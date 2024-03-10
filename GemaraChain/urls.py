@@ -16,9 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from ChainApp import views
+from ChainApp.views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.HomeView.as_view(), name='home')
+    path('', HomeView.as_view(), name='home'),
+    path('create-session/', CreateSessionView.as_view(), name='create_session'),
 ]
