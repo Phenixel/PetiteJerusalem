@@ -10,24 +10,31 @@
     <!-- Ajoutez des scripts JS spécifiques à cette page -->
 {% endblock %}
 
-{% block content %}    
+{% block content %}
     <div class="container mt-5">
-    <h1 class="mb-4">Ajouter une session</h1>
-    <form method="post">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="name" class="form-label">Nom de la session</label>
-            <input type="text" class="form-control" id="name" name="name" required>
-        </div>
-        <div class="mb-3">
-            <label for="description" class="form-label">Description</label>
-            <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
-        </div>
-        <div class="mb-3">
-            <label for="date_limit" class="form-label">Date limite</label>
-            <input type="date" class="form-control" id="date_limit" name="date_limit" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Créer la session</button>
-    </form>
-</div>
+        <h1 class="mb-4">Créer une session</h1>
+
+        {% if error_message %}
+            <div class="alert alert-danger" role="alert">
+                {{ error_message }}
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="name" class="form-label">Nom de la session</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="date_limit" class="form-label">Date limite</label>
+                <input type="date" class="form-control" id="date_limit" name="date_limit" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Créer la session</button>
+        </form>
+    </div>
 {% endblock %}
