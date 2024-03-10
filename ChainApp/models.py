@@ -22,6 +22,7 @@ class Session(models.Model):
 
 class Gemarot(models.Model):
     name = models.CharField(max_length=255)
+    livre = models.CharField(max_length=255)
     link = models.URLField(blank=True)
 
     def __str__(self):
