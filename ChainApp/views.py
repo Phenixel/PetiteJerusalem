@@ -1,12 +1,15 @@
 from django.shortcuts import render, redirect
 from django.views import View
 from .models import Session
+from datetime import date
 
 
 class HomeView(View):
     def get(self, request):
-        sessions = Session.objects.all()
-        return render(request, 'home.html', {'sessions': sessions})
+        today = date.today()
+        ongoing_sessions = Session.objects.filter(date_limit__gte=today)
+        completed_sessions = Session.objects.filter(date_limit__lt=today)
+        return render(request, 'home.html', {'ongoing_sessions': ongoing_sessions, 'completed_sessions': completed_sessions})
 
 
 class CreateSessionView(View):

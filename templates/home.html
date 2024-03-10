@@ -12,7 +12,7 @@
 
 {% block content %}
     <h1 class="display-1">Gemara Chain 📖</h1>
-    <p>Créer une chaîne d'étude de Guemara !</p>
+    <p>Créer une chaîne d'étude de guemara !</p>
 
     <div class="hero-liste-lecture">
         <div class="header-liste-lecture">
@@ -20,19 +20,39 @@
         </div>
 
         <div class="content-liste-lecture d-flex">
-
-            {% for session in sessions %}
-                <div class="card m-3" style="width: 30rem;">
-                    <a href="{% url 'session_detail' session.pk %}" style="text-decoration: none">
-                        <div class="card-body">
-                            <h5 class="h5 card-title">{{ session.name }}</h5>
-                            <h6 class="card-subtitle mb-2 text-body-secondary">Créateur: {{ session.person }}</h6>
-                            <p class="card-text">{{ session.description }}</p>
-                        </div>
-                    </a>
-                </div>
+            {% for session in ongoing_sessions %}
+            <div class="card m-3" style="width: 30rem;">
+                <a href="{% url 'session_detail' session.id %}" style="text-decoration: none">
+                    <div class="card-body">
+                        <h5 class="h5 card-title">{{ session.name }}</h5>
+                        <h6 class="card-subtitle mb-2 text-body-secondary">Créateur: {{ session.person }}</h6>
+                        <p class="card-text">{{ session.description }}</p>
+                    </div>
+                </a>
+            </div>
             {% endfor %}
+        </div>
+    </div>
 
+    <hr>
+
+    <div class="hero-liste-lecture">
+        <div class="header-liste-lecture">
+            <h2 class="h2">Les lectures terminées</h2>
+        </div>
+
+        <div class="content-liste-lecture d-flex">
+            {% for session in completed_sessions %}
+            <div class="card m-3" style="width: 30rem;">
+                <a href="{% url 'session_detail' session.id %}" style="text-decoration: none">
+                    <div class="card-body">
+                        <h5 class="h5 card-title">{{ session.name }}</h5>
+                        <h6 class="card-subtitle mb-2 text-body-secondary">Créateur: {{ session.person }}</h6>
+                        <p class="card-text">{{ session.description }}</p>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
         </div>
     </div>
 {% endblock %}
