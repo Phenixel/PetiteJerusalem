@@ -5,14 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="author" content="Phenixel">
-    <meta name="description" content="GemaraChain est une application web permettant aux utilisateurs de créer et de rejoindre des chaînes d'études du Talmud. Créez votre propre session d'étude ou rejoignez une session existante pour explorer les Gemarot du Talmud.">
+    <meta name="description"
+          content="GemaraChain est une application web permettant aux utilisateurs de créer et de rejoindre des chaînes d'études du Talmud. Créez votre propre session d'étude ou rejoignez une session existante pour explorer les Gemarot du Talmud.">
     <meta name="keywords" content="GemaraChain, Talmud, Gemara, étude, chaînes d'études, session d'étude">
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{% static 'medias/favicon.png' %}">
 
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
     <!-- Title -->
     <title>{% block title %}{% endblock %} | GemaraChain - Créez des chaines de Gemara facilement</title>
@@ -25,34 +27,54 @@
 
     <!-- Custom Scripts -->
     {% block css %}{% endblock %}
-    
+
     <!-- Custom Scripts -->
     {% block scripts %}{% endblock %}
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <!-- Votre navigation ici -->
-        </nav>
-    </header>
-    
-    <!-- Contenu principal -->
-    <main class="container mt-4">
-        {% block content %}{% endblock %}
-    </main>
-    
-    <!-- Footer -->
-    <footer class="footer mt-auto py-3 bg-light">
-        <div class="container">
-            <span class="text-muted">© 2024 GemaraChain. Tous droits réservés.</span>
+<!-- Header -->
+<header>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Gemara Chain</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">À propos</a>
+                    </li>
+                </ul>
+                <button class="btn btn-outline-light" type="button">Créer une session</button>
+            </div>
         </div>
-    </footer>
+    </nav>
+</header>
 
-    <!-- Bootstrap JS, Popper.js, and jQuery -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    
-    <!-- Scripts JS -->
-    <script src="{% static 'js/script.js' %}"></script>
+<!-- Contenu principal -->
+<main class="container mt-4" style="min-height: 85vh">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer class="footer mt-auto py-3 bg-light">
+    <div class="container d-flex justify-content-between">
+        <span class="text-muted">© 2024 GemaraChain. Tous droits réservés.</span>
+        <span class="text-muted">Site créé par <a href="https://phenixel.fr/" target="_blank">Phenixel</a></span>
+    </div>
+</footer>
+
+<!-- Bootstrap JS, Popper.js, and jQuery -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+
+<!-- Scripts JS -->
+<script src="{% static 'js/script.js' %}"></script>
 </body>
 </html>
