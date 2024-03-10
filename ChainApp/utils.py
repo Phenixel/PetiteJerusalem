@@ -1,27 +1,34 @@
 import requests
-from .models import Gemara
+import logging
+from .models import Gemarot
+
+logger = logging.getLogger(__name__)
 
 
 def fetch_gemarot_from_api():
     url = "https://www.sefaria.org/api/index"
     params = {
         "category": "Talmud",
-        "language": "he",  # Language of the Gemarot (Hebrew)
-        # Other parameters as needed
+        "language": "he",  # Langue des Gemarot (Hébreu)
+        # Autres paramètres si nécessaire
     }
 
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()  # Lève une exception en cas de code HTTP différent de 200
         gemarot_data = response.json()
+
+        gemarot_to_create = []
         for gemara_info in gemarot_data:
-            gemara_name = gemara_info.get("title", "")
+            gemara_name = gemara_info.get("title", "").strip()  # Nettoie le nom de la Gemara
             gemara_link = gemara_info.get("url", "")
-            # Créez un nouveau Gemara et enregistrez-le dans la base de données
-            gemara, created = Gemara.objects.get_or_create(
-                name=gemara_name,
-                defaults={'available': True}
-            )
-            if created:
-                gemara.save()
-    else:
-        print("Failed to fetch Gemarot from Sepharia API")
+            gemarot_to_create.append(Gemarot(name=gemara_name, link=gemara_link))
+
+        # Créez les objets Gemarot en une seule requête à la base de données
+        Gemarot.objects.bulk_create(gemarot_to_create)
+
+        logger.info("Gemarot fetched successfully and saved to the database.")
+    except requests.RequestException as e:
+        logger.error(f"Failed to fetch Gemarot from Sepharia API: {e}")
+    except Exception as ex:
+        logger.exception("An error occurred while fetching Gemarot:")
