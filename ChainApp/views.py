@@ -24,3 +24,9 @@ class CreateSessionView(View):
 
         # Rediriger vers une page de confirmation ou une autre vue
         return redirect('home')  # Rediriger vers la page d'accueil après création
+
+
+class SessionDetailView(View):
+    def get(self, request, session_id):
+        session = Session.objects.get(pk=session_id)
+        return render(request, 'ChainApp/session_detail.html', {'session': session})
