@@ -50,9 +50,19 @@
                         <a class="nav-link" href="#">À propos</a>
                     </li>
                 </ul>
-                <button class="btn btn-outline-light" type="button"
-                        onclick="window.location.href='{% url 'create_session' %}'">Créer une session
-                </button>
+                <div>
+                    <button class="btn btn-outline-light" type="button"
+                            onclick="window.location.href='{% url 'create_session' %}'">Créer une session
+                    </button>
+                    {% if user.is_authenticated %}
+                        <span style="color: white">Bonjour, {{ user.username }}</span>
+                        <a href="{% url 'logout' %}">Déconnexion</a>
+                    {% else %}
+                        <a href="{% url 'login' %}">Connexion</a> |
+                        <a href="{% url 'signup' %}">Inscription</a>
+                    {% endif %}
+                </div>
+
             </div>
         </div>
     </nav>
