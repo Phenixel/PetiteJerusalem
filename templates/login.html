@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - GemaraChain{% endblock %}
+
+{% block css %}
+    <!-- Ajoutez des liens CSS spécifiques à cette page -->
+{% endblock %}
+
+{% block scripts %}
+    <!-- Ajoutez des scripts JS spécifiques à cette page -->
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h1 class="mb-4">Login</h1>
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+    </div>
+{% endblock %}
