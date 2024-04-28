@@ -28,7 +28,7 @@ class LoginView(View):
 
         if user is not None:
             login(request, user)
-            return redirect('home')  # Rediriger vers la page d'accueil après connexion
+            return redirect('home')
         else:
             # Gérer l'erreur d'authentification ici
             return render(request, 'login.html', {'error': 'Identifiants invalides'})
@@ -40,17 +40,25 @@ class SignupView(View):
 
     def post(self, request):
         username = request.POST.get('username')
+        email = request.POST.get('email')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
+
+        # Vérification du mot de passe fort
+        if len(password) < 8:
+            return render(request, 'signup.html', {'error': 'Password must be at least 8 characters long'})
+
+        if not any(char.isdigit() for char in password):
+            return render(request, 'signup.html', {'error': 'Password must contain at least one digit'})
+
+        # Autres vérifications de la force du mot de passe si nécessaire
 
         if password != confirm_password:
             return render(request, 'signup.html', {'error': 'Passwords do not match'})
 
-        # Création de l'utilisateur Django
-        user = User.objects.create_user(username=username, password=password)
-
-        # Création de l'objet Person lié à l'utilisateur
-        person = Person.objects.create(user=user, name=username)
+        # Création de l'utilisateur Django et Person
+        user = User.objects.create_user(username=username, email=email, password=password)
+        person = Person.objects.create(user=user, name=username, email=email)
 
         # Connexion de l'utilisateur après la création du compte
         login(request, user)
