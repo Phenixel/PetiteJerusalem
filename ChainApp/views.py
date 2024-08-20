@@ -6,6 +6,7 @@ from datetime import date
 from django.utils import timezone
 from datetime import datetime
 from django.contrib.auth import authenticate, login, logout
+import dateparser
 
 
 class HomeView(View):
@@ -82,7 +83,7 @@ class CreateSessionView(View):
         date_limit_str = request.POST.get('date_limit')
 
         # Convertir la chaîne de caractères en objet datetime.date
-        date_limit = datetime.strptime(date_limit_str, "%Y-%m-%d").date()
+        date_limit = dateparser.parse(date_limit_str, date_formats=['%Y-%m-%d']).date()
 
         # Vérifier si la date limite est déjà passée
         if timezone.now().date() > date_limit:
