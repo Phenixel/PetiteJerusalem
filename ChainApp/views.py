@@ -111,16 +111,20 @@ class SessionDetailView(View):
     def post(self, request, session_id):
         session = get_object_or_404(Session, id=session_id)
         gemara_id = request.POST.get('gemara_id')
+        print(Gemarot.objects.filter(id=gemara_id))
         gemara = get_object_or_404(Gemarot, id=gemara_id)
 
         chosen_by = None
         if request.user.is_authenticated:
             chosen_by = request.user.person
 
+        print(chosen_by, gemara, session, gemara_id)
+
         # Marquer la gemara comme prise pour cette session
-        new_gemara = Gemara(session=session, gemarot=gemara, chosen_by=chosen_by)
+        new_gemara = Gemara(session=session, gemarot_ptr=gemara, chosen_by=chosen_by)
         new_gemara.save()
 
+        print(new_gemara)
         return redirect('session_detail', session_id=session_id)
 
 

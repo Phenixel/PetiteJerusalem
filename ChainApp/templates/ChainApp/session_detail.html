@@ -14,4 +14,19 @@
     <h1 class="display-1">{{ session.name }}</h1>
     <p>Créateur: {{ session.person }}</p>
     <p>{{ session.description }}</p>
+
+    <form method="post">
+        {% csrf_token %}
+    
+        {% for gemara in gemarot %}
+            <label>
+                <input type="checkbox" name="gemara_id" value="{{ gemara.id }}">
+                {{ gemara }}
+            </label>
+            <br>
+        {% endfor %}
+
+        <input type="submit">
+    </form>
+    
 {% endblock %}
