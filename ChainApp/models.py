@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 class Person(models.Model):
@@ -9,6 +12,10 @@ class Person(models.Model):
 
     def __str__(self):
         return self.user.username
+
+    class Meta:
+        verbose_name = _("Person")
+        verbose_name_plural = _("People")
 
 
 class Session(models.Model):
@@ -21,6 +28,15 @@ class Session(models.Model):
     def __str__(self):
         return self.name
 
+    def clean(self):
+        if self.date_limit < timezone.now().date():
+            raise ValidationError(_("The date limit must be a future date."))
+
+    class Meta:
+        verbose_name = _("Session")
+        verbose_name_plural = _("Sessions")
+        ordering = ['-created_at']
+
 
 class Gemarot(models.Model):
     name = models.CharField(max_length=255)
@@ -30,13 +46,20 @@ class Gemarot(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name = _("Gemarot")
+        verbose_name_plural = _("Gemarot")
+
 
 class Gemara(Gemarot):
     session = models.ForeignKey('Session', on_delete=models.CASCADE)
     chosen_by = models.ForeignKey('Person', on_delete=models.SET_NULL, blank=True, null=True)
     available = models.BooleanField(default=True)
-    gemarot_ptr = models.OneToOneField(Gemarot, parent_link=True, on_delete=models.CASCADE, default=1)
+    choose_gemarot = models.ForeignKey('Gemarot', on_delete=models.CASCADE, related_name='chosen_gemaras')
 
     def __str__(self):
         return f"{self.name} - Session: {self.session.name}"
 
+    class Meta:
+        verbose_name = _("Gemara")
+        verbose_name_plural = _("Gemarot")
