@@ -51,14 +51,14 @@ class Gemarot(models.Model):
         verbose_name_plural = _("Gemarot")
 
 
-class Gemara(Gemarot):
+class Gemara(models.Model):
     session = models.ForeignKey('Session', on_delete=models.CASCADE)
     chosen_by = models.ForeignKey('Person', on_delete=models.SET_NULL, blank=True, null=True)
+    choose_gemarot = models.ForeignKey('Gemarot', on_delete=models.CASCADE)
     available = models.BooleanField(default=True)
-    choose_gemarot = models.ForeignKey('Gemarot', on_delete=models.CASCADE, related_name='chosen_gemaras')
 
     def __str__(self):
-        return f"{self.name} - Session: {self.session.name}"
+        return f"{self.choose_gemarot} - Session: {self.session.name}"
 
     class Meta:
         verbose_name = _("Gemara")

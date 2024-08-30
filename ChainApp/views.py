@@ -121,7 +121,7 @@ class SessionDetailView(View):
         print(chosen_by, gemara, session, gemara_id)
 
         # Marquer la gemara comme prise pour cette session
-        new_gemara = Gemara(session=session, gemarot_ptr=gemara, chosen_by=chosen_by)
+        new_gemara = Gemara(session=session, choose_gemarot=gemara, chosen_by=chosen_by)
         new_gemara.save()
 
         print(new_gemara)
