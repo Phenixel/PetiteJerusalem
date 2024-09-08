@@ -102,25 +102,53 @@ class SessionDetailView(View):
     def get(self, request, session_id):
         session = get_object_or_404(Session, id=session_id)
         gemarot = Gemarot.objects.all()
+
+        # Préparer une liste de gemarot avec les informations de réservation
+        gemarot_list = []
+        for gemara in gemarot:
+            gemara_reservation = Gemara.objects.filter(session=session, gemarot_ptr=gemara).first()
+            if gemara_reservation:
+                gemarot_list.append({
+                    'gemara': gemara,
+                    'reserved': True,
+                    'chosen_by_username': gemara_reservation.chosen_by.user.username if gemara_reservation.chosen_by else "Inconnu"
+                })
+            else:
+                gemarot_list.append({
+                    'gemara': gemara,
+                    'reserved': False,
+                    'chosen_by_username': None
+                })
+
         context = {
             'session': session,
-            'gemarot': gemarot,
+            'gemarot_list': gemarot_list,
         }
         return render(request, 'ChainApp/session_detail.html', context)
 
     def post(self, request, session_id):
         session = get_object_or_404(Session, id=session_id)
-        gemara_id = request.POST.get('gemara_id')
-        gemara = get_object_or_404(Gemarot, id=gemara_id)
-
+        gemara_ids = request.POST.getlist('gemarot')  # Récupère une liste d'IDs des Gemarot sélectionnées
         chosen_by = None
+
         if request.user.is_authenticated:
             chosen_by = request.user.person
 
-        # Marquer la gemara comme prise pour cette session
-        new_gemara = Gemara(session=session, gemarot=gemara, chosen_by=chosen_by)
-        new_gemara.save()
+        # Traiter chaque Gemarot sélectionnée
+        for gemara_id in gemara_ids:
+            gemarot = get_object_or_404(Gemarot, pk=gemara_id)
+
+            # Créer une instance de Gemara en utilisant le gemarot existant
+            new_gemara = Gemara.objects.create(
+                session=session,
+                gemarot_ptr=gemarot,
+                name=gemarot.name,  # Assurez-vous que le nom soit correctement récupéré
+                livre=gemarot.livre,  # Même chose pour les autres attributs si nécessaire
+                link=gemarot.link,  # Optionnel, selon votre modèle
+                chosen_by=chosen_by,
+                available=False
+            )
+            new_gemara.save()
 
         return redirect('session_detail', session_id=session_id)
-
 
