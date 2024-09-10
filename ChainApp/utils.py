@@ -1,4 +1,3 @@
-from django.db import models
 from ChainApp.models import Gemarot
 
 # Liste des livres du Talmud Bavli avec leurs Masechtot correspondants et les liens vers Sepharia
@@ -55,8 +54,7 @@ talmud_bavli = {
 def create_database_from_list():
     # Création des objets Gemarot avec le nom du Masechet, le nom du livre et le lien vers Sepharia
     for masechet, info in talmud_bavli.items():
-        gemara_name = f"{masechet} - {info['livre']}"
         gemara_link = info['link']
-        gemara = Gemarot.objects.create(name=gemara_name, livre=info['livre'], link=gemara_link)
+        gemara = Gemarot.objects.create(name=masechet, livre=info['livre'], link=gemara_link)
         gemara.save()
-        print(f"Created Gemarot: {gemara_name} - Link: {gemara_link}")
+        print(f"Created Gemarot: {masechet} - Link: {gemara_link}")
