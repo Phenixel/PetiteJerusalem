@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
-import itertools
+import itertools # Permet de faire les itération pour les slug du meme nom 
 
 class Person(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
