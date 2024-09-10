@@ -11,10 +11,15 @@
 {% endblock %}
 
 {% block content %}
+
     <h1 class="display-1">{{ session.name }}</h1>
     <p>Créateur: {{ session.person }}</p>
     <p>{{ session.description }}</p>
+    <p>{{ session.date_limit }}</p>
 
+    <!-- Ajout du bloc de messages -->
+
+    <!-- Reste du contenu du template -->
     <div class="container">
         <form method="post">
             {% csrf_token %}
@@ -36,6 +41,7 @@
                 </div>
             {% endif %}
 
+            {% if gemarot_list %}
             <div class="row">
                 {% for item in gemarot_list %}
                     <div class="col-md-4">
@@ -64,6 +70,42 @@
                     {% endif %}
                 {% endfor %}
             </div>
+            {% endif %}
+
+            {% if seder_list %}
+                {% for seder_data in seder_list %}
+                    <div class="col-md-12">
+                        <h3>{{ seder_data.seder.name }}</h3>  <!-- Affiche le nom du Seder -->
+                        <div class="row">
+                            {% for item in seder_data.massekhtot %}
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="masekhet_{{ item.masekhet.pk }}" name="masekhtot" value="{{ item.masekhet.pk }}"
+                                        {% if item.reserved_by_user %}
+                                            checked
+                                        {% endif %}
+                                        {% if item.reserved and not item.reserved_by_user %}
+                                            disabled
+                                        {% endif %}>
+                                        <label class="form-check-label" for="masekhet_{{ item.masekhet.pk }}">
+                                            {{ item.masekhet.name }}
+                                            
+                                            {% if item.reserved %}
+                                                <span style="color: red; font-weight: bold;">
+                                                    (Réservé par {{ item.chosen_by_username }})
+                                                </span>
+                                            {% endif %}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% if forloop.counter|divisibleby:3 and not forloop.last %}
+                                    </div><div class="row">
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
         
             <button type="submit" class="btn btn-primary mt-3">Submit</button>
         </form>
