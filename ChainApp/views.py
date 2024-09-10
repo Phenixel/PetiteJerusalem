@@ -6,16 +6,33 @@ from datetime import date
 from django.utils import timezone
 from django.contrib.auth import authenticate, login, logout
 import dateparser
+from django.db.models import Count
 
 
 class HomeView(View):
     def get(self, request):
         today = date.today()
-        ongoing_sessions = Session.objects.filter(date_limit__gte=today)
-        completed_sessions = Session.objects.filter(date_limit__lt=today)
-        return render(request, 'home.html',
-                      {'ongoing_sessions': ongoing_sessions, 'completed_sessions': completed_sessions})
 
+        # Récupérer toutes les sessions
+        all_sessions = Session.objects.all()
+
+        ongoing_sessions = []
+        completed_sessions = []
+
+        for session in all_sessions:
+            # Compter le nombre de réservations dans la session
+            reservation_count = Gemara.objects.filter(session=session, available=False).count()
+
+            # Vérifier si la session est complète
+            is_complete = reservation_count >= 46  # Si 46 réservations, la session est complète
+
+            if not is_complete and session.date_limit >= today:
+                ongoing_sessions.append(session)
+            else:
+                completed_sessions.append(session)
+
+        return render(request, 'home.html', 
+                      {'ongoing_sessions': ongoing_sessions, 'completed_sessions': completed_sessions})
 
 class LoginView(View):
     def get(self, request):
@@ -176,3 +193,10 @@ class SessionDetailView(View):
                     )
 
         return redirect('session_detail', slug=slug)
+    
+    
+    
+            
+            
+            
+        
