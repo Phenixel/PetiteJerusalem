@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
 import itertools
 
-.
+
 class Person(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
