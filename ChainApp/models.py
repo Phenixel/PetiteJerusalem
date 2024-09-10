@@ -3,7 +3,8 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
+from django.utils.text import slugify
+import itertools
 
 class Person(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -18,12 +19,34 @@ class Person(models.Model):
         verbose_name_plural = _("People")
 
 
+# class Session(models.Model):
+#     name = models.CharField(max_length=255)
+#     description = models.TextField()
+#     date_limit = models.DateField()
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     person = models.ForeignKey('Person', on_delete=models.SET_NULL, blank=True, null=True)
+
+#     def __str__(self):
+#         return self.name
+
+#     def clean(self):
+#         if self.date_limit < timezone.now().date():
+#             raise ValidationError(_("The date limit must be a future date."))
+
+#     class Meta:
+#         verbose_name = _("Session")
+#         verbose_name_plural = _("Sessions")
+#         ordering = ['-created_at']
+
+
+
 class Session(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     date_limit = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     person = models.ForeignKey('Person', on_delete=models.SET_NULL, blank=True, null=True)
+    slug = models.SlugField(unique=True, max_length=255, blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -32,11 +55,21 @@ class Session(models.Model):
         if self.date_limit < timezone.now().date():
             raise ValidationError(_("The date limit must be a future date."))
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name)
+            slug = base_slug
+            for i in itertools.count(1):
+                if not Session.objects.filter(slug=slug).exists():
+                    break
+                slug = f'{base_slug}-{i}'
+            self.slug = slug
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = _("Session")
         verbose_name_plural = _("Sessions")
         ordering = ['-created_at']
-
 
 class Gemarot(models.Model):
     name = models.CharField(max_length=255)
