@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
-from .models import Session, Gemara, Gemarot, Person
+from .models import Session, Gemara, Gemarot, Person, Guest
 from datetime import date
 from django.utils import timezone
 from datetime import datetime
@@ -15,7 +15,8 @@ class HomeView(View):
         today = date.today()
         ongoing_sessions = Session.objects.filter(date_limit__gte=today)
         completed_sessions = Session.objects.filter(date_limit__lt=today)
-        return render(request, 'home.html', {'ongoing_sessions': ongoing_sessions, 'completed_sessions': completed_sessions})
+        return render(request, 'home.html',
+                      {'ongoing_sessions': ongoing_sessions, 'completed_sessions': completed_sessions})
 
 
 class LoginView(View):
@@ -106,27 +107,27 @@ class CreateSessionView(View):
         return redirect('home')
 
 
-
 class SessionDetailView(View):
     def get(self, request, slug):
         session = get_object_or_404(Session, slug=slug)  # Récupérer la session par slug
 
         gemarot = Gemarot.objects.all()
         gemarot_list = []
-        logger.info(f"Users connecté : {request.user}")
+        # logger.info(f"Users connecté : {request.user}")
         for gemara in gemarot:
             # Vérifier si la Gemara est réservée pour cette session par n'importe quel utilisateur
             gemara_reservation = Gemara.objects.filter(session=session, choose_gemarot=gemara).first()
-            if request.user.is_authenticated :
-                reserved_by_user = gemara_reservation and gemara_reservation.chosen_by == request.user.person  
-            else :
+            if request.user.is_authenticated:
+                reserved_by_user = gemara_reservation and gemara_reservation.chosen_by == request.user.person
+            else:
                 reserved_by_user = None
 
             gemarot_list.append({
                 'gemara': gemara,
                 'reserved': gemara_reservation is not None,
-                'chosen_by_username': (gemara_reservation.chosen_by.user.username if gemara_reservation and gemara_reservation.chosen_by else 
-                                      gemara_reservation.chosen_by_guest.name if gemara_reservation and gemara_reservation.chosen_by_guest else None),
+                'chosen_by_username': (
+                    gemara_reservation.chosen_by.user.username if gemara_reservation and gemara_reservation.chosen_by else
+                    gemara_reservation.chosen_by_guest.name if gemara_reservation and gemara_reservation.chosen_by_guest else None),
                 'reserved_by_user': reserved_by_user,
             })
 
@@ -142,7 +143,7 @@ class SessionDetailView(View):
 
         if request.user.is_authenticated:
             person = request.user.person
-            logger.info(f"Profil Person trouvé : {person}")
+            # logger.info(f"Profil Person trouvé : {person}")
             user_reservations = Gemara.objects.filter(session=session, chosen_by=person)
 
             # Annuler les réservations décochées (seulement si l'utilisateur est connecté)
@@ -164,10 +165,6 @@ class SessionDetailView(View):
             guest_name = request.POST.get('guest_name')
             guest_email = request.POST.get('guest_email')
             guest, created = Guest.objects.get_or_create(email=guest_email, defaults={'name': guest_name})
-            if created:
-                logger.info(f"Nouvel invité créé : {guest}")
-            else:
-                logger.info(f"Invité existant trouvé : {guest}")
 
             # Ajouter les nouvelles réservations cochées
             for gemara_id in gemara_ids:
