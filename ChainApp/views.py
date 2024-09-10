@@ -4,10 +4,8 @@ from django.views import View
 from .models import Session, Gemara, Gemarot, Person, Guest
 from datetime import date
 from django.utils import timezone
-from datetime import datetime
 from django.contrib.auth import authenticate, login, logout
 import dateparser
-from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 class HomeView(View):

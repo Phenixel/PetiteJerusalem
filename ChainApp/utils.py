@@ -1,4 +1,3 @@
-from django.db import models
 from ChainApp.models import Gemarot
 
 # Liste des livres du Talmud Bavli avec leurs Masechtot correspondants et les liens vers Sepharia

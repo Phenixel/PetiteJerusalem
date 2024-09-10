@@ -4,7 +4,8 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
-import itertools # Permet de faire les itération pour les slug du meme nom 
+import itertools
+
 
 class Person(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -30,6 +31,7 @@ class Guest(models.Model):
         verbose_name = _("Guest")
         verbose_name_plural = _("Guests")
 
+
 class Session(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
@@ -49,6 +51,7 @@ class Session(models.Model):
         if not self.slug:
             base_slug = slugify(self.name)
             slug = base_slug
+            # Permet de faire les itérations pour les slug du meme nom
             for i in itertools.count(1):
                 if not Session.objects.filter(slug=slug).exists():
                     break
@@ -60,6 +63,7 @@ class Session(models.Model):
         verbose_name = _("Session")
         verbose_name_plural = _("Sessions")
         ordering = ['-created_at']
+
 
 class Gemarot(models.Model):
     name = models.CharField(max_length=255)
