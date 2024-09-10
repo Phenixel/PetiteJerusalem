@@ -4,7 +4,8 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
-import itertools # Permet de faire les itération pour les slug du meme nom 
+import itertools
+
 
 class Person(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -19,25 +20,16 @@ class Person(models.Model):
         verbose_name_plural = _("People")
 
 
-# class Session(models.Model):
-#     name = models.CharField(max_length=255)
-#     description = models.TextField()
-#     date_limit = models.DateField()
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     person = models.ForeignKey('Person', on_delete=models.SET_NULL, blank=True, null=True)
+class Guest(models.Model):
+    name = models.CharField(max_length=255)
+    email = models.EmailField()
 
-#     def __str__(self):
-#         return self.name
+    def __str__(self):
+        return self.name
 
-#     def clean(self):
-#         if self.date_limit < timezone.now().date():
-#             raise ValidationError(_("The date limit must be a future date."))
-
-#     class Meta:
-#         verbose_name = _("Session")
-#         verbose_name_plural = _("Sessions")
-#         ordering = ['-created_at']
-
+    class Meta:
+        verbose_name = _("Guest")
+        verbose_name_plural = _("Guests")
 
 
 class Session(models.Model):
@@ -59,6 +51,7 @@ class Session(models.Model):
         if not self.slug:
             base_slug = slugify(self.name)
             slug = base_slug
+            # Permet de faire les itérations pour les slug du meme nom
             for i in itertools.count(1):
                 if not Session.objects.filter(slug=slug).exists():
                     break
@@ -70,6 +63,7 @@ class Session(models.Model):
         verbose_name = _("Session")
         verbose_name_plural = _("Sessions")
         ordering = ['-created_at']
+
 
 class Gemarot(models.Model):
     name = models.CharField(max_length=255)
@@ -87,6 +81,7 @@ class Gemarot(models.Model):
 class Gemara(models.Model):
     session = models.ForeignKey('Session', on_delete=models.CASCADE)
     chosen_by = models.ForeignKey('Person', on_delete=models.SET_NULL, blank=True, null=True)
+    chosen_by_guest = models.ForeignKey('Guest', on_delete=models.SET_NULL, blank=True, null=True)
     choose_gemarot = models.ForeignKey('Gemarot', on_delete=models.CASCADE)
     available = models.BooleanField(default=True)
 
@@ -95,4 +90,4 @@ class Gemara(models.Model):
 
     class Meta:
         verbose_name = _("Gemara")
-        verbose_name_plural = _("Gemarot")
+        verbose_name_plural = _("Gemara")

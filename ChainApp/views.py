@@ -1,13 +1,11 @@
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
-from .models import Session, Gemara, Gemarot, Person
+from .models import Session, Gemara, Gemarot, Person, Guest
 from datetime import date
 from django.utils import timezone
-from datetime import datetime
 from django.contrib.auth import authenticate, login, logout
 import dateparser
-from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 class HomeView(View):
@@ -15,7 +13,8 @@ class HomeView(View):
         today = date.today()
         ongoing_sessions = Session.objects.filter(date_limit__gte=today)
         completed_sessions = Session.objects.filter(date_limit__lt=today)
-        return render(request, 'home.html', {'ongoing_sessions': ongoing_sessions, 'completed_sessions': completed_sessions})
+        return render(request, 'home.html',
+                      {'ongoing_sessions': ongoing_sessions, 'completed_sessions': completed_sessions})
 
 
 class LoginView(View):
@@ -76,31 +75,8 @@ class LogoutView(View):
 
 class CreateSessionView(View):
     def get(self, request):
-        return render(request, 'ChainApp/create_session.html')
-
-    def post(self, request):
-        name = request.POST.get('name')
-        description = request.POST.get('description')
-        date_limit_str = request.POST.get('date_limit')
-
-        # Convertir la chaîne de caractères en objet datetime.date
-        date_limit = dateparser.parse(date_limit_str, date_formats=['%Y-%m-%d']).date()
-
-        # Vérifier si la date limite est déjà passée
-        if timezone.now().date() > date_limit:
-            error_message = "La date limite doit être une date future."
-            return render(request, 'ChainApp/create_session.html', {'error_message': error_message})
-
-        # Créer une nouvelle session
-        new_session = Session(name=name, description=description, date_limit=date_limit)
-        new_session.save()
-
-        # Rediriger vers une page de confirmation ou une autre vue
-        return redirect('home')
-
-
-class CreateSessionView(View):
-    def get(self, request):
+        if not request.user.is_authenticated:
+            return redirect('login')
         return render(request, 'ChainApp/create_session.html')
 
     def post(self, request):
@@ -128,30 +104,29 @@ class CreateSessionView(View):
 
         return redirect('home')
 
-class SessionDetailView(LoginRequiredMixin, View):
+
+class SessionDetailView(View):
     def get(self, request, slug):
         session = get_object_or_404(Session, slug=slug)  # Récupérer la session par slug
 
-        try:
-            person = request.user.person
-        except Person.DoesNotExist:
-            person = None
-
         gemarot = Gemarot.objects.all()
-
         gemarot_list = []
+        # logger.info(f"Users connecté : {request.user}")
         for gemara in gemarot:
-            if person:
-                gemara_reservation = Gemara.objects.filter(session=session, choose_gemarot=gemara, chosen_by=person).first()
-                reserved_by_user = gemara_reservation is not None
+            # Vérifier si la Gemara est réservée pour cette session par n'importe quel utilisateur
+            gemara_reservation = Gemara.objects.filter(session=session, choose_gemarot=gemara).first()
+            if request.user.is_authenticated:
+                reserved_by_user = gemara_reservation and gemara_reservation.chosen_by == request.user.person
             else:
-                gemara_reservation = None
-                reserved_by_user = False
+                reserved_by_user = None
 
             gemarot_list.append({
                 'gemara': gemara,
-                'reserved': reserved_by_user,
-                'chosen_by_username': gemara_reservation.chosen_by.user.username if gemara_reservation else None
+                'reserved': gemara_reservation is not None,
+                'chosen_by_username': (
+                    gemara_reservation.chosen_by.user.username if gemara_reservation and gemara_reservation.chosen_by else
+                    gemara_reservation.chosen_by_guest.name if gemara_reservation and gemara_reservation.chosen_by_guest else None),
+                'reserved_by_user': reserved_by_user,
             })
 
         context = {
@@ -162,32 +137,42 @@ class SessionDetailView(LoginRequiredMixin, View):
 
     def post(self, request, slug):
         session = get_object_or_404(Session, slug=slug)  # Récupérer la session par slug
-
-        try:
-            person = request.user.person
-        except Person.DoesNotExist:
-            person = None
-
-        if not person:
-            return redirect('create_person')  # Redirigez l'utilisateur vers une page pour créer un profil Person
-
         gemara_ids = request.POST.getlist('gemarot')  # Récupère une liste d'IDs des Gemarot sélectionnées
-        user_reservations = Gemara.objects.filter(session=session, chosen_by=person)
 
-        # Annuler les réservations décochées
-        for reservation in user_reservations:
-            if str(reservation.choose_gemarot.id) not in gemara_ids:
-                reservation.delete()
+        if request.user.is_authenticated:
+            person = request.user.person
+            # logger.info(f"Profil Person trouvé : {person}")
+            user_reservations = Gemara.objects.filter(session=session, chosen_by=person)
 
-        # Ajouter les nouvelles réservations cochées
-        for gemara_id in gemara_ids:
-            gemarot = get_object_or_404(Gemarot, pk=gemara_id)
-            if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, chosen_by=person).exists():
-                Gemara.objects.create(
-                    session=session,
-                    choose_gemarot=gemarot,
-                    chosen_by=person,
-                    available=False
-                )
+            # Annuler les réservations décochées (seulement si l'utilisateur est connecté)
+            for reservation in user_reservations:
+                if str(reservation.choose_gemarot.id) not in gemara_ids:
+                    reservation.delete()
+
+            # Ajouter les nouvelles réservations cochées
+            for gemara_id in gemara_ids:
+                gemarot = get_object_or_404(Gemarot, pk=gemara_id)
+                if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, chosen_by=person).exists():
+                    Gemara.objects.create(
+                        session=session,
+                        choose_gemarot=gemarot,
+                        chosen_by=person,
+                        available=False
+                    )
+        else:
+            guest_name = request.POST.get('guest_name')
+            guest_email = request.POST.get('guest_email')
+            guest, created = Guest.objects.get_or_create(email=guest_email, defaults={'name': guest_name})
+
+            # Ajouter les nouvelles réservations cochées
+            for gemara_id in gemara_ids:
+                gemarot = get_object_or_404(Gemarot, pk=gemara_id)
+                if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, chosen_by_guest=guest).exists():
+                    Gemara.objects.create(
+                        session=session,
+                        choose_gemarot=gemarot,
+                        chosen_by_guest=guest,
+                        available=False
+                    )
 
         return redirect('session_detail', slug=slug)
