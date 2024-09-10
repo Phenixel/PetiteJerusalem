@@ -98,33 +98,81 @@ class CreateSessionView(View):
         return redirect('home')
 
 
+class CreateSessionView(View):
+    def get(self, request):
+        return render(request, 'ChainApp/create_session.html')
+
+    def post(self, request):
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        date_limit_str = request.POST.get('date_limit')
+
+        date_limit = dateparser.parse(date_limit_str, date_formats=['%Y-%m-%d']).date()
+
+        if timezone.now().date() > date_limit:
+            error_message = "La date limite doit être une date future."
+            return render(request, 'ChainApp/create_session.html', {'error_message': error_message})
+
+        person = None
+        if request.user.is_authenticated:
+            person = request.user.person
+
+        new_session = Session(
+            name=name,
+            description=description,
+            date_limit=date_limit,
+            person=person
+        )
+        new_session.save()
+
+        return redirect('home')
+
+
 class SessionDetailView(View):
     def get(self, request, session_id):
         session = get_object_or_404(Session, id=session_id)
         gemarot = Gemarot.objects.all()
+
+        # Préparer une liste de gemarot avec les informations de réservation
+        gemarot_list = []
+        for gemara in gemarot:
+            gemara_reservation = Gemara.objects.filter(session=session, choose_gemarot=gemara, chosen_by=request.user.person).first()
+            reserved_by_user = gemara_reservation is not None
+
+            gemarot_list.append({
+                'gemara': gemara,
+                'reserved': reserved_by_user,
+                'chosen_by_username': gemara_reservation.chosen_by.user.username if gemara_reservation else None
+            })
+
         context = {
             'session': session,
-            'gemarot': gemarot,
+            'gemarot_list': gemarot_list,
         }
         return render(request, 'ChainApp/session_detail.html', context)
 
     def post(self, request, session_id):
         session = get_object_or_404(Session, id=session_id)
-        gemara_id = request.POST.get('gemara_id')
-        print(Gemarot.objects.filter(id=gemara_id))
-        gemara = get_object_or_404(Gemarot, id=gemara_id)
+        gemara_ids = request.POST.getlist('gemarot')  # Récupère une liste d'IDs des Gemarot sélectionnées
+        chosen_by = request.user.person
 
-        chosen_by = None
-        if request.user.is_authenticated:
-            chosen_by = request.user.person
+        # Récupérer toutes les réservations de cet utilisateur pour cette session
+        user_reservations = Gemara.objects.filter(session=session, chosen_by=chosen_by)
 
-        print(chosen_by, gemara, session, gemara_id)
+        # Annuler les réservations décochées
+        for reservation in user_reservations:
+            if str(reservation.choose_gemarot.id) not in gemara_ids:
+                reservation.delete()
 
-        # Marquer la gemara comme prise pour cette session
-        new_gemara = Gemara(session=session, choose_gemarot=gemara, chosen_by=chosen_by)
-        new_gemara.save()
+        # Ajouter les nouvelles réservations cochées
+        for gemara_id in gemara_ids:
+            gemarot = get_object_or_404(Gemarot, pk=gemara_id)
+            if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, chosen_by=chosen_by).exists():
+                Gemara.objects.create(
+                    session=session,
+                    choose_gemarot=gemarot,
+                    chosen_by=chosen_by,
+                    available=False
+                )
 
-        print(new_gemara)
         return redirect('session_detail', session_id=session_id)
-
-
