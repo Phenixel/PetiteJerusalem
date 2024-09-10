@@ -23,8 +23,11 @@
                     <div class="col-md-4">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="gemarot_{{ item.gemara.pk }}" name="gemarot" value="{{ item.gemara.pk }}"
-                            {% if item.reserved %}
+                            {% if item.reserved_by_user %}
                                 checked
+                            {% endif %}
+                            {% if item.reserved and not item.reserved_by_user %}
+                                disabled
                             {% endif %}>
                             <label class="form-check-label" for="gemarot_{{ item.gemara.pk }}">
                                 {{ item.gemara.name }}

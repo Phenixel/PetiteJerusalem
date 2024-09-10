@@ -7,7 +7,11 @@ from django.utils import timezone
 from datetime import datetime
 from django.contrib.auth import authenticate, login, logout
 import dateparser
+from django.contrib.auth.mixins import LoginRequiredMixin
+import logging
 
+
+logger = logging.getLogger(__name__)
 
 class HomeView(View):
     def get(self, request):
@@ -128,21 +132,27 @@ class CreateSessionView(View):
         return redirect('home')
 
 
-class SessionDetailView(View):
-    def get(self, request, session_id):
-        session = get_object_or_404(Session, id=session_id)
-        gemarot = Gemarot.objects.all()
 
-        # Préparer une liste de gemarot avec les informations de réservation
+class SessionDetailView(View):
+    def get(self, request, slug):
+        session = get_object_or_404(Session, slug=slug)  # Récupérer la session par slug
+
+        gemarot = Gemarot.objects.all()
         gemarot_list = []
+        logger.info(f"Users connecté : {request.user}")
         for gemara in gemarot:
-            gemara_reservation = Gemara.objects.filter(session=session, choose_gemarot=gemara, chosen_by=request.user.person).first()
-            reserved_by_user = gemara_reservation is not None
+            # Vérifier si la Gemara est réservée pour cette session par n'importe quel utilisateur
+            gemara_reservation = Gemara.objects.filter(session=session, choose_gemarot=gemara).first()
+            if request.user.is_authenticated :
+                reserved_by_user = gemara_reservation and gemara_reservation.chosen_by == request.user.person  
+            else :
+                reserved_by_user = None
 
             gemarot_list.append({
                 'gemara': gemara,
-                'reserved': reserved_by_user,
-                'chosen_by_username': gemara_reservation.chosen_by.user.username if gemara_reservation else None
+                'reserved': gemara_reservation is not None,
+                'chosen_by_username': gemara_reservation.chosen_by.user.username if gemara_reservation else None,
+                'reserved_by_user': reserved_by_user,
             })
 
         context = {
@@ -151,13 +161,18 @@ class SessionDetailView(View):
         }
         return render(request, 'ChainApp/session_detail.html', context)
 
-    def post(self, request, session_id):
-        session = get_object_or_404(Session, id=session_id)
+    def post(self, request, slug):
+        print(request.user)
+        session = get_object_or_404(Session, slug=slug)  # Récupérer la session par slug
+        
+        logger.info(f"Users connecté : {request.user}")
+        try:
+            person = request.user.person
+            logger.info(f"Profil Person trouvé : {person}")
+        except Person.DoesNotExist:
+            logger.error("Aucun profil Person trouvé pour cet utilisateur.")
         gemara_ids = request.POST.getlist('gemarot')  # Récupère une liste d'IDs des Gemarot sélectionnées
-        chosen_by = request.user.person
-
-        # Récupérer toutes les réservations de cet utilisateur pour cette session
-        user_reservations = Gemara.objects.filter(session=session, chosen_by=chosen_by)
+        user_reservations = Gemara.objects.filter(session=session, chosen_by=person)
 
         # Annuler les réservations décochées
         for reservation in user_reservations:
@@ -167,12 +182,14 @@ class SessionDetailView(View):
         # Ajouter les nouvelles réservations cochées
         for gemara_id in gemara_ids:
             gemarot = get_object_or_404(Gemarot, pk=gemara_id)
-            if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, chosen_by=chosen_by).exists():
+            if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, chosen_by=person).exists():
                 Gemara.objects.create(
                     session=session,
                     choose_gemarot=gemarot,
-                    chosen_by=chosen_by,
+                    chosen_by=person,
                     available=False
                 )
 
-        return redirect('session_detail', session_id=session_id)
+        return redirect('session_detail', slug=slug)
+
+   
