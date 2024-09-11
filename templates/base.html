@@ -55,7 +55,7 @@
                             onclick="window.location.href='{% url 'create_session' %}'">Créer une session
                     </button>
                     {% if user.is_authenticated %}
-                        <span style="color: white">Bonjour, {{ user.username }}</span>
+                        <span style="color: white">Bonjour, <a href="{% url 'profile' %}">{{ user.username }}</a></span>
                         <a href="{% url 'logout' %}">Déconnexion</a>
                     {% else %}
                         <a href="{% url 'login' %}">Connexion</a> |
