@@ -54,7 +54,8 @@
                                 disabled
                             {% endif %}>
                             <label class="form-check-label" for="gemarot_{{ item.gemara.pk }}">
-                                {{ item.gemara.name }}
+                            <a href="{{item.gemara.link}}" style="text-decoration: none" target="_blank">{{ item.gemara.name }}</a>
+                                
                                 
                                 {% if item.reserved %}
                                     <span style="color: red; font-weight: bold;">
