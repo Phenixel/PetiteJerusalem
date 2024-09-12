@@ -13,28 +13,39 @@ from django.db.models import Count
 
 class HomeView(View):
     def get(self, request):
-        today = date.today()
+        today = timezone.now().date()
 
-        # Récupérer toutes les sessions
-        all_sessions = Session.objects.all()
+        # Récupérer le type de session demandé (all, mishna, gemara)
+        session_type = request.GET.get('type', 'all')
+        
+        # Récupérer le type d'affichage demandé (grid ou list)
+        display_type = request.GET.get('display', 'grid')
+
+        # Filtrer les sessions en fonction du type demandé
+        if session_type == 'mishna':
+            all_sessions = Session.objects.filter(session_is=True)
+        elif session_type == 'gemara':
+            all_sessions = Session.objects.filter(session_is=False)
+        else:
+            all_sessions = Session.objects.all()
 
         ongoing_sessions = []
         completed_sessions = []
 
         for session in all_sessions:
-            # Compter le nombre de réservations dans la session
-            reservation_count = Gemara.objects.filter(session=session, available=False).count()
-
-            # Vérifier si la session est complète
-            is_complete = reservation_count >= 46  # Si 46 réservations, la session est complète
-
-            if not is_complete and session.date_limit >= today:
-                ongoing_sessions.append(session)
-            else:
+            if session.is_completed:
                 completed_sessions.append(session)
+            else:
+                ongoing_sessions.append(session)
 
-        return render(request, 'home.html',
-                      {'ongoing_sessions': ongoing_sessions, 'completed_sessions': completed_sessions})
+        context = {
+            'ongoing_sessions': ongoing_sessions, 
+            'completed_sessions': completed_sessions,
+            'session_type': session_type,
+            'display_type': display_type
+        }
+
+        return render(request, 'home.html', context)
 
 
 class LoginView(View):

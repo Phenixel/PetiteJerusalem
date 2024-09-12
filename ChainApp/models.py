@@ -53,7 +53,6 @@ class Session(models.Model):
         if not self.slug:
             base_slug = slugify(self.name)
             slug = base_slug
-            # Permet de faire les itérations pour les slug du meme nom
             for i in itertools.count(1):
                 if not Session.objects.filter(slug=slug).exists():
                     break
@@ -61,10 +60,27 @@ class Session(models.Model):
             self.slug = slug
         super().save(*args, **kwargs)
 
+    @property
+    def is_completed(self):
+        # Vérifier si la date de la session est dépassée
+        if self.date_limit < timezone.now().date():
+            return True
+
+        # Vérifier la complétion en fonction du type de session
+        if self.session_is:  # Mishna
+            total_massekhets = Massekhet.objects.count()
+            reserved_mishnas = Michna.objects.filter(session=self).count()
+            return reserved_mishnas == total_massekhets
+        else:  # Gemara
+            total_gemarots = Gemarot.objects.count()
+            reserved_gemaras = Gemara.objects.filter(session=self).count()
+            return reserved_gemaras == total_gemarots
+
     class Meta:
         verbose_name = _("Session")
         verbose_name_plural = _("Sessions")
         ordering = ['-created_at']
+
 
 class Gemarot(models.Model):
     name = models.CharField(max_length=255)
