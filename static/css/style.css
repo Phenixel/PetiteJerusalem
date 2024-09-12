@@ -1,0 +1,76 @@
+:root {
+    --color-bg: #FFFFFF;
+    --color-text: #000000;
+    --card-bg: #f8f9fa;
+}
+
+[data-theme="dark"] {
+    --color-bg: #292929;
+    --color-text: #FFFFFF;
+    --card-bg: #343a40;
+}
+
+body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+}
+
+.btn-group .btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-toolbar {
+    margin-bottom: 1rem;
+}
+
+.card {
+    background-color: var(--card-bg);
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    width: 100%;
+}
+
+.grid-view .card {
+    max-width: 20rem;
+    flex: 1 1 calc(33.333% - 1rem);
+}
+
+.list-view .card {
+    flex: 1 1 100%;
+    display: flex;
+    align-items: center;
+}
+
+.list-view .card-body {
+    padding: 1rem;
+    flex: 1;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.content-liste-lecture {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 1rem;
+}
+
+.hero-liste-lecture {
+    margin-top: 2rem;
+}
+
+.header-liste-lecture h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.badge {
+    margin-top: 0.5rem;
+}

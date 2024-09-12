@@ -3,90 +3,88 @@
 {% block title %}Accueil - GemaraChain{% endblock %}
 
 {% block css %}
-    <style>
-        .list-view .card {
-            width: 100% !important;
-            margin-bottom: 1rem;
-        }
-    </style>
+
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        function toggleView(view) {
-            const container = document.querySelector('.content-liste-lecture');
-            if (view === 'list') {
-                container.classList.add('list-view');
-                container.classList.remove('d-flex');
-            } else {
-                container.classList.remove('list-view');
-                container.classList.add('d-flex');
-            }
-        }
-    </script>
+
 {% endblock %}
 
 {% block content %}
-    <h1 class="display-1">Gemara Chain 📖</h1>
-    <p>Créer une chaîne d'étude de guemara !</p>
+<h1 class="display-1 text-center">Gemara Chain 📖</h1>
+<p class="text-center">Créer une chaîne d'étude de guemara !</p>
 
-    <div class="mb-4">
-        <div class="btn-group" role="group" aria-label="Filtre type de session">
-            <a href="?type=all&display={{ display_type }}" class="btn btn-outline-primary {% if session_type == 'all' %}active{% endif %}">Toutes</a>
-            <a href="?type=mishna&display={{ display_type }}" class="btn btn-outline-primary {% if session_type == 'mishna' %}active{% endif %}">Mishna</a>
-            <a href="?type=gemara&display={{ display_type }}" class="btn btn-outline-primary {% if session_type == 'gemara' %}active{% endif %}">Gemara</a>
+<div class="mb-4">
+    <div class="btn-toolbar justify-content-between" role="toolbar" aria-label="Toolbar with button groups">
+        <div class="btn-group btn-group-lg" role="group" aria-label="Filtre type de session">
+            <a href="?type=all&display={{ display_type }}" class="btn btn-outline-primary {% if session_type == 'all' %}active{% endif %}">
+                <i class="bi bi-list-ul"></i> Toutes
+            </a>
+            <a href="?type=mishna&display={{ display_type }}" class="btn btn-outline-primary {% if session_type == 'mishna' %}active{% endif %}">
+                <i class="bi bi-book"></i> Mishna
+            </a>
+            <a href="?type=gemara&display={{ display_type }}" class="btn btn-outline-primary {% if session_type == 'gemara' %}active{% endif %}">
+                <i class="bi bi-journal-text"></i> Gemara
+            </a>
         </div>
-        <div class="btn-group ml-2" role="group" aria-label="Type d'affichage">
-            <button onclick="toggleView('grid')" class="btn btn-outline-secondary {% if display_type == 'grid' %}active{% endif %}">Grille</button>
-            <button onclick="toggleView('list')" class="btn btn-outline-secondary {% if display_type == 'list' %}active{% endif %}">Liste</button>
+        <div class="btn-group btn-group-lg" role="group" aria-label="Type d'affichage">
+            <button onclick="toggleView('grid')" class="btn btn-outline-secondary {% if display_type == 'grid' %}active{% endif %}">
+                <i class="bi bi-grid-3x3-gap-fill"></i> Grille
+            </button>
+            <button onclick="toggleView('list')" class="btn btn-outline-secondary {% if display_type == 'list' %}active{% endif %}">
+                <i class="bi bi-list-task"></i> Liste
+            </button>
         </div>
     </div>
+</div>
 
-    <div class="hero-liste-lecture">
-        <div class="header-liste-lecture">
-            <h2 class="h2">Les lectures en cours</h2>
-        </div>
+<div class="hero-liste-lecture">
+    <div class="header-liste-lecture">
+        <h2 class="h2">Les lectures en cours</h2>
+    </div>
 
-        <div class="content-liste-lecture {% if display_type == 'grid' %}d-flex{% endif %} {% if display_type == 'list' %}list-view{% endif %}">
-            {% for session in ongoing_sessions %}
-            <div class="card m-3" {% if display_type == 'grid' %}style="width: 30rem;"{% endif %}>
+    <div class="content-liste-lecture {% if display_type == 'grid' %}grid-view{% else %}list-view{% endif %}">
+        {% for session in ongoing_sessions %}
+            <div class="card">
                 <a href="{% url 'session_detail' session.slug %}" style="text-decoration: none">
                     <div class="card-body">
-                        <h5 class="h5 card-title">{{ session.name }}</h5>
-                        <h6 class="card-subtitle mb-2 text-body-secondary">Créateur: {{ session.person }}</h6>
+                        <h5 class="card-title">{{ session.name }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Créateur: {{ session.person }}</h6>
                         <p class="card-text">{{ session.description }}</p>
-                        <p class="card-text"><small class="text-muted">Type: {% if session.session_is %}Mishna{% else %}Gemara{% endif %}</small></p>
+                        <p class="card-text">{{ session.date_limit }}</p>
+                        <span class="badge bg-primary">{% if session.session_is %}Mishna{% else %}Gemara{% endif %}</span>
                     </div>
                 </a>
             </div>
-            {% empty %}
+        {% empty %}
             <p>Aucune session en cours.</p>
-            {% endfor %}
-        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<hr>
+
+<div class="hero-liste-lecture">
+    <div class="header-liste-lecture">
+        <h2 class="h2">Les lectures terminées</h2>
     </div>
 
-    <hr>
-
-    <div class="hero-liste-lecture">
-        <div class="header-liste-lecture">
-            <h2 class="h2">Les lectures terminées</h2>
-        </div>
-
-        <div class="content-liste-lecture {% if display_type == 'grid' %}d-flex{% endif %} {% if display_type == 'list' %}list-view{% endif %}">
-            {% for session in completed_sessions %}
-            <div class="card m-3" {% if display_type == 'grid' %}style="width: 30rem;"{% endif %}>
+    <div class="content-liste-lecture {% if display_type == 'grid' %}grid-view{% else %}list-view{% endif %}">
+        {% for session in completed_sessions %}
+            <div class="card">
                 <a href="{% url 'session_detail' session.slug %}" style="text-decoration: none">
                     <div class="card-body">
-                        <h5 class="h5 card-title">{{ session.name }}</h5>
-                        <h6 class="card-subtitle mb-2 text-body-secondary">Créateur: {{ session.person }}</h6>
+                        <h5 class="card-title">{{ session.name }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Créateur: {{ session.person }}</h6>
                         <p class="card-text">{{ session.description }}</p>
-                        <p class="card-text"><small class="text-muted">Type: {% if session.session_is %}Mishna{% else %}Gemara{% endif %}</small></p>
+                        <p class="card-text">{{ session.date_limit }}</p>
+                        <span class="badge bg-primary">{% if session.session_is %}Mishna{% else %}Gemara{% endif %}</span>
                     </div>
                 </a>
             </div>
-            {% empty %}
+        {% empty %}
             <p>Aucune session terminée.</p>
-            {% endfor %}
-        </div>
+        {% endfor %}
     </div>
+</div>
 {% endblock %}
