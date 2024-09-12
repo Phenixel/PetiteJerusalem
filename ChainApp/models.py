@@ -33,19 +33,21 @@ class Guest(models.Model):
 
 
 class Session(models.Model):
+    SESSION_TYPE_CHOICES = (
+        (True, 'Mishna'),
+        (False, 'Gemara'),
+    )
+
     name = models.CharField(max_length=255)
     description = models.TextField()
     date_limit = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     person = models.ForeignKey('Person', on_delete=models.SET_NULL, blank=True, null=True)
     slug = models.SlugField(unique=True, max_length=255, blank=True, null=True)
+    session_is = models.BooleanField(choices=SESSION_TYPE_CHOICES, default=False)
 
     def __str__(self):
         return self.name
-
-    def clean(self):
-        if self.date_limit < timezone.now().date():
-            raise ValidationError(_("The date limit must be a future date."))
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -63,7 +65,6 @@ class Session(models.Model):
         verbose_name = _("Session")
         verbose_name_plural = _("Sessions")
         ordering = ['-created_at']
-
 
 class Gemarot(models.Model):
     name = models.CharField(max_length=255)
@@ -91,3 +92,43 @@ class Gemara(models.Model):
     class Meta:
         verbose_name = _("Gemara")
         verbose_name_plural = _("Gemara")
+        
+        
+class Michna(models.Model):
+    session = models.ForeignKey('Session', on_delete=models.CASCADE)
+    chosen_by = models.ForeignKey('Person', on_delete=models.SET_NULL, blank=True, null=True)
+    chosen_by_guest = models.ForeignKey('Guest', on_delete=models.SET_NULL, blank=True, null=True)
+    choose_michna = models.ForeignKey('Massekhet', on_delete=models.CASCADE)
+    available = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.choose_michna} - Session: {self.session.name}"
+
+    class Meta:
+        verbose_name = _("Michna")
+        verbose_name_plural = _("Michna")
+
+
+
+class Seder(models.Model):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Seder"
+        verbose_name_plural = "Sederim"
+
+
+class Massekhet(models.Model):
+    name = models.CharField(max_length=255)
+    seder = models.ForeignKey(Seder, on_delete=models.CASCADE, related_name='massekhtot')
+    link = models.URLField(blank=True, null=True)  # Lien optionnel, par défaut null
+
+    def __str__(self):
+        return f"{self.name} ({self.seder.name})"
+
+    class Meta:
+        verbose_name = "Massekhet"
+        verbose_name_plural = "Massekhtot"

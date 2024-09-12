@@ -1,4 +1,4 @@
-from ChainApp.models import Gemarot
+from ChainApp.models import Gemarot, Seder, Massekhet
 
 # Liste des livres du Talmud Bavli avec leurs Masechtot correspondants et les liens vers Sepharia
 talmud_bavli = {
@@ -50,6 +50,16 @@ talmud_bavli = {
     "Tohorot": {"livre": "Tahorot", "link": "https://www.sefaria.org/Tohorot.2a?lang=bi"},
 }
 
+# Liste des Sederim et des Massekhtot de la Mishna
+mishna_sederim = {
+    "Zeraim": ["Berakhot", "Peah", "Demai", "Kilayim", "Sheviit", "Terumot", "Maasrot", "Maaser Sheni", "Challah", "Orlah", "Bikkurim"],
+    "Moed": ["Shabbat", "Eruvin", "Pesachim", "Shekalim", "Yoma", "Sukkah", "Beitzah", "Rosh Hashanah", "Taanit", "Megillah", "Moed Katan", "Chagigah"],
+    "Nashim": ["Yevamot", "Ketubot", "Nedarim", "Nazir", "Sotah", "Gittin", "Kiddushin"],
+    "Nezikin": ["Bava Kamma", "Bava Metzia", "Bava Batra", "Sanhedrin", "Makkot", "Shevuot", "Eduyot", "Avodah Zarah", "Avot", "Horayot"],
+    "Kodshim": ["Zevachim", "Menachot", "Chullin", "Bechorot", "Arachin", "Temurah", "Keritot", "Meilah", "Kinnim", "Tamid", "Middot"],
+    "Tahorot": ["Kelim", "Oholot", "Nega'im", "Parah", "Tohorot", "Mikvaot", "Niddah", "Machshirin", "Zavim", "Tevul Yom", "Yadayim", "Uktzin"],
+}
+
 
 def create_database_from_list():
     # Création des objets Gemarot avec le nom du Masechet, le nom du livre et le lien vers Sepharia
@@ -58,3 +68,12 @@ def create_database_from_list():
         gemara = Gemarot.objects.create(name=masechet, livre=info['livre'], link=gemara_link)
         gemara.save()
         print(f"Created Gemarot: {masechet} - Link: {gemara_link}")
+
+    # Création des objets Seder et Massekhet
+    for seder_name, massekhtot in mishna_sederim.items():
+        seder, created = Seder.objects.get_or_create(name=seder_name)
+
+        for massekhet_name in massekhtot:
+            massekhet = Massekhet.objects.create(name=massekhet_name, seder=seder)
+            massekhet.save()
+            print(f"Created Massekhet: {massekhet_name} under Seder: {seder_name}")
