@@ -266,3 +266,25 @@ class SessionDetailView(View):
                         )
 
         return redirect('session_detail', slug=slug)
+
+
+
+
+class ProfileView(View):
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        else:
+            user = request.user
+            user_sessions = Session.objects.filter(person=user.person)
+
+            # Filtrer les sessions réservées via les modèles Gemara et Michna
+            reserved_sessions = Session.objects.filter(
+                Q(gemara__chosen_by=user.person) | Q(michna__chosen_by=user.person)
+            ).distinct()
+
+            context = {
+                'user_sessions': user_sessions,
+                'reserved_sessions': reserved_sessions,
+            }
+            return render(request, 'ChainApp/profile.html', context)

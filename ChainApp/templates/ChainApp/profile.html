@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ session.name }}{% endblock %}
+
+{% block css %}
+    <!-- Ajoutez des liens CSS spécifiques à cette page -->
+{% endblock %}
+
+{% block scripts %}
+    <!-- Ajoutez des scripts JS spécifiques à cette page -->
+{% endblock %}
+
+{% block content %}
+<h1 class="display-1">Profile</h1>
+
+
+<div class="hero-liste-lecture">
+    <div class="header-liste-lecture">
+        <h2 class="h2">Session crée</h2>
+    </div>
+
+    <div class="content-liste-lecture d-flex">
+        {% if user_sessions %}
+            {% for session in user_sessions %}
+            <div class="card m-3" style="width: 30rem;">
+                <a href="{% url 'session_detail' session.slug %}" style="text-decoration: none">
+                    <div class="card-body">
+                        <h5 class="h5 card-title">{{ session.name }}</h5>
+                        <h6 class="card-subtitle mb-2 text-body-secondary">Créateur: {{ session.person }}</h6>
+                        <p class="card-text">{{ session.description }}</p>
+                        <p class="card-text">Date limite: {{ session.date_limit }}</p>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>Vous n'avez créé aucune session.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="hero-liste-lecture">
+    <div class="header-liste-lecture">
+        <h2 class="h2">Sessions où vous avez réservé</h2>
+    </div>
+
+    <div class="content-liste-lecture d-flex">
+        {% if reserved_sessions %}
+            {% for session in reserved_sessions %}
+            <div class="card m-3" style="width: 30rem;">
+                <a href="{% url 'session_detail' session.slug %}" style="text-decoration: none">
+                    <div class="card-body">
+                        <h5 class="h5 card-title">{{ session.name }}</h5>
+                        <h6 class="card-subtitle mb-2 text-body-secondary">Créateur: {{ session.person }}</h6>
+                        <p class="card-text">{{ session.description }}</p>
+                        <p class="card-text">Date limite: {{ session.date_limit }}</p>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>Vous n'avez réservé aucune session.</p>
+        {% endif %}
+    </div>
+</div>
+
+
+{% endblock %}
