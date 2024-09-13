@@ -52,19 +52,15 @@
                 </ul>
                 <div class="d-flex align-items-center">
                     {% if user.is_authenticated %}
-                        <span class="text-light me-3">Bonjour, <a href="{% url 'profile' %}"
-                                                                  class="text-decoration-none text-light">{{ user.username }}</a></span>
+                        <a href="{% url 'profile' %}" class="text-decoration-none btn btn-outline-light me-2">Bonjour, {{ user.username }}</a>
                         <a href="{% url 'logout' %}" class="btn btn-outline-light me-2"><i
-                                class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
+                                class="fa-solid fa-right-from-bracket"></i></a>
                     {% else %}
                         <a href="{% url 'login' %}" class="btn btn-outline-light me-2">Connexion</a>
                         <a href="{% url 'signup' %}" class="btn btn-outline-light me-2">Inscription</a>
                     {% endif %}
                     <button id="theme-toggle" class="btn btn-outline-light me-2" aria-label="Changer de thème">
                         <i class="fas fa-moon"></i>
-                    </button>
-                    <button class="btn btn-success" type="button"
-                            onclick="window.location.href='{% url 'create_session' %}'">Créer une session
                     </button>
                 </div>
             </div>

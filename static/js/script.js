@@ -28,3 +28,20 @@ function updateThemeIcon(theme) {
         icon.classList.replace('fa-sun', 'fa-moon');
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const completedSection = document.querySelector('.hero-liste-lecture.completed .content-liste-lecture');
+    const cards = Array.from(completedSection.querySelectorAll('.card'));
+    const containerWidth = completedSection.offsetWidth;
+    let totalWidth = cards.reduce((acc, card) => acc + card.offsetWidth, 0);
+
+    while (totalWidth < containerWidth * 2) {
+        cards.forEach(card => {
+            const clone = card.cloneNode(true);
+            completedSection.appendChild(clone);
+            totalWidth += card.offsetWidth;
+        });
+    }
+
+    completedSection.style.width = `${totalWidth}px`;
+});
