@@ -45,3 +45,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     completedSection.style.width = `${totalWidth}px`;
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    function animateValue(id, start, end, duration) {
+        const obj = document.getElementById(id);
+        const range = end - start;
+        let startTime = null;
+
+        function step(timestamp) {
+            if (!startTime) startTime = timestamp;
+            const progress = Math.min((timestamp - startTime) / duration, 1);
+            obj.innerText = Math.floor(progress * range + start);
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+        }
+
+        window.requestAnimationFrame(step);
+    }
+
+    animateValue('open-sessions', 0, 120, 2000);
+    animateValue('participants', 0, 450, 2000);
+    animateValue('completed-sessions', 0, 75, 2000);
+});

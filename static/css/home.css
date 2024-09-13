@@ -1,0 +1,130 @@
+.hero-header {
+    background-color: var(--hero-bg-light);
+    border-radius: 40px 40px 0 0;
+}
+
+.content-page {
+    background-color: var(--hero-bg-light);
+    border-radius: 0 0 40px 40px;
+    padding: 2rem;
+}
+
+@media (max-width: 767.98px) {
+    .content-liste-lecture {
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+.grid-view .card {
+    max-width: 25rem;
+    flex: 1 1 calc(33.333% - 1rem);
+}
+
+.list-view .card {
+    flex: 1 1 100%;
+    display: flex;
+    text-align: left;
+}
+
+.list-view .card-body {
+    padding: 1rem;
+    flex: 1;
+}
+
+.card .badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.content-liste-lecture {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 1rem;
+}
+
+.hero-liste-lecture {
+    margin-top: 2rem;
+}
+
+.header-liste-lecture h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.hero-liste-lecture.completed {
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+}
+
+.hero-liste-lecture.completed .card {
+    display: inline-block;
+    width: 300px;
+    margin-right: 1rem;
+}
+
+.hero-liste-lecture.completed .content-liste-lecture {
+    display: inline-block;
+    animation: scroll 30s linear infinite;
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.hero-liste-lecture.completed::before,
+.hero-liste-lecture.completed::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 50px;
+    height: 100%;
+    z-index: 1;
+}
+
+.hero-liste-lecture.completed::before {
+    left: 0;
+    background: linear-gradient(to right, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+}
+
+.hero-liste-lecture.completed::after {
+    right: 0;
+    background: linear-gradient(to left, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+}
+
+[data-theme="dark"] .hero-liste-lecture.completed::before {
+    background: linear-gradient(to right, rgba(41, 41, 41, 1), rgba(41, 41, 41, 0));
+}
+
+[data-theme="dark"] .hero-liste-lecture.completed::after {
+    background: linear-gradient(to left, rgba(41, 41, 41, 1), rgba(41, 41, 41, 0));
+}
+
+.kpi-banner .kpi {
+    flex: 1;
+}
+
+.kpi h2 {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    animation: count 2s ease-in-out forwards;
+}
+
+@keyframes count {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
