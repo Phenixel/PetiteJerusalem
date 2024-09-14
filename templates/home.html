@@ -5,19 +5,40 @@
 
 {% block keywords %}Gemara, Talmud, Mishna, étude, Torah, Judaïsme, chaine, partage{% endblock %}
 
-{% block description %}Créez des chaines d'étude de Gemara ou de Mishna simplement et partagez-les à vos proches.{% endblock %}
+{% block description %}Créez des chaines d'étude de Gemara ou de Mishna simplement et partagez-les à vos
+    proches.{% endblock %}
 
 {% block css %}
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
 {% endblock %}
 
 {% block scripts %}
-
+    <script src="{% static 'js/home.js' %}"></script>
 {% endblock %}
 
-{% block content %}
+{% block header %}
     <div class="hero-header text-center">
-        <h1 class="display-1">Gemara Chain 📖</h1>
+        <div class="backwrap gradient">
+            <div class="back-shapes">
+                <span class="floating letter" style="top:10vh;left:5%;animation-delay:-0.9s;">א</span>
+                <span class="floating letter" style="top:20vh;left:15%;animation-delay:-4.8s;">ב</span>
+                <span class="floating letter" style="top:30vh;left:10%;animation-delay:-4s;">ג</span>
+                <span class="floating letter" style="top:40vh;left:8%;animation-delay:-2.8s;">ד</span>
+                <span class="floating letter" style="top:50vh;left:12%;animation-delay:-2.15s;">ה</span>
+                <span class="floating letter" style="top:15vh;left:18%;animation-delay:-1.9s;">ו</span>
+                <span class="floating letter" style="top:25vh;left:20%;animation-delay:-0.65s;">ז</span>
+                <span class="floating letter" style="top:35vh;left:3%;animation-delay:-0.4s;">ח</span>
+                <span class="floating letter" style="top:45vh;right:5%;animation-delay:-4.1s;">ט</span>
+                <span class="floating letter" style="top:5vh;right:15%;animation-delay:-3.65s;">י</span>
+                <span class="floating letter" style="top:25vh;right:10%;animation-delay:-2.25s;">כ</span>
+                <span class="floating letter" style="top:35vh;right:8%;animation-delay:-2s;">ל</span>
+                <span class="floating letter" style="top:45vh;right:12%;animation-delay:-1.55s;">מ</span>
+                <span class="floating letter" style="top:10vh;right:18%;animation-delay:-0.95s;">נ</span>
+                <span class="floating letter" style="top:20vh;right:20%;animation-delay:-4.45s;">ס</span>
+                <span class="floating letter" style="top:30vh;right:3%;animation-delay:-3.35s;">ע</span>
+            </div>
+        </div>
+        <h1 class="display-1">Chaine de lecture 📖</h1>
         <p>Créer une chaîne d'étude de guemara ou de Michna simplement et partagez-la à vos proches.</p>
         <a href="{% url 'create_session' %}" class="btn btn-success">Créer une session</a>
 
@@ -35,8 +56,18 @@
                 <p>Sessions terminées</p>
             </div>
         </div>
-    </div>
 
+        <div class="ripple-background">
+            <div class="circle xxlarge shade1"></div>
+            <div class="circle xlarge shade2"></div>
+            <div class="circle large shade3"></div>
+            <div class="circle medium shade4"></div>
+            <div class="circle small shade5"></div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
     <div class="content-page mb-5">
         <div class="mb-4">
             <div class="btn-toolbar justify-content-between" role="toolbar" aria-label="Toolbar with button groups">

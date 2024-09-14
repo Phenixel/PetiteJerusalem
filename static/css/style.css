@@ -1,12 +1,14 @@
 :root {
-    --color-bg: #f8f9fa;
+    --color-bg: #77B5FE;
+    --color-circle: #77B5FE;
     --color-text: #000000;
     --card-bg: #f8f9fa;
     --hero-bg-light: #ffffff;
 }
 
 [data-theme="dark"] {
-    --color-bg: #292929;
+    --color-bg: #03001a;
+    --color-circle: white;
     --color-text: #FFFFFF;
     --card-bg: #343a40;
     --hero-bg-light: #292929;
@@ -15,6 +17,7 @@
 body {
     background-color: var(--color-bg);
     color: var(--color-text);
+    padding-top: 5vh;
 }
 
 .btn-group .btn {
