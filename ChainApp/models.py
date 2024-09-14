@@ -71,15 +71,35 @@ class Session(models.Model):
         if self.date_limit < timezone.now().date():
             return True
 
-        # Vérifier la complétion en fonction du type de session
         if self.session_is:  # Mishna
             total_massekhets = Massekhet.objects.count()
-            reserved_mishnas = Michna.objects.filter(session=self).count()
-            return reserved_mishnas == total_massekhets
+            reserved_massekhets = Michna.objects.filter(session=self, choose_perek__isnull=True).count()
+            
+            # Vérifier si tous les Perekim de chaque Massekhet sont réservés
+            for massekhet in Massekhet.objects.all():
+                total_perekim = massekhet.perek
+                reserved_perekim = Michna.objects.filter(session=self, choose_michna=massekhet, choose_perek__isnull=False).count()
+                
+                # Si une Massekhet n'est pas complètement réservée (ni en entier ni tous les Perekim), retourner False
+                if reserved_perekim < total_perekim and not Michna.objects.filter(session=self, choose_michna=massekhet, choose_perek__isnull=True).exists():
+                    return False
+            
+            return reserved_massekhets + reserved_perekim == total_massekhets + total_perekim
+
         else:  # Gemara
             total_gemarots = Gemarot.objects.count()
-            reserved_gemaras = Gemara.objects.filter(session=self).count()
-            return reserved_gemaras == total_gemarots
+            reserved_gemarots = Gemara.objects.filter(session=self, choose_perek__isnull=True).count()
+            
+            # Vérifier si tous les Perekim de chaque Gemara sont réservés
+            for gemara in Gemarot.objects.all():
+                total_perekim = gemara.perek
+                reserved_perekim = Gemara.objects.filter(session=self, choose_gemarot=gemara, choose_perek__isnull=False).count()
+                
+                # Si une Gemara n'est pas complètement réservée (ni en entier ni tous les Perekim), retourner False
+                if reserved_perekim < total_perekim and not Gemara.objects.filter(session=self, choose_gemarot=gemara, choose_perek__isnull=True).exists():
+                    return False
+            
+            return reserved_gemarots + reserved_perekim == total_gemarots + total_perekim
 
     class Meta:
         verbose_name = _("Session")
