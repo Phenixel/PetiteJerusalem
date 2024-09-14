@@ -2,30 +2,6 @@
 
 {% block title %}{{ session.name }}{% endblock %}
 
-{% block scripts %}
-<script>
-        function togglePerekList(id) {
-            var perekList = document.getElementById("perek_list_" + id);
-            if (perekList.style.display === "none") {
-                perekList.style.display = "block";
-            } else {
-                perekList.style.display = "none";
-            }
-        }
-
-        function togglePerekSelection(id, isChecked) {
-            var perekList = document.getElementById("perek_list_" + id);
-            var checkboxes = perekList.querySelectorAll("input[type='checkbox']");
-
-            checkboxes.forEach(function(checkbox) {
-                if (!checkbox.disabled) {
-                    checkbox.checked = isChecked;
-                }
-            });
-        }
-    </script>
-{% endblock %}
-
 {% block content %}
     {% if is_expired %}
         <div class="alert alert-danger" role="alert">
@@ -68,18 +44,14 @@
                         <div class="card mb-4">
                             <div class="card-body">
                                 <div class="form-check">
-                                    {% if not item.all_perek_reserved %}
-                                        <input class="form-check-input" type="checkbox" id="gemara_{{ item.gemara.pk }}" name="gemarot" value="{{ item.gemara.pk }}"
-                                        {% if item.reserved_by_user %}
-                                            checked
-                                        {% endif %}
-                                        {% if item.reserved and not item.reserved_by_user or is_expired %}
-                                            disabled
-                                        {% endif %}
-                                        onchange="togglePerekSelection('{{ item.gemara.pk }}', this.checked)">
-                                    {% else %}
-                                        <input class="form-check-input" type="checkbox" id="gemara_{{ item.gemara.pk }}" name="gemarot" value="{{ item.gemara.pk }}" disabled>
+                                    <input class="form-check-input" type="checkbox" id="gemara_{{ item.gemara.pk }}" name="gemarot" value="{{ item.gemara.pk }}"
+                                    {% if item.all_perek_reserved_by_user %}
+                                        checked
                                     {% endif %}
+                                    {% if item.all_perek_reserved and not item.reserved_by_user or is_expired %}
+                                        disabled
+                                    {% endif %}
+                                    onchange="togglePerekSelection('{{ item.gemara.pk }}', this.checked)">
                                     <label class="form-check-label" for="gemara_{{ item.gemara.pk }}">
                                         {{ item.gemara.name }}
                                         
@@ -136,18 +108,14 @@
                                 <div class="form-check">
                                     {% for item in seder_data.massekhtot %}
                                         <div>
-                                            {% if not item.all_perek_reserved %}
-                                                <input class="form-check-input" type="checkbox" id="masekhet_{{ item.masekhet.pk }}" name="masekhtot" value="{{ item.masekhet.pk }}"
-                                                {% if item.reserved_by_user %}
-                                                    checked
-                                                {% endif %}
-                                                {% if item.reserved and not item.reserved_by_user or is_expired %}
-                                                    disabled
-                                                {% endif %}
-                                                onchange="togglePerekSelection('{{ item.masekhet.pk }}', this.checked)">
-                                            {% else %}
-                                                <input class="form-check-input" type="checkbox" id="masekhet_{{ item.masekhet.pk }}" name="masekhtot" value="{{ item.masekhet.pk }}" disabled>
+                                            <input class="form-check-input" type="checkbox" id="masekhet_{{ item.masekhet.pk }}" name="masekhtot" value="{{ item.masekhet.pk }}"
+                                            {% if item.all_perek_reserved_by_user %}
+                                                checked
                                             {% endif %}
+                                            {% if item.all_perek_reserved and not item.reserved_by_user or is_expired %}
+                                                disabled
+                                            {% endif %}
+                                            onchange="togglePerekSelection('{{ item.masekhet.pk }}', this.checked)">
                                             <label class="form-check-label" for="masekhet_{{ item.masekhet.pk }}">
                                                 {{ item.masekhet.name }}
                                                 
@@ -199,5 +167,27 @@
             <button type="submit" class="btn btn-primary mt-3" {% if is_expired %}disabled{% endif %}>Submit</button>
         </form>
     </div>
+
+    <script>
+        function togglePerekList(id) {
+            var perekList = document.getElementById("perek_list_" + id);
+            if (perekList.style.display === "none") {
+                perekList.style.display = "block";
+            } else {
+                perekList.style.display = "none";
+            }
+        }
+
+        function togglePerekSelection(id, isChecked) {
+            var perekList = document.getElementById("perek_list_" + id);
+            var checkboxes = perekList.querySelectorAll("input[type='checkbox']");
+
+            checkboxes.forEach(function(checkbox) {
+                if (!checkbox.disabled) {
+                    checkbox.checked = isChecked;
+                }
+            });
+        }
+    </script>
 
 {% endblock %}

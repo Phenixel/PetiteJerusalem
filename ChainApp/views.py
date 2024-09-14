@@ -159,7 +159,8 @@ class SessionDetailView(View):
 
                     perekim = []
                     all_perek_reserved = True
-                    some_perek_reserved = False  # Ajout de cette variable
+                    some_perek_reserved = False  # Variable pour indiquer si certains, mais pas tous les perekim sont réservés
+                    all_perek_reserved_by_user = True  # Variable pour vérifier si l'utilisateur a réservé tous les Perekim
 
                     for perek in range(1, masekhet.perek + 1):
                         perek_reservation = Michna.objects.filter(session=session, choose_michna=masekhet, choose_perek=perek).first()
@@ -169,6 +170,9 @@ class SessionDetailView(View):
                             some_perek_reserved = True
                         else:
                             all_perek_reserved = False
+
+                        if not reserved_by_user_perek:
+                            all_perek_reserved_by_user = False  # L'utilisateur n'a pas réservé tous les Perekim
 
                         perekim.append({
                             'perek': perek,
@@ -186,6 +190,7 @@ class SessionDetailView(View):
                         'reserved_by_user': reserved_by_user,
                         'all_perek_reserved': all_perek_reserved,  # Tous les Perekim sont réservés
                         'some_perek_reserved': some_perek_reserved,  # Certains mais pas tous les Perekim sont réservés
+                        'all_perek_reserved_by_user': all_perek_reserved_by_user,  # L'utilisateur a réservé tous les Perekim
                     })
 
                 masekhtot_list.append(seder_data)
@@ -204,7 +209,8 @@ class SessionDetailView(View):
 
                 perekim = []
                 all_perek_reserved = True
-                some_perek_reserved = False  # Ajout de cette variable
+                some_perek_reserved = False  # Variable pour indiquer si certains, mais pas tous les perekim sont réservés
+                all_perek_reserved_by_user = True  # Variable pour vérifier si l'utilisateur a réservé tous les Perekim
 
                 for perek in range(1, gemara.perek + 1):
                     perek_reservation = Gemara.objects.filter(session=session, choose_gemarot=gemara, choose_perek=perek).first()
@@ -214,6 +220,9 @@ class SessionDetailView(View):
                         some_perek_reserved = True
                     else:
                         all_perek_reserved = False
+
+                    if not reserved_by_user_perek:
+                        all_perek_reserved_by_user = False  # L'utilisateur n'a pas réservé tous les Perekim
 
                     perekim.append({
                         'perek': perek,
@@ -231,6 +240,7 @@ class SessionDetailView(View):
                     'reserved_by_user': reserved_by_user,
                     'all_perek_reserved': all_perek_reserved,  # Tous les Perekim sont réservés
                     'some_perek_reserved': some_perek_reserved,  # Certains mais pas tous les Perekim sont réservés
+                    'all_perek_reserved_by_user': all_perek_reserved_by_user,  # L'utilisateur a réservé tous les Perekim
                 })
 
             context = {
@@ -240,6 +250,7 @@ class SessionDetailView(View):
             }
 
         return render(request, 'ChainApp/session_detail.html', context)
+
     
 
     def post(self, request, slug):
@@ -454,9 +465,6 @@ class SessionDetailView(View):
                         )
 
         return redirect('session_detail', slug=slug)
-
-
-
 
 
 class ProfileView(View):
