@@ -59,6 +59,11 @@ class Session(models.Model):
                 slug = f'{base_slug}-{i}'
             self.slug = slug
         super().save(*args, **kwargs)
+        
+    def clean(self):
+        # Vérifier si la date limite est dans le futur
+        if self.date_limit <= timezone.now().date():
+            raise ValidationError("La date limite doit être dans le futur.")
 
     @property
     def is_completed(self):
@@ -82,10 +87,13 @@ class Session(models.Model):
         ordering = ['-created_at']
 
 
+
+
 class Gemarot(models.Model):
     name = models.CharField(max_length=255)
     livre = models.CharField(max_length=255)
     link = models.URLField(blank=True)
+    perek = models.IntegerField(default=1)
 
     def __str__(self):
         return self.name
@@ -101,6 +109,7 @@ class Gemara(models.Model):
     chosen_by_guest = models.ForeignKey('Guest', on_delete=models.SET_NULL, blank=True, null=True)
     choose_gemarot = models.ForeignKey('Gemarot', on_delete=models.CASCADE)
     available = models.BooleanField(default=True)
+    choose_perek = models.IntegerField( null=True, blank=True)  # Nouveau champ
 
     def __str__(self):
         return f"{self.choose_gemarot} - Session: {self.session.name}"
@@ -116,6 +125,7 @@ class Michna(models.Model):
     chosen_by_guest = models.ForeignKey('Guest', on_delete=models.SET_NULL, blank=True, null=True)
     choose_michna = models.ForeignKey('Massekhet', on_delete=models.CASCADE)
     available = models.BooleanField(default=True)
+    choose_perek = models.IntegerField(null=True, blank=True)  # Nouveau champ
 
     def __str__(self):
         return f"{self.choose_michna} - Session: {self.session.name}"
@@ -141,6 +151,7 @@ class Massekhet(models.Model):
     name = models.CharField(max_length=255)
     seder = models.ForeignKey(Seder, on_delete=models.CASCADE, related_name='massekhtot')
     link = models.URLField(blank=True, null=True)  # Lien optionnel, par défaut null
+    perek = models.IntegerField(default=1)
 
     def __str__(self):
         return f"{self.name} ({self.seder.name})"
