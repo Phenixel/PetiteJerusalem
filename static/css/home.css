@@ -17,7 +17,7 @@
 }
 
 /* Met les les textes dans hero-header a un z index de 3*/
-.hero-header h1, .hero-header p {
+.hero-header h1, .hero-header p, .hero-header a{
     z-index: 3;
 }
 
