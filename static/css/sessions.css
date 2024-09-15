@@ -1,0 +1,43 @@
+.session-detail-container {
+    margin-top: 20px;
+}
+
+.session-header {
+    margin-bottom: 20px;
+}
+
+.form-check-label span {
+    color: red;
+    font-style: italic;
+    font-size: 0.8rem;
+}
+
+.hero-header {
+    background: var(--hero-bg-light);
+    min-height: 30vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.content-page {
+    background-color: var(--hero-bg-light);
+    padding: 2rem;
+}
+
+.sticky-container {
+    position: relative;
+}
+
+.form-reservation {
+    top: 6vh;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}

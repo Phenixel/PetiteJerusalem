@@ -1,115 +1,121 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{{ session.name }}{% endblock %}
 
 {% block css %}
-    <!-- Ajoutez des liens CSS spécifiques à cette page -->
+    <link rel="stylesheet" href="{% static 'css/sessions.css' %}">
 {% endblock %}
 
 {% block scripts %}
-    <!-- Ajoutez des scripts JS spécifiques à cette page -->
+    <script>
+        // Initialisation du popover
+        document.addEventListener('DOMContentLoaded', function () {
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl);
+            });
+        });
+    </script>{% endblock %}
+
+{% block header %}
+    <div class="hero-header text-center">
+        <h3 class="display-3">{{ session.name }}</h3>
+        <p>Session créée par : {{ session.person }}</p>
+        <p>{{ session.description }}</p>
+        <p>Date limite: {{ session.date_limit }}</p>
+    </div>
 {% endblock %}
 
 {% block content %}
-
-    <h1 class="display-1">{{ session.name }}</h1>
-    <p>Créateur: {{ session.person }}</p>
-    <p>{{ session.description }}</p>
-    <p>{{ session.date_limit }}</p>
-
-    <!-- Ajout du bloc de messages -->
-
-    <!-- Reste du contenu du template -->
-    <div class="container">
+    <div class="content-page mb-5 sticky-container">
         <form method="post">
             {% csrf_token %}
-            
-            {% if not user.is_authenticated %}
-                <div class="row">
-                    <div class="col-md-6">
+
+            <div class="row mb-4 sticky-top form-reservation">
+                {% if not user.is_authenticated %}
+                    <div class="col-md-5">
                         <div class="form-group">
                             <label for="guest_name">Nom</label>
                             <input type="text" class="form-control" id="guest_name" name="guest_name" required>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                         <div class="form-group">
                             <label for="guest_email">Email</label>
-                            <input type="email" class="form-control" id="guest_email" name="guest_email" required>
+                            <input type="email" class="form-control" id="guest_email" name="guest_email" required
+                                   data-bs-toggle="popover" data-bs-trigger="focus" title="Information sur l'email"
+                                   data-bs-placement="top"
+                                   data-bs-content="Votre email ne sera pas utilisé à des fins commerciales. Il servira uniquement à vous prévenir de la date limite de la session.">
                         </div>
                     </div>
+                {% endif %}
+                <div class="d-flex align-items-end 
+                {% if not user.is_authenticated %}col-md-2{% else %}col-md-12{% endif %}">
+                    <button type="submit" class="btn btn-primary mt-3 w-100">Réserver</button>
                 </div>
-            {% endif %}
+            </div>
 
             {% if gemarot_list %}
-            <div class="row">
-                {% for item in gemarot_list %}
-                    <div class="col-md-4">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="gemarot_{{ item.gemara.pk }}" name="gemarot" value="{{ item.gemara.pk }}"
-                            {% if item.reserved_by_user %}
-                                checked
-                            {% endif %}
-                            {% if item.reserved and not item.reserved_by_user %}
-                                disabled
-                            {% endif %}>
-                            <label class="form-check-label" for="gemarot_{{ item.gemara.pk }}">
-                            <a href="{{item.gemara.link}}" style="text-decoration: none" target="_blank">{{ item.gemara.name }}</a>
-                                
-                                
-                                {% if item.reserved %}
-                                    <span style="color: red; font-weight: bold;">
-                                        (Réservé par {{ item.chosen_by_username }})
-                                    </span>
-                                {% endif %}
-                            </label>
+                <div class="row">
+                    {% for item in gemarot_list %}
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="gemarot_{{ item.gemara.pk }}"
+                                       name="gemarot" value="{{ item.gemara.pk }}"
+                                        {% if item.reserved_by_user %} checked {% endif %}
+                                        {% if item.reserved and not item.reserved_by_user %} disabled {% endif %}>
+                                <label class="form-check-label" for="gemarot_{{ item.gemara.pk }}">
+                                    <a href="{{ item.gemara.link }}" style="text-decoration: none"
+                                       target="_blank">{{ item.gemara.name }}</a>
+                                    {% if item.reserved %}
+                                        <span>Réservé par {{ item.chosen_by_username }}</span>
+                                    {% endif %}
+                                </label>
+                            </div>
                         </div>
+                        {% if forloop.counter|divisibleby:3 and not forloop.last %}
+                            </div>
+                            <div class="row">
+                        {% endif %}
+                    {% endfor %}
                     </div>
-        
-                    {% if forloop.counter|divisibleby:3 and not forloop.last %}
-                        </div><div class="row">
-                    {% endif %}
-                {% endfor %}
-            </div>
             {% endif %}
 
             {% if seder_list %}
                 {% for seder_data in seder_list %}
-                    <div class="col-md-12">
-                        <h3>{{ seder_data.seder.name }}</h3>  <!-- Affiche le nom du Seder -->
+                    <div class="col-md-12 mb-3">
+                        <h3>{{ seder_data.seder.name }}</h3>
                         <div class="row">
                             {% for item in seder_data.massekhtot %}
                                 <div class="col-md-4">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="masekhet_{{ item.masekhet.pk }}" name="masekhtot" value="{{ item.masekhet.pk }}"
-                                        {% if item.reserved_by_user %}
-                                            checked
-                                        {% endif %}
-                                        {% if item.reserved and not item.reserved_by_user %}
-                                            disabled
-                                        {% endif %}>
+                                        <input class="form-check-input" type="checkbox"
+                                               id="masekhet_{{ item.masekhet.pk }}" name="masekhtot"
+                                               value="{{ item.masekhet.pk }}"
+                                                {% if item.reserved_by_user %} checked {% endif %}
+                                                {% if item.reserved and not item.reserved_by_user %}
+                                               disabled {% endif %}>
                                         <label class="form-check-label" for="masekhet_{{ item.masekhet.pk }}">
                                             {{ item.masekhet.name }}
-                                            
                                             {% if item.reserved %}
-                                                <span style="color: red; font-weight: bold;">
-                                                    (Réservé par {{ item.chosen_by_username }})
-                                                </span>
+                                                <span>Réservé par {{ item.chosen_by_username }}</span>
                                             {% endif %}
                                         </label>
                                     </div>
                                 </div>
                                 {% if forloop.counter|divisibleby:3 and not forloop.last %}
-                                    </div><div class="row">
+                                    </div>
+                                    <div class="row">
                                 {% endif %}
                             {% endfor %}
-                        </div>
+                            </div>
                     </div>
                 {% endfor %}
             {% endif %}
-        
-            <button type="submit" class="btn btn-primary mt-3">Submit</button>
         </form>
-        
+        <div class="text-center mt-5">
+            <a href="{% url 'home' %}" style="text-decoration: none">Créer votre propre session en cliquant ici</a>
+        </div>
     </div>
 {% endblock %}
