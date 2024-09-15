@@ -17,7 +17,7 @@ class HomeView(View):
 
         # Récupérer le type de session demandé (all, mishna, gemara)
         session_type = request.GET.get('type', 'all')
-        
+
         # Récupérer le type d'affichage demandé (grid ou list)
         display_type = request.GET.get('display', 'grid')
 
@@ -38,11 +38,25 @@ class HomeView(View):
             else:
                 ongoing_sessions.append(session)
 
+        # Calcul des KPI
+        total_sessions = all_sessions.count()
+        total_ongoing_sessions = len(ongoing_sessions)
+        total_completed_sessions = len(completed_sessions)
+        total_users = User.objects.count()
+
+        # Calcul des participants
+        total_participants = Person.objects.count() + Guest.objects.count()
+
         context = {
-            'ongoing_sessions': ongoing_sessions, 
+            'ongoing_sessions': ongoing_sessions,
             'completed_sessions': completed_sessions,
             'session_type': session_type,
-            'display_type': display_type
+            'display_type': display_type,
+            'total_sessions': total_sessions,
+            'total_ongoing_sessions': total_ongoing_sessions,
+            'total_completed_sessions': total_completed_sessions,
+            'total_users': total_users,
+            'total_participants': total_participants,
         }
 
         return render(request, 'home.html', context)
@@ -154,7 +168,8 @@ class SessionDetailView(View):
                 }
 
                 for masekhet in seder.massekhtot.all():
-                    masekhet_reservation = Michna.objects.filter(session=session, choose_michna=masekhet, choose_perek__isnull=True).first()
+                    masekhet_reservation = Michna.objects.filter(session=session, choose_michna=masekhet,
+                                                                 choose_perek__isnull=True).first()
                     reserved_by_user = masekhet_reservation and masekhet_reservation.chosen_by == request.user.person if request.user.is_authenticated else None
 
                     perekim = []
@@ -163,7 +178,8 @@ class SessionDetailView(View):
                     all_perek_reserved_by_user = True  # Variable pour vérifier si l'utilisateur a réservé tous les Perekim
 
                     for perek in range(1, masekhet.perek + 1):
-                        perek_reservation = Michna.objects.filter(session=session, choose_michna=masekhet, choose_perek=perek).first()
+                        perek_reservation = Michna.objects.filter(session=session, choose_michna=masekhet,
+                                                                  choose_perek=perek).first()
                         reserved_by_user_perek = perek_reservation and perek_reservation.chosen_by == request.user.person if request.user.is_authenticated else None
 
                         if perek_reservation:
@@ -190,7 +206,8 @@ class SessionDetailView(View):
                         'reserved_by_user': reserved_by_user,
                         'all_perek_reserved': all_perek_reserved,  # Tous les Perekim sont réservés
                         'some_perek_reserved': some_perek_reserved,  # Certains mais pas tous les Perekim sont réservés
-                        'all_perek_reserved_by_user': all_perek_reserved_by_user,  # L'utilisateur a réservé tous les Perekim
+                        'all_perek_reserved_by_user': all_perek_reserved_by_user,
+                        # L'utilisateur a réservé tous les Perekim
                     })
 
                 masekhtot_list.append(seder_data)
@@ -204,7 +221,8 @@ class SessionDetailView(View):
             gemarot = Gemarot.objects.all()
             gemarot_list = []
             for gemara in gemarot:
-                gemara_reservation = Gemara.objects.filter(session=session, choose_gemarot=gemara, choose_perek__isnull=True).first()
+                gemara_reservation = Gemara.objects.filter(session=session, choose_gemarot=gemara,
+                                                           choose_perek__isnull=True).first()
                 reserved_by_user = gemara_reservation and gemara_reservation.chosen_by == request.user.person if request.user.is_authenticated else None
 
                 perekim = []
@@ -213,7 +231,8 @@ class SessionDetailView(View):
                 all_perek_reserved_by_user = True  # Variable pour vérifier si l'utilisateur a réservé tous les Perekim
 
                 for perek in range(1, gemara.perek + 1):
-                    perek_reservation = Gemara.objects.filter(session=session, choose_gemarot=gemara, choose_perek=perek).first()
+                    perek_reservation = Gemara.objects.filter(session=session, choose_gemarot=gemara,
+                                                              choose_perek=perek).first()
                     reserved_by_user_perek = perek_reservation and perek_reservation.chosen_by == request.user.person if request.user.is_authenticated else None
 
                     if perek_reservation:
@@ -240,7 +259,8 @@ class SessionDetailView(View):
                     'reserved_by_user': reserved_by_user,
                     'all_perek_reserved': all_perek_reserved,  # Tous les Perekim sont réservés
                     'some_perek_reserved': some_perek_reserved,  # Certains mais pas tous les Perekim sont réservés
-                    'all_perek_reserved_by_user': all_perek_reserved_by_user,  # L'utilisateur a réservé tous les Perekim
+                    'all_perek_reserved_by_user': all_perek_reserved_by_user,
+                    # L'utilisateur a réservé tous les Perekim
                 })
 
             context = {
@@ -250,8 +270,6 @@ class SessionDetailView(View):
             }
 
         return render(request, 'ChainApp/session_detail.html', context)
-
-    
 
     def post(self, request, slug):
         session = get_object_or_404(Session, slug=slug)
@@ -273,7 +291,8 @@ class SessionDetailView(View):
                     if str(reservation.choose_michna.id) not in masekhet_ids and reservation.choose_perek is None:
                         reservation.delete()
 
-                user_perek_reservations = Michna.objects.filter(session=session, chosen_by=person, choose_perek__isnull=False)
+                user_perek_reservations = Michna.objects.filter(session=session, chosen_by=person,
+                                                                choose_perek__isnull=False)
                 for perek_reservation in user_perek_reservations:
                     perek_id = f"{perek_reservation.choose_michna.id}-{perek_reservation.choose_perek}"
                     if perek_id not in perek_ids:
@@ -282,7 +301,8 @@ class SessionDetailView(View):
                 # Réserver la Massekhet entière et les Perekim
                 for masekhet_id in masekhet_ids:
                     masekhet = get_object_or_404(Massekhet, pk=masekhet_id)
-                    if not Michna.objects.filter(session=session, choose_michna=masekhet, chosen_by=person, choose_perek__isnull=True).exists():
+                    if not Michna.objects.filter(session=session, choose_michna=masekhet, chosen_by=person,
+                                                 choose_perek__isnull=True).exists():
                         Michna.objects.create(
                             session=session,
                             choose_michna=masekhet,
@@ -290,7 +310,8 @@ class SessionDetailView(View):
                             available=False
                         )
                     for perek in range(1, masekhet.perek + 1):
-                        if not Michna.objects.filter(session=session, choose_michna=masekhet, choose_perek=perek).exists():
+                        if not Michna.objects.filter(session=session, choose_michna=masekhet,
+                                                     choose_perek=perek).exists():
                             Michna.objects.create(
                                 session=session,
                                 choose_michna=masekhet,
@@ -303,7 +324,8 @@ class SessionDetailView(View):
                 for perek_id in perek_ids:
                     masekhet_id, perek_number = perek_id.split('-')
                     masekhet = get_object_or_404(Massekhet, pk=masekhet_id)
-                    if not Michna.objects.filter(session=session, choose_michna=masekhet, choose_perek=perek_number, chosen_by=person).exists():
+                    if not Michna.objects.filter(session=session, choose_michna=masekhet, choose_perek=perek_number,
+                                                 chosen_by=person).exists():
                         Michna.objects.create(
                             session=session,
                             choose_michna=masekhet,
@@ -323,7 +345,8 @@ class SessionDetailView(View):
                     if str(reservation.choose_michna.id) not in masekhet_ids and reservation.choose_perek is None:
                         reservation.delete()
 
-                user_perek_reservations = Michna.objects.filter(session=session, chosen_by_guest=guest, choose_perek__isnull=False)
+                user_perek_reservations = Michna.objects.filter(session=session, chosen_by_guest=guest,
+                                                                choose_perek__isnull=False)
                 for perek_reservation in user_perek_reservations:
                     perek_id = f"{perek_reservation.choose_michna.id}-{perek_reservation.choose_perek}"
                     if perek_id not in perek_ids:
@@ -332,7 +355,8 @@ class SessionDetailView(View):
                 # Réserver la Massekhet entière et les Perekim pour les invités
                 for masekhet_id in masekhet_ids:
                     masekhet = get_object_or_404(Massekhet, pk=masekhet_id)
-                    if not Michna.objects.filter(session=session, choose_michna=masekhet, chosen_by_guest=guest, choose_perek__isnull=True).exists():
+                    if not Michna.objects.filter(session=session, choose_michna=masekhet, chosen_by_guest=guest,
+                                                 choose_perek__isnull=True).exists():
                         Michna.objects.create(
                             session=session,
                             choose_michna=masekhet,
@@ -340,7 +364,8 @@ class SessionDetailView(View):
                             available=False
                         )
                     for perek in range(1, masekhet.perek + 1):
-                        if not Michna.objects.filter(session=session, choose_michna=masekhet, choose_perek=perek).exists():
+                        if not Michna.objects.filter(session=session, choose_michna=masekhet,
+                                                     choose_perek=perek).exists():
                             Michna.objects.create(
                                 session=session,
                                 choose_michna=masekhet,
@@ -353,7 +378,8 @@ class SessionDetailView(View):
                 for perek_id in perek_ids:
                     masekhet_id, perek_number = perek_id.split('-')
                     masekhet = get_object_or_404(Massekhet, pk=masekhet_id)
-                    if not Michna.objects.filter(session=session, choose_michna=masekhet, choose_perek=perek_number, chosen_by_guest=guest).exists():
+                    if not Michna.objects.filter(session=session, choose_michna=masekhet, choose_perek=perek_number,
+                                                 chosen_by_guest=guest).exists():
                         Michna.objects.create(
                             session=session,
                             choose_michna=masekhet,
@@ -375,7 +401,8 @@ class SessionDetailView(View):
                     if str(reservation.choose_gemarot.id) not in gemara_ids and reservation.choose_perek is None:
                         reservation.delete()
 
-                user_perek_reservations = Gemara.objects.filter(session=session, chosen_by=person, choose_perek__isnull=False)
+                user_perek_reservations = Gemara.objects.filter(session=session, chosen_by=person,
+                                                                choose_perek__isnull=False)
                 for perek_reservation in user_perek_reservations:
                     perek_id = f"{perek_reservation.choose_gemarot.id}-{perek_reservation.choose_perek}"
                     if perek_id not in perek_ids:
@@ -384,7 +411,8 @@ class SessionDetailView(View):
                 # Réserver la Gemara entière et les Perekim
                 for gemara_id in gemara_ids:
                     gemarot = get_object_or_404(Gemarot, pk=gemara_id)
-                    if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, chosen_by=person, choose_perek__isnull=True).exists():
+                    if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, chosen_by=person,
+                                                 choose_perek__isnull=True).exists():
                         Gemara.objects.create(
                             session=session,
                             choose_gemarot=gemarot,
@@ -392,7 +420,8 @@ class SessionDetailView(View):
                             available=False
                         )
                     for perek in range(1, gemarot.perek + 1):
-                        if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, choose_perek=perek).exists():
+                        if not Gemara.objects.filter(session=session, choose_gemarot=gemarot,
+                                                     choose_perek=perek).exists():
                             Gemara.objects.create(
                                 session=session,
                                 choose_gemarot=gemarot,
@@ -405,7 +434,8 @@ class SessionDetailView(View):
                 for perek_id in perek_ids:
                     gemara_id, perek_number = perek_id.split('-')
                     gemarot = get_object_or_404(Gemarot, pk=gemara_id)
-                    if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, choose_perek=perek_number, chosen_by=person).exists():
+                    if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, choose_perek=perek_number,
+                                                 chosen_by=person).exists():
                         Gemara.objects.create(
                             session=session,
                             choose_gemarot=gemarot,
@@ -425,7 +455,8 @@ class SessionDetailView(View):
                     if str(reservation.choose_gemarot.id) not in gemara_ids and reservation.choose_perek is None:
                         reservation.delete()
 
-                user_perek_reservations = Gemara.objects.filter(session=session, chosen_by_guest=guest, choose_perek__isnull=False)
+                user_perek_reservations = Gemara.objects.filter(session=session, chosen_by_guest=guest,
+                                                                choose_perek__isnull=False)
                 for perek_reservation in user_perek_reservations:
                     perek_id = f"{perek_reservation.choose_gemarot.id}-{perek_reservation.choose_perek}"
                     if perek_id not in perek_ids:
@@ -434,7 +465,8 @@ class SessionDetailView(View):
                 # Réserver la Gemara entière et les Perekim pour les invités
                 for gemara_id in gemara_ids:
                     gemarot = get_object_or_404(Gemarot, pk=gemara_id)
-                    if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, chosen_by_guest=guest, choose_perek__isnull=True).exists():
+                    if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, chosen_by_guest=guest,
+                                                 choose_perek__isnull=True).exists():
                         Gemara.objects.create(
                             session=session,
                             choose_gemarot=gemarot,
@@ -442,7 +474,8 @@ class SessionDetailView(View):
                             available=False
                         )
                     for perek in range(1, gemarot.perek + 1):
-                        if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, choose_perek=perek).exists():
+                        if not Gemara.objects.filter(session=session, choose_gemarot=gemarot,
+                                                     choose_perek=perek).exists():
                             Gemara.objects.create(
                                 session=session,
                                 choose_gemarot=gemarot,
@@ -455,7 +488,8 @@ class SessionDetailView(View):
                 for perek_id in perek_ids:
                     gemara_id, perek_number = perek_id.split('-')
                     gemarot = get_object_or_404(Gemarot, pk=gemara_id)
-                    if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, choose_perek=perek_number, chosen_by_guest=guest).exists():
+                    if not Gemara.objects.filter(session=session, choose_gemarot=gemarot, choose_perek=perek_number,
+                                                 chosen_by_guest=guest).exists():
                         Gemara.objects.create(
                             session=session,
                             choose_gemarot=gemarot,
