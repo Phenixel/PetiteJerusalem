@@ -50,7 +50,7 @@
                         </div>
                     </div>
                 {% endif %}
-                <div class="d-flex align-items-end 
+                <div class="d-flex align-items-end
                 {% if not user.is_authenticated %}col-md-2{% else %}col-md-12{% endif %}">
                     <button type="submit" class="btn btn-primary mt-3 w-100">Réserver</button>
                 </div>
@@ -118,4 +118,20 @@
             <a href="{% url 'home' %}" style="text-decoration: none">Créer votre propre session en cliquant ici</a>
         </div>
     </div>
+    {% if not user.is_authenticated %}
+        <div class="content-page">
+            <div class="hero-header">
+                <h3>Pourquoi se créer un compte ?</h3>
+                <div class="text-start">
+                    <p>Créer un compte vous permet de :</p>
+                    <ul>
+                        <li>Créer des sessions d'études</li>
+                        <li>Rejoindre des sessions d'études</li>
+                        <li>Connaître les dates limites des sessions d'études</li>
+                    </ul>
+                    <a href="{% url 'signup' %}" class="btn btn-primary">Créer un compte</a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}
