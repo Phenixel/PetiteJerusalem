@@ -1,53 +1,54 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Créer une chaîne d'étude{% endblock %}
 
 {% block css %}
-    <!-- Ajoutez des liens CSS spécifiques à cette page -->
+    <link rel="stylesheet" href="{% static 'css/forms.css' %}">
 {% endblock %}
 
-{% block scripts %}
-    <!-- Ajoutez des scripts JS spécifiques à cette page -->
-{% endblock %}
+{% block scripts %}{% endblock %}
 
 {% block content %}
-    <div class="container mt-5">
-        <h1 class="mb-4">Créer une session</h1>
+    <div class="login-container">
+        <div class="login-form">
+            <h1 class="mb-4">Créer une session</h1>
 
-        {% if error_message %}
-            <div class="alert alert-danger" role="alert">
-                {{ error_message }}
-            </div>
-        {% endif %}
+            {% if error_message %}
+                <div class="alert alert-danger" role="alert">
+                    {{ error_message }}
+                </div>
+            {% endif %}
 
-        <form method="post">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="name" class="form-label">Nom de la session</label>
-                <input type="text" class="form-control" id="name" name="name" required>
-            </div>
-            <div class="mb-3">
-                <label for="description" class="form-label">Description</label>
-                <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
-            </div>
-            <div class="mb-3">
-                <label for="date_limit" class="form-label">Date limite</label>
-                <input type="text" class="form-control" id="date_limit" name="date_limit" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Type de session</label>
-                <div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="session_type" id="mishna" value="mishna" required>
-                        <label class="form-check-label" for="mishna">Mishna</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="session_type" id="gemara" value="gemara" required>
-                        <label class="form-check-label" for="gemara">Gemara</label>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="name" class="form-label">Nom de la session</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="date_limit" class="form-label">Date limite</label>
+                    <input type="text" class="form-control" id="date_limit" name="date_limit" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Type de session</label>
+                    <div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="session_type" id="mishna" value="mishna" required>
+                            <label class="form-check-label" for="mishna">Mishna</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="session_type" id="gemara" value="gemara" required>
+                            <label class="form-check-label" for="gemara">Gemara</label>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <button type="submit" class="btn btn-primary">Créer la session</button>
-        </form>
+                <button type="submit" class="btn btn-primary mt-3">Créer la session</button>
+            </form>
+        </div>
     </div>
 {% endblock %}
