@@ -1,0 +1,49 @@
+:root {
+    --color-bg: #77B5FE;
+    --color-circle: #77B5FE;
+    --color-text: #000000;
+    --card-bg: #f8f9fa;
+    --hero-bg-light: #ffffff;
+}
+
+[data-theme="dark"] {
+    --color-bg: #03001a;
+    --color-circle: white;
+    --color-text: #FFFFFF;
+    --card-bg: #343a40;
+    --hero-bg-light: #292929;
+}
+
+body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    padding-top: 5vh;
+}
+
+.btn-group .btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-toolbar {
+    margin-bottom: 1rem;
+}
+
+.card {
+    background-color: var(--card-bg);
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    width: 100%;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.badge {
+    margin-top: 0.5rem;
+}
