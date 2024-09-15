@@ -8,35 +8,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        // Initialisation du popover
-        document.addEventListener('DOMContentLoaded', function () {
-            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
-                return new bootstrap.Popover(popoverTriggerEl);
-            });
-        });
-
-        function togglePerekList(id) {
-            var perekList = document.getElementById("perek_list_" + id);
-            if (perekList.style.display === "none") {
-                perekList.style.display = "block";
-            } else {
-                perekList.style.display = "none";
-            }
-        }
-
-        function togglePerekSelection(id, isChecked) {
-            var perekList = document.getElementById("perek_list_" + id);
-            var checkboxes = perekList.querySelectorAll("input[type='checkbox']");
-
-            checkboxes.forEach(function (checkbox) {
-                if (!checkbox.disabled) {
-                    checkbox.checked = isChecked;
-                }
-            });
-        }
-    </script>
+    <script src="{% static 'js/sessions.js' %}"></script>
 {% endblock %}
 
 {% block header %}
@@ -81,11 +53,18 @@
                 {% endif %}
                 <div class="d-flex align-items-end
                 {% if not user.is_authenticated %}col-md-2{% else %}col-md-12{% endif %}">
-                    <button type="submit" class="btn btn-primary mt-3 w-100" {% if is_expired %}disabled{% endif %}>
+                    <button type="submit" class="btn btn-primary w-100" {% if is_expired %}disabled{% endif %}>
                         Réserver
                     </button>
                 </div>
             </div>
+        
+        <div class="mb-3">
+            <small>
+                Cochez les cases pour réserver un perek ou une massekhet. Si vous avez déjà réservé un perek ou une massekhet, vous pouvez le décocher pour annuler votre réservation (si vous avez un compte).
+                Cliquez sur la carte de la gemara ou de la massekhet pour voir les perekim disponibles.
+            </small>
+        </div>
 
             {% if gemarot_list %}
                 <div class="row">
@@ -104,19 +83,18 @@
                                                target="_blank">{{ item.gemara.name }}</a>
 
                                             {% if item.all_perek_reserved %}
-                                                <span style="color: red; font-weight: bold;">
-                                                    (Réservé)
+                                                <span>
+                                                    Réservé
                                                 </span>
                                             {% elif item.some_perek_reserved %}
-                                                <span style="color: orange; font-weight: bold;">
-                                                    (En cours)
+                                                <span>
+                                                    En cours
                                                 </span>
                                             {% endif %}
-                                            <a href="#" onclick="togglePerekList('{{ item.gemara.pk }}'); return false;"
-                                               style="text-decoration: none">&#9654;</a>
                                         </label>
 
-                                        <div id="perek_list_{{ item.gemara.pk }}" style="display:none;">
+                                        <div id="perek_list_{{ item.gemara.pk }}" class="perek-list"
+                                             style="display:none;">
                                             <div class="ml-3">
                                                 {% for perek in item.perekim %}
                                                     <div class="form-check">
@@ -134,8 +112,8 @@
                                                                for="perek_{{ item.gemara.pk }}-{{ perek.perek }}">
                                                             Perek {{ perek.perek }}
                                                             {% if perek.reserved %}
-                                                                <span style="color: red; font-weight: bold;">
-                                                                    (Réservé par {{ perek.chosen_by_username }})
+                                                                <span>
+                                                                    Réservé par {{ perek.chosen_by_username }}
                                                                 </span>
                                                             {% endif %}
                                                         </label>
@@ -175,20 +153,18 @@
                                                     {{ item.masekhet.name }}
 
                                                     {% if item.all_perek_reserved %}
-                                                        <span style="color: red; font-weight: bold;">
-                                                            (Réservé)
+                                                        <span>
+                                                            Réservé
                                                         </span>
                                                     {% elif item.some_perek_reserved %}
-                                                        <span style="color: orange; font-weight: bold;">
-                                                            (En cours)
+                                                        <span>
+                                                            En cours
                                                         </span>
                                                     {% endif %}
-                                                    <a href="#"
-                                                       onclick="togglePerekList('{{ item.masekhet.pk }}'); return false;"
-                                                       style="text-decoration: none">&#9654;</a>
                                                 </label>
 
-                                                <div id="perek_list_{{ item.masekhet.pk }}" style="display:none;">
+                                                <div id="perek_list_{{ item.masekhet.pk }}" class="perek-list"
+                                                     style="display:none;">
                                                     <div class="ml-3">
                                                         {% for perek in item.perekim %}
                                                             <div class="form-check">
@@ -206,8 +182,8 @@
                                                                        for="perek_{{ item.masekhet.pk }}-{{ perek.perek }}">
                                                                     Perek {{ perek.perek }}
                                                                     {% if perek.reserved %}
-                                                                        <span style="color: red; font-weight: bold;">
-                                                                            (Réservé par {{ perek.chosen_by_username }})
+                                                                        <span>
+                                                                            Réservé par {{ perek.chosen_by_username }}
                                                                         </span>
                                                                     {% endif %}
                                                                 </label>
