@@ -1,68 +1,131 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}{{ session.name }}{% endblock %}
+{% block title %}{{ user.person.name }}{% endblock %}
 
 {% block css %}
-    <!-- Ajoutez des liens CSS spécifiques à cette page -->
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}">
 {% endblock %}
 
 {% block scripts %}
-    <!-- Ajoutez des scripts JS spécifiques à cette page -->
+    <script>
+        // Initialisation du tooltip
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block header %}
+    <div class="hero-header">
+        <h1>{{ user.person.name }}</h1>
+        <h3 class="me-3">Niveau 1</h3>
+    </div>
 {% endblock %}
 
 {% block content %}
-<h1 class="display-1">Profile</h1>
-
-
-<div class="hero-liste-lecture">
-    <div class="header-liste-lecture">
-        <h2 class="h2">Session crée</h2>
-    </div>
-
-    <div class="content-liste-lecture d-flex">
-        {% if user_sessions %}
-            {% for session in user_sessions %}
-            <div class="card m-3" style="width: 30rem;">
-                <a href="{% url 'session_detail' session.slug %}" style="text-decoration: none">
-                    <div class="card-body">
-                        <h5 class="h5 card-title">{{ session.name }}</h5>
-                        <h6 class="card-subtitle mb-2 text-body-secondary">Créateur: {{ session.person }}</h6>
-                        <p class="card-text">{{ session.description }}</p>
-                        <p class="card-text">Date limite: {{ session.date_limit }}</p>
-                    </div>
-                </a>
+    <div class="content-page mb-2">
+        <div class="progress mb-2" style="height: 25px; position: relative;">
+            <div class="progress-bar bg-primary" role="progressbar" style="width: 0%;" aria-valuenow="0"
+                 aria-valuemin="0" aria-valuemax="100">
+                60%
             </div>
-            {% endfor %}
-        {% else %}
-            <p>Vous n'avez créé aucune session.</p>
-        {% endif %}
-    </div>
-</div>
 
-<div class="hero-liste-lecture">
-    <div class="header-liste-lecture">
-        <h2 class="h2">Sessions où vous avez réservé</h2>
+            <!-- Bouton de tooltip placé à droite de la barre de progression -->
+            <button type="button" class="btn btn-secondary btn-sm" style="position: absolute; right: 0; top: -5px;"
+                    data-bs-toggle="tooltip" data-bs-placement="right"
+                    title="Il vous manque 200 XP pour atteindre le prochain niveau.">
+                ?
+            </button>
+        </div>
+        <small class="text-muted">Bientôt : Votre niveau disponible sur votre profil</small>
     </div>
 
-    <div class="content-liste-lecture d-flex">
-        {% if reserved_sessions %}
-            {% for session in reserved_sessions %}
-            <div class="card m-3" style="width: 30rem;">
-                <a href="{% url 'session_detail' session.slug %}" style="text-decoration: none">
-                    <div class="card-body">
-                        <h5 class="h5 card-title">{{ session.name }}</h5>
-                        <h6 class="card-subtitle mb-2 text-body-secondary">Créateur: {{ session.person }}</h6>
-                        <p class="card-text">{{ session.description }}</p>
-                        <p class="card-text">Date limite: {{ session.date_limit }}</p>
-                    </div>
-                </a>
+    <div class="content-page">
+        <div class="hero-liste-lecture mb-4">
+            <div class="header-liste-lecture">
+                <h2 class="h2">Sessions créées</h2>
             </div>
-            {% endfor %}
-        {% else %}
-            <p>Vous n'avez réservé aucune session.</p>
-        {% endif %}
+
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">Nom</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Date limite</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% if user_sessions %}
+                        {% for session in user_sessions %}
+                            <tr>
+                                <td>{{ session.name }}</td>
+                                <td>{{ session.description }}</td>
+                                <td>{{ session.date_limit }}</td>
+                                <td>
+                                    <a href="#" class="btn btn-outline-secondary btn-sm disabled" title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="#" class="btn btn-outline-danger btn-sm disabled" title="Supprimer">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                    <small class="text-muted">Fonctionnalité bientôt disponible</small>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4">Vous n'avez créé aucune session.</td>
+                        </tr>
+                    {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="hero-liste-lecture">
+            <div class="header-liste-lecture">
+                <h2 class="h2">Sessions où vous avez réservé</h2>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">Nom</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Date limite</th>
+                        <th scope="col">Détails</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% if reserved_sessions %}
+                        {% for session in reserved_sessions %}
+                            <tr>
+                                <td>{{ session.name }}</td>
+                                <td>{{ session.description }}</td>
+                                <td>{{ session.date_limit }}</td>
+                                <td>
+                                    <a href="{% url 'session_detail' session.slug %}"
+                                       class="btn btn-outline-primary btn-sm" title="Aller à la session">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4">Vous n'avez réservé aucune session.</td>
+                        </tr>
+                    {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-</div>
-
-
 {% endblock %}

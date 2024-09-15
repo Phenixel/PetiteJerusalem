@@ -1,0 +1,16 @@
+.hero-header {
+    background: var(--hero-bg-light);
+    min-height: 30vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.content-page {
+    background-color: var(--hero-bg-light);
+    padding: 2rem;
+}
