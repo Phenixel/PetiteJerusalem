@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="author" content="Phenixel">
     <meta name="description" content="{% block description %}{% endblock %}">
-    <meta name="keywords" content="Petite Jerusalem, Talmud, Gemara {% block keywords %}{% endblock %}">
+    <meta name="keywords" content="Petite Jerusalem, Talmud, Gemara, judaisme, {% block keywords %}{% endblock %}">
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{% static 'medias/favicon.png' %}">
@@ -46,7 +46,9 @@
                         <a class="nav-link" href="{% url 'home' %}">Gemara Chain</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">À propos</a>
+                        <a class="nav-link"
+                           href="https://phenixel.notion.site/A-propos-0eb34805d881462b8a246de7f836edb9?pvs=4">À
+                            propos</a>
                     </li>
                 </ul>
                 <div class="d-flex align-items-center">
@@ -82,27 +84,33 @@
             <div class="col-md-4 text-left">
                 <h5 class="text-light">A propos de nous</h5>
                 <p class="text-light" style="text-align: justify">
-                    Nous sommes une petite équipe de développeurs passionnés par le Talmud et la technologie.
-                    Nous avons créé GemaraChain pour vous permettre de créer et de rejoindre des chaînes d'études du
-                    Talmud où que vous soyez.
+                    Nous sommes une équipe passionnée par le développement et animée par le désir d'aider notre
+                    communauté. C'est dans cet esprit que nous avons créé la plateforme La Petite Jérusalem, un espace
+                    dédié à la création de chaine d’étude.
                 </p>
             </div>
             <div class="col-md-4 offset-md-1">
                 <h5 class="text-light">La petite Jerusalem</h5>
                 <ul class="list-unstyled">
-                    <li><a href="#" class="text-decoration-none">À propos</a></li>
-                    <li><a href="#" class="text-decoration-none">Contactez-nous</a></li>
-                    <li><a href="#" class="text-decoration-none">Légales</a></li>
+                    <li><a target="_blank"
+                           href="https://phenixel.notion.site/A-propos-0eb34805d881462b8a246de7f836edb9?pvs=4"
+                           class="text-decoration-none">À propos</a></li>
+                    <li><a target="_blank" href="https://app.phenixel.fr/helpdesk/la-petite-jerusalem-3"
+                           class="text-decoration-none">Contactez-nous</a></li>
+                    <li><a target="_blank"
+                           href="https://phenixel.notion.site/Mentions-L-gales-10335db90d4d805b8a32ca214412962a?pvs=4"
+                           class="text-decoration-none">Légales</a></li>
                 </ul>
             </div>
             <div class="col-md-3 text-end">
-                <a href="https://github.com/Phenixel" target="_blank" class="text-light text-decoration-none me-2">
+                <a href="https://github.com/Phenixel/PetiteJerusalem" target="_blank"
+                   class="text-light text-decoration-none me-2">
                     <i class="fab fa-github"></i>
                 </a>
-                <a href="https://twitter.com/Phenixel" target="_blank" class="text-light text-decoration-none me-2">
+                <a href="https://x.com/Real_Phenixel" target="_blank" class="text-light text-decoration-none me-2">
                     <i class="fab fa-twitter"></i>
                 </a>
-                <a href="https://instagram.com/Phenixel" target="_blank" class="text-light text-decoration-none">
+                <a href="https://www.instagram.com/phenixel.y/" target="_blank" class="text-light text-decoration-none">
                     <i class="fab fa-instagram"></i>
                 </a>
             </div>
