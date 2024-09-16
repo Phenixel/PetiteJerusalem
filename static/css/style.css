@@ -4,6 +4,8 @@
     --color-text: #000000;
     --card-bg: #f8f9fa;
     --hero-bg-light: #ffffff;
+    --btn-color: #A7C7E7;
+    --btn-color-hover: #7ba1c6;
 }
 
 [data-theme="dark"] {
@@ -12,6 +14,8 @@
     --color-text: #FFFFFF;
     --card-bg: #343a40;
     --hero-bg-light: #292929;
+    --btn-color: #306ba5;
+    --btn-color-hover: #194673;
 }
 
 body {

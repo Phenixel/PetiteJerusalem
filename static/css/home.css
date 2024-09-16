@@ -283,3 +283,27 @@
         transform: translateY(0);
     }
 }
+
+.btn-success {
+    background-color: var(--btn-color);
+    border-color: var(--btn-color);
+}
+
+.btn-success:hover {
+    background-color: var(--btn-color-hover);
+    border-color: var(--btn-color-hover);
+}
+
+.btn-lg {
+    padding: 0.5rem 1rem;
+    font-size: 1.25rem;
+    border-radius: 0.3rem;
+}
+
+.shadow-sm {
+    box-shadow: 0 .125rem .25rem rgba(0, 0, 0, 0.075);
+}
+
+.rounded-pill {
+    border-radius: 50rem;
+}
