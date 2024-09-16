@@ -58,20 +58,21 @@
                     </button>
                 </div>
             </div>
-        
-        <div class="mb-3">
-            <small>
-                Cochez les cases pour réserver un perek ou une massekhet. Si vous avez déjà réservé un perek ou une massekhet, vous pouvez le décocher pour annuler votre réservation (si vous avez un compte).
-                Cliquez sur la carte de la gemara ou de la massekhet pour voir les perekim disponibles.
-            </small>
-        </div>
+
+            <div class="mb-3">
+                <small>
+                    Cochez les cases pour réserver un perek ou une massekhet. Si vous avez déjà réservé un perek ou une
+                    massekhet, vous pouvez le décocher pour annuler votre réservation (si vous avez un compte).
+                    Cliquez sur la carte de la gemara ou de la massekhet pour voir les perekim disponibles.
+                </small>
+            </div>
 
             {% if gemarot_list %}
                 <div class="row">
                     {% for item in gemarot_list %}
                         <div class="col-md-4">
-                            <div class="card mb-4">
-                                <div class="card-body">
+                            <div class="card mb-4 card-lecture">
+                                <div class="card-body position-relative">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="gemara_{{ item.gemara.pk }}"
                                                name="gemarot" value="{{ item.gemara.pk }}"
@@ -122,6 +123,7 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="collapse-icon" style="display: none; cursor:pointer;">&#9650;</div>
                                 </div>
                             </div>
                         </div>
@@ -136,8 +138,8 @@
                         <div class="row">
                             {% for item in seder_data.massekhtot %}
                                 <div class="col-md-4">
-                                    <div class="card mb-4">
-                                        <div class="card-body">
+                                    <div class="card mb-4 card-lecture">
+                                        <div class="card-body position-relative">
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox"
                                                        id="masekhet_{{ item.masekhet.pk }}" name="masekhtot"
@@ -191,6 +193,8 @@
                                                         {% endfor %}
                                                     </div>
                                                 </div>
+                                            </div>
+                                            <div class="collapse-icon" style="display: none; cursor:pointer;">&#9650;
                                             </div>
                                         </div>
                                     </div>
