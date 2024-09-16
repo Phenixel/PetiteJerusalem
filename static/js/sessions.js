@@ -1,21 +1,27 @@
-// Initialisation du popover
 document.addEventListener('DOMContentLoaded', function () {
     var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
     var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
         return new bootstrap.Popover(popoverTriggerEl);
     });
 
-    // Ajout des gestionnaires d'événements pour chaque card-body
     var cardBodies = document.querySelectorAll('.card-body');
     cardBodies.forEach(function (cardBody) {
         cardBody.addEventListener('click', function () {
             var perekList = cardBody.querySelector('.perek-list');
+            var collapseIcon = cardBody.querySelector('.collapse-icon');
+            if (perekList && perekList.style.display === "none") {
+                perekList.style.display = "block";
+                collapseIcon.style.display = "block";
+            }
+        });
+
+        var collapseIcon = cardBody.querySelector('.collapse-icon');
+        collapseIcon.addEventListener('click', function (event) {
+            event.stopPropagation(); // Prevent the card body click event
+            var perekList = cardBody.querySelector('.perek-list');
             if (perekList) {
-                if (perekList.style.display === "none") {
-                    perekList.style.display = "block";
-                } else {
-                    perekList.style.display = "none";
-                }
+                perekList.style.display = "none";
+                collapseIcon.style.display = "none";
             }
         });
     });
