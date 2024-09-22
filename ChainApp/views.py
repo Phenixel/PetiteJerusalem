@@ -519,3 +519,17 @@ class ProfileView(View):
                 'reserved_sessions': reserved_sessions,
             }
             return render(request, 'ChainApp/profile.html', context)
+
+
+class MarkCompletedView(View):
+    def post(self, request, model_name, pk):
+        if model_name == 'michna':
+            item = get_object_or_404(Michna, pk=pk, chosen_by=request.user.person)
+        elif model_name == 'gemara':
+            item = get_object_or_404(Gemara, pk=pk, chosen_by=request.user.person)
+        else:
+            return redirect('profile')
+
+        item.is_completed = True
+        item.save()
+        return redirect('profile')

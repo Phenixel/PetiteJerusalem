@@ -11,4 +11,5 @@ urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('profile/', ProfileView.as_view(), name='profile'),
+    path('mark_completed/<str:model_name>/<int:pk>/', MarkCompletedView.as_view(), name='mark_completed'),
 ]

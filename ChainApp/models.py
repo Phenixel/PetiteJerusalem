@@ -129,7 +129,8 @@ class Gemara(models.Model):
     chosen_by_guest = models.ForeignKey('Guest', on_delete=models.SET_NULL, blank=True, null=True)
     choose_gemarot = models.ForeignKey('Gemarot', on_delete=models.CASCADE)
     available = models.BooleanField(default=True)
-    choose_perek = models.IntegerField( null=True, blank=True)  # Nouveau champ
+    choose_perek = models.IntegerField( null=True, blank=True)
+    is_completed = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.choose_gemarot} - Session: {self.session.name}"
@@ -145,7 +146,8 @@ class Michna(models.Model):
     chosen_by_guest = models.ForeignKey('Guest', on_delete=models.SET_NULL, blank=True, null=True)
     choose_michna = models.ForeignKey('Massekhet', on_delete=models.CASCADE)
     available = models.BooleanField(default=True)
-    choose_perek = models.IntegerField(null=True, blank=True)  # Nouveau champ
+    choose_perek = models.IntegerField(null=True, blank=True)
+    is_completed = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.choose_michna} - Session: {self.session.name}"
