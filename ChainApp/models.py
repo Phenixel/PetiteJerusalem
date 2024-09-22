@@ -8,6 +8,9 @@ import itertools
 
 
 class Person(models.Model):
+    """
+    Model representing a person
+    """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     email = models.EmailField()
@@ -21,6 +24,9 @@ class Person(models.Model):
 
 
 class Guest(models.Model):
+    """
+    Model representing a guest
+    """
     name = models.CharField(max_length=255)
     email = models.EmailField()
 
@@ -32,19 +38,34 @@ class Guest(models.Model):
         verbose_name_plural = _("Guests")
 
 
-class Session(models.Model):
-    SESSION_TYPE_CHOICES = (
-        (True, 'Mishna'),
-        (False, 'Gemara'),
-    )
+class TextStudy(models.Model):
+    """
+    Model representing a text study
+    """
+    name = models.CharField(max_length=255)
+    type = models.CharField(max_length=255)  # ex., Mishna, Gemara, Tehilim, etc.
+    livre = models.CharField(max_length=255, default="")  # ex., Berakhot, Shabbat, etc.
+    link = models.URLField(blank=True)
+    total_sections = models.IntegerField(default=1)
 
+    def __str__(self):
+        return f"{self.name} ({self.type})"
+
+    class Meta:
+        verbose_name = _("Text Study")
+        verbose_name_plural = _("Text Studies")
+
+
+class Session(models.Model):
+    """
+    Model representing a session of text study
+    """
     name = models.CharField(max_length=255)
     description = models.TextField()
     date_limit = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     person = models.ForeignKey('Person', on_delete=models.SET_NULL, blank=True, null=True)
     slug = models.SlugField(unique=True, max_length=255, blank=True, null=True)
-    session_is = models.BooleanField(choices=SESSION_TYPE_CHOICES, default=False)
 
     def __str__(self):
         return self.name
@@ -59,47 +80,37 @@ class Session(models.Model):
                 slug = f'{base_slug}-{i}'
             self.slug = slug
         super().save(*args, **kwargs)
-        
+
     def clean(self):
-        # Vérifier si la date limite est dans le futur
+        """
+        Check if the date limit is in the future
+        """
         if self.date_limit <= timezone.now().date():
             raise ValidationError("La date limite doit être dans le futur.")
 
     @property
     def is_completed(self):
-        # Vérifier si la date de la session est dépassée
+        """
+        Check if the session is completed
+        :return: True if the session is completed, False otherwise
+        """
         if self.date_limit < timezone.now().date():
             return True
 
-        if self.session_is:  # Mishna
-            total_massekhets = Massekhet.objects.count()
-            reserved_massekhets = Michna.objects.filter(session=self, choose_perek__isnull=True).count()
-            
-            # Vérifier si tous les Perekim de chaque Massekhet sont réservés
-            for massekhet in Massekhet.objects.all():
-                total_perekim = massekhet.perek
-                reserved_perekim = Michna.objects.filter(session=self, choose_michna=massekhet, choose_perek__isnull=False).count()
-                
-                # Si une Massekhet n'est pas complètement réservée (ni en entier ni tous les Perekim), retourner False
-                if reserved_perekim < total_perekim and not Michna.objects.filter(session=self, choose_michna=massekhet, choose_perek__isnull=True).exists():
-                    return False
-            
-            return reserved_massekhets + reserved_perekim == total_massekhets + total_perekim
+        total_texts = TextStudy.objects.count()
+        reserved_texts = TextStudyReservation.objects.filter(session=self, section__isnull=True).count()
 
-        else:  # Gemara
-            total_gemarots = Gemarot.objects.count()
-            reserved_gemarots = Gemara.objects.filter(session=self, choose_perek__isnull=True).count()
-            
-            # Vérifier si tous les Perekim de chaque Gemara sont réservés
-            for gemara in Gemarot.objects.all():
-                total_perekim = gemara.perek
-                reserved_perekim = Gemara.objects.filter(session=self, choose_gemarot=gemara, choose_perek__isnull=False).count()
-                
-                # Si une Gemara n'est pas complètement réservée (ni en entier ni tous les Perekim), retourner False
-                if reserved_perekim < total_perekim and not Gemara.objects.filter(session=self, choose_gemarot=gemara, choose_perek__isnull=True).exists():
-                    return False
-            
-            return reserved_gemarots + reserved_perekim == total_gemarots + total_perekim
+        for text in TextStudy.objects.all():
+            total_sections = text.total_sections
+            reserved_sections = TextStudyReservation.objects.filter(session=self, text_study=text,
+                                                                    section__isnull=False).count()
+
+            if reserved_sections < total_sections and not TextStudyReservation.objects.filter(session=self,
+                                                                                              text_study=text,
+                                                                                              section__isnull=True).exists():
+                return False
+
+        return reserved_texts + reserved_sections == total_texts + total_sections
 
     class Meta:
         verbose_name = _("Session")
@@ -107,77 +118,21 @@ class Session(models.Model):
         ordering = ['-created_at']
 
 
-
-
-class Gemarot(models.Model):
-    name = models.CharField(max_length=255)
-    livre = models.CharField(max_length=255)
-    link = models.URLField(blank=True)
-    perek = models.IntegerField(default=1)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = _("Gemarot")
-        verbose_name_plural = _("Gemarot")
-
-
-class Gemara(models.Model):
+class TextStudyReservation(models.Model):
+    """
+    Model representing a reservation of a text study
+    """
     session = models.ForeignKey('Session', on_delete=models.CASCADE)
     chosen_by = models.ForeignKey('Person', on_delete=models.SET_NULL, blank=True, null=True)
     chosen_by_guest = models.ForeignKey('Guest', on_delete=models.SET_NULL, blank=True, null=True)
-    choose_gemarot = models.ForeignKey('Gemarot', on_delete=models.CASCADE)
+    text_study = models.ForeignKey('TextStudy', on_delete=models.CASCADE)
     available = models.BooleanField(default=True)
-    choose_perek = models.IntegerField( null=True, blank=True)
+    section = models.IntegerField(null=True, blank=True)
     is_completed = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.choose_gemarot} - Session: {self.session.name}"
+        return f"{self.text_study} - Session: {self.session.name}"
 
     class Meta:
-        verbose_name = _("Gemara")
-        verbose_name_plural = _("Gemara")
-        
-        
-class Michna(models.Model):
-    session = models.ForeignKey('Session', on_delete=models.CASCADE)
-    chosen_by = models.ForeignKey('Person', on_delete=models.SET_NULL, blank=True, null=True)
-    chosen_by_guest = models.ForeignKey('Guest', on_delete=models.SET_NULL, blank=True, null=True)
-    choose_michna = models.ForeignKey('Massekhet', on_delete=models.CASCADE)
-    available = models.BooleanField(default=True)
-    choose_perek = models.IntegerField(null=True, blank=True)
-    is_completed = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"{self.choose_michna} - Session: {self.session.name}"
-
-    class Meta:
-        verbose_name = _("Michna")
-        verbose_name_plural = _("Michna")
-
-
-
-class Seder(models.Model):
-    name = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = "Seder"
-        verbose_name_plural = "Sederim"
-
-
-class Massekhet(models.Model):
-    name = models.CharField(max_length=255)
-    seder = models.ForeignKey(Seder, on_delete=models.CASCADE, related_name='massekhtot')
-    link = models.URLField(blank=True, null=True)  # Lien optionnel, par défaut null
-    perek = models.IntegerField(default=1)
-
-    def __str__(self):
-        return f"{self.name} ({self.seder.name})"
-
-    class Meta:
-        verbose_name = "Massekhet"
-        verbose_name_plural = "Massekhtot"
+        verbose_name = _("Text Study Reservation")
+        verbose_name_plural = _("Text Study Reservations")
