@@ -5,7 +5,7 @@
 
 {% block keywords %}Gemara, Talmud, Mishna, étude, Torah, Judaïsme, chaine, partage{% endblock %}
 
-{% block description %}Rejoignez la session d'étude {{ session.name }} et réservez des perekim ou des massekhtot.{% endblock %}
+{% block description %}Rejoignez la session d'étude {{ session.name }} et réservez des sections ou des textes.{% endblock %}
 
 {% block css %}
     <link rel="stylesheet" href="{% static 'css/sessions.css' %}">
@@ -65,149 +65,72 @@
 
             <div class="mb-3">
                 <small>
-                    Cochez les cases pour réserver un perek ou une massekhet. Si vous avez déjà réservé un perek ou une
-                    massekhet, vous pouvez le décocher pour annuler votre réservation (si vous avez un compte).
-                    Cliquez sur la carte de la gemara ou de la massekhet pour voir les perekim disponibles.
+                    Cochez les cases pour réserver une section ou un texte. Si vous avez déjà réservé une section ou un texte, vous pouvez le décocher pour annuler votre réservation (si vous avez un compte).
+                    Cliquez sur la carte du texte pour voir les sections disponibles.
                 </small>
             </div>
 
-            {% if gemarot_list %}
-                <div class="row">
-                    {% for item in gemarot_list %}
-                        <div class="col-md-4">
-                            <div class="card mb-4 card-lecture">
-                                <div class="card-body position-relative">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="gemara_{{ item.gemara.pk }}"
-                                               name="gemarot" value="{{ item.gemara.pk }}"
-                                               {% if item.all_perek_reserved_by_user %}checked{% endif %}
-                                               {% if item.all_perek_reserved and not item.reserved_by_user or is_expired %}disabled{% endif %}
-                                               onchange="togglePerekSelection('{{ item.gemara.pk }}', this.checked)">
-                                        <label class="form-check-label" for="gemara_{{ item.gemara.pk }}">
-                                            <a href="{{ item.gemara.link }}" style="text-decoration: none"
-                                               target="_blank">{{ item.gemara.name }}</a>
+            <div class="row">
+                {% for item in text_study_list %}
+                    <div class="col-md-4">
+                        <div class="card mb-4 card-lecture">
+                            <div class="card-body position-relative">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="text_study_{{ item.text_study.pk }}"
+                                           name="text_studies" value="{{ item.text_study.pk }}"
+                                           {% if item.all_sections_reserved_by_user %}checked{% endif %}
+                                           {% if item.all_sections_reserved and not item.reserved_by_user or is_expired %}disabled{% endif %}
+                                           onchange="toggleSectionSelection('{{ item.text_study.pk }}', this.checked)">
+                                    <label class="form-check-label" for="text_study_{{ item.text_study.pk }}">
+                                        <a href="{{ item.text_study.link }}" style="text-decoration: none"
+                                           target="_blank">{{ item.text_study.name }}</a>
 
-                                            {% if item.all_perek_reserved %}
-                                                <span>
-                                                    Réservé
-                                                </span>
-                                            {% elif item.some_perek_reserved %}
-                                                <span>
-                                                    En cours
-                                                </span>
-                                            {% endif %}
-                                        </label>
+                                        {% if item.all_sections_reserved %}
+                                            <span>
+                                                Réservé
+                                            </span>
+                                        {% elif item.some_sections_reserved %}
+                                            <span>
+                                                En cours
+                                            </span>
+                                        {% endif %}
+                                    </label>
 
-                                        <div id="perek_list_{{ item.gemara.pk }}" class="perek-list"
-                                             style="display:none;">
-                                            <div class="ml-3">
-                                                {% for perek in item.perekim %}
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox"
-                                                               id="perek_{{ item.gemara.pk }}-{{ perek.perek }}"
-                                                               name="perekim"
-                                                               value="{{ item.gemara.pk }}-{{ perek.perek }}"
-                                                                {% if perek.reserved_by_user %}
-                                                               checked
-                                                                {% endif %}
-                                                                {% if perek.reserved and not perek.reserved_by_user or is_expired %}
-                                                               disabled
-                                                                {% endif %}>
-                                                        <label class="form-check-label"
-                                                               for="perek_{{ item.gemara.pk }}-{{ perek.perek }}">
-                                                            Perek {{ perek.perek }}
-                                                            {% if perek.reserved %}
-                                                                <span>
-                                                                    Réservé par {{ perek.chosen_by_username }}
-                                                                </span>
+                                    <div id="section_list_{{ item.text_study.pk }}" class="section-list"
+                                         style="display:none;">
+                                        <div class="ml-3">
+                                            {% for section in item.sections %}
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox"
+                                                           id="section_{{ item.text_study.pk }}-{{ section.section }}"
+                                                           name="sections"
+                                                           value="{{ item.text_study.pk }}-{{ section.section }}"
+                                                            {% if section.reserved_by_user %}
+                                                           checked
                                                             {% endif %}
-                                                        </label>
-                                                    </div>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="collapse-icon" style="display: none; cursor:pointer;">&#9650;</div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-
-            {% if seder_list %}
-                {% for seder_data in seder_list %}
-                    <div class="col-md-12 mb-3">
-                        <h3>{{ seder_data.seder.name }}</h3>
-                        <div class="row">
-                            {% for item in seder_data.massekhtot %}
-                                <div class="col-md-4">
-                                    <div class="card mb-4 card-lecture">
-                                        <div class="card-body position-relative">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox"
-                                                       id="masekhet_{{ item.masekhet.pk }}" name="masekhtot"
-                                                       value="{{ item.masekhet.pk }}"
-                                                        {% if item.all_perek_reserved_by_user %}
-                                                       checked
+                                                            {% if section.reserved and not section.reserved_by_user or is_expired %}
+                                                           disabled
+                                                            {% endif %}>
+                                                    <label class="form-check-label"
+                                                           for="section_{{ item.text_study.pk }}-{{ section.section }}">
+                                                        Section {{ section.section }}
+                                                        {% if section.reserved %}
+                                                            <span>
+                                                                Réservé par {{ section.chosen_by_username }}
+                                                            </span>
                                                         {% endif %}
-                                                        {% if item.all_perek_reserved and not item.reserved_by_user or is_expired %}
-                                                       disabled
-                                                        {% endif %}
-                                                       onchange="togglePerekSelection('{{ item.masekhet.pk }}', this.checked)">
-                                                <label class="form-check-label" for="masekhet_{{ item.masekhet.pk }}">
-                                                    {{ item.masekhet.name }}
-
-                                                    {% if item.all_perek_reserved %}
-                                                        <span>
-                                                            Réservé
-                                                        </span>
-                                                    {% elif item.some_perek_reserved %}
-                                                        <span>
-                                                            En cours
-                                                        </span>
-                                                    {% endif %}
-                                                </label>
-
-                                                <div id="perek_list_{{ item.masekhet.pk }}" class="perek-list"
-                                                     style="display:none;">
-                                                    <div class="ml-3">
-                                                        {% for perek in item.perekim %}
-                                                            <div class="form-check">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                       id="perek_{{ item.masekhet.pk }}-{{ perek.perek }}"
-                                                                       name="perekim"
-                                                                       value="{{ item.masekhet.pk }}-{{ perek.perek }}"
-                                                                        {% if perek.reserved_by_user %}
-                                                                       checked
-                                                                        {% endif %}
-                                                                        {% if perek.reserved and not perek.reserved_by_user or is_expired %}
-                                                                       disabled
-                                                                        {% endif %}>
-                                                                <label class="form-check-label"
-                                                                       for="perek_{{ item.masekhet.pk }}-{{ perek.perek }}">
-                                                                    Perek {{ perek.perek }}
-                                                                    {% if perek.reserved %}
-                                                                        <span>
-                                                                            Réservé par {{ perek.chosen_by_username }}
-                                                                        </span>
-                                                                    {% endif %}
-                                                                </label>
-                                                            </div>
-                                                        {% endfor %}
-                                                    </div>
+                                                    </label>
                                                 </div>
-                                            </div>
-                                            <div class="collapse-icon" style="display: none; cursor:pointer;">&#9650;
-                                            </div>
+                                            {% endfor %}
                                         </div>
                                     </div>
                                 </div>
-                            {% endfor %}
+                                <div class="collapse-icon" style="display: none; cursor:pointer;">&#9650;</div>
+                            </div>
                         </div>
                     </div>
                 {% endfor %}
-            {% endif %}
+            </div>
         </form>
         <div class="text-center mt-5">
             <a href="{% url 'home' %}" style="text-decoration: none">Créer votre propre session en cliquant ici</a>

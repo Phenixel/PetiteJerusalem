@@ -1,4 +1,10 @@
-from .models import TextStudy
+from .models import TextStudy, TypeTextStudy
+
+
+def create_text_study_types():
+    types = ["Talmud Bavli", "Mishna", "Tehilim", "Parasha"]
+    for type_name in types:
+        TypeTextStudy.objects.get_or_create(name=type_name)
 
 
 def add_talmud_bavli():
@@ -57,11 +63,13 @@ def add_talmud_bavli():
         },
     }
 
+    type_talmud_bavli, created = TypeTextStudy.objects.get_or_create(name="Talmud Bavli")
+
     for masechet_group, masechtot in talmud_bavli.items():
         for name, total_sections in masechtot.items():
             TextStudy.objects.create(
                 name=f"{name}",
-                type="Talmud Bavli",
+                type=type_talmud_bavli,
                 livre=masechet_group,
                 link=f"https://www.sefaria.org/{name}",
                 total_sections=total_sections,
@@ -135,11 +143,13 @@ def add_mishna():
         },
     }
 
+    type_mishna, created = TypeTextStudy.objects.get_or_create(name="Mishna")
+
     for mishna_group, masechtot in mishna.items():
         for name, total_sections in masechtot.items():
             TextStudy.objects.create(
                 name=f"{name}",
-                type="Mishna",
+                type=type_mishna,
                 livre=mishna_group,
                 link=f"https://www.sefaria.org/{name}",
                 total_sections=total_sections,
@@ -155,12 +165,14 @@ def add_tehilim():
         "Sefer 5": 44,
     }
 
+    type_tehilim, created = TypeTextStudy.objects.get_or_create(name="Tehilim")
+
     current_tehilim = 1
     for day, total_sections in tehilim_per_book.items():
         for section in range(1, total_sections + 1):
             TextStudy.objects.create(
                 name=f"Tehilim {current_tehilim}",
-                type="Tehilim",
+                type=type_tehilim,
                 livre=day,
                 link=f"https://www.sefaria.org/Psalms.{current_tehilim}",
                 total_sections=1,
@@ -183,10 +195,12 @@ def add_parachiot_devarim():
         "V'Zot HaBracha": 41,
     }
 
+    type_parasha, created = TypeTextStudy.objects.get_or_create(name="Parasha")
+
     for parasha, total_sections in devarim.items():
         TextStudy.objects.create(
             name=f"Parashat {parasha}",
-            type="Parasha",
+            type=type_parasha,
             livre="Devarim",
             link=f"https://www.sefaria.org/Deuteronomy.{parasha}",
             total_sections=total_sections,
@@ -194,7 +208,14 @@ def add_parachiot_devarim():
 
 
 def initialize_text_studies():
+    create_text_study_types()
+    print("Types created")
     add_talmud_bavli()
+    print("Talmud Bavli added")
     add_mishna()
+    print("Mishna added")
     add_tehilim()
+    print("Tehilim added")
     add_parachiot_devarim()
+    print("Parashiot added")
+    print("All text studies added")

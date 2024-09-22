@@ -38,12 +38,26 @@ class Guest(models.Model):
         verbose_name_plural = _("Guests")
 
 
+class TypeTextStudy(models.Model):
+    """
+    Model representing a type of text study
+    """
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("Type Text Study")
+        verbose_name_plural = _("Type Text Studies")
+
+
 class TextStudy(models.Model):
     """
     Model representing a text study
     """
     name = models.CharField(max_length=255)
-    type = models.CharField(max_length=255)  # ex., Mishna, Gemara, Tehilim, etc.
+    type = models.ForeignKey('TypeTextStudy', on_delete=models.CASCADE)
     livre = models.CharField(max_length=255, default="")  # ex., Berakhot, Shabbat, etc.
     link = models.URLField(blank=True)
     total_sections = models.IntegerField(default=1)
@@ -61,6 +75,7 @@ class Session(models.Model):
     Model representing a session of text study
     """
     name = models.CharField(max_length=255)
+    type = models.ForeignKey('TypeTextStudy', on_delete=models.CASCADE)
     description = models.TextField()
     date_limit = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
