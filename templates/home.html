@@ -99,14 +99,12 @@
                        class="btn btn-outline-primary {% if session_type == 'all' %}active{% endif %}">
                         <i class="bi bi-list-ul"></i> Toutes
                     </a>
-                    <a href="?type=mishna&display={{ display_type }}"
-                       class="btn btn-outline-primary {% if session_type == 'mishna' %}active{% endif %}">
-                        <i class="bi bi-book"></i> Mishna
-                    </a>
-                    <a href="?type=gemara&display={{ display_type }}"
-                       class="btn btn-outline-primary {% if session_type == 'gemara' %}active{% endif %}">
-                        <i class="bi bi-journal-text"></i> Gemara
-                    </a>
+                    {% for type in text_study_types %}
+                        <a href="?type={{ type.name }}&display={{ display_type }}"
+                           class="btn btn-outline-primary {% if session_type == type.name %}active{% endif %}">
+                            <i class="bi bi-book"></i> {{ type.name }}
+                        </a>
+                    {% endfor %}
                 </div>
                 <div class="btn-group btn-group d-none d-md-flex" role="group" aria-label="Type d'affichage">
                     <button onclick="toggleView('grid')"
@@ -135,8 +133,7 @@
                                 <h6 class="card-subtitle mb-2 text-muted">Créateur: {{ session.person }}</h6>
                                 <p class="card-text">{{ session.description }}</p>
                                 <p class="card-text">{{ session.date_limit }}</p>
-                                <span class="badge bg-primary">{% if session.session_is %}Mishna{% else %}
-                                    Gemara{% endif %}</span>
+                                <span class="badge bg-primary">{{ session.type.name }}</span>
                             </div>
                         </a>
                     </div>
