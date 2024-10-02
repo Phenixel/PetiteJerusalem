@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load custom_filters %}
 {% load static %}
 
 {% block title %}{{ session.name }}{% endblock %}
@@ -82,15 +83,24 @@
                             <div class="card mb-4 card-lecture">
                                 <div class="card-body position-relative">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox"
-                                               id="text_study_{{ item.text_study.pk }}"
-                                               name="text_studies" value="{{ item.text_study.pk }}"
-                                               {% if item.reserved_by_user %}checked{% endif %}
-                                               {% if item.reserved and not item.reserved_by_user or is_expired %}disabled{% endif %}
-                                               onchange="togglePerekSelection('{{ item.text_study.pk }}', this.checked)">
+                                        {% if not item.sections_by_perek|all_reserved %}
+                                            <input class="form-check-input" type="checkbox"
+                                                   id="text_study_{{ item.text_study.pk }}"
+                                                   name="text_studies" value="{{ item.text_study.pk }}"
+                                                   {% if item.reserved_by_user %}checked{% endif %}
+                                                   {% if item.reserved and not item.reserved_by_user or is_expired %}disabled{% endif %}
+                                                   onchange="togglePerekSelection('{{ item.text_study.pk }}', this.checked)">
+                                        {% endif %}
                                         <label class="form-check-label" for="text_study_{{ item.text_study.pk }}">
                                             <a href="{{ item.text_study.link }}" style="text-decoration: none"
                                                target="_blank">{{ item.text_study.name }}</a>
+                                            {% if item.sections_by_perek|all_reserved %}
+                                                <span class="text-danger">Réservé</span>
+                                            {% else %}
+                                                {% if item.sections_by_perek|length > 0 and item.sections_by_perek %}
+                                                    <span class="text-warning">En cours</span>
+                                                {% endif %}
+                                            {% endif %}
                                         </label>
 
                                         <div id="perek_list_{{ item.text_study.pk }}" class="perek-list"
@@ -103,7 +113,8 @@
                                                                name="sections"
                                                                value="{{ item.text_study.pk }}-{{ section.section }}"
                                                                {% if section.reserved_by_user %}checked{% endif %}
-                                                               {% if section.reserved and not section.reserved_by_user or is_expired %}disabled{% endif %}>
+                                                               {% if section.reserved and not section.reserved_by_user or is_expired %}disabled{% endif %}
+                                                               onchange="toggleMainCheckbox('{{ item.text_study.pk }}')">
                                                         <label class="form-check-label"
                                                                for="section_{{ item.text_study.pk }}-{{ section.section }}">
                                                             Perek {{ section.section }}

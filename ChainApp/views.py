@@ -1,11 +1,11 @@
 from collections import defaultdict
-
 from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView
+from django.views.generic.edit import FormMixin
+from .forms import ReservationForm
 from .models import Session, Person, Guest, TextStudy, TextStudyReservation, TypeTextStudy
 from django.utils import timezone
 from django.contrib.auth import authenticate, login, logout
@@ -162,12 +162,13 @@ class CreateSessionView(View):
         return redirect('home')
 
 
-class SessionDetailView(DetailView):
+class SessionDetailView(DetailView, FormMixin):
     model = Session
     template_name = 'ChainApp/session_detail.html'
     context_object_name = 'session'
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
+    form_class = ReservationForm
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -178,7 +179,8 @@ class SessionDetailView(DetailView):
         livre_dict = defaultdict(list)
 
         for text_study in text_studies:
-            text_study_reservation = TextStudyReservation.objects.filter(session=session, text_study=text_study, section__isnull=True).first()
+            text_study_reservation = TextStudyReservation.objects.filter(session=session, text_study=text_study,
+                                                                         section__isnull=True).first()
             reserved_by_user = text_study_reservation and text_study_reservation.chosen_by == self.request.user.person if self.request.user.is_authenticated else None
 
             perek_sections = self.get_perek_sections(session, text_study)
@@ -201,7 +203,8 @@ class SessionDetailView(DetailView):
     def get_perek_sections(self, session, text_study):
         perek_sections = []
         for section in range(1, text_study.total_sections + 1):
-            section_reservation = TextStudyReservation.objects.filter(session=session, text_study=text_study, section=section).first()
+            section_reservation = TextStudyReservation.objects.filter(session=session, text_study=text_study,
+                                                                      section=section).first()
             reserved_by_user_section = section_reservation and section_reservation.chosen_by == self.request.user.person if self.request.user.is_authenticated else None
 
             perek_sections.append({
@@ -213,6 +216,60 @@ class SessionDetailView(DetailView):
                 'reserved_by_user': reserved_by_user_section,
             })
         return perek_sections
+
+    def post(self, request, *args, **kwargs):
+        session = self.get_object()
+        if session.date_limit < timezone.now().date():
+            return HttpResponseRedirect(self.request.path_info)
+
+        sections = request.POST.getlist('sections')
+
+        # Get all existing reservations for the session and user
+        existing_reservations = TextStudyReservation.objects.filter(
+            session=session,
+            chosen_by=request.user.person if request.user.is_authenticated else None,
+            chosen_by_guest=None if request.user.is_authenticated else Guest.objects.filter(
+                name=request.POST.get('guest_name'),
+                email=request.POST.get('guest_email')
+            )
+        )
+
+        # Create a set of sections to be reserved
+        sections_to_reserve = set(sections)
+
+        # Remove reservations that are no longer checked
+        for reservation in existing_reservations:
+            section_id = f"{reservation.text_study.pk}-{reservation.section}"
+            if section_id not in sections_to_reserve:
+                reservation.delete()
+
+        # Add new reservations
+        for section in sections:
+            text_study_id, section_number = section.split('-')
+            text_study = TextStudy.objects.get(pk=text_study_id)
+            if not TextStudyReservation.objects.filter(
+                    session=session,
+                    text_study=text_study,
+                    section=section_number,
+                    chosen_by=request.user.person if request.user.is_authenticated else None,
+                    chosen_by_guest=None if request.user.is_authenticated else Guest.objects.filter(
+                        name=request.POST.get('guest_name'),
+                        email=request.POST.get('guest_email')
+                    )
+            ).exists():
+                TextStudyReservation.objects.create(
+                    session=session,
+                    text_study=text_study,
+                    section=section_number,
+                    chosen_by=request.user.person if request.user.is_authenticated else None,
+                    chosen_by_guest=None if request.user.is_authenticated else Guest.objects.create(
+                        name=request.POST.get('guest_name'),
+                        email=request.POST.get('guest_email')
+                    )
+                )
+
+        return HttpResponseRedirect(self.request.path_info)
+
 
 class ProfileView(View):
     def get(self, request):
