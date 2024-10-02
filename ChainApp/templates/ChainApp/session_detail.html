@@ -5,7 +5,8 @@
 
 {% block keywords %}Gemara, Talmud, Mishna, étude, Torah, Judaïsme, chaine, partage{% endblock %}
 
-{% block description %}Rejoignez la session d'étude {{ session.name }} et réservez des sections ou des textes.{% endblock %}
+{% block description %}Rejoignez la session d'étude {{ session.name }} et réservez des sections ou des
+    textes.{% endblock %}
 
 {% block css %}
     <link rel="stylesheet" href="{% static 'css/sessions.css' %}">
@@ -65,70 +66,61 @@
 
             <div class="mb-3">
                 <small>
-                    Cochez les cases pour réserver une section ou un texte. Si vous avez déjà réservé une section ou un texte, vous pouvez le décocher pour annuler votre réservation (si vous avez un compte).
+                    Cochez les cases pour réserver une section ou un texte. Si vous avez déjà réservé une section ou un
+                    texte, vous pouvez le décocher pour annuler votre réservation (si vous avez un compte).
                     Cliquez sur la carte du texte pour voir les sections disponibles.
                 </small>
             </div>
 
             <div class="row">
-                {% for item in text_study_list %}
-                    <div class="col-md-4">
-                        <div class="card mb-4 card-lecture">
-                            <div class="card-body position-relative">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="text_study_{{ item.text_study.pk }}"
-                                           name="text_studies" value="{{ item.text_study.pk }}"
-                                           {% if item.all_sections_reserved_by_user %}checked{% endif %}
-                                           {% if item.all_sections_reserved and not item.reserved_by_user or is_expired %}disabled{% endif %}
-                                           onchange="toggleSectionSelection('{{ item.text_study.pk }}', this.checked)">
-                                    <label class="form-check-label" for="text_study_{{ item.text_study.pk }}">
-                                        <a href="{{ item.text_study.link }}" style="text-decoration: none"
-                                           target="_blank">{{ item.text_study.name }}</a>
+                {% for livre, text_studies in livre_dict.items %}
+                    <div class="col-12">
+                        <h3>{{ livre }}</h3>
+                    </div>
+                    {% for item in text_studies %}
+                        <div class="col-md-4">
+                            <div class="card mb-4 card-lecture">
+                                <div class="card-body position-relative">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="text_study_{{ item.text_study.pk }}"
+                                               name="text_studies" value="{{ item.text_study.pk }}"
+                                               {% if item.reserved_by_user %}checked{% endif %}
+                                               {% if item.reserved and not item.reserved_by_user or is_expired %}disabled{% endif %}
+                                               onchange="togglePerekSelection('{{ item.text_study.pk }}', this.checked)">
+                                        <label class="form-check-label" for="text_study_{{ item.text_study.pk }}">
+                                            <a href="{{ item.text_study.link }}" style="text-decoration: none"
+                                               target="_blank">{{ item.text_study.name }}</a>
+                                        </label>
 
-                                        {% if item.all_sections_reserved %}
-                                            <span>
-                                                Réservé
-                                            </span>
-                                        {% elif item.some_sections_reserved %}
-                                            <span>
-                                                En cours
-                                            </span>
-                                        {% endif %}
-                                    </label>
-
-                                    <div id="section_list_{{ item.text_study.pk }}" class="section-list"
-                                         style="display:none;">
-                                        <div class="ml-3">
-                                            {% for section in item.sections %}
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox"
-                                                           id="section_{{ item.text_study.pk }}-{{ section.section }}"
-                                                           name="sections"
-                                                           value="{{ item.text_study.pk }}-{{ section.section }}"
-                                                            {% if section.reserved_by_user %}
-                                                           checked
+                                        <div id="perek_list_{{ item.text_study.pk }}" class="perek-list"
+                                             style="display:none;">
+                                            <div class="ml-3">
+                                                {% for section in item.sections_by_perek %}
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox"
+                                                               id="section_{{ item.text_study.pk }}-{{ section.section }}"
+                                                               name="sections"
+                                                               value="{{ item.text_study.pk }}-{{ section.section }}"
+                                                               {% if section.reserved_by_user %}checked{% endif %}
+                                                               {% if section.reserved and not section.reserved_by_user or is_expired %}disabled{% endif %}>
+                                                        <label class="form-check-label"
+                                                               for="section_{{ item.text_study.pk }}-{{ section.section }}">
+                                                            Perek {{ section.section }}
+                                                            {% if section.reserved %}
+                                                                <span>Réservé par {{ section.chosen_by_username }}</span>
                                                             {% endif %}
-                                                            {% if section.reserved and not section.reserved_by_user or is_expired %}
-                                                           disabled
-                                                            {% endif %}>
-                                                    <label class="form-check-label"
-                                                           for="section_{{ item.text_study.pk }}-{{ section.section }}">
-                                                        Section {{ section.section }}
-                                                        {% if section.reserved %}
-                                                            <span>
-                                                                Réservé par {{ section.chosen_by_username }}
-                                                            </span>
-                                                        {% endif %}
-                                                    </label>
-                                                </div>
-                                            {% endfor %}
+                                                        </label>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
                                         </div>
                                     </div>
+                                    <div class="collapse-icon" style="display: none; cursor:pointer;">&#9650;</div>
                                 </div>
-                                <div class="collapse-icon" style="display: none; cursor:pointer;">&#9650;</div>
                             </div>
                         </div>
-                    </div>
+                    {% endfor %}
                 {% endfor %}
             </div>
         </form>

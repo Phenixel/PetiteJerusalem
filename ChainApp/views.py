@@ -1,6 +1,11 @@
+from collections import defaultdict
+
 from django.contrib.auth.models import User
+from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.views import View
+from django.views.generic import DetailView
 from .models import Session, Person, Guest, TextStudy, TextStudyReservation, TypeTextStudy
 from django.utils import timezone
 from django.contrib.auth import authenticate, login, logout
@@ -12,19 +17,20 @@ class HomeView(View):
     def get(self, request):
         today = timezone.now().date()
 
-        # Récupérer le type de session demandé (all, mishna, gemara)
+        # Récupérer le type de session demandé (all par défaut)
         session_type = request.GET.get('type', 'all')
 
         # Récupérer le type d'affichage demandé (grid ou list)
         display_type = request.GET.get('display', 'grid')
 
+        # Récupérer tous les types de sessions disponibles
+        text_study_types = TypeTextStudy.objects.all()
+
         # Filtrer les sessions en fonction du type demandé
-        if session_type == 'mishna':
-            all_sessions = Session.objects.filter(session_is=True)
-        elif session_type == 'gemara':
-            all_sessions = Session.objects.filter(session_is=False)
-        else:
+        if session_type == 'all':
             all_sessions = Session.objects.all()
+        else:
+            all_sessions = Session.objects.filter(type__name=session_type)
 
         ongoing_sessions = []
         completed_sessions = []
@@ -54,6 +60,7 @@ class HomeView(View):
             'total_completed_sessions': total_completed_sessions,
             'total_users': total_users,
             'total_participants': total_participants,
+            'text_study_types': text_study_types,
         }
 
         return render(request, 'home.html', context)
@@ -155,176 +162,57 @@ class CreateSessionView(View):
         return redirect('home')
 
 
-class SessionDetailView(View):
-    def get(self, request, slug):
-        session = get_object_or_404(Session, slug=slug)
+class SessionDetailView(DetailView):
+    model = Session
+    template_name = 'ChainApp/session_detail.html'
+    context_object_name = 'session'
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        session = self.get_object()
         is_expired = session.date_limit < timezone.now().date()
 
-        text_studies = TextStudy.objects.all()
-        text_study_list = []
+        text_studies = TextStudy.objects.filter(type=session.type)
+        livre_dict = defaultdict(list)
 
         for text_study in text_studies:
-            text_study_reservation = TextStudyReservation.objects.filter(session=session, text_study=text_study,
-                                                                         section__isnull=True).first()
-            reserved_by_user = text_study_reservation and text_study_reservation.chosen_by == request.user.person if request.user.is_authenticated else None
+            text_study_reservation = TextStudyReservation.objects.filter(session=session, text_study=text_study, section__isnull=True).first()
+            reserved_by_user = text_study_reservation and text_study_reservation.chosen_by == self.request.user.person if self.request.user.is_authenticated else None
 
-            sections = []
-            all_sections_reserved = True
-            some_sections_reserved = False
-            all_sections_reserved_by_user = True
+            perek_sections = self.get_perek_sections(session, text_study)
 
-            for section in range(1, text_study.total_sections + 1):
-                section_reservation = TextStudyReservation.objects.filter(session=session, text_study=text_study,
-                                                                          section=section).first()
-                reserved_by_user_section = section_reservation and section_reservation.chosen_by == request.user.person if request.user.is_authenticated else None
-
-                if section_reservation:
-                    some_sections_reserved = True
-                else:
-                    all_sections_reserved = False
-
-                if not reserved_by_user_section:
-                    all_sections_reserved_by_user = False
-
-                sections.append({
-                    'section': section,
-                    'reserved': section_reservation is not None,
-                    'chosen_by_username': (
-                        section_reservation.chosen_by.user.username if section_reservation and section_reservation.chosen_by else
-                        section_reservation.chosen_by_guest.name if section_reservation and section_reservation.chosen_by_guest else None),
-                    'reserved_by_user': reserved_by_user_section,
-                })
-
-            text_study_list.append({
+            text_study_item = {
                 'text_study': text_study,
                 'reserved': text_study_reservation is not None,
-                'sections': sections,
+                'sections_by_perek': perek_sections,
                 'reserved_by_user': reserved_by_user,
-                'all_sections_reserved': all_sections_reserved,
-                'some_sections_reserved': some_sections_reserved,
-                'all_sections_reserved_by_user': all_sections_reserved_by_user,
-            })
+            }
 
-        context = {
-            'session': session,
-            'text_study_list': text_study_list,
+            livre_dict[text_study.livre].append(text_study_item)
+
+        context.update({
+            'livre_dict': dict(livre_dict),
             'is_expired': is_expired,
-        }
+        })
+        return context
 
-        return render(request, 'ChainApp/session_detail.html', context)
+    def get_perek_sections(self, session, text_study):
+        perek_sections = []
+        for section in range(1, text_study.total_sections + 1):
+            section_reservation = TextStudyReservation.objects.filter(session=session, text_study=text_study, section=section).first()
+            reserved_by_user_section = section_reservation and section_reservation.chosen_by == self.request.user.person if self.request.user.is_authenticated else None
 
-    def post(self, request, slug):
-        session = get_object_or_404(Session, slug=slug)
-        is_expired = session.date_limit < timezone.now().date()
-
-        if is_expired:
-            return redirect('session_detail', slug=slug)
-
-        text_study_ids = request.POST.getlist('text_studies')
-        section_ids = request.POST.getlist('sections')
-
-        if request.user.is_authenticated:
-            person = request.user.person
-
-            user_reservations = TextStudyReservation.objects.filter(session=session, chosen_by=person)
-            for reservation in user_reservations:
-                if str(reservation.text_study.id) not in text_study_ids and reservation.section is None:
-                    reservation.delete()
-
-            user_section_reservations = TextStudyReservation.objects.filter(session=session, chosen_by=person,
-                                                                            section__isnull=False)
-            for section_reservation in user_section_reservations:
-                section_id = f"{section_reservation.text_study.id}-{section_reservation.section}"
-                if section_id not in section_ids:
-                    section_reservation.delete()
-
-            for text_study_id in text_study_ids:
-                text_study = get_object_or_404(TextStudy, pk=text_study_id)
-                if not TextStudyReservation.objects.filter(session=session, text_study=text_study, chosen_by=person,
-                                                           section__isnull=True).exists():
-                    TextStudyReservation.objects.create(
-                        session=session,
-                        text_study=text_study,
-                        chosen_by=person,
-                        available=False
-                    )
-                for section in range(1, text_study.total_sections + 1):
-                    if not TextStudyReservation.objects.filter(session=session, text_study=text_study,
-                                                               section=section).exists():
-                        TextStudyReservation.objects.create(
-                            session=session,
-                            text_study=text_study,
-                            section=section,
-                            chosen_by=person,
-                            available=False
-                        )
-
-            for section_id in section_ids:
-                text_study_id, section_number = section_id.split('-')
-                text_study = get_object_or_404(TextStudy, pk=text_study_id)
-                if not TextStudyReservation.objects.filter(session=session, text_study=text_study,
-                                                           section=section_number, chosen_by=person).exists():
-                    TextStudyReservation.objects.create(
-                        session=session,
-                        text_study=text_study,
-                        section=section_number,
-                        chosen_by=person,
-                        available=False
-                    )
-
-        else:
-            guest_name = request.POST.get('guest_name')
-            guest_email = request.POST.get('guest_email')
-            guest, created = Guest.objects.get_or_create(email=guest_email, defaults={'name': guest_name})
-
-            user_reservations = TextStudyReservation.objects.filter(session=session, chosen_by_guest=guest)
-            for reservation in user_reservations:
-                if str(reservation.text_study.id) not in text_study_ids and reservation.section is None:
-                    reservation.delete()
-
-            user_section_reservations = TextStudyReservation.objects.filter(session=session, chosen_by_guest=guest,
-                                                                            section__isnull=False)
-            for section_reservation in user_section_reservations:
-                section_id = f"{section_reservation.text_study.id}-{section_reservation.section}"
-                if section_id not in section_ids:
-                    section_reservation.delete()
-
-            for text_study_id in text_study_ids:
-                text_study = get_object_or_404(TextStudy, pk=text_study_id)
-                if not TextStudyReservation.objects.filter(session=session, text_study=text_study,
-                                                           chosen_by_guest=guest, section__isnull=True).exists():
-                    TextStudyReservation.objects.create(
-                        session=session,
-                        text_study=text_study,
-                        chosen_by_guest=guest,
-                        available=False
-                    )
-                for section in range(1, text_study.total_sections + 1):
-                    if not TextStudyReservation.objects.filter(session=session, text_study=text_study,
-                                                               section=section).exists():
-                        TextStudyReservation.objects.create(
-                            session=session,
-                            text_study=text_study,
-                            section=section,
-                            chosen_by_guest=guest,
-                            available=False
-                        )
-
-            for section_id in section_ids:
-                text_study_id, section_number = section_id.split('-')
-                text_study = get_object_or_404(TextStudy, pk=text_study_id)
-                if not TextStudyReservation.objects.filter(session=session, text_study=text_study,
-                                                           section=section_number, chosen_by_guest=guest).exists():
-                    TextStudyReservation.objects.create(
-                        session=session,
-                        text_study=text_study,
-                        section=section_number,
-                        chosen_by_guest=guest,
-                        available=False
-                    )
-
-        return redirect('session_detail', slug=slug)
-
+            perek_sections.append({
+                'section': section,
+                'reserved': section_reservation is not None,
+                'chosen_by_username': (
+                    section_reservation.chosen_by.user.username if section_reservation and section_reservation.chosen_by else
+                    section_reservation.chosen_by_guest.name if section_reservation and section_reservation.chosen_by_guest else None),
+                'reserved_by_user': reserved_by_user_section,
+            })
+        return perek_sections
 
 class ProfileView(View):
     def get(self, request):
