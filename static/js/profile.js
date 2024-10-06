@@ -39,15 +39,73 @@ document.addEventListener('DOMContentLoaded', function () {
                 'date_limit': sessionDate
             })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert(data.error);
-            }
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.error);
+                }
+            });
     });
+
+    var confirmUnmarkModal = new bootstrap.Modal(document.getElementById('confirmUnmarkModal'));
+    var confirmUnmarkButton = document.getElementById('confirmUnmarkButton');
+    var currentReservationId = null;
+
+    confirmUnmarkButton.addEventListener('click', function () {
+        if (currentReservationId !== null) {
+            unmarkReading(currentReservationId);
+            confirmUnmarkModal.hide();
+        }
+    });
+
+    window.confirmReading = function (reservationId) {
+        fetch(`/confirm-reading/${reservationId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const button = document.querySelector(`button[onclick="confirmReading(${reservationId})"]`);
+                    button.classList.remove('btn-outline-success');
+                    button.classList.add('btn-success');
+                    button.innerHTML = '<i class="fas fa-check"></i> Lu';
+                    button.setAttribute('onclick', `showUnmarkModal(${reservationId})`);
+                } else {
+                    alert('Erreur lors de la confirmation de la lecture.');
+                }
+            });
+    };
+
+    window.showUnmarkModal = function (reservationId) {
+        currentReservationId = reservationId;
+        confirmUnmarkModal.show();
+    };
+
+    window.unmarkReading = function (reservationId) {
+        fetch(`/unmark-reading/${reservationId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const button = document.querySelector(`button[onclick="showUnmarkModal(${reservationId})"]`);
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-outline-success');
+                    button.innerHTML = 'Perek non lu <i class="fas fa-times"></i>';
+                    button.setAttribute('onclick', `confirmReading(${reservationId})`);
+                } else {
+                    alert('Erreur lors de la modification de l\'état de lecture.');
+                }
+            });
+    };
 });
 
 function deleteSession(sessionId) {
@@ -58,14 +116,14 @@ function deleteSession(sessionId) {
                 'X-CSRFToken': getCookie('csrftoken')
             }
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Erreur lors de la suppression de la session.');
-            }
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erreur lors de la suppression de la session.');
+                }
+            });
     }
 }
 
@@ -82,26 +140,4 @@ function getCookie(name) {
         }
     }
     return cookieValue;
-}
-
-function confirmReading(reservationId) {
-    fetch(`/confirm-reading/${reservationId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Find the button and update its appearance
-            const button = document.querySelector(`button[onclick="confirmReading(${reservationId})"]`);
-            button.classList.remove('btn-outline-success');
-            button.classList.add('btn-success');
-            button.innerHTML = '<i class="fas fa-check"></i> Lu';
-            button.disabled = true;
-        } else {
-            alert('Erreur lors de la confirmation de la lecture.');
-        }
-    });
 }

@@ -1,5 +1,6 @@
 from collections import defaultdict
 from django.contrib.auth.models import User
+from django.db.models import Prefetch
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.dateformat import DateFormat
@@ -313,20 +314,50 @@ class ProfileView(View):
     def get(self, request):
         if not request.user.is_authenticated:
             return redirect('login')
-        else:
-            user = request.user
-            user_sessions = Session.objects.filter(person=user.person)
 
-            # Format the date_limit for each session
-            for session in user_sessions:
-                session.formatted_date_limit = DateFormat(session.date_limit).format('Y-m-d')
+        user = request.user
+        user_sessions = Session.objects.filter(person=user.person)
 
-            reserved_sessions = Session.objects.filter(
-                textstudyreservation__chosen_by=user.person
-            ).distinct()
+        # Format the date_limit for each session
+        for session in user_sessions:
+            session.formatted_date_limit = DateFormat(session.date_limit).format('Y-m-d')
 
-            context = {
-                'user_sessions': user_sessions,
-                'reserved_sessions': reserved_sessions,
-            }
-            return render(request, 'ChainApp/profile.html', context)
+        # Prefetch related TextStudyReservation and TextStudy objects
+        reserved_sessions = Session.objects.filter(
+            textstudyreservation__chosen_by=user.person
+        ).prefetch_related(
+            Prefetch(
+                'textstudyreservation_set',
+                queryset=TextStudyReservation.objects.filter(chosen_by=user.person).select_related('text_study'),
+                to_attr='user_reservations'
+            )
+        ).distinct()
+
+        # Group reservations by TextStudy for each session and sort sections
+        for session in reserved_sessions:
+            session.grouped_reservations = {}
+            for reservation in session.user_reservations:
+                if reservation.text_study not in session.grouped_reservations:
+                    session.grouped_reservations[reservation.text_study] = []
+                session.grouped_reservations[reservation.text_study].append(reservation)
+
+            # Sort the reservations for each text study by section
+            for text_study in session.grouped_reservations:
+                session.grouped_reservations[text_study].sort(key=lambda x: x.section or 0)
+
+        context = {
+            'user_sessions': user_sessions,
+            'reserved_sessions': reserved_sessions,
+        }
+        return render(request, 'ChainApp/profile.html', context)
+
+
+class UnmarkReadingView(View):
+    def post(self, request, reservation_id):
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Unauthorized'}, status=401)
+
+        reservation = get_object_or_404(TextStudyReservation, id=reservation_id, chosen_by=request.user.person)
+        reservation.is_completed = False
+        reservation.save()
+        return JsonResponse({'success': True})

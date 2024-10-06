@@ -118,29 +118,34 @@
                              aria-labelledby="headingReserved{{ session.id }}"
                              data-bs-parent="#reservedSessionsAccordion">
                             <div class="accordion-body">
-                                <p>{{ session.description }}</p>
+                                <div class="d-flex justify-content-between">
+                                    <p>{{ session.description }}</p>
+                                    <a class="btn btn-primary" href="{% url 'session_detail' session.slug %}">A la
+                                        session <i class="fas fa-arrow-right"></i></a>
+                                </div>
                                 <table class="table table-striped">
                                     <thead>
                                     <tr>
                                         <th scope="col">Texte</th>
                                         <th scope="col">Perek</th>
-                                        <th scope="col">Actions</th>
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    {% for reservation in session.textstudyreservation_set.all %}
+                                    {% for text_study, reservations in session.grouped_reservations.items %}
                                         <tr>
-                                            <td>{{ reservation.text_study.name }}</td>
-                                            <td>{{ reservation.section }}</td>
+                                            <td>{{ text_study.name }}</td>
                                             <td>
-                                                <button type="button"
-                                                        class="btn {% if reservation.is_completed %}btn-success{% else %}btn-outline-success{% endif %} btn-sm"
-                                                        title="Confirmer la lecture"
-                                                        onclick="confirmReading({{ reservation.id }})"
-                                                        {% if reservation.is_completed %}disabled{% endif %}>
-                                                    <i class="fas fa-check"></i> {% if reservation.is_completed %}
-                                                    Lu{% endif %}
-                                                </button>
+                                                {% for reservation in reservations %}
+                                                    <button type="button"
+                                                            class="btn {% if reservation.is_completed %}btn-success{% else %}btn-outline-success{% endif %} btn-sm"
+                                                            title="{% if reservation.is_completed %}Marquer comme non lu{% else %}Confirmer la lecture{% endif %}"
+                                                            onclick="{% if reservation.is_completed %}showUnmarkModal({{ reservation.id }}){% else %}confirmReading({{ reservation.id }}){% endif %}">
+                                                        Perek {{ reservation.section }}
+                                                        {% if reservation.is_completed %}
+                                                            <i class="fas fa-check"></i>
+                                                        {% endif %}
+                                                    </button>
+                                                {% endfor %}
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -181,6 +186,25 @@
                         <input type="hidden" id="editSessionId" name="session_id">
                         <button type="submit" class="btn btn-primary">Enregistrer</button>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="confirmUnmarkModal" tabindex="-1" aria-labelledby="confirmUnmarkModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmUnmarkModalLabel">Confirmer l'action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Êtes-vous sûr de vouloir marquer ce perek comme non lu ?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="confirmUnmarkButton">Confirmer</button>
                 </div>
             </div>
         </div>

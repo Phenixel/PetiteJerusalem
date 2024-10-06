@@ -16,5 +16,6 @@ urlpatterns = [
     path('delete-session/<int:session_id>/', DeleteSessionView.as_view(), name='delete_session'),
     path('update-session/<int:session_id>/', UpdateSessionView.as_view(), name='update_session'),
     path('confirm-reading/<int:reservation_id>/', ConfirmReadingView.as_view(), name='confirm_reading'),
+    path('unmark-reading/<int:reservation_id>/', UnmarkReadingView.as_view(), name='unmark_reading'),
 
 ]
