@@ -2,64 +2,64 @@ from .models import TextStudy, TypeTextStudy
 
 
 def create_text_study_types():
-    types = ["Talmud Bavli", "Mishna", "Tehilim", "Parasha"]
+    types = ["Talmud Bavli", "Mishna", "Tehilim", "Parasha Devarim"]
     for type_name in types:
         TypeTextStudy.objects.get_or_create(name=type_name)
 
 
 def add_talmud_bavli():
     talmud_bavli = {
-        "Zeraim": {
-            "Berakhot": 64,
+        "זרעים (Zeraim)": {
+            "ברכות (Berakhot)": 9,
         },
-        "Moed": {
-            "Shabbat": 157,
-            "Eruvin": 105,
-            "Pesachim": 121,
-            "Shekalim": 22,
-            "Yoma": 88,
-            "Sukkah": 56,
-            "Beitzah": 40,
-            "Rosh Hashanah": 35,
-            "Taanit": 31,
-            "Megillah": 32,
-            "Moed Katan": 29,
-            "Chagigah": 27,
+        "מועד (Moed)": {
+            "שבת (Shabbat)": 24,
+            "עירובין (Eruvin)": 10,
+            "פסחים (Pesachim)": 10,
+            "שקלים (Shekalim)": 8,
+            "יומא (Yoma)": 8,
+            "סוכה (Sukkah)": 5,
+            "ביצה (Beitzah)": 5,
+            "ראש השנה (Rosh Hashanah)": 4,
+            "תענית (Taanit)": 4,
+            "מגילה (Megillah)": 4,
+            "מועד קטן (Moed Katan)": 3,
+            "חגיגה (Chagigah)": 3,
         },
-        "Nashim": {
-            "Yevamot": 122,
-            "Ketubot": 112,
-            "Nedarim": 91,
-            "Nazir": 66,
-            "Sotah": 49,
-            "Gittin": 90,
-            "Kiddushin": 82,
+        "נשים (Nashim)": {
+            "יבמות (Yevamot)": 16,
+            "כתובות (Ketubot)": 13,
+            "נדרים (Nedarim)": 11,
+            "נזיר (Nazir)": 9,
+            "סוטה (Sotah)": 9,
+            "גיטין (Gittin)": 9,
+            "קידושין (Kiddushin)": 4,
         },
-        "Nezikin": {
-            "Bava Kamma": 119,
-            "Bava Metzia": 119,
-            "Bava Batra": 176,
-            "Sanhedrin": 113,
-            "Makkot": 24,
-            "Shevuot": 49,
-            "Avodah Zarah": 76,
-            "Horayot": 14,
+        "נזיקין (Nezikin)": {
+            "בבא קמא (Bava Kamma)": 10,
+            "בבא מציעא (Bava Metzia)": 10,
+            "בבא בתרא (Bava Batra)": 10,
+            "סנהדרין (Sanhedrin)": 11,
+            "מכות (Makkot)": 3,
+            "שבועות (Shevuot)": 8,
+            "עבודה זרה (Avodah Zarah)": 5,
+            "הוריות (Horayot)": 3,
         },
-        "Kodashim": {
-            "Zevachim": 120,
-            "Menachot": 110,
-            "Chullin": 142,
-            "Bekhorot": 61,
-            "Arakhin": 34,
-            "Temurah": 34,
-            "Keritot": 28,
-            "Meilah": 22,
-            "Tamid": 10,
-            "Middot": 4,
-            "Kinnim": 3,
+        "קדשים (Kodashim)": {
+            "זבחים (Zevachim)": 14,
+            "מנחות (Menachot)": 13,
+            "חולין (Chullin)": 12,
+            "בכורות (Bekhorot)": 9,
+            "ערכין (Arakhin)": 9,
+            "תמורה (Temurah)": 7,
+            "כריתות (Keritot)": 6,
+            "מעילה (Meilah)": 6,
+            "תמיד (Tamid)": 7,
+            "מדות (Middot)": 3,
+            "קינים (Kinnim)": 3,
         },
-        "Toharot": {
-            "Niddah": 73,
+        "טהרות (Toharot)": {
+            "נידה (Niddah)": 10,
         },
     }
 
@@ -78,68 +78,79 @@ def add_talmud_bavli():
 
 def add_mishna():
     mishna = {
-        "Zeraim": {
-            "Berakhot": 9,
-            "Peah": 8,
-            "Demai": 7,
-            "Kilayim": 9,
-            "Sheviit": 10,
-            "Terumot": 11,
-            "Maasrot": 5,
-            "Maaser Sheni": 5,
-            "Challah": 4,
-            "Orlah": 3,
-            "Bikkurim": 3,
+        "זרעים (Zeraim)": {
+            "ברכות (Berakhot)": 9,
+            "פאה (Peah)": 8,
+            "דמאי (Demai)": 7,
+            "כלאים (Kilayim)": 9,
+            "שביעית (Sheviit)": 10,
+            "תרומות (Terumot)": 11,
+            "מעשרות (Maasrot)": 5,
+            "מעשר שני (Maaser Sheni)": 5,
+            "חלה (Challah)": 4,
+            "ערלה (Orlah)": 3,
+            "ביכורים (Bikkurim)": 3,
         },
-        "Moed": {
-            "Shabbat": 24,
-            "Eruvin": 10,
-            "Pesachim": 10,
-            "Shekalim": 8,
-            "Yoma": 8,
-            "Sukkah": 5,
-            "Beitzah": 5,
-            "Rosh Hashanah": 4,
-            "Taanit": 4,
-            "Megillah": 4,
-            "Moed Katan": 3,
-            "Chagigah": 3,
+        "מועד (Moed)": {
+            "שבת (Shabbat)": 24,
+            "עירובין (Eruvin)": 10,
+            "פסחים (Pesachim)": 10,
+            "שקלים (Shekalim)": 8,
+            "יומא (Yoma)": 8,
+            "סוכה (Sukkah)": 5,
+            "ביצה (Beitzah)": 5,
+            "ראש השנה (Rosh Hashanah)": 4,
+            "תענית (Taanit)": 4,
+            "מגילה (Megillah)": 4,
+            "מועד קטן (Moed Katan)": 3,
+            "חגיגה (Chagigah)": 3,
         },
-        "Nashim": {
-            "Yevamot": 16,
-            "Ketubot": 13,
-            "Nedarim": 11,
-            "Nazir": 9,
-            "Sotah": 9,
-            "Gittin": 9,
-            "Kiddushin": 4,
+        "נשים (Nashim)": {
+            "יבמות (Yevamot)": 16,
+            "כתובות (Ketubot)": 13,
+            "נדרים (Nedarim)": 11,
+            "נזיר (Nazir)": 9,
+            "סוטה (Sotah)": 9,
+            "גיטין (Gittin)": 9,
+            "קידושין (Kiddushin)": 4,
         },
-        "Nezikin": {
-            "Bava Kamma": 10,
-            "Bava Metzia": 10,
-            "Bava Batra": 10,
-            "Sanhedrin": 11,
-            "Makkot": 3,
-            "Shevuot": 8,
-            "Avodah Zarah": 5,
-            "Avot": 5,
-            "Horayot": 3,
+        "נזיקין (Nezikin)": {
+            "בבא קמא (Bava Kamma)": 10,
+            "בבא מציעא (Bava Metzia)": 10,
+            "בבא בתרא (Bava Batra)": 10,
+            "סנהדרין (Sanhedrin)": 11,
+            "מכות (Makkot)": 3,
+            "שבועות (Shevuot)": 8,
+            "עבודה זרה (Avodah Zarah)": 5,
+            "אבות (Avot)": 5,
+            "הוריות (Horayot)": 3,
         },
-        "Kodashim": {
-            "Zevachim": 14,
-            "Menachot": 13,
-            "Chullin": 12,
-            "Bekhorot": 9,
-            "Arakhin": 9,
-            "Temurah": 7,
-            "Keritot": 6,
-            "Meilah": 6,
-            "Tamid": 7,
-            "Middot": 3,
-            "Kinnim": 3,
+        "קדשים (Kodashim)": {
+            "זבחים (Zevachim)": 14,
+            "מנחות (Menachot)": 13,
+            "חולין (Chullin)": 12,
+            "בכורות (Bekhorot)": 9,
+            "ערכין (Arakhin)": 9,
+            "תמורה (Temurah)": 7,
+            "כריתות (Keritot)": 6,
+            "מעילה (Meilah)": 6,
+            "תמיד (Tamid)": 7,
+            "מדות (Middot)": 3,
+            "קינים (Kinnim)": 3,
         },
-        "Toharot": {
-            "Niddah": 10,
+        "טהרות (Toharot)": {
+            "כלים (Keilim)": 30,
+            "אהלות (Oholot)": 18,
+            "נגעים (Negaim)": 14,
+            "פרה (Parah)": 12,
+            "טהרות (Toharot)": 10,
+            "מקואות (Mikvaot)": 10,
+            "נידה (Niddah)": 10,
+            "מכשירין (Makhshirin)": 6,
+            "זבים (Zavim)": 5,
+            "טבול יום (Tevul Yom)": 4,
+            "ידים (Yadayim)": 4,
+            "עוקצין (Oktzin)": 3,
         },
     }
 
@@ -158,11 +169,11 @@ def add_mishna():
 
 def add_tehilim():
     tehilim_per_book = {
-        "Sefer 1": 41,
-        "Sefer 2": 31,
-        "Sefer 3": 17,
-        "Sefer 4": 17,
-        "Sefer 5": 44,
+        "ספר 1 (Sefer 1)": 41,
+        "ספר 2 (Sefer 2)": 31,
+        "ספר 3 (Sefer 3)": 17,
+        "ספר 4 (Sefer 4)": 17,
+        "ספר 5 (Sefer 5)": 44,
     }
 
     type_tehilim, created = TypeTextStudy.objects.get_or_create(name="Tehilim")
@@ -182,26 +193,26 @@ def add_tehilim():
 
 def add_parachiot_devarim():
     devarim = {
-        "Devarim": 105,
-        "Vaetchanan": 122,
-        "Eikev": 111,
-        "Re'eh": 126,
-        "Shoftim": 97,
-        "Ki Teitzei": 110,
-        "Ki Tavo": 122,
-        "Nitzavim": 40,
-        "Vayelech": 30,
-        "Ha'Azinu": 52,
-        "V'Zot HaBracha": 41,
+        "דברים (Devarim)": 1,
+        "ואתחנן (Vaetchanan)": 1,
+        "עקב (Eikev)": 1,
+        "ראה (Re'eh)": 1,
+        "שופטים (Shoftim)": 1,
+        "כי תצא (Ki Teitzei)": 1,
+        "כי תבוא (Ki Tavo)": 1,
+        "ניצבים (Nitzavim)": 1,
+        "וילך (Vayelech)": 1,
+        "האזינו (Ha'Azinu)": 1,
+        "וזאת הברכה (V'Zot HaBracha)": 1,
     }
 
-    type_parasha, created = TypeTextStudy.objects.get_or_create(name="Parasha")
+    type_parasha, created = TypeTextStudy.objects.get_or_create(name="Parasha Devarim")
 
     for parasha, total_sections in devarim.items():
         TextStudy.objects.create(
-            name=f"Parashat {parasha}",
+            name=f"פרשת {parasha}",
             type=type_parasha,
-            livre="Devarim",
+            livre="דברים (Devarim)",
             link=f"https://www.sefaria.org/Deuteronomy.{parasha}",
             total_sections=total_sections,
         )
