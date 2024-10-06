@@ -223,27 +223,27 @@ class SessionDetailView(DetailView, FormMixin):
             return HttpResponseRedirect(self.request.path_info)
 
         sections = request.POST.getlist('sections')
+        guest = None
 
-        # Get all existing reservations for the session and user
-        existing_reservations = TextStudyReservation.objects.filter(
-            session=session,
-            chosen_by=request.user.person if request.user.is_authenticated else None,
-            chosen_by_guest=None if request.user.is_authenticated else Guest.objects.filter(
-                name=request.POST.get('guest_name'),
-                email=request.POST.get('guest_email')
+        if request.user.is_authenticated:
+            existing_reservations = TextStudyReservation.objects.filter(
+                session=session,
+                chosen_by=request.user.person,
+                chosen_by_guest=None
             )
-        )
+        else:
+            guest_name = request.POST.get('guest_name')
+            guest_email = request.POST.get('guest_email')
+            guest, _ = Guest.objects.get_or_create(name=guest_name, email=guest_email)
+            existing_reservations = []
 
-        # Create a set of sections to be reserved
         sections_to_reserve = set(sections)
 
-        # Remove reservations that are no longer checked
         for reservation in existing_reservations:
             section_id = f"{reservation.text_study.pk}-{reservation.section}"
             if section_id not in sections_to_reserve:
                 reservation.delete()
 
-        # Add new reservations
         for section in sections:
             text_study_id, section_number = section.split('-')
             text_study = TextStudy.objects.get(pk=text_study_id)
@@ -252,24 +252,17 @@ class SessionDetailView(DetailView, FormMixin):
                     text_study=text_study,
                     section=section_number,
                     chosen_by=request.user.person if request.user.is_authenticated else None,
-                    chosen_by_guest=None if request.user.is_authenticated else Guest.objects.filter(
-                        name=request.POST.get('guest_name'),
-                        email=request.POST.get('guest_email')
-                    )
+                    chosen_by_guest=guest if not request.user.is_authenticated else None
             ).exists():
                 TextStudyReservation.objects.create(
                     session=session,
                     text_study=text_study,
                     section=section_number,
                     chosen_by=request.user.person if request.user.is_authenticated else None,
-                    chosen_by_guest=None if request.user.is_authenticated else Guest.objects.create(
-                        name=request.POST.get('guest_name'),
-                        email=request.POST.get('guest_email')
-                    )
+                    chosen_by_guest=guest if not request.user.is_authenticated else None
                 )
 
         return HttpResponseRedirect(self.request.path_info)
-
 
 class ProfileView(View):
     def get(self, request):
