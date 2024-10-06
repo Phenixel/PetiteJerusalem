@@ -68,6 +68,20 @@
             </div>
         </div>
     </nav>
+
+<!-- Announcements Banner -->
+{% if active_announcements and not request.COOKIES.dismissed_announcement %}
+    <div id="announcement-banner" class="alert alert-info text-center mt-3 mb-0 position-relative" role="alert">
+        <button type="button" class="btn-close position-absolute top-0 end-0 m-2" aria-label="Close" onclick="dismissAnnouncement()"></button>
+        {% for annonce in active_announcements %}
+            <strong>{{ annonce.titre }}</strong>: {{ annonce.description }}
+            {% if annonce.lien %}
+                - <a href="{{ annonce.lien }}" target="_blank">En savoir plus</a>
+            {% endif %}
+            {% if not forloop.last %}<br>{% endif %}
+        {% endfor %}
+    </div>
+{% endif %}
 </header>
 
 <!-- Contenu principal -->
