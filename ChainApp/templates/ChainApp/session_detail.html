@@ -95,9 +95,15 @@
                                             <a href="{{ item.text_study.link }}" style="text-decoration: none"
                                                target="_blank">{{ item.text_study.name }}</a>
                                             {% if item.sections_by_perek|all_reserved %}
-                                                <span class="text-danger">Réservé</span>
+                                                <span class="text-danger">Réservé par
+                                                    {% with item.sections_by_perek|unique_names as unique_names %}
+                                                        {% for name in unique_names %}
+                                                            {{ name }}{% if not forloop.last %}, {% endif %}
+                                                        {% endfor %}
+                                                    {% endwith %}
+                                                </span>
                                             {% else %}
-                                                {% if item.sections_by_perek|length > 0 and item.sections_by_perek %}
+                                                {% if item.sections_by_perek|length > 0 %}
                                                     <span class="text-warning">En cours</span>
                                                 {% endif %}
                                             {% endif %}
