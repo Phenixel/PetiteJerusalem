@@ -71,6 +71,11 @@
                     texte, vous pouvez le décocher pour annuler votre réservation (si vous avez un compte).
                     Cliquez sur la carte du texte pour voir les sections disponibles.
                 </small>
+                <br>
+                <small>
+                    Si vous rencontrez un souci merci de me le signaler <a
+                        href="https://app.phenixel.fr/helpdesk/la-petite-jerusalem-3">en cliquant ici</a>
+                </small>
             </div>
 
             <div class="row">
@@ -92,8 +97,7 @@
                                                    onchange="togglePerekSelection('{{ item.text_study.pk }}', this.checked)">
                                         {% endif %}
                                         <label class="form-check-label" for="text_study_{{ item.text_study.pk }}">
-                                            <a href="{{ item.text_study.link }}" style="text-decoration: none"
-                                               target="_blank">{{ item.text_study.name }}</a>
+                                            {{ item.text_study.name }}
                                             {% if item.sections_by_perek|all_reserved %}
                                                 <span class="text-danger">Réservé par
                                                     {% with item.sections_by_perek|unique_names as unique_names %}
@@ -108,6 +112,10 @@
                                                 {% endif %}
                                             {% endif %}
                                         </label>
+                                        <a href="{{ item.text_study.link }}" target="_blank" class="btn btn-outline-dark btn-sm me-4"
+                                           style="float: right;">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
 
                                         <div id="perek_list_{{ item.text_study.pk }}" class="perek-list"
                                              style="display:none;">
@@ -126,7 +134,8 @@
                                                             Perek {{ section.section }}
                                                             {% if section.reserved %}
                                                                 <span class="{% if section.is_completed %}text-success{% endif %}">
-                                                                    {% if section.is_completed %}Lu par{% else %}Réservé par{% endif %} {{ section.chosen_by_username }}
+                                                                    {% if section.is_completed %}Lu par{% else %}Réservé
+                                                                        par{% endif %} {{ section.chosen_by_username }}
                                                                 </span>
                                                             {% endif %}
                                                         </label>
@@ -156,8 +165,11 @@
                     <p>Créer un compte vous permet de :</p>
                     <ul>
                         <li>Créer des sessions d'études</li>
+                        <li>Indiquer que vous avez terminez votre lecture</li>
                         <li>Rejoindre des sessions d'études</li>
                         <li>Connaître les dates limites des sessions d'études</li>
+                        <li>Avoir la liste des sessions auxquelles vous avez participé</li>
+                        <li>Et bien plus encore...</li>
                     </ul>
                     <a href="{% url 'signup' %}" class="btn btn-primary">Créer un compte</a>
                 </div>
