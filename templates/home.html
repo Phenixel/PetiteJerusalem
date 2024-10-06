@@ -92,34 +92,44 @@
 
 {% block content %}
     <div class="content-page mb-5">
-        <div class="mb-4">
-            <div class="btn-toolbar justify-content-between" role="toolbar" aria-label="Toolbar with button groups">
-                <div class="btn-group btn-group" role="group" aria-label="Filtre type de session">
-                    <a href="?type=all&display={{ display_type }}"
-                       class="btn btn-outline-primary {% if session_type == 'all' %}active{% endif %}">
-                        <i class="bi bi-list-ul"></i> Toutes
-                    </a>
-                    <a href="?type=mishna&display={{ display_type }}"
-                       class="btn btn-outline-primary {% if session_type == 'mishna' %}active{% endif %}">
-                        <i class="bi bi-book"></i> Mishna
-                    </a>
-                    <a href="?type=gemara&display={{ display_type }}"
-                       class="btn btn-outline-primary {% if session_type == 'gemara' %}active{% endif %}">
-                        <i class="bi bi-journal-text"></i> Gemara
-                    </a>
-                </div>
-                <div class="btn-group btn-group d-none d-md-flex" role="group" aria-label="Type d'affichage">
-                    <button onclick="toggleView('grid')"
-                            class="btn btn-outline-secondary {% if display_type == 'grid' %}active{% endif %}">
-                        <i class="bi bi-grid-3x3-gap-fill"></i> Grille
-                    </button>
-                    <button onclick="toggleView('list')"
-                            class="btn btn-outline-secondary {% if display_type == 'list' %}active{% endif %}">
-                        <i class="bi bi-list-task"></i> Liste
-                    </button>
-                </div>
-            </div>
+<div class="mb-4">
+    <div class="btn-toolbar justify-content-between" role="toolbar" aria-label="Toolbar with button groups">
+        <div class="btn-group btn-group d-md-none" role="group" aria-label="Filtre type de session">
+            <select class="form-select" onchange="location = this.value;">
+                <option value="?type=all&display={{ display_type }}" {% if session_type == 'all' %}selected{% endif %}>
+                    Toutes
+                </option>
+                {% for type in text_study_types %}
+                    <option value="?type={{ type.name }}&display={{ display_type }}" {% if session_type == type.name %}selected{% endif %}>
+                        {{ type.name }}
+                    </option>
+                {% endfor %}
+            </select>
         </div>
+        <div class="btn-group btn-group d-none d-md-flex" role="group" aria-label="Filtre type de session">
+            <a href="?type=all&display={{ display_type }}"
+               class="btn btn-outline-primary {% if session_type == 'all' %}active{% endif %}">
+                <i class="bi bi-list-ul"></i> Toutes
+            </a>
+            {% for type in text_study_types %}
+                <a href="?type={{ type.name }}&display={{ display_type }}"
+                   class="btn btn-outline-primary {% if session_type == type.name %}active{% endif %}">
+                    <i class="bi bi-book"></i> {{ type.name }}
+                </a>
+            {% endfor %}
+        </div>
+        <div class="btn-group btn-group d-none d-md-flex" role="group" aria-label="Type d'affichage">
+            <button onclick="toggleView('grid')"
+                    class="btn btn-outline-secondary {% if display_type == 'grid' %}active{% endif %}">
+                <i class="bi bi-grid-3x3-gap-fill"></i> Grille
+            </button>
+            <button onclick="toggleView('list')"
+                    class="btn btn-outline-secondary {% if display_type == 'list' %}active{% endif %}">
+                <i class="bi bi-list-task"></i> Liste
+            </button>
+        </div>
+    </div>
+</div>
 
         <div class="hero-liste-lecture">
             <div class="header-liste-lecture d-flex justify-content-between align-items-center">
@@ -135,8 +145,7 @@
                                 <h6 class="card-subtitle mb-2 text-muted">Créateur: {{ session.person }}</h6>
                                 <p class="card-text">{{ session.description }}</p>
                                 <p class="card-text">{{ session.date_limit }}</p>
-                                <span class="badge bg-primary">{% if session.session_is %}Mishna{% else %}
-                                    Gemara{% endif %}</span>
+                                <span class="badge bg-primary">{{ session.type.name }}</span>
                             </div>
                         </a>
                     </div>
