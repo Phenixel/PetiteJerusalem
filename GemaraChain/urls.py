@@ -15,4 +15,6 @@ urlpatterns = [
     path('session/<slug:slug>/', SessionDetailView.as_view(), name='session_detail'),
     path('delete-session/<int:session_id>/', DeleteSessionView.as_view(), name='delete_session'),
     path('update-session/<int:session_id>/', UpdateSessionView.as_view(), name='update_session'),
+    path('confirm-reading/<int:reservation_id>/', ConfirmReadingView.as_view(), name='confirm_reading'),
+
 ]

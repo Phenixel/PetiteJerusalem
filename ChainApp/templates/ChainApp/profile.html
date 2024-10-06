@@ -104,38 +104,54 @@
                 <h2 class="h2">Sessions où vous avez réservé</h2>
             </div>
 
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th scope="col">Nom</th>
-                        <th scope="col">Description</th>
-                        <th scope="col">Date limite</th>
-                        <th scope="col">Détails</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% if reserved_sessions %}
-                        {% for session in reserved_sessions %}
-                            <tr>
-                                <td>{{ session.name }}</td>
-                                <td>{{ session.description }}</td>
-                                <td>{{ session.date_limit }}</td>
-                                <td>
-                                    <a href="{% url 'session_detail' session.slug %}"
-                                       class="btn btn-outline-primary btn-sm" title="Aller à la session">
-                                        <i class="fas fa-arrow-right"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="4">Vous n'avez réservé aucune session.</td>
-                        </tr>
-                    {% endif %}
-                    </tbody>
-                </table>
+            <div class="accordion" id="reservedSessionsAccordion">
+                {% for session in reserved_sessions %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingReserved{{ session.id }}">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#collapseReserved{{ session.id }}" aria-expanded="false"
+                                    aria-controls="collapseReserved{{ session.id }}">
+                                {{ session.name }} - {{ session.date_limit }}
+                            </button>
+                        </h2>
+                        <div id="collapseReserved{{ session.id }}" class="accordion-collapse collapse"
+                             aria-labelledby="headingReserved{{ session.id }}"
+                             data-bs-parent="#reservedSessionsAccordion">
+                            <div class="accordion-body">
+                                <p>{{ session.description }}</p>
+                                <table class="table table-striped">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">Texte</th>
+                                        <th scope="col">Perek</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for reservation in session.textstudyreservation_set.all %}
+                                        <tr>
+                                            <td>{{ reservation.text_study.name }}</td>
+                                            <td>{{ reservation.section }}</td>
+                                            <td>
+                                                <button type="button"
+                                                        class="btn {% if reservation.is_completed %}btn-success{% else %}btn-outline-success{% endif %} btn-sm"
+                                                        title="Confirmer la lecture"
+                                                        onclick="confirmReading({{ reservation.id }})"
+                                                        {% if reservation.is_completed %}disabled{% endif %}>
+                                                    <i class="fas fa-check"></i> {% if reservation.is_completed %}
+                                                    Lu{% endif %}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p>Vous n'avez réservé aucune session.</p>
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -150,19 +166,19 @@
                 </div>
                 <div class="modal-body">
                     <form id="editSessionForm">
-                        <input type="hidden" id="editSessionId">
                         <div class="mb-3">
                             <label for="editSessionName" class="form-label">Nom</label>
-                            <input type="text" class="form-control" id="editSessionName" required>
+                            <input type="text" class="form-control" id="editSessionName" name="name">
                         </div>
                         <div class="mb-3">
                             <label for="editSessionDescription" class="form-label">Description</label>
-                            <textarea class="form-control" id="editSessionDescription" rows="3" required></textarea>
+                            <textarea class="form-control" id="editSessionDescription" name="description"></textarea>
                         </div>
                         <div class="mb-3">
                             <label for="editSessionDate" class="form-label">Date limite</label>
-                            <input type="date" class="form-control" id="editSessionDate" required>
+                            <input type="date" class="form-control" id="editSessionDate" name="date_limit">
                         </div>
+                        <input type="hidden" id="editSessionId" name="session_id">
                         <button type="submit" class="btn btn-primary">Enregistrer</button>
                     </form>
                 </div>

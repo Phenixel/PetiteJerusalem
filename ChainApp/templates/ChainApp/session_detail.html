@@ -125,7 +125,9 @@
                                                                for="section_{{ item.text_study.pk }}-{{ section.section }}">
                                                             Perek {{ section.section }}
                                                             {% if section.reserved %}
-                                                                <span>Réservé par {{ section.chosen_by_username }}</span>
+                                                                <span class="{% if section.is_completed %}text-success{% endif %}">
+                                                                    {% if section.is_completed %}Lu par{% else %}Réservé par{% endif %} {{ section.chosen_by_username }}
+                                                                </span>
                                                             {% endif %}
                                                         </label>
                                                     </div>

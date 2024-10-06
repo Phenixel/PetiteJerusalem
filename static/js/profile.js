@@ -83,3 +83,25 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+function confirmReading(reservationId) {
+    fetch(`/confirm-reading/${reservationId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Find the button and update its appearance
+            const button = document.querySelector(`button[onclick="confirmReading(${reservationId})"]`);
+            button.classList.remove('btn-outline-success');
+            button.classList.add('btn-success');
+            button.innerHTML = '<i class="fas fa-check"></i> Lu';
+            button.disabled = true;
+        } else {
+            alert('Erreur lors de la confirmation de la lecture.');
+        }
+    });
+}

@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.contrib.auth import authenticate, login, logout
 import dateparser
 
+
 class HomeView(View):
     def get(self, request):
         today = timezone.now().date()
@@ -202,8 +203,9 @@ class SessionDetailView(DetailView, FormMixin):
     def get_perek_sections(self, session, text_study):
         perek_sections = []
         for section in range(1, text_study.total_sections + 1):
-            section_reservation = TextStudyReservation.objects.filter(session=session, text_study=text_study,
-                                                                      section=section).first()
+            section_reservation = TextStudyReservation.objects.filter(
+                session=session, text_study=text_study, section=section
+            ).first()
             reserved_by_user_section = section_reservation and section_reservation.chosen_by == self.request.user.person if self.request.user.is_authenticated else None
 
             perek_sections.append({
@@ -213,6 +215,7 @@ class SessionDetailView(DetailView, FormMixin):
                     section_reservation.chosen_by.user.username if section_reservation and section_reservation.chosen_by else
                     section_reservation.chosen_by_guest.name if section_reservation and section_reservation.chosen_by_guest else None),
                 'reserved_by_user': reserved_by_user_section,
+                'is_completed': section_reservation.is_completed if section_reservation else False,  # Add this line
             })
         return perek_sections
 
@@ -273,6 +276,7 @@ class DeleteSessionView(View):
         session.delete()
         return JsonResponse({'success': True})
 
+
 class UpdateSessionView(View):
     def post(self, request, session_id):
         if not request.user.is_authenticated:
@@ -291,6 +295,17 @@ class UpdateSessionView(View):
         session.description = description
         session.date_limit = date_limit
         session.save()
+        return JsonResponse({'success': True})
+
+
+class ConfirmReadingView(View):
+    def post(self, request, reservation_id):
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Unauthorized'}, status=401)
+
+        reservation = get_object_or_404(TextStudyReservation, id=reservation_id, chosen_by=request.user.person)
+        reservation.is_completed = True
+        reservation.save()
         return JsonResponse({'success': True})
 
 
