@@ -37,3 +37,12 @@ function togglePerekSelection(id, isChecked) {
         }
     });
 }
+
+function toggleMainCheckbox(id) {
+    var mainCheckbox = document.getElementById("text_study_" + id);
+    var perekList = document.getElementById("perek_list_" + id);
+    var checkboxes = perekList.querySelectorAll("input[type='checkbox']");
+    var allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+
+    mainCheckbox.checked = allChecked;
+}
