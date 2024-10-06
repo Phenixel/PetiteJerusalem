@@ -151,3 +151,20 @@ class TextStudyReservation(models.Model):
     class Meta:
         verbose_name = _("Text Study Reservation")
         verbose_name_plural = _("Text Study Reservations")
+
+
+class Annonces(models.Model):
+    """
+    Model representing an announcement for the website
+    """
+    titre = models.CharField(max_length=255)
+    description = models.TextField()
+    lien = models.URLField(max_length=300, blank=True)
+    start_date = models.DateField(default=timezone.now)
+    end_date = models.DateField()
+
+    def __str__(self):
+        return self.titre
+
+    def is_active(self):
+        return self.start_date <= timezone.now().date() <= self.end_date
