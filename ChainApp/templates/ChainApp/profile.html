@@ -17,6 +17,8 @@
             });
         });
     </script>
+
+    <script src="{% static 'js/profile.js' %}"></script>
 {% endblock %}
 
 {% block header %}
@@ -68,13 +70,22 @@
                                 <td>{{ session.description }}</td>
                                 <td>{{ session.date_limit }}</td>
                                 <td>
-                                    <a href="#" class="btn btn-outline-secondary btn-sm disabled" title="Modifier">
+                                    <button type="button" class="btn btn-outline-info btn-sm" title="Modifier"
+                                            data-bs-toggle="modal" data-bs-target="#editSessionModal"
+                                            data-session-id="{{ session.id }}" data-session-name="{{ session.name }}"
+                                            data-session-description="{{ session.description }}"
+                                            data-session-date="{{ session.formatted_date_limit }}">
                                         <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="#" class="btn btn-outline-danger btn-sm disabled" title="Supprimer">
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" title="Supprimer"
+                                            onclick="deleteSession({{ session.id }})">
                                         <i class="fas fa-trash-alt"></i>
-                                    </a>
-                                    <small class="text-muted">Fonctionnalité bientôt disponible</small>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                                            data-bs-toggle="tooltip" data-bs-placement="top"
+                                            title="Cette fonctionnalité sera bientôt disponible.">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -125,6 +136,36 @@
                     {% endif %}
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editSessionModal" tabindex="-1" aria-labelledby="editSessionModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editSessionModalLabel">Modifier la session</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editSessionForm">
+                        <input type="hidden" id="editSessionId">
+                        <div class="mb-3">
+                            <label for="editSessionName" class="form-label">Nom</label>
+                            <input type="text" class="form-control" id="editSessionName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSessionDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editSessionDescription" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSessionDate" class="form-label">Date limite</label>
+                            <input type="date" class="form-control" id="editSessionDate" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

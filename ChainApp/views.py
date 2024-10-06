@@ -1,7 +1,8 @@
 from collections import defaultdict
 from django.contrib.auth.models import User
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.dateformat import DateFormat
 from django.views import View
 from django.views.generic import DetailView
 from django.views.generic.edit import FormMixin
@@ -10,8 +11,6 @@ from .models import Session, Person, Guest, TextStudy, TextStudyReservation, Typ
 from django.utils import timezone
 from django.contrib.auth import authenticate, login, logout
 import dateparser
-from django.db.models import Q
-
 
 class HomeView(View):
     def get(self, request):
@@ -264,6 +263,37 @@ class SessionDetailView(DetailView, FormMixin):
 
         return HttpResponseRedirect(self.request.path_info)
 
+
+class DeleteSessionView(View):
+    def post(self, request, session_id):
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Unauthorized'}, status=401)
+
+        session = get_object_or_404(Session, id=session_id, person=request.user.person)
+        session.delete()
+        return JsonResponse({'success': True})
+
+class UpdateSessionView(View):
+    def post(self, request, session_id):
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Unauthorized'}, status=401)
+
+        session = get_object_or_404(Session, id=session_id, person=request.user.person)
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        date_limit_str = request.POST.get('date_limit')
+        date_limit = dateparser.parse(date_limit_str, date_formats=['%Y-%m-%d']).date()
+
+        if timezone.now().date() > date_limit:
+            return JsonResponse({'error': 'La date limite doit être une date future.'}, status=400)
+
+        session.name = name
+        session.description = description
+        session.date_limit = date_limit
+        session.save()
+        return JsonResponse({'success': True})
+
+
 class ProfileView(View):
     def get(self, request):
         if not request.user.is_authenticated:
@@ -272,9 +302,12 @@ class ProfileView(View):
             user = request.user
             user_sessions = Session.objects.filter(person=user.person)
 
-            # Filtrer les sessions réservées via les modèles Gemara et Michna
+            # Format the date_limit for each session
+            for session in user_sessions:
+                session.formatted_date_limit = DateFormat(session.date_limit).format('Y-m-d')
+
             reserved_sessions = Session.objects.filter(
-                Q(gemara__chosen_by=user.person) | Q(michna__chosen_by=user.person)
+                textstudyreservation__chosen_by=user.person
             ).distinct()
 
             context = {
