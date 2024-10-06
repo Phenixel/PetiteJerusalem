@@ -216,7 +216,7 @@ class SessionDetailView(DetailView, FormMixin):
                     section_reservation.chosen_by.user.username if section_reservation and section_reservation.chosen_by else
                     section_reservation.chosen_by_guest.name if section_reservation and section_reservation.chosen_by_guest else None),
                 'reserved_by_user': reserved_by_user_section,
-                'is_completed': section_reservation.is_completed if section_reservation else False,  # Add this line
+                'is_completed': section_reservation.is_completed if section_reservation else False,
             })
         return perek_sections
 
