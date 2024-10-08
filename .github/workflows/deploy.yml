@@ -1,0 +1,33 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run tests
+      run: python manage.py test
+
+    - name: Deploy to o2switch
+      run: |
+        ssh -o StrictHostKeyChecking=no hpjh3807@109.234.164.238 "cd /home/hpjh3807/web/staging-PetiteJerusalem && git pull && source /home/hpjh3807/virtualenv/web/staging-PetiteJerusalem/3.11/bin/activate && cd /home/hpjh3807/web/staging-PetiteJerusalem && pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput"
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
