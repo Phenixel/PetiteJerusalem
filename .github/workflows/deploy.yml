@@ -6,15 +6,22 @@ on:
       - staging
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Deploy to o2switch
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.IP_ADRESS }} "cd ${{ secrets.PROJECT_URL_STAGING }} && git pull && source /home/hpjh3807/virtualenv/web/staging-PetiteJerusalem/3.11/bin/activate && cd ${{ secrets.PROJECT_URL_STAGING }} && pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput"
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Run tests
+        run: |
+          python manage.py test
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy
+        run: |
+          echo "Deployment will be triggered via CPanel Git Pull"
