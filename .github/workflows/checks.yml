@@ -24,9 +24,23 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Check pytest plugins
+      run: pytest --version
+
     - name: Set up Django settings
-      run: |
-        echo "DJANGO_SETTINGS_MODULE=GemaraChain.settings" >> $GITHUB_ENV
+      run: echo "DJANGO_SETTINGS_MODULE=GemaraChain.settings" >> $GITHUB_ENV
+
+    - name: Check Django configuration
+      run: python manage.py check
+
+    - name: Apply migrations
+      run: python manage.py migrate
+
+    - name: List migrations
+      run: python manage.py showmigrations
+
+    - name: Populate database
+      run: python manage.py shell -c "from ChainApp.utils import initialize_text_studies; initialize_text_studies()"
 
     - name: Run tests
       env:
