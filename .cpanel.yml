@@ -1,9 +1,10 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/hpjh3807/web/staging-PetiteJerusalem-git
+    - export DEPLOYPATH=/home/hpjh3807/web/staging-PetiteJerusalem
+    - cd /home/hpjh3807/web/staging-PetiteJerusalem-git
     - /bin/cp -R ./* $DEPLOYPATH
-    - cd $DEPLOYPATH/staging-PetiteJerusalem
+    - cd $DEPLOYPATH
     - source /home/hpjh3807/virtualenv/web/staging-PetiteJerusalem/3.11/bin/activate
     - pip install -r requirements.txt
     - python manage.py migrate
