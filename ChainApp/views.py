@@ -135,7 +135,7 @@ class CreateSessionView(View):
         name = request.POST.get('name')
         description = request.POST.get('description')
         date_limit_str = request.POST.get('date_limit')
-        session_type_id = request.POST.get('session_type')  # Récupère l'ID du type de session
+        session_type_id = request.POST.get('session_type')
 
         date_limit = dateparser.parse(date_limit_str, date_formats=['%Y-%m-%d']).date()
 
@@ -160,7 +160,7 @@ class CreateSessionView(View):
         )
         new_session.save()
 
-        return redirect('home')
+        return redirect('session_detail', slug=new_session.slug)
 
 
 class SessionDetailView(DetailView, FormMixin):
