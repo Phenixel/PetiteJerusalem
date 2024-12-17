@@ -16,3 +16,7 @@ def unique_names(sections):
             unique.append(section['chosen_by_username'])
             seen.add(section['chosen_by_username'])
     return unique
+
+@register.filter
+def any_reserved(sections):
+    return any(section['reserved'] for section in sections)

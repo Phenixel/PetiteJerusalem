@@ -46,3 +46,16 @@ function toggleMainCheckbox(id) {
 
     mainCheckbox.checked = allChecked;
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    var shareModal = document.getElementById('shareModal');
+    shareModal.addEventListener('shown.bs.modal', function () {
+        var qrcodeContainer = document.getElementById('qrcode');
+        qrcodeContainer.innerHTML = '';
+        new QRCode(qrcodeContainer, {
+            text: window.location.href,
+            width: 256,
+            height: 256
+        });
+    });
+});

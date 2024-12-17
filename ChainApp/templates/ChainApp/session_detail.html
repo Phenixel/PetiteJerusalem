@@ -14,6 +14,7 @@
 {% endblock %}
 
 {% block scripts %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="{% static 'js/sessions.js' %}"></script>
 {% endblock %}
 
@@ -24,6 +25,13 @@
         <p>{{ session.description }}</p>
         <p>Date limite: {{ session.date_limit }}</p>
     </div>
+
+    <div class="text-center mt-3">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#shareModal">
+            Partager cette session <i class="fas fa-share"></i>
+        </button>
+    </div>
+
 {% endblock %}
 
 {% block content %}
@@ -37,7 +45,7 @@
         <form method="post">
             {% csrf_token %}
 
-            <div class="row mb-4 sticky-top form-reservation">
+            <div class="row mb-4 form-reservation">
                 {% if not user.is_authenticated %}
                     {% if not is_expired %}
                         <div class="col-md-5">
@@ -107,12 +115,13 @@
                                                     {% endwith %}
                                                 </span>
                                             {% else %}
-                                                {% if item.sections_by_perek|length > 0 %}
+                                                {% if item.sections_by_perek|length > 0 and item.sections_by_perek|any_reserved %}
                                                     <span class="text-warning">En cours</span>
                                                 {% endif %}
                                             {% endif %}
                                         </label>
-                                        <a href="{{ item.text_study.link }}" target="_blank" class="btn btn-outline-dark btn-sm me-4"
+                                        <a href="{{ item.text_study.link }}" target="_blank"
+                                           class="btn btn-outline-dark btn-sm me-4"
                                            style="float: right;">
                                             <i class="fas fa-external-link-alt"></i>
                                         </a>
@@ -176,4 +185,37 @@
             </div>
         </div>
     {% endif %}
+
+    <div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="shareModalLabel">Partager cette session</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-around">
+                        <a href="https://wa.me/?text={{ request.build_absolute_uri }}" target="_blank"
+                           class="btn btn-success">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </a>
+                        <a href="sms:?body={{ request.build_absolute_uri }}" class="btn btn-info">
+                            <i class="fas fa-sms"></i> SMS
+                        </a>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}"
+                           target="_blank" class="btn btn-primary">
+                            <i class="fab fa-facebook"></i> Facebook
+                        </a>
+                        <button class="btn btn-secondary"
+                                onclick="navigator.share({ url: '{{ request.build_absolute_uri }}' })">
+                            <i class="fas fa-share-alt"></i> Autre
+                        </button>
+                    </div>
+                    <div class="text-center mt-3">
+                        <div id="qrcode" style="display: inline-block; width: 256px; height: 256px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
