@@ -178,13 +178,16 @@ class SessionDetailView(DetailView, FormMixin):
 
         text_studies = TextStudy.objects.filter(type=session.type)
         livre_dict = defaultdict(list)
+        total_sections = 0
+        completed_sections = 0
 
         for text_study in text_studies:
-            text_study_reservation = TextStudyReservation.objects.filter(session=session, text_study=text_study,
-                                                                         section__isnull=True).first()
+            text_study_reservation = TextStudyReservation.objects.filter(session=session, text_study=text_study, section__isnull=True).first()
             reserved_by_user = text_study_reservation and text_study_reservation.chosen_by == self.request.user.person if self.request.user.is_authenticated else None
 
             perek_sections = self.get_perek_sections(session, text_study)
+            total_sections += len(perek_sections)
+            completed_sections += sum(1 for section in perek_sections if section['is_completed'])
 
             text_study_item = {
                 'text_study': text_study,
@@ -195,9 +198,14 @@ class SessionDetailView(DetailView, FormMixin):
 
             livre_dict[text_study.livre].append(text_study_item)
 
+        progress = (completed_sections / total_sections) * 100 if total_sections > 0 else 0
+        remaining_sections = total_sections - completed_sections
+
         context.update({
             'livre_dict': dict(livre_dict),
             'is_expired': is_expired,
+            'progress': progress,
+            'remaining_sections': remaining_sections,
         })
         return context
 

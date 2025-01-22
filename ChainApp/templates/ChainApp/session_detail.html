@@ -48,6 +48,18 @@
             <div class="row mb-4 form-reservation">
                 {% if not user.is_authenticated %}
                     {% if not is_expired %}
+                        <div class="container">
+                            <p>Créer un compte vous permet de :</p>
+                            <ul>
+                                <li>Créer des sessions d'études</li>
+                                <li>Indiquer que vous avez terminé votre lecture</li>
+                                <li>Rejoindre des sessions d'études</li>
+                                <li>Connaître les dates limites des sessions d'études</li>
+                                <li>Avoir la liste des sessions auxquelles vous avez participé</li>
+                                <li>Et bien plus encore...</li>
+                            </ul>
+                            <a href="{% url 'signup' %}" class="btn btn-primary">Créer un compte</a>
+                        </div>
                         <div class="col-md-5">
                             <div class="form-group">
                                 <label for="guest_name">Nom</label>
@@ -84,6 +96,19 @@
                     Si vous rencontrez un souci merci de me le signaler <a
                         href="https://app.phenixel.fr/helpdesk/la-petite-jerusalem-3">en cliquant ici</a>
                 </small>
+            </div>
+
+            <h5>
+                {% if progress == 100 %}
+                    Vous avez terminé la lecture de tous les textes
+                {% else %}
+                    Il vous reste {{ remaining_sections }} textes à lire
+                {% endif %}
+            </h5>
+            <div class="progress mb-4">
+                <div class="progress-bar" role="progressbar" style="width: {{ progress }}%;"
+                     aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">{{ progress }}%
+                </div>
             </div>
 
             <div class="row">
@@ -174,7 +199,7 @@
                     <p>Créer un compte vous permet de :</p>
                     <ul>
                         <li>Créer des sessions d'études</li>
-                        <li>Indiquer que vous avez terminez votre lecture</li>
+                        <li>Indiquer que vous avez terminé votre lecture</li>
                         <li>Rejoindre des sessions d'études</li>
                         <li>Connaître les dates limites des sessions d'études</li>
                         <li>Avoir la liste des sessions auxquelles vous avez participé</li>
