@@ -89,7 +89,21 @@
 
 <main class="container mt-4" style="min-height: 85vh;">
     {% block content %}{% endblock %}
+
+    <div class="promote">
+        <div class="alert alert-info text-center shadow-sm mb-4">
+            <p class="mb-0 text-dark">🕯️ Ce site est dédié Léilouy Nichmat <strong>Fortunée bat Henriette</strong> et <strong>Mongia bat Joulina</strong>. Que leurs âmes reposent en paix. 🕯️</p>
+        </div>
+
+        <div class="alert alert-warning text-center shadow-sm">
+            <h5 class="mb-3 fw-bold">Aidez-nous à maintenir ce projet</h5>
+            <p class="mb-3">Ce site fonctionne entièrement bénévolement. Si vous souhaitez contribuer à son fonctionnement et soutenir nos efforts, vous pouvez faire un don.</p>
+            <a href="https://fr.tipeee.com/phenixel" target="_blank" class="btn btn-primary tipeee-project-cart-simple" data-orientation="line" data-rewards="0">Faire un don sur Tipeee</a>
+        </div>
+    </div>
 </main>
+
+
 
 <!-- Footer -->
 <footer class="footer mt-auto py-4 bg-dark border-top">
@@ -144,6 +158,7 @@
 
 <!-- Custom Scripts -->
 <script src="{% static 'js/script.js' %}"></script>
+<script async src="https://plugin.tipeee.com/widget.js" charset="utf-8"></script>
 
 <!-- Additional Scripts -->
 {% block scripts %}{% endblock %}
