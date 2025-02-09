@@ -62,7 +62,7 @@ Pour installer et exécuter le projet localement, suivez les étapes ci-dessous 
   ```
 
   ```python
-  from ChainApp.utils import initialize_text_studies
+  from ChainApp.utils.generate_data import initialize_text_studies
   initialize_text_studies()
   exit()
   ```

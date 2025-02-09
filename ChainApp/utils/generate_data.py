@@ -1,14 +1,109 @@
-from .models import TextStudy, TypeTextStudy
+from ChainApp.models import TextStudy, TypeTextStudy
+import re
 
 
-def create_text_study_types():
-    types = ["Talmud Bavli", "Mishna", "Tehilim", "Parasha Devarim"]
-    for type_name in types:
-        TypeTextStudy.objects.get_or_create(name=type_name)
+def extract_text_in_parentheses(text):
+    """Extrait le texte entre parenthèses pour construire le lien."""
+    match = re.search(r"\((.*?)\)", text)
+    return match.group(1) if match else None
 
 
-def add_talmud_bavli():
-    talmud_bavli = {
+def create_text_study_type(type_name):
+    """Crée un type de TextStudy s'il n'existe pas déjà."""
+    return TypeTextStudy.objects.get_or_create(name=type_name)[0]
+
+
+def get_devarim_link(parasha_name):
+    """Génère le lien correct pour chaque parasha de Devarim."""
+    devarim_links = {
+        "Devarim": "1.1",
+        "Vaetchanan": "3.23",
+        "Eikev": "7.12",
+        "Re'eh": "11.26",
+        "Shoftim": "16.18",
+        "Ki Teitzei": "21.10",
+        "Ki Tavo": "26.1",
+        "Nitzavim": "29.9",
+        "Vayelech": "31.1",
+        "Ha'Azinu": "32.1",
+        "V'Zot HaBracha": "33.1"
+    }
+    english_name = extract_text_in_parentheses(parasha_name)
+    return f"https://www.sefaria.org/Deuteronomy.{devarim_links[english_name]}?lang=he&aliyot=0"
+
+
+
+def add_text_studies(data, type_name, link_template, livre_template=None):
+    """
+    Ajoute des TextStudy à partir de données structurées.
+
+    Args:
+        data (dict): Les données structurées contenant les livres et leurs sections.
+        type_name (str): Le nom du type de texte (ex : "Talmud Bavli", "Mishna").
+        link_template (str): Le modèle d'URL (ex : "https://www.sefaria.org/{name}").
+        livre_template (str, optional): Modèle pour les livres (par défaut, les clés de `data`).
+    """
+    type_text_study = create_text_study_type(type_name)
+
+    for livre, sections in data.items():
+        livre_name = livre_template.format(livre=livre) if livre_template else livre
+        if isinstance(sections, dict):
+            for section_name, total_sections in sections.items():
+                link_name = extract_text_in_parentheses(section_name)
+                if link_name:
+                    if type_name == "Mishna" and "Avot" not in section_name:
+                        link_name = f"Mishnah_{link_name}"
+                    link = link_template.format(name=link_name)
+                    TextStudy.objects.create(
+                        name=section_name,
+                        type=type_text_study,
+                        livre=livre_name,
+                        link=link,
+                        total_sections=total_sections,
+                    )
+        else:
+            link = get_devarim_link(livre) if type_name == "Parasha Devarim" else link_template.format(name=extract_text_in_parentheses(livre))
+            TextStudy.objects.create(
+                name=livre,
+                type=type_text_study,
+                livre=livre_name,
+                link=link,
+                total_sections=sections,
+            )
+
+
+def add_tehilim():
+    tehilim_data = {
+        "ספר 1 (Sefer 1)": 41,
+        "ספר 2 (Sefer 2)": 31,
+        "ספר 3 (Sefer 3)": 17,
+        "ספר 4 (Sefer 4)": 17,
+        "ספר 5 (Sefer 5)": 44,
+    }
+    type_tehilim = create_text_study_type("Tehilim")
+    current_tehilim = 1
+
+    for livre, total_sections in tehilim_data.items():
+        for section in range(1, total_sections + 1):
+            TextStudy.objects.create(
+                name=f"Tehilim {current_tehilim}",
+                type=type_tehilim,
+                livre=livre,
+                link=f"https://www.sefaria.org/Psalms.{current_tehilim}",
+                total_sections=1,
+            )
+            current_tehilim += 1
+
+
+def initialize_text_studies():
+    # Créer les types de textes
+    create_text_study_type("Talmud Bavli")
+    create_text_study_type("Mishna")
+    create_text_study_type("Tehilim")
+    create_text_study_type("Parasha Devarim")
+
+    # Ajouter le Talmud Bavli
+    talmud_bavli_data = {
         "זרעים (Zeraim)": {
             "ברכות (Berakhot)": 9,
         },
@@ -62,23 +157,11 @@ def add_talmud_bavli():
             "נידה (Niddah)": 10,
         },
     }
+    add_text_studies(talmud_bavli_data, "Talmud Bavli", "https://www.sefaria.org/{name}")
 
-    type_talmud_bavli, created = TypeTextStudy.objects.get_or_create(name="Talmud Bavli")
-
-    for masechet_group, masechtot in talmud_bavli.items():
-        for name, total_sections in masechtot.items():
-            TextStudy.objects.create(
-                name=f"{name}",
-                type=type_talmud_bavli,
-                livre=masechet_group,
-                link=f"https://www.sefaria.org/{name}",
-                total_sections=total_sections,
-            )
-
-
-def add_mishna():
-    mishna = {
-        "זרעים (Zeraim)": {
+    # Ajouter la Mishna
+    mishna_data = {
+       "זרעים (Zeraim)": {
             "ברכות (Berakhot)": 9,
             "פאה (Peah)": 8,
             "דמאי (Demai)": 7,
@@ -153,46 +236,13 @@ def add_mishna():
             "עוקצין (Oktzin)": 3,
         },
     }
+    add_text_studies(mishna_data, "Mishna", "https://www.sefaria.org/{name}")
 
-    type_mishna, created = TypeTextStudy.objects.get_or_create(name="Mishna")
+    # Ajouter les Tehilim
+    add_tehilim()
 
-    for mishna_group, masechtot in mishna.items():
-        for name, total_sections in masechtot.items():
-            TextStudy.objects.create(
-                name=f"{name}",
-                type=type_mishna,
-                livre=mishna_group,
-                link=f"https://www.sefaria.org/{name}",
-                total_sections=total_sections,
-            )
-
-
-def add_tehilim():
-    tehilim_per_book = {
-        "ספר 1 (Sefer 1)": 41,
-        "ספר 2 (Sefer 2)": 31,
-        "ספר 3 (Sefer 3)": 17,
-        "ספר 4 (Sefer 4)": 17,
-        "ספר 5 (Sefer 5)": 44,
-    }
-
-    type_tehilim, created = TypeTextStudy.objects.get_or_create(name="Tehilim")
-
-    current_tehilim = 1
-    for day, total_sections in tehilim_per_book.items():
-        for section in range(1, total_sections + 1):
-            TextStudy.objects.create(
-                name=f"Tehilim {current_tehilim}",
-                type=type_tehilim,
-                livre=day,
-                link=f"https://www.sefaria.org/Psalms.{current_tehilim}",
-                total_sections=1,
-            )
-            current_tehilim += 1
-
-
-def add_parachiot_devarim():
-    devarim = {
+    # Ajouter les Parashiot de Devarim
+    devarim_data = {
         "דברים (Devarim)": 1,
         "ואתחנן (Vaetchanan)": 1,
         "עקב (Eikev)": 1,
@@ -205,28 +255,11 @@ def add_parachiot_devarim():
         "האזינו (Ha'Azinu)": 1,
         "וזאת הברכה (V'Zot HaBracha)": 1,
     }
+    add_text_studies(
+        devarim_data,
+        "Parasha Devarim",
+        "https://www.sefaria.org/Deuteronomy.{name}",
+        livre_template="דברים (Devarim)"
+    )
 
-    type_parasha, created = TypeTextStudy.objects.get_or_create(name="Parasha Devarim")
-
-    for parasha, total_sections in devarim.items():
-        TextStudy.objects.create(
-            name=f"פרשת {parasha}",
-            type=type_parasha,
-            livre="דברים (Devarim)",
-            link=f"https://www.sefaria.org/Deuteronomy.{parasha}",
-            total_sections=total_sections,
-        )
-
-
-def initialize_text_studies():
-    create_text_study_types()
-    print("Types created")
-    add_talmud_bavli()
-    print("Talmud Bavli added")
-    add_mishna()
-    print("Mishna added")
-    add_tehilim()
-    print("Tehilim added")
-    add_parachiot_devarim()
-    print("Parashiot added")
-    print("All text studies added")
+    print("All text studies initialized.")
