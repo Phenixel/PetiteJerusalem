@@ -8,6 +8,11 @@ def extract_text_in_parentheses(text):
     return match.group(1) if match else None
 
 
+def create_or_get_type(name):
+    """Crée ou récupère un type de TextStudy."""
+    return TypeTextStudy.objects.get_or_create(name=name)[0]
+
+
 def create_text_study_type(type_name):
     """Crée un type de TextStudy s'il n'existe pas déjà."""
     return TypeTextStudy.objects.get_or_create(name=type_name)[0]
@@ -31,6 +36,21 @@ def get_devarim_link(parasha_name):
     english_name = extract_text_in_parentheses(parasha_name)
     return f"https://www.sefaria.org/Deuteronomy.{devarim_links[english_name]}?lang=he&aliyot=0"
 
+
+def get_tanakh_link(book_name):
+    """Renvoie un lien Sefaria selon le livre du Tanakh."""
+    tanakh_mapping = {
+        "Berechit": "Genesis", "Shemot": "Exodus", "Vayikra": "Leviticus",
+        "Bamidbar": "Numbers", "Devarim": "Deuteronomy", "Yehoshua": "Joshua",
+        "Shoftim": "Judges", "Shmuel": "Samuel", "Melakhim": "Kings",
+        "Yeshayahu": "Isaiah", "Yirmiyahu": "Jeremiah", "Yechezkel": "Ezekiel",
+        "Tehillim": "Psalms", "Mishlei": "Proverbs", "Iyov": "Job",
+        "Shir Hashirim": "Song_of_Songs", "Rut": "Ruth", "Eicha": "Lamentations",
+        "Kohelet": "Ecclesiastes", "Esther": "Esther", "Daniel": "Daniel",
+        "Ezra": "Ezra", "Nechemia": "Nehemiah", "Divrei Hayamim": "Chronicles"
+    }
+    book_key = extract_text_in_parentheses(book_name) or book_name
+    return f"https://www.sefaria.org/{tanakh_mapping.get(book_key, book_key)}"
 
 
 def add_text_studies(data, type_name, link_template, livre_template=None):
@@ -93,6 +113,113 @@ def add_tehilim():
                 total_sections=1,
             )
             current_tehilim += 1
+
+
+def add_tanakh_texts():
+    """Ajoute les livres du Tanakh à la base de données."""
+    tanakh_data = {
+        "Berechit": {
+            "Berechit": 1,
+            "Noah": 1,
+            "Lech Lecha": 1,
+            "Vayera": 1,
+            "Chayei Sarah": 1,
+            "Toldot": 1,
+            "Vayetze": 1,
+            "Vayishlach": 1,
+            "Vayeshev": 1,
+            "Miketz": 1,
+            "Vayigash": 1,
+            "Vayechi": 1,
+        },
+        "Chemot": {
+            "Shemot": 1,
+            "Va'era": 1,
+            "Bo": 1,
+            "Beshalach": 1,
+            "Yitro": 1,
+            "Mishpatim": 1,
+            "Terumah": 1,
+            "Tetzaveh": 1,
+            "Ki Tisa": 1,
+            "Vayakhel": 1,
+            "Pekudei": 1,
+        },
+        "Vayikra": {
+            "Vayikra": 1,
+            "Tzav": 1,
+            "Shemini": 1,
+            "Tazria": 1,
+            "Metzora": 1,
+            "Acharei Mot": 1,
+            "Kedoshim": 1,
+            "Emor": 1,
+            "Behar": 1,
+            "Bechukotai": 1,
+        },
+        "Bamidbar": {
+            "Bamidbar": 1,
+            "Nasso": 1,
+            "Beha'alotcha": 1,
+            "Shelach": 1,
+            "Korach": 1,
+            "Chukat": 1,
+            "Balak": 1,
+            "Pinchas": 1,
+            "Matot": 1,
+            "Masei": 1,
+        },
+        "Devarim": {
+            "Devarim": 1,
+            "Va'etchanan": 1,
+            "Ekev": 1,
+            "Re'eh": 1,
+            "Shoftim": 1,
+            "Ki Tetze": 1,
+            "Ki Tavo": 1,
+            "Nitzavim": 1,
+            "Vayelech": 1,
+            "Haazinu": 1,
+            "V'Zot HaBerachah": 1,
+        },
+        "Nevi'im (Prophets)": {
+            "Yehoshua": 1,
+            "Shoftim": 1,
+            "Shmuel Aleph": 1,
+            "Shmuel Bet": 1,
+            "Melachim Aleph": 1,
+            "Melachim Bet": 1,
+            "Yeshayahu": 1,
+            "Yirmiyahu": 1,
+            "Yechezkel": 1,
+            "Trei Asar": 1,
+        },
+        "Ketuvim (Writings)": {
+            "Tehillim": 1,
+            "Mishlei": 1,
+            "Iyov": 1,
+            "Shir Hashirim": 1,
+            "Ruth": 1,
+            "Eicha": 1,
+            "Kohelet": 1,
+            "Esther": 1,
+            "Daniel": 1,
+            "Ezra-Nehemiah": 1,
+            "Divrei Hayamim Aleph": 1,
+            "Divrei Hayamim Bet": 1,
+        }
+    }
+
+    tanakh_type = create_or_get_type("Tanakh")
+    for book, sections in tanakh_data.items():
+        for section, total_sections in sections.items():
+            TextStudy.objects.create(
+                name=section,
+                type=tanakh_type,
+                livre=book,
+                link=get_tanakh_link(section),
+                total_sections=total_sections,
+            )
 
 
 def initialize_text_studies():
@@ -237,6 +364,9 @@ def initialize_text_studies():
         },
     }
     add_text_studies(mishna_data, "Mishna", "https://www.sefaria.org/{name}")
+
+    # Ajouter le tanah
+    # add_tanakh_texts()
 
     # Ajouter les Tehilim
     add_tehilim()
