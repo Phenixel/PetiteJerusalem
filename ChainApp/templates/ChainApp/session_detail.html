@@ -140,7 +140,11 @@
                                                                onchange="toggleMainCheckbox('{{ item.text_study.pk }}')">
                                                         <label class="form-check-label"
                                                                for="section_{{ item.text_study.pk }}-{{ section.section }}">
-                                                            Perek {{ section.section }}
+                                                            {% if item.text_study.total_sections == 1 %}
+                                                                Je réserve ce texte
+                                                            {% else %}
+                                                                Perek {{ section.section }}
+                                                            {% endif %}
                                                             {% if section.reserved %}
                                                                 <span class="{% if section.is_completed %}text-success{% endif %}">
                                                                     {% if section.is_completed %}Lu par{% else %}Réservé
