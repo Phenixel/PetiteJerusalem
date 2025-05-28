@@ -182,7 +182,8 @@ class SessionDetailView(DetailView, FormMixin):
         completed_sections = 0
 
         for text_study in text_studies:
-            text_study_reservation = TextStudyReservation.objects.filter(session=session, text_study=text_study, section__isnull=True).first()
+            text_study_reservation = TextStudyReservation.objects.filter(session=session, text_study=text_study,
+                                                                         section__isnull=True).first()
             reserved_by_user = text_study_reservation and text_study_reservation.chosen_by == self.request.user.person if self.request.user.is_authenticated else None
 
             perek_sections = self.get_perek_sections(session, text_study)
@@ -324,13 +325,12 @@ class ProfileView(View):
             return redirect('login')
 
         user = request.user
+
+        # Sessions créées par l'utilisateur
         user_sessions = Session.objects.filter(person=user.person)
+        user_sessions_completed = [session for session in user_sessions if session.is_completed]
 
-        # Format the date_limit for each session
-        for session in user_sessions:
-            session.formatted_date_limit = DateFormat(session.date_limit).format('Y-m-d')
-
-        # Prefetch related TextStudyReservation and TextStudy objects
+        # Sessions réservées par l'utilisateur
         reserved_sessions = Session.objects.filter(
             textstudyreservation__chosen_by=user.person
         ).prefetch_related(
@@ -340,6 +340,9 @@ class ProfileView(View):
                 to_attr='user_reservations'
             )
         ).distinct()
+
+        reserved_sessions_completed = []
+        reserved_sessions_ongoing = []
 
         # Group reservations by TextStudy for each session and sort sections
         for session in reserved_sessions:
@@ -353,9 +356,16 @@ class ProfileView(View):
             for text_study in session.grouped_reservations:
                 session.grouped_reservations[text_study].sort(key=lambda x: x.section or 0)
 
+            if session.is_completed:
+                reserved_sessions_completed.append(session)
+            else:
+                reserved_sessions_ongoing.append(session)
+
         context = {
             'user_sessions': user_sessions,
-            'reserved_sessions': reserved_sessions,
+            'reserved_sessions_completed': reserved_sessions_completed,
+            'reserved_sessions_ongoing': reserved_sessions_ongoing,
+            'user_sessions_completed': user_sessions_completed,
         }
         return render(request, 'ChainApp/profile.html', context)
 

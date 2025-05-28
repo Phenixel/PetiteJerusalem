@@ -101,22 +101,23 @@
 
         <div class="hero-liste-lecture">
             <div class="header-liste-lecture">
-                <h2 class="h2">Sessions où vous avez réservé</h2>
+                <h2 class="h2">Sessions terminées</h2>
+                <p class="font-italic">Liste des sessions où vous avez réservé et qui sont en cours.</p>
             </div>
 
-            <div class="accordion" id="reservedSessionsAccordion">
-                {% for session in reserved_sessions %}
+            <div class="accordion" id="reservedSessionsOngoingAccordion">
+                {% for session in reserved_sessions_ongoing %}
                     <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingReserved{{ session.id }}">
+                        <h2 class="accordion-header" id="headingReservedOngoing{{ session.id }}">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                    data-bs-target="#collapseReserved{{ session.id }}" aria-expanded="false"
-                                    aria-controls="collapseReserved{{ session.id }}">
+                                    data-bs-target="#collapseReservedOngoing{{ session.id }}" aria-expanded="false"
+                                    aria-controls="collapseReservedOngoing{{ session.id }}">
                                 {{ session.name }} - {{ session.date_limit }}
                             </button>
                         </h2>
-                        <div id="collapseReserved{{ session.id }}" class="accordion-collapse collapse"
-                             aria-labelledby="headingReserved{{ session.id }}"
-                             data-bs-parent="#reservedSessionsAccordion">
+                        <div id="collapseReservedOngoing{{ session.id }}" class="accordion-collapse collapse"
+                             aria-labelledby="headingReservedOngoing{{ session.id }}"
+                             data-bs-parent="#reservedSessionsOngoingAccordion">
                             <div class="accordion-body">
                                 <div class="d-flex justify-content-between">
                                     <p>{{ session.description }}</p>
@@ -155,7 +156,69 @@
                         </div>
                     </div>
                 {% empty %}
-                    <p>Vous n'avez réservé aucune session.</p>
+                    <p>Vous n'avez réservé aucune session en cours.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="hero-liste-lecture">
+            <div class="header-liste-lecture">
+                <h2 class="h2">Sessions où vous avez réservé</h2>
+                <p class="font-italic">Liste des sessions où vous avez réservé et qui sont terminées.</p>
+            </div>
+
+            <div class="accordion" id="reservedSessionsCompletedAccordion">
+                {% for session in reserved_sessions_completed %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingReservedCompleted{{ session.id }}">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#collapseReservedCompleted{{ session.id }}" aria-expanded="false"
+                                    aria-controls="collapseReservedCompleted{{ session.id }}">
+                                {{ session.name }} - {{ session.date_limit }}
+                            </button>
+                        </h2>
+                        <div id="collapseReservedCompleted{{ session.id }}" class="accordion-collapse collapse"
+                             aria-labelledby="headingReservedCompleted{{ session.id }}"
+                             data-bs-parent="#reservedSessionsCompletedAccordion">
+                            <div class="accordion-body">
+                                <div class="d-flex justify-content-between">
+                                    <p>{{ session.description }}</p>
+                                    <a class="btn btn-primary" href="{% url 'session_detail' session.slug %}">A la
+                                        session <i class="fas fa-arrow-right"></i></a>
+                                </div>
+                                <table class="table table-striped">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">Texte</th>
+                                        <th scope="col">Perek</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for text_study, reservations in session.grouped_reservations.items %}
+                                        <tr>
+                                            <td>{{ text_study.name }}</td>
+                                            <td>
+                                                {% for reservation in reservations %}
+                                                    <button type="button"
+                                                            class="btn {% if reservation.is_completed %}btn-success{% else %}btn-outline-success{% endif %} btn-sm"
+                                                            title="{% if reservation.is_completed %}Marquer comme non lu{% else %}Confirmer la lecture{% endif %}"
+                                                            onclick="{% if reservation.is_completed %}showUnmarkModal({{ reservation.id }}){% else %}confirmReading({{ reservation.id }}){% endif %}">
+                                                        Perek {{ reservation.section }}
+                                                        {% if reservation.is_completed %}
+                                                            <i class="fas fa-check"></i>
+                                                        {% endif %}
+                                                    </button>
+                                                {% endfor %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p>Vous n'avez réservé aucune session terminée.</p>
                 {% endfor %}
             </div>
         </div>
