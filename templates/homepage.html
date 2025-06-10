@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Accueil{% endblock %}
+{% block description %}Bienvenue sur La Petite Jérusalem, plateforme d'étude collaborative du Talmud.{% endblock %}
+
+{% block header %}
+    <section class="text-center py-5 bg-light shadow-sm">
+        <div class="container">
+            <h1 class="display-4 fw-bold mb-3">Bienvenue sur <span class="text-primary">La Petite Jérusalem 🕍</span></h1>
+            <p class="lead mb-4">Découvrez nos outils d’étude du Talmud, connectez-vous, et commencez votre parcours dès aujourd’hui.</p>
+            <a href="{% url 'guemara_home' %}" class="btn btn-outline-primary btn-lg">Accéder à Guemara Chain</a>
+        </div>
+    </section>
+{% endblock %}
+
+{% block content %}
+    <section class="py-5">
+        <div class="container text-center">
+            <h2 class="mb-4">Ce que vous pouvez faire ici</h2>
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <ul class="list-group list-group-flush shadow-sm rounded">
+                        <li class="list-group-item py-3">📘 Créer une chaîne d’étude de Guemara</li>
+                        <li class="list-group-item py-3">⏳ Suivre vos sessions en cours</li>
+                        <li class="list-group-item py-3">🤝 Rejoindre une étude communautaire</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

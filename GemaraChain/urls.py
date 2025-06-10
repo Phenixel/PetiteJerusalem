@@ -1,9 +1,13 @@
 from django.contrib import admin
 from django.urls import path
+from ChainApp import views as chain_views
 from ChainApp.views import *
 
 urlpatterns = [
-    path('', HomeView.as_view(), name='home'),
+
+
+    path('', MainHomeView.as_view(), name='home'),
+    path('guemara/', chain_views.HomeView.as_view(), name='guemara_home'),
 
     path('admin/', admin.site.urls),
     path('login/', LoginView.as_view(), name='login'),
