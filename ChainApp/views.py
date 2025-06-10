@@ -14,6 +14,11 @@ from django.contrib.auth import authenticate, login, logout
 import dateparser
 
 
+from django.views.generic import TemplateView
+
+class MainHomeView(TemplateView):
+    template_name = "homepage.html"
+
 class HomeView(View):
     def get(self, request):
         today = timezone.now().date()
