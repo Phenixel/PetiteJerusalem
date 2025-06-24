@@ -7,3 +7,50 @@ services:
     shm_size: 128mb
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_DB: petitejerusalem
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 10s
+      start_period: 5s
+      retries: 5
+    volumes:
+      - postgris:/var/lib/postgresql/data/
+
+  migration:
+    build:
+      context: .
+    command: ["migrate"]
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./.env.local
+      - ./.env.local.docker-override
+
+  seed:
+    build:
+      context: .
+    command: ["seed"]
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+    env_file:
+      - ./.env.local
+      - ./.env.local.docker-override
+
+  app:
+    build:
+      context: .
+    command: ["serve"]
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    env_file:
+      - ./.env.local
+      - ./.env.local.docker-override
+    ports:
+      - 8000:8000/tcp
+
+volumes:
+  postgris:
