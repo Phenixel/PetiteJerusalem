@@ -112,12 +112,17 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+# Django will not serve static file in production context
+if DEBUG:
+    STATIC_URL = 'static/'
+else:
+    STATIC_URL = os.environ['DJANGO_STATIC_URL']
 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
+# Only relevant in production
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
