@@ -8,6 +8,7 @@ on:
 env:
   REGION: europe-west1
   DOCKER_IMAGE: europe-west1-docker.pkg.dev/phenixel-infra/phenixel-repo/petitejerusalem
+  PROJECT_ID: petite-jerusalem
 
 jobs:
   upload-static:
@@ -94,11 +95,12 @@ jobs:
           region: ${{ env.REGION }}
           job: 'petite-jerusalem-django-migration'
           image: ${{ env.DOCKER_IMAGE }}
+          project_id: ${{ env.PROJECT_ID }}
   
       - name: Run Job petite-jerusalem-django-migration
         run: |
           gcloud run jobs execute petite-jerusalem-django-migration \
-          --project=petite-jerusalem \
+          --project=${{ env.PROJECT_ID }} \
           --region=${{ env.REGION }} \
           --wait
 
@@ -122,3 +124,4 @@ jobs:
           region: ${{ env.REGION }}
           service: 'petite-jerusalem-django-app'
           image: ${{ env.DOCKER_IMAGE }}
+          project_id: ${{ env.PROJECT_ID }}
