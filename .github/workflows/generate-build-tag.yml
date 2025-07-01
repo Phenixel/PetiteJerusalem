@@ -1,0 +1,31 @@
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        type: string
+        required: false
+        default: ''
+    outputs:
+      tag:
+        description: "Generated tag"
+        value: ${{ jobs.shell.outputs.tag }}
+  
+jobs:
+  shell:
+    runs-on: [ubuntu-latest]
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get short Git commit SHA
+        id: vars
+        run: |
+          if [[ "${{ inputs.release_tag }}" != "" ]]; then
+            tag=$(echo "${{ inputs.release_tag }}" | grep -oE "[^/]+$")
+          else
+            tag=$(git rev-parse --short HEAD)
+          fi
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+      - name: Debug output
+        run: |
+          echo "Extracted Tag: ${{ steps.vars.outputs.tag }}"

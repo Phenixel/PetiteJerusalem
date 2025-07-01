@@ -8,8 +8,13 @@ on:
 jobs:
 #   verify:
 #     uses: ./.github/workflows/verify.yml
+  prepare:
+    uses: ./.github/workflows/generate-build-tag.yml
+    with:
+      release_tag: ${{ github.ref_name }}
   deploy:
     uses: ./.github/workflows/deploy.yml
     with:
-      tag: ${{ github.ref_name }}
+      tag: ${{ needs.prepare.outputs.tag }}
     secrets: inherit
+    needs: [prepare]

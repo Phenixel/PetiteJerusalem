@@ -41,7 +41,7 @@ jobs:
 
       - name: Upload static files to GCS
         run: |
-          gcloud storage cp --recursive src/staticfiles gs://petite-jerusalem-django-assets/static
+          gcloud storage cp --recursive src/staticfiles/* gs://petite-jerusalem-django-assets/static
 
   build-push:
     runs-on: ubuntu-latest
