@@ -1,0 +1,11 @@
+name: CI/CD Checks
+
+on:
+  pull_request:
+    branches:
+      - staging
+      - main
+
+jobs:
+  verify:
+    uses: ./.github/workflows/verify.yml

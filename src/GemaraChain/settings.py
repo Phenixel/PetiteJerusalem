@@ -6,15 +6,17 @@ import sentry_sdk
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-load_dotenv()
+load_dotenv('.env.local')
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', default=False)
+DEBUG = os.getenv('DJANGO_DEBUG')
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+CSRF_TRUSTED_ORIGINS = [ f"https://{v}" for v in ALLOWED_HOSTS ]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -63,8 +65,12 @@ WSGI_APPLICATION = 'GemaraChain.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        "NAME": os.environ["POSTGRES_DB"],
+        "USER": os.environ["POSTGRES_USER"],
+        "PASSWORD": os.getenv('POSTGRES_PASSWORD', ''),
+        "HOST": os.environ['POSTGRES_HOST'],
+        "PORT": os.getenv("POSTGRES_PORT","5432"),
     }
 }
 
@@ -86,11 +92,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-sentry_sdk.init(
-    dsn=os.getenv('SENTRY_DSN'),
-    traces_sample_rate=1.0,
-    profiles_sample_rate=1.0,
-)
+sentry_dsn = os.getenv('SENTRY_DSN')
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+    )
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
@@ -106,12 +114,17 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+# Django will not serve static file in production context
+if DEBUG:
+    STATIC_URL = 'static/'
+else:
+    STATIC_URL = os.environ['DJANGO_STATIC_URL']
 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
+# Only relevant in production
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type

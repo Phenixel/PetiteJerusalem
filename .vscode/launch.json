@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "Django",
+            "type": "debugpy",
+            "request": "launch",
+            "stopOnEntry": false,
+            "program": "${workspaceRoot}/manage.py",
+            "envFile": "${workspaceFolder}/.env.local",
+            "args": [
+                "runserver",
+                "--no-color",
+                "--noreload"
+            ],
+        },
+    ]
+}
