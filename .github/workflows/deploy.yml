@@ -7,7 +7,7 @@ on:
 
 env:
   REGION: europe-west1
-  DOCKER_IMAGE: europe-west1-docker.pkg.dev/phenixel-infra/phenixel-repo/petitejerusalem
+  DOCKER_IMAGE: europe-west1-docker.pkg.dev/phenixel-infra/phenixel-repo/petitejerusalem:${{ inputs.tag }}
   PROJECT_ID: petite-jerusalem
 
 jobs:
@@ -72,7 +72,7 @@ jobs:
           push: true
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }},mode=max
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }},mode=max
-          tags: ${{ env.DOCKER_IMAGE }}:${{ inputs.tag }}
+          tags: ${{ env.DOCKER_IMAGE }}
 
   deploy-migrations:
     needs: [build-push]
