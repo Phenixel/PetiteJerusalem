@@ -1,0 +1,19 @@
+@import './base.css';
+@import './style.css';
+
+/* Styles globaux spécifiques à l'application */
+#app {
+  min-height: 100vh;
+  font-family: var(--font-family-primary);
+}
+
+/* Styles pour les transitions de page */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+}
