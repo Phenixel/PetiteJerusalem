@@ -31,7 +31,6 @@ const formatDate = (date: Date): string => {
       <span class="card-badge">{{ formatTextType(session.type) }}</span>
     </div>
     <div class="card-info">
-      <p class="card-description">{{ session.description }}</p>
       <div class="card-creator"><strong>Créé par :</strong> {{ session.creatorName }}</div>
     </div>
     <div class="card-meta">

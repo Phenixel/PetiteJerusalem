@@ -50,8 +50,6 @@ const handleSessionClick = (session: Session) => {
     </div>
 
     <div class="hero-section">
-      <h3 class="hero-title">Liste des sessions disponibles</h3>
-
       <!-- État de chargement -->
       <div v-if="isLoading" class="loading-state">
         <div class="loading-spinner"></div>

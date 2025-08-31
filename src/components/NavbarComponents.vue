@@ -32,7 +32,7 @@ function closeMobileMenu() {
 }
 
 onAuthStateChanged(getAuth(app), async (firebaseUser: FirebaseUser | null) => {
-  username.value = firebaseUser?.email ?? null
+  username.value = firebaseUser?.displayName ?? null
 })
 </script>
 

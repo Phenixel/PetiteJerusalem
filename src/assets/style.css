@@ -675,8 +675,10 @@ body.menu-open {
 
 .cards-list {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: var(--spacing-lg);
   margin-top: var(--spacing-lg);
+  max-width: 100%;
 }
 
 .card {
@@ -687,6 +689,9 @@ body.menu-open {
   padding: var(--spacing-xl);
   transition: var(--transition-normal);
   cursor: pointer;
+  height: 200px; /* Hauteur fixe pour uniformiser */
+  display: flex;
+  flex-direction: column;
 }
 
 .card:hover {
@@ -701,6 +706,7 @@ body.menu-open {
   align-items: flex-start;
   margin-bottom: var(--spacing-md);
   gap: var(--spacing-md);
+  min-height: 60px; /* Hauteur fixe pour aligner le contenu */
 }
 
 .card-title {
@@ -709,6 +715,8 @@ body.menu-open {
   margin: 0;
   color: var(--text-light);
   flex: 1;
+  line-height: 1.3;
+  text-align: left; /* Aligner à gauche */
 }
 
 .card-badge {
@@ -719,17 +727,13 @@ body.menu-open {
   font-size: var(--text-sm);
   font-weight: 500;
   white-space: nowrap;
+  flex-shrink: 0; /* Empêcher le badge de se rétrécir */
+  min-width: fit-content;
 }
 
 .card-info {
   margin-bottom: var(--spacing-md);
-}
-
-.card-description {
-  color: var(--text-light);
-  opacity: 0.9;
-  line-height: 1.6;
-  margin-bottom: var(--spacing-md);
+  flex: 1; /* Prendre l'espace disponible */
 }
 
 .card-creator {
@@ -737,20 +741,24 @@ body.menu-open {
   opacity: 0.8;
   font-size: var(--text-sm);
   font-style: italic;
+  text-align: left; /* Aligner à gauche */
 }
 
 .card-meta {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start; /* Aligner à gauche */
   align-items: center;
   flex-wrap: wrap;
   gap: var(--spacing-md);
+  margin-top: auto; /* Pousser vers le bas */
 }
 
 .card-date {
   color: var(--text-light);
   opacity: 0.8;
   font-size: var(--text-sm);
+  text-align: left; /* Aligner à gauche */
+  width: 100%; /* Prendre toute la largeur */
 }
 
 .card-status {
@@ -871,6 +879,22 @@ body.menu-open {
   .btn-gradient,
   .btn-secondary {
     width: 100%;
+  }
+}
+
+/* Responsive pour les cartes */
+@media (max-width: 768px) {
+  .cards-list {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .card {
+    padding: var(--spacing-lg);
+  }
+
+  .card-header {
+    min-height: 50px;
   }
 }
 
