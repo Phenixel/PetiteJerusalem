@@ -42,6 +42,7 @@ export interface TextStudyReservation {
   sessionId: string // référence vers Session
   chosenById?: string // référence vers User
   chosenByGuestId?: string // référence vers Guest
+  chosenByName?: string // nom de l'utilisateur ou de l'invité pour l'affichage
   textStudyId: string // référence vers TextStudy
   available: boolean
   section?: number

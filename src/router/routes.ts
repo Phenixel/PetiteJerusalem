@@ -1,6 +1,7 @@
 import HomeView from '../views/HomeView.vue'
 import ShareHomePage from '../views/ShareReading/ShareHomePage.vue'
 import NewSession from '../views/ShareReading/NewSession.vue'
+import DetailSession from '../views/ShareReading/DetailSession.vue'
 import NotFound from '../views/NotFound.vue'
 
 export default [
@@ -18,6 +19,11 @@ export default [
     path: '/share-reading/new-session',
     name: 'new-session',
     component: NewSession,
+  },
+  {
+    path: '/share-reading/session/:id',
+    name: 'detail-session',
+    component: DetailSession,
   },
   {
     path: '/:pathMatch(.*)*',

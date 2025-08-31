@@ -1,5 +1,5 @@
 import { FirestoreService } from './firestoreService'
-import type { Session } from '../models/models'
+import type { Session, TextStudy, TextStudyReservation } from '../models/models'
 import { EnumTypeTextStudy } from '../models/typeTextStudy'
 import { TextTypeService } from './textTypeService'
 import { DateService } from './dateService'
@@ -20,6 +20,68 @@ export class SessionService {
   // Récupérer une session par ID
   async getSessionById(sessionId: string): Promise<Session | null> {
     return await this.firestoreService.getSessionById(sessionId)
+  }
+
+  // Récupérer tous les textes d'étude par type
+  async getTextStudiesByType(type: EnumTypeTextStudy): Promise<TextStudy[]> {
+    return await this.firestoreService.getTextStudiesByType(type)
+  }
+
+  // Récupérer les réservations d'une session
+  async getReservationsBySession(sessionId: string): Promise<TextStudyReservation[]> {
+    return await this.firestoreService.getReservationsBySession(sessionId)
+  }
+
+  // Créer une réservation
+  async createReservation(
+    sessionId: string,
+    textStudyId: string,
+    section?: number,
+    userId?: string,
+    guestId?: string,
+    userName?: string,
+    guestName?: string,
+  ): Promise<string> {
+    // Validation : au moins un des deux doit être défini
+    if (!userId && !guestId) {
+      throw new Error('Une réservation doit être associée à un utilisateur ou un invité')
+    }
+
+    // Créer l'objet de réservation en excluant les champs undefined
+    const reservationData: any = {
+      sessionId,
+      textStudyId,
+      available: false,
+      isCompleted: false,
+    }
+
+    // Ajouter section seulement si défini
+    if (section !== undefined) {
+      reservationData.section = section
+    }
+
+    // Ajouter chosenById et chosenByName seulement si défini
+    if (userId) {
+      reservationData.chosenById = userId
+      if (userName) {
+        reservationData.chosenByName = userName
+      }
+    }
+
+    // Ajouter chosenByGuestId et chosenByName seulement si défini
+    if (guestId) {
+      reservationData.chosenByGuestId = guestId
+      if (guestName) {
+        reservationData.chosenByName = guestName
+      }
+    }
+
+    return await this.firestoreService.createTextStudyReservation(reservationData)
+  }
+
+  // Supprimer une réservation
+  async deleteReservation(reservationId: string): Promise<void> {
+    return await this.firestoreService.deleteTextStudyReservation(reservationId)
   }
 
   // Créer une nouvelle session
@@ -105,5 +167,177 @@ export class SessionService {
     return [...sessions].sort(
       (a, b) => new Date(a.dateLimit).getTime() - new Date(b.dateLimit).getTime(),
     )
+  }
+
+  // Grouper les textes par livre
+  groupTextStudiesByBook(textStudies: TextStudy[]): Record<string, TextStudy[]> {
+    const grouped: Record<string, TextStudy[]> = {}
+
+    textStudies.forEach((textStudy) => {
+      if (!grouped[textStudy.livre]) {
+        grouped[textStudy.livre] = []
+      }
+      grouped[textStudy.livre].push(textStudy)
+    })
+
+    // Trier les textes dans chaque groupe selon leur type
+    Object.keys(grouped).forEach((bookName) => {
+      grouped[bookName] = this.sortTextStudiesByType(grouped[bookName], bookName)
+    })
+
+    return grouped
+  }
+
+  // Trier les textes selon leur type et leur nom
+  private sortTextStudiesByType(textStudies: TextStudy[], bookName: string): TextStudy[] {
+    return [...textStudies].sort((a, b) => {
+      // Pour les Tehilim, trier par numéro
+      if (a.type === EnumTypeTextStudy.Tehilim) {
+        const aNumber = this.extractTehilimNumber(a.name)
+        const bNumber = this.extractTehilimNumber(b.name)
+        if (aNumber !== null && bNumber !== null) {
+          return aNumber - bNumber
+        }
+      }
+
+      // Pour les autres types, trier alphabétiquement par nom français
+      const aName = this.extractFrenchName(a.name)
+      const bName = this.extractFrenchName(b.name)
+      return aName.localeCompare(bName, 'fr')
+    })
+  }
+
+  // Extraire le numéro d'un Tehilim
+  private extractTehilimNumber(tehilimName: string): number | null {
+    const match = tehilimName.match(/Tehilim\s+(\d+)/)
+    return match ? parseInt(match[1], 10) : null
+  }
+
+  // Extraire le nom français d'un texte (entre parenthèses)
+  private extractFrenchName(textName: string): string {
+    const match = textName.match(/\((.*?)\)/)
+    return match ? match[1] : textName
+  }
+
+  // Vérifier si un texte ou une section est réservé
+  isTextOrSectionReserved(
+    textStudyId: string,
+    section: number | undefined,
+    reservations: TextStudyReservation[],
+  ): { isReserved: boolean; reservedBy?: string } {
+    const reservation = reservations.find(
+      (r) => r.textStudyId === textStudyId && r.section === section,
+    )
+
+    if (reservation) {
+      return {
+        isReserved: true,
+        reservedBy:
+          reservation.chosenByName || reservation.chosenById || reservation.chosenByGuestId,
+      }
+    }
+
+    return { isReserved: false }
+  }
+
+  // Formater le nom du livre pour l'affichage
+  formatBookName(bookName: string): string {
+    return this.extractFrenchName(bookName)
+  }
+
+  // Obtenir le statut d'affichage d'un texte
+  getTextDisplayStatus(
+    textStudyId: string,
+    textStudy: TextStudy,
+    reservations: TextStudyReservation[],
+  ): { status: 'available' | 'fully_reserved' | 'partially_reserved'; reservedBy: string | null } {
+    const textReservations = reservations.filter((r) => r.textStudyId === textStudyId)
+    const chapterReservations = textReservations.filter((r) => r.section !== undefined)
+
+    if (chapterReservations.length === 0) {
+      return { status: 'available', reservedBy: null }
+    }
+
+    // Si tous les chapitres sont réservés par la même personne
+    if (chapterReservations.length === textStudy.totalSections) {
+      const firstReservation = chapterReservations[0]
+      const allSamePerson = chapterReservations.every(
+        (r) => r.chosenByName === firstReservation.chosenByName,
+      )
+
+      if (allSamePerson && firstReservation.chosenByName) {
+        return { status: 'fully_reserved', reservedBy: firstReservation.chosenByName }
+      }
+    }
+
+    // Si certains chapitres sont réservés mais pas tous
+    if (chapterReservations.length > 0 && chapterReservations.length < textStudy.totalSections) {
+      return { status: 'partially_reserved', reservedBy: null }
+    }
+
+    // Si tous les chapitres sont réservés par des personnes différentes
+    if (chapterReservations.length === textStudy.totalSections) {
+      const uniqueNames = [
+        ...new Set(chapterReservations.map((r) => r.chosenByName).filter(Boolean)),
+      ]
+      return { status: 'fully_reserved', reservedBy: uniqueNames.join(', ') }
+    }
+
+    return { status: 'available', reservedBy: null }
+  }
+
+  // Vérifier si tous les chapitres d'un texte sont réservés par la même personne
+  isTextFullyReservedBySamePerson(
+    textStudyId: string,
+    textStudy: TextStudy,
+    reservations: TextStudyReservation[],
+  ): { isFullyReserved: boolean; reservedBy: string | null } {
+    const textReservations = reservations.filter((r) => r.textStudyId === textStudyId)
+    const chapterReservations = textReservations.filter((r) => r.section !== undefined)
+
+    // Si aucun chapitre n'est réservé, le texte n'est pas réservé
+    if (chapterReservations.length === 0) {
+      return { isFullyReserved: false, reservedBy: null }
+    }
+
+    // Vérifier si tous les chapitres sont réservés
+    const allChaptersReserved = chapterReservations.length === textStudy.totalSections
+
+    if (!allChaptersReserved) {
+      return { isFullyReserved: false, reservedBy: null }
+    }
+
+    // Vérifier si tous les chapitres sont réservés par la même personne
+    const firstReservation = chapterReservations[0]
+    const allSamePerson = chapterReservations.every(
+      (r) => r.chosenByName === firstReservation.chosenByName,
+    )
+
+    return {
+      isFullyReserved: true,
+      reservedBy:
+        allSamePerson && firstReservation.chosenByName ? firstReservation.chosenByName : null,
+    }
+  }
+
+  // Filtrer les textes par terme de recherche
+  filterTextStudiesBySearch(textStudies: TextStudy[], searchTerm: string): TextStudy[] {
+    if (!searchTerm.trim()) return textStudies
+
+    const searchLower = searchTerm.toLowerCase()
+    return textStudies.filter((text) => {
+      const hebrewName = text.name
+      const frenchName = this.extractFrenchName(text.name)
+
+      return (
+        hebrewName.toLowerCase().includes(searchLower) ||
+        frenchName.toLowerCase().includes(searchLower)
+      )
+    })
+  }
+
+  // Générer la liste des chapitres
+  generateChapters(totalSections: number): number[] {
+    return Array.from({ length: totalSections }, (_, i) => i + 1)
   }
 }

@@ -34,9 +34,8 @@ onMounted(() => {
 })
 
 const handleSessionClick = (session: Session) => {
-  // Pour l'instant, on peut afficher les détails de la session
-  console.log('Session cliquée:', session)
-  // TODO: Naviguer vers une page de détail de session
+  // Naviguer vers la page de détail de la session
+  router.push(`/share-reading/session/${session.id}`)
 }
 </script>
 
@@ -46,7 +45,9 @@ const handleSessionClick = (session: Session) => {
       <h2 class="hero-title">Partage de Lectures</h2>
       <p class="hero-description">Échangez et découvrez des textes sacrés avec la communauté</p>
 
-      <button @click="router.push('/share-reading/new-session')" class="btn-gradient">Créer une session</button>
+      <button @click="router.push('/share-reading/new-session')" class="btn-gradient">
+        Créer une session
+      </button>
     </div>
 
     <div class="hero-section">

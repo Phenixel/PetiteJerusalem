@@ -8,6 +8,8 @@ import {
   getDoc,
   updateDoc,
   deleteDoc,
+  query,
+  where,
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import type { TextStudy, Session, TextStudyReservation } from '../models/models'
@@ -36,23 +38,25 @@ export class FirestoreService {
     await batch.commit()
   }
 
+  async getTextStudiesByType(type: string): Promise<TextStudy[]> {
+    const q = query(collection(db, 'textStudies'), where('type', '==', type))
+    const querySnapshot = await getDocs(q)
+    return querySnapshot.docs.map(
+      (doc) =>
+        ({
+          ...doc.data(),
+          id: doc.id,
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+        }) as TextStudy,
+    )
+  }
+
   // Session
   async createSession(session: Omit<Session, 'id' | 'createdAt' | 'isCompleted'>): Promise<string> {
     const docRef = await addDoc(collection(db, 'sessions'), {
       ...session,
       createdAt: Timestamp.now(),
       isCompleted: false,
-    })
-    return docRef.id
-  }
-
-  // TextStudyReservation
-  async createTextStudyReservation(
-    reservation: Omit<TextStudyReservation, 'id' | 'createdAt'>,
-  ): Promise<string> {
-    const docRef = await addDoc(collection(db, 'textStudyReservations'), {
-      ...reservation,
-      createdAt: Timestamp.now(),
     })
     return docRef.id
   }
@@ -68,6 +72,10 @@ export class FirestoreService {
           dateLimit: doc.data().dateLimit?.toDate() || new Date(),
         }) as Session,
     )
+  }
+
+  async getAllSessions(): Promise<Session[]> {
+    return this.getSessions()
   }
 
   async getSessionById(sessionId: string): Promise<Session | null> {
@@ -96,6 +104,35 @@ export class FirestoreService {
 
   async deleteSession(sessionId: string): Promise<void> {
     const docRef = doc(db, 'sessions', sessionId)
+    await deleteDoc(docRef)
+  }
+
+  // TextStudyReservation
+  async createTextStudyReservation(
+    reservation: Omit<TextStudyReservation, 'id' | 'createdAt'>,
+  ): Promise<string> {
+    const docRef = await addDoc(collection(db, 'textStudyReservations'), {
+      ...reservation,
+      createdAt: Timestamp.now(),
+    })
+    return docRef.id
+  }
+
+  async getReservationsBySession(sessionId: string): Promise<TextStudyReservation[]> {
+    const q = query(collection(db, 'textStudyReservations'), where('sessionId', '==', sessionId))
+    const querySnapshot = await getDocs(q)
+    return querySnapshot.docs.map(
+      (doc) =>
+        ({
+          ...doc.data(),
+          id: doc.id,
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+        }) as TextStudyReservation,
+    )
+  }
+
+  async deleteTextStudyReservation(reservationId: string): Promise<void> {
+    const docRef = doc(db, 'textStudyReservations', reservationId)
     await deleteDoc(docRef)
   }
 }
