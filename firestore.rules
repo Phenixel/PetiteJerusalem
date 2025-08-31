@@ -1,18 +1,65 @@
-rules_version='2'
-
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Règles générales
     match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2025, 9, 28);
+      allow read: if true; // Lecture publique pour tous
+    }
+    
+    // TypeTextStudy - Lecture publique, écriture admin uniquement
+    match /typeTextStudies/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+        request.auth.token.email in [
+          'admin@petite-jerusalem.com'
+        ];
+    }
+    
+    // TextStudy - Lecture publique, écriture admin uniquement
+    match /textStudies/{document} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+        request.auth.token.email in [
+          'admin@petite-jerusalem.com'
+        ];
+    }
+    
+    // Sessions - Lecture publique, création avec authentification
+    match /sessions/{document} {
+      allow read: if true; // Tout le monde peut lire les sessions existantes
+      allow create: if request.auth != null; // Création uniquement avec un compte
+      allow update, delete: if request.auth != null && 
+        (request.auth.uid == resource.data.personId || // Propriétaire de la session
+         request.auth.token.email in ['admin@petite-jerusalem.com']); // Admin
+    }
+    
+    // TextStudyReservation - Lecture publique, réservation avec ou sans compte
+    match /textStudyReservations/{document} {
+      allow read: if true; // Tout le monde peut voir les réservations
+      allow create: if true; // Réservation possible avec ou sans compte (guest activé)
+      allow update: if request.auth != null && 
+        (request.auth.uid == resource.data.chosenById || // Propriétaire de la réservation
+         request.auth.token.email in ['admin@petite-jerusalem.com']); // Admin
+      allow delete: if request.auth != null && 
+        (request.auth.uid == resource.data.chosenById || // Propriétaire de la réservation
+         request.auth.token.email in ['admin@petite-jerusalem.com']); // Admin
+    }
+    
+    // Users - Lecture publique, écriture par le propriétaire ou admin
+    match /users/{document} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == document;
+      allow update, delete: if request.auth != null && 
+        (request.auth.uid == document || // Propriétaire du compte
+         request.auth.token.email in ['admin@petite-jerusalem.com']); // Admin
+    }
+    
+    // Guests - Lecture publique, création libre (pour les invités sans compte)
+    match /guests/{document} {
+      allow read: if true;
+      allow create: if true; // Création libre pour les invités
+      allow update, delete: if request.auth != null && 
+        request.auth.token.email in ['admin@petite-jerusalem.com']; // Admin uniquement
     }
   }
 }
