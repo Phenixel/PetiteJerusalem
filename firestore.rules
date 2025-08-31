@@ -6,15 +6,6 @@ service cloud.firestore {
       allow read: if true; // Lecture publique pour tous
     }
     
-    // TypeTextStudy - Lecture publique, écriture admin uniquement
-    match /typeTextStudies/{document} {
-      allow read: if true;
-      allow write: if request.auth != null && 
-        request.auth.token.email in [
-          'admin@petite-jerusalem.com'
-        ];
-    }
-    
     // TextStudy - Lecture publique, écriture admin uniquement
     match /textStudies/{document} {
       allow read: if true;

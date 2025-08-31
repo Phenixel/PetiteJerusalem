@@ -1,35 +1,18 @@
 import {
   collection,
   doc,
-  getDocs,
-  query,
-  where,
   addDoc,
   Timestamp,
   writeBatch,
+  getDocs,
+  getDoc,
+  updateDoc,
+  deleteDoc,
 } from 'firebase/firestore'
 import { db } from '../../firebase'
-import type { TypeTextStudy, TextStudy, Session, TextStudyReservation } from '../models/models'
+import type { TextStudy, Session, TextStudyReservation } from '../models/models'
 
 export class FirestoreService {
-  // TypeTextStudy
-  async createTypeTextStudy(type: Omit<TypeTextStudy, 'id' | 'createdAt'>): Promise<string> {
-    const docRef = await addDoc(collection(db, 'typeTextStudies'), {
-      ...type,
-      createdAt: Timestamp.now(),
-    })
-    return docRef.id
-  }
-
-  async getTypeTextStudyByName(name: string): Promise<TypeTextStudy | null> {
-    const q = query(collection(db, 'typeTextStudies'), where('name', '==', name))
-    const querySnapshot = await getDocs(q)
-    if (querySnapshot.empty) return null
-
-    const doc = querySnapshot.docs[0]
-    return { id: doc.id, ...doc.data() } as TypeTextStudy
-  }
-
   // TextStudy
   async createTextStudy(textStudy: Omit<TextStudy, 'id' | 'createdAt'>): Promise<string> {
     const docRef = await addDoc(collection(db, 'textStudies'), {
@@ -74,11 +57,45 @@ export class FirestoreService {
     return docRef.id
   }
 
-  // Utilitaires
-  async getOrCreateTypeTextStudy(name: string): Promise<string> {
-    const existing = await this.getTypeTextStudyByName(name)
-    if (existing) return existing.id
+  async getSessions(): Promise<Session[]> {
+    const querySnapshot = await getDocs(collection(db, 'sessions'))
+    return querySnapshot.docs.map(
+      (doc) =>
+        ({
+          ...doc.data(),
+          id: doc.id,
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+          dateLimit: doc.data().dateLimit?.toDate() || new Date(),
+        }) as Session,
+    )
+  }
 
-    return await this.createTypeTextStudy({ name })
+  async getSessionById(sessionId: string): Promise<Session | null> {
+    const docRef = doc(db, 'sessions', sessionId)
+    const docSnap = await getDoc(docRef)
+
+    if (docSnap.exists()) {
+      const data = docSnap.data()
+      return {
+        ...data,
+        id: docSnap.id,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        dateLimit: data.dateLimit?.toDate() || new Date(),
+      } as Session
+    }
+    return null
+  }
+
+  async updateSession(
+    sessionId: string,
+    updates: Partial<Omit<Session, 'id' | 'createdAt'>>,
+  ): Promise<void> {
+    const docRef = doc(db, 'sessions', sessionId)
+    await updateDoc(docRef, updates)
+  }
+
+  async deleteSession(sessionId: string): Promise<void> {
+    const docRef = doc(db, 'sessions', sessionId)
+    await deleteDoc(docRef)
   }
 }
