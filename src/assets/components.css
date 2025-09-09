@@ -1,0 +1,288 @@
+/* ===== STYLES POUR LES COMPOSANTS SPÉCIFIQUES ===== */
+
+/* ===== MODAL DE PARTAGE (DetailSession.vue uniquement) ===== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-lg);
+}
+
+.modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: var(--border-radius-lg);
+  padding: 0;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xl);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+.close-button {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  font-size: var(--text-lg);
+  cursor: pointer;
+  color: var(--text-primary);
+  opacity: 0.8;
+  transition: var(--transition-normal);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.2);
+  transform: scale(1.1);
+}
+
+.modal-body {
+  padding: var(--spacing-xl);
+  background: rgba(255, 255, 255, 0.95);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.share-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.share-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--border-radius-md);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.share-option:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.share-option.whatsapp {
+  border-color: rgba(37, 211, 102, 0.3);
+}
+
+.share-option.whatsapp:hover {
+  background: #25d366;
+  color: white;
+  border-color: #25d366;
+  box-shadow: 0 8px 25px rgba(37, 211, 102, 0.3);
+}
+
+.share-option.sms {
+  border-color: rgba(0, 123, 255, 0.3);
+}
+
+.share-option.sms:hover {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+  box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
+}
+
+.share-option.facebook {
+  border-color: rgba(24, 119, 242, 0.3);
+}
+
+.share-option.facebook:hover {
+  background: #1877f2;
+  color: white;
+  border-color: #1877f2;
+  box-shadow: 0 8px 25px rgba(24, 119, 242, 0.3);
+}
+
+.share-option.copy {
+  border-color: rgba(108, 117, 125, 0.3);
+}
+
+.share-option.copy:hover {
+  background: #6c757d;
+  color: white;
+  border-color: #6c757d;
+  box-shadow: 0 8px 25px rgba(108, 117, 125, 0.3);
+}
+
+.share-icon {
+  font-size: var(--text-2xl);
+}
+
+.qr-section {
+  text-align: center;
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.qr-section h4 {
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--text-primary);
+  font-size: var(--text-lg);
+  font-weight: 500;
+}
+
+.qr-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: var(--border-radius-md);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  box-shadow: var(--shadow-md);
+}
+
+.qr-description {
+  margin: 0;
+  color: var(--text-primary);
+  opacity: 0.7;
+  font-size: var(--text-sm);
+}
+
+/* Responsive pour le modal */
+@media (max-width: 768px) {
+  .modal-content {
+    margin: var(--spacing-md);
+    max-width: none;
+  }
+
+  .share-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== BOUTON DE PARTAGE DE SESSION ===== */
+
+.session-share-button {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text-light);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.session-share-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ===== MÉTADONNÉES DE SESSION ===== */
+
+.session-meta {
+  display: flex;
+  gap: var(--spacing-lg);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: var(--spacing-lg);
+}
+
+.session-type,
+.session-date,
+.session-creator {
+  background: rgba(255, 255, 255, 0.1);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--text-sm);
+  backdrop-filter: blur(10px);
+}
+
+/* ===== INSTRUCTIONS ===== */
+
+.instructions-section {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.instructions-section h3 {
+  color: var(--text-light);
+  margin-bottom: var(--spacing-md);
+}
+
+.instructions-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.instructions-section li {
+  color: var(--text-light);
+  opacity: 0.9;
+  margin-bottom: var(--spacing-sm);
+  padding-left: var(--spacing-md);
+  position: relative;
+}
+
+.instructions-section li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--accent-color);
+}
