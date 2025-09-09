@@ -55,9 +55,11 @@ const features = [
       </div>
     </div>
 
-      <div class="cta-section">
-        <h3>🕯️ À la mémoire de 🕯️</h3>
-        <p class="welcome-message">Ce site est dédié à l'élévation de l'âme de Fortunée Bat Henriette et Mongia Bat Joulina</p>
-      </div>
-    </main>
+    <div class="cta-section">
+      <h3>🕯️ À la mémoire de 🕯️</h3>
+      <p class="welcome-message">
+        Ce site est dédié à l'élévation de l'âme de Fortunée Bat Henriette et Mongia Bat Joulina
+      </p>
+    </div>
+  </main>
 </template>

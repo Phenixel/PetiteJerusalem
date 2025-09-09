@@ -35,11 +35,11 @@ export interface Session {
   creatorName: string // nom du créateur pour l'affichage
   slug: string
   isCompleted: boolean // calculé côté application
+  reservations: TextStudyReservation[] // réservations intégrées directement
 }
 
 export interface TextStudyReservation {
   id: string
-  sessionId: string // référence vers Session
   chosenById?: string // référence vers User
   chosenByGuestId?: string // référence vers Guest
   chosenByName?: string // nom de l'utilisateur ou de l'invité pour l'affichage
@@ -48,4 +48,31 @@ export interface TextStudyReservation {
   section?: number
   isCompleted: boolean
   createdAt: Date
+}
+
+// Types dédiés aux adaptateurs / stockage (DTO)
+export interface ReservationRecord {
+  id: string
+  textStudyId: string
+  section?: number
+  chosenById?: string
+  chosenByGuestId?: string
+  chosenByName?: string
+  available: boolean
+  isCompleted: boolean
+  createdAt: string // ISO string pour Firestore
+}
+
+export interface TextStudyJsonEntry {
+  id: number | string
+  name: string
+  livre: string
+  link: string
+  totalSections: number
+  type: string
+}
+
+export interface TextStudiesJson {
+  textStudies: TextStudyJsonEntry[]
+  types: string[]
 }

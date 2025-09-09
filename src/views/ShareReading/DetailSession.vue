@@ -96,9 +96,8 @@ const loadSessionData = async () => {
     const textStudiesData = await sessionService.getTextStudiesByType(sessionData.type)
     textStudies.value = textStudiesData
 
-    // Charger les réservations existantes
-    const reservationsData = await sessionService.getReservationsBySession(sessionId)
-    reservations.value = reservationsData
+    // Les réservations sont maintenant intégrées dans la session
+    reservations.value = sessionData.reservations || []
   } catch (err) {
     console.error('Erreur lors du chargement des données:', err)
     error.value = err instanceof Error ? err.message : 'Erreur lors du chargement'
@@ -150,15 +149,15 @@ const reserveTextOrSection = async (textStudyId: string, section?: number) => {
     // Créer la nouvelle réservation localement
     const newReservation: TextStudyReservation = {
       id: reservationId,
-      sessionId: session.value.id,
       textStudyId,
       section,
-      chosenById: currentUser.value?.id,
-      chosenByGuestId: currentUser.value ? undefined : reservationForm.value.email,
       chosenByName: currentUser.value?.name || reservationForm.value.name,
       available: false,
       isCompleted: false,
       createdAt: new Date(),
+      ...(currentUser.value?.id && { chosenById: currentUser.value.id }),
+      ...(!currentUser.value &&
+        reservationForm.value.email && { chosenByGuestId: reservationForm.value.email }),
     }
 
     // Ajouter à la liste locale
@@ -183,7 +182,7 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
     )
 
     if (reservation) {
-      await sessionService.deleteReservation(reservation.id)
+      await sessionService.deleteReservation(session.value.id, reservation.id)
 
       // Supprimer de la liste locale
       const index = reservations.value.findIndex((r) => r.id === reservation.id)
@@ -201,71 +200,16 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
 
 // Vérifier si un texte ou une section est réservé
 const isReserved = (textStudyId: string, section?: number) => {
-  return sessionService.isTextOrSectionReserved(textStudyId, section, reservations.value)
-}
-
-// Vérifier si tous les chapitres d'un texte sont réservés par la même personne
-const isTextFullyReservedBySamePerson = (textStudyId: string) => {
-  const textStudy = textStudies.value.find((t) => t.id === textStudyId)
-  if (!textStudy) return { isFullyReserved: false, reservedBy: null }
-
-  const textReservations = reservations.value.filter((r) => r.textStudyId === textStudyId)
-  const chapterReservations = textReservations.filter((r) => r.section !== undefined)
-
-  // Si aucun chapitre n'est réservé, le texte n'est pas réservé
-  if (chapterReservations.length === 0) {
-    return { isFullyReserved: false, reservedBy: null }
-  }
-
-  // Vérifier si tous les chapitres sont réservés
-  const allChaptersReserved = chapterReservations.length === textStudy.totalSections
-
-  if (!allChaptersReserved) {
-    return { isFullyReserved: false, reservedBy: null }
-  }
-
-  // Vérifier si tous les chapitres sont réservés par la même personne
-  const firstReservation = chapterReservations[0]
-  const allSamePerson = chapterReservations.every(
-    (r) => r.chosenByName === firstReservation.chosenByName,
-  )
-
-  return {
-    isFullyReserved: true,
-    reservedBy: allSamePerson ? firstReservation.chosenByName : null,
-  }
+  if (!session.value) return { isReserved: false }
+  return sessionService.isTextOrSectionReserved(textStudyId, section, session.value)
 }
 
 // Obtenir le statut d'affichage d'un texte
 const getTextDisplayStatus = (textStudyId: string) => {
   const textStudy = textStudies.value.find((t) => t.id === textStudyId)
-  if (!textStudy) return { status: 'available', reservedBy: null }
+  if (!textStudy || !session.value) return { status: 'available', reservedBy: null }
 
-  const textReservations = reservations.value.filter((r) => r.textStudyId === textStudyId)
-  const chapterReservations = textReservations.filter((r) => r.section !== undefined)
-
-  if (chapterReservations.length === 0) {
-    return { status: 'available', reservedBy: null }
-  }
-
-  // Si tous les chapitres sont réservés par la même personne
-  const fullyReserved = isTextFullyReservedBySamePerson(textStudyId)
-  if (fullyReserved.isFullyReserved && fullyReserved.reservedBy) {
-    return { status: 'fully_reserved', reservedBy: fullyReserved.reservedBy }
-  }
-
-  // Si certains chapitres sont réservés mais pas tous
-  if (chapterReservations.length > 0 && chapterReservations.length < textStudy.totalSections) {
-    return { status: 'partially_reserved', reservedBy: null }
-  }
-
-  // Si tous les chapitres sont réservés par des personnes différentes
-  if (chapterReservations.length === textStudy.totalSections) {
-    const uniqueNames = [...new Set(chapterReservations.map((r) => r.chosenByName))]
-    return { status: 'fully_reserved', reservedBy: uniqueNames.join(', ') }
-  }
-
-  return { status: 'available', reservedBy: null }
+  return sessionService.getTextDisplayStatus(textStudyId, textStudy, session.value)
 }
 
 // Réserver tous les chapitres d'un texte
@@ -323,15 +267,15 @@ const reserveAllChapters = async (textStudyId: string) => {
       // Créer la nouvelle réservation localement
       const newReservation: TextStudyReservation = {
         id: reservationId,
-        sessionId: session.value.id,
         textStudyId,
         section: chapter,
-        chosenById: currentUser.value?.id,
-        chosenByGuestId: currentUser.value ? undefined : reservationForm.value.email,
         chosenByName: currentUser.value?.name || reservationForm.value.name,
         available: false,
         isCompleted: false,
         createdAt: new Date(),
+        ...(currentUser.value?.id && { chosenById: currentUser.value.id }),
+        ...(!currentUser.value &&
+          reservationForm.value.email && { chosenByGuestId: reservationForm.value.email }),
       }
 
       // Ajouter à la liste locale
@@ -356,7 +300,7 @@ const cancelAllReservations = async (textStudyId: string) => {
 
     // Supprimer toutes les réservations de ce texte
     for (const reservation of textReservations) {
-      await sessionService.deleteReservation(reservation.id)
+      await sessionService.deleteReservation(session.value.id, reservation.id)
     }
 
     // Supprimer de la liste locale
@@ -555,12 +499,30 @@ onMounted(async () => {
                       <span class="section-label">Chapitre {{ chapter }}</span>
                     </label>
 
-                    <span
+                    <div
                       v-if="isReserved(text.id, chapter).isReserved"
-                      class="section-status reserved"
+                      class="section-status-container"
                     >
-                      Réservé par {{ isReserved(text.id, chapter).reservedBy || "quelqu'un" }}
-                    </span>
+                      <span
+                        class="section-status"
+                        :class="{
+                          reserved: !reservations.find(
+                            (r) => r.textStudyId === text.id && r.section === chapter,
+                          )?.isCompleted,
+                          completed: reservations.find(
+                            (r) => r.textStudyId === text.id && r.section === chapter,
+                          )?.isCompleted,
+                        }"
+                      >
+                        {{
+                          reservations.find(
+                            (r) => r.textStudyId === text.id && r.section === chapter,
+                          )?.isCompleted
+                            ? `Lu par ${isReserved(text.id, chapter).reservedBy || "quelqu'un"}`
+                            : `Réservé par ${isReserved(text.id, chapter).reservedBy || "quelqu'un"}`
+                        }}
+                      </span>
+                    </div>
                     <span v-else class="section-status available"> Disponible </span>
                   </div>
                 </div>
@@ -910,10 +872,23 @@ onMounted(async () => {
   border: 1px solid rgba(255, 107, 107, 0.4);
 }
 
+.section-status.completed {
+  background: rgba(33, 150, 243, 0.2);
+  color: #2196f3;
+  border: 1px solid rgba(33, 150, 243, 0.4);
+}
+
 .section-status.available {
   background: rgba(76, 175, 80, 0.2);
   color: #4caf50;
   border: 1px solid rgba(76, 175, 80, 0.4);
+}
+
+.section-status-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
 }
 
 .full-text-reservation {
