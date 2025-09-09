@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { EnumTypeTextStudy } from '../../models/typeTextStudy'
 import { SessionService } from '../../services/sessionService'
 import { TextTypeService } from '../../services/textTypeService'
-import { Services } from '../../services/Services'
+import type { User } from '../../services/authService'
 
 const router = useRouter()
 const sessionService = new SessionService()
@@ -12,7 +12,7 @@ const sessionService = new SessionService()
 const isLoading = ref(false)
 const message = ref('')
 const messageType = ref<'success' | 'error'>('success')
-const currentUser = ref<{ id: string; name: string; email: string } | null>(null)
+const currentUser = ref<User | null>(null)
 
 // Types de texte d'étude disponibles
 const textStudyTypes = TextTypeService.getAllTypes()
@@ -27,7 +27,7 @@ const sessionData = reactive({
 
 // Récupérer l'utilisateur connecté
 onMounted(async () => {
-  currentUser.value = await Services.requireAuthentication(router)
+  currentUser.value = await sessionService.requireAuthentication(router)
 })
 
 const createSession = async () => {

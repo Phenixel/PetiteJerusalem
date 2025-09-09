@@ -1,25 +1,31 @@
 import { FirestoreService } from './firestoreService'
+import { ReservationService, type ReservationForm } from './reservationService'
+import { SearchService } from './searchService'
+import { AuthService, type User } from './authService'
+import { UtilsService } from './Services'
 import type {
   Session,
   TextStudy,
   TextStudyReservation,
   TextStudiesJson,
   TextStudyJsonEntry,
-  ReservationRecord,
 } from '../models/models'
 import { EnumTypeTextStudy } from '../models/typeTextStudy'
 import { TextTypeService } from './textTypeService'
 import { DateService } from './dateService'
-import { Services } from './Services'
 import textStudiesJson from '../datas/textStudies.json'
-import { db } from '../../firebase'
-import { doc, runTransaction } from 'firebase/firestore'
 
 export class SessionService {
   private firestoreService: FirestoreService
+  private reservationService: ReservationService
+  private searchService: SearchService
+  private authService: AuthService
 
   constructor() {
     this.firestoreService = new FirestoreService()
+    this.reservationService = new ReservationService()
+    this.searchService = new SearchService()
+    this.authService = new AuthService()
   }
 
   // Récupérer toutes les sessions
@@ -61,9 +67,31 @@ export class SessionService {
     return filtered
   }
 
+  // === MÉTHODES D'AUTHENTIFICATION ===
+
+  // Récupérer l'utilisateur connecté
+  async getCurrentUser(): Promise<User | null> {
+    return await this.authService.getCurrentUser()
+  }
+
+  // Vérifier si l'utilisateur est connecté
+  async isUserAuthenticated(): Promise<boolean> {
+    return await this.authService.isUserAuthenticated()
+  }
+
+  // Rediriger si pas d'utilisateur connecté
+  async requireAuthentication(
+    router: { push: (path: string) => void },
+    redirectPath: string = '/',
+  ): Promise<User | null> {
+    return await this.authService.requireAuthentication(router, redirectPath)
+  }
+
+  // === MÉTHODES DE RÉSERVATION ===
+
   // Récupérer les réservations d'une session (depuis l'objet Session)
   getReservationsBySession(session: Session): TextStudyReservation[] {
-    return session.reservations || []
+    return this.reservationService.getReservationsBySession(session)
   }
 
   // Créer une réservation (enregistrée dans le document de session)
@@ -76,81 +104,54 @@ export class SessionService {
     userName?: string,
     guestName?: string,
   ): Promise<string> {
-    if (!userId && !guestId) {
-      throw new Error('Une réservation doit être associée à un utilisateur ou un invité')
-    }
-
-    const reservationId = crypto.randomUUID()
-    const sfDocRef = doc(db, 'sessions', sessionId)
-
-    await runTransaction(db, (transaction) => {
-      return transaction.get(sfDocRef).then((sfDoc) => {
-        if (!sfDoc.exists()) {
-          throw new Error('Document de session introuvable')
-        }
-
-        const data = sfDoc.data() as { reservations?: ReservationRecord[] }
-        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
-          ? data.reservations
-          : []
-
-        // éviter les doublons (même textStudyId + section)
-        if (
-          reservations.find((r) => r.textStudyId === textStudyId && r.section === section) !==
-          undefined
-        ) {
-          throw new Error('Cette section est déjà réservée')
-        }
-
-        // Construire l'objet de réservation sans valeurs undefined
-        const newReservation: ReservationRecord = {
-          id: reservationId,
-          textStudyId,
-          chosenByName: userName || guestName || 'Utilisateur inconnu',
-          available: false,
-          isCompleted: false,
-          createdAt: new Date().toISOString(),
-        }
-
-        // Ajouter section seulement si défini
-        if (section !== undefined) {
-          newReservation.section = section
-        }
-
-        // Ajouter chosenById seulement si défini
-        if (userId) {
-          newReservation.chosenById = userId
-        }
-
-        // Ajouter chosenByGuestId seulement si défini
-        if (guestId) {
-          newReservation.chosenByGuestId = guestId
-        }
-
-        reservations.push(newReservation)
-        transaction.update(sfDocRef, { reservations })
-      })
-    })
-
-    return reservationId
+    return await this.reservationService.createReservation(
+      sessionId,
+      textStudyId,
+      section,
+      userId,
+      guestId,
+      userName,
+      guestName,
+    )
   }
 
   // Supprimer une réservation par id (intégrée dans le document de session)
   async deleteReservation(sessionId: string, reservationId: string): Promise<void> {
-    const sfDocRef = doc(db, 'sessions', sessionId)
-    await runTransaction(db, (transaction) => {
-      return transaction.get(sfDocRef).then((sfDoc) => {
-        if (!sfDoc.exists()) {
-          throw new Error('Document de session introuvable')
-        }
-        const data = sfDoc.data() as { reservations?: ReservationRecord[] }
-        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
-          ? data.reservations
-          : []
-        const filtered = reservations.filter((r: ReservationRecord) => r.id !== reservationId)
-        transaction.update(sfDocRef, { reservations: filtered })
-      })
-    })
+    return await this.reservationService.deleteReservation(sessionId, reservationId)
+  }
+
+  // Créer une réservation pour un utilisateur connecté ou un invité
+  async createReservationForUser(
+    sessionId: string,
+    textStudyId: string,
+    section: number | undefined,
+    currentUser: User | null,
+    reservationForm: ReservationForm,
+  ): Promise<string> {
+    return await this.reservationService.createReservationForUser(
+      sessionId,
+      textStudyId,
+      section,
+      currentUser,
+      reservationForm,
+    )
+  }
+
+  // Créer une réservation locale pour l'interface
+  createLocalReservation(
+    reservationId: string,
+    textStudyId: string,
+    section: number | undefined,
+    currentUser: User | null,
+    reservationForm: ReservationForm,
+  ): TextStudyReservation {
+    return this.reservationService.createLocalReservation(
+      reservationId,
+      textStudyId,
+      section,
+      currentUser,
+      reservationForm,
+    )
   }
 
   // Créer une nouvelle session
@@ -179,7 +180,7 @@ export class SessionService {
     }
 
     // Génération du slug
-    const slug = Services.generateSlug(name)
+    const slug = UtilsService.generateSlug(name)
 
     // Création de l'objet session
     const sessionData: Omit<Session, 'id' | 'createdAt' | 'isCompleted' | 'reservations'> = {
@@ -274,8 +275,8 @@ export class SessionService {
       }
 
       // Pour les autres types, trier alphabétiquement par nom français
-      const aName = this.extractFrenchName(a.name)
-      const bName = this.extractFrenchName(b.name)
+      const aName = SearchService.extractFrenchName(a.name)
+      const bName = SearchService.extractFrenchName(b.name)
       return aName.localeCompare(bName, 'fr')
     })
   }
@@ -286,37 +287,18 @@ export class SessionService {
     return match ? parseInt(match[1], 10) : null
   }
 
-  // Extraire le nom français d'un texte (entre parenthèses)
-  private extractFrenchName(textName: string): string {
-    const match = textName.match(/\((.*?)\)/)
-    return match ? match[1] : textName
-  }
-
   // Vérifier si un texte ou une section est réservé
   isTextOrSectionReserved(
     textStudyId: string,
     section: number | undefined,
     session: Session,
   ): { isReserved: boolean; reservedBy?: string } {
-    const reservations = this.getReservationsBySession(session)
-    const reservation = reservations.find(
-      (r) => r.textStudyId === textStudyId && r.section === section,
-    )
-
-    if (reservation) {
-      return {
-        isReserved: true,
-        reservedBy:
-          reservation.chosenByName || reservation.chosenById || reservation.chosenByGuestId,
-      }
-    }
-
-    return { isReserved: false }
+    return this.reservationService.isTextOrSectionReserved(textStudyId, section, session)
   }
 
   // Formater le nom du livre pour l'affichage
   formatBookName(bookName: string): string {
-    return this.extractFrenchName(bookName)
+    return SearchService.formatBookName(bookName)
   }
 
   // Obtenir le statut d'affichage d'un texte
@@ -325,40 +307,7 @@ export class SessionService {
     textStudy: TextStudy,
     session: Session,
   ): { status: 'available' | 'fully_reserved' | 'partially_reserved'; reservedBy: string | null } {
-    const reservations = this.getReservationsBySession(session)
-    const textReservations = reservations.filter((r) => r.textStudyId === textStudyId)
-    const chapterReservations = textReservations.filter((r) => r.section !== undefined)
-
-    if (chapterReservations.length === 0) {
-      return { status: 'available', reservedBy: null }
-    }
-
-    // Si tous les chapitres sont réservés par la même personne
-    if (chapterReservations.length === textStudy.totalSections) {
-      const firstReservation = chapterReservations[0]
-      const allSamePerson = chapterReservations.every(
-        (r) => r.chosenByName === firstReservation.chosenByName,
-      )
-
-      if (allSamePerson && firstReservation.chosenByName) {
-        return { status: 'fully_reserved', reservedBy: firstReservation.chosenByName }
-      }
-    }
-
-    // Si certains chapitres sont réservés mais pas tous
-    if (chapterReservations.length > 0 && chapterReservations.length < textStudy.totalSections) {
-      return { status: 'partially_reserved', reservedBy: null }
-    }
-
-    // Si tous les chapitres sont réservés par des personnes différentes
-    if (chapterReservations.length === textStudy.totalSections) {
-      const uniqueNames = [
-        ...new Set(chapterReservations.map((r) => r.chosenByName).filter(Boolean)),
-      ]
-      return { status: 'fully_reserved', reservedBy: uniqueNames.join(', ') }
-    }
-
-    return { status: 'available', reservedBy: null }
+    return this.reservationService.getTextDisplayStatus(textStudyId, textStudy, session)
   }
 
   // Vérifier si tous les chapitres d'un texte sont réservés par la même personne
@@ -367,53 +316,118 @@ export class SessionService {
     textStudy: TextStudy,
     session: Session,
   ): { isFullyReserved: boolean; reservedBy: string | null } {
-    const reservations = this.getReservationsBySession(session)
-    const textReservations = reservations.filter((r) => r.textStudyId === textStudyId)
-    const chapterReservations = textReservations.filter((r) => r.section !== undefined)
-
-    // Si aucun chapitre n'est réservé, le texte n'est pas réservé
-    if (chapterReservations.length === 0) {
-      return { isFullyReserved: false, reservedBy: null }
-    }
-
-    // Vérifier si tous les chapitres sont réservés
-    const allChaptersReserved = chapterReservations.length === textStudy.totalSections
-
-    if (!allChaptersReserved) {
-      return { isFullyReserved: false, reservedBy: null }
-    }
-
-    // Vérifier si tous les chapitres sont réservés par la même personne
-    const firstReservation = chapterReservations[0]
-    const allSamePerson = chapterReservations.every(
-      (r) => r.chosenByName === firstReservation.chosenByName,
-    )
-
-    return {
-      isFullyReserved: true,
-      reservedBy:
-        allSamePerson && firstReservation.chosenByName ? firstReservation.chosenByName : null,
-    }
+    return this.reservationService.isTextFullyReservedBySamePerson(textStudyId, textStudy, session)
   }
 
   // Filtrer les textes par terme de recherche
   filterTextStudiesBySearch(textStudies: TextStudy[], searchTerm: string): TextStudy[] {
-    if (!searchTerm.trim()) return textStudies
-
-    const searchLower = searchTerm.toLowerCase()
-    return textStudies.filter((text) => {
-      const hebrewName = text.name
-      const frenchName = this.extractFrenchName(text.name)
-
-      return (
-        hebrewName.toLowerCase().includes(searchLower) ||
-        frenchName.toLowerCase().includes(searchLower)
-      )
-    })
+    return SearchService.filterTextStudiesBySearch(textStudies, searchTerm)
   }
 
   // Générer la liste des chapitres
   generateChapters(totalSections: number): number[] {
     return Array.from({ length: totalSections }, (_, i) => i + 1)
+  }
+
+  // === MÉTHODES DE GESTION COMPLÈTE DES RÉSERVATIONS ===
+
+  // Réserver tous les chapitres d'un texte
+  async reserveAllChapters(
+    sessionId: string,
+    textStudyId: string,
+    textStudy: TextStudy,
+    currentUser: User | null,
+    reservationForm: ReservationForm,
+  ): Promise<TextStudyReservation[]> {
+    const newReservations: TextStudyReservation[] = []
+
+    // Vérifier les réservations existantes pour ce texte
+    const session = await this.getSessionById(sessionId)
+    if (!session) throw new Error('Session non trouvée')
+
+    const existingReservations = this.getReservationsBySession(session)
+    const existingChapters = new Set(
+      existingReservations
+        .filter((r) => r.textStudyId === textStudyId)
+        .map((r) => r.section)
+        .filter((s) => s !== undefined),
+    )
+
+    // Créer des réservations seulement pour les chapitres non réservés
+    for (let chapter = 1; chapter <= textStudy.totalSections; chapter++) {
+      // Ignorer les chapitres déjà réservés
+      if (existingChapters.has(chapter)) {
+        continue
+      }
+
+      const reservationId = await this.createReservationForUser(
+        sessionId,
+        textStudyId,
+        chapter,
+        currentUser,
+        reservationForm,
+      )
+
+      const newReservation = this.createLocalReservation(
+        reservationId,
+        textStudyId,
+        chapter,
+        currentUser,
+        reservationForm,
+      )
+
+      newReservations.push(newReservation)
+    }
+
+    return newReservations
+  }
+
+  // Annuler toutes les réservations d'un texte
+  async cancelAllReservations(sessionId: string, textStudyId: string): Promise<void> {
+    const session = await this.getSessionById(sessionId)
+    if (!session) throw new Error('Session non trouvée')
+
+    const textReservations = this.getReservationsBySession(session).filter(
+      (r) => r.textStudyId === textStudyId,
+    )
+
+    // Supprimer toutes les réservations de ce texte
+    for (const reservation of textReservations) {
+      await this.deleteReservation(sessionId, reservation.id)
+    }
+  }
+
+  // === MÉTHODES DE GESTION DES DONNÉES DE SESSION ===
+
+  // Charger les données complètes d'une session
+  async loadSessionData(sessionId: string): Promise<{
+    session: Session
+    textStudies: TextStudy[]
+    reservations: TextStudyReservation[]
+  }> {
+    const session = await this.getSessionById(sessionId)
+    if (!session) {
+      throw new Error('Session non trouvée')
+    }
+
+    const textStudies = await this.getTextStudiesByType(session.type)
+    const reservations = this.getReservationsBySession(session)
+
+    return { session, textStudies, reservations }
+  }
+
+  // Grouper et filtrer les textes pour l'affichage
+  getGroupedAndFilteredTextStudies(
+    textStudies: TextStudy[],
+    searchTerm: string,
+  ): Record<string, TextStudy[]> {
+    let filteredTexts = textStudies
+
+    // Filtrer par terme de recherche si présent
+    if (searchTerm.trim()) {
+      filteredTexts = this.filterTextStudiesBySearch(textStudies, searchTerm)
+    }
+
+    return this.groupTextStudiesByBook(filteredTexts)
   }
 }

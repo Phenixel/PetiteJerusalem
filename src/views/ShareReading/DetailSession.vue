@@ -2,8 +2,8 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { SessionService } from '../../services/sessionService'
-import { Services } from '../../services/Services'
 import type { Session, TextStudy, TextStudyReservation } from '../../models/models'
+import type { User } from '../../services/authService'
 
 const route = useRoute()
 const sessionService = new SessionService()
@@ -14,7 +14,7 @@ const textStudies = ref<TextStudy[]>([])
 const reservations = ref<TextStudyReservation[]>([])
 const isLoading = ref(true)
 const error = ref<string | null>(null)
-const currentUser = ref<{ id: string; name: string; email: string } | null>(null)
+const currentUser = ref<User | null>(null)
 
 // État d'expansion des textes
 const expandedTexts = ref<Set<string>>(new Set())
@@ -31,34 +31,10 @@ const isReserving = ref<string | null>(null)
 // Terme de recherche
 const searchTerm = ref('')
 
-// Nettoyer la recherche
-const clearSearch = () => {
-  searchTerm.value = ''
-}
-
 // Computed properties
 const groupedTextStudies = computed(() => {
   if (!textStudies.value.length) return {}
-
-  let filteredTexts = textStudies.value
-
-  // Filtrer par terme de recherche si présent
-  if (searchTerm.value.trim()) {
-    const searchLower = searchTerm.value.toLowerCase()
-    filteredTexts = textStudies.value.filter((text) => {
-      const hebrewName = text.name
-      const frenchName = formatBookName(text.livre)
-      const textName = text.name
-
-      return (
-        hebrewName.toLowerCase().includes(searchLower) ||
-        frenchName.toLowerCase().includes(searchLower) ||
-        textName.toLowerCase().includes(searchLower)
-      )
-    })
-  }
-
-  return sessionService.groupTextStudiesByBook(filteredTexts)
+  return sessionService.getGroupedAndFilteredTextStudies(textStudies.value, searchTerm.value)
 })
 
 // Gérer l'expansion des textes
@@ -85,19 +61,16 @@ const loadSessionData = async () => {
       throw new Error('ID de session manquant')
     }
 
-    // Charger la session
-    const sessionData = await sessionService.getSessionById(sessionId)
-    if (!sessionData) {
-      throw new Error('Session non trouvée')
-    }
+    // Charger toutes les données d'un coup
+    const {
+      session: sessionData,
+      textStudies: textStudiesData,
+      reservations: reservationsData,
+    } = await sessionService.loadSessionData(sessionId)
+
     session.value = sessionData
-
-    // Charger les textes d'étude du même type
-    const textStudiesData = await sessionService.getTextStudiesByType(sessionData.type)
     textStudies.value = textStudiesData
-
-    // Les réservations sont maintenant intégrées dans la session
-    reservations.value = sessionData.reservations || []
+    reservations.value = reservationsData
   } catch (err) {
     console.error('Erreur lors du chargement des données:', err)
     error.value = err instanceof Error ? err.message : 'Erreur lors du chargement'
@@ -113,60 +86,28 @@ const reserveTextOrSection = async (textStudyId: string, section?: number) => {
   try {
     isReserving.value = `${textStudyId}-${section || 'full'}`
 
-    let reservationId: string
-
-    if (currentUser.value) {
-      // Utilisateur connecté
-      reservationId = await sessionService.createReservation(
-        session.value.id,
-        textStudyId,
-        section,
-        currentUser.value.id,
-        undefined,
-        currentUser.value.name,
-        undefined,
-      )
-    } else {
-      // Utilisateur invité
-      if (!reservationForm.value.name || !reservationForm.value.email) {
-        alert('Veuillez remplir votre nom et email')
-        return
-      }
-
-      // Pour l'instant, on utilise l'email comme guestId
-      // En production, vous pourriez vouloir créer un vrai système de guests
-      reservationId = await sessionService.createReservation(
-        session.value.id,
-        textStudyId,
-        section,
-        undefined,
-        reservationForm.value.email,
-        undefined,
-        reservationForm.value.name,
-      )
-    }
-
-    // Créer la nouvelle réservation localement
-    const newReservation: TextStudyReservation = {
-      id: reservationId,
+    const reservationId = await sessionService.createReservationForUser(
+      session.value.id,
       textStudyId,
       section,
-      chosenByName: currentUser.value?.name || reservationForm.value.name,
-      available: false,
-      isCompleted: false,
-      createdAt: new Date(),
-      ...(currentUser.value?.id && { chosenById: currentUser.value.id }),
-      ...(!currentUser.value &&
-        reservationForm.value.email && { chosenByGuestId: reservationForm.value.email }),
-    }
+      currentUser.value,
+      reservationForm.value,
+    )
+
+    // Créer la nouvelle réservation localement
+    const newReservation = sessionService.createLocalReservation(
+      reservationId,
+      textStudyId,
+      section,
+      currentUser.value,
+      reservationForm.value,
+    )
 
     // Ajouter à la liste locale
     reservations.value.push(newReservation)
-
-    // Pas d'alerte pour une expérience plus fluide
   } catch (err) {
     console.error('Erreur lors de la réservation:', err)
-    alert('Erreur lors de la réservation. Veuillez réessayer.')
+    alert(err instanceof Error ? err.message : 'Erreur lors de la réservation. Veuillez réessayer.')
   } finally {
     isReserving.value = null
   }
@@ -198,6 +139,8 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
   }
 }
 
+// === MÉTHODES DÉLÉGUÉES AUX SERVICES ===
+
 // Vérifier si un texte ou une section est réservé
 const isReserved = (textStudyId: string, section?: number) => {
   if (!session.value) return { isReserved: false }
@@ -222,68 +165,19 @@ const reserveAllChapters = async (textStudyId: string) => {
     const textStudy = textStudies.value.find((t) => t.id === textStudyId)
     if (!textStudy) return
 
-    // Vérifier les réservations existantes pour ce texte
-    const existingReservations = reservations.value.filter((r) => r.textStudyId === textStudyId)
-    const existingChapters = new Set(
-      existingReservations.map((r) => r.section).filter((s) => s !== undefined),
+    const newReservations = await sessionService.reserveAllChapters(
+      session.value.id,
+      textStudyId,
+      textStudy,
+      currentUser.value,
+      reservationForm.value,
     )
 
-    // Créer des réservations seulement pour les chapitres non réservés
-    for (let chapter = 1; chapter <= textStudy.totalSections; chapter++) {
-      // Ignorer les chapitres déjà réservés
-      if (existingChapters.has(chapter)) {
-        continue
-      }
-
-      let reservationId: string
-
-      if (currentUser.value) {
-        reservationId = await sessionService.createReservation(
-          session.value.id,
-          textStudyId,
-          chapter,
-          currentUser.value.id,
-          undefined,
-          currentUser.value.name,
-          undefined,
-        )
-      } else {
-        if (!reservationForm.value.name || !reservationForm.value.email) {
-          alert('Veuillez remplir votre nom et email')
-          return
-        }
-
-        reservationId = await sessionService.createReservation(
-          session.value.id,
-          textStudyId,
-          chapter,
-          undefined,
-          reservationForm.value.email,
-          undefined,
-          reservationForm.value.name,
-        )
-      }
-
-      // Créer la nouvelle réservation localement
-      const newReservation: TextStudyReservation = {
-        id: reservationId,
-        textStudyId,
-        section: chapter,
-        chosenByName: currentUser.value?.name || reservationForm.value.name,
-        available: false,
-        isCompleted: false,
-        createdAt: new Date(),
-        ...(currentUser.value?.id && { chosenById: currentUser.value.id }),
-        ...(!currentUser.value &&
-          reservationForm.value.email && { chosenByGuestId: reservationForm.value.email }),
-      }
-
-      // Ajouter à la liste locale
-      reservations.value.push(newReservation)
-    }
+    // Ajouter toutes les nouvelles réservations à la liste locale
+    reservations.value.push(...newReservations)
   } catch (err) {
     console.error('Erreur lors de la réservation de tous les chapitres:', err)
-    alert('Erreur lors de la réservation. Veuillez réessayer.')
+    alert(err instanceof Error ? err.message : 'Erreur lors de la réservation. Veuillez réessayer.')
   } finally {
     isReserving.value = null
   }
@@ -296,18 +190,13 @@ const cancelAllReservations = async (textStudyId: string) => {
   try {
     isReserving.value = `${textStudyId}-all`
 
-    const textReservations = reservations.value.filter((r) => r.textStudyId === textStudyId)
-
-    // Supprimer toutes les réservations de ce texte
-    for (const reservation of textReservations) {
-      await sessionService.deleteReservation(session.value.id, reservation.id)
-    }
+    await sessionService.cancelAllReservations(session.value.id, textStudyId)
 
     // Supprimer de la liste locale
     reservations.value = reservations.value.filter((r) => r.textStudyId !== textStudyId)
   } catch (err) {
     console.error("Erreur lors de l'annulation de toutes les réservations:", err)
-    alert("Erreur lors de l'annulation. Veuillez réessayer.")
+    alert(err instanceof Error ? err.message : "Erreur lors de l'annulation. Veuillez réessayer.")
   } finally {
     isReserving.value = null
   }
@@ -315,20 +204,23 @@ const cancelAllReservations = async (textStudyId: string) => {
 
 // Générer la liste des chapitres
 const generateChapters = (totalSections: number) => {
-  return Array.from({ length: totalSections }, (_, i) => i + 1)
+  return sessionService.generateChapters(totalSections)
 }
 
 // Formater le nom du livre pour l'affichage
 const formatBookName = (bookName: string) => {
-  // Extraire le nom français entre parenthèses
-  const match = bookName.match(/\((.*?)\)/)
-  return match ? match[1] : bookName
+  return sessionService.formatBookName(bookName)
+}
+
+// Nettoyer la recherche
+const clearSearch = () => {
+  searchTerm.value = ''
 }
 
 // Initialisation
 onMounted(async () => {
   // Vérifier l'authentification
-  currentUser.value = await Services.getCurrentUser()
+  currentUser.value = await sessionService.getCurrentUser()
 
   // Charger les données
   await loadSessionData()

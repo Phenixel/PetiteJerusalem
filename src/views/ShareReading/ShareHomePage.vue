@@ -22,7 +22,7 @@ const loadSessions = async () => {
     sessions.value = sessionService.sortSessionsByDate(fetchedSessions)
   } catch (err) {
     console.error('Erreur lors du chargement des sessions:', err)
-    error.value = 'Erreur lors du chargement des sessions'
+    error.value = err instanceof Error ? err.message : 'Erreur lors du chargement des sessions'
   } finally {
     isLoading.value = false
   }
