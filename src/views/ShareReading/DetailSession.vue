@@ -1,9 +1,34 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { SessionService } from '../../services/sessionService'
 import type { Session, TextStudy, TextStudyReservation } from '../../models/models'
 import type { User } from '../../services/authService'
+
+// Déclaration TypeScript pour QRCode
+declare global {
+  interface Window {
+    QRCode: {
+      new (
+        element: HTMLElement,
+        options: {
+          text: string
+          width: number
+          height: number
+          colorDark: string
+          colorLight: string
+          correctLevel: number
+        },
+      ): void
+      CorrectLevel: {
+        L: number
+        M: number
+        Q: number
+        H: number
+      }
+    }
+  }
+}
 
 const route = useRoute()
 const sessionService = new SessionService()
@@ -30,6 +55,10 @@ const isReserving = ref<string | null>(null)
 
 // Terme de recherche
 const searchTerm = ref('')
+
+// État du modal de partage
+const showShareModal = ref(false)
+const shareUrl = ref('')
 
 // Computed properties
 const groupedTextStudies = computed(() => {
@@ -217,6 +246,89 @@ const clearSearch = () => {
   searchTerm.value = ''
 }
 
+// Fonctions de partage
+const openShareModal = () => {
+  shareUrl.value = window.location.href
+  showShareModal.value = true
+  nextTick(() => {
+    generateQRCode()
+  })
+}
+
+const closeShareModal = () => {
+  showShareModal.value = false
+}
+
+const generateQRCode = async () => {
+  const qrContainer = document.getElementById('qr-code')
+  if (qrContainer && shareUrl.value) {
+    qrContainer.innerHTML = ''
+
+    try {
+      // Charger dynamiquement la bibliothèque QRCode
+      await new Promise((resolve, reject) => {
+        if (window.QRCode) {
+          resolve(true)
+          return
+        }
+
+        const script = document.createElement('script')
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
+        script.onload = () => resolve(true)
+        script.onerror = () => reject(new Error('Erreur lors du chargement de QRCode'))
+        document.head.appendChild(script)
+      })
+
+      new window.QRCode(qrContainer, {
+        text: shareUrl.value,
+        width: 200,
+        height: 200,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: window.QRCode.CorrectLevel.H,
+      })
+    } catch (error) {
+      console.error('Erreur lors de la génération du QR code:', error)
+      qrContainer.innerHTML =
+        '<p style="color: #ff6b6b;">Erreur lors de la génération du QR code</p>'
+    }
+  }
+}
+
+const shareToWhatsApp = () => {
+  const message = `Rejoignez-moi pour une session d'étude partagée : ${session.value?.name}\n\n${shareUrl.value}`
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
+  window.open(whatsappUrl, '_blank')
+}
+
+const shareToSMS = () => {
+  const message = `Rejoignez-moi pour une session d'étude partagée : ${session.value?.name}\n\n${shareUrl.value}`
+  const smsUrl = `sms:?body=${encodeURIComponent(message)}`
+  window.location.href = smsUrl
+}
+
+const shareToFacebook = () => {
+  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl.value)}`
+  window.open(facebookUrl, '_blank', 'width=600,height=400')
+}
+
+const copyToClipboard = async () => {
+  try {
+    await navigator.clipboard.writeText(shareUrl.value)
+    alert('Lien copié dans le presse-papiers !')
+  } catch (err) {
+    console.error('Erreur lors de la copie:', err)
+    // Fallback pour les navigateurs plus anciens
+    const textArea = document.createElement('textarea')
+    textArea.value = shareUrl.value
+    document.body.appendChild(textArea)
+    textArea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textArea)
+    alert('Lien copié dans le presse-papiers !')
+  }
+}
+
 // Initialisation
 onMounted(async () => {
   // Vérifier l'authentification
@@ -253,6 +365,13 @@ onMounted(async () => {
             >Date limite : {{ sessionService.formatDate(session.dateLimit) }}</span
           >
           <span class="session-creator">Créé par : {{ session.creatorName }}</span>
+          <button
+            @click="openShareModal"
+            class="session-share-button"
+            title="Partager cette session"
+          >
+            📤 Partager
+          </button>
         </div>
       </div>
 
@@ -447,12 +566,74 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+
+    <!-- Modal de partage -->
+    <div v-if="showShareModal" class="modal-overlay" @click="closeShareModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>Partager cette session</h3>
+          <button @click="closeShareModal" class="close-button">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="share-options">
+            <button @click="shareToWhatsApp" class="share-option whatsapp">
+              <span class="share-icon">📱</span>
+              <span>WhatsApp</span>
+            </button>
+
+            <button @click="shareToSMS" class="share-option sms">
+              <span class="share-icon">💬</span>
+              <span>SMS</span>
+            </button>
+
+            <button @click="shareToFacebook" class="share-option facebook">
+              <span class="share-icon">📘</span>
+              <span>Facebook</span>
+            </button>
+
+            <button @click="copyToClipboard" class="share-option copy">
+              <span class="share-icon">📋</span>
+              <span>Copier le lien</span>
+            </button>
+          </div>
+
+          <div class="qr-section">
+            <h4>Ou scanner le QR code :</h4>
+            <div id="qr-code" class="qr-container"></div>
+            <p class="qr-description">Scannez ce code pour accéder directement à la session</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 </template>
 <style scoped>
 .session-detail {
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.session-share-button {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text-light);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.session-share-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .session-meta {
@@ -846,6 +1027,222 @@ onMounted(async () => {
   .search-input {
     font-size: var(--text-base);
     padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+
+/* Styles pour le modal de partage */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-lg);
+}
+
+.modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: var(--border-radius-lg);
+  padding: 0;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xl);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+.close-button {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  font-size: var(--text-lg);
+  cursor: pointer;
+  color: var(--text-primary);
+  opacity: 0.8;
+  transition: var(--transition-normal);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.2);
+  transform: scale(1.1);
+}
+
+.modal-body {
+  padding: var(--spacing-xl);
+  background: rgba(255, 255, 255, 0.95);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.share-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.share-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--border-radius-md);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.share-option:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.share-option.whatsapp {
+  border-color: rgba(37, 211, 102, 0.3);
+}
+
+.share-option.whatsapp:hover {
+  background: #25d366;
+  color: white;
+  border-color: #25d366;
+  box-shadow: 0 8px 25px rgba(37, 211, 102, 0.3);
+}
+
+.share-option.sms {
+  border-color: rgba(0, 123, 255, 0.3);
+}
+
+.share-option.sms:hover {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+  box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
+}
+
+.share-option.facebook {
+  border-color: rgba(24, 119, 242, 0.3);
+}
+
+.share-option.facebook:hover {
+  background: #1877f2;
+  color: white;
+  border-color: #1877f2;
+  box-shadow: 0 8px 25px rgba(24, 119, 242, 0.3);
+}
+
+.share-option.copy {
+  border-color: rgba(108, 117, 125, 0.3);
+}
+
+.share-option.copy:hover {
+  background: #6c757d;
+  color: white;
+  border-color: #6c757d;
+  box-shadow: 0 8px 25px rgba(108, 117, 125, 0.3);
+}
+
+.share-icon {
+  font-size: var(--text-2xl);
+}
+
+.qr-section {
+  text-align: center;
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.qr-section h4 {
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--text-primary);
+  font-size: var(--text-lg);
+  font-weight: 500;
+}
+
+.qr-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: var(--border-radius-md);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  box-shadow: var(--shadow-md);
+}
+
+.qr-description {
+  margin: 0;
+  color: var(--text-primary);
+  opacity: 0.7;
+  font-size: var(--text-sm);
+}
+
+/* Responsive pour le modal */
+@media (max-width: 768px) {
+  .modal-content {
+    margin: var(--spacing-md);
+    max-width: none;
+  }
+
+  .share-options {
+    grid-template-columns: 1fr;
+  }
+
+  .session-meta {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+  }
+
+  .session-share-button {
+    margin-top: var(--spacing-sm);
   }
 }
 </style>
