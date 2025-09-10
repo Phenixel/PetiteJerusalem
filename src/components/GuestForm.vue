@@ -23,7 +23,6 @@ const updateField = (field: 'name' | 'email', value: string) => {
 
 <template>
   <div class="guest-form-section">
-    <h3>Vos informations</h3>
     <div class="form-container">
       <div class="form-group">
         <label for="guest-name" class="form-label">Nom</label>

@@ -1,56 +1,63 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Règles générales
+    // Fonctions utilitaires
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.email in ['admin@petite-jerusalem.com'];
+    }
+
+    function isSessionOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.personId;
+    }
+
+    // Ne permettre de modifier QUE le champ 'reservations'
+    function onlyReservationsChanged() {
+      let keys = request.resource.data.diff(resource.data).changedKeys();
+      return keys.hasAll(['reservations']) && keys.size() == 1;
+    }
+
+    // Helper tailles de tableaux, compatible si 'reservations' absent dans la ressource
+    function currentReservationsSize() {
+      return resource.data.keys().hasAny(['reservations']) && resource.data.reservations is list
+        ? resource.data.reservations.size()
+        : 0;
+    }
+
+    // Ajout d'UNE réservation (taille +1) et aucune autre modif
+    function isAppendOneReservationOnly() {
+      return onlyReservationsChanged() &&
+             (request.resource.data.reservations is list) &&
+             request.resource.data.reservations.size() == currentReservationsSize() + 1;
+    }
+
+    // Suppression d'UNE réservation (taille -1) et aucune autre modif
+    function isRemoveOneReservationOnly() {
+      return onlyReservationsChanged() &&
+             (request.resource.data.reservations is list) &&
+             request.resource.data.reservations.size() == currentReservationsSize() - 1;
+    }
+
+    // Règle générale de lecture publique
     match /{document=**} {
-      allow read: if true; // Lecture publique pour tous
-    }
-    
-    // TextStudy - Lecture publique, écriture admin uniquement
-    match /textStudies/{document} {
       allow read: if true;
-      allow write: if request.auth != null && 
-        request.auth.token.email in [
-          'admin@petite-jerusalem.com'
-        ];
     }
-    
-    // Sessions - Lecture publique, création avec authentification
-    match /sessions/{document} {
-      allow read: if true; // Tout le monde peut lire les sessions existantes
-      allow create: if request.auth != null; // Création uniquement avec un compte
-      allow update, delete: if request.auth != null && 
-        (request.auth.uid == resource.data.personId || // Propriétaire de la session
-         request.auth.token.email in ['admin@petite-jerusalem.com']); // Admin
-    }
-    
-    // TextStudyReservation - Lecture publique, réservation avec ou sans compte
-    match /textStudyReservations/{document} {
-      allow read: if true; // Tout le monde peut voir les réservations
-      allow create: if true; // Réservation possible avec ou sans compte (guest activé)
-      allow update: if request.auth != null && 
-        (request.auth.uid == resource.data.chosenById || // Propriétaire de la réservation
-         request.auth.token.email in ['admin@petite-jerusalem.com']); // Admin
-      allow delete: if request.auth != null && 
-        (request.auth.uid == resource.data.chosenById || // Propriétaire de la réservation
-         request.auth.token.email in ['admin@petite-jerusalem.com']); // Admin
-    }
-    
-    // Users - Lecture publique, écriture par le propriétaire ou admin
-    match /users/{document} {
+
+    // Sessions
+    match /sessions/{sessionId} {
       allow read: if true;
-      allow create: if request.auth != null && request.auth.uid == document;
-      allow update, delete: if request.auth != null && 
-        (request.auth.uid == document || // Propriétaire du compte
-         request.auth.token.email in ['admin@petite-jerusalem.com']); // Admin
-    }
-    
-    // Guests - Lecture publique, création libre (pour les invités sans compte)
-    match /guests/{document} {
-      allow read: if true;
-      allow create: if true; // Création libre pour les invités
-      allow update, delete: if request.auth != null && 
-        request.auth.token.email in ['admin@petite-jerusalem.com']; // Admin uniquement
+      // Création: utilisateur connecté uniquement
+      allow create: if isAuthenticated();
+
+      // Mise à jour: propriétaire/admin OU append d'une réservation OU suppression d'une réservation (utilisateur connecté)
+      allow update: if isSessionOwner() || isAdmin() || isAppendOneReservationOnly() || (isAuthenticated() && isRemoveOneReservationOnly());
+
+      // Suppression: propriétaire ou admin uniquement
+      allow delete: if isSessionOwner() || isAdmin();
     }
   }
 }
+

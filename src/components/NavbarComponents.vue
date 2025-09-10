@@ -5,6 +5,7 @@ import {
   getAuth,
   onAuthStateChanged,
   signInWithRedirect,
+  signOut,
   type User as FirebaseUser,
 } from 'firebase/auth'
 
@@ -34,6 +35,12 @@ function closeMobileMenu() {
 onAuthStateChanged(getAuth(app), async (firebaseUser: FirebaseUser | null) => {
   username.value = firebaseUser?.displayName ?? null
 })
+
+async function logout() {
+  await signOut(getAuth(app))
+  username.value = null
+  closeMobileMenu()
+}
 </script>
 
 <template>
@@ -62,11 +69,20 @@ onAuthStateChanged(getAuth(app), async (firebaseUser: FirebaseUser | null) => {
         <RouterLink to="/share-reading" @click="closeMobileMenu">Partage de lectures</RouterLink>
       </div>
       <div class="auth-section">
-        <button v-if="!username" @click="connectWithGoogle" class="auth-button">
+        <button v-if="!username" @click="connectWithGoogle" class="btn btn--glass btn-md">
           Se connecter avec Google
         </button>
         <div v-else class="user-info">
           <span>Bienvenue, {{ username }}</span>
+          <button
+            @click="logout"
+            class="btn btn--glass btn--icon"
+            aria-label="Se déconnecter"
+            title="Se déconnecter"
+            data-tooltip="Se déconnecter"
+          >
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
         </div>
       </div>
     </nav>
@@ -98,11 +114,24 @@ onAuthStateChanged(getAuth(app), async (firebaseUser: FirebaseUser | null) => {
 
         <!-- Section d'authentification mobile -->
         <div class="mobile-auth-section">
-          <button v-if="!username" @click="connectWithGoogle" class="mobile-auth-button">
+          <button
+            v-if="!username"
+            @click="connectWithGoogle"
+            class="btn btn--gradient btn-lg w-100"
+          >
             Se connecter avec Google
           </button>
           <div v-else class="mobile-user-info">
             <span>Bienvenue, {{ username }}</span>
+            <button
+              @click="logout"
+              class="btn btn--contrast btn-md"
+              aria-label="Se déconnecter"
+              title="Se déconnecter"
+            >
+              <i class="fa-solid fa-right-from-bracket"></i>
+              <span>Déconnexion</span>
+            </button>
           </div>
         </div>
       </div>

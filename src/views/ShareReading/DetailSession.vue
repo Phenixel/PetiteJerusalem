@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { SessionService } from '../../services/sessionService'
 import type { Session, TextStudy, TextStudyReservation } from '../../models/models'
 import type { User } from '../../services/authService'
+import GuestForm from '../../components/GuestForm.vue'
 
 // Déclaration TypeScript pour QRCode
 declare global {
@@ -134,6 +135,10 @@ const reserveTextOrSection = async (textStudyId: string, section?: number) => {
 
     // Ajouter à la liste locale
     reservations.value.push(newReservation)
+    // Synchroniser l'état de session pour refléter immédiatement côté UI
+    if (session.value) {
+      session.value.reservations = reservations.value
+    }
   } catch (err) {
     console.error('Erreur lors de la réservation:', err)
     alert(err instanceof Error ? err.message : 'Erreur lors de la réservation. Veuillez réessayer.')
@@ -160,7 +165,10 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
         reservations.value.splice(index, 1)
       }
 
-      // Pas d'alerte pour une expérience plus fluide
+      // Synchroniser l'état de session pour refléter immédiatement côté UI
+      if (session.value) {
+        session.value.reservations = reservations.value
+      }
     }
   } catch (err) {
     console.error("Erreur lors de l'annulation:", err)
@@ -204,6 +212,10 @@ const reserveAllChapters = async (textStudyId: string) => {
 
     // Ajouter toutes les nouvelles réservations à la liste locale
     reservations.value.push(...newReservations)
+    // Synchroniser l'état de session pour refléter immédiatement côté UI
+    if (session.value) {
+      session.value.reservations = reservations.value
+    }
   } catch (err) {
     console.error('Erreur lors de la réservation de tous les chapitres:', err)
     alert(err instanceof Error ? err.message : 'Erreur lors de la réservation. Veuillez réessayer.')
@@ -223,6 +235,10 @@ const cancelAllReservations = async (textStudyId: string) => {
 
     // Supprimer de la liste locale
     reservations.value = reservations.value.filter((r) => r.textStudyId !== textStudyId)
+    // Synchroniser l'état de session pour refléter immédiatement côté UI
+    if (session.value) {
+      session.value.reservations = reservations.value
+    }
   } catch (err) {
     console.error("Erreur lors de l'annulation de toutes les réservations:", err)
     alert(err instanceof Error ? err.message : "Erreur lors de l'annulation. Veuillez réessayer.")
@@ -360,14 +376,14 @@ onMounted(async () => {
         <h2 class="hero-title">{{ session.name }}</h2>
         <p class="hero-description">{{ session.description }}</p>
         <div class="session-meta">
-          <span class="session-type">{{ sessionService.formatTextType(session.type) }}</span>
-          <span class="session-date"
+          <span class="badge session-type">{{ sessionService.formatTextType(session.type) }}</span>
+          <span class="badge session-date"
             >Date limite : {{ sessionService.formatDate(session.dateLimit) }}</span
           >
-          <span class="session-creator">Créé par : {{ session.creatorName }}</span>
+          <span class="badge session-creator">Créé par : {{ session.creatorName }}</span>
           <button
             @click="openShareModal"
-            class="session-share-button"
+            class="badge badge--clickable"
             title="Partager cette session"
           >
             📤 Partager
@@ -386,6 +402,11 @@ onMounted(async () => {
           </li>
           <li>Cliquez sur la carte du texte pour voir les sections disponibles</li>
         </ul>
+      </div>
+
+      <!-- Formulaire de réservation pour invités (composant unifié) -->
+      <div v-if="!currentUser" style="margin-bottom: var(--spacing-2xl)">
+        <GuestForm v-model:reservationForm="reservationForm" />
       </div>
 
       <!-- Barre de recherche -->
@@ -408,33 +429,6 @@ onMounted(async () => {
             </button>
           </div>
           <div v-if="searchTerm" class="search-info">Recherche : "{{ searchTerm }}"</div>
-        </div>
-      </div>
-
-      <!-- Formulaire de réservation pour invités -->
-      <div v-if="!currentUser" class="glass-effect">
-        <h3>Vos informations</h3>
-        <div class="form-container">
-          <div class="form-group">
-            <label for="guest-name" class="form-label">Nom</label>
-            <input
-              type="text"
-              id="guest-name"
-              v-model="reservationForm.name"
-              placeholder="Votre nom"
-              class="form-input"
-            />
-          </div>
-          <div class="form-group">
-            <label for="guest-email" class="form-label">Email</label>
-            <input
-              type="email"
-              id="guest-email"
-              v-model="reservationForm.email"
-              placeholder="votre@email.com"
-              class="form-input"
-            />
-          </div>
         </div>
       </div>
 
