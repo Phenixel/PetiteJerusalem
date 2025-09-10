@@ -63,7 +63,9 @@ async function logout() {
           >Se connecter</RouterLink
         >
         <div v-else class="user-info">
-          <span>Bienvenue, {{ username }}</span>
+          <RouterLink to="/profile" class="user-name-link">
+            <span>Bienvenue, {{ username }}</span>
+          </RouterLink>
           <button
             @click="logout"
             class="btn btn--glass btn--icon"
@@ -104,11 +106,18 @@ async function logout() {
 
         <!-- Section d'authentification mobile -->
         <div class="mobile-auth-section">
-          <RouterLink v-if="!username" to="/login" @click="closeMobileMenu" class="btn btn--gradient btn-lg w-100">
+          <RouterLink
+            v-if="!username"
+            to="/login"
+            @click="closeMobileMenu"
+            class="btn btn--gradient btn-lg w-100"
+          >
             Se connecter
           </RouterLink>
           <div v-else class="mobile-user-info">
-            <span>Bienvenue, {{ username }}</span>
+            <RouterLink to="/profile" @click="closeMobileMenu" class="mobile-user-name-link">
+              <span>Bienvenue, {{ username }}</span>
+            </RouterLink>
             <button
               @click="logout"
               class="btn btn--contrast btn-md"

@@ -78,12 +78,18 @@ export class AuthService {
   async signUpWithEmail(email: string, password: string, displayName?: string): Promise<User> {
     const auth = getAuth(app)
     const cred = await createUserWithEmailAndPassword(auth, email, password)
+
+    // Mettre à jour le profil avec le nom d'affichage si fourni
     if (displayName) {
       await updateProfile(cred.user, { displayName })
     }
+
+    // Attendre un peu pour que la mise à jour du profil soit propagée
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
     return {
       id: cred.user.uid,
-      name: cred.user.displayName || cred.user.email || 'Utilisateur',
+      name: displayName || cred.user.displayName || cred.user.email || 'Utilisateur',
       email: cred.user.email || email,
     }
   }

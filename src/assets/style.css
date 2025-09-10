@@ -90,6 +90,21 @@
   color: var(--text-light);
 }
 
+.user-name-link {
+  color: var(--text-light);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition-normal);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+}
+
+.user-name-link:hover {
+  color: var(--text-light);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
 /* Bouton ha  urger */
 .hamburger-button {
   display: none;
@@ -289,6 +304,22 @@
   border-radius: var(--border-radius-md);
   border: 1px solid rgba(102, 126, 234, 0.3);
   backdrop-filter: blur(10px);
+}
+
+.mobile-user-name-link {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition-normal);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  text-align: center;
+}
+
+.mobile-user-name-link:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
 }
 
 /* Overlay mobile */
@@ -1325,6 +1356,341 @@ body.menu-open {
   background: rgba(244, 67, 54, 0.2);
   border: 1px solid rgba(244, 67, 54, 0.4);
   color: #f44336;
+}
+
+/* ===== STYLES POUR LA PAGE DE PROFIL ===== */
+
+/* En-tête du profil */
+.profile-header {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: var(--text-light);
+  padding: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
+  border-radius: var(--border-radius-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.profile-info {
+  position: relative;
+  z-index: 1;
+}
+
+.profile-title {
+  font-size: var(--text-4xl);
+  font-weight: 700;
+  margin: 0 0 var(--spacing-sm) 0;
+  background: linear-gradient(45deg, #fff, #f0f0f0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.profile-id {
+  font-size: var(--text-lg);
+  opacity: 0.8;
+  margin: 0 0 var(--spacing-md) 0;
+  font-family: monospace;
+}
+
+.profile-badge {
+  display: inline-block;
+}
+
+/* Contenu principal du profil */
+.profile-content {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: var(--spacing-2xl);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Menu latéral */
+.profile-sidebar {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  height: fit-content;
+  position: sticky;
+  top: var(--spacing-xl);
+}
+
+.profile-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--spacing-2xl) 0;
+}
+
+.profile-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-md);
+  color: var(--text-light);
+  font-weight: 600;
+  font-size: var(--text-base);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  text-align: left;
+}
+
+.profile-menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateX(5px);
+}
+
+.profile-menu-item.active {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--primary-color);
+  color: var(--text-light);
+  box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+.profile-menu-item i {
+  font-size: var(--text-sm);
+  opacity: 0.7;
+}
+
+/* Contenu principal */
+.profile-main {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-2xl);
+  min-height: 600px;
+}
+
+/* En-tête des onglets */
+.tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-2xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tab-header h2 {
+  color: var(--text-light);
+  font-size: var(--text-2xl);
+  margin: 0;
+}
+
+.tab-tabs {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.tab-tab {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-light);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-normal);
+}
+
+.tab-tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tab-tab.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+/* Contenu des onglets */
+.tab-content {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Grille des sessions */
+.sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.session-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  transition: var(--transition-normal);
+}
+
+.session-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.session-card h3 {
+  color: var(--text-light);
+  font-size: var(--text-lg);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.session-card p {
+  color: var(--text-light);
+  opacity: 0.8;
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--text-sm);
+}
+
+.session-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.session-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+/* État vide */
+.no-sessions {
+  text-align: center;
+  padding: var(--spacing-3xl);
+  color: var(--text-light);
+  opacity: 0.7;
+}
+
+.no-sessions-content {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.no-sessions-icon {
+  font-size: var(--text-5xl);
+  margin-bottom: var(--spacing-lg);
+  opacity: 0.5;
+}
+
+.no-sessions h3 {
+  font-size: var(--text-xl);
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-light);
+}
+
+.no-sessions p {
+  margin-bottom: var(--spacing-lg);
+  opacity: 0.8;
+}
+
+/* Formulaire d'informations */
+.info-form {
+  max-width: 500px;
+}
+
+.edit-actions {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+/* Sections de sécurité */
+.security-sections {
+  max-width: 600px;
+}
+
+.security-section {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.security-section.danger {
+  border-color: rgba(244, 67, 54, 0.3);
+  background: rgba(244, 67, 54, 0.05);
+}
+
+.security-section h3 {
+  color: var(--text-light);
+  font-size: var(--text-lg);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.security-section p {
+  color: var(--text-light);
+  opacity: 0.8;
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.password-form {
+  max-width: 400px;
+}
+
+/* Bouton de danger */
+.btn--danger {
+  background: linear-gradient(45deg, #f44336, #d32f2f);
+  border: none;
+  color: white;
+}
+
+.btn--danger:hover {
+  background: linear-gradient(45deg, #d32f2f, #b71c1c);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profile-content {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .profile-sidebar {
+    position: static;
+    order: 2;
+  }
+
+  .profile-main {
+    order: 1;
+  }
+
+  .tab-header {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: flex-start;
+  }
+
+  .sessions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-title {
+    font-size: var(--text-2xl);
+  }
 }
 
 /* ===== ÉTATS DE CHARGEMENT ET D'ERREUR ===== */
