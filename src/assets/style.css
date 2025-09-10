@@ -82,23 +82,6 @@
   align-items: center;
 }
 
-.auth-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: var(--text-light);
-  padding: var(--spacing-sm) var(--spacing-lg);
-  border-radius: var(--border-radius-lg);
-  cursor: pointer;
-  font-weight: 500;
-  transition: var(--transition-normal);
-  backdrop-filter: blur(10px);
-}
-
-.auth-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-}
-
 .user-info {
   display: flex;
   align-items: center;
@@ -107,7 +90,7 @@
   color: var(--text-light);
 }
 
-/* Bouton hamburger */
+/* Bouton ha  urger */
 .hamburger-button {
   display: none;
   flex-direction: column;
@@ -287,42 +270,6 @@
   border-radius: var(--border-radius-md);
   padding: var(--spacing-xl);
   backdrop-filter: blur(10px);
-}
-
-.mobile-auth-button {
-  width: 100%;
-  background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-  border: none;
-  color: var(--text-light);
-  padding: var(--spacing-lg) var(--spacing-xl);
-  border-radius: var(--border-radius-lg);
-  font-size: var(--text-lg);
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition-normal);
-  box-shadow: var(--shadow-md);
-  position: relative;
-  overflow: hidden;
-}
-
-.mobile-auth-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.mobile-auth-button:hover::before {
-  left: 100%;
-}
-
-.mobile-auth-button:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-lg);
 }
 
 /* Utilitaires */
@@ -570,8 +517,6 @@ body.menu-open {
 .btn:focus-visible,
 .btn-gradient:focus-visible,
 .btn-secondary:focus-visible,
-.auth-button:focus-visible,
-.mobile-auth-button:focus-visible,
 .logout-button:focus-visible,
 .mobile-logout-button:focus-visible,
 .cta-button:focus-visible {
@@ -582,8 +527,6 @@ body.menu-open {
 .btn:disabled,
 .btn-gradient:disabled,
 .btn-secondary:disabled,
-.auth-button:disabled,
-.mobile-auth-button:disabled,
 .logout-button:disabled,
 .mobile-logout-button:disabled,
 .cta-button:disabled {

@@ -1,4 +1,5 @@
 import HomeView from '../views/HomeView.vue'
+import LoginView from '../views/loginView.vue'
 import ShareHomePage from '../views/ShareReading/ShareHomePage.vue'
 import NewSession from '../views/ShareReading/NewSession.vue'
 import DetailSession from '../views/ShareReading/DetailSession.vue'
@@ -9,6 +10,11 @@ export default [
     path: '/',
     name: 'home',
     component: HomeView,
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: LoginView,
   },
   {
     path: '/share-reading',

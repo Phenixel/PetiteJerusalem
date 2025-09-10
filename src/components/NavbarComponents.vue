@@ -1,17 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { app, googleAuthProvider } from '../../firebase'
-import {
-  getAuth,
-  onAuthStateChanged,
-  signInWithRedirect,
-  signOut,
-  type User as FirebaseUser,
-} from 'firebase/auth'
-
-function connectWithGoogle() {
-  signInWithRedirect(getAuth(app), googleAuthProvider)
-}
+import { app } from '../../firebase'
+import { getAuth, onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth'
 
 const username = ref<string | null>(null)
 const isMobileMenuOpen = ref(false)
@@ -69,9 +59,9 @@ async function logout() {
         <RouterLink to="/share-reading" @click="closeMobileMenu">Partage de lectures</RouterLink>
       </div>
       <div class="auth-section">
-        <button v-if="!username" @click="connectWithGoogle" class="btn btn--glass btn-md">
-          Se connecter avec Google
-        </button>
+        <RouterLink v-if="!username" to="/login" class="btn btn--glass btn-md"
+          >Se connecter</RouterLink
+        >
         <div v-else class="user-info">
           <span>Bienvenue, {{ username }}</span>
           <button
@@ -114,13 +104,9 @@ async function logout() {
 
         <!-- Section d'authentification mobile -->
         <div class="mobile-auth-section">
-          <button
-            v-if="!username"
-            @click="connectWithGoogle"
-            class="btn btn--gradient btn-lg w-100"
-          >
-            Se connecter avec Google
-          </button>
+          <RouterLink v-if="!username" to="/login" @click="closeMobileMenu" class="btn btn--gradient btn-lg w-100">
+            Se connecter
+          </RouterLink>
           <div v-else class="mobile-user-info">
             <span>Bienvenue, {{ username }}</span>
             <button
