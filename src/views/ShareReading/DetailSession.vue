@@ -157,6 +157,18 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
     )
 
     if (reservation) {
+      // Vérifier si l'utilisateur peut supprimer cette réservation
+      const canDelete = sessionService.canUserDeleteReservation(
+        reservation,
+        currentUser.value,
+        reservationForm.value.email,
+      )
+
+      if (!canDelete) {
+        alert('Vous ne pouvez annuler que vos propres réservations.')
+        return
+      }
+
       await sessionService.deleteReservation(session.value.id, reservation.id)
 
       // Supprimer de la liste locale
@@ -231,6 +243,21 @@ const cancelAllReservations = async (textStudyId: string) => {
   try {
     isReserving.value = `${textStudyId}-all`
 
+    // Vérifier que l'utilisateur peut supprimer toutes les réservations de ce texte
+    const textReservations = reservations.value.filter((r) => r.textStudyId === textStudyId)
+    const canDeleteAll = textReservations.every((reservation) =>
+      sessionService.canUserDeleteReservation(
+        reservation,
+        currentUser.value,
+        reservationForm.value.email,
+      ),
+    )
+
+    if (!canDeleteAll) {
+      alert('Vous ne pouvez annuler que vos propres réservations.')
+      return
+    }
+
     await sessionService.cancelAllReservations(session.value.id, textStudyId)
 
     // Supprimer de la liste locale
@@ -260,6 +287,36 @@ const formatBookName = (bookName: string) => {
 // Nettoyer la recherche
 const clearSearch = () => {
   searchTerm.value = ''
+}
+
+// Vérifier si une réservation peut être annulée par l'utilisateur actuel
+const canCancelReservation = (textStudyId: string, section?: number) => {
+  const reservation = reservations.value.find(
+    (r) => r.textStudyId === textStudyId && r.section === section,
+  )
+
+  if (!reservation) return false
+
+  return sessionService.canUserDeleteReservation(
+    reservation,
+    currentUser.value,
+    reservationForm.value.email,
+  )
+}
+
+// Vérifier si toutes les réservations d'un texte peuvent être annulées par l'utilisateur actuel
+const canCancelAllReservations = (textStudyId: string) => {
+  const textReservations = reservations.value.filter((r) => r.textStudyId === textStudyId)
+
+  if (textReservations.length === 0) return false
+
+  return textReservations.every((reservation) =>
+    sessionService.canUserDeleteReservation(
+      reservation,
+      currentUser.value,
+      reservationForm.value.email,
+    ),
+  )
 }
 
 // Fonctions de partage
@@ -490,7 +547,14 @@ onMounted(async () => {
                     :key="chapter"
                     class="section-item"
                   >
-                    <label class="section-checkbox">
+                    <label
+                      class="section-checkbox"
+                      :class="{
+                        disabled:
+                          isReserved(text.id, chapter).isReserved &&
+                          !canCancelReservation(text.id, chapter),
+                      }"
+                    >
                       <input
                         type="checkbox"
                         :checked="isReserved(text.id, chapter).isReserved"
@@ -499,7 +563,11 @@ onMounted(async () => {
                             ? cancelReservation(text.id, chapter)
                             : reserveTextOrSection(text.id, chapter)
                         "
-                        :disabled="isReserving === `${text.id}-${chapter}`"
+                        :disabled="
+                          isReserving === `${text.id}-${chapter}` ||
+                          (isReserved(text.id, chapter).isReserved &&
+                            !canCancelReservation(text.id, chapter))
+                        "
                       />
                       <span class="section-label">Chapitre {{ chapter }}</span>
                     </label>
@@ -540,11 +608,18 @@ onMounted(async () => {
                         ? cancelAllReservations(text.id)
                         : reserveAllChapters(text.id)
                     "
-                    :disabled="isReserving === `${text.id}-all`"
+                    :disabled="
+                      isReserving === `${text.id}-all` ||
+                      (getTextDisplayStatus(text.id).status === 'fully_reserved' &&
+                        !canCancelAllReservations(text.id))
+                    "
                     class="btn-reserve-full"
                     :class="{
                       reserved: getTextDisplayStatus(text.id).status === 'fully_reserved',
                       available: getTextDisplayStatus(text.id).status === 'available',
+                      disabled:
+                        getTextDisplayStatus(text.id).status === 'fully_reserved' &&
+                        !canCancelAllReservations(text.id),
                     }"
                   >
                     {{

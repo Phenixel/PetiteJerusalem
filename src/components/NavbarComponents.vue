@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { app } from '../../firebase'
 import { getAuth, onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth'
 
+const router = useRouter()
+const route = useRoute()
 const username = ref<string | null>(null)
 const isMobileMenuOpen = ref(false)
 
@@ -29,6 +32,14 @@ onAuthStateChanged(getAuth(app), async (firebaseUser: FirebaseUser | null) => {
 async function logout() {
   await signOut(getAuth(app))
   username.value = null
+  closeMobileMenu()
+  router.push('/')
+}
+
+function goToLogin() {
+  // Sauvegarder la page actuelle pour redirection après connexion
+  const currentPath = route.path
+  router.push(`/login?redirect=${encodeURIComponent(currentPath)}`)
   closeMobileMenu()
 }
 </script>
@@ -59,16 +70,16 @@ async function logout() {
         <RouterLink to="/share-reading" @click="closeMobileMenu">Partage de lectures</RouterLink>
       </div>
       <div class="auth-section">
-        <RouterLink v-if="!username" to="/login" class="btn btn--glass btn-md"
-          >Se connecter</RouterLink
-        >
+        <button v-if="!username" @click="goToLogin" class="btn btn--glass btn-md">
+          Se connecter
+        </button>
         <div v-else class="user-info">
           <RouterLink to="/profile" class="user-name-link">
-            <span>Bienvenue, {{ username }}</span>
+            <span><i class="fa-solid fa-user"></i> {{ username }}</span>
           </RouterLink>
           <button
             @click="logout"
-            class="btn btn--glass btn--icon"
+            class="btn btn--glass btn--icon btn-md"
             aria-label="Se déconnecter"
             title="Se déconnecter"
             data-tooltip="Se déconnecter"
@@ -106,21 +117,22 @@ async function logout() {
 
         <!-- Section d'authentification mobile -->
         <div class="mobile-auth-section">
-          <RouterLink
-            v-if="!username"
-            to="/login"
-            @click="closeMobileMenu"
-            class="btn btn--gradient btn-lg w-100"
-          >
+          <button v-if="!username" @click="goToLogin" class="btn btn--gradient btn-lg w-100">
             Se connecter
-          </RouterLink>
-          <div v-else class="mobile-user-info">
-            <RouterLink to="/profile" @click="closeMobileMenu" class="mobile-user-name-link">
-              <span>Bienvenue, {{ username }}</span>
+          </button>
+          <div v-else>
+            <RouterLink
+              to="/profile"
+              @click="closeMobileMenu"
+              class="btn btn--glass btn-lg w-100"
+              style="margin-bottom: var(--spacing-md)"
+            >
+              <i class="fa-solid fa-user"></i>
+              <span>{{ username }}</span>
             </RouterLink>
             <button
               @click="logout"
-              class="btn btn--contrast btn-md"
+              class="btn btn--gradient btn-lg w-100"
               aria-label="Se déconnecter"
               title="Se déconnecter"
             >

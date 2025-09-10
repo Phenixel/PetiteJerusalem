@@ -281,7 +281,7 @@
   margin-top: auto;
   padding-top: var(--spacing-xl);
   border-top: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   border-radius: var(--border-radius-md);
   padding: var(--spacing-xl);
   backdrop-filter: blur(10px);
@@ -584,7 +584,7 @@ body.menu-open {
   backdrop-filter: blur(10px);
 }
 .btn--contrast {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: var(--text-primary);
   backdrop-filter: blur(10px);
@@ -1012,6 +1012,41 @@ body.menu-open {
 .btn-reserve-full:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Styles pour les éléments désactivés (non modifiables par l'utilisateur) */
+.section-checkbox.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.section-checkbox.disabled input[type='checkbox'] {
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.section-checkbox.disabled input[type='checkbox']:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: none;
+}
+
+.section-checkbox.disabled .section-label {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.btn-reserve-full.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: rgba(128, 128, 128, 0.2) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  border-color: rgba(128, 128, 128, 0.3) !important;
+}
+
+.btn-reserve-full.disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 /* Styles pour les groupes de livres */

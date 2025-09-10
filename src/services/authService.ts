@@ -5,6 +5,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithRedirect,
+  getRedirectResult,
   signOut,
   updateProfile,
 } from 'firebase/auth'
@@ -109,6 +110,40 @@ export class AuthService {
   async signInWithGoogleRedirect(): Promise<void> {
     const auth = getAuth(app)
     await signInWithRedirect(auth, googleAuthProvider)
+  }
+
+  // Récupérer le résultat de la redirection Google
+  async getGoogleRedirectResult(): Promise<User | null> {
+    const auth = getAuth(app)
+    try {
+      const result = await getRedirectResult(auth)
+      if (result && result.user) {
+        return {
+          id: result.user.uid,
+          name: result.user.displayName || result.user.email || 'Utilisateur',
+          email: result.user.email || '',
+        }
+      }
+      return null
+    } catch (error) {
+      console.error('Erreur lors de la récupération du résultat de redirection:', error)
+      return null
+    }
+  }
+
+  // Sauvegarder la page d'origine pour redirection après connexion
+  saveRedirectPath(path: string): void {
+    localStorage.setItem('auth_redirect_path', path)
+  }
+
+  // Récupérer et supprimer la page d'origine sauvegardée
+  getAndClearRedirectPath(): string | null {
+    const path = localStorage.getItem('auth_redirect_path')
+    if (path) {
+      localStorage.removeItem('auth_redirect_path')
+      return path
+    }
+    return null
   }
 
   // Déconnexion

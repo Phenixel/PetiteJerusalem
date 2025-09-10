@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { AuthService } from '../services/authService'
 
 const authService = new AuthService()
 const router = useRouter()
+const route = useRoute()
 
 const mode = ref<'login' | 'signup'>('login')
 const email = ref('')
@@ -46,18 +47,47 @@ async function submitForm() {
 
 async function loginWithGoogle() {
   try {
+    // Sauvegarder la page d'origine pour redirection après connexion
+    const redirectPath = (route.query.redirect as string) || '/profile'
+    authService.saveRedirectPath(redirectPath)
+
     await authService.signInWithGoogleRedirect()
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Erreur Google'
     errorMessage.value = msg
   }
 }
+
+// Gérer la redirection après connexion Google au chargement de la page
+onMounted(async () => {
+  try {
+    const user = await authService.getGoogleRedirectResult()
+    if (user) {
+      // Récupérer la page d'origine sauvegardée
+      const redirectPath = authService.getAndClearRedirectPath() || '/profile'
+      router.push(redirectPath)
+    }
+  } catch (error) {
+    console.error('Erreur lors de la vérification de la redirection Google:', error)
+  }
+})
 </script>
 
 <template>
   <main class="main-content">
     <section class="content-body">
       <div class="form-container max-width-600">
+        <div class="center-content">
+          <button class="btn btn--glass btn-lg" @click="loginWithGoogle">
+            <i class="fa-brands fa-google"></i>
+            Se connecter avec Google
+          </button>
+        </div>
+
+        <div class="center-content" style="margin: var(--spacing-xl) 0">
+          <p class="text-opacity-80">ou</p>
+        </div>
+
         <div class="mode-switch" :data-mode="mode">
           <div
             class="mode-switch__pill"
@@ -142,14 +172,6 @@ async function loginWithGoogle() {
             </button>
           </div>
         </form>
-
-        <div class="center-content" style="margin-top: var(--spacing-2xl)">
-          <p class="text-opacity-80">ou</p>
-          <button class="btn btn--glass btn-md" @click="loginWithGoogle">
-            <i class="fa-brands fa-google"></i>
-            Se connecter avec Google
-          </button>
-        </div>
       </div>
     </section>
   </main>

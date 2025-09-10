@@ -95,6 +95,29 @@ export class ReservationService {
     })
   }
 
+  // Vérifier si l'utilisateur peut supprimer une réservation
+  canUserDeleteReservation(
+    reservation: TextStudyReservation,
+    currentUser: { id: string; email: string } | null,
+    guestEmail?: string,
+  ): boolean {
+    if (!currentUser && !guestEmail) {
+      return false
+    }
+
+    // Vérifier si c'est l'utilisateur connecté qui a fait la réservation
+    if (currentUser && reservation.chosenById === currentUser.id) {
+      return true
+    }
+
+    // Vérifier si c'est un invité qui a fait la réservation
+    if (guestEmail && reservation.chosenByGuestId === guestEmail) {
+      return true
+    }
+
+    return false
+  }
+
   // Vérifier si un texte ou une section est réservé
   isTextOrSectionReserved(
     textStudyId: string,

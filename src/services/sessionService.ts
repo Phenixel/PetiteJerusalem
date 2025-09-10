@@ -120,6 +120,15 @@ export class SessionService {
     return await this.reservationService.deleteReservation(sessionId, reservationId)
   }
 
+  // Vérifier si l'utilisateur peut supprimer une réservation
+  canUserDeleteReservation(
+    reservation: TextStudyReservation,
+    currentUser: User | null,
+    guestEmail?: string,
+  ): boolean {
+    return this.reservationService.canUserDeleteReservation(reservation, currentUser, guestEmail)
+  }
+
   // Créer une réservation pour un utilisateur connecté ou un invité
   async createReservationForUser(
     sessionId: string,
