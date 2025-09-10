@@ -1,0 +1,17 @@
+name: Petite Jerusalem Deployment (production)
+
+on:
+  push:
+    tags:
+      - 'release/**'
+
+jobs:
+  verify:
+    uses: ./.github/workflows/verify.yml
+
+  deploy:
+    needs: verify
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: production
+    secrets: inherit
