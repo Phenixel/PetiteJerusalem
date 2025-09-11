@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { SessionService } from '../../services/sessionService'
 import type { Session, TextStudy, TextStudyReservation } from '../../models/models'
 import type { User } from '../../services/authService'
 import GuestForm from '../../components/GuestForm.vue'
+import { seoService } from '../../services/seoService'
 
 // Déclaration TypeScript pour QRCode
 declare global {
@@ -402,13 +403,31 @@ const copyToClipboard = async () => {
   }
 }
 
-// Initialisation
 onMounted(async () => {
-  // Vérifier l'authentification
   currentUser.value = await sessionService.getCurrentUser()
 
-  // Charger les données
   await loadSessionData()
+
+  if (session.value) {
+    const url = window.location.origin + `/share-reading/session/${session.value.id}`
+    seoService.setMeta({
+      title: `${session.value.name} | Session d'étude | Petite Jerusalem`,
+      description: session.value.description || 'Session de lecture partagée.',
+      canonical: url,
+      og: { url },
+    })
+  }
+})
+
+watch(session, (s) => {
+  if (!s) return
+  const url = window.location.origin + `/share-reading/session/${s.id}`
+  seoService.setMeta({
+    title: `${s.name} | Session d'étude | Petite Jerusalem`,
+    description: s.description || 'Session de lecture partagée.',
+    canonical: url,
+    og: { url },
+  })
 })
 </script>
 

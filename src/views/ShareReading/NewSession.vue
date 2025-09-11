@@ -5,6 +5,7 @@ import { EnumTypeTextStudy } from '../../models/typeTextStudy'
 import { SessionService } from '../../services/sessionService'
 import { TextTypeService } from '../../services/textTypeService'
 import type { User } from '../../services/authService'
+import { seoService } from '../../services/seoService'
 
 const router = useRouter()
 const sessionService = new SessionService()
@@ -28,6 +29,13 @@ const sessionData = reactive({
 // Récupérer l'utilisateur connecté
 onMounted(async () => {
   currentUser.value = await sessionService.requireAuthentication(router)
+  const url = window.location.origin + '/share-reading/new-session'
+  seoService.setMeta({
+    title: 'Créer une session | Petite Jerusalem',
+    description: 'Créez une session de lecture partagée et invitez la communauté à participer.',
+    canonical: url,
+    og: { url },
+  })
 })
 
 const createSession = async () => {

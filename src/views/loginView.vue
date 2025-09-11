@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AuthService } from '../services/authService'
+import { seoService } from '../services/seoService'
 
 const authService = new AuthService()
 const router = useRouter()
@@ -70,6 +71,14 @@ onMounted(async () => {
   } catch (error) {
     console.error('Erreur lors de la vérification de la redirection Google:', error)
   }
+  const url = window.location.origin + '/login'
+  seoService.setMeta({
+    title: 'Connexion | Petite Jerusalem',
+    description:
+      'Connectez-vous pour créer des sessions, réserver des textes et gérer votre profil.',
+    canonical: url,
+    og: { url },
+  })
 })
 </script>
 

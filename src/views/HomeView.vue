@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { onMounted } from 'vue'
+import { seoService } from '../services/seoService'
 
 const router = useRouter()
 
@@ -26,6 +28,17 @@ const features = [
     route: 'suivi-personnel',
   },
 ]
+
+onMounted(() => {
+  const url = window.location.origin + '/'
+  seoService.setMeta({
+    title: 'Accueil | Petite Jerusalem',
+    description:
+      "Votre centre spirituel numérique: partage de lectures, halakhot quotidiennes et suivi d'étude.",
+    canonical: url,
+    og: { url },
+  })
+})
 </script>
 
 <template>

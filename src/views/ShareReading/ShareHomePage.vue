@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { SessionService } from '../../services/sessionService'
 import type { Session } from '../../models/models'
 import SessionCard from '../../components/SessionCard.vue'
+import { seoService } from '../../services/seoService'
 
 const router = useRouter()
 const sessionService = new SessionService()
@@ -31,6 +32,14 @@ const loadSessions = async () => {
 // Charger les sessions au montage du composant
 onMounted(() => {
   loadSessions()
+  const url = window.location.origin + '/share-reading'
+  seoService.setMeta({
+    title: 'Partage de Lectures | Petite Jerusalem',
+    description:
+      'Découvrez et créez des sessions de lecture partagée. Réservez des textes et étudiez avec la communauté.',
+    canonical: url,
+    og: { url },
+  })
 })
 
 const handleSessionClick = (session: Session) => {
@@ -45,7 +54,11 @@ const handleSessionClick = (session: Session) => {
       <h2 class="hero-title">Partage de Lectures</h2>
       <p class="hero-description">Échangez et découvrez des textes sacrés avec la communauté</p>
 
-      <button @click="router.push('/share-reading/new-session')" class="btn-gradient">
+      <button
+        @click="router.push('/share-reading/new-session')"
+        class="btn-gradient"
+        style="margin-top: var(--spacing-xl)"
+      >
         Créer une session
       </button>
     </div>

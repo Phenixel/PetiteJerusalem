@@ -5,6 +5,7 @@ import { AuthService } from '../services/authService'
 import { SessionService } from '../services/sessionService'
 import type { User } from '../services/authService'
 import type { Session } from '../models/models'
+import { seoService } from '../services/seoService'
 
 const router = useRouter()
 const authService = new AuthService()
@@ -147,10 +148,16 @@ const deleteAccount = async () => {
   }
 }
 
-// Initialisation
 onMounted(async () => {
   await loadUserData()
   await loadSessions()
+  const url = window.location.origin + '/profile'
+  seoService.setMeta({
+    title: `${userDisplayName.value} | Profil | Petite Jerusalem`,
+    description: "Gérez vos informations, consultez vos sessions d'étude participées et créées.",
+    canonical: url,
+    og: { url },
+  })
 })
 </script>
 

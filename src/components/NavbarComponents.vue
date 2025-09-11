@@ -46,10 +46,10 @@ function goToLogin() {
 
 <template>
   <header class="header">
-    <div class="logo">
+    <RouterLink to="/" class="logo">
       <h1>Petite Jérusalem</h1>
       <p class="tagline">Hub de référence pour la communauté juive</p>
-    </div>
+    </RouterLink>
 
     <!-- Bouton hamburger pour mobile -->
     <button
@@ -109,7 +109,7 @@ function goToLogin() {
       <div class="mobile-menu-container">
         <!-- Navigation mobile -->
         <div class="mobile-links">
-          <RouterLink to="/" @click="closeMobileMenu" class="mobile-link"> Accueil </RouterLink>
+          <RouterLink to="/" @click="closeMobileMenu" class="mobile-link"> Accueil</RouterLink>
           <RouterLink to="/share-reading" @click="closeMobileMenu" class="mobile-link">
             Partage de lectures
           </RouterLink>

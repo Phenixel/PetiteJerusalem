@@ -1,3 +1,19 @@
+<script setup lang="ts">
+import { onMounted } from 'vue'
+import { seoService } from '../services/seoService'
+
+onMounted(() => {
+  const url = window.location.origin + window.location.pathname
+  seoService.setMeta({
+    title: 'Page non trouvée | Petite Jerusalem',
+    description: "La page demandée n'existe pas.",
+    canonical: url,
+    robots: 'noindex, follow',
+    og: { url },
+  })
+})
+</script>
+
 <template>
   <div class="page-gradient">
     <main class="main-content">
