@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import Navbar from './components/NavbarComponents.vue'
+import SiteFooter from './components/SiteFooter.vue'
 import { RouterView } from 'vue-router'
 import { AuthService } from './services/authService'
 
 const router = useRouter()
+const route = useRoute()
 const authService = new AuthService()
+
+const isHome = computed(() => route.name === 'home')
 
 // Gérer la redirection après connexion Google
 onMounted(async () => {
@@ -27,5 +31,6 @@ onMounted(async () => {
   <div class="page-gradient">
     <Navbar />
     <RouterView />
+    <SiteFooter v-if="!isHome" />
   </div>
 </template>

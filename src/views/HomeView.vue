@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 import { seoService } from '../services/seoService'
+import SiteFooter from '../components/SiteFooter.vue'
 
 const router = useRouter()
 
@@ -75,4 +76,6 @@ onMounted(() => {
       </p>
     </div>
   </main>
+
+  <SiteFooter class="footer-overlay" />
 </template>
