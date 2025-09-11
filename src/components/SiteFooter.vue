@@ -21,6 +21,10 @@
         <a class="footer-link" href="https://phenixel.notion.site/petite-jerusalem-mentions-legales" target="_blank" rel="noopener noreferrer">
           Mentions légales
         </a>
+        <span class="footer-separator" aria-hidden="true">•</span>
+        <a class="footer-link" href="https://phenixel.notion.site/26b35db90d4d809aada8e077937652d4?pvs=105" target="_blank" rel="noopener noreferrer">
+          Signaler un problème
+        </a>
       </nav>
 
       <div class="footer-right" aria-label="Réseaux sociaux">

@@ -153,7 +153,7 @@ onMounted(async () => {
   await loadSessions()
   const url = window.location.origin + '/profile'
   seoService.setMeta({
-    title: `${userDisplayName.value} | Profil | Petite Jerusalem`,
+    title: `Mon profil | Petite Jerusalem`,
     description: "Gérez vos informations, consultez vos sessions d'étude participées et créées.",
     canonical: url,
     og: { url },
