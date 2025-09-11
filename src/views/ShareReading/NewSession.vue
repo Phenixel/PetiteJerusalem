@@ -92,7 +92,7 @@ const goBack = () => {
       <p class="hero-description">Créez une session de partage de lectures avec la communauté</p>
     </div>
 
-    <div class="form-section">
+    <div>
       <form @submit.prevent="createSession" class="form-container">
         <div class="form-group">
           <label for="name" class="form-label">Titre de la session</label>

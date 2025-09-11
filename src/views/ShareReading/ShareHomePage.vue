@@ -1,17 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { SessionService } from '../../services/sessionService'
 import type { Session } from '../../models/models'
 import SessionCard from '../../components/SessionCard.vue'
 import { seoService } from '../../services/seoService'
+import { AuthService } from '../../services/authService'
 
 const router = useRouter()
 const sessionService = new SessionService()
+const authService = new AuthService()
 
 const sessions = ref<Session[]>([])
 const isLoading = ref(true)
 const error = ref<string | null>(null)
+const isAuthenticated = ref(false)
+let unsubscribeAuth: (() => void) | null = null
 
 // Charger les sessions depuis Firestore
 const loadSessions = async () => {
@@ -32,6 +36,10 @@ const loadSessions = async () => {
 // Charger les sessions au montage du composant
 onMounted(() => {
   loadSessions()
+  // Écouter l'état d'authentification et mettre à jour isAuthenticated
+  unsubscribeAuth = authService.onAuthChanged((user) => {
+    isAuthenticated.value = !!user
+  })
   const url = window.location.origin + '/share-reading'
   seoService.setMeta({
     title: 'Partage de Lectures | Petite Jerusalem',
@@ -40,6 +48,10 @@ onMounted(() => {
     canonical: url,
     og: { url },
   })
+})
+
+onUnmounted(() => {
+  if (unsubscribeAuth) unsubscribeAuth()
 })
 
 const handleSessionClick = (session: Session) => {
@@ -57,10 +69,15 @@ const handleSessionClick = (session: Session) => {
       <button
         @click="router.push('/share-reading/new-session')"
         class="btn-gradient"
+        :disabled="!isAuthenticated"
         style="margin-top: var(--spacing-xl)"
+        title="Créer une session"
       >
         Créer une session
       </button>
+      <div v-if="!isAuthenticated" style="margin-top: var(--spacing-sm)">
+        <small>Vous devez avoir un compte et être connecté pour créer une session.</small>
+      </div>
     </div>
 
     <div class="hero-section">
