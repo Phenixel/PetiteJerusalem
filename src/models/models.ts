@@ -36,6 +36,9 @@ export interface Session {
   slug: string
   isCompleted: boolean // calculé côté application
   reservations: TextStudyReservation[] // réservations intégrées directement
+  isEnded?: boolean // session terminée
+  endedAt?: Date // date de fin de session
+  updatedAt?: Date // date de dernière modification
 }
 
 export interface TextStudyReservation {

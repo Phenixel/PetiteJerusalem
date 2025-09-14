@@ -37,6 +37,8 @@ export class FirestoreService {
       id: doc.id,
       createdAt: data.createdAt?.toDate() || new Date(),
       dateLimit: data.dateLimit?.toDate() || new Date(),
+      endedAt: data.endedAt?.toDate() || undefined,
+      updatedAt: data.updatedAt?.toDate() || undefined,
     } as Session
   }
 

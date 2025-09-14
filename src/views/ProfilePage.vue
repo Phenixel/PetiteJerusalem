@@ -6,6 +6,8 @@ import { SessionService } from '../services/sessionService'
 import type { User } from '../services/authService'
 import type { Session, TextStudy } from '../models/models'
 import { seoService } from '../services/seoService'
+import ShareModal from '../components/ShareModal.vue'
+import EditSessionModal from '../components/EditSessionModal.vue'
 
 const router = useRouter()
 const authService = new AuthService()
@@ -38,6 +40,12 @@ const passwordForm = ref({
 })
 const isChangingPassword = ref(false)
 const isDeletingAccount = ref(false)
+
+// État des modals
+const showShareModal = ref(false)
+const showEditModal = ref(false)
+const selectedSession = ref<Session | null>(null)
+const shareUrl = ref('')
 
 // Computed
 const userDisplayName = computed(() => currentUser.value?.name || 'Utilisateur')
@@ -218,6 +226,79 @@ const deleteAccount = async () => {
     alert('Erreur lors de la suppression du compte')
   } finally {
     isDeletingAccount.value = false
+  }
+}
+
+// Fonctions pour les modals
+const openShareModal = (session: Session) => {
+  selectedSession.value = session
+  shareUrl.value = `${window.location.origin}/share-reading/session/${session.id}`
+  showShareModal.value = true
+}
+
+const openEditModal = (session: Session) => {
+  selectedSession.value = session
+  showEditModal.value = true
+}
+
+// Les fonctions closeShareModal et closeEditModal sont gérées par les composants modals
+
+// Sauvegarder les modifications de session
+const saveSessionChanges = async (sessionData: {
+  name: string
+  description: string
+  dateLimit: string
+}) => {
+  if (!selectedSession.value) return
+
+  try {
+    await sessionService.updateSession(selectedSession.value.id, sessionData)
+
+    // Mettre à jour la session locale
+    const sessionIndex = createdSessions.value.findIndex((s) => s.id === selectedSession.value!.id)
+    if (sessionIndex > -1) {
+      createdSessions.value[sessionIndex] = {
+        ...createdSessions.value[sessionIndex],
+        name: sessionData.name,
+        description: sessionData.description,
+        dateLimit: new Date(sessionData.dateLimit),
+        updatedAt: new Date(),
+      }
+    }
+
+    alert('Session mise à jour avec succès')
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour:', error)
+    alert('Erreur lors de la mise à jour de la session')
+  }
+}
+
+// Terminer une session
+const endSession = async (session: Session) => {
+  if (
+    !confirm('Êtes-vous sûr de vouloir terminer cette session ? Cette action est irréversible.')
+  ) {
+    return
+  }
+
+  try {
+    await sessionService.endSession(session.id)
+
+    // Mettre à jour la session locale
+    const sessionIndex = createdSessions.value.findIndex((s) => s.id === session.id)
+    if (sessionIndex > -1) {
+      createdSessions.value[sessionIndex] = {
+        ...createdSessions.value[sessionIndex],
+        isEnded: true,
+        endedAt: new Date(),
+        updatedAt: new Date(),
+      }
+    }
+
+    alert('Session terminée avec succès')
+  } catch (error) {
+    console.error('Erreur lors de la fin de session:', error)
+    alert('Erreur lors de la fin de session')
   }
 }
 
@@ -420,17 +501,44 @@ onMounted(async () => {
 
               <div v-else class="sessions-grid">
                 <div v-for="session in createdSessions" :key="session.id" class="session-card">
-                  <h3>{{ session.name }}</h3>
-                  <p>{{ session.description }}</p>
+                  <div class="session-card-header">
+                    <h3>{{ session.name }}</h3>
+                    <div v-if="session.isEnded" class="card-status completed">
+                      <i class="fa-solid fa-flag-checkered"></i>
+                      Terminée
+                    </div>
+                  </div>
+                  <p class="session-description">{{ session.description }}</p>
                   <div class="session-meta">
                     <span class="badge">{{ sessionService.formatTextType(session.type) }}</span>
                     <span class="badge"
                       >Date limite : {{ sessionService.formatDate(session.dateLimit) }}</span
                     >
+                    <span v-if="session.isEnded && session.endedAt" class="card-status completed">
+                      Terminée le {{ sessionService.formatDate(session.endedAt) }}
+                    </span>
                   </div>
                   <div class="session-actions">
-                    <button class="btn btn--glass btn-sm">Modifier</button>
-                    <button class="btn btn--secondary btn-sm">Partager</button>
+                    <button
+                      v-if="sessionService.canEditSession(session)"
+                      @click="openEditModal(session)"
+                      class="btn btn--glass btn-sm"
+                    >
+                      <i class="fa-solid fa-edit"></i>
+                      Modifier
+                    </button>
+                    <button @click="openShareModal(session)" class="btn btn--secondary btn-sm">
+                      <i class="fa-solid fa-share"></i>
+                      Partager
+                    </button>
+                    <button
+                      v-if="sessionService.canEndSession(session)"
+                      @click="endSession(session)"
+                      class="btn btn--danger btn-sm"
+                    >
+                      <i class="fa-solid fa-flag-checkered"></i>
+                      Mettre fin
+                    </button>
                   </div>
                 </div>
               </div>
@@ -556,6 +664,19 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+
+    <!-- Modals -->
+    <ShareModal
+      v-model:show="showShareModal"
+      :session-name="selectedSession?.name || ''"
+      :share-url="shareUrl"
+    />
+
+    <EditSessionModal
+      v-model:show="showEditModal"
+      :session="selectedSession"
+      @save="saveSessionChanges"
+    />
   </main>
 </template>
 
@@ -793,6 +914,24 @@ onMounted(async () => {
   box-shadow: var(--shadow-lg);
 }
 
+/* Amélioration des actions de session */
+.session-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-md);
+}
+
+.session-actions .btn {
+  flex: 1;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.session-actions .btn i {
+  margin-right: var(--spacing-xs);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .profile-content {
@@ -821,6 +960,15 @@ onMounted(async () => {
 
   .profile-title {
     font-size: var(--text-2xl);
+  }
+
+  .session-actions {
+    flex-direction: column;
+  }
+
+  .session-actions .btn {
+    width: 100%;
+    min-width: auto;
   }
 }
 </style>

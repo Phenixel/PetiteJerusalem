@@ -205,14 +205,6 @@ export class SessionService {
     return await this.createSession(sessionData)
   }
 
-  // Mettre à jour une session
-  async updateSession(
-    sessionId: string,
-    updates: Partial<Omit<Session, 'id' | 'createdAt'>>,
-  ): Promise<void> {
-    return await this.firestoreService.updateSession(sessionId, updates)
-  }
-
   // Supprimer une session
   async deleteSession(sessionId: string): Promise<void> {
     return await this.firestoreService.deleteSession(sessionId)
@@ -374,5 +366,49 @@ export class SessionService {
     }
 
     return this.groupTextStudiesByBook(filteredTexts)
+  }
+
+  // Mettre à jour une session
+  async updateSession(
+    sessionId: string,
+    sessionData: { name: string; description: string; dateLimit: string },
+  ): Promise<void> {
+    try {
+      await this.firestoreService.updateSession(sessionId, {
+        name: sessionData.name,
+        description: sessionData.description,
+        dateLimit: new Date(sessionData.dateLimit),
+        updatedAt: new Date(),
+      })
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de la session:', error)
+      throw new Error('Impossible de mettre à jour la session')
+    }
+  }
+
+  // Marquer une session comme terminée
+  async endSession(sessionId: string): Promise<void> {
+    try {
+      await this.firestoreService.updateSession(sessionId, {
+        isEnded: true,
+        endedAt: new Date(),
+        updatedAt: new Date(),
+      })
+    } catch (error) {
+      console.error('Erreur lors de la fin de session:', error)
+      throw new Error('Impossible de terminer la session')
+    }
+  }
+
+  // Vérifier si une session peut être modifiée
+  canEditSession(session: Session): boolean {
+    // Une session peut être modifiée si elle n'est pas terminée
+    return !session.isEnded
+  }
+
+  // Vérifier si une session peut être terminée
+  canEndSession(session: Session): boolean {
+    // Une session peut être terminée si elle n'est pas déjà terminée
+    return !session.isEnded
   }
 }
