@@ -41,11 +41,23 @@ service cloud.firestore {
              request.resource.data.reservations.size() == currentReservationsSize() - 1;
     }
 
+    // Modification d'une réservation existante (même taille, mais contenu modifié)
+    function isUpdateReservationOnly() {
+      return onlyReservationsChanged() &&
+             (request.resource.data.reservations is list) &&
+             request.resource.data.reservations.size() == currentReservationsSize();
+    }
+
     // Vérifier si l'utilisateur peut supprimer des réservations
     // Pour simplifier, on permet la suppression seulement si l'utilisateur est propriétaire de la session ou admin
     // La vérification fine de propriété des réservations se fait côté client
     function canRemoveReservation() {
       return isAuthenticated() && isRemoveOneReservationOnly();
+    }
+
+    // Vérifier si l'utilisateur peut modifier des réservations
+    function canUpdateReservation() {
+      return isAuthenticated() && isUpdateReservationOnly();
     }
 
     // Règle générale de lecture publique
@@ -59,8 +71,8 @@ service cloud.firestore {
       // Création: utilisateur connecté uniquement
       allow create: if isAuthenticated();
 
-      // Mise à jour: propriétaire/admin OU append d'une réservation OU suppression d'une réservation (propriétaire de la réservation)
-      allow update: if isSessionOwner() || isAdmin() || isAppendOneReservationOnly() || canRemoveReservation();
+      // Mise à jour: propriétaire/admin OU append d'une réservation OU suppression d'une réservation OU modification d'une réservation
+      allow update: if isSessionOwner() || isAdmin() || isAppendOneReservationOnly() || canRemoveReservation() || canUpdateReservation();
 
       // Suppression: propriétaire ou admin uniquement
       allow delete: if isSessionOwner() || isAdmin();

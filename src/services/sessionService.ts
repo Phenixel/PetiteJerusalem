@@ -329,6 +329,19 @@ export class SessionService {
     return Array.from({ length: totalSections }, (_, i) => i + 1)
   }
 
+  // Marquer une réservation comme complétée
+  async markReservationAsCompleted(
+    sessionId: string,
+    reservationId: string,
+    isCompleted: boolean,
+  ): Promise<void> {
+    return await this.reservationService.markReservationAsCompleted(
+      sessionId,
+      reservationId,
+      isCompleted,
+    )
+  }
+
   // === MÉTHODES DE GESTION DES DONNÉES DE SESSION ===
 
   // Charger les données complètes d'une session

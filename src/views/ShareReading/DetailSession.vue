@@ -232,6 +232,32 @@ const canCancelReservation = (textStudyId: string, section?: number) => {
   )
 }
 
+// Marquer une réservation comme complétée
+const toggleReservationCompletion = async (textStudyId: string, section: number) => {
+  if (!session.value) return
+
+  try {
+    const reservation = reservations.value.find(
+      (r) => r.textStudyId === textStudyId && r.section === section,
+    )
+
+    if (!reservation) return
+
+    const newCompletionStatus = !reservation.isCompleted
+    await sessionService.markReservationAsCompleted(
+      session.value.id,
+      reservation.id,
+      newCompletionStatus,
+    )
+
+    // Mettre à jour l'état local
+    reservation.isCompleted = newCompletionStatus
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour de la réservation:', error)
+    alert('Erreur lors de la mise à jour de la réservation')
+  }
+}
+
 // Fonctions de partage
 const openShareModal = () => {
   shareUrl.value = window.location.href
@@ -477,14 +503,61 @@ watch(session, (s) => {
 
               <!-- Statut global du texte -->
               <div class="text-status">
+                <!-- Pour les textes à un seul chapitre, vérifier le statut de complétion -->
+                <div
+                  v-if="text.totalSections === 1 && isReserved(text.id, 1).isReserved"
+                  class="single-chapter-status"
+                >
+                  <span
+                    class="section-status"
+                    :class="{
+                      reserved: !reservations.find(
+                        (r) => r.textStudyId === text.id && r.section === 1,
+                      )?.isCompleted,
+                      completed: reservations.find(
+                        (r) => r.textStudyId === text.id && r.section === 1,
+                      )?.isCompleted,
+                    }"
+                  >
+                    {{
+                      reservations.find((r) => r.textStudyId === text.id && r.section === 1)
+                        ?.isCompleted
+                        ? `Lu par ${isReserved(text.id, 1).reservedBy || "quelqu'un"}`
+                        : `Réservé par ${isReserved(text.id, 1).reservedBy || "quelqu'un"}`
+                    }}
+                  </span>
+
+                  <!-- Switch pour marquer comme lu (seulement si c'est notre réservation) -->
+                  <div v-if="canCancelReservation(text.id, 1)" class="completion-toggle">
+                    <label class="switch">
+                      <input
+                        type="checkbox"
+                        :checked="
+                          reservations.find((r) => r.textStudyId === text.id && r.section === 1)
+                            ?.isCompleted || false
+                        "
+                        @change="toggleReservationCompletion(text.id, 1)"
+                      />
+                      <span class="slider"></span>
+                    </label>
+                    <span class="switch-label">Marqué comme lu</span>
+                  </div>
+                </div>
+                <!-- Pour les textes à plusieurs chapitres, utiliser la logique existante -->
                 <span
-                  v-if="getTextDisplayStatus(text.id).status === 'fully_reserved'"
+                  v-else-if="
+                    text.totalSections > 1 &&
+                    getTextDisplayStatus(text.id).status === 'fully_reserved'
+                  "
                   class="status-reserved"
                 >
                   Réservé par {{ getTextDisplayStatus(text.id).reservedBy || "quelqu'un" }}
                 </span>
                 <span
-                  v-else-if="getTextDisplayStatus(text.id).status === 'partially_reserved'"
+                  v-else-if="
+                    text.totalSections > 1 &&
+                    getTextDisplayStatus(text.id).status === 'partially_reserved'
+                  "
                   class="status-partially-reserved"
                 >
                   En cours
@@ -608,5 +681,33 @@ watch(session, (s) => {
 .session-detail {
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* Styles spécifiques pour les textes à un seul chapitre */
+.single-chapter-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.completion-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .single-chapter-status {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+
+  .completion-toggle {
+    align-self: flex-end;
+  }
 }
 </style>

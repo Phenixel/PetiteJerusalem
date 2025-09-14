@@ -244,4 +244,33 @@ export class ReservationService {
       ...(!currentUser && reservationForm.email && { chosenByGuestId: reservationForm.email }),
     }
   }
+
+  // Marquer une réservation comme complétée
+  async markReservationAsCompleted(
+    sessionId: string,
+    reservationId: string,
+    isCompleted: boolean,
+  ): Promise<void> {
+    const sfDocRef = doc(db, 'sessions', sessionId)
+    await runTransaction(db, (transaction) => {
+      return transaction.get(sfDocRef).then((sfDoc) => {
+        if (!sfDoc.exists()) {
+          throw new Error('Document de session introuvable')
+        }
+
+        const data = sfDoc.data() as { reservations?: ReservationRecord[] }
+        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
+          ? data.reservations
+          : []
+
+        const reservationIndex = reservations.findIndex((r) => r.id === reservationId)
+        if (reservationIndex === -1) {
+          throw new Error('Réservation introuvable')
+        }
+
+        reservations[reservationIndex].isCompleted = isCompleted
+        transaction.update(sfDocRef, { reservations })
+      })
+    })
+  }
 }

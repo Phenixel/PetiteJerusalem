@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { AuthService } from '../services/authService'
 import { SessionService } from '../services/sessionService'
 import type { User } from '../services/authService'
-import type { Session } from '../models/models'
+import type { Session, TextStudy } from '../models/models'
 import { seoService } from '../services/seoService'
 
 const router = useRouter()
@@ -21,6 +21,7 @@ const isLoading = ref(true)
 // Données des sessions
 const participatedSessions = ref<Session[]>([])
 const createdSessions = ref<Session[]>([])
+const textStudiesMap = ref<Map<string, TextStudy>>(new Map())
 
 // État d'édition des infos
 const isEditingInfo = ref(false)
@@ -82,9 +83,81 @@ const loadSessions = async () => {
     createdSessions.value = allSessions.filter(
       (session) => session.personId === currentUser.value?.id,
     )
+
+    // Charger les détails des textes d'étude pour les sessions participées
+    await loadTextStudiesForSessions(participatedSessions.value)
   } catch (error) {
     console.error('Erreur lors du chargement des sessions:', error)
   }
+}
+
+// Charger les textes d'étude pour les sessions
+const loadTextStudiesForSessions = async (sessions: Session[]) => {
+  try {
+    const textStudyIds = new Set<string>()
+
+    // Collecter tous les IDs de textes d'étude uniques
+    sessions.forEach((session) => {
+      session.reservations?.forEach((reservation) => {
+        textStudyIds.add(reservation.textStudyId)
+      })
+    })
+
+    // Charger les textes d'étude par type
+    const types = [...new Set(sessions.map((s) => s.type))]
+    for (const type of types) {
+      const textStudies = await sessionService.getTextStudiesByType(type)
+      textStudies.forEach((textStudy) => {
+        textStudiesMap.value.set(textStudy.id, textStudy)
+      })
+    }
+  } catch (error) {
+    console.error("Erreur lors du chargement des textes d'étude:", error)
+  }
+}
+
+// Obtenir le nom d'un texte d'étude
+const getTextStudyName = (textStudyId: string): string => {
+  const textStudy = textStudiesMap.value.get(textStudyId)
+  return textStudy ? textStudy.name : textStudyId
+}
+
+// Obtenir les réservations de l'utilisateur pour une session
+const getUserReservationsForSession = (session: Session) => {
+  if (!currentUser.value) return []
+  return (
+    session.reservations?.filter(
+      (reservation) => reservation.chosenById === currentUser.value?.id,
+    ) || []
+  )
+}
+
+// Marquer une réservation comme complétée
+const toggleReservationCompletion = async (
+  sessionId: string,
+  reservationId: string,
+  isCompleted: boolean,
+) => {
+  try {
+    await sessionService.markReservationAsCompleted(sessionId, reservationId, isCompleted)
+
+    // Mettre à jour l'état local
+    const session = participatedSessions.value.find((s) => s.id === sessionId)
+    if (session) {
+      const reservation = session.reservations?.find((r) => r.id === reservationId)
+      if (reservation) {
+        reservation.isCompleted = isCompleted
+      }
+    }
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour de la réservation:', error)
+    alert('Erreur lors de la mise à jour de la réservation')
+  }
+}
+
+// Naviguer vers une session
+const goToSession = (sessionId: string) => {
+  router.push({ name: 'detail-session', params: { id: sessionId } })
 }
 
 // Changer d'onglet
@@ -164,11 +237,9 @@ onMounted(async () => {
 <template>
   <main class="main-content">
     <!-- Affichage de chargement -->
-    <div v-if="isLoading" class="loading-container">
-      <div class="loading-spinner">
-        <i class="fa-solid fa-spinner fa-spin"></i>
-        <p>Chargement...</p>
-      </div>
+    <div v-if="isLoading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Chargement de votre profil...</p>
     </div>
 
     <!-- Contenu du profil (affiché seulement si l'utilisateur est connecté) -->
@@ -259,13 +330,68 @@ onMounted(async () => {
 
               <div v-else class="sessions-grid">
                 <div v-for="session in participatedSessions" :key="session.id" class="session-card">
-                  <h3>{{ session.name }}</h3>
-                  <p>{{ session.description }}</p>
+                  <div class="session-card-header">
+                    <h3>{{ session.name }}</h3>
+                    <button @click="goToSession(session.id)" class="btn btn--glass btn-sm">
+                      <i class="fa-solid fa-external-link-alt"></i>
+                      Voir la session
+                    </button>
+                  </div>
+                  <p class="session-description">{{ session.description }}</p>
                   <div class="session-meta">
                     <span class="badge">{{ sessionService.formatTextType(session.type) }}</span>
                     <span class="badge"
                       >Date limite : {{ sessionService.formatDate(session.dateLimit) }}</span
                     >
+                  </div>
+
+                  <!-- Réservations de l'utilisateur -->
+                  <div class="user-reservations">
+                    <h4>Mes réservations :</h4>
+                    <div
+                      v-if="getUserReservationsForSession(session).length === 0"
+                      class="no-reservations"
+                    >
+                      <p>Aucune réservation trouvée</p>
+                    </div>
+                    <div v-else class="reservations-list">
+                      <div
+                        v-for="reservation in getUserReservationsForSession(session)"
+                        :key="reservation.id"
+                        class="reservation-item"
+                        :class="{ completed: reservation.isCompleted }"
+                      >
+                        <div class="reservation-info">
+                          <span class="reservation-text">
+                            {{ getTextStudyName(reservation.textStudyId) }}
+                            <span v-if="reservation.section" class="reservation-section">
+                              - Chapitre {{ reservation.section }}
+                            </span>
+                          </span>
+                          <span v-if="reservation.isCompleted" class="completion-badge">
+                            <i class="fa-solid fa-check-circle"></i>
+                            Terminé
+                          </span>
+                        </div>
+                        <div class="reservation-actions">
+                          <label class="switch">
+                            <input
+                              type="checkbox"
+                              :checked="reservation.isCompleted"
+                              @change="
+                                toggleReservationCompletion(
+                                  session.id,
+                                  reservation.id,
+                                  ($event.target as HTMLInputElement).checked,
+                                )
+                              "
+                            />
+                            <span class="slider"></span>
+                          </label>
+                          <span class="switch-label">Marqué comme lu</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -434,27 +560,267 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
+/* Styles spécifiques à la page de profil uniquement */
+.profile-header {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: var(--text-light);
+  padding: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
+  border-radius: var(--border-radius-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.profile-info {
+  position: relative;
+  z-index: 1;
+}
+
+.profile-title {
+  font-size: var(--text-4xl);
+  font-weight: 700;
+  margin: 0 0 var(--spacing-sm) 0;
+  background: linear-gradient(45deg, #fff, #f0f0f0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.profile-id {
+  font-size: var(--text-lg);
+  opacity: 0.8;
+  margin: 0 0 var(--spacing-md) 0;
+  font-family: monospace;
+}
+
+.profile-badge {
+  display: inline-block;
+}
+
+/* Contenu principal du profil */
+.profile-content {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: var(--spacing-2xl);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Menu latéral */
+.profile-sidebar {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius-lg);
   padding: var(--spacing-xl);
+  height: fit-content;
+  position: sticky;
+  top: var(--spacing-xl);
 }
 
-.loading-spinner {
-  text-align: center;
-  color: var(--color-text-soft, #666);
+.profile-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--spacing-2xl) 0;
 }
 
-.loading-spinner i {
-  font-size: 2rem;
-  margin-bottom: var(--spacing-md);
-  display: block;
+.profile-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-md);
+  color: var(--text-light);
+  font-weight: 600;
+  font-size: var(--text-base);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  text-align: left;
 }
 
-.loading-spinner p {
+.profile-menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateX(5px);
+}
+
+.profile-menu-item.active {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--primary-color);
+  color: var(--text-light);
+  box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+.profile-menu-item i {
+  font-size: var(--text-sm);
+  opacity: 0.7;
+}
+
+/* Contenu principal */
+.profile-main {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-2xl);
+  min-height: 600px;
+}
+
+/* En-tête des onglets */
+.tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-2xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tab-header h2 {
+  color: var(--text-light);
+  font-size: var(--text-2xl);
   margin: 0;
-  font-size: 1.1rem;
+}
+
+.tab-tabs {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.tab-tab {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-light);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-normal);
+}
+
+.tab-tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tab-tab.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+/* Contenu des onglets */
+.tab-content {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Grille des sessions */
+.sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+/* Formulaire d'informations */
+.info-form {
+  max-width: 500px;
+}
+
+.edit-actions {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+/* Sections de sécurité */
+.security-sections {
+  max-width: 600px;
+}
+
+.security-section {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.security-section.danger {
+  border-color: rgba(244, 67, 54, 0.3);
+  background: rgba(244, 67, 54, 0.05);
+}
+
+.security-section h3 {
+  color: var(--text-light);
+  font-size: var(--text-lg);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.security-section p {
+  color: var(--text-light);
+  opacity: 0.8;
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.password-form {
+  max-width: 400px;
+}
+
+/* Bouton de danger */
+.btn--danger {
+  background: linear-gradient(45deg, #f44336, #d32f2f);
+  border: none;
+  color: white;
+}
+
+.btn--danger:hover {
+  background: linear-gradient(45deg, #d32f2f, #b71c1c);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profile-content {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .profile-sidebar {
+    position: static;
+    order: 2;
+  }
+
+  .profile-main {
+    order: 1;
+  }
+
+  .tab-header {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: flex-start;
+  }
+
+  .sessions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-title {
+    font-size: var(--text-2xl);
+  }
 }
 </style>
