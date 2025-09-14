@@ -187,41 +187,6 @@ export class ReservationService {
     return { status: 'available', reservedBy: null }
   }
 
-  // Vérifier si tous les chapitres d'un texte sont réservés par la même personne
-  isTextFullyReservedBySamePerson(
-    textStudyId: string,
-    textStudy: TextStudy,
-    session: Session,
-  ): { isFullyReserved: boolean; reservedBy: string | null } {
-    const reservations = this.getReservationsBySession(session)
-    const textReservations = reservations.filter((r) => r.textStudyId === textStudyId)
-    const chapterReservations = textReservations.filter((r) => r.section !== undefined)
-
-    // Si aucun chapitre n'est réservé, le texte n'est pas réservé
-    if (chapterReservations.length === 0) {
-      return { isFullyReserved: false, reservedBy: null }
-    }
-
-    // Vérifier si tous les chapitres sont réservés
-    const allChaptersReserved = chapterReservations.length === textStudy.totalSections
-
-    if (!allChaptersReserved) {
-      return { isFullyReserved: false, reservedBy: null }
-    }
-
-    // Vérifier si tous les chapitres sont réservés par la même personne
-    const firstReservation = chapterReservations[0]
-    const allSamePerson = chapterReservations.every(
-      (r) => r.chosenByName === firstReservation.chosenByName,
-    )
-
-    return {
-      isFullyReserved: true,
-      reservedBy:
-        allSamePerson && firstReservation.chosenByName ? firstReservation.chosenByName : null,
-    }
-  }
-
   // Créer une réservation pour un utilisateur connecté ou un invité
   async createReservationForUser(
     sessionId: string,

@@ -188,9 +188,6 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
     alert("Erreur lors de l'annulation. Veuillez réessayer.")
   }
 }
-
-// === MÉTHODES DÉLÉGUÉES AUX SERVICES ===
-
 // Vérifier si un texte ou une section est réservé
 const isReserved = (textStudyId: string, section?: number) => {
   if (!session.value) return { isReserved: false }
@@ -203,76 +200,6 @@ const getTextDisplayStatus = (textStudyId: string) => {
   if (!textStudy || !session.value) return { status: 'available', reservedBy: null }
 
   return sessionService.getTextDisplayStatus(textStudyId, textStudy, session.value)
-}
-
-// Réserver tous les chapitres d'un texte
-const reserveAllChapters = async (textStudyId: string) => {
-  if (!session.value) return
-
-  try {
-    isReserving.value = `${textStudyId}-all`
-
-    const textStudy = textStudies.value.find((t) => t.id === textStudyId)
-    if (!textStudy) return
-
-    const newReservations = await sessionService.reserveAllChapters(
-      session.value.id,
-      textStudyId,
-      textStudy,
-      currentUser.value,
-      reservationForm.value,
-    )
-
-    // Ajouter toutes les nouvelles réservations à la liste locale
-    reservations.value.push(...newReservations)
-    // Synchroniser l'état de session pour refléter immédiatement côté UI
-    if (session.value) {
-      session.value.reservations = reservations.value
-    }
-  } catch (err) {
-    console.error('Erreur lors de la réservation de tous les chapitres:', err)
-    alert(err instanceof Error ? err.message : 'Erreur lors de la réservation. Veuillez réessayer.')
-  } finally {
-    isReserving.value = null
-  }
-}
-
-// Annuler toutes les réservations d'un texte
-const cancelAllReservations = async (textStudyId: string) => {
-  if (!session.value) return
-
-  try {
-    isReserving.value = `${textStudyId}-all`
-
-    // Vérifier que l'utilisateur peut supprimer toutes les réservations de ce texte
-    const textReservations = reservations.value.filter((r) => r.textStudyId === textStudyId)
-    const canDeleteAll = textReservations.every((reservation) =>
-      sessionService.canUserDeleteReservation(
-        reservation,
-        currentUser.value,
-        reservationForm.value.email,
-      ),
-    )
-
-    if (!canDeleteAll) {
-      alert('Vous ne pouvez annuler que vos propres réservations.')
-      return
-    }
-
-    await sessionService.cancelAllReservations(session.value.id, textStudyId)
-
-    // Supprimer de la liste locale
-    reservations.value = reservations.value.filter((r) => r.textStudyId !== textStudyId)
-    // Synchroniser l'état de session pour refléter immédiatement côté UI
-    if (session.value) {
-      session.value.reservations = reservations.value
-    }
-  } catch (err) {
-    console.error("Erreur lors de l'annulation de toutes les réservations:", err)
-    alert(err instanceof Error ? err.message : "Erreur lors de l'annulation. Veuillez réessayer.")
-  } finally {
-    isReserving.value = null
-  }
 }
 
 // Générer la liste des chapitres
@@ -302,21 +229,6 @@ const canCancelReservation = (textStudyId: string, section?: number) => {
     reservation,
     currentUser.value,
     reservationForm.value.email,
-  )
-}
-
-// Vérifier si toutes les réservations d'un texte peuvent être annulées par l'utilisateur actuel
-const canCancelAllReservations = (textStudyId: string) => {
-  const textReservations = reservations.value.filter((r) => r.textStudyId === textStudyId)
-
-  if (textReservations.length === 0) return false
-
-  return textReservations.every((reservation) =>
-    sessionService.canUserDeleteReservation(
-      reservation,
-      currentUser.value,
-      reservationForm.value.email,
-    ),
   )
 }
 
@@ -517,7 +429,32 @@ watch(session, (s) => {
             <div v-for="text in texts" :key="text.id" class="text-card">
               <!-- En-tête du texte -->
               <div class="text-header">
-                <h4 class="text-title">{{ text.name }}</h4>
+                <div class="text-title-container">
+                  <h4 class="text-title">{{ text.name }}</h4>
+                  <!-- Case à cocher directe pour les textes à un seul chapitre -->
+                  <label
+                    v-if="text.totalSections === 1"
+                    class="title-checkbox"
+                    :class="{
+                      disabled:
+                        isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1),
+                    }"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="isReserved(text.id, 1).isReserved"
+                      @change="
+                        isReserved(text.id, 1).isReserved
+                          ? cancelReservation(text.id, 1)
+                          : reserveTextOrSection(text.id, 1)
+                      "
+                      :disabled="
+                        isReserving === `${text.id}-1` ||
+                        (isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1))
+                      "
+                    />
+                  </label>
+                </div>
                 <div class="text-actions">
                   <a
                     :href="text.link"
@@ -528,6 +465,7 @@ watch(session, (s) => {
                     🔗
                   </a>
                   <button
+                    v-if="text.totalSections > 1"
                     @click="toggleTextExpansion(text.id)"
                     class="expand-button"
                     :class="{ expanded: isTextExpanded(text.id) }"
@@ -554,8 +492,8 @@ watch(session, (s) => {
                 <span v-else class="status-available">Disponible</span>
               </div>
 
-              <!-- Sections du texte (expandable) -->
-              <div v-if="isTextExpanded(text.id)" class="text-sections">
+              <!-- Sections du texte (expandable) - seulement si plus d'un chapitre -->
+              <div v-if="text.totalSections > 1 && isTextExpanded(text.id)" class="text-sections">
                 <div class="sections-header">
                   <h5>Sections disponibles ({{ text.totalSections }})</h5>
                 </div>
@@ -617,36 +555,6 @@ watch(session, (s) => {
                     </div>
                     <span v-else class="section-status available"> Disponible </span>
                   </div>
-                </div>
-
-                <!-- Bouton de réservation du texte complet -->
-                <div class="full-text-reservation">
-                  <button
-                    @click="
-                      getTextDisplayStatus(text.id).status === 'fully_reserved'
-                        ? cancelAllReservations(text.id)
-                        : reserveAllChapters(text.id)
-                    "
-                    :disabled="
-                      isReserving === `${text.id}-all` ||
-                      (getTextDisplayStatus(text.id).status === 'fully_reserved' &&
-                        !canCancelAllReservations(text.id))
-                    "
-                    class="btn-reserve-full"
-                    :class="{
-                      reserved: getTextDisplayStatus(text.id).status === 'fully_reserved',
-                      available: getTextDisplayStatus(text.id).status === 'available',
-                      disabled:
-                        getTextDisplayStatus(text.id).status === 'fully_reserved' &&
-                        !canCancelAllReservations(text.id),
-                    }"
-                  >
-                    {{
-                      getTextDisplayStatus(text.id).status === 'fully_reserved'
-                        ? 'Annuler la réservation'
-                        : 'Réserver le texte complet'
-                    }}
-                  </button>
                 </div>
               </div>
             </div>

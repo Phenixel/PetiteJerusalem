@@ -319,15 +319,6 @@ export class SessionService {
     return this.reservationService.getTextDisplayStatus(textStudyId, textStudy, session)
   }
 
-  // Vérifier si tous les chapitres d'un texte sont réservés par la même personne
-  isTextFullyReservedBySamePerson(
-    textStudyId: string,
-    textStudy: TextStudy,
-    session: Session,
-  ): { isFullyReserved: boolean; reservedBy: string | null } {
-    return this.reservationService.isTextFullyReservedBySamePerson(textStudyId, textStudy, session)
-  }
-
   // Filtrer les textes par terme de recherche
   filterTextStudiesBySearch(textStudies: TextStudy[], searchTerm: string): TextStudy[] {
     return SearchService.filterTextStudiesBySearch(textStudies, searchTerm)
@@ -336,74 +327,6 @@ export class SessionService {
   // Générer la liste des chapitres
   generateChapters(totalSections: number): number[] {
     return Array.from({ length: totalSections }, (_, i) => i + 1)
-  }
-
-  // === MÉTHODES DE GESTION COMPLÈTE DES RÉSERVATIONS ===
-
-  // Réserver tous les chapitres d'un texte
-  async reserveAllChapters(
-    sessionId: string,
-    textStudyId: string,
-    textStudy: TextStudy,
-    currentUser: User | null,
-    reservationForm: ReservationForm,
-  ): Promise<TextStudyReservation[]> {
-    const newReservations: TextStudyReservation[] = []
-
-    // Vérifier les réservations existantes pour ce texte
-    const session = await this.getSessionById(sessionId)
-    if (!session) throw new Error('Session non trouvée')
-
-    const existingReservations = this.getReservationsBySession(session)
-    const existingChapters = new Set(
-      existingReservations
-        .filter((r) => r.textStudyId === textStudyId)
-        .map((r) => r.section)
-        .filter((s) => s !== undefined),
-    )
-
-    // Créer des réservations seulement pour les chapitres non réservés
-    for (let chapter = 1; chapter <= textStudy.totalSections; chapter++) {
-      // Ignorer les chapitres déjà réservés
-      if (existingChapters.has(chapter)) {
-        continue
-      }
-
-      const reservationId = await this.createReservationForUser(
-        sessionId,
-        textStudyId,
-        chapter,
-        currentUser,
-        reservationForm,
-      )
-
-      const newReservation = this.createLocalReservation(
-        reservationId,
-        textStudyId,
-        chapter,
-        currentUser,
-        reservationForm,
-      )
-
-      newReservations.push(newReservation)
-    }
-
-    return newReservations
-  }
-
-  // Annuler toutes les réservations d'un texte
-  async cancelAllReservations(sessionId: string, textStudyId: string): Promise<void> {
-    const session = await this.getSessionById(sessionId)
-    if (!session) throw new Error('Session non trouvée')
-
-    const textReservations = this.getReservationsBySession(session).filter(
-      (r) => r.textStudyId === textStudyId,
-    )
-
-    // Supprimer toutes les réservations de ce texte
-    for (const reservation of textReservations) {
-      await this.deleteReservation(sessionId, reservation.id)
-    }
   }
 
   // === MÉTHODES DE GESTION DES DONNÉES DE SESSION ===
