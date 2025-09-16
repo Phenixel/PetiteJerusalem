@@ -411,4 +411,96 @@ export class SessionService {
     // Une session peut être terminée si elle n'est pas déjà terminée
     return !session.isEnded
   }
+
+  // === MÉTHODES DE GESTION POUR LES CRÉATEURS ===
+
+  // Créer une réservation au nom d'un invité (pour les créateurs)
+  async createGuestReservation(
+    sessionId: string,
+    textStudyId: string,
+    section: number | undefined,
+    guestName: string,
+    guestEmail: string,
+  ): Promise<string> {
+    return await this.reservationService.createReservation(
+      sessionId,
+      textStudyId,
+      section,
+      undefined, // userId
+      guestEmail, // guestId
+      undefined, // userName
+      guestName, // guestName
+    )
+  }
+
+  // Obtenir les statistiques d'une session
+  getSessionStats(session: Session): {
+    totalReservations: number
+    completedReservations: number
+    completionRate: number
+    totalTexts: number
+    reservedTexts: number
+    availableTexts: number
+  } {
+    const reservations = session.reservations || []
+    const totalReservations = reservations.length
+    const completedReservations = reservations.filter((r) => r.isCompleted).length
+    const completionRate =
+      totalReservations > 0 ? (completedReservations / totalReservations) * 100 : 0
+
+    // Pour les statistiques des textes, on aurait besoin de charger les textes d'étude
+    // Pour l'instant, on retourne des valeurs de base
+    return {
+      totalReservations,
+      completedReservations,
+      completionRate: Math.round(completionRate),
+      totalTexts: 0, // Sera calculé dans le composant
+      reservedTexts: 0, // Sera calculé dans le composant
+      availableTexts: 0, // Sera calculé dans le composant
+    }
+  }
+
+  // Obtenir les réservations d'un texte spécifique
+  getTextReservations(session: Session, textStudyId: string): TextStudyReservation[] {
+    return session.reservations?.filter((r) => r.textStudyId === textStudyId) || []
+  }
+
+  // Vérifier si un créateur peut gérer une session
+  canManageSession(session: Session, currentUser: User | null): boolean {
+    if (!currentUser) return false
+    return session.personId === currentUser.id
+  }
+
+  // Obtenir le statut de réservation d'un texte
+  getTextReservationStatus(
+    textStudy: TextStudy,
+    session: Session,
+  ): {
+    status: 'available' | 'fully_reserved' | 'partially_reserved'
+    reservedBy: string | null
+    reservations: TextStudyReservation[]
+  } {
+    const reservations = this.getTextReservations(session, textStudy.id)
+    const status = this.reservationService.getTextDisplayStatus(textStudy.id, textStudy, session)
+
+    return {
+      ...status,
+      reservations,
+    }
+  }
+
+  // Filtrer les sessions par créateur
+  getSessionsByCreator(sessions: Session[], creatorId: string): Session[] {
+    return sessions.filter((session) => session.personId === creatorId)
+  }
+
+  // Obtenir les sessions actives (non terminées) d'un créateur
+  getActiveSessionsByCreator(sessions: Session[], creatorId: string): Session[] {
+    return this.getSessionsByCreator(sessions, creatorId).filter((session) => !session.isEnded)
+  }
+
+  // Obtenir les sessions terminées d'un créateur
+  getCompletedSessionsByCreator(sessions: Session[], creatorId: string): Session[] {
+    return this.getSessionsByCreator(sessions, creatorId).filter((session) => session.isEnded)
+  }
 }

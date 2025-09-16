@@ -10,12 +10,12 @@ import { getFirestore } from 'firebase/firestore'
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: 'AIzaSyCykY9IonqmVpuA0VGICXnMWVtVNWlipnk',
-  authDomain: 'petite-jerusalem-dev.firebaseapp.com',
+  authDomain: 'petite-jerusalem.fr',
   projectId: 'petite-jerusalem-dev',
   storageBucket: 'petite-jerusalem-dev.firebasestorage.app',
   messagingSenderId: '152837353533',
   appId: '1:152837353533:web:f98a0d34a8c2e834d07a54',
-  measurementId: "G-YCXXL5PMK0"
+  measurementId: 'G-YCXXL5PMK0',
 }
 
 export const googleAuthProvider = new GoogleAuthProvider()

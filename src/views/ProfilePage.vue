@@ -243,6 +243,11 @@ const openEditModal = (session: Session) => {
 
 // Les fonctions closeShareModal et closeEditModal sont gérées par les composants modals
 
+// Fonction pour rediriger vers la page de gestion
+const openSessionManagement = (session: Session) => {
+  router.push({ name: 'session-management', params: { id: session.id } })
+}
+
 // Sauvegarder les modifications de session
 const saveSessionChanges = async (sessionData: {
   name: string
@@ -526,6 +531,14 @@ onMounted(async () => {
                     >
                       <i class="fa-solid fa-edit"></i>
                       Modifier
+                    </button>
+                    <button
+                      v-if="sessionService.canManageSession(session, currentUser)"
+                      @click="openSessionManagement(session)"
+                      class="btn btn--gradient btn-sm"
+                    >
+                      <i class="fa-solid fa-cogs"></i>
+                      Gérer
                     </button>
                     <button @click="openShareModal(session)" class="btn btn--secondary btn-sm">
                       <i class="fa-solid fa-share"></i>
