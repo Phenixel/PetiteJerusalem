@@ -26,26 +26,28 @@ const formatDate = (date: Date): string => {
 
 <template>
   <div
-    class="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white/40 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:bg-white/80 group"
+    class="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white/40 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:bg-white/80 group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:bg-gray-800/80"
     @click="$emit('click', session)"
   >
     <div class="flex justify-between items-start mb-4">
-      <h4 class="text-xl font-bold text-text-primary group-hover:text-primary transition-colors">
+      <h4
+        class="text-xl font-bold text-text-primary group-hover:text-primary transition-colors dark:text-gray-100 dark:group-hover:text-primary"
+      >
         {{ session.name }}
       </h4>
       <span
-        class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+        class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider dark:bg-primary/20"
         >{{ formatTextType(session.type) }}</span
       >
     </div>
     <div class="mb-4">
-      <div class="text-text-secondary">
-        <strong class="text-text-primary font-semibold">Créé par :</strong>
+      <div class="text-text-secondary dark:text-gray-400">
+        <strong class="text-text-primary font-semibold dark:text-gray-300">Créé par :</strong>
         {{ session.creatorName }}
       </div>
     </div>
-    <div class="pt-4 border-t border-black/5">
-      <span class="text-sm text-text-secondary flex items-center gap-2">
+    <div class="pt-4 border-t border-black/5 dark:border-white/10">
+      <span class="text-sm text-text-secondary flex items-center gap-2 dark:text-gray-400">
         <i class="far fa-calendar-alt"></i>
         <strong>Date limite :</strong> {{ formatDate(session.dateLimit) }}
       </span>

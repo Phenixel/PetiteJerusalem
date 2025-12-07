@@ -3,11 +3,13 @@ import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { app } from '../../firebase'
 import { getAuth, onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth'
+import { useDarkMode } from '../composables/useDarkMode'
 
 const router = useRouter()
 const route = useRoute()
 const username = ref<string | null>(null)
 const isMobileMenuOpen = ref(false)
+const { isDark, toggleDarkMode } = useDarkMode()
 
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
@@ -46,7 +48,7 @@ function goToLogin() {
 
 <template>
   <header
-    class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-white/30 backdrop-blur-md border-b border-white/20"
+    class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-white/30 backdrop-blur-md border-b border-white/20 dark:bg-gray-900/80 dark:border-gray-800 transition-colors duration-300"
   >
     <RouterLink to="/" class="group">
       <h1
@@ -62,20 +64,20 @@ function goToLogin() {
     <!-- Bouton hamburger pour mobile -->
     <button
       @click="toggleMobileMenu"
-      class="flex flex-col justify-around w-8 h-6 bg-transparent border-none cursor-pointer p-0 z-[1000] md:hidden"
+      class="flex flex-col justify-around w-8 h-6 bg-transparent border-none cursor-pointer p-0 z-[1000] md:hidden text-text-primary dark:text-white"
       :class="{ 'fixed right-6 top-6': isMobileMenuOpen }"
       aria-label="Menu principal"
     >
       <span
-        class="w-full h-[3px] bg-text-primary rounded-sm transition-all duration-300 origin-center"
+        class="w-full h-[3px] bg-current rounded-sm transition-all duration-300 origin-center"
         :class="{ 'rotate-45 translate-x-[6px] translate-y-[6px]': isMobileMenuOpen }"
       ></span>
       <span
-        class="w-full h-[3px] bg-text-primary rounded-sm transition-all duration-300 origin-center"
+        class="w-full h-[3px] bg-current rounded-sm transition-all duration-300 origin-center"
         :class="{ 'opacity-0': isMobileMenuOpen }"
       ></span>
       <span
-        class="w-full h-[3px] bg-text-primary rounded-sm transition-all duration-300 origin-center"
+        class="w-full h-[3px] bg-current rounded-sm transition-all duration-300 origin-center"
         :class="{ '-rotate-45 translate-x-[6px] -translate-y-[6px]': isMobileMenuOpen }"
       ></span>
     </button>
@@ -86,19 +88,27 @@ function goToLogin() {
         <RouterLink
           to="/"
           @click="closeMobileMenu"
-          class="text-text-primary font-medium px-4 py-2 rounded-lg hover:bg-black/5 hover:text-primary transition-colors"
-          exact-active-class="bg-black/5 text-primary"
+          class="text-text-primary font-medium px-4 py-2 rounded-lg hover:bg-black/5 hover:text-primary transition-colors dark:text-gray-100 dark:hover:bg-gray-800"
+          exact-active-class="bg-black/5 text-primary dark:bg-gray-800"
           >Accueil</RouterLink
         >
         <RouterLink
           to="/share-reading"
           @click="closeMobileMenu"
-          class="text-text-primary font-medium px-4 py-2 rounded-lg hover:bg-black/5 hover:text-primary transition-colors"
-          exact-active-class="bg-black/5 text-primary"
+          class="text-text-primary font-medium px-4 py-2 rounded-lg hover:bg-black/5 hover:text-primary transition-colors dark:text-gray-100 dark:hover:bg-gray-800"
+          exact-active-class="bg-black/5 text-primary dark:bg-gray-800"
           >Partage de lectures</RouterLink
         >
       </div>
-      <div class="flex items-center">
+      <div class="flex items-center gap-4">
+        <button
+          @click="toggleDarkMode"
+          class="flex items-center justify-center w-9 h-9 text-text-primary hover:text-primary transition-colors focus:outline-none"
+          :title="isDark ? 'Passer en mode clair' : 'Passer en mode sombre'"
+        >
+          <i class="fa-solid text-lg" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
+        </button>
+
         <button
           v-if="!username"
           @click="goToLogin"
@@ -106,16 +116,19 @@ function goToLogin() {
         >
           Se connecter
         </button>
-        <div v-else class="flex items-center gap-4 font-medium text-text-primary">
+        <div
+          v-else
+          class="flex items-center gap-4 font-medium text-text-primary dark:text-gray-100"
+        >
           <RouterLink
             to="/profile"
-            class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-black/5 transition-colors"
+            class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-black/5 transition-colors dark:hover:bg-gray-800"
           >
             <span><i class="fa-solid fa-user"></i> {{ username }}</span>
           </RouterLink>
           <button
             @click="logout"
-            class="flex items-center justify-center w-9 h-9 bg-white/20 border border-white/30 backdrop-blur-sm rounded-lg hover:bg-white/30 hover:-translate-y-0.5 transition-all text-text-primary"
+            class="flex items-center justify-center w-9 h-9 bg-white/20 border border-white/30 backdrop-blur-sm rounded-lg hover:bg-white/30 hover:-translate-y-0.5 transition-all text-text-primary dark:text-gray-100 dark:bg-gray-800/50 dark:border-gray-700 dark:hover:bg-gray-700"
             aria-label="Se déconnecter"
             title="Se déconnecter"
           >
@@ -138,7 +151,7 @@ function goToLogin() {
     <!-- Menu mobile -->
     <nav
       v-if="isMobileMenuOpen"
-      class="fixed top-0 left-0 w-80 h-full bg-bg-primary/95 backdrop-blur-xl border-r border-white/30 p-8 shadow-2xl z-[9999] overflow-y-auto animate-[slideInLeft_0.4s_ease-out]"
+      class="fixed top-0 left-0 w-80 h-full bg-bg-primary/95 backdrop-blur-xl border-r border-white/30 p-8 shadow-2xl z-[9999] overflow-y-auto animate-[slideInLeft_0.4s_ease-out] dark:bg-gray-900/95 dark:border-gray-700"
     >
       <div class="flex flex-col h-full">
         <!-- Navigation mobile -->
@@ -146,19 +159,30 @@ function goToLogin() {
           <RouterLink
             to="/"
             @click="closeMobileMenu"
-            class="text-text-primary font-semibold text-lg p-4 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 hover:text-primary hover:translate-x-1 transition-all"
-            exact-active-class="bg-primary/10 border-primary text-primary"
+            class="text-text-primary font-semibold text-lg p-4 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 hover:text-primary hover:translate-x-1 transition-all dark:text-gray-100 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:bg-gray-700"
+            exact-active-class="bg-primary/10 border-primary text-primary dark:bg-primary/20"
           >
             Accueil</RouterLink
           >
           <RouterLink
             to="/share-reading"
             @click="closeMobileMenu"
-            class="text-text-primary font-semibold text-lg p-4 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 hover:text-primary hover:translate-x-1 transition-all"
-            exact-active-class="bg-primary/10 border-primary text-primary"
+            class="text-text-primary font-semibold text-lg p-4 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 hover:text-primary hover:translate-x-1 transition-all dark:text-gray-100 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:bg-gray-700"
+            exact-active-class="bg-primary/10 border-primary text-primary dark:bg-primary/20"
           >
             Partage de lectures
           </RouterLink>
+        </div>
+
+        <!-- Section de préférences mobile -->
+        <div class="mb-4">
+          <button
+            @click="toggleDarkMode"
+            class="flex items-center justify-between w-full p-4 rounded-xl border border-white/20 bg-white/10 text-text-primary font-semibold hover:bg-white/20 transition-all dark:text-gray-100 dark:border-gray-700 dark:bg-gray-800/50"
+          >
+            <span>Mode sombre</span>
+            <i class="fa-solid" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
+          </button>
         </div>
 
         <!-- Section d'authentification mobile -->

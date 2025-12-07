@@ -360,7 +360,7 @@ onMounted(async () => {
       <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
         <!-- Menu latéral -->
         <nav
-          class="lg:sticky lg:top-24 h-fit bg-white/40 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm"
+          class="lg:sticky lg:top-24 h-fit bg-white/40 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm dark:bg-gray-800/40 dark:border-gray-700"
         >
           <ul class="flex flex-col gap-2 mb-8">
             <li>
@@ -369,8 +369,8 @@ onMounted(async () => {
                 :class="[
                   'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
                   activeTab === 'sessions-participated'
-                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
-                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1',
+                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm dark:bg-primary/20'
+                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
                 ]"
               >
                 <span>Sessions Participées</span>
@@ -383,8 +383,8 @@ onMounted(async () => {
                 :class="[
                   'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
                   activeTab === 'sessions-created'
-                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
-                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1',
+                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm dark:bg-primary/20'
+                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
                 ]"
               >
                 <span>Sessions Créées</span>
@@ -397,8 +397,8 @@ onMounted(async () => {
                 :class="[
                   'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
                   activeTab === 'my-info'
-                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
-                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1',
+                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm dark:bg-primary/20'
+                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
                 ]"
               >
                 <span>Mes Informations</span>
@@ -411,8 +411,8 @@ onMounted(async () => {
                 :class="[
                   'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
                   activeTab === 'security'
-                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
-                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1',
+                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm dark:bg-primary/20'
+                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
                 ]"
               >
                 <span>Sécurité</span>
@@ -423,7 +423,7 @@ onMounted(async () => {
 
           <button
             @click="authService.logout()"
-            class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium"
+            class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20"
           >
             <i class="fa-solid fa-right-from-bracket"></i>
             Déconnexion
@@ -435,22 +435,24 @@ onMounted(async () => {
           <!-- Sessions participées -->
           <div v-if="activeTab === 'sessions-participated'" class="animate-[fadeIn_0.3s_ease]">
             <div class="flex items-center justify-between mb-8">
-              <h2 class="text-2xl font-bold text-text-primary">Sessions participées</h2>
+              <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">
+                Sessions participées
+              </h2>
             </div>
 
             <div
               v-if="participatedSessions.length === 0"
-              class="flex flex-col items-center justify-center p-12 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 text-center"
+              class="flex flex-col items-center justify-center p-12 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 text-center dark:bg-gray-800/40 dark:border-gray-700"
             >
               <div
-                class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400 text-2xl"
+                class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400 text-2xl dark:bg-gray-700 dark:text-gray-500"
               >
                 <i class="fa-solid fa-calendar-xmark"></i>
               </div>
-              <h3 class="text-xl font-semibold text-text-primary mb-2">
+              <h3 class="text-xl font-semibold text-text-primary mb-2 dark:text-gray-200">
                 Aucune session participée
               </h3>
-              <p class="text-text-secondary">
+              <p class="text-text-secondary dark:text-gray-400">
                 Vous n'avez pas encore participé à des sessions d'étude.
               </p>
             </div>
@@ -459,18 +461,22 @@ onMounted(async () => {
               <div
                 v-for="session in participatedSessions"
                 :key="session.id"
-                class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-6 hover:shadow-lg transition-all duration-300"
+                class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-6 hover:shadow-lg transition-all duration-300 dark:bg-gray-800/60 dark:border-gray-700"
               >
                 <div
-                  class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-black/5"
+                  class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-black/5 dark:border-white/10"
                 >
                   <div>
-                    <h3 class="text-xl font-bold text-text-primary mb-1">{{ session.name }}</h3>
-                    <p class="text-text-secondary text-sm">{{ session.description }}</p>
+                    <h3 class="text-xl font-bold text-text-primary mb-1 dark:text-gray-100">
+                      {{ session.name }}
+                    </h3>
+                    <p class="text-text-secondary text-sm dark:text-gray-400">
+                      {{ session.description }}
+                    </p>
                   </div>
                   <button
                     @click="goToSession(session.id)"
-                    class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap"
+                    class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
                   >
                     <i class="fa-solid fa-external-link-alt text-xs"></i>
                     Voir la session
@@ -478,24 +484,28 @@ onMounted(async () => {
                 </div>
 
                 <div class="flex gap-2 mb-6 text-xs">
-                  <span class="px-2 py-1 bg-primary/10 text-primary rounded-md font-semibold">{{
-                    sessionService.formatTextType(session.type)
-                  }}</span>
-                  <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-md"
+                  <span
+                    class="px-2 py-1 bg-primary/10 text-primary rounded-md font-semibold dark:bg-primary/20"
+                    >{{ sessionService.formatTextType(session.type) }}</span
+                  >
+                  <span
+                    class="px-2 py-1 bg-gray-100 text-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-300"
                     >Limite : {{ sessionService.formatDate(session.dateLimit) }}</span
                   >
                 </div>
 
                 <!-- Réservations de l'utilisateur -->
-                <div class="bg-white/40 rounded-xl p-4 border border-white/40">
+                <div
+                  class="bg-white/40 rounded-xl p-4 border border-white/40 dark:bg-gray-700/30 dark:border-gray-600/50"
+                >
                   <h4
-                    class="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide opacity-70"
+                    class="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide opacity-70 dark:text-gray-300"
                   >
                     Mes réservations
                   </h4>
                   <div
                     v-if="getUserReservationsForSession(session).length === 0"
-                    class="text-sm text-text-secondary italic"
+                    class="text-sm text-text-secondary italic dark:text-gray-400"
                   >
                     Aucune réservation trouvée
                   </div>
@@ -503,19 +513,25 @@ onMounted(async () => {
                     <div
                       v-for="reservation in getUserReservationsForSession(session)"
                       :key="reservation.id"
-                      class="flex items-center justify-between p-3 rounded-lg bg-white/60 border border-white/40 transition-all"
-                      :class="{ 'border-green-200 bg-green-50/50': reservation.isCompleted }"
+                      class="flex items-center justify-between p-3 rounded-lg bg-white/60 border border-white/40 transition-all dark:bg-gray-700/50 dark:border-gray-600"
+                      :class="{
+                        'border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-900/20':
+                          reservation.isCompleted,
+                      }"
                     >
                       <div class="flex flex-col">
-                        <span class="font-medium text-text-primary">
+                        <span class="font-medium text-text-primary dark:text-gray-200">
                           {{ getTextStudyName(reservation.textStudyId) }}
-                          <span v-if="reservation.section" class="text-text-secondary font-normal">
+                          <span
+                            v-if="reservation.section"
+                            class="text-text-secondary font-normal dark:text-gray-400"
+                          >
                             - Chapitre {{ reservation.section }}
                           </span>
                         </span>
                         <span
                           v-if="reservation.isCompleted"
-                          class="text-xs text-green-600 font-bold mt-1 flex items-center gap-1"
+                          class="text-xs text-green-600 font-bold mt-1 flex items-center gap-1 dark:text-green-400"
                         >
                           <i class="fa-solid fa-check-circle"></i> Terminé
                         </span>
@@ -523,7 +539,7 @@ onMounted(async () => {
                       <label class="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
-                          class="w-5 h-5 rounded text-primary border-gray-300 focus:ring-primary accent-primary"
+                          class="w-5 h-5 rounded text-primary border-gray-300 focus:ring-primary accent-primary dark:border-gray-500 dark:bg-gray-600"
                           :checked="reservation.isCompleted"
                           @change="
                             toggleReservationCompletion(
@@ -533,7 +549,9 @@ onMounted(async () => {
                             )
                           "
                         />
-                        <span class="text-xs font-medium text-text-secondary">Lu</span>
+                        <span class="text-xs font-medium text-text-secondary dark:text-gray-400"
+                          >Lu</span
+                        >
                       </label>
                     </div>
                   </div>
@@ -545,20 +563,26 @@ onMounted(async () => {
           <!-- Sessions créées -->
           <div v-if="activeTab === 'sessions-created'" class="animate-[fadeIn_0.3s_ease]">
             <div class="flex items-center justify-between mb-8">
-              <h2 class="text-2xl font-bold text-text-primary">Sessions créées</h2>
+              <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">
+                Sessions créées
+              </h2>
             </div>
 
             <div
               v-if="createdSessions.length === 0"
-              class="flex flex-col items-center justify-center p-12 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 text-center"
+              class="flex flex-col items-center justify-center p-12 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 text-center dark:bg-gray-800/40 dark:border-gray-700"
             >
               <div
-                class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400 text-2xl"
+                class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400 text-2xl dark:bg-gray-700 dark:text-gray-500"
               >
                 <i class="fa-solid fa-plus-circle"></i>
               </div>
-              <h3 class="text-xl font-semibold text-text-primary mb-2">Aucune session créée</h3>
-              <p class="text-text-secondary mb-6">Créez votre première session d'étude partagée.</p>
+              <h3 class="text-xl font-semibold text-text-primary mb-2 dark:text-gray-200">
+                Aucune session créée
+              </h3>
+              <p class="text-text-secondary mb-6 dark:text-gray-400">
+                Créez votre première session d'étude partagée.
+              </p>
               <button
                 class="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all"
               >
@@ -570,53 +594,59 @@ onMounted(async () => {
               <div
                 v-for="session in createdSessions"
                 :key="session.id"
-                class="relative bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-6 hover:shadow-lg transition-all duration-300"
+                class="relative bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-6 hover:shadow-lg transition-all duration-300 dark:bg-gray-800/60 dark:border-gray-700 dark:hover:bg-gray-800/80"
               >
                 <div class="flex items-start justify-between mb-4">
                   <div>
-                    <h3 class="text-xl font-bold text-text-primary mb-1">{{ session.name }}</h3>
+                    <h3 class="text-xl font-bold text-text-primary mb-1 dark:text-gray-100">
+                      {{ session.name }}
+                    </h3>
                     <div
                       v-if="session.isEnded"
-                      class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold uppercase rounded mb-2"
+                      class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold uppercase rounded mb-2 dark:bg-gray-700 dark:text-gray-300"
                     >
                       <i class="fa-solid fa-flag-checkered"></i> Terminée
                     </div>
                   </div>
                   <div class="flex gap-2">
                     <span
-                      class="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs font-semibold"
+                      class="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs font-semibold dark:bg-primary/20"
                       >{{ sessionService.formatTextType(session.type) }}</span
                     >
                   </div>
                 </div>
 
-                <p class="text-text-secondary text-sm mb-6">{{ session.description }}</p>
+                <p class="text-text-secondary text-sm mb-6 dark:text-gray-400">
+                  {{ session.description }}
+                </p>
 
-                <div class="flex flex-wrap items-center gap-4 pt-4 border-t border-black/5">
+                <div
+                  class="flex flex-wrap items-center gap-4 pt-4 border-t border-black/5 dark:border-white/10"
+                >
                   <button
                     v-if="sessionService.canEditSession(session)"
                     @click="openEditModal(session)"
-                    class="px-3 py-1.5 bg-white/50 hover:bg-white border border-gray-200 rounded-lg text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-2"
+                    class="px-3 py-1.5 bg-white/50 hover:bg-white border border-gray-200 rounded-lg text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-2 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-300 dark:hover:text-primary dark:hover:bg-gray-700"
                   >
                     <i class="fa-solid fa-edit"></i> Modifier
                   </button>
                   <button
                     v-if="sessionService.canManageSession(session, currentUser)"
                     @click="openSessionManagement(session)"
-                    class="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg text-sm font-medium text-primary transition-colors flex items-center gap-2"
+                    class="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg text-sm font-medium text-primary transition-colors flex items-center gap-2 dark:bg-primary/20"
                   >
                     <i class="fa-solid fa-cogs"></i> Gérer
                   </button>
                   <button
                     @click="openShareModal(session)"
-                    class="px-3 py-1.5 bg-white/50 hover:bg-white border border-gray-200 rounded-lg text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-2"
+                    class="px-3 py-1.5 bg-white/50 hover:bg-white border border-gray-200 rounded-lg text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-2 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-300 dark:hover:text-primary dark:hover:bg-gray-700"
                   >
                     <i class="fa-solid fa-share"></i> Partager
                   </button>
                   <button
                     v-if="sessionService.canEndSession(session)"
                     @click="endSession(session)"
-                    class="px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg text-sm font-medium text-red-600 transition-colors flex items-center gap-2 ml-auto"
+                    class="px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg text-sm font-medium text-red-600 transition-colors flex items-center gap-2 ml-auto dark:bg-red-900/10 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/30"
                   >
                     <i class="fa-solid fa-flag-checkered"></i> Fin
                   </button>
@@ -628,11 +658,13 @@ onMounted(async () => {
           <!-- Mes informations -->
           <div v-if="activeTab === 'my-info'" class="animate-[fadeIn_0.3s_ease]">
             <div class="flex items-center justify-between mb-8">
-              <h2 class="text-2xl font-bold text-text-primary">Mes informations</h2>
+              <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">
+                Mes informations
+              </h2>
               <button
                 v-if="!isEditingInfo"
                 @click="isEditingInfo = true"
-                class="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg font-medium text-text-secondary transition-colors"
+                class="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg font-medium text-text-secondary transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
               >
                 <i class="fa-solid fa-edit mr-2"></i> Modifier
               </button>
@@ -645,7 +677,7 @@ onMounted(async () => {
                 </button>
                 <button
                   @click="isEditingInfo = false"
-                  class="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg font-medium text-text-secondary transition-colors"
+                  class="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg font-medium text-text-secondary transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
                 >
                   Annuler
                 </button>
@@ -653,41 +685,44 @@ onMounted(async () => {
             </div>
 
             <div
-              class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-8 max-w-2xl"
+              class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-8 max-w-2xl dark:bg-gray-800/60 dark:border-gray-700"
             >
               <div class="space-y-6">
                 <div>
-                  <label class="block text-sm font-semibold text-text-secondary mb-2"
+                  <label
+                    class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400"
                     >Nom d'affichage</label
                   >
                   <input
                     v-model="editForm.name"
                     :disabled="!isEditingInfo"
-                    class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none disabled:opacity-60 disabled:bg-gray-50"
+                    class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none disabled:opacity-60 disabled:bg-gray-50 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700 dark:disabled:bg-gray-900/50"
                     type="text"
                   />
                 </div>
 
                 <div>
-                  <label class="block text-sm font-semibold text-text-secondary mb-2"
+                  <label
+                    class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400"
                     >Adresse e-mail</label
                   >
                   <input
                     v-model="editForm.email"
                     :disabled="!isEditingInfo"
-                    class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none disabled:opacity-60 disabled:bg-gray-50"
+                    class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none disabled:opacity-60 disabled:bg-gray-50 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700 dark:disabled:bg-gray-900/50"
                     type="email"
                   />
                 </div>
 
                 <div>
-                  <label class="block text-sm font-semibold text-text-secondary mb-2"
+                  <label
+                    class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400"
                     >ID utilisateur</label
                   >
                   <input
                     :value="currentUser?.id"
                     disabled
-                    class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 opacity-60 font-mono text-sm"
+                    class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 opacity-60 font-mono text-sm dark:bg-gray-900/50 dark:border-gray-600 dark:text-gray-400"
                     type="text"
                   />
                 </div>
@@ -698,45 +733,52 @@ onMounted(async () => {
           <!-- Sécurité -->
           <div v-if="activeTab === 'security'" class="animate-[fadeIn_0.3s_ease]">
             <div class="flex items-center justify-between mb-8">
-              <h2 class="text-2xl font-bold text-text-primary">Sécurité</h2>
+              <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">Sécurité</h2>
             </div>
 
             <div class="grid gap-8 max-w-2xl">
               <!-- Changement de mot de passe -->
-              <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-8">
-                <h3 class="text-xl font-bold text-text-primary mb-6">Changer le mot de passe</h3>
+              <div
+                class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-8 dark:bg-gray-800/60 dark:border-gray-700"
+              >
+                <h3 class="text-xl font-bold text-text-primary mb-6 dark:text-gray-100">
+                  Changer le mot de passe
+                </h3>
                 <form @submit.prevent="changePassword" class="space-y-4">
                   <div>
-                    <label class="block text-sm font-semibold text-text-secondary mb-2"
+                    <label
+                      class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400"
                       >Mot de passe actuel</label
                     >
                     <input
                       v-model="passwordForm.currentPassword"
-                      class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                      class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
                       type="password"
                       required
                     />
                   </div>
 
                   <div>
-                    <label class="block text-sm font-semibold text-text-secondary mb-2"
+                    <label
+                      class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400"
                       >Nouveau mot de passe</label
                     >
                     <input
                       v-model="passwordForm.newPassword"
-                      class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                      class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
                       type="password"
                       required
                     />
                   </div>
 
                   <div>
-                    <label class="block text-sm font-semibold text-text-secondary mb-2"
+                    <label
+                      class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400"
                       >Confirmer le nouveau mot de passe</label
                     >
                     <input
                       v-model="passwordForm.confirmPassword"
-                      class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                      class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
                       type="password"
                       required
                     />
@@ -753,16 +795,20 @@ onMounted(async () => {
               </div>
 
               <!-- Suppression du compte -->
-              <div class="bg-red-50/50 backdrop-blur-sm rounded-2xl border border-red-100 p-8">
-                <h3 class="text-xl font-bold text-red-700 mb-2">Supprimer le compte</h3>
-                <p class="text-red-600/80 mb-6">
+              <div
+                class="bg-red-50/50 backdrop-blur-sm rounded-2xl border border-red-100 p-8 dark:bg-red-900/10 dark:border-red-900/30"
+              >
+                <h3 class="text-xl font-bold text-red-700 mb-2 dark:text-red-400">
+                  Supprimer le compte
+                </h3>
+                <p class="text-red-600/80 mb-6 dark:text-red-400/80">
                   Cette action est irréversible. Toutes vos données seront définitivement
                   supprimées.
                 </p>
                 <button
                   @click="deleteAccount"
                   :disabled="isDeletingAccount"
-                  class="px-6 py-3 bg-red-100 text-red-700 hover:bg-red-200 border border-red-200 rounded-xl font-semibold transition-colors w-full sm:w-auto"
+                  class="px-6 py-3 bg-red-100 text-red-700 hover:bg-red-200 border border-red-200 rounded-xl font-semibold transition-colors w-full sm:w-auto dark:bg-red-900/30 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/50"
                 >
                   {{ isDeletingAccount ? 'Suppression en cours...' : 'Supprimer mon compte' }}
                 </button>

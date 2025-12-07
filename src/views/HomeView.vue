@@ -51,7 +51,7 @@ onMounted(() => {
         Votre centre spirituel numérique
       </h2>
       <p
-        class="text-lg md:text-xl text-text-secondary/90 max-w-2xl mx-auto leading-relaxed font-light"
+        class="text-lg md:text-xl text-text-secondary/90 max-w-2xl mx-auto leading-relaxed font-light dark:text-gray-300"
       >
         Une plateforme moderne dédiée à l'étude, au partage et à la croissance spirituelle de la
         communauté juive francophone.
@@ -65,8 +65,8 @@ onMounted(() => {
         :class="[
           'relative p-6 rounded-2xl backdrop-blur-md border border-white/40 transition-all duration-300 group flex flex-col items-center text-center',
           feature.status === 'coming-soon'
-            ? 'bg-white/20 opacity-70 cursor-default'
-            : 'bg-white/40 hover:-translate-y-1 hover:shadow-lg hover:bg-white/60 cursor-pointer',
+            ? 'bg-white/20 opacity-70 cursor-default dark:bg-gray-800/30'
+            : 'bg-white/40 hover:-translate-y-1 hover:shadow-lg hover:bg-white/60 cursor-pointer dark:bg-gray-800/50 dark:hover:bg-gray-800/80 dark:border-gray-700',
         ]"
         @click="feature.status !== 'coming-soon' && router.push(feature.route)"
       >
@@ -75,7 +75,9 @@ onMounted(() => {
         >
           {{ feature.icon }}
         </div>
-        <h3 class="text-xl font-bold mb-2 text-text-primary flex items-center justify-center gap-2">
+        <h3
+          class="text-xl font-bold mb-2 text-text-primary flex items-center justify-center gap-2 dark:text-gray-100"
+        >
           {{ feature.title }}
           <span
             v-if="feature.status === 'coming-soon'"
@@ -83,17 +85,19 @@ onMounted(() => {
             >Bientôt</span
           >
         </h3>
-        <p class="text-text-secondary text-base leading-relaxed max-w-xs">
+        <p class="text-text-secondary text-base leading-relaxed max-w-xs dark:text-gray-400">
           {{ feature.description }}
         </p>
       </div>
     </div>
 
     <div
-      class="text-center bg-white/40 backdrop-blur-md rounded-2xl p-6 border border-white/30 max-w-3xl mx-auto shadow-sm"
+      class="text-center bg-white/40 backdrop-blur-md rounded-2xl p-6 border border-white/30 max-w-3xl mx-auto shadow-sm dark:bg-gray-800/40 dark:border-gray-700"
     >
-      <h3 class="text-lg font-serif italic text-text-primary mb-2">🕯️ À la mémoire de 🕯️</h3>
-      <p class="text-base text-text-primary/80 font-serif italic">
+      <h3 class="text-lg font-serif italic text-text-primary mb-2 dark:text-gray-200">
+        🕯️ À la mémoire de 🕯️
+      </h3>
+      <p class="text-base text-text-primary/80 font-serif italic dark:text-gray-300">
         Ce site est dédié à l'élévation de l'âme de Fortunée Bat Henriette et Mongia Bat Joulina
       </p>
     </div>

@@ -36,6 +36,14 @@ body {
   background-color: var(--color-bg-beige); /* Apply new background globally */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+:root.dark body {
+  background-color: #111827; /* gray-900 */
+  color: #f3f4f6; /* gray-100 */
 }
 
 #app {

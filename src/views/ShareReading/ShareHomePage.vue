@@ -88,25 +88,27 @@ const handleSessionClick = (session: Session) => {
       <!-- État de chargement -->
       <div
         v-if="isLoading"
-        class="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm z-10 rounded-2xl"
+        class="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm z-10 rounded-2xl dark:bg-gray-900/60"
       >
         <div
           class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
         ></div>
-        <p class="text-text-secondary font-medium animate-pulse">Chargement des sessions...</p>
+        <p class="text-text-secondary font-medium animate-pulse dark:text-gray-300">
+          Chargement des sessions...
+        </p>
       </div>
 
       <!-- État d'erreur -->
       <div
-        v-else-if="error"
-        class="flex flex-col items-center justify-center p-12 text-center bg-red-50 rounded-2xl border border-red-100"
+        v-if="error"
+        class="flex flex-col items-center justify-center p-12 text-center bg-red-50 rounded-2xl border border-red-100 dark:bg-red-900/10 dark:border-red-900/30"
       >
         <div
-          class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-2xl mb-4"
+          class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-2xl mb-4 dark:bg-red-900/20 dark:text-red-400"
         >
           <i class="fa-solid fa-exclamation-triangle"></i>
         </div>
-        <p class="text-red-700 font-medium mb-6">{{ error }}</p>
+        <p class="text-red-700 font-medium mb-6 dark:text-red-400">{{ error }}</p>
         <button
           @click="loadSessions"
           class="px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
@@ -132,11 +134,15 @@ const handleSessionClick = (session: Session) => {
       <!-- Aucune session -->
       <div
         v-else
-        class="flex flex-col items-center justify-center py-20 text-center bg-white/40 backdrop-blur-sm rounded-3xl border border-white/40"
+        class="flex flex-col items-center justify-center py-20 text-center bg-white/40 backdrop-blur-sm rounded-3xl border border-white/40 dark:bg-gray-800/40 dark:border-gray-700"
       >
         <div class="text-6xl mb-6">📚</div>
-        <h4 class="text-2xl font-bold text-text-primary mb-2">Aucune session existante</h4>
-        <p class="text-text-secondary">Créez la première session de partage de lectures !</p>
+        <h4 class="text-2xl font-bold text-text-primary mb-2 dark:text-gray-200">
+          Aucune session existante
+        </h4>
+        <p class="text-text-secondary dark:text-gray-400">
+          Créez la première session de partage de lectures !
+        </p>
       </div>
     </div>
   </main>

@@ -82,11 +82,11 @@ const generateChapters = (totalSections: number) => {
 
 <template>
   <div
-    class="bg-white/60 backdrop-blur-sm rounded-xl border border-white/40 overflow-hidden transition-all duration-300 hover:shadow-lg p-5"
+    class="bg-white/60 backdrop-blur-sm rounded-xl border border-white/40 overflow-hidden transition-all duration-300 hover:shadow-lg p-5 dark:bg-gray-800/60 dark:border-gray-700"
   >
     <!-- En-tête du texte -->
     <div class="flex justify-between items-center mb-3">
-      <h4 class="text-xl font-semibold text-text-primary">{{ text.name }}</h4>
+      <h4 class="text-xl font-semibold text-text-primary dark:text-gray-100">{{ text.name }}</h4>
       <div class="flex items-center gap-3">
         <a
           :href="text.link"
@@ -98,8 +98,8 @@ const generateChapters = (totalSections: number) => {
         </a>
         <button
           @click="emit('toggle-expansion', text.id)"
-          class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/5 transition-colors text-xs text-text-secondary"
-          :class="{ 'rotate-180 bg-black/5': isExpanded }"
+          class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/5 transition-colors text-xs text-text-secondary dark:text-gray-300 dark:hover:bg-gray-700"
+          :class="{ 'rotate-180 bg-black/5 dark:bg-gray-700': isExpanded }"
         >
           {{ isExpanded ? '▼' : '▶' }}
         </button>
@@ -128,9 +128,14 @@ const generateChapters = (totalSections: number) => {
     </div>
 
     <!-- Sections du texte (expandable) -->
-    <div v-if="isExpanded" class="mt-4 pt-4 border-t border-black/5 animate-[fadeIn_0.3s_ease]">
+    <div
+      v-if="isExpanded"
+      class="mt-4 pt-4 border-t border-black/5 animate-[fadeIn_0.3s_ease] dark:border-white/10"
+    >
       <div class="mb-3">
-        <h5 class="text-sm font-semibold text-text-secondary uppercase tracking-wide">
+        <h5
+          class="text-sm font-semibold text-text-secondary uppercase tracking-wide dark:text-gray-400"
+        >
           Sections disponibles ({{ text.totalSections }})
         </h5>
       </div>
@@ -141,12 +146,12 @@ const generateChapters = (totalSections: number) => {
         <div
           v-for="chapter in generateChapters(text.totalSections)"
           :key="chapter"
-          class="flex items-center justify-between p-2 rounded-lg bg-white/40 border border-white/20 hover:bg-white/60 transition-colors"
+          class="flex items-center justify-between p-2 rounded-lg bg-white/40 border border-white/20 hover:bg-white/60 transition-colors dark:bg-gray-700/40 dark:border-gray-600 dark:hover:bg-gray-700/60"
         >
           <label class="flex items-center gap-3 cursor-pointer flex-1">
             <input
               type="checkbox"
-              class="w-4 h-4 rounded text-primary border-gray-300 focus:ring-primary"
+              class="w-4 h-4 rounded text-primary border-gray-300 focus:ring-primary dark:border-gray-500 dark:bg-gray-600"
               :checked="isReserved(chapter).isReserved"
               @change="
                 isReserved(chapter).isReserved
@@ -155,7 +160,9 @@ const generateChapters = (totalSections: number) => {
               "
               :disabled="isReserving === `${text.id}-${chapter}`"
             />
-            <span class="text-sm font-medium text-text-primary">Chapitre {{ chapter }}</span>
+            <span class="text-sm font-medium text-text-primary dark:text-gray-200"
+              >Chapitre {{ chapter }}</span
+            >
           </label>
 
           <span
@@ -170,7 +177,7 @@ const generateChapters = (totalSections: number) => {
       </div>
 
       <!-- Bouton de réservation du texte complet -->
-      <div class="mt-4 pt-4 border-t border-black/5">
+      <div class="mt-4 pt-4 border-t border-black/5 dark:border-white/10">
         <button
           @click="
             isTextFullyReserved

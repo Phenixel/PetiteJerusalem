@@ -1,6 +1,6 @@
 <template>
   <footer
-    class="mt-auto px-6 py-8 text-text-secondary/90 bg-white/30 border-t border-white/20"
+    class="mt-auto px-6 py-8 text-text-secondary/90 bg-white/30 border-t border-white/20 dark:bg-gray-900/50 dark:border-gray-800 dark:text-gray-400 transition-colors"
     role="contentinfo"
   >
     <div

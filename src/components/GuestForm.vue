@@ -25,7 +25,9 @@ const updateField = (field: 'name' | 'email', value: string) => {
   <div class="w-full">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
-        <label for="guest-name" class="block text-sm font-semibold text-text-primary mb-2"
+        <label
+          for="guest-name"
+          class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
           >Nom</label
         >
         <input
@@ -34,11 +36,13 @@ const updateField = (field: 'name' | 'email', value: string) => {
           :value="reservationForm.name"
           @input="updateField('name', ($event.target as HTMLInputElement).value)"
           placeholder="Votre nom"
-          class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+          class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
         />
       </div>
       <div>
-        <label for="guest-email" class="block text-sm font-semibold text-text-primary mb-2"
+        <label
+          for="guest-email"
+          class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
           >Email</label
         >
         <input
@@ -47,7 +51,7 @@ const updateField = (field: 'name' | 'email', value: string) => {
           :value="reservationForm.email"
           @input="updateField('email', ($event.target as HTMLInputElement).value)"
           placeholder="votre@email.com"
-          class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+          class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
         />
       </div>
     </div>

@@ -97,14 +97,16 @@ watch(
     @click="closeModal"
   >
     <div
-      class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-[scaleIn_0.3s_ease] border border-gray-100"
+      class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-[scaleIn_0.3s_ease] border border-gray-100 dark:bg-gray-800 dark:border-gray-700"
       @click.stop
     >
-      <div class="flex justify-between items-center p-4 border-b border-gray-100">
-        <h3 class="text-lg font-bold text-gray-800">Modifier la session</h3>
+      <div
+        class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700"
+      >
+        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">Modifier la session</h3>
         <button
           @click="closeModal"
-          class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+          class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600"
         >
           ✕
         </button>
@@ -113,12 +115,12 @@ watch(
       <div class="p-6">
         <form @submit.prevent="saveSession" class="space-y-4">
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2"
+            <label class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300"
               >Nom de la session *</label
             >
             <input
               v-model="editForm.name"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
               type="text"
               required
               placeholder="Entrez le nom de la session"
@@ -126,30 +128,36 @@ watch(
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+            <label class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300"
+              >Description</label
+            >
             <textarea
               v-model="editForm.description"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-y min-h-[80px]"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-y min-h-[80px] dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
               placeholder="Décrivez la session (optionnel)"
               rows="3"
             ></textarea>
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Date limite *</label>
+            <label class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300"
+              >Date limite *</label
+            >
             <input
               v-model="editForm.dateLimit"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
               type="datetime-local"
               required
             />
           </div>
 
-          <div class="flex gap-3 justify-end pt-4 mt-4 border-t border-gray-100">
+          <div
+            class="flex gap-3 justify-end pt-4 mt-4 border-t border-gray-100 dark:border-gray-700"
+          >
             <button
               type="button"
               @click="closeModal"
-              class="px-5 py-2.5 rounded-lg border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+              class="px-5 py-2.5 rounded-lg border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
               :disabled="isLoading"
             >
               Annuler

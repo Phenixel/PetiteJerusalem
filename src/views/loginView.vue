@@ -85,16 +85,16 @@ onMounted(async () => {
 <template>
   <main class="min-h-screen py-16 px-6 flex items-center justify-center">
     <section
-      class="max-w-[480px] w-full bg-white/60 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/40 p-8 md:p-12 animate-[fadeIn_0.5s_ease]"
+      class="max-w-[480px] w-full bg-white/60 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/40 p-8 md:p-12 animate-[fadeIn_0.5s_ease] dark:bg-gray-800/60 dark:border-gray-700"
     >
       <div class="text-center mb-10">
-        <h1 class="text-3xl font-bold text-text-primary mb-2">Bienvenue</h1>
-        <p class="text-text-secondary">Connectez-vous pour continuer</p>
+        <h1 class="text-3xl font-bold text-text-primary mb-2 dark:text-gray-100">Bienvenue</h1>
+        <p class="text-text-secondary dark:text-gray-400">Connectez-vous pour continuer</p>
       </div>
 
       <div class="mb-8">
         <button
-          class="w-full py-3 px-6 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl font-semibold text-text-primary shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3"
+          class="w-full py-3 px-6 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl font-semibold text-text-primary shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
           @click="loginWithGoogle"
         >
           <i class="fa-brands fa-google text-[#4285F4]"></i>
@@ -103,20 +103,22 @@ onMounted(async () => {
       </div>
 
       <div class="flex items-center gap-4 mb-8">
-        <div class="h-px bg-gray-200 flex-1"></div>
-        <p class="text-sm text-text-secondary/60 font-medium">ou</p>
-        <div class="h-px bg-gray-200 flex-1"></div>
+        <div class="h-px bg-gray-200 flex-1 dark:bg-gray-700"></div>
+        <p class="text-sm text-text-secondary/60 font-medium dark:text-gray-500">ou</p>
+        <div class="h-px bg-gray-200 flex-1 dark:bg-gray-700"></div>
       </div>
 
       <div
-        class="relative grid grid-cols-2 gap-0 bg-gray-100/50 p-1 rounded-full mb-8 border border-gray-200/50"
+        class="relative grid grid-cols-2 gap-0 bg-gray-100/50 p-1 rounded-full mb-8 border border-gray-200/50 dark:bg-gray-700/50 dark:border-gray-600"
       >
         <button
           type="button"
           class="relative z-10 py-2.5 text-sm font-bold text-center transition-all duration-300 rounded-full"
           :class="{
-            'bg-white text-text-primary shadow-sm': mode === 'login',
-            'text-text-secondary hover:text-text-primary': mode !== 'login',
+            'bg-white text-text-primary shadow-sm dark:bg-gray-600 dark:text-gray-100 dark:shadow-none':
+              mode === 'login',
+            'text-text-secondary hover:text-text-primary dark:text-gray-400 dark:hover:text-gray-200':
+              mode !== 'login',
           }"
           @click="setMode('login')"
           :disabled="loading"
@@ -127,8 +129,10 @@ onMounted(async () => {
           type="button"
           class="relative z-10 py-2.5 text-sm font-bold text-center transition-all duration-300 rounded-full"
           :class="{
-            'bg-white text-text-primary shadow-sm': mode === 'signup',
-            'text-text-secondary hover:text-text-primary': mode !== 'signup',
+            'bg-white text-text-primary shadow-sm dark:bg-gray-600 dark:text-gray-100 dark:shadow-none':
+              mode === 'signup',
+            'text-text-secondary hover:text-text-primary dark:text-gray-400 dark:hover:text-gray-200':
+              mode !== 'signup',
           }"
           @click="setMode('signup')"
           :disabled="loading"
@@ -139,55 +143,63 @@ onMounted(async () => {
 
       <form @submit.prevent="submitForm" class="space-y-5">
         <div v-if="mode === 'signup'" class="animate-[slideIn_0.3s_ease]">
-          <label class="block text-sm font-semibold text-text-primary mb-2" for="displayName"
+          <label
+            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
+            for="displayName"
             >Nom affiché</label
           >
           <input
             id="displayName"
             v-model="displayName"
             type="text"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
             placeholder="Votre nom"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-text-primary mb-2" for="email"
+          <label
+            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
+            for="email"
             >Adresse e-mail</label
           >
           <input
             id="email"
             v-model="email"
             type="email"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
             placeholder="email@exemple.com"
             required
           />
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-text-primary mb-2" for="password"
+          <label
+            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
+            for="password"
             >Mot de passe</label
           >
           <input
             id="password"
             v-model="password"
             type="password"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
             placeholder="••••••••"
             required
           />
         </div>
 
         <div v-if="mode === 'signup'" class="animate-[slideIn_0.3s_ease]">
-          <label class="block text-sm font-semibold text-text-primary mb-2" for="confirmPassword"
+          <label
+            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
+            for="confirmPassword"
             >Confirmer le mot de passe</label
           >
           <input
             id="confirmPassword"
             v-model="confirmPassword"
             type="password"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
             placeholder="••••••••"
             required
           />
@@ -195,7 +207,7 @@ onMounted(async () => {
 
         <div
           v-if="errorMessage"
-          class="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium animate-[shake_0.4s_ease]"
+          class="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium animate-[shake_0.4s_ease] dark:bg-red-900/10 dark:border-red-900/30 dark:text-red-400"
         >
           <i class="fa-solid fa-circle-exclamation mr-2"></i>{{ errorMessage }}
         </div>

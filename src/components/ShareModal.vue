@@ -133,14 +133,16 @@ watch(
     @click="closeModal"
   >
     <div
-      class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-[scaleIn_0.3s_ease] border border-gray-100"
+      class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-[scaleIn_0.3s_ease] border border-gray-100 dark:bg-gray-800 dark:border-gray-700"
       @click.stop
     >
-      <div class="flex justify-between items-center p-4 border-b border-gray-100">
-        <h3 class="text-lg font-bold text-gray-800">Partager cette session</h3>
+      <div
+        class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700"
+      >
+        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">Partager cette session</h3>
         <button
           @click="closeModal"
-          class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+          class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600"
         >
           ✕
         </button>
@@ -150,7 +152,7 @@ watch(
         <div class="grid grid-cols-2 gap-4 mb-8">
           <button
             @click="shareToWhatsApp"
-            class="flex flex-col items-center justify-center p-4 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition-colors gap-2"
+            class="flex flex-col items-center justify-center p-4 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition-colors gap-2 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
           >
             <span class="text-2xl">📱</span>
             <span class="font-medium">WhatsApp</span>
@@ -158,7 +160,7 @@ watch(
 
           <button
             @click="shareToSMS"
-            class="flex flex-col items-center justify-center p-4 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors gap-2"
+            class="flex flex-col items-center justify-center p-4 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors gap-2 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
           >
             <span class="text-2xl">💬</span>
             <span class="font-medium">SMS</span>
@@ -166,7 +168,7 @@ watch(
 
           <button
             @click="shareToFacebook"
-            class="flex flex-col items-center justify-center p-4 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors gap-2"
+            class="flex flex-col items-center justify-center p-4 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors gap-2 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
           >
             <span class="text-2xl">📘</span>
             <span class="font-medium">Facebook</span>
@@ -174,19 +176,26 @@ watch(
 
           <button
             @click="copyToClipboard"
-            class="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors gap-2"
+            class="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors gap-2 dark:bg-gray-700/50 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             <span class="text-2xl">📋</span>
             <span class="font-medium">Copier le lien</span>
           </button>
         </div>
 
-        <div class="text-center pt-6 border-t border-gray-100">
-          <h4 class="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wider">
+        <div class="text-center pt-6 border-t border-gray-100 dark:border-gray-700">
+          <h4
+            class="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wider dark:text-gray-400"
+          >
             Ou scanner le QR code
           </h4>
-          <div id="qr-code" class="flex justify-center mb-2"></div>
-          <p class="text-sm text-gray-400">Scannez ce code pour accéder directement à la session</p>
+          <div
+            id="qr-code"
+            class="flex justify-center mb-2 p-2 bg-white rounded-lg inline-block"
+          ></div>
+          <p class="text-sm text-gray-400 dark:text-gray-500">
+            Scannez ce code pour accéder directement à la session
+          </p>
         </div>
       </div>
     </div>
