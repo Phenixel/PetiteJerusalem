@@ -1,48 +1,36 @@
-# name: PR Checks
+name: CI Checks
 
-# on:
-#   pull_request:
-#     branches:
-#       - staging
-#       - main
+on:
+  pull_request:
+    branches:
+      - staging
+      - main
+  workflow_call:
 
-# jobs:
-#   check:
-#     runs-on: ubuntu-latest
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-#     steps:
-#     - name: Checkout code
-#       uses: actions/checkout@v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-#     - name: Set up Python
-#       uses: actions/setup-python@v2
-#       with:
-#         python-version: '3.12'
+      - name: Install dependencies
+        run: npm ci
 
-#     - name: Install dependencies
-#       run: |
-#         python -m pip install --upgrade pip
-#         pip install -r requirements.txt
+      - name: Lint
+        run: npm run lint
 
-#     - name: Check pytest plugins
-#       run: pytest --version
+      - name: Type check
+        run: npm run type-check
 
-#     - name: Set up Django settings
-#       run: echo "DJANGO_SETTINGS_MODULE=GemaraChain.settings" >> $GITHUB_ENV
+      - name: Unit tests
+        run: npm run test:unit -- --run
 
-#     - name: Check Django configuration
-#       run: python manage.py check
-
-#     - name: Apply migrations
-#       run: python manage.py migrate
-
-#     - name: List migrations
-#       run: python manage.py showmigrations
-
-#     - name: Populate database
-#       run: python manage.py shell -c "from ChainApp.utils import initialize_text_studies; initialize_text_studies()"
-
-#     - name: Run tests
-#       env:
-#         DJANGO_SETTINGS_MODULE: GemaraChain.settings
-#       run: pytest
+      - name: Build
+        run: npm run build

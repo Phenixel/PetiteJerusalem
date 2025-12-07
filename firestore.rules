@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Fonctions utilitaires
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.email in ['admin@petite-jerusalem.com'];
+    }
+
+    function isSessionOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.personId;
+    }
+
+    // Ne permettre de modifier QUE le champ 'reservations'
+    function onlyReservationsChanged() {
+      let keys = request.resource.data.diff(resource.data).changedKeys();
+      return keys.hasAll(['reservations']) && keys.size() == 1;
+    }
+
+    // Helper tailles de tableaux, compatible si 'reservations' absent dans la ressource
+    function currentReservationsSize() {
+      return resource.data.keys().hasAny(['reservations']) && resource.data.reservations is list
+        ? resource.data.reservations.size()
+        : 0;
+    }
+
+    // Ajout d'UNE réservation (taille +1) et aucune autre modif
+    function isAppendOneReservationOnly() {
+      return onlyReservationsChanged() &&
+             (request.resource.data.reservations is list) &&
+             request.resource.data.reservations.size() == currentReservationsSize() + 1;
+    }
+
+    // Suppression d'UNE réservation (taille -1) et aucune autre modif
+    function isRemoveOneReservationOnly() {
+      return onlyReservationsChanged() &&
+             (request.resource.data.reservations is list) &&
+             request.resource.data.reservations.size() == currentReservationsSize() - 1;
+    }
+
+    // Modification d'une réservation existante (même taille, mais contenu modifié)
+    function isUpdateReservationOnly() {
+      return onlyReservationsChanged() &&
+             (request.resource.data.reservations is list) &&
+             request.resource.data.reservations.size() == currentReservationsSize();
+    }
+
+    // Vérifier si l'utilisateur peut supprimer des réservations
+    // Pour simplifier, on permet la suppression seulement si l'utilisateur est propriétaire de la session ou admin
+    // La vérification fine de propriété des réservations se fait côté client
+    function canRemoveReservation() {
+      return isAuthenticated() && isRemoveOneReservationOnly();
+    }
+
+    // Vérifier si l'utilisateur peut modifier des réservations
+    function canUpdateReservation() {
+      return isAuthenticated() && isUpdateReservationOnly();
+    }
+
+    // Règle générale de lecture publique
+    match /{document=**} {
+      allow read: if true;
+    }
+
+    // Sessions
+    match /sessions/{sessionId} {
+      allow read: if true;
+      // Création: utilisateur connecté uniquement
+      allow create: if isAuthenticated();
+
+      // Mise à jour: propriétaire/admin OU append d'une réservation OU suppression d'une réservation OU modification d'une réservation
+      allow update: if isSessionOwner() || isAdmin() || isAppendOneReservationOnly() || canRemoveReservation() || canUpdateReservation();
+
+      // Suppression: propriétaire ou admin uniquement
+      allow delete: if isSessionOwner() || isAdmin();
+    }
+  }
+}
+

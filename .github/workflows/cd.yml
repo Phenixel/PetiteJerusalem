@@ -6,10 +6,12 @@ on:
       - 'release/**'
 
 jobs:
-#   verify:
-#     uses: ./.github/workflows/verify.yml
+  verify:
+    uses: ./.github/workflows/verify.yml
+
   deploy:
+    needs: verify
     uses: ./.github/workflows/deploy.yml
     with:
-      tag: ${{ github.ref_name }}
+      environment: production
     secrets: inherit
