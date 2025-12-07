@@ -265,10 +265,7 @@ onMounted(() => {
 <template>
   <main class="min-h-screen pb-20">
     <!-- Affichage de chargement -->
-    <div
-      v-if="isLoading"
-      class="flex flex-col items-center justify-center min-h-[60vh] text-text-secondary"
-    >
+    <div v-if="isLoading" class="flex flex-col items-center justify-center text-text-secondary">
       <div
         class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
       ></div>
@@ -276,7 +273,7 @@ onMounted(() => {
     </div>
 
     <!-- Contenu principal -->
-    <div v-else-if="session" class="max-w-[1200px] mx-auto px-6 pt-8 animate-[fadeIn_0.5s_ease]">
+    <div v-else-if="session" class="mx-auto px-6 pt-8 animate-[fadeIn_0.5s_ease]">
       <!-- En-tête avec navigation -->
       <div
         class="relative overflow-hidden mb-8 p-8 bg-white/40 backdrop-blur-xl border border-white/40 rounded-3xl shadow-lg"

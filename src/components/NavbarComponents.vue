@@ -9,7 +9,7 @@ const router = useRouter()
 const route = useRoute()
 const username = ref<string | null>(null)
 const isMobileMenuOpen = ref(false)
-const { isDark, toggleDarkMode } = useDarkMode()
+useDarkMode()
 
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
@@ -102,14 +102,6 @@ function goToLogin() {
       </div>
       <div class="flex items-center gap-4">
         <button
-          @click="toggleDarkMode"
-          class="flex items-center justify-center w-9 h-9 text-text-primary hover:text-primary transition-colors focus:outline-none"
-          :title="isDark ? 'Passer en mode clair' : 'Passer en mode sombre'"
-        >
-          <i class="fa-solid text-lg" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
-        </button>
-
-        <button
           v-if="!username"
           @click="goToLogin"
           class="px-4 py-2 bg-white/20 border border-white/30 backdrop-blur-sm rounded-lg hover:bg-white/30 hover:-translate-y-0.5 transition-all text-text-primary font-medium"
@@ -172,17 +164,6 @@ function goToLogin() {
           >
             Partage de lectures
           </RouterLink>
-        </div>
-
-        <!-- Section de préférences mobile -->
-        <div class="mb-4">
-          <button
-            @click="toggleDarkMode"
-            class="flex items-center justify-between w-full p-4 rounded-xl border border-white/20 bg-white/10 text-text-primary font-semibold hover:bg-white/20 transition-all dark:text-gray-100 dark:border-gray-700 dark:bg-gray-800/50"
-          >
-            <span>Mode sombre</span>
-            <i class="fa-solid" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
-          </button>
         </div>
 
         <!-- Section d'authentification mobile -->

@@ -167,7 +167,7 @@ const generateChapters = (totalSections: number) => {
 
           <span
             v-if="isReserved(chapter).isReserved"
-            class="text-xs font-bold text-secondary truncate max-w-[100px] text-right"
+            class="text-xs font-bold text-secondary truncate text-right"
             :title="isReserved(chapter).reservedBy || 'quelqu\'un'"
           >
             {{ isReserved(chapter).reservedBy || "quelqu'un" }}

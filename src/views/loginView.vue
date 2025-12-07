@@ -85,7 +85,7 @@ onMounted(async () => {
 <template>
   <main class="min-h-screen py-16 px-6 flex items-center justify-center">
     <section
-      class="max-w-[480px] w-full bg-white/60 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/40 p-8 md:p-12 animate-[fadeIn_0.5s_ease] dark:bg-gray-800/60 dark:border-gray-700"
+      class="w-full bg-white/60 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/40 p-8 md:p-12 animate-[fadeIn_0.5s_ease] dark:bg-gray-800/60 dark:border-gray-700"
     >
       <div class="text-center mb-10">
         <h1 class="text-3xl font-bold text-text-primary mb-2 dark:text-gray-100">Bienvenue</h1>

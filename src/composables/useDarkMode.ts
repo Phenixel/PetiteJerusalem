@@ -11,33 +11,19 @@ export function useDarkMode() {
     }
   }
 
-  const toggleDarkMode = () => {
-    isDark.value = !isDark.value
-    applyTheme()
-    localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
-  }
-
   onMounted(() => {
-    // Check local storage or system preference
-    const savedTheme = localStorage.getItem('theme')
-    if (savedTheme) {
-      isDark.value = savedTheme === 'dark'
-    } else {
-      isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
-    }
-    applyTheme() // Apply but DO NOT save to LS yet
+    // Check system preference
+    isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+    applyTheme()
 
-    // Listen for system preference changes if no user override
+    // Listen for system preference changes
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      if (!localStorage.getItem('theme')) {
-        isDark.value = e.matches
-        applyTheme()
-      }
+      isDark.value = e.matches
+      applyTheme()
     })
   })
 
   return {
     isDark,
-    toggleDarkMode,
   }
 }

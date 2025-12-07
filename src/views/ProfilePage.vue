@@ -323,10 +323,7 @@ onMounted(async () => {
 <template>
   <main class="min-h-screen pb-20">
     <!-- Affichage de chargement -->
-    <div
-      v-if="isLoading"
-      class="flex flex-col items-center justify-center min-h-[60vh] text-text-secondary"
-    >
+    <div v-if="isLoading" class="flex flex-col items-center justify-center text-text-secondary">
       <div
         class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
       ></div>
@@ -431,7 +428,7 @@ onMounted(async () => {
         </nav>
 
         <!-- Contenu des onglets -->
-        <div class="min-h-[500px]">
+        <div>
           <!-- Sessions participées -->
           <div v-if="activeTab === 'sessions-participated'" class="animate-[fadeIn_0.3s_ease]">
             <div class="flex items-center justify-between mb-8">

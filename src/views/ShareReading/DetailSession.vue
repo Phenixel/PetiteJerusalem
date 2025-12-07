@@ -274,11 +274,11 @@ watch(session, (s) => {
 </script>
 
 <template>
-  <main class="max-w-[1200px] mx-auto px-6 py-8 min-h-screen">
+  <main class="mx-auto px-6 py-8 min-h-screen">
     <!-- État de chargement -->
     <div
       v-if="isLoading"
-      class="flex flex-col items-center justify-center min-h-[60vh] text-text-secondary"
+      class="flex flex-col items-center justify-center text-text-secondary"
     >
       <div
         class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"

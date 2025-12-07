@@ -4,7 +4,7 @@
     role="contentinfo"
   >
     <div
-      class="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center text-center md:text-left"
+      class="mx-auto grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center text-center md:text-left"
     >
       <div class="justify-self-center md:justify-self-start">
         <a

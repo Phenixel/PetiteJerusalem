@@ -86,7 +86,7 @@ const goBack = () => {
 </script>
 
 <template>
-  <main class="max-w-[800px] mx-auto px-6 py-12 min-h-screen">
+  <main class="mx-auto px-6 py-12 min-h-screen">
     <div class="text-center mb-12 animate-[fadeIn_0.5s_ease]">
       <h2 class="text-3xl md:text-4xl font-bold text-text-primary mb-4">Créer une session</h2>
       <p class="text-text-secondary text-lg">

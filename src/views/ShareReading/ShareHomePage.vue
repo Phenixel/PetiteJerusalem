@@ -61,9 +61,11 @@ const handleSessionClick = (session: Session) => {
 </script>
 
 <template>
-  <main class="max-w-[1200px] mx-auto px-6 py-12 min-h-[calc(100vh-80px)]">
+  <main class="mx-auto px-6 py-12">
     <div class="text-center mb-16 animate-[fadeIn_0.5s_ease]">
-      <h2 class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight">
+      <h2
+        class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-4 tracking-tight"
+      >
         Partage de Lectures
       </h2>
       <p class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
@@ -84,7 +86,7 @@ const handleSessionClick = (session: Session) => {
       </div>
     </div>
 
-    <div class="relative min-h-[400px]">
+    <div class="relative">
       <!-- État de chargement -->
       <div
         v-if="isLoading"
