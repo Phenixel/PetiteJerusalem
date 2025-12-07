@@ -45,44 +45,79 @@ function goToLogin() {
 </script>
 
 <template>
-  <header class="header">
-    <RouterLink to="/" class="logo">
-      <h1>Petite Jérusalem</h1>
-      <p class="tagline">Hub de référence pour la communauté juive</p>
+  <header
+    class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-white/30 backdrop-blur-md border-b border-white/20"
+  >
+    <RouterLink to="/" class="group">
+      <h1
+        class="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+      >
+        Petite Jérusalem
+      </h1>
+      <p class="text-sm text-text-secondary mt-1 group-hover:text-primary transition-colors">
+        Hub de référence pour la communauté juive
+      </p>
     </RouterLink>
 
     <!-- Bouton hamburger pour mobile -->
     <button
       @click="toggleMobileMenu"
-      class="hamburger-button"
-      :class="{ active: isMobileMenuOpen }"
+      class="flex flex-col justify-around w-8 h-6 bg-transparent border-none cursor-pointer p-0 z-[1000] md:hidden"
+      :class="{ 'fixed right-6 top-6': isMobileMenuOpen }"
       aria-label="Menu principal"
     >
-      <span class="hamburger-line"></span>
-      <span class="hamburger-line"></span>
-      <span class="hamburger-line"></span>
+      <span
+        class="w-full h-[3px] bg-text-primary rounded-sm transition-all duration-300 origin-center"
+        :class="{ 'rotate-45 translate-x-[6px] translate-y-[6px]': isMobileMenuOpen }"
+      ></span>
+      <span
+        class="w-full h-[3px] bg-text-primary rounded-sm transition-all duration-300 origin-center"
+        :class="{ 'opacity-0': isMobileMenuOpen }"
+      ></span>
+      <span
+        class="w-full h-[3px] bg-text-primary rounded-sm transition-all duration-300 origin-center"
+        :class="{ '-rotate-45 translate-x-[6px] -translate-y-[6px]': isMobileMenuOpen }"
+      ></span>
     </button>
 
     <!-- Navigation desktop -->
-    <nav class="nav-desktop">
-      <div class="links">
-        <RouterLink to="/" @click="closeMobileMenu">Accueil</RouterLink>
-        <RouterLink to="/share-reading" @click="closeMobileMenu">Partage de lectures</RouterLink>
+    <nav class="hidden md:flex items-center gap-8">
+      <div class="flex gap-6 items-center">
+        <RouterLink
+          to="/"
+          @click="closeMobileMenu"
+          class="text-text-primary font-medium px-4 py-2 rounded-lg hover:bg-black/5 hover:text-primary transition-colors"
+          exact-active-class="bg-black/5 text-primary"
+          >Accueil</RouterLink
+        >
+        <RouterLink
+          to="/share-reading"
+          @click="closeMobileMenu"
+          class="text-text-primary font-medium px-4 py-2 rounded-lg hover:bg-black/5 hover:text-primary transition-colors"
+          exact-active-class="bg-black/5 text-primary"
+          >Partage de lectures</RouterLink
+        >
       </div>
-      <div class="auth-section">
-        <button v-if="!username" @click="goToLogin" class="btn btn--glass btn-md">
+      <div class="flex items-center">
+        <button
+          v-if="!username"
+          @click="goToLogin"
+          class="px-4 py-2 bg-white/20 border border-white/30 backdrop-blur-sm rounded-lg hover:bg-white/30 hover:-translate-y-0.5 transition-all text-text-primary font-medium"
+        >
           Se connecter
         </button>
-        <div v-else class="user-info">
-          <RouterLink to="/profile" class="user-name-link">
+        <div v-else class="flex items-center gap-4 font-medium text-text-primary">
+          <RouterLink
+            to="/profile"
+            class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-black/5 transition-colors"
+          >
             <span><i class="fa-solid fa-user"></i> {{ username }}</span>
           </RouterLink>
           <button
             @click="logout"
-            class="btn btn--glass btn--icon btn-md"
+            class="flex items-center justify-center w-9 h-9 bg-white/20 border border-white/30 backdrop-blur-sm rounded-lg hover:bg-white/30 hover:-translate-y-0.5 transition-all text-text-primary"
             aria-label="Se déconnecter"
             title="Se déconnecter"
-            data-tooltip="Se déconnecter"
           >
             <i class="fa-solid fa-right-from-bracket"></i>
           </button>
@@ -94,45 +129,61 @@ function goToLogin() {
   <!-- Menu mobile et overlay -->
   <Teleport to="body">
     <!-- Overlay -->
-    <div v-if="isMobileMenuOpen" @click="closeMobileMenu" class="mobile-overlay"></div>
+    <div
+      v-if="isMobileMenuOpen"
+      @click="closeMobileMenu"
+      class="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998]"
+    ></div>
 
     <!-- Menu mobile -->
     <nav
       v-if="isMobileMenuOpen"
-      class="nav-mobile"
-      :style="{
-        transform: 'translateX(0)',
-        opacity: '1',
-        visibility: 'visible',
-      }"
+      class="fixed top-0 left-0 w-80 h-full bg-bg-primary/95 backdrop-blur-xl border-r border-white/30 p-8 shadow-2xl z-[9999] overflow-y-auto animate-[slideInLeft_0.4s_ease-out]"
     >
-      <div class="mobile-menu-container">
+      <div class="flex flex-col h-full">
         <!-- Navigation mobile -->
-        <div class="mobile-links">
-          <RouterLink to="/" @click="closeMobileMenu" class="mobile-link"> Accueil</RouterLink>
-          <RouterLink to="/share-reading" @click="closeMobileMenu" class="mobile-link">
+        <div class="flex flex-col gap-4 mb-8 mt-12">
+          <RouterLink
+            to="/"
+            @click="closeMobileMenu"
+            class="text-text-primary font-semibold text-lg p-4 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 hover:text-primary hover:translate-x-1 transition-all"
+            exact-active-class="bg-primary/10 border-primary text-primary"
+          >
+            Accueil</RouterLink
+          >
+          <RouterLink
+            to="/share-reading"
+            @click="closeMobileMenu"
+            class="text-text-primary font-semibold text-lg p-4 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 hover:text-primary hover:translate-x-1 transition-all"
+            exact-active-class="bg-primary/10 border-primary text-primary"
+          >
             Partage de lectures
           </RouterLink>
         </div>
 
         <!-- Section d'authentification mobile -->
-        <div class="mobile-auth-section">
-          <button v-if="!username" @click="goToLogin" class="btn btn--gradient btn-lg w-100">
+        <div
+          class="mt-auto pt-8 border-t border-white/20 bg-gradient-to-br from-primary to-secondary rounded-xl p-6 text-white"
+        >
+          <button
+            v-if="!username"
+            @click="goToLogin"
+            class="w-full py-3 px-6 bg-white/20 border border-white/30 rounded-xl font-semibold hover:translate-y-[-2px] hover:shadow-lg transition-all"
+          >
             Se connecter
           </button>
           <div v-else>
             <RouterLink
               to="/profile"
               @click="closeMobileMenu"
-              class="btn btn--glass btn-lg w-100"
-              style="margin-bottom: var(--spacing-md)"
+              class="flex items-center justify-center gap-2 w-full py-3 px-6 mb-4 bg-white/20 border border-white/30 rounded-xl font-semibold hover:bg-white/30 transition-all text-white"
             >
               <i class="fa-solid fa-user"></i>
               <span>{{ username }}</span>
             </RouterLink>
             <button
               @click="logout"
-              class="btn btn--gradient btn-lg w-100"
+              class="flex items-center justify-center gap-2 w-full py-3 px-6 bg-white/10 border border-white/20 rounded-xl font-semibold hover:bg-white/20 transition-all text-white"
               aria-label="Se déconnecter"
               title="Se déconnecter"
             >

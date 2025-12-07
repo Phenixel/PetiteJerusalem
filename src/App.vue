@@ -28,7 +28,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="page-gradient">
+  <div class="min-h-screen flex flex-col text-text-primary">
     <Navbar />
     <RouterView />
     <SiteFooter v-if="!isHome" />

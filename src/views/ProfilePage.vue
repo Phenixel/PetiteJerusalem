@@ -321,162 +321,220 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="main-content">
+  <main class="min-h-screen pb-20">
     <!-- Affichage de chargement -->
-    <div v-if="isLoading" class="loading-state">
-      <div class="loading-spinner"></div>
-      <p>Chargement de votre profil...</p>
+    <div
+      v-if="isLoading"
+      class="flex flex-col items-center justify-center min-h-[60vh] text-text-secondary"
+    >
+      <div
+        class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
+      ></div>
+      <p class="font-medium animate-pulse">Chargement de votre profil...</p>
     </div>
 
     <!-- Contenu du profil (affiché seulement si l'utilisateur est connecté) -->
     <div v-else-if="currentUser">
       <!-- En-tête du profil -->
-      <div class="profile-header">
-        <div class="profile-info">
-          <h1 class="profile-title">{{ userDisplayName }}</h1>
-          <div class="profile-badge">
-            <span class="badge">MEMBRE ACTIF</span>
+      <div
+        class="relative overflow-hidden mb-12 py-16 px-6 md:px-12 bg-gradient-to-br from-primary to-secondary text-white shadow-lg"
+      >
+        <div
+          class="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNmZmZmZmYiLz48L3N2Zz4=')] opacity-30"
+        ></div>
+        <div class="relative z-10 max-w-[1200px] mx-auto">
+          <div class="flex items-center gap-4 mb-2">
+            <h1 class="text-4xl md:text-5xl font-bold text-white tracking-tight">
+              {{ userDisplayName }}
+            </h1>
+            <span
+              class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold tracking-wider uppercase border border-white/20"
+              >Membre Actif</span
+            >
           </div>
+          <p class="text-white/80 font-mono text-sm opacity-60">ID: {{ currentUser.id }}</p>
         </div>
       </div>
 
       <!-- Contenu principal -->
-      <div class="profile-content">
+      <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
         <!-- Menu latéral -->
-        <nav class="profile-sidebar">
-          <ul class="profile-menu">
+        <nav
+          class="lg:sticky lg:top-24 h-fit bg-white/40 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm"
+        >
+          <ul class="flex flex-col gap-2 mb-8">
             <li>
               <button
                 @click="setActiveTab('sessions-participated')"
-                :class="{ active: activeTab === 'sessions-participated' }"
-                class="profile-menu-item"
+                :class="[
+                  'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
+                  activeTab === 'sessions-participated'
+                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
+                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1',
+                ]"
               >
-                <span>MES SESSIONS PARTICIPÉES</span>
-                <i class="fa-solid fa-chevron-right"></i>
+                <span>Sessions Participées</span>
+                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
               </button>
             </li>
             <li>
               <button
                 @click="setActiveTab('sessions-created')"
-                :class="{ active: activeTab === 'sessions-created' }"
-                class="profile-menu-item"
+                :class="[
+                  'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
+                  activeTab === 'sessions-created'
+                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
+                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1',
+                ]"
               >
-                <span>MES SESSIONS CRÉÉES</span>
-                <i class="fa-solid fa-chevron-right"></i>
+                <span>Sessions Créées</span>
+                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
               </button>
             </li>
             <li>
               <button
                 @click="setActiveTab('my-info')"
-                :class="{ active: activeTab === 'my-info' }"
-                class="profile-menu-item"
+                :class="[
+                  'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
+                  activeTab === 'my-info'
+                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
+                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1',
+                ]"
               >
-                <span>MES INFORMATIONS</span>
-                <i class="fa-solid fa-chevron-right"></i>
+                <span>Mes Informations</span>
+                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
               </button>
             </li>
             <li>
               <button
                 @click="setActiveTab('security')"
-                :class="{ active: activeTab === 'security' }"
-                class="profile-menu-item"
+                :class="[
+                  'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
+                  activeTab === 'security'
+                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
+                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1',
+                ]"
               >
-                <span>SÉCURITÉ</span>
-                <i class="fa-solid fa-chevron-right"></i>
+                <span>Sécurité</span>
+                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
               </button>
             </li>
           </ul>
 
-          <button @click="authService.logout()" class="btn btn--secondary btn-lg w-100">
+          <button
+            @click="authService.logout()"
+            class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium"
+          >
             <i class="fa-solid fa-right-from-bracket"></i>
-            SE DÉCONNECTER
+            Déconnexion
           </button>
         </nav>
 
         <!-- Contenu des onglets -->
-        <div class="profile-main">
+        <div class="min-h-[500px]">
           <!-- Sessions participées -->
-          <div v-if="activeTab === 'sessions-participated'" class="tab-content">
-            <div class="tab-header">
-              <h2>Sessions participées</h2>
-              <div class="tab-tabs">
-                <button class="tab-tab active">À VENIR</button>
-                <button class="tab-tab">HISTORIQUE</button>
-              </div>
+          <div v-if="activeTab === 'sessions-participated'" class="animate-[fadeIn_0.3s_ease]">
+            <div class="flex items-center justify-between mb-8">
+              <h2 class="text-2xl font-bold text-text-primary">Sessions participées</h2>
             </div>
 
-            <div class="sessions-list">
-              <div v-if="participatedSessions.length === 0" class="no-sessions">
-                <div class="no-sessions-content">
-                  <i class="fa-solid fa-calendar-xmark no-sessions-icon"></i>
-                  <h3>Aucune session participée</h3>
-                  <p>Vous n'avez pas encore participé à des sessions d'étude.</p>
-                </div>
+            <div
+              v-if="participatedSessions.length === 0"
+              class="flex flex-col items-center justify-center p-12 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 text-center"
+            >
+              <div
+                class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400 text-2xl"
+              >
+                <i class="fa-solid fa-calendar-xmark"></i>
               </div>
+              <h3 class="text-xl font-semibold text-text-primary mb-2">
+                Aucune session participée
+              </h3>
+              <p class="text-text-secondary">
+                Vous n'avez pas encore participé à des sessions d'étude.
+              </p>
+            </div>
 
-              <div v-else class="sessions-grid">
-                <div v-for="session in participatedSessions" :key="session.id" class="session-card">
-                  <div class="session-card-header">
-                    <h3>{{ session.name }}</h3>
-                    <button @click="goToSession(session.id)" class="btn btn--glass btn-sm">
-                      <i class="fa-solid fa-external-link-alt"></i>
-                      Voir la session
-                    </button>
+            <div v-else class="grid gap-6">
+              <div
+                v-for="session in participatedSessions"
+                :key="session.id"
+                class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-6 hover:shadow-lg transition-all duration-300"
+              >
+                <div
+                  class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-black/5"
+                >
+                  <div>
+                    <h3 class="text-xl font-bold text-text-primary mb-1">{{ session.name }}</h3>
+                    <p class="text-text-secondary text-sm">{{ session.description }}</p>
                   </div>
-                  <p class="session-description">{{ session.description }}</p>
-                  <div class="session-meta">
-                    <span class="badge">{{ sessionService.formatTextType(session.type) }}</span>
-                    <span class="badge"
-                      >Date limite : {{ sessionService.formatDate(session.dateLimit) }}</span
-                    >
-                  </div>
+                  <button
+                    @click="goToSession(session.id)"
+                    class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap"
+                  >
+                    <i class="fa-solid fa-external-link-alt text-xs"></i>
+                    Voir la session
+                  </button>
+                </div>
 
-                  <!-- Réservations de l'utilisateur -->
-                  <div class="user-reservations">
-                    <h4>Mes réservations :</h4>
+                <div class="flex gap-2 mb-6 text-xs">
+                  <span class="px-2 py-1 bg-primary/10 text-primary rounded-md font-semibold">{{
+                    sessionService.formatTextType(session.type)
+                  }}</span>
+                  <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-md"
+                    >Limite : {{ sessionService.formatDate(session.dateLimit) }}</span
+                  >
+                </div>
+
+                <!-- Réservations de l'utilisateur -->
+                <div class="bg-white/40 rounded-xl p-4 border border-white/40">
+                  <h4
+                    class="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide opacity-70"
+                  >
+                    Mes réservations
+                  </h4>
+                  <div
+                    v-if="getUserReservationsForSession(session).length === 0"
+                    class="text-sm text-text-secondary italic"
+                  >
+                    Aucune réservation trouvée
+                  </div>
+                  <div v-else class="space-y-3">
                     <div
-                      v-if="getUserReservationsForSession(session).length === 0"
-                      class="no-reservations"
+                      v-for="reservation in getUserReservationsForSession(session)"
+                      :key="reservation.id"
+                      class="flex items-center justify-between p-3 rounded-lg bg-white/60 border border-white/40 transition-all"
+                      :class="{ 'border-green-200 bg-green-50/50': reservation.isCompleted }"
                     >
-                      <p>Aucune réservation trouvée</p>
-                    </div>
-                    <div v-else class="reservations-list">
-                      <div
-                        v-for="reservation in getUserReservationsForSession(session)"
-                        :key="reservation.id"
-                        class="reservation-item"
-                        :class="{ completed: reservation.isCompleted }"
-                      >
-                        <div class="reservation-info">
-                          <span class="reservation-text">
-                            {{ getTextStudyName(reservation.textStudyId) }}
-                            <span v-if="reservation.section" class="reservation-section">
-                              - Chapitre {{ reservation.section }}
-                            </span>
+                      <div class="flex flex-col">
+                        <span class="font-medium text-text-primary">
+                          {{ getTextStudyName(reservation.textStudyId) }}
+                          <span v-if="reservation.section" class="text-text-secondary font-normal">
+                            - Chapitre {{ reservation.section }}
                           </span>
-                          <span v-if="reservation.isCompleted" class="completion-badge">
-                            <i class="fa-solid fa-check-circle"></i>
-                            Terminé
-                          </span>
-                        </div>
-                        <div class="reservation-actions">
-                          <label class="switch">
-                            <input
-                              type="checkbox"
-                              :checked="reservation.isCompleted"
-                              @change="
-                                toggleReservationCompletion(
-                                  session.id,
-                                  reservation.id,
-                                  ($event.target as HTMLInputElement).checked,
-                                )
-                              "
-                            />
-                            <span class="slider"></span>
-                          </label>
-                          <span class="switch-label">Marqué comme lu</span>
-                        </div>
+                        </span>
+                        <span
+                          v-if="reservation.isCompleted"
+                          class="text-xs text-green-600 font-bold mt-1 flex items-center gap-1"
+                        >
+                          <i class="fa-solid fa-check-circle"></i> Terminé
+                        </span>
                       </div>
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          class="w-5 h-5 rounded text-primary border-gray-300 focus:ring-primary accent-primary"
+                          :checked="reservation.isCompleted"
+                          @change="
+                            toggleReservationCompletion(
+                              session.id,
+                              reservation.id,
+                              ($event.target as HTMLInputElement).checked,
+                            )
+                          "
+                        />
+                        <span class="text-xs font-medium text-text-secondary">Lu</span>
+                      </label>
                     </div>
                   </div>
                 </div>
@@ -485,163 +543,200 @@ onMounted(async () => {
           </div>
 
           <!-- Sessions créées -->
-          <div v-if="activeTab === 'sessions-created'" class="tab-content">
-            <div class="tab-header">
-              <h2>Sessions créées</h2>
-              <div class="tab-tabs">
-                <button class="tab-tab active">À VENIR</button>
-                <button class="tab-tab">HISTORIQUE</button>
-              </div>
+          <div v-if="activeTab === 'sessions-created'" class="animate-[fadeIn_0.3s_ease]">
+            <div class="flex items-center justify-between mb-8">
+              <h2 class="text-2xl font-bold text-text-primary">Sessions créées</h2>
             </div>
 
-            <div class="sessions-list">
-              <div v-if="createdSessions.length === 0" class="no-sessions">
-                <div class="no-sessions-content">
-                  <i class="fa-solid fa-plus-circle no-sessions-icon"></i>
-                  <h3>Aucune session créée</h3>
-                  <p>Créez votre première session d'étude partagée.</p>
-                  <button class="btn btn--gradient btn-lg">Créer une session</button>
-                </div>
+            <div
+              v-if="createdSessions.length === 0"
+              class="flex flex-col items-center justify-center p-12 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 text-center"
+            >
+              <div
+                class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400 text-2xl"
+              >
+                <i class="fa-solid fa-plus-circle"></i>
               </div>
+              <h3 class="text-xl font-semibold text-text-primary mb-2">Aucune session créée</h3>
+              <p class="text-text-secondary mb-6">Créez votre première session d'étude partagée.</p>
+              <button
+                class="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all"
+              >
+                Créer une session
+              </button>
+            </div>
 
-              <div v-else class="sessions-grid">
-                <div v-for="session in createdSessions" :key="session.id" class="session-card">
-                  <div class="session-card-header">
-                    <h3>{{ session.name }}</h3>
-                    <div v-if="session.isEnded" class="card-status completed">
-                      <i class="fa-solid fa-flag-checkered"></i>
-                      Terminée
+            <div v-else class="grid gap-6">
+              <div
+                v-for="session in createdSessions"
+                :key="session.id"
+                class="relative bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-6 hover:shadow-lg transition-all duration-300"
+              >
+                <div class="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 class="text-xl font-bold text-text-primary mb-1">{{ session.name }}</h3>
+                    <div
+                      v-if="session.isEnded"
+                      class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold uppercase rounded mb-2"
+                    >
+                      <i class="fa-solid fa-flag-checkered"></i> Terminée
                     </div>
                   </div>
-                  <p class="session-description">{{ session.description }}</p>
-                  <div class="session-meta">
-                    <span class="badge">{{ sessionService.formatTextType(session.type) }}</span>
-                    <span class="badge"
-                      >Date limite : {{ sessionService.formatDate(session.dateLimit) }}</span
+                  <div class="flex gap-2">
+                    <span
+                      class="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs font-semibold"
+                      >{{ sessionService.formatTextType(session.type) }}</span
                     >
-                    <span v-if="session.isEnded && session.endedAt" class="card-status completed">
-                      Terminée le {{ sessionService.formatDate(session.endedAt) }}
-                    </span>
                   </div>
-                  <div class="session-actions">
-                    <button
-                      v-if="sessionService.canEditSession(session)"
-                      @click="openEditModal(session)"
-                      class="btn btn--glass btn-sm"
-                    >
-                      <i class="fa-solid fa-edit"></i>
-                      Modifier
-                    </button>
-                    <button
-                      v-if="sessionService.canManageSession(session, currentUser)"
-                      @click="openSessionManagement(session)"
-                      class="btn btn--gradient btn-sm"
-                    >
-                      <i class="fa-solid fa-cogs"></i>
-                      Gérer
-                    </button>
-                    <button @click="openShareModal(session)" class="btn btn--secondary btn-sm">
-                      <i class="fa-solid fa-share"></i>
-                      Partager
-                    </button>
-                    <button
-                      v-if="sessionService.canEndSession(session)"
-                      @click="endSession(session)"
-                      class="btn btn--danger btn-sm"
-                    >
-                      <i class="fa-solid fa-flag-checkered"></i>
-                      Mettre fin
-                    </button>
-                  </div>
+                </div>
+
+                <p class="text-text-secondary text-sm mb-6">{{ session.description }}</p>
+
+                <div class="flex flex-wrap items-center gap-4 pt-4 border-t border-black/5">
+                  <button
+                    v-if="sessionService.canEditSession(session)"
+                    @click="openEditModal(session)"
+                    class="px-3 py-1.5 bg-white/50 hover:bg-white border border-gray-200 rounded-lg text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-2"
+                  >
+                    <i class="fa-solid fa-edit"></i> Modifier
+                  </button>
+                  <button
+                    v-if="sessionService.canManageSession(session, currentUser)"
+                    @click="openSessionManagement(session)"
+                    class="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg text-sm font-medium text-primary transition-colors flex items-center gap-2"
+                  >
+                    <i class="fa-solid fa-cogs"></i> Gérer
+                  </button>
+                  <button
+                    @click="openShareModal(session)"
+                    class="px-3 py-1.5 bg-white/50 hover:bg-white border border-gray-200 rounded-lg text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-2"
+                  >
+                    <i class="fa-solid fa-share"></i> Partager
+                  </button>
+                  <button
+                    v-if="sessionService.canEndSession(session)"
+                    @click="endSession(session)"
+                    class="px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg text-sm font-medium text-red-600 transition-colors flex items-center gap-2 ml-auto"
+                  >
+                    <i class="fa-solid fa-flag-checkered"></i> Fin
+                  </button>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Mes informations -->
-          <div v-if="activeTab === 'my-info'" class="tab-content">
-            <div class="tab-header">
-              <h2>Mes informations</h2>
+          <div v-if="activeTab === 'my-info'" class="animate-[fadeIn_0.3s_ease]">
+            <div class="flex items-center justify-between mb-8">
+              <h2 class="text-2xl font-bold text-text-primary">Mes informations</h2>
               <button
                 v-if="!isEditingInfo"
                 @click="isEditingInfo = true"
-                class="btn btn--glass btn-md"
+                class="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg font-medium text-text-secondary transition-colors"
               >
-                <i class="fa-solid fa-edit"></i>
-                Modifier
+                <i class="fa-solid fa-edit mr-2"></i> Modifier
               </button>
-              <div v-else class="edit-actions">
-                <button @click="saveUserInfo" class="btn btn--gradient btn-md">Sauvegarder</button>
-                <button @click="isEditingInfo = false" class="btn btn--secondary btn-md">
+              <div v-else class="flex gap-2">
+                <button
+                  @click="saveUserInfo"
+                  class="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                >
+                  Sauvegarder
+                </button>
+                <button
+                  @click="isEditingInfo = false"
+                  class="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg font-medium text-text-secondary transition-colors"
+                >
                   Annuler
                 </button>
               </div>
             </div>
 
-            <div class="info-form">
-              <div class="form-group">
-                <label class="form-label">Nom d'affichage</label>
-                <input
-                  v-model="editForm.name"
-                  :disabled="!isEditingInfo"
-                  class="form-input"
-                  type="text"
-                />
-              </div>
+            <div
+              class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-8 max-w-2xl"
+            >
+              <div class="space-y-6">
+                <div>
+                  <label class="block text-sm font-semibold text-text-secondary mb-2"
+                    >Nom d'affichage</label
+                  >
+                  <input
+                    v-model="editForm.name"
+                    :disabled="!isEditingInfo"
+                    class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none disabled:opacity-60 disabled:bg-gray-50"
+                    type="text"
+                  />
+                </div>
 
-              <div class="form-group">
-                <label class="form-label">Adresse e-mail</label>
-                <input
-                  v-model="editForm.email"
-                  :disabled="!isEditingInfo"
-                  class="form-input"
-                  type="email"
-                />
-              </div>
+                <div>
+                  <label class="block text-sm font-semibold text-text-secondary mb-2"
+                    >Adresse e-mail</label
+                  >
+                  <input
+                    v-model="editForm.email"
+                    :disabled="!isEditingInfo"
+                    class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none disabled:opacity-60 disabled:bg-gray-50"
+                    type="email"
+                  />
+                </div>
 
-              <div class="form-group">
-                <label class="form-label">ID utilisateur</label>
-                <input :value="currentUser?.id" disabled class="form-input" type="text" />
+                <div>
+                  <label class="block text-sm font-semibold text-text-secondary mb-2"
+                    >ID utilisateur</label
+                  >
+                  <input
+                    :value="currentUser?.id"
+                    disabled
+                    class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 opacity-60 font-mono text-sm"
+                    type="text"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Sécurité -->
-          <div v-if="activeTab === 'security'" class="tab-content">
-            <div class="tab-header">
-              <h2>Sécurité</h2>
+          <div v-if="activeTab === 'security'" class="animate-[fadeIn_0.3s_ease]">
+            <div class="flex items-center justify-between mb-8">
+              <h2 class="text-2xl font-bold text-text-primary">Sécurité</h2>
             </div>
 
-            <div class="security-sections">
+            <div class="grid gap-8 max-w-2xl">
               <!-- Changement de mot de passe -->
-              <div class="security-section">
-                <h3>Changer le mot de passe</h3>
-                <form @submit.prevent="changePassword" class="password-form">
-                  <div class="form-group">
-                    <label class="form-label">Mot de passe actuel</label>
+              <div class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-8">
+                <h3 class="text-xl font-bold text-text-primary mb-6">Changer le mot de passe</h3>
+                <form @submit.prevent="changePassword" class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-semibold text-text-secondary mb-2"
+                      >Mot de passe actuel</label
+                    >
                     <input
                       v-model="passwordForm.currentPassword"
-                      class="form-input"
+                      class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                       type="password"
                       required
                     />
                   </div>
 
-                  <div class="form-group">
-                    <label class="form-label">Nouveau mot de passe</label>
+                  <div>
+                    <label class="block text-sm font-semibold text-text-secondary mb-2"
+                      >Nouveau mot de passe</label
+                    >
                     <input
                       v-model="passwordForm.newPassword"
-                      class="form-input"
+                      class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                       type="password"
                       required
                     />
                   </div>
 
-                  <div class="form-group">
-                    <label class="form-label">Confirmer le nouveau mot de passe</label>
+                  <div>
+                    <label class="block text-sm font-semibold text-text-secondary mb-2"
+                      >Confirmer le nouveau mot de passe</label
+                    >
                     <input
                       v-model="passwordForm.confirmPassword"
-                      class="form-input"
+                      class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                       type="password"
                       required
                     />
@@ -650,7 +745,7 @@ onMounted(async () => {
                   <button
                     type="submit"
                     :disabled="isChangingPassword"
-                    class="btn btn--gradient btn-lg"
+                    class="w-full py-3 px-6 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-all mt-4 disabled:opacity-70"
                   >
                     {{ isChangingPassword ? 'Changement en cours...' : 'Changer le mot de passe' }}
                   </button>
@@ -658,16 +753,16 @@ onMounted(async () => {
               </div>
 
               <!-- Suppression du compte -->
-              <div class="security-section danger">
-                <h3>Supprimer le compte</h3>
-                <p>
+              <div class="bg-red-50/50 backdrop-blur-sm rounded-2xl border border-red-100 p-8">
+                <h3 class="text-xl font-bold text-red-700 mb-2">Supprimer le compte</h3>
+                <p class="text-red-600/80 mb-6">
                   Cette action est irréversible. Toutes vos données seront définitivement
                   supprimées.
                 </p>
                 <button
                   @click="deleteAccount"
                   :disabled="isDeletingAccount"
-                  class="btn btn--danger btn-lg"
+                  class="px-6 py-3 bg-red-100 text-red-700 hover:bg-red-200 border border-red-200 rounded-xl font-semibold transition-colors w-full sm:w-auto"
                 >
                   {{ isDeletingAccount ? 'Suppression en cours...' : 'Supprimer mon compte' }}
                 </button>
@@ -692,296 +787,3 @@ onMounted(async () => {
     />
   </main>
 </template>
-
-<style scoped>
-/* Styles spécifiques à la page de profil uniquement */
-.profile-header {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  color: var(--text-light);
-  padding: var(--spacing-2xl);
-  margin-bottom: var(--spacing-2xl);
-  border-radius: var(--border-radius-lg);
-  position: relative;
-  overflow: hidden;
-}
-
-.profile-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-  opacity: 0.3;
-  pointer-events: none;
-}
-
-.profile-info {
-  position: relative;
-  z-index: 1;
-}
-
-.profile-title {
-  font-size: var(--text-4xl);
-  font-weight: 700;
-  margin: 0 0 var(--spacing-sm) 0;
-  background: linear-gradient(45deg, #fff, #f0f0f0);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.profile-id {
-  font-size: var(--text-lg);
-  opacity: 0.8;
-  margin: 0 0 var(--spacing-md) 0;
-  font-family: monospace;
-}
-
-.profile-badge {
-  display: inline-block;
-}
-
-/* Contenu principal du profil */
-.profile-content {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: var(--spacing-2xl);
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* Menu latéral */
-.profile-sidebar {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-xl);
-  height: fit-content;
-  position: sticky;
-  top: var(--spacing-xl);
-}
-
-.profile-menu {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 var(--spacing-2xl) 0;
-}
-
-.profile-menu-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-sm);
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--border-radius-md);
-  color: var(--text-light);
-  font-weight: 600;
-  font-size: var(--text-base);
-  cursor: pointer;
-  transition: var(--transition-normal);
-  text-align: left;
-}
-
-.profile-menu-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateX(5px);
-}
-
-.profile-menu-item.active {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: var(--primary-color);
-  color: var(--text-light);
-  box-shadow: 0 0 0 1px var(--primary-color);
-}
-
-.profile-menu-item i {
-  font-size: var(--text-sm);
-  opacity: 0.7;
-}
-
-/* Contenu principal */
-.profile-main {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-2xl);
-  min-height: 600px;
-}
-
-/* En-tête des onglets */
-.tab-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-2xl);
-  padding-bottom: var(--spacing-lg);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.tab-header h2 {
-  color: var(--text-light);
-  font-size: var(--text-2xl);
-  margin: 0;
-}
-
-.tab-tabs {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
-.tab-tab {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--border-radius-sm);
-  color: var(--text-light);
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
-
-.tab-tab:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.tab-tab.active {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-  color: white;
-}
-
-/* Contenu des onglets */
-.tab-content {
-  animation: fadeInUp 0.3s ease-out;
-}
-
-/* Grille des sessions */
-.sessions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: var(--spacing-lg);
-}
-
-/* Formulaire d'informations */
-.info-form {
-  max-width: 500px;
-}
-
-.edit-actions {
-  display: flex;
-  gap: var(--spacing-md);
-}
-
-/* Sections de sécurité */
-.security-sections {
-  max-width: 600px;
-}
-
-.security-section {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-xl);
-  margin-bottom: var(--spacing-xl);
-}
-
-.security-section.danger {
-  border-color: rgba(244, 67, 54, 0.3);
-  background: rgba(244, 67, 54, 0.05);
-}
-
-.security-section h3 {
-  color: var(--text-light);
-  font-size: var(--text-lg);
-  margin: 0 0 var(--spacing-md) 0;
-}
-
-.security-section p {
-  color: var(--text-light);
-  opacity: 0.8;
-  margin: 0 0 var(--spacing-lg) 0;
-}
-
-.password-form {
-  max-width: 400px;
-}
-
-/* Bouton de danger */
-.btn--danger {
-  background: linear-gradient(45deg, #f44336, #d32f2f);
-  border: none;
-  color: white;
-}
-
-.btn--danger:hover {
-  background: linear-gradient(45deg, #d32f2f, #b71c1c);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-/* Amélioration des actions de session */
-.session-actions {
-  display: flex;
-  gap: var(--spacing-sm);
-  flex-wrap: wrap;
-  margin-top: var(--spacing-md);
-}
-
-.session-actions .btn {
-  flex: 1;
-  min-width: 120px;
-  justify-content: center;
-}
-
-.session-actions .btn i {
-  margin-right: var(--spacing-xs);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .profile-content {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
-  }
-
-  .profile-sidebar {
-    position: static;
-    order: 2;
-  }
-
-  .profile-main {
-    order: 1;
-  }
-
-  .tab-header {
-    flex-direction: column;
-    gap: var(--spacing-md);
-    align-items: flex-start;
-  }
-
-  .sessions-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .profile-title {
-    font-size: var(--text-2xl);
-  }
-
-  .session-actions {
-    flex-direction: column;
-  }
-
-  .session-actions .btn {
-    width: 100%;
-    min-width: auto;
-  }
-}
-</style>

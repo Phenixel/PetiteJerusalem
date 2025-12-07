@@ -81,18 +81,25 @@ const generateChapters = (totalSections: number) => {
 </script>
 
 <template>
-  <div class="text-card">
+  <div
+    class="bg-white/60 backdrop-blur-sm rounded-xl border border-white/40 overflow-hidden transition-all duration-300 hover:shadow-lg p-5"
+  >
     <!-- En-tête du texte -->
-    <div class="text-header">
-      <h4 class="text-title">{{ text.name }}</h4>
-      <div class="text-actions">
-        <a :href="text.link" target="_blank" class="text-link" title="Voir le texte sur Sefaria">
+    <div class="flex justify-between items-center mb-3">
+      <h4 class="text-xl font-semibold text-text-primary">{{ text.name }}</h4>
+      <div class="flex items-center gap-3">
+        <a
+          :href="text.link"
+          target="_blank"
+          class="text-xl opacity-70 hover:opacity-100 transition-opacity hover:-translate-y-0.5"
+          title="Voir le texte sur Sefaria"
+        >
           🔗
         </a>
         <button
           @click="emit('toggle-expansion', text.id)"
-          class="expand-button"
-          :class="{ expanded: isExpanded }"
+          class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/5 transition-colors text-xs text-text-secondary"
+          :class="{ 'rotate-180 bg-black/5': isExpanded }"
         >
           {{ isExpanded ? '▼' : '▶' }}
         </button>
@@ -100,34 +107,46 @@ const generateChapters = (totalSections: number) => {
     </div>
 
     <!-- Statut global du texte -->
-    <div class="text-status">
-      <span v-if="textDisplayStatus.status === 'fully_reserved'" class="status-reserved">
+    <div class="mb-4">
+      <span
+        v-if="textDisplayStatus.status === 'fully_reserved'"
+        class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-secondary/10 text-secondary border border-secondary/20"
+      >
         Réservé par {{ textDisplayStatus.reservedBy || "quelqu'un" }}
       </span>
       <span
         v-else-if="textDisplayStatus.status === 'partially_reserved'"
-        class="status-partially-reserved"
+        class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-accent-secondary/10 text-accent-secondary border border-accent-secondary/20"
       >
         En cours
       </span>
-      <span v-else class="status-available">Disponible</span>
+      <span
+        v-else
+        class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-500/10 text-green-600 border border-green-500/20"
+        >Disponible</span
+      >
     </div>
 
     <!-- Sections du texte (expandable) -->
-    <div v-if="isExpanded" class="text-sections">
-      <div class="sections-header">
-        <h5>Sections disponibles ({{ text.totalSections }})</h5>
+    <div v-if="isExpanded" class="mt-4 pt-4 border-t border-black/5 animate-[fadeIn_0.3s_ease]">
+      <div class="mb-3">
+        <h5 class="text-sm font-semibold text-text-secondary uppercase tracking-wide">
+          Sections disponibles ({{ text.totalSections }})
+        </h5>
       </div>
 
-      <div class="sections-list">
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar"
+      >
         <div
           v-for="chapter in generateChapters(text.totalSections)"
           :key="chapter"
-          class="section-item"
+          class="flex items-center justify-between p-2 rounded-lg bg-white/40 border border-white/20 hover:bg-white/60 transition-colors"
         >
-          <label class="section-checkbox">
+          <label class="flex items-center gap-3 cursor-pointer flex-1">
             <input
               type="checkbox"
+              class="w-4 h-4 rounded text-primary border-gray-300 focus:ring-primary"
               :checked="isReserved(chapter).isReserved"
               @change="
                 isReserved(chapter).isReserved
@@ -136,18 +155,22 @@ const generateChapters = (totalSections: number) => {
               "
               :disabled="isReserving === `${text.id}-${chapter}`"
             />
-            <span class="section-label">Chapitre {{ chapter }}</span>
+            <span class="text-sm font-medium text-text-primary">Chapitre {{ chapter }}</span>
           </label>
 
-          <span v-if="isReserved(chapter).isReserved" class="section-status reserved">
-            Réservé par {{ isReserved(chapter).reservedBy || "quelqu'un" }}
+          <span
+            v-if="isReserved(chapter).isReserved"
+            class="text-xs font-bold text-secondary truncate max-w-[100px] text-right"
+            :title="isReserved(chapter).reservedBy || 'quelqu\'un'"
+          >
+            {{ isReserved(chapter).reservedBy || "quelqu'un" }}
           </span>
-          <span v-else class="section-status available"> Disponible </span>
+          <span v-else class="text-xs font-bold text-green-600"> Disponible </span>
         </div>
       </div>
 
       <!-- Bouton de réservation du texte complet -->
-      <div class="full-text-reservation">
+      <div class="mt-4 pt-4 border-t border-black/5">
         <button
           @click="
             isTextFullyReserved
@@ -155,10 +178,14 @@ const generateChapters = (totalSections: number) => {
               : emit('reserve-all-chapters', text.id)
           "
           :disabled="isReserving === `${text.id}-all`"
-          class="btn-reserve-full"
+          class="w-full py-2 px-4 rounded-lg font-semibold text-sm transition-all border"
           :class="{
-            reserved: isTextFullyReserved,
-            available: textDisplayStatus.status === 'available',
+            'bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/20':
+              isTextFullyReserved,
+            'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20':
+              !isTextFullyReserved && textDisplayStatus.status === 'available',
+            'bg-gray-100 text-gray-400 cursor-not-allowed':
+              !isTextFullyReserved && textDisplayStatus.status !== 'available',
           }"
         >
           {{ isTextFullyReserved ? 'Annuler la réservation' : 'Réserver le texte complet' }}

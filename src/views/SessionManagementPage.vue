@@ -263,28 +263,44 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="session-management-page">
+  <main class="min-h-screen pb-20">
     <!-- Affichage de chargement -->
-    <div v-if="isLoading" class="loading-state">
-      <div class="loading-spinner"></div>
-      <p>Chargement de la session...</p>
+    <div
+      v-if="isLoading"
+      class="flex flex-col items-center justify-center min-h-[60vh] text-text-secondary"
+    >
+      <div
+        class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
+      ></div>
+      <p class="font-medium animate-pulse">Chargement de la session...</p>
     </div>
 
     <!-- Contenu principal -->
-    <div v-else-if="session" class="session-management">
+    <div v-else-if="session" class="max-w-[1200px] mx-auto px-6 pt-8 animate-[fadeIn_0.5s_ease]">
       <!-- En-tête avec navigation -->
-      <div class="page-header">
-        <button @click="goBackToProfile" class="btn btn--secondary btn-sm">
-          <i class="fa-solid fa-arrow-left"></i>
+      <div
+        class="relative overflow-hidden mb-8 p-8 bg-white/40 backdrop-blur-xl border border-white/40 rounded-3xl shadow-lg"
+      >
+        <button
+          @click="goBackToProfile"
+          class="mb-6 px-4 py-2 bg-white/50 hover:bg-white text-text-secondary hover:text-primary rounded-xl font-medium transition-all flex items-center gap-2 group"
+        >
+          <i class="fa-solid fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
           Retour au profil
         </button>
 
-        <div class="session-info">
-          <h1>{{ session.name }}</h1>
-          <p class="session-description">{{ session.description }}</p>
-          <div class="session-meta">
-            <span class="badge">{{ sessionService.formatTextType(session.type) }}</span>
-            <span class="badge"
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <h1 class="text-3xl md:text-4xl font-bold text-text-primary mb-2 tracking-tight">
+              {{ session.name }}
+            </h1>
+            <p class="text-text-secondary text-lg max-w-2xl">{{ session.description }}</p>
+          </div>
+          <div class="flex gap-2">
+            <span class="px-3 py-1 bg-primary/10 text-primary rounded-lg font-semibold">{{
+              sessionService.formatTextType(session.type)
+            }}</span>
+            <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg font-medium"
               >Date limite : {{ sessionService.formatDate(session.dateLimit) }}</span
             >
           </div>
@@ -292,45 +308,78 @@ onMounted(() => {
       </div>
 
       <!-- Statistiques de la session -->
-      <div class="stats-container">
-        <div class="stat-item">
-          <span class="stat-number">{{ sessionStats.totalReservations }}</span>
-          <span class="stat-label">Réservations</span>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
+        <div
+          class="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white/40 text-center hover:shadow-md transition-shadow"
+        >
+          <span class="block text-3xl font-bold text-primary mb-1">{{
+            sessionStats.totalReservations
+          }}</span>
+          <span class="text-xs font-semibold text-text-secondary uppercase tracking-wider"
+            >Réservations</span
+          >
         </div>
-        <div class="stat-item">
-          <span class="stat-number">{{ sessionStats.completedReservations }}</span>
-          <span class="stat-label">Terminées</span>
+        <div
+          class="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white/40 text-center hover:shadow-md transition-shadow"
+        >
+          <span class="block text-3xl font-bold text-green-600 mb-1">{{
+            sessionStats.completedReservations
+          }}</span>
+          <span class="text-xs font-semibold text-text-secondary uppercase tracking-wider"
+            >Terminées</span
+          >
         </div>
-        <div class="stat-item">
-          <span class="stat-number">{{ sessionStats.completionRate }}%</span>
-          <span class="stat-label">Progression</span>
+        <div
+          class="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white/40 text-center hover:shadow-md transition-shadow"
+        >
+          <span class="block text-3xl font-bold text-text-primary mb-1"
+            >{{ sessionStats.completionRate }}%</span
+          >
+          <span class="text-xs font-semibold text-text-secondary uppercase tracking-wider"
+            >Progression</span
+          >
         </div>
-        <div class="stat-item">
-          <span class="stat-number"
+        <div
+          class="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white/40 text-center hover:shadow-md transition-shadow"
+        >
+          <span class="block text-3xl font-bold text-text-primary mb-1"
             >{{ sessionStats.reservedTexts }}/{{ sessionStats.totalTexts }}</span
           >
-          <span class="stat-label">Textes réservés</span>
+          <span class="text-xs font-semibold text-text-secondary uppercase tracking-wider"
+            >Textes réservés</span
+          >
         </div>
-        <div class="stat-item">
-          <span class="stat-number">{{ sessionStats.reservationRate }}%</span>
-          <span class="stat-label">Taux de réservation</span>
+        <div
+          class="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white/40 text-center hover:shadow-md transition-shadow col-span-2 md:col-span-1"
+        >
+          <span class="block text-3xl font-bold text-text-primary mb-1"
+            >{{ sessionStats.reservationRate }}%</span
+          >
+          <span class="text-xs font-semibold text-text-secondary uppercase tracking-wider"
+            >Taux de réservation</span
+          >
         </div>
       </div>
 
       <!-- Filtres et recherche -->
-      <div class="filters-container">
-        <div class="search-container">
+      <div class="flex flex-col md:flex-row gap-4 mb-8">
+        <div class="relative flex-1">
           <input
             v-model="searchTerm"
             type="text"
             placeholder="Rechercher un texte..."
-            class="search-input"
+            class="w-full pl-10 pr-4 py-3 bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all text-text-primary placeholder:text-text-secondary/60"
           />
-          <i class="fa-solid fa-search search-icon"></i>
+          <i
+            class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/60"
+          ></i>
         </div>
 
-        <div class="filter-container">
-          <select v-model="selectedBook" class="filter-select">
+        <div class="w-full md:w-64">
+          <select
+            v-model="selectedBook"
+            class="w-full px-4 py-3 bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all text-text-primary appearance-none cursor-pointer"
+          >
             <option value="">Tous les livres</option>
             <option v-for="book in availableBooks" :key="book" :value="book">
               {{ sessionService.formatBookName(book) }}
@@ -340,19 +389,38 @@ onMounted(() => {
       </div>
 
       <!-- Liste des textes groupés par livre -->
-      <div class="content-section">
-        <div v-for="(texts, bookName) in groupedTextStudies" :key="bookName" class="book-group">
-          <h3 class="section-title">{{ sessionService.formatBookName(bookName) }}</h3>
+      <div class="space-y-12">
+        <div
+          v-for="(texts, bookName) in groupedTextStudies"
+          :key="bookName"
+          class="animate-[fadeIn_0.5s_ease]"
+        >
+          <h3 class="text-2xl font-bold text-text-primary mb-6 pl-2 border-l-4 border-primary">
+            {{ sessionService.formatBookName(bookName) }}
+          </h3>
 
-          <div class="content-grid">
-            <div v-for="textStudy in texts" :key="textStudy.id" class="management-card">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div
+              v-for="textStudy in texts"
+              :key="textStudy.id"
+              class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full"
+            >
               <!-- En-tête du texte -->
-              <div class="card-header">
-                <h4 class="card-title">{{ sessionService.formatBookName(textStudy.name) }}</h4>
-                <div class="text-status">
+              <div class="p-5 border-b border-black/5 bg-white/30">
+                <div class="flex justify-between items-start gap-4 mb-2">
+                  <h4 class="font-bold text-lg text-text-primary leading-tight">
+                    {{ sessionService.formatBookName(textStudy.name) }}
+                  </h4>
                   <span
-                    :class="`status-${getTextStatus(textStudy).status.replace('_', '-')}`"
-                    class="status-badge"
+                    class="px-2 py-1 text-xs font-bold uppercase rounded-md whitespace-nowrap"
+                    :class="{
+                      'bg-green-100 text-green-700':
+                        getTextStatus(textStudy).status === 'available',
+                      'bg-red-50 text-red-700':
+                        getTextStatus(textStudy).status === 'fully_reserved',
+                      'bg-amber-50 text-amber-700':
+                        getTextStatus(textStudy).status === 'partially_reserved',
+                    }"
                   >
                     {{
                       getTextStatus(textStudy).status === 'available'
@@ -363,58 +431,77 @@ onMounted(() => {
                     }}
                   </span>
                 </div>
-              </div>
 
-              <!-- Informations sur les réservations -->
-              <div class="card-info">
-                <p class="reservations-count">
-                  {{ getTextReservations(textStudy.id).length }} réservation(s)
-                </p>
-                <p v-if="getTextStatus(textStudy).reservedBy" class="reserved-by">
-                  Réservé par : {{ getTextStatus(textStudy).reservedBy }}
-                </p>
+                <div class="flex items-center justify-between text-xs text-text-secondary mt-2">
+                  <span class="font-medium bg-white/50 px-2 py-1 rounded"
+                    >{{ getTextReservations(textStudy.id).length }} réservation(s)</span
+                  >
+                  <span
+                    v-if="getTextStatus(textStudy).reservedBy"
+                    class="truncate max-w-[120px]"
+                    :title="getTextStatus(textStudy).reservedBy || ''"
+                  >
+                    Par : {{ getTextStatus(textStudy).reservedBy }}
+                  </span>
+                </div>
               </div>
 
               <!-- Gestion des réservations -->
-              <div class="sections-container">
-                <h5 v-if="textStudy.totalSections > 1">Sections :</h5>
-                <h5 v-else>Gestion :</h5>
-                <div class="sections-list">
+              <div class="p-5 flex-1 flex flex-col">
+                <h5 class="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
+                  {{ textStudy.totalSections > 1 ? 'Sections :' : 'Gestion :' }}
+                </h5>
+
+                <div class="space-y-2 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
                   <div
                     v-for="section in sessionService.generateChapters(textStudy.totalSections)"
                     :key="section"
-                    class="section-item"
+                    class="flex items-center justify-between p-2 rounded-lg transition-colors text-sm"
                     :class="{
-                      reserved: isSectionReserved(textStudy.id, section),
-                      completed: getSectionReservation(textStudy.id, section)?.isCompleted,
+                      'bg-primary/5 border border-primary/10': isSectionReserved(
+                        textStudy.id,
+                        section,
+                      ),
+                      'bg-white/40 border border-white/20': !isSectionReserved(
+                        textStudy.id,
+                        section,
+                      ),
+                      'bg-green-50/50 border-green-200': getSectionReservation(
+                        textStudy.id,
+                        section,
+                      )?.isCompleted,
                     }"
                   >
-                    <div class="section-info">
-                      <span class="section-number">
+                    <div class="flex flex-col min-w-0">
+                      <span class="font-medium text-text-primary">
                         {{ textStudy.totalSections > 1 ? `Chapitre ${section}` : 'Texte complet' }}
                       </span>
                       <span
                         v-if="isSectionReserved(textStudy.id, section)"
-                        class="section-reserved-by"
+                        class="text-xs text-text-secondary truncate mt-0.5"
                       >
                         {{ getSectionReservation(textStudy.id, section)?.chosenByName }}
                       </span>
                     </div>
 
-                    <div class="section-actions">
+                    <div class="flex items-center gap-2 ml-2">
                       <button
                         v-if="!isSectionReserved(textStudy.id, section)"
                         @click="openGuestForm(textStudy, section)"
-                        class="btn btn--glass btn-sm"
+                        class="w-6 h-6 rounded-full flex items-center justify-center bg-white border border-gray-200 text-text-secondary hover:bg-primary hover:text-white hover:border-primary transition-colors focus:outline-none"
+                        title="Réserver pour un invité"
                       >
-                        <i class="fa-solid fa-plus"></i>
-                        {{ textStudy.totalSections > 1 ? 'Réserver' : 'Réserver le texte' }}
+                        <i class="fa-solid fa-plus text-xs"></i>
                       </button>
 
-                      <div v-else class="reservation-controls">
-                        <label class="switch">
+                      <div v-else class="flex items-center gap-2">
+                        <label
+                          class="relative inline-flex items-center cursor-pointer"
+                          title="Marquer comme terminé"
+                        >
                           <input
                             type="checkbox"
+                            class="sr-only peer"
                             :checked="getSectionReservation(textStudy.id, section)?.isCompleted"
                             @change="
                               toggleReservationCompletion(
@@ -423,17 +510,19 @@ onMounted(() => {
                               )
                             "
                           />
-                          <span class="slider"></span>
+                          <div
+                            class="w-8 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[0px] after:left-[0px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"
+                          ></div>
                         </label>
-                        <span class="switch-label">Terminé</span>
 
                         <button
                           @click="
                             deleteReservation(getSectionReservation(textStudy.id, section)!.id)
                           "
-                          class="btn btn--danger btn-sm"
+                          class="w-6 h-6 rounded-full flex items-center justify-center bg-white border border-gray-200 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors focus:outline-none"
+                          title="Supprimer la réservation"
                         >
-                          <i class="fa-solid fa-trash"></i>
+                          <i class="fa-solid fa-trash text-xs"></i>
                         </button>
                       </div>
                     </div>
@@ -447,226 +536,76 @@ onMounted(() => {
     </div>
 
     <!-- Modal pour les invités -->
-    <div v-if="showGuestForm" class="modal-overlay" @click="showGuestForm = false">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>Réserver pour un invité</h3>
-          <button @click="showGuestForm = false" class="close-button">
+    <div
+      v-if="showGuestForm"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-[fadeIn_0.3s_ease]"
+      @click="showGuestForm = false"
+    >
+      <div
+        class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl p-6 w-full max-w-md border border-white/50 animate-[scaleIn_0.3s_ease]"
+        @click.stop
+      >
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-text-primary">Réserver pour un invité</h3>
+          <button
+            @click="showGuestForm = false"
+            class="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 hover:bg-black/10 text-text-secondary transition-colors"
+          >
             <i class="fa-solid fa-times"></i>
           </button>
         </div>
 
-        <div class="modal-body">
-          <div class="guest-form">
-            <div class="form-group">
-              <label class="form-label">Nom de l'invité</label>
-              <input
-                v-model="guestForm.name"
-                type="text"
-                class="form-input"
-                placeholder="Nom complet"
-                required
-              />
-            </div>
+        <div class="space-y-4">
+          <div class="p-3 bg-primary/10 rounded-xl text-sm text-text-primary mb-2">
+            <span class="font-semibold">{{
+              sessionService.formatBookName(selectedTextStudy?.name || '')
+            }}</span>
+            <span v-if="selectedSection"> - Chapitre {{ selectedSection }}</span>
+          </div>
 
-            <div class="form-group">
-              <label class="form-label">Email de l'invité</label>
-              <input
-                v-model="guestForm.email"
-                type="email"
-                class="form-input"
-                placeholder="email@example.com"
-                required
-              />
-            </div>
+          <div>
+            <label class="block text-sm font-semibold text-text-secondary mb-2"
+              >Nom de l'invité</label
+            >
+            <input
+              v-model="guestForm.name"
+              type="text"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              placeholder="Nom complet"
+              required
+            />
+          </div>
 
-            <div class="form-group">
-              <label class="form-label">Texte à réserver</label>
-              <p class="form-info">
-                {{ sessionService.formatBookName(selectedTextStudy?.name || '') }}
-                <span v-if="selectedSection"> - Chapitre {{ selectedSection }}</span>
-              </p>
-            </div>
+          <div>
+            <label class="block text-sm font-semibold text-text-secondary mb-2"
+              >Email de l'invité</label
+            >
+            <input
+              v-model="guestForm.email"
+              type="email"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              placeholder="email@example.com"
+              required
+            />
+          </div>
 
-            <div class="form-actions">
-              <button @click="showGuestForm = false" class="btn btn--secondary">Annuler</button>
-              <button
-                @click="createGuestReservation"
-                class="btn btn--gradient"
-                :disabled="!guestForm.name || !guestForm.email"
-              >
-                Créer la réservation
-              </button>
-            </div>
+          <div class="flex gap-3 mt-6">
+            <button
+              @click="showGuestForm = false"
+              class="flex-1 py-3 px-4 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl font-bold text-text-secondary transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              @click="createGuestReservation"
+              class="flex-1 py-3 px-4 bg-gradient-to-r from-primary to-secondary hover:shadow-lg text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="!guestForm.name || !guestForm.email"
+            >
+              Créer
+            </button>
           </div>
         </div>
       </div>
     </div>
   </main>
 </template>
-
-<style scoped>
-.session-management-page {
-  min-height: 100vh;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  color: var(--text-light);
-  font-family: var(--font-family-primary);
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  color: var(--text-light);
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-top: 3px solid var(--text-light);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: var(--spacing-md);
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.session-management {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: var(--spacing-xl);
-}
-
-.page-header {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-xl);
-  margin-bottom: var(--spacing-2xl);
-  padding: var(--spacing-xl);
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--border-radius-lg);
-}
-
-.session-info h1 {
-  color: var(--text-light);
-  font-size: var(--text-3xl);
-  margin: 0 0 var(--spacing-sm) 0;
-}
-
-.session-description {
-  color: var(--text-light);
-  opacity: 0.8;
-  margin: 0 0 var(--spacing-md) 0;
-}
-
-.session-meta {
-  display: flex;
-  gap: var(--spacing-sm);
-  flex-wrap: wrap;
-}
-
-.book-group {
-  margin-bottom: var(--spacing-2xl);
-}
-
-.reservations-count {
-  color: var(--text-light);
-  opacity: 0.8;
-  font-size: var(--text-sm);
-  margin: 0 0 var(--spacing-xs) 0;
-}
-
-.reserved-by {
-  color: var(--text-light);
-  opacity: 0.7;
-  font-size: var(--text-xs);
-  margin: 0;
-}
-
-.guest-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-}
-
-.form-info {
-  margin: 0;
-  padding: var(--spacing-sm);
-  background: rgba(102, 126, 234, 0.1);
-  border-radius: var(--border-radius-sm);
-  color: var(--text-primary);
-  font-size: var(--text-sm);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .session-management {
-    padding: var(--spacing-lg);
-  }
-
-  .page-header {
-    flex-direction: column;
-    gap: var(--spacing-lg);
-  }
-
-  .stats-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-md);
-  }
-
-  .stat-item {
-    text-align: center;
-  }
-
-  .stat-number {
-    margin-bottom: var(--spacing-xs);
-  }
-
-  .filters-container {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .search-container {
-    max-width: none;
-  }
-
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .card-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-sm);
-  }
-
-  .section-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-sm);
-  }
-
-  .section-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
-
-  .form-actions {
-    flex-direction: column;
-  }
-}
-</style>

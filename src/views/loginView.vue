@@ -83,148 +83,132 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="main-content">
-    <section class="content-body">
-      <div class="form-container max-width-600">
-        <div class="center-content">
-          <button class="btn btn--glass btn-lg" @click="loginWithGoogle">
-            <i class="fa-brands fa-google"></i>
-            Se connecter avec Google
-          </button>
-        </div>
-
-        <div class="center-content" style="margin: var(--spacing-xl) 0">
-          <p class="text-opacity-80">ou</p>
-        </div>
-
-        <div class="mode-switch" :data-mode="mode">
-          <div
-            class="mode-switch__pill"
-            :class="{ 'is-right': mode === 'signup' }"
-            aria-hidden="true"
-          />
-          <button
-            type="button"
-            class="btn btn-md"
-            :class="{ 'btn--glass': mode === 'login', 'is-active': mode === 'login' }"
-            @click="setMode('login')"
-            :disabled="loading"
-          >
-            Se connecter
-          </button>
-          <button
-            type="button"
-            class="btn btn-md"
-            :class="{ 'btn--glass': mode === 'signup', 'is-active': mode === 'signup' }"
-            @click="setMode('signup')"
-            :disabled="loading"
-          >
-            Créer un compte
-          </button>
-        </div>
-
-        <form @submit.prevent="submitForm">
-          <div v-if="mode === 'signup'" class="form-group">
-            <label class="form-label" for="displayName">Nom affiché</label>
-            <input
-              id="displayName"
-              v-model="displayName"
-              type="text"
-              class="form-input"
-              placeholder="Votre nom"
-            />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="email">Adresse e-mail</label>
-            <input
-              id="email"
-              v-model="email"
-              type="email"
-              class="form-input"
-              placeholder="email@exemple.com"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="password">Mot de passe</label>
-            <input
-              id="password"
-              v-model="password"
-              type="password"
-              class="form-input"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-
-          <div v-if="mode === 'signup'" class="form-group">
-            <label class="form-label" for="confirmPassword">Confirmer le mot de passe</label>
-            <input
-              id="confirmPassword"
-              v-model="confirmPassword"
-              type="password"
-              class="form-input"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-
-          <div v-if="errorMessage" class="message error">{{ errorMessage }}</div>
-
-          <div class="form-actions">
-            <button class="btn btn--secondary btn-lg" type="submit" :disabled="loading">
-              {{
-                loading ? 'Veuillez patienter…' : mode === 'login' ? 'Se connecter' : "S'inscrire"
-              }}
-            </button>
-          </div>
-        </form>
+  <main class="min-h-screen py-16 px-6 flex items-center justify-center">
+    <section
+      class="max-w-[480px] w-full bg-white/60 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/40 p-8 md:p-12 animate-[fadeIn_0.5s_ease]"
+    >
+      <div class="text-center mb-10">
+        <h1 class="text-3xl font-bold text-text-primary mb-2">Bienvenue</h1>
+        <p class="text-text-secondary">Connectez-vous pour continuer</p>
       </div>
+
+      <div class="mb-8">
+        <button
+          class="w-full py-3 px-6 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl font-semibold text-text-primary shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3"
+          @click="loginWithGoogle"
+        >
+          <i class="fa-brands fa-google text-[#4285F4]"></i>
+          Se connecter avec Google
+        </button>
+      </div>
+
+      <div class="flex items-center gap-4 mb-8">
+        <div class="h-px bg-gray-200 flex-1"></div>
+        <p class="text-sm text-text-secondary/60 font-medium">ou</p>
+        <div class="h-px bg-gray-200 flex-1"></div>
+      </div>
+
+      <div
+        class="relative grid grid-cols-2 gap-0 bg-gray-100/50 p-1 rounded-full mb-8 border border-gray-200/50"
+      >
+        <button
+          type="button"
+          class="relative z-10 py-2.5 text-sm font-bold text-center transition-all duration-300 rounded-full"
+          :class="{
+            'bg-white text-text-primary shadow-sm': mode === 'login',
+            'text-text-secondary hover:text-text-primary': mode !== 'login',
+          }"
+          @click="setMode('login')"
+          :disabled="loading"
+        >
+          Se connecter
+        </button>
+        <button
+          type="button"
+          class="relative z-10 py-2.5 text-sm font-bold text-center transition-all duration-300 rounded-full"
+          :class="{
+            'bg-white text-text-primary shadow-sm': mode === 'signup',
+            'text-text-secondary hover:text-text-primary': mode !== 'signup',
+          }"
+          @click="setMode('signup')"
+          :disabled="loading"
+        >
+          Créer un compte
+        </button>
+      </div>
+
+      <form @submit.prevent="submitForm" class="space-y-5">
+        <div v-if="mode === 'signup'" class="animate-[slideIn_0.3s_ease]">
+          <label class="block text-sm font-semibold text-text-primary mb-2" for="displayName"
+            >Nom affiché</label
+          >
+          <input
+            id="displayName"
+            v-model="displayName"
+            type="text"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+            placeholder="Votre nom"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-text-primary mb-2" for="email"
+            >Adresse e-mail</label
+          >
+          <input
+            id="email"
+            v-model="email"
+            type="email"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+            placeholder="email@exemple.com"
+            required
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-text-primary mb-2" for="password"
+            >Mot de passe</label
+          >
+          <input
+            id="password"
+            v-model="password"
+            type="password"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+
+        <div v-if="mode === 'signup'" class="animate-[slideIn_0.3s_ease]">
+          <label class="block text-sm font-semibold text-text-primary mb-2" for="confirmPassword"
+            >Confirmer le mot de passe</label
+          >
+          <input
+            id="confirmPassword"
+            v-model="confirmPassword"
+            type="password"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+
+        <div
+          v-if="errorMessage"
+          class="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium animate-[shake_0.4s_ease]"
+        >
+          <i class="fa-solid fa-circle-exclamation mr-2"></i>{{ errorMessage }}
+        </div>
+
+        <button
+          class="w-full py-4 mt-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+          type="submit"
+          :disabled="loading"
+        >
+          <i v-if="loading" class="fa-solid fa-circle-notch fa-spin mr-2"></i>
+          {{ loading ? 'Veuillez patienter…' : mode === 'login' ? 'Se connecter' : "S'inscrire" }}
+        </button>
+      </form>
     </section>
   </main>
 </template>
-
-<style scoped>
-.mode-switch {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  gap: 0;
-  margin-bottom: var(--spacing-xl);
-  background: var(--color-surface, transparent);
-  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
-  border-radius: 999px;
-  padding: 4px;
-}
-
-.mode-switch > button {
-  position: relative;
-  width: 100%;
-  z-index: 1;
-}
-
-.mode-switch__pill {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  width: calc(50% - 4px);
-  background: var(--color-bg-soft, rgba(0, 0, 0, 0.06));
-  border-radius: 999px;
-  transition: transform 220ms ease;
-  transform: translateX(0%);
-}
-
-.mode-switch__pill.is-right {
-  transform: translateX(100%);
-}
-
-.mode-switch .is-active {
-  /* accentuer le label actif */
-  color: var(--color-text-strong, inherit);
-  font-weight: 600;
-}
-</style>

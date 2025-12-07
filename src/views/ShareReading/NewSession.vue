@@ -86,69 +86,112 @@ const goBack = () => {
 </script>
 
 <template>
-  <main class="main-content">
-    <div class="hero-section">
-      <h2 class="hero-title">Créer une session</h2>
-      <p class="hero-description">Créez une session de partage de lectures avec la communauté</p>
+  <main class="max-w-[800px] mx-auto px-6 py-12 min-h-screen">
+    <div class="text-center mb-12 animate-[fadeIn_0.5s_ease]">
+      <h2 class="text-3xl md:text-4xl font-bold text-text-primary mb-4">Créer une session</h2>
+      <p class="text-text-secondary text-lg">
+        Créez une session de partage de lectures avec la communauté
+      </p>
     </div>
 
-    <div>
-      <form @submit.prevent="createSession" class="form-container">
-        <div class="form-group">
-          <label for="name" class="form-label">Titre de la session</label>
+    <div
+      class="bg-white/60 backdrop-blur-xl rounded-2xl shadow-xl border border-white/40 p-8 md:p-10 animate-[fadeIn_0.5s_ease_0.1s] text-left"
+    >
+      <form @submit.prevent="createSession" class="space-y-6">
+        <div>
+          <label for="name" class="block text-sm font-semibold text-text-primary mb-2"
+            >Titre de la session</label
+          >
           <input
             type="text"
             id="name"
             v-model="sessionData.name"
-            placeholder="Titre de la session"
+            placeholder="Ex: Étude de la Parasha de la semaine"
             required
-            class="form-input"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
           />
         </div>
 
-        <div class="form-group">
-          <label for="description" class="form-label">Description de la session</label>
+        <div>
+          <label for="description" class="block text-sm font-semibold text-text-primary mb-2"
+            >Description de la session</label
+          >
           <textarea
             id="description"
             v-model="sessionData.description"
-            placeholder="Description de la session"
+            placeholder="Décrivez l'objectif de cette session d'étude..."
             required
-            class="form-input"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-y"
             rows="4"
           ></textarea>
         </div>
 
-        <div class="form-group">
-          <label for="type" class="form-label">Type de texte</label>
-          <select name="type" id="type" v-model="sessionData.type" required class="form-input">
-            <option value="">Sélectionnez un type</option>
-            <option v-for="type in textStudyTypes" :key="type.value" :value="type.value">
-              {{ type.label }}
-            </option>
-          </select>
+        <div>
+          <label for="type" class="block text-sm font-semibold text-text-primary mb-2"
+            >Type de texte</label
+          >
+          <div class="relative">
+            <select
+              name="type"
+              id="type"
+              v-model="sessionData.type"
+              required
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none cursor-pointer"
+            >
+              <option value="">Sélectionnez un type</option>
+              <option v-for="type in textStudyTypes" :key="type.value" :value="type.value">
+                {{ type.label }}
+              </option>
+            </select>
+            <i
+              class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
+            ></i>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="dateLimit" class="form-label">Date limite</label>
+        <div>
+          <label for="dateLimit" class="block text-sm font-semibold text-text-primary mb-2"
+            >Date limite</label
+          >
           <input
             type="date"
             id="dateLimit"
             v-model="sessionData.dateLimit"
             required
-            class="form-input"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none cursor-pointer"
           />
         </div>
 
-        <div class="form-actions">
-          <button type="submit" class="btn-gradient" :disabled="isLoading">
+        <div class="flex flex-col-reverse sm:flex-row gap-4 pt-4">
+          <button
+            type="button"
+            @click="goBack"
+            class="px-6 py-3 bg-white border border-gray-200 text-text-secondary font-bold rounded-xl hover:bg-gray-50 transition-colors w-full sm:w-auto"
+          >
+            Annuler
+          </button>
+          <button
+            type="submit"
+            class="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all w-full sm:flex-1 disabled:opacity-70 disabled:cursor-wait"
+            :disabled="isLoading"
+          >
             {{ isLoading ? 'Création en cours...' : 'Créer la session' }}
           </button>
-          <button type="button" @click="goBack" class="btn-secondary">Annuler</button>
         </div>
       </form>
     </div>
 
-    <div v-if="message" class="message" :class="messageType">
+    <div
+      v-if="message"
+      class="mt-6 p-4 rounded-xl text-center font-medium animate-[fadeIn_0.3s_ease]"
+      :class="
+        messageType === 'success'
+          ? 'bg-green-100 text-green-700 border border-green-200'
+          : 'bg-red-100 text-red-700 border border-red-200'
+      "
+    >
+      <i class="fa-solid fa-check-circle mr-2" v-if="messageType === 'success'"></i>
+      <i class="fa-solid fa-exclamation-circle mr-2" v-if="messageType === 'error'"></i>
       {{ message }}
     </div>
   </main>
