@@ -349,7 +349,6 @@ onMounted(async () => {
               >Membre Actif</span
             >
           </div>
-          <p class="text-white/80 font-mono text-sm opacity-60">ID: {{ currentUser.id }}</p>
         </div>
       </div>
 
