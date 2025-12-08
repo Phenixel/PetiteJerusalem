@@ -136,7 +136,7 @@ const handleSessionClick = (session: Session) => {
       <!-- Aucune session -->
       <div
         v-else
-        class="flex flex-col items-center justify-center py-20 text-center bg-white/40 backdrop-blur-sm rounded-3xl border border-white/40 dark:bg-gray-800/40 dark:border-gray-700"
+        class="flex flex-col items-center justify-center py-20 text-center bg-white/60 backdrop-blur-sm rounded-3xl border border-white/60 dark:bg-gray-800/40 dark:border-gray-700"
       >
         <div class="text-6xl mb-6">📚</div>
         <h4 class="text-2xl font-bold text-text-primary mb-2 dark:text-gray-200">

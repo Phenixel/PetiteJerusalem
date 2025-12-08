@@ -26,7 +26,7 @@ const formatDate = (date: Date): string => {
 
 <template>
   <div
-    class="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white/40 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:bg-white/80 group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:bg-gray-800/80"
+    class="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/60 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:bg-white/90 group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:bg-gray-800/80"
     @click="$emit('click', session)"
   >
     <div class="flex justify-between items-start mb-4">

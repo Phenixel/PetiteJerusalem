@@ -43,9 +43,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <main
-    class="flex-1 container mx-auto px-4 py-4 flex flex-col justify-center"
-  >
+  <main class="flex-1 container mx-auto px-4 py-4 flex flex-col justify-center">
     <div class="text-center mb-8 space-y-2">
       <h2
         class="text-3xl md:text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent pb-1"
@@ -66,10 +64,10 @@ onMounted(() => {
           v-for="feature in features"
           :key="feature.title"
           :class="[
-            'relative p-6 rounded-2xl backdrop-blur-md border border-white/40 transition-all duration-300 group flex flex-col items-center text-center',
+            'relative p-6 rounded-2xl backdrop-blur-md border border-white/60 transition-all duration-300 group flex flex-col items-center text-center',
             feature.status === 'coming-soon'
               ? 'bg-white/20 opacity-70 cursor-default dark:bg-gray-800/30'
-              : 'bg-white/40 hover:-translate-y-1 hover:shadow-lg hover:bg-white/60 cursor-pointer dark:bg-gray-800/50 dark:hover:bg-gray-800/80 dark:border-gray-700',
+              : 'bg-white/60 hover:-translate-y-1 hover:shadow-lg hover:bg-white/80 cursor-pointer dark:bg-gray-800/50 dark:hover:bg-gray-800/80 dark:border-gray-700',
           ]"
           @click="feature.status !== 'coming-soon' && router.push(feature.route)"
         >
@@ -95,7 +93,7 @@ onMounted(() => {
       </div>
 
       <div
-        class="text-center bg-white/40 backdrop-blur-md rounded-2xl p-6 border border-white/30 w-full shadow-sm dark:bg-gray-800/40 dark:border-gray-700"
+        class="text-center bg-white/60 backdrop-blur-md rounded-2xl p-6 border border-white/60 w-full shadow-sm dark:bg-gray-800/40 dark:border-gray-700"
       >
         <h3 class="text-lg font-serif italic text-text-primary mb-2 dark:text-gray-200">
           🕯️ À la mémoire de 🕯️
