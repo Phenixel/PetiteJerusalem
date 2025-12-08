@@ -101,7 +101,7 @@ const createSession = async () => {
   message.value = ''
 
   try {
-    await sessionService.createSessionWithValidation(
+    const sessionId = await sessionService.createSessionWithValidation(
       sessionData.name,
       sessionData.description,
       sessionData.type as EnumTypeTextStudy,
@@ -116,14 +116,17 @@ const createSession = async () => {
 
     // Rediriger vers la page des sessions après un délai
     setTimeout(() => {
-      router.push('/share-reading')
+      router.push(`/share-reading/session/${sessionId}`)
     }, 2000)
   } catch (error) {
     console.error('Erreur lors de la création de la session:', error)
     message.value = 'Erreur lors de la création de la session. Veuillez réessayer.'
     messageType.value = 'error'
-  } finally {
     isLoading.value = false
+  } finally {
+    if (messageType.value === 'error') {
+      isLoading.value = false
+    }
   }
 }
 
