@@ -1,20 +1,69 @@
-@import './base.css';
-@import './style.css';
-@import './components.css';
+@import 'tailwindcss';
 
-/* Styles globaux spécifiques à l'application */
+@theme {
+  /* Colors */
+  --color-primary: #667eea;
+  --color-secondary: #764ba2;
+  --color-accent: #ff6b6b;
+  --color-accent-secondary: #ee5a24;
+
+  /* Backgrounds */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8f9fa;
+  --color-bg-dark: #181818;
+  --color-bg-beige: #f4f1ea; /* New background color */
+
+  /* Text */
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-light: #ffffff;
+
+  /* Fonts */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Georgia', serif;
+
+  /* Spacing - usually standard tailwind is fine, but we can match specific ones if needed */
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+}
+
+/* Global Styles */
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-beige); /* Apply new background globally */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+:root.dark body {
+  background-color: #111827; /* gray-900 */
+  color: #f3f4f6; /* gray-100 */
+}
+
 #app {
   min-height: 100vh;
-  font-family: var(--font-family-primary);
+  display: flex;
+  flex-direction: column;
 }
 
-/* Styles pour les transitions de page */
-.page-enter-active,
-.page-leave-active {
-  transition: opacity 0.3s ease;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
+  line-height: 1.2;
 }
 
-.page-enter-from,
-.page-leave-to {
-  opacity: 0;
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: all 0.3s ease;
 }

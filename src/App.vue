@@ -28,7 +28,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="page-gradient">
+  <div
+    class="min-h-screen flex flex-col text-text-primary transition-colors duration-300 dark:bg-gray-900 dark:text-gray-100"
+  >
     <Navbar />
     <RouterView />
     <SiteFooter v-if="!isHome" />

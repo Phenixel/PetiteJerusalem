@@ -91,51 +91,82 @@ watch(
 </script>
 
 <template>
-  <div v-if="show" class="modal-overlay" @click="closeModal">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <h3>Modifier la session</h3>
-        <button @click="closeModal" class="close-button">✕</button>
+  <div
+    v-if="show"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-[fadeIn_0.3s_ease]"
+    @click="closeModal"
+  >
+    <div
+      class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-[scaleIn_0.3s_ease] border border-gray-100 dark:bg-gray-800 dark:border-gray-700"
+      @click.stop
+    >
+      <div
+        class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700"
+      >
+        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">Modifier la session</h3>
+        <button
+          @click="closeModal"
+          class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600"
+        >
+          ✕
+        </button>
       </div>
 
-      <div class="modal-body">
-        <form @submit.prevent="saveSession" class="edit-form">
-          <div class="form-group">
-            <label class="form-label">Nom de la session *</label>
+      <div class="p-6">
+        <form @submit.prevent="saveSession" class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300"
+              >Nom de la session *</label
+            >
             <input
               v-model="editForm.name"
-              class="form-input"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
               type="text"
               required
               placeholder="Entrez le nom de la session"
             />
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Description</label>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300"
+              >Description</label
+            >
             <textarea
               v-model="editForm.description"
-              class="form-input form-textarea"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-y dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
               placeholder="Décrivez la session (optionnel)"
               rows="3"
             ></textarea>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Date limite *</label>
-            <input v-model="editForm.dateLimit" class="form-input" type="datetime-local" required />
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300"
+              >Date limite *</label
+            >
+            <input
+              v-model="editForm.dateLimit"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
+              type="datetime-local"
+              required
+            />
           </div>
 
-          <div class="form-actions">
+          <div
+            class="flex gap-3 justify-end pt-4 mt-4 border-t border-gray-100 dark:border-gray-700"
+          >
             <button
               type="button"
               @click="closeModal"
-              class="btn btn--secondary btn-md"
+              class="px-5 py-2.5 rounded-lg border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
               :disabled="isLoading"
             >
               Annuler
             </button>
-            <button type="submit" class="btn btn--gradient btn-md" :disabled="isLoading">
+            <button
+              type="submit"
+              class="px-5 py-2.5 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-bold hover:shadow-md hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+              :disabled="isLoading"
+            >
               {{ isLoading ? 'Sauvegarde...' : 'Sauvegarder' }}
             </button>
           </div>
@@ -144,77 +175,3 @@ watch(
     </div>
   </div>
 </template>
-
-<style scoped>
-.edit-form {
-  max-width: 100%;
-}
-
-.form-textarea {
-  resize: vertical;
-  min-height: 80px;
-  font-family: inherit;
-}
-
-.form-actions {
-  display: flex;
-  gap: var(--spacing-md);
-  justify-content: flex-end;
-  margin-top: var(--spacing-xl);
-  padding-top: var(--spacing-lg);
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-/* Utiliser le même style que le modal de partage */
-.modal-content {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-2xl);
-  max-width: 500px;
-  width: 100%;
-  box-shadow: var(--shadow-xl);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.modal-header h3 {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: var(--text-xl);
-}
-
-.modal-body {
-  color: var(--text-primary);
-}
-
-.form-label {
-  color: var(--text-primary);
-  opacity: 0.9;
-}
-
-.form-input {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  color: var(--text-primary);
-}
-
-.form-input::placeholder {
-  color: rgba(0, 0, 0, 0.6);
-}
-
-.form-input:focus {
-  border-color: rgba(0, 0, 0, 0.3);
-  background: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
-}
-
-@media (max-width: 768px) {
-  .form-actions {
-    flex-direction: column;
-  }
-
-  .form-actions .btn {
-    width: 100%;
-  }
-}
-</style>

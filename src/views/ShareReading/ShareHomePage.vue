@@ -61,56 +61,91 @@ const handleSessionClick = (session: Session) => {
 </script>
 
 <template>
-  <main class="main-content">
-    <div class="hero-section">
-      <h2 class="hero-title">Partage de Lectures</h2>
-      <p class="hero-description">Échangez et découvrez des textes sacrés avec la communauté</p>
+  <main class="mx-auto px-6 py-12">
+    <div class="text-center mb-16 animate-[fadeIn_0.5s_ease]">
+      <h2
+        class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-4 tracking-tight"
+      >
+        Partage de Lectures
+      </h2>
+      <p class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
+        Échangez et découvrez des textes sacrés avec la communauté
+      </p>
 
       <button
         @click="router.push('/share-reading/new-session')"
-        class="btn-gradient"
+        class="mt-8 px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
         :disabled="!isAuthenticated"
-        style="margin-top: var(--spacing-xl)"
         title="Créer une session"
       >
+        <i class="fa-solid fa-plus mr-2"></i>
         Créer une session
       </button>
-      <div v-if="!isAuthenticated" style="margin-top: var(--spacing-sm)">
+      <div v-if="!isAuthenticated" class="mt-4 text-sm text-text-secondary/80">
         <small>Vous devez avoir un compte et être connecté pour créer une session.</small>
       </div>
     </div>
 
-    <div class="hero-section">
+    <div class="relative">
       <!-- État de chargement -->
-      <div v-if="isLoading" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>Chargement des sessions...</p>
+      <div
+        v-if="isLoading"
+        class="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm z-10 rounded-2xl dark:bg-gray-900/60"
+      >
+        <div
+          class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
+        ></div>
+        <p class="text-text-secondary font-medium animate-pulse dark:text-gray-300">
+          Chargement des sessions...
+        </p>
       </div>
 
       <!-- État d'erreur -->
-      <div v-else-if="error" class="error-state">
-        <p class="error-message">{{ error }}</p>
-        <button @click="loadSessions" class="btn-gradient">Réessayer</button>
+      <div
+        v-if="error"
+        class="flex flex-col items-center justify-center p-12 text-center bg-red-50 rounded-2xl border border-red-100 dark:bg-red-900/10 dark:border-red-900/30"
+      >
+        <div
+          class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-2xl mb-4 dark:bg-red-900/20 dark:text-red-400"
+        >
+          <i class="fa-solid fa-exclamation-triangle"></i>
+        </div>
+        <p class="text-red-700 font-medium mb-6 dark:text-red-400">{{ error }}</p>
+        <button
+          @click="loadSessions"
+          class="px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Réessayer
+        </button>
       </div>
 
       <!-- Liste des sessions -->
-      <div v-else-if="sessions.length > 0" class="cards-list">
+      <div
+        v-else-if="sessions.length > 0"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-[fadeIn_0.5s_ease]"
+      >
         <SessionCard
           v-for="session in sessions"
           :key="session.id"
           :session="session"
           @click="handleSessionClick"
+          class="h-full"
         />
       </div>
 
       <!-- Aucune session -->
-      <div v-else class="no-sessions">
-        <div class="no-sessions-icon">📚</div>
-        <h4>Aucune session existante</h4>
-        <p>Créez la première session de partage de lectures !</p>
+      <div
+        v-else
+        class="flex flex-col items-center justify-center py-20 text-center bg-white/60 backdrop-blur-sm rounded-3xl border border-white/60 dark:bg-gray-800/40 dark:border-gray-700"
+      >
+        <div class="text-6xl mb-6">📚</div>
+        <h4 class="text-2xl font-bold text-text-primary mb-2 dark:text-gray-200">
+          Aucune session existante
+        </h4>
+        <p class="text-text-secondary dark:text-gray-400">
+          Créez la première session de partage de lectures !
+        </p>
       </div>
     </div>
   </main>
 </template>
-
-<style scoped></style>
