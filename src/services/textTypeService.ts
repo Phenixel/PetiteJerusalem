@@ -6,7 +6,6 @@ export class TextTypeService {
     [EnumTypeTextStudy.TalmudBavli]: 'Talmud Bavli',
     [EnumTypeTextStudy.Mishna]: 'Mishna',
     [EnumTypeTextStudy.Tehilim]: 'Tehilim',
-    [EnumTypeTextStudy.ParashaDevarim]: 'Parasha Devarim',
     [EnumTypeTextStudy.Tanakh]: 'Tanakh',
   }
 

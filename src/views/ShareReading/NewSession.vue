@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { EnumTypeTextStudy } from '../../models/typeTextStudy'
 import { SessionService } from '../../services/sessionService'
@@ -26,6 +26,47 @@ const sessionData = reactive({
   dateLimit: '',
 })
 
+// Gestion de la sélection fine des livres
+const availableBooks = ref<string[]>([])
+const selectedBooks = ref<string[]>([])
+const isBookSelectionEnabled = ref(false)
+
+// Observer les changements de type pour charger les livres
+watch(
+  () => sessionData.type,
+  async (newType) => {
+    selectedBooks.value = []
+    availableBooks.value = []
+    isBookSelectionEnabled.value = false
+
+    if (newType) {
+      try {
+        const books = await sessionService.getBooksByType(newType as EnumTypeTextStudy)
+        if (books.length > 0) {
+          availableBooks.value = books
+          // Par défaut, tout sélectionner comme demandé
+          selectedBooks.value = [...books]
+          isBookSelectionEnabled.value = true
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des livres:', error)
+      }
+    }
+  },
+)
+
+const toggleAllBooks = () => {
+  if (selectedBooks.value.length === availableBooks.value.length) {
+    selectedBooks.value = []
+  } else {
+    selectedBooks.value = [...availableBooks.value]
+  }
+}
+
+const formatBookName = (bookName: string) => {
+  return sessionService.formatBookName(bookName)
+}
+
 // Récupérer l'utilisateur connecté
 onMounted(async () => {
   currentUser.value = await sessionService.requireAuthentication(router)
@@ -50,6 +91,12 @@ const createSession = async () => {
     return
   }
 
+  if (isBookSelectionEnabled.value && selectedBooks.value.length === 0) {
+    message.value = 'Veuillez sélectionner au moins une partie du texte'
+    messageType.value = 'error'
+    return
+  }
+
   isLoading.value = true
   message.value = ''
 
@@ -61,6 +108,7 @@ const createSession = async () => {
       sessionData.dateLimit,
       currentUser.value!.id,
       currentUser.value!.name,
+      selectedBooks.value.length > 0 ? selectedBooks.value : undefined,
     )
 
     message.value = 'Session créée avec succès !'
@@ -157,6 +205,62 @@ const goBack = () => {
               class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none dark:text-gray-400"
             ></i>
           </div>
+        </div>
+
+        <!-- Sélection des parties/livres (s'affiche uniquement si des livres sont disponibles) -->
+        <div v-if="isBookSelectionEnabled" class="animate-[fadeIn_0.3s_ease]">
+          <label class="block text-sm font-semibold text-text-primary mb-3 dark:text-gray-200">
+            Sélectionner les parties à inclure
+            <span class="text-xs font-normal text-text-secondary ml-2 dark:text-gray-400">
+              ({{ selectedBooks.length }}/{{ availableBooks.length }})
+            </span>
+          </label>
+
+          <div
+            class="bg-white/50 rounded-xl border border-gray-200 p-4 max-h-60 overflow-y-auto custom-scrollbar dark:bg-gray-700/50 dark:border-gray-600"
+          >
+            <div class="flex items-center mb-3 pb-2 border-b border-gray-200 dark:border-gray-600">
+              <label class="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  class="w-5 h-5 rounded text-primary border-gray-300 focus:ring-primary accent-primary"
+                  :checked="selectedBooks.length === availableBooks.length"
+                  :indeterminate="
+                    selectedBooks.length > 0 && selectedBooks.length < availableBooks.length
+                  "
+                  @change="toggleAllBooks"
+                />
+                <span class="ml-2 text-sm font-semibold text-text-primary dark:text-gray-200"
+                  >Tout sélectionner</span
+                >
+              </label>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <label
+                v-for="book in availableBooks"
+                :key="book"
+                class="inline-flex items-center cursor-pointer hover:bg-black/5 p-1 rounded transition-colors dark:hover:bg-white/5"
+              >
+                <input
+                  type="checkbox"
+                  class="w-4 h-4 rounded text-primary border-gray-300 focus:ring-primary accent-primary"
+                  :value="book"
+                  v-model="selectedBooks"
+                />
+                <span class="ml-2 text-sm text-text-secondary dark:text-gray-300">{{
+                  formatBookName(book)
+                }}</span>
+              </label>
+            </div>
+          </div>
+          <p
+            v-if="selectedBooks.length === 0"
+            class="text-xs text-red-500 mt-1 flex items-center gap-1"
+          >
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            Veuillez sélectionner au moins une partie
+          </p>
         </div>
 
         <div>

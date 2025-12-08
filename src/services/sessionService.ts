@@ -45,7 +45,6 @@ export class SessionService {
       [EnumTypeTextStudy.TalmudBavli]: 'Talmud Bavli',
       [EnumTypeTextStudy.Mishna]: 'Mishna',
       [EnumTypeTextStudy.Tehilim]: 'Tehilim',
-      [EnumTypeTextStudy.ParashaDevarim]: 'Parasha Devarim',
       [EnumTypeTextStudy.Tanakh]: 'Tanakh',
     }
 
@@ -65,6 +64,13 @@ export class SessionService {
       })) as unknown as TextStudy[]
 
     return filtered
+  }
+
+  // Récupérer les livres disponibles pour un type
+  async getBooksByType(type: EnumTypeTextStudy): Promise<string[]> {
+    const texts = await this.getTextStudiesByType(type)
+    const books = new Set(texts.map((t) => t.livre))
+    return Array.from(books)
   }
 
   // === MÉTHODES D'AUTHENTIFICATION ===
@@ -182,6 +188,7 @@ export class SessionService {
     dateLimit: string,
     personId: string,
     creatorName: string,
+    selectedBooks?: string[],
   ): Promise<string> {
     // Validation des données
     if (!name || !description || !type || !dateLimit || !personId || !creatorName) {
@@ -200,6 +207,7 @@ export class SessionService {
       personId,
       creatorName,
       slug,
+      selectedBooks,
     }
 
     return await this.createSession(sessionData)
@@ -347,7 +355,13 @@ export class SessionService {
       throw new Error('Session non trouvée')
     }
 
-    const textStudies = await this.getTextStudiesByType(session.type)
+    let textStudies = await this.getTextStudiesByType(session.type)
+
+    // Filtrer par livres sélectionnés si définis
+    if (session.selectedBooks && session.selectedBooks.length > 0) {
+      textStudies = textStudies.filter((text) => session.selectedBooks!.includes(text.livre))
+    }
+
     const reservations = this.getReservationsBySession(session)
 
     return { session, textStudies, reservations }
