@@ -88,7 +88,11 @@ const goBack = () => {
 <template>
   <main class="mx-auto px-6 py-12 min-h-screen">
     <div class="text-center mb-12 animate-[fadeIn_0.5s_ease]">
-      <h2 class="text-3xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent md:text-4xl font-bold text-text-primary mb-4">Créer une session</h2>
+      <h2
+        class="text-3xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent md:text-4xl font-bold text-text-primary mb-4"
+      >
+        Créer une session
+      </h2>
       <p class="text-text-secondary text-lg">
         Créez une session de partage de lectures avec la communauté
       </p>
