@@ -95,11 +95,13 @@ const goBack = () => {
     </div>
 
     <div
-      class="bg-white/60 backdrop-blur-xl rounded-2xl shadow-xl border border-white/40 p-8 md:p-10 animate-[fadeIn_0.5s_ease_0.1s] text-left"
+      class="bg-white/60 backdrop-blur-xl rounded-2xl shadow-xl border border-white/40 p-8 md:p-10 animate-[fadeIn_0.5s_ease_0.1s] text-left dark:bg-gray-800/60 dark:border-gray-700"
     >
       <form @submit.prevent="createSession" class="space-y-6">
         <div>
-          <label for="name" class="block text-sm font-semibold text-text-primary mb-2"
+          <label
+            for="name"
+            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-200"
             >Titre de la session</label
           >
           <input
@@ -108,12 +110,14 @@ const goBack = () => {
             v-model="sessionData.name"
             placeholder="Ex: Étude de la Parasha de la semaine"
             required
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-600"
           />
         </div>
 
         <div>
-          <label for="description" class="block text-sm font-semibold text-text-primary mb-2"
+          <label
+            for="description"
+            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-200"
             >Description de la session</label
           >
           <textarea
@@ -121,13 +125,15 @@ const goBack = () => {
             v-model="sessionData.description"
             placeholder="Décrivez l'objectif de cette session d'étude..."
             required
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-y"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-y dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-600"
             rows="4"
           ></textarea>
         </div>
 
         <div>
-          <label for="type" class="block text-sm font-semibold text-text-primary mb-2"
+          <label
+            for="type"
+            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-200"
             >Type de texte</label
           >
           <div class="relative">
@@ -136,7 +142,7 @@ const goBack = () => {
               id="type"
               v-model="sessionData.type"
               required
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none cursor-pointer"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none cursor-pointer dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-600"
             >
               <option value="">Sélectionnez un type</option>
               <option v-for="type in textStudyTypes" :key="type.value" :value="type.value">
@@ -144,13 +150,15 @@ const goBack = () => {
               </option>
             </select>
             <i
-              class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
+              class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none dark:text-gray-400"
             ></i>
           </div>
         </div>
 
         <div>
-          <label for="dateLimit" class="block text-sm font-semibold text-text-primary mb-2"
+          <label
+            for="dateLimit"
+            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-200"
             >Date limite</label
           >
           <input
@@ -158,7 +166,7 @@ const goBack = () => {
             id="dateLimit"
             v-model="sessionData.dateLimit"
             required
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none cursor-pointer"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none cursor-pointer dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-600 dark:[color-scheme:dark]"
           />
         </div>
 
@@ -166,7 +174,7 @@ const goBack = () => {
           <button
             type="button"
             @click="goBack"
-            class="px-6 py-3 bg-white border border-gray-200 text-text-secondary font-bold rounded-xl hover:bg-gray-50 transition-colors w-full sm:w-auto"
+            class="px-6 py-3 bg-white border border-gray-200 text-text-secondary font-bold rounded-xl hover:bg-gray-50 transition-colors w-full sm:w-auto dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
           >
             Annuler
           </button>
