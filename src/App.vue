@@ -3,6 +3,7 @@ import { onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import Navbar from './components/NavbarComponents.vue'
 import SiteFooter from './components/SiteFooter.vue'
+import ScrollToTop from './components/ScrollToTop.vue'
 import { RouterView } from 'vue-router'
 import { AuthService } from './services/authService'
 
@@ -34,5 +35,6 @@ onMounted(async () => {
     <Navbar />
     <RouterView />
     <SiteFooter v-if="!isHome" />
+    <ScrollToTop />
   </div>
 </template>

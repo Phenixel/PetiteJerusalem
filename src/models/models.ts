@@ -39,6 +39,7 @@ export interface Session {
   isEnded?: boolean // session terminée
   endedAt?: Date // date de fin de session
   updatedAt?: Date // date de dernière modification
+  selectedBooks?: string[] // livres sélectionnés pour la session
 }
 
 export interface TextStudyReservation {
