@@ -85,7 +85,7 @@ onMounted(async () => {
 <template>
   <main class="min-h-screen py-16 px-6 flex items-center justify-center">
     <section
-      class="w-full bg-white/60 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/40 p-8 md:p-12 animate-[fadeIn_0.5s_ease] dark:bg-gray-800/60 dark:border-gray-700"
+      class="w-full max-w-lg bg-white/60 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/40 p-8 md:p-12 animate-[fadeIn_0.5s_ease] dark:bg-gray-800/60 dark:border-gray-700"
     >
       <div class="text-center mb-10">
         <h1 class="text-3xl font-bold text-text-primary mb-2 dark:text-gray-100">Bienvenue</h1>
@@ -111,12 +111,15 @@ onMounted(async () => {
       <div
         class="relative grid grid-cols-2 gap-0 bg-gray-100/50 p-1 rounded-full mb-8 border border-gray-200/50 dark:bg-gray-700/50 dark:border-gray-600"
       >
+        <div
+          class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white dark:bg-gray-600 rounded-full shadow-sm transition-all duration-300 ease-out"
+          :class="mode === 'login' ? 'left-1' : 'left-1 translate-x-full'"
+        ></div>
         <button
           type="button"
-          class="relative z-10 py-2.5 text-sm font-bold text-center transition-all duration-300 rounded-full"
+          class="relative z-10 py-2.5 text-sm font-bold text-center transition-colors duration-300 rounded-full"
           :class="{
-            'bg-white text-text-primary shadow-sm dark:bg-gray-600 dark:text-gray-100 dark:shadow-none':
-              mode === 'login',
+            'text-text-primary dark:text-gray-100': mode === 'login',
             'text-text-secondary hover:text-text-primary dark:text-gray-400 dark:hover:text-gray-200':
               mode !== 'login',
           }"
@@ -127,10 +130,9 @@ onMounted(async () => {
         </button>
         <button
           type="button"
-          class="relative z-10 py-2.5 text-sm font-bold text-center transition-all duration-300 rounded-full"
+          class="relative z-10 py-2.5 text-sm font-bold text-center transition-colors duration-300 rounded-full"
           :class="{
-            'bg-white text-text-primary shadow-sm dark:bg-gray-600 dark:text-gray-100 dark:shadow-none':
-              mode === 'signup',
+            'text-text-primary dark:text-gray-100': mode === 'signup',
             'text-text-secondary hover:text-text-primary dark:text-gray-400 dark:hover:text-gray-200':
               mode !== 'signup',
           }"
@@ -141,23 +143,25 @@ onMounted(async () => {
         </button>
       </div>
 
-      <form @submit.prevent="submitForm" class="space-y-5">
-        <div v-if="mode === 'signup'" class="animate-[slideIn_0.3s_ease]">
-          <label
-            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
-            for="displayName"
-            >Nom affiché</label
-          >
-          <input
-            id="displayName"
-            v-model="displayName"
-            type="text"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
-            placeholder="Votre nom"
-          />
-        </div>
+      <form @submit.prevent="submitForm" class="flex flex-col">
+        <Transition name="slide-up">
+          <div v-if="mode === 'signup'" class="mb-5 overflow-hidden">
+            <label
+              class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
+              for="displayName"
+              >Nom affiché</label
+            >
+            <input
+              id="displayName"
+              v-model="displayName"
+              type="text"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
+              placeholder="Votre nom"
+            />
+          </div>
+        </Transition>
 
-        <div>
+        <div class="mb-5">
           <label
             class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
             for="email"
@@ -173,7 +177,7 @@ onMounted(async () => {
           />
         </div>
 
-        <div>
+        <div class="mb-5">
           <label
             class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
             for="password"
@@ -189,31 +193,33 @@ onMounted(async () => {
           />
         </div>
 
-        <div v-if="mode === 'signup'" class="animate-[slideIn_0.3s_ease]">
-          <label
-            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
-            for="confirmPassword"
-            >Confirmer le mot de passe</label
-          >
-          <input
-            id="confirmPassword"
-            v-model="confirmPassword"
-            type="password"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
-            placeholder="••••••••"
-            required
-          />
-        </div>
+        <Transition name="slide-up">
+          <div v-if="mode === 'signup'" class="mb-5 overflow-hidden">
+            <label
+              class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
+              for="confirmPassword"
+              >Confirmer le mot de passe</label
+            >
+            <input
+              id="confirmPassword"
+              v-model="confirmPassword"
+              type="password"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+        </Transition>
 
         <div
           v-if="errorMessage"
-          class="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium animate-[shake_0.4s_ease] dark:bg-red-900/10 dark:border-red-900/30 dark:text-red-400"
+          class="p-4 mb-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium animate-[shake_0.4s_ease] dark:bg-red-900/10 dark:border-red-900/30 dark:text-red-400"
         >
           <i class="fa-solid fa-circle-exclamation mr-2"></i>{{ errorMessage }}
         </div>
 
         <button
-          class="w-full py-4 mt-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+          class="w-full py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
           type="submit"
           :disabled="loading"
         >
@@ -224,3 +230,20 @@ onMounted(async () => {
     </section>
   </main>
 </template>
+
+<style scoped>
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 120px;
+  opacity: 1;
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-10px);
+  margin-bottom: 0 !important;
+}
+</style>
