@@ -1,22 +1,29 @@
-name: CI/CD Checks
+name: CI/CD - PR Validation
 
 on:
   pull_request:
     branches:
-      - staging
-      - main
-  push:
-    branches:
       - main
 
 jobs:
-  verify:
-    uses: ./.github/workflows/verify.yml
+  build-and-test:
+    runs-on: ubuntu-latest
 
-  deploy-staging:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: verify
-    uses: ./.github/workflows/deploy.yml
-    with:
-      environment: staging
-    secrets: inherit
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Verification
+        run: npm run verify
+
+      - name: Build project
+        run: npm run build
