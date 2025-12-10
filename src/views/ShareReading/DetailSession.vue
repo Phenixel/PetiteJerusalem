@@ -6,6 +6,7 @@ import type { Session, TextStudy, TextStudyReservation } from '../../models/mode
 import type { User } from '../../services/authService'
 import GuestForm from '../../components/GuestForm.vue'
 import ShareModal from '../../components/ShareModal.vue'
+import SessionProgressBar from '../../components/SessionProgressBar.vue'
 import { seoService } from '../../services/seoService'
 
 const route = useRoute()
@@ -42,6 +43,47 @@ const shareUrl = ref('')
 const groupedTextStudies = computed(() => {
   if (!textStudies.value.length) return {}
   return sessionService.getGroupedAndFilteredTextStudies(textStudies.value, searchTerm.value)
+})
+
+const progressStats = computed(() => {
+  if (!textStudies.value.length)
+    return {
+      total: 0,
+      reserved: 0,
+      read: 0,
+      participants: 0,
+      reservedPercentage: 0,
+      readPercentage: 0,
+    }
+
+  // Calcul du total de sections disponibles
+  const total = textStudies.value.reduce((acc, textStudy) => acc + textStudy.totalSections, 0)
+
+  // Calcul du nombre de réservations
+  const reserved = reservations.value.length
+
+  // Calcul du nombre de lectures terminées
+  const read = reservations.value.filter((r) => r.isCompleted).length
+
+  // Calcul du nombre de participants uniques (utilisateurs ou invités)
+  const uniqueParticipants = new Set<string>()
+  reservations.value.forEach((r) => {
+    if (r.chosenById) {
+      uniqueParticipants.add(`user:${r.chosenById}`)
+    } else if (r.chosenByGuestId) {
+      uniqueParticipants.add(`guest:${r.chosenByGuestId}`)
+    }
+  })
+  const participants = uniqueParticipants.size
+
+  return {
+    total,
+    reserved,
+    read,
+    participants,
+    reservedPercentage: total > 0 ? (reserved / total) * 100 : 0,
+    readPercentage: total > 0 ? (read / total) * 100 : 0,
+  }
 })
 
 // Gérer l'expansion des textes
@@ -329,6 +371,14 @@ watch(session, (s) => {
           </button>
         </div>
       </div>
+
+      <!-- Barre de progression -->
+      <SessionProgressBar
+        :total="progressStats.total"
+        :reserved="progressStats.reserved"
+        :read="progressStats.read"
+        :participants="progressStats.participants"
+      />
 
       <!-- Instructions -->
       <div
