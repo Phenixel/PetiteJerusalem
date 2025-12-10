@@ -7,6 +7,7 @@ import type { User } from '../../services/authService'
 import GuestForm from '../../components/GuestForm.vue'
 import ShareModal from '../../components/ShareModal.vue'
 import SessionProgressBar from '../../components/SessionProgressBar.vue'
+import BatchSelectionBar from '../../components/BatchSelectionBar.vue'
 import { seoService } from '../../services/seoService'
 
 const route = useRoute()
@@ -787,44 +788,15 @@ watch(session, (s) => {
     </div>
 
     <!-- Sticky Bottom Bar pour Confirmation -->
-    <div
+    <BatchSelectionBar
       v-if="hasSelectedItems"
-      class="fixed bottom-0 left-0 right-0 p-4 z-50 animate-[slideUp_0.3s_ease-out]"
-    >
-      <div
-        class="max-w-2xl mx-auto bg-white/95 backdrop-blur-xl border border-primary/20 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] rounded-2xl p-4 flex items-center justify-between gap-4 dark:bg-gray-800/95 dark:border-primary/30"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light"
-          >
-            <i class="fa-solid fa-check-double text-lg"></i>
-          </div>
-          <div>
-            <p class="font-bold text-text-primary dark:text-gray-100">
-              {{ selectedItems.size }} texte{{ selectedItems.size > 1 ? 's' : '' }} sélectionné{{
-                selectedItems.size > 1 ? 's' : ''
-              }}
-            </p>
-            <p class="text-xs text-text-secondary dark:text-gray-400">
-              {{ !currentUser ? "Finaliser en tant qu'invité" : 'Confirmer la réservation' }}
-            </p>
-          </div>
-        </div>
-
-        <button
-          @click="confirmReservations"
-          :disabled="isSubmittingBatch"
-          class="px-6 py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl shadow-lg shadow-primary/30 transform hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2"
-        >
-          <i
-            class="fa-solid"
-            :class="isSubmittingBatch ? 'fa-circle-notch fa-spin' : 'fa-check'"
-          ></i>
-          {{ isSubmittingBatch ? 'Réservation...' : 'Confirmer mes réservations' }}
-        </button>
-      </div>
-    </div>
+      :count="selectedItems.size"
+      :loading="isSubmittingBatch"
+      :label="!currentUser ? 'Finaliser en tant qu\'invité' : 'Confirmer la réservation'"
+      :button-text="'Confirmer mes réservations'"
+      :button-loading-text="'Réservation...'"
+      @confirm="confirmReservations"
+    />
 
     <!-- Modal de partage -->
     <ShareModal
