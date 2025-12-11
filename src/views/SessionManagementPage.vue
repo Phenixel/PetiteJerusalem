@@ -8,6 +8,8 @@ import type { Session, TextStudy } from '../models/models'
 import type { User } from '../services/authService'
 import { seoService } from '../services/seoService'
 
+import BatchSelectionBar from '../components/BatchSelectionBar.vue'
+
 const router = useRouter()
 const route = useRoute()
 const sessionService = new SessionService()
@@ -24,6 +26,10 @@ const selectedBook = ref<string>('')
 const showGuestForm = ref(false)
 const selectedTextStudy = ref<TextStudy | null>(null)
 const selectedSection = ref<number | undefined>(undefined)
+
+// État pour la sélection multiple
+const selectedItems = ref<Set<string>>(new Set())
+const isSubmittingBatch = ref(false)
 
 // Formulaire pour les invités
 const guestForm = ref<ReservationForm>({
@@ -140,26 +146,53 @@ const openGuestForm = (textStudy: TextStudy, section?: number) => {
 
 // Créer une réservation pour un invité
 const createGuestReservation = async () => {
-  if (
-    !selectedTextStudy.value ||
-    !guestForm.value.name ||
-    !guestForm.value.email ||
-    !session.value
-  ) {
+  if (!guestForm.value.name || !guestForm.value.email || !session.value) {
     return
   }
 
   try {
     isLoading.value = true
-    await reservationService.createReservation(
-      session.value.id,
-      selectedTextStudy.value.id,
-      selectedSection.value,
-      undefined, // userId
-      guestForm.value.email, // guestId
-      undefined, // userName
-      guestForm.value.name, // guestName
-    )
+
+    // Si des éléments sont sélectionnés en lot
+    if (selectedItems.value.size > 0) {
+      isSubmittingBatch.value = true
+      const itemsToReserve = Array.from(selectedItems.value).map((key) => {
+        const [textId, sectionStr] = key.split('#')
+        return {
+          textId,
+          section: sectionStr === 'full' ? undefined : parseInt(sectionStr),
+        }
+      })
+
+      for (const item of itemsToReserve) {
+        // Skip si déjà réservé entre temps
+        if (item.section && isSectionReserved(item.textId, item.section)) continue
+
+        await reservationService.createReservation(
+          session.value.id,
+          item.textId,
+          item.section,
+          undefined, // userId
+          guestForm.value.email, // guestId (email as ID for guests mostly)
+          undefined, // userName
+          guestForm.value.name, // guestName
+        )
+      }
+
+      selectedItems.value.clear()
+    }
+    // Sinon réservation individuelle classique
+    else if (selectedTextStudy.value) {
+      await reservationService.createReservation(
+        session.value.id,
+        selectedTextStudy.value.id,
+        selectedSection.value,
+        undefined, // userId
+        guestForm.value.email, // guestId
+        undefined, // userName
+        guestForm.value.name, // guestName
+      )
+    }
 
     // Recharger la session
     await reloadSession()
@@ -169,7 +202,31 @@ const createGuestReservation = async () => {
     alert('Erreur lors de la création de la réservation')
   } finally {
     isLoading.value = false
+    isSubmittingBatch.value = false
   }
+}
+
+// Gestion de la sélection multiple
+const toggleSelection = (textId: string, section?: number) => {
+  const key = section ? `${textId}#${section}` : `${textId}#full`
+  if (selectedItems.value.has(key)) {
+    selectedItems.value.delete(key)
+  } else {
+    selectedItems.value.add(key)
+  }
+}
+
+const isSelected = (textId: string, section: number) => {
+  const key = `${textId}#${section}`
+  return selectedItems.value.has(key)
+}
+
+const openBatchGuestForm = () => {
+  selectedTextStudy.value = null
+  selectedSection.value = undefined
+  showGuestForm.value = true
+  // On garde le formulaire s'il était déjà rempli ou on reset ?
+  // guestForm.value = { name: '', email: '' } // Au choix, gardons pour l'instant
 }
 
 // Marquer une réservation comme terminée
@@ -496,6 +553,14 @@ onMounted(() => {
                     </div>
 
                     <div class="flex items-center gap-2 ml-2">
+                      <input
+                        v-if="!isSectionReserved(textStudy.id, section)"
+                        type="checkbox"
+                        class="w-5 h-5 rounded text-primary border-gray-300 focus:ring-primary accent-primary cursor-pointer mr-1"
+                        :checked="isSelected(textStudy.id, section)"
+                        @change="toggleSelection(textStudy.id, section)"
+                      />
+
                       <button
                         v-if="!isSectionReserved(textStudy.id, section)"
                         @click="openGuestForm(textStudy, section)"
@@ -546,6 +611,16 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- Sticky Bottom Bar pour Batch -->
+    <BatchSelectionBar
+      :count="selectedItems.size"
+      :loading="isSubmittingBatch"
+      :label="'Attribuer à un invité'"
+      :button-text="'Réserver'"
+      :button-loading-text="'Traitement...'"
+      @confirm="openBatchGuestForm"
+    />
+
     <!-- Modal pour les invités -->
     <div
       v-if="showGuestForm"
@@ -558,7 +633,11 @@ onMounted(() => {
       >
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-xl font-bold text-text-primary dark:text-gray-100">
-            Réserver pour un invité
+            {{
+              selectedItems.size > 0
+                ? `Réserver ${selectedItems.size} textes`
+                : 'Réserver pour un invité'
+            }}
           </h3>
           <button
             @click="showGuestForm = false"
@@ -570,7 +649,8 @@ onMounted(() => {
 
         <div class="space-y-4">
           <div
-            class="p-3 bg-primary/10 rounded-xl text-sm text-text-primary mb-2 dark:bg-primary/20 dark:text-primary-light"
+            v-if="selectedTextStudy"
+            class="p-3 bg-primary/10 rounded-xl text-sm text-text-primary mb-2 dark:bg-primary/20 dark:text-white"
           >
             <span class="font-semibold">{{
               sessionService.formatBookName(selectedTextStudy?.name || '')
@@ -613,10 +693,11 @@ onMounted(() => {
             </button>
             <button
               @click="createGuestReservation"
-              class="flex-1 py-3 px-4 bg-gradient-to-r from-primary to-secondary hover:shadow-lg text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="!guestForm.name || !guestForm.email"
+              class="flex-1 py-3 px-4 bg-gradient-to-r from-primary to-secondary hover:shadow-lg text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              :disabled="!guestForm.name || !guestForm.email || isLoading"
             >
-              Créer
+              <i v-if="isLoading" class="fa-solid fa-circle-notch fa-spin"></i>
+              {{ isLoading ? 'Création...' : 'Créer' }}
             </button>
           </div>
         </div>
