@@ -7,6 +7,7 @@ import type { User } from '../../services/authService'
 import GuestForm from '../../components/GuestForm.vue'
 import ShareModal from '../../components/ShareModal.vue'
 import SessionProgressBar from '../../components/SessionProgressBar.vue'
+import BatchSelectionBar from '../../components/BatchSelectionBar.vue'
 import { seoService } from '../../services/seoService'
 
 const route = useRoute()
@@ -38,6 +39,10 @@ const searchTerm = ref('')
 // État du modal de partage
 const showShareModal = ref(false)
 const shareUrl = ref('')
+
+// État des sélections en attente
+const selectedItems = ref<Set<string>>(new Set())
+const isSubmittingBatch = ref(false)
 
 // Computed properties
 const groupedTextStudies = computed(() => {
@@ -86,6 +91,9 @@ const progressStats = computed(() => {
   }
 })
 
+// Vérifier si des éléments sont sélectionnés
+const hasSelectedItems = computed(() => selectedItems.value.size > 0)
+
 // Gérer l'expansion des textes
 const toggleTextExpansion = (textId: string) => {
   if (expandedTexts.value.has(textId)) {
@@ -133,7 +141,8 @@ const reserveTextOrSection = async (textStudyId: string, section?: number) => {
   if (!session.value) return
 
   try {
-    isReserving.value = `${textStudyId}-${section || 'full'}`
+    const key = section ? `${textStudyId}-${section}` : `${textStudyId}-full`
+    isReserving.value = key
 
     const reservationId = await sessionService.createReservationForUser(
       session.value.id,
@@ -161,8 +170,91 @@ const reserveTextOrSection = async (textStudyId: string, section?: number) => {
   } catch (err) {
     console.error('Erreur lors de la réservation:', err)
     alert(err instanceof Error ? err.message : 'Erreur lors de la réservation. Veuillez réessayer.')
+    throw err // Propager l'erreur pour la gestion en lot
   } finally {
     isReserving.value = null
+  }
+}
+
+// Basculer la sélection d'un item (sélection ou désélection)
+const toggleSelection = (textStudyId: string, section?: number) => {
+  const key = section ? `${textStudyId}#${section}` : `${textStudyId}#full`
+
+  // Si c'est déjà réservé, on annule (comportement existant immédiat)
+  if (isReserved(textStudyId, section).isReserved) {
+    // Nettoyage préventif: si c'était noté comme sélectionné, on l'enlève
+    if (selectedItems.value.has(key)) {
+      selectedItems.value.delete(key)
+    }
+
+    if (confirm('Voulez-vous annuler cette réservation ?')) {
+      cancelReservation(textStudyId, section)
+    }
+    return
+  }
+
+  // Sinon, on bascule l'état de sélection
+  if (selectedItems.value.has(key)) {
+    selectedItems.value.delete(key)
+  } else {
+    selectedItems.value.add(key)
+  }
+}
+
+// Vérifier si un item est sélectionné
+const isSelected = (textStudyId: string, section?: number) => {
+  const key = section ? `${textStudyId}#${section}` : `${textStudyId}#full`
+  return selectedItems.value.has(key)
+}
+
+// Confirmer toutes les réservations sélectionnées
+const confirmReservations = async () => {
+  if (!session.value || selectedItems.value.size === 0) return
+
+  // Validation invité
+  if (!currentUser.value && (!reservationForm.value.name || !reservationForm.value.email)) {
+    alert('Veuillez remplir votre nom et email pour confirmer les réservations.')
+    // Scroll vers le formulaire invité si nécessaire
+    const formElement = document.getElementById('guest-form')
+    if (formElement) {
+      const offset = 120 // Compte pour la navbar + marge
+      const elementPosition = formElement.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.scrollY - offset
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth',
+      })
+    }
+    return
+  }
+
+  try {
+    isSubmittingBatch.value = true
+    const itemsToReserve = Array.from(selectedItems.value).map((key) => {
+      const [textId, sectionStr] = key.split('#')
+      return {
+        textId,
+        section: sectionStr === 'full' ? undefined : parseInt(sectionStr),
+      }
+    })
+
+    // Exécuter les réservations en série pour éviter les race conditions ou surcharge
+    // Idéalement, le backend devrait supporter une route batch, mais on utilise l'existant pour l'instant
+    for (const item of itemsToReserve) {
+      // Vérification de sécurité : ne pas réserver si déjà réservé (cas de retry après erreur partielle)
+      if (isReserved(item.textId, item.section).isReserved) continue
+
+      await reserveTextOrSection(item.textId, item.section)
+    }
+
+    // Vider la sélection après succès
+    selectedItems.value.clear()
+  } catch (err) {
+    console.error('Erreur lors de la confirmation globale:', err)
+    // On ne vide pas la sélection en cas d'erreur pour permettre de réessayer les items restants
+  } finally {
+    isSubmittingBatch.value = false
   }
 }
 
@@ -396,6 +488,7 @@ watch(session, (s) => {
 
       <!-- Formulaire de réservation pour invités (composant unifié) -->
       <div
+        id="guest-form"
         v-if="!currentUser"
         class="mb-8 p-6 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 shadow-sm dark:bg-gray-800/60 dark:border-gray-700"
       >
@@ -448,6 +541,12 @@ watch(session, (s) => {
               v-for="text in texts"
               :key="text.id"
               class="flex flex-col bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 hover:shadow-lg transition-all duration-300 dark:bg-gray-800/60 dark:border-gray-700 dark:hover:bg-gray-800/80"
+              :class="{
+                'ring-2 ring-primary/50 dark:ring-primary/40':
+                  isSelected(text.id, 1) ||
+                  (text.totalSections > 1 &&
+                    generateChapters(text.totalSections).some((c) => isSelected(text.id, c))),
+              }"
             >
               <!-- En-tête du texte -->
               <div
@@ -473,20 +572,16 @@ watch(session, (s) => {
                       <input
                         type="checkbox"
                         class="w-5 h-5 rounded text-primary border-gray-300 focus:ring-primary accent-primary"
-                        :checked="isReserved(text.id, 1).isReserved"
-                        @change="
-                          isReserved(text.id, 1).isReserved
-                            ? cancelReservation(text.id, 1)
-                            : reserveTextOrSection(text.id, 1)
-                        "
+                        :checked="isReserved(text.id, 1).isReserved || isSelected(text.id, 1)"
+                        @change="toggleSelection(text.id, 1)"
                         :disabled="
                           isReserving === `${text.id}-1` ||
                           (isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1))
                         "
                       />
-                      <span class="text-sm font-medium text-text-secondary dark:text-gray-400"
-                        >Réserver</span
-                      >
+                      <span class="text-sm font-medium text-text-secondary dark:text-gray-400">
+                        {{ isSelected(text.id, 1) ? 'Sélectionné' : 'Réserver' }}
+                      </span>
                     </label>
                   </div>
 
@@ -632,12 +727,10 @@ watch(session, (s) => {
                       <input
                         type="checkbox"
                         class="w-5 h-5 rounded text-primary border-gray-300 focus:ring-primary accent-primary"
-                        :checked="isReserved(text.id, chapter).isReserved"
-                        @change="
-                          isReserved(text.id, chapter).isReserved
-                            ? cancelReservation(text.id, chapter)
-                            : reserveTextOrSection(text.id, chapter)
+                        :checked="
+                          isReserved(text.id, chapter).isReserved || isSelected(text.id, chapter)
                         "
+                        @change="toggleSelection(text.id, chapter)"
                         :disabled="
                           isReserving === `${text.id}-${chapter}` ||
                           (isReserved(text.id, chapter).isReserved &&
@@ -674,6 +767,12 @@ watch(session, (s) => {
                       }}
                     </div>
                     <span
+                      v-else-if="isSelected(text.id, chapter)"
+                      class="px-2 py-1 bg-primary/10 text-primary rounded text-xs font-semibold sm:ml-auto dark:bg-primary/20 dark:text-primary-light animate-pulse"
+                    >
+                      Sélectionné
+                    </span>
+                    <span
                       v-else
                       class="px-2 py-1 bg-green-50 text-green-700 rounded text-xs font-semibold sm:ml-auto dark:bg-green-900/30 dark:text-green-300"
                     >
@@ -687,6 +786,17 @@ watch(session, (s) => {
         </div>
       </div>
     </div>
+
+    <!-- Sticky Bottom Bar pour Confirmation -->
+    <BatchSelectionBar
+      v-if="hasSelectedItems"
+      :count="selectedItems.size"
+      :loading="isSubmittingBatch"
+      :label="!currentUser ? 'Finaliser en tant qu\'invité' : 'Confirmer la réservation'"
+      :button-text="'Confirmer mes réservations'"
+      :button-loading-text="'Réservation...'"
+      @confirm="confirmReservations"
+    />
 
     <!-- Modal de partage -->
     <ShareModal

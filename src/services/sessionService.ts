@@ -283,10 +283,8 @@ export class SessionService {
         }
       }
 
-      // Pour les autres types, trier alphabétiquement par nom français
-      const aName = SearchService.extractFrenchName(a.name)
-      const bName = SearchService.extractFrenchName(b.name)
-      return aName.localeCompare(bName, 'fr')
+      // Pour les autres types, trier par ID pour respecter l'ordre du JSON
+      return parseInt(a.id) - parseInt(b.id)
     })
   }
 
