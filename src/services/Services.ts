@@ -1,6 +1,4 @@
-// Service d'utilitaires généraux
 export class UtilsService {
-  // Générer un slug à partir d'un texte
   static generateSlug(text: string): string {
     return text
       .toLowerCase()
@@ -16,13 +14,11 @@ export class UtilsService {
       .trim()
   }
 
-  // Valider un email
   static isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email)
   }
 
-  // Formater une date pour l'affichage
   static formatDate(date: Date): string {
     return new Date(date).toLocaleDateString('fr-FR', {
       year: 'numeric',
@@ -31,7 +27,6 @@ export class UtilsService {
     })
   }
 
-  // Formater une date courte (DD/MM/YYYY)
   static formatShortDate(date: Date): string {
     return new Date(date).toLocaleDateString('fr-FR', {
       year: 'numeric',
@@ -40,12 +35,10 @@ export class UtilsService {
     })
   }
 
-  // Vérifier si une date est passée
   static isDatePast(date: Date): boolean {
     return new Date() > new Date(date)
   }
 
-  // Vérifier si une date est aujourd'hui
   static isDateToday(date: Date): boolean {
     const today = new Date()
     const checkDate = new Date(date)
@@ -56,7 +49,6 @@ export class UtilsService {
     )
   }
 
-  // Obtenir le nombre de jours restants jusqu'à une date
   static getDaysUntil(date: Date): number {
     const today = new Date()
     const targetDate = new Date(date)
@@ -64,7 +56,6 @@ export class UtilsService {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   }
 
-  // Formater une durée relative (ex: "dans 3 jours", "il y a 2 jours")
   static formatRelativeDate(date: Date): string {
     const daysUntil = this.getDaysUntil(date)
 
@@ -78,12 +69,10 @@ export class UtilsService {
     return this.formatDate(date)
   }
 
-  // Générer un ID unique
   static generateId(): string {
     return crypto.randomUUID()
   }
 
-  // Débouncer une fonction
   static debounce<T extends (...args: unknown[]) => unknown>(
     func: T,
     wait: number,

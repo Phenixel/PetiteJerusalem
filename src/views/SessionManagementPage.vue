@@ -16,7 +16,6 @@ const sessionService = new SessionService()
 const reservationService = new ReservationService()
 const authService = new AuthService()
 
-// État du composant
 const isLoading = ref(true)
 const currentUser = ref<User | null>(null)
 const session = ref<Session | null>(null)
@@ -27,29 +26,24 @@ const showGuestForm = ref(false)
 const selectedTextStudy = ref<TextStudy | null>(null)
 const selectedSection = ref<number | undefined>(undefined)
 
-// État pour la sélection multiple
 const selectedItems = ref<Set<string>>(new Set())
 const isSubmittingBatch = ref(false)
 
-// Formulaire pour les invités
 const guestForm = ref<ReservationForm>({
   name: '',
   email: '',
 })
 
-// Charger les données
 const loadData = async () => {
   try {
     isLoading.value = true
 
-    // Charger l'utilisateur actuel
     currentUser.value = await authService.getCurrentUser()
     if (!currentUser.value) {
       router.push('/')
       return
     }
 
-    // Charger la session
     const sessionId = route.params.id as string
     session.value = await sessionService.getSessionById(sessionId)
 
@@ -58,16 +52,13 @@ const loadData = async () => {
       return
     }
 
-    // Vérifier que l'utilisateur peut gérer cette session
     if (!sessionService.canManageSession(session.value, currentUser.value)) {
       router.push('/profile')
       return
     }
 
-    // Charger les textes d'étude
     textStudies.value = await sessionService.getTextStudiesByType(session.value.type)
 
-    // Configuration SEO
     const url = window.location.origin + `/session-management/${sessionId}`
     seoService.setMeta({
       title: `Gestion de session - ${session.value.name} | Petite Jerusalem`,
@@ -83,16 +74,13 @@ const loadData = async () => {
   }
 }
 
-// Textes filtrés et groupés
 const filteredTextStudies = computed(() => {
   let filtered = textStudies.value
 
-  // Filtrage par recherche
   if (searchTerm.value) {
     filtered = sessionService.filterTextStudiesBySearch(filtered, searchTerm.value)
   }
 
-  // Filtrage par livre
   if (selectedBook.value) {
     filtered = filtered.filter((text) => text.livre === selectedBook.value)
   }
@@ -104,23 +92,19 @@ const groupedTextStudies = computed(() => {
   return sessionService.groupTextStudiesByBook(filteredTextStudies.value)
 })
 
-// Obtenir les livres uniques
 const availableBooks = computed(() => {
   const books = new Set(textStudies.value.map((text) => text.livre))
   return Array.from(books).sort()
 })
 
-// Obtenir le statut d'un texte
 const getTextStatus = (textStudy: TextStudy) => {
   return reservationService.getTextDisplayStatus(textStudy.id, textStudy, session.value!)
 }
 
-// Obtenir les réservations d'un texte
 const getTextReservations = (textStudyId: string) => {
   return session.value?.reservations?.filter((r) => r.textStudyId === textStudyId) || []
 }
 
-// Vérifier si une section est réservée
 const isSectionReserved = (textStudyId: string, section: number) => {
   return (
     session.value?.reservations?.some(
@@ -129,14 +113,12 @@ const isSectionReserved = (textStudyId: string, section: number) => {
   )
 }
 
-// Obtenir la réservation d'une section
 const getSectionReservation = (textStudyId: string, section: number) => {
   return session.value?.reservations?.find(
     (r) => r.textStudyId === textStudyId && r.section === section,
   )
 }
 
-// Ouvrir le formulaire d'invité
 const openGuestForm = (textStudy: TextStudy, section?: number) => {
   selectedTextStudy.value = textStudy
   selectedSection.value = section
@@ -144,7 +126,6 @@ const openGuestForm = (textStudy: TextStudy, section?: number) => {
   guestForm.value = { name: '', email: '' }
 }
 
-// Créer une réservation pour un invité
 const createGuestReservation = async () => {
   if (!guestForm.value.name || !guestForm.value.email || !session.value) {
     return
@@ -153,7 +134,6 @@ const createGuestReservation = async () => {
   try {
     isLoading.value = true
 
-    // Si des éléments sont sélectionnés en lot
     if (selectedItems.value.size > 0) {
       isSubmittingBatch.value = true
       const itemsToReserve = Array.from(selectedItems.value).map((key) => {
@@ -165,7 +145,6 @@ const createGuestReservation = async () => {
       })
 
       for (const item of itemsToReserve) {
-        // Skip si déjà réservé entre temps
         if (item.section && isSectionReserved(item.textId, item.section)) continue
 
         await reservationService.createReservation(
@@ -180,9 +159,7 @@ const createGuestReservation = async () => {
       }
 
       selectedItems.value.clear()
-    }
-    // Sinon réservation individuelle classique
-    else if (selectedTextStudy.value) {
+    } else if (selectedTextStudy.value) {
       await reservationService.createReservation(
         session.value.id,
         selectedTextStudy.value.id,
@@ -194,7 +171,6 @@ const createGuestReservation = async () => {
       )
     }
 
-    // Recharger la session
     await reloadSession()
     showGuestForm.value = false
   } catch (error) {
@@ -206,7 +182,6 @@ const createGuestReservation = async () => {
   }
 }
 
-// Gestion de la sélection multiple
 const toggleSelection = (textId: string, section?: number) => {
   const key = section ? `${textId}#${section}` : `${textId}#full`
   if (selectedItems.value.has(key)) {
@@ -225,11 +200,8 @@ const openBatchGuestForm = () => {
   selectedTextStudy.value = null
   selectedSection.value = undefined
   showGuestForm.value = true
-  // On garde le formulaire s'il était déjà rempli ou on reset ?
-  // guestForm.value = { name: '', email: '' } // Au choix, gardons pour l'instant
 }
 
-// Marquer une réservation comme terminée
 const toggleReservationCompletion = async (reservationId: string, isCompleted: boolean) => {
   if (!session.value) return
 
@@ -242,7 +214,6 @@ const toggleReservationCompletion = async (reservationId: string, isCompleted: b
   }
 }
 
-// Supprimer une réservation
 const deleteReservation = async (reservationId: string) => {
   if (!confirm('Êtes-vous sûr de vouloir supprimer cette réservation ?')) {
     return
@@ -259,7 +230,6 @@ const deleteReservation = async (reservationId: string) => {
   }
 }
 
-// Recharger la session
 const reloadSession = async () => {
   if (!session.value) return
 
@@ -273,7 +243,6 @@ const reloadSession = async () => {
   }
 }
 
-// Statistiques de la session
 const sessionStats = computed(() => {
   if (!session.value)
     return {
@@ -291,7 +260,6 @@ const sessionStats = computed(() => {
   const completionRate =
     totalReservations > 0 ? (completedReservations / totalReservations) * 100 : 0
 
-  // Calculer le taux de réservation des textes
   const totalTexts = textStudies.value.length
   const reservedTexts = textStudies.value.filter((textStudy) => {
     const status = getTextStatus(textStudy)
@@ -309,7 +277,6 @@ const sessionStats = computed(() => {
   }
 })
 
-// Retour au profil
 const goBackToProfile = () => {
   router.push('/profile')
 }

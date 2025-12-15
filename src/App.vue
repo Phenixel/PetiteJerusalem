@@ -13,12 +13,10 @@ const authService = new AuthService()
 
 const isHome = computed(() => route.name === 'home')
 
-// Gérer la redirection après connexion Google
 onMounted(async () => {
   try {
     const user = await authService.getGoogleRedirectResult()
     if (user) {
-      // Récupérer la page d'origine sauvegardée
       const redirectPath = authService.getAndClearRedirectPath() || '/profile'
       router.push(redirectPath)
     }

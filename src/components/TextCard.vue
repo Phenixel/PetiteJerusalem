@@ -22,7 +22,6 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-// Computed properties
 const textDisplayStatus = computed(() => {
   const textReservations = props.reservations.filter((r) => r.textStudyId === props.text.id)
   const chapterReservations = textReservations.filter((r) => r.section !== undefined)
@@ -31,7 +30,6 @@ const textDisplayStatus = computed(() => {
     return { status: 'available', reservedBy: null }
   }
 
-  // Si tous les chapitres sont réservés par la même personne
   if (chapterReservations.length === props.text.totalSections) {
     const firstReservation = chapterReservations[0]
     const allSamePerson = chapterReservations.every(
@@ -43,12 +41,10 @@ const textDisplayStatus = computed(() => {
     }
   }
 
-  // Si certains chapitres sont réservés mais pas tous
   if (chapterReservations.length > 0 && chapterReservations.length < props.text.totalSections) {
     return { status: 'partially_reserved', reservedBy: null }
   }
 
-  // Si tous les chapitres sont réservés par des personnes différentes
   if (chapterReservations.length === props.text.totalSections) {
     const uniqueNames = [...new Set(chapterReservations.map((r) => r.chosenByName))]
     return { status: 'fully_reserved', reservedBy: uniqueNames.join(', ') }
@@ -59,7 +55,6 @@ const textDisplayStatus = computed(() => {
 
 const isTextFullyReserved = computed(() => textDisplayStatus.value.status === 'fully_reserved')
 
-// Methods
 const isReserved = (section?: number) => {
   const reservation = props.reservations.find(
     (r) => r.textStudyId === props.text.id && r.section === section,

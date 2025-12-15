@@ -13,7 +13,6 @@ import { seoService } from '../../services/seoService'
 const route = useRoute()
 const sessionService = new SessionService()
 
-// État de la page
 const session = ref<Session | null>(null)
 const textStudies = ref<TextStudy[]>([])
 const reservations = ref<TextStudyReservation[]>([])
@@ -21,46 +20,35 @@ const isLoading = ref(true)
 const error = ref<string | null>(null)
 const currentUser = ref<User | null>(null)
 
-// État d'expansion des textes
 const expandedTexts = ref<Set<string>>(new Set())
 
-// Données du formulaire de réservation
 const reservationForm = ref({
   name: '',
   email: '',
 })
 
-// État des réservations en cours
 const isReserving = ref<string | null>(null)
 
-// Terme de recherche
 const searchTerm = ref('')
 
-// État du modal de partage
 const showShareModal = ref(false)
 const shareUrl = ref('')
 
-// État des sélections en attente
 const selectedItems = ref<Set<string>>(new Set())
 const isSubmittingBatch = ref(false)
 
-// Computed properties
 const groupedTextStudies = computed(() => {
   if (!textStudies.value.length) return {}
 
-  // 1. Filtrer d'abord par recherche
   let filtered = textStudies.value
   if (searchTerm.value.trim()) {
     filtered = sessionService.filterTextStudiesBySearch(filtered, searchTerm.value)
   }
 
-  // 2. Si utilisateur connecté, séparer ses réservations
   if (currentUser.value) {
     const myReservedTextIds = new Set<string>()
 
     reservations.value.forEach((r) => {
-      // On utilise canUserDeleteReservation pour vérifier si c'est "ma" réservation
-      // (vérifie l'ID user vs r.chosenById)
       if (sessionService.canUserDeleteReservation(r, currentUser.value, '')) {
         myReservedTextIds.add(r.textStudyId)
       }
@@ -89,7 +77,6 @@ const groupedTextStudies = computed(() => {
     return groupedOthers
   }
 
-  // 3. Comportement standard (non connecté ou pas de réservations)
   return sessionService.getGroupedAndFilteredTextStudies(textStudies.value, searchTerm.value)
 })
 
@@ -104,16 +91,12 @@ const progressStats = computed(() => {
       readPercentage: 0,
     }
 
-  // Calcul du total de sections disponibles
   const total = textStudies.value.reduce((acc, textStudy) => acc + textStudy.totalSections, 0)
 
-  // Calcul du nombre de réservations
   const reserved = reservations.value.length
 
-  // Calcul du nombre de lectures terminées
   const read = reservations.value.filter((r) => r.isCompleted).length
 
-  // Calcul du nombre de participants uniques (utilisateurs ou invités)
   const uniqueParticipants = new Set<string>()
   reservations.value.forEach((r) => {
     if (r.chosenById) {
@@ -134,10 +117,8 @@ const progressStats = computed(() => {
   }
 })
 
-// Vérifier si des éléments sont sélectionnés
 const hasSelectedItems = computed(() => selectedItems.value.size > 0)
 
-// Gérer l'expansion des textes
 const toggleTextExpansion = (textId: string) => {
   if (expandedTexts.value.has(textId)) {
     expandedTexts.value.delete(textId)
@@ -150,7 +131,6 @@ const isTextExpanded = (textId: string) => {
   return expandedTexts.value.has(textId)
 }
 
-// Charger les données de la session
 const loadSessionData = async () => {
   try {
     isLoading.value = true
@@ -161,7 +141,6 @@ const loadSessionData = async () => {
       throw new Error('ID de session manquant')
     }
 
-    // Charger toutes les données d'un coup
     const {
       session: sessionData,
       textStudies: textStudiesData,
@@ -179,7 +158,6 @@ const loadSessionData = async () => {
   }
 }
 
-// Réserver un texte ou une section
 const reserveTextOrSection = async (textStudyId: string, section?: number) => {
   if (!session.value) return
 
@@ -195,7 +173,6 @@ const reserveTextOrSection = async (textStudyId: string, section?: number) => {
       reservationForm.value,
     )
 
-    // Créer la nouvelle réservation localement
     const newReservation = sessionService.createLocalReservation(
       reservationId,
       textStudyId,
@@ -204,28 +181,22 @@ const reserveTextOrSection = async (textStudyId: string, section?: number) => {
       reservationForm.value,
     )
 
-    // Ajouter à la liste locale
     reservations.value.push(newReservation)
-    // Synchroniser l'état de session pour refléter immédiatement côté UI
     if (session.value) {
-      session.value.reservations = reservations.value
     }
   } catch (err) {
     console.error('Erreur lors de la réservation:', err)
     alert(err instanceof Error ? err.message : 'Erreur lors de la réservation. Veuillez réessayer.')
-    throw err // Propager l'erreur pour la gestion en lot
+    throw err
   } finally {
     isReserving.value = null
   }
 }
 
-// Basculer la sélection d'un item (sélection ou désélection)
 const toggleSelection = (textStudyId: string, section?: number) => {
   const key = section ? `${textStudyId}#${section}` : `${textStudyId}#full`
 
-  // Si c'est déjà réservé, on annule (comportement existant immédiat)
   if (isReserved(textStudyId, section).isReserved) {
-    // Nettoyage préventif: si c'était noté comme sélectionné, on l'enlève
     if (selectedItems.value.has(key)) {
       selectedItems.value.delete(key)
     }
@@ -236,7 +207,6 @@ const toggleSelection = (textStudyId: string, section?: number) => {
     return
   }
 
-  // Sinon, on bascule l'état de sélection
   if (selectedItems.value.has(key)) {
     selectedItems.value.delete(key)
   } else {
@@ -244,23 +214,19 @@ const toggleSelection = (textStudyId: string, section?: number) => {
   }
 }
 
-// Vérifier si un item est sélectionné
 const isSelected = (textStudyId: string, section?: number) => {
   const key = section ? `${textStudyId}#${section}` : `${textStudyId}#full`
   return selectedItems.value.has(key)
 }
 
-// Confirmer toutes les réservations sélectionnées
 const confirmReservations = async () => {
   if (!session.value || selectedItems.value.size === 0) return
 
-  // Validation invité
   if (!currentUser.value && (!reservationForm.value.name || !reservationForm.value.email)) {
     alert('Veuillez remplir votre nom et email pour confirmer les réservations.')
-    // Scroll vers le formulaire invité si nécessaire
     const formElement = document.getElementById('guest-form')
     if (formElement) {
-      const offset = 120 // Compte pour la navbar + marge
+      const offset = 120
       const elementPosition = formElement.getBoundingClientRect().top
       const offsetPosition = elementPosition + window.scrollY - offset
 
@@ -282,26 +248,20 @@ const confirmReservations = async () => {
       }
     })
 
-    // Exécuter les réservations en série pour éviter les race conditions ou surcharge
-    // Idéalement, le backend devrait supporter une route batch, mais on utilise l'existant pour l'instant
     for (const item of itemsToReserve) {
-      // Vérification de sécurité : ne pas réserver si déjà réservé (cas de retry après erreur partielle)
       if (isReserved(item.textId, item.section).isReserved) continue
 
       await reserveTextOrSection(item.textId, item.section)
     }
 
-    // Vider la sélection après succès
     selectedItems.value.clear()
   } catch (err) {
     console.error('Erreur lors de la confirmation globale:', err)
-    // On ne vide pas la sélection en cas d'erreur pour permettre de réessayer les items restants
   } finally {
     isSubmittingBatch.value = false
   }
 }
 
-// Annuler une réservation
 const cancelReservation = async (textStudyId: string, section?: number) => {
   if (!session.value) return
 
@@ -311,7 +271,6 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
     )
 
     if (reservation) {
-      // Vérifier si l'utilisateur peut supprimer cette réservation
       const canDelete = sessionService.canUserDeleteReservation(
         reservation,
         currentUser.value,
@@ -325,13 +284,11 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
 
       await sessionService.deleteReservation(session.value.id, reservation.id)
 
-      // Supprimer de la liste locale
       const index = reservations.value.findIndex((r) => r.id === reservation.id)
       if (index > -1) {
         reservations.value.splice(index, 1)
       }
 
-      // Synchroniser l'état de session pour refléter immédiatement côté UI
       if (session.value) {
         session.value.reservations = reservations.value
       }
@@ -341,18 +298,15 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
     alert("Erreur lors de l'annulation. Veuillez réessayer.")
   }
 }
-// Vérifier si un texte ou une section est réservé
 const isReserved = (textStudyId: string, section?: number) => {
   if (!session.value) return { isReserved: false }
   return sessionService.isTextOrSectionReserved(textStudyId, section, session.value)
 }
 
-// Helper pour obtenir une réservation spécifique pour le template
 const getReservation = (textStudyId: string, section?: number) => {
   return reservations.value.find((r) => r.textStudyId === textStudyId && r.section === section)
 }
 
-// Obtenir le statut d'affichage d'un texte
 const getTextDisplayStatus = (textStudyId: string) => {
   const textStudy = textStudies.value.find((t) => t.id === textStudyId)
   if (!textStudy || !session.value) return { status: 'available', reservedBy: null }
@@ -360,23 +314,19 @@ const getTextDisplayStatus = (textStudyId: string) => {
   return sessionService.getTextDisplayStatus(textStudyId, textStudy, session.value)
 }
 
-// Générer la liste des chapitres
 const generateChapters = (totalSections: number) => {
   return sessionService.generateChapters(totalSections)
 }
 
-// Formater le nom du livre pour l'affichage
 const formatBookName = (bookName: string) => {
   if (bookName === 'Mes réservations') return bookName
   return sessionService.formatBookName(bookName)
 }
 
-// Nettoyer la recherche
 const clearSearch = () => {
   searchTerm.value = ''
 }
 
-// Vérifier si une réservation peut être annulée par l'utilisateur actuel
 const canCancelReservation = (textStudyId: string, section?: number) => {
   const reservation = reservations.value.find(
     (r) => r.textStudyId === textStudyId && r.section === section,
@@ -391,7 +341,6 @@ const canCancelReservation = (textStudyId: string, section?: number) => {
   )
 }
 
-// Marquer une réservation comme complétée
 const toggleReservationCompletion = async (textStudyId: string, section: number) => {
   if (!session.value) return
 
@@ -409,7 +358,6 @@ const toggleReservationCompletion = async (textStudyId: string, section: number)
       newCompletionStatus,
     )
 
-    // Mettre à jour l'état local
     reservation.isCompleted = newCompletionStatus
   } catch (error) {
     console.error('Erreur lors de la mise à jour de la réservation:', error)
@@ -417,7 +365,6 @@ const toggleReservationCompletion = async (textStudyId: string, section: number)
   }
 }
 
-// Fonctions de partage
 const openShareModal = () => {
   shareUrl.value = window.location.href
   showShareModal.value = true

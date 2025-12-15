@@ -48,7 +48,6 @@ async function submitForm() {
 
 async function loginWithGoogle() {
   try {
-    // Sauvegarder la page d'origine pour redirection après connexion
     const redirectPath = (route.query.redirect as string) || '/profile'
     authService.saveRedirectPath(redirectPath)
 
@@ -59,12 +58,10 @@ async function loginWithGoogle() {
   }
 }
 
-// Gérer la redirection après connexion Google au chargement de la page
 onMounted(async () => {
   try {
     const user = await authService.getGoogleRedirectResult()
     if (user) {
-      // Récupérer la page d'origine sauvegardée
       const redirectPath = authService.getAndClearRedirectPath() || '/profile'
       router.push(redirectPath)
     }

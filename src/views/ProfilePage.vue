@@ -13,26 +13,22 @@ const router = useRouter()
 const authService = new AuthService()
 const sessionService = new SessionService()
 
-// État de la page
 const currentUser = ref<User | null>(null)
 const activeTab = ref<'sessions-participated' | 'sessions-created' | 'my-info' | 'security'>(
   'sessions-participated',
 )
 const isLoading = ref(true)
 
-// Données des sessions
 const participatedSessions = ref<Session[]>([])
 const createdSessions = ref<Session[]>([])
 const textStudiesMap = ref<Map<string, TextStudy>>(new Map())
 
-// État d'édition des infos
 const isEditingInfo = ref(false)
 const editForm = ref({
   name: '',
   email: '',
 })
 
-// État de sécurité
 const passwordForm = ref({
   currentPassword: '',
   newPassword: '',
@@ -41,22 +37,18 @@ const passwordForm = ref({
 const isChangingPassword = ref(false)
 const isDeletingAccount = ref(false)
 
-// État des modals
 const showShareModal = ref(false)
 const showEditModal = ref(false)
 const selectedSession = ref<Session | null>(null)
 const shareUrl = ref('')
 
-// Computed
 const userDisplayName = computed(() => currentUser.value?.name || 'Utilisateur')
 
-// Charger les données utilisateur
 const loadUserData = async () => {
   try {
     isLoading.value = true
     currentUser.value = await authService.getCurrentUser()
 
-    // Si l'utilisateur n'est pas connecté, rediriger vers la page d'accueil
     if (!currentUser.value) {
       router.push('/')
       return
@@ -68,49 +60,39 @@ const loadUserData = async () => {
     }
   } catch (error) {
     console.error('Erreur lors du chargement des données utilisateur:', error)
-    // En cas d'erreur, rediriger vers la page d'accueil
     router.push('/')
   } finally {
     isLoading.value = false
   }
 }
 
-// Charger les sessions
 const loadSessions = async () => {
   if (!currentUser.value) return
 
   try {
     const allSessions = await sessionService.getAllSessions()
 
-    // Filtrer les sessions où l'utilisateur a participé (a des réservations)
     participatedSessions.value = allSessions.filter((session) =>
       session.reservations?.some((reservation) => reservation.chosenById === currentUser.value?.id),
     )
 
-    // Filtrer les sessions créées par l'utilisateur
     createdSessions.value = allSessions.filter(
       (session) => session.personId === currentUser.value?.id,
     )
 
-    // Charger les détails des textes d'étude pour les sessions participées
     await loadTextStudiesForSessions(participatedSessions.value)
   } catch (error) {
     console.error('Erreur lors du chargement des sessions:', error)
   }
 }
 
-// Vérifier si une session est terminée
 const isSessionFinished = (session: Session): boolean => {
   if (session.isEnded) return true
-  // Vérifier si la date limite est passée
-  // On compare la date limite (fin de journée) avec maintenant
   const limit = new Date(session.dateLimit)
-  // Ajuster pour inclure toute la journée de la date limite
   limit.setHours(23, 59, 59, 999)
   return new Date() > limit
 }
 
-// Sessions participées filtrées
 const ongoingParticipatedSessions = computed(() =>
   participatedSessions.value.filter((s) => !isSessionFinished(s)),
 )
@@ -118,7 +100,6 @@ const finishedParticipatedSessions = computed(() =>
   participatedSessions.value.filter((s) => isSessionFinished(s)),
 )
 
-// Sessions créées filtrées
 const ongoingCreatedSessions = computed(() =>
   createdSessions.value.filter((s) => !isSessionFinished(s)),
 )
@@ -126,19 +107,16 @@ const finishedCreatedSessions = computed(() =>
   createdSessions.value.filter((s) => isSessionFinished(s)),
 )
 
-// Charger les textes d'étude pour les sessions
 const loadTextStudiesForSessions = async (sessions: Session[]) => {
   try {
     const textStudyIds = new Set<string>()
 
-    // Collecter tous les IDs de textes d'étude uniques
     sessions.forEach((session) => {
       session.reservations?.forEach((reservation) => {
         textStudyIds.add(reservation.textStudyId)
       })
     })
 
-    // Charger les textes d'étude par type
     const types = [...new Set(sessions.map((s) => s.type))]
     for (const type of types) {
       const textStudies = await sessionService.getTextStudiesByType(type)
@@ -151,13 +129,11 @@ const loadTextStudiesForSessions = async (sessions: Session[]) => {
   }
 }
 
-// Obtenir le nom d'un texte d'étude
 const getTextStudyName = (textStudyId: string): string => {
   const textStudy = textStudiesMap.value.get(textStudyId)
   return textStudy ? textStudy.name : textStudyId
 }
 
-// Obtenir les réservations de l'utilisateur pour une session
 const getUserReservationsForSession = (session: Session) => {
   if (!currentUser.value) return []
   return (
@@ -167,7 +143,6 @@ const getUserReservationsForSession = (session: Session) => {
   )
 }
 
-// Marquer une réservation comme complétée
 const toggleReservationCompletion = async (
   sessionId: string,
   reservationId: string,
@@ -176,7 +151,6 @@ const toggleReservationCompletion = async (
   try {
     await sessionService.markReservationAsCompleted(sessionId, reservationId, isCompleted)
 
-    // Mettre à jour l'état local
     const session = participatedSessions.value.find((s) => s.id === sessionId)
     if (session) {
       const reservation = session.reservations?.find((r) => r.id === reservationId)
@@ -190,23 +164,18 @@ const toggleReservationCompletion = async (
   }
 }
 
-// Naviguer vers une session
 const goToSession = (sessionId: string) => {
   router.push({ name: 'detail-session', params: { id: sessionId } })
 }
 
-// Changer d'onglet
 const setActiveTab = (tab: typeof activeTab.value) => {
   activeTab.value = tab
 }
 
-// Sauvegarder les informations
 const saveUserInfo = async () => {
   if (!currentUser.value) return
 
   try {
-    // Ici on pourrait ajouter une méthode pour mettre à jour le profil
-    // Pour l'instant, on simule la sauvegarde
     currentUser.value.name = editForm.value.name
     currentUser.value.email = editForm.value.email
     isEditingInfo.value = false
@@ -215,7 +184,6 @@ const saveUserInfo = async () => {
   }
 }
 
-// Changer le mot de passe
 const changePassword = async () => {
   if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
     alert('Les mots de passe ne correspondent pas')
@@ -224,7 +192,6 @@ const changePassword = async () => {
 
   try {
     isChangingPassword.value = true
-    // Ici on implémenterait le changement de mot de passe
     alert('Changement de mot de passe réussi')
     passwordForm.value = { currentPassword: '', newPassword: '', confirmPassword: '' }
   } catch (error) {
@@ -235,7 +202,6 @@ const changePassword = async () => {
   }
 }
 
-// Supprimer le compte
 const deleteAccount = async () => {
   if (
     !confirm('Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.')
@@ -246,7 +212,6 @@ const deleteAccount = async () => {
   try {
     isDeletingAccount.value = true
     await authService.logout()
-    // Rediriger vers la page d'accueil
     window.location.href = '/'
   } catch (error) {
     console.error('Erreur lors de la suppression du compte:', error)
@@ -256,7 +221,6 @@ const deleteAccount = async () => {
   }
 }
 
-// Fonctions pour les modals
 const openShareModal = (session: Session) => {
   selectedSession.value = session
   shareUrl.value = `${window.location.origin}/share-reading/session/${session.id}`
@@ -268,14 +232,10 @@ const openEditModal = (session: Session) => {
   showEditModal.value = true
 }
 
-// Les fonctions closeShareModal et closeEditModal sont gérées par les composants modals
-
-// Fonction pour rediriger vers la page de gestion
 const openSessionManagement = (session: Session) => {
   router.push({ name: 'session-management', params: { id: session.id } })
 }
 
-// Sauvegarder les modifications de session
 const saveSessionChanges = async (sessionData: {
   name: string
   description: string
@@ -286,7 +246,6 @@ const saveSessionChanges = async (sessionData: {
   try {
     await sessionService.updateSession(selectedSession.value.id, sessionData)
 
-    // Mettre à jour la session locale
     const sessionIndex = createdSessions.value.findIndex((s) => s.id === selectedSession.value!.id)
     if (sessionIndex > -1) {
       createdSessions.value[sessionIndex] = {
@@ -305,7 +264,6 @@ const saveSessionChanges = async (sessionData: {
   }
 }
 
-// Terminer une session
 const endSession = async (session: Session) => {
   if (
     !confirm('Êtes-vous sûr de vouloir terminer cette session ? Cette action est irréversible.')
@@ -316,7 +274,6 @@ const endSession = async (session: Session) => {
   try {
     await sessionService.endSession(session.id)
 
-    // Mettre à jour la session locale
     const sessionIndex = createdSessions.value.findIndex((s) => s.id === session.id)
     if (sessionIndex > -1) {
       createdSessions.value[sessionIndex] = {
@@ -349,7 +306,6 @@ onMounted(async () => {
 
 <template>
   <main class="min-h-screen pb-20">
-    <!-- Affichage de chargement -->
     <div v-if="isLoading" class="flex flex-col items-center justify-center text-text-secondary">
       <div
         class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
@@ -357,9 +313,7 @@ onMounted(async () => {
       <p class="font-medium animate-pulse">Chargement de votre profil...</p>
     </div>
 
-    <!-- Contenu du profil (affiché seulement si l'utilisateur est connecté) -->
     <div v-else-if="currentUser">
-      <!-- En-tête du profil -->
       <div
         class="relative overflow-hidden mb-12 py-16 px-6 md:px-12 bg-gradient-to-br from-primary to-secondary text-white shadow-lg"
       >
@@ -379,9 +333,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Contenu principal -->
       <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
-        <!-- Menu latéral -->
         <nav
           class="lg:sticky lg:top-24 h-fit bg-white/40 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm dark:bg-gray-800/40 dark:border-gray-700"
         >
@@ -453,9 +405,7 @@ onMounted(async () => {
           </button>
         </nav>
 
-        <!-- Contenu des onglets -->
         <div>
-          <!-- Sessions participées -->
           <div v-if="activeTab === 'sessions-participated'" class="animate-[fadeIn_0.3s_ease]">
             <div class="flex items-center justify-between mb-8">
               <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">
@@ -463,7 +413,6 @@ onMounted(async () => {
               </h2>
             </div>
 
-            <!-- Messages d'état global si aucune session -->
             <div
               v-if="participatedSessions.length === 0"
               class="flex flex-col items-center justify-center p-12 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 text-center dark:bg-gray-800/40 dark:border-gray-700"
@@ -482,7 +431,6 @@ onMounted(async () => {
             </div>
 
             <div v-else>
-              <!-- Sessions en cours -->
               <div v-if="ongoingParticipatedSessions.length > 0" class="mb-12">
                 <h3
                   class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2 dark:text-gray-200"
@@ -527,7 +475,6 @@ onMounted(async () => {
                       >
                     </div>
 
-                    <!-- Réservations de l'utilisateur -->
                     <div
                       class="bg-white/40 rounded-xl p-4 border border-white/40 dark:bg-gray-700/30 dark:border-gray-600/50"
                     >
@@ -593,7 +540,6 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <!-- Sessions terminées -->
               <div v-if="finishedParticipatedSessions.length > 0" class="opacity-80">
                 <h3
                   class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2 dark:text-gray-200"
@@ -603,7 +549,6 @@ onMounted(async () => {
                 </h3>
 
                 <div class="grid gap-6">
-                  <!-- On réutilise la même structure mais avec un style légèrement différent pour indiquer que c'est terminé -->
                   <div
                     v-for="session in finishedParticipatedSessions"
                     :key="session.id"
@@ -633,7 +578,6 @@ onMounted(async () => {
                       </button>
                     </div>
 
-                    <!-- Réservations (lecture seule ou simplifiée) -->
                     <div class="text-sm text-text-secondary dark:text-gray-400 mb-2">
                       Vous aviez {{ getUserReservationsForSession(session).length }} réservations
                       dans cette session.
@@ -644,7 +588,6 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- Sessions créées -->
           <div v-if="activeTab === 'sessions-created'" class="animate-[fadeIn_0.3s_ease]">
             <div class="flex items-center justify-between mb-8">
               <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">
@@ -675,7 +618,6 @@ onMounted(async () => {
             </div>
 
             <div v-else>
-              <!-- En cours -->
               <div v-if="ongoingCreatedSessions.length > 0" class="mb-12">
                 <h3
                   class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2 dark:text-gray-200"
@@ -796,7 +738,6 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- Mes informations -->
           <div v-if="activeTab === 'my-info'" class="animate-[fadeIn_0.3s_ease]">
             <div class="flex items-center justify-between mb-8">
               <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">
@@ -871,14 +812,12 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- Sécurité -->
           <div v-if="activeTab === 'security'" class="animate-[fadeIn_0.3s_ease]">
             <div class="flex items-center justify-between mb-8">
               <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">Sécurité</h2>
             </div>
 
             <div class="grid gap-8 max-w-2xl">
-              <!-- Changement de mot de passe -->
               <div
                 class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-8 dark:bg-gray-800/60 dark:border-gray-700"
               >
@@ -935,7 +874,6 @@ onMounted(async () => {
                 </form>
               </div>
 
-              <!-- Suppression du compte -->
               <div
                 class="bg-red-50/50 backdrop-blur-sm rounded-2xl border border-red-100 p-8 dark:bg-red-900/10 dark:border-red-900/30"
               >
@@ -960,7 +898,6 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Modals -->
     <ShareModal
       v-model:show="showShareModal"
       :session-name="selectedSession?.name || ''"

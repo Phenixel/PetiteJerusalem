@@ -42,14 +42,12 @@ export class SeoService {
       this.upsertMeta('name', 'robots', meta.robots)
     }
 
-    // Open Graph fallbacks
     this.upsertMeta('property', 'og:type', meta.og?.type || 'website')
     this.upsertMeta('property', 'og:site_name', meta.og?.site_name || 'Petite Jerusalem')
     if (meta.og?.image) {
       this.upsertMeta('property', 'og:image', meta.og.image)
     }
 
-    // Twitter fallbacks
     this.upsertMeta('name', 'twitter:card', meta.twitter?.card || 'summary')
     if (meta.twitter?.image) {
       this.upsertMeta('name', 'twitter:image', meta.twitter.image)

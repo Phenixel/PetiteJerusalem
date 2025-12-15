@@ -14,7 +14,6 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-// Déclaration TypeScript pour QRCode
 declare global {
   interface Window {
     QRCode: {
@@ -113,7 +112,6 @@ const copyToClipboard = async () => {
   }
 }
 
-// Générer le QR code quand le modal s'ouvre
 watch(
   () => props.show,
   (newValue) => {

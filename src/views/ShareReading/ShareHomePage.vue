@@ -17,13 +17,11 @@ const error = ref<string | null>(null)
 const isAuthenticated = ref(false)
 let unsubscribeAuth: (() => void) | null = null
 
-// Charger les sessions depuis Firestore
 const loadSessions = async () => {
   try {
     isLoading.value = true
     error.value = null
     const fetchedSessions = await sessionService.getAllSessions()
-    // Trier les sessions par date de création (plus récentes en premier)
     sessions.value = sessionService.sortSessionsByDate(fetchedSessions)
   } catch (err) {
     console.error('Erreur lors du chargement des sessions:', err)
@@ -33,25 +31,17 @@ const loadSessions = async () => {
   }
 }
 
-// Vérifier si une session est terminée
 const isSessionFinished = (session: Session): boolean => {
   if (session.isEnded) return true
-  // Vérifier si la date limite est passée
-  // On compare la date limite (fin de journée) avec maintenant
   const limit = new Date(session.dateLimit)
-  // Ajuster pour inclure toute la journée de la date limite
   limit.setHours(23, 59, 59, 999)
   return new Date() > limit
 }
 
-// Sessions filtrées
 const ongoingSessions = computed(() => sessions.value.filter((s) => !isSessionFinished(s)))
 const finishedSessions = computed(() => sessions.value.filter((s) => isSessionFinished(s)))
 
-// Charger les sessions au montage du composant
 onMounted(() => {
-  loadSessions()
-  // Écouter l'état d'authentification et mettre à jour isAuthenticated
   unsubscribeAuth = authService.onAuthChanged((user) => {
     isAuthenticated.value = !!user
   })
@@ -70,7 +60,6 @@ onUnmounted(() => {
 })
 
 const handleSessionClick = (session: Session) => {
-  // Naviguer vers la page de détail de la session
   router.push(`/share-reading/session/${session.id}`)
 }
 </script>

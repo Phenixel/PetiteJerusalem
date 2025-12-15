@@ -14,7 +14,6 @@ useDarkMode()
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
 
-  // Empêcher/permettre le scroll du body
   if (isMobileMenuOpen.value) {
     document.body.classList.add('menu-open')
   } else {
@@ -39,7 +38,6 @@ async function logout() {
 }
 
 function goToLogin() {
-  // Sauvegarder la page actuelle pour redirection après connexion
   const currentPath = route.path
   router.push(`/login?redirect=${encodeURIComponent(currentPath)}`)
   closeMobileMenu()
