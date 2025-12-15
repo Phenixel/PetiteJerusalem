@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Navbar from './components/NavbarComponents.vue'
 import SiteFooter from './components/SiteFooter.vue'
@@ -10,8 +10,6 @@ const route = useRoute()
 
 const isHome = computed(() => route.name === 'home')
 
-onMounted(() => {
-})
 </script>
 
 <template>

@@ -9,6 +9,10 @@ import {
   getRedirectResult,
   signOut,
   updateProfile,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  deleteUser,
 } from 'firebase/auth'
 import { app, googleAuthProvider } from '../../firebase'
 import type { User } from '../models/models'
@@ -140,6 +144,65 @@ export class AuthService {
       return path
     }
     return null
+  }
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const auth = getAuth(app)
+    const user = auth.currentUser
+
+    if (!user || !user.email) {
+      throw new Error('Aucun utilisateur connecté')
+    }
+
+    const credential = EmailAuthProvider.credential(user.email, currentPassword)
+    await reauthenticateWithCredential(user, credential)
+
+    await updatePassword(user, newPassword)
+  }
+
+  async deleteAccount(password?: string): Promise<void> {
+    const auth = getAuth(app)
+    const user = auth.currentUser
+
+    if (!user) {
+      throw new Error('Aucun utilisateur connecté')
+    }
+
+    if (password && user.email) {
+      const credential = EmailAuthProvider.credential(user.email, password)
+      await reauthenticateWithCredential(user, credential)
+    }
+
+    await deleteUser(user)
+  }
+
+  async reauthenticateWithGoogle(): Promise<void> {
+    const auth = getAuth(app)
+    const user = auth.currentUser
+
+    if (!user) {
+      throw new Error('Aucun utilisateur connecté')
+    }
+
+    await signInWithPopup(auth, googleAuthProvider)
+  }
+
+  isGoogleUser(): boolean {
+    const auth = getAuth(app)
+    const user = auth.currentUser
+
+    if (!user) return false
+
+    return user.providerData.some((provider) => provider.providerId === 'google.com')
+  }
+
+  hasPasswordProvider(): boolean {
+    const auth = getAuth(app)
+    const user = auth.currentUser
+
+    if (!user) return false
+
+    return user.providerData.some((provider) => provider.providerId === 'password')
   }
 
   async logout(): Promise<void> {
