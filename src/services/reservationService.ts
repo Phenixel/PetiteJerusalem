@@ -8,7 +8,6 @@ export interface ReservationForm {
 }
 
 export class ReservationService {
-  // Créer une réservation (enregistrée dans le document de session)
   async createReservation(
     sessionId: string,
     textStudyId: string,
@@ -36,7 +35,6 @@ export class ReservationService {
           ? data.reservations
           : []
 
-        // éviter les doublons (même textStudyId + section)
         if (
           reservations.find((r) => r.textStudyId === textStudyId && r.section === section) !==
           undefined
@@ -44,7 +42,6 @@ export class ReservationService {
           throw new Error('Cette section est déjà réservée')
         }
 
-        // Construire l'objet de réservation sans valeurs undefined
         const newReservation: ReservationRecord = {
           id: reservationId,
           textStudyId,
@@ -54,17 +51,14 @@ export class ReservationService {
           createdAt: new Date().toISOString(),
         }
 
-        // Ajouter section seulement si défini
         if (section !== undefined) {
           newReservation.section = section
         }
 
-        // Ajouter chosenById seulement si défini
         if (userId) {
           newReservation.chosenById = userId
         }
 
-        // Ajouter chosenByGuestId seulement si défini
         if (guestId) {
           newReservation.chosenByGuestId = guestId
         }
@@ -77,7 +71,6 @@ export class ReservationService {
     return reservationId
   }
 
-  // Supprimer une réservation par id (intégrée dans le document de session)
   async deleteReservation(sessionId: string, reservationId: string): Promise<void> {
     const sfDocRef = doc(db, 'sessions', sessionId)
     await runTransaction(db, (transaction) => {
@@ -95,7 +88,6 @@ export class ReservationService {
     })
   }
 
-  // Vérifier si l'utilisateur peut supprimer une réservation
   canUserDeleteReservation(
     reservation: TextStudyReservation,
     currentUser: { id: string; email: string } | null,
@@ -105,12 +97,10 @@ export class ReservationService {
       return false
     }
 
-    // Vérifier si c'est l'utilisateur connecté qui a fait la réservation
     if (currentUser && reservation.chosenById === currentUser.id) {
       return true
     }
 
-    // Vérifier si c'est un invité qui a fait la réservation
     if (guestEmail && reservation.chosenByGuestId === guestEmail) {
       return true
     }
@@ -118,7 +108,6 @@ export class ReservationService {
     return false
   }
 
-  // Vérifier si un texte ou une section est réservé
   isTextOrSectionReserved(
     textStudyId: string,
     section: number | undefined,
@@ -140,12 +129,10 @@ export class ReservationService {
     return { isReserved: false }
   }
 
-  // Récupérer les réservations d'une session (depuis l'objet Session)
   getReservationsBySession(session: Session): TextStudyReservation[] {
     return session.reservations || []
   }
 
-  // Obtenir le statut d'affichage d'un texte
   getTextDisplayStatus(
     textStudyId: string,
     textStudy: TextStudy,
@@ -159,7 +146,6 @@ export class ReservationService {
       return { status: 'available', reservedBy: null }
     }
 
-    // Si tous les chapitres sont réservés par la même personne
     if (chapterReservations.length === textStudy.totalSections) {
       const firstReservation = chapterReservations[0]
       const allSamePerson = chapterReservations.every(
@@ -171,12 +157,10 @@ export class ReservationService {
       }
     }
 
-    // Si certains chapitres sont réservés mais pas tous
     if (chapterReservations.length > 0 && chapterReservations.length < textStudy.totalSections) {
       return { status: 'partially_reserved', reservedBy: null }
     }
 
-    // Si tous les chapitres sont réservés par des personnes différentes
     if (chapterReservations.length === textStudy.totalSections) {
       const uniqueNames = [
         ...new Set(chapterReservations.map((r) => r.chosenByName).filter(Boolean)),
@@ -187,7 +171,6 @@ export class ReservationService {
     return { status: 'available', reservedBy: null }
   }
 
-  // Créer une réservation pour un utilisateur connecté ou un invité
   async createReservationForUser(
     sessionId: string,
     textStudyId: string,
@@ -196,7 +179,6 @@ export class ReservationService {
     reservationForm: ReservationForm,
   ): Promise<string> {
     if (currentUser) {
-      // Utilisateur connecté
       return await this.createReservation(
         sessionId,
         textStudyId,
@@ -207,7 +189,6 @@ export class ReservationService {
         undefined,
       )
     } else {
-      // Utilisateur invité
       if (!reservationForm.name || !reservationForm.email) {
         throw new Error('Veuillez remplir votre nom et email')
       }
@@ -224,7 +205,6 @@ export class ReservationService {
     }
   }
 
-  // Créer une réservation locale pour l'interface
   createLocalReservation(
     reservationId: string,
     textStudyId: string,
@@ -245,7 +225,6 @@ export class ReservationService {
     }
   }
 
-  // Marquer une réservation comme complétée
   async markReservationAsCompleted(
     sessionId: string,
     reservationId: string,
@@ -274,3 +253,5 @@ export class ReservationService {
     })
   }
 }
+
+export const reservationService = new ReservationService()

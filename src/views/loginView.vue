@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { AuthService } from '../services/authService'
+import { authService } from '../services/authService'
 import { seoService } from '../services/seoService'
 
-const authService = new AuthService()
 const router = useRouter()
 const route = useRoute()
 
@@ -48,28 +47,33 @@ async function submitForm() {
 
 async function loginWithGoogle() {
   try {
-    // Sauvegarder la page d'origine pour redirection après connexion
     const redirectPath = (route.query.redirect as string) || '/profile'
-    authService.saveRedirectPath(redirectPath)
 
-    await authService.signInWithGoogleRedirect()
+    await authService.signInWithGooglePopup()
+
+    router.push(redirectPath)
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Erreur Google'
     errorMessage.value = msg
   }
 }
 
-// Gérer la redirection après connexion Google au chargement de la page
 onMounted(async () => {
   try {
     const user = await authService.getGoogleRedirectResult()
     if (user) {
-      // Récupérer la page d'origine sauvegardée
       const redirectPath = authService.getAndClearRedirectPath() || '/profile'
       router.push(redirectPath)
     }
   } catch (error) {
     console.error('Erreur lors de la vérification de la redirection Google:', error)
+  }
+
+  const currentUser = await authService.getCurrentUser()
+  if (currentUser) {
+    const redirectPath = (route.query.redirect as string) || '/profile'
+    router.push(redirectPath)
+    return
   }
   const url = window.location.origin + '/login'
   seoService.setMeta({

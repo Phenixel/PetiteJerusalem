@@ -36,15 +36,12 @@ const stats = computed(() => {
       </div>
     </div>
 
-    <!-- Progress Bar Container -->
     <div class="relative h-3 bg-gray-600/30 rounded-full overflow-hidden mb-3">
-      <!-- Barre de réservation (Bleu) -->
       <div
         class="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-1000 ease-out rounded-full"
         :style="{ width: `${stats.reservedPercentage}%` }"
       ></div>
 
-      <!-- Barre de lecture (Vert) -->
       <div
         class="absolute top-0 left-0 h-full bg-green-500 transition-all duration-1000 ease-out rounded-full shadow-[0_0_10px_rgba(34,197,94,0.4)]"
         :style="{ width: `${stats.readPercentage}%` }"

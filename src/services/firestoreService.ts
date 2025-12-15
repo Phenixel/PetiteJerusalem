@@ -19,7 +19,6 @@ import type { TextStudy, Session, TextStudyReservation } from '../models/models'
 export class FirestoreService {
   // === MÉTHODES UTILITAIRES ===
 
-  // Convertir un document Firestore en TextStudy
   private convertToTextStudy(doc: QueryDocumentSnapshot<DocumentData>): TextStudy {
     const data = doc.data()
     return {
@@ -29,7 +28,6 @@ export class FirestoreService {
     } as TextStudy
   }
 
-  // Convertir un document Firestore en Session
   private convertToSession(doc: QueryDocumentSnapshot<DocumentData>): Session {
     const data = doc.data()
     return {
@@ -42,7 +40,6 @@ export class FirestoreService {
     } as Session
   }
 
-  // Convertir un document Firestore en TextStudyReservation
   private convertToTextStudyReservation(
     doc: QueryDocumentSnapshot<DocumentData>,
   ): TextStudyReservation {
@@ -54,7 +51,6 @@ export class FirestoreService {
     } as TextStudyReservation
   }
 
-  // Gérer les erreurs Firestore
   private handleFirestoreError(error: unknown, operation: string): never {
     console.error(`Erreur Firestore lors de ${operation}:`, error)
     throw new Error(`Erreur lors de ${operation}. Veuillez réessayer.`)
@@ -201,7 +197,6 @@ export class FirestoreService {
 
   // === MÉTHODES UTILITAIRES POUR LES RÉSERVATIONS ===
 
-  // Vérifier si une collection existe
   async collectionExists(collectionName: string): Promise<boolean> {
     try {
       const querySnapshot = await getDocs(collection(db, collectionName))
@@ -212,7 +207,6 @@ export class FirestoreService {
     }
   }
 
-  // Compter les documents dans une collection
   async countDocuments(collectionName: string): Promise<number> {
     try {
       const querySnapshot = await getDocs(collection(db, collectionName))
@@ -222,3 +216,5 @@ export class FirestoreService {
     }
   }
 }
+
+export const firestoreService = new FirestoreService()

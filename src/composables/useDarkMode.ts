@@ -1,29 +1,41 @@
-import { ref, onMounted } from 'vue'
+import { ref, watchEffect } from 'vue'
 
 const isDark = ref(false)
+let initialized = false
 
-export function useDarkMode() {
-  const applyTheme = () => {
+function applyTheme() {
+  if (typeof document !== 'undefined') {
     if (isDark.value) {
       document.documentElement.classList.add('dark')
     } else {
       document.documentElement.classList.remove('dark')
     }
   }
+}
 
-  onMounted(() => {
-    // Check system preference
-    isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
-    applyTheme()
+function initDarkMode() {
+  if (initialized || typeof window === 'undefined') return
 
-    // Listen for system preference changes
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      isDark.value = e.matches
-      applyTheme()
-    })
+  isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    isDark.value = e.matches
   })
+
+  initialized = true
+}
+
+initDarkMode()
+
+export function useDarkMode() {
+  watchEffect(() => applyTheme())
+
+  const toggleDark = () => {
+    isDark.value = !isDark.value
+  }
 
   return {
     isDark,
+    toggleDark,
   }
 }

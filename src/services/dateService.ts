@@ -1,5 +1,4 @@
 export class DateService {
-  // Formater une date pour l'affichage en français
   static formatDate(date: Date): string {
     return new Date(date).toLocaleDateString('fr-FR', {
       year: 'numeric',
@@ -8,7 +7,6 @@ export class DateService {
     })
   }
 
-  // Formater une date courte (DD/MM/YYYY)
   static formatShortDate(date: Date): string {
     return new Date(date).toLocaleDateString('fr-FR', {
       year: 'numeric',
@@ -17,7 +15,6 @@ export class DateService {
     })
   }
 
-  // Formater une date avec l'heure
   static formatDateTime(date: Date): string {
     return new Date(date).toLocaleString('fr-FR', {
       year: 'numeric',
@@ -28,12 +25,10 @@ export class DateService {
     })
   }
 
-  // Vérifier si une date est passée
   static isDatePast(date: Date): boolean {
     return new Date() > new Date(date)
   }
 
-  // Vérifier si une date est aujourd'hui
   static isDateToday(date: Date): boolean {
     const today = new Date()
     const checkDate = new Date(date)
@@ -44,7 +39,6 @@ export class DateService {
     )
   }
 
-  // Obtenir le nombre de jours restants jusqu'à une date
   static getDaysUntil(date: Date): number {
     const today = new Date()
     const targetDate = new Date(date)
@@ -52,7 +46,6 @@ export class DateService {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   }
 
-  // Formater une durée relative (ex: "dans 3 jours", "il y a 2 jours")
   static formatRelativeDate(date: Date): string {
     const daysUntil = this.getDaysUntil(date)
 

@@ -13,12 +13,10 @@ defineEmits<{
   click: [session: Session]
 }>()
 
-// Formater le type de texte pour l'affichage
 const formatTextType = (type: EnumTypeTextStudy): string => {
   return TextTypeService.formatType(type)
 }
 
-// Formater la date pour l'affichage
 const formatDate = (date: Date): string => {
   return DateService.formatDate(date)
 }

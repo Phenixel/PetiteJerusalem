@@ -54,7 +54,6 @@ const saveSession = async () => {
   }
 }
 
-// Initialiser le formulaire quand la session change
 watch(
   () => props.session,
   (newSession) => {
@@ -72,7 +71,6 @@ watch(
   { immediate: true },
 )
 
-// Réinitialiser le formulaire quand le modal se ferme
 watch(
   () => props.show,
   (newValue) => {

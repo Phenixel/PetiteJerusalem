@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { app } from '../../firebase'
-import { getAuth, onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth'
+import { authService } from '../services/authService'
 import { useDarkMode } from '../composables/useDarkMode'
 
 const router = useRouter()
 const route = useRoute()
 const username = ref<string | null>(null)
 const isMobileMenuOpen = ref(false)
+let unsubscribeAuth: (() => void) | null = null
+
 useDarkMode()
 
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
 
-  // Empêcher/permettre le scroll du body
   if (isMobileMenuOpen.value) {
     document.body.classList.add('menu-open')
   } else {
@@ -27,19 +27,25 @@ function closeMobileMenu() {
   document.body.classList.remove('menu-open')
 }
 
-onAuthStateChanged(getAuth(app), async (firebaseUser: FirebaseUser | null) => {
-  username.value = firebaseUser?.displayName ?? null
+onMounted(() => {
+  unsubscribeAuth = authService.onAuthChanged((user) => {
+    username.value = user?.name ?? null
+  })
+})
+
+onUnmounted(() => {
+  if (unsubscribeAuth) {
+    unsubscribeAuth()
+  }
 })
 
 async function logout() {
-  await signOut(getAuth(app))
+  await authService.logout()
   username.value = null
   closeMobileMenu()
   router.push('/')
 }
-
 function goToLogin() {
-  // Sauvegarder la page actuelle pour redirection après connexion
   const currentPath = route.path
   router.push(`/login?redirect=${encodeURIComponent(currentPath)}`)
   closeMobileMenu()
@@ -104,7 +110,7 @@ function goToLogin() {
         <button
           v-if="!username"
           @click="goToLogin"
-          class="px-4 py-2 bg-white/20 border border-white/30 backdrop-blur-sm rounded-lg hover:bg-white/30 hover:-translate-y-0.5 transition-all text-text-primary font-medium"
+          class="px-4 py-2 bg-white/20 border border-white/30 backdrop-blur-sm rounded-lg hover:bg-white/30 hover:-translate-y-0.5 transition-all text-text-primary font-medium dark:text-gray-100 dark:bg-gray-800/50 dark:border-gray-700 dark:hover:bg-gray-700"
         >
           Se connecter
         </button>

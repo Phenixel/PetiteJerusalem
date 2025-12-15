@@ -2,23 +2,20 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { EnumTypeTextStudy } from '../../models/typeTextStudy'
-import { SessionService } from '../../services/sessionService'
+import { sessionService } from '../../services/sessionService'
 import { TextTypeService } from '../../services/textTypeService'
 import type { User } from '../../services/authService'
 import { seoService } from '../../services/seoService'
 
 const router = useRouter()
-const sessionService = new SessionService()
 
 const isLoading = ref(false)
 const message = ref('')
 const messageType = ref<'success' | 'error'>('success')
 const currentUser = ref<User | null>(null)
 
-// Types de texte d'étude disponibles
 const textStudyTypes = TextTypeService.getAllTypes()
 
-// Données du formulaire
 const sessionData = reactive({
   name: '',
   description: '',
@@ -26,12 +23,10 @@ const sessionData = reactive({
   dateLimit: '',
 })
 
-// Gestion de la sélection fine des livres
 const availableBooks = ref<string[]>([])
 const selectedBooks = ref<string[]>([])
 const isBookSelectionEnabled = ref(false)
 
-// Observer les changements de type pour charger les livres
 watch(
   () => sessionData.type,
   async (newType) => {
@@ -44,7 +39,6 @@ watch(
         const books = await sessionService.getBooksByType(newType as EnumTypeTextStudy)
         if (books.length > 0) {
           availableBooks.value = books
-          // Par défaut, tout sélectionner comme demandé
           selectedBooks.value = [...books]
           isBookSelectionEnabled.value = true
         }
@@ -67,7 +61,6 @@ const formatBookName = (bookName: string) => {
   return sessionService.formatBookName(bookName)
 }
 
-// Récupérer l'utilisateur connecté
 onMounted(async () => {
   currentUser.value = await sessionService.requireAuthentication(router)
   const url = window.location.origin + '/share-reading/new-session'
@@ -114,7 +107,6 @@ const createSession = async () => {
     message.value = 'Session créée avec succès !'
     messageType.value = 'success'
 
-    // Rediriger vers la page des sessions après un délai
     setTimeout(() => {
       router.push(`/share-reading/session/${sessionId}`)
     }, 2000)
@@ -130,7 +122,6 @@ const createSession = async () => {
   }
 }
 
-// Retour à la page précédente
 const goBack = () => {
   router.back()
 }
