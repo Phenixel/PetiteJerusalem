@@ -47,6 +47,49 @@ const isSubmittingBatch = ref(false)
 // Computed properties
 const groupedTextStudies = computed(() => {
   if (!textStudies.value.length) return {}
+
+  // 1. Filtrer d'abord par recherche
+  let filtered = textStudies.value
+  if (searchTerm.value.trim()) {
+    filtered = sessionService.filterTextStudiesBySearch(filtered, searchTerm.value)
+  }
+
+  // 2. Si utilisateur connecté, séparer ses réservations
+  if (currentUser.value) {
+    const myReservedTextIds = new Set<string>()
+
+    reservations.value.forEach((r) => {
+      // On utilise canUserDeleteReservation pour vérifier si c'est "ma" réservation
+      // (vérifie l'ID user vs r.chosenById)
+      if (sessionService.canUserDeleteReservation(r, currentUser.value, '')) {
+        myReservedTextIds.add(r.textStudyId)
+      }
+    })
+
+    const myTexts: TextStudy[] = []
+    const otherTexts: TextStudy[] = []
+
+    filtered.forEach((text) => {
+      if (myReservedTextIds.has(text.id)) {
+        myTexts.push(text)
+      } else {
+        otherTexts.push(text)
+      }
+    })
+
+    const groupedOthers = sessionService.groupTextStudiesByBook(otherTexts)
+
+    if (myTexts.length > 0) {
+      return {
+        'Mes réservations': myTexts,
+        ...groupedOthers,
+      }
+    }
+
+    return groupedOthers
+  }
+
+  // 3. Comportement standard (non connecté ou pas de réservations)
   return sessionService.getGroupedAndFilteredTextStudies(textStudies.value, searchTerm.value)
 })
 
@@ -324,6 +367,7 @@ const generateChapters = (totalSections: number) => {
 
 // Formater le nom du livre pour l'affichage
 const formatBookName = (bookName: string) => {
+  if (bookName === 'Mes réservations') return bookName
   return sessionService.formatBookName(bookName)
 }
 
