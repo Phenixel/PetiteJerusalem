@@ -34,6 +34,7 @@ body {
   font-family: var(--font-sans);
   color: var(--color-text-primary);
   background-color: var(--color-bg-beige); /* Apply new background globally */
+  scrollbar-gutter: stable;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition:
