@@ -40,6 +40,7 @@ const ongoingSessions = computed(() => sessions.value.filter((s) => !isSessionFi
 const finishedSessions = computed(() => sessions.value.filter((s) => isSessionFinished(s)))
 
 onMounted(() => {
+  loadSessions()
   unsubscribeAuth = authService.onAuthChanged((user) => {
     isAuthenticated.value = !!user
   })
