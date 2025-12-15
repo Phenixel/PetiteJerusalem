@@ -48,9 +48,10 @@ async function submitForm() {
 async function loginWithGoogle() {
   try {
     const redirectPath = (route.query.redirect as string) || '/profile'
-    authService.saveRedirectPath(redirectPath)
 
-    await authService.signInWithGoogleRedirect()
+    await authService.signInWithGooglePopup()
+
+    router.push(redirectPath)
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Erreur Google'
     errorMessage.value = msg
@@ -66,6 +67,13 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('Erreur lors de la vérification de la redirection Google:', error)
+  }
+
+  const currentUser = await authService.getCurrentUser()
+  if (currentUser) {
+    const redirectPath = (route.query.redirect as string) || '/profile'
+    router.push(redirectPath)
+    return
   }
   const url = window.location.origin + '/login'
   seoService.setMeta({

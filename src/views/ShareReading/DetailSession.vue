@@ -505,7 +505,7 @@ watch(session, (s) => {
         </div>
         <div
           v-if="searchTerm"
-          class="text-center mt-2 text-sm text-text-secondary bg-white/50 backdrop-blur py-1 px-3 rounded-full inline-block mx-auto left-0 right-0 w-fit relative"
+          class="text-center mt-2 text-sm text-text-secondary bg-white/50 backdrop-blur py-1 px-3 rounded-full inline-block mx-auto left-0 right-0 w-fit relative dark:bg-gray-700/50 dark:text-gray-300"
         >
           Recherche : "{{ searchTerm }}"
         </div>

@@ -5,6 +5,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithRedirect,
+  signInWithPopup,
   getRedirectResult,
   signOut,
   updateProfile,
@@ -98,6 +99,16 @@ export class AuthService {
   async signInWithGoogleRedirect(): Promise<void> {
     const auth = getAuth(app)
     await signInWithRedirect(auth, googleAuthProvider)
+  }
+
+  async signInWithGooglePopup(): Promise<User> {
+    const auth = getAuth(app)
+    const result = await signInWithPopup(auth, googleAuthProvider)
+    return {
+      id: result.user.uid,
+      name: result.user.displayName || result.user.email || 'Utilisateur',
+      email: result.user.email || '',
+    }
   }
 
   async getGoogleRedirectResult(): Promise<User | null> {

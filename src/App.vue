@@ -1,27 +1,16 @@
 <script setup lang="ts">
 import { onMounted, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
 import Navbar from './components/NavbarComponents.vue'
 import SiteFooter from './components/SiteFooter.vue'
 import ScrollToTop from './components/ScrollToTop.vue'
 import { RouterView } from 'vue-router'
-import { authService } from './services/authService'
 
-const router = useRouter()
 const route = useRoute()
 
 const isHome = computed(() => route.name === 'home')
 
-onMounted(async () => {
-  try {
-    const user = await authService.getGoogleRedirectResult()
-    if (user) {
-      const redirectPath = authService.getAndClearRedirectPath() || '/profile'
-      router.push(redirectPath)
-    }
-  } catch (error) {
-    console.error('Erreur lors de la vérification de la redirection Google:', error)
-  }
+onMounted(() => {
 })
 </script>
 
