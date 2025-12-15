@@ -10,12 +10,9 @@ import {
   updateProfile,
 } from 'firebase/auth'
 import { app, googleAuthProvider } from '../../firebase'
+import type { User } from '../models/models'
 
-export interface User {
-  id: string
-  name: string
-  email: string
-}
+export type { User }
 
 export class AuthService {
   onAuthChanged(callback: (user: User | null) => void): () => void {
@@ -139,3 +136,5 @@ export class AuthService {
     await signOut(auth)
   }
 }
+
+export const authService = new AuthService()

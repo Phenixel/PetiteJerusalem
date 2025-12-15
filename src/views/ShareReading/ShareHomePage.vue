@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { SessionService } from '../../services/sessionService'
+import { sessionService } from '../../services/sessionService'
 import type { Session } from '../../models/models'
 import SessionCard from '../../components/SessionCard.vue'
 import { seoService } from '../../services/seoService'
-import { AuthService } from '../../services/authService'
+import { authService } from '../../services/authService'
 
 const router = useRouter()
-const sessionService = new SessionService()
-const authService = new AuthService()
 
 const sessions = ref<Session[]>([])
 const isLoading = ref(true)

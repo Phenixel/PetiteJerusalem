@@ -1,7 +1,7 @@
-import { FirestoreService } from './firestoreService'
-import { ReservationService, type ReservationForm } from './reservationService'
+import { firestoreService } from './firestoreService'
+import { reservationService, type ReservationForm } from './reservationService'
 import { SearchService } from './searchService'
-import { AuthService, type User } from './authService'
+import { authService, type User } from './authService'
 import { UtilsService } from './Services'
 import type {
   Session,
@@ -16,24 +16,12 @@ import { DateService } from './dateService'
 import textStudiesJson from '../datas/textStudies.json'
 
 export class SessionService {
-  private firestoreService: FirestoreService
-  private reservationService: ReservationService
-  private searchService: SearchService
-  private authService: AuthService
-
-  constructor() {
-    this.firestoreService = new FirestoreService()
-    this.reservationService = new ReservationService()
-    this.searchService = new SearchService()
-    this.authService = new AuthService()
-  }
-
   async getAllSessions(): Promise<Session[]> {
-    return await this.firestoreService.getSessions()
+    return await firestoreService.getSessions()
   }
 
   async getSessionById(sessionId: string): Promise<Session | null> {
-    return await this.firestoreService.getSessionById(sessionId)
+    return await firestoreService.getSessionById(sessionId)
   }
 
   async getTextStudiesByType(type: EnumTypeTextStudy): Promise<TextStudy[]> {
@@ -71,24 +59,24 @@ export class SessionService {
   // === MÉTHODES D'AUTHENTIFICATION ===
 
   async getCurrentUser(): Promise<User | null> {
-    return await this.authService.getCurrentUser()
+    return await authService.getCurrentUser()
   }
 
   async isUserAuthenticated(): Promise<boolean> {
-    return await this.authService.isUserAuthenticated()
+    return await authService.isUserAuthenticated()
   }
 
   async requireAuthentication(
     router: { push: (path: string) => void },
     redirectPath: string = '/',
   ): Promise<User | null> {
-    return await this.authService.requireAuthentication(router, redirectPath)
+    return await authService.requireAuthentication(router, redirectPath)
   }
 
   // === MÉTHODES DE RÉSERVATION ===
 
   getReservationsBySession(session: Session): TextStudyReservation[] {
-    return this.reservationService.getReservationsBySession(session)
+    return reservationService.getReservationsBySession(session)
   }
 
   async createReservation(
@@ -100,7 +88,7 @@ export class SessionService {
     userName?: string,
     guestName?: string,
   ): Promise<string> {
-    return await this.reservationService.createReservation(
+    return await reservationService.createReservation(
       sessionId,
       textStudyId,
       section,
@@ -112,14 +100,14 @@ export class SessionService {
   }
 
   async deleteReservation(sessionId: string, reservationId: string): Promise<void> {
-    return await this.reservationService.deleteReservation(sessionId, reservationId)
+    return await reservationService.deleteReservation(sessionId, reservationId)
   }
   canUserDeleteReservation(
     reservation: TextStudyReservation,
     currentUser: User | null,
     guestEmail?: string,
   ): boolean {
-    return this.reservationService.canUserDeleteReservation(reservation, currentUser, guestEmail)
+    return reservationService.canUserDeleteReservation(reservation, currentUser, guestEmail)
   }
 
   async createReservationForUser(
@@ -129,7 +117,7 @@ export class SessionService {
     currentUser: User | null,
     reservationForm: ReservationForm,
   ): Promise<string> {
-    return await this.reservationService.createReservationForUser(
+    return await reservationService.createReservationForUser(
       sessionId,
       textStudyId,
       section,
@@ -145,7 +133,7 @@ export class SessionService {
     currentUser: User | null,
     reservationForm: ReservationForm,
   ): TextStudyReservation {
-    return this.reservationService.createLocalReservation(
+    return reservationService.createLocalReservation(
       reservationId,
       textStudyId,
       section,
@@ -161,7 +149,7 @@ export class SessionService {
       ...sessionData,
       reservations: [],
     }
-    return await this.firestoreService.createSession(sessionWithReservations)
+    return await firestoreService.createSession(sessionWithReservations)
   }
 
   async createSessionWithValidation(
@@ -194,7 +182,7 @@ export class SessionService {
   }
 
   async deleteSession(sessionId: string): Promise<void> {
-    return await this.firestoreService.deleteSession(sessionId)
+    return await firestoreService.deleteSession(sessionId)
   }
 
   formatTextType(type: EnumTypeTextStudy): string {
@@ -265,7 +253,7 @@ export class SessionService {
     section: number | undefined,
     session: Session,
   ): { isReserved: boolean; reservedBy?: string } {
-    return this.reservationService.isTextOrSectionReserved(textStudyId, section, session)
+    return reservationService.isTextOrSectionReserved(textStudyId, section, session)
   }
 
   formatBookName(bookName: string): string {
@@ -277,7 +265,7 @@ export class SessionService {
     textStudy: TextStudy,
     session: Session,
   ): { status: 'available' | 'fully_reserved' | 'partially_reserved'; reservedBy: string | null } {
-    return this.reservationService.getTextDisplayStatus(textStudyId, textStudy, session)
+    return reservationService.getTextDisplayStatus(textStudyId, textStudy, session)
   }
 
   filterTextStudiesBySearch(textStudies: TextStudy[], searchTerm: string): TextStudy[] {
@@ -293,7 +281,7 @@ export class SessionService {
     reservationId: string,
     isCompleted: boolean,
   ): Promise<void> {
-    return await this.reservationService.markReservationAsCompleted(
+    return await reservationService.markReservationAsCompleted(
       sessionId,
       reservationId,
       isCompleted,
@@ -340,7 +328,7 @@ export class SessionService {
     sessionData: { name: string; description: string; dateLimit: string },
   ): Promise<void> {
     try {
-      await this.firestoreService.updateSession(sessionId, {
+      await firestoreService.updateSession(sessionId, {
         name: sessionData.name,
         description: sessionData.description,
         dateLimit: new Date(sessionData.dateLimit),
@@ -354,7 +342,7 @@ export class SessionService {
 
   async endSession(sessionId: string): Promise<void> {
     try {
-      await this.firestoreService.updateSession(sessionId, {
+      await firestoreService.updateSession(sessionId, {
         isEnded: true,
         endedAt: new Date(),
         updatedAt: new Date(),
@@ -382,7 +370,7 @@ export class SessionService {
     guestName: string,
     guestEmail: string,
   ): Promise<string> {
-    return await this.reservationService.createReservation(
+    return await reservationService.createReservation(
       sessionId,
       textStudyId,
       section,
@@ -434,7 +422,7 @@ export class SessionService {
     reservations: TextStudyReservation[]
   } {
     const reservations = this.getTextReservations(session, textStudy.id)
-    const status = this.reservationService.getTextDisplayStatus(textStudy.id, textStudy, session)
+    const status = reservationService.getTextDisplayStatus(textStudy.id, textStudy, session)
 
     return {
       ...status,
@@ -453,3 +441,5 @@ export class SessionService {
     return this.getSessionsByCreator(sessions, creatorId).filter((session) => session.isEnded)
   }
 }
+
+export const sessionService = new SessionService()

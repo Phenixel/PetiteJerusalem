@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { AuthService } from '../services/authService'
-import { SessionService } from '../services/sessionService'
+import { authService } from '../services/authService'
+import { sessionService } from '../services/sessionService'
 import type { User } from '../services/authService'
 import type { Session, TextStudy } from '../models/models'
 import { seoService } from '../services/seoService'
@@ -10,8 +10,6 @@ import ShareModal from '../components/ShareModal.vue'
 import EditSessionModal from '../components/EditSessionModal.vue'
 
 const router = useRouter()
-const authService = new AuthService()
-const sessionService = new SessionService()
 
 const currentUser = ref<User | null>(null)
 const activeTab = ref<'sessions-participated' | 'sessions-created' | 'my-info' | 'security'>(

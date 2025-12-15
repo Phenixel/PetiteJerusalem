@@ -4,7 +4,7 @@ export interface User {
   id: string
   name: string
   email: string
-  createdAt: Date
+  createdAt?: Date // Optional: Firebase auth users don't have createdAt
 }
 
 export interface Guest {
@@ -17,7 +17,7 @@ export interface Guest {
 export interface TextStudy {
   id: string
   name: string
-  type: EnumTypeTextStudy // référence vers TypeTextStudy
+  type: EnumTypeTextStudy
   livre: string
   link: string
   totalSections: number
@@ -27,27 +27,27 @@ export interface TextStudy {
 export interface Session {
   id: string
   name: string
-  type: EnumTypeTextStudy // référence vers TypeTextStudy
+  type: EnumTypeTextStudy
   description: string
   dateLimit: Date
   createdAt: Date
-  personId: string // référence vers User (obligatoire)
-  creatorName: string // nom du créateur pour l'affichage
+  personId: string
+  creatorName: string
   slug: string
-  isCompleted: boolean // calculé côté application
-  reservations: TextStudyReservation[] // réservations intégrées directement
-  isEnded?: boolean // session terminée
-  endedAt?: Date // date de fin de session
-  updatedAt?: Date // date de dernière modification
-  selectedBooks?: string[] // livres sélectionnés pour la session
+  isCompleted: boolean
+  reservations: TextStudyReservation[]
+  isEnded?: boolean
+  endedAt?: Date
+  updatedAt?: Date
+  selectedBooks?: string[]
 }
 
 export interface TextStudyReservation {
   id: string
-  chosenById?: string // référence vers User
-  chosenByGuestId?: string // référence vers Guest
-  chosenByName?: string // nom de l'utilisateur ou de l'invité pour l'affichage
-  textStudyId: string // référence vers TextStudy
+  chosenById?: string
+  chosenByGuestId?: string
+  chosenByName?: string
+  textStudyId: string
   available: boolean
   section?: number
   isCompleted: boolean
@@ -64,7 +64,7 @@ export interface ReservationRecord {
   chosenByName?: string
   available: boolean
   isCompleted: boolean
-  createdAt: string // ISO string pour Firestore
+  createdAt: string
 }
 
 export interface TextStudyJsonEntry {

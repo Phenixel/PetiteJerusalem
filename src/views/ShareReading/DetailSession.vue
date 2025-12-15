@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { SessionService } from '../../services/sessionService'
+import { sessionService } from '../../services/sessionService'
 import type { Session, TextStudy, TextStudyReservation } from '../../models/models'
 import type { User } from '../../services/authService'
 import GuestForm from '../../components/GuestForm.vue'
@@ -11,7 +11,6 @@ import BatchSelectionBar from '../../components/BatchSelectionBar.vue'
 import { seoService } from '../../services/seoService'
 
 const route = useRoute()
-const sessionService = new SessionService()
 
 const session = ref<Session | null>(null)
 const textStudies = ref<TextStudy[]>([])
@@ -182,8 +181,6 @@ const reserveTextOrSection = async (textStudyId: string, section?: number) => {
     )
 
     reservations.value.push(newReservation)
-    if (session.value) {
-    }
   } catch (err) {
     console.error('Erreur lors de la réservation:', err)
     alert(err instanceof Error ? err.message : 'Erreur lors de la réservation. Veuillez réessayer.')

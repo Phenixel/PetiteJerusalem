@@ -2,13 +2,12 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { EnumTypeTextStudy } from '../../models/typeTextStudy'
-import { SessionService } from '../../services/sessionService'
+import { sessionService } from '../../services/sessionService'
 import { TextTypeService } from '../../services/textTypeService'
 import type { User } from '../../services/authService'
 import { seoService } from '../../services/seoService'
 
 const router = useRouter()
-const sessionService = new SessionService()
 
 const isLoading = ref(false)
 const message = ref('')

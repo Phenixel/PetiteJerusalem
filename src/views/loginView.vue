@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { AuthService } from '../services/authService'
+import { authService } from '../services/authService'
 import { seoService } from '../services/seoService'
 
-const authService = new AuthService()
 const router = useRouter()
 const route = useRoute()
 

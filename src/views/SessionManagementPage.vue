@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { SessionService } from '../services/sessionService'
-import { ReservationService, type ReservationForm } from '../services/reservationService'
-import { AuthService } from '../services/authService'
+import { sessionService } from '../services/sessionService'
+import { reservationService, type ReservationForm } from '../services/reservationService'
+import { authService } from '../services/authService'
 import type { Session, TextStudy } from '../models/models'
 import type { User } from '../services/authService'
 import { seoService } from '../services/seoService'
@@ -12,9 +12,6 @@ import BatchSelectionBar from '../components/BatchSelectionBar.vue'
 
 const router = useRouter()
 const route = useRoute()
-const sessionService = new SessionService()
-const reservationService = new ReservationService()
-const authService = new AuthService()
 
 const isLoading = ref(true)
 const currentUser = ref<User | null>(null)

@@ -5,11 +5,10 @@ import Navbar from './components/NavbarComponents.vue'
 import SiteFooter from './components/SiteFooter.vue'
 import ScrollToTop from './components/ScrollToTop.vue'
 import { RouterView } from 'vue-router'
-import { AuthService } from './services/authService'
+import { authService } from './services/authService'
 
 const router = useRouter()
 const route = useRoute()
-const authService = new AuthService()
 
 const isHome = computed(() => route.name === 'home')
 

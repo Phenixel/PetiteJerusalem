@@ -216,3 +216,5 @@ export class FirestoreService {
     }
   }
 }
+
+export const firestoreService = new FirestoreService()

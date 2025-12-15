@@ -253,3 +253,5 @@ export class ReservationService {
     })
   }
 }
+
+export const reservationService = new ReservationService()
