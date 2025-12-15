@@ -793,7 +793,7 @@ watch(session, (s) => {
       :count="selectedItems.size"
       :loading="isSubmittingBatch"
       :label="!currentUser ? 'Finaliser en tant qu\'invité' : 'Confirmer la réservation'"
-      :button-text="'Confirmer mes réservations'"
+      :button-text="'Confirmer'"
       :button-loading-text="'Réservation...'"
       @confirm="confirmReservations"
     />

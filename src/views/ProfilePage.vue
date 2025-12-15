@@ -99,6 +99,33 @@ const loadSessions = async () => {
   }
 }
 
+// Vérifier si une session est terminée
+const isSessionFinished = (session: Session): boolean => {
+  if (session.isEnded) return true
+  // Vérifier si la date limite est passée
+  // On compare la date limite (fin de journée) avec maintenant
+  const limit = new Date(session.dateLimit)
+  // Ajuster pour inclure toute la journée de la date limite
+  limit.setHours(23, 59, 59, 999)
+  return new Date() > limit
+}
+
+// Sessions participées filtrées
+const ongoingParticipatedSessions = computed(() =>
+  participatedSessions.value.filter((s) => !isSessionFinished(s)),
+)
+const finishedParticipatedSessions = computed(() =>
+  participatedSessions.value.filter((s) => isSessionFinished(s)),
+)
+
+// Sessions créées filtrées
+const ongoingCreatedSessions = computed(() =>
+  createdSessions.value.filter((s) => !isSessionFinished(s)),
+)
+const finishedCreatedSessions = computed(() =>
+  createdSessions.value.filter((s) => isSessionFinished(s)),
+)
+
 // Charger les textes d'étude pour les sessions
 const loadTextStudiesForSessions = async (sessions: Session[]) => {
   try {
@@ -436,6 +463,7 @@ onMounted(async () => {
               </h2>
             </div>
 
+            <!-- Messages d'état global si aucune session -->
             <div
               v-if="participatedSessions.length === 0"
               class="flex flex-col items-center justify-center p-12 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 text-center dark:bg-gray-800/40 dark:border-gray-700"
@@ -453,102 +481,162 @@ onMounted(async () => {
               </p>
             </div>
 
-            <div v-else class="grid gap-6">
-              <div
-                v-for="session in participatedSessions"
-                :key="session.id"
-                class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-6 hover:shadow-lg transition-all duration-300 dark:bg-gray-800/60 dark:border-gray-700"
-              >
-                <div
-                  class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-black/5 dark:border-white/10"
+            <div v-else>
+              <!-- Sessions en cours -->
+              <div v-if="ongoingParticipatedSessions.length > 0" class="mb-12">
+                <h3
+                  class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2 dark:text-gray-200"
                 >
-                  <div>
-                    <h3 class="text-xl font-bold text-text-primary mb-1 dark:text-gray-100">
-                      {{ session.name }}
-                    </h3>
-                    <p class="text-text-secondary text-sm dark:text-gray-400">
-                      {{ session.description }}
-                    </p>
-                  </div>
-                  <button
-                    @click="goToSession(session.id)"
-                    class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
-                  >
-                    <i class="fa-solid fa-external-link-alt text-xs"></i>
-                    Voir la session
-                  </button>
-                </div>
+                  <i class="fa-solid fa-hourglass-half text-primary"></i> En cours
+                </h3>
 
-                <div class="flex gap-2 mb-6 text-xs">
-                  <span
-                    class="px-2 py-1 bg-primary/10 text-primary rounded-md font-semibold dark:bg-primary/20"
-                    >{{ sessionService.formatTextType(session.type) }}</span
-                  >
-                  <span
-                    class="px-2 py-1 bg-gray-100 text-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-300"
-                    >Limite : {{ sessionService.formatDate(session.dateLimit) }}</span
-                  >
-                </div>
-
-                <!-- Réservations de l'utilisateur -->
-                <div
-                  class="bg-white/40 rounded-xl p-4 border border-white/40 dark:bg-gray-700/30 dark:border-gray-600/50"
-                >
-                  <h4
-                    class="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide opacity-70 dark:text-gray-300"
-                  >
-                    Mes réservations
-                  </h4>
+                <div class="grid gap-6">
                   <div
-                    v-if="getUserReservationsForSession(session).length === 0"
-                    class="text-sm text-text-secondary italic dark:text-gray-400"
+                    v-for="session in ongoingParticipatedSessions"
+                    :key="session.id"
+                    class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-6 hover:shadow-lg transition-all duration-300 dark:bg-gray-800/60 dark:border-gray-700"
                   >
-                    Aucune réservation trouvée
-                  </div>
-                  <div v-else class="space-y-3">
                     <div
-                      v-for="reservation in getUserReservationsForSession(session)"
-                      :key="reservation.id"
-                      class="flex items-center justify-between p-3 rounded-lg bg-white/60 border border-white/40 transition-all dark:bg-gray-700/50 dark:border-gray-600"
-                      :class="{
-                        'border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-900/20':
-                          reservation.isCompleted,
-                      }"
+                      class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-black/5 dark:border-white/10"
                     >
-                      <div class="flex flex-col">
-                        <span class="font-medium text-text-primary dark:text-gray-200">
-                          {{ getTextStudyName(reservation.textStudyId) }}
-                          <span
-                            v-if="reservation.section"
-                            class="text-text-secondary font-normal dark:text-gray-400"
-                          >
-                            - Chapitre {{ reservation.section }}
-                          </span>
-                        </span>
-                        <span
-                          v-if="reservation.isCompleted"
-                          class="text-xs text-green-600 font-bold mt-1 flex items-center gap-1 dark:text-green-400"
-                        >
-                          <i class="fa-solid fa-check-circle"></i> Terminé
-                        </span>
+                      <div>
+                        <h3 class="text-xl font-bold text-text-primary mb-1 dark:text-gray-100">
+                          {{ session.name }}
+                        </h3>
+                        <p class="text-text-secondary text-sm dark:text-gray-400">
+                          {{ session.description }}
+                        </p>
                       </div>
-                      <label class="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          class="w-5 h-5 rounded text-primary border-gray-300 focus:ring-primary accent-primary dark:border-gray-500 dark:bg-gray-600"
-                          :checked="reservation.isCompleted"
-                          @change="
-                            toggleReservationCompletion(
-                              session.id,
-                              reservation.id,
-                              ($event.target as HTMLInputElement).checked,
-                            )
-                          "
-                        />
-                        <span class="text-xs font-medium text-text-secondary dark:text-gray-400"
-                          >Lu</span
+                      <button
+                        @click="goToSession(session.id)"
+                        class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
+                      >
+                        <i class="fa-solid fa-external-link-alt text-xs"></i>
+                        Voir la session
+                      </button>
+                    </div>
+
+                    <div class="flex gap-2 mb-6 text-xs">
+                      <span
+                        class="px-2 py-1 bg-primary/10 text-primary rounded-md font-semibold dark:bg-primary/20"
+                        >{{ sessionService.formatTextType(session.type) }}</span
+                      >
+                      <span
+                        class="px-2 py-1 bg-gray-100 text-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-300"
+                        >Limite : {{ sessionService.formatDate(session.dateLimit) }}</span
+                      >
+                    </div>
+
+                    <!-- Réservations de l'utilisateur -->
+                    <div
+                      class="bg-white/40 rounded-xl p-4 border border-white/40 dark:bg-gray-700/30 dark:border-gray-600/50"
+                    >
+                      <h4
+                        class="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide opacity-70 dark:text-gray-300"
+                      >
+                        Mes réservations
+                      </h4>
+                      <div
+                        v-if="getUserReservationsForSession(session).length === 0"
+                        class="text-sm text-text-secondary italic dark:text-gray-400"
+                      >
+                        Aucune réservation trouvée
+                      </div>
+                      <div v-else class="space-y-3">
+                        <div
+                          v-for="reservation in getUserReservationsForSession(session)"
+                          :key="reservation.id"
+                          class="flex items-center justify-between p-3 rounded-lg bg-white/60 border border-white/40 transition-all dark:bg-gray-700/50 dark:border-gray-600"
+                          :class="{
+                            'border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-900/20':
+                              reservation.isCompleted,
+                          }"
                         >
-                      </label>
+                          <div class="flex flex-col">
+                            <span class="font-medium text-text-primary dark:text-gray-200">
+                              {{ getTextStudyName(reservation.textStudyId) }}
+                              <span
+                                v-if="reservation.section"
+                                class="text-text-secondary font-normal dark:text-gray-400"
+                              >
+                                - Chapitre {{ reservation.section }}
+                              </span>
+                            </span>
+                            <span
+                              v-if="reservation.isCompleted"
+                              class="text-xs text-green-600 font-bold mt-1 flex items-center gap-1 dark:text-green-400"
+                            >
+                              <i class="fa-solid fa-check-circle"></i> Terminé
+                            </span>
+                          </div>
+                          <label class="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              class="w-5 h-5 rounded text-primary border-gray-300 focus:ring-primary accent-primary dark:border-gray-500 dark:bg-gray-600"
+                              :checked="reservation.isCompleted"
+                              @change="
+                                toggleReservationCompletion(
+                                  session.id,
+                                  reservation.id,
+                                  ($event.target as HTMLInputElement).checked,
+                                )
+                              "
+                            />
+                            <span class="text-xs font-medium text-text-secondary dark:text-gray-400"
+                              >Lu</span
+                            >
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sessions terminées -->
+              <div v-if="finishedParticipatedSessions.length > 0" class="opacity-80">
+                <h3
+                  class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2 dark:text-gray-200"
+                >
+                  <i class="fa-solid fa-check-double text-green-600 dark:text-green-400"></i>
+                  Terminées
+                </h3>
+
+                <div class="grid gap-6">
+                  <!-- On réutilise la même structure mais avec un style légèrement différent pour indiquer que c'est terminé -->
+                  <div
+                    v-for="session in finishedParticipatedSessions"
+                    :key="session.id"
+                    class="bg-gray-50/60 backdrop-blur-sm rounded-2xl border border-gray-200 p-6 opacity-90 hover:opacity-100 transition-all duration-300 dark:bg-gray-800/40 dark:border-gray-700"
+                  >
+                    <div
+                      class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-black/5 dark:border-white/10"
+                    >
+                      <div>
+                        <h3 class="text-xl font-bold text-text-primary mb-1 dark:text-gray-300">
+                          {{ session.name }}
+                        </h3>
+                        <div class="flex items-center gap-2">
+                          <span
+                            class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-200 text-gray-700 text-xs font-bold uppercase rounded dark:bg-gray-700 dark:text-gray-300"
+                          >
+                            <i class="fa-solid fa-flag-checkered"></i> Terminée
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        @click="goToSession(session.id)"
+                        class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
+                      >
+                        <i class="fa-solid fa-eye text-xs"></i>
+                        Consulter
+                      </button>
+                    </div>
+
+                    <!-- Réservations (lecture seule ou simplifiée) -->
+                    <div class="text-sm text-text-secondary dark:text-gray-400 mb-2">
+                      Vous aviez {{ getUserReservationsForSession(session).length }} réservations
+                      dans cette session.
                     </div>
                   </div>
                 </div>
@@ -586,66 +674,123 @@ onMounted(async () => {
               </button>
             </div>
 
-            <div v-else class="grid gap-6">
-              <div
-                v-for="session in createdSessions"
-                :key="session.id"
-                class="relative bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-6 hover:shadow-lg transition-all duration-300 dark:bg-gray-800/60 dark:border-gray-700 dark:hover:bg-gray-800/80"
-              >
-                <div class="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 class="text-xl font-bold text-text-primary mb-1 dark:text-gray-100">
-                      {{ session.name }}
-                    </h3>
+            <div v-else>
+              <!-- En cours -->
+              <div v-if="ongoingCreatedSessions.length > 0" class="mb-12">
+                <h3
+                  class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2 dark:text-gray-200"
+                >
+                  <i class="fa-solid fa-play-circle text-primary"></i> En cours
+                </h3>
+
+                <div class="grid gap-6">
+                  <div
+                    v-for="session in ongoingCreatedSessions"
+                    :key="session.id"
+                    class="relative bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-6 hover:shadow-lg transition-all duration-300 dark:bg-gray-800/60 dark:border-gray-700 dark:hover:bg-gray-800/80"
+                  >
+                    <div class="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 class="text-xl font-bold text-text-primary mb-1 dark:text-gray-100">
+                          {{ session.name }}
+                        </h3>
+                      </div>
+                      <div class="flex gap-2">
+                        <span
+                          class="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs font-semibold dark:bg-primary/20"
+                          >{{ sessionService.formatTextType(session.type) }}</span
+                        >
+                      </div>
+                    </div>
+
+                    <p class="text-text-secondary text-sm mb-6 dark:text-gray-400">
+                      {{ session.description }}
+                    </p>
+
                     <div
-                      v-if="session.isEnded"
-                      class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold uppercase rounded mb-2 dark:bg-gray-700 dark:text-gray-300"
+                      class="flex flex-wrap items-center gap-4 pt-4 border-t border-black/5 dark:border-white/10"
                     >
-                      <i class="fa-solid fa-flag-checkered"></i> Terminée
+                      <button
+                        v-if="sessionService.canEditSession(session)"
+                        @click="openEditModal(session)"
+                        class="px-3 py-1.5 bg-white/50 hover:bg-white border border-gray-200 rounded-lg text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-2 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-300 dark:hover:text-primary dark:hover:bg-gray-700"
+                      >
+                        <i class="fa-solid fa-edit"></i> Modifier
+                      </button>
+                      <button
+                        v-if="sessionService.canManageSession(session, currentUser)"
+                        @click="openSessionManagement(session)"
+                        class="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg text-sm font-medium text-primary transition-colors flex items-center gap-2 dark:bg-primary/20"
+                      >
+                        <i class="fa-solid fa-cogs"></i> Gérer
+                      </button>
+                      <button
+                        @click="openShareModal(session)"
+                        class="px-3 py-1.5 bg-white/50 hover:bg-white border border-gray-200 rounded-lg text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-2 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-300 dark:hover:text-primary dark:hover:bg-gray-700"
+                      >
+                        <i class="fa-solid fa-share"></i> Partager
+                      </button>
+                      <button
+                        v-if="sessionService.canEndSession(session)"
+                        @click="endSession(session)"
+                        class="px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg text-sm font-medium text-red-600 transition-colors flex items-center gap-2 ml-auto dark:bg-red-900/10 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/30"
+                      >
+                        <i class="fa-solid fa-flag-checkered"></i> Fin
+                      </button>
                     </div>
                   </div>
-                  <div class="flex gap-2">
-                    <span
-                      class="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs font-semibold dark:bg-primary/20"
-                      >{{ sessionService.formatTextType(session.type) }}</span
-                    >
-                  </div>
                 </div>
+              </div>
 
-                <p class="text-text-secondary text-sm mb-6 dark:text-gray-400">
-                  {{ session.description }}
-                </p>
-
-                <div
-                  class="flex flex-wrap items-center gap-4 pt-4 border-t border-black/5 dark:border-white/10"
+              <!-- Terminées -->
+              <div v-if="finishedCreatedSessions.length > 0" class="opacity-80">
+                <h3
+                  class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2 dark:text-gray-200"
                 >
-                  <button
-                    v-if="sessionService.canEditSession(session)"
-                    @click="openEditModal(session)"
-                    class="px-3 py-1.5 bg-white/50 hover:bg-white border border-gray-200 rounded-lg text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-2 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-300 dark:hover:text-primary dark:hover:bg-gray-700"
+                  <i class="fa-solid fa-stop-circle text-gray-500"></i> Terminées
+                </h3>
+
+                <div class="grid gap-6">
+                  <div
+                    v-for="session in finishedCreatedSessions"
+                    :key="session.id"
+                    class="relative bg-gray-50/60 backdrop-blur-sm rounded-2xl border border-gray-200 p-6 transition-all duration-300 dark:bg-gray-800/40 dark:border-gray-700"
                   >
-                    <i class="fa-solid fa-edit"></i> Modifier
-                  </button>
-                  <button
-                    v-if="sessionService.canManageSession(session, currentUser)"
-                    @click="openSessionManagement(session)"
-                    class="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg text-sm font-medium text-primary transition-colors flex items-center gap-2 dark:bg-primary/20"
-                  >
-                    <i class="fa-solid fa-cogs"></i> Gérer
-                  </button>
-                  <button
-                    @click="openShareModal(session)"
-                    class="px-3 py-1.5 bg-white/50 hover:bg-white border border-gray-200 rounded-lg text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-2 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-300 dark:hover:text-primary dark:hover:bg-gray-700"
-                  >
-                    <i class="fa-solid fa-share"></i> Partager
-                  </button>
-                  <button
-                    v-if="sessionService.canEndSession(session)"
-                    @click="endSession(session)"
-                    class="px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg text-sm font-medium text-red-600 transition-colors flex items-center gap-2 ml-auto dark:bg-red-900/10 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/30"
-                  >
-                    <i class="fa-solid fa-flag-checkered"></i> Fin
-                  </button>
+                    <div class="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 class="text-xl font-bold text-text-primary mb-1 dark:text-gray-300">
+                          {{ session.name }}
+                        </h3>
+                        <div
+                          class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-200 text-gray-700 text-xs font-bold uppercase rounded mb-2 dark:bg-gray-700 dark:text-gray-300"
+                        >
+                          <i class="fa-solid fa-flag-checkered"></i> Terminée
+                        </div>
+                      </div>
+                      <div class="flex gap-2">
+                        <span
+                          class="px-2 py-1 bg-gray-200 text-gray-600 rounded-md text-xs font-semibold dark:bg-gray-700 dark:text-gray-400"
+                          >{{ sessionService.formatTextType(session.type) }}</span
+                        >
+                      </div>
+                    </div>
+
+                    <p class="text-text-secondary text-sm mb-6 dark:text-gray-500">
+                      {{ session.description }}
+                    </p>
+
+                    <div
+                      class="flex flex-wrap items-center gap-4 pt-4 border-t border-black/5 dark:border-white/10"
+                    >
+                      <button
+                        v-if="sessionService.canManageSession(session, currentUser)"
+                        @click="openSessionManagement(session)"
+                        class="px-3 py-1.5 bg-white/50 hover:bg-white border border-gray-200 rounded-lg text-sm font-medium text-text-secondary transition-colors flex items-center gap-2 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        <i class="fa-solid fa-eye"></i> Consulter
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

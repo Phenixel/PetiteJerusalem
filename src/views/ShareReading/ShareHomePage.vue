@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { SessionService } from '../../services/sessionService'
 import type { Session } from '../../models/models'
@@ -32,6 +32,21 @@ const loadSessions = async () => {
     isLoading.value = false
   }
 }
+
+// Vérifier si une session est terminée
+const isSessionFinished = (session: Session): boolean => {
+  if (session.isEnded) return true
+  // Vérifier si la date limite est passée
+  // On compare la date limite (fin de journée) avec maintenant
+  const limit = new Date(session.dateLimit)
+  // Ajuster pour inclure toute la journée de la date limite
+  limit.setHours(23, 59, 59, 999)
+  return new Date() > limit
+}
+
+// Sessions filtrées
+const ongoingSessions = computed(() => sessions.value.filter((s) => !isSessionFinished(s)))
+const finishedSessions = computed(() => sessions.value.filter((s) => isSessionFinished(s)))
 
 // Charger les sessions au montage du composant
 onMounted(() => {
@@ -120,17 +135,64 @@ const handleSessionClick = (session: Session) => {
       </div>
 
       <!-- Liste des sessions -->
-      <div
-        v-else-if="sessions.length > 0"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-[fadeIn_0.5s_ease]"
-      >
-        <SessionCard
-          v-for="session in sessions"
-          :key="session.id"
-          :session="session"
-          @click="handleSessionClick"
-          class="h-full"
-        />
+      <div v-else-if="sessions.length > 0">
+        <!-- Sessions en cours -->
+        <div class="mb-16 animate-[fadeIn_0.5s_ease]">
+          <h3
+            class="text-2xl font-bold text-text-primary mb-6 flex items-center gap-3 dark:text-gray-100"
+          >
+            <i class="fa-solid fa-fire text-orange-500"></i>
+            Sessions en cours
+            <span
+              class="text-sm font-normal text-text-secondary bg-gray-100 px-3 py-1 rounded-full dark:bg-gray-800 dark:text-gray-400"
+              >{{ ongoingSessions.length }}</span
+            >
+          </h3>
+
+          <div
+            v-if="ongoingSessions.length > 0"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            <SessionCard
+              v-for="session in ongoingSessions"
+              :key="session.id"
+              :session="session"
+              @click="handleSessionClick"
+              class="h-full"
+            />
+          </div>
+          <div
+            v-else
+            class="flex flex-col items-center justify-center py-12 bg-white/40 backdrop-blur-sm rounded-xl border border-white/60 dark:bg-gray-800/40 dark:border-gray-700"
+          >
+            <p class="text-text-secondary text-lg dark:text-gray-400">
+              Aucune session en cours pour le moment.
+            </p>
+          </div>
+        </div>
+
+        <!-- Sessions terminées -->
+        <div v-if="finishedSessions.length > 0" class="animate-[fadeIn_0.5s_ease] opacity-80">
+          <div class="flex items-center gap-4 mb-6">
+            <h3
+              class="text-2xl font-bold text-text-primary flex items-center gap-3 dark:text-gray-100"
+            >
+              <i class="fa-solid fa-history text-gray-500"></i>
+              Archives
+            </h3>
+            <div class="h-px flex-grow bg-gradient-to-r from-gray-200 to-transparent"></div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <SessionCard
+              v-for="session in finishedSessions"
+              :key="session.id"
+              :session="session"
+              @click="handleSessionClick"
+              class="h-full grayscale-[0.3] hover:grayscale-0 transition-all duration-300"
+            />
+          </div>
+        </div>
       </div>
 
       <!-- Aucune session -->
