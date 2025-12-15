@@ -68,3 +68,11 @@ a {
   text-decoration: none;
   transition: all 0.3s ease;
 }
+
+button,
+[type='button'],
+[type='reset'],
+[type='submit'],
+[role='button'] {
+  cursor: pointer;
+}
