@@ -66,6 +66,21 @@ const getTextDisplayStatus = (textStudyId: string, text: TextStudy) => {
   // We need to pass text object as well
   return sessionService.getTextDisplayStatus(textStudyId, text, props.session)
 }
+
+const handleCardClick = (text: TextStudy) => {
+  if (text.totalSections === 1) {
+    // Pour les textes à un seul chapitre, toggle la réservation
+    const isDisabled =
+      props.isReserving === `${text.id}-1` ||
+      (isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1))
+    if (!isDisabled) {
+      emit('item-click', text.id, 1)
+    }
+  } else if (!isTextExpanded(text.id)) {
+    // Pour les textes à plusieurs chapitres, ouvrir si fermé
+    toggleTextExpansion(text.id)
+  }
+}
 </script>
 
 <template>
@@ -96,6 +111,17 @@ const getTextDisplayStatus = (textStudyId: string, text: TextStudy) => {
           <!-- En-tête du texte -->
           <div
             class="p-5 border-b border-black/5 bg-white/40 rounded-t-2xl dark:bg-gray-800/40 dark:border-white/5"
+            :class="{
+              'cursor-pointer hover:bg-white/60 dark:hover:bg-gray-700/40':
+                (text.totalSections > 1 && !isTextExpanded(text.id)) ||
+                (text.totalSections === 1 &&
+                  !(isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1))),
+              'cursor-not-allowed opacity-60':
+                text.totalSections === 1 &&
+                isReserved(text.id, 1).isReserved &&
+                !canCancelReservation(text.id, 1),
+            }"
+            @click="handleCardClick(text)"
           >
             <div class="flex justify-between items-start gap-3 mb-2">
               <div class="flex-1 min-w-0">
@@ -109,6 +135,7 @@ const getTextDisplayStatus = (textStudyId: string, text: TextStudy) => {
                 <label
                   v-if="text.totalSections === 1"
                   class="inline-flex items-center gap-2 cursor-pointer mt-1"
+                  @click.stop
                   :class="{
                     'opacity-60 cursor-not-allowed':
                       isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1),
@@ -137,12 +164,13 @@ const getTextDisplayStatus = (textStudyId: string, text: TextStudy) => {
                   target="_blank"
                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-text-secondary hover:text-primary hover:border-primary transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:text-primary"
                   title="Voir le texte sur Sefaria"
+                  @click.stop
                 >
                   <i class="fa-solid fa-book-open text-xs"></i>
                 </a>
                 <button
                   v-if="text.totalSections > 1"
-                  @click="toggleTextExpansion(text.id)"
+                  @click.stop="toggleTextExpansion(text.id)"
                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-text-secondary hover:bg-gray-50 transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
                   :class="{
                     'bg-gray-100 ring-2 ring-gray-200 dark:bg-gray-600 dark:ring-gray-500':
