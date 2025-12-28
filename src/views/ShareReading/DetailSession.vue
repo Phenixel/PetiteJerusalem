@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { sessionService } from '../../services/sessionService'
 import type { Session, TextStudy, TextStudyReservation } from '../../models/models'
 import type { User } from '../../services/authService'
@@ -325,6 +325,19 @@ const openShareModal = () => {
   showShareModal.value = true
 }
 
+const router = useRouter()
+
+const isOwner = computed(() => {
+  if (!currentUser.value || !session.value) return false
+  return currentUser.value.id === session.value.personId
+})
+
+const goToManagement = () => {
+  if (session.value) {
+    router.push(`/session-management/${session.value.id}`)
+  }
+}
+
 onMounted(async () => {
   currentUser.value = await sessionService.getCurrentUser()
 
@@ -379,7 +392,12 @@ watch(session, (s) => {
 
     <!-- Contenu de la session -->
     <div v-else-if="session" class="animate-[fadeIn_0.5s_ease]">
-      <SessionHeader :session="session" @share="openShareModal" />
+      <SessionHeader
+        :session="session"
+        :is-owner="isOwner"
+        @share="openShareModal"
+        @manage="goToManagement"
+      />
 
       <!-- Barre de progression -->
       <SessionProgressBar
