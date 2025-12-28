@@ -48,7 +48,6 @@ const generateQRCode = async () => {
     qrContainer.innerHTML = ''
 
     try {
-      // Charger dynamiquement la bibliothèque QRCode
       await new Promise((resolve, reject) => {
         if (window.QRCode) {
           resolve(true)
@@ -150,33 +149,33 @@ watch(
         <div class="grid grid-cols-2 gap-4 mb-8">
           <button
             @click="shareToWhatsApp"
-            class="flex flex-col items-center justify-center p-4 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition-colors gap-2 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
+            class="flex flex-col items-center justify-center p-4 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition-colors gap-2 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 cursor-pointer"
           >
-            <span class="text-2xl">📱</span>
+            <i class="fa-brands fa-whatsapp text-3xl"></i>
             <span class="font-medium">WhatsApp</span>
           </button>
 
           <button
             @click="shareToSMS"
-            class="flex flex-col items-center justify-center p-4 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors gap-2 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+            class="flex flex-col items-center justify-center p-4 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors gap-2 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 cursor-pointer"
           >
-            <span class="text-2xl">💬</span>
+            <i class="fa-solid fa-comment-sms text-3xl"></i>
             <span class="font-medium">SMS</span>
           </button>
 
           <button
             @click="shareToFacebook"
-            class="flex flex-col items-center justify-center p-4 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors gap-2 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
+            class="flex flex-col items-center justify-center p-4 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors gap-2 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 cursor-pointer"
           >
-            <span class="text-2xl">📘</span>
+            <i class="fa-brands fa-facebook-f text-3xl"></i>
             <span class="font-medium">Facebook</span>
           </button>
 
           <button
             @click="copyToClipboard"
-            class="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors gap-2 dark:bg-gray-700/50 dark:text-gray-300 dark:hover:bg-gray-700"
+            class="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors gap-2 dark:bg-gray-700/50 dark:text-gray-300 dark:hover:bg-gray-700 cursor-pointer"
           >
-            <span class="text-2xl">📋</span>
+            <i class="fa-regular fa-copy text-3xl"></i>
             <span class="font-medium">Copier le lien</span>
           </button>
         </div>
