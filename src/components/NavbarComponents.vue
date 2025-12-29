@@ -139,71 +139,123 @@ function goToLogin() {
 
   <!-- Menu mobile et overlay -->
   <Teleport to="body">
-    <!-- Overlay -->
-    <div
-      v-if="isMobileMenuOpen"
-      @click="closeMobileMenu"
-      class="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998]"
-    ></div>
+    <Transition name="fade">
+      <div
+        v-if="isMobileMenuOpen"
+        @click="closeMobileMenu"
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998]"
+      ></div>
+    </Transition>
 
-    <!-- Menu mobile -->
-    <nav
-      v-if="isMobileMenuOpen"
-      class="fixed top-0 left-0 w-80 h-full bg-bg-primary/95 backdrop-blur-xl border-r border-white/30 p-8 shadow-2xl z-[9999] overflow-y-auto animate-[slideInLeft_0.4s_ease-out] dark:bg-gray-900/95 dark:border-gray-700"
-    >
-      <div class="flex flex-col h-full">
-        <!-- Navigation mobile -->
-        <div class="flex flex-col gap-4 mb-8 mt-12">
-          <RouterLink
-            to="/"
-            @click="closeMobileMenu"
-            class="text-text-primary font-semibold text-lg p-4 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 hover:text-primary hover:translate-x-1 transition-all dark:text-gray-100 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:bg-gray-700"
-            exact-active-class="bg-primary/10 border-primary text-primary dark:bg-primary/20"
-          >
-            Accueil</RouterLink
-          >
-          <RouterLink
-            to="/share-reading"
-            @click="closeMobileMenu"
-            class="text-text-primary font-semibold text-lg p-4 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 hover:text-primary hover:translate-x-1 transition-all dark:text-gray-100 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:bg-gray-700"
-            exact-active-class="bg-primary/10 border-primary text-primary dark:bg-primary/20"
-          >
-            Partage de lectures
-          </RouterLink>
-        </div>
-
-        <!-- Section d'authentification mobile -->
+    <Transition name="slide-menu">
+      <nav
+        v-if="isMobileMenuOpen"
+        class="fixed top-0 left-0 w-[85vw] max-w-[320px] h-full z-[9999] overflow-y-auto"
+      >
         <div
-          class="mt-auto pt-8 border-t border-white/20 bg-gradient-to-br from-primary to-secondary rounded-xl p-6 text-white"
-        >
-          <button
-            v-if="!username"
-            @click="goToLogin"
-            class="w-full py-3 px-6 bg-white/20 border border-white/30 rounded-xl font-semibold hover:translate-y-[-2px] hover:shadow-lg transition-all"
-          >
-            Se connecter
-          </button>
-          <div v-else>
+          class="absolute inset-0 bg-gradient-to-b from-white/98 via-white/95 to-gray-100/98 backdrop-blur-2xl dark:from-slate-900/98 dark:via-slate-900/95 dark:to-slate-800/98"
+        ></div>
+        <div
+          class="absolute top-0 right-0 w-[1px] h-full bg-gradient-to-b from-gray-300/50 via-gray-200/30 to-transparent dark:from-white/20 dark:via-white/10 dark:to-transparent"
+        ></div>
+
+        <div class="relative flex flex-col h-full p-6">
+          <div class="mb-8 pt-2">
+            <h2
+              class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+            >
+              Petite Jérusalem
+            </h2>
+            <div
+              class="w-12 h-1 bg-gradient-to-r from-primary to-secondary rounded-full mt-2"
+            ></div>
+          </div>
+          <div class="flex flex-col gap-3">
             <RouterLink
-              to="/profile"
+              to="/"
               @click="closeMobileMenu"
-              class="flex items-center justify-center gap-2 w-full py-3 px-6 mb-4 bg-white/20 border border-white/30 rounded-xl font-semibold hover:bg-white/30 transition-all text-white"
+              class="text-gray-700 font-medium text-base p-4 rounded-2xl bg-black/5 border border-black/10 hover:bg-black/10 hover:border-black/20 hover:text-gray-900 transition-all duration-300 dark:text-white/80 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20 dark:hover:text-white"
+              exact-active-class="!bg-primary/20 !border-primary/40 !text-primary dark:!text-white"
             >
-              <i class="fa-solid fa-user"></i>
-              <span>{{ username }}</span>
+              Accueil
             </RouterLink>
-            <button
-              @click="logout"
-              class="flex items-center justify-center gap-2 w-full py-3 px-6 bg-white/10 border border-white/20 rounded-xl font-semibold hover:bg-white/20 transition-all text-white"
-              aria-label="Se déconnecter"
-              title="Se déconnecter"
+
+            <RouterLink
+              to="/share-reading"
+              @click="closeMobileMenu"
+              class="text-gray-700 font-medium text-base p-4 rounded-2xl bg-black/5 border border-black/10 hover:bg-black/10 hover:border-black/20 hover:text-gray-900 transition-all duration-300 dark:text-white/80 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20 dark:hover:text-white"
+              exact-active-class="!bg-primary/20 !border-primary/40 !text-primary dark:!text-white"
             >
-              <i class="fa-solid fa-right-from-bracket"></i>
-              <span>Déconnexion</span>
-            </button>
+              Partage de lectures
+            </RouterLink>
+          </div>
+          <div class="mt-auto pt-6">
+            <div
+              class="h-[1px] bg-gradient-to-r from-transparent via-black/10 to-transparent mb-6 dark:via-white/20"
+            ></div>
+
+            <div class="space-y-3">
+              <button
+                v-if="!username"
+                @click="goToLogin"
+                class="flex items-center justify-center gap-2 w-full py-3.5 px-6 bg-black/5 border border-black/10 rounded-xl font-medium text-gray-700 hover:bg-black/10 hover:text-gray-900 transition-all duration-200 cursor-pointer dark:bg-white/10 dark:border-white/20 dark:text-white/90 dark:hover:bg-white/15 dark:hover:text-white"
+              >
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Se connecter
+              </button>
+              <template v-else>
+                <RouterLink
+                  to="/profile"
+                  @click="closeMobileMenu"
+                  class="flex items-center gap-3 w-full py-3.5 px-4 bg-black/5 border border-black/10 rounded-xl font-medium hover:bg-black/10 transition-all duration-200 text-gray-700 hover:text-gray-900 dark:bg-white/10 dark:border-white/20 dark:text-white/90 dark:hover:bg-white/15 dark:hover:text-white"
+                >
+                  <i class="fa-solid fa-user"></i>
+                  <span class="truncate">{{ username }}</span>
+                </RouterLink>
+                <button
+                  @click="logout"
+                  class="flex items-center justify-start gap-3 w-full py-3.5 px-4 bg-black/[0.03] border border-black/5 rounded-xl font-medium hover:bg-black/10 transition-all duration-200 text-gray-500 hover:text-gray-700 cursor-pointer dark:bg-white/5 dark:border-white/10 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white"
+                  aria-label="Se déconnecter"
+                  title="Se déconnecter"
+                >
+                  <i class="fa-solid fa-right-from-bracket"></i>
+                  Déconnexion
+                </button>
+              </template>
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </Transition>
   </Teleport>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-menu-enter-active {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-menu-leave-active {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-menu-enter-from,
+.slide-menu-leave-to {
+  transform: translateX(-100%);
+}
+
+.slide-menu-enter-to,
+.slide-menu-leave-from {
+  transform: translateX(0);
+}
+</style>

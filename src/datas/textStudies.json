@@ -2625,11 +2625,5 @@
       "type": "Tanakh"
     }
   ],
-  "types": [
-    "Talmud Bavli",
-    "Mishna",
-    "Tehilim",
-    "Parasha Devarim",
-    "Tanakh"
-  ]
+  "types": ["Talmud Bavli", "Mishna", "Tehilim", "Parasha Devarim", "Tanakh"]
 }

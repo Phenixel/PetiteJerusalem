@@ -9,7 +9,6 @@ import { RouterView } from 'vue-router'
 const route = useRoute()
 
 const isHome = computed(() => route.name === 'home')
-
 </script>
 
 <template>

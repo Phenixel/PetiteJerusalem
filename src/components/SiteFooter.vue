@@ -18,7 +18,10 @@
         </a>
       </div>
 
-      <nav class="flex gap-4 items-center justify-center" aria-label="Liens du pied de page">
+      <nav
+        class="flex flex-col md:flex-row gap-2 md:gap-4 items-center justify-center"
+        aria-label="Liens du pied de page"
+      >
         <a
           class="hover:text-primary transition-colors hover:drop-shadow-lg"
           href="https://phenixel.notion.site/petite-jerusalem-a-propos"
@@ -27,7 +30,7 @@
         >
           À propos
         </a>
-        <span class="opacity-60" aria-hidden="true">•</span>
+        <span class="opacity-60 hidden md:inline" aria-hidden="true">•</span>
         <a
           class="hover:text-primary transition-colors hover:drop-shadow-lg"
           href="https://phenixel.notion.site/petite-jerusalem-mentions-legales"
@@ -36,7 +39,7 @@
         >
           Mentions légales
         </a>
-        <span class="opacity-60" aria-hidden="true">•</span>
+        <span class="opacity-60 hidden md:inline" aria-hidden="true">•</span>
         <a
           class="hover:text-primary transition-colors hover:drop-shadow-lg"
           href="https://phenixel.notion.site/26b35db90d4d809aada8e077937652d4?pvs=105"
