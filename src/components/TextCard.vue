@@ -1,78 +1,78 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { TextStudy, TextStudyReservation } from '../models/models'
+import { computed } from "vue";
+import type { TextStudy, TextStudyReservation } from "../models/models";
 
 interface Props {
-  text: TextStudy
-  reservations: TextStudyReservation[]
-  isExpanded: boolean
-  isReserving: string | null
-  currentUser: { id: string; name: string; email: string } | null
-  reservationForm: { name: string; email: string }
+  text: TextStudy;
+  reservations: TextStudyReservation[];
+  isExpanded: boolean;
+  isReserving: string | null;
+  currentUser: { id: string; name: string; email: string } | null;
+  reservationForm: { name: string; email: string };
 }
 
 interface Emits {
-  (e: 'toggle-expansion', textId: string): void
-  (e: 'reserve-text', textStudyId: string, section?: number): void
-  (e: 'cancel-reservation', textStudyId: string, section?: number): void
-  (e: 'reserve-all-chapters', textStudyId: string): void
-  (e: 'cancel-all-reservations', textStudyId: string): void
+  (e: "toggle-expansion", textId: string): void;
+  (e: "reserve-text", textStudyId: string, section?: number): void;
+  (e: "cancel-reservation", textStudyId: string, section?: number): void;
+  (e: "reserve-all-chapters", textStudyId: string): void;
+  (e: "cancel-all-reservations", textStudyId: string): void;
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 
 const textDisplayStatus = computed(() => {
-  const textReservations = props.reservations.filter((r) => r.textStudyId === props.text.id)
-  const chapterReservations = textReservations.filter((r) => r.section !== undefined)
+  const textReservations = props.reservations.filter((r) => r.textStudyId === props.text.id);
+  const chapterReservations = textReservations.filter((r) => r.section !== undefined);
 
   if (chapterReservations.length === 0) {
-    return { status: 'available', reservedBy: null }
+    return { status: "available", reservedBy: null };
   }
 
   if (chapterReservations.length === props.text.totalSections) {
-    const firstReservation = chapterReservations[0]
+    const firstReservation = chapterReservations[0];
     const allSamePerson = chapterReservations.every(
       (r) => r.chosenByName === firstReservation.chosenByName,
-    )
+    );
 
     if (allSamePerson) {
-      return { status: 'fully_reserved', reservedBy: firstReservation.chosenByName }
+      return { status: "fully_reserved", reservedBy: firstReservation.chosenByName };
     }
   }
 
   if (chapterReservations.length > 0 && chapterReservations.length < props.text.totalSections) {
-    return { status: 'partially_reserved', reservedBy: null }
+    return { status: "partially_reserved", reservedBy: null };
   }
 
   if (chapterReservations.length === props.text.totalSections) {
-    const uniqueNames = [...new Set(chapterReservations.map((r) => r.chosenByName))]
-    return { status: 'fully_reserved', reservedBy: uniqueNames.join(', ') }
+    const uniqueNames = [...new Set(chapterReservations.map((r) => r.chosenByName))];
+    return { status: "fully_reserved", reservedBy: uniqueNames.join(", ") };
   }
 
-  return { status: 'available', reservedBy: null }
-})
+  return { status: "available", reservedBy: null };
+});
 
-const isTextFullyReserved = computed(() => textDisplayStatus.value.status === 'fully_reserved')
+const isTextFullyReserved = computed(() => textDisplayStatus.value.status === "fully_reserved");
 
 const isReserved = (section?: number) => {
   const reservation = props.reservations.find(
     (r) => r.textStudyId === props.text.id && r.section === section,
-  )
+  );
 
   if (reservation) {
     return {
       isReserved: true,
       reservedBy: reservation.chosenByName || reservation.chosenById || reservation.chosenByGuestId,
-    }
+    };
   }
 
-  return { isReserved: false }
-}
+  return { isReserved: false };
+};
 
 const generateChapters = (totalSections: number) => {
-  return Array.from({ length: totalSections }, (_, i) => i + 1)
-}
+  return Array.from({ length: totalSections }, (_, i) => i + 1);
+};
 </script>
 
 <template>
@@ -96,7 +96,7 @@ const generateChapters = (totalSections: number) => {
           class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/5 transition-colors text-xs text-text-secondary dark:text-gray-300 dark:hover:bg-gray-700"
           :class="{ 'rotate-180 bg-black/5 dark:bg-gray-700': isExpanded }"
         >
-          {{ isExpanded ? '▼' : '▶' }}
+          {{ isExpanded ? "▼" : "▶" }}
         </button>
       </div>
     </div>
@@ -190,7 +190,7 @@ const generateChapters = (totalSections: number) => {
               !isTextFullyReserved && textDisplayStatus.status !== 'available',
           }"
         >
-          {{ isTextFullyReserved ? 'Annuler la réservation' : 'Réserver le texte complet' }}
+          {{ isTextFullyReserved ? "Annuler la réservation" : "Réserver le texte complet" }}
         </button>
       </div>
     </div>

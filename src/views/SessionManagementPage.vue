@@ -1,148 +1,148 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { sessionService } from '../services/sessionService'
-import { reservationService, type ReservationForm } from '../services/reservationService'
-import { authService } from '../services/authService'
-import type { Session, TextStudy } from '../models/models'
-import type { User } from '../services/authService'
-import { seoService } from '../services/seoService'
+import { ref, onMounted, computed } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { sessionService } from "../services/sessionService";
+import { reservationService, type ReservationForm } from "../services/reservationService";
+import { authService } from "../services/authService";
+import type { Session, TextStudy } from "../models/models";
+import type { User } from "../services/authService";
+import { seoService } from "../services/seoService";
 
-import BatchSelectionBar from '../components/BatchSelectionBar.vue'
+import BatchSelectionBar from "../components/BatchSelectionBar.vue";
 
-const router = useRouter()
-const route = useRoute()
+const router = useRouter();
+const route = useRoute();
 
-const isLoading = ref(true)
-const currentUser = ref<User | null>(null)
-const session = ref<Session | null>(null)
-const textStudies = ref<TextStudy[]>([])
-const searchTerm = ref('')
-const selectedBook = ref<string>('')
-const showGuestForm = ref(false)
-const selectedTextStudy = ref<TextStudy | null>(null)
-const selectedSection = ref<number | undefined>(undefined)
+const isLoading = ref(true);
+const currentUser = ref<User | null>(null);
+const session = ref<Session | null>(null);
+const textStudies = ref<TextStudy[]>([]);
+const searchTerm = ref("");
+const selectedBook = ref<string>("");
+const showGuestForm = ref(false);
+const selectedTextStudy = ref<TextStudy | null>(null);
+const selectedSection = ref<number | undefined>(undefined);
 
-const selectedItems = ref<Set<string>>(new Set())
-const isSubmittingBatch = ref(false)
+const selectedItems = ref<Set<string>>(new Set());
+const isSubmittingBatch = ref(false);
 
 const guestForm = ref<ReservationForm>({
-  name: '',
-  email: '',
-})
+  name: "",
+  email: "",
+});
 
 const loadData = async () => {
   try {
-    isLoading.value = true
+    isLoading.value = true;
 
-    currentUser.value = await authService.getCurrentUser()
+    currentUser.value = await authService.getCurrentUser();
     if (!currentUser.value) {
-      router.push('/')
-      return
+      router.push("/");
+      return;
     }
 
-    const sessionId = route.params.id as string
-    session.value = await sessionService.getSessionById(sessionId)
+    const sessionId = route.params.id as string;
+    session.value = await sessionService.getSessionById(sessionId);
 
     if (!session.value) {
-      router.push('/profile')
-      return
+      router.push("/profile");
+      return;
     }
 
     if (!sessionService.canManageSession(session.value, currentUser.value)) {
-      router.push('/profile')
-      return
+      router.push("/profile");
+      return;
     }
 
-    textStudies.value = await sessionService.getTextStudiesByType(session.value.type)
+    textStudies.value = await sessionService.getTextStudiesByType(session.value.type);
 
-    const url = window.location.origin + `/session-management/${sessionId}`
+    const url = window.location.origin + `/session-management/${sessionId}`;
     seoService.setMeta({
       title: `Gestion de session - ${session.value.name} | Petite Jerusalem`,
       description: `Gérez les réservations et le suivi de la session "${session.value.name}".`,
       canonical: url,
       og: { url },
-    })
+    });
   } catch (error) {
-    console.error('Erreur lors du chargement des données:', error)
-    router.push('/profile')
+    console.error("Erreur lors du chargement des données:", error);
+    router.push("/profile");
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const filteredTextStudies = computed(() => {
-  let filtered = textStudies.value
+  let filtered = textStudies.value;
 
   if (searchTerm.value) {
-    filtered = sessionService.filterTextStudiesBySearch(filtered, searchTerm.value)
+    filtered = sessionService.filterTextStudiesBySearch(filtered, searchTerm.value);
   }
 
   if (selectedBook.value) {
-    filtered = filtered.filter((text) => text.livre === selectedBook.value)
+    filtered = filtered.filter((text) => text.livre === selectedBook.value);
   }
 
-  return filtered
-})
+  return filtered;
+});
 
 const groupedTextStudies = computed(() => {
-  return sessionService.groupTextStudiesByBook(filteredTextStudies.value)
-})
+  return sessionService.groupTextStudiesByBook(filteredTextStudies.value);
+});
 
 const availableBooks = computed(() => {
-  const books = new Set(textStudies.value.map((text) => text.livre))
-  return Array.from(books).sort()
-})
+  const books = new Set(textStudies.value.map((text) => text.livre));
+  return Array.from(books).sort();
+});
 
 const getTextStatus = (textStudy: TextStudy) => {
-  return reservationService.getTextDisplayStatus(textStudy.id, textStudy, session.value!)
-}
+  return reservationService.getTextDisplayStatus(textStudy.id, textStudy, session.value!);
+};
 
 const getTextReservations = (textStudyId: string) => {
-  return session.value?.reservations?.filter((r) => r.textStudyId === textStudyId) || []
-}
+  return session.value?.reservations?.filter((r) => r.textStudyId === textStudyId) || [];
+};
 
 const isSectionReserved = (textStudyId: string, section: number) => {
   return (
     session.value?.reservations?.some(
       (r) => r.textStudyId === textStudyId && r.section === section,
     ) || false
-  )
-}
+  );
+};
 
 const getSectionReservation = (textStudyId: string, section: number) => {
   return session.value?.reservations?.find(
     (r) => r.textStudyId === textStudyId && r.section === section,
-  )
-}
+  );
+};
 
 const openGuestForm = (textStudy: TextStudy, section?: number) => {
-  selectedTextStudy.value = textStudy
-  selectedSection.value = section
-  showGuestForm.value = true
-  guestForm.value = { name: '', email: '' }
-}
+  selectedTextStudy.value = textStudy;
+  selectedSection.value = section;
+  showGuestForm.value = true;
+  guestForm.value = { name: "", email: "" };
+};
 
 const createGuestReservation = async () => {
   if (!guestForm.value.name || !guestForm.value.email || !session.value) {
-    return
+    return;
   }
 
   try {
-    isLoading.value = true
+    isLoading.value = true;
 
     if (selectedItems.value.size > 0) {
-      isSubmittingBatch.value = true
+      isSubmittingBatch.value = true;
       const itemsToReserve = Array.from(selectedItems.value).map((key) => {
-        const [textId, sectionStr] = key.split('#')
+        const [textId, sectionStr] = key.split("#");
         return {
           textId,
-          section: sectionStr === 'full' ? undefined : parseInt(sectionStr),
-        }
-      })
+          section: sectionStr === "full" ? undefined : parseInt(sectionStr),
+        };
+      });
 
       for (const item of itemsToReserve) {
-        if (item.section && isSectionReserved(item.textId, item.section)) continue
+        if (item.section && isSectionReserved(item.textId, item.section)) continue;
 
         await reservationService.createReservation(
           session.value.id,
@@ -152,10 +152,10 @@ const createGuestReservation = async () => {
           guestForm.value.email, // guestId (email as ID for guests mostly)
           undefined, // userName
           guestForm.value.name, // guestName
-        )
+        );
       }
 
-      selectedItems.value.clear()
+      selectedItems.value.clear();
     } else if (selectedTextStudy.value) {
       await reservationService.createReservation(
         session.value.id,
@@ -165,80 +165,80 @@ const createGuestReservation = async () => {
         guestForm.value.email, // guestId
         undefined, // userName
         guestForm.value.name, // guestName
-      )
+      );
     }
 
-    await reloadSession()
-    showGuestForm.value = false
+    await reloadSession();
+    showGuestForm.value = false;
   } catch (error) {
-    console.error('Erreur lors de la création de la réservation:', error)
-    alert('Erreur lors de la création de la réservation')
+    console.error("Erreur lors de la création de la réservation:", error);
+    alert("Erreur lors de la création de la réservation");
   } finally {
-    isLoading.value = false
-    isSubmittingBatch.value = false
+    isLoading.value = false;
+    isSubmittingBatch.value = false;
   }
-}
+};
 
 const toggleSelection = (textId: string, section?: number) => {
-  const key = section ? `${textId}#${section}` : `${textId}#full`
+  const key = section ? `${textId}#${section}` : `${textId}#full`;
   if (selectedItems.value.has(key)) {
-    selectedItems.value.delete(key)
+    selectedItems.value.delete(key);
   } else {
-    selectedItems.value.add(key)
+    selectedItems.value.add(key);
   }
-}
+};
 
 const isSelected = (textId: string, section: number) => {
-  const key = `${textId}#${section}`
-  return selectedItems.value.has(key)
-}
+  const key = `${textId}#${section}`;
+  return selectedItems.value.has(key);
+};
 
 const openBatchGuestForm = () => {
-  selectedTextStudy.value = null
-  selectedSection.value = undefined
-  showGuestForm.value = true
-}
+  selectedTextStudy.value = null;
+  selectedSection.value = undefined;
+  showGuestForm.value = true;
+};
 
 const toggleReservationCompletion = async (reservationId: string, isCompleted: boolean) => {
-  if (!session.value) return
+  if (!session.value) return;
 
   try {
-    await sessionService.markReservationAsCompleted(session.value.id, reservationId, isCompleted)
-    await reloadSession()
+    await sessionService.markReservationAsCompleted(session.value.id, reservationId, isCompleted);
+    await reloadSession();
   } catch (error) {
-    console.error('Erreur lors de la mise à jour:', error)
-    alert('Erreur lors de la mise à jour')
+    console.error("Erreur lors de la mise à jour:", error);
+    alert("Erreur lors de la mise à jour");
   }
-}
+};
 
 const deleteReservation = async (reservationId: string) => {
-  if (!confirm('Êtes-vous sûr de vouloir supprimer cette réservation ?')) {
-    return
+  if (!confirm("Êtes-vous sûr de vouloir supprimer cette réservation ?")) {
+    return;
   }
 
-  if (!session.value) return
+  if (!session.value) return;
 
   try {
-    await sessionService.deleteReservation(session.value.id, reservationId)
-    await reloadSession()
+    await sessionService.deleteReservation(session.value.id, reservationId);
+    await reloadSession();
   } catch (error) {
-    console.error('Erreur lors de la suppression:', error)
-    alert('Erreur lors de la suppression')
+    console.error("Erreur lors de la suppression:", error);
+    alert("Erreur lors de la suppression");
   }
-}
+};
 
 const reloadSession = async () => {
-  if (!session.value) return
+  if (!session.value) return;
 
   try {
-    const updatedSession = await sessionService.getSessionById(session.value.id)
+    const updatedSession = await sessionService.getSessionById(session.value.id);
     if (updatedSession) {
-      session.value = updatedSession
+      session.value = updatedSession;
     }
   } catch (error) {
-    console.error('Erreur lors du rechargement de la session:', error)
+    console.error("Erreur lors du rechargement de la session:", error);
   }
-}
+};
 
 const sessionStats = computed(() => {
   if (!session.value)
@@ -249,20 +249,20 @@ const sessionStats = computed(() => {
       totalTexts: 0,
       reservedTexts: 0,
       reservationRate: 0,
-    }
+    };
 
-  const reservations = session.value.reservations || []
-  const totalReservations = reservations.length
-  const completedReservations = reservations.filter((r) => r.isCompleted).length
+  const reservations = session.value.reservations || [];
+  const totalReservations = reservations.length;
+  const completedReservations = reservations.filter((r) => r.isCompleted).length;
   const completionRate =
-    totalReservations > 0 ? (completedReservations / totalReservations) * 100 : 0
+    totalReservations > 0 ? (completedReservations / totalReservations) * 100 : 0;
 
-  const totalTexts = textStudies.value.length
+  const totalTexts = textStudies.value.length;
   const reservedTexts = textStudies.value.filter((textStudy) => {
-    const status = getTextStatus(textStudy)
-    return status.status === 'fully_reserved' || status.status === 'partially_reserved'
-  }).length
-  const reservationRate = totalTexts > 0 ? (reservedTexts / totalTexts) * 100 : 0
+    const status = getTextStatus(textStudy);
+    return status.status === "fully_reserved" || status.status === "partially_reserved";
+  }).length;
+  const reservationRate = totalTexts > 0 ? (reservedTexts / totalTexts) * 100 : 0;
 
   return {
     totalReservations,
@@ -271,16 +271,16 @@ const sessionStats = computed(() => {
     totalTexts,
     reservedTexts,
     reservationRate: Math.round(reservationRate),
-  }
-})
+  };
+});
 
 const goBackToProfile = () => {
-  router.push('/profile')
-}
+  router.push("/profile");
+};
 
 onMounted(() => {
-  loadData()
-})
+  loadData();
+});
 </script>
 
 <template>
@@ -456,11 +456,11 @@ onMounted(() => {
                     }"
                   >
                     {{
-                      getTextStatus(textStudy).status === 'available'
-                        ? 'Disponible'
-                        : getTextStatus(textStudy).status === 'fully_reserved'
-                          ? 'Réservé'
-                          : 'Partiellement réservé'
+                      getTextStatus(textStudy).status === "available"
+                        ? "Disponible"
+                        : getTextStatus(textStudy).status === "fully_reserved"
+                          ? "Réservé"
+                          : "Partiellement réservé"
                     }}
                   </span>
                 </div>
@@ -487,7 +487,7 @@ onMounted(() => {
                 <h5
                   class="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3 dark:text-gray-400"
                 >
-                  {{ textStudy.totalSections > 1 ? 'Sections :' : 'Gestion :' }}
+                  {{ textStudy.totalSections > 1 ? "Sections :" : "Gestion :" }}
                 </h5>
 
                 <div class="space-y-2 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
@@ -506,7 +506,7 @@ onMounted(() => {
                   >
                     <div class="flex flex-col min-w-0">
                       <span class="font-medium text-text-primary dark:text-gray-200">
-                        {{ textStudy.totalSections > 1 ? `Chapitre ${section}` : 'Texte complet' }}
+                        {{ textStudy.totalSections > 1 ? `Chapitre ${section}` : "Texte complet" }}
                       </span>
                       <span
                         v-if="isSectionReserved(textStudy.id, section)"
@@ -600,7 +600,7 @@ onMounted(() => {
             {{
               selectedItems.size > 0
                 ? `Réserver ${selectedItems.size} textes`
-                : 'Réserver pour un invité'
+                : "Réserver pour un invité"
             }}
           </h3>
           <button
@@ -617,7 +617,7 @@ onMounted(() => {
             class="p-3 bg-primary/10 rounded-xl text-sm text-text-primary mb-2 dark:bg-primary/20 dark:text-white"
           >
             <span class="font-semibold">{{
-              sessionService.formatBookName(selectedTextStudy?.name || '')
+              sessionService.formatBookName(selectedTextStudy?.name || "")
             }}</span>
             <span v-if="selectedSection"> - Chapitre {{ selectedSection }}</span>
           </div>
@@ -661,7 +661,7 @@ onMounted(() => {
               :disabled="!guestForm.name || !guestForm.email || isLoading"
             >
               <i v-if="isLoading" class="fa-solid fa-circle-notch fa-spin"></i>
-              {{ isLoading ? 'Création...' : 'Créer' }}
+              {{ isLoading ? "Création..." : "Créer" }}
             </button>
           </div>
         </div>

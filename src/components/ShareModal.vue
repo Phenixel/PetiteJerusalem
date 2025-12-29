@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { nextTick, watch } from 'vue'
+import { nextTick, watch } from "vue";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 interface Props {
-  show: boolean
-  sessionName: string
-  shareUrl: string
+  show: boolean;
+  sessionName: string;
+  shareUrl: string;
 }
 
 interface Emits {
-  (e: 'update:show', value: boolean): void
+  (e: "update:show", value: boolean): void;
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 
 declare global {
   interface Window {
@@ -20,107 +23,106 @@ declare global {
       new (
         element: HTMLElement,
         options: {
-          text: string
-          width: number
-          height: number
-          colorDark: string
-          colorLight: string
-          correctLevel: number
+          text: string;
+          width: number;
+          height: number;
+          colorDark: string;
+          colorLight: string;
+          correctLevel: number;
         },
-      ): void
+      ): void;
       CorrectLevel: {
-        L: number
-        M: number
-        Q: number
-        H: number
-      }
-    }
+        L: number;
+        M: number;
+        Q: number;
+        H: number;
+      };
+    };
   }
 }
 
 const closeModal = () => {
-  emit('update:show', false)
-}
+  emit("update:show", false);
+};
 
 const generateQRCode = async () => {
-  const qrContainer = document.getElementById('qr-code')
+  const qrContainer = document.getElementById("qr-code");
   if (qrContainer && props.shareUrl) {
-    qrContainer.innerHTML = ''
+    qrContainer.innerHTML = "";
 
     try {
       await new Promise((resolve, reject) => {
         if (window.QRCode) {
-          resolve(true)
-          return
+          resolve(true);
+          return;
         }
 
-        const script = document.createElement('script')
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
-        script.onload = () => resolve(true)
-        script.onerror = () => reject(new Error('Erreur lors du chargement de QRCode'))
-        document.head.appendChild(script)
-      })
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+        script.onload = () => resolve(true);
+        script.onerror = () => reject(new Error("Erreur lors du chargement de QRCode"));
+        document.head.appendChild(script);
+      });
 
       new window.QRCode(qrContainer, {
         text: props.shareUrl,
         width: 200,
         height: 200,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
+        colorDark: "#000000",
+        colorLight: "#ffffff",
         correctLevel: window.QRCode.CorrectLevel.H,
-      })
+      });
     } catch (error) {
-      console.error('Erreur lors de la génération du QR code:', error)
-      qrContainer.innerHTML =
-        '<p class="text-red-500 font-medium">Erreur lors de la génération du QR code</p>'
+      console.error("Erreur lors de la génération du QR code:", error);
+      qrContainer.innerHTML = `<p class="text-red-500 font-medium">${t("shareModal.qrError")}</p>`;
     }
   }
-}
+};
 
 const shareToWhatsApp = () => {
-  const message = `Rejoignez-moi pour une session d'étude partagée : ${props.sessionName}\n\n${props.shareUrl}`
-  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`
-  window.open(whatsappUrl, '_blank')
-}
+  const message = `${t("shareModal.shareMessage")}: ${props.sessionName}\n\n${props.shareUrl}`;
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, "_blank");
+};
 
 const shareToSMS = () => {
-  const message = `Rejoignez-moi pour une session d'étude partagée : ${props.sessionName}\n\n${props.shareUrl}`
-  const smsUrl = `sms:?body=${encodeURIComponent(message)}`
-  window.location.href = smsUrl
-}
+  const message = `${t("shareModal.shareMessage")}: ${props.sessionName}\n\n${props.shareUrl}`;
+  const smsUrl = `sms:?body=${encodeURIComponent(message)}`;
+  window.location.href = smsUrl;
+};
 
 const shareToFacebook = () => {
-  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(props.shareUrl)}`
-  window.open(facebookUrl, '_blank', 'width=600,height=400')
-}
+  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(props.shareUrl)}`;
+  window.open(facebookUrl, "_blank", "width=600,height=400");
+};
 
 const copyToClipboard = async () => {
   try {
-    await navigator.clipboard.writeText(props.shareUrl)
-    alert('Lien copié dans le presse-papiers !')
+    await navigator.clipboard.writeText(props.shareUrl);
+    alert(t("shareModal.linkCopied"));
   } catch (err) {
-    console.error('Erreur lors de la copie:', err)
+    console.error("Erreur lors de la copie:", err);
     // Fallback pour les navigateurs plus anciens
-    const textArea = document.createElement('textarea')
-    textArea.value = props.shareUrl
-    document.body.appendChild(textArea)
-    textArea.select()
-    document.execCommand('copy')
-    document.body.removeChild(textArea)
-    alert('Lien copié dans le presse-papiers !')
+    const textArea = document.createElement("textarea");
+    textArea.value = props.shareUrl;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textArea);
+    alert(t("shareModal.linkCopied"));
   }
-}
+};
 
 watch(
   () => props.show,
   (newValue) => {
     if (newValue) {
       nextTick(() => {
-        generateQRCode()
-      })
+        generateQRCode();
+      });
     }
   },
-)
+);
 </script>
 
 <template>
@@ -136,7 +138,9 @@ watch(
       <div
         class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700"
       >
-        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">Partager cette session</h3>
+        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">
+          {{ t("shareModal.title") }}
+        </h3>
         <button
           @click="closeModal"
           class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600"
@@ -176,7 +180,7 @@ watch(
             class="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors gap-2 dark:bg-gray-700/50 dark:text-gray-300 dark:hover:bg-gray-700 cursor-pointer"
           >
             <i class="fa-regular fa-copy text-3xl"></i>
-            <span class="font-medium">Copier le lien</span>
+            <span class="font-medium">{{ t("shareModal.copyLink") }}</span>
           </button>
         </div>
 
@@ -184,14 +188,14 @@ watch(
           <h4
             class="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wider dark:text-gray-400"
           >
-            Ou scanner le QR code
+            {{ t("shareModal.scanQR") }}
           </h4>
           <div
             id="qr-code"
             class="flex justify-center mb-2 p-2 bg-white rounded-lg inline-block"
           ></div>
           <p class="text-sm text-gray-400 dark:text-gray-500">
-            Scannez ce code pour accéder directement à la session
+            {{ t("shareModal.scanQRDesc") }}
           </p>
         </div>
       </div>

@@ -1,15 +1,19 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
+
 defineProps<{
-  count: number
-  loading?: boolean
-  label?: string
-  buttonText?: string
-  buttonLoadingText?: string
-}>()
+  count: number;
+  loading?: boolean;
+  label?: string;
+  buttonText?: string;
+  buttonLoadingText?: string;
+}>();
 
 defineEmits<{
-  (e: 'confirm'): void
-}>()
+  (e: "confirm"): void;
+}>();
 </script>
 
 <template>
@@ -28,7 +32,7 @@ defineEmits<{
         </div>
         <div>
           <p class="font-bold text-text-primary dark:text-gray-100">
-            {{ count }} texte{{ count > 1 ? 's' : '' }} sélectionné{{ count > 1 ? 's' : '' }}
+            {{ t("batchSelection.textsSelected", { count }) }}
           </p>
           <p v-if="label" class="text-xs text-text-secondary dark:text-gray-400">
             {{ label }}
@@ -42,7 +46,11 @@ defineEmits<{
         class="px-6 py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl shadow-lg shadow-primary/30 transform hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2"
       >
         <i class="fa-solid" :class="loading ? 'fa-circle-notch fa-spin' : 'fa-check'"></i>
-        {{ loading ? buttonLoadingText || 'Chargement...' : buttonText || 'Confirmer' }}
+        {{
+          loading
+            ? buttonLoadingText || t("batchSelection.loading")
+            : buttonText || t("common.confirm")
+        }}
       </button>
     </div>
   </div>

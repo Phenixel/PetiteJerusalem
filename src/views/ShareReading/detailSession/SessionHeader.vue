@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { sessionService } from '../../../services/sessionService'
-import type { Session } from '../../../models/models'
+import { useI18n } from "vue-i18n";
+import { sessionService } from "../../../services/sessionService";
+import type { Session } from "../../../models/models";
+
+const { t } = useI18n();
 
 defineProps<{
-  session: Session
-  isOwner?: boolean
-}>()
+  session: Session;
+  isOwner?: boolean;
+}>();
 
 const emit = defineEmits<{
-  (e: 'share'): void
-  (e: 'manage'): void
-}>()
+  (e: "share"): void;
+  (e: "manage"): void;
+}>();
 </script>
 
 <template>
@@ -28,26 +31,26 @@ const emit = defineEmits<{
       >
       <span
         class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium dark:bg-gray-800 dark:text-gray-300"
-        >Date limite : {{ sessionService.formatDate(session.dateLimit) }}</span
+        >{{ t("common.dateLimit") }} : {{ sessionService.formatDate(session.dateLimit) }}</span
       >
       <span
         class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium dark:bg-gray-800 dark:text-gray-300"
-        >Créé par : {{ session.creatorName }}</span
+        >{{ t("common.createdBy") }} : {{ session.creatorName }}</span
       >
       <button
         v-if="isOwner"
         @click="emit('manage')"
         class="px-3 py-1 bg-primary text-white hover:bg-primary-dark rounded-full text-sm font-medium transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
-        title="Gérer cette session"
+        :title="t('detailSession.manageSession')"
       >
-        <i class="fa-solid fa-cog"></i> Gérer
+        <i class="fa-solid fa-cog"></i> {{ t("common.manage") }}
       </button>
       <button
         @click="emit('share')"
         class="px-3 py-1 bg-white border border-gray-200 hover:border-primary hover:text-primary rounded-full text-sm font-medium transition-colors flex items-center gap-1 shadow-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:text-primary dark:hover:border-primary cursor-pointer"
-        title="Partager cette session"
+        :title="t('common.share')"
       >
-        <i class="fa-solid fa-share-nodes"></i> Partager
+        <i class="fa-solid fa-share-nodes"></i> {{ t("common.share") }}
       </button>
     </div>
   </div>

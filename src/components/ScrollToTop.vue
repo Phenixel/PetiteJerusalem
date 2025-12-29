@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from "vue";
 
-const isVisible = ref(false)
+const isVisible = ref(false);
 
 const checkScroll = () => {
-  isVisible.value = window.scrollY > 300
-}
+  isVisible.value = window.scrollY > 300;
+};
 
 const scrollToTop = () => {
   window.scrollTo({
     top: 0,
-    behavior: 'smooth',
-  })
-}
+    behavior: "smooth",
+  });
+};
 
 onMounted(() => {
-  window.addEventListener('scroll', checkScroll)
-})
+  window.addEventListener("scroll", checkScroll);
+});
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', checkScroll)
-})
+  window.removeEventListener("scroll", checkScroll);
+});
 </script>
 
 <template>

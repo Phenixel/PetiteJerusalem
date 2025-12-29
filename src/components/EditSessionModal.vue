@@ -1,58 +1,61 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import type { Session } from '../models/models'
+import { ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
+import type { Session } from "../models/models";
+
+const { t } = useI18n();
 
 interface Props {
-  show: boolean
-  session: Session | null
+  show: boolean;
+  session: Session | null;
 }
 
 interface Emits {
-  (e: 'update:show', value: boolean): void
-  (e: 'save', sessionData: { name: string; description: string; dateLimit: string }): void
+  (e: "update:show", value: boolean): void;
+  (e: "save", sessionData: { name: string; description: string; dateLimit: string }): void;
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 
 const editForm = ref({
-  name: '',
-  description: '',
-  dateLimit: '',
-})
+  name: "",
+  description: "",
+  dateLimit: "",
+});
 
-const isLoading = ref(false)
+const isLoading = ref(false);
 
 const closeModal = () => {
-  emit('update:show', false)
-}
+  emit("update:show", false);
+};
 
 const saveSession = async () => {
   if (!editForm.value.name.trim()) {
-    alert('Le nom de la session est requis')
-    return
+    alert(t("editModal.sessionNameRequired"));
+    return;
   }
 
   if (!editForm.value.dateLimit) {
-    alert('La date limite est requise')
-    return
+    alert(t("editModal.dateLimitRequired"));
+    return;
   }
 
   try {
-    isLoading.value = true
-    emit('save', {
+    isLoading.value = true;
+    emit("save", {
       name: editForm.value.name.trim(),
       description: editForm.value.description.trim(),
       dateLimit: editForm.value.dateLimit,
-    })
-    closeModal()
+    });
+    closeModal();
   } catch (error) {
-    console.error('Erreur lors de la sauvegarde:', error)
-    alert('Erreur lors de la sauvegarde de la session')
+    console.error("Erreur lors de la sauvegarde:", error);
+    alert(t("editModal.saveError"));
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 watch(
   () => props.session,
@@ -60,16 +63,16 @@ watch(
     if (newSession) {
       editForm.value = {
         name: newSession.name,
-        description: newSession.description || '',
+        description: newSession.description || "",
         dateLimit:
           newSession.dateLimit instanceof Date
             ? newSession.dateLimit.toISOString().slice(0, 16)
             : newSession.dateLimit,
-      }
+      };
     }
   },
   { immediate: true },
-)
+);
 
 watch(
   () => props.show,
@@ -77,15 +80,15 @@ watch(
     if (!newValue && props.session) {
       editForm.value = {
         name: props.session.name,
-        description: props.session.description || '',
+        description: props.session.description || "",
         dateLimit:
           props.session.dateLimit instanceof Date
             ? props.session.dateLimit.toISOString().slice(0, 16)
             : props.session.dateLimit,
-      }
+      };
     }
   },
-)
+);
 </script>
 
 <template>
@@ -101,7 +104,9 @@ watch(
       <div
         class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700"
       >
-        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">Modifier la session</h3>
+        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">
+          {{ t("editModal.title") }}
+        </h3>
         <button
           @click="closeModal"
           class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600"
@@ -114,32 +119,32 @@ watch(
         <form @submit.prevent="saveSession" class="space-y-4">
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300"
-              >Nom de la session *</label
+              >{{ t("editModal.sessionName") }} *</label
             >
             <input
               v-model="editForm.name"
               class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
               type="text"
               required
-              placeholder="Entrez le nom de la session"
+              :placeholder="t('editModal.sessionNamePlaceholder')"
             />
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300"
-              >Description</label
-            >
+            <label class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300">{{
+              t("common.description")
+            }}</label>
             <textarea
               v-model="editForm.description"
               class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-y dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
-              placeholder="Décrivez la session (optionnel)"
+              :placeholder="t('editModal.descriptionPlaceholder')"
               rows="3"
             ></textarea>
           </div>
 
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300"
-              >Date limite *</label
+              >{{ t("common.dateLimit") }} *</label
             >
             <input
               v-model="editForm.dateLimit"
@@ -158,14 +163,14 @@ watch(
               class="px-5 py-2.5 rounded-lg border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
               :disabled="isLoading"
             >
-              Annuler
+              {{ t("common.cancel") }}
             </button>
             <button
               type="submit"
               class="px-5 py-2.5 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-bold hover:shadow-md hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
               :disabled="isLoading"
             >
-              {{ isLoading ? 'Sauvegarde...' : 'Sauvegarder' }}
+              {{ isLoading ? t("common.saving") : t("common.save") }}
             </button>
           </div>
         </form>

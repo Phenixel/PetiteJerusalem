@@ -1,76 +1,82 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { EnumTypeTextStudy } from '../../models/typeTextStudy'
-import { sessionService } from '../../services/sessionService'
-import { TextTypeService } from '../../services/textTypeService'
-import type { User } from '../../services/authService'
-import { seoService } from '../../services/seoService'
+import { ref, reactive, onMounted, watch, computed } from "vue";
+import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { EnumTypeTextStudy } from "../../models/typeTextStudy";
+import { sessionService } from "../../services/sessionService";
+import { TextTypeService } from "../../services/textTypeService";
+import type { User } from "../../services/authService";
+import { seoService } from "../../services/seoService";
 
-const router = useRouter()
+const router = useRouter();
+const { t } = useI18n();
 
-const isLoading = ref(false)
-const message = ref('')
-const messageType = ref<'success' | 'error'>('success')
-const currentUser = ref<User | null>(null)
+const isLoading = ref(false);
+const message = ref("");
+const messageType = ref<"success" | "error">("success");
+const currentUser = ref<User | null>(null);
 
-const textStudyTypes = TextTypeService.getAllTypes()
+const textStudyTypes = TextTypeService.getAllTypes();
 
 const sessionData = reactive({
-  name: '',
-  description: '',
-  type: '' as EnumTypeTextStudy | '',
-  dateLimit: '',
-})
+  name: "",
+  description: "",
+  type: "" as EnumTypeTextStudy | "",
+  dateLimit: "",
+});
 
-const availableBooks = ref<string[]>([])
-const selectedBooks = ref<string[]>([])
-const isBookSelectionEnabled = ref(false)
+const availableBooks = ref<string[]>([]);
+const selectedBooks = ref<string[]>([]);
+const isBookSelectionEnabled = ref(false);
+
+const buttonText = computed(() => {
+  return isLoading.value ? t("newSession.creating") : t("newSession.create");
+});
 
 watch(
   () => sessionData.type,
   async (newType) => {
-    selectedBooks.value = []
-    availableBooks.value = []
-    isBookSelectionEnabled.value = false
+    selectedBooks.value = [];
+    availableBooks.value = [];
+    isBookSelectionEnabled.value = false;
 
     if (newType) {
       try {
-        const books = await sessionService.getBooksByType(newType as EnumTypeTextStudy)
+        const books = await sessionService.getBooksByType(newType as EnumTypeTextStudy);
         if (books.length > 0) {
-          availableBooks.value = books
-          selectedBooks.value = [...books]
-          isBookSelectionEnabled.value = true
+          availableBooks.value = books;
+          selectedBooks.value = [...books];
+          isBookSelectionEnabled.value = true;
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des livres:', error)
+        console.error("Erreur lors du chargement des livres:", error);
       }
     }
   },
-)
+);
 
 const toggleAllBooks = () => {
   if (selectedBooks.value.length === availableBooks.value.length) {
-    selectedBooks.value = []
+    selectedBooks.value = [];
   } else {
-    selectedBooks.value = [...availableBooks.value]
+    selectedBooks.value = [...availableBooks.value];
   }
-}
+};
 
 const formatBookName = (bookName: string) => {
-  return sessionService.formatBookName(bookName)
-}
+  return sessionService.formatBookName(bookName);
+};
 
 onMounted(async () => {
-  currentUser.value = await sessionService.requireAuthentication(router)
-  const url = window.location.origin + '/share-reading/new-session'
+  currentUser.value = await sessionService.requireAuthentication(router);
+  const url = window.location.origin + "/share-reading/new-session";
   seoService.setMeta({
-    title: 'Créer une session | Petite Jerusalem',
-    description: 'Créez une session de lecture partagée et invitez la communauté à participer.',
+    title: t("seo.newSessionTitle"),
+    description: t("seo.newSessionDescription"),
     canonical: url,
     og: { url },
-  })
-})
+  });
+});
 
 const createSession = async () => {
   if (
@@ -79,19 +85,19 @@ const createSession = async () => {
     !sessionData.type ||
     !sessionData.dateLimit
   ) {
-    message.value = 'Veuillez remplir tous les champs'
-    messageType.value = 'error'
-    return
+    message.value = t("newSession.fillAllFields");
+    messageType.value = "error";
+    return;
   }
 
   if (isBookSelectionEnabled.value && selectedBooks.value.length === 0) {
-    message.value = 'Veuillez sélectionner au moins une partie du texte'
-    messageType.value = 'error'
-    return
+    message.value = t("newSession.selectAtLeastOne");
+    messageType.value = "error";
+    return;
   }
 
-  isLoading.value = true
-  message.value = ''
+  isLoading.value = true;
+  message.value = "";
 
   try {
     const sessionId = await sessionService.createSessionWithValidation(
@@ -102,29 +108,29 @@ const createSession = async () => {
       currentUser.value!.id,
       currentUser.value!.name,
       selectedBooks.value.length > 0 ? selectedBooks.value : undefined,
-    )
+    );
 
-    message.value = 'Session créée avec succès !'
-    messageType.value = 'success'
+    message.value = t("newSession.createdSuccess");
+    messageType.value = "success";
 
     setTimeout(() => {
-      router.push(`/share-reading/session/${sessionId}`)
-    }, 2000)
+      router.push(`/share-reading/session/${sessionId}`);
+    }, 2000);
   } catch (error) {
-    console.error('Erreur lors de la création de la session:', error)
-    message.value = 'Erreur lors de la création de la session. Veuillez réessayer.'
-    messageType.value = 'error'
-    isLoading.value = false
+    console.error("Erreur lors de la création de la session:", error);
+    message.value = t("newSession.createError");
+    messageType.value = "error";
+    isLoading.value = false;
   } finally {
-    if (messageType.value === 'error') {
-      isLoading.value = false
+    if (messageType.value === "error") {
+      isLoading.value = false;
     }
   }
-}
+};
 
 const goBack = () => {
-  router.back()
-}
+  router.back();
+};
 </script>
 
 <template>
@@ -133,10 +139,10 @@ const goBack = () => {
       <h2
         class="text-3xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent md:text-4xl font-bold text-text-primary mb-4"
       >
-        Créer une session
+        {{ t("newSession.title") }}
       </h2>
-      <p class="text-text-secondary text-lg">
-        Créez une session de partage de lectures avec la communauté
+      <p class="text-text-secondary text-lg dark:text-gray-300">
+        {{ t("newSession.subtitle") }}
       </p>
     </div>
 
@@ -148,13 +154,13 @@ const goBack = () => {
           <label
             for="name"
             class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-200"
-            >Titre de la session</label
+            >{{ t("newSession.sessionTitle") }}</label
           >
           <input
             type="text"
             id="name"
             v-model="sessionData.name"
-            placeholder="Ex: Étude de la Parasha de la semaine"
+            :placeholder="t('newSession.sessionTitlePlaceholder')"
             required
             class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-600"
           />
@@ -164,12 +170,12 @@ const goBack = () => {
           <label
             for="description"
             class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-200"
-            >Description de la session</label
+            >{{ t("newSession.sessionDescription") }}</label
           >
           <textarea
             id="description"
             v-model="sessionData.description"
-            placeholder="Décrivez l'objectif de cette session d'étude..."
+            :placeholder="t('newSession.sessionDescriptionPlaceholder')"
             required
             class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-y dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-600"
             rows="4"
@@ -180,7 +186,7 @@ const goBack = () => {
           <label
             for="type"
             class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-200"
-            >Type de texte</label
+            >{{ t("newSession.textType") }}</label
           >
           <div class="relative">
             <select
@@ -190,7 +196,7 @@ const goBack = () => {
               required
               class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none cursor-pointer dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-600"
             >
-              <option value="">Sélectionnez un type</option>
+              <option value="">{{ t("newSession.selectType") }}</option>
               <option v-for="type in textStudyTypes" :key="type.value" :value="type.value">
                 {{ type.label }}
               </option>
@@ -204,7 +210,7 @@ const goBack = () => {
         <!-- Sélection des parties/livres (s'affiche uniquement si des livres sont disponibles) -->
         <div v-if="isBookSelectionEnabled" class="animate-[fadeIn_0.3s_ease]">
           <label class="block text-sm font-semibold text-text-primary mb-3 dark:text-gray-200">
-            Sélectionner les parties à inclure
+            {{ t("newSession.selectParts") }}
             <span class="text-xs font-normal text-text-secondary ml-2 dark:text-gray-400">
               ({{ selectedBooks.length }}/{{ availableBooks.length }})
             </span>
@@ -224,9 +230,9 @@ const goBack = () => {
                   "
                   @change="toggleAllBooks"
                 />
-                <span class="ml-2 text-sm font-semibold text-text-primary dark:text-gray-200"
-                  >Tout sélectionner</span
-                >
+                <span class="ml-2 text-sm font-semibold text-text-primary dark:text-gray-200">{{
+                  t("newSession.selectAll")
+                }}</span>
               </label>
             </div>
 
@@ -253,7 +259,7 @@ const goBack = () => {
             class="text-xs text-red-500 mt-1 flex items-center gap-1"
           >
             <i class="fa-solid fa-triangle-exclamation"></i>
-            Veuillez sélectionner au moins une partie
+            {{ t("newSession.selectAtLeastOne") }}
           </p>
         </div>
 
@@ -261,7 +267,7 @@ const goBack = () => {
           <label
             for="dateLimit"
             class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-200"
-            >Date limite</label
+            >{{ t("newSession.dateLimit") }}</label
           >
           <input
             type="date"
@@ -278,14 +284,14 @@ const goBack = () => {
             @click="goBack"
             class="px-6 py-3 bg-white border border-gray-200 text-text-secondary font-bold rounded-xl hover:bg-gray-50 transition-colors w-full sm:w-auto dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
           >
-            Annuler
+            {{ t("common.cancel") }}
           </button>
           <button
             type="submit"
             class="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all w-full sm:flex-1 disabled:opacity-70 disabled:cursor-wait"
             :disabled="isLoading"
           >
-            {{ isLoading ? 'Création en cours...' : 'Créer la session' }}
+            {{ buttonText }}
           </button>
         </div>
       </form>
@@ -296,8 +302,8 @@ const goBack = () => {
       class="mt-6 p-4 rounded-xl text-center font-medium animate-[fadeIn_0.3s_ease]"
       :class="
         messageType === 'success'
-          ? 'bg-green-100 text-green-700 border border-green-200'
-          : 'bg-red-100 text-red-700 border border-red-200'
+          ? 'bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/30'
+          : 'bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30'
       "
     >
       <i class="fa-solid fa-check-circle mr-2" v-if="messageType === 'success'"></i>

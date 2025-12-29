@@ -12,15 +12,15 @@
           href="https://phenixel.fr"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Fait par Phenixel (ouvre un nouvel onglet)"
+          :aria-label="t('footer.madeBy') + ' Phenixel (' + t('footer.about') + ')'"
         >
-          Fait par <strong>Phenixel</strong> 🐦‍🔥
+          {{ t("footer.madeBy") }} <strong>Phenixel</strong> 🐦‍🔥
         </a>
       </div>
 
       <nav
         class="flex flex-col md:flex-row gap-2 md:gap-4 items-center justify-center"
-        aria-label="Liens du pied de page"
+        :aria-label="t('footer.about')"
       >
         <a
           class="hover:text-primary transition-colors hover:drop-shadow-lg"
@@ -28,7 +28,7 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          À propos
+          {{ t("footer.about") }}
         </a>
         <span class="opacity-60 hidden md:inline" aria-hidden="true">•</span>
         <a
@@ -37,7 +37,7 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          Mentions légales
+          {{ t("footer.legal") }}
         </a>
         <span class="opacity-60 hidden md:inline" aria-hidden="true">•</span>
         <a
@@ -46,14 +46,15 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          Signaler un problème
+          {{ t("footer.reportIssue") }}
         </a>
       </nav>
 
       <div
         class="justify-self-center md:justify-self-end flex gap-4 items-center"
-        aria-label="Réseaux sociaux"
+        aria-label="Social media"
       >
+        <LanguageSelector variant="compact" dropup />
         <a
           class="flex items-center justify-center w-6 h-6 opacity-85 hover:opacity-100 hover:-translate-y-0.5 transition-all text-text-secondary hover:text-[#333]"
           href="https://github.com/Phenixel/PetiteJerusalem"
@@ -79,6 +80,11 @@
   </footer>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { useI18n } from "vue-i18n";
+import LanguageSelector from "./LanguageSelector.vue";
+
+const { t } = useI18n();
+</script>
 
 <!-- Styles globaux dans src/assets/style.css -->
