@@ -4,10 +4,12 @@ import type { Session } from '../../../models/models'
 
 defineProps<{
   session: Session
+  isOwner?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'share'): void
+  (e: 'manage'): void
 }>()
 </script>
 
@@ -33,8 +35,16 @@ const emit = defineEmits<{
         >Créé par : {{ session.creatorName }}</span
       >
       <button
+        v-if="isOwner"
+        @click="emit('manage')"
+        class="px-3 py-1 bg-primary text-white hover:bg-primary-dark rounded-full text-sm font-medium transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+        title="Gérer cette session"
+      >
+        <i class="fa-solid fa-cog"></i> Gérer
+      </button>
+      <button
         @click="emit('share')"
-        class="px-3 py-1 bg-white border border-gray-200 hover:border-primary hover:text-primary rounded-full text-sm font-medium transition-colors flex items-center gap-1 shadow-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:text-primary dark:hover:border-primary"
+        class="px-3 py-1 bg-white border border-gray-200 hover:border-primary hover:text-primary rounded-full text-sm font-medium transition-colors flex items-center gap-1 shadow-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:text-primary dark:hover:border-primary cursor-pointer"
         title="Partager cette session"
       >
         <i class="fa-solid fa-share-nodes"></i> Partager

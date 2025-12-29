@@ -66,6 +66,21 @@ const getTextDisplayStatus = (textStudyId: string, text: TextStudy) => {
   // We need to pass text object as well
   return sessionService.getTextDisplayStatus(textStudyId, text, props.session)
 }
+
+const handleCardClick = (text: TextStudy) => {
+  if (text.totalSections === 1) {
+    // Pour les textes à un seul chapitre, toggle la réservation
+    const isDisabled =
+      props.isReserving === `${text.id}-1` ||
+      (isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1))
+    if (!isDisabled) {
+      emit('item-click', text.id, 1)
+    }
+  } else if (!isTextExpanded(text.id)) {
+    // Pour les textes à plusieurs chapitres, ouvrir si fermé
+    toggleTextExpansion(text.id)
+  }
+}
 </script>
 
 <template>
@@ -96,6 +111,17 @@ const getTextDisplayStatus = (textStudyId: string, text: TextStudy) => {
           <!-- En-tête du texte -->
           <div
             class="p-5 border-b border-black/5 bg-white/40 rounded-t-2xl dark:bg-gray-800/40 dark:border-white/5"
+            :class="{
+              'cursor-pointer hover:bg-white/60 dark:hover:bg-gray-700/40':
+                (text.totalSections > 1 && !isTextExpanded(text.id)) ||
+                (text.totalSections === 1 &&
+                  !(isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1))),
+              'cursor-not-allowed opacity-60':
+                text.totalSections === 1 &&
+                isReserved(text.id, 1).isReserved &&
+                !canCancelReservation(text.id, 1),
+            }"
+            @click="handleCardClick(text)"
           >
             <div class="flex justify-between items-start gap-3 mb-2">
               <div class="flex-1 min-w-0">
@@ -109,6 +135,7 @@ const getTextDisplayStatus = (textStudyId: string, text: TextStudy) => {
                 <label
                   v-if="text.totalSections === 1"
                   class="inline-flex items-center gap-2 cursor-pointer mt-1"
+                  @click.stop
                   :class="{
                     'opacity-60 cursor-not-allowed':
                       isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1),
@@ -137,12 +164,13 @@ const getTextDisplayStatus = (textStudyId: string, text: TextStudy) => {
                   target="_blank"
                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-text-secondary hover:text-primary hover:border-primary transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:text-primary"
                   title="Voir le texte sur Sefaria"
+                  @click.stop
                 >
                   <i class="fa-solid fa-book-open text-xs"></i>
                 </a>
                 <button
                   v-if="text.totalSections > 1"
-                  @click="toggleTextExpansion(text.id)"
+                  @click.stop="toggleTextExpansion(text.id)"
                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-text-secondary hover:bg-gray-50 transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
                   :class="{
                     'bg-gray-100 ring-2 ring-gray-200 dark:bg-gray-600 dark:ring-gray-500':
@@ -256,71 +284,113 @@ const getTextDisplayStatus = (textStudyId: string, text: TextStudy) => {
               <div
                 v-for="chapter in generateChapters(text.totalSections)"
                 :key="chapter"
-                class="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-lg hover:bg-white/50 transition-colors gap-2 dark:hover:bg-gray-700/50"
+                class="flex items-center justify-between py-2.5 px-3 rounded-xl transition-all duration-200 cursor-pointer select-none"
+                :class="{
+                  'bg-green-500/10 dark:bg-green-500/5 hover:bg-green-500/15 dark:hover:bg-green-500/10':
+                    getReservation(text.id, chapter)?.isCompleted,
+                  'bg-amber-500/10 dark:bg-amber-500/5 hover:bg-amber-500/15 dark:hover:bg-amber-500/10':
+                    isReserved(text.id, chapter).isReserved &&
+                    !getReservation(text.id, chapter)?.isCompleted,
+                  'hover:bg-white/60 dark:hover:bg-gray-700/50': !isReserved(text.id, chapter)
+                    .isReserved,
+                  'opacity-60 cursor-not-allowed':
+                    isReserved(text.id, chapter).isReserved &&
+                    !canCancelReservation(text.id, chapter),
+                }"
+                @click="
+                  !(
+                    isReserving === `${text.id}-${chapter}` ||
+                    (isReserved(text.id, chapter).isReserved &&
+                      !canCancelReservation(text.id, chapter))
+                  ) && emit('item-click', text.id, chapter)
+                "
               >
-                <label
-                  class="flex items-center gap-3 cursor-pointer p-2 rounded-lg w-full sm:w-auto"
-                  :class="{
-                    'opacity-60 cursor-not-allowed':
-                      isReserved(text.id, chapter).isReserved &&
-                      !canCancelReservation(text.id, chapter),
-                    'hover:bg-primary/5': !isReserved(text.id, chapter).isReserved,
-                  }"
-                >
+                <!-- Checkbox + Chapitre -->
+                <div class="flex items-center gap-3 flex-shrink-0">
                   <input
                     type="checkbox"
-                    class="w-5 h-5 rounded text-primary border-gray-300 focus:ring-primary accent-primary"
+                    class="w-4 h-4 rounded text-primary border-gray-300 focus:ring-primary accent-primary pointer-events-none"
                     :checked="
                       isReserved(text.id, chapter).isReserved || isSelected(text.id, chapter)
                     "
-                    @change="emit('item-click', text.id, chapter)"
                     :disabled="
                       isReserving === `${text.id}-${chapter}` ||
                       (isReserved(text.id, chapter).isReserved &&
                         !canCancelReservation(text.id, chapter))
                     "
                   />
-                  <span class="font-medium text-text-primary dark:text-gray-200"
+                  <span class="font-medium text-sm text-text-primary dark:text-gray-200"
                     >Chapitre {{ chapter }}</span
                   >
-                </label>
-
-                <div
-                  v-if="isReserved(text.id, chapter).isReserved"
-                  class="px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 sm:ml-auto"
-                  :class="{
-                    'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200':
-                      !getReservation(text.id, chapter)?.isCompleted,
-                    'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300':
-                      getReservation(text.id, chapter)?.isCompleted,
-                  }"
-                >
-                  <i
-                    class="fa-solid"
-                    :class="
-                      getReservation(text.id, chapter)?.isCompleted
-                        ? 'fa-check-circle'
-                        : 'fa-user-clock'
-                    "
-                  ></i>
-                  {{
-                    getReservation(text.id, chapter)?.isCompleted
-                      ? `Lu par ${isReserved(text.id, chapter).reservedBy || "quelqu'un"}`
-                      : `Réservé par ${isReserved(text.id, chapter).reservedBy || "quelqu'un"}`
-                  }}
                 </div>
-                <span
-                  v-else-if="isSelected(text.id, chapter)"
-                  class="px-2 py-1 bg-primary/10 text-primary rounded text-xs font-semibold sm:ml-auto dark:bg-primary/20 dark:text-primary-light animate-pulse"
-                >
-                  Sélectionné
-                </span>
-                <span
-                  v-else
-                  class="px-2 py-1 bg-green-50 text-green-700 rounded text-xs font-semibold sm:ml-auto dark:bg-green-900/30 dark:text-green-300"
-                >
-                  Disponible
-                </span>
+
+                <!-- Statut à droite -->
+                <div class="flex items-center gap-3">
+                  <!-- Si réservé -->
+                  <template v-if="isReserved(text.id, chapter).isReserved">
+                    <!-- Switch "Lu" - seulement pour nos réservations -->
+                    <label
+                      v-if="canCancelReservation(text.id, chapter)"
+                      class="flex items-center gap-2 cursor-pointer group"
+                      @click.stop
+                    >
+                      <span
+                        class="text-xs text-text-secondary dark:text-gray-400 group-hover:text-text-primary dark:group-hover:text-gray-300 transition-colors"
+                        >Lu</span
+                      >
+                      <div class="relative">
+                        <input
+                          type="checkbox"
+                          class="sr-only peer"
+                          :checked="getReservation(text.id, chapter)?.isCompleted || false"
+                          @change="emit('toggle-completion', text.id, chapter)"
+                        />
+                        <div
+                          class="w-8 h-4.5 bg-gray-300 rounded-full peer peer-checked:bg-green-500 peer-focus:ring-2 peer-focus:ring-green-500/20 transition-colors dark:bg-gray-600"
+                        ></div>
+                        <div
+                          class="absolute top-0.5 left-0.5 w-3.5 h-3.5 bg-white rounded-full shadow-sm transition-transform peer-checked:translate-x-3.5"
+                        ></div>
+                      </div>
+                    </label>
+
+                    <!-- Badge de statut compact -->
+                    <span
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                      :class="{
+                        'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300':
+                          getReservation(text.id, chapter)?.isCompleted,
+                        'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300':
+                          !getReservation(text.id, chapter)?.isCompleted,
+                      }"
+                    >
+                      <i
+                        class="fa-solid text-[10px]"
+                        :class="
+                          getReservation(text.id, chapter)?.isCompleted ? 'fa-check' : 'fa-user'
+                        "
+                      ></i>
+                      {{ isReserved(text.id, chapter).reservedBy || 'Réservé' }}
+                    </span>
+                  </template>
+
+                  <!-- Si sélectionné (en attente de confirmation) -->
+                  <span
+                    v-else-if="isSelected(text.id, chapter)"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary/15 text-primary rounded-full text-xs font-medium dark:bg-primary/25 animate-pulse"
+                  >
+                    <i class="fa-solid fa-plus text-[10px]"></i>
+                    Sélectionné
+                  </span>
+
+                  <!-- Si disponible -->
+                  <span
+                    v-else
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium dark:bg-gray-700/50 dark:text-gray-400"
+                  >
+                    Disponible
+                  </span>
+                </div>
               </div>
             </div>
           </div>
