@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { authService } from '../services/authService'
 import { useDarkMode } from '../composables/useDarkMode'
+import LanguageSelector from './LanguageSelector.vue'
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 const username = ref<string | null>(null)
 const isMobileMenuOpen = ref(false)
 let unsubscribeAuth: (() => void) | null = null
@@ -60,10 +63,10 @@ function goToLogin() {
       <h1
         class="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
       >
-        Petite Jérusalem
+        {{ t('navbar.title') }}
       </h1>
       <p class="text-sm text-text-secondary mt-1 group-hover:text-primary transition-colors">
-        Hub de référence pour la communauté juive
+        {{ t('navbar.subtitle') }}
       </p>
     </RouterLink>
 
@@ -72,7 +75,7 @@ function goToLogin() {
       @click="toggleMobileMenu"
       class="flex flex-col justify-around w-8 h-6 bg-transparent border-none cursor-pointer p-0 z-[1000] md:hidden text-text-primary dark:text-white"
       :class="{ 'fixed right-6 top-6': isMobileMenuOpen }"
-      aria-label="Menu principal"
+      :aria-label="t('navbar.mainMenu')"
     >
       <span
         class="w-full h-[3px] bg-current rounded-sm transition-all duration-300 origin-center"
@@ -96,14 +99,14 @@ function goToLogin() {
           @click="closeMobileMenu"
           class="text-text-primary font-medium px-4 py-2 rounded-lg hover:bg-black/5 hover:text-primary transition-colors dark:text-gray-100 dark:hover:bg-gray-800"
           exact-active-class="bg-black/5 text-primary dark:bg-gray-800"
-          >Accueil</RouterLink
+          >{{ t('common.home') }}</RouterLink
         >
         <RouterLink
           to="/share-reading"
           @click="closeMobileMenu"
           class="text-text-primary font-medium px-4 py-2 rounded-lg hover:bg-black/5 hover:text-primary transition-colors dark:text-gray-100 dark:hover:bg-gray-800"
           exact-active-class="bg-black/5 text-primary dark:bg-gray-800"
-          >Partage de lectures</RouterLink
+          >{{ t('common.shareReading') }}</RouterLink
         >
       </div>
       <div class="flex items-center gap-4">
@@ -112,7 +115,7 @@ function goToLogin() {
           @click="goToLogin"
           class="px-4 py-2 bg-white/20 border border-white/30 backdrop-blur-sm rounded-lg hover:bg-white/30 hover:-translate-y-0.5 transition-all text-text-primary font-medium dark:text-gray-100 dark:bg-gray-800/50 dark:border-gray-700 dark:hover:bg-gray-700"
         >
-          Se connecter
+          {{ t('common.login') }}
         </button>
         <div
           v-else
@@ -127,8 +130,8 @@ function goToLogin() {
           <button
             @click="logout"
             class="flex items-center justify-center w-9 h-9 bg-white/20 border border-white/30 backdrop-blur-sm rounded-lg hover:bg-white/30 hover:-translate-y-0.5 transition-all text-text-primary dark:text-gray-100 dark:bg-gray-800/50 dark:border-gray-700 dark:hover:bg-gray-700"
-            aria-label="Se déconnecter"
-            title="Se déconnecter"
+            :aria-label="t('common.logout')"
+            :title="t('common.logout')"
           >
             <i class="fa-solid fa-right-from-bracket"></i>
           </button>
@@ -164,7 +167,7 @@ function goToLogin() {
             <h2
               class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
             >
-              Petite Jérusalem
+              {{ t('navbar.title') }}
             </h2>
             <div
               class="w-12 h-1 bg-gradient-to-r from-primary to-secondary rounded-full mt-2"
@@ -177,7 +180,7 @@ function goToLogin() {
               class="text-gray-700 font-medium text-base p-4 rounded-2xl bg-black/5 border border-black/10 hover:bg-black/10 hover:border-black/20 hover:text-gray-900 transition-all duration-300 dark:text-white/80 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20 dark:hover:text-white"
               exact-active-class="!bg-primary/20 !border-primary/40 !text-primary dark:!text-white"
             >
-              Accueil
+              {{ t('common.home') }}
             </RouterLink>
 
             <RouterLink
@@ -186,9 +189,18 @@ function goToLogin() {
               class="text-gray-700 font-medium text-base p-4 rounded-2xl bg-black/5 border border-black/10 hover:bg-black/10 hover:border-black/20 hover:text-gray-900 transition-all duration-300 dark:text-white/80 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20 dark:hover:text-white"
               exact-active-class="!bg-primary/20 !border-primary/40 !text-primary dark:!text-white"
             >
-              Partage de lectures
+              {{ t('common.shareReading') }}
             </RouterLink>
           </div>
+
+          <!-- Language selector in mobile menu -->
+          <div class="mt-6">
+            <p class="text-xs text-gray-500 dark:text-white/50 mb-2 px-1">
+              {{ t('common.language') }}
+            </p>
+            <LanguageSelector />
+          </div>
+
           <div class="mt-auto pt-6">
             <div
               class="h-[1px] bg-gradient-to-r from-transparent via-black/10 to-transparent mb-6 dark:via-white/20"
@@ -201,7 +213,7 @@ function goToLogin() {
                 class="flex items-center justify-center gap-2 w-full py-3.5 px-6 bg-black/5 border border-black/10 rounded-xl font-medium text-gray-700 hover:bg-black/10 hover:text-gray-900 transition-all duration-200 cursor-pointer dark:bg-white/10 dark:border-white/20 dark:text-white/90 dark:hover:bg-white/15 dark:hover:text-white"
               >
                 <i class="fa-solid fa-right-to-bracket"></i>
-                Se connecter
+                {{ t('common.login') }}
               </button>
               <template v-else>
                 <RouterLink
@@ -215,11 +227,11 @@ function goToLogin() {
                 <button
                   @click="logout"
                   class="flex items-center justify-start gap-3 w-full py-3.5 px-4 bg-black/[0.03] border border-black/5 rounded-xl font-medium hover:bg-black/10 transition-all duration-200 text-gray-500 hover:text-gray-700 cursor-pointer dark:bg-white/5 dark:border-white/10 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white"
-                  aria-label="Se déconnecter"
-                  title="Se déconnecter"
+                  :aria-label="t('common.logout')"
+                  :title="t('common.logout')"
                 >
                   <i class="fa-solid fa-right-from-bracket"></i>
-                  Déconnexion
+                  {{ t('common.logout') }}
                 </button>
               </template>
             </div>

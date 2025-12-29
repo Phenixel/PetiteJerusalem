@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { Session } from '../models/models'
 import { EnumTypeTextStudy } from '../models/typeTextStudy'
 import { TextTypeService } from '../services/textTypeService'
 import { DateService } from '../services/dateService'
+
+const { t } = useI18n()
 
 interface Props {
   session: Session
@@ -40,14 +43,16 @@ const formatDate = (date: Date): string => {
     </div>
     <div class="mb-4">
       <div class="text-text-secondary dark:text-gray-400">
-        <strong class="text-text-primary font-semibold dark:text-gray-300">Créé par :</strong>
+        <strong class="text-text-primary font-semibold dark:text-gray-300"
+          >{{ t('sessionCard.createdBy') }} :</strong
+        >
         {{ session.creatorName }}
       </div>
     </div>
     <div class="pt-4 border-t border-black/5 dark:border-white/10">
       <span class="text-sm text-text-secondary flex items-center gap-2 dark:text-gray-400">
         <i class="far fa-calendar-alt"></i>
-        <strong>Date limite :</strong> {{ formatDate(session.dateLimit) }}
+        <strong>{{ t('sessionCard.dateLimit') }} :</strong> {{ formatDate(session.dateLimit) }}
       </span>
     </div>
   </div>

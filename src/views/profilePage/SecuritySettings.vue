@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { authService } from '../../services/authService'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const passwordForm = ref({
   currentPassword: '',
@@ -41,12 +43,12 @@ const changePassword = async () => {
   clearMessages()
 
   if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
-    errorMessage.value = 'Les mots de passe ne correspondent pas'
+    errorMessage.value = t('security.passwordsDoNotMatch')
     return
   }
 
   if (passwordForm.value.newPassword.length < 6) {
-    errorMessage.value = 'Le nouveau mot de passe doit contenir au moins 6 caractères'
+    errorMessage.value = t('security.passwordMinError')
     return
   }
 
@@ -56,7 +58,7 @@ const changePassword = async () => {
       passwordForm.value.currentPassword,
       passwordForm.value.newPassword,
     )
-    successMessage.value = 'Mot de passe modifié avec succès'
+    successMessage.value = t('security.passwordChangedSuccess')
     passwordForm.value = { currentPassword: '', newPassword: '', confirmPassword: '' }
   } catch (error) {
     console.error('Erreur lors du changement de mot de passe:', error)
@@ -65,11 +67,11 @@ const changePassword = async () => {
         error.message.includes('auth/wrong-password') ||
         error.message.includes('auth/invalid-credential')
       ) {
-        errorMessage.value = 'Mot de passe actuel incorrect'
+        errorMessage.value = t('security.wrongPassword')
       } else if (error.message.includes('auth/requires-recent-login')) {
-        errorMessage.value = 'Veuillez vous reconnecter avant de changer votre mot de passe'
+        errorMessage.value = t('security.requiresRecentLogin')
       } else {
-        errorMessage.value = 'Erreur lors du changement de mot de passe'
+        errorMessage.value = t('security.passwordChangeError')
       }
     }
   } finally {
@@ -102,11 +104,11 @@ const deleteAccount = async () => {
     console.error('Erreur lors de la suppression du compte:', error)
     if (error instanceof Error) {
       if (error.message.includes('auth/requires-recent-login')) {
-        errorMessage.value = 'Veuillez vous reconnecter avant de supprimer votre compte'
+        errorMessage.value = t('security.deleteRecentLogin')
       } else if (error.message.includes('auth/popup-closed-by-user')) {
-        errorMessage.value = 'Authentification annulée'
+        errorMessage.value = t('security.authCancelled')
       } else {
-        errorMessage.value = 'Erreur lors de la suppression du compte'
+        errorMessage.value = t('security.deleteError')
       }
     }
   } finally {
@@ -118,7 +120,9 @@ const deleteAccount = async () => {
 <template>
   <div class="animate-[fadeIn_0.3s_ease]">
     <div class="flex items-center justify-between mb-8">
-      <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">Sécurité</h2>
+      <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">
+        {{ t('security.title') }}
+      </h2>
     </div>
 
     <!-- Messages de feedback -->
@@ -145,12 +149,13 @@ const deleteAccount = async () => {
         class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-8 dark:bg-gray-800/60 dark:border-gray-700"
       >
         <h3 class="text-xl font-bold text-text-primary mb-6 dark:text-gray-100">
-          Changer le mot de passe
+          {{ t('security.changePassword') }}
         </h3>
         <form @submit.prevent="changePassword" class="space-y-4">
           <div>
-            <label class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400"
-              >Mot de passe actuel</label
+            <label
+              class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400"
+              >{{ t('security.currentPassword') }}</label
             >
             <input
               v-model="passwordForm.currentPassword"
@@ -162,8 +167,9 @@ const deleteAccount = async () => {
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400"
-              >Nouveau mot de passe</label
+            <label
+              class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400"
+              >{{ t('security.newPassword') }}</label
             >
             <input
               v-model="passwordForm.newPassword"
@@ -173,12 +179,15 @@ const deleteAccount = async () => {
               minlength="6"
               required
             />
-            <p class="text-xs text-text-secondary mt-1 dark:text-gray-500">Minimum 6 caractères</p>
+            <p class="text-xs text-text-secondary mt-1 dark:text-gray-500">
+              {{ t('security.minChars') }}
+            </p>
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400"
-              >Confirmer le nouveau mot de passe</label
+            <label
+              class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400"
+              >{{ t('security.confirmNewPassword') }}</label
             >
             <input
               v-model="passwordForm.confirmPassword"
@@ -194,7 +203,7 @@ const deleteAccount = async () => {
               "
               class="text-xs text-red-500 mt-1"
             >
-              Les mots de passe ne correspondent pas
+              {{ t('security.passwordsDoNotMatch') }}
             </p>
           </div>
 
@@ -205,9 +214,9 @@ const deleteAccount = async () => {
           >
             <span v-if="isChangingPassword">
               <i class="fa-solid fa-spinner fa-spin mr-2"></i>
-              Changement en cours...
+              {{ t('security.changingPassword') }}
             </span>
-            <span v-else>Changer le mot de passe</span>
+            <span v-else>{{ t('security.changePasswordBtn') }}</span>
           </button>
         </form>
       </div>
@@ -223,12 +232,12 @@ const deleteAccount = async () => {
           >
             <i class="fa-brands fa-google text-xl text-blue-500"></i>
           </div>
-          <h3 class="text-xl font-bold text-blue-700 dark:text-blue-400">Compte Google</h3>
+          <h3 class="text-xl font-bold text-blue-700 dark:text-blue-400">
+            {{ t('security.googleAccount') }}
+          </h3>
         </div>
         <p class="text-blue-600/80 dark:text-blue-400/80">
-          Votre compte est lié à Google. Vous ne pouvez pas changer votre mot de passe ici. Pour
-          modifier vos paramètres de sécurité, rendez-vous dans les paramètres de votre compte
-          Google.
+          {{ t('security.googleAccountDesc') }}
         </p>
         <a
           href="https://myaccount.google.com/security"
@@ -237,7 +246,7 @@ const deleteAccount = async () => {
           class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium hover:bg-blue-200 transition-colors dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
         >
           <i class="fa-solid fa-external-link-alt"></i>
-          Paramètres Google
+          {{ t('security.googleSettings') }}
         </a>
       </div>
 
@@ -245,9 +254,11 @@ const deleteAccount = async () => {
       <div
         class="bg-red-50/50 backdrop-blur-sm rounded-2xl border border-red-100 p-8 dark:bg-red-900/10 dark:border-red-900/30"
       >
-        <h3 class="text-xl font-bold text-red-700 mb-2 dark:text-red-400">Supprimer le compte</h3>
+        <h3 class="text-xl font-bold text-red-700 mb-2 dark:text-red-400">
+          {{ t('security.deleteAccount') }}
+        </h3>
         <p class="text-red-600/80 mb-6 dark:text-red-400/80">
-          Cette action est irréversible. Toutes vos données seront définitivement supprimées.
+          {{ t('security.deleteAccountWarning') }}
         </p>
 
         <!-- Formulaire de confirmation -->
@@ -258,9 +269,9 @@ const deleteAccount = async () => {
             <p class="text-sm text-red-700 font-medium dark:text-red-300">
               <i class="fa-solid fa-warning mr-2"></i>
               <span v-if="isGoogleUser && !hasPasswordProvider">
-                Pour confirmer, vous devrez vous ré-authentifier avec Google.
+                {{ t('security.deleteConfirmGoogle') }}
               </span>
-              <span v-else> Confirmez-vous vouloir supprimer définitivement votre compte ? </span>
+              <span v-else> {{ t('security.deleteConfirmPassword') }} </span>
             </p>
           </div>
 
@@ -272,20 +283,20 @@ const deleteAccount = async () => {
             >
               <span v-if="isDeletingAccount">
                 <i class="fa-solid fa-spinner fa-spin mr-2"></i>
-                Suppression...
+                {{ t('security.deleting') }}
               </span>
               <span v-else-if="isGoogleUser && !hasPasswordProvider">
                 <i class="fa-brands fa-google mr-2"></i>
-                Confirmer avec Google
+                {{ t('security.confirmWithGoogle') }}
               </span>
-              <span v-else>Confirmer la suppression</span>
+              <span v-else>{{ t('security.confirmDeletion') }}</span>
             </button>
             <button
               @click="cancelDelete"
               type="button"
               class="py-3 px-6 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
             >
-              Annuler
+              {{ t('common.cancel') }}
             </button>
           </div>
         </div>
@@ -295,7 +306,7 @@ const deleteAccount = async () => {
           @click="confirmDeleteAccount"
           class="px-6 py-3 bg-red-100 text-red-700 hover:bg-red-200 border border-red-200 rounded-xl font-semibold transition-colors w-full sm:w-auto dark:bg-red-900/30 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/50"
         >
-          Supprimer mon compte
+          {{ t('security.deleteMyAccount') }}
         </button>
       </div>
     </div>

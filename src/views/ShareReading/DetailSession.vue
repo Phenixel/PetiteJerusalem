@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { sessionService } from '../../services/sessionService'
 import type { Session, TextStudy, TextStudyReservation } from '../../models/models'
 import type { User } from '../../services/authService'
@@ -14,6 +15,8 @@ import SessionInstructions from './detailSession/SessionInstructions.vue'
 import TextStudiesList from './detailSession/TextStudiesList.vue'
 
 const route = useRoute()
+const router = useRouter()
+const { t } = useI18n()
 
 const session = ref<Session | null>(null)
 const textStudies = ref<TextStudy[]>([])
@@ -69,7 +72,7 @@ const groupedTextStudies = computed(() => {
 
     if (myTexts.length > 0) {
       return {
-        'Mes réservations': myTexts,
+        [t('detailSession.myReservations')]: myTexts,
         ...groupedOthers,
       }
     }
@@ -119,6 +122,12 @@ const progressStats = computed(() => {
 
 const hasSelectedItems = computed(() => selectedItems.value.size > 0)
 
+const confirmButtonLabel = computed(() => {
+  return !currentUser.value
+    ? t('detailSession.confirmAsGuest')
+    : t('detailSession.confirmReservation')
+})
+
 const loadSessionData = async () => {
   try {
     isLoading.value = true
@@ -150,12 +159,6 @@ const reserveTextOrSection = async (textStudyId: string, section?: number) => {
   if (!session.value) return
 
   try {
-    // const key = section ? `${textStudyId}-${section}` : `${textStudyId}-full`
-    // isReserving.value = key // Handled in loop in confirmReservations mostly
-
-    // We update isReserving to show loading state on specific item if single item reservation,
-    // but here we use batch confirmation.
-
     const reservationId = await sessionService.createReservationForUser(
       session.value.id,
       textStudyId,
@@ -175,7 +178,7 @@ const reserveTextOrSection = async (textStudyId: string, section?: number) => {
     reservations.value.push(newReservation)
   } catch (err) {
     console.error('Erreur lors de la réservation:', err)
-    alert(err instanceof Error ? err.message : 'Erreur lors de la réservation. Veuillez réessayer.')
+    alert(err instanceof Error ? err.message : t('detailSession.reservationError'))
     throw err
   }
 }
@@ -193,7 +196,7 @@ const handleItemClick = (textStudyId: string, section?: number) => {
       selectedItems.value.delete(key)
     }
 
-    if (confirm('Voulez-vous annuler cette réservation ?')) {
+    if (confirm(t('detailSession.cancelReservationConfirm'))) {
       cancelReservation(textStudyId, section)
     }
     return
@@ -210,7 +213,7 @@ const confirmReservations = async () => {
   if (!session.value || selectedItems.value.size === 0) return
 
   if (!currentUser.value && (!reservationForm.value.name || !reservationForm.value.email)) {
-    alert('Veuillez remplir votre nom et email pour confirmer les réservations.')
+    alert(t('detailSession.fillNameAndEmail'))
     const formElement = document.getElementById('guest-form')
     if (formElement) {
       const offset = 120
@@ -271,7 +274,7 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
       )
 
       if (!canDelete) {
-        alert('Vous ne pouvez annuler que vos propres réservations.')
+        alert(t('detailSession.canOnlyCancelOwn'))
         return
       }
 
@@ -288,7 +291,7 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
     }
   } catch (err) {
     console.error("Erreur lors de l'annulation:", err)
-    alert("Erreur lors de l'annulation. Veuillez réessayer.")
+    alert(t('detailSession.cancelError'))
   }
 }
 
@@ -312,7 +315,7 @@ const toggleReservationCompletion = async (textStudyId: string, section: number)
     reservation.isCompleted = newCompletionStatus
   } catch (error) {
     console.error('Erreur lors de la mise à jour de la réservation:', error)
-    alert('Erreur lors de la mise à jour de la réservation')
+    alert(t('detailSession.updateError'))
   }
 }
 
@@ -324,8 +327,6 @@ const openShareModal = () => {
   shareUrl.value = window.location.href
   showShareModal.value = true
 }
-
-const router = useRouter()
 
 const isOwner = computed(() => {
   if (!currentUser.value || !session.value) return false
@@ -346,7 +347,7 @@ onMounted(async () => {
   if (session.value) {
     const url = window.location.origin + `/share-reading/session/${session.value.id}`
     seoService.setMeta({
-      title: `${session.value.name} | Session d'étude | Petite Jerusalem`,
+      title: `${session.value.name} | ${t('seo.sessionTitle')}`,
       description: session.value.description || 'Session de lecture partagée.',
       canonical: url,
       og: { url },
@@ -358,7 +359,7 @@ watch(session, (s) => {
   if (!s) return
   const url = window.location.origin + `/share-reading/session/${s.id}`
   seoService.setMeta({
-    title: `${s.name} | Session d'étude | Petite Jerusalem`,
+    title: `${s.name} | ${t('seo.sessionTitle')}`,
     description: s.description || 'Session de lecture partagée.',
     canonical: url,
     og: { url },
@@ -373,20 +374,20 @@ watch(session, (s) => {
       <div
         class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
       ></div>
-      <p class="font-medium animate-pulse">Chargement de la session...</p>
+      <p class="font-medium animate-pulse">{{ t('detailSession.loadingSession') }}</p>
     </div>
 
     <!-- État d'erreur -->
     <div
       v-else-if="error"
-      class="flex flex-col items-center justify-center p-12 text-center bg-red-50 rounded-2xl border border-red-100"
+      class="flex flex-col items-center justify-center p-12 text-center bg-red-50 rounded-2xl border border-red-100 dark:bg-red-900/10 dark:border-red-900/30"
     >
-      <p class="text-red-700 font-medium mb-4">{{ error }}</p>
+      <p class="text-red-700 font-medium mb-4 dark:text-red-400">{{ error }}</p>
       <button
         @click="loadSessionData"
         class="px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
       >
-        Réessayer
+        {{ t('common.retry') }}
       </button>
     </div>
 
@@ -415,7 +416,9 @@ watch(session, (s) => {
         v-if="!currentUser"
         class="mb-8 p-6 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 shadow-sm dark:bg-gray-800/60 dark:border-gray-700"
       >
-        <h3 class="font-bold text-lg text-text-primary mb-4 dark:text-gray-100">Invité ?</h3>
+        <h3 class="font-bold text-lg text-text-primary mb-4 dark:text-gray-100">
+          {{ t('detailSession.guestTitle') }}
+        </h3>
         <GuestForm v-model:reservationForm="reservationForm" />
       </div>
 
@@ -425,7 +428,7 @@ watch(session, (s) => {
           <input
             type="text"
             v-model="searchTerm"
-            placeholder="Rechercher un texte, un livre ou un chapitre..."
+            :placeholder="t('detailSession.searchPlaceholder')"
             class="w-full pl-12 pr-10 py-4 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none dark:bg-gray-800/90 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:bg-gray-800"
           />
           <i class="fa-solid fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
@@ -433,7 +436,7 @@ watch(session, (s) => {
             v-if="searchTerm"
             @click="clearSearch"
             class="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 text-xs transition-colors dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300"
-            title="Effacer la recherche"
+            :title="t('detailSession.clearSearch')"
           >
             <i class="fa-solid fa-times"></i>
           </button>
@@ -442,7 +445,7 @@ watch(session, (s) => {
           v-if="searchTerm"
           class="text-center mt-2 text-sm text-text-secondary bg-white/50 backdrop-blur py-1 px-3 rounded-full inline-block mx-auto left-0 right-0 w-fit relative dark:bg-gray-700/50 dark:text-gray-300"
         >
-          Recherche : "{{ searchTerm }}"
+          {{ t('detailSession.searchFor') }} : "{{ searchTerm }}"
         </div>
       </div>
 
@@ -465,9 +468,9 @@ watch(session, (s) => {
       v-if="hasSelectedItems"
       :count="selectedItems.size"
       :loading="isSubmittingBatch"
-      :label="!currentUser ? 'Finaliser en tant qu\'invité' : 'Confirmer la réservation'"
-      :button-text="'Confirmer'"
-      :button-loading-text="'Réservation...'"
+      :label="confirmButtonLabel"
+      :button-text="t('common.confirm')"
+      :button-loading-text="t('detailSession.reserving')"
       @confirm="confirmReservations"
     />
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { authService } from '../services/authService'
 import { sessionService } from '../services/sessionService'
 import type { User } from '../services/authService'
@@ -15,6 +16,7 @@ import UserInfoForm from './profilePage/UserInfoForm.vue'
 import SecuritySettings from './profilePage/SecuritySettings.vue'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const currentUser = ref<User | null>(null)
 const activeTab = ref<'sessions-participated' | 'sessions-created' | 'my-info' | 'security'>(
@@ -72,8 +74,6 @@ const loadSessions = async () => {
 
 const loadTextStudiesForSessions = async (sessions: Session[]) => {
   try {
-    // Collect unique text IDs first to minimize updates if needed, though loading by type.
-    // Actually current logic loads by type
     const types = [...new Set(sessions.map((s) => s.type))]
     for (const type of types) {
       const textStudies = await sessionService.getTextStudiesByType(type)
@@ -96,7 +96,6 @@ const updateUserInfo = async (data: { name: string; email: string }) => {
   try {
     currentUser.value.name = data.name
     currentUser.value.email = data.email
-    // Note: If there was a backend save call it should go here
   } catch (error) {
     console.error('Erreur lors de la sauvegarde:', error)
   }
@@ -134,17 +133,15 @@ const saveSessionChanges = async (sessionData: {
       }
     }
 
-    alert('Session mise à jour avec succès')
+    alert(t('profile.sessionUpdatedSuccess'))
   } catch (error) {
     console.error('Erreur lors de la mise à jour:', error)
-    alert('Erreur lors de la mise à jour de la session')
+    alert(t('profile.sessionUpdateError'))
   }
 }
 
 const endSession = async (session: Session) => {
-  if (
-    !confirm('Êtes-vous sûr de vouloir terminer cette session ? Cette action est irréversible.')
-  ) {
+  if (!confirm(t('profile.endSessionConfirm'))) {
     return
   }
 
@@ -161,10 +158,10 @@ const endSession = async (session: Session) => {
       }
     }
 
-    alert('Session terminée avec succès')
+    alert(t('profile.sessionEndedSuccess'))
   } catch (error) {
     console.error('Erreur lors de la fin de session:', error)
-    alert('Erreur lors de la fin de session')
+    alert(t('profile.sessionEndError'))
   }
 }
 
@@ -173,8 +170,8 @@ onMounted(async () => {
   await loadSessions()
   const url = window.location.origin + '/profile'
   seoService.setMeta({
-    title: `Mon profil | Petite Jerusalem`,
-    description: "Gérez vos informations, consultez vos sessions d'étude participées et créées.",
+    title: t('seo.profileTitle'),
+    description: t('seo.profileDescription'),
     canonical: url,
     og: { url },
   })
@@ -187,7 +184,7 @@ onMounted(async () => {
       <div
         class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
       ></div>
-      <p class="font-medium animate-pulse">Chargement de votre profil...</p>
+      <p class="font-medium animate-pulse">{{ t('profile.loadingProfile') }}</p>
     </div>
 
     <div v-else-if="currentUser">
@@ -208,7 +205,7 @@ onMounted(async () => {
                     : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
                 ]"
               >
-                <span>Sessions Participées</span>
+                <span>{{ t('profile.tabs.participatedSessions') }}</span>
                 <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
               </button>
             </li>
@@ -222,7 +219,7 @@ onMounted(async () => {
                     : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
                 ]"
               >
-                <span>Sessions Créées</span>
+                <span>{{ t('profile.tabs.createdSessions') }}</span>
                 <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
               </button>
             </li>
@@ -236,7 +233,7 @@ onMounted(async () => {
                     : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
                 ]"
               >
-                <span>Mes Informations</span>
+                <span>{{ t('profile.tabs.myInfo') }}</span>
                 <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
               </button>
             </li>
@@ -250,7 +247,7 @@ onMounted(async () => {
                     : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
                 ]"
               >
-                <span>Sécurité</span>
+                <span>{{ t('profile.tabs.security') }}</span>
                 <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
               </button>
             </li>
@@ -261,7 +258,7 @@ onMounted(async () => {
             class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20"
           >
             <i class="fa-solid fa-right-from-bracket"></i>
-            Déconnexion
+            {{ t('common.logout') }}
           </button>
         </nav>
 

@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 defineProps<{
   userDisplayName: string
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -18,7 +22,7 @@ defineProps<{
         </h1>
         <span
           class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold tracking-wider uppercase border border-white/20"
-          >Membre Actif</span
+          >{{ t('profile.activeMember') }}</span
         >
       </div>
     </div>

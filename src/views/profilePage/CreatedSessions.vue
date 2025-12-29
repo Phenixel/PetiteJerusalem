@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { sessionService } from '../../services/sessionService'
 import type { Session } from '../../models/models'
 import type { User } from '../../services/authService'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const props = defineProps<{
   sessions: Session[]
@@ -31,12 +33,18 @@ const finishedCreatedSessions = computed(() => props.sessions.filter((s) => isSe
 const openSessionManagement = (session: Session) => {
   router.push({ name: 'session-management', params: { id: session.id } })
 }
+
+const goToNewSession = () => {
+  router.push('/share-reading/new-session')
+}
 </script>
 
 <template>
   <div class="animate-[fadeIn_0.3s_ease]">
     <div class="flex items-center justify-between mb-8">
-      <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">Sessions créées</h2>
+      <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">
+        {{ t('profile.createdSessions') }}
+      </h2>
     </div>
 
     <div
@@ -49,15 +57,16 @@ const openSessionManagement = (session: Session) => {
         <i class="fa-solid fa-plus-circle"></i>
       </div>
       <h3 class="text-xl font-semibold text-text-primary mb-2 dark:text-gray-200">
-        Aucune session créée
+        {{ t('profile.noCreatedSessions') }}
       </h3>
       <p class="text-text-secondary mb-6 dark:text-gray-400">
-        Créez votre première session d'étude partagée.
+        {{ t('profile.noCreatedSessionsDesc') }}
       </p>
       <button
+        @click="goToNewSession"
         class="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all"
       >
-        Créer une session
+        {{ t('profile.createSession') }}
       </button>
     </div>
 
@@ -66,7 +75,7 @@ const openSessionManagement = (session: Session) => {
         <h3
           class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2 dark:text-gray-200"
         >
-          <i class="fa-solid fa-play-circle text-primary"></i> En cours
+          <i class="fa-solid fa-play-circle text-primary"></i> {{ t('common.ongoing') }}
         </h3>
 
         <div class="grid gap-6">
@@ -101,27 +110,27 @@ const openSessionManagement = (session: Session) => {
                 @click="emit('edit', session)"
                 class="px-3 py-1.5 bg-white/50 hover:bg-white border border-gray-200 rounded-lg text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-2 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-300 dark:hover:text-primary dark:hover:bg-gray-700"
               >
-                <i class="fa-solid fa-edit"></i> Modifier
+                <i class="fa-solid fa-edit"></i> {{ t('common.edit') }}
               </button>
               <button
                 v-if="sessionService.canManageSession(session, currentUser)"
                 @click="openSessionManagement(session)"
                 class="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg text-sm font-medium text-primary transition-colors flex items-center gap-2 dark:bg-primary/20"
               >
-                <i class="fa-solid fa-cogs"></i> Gérer
+                <i class="fa-solid fa-cogs"></i> {{ t('common.manage') }}
               </button>
               <button
                 @click="emit('share', session)"
                 class="px-3 py-1.5 bg-white/50 hover:bg-white border border-gray-200 rounded-lg text-sm font-medium text-text-secondary hover:text-primary transition-colors flex items-center gap-2 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-300 dark:hover:text-primary dark:hover:bg-gray-700"
               >
-                <i class="fa-solid fa-share"></i> Partager
+                <i class="fa-solid fa-share"></i> {{ t('common.share') }}
               </button>
               <button
                 v-if="sessionService.canEndSession(session)"
                 @click="emit('end', session)"
                 class="px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg text-sm font-medium text-red-600 transition-colors flex items-center gap-2 ml-auto dark:bg-red-900/10 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/30"
               >
-                <i class="fa-solid fa-flag-checkered"></i> Fin
+                <i class="fa-solid fa-flag-checkered"></i> {{ t('common.end') }}
               </button>
             </div>
           </div>
@@ -133,7 +142,7 @@ const openSessionManagement = (session: Session) => {
         <h3
           class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2 dark:text-gray-200"
         >
-          <i class="fa-solid fa-stop-circle text-gray-500"></i> Terminées
+          <i class="fa-solid fa-stop-circle text-gray-500"></i> {{ t('common.finished') }}
         </h3>
 
         <div class="grid gap-6">
@@ -150,7 +159,7 @@ const openSessionManagement = (session: Session) => {
                 <div
                   class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-200 text-gray-700 text-xs font-bold uppercase rounded mb-2 dark:bg-gray-700 dark:text-gray-300"
                 >
-                  <i class="fa-solid fa-flag-checkered"></i> Terminée
+                  <i class="fa-solid fa-flag-checkered"></i> {{ t('common.finished') }}
                 </div>
               </div>
               <div class="flex gap-2">
@@ -173,7 +182,7 @@ const openSessionManagement = (session: Session) => {
                 @click="openSessionManagement(session)"
                 class="px-3 py-1.5 bg-white/50 hover:bg-white border border-gray-200 rounded-lg text-sm font-medium text-text-secondary transition-colors flex items-center gap-2 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
               >
-                <i class="fa-solid fa-eye"></i> Consulter
+                <i class="fa-solid fa-eye"></i> {{ t('common.view') }}
               </button>
             </div>
           </div>
