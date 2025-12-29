@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @theme {
   /* Colors */
@@ -19,8 +19,8 @@
   --color-text-light: #ffffff;
 
   /* Fonts */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: 'Georgia', serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Georgia", serif;
 
   /* Spacing - usually standard tailwind is fine, but we can match specific ones if needed */
   /* Border Radius */
@@ -70,9 +70,9 @@ a {
 }
 
 button,
-[type='button'],
-[type='reset'],
-[type='submit'],
-[role='button'] {
+[type="button"],
+[type="reset"],
+[type="submit"],
+[role="button"] {
   cursor: pointer;
 }

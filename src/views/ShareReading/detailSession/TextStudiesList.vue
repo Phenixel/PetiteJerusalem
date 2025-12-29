@@ -1,86 +1,86 @@
 <script setup lang="ts">
-import { sessionService } from '../../../services/sessionService'
-import { ref } from 'vue'
-import type { Session, TextStudy, TextStudyReservation } from '../../../models/models'
-import type { User } from '../../../services/authService'
+import { sessionService } from "../../../services/sessionService";
+import { ref } from "vue";
+import type { Session, TextStudy, TextStudyReservation } from "../../../models/models";
+import type { User } from "../../../services/authService";
 
 const props = defineProps<{
-  groupedTextStudies: Record<string, TextStudy[]>
-  session: Session
-  reservations: TextStudyReservation[]
-  currentUser: User | null
-  guestEmail: string
-  selectedItems: Set<string>
-  isReserving: string | null
-}>()
+  groupedTextStudies: Record<string, TextStudy[]>;
+  session: Session;
+  reservations: TextStudyReservation[];
+  currentUser: User | null;
+  guestEmail: string;
+  selectedItems: Set<string>;
+  isReserving: string | null;
+}>();
 
 const emit = defineEmits<{
-  (e: 'item-click', textId: string, section?: number): void
-  (e: 'toggle-completion', textId: string, section: number): void
-}>()
+  (e: "item-click", textId: string, section?: number): void;
+  (e: "toggle-completion", textId: string, section: number): void;
+}>();
 
-const expandedTexts = ref<Set<string>>(new Set())
+const expandedTexts = ref<Set<string>>(new Set());
 
 const toggleTextExpansion = (textId: string) => {
   if (expandedTexts.value.has(textId)) {
-    expandedTexts.value.delete(textId)
+    expandedTexts.value.delete(textId);
   } else {
-    expandedTexts.value.add(textId)
+    expandedTexts.value.add(textId);
   }
-}
+};
 
 const isTextExpanded = (textId: string) => {
-  return expandedTexts.value.has(textId)
-}
+  return expandedTexts.value.has(textId);
+};
 
 const formatBookName = (bookName: string) => {
-  if (bookName === 'Mes réservations') return bookName
-  return sessionService.formatBookName(bookName)
-}
+  if (bookName === "Mes réservations") return bookName;
+  return sessionService.formatBookName(bookName);
+};
 
 const generateChapters = (totalSections: number) => {
-  return sessionService.generateChapters(totalSections)
-}
+  return sessionService.generateChapters(totalSections);
+};
 
 const isReserved = (textStudyId: string, section?: number) => {
-  return sessionService.isTextOrSectionReserved(textStudyId, section, props.session)
-}
+  return sessionService.isTextOrSectionReserved(textStudyId, section, props.session);
+};
 
 const isSelected = (textStudyId: string, section?: number) => {
-  const key = section ? `${textStudyId}#${section}` : `${textStudyId}#full`
-  return props.selectedItems.has(key)
-}
+  const key = section ? `${textStudyId}#${section}` : `${textStudyId}#full`;
+  return props.selectedItems.has(key);
+};
 
 const getReservation = (textStudyId: string, section?: number) => {
-  return props.reservations.find((r) => r.textStudyId === textStudyId && r.section === section)
-}
+  return props.reservations.find((r) => r.textStudyId === textStudyId && r.section === section);
+};
 
 const canCancelReservation = (textStudyId: string, section?: number) => {
-  const reservation = getReservation(textStudyId, section)
-  if (!reservation) return false
+  const reservation = getReservation(textStudyId, section);
+  if (!reservation) return false;
 
-  return sessionService.canUserDeleteReservation(reservation, props.currentUser, props.guestEmail)
-}
+  return sessionService.canUserDeleteReservation(reservation, props.currentUser, props.guestEmail);
+};
 
 const getTextDisplayStatus = (textStudyId: string, text: TextStudy) => {
   // We need to pass text object as well
-  return sessionService.getTextDisplayStatus(textStudyId, text, props.session)
-}
+  return sessionService.getTextDisplayStatus(textStudyId, text, props.session);
+};
 
 const handleCardClick = (text: TextStudy) => {
   if (text.totalSections === 1) {
     // Pour les textes à un seul chapitre, toggle la réservation
     const isDisabled =
       props.isReserving === `${text.id}-1` ||
-      (isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1))
+      (isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1));
     if (!isDisabled) {
-      emit('item-click', text.id, 1)
+      emit("item-click", text.id, 1);
     }
   } else if (!isTextExpanded(text.id)) {
     // Pour les textes à plusieurs chapitres, ouvrir si fermé
-    toggleTextExpansion(text.id)
+    toggleTextExpansion(text.id);
   }
-}
+};
 </script>
 
 <template>
@@ -152,7 +152,7 @@ const handleCardClick = (text: TextStudy) => {
                     "
                   />
                   <span class="text-sm font-medium text-text-secondary dark:text-gray-400">
-                    {{ isSelected(text.id, 1) ? 'Sélectionné' : 'Réserver' }}
+                    {{ isSelected(text.id, 1) ? "Sélectionné" : "Réserver" }}
                   </span>
                 </label>
               </div>
@@ -370,7 +370,7 @@ const handleCardClick = (text: TextStudy) => {
                           getReservation(text.id, chapter)?.isCompleted ? 'fa-check' : 'fa-user'
                         "
                       ></i>
-                      {{ isReserved(text.id, chapter).reservedBy || 'Réservé' }}
+                      {{ isReserved(text.id, chapter).reservedBy || "Réservé" }}
                     </span>
                   </template>
 

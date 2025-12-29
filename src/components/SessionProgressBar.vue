@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps<{
-  total: number
-  participants: number
-  reserved: number
-  read: number
-}>()
+  total: number;
+  participants: number;
+  reserved: number;
+  read: number;
+}>();
 
 const stats = computed(() => {
-  const { total, reserved, read } = props
+  const { total, reserved, read } = props;
   return {
     reservedPercentage: total > 0 ? (reserved / total) * 100 : 0,
     readPercentage: total > 0 ? (read / total) * 100 : 0,
     remaining: total - reserved,
-  }
-})
+  };
+});
 </script>
 
 <template>
@@ -30,11 +30,11 @@ const stats = computed(() => {
         </span>
         <span
           class="text-sm font-medium text-green-600 dark:text-green-300 transform translate-y-[-2px]"
-          >{{ t('progressBar.participants') }}</span
+          >{{ t("progressBar.participants") }}</span
         >
       </div>
       <div class="flex items-center gap-1 text-text-secondary dark:text-gray-400">
-        <span class="text-sm">{{ t('progressBar.total') }}</span>
+        <span class="text-sm">{{ t("progressBar.total") }}</span>
         <span class="text-xl font-bold text-text-primary dark:text-gray-200">{{ total }}</span>
       </div>
     </div>
@@ -54,15 +54,15 @@ const stats = computed(() => {
     <div class="flex items-center justify-start gap-6 text-xs font-medium">
       <div class="flex items-center gap-1.5 text-green-600 dark:text-green-400">
         <div class="w-2 h-2 rounded-full bg-green-500"></div>
-        <span>{{ read }} {{ t('progressBar.read') }}</span>
+        <span>{{ read }} {{ t("progressBar.read") }}</span>
       </div>
       <div class="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
         <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-        <span>{{ reserved }} {{ t('progressBar.reserved') }}</span>
+        <span>{{ reserved }} {{ t("progressBar.reserved") }}</span>
       </div>
       <div class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
         <div class="w-2 h-2 rounded-full bg-gray-400"></div>
-        <span>{{ stats.remaining }} {{ t('progressBar.remaining') }}</span>
+        <span>{{ stats.remaining }} {{ t("progressBar.remaining") }}</span>
       </div>
     </div>
   </div>

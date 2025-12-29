@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-import Navbar from './components/NavbarComponents.vue'
-import SiteFooter from './components/SiteFooter.vue'
-import ScrollToTop from './components/ScrollToTop.vue'
-import { RouterView } from 'vue-router'
+import { computed } from "vue";
+import { useRoute } from "vue-router";
+import Navbar from "./components/NavbarComponents.vue";
+import SiteFooter from "./components/SiteFooter.vue";
+import ScrollToTop from "./components/ScrollToTop.vue";
+import { RouterView } from "vue-router";
 
-const route = useRoute()
+const route = useRoute();
 
-const isHome = computed(() => route.name === 'home')
+const isHome = computed(() => route.name === "home");
 </script>
 
 <template>

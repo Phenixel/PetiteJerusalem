@@ -14,7 +14,7 @@
           rel="noopener noreferrer"
           :aria-label="t('footer.madeBy') + ' Phenixel (' + t('footer.about') + ')'"
         >
-          {{ t('footer.madeBy') }} <strong>Phenixel</strong> 🐦‍🔥
+          {{ t("footer.madeBy") }} <strong>Phenixel</strong> 🐦‍🔥
         </a>
       </div>
 
@@ -28,7 +28,7 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          {{ t('footer.about') }}
+          {{ t("footer.about") }}
         </a>
         <span class="opacity-60 hidden md:inline" aria-hidden="true">•</span>
         <a
@@ -37,7 +37,7 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          {{ t('footer.legal') }}
+          {{ t("footer.legal") }}
         </a>
         <span class="opacity-60 hidden md:inline" aria-hidden="true">•</span>
         <a
@@ -46,7 +46,7 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          {{ t('footer.reportIssue') }}
+          {{ t("footer.reportIssue") }}
         </a>
       </nav>
 
@@ -81,10 +81,10 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
-import LanguageSelector from './LanguageSelector.vue'
+import { useI18n } from "vue-i18n";
+import LanguageSelector from "./LanguageSelector.vue";
 
-const { t } = useI18n()
+const { t } = useI18n();
 </script>
 
 <!-- Styles globaux dans src/assets/style.css -->

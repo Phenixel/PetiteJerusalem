@@ -1,67 +1,67 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { sessionService } from '../../services/sessionService'
-import type { Session } from '../../models/models'
-import SessionCard from '../../components/SessionCard.vue'
-import { seoService } from '../../services/seoService'
-import { authService } from '../../services/authService'
+import { ref, onMounted, onUnmounted, computed } from "vue";
+import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { sessionService } from "../../services/sessionService";
+import type { Session } from "../../models/models";
+import SessionCard from "../../components/SessionCard.vue";
+import { seoService } from "../../services/seoService";
+import { authService } from "../../services/authService";
 
-const router = useRouter()
-const { t } = useI18n()
+const router = useRouter();
+const { t } = useI18n();
 
-const sessions = ref<Session[]>([])
-const isLoading = ref(true)
-const error = ref<string | null>(null)
-const isAuthenticated = ref(false)
-let unsubscribeAuth: (() => void) | null = null
+const sessions = ref<Session[]>([]);
+const isLoading = ref(true);
+const error = ref<string | null>(null);
+const isAuthenticated = ref(false);
+let unsubscribeAuth: (() => void) | null = null;
 
 const loadSessions = async () => {
   try {
-    isLoading.value = true
-    error.value = null
-    const fetchedSessions = await sessionService.getAllSessions()
-    sessions.value = sessionService.sortSessionsByDate(fetchedSessions)
+    isLoading.value = true;
+    error.value = null;
+    const fetchedSessions = await sessionService.getAllSessions();
+    sessions.value = sessionService.sortSessionsByDate(fetchedSessions);
   } catch (err) {
-    console.error('Erreur lors du chargement des sessions:', err)
-    error.value = err instanceof Error ? err.message : 'Erreur lors du chargement des sessions'
+    console.error("Erreur lors du chargement des sessions:", err);
+    error.value = err instanceof Error ? err.message : "Erreur lors du chargement des sessions";
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const isSessionFinished = (session: Session): boolean => {
-  if (session.isEnded) return true
-  const limit = new Date(session.dateLimit)
-  limit.setHours(23, 59, 59, 999)
-  return new Date() > limit
-}
+  if (session.isEnded) return true;
+  const limit = new Date(session.dateLimit);
+  limit.setHours(23, 59, 59, 999);
+  return new Date() > limit;
+};
 
-const ongoingSessions = computed(() => sessions.value.filter((s) => !isSessionFinished(s)))
-const finishedSessions = computed(() => sessions.value.filter((s) => isSessionFinished(s)))
+const ongoingSessions = computed(() => sessions.value.filter((s) => !isSessionFinished(s)));
+const finishedSessions = computed(() => sessions.value.filter((s) => isSessionFinished(s)));
 
 onMounted(() => {
-  loadSessions()
+  loadSessions();
   unsubscribeAuth = authService.onAuthChanged((user) => {
-    isAuthenticated.value = !!user
-  })
-  const url = window.location.origin + '/share-reading'
+    isAuthenticated.value = !!user;
+  });
+  const url = window.location.origin + "/share-reading";
   seoService.setMeta({
-    title: t('seo.shareReadingTitle'),
-    description: t('seo.shareReadingDescription'),
+    title: t("seo.shareReadingTitle"),
+    description: t("seo.shareReadingDescription"),
     canonical: url,
     og: { url },
-  })
-})
+  });
+});
 
 onUnmounted(() => {
-  if (unsubscribeAuth) unsubscribeAuth()
-})
+  if (unsubscribeAuth) unsubscribeAuth();
+});
 
 const handleSessionClick = (session: Session) => {
-  router.push(`/share-reading/session/${session.id}`)
-}
+  router.push(`/share-reading/session/${session.id}`);
+};
 </script>
 
 <template>
@@ -70,10 +70,10 @@ const handleSessionClick = (session: Session) => {
       <h2
         class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-4 tracking-tight"
       >
-        {{ t('shareReading.title') }}
+        {{ t("shareReading.title") }}
       </h2>
       <p class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed dark:text-gray-300">
-        {{ t('shareReading.subtitle') }}
+        {{ t("shareReading.subtitle") }}
       </p>
 
       <button
@@ -83,10 +83,10 @@ const handleSessionClick = (session: Session) => {
         :title="t('shareReading.createSession')"
       >
         <i class="fa-solid fa-plus mr-2"></i>
-        {{ t('shareReading.createSession') }}
+        {{ t("shareReading.createSession") }}
       </button>
       <div v-if="!isAuthenticated" class="mt-4 text-sm text-text-secondary/80 dark:text-gray-400">
-        <small>{{ t('shareReading.authRequired') }}</small>
+        <small>{{ t("shareReading.authRequired") }}</small>
       </div>
     </div>
 
@@ -100,7 +100,7 @@ const handleSessionClick = (session: Session) => {
           class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
         ></div>
         <p class="text-text-secondary font-medium animate-pulse dark:text-gray-300">
-          {{ t('shareReading.loadingSessions') }}
+          {{ t("shareReading.loadingSessions") }}
         </p>
       </div>
 
@@ -119,7 +119,7 @@ const handleSessionClick = (session: Session) => {
           @click="loadSessions"
           class="px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
         >
-          {{ t('common.retry') }}
+          {{ t("common.retry") }}
         </button>
       </div>
 
@@ -131,7 +131,7 @@ const handleSessionClick = (session: Session) => {
             class="text-2xl font-bold text-text-primary mb-6 flex items-center gap-3 dark:text-gray-100"
           >
             <i class="fa-solid fa-fire text-orange-500"></i>
-            {{ t('shareReading.ongoingSessions') }}
+            {{ t("shareReading.ongoingSessions") }}
             <span
               class="text-sm font-normal text-text-secondary bg-gray-100 px-3 py-1 rounded-full dark:bg-gray-800 dark:text-gray-400"
               >{{ ongoingSessions.length }}</span
@@ -155,7 +155,7 @@ const handleSessionClick = (session: Session) => {
             class="flex flex-col items-center justify-center py-12 bg-white/40 backdrop-blur-sm rounded-xl border border-white/60 dark:bg-gray-800/40 dark:border-gray-700"
           >
             <p class="text-text-secondary text-lg dark:text-gray-400">
-              {{ t('shareReading.noOngoingSessions') }}
+              {{ t("shareReading.noOngoingSessions") }}
             </p>
           </div>
         </div>
@@ -167,7 +167,7 @@ const handleSessionClick = (session: Session) => {
               class="text-2xl font-bold text-text-primary flex items-center gap-3 dark:text-gray-100"
             >
               <i class="fa-solid fa-history text-gray-500"></i>
-              {{ t('shareReading.archives') }}
+              {{ t("shareReading.archives") }}
             </h3>
             <div class="h-px flex-grow bg-gradient-to-r from-gray-200 to-transparent"></div>
           </div>
@@ -191,10 +191,10 @@ const handleSessionClick = (session: Session) => {
       >
         <div class="text-6xl mb-6">📚</div>
         <h4 class="text-2xl font-bold text-text-primary mb-2 dark:text-gray-200">
-          {{ t('shareReading.noSessions') }}
+          {{ t("shareReading.noSessions") }}
         </h4>
         <p class="text-text-secondary dark:text-gray-400">
-          {{ t('shareReading.createFirstSession') }}
+          {{ t("shareReading.createFirstSession") }}
         </p>
       </div>
     </div>

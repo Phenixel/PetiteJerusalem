@@ -1,87 +1,87 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { sessionService } from '../../services/sessionService'
-import type { Session, TextStudy, TextStudyReservation } from '../../models/models'
-import type { User } from '../../services/authService'
-import GuestForm from '../../components/GuestForm.vue'
-import ShareModal from '../../components/ShareModal.vue'
-import SessionProgressBar from '../../components/SessionProgressBar.vue'
-import BatchSelectionBar from '../../components/BatchSelectionBar.vue'
-import { seoService } from '../../services/seoService'
-import SessionHeader from './detailSession/SessionHeader.vue'
-import SessionInstructions from './detailSession/SessionInstructions.vue'
-import TextStudiesList from './detailSession/TextStudiesList.vue'
+import { ref, onMounted, computed, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { sessionService } from "../../services/sessionService";
+import type { Session, TextStudy, TextStudyReservation } from "../../models/models";
+import type { User } from "../../services/authService";
+import GuestForm from "../../components/GuestForm.vue";
+import ShareModal from "../../components/ShareModal.vue";
+import SessionProgressBar from "../../components/SessionProgressBar.vue";
+import BatchSelectionBar from "../../components/BatchSelectionBar.vue";
+import { seoService } from "../../services/seoService";
+import SessionHeader from "./detailSession/SessionHeader.vue";
+import SessionInstructions from "./detailSession/SessionInstructions.vue";
+import TextStudiesList from "./detailSession/TextStudiesList.vue";
 
-const route = useRoute()
-const router = useRouter()
-const { t } = useI18n()
+const route = useRoute();
+const router = useRouter();
+const { t } = useI18n();
 
-const session = ref<Session | null>(null)
-const textStudies = ref<TextStudy[]>([])
-const reservations = ref<TextStudyReservation[]>([])
-const isLoading = ref(true)
-const error = ref<string | null>(null)
-const currentUser = ref<User | null>(null)
+const session = ref<Session | null>(null);
+const textStudies = ref<TextStudy[]>([]);
+const reservations = ref<TextStudyReservation[]>([]);
+const isLoading = ref(true);
+const error = ref<string | null>(null);
+const currentUser = ref<User | null>(null);
 
 const reservationForm = ref({
-  name: '',
-  email: '',
-})
+  name: "",
+  email: "",
+});
 
-const isReserving = ref<string | null>(null)
+const isReserving = ref<string | null>(null);
 
-const searchTerm = ref('')
+const searchTerm = ref("");
 
-const showShareModal = ref(false)
-const shareUrl = ref('')
+const showShareModal = ref(false);
+const shareUrl = ref("");
 
-const selectedItems = ref<Set<string>>(new Set())
-const isSubmittingBatch = ref(false)
+const selectedItems = ref<Set<string>>(new Set());
+const isSubmittingBatch = ref(false);
 
 const groupedTextStudies = computed(() => {
-  if (!textStudies.value.length) return {}
+  if (!textStudies.value.length) return {};
 
-  let filtered = textStudies.value
+  let filtered = textStudies.value;
   if (searchTerm.value.trim()) {
-    filtered = sessionService.filterTextStudiesBySearch(filtered, searchTerm.value)
+    filtered = sessionService.filterTextStudiesBySearch(filtered, searchTerm.value);
   }
 
   if (currentUser.value) {
-    const myReservedTextIds = new Set<string>()
+    const myReservedTextIds = new Set<string>();
 
     reservations.value.forEach((r) => {
-      if (sessionService.canUserDeleteReservation(r, currentUser.value, '')) {
-        myReservedTextIds.add(r.textStudyId)
+      if (sessionService.canUserDeleteReservation(r, currentUser.value, "")) {
+        myReservedTextIds.add(r.textStudyId);
       }
-    })
+    });
 
-    const myTexts: TextStudy[] = []
-    const otherTexts: TextStudy[] = []
+    const myTexts: TextStudy[] = [];
+    const otherTexts: TextStudy[] = [];
 
     filtered.forEach((text) => {
       if (myReservedTextIds.has(text.id)) {
-        myTexts.push(text)
+        myTexts.push(text);
       } else {
-        otherTexts.push(text)
+        otherTexts.push(text);
       }
-    })
+    });
 
-    const groupedOthers = sessionService.groupTextStudiesByBook(otherTexts)
+    const groupedOthers = sessionService.groupTextStudiesByBook(otherTexts);
 
     if (myTexts.length > 0) {
       return {
-        [t('detailSession.myReservations')]: myTexts,
+        [t("detailSession.myReservations")]: myTexts,
         ...groupedOthers,
-      }
+      };
     }
 
-    return groupedOthers
+    return groupedOthers;
   }
 
-  return sessionService.getGroupedAndFilteredTextStudies(textStudies.value, searchTerm.value)
-})
+  return sessionService.getGroupedAndFilteredTextStudies(textStudies.value, searchTerm.value);
+});
 
 const progressStats = computed(() => {
   if (!textStudies.value.length)
@@ -92,23 +92,23 @@ const progressStats = computed(() => {
       participants: 0,
       reservedPercentage: 0,
       readPercentage: 0,
-    }
+    };
 
-  const total = textStudies.value.reduce((acc, textStudy) => acc + textStudy.totalSections, 0)
+  const total = textStudies.value.reduce((acc, textStudy) => acc + textStudy.totalSections, 0);
 
-  const reserved = reservations.value.length
+  const reserved = reservations.value.length;
 
-  const read = reservations.value.filter((r) => r.isCompleted).length
+  const read = reservations.value.filter((r) => r.isCompleted).length;
 
-  const uniqueParticipants = new Set<string>()
+  const uniqueParticipants = new Set<string>();
   reservations.value.forEach((r) => {
     if (r.chosenById) {
-      uniqueParticipants.add(`user:${r.chosenById}`)
+      uniqueParticipants.add(`user:${r.chosenById}`);
     } else if (r.chosenByGuestId) {
-      uniqueParticipants.add(`guest:${r.chosenByGuestId}`)
+      uniqueParticipants.add(`guest:${r.chosenByGuestId}`);
     }
-  })
-  const participants = uniqueParticipants.size
+  });
+  const participants = uniqueParticipants.size;
 
   return {
     total,
@@ -117,46 +117,46 @@ const progressStats = computed(() => {
     participants,
     reservedPercentage: total > 0 ? (reserved / total) * 100 : 0,
     readPercentage: total > 0 ? (read / total) * 100 : 0,
-  }
-})
+  };
+});
 
-const hasSelectedItems = computed(() => selectedItems.value.size > 0)
+const hasSelectedItems = computed(() => selectedItems.value.size > 0);
 
 const confirmButtonLabel = computed(() => {
   return !currentUser.value
-    ? t('detailSession.confirmAsGuest')
-    : t('detailSession.confirmReservation')
-})
+    ? t("detailSession.confirmAsGuest")
+    : t("detailSession.confirmReservation");
+});
 
 const loadSessionData = async () => {
   try {
-    isLoading.value = true
-    error.value = null
+    isLoading.value = true;
+    error.value = null;
 
-    const sessionId = route.params.id as string
+    const sessionId = route.params.id as string;
     if (!sessionId) {
-      throw new Error('ID de session manquant')
+      throw new Error("ID de session manquant");
     }
 
     const {
       session: sessionData,
       textStudies: textStudiesData,
       reservations: reservationsData,
-    } = await sessionService.loadSessionData(sessionId)
+    } = await sessionService.loadSessionData(sessionId);
 
-    session.value = sessionData
-    textStudies.value = textStudiesData
-    reservations.value = reservationsData
+    session.value = sessionData;
+    textStudies.value = textStudiesData;
+    reservations.value = reservationsData;
   } catch (err) {
-    console.error('Erreur lors du chargement des données:', err)
-    error.value = err instanceof Error ? err.message : 'Erreur lors du chargement'
+    console.error("Erreur lors du chargement des données:", err);
+    error.value = err instanceof Error ? err.message : "Erreur lors du chargement";
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const reserveTextOrSection = async (textStudyId: string, section?: number) => {
-  if (!session.value) return
+  if (!session.value) return;
 
   try {
     const reservationId = await sessionService.createReservationForUser(
@@ -165,7 +165,7 @@ const reserveTextOrSection = async (textStudyId: string, section?: number) => {
       section,
       currentUser.value,
       reservationForm.value,
-    )
+    );
 
     const newReservation = sessionService.createLocalReservation(
       reservationId,
@@ -173,198 +173,198 @@ const reserveTextOrSection = async (textStudyId: string, section?: number) => {
       section,
       currentUser.value,
       reservationForm.value,
-    )
+    );
 
-    reservations.value.push(newReservation)
+    reservations.value.push(newReservation);
   } catch (err) {
-    console.error('Erreur lors de la réservation:', err)
-    alert(err instanceof Error ? err.message : t('detailSession.reservationError'))
-    throw err
+    console.error("Erreur lors de la réservation:", err);
+    alert(err instanceof Error ? err.message : t("detailSession.reservationError"));
+    throw err;
   }
-}
+};
 
 const isReserved = (textStudyId: string, section?: number) => {
-  if (!session.value) return { isReserved: false }
-  return sessionService.isTextOrSectionReserved(textStudyId, section, session.value)
-}
+  if (!session.value) return { isReserved: false };
+  return sessionService.isTextOrSectionReserved(textStudyId, section, session.value);
+};
 
 const handleItemClick = (textStudyId: string, section?: number) => {
-  const key = section ? `${textStudyId}#${section}` : `${textStudyId}#full`
+  const key = section ? `${textStudyId}#${section}` : `${textStudyId}#full`;
 
   if (isReserved(textStudyId, section).isReserved) {
     if (selectedItems.value.has(key)) {
-      selectedItems.value.delete(key)
+      selectedItems.value.delete(key);
     }
 
-    if (confirm(t('detailSession.cancelReservationConfirm'))) {
-      cancelReservation(textStudyId, section)
+    if (confirm(t("detailSession.cancelReservationConfirm"))) {
+      cancelReservation(textStudyId, section);
     }
-    return
+    return;
   }
 
   if (selectedItems.value.has(key)) {
-    selectedItems.value.delete(key)
+    selectedItems.value.delete(key);
   } else {
-    selectedItems.value.add(key)
+    selectedItems.value.add(key);
   }
-}
+};
 
 const confirmReservations = async () => {
-  if (!session.value || selectedItems.value.size === 0) return
+  if (!session.value || selectedItems.value.size === 0) return;
 
   if (!currentUser.value && (!reservationForm.value.name || !reservationForm.value.email)) {
-    alert(t('detailSession.fillNameAndEmail'))
-    const formElement = document.getElementById('guest-form')
+    alert(t("detailSession.fillNameAndEmail"));
+    const formElement = document.getElementById("guest-form");
     if (formElement) {
-      const offset = 120
-      const elementPosition = formElement.getBoundingClientRect().top
-      const offsetPosition = elementPosition + window.scrollY - offset
+      const offset = 120;
+      const elementPosition = formElement.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.scrollY - offset;
 
       window.scrollTo({
         top: offsetPosition,
-        behavior: 'smooth',
-      })
+        behavior: "smooth",
+      });
     }
-    return
+    return;
   }
 
   try {
-    isSubmittingBatch.value = true
+    isSubmittingBatch.value = true;
     const itemsToReserve = Array.from(selectedItems.value).map((key) => {
-      const [textId, sectionStr] = key.split('#')
+      const [textId, sectionStr] = key.split("#");
       return {
         textId,
-        section: sectionStr === 'full' ? undefined : parseInt(sectionStr),
-      }
-    })
+        section: sectionStr === "full" ? undefined : parseInt(sectionStr),
+      };
+    });
 
     for (const item of itemsToReserve) {
-      if (isReserved(item.textId, item.section).isReserved) continue
+      if (isReserved(item.textId, item.section).isReserved) continue;
 
-      const key = item.section ? `${item.textId}-${item.section}` : `${item.textId}-full`
-      isReserving.value = key
+      const key = item.section ? `${item.textId}-${item.section}` : `${item.textId}-full`;
+      isReserving.value = key;
       try {
-        await reserveTextOrSection(item.textId, item.section)
+        await reserveTextOrSection(item.textId, item.section);
       } finally {
-        isReserving.value = null
+        isReserving.value = null;
       }
     }
 
-    selectedItems.value.clear()
+    selectedItems.value.clear();
   } catch (err) {
-    console.error('Erreur lors de la confirmation globale:', err)
+    console.error("Erreur lors de la confirmation globale:", err);
   } finally {
-    isSubmittingBatch.value = false
+    isSubmittingBatch.value = false;
   }
-}
+};
 
 const cancelReservation = async (textStudyId: string, section?: number) => {
-  if (!session.value) return
+  if (!session.value) return;
 
   try {
     const reservation = reservations.value.find(
       (r) => r.textStudyId === textStudyId && r.section === section,
-    )
+    );
 
     if (reservation) {
       const canDelete = sessionService.canUserDeleteReservation(
         reservation,
         currentUser.value,
         reservationForm.value.email,
-      )
+      );
 
       if (!canDelete) {
-        alert(t('detailSession.canOnlyCancelOwn'))
-        return
+        alert(t("detailSession.canOnlyCancelOwn"));
+        return;
       }
 
-      await sessionService.deleteReservation(session.value.id, reservation.id)
+      await sessionService.deleteReservation(session.value.id, reservation.id);
 
-      const index = reservations.value.findIndex((r) => r.id === reservation.id)
+      const index = reservations.value.findIndex((r) => r.id === reservation.id);
       if (index > -1) {
-        reservations.value.splice(index, 1)
+        reservations.value.splice(index, 1);
       }
 
       if (session.value) {
-        session.value.reservations = reservations.value
+        session.value.reservations = reservations.value;
       }
     }
   } catch (err) {
-    console.error("Erreur lors de l'annulation:", err)
-    alert(t('detailSession.cancelError'))
+    console.error("Erreur lors de l'annulation:", err);
+    alert(t("detailSession.cancelError"));
   }
-}
+};
 
 const toggleReservationCompletion = async (textStudyId: string, section: number) => {
-  if (!session.value) return
+  if (!session.value) return;
 
   try {
     const reservation = reservations.value.find(
       (r) => r.textStudyId === textStudyId && r.section === section,
-    )
+    );
 
-    if (!reservation) return
+    if (!reservation) return;
 
-    const newCompletionStatus = !reservation.isCompleted
+    const newCompletionStatus = !reservation.isCompleted;
     await sessionService.markReservationAsCompleted(
       session.value.id,
       reservation.id,
       newCompletionStatus,
-    )
+    );
 
-    reservation.isCompleted = newCompletionStatus
+    reservation.isCompleted = newCompletionStatus;
   } catch (error) {
-    console.error('Erreur lors de la mise à jour de la réservation:', error)
-    alert(t('detailSession.updateError'))
+    console.error("Erreur lors de la mise à jour de la réservation:", error);
+    alert(t("detailSession.updateError"));
   }
-}
+};
 
 const clearSearch = () => {
-  searchTerm.value = ''
-}
+  searchTerm.value = "";
+};
 
 const openShareModal = () => {
-  shareUrl.value = window.location.href
-  showShareModal.value = true
-}
+  shareUrl.value = window.location.href;
+  showShareModal.value = true;
+};
 
 const isOwner = computed(() => {
-  if (!currentUser.value || !session.value) return false
-  return currentUser.value.id === session.value.personId
-})
+  if (!currentUser.value || !session.value) return false;
+  return currentUser.value.id === session.value.personId;
+});
 
 const goToManagement = () => {
   if (session.value) {
-    router.push(`/session-management/${session.value.id}`)
+    router.push(`/session-management/${session.value.id}`);
   }
-}
+};
 
 onMounted(async () => {
-  currentUser.value = await sessionService.getCurrentUser()
+  currentUser.value = await sessionService.getCurrentUser();
 
-  await loadSessionData()
+  await loadSessionData();
 
   if (session.value) {
-    const url = window.location.origin + `/share-reading/session/${session.value.id}`
+    const url = window.location.origin + `/share-reading/session/${session.value.id}`;
     seoService.setMeta({
-      title: `${session.value.name} | ${t('seo.sessionTitle')}`,
-      description: session.value.description || 'Session de lecture partagée.',
+      title: `${session.value.name} | ${t("seo.sessionTitle")}`,
+      description: session.value.description || "Session de lecture partagée.",
       canonical: url,
       og: { url },
-    })
+    });
   }
-})
+});
 
 watch(session, (s) => {
-  if (!s) return
-  const url = window.location.origin + `/share-reading/session/${s.id}`
+  if (!s) return;
+  const url = window.location.origin + `/share-reading/session/${s.id}`;
   seoService.setMeta({
-    title: `${s.name} | ${t('seo.sessionTitle')}`,
-    description: s.description || 'Session de lecture partagée.',
+    title: `${s.name} | ${t("seo.sessionTitle")}`,
+    description: s.description || "Session de lecture partagée.",
     canonical: url,
     og: { url },
-  })
-})
+  });
+});
 </script>
 
 <template>
@@ -374,7 +374,7 @@ watch(session, (s) => {
       <div
         class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
       ></div>
-      <p class="font-medium animate-pulse">{{ t('detailSession.loadingSession') }}</p>
+      <p class="font-medium animate-pulse">{{ t("detailSession.loadingSession") }}</p>
     </div>
 
     <!-- État d'erreur -->
@@ -387,7 +387,7 @@ watch(session, (s) => {
         @click="loadSessionData"
         class="px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
       >
-        {{ t('common.retry') }}
+        {{ t("common.retry") }}
       </button>
     </div>
 
@@ -417,7 +417,7 @@ watch(session, (s) => {
         class="mb-8 p-6 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 shadow-sm dark:bg-gray-800/60 dark:border-gray-700"
       >
         <h3 class="font-bold text-lg text-text-primary mb-4 dark:text-gray-100">
-          {{ t('detailSession.guestTitle') }}
+          {{ t("detailSession.guestTitle") }}
         </h3>
         <GuestForm v-model:reservationForm="reservationForm" />
       </div>
@@ -445,7 +445,7 @@ watch(session, (s) => {
           v-if="searchTerm"
           class="text-center mt-2 text-sm text-text-secondary bg-white/50 backdrop-blur py-1 px-3 rounded-full inline-block mx-auto left-0 right-0 w-fit relative dark:bg-gray-700/50 dark:text-gray-300"
         >
-          {{ t('detailSession.searchFor') }} : "{{ searchTerm }}"
+          {{ t("detailSession.searchFor") }} : "{{ searchTerm }}"
         </div>
       </div>
 

@@ -1,95 +1,95 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { authService } from '../services/authService'
-import { seoService } from '../services/seoService'
+import { ref, onMounted, computed } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { authService } from "../services/authService";
+import { seoService } from "../services/seoService";
 
-const router = useRouter()
-const route = useRoute()
-const { t } = useI18n()
+const router = useRouter();
+const route = useRoute();
+const { t } = useI18n();
 
-const mode = ref<'login' | 'signup'>('login')
-const email = ref('')
-const password = ref('')
-const confirmPassword = ref('')
-const displayName = ref('')
-const loading = ref(false)
-const errorMessage = ref<string | null>(null)
+const mode = ref<"login" | "signup">("login");
+const email = ref("");
+const password = ref("");
+const confirmPassword = ref("");
+const displayName = ref("");
+const loading = ref(false);
+const errorMessage = ref<string | null>(null);
 
-function setMode(newMode: 'login' | 'signup') {
-  mode.value = newMode
-  errorMessage.value = null
+function setMode(newMode: "login" | "signup") {
+  mode.value = newMode;
+  errorMessage.value = null;
 }
 
 const buttonText = computed(() => {
-  if (loading.value) return t('login.pleaseWait')
-  return mode.value === 'login' ? t('login.signIn') : t('login.register')
-})
+  if (loading.value) return t("login.pleaseWait");
+  return mode.value === "login" ? t("login.signIn") : t("login.register");
+});
 
 async function submitForm() {
-  errorMessage.value = null
-  loading.value = true
+  errorMessage.value = null;
+  loading.value = true;
   try {
-    if (mode.value === 'signup') {
+    if (mode.value === "signup") {
       if (password.value !== confirmPassword.value) {
-        throw new Error(t('login.passwordsDoNotMatch'))
+        throw new Error(t("login.passwordsDoNotMatch"));
       }
       await authService.signUpWithEmail(
         email.value.trim(),
         password.value,
         displayName.value.trim() || undefined,
-      )
+      );
     } else {
-      await authService.signInWithEmail(email.value.trim(), password.value)
+      await authService.signInWithEmail(email.value.trim(), password.value);
     }
-    router.push('/')
+    router.push("/");
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : t('login.loginError')
-    errorMessage.value = msg
+    const msg = e instanceof Error ? e.message : t("login.loginError");
+    errorMessage.value = msg;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 async function loginWithGoogle() {
   try {
-    const redirectPath = (route.query.redirect as string) || '/profile'
+    const redirectPath = (route.query.redirect as string) || "/profile";
 
-    await authService.signInWithGooglePopup()
+    await authService.signInWithGooglePopup();
 
-    router.push(redirectPath)
+    router.push(redirectPath);
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : t('login.googleError')
-    errorMessage.value = msg
+    const msg = e instanceof Error ? e.message : t("login.googleError");
+    errorMessage.value = msg;
   }
 }
 
 onMounted(async () => {
   try {
-    const user = await authService.getGoogleRedirectResult()
+    const user = await authService.getGoogleRedirectResult();
     if (user) {
-      const redirectPath = authService.getAndClearRedirectPath() || '/profile'
-      router.push(redirectPath)
+      const redirectPath = authService.getAndClearRedirectPath() || "/profile";
+      router.push(redirectPath);
     }
   } catch (error) {
-    console.error('Erreur lors de la vérification de la redirection Google:', error)
+    console.error("Erreur lors de la vérification de la redirection Google:", error);
   }
 
-  const currentUser = await authService.getCurrentUser()
+  const currentUser = await authService.getCurrentUser();
   if (currentUser) {
-    const redirectPath = (route.query.redirect as string) || '/profile'
-    router.push(redirectPath)
-    return
+    const redirectPath = (route.query.redirect as string) || "/profile";
+    router.push(redirectPath);
+    return;
   }
-  const url = window.location.origin + '/login'
+  const url = window.location.origin + "/login";
   seoService.setMeta({
-    title: t('seo.loginTitle'),
-    description: t('seo.loginDescription'),
+    title: t("seo.loginTitle"),
+    description: t("seo.loginDescription"),
     canonical: url,
     og: { url },
-  })
-})
+  });
+});
 </script>
 
 <template>
@@ -99,9 +99,9 @@ onMounted(async () => {
     >
       <div class="text-center mb-10">
         <h1 class="text-3xl font-bold text-text-primary mb-2 dark:text-gray-100">
-          {{ t('login.welcome') }}
+          {{ t("login.welcome") }}
         </h1>
-        <p class="text-text-secondary dark:text-gray-400">{{ t('login.connectToContinue') }}</p>
+        <p class="text-text-secondary dark:text-gray-400">{{ t("login.connectToContinue") }}</p>
       </div>
 
       <div class="mb-8">
@@ -110,14 +110,14 @@ onMounted(async () => {
           @click="loginWithGoogle"
         >
           <i class="fa-brands fa-google text-[#4285F4]"></i>
-          {{ t('login.signInWithGoogle') }}
+          {{ t("login.signInWithGoogle") }}
         </button>
       </div>
 
       <div class="flex items-center gap-4 mb-8">
         <div class="h-px bg-gray-200 flex-1 dark:bg-gray-700"></div>
         <p class="text-sm text-text-secondary/60 font-medium dark:text-gray-500">
-          {{ t('common.or') }}
+          {{ t("common.or") }}
         </p>
         <div class="h-px bg-gray-200 flex-1 dark:bg-gray-700"></div>
       </div>
@@ -140,7 +140,7 @@ onMounted(async () => {
           @click="setMode('login')"
           :disabled="loading"
         >
-          {{ t('login.signIn') }}
+          {{ t("login.signIn") }}
         </button>
         <button
           type="button"
@@ -153,7 +153,7 @@ onMounted(async () => {
           @click="setMode('signup')"
           :disabled="loading"
         >
-          {{ t('login.signUp') }}
+          {{ t("login.signUp") }}
         </button>
       </div>
 
@@ -163,7 +163,7 @@ onMounted(async () => {
             <label
               class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
               for="displayName"
-              >{{ t('login.displayName') }}</label
+              >{{ t("login.displayName") }}</label
             >
             <input
               id="displayName"
@@ -179,7 +179,7 @@ onMounted(async () => {
           <label
             class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
             for="email"
-            >{{ t('login.email') }}</label
+            >{{ t("login.email") }}</label
           >
           <input
             id="email"
@@ -195,7 +195,7 @@ onMounted(async () => {
           <label
             class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
             for="password"
-            >{{ t('login.password') }}</label
+            >{{ t("login.password") }}</label
           >
           <input
             id="password"
@@ -212,7 +212,7 @@ onMounted(async () => {
             <label
               class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
               for="confirmPassword"
-              >{{ t('login.confirmPassword') }}</label
+              >{{ t("login.confirmPassword") }}</label
             >
             <input
               id="confirmPassword"

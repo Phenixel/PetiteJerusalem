@@ -1,128 +1,128 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { authService } from '../services/authService'
-import { sessionService } from '../services/sessionService'
-import type { User } from '../services/authService'
-import type { Session, TextStudy } from '../models/models'
-import { seoService } from '../services/seoService'
-import ShareModal from '../components/ShareModal.vue'
-import EditSessionModal from '../components/EditSessionModal.vue'
-import ProfileHeader from './profilePage/ProfileHeader.vue'
-import ParticipatedSessions from './profilePage/ParticipatedSessions.vue'
-import CreatedSessions from './profilePage/CreatedSessions.vue'
-import UserInfoForm from './profilePage/UserInfoForm.vue'
-import SecuritySettings from './profilePage/SecuritySettings.vue'
+import { ref, onMounted, computed } from "vue";
+import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { authService } from "../services/authService";
+import { sessionService } from "../services/sessionService";
+import type { User } from "../services/authService";
+import type { Session, TextStudy } from "../models/models";
+import { seoService } from "../services/seoService";
+import ShareModal from "../components/ShareModal.vue";
+import EditSessionModal from "../components/EditSessionModal.vue";
+import ProfileHeader from "./profilePage/ProfileHeader.vue";
+import ParticipatedSessions from "./profilePage/ParticipatedSessions.vue";
+import CreatedSessions from "./profilePage/CreatedSessions.vue";
+import UserInfoForm from "./profilePage/UserInfoForm.vue";
+import SecuritySettings from "./profilePage/SecuritySettings.vue";
 
-const router = useRouter()
-const { t } = useI18n()
+const router = useRouter();
+const { t } = useI18n();
 
-const currentUser = ref<User | null>(null)
-const activeTab = ref<'sessions-participated' | 'sessions-created' | 'my-info' | 'security'>(
-  'sessions-participated',
-)
-const isLoading = ref(true)
+const currentUser = ref<User | null>(null);
+const activeTab = ref<"sessions-participated" | "sessions-created" | "my-info" | "security">(
+  "sessions-participated",
+);
+const isLoading = ref(true);
 
-const participatedSessions = ref<Session[]>([])
-const createdSessions = ref<Session[]>([])
-const textStudiesMap = ref<Map<string, TextStudy>>(new Map())
+const participatedSessions = ref<Session[]>([]);
+const createdSessions = ref<Session[]>([]);
+const textStudiesMap = ref<Map<string, TextStudy>>(new Map());
 
-const showShareModal = ref(false)
-const showEditModal = ref(false)
-const selectedSession = ref<Session | null>(null)
-const shareUrl = ref('')
+const showShareModal = ref(false);
+const showEditModal = ref(false);
+const selectedSession = ref<Session | null>(null);
+const shareUrl = ref("");
 
-const userDisplayName = computed(() => currentUser.value?.name || 'Utilisateur')
+const userDisplayName = computed(() => currentUser.value?.name || "Utilisateur");
 
 const loadUserData = async () => {
   try {
-    isLoading.value = true
-    currentUser.value = await authService.getCurrentUser()
+    isLoading.value = true;
+    currentUser.value = await authService.getCurrentUser();
 
     if (!currentUser.value) {
-      router.push('/')
-      return
+      router.push("/");
+      return;
     }
   } catch (error) {
-    console.error('Erreur lors du chargement des données utilisateur:', error)
-    router.push('/')
+    console.error("Erreur lors du chargement des données utilisateur:", error);
+    router.push("/");
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const loadSessions = async () => {
-  if (!currentUser.value) return
+  if (!currentUser.value) return;
 
   try {
-    const allSessions = await sessionService.getAllSessions()
+    const allSessions = await sessionService.getAllSessions();
 
     participatedSessions.value = allSessions.filter((session) =>
       session.reservations?.some((reservation) => reservation.chosenById === currentUser.value?.id),
-    )
+    );
 
     createdSessions.value = allSessions.filter(
       (session) => session.personId === currentUser.value?.id,
-    )
+    );
 
-    await loadTextStudiesForSessions(participatedSessions.value)
+    await loadTextStudiesForSessions(participatedSessions.value);
   } catch (error) {
-    console.error('Erreur lors du chargement des sessions:', error)
+    console.error("Erreur lors du chargement des sessions:", error);
   }
-}
+};
 
 const loadTextStudiesForSessions = async (sessions: Session[]) => {
   try {
-    const types = [...new Set(sessions.map((s) => s.type))]
+    const types = [...new Set(sessions.map((s) => s.type))];
     for (const type of types) {
-      const textStudies = await sessionService.getTextStudiesByType(type)
+      const textStudies = await sessionService.getTextStudiesByType(type);
       textStudies.forEach((textStudy) => {
-        textStudiesMap.value.set(textStudy.id, textStudy)
-      })
+        textStudiesMap.value.set(textStudy.id, textStudy);
+      });
     }
   } catch (error) {
-    console.error("Erreur lors du chargement des textes d'étude:", error)
+    console.error("Erreur lors du chargement des textes d'étude:", error);
   }
-}
+};
 
 const setActiveTab = (tab: typeof activeTab.value) => {
-  activeTab.value = tab
-}
+  activeTab.value = tab;
+};
 
 const updateUserInfo = async (data: { name: string; email: string }) => {
-  if (!currentUser.value) return
+  if (!currentUser.value) return;
 
   try {
-    currentUser.value.name = data.name
-    currentUser.value.email = data.email
+    currentUser.value.name = data.name;
+    currentUser.value.email = data.email;
   } catch (error) {
-    console.error('Erreur lors de la sauvegarde:', error)
+    console.error("Erreur lors de la sauvegarde:", error);
   }
-}
+};
 
 const openShareModal = (session: Session) => {
-  selectedSession.value = session
-  shareUrl.value = `${window.location.origin}/share-reading/session/${session.id}`
-  showShareModal.value = true
-}
+  selectedSession.value = session;
+  shareUrl.value = `${window.location.origin}/share-reading/session/${session.id}`;
+  showShareModal.value = true;
+};
 
 const openEditModal = (session: Session) => {
-  selectedSession.value = session
-  showEditModal.value = true
-}
+  selectedSession.value = session;
+  showEditModal.value = true;
+};
 
 const saveSessionChanges = async (sessionData: {
-  name: string
-  description: string
-  dateLimit: string
+  name: string;
+  description: string;
+  dateLimit: string;
 }) => {
-  if (!selectedSession.value) return
+  if (!selectedSession.value) return;
 
   try {
-    await sessionService.updateSession(selectedSession.value.id, sessionData)
+    await sessionService.updateSession(selectedSession.value.id, sessionData);
 
-    const sessionIndex = createdSessions.value.findIndex((s) => s.id === selectedSession.value!.id)
+    const sessionIndex = createdSessions.value.findIndex((s) => s.id === selectedSession.value!.id);
     if (sessionIndex > -1) {
       createdSessions.value[sessionIndex] = {
         ...createdSessions.value[sessionIndex],
@@ -130,52 +130,52 @@ const saveSessionChanges = async (sessionData: {
         description: sessionData.description,
         dateLimit: new Date(sessionData.dateLimit),
         updatedAt: new Date(),
-      }
+      };
     }
 
-    alert(t('profile.sessionUpdatedSuccess'))
+    alert(t("profile.sessionUpdatedSuccess"));
   } catch (error) {
-    console.error('Erreur lors de la mise à jour:', error)
-    alert(t('profile.sessionUpdateError'))
+    console.error("Erreur lors de la mise à jour:", error);
+    alert(t("profile.sessionUpdateError"));
   }
-}
+};
 
 const endSession = async (session: Session) => {
-  if (!confirm(t('profile.endSessionConfirm'))) {
-    return
+  if (!confirm(t("profile.endSessionConfirm"))) {
+    return;
   }
 
   try {
-    await sessionService.endSession(session.id)
+    await sessionService.endSession(session.id);
 
-    const sessionIndex = createdSessions.value.findIndex((s) => s.id === session.id)
+    const sessionIndex = createdSessions.value.findIndex((s) => s.id === session.id);
     if (sessionIndex > -1) {
       createdSessions.value[sessionIndex] = {
         ...createdSessions.value[sessionIndex],
         isEnded: true,
         endedAt: new Date(),
         updatedAt: new Date(),
-      }
+      };
     }
 
-    alert(t('profile.sessionEndedSuccess'))
+    alert(t("profile.sessionEndedSuccess"));
   } catch (error) {
-    console.error('Erreur lors de la fin de session:', error)
-    alert(t('profile.sessionEndError'))
+    console.error("Erreur lors de la fin de session:", error);
+    alert(t("profile.sessionEndError"));
   }
-}
+};
 
 onMounted(async () => {
-  await loadUserData()
-  await loadSessions()
-  const url = window.location.origin + '/profile'
+  await loadUserData();
+  await loadSessions();
+  const url = window.location.origin + "/profile";
   seoService.setMeta({
-    title: t('seo.profileTitle'),
-    description: t('seo.profileDescription'),
+    title: t("seo.profileTitle"),
+    description: t("seo.profileDescription"),
     canonical: url,
     og: { url },
-  })
-})
+  });
+});
 </script>
 
 <template>
@@ -184,7 +184,7 @@ onMounted(async () => {
       <div
         class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
       ></div>
-      <p class="font-medium animate-pulse">{{ t('profile.loadingProfile') }}</p>
+      <p class="font-medium animate-pulse">{{ t("profile.loadingProfile") }}</p>
     </div>
 
     <div v-else-if="currentUser">
@@ -205,7 +205,7 @@ onMounted(async () => {
                     : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
                 ]"
               >
-                <span>{{ t('profile.tabs.participatedSessions') }}</span>
+                <span>{{ t("profile.tabs.participatedSessions") }}</span>
                 <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
               </button>
             </li>
@@ -219,7 +219,7 @@ onMounted(async () => {
                     : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
                 ]"
               >
-                <span>{{ t('profile.tabs.createdSessions') }}</span>
+                <span>{{ t("profile.tabs.createdSessions") }}</span>
                 <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
               </button>
             </li>
@@ -233,7 +233,7 @@ onMounted(async () => {
                     : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
                 ]"
               >
-                <span>{{ t('profile.tabs.myInfo') }}</span>
+                <span>{{ t("profile.tabs.myInfo") }}</span>
                 <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
               </button>
             </li>
@@ -247,7 +247,7 @@ onMounted(async () => {
                     : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
                 ]"
               >
-                <span>{{ t('profile.tabs.security') }}</span>
+                <span>{{ t("profile.tabs.security") }}</span>
                 <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
               </button>
             </li>
@@ -258,7 +258,7 @@ onMounted(async () => {
             class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20"
           >
             <i class="fa-solid fa-right-from-bracket"></i>
-            {{ t('common.logout') }}
+            {{ t("common.logout") }}
           </button>
         </nav>
 

@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
-import type { User } from '../../services/authService'
+import { ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
+import type { User } from "../../services/authService";
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps<{
-  user: User
-}>()
+  user: User;
+}>();
 
 const emit = defineEmits<{
-  (e: 'update', data: { name: string; email: string }): void
-}>()
+  (e: "update", data: { name: string; email: string }): void;
+}>();
 
-const isEditing = ref(false)
+const isEditing = ref(false);
 const form = ref({
-  name: props.user?.name || '',
-  email: props.user?.email || '',
-})
+  name: props.user?.name || "",
+  email: props.user?.email || "",
+});
 
 watch(
   () => props.user,
@@ -26,59 +26,59 @@ watch(
       form.value = {
         name: newUser.name,
         email: newUser.email,
-      }
+      };
     }
   },
   { immediate: true },
-)
+);
 
 const startEdit = () => {
   form.value = {
-    name: props.user?.name || '',
-    email: props.user?.email || '',
-  }
-  isEditing.value = true
-}
+    name: props.user?.name || "",
+    email: props.user?.email || "",
+  };
+  isEditing.value = true;
+};
 
 const cancelEdit = () => {
-  isEditing.value = false
+  isEditing.value = false;
   form.value = {
-    name: props.user?.name || '',
-    email: props.user?.email || '',
-  }
-}
+    name: props.user?.name || "",
+    email: props.user?.email || "",
+  };
+};
 
 const save = () => {
-  emit('update', form.value)
-  isEditing.value = false
-}
+  emit("update", form.value);
+  isEditing.value = false;
+};
 </script>
 
 <template>
   <div class="animate-[fadeIn_0.3s_ease]">
     <div class="flex items-center justify-between mb-8">
       <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">
-        {{ t('profile.myInformation') }}
+        {{ t("profile.myInformation") }}
       </h2>
       <button
         v-if="!isEditing"
         @click="startEdit"
         class="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg font-medium text-text-secondary transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
       >
-        <i class="fa-solid fa-edit mr-2"></i> {{ t('common.edit') }}
+        <i class="fa-solid fa-edit mr-2"></i> {{ t("common.edit") }}
       </button>
       <div v-else class="flex gap-2">
         <button
           @click="save"
           class="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
         >
-          {{ t('common.save') }}
+          {{ t("common.save") }}
         </button>
         <button
           @click="cancelEdit"
           class="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg font-medium text-text-secondary transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
         >
-          {{ t('common.cancel') }}
+          {{ t("common.cancel") }}
         </button>
       </div>
     </div>
@@ -89,7 +89,7 @@ const save = () => {
       <div class="space-y-6">
         <div>
           <label class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400">{{
-            t('profile.displayName')
+            t("profile.displayName")
           }}</label>
           <input
             v-model="form.name"
@@ -101,7 +101,7 @@ const save = () => {
 
         <div>
           <label class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400">{{
-            t('profile.emailAddress')
+            t("profile.emailAddress")
           }}</label>
           <input
             v-model="form.email"
@@ -113,7 +113,7 @@ const save = () => {
 
         <div>
           <label class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400">{{
-            t('profile.userId')
+            t("profile.userId")
           }}</label>
           <div
             class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-text-secondary font-mono text-sm dark:bg-gray-900/50 dark:border-gray-600 dark:text-gray-400"

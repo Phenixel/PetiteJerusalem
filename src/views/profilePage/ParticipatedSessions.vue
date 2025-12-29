@@ -1,47 +1,47 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { sessionService } from '../../services/sessionService'
-import type { Session, TextStudy } from '../../models/models'
-import type { User } from '../../services/authService'
+import { computed } from "vue";
+import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { sessionService } from "../../services/sessionService";
+import type { Session, TextStudy } from "../../models/models";
+import type { User } from "../../services/authService";
 
-const router = useRouter()
-const { t } = useI18n()
+const router = useRouter();
+const { t } = useI18n();
 
 const props = defineProps<{
-  sessions: Session[]
-  currentUser: User | null
-  textStudiesMap: Map<string, TextStudy>
-}>()
+  sessions: Session[];
+  currentUser: User | null;
+  textStudiesMap: Map<string, TextStudy>;
+}>();
 
 const isSessionFinished = (session: Session): boolean => {
-  if (session.isEnded) return true
-  const limit = new Date(session.dateLimit)
-  limit.setHours(23, 59, 59, 999)
-  return new Date() > limit
-}
+  if (session.isEnded) return true;
+  const limit = new Date(session.dateLimit);
+  limit.setHours(23, 59, 59, 999);
+  return new Date() > limit;
+};
 
 const ongoingParticipatedSessions = computed(() =>
   props.sessions.filter((s) => !isSessionFinished(s)),
-)
+);
 const finishedParticipatedSessions = computed(() =>
   props.sessions.filter((s) => isSessionFinished(s)),
-)
+);
 
 const getUserReservationsForSession = (session: Session) => {
-  if (!props.currentUser) return []
+  if (!props.currentUser) return [];
   return (
     session.reservations?.filter(
       (reservation) => reservation.chosenById === props.currentUser?.id,
     ) || []
-  )
-}
+  );
+};
 
 const getTextStudyName = (textStudyId: string): string => {
-  const textStudy = props.textStudiesMap.get(textStudyId)
-  return textStudy ? textStudy.name : textStudyId
-}
+  const textStudy = props.textStudiesMap.get(textStudyId);
+  return textStudy ? textStudy.name : textStudyId;
+};
 
 const toggleReservationCompletion = async (
   sessionId: string,
@@ -49,31 +49,31 @@ const toggleReservationCompletion = async (
   isCompleted: boolean,
 ) => {
   try {
-    await sessionService.markReservationAsCompleted(sessionId, reservationId, isCompleted)
+    await sessionService.markReservationAsCompleted(sessionId, reservationId, isCompleted);
 
-    const session = props.sessions.find((s) => s.id === sessionId)
+    const session = props.sessions.find((s) => s.id === sessionId);
     if (session) {
-      const reservation = session.reservations?.find((r) => r.id === reservationId)
+      const reservation = session.reservations?.find((r) => r.id === reservationId);
       if (reservation) {
-        reservation.isCompleted = isCompleted
+        reservation.isCompleted = isCompleted;
       }
     }
   } catch (error) {
-    console.error('Erreur lors de la mise à jour de la réservation:', error)
-    alert(t('profile.reservationUpdateError'))
+    console.error("Erreur lors de la mise à jour de la réservation:", error);
+    alert(t("profile.reservationUpdateError"));
   }
-}
+};
 
 const goToSession = (sessionId: string) => {
-  router.push({ name: 'detail-session', params: { id: sessionId } })
-}
+  router.push({ name: "detail-session", params: { id: sessionId } });
+};
 </script>
 
 <template>
   <div class="animate-[fadeIn_0.3s_ease]">
     <div class="flex items-center justify-between mb-8">
       <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">
-        {{ t('profile.participatedSessions') }}
+        {{ t("profile.participatedSessions") }}
       </h2>
     </div>
 
@@ -87,10 +87,10 @@ const goToSession = (sessionId: string) => {
         <i class="fa-solid fa-calendar-xmark"></i>
       </div>
       <h3 class="text-xl font-semibold text-text-primary mb-2 dark:text-gray-200">
-        {{ t('profile.noParticipatedSessions') }}
+        {{ t("profile.noParticipatedSessions") }}
       </h3>
       <p class="text-text-secondary dark:text-gray-400">
-        {{ t('profile.noParticipatedSessionsDesc') }}
+        {{ t("profile.noParticipatedSessionsDesc") }}
       </p>
     </div>
 
@@ -99,7 +99,7 @@ const goToSession = (sessionId: string) => {
         <h3
           class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2 dark:text-gray-200"
         >
-          <i class="fa-solid fa-hourglass-half text-primary"></i> {{ t('common.ongoing') }}
+          <i class="fa-solid fa-hourglass-half text-primary"></i> {{ t("common.ongoing") }}
         </h3>
 
         <div class="grid gap-6">
@@ -124,7 +124,7 @@ const goToSession = (sessionId: string) => {
                 class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
               >
                 <i class="fa-solid fa-external-link-alt text-xs"></i>
-                {{ t('profile.viewSession') }}
+                {{ t("profile.viewSession") }}
               </button>
             </div>
 
@@ -135,7 +135,7 @@ const goToSession = (sessionId: string) => {
               >
               <span
                 class="px-2 py-1 bg-gray-100 text-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-300"
-                >{{ t('common.dateLimit') }} :
+                >{{ t("common.dateLimit") }} :
                 {{ sessionService.formatDate(session.dateLimit) }}</span
               >
             </div>
@@ -146,13 +146,13 @@ const goToSession = (sessionId: string) => {
               <h4
                 class="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide opacity-70 dark:text-gray-300"
               >
-                {{ t('profile.myReservations') }}
+                {{ t("profile.myReservations") }}
               </h4>
               <div
                 v-if="getUserReservationsForSession(session).length === 0"
                 class="text-sm text-text-secondary italic dark:text-gray-400"
               >
-                {{ t('profile.noReservationFound') }}
+                {{ t("profile.noReservationFound") }}
               </div>
               <div v-else class="space-y-3">
                 <div
@@ -171,14 +171,14 @@ const goToSession = (sessionId: string) => {
                         v-if="reservation.section"
                         class="text-text-secondary font-normal dark:text-gray-400"
                       >
-                        - {{ t('common.chapter') }} {{ reservation.section }}
+                        - {{ t("common.chapter") }} {{ reservation.section }}
                       </span>
                     </span>
                     <span
                       v-if="reservation.isCompleted"
                       class="text-xs text-green-600 font-bold mt-1 flex items-center gap-1 dark:text-green-400"
                     >
-                      <i class="fa-solid fa-check-circle"></i> {{ t('common.finished') }}
+                      <i class="fa-solid fa-check-circle"></i> {{ t("common.finished") }}
                     </span>
                   </div>
                   <label class="flex items-center gap-2 cursor-pointer">
@@ -195,7 +195,7 @@ const goToSession = (sessionId: string) => {
                       "
                     />
                     <span class="text-xs font-medium text-text-secondary dark:text-gray-400">{{
-                      t('common.read')
+                      t("common.read")
                     }}</span>
                   </label>
                 </div>
@@ -210,7 +210,7 @@ const goToSession = (sessionId: string) => {
           class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2 dark:text-gray-200"
         >
           <i class="fa-solid fa-check-double text-green-600 dark:text-green-400"></i>
-          {{ t('common.finished') }}
+          {{ t("common.finished") }}
         </h3>
 
         <div class="grid gap-6">
@@ -230,7 +230,7 @@ const goToSession = (sessionId: string) => {
                   <span
                     class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-200 text-gray-700 text-xs font-bold uppercase rounded dark:bg-gray-700 dark:text-gray-300"
                   >
-                    <i class="fa-solid fa-flag-checkered"></i> {{ t('common.finished') }}
+                    <i class="fa-solid fa-flag-checkered"></i> {{ t("common.finished") }}
                   </span>
                 </div>
               </div>
@@ -239,13 +239,13 @@ const goToSession = (sessionId: string) => {
                 class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
               >
                 <i class="fa-solid fa-eye text-xs"></i>
-                {{ t('common.view') }}
+                {{ t("common.view") }}
               </button>
             </div>
 
             <div class="text-sm text-text-secondary dark:text-gray-400 mb-2">
               {{
-                t('profile.reservationsCount', {
+                t("profile.reservationsCount", {
                   count: getUserReservationsForSession(session).length,
                 })
               }}

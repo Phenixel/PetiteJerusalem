@@ -1,37 +1,37 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useLocale } from '../composables/useLocale'
-import { useI18n } from 'vue-i18n'
+import { ref } from "vue";
+import { useLocale } from "../composables/useLocale";
+import { useI18n } from "vue-i18n";
 
 defineProps<{
-  variant?: 'default' | 'compact'
-  dropup?: boolean
-}>()
+  variant?: "default" | "compact";
+  dropup?: boolean;
+}>();
 
-const { currentLocaleOption, availableLocales, setLocale } = useLocale()
-const { t } = useI18n()
+const { currentLocaleOption, availableLocales, setLocale } = useLocale();
+const { t } = useI18n();
 
-const isOpen = ref(false)
+const isOpen = ref(false);
 
 function toggleDropdown() {
-  isOpen.value = !isOpen.value
+  isOpen.value = !isOpen.value;
 }
 
-function selectLocale(code: 'fr' | 'en' | 'he') {
-  setLocale(code)
-  isOpen.value = false
+function selectLocale(code: "fr" | "en" | "he") {
+  setLocale(code);
+  isOpen.value = false;
 }
 
 function handleClickOutside(event: MouseEvent) {
-  const target = event.target as HTMLElement
-  if (!target.closest('.language-selector')) {
-    isOpen.value = false
+  const target = event.target as HTMLElement;
+  if (!target.closest(".language-selector")) {
+    isOpen.value = false;
   }
 }
 
 function handleKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
-    isOpen.value = false
+  if (event.key === "Escape") {
+    isOpen.value = false;
   }
 }
 </script>

@@ -1,28 +1,28 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+import { useI18n } from "vue-i18n";
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 interface Props {
   reservationForm: {
-    name: string
-    email: string
-  }
+    name: string;
+    email: string;
+  };
 }
 
 interface Emits {
-  (e: 'update:reservationForm', value: { name: string; email: string }): void
+  (e: "update:reservationForm", value: { name: string; email: string }): void;
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 
-const updateField = (field: 'name' | 'email', value: string) => {
-  emit('update:reservationForm', {
+const updateField = (field: "name" | "email", value: string) => {
+  emit("update:reservationForm", {
     ...props.reservationForm,
     [field]: value,
-  })
-}
+  });
+};
 </script>
 
 <template>
@@ -32,7 +32,7 @@ const updateField = (field: 'name' | 'email', value: string) => {
         <label
           for="guest-name"
           class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
-          >{{ t('common.name') }}</label
+          >{{ t("common.name") }}</label
         >
         <input
           type="text"
@@ -47,7 +47,7 @@ const updateField = (field: 'name' | 'email', value: string) => {
         <label
           for="guest-email"
           class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
-          >{{ t('common.email') }}</label
+          >{{ t("common.email") }}</label
         >
         <input
           type="email"

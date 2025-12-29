@@ -1,24 +1,24 @@
 <script setup lang="ts">
 interface Props {
-  searchTerm: string
-  placeholder?: string
+  searchTerm: string;
+  placeholder?: string;
 }
 
 interface Emits {
-  (e: 'update:searchTerm', value: string): void
-  (e: 'clear-search'): void
+  (e: "update:searchTerm", value: string): void;
+  (e: "clear-search"): void;
 }
 
 withDefaults(defineProps<Props>(), {
-  placeholder: 'Rechercher...',
-})
+  placeholder: "Rechercher...",
+});
 
-const emit = defineEmits<Emits>()
+const emit = defineEmits<Emits>();
 
 const clearSearch = () => {
-  emit('update:searchTerm', '')
-  emit('clear-search')
-}
+  emit("update:searchTerm", "");
+  emit("clear-search");
+};
 </script>
 
 <template>
