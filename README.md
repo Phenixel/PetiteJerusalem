@@ -27,7 +27,7 @@ To run the project locally:
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/your-username/petite-jerusalem.git
+   git clone git@github.com:Phenixel/PetiteJerusalem.git
    cd petite-jerusalem
    ```
 
