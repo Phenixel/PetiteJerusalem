@@ -283,7 +283,7 @@ const deleteAccount = async () => {
             >
               <span v-if="isDeletingAccount">
                 <i class="fa-solid fa-spinner fa-spin mr-2"></i>
-                {{ t("security.deleting") }}
+                {{ t("common.deleting") }}
               </span>
               <span v-else-if="isGoogleUser && !hasPasswordProvider">
                 <i class="fa-brands fa-google mr-2"></i>

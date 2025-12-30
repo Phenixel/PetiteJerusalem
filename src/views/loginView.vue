@@ -179,7 +179,7 @@ onMounted(async () => {
           <label
             class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
             for="email"
-            >{{ t("login.email") }}</label
+            >{{ t("common.email") }}</label
           >
           <input
             id="email"
@@ -195,7 +195,7 @@ onMounted(async () => {
           <label
             class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
             for="password"
-            >{{ t("login.password") }}</label
+            >{{ t("common.password") }}</label
           >
           <input
             id="password"

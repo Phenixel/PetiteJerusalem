@@ -88,6 +88,14 @@ const loadTextStudiesForSessions = async (sessions: Session[]) => {
 
 const setActiveTab = (tab: typeof activeTab.value) => {
   activeTab.value = tab;
+  if (window.innerWidth < 1024) {
+    setTimeout(() => {
+      const element = document.getElementById("profile-content");
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
+  }
 };
 
 const updateUserInfo = async (data: { name: string; email: string }) => {
@@ -262,7 +270,7 @@ onMounted(async () => {
           </button>
         </nav>
 
-        <div>
+        <div id="profile-content">
           <div v-if="activeTab === 'sessions-participated'">
             <ParticipatedSessions
               :sessions="participatedSessions"

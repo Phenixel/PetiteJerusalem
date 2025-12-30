@@ -91,7 +91,9 @@
     "register": "S'inscrire",
     "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
     "loginError": "Erreur de connexion",
-    "googleError": "Erreur Google"
+    "googleError": "Erreur Google",
+    "displayNamePlaceholder": "Ex: David Cohen",
+    "emailPlaceholder": "exemple@email.com"
   },
   "profile": {
     "title": "Mon profil",
@@ -230,6 +232,7 @@
     "descriptionPlaceholder": "Décrivez la session (optionnel)",
     "sessionNameRequired": "Le nom de la session est requis",
     "dateLimitRequired": "La date limite est requise",
+    "sessionName": "Nom de la session",
     "saveError": "Erreur lors de la sauvegarde de la session"
   },
   "progressBar": {

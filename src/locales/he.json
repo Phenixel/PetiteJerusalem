@@ -91,7 +91,9 @@
     "register": "הרשמה",
     "passwordsDoNotMatch": "הסיסמאות אינן תואמות",
     "loginError": "שגיאת התחברות",
-    "googleError": "שגיאת Google"
+    "googleError": "שגיאת Google",
+    "displayNamePlaceholder": "לדוגמה: דוד כהן",
+    "emailPlaceholder": "example@email.com"
   },
   "profile": {
     "title": "הפרופיל שלי",
@@ -230,6 +232,7 @@
     "descriptionPlaceholder": "תארו את הסשן (אופציונלי)",
     "sessionNameRequired": "נדרש שם הסשן",
     "dateLimitRequired": "נדרש תאריך יעד",
+    "sessionName": "שם הסשן",
     "saveError": "שגיאה בשמירת הסשן"
   },
   "progressBar": {
