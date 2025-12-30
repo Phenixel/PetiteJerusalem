@@ -267,7 +267,7 @@ const goBack = () => {
           <label
             for="dateLimit"
             class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-200"
-            >{{ t("newSession.dateLimit") }}</label
+            >{{ t("common.dateLimit") }}</label
           >
           <input
             type="date"
