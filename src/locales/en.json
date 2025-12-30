@@ -91,7 +91,9 @@
     "register": "Register",
     "passwordsDoNotMatch": "Passwords do not match",
     "loginError": "Login error",
-    "googleError": "Google error"
+    "googleError": "Google error",
+    "displayNamePlaceholder": "Ex: David Cohen",
+    "emailPlaceholder": "example@email.com"
   },
   "profile": {
     "title": "My profile",
@@ -230,6 +232,7 @@
     "descriptionPlaceholder": "Describe the session (optional)",
     "sessionNameRequired": "Session name is required",
     "dateLimitRequired": "Deadline is required",
+    "sessionName": "Session Name",
     "saveError": "Error saving session"
   },
   "progressBar": {

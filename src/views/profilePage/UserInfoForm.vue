@@ -101,7 +101,7 @@ const save = () => {
 
         <div>
           <label class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400">{{
-            t("profile.emailAddress")
+            t("common.emailAddress")
           }}</label>
           <input
             v-model="form.email"

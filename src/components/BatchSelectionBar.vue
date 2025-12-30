@@ -46,11 +46,7 @@ defineEmits<{
         class="px-6 py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl shadow-lg shadow-primary/30 transform hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2"
       >
         <i class="fa-solid" :class="loading ? 'fa-circle-notch fa-spin' : 'fa-check'"></i>
-        {{
-          loading
-            ? buttonLoadingText || t("batchSelection.loading")
-            : buttonText || t("common.confirm")
-        }}
+        {{ loading ? buttonLoadingText || t("common.loading") : buttonText || t("common.confirm") }}
       </button>
     </div>
   </div>
