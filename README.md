@@ -1,45 +1,65 @@
-# petite-jerusalem
+# Petite Jérusalem
 
-This template should help get you started developing with Vue 3 in Vite.
+Petite Jerusalem is a web application developed with VueJs, allowing users to create and join religious text study chains.
+The goal is to create a platform that centralizes several useful "apps" for the Jewish community.
 
-## Recommended IDE Setup
+## 🚀 Features
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- **Authentication**: Secure login (via Firebase).
+- **Session Management**: Create, view, and manage study sessions (Limoud).
+- **Text Reservation**: Users can reserve parts of texts to study.
+- **Internationalization (i18n)**: Multi-language support (French, English, Hebrew).
+- **Modern Interface**: Responsive and polished design with TailwindCSS.
 
-## Type Support for `.vue` Imports in TS
+## 🛠️ Tech Stack
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+- **Front-end Framework**: [Vue 3](https://vuejs.org/) (Composition API)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styles**: [TailwindCSS](https://tailwindcss.com/)
+- **Backend / Auth**: [Firebase](https://firebase.google.com/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Tests**: [Vitest](https://vitest.dev/)
 
-## Customize configuration
+## 📦 Installation
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+To run the project locally:
 
-## Project Setup
+1. **Clone the repository**
 
-```sh
-npm install
-```
+   ```bash
+   git clone https://github.com/your-username/petite-jerusalem.git
+   cd petite-jerusalem
+   ```
 
-### Compile and Hot-Reload for Development
+2. **Install dependencies**
 
-```sh
-npm run dev
-```
+   ```bash
+   npm install
+   ```
 
-### Type-Check, Compile and Minify for Production
+3. **Start the development server**
 
-```sh
-npm run build
-```
+   ```bash
+   npm run dev
+   ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+4. **Verify code (Lint & Type-check)**
 
-```sh
-npm run test:unit
-```
+   ```bash
+   npm run verify
+   ```
 
-### Lint with [ESLint](https://eslint.org/)
+5. **Format code**
+   ```bash
+   npm run format
+   ```
 
-```sh
-npm run lint
-```
+## 🤝 Contribution
+
+Contributions are welcome! Please check the [CONTRIBUTING.md](CONTRIBUTING.md) file for more details on how to contribute to the project.
+
+## 📄 License
+
+This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)**.
+You are **not** allowed to use this code for commercial purposes.
+See the [LICENSE](LICENSE) file for more details.
