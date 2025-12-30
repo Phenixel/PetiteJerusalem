@@ -7,11 +7,27 @@ export type SupportedLocale = "fr" | "en" | "he";
 
 const STORAGE_KEY = "petite-jerusalem-locale";
 
+export function getBrowserLocale(): SupportedLocale | null {
+  if (typeof navigator === "undefined") return null;
+
+  const browserLang = navigator.language.split("-")[0];
+  if (["fr", "en", "he"].includes(browserLang)) {
+    return browserLang as SupportedLocale;
+  }
+  return null;
+}
+
 function getStoredLocale(): SupportedLocale {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored && ["fr", "en", "he"].includes(stored)) {
     return stored as SupportedLocale;
   }
+
+  const browserLocale = getBrowserLocale();
+  if (browserLocale) {
+    return browserLocale;
+  }
+
   return "fr";
 }
 
