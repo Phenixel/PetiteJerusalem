@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import fr from "../locales/fr.json";
+import fr from "../locales/fr";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
