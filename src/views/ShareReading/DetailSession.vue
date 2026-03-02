@@ -155,34 +155,6 @@ const loadSessionData = async () => {
   }
 };
 
-const reserveTextOrSection = async (textStudyId: string, section?: number) => {
-  if (!session.value) return;
-
-  try {
-    const reservationId = await sessionService.createReservationForUser(
-      session.value.id,
-      textStudyId,
-      section,
-      currentUser.value,
-      reservationForm.value,
-    );
-
-    const newReservation = sessionService.createLocalReservation(
-      reservationId,
-      textStudyId,
-      section,
-      currentUser.value,
-      reservationForm.value,
-    );
-
-    reservations.value.push(newReservation);
-  } catch (err) {
-    console.error("Erreur lors de la réservation:", err);
-    alert(err instanceof Error ? err.message : t("detailSession.reservationError"));
-    throw err;
-  }
-};
-
 const isReserved = (textStudyId: string, section?: number) => {
   if (!session.value) return { isReserved: false };
   return sessionService.isTextOrSectionReserved(textStudyId, section, session.value);
@@ -233,26 +205,39 @@ const confirmReservations = async () => {
     const itemsToReserve = Array.from(selectedItems.value).map((key) => {
       const [textId, sectionStr] = key.split("#");
       return {
-        textId,
+        textStudyId: textId,
         section: sectionStr === "full" ? undefined : parseInt(sectionStr),
       };
     });
 
-    for (const item of itemsToReserve) {
-      if (isReserved(item.textId, item.section).isReserved) continue;
+    const unreservedItems = itemsToReserve.filter(
+      (item) => !isReserved(item.textStudyId, item.section).isReserved,
+    );
 
-      const key = item.section ? `${item.textId}-${item.section}` : `${item.textId}-full`;
-      isReserving.value = key;
-      try {
-        await reserveTextOrSection(item.textId, item.section);
-      } finally {
-        isReserving.value = null;
-      }
+    if (unreservedItems.length === 0) {
+      selectedItems.value.clear();
+      return;
     }
 
+    const reservationIds = await sessionService.createBatchReservationsForUser(
+      session.value.id,
+      unreservedItems,
+      currentUser.value,
+      reservationForm.value,
+    );
+
+    const newReservations = sessionService.createLocalReservations(
+      unreservedItems,
+      reservationIds,
+      currentUser.value,
+      reservationForm.value,
+    );
+
+    reservations.value.push(...newReservations);
     selectedItems.value.clear();
   } catch (err) {
     console.error("Erreur lors de la confirmation globale:", err);
+    alert(err instanceof Error ? err.message : t("detailSession.reservationError"));
   } finally {
     isSubmittingBatch.value = false;
   }

@@ -1,3 +1,5 @@
+import { i18n } from "../i18n";
+
 export class UtilsService {
   static generateSlug(text: string): string {
     return text
@@ -20,7 +22,7 @@ export class UtilsService {
   }
 
   static formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString("fr-FR", {
+    return new Date(date).toLocaleDateString(i18n.global.locale.value, {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -28,7 +30,7 @@ export class UtilsService {
   }
 
   static formatShortDate(date: Date): string {
-    return new Date(date).toLocaleDateString("fr-FR", {
+    return new Date(date).toLocaleDateString(i18n.global.locale.value, {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
