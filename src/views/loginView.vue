@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { authService } from "../services/authService";
 import { seoService } from "../services/seoService";
 
 const router = useRouter();
-const route = useRoute();
 const { t } = useI18n();
 
 const mode = ref<"login" | "signup">("login");
@@ -54,7 +53,7 @@ async function submitForm() {
 
 async function loginWithGoogle() {
   try {
-    const redirectPath = (route.query.redirect as string) || "/profile";
+    const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
 
     await authService.signInWithGooglePopup();
 
@@ -78,7 +77,7 @@ onMounted(async () => {
 
   const currentUser = await authService.getCurrentUser();
   if (currentUser) {
-    const redirectPath = (route.query.redirect as string) || "/profile";
+    const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
     router.push(redirectPath);
     return;
   }

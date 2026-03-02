@@ -179,7 +179,7 @@ export class ReservationService {
     reservationForm: ReservationForm,
   ): Promise<string> {
     if (currentUser) {
-      return await this.createReservation(
+      return this.createReservation(
         sessionId,
         textStudyId,
         section,
@@ -193,7 +193,7 @@ export class ReservationService {
         throw new Error("Veuillez remplir votre nom et email");
       }
 
-      return await this.createReservation(
+      return this.createReservation(
         sessionId,
         textStudyId,
         section,

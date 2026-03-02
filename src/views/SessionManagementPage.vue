@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { useRouter } from "vue-router";
 import { sessionService } from "../services/sessionService";
 import { reservationService, type ReservationForm } from "../services/reservationService";
 import { authService } from "../services/authService";
@@ -11,7 +11,6 @@ import { seoService } from "../services/seoService";
 import BatchSelectionBar from "../components/BatchSelectionBar.vue";
 
 const router = useRouter();
-const route = useRoute();
 
 const isLoading = ref(true);
 const currentUser = ref<User | null>(null);
@@ -41,7 +40,7 @@ const loadData = async () => {
       return;
     }
 
-    const sessionId = route.params.id as string;
+    const sessionId = router.currentRoute.value.params.id as string;
     session.value = await sessionService.getSessionById(sessionId);
 
     if (!session.value) {

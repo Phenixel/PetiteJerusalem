@@ -1,6 +1,6 @@
 import { computed, watch, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
-import { setStoredLocale, type SupportedLocale } from "../i18n";
+import { setStoredLocale, type SupportedLocale, SUPPORTED_LOCALES } from "../i18n";
 
 export interface LocaleOption {
   code: SupportedLocale;
@@ -9,11 +9,10 @@ export interface LocaleOption {
   dir: "ltr" | "rtl";
 }
 
-export const availableLocales: LocaleOption[] = [
-  { code: "fr", label: "Français", flag: "🇫🇷", dir: "ltr" },
-  { code: "en", label: "English", flag: "🇬🇧", dir: "ltr" },
-  { code: "he", label: "עברית", flag: "🇮🇱", dir: "rtl" },
-];
+export const availableLocales: LocaleOption[] = SUPPORTED_LOCALES.map((loc) => ({
+  ...loc,
+  dir: loc.code === "he" ? "rtl" : "ltr",
+}));
 
 export function useLocale() {
   const { locale } = useI18n();
