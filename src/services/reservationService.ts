@@ -71,6 +71,77 @@ export class ReservationService {
     return reservationId;
   }
 
+  async createBatchReservations(
+    sessionId: string,
+    items: Array<{ textStudyId: string; section?: number }>,
+    userId: string | undefined,
+    guestId: string | undefined,
+    userName: string | undefined,
+    guestName: string | undefined,
+  ): Promise<string[]> {
+    if (!userId && !guestId) {
+      throw new Error("Une réservation doit être associée à un utilisateur ou un invité");
+    }
+
+    if (items.length === 0) return [];
+
+    const reservationIds = items.map(() => crypto.randomUUID());
+    const sfDocRef = doc(db, "sessions", sessionId);
+
+    await runTransaction(db, (transaction) => {
+      return transaction.get(sfDocRef).then((sfDoc) => {
+        if (!sfDoc.exists()) {
+          throw new Error("Document de session introuvable");
+        }
+
+        const data = sfDoc.data() as { reservations?: ReservationRecord[] };
+        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
+          ? data.reservations
+          : [];
+
+        const newReservations: ReservationRecord[] = items.map((item, index) => {
+          if (
+            reservations.find(
+              (r) => r.textStudyId === item.textStudyId && r.section === item.section,
+            ) !== undefined
+          ) {
+            throw new Error(
+              `La section ${item.section ?? "complète"} de ${item.textStudyId} est déjà réservée`,
+            );
+          }
+
+          const newReservation: ReservationRecord = {
+            id: reservationIds[index],
+            textStudyId: item.textStudyId,
+            chosenByName: userName || guestName || "Utilisateur inconnu",
+            available: false,
+            isCompleted: false,
+            createdAt: new Date().toISOString(),
+          };
+
+          if (item.section !== undefined) {
+            newReservation.section = item.section;
+          }
+
+          if (userId) {
+            newReservation.chosenById = userId;
+          }
+
+          if (guestId) {
+            newReservation.chosenByGuestId = guestId;
+          }
+
+          return newReservation;
+        });
+
+        reservations.push(...newReservations);
+        transaction.update(sfDocRef, { reservations });
+      });
+    });
+
+    return reservationIds;
+  }
+
   async deleteReservation(sessionId: string, reservationId: string): Promise<void> {
     const sfDocRef = doc(db, "sessions", sessionId);
     await runTransaction(db, (transaction) => {

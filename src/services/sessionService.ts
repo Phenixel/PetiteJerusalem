@@ -142,6 +142,53 @@ export class SessionService {
     );
   }
 
+  async createBatchReservationsForUser(
+    sessionId: string,
+    items: Array<{ textStudyId: string; section?: number }>,
+    currentUser: User | null,
+    reservationForm: ReservationForm,
+  ): Promise<string[]> {
+    if (currentUser) {
+      return await reservationService.createBatchReservations(
+        sessionId,
+        items,
+        currentUser.id,
+        undefined,
+        currentUser.name,
+        undefined,
+      );
+    } else {
+      if (!reservationForm.name || !reservationForm.email) {
+        throw new Error("Veuillez remplir votre nom et email");
+      }
+      return await reservationService.createBatchReservations(
+        sessionId,
+        items,
+        undefined,
+        reservationForm.email,
+        undefined,
+        reservationForm.name,
+      );
+    }
+  }
+
+  createLocalReservations(
+    items: Array<{ textStudyId: string; section?: number }>,
+    reservationIds: string[],
+    currentUser: User | null,
+    reservationForm: ReservationForm,
+  ): TextStudyReservation[] {
+    return items.map((item, index) =>
+      reservationService.createLocalReservation(
+        reservationIds[index],
+        item.textStudyId,
+        item.section,
+        currentUser,
+        reservationForm,
+      ),
+    );
+  }
+
   async createSession(
     sessionData: Omit<Session, "id" | "createdAt" | "isCompleted" | "reservations">,
   ): Promise<string> {
