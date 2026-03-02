@@ -33,7 +33,9 @@ const getUserReservationsForSession = (session: Session) => {
   if (!props.currentUser) return [];
   return (
     session.reservations?.filter(
-      (reservation) => reservation.chosenById === props.currentUser?.id,
+      (reservation) =>
+        reservation.chosenById === props.currentUser?.id ||
+        reservation.chosenByGuestId === props.currentUser?.email,
     ) || []
   );
 };

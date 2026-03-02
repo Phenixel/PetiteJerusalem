@@ -261,6 +261,26 @@ const he: LocaleMessages = {
     newSessionDescription: "צרו סשן קריאה משותף והזמינו את הקהילה להשתתף.",
     sessionTitle: "סשן לימוד – פטיט ירושלים",
   },
+  signupPrompt: {
+    reservationConfirmed: "ההזמנה אושרה!",
+    subtitle: "רק סיסמה אחת מפרידה בינך לבין כל התכונות",
+    benefits: {
+      recover: "גש להזמנות העבר והעתיד שלך",
+      track: "סמן את הקריאות שלך כהושלמו",
+      profile: "גש לפרופיל ולסטטיסטיקות שלך",
+      upcoming: "תכונות חדשות בקרוב",
+    },
+    signUpGoogle: "צור חשבון עם Google",
+    signUpEmail: "הירשם עם אימייל",
+    later: "אחר כך",
+    signIn: "התחברות",
+    existingSubtitle: "כבר יש לך חשבון עם כתובת אימייל זו",
+    existingHint: "התחבר כדי למצוא את ההזמנה הזו ואת כל הקודמות בפרופיל שלך.",
+    guestHint: "צור חשבון חינמי כדי לגשת להזמנות שלך ולעקוב אחר הקריאות שלך.",
+    guestHintLink: "התחבר",
+    tip: "טיפ",
+    alreadyHaveAccount: "כבר יש לך חשבון? ההזמנות שלך כאורח ישוחזרו אוטומטית.",
+  },
 };
 
 export default he;

@@ -267,6 +267,28 @@ const fr = {
       "Créez une session de lecture partagée et invitez la communauté à participer.",
     sessionTitle: "Session d'étude – Petite Jerusalem",
   },
+  signupPrompt: {
+    reservationConfirmed: "Réservation confirmée !",
+    subtitle: "Plus qu'un mot de passe pour profiter de toutes les fonctionnalités",
+    benefits: {
+      recover: "Retrouvez vos réservations passées et futures",
+      track: "Marquez vos lectures comme terminées",
+      profile: "Accédez à votre profil et statistiques",
+      upcoming: "Nouvelles fonctionnalités à venir",
+    },
+    signUpGoogle: "Créer un compte avec Google",
+    signUpEmail: "S'inscrire par email",
+    later: "Plus tard",
+    signIn: "Se connecter",
+    existingSubtitle: "Vous avez déjà un compte avec cette adresse email",
+    existingHint:
+      "Connectez-vous pour retrouver cette réservation et toutes les précédentes sur votre profil.",
+    guestHint: "Créez un compte gratuit pour retrouver vos réservations et suivre vos lectures.",
+    guestHintLink: "Se connecter",
+    tip: "Astuce",
+    alreadyHaveAccount:
+      "Vous avez déjà un compte ? Vos réservations invité seront automatiquement récupérées.",
+  },
 };
 
 type DeepStringify<T> = {

@@ -9,6 +9,7 @@ import GuestForm from "../../components/GuestForm.vue";
 import ShareModal from "../../components/ShareModal.vue";
 import SessionProgressBar from "../../components/SessionProgressBar.vue";
 import BatchSelectionBar from "../../components/BatchSelectionBar.vue";
+import SignupPromptModal from "../../components/SignupPromptModal.vue";
 import { seoService } from "../../services/seoService";
 import SessionHeader from "./detailSession/SessionHeader.vue";
 import SessionInstructions from "./detailSession/SessionInstructions.vue";
@@ -39,6 +40,7 @@ const shareUrl = ref("");
 
 const selectedItems = ref<Set<string>>(new Set());
 const isSubmittingBatch = ref(false);
+const showSignupPrompt = ref(false);
 
 const groupedTextStudies = computed(() => {
   if (!textStudies.value.length) return {};
@@ -235,6 +237,10 @@ const confirmReservations = async () => {
 
     reservations.value.push(...newReservations);
     selectedItems.value.clear();
+
+    if (!currentUser.value) {
+      showSignupPrompt.value = true;
+    }
   } catch (err) {
     console.error("Erreur lors de la confirmation globale:", err);
     alert(err instanceof Error ? err.message : t("detailSession.reservationError"));
@@ -458,6 +464,9 @@ watch(session, (s) => {
       :button-loading-text="t('detailSession.reserving')"
       @confirm="confirmReservations"
     />
+
+    <!-- Modal d'incitation à la création de compte -->
+    <SignupPromptModal v-model:show="showSignupPrompt" :guest-email="reservationForm.email" />
 
     <!-- Modal de partage -->
     <ShareModal

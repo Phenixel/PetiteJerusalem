@@ -27,11 +27,11 @@ service cloud.firestore {
         : 0;
     }
 
-    // Ajout d'UNE réservation (taille +1) et aucune autre modif
-    function isAppendOneReservationOnly() {
+    // Ajout de réservations (taille +1 ou plus) et aucune autre modif
+    function isAppendReservationsOnly() {
       return onlyReservationsChanged() &&
              (request.resource.data.reservations is list) &&
-             request.resource.data.reservations.size() == currentReservationsSize() + 1;
+             request.resource.data.reservations.size() >= currentReservationsSize() + 1;
     }
 
     // Suppression d'UNE réservation (taille -1) et aucune autre modif
@@ -72,7 +72,7 @@ service cloud.firestore {
       allow create: if isAuthenticated();
 
       // Mise à jour: propriétaire/admin OU append d'une réservation OU suppression d'une réservation OU modification d'une réservation
-      allow update: if isSessionOwner() || isAdmin() || isAppendOneReservationOnly() || canRemoveReservation() || canUpdateReservation();
+      allow update: if isSessionOwner() || isAdmin() || isAppendReservationsOnly() || canRemoveReservation() || canUpdateReservation();
 
       // Suppression: propriétaire ou admin uniquement
       allow delete: if isSessionOwner() || isAdmin();

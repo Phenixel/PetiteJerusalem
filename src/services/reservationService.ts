@@ -1,6 +1,6 @@
 import type { Session, TextStudy, TextStudyReservation, ReservationRecord } from "../models/models";
 import { db } from "../../firebase";
-import { doc, runTransaction } from "firebase/firestore";
+import { doc, runTransaction, collection, getDocs } from "firebase/firestore";
 
 export interface ReservationForm {
   name: string;
@@ -322,6 +322,70 @@ export class ReservationService {
         transaction.update(sfDocRef, { reservations });
       });
     });
+  }
+
+  async migrateGuestReservations(
+    userEmail: string,
+    userId: string,
+    userName: string,
+  ): Promise<number> {
+    let migratedCount = 0;
+
+    try {
+      const sessionsSnapshot = await getDocs(collection(db, "sessions"));
+
+      for (const sessionDoc of sessionsSnapshot.docs) {
+        const data = sessionDoc.data() as { reservations?: ReservationRecord[] };
+        const reservations = Array.isArray(data.reservations) ? data.reservations : [];
+
+        const hasGuestReservations = reservations.some((r) => r.chosenByGuestId === userEmail);
+
+        if (!hasGuestReservations) continue;
+
+        const sfDocRef = doc(db, "sessions", sessionDoc.id);
+
+        await runTransaction(db, (transaction) => {
+          return transaction.get(sfDocRef).then((sfDoc) => {
+            if (!sfDoc.exists()) return;
+
+            const freshData = sfDoc.data() as { reservations?: ReservationRecord[] };
+            const freshReservations = Array.isArray(freshData.reservations)
+              ? freshData.reservations
+              : [];
+
+            let sessionMigrated = 0;
+            const updatedReservations = freshReservations.map((r) => {
+              if (r.chosenByGuestId === userEmail) {
+                sessionMigrated++;
+                const updated: ReservationRecord = {
+                  id: r.id,
+                  textStudyId: r.textStudyId,
+                  chosenByName: userName,
+                  chosenById: userId,
+                  available: r.available,
+                  isCompleted: r.isCompleted,
+                  createdAt: r.createdAt,
+                };
+                if (r.section !== undefined) {
+                  updated.section = r.section;
+                }
+                return updated;
+              }
+              return r;
+            });
+
+            if (sessionMigrated > 0) {
+              transaction.update(sfDocRef, { reservations: updatedReservations });
+              migratedCount += sessionMigrated;
+            }
+          });
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors de la migration des réservations invité:", error);
+    }
+
+    return migratedCount;
   }
 }
 

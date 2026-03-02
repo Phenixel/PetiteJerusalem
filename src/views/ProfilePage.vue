@@ -59,7 +59,11 @@ const loadSessions = async () => {
     const allSessions = await sessionService.getAllSessions();
 
     participatedSessions.value = allSessions.filter((session) =>
-      session.reservations?.some((reservation) => reservation.chosenById === currentUser.value?.id),
+      session.reservations?.some(
+        (reservation) =>
+          reservation.chosenById === currentUser.value?.id ||
+          reservation.chosenByGuestId === currentUser.value?.email,
+      ),
     );
 
     createdSessions.value = allSessions.filter(
