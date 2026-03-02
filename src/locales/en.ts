@@ -266,6 +266,27 @@ const en: LocaleMessages = {
       "Create a shared reading session and invite the community to participate.",
     sessionTitle: "Study session – Petite Jerusalem",
   },
+  signupPrompt: {
+    reservationConfirmed: "Reservation confirmed!",
+    subtitle: "Just a password away from unlocking all features",
+    benefits: {
+      recover: "Access your past and future reservations",
+      track: "Mark your readings as completed",
+      profile: "Access your profile and statistics",
+      upcoming: "New features coming soon",
+    },
+    signUpGoogle: "Create an account with Google",
+    signUpEmail: "Sign up with email",
+    later: "Later",
+    signIn: "Sign in",
+    existingSubtitle: "You already have an account with this email address",
+    existingHint: "Sign in to find this reservation and all previous ones on your profile.",
+    guestHint: "Create a free account to access your reservations and track your readings.",
+    guestHintLink: "Sign in",
+    tip: "Tip",
+    alreadyHaveAccount:
+      "Already have an account? Your guest reservations will be recovered automatically.",
+  },
 };
 
 export default en;

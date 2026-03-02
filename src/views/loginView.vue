@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { authService } from "../services/authService";
+import { reservationService } from "../services/reservationService";
 import { seoService } from "../services/seoService";
 
 const router = useRouter();
@@ -42,6 +43,16 @@ async function submitForm() {
     } else {
       await authService.signInWithEmail(email.value.trim(), password.value);
     }
+
+    const currentUser = await authService.getCurrentUser();
+    if (currentUser) {
+      reservationService.migrateGuestReservations(
+        currentUser.email,
+        currentUser.id,
+        currentUser.name,
+      );
+    }
+
     router.push("/");
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : t("login.loginError");
@@ -55,7 +66,9 @@ async function loginWithGoogle() {
   try {
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
 
-    await authService.signInWithGooglePopup();
+    const user = await authService.signInWithGooglePopup();
+
+    reservationService.migrateGuestReservations(user.email, user.id, user.name);
 
     router.push(redirectPath);
   } catch (e: unknown) {
@@ -81,6 +94,16 @@ onMounted(async () => {
     router.push(redirectPath);
     return;
   }
+
+  const queryEmail = router.currentRoute.value.query.email as string;
+  if (queryEmail) {
+    email.value = queryEmail;
+  }
+  const queryMode = router.currentRoute.value.query.mode as string;
+  if (queryMode === "signup") {
+    mode.value = "signup";
+  }
+
   const url = window.location.origin + "/login";
   seoService.setMeta({
     title: t("seo.loginTitle"),
