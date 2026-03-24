@@ -1,23 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { sessionService } from "../services/sessionService";
 import type { Session } from "../models/models";
 import { EnumTypeTextStudy } from "../models/typeTextStudy";
 
-vi.mock("../services/firestoreService", () => ({
-  firestoreService: {
-    getSessionBySlug: vi.fn(),
-    getSessionById: vi.fn(),
-    getSessions: vi.fn(),
-    createSession: vi.fn(),
-    updateSession: vi.fn(),
-    deleteSession: vi.fn(),
-    getTextStudiesBySessionType: vi.fn(),
-    createReservation: vi.fn(),
-    getReservationsBySession: vi.fn(),
-    handleFirestoreError: vi.fn(),
-  },
-}));
+vi.mock("../services/firestoreService");
 
+import { sessionService } from "../services/sessionService";
 import { firestoreService } from "../services/firestoreService";
 
 const mockSession: Session = {

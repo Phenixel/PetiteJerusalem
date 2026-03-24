@@ -24,10 +24,6 @@ export class SessionService {
     return await firestoreService.getSessionById(sessionId);
   }
 
-  async getSessionBySlug(slug: string): Promise<Session | null> {
-    return await firestoreService.getSessionBySlug(slug);
-  }
-
   async resolveSession(slugOrId: string): Promise<Session | null> {
     const bySlug = await firestoreService.getSessionBySlug(slugOrId);
     if (bySlug) return bySlug;
@@ -389,6 +385,7 @@ export class SessionService {
         name: sessionData.name,
         description: sessionData.description,
         dateLimit: new Date(sessionData.dateLimit),
+        slug: UtilsService.generateSlug(sessionData.name),
         updatedAt: new Date(),
       });
     } catch (error) {

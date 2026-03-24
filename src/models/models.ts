@@ -33,7 +33,7 @@ export interface Session {
   createdAt: Date;
   personId: string;
   creatorName: string;
-  slug: string;
+  slug?: string;
   isCompleted: boolean;
   reservations: TextStudyReservation[];
   isEnded?: boolean;
