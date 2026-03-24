@@ -260,6 +260,7 @@ const he: LocaleMessages = {
     newSessionTitle: "יצירת סשן – פטיט ירושלים",
     newSessionDescription: "צרו סשן קריאה משותף והזמינו את הקהילה להשתתף.",
     sessionTitle: "סשן לימוד – פטיט ירושלים",
+    sessionDefaultDescription: "הצטרפו לסשן קריאה משותף זה בפטיט ירושלים.",
   },
   signupPrompt: {
     reservationConfirmed: "ההזמנה אושרה!",

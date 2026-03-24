@@ -139,6 +139,19 @@ export class FirestoreService {
     }
   }
 
+  async getSessionBySlug(slug: string): Promise<Session | null> {
+    try {
+      const q = query(collection(db, "sessions"), where("slug", "==", slug));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        return this.convertToSession(querySnapshot.docs[0]);
+      }
+      return null;
+    } catch (error) {
+      this.handleFirestoreError(error, "récupération de la session par slug");
+    }
+  }
+
   async updateSession(
     sessionId: string,
     updates: Partial<Omit<Session, "id" | "createdAt">>,

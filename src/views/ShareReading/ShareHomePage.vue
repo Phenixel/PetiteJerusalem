@@ -60,7 +60,7 @@ onUnmounted(() => {
 });
 
 const handleSessionClick = (session: Session) => {
-  router.push(`/share-reading/session/${session.id}`);
+  router.push(`/share-reading/session/${session.slug || session.id}`);
 };
 </script>
 

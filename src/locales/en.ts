@@ -265,6 +265,7 @@ const en: LocaleMessages = {
     newSessionDescription:
       "Create a shared reading session and invite the community to participate.",
     sessionTitle: "Study session – Petite Jerusalem",
+    sessionDefaultDescription: "Join this shared reading session on Petite Jerusalem.",
   },
   signupPrompt: {
     reservationConfirmed: "Reservation confirmed!",

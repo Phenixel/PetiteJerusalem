@@ -24,6 +24,16 @@ export class SessionService {
     return await firestoreService.getSessionById(sessionId);
   }
 
+  async getSessionBySlug(slug: string): Promise<Session | null> {
+    return await firestoreService.getSessionBySlug(slug);
+  }
+
+  async resolveSession(slugOrId: string): Promise<Session | null> {
+    const bySlug = await firestoreService.getSessionBySlug(slugOrId);
+    if (bySlug) return bySlug;
+    return await firestoreService.getSessionById(slugOrId);
+  }
+
   async getTextStudiesByType(type: EnumTypeTextStudy): Promise<TextStudy[]> {
     const enumToJsonLabel: Record<EnumTypeTextStudy, string> = {
       [EnumTypeTextStudy.TalmudBavli]: "Talmud Bavli",
