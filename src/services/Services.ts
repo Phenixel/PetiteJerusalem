@@ -11,9 +11,10 @@ export class UtilsService {
       .replace(/[ûüù]/g, "u")
       .replace(/[ç]/g, "c")
       .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
-      .trim();
+      .replace(/^-+|-+$/g, "");
   }
 
   static isValidEmail(email: string): boolean {
