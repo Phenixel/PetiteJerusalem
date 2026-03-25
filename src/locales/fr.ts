@@ -266,6 +266,7 @@ const fr = {
     newSessionDescription:
       "Créez une session de lecture partagée et invitez la communauté à participer.",
     sessionTitle: "Session d'étude – Petite Jerusalem",
+    sessionDefaultDescription: "Rejoignez cette session de lecture partagée sur Petite Jerusalem.",
   },
   signupPrompt: {
     reservationConfirmed: "Réservation confirmée !",

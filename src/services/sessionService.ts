@@ -24,6 +24,12 @@ export class SessionService {
     return await firestoreService.getSessionById(sessionId);
   }
 
+  async resolveSession(slugOrId: string): Promise<Session | null> {
+    const bySlug = await firestoreService.getSessionBySlug(slugOrId);
+    if (bySlug) return bySlug;
+    return await firestoreService.getSessionById(slugOrId);
+  }
+
   async getTextStudiesByType(type: EnumTypeTextStudy): Promise<TextStudy[]> {
     const enumToJsonLabel: Record<EnumTypeTextStudy, string> = {
       [EnumTypeTextStudy.TalmudBavli]: "Talmud Bavli",
@@ -199,6 +205,20 @@ export class SessionService {
     return await firestoreService.createSession(sessionWithReservations);
   }
 
+  private async generateUniqueSlug(baseName: string, excludeSessionId?: string): Promise<string> {
+    const base = UtilsService.generateSlug(baseName);
+    const existing = await firestoreService.getSessionBySlug(base);
+    if (!existing || existing.id === excludeSessionId) return base;
+
+    let counter = 1;
+    while (true) {
+      const candidate = `${base}-${counter}`;
+      const found = await firestoreService.getSessionBySlug(candidate);
+      if (!found || found.id === excludeSessionId) return candidate;
+      counter++;
+    }
+  }
+
   async createSessionWithValidation(
     name: string,
     description: string,
@@ -212,7 +232,7 @@ export class SessionService {
       throw new Error("Tous les champs sont obligatoires");
     }
 
-    const slug = UtilsService.generateSlug(name);
+    const slug = await this.generateUniqueSlug(name);
 
     const sessionData: Omit<Session, "id" | "createdAt" | "isCompleted" | "reservations"> = {
       name,
@@ -375,10 +395,12 @@ export class SessionService {
     sessionData: { name: string; description: string; dateLimit: string },
   ): Promise<void> {
     try {
+      const slug = await this.generateUniqueSlug(sessionData.name, sessionId);
       await firestoreService.updateSession(sessionId, {
         name: sessionData.name,
         description: sessionData.description,
         dateLimit: new Date(sessionData.dateLimit),
+        slug,
         updatedAt: new Date(),
       });
     } catch (error) {

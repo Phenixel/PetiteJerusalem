@@ -115,7 +115,7 @@ const updateUserInfo = async (data: { name: string; email: string }) => {
 
 const openShareModal = (session: Session) => {
   selectedSession.value = session;
-  shareUrl.value = `${window.location.origin}/share-reading/session/${session.id}`;
+  shareUrl.value = `${window.location.origin}/share-reading/session/${session.slug || session.id}`;
   showShareModal.value = true;
 };
 

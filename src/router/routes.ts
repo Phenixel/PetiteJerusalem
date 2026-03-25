@@ -39,7 +39,7 @@ export default [
     component: NewSession,
   },
   {
-    path: "/share-reading/session/:id",
+    path: "/share-reading/session/:slug",
     name: "detail-session",
     component: DetailSession,
   },

@@ -11,9 +11,10 @@ export class UtilsService {
       .replace(/[ûüù]/g, "u")
       .replace(/[ç]/g, "c")
       .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
-      .trim();
+      .replace(/^-+|-+$/g, "");
   }
 
   static isValidEmail(email: string): boolean {
@@ -79,7 +80,7 @@ export class UtilsService {
     func: T,
     wait: number,
   ): (...args: Parameters<T>) => void {
-    let timeout: number;
+    let timeout: ReturnType<typeof setTimeout>;
     return (...args: Parameters<T>) => {
       clearTimeout(timeout);
       timeout = setTimeout(() => func(...args), wait);

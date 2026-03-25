@@ -135,20 +135,33 @@ const loadSessionData = async () => {
     isLoading.value = true;
     error.value = null;
 
-    const sessionId = route.params.id as string;
-    if (!sessionId) {
-      throw new Error("ID de session manquant");
+    const slugOrId = route.params.slug as string;
+    if (!slugOrId) {
+      throw new Error("Session introuvable");
     }
 
-    const {
-      session: sessionData,
-      textStudies: textStudiesData,
-      reservations: reservationsData,
-    } = await sessionService.loadSessionData(sessionId);
+    const sessionData = await sessionService.resolveSession(slugOrId);
+    if (!sessionData) {
+      throw new Error("Session introuvable");
+    }
+
+    // Redirect to clean slug URL if accessed via old ID-based URL
+    if (sessionData.slug && sessionData.slug !== slugOrId) {
+      router.replace(`/share-reading/session/${sessionData.slug}`);
+    }
+
+    const [textStudiesData] = await Promise.all([
+      sessionService.getTextStudiesByType(sessionData.type),
+    ]);
+
+    const filteredTextStudies =
+      sessionData.selectedBooks && sessionData.selectedBooks.length > 0
+        ? textStudiesData.filter((text) => sessionData.selectedBooks!.includes(text.livre))
+        : textStudiesData;
 
     session.value = sessionData;
-    textStudies.value = textStudiesData;
-    reservations.value = reservationsData;
+    textStudies.value = filteredTextStudies;
+    reservations.value = sessionService.getReservationsBySession(sessionData);
   } catch (err) {
     console.error("Erreur lors du chargement des données:", err);
     error.value = err instanceof Error ? err.message : "Erreur lors du chargement";
@@ -330,32 +343,39 @@ const goToManagement = () => {
   }
 };
 
-onMounted(async () => {
-  currentUser.value = await sessionService.getCurrentUser();
-
-  await loadSessionData();
-
-  if (session.value) {
-    const url = window.location.origin + `/share-reading/session/${session.value.id}`;
-    seoService.setMeta({
-      title: `${session.value.name} | ${t("seo.sessionTitle")}`,
-      description: session.value.description || "Session de lecture partagée.",
-      canonical: url,
-      og: { url },
-    });
-  }
-});
-
-watch(session, (s) => {
+const applySessionSeo = (s: typeof session.value) => {
   if (!s) return;
-  const url = window.location.origin + `/share-reading/session/${s.id}`;
+  const slug = s.slug || s.id;
+  const url = `${window.location.origin}/share-reading/session/${slug}`;
+  const description = s.description || t("seo.sessionDefaultDescription");
   seoService.setMeta({
     title: `${s.name} | ${t("seo.sessionTitle")}`,
-    description: s.description || "Session de lecture partagée.",
+    description,
     canonical: url,
-    og: { url },
+    og: {
+      type: "article",
+      url,
+      title: s.name,
+      description,
+      image: `${window.location.origin}/og-session.png`,
+      site_name: "Petite Jerusalem",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: s.name,
+      description,
+      image: `${window.location.origin}/og-session.png`,
+    },
   });
+};
+
+onMounted(async () => {
+  currentUser.value = await sessionService.getCurrentUser();
+  await loadSessionData();
+  applySessionSeo(session.value);
 });
+
+watch(session, (s) => applySessionSeo(s));
 </script>
 
 <template>

@@ -35,6 +35,7 @@ export class FirestoreService {
       id: doc.id,
       createdAt: data.createdAt?.toDate() || new Date(),
       dateLimit: data.dateLimit?.toDate() || new Date(),
+      slug: data.slug || "",
       endedAt: data.endedAt?.toDate() || undefined,
       updatedAt: data.updatedAt?.toDate() || undefined,
     } as Session;
@@ -136,6 +137,19 @@ export class FirestoreService {
       return null;
     } catch (error) {
       this.handleFirestoreError(error, "récupération de la session par ID");
+    }
+  }
+
+  async getSessionBySlug(slug: string): Promise<Session | null> {
+    try {
+      const q = query(collection(db, "sessions"), where("slug", "==", slug));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        return this.convertToSession(querySnapshot.docs[0]);
+      }
+      return null;
+    } catch (error) {
+      this.handleFirestoreError(error, "récupération de la session par slug");
     }
   }
 
