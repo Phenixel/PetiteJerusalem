@@ -1,8 +1,8 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app'
-import { GoogleAuthProvider } from 'firebase/auth'
+import { GoogleAuthProvider, getAuth, connectAuthEmulator } from 'firebase/auth'
 import { getAnalytics } from 'firebase/analytics'
-import { getFirestore } from 'firebase/firestore'
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -29,5 +29,14 @@ export const app = initializeApp(firebaseConfig)
 // Initialize Firestore
 export const db = getFirestore(app)
 
-// Initialize Analytics
-export const analytics = getAnalytics(app)
+// Initialize Auth
+export const auth = getAuth(app)
+
+// Connect to emulators in development
+if (import.meta.env.DEV) {
+  connectFirestoreEmulator(db, 'localhost', 8080)
+  connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true })
+}
+
+// Initialize Analytics (prod only)
+export const analytics = import.meta.env.PROD ? getAnalytics(app) : null
