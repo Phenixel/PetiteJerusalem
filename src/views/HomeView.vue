@@ -17,6 +17,13 @@ const features = computed(() => [
     route: "share-reading",
   },
   {
+    icon: "🎓",
+    title: t("home.features.chiourim.title"),
+    description: t("home.features.chiourim.description"),
+    status: "available",
+    route: "chiourim",
+  },
+  {
     icon: "⚖️",
     title: t("home.features.dailyHalakhot.title"),
     description: t("home.features.dailyHalakhot.description"),

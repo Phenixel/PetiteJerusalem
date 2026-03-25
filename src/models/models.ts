@@ -80,3 +80,26 @@ export interface TextStudiesJson {
   textStudies: TextStudyJsonEntry[];
   types: string[];
 }
+
+// === CHIOURIM ===
+
+export type ChiourCategory =
+  | "guemara"
+  | "halakha"
+  | "paracha"
+  | "moussar"
+  | "hassidout"
+  | "other";
+
+export interface Chiour {
+  id: string;
+  title: string;
+  description: string;
+  teacher: string;
+  category: ChiourCategory;
+  link: string;
+  datePublished: Date;
+  createdAt: Date;
+  createdById: string;
+  duration?: string;
+}
