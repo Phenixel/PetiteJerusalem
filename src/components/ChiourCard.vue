@@ -2,6 +2,7 @@
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import type { Chiour } from "../models/models";
+import { chiourService } from "../services/chiourService";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -14,6 +15,11 @@ defineProps<Props>();
 
 function goToDetail(chiour: Chiour) {
   router.push(`/chiourim/${chiour.slug}`);
+}
+
+function goToAuteur(event: Event, auteur: string) {
+  event.stopPropagation();
+  router.push(`/chiourim/auteur/${chiourService.generateAuteurSlug(auteur)}`);
 }
 </script>
 
@@ -49,12 +55,16 @@ function goToDetail(chiour: Chiour) {
     </p>
 
     <div class="flex items-center gap-4 mb-3">
-      <div v-if="chiour.auteur" class="text-text-secondary dark:text-gray-400">
+      <button
+        v-if="chiour.auteur"
+        @click="goToAuteur($event, chiour.auteur)"
+        class="text-text-secondary hover:text-primary transition-colors dark:text-gray-400 dark:hover:text-primary"
+      >
         <i class="fa-solid fa-chalkboard-user mr-1"></i>
-        <strong class="text-text-primary font-semibold dark:text-gray-300">{{
+        <strong class="font-semibold underline decoration-dotted underline-offset-2">{{
           chiour.auteur
         }}</strong>
-      </div>
+      </button>
       <div
         v-if="chiour.niveau"
         class="text-text-secondary text-sm dark:text-gray-400"

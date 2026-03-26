@@ -10,6 +10,10 @@ import { seoService } from "../../services/seoService";
 
 const route = useRoute();
 const router = useRouter();
+
+function goToAuteur(auteur: string) {
+  router.push(`/chiourim/auteur/${chiourService.generateAuteurSlug(auteur)}`);
+}
 const { t } = useI18n();
 
 const chiour = ref<Chiour | null>(null);
@@ -143,12 +147,16 @@ watch(() => route.params.slug, loadChiour);
 
         <!-- Meta : auteur + niveau -->
         <div class="flex flex-wrap items-center gap-6 text-text-secondary dark:text-gray-400">
-          <div v-if="chiour.auteur" class="flex items-center gap-2">
+          <button
+            v-if="chiour.auteur"
+            @click="goToAuteur(chiour.auteur)"
+            class="flex items-center gap-2 hover:text-primary transition-colors"
+          >
             <i class="fa-solid fa-chalkboard-user text-primary"></i>
-            <span class="font-semibold text-text-primary dark:text-gray-200">{{
+            <span class="font-semibold text-text-primary underline decoration-dotted underline-offset-2 hover:text-primary dark:text-gray-200 dark:hover:text-primary">{{
               chiour.auteur
             }}</span>
-          </div>
+          </button>
           <div v-if="chiour.niveau" class="flex items-center gap-2">
             <i class="fa-solid fa-signal text-primary"></i>
             <span>{{ chiour.niveau }}</span>

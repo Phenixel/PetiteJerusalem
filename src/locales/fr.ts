@@ -297,6 +297,11 @@ const fr = {
     noAudio: "Aucun audio disponible pour ce chiour.",
     recommendations: "À écouter ensuite",
   },
+  auteurPage: {
+    notFound: "Cet auteur n'a pas été trouvé.",
+    chiourimCount: "{count} chiour(im) disponible(s)",
+    seoDescription: "Tous les chiourim de {auteur} sur Petite Jerusalem.",
+  },
   audioPlayer: {
     play: "Lecture",
     pause: "Pause",

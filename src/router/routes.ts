@@ -7,6 +7,7 @@ import NewSession from "../views/ShareReading/NewSession.vue";
 import DetailSession from "../views/ShareReading/DetailSession.vue";
 import ChiourimPage from "../views/Chiourim/ChiourimPage.vue";
 import DetailChiour from "../views/Chiourim/DetailChiour.vue";
+import AuteurChiourimPage from "../views/Chiourim/AuteurChiourimPage.vue";
 import NotFound from "../views/NotFound.vue";
 
 export default [
@@ -49,6 +50,11 @@ export default [
     path: "/chiourim",
     name: "chiourim",
     component: ChiourimPage,
+  },
+  {
+    path: "/chiourim/auteur/:auteur",
+    name: "auteur-chiourim",
+    component: AuteurChiourimPage,
   },
   {
     path: "/chiourim/:slug",

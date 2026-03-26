@@ -296,6 +296,11 @@ const en: LocaleMessages = {
     noAudio: "No audio available for this shiur.",
     recommendations: "Listen next",
   },
+  auteurPage: {
+    notFound: "This author was not found.",
+    chiourimCount: "{count} shiur(im) available",
+    seoDescription: "All shiurim by {auteur} on Petite Jerusalem.",
+  },
   audioPlayer: {
     play: "Play",
     pause: "Pause",

@@ -77,6 +77,29 @@ export class ChiourService {
     if (category === "all") return chiourim;
     return chiourim.filter((c) => c.categories.includes(category));
   }
+
+  filterByAuteur(chiourim: Chiour[], auteur: string): Chiour[] {
+    return chiourim.filter((c) => c.auteur === auteur);
+  }
+
+  getAuteurs(chiourim: Chiour[]): string[] {
+    const set = new Set<string>();
+    for (const c of chiourim) {
+      if (c.auteur) set.add(c.auteur);
+    }
+    return Array.from(set).sort();
+  }
+
+  generateAuteurSlug(auteur: string): string {
+    return generateChiourSlug(auteur);
+  }
+
+  findAuteurBySlug(chiourim: Chiour[], slug: string): string | null {
+    for (const c of chiourim) {
+      if (c.auteur && generateChiourSlug(c.auteur) === slug) return c.auteur;
+    }
+    return null;
+  }
 }
 
 export const chiourService = new ChiourService();

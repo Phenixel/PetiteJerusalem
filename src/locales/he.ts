@@ -290,6 +290,11 @@ const he: LocaleMessages = {
     noAudio: "אין אודיו זמין לשיעור זה.",
     recommendations: "להאזנה הבאה",
   },
+  auteurPage: {
+    notFound: "מחבר זה לא נמצא.",
+    chiourimCount: "{count} שיעור(ים) זמין(ים)",
+    seoDescription: "כל השיעורים של {auteur} בפטיט ירושלים.",
+  },
   audioPlayer: {
     play: "נגן",
     pause: "השהה",
