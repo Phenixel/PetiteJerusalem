@@ -1,30 +1,26 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
 import type { Chiour } from "../models/models";
 
 const { t } = useI18n();
+const router = useRouter();
 
 interface Props {
   chiour: Chiour;
 }
 
-const props = defineProps<Props>();
+defineProps<Props>();
 
-const chiourLink = computed(() => {
-  return props.chiour.mediaUrl || "";
-});
+function goToDetail(chiour: Chiour) {
+  router.push(`/chiourim/${chiour.slug}`);
+}
 </script>
 
 <template>
-  <a
-    :href="chiourLink || undefined"
-    :target="chiourLink ? '_blank' : undefined"
-    :rel="chiourLink ? 'noopener noreferrer' : undefined"
-    :class="[
-      'block bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:bg-white/90 group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:bg-gray-800/80',
-      chiourLink ? 'cursor-pointer' : 'cursor-default',
-    ]"
+  <div
+    class="block bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/60 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:bg-white/90 group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:bg-gray-800/80"
+    @click="goToDetail(chiour)"
   >
     <div class="flex justify-between items-start mb-3">
       <h4
@@ -69,15 +65,15 @@ const chiourLink = computed(() => {
     </div>
 
     <div
-      v-if="chiourLink"
+      v-if="chiour.mediaUrl"
       class="pt-3 border-t border-black/5 flex items-center justify-end dark:border-white/10"
     >
       <span
         class="text-sm text-primary font-medium flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
       >
-        {{ t("chiourim.openLink") }}
-        <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+        <i class="fa-solid fa-headphones mr-1"></i>
+        {{ t("chiourim.listen") }}
       </span>
     </div>
-  </a>
+  </div>
 </template>

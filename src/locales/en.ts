@@ -288,6 +288,22 @@ const en: LocaleMessages = {
     noChiourim: "No shiurim available",
     noChiourimDesc: "Shiurim will be added soon. Check back later!",
     openLink: "View course",
+    listen: "Listen",
+  },
+  detailChiour: {
+    backToList: "Back to shiurim",
+    notFound: "This shiur was not found.",
+    noAudio: "No audio available for this shiur.",
+    recommendations: "Listen next",
+  },
+  audioPlayer: {
+    play: "Play",
+    pause: "Pause",
+    mute: "Mute",
+    unmute: "Unmute",
+    rewind: "Rewind 15s",
+    forward: "Forward 30s",
+    speed: "Playback speed",
   },
   signupPrompt: {
     reservationConfirmed: "Reservation confirmed!",

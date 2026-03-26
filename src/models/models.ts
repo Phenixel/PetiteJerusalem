@@ -84,6 +84,7 @@ export interface TextStudiesJson {
 // === CHIOURIM ===
 
 export interface Chiour {
+  slug: string;
   name: string;
   description: string;
   auteur: string | null;

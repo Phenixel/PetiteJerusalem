@@ -282,6 +282,22 @@ const he: LocaleMessages = {
     noChiourim: "אין שיעורים זמינים",
     noChiourimDesc: "שיעורים יתווספו בקרוב. חזרו מאוחר יותר!",
     openLink: "צפה בשיעור",
+    listen: "האזנה",
+  },
+  detailChiour: {
+    backToList: "חזרה לשיעורים",
+    notFound: "שיעור זה לא נמצא.",
+    noAudio: "אין אודיו זמין לשיעור זה.",
+    recommendations: "להאזנה הבאה",
+  },
+  audioPlayer: {
+    play: "נגן",
+    pause: "השהה",
+    mute: "השתק",
+    unmute: "בטל השתקה",
+    rewind: "15 שניות אחורה",
+    forward: "30 שניות קדימה",
+    speed: "מהירות השמעה",
   },
   signupPrompt: {
     reservationConfirmed: "ההזמנה אושרה!",

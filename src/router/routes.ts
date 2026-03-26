@@ -6,6 +6,7 @@ import ShareHomePage from "../views/ShareReading/ShareHomePage.vue";
 import NewSession from "../views/ShareReading/NewSession.vue";
 import DetailSession from "../views/ShareReading/DetailSession.vue";
 import ChiourimPage from "../views/Chiourim/ChiourimPage.vue";
+import DetailChiour from "../views/Chiourim/DetailChiour.vue";
 import NotFound from "../views/NotFound.vue";
 
 export default [
@@ -48,6 +49,11 @@ export default [
     path: "/chiourim",
     name: "chiourim",
     component: ChiourimPage,
+  },
+  {
+    path: "/chiourim/:slug",
+    name: "detail-chiour",
+    component: DetailChiour,
   },
   {
     path: "/:pathMatch(.*)*",

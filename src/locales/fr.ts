@@ -289,6 +289,22 @@ const fr = {
     noChiourim: "Aucun chiour disponible",
     noChiourimDesc: "Les chiourim seront bientôt ajoutés. Revenez vite !",
     openLink: "Voir le cours",
+    listen: "Écouter",
+  },
+  detailChiour: {
+    backToList: "Retour aux chiourim",
+    notFound: "Ce chiour n'a pas été trouvé.",
+    noAudio: "Aucun audio disponible pour ce chiour.",
+    recommendations: "À écouter ensuite",
+  },
+  audioPlayer: {
+    play: "Lecture",
+    pause: "Pause",
+    mute: "Couper le son",
+    unmute: "Rétablir le son",
+    rewind: "Reculer de 15s",
+    forward: "Avancer de 30s",
+    speed: "Vitesse de lecture",
   },
   signupPrompt: {
     reservationConfirmed: "Réservation confirmée !",
