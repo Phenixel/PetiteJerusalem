@@ -80,3 +80,15 @@ export interface TextStudiesJson {
   textStudies: TextStudyJsonEntry[];
   types: string[];
 }
+
+// === CHIOURIM ===
+
+export interface Chiour {
+  slug: string;
+  name: string;
+  description: string;
+  auteur: string | null;
+  categories: string[];
+  mediaUrl: string;
+  niveau: string | null;
+}

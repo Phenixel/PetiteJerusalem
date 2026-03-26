@@ -17,18 +17,18 @@ const features = computed(() => [
     route: "share-reading",
   },
   {
+    icon: "🎓",
+    title: t("home.features.chiourim.title"),
+    description: t("home.features.chiourim.description"),
+    status: "available",
+    route: "chiourim",
+  },
+  {
     icon: "⚖️",
     title: t("home.features.dailyHalakhot.title"),
     description: t("home.features.dailyHalakhot.description"),
     status: "coming-soon",
     route: "halakhot-quotidiennes",
-  },
-  {
-    icon: "📖",
-    title: t("home.features.personalTracking.title"),
-    description: t("home.features.personalTracking.description"),
-    status: "coming-soon",
-    route: "suivi-personnel",
   },
 ]);
 

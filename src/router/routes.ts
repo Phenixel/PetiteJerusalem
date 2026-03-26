@@ -5,6 +5,9 @@ import SessionManagementPage from "../views/SessionManagementPage.vue";
 import ShareHomePage from "../views/ShareReading/ShareHomePage.vue";
 import NewSession from "../views/ShareReading/NewSession.vue";
 import DetailSession from "../views/ShareReading/DetailSession.vue";
+import ChiourimPage from "../views/Chiourim/ChiourimPage.vue";
+import DetailChiour from "../views/Chiourim/DetailChiour.vue";
+import AuteurChiourimPage from "../views/Chiourim/AuteurChiourimPage.vue";
 import NotFound from "../views/NotFound.vue";
 
 export default [
@@ -42,6 +45,21 @@ export default [
     path: "/share-reading/session/:slug",
     name: "detail-session",
     component: DetailSession,
+  },
+  {
+    path: "/chiourim",
+    name: "chiourim",
+    component: ChiourimPage,
+  },
+  {
+    path: "/chiourim/auteur/:auteur",
+    name: "auteur-chiourim",
+    component: AuteurChiourimPage,
+  },
+  {
+    path: "/chiourim/:slug",
+    name: "detail-chiour",
+    component: DetailChiour,
   },
   {
     path: "/:pathMatch(.*)*",

@@ -105,6 +105,13 @@ function goToLogin() {
           exact-active-class="bg-black/5 text-primary dark:bg-gray-800"
           >{{ $t("common.shareReading") }}</RouterLink
         >
+        <RouterLink
+          to="/chiourim"
+          @click="closeMobileMenu"
+          class="text-text-primary font-medium px-4 py-2 rounded-lg hover:bg-black/5 hover:text-primary transition-colors dark:text-gray-100 dark:hover:bg-gray-800"
+          exact-active-class="bg-black/5 text-primary dark:bg-gray-800"
+          >{{ $t("common.chiourim") }}</RouterLink
+        >
       </div>
       <div class="flex items-center gap-4">
         <button
@@ -187,6 +194,15 @@ function goToLogin() {
               exact-active-class="!bg-primary/20 !border-primary/40 !text-primary dark:!text-white"
             >
               {{ $t("common.shareReading") }}
+            </RouterLink>
+
+            <RouterLink
+              to="/chiourim"
+              @click="closeMobileMenu"
+              class="text-gray-700 font-medium text-base p-4 rounded-2xl bg-black/5 border border-black/10 hover:bg-black/10 hover:border-black/20 hover:text-gray-900 transition-all duration-300 dark:text-white/80 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20 dark:hover:text-white"
+              exact-active-class="!bg-primary/20 !border-primary/40 !text-primary dark:!text-white"
+            >
+              {{ $t("common.chiourim") }}
             </RouterLink>
           </div>
 
