@@ -31,19 +31,66 @@ function mapWebhookToChiour(item: WebhookChiour): Chiour {
   };
 }
 
+const MEDIA_TTL = 60 * 60 * 1000; // 1h — Notion media URLs expire after ~1h
+
+interface Cache<T> {
+  data: T;
+  fetchedAt: number;
+}
+
 export class ChiourService {
+  private chiourimCache: Cache<Chiour[]> | null = null;
+  private categoriesCache: Cache<string[]> | null = null;
+  private fetchPromise: Promise<Chiour[]> | null = null;
+  private categoriesFetchPromise: Promise<string[]> | null = null;
+
   async getAllChiourim(): Promise<Chiour[]> {
-    const data = await chiourRepository.fetchAll();
-    return data.map(mapWebhookToChiour);
+    if (this.chiourimCache && Date.now() - this.chiourimCache.fetchedAt < MEDIA_TTL) {
+      return this.chiourimCache.data;
+    }
+
+    // Deduplicate concurrent requests
+    if (!this.fetchPromise) {
+      this.fetchPromise = chiourRepository
+        .fetchAll()
+        .then((data) => {
+          const chiourim = data.map(mapWebhookToChiour);
+          this.chiourimCache = { data: chiourim, fetchedAt: Date.now() };
+          return chiourim;
+        })
+        .finally(() => {
+          this.fetchPromise = null;
+        });
+    }
+    return this.fetchPromise;
   }
 
-  async getChiourBySlug(slug: string): Promise<Chiour | null> {
-    const all = await this.getAllChiourim();
-    return all.find((c) => c.slug === slug) ?? null;
+  getCachedChiourim(): Chiour[] | null {
+    return this.chiourimCache?.data ?? null;
+  }
+
+  isCacheStale(): boolean {
+    if (!this.chiourimCache) return true;
+    return Date.now() - this.chiourimCache.fetchedAt >= MEDIA_TTL;
   }
 
   async getCategories(): Promise<string[]> {
-    return await chiourRepository.fetchCategories();
+    if (this.categoriesCache && Date.now() - this.categoriesCache.fetchedAt < MEDIA_TTL) {
+      return this.categoriesCache.data;
+    }
+
+    if (!this.categoriesFetchPromise) {
+      this.categoriesFetchPromise = chiourRepository
+        .fetchCategories()
+        .then((data) => {
+          this.categoriesCache = { data, fetchedAt: Date.now() };
+          return data;
+        })
+        .finally(() => {
+          this.categoriesFetchPromise = null;
+        });
+    }
+    return this.categoriesFetchPromise;
   }
 
   getRecommendations(current: Chiour, allChiourim: Chiour[], max = 3): Chiour[] {
@@ -80,14 +127,6 @@ export class ChiourService {
 
   filterByAuteur(chiourim: Chiour[], auteur: string): Chiour[] {
     return chiourim.filter((c) => c.auteur === auteur);
-  }
-
-  getAuteurs(chiourim: Chiour[]): string[] {
-    const set = new Set<string>();
-    for (const c of chiourim) {
-      if (c.auteur) set.add(c.auteur);
-    }
-    return Array.from(set).sort();
   }
 
   generateAuteurSlug(auteur: string): string {

@@ -26,29 +26,41 @@ const recommendations = computed(() => {
   return chiourService.getRecommendations(chiour.value, allChiourim.value, 3);
 });
 
+function applyChiour(all: Chiour[], slug: string): boolean {
+  allChiourim.value = all;
+  const found = all.find((c) => c.slug === slug) ?? null;
+  if (!found) return false;
+  chiour.value = found;
+  seoService.setMeta({
+    title: `${found.name} – Petite Jerusalem`,
+    description: found.description || t("seo.chiourimDescription"),
+    canonical: window.location.origin + `/chiourim/${found.slug}`,
+  });
+  return true;
+}
+
 const loadChiour = async () => {
+  const slug = route.params.slug as string;
+  error.value = null;
+
+  // Instant display from cache (even if media URLs are stale)
+  const cached = chiourService.getCachedChiourim();
+  if (cached && applyChiour(cached, slug)) {
+    isLoading.value = false;
+    // If media URLs may be expired, refresh in background
+    if (chiourService.isCacheStale()) {
+      chiourService.getAllChiourim().then((fresh) => applyChiour(fresh, slug)).catch(() => {});
+    }
+    return;
+  }
+
+  // No cache — full load with skeleton
   try {
     isLoading.value = true;
-    error.value = null;
-
     const all = await chiourService.getAllChiourim();
-    allChiourim.value = all;
-
-    const slug = route.params.slug as string;
-    const found = all.find((c) => c.slug === slug) ?? null;
-
-    if (!found) {
+    if (!applyChiour(all, slug)) {
       error.value = t("detailChiour.notFound");
-      return;
     }
-
-    chiour.value = found;
-
-    seoService.setMeta({
-      title: `${found.name} – Petite Jerusalem`,
-      description: found.description || t("seo.chiourimDescription"),
-      canonical: window.location.origin + `/chiourim/${found.slug}`,
-    });
   } catch (err) {
     console.error("Erreur lors du chargement du chiour:", err);
     error.value = err instanceof Error ? err.message : t("chiourim.loadError");

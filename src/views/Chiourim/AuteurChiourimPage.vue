@@ -29,28 +29,40 @@ const categories = computed(() => {
   return Array.from(cats).sort();
 });
 
+function applyAuteur(all: Chiour[], slug: string): boolean {
+  const name = chiourService.findAuteurBySlug(all, slug);
+  if (!name) return false;
+  auteurName.value = name;
+  chiourim.value = chiourService.filterByAuteur(all, name);
+  seoService.setMeta({
+    title: `${name} – ${t("chiourim.title")} – Petite Jerusalem`,
+    description: t("auteurPage.seoDescription", { auteur: name }),
+    canonical: window.location.origin + `/chiourim/auteur/${slug}`,
+  });
+  return true;
+}
+
 const loadAuteur = async () => {
+  const slug = route.params.auteur as string;
+  error.value = null;
+
+  // Instant display from cache
+  const cached = chiourService.getCachedChiourim();
+  if (cached && applyAuteur(cached, slug)) {
+    isLoading.value = false;
+    if (chiourService.isCacheStale()) {
+      chiourService.getAllChiourim().then((fresh) => applyAuteur(fresh, slug)).catch(() => {});
+    }
+    return;
+  }
+
+  // No cache — full load
   try {
     isLoading.value = true;
-    error.value = null;
-
-    const slug = route.params.auteur as string;
     const all = await chiourService.getAllChiourim();
-
-    const name = chiourService.findAuteurBySlug(all, slug);
-    if (!name) {
+    if (!applyAuteur(all, slug)) {
       error.value = t("auteurPage.notFound");
-      return;
     }
-
-    auteurName.value = name;
-    chiourim.value = chiourService.filterByAuteur(all, name);
-
-    seoService.setMeta({
-      title: `${name} – ${t("chiourim.title")} – Petite Jerusalem`,
-      description: t("auteurPage.seoDescription", { auteur: name }),
-      canonical: window.location.origin + `/chiourim/auteur/${slug}`,
-    });
   } catch (err) {
     console.error("Erreur lors du chargement de l'auteur:", err);
     error.value = err instanceof Error ? err.message : t("chiourim.loadError");

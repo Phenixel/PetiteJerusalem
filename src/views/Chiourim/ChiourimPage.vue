@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { chiourService } from "../../services/chiourService";
 import type { Chiour } from "../../models/models";
 import ChiourCard from "../../components/ChiourCard.vue";
 import { seoService } from "../../services/seoService";
-import { authService } from "../../services/authService";
 
 const { t } = useI18n();
 
@@ -13,16 +12,31 @@ const chiourim = ref<Chiour[]>([]);
 const dynamicCategories = ref<string[]>([]);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
-const isAuthenticated = ref(false);
 const searchTerm = ref("");
 const selectedCategory = ref<string>("all");
-let unsubscribeAuth: (() => void) | null = null;
 
 
 const loadChiourim = async () => {
+  error.value = null;
+
+  // Show cached data instantly if available
+  const cached = chiourService.getCachedChiourim();
+  if (cached) {
+    chiourim.value = cached;
+    isLoading.value = false;
+  }
+
+  if (cached && !chiourService.isCacheStale()) {
+    // Cache fresh — just load categories for this component instance
+    chiourService.getCategories().then((cats) => {
+      dynamicCategories.value = cats;
+    }).catch(() => {});
+    return;
+  }
+
+  // No cache or stale — fetch fresh data
+  if (!cached) isLoading.value = true;
   try {
-    isLoading.value = true;
-    error.value = null;
     const [fetchedChiourim, fetchedCategories] = await Promise.all([
       chiourService.getAllChiourim(),
       chiourService.getCategories(),
@@ -30,8 +44,10 @@ const loadChiourim = async () => {
     chiourim.value = fetchedChiourim;
     dynamicCategories.value = fetchedCategories;
   } catch (err) {
-    console.error("Erreur lors du chargement des chiourim:", err);
-    error.value = err instanceof Error ? err.message : t("chiourim.loadError");
+    if (!cached) {
+      console.error("Erreur lors du chargement des chiourim:", err);
+      error.value = err instanceof Error ? err.message : t("chiourim.loadError");
+    }
   } finally {
     isLoading.value = false;
   }
@@ -48,9 +64,6 @@ const chiourimCount = computed(() => filteredChiourim.value.length);
 
 onMounted(() => {
   loadChiourim();
-  unsubscribeAuth = authService.onAuthChanged((user) => {
-    isAuthenticated.value = !!user;
-  });
   const url = window.location.origin + "/chiourim";
   seoService.setMeta({
     title: t("seo.chiourimTitle"),
@@ -58,10 +71,6 @@ onMounted(() => {
     canonical: url,
     og: { url },
   });
-});
-
-onUnmounted(() => {
-  if (unsubscribeAuth) unsubscribeAuth();
 });
 </script>
 
