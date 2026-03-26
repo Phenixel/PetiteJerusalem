@@ -30,13 +30,6 @@ const features = computed(() => [
     status: "coming-soon",
     route: "halakhot-quotidiennes",
   },
-  {
-    icon: "📖",
-    title: t("home.features.personalTracking.title"),
-    description: t("home.features.personalTracking.description"),
-    status: "coming-soon",
-    route: "suivi-personnel",
-  },
 ]);
 
 onMounted(() => {

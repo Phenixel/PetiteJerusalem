@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { chiourService } from "../../services/chiourService";
-import type { Chiour, ChiourCategory } from "../../models/models";
+import type { Chiour } from "../../models/models";
 import ChiourCard from "../../components/ChiourCard.vue";
 import { seoService } from "../../services/seoService";
 import { authService } from "../../services/authService";
@@ -10,29 +10,25 @@ import { authService } from "../../services/authService";
 const { t } = useI18n();
 
 const chiourim = ref<Chiour[]>([]);
+const dynamicCategories = ref<string[]>([]);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const isAuthenticated = ref(false);
 const searchTerm = ref("");
-const selectedCategory = ref<ChiourCategory | "all">("all");
+const selectedCategory = ref<string>("all");
 let unsubscribeAuth: (() => void) | null = null;
 
-const categories: Array<{ value: ChiourCategory | "all"; labelKey: string }> = [
-  { value: "all", labelKey: "chiourim.allCategories" },
-  { value: "guemara", labelKey: "chiourim.categories.guemara" },
-  { value: "halakha", labelKey: "chiourim.categories.halakha" },
-  { value: "paracha", labelKey: "chiourim.categories.paracha" },
-  { value: "moussar", labelKey: "chiourim.categories.moussar" },
-  { value: "hassidout", labelKey: "chiourim.categories.hassidout" },
-  { value: "other", labelKey: "chiourim.categories.other" },
-];
 
 const loadChiourim = async () => {
   try {
     isLoading.value = true;
     error.value = null;
-    const fetched = await chiourService.getAllChiourim();
-    chiourim.value = chiourService.sortByDate(fetched);
+    const [fetchedChiourim, fetchedCategories] = await Promise.all([
+      chiourService.getAllChiourim(),
+      chiourService.getCategories(),
+    ]);
+    chiourim.value = fetchedChiourim;
+    dynamicCategories.value = fetchedCategories;
   } catch (err) {
     console.error("Erreur lors du chargement des chiourim:", err);
     error.value = err instanceof Error ? err.message : t("chiourim.loadError");
@@ -110,17 +106,28 @@ onUnmounted(() => {
       <!-- Filtre par catégorie -->
       <div class="flex flex-wrap gap-2 justify-center">
         <button
-          v-for="cat in categories"
-          :key="cat.value"
-          @click="selectedCategory = cat.value"
+          @click="selectedCategory = 'all'"
           :class="[
             'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border',
-            selectedCategory === cat.value
+            selectedCategory === 'all'
               ? 'bg-primary text-white border-primary shadow-md'
               : 'bg-white/60 text-text-secondary border-white/60 hover:bg-white/80 hover:text-text-primary dark:bg-gray-800/40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200',
           ]"
         >
-          {{ t(cat.labelKey) }}
+          {{ t("chiourim.allCategories") }}
+        </button>
+        <button
+          v-for="cat in dynamicCategories"
+          :key="cat"
+          @click="selectedCategory = cat"
+          :class="[
+            'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border',
+            selectedCategory === cat
+              ? 'bg-primary text-white border-primary shadow-md'
+              : 'bg-white/60 text-text-secondary border-white/60 hover:bg-white/80 hover:text-text-primary dark:bg-gray-800/40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200',
+          ]"
+        >
+          {{ cat }}
         </button>
       </div>
     </div>
@@ -179,7 +186,7 @@ onUnmounted(() => {
           >
             <ChiourCard
               v-for="chiour in filteredChiourim"
-              :key="chiour.id"
+              :key="chiour.name"
               :chiour="chiour"
               class="h-full"
             />

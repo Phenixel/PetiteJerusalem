@@ -14,7 +14,7 @@ import {
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "../../firebase";
-import type { TextStudy, Session, TextStudyReservation, Chiour } from "../models/models";
+import type { TextStudy, Session, TextStudyReservation } from "../models/models";
 
 export class FirestoreService {
   // === MÉTHODES UTILITAIRES ===
@@ -206,58 +206,6 @@ export class FirestoreService {
       await deleteDoc(docRef);
     } catch (error) {
       this.handleFirestoreError(error, "suppression de la réservation");
-    }
-  }
-
-  // === MÉTHODES CHIOURIM ===
-
-  private convertToChiour(doc: QueryDocumentSnapshot<DocumentData>): Chiour {
-    const data = doc.data();
-    return {
-      ...data,
-      id: doc.id,
-      createdAt: data.createdAt?.toDate() || new Date(),
-      datePublished: data.datePublished?.toDate() || new Date(),
-    } as Chiour;
-  }
-
-  async getChiourim(): Promise<Chiour[]> {
-    try {
-      const querySnapshot = await getDocs(collection(db, "chiourim"));
-      return querySnapshot.docs.map((doc) => this.convertToChiour(doc));
-    } catch (error) {
-      this.handleFirestoreError(error, "récupération des chiourim");
-    }
-  }
-
-  async getChiourimByCategory(category: string): Promise<Chiour[]> {
-    try {
-      const q = query(collection(db, "chiourim"), where("category", "==", category));
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map((doc) => this.convertToChiour(doc));
-    } catch (error) {
-      this.handleFirestoreError(error, "récupération des chiourim par catégorie");
-    }
-  }
-
-  async createChiour(chiour: Omit<Chiour, "id" | "createdAt">): Promise<string> {
-    try {
-      const docRef = await addDoc(collection(db, "chiourim"), {
-        ...chiour,
-        createdAt: Timestamp.now(),
-      });
-      return docRef.id;
-    } catch (error) {
-      this.handleFirestoreError(error, "création du chiour");
-    }
-  }
-
-  async deleteChiour(chiourId: string): Promise<void> {
-    try {
-      const docRef = doc(db, "chiourim", chiourId);
-      await deleteDoc(docRef);
-    } catch (error) {
-      this.handleFirestoreError(error, "suppression du chiour");
     }
   }
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Chiour } from "../models/models";
-import { DateService } from "../services/dateService";
 
 const { t } = useI18n();
 
@@ -9,43 +9,49 @@ interface Props {
   chiour: Chiour;
 }
 
-defineProps<Props>();
-
-const formatDate = (date: Date): string => {
-  return DateService.formatDate(date);
-};
+const props = defineProps<Props>();
 
 const categoryIcon = (category: string): string => {
   const icons: Record<string, string> = {
-    guemara: "fa-solid fa-book-open",
-    halakha: "fa-solid fa-scale-balanced",
-    paracha: "fa-solid fa-scroll",
-    moussar: "fa-solid fa-heart",
-    hassidout: "fa-solid fa-star",
-    other: "fa-solid fa-bookmark",
+    "Hovot Halévavot": "fa-solid fa-heart",
+    Halaha: "fa-solid fa-scale-balanced",
+    Paracha: "fa-solid fa-scroll",
   };
-  return icons[category] || icons.other;
+  return icons[category] || "fa-solid fa-bookmark";
 };
+
+const chiourLink = computed(() => {
+  return props.chiour.mediaUrl || "";
+});
 </script>
 
 <template>
   <a
-    :href="chiour.link"
-    target="_blank"
-    rel="noopener noreferrer"
-    class="block bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/60 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:bg-white/90 group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:bg-gray-800/80"
+    :href="chiourLink || undefined"
+    :target="chiourLink ? '_blank' : undefined"
+    :rel="chiourLink ? 'noopener noreferrer' : undefined"
+    :class="[
+      'block bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:bg-white/90 group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:bg-gray-800/80',
+      chiourLink ? 'cursor-pointer' : 'cursor-default',
+    ]"
   >
     <div class="flex justify-between items-start mb-3">
       <h4
         class="text-lg font-bold text-text-primary group-hover:text-primary transition-colors dark:text-gray-100 dark:group-hover:text-primary line-clamp-2"
       >
-        {{ chiour.title }}
+        {{ chiour.name }}
       </h4>
+    </div>
+
+    <!-- Categories badges -->
+    <div class="flex flex-wrap gap-2 mb-3">
       <span
-        class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap ml-3 dark:bg-primary/20"
+        v-for="cat in chiour.categories"
+        :key="cat"
+        class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap dark:bg-primary/20"
       >
-        <i :class="categoryIcon(chiour.category)" class="mr-1"></i>
-        {{ t(`chiourim.categories.${chiour.category}`) }}
+        <i :class="categoryIcon(cat)" class="mr-1"></i>
+        {{ cat }}
       </span>
     </div>
 
@@ -57,23 +63,25 @@ const categoryIcon = (category: string): string => {
     </p>
 
     <div class="flex items-center gap-4 mb-3">
-      <div class="text-text-secondary dark:text-gray-400">
+      <div v-if="chiour.auteur" class="text-text-secondary dark:text-gray-400">
         <i class="fa-solid fa-chalkboard-user mr-1"></i>
         <strong class="text-text-primary font-semibold dark:text-gray-300">{{
-          chiour.teacher
+          chiour.auteur
         }}</strong>
       </div>
-      <div v-if="chiour.duration" class="text-text-secondary text-sm dark:text-gray-400">
-        <i class="fa-regular fa-clock mr-1"></i>
-        {{ chiour.duration }}
+      <div
+        v-if="chiour.niveau"
+        class="text-text-secondary text-sm dark:text-gray-400"
+      >
+        <i class="fa-solid fa-signal mr-1"></i>
+        {{ chiour.niveau }}
       </div>
     </div>
 
-    <div class="pt-3 border-t border-black/5 flex items-center justify-between dark:border-white/10">
-      <span class="text-sm text-text-secondary flex items-center gap-2 dark:text-gray-400">
-        <i class="far fa-calendar-alt"></i>
-        {{ formatDate(chiour.datePublished) }}
-      </span>
+    <div
+      v-if="chiourLink"
+      class="pt-3 border-t border-black/5 flex items-center justify-end dark:border-white/10"
+    >
       <span
         class="text-sm text-primary font-medium flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
       >
