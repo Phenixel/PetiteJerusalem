@@ -11,15 +11,6 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const categoryIcon = (category: string): string => {
-  const icons: Record<string, string> = {
-    "Hovot Halévavot": "fa-solid fa-heart",
-    Halaha: "fa-solid fa-scale-balanced",
-    Paracha: "fa-solid fa-scroll",
-  };
-  return icons[category] || "fa-solid fa-bookmark";
-};
-
 const chiourLink = computed(() => {
   return props.chiour.mediaUrl || "";
 });
@@ -50,7 +41,6 @@ const chiourLink = computed(() => {
         :key="cat"
         class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap dark:bg-primary/20"
       >
-        <i :class="categoryIcon(cat)" class="mr-1"></i>
         {{ cat }}
       </span>
     </div>
