@@ -133,17 +133,53 @@ onUnmounted(() => {
     </div>
 
     <div class="relative">
-      <!-- Loading -->
-      <div
-        v-if="isLoading"
-        class="flex flex-col items-center justify-center py-20 bg-white/50 backdrop-blur-sm rounded-2xl dark:bg-gray-900/60"
-      >
-        <div
-          class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
-        ></div>
-        <p class="text-text-secondary font-medium animate-pulse dark:text-gray-300">
-          {{ t("chiourim.loading") }}
-        </p>
+      <!-- Skeleton loading -->
+      <div v-if="isLoading">
+        <h3
+          class="text-2xl font-bold text-text-primary mb-6 flex items-center gap-3 dark:text-gray-100"
+        >
+          <i class="fa-solid fa-graduation-cap text-primary"></i>
+          {{ t("chiourim.availableChiourim") }}
+          <span
+            class="h-6 w-8 bg-gray-200 rounded-full animate-pulse dark:bg-gray-700"
+          ></span>
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div
+            v-for="n in 6"
+            :key="n"
+            class="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/60 dark:bg-gray-800/60 dark:border-gray-700 animate-pulse"
+          >
+            <!-- Titre -->
+            <div class="mb-3">
+              <div class="h-5 bg-gray-200 rounded-lg w-3/4 dark:bg-gray-700"></div>
+            </div>
+
+            <!-- Badges catégories -->
+            <div class="flex gap-2 mb-3">
+              <div class="h-6 w-20 bg-primary/10 rounded-full dark:bg-primary/10"></div>
+              <div class="h-6 w-16 bg-primary/10 rounded-full dark:bg-primary/10"></div>
+            </div>
+
+            <!-- Description -->
+            <div class="space-y-2 mb-4">
+              <div class="h-3 bg-gray-200 rounded w-full dark:bg-gray-700"></div>
+              <div class="h-3 bg-gray-200 rounded w-5/6 dark:bg-gray-700"></div>
+            </div>
+
+            <!-- Auteur + niveau -->
+            <div class="flex items-center gap-4 mb-3">
+              <div class="h-4 bg-gray-200 rounded w-28 dark:bg-gray-700"></div>
+              <div class="h-4 bg-gray-200 rounded w-16 dark:bg-gray-700"></div>
+            </div>
+
+            <!-- Footer -->
+            <div class="pt-3 border-t border-black/5 dark:border-white/10">
+              <div class="h-3 bg-gray-200 rounded w-20 ml-auto dark:bg-gray-700"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Error -->
