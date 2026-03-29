@@ -14,14 +14,15 @@ import ParticipatedSessions from "./profilePage/ParticipatedSessions.vue";
 import CreatedSessions from "./profilePage/CreatedSessions.vue";
 import UserInfoForm from "./profilePage/UserInfoForm.vue";
 import SecuritySettings from "./profilePage/SecuritySettings.vue";
+import ThemeSelector from "./profilePage/ThemeSelector.vue";
 
 const router = useRouter();
 const { t } = useI18n();
 
 const currentUser = ref<User | null>(null);
-const activeTab = ref<"sessions-participated" | "sessions-created" | "my-info" | "security">(
-  "sessions-participated",
-);
+const activeTab = ref<
+  "sessions-participated" | "sessions-created" | "my-info" | "security" | "theme"
+>("sessions-participated");
 const isLoading = ref(true);
 
 const participatedSessions = ref<Session[]>([]);
@@ -263,6 +264,20 @@ onMounted(async () => {
                 <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
               </button>
             </li>
+            <li>
+              <button
+                @click="setActiveTab('theme')"
+                :class="[
+                  'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
+                  activeTab === 'theme'
+                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm dark:bg-primary/20'
+                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
+                ]"
+              >
+                <span>{{ t("profile.tabs.theme") }}</span>
+                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
+              </button>
+            </li>
           </ul>
 
           <button
@@ -299,6 +314,10 @@ onMounted(async () => {
 
           <div v-if="activeTab === 'security'">
             <SecuritySettings />
+          </div>
+
+          <div v-if="activeTab === 'theme'">
+            <ThemeSelector :user-id="currentUser.id" />
           </div>
         </div>
       </div>

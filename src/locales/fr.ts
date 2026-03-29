@@ -111,6 +111,7 @@ const fr = {
       createdSessions: "Sessions Créées",
       myInfo: "Mes Informations",
       security: "Sécurité",
+      theme: "Apparence",
     },
     noParticipatedSessions: "Aucune session participée",
     noParticipatedSessionsDesc: "Vous n'avez pas encore participé à des sessions d'étude.",
@@ -133,6 +134,15 @@ const fr = {
     myInformation: "Mes informations",
     displayName: "Nom d'affichage",
     userId: "ID utilisateur",
+    themeTitle: "Thème du site",
+    themeDescription: "Choisissez les couleurs qui vous correspondent. Le thème s'applique à l'ensemble du site.",
+    themeActive: "Actif",
+    themeHint: "Survolez un thème pour le prévisualiser. Cliquez pour l'appliquer.",
+    themes: {
+      ocean: "Océan",
+      sunset: "Coucher de soleil",
+      emerald: "Émeraude",
+    },
   },
   security: {
     title: "Sécurité",

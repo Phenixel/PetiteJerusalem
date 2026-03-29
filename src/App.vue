@@ -5,10 +5,22 @@ import Navbar from "./components/NavbarComponents.vue";
 import SiteFooter from "./components/SiteFooter.vue";
 import ScrollToTop from "./components/ScrollToTop.vue";
 import { RouterView } from "vue-router";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase";
+import { useTheme } from "./composables/useTheme";
 
 const route = useRoute();
+const { loadTheme, resetTheme } = useTheme();
 
 const isHome = computed(() => route.name === "home");
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    loadTheme(user.uid);
+  } else {
+    resetTheme();
+  }
+});
 </script>
 
 <template>

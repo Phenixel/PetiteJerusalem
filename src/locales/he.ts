@@ -112,6 +112,7 @@ const he: LocaleMessages = {
       createdSessions: "סשנים שיצרתי",
       myInfo: "המידע שלי",
       security: "אבטחה",
+      theme: "מראה",
     },
     noParticipatedSessions: "אין סשנים שהשתתפת בהם",
     noParticipatedSessionsDesc: "עדיין לא השתתפת בסשני לימוד.",
@@ -133,6 +134,15 @@ const he: LocaleMessages = {
     myInformation: "המידע שלי",
     displayName: "שם תצוגה",
     userId: "מזהה משתמש",
+    themeTitle: "ערכת נושא",
+    themeDescription: "בחרו את הצבעים שמתאימים לכם. ערכת הנושא חלה על כל האתר.",
+    themeActive: "פעיל",
+    themeHint: "העבירו את העכבר מעל ערכת נושא לתצוגה מקדימה. לחצו כדי להחיל.",
+    themes: {
+      ocean: "אוקיינוס",
+      sunset: "שקיעה",
+      emerald: "אזמרגד",
+    },
   },
   security: {
     title: "אבטחה",

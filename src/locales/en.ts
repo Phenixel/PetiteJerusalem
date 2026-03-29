@@ -113,6 +113,7 @@ const en: LocaleMessages = {
       createdSessions: "Created Sessions",
       myInfo: "My Information",
       security: "Security",
+      theme: "Appearance",
     },
     noParticipatedSessions: "No participated sessions",
     noParticipatedSessionsDesc: "You haven't participated in any study sessions yet.",
@@ -134,6 +135,15 @@ const en: LocaleMessages = {
     myInformation: "My information",
     displayName: "Display name",
     userId: "User ID",
+    themeTitle: "Site theme",
+    themeDescription: "Choose the colors that suit you. The theme applies across the entire site.",
+    themeActive: "Active",
+    themeHint: "Hover over a theme to preview it. Click to apply.",
+    themes: {
+      ocean: "Ocean",
+      sunset: "Sunset",
+      emerald: "Emerald",
+    },
   },
   security: {
     title: "Security",
