@@ -57,9 +57,17 @@ export function useTheme() {
     const theme = THEME_OPTIONS.find((t) => t.id === themeId);
     if (!theme) return;
 
+    const previousThemeId = currentThemeId.value;
     currentThemeId.value = themeId;
     applyThemeColors(theme);
-    await userPreferencesService.savePreferences(userId, { theme: themeId });
+
+    try {
+      await userPreferencesService.savePreferences(userId, { theme: themeId });
+    } catch {
+      currentThemeId.value = previousThemeId;
+      applyThemeColors(currentTheme.value);
+      throw new Error("Failed to save theme preference");
+    }
   }
 
   function previewTheme(themeId: string) {
@@ -73,6 +81,12 @@ export function useTheme() {
     applyThemeColors(currentTheme.value);
   }
 
+  function resetTheme() {
+    currentThemeId.value = "ocean";
+    loadedForUserId = null;
+    applyThemeColors(THEME_OPTIONS[0]);
+  }
+
   return {
     currentThemeId,
     currentTheme,
@@ -81,5 +95,6 @@ export function useTheme() {
     setTheme,
     previewTheme,
     cancelPreview,
+    resetTheme,
   };
 }

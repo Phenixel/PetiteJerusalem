@@ -10,13 +10,15 @@ import { auth } from "../firebase";
 import { useTheme } from "./composables/useTheme";
 
 const route = useRoute();
-const { loadTheme } = useTheme();
+const { loadTheme, resetTheme } = useTheme();
 
 const isHome = computed(() => route.name === "home");
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
     loadTheme(user.uid);
+  } else {
+    resetTheme();
   }
 });
 </script>
