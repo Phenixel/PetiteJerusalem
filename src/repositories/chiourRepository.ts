@@ -10,6 +10,7 @@ export interface WebhookChiour {
   property_cat_gorie: string[];
   property_medias: string;
   property_niveau: string | null;
+  property_link: string | null;
 }
 
 export class ChiourRepository {

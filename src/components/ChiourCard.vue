@@ -25,7 +25,7 @@ function goToAuteur(event: Event, auteur: string) {
 
 <template>
   <div
-    class="block bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/60 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:bg-white/90 group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:bg-gray-800/80"
+    class="flex flex-col bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/60 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:bg-white/90 group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:bg-gray-800/80"
     @click="goToDetail(chiour)"
   >
     <div class="flex justify-between items-start mb-3">
@@ -74,15 +74,17 @@ function goToAuteur(event: Event, auteur: string) {
       </div>
     </div>
 
+    <div class="flex-grow"></div>
+
     <div
-      v-if="chiour.mediaUrl"
-      class="pt-3 border-t border-black/5 flex items-center justify-end dark:border-white/10"
+      v-if="chiour.link || chiour.mediaUrl"
+      class="mt-auto pt-3 border-t border-black/5 flex items-center justify-end dark:border-white/10"
     >
       <span
         class="text-sm text-primary font-medium flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
       >
-        <i class="fa-solid fa-headphones mr-1"></i>
-        {{ t("chiourim.listen") }}
+        <i :class="chiour.link ? 'fa-brands fa-youtube mr-1' : 'fa-solid fa-headphones mr-1'"></i>
+        {{ chiour.link ? t("chiourim.openLink") : t("chiourim.listen") }}
       </span>
     </div>
   </div>

@@ -304,7 +304,7 @@ const fr = {
   detailChiour: {
     backToList: "Retour aux chiourim",
     notFound: "Ce chiour n'a pas été trouvé.",
-    noAudio: "Aucun audio disponible pour ce chiour.",
+    noAudio: "Aucun média disponible pour ce chiour.",
     recommendations: "À écouter ensuite",
   },
   auteurPage: {
