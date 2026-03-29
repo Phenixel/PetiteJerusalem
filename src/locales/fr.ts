@@ -48,7 +48,7 @@ const fr = {
   },
   navbar: {
     title: "Petite Jérusalem",
-    subtitle: "Hub de référence pour la communauté juive",
+    subtitle: "Hub de partage pour la communauté juive",
     mainMenu: "Menu principal",
   },
   footer: {
@@ -60,11 +60,11 @@ const fr = {
   home: {
     heroTitle: "Votre centre spirituel numérique",
     heroDescription:
-      "Une plateforme moderne dédiée à l'étude, au partage et à la croissance spirituelle de la communauté juive francophone.",
+      "Une plateforme moderne dédiée à l'étude, au partage et à la croissance spirituelle de la communauté juive.",
     features: {
       shareReading: {
         title: "Partage de Lectures",
-        description: "Échangez et découvrez des textes sacrés avec la communauté",
+        description: "Lisez ensemble des textes sacrés pour un leillouï nishmat ou une refoua chelema",
       },
       dailyHalakhot: {
         title: "Halakhot Quotidiennes",
@@ -182,7 +182,7 @@ const fr = {
   },
   shareReading: {
     title: "Partage de Lectures",
-    subtitle: "Échangez et découvrez des textes sacrés avec la communauté",
+    subtitle: "Organisez des lectures collectives de textes sacrés pour un leillouï nishmat ou une refoua chelema",
     createSession: "Créer une session",
     authRequired: "Vous devez avoir un compte et être connecté pour créer une session.",
     loadingSessions: "Chargement des sessions...",
@@ -194,7 +194,7 @@ const fr = {
   },
   newSession: {
     title: "Créer une session",
-    subtitle: "Créez une session de partage de lectures avec la communauté",
+    subtitle: "Créez une session de lecture collective pour un leillouï nishmat ou une refoua chelema",
     sessionTitle: "Titre de la session",
     sessionTitlePlaceholder: "Ex: Étude de la Parasha de la semaine",
     sessionDescription: "Description de la session",
@@ -276,10 +276,10 @@ const fr = {
     notFoundDescription: "La page demandée n'existe pas.",
     shareReadingTitle: "Partage de Lectures – Petite Jerusalem",
     shareReadingDescription:
-      "Découvrez et créez des sessions de lecture partagée. Réservez des textes et étudiez avec la communauté.",
+      "Créez des sessions de lecture collective pour un leillouï nishmat ou une refoua chelema. Réservez des parties de textes et participez ensemble.",
     newSessionTitle: "Créer une session – Petite Jerusalem",
     newSessionDescription:
-      "Créez une session de lecture partagée et invitez la communauté à participer.",
+      "Créez une session de lecture collective et invitez d'autres à vous rejoindre pour un leillouï nishmat ou une refoua chelema.",
     sessionTitle: "Session d'étude – Petite Jerusalem",
     sessionDefaultDescription: "Rejoignez cette session de lecture partagée sur Petite Jerusalem.",
     chiourimTitle: "Chiourim – Petite Jerusalem",

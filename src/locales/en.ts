@@ -50,7 +50,7 @@ const en: LocaleMessages = {
   },
   navbar: {
     title: "Petite Jérusalem",
-    subtitle: "Reference hub for the Jewish community",
+    subtitle: "Sharing hub for the Jewish community",
     mainMenu: "Main menu",
   },
   footer: {
@@ -62,11 +62,11 @@ const en: LocaleMessages = {
   home: {
     heroTitle: "Your digital spiritual center",
     heroDescription:
-      "A modern platform dedicated to study, sharing and spiritual growth of the French-speaking Jewish community.",
+      "A modern platform dedicated to study, sharing and spiritual growth of the Jewish community.",
     features: {
       shareReading: {
         title: "Reading Share",
-        description: "Exchange and discover sacred texts with the community",
+        description: "Read sacred texts together for a leillouï nishmat or a refoua shelema",
       },
       dailyHalakhot: {
         title: "Daily Halakhot",
@@ -182,7 +182,7 @@ const en: LocaleMessages = {
   },
   shareReading: {
     title: "Reading Share",
-    subtitle: "Exchange and discover sacred texts with the community",
+    subtitle: "Organize collective readings of sacred texts for a leillouï nishmat or a refoua shelema",
     createSession: "Create session",
     authRequired: "You must have an account and be logged in to create a session.",
     loadingSessions: "Loading sessions...",
@@ -194,7 +194,7 @@ const en: LocaleMessages = {
   },
   newSession: {
     title: "Create a session",
-    subtitle: "Create a reading share session with the community",
+    subtitle: "Create a collective reading session for a leillouï nishmat or a refoua shelema",
     sessionTitle: "Session title",
     sessionTitlePlaceholder: "Ex: Weekly Parasha study",
     sessionDescription: "Session description",
@@ -275,10 +275,10 @@ const en: LocaleMessages = {
     notFoundDescription: "The requested page does not exist.",
     shareReadingTitle: "Reading Share – Petite Jerusalem",
     shareReadingDescription:
-      "Discover and create shared reading sessions. Reserve texts and study with the community.",
+      "Create collective reading sessions for a leillouï nishmat or a refoua shelema. Reserve text portions and participate together.",
     newSessionTitle: "Create a session – Petite Jerusalem",
     newSessionDescription:
-      "Create a shared reading session and invite the community to participate.",
+      "Create a collective reading session and invite others to join for a leillouï nishmat or a refoua shelema.",
     sessionTitle: "Study session – Petite Jerusalem",
     sessionDefaultDescription: "Join this shared reading session on Petite Jerusalem.",
     chiourimTitle: "Shiurim – Petite Jerusalem",

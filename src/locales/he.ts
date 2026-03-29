@@ -50,7 +50,7 @@ const he: LocaleMessages = {
   },
   navbar: {
     title: "פטיט ירושלים",
-    subtitle: "מרכז הפניות לקהילה היהודית",
+    subtitle: "מרכז שיתוף לקהילה היהודית",
     mainMenu: "תפריט ראשי",
   },
   footer: {
@@ -62,11 +62,11 @@ const he: LocaleMessages = {
   home: {
     heroTitle: "המרכז הרוחני הדיגיטלי שלכם",
     heroDescription:
-      "פלטפורמה מודרנית המוקדשת ללימוד, שיתוף וצמיחה רוחנית של הקהילה היהודית הדוברת צרפתית.",
+      "פלטפורמה מודרנית המוקדשת ללימוד, שיתוף וצמיחה רוחנית של הקהילה היהודית.",
     features: {
       shareReading: {
         title: "שיתוף קריאות",
-        description: "החליפו וגלו טקסטים קדושים עם הקהילה",
+        description: "קראו יחד טקסטים קדושים לעילוי נשמה או לרפואה שלמה",
       },
       dailyHalakhot: {
         title: "הלכות יומיות",
@@ -181,7 +181,7 @@ const he: LocaleMessages = {
   },
   shareReading: {
     title: "שיתוף קריאות",
-    subtitle: "החליפו וגלו טקסטים קדושים עם הקהילה",
+    subtitle: "ארגנו קריאות משותפות של טקסטים קדושים לעילוי נשמה או לרפואה שלמה",
     createSession: "צור סשן",
     authRequired: "עליך להיות בעל חשבון ומחובר כדי ליצור סשן.",
     loadingSessions: "טוען סשנים...",
@@ -193,7 +193,7 @@ const he: LocaleMessages = {
   },
   newSession: {
     title: "יצירת סשן",
-    subtitle: "צור סשן שיתוף קריאות עם הקהילה",
+    subtitle: "צור סשן קריאה משותף לעילוי נשמה או לרפואה שלמה",
     sessionTitle: "כותרת הסשן",
     sessionTitlePlaceholder: "לדוגמה: לימוד פרשת השבוע",
     sessionDescription: "תיאור הסשן",
@@ -271,9 +271,9 @@ const he: LocaleMessages = {
     notFoundTitle: "הדף לא נמצא – פטיט ירושלים",
     notFoundDescription: "הדף המבוקש אינו קיים.",
     shareReadingTitle: "שיתוף קריאות – פטיט ירושלים",
-    shareReadingDescription: "גלו וצרו סשני קריאה משותפים. הזמינו טקסטים ולמדו עם הקהילה.",
+    shareReadingDescription: "צרו סשני קריאה משותפים לעילוי נשמה או לרפואה שלמה. הזמינו קטעי טקסט והשתתפו יחד.",
     newSessionTitle: "יצירת סשן – פטיט ירושלים",
-    newSessionDescription: "צרו סשן קריאה משותף והזמינו את הקהילה להשתתף.",
+    newSessionDescription: "צרו סשן קריאה משותף והזמינו אחרים להצטרף לעילוי נשמה או לרפואה שלמה.",
     sessionTitle: "סשן לימוד – פטיט ירושלים",
     sessionDefaultDescription: "הצטרפו לסשן קריאה משותף זה בפטיט ירושלים.",
     chiourimTitle: "שיעורים – פטיט ירושלים",
