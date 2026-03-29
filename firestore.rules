@@ -81,7 +81,10 @@ service cloud.firestore {
     // Préférences utilisateur (thème, etc.)
     match /userPreferences/{userId} {
       allow read: if true;
-      allow create, update: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update: if isAuthenticated()
+        && request.auth.uid == userId
+        && request.resource.data.size() <= 10
+        && (!('theme' in request.resource.data) || (request.resource.data.theme is string && request.resource.data.theme.size() <= 20));
       allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
   }
