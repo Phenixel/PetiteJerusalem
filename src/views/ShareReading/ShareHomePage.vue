@@ -21,7 +21,7 @@ const loadSessions = async () => {
   try {
     isLoading.value = true;
     error.value = null;
-    const fetchedSessions = await sessionService.getAllSessions();
+    const fetchedSessions = await sessionService.getPublicSessions();
     sessions.value = sessionService.sortSessionsByDate(fetchedSessions);
   } catch (err) {
     console.error("Erreur lors du chargement des sessions:", err);

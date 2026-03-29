@@ -23,6 +23,7 @@ const sessionData = reactive({
   description: "",
   type: "" as EnumTypeTextStudy | "",
   dateLimit: "",
+  isPrivate: false,
 });
 
 const availableBooks = ref<string[]>([]);
@@ -108,6 +109,7 @@ const createSession = async () => {
       currentUser.value!.id,
       currentUser.value!.name,
       selectedBooks.value.length > 0 ? selectedBooks.value : undefined,
+      sessionData.isPrivate,
     );
 
     message.value = t("newSession.createdSuccess");
@@ -276,6 +278,34 @@ const goBack = () => {
             required
             class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none cursor-pointer dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-600 dark:[color-scheme:dark]"
           />
+        </div>
+
+        <!-- Session privée -->
+        <div
+          class="flex items-start gap-4 p-4 rounded-xl border border-gray-200 bg-white/50 dark:bg-gray-700/50 dark:border-gray-600"
+        >
+          <button
+            type="button"
+            @click="sessionData.isPrivate = !sessionData.isPrivate"
+            class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 mt-0.5"
+            :class="sessionData.isPrivate ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'"
+            role="switch"
+            :aria-checked="sessionData.isPrivate"
+          >
+            <span
+              class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+              :class="sessionData.isPrivate ? 'translate-x-5' : 'translate-x-0'"
+            />
+          </button>
+          <div>
+            <p class="text-sm font-semibold text-text-primary dark:text-gray-200 flex items-center gap-2">
+              <i class="fa-solid fa-lock text-primary text-xs"></i>
+              {{ t("newSession.privateSession") }}
+            </p>
+            <p class="text-xs text-text-secondary dark:text-gray-400 mt-0.5">
+              {{ t("newSession.privateSessionDescription") }}
+            </p>
+          </div>
         </div>
 
         <div class="flex flex-col-reverse sm:flex-row gap-4 pt-4">

@@ -208,6 +208,9 @@ const he: LocaleMessages = {
     fillAllFields: "אנא מלא את כל השדות",
     createdSuccess: "הסשן נוצר בהצלחה!",
     createError: "שגיאה ביצירת הסשן. אנא נסה שוב.",
+    privateSession: "סשן פרטי",
+    privateSessionDescription:
+      "הסשן לא יופיע בדף הבית ויהיה נגיש רק דרך קישור סודי.",
   },
   detailSession: {
     loadingSession: "טוען סשן...",

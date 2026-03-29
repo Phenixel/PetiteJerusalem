@@ -209,6 +209,9 @@ const en: LocaleMessages = {
     fillAllFields: "Please fill in all fields",
     createdSuccess: "Session created successfully!",
     createError: "Error creating session. Please try again.",
+    privateSession: "Private session",
+    privateSessionDescription:
+      "The session will not appear on the homepage and will only be accessible via a secret link.",
   },
   detailSession: {
     loadingSession: "Loading session...",
