@@ -209,6 +209,9 @@ const fr = {
     fillAllFields: "Veuillez remplir tous les champs",
     createdSuccess: "Session créée avec succès !",
     createError: "Erreur lors de la création de la session. Veuillez réessayer.",
+    privateSession: "Session privée",
+    privateSessionDescription:
+      "La session n'apparaîtra pas sur la page d'accueil et sera accessible uniquement via un lien secret.",
   },
   detailSession: {
     loadingSession: "Chargement de la session...",
