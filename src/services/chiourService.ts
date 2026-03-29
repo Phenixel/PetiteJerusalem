@@ -16,7 +16,7 @@ function generateChiourSlug(name: string): string {
   return name
     .trim()
     .replace(/\s+/g, "-")
-    .replace(/[/'"""''`]/g, "");
+    .replace(/[/'"""''`?#]/g, "");
 }
 
 function mapWebhookToChiour(item: WebhookChiour): Chiour {
@@ -28,6 +28,7 @@ function mapWebhookToChiour(item: WebhookChiour): Chiour {
     categories: item.property_cat_gorie || [],
     mediaUrl: parseMediaUrl(item.property_medias),
     niveau: item.property_niveau,
+    link: item.property_link || null,
   };
 }
 
@@ -93,7 +94,7 @@ export class ChiourService {
     return this.categoriesFetchPromise;
   }
 
-  getRecommendations(current: Chiour, allChiourim: Chiour[], max = 3): Chiour[] {
+  getRecommendations(current: Chiour, allChiourim: Chiour[], max = 2): Chiour[] {
     const others = allChiourim.filter((c) => c.slug !== current.slug);
 
     const scored = others.map((c) => {

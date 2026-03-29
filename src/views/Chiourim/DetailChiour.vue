@@ -16,6 +16,18 @@ function goToAuteur(auteur: string) {
 }
 const { t } = useI18n();
 
+function getYouTubeId(url: string): string | null {
+  const match = url.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([a-zA-Z0-9_-]{11})/,
+  );
+  return match?.[1] ?? null;
+}
+
+const youtubeId = computed(() => {
+  if (!chiour.value?.link) return null;
+  return getYouTubeId(chiour.value.link);
+});
+
 const chiour = ref<Chiour | null>(null);
 const allChiourim = ref<Chiour[]>([]);
 const isLoading = ref(true);
@@ -23,7 +35,7 @@ const error = ref<string | null>(null);
 
 const recommendations = computed(() => {
   if (!chiour.value || !allChiourim.value.length) return [];
-  return chiourService.getRecommendations(chiour.value, allChiourim.value, 3);
+  return chiourService.getRecommendations(chiour.value, allChiourim.value, 2);
 });
 
 function applyChiour(all: Chiour[], slug: string): boolean {
@@ -176,8 +188,22 @@ watch(() => route.params.slug, loadChiour);
         </div>
       </div>
 
+      <!-- YouTube Embed -->
+      <div v-if="youtubeId" class="mb-8">
+        <div class="relative w-full rounded-2xl overflow-hidden border border-white/60 dark:border-gray-700" style="padding-top: 56.25%">
+          <iframe
+            class="absolute inset-0 w-full h-full"
+            :src="`https://www.youtube-nocookie.com/embed/${youtubeId}`"
+            :title="chiour.name"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </div>
+
       <!-- Audio Player -->
-      <div v-if="chiour.mediaUrl" class="mb-8">
+      <div v-else-if="chiour.mediaUrl" class="mb-8">
         <AudioPlayer :src="chiour.mediaUrl" :title="chiour.name" />
       </div>
 
@@ -223,7 +249,7 @@ watch(() => route.params.slug, loadChiour);
           ></div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ChiourCard
             v-for="rec in recommendations"
             :key="rec.slug"

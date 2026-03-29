@@ -91,4 +91,5 @@ export interface Chiour {
   categories: string[];
   mediaUrl: string;
   niveau: string | null;
+  link: string | null;
 }
