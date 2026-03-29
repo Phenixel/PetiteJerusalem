@@ -27,6 +27,7 @@ export const THEME_OPTIONS: ThemeOption[] = [
 
 const currentThemeId = ref("ocean");
 let loadedForUserId: string | null = null;
+let themeVersion = 0;
 
 function applyThemeColors(theme: ThemeOption) {
   if (typeof document === "undefined") return;
@@ -41,13 +42,16 @@ export function useTheme() {
 
   async function loadTheme(userId: string) {
     if (loadedForUserId === userId) return;
+    const versionAtStart = ++themeVersion;
     try {
       const prefs = await userPreferencesService.getPreferences(userId);
+      if (themeVersion !== versionAtStart) return;
       const validTheme = THEME_OPTIONS.find((t) => t.id === prefs.theme);
       currentThemeId.value = validTheme ? prefs.theme : "ocean";
       applyThemeColors(currentTheme.value);
       loadedForUserId = userId;
     } catch {
+      if (themeVersion !== versionAtStart) return;
       currentThemeId.value = "ocean";
       applyThemeColors(THEME_OPTIONS[0]);
     }
@@ -58,6 +62,8 @@ export function useTheme() {
     if (!theme) return;
 
     const previousThemeId = currentThemeId.value;
+    themeVersion++;
+    loadedForUserId = userId;
     currentThemeId.value = themeId;
     applyThemeColors(theme);
 
