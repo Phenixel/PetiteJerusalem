@@ -50,7 +50,7 @@ const en: LocaleMessages = {
   },
   navbar: {
     title: "Petite Jérusalem",
-    subtitle: "Reference hub for the Jewish community",
+    subtitle: "Study and share Torah, together",
     mainMenu: "Main menu",
   },
   footer: {
@@ -263,27 +263,29 @@ const en: LocaleMessages = {
     remaining: "Remaining",
   },
   seo: {
-    homeTitle: "Home – Petite Jerusalem",
+    homeTitle: "Petite Jérusalem | Shared Torah reading and study",
     homeDescription:
-      "Your digital spiritual center: reading sharing, daily halakhot and study tracking.",
-    loginTitle: "Login – Petite Jerusalem",
-    loginDescription: "Sign in to create sessions, reserve texts and manage your profile.",
-    profileTitle: "My Profile – Petite Jerusalem",
+      "Create and join shared Torah reading and study sessions. Reserve texts, study together and track your progress — free and online.",
+    loginTitle: "Login – Petite Jérusalem",
+    loginDescription:
+      "Sign in to create shared reading sessions, reserve texts and track your studies.",
+    profileTitle: "My Profile – Petite Jérusalem",
     profileDescription:
       "Manage your information, view your participated and created study sessions.",
-    notFoundTitle: "Page not found – Petite Jerusalem",
+    notFoundTitle: "Page not found – Petite Jérusalem",
     notFoundDescription: "The requested page does not exist.",
-    shareReadingTitle: "Reading Share – Petite Jerusalem",
+    shareReadingTitle: "Shared Torah reading and study – Petite Jérusalem",
     shareReadingDescription:
-      "Discover and create shared reading sessions. Reserve texts and study with the community.",
-    newSessionTitle: "Create a session – Petite Jerusalem",
+      "Discover and create shared Torah reading and study sessions. Reserve texts, study together and move forward with the community.",
+    newSessionTitle: "Create a shared reading session – Petite Jérusalem",
     newSessionDescription:
-      "Create a shared reading session and invite the community to participate.",
-    sessionTitle: "Study session – Petite Jerusalem",
-    sessionDefaultDescription: "Join this shared reading session on Petite Jerusalem.",
-    chiourimTitle: "Shiurim – Petite Jerusalem",
+      "Create a shared reading or Torah study session and invite the community to study with you.",
+    sessionTitle: "Shared reading session – Petite Jérusalem",
+    sessionDefaultDescription:
+      "Join this shared Torah reading and study session on Petite Jérusalem.",
+    chiourimTitle: "Shiurim – Torah courses and lessons – Petite Jérusalem",
     chiourimDescription:
-      "Discover Torah courses and lessons shared by the community on Petite Jerusalem.",
+      "Listen to shiurim: Torah courses and lessons shared by the community on Petite Jérusalem.",
   },
   chiourim: {
     title: "Shiurim",
