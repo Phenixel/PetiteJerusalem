@@ -48,7 +48,7 @@ const fr = {
   },
   navbar: {
     title: "Petite Jérusalem",
-    subtitle: "Hub de référence pour la communauté juive",
+    subtitle: "Étudier et partager la Torah, ensemble",
     mainMenu: "Menu principal",
   },
   footer: {
@@ -263,28 +263,29 @@ const fr = {
     remaining: "Restants",
   },
   seo: {
-    homeTitle: "Accueil – Petite Jerusalem",
+    homeTitle: "Petite Jérusalem | Partage de lectures et d'études de Torah",
     homeDescription:
-      "Votre centre spirituel numérique: partage de lectures, halakhot quotidiennes et suivi d'étude.",
-    loginTitle: "Connexion – Petite Jerusalem",
+      "Créez et rejoignez des sessions de partage de lectures et d'études de Torah. Réservez des textes, étudiez à plusieurs et suivez votre progression, gratuitement et en français.",
+    loginTitle: "Connexion – Petite Jérusalem",
     loginDescription:
-      "Connectez-vous pour créer des sessions, réserver des textes et gérer votre profil.",
-    profileTitle: "Mon profil – Petite Jerusalem",
+      "Connectez-vous pour créer des sessions de partage de lectures, réserver des textes et suivre vos études.",
+    profileTitle: "Mon profil – Petite Jérusalem",
     profileDescription:
       "Gérez vos informations, consultez vos sessions d'étude participées et créées.",
-    notFoundTitle: "Page non trouvée – Petite Jerusalem",
+    notFoundTitle: "Page non trouvée – Petite Jérusalem",
     notFoundDescription: "La page demandée n'existe pas.",
-    shareReadingTitle: "Partage de Lectures – Petite Jerusalem",
+    shareReadingTitle: "Partage de lectures et d'études de Torah – Petite Jérusalem",
     shareReadingDescription:
-      "Découvrez et créez des sessions de lecture partagée. Réservez des textes et étudiez avec la communauté.",
-    newSessionTitle: "Créer une session – Petite Jerusalem",
+      "Découvrez et créez des sessions de partage de lectures et d'études de Torah. Réservez des textes, étudiez à plusieurs et avancez ensemble avec la communauté.",
+    newSessionTitle: "Créer une session de partage de lecture – Petite Jérusalem",
     newSessionDescription:
-      "Créez une session de lecture partagée et invitez la communauté à participer.",
-    sessionTitle: "Session d'étude – Petite Jerusalem",
-    sessionDefaultDescription: "Rejoignez cette session de lecture partagée sur Petite Jerusalem.",
-    chiourimTitle: "Chiourim – Petite Jerusalem",
+      "Créez une session de partage de lecture ou d'étude de Torah et invitez la communauté à étudier avec vous.",
+    sessionTitle: "Session de partage de lecture – Petite Jérusalem",
+    sessionDefaultDescription:
+      "Rejoignez cette session de partage de lecture et d'étude de Torah sur Petite Jérusalem.",
+    chiourimTitle: "Chiourim – Cours et leçons de Torah – Petite Jérusalem",
     chiourimDescription:
-      "Découvrez des cours et leçons de Torah partagés par la communauté sur Petite Jerusalem.",
+      "Écoutez des chiourim : cours et leçons de Torah partagés par la communauté sur Petite Jérusalem.",
   },
   chiourim: {
     title: "Chiourim",

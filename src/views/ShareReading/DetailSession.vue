@@ -357,14 +357,14 @@ const applySessionSeo = (s: typeof session.value) => {
       url,
       title: s.name,
       description,
-      image: `${window.location.origin}/og-session.png`,
-      site_name: "Petite Jerusalem",
+      image: `${window.location.origin}/og-image.jpg`,
+      site_name: "Petite Jérusalem",
     },
     twitter: {
       card: "summary_large_image",
       title: s.name,
       description,
-      image: `${window.location.origin}/og-session.png`,
+      image: `${window.location.origin}/og-image.jpg`,
     },
   });
 };

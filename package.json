@@ -8,10 +8,11 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
+    "build": "run-s type-check build-only prerender",
     "preview": "vite preview",
     "test:unit": "vitest",
     "build-only": "vite build",
+    "prerender": "node scripts/prerender-seo.mjs",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
     "format": "prettier --write src/",

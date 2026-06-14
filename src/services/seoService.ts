@@ -43,7 +43,7 @@ export class SeoService {
     }
 
     this.upsertMeta("property", "og:type", meta.og?.type || "website");
-    this.upsertMeta("property", "og:site_name", meta.og?.site_name || "Petite Jerusalem");
+    this.upsertMeta("property", "og:site_name", meta.og?.site_name || "Petite Jérusalem");
     if (meta.og?.image) {
       this.upsertMeta("property", "og:image", meta.og.image);
     }

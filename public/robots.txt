@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Pages privées / sans intérêt pour l'indexation
+Disallow: /profile
+Disallow: /session-management/
+
+Sitemap: https://petite-jerusalem.web.app/sitemap.xml

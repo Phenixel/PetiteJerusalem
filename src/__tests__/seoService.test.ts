@@ -90,9 +90,9 @@ describe("SeoService.setMeta", () => {
       expect(getMeta("property", "og:type")).toBe("article");
     });
 
-    it("og:site_name vaut 'Petite Jerusalem' par défaut", () => {
+    it("og:site_name vaut 'Petite Jérusalem' par défaut", () => {
       seo.setMeta({});
-      expect(getMeta("property", "og:site_name")).toBe("Petite Jerusalem");
+      expect(getMeta("property", "og:site_name")).toBe("Petite Jérusalem");
     });
 
     it("twitter:card vaut 'summary' par défaut", () => {
