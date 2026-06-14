@@ -7,11 +7,11 @@ const template = `<!doctype html>
   <head>
     <title>Petite Jérusalem | Base</title>
     <meta name="description" content="Description de base" />
-    <link rel="canonical" href="https://petite-jerusalem.web.app/" />
+    <link rel="canonical" href="https://petite-jerusalem.fr/" />
     <meta property="og:title" content="OG base" />
     <meta property="og:description" content="OG desc base" />
-    <meta property="og:url" content="https://petite-jerusalem.web.app/" />
-    <meta property="og:image" content="https://petite-jerusalem.web.app/og-image.jpg" />
+    <meta property="og:url" content="https://petite-jerusalem.fr/" />
+    <meta property="og:image" content="https://petite-jerusalem.fr/og-image.jpg" />
     <meta name="twitter:title" content="TW base" />
     <meta name="twitter:description" content="TW desc base" />
     <meta name="robots" content="index, follow" />

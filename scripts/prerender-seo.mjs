@@ -24,7 +24,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export const SITE_URL = "https://petite-jerusalem.web.app";
+export const SITE_URL = "https://petite-jerusalem.fr";
 
 /**
  * Public, statically-known routes that benefit from their own social preview.

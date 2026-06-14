@@ -24,7 +24,7 @@ const db = getFirestore();
 // Cap concurrency to keep costs bounded; previews are tiny and cached.
 setGlobalOptions({ maxInstances: 3 });
 
-const SITE_URL = "https://petite-jerusalem.web.app";
+const SITE_URL = "https://petite-jerusalem.fr";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 const CHIOURIM_WEBHOOK =
   "https://n8n.phenixel.fr/webhook/1e7e1be1-1f2c-4916-a6f6-34ff8f437ef6";
