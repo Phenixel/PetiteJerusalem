@@ -9,7 +9,7 @@ import ChiourimPage from "../views/Chiourim/ChiourimPage.vue";
 import DetailChiour from "../views/Chiourim/DetailChiour.vue";
 import AuteurChiourimPage from "../views/Chiourim/AuteurChiourimPage.vue";
 import NotFound from "../views/NotFound.vue";
-import TextReadingPage from "../views/SefariaReading/TextReadingPage.vue";
+import TextReadingPage from "../views/TextReading/TextReadingPage.vue";
 
 export default [
   {
