@@ -1,0 +1,2385 @@
+{
+  "berakhot": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "7a",
+      "startIdx": 0,
+      "endIdx": 10
+    },
+    {
+      "chapter": 2,
+      "startDaf": "7b",
+      "endDaf": "16a",
+      "startIdx": 11,
+      "endIdx": 28
+    },
+    {
+      "chapter": 3,
+      "startDaf": "16b",
+      "endDaf": "22b",
+      "startIdx": 29,
+      "endIdx": 41
+    },
+    {
+      "chapter": 4,
+      "startDaf": "23a",
+      "endDaf": "30a",
+      "startIdx": 42,
+      "endIdx": 56
+    },
+    {
+      "chapter": 5,
+      "startDaf": "30b",
+      "endDaf": "35b",
+      "startIdx": 57,
+      "endIdx": 67
+    },
+    {
+      "chapter": 6,
+      "startDaf": "36a",
+      "endDaf": "44b",
+      "startIdx": 68,
+      "endIdx": 85
+    },
+    {
+      "chapter": 7,
+      "startDaf": "45a",
+      "endDaf": "49b",
+      "startIdx": 86,
+      "endIdx": 95
+    },
+    {
+      "chapter": 8,
+      "startDaf": "50a",
+      "endDaf": "58b",
+      "startIdx": 96,
+      "endIdx": 113
+    },
+    {
+      "chapter": 9,
+      "startDaf": "59a",
+      "endDaf": "64a",
+      "startIdx": 114,
+      "endIdx": 124
+    }
+  ],
+  "shabbat": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "14a",
+      "startIdx": 0,
+      "endIdx": 24
+    },
+    {
+      "chapter": 2,
+      "startDaf": "14b",
+      "endDaf": "21b",
+      "startIdx": 25,
+      "endIdx": 39
+    },
+    {
+      "chapter": 3,
+      "startDaf": "22a",
+      "endDaf": "28b",
+      "startIdx": 40,
+      "endIdx": 53
+    },
+    {
+      "chapter": 4,
+      "startDaf": "29a",
+      "endDaf": "30b",
+      "startIdx": 54,
+      "endIdx": 57
+    },
+    {
+      "chapter": 5,
+      "startDaf": "31a",
+      "endDaf": "35a",
+      "startIdx": 58,
+      "endIdx": 66
+    },
+    {
+      "chapter": 6,
+      "startDaf": "35b",
+      "endDaf": "46b",
+      "startIdx": 67,
+      "endIdx": 89
+    },
+    {
+      "chapter": 7,
+      "startDaf": "47a",
+      "endDaf": "51a",
+      "startIdx": 90,
+      "endIdx": 98
+    },
+    {
+      "chapter": 8,
+      "startDaf": "51b",
+      "endDaf": "58b",
+      "startIdx": 99,
+      "endIdx": 113
+    },
+    {
+      "chapter": 9,
+      "startDaf": "59a",
+      "endDaf": "66b",
+      "startIdx": 114,
+      "endIdx": 129
+    },
+    {
+      "chapter": 10,
+      "startDaf": "67a",
+      "endDaf": "73b",
+      "startIdx": 130,
+      "endIdx": 143
+    },
+    {
+      "chapter": 11,
+      "startDaf": "74a",
+      "endDaf": "80a",
+      "startIdx": 144,
+      "endIdx": 156
+    },
+    {
+      "chapter": 12,
+      "startDaf": "80b",
+      "endDaf": "87a",
+      "startIdx": 157,
+      "endIdx": 170
+    },
+    {
+      "chapter": 13,
+      "startDaf": "87b",
+      "endDaf": "94b",
+      "startIdx": 171,
+      "endIdx": 185
+    },
+    {
+      "chapter": 14,
+      "startDaf": "95a",
+      "endDaf": "99a",
+      "startIdx": 186,
+      "endIdx": 194
+    },
+    {
+      "chapter": 15,
+      "startDaf": "99b",
+      "endDaf": "102b",
+      "startIdx": 195,
+      "endIdx": 201
+    },
+    {
+      "chapter": 16,
+      "startDaf": "103a",
+      "endDaf": "111b",
+      "startIdx": 202,
+      "endIdx": 219
+    },
+    {
+      "chapter": 17,
+      "startDaf": "112a",
+      "endDaf": "120b",
+      "startIdx": 220,
+      "endIdx": 237
+    },
+    {
+      "chapter": 18,
+      "startDaf": "121a",
+      "endDaf": "124a",
+      "startIdx": 238,
+      "endIdx": 244
+    },
+    {
+      "chapter": 19,
+      "startDaf": "124b",
+      "endDaf": "130b",
+      "startIdx": 245,
+      "endIdx": 257
+    },
+    {
+      "chapter": 20,
+      "startDaf": "131a",
+      "endDaf": "136a",
+      "startIdx": 258,
+      "endIdx": 268
+    },
+    {
+      "chapter": 21,
+      "startDaf": "136b",
+      "endDaf": "139b",
+      "startIdx": 269,
+      "endIdx": 275
+    },
+    {
+      "chapter": 22,
+      "startDaf": "140a",
+      "endDaf": "146b",
+      "startIdx": 276,
+      "endIdx": 289
+    },
+    {
+      "chapter": 23,
+      "startDaf": "147a",
+      "endDaf": "152a",
+      "startIdx": 290,
+      "endIdx": 300
+    },
+    {
+      "chapter": 24,
+      "startDaf": "152b",
+      "endDaf": "157b",
+      "startIdx": 301,
+      "endIdx": 311
+    }
+  ],
+  "eruvin": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "17a",
+      "startIdx": 0,
+      "endIdx": 30
+    },
+    {
+      "chapter": 2,
+      "startDaf": "17b",
+      "endDaf": "26a",
+      "startIdx": 31,
+      "endIdx": 48
+    },
+    {
+      "chapter": 3,
+      "startDaf": "26b",
+      "endDaf": "41a",
+      "startIdx": 49,
+      "endIdx": 78
+    },
+    {
+      "chapter": 4,
+      "startDaf": "41b",
+      "endDaf": "52a",
+      "startIdx": 79,
+      "endIdx": 100
+    },
+    {
+      "chapter": 5,
+      "startDaf": "52b",
+      "endDaf": "61a",
+      "startIdx": 101,
+      "endIdx": 118
+    },
+    {
+      "chapter": 6,
+      "startDaf": "61b",
+      "endDaf": "75b",
+      "startIdx": 119,
+      "endIdx": 147
+    },
+    {
+      "chapter": 7,
+      "startDaf": "76a",
+      "endDaf": "88b",
+      "startIdx": 148,
+      "endIdx": 173
+    },
+    {
+      "chapter": 8,
+      "startDaf": "89a",
+      "endDaf": "94b",
+      "startIdx": 174,
+      "endIdx": 185
+    },
+    {
+      "chapter": 9,
+      "startDaf": "95a",
+      "endDaf": "100b",
+      "startIdx": 186,
+      "endIdx": 197
+    },
+    {
+      "chapter": 10,
+      "startDaf": "101a",
+      "endDaf": "105a",
+      "startIdx": 198,
+      "endIdx": 206
+    }
+  ],
+  "pesachim": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "11a",
+      "startIdx": 0,
+      "endIdx": 18
+    },
+    {
+      "chapter": 2,
+      "startDaf": "11b",
+      "endDaf": "21b",
+      "startIdx": 19,
+      "endIdx": 39
+    },
+    {
+      "chapter": 3,
+      "startDaf": "22a",
+      "endDaf": "32b",
+      "startIdx": 40,
+      "endIdx": 61
+    },
+    {
+      "chapter": 4,
+      "startDaf": "33a",
+      "endDaf": "44b",
+      "startIdx": 62,
+      "endIdx": 85
+    },
+    {
+      "chapter": 5,
+      "startDaf": "45a",
+      "endDaf": "58a",
+      "startIdx": 86,
+      "endIdx": 112
+    },
+    {
+      "chapter": 6,
+      "startDaf": "58b",
+      "endDaf": "66a",
+      "startIdx": 113,
+      "endIdx": 128
+    },
+    {
+      "chapter": 7,
+      "startDaf": "66b",
+      "endDaf": "83b",
+      "startIdx": 129,
+      "endIdx": 163
+    },
+    {
+      "chapter": 8,
+      "startDaf": "84a",
+      "endDaf": "94b",
+      "startIdx": 164,
+      "endIdx": 185
+    },
+    {
+      "chapter": 9,
+      "startDaf": "95a",
+      "endDaf": "109b",
+      "startIdx": 186,
+      "endIdx": 215
+    },
+    {
+      "chapter": 10,
+      "startDaf": "110a",
+      "endDaf": "121b",
+      "startIdx": 216,
+      "endIdx": 239
+    }
+  ],
+  "shekalim": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "2a",
+      "startIdx": 0,
+      "endIdx": 0
+    },
+    {
+      "chapter": 2,
+      "startDaf": "2b",
+      "endDaf": "2b",
+      "startIdx": 1,
+      "endIdx": 1
+    },
+    {
+      "chapter": 3,
+      "startDaf": "3a",
+      "endDaf": "2b",
+      "startIdx": 2,
+      "endIdx": 1
+    },
+    {
+      "chapter": 4,
+      "startDaf": "3a",
+      "endDaf": "3b",
+      "startIdx": 2,
+      "endIdx": 3
+    },
+    {
+      "chapter": 5,
+      "startDaf": "4a",
+      "endDaf": "4a",
+      "startIdx": 4,
+      "endIdx": 4
+    },
+    {
+      "chapter": 6,
+      "startDaf": "4b",
+      "endDaf": "4b",
+      "startIdx": 5,
+      "endIdx": 5
+    },
+    {
+      "chapter": 7,
+      "startDaf": "5a",
+      "endDaf": "5a",
+      "startIdx": 6,
+      "endIdx": 6
+    },
+    {
+      "chapter": 8,
+      "startDaf": "5b",
+      "endDaf": "5b",
+      "startIdx": 7,
+      "endIdx": 7
+    }
+  ],
+  "yoma": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "13a",
+      "startIdx": 0,
+      "endIdx": 22
+    },
+    {
+      "chapter": 2,
+      "startDaf": "13b",
+      "endDaf": "23a",
+      "startIdx": 23,
+      "endIdx": 42
+    },
+    {
+      "chapter": 3,
+      "startDaf": "23b",
+      "endDaf": "38b",
+      "startIdx": 43,
+      "endIdx": 73
+    },
+    {
+      "chapter": 4,
+      "startDaf": "39a",
+      "endDaf": "47a",
+      "startIdx": 74,
+      "endIdx": 90
+    },
+    {
+      "chapter": 5,
+      "startDaf": "47b",
+      "endDaf": "57a",
+      "startIdx": 91,
+      "endIdx": 110
+    },
+    {
+      "chapter": 6,
+      "startDaf": "57b",
+      "endDaf": "68a",
+      "startIdx": 111,
+      "endIdx": 132
+    },
+    {
+      "chapter": 7,
+      "startDaf": "68b",
+      "endDaf": "75a",
+      "startIdx": 133,
+      "endIdx": 146
+    },
+    {
+      "chapter": 8,
+      "startDaf": "75b",
+      "endDaf": "88a",
+      "startIdx": 147,
+      "endIdx": 172
+    }
+  ],
+  "sukkah": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "8b",
+      "startIdx": 0,
+      "endIdx": 13
+    },
+    {
+      "chapter": 2,
+      "startDaf": "9a",
+      "endDaf": "9a",
+      "startIdx": 14,
+      "endIdx": 14
+    },
+    {
+      "chapter": 3,
+      "startDaf": "9b",
+      "endDaf": "14b",
+      "startIdx": 15,
+      "endIdx": 25
+    },
+    {
+      "chapter": 4,
+      "startDaf": "15a",
+      "endDaf": "21b",
+      "startIdx": 26,
+      "endIdx": 39
+    },
+    {
+      "chapter": 5,
+      "startDaf": "22a",
+      "endDaf": "56b",
+      "startIdx": 40,
+      "endIdx": 109
+    }
+  ],
+  "beitzah": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "23a",
+      "startIdx": 0,
+      "endIdx": 42
+    },
+    {
+      "chapter": 2,
+      "startDaf": "23b",
+      "endDaf": "27b",
+      "startIdx": 43,
+      "endIdx": 51
+    },
+    {
+      "chapter": 3,
+      "startDaf": "28a",
+      "endDaf": "30a",
+      "startIdx": 52,
+      "endIdx": 56
+    },
+    {
+      "chapter": 4,
+      "startDaf": "30b",
+      "endDaf": "30b",
+      "startIdx": 57,
+      "endIdx": 57
+    },
+    {
+      "chapter": 5,
+      "startDaf": "31a",
+      "endDaf": "40b",
+      "startIdx": 58,
+      "endIdx": 77
+    }
+  ],
+  "rosh-hashanah": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "10a",
+      "startIdx": 0,
+      "endIdx": 16
+    },
+    {
+      "chapter": 2,
+      "startDaf": "10b",
+      "endDaf": "18b",
+      "startIdx": 17,
+      "endIdx": 33
+    },
+    {
+      "chapter": 3,
+      "startDaf": "19a",
+      "endDaf": "26b",
+      "startIdx": 34,
+      "endIdx": 49
+    },
+    {
+      "chapter": 4,
+      "startDaf": "27a",
+      "endDaf": "35a",
+      "startIdx": 50,
+      "endIdx": 66
+    }
+  ],
+  "taanit": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "7b",
+      "startIdx": 0,
+      "endIdx": 11
+    },
+    {
+      "chapter": 2,
+      "startDaf": "8a",
+      "endDaf": "16b",
+      "startIdx": 12,
+      "endIdx": 29
+    },
+    {
+      "chapter": 3,
+      "startDaf": "17a",
+      "endDaf": "24a",
+      "startIdx": 30,
+      "endIdx": 44
+    },
+    {
+      "chapter": 4,
+      "startDaf": "24b",
+      "endDaf": "31a",
+      "startIdx": 45,
+      "endIdx": 58
+    }
+  ],
+  "megillah": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "11b",
+      "startIdx": 0,
+      "endIdx": 19
+    },
+    {
+      "chapter": 2,
+      "startDaf": "12a",
+      "endDaf": "17a",
+      "startIdx": 20,
+      "endIdx": 30
+    },
+    {
+      "chapter": 3,
+      "startDaf": "17b",
+      "endDaf": "23a",
+      "startIdx": 31,
+      "endIdx": 42
+    },
+    {
+      "chapter": 4,
+      "startDaf": "23b",
+      "endDaf": "32a",
+      "startIdx": 43,
+      "endIdx": 60
+    }
+  ],
+  "moed-katan": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "13a",
+      "startIdx": 0,
+      "endIdx": 22
+    },
+    {
+      "chapter": 2,
+      "startDaf": "13b",
+      "endDaf": "18b",
+      "startIdx": 23,
+      "endIdx": 33
+    },
+    {
+      "chapter": 3,
+      "startDaf": "19a",
+      "endDaf": "29a",
+      "startIdx": 34,
+      "endIdx": 54
+    }
+  ],
+  "chagigah": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "10b",
+      "startIdx": 0,
+      "endIdx": 17
+    },
+    {
+      "chapter": 2,
+      "startDaf": "11a",
+      "endDaf": "18a",
+      "startIdx": 18,
+      "endIdx": 32
+    },
+    {
+      "chapter": 3,
+      "startDaf": "18b",
+      "endDaf": "27a",
+      "startIdx": 33,
+      "endIdx": 50
+    }
+  ],
+  "yevamot": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "5b",
+      "startIdx": 0,
+      "endIdx": 7
+    },
+    {
+      "chapter": 2,
+      "startDaf": "6a",
+      "endDaf": "14b",
+      "startIdx": 8,
+      "endIdx": 25
+    },
+    {
+      "chapter": 3,
+      "startDaf": "15a",
+      "endDaf": "24a",
+      "startIdx": 26,
+      "endIdx": 44
+    },
+    {
+      "chapter": 4,
+      "startDaf": "24b",
+      "endDaf": "36b",
+      "startIdx": 45,
+      "endIdx": 69
+    },
+    {
+      "chapter": 5,
+      "startDaf": "37a",
+      "endDaf": "42a",
+      "startIdx": 70,
+      "endIdx": 80
+    },
+    {
+      "chapter": 6,
+      "startDaf": "42b",
+      "endDaf": "48a",
+      "startIdx": 81,
+      "endIdx": 92
+    },
+    {
+      "chapter": 7,
+      "startDaf": "48b",
+      "endDaf": "53b",
+      "startIdx": 93,
+      "endIdx": 103
+    },
+    {
+      "chapter": 8,
+      "startDaf": "54a",
+      "endDaf": "59a",
+      "startIdx": 104,
+      "endIdx": 114
+    },
+    {
+      "chapter": 9,
+      "startDaf": "59b",
+      "endDaf": "65a",
+      "startIdx": 115,
+      "endIdx": 126
+    },
+    {
+      "chapter": 10,
+      "startDaf": "65b",
+      "endDaf": "73b",
+      "startIdx": 127,
+      "endIdx": 143
+    },
+    {
+      "chapter": 11,
+      "startDaf": "74a",
+      "endDaf": "80a",
+      "startIdx": 144,
+      "endIdx": 156
+    },
+    {
+      "chapter": 12,
+      "startDaf": "80b",
+      "endDaf": "85b",
+      "startIdx": 157,
+      "endIdx": 167
+    },
+    {
+      "chapter": 13,
+      "startDaf": "86a",
+      "endDaf": "98a",
+      "startIdx": 168,
+      "endIdx": 192
+    },
+    {
+      "chapter": 14,
+      "startDaf": "98b",
+      "endDaf": "106b",
+      "startIdx": 193,
+      "endIdx": 209
+    },
+    {
+      "chapter": 15,
+      "startDaf": "107a",
+      "endDaf": "116a",
+      "startIdx": 210,
+      "endIdx": 228
+    },
+    {
+      "chapter": 16,
+      "startDaf": "116b",
+      "endDaf": "122b",
+      "startIdx": 229,
+      "endIdx": 241
+    }
+  ],
+  "ketubot": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "11b",
+      "startIdx": 0,
+      "endIdx": 19
+    },
+    {
+      "chapter": 2,
+      "startDaf": "12a",
+      "endDaf": "21b",
+      "startIdx": 20,
+      "endIdx": 39
+    },
+    {
+      "chapter": 3,
+      "startDaf": "22a",
+      "endDaf": "30b",
+      "startIdx": 40,
+      "endIdx": 57
+    },
+    {
+      "chapter": 4,
+      "startDaf": "31a",
+      "endDaf": "42b",
+      "startIdx": 58,
+      "endIdx": 81
+    },
+    {
+      "chapter": 5,
+      "startDaf": "43a",
+      "endDaf": "51b",
+      "startIdx": 82,
+      "endIdx": 99
+    },
+    {
+      "chapter": 6,
+      "startDaf": "52a",
+      "endDaf": "58b",
+      "startIdx": 100,
+      "endIdx": 113
+    },
+    {
+      "chapter": 7,
+      "startDaf": "59a",
+      "endDaf": "68b",
+      "startIdx": 114,
+      "endIdx": 133
+    },
+    {
+      "chapter": 8,
+      "startDaf": "69a",
+      "endDaf": "76b",
+      "startIdx": 134,
+      "endIdx": 149
+    },
+    {
+      "chapter": 9,
+      "startDaf": "77a",
+      "endDaf": "85b",
+      "startIdx": 150,
+      "endIdx": 167
+    },
+    {
+      "chapter": 10,
+      "startDaf": "86a",
+      "endDaf": "91b",
+      "startIdx": 168,
+      "endIdx": 179
+    },
+    {
+      "chapter": 11,
+      "startDaf": "92a",
+      "endDaf": "97b",
+      "startIdx": 180,
+      "endIdx": 191
+    },
+    {
+      "chapter": 12,
+      "startDaf": "98a",
+      "endDaf": "101b",
+      "startIdx": 192,
+      "endIdx": 199
+    },
+    {
+      "chapter": 13,
+      "startDaf": "102a",
+      "endDaf": "112b",
+      "startIdx": 200,
+      "endIdx": 221
+    }
+  ],
+  "nedarim": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "5b",
+      "startIdx": 0,
+      "endIdx": 7
+    },
+    {
+      "chapter": 2,
+      "startDaf": "6a",
+      "endDaf": "10b",
+      "startIdx": 8,
+      "endIdx": 17
+    },
+    {
+      "chapter": 3,
+      "startDaf": "11a",
+      "endDaf": "21b",
+      "startIdx": 18,
+      "endIdx": 39
+    },
+    {
+      "chapter": 4,
+      "startDaf": "22a",
+      "endDaf": "29b",
+      "startIdx": 40,
+      "endIdx": 55
+    },
+    {
+      "chapter": 5,
+      "startDaf": "30a",
+      "endDaf": "35b",
+      "startIdx": 56,
+      "endIdx": 67
+    },
+    {
+      "chapter": 6,
+      "startDaf": "36a",
+      "endDaf": "45b",
+      "startIdx": 68,
+      "endIdx": 87
+    },
+    {
+      "chapter": 7,
+      "startDaf": "46a",
+      "endDaf": "54b",
+      "startIdx": 88,
+      "endIdx": 105
+    },
+    {
+      "chapter": 8,
+      "startDaf": "55a",
+      "endDaf": "61b",
+      "startIdx": 106,
+      "endIdx": 119
+    },
+    {
+      "chapter": 9,
+      "startDaf": "62a",
+      "endDaf": "71b",
+      "startIdx": 120,
+      "endIdx": 139
+    },
+    {
+      "chapter": 10,
+      "startDaf": "72a",
+      "endDaf": "79b",
+      "startIdx": 140,
+      "endIdx": 155
+    },
+    {
+      "chapter": 11,
+      "startDaf": "80a",
+      "endDaf": "91b",
+      "startIdx": 156,
+      "endIdx": 179
+    }
+  ],
+  "nazir": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "9a",
+      "startIdx": 0,
+      "endIdx": 14
+    },
+    {
+      "chapter": 2,
+      "startDaf": "9b",
+      "endDaf": "20a",
+      "startIdx": 15,
+      "endIdx": 36
+    },
+    {
+      "chapter": 3,
+      "startDaf": "20b",
+      "endDaf": "27b",
+      "startIdx": 37,
+      "endIdx": 51
+    },
+    {
+      "chapter": 4,
+      "startDaf": "28a",
+      "endDaf": "35a",
+      "startIdx": 52,
+      "endIdx": 66
+    },
+    {
+      "chapter": 5,
+      "startDaf": "35b",
+      "endDaf": "42b",
+      "startIdx": 67,
+      "endIdx": 81
+    },
+    {
+      "chapter": 6,
+      "startDaf": "43a",
+      "endDaf": "54a",
+      "startIdx": 82,
+      "endIdx": 104
+    },
+    {
+      "chapter": 7,
+      "startDaf": "54b",
+      "endDaf": "58b",
+      "startIdx": 105,
+      "endIdx": 113
+    },
+    {
+      "chapter": 8,
+      "startDaf": "59a",
+      "endDaf": "60b",
+      "startIdx": 114,
+      "endIdx": 117
+    },
+    {
+      "chapter": 9,
+      "startDaf": "61a",
+      "endDaf": "66a",
+      "startIdx": 118,
+      "endIdx": 128
+    }
+  ],
+  "sotah": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "8a",
+      "startIdx": 0,
+      "endIdx": 12
+    },
+    {
+      "chapter": 2,
+      "startDaf": "8b",
+      "endDaf": "12a",
+      "startIdx": 13,
+      "endIdx": 20
+    },
+    {
+      "chapter": 3,
+      "startDaf": "12b",
+      "endDaf": "18a",
+      "startIdx": 21,
+      "endIdx": 32
+    },
+    {
+      "chapter": 4,
+      "startDaf": "18b",
+      "endDaf": "21b",
+      "startIdx": 33,
+      "endIdx": 39
+    },
+    {
+      "chapter": 5,
+      "startDaf": "22a",
+      "endDaf": "25a",
+      "startIdx": 40,
+      "endIdx": 46
+    },
+    {
+      "chapter": 6,
+      "startDaf": "25b",
+      "endDaf": "28a",
+      "startIdx": 47,
+      "endIdx": 52
+    },
+    {
+      "chapter": 7,
+      "startDaf": "28b",
+      "endDaf": "33b",
+      "startIdx": 53,
+      "endIdx": 63
+    },
+    {
+      "chapter": 8,
+      "startDaf": "34a",
+      "endDaf": "39a",
+      "startIdx": 64,
+      "endIdx": 74
+    },
+    {
+      "chapter": 9,
+      "startDaf": "39b",
+      "endDaf": "49b",
+      "startIdx": 75,
+      "endIdx": 95
+    }
+  ],
+  "gittin": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "8b",
+      "startIdx": 0,
+      "endIdx": 13
+    },
+    {
+      "chapter": 2,
+      "startDaf": "9a",
+      "endDaf": "17a",
+      "startIdx": 14,
+      "endIdx": 30
+    },
+    {
+      "chapter": 3,
+      "startDaf": "17b",
+      "endDaf": "26b",
+      "startIdx": 31,
+      "endIdx": 49
+    },
+    {
+      "chapter": 4,
+      "startDaf": "27a",
+      "endDaf": "37a",
+      "startIdx": 50,
+      "endIdx": 70
+    },
+    {
+      "chapter": 5,
+      "startDaf": "37b",
+      "endDaf": "48a",
+      "startIdx": 71,
+      "endIdx": 92
+    },
+    {
+      "chapter": 6,
+      "startDaf": "48b",
+      "endDaf": "56a",
+      "startIdx": 93,
+      "endIdx": 108
+    },
+    {
+      "chapter": 7,
+      "startDaf": "56b",
+      "endDaf": "67a",
+      "startIdx": 109,
+      "endIdx": 130
+    },
+    {
+      "chapter": 8,
+      "startDaf": "67b",
+      "endDaf": "78b",
+      "startIdx": 131,
+      "endIdx": 153
+    },
+    {
+      "chapter": 9,
+      "startDaf": "79a",
+      "endDaf": "90b",
+      "startIdx": 154,
+      "endIdx": 177
+    }
+  ],
+  "kiddushin": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "18b",
+      "startIdx": 0,
+      "endIdx": 33
+    },
+    {
+      "chapter": 2,
+      "startDaf": "19a",
+      "endDaf": "36a",
+      "startIdx": 34,
+      "endIdx": 68
+    },
+    {
+      "chapter": 3,
+      "startDaf": "36b",
+      "endDaf": "58b",
+      "startIdx": 69,
+      "endIdx": 113
+    },
+    {
+      "chapter": 4,
+      "startDaf": "59a",
+      "endDaf": "82b",
+      "startIdx": 114,
+      "endIdx": 161
+    }
+  ],
+  "bava-kamma": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "7b",
+      "startIdx": 0,
+      "endIdx": 11
+    },
+    {
+      "chapter": 2,
+      "startDaf": "8a",
+      "endDaf": "16b",
+      "startIdx": 12,
+      "endIdx": 29
+    },
+    {
+      "chapter": 3,
+      "startDaf": "17a",
+      "endDaf": "33a",
+      "startIdx": 30,
+      "endIdx": 62
+    },
+    {
+      "chapter": 4,
+      "startDaf": "33b",
+      "endDaf": "46b",
+      "startIdx": 63,
+      "endIdx": 89
+    },
+    {
+      "chapter": 5,
+      "startDaf": "47a",
+      "endDaf": "57a",
+      "startIdx": 90,
+      "endIdx": 110
+    },
+    {
+      "chapter": 6,
+      "startDaf": "57b",
+      "endDaf": "65b",
+      "startIdx": 111,
+      "endIdx": 127
+    },
+    {
+      "chapter": 7,
+      "startDaf": "66a",
+      "endDaf": "76a",
+      "startIdx": 128,
+      "endIdx": 148
+    },
+    {
+      "chapter": 8,
+      "startDaf": "76b",
+      "endDaf": "86b",
+      "startIdx": 149,
+      "endIdx": 169
+    },
+    {
+      "chapter": 9,
+      "startDaf": "87a",
+      "endDaf": "104b",
+      "startIdx": 170,
+      "endIdx": 205
+    },
+    {
+      "chapter": 10,
+      "startDaf": "105a",
+      "endDaf": "119b",
+      "startIdx": 206,
+      "endIdx": 235
+    }
+  ],
+  "bava-metzia": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "11a",
+      "startIdx": 0,
+      "endIdx": 18
+    },
+    {
+      "chapter": 2,
+      "startDaf": "11b",
+      "endDaf": "23b",
+      "startIdx": 19,
+      "endIdx": 43
+    },
+    {
+      "chapter": 3,
+      "startDaf": "24a",
+      "endDaf": "37b",
+      "startIdx": 44,
+      "endIdx": 71
+    },
+    {
+      "chapter": 4,
+      "startDaf": "38a",
+      "endDaf": "51b",
+      "startIdx": 72,
+      "endIdx": 99
+    },
+    {
+      "chapter": 5,
+      "startDaf": "52a",
+      "endDaf": "64b",
+      "startIdx": 100,
+      "endIdx": 125
+    },
+    {
+      "chapter": 6,
+      "startDaf": "65a",
+      "endDaf": "73b",
+      "startIdx": 126,
+      "endIdx": 143
+    },
+    {
+      "chapter": 7,
+      "startDaf": "74a",
+      "endDaf": "86b",
+      "startIdx": 144,
+      "endIdx": 169
+    },
+    {
+      "chapter": 8,
+      "startDaf": "87a",
+      "endDaf": "97a",
+      "startIdx": 170,
+      "endIdx": 190
+    },
+    {
+      "chapter": 9,
+      "startDaf": "97b",
+      "endDaf": "112a",
+      "startIdx": 191,
+      "endIdx": 220
+    },
+    {
+      "chapter": 10,
+      "startDaf": "112b",
+      "endDaf": "119a",
+      "startIdx": 221,
+      "endIdx": 234
+    }
+  ],
+  "bava-batra": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "13b",
+      "startIdx": 0,
+      "endIdx": 23
+    },
+    {
+      "chapter": 2,
+      "startDaf": "14a",
+      "endDaf": "42a",
+      "startIdx": 24,
+      "endIdx": 80
+    },
+    {
+      "chapter": 3,
+      "startDaf": "42b",
+      "endDaf": "58b",
+      "startIdx": 81,
+      "endIdx": 113
+    },
+    {
+      "chapter": 4,
+      "startDaf": "59a",
+      "endDaf": "77a",
+      "startIdx": 114,
+      "endIdx": 150
+    },
+    {
+      "chapter": 5,
+      "startDaf": "77b",
+      "endDaf": "99a",
+      "startIdx": 151,
+      "endIdx": 194
+    },
+    {
+      "chapter": 6,
+      "startDaf": "99b",
+      "endDaf": "115b",
+      "startIdx": 195,
+      "endIdx": 227
+    },
+    {
+      "chapter": 7,
+      "startDaf": "116a",
+      "endDaf": "123b",
+      "startIdx": 228,
+      "endIdx": 243
+    },
+    {
+      "chapter": 8,
+      "startDaf": "124a",
+      "endDaf": "140a",
+      "startIdx": 244,
+      "endIdx": 276
+    },
+    {
+      "chapter": 9,
+      "startDaf": "140b",
+      "endDaf": "160a",
+      "startIdx": 277,
+      "endIdx": 316
+    },
+    {
+      "chapter": 10,
+      "startDaf": "160b",
+      "endDaf": "176b",
+      "startIdx": 317,
+      "endIdx": 349
+    }
+  ],
+  "sanhedrin": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "11a",
+      "startIdx": 0,
+      "endIdx": 18
+    },
+    {
+      "chapter": 2,
+      "startDaf": "11b",
+      "endDaf": "19a",
+      "startIdx": 19,
+      "endIdx": 34
+    },
+    {
+      "chapter": 3,
+      "startDaf": "19b",
+      "endDaf": "31b",
+      "startIdx": 35,
+      "endIdx": 59
+    },
+    {
+      "chapter": 4,
+      "startDaf": "32a",
+      "endDaf": "39b",
+      "startIdx": 60,
+      "endIdx": 75
+    },
+    {
+      "chapter": 5,
+      "startDaf": "40a",
+      "endDaf": "47a",
+      "startIdx": 76,
+      "endIdx": 90
+    },
+    {
+      "chapter": 6,
+      "startDaf": "47b",
+      "endDaf": "56b",
+      "startIdx": 91,
+      "endIdx": 109
+    },
+    {
+      "chapter": 7,
+      "startDaf": "57a",
+      "endDaf": "74a",
+      "startIdx": 110,
+      "endIdx": 144
+    },
+    {
+      "chapter": 8,
+      "startDaf": "74b",
+      "endDaf": "85a",
+      "startIdx": 145,
+      "endIdx": 166
+    },
+    {
+      "chapter": 9,
+      "startDaf": "85b",
+      "endDaf": "94b",
+      "startIdx": 167,
+      "endIdx": 185
+    },
+    {
+      "chapter": 10,
+      "startDaf": "95a",
+      "endDaf": "104a",
+      "startIdx": 186,
+      "endIdx": 204
+    },
+    {
+      "chapter": 11,
+      "startDaf": "104b",
+      "endDaf": "113b",
+      "startIdx": 205,
+      "endIdx": 223
+    }
+  ],
+  "makkot": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "8b",
+      "startIdx": 0,
+      "endIdx": 13
+    },
+    {
+      "chapter": 2,
+      "startDaf": "9a",
+      "endDaf": "13b",
+      "startIdx": 14,
+      "endIdx": 23
+    },
+    {
+      "chapter": 3,
+      "startDaf": "14a",
+      "endDaf": "24b",
+      "startIdx": 24,
+      "endIdx": 45
+    }
+  ],
+  "shevuot": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "7a",
+      "startIdx": 0,
+      "endIdx": 10
+    },
+    {
+      "chapter": 2,
+      "startDaf": "7b",
+      "endDaf": "11a",
+      "startIdx": 11,
+      "endIdx": 18
+    },
+    {
+      "chapter": 3,
+      "startDaf": "11b",
+      "endDaf": "19b",
+      "startIdx": 19,
+      "endIdx": 35
+    },
+    {
+      "chapter": 4,
+      "startDaf": "20a",
+      "endDaf": "29b",
+      "startIdx": 36,
+      "endIdx": 55
+    },
+    {
+      "chapter": 5,
+      "startDaf": "30a",
+      "endDaf": "33a",
+      "startIdx": 56,
+      "endIdx": 62
+    },
+    {
+      "chapter": 6,
+      "startDaf": "33b",
+      "endDaf": "38b",
+      "startIdx": 63,
+      "endIdx": 73
+    },
+    {
+      "chapter": 7,
+      "startDaf": "39a",
+      "endDaf": "45a",
+      "startIdx": 74,
+      "endIdx": 86
+    },
+    {
+      "chapter": 8,
+      "startDaf": "45b",
+      "endDaf": "49b",
+      "startIdx": 87,
+      "endIdx": 95
+    }
+  ],
+  "avodah-zarah": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "15a",
+      "startIdx": 0,
+      "endIdx": 26
+    },
+    {
+      "chapter": 2,
+      "startDaf": "15b",
+      "endDaf": "25b",
+      "startIdx": 27,
+      "endIdx": 47
+    },
+    {
+      "chapter": 3,
+      "startDaf": "26a",
+      "endDaf": "40b",
+      "startIdx": 48,
+      "endIdx": 77
+    },
+    {
+      "chapter": 4,
+      "startDaf": "41a",
+      "endDaf": "58b",
+      "startIdx": 78,
+      "endIdx": 113
+    },
+    {
+      "chapter": 5,
+      "startDaf": "59a",
+      "endDaf": "76b",
+      "startIdx": 114,
+      "endIdx": 149
+    }
+  ],
+  "horayot": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "4b",
+      "startIdx": 0,
+      "endIdx": 5
+    },
+    {
+      "chapter": 2,
+      "startDaf": "5a",
+      "endDaf": "9a",
+      "startIdx": 6,
+      "endIdx": 14
+    },
+    {
+      "chapter": 3,
+      "startDaf": "9b",
+      "endDaf": "14a",
+      "startIdx": 15,
+      "endIdx": 24
+    }
+  ],
+  "zevachim": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "6a",
+      "startIdx": 0,
+      "endIdx": 8
+    },
+    {
+      "chapter": 2,
+      "startDaf": "6b",
+      "endDaf": "12a",
+      "startIdx": 9,
+      "endIdx": 20
+    },
+    {
+      "chapter": 3,
+      "startDaf": "12b",
+      "endDaf": "19a",
+      "startIdx": 21,
+      "endIdx": 34
+    },
+    {
+      "chapter": 4,
+      "startDaf": "19b",
+      "endDaf": "26a",
+      "startIdx": 35,
+      "endIdx": 48
+    },
+    {
+      "chapter": 5,
+      "startDaf": "26b",
+      "endDaf": "35b",
+      "startIdx": 49,
+      "endIdx": 67
+    },
+    {
+      "chapter": 6,
+      "startDaf": "36a",
+      "endDaf": "44a",
+      "startIdx": 68,
+      "endIdx": 84
+    },
+    {
+      "chapter": 7,
+      "startDaf": "44b",
+      "endDaf": "51a",
+      "startIdx": 85,
+      "endIdx": 98
+    },
+    {
+      "chapter": 8,
+      "startDaf": "51b",
+      "endDaf": "65a",
+      "startIdx": 99,
+      "endIdx": 126
+    },
+    {
+      "chapter": 9,
+      "startDaf": "65b",
+      "endDaf": "73b",
+      "startIdx": 127,
+      "endIdx": 143
+    },
+    {
+      "chapter": 10,
+      "startDaf": "74a",
+      "endDaf": "83a",
+      "startIdx": 144,
+      "endIdx": 162
+    },
+    {
+      "chapter": 11,
+      "startDaf": "83b",
+      "endDaf": "92a",
+      "startIdx": 163,
+      "endIdx": 180
+    },
+    {
+      "chapter": 12,
+      "startDaf": "92b",
+      "endDaf": "99b",
+      "startIdx": 181,
+      "endIdx": 195
+    },
+    {
+      "chapter": 13,
+      "startDaf": "100a",
+      "endDaf": "108b",
+      "startIdx": 196,
+      "endIdx": 213
+    },
+    {
+      "chapter": 14,
+      "startDaf": "109a",
+      "endDaf": "120b",
+      "startIdx": 214,
+      "endIdx": 237
+    }
+  ],
+  "menachot": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "6a",
+      "startIdx": 0,
+      "endIdx": 8
+    },
+    {
+      "chapter": 2,
+      "startDaf": "6b",
+      "endDaf": "12a",
+      "startIdx": 9,
+      "endIdx": 20
+    },
+    {
+      "chapter": 3,
+      "startDaf": "12b",
+      "endDaf": "20a",
+      "startIdx": 21,
+      "endIdx": 36
+    },
+    {
+      "chapter": 4,
+      "startDaf": "20b",
+      "endDaf": "26a",
+      "startIdx": 37,
+      "endIdx": 48
+    },
+    {
+      "chapter": 5,
+      "startDaf": "26b",
+      "endDaf": "36b",
+      "startIdx": 49,
+      "endIdx": 69
+    },
+    {
+      "chapter": 6,
+      "startDaf": "37a",
+      "endDaf": "44b",
+      "startIdx": 70,
+      "endIdx": 85
+    },
+    {
+      "chapter": 7,
+      "startDaf": "45a",
+      "endDaf": "51b",
+      "startIdx": 86,
+      "endIdx": 99
+    },
+    {
+      "chapter": 8,
+      "startDaf": "52a",
+      "endDaf": "60a",
+      "startIdx": 100,
+      "endIdx": 116
+    },
+    {
+      "chapter": 9,
+      "startDaf": "60b",
+      "endDaf": "70b",
+      "startIdx": 117,
+      "endIdx": 137
+    },
+    {
+      "chapter": 10,
+      "startDaf": "71a",
+      "endDaf": "81a",
+      "startIdx": 138,
+      "endIdx": 158
+    },
+    {
+      "chapter": 11,
+      "startDaf": "81b",
+      "endDaf": "91b",
+      "startIdx": 159,
+      "endIdx": 179
+    },
+    {
+      "chapter": 12,
+      "startDaf": "92a",
+      "endDaf": "97a",
+      "startIdx": 180,
+      "endIdx": 190
+    },
+    {
+      "chapter": 13,
+      "startDaf": "97b",
+      "endDaf": "110a",
+      "startIdx": 191,
+      "endIdx": 216
+    }
+  ],
+  "chullin": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "15a",
+      "startIdx": 0,
+      "endIdx": 26
+    },
+    {
+      "chapter": 2,
+      "startDaf": "15b",
+      "endDaf": "34a",
+      "startIdx": 27,
+      "endIdx": 64
+    },
+    {
+      "chapter": 3,
+      "startDaf": "34b",
+      "endDaf": "47a",
+      "startIdx": 65,
+      "endIdx": 90
+    },
+    {
+      "chapter": 4,
+      "startDaf": "47b",
+      "endDaf": "60b",
+      "startIdx": 91,
+      "endIdx": 117
+    },
+    {
+      "chapter": 5,
+      "startDaf": "61a",
+      "endDaf": "70a",
+      "startIdx": 118,
+      "endIdx": 136
+    },
+    {
+      "chapter": 6,
+      "startDaf": "70b",
+      "endDaf": "83a",
+      "startIdx": 137,
+      "endIdx": 162
+    },
+    {
+      "chapter": 7,
+      "startDaf": "83b",
+      "endDaf": "94b",
+      "startIdx": 163,
+      "endIdx": 185
+    },
+    {
+      "chapter": 8,
+      "startDaf": "95a",
+      "endDaf": "106a",
+      "startIdx": 186,
+      "endIdx": 208
+    },
+    {
+      "chapter": 9,
+      "startDaf": "106b",
+      "endDaf": "121a",
+      "startIdx": 209,
+      "endIdx": 238
+    },
+    {
+      "chapter": 10,
+      "startDaf": "121b",
+      "endDaf": "128b",
+      "startIdx": 239,
+      "endIdx": 253
+    },
+    {
+      "chapter": 11,
+      "startDaf": "129a",
+      "endDaf": "132b",
+      "startIdx": 254,
+      "endIdx": 261
+    },
+    {
+      "chapter": 12,
+      "startDaf": "133a",
+      "endDaf": "142a",
+      "startIdx": 262,
+      "endIdx": 280
+    }
+  ],
+  "bekhorot": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "7a",
+      "startIdx": 0,
+      "endIdx": 10
+    },
+    {
+      "chapter": 2,
+      "startDaf": "7b",
+      "endDaf": "14b",
+      "startIdx": 11,
+      "endIdx": 25
+    },
+    {
+      "chapter": 3,
+      "startDaf": "15a",
+      "endDaf": "18a",
+      "startIdx": 26,
+      "endIdx": 32
+    },
+    {
+      "chapter": 4,
+      "startDaf": "18b",
+      "endDaf": "26a",
+      "startIdx": 33,
+      "endIdx": 48
+    },
+    {
+      "chapter": 5,
+      "startDaf": "26b",
+      "endDaf": "31a",
+      "startIdx": 49,
+      "endIdx": 58
+    },
+    {
+      "chapter": 6,
+      "startDaf": "31b",
+      "endDaf": "40b",
+      "startIdx": 59,
+      "endIdx": 77
+    },
+    {
+      "chapter": 7,
+      "startDaf": "41a",
+      "endDaf": "46b",
+      "startIdx": 78,
+      "endIdx": 89
+    },
+    {
+      "chapter": 8,
+      "startDaf": "47a",
+      "endDaf": "54b",
+      "startIdx": 90,
+      "endIdx": 105
+    },
+    {
+      "chapter": 9,
+      "startDaf": "55a",
+      "endDaf": "61a",
+      "startIdx": 106,
+      "endIdx": 118
+    }
+  ],
+  "arakhin": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "4a",
+      "startIdx": 0,
+      "endIdx": 4
+    },
+    {
+      "chapter": 2,
+      "startDaf": "4b",
+      "endDaf": "8a",
+      "startIdx": 5,
+      "endIdx": 12
+    },
+    {
+      "chapter": 3,
+      "startDaf": "8b",
+      "endDaf": "11b",
+      "startIdx": 13,
+      "endIdx": 19
+    },
+    {
+      "chapter": 4,
+      "startDaf": "12a",
+      "endDaf": "14a",
+      "startIdx": 20,
+      "endIdx": 24
+    },
+    {
+      "chapter": 5,
+      "startDaf": "14b",
+      "endDaf": "18a",
+      "startIdx": 25,
+      "endIdx": 32
+    },
+    {
+      "chapter": 6,
+      "startDaf": "18b",
+      "endDaf": "21a",
+      "startIdx": 33,
+      "endIdx": 38
+    },
+    {
+      "chapter": 7,
+      "startDaf": "21b",
+      "endDaf": "24b",
+      "startIdx": 39,
+      "endIdx": 45
+    },
+    {
+      "chapter": 8,
+      "startDaf": "25a",
+      "endDaf": "29a",
+      "startIdx": 46,
+      "endIdx": 54
+    },
+    {
+      "chapter": 9,
+      "startDaf": "29b",
+      "endDaf": "34a",
+      "startIdx": 55,
+      "endIdx": 64
+    }
+  ],
+  "temurah": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "7a",
+      "startIdx": 0,
+      "endIdx": 10
+    },
+    {
+      "chapter": 2,
+      "startDaf": "7b",
+      "endDaf": "10a",
+      "startIdx": 11,
+      "endIdx": 16
+    },
+    {
+      "chapter": 3,
+      "startDaf": "10b",
+      "endDaf": "14b",
+      "startIdx": 17,
+      "endIdx": 25
+    },
+    {
+      "chapter": 4,
+      "startDaf": "15a",
+      "endDaf": "18a",
+      "startIdx": 26,
+      "endIdx": 32
+    },
+    {
+      "chapter": 5,
+      "startDaf": "18b",
+      "endDaf": "24a",
+      "startIdx": 33,
+      "endIdx": 44
+    },
+    {
+      "chapter": 6,
+      "startDaf": "24b",
+      "endDaf": "28b",
+      "startIdx": 45,
+      "endIdx": 53
+    },
+    {
+      "chapter": 7,
+      "startDaf": "29a",
+      "endDaf": "34a",
+      "startIdx": 54,
+      "endIdx": 64
+    }
+  ],
+  "keritot": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "6a",
+      "startIdx": 0,
+      "endIdx": 8
+    },
+    {
+      "chapter": 2,
+      "startDaf": "6b",
+      "endDaf": "9b",
+      "startIdx": 9,
+      "endIdx": 15
+    },
+    {
+      "chapter": 3,
+      "startDaf": "10a",
+      "endDaf": "16a",
+      "startIdx": 16,
+      "endIdx": 28
+    },
+    {
+      "chapter": 4,
+      "startDaf": "16b",
+      "endDaf": "18a",
+      "startIdx": 29,
+      "endIdx": 32
+    },
+    {
+      "chapter": 5,
+      "startDaf": "18b",
+      "endDaf": "23a",
+      "startIdx": 33,
+      "endIdx": 42
+    },
+    {
+      "chapter": 6,
+      "startDaf": "23b",
+      "endDaf": "28b",
+      "startIdx": 43,
+      "endIdx": 53
+    }
+  ],
+  "meilah": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "3b",
+      "startIdx": 0,
+      "endIdx": 3
+    },
+    {
+      "chapter": 2,
+      "startDaf": "4a",
+      "endDaf": "8b",
+      "startIdx": 4,
+      "endIdx": 13
+    },
+    {
+      "chapter": 3,
+      "startDaf": "9a",
+      "endDaf": "13a",
+      "startIdx": 14,
+      "endIdx": 22
+    },
+    {
+      "chapter": 4,
+      "startDaf": "13b",
+      "endDaf": "16a",
+      "startIdx": 23,
+      "endIdx": 28
+    },
+    {
+      "chapter": 5,
+      "startDaf": "16b",
+      "endDaf": "19a",
+      "startIdx": 29,
+      "endIdx": 34
+    },
+    {
+      "chapter": 6,
+      "startDaf": "19b",
+      "endDaf": "22a",
+      "startIdx": 35,
+      "endIdx": 40
+    }
+  ],
+  "tamid": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "2b",
+      "startIdx": 0,
+      "endIdx": 1
+    },
+    {
+      "chapter": 2,
+      "startDaf": "3a",
+      "endDaf": "4a",
+      "startIdx": 2,
+      "endIdx": 4
+    },
+    {
+      "chapter": 3,
+      "startDaf": "4b",
+      "endDaf": "6a",
+      "startIdx": 5,
+      "endIdx": 8
+    },
+    {
+      "chapter": 4,
+      "startDaf": "6b",
+      "endDaf": "7a",
+      "startIdx": 9,
+      "endIdx": 10
+    },
+    {
+      "chapter": 5,
+      "startDaf": "7b",
+      "endDaf": "8b",
+      "startIdx": 11,
+      "endIdx": 13
+    },
+    {
+      "chapter": 6,
+      "startDaf": "9a",
+      "endDaf": "9a",
+      "startIdx": 14,
+      "endIdx": 14
+    },
+    {
+      "chapter": 7,
+      "startDaf": "9b",
+      "endDaf": "10a",
+      "startIdx": 15,
+      "endIdx": 16
+    }
+  ],
+  "middot": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "2a",
+      "startIdx": 0,
+      "endIdx": 0
+    },
+    {
+      "chapter": 2,
+      "startDaf": "2b",
+      "endDaf": "2b",
+      "startIdx": 1,
+      "endIdx": 1
+    },
+    {
+      "chapter": 3,
+      "startDaf": "3a",
+      "endDaf": "3a",
+      "startIdx": 2,
+      "endIdx": 2
+    },
+    {
+      "chapter": 4,
+      "startDaf": "3b",
+      "endDaf": "3b",
+      "startIdx": 3,
+      "endIdx": 3
+    },
+    {
+      "chapter": 5,
+      "startDaf": "4a",
+      "endDaf": "4a",
+      "startIdx": 4,
+      "endIdx": 4
+    }
+  ],
+  "kinnim": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "2a",
+      "startIdx": 0,
+      "endIdx": 0
+    },
+    {
+      "chapter": 2,
+      "startDaf": "2b",
+      "endDaf": "2b",
+      "startIdx": 1,
+      "endIdx": 1
+    },
+    {
+      "chapter": 3,
+      "startDaf": "3a",
+      "endDaf": "3a",
+      "startIdx": 2,
+      "endIdx": 2
+    }
+  ],
+  "niddah": [
+    {
+      "chapter": 1,
+      "startDaf": "2a",
+      "endDaf": "8a",
+      "startIdx": 0,
+      "endIdx": 12
+    },
+    {
+      "chapter": 2,
+      "startDaf": "8b",
+      "endDaf": "14a",
+      "startIdx": 13,
+      "endIdx": 24
+    },
+    {
+      "chapter": 3,
+      "startDaf": "14b",
+      "endDaf": "20b",
+      "startIdx": 25,
+      "endIdx": 37
+    },
+    {
+      "chapter": 4,
+      "startDaf": "21a",
+      "endDaf": "27a",
+      "startIdx": 38,
+      "endIdx": 50
+    },
+    {
+      "chapter": 5,
+      "startDaf": "27b",
+      "endDaf": "35a",
+      "startIdx": 51,
+      "endIdx": 66
+    },
+    {
+      "chapter": 6,
+      "startDaf": "35b",
+      "endDaf": "47b",
+      "startIdx": 67,
+      "endIdx": 91
+    },
+    {
+      "chapter": 7,
+      "startDaf": "48a",
+      "endDaf": "52a",
+      "startIdx": 92,
+      "endIdx": 100
+    },
+    {
+      "chapter": 8,
+      "startDaf": "52b",
+      "endDaf": "56a",
+      "startIdx": 101,
+      "endIdx": 108
+    },
+    {
+      "chapter": 9,
+      "startDaf": "56b",
+      "endDaf": "66a",
+      "startIdx": 109,
+      "endIdx": 128
+    },
+    {
+      "chapter": 10,
+      "startDaf": "66b",
+      "endDaf": "73a",
+      "startIdx": 129,
+      "endIdx": 142
+    }
+  ]
+}

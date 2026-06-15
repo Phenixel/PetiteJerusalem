@@ -17,9 +17,9 @@ const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
 const textEntry = computed(() => allTexts.find((t) => String(t.id) === textId.value) ?? null);
 
 const loading = ref(false);
+const missingFile = ref(false);
 const error = ref<string | null>(null);
 const content = ref<TextContent | null>(null);
-const showTranslation = ref(false);
 
 const isSingleSection = computed(
   () => content.value !== null && content.value.sections.length === 1,
@@ -42,11 +42,16 @@ async function loadContent() {
   if (!textEntry.value) return;
   loading.value = true;
   error.value = null;
+  missingFile.value = false;
   content.value = null;
   try {
     content.value = await loadText(textEntry.value);
   } catch (e) {
-    error.value = e instanceof Error ? e.message : "Erreur inconnue";
+    if (e instanceof Error && (e as Error & { isMissing?: boolean }).isMissing) {
+      missingFile.value = true;
+    } else {
+      error.value = e instanceof Error ? e.message : "Erreur inconnue";
+    }
   } finally {
     loading.value = false;
   }
@@ -126,25 +131,11 @@ const hasNext = computed(() => {
             </span>
           </h1>
         </div>
-
-        <button
-          v-if="currentSection"
-          @click="showTranslation = !showTranslation"
-          class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors flex-shrink-0"
-          :class="
-            showTranslation
-              ? 'bg-primary text-white border-primary'
-              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-text-secondary dark:text-gray-400 hover:border-primary hover:text-primary'
-          "
-        >
-          <i class="fa-solid fa-language"></i>
-          EN
-        </button>
       </div>
     </div>
 
     <div class="max-w-3xl mx-auto px-4 py-8">
-      <!-- Text not found -->
+      <!-- Text not found in JSON -->
       <div v-if="!textEntry" class="text-center py-16 text-text-secondary dark:text-gray-400">
         <i class="fa-solid fa-circle-exclamation text-3xl mb-3 block"></i>
         <p>Texte introuvable.</p>
@@ -158,7 +149,29 @@ const hasNext = computed(() => {
         <p class="text-text-secondary dark:text-gray-400 text-sm">Chargement…</p>
       </div>
 
-      <!-- Error -->
+      <!-- Missing file -->
+      <div v-else-if="missingFile" class="text-center py-20">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 mb-5">
+          <i class="fa-solid fa-book-open text-2xl text-amber-500 dark:text-amber-400"></i>
+        </div>
+        <h2 class="text-xl font-semibold text-text-primary dark:text-gray-100 mb-2">
+          Source non disponible
+        </h2>
+        <p class="text-text-secondary dark:text-gray-400 mb-1 max-w-sm mx-auto">
+          Le fichier de ce texte n'est pas encore disponible localement.
+        </p>
+        <p class="text-xs text-text-secondary/60 dark:text-gray-600 mb-6" v-if="textEntry">
+          {{ textEntry.name }}
+        </p>
+        <button
+          @click="goBack"
+          class="px-5 py-2 rounded-lg bg-primary text-white text-sm hover:bg-primary/90 transition-colors"
+        >
+          Retour
+        </button>
+      </div>
+
+      <!-- Generic error -->
       <div v-else-if="error" class="text-center py-16">
         <i class="fa-solid fa-triangle-exclamation text-amber-500 text-3xl mb-3 block"></i>
         <p class="text-text-secondary dark:text-gray-400 mb-4">{{ error }}</p>
@@ -188,7 +201,7 @@ const hasNext = computed(() => {
             @click="goToSection(section.index)"
             class="aspect-square rounded-xl border border-amber-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-text-primary dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-gray-700 hover:border-primary dark:hover:border-primary transition-all hover:scale-105 hover:shadow-md flex items-center justify-center p-1 text-center leading-tight"
           >
-            {{ section.label.replace("Chapitre ", "").replace("Daf ", "") }}
+            {{ section.index }}
           </button>
         </div>
       </div>
@@ -215,7 +228,7 @@ const hasNext = computed(() => {
           </button>
 
           <span
-            class="text-xs text-text-secondary dark:text-gray-500 bg-amber-50 dark:bg-gray-800 px-3 py-1 rounded-full border border-amber-100 dark:border-gray-700"
+            class="text-xs text-text-secondary dark:text-gray-500 bg-amber-50 dark:bg-gray-800 px-3 py-1 rounded-full border border-amber-100 dark:border-gray-700 text-center max-w-[60%]"
           >
             {{ currentSection.label }}
           </span>
@@ -249,22 +262,13 @@ const hasNext = computed(() => {
                 {{ index + 1 }}
               </span>
 
-              <div class="flex-1 space-y-2">
-                <p
-                  dir="rtl"
-                  class="text-lg leading-loose text-text-primary dark:text-gray-100 font-medium"
-                  style="font-family: 'Noto Serif Hebrew', 'David Libre', 'Times New Roman', serif"
-                >
-                  {{ line }}
-                </p>
-
-                <p
-                  v-if="showTranslation && currentSection.en[index]"
-                  class="text-sm leading-relaxed text-text-secondary dark:text-gray-400 border-l-2 border-amber-200 dark:border-gray-700 pl-3 italic"
-                >
-                  {{ currentSection.en[index] }}
-                </p>
-              </div>
+              <p
+                dir="rtl"
+                class="flex-1 text-lg leading-loose text-text-primary dark:text-gray-100 font-medium"
+                style="font-family: 'Noto Serif Hebrew', 'David Libre', 'Times New Roman', serif"
+              >
+                {{ line }}
+              </p>
             </div>
 
             <div class="mt-3 border-b border-amber-50 dark:border-gray-800/60"></div>
