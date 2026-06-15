@@ -9,6 +9,7 @@ import ChiourimPage from "../views/Chiourim/ChiourimPage.vue";
 import DetailChiour from "../views/Chiourim/DetailChiour.vue";
 import AuteurChiourimPage from "../views/Chiourim/AuteurChiourimPage.vue";
 import NotFound from "../views/NotFound.vue";
+import TextReadingPage from "../views/SefariaReading/TextReadingPage.vue";
 
 export default [
   {
@@ -60,6 +61,16 @@ export default [
     path: "/chiourim/:slug",
     name: "detail-chiour",
     component: DetailChiour,
+  },
+  {
+    path: "/lire/:textId",
+    name: "text-reading",
+    component: TextReadingPage,
+  },
+  {
+    path: "/lire/:textId/:section",
+    name: "text-reading-section",
+    component: TextReadingPage,
   },
   {
     path: "/:pathMatch(.*)*",
