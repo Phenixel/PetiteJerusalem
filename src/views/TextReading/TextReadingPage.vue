@@ -65,6 +65,7 @@ function goToSection(index: number) {
     name: "text-reading-section",
     params: { textId: textId.value, section: index },
   });
+  window.scrollTo({ top: 0 });
 }
 
 function goBack() {
@@ -109,14 +110,6 @@ const hasNext = computed(() => {
       class="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-amber-100 dark:border-gray-800 shadow-sm"
     >
       <div class="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-        <button
-          @click="goBack"
-          class="flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary dark:text-gray-400 dark:hover:text-primary transition-colors flex-shrink-0"
-        >
-          <i class="fa-solid fa-arrow-left text-xs"></i>
-          Retour
-        </button>
-
         <div class="flex-1 min-w-0" v-if="textEntry">
           <p class="text-xs text-text-secondary dark:text-gray-500 truncate">
             {{ textEntry.livre }}
@@ -223,7 +216,7 @@ const hasNext = computed(() => {
                 : 'text-text-secondary dark:text-gray-400 hover:text-primary hover:bg-amber-50 dark:hover:bg-gray-800'
             "
           >
-            <i class="fa-solid fa-chevron-right text-xs"></i>
+            <i class="fa-solid fa-chevron-left text-xs"></i>
             Précédent
           </button>
 
@@ -244,7 +237,7 @@ const hasNext = computed(() => {
             "
           >
             Suivant
-            <i class="fa-solid fa-chevron-left text-xs"></i>
+            <i class="fa-solid fa-chevron-right text-xs"></i>
           </button>
         </div>
 
@@ -290,7 +283,7 @@ const hasNext = computed(() => {
                 : 'border-amber-200 dark:border-gray-700 hover:border-primary hover:text-primary hover:bg-amber-50 dark:hover:bg-gray-800'
             "
           >
-            <i class="fa-solid fa-chevron-right text-xs"></i>
+            <i class="fa-solid fa-chevron-left text-xs"></i>
             Précédent
           </button>
 
@@ -312,7 +305,7 @@ const hasNext = computed(() => {
             "
           >
             Suivant
-            <i class="fa-solid fa-chevron-left text-xs"></i>
+            <i class="fa-solid fa-chevron-right text-xs"></i>
           </button>
         </div>
       </div>

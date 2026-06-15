@@ -183,6 +183,16 @@ export async function loadText(textStudy: TextStudyJsonEntry): Promise<TextConte
   // ── Tanakh ───────────────────────────────────────────────────────────────
   if (type === "Tanakh") {
     const heChapters: unknown[] = data.he ?? [];
+    // Reserved as a whole unit → flatten all chapters into one section
+    if (textStudy.totalSections === 1) {
+      const allLines: string[] = [];
+      for (const ch of heChapters) allLines.push(...normalizeLines(ch));
+      return {
+        title: data.title ?? textStudy.name,
+        type,
+        sections: [{ index: 1, label: textStudy.name, he: allLines }],
+      };
+    }
     const sections: TextSection[] = heChapters
       .map((ch: unknown, i: number) => ({
         index: i + 1,
