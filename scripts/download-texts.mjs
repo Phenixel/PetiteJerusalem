@@ -80,13 +80,6 @@ for (const b of booksIndex.books) {
   if (b.language === 'English') lookup[title].en_url = b.json_url;
 }
 
-// Helper: find a merged file URL for a text by trying several title forms
-function findUrls(titleForms) {
-  for (const t of titleForms) {
-    if (lookup[t]) return lookup[t];
-  }
-  return null;
-}
 
 // ---------- TEHILIM (150 Psalms) ----------
 

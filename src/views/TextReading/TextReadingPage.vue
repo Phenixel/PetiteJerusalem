@@ -25,6 +25,9 @@ const isSingleSection = computed(
   () => content.value !== null && content.value.sections.length === 1,
 );
 
+// Texts reserved as a whole (totalSections=1, e.g. Tehilim, Tanakh) don't need verse numbers
+const showVerseNumbers = computed(() => (textEntry.value?.totalSections ?? 1) > 1);
+
 const showSectionList = computed(
   () => !isSingleSection.value && sectionParam.value === undefined,
 );
@@ -250,6 +253,7 @@ const hasNext = computed(() => {
           >
             <div class="flex items-start gap-3">
               <span
+                v-if="showVerseNumbers"
                 class="mt-1.5 flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-amber-100 dark:bg-gray-800 text-xs text-amber-700 dark:text-amber-400 font-semibold select-none"
               >
                 {{ index + 1 }}
