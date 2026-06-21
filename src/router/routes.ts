@@ -10,6 +10,7 @@ import DetailChiour from "../views/Chiourim/DetailChiour.vue";
 import AuteurChiourimPage from "../views/Chiourim/AuteurChiourimPage.vue";
 import NotFound from "../views/NotFound.vue";
 import TextReadingPage from "../views/TextReading/TextReadingPage.vue";
+import StudyPage from "../views/StudyPage.vue";
 
 export default [
   {
@@ -46,6 +47,11 @@ export default [
     path: "/share-reading/session/:slug",
     name: "detail-session",
     component: DetailSession,
+  },
+  {
+    path: "/etude",
+    name: "study",
+    component: StudyPage,
   },
   {
     path: "/chiourim",

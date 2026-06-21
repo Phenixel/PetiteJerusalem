@@ -68,9 +68,9 @@ const en: LocaleMessages = {
         title: "Reading Share",
         description: "Exchange and discover sacred texts with the community",
       },
-      dailyHalakhot: {
-        title: "Daily Halakhot",
-        description: "Receive your personalized daily laws",
+      study: {
+        title: "Study",
+        description: "Freely read Tehilim, Mishnah, Talmud and Tanakh",
       },
       personalTracking: {
         title: "Personal Tracking",
@@ -373,6 +373,19 @@ const en: LocaleMessages = {
     cancelError: "The cancellation failed.",
     updateError: "The update failed.",
     guestIntro: "Enter your name and email to reserve this passage.",
+  },
+  study: {
+    title: "Study",
+    subtitle: "Read and study the texts: Tehilim, Mishnah, Talmud and Tanakh.",
+    searchPlaceholder: "Search a text…",
+    noResults: "No text matches your search.",
+    sections: "{count} sections",
+    types: {
+      tehilim: "Tehilim",
+      mishna: "Mishnah",
+      talmud: "Talmud",
+      tanakh: "Tanakh",
+    },
   },
 };
 

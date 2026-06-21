@@ -1,0 +1,148 @@
+<script setup lang="ts">
+import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
+import textStudiesJson from "../datas/textStudies.json";
+import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
+import { sessionService } from "../services/sessionService";
+import { seoService } from "../services/seoService";
+
+const { t } = useI18n();
+
+const TYPES = [
+  { key: "Tehilim", labelKey: "study.types.tehilim" },
+  { key: "Mishna", labelKey: "study.types.mishna" },
+  { key: "Talmud Bavli", labelKey: "study.types.talmud" },
+  { key: "Tanakh", labelKey: "study.types.tanakh" },
+];
+
+const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
+const selectedType = ref("Tehilim");
+const searchTerm = ref("");
+
+const filtered = computed(() => {
+  const term = searchTerm.value.trim().toLowerCase();
+  return allTexts.filter(
+    (txt) =>
+      String(txt.type) === selectedType.value &&
+      (term === "" || txt.name.toLowerCase().includes(term)),
+  );
+});
+
+// Group the selected type's texts by book/seder for readable sections.
+const groupedByBook = computed(() => {
+  const groups: Record<string, TextStudyJsonEntry[]> = {};
+  for (const txt of filtered.value) {
+    (groups[txt.livre] ??= []).push(txt);
+  }
+  return groups;
+});
+
+const hasResults = computed(() => filtered.value.length > 0);
+
+function formatBookName(livre: string): string {
+  return sessionService.formatBookName(livre);
+}
+
+onMounted(() => {
+  const url = window.location.origin + "/etude";
+  seoService.setMeta({
+    title: `${t("study.title")} | Petite Jérusalem`,
+    description: t("study.subtitle"),
+    canonical: url,
+  });
+});
+</script>
+
+<template>
+  <main class="mx-auto px-6 py-12">
+    <!-- Hero -->
+    <div class="text-center mb-10">
+      <h1
+        class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-4 tracking-tight pb-1"
+      >
+        {{ t("study.title") }}
+      </h1>
+      <p class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed dark:text-gray-300">
+        {{ t("study.subtitle") }}
+      </p>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex flex-col items-center gap-4 mb-10">
+      <div class="relative w-full md:w-96">
+        <i
+          class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/60 dark:text-gray-500"
+        ></i>
+        <input
+          v-model="searchTerm"
+          type="text"
+          :placeholder="t('study.searchPlaceholder')"
+          class="w-full pl-11 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-white/60 rounded-xl text-text-primary placeholder-text-secondary/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all dark:bg-gray-800/60 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
+        />
+        <button
+          v-if="searchTerm"
+          @click="searchTerm = ''"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/60 hover:text-text-primary transition-colors dark:text-gray-500 dark:hover:text-gray-300"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="flex flex-wrap gap-2 justify-center">
+        <button
+          v-for="ty in TYPES"
+          :key="ty.key"
+          @click="selectedType = ty.key"
+          :class="[
+            'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border',
+            selectedType === ty.key
+              ? 'bg-primary text-white border-primary shadow-md'
+              : 'bg-white/60 text-text-secondary border-white/60 hover:bg-white/80 hover:text-text-primary dark:bg-gray-800/40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200',
+          ]"
+        >
+          {{ t(ty.labelKey) }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div v-if="hasResults" class="max-w-5xl mx-auto space-y-10">
+      <section v-for="(texts, livre) in groupedByBook" :key="livre">
+        <h2
+          class="text-xl font-bold text-text-primary mb-4 pl-3 border-l-4 border-primary dark:text-gray-100"
+        >
+          {{ formatBookName(String(livre)) }}
+        </h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <router-link
+            v-for="text in texts"
+            :key="text.id"
+            :to="{ name: 'text-reading', params: { textId: String(text.id) } }"
+            class="flex items-center justify-between gap-2 p-3 rounded-xl bg-white/60 backdrop-blur-sm border border-white/40 hover:border-primary hover:shadow-md transition-all group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:border-primary"
+          >
+            <span class="min-w-0">
+              <span class="block font-medium text-text-primary truncate dark:text-gray-200">
+                {{ text.name }}
+              </span>
+              <span
+                v-if="text.totalSections > 1"
+                class="text-xs text-text-secondary dark:text-gray-500"
+              >
+                {{ t("study.sections", { count: text.totalSections }) }}
+              </span>
+            </span>
+            <i
+              class="fa-solid fa-book-open text-text-secondary/40 group-hover:text-primary transition-colors flex-shrink-0"
+            ></i>
+          </router-link>
+        </div>
+      </section>
+    </div>
+
+    <!-- Empty -->
+    <div v-else class="text-center py-16 text-text-secondary dark:text-gray-400">
+      <i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-40"></i>
+      <p>{{ t("study.noResults") }}</p>
+    </div>
+  </main>
+</template>

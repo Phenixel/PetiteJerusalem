@@ -68,9 +68,9 @@ const he: LocaleMessages = {
         title: "שיתוף קריאות",
         description: "החליפו וגלו טקסטים קדושים עם הקהילה",
       },
-      dailyHalakhot: {
-        title: "הלכות יומיות",
-        description: "קבלו את ההלכות היומיות המותאמות אישית",
+      study: {
+        title: "לימוד",
+        description: "קראו בחופשיות תהילים, משנה, תלמוד ותנ״ך",
       },
       personalTracking: {
         title: "מעקב אישי",
@@ -366,6 +366,19 @@ const he: LocaleMessages = {
     cancelError: "הביטול נכשל.",
     updateError: "העדכון נכשל.",
     guestIntro: "הזן את שמך והאימייל שלך כדי לשמור קטע זה.",
+  },
+  study: {
+    title: "לימוד",
+    subtitle: "קראו ולמדו את הטקסטים: תהילים, משנה, תלמוד ותנ״ך.",
+    searchPlaceholder: "חיפוש טקסט…",
+    noResults: "לא נמצא טקסט תואם.",
+    sections: "{count} פרקים",
+    types: {
+      tehilim: "תהילים",
+      mishna: "משנה",
+      talmud: "תלמוד",
+      tanakh: "תנ״ך",
+    },
   },
 };
 

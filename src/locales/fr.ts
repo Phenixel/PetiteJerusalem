@@ -66,9 +66,9 @@ const fr = {
         title: "Partage de Lectures",
         description: "Échangez et découvrez des textes sacrés avec la communauté",
       },
-      dailyHalakhot: {
-        title: "Halakhot Quotidiennes",
-        description: "Recevez vos lois quotidiennes personnalisées",
+      study: {
+        title: "Étude",
+        description: "Lisez librement les Tehilim, la Michna, le Talmud et le Tanakh",
       },
       personalTracking: {
         title: "Suivi Personnel",
@@ -374,6 +374,19 @@ const fr = {
     cancelError: "L'annulation a échoué.",
     updateError: "La mise à jour a échoué.",
     guestIntro: "Renseignez votre nom et votre email pour réserver ce passage.",
+  },
+  study: {
+    title: "Étude",
+    subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud et Tanakh.",
+    searchPlaceholder: "Rechercher un texte…",
+    noResults: "Aucun texte ne correspond à votre recherche.",
+    sections: "{count} sections",
+    types: {
+      tehilim: "Tehilim",
+      mishna: "Michna",
+      talmud: "Talmud",
+      tanakh: "Tanakh",
+    },
   },
 };
 
