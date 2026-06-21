@@ -1,36 +1,47 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../datas/textStudies.json";
-import type { TextStudiesJson } from "../../models/models";
-import { loadText, type TextContent, type TextSection } from "../../services/textService";
+import type {
+  Session,
+  TextStudyReservation,
+  TextStudiesJson,
+  TextStudyJsonEntry,
+} from "../../models/models";
+import type { User } from "../../services/authService";
+import { loadText, MissingTextFileError } from "../../services/textService";
+import type { TextContent, TextSection } from "../../services/textService";
+import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
+import { sessionService } from "../../services/sessionService";
+import { seoService } from "../../services/seoService";
+import GuestForm from "../../components/GuestForm.vue";
+import ReadingNav from "../../components/ReadingNav.vue";
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const textId = computed(() => String(route.params.textId));
-const sectionParam = computed(() =>
-  route.params.section ? Number(route.params.section) : undefined,
-);
+const sectionParam = computed(() => (route.params.section ? Number(route.params.section) : undefined));
+const sessionSlug = computed(() => (route.query.session ? String(route.query.session) : null));
 
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
 const textEntry = computed(() => allTexts.find((t) => String(t.id) === textId.value) ?? null);
 
 const loading = ref(false);
 const missingFile = ref(false);
-const error = ref<string | null>(null);
+const error = ref(false);
 const content = ref<TextContent | null>(null);
+const showPhonetic = ref(false);
 
-const isSingleSection = computed(
-  () => content.value !== null && content.value.sections.length === 1,
-);
+// --- Reading ---
+const isSingleSection = computed(() => content.value?.sections.length === 1);
 
-// Texts reserved as a whole (totalSections=1, e.g. Tehilim, Tanakh) don't need verse numbers
+// Texts reserved as a whole (Tehilim, full parasha) don't need verse numbers.
 const showVerseNumbers = computed(() => (textEntry.value?.totalSections ?? 1) > 1);
 
-const showSectionList = computed(
-  () => !isSingleSection.value && sectionParam.value === undefined,
-);
+const showSectionList = computed(() => !isSingleSection.value && sectionParam.value === undefined);
 
 const currentSection = computed<TextSection | null>(() => {
   if (!content.value) return null;
@@ -41,278 +52,535 @@ const currentSection = computed<TextSection | null>(() => {
   return null;
 });
 
+const canTransliterate = computed(() => currentSection.value?.he.some((line) => hasNiqqud(line)) ?? false);
+
+const sectionIndexInList = computed(() => {
+  if (!content.value || !currentSection.value) return -1;
+  return content.value.sections.indexOf(currentSection.value);
+});
+const hasPrev = computed(() => sectionIndexInList.value > 0);
+const hasNext = computed(
+  () => content.value !== null && sectionIndexInList.value < content.value.sections.length - 1,
+);
+
 async function loadContent() {
   if (!textEntry.value) return;
   loading.value = true;
-  error.value = null;
+  error.value = false;
   missingFile.value = false;
   content.value = null;
   try {
     content.value = await loadText(textEntry.value);
   } catch (e) {
-    if (e instanceof Error && (e as Error & { isMissing?: boolean }).isMissing) {
-      missingFile.value = true;
-    } else {
-      error.value = e instanceof Error ? e.message : "Erreur inconnue";
-    }
+    if (e instanceof MissingTextFileError) missingFile.value = true;
+    else error.value = true;
   } finally {
     loading.value = false;
   }
 }
 
-onMounted(loadContent);
-watch(textId, loadContent);
-
 function goToSection(index: number) {
   router.push({
     name: "text-reading-section",
     params: { textId: textId.value, section: index },
+    query: route.query,
   });
   window.scrollTo({ top: 0 });
 }
 
-function goBack() {
-  if (sectionParam.value !== undefined) {
-    router.push({ name: "text-reading", params: { textId: textId.value } });
-  } else {
-    router.back();
-  }
+function backToSectionList() {
+  router.push({ name: "text-reading", params: { textId: textId.value }, query: route.query });
+  window.scrollTo({ top: 0 });
+}
+
+function exitReading() {
+  if (sessionSlug.value) router.push(`/share-reading/session/${sessionSlug.value}`);
+  else router.back();
 }
 
 function prevSection() {
-  if (!currentSection.value || !content.value) return;
-  const idx = content.value.sections.indexOf(currentSection.value);
-  if (idx > 0) goToSection(content.value.sections[idx - 1].index);
+  if (content.value && hasPrev.value) goToSection(content.value.sections[sectionIndexInList.value - 1].index);
 }
-
 function nextSection() {
-  if (!currentSection.value || !content.value) return;
-  const idx = content.value.sections.indexOf(currentSection.value);
-  if (idx < content.value.sections.length - 1)
-    goToSection(content.value.sections[idx + 1].index);
+  if (content.value && hasNext.value) goToSection(content.value.sections[sectionIndexInList.value + 1].index);
 }
 
-const hasPrev = computed(() => {
-  if (!currentSection.value || !content.value) return false;
-  return content.value.sections.indexOf(currentSection.value) > 0;
+// Sibling texts of the same type (all Tehilim, all tractates…), in catalog order.
+const siblings = computed(() =>
+  textEntry.value ? allTexts.filter((s) => s.type === textEntry.value!.type) : [],
+);
+const siblingIndex = computed(() => siblings.value.findIndex((s) => String(s.id) === textId.value));
+const prevText = computed<TextStudyJsonEntry | null>(() =>
+  siblingIndex.value > 0 ? siblings.value[siblingIndex.value - 1] : null,
+);
+const nextText = computed<TextStudyJsonEntry | null>(() =>
+  siblingIndex.value >= 0 && siblingIndex.value < siblings.value.length - 1
+    ? siblings.value[siblingIndex.value + 1]
+    : null,
+);
+
+function goToText(target: TextStudyJsonEntry) {
+  router.push({ name: "text-reading", params: { textId: String(target.id) }, query: route.query });
+  window.scrollTo({ top: 0 });
+}
+
+// --- Reservation (session mode) ---
+const session = ref<Session | null>(null);
+const currentUser = ref<User | null>(null);
+const reservationForm = ref({ name: "", email: "" });
+const isReserving = ref(false);
+
+const isSessionMode = computed(() => sessionSlug.value !== null && session.value !== null);
+
+// Reservation unit: the current chapter, or 1 for a single-section text.
+const reservationUnit = computed(() => (isSingleSection.value ? 1 : sectionParam.value));
+
+const showReservationBar = computed(() => isSessionMode.value && reservationUnit.value !== undefined);
+
+function findReservation(unit: number | undefined): TextStudyReservation | null {
+  if (!session.value || unit === undefined) return null;
+  return (
+    session.value.reservations.find((r) => r.textStudyId === textId.value && r.section === unit) ?? null
+  );
+}
+
+const currentReservation = computed(() => findReservation(reservationUnit.value));
+
+const reservedStatus = computed(() => {
+  if (!session.value || reservationUnit.value === undefined) return { isReserved: false } as const;
+  return sessionService.isTextOrSectionReserved(textId.value, reservationUnit.value, session.value);
 });
 
-const hasNext = computed(() => {
-  if (!currentSection.value || !content.value) return false;
-  const idx = content.value.sections.indexOf(currentSection.value);
-  return idx < content.value.sections.length - 1;
+const isMine = computed(() => {
+  const r = currentReservation.value;
+  return !!r && sessionService.canUserDeleteReservation(r, currentUser.value, reservationForm.value.email);
 });
+
+async function reserve() {
+  if (!session.value || reservationUnit.value === undefined) return;
+  if (!currentUser.value && (!reservationForm.value.name || !reservationForm.value.email)) {
+    alert(t("textReading.guestIntro"));
+    return;
+  }
+  isReserving.value = true;
+  try {
+    const id = await sessionService.createReservationForUser(
+      session.value.id,
+      textId.value,
+      reservationUnit.value,
+      currentUser.value,
+      reservationForm.value,
+    );
+    const local = sessionService.createLocalReservation(
+      id,
+      textId.value,
+      reservationUnit.value,
+      currentUser.value,
+      reservationForm.value,
+    );
+    session.value.reservations = [...session.value.reservations, local];
+  } catch (e) {
+    alert(e instanceof Error ? e.message : t("textReading.reserveError"));
+  } finally {
+    isReserving.value = false;
+  }
+}
+
+async function cancelReservation() {
+  const r = currentReservation.value;
+  if (!session.value || !r || !isMine.value) return;
+  if (!confirm(t("textReading.cancelConfirm"))) return;
+  isReserving.value = true;
+  try {
+    await sessionService.deleteReservation(session.value.id, r.id);
+    session.value.reservations = session.value.reservations.filter((x) => x.id !== r.id);
+  } catch {
+    alert(t("textReading.cancelError"));
+  } finally {
+    isReserving.value = false;
+  }
+}
+
+async function toggleRead() {
+  const r = currentReservation.value;
+  if (!session.value || !r) return;
+  const next = !r.isCompleted;
+  isReserving.value = true;
+  try {
+    await sessionService.markReservationAsCompleted(session.value.id, r.id, next);
+    r.isCompleted = next;
+    session.value.reservations = [...session.value.reservations];
+  } catch {
+    alert(t("textReading.updateError"));
+  } finally {
+    isReserving.value = false;
+  }
+}
+
+// --- SEO ---
+const pageTitle = computed(() => {
+  if (!textEntry.value) return "Lecture | Petite Jérusalem";
+  const sec = currentSection.value && !isSingleSection.value ? ` — ${currentSection.value.label}` : "";
+  return `${textEntry.value.name}${sec} | Petite Jérusalem`;
+});
+watch(pageTitle, (title) => seoService.setMeta({ title }), { immediate: true });
+
+// --- Lifecycle ---
+onMounted(async () => {
+  await loadContent();
+  if (sessionSlug.value) {
+    currentUser.value = await sessionService.getCurrentUser();
+    session.value = await sessionService.resolveSession(sessionSlug.value);
+  }
+});
+watch(textId, loadContent);
 </script>
 
 <template>
-  <div
-    class="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950"
-  >
-    <!-- Header -->
-    <div
-      class="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-amber-100 dark:border-gray-800 shadow-sm"
+  <main class="mx-auto px-6 py-12 max-w-3xl w-full">
+    <button
+      @click="exitReading"
+      class="mb-8 flex items-center gap-2 text-text-secondary hover:text-primary transition-colors group dark:text-gray-400 dark:hover:text-primary"
     >
-      <div class="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-        <div class="flex-1 min-w-0" v-if="textEntry">
-          <p class="text-xs text-text-secondary dark:text-gray-500 truncate">
-            {{ textEntry.livre }}
-          </p>
-          <h1 class="text-sm font-semibold text-text-primary dark:text-gray-100 truncate">
-            {{ textEntry.name }}
-            <span
-              v-if="currentSection && !isSingleSection"
-              class="text-text-secondary dark:text-gray-400 font-normal"
-            >
-              — {{ currentSection.label }}
-            </span>
-          </h1>
-        </div>
+      <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+      {{ sessionSlug ? t("textReading.backToSession") : t("textReading.back") }}
+    </button>
+
+    <!-- Text not in catalog -->
+    <div
+      v-if="!textEntry"
+      class="flex flex-col items-center justify-center p-12 text-center bg-white/60 backdrop-blur-sm rounded-2xl border border-white/60 dark:bg-gray-800/40 dark:border-gray-700"
+    >
+      <div
+        class="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center text-2xl mb-4 dark:bg-gray-700 dark:text-gray-500"
+      >
+        <i class="fa-solid fa-circle-question"></i>
+      </div>
+      <p class="text-text-secondary dark:text-gray-400">{{ t("textReading.notFound") }}</p>
+    </div>
+
+    <div v-else-if="loading" class="animate-pulse">
+      <div class="h-4 w-24 bg-primary/10 rounded-full mb-3"></div>
+      <div class="h-9 bg-gray-200 rounded-lg w-2/3 mb-8 dark:bg-gray-700"></div>
+      <div class="space-y-4">
+        <div v-for="n in 6" :key="n" class="h-5 bg-gray-200 rounded w-full dark:bg-gray-700"></div>
       </div>
     </div>
 
-    <div class="max-w-3xl mx-auto px-4 py-8">
-      <!-- Text not found in JSON -->
-      <div v-if="!textEntry" class="text-center py-16 text-text-secondary dark:text-gray-400">
-        <i class="fa-solid fa-circle-exclamation text-3xl mb-3 block"></i>
-        <p>Texte introuvable.</p>
+    <!-- Text file unavailable -->
+    <div
+      v-else-if="missingFile"
+      class="flex flex-col items-center justify-center p-12 text-center bg-white/60 backdrop-blur-sm rounded-2xl border border-white/60 dark:bg-gray-800/40 dark:border-gray-700"
+    >
+      <div
+        class="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center text-2xl mb-4 dark:bg-primary/20"
+      >
+        <i class="fa-solid fa-book-open"></i>
       </div>
+      <h2 class="text-xl font-semibold text-text-primary mb-2 dark:text-gray-100">
+        {{ t("textReading.missingTitle") }}
+      </h2>
+      <p class="text-text-secondary mb-1 max-w-sm dark:text-gray-400">
+        {{ t("textReading.missingDescription") }}
+      </p>
+      <p class="text-xs text-text-secondary/60 dark:text-gray-600">{{ textEntry.name }}</p>
+    </div>
 
-      <!-- Loading -->
-      <div v-else-if="loading" class="flex flex-col items-center justify-center py-24 gap-4">
-        <div
-          class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"
-        ></div>
-        <p class="text-text-secondary dark:text-gray-400 text-sm">Chargement…</p>
+    <div
+      v-else-if="error"
+      class="flex flex-col items-center justify-center p-12 text-center bg-red-50 rounded-2xl border border-red-100 dark:bg-red-900/10 dark:border-red-900/30"
+    >
+      <div
+        class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-2xl mb-4 dark:bg-red-900/20 dark:text-red-400"
+      >
+        <i class="fa-solid fa-triangle-exclamation"></i>
       </div>
+      <p class="text-red-700 font-medium mb-6 dark:text-red-400">{{ t("textReading.loadError") }}</p>
+      <button
+        @click="loadContent"
+        class="px-6 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors"
+      >
+        {{ t("textReading.retry") }}
+      </button>
+    </div>
 
-      <!-- Missing file -->
-      <div v-else-if="missingFile" class="text-center py-20">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 mb-5">
-          <i class="fa-solid fa-book-open text-2xl text-amber-500 dark:text-amber-400"></i>
-        </div>
-        <h2 class="text-xl font-semibold text-text-primary dark:text-gray-100 mb-2">
-          Source non disponible
-        </h2>
-        <p class="text-text-secondary dark:text-gray-400 mb-1 max-w-sm mx-auto">
-          Le fichier de ce texte n'est pas encore disponible localement.
+    <template v-else-if="content">
+      <header class="mb-8">
+        <p class="text-sm font-semibold text-primary uppercase tracking-wide mb-1">
+          {{ textEntry.livre }}
         </p>
-        <p class="text-xs text-text-secondary/60 dark:text-gray-600 mb-6" v-if="textEntry">
+        <h1 class="text-3xl md:text-4xl font-bold text-text-primary dark:text-gray-100">
           {{ textEntry.name }}
+        </h1>
+        <p
+          v-if="currentSection && !isSingleSection"
+          class="mt-2 text-text-secondary dark:text-gray-400"
+        >
+          {{ currentSection.label }}
         </p>
-        <button
-          @click="goBack"
-          class="px-5 py-2 rounded-lg bg-primary text-white text-sm hover:bg-primary/90 transition-colors"
-        >
-          Retour
-        </button>
-      </div>
+      </header>
 
-      <!-- Generic error -->
-      <div v-else-if="error" class="text-center py-16">
-        <i class="fa-solid fa-triangle-exclamation text-amber-500 text-3xl mb-3 block"></i>
-        <p class="text-text-secondary dark:text-gray-400 mb-4">{{ error }}</p>
-        <button
-          @click="loadContent"
-          class="px-4 py-2 rounded-lg bg-primary text-white text-sm hover:bg-primary/90 transition-colors"
-        >
-          Réessayer
-        </button>
-      </div>
-
-      <!-- Section grid (multi-section texts) -->
-      <div v-else-if="content && showSectionList">
-        <div class="text-center mb-8">
-          <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100 mb-1">
-            {{ content.title }}
-          </h2>
-          <p class="text-text-secondary dark:text-gray-400 text-sm">
-            {{ content.sections.length }} section{{ content.sections.length > 1 ? "s" : "" }}
-          </p>
-        </div>
-
-        <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+      <!-- Passage list (multi-section texts) -->
+      <div v-if="showSectionList">
+        <ReadingNav
+          v-if="prevText || nextText"
+          :prev-label="prevText?.name ?? null"
+          :next-label="nextText?.name ?? null"
+          @prev="prevText && goToText(prevText)"
+          @next="nextText && goToText(nextText)"
+          class="mb-6 pb-5 border-b border-black/5 dark:border-white/10"
+        />
+        <p class="text-sm text-text-secondary mb-4 dark:text-gray-400">
+          {{ t("textReading.sectionsCount", { count: content.sections.length }) }}
+        </p>
+        <div class="space-y-2">
           <button
             v-for="section in content.sections"
             :key="section.index"
             @click="goToSection(section.index)"
-            class="aspect-square rounded-xl border border-amber-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-text-primary dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-gray-700 hover:border-primary dark:hover:border-primary transition-all hover:scale-105 hover:shadow-md flex items-center justify-center p-1 text-center leading-tight"
+            class="w-full flex items-center justify-between gap-3 p-4 rounded-xl bg-white/60 backdrop-blur-sm border border-white/40 hover:border-primary hover:shadow-md transition-all text-left group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:border-primary"
           >
-            {{ section.index }}
+            <span class="flex items-center gap-3 min-w-0">
+              <span
+                class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-sm dark:bg-primary/20"
+              >
+                {{ section.index }}
+              </span>
+              <span class="font-medium text-text-primary truncate dark:text-gray-200">
+                {{ section.label }}
+              </span>
+            </span>
+            <span class="flex items-center gap-2 flex-shrink-0">
+              <i
+                v-if="isSessionMode && findReservation(section.index)?.isCompleted"
+                class="fa-solid fa-circle-check text-green-500"
+                :title="t('textReading.read')"
+              ></i>
+              <i
+                v-else-if="isSessionMode && findReservation(section.index)"
+                class="fa-solid fa-user-clock text-amber-500"
+              ></i>
+              <i
+                class="fa-solid fa-chevron-right text-text-secondary/40 group-hover:text-primary transition-colors"
+              ></i>
+            </span>
           </button>
         </div>
+        <ReadingNav
+          v-if="prevText || nextText"
+          :prev-label="prevText?.name ?? null"
+          :next-label="nextText?.name ?? null"
+          @prev="prevText && goToText(prevText)"
+          @next="nextText && goToText(nextText)"
+          class="mt-8 pt-6 border-t border-black/5 dark:border-white/10"
+        />
       </div>
 
-      <!-- Text content -->
-      <div v-else-if="content && currentSection">
-        <!-- Navigation haut -->
+      <!-- Reading a passage -->
+      <div v-else-if="currentSection">
+        <!-- Reservation bar (session mode) -->
         <div
-          v-if="!isSingleSection"
-          class="flex items-center justify-between mb-6"
+          v-if="showReservationBar"
+          class="mb-8 p-4 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/40 dark:bg-gray-800/60 dark:border-gray-700"
         >
-          <button
-            @click="prevSection"
-            :disabled="!hasPrev"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
-            :class="
-              !hasPrev
-                ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                : 'text-text-secondary dark:text-gray-400 hover:text-primary hover:bg-amber-50 dark:hover:bg-gray-800'
-            "
-          >
-            <i class="fa-solid fa-chevron-left text-xs"></i>
-            Précédent
-          </button>
-
-          <span
-            class="text-xs text-text-secondary dark:text-gray-500 bg-amber-50 dark:bg-gray-800 px-3 py-1 rounded-full border border-amber-100 dark:border-gray-700 text-center max-w-[60%]"
-          >
-            {{ currentSection.label }}
-          </span>
-
-          <button
-            @click="nextSection"
-            :disabled="!hasNext"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
-            :class="
-              !hasNext
-                ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                : 'text-text-secondary dark:text-gray-400 hover:text-primary hover:bg-amber-50 dark:hover:bg-gray-800'
-            "
-          >
-            Suivant
-            <i class="fa-solid fa-chevron-right text-xs"></i>
-          </button>
-        </div>
-
-        <!-- Versets / lignes -->
-        <div class="space-y-4">
-          <div
-            v-for="(line, index) in currentSection.he"
-            :key="index"
-            class="group"
-          >
-            <div class="flex items-start gap-3">
-              <span
-                v-if="showVerseNumbers"
-                class="mt-1.5 flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-amber-100 dark:bg-gray-800 text-xs text-amber-700 dark:text-amber-400 font-semibold select-none"
+          <!-- Reserved by me -->
+          <div v-if="isMine" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <span
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold w-fit"
+              :class="
+                currentReservation?.isCompleted
+                  ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                  : 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200'
+              "
+            >
+              <i
+                class="fa-solid"
+                :class="currentReservation?.isCompleted ? 'fa-circle-check' : 'fa-user-clock'"
+              ></i>
+              {{ t("textReading.reservedByYou") }}
+            </span>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <button
+                @click="toggleRead"
+                :disabled="isReserving"
+                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50"
+                :class="
+                  currentReservation?.isCompleted
+                    ? 'border-gray-200 text-text-secondary hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700'
+                    : 'border-green-500/30 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20'
+                "
               >
-                {{ index + 1 }}
-              </span>
-
-              <p
-                dir="rtl"
-                class="flex-1 text-lg leading-loose text-text-primary dark:text-gray-100 font-medium"
-                style="font-family: 'Noto Serif Hebrew', 'David Libre', 'Times New Roman', serif"
+                <i class="fa-solid fa-check text-xs"></i>
+                {{ currentReservation?.isCompleted ? t("textReading.unmarkRead") : t("textReading.markRead") }}
+              </button>
+              <button
+                @click="cancelReservation"
+                :disabled="isReserving"
+                class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 text-text-secondary hover:text-red-600 hover:border-red-300 transition-colors disabled:opacity-50 dark:border-gray-600 dark:text-gray-400"
+                :title="t('textReading.cancel')"
               >
-                {{ line }}
-              </p>
+                <i class="fa-solid fa-xmark"></i>
+              </button>
             </div>
+          </div>
 
-            <div class="mt-3 border-b border-amber-50 dark:border-gray-800/60"></div>
+          <!-- Reserved by someone else -->
+          <div v-else-if="reservedStatus.isReserved" class="flex items-center gap-2">
+            <span
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold bg-amber-50 text-amber-700 w-fit dark:bg-amber-900/30 dark:text-amber-200"
+            >
+              <i class="fa-solid fa-user"></i>
+              {{ t("textReading.reservedBy", { name: reservedStatus.reservedBy || t("textReading.someone") }) }}
+            </span>
+          </div>
+
+          <!-- Available -->
+          <div v-else>
+            <div v-if="!currentUser" class="mb-4">
+              <p class="text-sm text-text-secondary mb-3 dark:text-gray-400">
+                {{ t("textReading.guestIntro") }}
+              </p>
+              <GuestForm v-model:reservation-form="reservationForm" />
+            </div>
+            <button
+              @click="reserve"
+              :disabled="isReserving"
+              class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              <i class="fa-solid fa-bookmark text-xs"></i>
+              {{ t("textReading.reserve") }}
+            </button>
           </div>
         </div>
 
-        <!-- Navigation bas -->
-        <div
+        <!-- Top navigation -->
+        <ReadingNav
           v-if="!isSingleSection"
-          class="flex items-center justify-between mt-10 pt-6 border-t border-amber-100 dark:border-gray-800"
-        >
-          <button
-            @click="prevSection"
-            :disabled="!hasPrev"
-            class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all"
-            :class="
-              !hasPrev
-                ? 'text-gray-300 dark:text-gray-600 border-gray-200 dark:border-gray-800 cursor-not-allowed'
-                : 'border-amber-200 dark:border-gray-700 hover:border-primary hover:text-primary hover:bg-amber-50 dark:hover:bg-gray-800'
-            "
-          >
-            <i class="fa-solid fa-chevron-left text-xs"></i>
-            Précédent
-          </button>
+          :prev-label="hasPrev ? t('textReading.previous') : null"
+          :next-label="hasNext ? t('textReading.next') : null"
+          :middle-label="t('textReading.allSections')"
+          @prev="prevSection"
+          @next="nextSection"
+          @middle="backToSectionList"
+          class="mb-6 pb-5 border-b border-black/5 dark:border-white/10"
+        />
+        <ReadingNav
+          v-else-if="prevText || nextText"
+          :prev-label="prevText?.name ?? null"
+          :next-label="nextText?.name ?? null"
+          @prev="prevText && goToText(prevText)"
+          @next="nextText && goToText(nextText)"
+          class="mb-6 pb-5 border-b border-black/5 dark:border-white/10"
+        />
 
-          <button
-            @click="goBack"
-            class="text-xs text-text-secondary dark:text-gray-500 hover:text-primary transition-colors"
+        <!-- Hebrew / phonetic toggle -->
+        <div v-if="canTransliterate" class="flex justify-end mb-5">
+          <div
+            class="inline-flex p-0.5 rounded-lg bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700"
           >
-            Toutes les sections
-          </button>
-
-          <button
-            @click="nextSection"
-            :disabled="!hasNext"
-            class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all"
-            :class="
-              !hasNext
-                ? 'text-gray-300 dark:text-gray-600 border-gray-200 dark:border-gray-800 cursor-not-allowed'
-                : 'border-amber-200 dark:border-gray-700 hover:border-primary hover:text-primary hover:bg-amber-50 dark:hover:bg-gray-800'
-            "
-          >
-            Suivant
-            <i class="fa-solid fa-chevron-right text-xs"></i>
-          </button>
+            <button
+              @click="showPhonetic = false"
+              class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+              :class="
+                !showPhonetic
+                  ? 'bg-white text-primary shadow-sm dark:bg-gray-700 dark:text-primary'
+                  : 'text-text-secondary dark:text-gray-400'
+              "
+            >
+              {{ t("textReading.hebrew") }}
+            </button>
+            <button
+              @click="showPhonetic = true"
+              class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+              :class="
+                showPhonetic
+                  ? 'bg-white text-primary shadow-sm dark:bg-gray-700 dark:text-primary'
+                  : 'text-text-secondary dark:text-gray-400'
+              "
+            >
+              {{ t("textReading.phonetic") }}
+            </button>
+          </div>
         </div>
+
+        <!-- Talmud: continuous text with a marker at each daf change -->
+        <div v-if="content.type === 'Talmud Bavli'">
+          <template v-for="block in currentSection.dafBlocks ?? []" :key="block.daf">
+            <div class="flex items-center gap-3 my-6">
+              <span class="flex-1 border-t border-black/10 dark:border-white/10"></span>
+              <span
+                class="text-xs font-semibold text-primary/70 uppercase tracking-wider whitespace-nowrap dark:text-primary"
+              >
+                Daf {{ block.daf }}
+              </span>
+              <span class="flex-1 border-t border-black/10 dark:border-white/10"></span>
+            </div>
+            <p
+              v-if="!showPhonetic"
+              dir="rtl"
+              class="font-hebrew text-2xl leading-loose text-text-primary dark:text-gray-100"
+            >
+              {{ block.lines.join(" ") }}
+            </p>
+            <p
+              v-else
+              dir="ltr"
+              class="text-lg leading-relaxed italic text-text-secondary dark:text-gray-300"
+            >
+              {{ block.lines.map(transliterate).join(" ") }}
+            </p>
+          </template>
+        </div>
+
+        <!-- Verses / mishnayot (numbered for reference texts) -->
+        <div v-else class="space-y-4">
+          <div v-for="(line, index) in currentSection.he" :key="index">
+            <div class="flex items-start gap-3">
+              <span
+                v-if="showVerseNumbers"
+                class="mt-1.5 flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-primary/10 text-xs text-primary font-semibold select-none dark:bg-primary/20"
+              >
+                {{ index + 1 }}
+              </span>
+              <p
+                v-if="!showPhonetic"
+                dir="rtl"
+                class="flex-1 min-w-0 font-hebrew text-2xl leading-loose text-text-primary dark:text-gray-100"
+              >
+                {{ line }}
+              </p>
+              <p
+                v-else
+                dir="ltr"
+                class="flex-1 min-w-0 text-lg leading-relaxed italic text-text-secondary dark:text-gray-300"
+              >
+                {{ transliterate(line) }}
+              </p>
+            </div>
+            <div class="mt-4 border-b border-black/5 dark:border-white/5"></div>
+          </div>
+        </div>
+
+        <!-- Bottom navigation -->
+        <ReadingNav
+          v-if="!isSingleSection"
+          :prev-label="hasPrev ? t('textReading.previous') : null"
+          :next-label="hasNext ? t('textReading.next') : null"
+          :middle-label="t('textReading.allSections')"
+          @prev="prevSection"
+          @next="nextSection"
+          @middle="backToSectionList"
+          class="mt-10 pt-6 border-t border-black/5 dark:border-white/10"
+        />
+        <ReadingNav
+          v-else-if="prevText || nextText"
+          :prev-label="prevText?.name ?? null"
+          :next-label="nextText?.name ?? null"
+          @prev="prevText && goToText(prevText)"
+          @next="nextText && goToText(nextText)"
+          class="mt-10 pt-6 border-t border-black/5 dark:border-white/10"
+        />
       </div>
-    </div>
-  </div>
+    </template>
+  </main>
 </template>

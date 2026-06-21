@@ -85,10 +85,10 @@ const generateChapters = (totalSections: number) => {
       <div class="flex items-center gap-3">
         <router-link
           :to="{ name: 'text-reading', params: { textId: text.id } }"
-          class="text-xl opacity-70 hover:opacity-100 transition-opacity hover:-translate-y-0.5"
+          class="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:text-primary transition-colors"
           title="Lire ce texte"
         >
-          🔗
+          <i class="fa-solid fa-book-open text-sm"></i>
         </router-link>
         <button
           @click="emit('toggle-expansion', text.id)"

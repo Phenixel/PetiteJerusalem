@@ -159,7 +159,11 @@ const handleCardClick = (text: TextStudy) => {
 
               <div class="flex items-center gap-2 self-start">
                 <router-link
-                  :to="{ name: 'text-reading', params: { textId: text.id } }"
+                  :to="{
+                    name: 'text-reading',
+                    params: { textId: text.id },
+                    query: { session: session.slug ?? session.id },
+                  }"
                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-text-secondary hover:text-primary hover:border-primary transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:text-primary"
                   title="Lire ce texte"
                   @click.stop
@@ -391,8 +395,12 @@ const handleCardClick = (text: TextStudy) => {
 
                   <!-- Lien lecture interne -->
                   <router-link
-                    :to="{ name: 'text-reading-section', params: { textId: text.id, section: chapter } }"
-                    class="w-6 h-6 flex items-center justify-center rounded-md text-text-secondary hover:text-primary hover:bg-amber-50 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
+                    :to="{
+                      name: 'text-reading-section',
+                      params: { textId: text.id, section: chapter },
+                      query: { session: session.slug ?? session.id },
+                    }"
+                    class="w-6 h-6 flex items-center justify-center rounded-md text-text-secondary hover:text-primary hover:bg-primary/5 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
                     title="Lire ce chapitre"
                     @click.stop
                   >
