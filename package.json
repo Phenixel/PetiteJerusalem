@@ -8,6 +8,8 @@
   },
   "scripts": {
     "dev": "vite",
+    "emulators": "node scripts/emulators.mjs",
+    "dev:local": "run-p -l emulators dev",
     "build": "run-s type-check build-only prerender",
     "preview": "vite preview",
     "test:unit": "vitest",
