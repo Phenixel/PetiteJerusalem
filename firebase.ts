@@ -35,7 +35,7 @@ export const auth = getAuth(app)
 // Connect to emulators in development
 if (import.meta.env.DEV) {
   connectFirestoreEmulator(db, 'localhost', 8080)
-  connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true })
+  connectAuthEmulator(auth, 'http://localhost:9199', { disableWarnings: true })
 }
 
 // Initialize Analytics (prod only)
