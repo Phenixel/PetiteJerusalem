@@ -79,12 +79,17 @@ async function loadContent() {
   }
 }
 
-function goToSection(index: number) {
-  router.push({
+// Entering a chapter from the list pushes a new entry; paging between chapters
+// (next/previous) replaces it, since moving along is lateral navigation within
+// the same text rather than a new page to step back through.
+function goToSection(index: number, replace = false) {
+  const to = {
     name: "text-reading-section",
     params: { textId: textId.value, section: index },
     query: route.query,
-  });
+  };
+  if (replace) router.replace(to);
+  else router.push(to);
   window.scrollTo({ top: 0 });
 }
 
@@ -94,15 +99,27 @@ function backToSectionList() {
 }
 
 function exitReading() {
-  if (sessionSlug.value) router.push(`/share-reading/session/${sessionSlug.value}`);
-  else router.back();
+  if (sessionSlug.value) {
+    router.push(`/share-reading/session/${sessionSlug.value}`);
+    return;
+  }
+  // While reading a chapter, "back" returns to this text's chapter list rather
+  // than the previously read chapter — readers paging through next/previous
+  // expect to land back on the list to pick another passage.
+  if (!isSingleSection.value && sectionParam.value !== undefined) {
+    backToSectionList();
+    return;
+  }
+  router.back();
 }
 
 function prevSection() {
-  if (content.value && hasPrev.value) goToSection(content.value.sections[sectionIndexInList.value - 1].index);
+  if (content.value && hasPrev.value)
+    goToSection(content.value.sections[sectionIndexInList.value - 1].index, true);
 }
 function nextSection() {
-  if (content.value && hasNext.value) goToSection(content.value.sections[sectionIndexInList.value + 1].index);
+  if (content.value && hasNext.value)
+    goToSection(content.value.sections[sectionIndexInList.value + 1].index, true);
 }
 
 // Sibling texts of the same type (all Tehilim, all tractates…), in catalog order.
