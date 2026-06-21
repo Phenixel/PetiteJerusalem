@@ -343,6 +343,9 @@ const en: LocaleMessages = {
   },
   signupPrompt: {
     reservationConfirmed: "Reservation confirmed!",
+    createSessionTitle: "Sign in to create a session",
+    createSessionSubtitle: "Sign up or log in to start your reading share",
+    createSessionHaveAccount: "Already have an account?",
     subtitle: "Just a password away from unlocking all features",
     benefits: {
       recover: "Access your past and future reservations",

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter, useRoute } from "vue-router";
 
@@ -9,14 +10,44 @@ const route = useRoute();
 interface Props {
   show: boolean;
   guestEmail?: string;
+  // "reservation": shown after a guest reserves (default).
+  // "auth": shown when a visitor must sign in/up to perform an action
+  //         (e.g. create a session).
+  variant?: "reservation" | "auth";
 }
 
 interface Emits {
   (e: "update:show", value: boolean): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  variant: "reservation",
+});
 const emit = defineEmits<Emits>();
+
+// Header + body adapt to the variant. Defaults keep the original
+// "reservation confirmed" appearance so existing usage is unchanged.
+const isAuth = computed(() => props.variant === "auth");
+const headerIcon = computed(() => (isAuth.value ? "fa-circle-plus" : "fa-check"));
+const headerIconWrapClass = computed(() =>
+  isAuth.value
+    ? "bg-primary/10 dark:bg-primary/20"
+    : "bg-green-100 dark:bg-green-900/30",
+);
+const headerIconClass = computed(() =>
+  isAuth.value ? "text-primary" : "text-green-600 dark:text-green-400",
+);
+const title = computed(() =>
+  isAuth.value ? t("signupPrompt.createSessionTitle") : t("signupPrompt.reservationConfirmed"),
+);
+const subtitle = computed(() =>
+  isAuth.value ? t("signupPrompt.createSessionSubtitle") : t("signupPrompt.subtitle"),
+);
+// The benefits list is reservation-specific; keep the auth prompt compact.
+const showBenefits = computed(() => !isAuth.value);
+const footerNote = computed(() =>
+  isAuth.value ? t("signupPrompt.createSessionHaveAccount") : t("signupPrompt.alreadyHaveAccount"),
+);
 
 const closeModal = () => {
   emit("update:show", false);
@@ -48,23 +79,24 @@ const goToLogin = (mode: "signup" | "google" | "login") => {
           class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 dark:bg-gray-800 dark:border-gray-700 animate-[scaleIn_0.3s_ease]"
           @click.stop
         >
-          <!-- Header avec confirmation -->
+          <!-- Header : confirmation ou invitation à se connecter -->
           <div class="p-6 pb-2 text-center">
             <div
-              class="w-16 h-16 mx-auto mb-4 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center"
+              class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+              :class="headerIconWrapClass"
             >
-              <i class="fa-solid fa-check text-2xl text-green-600 dark:text-green-400"></i>
+              <i class="fa-solid text-2xl" :class="[headerIcon, headerIconClass]"></i>
             </div>
             <h3 class="text-xl font-bold text-text-primary dark:text-gray-100 mb-1">
-              {{ t("signupPrompt.reservationConfirmed") }}
+              {{ title }}
             </h3>
             <p class="text-sm text-text-secondary dark:text-gray-400">
-              {{ t("signupPrompt.subtitle") }}
+              {{ subtitle }}
             </p>
           </div>
 
           <!-- Liste des avantages -->
-          <div class="px-6 py-4">
+          <div v-if="showBenefits" class="px-6 py-4">
             <div class="space-y-3">
               <div class="flex items-center gap-3">
                 <span
@@ -140,7 +172,7 @@ const goToLogin = (mode: "signup" | "google" | "login") => {
           <!-- Note pour les utilisateurs existants -->
           <div class="px-6 pb-5">
             <p class="text-xs text-center text-text-secondary/70 dark:text-gray-500">
-              {{ t("signupPrompt.alreadyHaveAccount") }}
+              {{ footerNote }}
               <a
                 href="#"
                 class="text-primary font-semibold hover:underline"

@@ -337,6 +337,9 @@ const he: LocaleMessages = {
   },
   signupPrompt: {
     reservationConfirmed: "ההזמנה אושרה!",
+    createSessionTitle: "התחברו כדי ליצור סשן",
+    createSessionSubtitle: "הירשמו או התחברו כדי להתחיל את שיתוף הקריאה שלכם",
+    createSessionHaveAccount: "כבר יש לך חשבון?",
     subtitle: "רק סיסמה אחת מפרידה בינך לבין כל התכונות",
     benefits: {
       recover: "גש להזמנות העבר והעתיד שלך",
