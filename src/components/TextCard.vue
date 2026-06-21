@@ -83,14 +83,13 @@ const generateChapters = (totalSections: number) => {
     <div class="flex justify-between items-center mb-3">
       <h4 class="text-xl font-semibold text-text-primary dark:text-gray-100">{{ text.name }}</h4>
       <div class="flex items-center gap-3">
-        <a
-          :href="text.link"
-          target="_blank"
-          class="text-xl opacity-70 hover:opacity-100 transition-opacity hover:-translate-y-0.5"
-          title="Voir le texte sur Sefaria"
+        <router-link
+          :to="{ name: 'text-reading', params: { textId: text.id } }"
+          class="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:text-primary transition-colors"
+          title="Lire ce texte"
         >
-          🔗
-        </a>
+          <i class="fa-solid fa-book-open text-sm"></i>
+        </router-link>
         <button
           @click="emit('toggle-expansion', text.id)"
           class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/5 transition-colors text-xs text-text-secondary dark:text-gray-300 dark:hover:bg-gray-700"

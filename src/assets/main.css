@@ -21,6 +21,7 @@
   /* Fonts */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-serif: "Georgia", serif;
+  --font-hebrew: "Frank Ruhl Libre", "Noto Serif Hebrew", "David Libre", Georgia, serif;
 
   /* Spacing - usually standard tailwind is fine, but we can match specific ones if needed */
   /* Border Radius */

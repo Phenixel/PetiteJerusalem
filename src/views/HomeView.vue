@@ -24,11 +24,11 @@ const features = computed(() => [
     route: "chiourim",
   },
   {
-    icon: "⚖️",
-    title: t("home.features.dailyHalakhot.title"),
-    description: t("home.features.dailyHalakhot.description"),
-    status: "coming-soon",
-    route: "halakhot-quotidiennes",
+    icon: "📖",
+    title: t("home.features.study.title"),
+    description: t("home.features.study.description"),
+    status: "available",
+    route: "etude",
   },
 ]);
 
