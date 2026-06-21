@@ -406,7 +406,11 @@ watch(textId, loadContent);
                 class="fa-solid"
                 :class="currentReservation?.isCompleted ? 'fa-circle-check' : 'fa-user-clock'"
               ></i>
-              {{ t("textReading.reservedByYou") }}
+              {{
+                currentReservation?.isCompleted
+                  ? t("textReading.readByYou")
+                  : t("textReading.reservedByYou")
+              }}
             </span>
             <div class="flex items-center gap-2 flex-shrink-0">
               <button
@@ -436,10 +440,22 @@ watch(textId, loadContent);
           <!-- Reserved by someone else -->
           <div v-else-if="reservedStatus.isReserved" class="flex items-center gap-2">
             <span
-              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold bg-amber-50 text-amber-700 w-fit dark:bg-amber-900/30 dark:text-amber-200"
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold w-fit"
+              :class="
+                currentReservation?.isCompleted
+                  ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                  : 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200'
+              "
             >
-              <i class="fa-solid fa-user"></i>
-              {{ t("textReading.reservedBy", { name: reservedStatus.reservedBy || t("textReading.someone") }) }}
+              <i
+                class="fa-solid"
+                :class="currentReservation?.isCompleted ? 'fa-circle-check' : 'fa-user'"
+              ></i>
+              {{
+                currentReservation?.isCompleted
+                  ? t("textReading.readBy", { name: reservedStatus.reservedBy || t("textReading.someone") })
+                  : t("textReading.reservedBy", { name: reservedStatus.reservedBy || t("textReading.someone") })
+              }}
             </span>
           </div>
 
