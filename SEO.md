@@ -86,6 +86,16 @@ indexed and linked from elsewhere**. Concretely:
 - Keep `llms.txt` and the FAQ answers up to date; they are the text an assistant
   is most likely to quote.
 
+## IndexNow (Bing / Yandex / ChatGPT search)
+
+The site is set up for **IndexNow**, which instantly notifies Bing and Yandex of
+new/updated URLs (Bing also feeds ChatGPT's web search). Google does not use it.
+
+- Ownership key is hosted at `public/<key>.txt` (served from the domain root).
+- Submit the indexable URLs after a deploy with **`npm run indexnow`**
+  (`scripts/indexnow.mjs`, URL list derived from the same page list as the
+  sitemap). Re-run it whenever content changes meaningfully.
+
 ## Adding a new SEO page
 
 Add an entry to `appPages` (existing Vue view) or `landingPages` (new
