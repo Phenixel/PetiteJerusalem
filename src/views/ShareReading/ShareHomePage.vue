@@ -181,7 +181,6 @@ const handleSessionClick = (session: Session) => {
           </span>
           <span class="timeline__node">
             <i :class="['fa-solid', step.icon]" aria-hidden="true"></i>
-            <span class="timeline__num">{{ index + 1 }}</span>
           </span>
           <div class="timeline__content">
             <h4 class="timeline__title">{{ step.title }}</h4>
@@ -346,27 +345,6 @@ const handleSessionClick = (session: Session) => {
   opacity: 0.4;
   transform: scale(0.88);
 }
-.timeline__num {
-  position: absolute;
-  top: -0.35rem;
-  inset-inline-start: -0.35rem;
-  width: 1.35rem;
-  height: 1.35rem;
-  border-radius: 9999px;
-  background: #fff;
-  color: var(--color-primary);
-  font-size: 0.7rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-}
-:global(:root.dark) .timeline__num {
-  background: #1f2937;
-  color: #fff;
-}
-
 /* --- text --- */
 .timeline__content {
   grid-column: 2;

@@ -243,6 +243,10 @@ const fr = {
     reservationError: "Erreur lors de la réservation. Veuillez réessayer.",
     updateError: "Erreur lors de la mise à jour de la réservation",
     manageSession: "Gérer la session",
+    createYourOwnTitle: "À votre tour d'étudier ensemble",
+    createYourOwnText:
+      "Cette session vous inspire ? Créez la vôtre en quelques clics : choisissez un texte (Talmud, Tehilim, Michna, Tanakh), répartissez-le et invitez votre communauté à le terminer avec vous.",
+    createYourOwnButton: "Créer ma session",
     instructions: {
       title: "Instructions",
       step1: "Cochez les cases pour réserver une section ou un texte",

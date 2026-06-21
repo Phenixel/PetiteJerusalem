@@ -241,6 +241,10 @@ const he: LocaleMessages = {
     reservationError: "שגיאה בהזמנה. אנא נסה שוב.",
     updateError: "שגיאה בעדכון ההזמנה",
     manageSession: "נהל סשן",
+    createYourOwnTitle: "תורכם ללמוד יחד",
+    createYourOwnText:
+      "הסשן הזה נתן לכם השראה? צרו אחד משלכם בכמה קליקים: בחרו טקסט (תלמוד, תהילים, משנה, תנ״ך), חלקו אותו והזמינו את הקהילה שלכם לסיים אותו יחד אתכם.",
+    createYourOwnButton: "צרו את הסשן שלי",
     instructions: {
       title: "הוראות",
       step1: "סמן את התיבות כדי להזמין קטע או טקסט",

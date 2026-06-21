@@ -242,6 +242,10 @@ const en: LocaleMessages = {
     reservationError: "Error reserving. Please try again.",
     updateError: "Error updating reservation",
     manageSession: "Manage session",
+    createYourOwnTitle: "Your turn to study together",
+    createYourOwnText:
+      "Inspired by this session? Create your own in a few clicks: choose a text (Talmud, Tehilim, Mishnah, Tanakh), split it up and invite your community to finish it with you.",
+    createYourOwnButton: "Create my session",
     instructions: {
       title: "Instructions",
       step1: "Check the boxes to reserve a section or text",
