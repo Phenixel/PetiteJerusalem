@@ -383,6 +383,15 @@ watch(textId, loadContent);
           v-if="showReservationBar"
           class="mb-8 p-4 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/40 dark:bg-gray-800/60 dark:border-gray-700"
         >
+          <!-- Current session -->
+          <router-link
+            :to="`/share-reading/session/${sessionSlug}`"
+            class="flex items-center gap-2 mb-3 pb-3 border-b border-black/5 text-sm font-semibold text-text-primary hover:text-primary transition-colors dark:text-gray-200 dark:border-white/10"
+          >
+            <i class="fa-solid fa-people-group text-primary flex-shrink-0"></i>
+            <span class="truncate">{{ session?.name }}</span>
+          </router-link>
+
           <!-- Reserved by me -->
           <div v-if="isMine" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <span
