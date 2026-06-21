@@ -194,6 +194,19 @@ const fr = {
     noOngoingSessions: "Aucune session en cours pour le moment.",
     noSessions: "Aucune session existante",
     createFirstSession: "Créez la première session de partage de lectures !",
+    howItWorks: {
+      title: "Comment ça marche",
+      subtitle:
+        "Répartissez un texte entre plusieurs personnes et terminez-le ensemble, en quatre étapes.",
+      step1Title: "Créez une session",
+      step1Desc: "Donnez-lui un nom et une intention (par exemple « à la mémoire de… »).",
+      step2Title: "Choisissez le texte",
+      step2Desc: "Talmud, Tehilim, Michna ou Tanakh, et les parties à inclure.",
+      step3Title: "Partagez le lien",
+      step3Desc: "Invitez votre communauté, votre famille ou vos amis, même sans compte.",
+      step4Title: "Suivez la progression",
+      step4Desc: "Chacun réserve ses passages et les lit ; avancez ensemble jusqu'au siyoum.",
+    },
   },
   newSession: {
     title: "Créer une session",

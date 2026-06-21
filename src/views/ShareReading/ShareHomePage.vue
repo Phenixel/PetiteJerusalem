@@ -41,6 +41,30 @@ const isSessionFinished = (session: Session): boolean => {
 const ongoingSessions = computed(() => sessions.value.filter((s) => !isSessionFinished(s)));
 const finishedSessions = computed(() => sessions.value.filter((s) => isSessionFinished(s)));
 
+// Visual "how it works" steps shown between the create button and the session list.
+const howItWorksSteps = computed(() => [
+  {
+    icon: "fa-circle-plus",
+    title: t("shareReading.howItWorks.step1Title"),
+    description: t("shareReading.howItWorks.step1Desc"),
+  },
+  {
+    icon: "fa-book-open",
+    title: t("shareReading.howItWorks.step2Title"),
+    description: t("shareReading.howItWorks.step2Desc"),
+  },
+  {
+    icon: "fa-share-nodes",
+    title: t("shareReading.howItWorks.step3Title"),
+    description: t("shareReading.howItWorks.step3Desc"),
+  },
+  {
+    icon: "fa-flag-checkered",
+    title: t("shareReading.howItWorks.step4Title"),
+    description: t("shareReading.howItWorks.step4Desc"),
+  },
+]);
+
 onMounted(() => {
   loadSessions();
   unsubscribeAuth = authService.onAuthChanged((user) => {
@@ -89,6 +113,45 @@ const handleSessionClick = (session: Session) => {
         <small>{{ t("shareReading.authRequired") }}</small>
       </div>
     </div>
+
+    <!-- Comment ça marche : explication visuelle, en étapes -->
+    <section class="max-w-6xl mx-auto mb-16 animate-[fadeIn_0.5s_ease]">
+      <div class="text-center mb-8">
+        <h3
+          class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent pb-1"
+        >
+          {{ t("shareReading.howItWorks.title") }}
+        </h3>
+        <p class="text-text-secondary max-w-2xl mx-auto mt-2 dark:text-gray-400">
+          {{ t("shareReading.howItWorks.subtitle") }}
+        </p>
+      </div>
+
+      <ol class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <li
+          v-for="(step, index) in howItWorksSteps"
+          :key="step.title"
+          class="relative flex flex-col items-center text-center p-6 rounded-2xl bg-white/60 backdrop-blur-md border border-white/60 shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 dark:bg-gray-800/50 dark:border-gray-700"
+        >
+          <span
+            class="absolute -top-3 -left-3 flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-primary to-secondary text-white text-sm font-bold shadow-md"
+          >
+            {{ index + 1 }}
+          </span>
+          <div
+            class="flex items-center justify-center w-14 h-14 mb-4 rounded-full bg-gradient-to-br from-primary/15 to-secondary/15 text-primary text-2xl"
+          >
+            <i :class="['fa-solid', step.icon]" aria-hidden="true"></i>
+          </div>
+          <h4 class="text-lg font-bold text-text-primary mb-2 dark:text-gray-100">
+            {{ step.title }}
+          </h4>
+          <p class="text-sm text-text-secondary leading-relaxed dark:text-gray-400">
+            {{ step.description }}
+          </p>
+        </li>
+      </ol>
+    </section>
 
     <div class="relative">
       <!-- État de chargement -->

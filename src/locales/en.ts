@@ -194,6 +194,18 @@ const en: LocaleMessages = {
     noOngoingSessions: "No ongoing sessions at the moment.",
     noSessions: "No existing sessions",
     createFirstSession: "Create the first reading share session!",
+    howItWorks: {
+      title: "How it works",
+      subtitle: "Split a text between several people and finish it together, in four steps.",
+      step1Title: "Create a session",
+      step1Desc: "Give it a name and a dedication, e.g. in memory of a loved one.",
+      step2Title: "Choose the text",
+      step2Desc: "Talmud, Tehilim, Mishnah or Tanakh, and the parts to include.",
+      step3Title: "Share the link",
+      step3Desc: "Invite your community, family or friends, even without an account.",
+      step4Title: "Track progress",
+      step4Desc: "Everyone reserves and reads their passages; advance together to the siyum.",
+    },
   },
   newSession: {
     title: "Create a session",
