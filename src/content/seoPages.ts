@@ -77,9 +77,9 @@ const faqJsonLd = (faq: { q: string; a: string }[]): Record<string, unknown> => 
 });
 
 /** Render a FAQ block both as visible HTML and (separately) as FAQPage JSON-LD. */
-const faqHtml = (faq: { q: string; a: string }[]): string => `
+const faqHtml = (faq: { q: string; a: string }[], heading: string): string => `
   <section class="seo-section" aria-labelledby="faq-title">
-    <h2 id="faq-title">Questions fréquentes</h2>
+    <h2 id="faq-title">${heading}</h2>
     <dl>
       ${faq.map((f) => `<dt>${f.q}</dt>\n      <dd>${f.a}</dd>`).join("\n      ")}
     </dl>
@@ -349,125 +349,384 @@ const partageTehilimFaq = [
   },
 ];
 
-export const landingPages: SeoPage[] = [
-  {
-    file: "finir-le-chass.html",
-    path: "/finir-le-chass",
-    title: "Finir le Chass à plusieurs : se répartir le Talmud en ligne | Petite Jérusalem",
-    description:
-      "Organisez l'étude collective du Talmud pour finir le Chass à plusieurs : créez une session, répartissez les traités et les dapim, suivez la progression jusqu'au siyoum haShass. Gratuit et en français.",
-    sitemap: { priority: 0.7, changefreq: "monthly" },
-    bodyHtml: `
+export type Locale = "fr" | "en" | "he";
+
+export type LandingLocaleContent = {
+  title: string;
+  description: string;
+  bodyHtml: string;
+  jsonLd?: Record<string, unknown>[];
+};
+
+export type LandingPage = {
+  file: string;
+  path: string;
+  sitemap?: { priority: number; changefreq: string } | false;
+  /** Same content in every supported language, picked at runtime by ContentPage. */
+  locales: Record<Locale, LandingLocaleContent>;
+};
+
+/** Localized strings for one landing page; the HTML structure is shared across languages. */
+type LandingStrings = {
+  lang: string; // BCP-47 tag for JSON-LD inLanguage
+  title: string;
+  description: string;
+  h1: string;
+  lead: string;
+  whyTitle: string;
+  whyIntro?: string;
+  why: string[];
+  howTitle: string;
+  how: string[];
+  cta: string;
+  faqHeading: string;
+  faq: { q: string; a: string }[];
+  breadcrumbHome: string;
+  breadcrumbName: string;
+  articleHeadline: string;
+};
+
+/** Build one locale's content from its strings; the markup is identical across languages. */
+function buildLanding(path: string, s: LandingStrings): LandingLocaleContent {
+  const bodyHtml = `
   <main class="seo-article">
-    <h1>Finir le Chass à plusieurs</h1>
-    <p class="seo-lead">
-      « Finir le Chass », c'est terminer l'étude de l'ensemble du Talmud Bavli, ses 63 traités
-      (massekhtot). Seul, cela demande des années ; à plusieurs, en se répartissant les passages, un
-      groupe ou une communauté peut y arriver en bien moins de temps. Petite Jérusalem est l'outil
-      gratuit qui organise ce partage.
-    </p>
+    <h1>${s.h1}</h1>
+    <p class="seo-lead">${s.lead}</p>
 
     <section class="seo-section">
-      <h2>Pourquoi finir le Chass ensemble ?</h2>
-      <p>L'achèvement de l'étude du Talmud (le siyoum haShass) est un grand moment. On l'organise
-      souvent collectivement&nbsp;:</p>
+      <h2>${s.whyTitle}</h2>
+      ${s.whyIntro ? `<p>${s.whyIntro}</p>` : ""}
       <ul>
-        <li>pour un <strong>ilouï nechama</strong>, à la mémoire et pour l'élévation de l'âme d'un proche&nbsp;;</li>
-        <li>pour une <strong>refoua chelema</strong>, la guérison d'un malade&nbsp;;</li>
-        <li>pour une <strong>hatslakha</strong>, la réussite d'un projet, d'un mariage, d'une naissance&nbsp;;</li>
-        <li>à l'occasion d'une <strong>hiloula</strong> ou d'un événement communautaire.</li>
+        ${s.why.map((li) => `<li>${li}</li>`).join("\n        ")}
       </ul>
     </section>
 
     <section class="seo-section">
-      <h2>Comment l'organiser sur Petite Jérusalem</h2>
+      <h2>${s.howTitle}</h2>
       <ol>
-        <li>Créez une <a href="/share-reading">session de partage</a> et nommez-la (par ex. « Siyoum haShass à la mémoire de… »).</li>
-        <li>Choisissez le Talmud et les traités à couvrir, puis répartissez-les en passages.</li>
-        <li>Partagez le lien avec les participants : famille, amis, kehila.</li>
-        <li>Chacun réserve les dapim qu'il étudie, puis les marque comme lus.</li>
-        <li>Suivez l'avancée commune jusqu'au siyoum.</li>
+        ${s.how.map((li) => `<li>${li}</li>`).join("\n        ")}
       </ol>
-      <p><a class="seo-cta" href="/share-reading/new-session">Créer une session pour finir le Chass</a></p>
+      <p><a class="seo-cta" href="/share-reading/new-session">${s.cta}</a></p>
     </section>
 
-    ${faqHtml(finirLeChassFaq)}
-  </main>`,
+    ${faqHtml(s.faq, s.faqHeading)}
+  </main>`;
+
+  return {
+    title: s.title,
+    description: s.description,
+    bodyHtml,
     jsonLd: [
       breadcrumb([
-        { name: "Accueil", path: "/" },
-        { name: "Finir le Chass", path: "/finir-le-chass" },
+        { name: s.breadcrumbHome, path: "/" },
+        { name: s.breadcrumbName, path },
       ]),
       {
         "@context": "https://schema.org",
         "@type": "Article",
-        headline: "Finir le Chass à plusieurs : se répartir le Talmud en ligne",
-        inLanguage: "fr-FR",
+        headline: s.articleHeadline,
+        inLanguage: s.lang,
         author: { "@type": "Organization", name: SITE_NAME },
-        publisher: { "@type": "Organization", name: SITE_NAME, logo: { "@type": "ImageObject", url: OG_IMAGE } },
+        publisher: {
+          "@type": "Organization",
+          name: SITE_NAME,
+          logo: { "@type": "ImageObject", url: OG_IMAGE },
+        },
       },
-      faqJsonLd(finirLeChassFaq),
+      faqJsonLd(s.faq),
     ],
+  };
+}
+
+// ---- finir-le-chass: localized strings ----
+
+const FINIR_FR: LandingStrings = {
+  lang: "fr-FR",
+  title: "Finir le Chass à plusieurs : se répartir le Talmud en ligne | Petite Jérusalem",
+  description:
+    "Organisez l'étude collective du Talmud pour finir le Chass à plusieurs : créez une session, répartissez les traités et les dapim, suivez la progression jusqu'au siyoum haShass. Gratuit et en français.",
+  h1: "Finir le Chass à plusieurs",
+  lead: "« Finir le Chass », c'est terminer l'étude de l'ensemble du Talmud Bavli, ses 63 traités (massekhtot). Seul, cela demande des années ; à plusieurs, en se répartissant les passages, un groupe ou une communauté peut y arriver en bien moins de temps. Petite Jérusalem est l'outil gratuit qui organise ce partage.",
+  whyTitle: "Pourquoi finir le Chass ensemble ?",
+  whyIntro:
+    "L'achèvement de l'étude du Talmud (le siyoum haShass) est un grand moment. On l'organise souvent collectivement&nbsp;:",
+  why: [
+    "pour un <strong>ilouï nechama</strong>, à la mémoire et pour l'élévation de l'âme d'un proche&nbsp;;",
+    "pour une <strong>refoua chelema</strong>, la guérison d'un malade&nbsp;;",
+    "pour une <strong>hatslakha</strong>, la réussite d'un projet, d'un mariage, d'une naissance&nbsp;;",
+    "à l'occasion d'une <strong>hiloula</strong> ou d'un événement communautaire.",
+  ],
+  howTitle: "Comment l'organiser sur Petite Jérusalem",
+  how: [
+    "Créez une <a href=\"/share-reading\">session de partage</a> et nommez-la (par ex. « Siyoum haShass à la mémoire de… »).",
+    "Choisissez le Talmud et les traités à couvrir, puis répartissez-les en passages.",
+    "Partagez le lien avec les participants : famille, amis, kehila.",
+    "Chacun réserve les dapim qu'il étudie, puis les marque comme lus.",
+    "Suivez l'avancée commune jusqu'au siyoum.",
+  ],
+  cta: "Créer une session pour finir le Chass",
+  faqHeading: "Questions fréquentes",
+  faq: finirLeChassFaq,
+  breadcrumbHome: "Accueil",
+  breadcrumbName: "Finir le Chass",
+  articleHeadline: "Finir le Chass à plusieurs : se répartir le Talmud en ligne",
+};
+
+const FINIR_EN: LandingStrings = {
+  lang: "en",
+  title: "Finish the Shas together: split the Talmud online | Petite Jérusalem",
+  description:
+    "Organize collective Talmud study to finish the Shas together: create a session, split the tractates and dapim, and follow the progress to the siyum haShas. Free and online.",
+  h1: "Finish the Shas together",
+  lead: "'Finishing the Shas' means completing the study of the entire Babylonian Talmud, its 63 tractates (masechtot). Alone it takes years; together, by splitting the passages, a group or community can do it in far less time. Petite Jérusalem is the free tool that organizes this sharing.",
+  whyTitle: "Why finish the Shas together?",
+  whyIntro:
+    "Completing the Talmud (the siyum haShas) is a major milestone. It is often organized collectively:",
+  why: [
+    "for an <strong>ilui neshama</strong>, in memory and for the elevation of a loved one's soul;",
+    "for a <strong>refua shlema</strong>, the recovery of someone who is ill;",
+    "for <strong>hatzlacha</strong>, success in a project, a wedding or a birth;",
+    "for a <strong>hilula</strong> or a community event.",
+  ],
+  howTitle: "How to organize it on Petite Jérusalem",
+  how: [
+    "Create a <a href=\"/share-reading\">sharing session</a> and name it (e.g. 'Siyum haShas in memory of…').",
+    "Choose the Talmud and the tractates to cover, then split them into passages.",
+    "Share the link with the participants: family, friends, community.",
+    "Everyone reserves the dapim they study, then marks them as read.",
+    "Follow the shared progress to the siyum.",
+  ],
+  cta: "Create a session to finish the Shas",
+  faqHeading: "Frequently asked questions",
+  faq: [
+    {
+      q: "How do you finish the Shas with several people?",
+      a: "Create a sharing session on Petite Jérusalem, choose the Talmud and the tractates to study, then share the link. Each participant reserves the dapim they take on; the text is finished once every passage has been learned, which is the siyum haShas.",
+    },
+    {
+      q: "How many people are needed to finish the Talmud?",
+      a: "There is no minimum: from two people to several hundred. The more participants, the fewer passages each one has, and the faster the Shas is completed.",
+    },
+    {
+      q: "Can the study be dedicated in someone's memory?",
+      a: "Yes. Many organize a study for an ilui neshama (elevation of a departed soul), a refua shlema (recovery of someone ill) or hatzlacha. State the dedication in the session's name and description.",
+    },
+    {
+      q: "Is it free?",
+      a: "Yes, Petite Jérusalem is completely free, and you can take part even without creating an account.",
+    },
+  ],
+  breadcrumbHome: "Home",
+  breadcrumbName: "Finish the Shas",
+  articleHeadline: "Finish the Shas together: split the Talmud online",
+};
+
+const FINIR_HE: LandingStrings = {
+  lang: "he",
+  title: "לסיים את הש״ס יחד: חלוקת התלמוד אונליין | Petite Jérusalem",
+  description:
+    "ארגנו לימוד משותף של התלמוד כדי לסיים את הש״ס יחד: צרו סשן, חלקו את המסכתות והדפים, ועקבו אחר ההתקדמות עד סיום הש״ס. בחינם ואונליין.",
+  h1: "לסיים את הש״ס יחד",
+  lead: "'לסיים את הש״ס' פירושו להשלים את לימוד כל התלמוד הבבלי, 63 המסכתות שלו. לבד זה אורך שנים; יחד, בחלוקת הקטעים, קבוצה או קהילה יכולה לעשות זאת בזמן קצר בהרבה. Petite Jérusalem הוא הכלי החינמי שמארגן את השיתוף הזה.",
+  whyTitle: "למה לסיים את הש״ס יחד?",
+  whyIntro: "סיום לימוד התלמוד (סיום הש״ס) הוא רגע גדול. לרוב מארגנים אותו במשותף:",
+  why: [
+    "ל<strong>עילוי נשמה</strong>, לזכר ולעילוי נשמתו של אדם יקר;",
+    "ל<strong>רפואה שלמה</strong> של חולה;",
+    "ל<strong>הצלחה</strong> בפרויקט, בחתונה או בלידה;",
+    "לרגל <strong>הילולה</strong> או אירוע קהילתי.",
+  ],
+  howTitle: "איך מארגנים ב-Petite Jérusalem",
+  how: [
+    "צרו <a href=\"/share-reading\">סשן שיתוף</a> ותנו לו שם (למשל «סיום הש״ס לעילוי נשמת…»).",
+    "בחרו את התלמוד ואת המסכתות לכיסוי, וחלקו אותן לקטעים.",
+    "שתפו את הקישור עם המשתתפים: משפחה, חברים, קהילה.",
+    "כל אחד מזמין את הדפים שהוא לומד, ומסמן אותם כנקראו.",
+    "עקבו אחר ההתקדמות המשותפת עד הסיום.",
+  ],
+  cta: "צרו סשן לסיום הש״ס",
+  faqHeading: "שאלות נפוצות",
+  faq: [
+    {
+      q: "איך מסיימים את הש״ס בכמה אנשים?",
+      a: "צרו סשן שיתוף ב-Petite Jérusalem, בחרו את התלמוד ואת המסכתות ללימוד, ושתפו את הקישור. כל משתתף מזמין את הדפים שעליהם הוא אחראי; הטקסט מסתיים כשכל הקטעים נלמדו, וזהו סיום הש״ס.",
+    },
+    {
+      q: "כמה אנשים צריך כדי לסיים את התלמוד?",
+      a: "אין מינימום: משניים ועד מאות. ככל שיש יותר משתתפים, לכל אחד יש פחות קטעים, והש״ס מסתיים מהר יותר.",
+    },
+    {
+      q: "אפשר להקדיש את הלימוד לזכר אדם יקר?",
+      a: "כן. רבים מארגנים לימוד לעילוי נשמה, לרפואה שלמה של חולה או להצלחה. ציינו את ההקדשה בשם הסשן ובתיאורו.",
+    },
+    {
+      q: "האם זה בחינם?",
+      a: "כן, Petite Jérusalem חינמי לחלוטין, ואפשר להשתתף גם בלי ליצור חשבון.",
+    },
+  ],
+  breadcrumbHome: "בית",
+  breadcrumbName: "לסיים את הש״ס",
+  articleHeadline: "לסיים את הש״ס יחד: חלוקת התלמוד אונליין",
+};
+
+// ---- partage-tehilim: localized strings ----
+
+const TEHILIM_FR: LandingStrings = {
+  lang: "fr-FR",
+  title: "Partage de Tehilim : répartir les Psaumes à plusieurs | Petite Jérusalem",
+  description:
+    "Répartissez les 150 Tehilim entre plusieurs personnes pour les terminer ensemble : pour un malade (refoua chelema), à la mémoire d'un proche (ilouï nechama) ou pour une hatslakha. Gratuit, sans compte obligatoire.",
+  h1: "Partage de Tehilim à plusieurs",
+  lead: "Lire un sefer Tehilim entier (les 150 Psaumes) prend du temps. En se répartissant les chapitres entre plusieurs personnes, on peut le terminer en quelques minutes. Petite Jérusalem permet d'organiser ce partage gratuitement et de suivre les chapitres déjà lus.",
+  whyTitle: "Pour quelle intention ?",
+  why: [
+    "<strong>Refoua chelema</strong> : pour la guérison d'un malade.",
+    "<strong>Ilouï nechama</strong> : à la mémoire et pour l'élévation de l'âme d'un défunt.",
+    "<strong>Hatslakha</strong> : pour la réussite d'un projet, d'un examen, d'un mariage.",
+    "Pour une <strong>hiloula</strong>, un Shabbat ou un événement communautaire.",
+  ],
+  howTitle: "Comment partager les Tehilim",
+  how: [
+    "Créez une <a href=\"/share-reading\">session</a> de type Tehilim et précisez l'intention dans la description.",
+    "Sélectionnez les chapitres (ou tout le sefer).",
+    "Partagez le lien : chacun réserve et lit ses chapitres, même en tant qu'invité.",
+    "Suivez en temps réel les Tehilim déjà lus jusqu'à terminer le sefer.",
+  ],
+  cta: "Créer un partage de Tehilim",
+  faqHeading: "Questions fréquentes",
+  faq: partageTehilimFaq,
+  breadcrumbHome: "Accueil",
+  breadcrumbName: "Partage de Tehilim",
+  articleHeadline: "Partage de Tehilim : répartir les Psaumes à plusieurs",
+};
+
+const TEHILIM_EN: LandingStrings = {
+  lang: "en",
+  title: "Share Tehilim: split the Psalms among several people | Petite Jérusalem",
+  description:
+    "Split the 150 Tehilim among several people to finish them together: for someone ill (refua shlema), in memory of a loved one (ilui neshama) or for hatzlacha. Free, no account required.",
+  h1: "Share Tehilim with several people",
+  lead: "Reading a whole sefer Tehilim (the 150 Psalms) takes time. By splitting the chapters among several people, it can be finished in a few minutes. Petite Jérusalem lets you organize this sharing for free and track the chapters already read.",
+  whyTitle: "For which intention?",
+  why: [
+    "<strong>Refua shlema</strong>: for the recovery of someone who is ill.",
+    "<strong>Ilui neshama</strong>: in memory and for the elevation of a departed soul.",
+    "<strong>Hatzlacha</strong>: for success in a project, an exam or a wedding.",
+    "For a <strong>hilula</strong>, a Shabbat or a community event.",
+  ],
+  howTitle: "How to share the Tehilim",
+  how: [
+    "Create a <a href=\"/share-reading\">session</a> of type Tehilim and state the intention in the description.",
+    "Select the chapters (or the whole sefer).",
+    "Share the link: everyone reserves and reads their chapters, even as a guest.",
+    "Track in real time the Tehilim already read until the sefer is finished.",
+  ],
+  cta: "Create a Tehilim sharing",
+  faqHeading: "Frequently asked questions",
+  faq: [
+    {
+      q: "How do you split the Tehilim among several people?",
+      a: "Create a Tehilim session on Petite Jérusalem, select the chapters, then share the link. Everyone reserves the Tehilim they read; the full sefer (150 chapters) is finished far faster together.",
+    },
+    {
+      q: "Can you read Tehilim for someone who is ill?",
+      a: "Yes. Sharing Tehilim is often organized for a refua shlema (recovery). You can state the person's name and the intention in the session description.",
+    },
+    {
+      q: "And in memory of someone who has passed away?",
+      a: "Sharing Tehilim is also fitting for an ilui neshama, in memory of a loved one, in particular for a hilula or a yahrzeit.",
+    },
+    {
+      q: "Do you need an account to take part?",
+      a: "No, you can reserve and read Tehilim as a guest. A free account lets you find your readings again and track your progress.",
+    },
+  ],
+  breadcrumbHome: "Home",
+  breadcrumbName: "Share Tehilim",
+  articleHeadline: "Share Tehilim: split the Psalms among several people",
+};
+
+const TEHILIM_HE: LandingStrings = {
+  lang: "he",
+  title: "חלוקת תהילים: חלוקת הפרקים בין כמה אנשים | Petite Jérusalem",
+  description:
+    "חלקו את 150 פרקי התהילים בין כמה אנשים כדי לסיים אותם יחד: לרפואה שלמה של חולה, לעילוי נשמת אדם יקר או להצלחה. בחינם, ללא צורך בחשבון.",
+  h1: "חלוקת תהילים בין כמה אנשים",
+  lead: "קריאת ספר תהילים שלם (150 הפרקים) אורכת זמן. בחלוקת הפרקים בין כמה אנשים אפשר לסיים אותו בכמה דקות. Petite Jérusalem מאפשר לארגן את החלוקה הזו בחינם ולעקוב אחר הפרקים שכבר נקראו.",
+  whyTitle: "לאיזו כוונה?",
+  why: [
+    "<strong>רפואה שלמה</strong>: לרפואתו של חולה.",
+    "<strong>עילוי נשמה</strong>: לזכר ולעילוי נשמתו של נפטר.",
+    "<strong>הצלחה</strong>: להצלחה בפרויקט, במבחן או בחתונה.",
+    "לרגל <strong>הילולה</strong>, שבת או אירוע קהילתי.",
+  ],
+  howTitle: "איך לחלק את התהילים",
+  how: [
+    "צרו <a href=\"/share-reading\">סשן</a> מסוג תהילים וציינו את הכוונה בתיאור.",
+    "בחרו את הפרקים (או את כל הספר).",
+    "שתפו את הקישור: כל אחד מזמין וקורא את הפרקים שלו, גם כאורח.",
+    "עקבו בזמן אמת אחר התהילים שכבר נקראו עד לסיום הספר.",
+  ],
+  cta: "צרו חלוקת תהילים",
+  faqHeading: "שאלות נפוצות",
+  faq: [
+    {
+      q: "איך מחלקים את התהילים בין כמה אנשים?",
+      a: "צרו סשן מסוג תהילים ב-Petite Jérusalem, בחרו את הפרקים, ושתפו את הקישור. כל אחד מזמין את התהילים שהוא קורא; הספר השלם (150 פרקים) מסתיים הרבה יותר מהר יחד.",
+    },
+    {
+      q: "אפשר לקרוא תהילים לרפואת חולה?",
+      a: "כן. חלוקת תהילים מאורגנת לעיתים קרובות לרפואה שלמה. אפשר לציין את שם האדם ואת הכוונה בתיאור הסשן.",
+    },
+    {
+      q: "ולעילוי נשמת נפטר?",
+      a: "חלוקת תהילים מתאימה גם לעילוי נשמה, לזכר אדם יקר, במיוחד לרגל הילולה או יום השנה לפטירה.",
+    },
+    {
+      q: "צריך חשבון כדי להשתתף?",
+      a: "לא, אפשר להזמין ולקרוא תהילים כאורח. חשבון חינמי מאפשר למצוא שוב את הקריאות שלך ולעקוב אחר ההתקדמות.",
+    },
+  ],
+  breadcrumbHome: "בית",
+  breadcrumbName: "חלוקת תהילים",
+  articleHeadline: "חלוקת תהילים: חלוקת הפרקים בין כמה אנשים",
+};
+
+export const landingPages: LandingPage[] = [
+  {
+    file: "finir-le-chass.html",
+    path: "/finir-le-chass",
+    sitemap: { priority: 0.7, changefreq: "monthly" },
+    locales: {
+      fr: buildLanding("/finir-le-chass", FINIR_FR),
+      en: buildLanding("/finir-le-chass", FINIR_EN),
+      he: buildLanding("/finir-le-chass", FINIR_HE),
+    },
   },
   {
     file: "partage-tehilim.html",
     path: "/partage-tehilim",
-    title: "Partage de Tehilim : répartir les Psaumes à plusieurs | Petite Jérusalem",
-    description:
-      "Répartissez les 150 Tehilim entre plusieurs personnes pour les terminer ensemble : pour un malade (refoua chelema), à la mémoire d'un proche (ilouï nechama) ou pour une hatslakha. Gratuit, sans compte obligatoire.",
     sitemap: { priority: 0.7, changefreq: "monthly" },
-    bodyHtml: `
-  <main class="seo-article">
-    <h1>Partage de Tehilim à plusieurs</h1>
-    <p class="seo-lead">
-      Lire un sefer Tehilim entier (les 150 Psaumes) prend du temps. En se répartissant les chapitres
-      entre plusieurs personnes, on peut le terminer en quelques minutes. Petite Jérusalem permet
-      d'organiser ce partage gratuitement et de suivre les chapitres déjà lus.
-    </p>
-
-    <section class="seo-section">
-      <h2>Pour quelle intention ?</h2>
-      <ul>
-        <li><strong>Refoua chelema</strong> : pour la guérison d'un malade.</li>
-        <li><strong>Ilouï nechama</strong> : à la mémoire et pour l'élévation de l'âme d'un défunt.</li>
-        <li><strong>Hatslakha</strong> : pour la réussite d'un projet, d'un examen, d'un mariage.</li>
-        <li>Pour une <strong>hiloula</strong>, un Shabbat ou un événement communautaire.</li>
-      </ul>
-    </section>
-
-    <section class="seo-section">
-      <h2>Comment partager les Tehilim</h2>
-      <ol>
-        <li>Créez une <a href="/share-reading">session</a> de type Tehilim et précisez l'intention dans la description.</li>
-        <li>Sélectionnez les chapitres (ou tout le sefer).</li>
-        <li>Partagez le lien : chacun réserve et lit ses chapitres, même en tant qu'invité.</li>
-        <li>Suivez en temps réel les Tehilim déjà lus jusqu'à terminer le sefer.</li>
-      </ol>
-      <p><a class="seo-cta" href="/share-reading/new-session">Créer un partage de Tehilim</a></p>
-    </section>
-
-    ${faqHtml(partageTehilimFaq)}
-  </main>`,
-    jsonLd: [
-      breadcrumb([
-        { name: "Accueil", path: "/" },
-        { name: "Partage de Tehilim", path: "/partage-tehilim" },
-      ]),
-      {
-        "@context": "https://schema.org",
-        "@type": "Article",
-        headline: "Partage de Tehilim : répartir les Psaumes à plusieurs",
-        inLanguage: "fr-FR",
-        author: { "@type": "Organization", name: SITE_NAME },
-        publisher: { "@type": "Organization", name: SITE_NAME, logo: { "@type": "ImageObject", url: OG_IMAGE } },
-      },
-      faqJsonLd(partageTehilimFaq),
-    ],
+    locales: {
+      fr: buildLanding("/partage-tehilim", TEHILIM_FR),
+      en: buildLanding("/partage-tehilim", TEHILIM_EN),
+      he: buildLanding("/partage-tehilim", TEHILIM_HE),
+    },
   },
 ];
 
+const DEFAULT_LANDING_LOCALE: Locale = "fr";
+
+/** Landing pages flattened to the default locale, for the static prerender + sitemap. */
+const landingAsSeoPages: SeoPage[] = landingPages.map((p) => ({
+  file: p.file,
+  path: p.path,
+  sitemap: p.sitemap,
+  ...p.locales[DEFAULT_LANDING_LOCALE],
+}));
+
 /** All pages that the prerender script turns into static HTML files. */
-export const allPages: SeoPage[] = [...appPages, ...landingPages];
+export const allPages: SeoPage[] = [...appPages, ...landingAsSeoPages];
 
 // ---- Pure HTML transforms (shared by prerender + tests) -----------------
 

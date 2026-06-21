@@ -126,7 +126,8 @@ button,
 
 .seo-article ul,
 .seo-article ol {
-  margin: 1rem 0 1rem 1.25rem;
+  margin-block: 1rem;
+  margin-inline-start: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -148,7 +149,7 @@ button,
 
 .seo-article .seo-cards {
   list-style: none;
-  margin-left: 0;
+  margin-inline-start: 0;
   display: grid;
   gap: 1rem;
 }
