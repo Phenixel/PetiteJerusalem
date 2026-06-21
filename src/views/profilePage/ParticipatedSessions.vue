@@ -66,8 +66,8 @@ const toggleReservationCompletion = async (
   }
 };
 
-const goToSession = (sessionId: string) => {
-  router.push({ name: "detail-session", params: { id: sessionId } });
+const goToSession = (slugOrId: string) => {
+  router.push({ name: "detail-session", params: { slug: slugOrId } });
 };
 </script>
 
@@ -122,7 +122,7 @@ const goToSession = (sessionId: string) => {
                 </p>
               </div>
               <button
-                @click="goToSession(session.id)"
+                @click="goToSession(session.slug || session.id)"
                 class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
               >
                 <i class="fa-solid fa-external-link-alt text-xs"></i>
@@ -237,7 +237,7 @@ const goToSession = (sessionId: string) => {
                 </div>
               </div>
               <button
-                @click="goToSession(session.id)"
+                @click="goToSession(session.slug || session.id)"
                 class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
               >
                 <i class="fa-solid fa-eye text-xs"></i>
