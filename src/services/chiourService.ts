@@ -32,7 +32,7 @@ function mapWebhookToChiour(item: WebhookChiour): Chiour {
   };
 }
 
-const MEDIA_TTL = 60 * 60 * 1000; // 1h — Notion media URLs expire after ~1h
+const MEDIA_TTL = 60 * 60 * 1000; // 1h, Notion media URLs expire after ~1h
 
 interface Cache<T> {
   data: T;

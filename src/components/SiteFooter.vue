@@ -3,6 +3,27 @@
     class="mt-auto px-6 py-8 text-text-secondary/90 bg-white/30 border-t border-white/20 dark:bg-gray-900/50 dark:border-gray-800 dark:text-gray-400 transition-colors"
     role="contentinfo"
   >
+    <nav
+      class="mx-auto mb-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm"
+      :aria-label="t('footer.discover')"
+    >
+      <RouterLink class="hover:text-primary transition-colors" to="/share-reading">{{
+        t("common.shareReading")
+      }}</RouterLink>
+      <RouterLink class="hover:text-primary transition-colors" to="/etude">{{
+        t("study.title")
+      }}</RouterLink>
+      <RouterLink class="hover:text-primary transition-colors" to="/chiourim">{{
+        t("common.chiourim")
+      }}</RouterLink>
+      <RouterLink class="hover:text-primary transition-colors" to="/finir-le-chass">{{
+        t("footer.finishChass")
+      }}</RouterLink>
+      <RouterLink class="hover:text-primary transition-colors" to="/partage-tehilim">{{
+        t("footer.shareTehilim")
+      }}</RouterLink>
+    </nav>
+
     <div
       class="mx-auto grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center text-center md:text-left"
     >

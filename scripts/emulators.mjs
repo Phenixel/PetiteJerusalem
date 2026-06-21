@@ -15,7 +15,7 @@ const DATA_DIR = './.emulator-data'
 const major = Number(process.versions.node.split('.')[0])
 if (major < 20) {
   console.error(
-    `\n✖ Node ${process.versions.node} détecté — le CLI Firebase exige Node >= 20.\n` +
+    `\n✖ Node ${process.versions.node} détecté : le CLI Firebase exige Node >= 20.\n` +
       `  Lance d'abord :  nvm use   (un .nvmrc fixe la version à 22)\n`,
   )
   process.exit(1)

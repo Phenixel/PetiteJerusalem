@@ -77,3 +77,144 @@ button,
 [role="button"] {
   cursor: pointer;
 }
+
+/* ---- SEO landing pages & prerendered content (src/content/seoPages.ts) ----
+   Styles the article markup rendered via v-html (not scoped) and the static
+   body the prerender step injects into crawled HTML. */
+.seo-article {
+  flex: 1;
+  width: 100%;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+.seo-article h1 {
+  font-size: clamp(1.9rem, 4vw, 2.75rem);
+  background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 1rem;
+}
+
+.seo-article h2 {
+  font-size: 1.5rem;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.seo-article h3 {
+  font-size: 1.15rem;
+  margin-bottom: 0.35rem;
+}
+
+.seo-article .seo-lead {
+  font-size: 1.15rem;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+}
+
+:root.dark .seo-article .seo-lead {
+  color: #cbd5e1;
+}
+
+.seo-article p,
+.seo-article li {
+  line-height: 1.7;
+}
+
+.seo-article ul,
+.seo-article ol {
+  margin: 1rem 0 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.seo-article ul {
+  list-style: disc;
+}
+
+.seo-article ol {
+  list-style: decimal;
+}
+
+.seo-article a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.seo-article .seo-cards {
+  list-style: none;
+  margin-left: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .seo-article .seo-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.seo-article .seo-cards li {
+  padding: 1.25rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+:root.dark .seo-article .seo-cards li {
+  background: rgba(31, 41, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.seo-article .seo-cta {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.seo-article dt {
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+.seo-article dd {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-secondary);
+}
+
+:root.dark .seo-article dd {
+  color: #cbd5e1;
+}
+
+/* Internal-link footer injected into prerendered HTML only (the SPA uses
+   SiteFooter.vue). Kept visually quiet. */
+.seo-footer {
+  max-width: 48rem;
+  margin: 2rem auto 0;
+  padding: 1.5rem;
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.seo-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.seo-footer a {
+  color: var(--color-primary);
+}

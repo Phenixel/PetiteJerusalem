@@ -3,7 +3,7 @@ import type { TextStudyJsonEntry } from "../models/models";
 /**
  * Loads the locally-stored texts under `public/texts/`.
  *
- * Files come from the public Sefaria dataset and are served as static assets — no
+ * Files come from the public Sefaria dataset and are served as static assets, with no
  * external network call. This service turns a study text ({@link TextStudyJsonEntry})
  * into ready-to-read sections.
  */

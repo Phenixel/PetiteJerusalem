@@ -51,15 +51,15 @@ To run the project locally:
 
 In development the app automatically connects to the Firebase **Auth** and
 **Firestore** emulators (see `firebase.ts`), so you can sign up, log in and
-create sessions entirely offline — no access to the cloud project needed.
+create sessions entirely offline, with no access to the cloud project needed.
 
 **Prerequisites**
 
-- **Node 22** — required by the Firebase CLI. The repo ships a `.nvmrc`:
+- **Node 22**, required by the Firebase CLI. The repo ships a `.nvmrc`:
   ```bash
   nvm use        # switches to Node 22
   ```
-- **Java (JDK 11+)** — required by the Firestore emulator (`java -version`).
+- **Java (JDK 11+)**, required by the Firestore emulator (`java -version`).
 - **Firebase CLI**:
   ```bash
   npm install -g firebase-tools
@@ -83,7 +83,7 @@ This runs the Vite dev server and the emulators in parallel. Then:
 **Create your first session locally**
 
 1. Open the app, go to **Login → Register**, and create an account with any
-   email/password (the Auth emulator accepts anything — no real email needed).
+   email/password (the Auth emulator accepts anything, no real email needed).
 2. Once logged in, create a session as usual.
 
 Data created in the emulators is **persisted** to `./.emulator-data` on exit

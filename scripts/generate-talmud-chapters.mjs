@@ -211,7 +211,7 @@ for (const slug of slugs) {
     let finalStarts = ourStarts;
     if (mishnaSizes && detected !== mishnaSizes.length) {
       // Fallback: proportional distribution
-      console.warn(`  ⚠ ${title}: detected ${detected} chapters, expected ${expected} — using proportional fallback`);
+      console.warn(`  ⚠ ${title}: detected ${detected} chapters, expected ${expected}, using proportional fallback`);
       finalStarts = proportionalDistribution(ourTotal, mishnaSizes);
     }
 

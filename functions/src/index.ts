@@ -10,7 +10,7 @@
  * This HTTP function is wired in `firebase.json` for the dynamic routes. For
  * every request it fetches the SPA shell once (cached), resolves the page data,
  * and injects page-specific <title> / description / Open Graph / Twitter tags.
- * The response depends only on the URL, so it is safe to cache on the CDN — and
+ * The response depends only on the URL, so it is safe to cache on the CDN, and
  * the SPA still boots normally for human visitors.
  */
 import { onRequest } from "firebase-functions/v2/https";
@@ -74,7 +74,18 @@ function setCanonical(html: string, href: string): string {
   );
 }
 
-/** Inject page-specific metadata into the SPA shell. */
+/** Build a small crawlable body so non-JS bots see real content, not an empty SPA shell. */
+function bodyFor(meta: Meta): string {
+  return (
+    `<main class="seo-article">` +
+    `<h1>${escapeAttr(meta.title.split(" | ")[0].split(" – ")[0])}</h1>` +
+    `<p>${escapeAttr(meta.description)}</p>` +
+    `<p><a href="${escapeAttr(meta.url)}">Voir sur Petite Jérusalem</a></p>` +
+    `</main>`
+  );
+}
+
+/** Inject page-specific metadata + crawlable body into the (empty) SPA shell. */
 function injectMeta(shell: string, meta: Meta): string {
   let html = shell;
   html = setTitle(html, meta.title);
@@ -88,6 +99,9 @@ function injectMeta(shell: string, meta: Meta): string {
   html = setMeta(html, "name", "twitter:description", meta.description);
   html = setMeta(html, "name", "twitter:image", OG_IMAGE);
   html = setCanonical(html, meta.url);
+  // The shell ships an empty `<div id="app"></div>`; fill it. Vue clears and
+  // re-renders #app on mount, so human visitors are unaffected.
+  html = html.replace(/(<div id="app">)(<\/div>)/, (_m, open, close) => `${open}${bodyFor(meta)}${close}`);
   return html;
 }
 
@@ -100,9 +114,11 @@ async function getShell(): Promise<string> {
   if (shellCache && Date.now() - shellCache.ts < SHELL_TTL) {
     return shellCache.html;
   }
-  // The root "/" is served statically (not routed to this function), so this
-  // fetch returns the current built index.html with up-to-date asset hashes.
-  const res = await fetch(`${SITE_URL}/`, {
+  // Fetch the bare SPA shell ("/app" → app.html, an empty `<div id="app"></div>`)
+  // rather than "/", because "/" now ships prerendered homepage body content that
+  // would otherwise leak into every dynamic preview. app.html carries the
+  // up-to-date asset hashes and is served statically (not routed to this function).
+  const res = await fetch(`${SITE_URL}/app`, {
     headers: { "User-Agent": "PetiteJerusalem-SocialPreview" },
   });
   const html = await res.text();

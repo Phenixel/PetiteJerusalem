@@ -58,6 +58,9 @@ const en: LocaleMessages = {
     about: "About",
     legal: "Legal notices",
     reportIssue: "Report an issue",
+    discover: "Discover",
+    finishChass: "Finish the Shas",
+    shareTehilim: "Share Tehilim",
   },
   home: {
     heroTitle: "Your digital spiritual center",
@@ -265,7 +268,7 @@ const en: LocaleMessages = {
   seo: {
     homeTitle: "Petite Jérusalem | Shared Torah reading and study",
     homeDescription:
-      "Create and join shared Torah reading and study sessions. Reserve texts, study together and track your progress — free and online.",
+      "Create and join shared Torah reading and study sessions. Reserve texts, study together and track your progress, free and online.",
     loginTitle: "Login – Petite Jérusalem",
     loginDescription:
       "Sign in to create shared reading sessions, reserve texts and track your studies.",
