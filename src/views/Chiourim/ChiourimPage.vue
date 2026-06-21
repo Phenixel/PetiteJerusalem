@@ -27,14 +27,14 @@ const loadChiourim = async () => {
   }
 
   if (cached && !chiourService.isCacheStale()) {
-    // Cache fresh — just load categories for this component instance
+    // Cache fresh, just load categories for this component instance
     chiourService.getCategories().then((cats) => {
       dynamicCategories.value = cats;
     }).catch(() => {});
     return;
   }
 
-  // No cache or stale — fetch fresh data
+  // No cache or stale, fetch fresh data
   if (!cached) isLoading.value = true;
   try {
     const [fetchedChiourim, fetchedCategories] = await Promise.all([

@@ -1,6 +1,6 @@
 {
   "name": "petite-jerusalem-functions",
-  "description": "Cloud Functions — social sharing previews for dynamic pages",
+  "description": "Cloud Functions for social sharing previews of dynamic pages",
   "private": true,
   "main": "lib/index.js",
   "engines": {

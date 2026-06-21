@@ -66,7 +66,7 @@ const loadChiour = async () => {
     return;
   }
 
-  // No cache — full load with skeleton
+  // No cache, full load with skeleton
   try {
     isLoading.value = true;
     const all = await chiourService.getAllChiourim();

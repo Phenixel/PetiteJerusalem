@@ -472,6 +472,32 @@ watch(session, (s) => applySessionSeo(s));
         @item-click="handleItemClick"
         @toggle-completion="toggleReservationCompletion"
       />
+
+      <!-- CTA : inviter le visiteur à créer sa propre session -->
+      <section class="mt-14 mb-2">
+        <div
+          class="max-w-3xl mx-auto text-center p-8 rounded-3xl bg-gradient-to-br from-primary/10 to-secondary/10 border border-white/60 backdrop-blur-sm dark:from-primary/15 dark:to-secondary/15 dark:border-gray-700"
+        >
+          <div
+            class="w-14 h-14 mx-auto mb-4 flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary text-white text-2xl shadow-md"
+          >
+            <i class="fa-solid fa-people-group" aria-hidden="true"></i>
+          </div>
+          <h3 class="text-xl md:text-2xl font-bold text-text-primary mb-2 dark:text-gray-100">
+            {{ t("detailSession.createYourOwnTitle") }}
+          </h3>
+          <p class="text-text-secondary max-w-xl mx-auto mb-6 leading-relaxed dark:text-gray-300">
+            {{ t("detailSession.createYourOwnText") }}
+          </p>
+          <button
+            @click="router.push('/share-reading')"
+            class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+          >
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            {{ t("detailSession.createYourOwnButton") }}
+          </button>
+        </div>
+      </section>
     </div>
 
     <!-- Sticky Bottom Bar pour Confirmation -->

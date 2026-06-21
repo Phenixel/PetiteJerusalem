@@ -11,6 +11,7 @@ import AuteurChiourimPage from "../views/Chiourim/AuteurChiourimPage.vue";
 import NotFound from "../views/NotFound.vue";
 import TextReadingPage from "../views/TextReading/TextReadingPage.vue";
 import StudyPage from "../views/StudyPage.vue";
+import ContentPage from "../views/ContentPage.vue";
 
 export default [
   {
@@ -77,6 +78,18 @@ export default [
     path: "/lire/:textId/:section",
     name: "text-reading-section",
     component: TextReadingPage,
+  },
+  // SEO landing pages, rendered from src/content/seoPages.ts (same markup the
+  // prerender step serves to crawlers).
+  {
+    path: "/finir-le-chass",
+    name: "finir-le-chass",
+    component: ContentPage,
+  },
+  {
+    path: "/partage-tehilim",
+    name: "partage-tehilim",
+    component: ContentPage,
   },
   {
     path: "/:pathMatch(.*)*",

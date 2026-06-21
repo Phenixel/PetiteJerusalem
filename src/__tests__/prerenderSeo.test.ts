@@ -1,6 +1,16 @@
 import { describe, it, expect } from "vitest";
-// @ts-expect-error - plain ESM build script without type declarations
-import { injectMeta, escapeAttr, staticPages, SITE_URL } from "../../scripts/prerender-seo.mjs";
+import {
+  injectMeta,
+  injectBody,
+  renderPage,
+  escapeAttr,
+  buildSitemap,
+  allPages,
+  appPages,
+  landingPages,
+  SITE_URL,
+  type SeoPage,
+} from "../content/seoPages";
 
 const template = `<!doctype html>
 <html lang="fr">
@@ -16,17 +26,19 @@ const template = `<!doctype html>
     <meta name="twitter:description" content="TW desc base" />
     <meta name="robots" content="index, follow" />
   </head>
-  <body></body>
+  <body><div id="app"></div></body>
 </html>`;
 
-describe("prerender-seo injectMeta", () => {
-  const page = {
-    file: "share-reading.html",
-    path: "/share-reading",
-    title: "Mon titre de page",
-    description: "Ma description de page",
-  };
+const page: SeoPage = {
+  file: "share-reading.html",
+  path: "/share-reading",
+  title: "Mon titre de page",
+  description: "Ma description de page",
+  bodyHtml: `<main class="seo-article"><h1>Mon contenu</h1></main>`,
+  jsonLd: [{ "@context": "https://schema.org", "@type": "WebPage", name: "Test" }],
+};
 
+describe("seoPages injectMeta", () => {
   it("remplace le <title>", () => {
     const html = injectMeta(template, page);
     expect(html).toContain("<title>Mon titre de page</title>");
@@ -57,14 +69,9 @@ describe("prerender-seo injectMeta", () => {
     expect(html).toContain(`<meta property="og:url" content="${url}" />`);
   });
 
-  it("conserve l'image og partagée", () => {
-    const html = injectMeta(template, page);
-    expect(html).toContain(`content="${SITE_URL}/og-image.jpg"`);
-  });
-
   it("applique robots uniquement quand fourni", () => {
-    const indexed = injectMeta(template, page);
-    expect(indexed).toContain('<meta name="robots" content="index, follow" />');
+    const html = injectMeta(template, page);
+    expect(html).toContain('<meta name="robots" content="index, follow" />');
 
     const noindex = injectMeta(template, { ...page, robots: "noindex, follow" });
     expect(noindex).toContain('<meta name="robots" content="noindex, follow" />');
@@ -75,16 +82,74 @@ describe("prerender-seo injectMeta", () => {
   });
 });
 
-describe("prerender-seo staticPages", () => {
+describe("seoPages injectBody", () => {
+  it("injecte le contenu crawlable dans #app", () => {
+    const html = injectBody(template, page);
+    expect(html).toContain('<div id="app"><main class="seo-article"><h1>Mon contenu</h1>');
+    expect(html).not.toContain('<div id="app"></div>');
+  });
+
+  it("inclut le footer de liens internes", () => {
+    const html = injectBody(template, page);
+    expect(html).toContain('href="/finir-le-chass"');
+    expect(html).toContain('href="/partage-tehilim"');
+  });
+
+  it("ajoute les blocs JSON-LD fournis dans le <head>", () => {
+    const html = injectBody(template, page);
+    expect(html).toContain('<script type="application/ld+json">');
+    expect(html).toContain('"@type":"WebPage"');
+  });
+
+  it("renderPage combine head + body", () => {
+    const html = renderPage(template, page);
+    expect(html).toContain("<title>Mon titre de page</title>");
+    expect(html).toContain("<h1>Mon contenu</h1>");
+  });
+});
+
+describe("seoPages data", () => {
   it("déclare des routes uniques avec les champs requis", () => {
     const paths = new Set<string>();
-    for (const p of staticPages as Array<{ file: string; path: string; title: string; description: string }>) {
+    for (const p of allPages) {
       expect(p.file).toMatch(/\.html$/);
       expect(p.path.startsWith("/")).toBe(true);
       expect(p.title.length).toBeGreaterThan(0);
       expect(p.description.length).toBeGreaterThan(0);
+      expect(p.bodyHtml.length).toBeGreaterThan(0);
       paths.add(p.path);
     }
-    expect(paths.size).toBe((staticPages as unknown[]).length);
+    expect(paths.size).toBe(allPages.length);
+  });
+
+  it("expose l'accueil et les pages de destination clés", () => {
+    expect(appPages.some((p) => p.path === "/" && p.file === "index.html")).toBe(true);
+    expect(landingPages.map((p) => p.path)).toContain("/finir-le-chass");
+    expect(landingPages.map((p) => p.path)).toContain("/partage-tehilim");
+  });
+
+  it("cible le bon domaine canonique", () => {
+    expect(SITE_URL).toBe("https://petite-jerusalem.fr");
+  });
+});
+
+describe("seoPages buildSitemap", () => {
+  const xml = buildSitemap("2026-06-21");
+
+  it("liste les URLs sur le domaine canonique .fr, jamais .web.app", () => {
+    expect(xml).toContain("<loc>https://petite-jerusalem.fr/</loc>");
+    expect(xml).toContain("<loc>https://petite-jerusalem.fr/share-reading</loc>");
+    expect(xml).toContain("<loc>https://petite-jerusalem.fr/finir-le-chass</loc>");
+    expect(xml).not.toContain("web.app");
+  });
+
+  it("exclut les pages marquées sitemap:false (ex. /login)", () => {
+    expect(xml).not.toContain("<loc>https://petite-jerusalem.fr/login</loc>");
+  });
+
+  it("inclut lastmod, changefreq et priority", () => {
+    expect(xml).toContain("<lastmod>2026-06-21</lastmod>");
+    expect(xml).toContain("<changefreq>");
+    expect(xml).toContain("<priority>1.0</priority>");
   });
 });

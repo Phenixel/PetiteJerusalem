@@ -56,15 +56,18 @@ const fr = {
     about: "À propos",
     legal: "Mentions légales",
     reportIssue: "Signaler un problème",
+    discover: "Découvrir",
+    finishChass: "Finir le Chass",
+    shareTehilim: "Partage de Tehilim",
   },
   home: {
-    heroTitle: "Votre centre spirituel numérique",
+    heroTitle: "Étudier et partager la Torah, à plusieurs",
     heroDescription:
-      "Une plateforme moderne dédiée à l'étude, au partage et à la croissance spirituelle de la communauté juive francophone.",
+      "Répartissez un texte entre plusieurs personnes pour le terminer ensemble : finir le Chass, lire les Tehilim à plusieurs, suivre la progression de votre limoud. Gratuit et en français.",
     features: {
       shareReading: {
         title: "Partage de Lectures",
-        description: "Échangez et découvrez des textes sacrés avec la communauté",
+        description: "Créez une session, répartissez un texte et étudiez à plusieurs jusqu'au siyoum",
       },
       study: {
         title: "Étude",
@@ -182,7 +185,7 @@ const fr = {
   },
   shareReading: {
     title: "Partage de Lectures",
-    subtitle: "Échangez et découvrez des textes sacrés avec la communauté",
+    subtitle: "Répartissez un texte entre plusieurs personnes et étudiez ensemble : pour finir le Chass, lire les Tehilim à plusieurs ou avancer dans la Michna",
     createSession: "Créer une session",
     authRequired: "Vous devez avoir un compte et être connecté pour créer une session.",
     loadingSessions: "Chargement des sessions...",
@@ -191,6 +194,19 @@ const fr = {
     noOngoingSessions: "Aucune session en cours pour le moment.",
     noSessions: "Aucune session existante",
     createFirstSession: "Créez la première session de partage de lectures !",
+    howItWorks: {
+      title: "Comment ça marche",
+      subtitle:
+        "Répartissez un texte entre plusieurs personnes et terminez-le ensemble, en quatre étapes.",
+      step1Title: "Créez une session",
+      step1Desc: "Donnez-lui un nom et une intention (par exemple « à la mémoire de… »).",
+      step2Title: "Choisissez le texte",
+      step2Desc: "Talmud, Tehilim, Michna ou Tanakh, et les parties à inclure.",
+      step3Title: "Partagez le lien",
+      step3Desc: "Invitez votre communauté, votre famille ou vos amis, même sans compte.",
+      step4Title: "Suivez la progression",
+      step4Desc: "Chacun réserve ses passages et les lit ; avancez ensemble jusqu'au siyoum.",
+    },
   },
   newSession: {
     title: "Créer une session",
@@ -227,6 +243,10 @@ const fr = {
     reservationError: "Erreur lors de la réservation. Veuillez réessayer.",
     updateError: "Erreur lors de la mise à jour de la réservation",
     manageSession: "Gérer la session",
+    createYourOwnTitle: "À votre tour d'étudier ensemble",
+    createYourOwnText:
+      "Cette session vous inspire ? Créez la vôtre en quelques clics : choisissez un texte (Talmud, Tehilim, Michna, Tanakh), répartissez-le et invitez votre communauté à le terminer avec vous.",
+    createYourOwnButton: "Créer ma session",
     instructions: {
       title: "Instructions",
       step1: "Cochez les cases pour réserver une section ou un texte",
@@ -263,9 +283,9 @@ const fr = {
     remaining: "Restants",
   },
   seo: {
-    homeTitle: "Petite Jérusalem | Partage de lectures et d'études de Torah",
+    homeTitle: "Petite Jérusalem | Partager l'étude de la Torah et finir le Chass à plusieurs",
     homeDescription:
-      "Créez et rejoignez des sessions de partage de lectures et d'études de Torah. Réservez des textes, étudiez à plusieurs et suivez votre progression, gratuitement et en français.",
+      "Plateforme gratuite en français pour étudier et partager la Torah à plusieurs : répartissez le Talmud pour finir le Chass, lisez les Tehilim à plusieurs pour une refoua chelema ou à la mémoire d'un proche, suivez la progression jusqu'au siyoum.",
     loginTitle: "Connexion – Petite Jérusalem",
     loginDescription:
       "Connectez-vous pour créer des sessions de partage de lectures, réserver des textes et suivre vos études.",
@@ -274,9 +294,9 @@ const fr = {
       "Gérez vos informations, consultez vos sessions d'étude participées et créées.",
     notFoundTitle: "Page non trouvée – Petite Jérusalem",
     notFoundDescription: "La page demandée n'existe pas.",
-    shareReadingTitle: "Partage de lectures et d'études de Torah – Petite Jérusalem",
+    shareReadingTitle: "Partage de lectures : organiser une étude de Torah à plusieurs – Petite Jérusalem",
     shareReadingDescription:
-      "Découvrez et créez des sessions de partage de lectures et d'études de Torah. Réservez des textes, étudiez à plusieurs et avancez ensemble avec la communauté.",
+      "Créez une session de partage : choisissez un texte (Talmud, Tehilim, Michna, Tanakh), répartissez les passages entre les participants, partagez le lien et suivez la progression du limoud jusqu'au siyoum.",
     newSessionTitle: "Créer une session de partage de lecture – Petite Jérusalem",
     newSessionDescription:
       "Créez une session de partage de lecture ou d'étude de Torah et invitez la communauté à étudier avec vous.",

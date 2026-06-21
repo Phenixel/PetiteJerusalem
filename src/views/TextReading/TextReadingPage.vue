@@ -220,7 +220,7 @@ async function toggleRead() {
 // --- SEO ---
 const pageTitle = computed(() => {
   if (!textEntry.value) return "Lecture | Petite Jérusalem";
-  const sec = currentSection.value && !isSingleSection.value ? ` — ${currentSection.value.label}` : "";
+  const sec = currentSection.value && !isSingleSection.value ? ` · ${currentSection.value.label}` : "";
   return `${textEntry.value.name}${sec} | Petite Jérusalem`;
 });
 watch(pageTitle, (title) => seoService.setMeta({ title }), { immediate: true });

@@ -58,6 +58,9 @@ const en: LocaleMessages = {
     about: "About",
     legal: "Legal notices",
     reportIssue: "Report an issue",
+    discover: "Discover",
+    finishChass: "Finish the Shas",
+    shareTehilim: "Share Tehilim",
   },
   home: {
     heroTitle: "Your digital spiritual center",
@@ -191,6 +194,18 @@ const en: LocaleMessages = {
     noOngoingSessions: "No ongoing sessions at the moment.",
     noSessions: "No existing sessions",
     createFirstSession: "Create the first reading share session!",
+    howItWorks: {
+      title: "How it works",
+      subtitle: "Split a text between several people and finish it together, in four steps.",
+      step1Title: "Create a session",
+      step1Desc: "Give it a name and a dedication, e.g. in memory of a loved one.",
+      step2Title: "Choose the text",
+      step2Desc: "Talmud, Tehilim, Mishnah or Tanakh, and the parts to include.",
+      step3Title: "Share the link",
+      step3Desc: "Invite your community, family or friends, even without an account.",
+      step4Title: "Track progress",
+      step4Desc: "Everyone reserves and reads their passages; advance together to the siyum.",
+    },
   },
   newSession: {
     title: "Create a session",
@@ -227,6 +242,10 @@ const en: LocaleMessages = {
     reservationError: "Error reserving. Please try again.",
     updateError: "Error updating reservation",
     manageSession: "Manage session",
+    createYourOwnTitle: "Your turn to study together",
+    createYourOwnText:
+      "Inspired by this session? Create your own in a few clicks: choose a text (Talmud, Tehilim, Mishnah, Tanakh), split it up and invite your community to finish it with you.",
+    createYourOwnButton: "Create my session",
     instructions: {
       title: "Instructions",
       step1: "Check the boxes to reserve a section or text",
@@ -265,7 +284,7 @@ const en: LocaleMessages = {
   seo: {
     homeTitle: "Petite Jérusalem | Shared Torah reading and study",
     homeDescription:
-      "Create and join shared Torah reading and study sessions. Reserve texts, study together and track your progress — free and online.",
+      "Create and join shared Torah reading and study sessions. Reserve texts, study together and track your progress, free and online.",
     loginTitle: "Login – Petite Jérusalem",
     loginDescription:
       "Sign in to create shared reading sessions, reserve texts and track your studies.",

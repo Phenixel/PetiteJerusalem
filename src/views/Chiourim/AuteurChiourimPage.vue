@@ -56,7 +56,7 @@ const loadAuteur = async () => {
     return;
   }
 
-  // No cache — full load
+  // No cache, full load
   try {
     isLoading.value = true;
     const all = await chiourService.getAllChiourim();
