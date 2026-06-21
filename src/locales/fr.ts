@@ -344,6 +344,9 @@ const fr = {
   },
   signupPrompt: {
     reservationConfirmed: "Réservation confirmée !",
+    createSessionTitle: "Connectez-vous pour créer une session",
+    createSessionSubtitle: "Inscrivez-vous ou connectez-vous pour lancer votre partage de lecture",
+    createSessionHaveAccount: "Vous avez déjà un compte ?",
     subtitle: "Plus qu'un mot de passe pour profiter de toutes les fonctionnalités",
     benefits: {
       recover: "Retrouvez vos réservations passées et futures",

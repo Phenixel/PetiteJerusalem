@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 import { sessionService } from "../../services/sessionService";
 import type { Session } from "../../models/models";
 import SessionCard from "../../components/SessionCard.vue";
+import SignupPromptModal from "../../components/SignupPromptModal.vue";
 import { seoService } from "../../services/seoService";
 import { authService } from "../../services/authService";
 
@@ -15,6 +16,9 @@ const sessions = ref<Session[]>([]);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const isAuthenticated = ref(false);
+// Visitors without an account can still click "create a session": instead of a
+// disabled button they get a prompt inviting them to sign in / sign up.
+const showAuthPrompt = ref(false);
 let unsubscribeAuth: (() => void) | null = null;
 
 // Animated "how it works" timeline: plays once when scrolled into view.
@@ -127,6 +131,15 @@ onUnmounted(() => {
 const handleSessionClick = (session: Session) => {
   router.push(`/share-reading/session/${session.slug || session.id}`);
 };
+
+// Logged-in users go straight to the form; visitors get the sign-in prompt.
+const handleCreateClick = () => {
+  if (isAuthenticated.value) {
+    router.push("/share-reading/new-session");
+  } else {
+    showAuthPrompt.value = true;
+  }
+};
 </script>
 
 <template>
@@ -142,18 +155,17 @@ const handleSessionClick = (session: Session) => {
       </p>
 
       <button
-        @click="router.push('/share-reading/new-session')"
-        class="mt-8 px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
-        :disabled="!isAuthenticated"
+        @click="handleCreateClick"
+        class="mt-8 px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
         :title="t('shareReading.createSession')"
       >
         <i class="fa-solid fa-plus mr-2"></i>
         {{ t("shareReading.createSession") }}
       </button>
-      <div v-if="!isAuthenticated" class="mt-4 text-sm text-text-secondary/80 dark:text-gray-400">
-        <small>{{ t("shareReading.authRequired") }}</small>
-      </div>
     </div>
+
+    <!-- Invitation à se connecter pour les visiteurs sans compte -->
+    <SignupPromptModal v-model:show="showAuthPrompt" variant="auth" />
 
     <!-- Comment ça marche : timeline animée -->
     <section class="max-w-5xl mx-auto mb-16">
@@ -175,7 +187,7 @@ const handleSessionClick = (session: Session) => {
           class="timeline__step"
           :style="{ '--i': index }"
         >
-          <span class="timeline__connector" aria-hidden="true">
+          <span class="timeline__connector bg-black/[0.08] dark:bg-white/[0.12]" aria-hidden="true">
             <span class="timeline__fill"></span>
             <span class="timeline__runner"></span>
           </span>
@@ -183,8 +195,10 @@ const handleSessionClick = (session: Session) => {
             <i :class="['fa-solid', step.icon]" aria-hidden="true"></i>
           </span>
           <div class="timeline__content">
-            <h4 class="timeline__title">{{ step.title }}</h4>
-            <p class="timeline__desc">{{ step.description }}</p>
+            <h4 class="timeline__title text-text-primary dark:text-gray-100">{{ step.title }}</h4>
+            <p class="timeline__desc text-text-secondary dark:text-gray-400">
+              {{ step.description }}
+            </p>
           </div>
         </li>
       </ol>
@@ -350,22 +364,17 @@ const handleSessionClick = (session: Session) => {
   grid-column: 2;
   align-self: center;
 }
+/* Title/description colors are set via Tailwind utilities in the template
+   (text-text-* / dark:text-gray-*) so dark mode adapts correctly — Vue's
+   scoped compiler drops the descendant in `:global(.dark) .scoped` rules. */
 .timeline__title {
   font-weight: 700;
   font-size: 1.05rem;
-  color: var(--color-text-primary);
   margin-bottom: 0.2rem;
 }
 .timeline__desc {
   font-size: 0.875rem;
   line-height: 1.55;
-  color: var(--color-text-secondary);
-}
-:global(:root.dark) .timeline__title {
-  color: #f3f4f6;
-}
-:global(:root.dark) .timeline__desc {
-  color: #9ca3af;
 }
 
 /* --- connector (mobile: vertical) --- */
@@ -377,11 +386,8 @@ const handleSessionClick = (session: Session) => {
   width: 3px;
   height: calc(100% - 3rem);
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.08);
   border-radius: 9999px;
-}
-:global(:root.dark) .timeline__connector {
-  background: rgba(255, 255, 255, 0.12);
+  /* track color set via Tailwind (bg-black/[0.08] dark:bg-white/[0.12]) */
 }
 .timeline__step:last-child .timeline__connector {
   display: none;
