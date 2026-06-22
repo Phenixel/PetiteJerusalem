@@ -136,8 +136,12 @@ const nextText = computed<TextStudyJsonEntry | null>(() =>
     : null,
 );
 
+// Paging to the previous/next sibling text (e.g. Tehilim 5 → Tehilim 6) is
+// lateral navigation, so it replaces the history entry rather than pushing.
+// That way "Retour" (and the browser back button) returns to the list the
+// reader came from instead of stepping back through every text already read.
 function goToText(target: TextStudyJsonEntry) {
-  router.push({ name: "text-reading", params: { textId: String(target.id) }, query: route.query });
+  router.replace({ name: "text-reading", params: { textId: String(target.id) }, query: route.query });
   window.scrollTo({ top: 0 });
 }
 
