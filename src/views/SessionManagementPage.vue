@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { sessionService } from "../services/sessionService";
 import { reservationService, type ReservationForm } from "../services/reservationService";
 import { authService } from "../services/authService";
+import { appendHebrewNumeral, formatNumberWithHebrew } from "../services/hebrewNumerals";
 import type { Session, TextStudy } from "../models/models";
 import type { User } from "../services/authService";
 import { seoService } from "../services/seoService";
@@ -441,7 +442,7 @@ onMounted(() => {
               >
                 <div class="flex justify-between items-start gap-4 mb-2">
                   <h4 class="font-bold text-lg text-text-primary leading-tight dark:text-gray-100">
-                    {{ sessionService.formatBookName(textStudy.name) }}
+                    {{ appendHebrewNumeral(sessionService.formatBookName(textStudy.name)) }}
                   </h4>
                   <span
                     class="px-2 py-1 text-xs font-bold uppercase rounded-md whitespace-nowrap"
@@ -505,7 +506,7 @@ onMounted(() => {
                   >
                     <div class="flex flex-col min-w-0">
                       <span class="font-medium text-text-primary dark:text-gray-200">
-                        {{ textStudy.totalSections > 1 ? `Chapitre ${section}` : "Texte complet" }}
+                        {{ textStudy.totalSections > 1 ? `Chapitre ${formatNumberWithHebrew(section)}` : "Texte complet" }}
                       </span>
                       <span
                         v-if="isSectionReserved(textStudy.id, section)"
@@ -616,9 +617,9 @@ onMounted(() => {
             class="p-3 bg-primary/10 rounded-xl text-sm text-text-primary mb-2 dark:bg-primary/20 dark:text-white"
           >
             <span class="font-semibold">{{
-              sessionService.formatBookName(selectedTextStudy?.name || "")
+              appendHebrewNumeral(sessionService.formatBookName(selectedTextStudy?.name || ""))
             }}</span>
-            <span v-if="selectedSection"> - Chapitre {{ selectedSection }}</span>
+            <span v-if="selectedSection"> - Chapitre {{ formatNumberWithHebrew(selectedSection) }}</span>
           </div>
 
           <div>

@@ -13,6 +13,7 @@ import type { User } from "../../services/authService";
 import { loadText, MissingTextFileError } from "../../services/textService";
 import type { TextContent, TextSection } from "../../services/textService";
 import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
+import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { sessionService } from "../../services/sessionService";
 import { seoService } from "../../services/seoService";
 import GuestForm from "../../components/GuestForm.vue";
@@ -242,7 +243,7 @@ async function toggleRead() {
 const pageTitle = computed(() => {
   if (!textEntry.value) return "Lecture | Petite Jérusalem";
   const sec = currentSection.value && !isSingleSection.value ? ` · ${currentSection.value.label}` : "";
-  return `${textEntry.value.name}${sec} | Petite Jérusalem`;
+  return `${appendHebrewNumeral(textEntry.value.name)}${sec} | Petite Jérusalem`;
 });
 watch(pageTitle, (title) => seoService.setMeta({ title }), { immediate: true });
 
@@ -304,7 +305,7 @@ watch(textId, loadContent);
       <p class="text-text-secondary mb-1 max-w-sm dark:text-gray-400">
         {{ t("textReading.missingDescription") }}
       </p>
-      <p class="text-xs text-text-secondary/60 dark:text-gray-600">{{ textEntry.name }}</p>
+      <p class="text-xs text-text-secondary/60 dark:text-gray-600">{{ appendHebrewNumeral(textEntry.name) }}</p>
     </div>
 
     <div
@@ -331,7 +332,7 @@ watch(textId, loadContent);
           {{ textEntry.livre }}
         </p>
         <h1 class="text-3xl md:text-4xl font-bold text-text-primary dark:text-gray-100">
-          {{ textEntry.name }}
+          {{ appendHebrewNumeral(textEntry.name) }}
         </h1>
         <p
           v-if="currentSection && !isSingleSection"
@@ -345,8 +346,8 @@ watch(textId, loadContent);
       <div v-if="showSectionList">
         <ReadingNav
           v-if="prevText || nextText"
-          :prev-label="prevText?.name ?? null"
-          :next-label="nextText?.name ?? null"
+          :prev-label="prevText ? appendHebrewNumeral(prevText.name) : null"
+          :next-label="nextText ? appendHebrewNumeral(nextText.name) : null"
           @prev="prevText && goToText(prevText)"
           @next="nextText && goToText(nextText)"
           class="mb-6 pb-5 border-b border-black/5 dark:border-white/10"
@@ -389,8 +390,8 @@ watch(textId, loadContent);
         </div>
         <ReadingNav
           v-if="prevText || nextText"
-          :prev-label="prevText?.name ?? null"
-          :next-label="nextText?.name ?? null"
+          :prev-label="prevText ? appendHebrewNumeral(prevText.name) : null"
+          :next-label="nextText ? appendHebrewNumeral(nextText.name) : null"
           @prev="prevText && goToText(prevText)"
           @next="nextText && goToText(nextText)"
           class="mt-8 pt-6 border-t border-black/5 dark:border-white/10"
@@ -512,8 +513,8 @@ watch(textId, loadContent);
         />
         <ReadingNav
           v-else-if="prevText || nextText"
-          :prev-label="prevText?.name ?? null"
-          :next-label="nextText?.name ?? null"
+          :prev-label="prevText ? appendHebrewNumeral(prevText.name) : null"
+          :next-label="nextText ? appendHebrewNumeral(nextText.name) : null"
           @prev="prevText && goToText(prevText)"
           @next="nextText && goToText(nextText)"
           class="mb-6 pb-5 border-b border-black/5 dark:border-white/10"
@@ -620,8 +621,8 @@ watch(textId, loadContent);
         />
         <ReadingNav
           v-else-if="prevText || nextText"
-          :prev-label="prevText?.name ?? null"
-          :next-label="nextText?.name ?? null"
+          :prev-label="prevText ? appendHebrewNumeral(prevText.name) : null"
+          :next-label="nextText ? appendHebrewNumeral(nextText.name) : null"
           @prev="prevText && goToText(prevText)"
           @next="nextText && goToText(nextText)"
           class="mt-10 pt-6 border-t border-black/5 dark:border-white/10"

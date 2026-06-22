@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { sessionService } from "../../services/sessionService";
+import { appendHebrewNumeral, formatNumberWithHebrew } from "../../services/hebrewNumerals";
 import type { Session, TextStudy } from "../../models/models";
 import type { User } from "../../services/authService";
 
@@ -42,7 +43,7 @@ const getUserReservationsForSession = (session: Session) => {
 
 const getTextStudyName = (textStudyId: string): string => {
   const textStudy = props.textStudiesMap.get(textStudyId);
-  return textStudy ? textStudy.name : textStudyId;
+  return textStudy ? appendHebrewNumeral(textStudy.name) : textStudyId;
 };
 
 const toggleReservationCompletion = async (
@@ -173,7 +174,7 @@ const goToSession = (slugOrId: string) => {
                         v-if="reservation.section"
                         class="text-text-secondary font-normal dark:text-gray-400"
                       >
-                        - {{ t("common.chapter") }} {{ reservation.section }}
+                        - {{ t("common.chapter") }} {{ formatNumberWithHebrew(reservation.section) }}
                       </span>
                     </span>
                     <span
