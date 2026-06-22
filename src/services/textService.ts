@@ -1,4 +1,5 @@
 import type { TextStudyJsonEntry } from "../models/models";
+import { formatNumberWithHebrew } from "./hebrewNumerals";
 
 /**
  * Loads the locally-stored texts under `public/texts/`.
@@ -122,7 +123,7 @@ function buildSection(index: number, label: string, he: string[]): TextSection {
 /** Splits a he[chapter][verse] array into one section per non-empty chapter. */
 function chaptersToSections(heChapters: unknown[]): TextSection[] {
   return heChapters
-    .map((chapter, i) => buildSection(i + 1, `Chapitre ${i + 1}`, normalizeLines(chapter)))
+    .map((chapter, i) => buildSection(i + 1, `Chapitre ${formatNumberWithHebrew(i + 1)}`, normalizeLines(chapter)))
     .filter((s) => s.he.length > 0);
 }
 
@@ -156,10 +157,11 @@ async function loadTalmud(
         lines.push(...dafLines);
         dafBlocks.push({ daf: `${Math.floor(i / 2) + 2}${i % 2 === 0 ? "a" : "b"}`, lines: dafLines });
       }
-      const label =
+      const dafRange =
         range.startDaf === range.endDaf
-          ? `Chapitre ${range.chapter} (Daf ${range.startDaf})`
-          : `Chapitre ${range.chapter} (Daf ${range.startDaf}–${range.endDaf})`;
+          ? `Daf ${range.startDaf}`
+          : `Daf ${range.startDaf}–${range.endDaf}`;
+      const label = `Chapitre ${formatNumberWithHebrew(range.chapter)} · ${dafRange}`;
       return { index: range.chapter, label, he: lines, dafBlocks };
     });
     return { title, type: "Talmud Bavli", sections };

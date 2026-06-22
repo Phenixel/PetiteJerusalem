@@ -5,6 +5,7 @@ import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { sessionService } from "../services/sessionService";
 import { seoService } from "../services/seoService";
+import { appendHebrewNumeral } from "../services/hebrewNumerals";
 
 const { t } = useI18n();
 
@@ -122,7 +123,7 @@ onMounted(() => {
           >
             <span class="min-w-0">
               <span class="block font-medium text-text-primary truncate dark:text-gray-200">
-                {{ text.name }}
+                {{ appendHebrewNumeral(text.name) }}
               </span>
               <span
                 v-if="text.totalSections > 1"

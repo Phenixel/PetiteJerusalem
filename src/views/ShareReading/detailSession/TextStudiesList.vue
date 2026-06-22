@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { sessionService } from "../../../services/sessionService";
+import { appendHebrewNumeral, formatNumberWithHebrew } from "../../../services/hebrewNumerals";
 import { ref } from "vue";
 import type { Session, TextStudy, TextStudyReservation } from "../../../models/models";
 import type { User } from "../../../services/authService";
@@ -127,9 +128,9 @@ const handleCardClick = (text: TextStudy) => {
               <div class="flex-1 min-w-0">
                 <h4
                   class="font-bold text-lg text-text-primary leading-tight truncate mb-1 dark:text-gray-100"
-                  :title="text.name"
+                  :title="appendHebrewNumeral(text.name)"
                 >
-                  {{ text.name }}
+                  {{ appendHebrewNumeral(text.name) }}
                 </h4>
                 <!-- Case à cocher directe pour les textes à un seul chapitre -->
                 <label
@@ -322,7 +323,7 @@ const handleCardClick = (text: TextStudy) => {
                     "
                   />
                   <span class="font-medium text-sm text-text-primary dark:text-gray-200"
-                    >Chapitre {{ chapter }}</span
+                    >Chapitre {{ formatNumberWithHebrew(chapter) }}</span
                   >
                 </div>
 
