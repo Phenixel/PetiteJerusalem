@@ -55,16 +55,44 @@ serveur de dev :
 | `npm run cap:android` | build + ouvre Android Studio |
 | `npm run cap:ios` | build + ouvre Xcode |
 
-## Limites connues du POC (attendues, pas des bugs)
+## Lecture hors-ligne : déjà fonctionnelle ✅
+
+Les textes (`public/texts/**`, ~38 Mo) sont des assets statiques chargés en
+chemins relatifs (`fetch('/texts/...')` dans `textService.ts`). Lors du build
+Capacitor, `public/` est copié dans `dist/`, puis `cap sync` l'embarque dans le
+bundle natif. L'app les sert depuis son origine locale (`capacitor://localhost`)
+→ **lecture 100 % offline, sans réseau, sans code supplémentaire.**
+
+Aucune action requise : ouvre un texte avec le mode avion activé pour le vérifier.
+
+## Connexion Apple (« Sign in with Apple »)
+
+Apple **impose** « Sign in with Apple » sur l'app iOS dès qu'un autre login tiers
+(ici Google) est proposé (règle App Store 4.8). Le bouton est donc câblé mais
+**affiché uniquement sur iOS** (`Capacitor.getPlatform() === 'ios'`) — invisible
+sur le site web.
+
+Le **code** est en place (`authService.signInWithApple` + bouton). Restent les
+étapes **hors-code** (non automatisables ici) pour que ça fonctionne :
+
+1. **Firebase Console** → Authentication → activer le provider **Apple**.
+2. **Apple Developer** → créer un *Service ID*, une *Sign in with Apple Key*,
+   renseigner le *Return URL* fourni par Firebase.
+3. **Xcode** (projet iOS généré) → onglet *Signing & Capabilities* → ajouter la
+   capability **Sign in with Apple**.
+4. **Production native** : pour un flux 100 % natif (recommandé sur iOS),
+   basculer `signInWithApple` sur le plugin
+   `@capacitor-firebase/authentication`. La popup JS SDK actuelle suffit pour le
+   web et pour valider le POC.
+
+## Autres limites connues du POC (attendues, pas des bugs)
 
 - **Connexion Google** : `signInWithRedirect/popup` de Firebase ne fonctionne
-  pas dans une webview native. Pour le POC, teste avec **email/mot de passe**.
-  La V1 réelle nécessitera le plugin `@capacitor-firebase/authentication`
-  (auth Google native). C'est le premier vrai chantier identifié.
+  pas idéalement dans une webview native. Pour le POC, teste avec **email/mot de
+  passe**. La V1 réelle nécessitera le plugin `@capacitor-firebase/authentication`
+  (auth Google + Apple natives). C'est le premier vrai chantier identifié.
 - **Pas de push** dans ce POC : les notifications (FCM + Cloud Functions
-  planifiées) sont une phase ultérieure.
-- **Offline / lecture locale** : dépend de la PR qui hébergera les textes en
-  local (aujourd'hui ce sont des liens externes).
+  planifiées + clé APNs côté Apple) sont une phase ultérieure.
 
 ## Ce qu'on cherche à conclure
 

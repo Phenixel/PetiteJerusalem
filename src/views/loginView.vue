@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { Capacitor } from "@capacitor/core";
 import { authService } from "../services/authService";
 import { reservationService } from "../services/reservationService";
 import { seoService } from "../services/seoService";
@@ -77,6 +78,25 @@ async function loginWithGoogle() {
   }
 }
 
+// Apple exige "Sign in with Apple" sur l'app iOS dès qu'un autre login tiers
+// est proposé. On n'affiche donc le bouton que sur la plateforme iOS.
+const isApplePlatform = computed(() => Capacitor.getPlatform() === "ios");
+
+async function loginWithApple() {
+  try {
+    const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
+
+    const user = await authService.signInWithApple();
+
+    reservationService.migrateGuestReservations(user.email, user.id, user.name);
+
+    router.push(redirectPath);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : t("login.appleError");
+    errorMessage.value = msg;
+  }
+}
+
 onMounted(async () => {
   try {
     const user = await authService.getGoogleRedirectResult();
@@ -133,6 +153,15 @@ onMounted(async () => {
         >
           <i class="fa-brands fa-google text-[#4285F4]"></i>
           {{ t("login.signInWithGoogle") }}
+        </button>
+
+        <button
+          v-if="isApplePlatform"
+          class="w-full mt-3 py-3 px-6 bg-black hover:bg-gray-900 rounded-xl font-semibold text-white shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3"
+          @click="loginWithApple"
+        >
+          <i class="fa-brands fa-apple text-lg"></i>
+          {{ t("login.signInWithApple") }}
         </button>
       </div>
 
