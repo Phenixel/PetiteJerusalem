@@ -36,6 +36,47 @@ const jiti = createJiti(import.meta.url);
 const { allPages, renderPage, buildSitemap, SITE_URL } = await jiti.import(
   "../src/content/seoPages.ts",
 );
+const {
+  TEHILIM_CHAPTER_COUNT,
+  chapterPath,
+  chapterTitle,
+  chapterDescription,
+  buildChapterBody,
+  chapterJsonLd,
+} = await jiti.import("../src/content/tehilimChapter.ts");
+
+/**
+ * Generate the individual Tehilim chapter pages (/etude/tehilim/N) from the
+ * local text file. Returns their sitemap entries so they can be appended to
+ * sitemap.xml. Kept out of `allPages` so the full Hebrew text never lands in
+ * the SPA bundle.
+ */
+function generateTehilimChapters(dist, template) {
+  const text = JSON.parse(readFileSync(join(dist, "texts", "tehilim.json"), "utf-8"));
+  const dir = join(dist, "etude", "tehilim");
+  mkdirSync(dir, { recursive: true });
+
+  const entries = [];
+  for (let n = 1; n <= TEHILIM_CHAPTER_COUNT; n++) {
+    const verses = text[String(n)]?.he;
+    if (!verses) {
+      console.warn(`[prerender-seo] Tehilim ${n} missing from tehilim.json, skipped.`);
+      continue;
+    }
+    const page = {
+      file: `etude/tehilim/${n}.html`,
+      path: chapterPath(n),
+      title: chapterTitle(n),
+      description: chapterDescription(n),
+      bodyHtml: buildChapterBody(n, verses),
+      jsonLd: chapterJsonLd(n),
+    };
+    writeFileSync(join(dist, page.file), renderPage(template, page), "utf-8");
+    entries.push({ path: page.path, priority: 0.5, changefreq: "yearly" });
+  }
+  console.log(`[prerender-seo] Generated ${entries.length} Tehilim chapter page(s).`);
+  return entries;
+}
 
 function main() {
   const dist = join(__dirname, "..", "dist");
@@ -55,11 +96,16 @@ function main() {
     console.log(`[prerender-seo] ${page.path} -> dist/${page.file}`);
   }
 
-  // 3. Sitemap, regenerated from the same list so it can never drift.
-  const lastmod = new Date().toISOString().slice(0, 10);
-  writeFileSync(join(dist, "sitemap.xml"), buildSitemap(lastmod), "utf-8");
+  // 2b. Individual Tehilim chapter pages (long-tail SEO), generated from the
+  //     text file and added to the sitemap below.
+  const chapterEntries = generateTehilimChapters(dist, template);
 
-  console.log(`[prerender-seo] Generated ${allPages.length} page(s) + app.html + sitemap.xml.`);
+  // 3. Sitemap, regenerated from the same lists so it can never drift.
+  const lastmod = new Date().toISOString().slice(0, 10);
+  writeFileSync(join(dist, "sitemap.xml"), buildSitemap(lastmod, chapterEntries), "utf-8");
+
+  const total = allPages.length + chapterEntries.length;
+  console.log(`[prerender-seo] Generated ${total} page(s) + app.html + sitemap.xml.`);
   console.log(`[prerender-seo] Canonical host: ${SITE_URL}`);
 }
 

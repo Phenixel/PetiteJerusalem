@@ -240,7 +240,7 @@ export const appPages: SeoPage[] = [
     <section class="seo-section">
       <h2>Les textes disponibles</h2>
       <ul>
-        <li><strong>Tehilim</strong> (Psaumes) : les 150 chapitres du livre de Tehilim.</li>
+        <li><strong>Tehilim</strong> (Psaumes) : les <a href="/etude/tehilim/1">150 chapitres</a> du livre de Tehilim, en hébreu et en phonétique.</li>
         <li><strong>Michna</strong> : les six ordres (sedarim) de la Michna.</li>
         <li><strong>Talmud Bavli</strong> : les traités (massekhtot) du Talmud de Babylone.</li>
         <li><strong>Tanakh</strong> : la Torah, les Neviim (Prophètes) et les Ketouvim (Écrits).</li>
@@ -1192,21 +1192,32 @@ export function renderPage(template: string, page: SeoPage): string {
   return injectBody(injectMeta(template, page), page);
 }
 
-/** Build sitemap.xml from the indexable pages. `lastmod` is an ISO date string. */
-export function buildSitemap(lastmod: string): string {
-  const urls = allPages
+export type SitemapEntry = { path: string; priority: number; changefreq: string };
+
+/**
+ * Build sitemap.xml from the indexable pages, plus any `extra` URLs (e.g. the
+ * 150 Tehilim chapter pages, which are generated outside `allPages` to keep the
+ * SPA bundle small). `lastmod` is an ISO date string.
+ */
+export function buildSitemap(lastmod: string, extra: SitemapEntry[] = []): string {
+  const fromPages: SitemapEntry[] = allPages
     .filter((p) => p.sitemap !== false)
     .map((p) => {
       const s = p.sitemap || { priority: 0.5, changefreq: "weekly" };
-      return [
+      return { path: p.path, priority: s.priority, changefreq: s.changefreq };
+    });
+
+  const urls = [...fromPages, ...extra]
+    .map((s) =>
+      [
         "  <url>",
-        `    <loc>${SITE_URL}${p.path === "/" ? "/" : p.path}</loc>`,
+        `    <loc>${SITE_URL}${s.path === "/" ? "/" : s.path}</loc>`,
         `    <lastmod>${lastmod}</lastmod>`,
         `    <changefreq>${s.changefreq}</changefreq>`,
         `    <priority>${s.priority.toFixed(1)}</priority>`,
         "  </url>",
-      ].join("\n");
-    })
+      ].join("\n"),
+    )
     .join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
