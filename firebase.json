@@ -18,6 +18,10 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
+        "source": "/og/session/**",
+        "function": "ogImage"
+      },
+      {
         "source": "/share-reading/session/**",
         "function": "socialPreview"
       },
