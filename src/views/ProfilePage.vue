@@ -327,6 +327,7 @@ onMounted(async () => {
       v-model:show="showShareModal"
       :session-name="selectedSession?.name || ''"
       :share-url="shareUrl"
+      :session-type="selectedSession?.type"
     />
 
     <EditSessionModal

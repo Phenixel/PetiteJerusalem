@@ -262,7 +262,10 @@ const fr = {
     scanQR: "Ou scanner le QR code",
     scanQRDesc: "Scannez ce code pour accéder directement à la session",
     qrError: "Erreur lors de la génération du QR code",
-    shareMessage: "Rejoignez-moi pour une session d'étude partagée",
+    inviteTehilim:
+      "Rejoignez la chaîne de Tehilim « {name} » 📖 Chacun lit quelques psaumes et l'on termine ensemble. Réservez les vôtres ici :",
+    inviteStudy:
+      "Rejoignez l'étude partagée « {name} » 📖 Réservez vos passages et étudions ensemble :",
   },
   batchSelection: {
     textsSelected: "{count} textes sélectionnés",
