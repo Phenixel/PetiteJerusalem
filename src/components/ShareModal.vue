@@ -8,6 +8,8 @@ interface Props {
   show: boolean;
   sessionName: string;
   shareUrl: string;
+  /** Session text type (e.g. "Tehilim") used to tailor the pre-filled invite. */
+  sessionType?: string;
 }
 
 interface Emits {
@@ -79,15 +81,24 @@ const generateQRCode = async () => {
   }
 };
 
+/**
+ * Build the pre-filled invite text. Tehilim sessions get a "chaîne de Tehilim"
+ * wording (the #1 acquisition channel is WhatsApp), others a generic study one.
+ * The session name usually already carries the intention (e.g. "… refoua
+ * chelema de …"), so we interpolate it into the message.
+ */
+const buildShareMessage = () => {
+  const key = props.sessionType === "Tehilim" ? "shareModal.inviteTehilim" : "shareModal.inviteStudy";
+  return `${t(key, { name: props.sessionName })}\n\n${props.shareUrl}`;
+};
+
 const shareToWhatsApp = () => {
-  const message = `${t("shareModal.shareMessage")}: ${props.sessionName}\n\n${props.shareUrl}`;
-  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(buildShareMessage())}`;
   window.open(whatsappUrl, "_blank");
 };
 
 const shareToSMS = () => {
-  const message = `${t("shareModal.shareMessage")}: ${props.sessionName}\n\n${props.shareUrl}`;
-  const smsUrl = `sms:?body=${encodeURIComponent(message)}`;
+  const smsUrl = `sms:?body=${encodeURIComponent(buildShareMessage())}`;
   window.location.href = smsUrl;
 };
 

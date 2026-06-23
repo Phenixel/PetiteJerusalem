@@ -519,6 +519,7 @@ watch(session, (s) => applySessionSeo(s));
       v-model:show="showShareModal"
       :session-name="session?.name || ''"
       :share-url="shareUrl"
+      :session-type="session?.type"
     />
   </main>
 </template>
