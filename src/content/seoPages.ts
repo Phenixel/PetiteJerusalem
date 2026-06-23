@@ -800,6 +800,173 @@ const INTENTIONS: Intention[] = [
       },
     ],
   },
+  {
+    slug: "mariage",
+    title: "Tehilim pour le mariage (zivoug) | Petite Jérusalem",
+    description:
+      "Quels Tehilim lire pour trouver son conjoint (zivoug) : psaumes 32, 38, 70, 71, 121, 124 et 133, à lire seul ou à plusieurs pour aller plus vite.",
+    h1: "Tehilim pour trouver son conjoint (zivoug)",
+    lead: "Le <strong>zivoug</strong> désigne l'âme sœur, le conjoint que l'on cherche à rencontrer. On a coutume de lire certains Tehilim (Psaumes) en priant pour trouver son conjoint et fonder un foyer. Lus à plusieurs, ils se terminent plus vite.",
+    psalms: [32, 38, 70, 71, 121, 124, 133],
+    psalmsNote: "Certains lisent aussi les psaumes 23 et 25, notamment avant et le jour du mariage.",
+    cardTitle: "Mariage (zivoug)",
+    cardDesc: "Les psaumes à lire pour trouver son conjoint et fonder un foyer.",
+    related: ["reussite", "parnassa"],
+    faq: [
+      {
+        q: "Quels Tehilim lire pour trouver son conjoint ?",
+        a: "On lit traditionnellement les psaumes 32, 38, 70, 71, 121, 124 et 133 pour le zivoug. Certains ajoutent les psaumes 23 et 25. En cas de doute, demandez conseil à votre rav.",
+      },
+      {
+        q: "Peut-on lire ces Tehilim à plusieurs ?",
+        a: "Oui. Créez une session de partage de Tehilim, indiquez l'intention (et le prénom concerné), puis partagez le lien : chacun lit quelques psaumes et l'on termine bien plus vite, ensemble.",
+      },
+      {
+        q: "Quand les lire ?",
+        a: "Il n'y a pas de moment imposé ; beaucoup les lisent régulièrement. Les psaumes 23 et 25 sont en particulier lus avant et le jour du mariage.",
+      },
+    ],
+  },
+  {
+    slug: "parnassa",
+    title: "Tehilim pour la parnassa (subsistance) | Petite Jérusalem",
+    description:
+      "Quels Tehilim lire pour la parnassa (subsistance, réussite financière) : psaumes 23, 24 et 32, et la cure de 40 jours (20, 21, 23, 24, 29, 91).",
+    h1: "Tehilim pour la parnassa (subsistance)",
+    lead: "La <strong>parnassa</strong> est la subsistance, ce qui permet de subvenir à ses besoins. On a coutume de lire certains Tehilim (Psaumes) en priant pour une parnassa sereine et une réussite dans son travail.",
+    psalms: [23, 24, 32],
+    psalmsNote:
+      "Il existe aussi une coutume de « cure » sur 40 jours&nbsp;: lire chaque jour les psaumes 20, 21, 23, 24, 29 et 91.",
+    cardTitle: "Parnassa (subsistance)",
+    cardDesc: "Les psaumes à lire pour la subsistance et la réussite financière.",
+    related: ["reussite", "protection"],
+    faq: [
+      {
+        q: "Quels Tehilim lire pour la parnassa ?",
+        a: "On cite souvent les psaumes 23, 24 et 32 pour la parnassa. Une coutume consiste aussi à lire pendant 40 jours les psaumes 20, 21, 23, 24, 29 et 91. En cas de doute, demandez conseil à votre rav.",
+      },
+      {
+        q: "Comment les lire à plusieurs ?",
+        a: "Créez une session de partage de Tehilim, précisez l'intention, partagez le lien : chacun lit ses psaumes et l'on avance ensemble.",
+      },
+      {
+        q: "Qu'est-ce que la cure de 40 jours ?",
+        a: "C'est l'usage de lire chaque jour, pendant 40 jours consécutifs, un ensemble de psaumes (ici 20, 21, 23, 24, 29 et 91) avec une intention particulière.",
+      },
+    ],
+  },
+  {
+    slug: "protection",
+    title: "Tehilim pour la protection | Petite Jérusalem",
+    description:
+      "Quels Tehilim lire pour la protection (danger, voyage, mauvais œil) : psaumes 91, 121, 20, 120, 3 et 34, à lire seul ou à plusieurs.",
+    h1: "Tehilim pour la protection (danger, voyage, mauvais œil)",
+    lead: "On a coutume de lire certains Tehilim (Psaumes) pour demander la <strong>protection</strong> de D.ieu&nbsp;: avant un voyage, en cas de danger, ou contre le mauvais œil (ayin hara).",
+    psalms: [91, 121, 20, 120, 3, 34],
+    psalmsNote:
+      "Contre le mauvais œil (ayin hara), on cite en particulier le psaume 31. Pour un voyage, on récite aussi la Tefilat haderekh (prière du voyageur).",
+    cardTitle: "Protection (danger, voyage)",
+    cardDesc: "Les psaumes à lire pour la protection, le voyage et contre le mauvais œil.",
+    related: ["refoua-chelema", "accouchement"],
+    faq: [
+      {
+        q: "Quels Tehilim lire pour être protégé ?",
+        a: "On cite souvent les psaumes 91, 121, 20, 120, 3 et 34 pour la protection. Contre le mauvais œil, on ajoute le psaume 31. En cas de doute, demandez conseil à votre rav.",
+      },
+      {
+        q: "Quel psaume lire avant un voyage ?",
+        a: "Le psaume 121 est très lu avant un voyage, en plus de la Tefilat haderekh (prière du voyageur).",
+      },
+      {
+        q: "Peut-on les lire à plusieurs ?",
+        a: "Oui. Créez une session de partage de Tehilim, indiquez l'intention et partagez le lien pour lire ensemble.",
+      },
+    ],
+  },
+  {
+    slug: "iloui-nechama",
+    title: "Tehilim pour un défunt (ilouï nechama) | Petite Jérusalem",
+    description:
+      "Quels Tehilim lire pour l'ilouï nechama (à la mémoire d'un défunt) : psaumes 33, 16, 17, 72, 91, 104 et 130, plus le psaume 119 selon le prénom.",
+    h1: "Tehilim à la mémoire d'un défunt (ilouï nechama)",
+    lead: "L'<strong>ilouï nechama</strong> est l'élévation de l'âme d'un défunt. On a coutume de lire des Tehilim (Psaumes) à la mémoire d'un proche, en particulier pour une hiloula (anniversaire de décès). Lus à plusieurs, ils se terminent plus vite.",
+    psalms: [33, 16, 17, 72, 91, 104, 130],
+    psalmsNote:
+      "On lit aussi le psaume 119 (le plus long) en choisissant les sections (huit versets par lettre) qui forment les lettres du prénom du défunt, puis celles du mot נשמה (Nechama).",
+    cardTitle: "Ilouï nechama (mémoire d'un défunt)",
+    cardDesc: "Les psaumes à lire pour l'élévation de l'âme d'un proche disparu.",
+    related: ["refoua-chelema", "protection"],
+    faq: [
+      {
+        q: "Quels Tehilim lire pour un défunt ?",
+        a: "On lit traditionnellement les psaumes 33, 16, 17, 72, 91, 104 et 130 pour un ilouï nechama, ainsi que les sections du psaume 119 correspondant aux lettres du prénom du défunt et au mot נשמה. En cas de doute, demandez conseil à votre rav.",
+      },
+      {
+        q: "Qu'est-ce que le psaume 119 selon le prénom ?",
+        a: "Le psaume 119 est divisé en sections de huit versets, une par lettre de l'alphabet hébraïque. On lit les sections correspondant aux lettres du prénom du défunt, puis celles du mot נשמה (Nechama).",
+      },
+      {
+        q: "Comment organiser une lecture à plusieurs ?",
+        a: "Créez une session de partage de Tehilim à la mémoire du défunt et partagez le lien à la famille et aux proches : chacun lit quelques psaumes, souvent avant la hiloula.",
+      },
+    ],
+  },
+  {
+    slug: "accouchement",
+    title: "Tehilim pour l'accouchement et la grossesse | Petite Jérusalem",
+    description:
+      "Quels Tehilim lire pour la grossesse et l'accouchement : surtout le psaume 20, ainsi que 22, 91 et 1, à lire seul ou à plusieurs.",
+    h1: "Tehilim pour la grossesse et l'accouchement",
+    lead: "On a coutume de lire des Tehilim (Psaumes) pour une grossesse sereine et un accouchement facile, pour la mère comme pour l'enfant à naître.",
+    psalms: [20, 22, 91, 1],
+    psalmsNote:
+      "Le psaume 20 est le plus cité. Une liste élargie attribuée au Rav 'Haïm Kanievsky comprend les psaumes 1 à 4, 21 à 24, 33 à 47, 72 à 86 et 90.",
+    cardTitle: "Grossesse & accouchement",
+    cardDesc: "Les psaumes à lire pour une grossesse et un accouchement sereins.",
+    related: ["refoua-chelema", "protection"],
+    faq: [
+      {
+        q: "Quel Tehilim lire pour un accouchement ?",
+        a: "Le psaume 20 est le plus cité pour l'accouchement ; on lit aussi les psaumes 22, 91 et 1. En cas de doute, demandez conseil à votre rav.",
+      },
+      {
+        q: "Y a-t-il une liste plus longue ?",
+        a: "Oui, une liste élargie attribuée au Rav 'Haïm Kanievsky comprend les psaumes 1 à 4, 21 à 24, 33 à 47, 72 à 86 et 90.",
+      },
+      {
+        q: "Peut-on les lire à plusieurs ?",
+        a: "Oui. La famille et les amis peuvent se répartir les psaumes via une session de partage, pour les terminer ensemble avant l'accouchement.",
+      },
+    ],
+  },
+  {
+    slug: "reussite",
+    title: "Tehilim pour la réussite (hatslakha) | Petite Jérusalem",
+    description:
+      "Quels Tehilim lire pour la réussite (hatslakha) — examen, projet, entreprise : psaumes 4, 20, 32 et 90, à lire seul ou à plusieurs.",
+    h1: "Tehilim pour la réussite (hatslakha)",
+    lead: "La <strong>hatslakha</strong> est la réussite, la bénédiction dans ce que l'on entreprend&nbsp;: un examen, un projet, une nouvelle entreprise. On a coutume de lire des Tehilim (Psaumes) pour la demander.",
+    psalms: [4, 20, 32, 90],
+    psalmsNote:
+      "Cette liste est provisoire et recoupe en partie celle de la <a href=\"/tehilim/parnassa\">parnassa</a> ; elle sera reconfirmée.",
+    cardTitle: "Réussite (hatslakha)",
+    cardDesc: "Les psaumes à lire pour la réussite d'un examen, d'un projet ou d'une entreprise.",
+    related: ["parnassa", "mariage"],
+    faq: [
+      {
+        q: "Quels Tehilim lire pour réussir un examen ou un projet ?",
+        a: "On cite les psaumes 4, 20, 32 et 90 pour la hatslakha (réussite). Cette liste est provisoire et sera reconfirmée. En cas de doute, demandez conseil à votre rav.",
+      },
+      {
+        q: "Quelle différence avec la parnassa ?",
+        a: "La parnassa concerne spécifiquement la subsistance et la réussite financière ; la hatslakha vise la réussite en général. Les listes se recoupent en partie.",
+      },
+      {
+        q: "Peut-on les lire à plusieurs ?",
+        a: "Oui. Créez une session de partage de Tehilim, précisez l'intention et partagez le lien pour lire ensemble.",
+      },
+    ],
+  },
 ];
 
 const intentionBySlug = new Map(INTENTIONS.map((i) => [i.slug, i]));
