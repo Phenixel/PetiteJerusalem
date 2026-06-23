@@ -1038,13 +1038,12 @@ function buildIntention(it: Intention): SeoPage {
 
 /** Build the hub page listing every intention. */
 function buildTehilimHub(): SeoPage {
-  const cards = INTENTIONS.map(
+  const rows = INTENTIONS.map(
     (it) => `
         <li>
-          <a class="tehilim-card" href="${intentionPath(it.slug)}">
-            <span class="tehilim-card-title">${it.cardTitle}</span>
-            <span class="tehilim-card-desc">${it.cardDesc}</span>
-            <span class="tehilim-card-cta">Voir les psaumes</span>
+          <a href="${intentionPath(it.slug)}">
+            <span class="tehilim-list-title">${it.cardTitle}</span>
+            <span class="tehilim-list-desc">${it.cardDesc}</span>
           </a>
         </li>`,
   ).join("");
@@ -1063,7 +1062,7 @@ function buildTehilimHub(): SeoPage {
 
     <section class="seo-section">
       <h2>Choisir une intention</h2>
-      <ul class="tehilim-cards">${cards}
+      <ul class="tehilim-list">${rows}
       </ul>
     </section>
 

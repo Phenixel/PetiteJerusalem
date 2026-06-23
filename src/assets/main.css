@@ -230,116 +230,64 @@ button,
   color: var(--color-text-secondary);
 }
 
-/* "Tehilim par intention" hub: clickable intention cards (whole card is a link). */
-.seo-article .tehilim-cards {
+/* "Tehilim par intention" hub: simple list of intentions (whole row is a link). */
+.seo-article .tehilim-list {
   list-style: none;
   margin-inline-start: 0;
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-@media (min-width: 640px) {
-  .seo-article .tehilim-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 900px) {
-  .seo-article .tehilim-cards {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.seo-article .tehilim-cards li {
+.seo-article .tehilim-list li {
   margin: 0;
 }
 
-.seo-article .tehilim-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  height: 100%;
-  padding: 1.5rem 1.4rem;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.55);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+.seo-article .tehilim-list a {
+  display: block;
+  padding: 1rem 0.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   text-decoration: none;
-  overflow: hidden;
-  transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease,
-    border-color 0.25s ease;
+  transition: background 0.2s ease;
 }
 
-/* Gradient accent bar that reveals on hover. */
-.seo-article .tehilim-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 4px;
-  background: linear-gradient(to bottom, var(--color-primary), var(--color-secondary));
-  opacity: 0;
-  transition: opacity 0.25s ease;
+.seo-article .tehilim-list a:hover {
+  background: rgba(0, 0, 0, 0.03);
 }
 
-.seo-article .tehilim-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(29, 111, 219, 0.25);
-  box-shadow: 0 12px 28px rgba(29, 111, 219, 0.13);
-}
-
-.seo-article .tehilim-card:hover::before {
-  opacity: 1;
-}
-
-.tehilim-card-title {
+.tehilim-list-title {
+  display: block;
   font-weight: 700;
-  font-size: 1.1rem;
-  line-height: 1.3;
+  font-size: 1.05rem;
   color: var(--color-text-primary);
 }
 
-.seo-article .tehilim-card:hover .tehilim-card-title {
-  background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.tehilim-card-desc {
-  flex: 1;
+.tehilim-list-desc {
+  display: block;
+  margin-top: 0.2rem;
   font-size: 0.95rem;
-  line-height: 1.55;
+  line-height: 1.5;
   color: var(--color-text-secondary);
 }
 
-.tehilim-card-cta {
-  margin-top: 0.4rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-primary);
+:root.dark .seo-article .tehilim-list {
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
-.seo-article .tehilim-card:hover .tehilim-card-cta {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+:root.dark .seo-article .tehilim-list a {
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
-:root.dark .seo-article .tehilim-card {
-  background: rgba(31, 41, 55, 0.5);
-  border-color: rgba(255, 255, 255, 0.08);
+:root.dark .seo-article .tehilim-list a:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 
-:root.dark .tehilim-card-title {
+:root.dark .tehilim-list-title {
   color: #f3f4f6;
 }
 
-:root.dark .tehilim-card-desc {
+:root.dark .tehilim-list-desc {
   color: #cbd5e1;
 }
 
