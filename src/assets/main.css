@@ -297,19 +297,6 @@ button,
   opacity: 1;
 }
 
-.tehilim-card-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  margin-bottom: 0.25rem;
-  border-radius: var(--radius-md);
-  font-size: 1.15rem;
-  color: var(--color-primary);
-  background: linear-gradient(135deg, rgba(29, 111, 219, 0.12), rgba(6, 182, 212, 0.12));
-}
-
 .tehilim-card-title {
   font-weight: 700;
   font-size: 1.1rem;
@@ -338,13 +325,9 @@ button,
   color: var(--color-primary);
 }
 
-.tehilim-card-cta i {
-  margin-inline-start: 0.25rem;
-  transition: transform 0.25s ease;
-}
-
-.seo-article .tehilim-card:hover .tehilim-card-cta i {
-  transform: translateX(3px);
+.seo-article .tehilim-card:hover .tehilim-card-cta {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 :root.dark .seo-article .tehilim-card {
@@ -358,11 +341,6 @@ button,
 
 :root.dark .tehilim-card-desc {
   color: #cbd5e1;
-}
-
-:root.dark .tehilim-card-icon {
-  background: linear-gradient(135deg, rgba(29, 111, 219, 0.22), rgba(6, 182, 212, 0.22));
-  color: #93c5fd;
 }
 
 /* Internal-link footer injected into prerendered HTML only (the SPA uses
