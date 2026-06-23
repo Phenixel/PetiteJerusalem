@@ -95,6 +95,7 @@ export const staticFooterHtml = `
       <a href="/chiourim">Chiourim</a>
       <a href="/finir-le-chass">Finir le Chass</a>
       <a href="/partage-tehilim">Partage de Tehilim</a>
+      <a href="/tehilim">Tehilim par intention</a>
     </nav>
     <p>Petite Jérusalem : étudier et partager la Torah, ensemble. Gratuit et en français.</p>
   </footer>`;
@@ -725,8 +726,231 @@ const landingAsSeoPages: SeoPage[] = landingPages.map((p) => ({
   ...p.locales[DEFAULT_LANDING_LOCALE],
 }));
 
+// ---- Tehilim par intention (hub + intention pages) ----------------------
+//
+// Evergreen utility pages answering "which Tehilim to read for …" queries
+// (a malade / refoua chelema, mariage, parnassa…). Each page lists the
+// traditionally-read psalms (linked to the full reader) and converts to a
+// shared reading. French-only for now (the brief defers i18n). The psalm
+// lists are provisional and to be revalidated by a competent person, so each
+// page carries a prudent disclaimer.
+
+const TEHILIM_HUB_PATH = "/tehilim";
+const SHARE_NEW_SESSION = "/share-reading/new-session";
+
+/** The Tehilim reader serves chapter N at textId 102 + N (see textStudies.json). */
+const tehilimReaderHref = (n: number): string => `/lire/${102 + n}`;
+
+const intentionPath = (slug: string): string => `${TEHILIM_HUB_PATH}/${slug}`;
+
+type Intention = {
+  /** URL slug, lowercase and without accents (e.g. "refoua-chelema"). */
+  slug: string;
+  title: string;
+  description: string;
+  h1: string;
+  /** Intro paragraph(s), inline HTML. */
+  lead: string;
+  /** Recommended psalm numbers, in reading order. */
+  psalms: number[];
+  /** Optional extra note shown under the psalm list (inline HTML). */
+  psalmsNote?: string;
+  /** Short label + blurb used on the hub card and breadcrumb. */
+  cardTitle: string;
+  cardDesc: string;
+  /** Slugs of related intentions for internal linking (unknown slugs are ignored). */
+  related: string[];
+  faq: { q: string; a: string }[];
+};
+
+/** Prudent disclaimer shown on every intention page (lists pending revalidation). */
+const TEHILIM_DISCLAIMER =
+  "Ces listes sont indicatives, selon les sources couramment citées, et en cours de revalidation. En cas de doute, demandez conseil à votre rav.";
+
+const INTENTIONS: Intention[] = [
+  {
+    slug: "refoua-chelema",
+    title: "Tehilim pour un malade (refoua chelema) | Petite Jérusalem",
+    description:
+      "Quels Tehilim lire pour la refoua chelema (guérison d'un malade) : psaumes 20, 121, 6, 30 et 38, à lire seul ou à plusieurs pour aller plus vite.",
+    h1: "Tehilim pour la guérison d'un malade (refoua chelema)",
+    lead: "La <strong>refoua chelema</strong> est la prière pour la guérison complète d'un malade. On a coutume de lire certains Tehilim (Psaumes) en pensant à la personne souffrante. Lus à plusieurs, en se répartissant les chapitres, ils se terminent bien plus vite.",
+    psalms: [20, 121, 6, 30, 38],
+    psalmsNote:
+      "L'usage est de prier pour la personne avec son prénom hébraïque suivi de celui de sa mère (par ex. «&nbsp;Untel ben Unetelle&nbsp;»). Beaucoup ajoutent le psaume 119 selon les lettres du prénom du malade.",
+    cardTitle: "Refoua chelema (guérison d'un malade)",
+    cardDesc: "Les psaumes à lire pour la guérison d'une personne malade.",
+    related: ["accouchement", "protection"],
+    faq: [
+      {
+        q: "Quels Tehilim lire pour un malade ?",
+        a: "On lit traditionnellement les psaumes 20, 121, 6, 30 et 38 pour une refoua chelema. Beaucoup ajoutent le psaume 119 selon les lettres du prénom du malade. En cas de doute, demandez conseil à votre rav.",
+      },
+      {
+        q: "Comment lire les Tehilim pour la guérison à plusieurs ?",
+        a: "Créez une session de partage de Tehilim sur Petite Jérusalem, indiquez le nom du malade, puis partagez le lien. Chacun lit quelques psaumes et l'on termine bien plus vite, ensemble.",
+      },
+      {
+        q: "Faut-il mentionner le nom du malade ?",
+        a: "L'usage est de prier pour la personne en utilisant son prénom hébraïque suivi de celui de sa mère (par ex. « Untel ben Unetelle »). Vous pouvez l'indiquer dans la description de la session de partage.",
+      },
+      {
+        q: "Est-ce gratuit ?",
+        a: "Oui, Petite Jérusalem est entièrement gratuit, et l'on peut participer même sans créer de compte.",
+      },
+    ],
+  },
+];
+
+const intentionBySlug = new Map(INTENTIONS.map((i) => [i.slug, i]));
+
+/** Build one intention page (body + head metadata + JSON-LD) as a SeoPage. */
+function buildIntention(it: Intention): SeoPage {
+  const path = intentionPath(it.slug);
+
+  const psalmsList = it.psalms
+    .map((n) => `<li><a href="${tehilimReaderHref(n)}">Tehilim ${n}</a></li>`)
+    .join("\n        ");
+
+  const related = it.related
+    .map((slug) => intentionBySlug.get(slug))
+    .filter((r): r is Intention => Boolean(r))
+    .map((r) => `<li><a href="${intentionPath(r.slug)}">${r.cardTitle}</a></li>`)
+    .join("\n        ");
+
+  const bodyHtml = `
+  <main class="seo-article">
+    <h1>${it.h1}</h1>
+    <p class="seo-lead">${it.lead}</p>
+
+    <p><a class="seo-cta" href="${SHARE_NEW_SESSION}">Organiser un partage de Tehilim pour cette intention</a></p>
+
+    <section class="seo-section" aria-labelledby="psaumes-title">
+      <h2 id="psaumes-title">Psaumes (Tehilim) à lire</h2>
+      <p>Psaumes traditionnellement lus pour cette intention&nbsp;:</p>
+      <ul class="tehilim-psalms">
+        ${psalmsList}
+      </ul>
+      ${it.psalmsNote ? `<p>${it.psalmsNote}</p>` : ""}
+      <p class="seo-note"><em>${TEHILIM_DISCLAIMER}</em></p>
+    </section>
+
+    <section class="seo-section">
+      <h2>Comment partager ces Tehilim</h2>
+      <ol>
+        <li>Créez une <a href="${SHARE_NEW_SESSION}">session de partage</a> de type Tehilim et précisez l'intention (et le nom concerné) dans la description.</li>
+        <li>Sélectionnez les chapitres à lire, ou tout le sefer Tehilim.</li>
+        <li>Partagez le lien avec votre famille, vos amis ou votre communauté&nbsp;: chacun réserve et lit ses chapitres, même sans compte.</li>
+        <li>Suivez la progression en temps réel jusqu'à terminer les Tehilim ensemble.</li>
+      </ol>
+      <p><a class="seo-cta" href="${SHARE_NEW_SESSION}">Organiser un partage de Tehilim</a></p>
+    </section>
+
+    ${faqHtml(it.faq, "Questions fréquentes")}
+
+    <section class="seo-section">
+      <h2>Autres intentions &amp; ressources</h2>
+      <ul>
+        ${related ? related + "\n        " : ""}<li><a href="${TEHILIM_HUB_PATH}">Toutes les intentions (Tehilim par intention)</a></li>
+        <li><a href="/partage-tehilim">Partage de Tehilim à plusieurs</a></li>
+        <li><a href="/etude">Étude libre des textes</a></li>
+      </ul>
+    </section>
+  </main>`;
+
+  return {
+    file: `tehilim/${it.slug}.html`,
+    path,
+    title: it.title,
+    description: it.description,
+    sitemap: { priority: 0.8, changefreq: "monthly" },
+    bodyHtml,
+    jsonLd: [
+      breadcrumb([
+        { name: "Accueil", path: "/" },
+        { name: "Tehilim par intention", path: TEHILIM_HUB_PATH },
+        { name: it.cardTitle, path },
+      ]),
+      faqJsonLd(it.faq),
+    ],
+  };
+}
+
+/** Build the hub page listing every intention. */
+function buildTehilimHub(): SeoPage {
+  const cards = INTENTIONS.map(
+    (it) => `
+        <li>
+          <h3><a href="${intentionPath(it.slug)}">${it.cardTitle}</a></h3>
+          <p>${it.cardDesc}</p>
+        </li>`,
+  ).join("");
+
+  const bodyHtml = `
+  <main class="seo-article">
+    <h1>Tehilim par intention</h1>
+    <p class="seo-lead">
+      À chaque moment de la vie correspondent des Tehilim (Psaumes) que l'on a coutume de lire&nbsp;:
+      pour la guérison d'un malade, à la mémoire d'un défunt, pour la subsistance ou la protection…
+      Retrouvez les psaumes traditionnellement lus pour chaque intention, et organisez un partage
+      pour les terminer à plusieurs.
+    </p>
+
+    <p><a class="seo-cta" href="${SHARE_NEW_SESSION}">Organiser un partage de Tehilim</a></p>
+
+    <section class="seo-section">
+      <h2>Choisir une intention</h2>
+      <ul class="seo-cards">${cards}
+      </ul>
+    </section>
+
+    <section class="seo-section">
+      <h2>Lire les Tehilim à plusieurs</h2>
+      <p>
+        Lire un sefer Tehilim entier (150 psaumes) prend du temps&nbsp;; en se répartissant les
+        chapitres, un groupe peut le terminer en quelques minutes. Découvrez comment
+        <a href="/partage-tehilim">partager les Tehilim à plusieurs</a> ou lancez directement une
+        <a href="${SHARE_NEW_SESSION}">session de partage</a>.
+      </p>
+      <p class="seo-note"><em>${TEHILIM_DISCLAIMER}</em></p>
+    </section>
+  </main>`;
+
+  return {
+    file: "tehilim.html",
+    path: TEHILIM_HUB_PATH,
+    title: "Tehilim par intention : quels psaumes lire et pourquoi | Petite Jérusalem",
+    description:
+      "Quels Tehilim (Psaumes) lire selon l'intention : guérison d'un malade (refoua chelema), à la mémoire d'un défunt, parnassa, protection… Listes des psaumes et partage à plusieurs.",
+    sitemap: { priority: 0.9, changefreq: "monthly" },
+    bodyHtml,
+    jsonLd: [
+      breadcrumb([
+        { name: "Accueil", path: "/" },
+        { name: "Tehilim par intention", path: TEHILIM_HUB_PATH },
+      ]),
+      {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: "Tehilim par intention",
+        itemListElement: INTENTIONS.map((it, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name: it.cardTitle,
+          url: `${SITE_URL}${intentionPath(it.slug)}`,
+        })),
+      },
+    ],
+  };
+}
+
+export const tehilimHub: SeoPage = buildTehilimHub();
+export const tehilimIntentionPages: SeoPage[] = INTENTIONS.map(buildIntention);
+/** Hub + intention pages, consumed at runtime by TehilimPage.vue. */
+export const tehilimPages: SeoPage[] = [tehilimHub, ...tehilimIntentionPages];
+
 /** All pages that the prerender script turns into static HTML files. */
-export const allPages: SeoPage[] = [...appPages, ...landingAsSeoPages];
+export const allPages: SeoPage[] = [...appPages, ...landingAsSeoPages, ...tehilimPages];
 
 // ---- Pure HTML transforms (shared by prerender + tests) -----------------
 

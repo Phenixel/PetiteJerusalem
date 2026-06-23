@@ -61,6 +61,7 @@ const en: LocaleMessages = {
     discover: "Discover",
     finishChass: "Finish the Shas",
     shareTehilim: "Share Tehilim",
+    tehilimIntentions: "Tehilim by intention",
   },
   home: {
     heroTitle: "Your digital spiritual center",

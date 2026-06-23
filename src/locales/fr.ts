@@ -59,6 +59,7 @@ const fr = {
     discover: "Découvrir",
     finishChass: "Finir le Chass",
     shareTehilim: "Partage de Tehilim",
+    tehilimIntentions: "Tehilim par intention",
   },
   home: {
     heroTitle: "Étudier et partager la Torah, à plusieurs",

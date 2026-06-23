@@ -12,6 +12,7 @@ import NotFound from "../views/NotFound.vue";
 import TextReadingPage from "../views/TextReading/TextReadingPage.vue";
 import StudyPage from "../views/StudyPage.vue";
 import ContentPage from "../views/ContentPage.vue";
+import TehilimPage from "../views/TehilimPage.vue";
 
 export default [
   {
@@ -90,6 +91,18 @@ export default [
     path: "/partage-tehilim",
     name: "partage-tehilim",
     component: ContentPage,
+  },
+  // Tehilim par intention: hub + intention pages, rendered from
+  // src/content/seoPages.ts (same markup the prerender step serves to crawlers).
+  {
+    path: "/tehilim",
+    name: "tehilim-hub",
+    component: TehilimPage,
+  },
+  {
+    path: "/tehilim/:slug",
+    name: "tehilim-intention",
+    component: TehilimPage,
   },
   {
     path: "/:pathMatch(.*)*",

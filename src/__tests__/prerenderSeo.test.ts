@@ -8,6 +8,9 @@ import {
   allPages,
   appPages,
   landingPages,
+  tehilimHub,
+  tehilimIntentionPages,
+  tehilimPages,
   SITE_URL,
   type SeoPage,
 } from "../content/seoPages";
@@ -130,6 +133,51 @@ describe("seoPages data", () => {
 
   it("cible le bon domaine canonique", () => {
     expect(SITE_URL).toBe("https://petite-jerusalem.fr");
+  });
+});
+
+describe("seoPages Tehilim par intention", () => {
+  it("expose le hub /tehilim et l'ajoute aux pages prérendues + sitemap", () => {
+    expect(tehilimHub.path).toBe("/tehilim");
+    expect(tehilimHub.file).toBe("tehilim.html");
+    expect(allPages).toContain(tehilimHub);
+    expect(buildSitemap("2026-06-21")).toContain(
+      "<loc>https://petite-jerusalem.fr/tehilim</loc>",
+    );
+  });
+
+  it("inclut au moins la page modèle refoua-chelema", () => {
+    const refoua = tehilimIntentionPages.find((p) => p.path === "/tehilim/refoua-chelema");
+    expect(refoua).toBeDefined();
+    expect(refoua!.file).toBe("tehilim/refoua-chelema.html");
+  });
+
+  it("chaque page intention lie vers le lecteur, le partage et le hub", () => {
+    for (const p of tehilimIntentionPages) {
+      expect(p.bodyHtml).toMatch(/href="\/lire\/\d+"/);
+      expect(p.bodyHtml).toContain('href="/share-reading/new-session"');
+      expect(p.bodyHtml).toContain('href="/tehilim"');
+      expect(p.bodyHtml).toContain('href="/partage-tehilim"');
+    }
+  });
+
+  it("émet le JSON-LD BreadcrumbList + FAQPage sur les pages intention", () => {
+    for (const p of tehilimIntentionPages) {
+      const types = (p.jsonLd ?? []).map((o) => o["@type"]);
+      expect(types).toContain("BreadcrumbList");
+      expect(types).toContain("FAQPage");
+    }
+  });
+
+  it("le hub liste chaque intention disponible", () => {
+    for (const p of tehilimIntentionPages) {
+      expect(tehilimHub.bodyHtml).toContain(`href="${p.path}"`);
+    }
+  });
+
+  it("tehilimPages regroupe le hub puis les intentions", () => {
+    expect(tehilimPages[0]).toBe(tehilimHub);
+    expect(tehilimPages.slice(1)).toEqual(tehilimIntentionPages);
   });
 });
 

@@ -61,6 +61,7 @@ const he: LocaleMessages = {
     discover: "גלה",
     finishChass: "לסיים את הש״ס",
     shareTehilim: "חלוקת תהילים",
+    tehilimIntentions: "תהילים לפי כוונה",
   },
   home: {
     heroTitle: "המרכז הרוחני הדיגיטלי שלכם",

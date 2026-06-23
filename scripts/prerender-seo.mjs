@@ -25,7 +25,7 @@
  * environment-agnostic module) so the Vue app and this build step share one
  * source of truth. It is a TypeScript file, loaded here through `jiti`.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createJiti } from "jiti";
@@ -45,9 +45,13 @@ function main() {
   writeFileSync(join(dist, "app.html"), template, "utf-8");
 
   // 2. One static HTML file per indexable page (body + head + JSON-LD).
+  //    Some pages live in a subfolder (e.g. tehilim/refoua-chelema.html), so
+  //    make sure the target directory exists before writing.
   for (const page of allPages) {
     const html = renderPage(template, page);
-    writeFileSync(join(dist, page.file), html, "utf-8");
+    const target = join(dist, page.file);
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, html, "utf-8");
     console.log(`[prerender-seo] ${page.path} -> dist/${page.file}`);
   }
 

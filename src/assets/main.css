@@ -197,6 +197,39 @@ button,
   color: #cbd5e1;
 }
 
+/* "Tehilim par intention": horizontal list of psalm chips linking to the reader. */
+.seo-article .tehilim-psalms {
+  list-style: none;
+  margin-inline-start: 0;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.seo-article .tehilim-psalms li {
+  margin: 0;
+}
+
+.seo-article .tehilim-psalms a {
+  display: inline-block;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+:root.dark .seo-article .tehilim-psalms a {
+  background: rgba(31, 41, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.seo-article .seo-note {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
 /* Internal-link footer injected into prerendered HTML only (the SPA uses
    SiteFooter.vue). Kept visually quiet. */
 .seo-footer {
