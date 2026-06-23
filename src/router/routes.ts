@@ -12,6 +12,7 @@ import NotFound from "../views/NotFound.vue";
 import TextReadingPage from "../views/TextReading/TextReadingPage.vue";
 import StudyPage from "../views/StudyPage.vue";
 import ContentPage from "../views/ContentPage.vue";
+import TehilimChapterPage from "../views/TehilimChapterPage.vue";
 
 export default [
   {
@@ -53,6 +54,13 @@ export default [
     path: "/etude",
     name: "study",
     component: StudyPage,
+  },
+  // Individual Tehilim chapter pages (long-tail SEO), prerendered to static
+  // HTML and rendered at runtime from src/content/tehilimChapter.ts.
+  {
+    path: "/etude/tehilim/:chapter",
+    name: "tehilim-chapter",
+    component: TehilimChapterPage,
   },
   {
     path: "/chiourim",

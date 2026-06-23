@@ -219,3 +219,61 @@ button,
 .seo-footer a {
   color: var(--color-primary);
 }
+
+/* Individual Tehilim chapter pages (/etude/tehilim/N): Hebrew verse + phonetic. */
+.seo-article .seo-note {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.tehilim-chapter .tehilim-verses {
+  list-style: none;
+  margin-inline-start: 0;
+}
+
+.tehilim-chapter .tehilim-verses li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+:root.dark .tehilim-chapter .tehilim-verses li {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.tehilim-chapter .verse-num {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.tehilim-chapter .he {
+  font-family: var(--font-hebrew);
+  font-size: 1.6rem;
+  line-height: 2;
+  direction: rtl;
+}
+
+.tehilim-chapter .tl {
+  color: var(--color-text-secondary);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+:root.dark .tehilim-chapter .tl {
+  color: #cbd5e1;
+}
+
+.tehilim-chapter .tehilim-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.tehilim-chapter .tehilim-nav a {
+  color: var(--color-primary);
+  font-weight: 600;
+}
