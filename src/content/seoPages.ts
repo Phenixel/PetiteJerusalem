@@ -758,6 +758,8 @@ type Intention = {
   /** Short label + blurb used on the hub card and breadcrumb. */
   cardTitle: string;
   cardDesc: string;
+  /** Font Awesome 6 solid icon name (e.g. "fa-heart-pulse") for the hub card. */
+  icon: string;
   /** Slugs of related intentions for internal linking (unknown slugs are ignored). */
   related: string[];
   faq: { q: string; a: string }[];
@@ -780,6 +782,7 @@ const INTENTIONS: Intention[] = [
       "L'usage est de prier pour la personne avec son prénom hébraïque suivi de celui de sa mère (par ex. «&nbsp;Untel ben Unetelle&nbsp;»). Beaucoup ajoutent le psaume 119 selon les lettres du prénom du malade.",
     cardTitle: "Refoua chelema (guérison d'un malade)",
     cardDesc: "Les psaumes à lire pour la guérison d'une personne malade.",
+    icon: "fa-heart-pulse",
     related: ["accouchement", "protection"],
     faq: [
       {
@@ -811,6 +814,7 @@ const INTENTIONS: Intention[] = [
     psalmsNote: "Certains lisent aussi les psaumes 23 et 25, notamment avant et le jour du mariage.",
     cardTitle: "Mariage (zivoug)",
     cardDesc: "Les psaumes à lire pour trouver son conjoint et fonder un foyer.",
+    icon: "fa-ring",
     related: ["reussite", "parnassa"],
     faq: [
       {
@@ -839,6 +843,7 @@ const INTENTIONS: Intention[] = [
       "Il existe aussi une coutume de « cure » sur 40 jours&nbsp;: lire chaque jour les psaumes 20, 21, 23, 24, 29 et 91.",
     cardTitle: "Parnassa (subsistance)",
     cardDesc: "Les psaumes à lire pour la subsistance et la réussite financière.",
+    icon: "fa-coins",
     related: ["reussite", "protection"],
     faq: [
       {
@@ -867,6 +872,7 @@ const INTENTIONS: Intention[] = [
       "Contre le mauvais œil (ayin hara), on cite en particulier le psaume 31. Pour un voyage, on récite aussi la Tefilat haderekh (prière du voyageur).",
     cardTitle: "Protection (danger, voyage)",
     cardDesc: "Les psaumes à lire pour la protection, le voyage et contre le mauvais œil.",
+    icon: "fa-shield-halved",
     related: ["refoua-chelema", "accouchement"],
     faq: [
       {
@@ -895,6 +901,7 @@ const INTENTIONS: Intention[] = [
       "On lit aussi le psaume 119 (le plus long) en choisissant les sections (huit versets par lettre) qui forment les lettres du prénom du défunt, puis celles du mot נשמה (Nechama).",
     cardTitle: "Ilouï nechama (mémoire d'un défunt)",
     cardDesc: "Les psaumes à lire pour l'élévation de l'âme d'un proche disparu.",
+    icon: "fa-dove",
     related: ["refoua-chelema", "protection"],
     faq: [
       {
@@ -923,6 +930,7 @@ const INTENTIONS: Intention[] = [
       "Le psaume 20 est le plus cité. Une liste élargie attribuée au Rav 'Haïm Kanievsky comprend les psaumes 1 à 4, 21 à 24, 33 à 47, 72 à 86 et 90.",
     cardTitle: "Grossesse & accouchement",
     cardDesc: "Les psaumes à lire pour une grossesse et un accouchement sereins.",
+    icon: "fa-baby",
     related: ["refoua-chelema", "protection"],
     faq: [
       {
@@ -951,6 +959,7 @@ const INTENTIONS: Intention[] = [
       "Cette liste est provisoire et recoupe en partie celle de la <a href=\"/tehilim/parnassa\">parnassa</a> ; elle sera reconfirmée.",
     cardTitle: "Réussite (hatslakha)",
     cardDesc: "Les psaumes à lire pour la réussite d'un examen, d'un projet ou d'une entreprise.",
+    icon: "fa-trophy",
     related: ["parnassa", "mariage"],
     faq: [
       {
@@ -1048,8 +1057,12 @@ function buildTehilimHub(): SeoPage {
   const cards = INTENTIONS.map(
     (it) => `
         <li>
-          <h3><a href="${intentionPath(it.slug)}">${it.cardTitle}</a></h3>
-          <p>${it.cardDesc}</p>
+          <a class="tehilim-card" href="${intentionPath(it.slug)}">
+            <span class="tehilim-card-icon"><i class="fa-solid ${it.icon}" aria-hidden="true"></i></span>
+            <span class="tehilim-card-title">${it.cardTitle}</span>
+            <span class="tehilim-card-desc">${it.cardDesc}</span>
+            <span class="tehilim-card-cta">Voir les psaumes <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+          </a>
         </li>`,
   ).join("");
 
@@ -1067,7 +1080,7 @@ function buildTehilimHub(): SeoPage {
 
     <section class="seo-section">
       <h2>Choisir une intention</h2>
-      <ul class="seo-cards">${cards}
+      <ul class="tehilim-cards">${cards}
       </ul>
     </section>
 
