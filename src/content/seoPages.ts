@@ -738,8 +738,8 @@ const landingAsSeoPages: SeoPage[] = landingPages.map((p) => ({
 const TEHILIM_HUB_PATH = "/tehilim";
 const SHARE_NEW_SESSION = "/share-reading/new-session";
 
-/** The Tehilim reader serves chapter N at textId 102 + N (see textStudies.json). */
-const tehilimReaderHref = (n: number): string => `/lire/${102 + n}`;
+/** Canonical reading page for Tehilim chapter N. */
+const tehilimReaderHref = (n: number): string => `/etude/tehilim/${n}`;
 
 const intentionPath = (slug: string): string => `${TEHILIM_HUB_PATH}/${slug}`;
 

@@ -154,7 +154,7 @@ describe("seoPages Tehilim par intention", () => {
 
   it("chaque page intention lie vers le lecteur, le partage et le hub", () => {
     for (const p of tehilimIntentionPages) {
-      expect(p.bodyHtml).toMatch(/href="\/lire\/\d+"/);
+      expect(p.bodyHtml).toMatch(/href="\/etude\/tehilim\/\d+"/);
       expect(p.bodyHtml).toContain('href="/share-reading/new-session"');
       expect(p.bodyHtml).toContain('href="/tehilim"');
       expect(p.bodyHtml).toContain('href="/partage-tehilim"');

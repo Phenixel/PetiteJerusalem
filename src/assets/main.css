@@ -314,13 +314,13 @@ button,
   color: var(--color-primary);
 }
 
-/* Individual Tehilim chapter pages (/etude/tehilim/N): Hebrew verse + phonetic. */
-.tehilim-chapter .tehilim-verses {
+/* Public reading pages (/etude/<corpus>/<slug>): Hebrew line + French phonetic. */
+.reading-page .reading-lines {
   list-style: none;
   margin-inline-start: 0;
 }
 
-.tehilim-chapter .tehilim-verses li {
+.reading-page .reading-lines li {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -328,41 +328,75 @@ button,
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-:root.dark .tehilim-chapter .tehilim-verses li {
+:root.dark .reading-page .reading-lines li {
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-.tehilim-chapter .verse-num {
+.reading-page .verse-num {
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--color-primary);
 }
 
-.tehilim-chapter .he {
+.reading-page .he {
   font-family: var(--font-hebrew);
   font-size: 1.6rem;
   line-height: 2;
   direction: rtl;
 }
 
-.tehilim-chapter .tl {
+.reading-page .tl {
   color: var(--color-text-secondary);
   font-style: italic;
   line-height: 1.6;
 }
 
-:root.dark .tehilim-chapter .tl {
+:root.dark .reading-page .tl {
   color: #cbd5e1;
 }
 
-.tehilim-chapter .tehilim-nav {
+/* Talmud: daf sub-header above each folio's lines. */
+.reading-page .daf-label {
+  margin-top: 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* Hub pages: chapter list. */
+.reading-page .chapter-list {
+  list-style: none;
+  margin-inline-start: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.reading-page .chapter-list a {
+  display: block;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  text-decoration: none;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+:root.dark .reading-page .chapter-list a {
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f3f4f6;
+}
+
+.reading-page .chapter-list a:hover {
+  color: var(--color-primary);
+}
+
+.reading-page .reading-nav {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
   margin-top: 1.5rem;
 }
 
-.tehilim-chapter .tehilim-nav a {
+.reading-page .reading-nav a {
   color: var(--color-primary);
   font-weight: 600;
 }

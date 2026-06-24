@@ -6,7 +6,7 @@ const NEW_SESSION_PATH = "/share-reading/new-session";
 
 /**
  * Wires up the internal links inside the SEO pages' `v-html` content
- * (TehilimPage, ContentPage, TehilimChapterPage).
+ * (TehilimPage, ContentPage, EtudeReadingPage).
  *
  * The body markup has to stay crawlable plain `<a href>` HTML, so by default a
  * click triggers a full browser reload. Two problems follow:

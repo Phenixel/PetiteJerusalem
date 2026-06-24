@@ -16,6 +16,7 @@ import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { sessionService } from "../../services/sessionService";
 import { seoService } from "../../services/seoService";
+import { hubPath, sectionPath, SITE_URL } from "../../content/etudeTexts";
 import GuestForm from "../../components/GuestForm.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
 
@@ -245,10 +246,32 @@ const pageTitle = computed(() => {
   const sec = currentSection.value && !isSingleSection.value ? ` · ${currentSection.value.label}` : "";
   return `${appendHebrewNumeral(textEntry.value.name)}${sec} | Petite Jérusalem`;
 });
-watch(pageTitle, (title) => seoService.setMeta({ title }), { immediate: true });
+// The reader is the in-session / interactive view; the canonical, indexable
+// page for this content is the /etude reading page. Point there and noindex.
+const canonicalUrl = computed(() => {
+  const e = textEntry.value;
+  if (!e) return undefined;
+  if (currentSection.value) return `${SITE_URL}${sectionPath(e, currentSection.value.index)}`;
+  return `${SITE_URL}${hubPath(e)}`;
+});
+watch(
+  [pageTitle, canonicalUrl],
+  ([title, canonical]) => seoService.setMeta({ title, canonical, robots: "noindex, follow" }),
+  { immediate: true },
+);
 
 // --- Lifecycle ---
 onMounted(async () => {
+  // The reader is now the in-session view only. A public /lire link (no session)
+  // is sent to the canonical /etude reading page, so there is one indexable URL.
+  if (!sessionSlug.value && textEntry.value) {
+    const target =
+      sectionParam.value !== undefined
+        ? sectionPath(textEntry.value, sectionParam.value)
+        : hubPath(textEntry.value);
+    router.replace(target);
+    return;
+  }
   await loadContent();
   if (sessionSlug.value) {
     currentUser.value = await sessionService.getCurrentUser();
