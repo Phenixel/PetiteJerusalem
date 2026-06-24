@@ -197,6 +197,100 @@ button,
   color: #cbd5e1;
 }
 
+/* "Tehilim par intention": horizontal list of psalm chips linking to the reader. */
+.seo-article .tehilim-psalms {
+  list-style: none;
+  margin-inline-start: 0;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.seo-article .tehilim-psalms li {
+  margin: 0;
+}
+
+.seo-article .tehilim-psalms a {
+  display: inline-block;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+:root.dark .seo-article .tehilim-psalms a {
+  background: rgba(31, 41, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.seo-article .seo-note {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+/* "Tehilim par intention" hub: simple list of intentions (whole row is a link). */
+.seo-article .tehilim-list {
+  list-style: none;
+  margin-inline-start: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.seo-article .tehilim-list li {
+  margin: 0;
+}
+
+.seo-article .tehilim-list a {
+  display: block;
+  padding: 1rem 0.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.seo-article .tehilim-list a:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.tehilim-list-title {
+  display: block;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--color-text-primary);
+}
+
+.tehilim-list-desc {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+:root.dark .seo-article .tehilim-list {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:root.dark .seo-article .tehilim-list a {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:root.dark .seo-article .tehilim-list a:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+:root.dark .tehilim-list-title {
+  color: #f3f4f6;
+}
+
+:root.dark .tehilim-list-desc {
+  color: #cbd5e1;
+}
+
 /* Internal-link footer injected into prerendered HTML only (the SPA uses
    SiteFooter.vue). Kept visually quiet. */
 .seo-footer {
@@ -218,4 +312,57 @@ button,
 
 .seo-footer a {
   color: var(--color-primary);
+}
+
+/* Individual Tehilim chapter pages (/etude/tehilim/N): Hebrew verse + phonetic. */
+.tehilim-chapter .tehilim-verses {
+  list-style: none;
+  margin-inline-start: 0;
+}
+
+.tehilim-chapter .tehilim-verses li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+:root.dark .tehilim-chapter .tehilim-verses li {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.tehilim-chapter .verse-num {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.tehilim-chapter .he {
+  font-family: var(--font-hebrew);
+  font-size: 1.6rem;
+  line-height: 2;
+  direction: rtl;
+}
+
+.tehilim-chapter .tl {
+  color: var(--color-text-secondary);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+:root.dark .tehilim-chapter .tl {
+  color: #cbd5e1;
+}
+
+.tehilim-chapter .tehilim-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.tehilim-chapter .tehilim-nav a {
+  color: var(--color-primary);
+  font-weight: 600;
 }

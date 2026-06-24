@@ -61,6 +61,7 @@ const en: LocaleMessages = {
     discover: "Discover",
     finishChass: "Finish the Shas",
     shareTehilim: "Share Tehilim",
+    tehilimIntentions: "Tehilim by intention",
   },
   home: {
     heroTitle: "Your digital spiritual center",
@@ -260,7 +261,9 @@ const en: LocaleMessages = {
     scanQR: "Or scan the QR code",
     scanQRDesc: "Scan this code to access the session directly",
     qrError: "Error generating QR code",
-    shareMessage: "Join me for a shared study session",
+    inviteTehilim:
+      "Join the Tehilim chain « {name} » 📖 Everyone reads a few psalms and we finish together. Reserve yours here:",
+    inviteStudy: "Join the shared study « {name} » 📖 Reserve your passages and let's learn together:",
   },
   batchSelection: {
     textsSelected: "{count} texts selected",

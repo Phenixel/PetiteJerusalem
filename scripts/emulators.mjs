@@ -7,7 +7,7 @@
 // session de dev à l'autre. Le dossier ./.emulator-data est git-ignoré.
 
 import { existsSync } from 'node:fs'
-import { spawn } from 'node:child_process'
+import { spawn, execFileSync } from 'node:child_process'
 
 const DATA_DIR = './.emulator-data'
 
@@ -19,6 +19,24 @@ if (major < 20) {
       `  Lance d'abord :  nvm use   (un .nvmrc fixe la version à 22)\n`,
   )
   process.exit(1)
+}
+
+// Les émulateurs tournent sur la JVM et firebase-tools exige désormais Java >= 21.
+// Sur macOS, si `JAVA_HOME` n'est pas déjà fixé, on pointe sur le JDK >= 21
+// installé (utile quand un openjdk@11 keg-only passe devant dans le PATH), au
+// lieu de planter avec « no longer supports Java version before 21 ».
+if (process.platform === 'darwin' && !process.env.JAVA_HOME) {
+  try {
+    const home = execFileSync('/usr/libexec/java_home', ['-v', '21+'], {
+      encoding: 'utf8',
+    }).trim()
+    if (home) {
+      process.env.JAVA_HOME = home
+      process.env.PATH = `${home}/bin:${process.env.PATH}`
+    }
+  } catch {
+    // Aucun JDK >= 21 trouvé : firebase affichera son propre message d'erreur.
+  }
 }
 
 const args = [

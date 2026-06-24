@@ -12,6 +12,8 @@ import NotFound from "../views/NotFound.vue";
 import TextReadingPage from "../views/TextReading/TextReadingPage.vue";
 import StudyPage from "../views/StudyPage.vue";
 import ContentPage from "../views/ContentPage.vue";
+import TehilimPage from "../views/TehilimPage.vue";
+import TehilimChapterPage from "../views/TehilimChapterPage.vue";
 
 export default [
   {
@@ -54,6 +56,13 @@ export default [
     name: "study",
     component: StudyPage,
   },
+  // Individual Tehilim chapter pages (long-tail SEO), prerendered to static
+  // HTML and rendered at runtime from src/content/tehilimChapter.ts.
+  {
+    path: "/etude/tehilim/:chapter",
+    name: "tehilim-chapter",
+    component: TehilimChapterPage,
+  },
   {
     path: "/chiourim",
     name: "chiourim",
@@ -90,6 +99,18 @@ export default [
     path: "/partage-tehilim",
     name: "partage-tehilim",
     component: ContentPage,
+  },
+  // Tehilim par intention: hub + intention pages, rendered from
+  // src/content/seoPages.ts (same markup the prerender step serves to crawlers).
+  {
+    path: "/tehilim",
+    name: "tehilim-hub",
+    component: TehilimPage,
+  },
+  {
+    path: "/tehilim/:slug",
+    name: "tehilim-intention",
+    component: TehilimPage,
   },
   {
     path: "/:pathMatch(.*)*",

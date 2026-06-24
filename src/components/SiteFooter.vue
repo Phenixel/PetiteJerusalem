@@ -22,6 +22,9 @@
       <RouterLink class="hover:text-primary transition-colors" to="/partage-tehilim">{{
         t("footer.shareTehilim")
       }}</RouterLink>
+      <RouterLink class="hover:text-primary transition-colors" to="/tehilim">{{
+        t("footer.tehilimIntentions")
+      }}</RouterLink>
     </nav>
 
     <div

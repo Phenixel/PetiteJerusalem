@@ -61,6 +61,7 @@ const he: LocaleMessages = {
     discover: "גלה",
     finishChass: "לסיים את הש״ס",
     shareTehilim: "חלוקת תהילים",
+    tehilimIntentions: "תהילים לפי כוונה",
   },
   home: {
     heroTitle: "המרכז הרוחני הדיגיטלי שלכם",
@@ -259,7 +260,9 @@ const he: LocaleMessages = {
     scanQR: "או סרוק את קוד ה-QR",
     scanQRDesc: "סרוק קוד זה כדי לגשת ישירות לסשן",
     qrError: "שגיאה ביצירת קוד QR",
-    shareMessage: "הצטרף אליי לסשן לימוד משותף",
+    inviteTehilim:
+      "הצטרפו לשרשרת התהילים « {name} » 📖 כל אחד קורא כמה פרקים ומסיימים יחד. הזמינו את שלכם כאן:",
+    inviteStudy: "הצטרפו ללימוד המשותף « {name} » 📖 הזמינו את הקטעים שלכם ונלמד יחד:",
   },
   batchSelection: {
     textsSelected: "{count} טקסטים נבחרו",

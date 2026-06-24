@@ -95,6 +95,7 @@ export const staticFooterHtml = `
       <a href="/chiourim">Chiourim</a>
       <a href="/finir-le-chass">Finir le Chass</a>
       <a href="/partage-tehilim">Partage de Tehilim</a>
+      <a href="/tehilim">Tehilim par intention</a>
     </nav>
     <p>Petite Jérusalem : étudier et partager la Torah, ensemble. Gratuit et en français.</p>
   </footer>`;
@@ -239,7 +240,7 @@ export const appPages: SeoPage[] = [
     <section class="seo-section">
       <h2>Les textes disponibles</h2>
       <ul>
-        <li><strong>Tehilim</strong> (Psaumes) : les 150 chapitres du livre de Tehilim.</li>
+        <li><strong>Tehilim</strong> (Psaumes) : les <a href="/etude/tehilim/1">150 chapitres</a> du livre de Tehilim, en hébreu et en phonétique.</li>
         <li><strong>Michna</strong> : les six ordres (sedarim) de la Michna.</li>
         <li><strong>Talmud Bavli</strong> : les traités (massekhtot) du Talmud de Babylone.</li>
         <li><strong>Tanakh</strong> : la Torah, les Neviim (Prophètes) et les Ketouvim (Écrits).</li>
@@ -725,8 +726,393 @@ const landingAsSeoPages: SeoPage[] = landingPages.map((p) => ({
   ...p.locales[DEFAULT_LANDING_LOCALE],
 }));
 
+// ---- Tehilim par intention (hub + intention pages) ----------------------
+//
+// Evergreen utility pages answering "which Tehilim to read for …" queries
+// (a malade / refoua chelema, mariage, parnassa…). Each page lists the
+// traditionally-read psalms (linked to the full reader) and converts to a
+// shared reading. French-only for now (the brief defers i18n). The psalm
+// lists are provisional and to be revalidated by a competent person, so each
+// page carries a prudent disclaimer.
+
+const TEHILIM_HUB_PATH = "/tehilim";
+const SHARE_NEW_SESSION = "/share-reading/new-session";
+
+/** The Tehilim reader serves chapter N at textId 102 + N (see textStudies.json). */
+const tehilimReaderHref = (n: number): string => `/lire/${102 + n}`;
+
+const intentionPath = (slug: string): string => `${TEHILIM_HUB_PATH}/${slug}`;
+
+type Intention = {
+  /** URL slug, lowercase and without accents (e.g. "refoua-chelema"). */
+  slug: string;
+  title: string;
+  description: string;
+  h1: string;
+  /** Intro paragraph(s), inline HTML. */
+  lead: string;
+  /** Recommended psalm numbers, in reading order. */
+  psalms: number[];
+  /** Optional extra note shown under the psalm list (inline HTML). */
+  psalmsNote?: string;
+  /** Short label + blurb used on the hub card and breadcrumb. */
+  cardTitle: string;
+  cardDesc: string;
+  /** Slugs of related intentions for internal linking (unknown slugs are ignored). */
+  related: string[];
+  faq: { q: string; a: string }[];
+};
+
+/** Prudent disclaimer shown on every intention page (lists pending revalidation). */
+const TEHILIM_DISCLAIMER =
+  "Ces listes sont indicatives, selon les sources couramment citées. En cas de doute, demandez conseil à votre rav.";
+
+const INTENTIONS: Intention[] = [
+  {
+    slug: "refoua-chelema",
+    title: "Tehilim pour un malade (refoua chelema) | Petite Jérusalem",
+    description:
+      "Quels Tehilim lire pour la refoua chelema (guérison d'un malade) : psaumes 20, 121, 6, 30 et 38, à lire seul ou à plusieurs pour aller plus vite.",
+    h1: "Tehilim pour la guérison d'un malade (refoua chelema)",
+    lead: "La <strong>refoua chelema</strong> est la prière pour la guérison complète d'un malade. On a coutume de lire certains Tehilim (Psaumes) en pensant à la personne souffrante. Lus à plusieurs, en se répartissant les chapitres, ils se terminent bien plus vite.",
+    psalms: [20, 121, 6, 30, 38],
+    psalmsNote:
+      "L'usage est de prier pour la personne avec son prénom hébraïque suivi de celui de sa mère (par ex. «&nbsp;Untel ben Unetelle&nbsp;»). Beaucoup ajoutent le psaume 119 selon les lettres du prénom du malade.",
+    cardTitle: "Refoua chelema (guérison d'un malade)",
+    cardDesc: "Les psaumes à lire pour la guérison d'une personne malade.",    related: ["accouchement", "protection"],
+    faq: [
+      {
+        q: "Quels Tehilim lire pour un malade ?",
+        a: "On lit traditionnellement les psaumes 20, 121, 6, 30 et 38 pour une refoua chelema. Beaucoup ajoutent le psaume 119 selon les lettres du prénom du malade. En cas de doute, demandez conseil à votre rav.",
+      },
+      {
+        q: "Comment lire les Tehilim pour la guérison à plusieurs ?",
+        a: "Créez une session de partage de Tehilim sur Petite Jérusalem, indiquez le nom du malade, puis partagez le lien. Chacun lit quelques psaumes et l'on termine bien plus vite, ensemble.",
+      },
+      {
+        q: "Faut-il mentionner le nom du malade ?",
+        a: "L'usage est de prier pour la personne en utilisant son prénom hébraïque suivi de celui de sa mère (par ex. « Untel ben Unetelle »). Vous pouvez l'indiquer dans la description de la session de partage.",
+      },
+      {
+        q: "Est-ce gratuit ?",
+        a: "Oui, Petite Jérusalem est entièrement gratuit, et l'on peut participer même sans créer de compte.",
+      },
+    ],
+  },
+  {
+    slug: "mariage",
+    title: "Tehilim pour le mariage (zivoug) | Petite Jérusalem",
+    description:
+      "Quels Tehilim lire pour trouver son conjoint (zivoug) : psaumes 32, 38, 70, 71, 121, 124 et 133, à lire seul ou à plusieurs pour aller plus vite.",
+    h1: "Tehilim pour trouver son conjoint (zivoug)",
+    lead: "Le <strong>zivoug</strong> désigne l'âme sœur, le conjoint que l'on cherche à rencontrer. On a coutume de lire certains Tehilim (Psaumes) en priant pour trouver son conjoint et fonder un foyer. Lus à plusieurs, ils se terminent plus vite.",
+    psalms: [32, 38, 70, 71, 121, 124, 133],
+    psalmsNote: "Certains lisent aussi les psaumes 23 et 25, notamment avant et le jour du mariage.",
+    cardTitle: "Mariage (zivoug)",
+    cardDesc: "Les psaumes à lire pour trouver son conjoint et fonder un foyer.",    related: ["reussite", "parnassa"],
+    faq: [
+      {
+        q: "Quels Tehilim lire pour trouver son conjoint ?",
+        a: "On lit traditionnellement les psaumes 32, 38, 70, 71, 121, 124 et 133 pour le zivoug. Certains ajoutent les psaumes 23 et 25. En cas de doute, demandez conseil à votre rav.",
+      },
+      {
+        q: "Peut-on lire ces Tehilim à plusieurs ?",
+        a: "Oui. Créez une session de partage de Tehilim, indiquez l'intention (et le prénom concerné), puis partagez le lien : chacun lit quelques psaumes et l'on termine bien plus vite, ensemble.",
+      },
+      {
+        q: "Quand les lire ?",
+        a: "Il n'y a pas de moment imposé ; beaucoup les lisent régulièrement. Les psaumes 23 et 25 sont en particulier lus avant et le jour du mariage.",
+      },
+    ],
+  },
+  {
+    slug: "parnassa",
+    title: "Tehilim pour la parnassa (subsistance) | Petite Jérusalem",
+    description:
+      "Quels Tehilim lire pour la parnassa (subsistance, réussite financière) : psaumes 23, 24 et 32, et la cure de 40 jours (20, 21, 23, 24, 29, 91).",
+    h1: "Tehilim pour la parnassa (subsistance)",
+    lead: "La <strong>parnassa</strong> est la subsistance, ce qui permet de subvenir à ses besoins. On a coutume de lire certains Tehilim (Psaumes) en priant pour une parnassa sereine et une réussite dans son travail.",
+    psalms: [23, 24, 32],
+    psalmsNote:
+      "Il existe aussi une coutume de « cure » sur 40 jours&nbsp;: lire chaque jour les psaumes 20, 21, 23, 24, 29 et 91.",
+    cardTitle: "Parnassa (subsistance)",
+    cardDesc: "Les psaumes à lire pour la subsistance et la réussite financière.",    related: ["reussite", "protection"],
+    faq: [
+      {
+        q: "Quels Tehilim lire pour la parnassa ?",
+        a: "On cite souvent les psaumes 23, 24 et 32 pour la parnassa. Une coutume consiste aussi à lire pendant 40 jours les psaumes 20, 21, 23, 24, 29 et 91. En cas de doute, demandez conseil à votre rav.",
+      },
+      {
+        q: "Comment les lire à plusieurs ?",
+        a: "Créez une session de partage de Tehilim, précisez l'intention, partagez le lien : chacun lit ses psaumes et l'on avance ensemble.",
+      },
+      {
+        q: "Qu'est-ce que la cure de 40 jours ?",
+        a: "C'est l'usage de lire chaque jour, pendant 40 jours consécutifs, un ensemble de psaumes (ici 20, 21, 23, 24, 29 et 91) avec une intention particulière.",
+      },
+    ],
+  },
+  {
+    slug: "protection",
+    title: "Tehilim pour la protection | Petite Jérusalem",
+    description:
+      "Quels Tehilim lire pour la protection (danger, voyage, mauvais œil) : psaumes 91, 121, 20, 120, 3 et 34, à lire seul ou à plusieurs.",
+    h1: "Tehilim pour la protection (danger, voyage, mauvais œil)",
+    lead: "On a coutume de lire certains Tehilim (Psaumes) pour demander la <strong>protection</strong> de D.ieu&nbsp;: avant un voyage, en cas de danger, ou contre le mauvais œil (ayin hara).",
+    psalms: [91, 121, 20, 120, 3, 34],
+    psalmsNote:
+      "Contre le mauvais œil (ayin hara), on cite en particulier le psaume 31. Pour un voyage, on récite aussi la Tefilat haderekh (prière du voyageur).",
+    cardTitle: "Protection (danger, voyage)",
+    cardDesc: "Les psaumes à lire pour la protection, le voyage et contre le mauvais œil.",    related: ["refoua-chelema", "accouchement"],
+    faq: [
+      {
+        q: "Quels Tehilim lire pour être protégé ?",
+        a: "On cite souvent les psaumes 91, 121, 20, 120, 3 et 34 pour la protection. Contre le mauvais œil, on ajoute le psaume 31. En cas de doute, demandez conseil à votre rav.",
+      },
+      {
+        q: "Quel psaume lire avant un voyage ?",
+        a: "Le psaume 121 est très lu avant un voyage, en plus de la Tefilat haderekh (prière du voyageur).",
+      },
+      {
+        q: "Peut-on les lire à plusieurs ?",
+        a: "Oui. Créez une session de partage de Tehilim, indiquez l'intention et partagez le lien pour lire ensemble.",
+      },
+    ],
+  },
+  {
+    slug: "iloui-nechama",
+    title: "Tehilim pour un défunt (ilouï nechama) | Petite Jérusalem",
+    description:
+      "Quels Tehilim lire pour l'ilouï nechama (à la mémoire d'un défunt) : psaumes 33, 16, 17, 72, 91, 104 et 130, plus le psaume 119 selon le prénom.",
+    h1: "Tehilim à la mémoire d'un défunt (ilouï nechama)",
+    lead: "L'<strong>ilouï nechama</strong> est l'élévation de l'âme d'un défunt. On a coutume de lire des Tehilim (Psaumes) à la mémoire d'un proche, en particulier pour une hiloula (anniversaire de décès). Lus à plusieurs, ils se terminent plus vite.",
+    psalms: [33, 16, 17, 72, 91, 104, 130],
+    psalmsNote:
+      "On lit aussi le psaume 119 (le plus long) en choisissant les sections (huit versets par lettre) qui forment les lettres du prénom du défunt, puis celles du mot נשמה (Nechama).",
+    cardTitle: "Ilouï nechama (mémoire d'un défunt)",
+    cardDesc: "Les psaumes à lire pour l'élévation de l'âme d'un proche disparu.",    related: ["refoua-chelema", "protection"],
+    faq: [
+      {
+        q: "Quels Tehilim lire pour un défunt ?",
+        a: "On lit traditionnellement les psaumes 33, 16, 17, 72, 91, 104 et 130 pour un ilouï nechama, ainsi que les sections du psaume 119 correspondant aux lettres du prénom du défunt et au mot נשמה. En cas de doute, demandez conseil à votre rav.",
+      },
+      {
+        q: "Qu'est-ce que le psaume 119 selon le prénom ?",
+        a: "Le psaume 119 est divisé en sections de huit versets, une par lettre de l'alphabet hébraïque. On lit les sections correspondant aux lettres du prénom du défunt, puis celles du mot נשמה (Nechama).",
+      },
+      {
+        q: "Comment organiser une lecture à plusieurs ?",
+        a: "Créez une session de partage de Tehilim à la mémoire du défunt et partagez le lien à la famille et aux proches : chacun lit quelques psaumes, souvent avant la hiloula.",
+      },
+    ],
+  },
+  {
+    slug: "accouchement",
+    title: "Tehilim pour l'accouchement et la grossesse | Petite Jérusalem",
+    description:
+      "Quels Tehilim lire pour la grossesse et l'accouchement : surtout le psaume 20, ainsi que 22, 91 et 1, à lire seul ou à plusieurs.",
+    h1: "Tehilim pour la grossesse et l'accouchement",
+    lead: "On a coutume de lire des Tehilim (Psaumes) pour une grossesse sereine et un accouchement facile, pour la mère comme pour l'enfant à naître.",
+    psalms: [20, 22, 91, 1],
+    psalmsNote:
+      "Le psaume 20 est le plus cité. Une liste élargie attribuée au Rav 'Haïm Kanievsky comprend les psaumes 1 à 4, 21 à 24, 33 à 47, 72 à 86 et 90.",
+    cardTitle: "Grossesse & accouchement",
+    cardDesc: "Les psaumes à lire pour une grossesse et un accouchement sereins.",    related: ["refoua-chelema", "protection"],
+    faq: [
+      {
+        q: "Quel Tehilim lire pour un accouchement ?",
+        a: "Le psaume 20 est le plus cité pour l'accouchement ; on lit aussi les psaumes 22, 91 et 1. En cas de doute, demandez conseil à votre rav.",
+      },
+      {
+        q: "Y a-t-il une liste plus longue ?",
+        a: "Oui, une liste élargie attribuée au Rav 'Haïm Kanievsky comprend les psaumes 1 à 4, 21 à 24, 33 à 47, 72 à 86 et 90.",
+      },
+      {
+        q: "Peut-on les lire à plusieurs ?",
+        a: "Oui. La famille et les amis peuvent se répartir les psaumes via une session de partage, pour les terminer ensemble avant l'accouchement.",
+      },
+    ],
+  },
+  {
+    slug: "reussite",
+    title: "Tehilim pour la réussite (hatslakha) | Petite Jérusalem",
+    description:
+      "Quels Tehilim lire pour la réussite (hatslakha) — examen, projet, entreprise : psaumes 4, 20, 32 et 90, à lire seul ou à plusieurs.",
+    h1: "Tehilim pour la réussite (hatslakha)",
+    lead: "La <strong>hatslakha</strong> est la réussite, la bénédiction dans ce que l'on entreprend&nbsp;: un examen, un projet, une nouvelle entreprise. On a coutume de lire des Tehilim (Psaumes) pour la demander.",
+    psalms: [4, 20, 32, 90],
+    psalmsNote:
+      "Cette liste est provisoire et recoupe en partie celle de la <a href=\"/tehilim/parnassa\">parnassa</a> ; elle sera reconfirmée.",
+    cardTitle: "Réussite (hatslakha)",
+    cardDesc: "Les psaumes à lire pour la réussite d'un examen, d'un projet ou d'une entreprise.",    related: ["parnassa", "mariage"],
+    faq: [
+      {
+        q: "Quels Tehilim lire pour réussir un examen ou un projet ?",
+        a: "On cite les psaumes 4, 20, 32 et 90 pour la hatslakha (réussite). Cette liste est provisoire et sera reconfirmée. En cas de doute, demandez conseil à votre rav.",
+      },
+      {
+        q: "Quelle différence avec la parnassa ?",
+        a: "La parnassa concerne spécifiquement la subsistance et la réussite financière ; la hatslakha vise la réussite en général. Les listes se recoupent en partie.",
+      },
+      {
+        q: "Peut-on les lire à plusieurs ?",
+        a: "Oui. Créez une session de partage de Tehilim, précisez l'intention et partagez le lien pour lire ensemble.",
+      },
+    ],
+  },
+];
+
+const intentionBySlug = new Map(INTENTIONS.map((i) => [i.slug, i]));
+
+/** Build one intention page (body + head metadata + JSON-LD) as a SeoPage. */
+function buildIntention(it: Intention): SeoPage {
+  const path = intentionPath(it.slug);
+
+  const psalmsList = it.psalms
+    .map((n) => `<li><a href="${tehilimReaderHref(n)}">Tehilim ${n}</a></li>`)
+    .join("\n        ");
+
+  const related = it.related
+    .map((slug) => intentionBySlug.get(slug))
+    .filter((r): r is Intention => Boolean(r))
+    .map((r) => `<li><a href="${intentionPath(r.slug)}">${r.cardTitle}</a></li>`)
+    .join("\n        ");
+
+  const bodyHtml = `
+  <main class="seo-article">
+    <h1>${it.h1}</h1>
+    <p class="seo-lead">${it.lead}</p>
+
+    <p><a class="seo-cta" href="${SHARE_NEW_SESSION}">Organiser un partage de Tehilim pour cette intention</a></p>
+
+    <section class="seo-section" aria-labelledby="psaumes-title">
+      <h2 id="psaumes-title">Psaumes (Tehilim) à lire</h2>
+      <p>Psaumes traditionnellement lus pour cette intention&nbsp;:</p>
+      <ul class="tehilim-psalms">
+        ${psalmsList}
+      </ul>
+      ${it.psalmsNote ? `<p>${it.psalmsNote}</p>` : ""}
+      <p class="seo-note"><em>${TEHILIM_DISCLAIMER}</em></p>
+    </section>
+
+    <section class="seo-section">
+      <h2>Comment partager ces Tehilim</h2>
+      <ol>
+        <li>Créez une <a href="${SHARE_NEW_SESSION}">session de partage</a> de type Tehilim et précisez l'intention (et le nom concerné) dans la description.</li>
+        <li>Sélectionnez les chapitres à lire, ou tout le sefer Tehilim.</li>
+        <li>Partagez le lien avec votre famille, vos amis ou votre communauté&nbsp;: chacun réserve et lit ses chapitres, même sans compte.</li>
+        <li>Suivez la progression en temps réel jusqu'à terminer les Tehilim ensemble.</li>
+      </ol>
+      <p><a class="seo-cta" href="${SHARE_NEW_SESSION}">Organiser un partage de Tehilim</a></p>
+    </section>
+
+    ${faqHtml(it.faq, "Questions fréquentes")}
+
+    <section class="seo-section">
+      <h2>Autres intentions &amp; ressources</h2>
+      <ul>
+        ${related ? related + "\n        " : ""}<li><a href="${TEHILIM_HUB_PATH}">Toutes les intentions (Tehilim par intention)</a></li>
+        <li><a href="/partage-tehilim">Partage de Tehilim à plusieurs</a></li>
+        <li><a href="/etude">Étude libre des textes</a></li>
+      </ul>
+    </section>
+  </main>`;
+
+  return {
+    file: `tehilim/${it.slug}.html`,
+    path,
+    title: it.title,
+    description: it.description,
+    sitemap: { priority: 0.8, changefreq: "monthly" },
+    bodyHtml,
+    jsonLd: [
+      breadcrumb([
+        { name: "Accueil", path: "/" },
+        { name: "Tehilim par intention", path: TEHILIM_HUB_PATH },
+        { name: it.cardTitle, path },
+      ]),
+      faqJsonLd(it.faq),
+    ],
+  };
+}
+
+/** Build the hub page listing every intention. */
+function buildTehilimHub(): SeoPage {
+  const rows = INTENTIONS.map(
+    (it) => `
+        <li>
+          <a href="${intentionPath(it.slug)}">
+            <span class="tehilim-list-title">${it.cardTitle}</span>
+            <span class="tehilim-list-desc">${it.cardDesc}</span>
+          </a>
+        </li>`,
+  ).join("");
+
+  const bodyHtml = `
+  <main class="seo-article">
+    <h1>Tehilim par intention</h1>
+    <p class="seo-lead">
+      À chaque moment de la vie correspondent des Tehilim (Psaumes) que l'on a coutume de lire&nbsp;:
+      pour la guérison d'un malade, à la mémoire d'un défunt, pour la subsistance ou la protection…
+      Retrouvez les psaumes traditionnellement lus pour chaque intention, et organisez un partage
+      pour les terminer à plusieurs.
+    </p>
+
+    <p><a class="seo-cta" href="${SHARE_NEW_SESSION}">Organiser un partage de Tehilim</a></p>
+
+    <section class="seo-section">
+      <h2>Choisir une intention</h2>
+      <ul class="tehilim-list">${rows}
+      </ul>
+    </section>
+
+    <section class="seo-section">
+      <h2>Lire les Tehilim à plusieurs</h2>
+      <p>
+        Lire un sefer Tehilim entier (150 psaumes) prend du temps&nbsp;; en se répartissant les
+        chapitres, un groupe peut le terminer en quelques minutes. Découvrez comment
+        <a href="/partage-tehilim">partager les Tehilim à plusieurs</a> ou lancez directement une
+        <a href="${SHARE_NEW_SESSION}">session de partage</a>.
+      </p>
+      <p class="seo-note"><em>${TEHILIM_DISCLAIMER}</em></p>
+    </section>
+  </main>`;
+
+  return {
+    file: "tehilim.html",
+    path: TEHILIM_HUB_PATH,
+    title: "Tehilim par intention : quels psaumes lire et pourquoi | Petite Jérusalem",
+    description:
+      "Quels Tehilim (Psaumes) lire selon l'intention : guérison d'un malade (refoua chelema), à la mémoire d'un défunt, parnassa, protection… Listes des psaumes et partage à plusieurs.",
+    sitemap: { priority: 0.9, changefreq: "monthly" },
+    bodyHtml,
+    jsonLd: [
+      breadcrumb([
+        { name: "Accueil", path: "/" },
+        { name: "Tehilim par intention", path: TEHILIM_HUB_PATH },
+      ]),
+      {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: "Tehilim par intention",
+        itemListElement: INTENTIONS.map((it, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name: it.cardTitle,
+          url: `${SITE_URL}${intentionPath(it.slug)}`,
+        })),
+      },
+    ],
+  };
+}
+
+export const tehilimHub: SeoPage = buildTehilimHub();
+export const tehilimIntentionPages: SeoPage[] = INTENTIONS.map(buildIntention);
+/** Hub + intention pages, consumed at runtime by TehilimPage.vue. */
+export const tehilimPages: SeoPage[] = [tehilimHub, ...tehilimIntentionPages];
+
 /** All pages that the prerender script turns into static HTML files. */
-export const allPages: SeoPage[] = [...appPages, ...landingAsSeoPages];
+export const allPages: SeoPage[] = [...appPages, ...landingAsSeoPages, ...tehilimPages];
 
 // ---- Pure HTML transforms (shared by prerender + tests) -----------------
 
@@ -801,21 +1187,32 @@ export function renderPage(template: string, page: SeoPage): string {
   return injectBody(injectMeta(template, page), page);
 }
 
-/** Build sitemap.xml from the indexable pages. `lastmod` is an ISO date string. */
-export function buildSitemap(lastmod: string): string {
-  const urls = allPages
+export type SitemapEntry = { path: string; priority: number; changefreq: string };
+
+/**
+ * Build sitemap.xml from the indexable pages, plus any `extra` URLs (e.g. the
+ * 150 Tehilim chapter pages, which are generated outside `allPages` to keep the
+ * SPA bundle small). `lastmod` is an ISO date string.
+ */
+export function buildSitemap(lastmod: string, extra: SitemapEntry[] = []): string {
+  const fromPages: SitemapEntry[] = allPages
     .filter((p) => p.sitemap !== false)
     .map((p) => {
       const s = p.sitemap || { priority: 0.5, changefreq: "weekly" };
-      return [
+      return { path: p.path, priority: s.priority, changefreq: s.changefreq };
+    });
+
+  const urls = [...fromPages, ...extra]
+    .map((s) =>
+      [
         "  <url>",
-        `    <loc>${SITE_URL}${p.path === "/" ? "/" : p.path}</loc>`,
+        `    <loc>${SITE_URL}${s.path === "/" ? "/" : s.path}</loc>`,
         `    <lastmod>${lastmod}</lastmod>`,
         `    <changefreq>${s.changefreq}</changefreq>`,
         `    <priority>${s.priority.toFixed(1)}</priority>`,
         "  </url>",
-      ].join("\n");
-    })
+      ].join("\n"),
+    )
     .join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;

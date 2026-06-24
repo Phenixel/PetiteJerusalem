@@ -5,8 +5,10 @@ import { useI18n } from "vue-i18n";
 import { EnumTypeTextStudy } from "../../models/typeTextStudy";
 import { sessionService } from "../../services/sessionService";
 import { TextTypeService } from "../../services/textTypeService";
+import { authService } from "../../services/authService";
 import type { User } from "../../services/authService";
 import { seoService } from "../../services/seoService";
+import SignupPromptModal from "../../components/SignupPromptModal.vue";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -15,6 +17,9 @@ const isLoading = ref(false);
 const message = ref("");
 const messageType = ref<"success" | "error">("success");
 const currentUser = ref<User | null>(null);
+// Visitors who aren't signed in get the sign-in prompt (like the share home
+// page) instead of being redirected away.
+const showAuthPrompt = ref(false);
 
 const textStudyTypes = TextTypeService.getAllTypes();
 
@@ -68,7 +73,10 @@ const formatBookName = (bookName: string) => {
 };
 
 onMounted(async () => {
-  currentUser.value = await sessionService.requireAuthentication(router);
+  currentUser.value = await authService.getCurrentUser();
+  if (!currentUser.value) {
+    showAuthPrompt.value = true;
+  }
   const url = window.location.origin + "/share-reading/new-session";
   seoService.setMeta({
     title: t("seo.newSessionTitle"),
@@ -79,6 +87,11 @@ onMounted(async () => {
 });
 
 const createSession = async () => {
+  if (!currentUser.value) {
+    showAuthPrompt.value = true;
+    return;
+  }
+
   if (
     !sessionData.name ||
     !sessionData.description ||
@@ -310,5 +323,7 @@ const goBack = () => {
       <i class="fa-solid fa-exclamation-circle mr-2" v-if="messageType === 'error'"></i>
       {{ message }}
     </div>
+
+    <SignupPromptModal v-model:show="showAuthPrompt" variant="auth" />
   </main>
 </template>

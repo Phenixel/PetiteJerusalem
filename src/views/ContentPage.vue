@@ -10,9 +10,12 @@ import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { landingPages, SITE_URL, type Locale } from "../content/seoPages";
 import { seoService } from "../services/seoService";
+import { useSeoContentNav } from "../composables/useSeoContentNav";
+import SignupPromptModal from "../components/SignupPromptModal.vue";
 
 const route = useRoute();
 const { locale } = useI18n();
+const { showAuthPrompt, onContentClick } = useSeoContentNav();
 
 const page = computed(() => landingPages.find((p) => p.path === route.path) ?? null);
 
@@ -49,5 +52,7 @@ watch([() => route.path, locale], applyMeta);
     class="seo-page"
     :dir="isRtl ? 'rtl' : 'ltr'"
     v-html="content.bodyHtml"
+    @click="onContentClick"
   ></div>
+  <SignupPromptModal v-model:show="showAuthPrompt" variant="auth" />
 </template>
