@@ -17,8 +17,12 @@ import {
   isValidChapter,
 } from "../content/tehilimChapter";
 import { seoService } from "../services/seoService";
+import { useSeoContentNav } from "../composables/useSeoContentNav";
+import SignupPromptModal from "../components/SignupPromptModal.vue";
 
 const SITE_URL = "https://petite-jerusalem.fr";
+
+const { showAuthPrompt, onContentClick } = useSeoContentNav();
 
 type TehilimData = Record<string, { he: string[] }>;
 let cache: Promise<TehilimData> | null = null;
@@ -71,12 +75,13 @@ watch(() => route.params.chapter, load);
 </script>
 
 <template>
-  <div v-if="bodyHtml" class="seo-page" v-html="bodyHtml"></div>
-  <main v-else-if="loaded" class="seo-article">
+  <div v-if="bodyHtml" class="seo-page" v-html="bodyHtml" @click="onContentClick"></div>
+  <main v-else-if="loaded" class="seo-article" @click="onContentClick">
     <h1>Tehilim introuvable</h1>
     <p>
       Ce psaume n'existe pas (les Tehilim vont de 1 à 150).
       <a href="/etude/tehilim/1">Commencer au Tehilim 1</a>.
     </p>
   </main>
+  <SignupPromptModal v-model:show="showAuthPrompt" variant="auth" />
 </template>
