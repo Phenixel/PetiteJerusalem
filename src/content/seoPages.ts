@@ -765,7 +765,7 @@ type Intention = {
 
 /** Prudent disclaimer shown on every intention page (lists pending revalidation). */
 const TEHILIM_DISCLAIMER =
-  "Ces listes sont indicatives, selon les sources couramment citées, et en cours de revalidation. En cas de doute, demandez conseil à votre rav.";
+  "Ces listes sont indicatives, selon les sources couramment citées. En cas de doute, demandez conseil à votre rav.";
 
 const INTENTIONS: Intention[] = [
   {
