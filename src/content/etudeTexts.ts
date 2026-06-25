@@ -153,6 +153,11 @@ function sectionTextHtml(section: TextSection, numbered: boolean): string {
 const READING_DISCLAIMER =
   "Phonétique générée automatiquement comme aide à la lecture (approximative). Texte hébreu d'après le jeu de données public Sefaria.";
 
+/** Short SEO sentences reused by the prerender AND the live reader (top/bottom). */
+export const READING_LEAD =
+  "Texte intégral en hébreu, accompagné de la phonétique pour le lire même sans maîtriser l'hébreu. Lisez-le seul ou partagez-en la lecture à plusieurs.";
+export const READING_NOTE = READING_DISCLAIMER;
+
 /** A short human title for a section, used in H1 / breadcrumbs. */
 export function sectionHeading(entry: TextStudyJsonEntry, section: TextSection): string {
   const corpus = corpusOf(entry);
@@ -249,10 +254,7 @@ export function buildSectionBody(
   return `
   <main class="seo-article reading-page">
     <h1>${esc(sectionHeading(entry, section))}</h1>
-    <p class="seo-lead">
-      Texte intégral en hébreu, accompagné de la phonétique pour le lire même sans maîtriser
-      l'hébreu. Lisez-le seul ou partagez-en la lecture à plusieurs.
-    </p>
+    <p class="seo-lead">${READING_LEAD}</p>
 
     ${ctaHtml}
 

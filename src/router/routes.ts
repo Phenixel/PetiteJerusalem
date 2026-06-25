@@ -13,7 +13,6 @@ import TextReadingPage from "../views/TextReading/TextReadingPage.vue";
 import StudyPage from "../views/StudyPage.vue";
 import ContentPage from "../views/ContentPage.vue";
 import TehilimPage from "../views/TehilimPage.vue";
-import EtudeReadingPage from "../views/EtudeReadingPage.vue";
 
 export default [
   {
@@ -56,17 +55,18 @@ export default [
     name: "study",
     component: StudyPage,
   },
-  // Public reading pages for the whole library (Tehilim, Tanakh, Michna, Talmud),
-  // prerendered for SEO and rendered at runtime from src/content/etudeTexts.ts.
+  // Public reading pages for the whole library (Tehilim, Tanakh, Michna, Talmud):
+  // the same reader as /lire, served at canonical keyword URLs and prerendered
+  // for SEO (static body from src/content/etudeTexts.ts).
   {
     path: "/etude/:corpus/:slug",
     name: "etude-reading",
-    component: EtudeReadingPage,
+    component: TextReadingPage,
   },
   {
     path: "/etude/:corpus/:slug/:section",
     name: "etude-reading-section",
-    component: EtudeReadingPage,
+    component: TextReadingPage,
   },
   {
     path: "/chiourim",
