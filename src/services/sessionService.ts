@@ -20,6 +20,10 @@ export class SessionService {
     return await firestoreService.getSessions();
   }
 
+  async getPublicSessions(): Promise<Session[]> {
+    return await firestoreService.getPublicSessions();
+  }
+
   async getSessionById(sessionId: string): Promise<Session | null> {
     return await firestoreService.getSessionById(sessionId);
   }
@@ -219,6 +223,10 @@ export class SessionService {
     }
   }
 
+  private generatePrivateSlug(): string {
+    return `p-${crypto.randomUUID()}`;
+  }
+
   async createSessionWithValidation(
     name: string,
     description: string,
@@ -227,12 +235,13 @@ export class SessionService {
     personId: string,
     creatorName: string,
     selectedBooks?: string[],
+    isPrivate: boolean = false,
   ): Promise<string> {
     if (!name || !description || !type || !dateLimit || !personId || !creatorName) {
       throw new Error("Tous les champs sont obligatoires");
     }
 
-    const slug = await this.generateUniqueSlug(name);
+    const slug = isPrivate ? this.generatePrivateSlug() : await this.generateUniqueSlug(name);
 
     const sessionData: Omit<Session, "id" | "createdAt" | "isCompleted" | "reservations"> = {
       name,
@@ -243,6 +252,7 @@ export class SessionService {
       creatorName,
       slug,
       selectedBooks,
+      isPrivate,
     };
 
     return await this.createSession(sessionData);

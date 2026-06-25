@@ -126,6 +126,16 @@ export class FirestoreService {
     return this.getSessions();
   }
 
+  async getPublicSessions(): Promise<Session[]> {
+    try {
+      const q = query(collection(db, "sessions"), where("isPrivate", "!=", true));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map((doc) => this.convertToSession(doc));
+    } catch (error) {
+      this.handleFirestoreError(error, "récupération des sessions publiques");
+    }
+  }
+
   async getSessionById(sessionId: string): Promise<Session | null> {
     try {
       const docRef = doc(db, "sessions", sessionId);
