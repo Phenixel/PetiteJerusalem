@@ -71,7 +71,7 @@ const fr = {
         description: "Créez une session, répartissez un texte et étudiez à plusieurs jusqu'au siyoum",
       },
       study: {
-        title: "Étude",
+        title: "Bibliothèque",
         description: "Lisez librement les Tehilim, la Michna, le Talmud et le Tanakh",
       },
       personalTracking: {
@@ -405,7 +405,7 @@ const fr = {
     guestIntro: "Renseignez votre nom et votre email pour réserver ce passage.",
   },
   study: {
-    title: "Étude",
+    title: "Bibliothèque",
     subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud et Tanakh.",
     searchPlaceholder: "Rechercher un texte…",
     noResults: "Aucun texte ne correspond à votre recherche.",

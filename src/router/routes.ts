@@ -51,7 +51,7 @@ export default [
     component: DetailSession,
   },
   {
-    path: "/etude",
+    path: "/bibliotheque",
     name: "study",
     component: StudyPage,
   },
@@ -59,12 +59,12 @@ export default [
   // the same reader as /lire, served at canonical keyword URLs and prerendered
   // for SEO (static body from src/content/etudeTexts.ts).
   {
-    path: "/etude/:corpus/:slug",
+    path: "/bibliotheque/:corpus/:slug",
     name: "etude-reading",
     component: TextReadingPage,
   },
   {
-    path: "/etude/:corpus/:slug/:section",
+    path: "/bibliotheque/:corpus/:slug/:section",
     name: "etude-reading-section",
     component: TextReadingPage,
   },

@@ -73,7 +73,7 @@ const en: LocaleMessages = {
         description: "Exchange and discover sacred texts with the community",
       },
       study: {
-        title: "Study",
+        title: "Library",
         description: "Freely read Tehilim, Mishnah, Talmud and Tanakh",
       },
       personalTracking: {
@@ -402,7 +402,7 @@ const en: LocaleMessages = {
     guestIntro: "Enter your name and email to reserve this passage.",
   },
   study: {
-    title: "Study",
+    title: "Library",
     subtitle: "Read and study the texts: Tehilim, Mishnah, Talmud and Tanakh.",
     searchPlaceholder: "Search a text…",
     noResults: "No text matches your search.",

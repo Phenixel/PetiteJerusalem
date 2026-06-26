@@ -130,7 +130,7 @@ function generateEtudePages(dist, template) {
     }
   }
 
-  console.log(`[prerender-seo] Generated ${sitemap.length} Étude reading page(s).`);
+  console.log(`[prerender-seo] Generated ${sitemap.length} Bibliothèque reading page(s).`);
   return sitemap;
 }
 

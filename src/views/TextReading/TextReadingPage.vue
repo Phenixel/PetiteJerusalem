@@ -37,7 +37,7 @@ const { t } = useI18n();
 
 // This view serves two URL shapes with the SAME UI: the in-session reader
 // (/lire/:textId, numeric id) and the public, indexable reading pages
-// (/etude/:corpus/:slug[/:section], keyword URLs). `isEtudeRoute` switches
+// (/bibliotheque/:corpus/:slug[/:section], keyword URLs). `isEtudeRoute` switches
 // navigation + metadata between the two.
 const isEtudeRoute = computed(() => route.params.corpus !== undefined);
 const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
@@ -52,7 +52,7 @@ const textId = computed(() =>
 const sectionParam = computed(() => (route.params.section ? Number(route.params.section) : undefined));
 const sessionSlug = computed(() => (route.query.session ? String(route.query.session) : null));
 
-/** Reading lead/note are shown on the public /etude pages (not in the session reader). */
+/** Reading lead/note are shown on the public /bibliotheque pages (not in the session reader). */
 const readingLead = READING_LEAD;
 const readingNote = READING_NOTE;
 const isTehilimEtude = computed(
@@ -278,9 +278,9 @@ async function toggleRead() {
 }
 
 // --- SEO ---
-// On /etude (the public, indexable pages) use the keyword title/description and
+// On /bibliotheque (the public, indexable pages) use the keyword title/description and
 // index the page. On /lire (the in-session reader) keep the reader title and
-// noindex, pointing the canonical at the /etude equivalent.
+// noindex, pointing the canonical at the /bibliotheque equivalent.
 const pageTitle = computed(() => {
   const e = textEntry.value;
   if (!e) return "Lecture | Petite Jérusalem";
@@ -316,8 +316,8 @@ watch(
 
 // --- Lifecycle ---
 onMounted(async () => {
-  // A public /lire link (no session) is redirected to the canonical /etude page,
-  // so there is a single indexable URL. /etude pages render here directly.
+  // A public /lire link (no session) is redirected to the canonical /bibliotheque page,
+  // so there is a single indexable URL. /bibliotheque pages render here directly.
   if (!isEtudeRoute.value && !sessionSlug.value && textEntry.value) {
     const target =
       sectionParam.value !== undefined
@@ -419,7 +419,7 @@ watch(textId, loadContent);
         </p>
       </header>
 
-      <!-- SEO intro (public /etude reading pages only) -->
+      <!-- SEO intro (public /bibliotheque reading pages only) -->
       <p v-if="isEtudeRoute" class="-mt-4 mb-8 text-text-secondary leading-relaxed dark:text-gray-400">
         {{ readingLead }}
       </p>
@@ -711,14 +711,14 @@ watch(textId, loadContent);
         />
       </div>
 
-      <!-- SEO note + internal links (public /etude reading pages only) -->
+      <!-- SEO note + internal links (public /bibliotheque reading pages only) -->
       <section
         v-if="isEtudeRoute"
         class="mt-12 pt-6 border-t border-black/5 text-sm text-text-secondary dark:border-white/10 dark:text-gray-400"
       >
         <p class="italic mb-4">{{ readingNote }}</p>
         <nav class="flex flex-wrap gap-x-5 gap-y-2">
-          <RouterLink to="/etude" class="hover:text-primary transition-colors">Bibliothèque</RouterLink>
+          <RouterLink to="/bibliotheque" class="hover:text-primary transition-colors">Bibliothèque</RouterLink>
           <RouterLink
             v-if="isTehilimEtude"
             to="/tehilim"

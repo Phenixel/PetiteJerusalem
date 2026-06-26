@@ -13,14 +13,14 @@ import {
 import type { TextContent } from "../services/textService";
 
 describe("etudeTexts URLs", () => {
-  it("maps Tehilim to /etude/tehilim/{n}", () => {
+  it("maps Tehilim to /bibliotheque/tehilim/{n}", () => {
     const e = entryByCorpusSlug("tehilim", "121");
     expect(e).toBeTruthy();
     expect(corpusOf(e!)).toBe("tehilim");
-    expect(hubPath(e!)).toBe("/etude/tehilim/121");
+    expect(hubPath(e!)).toBe("/bibliotheque/tehilim/121");
     expect(isMultiSection(e!)).toBe(false);
     // single-section: section path collapses to the hub path
-    expect(sectionPath(e!, 1)).toBe("/etude/tehilim/121");
+    expect(sectionPath(e!, 1)).toBe("/bibliotheque/tehilim/121");
   });
 
   it("maps Talmud tractates to a hub + per-chapter pages", () => {
@@ -28,12 +28,12 @@ describe("etudeTexts URLs", () => {
     expect(e).toBeTruthy();
     expect(slugOf(e!)).toBe("berakhot");
     expect(isMultiSection(e!)).toBe(true);
-    expect(hubPath(e!)).toBe("/etude/talmud/berakhot");
-    expect(sectionPath(e!, 2)).toBe("/etude/talmud/berakhot/2");
+    expect(hubPath(e!)).toBe("/bibliotheque/talmud/berakhot");
+    expect(sectionPath(e!, 2)).toBe("/bibliotheque/talmud/berakhot/2");
   });
 
   it("maps Michna and Tanakh under their own corpus segments", () => {
-    expect(hubPath(entryByCorpusSlug("michna", "berakhot")!)).toBe("/etude/michna/berakhot");
+    expect(hubPath(entryByCorpusSlug("michna", "berakhot")!)).toBe("/bibliotheque/michna/berakhot");
     expect(entryByCorpusSlug("tanakh", "berechit")).toBeTruthy();
   });
 
@@ -66,7 +66,7 @@ describe("etudeTexts URLs", () => {
       ],
     };
     const body = buildHubBody(e, content);
-    expect(body).toContain('href="/etude/talmud/berakhot/1"');
-    expect(body).toContain('href="/etude/talmud/berakhot/2"');
+    expect(body).toContain('href="/bibliotheque/talmud/berakhot/1"');
+    expect(body).toContain('href="/bibliotheque/talmud/berakhot/2"');
   });
 });

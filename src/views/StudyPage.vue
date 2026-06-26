@@ -46,7 +46,7 @@ function formatBookName(livre: string): string {
 }
 
 onMounted(() => {
-  const url = window.location.origin + "/etude";
+  const url = window.location.origin + "/bibliotheque";
   seoService.setMeta({
     title: `${t("study.title")} | Petite Jérusalem`,
     description: t("study.subtitle"),

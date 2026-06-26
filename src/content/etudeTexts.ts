@@ -1,11 +1,11 @@
 /**
- * SEO reading pages for the whole "Étude" library, under keyword URLs:
- *   /etude/tehilim/{n}            (Psaume n)
- *   /etude/tanakh/{parasha}       (single section)
- *   /etude/michna/{traite}        (hub) + /etude/michna/{traite}/{chapitre}
- *   /etude/talmud/{traite}        (hub) + /etude/talmud/{traite}/{chapitre}
+ * SEO reading pages for the whole "Bibliothèque" library, under keyword URLs:
+ *   /bibliotheque/tehilim/{n}            (Psaume n)
+ *   /bibliotheque/tanakh/{parasha}       (single section)
+ *   /bibliotheque/michna/{traite}        (hub) + /bibliotheque/michna/{traite}/{chapitre}
+ *   /bibliotheque/talmud/{traite}        (hub) + /bibliotheque/talmud/{traite}/{chapitre}
  *
- * One canonical URL per piece of content (no more /lire ↔ /etude duplication).
+ * One canonical URL per piece of content (no more /lire ↔ /bibliotheque duplication).
  * The body markup is built here so it is shared by BOTH the build-time prerender
  * (verses read from disk) and the runtime view (verses fetched), so a crawler
  * and a human get identical content. The big text files are passed in, never
@@ -83,7 +83,7 @@ export function slugOf(entry: TextStudyJsonEntry): string {
 export const isMultiSection = (entry: TextStudyJsonEntry): boolean =>
   (entry.totalSections ?? 1) > 1;
 
-const ETUDE = "/etude";
+const ETUDE = "/bibliotheque";
 
 export const hubPath = (entry: TextStudyJsonEntry): string =>
   `${ETUDE}/${corpusOf(entry)}/${slugOf(entry)}`;
@@ -209,7 +209,7 @@ function relatedLinksHtml(entry: TextStudyJsonEntry): string {
   const items: string[] = [];
   if (isMultiSection(entry))
     items.push(`<li><a href="${hubPath(entry)}">Tous les chapitres de ${latinName(entry)}</a></li>`);
-  items.push(`<li><a href="/etude">Bibliothèque (Tehilim, Michna, Talmud, Tanakh)</a></li>`);
+  items.push(`<li><a href="/bibliotheque">Bibliothèque (Tehilim, Michna, Talmud, Tanakh)</a></li>`);
   if (corpus === "tehilim")
     items.push(`<li><a href="/tehilim">Tehilim par intention</a></li>`);
   return items.join("\n        ");
@@ -304,7 +304,7 @@ export function buildHubBody(entry: TextStudyJsonEntry, content: TextContent): s
     <section class="seo-section">
       <h2>Aller plus loin</h2>
       <ul>
-        <li><a href="/etude">Bibliothèque (Tehilim, Michna, Talmud, Tanakh)</a></li>
+        <li><a href="/bibliotheque">Bibliothèque (Tehilim, Michna, Talmud, Tanakh)</a></li>
       </ul>
     </section>
   </main>`;
@@ -332,7 +332,7 @@ export function sectionJsonLd(
   const corpus = corpusOf(entry);
   const trail = [
     { name: "Accueil", path: "/" },
-    { name: "Étude", path: "/etude" },
+    { name: "Bibliothèque", path: "/bibliotheque" },
   ];
   if (isMultiSection(entry)) trail.push({ name: latinName(entry), path: hubPath(entry) });
   trail.push({ name: sectionHeading(entry, section), path: sectionPath(entry, section.index) });
@@ -353,7 +353,7 @@ export function hubJsonLd(entry: TextStudyJsonEntry): Record<string, unknown>[] 
   return [
     breadcrumb([
       { name: "Accueil", path: "/" },
-      { name: "Étude", path: "/etude" },
+      { name: "Bibliothèque", path: "/bibliotheque" },
       { name: latinName(entry), path: hubPath(entry) },
     ]),
   ];
