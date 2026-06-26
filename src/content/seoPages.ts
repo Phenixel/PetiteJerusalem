@@ -97,7 +97,7 @@ export const staticFooterHtml = `
       <a href="/partage-tehilim">Partage de Tehilim</a>
       <a href="/tehilim">Tehilim par intention</a>
     </nav>
-    <p>Petite Jérusalem : étudier et partager la Torah, ensemble. Gratuit et en français.</p>
+    <p>Petite Jérusalem : étudier et partager la Torah, ensemble. Gratuit, en français, en anglais et en hébreu.</p>
   </footer>`;
 
 // ---- Pages backed by an existing Vue view (static body = pre-paint) -----
@@ -108,13 +108,13 @@ export const appPages: SeoPage[] = [
     path: "/",
     title: "Petite Jérusalem | Partager l'étude de la Torah et finir le Chass à plusieurs",
     description:
-      "Plateforme gratuite en français pour étudier et partager la Torah à plusieurs : répartissez le Talmud pour finir le Chass, lisez les Tehilim à plusieurs pour une refoua chelema ou à la mémoire d'un proche, suivez la progression jusqu'au siyoum.",
+      "Plateforme gratuite pour étudier et partager la Torah à plusieurs : répartissez le Talmud pour finir le Chass, lisez les Tehilim à plusieurs pour une refoua chelema ou à la mémoire d'un proche, suivez la progression jusqu'au siyoum.",
     sitemap: { priority: 1.0, changefreq: "weekly" },
     bodyHtml: `
   <main class="seo-article">
     <h1>Étudier et partager la Torah, à plusieurs</h1>
     <p class="seo-lead">
-      Petite Jérusalem est une plateforme <strong>gratuite et en français</strong> pour organiser
+      Petite Jérusalem est une plateforme <strong>gratuite</strong> pour organiser
       l'étude collective des textes juifs. Répartissez un texte entre plusieurs personnes, réservez
       vos passages et suivez la progression de tous jusqu'au siyoum, où que vous soyez.
     </p>
@@ -445,7 +445,7 @@ const FINIR_FR: LandingStrings = {
   lang: "fr-FR",
   title: "Finir le Chass à plusieurs : se répartir le Talmud en ligne | Petite Jérusalem",
   description:
-    "Organisez l'étude collective du Talmud pour finir le Chass à plusieurs : créez une session, répartissez les traités et les dapim, suivez la progression jusqu'au siyoum haShass. Gratuit et en français.",
+    "Organisez l'étude collective du Talmud pour finir le Chass à plusieurs : créez une session, répartissez les traités et les dapim, suivez la progression jusqu'au siyoum haShass. Gratuit, en français, en anglais et en hébreu.",
   h1: "Finir le Chass à plusieurs",
   lead: "« Finir le Chass », c'est terminer l'étude de l'ensemble du Talmud Bavli, ses 63 traités (massekhtot). Seul, cela demande des années ; à plusieurs, en se répartissant les passages, un groupe ou une communauté peut y arriver en bien moins de temps. Petite Jérusalem est l'outil gratuit qui organise ce partage.",
   whyTitle: "Pourquoi finir le Chass ensemble ?",

@@ -64,7 +64,7 @@ const fr = {
   home: {
     heroTitle: "Étudier et partager la Torah, à plusieurs",
     heroDescription:
-      "Répartissez un texte entre plusieurs personnes pour le terminer ensemble : finir le Chass, lire les Tehilim à plusieurs, suivre la progression de votre limoud. Gratuit et en français.",
+      "Répartissez un texte entre plusieurs personnes pour le terminer ensemble : finir le Chass, lire les Tehilim à plusieurs, suivre la progression de votre limoud. Gratuit, en français, en anglais et en hébreu.",
     features: {
       shareReading: {
         title: "Partage de Lectures",
@@ -289,7 +289,7 @@ const fr = {
   seo: {
     homeTitle: "Petite Jérusalem | Partager l'étude de la Torah et finir le Chass à plusieurs",
     homeDescription:
-      "Plateforme gratuite en français pour étudier et partager la Torah à plusieurs : répartissez le Talmud pour finir le Chass, lisez les Tehilim à plusieurs pour une refoua chelema ou à la mémoire d'un proche, suivez la progression jusqu'au siyoum.",
+      "Plateforme gratuite pour étudier et partager la Torah à plusieurs : répartissez le Talmud pour finir le Chass, lisez les Tehilim à plusieurs pour une refoua chelema ou à la mémoire d'un proche, suivez la progression jusqu'au siyoum.",
     loginTitle: "Connexion – Petite Jérusalem",
     loginDescription:
       "Connectez-vous pour créer des sessions de partage de lectures, réserver des textes et suivre vos études.",
