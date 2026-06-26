@@ -66,7 +66,7 @@ const en: LocaleMessages = {
   home: {
     heroTitle: "Your digital spiritual center",
     heroDescription:
-      "A modern platform dedicated to study, sharing and spiritual growth of the French-speaking Jewish community.",
+      "A modern platform dedicated to study, sharing and spiritual growth of the Jewish community.",
     features: {
       shareReading: {
         title: "Reading Share",
