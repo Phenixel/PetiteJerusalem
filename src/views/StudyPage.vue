@@ -21,22 +21,29 @@ const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
 const selectedType = ref("Tehilim");
 const searchTerm = ref("");
 
+const isSearching = computed(() => searchTerm.value.trim() !== "");
+
 const filtered = computed(() => {
   const term = searchTerm.value.trim().toLowerCase();
-  return allTexts.filter(
-    (txt) =>
-      String(txt.type) === selectedType.value &&
-      (term === "" || txt.name.toLowerCase().includes(term)),
-  );
+  return allTexts.filter((txt) => {
+    const matchesTerm = term === "" || txt.name.toLowerCase().includes(term);
+    // When searching, look across every tab; otherwise stay on the active one.
+    const matchesType = isSearching.value || String(txt.type) === selectedType.value;
+    return matchesTerm && matchesType;
+  });
 });
 
-// Group the selected type's texts by book/seder for readable sections.
-const groupedByBook = computed(() => {
-  const groups: Record<string, TextStudyJsonEntry[]> = {};
-  for (const txt of filtered.value) {
-    (groups[txt.livre] ??= []).push(txt);
-  }
-  return groups;
+// Group results by type (only relevant when searching across tabs), then by
+// book/seder, so each section stays readable.
+const groupedByType = computed(() => {
+  return TYPES.map((ty) => {
+    const texts = filtered.value.filter((txt) => String(txt.type) === ty.key);
+    const groups: Record<string, TextStudyJsonEntry[]> = {};
+    for (const txt of texts) {
+      (groups[txt.livre] ??= []).push(txt);
+    }
+    return { key: ty.key, labelKey: ty.labelKey, groups, count: texts.length };
+  }).filter((group) => group.count > 0);
 });
 
 const hasResults = computed(() => filtered.value.length > 0);
@@ -108,37 +115,46 @@ onMounted(() => {
     </div>
 
     <!-- Results -->
-    <div v-if="hasResults" class="max-w-5xl mx-auto space-y-10">
-      <section v-for="(texts, livre) in groupedByBook" :key="livre">
+    <div v-if="hasResults" class="max-w-5xl mx-auto space-y-12">
+      <div v-for="typeGroup in groupedByType" :key="typeGroup.key" class="space-y-10">
+        <!-- Type heading: shown only when searching across all tabs. -->
         <h2
-          class="text-xl font-bold text-text-primary mb-4 pl-3 border-l-4 border-primary dark:text-gray-100"
+          v-if="isSearching"
+          class="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
         >
-          {{ formatBookName(String(livre)) }}
+          {{ t(typeGroup.labelKey) }}
         </h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          <router-link
-            v-for="text in texts"
-            :key="text.id"
-            :to="hubPath(text)"
-            class="flex items-center justify-between gap-2 p-3 rounded-xl bg-white/60 backdrop-blur-sm border border-white/40 hover:border-primary hover:shadow-md transition-all group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:border-primary"
+        <section v-for="(texts, livre) in typeGroup.groups" :key="livre">
+          <h3
+            class="text-xl font-bold text-text-primary mb-4 pl-3 border-l-4 border-primary dark:text-gray-100"
           >
-            <span class="min-w-0">
-              <span class="block font-medium text-text-primary truncate dark:text-gray-200">
-                {{ appendHebrewNumeral(text.name) }}
+            {{ formatBookName(String(livre)) }}
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            <router-link
+              v-for="text in texts"
+              :key="text.id"
+              :to="hubPath(text)"
+              class="flex items-center justify-between gap-2 p-3 rounded-xl bg-white/60 backdrop-blur-sm border border-white/40 hover:border-primary hover:shadow-md transition-all group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:border-primary"
+            >
+              <span class="min-w-0">
+                <span class="block font-medium text-text-primary truncate dark:text-gray-200">
+                  {{ appendHebrewNumeral(text.name) }}
+                </span>
+                <span
+                  v-if="text.totalSections > 1"
+                  class="text-xs text-text-secondary dark:text-gray-500"
+                >
+                  {{ t("study.sections", { count: text.totalSections }) }}
+                </span>
               </span>
-              <span
-                v-if="text.totalSections > 1"
-                class="text-xs text-text-secondary dark:text-gray-500"
-              >
-                {{ t("study.sections", { count: text.totalSections }) }}
-              </span>
-            </span>
-            <i
-              class="fa-solid fa-book-open text-text-secondary/40 group-hover:text-primary transition-colors flex-shrink-0"
-            ></i>
-          </router-link>
-        </div>
-      </section>
+              <i
+                class="fa-solid fa-book-open text-text-secondary/40 group-hover:text-primary transition-colors flex-shrink-0"
+              ></i>
+            </router-link>
+          </div>
+        </section>
+      </div>
     </div>
 
     <!-- Empty -->
