@@ -15,13 +15,19 @@ import CreatedSessions from "./profilePage/CreatedSessions.vue";
 import UserInfoForm from "./profilePage/UserInfoForm.vue";
 import SecuritySettings from "./profilePage/SecuritySettings.vue";
 import ThemeSelector from "./profilePage/ThemeSelector.vue";
+import DailyReading from "./profilePage/DailyReading.vue";
 
 const router = useRouter();
 const { t } = useI18n();
 
 const currentUser = ref<User | null>(null);
 const activeTab = ref<
-  "sessions-participated" | "sessions-created" | "my-info" | "security" | "theme"
+  | "daily-reading"
+  | "sessions-participated"
+  | "sessions-created"
+  | "my-info"
+  | "security"
+  | "theme"
 >("sessions-participated");
 const isLoading = ref(true);
 
@@ -210,6 +216,20 @@ onMounted(async () => {
           <ul class="flex flex-col gap-2 mb-8">
             <li>
               <button
+                @click="setActiveTab('daily-reading')"
+                :class="[
+                  'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
+                  activeTab === 'daily-reading'
+                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm dark:bg-primary/20'
+                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
+                ]"
+              >
+                <span>{{ t("profile.tabs.dailyReading") }}</span>
+                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
+              </button>
+            </li>
+            <li>
+              <button
                 @click="setActiveTab('sessions-participated')"
                 :class="[
                   'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
@@ -290,6 +310,10 @@ onMounted(async () => {
         </nav>
 
         <div id="profile-content">
+          <div v-if="activeTab === 'daily-reading'">
+            <DailyReading :user-id="currentUser.id" />
+          </div>
+
           <div v-if="activeTab === 'sessions-participated'">
             <ParticipatedSessions
               :sessions="participatedSessions"
