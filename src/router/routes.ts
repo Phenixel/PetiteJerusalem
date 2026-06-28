@@ -13,7 +13,6 @@ import TextReadingPage from "../views/TextReading/TextReadingPage.vue";
 import StudyPage from "../views/StudyPage.vue";
 import ContentPage from "../views/ContentPage.vue";
 import TehilimPage from "../views/TehilimPage.vue";
-import TehilimChapterPage from "../views/TehilimChapterPage.vue";
 
 export default [
   {
@@ -52,16 +51,22 @@ export default [
     component: DetailSession,
   },
   {
-    path: "/etude",
+    path: "/bibliotheque",
     name: "study",
     component: StudyPage,
   },
-  // Individual Tehilim chapter pages (long-tail SEO), prerendered to static
-  // HTML and rendered at runtime from src/content/tehilimChapter.ts.
+  // Public reading pages for the whole library (Tehilim, Tanakh, Michna, Talmud):
+  // the same reader as /lire, served at canonical keyword URLs and prerendered
+  // for SEO (static body from src/content/etudeTexts.ts).
   {
-    path: "/etude/tehilim/:chapter",
-    name: "tehilim-chapter",
-    component: TehilimChapterPage,
+    path: "/bibliotheque/:corpus/:slug",
+    name: "etude-reading",
+    component: TextReadingPage,
+  },
+  {
+    path: "/bibliotheque/:corpus/:slug/:section",
+    name: "etude-reading-section",
+    component: TextReadingPage,
   },
   {
     path: "/chiourim",

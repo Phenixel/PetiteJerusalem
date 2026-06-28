@@ -10,7 +10,7 @@
       <RouterLink class="hover:text-primary transition-colors" to="/share-reading">{{
         t("common.shareReading")
       }}</RouterLink>
-      <RouterLink class="hover:text-primary transition-colors" to="/etude">{{
+      <RouterLink class="hover:text-primary transition-colors" to="/bibliotheque">{{
         t("study.title")
       }}</RouterLink>
       <RouterLink class="hover:text-primary transition-colors" to="/chiourim">{{

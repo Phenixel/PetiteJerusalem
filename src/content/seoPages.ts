@@ -91,13 +91,13 @@ export const staticFooterHtml = `
     <nav aria-label="Navigation du site">
       <a href="/">Accueil</a>
       <a href="/share-reading">Partage de lectures</a>
-      <a href="/etude">Étude</a>
+      <a href="/bibliotheque">Bibliothèque</a>
       <a href="/chiourim">Chiourim</a>
       <a href="/finir-le-chass">Finir le Chass</a>
       <a href="/partage-tehilim">Partage de Tehilim</a>
       <a href="/tehilim">Tehilim par intention</a>
     </nav>
-    <p>Petite Jérusalem : étudier et partager la Torah, ensemble. Gratuit et en français.</p>
+    <p>Petite Jérusalem : étudier et partager la Torah, ensemble. Gratuit, en français, en anglais et en hébreu.</p>
   </footer>`;
 
 // ---- Pages backed by an existing Vue view (static body = pre-paint) -----
@@ -108,13 +108,13 @@ export const appPages: SeoPage[] = [
     path: "/",
     title: "Petite Jérusalem | Partager l'étude de la Torah et finir le Chass à plusieurs",
     description:
-      "Plateforme gratuite en français pour étudier et partager la Torah à plusieurs : répartissez le Talmud pour finir le Chass, lisez les Tehilim à plusieurs pour une refoua chelema ou à la mémoire d'un proche, suivez la progression jusqu'au siyoum.",
+      "Plateforme gratuite pour étudier et partager la Torah à plusieurs : répartissez le Talmud pour finir le Chass, lisez les Tehilim à plusieurs pour une refoua chelema ou à la mémoire d'un proche, suivez la progression jusqu'au siyoum.",
     sitemap: { priority: 1.0, changefreq: "weekly" },
     bodyHtml: `
   <main class="seo-article">
     <h1>Étudier et partager la Torah, à plusieurs</h1>
     <p class="seo-lead">
-      Petite Jérusalem est une plateforme <strong>gratuite et en français</strong> pour organiser
+      Petite Jérusalem est une plateforme <strong>gratuite</strong> pour organiser
       l'étude collective des textes juifs. Répartissez un texte entre plusieurs personnes, réservez
       vos passages et suivez la progression de tous jusqu'au siyoum, où que vous soyez.
     </p>
@@ -128,7 +128,7 @@ export const appPages: SeoPage[] = [
           répartissez les passages entre les participants.</p>
         </li>
         <li>
-          <h3><a href="/etude">Étude libre</a></h3>
+          <h3><a href="/bibliotheque">Bibliothèque</a></h3>
           <p>Lisez les Tehilim, la Michna, le Talmud et le Tanakh en ligne, en hébreu et en
           phonétique.</p>
         </li>
@@ -224,15 +224,15 @@ export const appPages: SeoPage[] = [
     ],
   },
   {
-    file: "etude.html",
-    path: "/etude",
-    title: "Étude libre : Tehilim, Michna, Talmud et Tanakh en ligne | Petite Jérusalem",
+    file: "bibliotheque.html",
+    path: "/bibliotheque",
+    title: "Bibliothèque : Tehilim, Michna, Talmud et Tanakh en ligne | Petite Jérusalem",
     description:
       "Lisez et étudiez gratuitement les textes juifs en ligne : Tehilim (Psaumes), Michna, Talmud et Tanakh, en hébreu et en phonétique. Réservez vos passages et suivez vos lectures.",
     sitemap: { priority: 0.8, changefreq: "weekly" },
     bodyHtml: `
   <main class="seo-article">
-    <h1>Étude libre : lire les textes de la Torah en ligne</h1>
+    <h1>Bibliothèque : lire les textes de la Torah en ligne</h1>
     <p class="seo-lead">
       Accédez gratuitement aux grands corpus de l'étude juive, en hébreu et en phonétique, pour les
       lire seul ou les <a href="/share-reading">partager à plusieurs</a>.
@@ -240,7 +240,7 @@ export const appPages: SeoPage[] = [
     <section class="seo-section">
       <h2>Les textes disponibles</h2>
       <ul>
-        <li><strong>Tehilim</strong> (Psaumes) : les <a href="/etude/tehilim/1">150 chapitres</a> du livre de Tehilim, en hébreu et en phonétique.</li>
+        <li><strong>Tehilim</strong> (Psaumes) : les <a href="/bibliotheque/tehilim/1">150 chapitres</a> du livre de Tehilim, en hébreu et en phonétique.</li>
         <li><strong>Michna</strong> : les six ordres (sedarim) de la Michna.</li>
         <li><strong>Talmud Bavli</strong> : les traités (massekhtot) du Talmud de Babylone.</li>
         <li><strong>Tanakh</strong> : la Torah, les Neviim (Prophètes) et les Ketouvim (Écrits).</li>
@@ -252,7 +252,7 @@ export const appPages: SeoPage[] = [
     jsonLd: [
       breadcrumb([
         { name: "Accueil", path: "/" },
-        { name: "Étude", path: "/etude" },
+        { name: "Bibliothèque", path: "/bibliotheque" },
       ]),
       {
         "@context": "https://schema.org",
@@ -282,7 +282,7 @@ export const appPages: SeoPage[] = [
     </p>
     <section class="seo-section">
       <p>Vous préférez étudier un texte vous-même ? Lisez les sources en
-      <a href="/etude">étude libre</a> ou lancez un <a href="/share-reading">partage de lectures</a>
+      <a href="/bibliotheque">bibliothèque</a> ou lancez un <a href="/share-reading">partage de lectures</a>
       avec votre communauté.</p>
     </section>
   </main>`,
@@ -445,7 +445,7 @@ const FINIR_FR: LandingStrings = {
   lang: "fr-FR",
   title: "Finir le Chass à plusieurs : se répartir le Talmud en ligne | Petite Jérusalem",
   description:
-    "Organisez l'étude collective du Talmud pour finir le Chass à plusieurs : créez une session, répartissez les traités et les dapim, suivez la progression jusqu'au siyoum haShass. Gratuit et en français.",
+    "Organisez l'étude collective du Talmud pour finir le Chass à plusieurs : créez une session, répartissez les traités et les dapim, suivez la progression jusqu'au siyoum haShass. Gratuit, en français, en anglais et en hébreu.",
   h1: "Finir le Chass à plusieurs",
   lead: "« Finir le Chass », c'est terminer l'étude de l'ensemble du Talmud Bavli, ses 63 traités (massekhtot). Seul, cela demande des années ; à plusieurs, en se répartissant les passages, un groupe ou une communauté peut y arriver en bien moins de temps. Petite Jérusalem est l'outil gratuit qui organise ce partage.",
   whyTitle: "Pourquoi finir le Chass ensemble ?",
@@ -738,8 +738,8 @@ const landingAsSeoPages: SeoPage[] = landingPages.map((p) => ({
 const TEHILIM_HUB_PATH = "/tehilim";
 const SHARE_NEW_SESSION = "/share-reading/new-session";
 
-/** The Tehilim reader serves chapter N at textId 102 + N (see textStudies.json). */
-const tehilimReaderHref = (n: number): string => `/lire/${102 + n}`;
+/** Canonical reading page for Tehilim chapter N. */
+const tehilimReaderHref = (n: number): string => `/bibliotheque/tehilim/${n}`;
 
 const intentionPath = (slug: string): string => `${TEHILIM_HUB_PATH}/${slug}`;
 
@@ -1013,7 +1013,7 @@ function buildIntention(it: Intention): SeoPage {
       <ul>
         ${related ? related + "\n        " : ""}<li><a href="${TEHILIM_HUB_PATH}">Toutes les intentions (Tehilim par intention)</a></li>
         <li><a href="/partage-tehilim">Partage de Tehilim à plusieurs</a></li>
-        <li><a href="/etude">Étude libre des textes</a></li>
+        <li><a href="/bibliotheque">Bibliothèque</a></li>
       </ul>
     </section>
   </main>`;

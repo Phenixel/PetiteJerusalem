@@ -16,6 +16,10 @@
     "public": "dist",
     "cleanUrls": true,
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "redirects": [
+      { "source": "/etude", "type": 301, "destination": "/bibliotheque" },
+      { "source": "/etude/**", "type": 301, "destination": "/bibliotheque/:splat" }
+    ],
     "rewrites": [
       {
         "source": "/og/session/**",

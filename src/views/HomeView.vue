@@ -28,7 +28,7 @@ const features = computed(() => [
     title: t("home.features.study.title"),
     description: t("home.features.study.description"),
     status: "available",
-    route: "etude",
+    route: "bibliotheque",
   },
 ]);
 

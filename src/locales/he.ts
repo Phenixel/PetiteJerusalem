@@ -66,14 +66,14 @@ const he: LocaleMessages = {
   home: {
     heroTitle: "המרכז הרוחני הדיגיטלי שלכם",
     heroDescription:
-      "פלטפורמה מודרנית המוקדשת ללימוד, שיתוף וצמיחה רוחנית של הקהילה היהודית הדוברת צרפתית.",
+      "פלטפורמה מודרנית המוקדשת ללימוד, שיתוף וצמיחה רוחנית של הקהילה היהודית.",
     features: {
       shareReading: {
         title: "שיתוף קריאות",
         description: "החליפו וגלו טקסטים קדושים עם הקהילה",
       },
       study: {
-        title: "לימוד",
+        title: "ספרייה",
         description: "קראו בחופשיות תהילים, משנה, תלמוד ותנ״ך",
       },
       personalTracking: {
@@ -395,7 +395,7 @@ const he: LocaleMessages = {
     guestIntro: "הזן את שמך והאימייל שלך כדי לשמור קטע זה.",
   },
   study: {
-    title: "לימוד",
+    title: "ספרייה",
     subtitle: "קראו ולמדו את הטקסטים: תהילים, משנה, תלמוד ותנ״ך.",
     searchPlaceholder: "חיפוש טקסט…",
     noResults: "לא נמצא טקסט תואם.",

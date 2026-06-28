@@ -1,8 +1,8 @@
 # Petite Jérusalem
 
-> Plateforme gratuite, en français, pour étudier et partager la Torah à plusieurs. On y répartit un texte entre plusieurs personnes pour le terminer ensemble : se partager le Talmud (Guemara) pour finir le Chass, lire les Tehilim (Psaumes) à plusieurs pour une refoua chelema (guérison) ou à la mémoire d'un proche (ilouï nechama), étudier la Michna ou le Tanakh. Chaque participant réserve ses passages (même sans compte) et tout le monde suit la progression jusqu'au siyoum.
+> Plateforme gratuite, en français, en anglais et en hébreu, pour étudier et partager la Torah à plusieurs. On y répartit un texte entre plusieurs personnes pour le terminer ensemble : se partager le Talmud (Guemara) pour finir le Chass, lire les Tehilim (Psaumes) à plusieurs pour une refoua chelema (guérison) ou à la mémoire d'un proche (ilouï nechama), étudier la Michna ou le Tanakh. Chaque participant réserve ses passages (même sans compte) et tout le monde suit la progression jusqu'au siyoum.
 
-Mots-clés : partage de lecture, partage d'étude, finir le Chass, terminer le Talmud à plusieurs, partage de Tehilim, répartir les Psaumes, limoud collectif, siyoum, refoua chelema, ilouï nechama, hiloula, communauté juive francophone.
+Mots-clés : partage de lecture, partage d'étude, finir le Chass, terminer le Talmud à plusieurs, partage de Tehilim, répartir les Psaumes, limoud collectif, siyoum, refoua chelema, ilouï nechama, hiloula, communauté juive.
 
 ## Pages principales
 
@@ -10,11 +10,11 @@ Mots-clés : partage de lecture, partage d'étude, finir le Chass, terminer le T
 - [Finir le Chass à plusieurs](https://petite-jerusalem.fr/finir-le-chass) : organiser l'étude collective du Talmud Bavli jusqu'au siyoum haShass.
 - [Partage de Tehilim](https://petite-jerusalem.fr/partage-tehilim) : répartir les 150 Psaumes entre plusieurs personnes.
 - [Tehilim par intention](https://petite-jerusalem.fr/tehilim) : quels psaumes lire selon l'intention (refoua chelema / guérison d'un malade, etc.) et comment les partager à plusieurs.
-- [Étude](https://petite-jerusalem.fr/etude) : lire les Tehilim, la Michna, le Talmud et le Tanakh en ligne, en hébreu et en phonétique.
+- [Bibliothèque](https://petite-jerusalem.fr/bibliotheque) : lire les Tehilim, la Michna, le Talmud et le Tanakh en ligne, en hébreu et en phonétique.
 - [Chiourim](https://petite-jerusalem.fr/chiourim) : cours et leçons de Torah à écouter, par rav ou par thème.
 
 ## En bref
 
 - Gratuit, sans publicité.
 - Utilisable sans compte (mode invité) ; un compte permet de retrouver ses réservations et de suivre ses lectures.
-- En français, pour la communauté juive francophone.
+- En français, en anglais et en hébreu, pour la communauté juive.

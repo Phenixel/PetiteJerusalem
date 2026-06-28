@@ -37,45 +37,101 @@ const { allPages, renderPage, buildSitemap, SITE_URL } = await jiti.import(
   "../src/content/seoPages.ts",
 );
 const {
-  TEHILIM_CHAPTER_COUNT,
-  chapterPath,
-  chapterTitle,
-  chapterDescription,
-  buildChapterBody,
-  chapterJsonLd,
-} = await jiti.import("../src/content/tehilimChapter.ts");
+  studyEntries,
+  isMultiSection,
+  hubPath,
+  sectionPath,
+  buildHubBody,
+  buildSectionBody,
+  hubTitle,
+  hubDescription,
+  sectionTitle,
+  sectionDescription,
+  hubJsonLd,
+  sectionJsonLd,
+} = await jiti.import("../src/content/etudeTexts.ts");
+const { parseContent, resolveFilePath } = await jiti.import("../src/services/textService.ts");
+
+/** Read + parse a text file from `dist/texts`, memoized (Tehilim shares one file). */
+function makeTextLoader(dist, talmudChapters) {
+  const cache = new Map();
+  return (entry) => {
+    const rel = resolveFilePath(entry).replace(/^\//, ""); // "/texts/x.json" → "texts/x.json"
+    if (!cache.has(rel)) {
+      cache.set(rel, JSON.parse(readFileSync(join(dist, rel), "utf-8")));
+    }
+    return parseContent(entry, cache.get(rel), talmudChapters);
+  };
+}
+
+function writePage(dist, template, { file, path, title, description, bodyHtml, jsonLd }) {
+  const target = join(dist, file);
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, renderPage(template, { file, path, title, description, bodyHtml, jsonLd }), "utf-8");
+}
+
+const fileFor = (path) => `${path.replace(/^\//, "")}.html`;
 
 /**
- * Generate the individual Tehilim chapter pages (/etude/tehilim/N) from the
- * local text file. Returns their sitemap entries so they can be appended to
- * sitemap.xml. Kept out of `allPages` so the full Hebrew text never lands in
- * the SPA bundle.
+ * Generate the public reading pages for the whole library (Tehilim, Tanakh,
+ * Michna, Talmud) under /etude/<corpus>/<slug>[/<section>]. Returns their
+ * sitemap entries. The big text files are read from disk here, never bundled.
  */
-function generateTehilimChapters(dist, template) {
-  const text = JSON.parse(readFileSync(join(dist, "texts", "tehilim.json"), "utf-8"));
-  const dir = join(dist, "etude", "tehilim");
-  mkdirSync(dir, { recursive: true });
+function generateEtudePages(dist, template) {
+  const talmudChapters = JSON.parse(readFileSync(join(dist, "texts", "talmud-chapters.json"), "utf-8"));
+  const loadEntry = makeTextLoader(dist, talmudChapters);
+  const sitemap = [];
 
-  const entries = [];
-  for (let n = 1; n <= TEHILIM_CHAPTER_COUNT; n++) {
-    const verses = text[String(n)]?.he;
-    if (!verses) {
-      console.warn(`[prerender-seo] Tehilim ${n} missing from tehilim.json, skipped.`);
+  for (const entry of studyEntries) {
+    let content;
+    try {
+      content = loadEntry(entry);
+    } catch {
+      console.warn(`[prerender-seo] text file missing for "${entry.name}", skipped.`);
       continue;
     }
-    const page = {
-      file: `etude/tehilim/${n}.html`,
-      path: chapterPath(n),
-      title: chapterTitle(n),
-      description: chapterDescription(n),
-      bodyHtml: buildChapterBody(n, verses),
-      jsonLd: chapterJsonLd(n),
-    };
-    writeFileSync(join(dist, page.file), renderPage(template, page), "utf-8");
-    entries.push({ path: page.path, priority: 0.5, changefreq: "yearly" });
+    if (!content.sections.length) continue;
+
+    if (isMultiSection(entry)) {
+      writePage(dist, template, {
+        file: fileFor(hubPath(entry)),
+        path: hubPath(entry),
+        title: hubTitle(entry),
+        description: hubDescription(entry),
+        bodyHtml: buildHubBody(entry, content),
+        jsonLd: hubJsonLd(entry),
+      });
+      sitemap.push({ path: hubPath(entry), priority: 0.5, changefreq: "yearly" });
+
+      for (const section of content.sections) {
+        const path = sectionPath(entry, section.index);
+        writePage(dist, template, {
+          file: fileFor(path),
+          path,
+          title: sectionTitle(entry, section),
+          description: sectionDescription(entry, section),
+          bodyHtml: buildSectionBody(entry, content, section),
+          jsonLd: sectionJsonLd(entry, section),
+        });
+        sitemap.push({ path, priority: 0.5, changefreq: "yearly" });
+      }
+    } else {
+      const section = content.sections[0];
+      const path = hubPath(entry);
+      writePage(dist, template, {
+        file: fileFor(path),
+        path,
+        title: sectionTitle(entry, section),
+        description: sectionDescription(entry, section),
+        bodyHtml: buildSectionBody(entry, content, section),
+        jsonLd: sectionJsonLd(entry, section),
+      });
+      sitemap.push({ path, priority: 0.6, changefreq: "yearly" });
+    }
   }
-  console.log(`[prerender-seo] Generated ${entries.length} Tehilim chapter page(s).`);
-  return entries;
+
+  console.log(`[prerender-seo] Generated ${sitemap.length} Bibliothèque reading page(s).`);
+  return sitemap;
 }
 
 function main() {
@@ -96,15 +152,15 @@ function main() {
     console.log(`[prerender-seo] ${page.path} -> dist/${page.file}`);
   }
 
-  // 2b. Individual Tehilim chapter pages (long-tail SEO), generated from the
-  //     text file and added to the sitemap below.
-  const chapterEntries = generateTehilimChapters(dist, template);
+  // 2b. Public reading pages for the whole library (Tehilim, Tanakh, Michna,
+  //     Talmud), generated from the text files and added to the sitemap below.
+  const readingEntries = generateEtudePages(dist, template);
 
   // 3. Sitemap, regenerated from the same lists so it can never drift.
   const lastmod = new Date().toISOString().slice(0, 10);
-  writeFileSync(join(dist, "sitemap.xml"), buildSitemap(lastmod, chapterEntries), "utf-8");
+  writeFileSync(join(dist, "sitemap.xml"), buildSitemap(lastmod, readingEntries), "utf-8");
 
-  const total = allPages.length + chapterEntries.length;
+  const total = allPages.length + readingEntries.length;
   console.log(`[prerender-seo] Generated ${total} page(s) + app.html + sitemap.xml.`);
   console.log(`[prerender-seo] Canonical host: ${SITE_URL}`);
 }

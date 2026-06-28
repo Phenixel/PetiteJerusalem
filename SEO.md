@@ -77,7 +77,7 @@ LLMs recommend a site when it is (a) crawlable as text (now true) and (b)
 present in their training/retrieval corpus, which mostly requires **being
 indexed and linked from elsewhere**. Concretely:
 
-- Get inbound links from French-speaking Jewish community sites, shul/kehila
+- Get inbound links from Jewish community sites, shul/kehila
   newsletters, Torah-study directories, and association pages. A handful of real
   links is the single biggest lever for a new domain.
 - Mention the exact use-cases in those links ("un site pour finir le Chass à

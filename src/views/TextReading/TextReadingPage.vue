@@ -16,6 +16,18 @@ import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { sessionService } from "../../services/sessionService";
 import { seoService } from "../../services/seoService";
+import {
+  hubPath,
+  sectionPath,
+  entryByCorpusSlug,
+  sectionTitle,
+  hubTitle,
+  sectionDescription,
+  hubDescription,
+  READING_LEAD,
+  READING_NOTE,
+  SITE_URL,
+} from "../../content/etudeTexts";
 import GuestForm from "../../components/GuestForm.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
 
@@ -23,9 +35,29 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 
-const textId = computed(() => String(route.params.textId));
+// This view serves two URL shapes with the SAME UI: the in-session reader
+// (/lire/:textId, numeric id) and the public, indexable reading pages
+// (/bibliotheque/:corpus/:slug[/:section], keyword URLs). `isEtudeRoute` switches
+// navigation + metadata between the two.
+const isEtudeRoute = computed(() => route.params.corpus !== undefined);
+const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
+  isEtudeRoute.value
+    ? entryByCorpusSlug(String(route.params.corpus), String(route.params.slug))
+    : null,
+);
+
+const textId = computed(() =>
+  isEtudeRoute.value ? String(etudeEntry.value?.id ?? "") : String(route.params.textId),
+);
 const sectionParam = computed(() => (route.params.section ? Number(route.params.section) : undefined));
 const sessionSlug = computed(() => (route.query.session ? String(route.query.session) : null));
+
+/** Reading lead/note are shown on the public /bibliotheque pages (not in the session reader). */
+const readingLead = READING_LEAD;
+const readingNote = READING_NOTE;
+const isTehilimEtude = computed(
+  () => isEtudeRoute.value && String(route.params.corpus) === "tehilim",
+);
 
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
 const textEntry = computed(() => allTexts.find((t) => String(t.id) === textId.value) ?? null);
@@ -84,18 +116,21 @@ async function loadContent() {
 // (next/previous) replaces it, since moving along is lateral navigation within
 // the same text rather than a new page to step back through.
 function goToSection(index: number, replace = false) {
-  const to = {
-    name: "text-reading-section",
-    params: { textId: textId.value, section: index },
-    query: route.query,
-  };
+  const to =
+    isEtudeRoute.value && textEntry.value
+      ? sectionPath(textEntry.value, index)
+      : { name: "text-reading-section", params: { textId: textId.value, section: index }, query: route.query };
   if (replace) router.replace(to);
   else router.push(to);
   window.scrollTo({ top: 0 });
 }
 
 function backToSectionList() {
-  router.push({ name: "text-reading", params: { textId: textId.value }, query: route.query });
+  const to =
+    isEtudeRoute.value && textEntry.value
+      ? hubPath(textEntry.value)
+      : { name: "text-reading", params: { textId: textId.value }, query: route.query };
+  router.push(to);
   window.scrollTo({ top: 0 });
 }
 
@@ -142,7 +177,10 @@ const nextText = computed<TextStudyJsonEntry | null>(() =>
 // That way "Retour" (and the browser back button) returns to the list the
 // reader came from instead of stepping back through every text already read.
 function goToText(target: TextStudyJsonEntry) {
-  router.replace({ name: "text-reading", params: { textId: String(target.id) }, query: route.query });
+  const to = isEtudeRoute.value
+    ? hubPath(target)
+    : { name: "text-reading", params: { textId: String(target.id) }, query: route.query };
+  router.replace(to);
   window.scrollTo({ top: 0 });
 }
 
@@ -240,15 +278,54 @@ async function toggleRead() {
 }
 
 // --- SEO ---
+// On /bibliotheque (the public, indexable pages) use the keyword title/description and
+// index the page. On /lire (the in-session reader) keep the reader title and
+// noindex, pointing the canonical at the /bibliotheque equivalent.
 const pageTitle = computed(() => {
-  if (!textEntry.value) return "Lecture | Petite Jérusalem";
+  const e = textEntry.value;
+  if (!e) return "Lecture | Petite Jérusalem";
+  if (isEtudeRoute.value) {
+    return currentSection.value ? sectionTitle(e, currentSection.value) : hubTitle(e);
+  }
   const sec = currentSection.value && !isSingleSection.value ? ` · ${currentSection.value.label}` : "";
-  return `${appendHebrewNumeral(textEntry.value.name)}${sec} | Petite Jérusalem`;
+  return `${appendHebrewNumeral(e.name)}${sec} | Petite Jérusalem`;
 });
-watch(pageTitle, (title) => seoService.setMeta({ title }), { immediate: true });
+const pageDescription = computed(() => {
+  const e = textEntry.value;
+  if (!e || !isEtudeRoute.value) return undefined;
+  return currentSection.value ? sectionDescription(e, currentSection.value) : hubDescription(e);
+});
+const canonicalUrl = computed(() => {
+  const e = textEntry.value;
+  if (!e) return undefined;
+  if (currentSection.value) return `${SITE_URL}${sectionPath(e, currentSection.value.index)}`;
+  return `${SITE_URL}${hubPath(e)}`;
+});
+watch(
+  [pageTitle, pageDescription, canonicalUrl],
+  ([title, description, canonical]) =>
+    seoService.setMeta({
+      title,
+      description,
+      canonical,
+      og: canonical ? { url: canonical, type: "article" } : undefined,
+      robots: isEtudeRoute.value ? "index, follow" : "noindex, follow",
+    }),
+  { immediate: true },
+);
 
 // --- Lifecycle ---
 onMounted(async () => {
+  // A public /lire link (no session) is redirected to the canonical /bibliotheque page,
+  // so there is a single indexable URL. /bibliotheque pages render here directly.
+  if (!isEtudeRoute.value && !sessionSlug.value && textEntry.value) {
+    const target =
+      sectionParam.value !== undefined
+        ? sectionPath(textEntry.value, sectionParam.value)
+        : hubPath(textEntry.value);
+    router.replace(target);
+    return;
+  }
   await loadContent();
   if (sessionSlug.value) {
     currentUser.value = await sessionService.getCurrentUser();
@@ -341,6 +418,11 @@ watch(textId, loadContent);
           {{ currentSection.label }}
         </p>
       </header>
+
+      <!-- SEO intro (public /bibliotheque reading pages only) -->
+      <p v-if="isEtudeRoute" class="-mt-4 mb-8 text-text-secondary leading-relaxed dark:text-gray-400">
+        {{ readingLead }}
+      </p>
 
       <!-- Passage list (multi-section texts) -->
       <div v-if="showSectionList">
@@ -628,6 +710,26 @@ watch(textId, loadContent);
           class="mt-10 pt-6 border-t border-black/5 dark:border-white/10"
         />
       </div>
+
+      <!-- SEO note + internal links (public /bibliotheque reading pages only) -->
+      <section
+        v-if="isEtudeRoute"
+        class="mt-12 pt-6 border-t border-black/5 text-sm text-text-secondary dark:border-white/10 dark:text-gray-400"
+      >
+        <p class="italic mb-4">{{ readingNote }}</p>
+        <nav class="flex flex-wrap gap-x-5 gap-y-2">
+          <RouterLink to="/bibliotheque" class="hover:text-primary transition-colors">Bibliothèque</RouterLink>
+          <RouterLink
+            v-if="isTehilimEtude"
+            to="/tehilim"
+            class="hover:text-primary transition-colors"
+            >Tehilim par intention</RouterLink
+          >
+          <RouterLink to="/partage-tehilim" class="hover:text-primary transition-colors"
+            >Partage de Tehilim</RouterLink
+          >
+        </nav>
+      </section>
     </template>
   </main>
 </template>

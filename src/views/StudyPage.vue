@@ -6,6 +6,7 @@ import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { sessionService } from "../services/sessionService";
 import { seoService } from "../services/seoService";
 import { appendHebrewNumeral } from "../services/hebrewNumerals";
+import { hubPath } from "../content/etudeTexts";
 
 const { t } = useI18n();
 
@@ -45,7 +46,7 @@ function formatBookName(livre: string): string {
 }
 
 onMounted(() => {
-  const url = window.location.origin + "/etude";
+  const url = window.location.origin + "/bibliotheque";
   seoService.setMeta({
     title: `${t("study.title")} | Petite Jérusalem`,
     description: t("study.subtitle"),
@@ -118,7 +119,7 @@ onMounted(() => {
           <router-link
             v-for="text in texts"
             :key="text.id"
-            :to="{ name: 'text-reading', params: { textId: String(text.id) } }"
+            :to="hubPath(text)"
             class="flex items-center justify-between gap-2 p-3 rounded-xl bg-white/60 backdrop-blur-sm border border-white/40 hover:border-primary hover:shadow-md transition-all group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:border-primary"
           >
             <span class="min-w-0">

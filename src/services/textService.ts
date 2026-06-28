@@ -40,7 +40,7 @@ export class MissingTextFileError extends Error {
   }
 }
 
-interface TalmudChapter {
+export interface TalmudChapter {
   chapter: number;
   startDaf: string;
   endDaf: string;
@@ -51,7 +51,7 @@ interface TalmudChapter {
 const SEFARIA_PREFIX = "https://www.sefaria.org/";
 
 /** Tractate slug: lowercase, spaces → dashes, apostrophes removed. */
-function tractateSlug(name: string): string {
+export function tractateSlug(name: string): string {
   return name
     .toLowerCase()
     .replace(/ /g, "-")
@@ -59,13 +59,13 @@ function tractateSlug(name: string): string {
 }
 
 /** Tractate name from a Sefaria link (optionally dropping the "Mishnah_" prefix). */
-function tractateFromLink(link: string, stripMishnah = false): string {
+export function tractateFromLink(link: string, stripMishnah = false): string {
   let name = link.replace(SEFARIA_PREFIX, "");
   if (stripMishnah) name = name.replace(/^Mishnah_/, "");
   return name.replace(/_/g, " ");
 }
 
-function resolveFilePath(textStudy: TextStudyJsonEntry): string {
+export function resolveFilePath(textStudy: TextStudyJsonEntry): string {
   switch (String(textStudy.type)) {
     case "Tehilim":
       return "/texts/tehilim.json";
@@ -137,13 +137,14 @@ function loadTehilim(textStudy: TextStudyJsonEntry, data: Record<string, { he?: 
   };
 }
 
-async function loadTalmud(
+function parseTalmud(
   textStudy: TextStudyJsonEntry,
   data: { title?: string; he?: unknown[] },
-): Promise<TextContent> {
+  talmudChapters: Record<string, TalmudChapter[]>,
+): TextContent {
   const heDaf = data.he ?? [];
   const slug = tractateSlug(tractateFromLink(textStudy.link));
-  const chapterRanges = (await getTalmudChapters())[slug] ?? [];
+  const chapterRanges = talmudChapters[slug] ?? [];
   const title = data.title ?? textStudy.name;
 
   if (chapterRanges.length > 0) {
@@ -195,6 +196,33 @@ function loadTanakh(
   return { title, type: "Tanakh", sections: chaptersToSections(heChapters) };
 }
 
+/**
+ * Pure parse of an already-loaded text file into ready-to-read sections.
+ * Shared by the runtime reader (via {@link loadText}) and the SEO prerender
+ * (which reads the files from disk), so both produce identical content.
+ * `talmudChapters` is only needed for the Talmud (chapter → daf-range map).
+ */
+export function parseContent(
+  textStudy: TextStudyJsonEntry,
+  data: unknown,
+  talmudChapters: Record<string, TalmudChapter[]> = {},
+): TextContent {
+  switch (String(textStudy.type)) {
+    case "Tehilim":
+      return loadTehilim(textStudy, data as Record<string, { he?: unknown }>);
+    case "Mishna": {
+      const d = data as { title?: string; he?: unknown[] };
+      return { title: d.title ?? textStudy.name, type: "Mishna", sections: chaptersToSections(d.he ?? []) };
+    }
+    case "Talmud Bavli":
+      return parseTalmud(textStudy, data as { title?: string; he?: unknown[] }, talmudChapters);
+    case "Tanakh":
+      return loadTanakh(textStudy, data as { title?: string; he?: unknown[] });
+    default:
+      throw new Error(`Type non supporté : ${textStudy.type}`);
+  }
+}
+
 export async function loadText(textStudy: TextStudyJsonEntry): Promise<TextContent> {
   const res = await fetch(resolveFilePath(textStudy));
   if (!res.ok) {
@@ -202,17 +230,7 @@ export async function loadText(textStudy: TextStudyJsonEntry): Promise<TextConte
     throw new Error(`Texte non disponible (${res.status})`);
   }
   const data = await res.json();
-
-  switch (String(textStudy.type)) {
-    case "Tehilim":
-      return loadTehilim(textStudy, data);
-    case "Mishna":
-      return { title: data.title ?? textStudy.name, type: "Mishna", sections: chaptersToSections(data.he ?? []) };
-    case "Talmud Bavli":
-      return loadTalmud(textStudy, data);
-    case "Tanakh":
-      return loadTanakh(textStudy, data);
-    default:
-      throw new Error(`Type non supporté : ${textStudy.type}`);
-  }
+  const talmudChapters =
+    String(textStudy.type) === "Talmud Bavli" ? await getTalmudChapters() : {};
+  return parseContent(textStudy, data, talmudChapters);
 }
