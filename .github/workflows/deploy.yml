@@ -40,5 +40,19 @@ jobs:
       # Deploys hosting (with the prerendered SEO pages) and the socialPreview
       # function together, so the hosting rewrites always resolve to a deployed
       # function. The functions are compiled by the predeploy hook in firebase.json.
+      # firebase-tools sometimes exits 1 on the final hosting "release" step with
+      # "supplied version <V> is the current active version" — even though <V> is
+      # the version that was just built and uploaded, i.e. the new content is
+      # already live. That makes the deploy a false failure. We swallow ONLY that
+      # exact, benign condition and still fail on any real deploy error.
       - name: Deploy hosting + functions
-        run: firebase deploy --only hosting,functions --project petite-jerusalem-dev --non-interactive
+        run: |
+          set +e
+          out=$(firebase deploy --only hosting,functions --project petite-jerusalem-dev --non-interactive 2>&1)
+          code=$?
+          echo "$out"
+          if [ "$code" -ne 0 ] && echo "$out" | grep -q "is the current active version"; then
+            echo "::warning::Hosting version already active — new content is live, treating as success."
+            exit 0
+          fi
+          exit "$code"
