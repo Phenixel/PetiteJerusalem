@@ -260,7 +260,7 @@ function formatBookName(livre: string): string {
                   isSelected(text.id) ? 'text-primary' : 'text-text-secondary/60 dark:text-gray-500',
                 ]"
               >
-                <i :class="isSelected(text.id) ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle-plus'"></i>
+                <i :class="isSelected(text.id) ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-plus'"></i>
                 {{ isSelected(text.id) ? t("dailyReading.added") : t("dailyReading.add") }}
               </span>
             </button>
