@@ -1,6 +1,16 @@
 import type { Chiour } from "../models/models";
 import { chiourRepository } from "../repositories/chiourRepository";
 import type { WebhookChiour } from "../repositories/chiourRepository";
+import { chiourFirestoreRepository } from "../repositories/chiourFirestoreRepository";
+
+/**
+ * Source de données des chiourim.
+ * - "n8n"      : ancien webhook (Notion via n8n) — comportement par défaut, prod actuelle.
+ * - "firestore": nouvelle base Firebase (audio permanent).
+ * Bascule via la variable d'env `VITE_CHIOURIM_SOURCE=firestore` une fois les données migrées.
+ */
+const SOURCE: "n8n" | "firestore" =
+  import.meta.env.VITE_CHIOURIM_SOURCE === "firestore" ? "firestore" : "n8n";
 
 function parseMediaUrl(medias: string): string {
   try {
@@ -52,10 +62,8 @@ export class ChiourService {
 
     // Deduplicate concurrent requests
     if (!this.fetchPromise) {
-      this.fetchPromise = chiourRepository
-        .fetchAll()
-        .then((data) => {
-          const chiourim = data.map(mapWebhookToChiour);
+      this.fetchPromise = this.loadChiourim()
+        .then((chiourim) => {
           this.chiourimCache = { data: chiourim, fetchedAt: Date.now() };
           return chiourim;
         })
@@ -64,6 +72,15 @@ export class ChiourService {
         });
     }
     return this.fetchPromise;
+  }
+
+  /** Charge les chiourim depuis la source configurée (Firestore ou webhook n8n). */
+  private async loadChiourim(): Promise<Chiour[]> {
+    if (SOURCE === "firestore") {
+      return chiourFirestoreRepository.fetchAll();
+    }
+    const data = await chiourRepository.fetchAll();
+    return data.map(mapWebhookToChiour);
   }
 
   getCachedChiourim(): Chiour[] | null {
@@ -78,6 +95,16 @@ export class ChiourService {
   async getCategories(): Promise<string[]> {
     if (this.categoriesCache && Date.now() - this.categoriesCache.fetchedAt < MEDIA_TTL) {
       return this.categoriesCache.data;
+    }
+
+    // En mode Firestore, les catégories sont dérivées des chiourim (pas de 2e source).
+    if (SOURCE === "firestore") {
+      const chiourim = await this.getAllChiourim();
+      const set = new Set<string>();
+      chiourim.forEach((c) => c.categories.forEach((cat) => set.add(cat)));
+      const cats = [...set].sort((a, b) => a.localeCompare(b, "fr"));
+      this.categoriesCache = { data: cats, fetchedAt: Date.now() };
+      return cats;
     }
 
     if (!this.categoriesFetchPromise) {

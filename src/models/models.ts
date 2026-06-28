@@ -92,4 +92,28 @@ export interface Chiour {
   mediaUrl: string;
   niveau: string | null;
   link: string | null;
+  /** Ordre d'affichage optionnel (issu de Firestore). Usage interne au tri. */
+  _order?: number | null;
+}
+
+/**
+ * Forme du document stocké dans Firestore (collection `chiourim`).
+ * `audioPath` est le chemin Cloud Storage ; `mediaUrl` l'URL de téléchargement
+ * permanente résolue lors de la migration / de l'upload admin.
+ */
+export interface ChiourDoc {
+  slug: string;
+  name: string;
+  description: string;
+  auteur: string | null;
+  categories: string[];
+  niveau: string | null;
+  audioPath: string;
+  mediaUrl: string;
+  duration?: number | null;
+  fileSize?: number | null;
+  published: boolean;
+  order?: number | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
