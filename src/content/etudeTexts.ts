@@ -150,13 +150,9 @@ function sectionTextHtml(section: TextSection, numbered: boolean): string {
   return `<ol class="reading-lines">\n      ${linesHtml(section.he, numbered)}\n      </ol>`;
 }
 
-const READING_DISCLAIMER =
-  "Phonétique générée automatiquement comme aide à la lecture (approximative). Texte hébreu d'après le jeu de données public Sefaria.";
-
-/** Short SEO sentences reused by the prerender AND the live reader (top/bottom). */
+/** Short SEO intro reused by the prerender AND the live reader (top of page). */
 export const READING_LEAD =
   "Texte intégral en hébreu, accompagné de la phonétique pour le lire même sans maîtriser l'hébreu. Lisez-le seul ou partagez-en la lecture à plusieurs.";
-export const READING_NOTE = READING_DISCLAIMER;
 
 /** A short human title for a section, used in H1 / breadcrumbs. */
 export function sectionHeading(entry: TextStudyJsonEntry, section: TextSection): string {
@@ -260,7 +256,6 @@ export function buildSectionBody(
 
     <section class="seo-section">
       ${sectionTextHtml(section, numbered)}
-      <p class="seo-note"><em>${READING_DISCLAIMER}</em></p>
     </section>
 
     <nav class="reading-nav" aria-label="Navigation">

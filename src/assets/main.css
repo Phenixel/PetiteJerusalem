@@ -225,11 +225,6 @@ button,
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-.seo-article .seo-note {
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-}
-
 /* "Tehilim par intention" hub: simple list of intentions (whole row is a link). */
 .seo-article .tehilim-list {
   list-style: none;

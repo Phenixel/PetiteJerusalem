@@ -25,7 +25,6 @@ import {
   sectionDescription,
   hubDescription,
   READING_LEAD,
-  READING_NOTE,
   SITE_URL,
 } from "../../content/etudeTexts";
 import GuestForm from "../../components/GuestForm.vue";
@@ -52,9 +51,8 @@ const textId = computed(() =>
 const sectionParam = computed(() => (route.params.section ? Number(route.params.section) : undefined));
 const sessionSlug = computed(() => (route.query.session ? String(route.query.session) : null));
 
-/** Reading lead/note are shown on the public /bibliotheque pages (not in the session reader). */
+/** Reading lead is shown on the public /bibliotheque pages (not in the session reader). */
 const readingLead = READING_LEAD;
-const readingNote = READING_NOTE;
 const isTehilimEtude = computed(
   () => isEtudeRoute.value && String(route.params.corpus) === "tehilim",
 );
@@ -711,12 +709,11 @@ watch(textId, loadContent);
         />
       </div>
 
-      <!-- SEO note + internal links (public /bibliotheque reading pages only) -->
+      <!-- Internal links (public /bibliotheque reading pages only) -->
       <section
         v-if="isEtudeRoute"
         class="mt-12 pt-6 border-t border-black/5 text-sm text-text-secondary dark:border-white/10 dark:text-gray-400"
       >
-        <p class="italic mb-4">{{ readingNote }}</p>
         <nav class="flex flex-wrap gap-x-5 gap-y-2">
           <RouterLink to="/bibliotheque" class="hover:text-primary transition-colors">Bibliothèque</RouterLink>
           <RouterLink
