@@ -1,12 +1,26 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 
+/** Daily reading completion for a single day. Resets when the date changes. */
+export interface DailyReadingProgress {
+  /** Local calendar day (YYYY-MM-DD) the completions belong to. */
+  date: string;
+  /** Ids of the texts marked as read on that day. */
+  completedIds: number[];
+}
+
 export interface UserPreferences {
   theme: string;
+  /** Ordered ids of the texts the user reads every day (their daily reading list). */
+  dailyReadingIds: number[];
+  /** Per-day read tracking for the daily reading list. */
+  dailyReadingProgress: DailyReadingProgress;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   theme: "ocean",
+  dailyReadingIds: [],
+  dailyReadingProgress: { date: "", completedIds: [] },
 };
 
 class UserPreferencesService {
