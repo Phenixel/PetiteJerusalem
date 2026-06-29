@@ -5,6 +5,9 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
+  "storage": {
+    "rules": "storage.rules"
+  },
   "functions": [
     {
       "source": "functions",
@@ -45,6 +48,9 @@
     },
     "firestore": {
       "port": 8080
+    },
+    "storage": {
+      "port": 9299
     },
     "ui": {
       "enabled": true,

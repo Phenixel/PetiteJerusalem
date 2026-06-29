@@ -77,14 +77,14 @@ function goToAuteur(event: Event, auteur: string) {
     <div class="flex-grow"></div>
 
     <div
-      v-if="chiour.link || chiour.mediaUrl"
+      v-if="chiour.mediaUrl"
       class="mt-auto pt-3 border-t border-black/5 flex items-center justify-end dark:border-white/10"
     >
       <span
         class="text-sm text-primary font-medium flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
       >
-        <i :class="chiour.link ? 'fa-brands fa-youtube mr-1' : 'fa-solid fa-headphones mr-1'"></i>
-        {{ chiour.link ? t("chiourim.openLink") : t("chiourim.listen") }}
+        <i class="fa-solid fa-headphones mr-1"></i>
+        {{ t("chiourim.listen") }}
       </span>
     </div>
   </div>

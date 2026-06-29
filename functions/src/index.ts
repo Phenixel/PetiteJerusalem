@@ -27,8 +27,6 @@ setGlobalOptions({ maxInstances: 3 });
 
 const SITE_URL = "https://petite-jerusalem.fr";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
-const CHIOURIM_WEBHOOK =
-  "https://n8n.phenixel.fr/webhook/1e7e1be1-1f2c-4916-a6f6-34ff8f437ef6";
 
 const DEFAULT_TITLE = "Petite Jérusalem | Partage de lectures et d'études de Torah";
 const DEFAULT_DESCRIPTION =
@@ -135,15 +133,15 @@ async function getShell(): Promise<string> {
   return html;
 }
 
-// ---- Chiourim (external webhook, cached) ----
+// ---- Chiourim (Firestore, cached) ----
 
-type WebhookChiour = {
+type ChiourPreview = {
   name: string;
   property_description: string;
   property_auteur: string | null;
 };
 
-let chiourimCache: { data: WebhookChiour[]; ts: number } | null = null;
+let chiourimCache: { data: ChiourPreview[]; ts: number } | null = null;
 const CHIOURIM_TTL = 10 * 60 * 1000;
 
 function chiourSlug(name: string): string {
@@ -153,13 +151,19 @@ function chiourSlug(name: string): string {
     .replace(/[/'"""''`?#]/g, "");
 }
 
-async function getChiourim(): Promise<WebhookChiour[]> {
+async function getChiourim(): Promise<ChiourPreview[]> {
   if (chiourimCache && Date.now() - chiourimCache.ts < CHIOURIM_TTL) {
     return chiourimCache.data;
   }
-  const res = await fetch(CHIOURIM_WEBHOOK);
-  if (!res.ok) throw new Error(`Chiourim webhook failed: ${res.status}`);
-  const data = (await res.json()) as WebhookChiour[];
+  const snap = await db.collection("chiourim").get();
+  const data: ChiourPreview[] = snap.docs.map((d) => {
+    const x = d.data();
+    return {
+      name: (x.name as string) ?? "",
+      property_description: (x.description as string) ?? "",
+      property_auteur: (x.auteur as string | null) ?? null,
+    };
+  });
   chiourimCache = { data, ts: Date.now() };
   return data;
 }

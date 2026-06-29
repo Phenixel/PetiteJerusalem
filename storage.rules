@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Mêmes admins que les règles Firestore
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['admin@phenixel.fr'];
+    }
+
+    // Fichiers audio des chiourim : lecture publique, écriture réservée aux admins
+    match /chiourim/{chiourId}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.size < 200 * 1024 * 1024          // 200 Mo max par fichier
+        && request.resource.contentType.matches('audio/.*');  // audio uniquement
+      allow delete: if isAdmin();
+    }
+
+    // Tout le reste fermé par défaut
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

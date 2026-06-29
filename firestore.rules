@@ -7,7 +7,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.email in ['admin@petite-jerusalem.com'];
+      return isAuthenticated() && request.auth.token.email in ['admin@phenixel.fr'];
     }
 
     function isSessionOwner() {
@@ -76,6 +76,12 @@ service cloud.firestore {
 
       // Suppression: propriétaire ou admin uniquement
       allow delete: if isSessionOwner() || isAdmin();
+    }
+
+    // Chiourim (catalogue audio) : lecture publique, écriture réservée aux admins
+    match /chiourim/{chiourId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     // Préférences utilisateur (thème, etc.)
