@@ -106,15 +106,6 @@ async function toggleCompleted(id: string) {
   await persistProgress();
 }
 
-function move(index: number, dir: -1 | 1) {
-  const target = index + dir;
-  if (target < 0 || target >= selectedIds.value.length) return;
-  const arr = [...selectedIds.value];
-  [arr[index], arr[target]] = [arr[target], arr[index]];
-  selectedIds.value = arr;
-  persistSelection();
-}
-
 const completedCount = computed(
   () => selectedIds.value.filter((id) => completedIds.value.has(id)).length,
 );
@@ -337,79 +328,35 @@ function formatBookName(livre: string): string {
           </p>
         </div>
 
-        <!-- Texts, one after another -->
-        <div class="space-y-5">
+        <!-- Texts, one after another, directly on the page background -->
+        <div class="space-y-12">
           <article
-            v-for="(entry, index) in selectedEntries"
+            v-for="entry in selectedEntries"
             :key="entry.id"
-            :class="[
-              'rounded-2xl border transition-colors',
-              completedIds.has(String(entry.id))
-                ? 'bg-green-50/60 border-green-200 dark:bg-green-900/10 dark:border-green-900/40'
-                : 'bg-white/60 border-white/40 dark:bg-gray-800/60 dark:border-gray-700',
-            ]"
+            :class="completedIds.has(String(entry.id)) ? 'opacity-60' : ''"
           >
-            <!-- Item header -->
-            <header
-              class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-black/5 dark:border-white/10"
-            >
-              <div class="min-w-0">
-                <p class="text-xs font-semibold text-primary uppercase tracking-wide">
-                  {{ formatBookName(entry.livre) }}
-                </p>
-                <h3 class="text-lg font-bold text-text-primary truncate dark:text-gray-100">
-                  {{ appendHebrewNumeral(entry.name) }}
-                </h3>
-              </div>
-
-              <div class="flex items-center gap-1.5">
-                <button
-                  @click="move(index, -1)"
-                  :disabled="index === 0"
-                  class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-gray-200 text-text-secondary hover:text-primary hover:border-primary/40 transition-colors disabled:opacity-30 disabled:cursor-not-allowed dark:border-gray-600 dark:text-gray-400"
-                  :title="t('dailyReading.moveUp')"
-                >
-                  <i class="fa-solid fa-arrow-up text-xs"></i>
-                </button>
-                <button
-                  @click="move(index, 1)"
-                  :disabled="index === selectedEntries.length - 1"
-                  class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-gray-200 text-text-secondary hover:text-primary hover:border-primary/40 transition-colors disabled:opacity-30 disabled:cursor-not-allowed dark:border-gray-600 dark:text-gray-400"
-                  :title="t('dailyReading.moveDown')"
-                >
-                  <i class="fa-solid fa-arrow-down text-xs"></i>
-                </button>
-                <router-link
-                  :to="`/lire/${entry.id}`"
-                  class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-gray-200 text-text-secondary hover:text-primary hover:border-primary/40 transition-colors dark:border-gray-600 dark:text-gray-400"
-                  :title="t('dailyReading.openReader')"
-                >
-                  <i class="fa-solid fa-up-right-from-square text-xs"></i>
-                </router-link>
-                <button
-                  @click="toggleSelect(entry)"
-                  class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-gray-200 text-text-secondary hover:text-red-600 hover:border-red-300 transition-colors dark:border-gray-600 dark:text-gray-400"
-                  :title="t('dailyReading.remove')"
-                >
-                  <i class="fa-solid fa-xmark text-xs"></i>
-                </button>
-              </div>
+            <!-- Discreet heading -->
+            <header class="mb-4">
+              <p class="text-xs font-semibold text-primary uppercase tracking-wide">
+                {{ formatBookName(entry.livre) }}
+              </p>
+              <h3 class="text-lg font-bold text-text-primary dark:text-gray-100">
+                {{ appendHebrewNumeral(entry.name) }}
+              </h3>
             </header>
 
             <!-- Text content -->
-            <div class="p-5">
-              <DailyReadingItem :entry="entry" />
-            </div>
+            <DailyReadingItem :entry="entry" />
 
-            <!-- Read toggle -->
-            <footer class="px-5 pb-5">
+            <!-- Discreet "mark as read" button -->
+            <div class="mt-4">
               <button
                 @click="toggleCompleted(String(entry.id))"
                 :class="[
-                  'w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition-colors',
+                  'inline-flex items-center gap-2 text-sm font-medium transition-colors',
                   completedIds.has(String(entry.id))
-                    ? 'bg-green-500/10 border-green-500/30 text-green-700 dark:text-green-300'
-                    : 'border-gray-200 text-text-secondary hover:border-primary/40 hover:text-primary dark:border-gray-600 dark:text-gray-400',
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-text-secondary hover:text-primary dark:text-gray-400',
                 ]"
               >
                 <i
@@ -425,7 +372,7 @@ function formatBookName(livre: string): string {
                     : t("dailyReading.markRead")
                 }}
               </button>
-            </footer>
+            </div>
           </article>
         </div>
       </template>

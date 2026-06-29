@@ -159,10 +159,6 @@ const en: LocaleMessages = {
     addTexts: "Add texts",
     add: "Add",
     added: "Added",
-    remove: "Remove from my list",
-    moveUp: "Move up",
-    moveDown: "Move down",
-    openReader: "Open full screen",
     selectedCount: "{count} text(s) in your list",
     emptyTitle: "Your list is empty",
     emptyDescription:

@@ -82,23 +82,18 @@ onMounted(load);
           </template>
         </template>
 
-        <!-- Verses / mishnayot / psalm lines -->
-        <div v-else class="space-y-2">
-          <div v-for="(line, index) in section.he" :key="index" class="flex items-start gap-2">
-            <span
-              v-if="showVerseNumbers"
-              class="mt-1 flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary font-semibold select-none dark:bg-primary/20"
-            >
-              {{ index + 1 }}
-            </span>
-            <p
-              dir="rtl"
-              class="flex-1 min-w-0 font-hebrew text-xl leading-loose text-text-primary dark:text-gray-100"
-            >
-              {{ line }}
-            </p>
-          </div>
-        </div>
+        <!-- Verses / mishnayot / psalm lines: each on its own line, flowing on the background -->
+        <p
+          v-else
+          dir="rtl"
+          class="font-hebrew text-xl leading-loose text-text-primary dark:text-gray-100"
+        >
+          <template v-for="(line, index) in section.he" :key="index">
+            <span v-if="showVerseNumbers" class="text-xs align-super text-primary/60 select-none">
+              {{ index + 1 }}&#8201;</span
+            >{{ line }}<br />
+          </template>
+        </p>
       </section>
     </div>
   </div>
