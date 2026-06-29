@@ -37,22 +37,62 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      # Deploys hosting (with the prerendered SEO pages) and the socialPreview
-      # function together, so the hosting rewrites always resolve to a deployed
-      # function. The functions are compiled by the predeploy hook in firebase.json.
-      # firebase-tools sometimes exits 1 on the final hosting "release" step with
-      # "supplied version <V> is the current active version" — even though <V> is
-      # the version that was just built and uploaded, i.e. the new content is
-      # already live. That makes the deploy a false failure. We swallow ONLY that
-      # exact, benign condition and still fail on any real deploy error.
-      - name: Deploy hosting + functions
+      # Hosting and functions are deployed in SEPARATE steps. They are
+      # independent: a functions failure must never block the hosting release
+      # (the previous combined "--only hosting,functions" let a transient 409 on
+      # a function abort the deploy before hosting was ever released).
+      - name: Deploy hosting
         run: |
           set +e
-          out=$(firebase deploy --only hosting,functions --project petite-jerusalem-dev --non-interactive 2>&1)
+          out=$(firebase deploy --only hosting --project petite-jerusalem-dev --non-interactive 2>&1)
           code=$?
           echo "$out"
-          if [ "$code" -ne 0 ] && echo "$out" | grep -q "is the current active version"; then
-            echo "::warning::Hosting version already active — new content is live, treating as success."
-            exit 0
+          # firebase-tools occasionally exits 1 on the final release with
+          # "is the current active version" even though the content is live.
+          # Swallow ONLY that exact benign case; ANY other error fails the job.
+          # The verification step below still proves the new bundle is served.
+          if [ "$code" -ne 0 ] && ! echo "$out" | grep -q "is the current active version"; then
+            exit "$code"
           fi
+
+      # Proves the release was actually ACTIVATED, not just uploaded. Compares
+      # the entry bundle hash just built (dist/index.html) with the one served
+      # in prod. Guards against the "green but not live" false positive.
+      - name: Verify hosting release is live
+        run: |
+          expected=$(grep -oE 'index-[A-Za-z0-9_-]+\.js' dist/index.html | head -1)
+          if [ -z "$expected" ]; then
+            echo "::error::Could not determine expected bundle hash from dist/index.html."
+            exit 1
+          fi
+          echo "Expected entry bundle: $expected"
+          for i in $(seq 1 12); do
+            served=$(curl -fsS "https://petite-jerusalem-dev.web.app/?cb=$(date +%s)" 2>/dev/null | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1)
+            echo "Attempt $i — served: ${served:-<none>}"
+            if [ "$served" = "$expected" ]; then
+              echo "✓ New hosting version is live in production."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Hosting release never became active (served=${served:-<none>}, expected=$expected)."
+          exit 1
+
+      # Deployed AFTER hosting so a transient functions error can never block the
+      # front release. Retries once to absorb a transient 409 "unable to queue
+      # the operation" (concurrent operation on the function).
+      - name: Deploy functions
+        run: |
+          set +e
+          for attempt in 1 2 3; do
+            out=$(firebase deploy --only functions --project petite-jerusalem-dev --non-interactive 2>&1)
+            code=$?
+            echo "$out"
+            if [ "$code" -eq 0 ]; then
+              exit 0
+            fi
+            echo "Functions deploy attempt $attempt failed (exit $code); retrying in 30s…"
+            sleep 30
+          done
+          echo "::error::Functions deploy failed after 3 attempts."
           exit "$code"
