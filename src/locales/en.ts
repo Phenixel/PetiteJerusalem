@@ -430,6 +430,7 @@ const en: LocaleMessages = {
     noResults: "No text matches your search.",
     sections: "{count} sections",
     types: {
+      all: "All",
       tehilim: "Tehilim",
       mishna: "Mishnah",
       talmud: "Talmud",

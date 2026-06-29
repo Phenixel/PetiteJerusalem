@@ -433,6 +433,7 @@ const fr = {
     noResults: "Aucun texte ne correspond à votre recherche.",
     sections: "{count} sections",
     types: {
+      all: "Tout",
       tehilim: "Tehilim",
       mishna: "Michna",
       talmud: "Talmud",

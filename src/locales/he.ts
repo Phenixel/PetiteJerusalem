@@ -421,6 +421,7 @@ const he: LocaleMessages = {
     noResults: "לא נמצא טקסט תואם.",
     sections: "{count} פרקים",
     types: {
+      all: "הכול",
       tehilim: "תהילים",
       mishna: "משנה",
       talmud: "תלמוד",
