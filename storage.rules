@@ -5,7 +5,7 @@ service firebase.storage {
     // Mêmes admins que les règles Firestore
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email in ['admin@petite-jerusalem.com'];
+        && request.auth.token.email in ['admin@phenixel.fr'];
     }
 
     // Fichiers audio des chiourim : lecture publique, écriture réservée aux admins

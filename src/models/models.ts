@@ -91,7 +91,6 @@ export interface Chiour {
   categories: string[];
   mediaUrl: string;
   niveau: string | null;
-  link: string | null;
   /** Ordre d'affichage optionnel (issu de Firestore). Usage interne au tri. */
   _order?: number | null;
 }

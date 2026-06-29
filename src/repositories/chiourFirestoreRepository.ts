@@ -28,7 +28,6 @@ export class ChiourFirestoreRepository {
           categories: doc.categories ?? [],
           mediaUrl: doc.mediaUrl ?? "",
           niveau: doc.niveau ?? null,
-          link: null, // plus de YouTube : audio uniquement
           _order: doc.order ?? null,
         }),
       );

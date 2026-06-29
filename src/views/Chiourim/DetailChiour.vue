@@ -16,18 +16,6 @@ function goToAuteur(auteur: string) {
 }
 const { t } = useI18n();
 
-function getYouTubeId(url: string): string | null {
-  const match = url.match(
-    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([a-zA-Z0-9_-]{11})/,
-  );
-  return match?.[1] ?? null;
-}
-
-const youtubeId = computed(() => {
-  if (!chiour.value?.link) return null;
-  return getYouTubeId(chiour.value.link);
-});
-
 const chiour = ref<Chiour | null>(null);
 const allChiourim = ref<Chiour[]>([]);
 const isLoading = ref(true);
@@ -188,22 +176,8 @@ watch(() => route.params.slug, loadChiour);
         </div>
       </div>
 
-      <!-- YouTube Embed -->
-      <div v-if="youtubeId" class="mb-8">
-        <div class="relative w-full rounded-2xl overflow-hidden border border-white/60 dark:border-gray-700" style="padding-top: 56.25%">
-          <iframe
-            class="absolute inset-0 w-full h-full"
-            :src="`https://www.youtube-nocookie.com/embed/${youtubeId}`"
-            :title="chiour.name"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-          ></iframe>
-        </div>
-      </div>
-
       <!-- Audio Player -->
-      <div v-else-if="chiour.mediaUrl" class="mb-8">
+      <div v-if="chiour.mediaUrl" class="mb-8">
         <AudioPlayer :src="chiour.mediaUrl" :title="chiour.name" />
       </div>
 
