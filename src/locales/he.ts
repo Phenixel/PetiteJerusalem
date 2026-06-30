@@ -214,6 +214,9 @@ const he: LocaleMessages = {
     noOngoingSessions: "אין סשנים פעילים כרגע.",
     noSessions: "אין סשנים קיימים",
     createFirstSession: "צור את סשן שיתוף הקריאות הראשון!",
+    reservedPercent: "{percent}% הוזמנו",
+    sessionFull: "מלא",
+    sessionAvailable: "יש מקומות פנויים",
     howItWorks: {
       title: "איך זה עובד",
       subtitle: "חלקו טקסט בין כמה אנשים וסיימו אותו יחד, בארבעה שלבים.",
@@ -251,6 +254,7 @@ const he: LocaleMessages = {
     searchPlaceholder: "חפש טקסט, ספר או פרק...",
     clearSearch: "נקה חיפוש",
     searchFor: "חיפוש",
+    availableOnly: "זמינים בלבד",
     myReservations: "ההזמנות שלי",
     confirmReservation: "אשר הזמנה",
     confirmAsGuest: "סיים כאורח",

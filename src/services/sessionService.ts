@@ -30,7 +30,7 @@ export class SessionService {
     return await firestoreService.getSessionById(slugOrId);
   }
 
-  async getTextStudiesByType(type: EnumTypeTextStudy): Promise<TextStudy[]> {
+  getTextStudiesByTypeSync(type: EnumTypeTextStudy): TextStudy[] {
     const enumToJsonLabel: Record<EnumTypeTextStudy, string> = {
       [EnumTypeTextStudy.TalmudBavli]: "Talmud Bavli",
       [EnumTypeTextStudy.Mishna]: "Mishna",
@@ -41,7 +41,7 @@ export class SessionService {
     const label = enumToJsonLabel[type];
     const all = (textStudiesJson as TextStudiesJson).textStudies;
 
-    const filtered = all
+    return all
       .filter((t: TextStudyJsonEntry) => t.type === label)
       .map((t: TextStudyJsonEntry) => ({
         id: String(t.id),
@@ -52,8 +52,54 @@ export class SessionService {
         type,
         createdAt: new Date(),
       })) as unknown as TextStudy[];
+  }
 
-    return filtered;
+  async getTextStudiesByType(type: EnumTypeTextStudy): Promise<TextStudy[]> {
+    return this.getTextStudiesByTypeSync(type);
+  }
+
+  /**
+   * Renvoie les textes d'une session après application de son filtre
+   * `selectedBooks` (les livres retenus à la création). Sert d'assise aux
+   * statistiques d'aperçu et au filtre de disponibilité.
+   */
+  private getSessionTextStudies(session: Session): TextStudy[] {
+    const texts = this.getTextStudiesByTypeSync(session.type);
+    if (session.selectedBooks && session.selectedBooks.length > 0) {
+      return texts.filter((text) => session.selectedBooks!.includes(text.livre));
+    }
+    return texts;
+  }
+
+  /**
+   * Statistiques de réservation d'une session pour l'aperçu (carte) :
+   * nombre total de sections, sections réservées et pourcentage arrondi,
+   * afin de signaler d'un coup d'œil s'il reste de la disponibilité.
+   */
+  getSessionReservationStats(session: Session): {
+    total: number;
+    reserved: number;
+    percentage: number;
+  } {
+    const total = this.getSessionTextStudies(session).reduce(
+      (acc, text) => acc + text.totalSections,
+      0,
+    );
+    const reserved = (session.reservations || []).length;
+    const percentage = total > 0 ? Math.round((reserved / total) * 100) : 0;
+
+    return { total, reserved, percentage };
+  }
+
+  /**
+   * Un texte est « entièrement réservé » lorsqu'il ne reste aucune section
+   * disponible. Utilisé par le filtre « disponibles uniquement ».
+   */
+  isTextFullyReserved(textStudy: TextStudy, session: Session): boolean {
+    return (
+      reservationService.getTextDisplayStatus(textStudy.id, textStudy, session).status ===
+      "fully_reserved"
+    );
   }
 
   async getBooksByType(type: EnumTypeTextStudy): Promise<string[]> {

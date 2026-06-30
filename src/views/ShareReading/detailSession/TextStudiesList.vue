@@ -68,6 +68,18 @@ const getTextDisplayStatus = (textStudyId: string, text: TextStudy) => {
   return sessionService.getTextDisplayStatus(textStudyId, text, props.session);
 };
 
+// Vrai lorsque toutes les sections d'un texte sont réservées ET marquées comme
+// lues : on affiche alors « Lu par » plutôt que « Réservé par ».
+const isTextFullyRead = (text: TextStudy) => {
+  const chapterReservations = props.reservations.filter(
+    (r) => r.textStudyId === text.id && r.section !== undefined,
+  );
+  return (
+    chapterReservations.length === text.totalSections &&
+    chapterReservations.every((r) => r.isCompleted)
+  );
+};
+
 const handleCardClick = (text: TextStudy) => {
   if (text.totalSections === 1) {
     // Pour les textes à un seul chapitre, toggle la réservation
@@ -243,9 +255,16 @@ const handleCardClick = (text: TextStudy) => {
             <div v-else-if="text.totalSections > 1">
               <div
                 v-if="getTextDisplayStatus(text.id, text).status === 'fully_reserved'"
-                class="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-sm font-semibold w-fit dark:bg-red-900/30 dark:text-red-300"
+                class="px-3 py-1.5 rounded-lg text-sm font-semibold w-fit flex items-center gap-2"
+                :class="
+                  isTextFullyRead(text)
+                    ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                    : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                "
               >
-                Réservé par {{ getTextDisplayStatus(text.id, text).reservedBy || "quelqu'un" }}
+                <i v-if="isTextFullyRead(text)" class="fa-solid fa-check-circle"></i>
+                {{ isTextFullyRead(text) ? "Lu par" : "Réservé par" }}
+                {{ getTextDisplayStatus(text.id, text).reservedBy || "quelqu'un" }}
               </div>
               <div
                 v-else-if="getTextDisplayStatus(text.id, text).status === 'partially_reserved'"

@@ -217,6 +217,9 @@ const fr = {
     noOngoingSessions: "Aucune session en cours pour le moment.",
     noSessions: "Aucune session existante",
     createFirstSession: "Créez la première session de partage de lectures !",
+    reservedPercent: "{percent}% réservé",
+    sessionFull: "Complet",
+    sessionAvailable: "Places disponibles",
     howItWorks: {
       title: "Comment ça marche",
       subtitle:
@@ -255,6 +258,7 @@ const fr = {
     searchPlaceholder: "Rechercher un texte, un livre ou un chapitre...",
     clearSearch: "Effacer la recherche",
     searchFor: "Recherche",
+    availableOnly: "Disponibles uniquement",
     myReservations: "Mes réservations",
     confirmReservation: "Confirmer la réservation",
     confirmAsGuest: "Finaliser en tant qu'invité",

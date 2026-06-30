@@ -34,6 +34,8 @@ const reservationForm = ref({
 const isReserving = ref<string | null>(null);
 
 const searchTerm = ref("");
+// Filtre : ne montrer que les textes ayant encore des sections disponibles.
+const showOnlyAvailable = ref(false);
 
 const showShareModal = ref(false);
 const shareUrl = ref("");
@@ -48,6 +50,13 @@ const groupedTextStudies = computed(() => {
   let filtered = textStudies.value;
   if (searchTerm.value.trim()) {
     filtered = sessionService.filterTextStudiesBySearch(filtered, searchTerm.value);
+  }
+
+  if (showOnlyAvailable.value && session.value) {
+    const currentSession = session.value;
+    filtered = filtered.filter(
+      (text) => !sessionService.isTextFullyReserved(text, currentSession),
+    );
   }
 
   if (currentUser.value) {
@@ -82,7 +91,7 @@ const groupedTextStudies = computed(() => {
     return groupedOthers;
   }
 
-  return sessionService.getGroupedAndFilteredTextStudies(textStudies.value, searchTerm.value);
+  return sessionService.groupTextStudiesByBook(filtered);
 });
 
 const progressStats = computed(() => {
@@ -458,6 +467,26 @@ watch(session, (s) => applySessionSeo(s));
         >
           {{ t("detailSession.searchFor") }} : "{{ searchTerm }}"
         </div>
+      </div>
+
+      <!-- Filtre : masquer les textes entièrement réservés (non sticky) -->
+      <div class="flex justify-center mb-8 -mt-4">
+        <label
+          class="inline-flex items-center gap-2.5 cursor-pointer bg-white/80 backdrop-blur px-4 py-2 rounded-full border border-gray-200 shadow-sm dark:bg-gray-800/80 dark:border-gray-700"
+        >
+          <span class="relative inline-flex items-center">
+            <input type="checkbox" v-model="showOnlyAvailable" class="sr-only peer" />
+            <span
+              class="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-primary transition-colors dark:bg-gray-600"
+            ></span>
+            <span
+              class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"
+            ></span>
+          </span>
+          <span class="text-sm font-medium text-text-secondary dark:text-gray-300">
+            {{ t("detailSession.availableOnly") }}
+          </span>
+        </label>
       </div>
 
       <!-- Liste des textes groupés par livre -->
