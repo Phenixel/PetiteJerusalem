@@ -28,6 +28,9 @@ const mode = ref<"reading" | "manage">("reading");
 // Ids kept as strings for reliable Map lookups; converted back to numbers on save.
 const selectedIds = ref<string[]>([]);
 const completedIds = ref<Set<string>>(new Set());
+// Texts whose content is folded away (UI-only): clicking the title toggles this,
+// and marking a text as read folds it so only unread texts stay expanded.
+const collapsedIds = ref<Set<string>>(new Set());
 
 const selectedEntries = computed(
   () => selectedIds.value.map((id) => byId.get(id)).filter(Boolean) as TextStudyJsonEntry[],
@@ -49,6 +52,8 @@ onMounted(async () => {
     const progress = prefs.dailyReadingProgress;
     if (progress && progress.date === todayKey()) {
       completedIds.value = new Set(progress.completedIds.map(String));
+      // Texts already read today start folded so unread ones stand out.
+      collapsedIds.value = new Set(completedIds.value);
     } else {
       // New day (or never tracked): start fresh and persist the reset once.
       completedIds.value = new Set();
@@ -92,6 +97,7 @@ async function toggleSelect(entry: TextStudyJsonEntry) {
     const next = new Set(completedIds.value);
     next.delete(id);
     completedIds.value = next;
+    setCollapsed(id, false);
   } else {
     selectedIds.value = [...selectedIds.value, id];
   }
@@ -100,10 +106,25 @@ async function toggleSelect(entry: TextStudyJsonEntry) {
 
 async function toggleCompleted(id: string) {
   const next = new Set(completedIds.value);
-  if (next.has(id)) next.delete(id);
-  else next.add(id);
+  const nowRead = !next.has(id);
+  if (nowRead) next.add(id);
+  else next.delete(id);
   completedIds.value = next;
+  // Marking read folds the text away; un-marking reopens it to keep reading.
+  setCollapsed(id, nowRead);
   await persistProgress();
+}
+
+function setCollapsed(id: string, collapsed: boolean) {
+  const next = new Set(collapsedIds.value);
+  if (collapsed) next.add(id);
+  else next.delete(id);
+  collapsedIds.value = next;
+}
+
+// Clicking a text's title folds/unfolds it (even once read, to read it again).
+function toggleCollapse(id: string) {
+  setCollapsed(id, !collapsedIds.value.has(id));
 }
 
 const completedCount = computed(
@@ -335,43 +356,63 @@ function formatBookName(livre: string): string {
             :key="entry.id"
             :class="completedIds.has(String(entry.id)) ? 'opacity-60' : ''"
           >
-            <!-- Discreet heading -->
+            <!-- Discreet heading: click to fold/unfold the text -->
             <header class="mb-4">
-              <p class="text-xs font-semibold text-primary uppercase tracking-wide">
-                {{ formatBookName(entry.livre) }}
-              </p>
-              <h3 class="text-lg font-bold text-text-primary dark:text-gray-100">
-                {{ appendHebrewNumeral(entry.name) }}
-              </h3>
-            </header>
-
-            <!-- Text content -->
-            <DailyReadingItem :entry="entry" />
-
-            <!-- Discreet "mark as read" button -->
-            <div class="mt-4">
               <button
-                @click="toggleCompleted(String(entry.id))"
-                :class="[
-                  'inline-flex items-center gap-2 text-sm font-medium transition-colors',
-                  completedIds.has(String(entry.id))
-                    ? 'text-green-600 dark:text-green-400'
-                    : 'text-text-secondary hover:text-primary dark:text-gray-400',
-                ]"
+                type="button"
+                @click="toggleCollapse(String(entry.id))"
+                class="group flex w-full items-start gap-3 text-left"
               >
                 <i
-                  :class="
-                    completedIds.has(String(entry.id))
-                      ? 'fa-solid fa-circle-check'
-                      : 'fa-regular fa-circle'
-                  "
+                  class="fa-solid fa-chevron-down mt-1.5 text-xs text-text-secondary/60 transition-transform duration-200 dark:text-gray-500"
+                  :class="collapsedIds.has(String(entry.id)) ? '-rotate-90' : ''"
                 ></i>
-                {{
-                  completedIds.has(String(entry.id))
-                    ? t("dailyReading.readToday")
-                    : t("dailyReading.markRead")
-                }}
+                <span class="min-w-0">
+                  <span class="block text-xs font-semibold text-primary uppercase tracking-wide">
+                    {{ formatBookName(entry.livre) }}
+                  </span>
+                  <span
+                    class="flex items-center gap-2 text-lg font-bold text-text-primary transition-colors group-hover:text-primary dark:text-gray-100"
+                  >
+                    {{ appendHebrewNumeral(entry.name) }}
+                    <i
+                      v-if="completedIds.has(String(entry.id))"
+                      class="fa-solid fa-circle-check text-sm text-green-500"
+                    ></i>
+                  </span>
+                </span>
               </button>
+            </header>
+
+            <!-- Text content + "mark as read", hidden (but kept loaded) when folded -->
+            <div v-show="!collapsedIds.has(String(entry.id))">
+              <DailyReadingItem :entry="entry" />
+
+              <!-- Discreet "mark as read" button -->
+              <div class="mt-4">
+                <button
+                  @click="toggleCompleted(String(entry.id))"
+                  :class="[
+                    'inline-flex items-center gap-2 text-sm font-medium transition-colors',
+                    completedIds.has(String(entry.id))
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-text-secondary hover:text-primary dark:text-gray-400',
+                  ]"
+                >
+                  <i
+                    :class="
+                      completedIds.has(String(entry.id))
+                        ? 'fa-solid fa-circle-check'
+                        : 'fa-regular fa-circle'
+                    "
+                  ></i>
+                  {{
+                    completedIds.has(String(entry.id))
+                      ? t("dailyReading.readToday")
+                      : t("dailyReading.markRead")
+                  }}
+                </button>
+              </div>
             </div>
           </article>
         </div>
