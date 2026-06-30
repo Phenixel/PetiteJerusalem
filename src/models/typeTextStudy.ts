@@ -3,4 +3,5 @@ export enum EnumTypeTextStudy {
   Mishna = "Mishna",
   Tehilim = "Tehilim",
   Tanakh = "Tanakh",
+  Halakha = "Halakha",
 }

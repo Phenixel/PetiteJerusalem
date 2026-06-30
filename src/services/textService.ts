@@ -73,6 +73,8 @@ export function resolveFilePath(textStudy: TextStudyJsonEntry): string {
       return `/texts/mishna/${tractateSlug(tractateFromLink(textStudy.link, true))}.json`;
     case "Talmud Bavli":
       return `/texts/talmud/${tractateSlug(tractateFromLink(textStudy.link))}.json`;
+    case "Halakha":
+      return `/texts/halakha/${tractateSlug(tractateFromLink(textStudy.link))}.json`;
     case "Tanakh":
       return `/texts/tanakh/${textStudy.id}.json`;
     default:
@@ -213,6 +215,10 @@ export function parseContent(
     case "Mishna": {
       const d = data as { title?: string; he?: unknown[] };
       return { title: d.title ?? textStudy.name, type: "Mishna", sections: chaptersToSections(d.he ?? []) };
+    }
+    case "Halakha": {
+      const d = data as { title?: string; he?: unknown[] };
+      return { title: d.title ?? textStudy.name, type: "Halakha", sections: chaptersToSections(d.he ?? []) };
     }
     case "Talmud Bavli":
       return parseTalmud(textStudy, data as { title?: string; he?: unknown[] }, talmudChapters);

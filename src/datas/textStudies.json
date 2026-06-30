@@ -2623,7 +2623,15 @@
       "link": "https://www.sefaria.org/Divrei Hayamim Bet",
       "totalSections": 1,
       "type": "Tanakh"
+    },
+    {
+      "id": 340,
+      "name": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "livre": "הלכה (Halakha)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 221,
+      "type": "Halakha"
     }
   ],
-  "types": ["Talmud Bavli", "Mishna", "Tehilim", "Parasha Devarim", "Tanakh"]
+  "types": ["Talmud Bavli", "Mishna", "Tehilim", "Parasha Devarim", "Tanakh", "Halakha"]
 }

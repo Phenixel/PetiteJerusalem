@@ -429,7 +429,7 @@ const en: LocaleMessages = {
   },
   study: {
     title: "Library",
-    subtitle: "Read and study the texts: Tehilim, Mishnah, Talmud and Tanakh.",
+    subtitle: "Read and study the texts: Tehilim, Mishnah, Talmud, Tanakh and Halakhah.",
     searchPlaceholder: "Search a text…",
     noResults: "No text matches your search.",
     sections: "{count} sections",
@@ -439,6 +439,7 @@ const en: LocaleMessages = {
       mishna: "Mishnah",
       talmud: "Talmud",
       tanakh: "Tanakh",
+      halakha: "Halakhah",
     },
   },
 };

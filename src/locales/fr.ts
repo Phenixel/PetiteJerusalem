@@ -432,7 +432,7 @@ const fr = {
   },
   study: {
     title: "Bibliothèque",
-    subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud et Tanakh.",
+    subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud, Tanakh et Halakha.",
     searchPlaceholder: "Rechercher un texte…",
     noResults: "Aucun texte ne correspond à votre recherche.",
     sections: "{count} sections",
@@ -442,6 +442,7 @@ const fr = {
       mishna: "Michna",
       talmud: "Talmud",
       tanakh: "Tanakh",
+      halakha: "Halakha",
     },
   },
 };

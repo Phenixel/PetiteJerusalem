@@ -19,13 +19,14 @@ import { transliterate, hasNiqqud } from "../services/hebrewTransliteration";
 
 export const SITE_URL = "https://petite-jerusalem.fr";
 
-export type Corpus = "tehilim" | "tanakh" | "michna" | "talmud";
+export type Corpus = "tehilim" | "tanakh" | "michna" | "talmud" | "halakha";
 
 const TYPE_TO_CORPUS: Record<string, Corpus> = {
   Tehilim: "tehilim",
   Tanakh: "tanakh",
   Mishna: "michna",
   "Talmud Bavli": "talmud",
+  Halakha: "halakha",
 };
 
 const CORPUS_LABEL: Record<Corpus, string> = {
@@ -33,6 +34,7 @@ const CORPUS_LABEL: Record<Corpus, string> = {
   tanakh: "Tanakh",
   michna: "Michna",
   talmud: "Talmud",
+  halakha: "Halakha",
 };
 
 const allEntries = (textStudiesJson as TextStudiesJson).textStudies;
@@ -52,6 +54,7 @@ function baseSlug(entry: TextStudyJsonEntry): string {
   if (corpus === "tehilim") return String(entry.link).split(".").pop() ?? "1";
   if (corpus === "talmud") return tractateSlug(tractateFromLink(entry.link));
   if (corpus === "michna") return tractateSlug(tractateFromLink(entry.link, true));
+  if (corpus === "halakha") return tractateSlug(tractateFromLink(entry.link));
   return tractateSlug(latinName(entry)); // tanakh parasha / book
 }
 

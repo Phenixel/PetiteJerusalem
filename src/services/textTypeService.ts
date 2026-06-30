@@ -6,6 +6,7 @@ export class TextTypeService {
     [EnumTypeTextStudy.Mishna]: "Mishna",
     [EnumTypeTextStudy.Tehilim]: "Tehilim",
     [EnumTypeTextStudy.Tanakh]: "Tanakh",
+    [EnumTypeTextStudy.Halakha]: "Halakha",
   };
 
   static getAllTypes(): Array<{ value: EnumTypeTextStudy; label: string }> {

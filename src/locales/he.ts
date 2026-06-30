@@ -420,7 +420,7 @@ const he: LocaleMessages = {
   },
   study: {
     title: "ספרייה",
-    subtitle: "קראו ולמדו את הטקסטים: תהילים, משנה, תלמוד ותנ״ך.",
+    subtitle: "קראו ולמדו את הטקסטים: תהילים, משנה, תלמוד, תנ״ך והלכה.",
     searchPlaceholder: "חיפוש טקסט…",
     noResults: "לא נמצא טקסט תואם.",
     sections: "{count} פרקים",
@@ -430,6 +430,7 @@ const he: LocaleMessages = {
       mishna: "משנה",
       talmud: "תלמוד",
       tanakh: "תנ״ך",
+      halakha: "הלכה",
     },
   },
 };

@@ -19,6 +19,7 @@ const GCS = 'https://storage.googleapis.com/sefaria-export/json';
 mkdirSync(`${OUT}/mishna`, { recursive: true });
 mkdirSync(`${OUT}/talmud`, { recursive: true });
 mkdirSync(`${OUT}/tanakh`, { recursive: true });
+mkdirSync(`${OUT}/halakha`, { recursive: true });
 
 // ---------- Utilities ----------
 
@@ -229,6 +230,43 @@ await downloadMishnaOrTalmud(
   t => t,
   `${OUT}/talmud`
 );
+
+// ---------- Halakha ----------
+
+// Halakha works are stored under the "Halakhah" category in the export, each at
+// a fixed GCS path, structured as he[chapter][paragraph] — the same shape as the
+// Mishna, so the reader parses them identically.
+const halakhaGcsMap = {
+  'Kitzur Shulchan Arukh': 'Halakhah/Kitzur Shulchan Arukh',
+};
+
+console.log('\n=== Halakha ===');
+const halakhaEntries = textStudies.filter(t => t.type === 'Halakha');
+for (const entry of halakhaEntries) {
+  const tractate = entry.link.replace('https://www.sefaria.org/', '').replace(/_/g, ' ');
+  const gcsPath = halakhaGcsMap[tractate];
+  if (!gcsPath) {
+    console.warn(`  ✗ ${tractate}: no GCS path mapping found`);
+    continue;
+  }
+  const slug = tractate.toLowerCase().replace(/ /g, '-').replace(/'/g, '');
+  const outPath = `${OUT}/halakha/${slug}.json`;
+  try {
+    const [heData, enData] = await Promise.all([
+      withRetry(() => fetchJson(`${GCS}/${gcsPath}/Hebrew/merged.json`), `${tractate}/He`),
+      withRetry(() => fetchJson(`${GCS}/${gcsPath}/English/merged.json`), `${tractate}/En`).catch(() => ({ text: [] })),
+    ]);
+    const result = {
+      title: tractate,
+      he: cleanTextArray(heData.text),
+      en: cleanTextArray(enData.text),
+    };
+    writeFileSync(outPath, JSON.stringify(result), 'utf8');
+    console.log(`  ✓ ${tractate} → halakha/${slug}.json`);
+  } catch (e) {
+    console.error(`  ✗ ${tractate}: ${e.message}`);
+  }
+}
 
 // ---------- Tanakh ----------
 

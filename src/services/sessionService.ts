@@ -36,6 +36,7 @@ export class SessionService {
       [EnumTypeTextStudy.Mishna]: "Mishna",
       [EnumTypeTextStudy.Tehilim]: "Tehilim",
       [EnumTypeTextStudy.Tanakh]: "Tanakh",
+      [EnumTypeTextStudy.Halakha]: "Halakha",
     };
 
     const label = enumToJsonLabel[type];
