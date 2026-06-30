@@ -32,10 +32,13 @@ export const db = getFirestore(app)
 // Initialize Auth
 export const auth = getAuth(app)
 
-// Connect to emulators in development
+// Connect to emulators in development.
+// Plage de ports dédiée à ce projet (8470-8476) pour ne pas entrer en conflit
+// avec d'autres projets Firebase tournant en parallèle (qui gardent les ports
+// par défaut 8080 / 9099 …). À garder en phase avec le bloc "emulators" de firebase.json.
 if (import.meta.env.DEV) {
-  connectFirestoreEmulator(db, 'localhost', 8080)
-  connectAuthEmulator(auth, 'http://localhost:9199', { disableWarnings: true })
+  connectFirestoreEmulator(db, 'localhost', 8470)
+  connectAuthEmulator(auth, 'http://localhost:8471', { disableWarnings: true })
 }
 
 // Initialize Analytics (prod only)

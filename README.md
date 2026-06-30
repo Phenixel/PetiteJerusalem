@@ -59,7 +59,9 @@ create sessions entirely offline, with no access to the cloud project needed.
   ```bash
   nvm use        # switches to Node 22
   ```
-- **Java (JDK 11+)**, required by the Firestore emulator (`java -version`).
+- **Java (JDK 21+)**, required by the Firestore emulator (`java -version`). On
+  macOS the `npm run emulators` script auto-selects an installed JDK 21+ if your
+  `JAVA_HOME`/`PATH` points at an older one (e.g. a pinned `openjdk@11`).
 - **Firebase CLI**:
   ```bash
   npm install -g firebase-tools
@@ -73,12 +75,17 @@ npm run dev:local
 
 This runs the Vite dev server and the emulators in parallel. Then:
 
-- App: http://localhost:5173
-- Emulator UI (inspect Firestore data & Auth users): http://localhost:4000
-- Auth emulator: `localhost:9199` · Firestore emulator: `localhost:8080`
+- App: http://localhost:5473
+- Emulator UI (inspect Firestore data & Auth users): http://localhost:8473
+- Auth emulator: `localhost:8471` · Firestore emulator: `localhost:8470`
 
-> Port `9099` (the Auth emulator default) is used here on `9199` to avoid a
-> clash with a local Docker service.
+> This project uses a **dedicated port range** (`5473` for Vite, `8470`–`8476`
+> for the emulators) instead of the Firebase/Vite defaults, so it can run in
+> parallel with other Firebase projects without port clashes. The ports live in
+> `firebase.json` (`emulators` block) and `firebase.ts` (client `connect*Emulator`
+> calls) — keep the two in sync. On startup the emulator script also reaps any
+> orphaned emulator left holding one of these ports, and on exit it shuts the
+> emulators down cleanly so none is orphaned.
 
 **Create your first session locally**
 

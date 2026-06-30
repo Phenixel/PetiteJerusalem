@@ -158,10 +158,6 @@ const fr = {
     addTexts: "Ajouter des textes",
     add: "Ajouter",
     added: "Ajouté",
-    remove: "Retirer de ma liste",
-    moveUp: "Monter",
-    moveDown: "Descendre",
-    openReader: "Ouvrir en plein écran",
     selectedCount: "{count} texte(s) dans votre liste",
     emptyTitle: "Votre liste est vide",
     emptyDescription:
