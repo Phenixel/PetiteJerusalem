@@ -763,10 +763,6 @@ type Intention = {
   faq: { q: string; a: string }[];
 };
 
-/** Prudent disclaimer shown on every intention page (lists pending revalidation). */
-const TEHILIM_DISCLAIMER =
-  "Ces listes sont indicatives, selon les sources couramment citées. En cas de doute, demandez conseil à votre rav.";
-
 const INTENTIONS: Intention[] = [
   {
     slug: "refoua-chelema",
@@ -942,13 +938,13 @@ const INTENTIONS: Intention[] = [
     lead: "La <strong>hatslakha</strong> est la réussite, la bénédiction dans ce que l'on entreprend&nbsp;: un examen, un projet, une nouvelle entreprise. On a coutume de lire des Tehilim (Psaumes) pour la demander.",
     psalms: [4, 20, 32, 90],
     psalmsNote:
-      "Cette liste est provisoire et recoupe en partie celle de la <a href=\"/tehilim/parnassa\">parnassa</a> ; elle sera reconfirmée.",
+      "Plusieurs de ces psaumes rejoignent ceux que l'on lit pour la <a href=\"/tehilim/parnassa\">parnassa</a>.",
     cardTitle: "Réussite (hatslakha)",
     cardDesc: "Les psaumes à lire pour la réussite d'un examen, d'un projet ou d'une entreprise.",    related: ["parnassa", "mariage"],
     faq: [
       {
         q: "Quels Tehilim lire pour réussir un examen ou un projet ?",
-        a: "On cite les psaumes 4, 20, 32 et 90 pour la hatslakha (réussite). Cette liste est provisoire et sera reconfirmée. En cas de doute, demandez conseil à votre rav.",
+        a: "On cite les psaumes 4, 20, 32 et 90 pour la hatslakha (réussite). En cas de doute, demandez conseil à votre rav.",
       },
       {
         q: "Quelle différence avec la parnassa ?",
@@ -992,7 +988,6 @@ function buildIntention(it: Intention): SeoPage {
         ${psalmsList}
       </ul>
       ${it.psalmsNote ? `<p>${it.psalmsNote}</p>` : ""}
-      <p class="seo-note"><em>${TEHILIM_DISCLAIMER}</em></p>
     </section>
 
     <section class="seo-section">
@@ -1074,7 +1069,6 @@ function buildTehilimHub(): SeoPage {
         <a href="/partage-tehilim">partager les Tehilim à plusieurs</a> ou lancez directement une
         <a href="${SHARE_NEW_SESSION}">session de partage</a>.
       </p>
-      <p class="seo-note"><em>${TEHILIM_DISCLAIMER}</em></p>
     </section>
   </main>`;
 
