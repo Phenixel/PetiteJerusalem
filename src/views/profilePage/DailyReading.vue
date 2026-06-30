@@ -11,12 +11,18 @@ import DailyReadingItem from "./DailyReadingItem.vue";
 const props = defineProps<{ userId: string }>();
 const { t } = useI18n();
 
+const ALL_TYPE = "Tout";
+
 const TYPES = [
+  { key: ALL_TYPE, labelKey: "study.types.all" },
   { key: "Tehilim", labelKey: "study.types.tehilim" },
   { key: "Mishna", labelKey: "study.types.mishna" },
   { key: "Talmud Bavli", labelKey: "study.types.talmud" },
   { key: "Tanakh", labelKey: "study.types.tanakh" },
 ];
+
+// Type tabs that map to an actual corpus (everything except the "Tout" tab).
+const CORPUS_TYPES = TYPES.filter((ty) => ty.key !== ALL_TYPE);
 
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
 const byId = new Map<string, TextStudyJsonEntry>(allTexts.map((txt) => [String(txt.id), txt]));
@@ -138,21 +144,29 @@ const progressPct = computed(() =>
 
 // --- Manage view (browse the library, like the Bibliothèque) ---
 const searchTerm = ref("");
-const selectedType = ref("Tehilim");
+const selectedType = ref(ALL_TYPE);
+
+// "Tout" shows every corpus at once; any other tab stays scoped to itself.
+const isAllSelected = computed(() => selectedType.value === ALL_TYPE);
 
 const filtered = computed(() => {
   const term = searchTerm.value.trim().toLowerCase();
-  return allTexts.filter(
-    (txt) =>
-      String(txt.type) === selectedType.value &&
-      (term === "" || txt.name.toLowerCase().includes(term)),
-  );
+  return allTexts.filter((txt) => {
+    const matchesTerm = term === "" || txt.name.toLowerCase().includes(term);
+    const matchesType = isAllSelected.value || String(txt.type) === selectedType.value;
+    return matchesTerm && matchesType;
+  });
 });
 
-const groupedByBook = computed(() => {
-  const groups: Record<string, TextStudyJsonEntry[]> = {};
-  for (const txt of filtered.value) (groups[txt.livre] ??= []).push(txt);
-  return groups;
+// Group results by type (a type heading is only shown on the "Tout" tab), then
+// by book/seder, so each section stays readable.
+const groupedByType = computed(() => {
+  return CORPUS_TYPES.map((ty) => {
+    const texts = filtered.value.filter((txt) => String(txt.type) === ty.key);
+    const groups: Record<string, TextStudyJsonEntry[]> = {};
+    for (const txt of texts) (groups[txt.livre] ??= []).push(txt);
+    return { key: ty.key, labelKey: ty.labelKey, groups, count: texts.length };
+  }).filter((group) => group.count > 0);
 });
 
 function formatBookName(livre: string): string {
@@ -242,42 +256,51 @@ function formatBookName(livre: string): string {
         </div>
       </div>
 
-      <div v-if="filtered.length > 0" class="space-y-8">
-        <section v-for="(texts, livre) in groupedByBook" :key="livre">
-          <h3
-            class="text-lg font-bold text-text-primary mb-3 pl-3 border-l-4 border-primary dark:text-gray-100"
+      <div v-if="filtered.length > 0" class="space-y-10">
+        <div v-for="typeGroup in groupedByType" :key="typeGroup.key" class="space-y-8">
+          <!-- Type heading: shown only on the "Tout" tab, where several corpora mix. -->
+          <h2
+            v-if="isAllSelected"
+            class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
           >
-            {{ formatBookName(String(livre)) }}
-          </h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button
-              v-for="text in texts"
-              :key="text.id"
-              @click="toggleSelect(text)"
-              :class="[
-                'flex items-center justify-between gap-2 p-3 rounded-xl border transition-all text-left',
-                isSelected(text.id)
-                  ? 'bg-primary/10 border-primary/40 dark:bg-primary/20'
-                  : 'bg-white/60 border-white/40 hover:border-primary hover:shadow-md dark:bg-gray-800/60 dark:border-gray-700 dark:hover:border-primary',
-              ]"
+            {{ t(typeGroup.labelKey) }}
+          </h2>
+          <section v-for="(texts, livre) in typeGroup.groups" :key="livre">
+            <h3
+              class="text-lg font-bold text-text-primary mb-3 pl-3 border-l-4 border-primary dark:text-gray-100"
             >
-              <span class="min-w-0">
-                <span class="block font-medium text-text-primary truncate dark:text-gray-200">
-                  {{ appendHebrewNumeral(text.name) }}
-                </span>
-              </span>
-              <span
+              {{ formatBookName(String(livre)) }}
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                v-for="text in texts"
+                :key="text.id"
+                @click="toggleSelect(text)"
                 :class="[
-                  'flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold',
-                  isSelected(text.id) ? 'text-primary' : 'text-text-secondary/60 dark:text-gray-500',
+                  'flex items-center justify-between gap-2 p-3 rounded-xl border transition-all text-left',
+                  isSelected(text.id)
+                    ? 'bg-primary/10 border-primary/40 dark:bg-primary/20'
+                    : 'bg-white/60 border-white/40 hover:border-primary hover:shadow-md dark:bg-gray-800/60 dark:border-gray-700 dark:hover:border-primary',
                 ]"
               >
-                <i :class="isSelected(text.id) ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-plus'"></i>
-                {{ isSelected(text.id) ? t("dailyReading.added") : t("dailyReading.add") }}
-              </span>
-            </button>
-          </div>
-        </section>
+                <span class="min-w-0">
+                  <span class="block font-medium text-text-primary truncate dark:text-gray-200">
+                    {{ appendHebrewNumeral(text.name) }}
+                  </span>
+                </span>
+                <span
+                  :class="[
+                    'flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold',
+                    isSelected(text.id) ? 'text-primary' : 'text-text-secondary/60 dark:text-gray-500',
+                  ]"
+                >
+                  <i :class="isSelected(text.id) ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-plus'"></i>
+                  {{ isSelected(text.id) ? t("dailyReading.added") : t("dailyReading.add") }}
+                </span>
+              </button>
+            </div>
+          </section>
+        </div>
       </div>
 
       <div v-else class="text-center py-12 text-text-secondary dark:text-gray-400">

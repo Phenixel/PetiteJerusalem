@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Session } from "../models/models";
 import { EnumTypeTextStudy } from "../models/typeTextStudy";
 import { TextTypeService } from "../services/textTypeService";
 import { DateService } from "../services/dateService";
+import { sessionService } from "../services/sessionService";
 
 const { t } = useI18n();
 
@@ -11,7 +13,7 @@ interface Props {
   session: Session;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 defineEmits<{
   click: [session: Session];
 }>();
@@ -23,6 +25,10 @@ const formatTextType = (type: EnumTypeTextStudy): string => {
 const formatDate = (date: Date): string => {
   return DateService.formatDate(date);
 };
+
+// Aperçu de la disponibilité : pourcentage de sections déjà réservées.
+const reservationStats = computed(() => sessionService.getSessionReservationStats(props.session));
+const isFull = computed(() => reservationStats.value.percentage >= 100);
 </script>
 
 <template>
@@ -49,6 +55,25 @@ const formatDate = (date: Date): string => {
         {{ session.creatorName }}
       </div>
     </div>
+    <!-- Pourcentage de réservation : indique s'il reste de la disponibilité -->
+    <div v-if="reservationStats.total > 0" class="mb-4">
+      <div class="flex items-center justify-between mb-1.5 text-xs font-medium">
+        <span class="text-text-secondary dark:text-gray-400">
+          {{ t("shareReading.reservedPercent", { percent: reservationStats.percentage }) }}
+        </span>
+        <span :class="isFull ? 'text-red-500 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+          {{ isFull ? t("shareReading.sessionFull") : t("shareReading.sessionAvailable") }}
+        </span>
+      </div>
+      <div class="h-2 w-full bg-gray-100 rounded-full overflow-hidden dark:bg-gray-700">
+        <div
+          class="h-full rounded-full transition-all duration-500"
+          :class="isFull ? 'bg-red-400 dark:bg-red-500' : 'bg-gradient-to-r from-primary to-secondary'"
+          :style="{ width: `${reservationStats.percentage}%` }"
+        ></div>
+      </div>
+    </div>
+
     <div class="pt-4 border-t border-black/5 dark:border-white/10">
       <span class="text-sm text-text-secondary flex items-center gap-2 dark:text-gray-400">
         <i class="far fa-calendar-alt"></i>

@@ -10,33 +10,39 @@ import { hubPath } from "../content/etudeTexts";
 
 const { t } = useI18n();
 
+const ALL_TYPE = "Tout";
+
 const TYPES = [
+  { key: ALL_TYPE, labelKey: "study.types.all" },
   { key: "Tehilim", labelKey: "study.types.tehilim" },
   { key: "Mishna", labelKey: "study.types.mishna" },
   { key: "Talmud Bavli", labelKey: "study.types.talmud" },
   { key: "Tanakh", labelKey: "study.types.tanakh" },
 ];
 
+// Type tabs that map to an actual corpus (everything except the "Tout" tab).
+const CORPUS_TYPES = TYPES.filter((ty) => ty.key !== ALL_TYPE);
+
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
-const selectedType = ref("Tehilim");
+const selectedType = ref(ALL_TYPE);
 const searchTerm = ref("");
 
-const isSearching = computed(() => searchTerm.value.trim() !== "");
+// "Tout" shows every corpus at once; any other tab stays scoped to itself.
+const isAllSelected = computed(() => selectedType.value === ALL_TYPE);
 
 const filtered = computed(() => {
   const term = searchTerm.value.trim().toLowerCase();
   return allTexts.filter((txt) => {
     const matchesTerm = term === "" || txt.name.toLowerCase().includes(term);
-    // When searching, look across every tab; otherwise stay on the active one.
-    const matchesType = isSearching.value || String(txt.type) === selectedType.value;
+    const matchesType = isAllSelected.value || String(txt.type) === selectedType.value;
     return matchesTerm && matchesType;
   });
 });
 
-// Group results by type (only relevant when searching across tabs), then by
-// book/seder, so each section stays readable.
+// Group results by type (a type heading is only shown on the "Tout" tab), then
+// by book/seder, so each section stays readable.
 const groupedByType = computed(() => {
-  return TYPES.map((ty) => {
+  return CORPUS_TYPES.map((ty) => {
     const texts = filtered.value.filter((txt) => String(txt.type) === ty.key);
     const groups: Record<string, TextStudyJsonEntry[]> = {};
     for (const txt of texts) {
@@ -117,9 +123,9 @@ onMounted(() => {
     <!-- Results -->
     <div v-if="hasResults" class="max-w-5xl mx-auto space-y-12">
       <div v-for="typeGroup in groupedByType" :key="typeGroup.key" class="space-y-10">
-        <!-- Type heading: shown only when searching across all tabs. -->
+        <!-- Type heading: shown only on the "Tout" tab, where several corpora mix. -->
         <h2
-          v-if="isSearching"
+          v-if="isAllSelected"
           class="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
         >
           {{ t(typeGroup.labelKey) }}

@@ -217,6 +217,9 @@ const en: LocaleMessages = {
     noOngoingSessions: "No ongoing sessions at the moment.",
     noSessions: "No existing sessions",
     createFirstSession: "Create the first reading share session!",
+    reservedPercent: "{percent}% reserved",
+    sessionFull: "Full",
+    sessionAvailable: "Spots available",
     howItWorks: {
       title: "How it works",
       subtitle: "Split a text between several people and finish it together, in four steps.",
@@ -254,6 +257,7 @@ const en: LocaleMessages = {
     searchPlaceholder: "Search for a text, book or chapter...",
     clearSearch: "Clear search",
     searchFor: "Search",
+    availableOnly: "Available only",
     myReservations: "My reservations",
     confirmReservation: "Confirm reservation",
     confirmAsGuest: "Finalize as guest",
@@ -430,6 +434,7 @@ const en: LocaleMessages = {
     noResults: "No text matches your search.",
     sections: "{count} sections",
     types: {
+      all: "All",
       tehilim: "Tehilim",
       mishna: "Mishnah",
       talmud: "Talmud",
