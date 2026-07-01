@@ -10,6 +10,7 @@ const fr = {
     retry: "Réessayer",
     cancel: "Annuler",
     confirm: "Confirmer",
+    close: "Fermer",
     save: "Sauvegarder",
     saving: "Sauvegarde...",
     deleting: "Suppression...",
@@ -31,6 +32,10 @@ const fr = {
     ongoing: "En cours",
     finished: "Terminée",
     read: "Lu",
+  },
+  errors: {
+    permissionDenied: "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
+    unavailable: "Service momentanément indisponible. Vérifiez votre connexion et réessayez.",
   },
   navbar: {
     title: "Petite Jérusalem",
@@ -260,6 +265,12 @@ const fr = {
       step2: "Vous pouvez décocher vos propres réservations pour les annuler",
       step3: "Cliquez sur la carte du texte pour voir les sections disponibles",
     },
+  },
+  sessionManagement: {
+    reservationCreateError: "Erreur lors de la création de la réservation",
+    reservationUpdateError: "Erreur lors de la mise à jour de la réservation",
+    reservationDeleteError: "Erreur lors de la suppression de la réservation",
+    deleteReservationConfirm: "Êtes-vous sûr de vouloir supprimer cette réservation ?",
   },
   shareModal: {
     title: "Partager cette session",

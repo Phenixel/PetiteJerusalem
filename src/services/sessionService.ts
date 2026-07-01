@@ -451,7 +451,7 @@ export class SessionService {
       });
     } catch (error) {
       console.error("Erreur lors de la mise à jour de la session:", error);
-      throw new Error("Impossible de mettre à jour la session");
+      throw error;
     }
   }
 
@@ -464,7 +464,7 @@ export class SessionService {
       });
     } catch (error) {
       console.error("Erreur lors de la fin de session:", error);
-      throw new Error("Impossible de terminer la session");
+      throw error;
     }
   }
 

@@ -12,6 +12,7 @@ const he: LocaleMessages = {
     retry: "נסה שוב",
     cancel: "ביטול",
     confirm: "אישור",
+    close: "סגירה",
     save: "שמור",
     saving: "שומר...",
     deleting: "מוחק...",
@@ -33,6 +34,10 @@ const he: LocaleMessages = {
     ongoing: "בתהליך",
     finished: "הסתיים",
     read: "נקרא",
+  },
+  errors: {
+    permissionDenied: "אין לך הרשאה לבצע פעולה זו.",
+    unavailable: "השירות אינו זמין כרגע. בדקו את החיבור ונסו שוב.",
   },
   navbar: {
     title: "פטיט ירושלים",
@@ -256,6 +261,12 @@ const he: LocaleMessages = {
       step2: "אתה יכול לבטל סימון של ההזמנות שלך כדי לבטל אותן",
       step3: "לחץ על כרטיס הטקסט כדי לראות קטעים זמינים",
     },
+  },
+  sessionManagement: {
+    reservationCreateError: "שגיאה ביצירת ההזמנה",
+    reservationUpdateError: "שגיאה בעדכון ההזמנה",
+    reservationDeleteError: "שגיאה במחיקת ההזמנה",
+    deleteReservationConfirm: "האם אתם בטוחים שברצונכם למחוק את ההזמנה הזו?",
   },
   shareModal: {
     title: "שתף סשן זה",

@@ -6,9 +6,11 @@ import { sessionService } from "../../services/sessionService";
 import { appendHebrewNumeral, formatNumberWithHebrew } from "../../services/hebrewNumerals";
 import type { Session, TextStudy } from "../../models/models";
 import type { User } from "../../services/authService";
+import { useToast } from "../../composables/useToast";
 
 const router = useRouter();
 const { t } = useI18n();
+const toast = useToast();
 
 const props = defineProps<{
   sessions: Session[];
@@ -63,7 +65,7 @@ const toggleReservationCompletion = async (
     }
   } catch (error) {
     console.error("Erreur lors de la mise à jour de la réservation:", error);
-    alert(t("profile.reservationUpdateError"));
+    toast.errorFromException(error, t("profile.reservationUpdateError"));
   }
 };
 

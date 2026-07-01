@@ -4,6 +4,7 @@ import { useRoute } from "vue-router";
 import Navbar from "./components/NavbarComponents.vue";
 import SiteFooter from "./components/SiteFooter.vue";
 import ScrollToTop from "./components/ScrollToTop.vue";
+import ToastContainer from "./components/ToastContainer.vue";
 import { RouterView } from "vue-router";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
@@ -31,5 +32,6 @@ onAuthStateChanged(auth, (user) => {
     <RouterView />
     <SiteFooter v-if="!isHome" />
     <ScrollToTop />
+    <ToastContainer />
   </div>
 </template>
