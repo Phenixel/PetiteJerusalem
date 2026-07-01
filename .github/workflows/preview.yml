@@ -40,7 +40,9 @@ jobs:
 
       - name: Deploy preview channel
         run: |
-          channel="preview-$(echo "${GITHUB_REF_NAME}" | tr '/_' '--' | tr -cd 'a-zA-Z0-9-' | cut -c1-40)"
+          # Canal unique par commit : évite tout conflit 409 et garantit une URL
+          # servant le code du commit courant.
+          channel="preview-${GITHUB_SHA::8}"
           echo "Déploiement du canal : $channel"
           out=$(firebase hosting:channel:deploy "$channel" \
             --project petite-jerusalem-dev \
