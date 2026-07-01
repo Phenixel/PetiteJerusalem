@@ -1,0 +1,53 @@
+name: Preview Channel
+
+# Déploie un canal de preview Firebase Hosting (URL temporaire, 7 jours) pour
+# tester une branche sans toucher à la production. Se déclenche sur push de la
+# branche de travail, ou manuellement (workflow_dispatch).
+on:
+  push:
+    branches:
+      - "claude/**"
+  workflow_dispatch:
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app (type-check, build, SEO prerender)
+        run: npm run build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}"
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy preview channel
+        run: |
+          channel="preview-$(echo "${GITHUB_REF_NAME}" | tr '/_' '--' | tr -cd 'a-zA-Z0-9-' | cut -c1-40)"
+          echo "Déploiement du canal : $channel"
+          out=$(firebase hosting:channel:deploy "$channel" \
+            --project petite-jerusalem-dev \
+            --expires 7d \
+            --non-interactive 2>&1) || { echo "$out"; exit 1; }
+          echo "$out"
+          url=$(echo "$out" | grep -oE 'https://[a-zA-Z0-9._-]+\.web\.app[^ ]*' | head -1)
+          echo "## 🔗 URL de preview" >> "$GITHUB_STEP_SUMMARY"
+          echo "$url" >> "$GITHUB_STEP_SUMMARY"
+          echo "PREVIEW_URL=$url"
