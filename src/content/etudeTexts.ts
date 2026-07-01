@@ -54,7 +54,7 @@ function baseSlug(entry: TextStudyJsonEntry): string {
   if (corpus === "tehilim") return String(entry.link).split(".").pop() ?? "1";
   if (corpus === "talmud") return tractateSlug(tractateFromLink(entry.link));
   if (corpus === "michna") return tractateSlug(tractateFromLink(entry.link, true));
-  if (corpus === "halakha") return tractateSlug(tractateFromLink(entry.link));
+  if (corpus === "halakha") return entry.slug ?? tractateSlug(latinName(entry)); // thematic slug
   return tractateSlug(latinName(entry)); // tanakh parasha / book
 }
 
@@ -157,15 +157,20 @@ function sectionTextHtml(section: TextSection, numbered: boolean): string {
 export const READING_LEAD =
   "Texte intégral en hébreu, accompagné de la phonétique pour le lire même sans maîtriser l'hébreu. Lisez-le seul ou partagez-en la lecture à plusieurs.";
 
+/** The abridged Code of Jewish Law — the single sefer behind the Halakha themes. */
+const KITSOUR = "Kitsour Choulhan Aroukh";
+
 /** A short human title for a section, used in H1 / breadcrumbs. */
 export function sectionHeading(entry: TextStudyJsonEntry, section: TextSection): string {
   const corpus = corpusOf(entry);
   if (corpus === "tehilim") return `Tehilim ${slugOf(entry)} — Psaume ${slugOf(entry)}`;
   if (corpus === "tanakh") return `Parashat ${latinName(entry)}`;
+  if (corpus === "halakha") return `${latinName(entry)} — ${section.label}`;
   return `${CORPUS_LABEL[corpus]} ${latinName(entry)} — ${section.label}`;
 }
 
 export function hubHeading(entry: TextStudyJsonEntry): string {
+  if (corpusOf(entry) === "halakha") return `${KITSOUR} — ${latinName(entry)}`;
   return `${CORPUS_LABEL[corpusOf(entry)]} ${latinName(entry)}`;
 }
 
@@ -177,11 +182,15 @@ export function sectionTitle(entry: TextStudyJsonEntry, section: TextSection): s
     return `Tehilim ${slugOf(entry)} en phonétique et en hébreu (Psaume ${slugOf(entry)}) | Petite Jérusalem`;
   if (corpus === "tanakh")
     return `Parashat ${latinName(entry)} en hébreu et phonétique | Petite Jérusalem`;
+  if (corpus === "halakha")
+    return `${latinName(entry)}, ${section.label} — ${KITSOUR} en hébreu et français | Petite Jérusalem`;
   return `${CORPUS_LABEL[corpus]} ${latinName(entry)} ${section.label} en hébreu et phonétique | Petite Jérusalem`;
 }
 
 export function sectionDescription(entry: TextStudyJsonEntry, section: TextSection): string {
   const corpus = corpusOf(entry);
+  if (corpus === "halakha")
+    return `Lisez ${latinName(entry).toLowerCase()} (${section.label}) du ${KITSOUR} en hébreu et en français. Les lois juives en abrégé, thème par thème.`;
   const what =
     corpus === "tehilim"
       ? `le Tehilim ${slugOf(entry)} (Psaume ${slugOf(entry)})`
@@ -192,10 +201,14 @@ export function sectionDescription(entry: TextStudyJsonEntry, section: TextSecti
 }
 
 export function hubTitle(entry: TextStudyJsonEntry): string {
+  if (corpusOf(entry) === "halakha")
+    return `${latinName(entry)} — ${KITSOUR} en hébreu et français | Petite Jérusalem`;
   return `${CORPUS_LABEL[corpusOf(entry)]} ${latinName(entry)} en ligne (hébreu + phonétique) | Petite Jérusalem`;
 }
 
 export function hubDescription(entry: TextStudyJsonEntry): string {
+  if (corpusOf(entry) === "halakha")
+    return `Étudiez ${latinName(entry).toLowerCase()} dans le ${KITSOUR}, siman par siman, en hébreu et en français. Les lois juives en abrégé, organisées par thème.`;
   return `Lisez ${CORPUS_LABEL[corpusOf(entry)]} ${latinName(entry)} en ligne, chapitre par chapitre, en hébreu avec la phonétique. Texte intégral et partage de la lecture à plusieurs.`;
 }
 
@@ -282,12 +295,16 @@ export function buildHubBody(entry: TextStudyJsonEntry, content: TextContent): s
         `<li><a href="${sectionPath(entry, s.index)}">${esc(s.label)}</a></li>`,
     )
     .join("\n        ");
+  const lead =
+    corpusOf(entry) === "halakha"
+      ? `Étudiez ${esc(latinName(entry).toLowerCase())} dans le ${esc(KITSOUR)}, siman par siman, en hébreu et en français.`
+      : `Lisez ${esc(CORPUS_LABEL[corpusOf(entry)])} ${esc(latinName(entry))} en ligne, chapitre par
+      chapitre, en hébreu avec la phonétique.`;
   return `
   <main class="seo-article reading-page">
     <h1>${esc(hubHeading(entry))}</h1>
     <p class="seo-lead">
-      Lisez ${esc(CORPUS_LABEL[corpusOf(entry)])} ${esc(latinName(entry))} en ligne, chapitre par
-      chapitre, en hébreu avec la phonétique.
+      ${lead}
     </p>
 
     ${ctaHtml}

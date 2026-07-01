@@ -242,8 +242,12 @@ const halakhaGcsMap = {
 
 console.log('\n=== Halakha ===');
 const halakhaEntries = textStudies.filter(t => t.type === 'Halakha');
+// Many thematic entries share the same sefer/file — download each sefer once.
+const halakhaSeen = new Set();
 for (const entry of halakhaEntries) {
   const tractate = entry.link.replace('https://www.sefaria.org/', '').replace(/_/g, ' ');
+  if (halakhaSeen.has(tractate)) continue;
+  halakhaSeen.add(tractate);
   const gcsPath = halakhaGcsMap[tractate];
   if (!gcsPath) {
     console.warn(`  ✗ ${tractate}: no GCS path mapping found`);

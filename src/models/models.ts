@@ -74,6 +74,13 @@ export interface TextStudyJsonEntry {
   link: string;
   totalSections: number;
   type: string;
+  /**
+   * Halakha only: the inclusive siman range [start, end] this thematic entry
+   * covers inside the shared Kitsour Choulhan Aroukh file.
+   */
+  range?: [number, number];
+  /** Halakha only: explicit URL slug (the thematic French slug). */
+  slug?: string;
 }
 
 export interface TextStudiesJson {

@@ -21,6 +21,8 @@ export interface TextSection {
   label: string;
   /** Cleaned Hebrew lines (verses / mishnayot). */
   he: string[];
+  /** French translation lines, aligned to {@link he}. Halakha only (when available). */
+  fr?: string[];
   /** Talmud only: the section's lines grouped by daf. */
   dafBlocks?: DafBlock[];
 }
@@ -74,6 +76,8 @@ export function resolveFilePath(textStudy: TextStudyJsonEntry): string {
     case "Talmud Bavli":
       return `/texts/talmud/${tractateSlug(tractateFromLink(textStudy.link))}.json`;
     case "Halakha":
+      // All Halakha themes share one Kitsour Choulhan Aroukh file; each entry
+      // slices its own siman range from it (see loadHalakha).
       return `/texts/halakha/${tractateSlug(tractateFromLink(textStudy.link))}.json`;
     case "Tanakh":
       return `/texts/tanakh/${textStudy.id}.json`;
@@ -182,6 +186,33 @@ function parseTalmud(
   return { title, type: "Talmud Bavli", sections };
 }
 
+/**
+ * Kitsour Choulhan Aroukh: one shared file holds all 221 simanim (he + optional
+ * fr translation). A thematic entry slices its own inclusive siman range, keeping
+ * the real siman number as the section index/URL so numbering matches the sefer.
+ */
+function loadHalakha(
+  textStudy: TextStudyJsonEntry,
+  data: { title?: string; he?: unknown[]; fr?: unknown[] },
+): TextContent {
+  const heSimanim = data.he ?? [];
+  const frSimanim = data.fr ?? [];
+  const [start, end] = textStudy.range ?? [1, heSimanim.length];
+  const sections: TextSection[] = [];
+  for (let siman = start; siman <= end; siman++) {
+    const he = normalizeLines(heSimanim[siman - 1]);
+    if (he.length === 0) continue;
+    const fr = normalizeLines(frSimanim[siman - 1]);
+    sections.push({
+      index: siman,
+      label: `Siman ${formatNumberWithHebrew(siman)}`,
+      he,
+      ...(fr.length > 0 ? { fr } : {}),
+    });
+  }
+  return { title: data.title ?? textStudy.name, type: "Halakha", sections };
+}
+
 function loadTanakh(
   textStudy: TextStudyJsonEntry,
   data: { title?: string; he?: unknown[] },
@@ -216,10 +247,8 @@ export function parseContent(
       const d = data as { title?: string; he?: unknown[] };
       return { title: d.title ?? textStudy.name, type: "Mishna", sections: chaptersToSections(d.he ?? []) };
     }
-    case "Halakha": {
-      const d = data as { title?: string; he?: unknown[] };
-      return { title: d.title ?? textStudy.name, type: "Halakha", sections: chaptersToSections(d.he ?? []) };
-    }
+    case "Halakha":
+      return loadHalakha(textStudy, data as { title?: string; he?: unknown[]; fr?: unknown[] });
     case "Talmud Bavli":
       return parseTalmud(textStudy, data as { title?: string; he?: unknown[] }, talmudChapters);
     case "Tanakh":

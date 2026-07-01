@@ -2626,11 +2626,173 @@
     },
     {
       "id": 340,
-      "name": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
-      "livre": "הלכה (Halakha)",
+      "name": "Le lever et la conduite du matin",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
       "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
-      "totalSections": 221,
-      "type": "Halakha"
+      "totalSections": 7,
+      "type": "Halakha",
+      "range": [1, 7],
+      "slug": "lever-et-conduite-du-matin"
+    },
+    {
+      "id": 341,
+      "name": "Tsitsit, Téfilines et Mézouza",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 4,
+      "type": "Halakha",
+      "range": [8, 11],
+      "slug": "tsitsit-tefilines-mezouza"
+    },
+    {
+      "id": 342,
+      "name": "La prière et la synagogue",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 14,
+      "type": "Halakha",
+      "range": [12, 25],
+      "slug": "priere-et-synagogue"
+    },
+    {
+      "id": 343,
+      "name": "Étude de la Torah, traits de caractère et tsédaka",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 9,
+      "type": "Halakha",
+      "range": [26, 34],
+      "slug": "etude-traits-de-caractere-tsedaka"
+    },
+    {
+      "id": 344,
+      "name": "Le repas, les bénédictions et la cacheroute",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 27,
+      "type": "Halakha",
+      "range": [35, 61],
+      "slug": "repas-benedictions-cacheroute"
+    },
+    {
+      "id": 345,
+      "name": "Éthique, commerce et vœux",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 6,
+      "type": "Halakha",
+      "range": [62, 67],
+      "slug": "ethique-commerce-voeux"
+    },
+    {
+      "id": 346,
+      "name": "La prière du soir et le voyage",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 4,
+      "type": "Halakha",
+      "range": [68, 71],
+      "slug": "priere-du-soir-et-voyage"
+    },
+    {
+      "id": 347,
+      "name": "Le Chabbath",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 25,
+      "type": "Halakha",
+      "range": [72, 96],
+      "slug": "chabbath"
+    },
+    {
+      "id": 348,
+      "name": "Roch 'Hodech et Yom Tov",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 10,
+      "type": "Halakha",
+      "range": [97, 106],
+      "slug": "roch-hodech-et-fetes"
+    },
+    {
+      "id": 349,
+      "name": "Pessa'h et le compte du Omer",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 14,
+      "type": "Halakha",
+      "range": [107, 120],
+      "slug": "pessah-et-omer"
+    },
+    {
+      "id": 350,
+      "name": "Les jeûnes et les Trois Semaines",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 7,
+      "type": "Halakha",
+      "range": [121, 127],
+      "slug": "jeunes-et-trois-semaines"
+    },
+    {
+      "id": 351,
+      "name": "Roch Hachana et Yom Kippour",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 6,
+      "type": "Halakha",
+      "range": [128, 133],
+      "slug": "roch-hachana-et-yom-kippour"
+    },
+    {
+      "id": 352,
+      "name": "Souccot, 'Hanoucca et Pourim",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 9,
+      "type": "Halakha",
+      "range": [134, 142],
+      "slug": "souccot-hanoucca-pourim"
+    },
+    {
+      "id": 353,
+      "name": "La famille : parents, mariage, pureté et éducation",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 23,
+      "type": "Halakha",
+      "range": [143, 165],
+      "slug": "famille-mariage-purete-education"
+    },
+    {
+      "id": 354,
+      "name": "Interdits divers : idolâtrie, superstitions et mélanges",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 13,
+      "type": "Halakha",
+      "range": [166, 178],
+      "slug": "interdits-divers"
+    },
+    {
+      "id": 355,
+      "name": "Prêt, justice, dommages et restitution",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 13,
+      "type": "Halakha",
+      "range": [179, 191],
+      "slug": "pret-justice-dommages-restitution"
+    },
+    {
+      "id": 356,
+      "name": "La maladie, le deuil et le souvenir",
+      "livre": "קיצור שלחן ערוך (Kitsour Choulh'an Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh",
+      "totalSections": 30,
+      "type": "Halakha",
+      "range": [192, 221],
+      "slug": "maladie-deuil-et-souvenir"
     }
   ],
   "types": ["Talmud Bavli", "Mishna", "Tehilim", "Parasha Devarim", "Tanakh", "Halakha"]
