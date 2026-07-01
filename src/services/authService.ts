@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   signInWithRedirect,
   signInWithPopup,
+  reauthenticateWithPopup,
   getRedirectResult,
   signOut,
   updateProfile,
@@ -184,7 +185,10 @@ export class AuthService {
       throw new Error("Aucun utilisateur connecté");
     }
 
-    await signInWithPopup(auth, googleAuthProvider);
+    // reauthenticateWithPopup (et non signInWithPopup) : échoue si le compte
+    // choisi dans le popup n'est pas le compte courant — sinon une suppression
+    // de compte qui suit pourrait viser un autre compte Google.
+    await reauthenticateWithPopup(user, googleAuthProvider);
   }
 
   isGoogleUser(): boolean {

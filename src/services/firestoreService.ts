@@ -3,7 +3,6 @@ import {
   doc,
   addDoc,
   Timestamp,
-  writeBatch,
   getDocs,
   getDoc,
   updateDoc,
@@ -14,19 +13,17 @@ import {
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "../../firebase";
-import type { TextStudy, Session, TextStudyReservation } from "../models/models";
+import type { Session } from "../models/models";
+
+// Durée de vie du cache de la liste des sessions. Court : les réservations
+// des autres participants doivent apparaître rapidement.
+const SESSIONS_CACHE_TTL_MS = 60_000;
 
 export class FirestoreService {
-  // === MÉTHODES UTILITAIRES ===
+  private sessionsCache: { data: Session[]; fetchedAt: number } | null = null;
+  private sessionsCachePromise: Promise<Session[]> | null = null;
 
-  private convertToTextStudy(doc: QueryDocumentSnapshot<DocumentData>): TextStudy {
-    const data = doc.data();
-    return {
-      ...data,
-      id: doc.id,
-      createdAt: data.createdAt?.toDate() || new Date(),
-    } as TextStudy;
-  }
+  // === MÉTHODES UTILITAIRES ===
 
   private convertToSession(doc: QueryDocumentSnapshot<DocumentData>): Session {
     const data = doc.data();
@@ -41,61 +38,15 @@ export class FirestoreService {
     } as Session;
   }
 
-  private convertToTextStudyReservation(
-    doc: QueryDocumentSnapshot<DocumentData>,
-  ): TextStudyReservation {
-    const data = doc.data();
-    return {
-      ...data,
-      id: doc.id,
-      createdAt: data.createdAt?.toDate() || new Date(),
-    } as TextStudyReservation;
-  }
-
   private handleFirestoreError(error: unknown, operation: string): never {
     console.error(`Erreur Firestore lors de ${operation}:`, error);
     throw new Error(`Erreur lors de ${operation}. Veuillez réessayer.`);
   }
-  // === MÉTHODES TEXTSTUDY ===
 
-  async createTextStudy(textStudy: Omit<TextStudy, "id" | "createdAt">): Promise<string> {
-    try {
-      const docRef = await addDoc(collection(db, "textStudies"), {
-        ...textStudy,
-        createdAt: Timestamp.now(),
-      });
-      return docRef.id;
-    } catch (error) {
-      this.handleFirestoreError(error, "création du texte d'étude");
-    }
-  }
-
-  async createTextStudyBatch(textStudies: Omit<TextStudy, "id" | "createdAt">[]): Promise<void> {
-    try {
-      const batch = writeBatch(db);
-
-      textStudies.forEach((textStudy) => {
-        const docRef = doc(collection(db, "textStudies"));
-        batch.set(docRef, {
-          ...textStudy,
-          createdAt: Timestamp.now(),
-        });
-      });
-
-      await batch.commit();
-    } catch (error) {
-      this.handleFirestoreError(error, "création en lot des textes d'étude");
-    }
-  }
-
-  async getTextStudiesByType(type: string): Promise<TextStudy[]> {
-    try {
-      const q = query(collection(db, "textStudies"), where("type", "==", type));
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map((doc) => this.convertToTextStudy(doc));
-    } catch (error) {
-      this.handleFirestoreError(error, "récupération des textes d'étude par type");
-    }
+  /** À appeler après toute écriture qui modifie une session ou ses réservations. */
+  invalidateSessionsCache(): void {
+    this.sessionsCache = null;
+    this.sessionsCachePromise = null;
   }
 
   // === MÉTHODES SESSION ===
@@ -107,6 +58,7 @@ export class FirestoreService {
         createdAt: Timestamp.now(),
         isCompleted: false,
       });
+      this.invalidateSessionsCache();
       return docRef.id;
     } catch (error) {
       this.handleFirestoreError(error, "création de la session");
@@ -114,16 +66,26 @@ export class FirestoreService {
   }
 
   async getSessions(): Promise<Session[]> {
-    try {
-      const querySnapshot = await getDocs(collection(db, "sessions"));
-      return querySnapshot.docs.map((doc) => this.convertToSession(doc));
-    } catch (error) {
-      this.handleFirestoreError(error, "récupération des sessions");
+    if (this.sessionsCache && Date.now() - this.sessionsCache.fetchedAt < SESSIONS_CACHE_TTL_MS) {
+      return this.sessionsCache.data;
     }
-  }
-
-  async getAllSessions(): Promise<Session[]> {
-    return this.getSessions();
+    // Déduplique les requêtes concurrentes (plusieurs composants au montage).
+    if (this.sessionsCachePromise) {
+      return this.sessionsCachePromise;
+    }
+    this.sessionsCachePromise = (async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "sessions"));
+        const sessions = querySnapshot.docs.map((doc) => this.convertToSession(doc));
+        this.sessionsCache = { data: sessions, fetchedAt: Date.now() };
+        return sessions;
+      } catch (error) {
+        this.handleFirestoreError(error, "récupération des sessions");
+      } finally {
+        this.sessionsCachePromise = null;
+      }
+    })();
+    return this.sessionsCachePromise;
   }
 
   async getSessionById(sessionId: string): Promise<Session | null> {
@@ -160,6 +122,7 @@ export class FirestoreService {
     try {
       const docRef = doc(db, "sessions", sessionId);
       await updateDoc(docRef, updates);
+      this.invalidateSessionsCache();
     } catch (error) {
       this.handleFirestoreError(error, "mise à jour de la session");
     }
@@ -169,64 +132,9 @@ export class FirestoreService {
     try {
       const docRef = doc(db, "sessions", sessionId);
       await deleteDoc(docRef);
+      this.invalidateSessionsCache();
     } catch (error) {
       this.handleFirestoreError(error, "suppression de la session");
-    }
-  }
-
-  // === MÉTHODES TEXTSTUDYRESERVATION ===
-
-  async createTextStudyReservation(
-    reservation: Omit<TextStudyReservation, "id" | "createdAt">,
-  ): Promise<string> {
-    try {
-      const docRef = await addDoc(collection(db, "textStudyReservations"), {
-        ...reservation,
-        createdAt: Timestamp.now(),
-      });
-      return docRef.id;
-    } catch (error) {
-      this.handleFirestoreError(error, "création de la réservation");
-    }
-  }
-
-  async getReservationsBySession(sessionId: string): Promise<TextStudyReservation[]> {
-    try {
-      const q = query(collection(db, "textStudyReservations"), where("sessionId", "==", sessionId));
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map((doc) => this.convertToTextStudyReservation(doc));
-    } catch (error) {
-      this.handleFirestoreError(error, "récupération des réservations par session");
-    }
-  }
-
-  async deleteTextStudyReservation(reservationId: string): Promise<void> {
-    try {
-      const docRef = doc(db, "textStudyReservations", reservationId);
-      await deleteDoc(docRef);
-    } catch (error) {
-      this.handleFirestoreError(error, "suppression de la réservation");
-    }
-  }
-
-  // === MÉTHODES UTILITAIRES POUR LES RÉSERVATIONS ===
-
-  async collectionExists(collectionName: string): Promise<boolean> {
-    try {
-      const querySnapshot = await getDocs(collection(db, collectionName));
-      return !querySnapshot.empty;
-    } catch (error) {
-      console.warn(`Impossible de vérifier l'existence de la collection ${collectionName}:`, error);
-      return false;
-    }
-  }
-
-  async countDocuments(collectionName: string): Promise<number> {
-    try {
-      const querySnapshot = await getDocs(collection(db, collectionName));
-      return querySnapshot.size;
-    } catch (error) {
-      this.handleFirestoreError(error, `comptage des documents dans ${collectionName}`);
     }
   }
 }

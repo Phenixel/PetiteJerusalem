@@ -1,6 +1,7 @@
 import type { Session, TextStudy, TextStudyReservation, ReservationRecord } from "../models/models";
 import { db } from "../../firebase";
 import { doc, runTransaction, collection, getDocs } from "firebase/firestore";
+import { firestoreService } from "./firestoreService";
 
 export interface ReservationForm {
   name: string;
@@ -8,6 +9,22 @@ export interface ReservationForm {
 }
 
 export class ReservationService {
+  /**
+   * Une réservation « texte entier » (section undefined) et des réservations
+   * « par section » sont mutuellement exclusives pour un même texte.
+   */
+  private findConflictingReservation(
+    reservations: ReservationRecord[],
+    textStudyId: string,
+    section: number | undefined,
+  ): ReservationRecord | undefined {
+    return reservations.find(
+      (r) =>
+        r.textStudyId === textStudyId &&
+        (r.section === section || r.section === undefined || section === undefined),
+    );
+  }
+
   async createReservation(
     sessionId: string,
     textStudyId: string,
@@ -35,10 +52,7 @@ export class ReservationService {
           ? data.reservations
           : [];
 
-        if (
-          reservations.find((r) => r.textStudyId === textStudyId && r.section === section) !==
-          undefined
-        ) {
+        if (this.findConflictingReservation(reservations, textStudyId, section) !== undefined) {
           throw new Error("Cette section est déjà réservée");
         }
 
@@ -68,6 +82,7 @@ export class ReservationService {
       });
     });
 
+    firestoreService.invalidateSessionsCache();
     return reservationId;
   }
 
@@ -101,9 +116,8 @@ export class ReservationService {
 
         const newReservations: ReservationRecord[] = items.map((item, index) => {
           if (
-            reservations.find(
-              (r) => r.textStudyId === item.textStudyId && r.section === item.section,
-            ) !== undefined
+            this.findConflictingReservation(reservations, item.textStudyId, item.section) !==
+            undefined
           ) {
             throw new Error(
               `La section ${item.section ?? "complète"} de ${item.textStudyId} est déjà réservée`,
@@ -139,6 +153,7 @@ export class ReservationService {
       });
     });
 
+    firestoreService.invalidateSessionsCache();
     return reservationIds;
   }
 
@@ -157,6 +172,7 @@ export class ReservationService {
         transaction.update(sfDocRef, { reservations: filtered });
       });
     });
+    firestoreService.invalidateSessionsCache();
   }
 
   canUserDeleteReservation(
@@ -211,6 +227,13 @@ export class ReservationService {
   ): { status: "available" | "fully_reserved" | "partially_reserved"; reservedBy: string | null } {
     const reservations = this.getReservationsBySession(session);
     const textReservations = reservations.filter((r) => r.textStudyId === textStudyId);
+
+    // Réservation du texte entier (section undefined) : le texte est pris.
+    const fullReservation = textReservations.find((r) => r.section === undefined);
+    if (fullReservation) {
+      return { status: "fully_reserved", reservedBy: fullReservation.chosenByName || null };
+    }
+
     const chapterReservations = textReservations.filter((r) => r.section !== undefined);
 
     if (chapterReservations.length === 0) {
@@ -322,6 +345,7 @@ export class ReservationService {
         transaction.update(sfDocRef, { reservations });
       });
     });
+    firestoreService.invalidateSessionsCache();
   }
 
   async migrateGuestReservations(
@@ -331,60 +355,63 @@ export class ReservationService {
   ): Promise<number> {
     let migratedCount = 0;
 
-    try {
-      const sessionsSnapshot = await getDocs(collection(db, "sessions"));
+    const sessionsSnapshot = await getDocs(collection(db, "sessions"));
 
-      for (const sessionDoc of sessionsSnapshot.docs) {
-        const data = sessionDoc.data() as { reservations?: ReservationRecord[] };
-        const reservations = Array.isArray(data.reservations) ? data.reservations : [];
+    for (const sessionDoc of sessionsSnapshot.docs) {
+      const data = sessionDoc.data() as { reservations?: ReservationRecord[] };
+      const reservations = Array.isArray(data.reservations) ? data.reservations : [];
 
-        const hasGuestReservations = reservations.some((r) => r.chosenByGuestId === userEmail);
+      const hasGuestReservations = reservations.some((r) => r.chosenByGuestId === userEmail);
 
-        if (!hasGuestReservations) continue;
+      if (!hasGuestReservations) continue;
 
-        const sfDocRef = doc(db, "sessions", sessionDoc.id);
+      const sfDocRef = doc(db, "sessions", sessionDoc.id);
 
-        await runTransaction(db, (transaction) => {
-          return transaction.get(sfDocRef).then((sfDoc) => {
-            if (!sfDoc.exists()) return;
+      // Le compteur est retourné par la transaction (le callback peut être
+      // rejoué en cas de contention : ne jamais accumuler à l'intérieur).
+      const sessionMigrated = await runTransaction(db, (transaction) => {
+        return transaction.get(sfDocRef).then((sfDoc) => {
+          if (!sfDoc.exists()) return 0;
 
-            const freshData = sfDoc.data() as { reservations?: ReservationRecord[] };
-            const freshReservations = Array.isArray(freshData.reservations)
-              ? freshData.reservations
-              : [];
+          const freshData = sfDoc.data() as { reservations?: ReservationRecord[] };
+          const freshReservations = Array.isArray(freshData.reservations)
+            ? freshData.reservations
+            : [];
 
-            let sessionMigrated = 0;
-            const updatedReservations = freshReservations.map((r) => {
-              if (r.chosenByGuestId === userEmail) {
-                sessionMigrated++;
-                const updated: ReservationRecord = {
-                  id: r.id,
-                  textStudyId: r.textStudyId,
-                  chosenByName: userName,
-                  chosenById: userId,
-                  available: r.available,
-                  isCompleted: r.isCompleted,
-                  createdAt: r.createdAt,
-                };
-                if (r.section !== undefined) {
-                  updated.section = r.section;
-                }
-                return updated;
+          let count = 0;
+          const updatedReservations = freshReservations.map((r) => {
+            if (r.chosenByGuestId === userEmail) {
+              count++;
+              const updated: ReservationRecord = {
+                id: r.id,
+                textStudyId: r.textStudyId,
+                chosenByName: userName,
+                chosenById: userId,
+                available: r.available,
+                isCompleted: r.isCompleted,
+                createdAt: r.createdAt,
+              };
+              if (r.section !== undefined) {
+                updated.section = r.section;
               }
-              return r;
-            });
-
-            if (sessionMigrated > 0) {
-              transaction.update(sfDocRef, { reservations: updatedReservations });
-              migratedCount += sessionMigrated;
+              return updated;
             }
+            return r;
           });
+
+          if (count > 0) {
+            transaction.update(sfDocRef, { reservations: updatedReservations });
+          }
+          return count;
         });
-      }
-    } catch (error) {
-      console.error("Erreur lors de la migration des réservations invité:", error);
+      });
+
+      migratedCount += sessionMigrated;
     }
 
+    if (migratedCount > 0) {
+      firestoreService.invalidateSessionsCache();
+    }
     return migratedCount;
   }
 }

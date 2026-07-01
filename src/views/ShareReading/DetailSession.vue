@@ -168,9 +168,16 @@ const loadSessionData = async () => {
         ? textStudiesData.filter((text) => sessionData.selectedBooks!.includes(text.livre))
         : textStudiesData;
 
+    // `reservations` et `session.reservations` doivent pointer sur LE MÊME
+    // tableau : si le doc n'a pas encore de champ reservations, on le crée,
+    // sinon les réservations ajoutées localement seraient invisibles pour
+    // isReserved()/getTextDisplayStatus() qui lisent session.value.
+    if (!Array.isArray(sessionData.reservations)) {
+      sessionData.reservations = [];
+    }
     session.value = sessionData;
     textStudies.value = filteredTextStudies;
-    reservations.value = sessionService.getReservationsBySession(sessionData);
+    reservations.value = sessionData.reservations;
   } catch (err) {
     console.error("Erreur lors du chargement des données:", err);
     error.value = err instanceof Error ? err.message : "Erreur lors du chargement";

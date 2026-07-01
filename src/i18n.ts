@@ -14,15 +14,23 @@ export const SUPPORTED_LOCALES = [
 const STORAGE_KEY = "petite-jerusalem-locale";
 
 function getStoredLocale(): SupportedLocale {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored && SUPPORTED_LOCALES.some((l) => l.code === stored)) {
-    return stored as SupportedLocale;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored && SUPPORTED_LOCALES.some((l) => l.code === stored)) {
+      return stored as SupportedLocale;
+    }
+  } catch {
+    // localStorage indisponible (tests Node, navigation privée…)
   }
   return "fr";
 }
 
 export function setStoredLocale(locale: SupportedLocale): void {
-  localStorage.setItem(STORAGE_KEY, locale);
+  try {
+    localStorage.setItem(STORAGE_KEY, locale);
+  } catch {
+    // localStorage indisponible : la locale ne sera pas persistée
+  }
 }
 
 export const i18n = createI18n({

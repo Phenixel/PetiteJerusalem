@@ -7,7 +7,9 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.email in ['admin@phenixel.fr'];
+      return isAuthenticated()
+        && request.auth.token.email in ['admin@phenixel.fr']
+        && request.auth.token.email_verified == true;
     }
 
     function isSessionOwner() {
@@ -27,54 +29,48 @@ service cloud.firestore {
         : 0;
     }
 
-    // Ajout de réservations (taille +1 ou plus) et aucune autre modif
+    // Ajout de réservations (taille +1 à +100) et aucune autre modif.
+    // Autorisé sans authentification : les invités réservent avec nom + email.
+    // Bornes pour empêcher un gonflement illimité du document.
     function isAppendReservationsOnly() {
       return onlyReservationsChanged() &&
              (request.resource.data.reservations is list) &&
-             request.resource.data.reservations.size() >= currentReservationsSize() + 1;
+             request.resource.data.reservations.size() >= currentReservationsSize() + 1 &&
+             request.resource.data.reservations.size() <= currentReservationsSize() + 100 &&
+             request.resource.data.reservations.size() <= 5000;
     }
 
-    // Suppression d'UNE réservation (taille -1) et aucune autre modif
+    // Suppression d'UNE réservation (taille -1) et aucune autre modif.
+    // Autorisé sans authentification : un invité doit pouvoir annuler sa
+    // réservation. NB : la propriété fine par élément n'est pas vérifiable
+    // dans les rules avec ce modèle (tableau embarqué) — voir la note du
+    // README de PR ; une migration vers une sous-collection permettrait
+    // de la faire respecter côté serveur.
     function isRemoveOneReservationOnly() {
       return onlyReservationsChanged() &&
              (request.resource.data.reservations is list) &&
              request.resource.data.reservations.size() == currentReservationsSize() - 1;
     }
 
-    // Modification d'une réservation existante (même taille, mais contenu modifié)
+    // Modification de réservations à taille constante (marquer « lu », etc.)
     function isUpdateReservationOnly() {
       return onlyReservationsChanged() &&
              (request.resource.data.reservations is list) &&
              request.resource.data.reservations.size() == currentReservationsSize();
     }
 
-    // Vérifier si l'utilisateur peut supprimer des réservations
-    // Pour simplifier, on permet la suppression seulement si l'utilisateur est propriétaire de la session ou admin
-    // La vérification fine de propriété des réservations se fait côté client
-    function canRemoveReservation() {
-      return isAuthenticated() && isRemoveOneReservationOnly();
-    }
-
-    // Vérifier si l'utilisateur peut modifier des réservations
-    function canUpdateReservation() {
-      return isAuthenticated() && isUpdateReservationOnly();
-    }
-
-    // Règle générale de lecture publique
-    match /{document=**} {
-      allow read: if true;
-    }
-
-    // Sessions
+    // Sessions : lecture publique (le partage de lecture est ouvert à tous)
     match /sessions/{sessionId} {
       allow read: if true;
-      // Création: utilisateur connecté uniquement
-      allow create: if isAuthenticated();
+      // Création : utilisateur connecté, qui ne peut créer que SES sessions
+      allow create: if isAuthenticated() && request.resource.data.personId == request.auth.uid;
 
-      // Mise à jour: propriétaire/admin OU append d'une réservation OU suppression d'une réservation OU modification d'une réservation
-      allow update: if isSessionOwner() || isAdmin() || isAppendReservationsOnly() || canRemoveReservation() || canUpdateReservation();
+      // Mise à jour : propriétaire/admin, ou opérations bornées sur le seul
+      // champ 'reservations' (réservation, annulation, statut de lecture —
+      // ouvertes aux invités non connectés, voir plus haut)
+      allow update: if isSessionOwner() || isAdmin() || isAppendReservationsOnly() || isRemoveOneReservationOnly() || isUpdateReservationOnly();
 
-      // Suppression: propriétaire ou admin uniquement
+      // Suppression : propriétaire ou admin uniquement
       allow delete: if isSessionOwner() || isAdmin();
     }
 
@@ -84,9 +80,9 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // Préférences utilisateur (thème, etc.)
+    // Préférences utilisateur (thème, lectures quotidiennes…) : privées
     match /userPreferences/{userId} {
-      allow read: if true;
+      allow read: if isAuthenticated() && request.auth.uid == userId;
       allow create, update: if isAuthenticated()
         && request.auth.uid == userId
         && request.resource.data.size() <= 10
@@ -95,6 +91,7 @@ service cloud.firestore {
         && (!('dailyReadingProgress' in request.resource.data) || request.resource.data.dailyReadingProgress is map);
       allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
+
+    // Toute autre collection : accès refusé par défaut (pas de règle catch-all).
   }
 }
-

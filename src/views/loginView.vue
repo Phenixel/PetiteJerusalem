@@ -46,14 +46,13 @@ async function submitForm() {
 
     const currentUser = await authService.getCurrentUser();
     if (currentUser) {
-      reservationService.migrateGuestReservations(
-        currentUser.email,
-        currentUser.id,
-        currentUser.name,
-      );
+      reservationService
+        .migrateGuestReservations(currentUser.email, currentUser.id, currentUser.name)
+        .catch((error) => console.error("Migration des réservations invité échouée:", error));
     }
 
-    router.push("/");
+    const redirectPath = (router.currentRoute.value.query.redirect as string) || "/";
+    router.push(redirectPath);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : t("login.loginError");
     errorMessage.value = msg;
@@ -68,7 +67,9 @@ async function loginWithGoogle() {
 
     const user = await authService.signInWithGooglePopup();
 
-    reservationService.migrateGuestReservations(user.email, user.id, user.name);
+    reservationService
+      .migrateGuestReservations(user.email, user.id, user.name)
+      .catch((error) => console.error("Migration des réservations invité échouée:", error));
 
     router.push(redirectPath);
   } catch (e: unknown) {

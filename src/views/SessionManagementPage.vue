@@ -141,13 +141,16 @@ const createGuestReservation = async () => {
         };
       });
 
-      for (const item of itemsToReserve) {
-        if (item.section && isSectionReserved(item.textId, item.section)) continue;
+      const unreservedItems = itemsToReserve.filter(
+        (item) => item.section === undefined || !isSectionReserved(item.textId, item.section),
+      );
 
-        await reservationService.createReservation(
+      // Une seule transaction atomique : soit tout passe, soit rien
+      // (la boucle précédente pouvait laisser un état partiel en cas d'échec).
+      if (unreservedItems.length > 0) {
+        await reservationService.createBatchReservations(
           session.value.id,
-          item.textId,
-          item.section,
+          unreservedItems.map((item) => ({ textStudyId: item.textId, section: item.section })),
           undefined, // userId
           guestForm.value.email, // guestId (email as ID for guests mostly)
           undefined, // userName
