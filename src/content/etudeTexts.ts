@@ -110,9 +110,6 @@ function corpusEntries(corpus: Corpus): TextStudyJsonEntry[] {
   return list;
 }
 
-/** Reader URL of an entry (kept only for the in-session reader / legacy links). */
-export const readerPath = (entry: TextStudyJsonEntry): string => `/lire/${entry.id}`;
-
 // ---- HTML building -----------------------------------------------------------
 
 function esc(value: string): string {

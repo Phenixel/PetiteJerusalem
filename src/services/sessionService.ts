@@ -496,30 +496,6 @@ export class SessionService {
     );
   }
 
-  getSessionStats(session: Session): {
-    totalReservations: number;
-    completedReservations: number;
-    completionRate: number;
-    totalTexts: number;
-    reservedTexts: number;
-    availableTexts: number;
-  } {
-    const reservations = session.reservations || [];
-    const totalReservations = reservations.length;
-    const completedReservations = reservations.filter((r) => r.isCompleted).length;
-    const completionRate =
-      totalReservations > 0 ? (completedReservations / totalReservations) * 100 : 0;
-
-    return {
-      totalReservations,
-      completedReservations,
-      completionRate: Math.round(completionRate),
-      totalTexts: 0,
-      reservedTexts: 0,
-      availableTexts: 0,
-    };
-  }
-
   getTextReservations(session: Session, textStudyId: string): TextStudyReservation[] {
     return session.reservations?.filter((r) => r.textStudyId === textStudyId) || [];
   }

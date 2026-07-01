@@ -1,18 +1,21 @@
 import HomeView from "../views/HomeView.vue";
-import LoginView from "../views/loginView.vue";
-import ProfilePage from "../views/ProfilePage.vue";
-import SessionManagementPage from "../views/SessionManagementPage.vue";
-import ShareHomePage from "../views/ShareReading/ShareHomePage.vue";
-import NewSession from "../views/ShareReading/NewSession.vue";
-import DetailSession from "../views/ShareReading/DetailSession.vue";
-import ChiourimPage from "../views/Chiourim/ChiourimPage.vue";
-import DetailChiour from "../views/Chiourim/DetailChiour.vue";
-import AuteurChiourimPage from "../views/Chiourim/AuteurChiourimPage.vue";
 import NotFound from "../views/NotFound.vue";
-import TextReadingPage from "../views/TextReading/TextReadingPage.vue";
-import StudyPage from "../views/StudyPage.vue";
-import ContentPage from "../views/ContentPage.vue";
-import TehilimPage from "../views/TehilimPage.vue";
+
+// Toutes les autres vues sont lazy-loadées : Vite génère un chunk par vue,
+// le bundle initial ne contient que la home (et la 404, minuscule).
+const LoginView = () => import("../views/loginView.vue");
+const ProfilePage = () => import("../views/ProfilePage.vue");
+const SessionManagementPage = () => import("../views/SessionManagementPage.vue");
+const ShareHomePage = () => import("../views/ShareReading/ShareHomePage.vue");
+const NewSession = () => import("../views/ShareReading/NewSession.vue");
+const DetailSession = () => import("../views/ShareReading/DetailSession.vue");
+const ChiourimPage = () => import("../views/Chiourim/ChiourimPage.vue");
+const DetailChiour = () => import("../views/Chiourim/DetailChiour.vue");
+const AuteurChiourimPage = () => import("../views/Chiourim/AuteurChiourimPage.vue");
+const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue");
+const StudyPage = () => import("../views/StudyPage.vue");
+const ContentPage = () => import("../views/ContentPage.vue");
+const TehilimPage = () => import("../views/TehilimPage.vue");
 
 export default [
   {
@@ -29,11 +32,13 @@ export default [
     path: "/profile",
     name: "profile",
     component: ProfilePage,
+    meta: { requiresAuth: true },
   },
   {
     path: "/session-management/:id",
     name: "session-management",
     component: SessionManagementPage,
+    meta: { requiresAuth: true },
   },
   {
     path: "/share-reading",

@@ -18,4 +18,16 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Sépare les vendors du code applicatif : une modif applicative
+        // n'invalide pas le cache navigateur des gros chunks stables.
+        manualChunks: {
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          vue: ['vue', 'vue-router', 'vue-i18n'],
+        },
+      },
+    },
+  },
 })

@@ -1,7 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app'
 import { GoogleAuthProvider, getAuth, connectAuthEmulator } from 'firebase/auth'
-import { getAnalytics } from 'firebase/analytics'
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 
 // TODO: Add SDKs for Firebase products that you want to use
@@ -41,5 +40,12 @@ if (import.meta.env.DEV) {
   connectAuthEmulator(auth, 'http://localhost:8471', { disableWarnings: true })
 }
 
-// Initialize Analytics (prod only)
-export const analytics = import.meta.env.PROD ? getAnalytics(app) : null
+// Initialize Analytics (prod only). Import dynamique : le module analytics
+// ne rentre pas dans le bundle initial et ne bloque jamais le démarrage.
+if (import.meta.env.PROD) {
+  import('firebase/analytics')
+    .then(({ getAnalytics }) => getAnalytics(app))
+    .catch(() => {
+      // Analytics bloqué (adblock…) : sans impact sur l'app.
+    })
+}
