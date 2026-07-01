@@ -413,6 +413,7 @@ const fr = {
     next: "Suivant",
     phonetic: "Phonétique",
     hebrew: "Hébreu",
+    french: "Français",
     available: "Disponible",
     reserve: "Réserver ce passage",
     cancel: "Annuler la réservation",

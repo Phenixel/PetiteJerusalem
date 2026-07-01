@@ -401,6 +401,7 @@ const he: LocaleMessages = {
     next: "הבא",
     phonetic: "תעתיק",
     hebrew: "עברית",
+    french: "צרפתית",
     available: "פנוי",
     reserve: "שמור קטע זה",
     cancel: "ביטול ההזמנה",

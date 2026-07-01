@@ -124,16 +124,23 @@ function esc(value: string): string {
 
 const SHARE_NEW_SESSION = "/share-reading/new-session";
 
-/** Render lines as Hebrew + (where vocalized) French phonetic. */
-function linesHtml(lines: string[], numbered: boolean): string {
+/**
+ * Render lines as Hebrew + a second line: the French translation when available
+ * (Halakha), otherwise the French phonetic transliteration (where vocalized).
+ */
+function linesHtml(lines: string[], numbered: boolean, fr?: string[]): string {
   return lines
     .map((line, i) => {
-      const tl = hasNiqqud(line) ? transliterate(line) : "";
+      const translation = fr?.[i];
+      const secondary = translation
+        ? `\n        <span class="fr" lang="fr">${esc(translation)}</span>`
+        : hasNiqqud(line)
+          ? `\n        <span class="tl" lang="fr">${esc(transliterate(line))}</span>`
+          : "";
       const num = numbered ? `<span class="verse-num">${i + 1}</span>\n        ` : "";
-      const tlHtml = tl ? `\n        <span class="tl" lang="fr">${esc(tl)}</span>` : "";
       return (
         `<li>\n        ${num}<span class="he" lang="he" dir="rtl">${esc(line)}</span>` +
-        `${tlHtml}\n      </li>`
+        `${secondary}\n      </li>`
       );
     })
     .join("\n      ");
@@ -150,7 +157,7 @@ function sectionTextHtml(section: TextSection, numbered: boolean): string {
       )
       .join("\n      ");
   }
-  return `<ol class="reading-lines">\n      ${linesHtml(section.he, numbered)}\n      </ol>`;
+  return `<ol class="reading-lines">\n      ${linesHtml(section.he, numbered, section.fr)}\n      </ol>`;
 }
 
 /** Short SEO intro reused by the prerender AND the live reader (top of page). */

@@ -350,6 +350,16 @@ button,
   color: #cbd5e1;
 }
 
+/* Halakha: the French translation shown under each Hebrew paragraph. */
+.reading-page .fr {
+  line-height: 1.7;
+  color: var(--color-text-primary);
+}
+
+:root.dark .reading-page .fr {
+  color: #e5e7eb;
+}
+
 /* Talmud: daf sub-header above each folio's lines. */
 .reading-page .daf-label {
   margin-top: 1.25rem;

@@ -64,7 +64,9 @@ const loading = ref(false);
 const missingFile = ref(false);
 const error = ref(false);
 const content = ref<TextContent | null>(null);
-const showPhonetic = ref(false);
+// Reading representation: Hebrew, French phonetic, or French translation (Halakha).
+const readingMode = ref<"hebrew" | "phonetic" | "french">("hebrew");
+const showPhonetic = computed(() => readingMode.value === "phonetic");
 
 // --- Reading ---
 const isSingleSection = computed(() => content.value?.sections.length === 1);
@@ -85,6 +87,11 @@ const currentSection = computed<TextSection | null>(() => {
 
 const canTransliterate = computed(() => currentSection.value?.he.some((line) => hasNiqqud(line)) ?? false);
 
+// Halakha ships a French translation aligned to the Hebrew, shown as a third mode.
+const hasTranslation = computed(
+  () => (currentSection.value?.fr?.some((line) => line.length > 0)) ?? false,
+);
+
 const sectionIndexInList = computed(() => {
   if (!content.value || !currentSection.value) return -1;
   return content.value.sections.indexOf(currentSection.value);
@@ -102,6 +109,8 @@ async function loadContent() {
   content.value = null;
   try {
     content.value = await loadText(textEntry.value);
+    // Halakha reads best in French by default; other corpora start in Hebrew.
+    readingMode.value = content.value?.type === "Halakha" ? "french" : "hebrew";
   } catch (e) {
     if (e instanceof MissingTextFileError) missingFile.value = true;
     else error.value = true;
@@ -600,16 +609,16 @@ watch(textId, loadContent);
           class="mb-6 pb-5 border-b border-black/5 dark:border-white/10"
         />
 
-        <!-- Hebrew / phonetic toggle -->
-        <div v-if="canTransliterate" class="flex justify-end mb-5">
+        <!-- Hebrew / phonetic / French toggle -->
+        <div v-if="canTransliterate || hasTranslation" class="flex justify-end mb-5">
           <div
             class="inline-flex p-0.5 rounded-lg bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700"
           >
             <button
-              @click="showPhonetic = false"
+              @click="readingMode = 'hebrew'"
               class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
               :class="
-                !showPhonetic
+                readingMode === 'hebrew'
                   ? 'bg-white text-primary shadow-sm dark:bg-gray-700 dark:text-primary'
                   : 'text-text-secondary dark:text-gray-400'
               "
@@ -617,15 +626,28 @@ watch(textId, loadContent);
               {{ t("textReading.hebrew") }}
             </button>
             <button
-              @click="showPhonetic = true"
+              v-if="canTransliterate"
+              @click="readingMode = 'phonetic'"
               class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
               :class="
-                showPhonetic
+                readingMode === 'phonetic'
                   ? 'bg-white text-primary shadow-sm dark:bg-gray-700 dark:text-primary'
                   : 'text-text-secondary dark:text-gray-400'
               "
             >
               {{ t("textReading.phonetic") }}
+            </button>
+            <button
+              v-if="hasTranslation"
+              @click="readingMode = 'french'"
+              class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+              :class="
+                readingMode === 'french'
+                  ? 'bg-white text-primary shadow-sm dark:bg-gray-700 dark:text-primary'
+                  : 'text-text-secondary dark:text-gray-400'
+              "
+            >
+              {{ t("textReading.french") }}
             </button>
           </div>
         </div>
@@ -670,18 +692,25 @@ watch(textId, loadContent);
                 {{ index + 1 }}
               </span>
               <p
-                v-if="!showPhonetic"
-                dir="rtl"
-                class="flex-1 min-w-0 font-hebrew text-2xl leading-loose text-text-primary dark:text-gray-100"
+                v-if="readingMode === 'french' && currentSection.fr?.[index]"
+                dir="ltr"
+                class="flex-1 min-w-0 text-lg leading-relaxed text-text-primary dark:text-gray-100"
               >
-                {{ line }}
+                {{ currentSection.fr[index] }}
               </p>
               <p
-                v-else
+                v-else-if="readingMode === 'phonetic'"
                 dir="ltr"
                 class="flex-1 min-w-0 text-lg leading-relaxed italic text-text-secondary dark:text-gray-300"
               >
                 {{ transliterate(line) }}
+              </p>
+              <p
+                v-else
+                dir="rtl"
+                class="flex-1 min-w-0 font-hebrew text-2xl leading-loose text-text-primary dark:text-gray-100"
+              >
+                {{ line }}
               </p>
             </div>
             <div class="mt-4 border-b border-black/5 dark:border-white/5"></div>

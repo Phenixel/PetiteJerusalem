@@ -410,6 +410,7 @@ const en: LocaleMessages = {
     next: "Next",
     phonetic: "Phonetic",
     hebrew: "Hebrew",
+    french: "French",
     available: "Available",
     reserve: "Reserve this passage",
     cancel: "Cancel reservation",
