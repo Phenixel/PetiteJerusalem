@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
+import AppIcon from "./icons/AppIcon.vue";
 
 const { t } = useI18n();
 
@@ -61,7 +62,10 @@ function seek(event: MouseEvent) {
 
 function skip(seconds: number) {
   if (!audio.value) return;
-  audio.value.currentTime = Math.max(0, Math.min(duration.value, audio.value.currentTime + seconds));
+  audio.value.currentTime = Math.max(
+    0,
+    Math.min(duration.value, audio.value.currentTime + seconds),
+  );
 }
 
 function setVolume(event: MouseEvent) {
@@ -129,9 +133,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    class="bg-white/90 backdrop-blur-md rounded-2xl border border-white/60 p-6 shadow-sm dark:bg-gray-800/80 dark:border-gray-700"
-  >
+  <div class="card p-6">
     <audio
       ref="audio"
       :src="src"
@@ -144,20 +146,17 @@ onUnmounted(() => {
     ></audio>
 
     <!-- Titre si fourni -->
-    <p
-      v-if="title"
-      class="text-sm font-medium text-text-secondary mb-4 truncate dark:text-gray-400"
-    >
-      <i class="fa-solid fa-headphones mr-2 text-primary"></i>{{ title }}
+    <p v-if="title" class="text-sm font-medium text-text-secondary mb-4 truncate">
+      <AppIcon name="headphones" :size="14" class="mr-2 text-primary" />{{ title }}
     </p>
 
     <!-- Barre de progression -->
     <div
-      class="group relative h-2 bg-gray-200 rounded-full cursor-pointer mb-3 dark:bg-gray-700"
+      class="group relative h-2 bg-black/10 rounded-full cursor-pointer mb-3 dark:bg-white/10"
       @click="seek"
     >
       <div
-        class="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-secondary rounded-full transition-[width] duration-100"
+        class="absolute inset-y-0 left-0 bg-primary rounded-full transition-[width] duration-100"
         :style="{ width: `${progress}%` }"
       ></div>
       <div
@@ -167,7 +166,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Temps -->
-    <div class="flex justify-between text-xs text-text-secondary mb-4 dark:text-gray-500">
+    <div class="flex justify-between text-xs text-text-secondary mb-4">
       <span>{{ formattedCurrent }}</span>
       <span>{{ formattedDuration }}</span>
     </div>
@@ -178,21 +177,16 @@ onUnmounted(() => {
       <div class="flex items-center gap-2 w-1/4">
         <button
           @click="toggleMute"
-          class="text-text-secondary hover:text-primary transition-colors dark:text-gray-400 dark:hover:text-primary"
+          class="text-text-secondary hover:text-primary transition-colors"
           :title="isMuted ? t('audioPlayer.unmute') : t('audioPlayer.mute')"
         >
-          <i
-            :class="
-              isMuted
-                ? 'fa-solid fa-volume-xmark'
-                : volume < 0.5
-                  ? 'fa-solid fa-volume-low'
-                  : 'fa-solid fa-volume-high'
-            "
-          ></i>
+          <AppIcon
+            :name="isMuted ? 'volume-x' : volume < 0.5 ? 'volume-low' : 'volume-high'"
+            :size="16"
+          />
         </button>
         <div
-          class="hidden sm:block relative h-1.5 w-20 bg-gray-200 rounded-full cursor-pointer dark:bg-gray-700"
+          class="hidden sm:block relative h-1.5 w-20 bg-black/10 rounded-full cursor-pointer dark:bg-white/10"
           @click="setVolume"
         >
           <div
@@ -206,28 +200,32 @@ onUnmounted(() => {
       <div class="flex items-center gap-4">
         <button
           @click="skip(-15)"
-          class="text-text-secondary hover:text-primary transition-colors text-sm dark:text-gray-400 dark:hover:text-primary"
+          class="text-text-secondary hover:text-primary transition-colors text-sm"
           :title="t('audioPlayer.rewind')"
         >
-          <i class="fa-solid fa-backward"></i>
+          <AppIcon name="backward" :size="14" />
           <span class="text-[10px] ml-0.5">15</span>
         </button>
 
         <button
           @click="togglePlay"
-          class="w-12 h-12 flex items-center justify-center bg-gradient-to-r from-primary to-secondary text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+          class="w-12 h-12 flex items-center justify-center bg-primary text-white rounded-full transition-colors"
           :title="isPlaying ? t('audioPlayer.pause') : t('audioPlayer.play')"
         >
-          <i :class="isPlaying ? 'fa-solid fa-pause text-lg' : 'fa-solid fa-play text-lg ml-0.5'"></i>
+          <AppIcon
+            :name="isPlaying ? 'pause' : 'play'"
+            :size="20"
+            :class="{ 'ml-0.5': !isPlaying }"
+          />
         </button>
 
         <button
           @click="skip(30)"
-          class="text-text-secondary hover:text-primary transition-colors text-sm dark:text-gray-400 dark:hover:text-primary"
+          class="text-text-secondary hover:text-primary transition-colors text-sm"
           :title="t('audioPlayer.forward')"
         >
           <span class="text-[10px] mr-0.5">30</span>
-          <i class="fa-solid fa-forward"></i>
+          <AppIcon name="forward" :size="14" />
         </button>
       </div>
 
@@ -235,11 +233,11 @@ onUnmounted(() => {
       <div class="relative w-1/4 flex justify-end">
         <button
           @click="showSpeedMenu = !showSpeedMenu"
-          class="px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors"
+          class="px-3 py-1.5 text-xs font-bold rounded-lg transition-colors"
           :class="
             playbackRate !== 1
-              ? 'bg-primary/10 text-primary border-primary/30 dark:bg-primary/20'
-              : 'bg-gray-100 text-text-secondary border-gray-200 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-600'
+              ? 'bg-primary/10 text-primary'
+              : 'bg-black/5 text-text-secondary hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15'
           "
           :title="t('audioPlayer.speed')"
         >
@@ -249,17 +247,17 @@ onUnmounted(() => {
         <Transition name="fade">
           <div
             v-if="showSpeedMenu"
-            class="absolute bottom-full right-0 mb-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-10 dark:bg-gray-800 dark:border-gray-700"
+            class="absolute bottom-full right-0 mb-2 bg-surface rounded-lg shadow-pop overflow-hidden z-10"
           >
             <button
               v-for="speed in speeds"
               :key="speed"
               @click="setSpeed(speed)"
-              class="block w-full px-4 py-2 text-sm text-left hover:bg-gray-50 transition-colors dark:hover:bg-gray-700"
+              class="block w-full px-4 py-2 text-sm text-left hover:bg-black/5 transition-colors dark:hover:bg-white/10"
               :class="
                 speed === playbackRate
                   ? 'text-primary font-bold bg-primary/5 dark:bg-primary/10'
-                  : 'text-text-secondary dark:text-gray-400'
+                  : 'text-text-secondary'
               "
             >
               {{ speed }}x

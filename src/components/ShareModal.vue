@@ -2,6 +2,7 @@
 import { nextTick, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useToast } from "../composables/useToast";
+import AppIcon from "./icons/AppIcon.vue";
 
 const { t } = useI18n();
 const toast = useToast();
@@ -90,7 +91,8 @@ const generateQRCode = async () => {
  * chelema de …"), so we interpolate it into the message.
  */
 const buildShareMessage = () => {
-  const key = props.sessionType === "Tehilim" ? "shareModal.inviteTehilim" : "shareModal.inviteStudy";
+  const key =
+    props.sessionType === "Tehilim" ? "shareModal.inviteTehilim" : "shareModal.inviteStudy";
   return `${t(key, { name: props.sessionName })}\n\n${props.shareUrl}`;
 };
 
@@ -139,78 +141,62 @@ watch(
 </script>
 
 <template>
-  <div
-    v-if="show"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-[fadeIn_0.3s_ease] cursor-pointer"
-    @click="closeModal"
-  >
-    <div
-      class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-[scaleIn_0.3s_ease] border border-gray-100 dark:bg-gray-800 dark:border-gray-700"
-      @click.stop
-    >
-      <div
-        class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700"
-      >
-        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">
+  <div v-if="show" class="modal-overlay animate-[fadeIn_0.3s_ease]" @click="closeModal">
+    <div class="modal-panel animate-[scaleIn_0.3s_ease]" @click.stop>
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="text-lg font-bold text-text-primary">
           {{ t("shareModal.title") }}
         </h3>
-        <button
-          @click="closeModal"
-          class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600"
-        >
-          ✕
+        <button @click="closeModal" class="icon-btn" :aria-label="t('common.close')">
+          <AppIcon name="x" :size="18" />
         </button>
       </div>
 
-      <div class="p-6">
-        <div class="grid grid-cols-2 gap-4 mb-8">
-          <button
-            @click="shareToWhatsApp"
-            class="flex flex-col items-center justify-center p-4 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition-colors gap-2 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 cursor-pointer"
-          >
-            <i class="fa-brands fa-whatsapp text-3xl"></i>
-            <span class="font-medium">WhatsApp</span>
-          </button>
+      <div class="grid grid-cols-2 gap-4 mb-8">
+        <button
+          @click="shareToWhatsApp"
+          class="flex flex-col items-center justify-center p-4 rounded-lg bg-green-600/10 text-green-700 hover:bg-green-600/15 transition-colors gap-2 dark:text-green-300"
+        >
+          <AppIcon name="whatsapp" :size="28" />
+          <span class="font-medium">WhatsApp</span>
+        </button>
 
-          <button
-            @click="shareToSMS"
-            class="flex flex-col items-center justify-center p-4 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors gap-2 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 cursor-pointer"
-          >
-            <i class="fa-solid fa-comment-sms text-3xl"></i>
-            <span class="font-medium">SMS</span>
-          </button>
+        <button
+          @click="shareToSMS"
+          class="flex flex-col items-center justify-center p-4 rounded-lg bg-blue-600/10 text-blue-700 hover:bg-blue-600/15 transition-colors gap-2 dark:text-blue-300"
+        >
+          <AppIcon name="message" :size="28" />
+          <span class="font-medium">SMS</span>
+        </button>
 
-          <button
-            @click="shareToFacebook"
-            class="flex flex-col items-center justify-center p-4 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors gap-2 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 cursor-pointer"
-          >
-            <i class="fa-brands fa-facebook-f text-3xl"></i>
-            <span class="font-medium">Facebook</span>
-          </button>
+        <button
+          @click="shareToFacebook"
+          class="flex flex-col items-center justify-center p-4 rounded-lg bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/15 transition-colors gap-2 dark:text-indigo-300"
+        >
+          <AppIcon name="facebook" :size="28" />
+          <span class="font-medium">Facebook</span>
+        </button>
 
-          <button
-            @click="copyToClipboard"
-            class="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors gap-2 dark:bg-gray-700/50 dark:text-gray-300 dark:hover:bg-gray-700 cursor-pointer"
-          >
-            <i class="fa-regular fa-copy text-3xl"></i>
-            <span class="font-medium">{{ t("shareModal.copyLink") }}</span>
-          </button>
-        </div>
+        <button
+          @click="copyToClipboard"
+          class="flex flex-col items-center justify-center p-4 rounded-lg bg-black/5 text-text-primary hover:bg-black/10 transition-colors gap-2 dark:bg-white/10 dark:hover:bg-white/15"
+        >
+          <AppIcon name="copy" :size="28" />
+          <span class="font-medium">{{ t("shareModal.copyLink") }}</span>
+        </button>
+      </div>
 
-        <div class="text-center pt-6 border-t border-gray-100 dark:border-gray-700">
-          <h4
-            class="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wider dark:text-gray-400"
-          >
-            {{ t("shareModal.scanQR") }}
-          </h4>
-          <div
-            id="qr-code"
-            class="flex justify-center mb-2 p-2 bg-white rounded-lg inline-block"
-          ></div>
-          <p class="text-sm text-gray-400 dark:text-gray-500">
-            {{ t("shareModal.scanQRDesc") }}
-          </p>
-        </div>
+      <div class="text-center">
+        <h4 class="text-sm font-semibold text-text-secondary mb-4">
+          {{ t("shareModal.scanQR") }}
+        </h4>
+        <div
+          id="qr-code"
+          class="flex justify-center mb-2 p-2 bg-white rounded-lg inline-block"
+        ></div>
+        <p class="text-sm text-text-secondary">
+          {{ t("shareModal.scanQRDesc") }}
+        </p>
       </div>
     </div>
   </div>

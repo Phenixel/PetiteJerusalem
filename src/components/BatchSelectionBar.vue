@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import AppIcon from "./icons/AppIcon.vue";
 
 const { t } = useI18n();
 
@@ -17,35 +18,29 @@ defineEmits<{
 </script>
 
 <template>
-  <div
-    v-if="count > 0"
-    class="fixed bottom-0 left-0 right-0 p-4 z-50 animate-[slideUp_0.3s_ease-out]"
-  >
+  <div v-if="count > 0" class="fixed bottom-0 left-0 right-0 p-4 z-50 animate-[fadeIn_0.3s_ease]">
     <div
-      class="max-w-2xl mx-auto bg-white/95 backdrop-blur-xl border border-primary/20 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] rounded-2xl p-4 flex items-center justify-between gap-4 dark:bg-gray-800/95 dark:border-primary/30"
+      class="max-w-2xl mx-auto bg-surface shadow-pop rounded-lg p-4 flex items-center justify-between gap-4"
     >
       <div class="flex items-center gap-3">
         <div
-          class="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light"
+          class="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary"
         >
-          <i class="fa-solid fa-check-double text-lg"></i>
+          <AppIcon name="check-double" :size="18" />
         </div>
         <div>
-          <p class="font-bold text-text-primary dark:text-gray-100">
+          <p class="font-bold text-text-primary">
             {{ t("batchSelection.textsSelected", { count }) }}
           </p>
-          <p v-if="label" class="text-xs text-text-secondary dark:text-gray-400">
+          <p v-if="label" class="text-xs text-text-secondary">
             {{ label }}
           </p>
         </div>
       </div>
 
-      <button
-        @click="$emit('confirm')"
-        :disabled="loading"
-        class="px-6 py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl shadow-lg shadow-primary/30 transform hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2"
-      >
-        <i class="fa-solid" :class="loading ? 'fa-circle-notch fa-spin' : 'fa-check'"></i>
+      <button @click="$emit('confirm')" :disabled="loading" class="btn btn-primary">
+        <AppIcon v-if="loading" name="spinner" :size="15" class="animate-spin" />
+        <AppIcon v-else name="check" :size="15" />
         {{ loading ? buttonLoadingText || t("common.loading") : buttonText || t("common.confirm") }}
       </button>
     </div>

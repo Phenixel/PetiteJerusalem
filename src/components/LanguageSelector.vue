@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { useLocale } from "../composables/useLocale";
 import { useI18n } from "vue-i18n";
+import AppIcon from "./icons/AppIcon.vue";
 
 defineProps<{
   variant?: "default" | "compact";
@@ -44,27 +45,26 @@ function handleKeydown(event: KeyboardEvent) {
   >
     <button
       @click="toggleDropdown"
-      class="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 border border-black/10 hover:bg-black/10 transition-all duration-200 cursor-pointer dark:bg-white/10 dark:border-white/20 dark:hover:bg-white/15"
+      class="flex items-center gap-2 px-3 py-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors cursor-pointer dark:bg-white/10 dark:hover:bg-white/15"
       :aria-expanded="isOpen"
       :aria-label="t('common.language')"
     >
       <span class="text-lg">{{ currentLocaleOption.flag }}</span>
-      <span
-        v-if="variant !== 'compact'"
-        class="text-sm font-medium text-gray-700 dark:text-white/90"
-      >
+      <span v-if="variant !== 'compact'" class="text-sm font-medium text-text-primary">
         {{ currentLocaleOption.label }}
       </span>
-      <i
-        class="fa-solid fa-chevron-down text-xs text-gray-500 dark:text-white/70 transition-transform duration-200"
+      <AppIcon
+        name="chevron-down"
+        :size="12"
+        class="text-text-secondary transition-transform duration-200"
         :class="{ 'rotate-180': isOpen }"
-      ></i>
+      />
     </button>
 
     <Transition :name="dropup ? 'dropup' : 'dropdown'">
       <div
         v-if="isOpen"
-        class="absolute min-w-[140px] bg-white/95 backdrop-blur-xl rounded-xl border border-black/10 shadow-lg overflow-hidden z-50 dark:bg-gray-800/95 dark:border-white/10"
+        class="absolute min-w-[140px] bg-surface rounded-lg shadow-pop overflow-hidden z-50"
         :class="[
           dropup ? 'bottom-full mb-2' : 'top-full mt-2',
           { 'right-0': true, 'left-0 right-auto': $attrs.class?.toString().includes('rtl') },
@@ -80,13 +80,15 @@ function handleKeydown(event: KeyboardEvent) {
           }"
         >
           <span class="text-lg">{{ locale.flag }}</span>
-          <span class="text-sm font-medium text-gray-700 dark:text-white/90">
+          <span class="text-sm font-medium text-text-primary">
             {{ locale.label }}
           </span>
-          <i
+          <AppIcon
             v-if="locale.code === currentLocaleOption.code"
-            class="fa-solid fa-check text-xs text-primary ml-auto"
-          ></i>
+            name="check"
+            :size="12"
+            class="text-primary ml-auto"
+          />
         </button>
       </div>
     </Transition>

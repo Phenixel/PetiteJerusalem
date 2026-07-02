@@ -33,20 +33,20 @@ const stats = computed(() => {
           >{{ t("progressBar.participants") }}</span
         >
       </div>
-      <div class="flex items-center gap-1 text-text-secondary dark:text-gray-400">
+      <div class="flex items-center gap-1 text-text-secondary">
         <span class="text-sm">{{ t("progressBar.total") }}</span>
-        <span class="text-xl font-bold text-text-primary dark:text-gray-200">{{ total }}</span>
+        <span class="text-xl font-bold text-text-primary">{{ total }}</span>
       </div>
     </div>
 
-    <div class="relative h-3 bg-gray-600/30 rounded-full overflow-hidden mb-3">
+    <div class="relative h-3 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden mb-3">
       <div
-        class="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-1000 ease-out rounded-full"
+        class="absolute top-0 left-0 h-full bg-primary transition-all duration-1000 ease-out rounded-full"
         :style="{ width: `${stats.reservedPercentage}%` }"
       ></div>
 
       <div
-        class="absolute top-0 left-0 h-full bg-green-500 transition-all duration-1000 ease-out rounded-full shadow-[0_0_10px_rgba(34,197,94,0.4)]"
+        class="absolute top-0 left-0 h-full bg-green-500 transition-all duration-1000 ease-out rounded-full"
         :style="{ width: `${stats.readPercentage}%` }"
       ></div>
     </div>
@@ -56,12 +56,12 @@ const stats = computed(() => {
         <div class="w-2 h-2 rounded-full bg-green-500"></div>
         <span>{{ read }} {{ t("progressBar.read") }}</span>
       </div>
-      <div class="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-        <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+      <div class="flex items-center gap-1.5 text-primary">
+        <div class="w-2 h-2 rounded-full bg-primary"></div>
         <span>{{ reserved }} {{ t("progressBar.reserved") }}</span>
       </div>
-      <div class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
-        <div class="w-2 h-2 rounded-full bg-gray-400"></div>
+      <div class="flex items-center gap-1.5 text-text-secondary">
+        <div class="w-2 h-2 rounded-full bg-text-secondary/60"></div>
         <span>{{ stats.remaining }} {{ t("progressBar.remaining") }}</span>
       </div>
     </div>

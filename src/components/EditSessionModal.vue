@@ -3,6 +3,7 @@ import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Session } from "../models/models";
 import { useToast } from "../composables/useToast";
+import AppIcon from "./icons/AppIcon.vue";
 
 const { t } = useI18n();
 const toast = useToast();
@@ -94,89 +95,59 @@ watch(
 </script>
 
 <template>
-  <div
-    v-if="show"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-[fadeIn_0.3s_ease]"
-    @click="closeModal"
-  >
-    <div
-      class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-[scaleIn_0.3s_ease] border border-gray-100 dark:bg-gray-800 dark:border-gray-700"
-      @click.stop
-    >
-      <div
-        class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700"
-      >
-        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">
+  <div v-if="show" class="modal-overlay animate-[fadeIn_0.3s_ease]" @click="closeModal">
+    <div class="modal-panel !max-w-lg animate-[scaleIn_0.3s_ease]" @click.stop>
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="text-lg font-bold text-text-primary">
           {{ t("editModal.title") }}
         </h3>
-        <button
-          @click="closeModal"
-          class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600"
-        >
-          ✕
+        <button @click="closeModal" class="icon-btn" :aria-label="t('common.close')">
+          <AppIcon name="x" :size="18" />
         </button>
       </div>
 
-      <div class="p-6">
-        <form @submit.prevent="saveSession" class="space-y-4">
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300"
-              >{{ t("editModal.sessionName") }} *</label
-            >
-            <input
-              v-model="editForm.name"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
-              type="text"
-              required
-              :placeholder="t('editModal.sessionNamePlaceholder')"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300">{{
-              t("common.description")
-            }}</label>
-            <textarea
-              v-model="editForm.description"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-y dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
-              :placeholder="t('editModal.descriptionPlaceholder')"
-              rows="3"
-            ></textarea>
-          </div>
-
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300"
-              >{{ t("common.dateLimit") }} *</label
-            >
-            <input
-              v-model="editForm.dateLimit"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
-              type="datetime-local"
-              required
-            />
-          </div>
-
-          <div
-            class="flex gap-3 justify-end pt-4 mt-4 border-t border-gray-100 dark:border-gray-700"
+      <form @submit.prevent="saveSession" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-text-primary mb-2"
+            >{{ t("editModal.sessionName") }} *</label
           >
-            <button
-              type="button"
-              @click="closeModal"
-              class="px-5 py-2.5 rounded-lg border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-              :disabled="isLoading"
-            >
-              {{ t("common.cancel") }}
-            </button>
-            <button
-              type="submit"
-              class="px-5 py-2.5 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-bold hover:shadow-md hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-              :disabled="isLoading"
-            >
-              {{ isLoading ? t("common.saving") : t("common.save") }}
-            </button>
-          </div>
-        </form>
-      </div>
+          <input
+            v-model="editForm.name"
+            class="field"
+            type="text"
+            required
+            :placeholder="t('editModal.sessionNamePlaceholder')"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-text-primary mb-2">{{
+            t("common.description")
+          }}</label>
+          <textarea
+            v-model="editForm.description"
+            class="field resize-y"
+            :placeholder="t('editModal.descriptionPlaceholder')"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-text-primary mb-2"
+            >{{ t("common.dateLimit") }} *</label
+          >
+          <input v-model="editForm.dateLimit" class="field" type="datetime-local" required />
+        </div>
+
+        <div class="flex gap-3 justify-end pt-2">
+          <button type="button" @click="closeModal" class="btn btn-soft" :disabled="isLoading">
+            {{ t("common.cancel") }}
+          </button>
+          <button type="submit" class="btn btn-primary" :disabled="isLoading">
+            {{ isLoading ? t("common.saving") : t("common.save") }}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </template>
