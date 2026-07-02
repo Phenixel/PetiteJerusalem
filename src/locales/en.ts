@@ -12,6 +12,7 @@ const en: LocaleMessages = {
     retry: "Retry",
     cancel: "Cancel",
     confirm: "Confirm",
+    close: "Close",
     save: "Save",
     saving: "Saving...",
     deleting: "Deleting...",
@@ -33,6 +34,10 @@ const en: LocaleMessages = {
     ongoing: "Ongoing",
     finished: "Finished",
     read: "Read",
+  },
+  errors: {
+    permissionDenied: "You don't have permission to perform this action.",
+    unavailable: "Service temporarily unavailable. Check your connection and try again.",
   },
   navbar: {
     title: "Petite Jérusalem",
@@ -248,6 +253,7 @@ const en: LocaleMessages = {
     cancelError: "Error cancelling. Please try again.",
     reservationError: "Error reserving. Please try again.",
     updateError: "Error updating reservation",
+    reservationsConfirmed: "Reservation confirmed! | Reservations confirmed!",
     manageSession: "Manage session",
     createYourOwnTitle: "Your turn to study together",
     createYourOwnText:
@@ -259,6 +265,13 @@ const en: LocaleMessages = {
       step2: "You can uncheck your own reservations to cancel them",
       step3: "Click on the text card to see available sections",
     },
+  },
+  sessionManagement: {
+    reservationCreatedSuccess: "Reservation saved | Reservations saved",
+    reservationCreateError: "Error creating the reservation",
+    reservationUpdateError: "Error updating the reservation",
+    reservationDeleteError: "Error deleting the reservation",
+    deleteReservationConfirm: "Are you sure you want to delete this reservation?",
   },
   shareModal: {
     title: "Share this session",
@@ -395,6 +408,7 @@ const en: LocaleMessages = {
     reservedBy: "Reserved by {name}.",
     readBy: "Read by {name}.",
     someone: "someone",
+    reserveSuccess: "Passage reserved!",
     reserveError: "The reservation failed.",
     cancelError: "The cancellation failed.",
     updateError: "The update failed.",

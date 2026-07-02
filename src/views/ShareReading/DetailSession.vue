@@ -14,10 +14,12 @@ import { seoService } from "../../services/seoService";
 import SessionHeader from "./detailSession/SessionHeader.vue";
 import SessionInstructions from "./detailSession/SessionInstructions.vue";
 import TextStudiesList from "./detailSession/TextStudiesList.vue";
+import { useToast } from "../../composables/useToast";
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const toast = useToast();
 
 const session = ref<Session | null>(null);
 const textStudies = ref<TextStudy[]>([]);
@@ -216,7 +218,7 @@ const confirmReservations = async () => {
   if (!session.value || selectedItems.value.size === 0) return;
 
   if (!currentUser.value && (!reservationForm.value.name || !reservationForm.value.email)) {
-    alert(t("detailSession.fillNameAndEmail"));
+    toast.info(t("detailSession.fillNameAndEmail"));
     const formElement = document.getElementById("guest-form");
     if (formElement) {
       const offset = 120;
@@ -268,11 +270,17 @@ const confirmReservations = async () => {
     selectedItems.value.clear();
 
     if (!currentUser.value) {
+      // Les invités voient la modale d'inscription, qui confirme déjà la réservation.
       showSignupPrompt.value = true;
+    } else {
+      toast.success(t("detailSession.reservationsConfirmed", newReservations.length));
     }
   } catch (err) {
     console.error("Erreur lors de la confirmation globale:", err);
-    alert(err instanceof Error ? err.message : t("detailSession.reservationError"));
+    toast.errorFromException(
+      err,
+      err instanceof Error && err.message ? err.message : t("detailSession.reservationError"),
+    );
   } finally {
     isSubmittingBatch.value = false;
   }
@@ -294,7 +302,7 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
       );
 
       if (!canDelete) {
-        alert(t("detailSession.canOnlyCancelOwn"));
+        toast.error(t("detailSession.canOnlyCancelOwn"));
         return;
       }
 
@@ -311,7 +319,7 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
     }
   } catch (err) {
     console.error("Erreur lors de l'annulation:", err);
-    alert(t("detailSession.cancelError"));
+    toast.errorFromException(err, t("detailSession.cancelError"));
   }
 };
 
@@ -335,7 +343,7 @@ const toggleReservationCompletion = async (textStudyId: string, section: number)
     reservation.isCompleted = newCompletionStatus;
   } catch (error) {
     console.error("Erreur lors de la mise à jour de la réservation:", error);
-    alert(t("detailSession.updateError"));
+    toast.errorFromException(error, t("detailSession.updateError"));
   }
 };
 

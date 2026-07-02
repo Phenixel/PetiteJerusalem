@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { useToast } from "../composables/useToast";
 import { sessionService } from "../services/sessionService";
 import { reservationService, type ReservationForm } from "../services/reservationService";
 import { authService } from "../services/authService";
@@ -12,6 +14,8 @@ import { seoService } from "../services/seoService";
 import BatchSelectionBar from "../components/BatchSelectionBar.vue";
 
 const router = useRouter();
+const { t } = useI18n();
+const toast = useToast();
 
 const isLoading = ref(true);
 const currentUser = ref<User | null>(null);
@@ -130,6 +134,7 @@ const createGuestReservation = async () => {
 
   try {
     isLoading.value = true;
+    let createdCount = 0;
 
     if (selectedItems.value.size > 0) {
       isSubmittingBatch.value = true;
@@ -156,6 +161,7 @@ const createGuestReservation = async () => {
           undefined, // userName
           guestForm.value.name, // guestName
         );
+        createdCount++;
       }
 
       selectedItems.value.clear();
@@ -169,13 +175,17 @@ const createGuestReservation = async () => {
         undefined, // userName
         guestForm.value.name, // guestName
       );
+      createdCount++;
     }
 
     await reloadSession();
     showGuestForm.value = false;
+    if (createdCount > 0) {
+      toast.success(t("sessionManagement.reservationCreatedSuccess", createdCount));
+    }
   } catch (error) {
     console.error("Erreur lors de la création de la réservation:", error);
-    alert("Erreur lors de la création de la réservation");
+    toast.errorFromException(error, t("sessionManagement.reservationCreateError"));
   } finally {
     isLoading.value = false;
     isSubmittingBatch.value = false;
@@ -210,12 +220,12 @@ const toggleReservationCompletion = async (reservationId: string, isCompleted: b
     await reloadSession();
   } catch (error) {
     console.error("Erreur lors de la mise à jour:", error);
-    alert("Erreur lors de la mise à jour");
+    toast.errorFromException(error, t("sessionManagement.reservationUpdateError"));
   }
 };
 
 const deleteReservation = async (reservationId: string) => {
-  if (!confirm("Êtes-vous sûr de vouloir supprimer cette réservation ?")) {
+  if (!confirm(t("sessionManagement.deleteReservationConfirm"))) {
     return;
   }
 
@@ -226,7 +236,7 @@ const deleteReservation = async (reservationId: string) => {
     await reloadSession();
   } catch (error) {
     console.error("Erreur lors de la suppression:", error);
-    alert("Erreur lors de la suppression");
+    toast.errorFromException(error, t("sessionManagement.reservationDeleteError"));
   }
 };
 

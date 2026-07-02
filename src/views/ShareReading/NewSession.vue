@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, watch, computed } from "vue";
+import { ref, reactive, onMounted, watch, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { EnumTypeTextStudy } from "../../models/typeTextStudy";
@@ -9,17 +9,16 @@ import { authService } from "../../services/authService";
 import type { User } from "../../services/authService";
 import { seoService } from "../../services/seoService";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
+import { useToast } from "../../composables/useToast";
 
 const router = useRouter();
 const { t } = useI18n();
+const toast = useToast();
 
 const isLoading = ref(false);
 const message = ref("");
 const messageType = ref<"success" | "error">("success");
 const currentUser = ref<User | null>(null);
-// Timer de redirection post-création, annulé si l'utilisateur quitte la page avant.
-let redirectTimer: ReturnType<typeof setTimeout> | undefined;
-onUnmounted(() => clearTimeout(redirectTimer));
 // Visitors who aren't signed in get the sign-in prompt (like the share home
 // page) instead of being redirected away.
 const showAuthPrompt = ref(false);
@@ -126,12 +125,10 @@ const createSession = async () => {
       selectedBooks.value.length > 0 ? selectedBooks.value : undefined,
     );
 
-    message.value = t("newSession.createdSuccess");
-    messageType.value = "success";
-
-    redirectTimer = setTimeout(() => {
-      router.push(`/share-reading/session/${sessionId}`);
-    }, 2000);
+    // Le toast est monté au niveau de l'app : il survit à la redirection et
+    // reste visible sur la page de la session nouvellement créée.
+    toast.success(t("newSession.createdSuccess"));
+    router.push(`/share-reading/session/${sessionId}`);
   } catch (error) {
     console.error("Erreur lors de la création de la session:", error);
     message.value = t("newSession.createError");

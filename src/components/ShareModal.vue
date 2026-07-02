@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { nextTick, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { useToast } from "../composables/useToast";
 
 const { t } = useI18n();
+const toast = useToast();
 
 interface Props {
   show: boolean;
@@ -110,7 +112,7 @@ const shareToFacebook = () => {
 const copyToClipboard = async () => {
   try {
     await navigator.clipboard.writeText(props.shareUrl);
-    alert(t("shareModal.linkCopied"));
+    toast.success(t("shareModal.linkCopied"));
   } catch (err) {
     console.error("Erreur lors de la copie:", err);
     // Fallback pour les navigateurs plus anciens
@@ -120,7 +122,7 @@ const copyToClipboard = async () => {
     textArea.select();
     document.execCommand("copy");
     document.body.removeChild(textArea);
-    alert(t("shareModal.linkCopied"));
+    toast.success(t("shareModal.linkCopied"));
   }
 };
 

@@ -12,6 +12,7 @@ const he: LocaleMessages = {
     retry: "נסה שוב",
     cancel: "ביטול",
     confirm: "אישור",
+    close: "סגירה",
     save: "שמור",
     saving: "שומר...",
     deleting: "מוחק...",
@@ -33,6 +34,10 @@ const he: LocaleMessages = {
     ongoing: "בתהליך",
     finished: "הסתיים",
     read: "נקרא",
+  },
+  errors: {
+    permissionDenied: "אין לך הרשאה לבצע פעולה זו.",
+    unavailable: "השירות אינו זמין כרגע. בדקו את החיבור ונסו שוב.",
   },
   navbar: {
     title: "פטיט ירושלים",
@@ -245,6 +250,7 @@ const he: LocaleMessages = {
     cancelError: "שגיאה בביטול. אנא נסה שוב.",
     reservationError: "שגיאה בהזמנה. אנא נסה שוב.",
     updateError: "שגיאה בעדכון ההזמנה",
+    reservationsConfirmed: "ההזמנה אושרה! | ההזמנות אושרו!",
     manageSession: "נהל סשן",
     createYourOwnTitle: "תורכם ללמוד יחד",
     createYourOwnText:
@@ -256,6 +262,13 @@ const he: LocaleMessages = {
       step2: "אתה יכול לבטל סימון של ההזמנות שלך כדי לבטל אותן",
       step3: "לחץ על כרטיס הטקסט כדי לראות קטעים זמינים",
     },
+  },
+  sessionManagement: {
+    reservationCreatedSuccess: "ההזמנה נשמרה | ההזמנות נשמרו",
+    reservationCreateError: "שגיאה ביצירת ההזמנה",
+    reservationUpdateError: "שגיאה בעדכון ההזמנה",
+    reservationDeleteError: "שגיאה במחיקת ההזמנה",
+    deleteReservationConfirm: "האם אתם בטוחים שברצונכם למחוק את ההזמנה הזו?",
   },
   shareModal: {
     title: "שתף סשן זה",
@@ -386,6 +399,7 @@ const he: LocaleMessages = {
     reservedBy: "נשמר על ידי {name}.",
     readBy: "נקרא על ידי {name}.",
     someone: "מישהו",
+    reserveSuccess: "הקטע נשמר!",
     reserveError: "ההזמנה נכשלה.",
     cancelError: "הביטול נכשל.",
     updateError: "העדכון נכשל.",

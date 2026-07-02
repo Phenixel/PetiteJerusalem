@@ -2,8 +2,10 @@
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Session } from "../models/models";
+import { useToast } from "../composables/useToast";
 
 const { t } = useI18n();
+const toast = useToast();
 
 interface Props {
   show: boolean;
@@ -32,12 +34,12 @@ const closeModal = () => {
 
 const saveSession = async () => {
   if (!editForm.value.name.trim()) {
-    alert(t("editModal.sessionNameRequired"));
+    toast.error(t("editModal.sessionNameRequired"));
     return;
   }
 
   if (!editForm.value.dateLimit) {
-    alert(t("editModal.dateLimitRequired"));
+    toast.error(t("editModal.dateLimitRequired"));
     return;
   }
 
@@ -51,7 +53,7 @@ const saveSession = async () => {
     closeModal();
   } catch (error) {
     console.error("Erreur lors de la sauvegarde:", error);
-    alert(t("editModal.saveError"));
+    toast.errorFromException(error, t("editModal.saveError"));
   } finally {
     isLoading.value = false;
   }

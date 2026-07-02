@@ -29,10 +29,12 @@ import {
 } from "../../content/etudeTexts";
 import GuestForm from "../../components/GuestForm.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
+import { useToast } from "../../composables/useToast";
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const toast = useToast();
 
 // This view serves two URL shapes with the SAME UI: the in-session reader
 // (/lire/:textId, numeric id) and the public, indexable reading pages
@@ -217,7 +219,7 @@ const isMine = computed(() => {
 async function reserve() {
   if (!session.value || reservationUnit.value === undefined) return;
   if (!currentUser.value && (!reservationForm.value.name || !reservationForm.value.email)) {
-    alert(t("textReading.guestIntro"));
+    toast.info(t("textReading.guestIntro"));
     return;
   }
   isReserving.value = true;
@@ -237,8 +239,12 @@ async function reserve() {
       reservationForm.value,
     );
     session.value.reservations = [...session.value.reservations, local];
+    toast.success(t("textReading.reserveSuccess"));
   } catch (e) {
-    alert(e instanceof Error ? e.message : t("textReading.reserveError"));
+    toast.errorFromException(
+      e,
+      e instanceof Error && e.message ? e.message : t("textReading.reserveError"),
+    );
   } finally {
     isReserving.value = false;
   }
@@ -252,8 +258,8 @@ async function cancelReservation() {
   try {
     await sessionService.deleteReservation(session.value.id, r.id);
     session.value.reservations = session.value.reservations.filter((x) => x.id !== r.id);
-  } catch {
-    alert(t("textReading.cancelError"));
+  } catch (e) {
+    toast.errorFromException(e, t("textReading.cancelError"));
   } finally {
     isReserving.value = false;
   }
@@ -268,8 +274,8 @@ async function toggleRead() {
     await sessionService.markReservationAsCompleted(session.value.id, r.id, next);
     r.isCompleted = next;
     session.value.reservations = [...session.value.reservations];
-  } catch {
-    alert(t("textReading.updateError"));
+  } catch (e) {
+    toast.errorFromException(e, t("textReading.updateError"));
   } finally {
     isReserving.value = false;
   }

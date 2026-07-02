@@ -9,6 +9,7 @@ import {
   deleteDoc,
   query,
   where,
+  FirestoreError,
   type DocumentData,
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
@@ -18,6 +19,20 @@ import type { Session } from "../models/models";
 // Durée de vie du cache de la liste des sessions. Court : les réservations
 // des autres participants doivent apparaître rapidement.
 const SESSIONS_CACHE_TTL_MS = 60_000;
+
+/**
+ * Erreur levée par FirestoreService : conserve le code Firestore d'origine
+ * ("permission-denied", "unavailable"…) pour que l'UI adapte son message.
+ */
+export class FirestoreOperationError extends Error {
+  readonly code: string | null;
+
+  constructor(message: string, code: string | null) {
+    super(message);
+    this.name = "FirestoreOperationError";
+    this.code = code;
+  }
+}
 
 export class FirestoreService {
   private sessionsCache: { data: Session[]; fetchedAt: number } | null = null;
@@ -40,7 +55,8 @@ export class FirestoreService {
 
   private handleFirestoreError(error: unknown, operation: string): never {
     console.error(`Erreur Firestore lors de ${operation}:`, error);
-    throw new Error(`Erreur lors de ${operation}. Veuillez réessayer.`);
+    const code = error instanceof FirestoreError ? error.code : null;
+    throw new FirestoreOperationError(`Erreur lors de ${operation}. Veuillez réessayer.`, code);
   }
 
   /** À appeler après toute écriture qui modifie une session ou ses réservations. */

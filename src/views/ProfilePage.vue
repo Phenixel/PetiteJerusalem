@@ -16,9 +16,11 @@ import UserInfoForm from "./profilePage/UserInfoForm.vue";
 import SecuritySettings from "./profilePage/SecuritySettings.vue";
 import ThemeSelector from "./profilePage/ThemeSelector.vue";
 import DailyReading from "./profilePage/DailyReading.vue";
+import { useToast } from "../composables/useToast";
 
 const router = useRouter();
 const { t } = useI18n();
+const toast = useToast();
 
 const currentUser = ref<User | null>(null);
 const activeTab = ref<
@@ -152,10 +154,10 @@ const saveSessionChanges = async (sessionData: {
       };
     }
 
-    alert(t("profile.sessionUpdatedSuccess"));
+    toast.success(t("profile.sessionUpdatedSuccess"));
   } catch (error) {
     console.error("Erreur lors de la mise à jour:", error);
-    alert(t("profile.sessionUpdateError"));
+    toast.errorFromException(error, t("profile.sessionUpdateError"));
   }
 };
 
@@ -177,10 +179,10 @@ const endSession = async (session: Session) => {
       };
     }
 
-    alert(t("profile.sessionEndedSuccess"));
+    toast.success(t("profile.sessionEndedSuccess"));
   } catch (error) {
     console.error("Erreur lors de la fin de session:", error);
-    alert(t("profile.sessionEndError"));
+    toast.errorFromException(error, t("profile.sessionEndError"));
   }
 };
 
