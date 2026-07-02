@@ -7,6 +7,7 @@ import { appendHebrewNumeral, formatNumberWithHebrew } from "../../services/hebr
 import type { Session, TextStudy } from "../../models/models";
 import type { User } from "../../services/authService";
 import { useToast } from "../../composables/useToast";
+import AppIcon from "../../components/icons/AppIcon.vue";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -77,119 +78,100 @@ const goToSession = (slugOrId: string) => {
 <template>
   <div class="animate-[fadeIn_0.3s_ease]">
     <div class="flex items-center justify-between mb-8">
-      <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">
+      <h2 class="text-2xl font-bold text-text-primary">
         {{ t("profile.participatedSessions") }}
       </h2>
     </div>
 
     <div
       v-if="sessions.length === 0"
-      class="flex flex-col items-center justify-center p-12 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 text-center dark:bg-gray-800/40 dark:border-gray-700"
+      class="flex flex-col items-center justify-center py-16 text-center"
     >
-      <div
-        class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400 text-2xl dark:bg-gray-700 dark:text-gray-500"
-      >
-        <i class="fa-solid fa-calendar-xmark"></i>
-      </div>
-      <h3 class="text-xl font-semibold text-text-primary mb-2 dark:text-gray-200">
+      <AppIcon name="calendar-x" :size="32" class="text-text-secondary/40 mb-4" />
+      <h3 class="text-xl font-semibold text-text-primary mb-2">
         {{ t("profile.noParticipatedSessions") }}
       </h3>
-      <p class="text-text-secondary dark:text-gray-400">
+      <p class="text-text-secondary">
         {{ t("profile.noParticipatedSessionsDesc") }}
       </p>
     </div>
 
     <div v-else>
       <div v-if="ongoingParticipatedSessions.length > 0" class="mb-12">
-        <h3
-          class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2 dark:text-gray-200"
-        >
-          <i class="fa-solid fa-hourglass-half text-primary"></i> {{ t("common.ongoing") }}
+        <h3 class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+          <AppIcon name="hourglass" :size="15" class="text-primary" /> {{ t("common.ongoing") }}
         </h3>
 
         <div class="grid gap-6">
-          <div
-            v-for="session in ongoingParticipatedSessions"
-            :key="session.id"
-            class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-6 hover:shadow-lg transition-all duration-300 dark:bg-gray-800/60 dark:border-gray-700"
-          >
-            <div
-              class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-black/5 dark:border-white/10"
-            >
+          <div v-for="session in ongoingParticipatedSessions" :key="session.id" class="card p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
               <div>
-                <h3 class="text-xl font-bold text-text-primary mb-1 dark:text-gray-100">
+                <h3 class="text-xl font-bold text-text-primary mb-1">
                   {{ session.name }}
                 </h3>
-                <p class="text-text-secondary text-sm dark:text-gray-400">
+                <p class="text-text-secondary text-sm">
                   {{ session.description }}
                 </p>
               </div>
               <button
                 @click="goToSession(session.slug || session.id)"
-                class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
+                class="btn btn-soft whitespace-nowrap"
               >
-                <i class="fa-solid fa-external-link-alt text-xs"></i>
+                <AppIcon name="external-link" :size="14" />
                 {{ t("profile.viewSession") }}
               </button>
             </div>
 
-            <div class="flex gap-2 mb-6 text-xs">
-              <span
-                class="px-2 py-1 bg-primary/10 text-primary rounded-md font-semibold dark:bg-primary/20"
-                >{{ sessionService.formatTextType(session.type) }}</span
-              >
-              <span
-                class="px-2 py-1 bg-gray-100 text-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-300"
+            <div class="flex flex-wrap gap-2 mb-6">
+              <span class="chip bg-primary/10 text-primary">{{
+                sessionService.formatTextType(session.type)
+              }}</span>
+              <span class="chip bg-black/5 text-text-secondary dark:bg-white/10"
                 >{{ t("common.dateLimit") }} :
                 {{ sessionService.formatDate(session.dateLimit) }}</span
               >
             </div>
 
-            <div
-              class="bg-white/40 rounded-xl p-4 border border-white/40 dark:bg-gray-700/30 dark:border-gray-600/50"
-            >
-              <h4
-                class="text-sm font-semibold text-text-primary mb-3 uppercase tracking-wide opacity-70 dark:text-gray-300"
-              >
+            <div>
+              <h4 class="text-sm font-semibold text-text-secondary mb-3">
                 {{ t("profile.myReservations") }}
               </h4>
               <div
                 v-if="getUserReservationsForSession(session).length === 0"
-                class="text-sm text-text-secondary italic dark:text-gray-400"
+                class="text-sm text-text-secondary italic"
               >
                 {{ t("profile.noReservationFound") }}
               </div>
-              <div v-else class="space-y-3">
+              <div v-else class="space-y-2">
                 <div
                   v-for="reservation in getUserReservationsForSession(session)"
                   :key="reservation.id"
-                  class="flex items-center justify-between p-3 rounded-lg bg-white/60 border border-white/40 transition-all dark:bg-gray-700/50 dark:border-gray-600"
-                  :class="{
-                    'border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-900/20':
-                      reservation.isCompleted,
-                  }"
+                  class="flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors"
+                  :class="
+                    reservation.isCompleted
+                      ? 'bg-green-600/5 dark:bg-green-500/10'
+                      : 'bg-black/[0.03] dark:bg-white/5'
+                  "
                 >
                   <div class="flex flex-col">
-                    <span class="font-medium text-text-primary dark:text-gray-200">
+                    <span class="font-medium text-text-primary">
                       {{ getTextStudyName(reservation.textStudyId) }}
-                      <span
-                        v-if="reservation.section"
-                        class="text-text-secondary font-normal dark:text-gray-400"
-                      >
-                        - {{ t("common.chapter") }} {{ formatNumberWithHebrew(reservation.section) }}
+                      <span v-if="reservation.section" class="text-text-secondary font-normal">
+                        - {{ t("common.chapter") }}
+                        {{ formatNumberWithHebrew(reservation.section) }}
                       </span>
                     </span>
                     <span
                       v-if="reservation.isCompleted"
-                      class="text-xs text-green-600 font-bold mt-1 flex items-center gap-1 dark:text-green-400"
+                      class="text-xs text-green-600 dark:text-green-400 font-semibold mt-1 flex items-center gap-1"
                     >
-                      <i class="fa-solid fa-check-circle"></i> {{ t("common.finished") }}
+                      <AppIcon name="circle-check" :size="12" /> {{ t("common.finished") }}
                     </span>
                   </div>
                   <label class="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      class="w-5 h-5 rounded text-primary border-gray-300 focus:ring-primary accent-primary dark:border-gray-500 dark:bg-gray-600"
+                      class="w-5 h-5 rounded accent-primary cursor-pointer"
                       :checked="reservation.isCompleted"
                       @change="
                         toggleReservationCompletion(
@@ -199,7 +181,7 @@ const goToSession = (slugOrId: string) => {
                         )
                       "
                     />
-                    <span class="text-xs font-medium text-text-secondary dark:text-gray-400">{{
+                    <span class="text-xs font-medium text-text-secondary">{{
                       t("common.read")
                     }}</span>
                   </label>
@@ -211,44 +193,32 @@ const goToSession = (slugOrId: string) => {
       </div>
 
       <div v-if="finishedParticipatedSessions.length > 0" class="opacity-80">
-        <h3
-          class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2 dark:text-gray-200"
-        >
-          <i class="fa-solid fa-check-double text-green-600 dark:text-green-400"></i>
+        <h3 class="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+          <AppIcon name="check-double" :size="15" class="text-green-600 dark:text-green-400" />
           {{ t("common.finished") }}
         </h3>
 
         <div class="grid gap-6">
-          <div
-            v-for="session in finishedParticipatedSessions"
-            :key="session.id"
-            class="bg-gray-50/60 backdrop-blur-sm rounded-2xl border border-gray-200 p-6 opacity-90 hover:opacity-100 transition-all duration-300 dark:bg-gray-800/40 dark:border-gray-700"
-          >
-            <div
-              class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-black/5 dark:border-white/10"
-            >
+          <div v-for="session in finishedParticipatedSessions" :key="session.id" class="card p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
               <div>
-                <h3 class="text-xl font-bold text-text-primary mb-1 dark:text-gray-300">
+                <h3 class="text-xl font-bold text-text-primary mb-2">
                   {{ session.name }}
                 </h3>
-                <div class="flex items-center gap-2">
-                  <span
-                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-200 text-gray-700 text-xs font-bold uppercase rounded dark:bg-gray-700 dark:text-gray-300"
-                  >
-                    <i class="fa-solid fa-flag-checkered"></i> {{ t("common.finished") }}
-                  </span>
-                </div>
+                <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">
+                  <AppIcon name="flag" :size="12" /> {{ t("common.finished") }}
+                </span>
               </div>
               <button
                 @click="goToSession(session.slug || session.id)"
-                class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
+                class="btn btn-soft whitespace-nowrap"
               >
-                <i class="fa-solid fa-eye text-xs"></i>
+                <AppIcon name="eye" :size="14" />
                 {{ t("common.view") }}
               </button>
             </div>
 
-            <div class="text-sm text-text-secondary dark:text-gray-400 mb-2">
+            <div class="text-sm text-text-secondary">
               {{
                 t("profile.reservationsCount", {
                   count: getUserReservationsForSession(session).length,

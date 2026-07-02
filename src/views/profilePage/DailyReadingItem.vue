@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import type { TextStudyJsonEntry } from "../../models/models";
 import { loadText, MissingTextFileError } from "../../services/textService";
 import type { TextContent } from "../../services/textService";
+import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{ entry: TextStudyJsonEntry }>();
 const { t } = useI18n();
@@ -39,13 +40,16 @@ onMounted(load);
 <template>
   <div>
     <div v-if="loading" class="animate-pulse space-y-3 py-2">
-      <div class="h-5 bg-gray-200 rounded w-full dark:bg-gray-700"></div>
-      <div class="h-5 bg-gray-200 rounded w-5/6 dark:bg-gray-700"></div>
-      <div class="h-5 bg-gray-200 rounded w-2/3 dark:bg-gray-700"></div>
+      <div class="h-5 bg-black/10 rounded w-full dark:bg-white/10"></div>
+      <div class="h-5 bg-black/10 rounded w-5/6 dark:bg-white/10"></div>
+      <div class="h-5 bg-black/10 rounded w-2/3 dark:bg-white/10"></div>
     </div>
 
-    <p v-else-if="missing || error" class="py-2 text-sm text-text-secondary dark:text-gray-400">
-      <i class="fa-solid fa-triangle-exclamation mr-1 text-amber-500"></i>
+    <p
+      v-else-if="missing || error"
+      class="py-2 text-sm text-text-secondary flex items-center gap-1.5"
+    >
+      <AppIcon name="alert-triangle" :size="14" class="text-amber-500" />
       {{ t("dailyReading.loadError") }}
       <button @click="load" class="ml-2 text-primary hover:underline">
         {{ t("textReading.retry") }}
@@ -64,30 +68,17 @@ onMounted(load);
         <!-- Talmud: continuous text with a marker at each daf change -->
         <template v-if="content.type === 'Talmud Bavli'">
           <template v-for="block in section.dafBlocks ?? []" :key="block.daf">
-            <div class="flex items-center gap-3 my-4">
-              <span class="flex-1 border-t border-black/10 dark:border-white/10"></span>
-              <span
-                class="text-xs font-semibold text-primary/70 uppercase tracking-wider whitespace-nowrap dark:text-primary"
-              >
-                Daf {{ block.daf }}
-              </span>
-              <span class="flex-1 border-t border-black/10 dark:border-white/10"></span>
-            </div>
-            <p
-              dir="rtl"
-              class="font-hebrew text-xl leading-loose text-text-primary dark:text-gray-100"
-            >
+            <p class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center">
+              Daf {{ block.daf }}
+            </p>
+            <p dir="rtl" class="font-hebrew text-xl leading-loose text-text-primary">
               {{ block.lines.join(" ") }}
             </p>
           </template>
         </template>
 
         <!-- Verses / mishnayot / psalm lines: each on its own line, flowing on the background -->
-        <p
-          v-else
-          dir="rtl"
-          class="font-hebrew text-xl leading-loose text-text-primary dark:text-gray-100"
-        >
+        <p v-else dir="rtl" class="font-hebrew text-xl leading-loose text-text-primary">
           <template v-for="(line, index) in section.he" :key="index">
             <span v-if="showVerseNumbers" class="text-xs align-super text-primary/60 select-none">
               {{ index + 1 }}&#8201;</span

@@ -9,6 +9,7 @@ import type { Session, TextStudy } from "../models/models";
 import { seoService } from "../services/seoService";
 import ShareModal from "../components/ShareModal.vue";
 import EditSessionModal from "../components/EditSessionModal.vue";
+import AppIcon from "../components/icons/AppIcon.vue";
 import ProfileHeader from "./profilePage/ProfileHeader.vue";
 import ParticipatedSessions from "./profilePage/ParticipatedSessions.vue";
 import CreatedSessions from "./profilePage/CreatedSessions.vue";
@@ -24,12 +25,7 @@ const toast = useToast();
 
 const currentUser = ref<User | null>(null);
 const activeTab = ref<
-  | "daily-reading"
-  | "sessions-participated"
-  | "sessions-created"
-  | "my-info"
-  | "security"
-  | "theme"
+  "daily-reading" | "sessions-participated" | "sessions-created" | "my-info" | "security" | "theme"
 >("sessions-participated");
 const isLoading = ref(true);
 
@@ -205,108 +201,97 @@ onMounted(async () => {
       <div
         class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
       ></div>
-      <p class="font-medium animate-pulse">{{ t("profile.loadingProfile") }}</p>
+      <p class="font-medium">{{ t("profile.loadingProfile") }}</p>
     </div>
 
     <div v-else-if="currentUser">
       <ProfileHeader :user-display-name="userDisplayName" />
 
       <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
-        <nav
-          class="lg:sticky lg:top-24 h-fit bg-white/40 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm dark:bg-gray-800/40 dark:border-gray-700"
-        >
-          <ul class="flex flex-col gap-2 mb-8">
+        <nav class="lg:sticky lg:top-24 h-fit card p-3">
+          <ul class="flex flex-col gap-1 mb-6">
             <li>
               <button
                 @click="setActiveTab('daily-reading')"
                 :class="[
-                  'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
+                  'w-full text-left px-4 py-3 rounded-lg font-medium transition-colors',
                   activeTab === 'daily-reading'
-                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm dark:bg-primary/20'
-                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',
                 ]"
               >
-                <span>{{ t("profile.tabs.dailyReading") }}</span>
-                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
+                {{ t("profile.tabs.dailyReading") }}
               </button>
             </li>
             <li>
               <button
                 @click="setActiveTab('sessions-participated')"
                 :class="[
-                  'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
+                  'w-full text-left px-4 py-3 rounded-lg font-medium transition-colors',
                   activeTab === 'sessions-participated'
-                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm dark:bg-primary/20'
-                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',
                 ]"
               >
-                <span>{{ t("profile.tabs.participatedSessions") }}</span>
-                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
+                {{ t("profile.tabs.participatedSessions") }}
               </button>
             </li>
             <li>
               <button
                 @click="setActiveTab('sessions-created')"
                 :class="[
-                  'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
+                  'w-full text-left px-4 py-3 rounded-lg font-medium transition-colors',
                   activeTab === 'sessions-created'
-                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm dark:bg-primary/20'
-                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',
                 ]"
               >
-                <span>{{ t("profile.tabs.createdSessions") }}</span>
-                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
+                {{ t("profile.tabs.createdSessions") }}
               </button>
             </li>
             <li>
               <button
                 @click="setActiveTab('my-info')"
                 :class="[
-                  'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
+                  'w-full text-left px-4 py-3 rounded-lg font-medium transition-colors',
                   activeTab === 'my-info'
-                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm dark:bg-primary/20'
-                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',
                 ]"
               >
-                <span>{{ t("profile.tabs.myInfo") }}</span>
-                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
+                {{ t("profile.tabs.myInfo") }}
               </button>
             </li>
             <li>
               <button
                 @click="setActiveTab('security')"
                 :class="[
-                  'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
+                  'w-full text-left px-4 py-3 rounded-lg font-medium transition-colors',
                   activeTab === 'security'
-                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm dark:bg-primary/20'
-                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',
                 ]"
               >
-                <span>{{ t("profile.tabs.security") }}</span>
-                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
+                {{ t("profile.tabs.security") }}
               </button>
             </li>
             <li>
               <button
                 @click="setActiveTab('theme')"
                 :class="[
-                  'w-full flex items-center justify-between p-4 rounded-xl transition-all text-left font-medium',
+                  'w-full text-left px-4 py-3 rounded-lg font-medium transition-colors',
                   activeTab === 'theme'
-                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm dark:bg-primary/20'
-                    : 'hover:bg-white/50 text-text-secondary hover:text-text-primary hover:translate-x-1 dark:hover:bg-gray-700/50 dark:text-gray-400 dark:hover:text-gray-200',
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',
                 ]"
               >
-                <span>{{ t("profile.tabs.theme") }}</span>
-                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
+                {{ t("profile.tabs.theme") }}
               </button>
             </li>
           </ul>
 
-          <button
-            @click="authService.logout()"
-            class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20"
-          >
-            <i class="fa-solid fa-right-from-bracket"></i>
+          <button @click="authService.logout()" class="btn btn-danger w-full">
+            <AppIcon name="logout" :size="15" />
             {{ t("common.logout") }}
           </button>
         </nav>
