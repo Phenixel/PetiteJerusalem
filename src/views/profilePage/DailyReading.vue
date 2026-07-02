@@ -7,6 +7,7 @@ import { userPreferencesService } from "../../services/userPreferencesService";
 import { sessionService } from "../../services/sessionService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import DailyReadingItem from "./DailyReadingItem.vue";
+import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{ userId: string }>();
 const { t } = useI18n();
@@ -178,12 +179,10 @@ function formatBookName(livre: string): string {
   <div>
     <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
       <div>
-        <h2
-          class="text-2xl font-bold mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
-        >
+        <h2 class="text-2xl font-bold mb-2 text-text-primary">
           {{ t("dailyReading.title") }}
         </h2>
-        <p class="text-text-secondary dark:text-gray-400 max-w-xl">
+        <p class="text-text-secondary max-w-xl">
           {{ t("dailyReading.description") }}
         </p>
       </div>
@@ -191,51 +190,49 @@ function formatBookName(livre: string): string {
       <button
         v-if="mode === 'reading'"
         @click="mode = 'manage'"
-        class="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+        class="btn btn-primary flex-shrink-0"
       >
-        <i class="fa-solid fa-sliders text-xs"></i>
+        <AppIcon name="settings" :size="14" />
         {{ t("dailyReading.manage") }}
       </button>
-      <button
-        v-else
-        @click="mode = 'reading'"
-        class="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors"
-      >
-        <i class="fa-solid fa-check text-xs"></i>
+      <button v-else @click="mode = 'reading'" class="btn btn-soft flex-shrink-0">
+        <AppIcon name="check" :size="14" />
         {{ t("dailyReading.done") }}
       </button>
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="animate-pulse space-y-4">
-      <div class="h-20 bg-gray-200 rounded-2xl dark:bg-gray-700"></div>
-      <div class="h-40 bg-gray-200 rounded-2xl dark:bg-gray-700"></div>
+      <div class="h-20 rounded-2xl bg-black/10 dark:bg-white/10"></div>
+      <div class="h-40 rounded-2xl bg-black/10 dark:bg-white/10"></div>
     </div>
 
     <!-- ===== Manage mode: pick texts from the library ===== -->
     <template v-else-if="mode === 'manage'">
-      <p class="text-sm text-text-secondary mb-4 dark:text-gray-400">
-        <i class="fa-solid fa-circle-info mr-1"></i>
+      <p class="text-sm text-text-secondary mb-4 flex items-center gap-1.5">
+        <AppIcon name="info" :size="14" />
         {{ t("dailyReading.selectedCount", { count: totalCount }) }}
       </p>
 
       <div class="flex flex-col items-center gap-4 mb-8">
         <div class="relative w-full md:w-96">
-          <i
-            class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/60 dark:text-gray-500"
-          ></i>
+          <AppIcon
+            name="search"
+            :size="16"
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
+          />
           <input
             v-model="searchTerm"
             type="text"
             :placeholder="t('study.searchPlaceholder')"
-            class="w-full pl-11 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-white/60 rounded-xl text-text-primary placeholder-text-secondary/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all dark:bg-gray-800/60 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
+            class="field !pl-11"
           />
           <button
             v-if="searchTerm"
             @click="searchTerm = ''"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/60 hover:text-text-primary transition-colors dark:text-gray-500 dark:hover:text-gray-300"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
           >
-            <i class="fa-solid fa-xmark"></i>
+            <AppIcon name="x" :size="14" />
           </button>
         </div>
 
@@ -245,10 +242,10 @@ function formatBookName(livre: string): string {
             :key="ty.key"
             @click="selectedType = ty.key"
             :class="[
-              'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border',
+              'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
               selectedType === ty.key
-                ? 'bg-primary text-white border-primary shadow-md'
-                : 'bg-white/60 text-text-secondary border-white/60 hover:bg-white/80 hover:text-text-primary dark:bg-gray-800/40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200',
+                ? 'bg-primary text-white'
+                : 'bg-black/5 text-text-secondary hover:bg-black/10 hover:text-text-primary dark:bg-white/10 dark:hover:bg-white/15',
             ]"
           >
             {{ t(ty.labelKey) }}
@@ -259,16 +256,11 @@ function formatBookName(livre: string): string {
       <div v-if="filtered.length > 0" class="space-y-10">
         <div v-for="typeGroup in groupedByType" :key="typeGroup.key" class="space-y-8">
           <!-- Type heading: shown only on the "Tout" tab, where several corpora mix. -->
-          <h2
-            v-if="isAllSelected"
-            class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
-          >
+          <h2 v-if="isAllSelected" class="text-xl font-bold text-text-primary">
             {{ t(typeGroup.labelKey) }}
           </h2>
           <section v-for="(texts, livre) in typeGroup.groups" :key="livre">
-            <h3
-              class="text-lg font-bold text-text-primary mb-3 pl-3 border-l-4 border-primary dark:text-gray-100"
-            >
+            <h3 class="text-lg font-bold text-text-primary mb-3">
               {{ formatBookName(String(livre)) }}
             </h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -277,24 +269,27 @@ function formatBookName(livre: string): string {
                 :key="text.id"
                 @click="toggleSelect(text)"
                 :class="[
-                  'flex items-center justify-between gap-2 p-3 rounded-xl border transition-all text-left',
+                  'flex items-center justify-between gap-2 p-3 rounded-lg transition-colors text-left',
                   isSelected(text.id)
-                    ? 'bg-primary/10 border-primary/40 dark:bg-primary/20'
-                    : 'bg-white/60 border-white/40 hover:border-primary hover:shadow-md dark:bg-gray-800/60 dark:border-gray-700 dark:hover:border-primary',
+                    ? 'bg-primary/10'
+                    : 'bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/5 dark:hover:bg-white/10',
                 ]"
               >
                 <span class="min-w-0">
-                  <span class="block font-medium text-text-primary truncate dark:text-gray-200">
+                  <span class="block font-medium text-text-primary truncate">
                     {{ appendHebrewNumeral(text.name) }}
                   </span>
                 </span>
                 <span
                   :class="[
                     'flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold',
-                    isSelected(text.id) ? 'text-primary' : 'text-text-secondary/60 dark:text-gray-500',
+                    isSelected(text.id) ? 'text-primary' : 'text-text-secondary/60',
                   ]"
                 >
-                  <i :class="isSelected(text.id) ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-plus'"></i>
+                  <AppIcon
+                    :name="isSelected(text.id) ? 'circle-check' : 'circle-plus'"
+                    :size="14"
+                  />
                   {{ isSelected(text.id) ? t("dailyReading.added") : t("dailyReading.add") }}
                 </span>
               </button>
@@ -303,9 +298,9 @@ function formatBookName(livre: string): string {
         </div>
       </div>
 
-      <div v-else class="text-center py-12 text-text-secondary dark:text-gray-400">
-        <i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-40"></i>
-        <p>{{ t("study.noResults") }}</p>
+      <div v-else class="flex flex-col items-center justify-center py-16 text-center">
+        <AppIcon name="search" :size="32" class="text-text-secondary/40 mb-4" />
+        <p class="text-text-secondary">{{ t("study.noResults") }}</p>
       </div>
     </template>
 
@@ -314,60 +309,51 @@ function formatBookName(livre: string): string {
       <!-- Empty list -->
       <div
         v-if="totalCount === 0"
-        class="flex flex-col items-center justify-center p-12 text-center bg-white/60 backdrop-blur-sm rounded-2xl border border-white/60 dark:bg-gray-800/40 dark:border-gray-700"
+        class="flex flex-col items-center justify-center py-16 text-center"
       >
-        <div
-          class="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center text-2xl mb-4 dark:bg-primary/20"
-        >
-          <i class="fa-solid fa-book-bookmark"></i>
-        </div>
-        <h3 class="text-xl font-semibold text-text-primary mb-2 dark:text-gray-100">
+        <AppIcon name="book" :size="32" class="text-primary/50 mb-4" />
+        <h3 class="text-xl font-semibold text-text-primary mb-2">
           {{ t("dailyReading.emptyTitle") }}
         </h3>
-        <p class="text-text-secondary mb-6 max-w-sm dark:text-gray-400">
+        <p class="text-text-secondary mb-6 max-w-sm">
           {{ t("dailyReading.emptyDescription") }}
         </p>
-        <button
-          @click="mode = 'manage'"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
-        >
-          <i class="fa-solid fa-plus text-xs"></i>
+        <button @click="mode = 'manage'" class="btn btn-primary">
+          <AppIcon name="plus" :size="14" />
           {{ t("dailyReading.addTexts") }}
         </button>
       </div>
 
       <template v-else>
         <!-- Daily progress -->
-        <div
-          class="mb-8 p-5 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/40 dark:bg-gray-800/60 dark:border-gray-700"
-        >
+        <div class="card p-5 mb-8">
           <div v-if="allDone" class="flex items-start gap-3">
-            <i class="fa-solid fa-circle-check text-green-500 text-xl mt-0.5"></i>
+            <AppIcon name="circle-check" :size="20" class="text-green-500 mt-0.5" />
             <div>
-              <p class="font-semibold text-text-primary dark:text-gray-100">
+              <p class="font-semibold text-text-primary">
                 {{ t("dailyReading.allReadTitle") }}
               </p>
-              <p class="text-sm text-text-secondary dark:text-gray-400">
+              <p class="text-sm text-text-secondary">
                 {{ t("dailyReading.allReadDescription") }}
               </p>
             </div>
           </div>
           <template v-else>
             <div class="flex items-center justify-between mb-2">
-              <span class="text-sm font-medium text-text-primary dark:text-gray-200">
+              <span class="text-sm font-medium text-text-primary">
                 {{ t("dailyReading.progress", { done: completedCount, total: totalCount }) }}
               </span>
               <span class="text-sm font-semibold text-primary">{{ progressPct }}%</span>
             </div>
-            <div class="h-2 w-full rounded-full bg-gray-200 overflow-hidden dark:bg-gray-700">
+            <div class="h-2 w-full rounded-full bg-black/5 overflow-hidden dark:bg-white/10">
               <div
-                class="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-500"
+                class="h-full rounded-full bg-primary transition-all duration-500"
                 :style="{ width: `${progressPct}%` }"
               ></div>
             </div>
           </template>
-          <p class="text-xs text-text-secondary/70 mt-3 dark:text-gray-500">
-            <i class="fa-solid fa-rotate mr-1"></i>
+          <p class="text-xs text-text-secondary/70 mt-3 flex items-center gap-1.5">
+            <AppIcon name="rotate" :size="12" />
             {{ t("dailyReading.resetsDaily") }}
           </p>
         </div>
@@ -386,22 +372,26 @@ function formatBookName(livre: string): string {
                 @click="toggleCollapse(String(entry.id))"
                 class="group flex w-full items-start gap-3 text-left"
               >
-                <i
-                  class="fa-solid fa-chevron-down mt-1.5 text-xs text-text-secondary/60 transition-transform duration-200 dark:text-gray-500"
+                <AppIcon
+                  name="chevron-down"
+                  :size="13"
+                  class="mt-1.5 text-text-secondary/60 transition-transform duration-200"
                   :class="collapsedIds.has(String(entry.id)) ? '-rotate-90' : ''"
-                ></i>
+                />
                 <span class="min-w-0">
-                  <span class="block text-xs font-semibold text-primary uppercase tracking-wide">
+                  <span class="block text-xs font-semibold text-primary">
                     {{ formatBookName(entry.livre) }}
                   </span>
                   <span
-                    class="flex items-center gap-2 text-lg font-bold text-text-primary transition-colors group-hover:text-primary dark:text-gray-100"
+                    class="flex items-center gap-2 text-lg font-bold text-text-primary transition-colors group-hover:text-primary"
                   >
                     {{ appendHebrewNumeral(entry.name) }}
-                    <i
+                    <AppIcon
                       v-if="completedIds.has(String(entry.id))"
-                      class="fa-solid fa-circle-check text-sm text-green-500"
-                    ></i>
+                      name="circle-check"
+                      :size="15"
+                      class="text-green-500"
+                    />
                   </span>
                 </span>
               </button>
@@ -419,16 +409,18 @@ function formatBookName(livre: string): string {
                     'inline-flex items-center gap-2 text-sm font-medium transition-colors',
                     completedIds.has(String(entry.id))
                       ? 'text-green-600 dark:text-green-400'
-                      : 'text-text-secondary hover:text-primary dark:text-gray-400',
+                      : 'text-text-secondary hover:text-primary',
                   ]"
                 >
-                  <i
-                    :class="
-                      completedIds.has(String(entry.id))
-                        ? 'fa-solid fa-circle-check'
-                        : 'fa-regular fa-circle'
-                    "
-                  ></i>
+                  <AppIcon
+                    v-if="completedIds.has(String(entry.id))"
+                    name="circle-check"
+                    :size="15"
+                  />
+                  <span
+                    v-else
+                    class="w-3.5 h-3.5 rounded-full border-2 border-current shrink-0"
+                  ></span>
                   {{
                     completedIds.has(String(entry.id))
                       ? t("dailyReading.readToday")

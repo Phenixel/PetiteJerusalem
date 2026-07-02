@@ -72,9 +72,9 @@ const fr = {
     },
     comingSoon: "Bientôt",
     memorial: {
-      title: "🕯️ À la mémoire de 🕯️",
+      title: "À la mémoire de",
       dedication:
-        "Ce site est dédié à l'élévation de l'âme de Fortunée Bat Henriette et Mongia Bat Joulina",
+        "Ce site est dédié à l'élévation de l'âme de Fortunée Bat Henriette, Mongia Bat Joulina, Pinhas Ben Missa et Max Isaac Ben Hanna",
     },
   },
   login: {
@@ -133,6 +133,21 @@ const fr = {
       ocean: "Océan",
       sunset: "Coucher de soleil",
       emerald: "Émeraude",
+    },
+    fontsTitle: "Polices",
+    fontsDescription:
+      "Choisissez la police de l'interface et celle des textes en hébreu. Vos choix s'appliquent à tout le site.",
+    fontLatinLabel: "Police de l'interface",
+    fontHebrewLabel: "Police des textes en hébreu",
+    fontsLatin: {
+      inter: "Moderne",
+      lora: "Classique",
+      nunito: "Douce",
+    },
+    fontsHebrew: {
+      frank: "Classique",
+      david: "Traditionnelle",
+      heebo: "Moderne",
     },
   },
   dailyReading: {
@@ -205,6 +220,10 @@ const fr = {
     reservedPercent: "{percent}% réservé",
     sessionFull: "Complet",
     sessionAvailable: "Places disponibles",
+    searchPlaceholder: "Rechercher une session…",
+    allTypes: "Tous les types",
+    noSearchResults: "Aucune session ne correspond à votre recherche.",
+    clearFilters: "Réinitialiser les filtres",
     howItWorks: {
       title: "Comment ça marche",
       subtitle:
@@ -273,6 +292,37 @@ const fr = {
     reservationUpdateError: "Erreur lors de la mise à jour de la réservation",
     reservationDeleteError: "Erreur lors de la suppression de la réservation",
     deleteReservationConfirm: "Êtes-vous sûr de vouloir supprimer cette réservation ?",
+    loading: "Chargement de la session...",
+    backToProfile: "Retour au profil",
+    stats: {
+      reservations: "Réservations",
+      completed: "Terminées",
+      progress: "Progression",
+      reservedTexts: "Textes réservés",
+      reservationRate: "Taux de réservation",
+    },
+    searchPlaceholder: "Rechercher un texte…",
+    allBooks: "Tous les livres",
+    status: {
+      available: "Disponible",
+      fullyReserved: "Réservé",
+      partiallyReserved: "Partiellement réservé",
+    },
+    reservationsCount: "{count} réservation(s)",
+    reservedBy: "Par : {name}",
+    fullText: "Texte complet",
+    reserveForGuest: "Réserver pour un invité",
+    reserveCountTitle: "Réserver {count} textes",
+    markCompleted: "Marquer comme terminé",
+    deleteReservation: "Supprimer la réservation",
+    guestName: "Nom de l'invité",
+    guestEmail: "Email de l'invité",
+    guestNamePlaceholder: "Nom complet",
+    creating: "Création...",
+    create: "Créer",
+    batchLabel: "Attribuer à un invité",
+    batchButton: "Réserver",
+    batchLoading: "Traitement...",
   },
   shareModal: {
     title: "Partager cette session",
@@ -415,6 +465,9 @@ const fr = {
     cancelError: "L'annulation a échoué.",
     updateError: "La mise à jour a échoué.",
     guestIntro: "Renseignez votre nom et votre email pour réserver ce passage.",
+    textSize: "Taille du texte",
+    textSizeIncrease: "Agrandir le texte",
+    textSizeDecrease: "Réduire le texte",
   },
   study: {
     title: "Bibliothèque",

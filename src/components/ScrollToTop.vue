@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
+import AppIcon from "./icons/AppIcon.vue";
 
 const isVisible = ref(false);
 
@@ -35,10 +36,10 @@ onUnmounted(() => {
     <button
       v-if="isVisible"
       @click="scrollToTop"
-      class="fixed bottom-20 right-6 p-3 rounded-full bg-primary text-white shadow-lg hover:bg-opacity-90 hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 z-50 dark:bg-primary dark:hover:bg-opacity-90"
+      class="fixed bottom-20 right-6 w-11 h-11 flex items-center justify-center rounded-full bg-surface text-text-primary shadow-pop hover:text-primary transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary z-50"
       aria-label="Retour en haut"
     >
-      <i class="fa-solid fa-arrow-up text-xl"></i>
+      <AppIcon name="arrow-up" :size="18" />
     </button>
   </transition>
 </template>

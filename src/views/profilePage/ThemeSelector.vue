@@ -2,6 +2,8 @@
 import { ref, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useTheme, type ThemeOption } from "../../composables/useTheme";
+import { useFonts, type FontOption } from "../../composables/useFonts";
+import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
   userId: string;
@@ -9,6 +11,14 @@ const props = defineProps<{
 
 const { t } = useI18n();
 const { currentThemeId, themes, setTheme, previewTheme, cancelPreview } = useTheme();
+const {
+  currentLatinId,
+  currentHebrewId,
+  latinFonts,
+  hebrewFonts,
+  setLatinFont,
+  setHebrewFont,
+} = useFonts();
 
 const saving = ref(false);
 const previewingId = ref<string | null>(null);
@@ -47,20 +57,38 @@ onUnmounted(() => {
 const getThemeName = (theme: ThemeOption): string => {
   return t(`profile.themes.${theme.id}`);
 };
+
+const selectLatinFont = async (font: FontOption) => {
+  if (font.id === currentLatinId.value) return;
+  saving.value = true;
+  try {
+    await setLatinFont(props.userId, font.id);
+  } finally {
+    saving.value = false;
+  }
+};
+
+const selectHebrewFont = async (font: FontOption) => {
+  if (font.id === currentHebrewId.value) return;
+  saving.value = true;
+  try {
+    await setHebrewFont(props.userId, font.id);
+  } finally {
+    saving.value = false;
+  }
+};
 </script>
 
 <template>
   <div>
-    <h2
-      class="text-2xl font-bold mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
-    >
+    <h2 class="text-2xl font-bold mb-2 text-text-primary">
       {{ t("profile.themeTitle") }}
     </h2>
-    <p class="text-text-secondary dark:text-gray-400 mb-8">
+    <p class="text-text-secondary mb-8">
       {{ t("profile.themeDescription") }}
     </p>
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
       <button
         v-for="theme in themes"
         :key="theme.id"
@@ -68,16 +96,16 @@ const getThemeName = (theme: ThemeOption): string => {
         @mouseenter="onMouseEnter(theme.id)"
         @mouseleave="onMouseLeave"
         :class="[
-          'group relative rounded-2xl border-2 p-1 transition-all duration-300 cursor-pointer text-left',
+          'card group relative p-1 transition-all duration-300 cursor-pointer text-left',
           currentThemeId === theme.id
-            ? 'border-primary shadow-lg scale-[1.02]'
-            : 'border-white/40 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-md',
+            ? 'ring-2 ring-primary shadow-card-hover'
+            : 'card-hover',
         ]"
         :disabled="saving"
       >
         <!-- Preview card -->
         <div class="rounded-xl overflow-hidden">
-          <!-- Gradient header preview -->
+          <!-- Color header preview -->
           <div
             class="h-24 relative"
             :style="{
@@ -86,7 +114,7 @@ const getThemeName = (theme: ThemeOption): string => {
           >
             <div class="absolute inset-0 flex items-end p-3">
               <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-white/30 backdrop-blur-sm"></div>
+                <div class="w-8 h-8 rounded-full bg-white/30"></div>
                 <div>
                   <div class="h-2.5 w-20 rounded-full bg-white/60"></div>
                   <div class="h-2 w-12 rounded-full bg-white/40 mt-1"></div>
@@ -95,24 +123,22 @@ const getThemeName = (theme: ThemeOption): string => {
             </div>
           </div>
 
-          <!-- Content preview (light mode) -->
-          <div class="bg-white dark:bg-gray-800 p-3 space-y-2">
+          <!-- Content preview -->
+          <div class="bg-surface p-3 space-y-2">
             <div class="flex gap-2">
               <div
                 class="h-2.5 w-16 rounded-full"
                 :style="{ backgroundColor: theme.primary }"
               ></div>
-              <div class="h-2.5 w-10 rounded-full bg-gray-200 dark:bg-gray-600"></div>
+              <div class="h-2.5 w-10 rounded-full bg-black/10 dark:bg-white/20"></div>
             </div>
-            <div class="h-2 w-full rounded-full bg-gray-100 dark:bg-gray-700"></div>
-            <div class="h-2 w-3/4 rounded-full bg-gray-100 dark:bg-gray-700"></div>
+            <div class="h-2 w-full rounded-full bg-black/5 dark:bg-white/10"></div>
+            <div class="h-2 w-3/4 rounded-full bg-black/5 dark:bg-white/10"></div>
             <!-- Button preview -->
             <div class="pt-1">
               <div
                 class="h-6 w-20 rounded-lg"
-                :style="{
-                  background: `linear-gradient(to right, ${theme.primary}, ${theme.secondary})`,
-                }"
+                :style="{ backgroundColor: theme.primary }"
               ></div>
             </div>
           </div>
@@ -120,23 +146,104 @@ const getThemeName = (theme: ThemeOption): string => {
 
         <!-- Theme name & status -->
         <div class="p-3 flex items-center justify-between">
-          <span class="font-semibold text-text-primary dark:text-gray-100">
+          <span class="font-semibold text-text-primary">
             {{ getThemeName(theme) }}
           </span>
           <span
             v-if="currentThemeId === theme.id"
             class="flex items-center gap-1 text-xs font-medium text-primary"
           >
-            <i class="fa-solid fa-check"></i>
+            <AppIcon name="check" :size="12" />
             {{ t("profile.themeActive") }}
           </span>
         </div>
       </button>
     </div>
 
-    <p class="text-sm text-text-secondary dark:text-gray-500 mt-6">
-      <i class="fa-solid fa-circle-info mr-1"></i>
+    <p class="text-sm text-text-secondary mt-6 flex items-center gap-1.5">
+      <AppIcon name="info" :size="14" />
       {{ t("profile.themeHint") }}
     </p>
+
+    <!-- Polices -->
+    <h2 class="text-2xl font-bold mt-12 mb-2 text-text-primary">
+      {{ t("profile.fontsTitle") }}
+    </h2>
+    <p class="text-text-secondary mb-8">
+      {{ t("profile.fontsDescription") }}
+    </p>
+
+    <h3 class="text-sm font-semibold text-text-secondary mb-3">
+      {{ t("profile.fontLatinLabel") }}
+    </h3>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <button
+        v-for="font in latinFonts"
+        :key="font.id"
+        @click="selectLatinFont(font)"
+        :disabled="saving"
+        :class="[
+          'card p-4 text-left transition-all duration-300 cursor-pointer',
+          currentLatinId === font.id ? 'ring-2 ring-primary' : 'card-hover',
+        ]"
+      >
+        <span class="block text-3xl text-text-primary mb-2" :style="{ fontFamily: font.stack }"
+          >Aa</span
+        >
+        <span class="flex items-center justify-between">
+          <span>
+            <span class="block font-semibold text-text-primary" :style="{ fontFamily: font.stack }">{{
+              font.label
+            }}</span>
+            <span class="block text-xs text-text-secondary mt-0.5">{{
+              t(`profile.fontsLatin.${font.id}`)
+            }}</span>
+          </span>
+          <AppIcon
+            v-if="currentLatinId === font.id"
+            name="check"
+            :size="14"
+            class="text-primary"
+          />
+        </span>
+      </button>
+    </div>
+
+    <h3 class="text-sm font-semibold text-text-secondary mb-3">
+      {{ t("profile.fontHebrewLabel") }}
+    </h3>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <button
+        v-for="font in hebrewFonts"
+        :key="font.id"
+        @click="selectHebrewFont(font)"
+        :disabled="saving"
+        :class="[
+          'card p-4 text-left transition-all duration-300 cursor-pointer',
+          currentHebrewId === font.id ? 'ring-2 ring-primary' : 'card-hover',
+        ]"
+      >
+        <span
+          class="block text-3xl text-text-primary mb-2"
+          dir="rtl"
+          :style="{ fontFamily: font.stack }"
+          >אבג</span
+        >
+        <span class="flex items-center justify-between">
+          <span>
+            <span class="block font-semibold text-text-primary">{{ font.label }}</span>
+            <span class="block text-xs text-text-secondary mt-0.5">{{
+              t(`profile.fontsHebrew.${font.id}`)
+            }}</span>
+          </span>
+          <AppIcon
+            v-if="currentHebrewId === font.id"
+            name="check"
+            :size="14"
+            class="text-primary"
+          />
+        </span>
+      </button>
+    </div>
   </div>
 </template>

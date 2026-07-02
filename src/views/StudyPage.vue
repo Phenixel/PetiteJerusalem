@@ -7,6 +7,7 @@ import { sessionService } from "../services/sessionService";
 import { seoService } from "../services/seoService";
 import { appendHebrewNumeral } from "../services/hebrewNumerals";
 import { hubPath } from "../content/etudeTexts";
+import AppIcon from "../components/icons/AppIcon.vue";
 
 const { t } = useI18n();
 
@@ -72,12 +73,10 @@ onMounted(() => {
   <main class="mx-auto px-6 py-12">
     <!-- Hero -->
     <div class="text-center mb-10">
-      <h1
-        class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-4 tracking-tight pb-1"
-      >
+      <h1 class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight pb-1">
         {{ t("study.title") }}
       </h1>
-      <p class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed dark:text-gray-300">
+      <p class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
         {{ t("study.subtitle") }}
       </p>
     </div>
@@ -85,21 +84,23 @@ onMounted(() => {
     <!-- Controls -->
     <div class="flex flex-col items-center gap-4 mb-10">
       <div class="relative w-full md:w-96">
-        <i
-          class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/60 dark:text-gray-500"
-        ></i>
+        <AppIcon
+          name="search"
+          :size="16"
+          class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
+        />
         <input
           v-model="searchTerm"
           type="text"
           :placeholder="t('study.searchPlaceholder')"
-          class="w-full pl-11 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-white/60 rounded-xl text-text-primary placeholder-text-secondary/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all dark:bg-gray-800/60 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
+          class="field !pl-11"
         />
         <button
           v-if="searchTerm"
           @click="searchTerm = ''"
-          class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/60 hover:text-text-primary transition-colors dark:text-gray-500 dark:hover:text-gray-300"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
         >
-          <i class="fa-solid fa-xmark"></i>
+          <AppIcon name="x" :size="14" />
         </button>
       </div>
 
@@ -108,12 +109,12 @@ onMounted(() => {
           v-for="ty in TYPES"
           :key="ty.key"
           @click="selectedType = ty.key"
-          :class="[
-            'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border',
+          class="chip transition-colors"
+          :class="
             selectedType === ty.key
-              ? 'bg-primary text-white border-primary shadow-md'
-              : 'bg-white/60 text-text-secondary border-white/60 hover:bg-white/80 hover:text-text-primary dark:bg-gray-800/40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200',
-          ]"
+              ? 'bg-primary text-white'
+              : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
+          "
         >
           {{ t(ty.labelKey) }}
         </button>
@@ -124,16 +125,11 @@ onMounted(() => {
     <div v-if="hasResults" class="max-w-5xl mx-auto space-y-12">
       <div v-for="typeGroup in groupedByType" :key="typeGroup.key" class="space-y-10">
         <!-- Type heading: shown only on the "Tout" tab, where several corpora mix. -->
-        <h2
-          v-if="isAllSelected"
-          class="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
-        >
+        <h2 v-if="isAllSelected" class="text-2xl font-bold text-text-primary">
           {{ t(typeGroup.labelKey) }}
         </h2>
         <section v-for="(texts, livre) in typeGroup.groups" :key="livre">
-          <h3
-            class="text-xl font-bold text-text-primary mb-4 pl-3 border-l-4 border-primary dark:text-gray-100"
-          >
+          <h3 class="text-xl font-bold text-text-primary mb-4">
             {{ formatBookName(String(livre)) }}
           </h3>
           <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -141,22 +137,21 @@ onMounted(() => {
               v-for="text in texts"
               :key="text.id"
               :to="hubPath(text)"
-              class="flex items-center justify-between gap-2 p-3 rounded-xl bg-white/60 backdrop-blur-sm border border-white/40 hover:border-primary hover:shadow-md transition-all group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:border-primary"
+              class="card card-hover p-4 flex items-center justify-between gap-2 group"
             >
               <span class="min-w-0">
-                <span class="block font-medium text-text-primary truncate dark:text-gray-200">
+                <span class="block font-medium text-text-primary truncate">
                   {{ appendHebrewNumeral(text.name) }}
                 </span>
-                <span
-                  v-if="text.totalSections > 1"
-                  class="text-xs text-text-secondary dark:text-gray-500"
-                >
+                <span v-if="text.totalSections > 1" class="text-xs text-text-secondary">
                   {{ t("study.sections", { count: text.totalSections }) }}
                 </span>
               </span>
-              <i
-                class="fa-solid fa-book-open text-text-secondary/40 group-hover:text-primary transition-colors flex-shrink-0"
-              ></i>
+              <AppIcon
+                name="book-open"
+                :size="16"
+                class="text-text-secondary/40 group-hover:text-primary transition-colors shrink-0"
+              />
             </router-link>
           </div>
         </section>
@@ -164,9 +159,9 @@ onMounted(() => {
     </div>
 
     <!-- Empty -->
-    <div v-else class="text-center py-16 text-text-secondary dark:text-gray-400">
-      <i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-40"></i>
-      <p>{{ t("study.noResults") }}</p>
+    <div v-else class="flex flex-col items-center justify-center py-16 text-center">
+      <AppIcon name="search" :size="32" class="text-text-secondary/40 mb-4" />
+      <p class="text-text-secondary">{{ t("study.noResults") }}</p>
     </div>
   </main>
 </template>

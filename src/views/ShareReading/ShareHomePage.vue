@@ -4,8 +4,10 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { sessionService } from "../../services/sessionService";
 import type { Session } from "../../models/models";
+import type { EnumTypeTextStudy } from "../../models/typeTextStudy";
 import SessionCard from "../../components/SessionCard.vue";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
+import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import { authService } from "../../services/authService";
 
@@ -20,6 +22,10 @@ const isAuthenticated = ref(false);
 // disabled button they get a prompt inviting them to sign in / sign up.
 const showAuthPrompt = ref(false);
 let unsubscribeAuth: (() => void) | null = null;
+
+// Search & type filter over the session list.
+const searchTerm = ref("");
+const selectedType = ref<EnumTypeTextStudy | "">("");
 
 // Animated "how it works" timeline: plays once when scrolled into view.
 const timelineRef = ref<HTMLElement | null>(null);
@@ -47,28 +53,54 @@ const isSessionFinished = (session: Session): boolean => {
   return new Date() > limit;
 };
 
-const ongoingSessions = computed(() => sessions.value.filter((s) => !isSessionFinished(s)));
-const finishedSessions = computed(() => sessions.value.filter((s) => isSessionFinished(s)));
+const availableTypes = computed(() => {
+  const types = new Set<EnumTypeTextStudy>();
+  for (const s of sessions.value) types.add(s.type);
+  return Array.from(types);
+});
+
+const filteredSessions = computed(() => {
+  const term = searchTerm.value.trim().toLowerCase();
+  return sessions.value.filter((s) => {
+    if (selectedType.value && s.type !== selectedType.value) return false;
+    if (!term) return true;
+    return (
+      s.name.toLowerCase().includes(term) ||
+      (s.creatorName || "").toLowerCase().includes(term) ||
+      (s.description || "").toLowerCase().includes(term)
+    );
+  });
+});
+
+const hasActiveFilter = computed(() => searchTerm.value.trim() !== "" || selectedType.value !== "");
+
+const ongoingSessions = computed(() => filteredSessions.value.filter((s) => !isSessionFinished(s)));
+const finishedSessions = computed(() => filteredSessions.value.filter((s) => isSessionFinished(s)));
+
+const clearFilters = () => {
+  searchTerm.value = "";
+  selectedType.value = "";
+};
 
 // Visual "how it works" steps shown between the create button and the session list.
 const howItWorksSteps = computed(() => [
   {
-    icon: "fa-circle-plus",
+    icon: "circle-plus" as const,
     title: t("shareReading.howItWorks.step1Title"),
     description: t("shareReading.howItWorks.step1Desc"),
   },
   {
-    icon: "fa-book-open",
+    icon: "book-open" as const,
     title: t("shareReading.howItWorks.step2Title"),
     description: t("shareReading.howItWorks.step2Desc"),
   },
   {
-    icon: "fa-share-nodes",
+    icon: "share" as const,
     title: t("shareReading.howItWorks.step3Title"),
     description: t("shareReading.howItWorks.step3Desc"),
   },
   {
-    icon: "fa-flag-checkered",
+    icon: "flag" as const,
     title: t("shareReading.howItWorks.step4Title"),
     description: t("shareReading.howItWorks.step4Desc"),
   },
@@ -145,21 +177,19 @@ const handleCreateClick = () => {
 <template>
   <main class="mx-auto px-6 py-12">
     <div class="text-center mb-16 animate-[fadeIn_0.5s_ease]">
-      <h2
-        class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-4 tracking-tight"
-      >
+      <h2 class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight">
         {{ t("shareReading.title") }}
       </h2>
-      <p class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed dark:text-gray-300">
+      <p class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
         {{ t("shareReading.subtitle") }}
       </p>
 
       <button
         @click="handleCreateClick"
-        class="mt-8 px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+        class="btn btn-primary mt-8 !px-8 !py-3"
         :title="t('shareReading.createSession')"
       >
-        <i class="fa-solid fa-plus mr-2"></i>
+        <AppIcon name="plus" :size="16" />
         {{ t("shareReading.createSession") }}
       </button>
     </div>
@@ -170,12 +200,10 @@ const handleCreateClick = () => {
     <!-- Comment ça marche : timeline animée -->
     <section class="max-w-5xl mx-auto mb-16">
       <div class="text-center mb-10">
-        <h3
-          class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent pb-1"
-        >
+        <h3 class="text-2xl md:text-3xl font-bold text-text-primary">
           {{ t("shareReading.howItWorks.title") }}
         </h3>
-        <p class="text-text-secondary max-w-2xl mx-auto mt-2 dark:text-gray-400">
+        <p class="text-text-secondary max-w-2xl mx-auto mt-2">
           {{ t("shareReading.howItWorks.subtitle") }}
         </p>
       </div>
@@ -192,11 +220,11 @@ const handleCreateClick = () => {
             <span class="timeline__runner"></span>
           </span>
           <span class="timeline__node">
-            <i :class="['fa-solid', step.icon]" aria-hidden="true"></i>
+            <AppIcon :name="step.icon" :size="20" />
           </span>
           <div class="timeline__content">
-            <h4 class="timeline__title text-text-primary dark:text-gray-100">{{ step.title }}</h4>
-            <p class="timeline__desc text-text-secondary dark:text-gray-400">
+            <h4 class="timeline__title text-text-primary">{{ step.title }}</h4>
+            <p class="timeline__desc text-text-secondary">
               {{ step.description }}
             </p>
           </div>
@@ -204,35 +232,76 @@ const handleCreateClick = () => {
       </ol>
     </section>
 
-    <div class="relative">
+    <div class="relative max-w-7xl mx-auto">
+      <!-- Recherche et filtres -->
+      <div v-if="sessions.length > 0" class="flex flex-col md:flex-row gap-3 mb-10 md:items-center">
+        <div class="relative flex-1 max-w-md">
+          <AppIcon
+            name="search"
+            :size="16"
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
+          />
+          <input
+            v-model="searchTerm"
+            type="text"
+            :placeholder="t('shareReading.searchPlaceholder')"
+            class="field !pl-11"
+          />
+          <button
+            v-if="searchTerm"
+            @click="searchTerm = ''"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
+            :aria-label="t('shareReading.clearFilters')"
+          >
+            <AppIcon name="x" :size="14" />
+          </button>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button
+            class="chip transition-colors"
+            :class="
+              selectedType === ''
+                ? 'bg-primary text-white'
+                : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
+            "
+            @click="selectedType = ''"
+          >
+            {{ t("shareReading.allTypes") }}
+          </button>
+          <button
+            v-for="type in availableTypes"
+            :key="type"
+            class="chip transition-colors"
+            :class="
+              selectedType === type
+                ? 'bg-primary text-white'
+                : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
+            "
+            @click="selectedType = selectedType === type ? '' : type"
+          >
+            {{ sessionService.formatTextType(type) }}
+          </button>
+        </div>
+      </div>
+
       <!-- État de chargement -->
       <div
         v-if="isLoading"
-        class="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm z-10 rounded-2xl dark:bg-gray-900/60"
+        class="absolute inset-0 flex flex-col items-center justify-center z-10"
       >
         <div
           class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
         ></div>
-        <p class="text-text-secondary font-medium animate-pulse dark:text-gray-300">
+        <p class="text-text-secondary font-medium">
           {{ t("shareReading.loadingSessions") }}
         </p>
       </div>
 
       <!-- État d'erreur -->
-      <div
-        v-if="error"
-        class="flex flex-col items-center justify-center p-12 text-center bg-red-50 rounded-2xl border border-red-100 dark:bg-red-900/10 dark:border-red-900/30"
-      >
-        <div
-          class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-2xl mb-4 dark:bg-red-900/20 dark:text-red-400"
-        >
-          <i class="fa-solid fa-exclamation-triangle"></i>
-        </div>
-        <p class="text-red-700 font-medium mb-6 dark:text-red-400">{{ error }}</p>
-        <button
-          @click="loadSessions"
-          class="px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
-        >
+      <div v-if="error" class="flex flex-col items-center justify-center py-16 text-center">
+        <AppIcon name="alert-triangle" :size="32" class="text-red-500 mb-4" />
+        <p class="text-text-primary font-medium mb-6">{{ error }}</p>
+        <button @click="loadSessions" class="btn btn-soft">
           {{ t("common.retry") }}
         </button>
       </div>
@@ -241,20 +310,16 @@ const handleCreateClick = () => {
       <div v-else-if="sessions.length > 0">
         <!-- Sessions en cours -->
         <div class="mb-16 animate-[fadeIn_0.5s_ease]">
-          <h3
-            class="text-2xl font-bold text-text-primary mb-6 flex items-center gap-3 dark:text-gray-100"
-          >
-            <i class="fa-solid fa-fire text-orange-500"></i>
+          <h3 class="text-2xl font-bold text-text-primary mb-6 flex items-baseline gap-3">
             {{ t("shareReading.ongoingSessions") }}
-            <span
-              class="text-sm font-normal text-text-secondary bg-gray-100 px-3 py-1 rounded-full dark:bg-gray-800 dark:text-gray-400"
-              >{{ ongoingSessions.length }}</span
-            >
+            <span class="text-sm font-normal text-text-secondary">{{
+              ongoingSessions.length
+            }}</span>
           </h3>
 
           <div
             v-if="ongoingSessions.length > 0"
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
           >
             <SessionCard
               v-for="session in ongoingSessions"
@@ -264,29 +329,30 @@ const handleCreateClick = () => {
               class="h-full"
             />
           </div>
-          <div
-            v-else
-            class="flex flex-col items-center justify-center py-12 bg-white/40 backdrop-blur-sm rounded-xl border border-white/60 dark:bg-gray-800/40 dark:border-gray-700"
-          >
-            <p class="text-text-secondary text-lg dark:text-gray-400">
-              {{ t("shareReading.noOngoingSessions") }}
+          <div v-else class="py-12 text-center">
+            <p class="text-text-secondary text-lg">
+              {{
+                hasActiveFilter
+                  ? t("shareReading.noSearchResults")
+                  : t("shareReading.noOngoingSessions")
+              }}
             </p>
+            <button v-if="hasActiveFilter" @click="clearFilters" class="btn btn-soft mt-4">
+              {{ t("shareReading.clearFilters") }}
+            </button>
           </div>
         </div>
 
         <!-- Sessions terminées -->
         <div v-if="finishedSessions.length > 0" class="animate-[fadeIn_0.5s_ease] opacity-80">
-          <div class="flex items-center gap-4 mb-6">
-            <h3
-              class="text-2xl font-bold text-text-primary flex items-center gap-3 dark:text-gray-100"
-            >
-              <i class="fa-solid fa-history text-gray-500"></i>
-              {{ t("shareReading.archives") }}
-            </h3>
-            <div class="h-px flex-grow bg-gradient-to-r from-gray-200 to-transparent"></div>
-          </div>
+          <h3 class="text-2xl font-bold text-text-primary mb-6 flex items-baseline gap-3">
+            {{ t("shareReading.archives") }}
+            <span class="text-sm font-normal text-text-secondary">{{
+              finishedSessions.length
+            }}</span>
+          </h3>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <SessionCard
               v-for="session in finishedSessions"
               :key="session.id"
@@ -299,15 +365,12 @@ const handleCreateClick = () => {
       </div>
 
       <!-- Aucune session -->
-      <div
-        v-else
-        class="flex flex-col items-center justify-center py-20 text-center bg-white/60 backdrop-blur-sm rounded-3xl border border-white/60 dark:bg-gray-800/40 dark:border-gray-700"
-      >
-        <div class="text-6xl mb-6">📚</div>
-        <h4 class="text-2xl font-bold text-text-primary mb-2 dark:text-gray-200">
+      <div v-else class="flex flex-col items-center justify-center py-20 text-center">
+        <AppIcon name="book-open" :size="40" class="text-primary/50 mb-6" :stroke-width="1.75" />
+        <h4 class="text-2xl font-bold text-text-primary mb-2">
           {{ t("shareReading.noSessions") }}
         </h4>
-        <p class="text-text-secondary dark:text-gray-400">
+        <p class="text-text-secondary">
           {{ t("shareReading.createFirstSession") }}
         </p>
       </div>
@@ -318,7 +381,7 @@ const handleCreateClick = () => {
 <style scoped>
 /* Animated "how it works" timeline.
    Mobile = vertical, desktop (>=768px) = horizontal. The connecting line fills
-   step by step and a glowing dot travels along it as each node lights up;
+   step by step and a dot travels along it as each node lights up;
    the whole sequence plays once when the timeline scrolls into view. */
 .timeline {
   list-style: none;
@@ -351,9 +414,7 @@ const handleCreateClick = () => {
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 1.05rem;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-  box-shadow: 0 4px 14px rgba(29, 111, 219, 0.25);
+  background: var(--color-primary);
   /* idle state before activation */
   filter: grayscale(1);
   opacity: 0.4;
@@ -365,8 +426,7 @@ const handleCreateClick = () => {
   align-self: center;
 }
 /* Title/description colors are set via Tailwind utilities in the template
-   (text-text-* / dark:text-gray-*) so dark mode adapts correctly — Vue's
-   scoped compiler drops the descendant in `:global(.dark) .scoped` rules. */
+   (text-text-*) so dark mode adapts via the flipped CSS variables. */
 .timeline__title {
   font-weight: 700;
   font-size: 1.05rem;
@@ -396,7 +456,7 @@ const handleCreateClick = () => {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(var(--color-primary), var(--color-secondary));
+  background: var(--color-primary);
   transform: scaleY(0);
   transform-origin: top center;
 }
@@ -409,7 +469,6 @@ const handleCreateClick = () => {
   border-radius: 9999px;
   transform: translate(-50%, -50%);
   background: var(--color-secondary);
-  box-shadow: 0 0 10px 2px rgba(6, 182, 212, 0.6);
   opacity: 0;
 }
 
@@ -500,7 +559,6 @@ const handleCreateClick = () => {
     grid-row: 1;
     width: 3.5rem;
     height: 3.5rem;
-    font-size: 1.25rem;
   }
   .timeline__content {
     grid-column: auto;

@@ -6,6 +6,7 @@ import { chiourService } from "../../services/chiourService";
 import type { Chiour } from "../../models/models";
 import AudioPlayer from "../../components/AudioPlayer.vue";
 import ChiourCard from "../../components/ChiourCard.vue";
+import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 
 const route = useRoute();
@@ -76,62 +77,45 @@ watch(() => route.params.slug, loadChiour);
 
 <template>
   <main class="mx-auto px-6 py-12 max-w-4xl">
-    <!-- Back button -->
-    <button
-      @click="router.push('/chiourim')"
-      class="mb-8 flex items-center gap-2 text-text-secondary hover:text-primary transition-colors group dark:text-gray-400 dark:hover:text-primary"
-    >
-      <i
-        class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"
-      ></i>
+    <!-- Back link -->
+    <button @click="router.push('/chiourim')" class="back-link mb-8">
+      <AppIcon name="chevron-left" :size="14" />
       {{ t("detailChiour.backToList") }}
     </button>
 
     <!-- Skeleton loading -->
     <div v-if="isLoading" class="animate-pulse">
-      <div class="h-8 bg-gray-200 rounded-lg w-2/3 mb-4 dark:bg-gray-700"></div>
+      <div class="h-8 bg-black/10 rounded-lg w-2/3 mb-4 dark:bg-white/10"></div>
       <div class="flex gap-2 mb-6">
-        <div class="h-6 w-20 bg-primary/10 rounded-full"></div>
-        <div class="h-6 w-16 bg-primary/10 rounded-full"></div>
+        <div class="h-6 w-20 bg-primary/10 rounded-lg"></div>
+        <div class="h-6 w-16 bg-primary/10 rounded-lg"></div>
       </div>
       <div class="flex gap-4 mb-8">
-        <div class="h-5 bg-gray-200 rounded w-32 dark:bg-gray-700"></div>
-        <div class="h-5 bg-gray-200 rounded w-24 dark:bg-gray-700"></div>
+        <div class="h-5 bg-black/10 rounded w-32 dark:bg-white/10"></div>
+        <div class="h-5 bg-black/10 rounded w-24 dark:bg-white/10"></div>
       </div>
-      <div
-        class="bg-white/90 rounded-2xl border border-white/60 p-6 mb-8 dark:bg-gray-800/80 dark:border-gray-700"
-      >
-        <div class="h-2 bg-gray-200 rounded-full mb-4 dark:bg-gray-700"></div>
+      <div class="card p-6 mb-8">
+        <div class="h-2 bg-black/10 rounded-full mb-4 dark:bg-white/10"></div>
         <div class="flex justify-between mb-4">
-          <div class="h-3 w-10 bg-gray-200 rounded dark:bg-gray-700"></div>
-          <div class="h-3 w-10 bg-gray-200 rounded dark:bg-gray-700"></div>
+          <div class="h-3 w-10 bg-black/10 rounded dark:bg-white/10"></div>
+          <div class="h-3 w-10 bg-black/10 rounded dark:bg-white/10"></div>
         </div>
         <div class="flex justify-center">
-          <div class="w-12 h-12 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+          <div class="w-12 h-12 bg-black/10 rounded-full dark:bg-white/10"></div>
         </div>
       </div>
       <div class="space-y-2 mb-8">
-        <div class="h-4 bg-gray-200 rounded w-full dark:bg-gray-700"></div>
-        <div class="h-4 bg-gray-200 rounded w-5/6 dark:bg-gray-700"></div>
-        <div class="h-4 bg-gray-200 rounded w-4/6 dark:bg-gray-700"></div>
+        <div class="h-4 bg-black/10 rounded w-full dark:bg-white/10"></div>
+        <div class="h-4 bg-black/10 rounded w-5/6 dark:bg-white/10"></div>
+        <div class="h-4 bg-black/10 rounded w-4/6 dark:bg-white/10"></div>
       </div>
     </div>
 
     <!-- Error -->
-    <div
-      v-else-if="error"
-      class="flex flex-col items-center justify-center p-12 text-center bg-red-50 rounded-2xl border border-red-100 dark:bg-red-900/10 dark:border-red-900/30"
-    >
-      <div
-        class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-2xl mb-4 dark:bg-red-900/20 dark:text-red-400"
-      >
-        <i class="fa-solid fa-exclamation-triangle"></i>
-      </div>
-      <p class="text-red-700 font-medium mb-6 dark:text-red-400">{{ error }}</p>
-      <button
-        @click="router.push('/chiourim')"
-        class="px-6 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors"
-      >
+    <div v-else-if="error" class="flex flex-col items-center justify-center py-16 text-center">
+      <AppIcon name="alert-triangle" :size="32" class="text-red-500 mb-4" />
+      <p class="text-text-primary font-medium mb-6">{{ error }}</p>
+      <button @click="router.push('/chiourim')" class="btn btn-soft">
         {{ t("detailChiour.backToList") }}
       </button>
     </div>
@@ -148,29 +132,26 @@ watch(() => route.params.slug, loadChiour);
 
         <!-- Categories -->
         <div class="flex flex-wrap gap-2 mb-5">
-          <span
-            v-for="cat in chiour.categories"
-            :key="cat"
-            class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider dark:bg-primary/20"
-          >
+          <span v-for="cat in chiour.categories" :key="cat" class="chip bg-primary/10 text-primary">
             {{ cat }}
           </span>
         </div>
 
         <!-- Meta : auteur + niveau -->
-        <div class="flex flex-wrap items-center gap-6 text-text-secondary dark:text-gray-400">
+        <div class="flex flex-wrap items-center gap-6 text-text-secondary">
           <button
             v-if="chiour.auteur"
             @click="goToAuteur(chiour.auteur)"
             class="flex items-center gap-2 hover:text-primary transition-colors"
           >
-            <i class="fa-solid fa-chalkboard-user text-primary"></i>
-            <span class="font-semibold text-text-primary underline decoration-dotted underline-offset-2 hover:text-primary dark:text-gray-200 dark:hover:text-primary">{{
-              chiour.auteur
-            }}</span>
+            <AppIcon name="teacher" :size="16" class="text-primary" />
+            <span
+              class="font-semibold text-text-primary underline decoration-dotted underline-offset-2 hover:text-primary"
+              >{{ chiour.auteur }}</span
+            >
           </button>
           <div v-if="chiour.niveau" class="flex items-center gap-2">
-            <i class="fa-solid fa-signal text-primary"></i>
+            <AppIcon name="signal" :size="16" class="text-primary" />
             <span>{{ chiour.niveau }}</span>
           </div>
         </div>
@@ -181,49 +162,30 @@ watch(() => route.params.slug, loadChiour);
         <AudioPlayer :src="chiour.mediaUrl" :title="chiour.name" />
       </div>
 
-      <div
-        v-else
-        class="mb-8 p-6 bg-gray-50 rounded-2xl border border-gray-100 text-center dark:bg-gray-800/40 dark:border-gray-700"
-      >
-        <i class="fa-solid fa-volume-xmark text-2xl text-text-secondary/40 mb-2"></i>
-        <p class="text-text-secondary dark:text-gray-400">
+      <div v-else class="mb-8 py-8 text-center">
+        <AppIcon name="volume-x" :size="24" class="text-text-secondary/40 mb-2" />
+        <p class="text-text-secondary">
           {{ t("detailChiour.noAudio") }}
         </p>
       </div>
 
       <!-- Description -->
-      <div
-        v-if="chiour.description"
-        class="mb-12 bg-white/70 backdrop-blur-sm rounded-2xl border border-white/60 p-6 dark:bg-gray-800/50 dark:border-gray-700"
-      >
-        <h2
-          class="text-lg font-bold text-text-primary mb-3 flex items-center gap-2 dark:text-gray-100"
-        >
-          <i class="fa-solid fa-align-left text-primary"></i>
+      <div v-if="chiour.description" class="mb-12 card p-6">
+        <h2 class="text-lg font-bold text-text-primary mb-3">
           {{ t("common.description") }}
         </h2>
-        <p
-          class="text-text-secondary leading-relaxed whitespace-pre-line dark:text-gray-300"
-        >
+        <p class="text-text-secondary leading-relaxed whitespace-pre-line">
           {{ chiour.description }}
         </p>
       </div>
 
       <!-- Recommandations -->
       <div v-if="recommendations.length > 0">
-        <div class="flex items-center gap-4 mb-6">
-          <h2
-            class="text-2xl font-bold text-text-primary flex items-center gap-3 dark:text-gray-100"
-          >
-            <i class="fa-solid fa-headphones text-primary"></i>
-            {{ t("detailChiour.recommendations") }}
-          </h2>
-          <div
-            class="h-px flex-grow bg-gradient-to-r from-gray-200 to-transparent dark:from-gray-700"
-          ></div>
-        </div>
+        <h2 class="text-2xl font-bold text-text-primary mb-6">
+          {{ t("detailChiour.recommendations") }}
+        </h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           <ChiourCard
             v-for="rec in recommendations"
             :key="rec.slug"

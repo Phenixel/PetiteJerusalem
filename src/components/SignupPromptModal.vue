@@ -2,6 +2,8 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter, useRoute } from "vue-router";
+import AppIcon from "./icons/AppIcon.vue";
+import type { IconName } from "./icons/registry";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -28,14 +30,11 @@ const emit = defineEmits<Emits>();
 // Header + body adapt to the variant. Defaults keep the original
 // "reservation confirmed" appearance so existing usage is unchanged.
 const isAuth = computed(() => props.variant === "auth");
-const headerIcon = computed(() => (isAuth.value ? "fa-circle-plus" : "fa-check"));
+const headerIcon = computed<IconName>(() => (isAuth.value ? "circle-plus" : "check"));
 const headerIconWrapClass = computed(() =>
   isAuth.value
-    ? "bg-primary/10 dark:bg-primary/20"
-    : "bg-green-100 dark:bg-green-900/30",
-);
-const headerIconClass = computed(() =>
-  isAuth.value ? "text-primary" : "text-green-600 dark:text-green-400",
+    ? "bg-primary/10 text-primary"
+    : "bg-green-600/10 text-green-600 dark:text-green-400",
 );
 const title = computed(() =>
   isAuth.value ? t("signupPrompt.createSessionTitle") : t("signupPrompt.reservationConfirmed"),
@@ -70,73 +69,48 @@ const goToLogin = (mode: "signup" | "google" | "login") => {
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div
-        v-if="show"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm cursor-pointer"
-        @click="closeModal"
-      >
-        <div
-          class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 dark:bg-gray-800 dark:border-gray-700 animate-[scaleIn_0.3s_ease]"
-          @click.stop
-        >
+      <div v-if="show" class="modal-overlay" @click="closeModal">
+        <div class="modal-panel animate-[scaleIn_0.3s_ease]" @click.stop>
           <!-- Header : confirmation ou invitation à se connecter -->
-          <div class="p-6 pb-2 text-center">
+          <div class="text-center">
             <div
               class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
               :class="headerIconWrapClass"
             >
-              <i class="fa-solid text-2xl" :class="[headerIcon, headerIconClass]"></i>
+              <AppIcon :name="headerIcon" :size="24" />
             </div>
-            <h3 class="text-xl font-bold text-text-primary dark:text-gray-100 mb-1">
+            <h3 class="text-xl font-bold text-text-primary mb-1">
               {{ title }}
             </h3>
-            <p class="text-sm text-text-secondary dark:text-gray-400">
+            <p class="text-sm text-text-secondary">
               {{ subtitle }}
             </p>
           </div>
 
           <!-- Liste des avantages -->
-          <div v-if="showBenefits" class="px-6 py-4">
+          <div v-if="showBenefits" class="py-5">
             <div class="space-y-3">
               <div class="flex items-center gap-3">
-                <span
-                  class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0"
-                >
-                  <i class="fa-solid fa-rotate text-primary text-sm"></i>
-                </span>
-                <span class="text-sm text-text-primary dark:text-gray-200">{{
+                <AppIcon name="check" :size="14" class="text-green-600 dark:text-green-400" />
+                <span class="text-sm text-text-primary">{{
                   t("signupPrompt.benefits.recover")
                 }}</span>
               </div>
               <div class="flex items-center gap-3">
-                <span
-                  class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0"
-                >
-                  <i
-                    class="fa-solid fa-circle-check text-green-600 dark:text-green-400 text-sm"
-                  ></i>
-                </span>
-                <span class="text-sm text-text-primary dark:text-gray-200">{{
+                <AppIcon name="check" :size="14" class="text-green-600 dark:text-green-400" />
+                <span class="text-sm text-text-primary">{{
                   t("signupPrompt.benefits.track")
                 }}</span>
               </div>
               <div class="flex items-center gap-3">
-                <span
-                  class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0"
-                >
-                  <i class="fa-solid fa-chart-simple text-blue-600 dark:text-blue-400 text-sm"></i>
-                </span>
-                <span class="text-sm text-text-primary dark:text-gray-200">{{
+                <AppIcon name="check" :size="14" class="text-green-600 dark:text-green-400" />
+                <span class="text-sm text-text-primary">{{
                   t("signupPrompt.benefits.profile")
                 }}</span>
               </div>
               <div class="flex items-center gap-3">
-                <span
-                  class="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0"
-                >
-                  <i class="fa-solid fa-rocket text-amber-600 dark:text-amber-400 text-sm"></i>
-                </span>
-                <span class="text-sm text-text-primary dark:text-gray-200">{{
+                <AppIcon name="check" :size="14" class="text-green-600 dark:text-green-400" />
+                <span class="text-sm text-text-primary">{{
                   t("signupPrompt.benefits.upcoming")
                 }}</span>
               </div>
@@ -144,44 +118,36 @@ const goToLogin = (mode: "signup" | "google" | "login") => {
           </div>
 
           <!-- Boutons d'action -->
-          <div class="px-6 pb-4 pt-2 space-y-3">
-            <button
-              @click="goToLogin('google')"
-              class="w-full py-3 px-6 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl font-semibold text-text-primary shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
-            >
-              <i class="fa-brands fa-google text-[#4285F4]"></i>
+          <div class="pt-2 space-y-3">
+            <button @click="goToLogin('google')" class="btn btn-soft w-full">
+              <AppIcon name="google" :size="16" class="text-[#4285F4]" />
               {{ t("signupPrompt.signUpGoogle") }}
             </button>
 
-            <button
-              @click="goToLogin('signup')"
-              class="w-full py-3 px-6 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
-            >
-              <i class="fa-solid fa-envelope mr-2"></i>
+            <button @click="goToLogin('signup')" class="btn btn-primary w-full">
+              <AppIcon name="envelope" :size="16" />
               {{ t("signupPrompt.signUpEmail") }}
             </button>
 
             <button
               @click="closeModal"
-              class="w-full py-2 text-sm text-text-secondary hover:text-text-primary transition-colors dark:text-gray-400 dark:hover:text-gray-200"
+              class="w-full py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
             >
               {{ t("signupPrompt.later") }}
             </button>
           </div>
 
           <!-- Note pour les utilisateurs existants -->
-          <div class="px-6 pb-5">
-            <p class="text-xs text-center text-text-secondary/70 dark:text-gray-500">
-              {{ footerNote }}
-              <a
-                href="#"
-                class="text-primary font-semibold hover:underline"
-                @click.prevent="goToLogin('login')"
-              >
-                {{ t("signupPrompt.signIn") }}
-              </a>
-            </p>
-          </div>
+          <p class="mt-3 text-xs text-center text-text-secondary/70">
+            {{ footerNote }}
+            <a
+              href="#"
+              class="text-primary font-semibold hover:underline"
+              @click.prevent="goToLogin('login')"
+            >
+              {{ t("signupPrompt.signIn") }}
+            </a>
+          </p>
         </div>
       </div>
     </Transition>
@@ -189,30 +155,11 @@ const goToLogin = (mode: "signup" | "google" | "login") => {
 </template>
 
 <style scoped>
+/* fadeIn is defined globally in main.css */
 .modal-enter-active {
   animation: fadeIn 0.3s ease;
 }
 .modal-leave-active {
   animation: fadeIn 0.3s ease reverse;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
 }
 </style>

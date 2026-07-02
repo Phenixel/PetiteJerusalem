@@ -1,9 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  /* Colors */
-  --color-primary: #1D6FDB;
-  --color-secondary: #06B6D4;
+  /* Colors — the beige background and the 3 selectable theme pairs are fixed;
+     --color-primary/--color-secondary are re-written at runtime by useTheme. */
+  --color-primary: #1d6fdb;
+  --color-secondary: #06b6d4;
   --color-accent: #ff6b6b;
   --color-accent-secondary: #ee5a24;
 
@@ -11,30 +12,55 @@
   --color-bg-primary: #ffffff;
   --color-bg-secondary: #f8f9fa;
   --color-bg-dark: #181818;
-  --color-bg-beige: #f4f1ea; /* New background color */
+  --color-bg-beige: #f4f1ea;
 
-  /* Text */
-  --color-text-primary: #333333;
-  --color-text-secondary: #666666;
+  /* Surfaces (cards, panels, modals). Flipped in dark mode below. */
+  --color-surface: #ffffff;
+  --color-surface-soft: #f8f5ef;
+
+  /* Text — warm-tinted neutrals to sit naturally on the beige background. */
+  --color-text-primary: #35312a;
+  --color-text-secondary: #6d6759;
   --color-text-light: #ffffff;
 
-  /* Fonts */
+  /* Hairlines for the few separators that remain. */
+  --color-line: rgb(53 49 42 / 0.08);
+
+  /* Fonts — --font-sans / --font-hebrew are re-written at runtime by useFonts. */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-serif: "Georgia", serif;
+  --font-serif: "Lora", "Georgia", serif;
   --font-hebrew: "Frank Ruhl Libre", "Noto Serif Hebrew", "David Libre", Georgia, serif;
 
-  /* Spacing - usually standard tailwind is fine, but we can match specific ones if needed */
-  /* Border Radius */
+  /* Border radius scale: tight on small controls, larger on large surfaces. */
   --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Soft, warm-tinted shadows — flat surfaces are separated from the beige
+     background by shadow alone (no borders). */
+  --shadow-card: 0 1px 2px rgb(58 50 30 / 0.05), 0 2px 8px rgb(58 50 30 / 0.05);
+  --shadow-card-hover: 0 2px 4px rgb(58 50 30 / 0.06), 0 8px 24px rgb(58 50 30 / 0.09);
+  --shadow-pop: 0 4px 12px rgb(30 26 18 / 0.08), 0 16px 40px rgb(30 26 18 / 0.14);
+}
+
+/* Dark mode: flip the semantic tokens so most components adapt without
+   per-element dark: overrides. */
+:root.dark {
+  --color-surface: #1f2937;
+  --color-surface-soft: #273244;
+  --color-text-primary: #f3f4f6;
+  --color-text-secondary: #9ca3af;
+  --color-line: rgb(255 255 255 / 0.1);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px rgb(0 0 0 / 0.25);
+  --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.35), 0 8px 24px rgb(0 0 0 / 0.4);
+  --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.5);
 }
 
 /* Global Styles */
 body {
   font-family: var(--font-sans);
   color: var(--color-text-primary);
-  background-color: var(--color-bg-beige); /* Apply new background globally */
+  background-color: var(--color-bg-beige);
   scrollbar-gutter: stable;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -78,6 +104,185 @@ button,
   cursor: pointer;
 }
 
+/* ---- Shared component styles ------------------------------------------- */
+@layer components {
+  /* Flat surface: no border, separated from the beige background by a soft
+     warm shadow. The house card. */
+  .card {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Clickable card: shadow deepens on hover — content inside reacts
+     (title color, illustration…), the box itself stays put. */
+  .card-hover {
+    transition:
+      box-shadow 0.25s ease,
+      background-color 0.25s ease;
+  }
+  .card-hover:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9375rem;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .btn-primary {
+    background-color: var(--color-primary);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--color-primary) 85%, #1a1408);
+  }
+
+  .btn-soft {
+    background-color: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+    color: var(--color-text-primary);
+  }
+  .btn-soft:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--color-text-primary) 11%, transparent);
+  }
+
+  .btn-danger {
+    background-color: color-mix(in srgb, #dc2626 9%, transparent);
+    color: #dc2626;
+  }
+  .btn-danger:hover:not(:disabled) {
+    background-color: color-mix(in srgb, #dc2626 16%, transparent);
+  }
+  :root.dark .btn-danger {
+    color: #f87171;
+  }
+
+  /* Square icon-only button */
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 10px;
+    color: var(--color-text-secondary);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+  .icon-btn:hover {
+    background-color: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+    color: var(--color-text-primary);
+  }
+
+  /* Small label chip (categories, types, statuses). Quiet by design:
+     sentence case, no letterspacing. Color it at the call site. */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Text inputs & selects */
+  .field {
+    width: 100%;
+    background-color: var(--color-surface);
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    color: var(--color-text-primary);
+    box-shadow: inset 0 0 0 1px var(--color-line);
+    transition: box-shadow 0.2s ease;
+  }
+  .field::placeholder {
+    color: color-mix(in srgb, var(--color-text-secondary) 70%, transparent);
+  }
+  .field:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 55%, transparent);
+  }
+
+  /* Quiet back / breadcrumb link at the top of detail pages. */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    transition: color 0.2s ease;
+  }
+  .back-link:hover {
+    color: var(--color-primary);
+  }
+
+  /* Modal building blocks — one modal style for the whole app. */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-color: rgb(20 16 8 / 0.45);
+  }
+  .modal-panel {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-pop);
+    width: 100%;
+    max-width: 28rem;
+    padding: 1.5rem;
+  }
+}
+
+/* Shared entrance animations, used via animate-[fadeIn_0.5s_ease] etc. */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* ---- SEO landing pages & prerendered content (src/content/seoPages.ts) ----
    Styles the article markup rendered via v-html (not scoped) and the static
    body the prerender step injects into crawled HTML. */
@@ -91,10 +296,7 @@ button,
 
 .seo-article h1 {
   font-size: clamp(1.9rem, 4vw, 2.75rem);
-  background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--color-text-primary);
   margin-bottom: 1rem;
 }
 
@@ -113,10 +315,6 @@ button,
   font-size: 1.15rem;
   color: var(--color-text-secondary);
   line-height: 1.7;
-}
-
-:root.dark .seo-article .seo-lead {
-  color: #cbd5e1;
 }
 
 .seo-article p,
@@ -162,22 +360,17 @@ button,
 
 .seo-article .seo-cards li {
   padding: 1.25rem;
-  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.6);
-}
-
-:root.dark .seo-article .seo-cards li {
-  background: rgba(31, 41, 55, 0.5);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
 }
 
 .seo-article .seo-cta {
   display: inline-block;
   margin-top: 0.5rem;
   padding: 0.75rem 1.5rem;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
+  border-radius: 10px;
+  background: var(--color-primary);
   color: #fff;
   font-weight: 700;
   text-decoration: none;
@@ -191,10 +384,6 @@ button,
 .seo-article dd {
   margin: 0.25rem 0 0;
   color: var(--color-text-secondary);
-}
-
-:root.dark .seo-article dd {
-  color: #cbd5e1;
 }
 
 /* "Tehilim par intention": horizontal list of psalm chips linking to the reader. */
@@ -213,16 +402,11 @@ button,
 .seo-article .tehilim-psalms a {
   display: inline-block;
   padding: 0.4rem 0.85rem;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
   text-decoration: none;
   font-weight: 600;
-}
-
-:root.dark .seo-article .tehilim-psalms a {
-  background: rgba(31, 41, 55, 0.5);
-  border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* "Tehilim par intention" hub: simple list of intentions (whole row is a link). */
@@ -232,7 +416,6 @@ button,
   display: flex;
   flex-direction: column;
   gap: 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .seo-article .tehilim-list li {
@@ -242,13 +425,17 @@ button,
 .seo-article .tehilim-list a {
   display: block;
   padding: 1rem 0.75rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--color-line);
   text-decoration: none;
   transition: background 0.2s ease;
 }
 
 .seo-article .tehilim-list a:hover {
   background: rgba(0, 0, 0, 0.03);
+}
+
+:root.dark .seo-article .tehilim-list a:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .tehilim-list-title {
@@ -264,26 +451,6 @@ button,
   font-size: 0.95rem;
   line-height: 1.5;
   color: var(--color-text-secondary);
-}
-
-:root.dark .seo-article .tehilim-list {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-:root.dark .seo-article .tehilim-list a {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-:root.dark .seo-article .tehilim-list a:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-:root.dark .tehilim-list-title {
-  color: #f3f4f6;
-}
-
-:root.dark .tehilim-list-desc {
-  color: #cbd5e1;
 }
 
 /* Internal-link footer injected into prerendered HTML only (the SPA uses
@@ -320,11 +487,6 @@ button,
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.85rem 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-:root.dark .reading-page .reading-lines li {
-  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .reading-page .verse-num {
@@ -346,10 +508,6 @@ button,
   line-height: 1.6;
 }
 
-:root.dark .reading-page .tl {
-  color: #cbd5e1;
-}
-
 /* Talmud: daf sub-header above each folio's lines. */
 .reading-page .daf-label {
   margin-top: 1.25rem;
@@ -369,15 +527,10 @@ button,
 .reading-page .chapter-list a {
   display: block;
   padding: 0.6rem 0.5rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid var(--color-line);
   text-decoration: none;
   font-weight: 600;
   color: var(--color-text-primary);
-}
-
-:root.dark .reading-page .chapter-list a {
-  border-color: rgba(255, 255, 255, 0.08);
-  color: #f3f4f6;
 }
 
 .reading-page .chapter-list a:hover {

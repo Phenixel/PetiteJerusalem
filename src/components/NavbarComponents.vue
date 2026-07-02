@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { authService } from "../services/authService";
 import { useDarkMode } from "../composables/useDarkMode";
 import LanguageSelector from "./LanguageSelector.vue";
+import AppIcon from "./icons/AppIcon.vue";
 
 const router = useRouter();
 const username = ref<string | null>(null);
@@ -11,6 +12,13 @@ const isMobileMenuOpen = ref(false);
 let unsubscribeAuth: (() => void) | null = null;
 
 useDarkMode();
+
+const navLinks = [
+  { to: "/", labelKey: "common.home", exact: true },
+  { to: "/share-reading", labelKey: "common.shareReading", exact: true },
+  { to: "/bibliotheque", labelKey: "study.title", exact: true },
+  { to: "/chiourim", labelKey: "common.chiourim", exact: true },
+];
 
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value;
@@ -54,7 +62,7 @@ function goToLogin() {
 
 <template>
   <header
-    class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-white/30 backdrop-blur-md border-b border-white/20 dark:bg-gray-900/80 dark:border-gray-800 transition-colors duration-300"
+    class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-beige/90 backdrop-blur-md dark:bg-gray-900/90 transition-colors duration-300"
   >
     <RouterLink to="/" class="group">
       <h1
@@ -70,7 +78,7 @@ function goToLogin() {
     <!-- Bouton hamburger pour mobile -->
     <button
       @click="toggleMobileMenu"
-      class="flex flex-col justify-around w-8 h-6 bg-transparent border-none cursor-pointer p-0 z-[1000] md:hidden text-text-primary dark:text-white"
+      class="flex flex-col justify-around w-8 h-6 bg-transparent border-none cursor-pointer p-0 z-[1000] md:hidden text-text-primary"
       :class="{ 'fixed right-6 top-6': isMobileMenuOpen }"
       :aria-label="$t('navbar.mainMenu')"
     >
@@ -90,61 +98,35 @@ function goToLogin() {
 
     <!-- Navigation desktop -->
     <nav class="hidden md:flex items-center gap-8">
-      <div class="flex gap-6 items-center">
+      <div class="flex gap-2 items-center">
         <RouterLink
-          to="/"
-          @click="closeMobileMenu"
-          class="text-text-primary font-medium px-4 py-2 rounded-lg hover:bg-black/5 hover:text-primary transition-colors dark:text-gray-100 dark:hover:bg-gray-800"
-          exact-active-class="bg-black/5 text-primary dark:bg-gray-800"
-          >{{ $t("common.home") }}</RouterLink
-        >
-        <RouterLink
-          to="/share-reading"
-          @click="closeMobileMenu"
-          class="text-text-primary font-medium px-4 py-2 rounded-lg hover:bg-black/5 hover:text-primary transition-colors dark:text-gray-100 dark:hover:bg-gray-800"
-          exact-active-class="bg-black/5 text-primary dark:bg-gray-800"
-          >{{ $t("common.shareReading") }}</RouterLink
-        >
-        <RouterLink
-          to="/bibliotheque"
-          @click="closeMobileMenu"
-          class="text-text-primary font-medium px-4 py-2 rounded-lg hover:bg-black/5 hover:text-primary transition-colors dark:text-gray-100 dark:hover:bg-gray-800"
-          exact-active-class="bg-black/5 text-primary dark:bg-gray-800"
-          >{{ $t("study.title") }}</RouterLink
-        >
-        <RouterLink
-          to="/chiourim"
-          @click="closeMobileMenu"
-          class="text-text-primary font-medium px-4 py-2 rounded-lg hover:bg-black/5 hover:text-primary transition-colors dark:text-gray-100 dark:hover:bg-gray-800"
-          exact-active-class="bg-black/5 text-primary dark:bg-gray-800"
-          >{{ $t("common.chiourim") }}</RouterLink
+          v-for="link in navLinks"
+          :key="link.to"
+          :to="link.to"
+          class="nav-link"
+          exact-active-class="nav-link-active"
+          >{{ $t(link.labelKey) }}</RouterLink
         >
       </div>
-      <div class="flex items-center gap-4">
-        <button
-          v-if="!username"
-          @click="goToLogin"
-          class="px-4 py-2 bg-white/20 border border-white/30 backdrop-blur-sm rounded-lg hover:bg-white/30 hover:-translate-y-0.5 transition-all text-text-primary font-medium dark:text-gray-100 dark:bg-gray-800/50 dark:border-gray-700 dark:hover:bg-gray-700"
-        >
+      <div class="flex items-center gap-3">
+        <button v-if="!username" @click="goToLogin" class="btn btn-soft">
           {{ $t("common.login") }}
         </button>
-        <div
-          v-else
-          class="flex items-center gap-4 font-medium text-text-primary dark:text-gray-100"
-        >
+        <div v-else class="flex items-center gap-2 font-medium text-text-primary">
           <RouterLink
             to="/profile"
-            class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-black/5 transition-colors dark:hover:bg-gray-800"
+            class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-black/5 transition-colors dark:hover:bg-white/10"
           >
-            <span><i class="fa-solid fa-user"></i> {{ username }}</span>
+            <AppIcon name="user" :size="16" />
+            <span>{{ username }}</span>
           </RouterLink>
           <button
             @click="logout"
-            class="flex items-center justify-center w-9 h-9 bg-white/20 border border-white/30 backdrop-blur-sm rounded-lg hover:bg-white/30 hover:-translate-y-0.5 transition-all text-text-primary dark:text-gray-100 dark:bg-gray-800/50 dark:border-gray-700 dark:hover:bg-gray-700"
+            class="icon-btn"
             :aria-label="$t('common.logout')"
             :title="$t('common.logout')"
           >
-            <i class="fa-solid fa-right-from-bracket"></i>
+            <AppIcon name="logout" :size="18" />
           </button>
         </div>
       </div>
@@ -157,22 +139,15 @@ function goToLogin() {
       <div
         v-if="isMobileMenuOpen"
         @click="closeMobileMenu"
-        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998]"
+        class="fixed inset-0 bg-black/40 z-[9998]"
       ></div>
     </Transition>
 
     <Transition name="slide-menu">
       <nav
         v-if="isMobileMenuOpen"
-        class="fixed top-0 left-0 w-[85vw] max-w-[320px] h-full z-[9999] overflow-y-auto"
+        class="fixed top-0 left-0 w-[85vw] max-w-[320px] h-full z-[9999] overflow-y-auto bg-surface shadow-pop"
       >
-        <div
-          class="absolute inset-0 bg-gradient-to-b from-white/98 via-white/95 to-gray-100/98 backdrop-blur-2xl dark:from-slate-900/98 dark:via-slate-900/95 dark:to-slate-800/98"
-        ></div>
-        <div
-          class="absolute top-0 right-0 w-[1px] h-full bg-gradient-to-b from-gray-300/50 via-gray-200/30 to-transparent dark:from-white/20 dark:via-white/10 dark:to-transparent"
-        ></div>
-
         <div class="relative flex flex-col h-full p-6">
           <div class="mb-8 pt-2">
             <h2
@@ -180,86 +155,50 @@ function goToLogin() {
             >
               {{ $t("navbar.title") }}
             </h2>
-            <div
-              class="w-12 h-1 bg-gradient-to-r from-primary to-secondary rounded-full mt-2"
-            ></div>
           </div>
-          <div class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
             <RouterLink
-              to="/"
+              v-for="link in navLinks"
+              :key="link.to"
+              :to="link.to"
               @click="closeMobileMenu"
-              class="text-gray-700 font-medium text-base p-4 rounded-2xl bg-black/5 border border-black/10 hover:bg-black/10 hover:border-black/20 hover:text-gray-900 transition-all duration-300 dark:text-white/80 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20 dark:hover:text-white"
-              exact-active-class="!bg-primary/20 !border-primary/40 !text-primary dark:!text-white"
+              class="mobile-link"
+              exact-active-class="mobile-link-active"
             >
-              {{ $t("common.home") }}
-            </RouterLink>
-
-            <RouterLink
-              to="/share-reading"
-              @click="closeMobileMenu"
-              class="text-gray-700 font-medium text-base p-4 rounded-2xl bg-black/5 border border-black/10 hover:bg-black/10 hover:border-black/20 hover:text-gray-900 transition-all duration-300 dark:text-white/80 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20 dark:hover:text-white"
-              exact-active-class="!bg-primary/20 !border-primary/40 !text-primary dark:!text-white"
-            >
-              {{ $t("common.shareReading") }}
-            </RouterLink>
-
-            <RouterLink
-              to="/bibliotheque"
-              @click="closeMobileMenu"
-              class="text-gray-700 font-medium text-base p-4 rounded-2xl bg-black/5 border border-black/10 hover:bg-black/10 hover:border-black/20 hover:text-gray-900 transition-all duration-300 dark:text-white/80 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20 dark:hover:text-white"
-              exact-active-class="!bg-primary/20 !border-primary/40 !text-primary dark:!text-white"
-            >
-              {{ $t("study.title") }}
-            </RouterLink>
-
-            <RouterLink
-              to="/chiourim"
-              @click="closeMobileMenu"
-              class="text-gray-700 font-medium text-base p-4 rounded-2xl bg-black/5 border border-black/10 hover:bg-black/10 hover:border-black/20 hover:text-gray-900 transition-all duration-300 dark:text-white/80 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-white/20 dark:hover:text-white"
-              exact-active-class="!bg-primary/20 !border-primary/40 !text-primary dark:!text-white"
-            >
-              {{ $t("common.chiourim") }}
+              {{ $t(link.labelKey) }}
             </RouterLink>
           </div>
 
           <!-- Language selector in mobile menu -->
-          <div class="mt-6">
-            <p class="text-xs text-gray-500 dark:text-white/50 mb-2 px-1">
+          <div class="mt-8">
+            <p class="text-xs text-text-secondary mb-2 px-1">
               {{ $t("common.language") }}
             </p>
             <LanguageSelector />
           </div>
 
           <div class="mt-auto pt-6">
-            <div
-              class="h-[1px] bg-gradient-to-r from-transparent via-black/10 to-transparent mb-6 dark:via-white/20"
-            ></div>
-
-            <div class="space-y-3">
-              <button
-                v-if="!username"
-                @click="goToLogin"
-                class="flex items-center justify-center gap-2 w-full py-3.5 px-6 bg-black/5 border border-black/10 rounded-xl font-medium text-gray-700 hover:bg-black/10 hover:text-gray-900 transition-all duration-200 cursor-pointer dark:bg-white/10 dark:border-white/20 dark:text-white/90 dark:hover:bg-white/15 dark:hover:text-white"
-              >
-                <i class="fa-solid fa-right-to-bracket"></i>
+            <div class="space-y-2">
+              <button v-if="!username" @click="goToLogin" class="btn btn-soft w-full">
+                <AppIcon name="login" :size="16" />
                 {{ $t("common.login") }}
               </button>
               <template v-else>
                 <RouterLink
                   to="/profile"
                   @click="closeMobileMenu"
-                  class="flex items-center gap-3 w-full py-3.5 px-4 bg-black/5 border border-black/10 rounded-xl font-medium hover:bg-black/10 transition-all duration-200 text-gray-700 hover:text-gray-900 dark:bg-white/10 dark:border-white/20 dark:text-white/90 dark:hover:bg-white/15 dark:hover:text-white"
+                  class="btn btn-soft w-full !justify-start"
                 >
-                  <i class="fa-solid fa-user"></i>
+                  <AppIcon name="user" :size="16" />
                   <span class="truncate">{{ username }}</span>
                 </RouterLink>
                 <button
                   @click="logout"
-                  class="flex items-center justify-start gap-3 w-full py-3.5 px-4 bg-black/[0.03] border border-black/5 rounded-xl font-medium hover:bg-black/10 transition-all duration-200 text-gray-500 hover:text-gray-700 cursor-pointer dark:bg-white/5 dark:border-white/10 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white"
+                  class="btn w-full !justify-start text-text-secondary hover:text-text-primary"
                   :aria-label="$t('common.logout')"
                   :title="$t('common.logout')"
                 >
-                  <i class="fa-solid fa-right-from-bracket"></i>
+                  <AppIcon name="logout" :size="16" />
                   {{ $t("common.logout") }}
                 </button>
               </template>
@@ -272,6 +211,57 @@ function goToLogin() {
 </template>
 
 <style scoped>
+/* Desktop links: quiet text, the active page gets a short underline bar
+   instead of a pill background. */
+.nav-link {
+  position: relative;
+  padding: 0.5rem 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: color 0.2s ease;
+}
+.nav-link:hover {
+  color: var(--color-text-primary);
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.1rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-primary);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.25s ease;
+}
+.nav-link-active {
+  color: var(--color-text-primary);
+}
+.nav-link-active::after {
+  transform: scaleX(1);
+}
+
+/* Mobile links: flat rows, active = primary tint. */
+.mobile-link {
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+.mobile-link:hover {
+  background-color: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+}
+.mobile-link-active {
+  color: var(--color-primary);
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  font-weight: 600;
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;

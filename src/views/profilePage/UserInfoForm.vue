@@ -2,6 +2,7 @@
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { User } from "../../services/authService";
+import AppIcon from "../../components/icons/AppIcon.vue";
 
 const { t } = useI18n();
 
@@ -57,67 +58,53 @@ const save = () => {
 <template>
   <div class="animate-[fadeIn_0.3s_ease]">
     <div class="flex items-center justify-between mb-8">
-      <h2 class="text-2xl font-bold text-text-primary dark:text-gray-100">
+      <h2 class="text-2xl font-bold text-text-primary">
         {{ t("profile.myInformation") }}
       </h2>
-      <button
-        v-if="!isEditing"
-        @click="startEdit"
-        class="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg font-medium text-text-secondary transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
-      >
-        <i class="fa-solid fa-edit mr-2"></i> {{ t("common.edit") }}
+      <button v-if="!isEditing" @click="startEdit" class="btn btn-soft">
+        <AppIcon name="pencil" :size="14" /> {{ t("common.edit") }}
       </button>
       <div v-else class="flex gap-2">
-        <button
-          @click="save"
-          class="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
-        >
+        <button @click="save" class="btn btn-primary">
           {{ t("common.save") }}
         </button>
-        <button
-          @click="cancelEdit"
-          class="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg font-medium text-text-secondary transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
-        >
+        <button @click="cancelEdit" class="btn btn-soft">
           {{ t("common.cancel") }}
         </button>
       </div>
     </div>
 
-    <div
-      class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-8 max-w-2xl dark:bg-gray-800/60 dark:border-gray-700"
-    >
+    <div class="card p-8 max-w-2xl">
       <div class="space-y-6">
         <div>
-          <label class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400">{{
+          <label class="block text-sm font-semibold text-text-secondary mb-2">{{
             t("profile.displayName")
           }}</label>
           <input
             v-model="form.name"
             :disabled="!isEditing"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none disabled:opacity-60 disabled:bg-gray-50 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700 dark:disabled:bg-gray-900/50"
+            class="field disabled:opacity-60"
             type="text"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400">{{
+          <label class="block text-sm font-semibold text-text-secondary mb-2">{{
             t("common.emailAddress")
           }}</label>
           <input
             v-model="form.email"
             :disabled="!isEditing"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none disabled:opacity-60 disabled:bg-gray-50 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700 dark:disabled:bg-gray-900/50"
+            class="field disabled:opacity-60"
             type="email"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-400">{{
+          <label class="block text-sm font-semibold text-text-secondary mb-2">{{
             t("profile.userId")
           }}</label>
-          <div
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-text-secondary font-mono text-sm dark:bg-gray-900/50 dark:border-gray-600 dark:text-gray-400"
-          >
+          <div class="field font-mono text-sm text-text-secondary">
             {{ user.id }}
           </div>
         </div>

@@ -11,6 +11,10 @@ export interface DailyReadingProgress {
 
 export interface UserPreferences {
   theme: string;
+  /** Latin (UI) font choice — see LATIN_FONT_OPTIONS in useFonts. */
+  fontLatin: string;
+  /** Hebrew (reading) font choice — see HEBREW_FONT_OPTIONS in useFonts. */
+  fontHebrew: string;
   /** Ordered ids of the texts the user reads every day (their daily reading list). */
   dailyReadingIds: number[];
   /** Per-day read tracking for the daily reading list. */
@@ -19,6 +23,8 @@ export interface UserPreferences {
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   theme: "ocean",
+  fontLatin: "inter",
+  fontHebrew: "frank",
   dailyReadingIds: [],
   dailyReadingProgress: { date: "", completedIds: [] },
 };
