@@ -14,7 +14,7 @@
     stroke-linecap="round"
     stroke-linejoin="round"
     aria-hidden="true"
-    class="illu"
+    class="illu illu-partage"
   >
     <!-- open book -->
     <g class="book">
@@ -110,31 +110,35 @@
 }
 
 /* --- hover (parent card): readers bob toward the book in turn, links flow
-   fast, page lines ripple — the drawing lives, nothing is scaled up --- */
-:global(.feature-card:hover) .link {
+   fast, page lines ripple — the drawing lives, nothing is scaled up ---
+   NOTE: the WHOLE selector must live inside :global() — Vue's scoped
+   compiler drops anything written after :global(...). */
+:global(.feature-card:hover .illu-partage .link) {
   animation: illu-flow 0.7s linear infinite;
   opacity: 1;
 }
-:global(.feature-card:hover) .reader {
+:global(.feature-card:hover .illu-partage .reader) {
   opacity: 1;
+  transform-box: fill-box;
+  transform-origin: center;
   animation: reader-bob 1.1s ease-in-out infinite;
 }
-:global(.feature-card:hover) .reader-1 {
+:global(.feature-card:hover .illu-partage .reader-1) {
   animation-delay: 0s;
 }
-:global(.feature-card:hover) .reader-2 {
+:global(.feature-card:hover .illu-partage .reader-2) {
   animation-delay: 0.18s;
 }
-:global(.feature-card:hover) .reader-3 {
+:global(.feature-card:hover .illu-partage .reader-3) {
   animation-delay: 0.36s;
 }
-:global(.feature-card:hover) .draw-2 {
+:global(.feature-card:hover .illu-partage .draw-2) {
   stroke-dashoffset: 0;
   transform-box: fill-box;
   transform-origin: center;
   animation: page-ripple 1.1s ease-in-out infinite;
 }
-:global(.feature-card:hover) .draw-2:last-of-type {
+:global(.feature-card:hover .illu-partage .draw-2:last-of-type) {
   animation-delay: 0.55s;
 }
 
@@ -173,9 +177,9 @@
     transform: none;
     stroke-dashoffset: 0;
   }
-  :global(.feature-card:hover) .link,
-  :global(.feature-card:hover) .draw-2,
-  :global(.feature-card:hover) .reader {
+  :global(.feature-card:hover .illu-partage .link),
+  :global(.feature-card:hover .illu-partage .draw-2),
+  :global(.feature-card:hover .illu-partage .reader) {
     animation: none;
     transform: none;
   }

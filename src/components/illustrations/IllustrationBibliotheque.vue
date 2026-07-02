@@ -14,7 +14,7 @@
     stroke-linecap="round"
     stroke-linejoin="round"
     aria-hidden="true"
-    class="illu"
+    class="illu illu-biblio"
   >
     <!-- shelf -->
     <path class="shelf" d="M8 53h48" />
@@ -96,21 +96,23 @@
   }
 }
 
-/* --- hover (parent card): the books tidy themselves up --- */
-:global(.feature-card:hover) .tome {
+/* --- hover (parent card): the books tidy themselves up ---
+   NOTE: the WHOLE selector must live inside :global() — Vue's scoped
+   compiler drops anything written after :global(...). */
+:global(.feature-card:hover .illu-biblio .tome) {
   opacity: 1;
   transform-box: fill-box;
   transform-origin: bottom center;
 }
-:global(.feature-card:hover) .tome-1 {
+:global(.feature-card:hover .illu-biblio .tome-1) {
   animation: tome-hop 0.5s ease 0s 1 both;
 }
-:global(.feature-card:hover) .tome-2 {
+:global(.feature-card:hover .illu-biblio .tome-2) {
   animation: tome-hop 0.5s ease 0.12s 1 both;
 }
 /* the leaning book springs upright (cancels its baked-in 9° tilt),
    with a small overshoot, and stays straight while hovered */
-:global(.feature-card:hover) .tome-3 {
+:global(.feature-card:hover .illu-biblio .tome-3) {
   animation: tome-straighten 0.7s ease-out 0.2s both;
 }
 
@@ -144,7 +146,7 @@
     transform: none;
     stroke-dashoffset: 0;
   }
-  :global(.feature-card:hover) .tome {
+  :global(.feature-card:hover .illu-biblio .tome) {
     animation: none;
     transform: none;
   }

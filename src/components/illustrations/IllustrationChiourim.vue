@@ -13,7 +13,7 @@
     stroke-linecap="round"
     stroke-linejoin="round"
     aria-hidden="true"
-    class="illu"
+    class="illu illu-chiourim"
   >
     <!-- headphones (band + cups) nod together on hover -->
     <g class="phones">
@@ -126,8 +126,11 @@
   }
 }
 
-/* --- hover (parent card): the headphones nod, the equalizer goes wild --- */
-:global(.feature-card:hover) .phones {
+/* --- hover (parent card): the headphones nod, the equalizer goes wild ---
+   NOTE: the WHOLE selector must live inside :global() — Vue's scoped
+   compiler drops anything written after :global(...). The .illu-chiourim
+   root class keeps these global rules from leaking elsewhere. */
+:global(.feature-card:hover .illu-chiourim .phones) {
   transform-box: fill-box;
   transform-origin: center 65%;
   animation: phones-nod 0.9s ease-in-out infinite;
@@ -143,23 +146,25 @@
   }
 }
 
-:global(.feature-card:hover) .bar {
+:global(.feature-card:hover .illu-chiourim .bar) {
   opacity: 1;
+  transform-box: fill-box;
+  transform-origin: bottom center;
   animation: illu-play 0.45s ease-in-out infinite;
 }
-:global(.feature-card:hover) .bar-4 {
+:global(.feature-card:hover .illu-chiourim .bar-4) {
   animation-delay: 0s;
 }
-:global(.feature-card:hover) .bar-1 {
+:global(.feature-card:hover .illu-chiourim .bar-1) {
   animation-delay: 0.09s;
 }
-:global(.feature-card:hover) .bar-2 {
+:global(.feature-card:hover .illu-chiourim .bar-2) {
   animation-delay: 0.18s;
 }
-:global(.feature-card:hover) .bar-3 {
+:global(.feature-card:hover .illu-chiourim .bar-3) {
   animation-delay: 0.27s;
 }
-:global(.feature-card:hover) .bar-5 {
+:global(.feature-card:hover .illu-chiourim .bar-5) {
   animation-delay: 0.36s;
 }
 
@@ -185,8 +190,8 @@
   .bar-x {
     opacity: 0;
   }
-  :global(.feature-card:hover) .phones,
-  :global(.feature-card:hover) .bar {
+  :global(.feature-card:hover .illu-chiourim .phones),
+  :global(.feature-card:hover .illu-chiourim .bar) {
     animation: none;
     transform: none;
   }

@@ -56,29 +56,30 @@ onMounted(() => {
       </p>
     </div>
 
-    <div class="w-full max-w-3xl mx-auto">
-      <div class="flex flex-col gap-5 mb-10">
+    <div class="w-full max-w-6xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mb-10 items-stretch">
         <button
           v-for="(feature, index) in features"
           :key="feature.title"
-          class="feature-card card card-hover group flex items-center gap-5 md:gap-8 p-6 md:p-7 text-left cursor-pointer"
+          class="feature-card card card-hover group flex items-center gap-5 p-6 text-left cursor-pointer"
           :style="{ '--enter-delay': `${index * 0.12}s` }"
           @click="router.push(feature.route)"
         >
-          <!-- Texte à gauche, illustration à droite, tout reste dans la carte.
-               Au repos, seule la micro-animation interne du SVG vit ; au survol,
-               c'est le dessin lui-même qui s'anime (aucun zoom global). -->
+          <!-- Texte à gauche, illustration à droite, tout reste dans la carte
+               (une ligne par carte sur mobile, trois cartes côte à côte sur
+               desktop). Au repos, seule la micro-animation interne du SVG vit ;
+               au survol, c'est le dessin lui-même qui s'anime (aucun zoom). -->
           <div class="flex-1 min-w-0">
             <h3
-              class="text-xl md:text-2xl font-bold mb-2 text-text-primary group-hover:text-primary transition-colors"
+              class="text-lg font-bold mb-1.5 text-text-primary group-hover:text-primary transition-colors"
             >
               {{ feature.title }}
             </h3>
-            <p class="text-text-secondary text-sm md:text-base leading-relaxed">
+            <p class="text-text-secondary text-sm leading-relaxed">
               {{ feature.description }}
             </p>
           </div>
-          <div class="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 shrink-0 text-primary">
+          <div class="w-24 h-24 sm:w-28 sm:h-28 md:w-24 md:h-24 lg:w-28 lg:h-28 shrink-0 text-primary">
             <component :is="feature.illustration" />
           </div>
         </button>
