@@ -169,30 +169,31 @@ const handleCardClick = (text: TextStudy) => {
                 </label>
               </div>
 
-              <div class="flex items-center gap-1 self-start">
+              <div class="flex items-center gap-2 self-start">
                 <router-link
                   :to="{
                     name: 'text-reading',
                     params: { textId: text.id },
                     query: { session: session.slug ?? session.id },
                   }"
-                  class="icon-btn !w-8 !h-8 hover:!text-primary"
+                  class="btn btn-soft !px-3.5 !py-2 text-sm hover:!text-primary"
                   title="Lire ce texte"
                   @click.stop
                 >
-                  <AppIcon name="book-open" :size="14" />
+                  <AppIcon name="book-open" :size="15" />
+                  Lire
                 </router-link>
                 <button
                   v-if="text.totalSections > 1"
                   @click.stop="toggleTextExpansion(text.id)"
-                  class="icon-btn !w-8 !h-8"
+                  class="icon-btn"
                   :class="{
                     'bg-black/5 text-text-primary dark:bg-white/10': isTextExpanded(text.id),
                   }"
                 >
                   <AppIcon
                     :name="isTextExpanded(text.id) ? 'chevron-up' : 'chevron-down'"
-                    :size="14"
+                    :size="15"
                   />
                 </button>
               </div>
@@ -395,11 +396,11 @@ const handleCardClick = (text: TextStudy) => {
                       params: { textId: text.id, section: chapter },
                       query: { session: session.slug ?? session.id },
                     }"
-                    class="w-6 h-6 flex items-center justify-center rounded-md text-text-secondary hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex-shrink-0"
+                    class="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex-shrink-0"
                     title="Lire ce chapitre"
                     @click.stop
                   >
-                    <AppIcon name="book-reader" :size="12" />
+                    <AppIcon name="book-reader" :size="16" />
                   </router-link>
                 </div>
               </div>

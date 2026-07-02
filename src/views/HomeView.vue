@@ -57,23 +57,30 @@ onMounted(() => {
     </div>
 
     <div class="w-full max-w-6xl mx-auto">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10 items-stretch">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 mt-16 items-stretch">
         <button
           v-for="(feature, index) in features"
           :key="feature.title"
-          class="feature-card card card-hover group p-7 flex flex-col items-start text-left cursor-pointer"
-          :style="{ '--enter-delay': `${index * 0.12}s` }"
+          class="feature-card card card-hover group px-7 pb-8 pt-0 flex flex-col items-center text-center cursor-pointer"
+          :style="{ '--enter-delay': `${index * 0.12}s`, '--float-delay': `${index * 1.1}s` }"
           @click="router.push(feature.route)"
         >
-          <div class="w-16 h-16 mb-5 text-primary">
-            <component :is="feature.illustration" />
+          <!-- L'illustration est l'élément principal : très grande, elle déborde
+               au-dessus de la carte, flotte doucement en continu et s'anime
+               franchement au survol. -->
+          <div class="illu-float w-40 h-40 md:w-44 md:h-44 -mt-16 mb-2">
+            <div
+              class="w-full h-full text-primary transition-transform duration-300 ease-out group-hover:scale-110"
+            >
+              <component :is="feature.illustration" />
+            </div>
           </div>
           <h3
             class="text-xl font-bold mb-2 text-text-primary group-hover:text-primary transition-colors"
           >
             {{ feature.title }}
           </h3>
-          <p class="text-text-secondary text-base leading-relaxed">
+          <p class="text-text-secondary text-base leading-relaxed max-w-xs">
             {{ feature.description }}
           </p>
         </button>
@@ -107,11 +114,31 @@ onMounted(() => {
   }
 }
 
+/* Idle life: the illustrations float gently all the time, each with its own
+   rhythm. The hover zoom lives on the inner wrapper so both can combine. */
+.illu-float {
+  animation: illu-float 5.5s ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s);
+}
+
+@keyframes illu-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .feature-card {
     animation: none;
     opacity: 1;
     transform: none;
+  }
+  .illu-float {
+    animation: none;
   }
 }
 </style>

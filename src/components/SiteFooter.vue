@@ -38,7 +38,7 @@
           rel="noopener noreferrer"
           :aria-label="t('footer.madeBy') + ' Phenixel (' + t('footer.about') + ')'"
         >
-          {{ t("footer.madeBy") }} <strong>Phenixel</strong>
+          {{ t("footer.madeBy") }} <strong>Phenixel</strong> 🐦‍🔥
         </a>
       </div>
 

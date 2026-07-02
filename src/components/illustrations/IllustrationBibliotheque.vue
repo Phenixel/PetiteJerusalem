@@ -65,7 +65,22 @@
   animation-delay: 0.5s;
 }
 .tome-3 {
-  animation-delay: 0.65s;
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  animation:
+    illu-rise 0.5s ease-out 0.65s forwards,
+    tome-sway 5s ease-in-out 2s infinite;
+}
+
+/* idle: the leaning book rocks gently while nothing happens */
+@keyframes tome-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(2.5deg);
+  }
 }
 
 @keyframes illu-draw {

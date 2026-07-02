@@ -70,16 +70,32 @@
   transform-box: fill-box;
   transform-origin: bottom center;
   transform: scaleY(0.2);
-  animation: illu-rise 0.45s ease-out forwards;
 }
 .bar-1 {
-  animation-delay: 0.85s;
+  animation:
+    illu-rise 0.45s ease-out 0.85s forwards,
+    illu-breathe 3.2s ease-in-out 1.5s infinite;
 }
 .bar-2 {
-  animation-delay: 0.95s;
+  animation:
+    illu-rise 0.45s ease-out 0.95s forwards,
+    illu-breathe 3.2s ease-in-out 1.9s infinite;
 }
 .bar-3 {
-  animation-delay: 1.05s;
+  animation:
+    illu-rise 0.45s ease-out 1.05s forwards,
+    illu-breathe 3.2s ease-in-out 2.3s infinite;
+}
+
+/* idle: the equalizer breathes softly while nothing happens */
+@keyframes illu-breathe {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.78);
+  }
 }
 
 @keyframes illu-draw {

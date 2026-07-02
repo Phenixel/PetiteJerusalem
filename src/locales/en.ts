@@ -76,7 +76,7 @@ const en: LocaleMessages = {
     memorial: {
       title: "In memory of",
       dedication:
-        "This site is dedicated to the elevation of the soul of Fortunée Bat Henriette and Mongia Bat Joulina",
+        "This site is dedicated to the elevation of the soul of Fortunée Bat Henriette, Mongia Bat Joulina, Pinhas Ben Missa and Max Isaac Ben Hanna",
     },
   },
   login: {

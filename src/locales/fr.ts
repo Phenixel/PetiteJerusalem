@@ -74,7 +74,7 @@ const fr = {
     memorial: {
       title: "À la mémoire de",
       dedication:
-        "Ce site est dédié à l'élévation de l'âme de Fortunée Bat Henriette et Mongia Bat Joulina",
+        "Ce site est dédié à l'élévation de l'âme de Fortunée Bat Henriette, Mongia Bat Joulina, Pinhas Ben Missa et Max Isaac Ben Hanna",
     },
   },
   login: {

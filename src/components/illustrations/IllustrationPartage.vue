@@ -86,7 +86,9 @@
 
 .link {
   opacity: 0;
-  animation: illu-fade 0.4s ease-out 1s forwards;
+  animation:
+    illu-fade 0.4s ease-out 1s forwards,
+    illu-flow 3.5s linear 1.4s infinite;
 }
 
 @keyframes illu-draw {
