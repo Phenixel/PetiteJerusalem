@@ -56,33 +56,31 @@ onMounted(() => {
       </p>
     </div>
 
-    <div class="w-full max-w-6xl mx-auto">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 mt-16 items-stretch">
+    <div class="w-full max-w-3xl mx-auto">
+      <div class="flex flex-col gap-5 mb-10">
         <button
           v-for="(feature, index) in features"
           :key="feature.title"
-          class="feature-card card card-hover group px-7 pb-8 pt-0 flex flex-col items-center text-center cursor-pointer"
-          :style="{ '--enter-delay': `${index * 0.12}s`, '--float-delay': `${index * 1.1}s` }"
+          class="feature-card card card-hover group flex items-center gap-5 md:gap-8 p-6 md:p-7 text-left cursor-pointer"
+          :style="{ '--enter-delay': `${index * 0.12}s` }"
           @click="router.push(feature.route)"
         >
-          <!-- L'illustration est l'élément principal : très grande, elle déborde
-               au-dessus de la carte, flotte doucement en continu et s'anime
-               franchement au survol. -->
-          <div class="illu-float w-40 h-40 md:w-44 md:h-44 -mt-16 mb-2">
-            <div
-              class="w-full h-full text-primary transition-transform duration-300 ease-out group-hover:scale-110"
+          <!-- Texte à gauche, illustration à droite, tout reste dans la carte.
+               Au repos, seule la micro-animation interne du SVG vit ; au survol,
+               c'est le dessin lui-même qui s'anime (aucun zoom global). -->
+          <div class="flex-1 min-w-0">
+            <h3
+              class="text-xl md:text-2xl font-bold mb-2 text-text-primary group-hover:text-primary transition-colors"
             >
-              <component :is="feature.illustration" />
-            </div>
+              {{ feature.title }}
+            </h3>
+            <p class="text-text-secondary text-sm md:text-base leading-relaxed">
+              {{ feature.description }}
+            </p>
           </div>
-          <h3
-            class="text-xl font-bold mb-2 text-text-primary group-hover:text-primary transition-colors"
-          >
-            {{ feature.title }}
-          </h3>
-          <p class="text-text-secondary text-base leading-relaxed max-w-xs">
-            {{ feature.description }}
-          </p>
+          <div class="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 shrink-0 text-primary">
+            <component :is="feature.illustration" />
+          </div>
         </button>
       </div>
 
@@ -114,31 +112,11 @@ onMounted(() => {
   }
 }
 
-/* Idle life: the illustrations float gently all the time, each with its own
-   rhythm. The hover zoom lives on the inner wrapper so both can combine. */
-.illu-float {
-  animation: illu-float 5.5s ease-in-out infinite;
-  animation-delay: var(--float-delay, 0s);
-}
-
-@keyframes illu-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-7px);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .feature-card {
     animation: none;
     opacity: 1;
     transform: none;
-  }
-  .illu-float {
-    animation: none;
   }
 }
 </style>

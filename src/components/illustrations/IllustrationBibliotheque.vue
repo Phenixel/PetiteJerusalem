@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // "Bibliothèque" hero illustration: books on a shelf, one leaning. The books
-// rise onto the shelf on load; the leaning book slides out when the parent
-// .feature-card is hovered, as if being picked.
+// rise onto the shelf on load. On hover of the parent .feature-card, the
+// books tidy themselves up: each one hops in turn and the leaning book
+// springs upright.
 </script>
 
 <template>
@@ -95,23 +96,44 @@
   }
 }
 
-/* --- hover (parent card): the leaning book gets picked --- */
+/* --- hover (parent card): the books tidy themselves up --- */
 :global(.feature-card:hover) .tome {
-  animation: none;
   opacity: 1;
-  transform: none;
   transform-box: fill-box;
   transform-origin: bottom center;
-  transition: transform 0.3s ease;
-}
-:global(.feature-card:hover) .tome-3 {
-  transform: translateY(-5px) rotate(4deg);
-}
-:global(.feature-card:hover) .tome-2 {
-  transform: translateY(-2px);
 }
 :global(.feature-card:hover) .tome-1 {
-  transform: translateY(-1px);
+  animation: tome-hop 0.5s ease 0s 1 both;
+}
+:global(.feature-card:hover) .tome-2 {
+  animation: tome-hop 0.5s ease 0.12s 1 both;
+}
+/* the leaning book springs upright (cancels its baked-in 9° tilt),
+   with a small overshoot, and stays straight while hovered */
+:global(.feature-card:hover) .tome-3 {
+  animation: tome-straighten 0.7s ease-out 0.2s both;
+}
+
+@keyframes tome-hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes tome-straighten {
+  0% {
+    transform: rotate(0deg);
+  }
+  55% {
+    transform: translateY(-3px) rotate(-11.5deg);
+  }
+  100% {
+    transform: rotate(-9deg);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -123,6 +145,7 @@
     stroke-dashoffset: 0;
   }
   :global(.feature-card:hover) .tome {
+    animation: none;
     transform: none;
   }
 }

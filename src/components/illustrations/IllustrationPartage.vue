@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // "Partage de lecture" hero illustration: an open book shared between three
-// readers. Draws itself in on load; the link lines flow and the readers lean
-// in when the parent .feature-card is hovered.
+// readers. Draws itself in on load. On hover of the parent .feature-card,
+// the readers bob toward the book one after the other, the link lines flow
+// fast, and the page lines ripple like turning pages.
 </script>
 
 <template>
@@ -108,31 +109,53 @@
   }
 }
 
-/* --- hover (parent card): links flow toward the book, readers lean in --- */
+/* --- hover (parent card): readers bob toward the book in turn, links flow
+   fast, page lines ripple — the drawing lives, nothing is scaled up --- */
 :global(.feature-card:hover) .link {
-  animation: illu-flow 0.8s linear infinite;
+  animation: illu-flow 0.7s linear infinite;
   opacity: 1;
 }
 :global(.feature-card:hover) .reader {
-  animation: none;
   opacity: 1;
-  transform: none;
-  transition: transform 0.3s ease;
+  animation: reader-bob 1.1s ease-in-out infinite;
 }
 :global(.feature-card:hover) .reader-1 {
-  transform: translate(2px, 2px);
+  animation-delay: 0s;
 }
 :global(.feature-card:hover) .reader-2 {
-  transform: translateY(2.5px);
+  animation-delay: 0.18s;
 }
 :global(.feature-card:hover) .reader-3 {
-  transform: translate(-2px, 2px);
+  animation-delay: 0.36s;
 }
-:global(.feature-card:hover) .book {
+:global(.feature-card:hover) .draw-2 {
+  stroke-dashoffset: 0;
   transform-box: fill-box;
   transform-origin: center;
-  transition: transform 0.3s ease;
-  transform: scale(1.06);
+  animation: page-ripple 1.1s ease-in-out infinite;
+}
+:global(.feature-card:hover) .draw-2:last-of-type {
+  animation-delay: 0.55s;
+}
+
+@keyframes reader-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(2.5px);
+  }
+}
+
+@keyframes page-ripple {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
 }
 
 @keyframes illu-flow {
@@ -151,7 +174,7 @@
     stroke-dashoffset: 0;
   }
   :global(.feature-card:hover) .link,
-  :global(.feature-card:hover) .book,
+  :global(.feature-card:hover) .draw-2,
   :global(.feature-card:hover) .reader {
     animation: none;
     transform: none;

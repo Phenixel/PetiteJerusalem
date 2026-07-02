@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // "Chiourim" hero illustration: headphones with an equalizer. Draws itself in
-// on load; the equalizer starts playing when the parent .feature-card is
-// hovered.
+// on load. On hover of the parent .feature-card, the headphones nod to the
+// beat while the equalizer goes wild and gains two extra bars.
 </script>
 
 <template>
@@ -15,20 +15,25 @@
     aria-hidden="true"
     class="illu"
   >
-    <!-- headband -->
-    <path class="draw" d="M10 40v-6a22 22 0 0 1 44 0v6" />
-    <!-- ear cups -->
-    <g class="cup cup-l">
-      <path d="M10 36h2a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4h-2a2 2 0 0 1-2-2V38a2 2 0 0 1 2-2z" />
+    <!-- headphones (band + cups) nod together on hover -->
+    <g class="phones">
+      <!-- headband -->
+      <path class="draw" d="M10 40v-6a22 22 0 0 1 44 0v6" />
+      <!-- ear cups -->
+      <g class="cup cup-l">
+        <path d="M10 36h2a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4h-2a2 2 0 0 1-2-2V38a2 2 0 0 1 2-2z" />
+      </g>
+      <g class="cup cup-r">
+        <path d="M54 36h-2a4 4 0 0 0-4 4v8a4 4 0 0 0 4 4h2a2 2 0 0 0 2-2V38a2 2 0 0 0-2-2z" />
+      </g>
     </g>
-    <g class="cup cup-r">
-      <path d="M54 36h-2a4 4 0 0 0-4 4v8a4 4 0 0 0 4 4h2a2 2 0 0 0 2-2V38a2 2 0 0 0-2-2z" />
-    </g>
-    <!-- equalizer -->
+    <!-- equalizer: 3 bars at rest, 2 extra bars join in on hover -->
     <g class="accent" stroke-width="3">
+      <path class="bar bar-x bar-4" d="M19 46v-4" />
       <path class="bar bar-1" d="M25 46v-6" />
       <path class="bar bar-2" d="M32 48v-12" />
       <path class="bar bar-3" d="M39 46v-7" />
+      <path class="bar bar-x bar-5" d="M45 46v-4" />
     </g>
   </svg>
 </template>
@@ -70,6 +75,11 @@
   transform-box: fill-box;
   transform-origin: bottom center;
   transform: scaleY(0.2);
+}
+
+/* extra bars: invisible at rest, they only join on hover */
+.bar-x {
+  animation: none;
 }
 .bar-1 {
   animation:
@@ -116,28 +126,50 @@
   }
 }
 
-/* --- hover (parent card): the equalizer plays --- */
+/* --- hover (parent card): the headphones nod, the equalizer goes wild --- */
+:global(.feature-card:hover) .phones {
+  transform-box: fill-box;
+  transform-origin: center 65%;
+  animation: phones-nod 0.9s ease-in-out infinite;
+}
+
+@keyframes phones-nod {
+  0%,
+  100% {
+    transform: rotate(-2.5deg);
+  }
+  50% {
+    transform: rotate(2.5deg);
+  }
+}
+
 :global(.feature-card:hover) .bar {
   opacity: 1;
-  animation: illu-play 0.9s ease-in-out infinite;
+  animation: illu-play 0.45s ease-in-out infinite;
 }
-:global(.feature-card:hover) .bar-1 {
+:global(.feature-card:hover) .bar-4 {
   animation-delay: 0s;
 }
+:global(.feature-card:hover) .bar-1 {
+  animation-delay: 0.09s;
+}
 :global(.feature-card:hover) .bar-2 {
-  animation-delay: 0.15s;
+  animation-delay: 0.18s;
 }
 :global(.feature-card:hover) .bar-3 {
-  animation-delay: 0.3s;
+  animation-delay: 0.27s;
+}
+:global(.feature-card:hover) .bar-5 {
+  animation-delay: 0.36s;
 }
 
 @keyframes illu-play {
   0%,
   100% {
-    transform: scaleY(0.55);
+    transform: scaleY(0.5);
   }
   50% {
-    transform: scaleY(1.35);
+    transform: scaleY(1.6);
   }
 }
 
@@ -150,6 +182,10 @@
     transform: none;
     stroke-dashoffset: 0;
   }
+  .bar-x {
+    opacity: 0;
+  }
+  :global(.feature-card:hover) .phones,
   :global(.feature-card:hover) .bar {
     animation: none;
     transform: none;
