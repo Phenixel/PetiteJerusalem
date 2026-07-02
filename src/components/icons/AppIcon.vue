@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { ICONS, type IconName } from "./registry";
+import { ICONS, type IconDef, type IconName } from "./registry";
 
 const props = withDefaults(
   defineProps<{
@@ -12,7 +12,7 @@ const props = withDefaults(
   { size: "1em", strokeWidth: 2 },
 );
 
-const icon = computed(() => ICONS[props.name]);
+const icon = computed<IconDef>(() => ICONS[props.name]);
 const dimension = computed(() => (typeof props.size === "number" ? `${props.size}px` : props.size));
 </script>
 
