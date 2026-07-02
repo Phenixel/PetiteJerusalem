@@ -1,0 +1,8 @@
+{
+  "shape": "package",
+  "framework": "vue",
+  "scope": "tokens-only",
+  "readmeHeader": ".design-sync/conventions.md",
+  "tokensSource": "src/assets/main.css",
+  "notes": "PetiteJerusalem is a Vue 3 application, not a React component library. Claude Design live-renders React from a compiled bundle, so the Vue single-file components cannot be synced as live preview cards. This config scopes the sync to the design tokens (the Tailwind v4 @theme block) plus a conventions guide. projectId is intentionally unset: DesignSync could not authorize in the environment where this was prepared. See NOTES.md."
+}

@@ -1,0 +1,34 @@
+/* Petite Jérusalem — design tokens
+ * Extracted verbatim from src/assets/main.css (@theme). These are the
+ * framework-agnostic CSS custom properties that define the brand. In the app
+ * they feed Tailwind v4 utility generation (e.g. --color-primary -> bg-primary);
+ * standalone they can be consumed directly as var(--*).
+ */
+:root {
+  /* Brand */
+  --color-primary: #1d6fdb; /* blue — primary actions, links, accents */
+  --color-secondary: #06b6d4; /* cyan — gradient partner to primary */
+  --color-accent: #ff6b6b; /* coral — highlights (defined; used sparingly) */
+  --color-accent-secondary: #ee5a24; /* deep coral */
+
+  /* Backgrounds */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8f9fa;
+  --color-bg-dark: #181818;
+  --color-bg-beige: #f4f1ea; /* global page background (light mode) */
+
+  /* Text */
+  --color-text-primary: #333333; /* body text */
+  --color-text-secondary: #666666; /* muted text */
+  --color-text-light: #ffffff;
+
+  /* Fonts */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Georgia", serif;
+  --font-hebrew: "Frank Ruhl Libre", "Noto Serif Hebrew", "David Libre", Georgia, serif;
+
+  /* Border radius */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+}
