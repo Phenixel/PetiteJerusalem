@@ -1,6 +1,6 @@
 <template>
   <footer
-    class="mt-auto px-6 py-8 text-text-secondary/90 bg-white/30 border-t border-white/20 dark:bg-gray-900/50 dark:border-gray-800 dark:text-gray-400 transition-colors"
+    class="mt-auto px-6 py-8 text-text-secondary transition-colors"
     role="contentinfo"
   >
     <nav
@@ -32,13 +32,13 @@
     >
       <div class="justify-self-center md:justify-self-start">
         <a
-          class="hover:text-primary transition-colors hover:drop-shadow-lg font-medium"
+          class="hover:text-primary transition-colors font-medium"
           href="https://phenixel.fr"
           target="_blank"
           rel="noopener noreferrer"
           :aria-label="t('footer.madeBy') + ' Phenixel (' + t('footer.about') + ')'"
         >
-          {{ t("footer.madeBy") }} <strong>Phenixel</strong> 🐦‍🔥
+          {{ t("footer.madeBy") }} <strong>Phenixel</strong>
         </a>
       </div>
 
@@ -47,25 +47,23 @@
         :aria-label="t('footer.about')"
       >
         <a
-          class="hover:text-primary transition-colors hover:drop-shadow-lg"
+          class="hover:text-primary transition-colors"
           href="https://phenixel.notion.site/petite-jerusalem-a-propos"
           target="_blank"
           rel="noopener noreferrer"
         >
           {{ t("footer.about") }}
         </a>
-        <span class="opacity-60 hidden md:inline" aria-hidden="true">•</span>
         <a
-          class="hover:text-primary transition-colors hover:drop-shadow-lg"
+          class="hover:text-primary transition-colors"
           href="https://phenixel.notion.site/petite-jerusalem-mentions-legales"
           target="_blank"
           rel="noopener noreferrer"
         >
           {{ t("footer.legal") }}
         </a>
-        <span class="opacity-60 hidden md:inline" aria-hidden="true">•</span>
         <a
-          class="hover:text-primary transition-colors hover:drop-shadow-lg"
+          class="hover:text-primary transition-colors"
           href="https://phenixel.notion.site/26b35db90d4d809aada8e077937652d4?pvs=105"
           target="_blank"
           rel="noopener noreferrer"
@@ -80,24 +78,24 @@
       >
         <LanguageSelector variant="compact" dropup />
         <a
-          class="flex items-center justify-center w-6 h-6 opacity-85 hover:opacity-100 hover:-translate-y-0.5 transition-all text-text-secondary hover:text-[#333]"
+          class="flex items-center justify-center w-6 h-6 opacity-80 hover:opacity-100 transition-opacity text-text-secondary hover:text-text-primary"
           href="https://github.com/Phenixel/PetiteJerusalem"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="GitHub"
           title="GitHub"
         >
-          <i class="fab fa-github text-xl"></i>
+          <AppIcon name="github" :size="20" />
         </a>
         <a
-          class="flex items-center justify-center w-6 h-6 opacity-85 hover:opacity-100 hover:-translate-y-0.5 transition-all text-text-secondary hover:text-[#1DA1F2]"
+          class="flex items-center justify-center w-6 h-6 opacity-80 hover:opacity-100 transition-opacity text-text-secondary hover:text-text-primary"
           href="https://x.com/Real_Phenixel"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Twitter"
-          title="Twitter"
+          aria-label="X"
+          title="X"
         >
-          <i class="fab fa-twitter text-xl"></i>
+          <AppIcon name="x-twitter" :size="18" />
         </a>
       </div>
     </div>
@@ -107,8 +105,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import LanguageSelector from "./LanguageSelector.vue";
+import AppIcon from "./icons/AppIcon.vue";
 
 const { t } = useI18n();
 </script>
-
-<!-- Styles globaux dans src/assets/style.css -->

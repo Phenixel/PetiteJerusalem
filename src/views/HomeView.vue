@@ -1,33 +1,35 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
-import { onMounted, computed } from "vue";
+import { onMounted, computed, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { seoService } from "../services/seoService";
 import SiteFooter from "../components/SiteFooter.vue";
+import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
+import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
+import IllustrationBibliotheque from "../components/illustrations/IllustrationBibliotheque.vue";
 
 const router = useRouter();
 const { t } = useI18n();
 
-const features = computed(() => [
+const features = computed<
+  { illustration: Component; title: string; description: string; route: string }[]
+>(() => [
   {
-    icon: "📚",
+    illustration: IllustrationPartage,
     title: t("home.features.shareReading.title"),
     description: t("home.features.shareReading.description"),
-    status: "available",
     route: "share-reading",
   },
   {
-    icon: "🎓",
+    illustration: IllustrationChiourim,
     title: t("home.features.chiourim.title"),
     description: t("home.features.chiourim.description"),
-    status: "available",
     route: "chiourim",
   },
   {
-    icon: "📖",
+    illustration: IllustrationBibliotheque,
     title: t("home.features.study.title"),
     description: t("home.features.study.description"),
-    status: "available",
     route: "bibliotheque",
   },
 ]);
@@ -45,60 +47,41 @@ onMounted(() => {
 
 <template>
   <main class="flex-1 container mx-auto px-4 py-4 flex flex-col justify-center">
-    <div class="text-center mb-8 space-y-2">
-      <h2
-        class="text-3xl md:text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent pb-1"
-      >
+    <div class="text-center mb-10 space-y-3">
+      <h2 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight">
         {{ t("home.heroTitle") }}
       </h2>
-      <p
-        class="text-base md:text-lg text-text-secondary/90 max-w-2xl mx-auto leading-relaxed font-light dark:text-gray-300"
-      >
+      <p class="text-base md:text-lg text-text-secondary max-w-2xl mx-auto leading-relaxed">
         {{ t("home.heroDescription") }}
       </p>
     </div>
 
     <div class="w-full max-w-6xl mx-auto">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 items-stretch">
-        <div
-          v-for="feature in features"
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10 items-stretch">
+        <button
+          v-for="(feature, index) in features"
           :key="feature.title"
-          :class="[
-            'relative p-6 rounded-2xl backdrop-blur-md border border-white/60 transition-all duration-300 group flex flex-col items-center text-center',
-            feature.status === 'coming-soon'
-              ? 'bg-white/20 opacity-70 cursor-default dark:bg-gray-800/30'
-              : 'bg-white/60 hover:-translate-y-1 hover:shadow-lg hover:bg-white/80 cursor-pointer dark:bg-gray-800/50 dark:hover:bg-gray-800/80 dark:border-gray-700',
-          ]"
-          @click="feature.status !== 'coming-soon' && router.push(feature.route)"
+          class="feature-card card card-hover group p-7 flex flex-col items-start text-left cursor-pointer"
+          :style="{ '--enter-delay': `${index * 0.12}s` }"
+          @click="router.push(feature.route)"
         >
-          <div
-            class="text-4xl mb-4 transform transition-transform duration-300 group-hover:scale-110"
-          >
-            {{ feature.icon }}
+          <div class="w-16 h-16 mb-5 text-primary">
+            <component :is="feature.illustration" />
           </div>
           <h3
-            class="text-xl font-bold mb-2 text-text-primary flex items-center justify-center gap-2 dark:text-gray-100"
+            class="text-xl font-bold mb-2 text-text-primary group-hover:text-primary transition-colors"
           >
             {{ feature.title }}
-            <span
-              v-if="feature.status === 'coming-soon'"
-              class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-accent to-accent-secondary text-white shadow-sm"
-              >{{ t("home.comingSoon") }}</span
-            >
           </h3>
-          <p class="text-text-secondary text-base leading-relaxed max-w-xs dark:text-gray-400">
+          <p class="text-text-secondary text-base leading-relaxed">
             {{ feature.description }}
           </p>
-        </div>
+        </button>
       </div>
 
-      <div
-        class="text-center bg-white/60 backdrop-blur-md rounded-2xl p-6 border border-white/60 w-full shadow-sm dark:bg-gray-800/40 dark:border-gray-700"
-      >
-        <h3 class="text-lg font-serif italic text-text-primary mb-2 dark:text-gray-200">
-          {{ t("home.memorial.title") }}
-        </h3>
-        <p class="text-base text-text-primary/80 font-serif italic dark:text-gray-300">
+      <div class="text-center max-w-2xl mx-auto">
+        <p class="font-serif italic text-text-secondary">{{ t("home.memorial.title") }}</p>
+        <p class="mt-1 font-serif italic text-text-primary">
           {{ t("home.memorial.dedication") }}
         </p>
       </div>
@@ -107,3 +90,28 @@ onMounted(() => {
 
   <SiteFooter />
 </template>
+
+<style scoped>
+/* Staggered entrance for the three feature cards. */
+.feature-card {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: card-enter 0.55s ease-out forwards;
+  animation-delay: var(--enter-delay, 0s);
+}
+
+@keyframes card-enter {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature-card {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+</style>

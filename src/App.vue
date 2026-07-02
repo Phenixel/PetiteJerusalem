@@ -9,17 +9,21 @@ import { RouterView } from "vue-router";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
 import { useTheme } from "./composables/useTheme";
+import { useFonts } from "./composables/useFonts";
 
 const route = useRoute();
 const { loadTheme, resetTheme } = useTheme();
+const { loadFonts, resetFonts } = useFonts();
 
 const isHome = computed(() => route.name === "home");
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
     loadTheme(user.uid);
+    loadFonts(user.uid);
   } else {
     resetTheme();
+    resetFonts();
   }
 });
 </script>

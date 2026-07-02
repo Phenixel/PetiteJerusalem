@@ -12,6 +12,7 @@ import type { User } from "../services/authService";
 import { seoService } from "../services/seoService";
 
 import BatchSelectionBar from "../components/BatchSelectionBar.vue";
+import AppIcon from "../components/icons/AppIcon.vue";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -303,126 +304,104 @@ onMounted(() => {
       <div
         class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
       ></div>
-      <p class="font-medium animate-pulse">Chargement de la session...</p>
+      <p class="font-medium">{{ t("sessionManagement.loading") }}</p>
     </div>
 
     <!-- Contenu principal -->
-    <div v-else-if="session" class="mx-auto px-6 pt-8 animate-[fadeIn_0.5s_ease]">
-      <!-- En-tête avec navigation -->
-      <div
-        class="relative overflow-hidden mb-8 p-8 bg-white/40 backdrop-blur-xl border border-white/40 rounded-3xl shadow-lg dark:bg-gray-800/40 dark:border-gray-700"
-      >
-        <button
-          @click="goBackToProfile"
-          class="mb-6 px-4 py-2 bg-white/50 hover:bg-white text-text-secondary hover:text-primary rounded-xl font-medium transition-all flex items-center gap-2 group dark:bg-gray-700/50 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-primary"
-        >
-          <i class="fa-solid fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
-          Retour au profil
+    <div v-else-if="session" class="max-w-7xl mx-auto px-6 pt-8 animate-[fadeIn_0.5s_ease]">
+      <!-- En-tête -->
+      <header class="mb-10">
+        <button @click="goBackToProfile" class="back-link mb-6">
+          <AppIcon name="chevron-left" :size="14" />
+          {{ t("sessionManagement.backToProfile") }}
         </button>
 
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
-            <h1
-              class="text-3xl md:text-4xl font-bold text-text-primary mb-2 tracking-tight dark:text-gray-100"
-            >
+            <h1 class="text-3xl md:text-4xl font-bold text-text-primary mb-2 tracking-tight">
               {{ session.name }}
             </h1>
-            <p class="text-text-secondary text-lg max-w-2xl dark:text-gray-300">
+            <p class="text-text-secondary text-lg max-w-2xl">
               {{ session.description }}
             </p>
           </div>
           <div class="flex gap-2">
-            <span
-              class="px-3 py-1 bg-primary/10 text-primary rounded-lg font-semibold dark:bg-primary/20 dark:text-primary-light"
-              >{{ sessionService.formatTextType(session.type) }}</span
-            >
-            <span
-              class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg font-medium dark:bg-gray-800 dark:text-gray-300"
-              >Date limite : {{ sessionService.formatDate(session.dateLimit) }}</span
+            <span class="chip bg-primary/10 text-primary">{{
+              sessionService.formatTextType(session.type)
+            }}</span>
+            <span class="chip bg-black/5 text-text-secondary dark:bg-white/10"
+              >{{ t("common.dateLimit") }} :
+              {{ sessionService.formatDate(session.dateLimit) }}</span
             >
           </div>
         </div>
-      </div>
+      </header>
 
       <!-- Statistiques de la session -->
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
-        <div
-          class="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white/40 text-center hover:shadow-md transition-shadow dark:bg-gray-800/60 dark:border-gray-700"
-        >
-          <span class="block text-3xl font-bold text-primary mb-1 dark:text-primary-light">{{
-            sessionStats.totalReservations
-          }}</span>
-          <span
-            class="text-xs font-semibold text-text-secondary uppercase tracking-wider dark:text-gray-400"
-            >Réservations</span
-          >
-        </div>
-        <div
-          class="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white/40 text-center hover:shadow-md transition-shadow dark:bg-gray-800/60 dark:border-gray-700"
-        >
-          <span class="block text-3xl font-bold text-green-600 mb-1 dark:text-green-400">{{
-            sessionStats.completedReservations
-          }}</span>
-          <span
-            class="text-xs font-semibold text-text-secondary uppercase tracking-wider dark:text-gray-400"
-            >Terminées</span
-          >
-        </div>
-        <div
-          class="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white/40 text-center hover:shadow-md transition-shadow dark:bg-gray-800/60 dark:border-gray-700"
-        >
-          <span class="block text-3xl font-bold text-text-primary mb-1 dark:text-gray-100"
-            >{{ sessionStats.completionRate }}%</span
-          >
-          <span
-            class="text-xs font-semibold text-text-secondary uppercase tracking-wider dark:text-gray-400"
-            >Progression</span
-          >
-        </div>
-        <div
-          class="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white/40 text-center hover:shadow-md transition-shadow dark:bg-gray-800/60 dark:border-gray-700"
-        >
-          <span class="block text-3xl font-bold text-text-primary mb-1 dark:text-gray-100"
-            >{{ sessionStats.reservedTexts }}/{{ sessionStats.totalTexts }}</span
-          >
-          <span
-            class="text-xs font-semibold text-text-secondary uppercase tracking-wider dark:text-gray-400"
-            >Textes réservés</span
-          >
-        </div>
-        <div
-          class="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white/40 text-center hover:shadow-md transition-shadow col-span-2 md:col-span-1 dark:bg-gray-800/60 dark:border-gray-700"
-        >
-          <span class="block text-3xl font-bold text-text-primary mb-1 dark:text-gray-100"
-            >{{ sessionStats.reservationRate }}%</span
-          >
-          <span
-            class="text-xs font-semibold text-text-secondary uppercase tracking-wider dark:text-gray-400"
-            >Taux de réservation</span
-          >
+      <div class="card p-6 mb-12">
+        <div class="flex flex-wrap gap-x-12 gap-y-5">
+          <div>
+            <span class="block text-2xl font-bold text-text-primary">{{
+              sessionStats.totalReservations
+            }}</span>
+            <span class="text-sm text-text-secondary">{{
+              t("sessionManagement.stats.reservations")
+            }}</span>
+          </div>
+          <div>
+            <span class="block text-2xl font-bold text-green-600 dark:text-green-400">{{
+              sessionStats.completedReservations
+            }}</span>
+            <span class="text-sm text-text-secondary">{{
+              t("sessionManagement.stats.completed")
+            }}</span>
+          </div>
+          <div>
+            <span class="block text-2xl font-bold text-text-primary"
+              >{{ sessionStats.completionRate }}%</span
+            >
+            <span class="text-sm text-text-secondary">{{
+              t("sessionManagement.stats.progress")
+            }}</span>
+          </div>
+          <div>
+            <span class="block text-2xl font-bold text-text-primary"
+              >{{ sessionStats.reservedTexts }}/{{ sessionStats.totalTexts }}</span
+            >
+            <span class="text-sm text-text-secondary">{{
+              t("sessionManagement.stats.reservedTexts")
+            }}</span>
+          </div>
+          <div>
+            <span class="block text-2xl font-bold text-text-primary"
+              >{{ sessionStats.reservationRate }}%</span
+            >
+            <span class="text-sm text-text-secondary">{{
+              t("sessionManagement.stats.reservationRate")
+            }}</span>
+          </div>
         </div>
       </div>
 
       <!-- Filtres et recherche -->
       <div class="flex flex-col md:flex-row gap-4 mb-8">
         <div class="relative flex-1">
+          <AppIcon
+            name="search"
+            :size="16"
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
+          />
           <input
             v-model="searchTerm"
             type="text"
-            placeholder="Rechercher un texte..."
-            class="w-full pl-10 pr-4 py-3 bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all text-text-primary placeholder:text-text-secondary/60 dark:bg-gray-800/60 dark:border-gray-700 dark:text-gray-100 dark:focus:bg-gray-800 dark:placeholder-gray-400"
+            :placeholder="t('sessionManagement.searchPlaceholder')"
+            class="field !pl-11"
           />
-          <i
-            class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/60 dark:text-gray-400"
-          ></i>
         </div>
 
         <div class="w-full md:w-64">
-          <select
-            v-model="selectedBook"
-            class="w-full px-4 py-3 bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all text-text-primary appearance-none cursor-pointer dark:bg-gray-800/60 dark:border-gray-700 dark:text-gray-100 dark:focus:bg-gray-800"
-          >
-            <option value="">Tous les livres</option>
+          <select v-model="selectedBook" class="field appearance-none cursor-pointer">
+            <option value="">{{ t("sessionManagement.allBooks") }}</option>
             <option v-for="book in availableBooks" :key="book" :value="book">
               {{ sessionService.formatBookName(book) }}
             </option>
@@ -437,93 +416,95 @@ onMounted(() => {
           :key="bookName"
           class="animate-[fadeIn_0.5s_ease]"
         >
-          <h3
-            class="text-2xl font-bold text-text-primary mb-6 pl-2 border-l-4 border-primary dark:text-gray-100"
-          >
+          <h3 class="text-2xl font-bold text-text-primary mb-6">
             {{ sessionService.formatBookName(bookName) }}
           </h3>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <div
               v-for="textStudy in texts"
               :key="textStudy.id"
-              class="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full dark:bg-gray-800/60 dark:border-gray-700 dark:hover:bg-gray-800/80"
+              class="card p-5 flex flex-col h-full"
             >
               <!-- En-tête du texte -->
-              <div
-                class="p-5 border-b border-black/5 bg-white/30 dark:bg-gray-800/30 dark:border-white/5"
-              >
-                <div class="flex justify-between items-start gap-4 mb-2">
-                  <h4 class="font-bold text-lg text-text-primary leading-tight dark:text-gray-100">
+              <div class="mb-4">
+                <div class="flex justify-between items-start gap-4 mb-1.5">
+                  <h4 class="font-bold text-lg text-text-primary leading-tight">
                     {{ appendHebrewNumeral(sessionService.formatBookName(textStudy.name)) }}
                   </h4>
                   <span
-                    class="px-2 py-1 text-xs font-bold uppercase rounded-md whitespace-nowrap"
+                    class="chip"
                     :class="{
-                      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300':
+                      'bg-green-600/10 text-green-700 dark:text-green-300':
                         getTextStatus(textStudy).status === 'available',
-                      'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300':
+                      'bg-red-600/10 text-red-700 dark:text-red-300':
                         getTextStatus(textStudy).status === 'fully_reserved',
-                      'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200':
+                      'bg-amber-500/10 text-amber-700 dark:text-amber-200':
                         getTextStatus(textStudy).status === 'partially_reserved',
                     }"
                   >
                     {{
                       getTextStatus(textStudy).status === "available"
-                        ? "Disponible"
+                        ? t("sessionManagement.status.available")
                         : getTextStatus(textStudy).status === "fully_reserved"
-                          ? "Réservé"
-                          : "Partiellement réservé"
+                          ? t("sessionManagement.status.fullyReserved")
+                          : t("sessionManagement.status.partiallyReserved")
                     }}
                   </span>
                 </div>
 
-                <div
-                  class="flex items-center justify-between text-xs text-text-secondary mt-2 dark:text-gray-400"
-                >
-                  <span
-                    class="font-medium bg-white/50 px-2 py-1 rounded dark:bg-gray-700/50 dark:text-gray-300"
-                    >{{ getTextReservations(textStudy.id).length }} réservation(s)</span
-                  >
+                <div class="flex items-center justify-between text-xs text-text-secondary">
+                  <span>{{
+                    t("sessionManagement.reservationsCount", {
+                      count: getTextReservations(textStudy.id).length,
+                    })
+                  }}</span>
                   <span
                     v-if="getTextStatus(textStudy).reservedBy"
                     class="truncate max-w-[120px]"
                     :title="getTextStatus(textStudy).reservedBy || ''"
                   >
-                    Par : {{ getTextStatus(textStudy).reservedBy }}
+                    {{
+                      t("sessionManagement.reservedBy", {
+                        name: getTextStatus(textStudy).reservedBy,
+                      })
+                    }}
                   </span>
                 </div>
               </div>
 
               <!-- Gestion des réservations -->
-              <div class="p-5 flex-1 flex flex-col">
-                <h5
-                  class="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3 dark:text-gray-400"
-                >
-                  {{ textStudy.totalSections > 1 ? "Sections :" : "Gestion :" }}
-                </h5>
-
-                <div class="space-y-2 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
+              <div class="flex-1 flex flex-col">
+                <div class="space-y-1 max-h-[240px] overflow-y-auto pr-2">
                   <div
                     v-for="section in sessionService.generateChapters(textStudy.totalSections)"
                     :key="section"
-                    class="flex items-center justify-between p-2 rounded-lg transition-colors text-sm"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm"
                     :class="{
-                      'bg-primary/5 border border-primary/10 dark:bg-primary/10 dark:border-primary/20':
-                        isSectionReserved(textStudy.id, section),
-                      'bg-white/40 border border-white/20 dark:bg-gray-700/30 dark:border-gray-600':
-                        !isSectionReserved(textStudy.id, section),
-                      'bg-green-50/50 border-green-200 dark:bg-green-900/10 dark:border-green-800':
-                        getSectionReservation(textStudy.id, section)?.isCompleted,
+                      'bg-primary/5 dark:bg-primary/10':
+                        isSectionReserved(textStudy.id, section) &&
+                        !getSectionReservation(textStudy.id, section)?.isCompleted,
+                      'bg-green-600/5 dark:bg-green-500/10': getSectionReservation(
+                        textStudy.id,
+                        section,
+                      )?.isCompleted,
+                      'hover:bg-black/[0.03] dark:hover:bg-white/5': !isSectionReserved(
+                        textStudy.id,
+                        section,
+                      ),
                     }"
                   >
                     <div class="flex flex-col min-w-0">
-                      <span class="font-medium text-text-primary dark:text-gray-200">
-                        {{ textStudy.totalSections > 1 ? `Chapitre ${formatNumberWithHebrew(section)}` : "Texte complet" }}
+                      <span class="font-medium text-text-primary">
+                        {{
+                          textStudy.totalSections > 1
+                            ? `${t("common.chapter")} ${formatNumberWithHebrew(section)}`
+                            : t("sessionManagement.fullText")
+                        }}
                       </span>
                       <span
                         v-if="isSectionReserved(textStudy.id, section)"
-                        class="text-xs text-text-secondary truncate mt-0.5 dark:text-gray-400"
+                        class="text-xs text-text-secondary truncate mt-0.5"
                       >
                         {{ getSectionReservation(textStudy.id, section)?.chosenByName }}
                       </span>
@@ -533,7 +514,7 @@ onMounted(() => {
                       <input
                         v-if="!isSectionReserved(textStudy.id, section)"
                         type="checkbox"
-                        class="w-5 h-5 rounded text-primary border-gray-300 focus:ring-primary accent-primary cursor-pointer mr-1"
+                        class="w-4.5 h-4.5 rounded accent-primary cursor-pointer"
                         :checked="isSelected(textStudy.id, section)"
                         @change="toggleSelection(textStudy.id, section)"
                       />
@@ -541,16 +522,16 @@ onMounted(() => {
                       <button
                         v-if="!isSectionReserved(textStudy.id, section)"
                         @click="openGuestForm(textStudy, section)"
-                        class="w-6 h-6 rounded-full flex items-center justify-center bg-white border border-gray-200 text-text-secondary hover:bg-primary hover:text-white hover:border-primary transition-colors focus:outline-none dark:bg-gray-600 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-primary dark:hover:text-white"
-                        title="Réserver pour un invité"
+                        class="w-7 h-7 rounded-lg flex items-center justify-center text-text-secondary hover:bg-primary hover:text-white transition-colors focus:outline-none"
+                        :title="t('sessionManagement.reserveForGuest')"
                       >
-                        <i class="fa-solid fa-plus text-xs"></i>
+                        <AppIcon name="plus" :size="14" />
                       </button>
 
                       <div v-else class="flex items-center gap-2">
                         <label
                           class="relative inline-flex items-center cursor-pointer"
-                          title="Marquer comme terminé"
+                          :title="t('sessionManagement.markCompleted')"
                         >
                           <input
                             type="checkbox"
@@ -564,7 +545,7 @@ onMounted(() => {
                             "
                           />
                           <div
-                            class="w-8 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[0px] after:left-[0px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500 dark:bg-gray-600 dark:peer-checked:bg-green-600 dark:after:border-gray-500"
+                            class="w-8 h-4 bg-black/15 peer-focus-visible:outline-2 peer-focus-visible:outline-primary rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[0px] after:left-[0px] after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all peer-checked:bg-green-500 dark:bg-white/20 dark:peer-checked:bg-green-600"
                           ></div>
                         </label>
 
@@ -572,10 +553,10 @@ onMounted(() => {
                           @click="
                             deleteReservation(getSectionReservation(textStudy.id, section)!.id)
                           "
-                          class="w-6 h-6 rounded-full flex items-center justify-center bg-white border border-gray-200 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors focus:outline-none dark:bg-gray-600 dark:border-gray-500 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
-                          title="Supprimer la réservation"
+                          class="w-7 h-7 rounded-lg flex items-center justify-center text-text-secondary hover:bg-red-600/10 hover:text-red-600 transition-colors focus:outline-none dark:hover:text-red-400"
+                          :title="t('sessionManagement.deleteReservation')"
                         >
-                          <i class="fa-solid fa-trash text-xs"></i>
+                          <AppIcon name="trash" :size="14" />
                         </button>
                       </div>
                     </div>
@@ -592,89 +573,82 @@ onMounted(() => {
     <BatchSelectionBar
       :count="selectedItems.size"
       :loading="isSubmittingBatch"
-      :label="'Attribuer à un invité'"
-      :button-text="'Réserver'"
-      :button-loading-text="'Traitement...'"
+      :label="t('sessionManagement.batchLabel')"
+      :button-text="t('sessionManagement.batchButton')"
+      :button-loading-text="t('sessionManagement.batchLoading')"
       @confirm="openBatchGuestForm"
     />
 
     <!-- Modal pour les invités -->
     <div
       v-if="showGuestForm"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-[fadeIn_0.3s_ease]"
+      class="modal-overlay animate-[fadeIn_0.3s_ease]"
       @click="showGuestForm = false"
     >
-      <div
-        class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl p-6 w-full max-w-md border border-white/50 animate-[scaleIn_0.3s_ease] dark:bg-gray-800/95 dark:border-gray-700/50"
-        @click.stop
-      >
+      <div class="modal-panel animate-[scaleIn_0.3s_ease]" @click.stop>
         <div class="flex justify-between items-center mb-6">
-          <h3 class="text-xl font-bold text-text-primary dark:text-gray-100">
+          <h3 class="text-xl font-bold text-text-primary">
             {{
               selectedItems.size > 0
-                ? `Réserver ${selectedItems.size} textes`
-                : "Réserver pour un invité"
+                ? t("sessionManagement.reserveCountTitle", { count: selectedItems.size })
+                : t("sessionManagement.reserveForGuest")
             }}
           </h3>
-          <button
-            @click="showGuestForm = false"
-            class="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 hover:bg-black/10 text-text-secondary transition-colors dark:bg-white/10 dark:hover:bg-white/20 dark:text-gray-300"
-          >
-            <i class="fa-solid fa-times"></i>
+          <button @click="showGuestForm = false" class="icon-btn" :aria-label="t('common.close')">
+            <AppIcon name="x" :size="16" />
           </button>
         </div>
 
         <div class="space-y-4">
           <div
             v-if="selectedTextStudy"
-            class="p-3 bg-primary/10 rounded-xl text-sm text-text-primary mb-2 dark:bg-primary/20 dark:text-white"
+            class="p-3 bg-primary/10 rounded-lg text-sm text-text-primary mb-2"
           >
             <span class="font-semibold">{{
               appendHebrewNumeral(sessionService.formatBookName(selectedTextStudy?.name || ""))
             }}</span>
-            <span v-if="selectedSection"> - Chapitre {{ formatNumberWithHebrew(selectedSection) }}</span>
+            <span v-if="selectedSection">
+              – {{ t("common.chapter") }} {{ formatNumberWithHebrew(selectedSection) }}</span
+            >
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-300"
-              >Nom de l'invité</label
-            >
+            <label class="block text-sm font-semibold text-text-secondary mb-2">{{
+              t("sessionManagement.guestName")
+            }}</label>
             <input
               v-model="guestForm.name"
               type="text"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:bg-gray-700"
-              placeholder="Nom complet"
+              class="field"
+              :placeholder="t('sessionManagement.guestNamePlaceholder')"
               required
             />
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-text-secondary mb-2 dark:text-gray-300"
-              >Email de l'invité</label
-            >
+            <label class="block text-sm font-semibold text-text-secondary mb-2">{{
+              t("sessionManagement.guestEmail")
+            }}</label>
             <input
               v-model="guestForm.email"
               type="email"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:bg-gray-700"
+              class="field"
               placeholder="email@example.com"
               required
             />
           </div>
 
           <div class="flex gap-3 mt-6">
-            <button
-              @click="showGuestForm = false"
-              class="flex-1 py-3 px-4 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl font-bold text-text-secondary transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
-            >
-              Annuler
+            <button @click="showGuestForm = false" class="btn btn-soft flex-1">
+              {{ t("common.cancel") }}
             </button>
             <button
               @click="createGuestReservation"
-              class="flex-1 py-3 px-4 bg-gradient-to-r from-primary to-secondary hover:shadow-lg text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              class="btn btn-primary flex-1"
               :disabled="!guestForm.name || !guestForm.email || isLoading"
             >
-              <i v-if="isLoading" class="fa-solid fa-circle-notch fa-spin"></i>
-              {{ isLoading ? "Création..." : "Créer" }}
+              <AppIcon v-if="isLoading" name="spinner" :size="15" class="animate-spin" />
+              {{ isLoading ? t("sessionManagement.creating") : t("sessionManagement.create") }}
             </button>
           </div>
         </div>

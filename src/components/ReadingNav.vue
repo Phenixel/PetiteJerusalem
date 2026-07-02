@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // Prev / middle / next navigation bar used in the reading page (top and bottom).
 // A label set to null/undefined hides its button (e.g. at the first/last item).
+import AppIcon from "./icons/AppIcon.vue";
+
 defineProps<{
   prevLabel?: string | null;
   nextLabel?: string | null;
@@ -14,9 +16,9 @@ defineEmits<{ prev: []; next: []; middle: [] }>();
     <button
       v-if="prevLabel"
       @click="$emit('prev')"
-      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 hover:border-primary hover:text-primary transition-all max-w-[45%] dark:border-gray-700"
+      class="btn btn-soft !px-4 !py-2 text-sm max-w-[45%]"
     >
-      <i class="fa-solid fa-chevron-left text-xs flex-shrink-0"></i>
+      <AppIcon name="chevron-left" :size="14" class="flex-shrink-0" />
       <span class="truncate">{{ prevLabel }}</span>
     </button>
     <span v-else></span>
@@ -24,7 +26,7 @@ defineEmits<{ prev: []; next: []; middle: [] }>();
     <button
       v-if="middleLabel"
       @click="$emit('middle')"
-      class="text-sm text-text-secondary hover:text-primary transition-colors dark:text-gray-400"
+      class="text-sm text-text-secondary hover:text-primary transition-colors"
     >
       {{ middleLabel }}
     </button>
@@ -32,10 +34,10 @@ defineEmits<{ prev: []; next: []; middle: [] }>();
     <button
       v-if="nextLabel"
       @click="$emit('next')"
-      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 hover:border-primary hover:text-primary transition-all max-w-[45%] dark:border-gray-700"
+      class="btn btn-soft !px-4 !py-2 text-sm max-w-[45%]"
     >
       <span class="truncate">{{ nextLabel }}</span>
-      <i class="fa-solid fa-chevron-right text-xs flex-shrink-0"></i>
+      <AppIcon name="chevron-right" :size="14" class="flex-shrink-0" />
     </button>
     <span v-else></span>
   </nav>

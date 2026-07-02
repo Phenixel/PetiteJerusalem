@@ -29,12 +29,15 @@ import {
 } from "../../content/etudeTexts";
 import GuestForm from "../../components/GuestForm.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
+import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
+import { useReadingSize } from "../../composables/useReadingSize";
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
+const readingSize = useReadingSize();
 
 // This view serves two URL shapes with the SAME UI: the in-session reader
 // (/lire/:textId, numeric id) and the public, indexable reading pages
@@ -341,68 +344,44 @@ watch(textId, loadContent);
 
 <template>
   <main class="mx-auto px-6 py-12 max-w-3xl w-full">
-    <button
-      @click="exitReading"
-      class="mb-8 flex items-center gap-2 text-text-secondary hover:text-primary transition-colors group dark:text-gray-400 dark:hover:text-primary"
-    >
-      <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+    <button @click="exitReading" class="back-link mb-8">
+      <AppIcon name="chevron-left" :size="14" />
       {{ sessionSlug ? t("textReading.backToSession") : t("textReading.back") }}
     </button>
 
     <!-- Text not in catalog -->
-    <div
-      v-if="!textEntry"
-      class="flex flex-col items-center justify-center p-12 text-center bg-white/60 backdrop-blur-sm rounded-2xl border border-white/60 dark:bg-gray-800/40 dark:border-gray-700"
-    >
-      <div
-        class="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center text-2xl mb-4 dark:bg-gray-700 dark:text-gray-500"
-      >
-        <i class="fa-solid fa-circle-question"></i>
-      </div>
-      <p class="text-text-secondary dark:text-gray-400">{{ t("textReading.notFound") }}</p>
+    <div v-if="!textEntry" class="flex flex-col items-center justify-center py-16 text-center">
+      <AppIcon name="help" :size="32" class="text-text-secondary/40 mb-4" />
+      <p class="text-text-secondary">{{ t("textReading.notFound") }}</p>
     </div>
 
     <div v-else-if="loading" class="animate-pulse">
       <div class="h-4 w-24 bg-primary/10 rounded-full mb-3"></div>
-      <div class="h-9 bg-gray-200 rounded-lg w-2/3 mb-8 dark:bg-gray-700"></div>
+      <div class="h-9 bg-black/10 rounded-lg w-2/3 mb-8 dark:bg-white/10"></div>
       <div class="space-y-4">
-        <div v-for="n in 6" :key="n" class="h-5 bg-gray-200 rounded w-full dark:bg-gray-700"></div>
+        <div v-for="n in 6" :key="n" class="h-5 bg-black/10 rounded w-full dark:bg-white/10"></div>
       </div>
     </div>
 
     <!-- Text file unavailable -->
     <div
       v-else-if="missingFile"
-      class="flex flex-col items-center justify-center p-12 text-center bg-white/60 backdrop-blur-sm rounded-2xl border border-white/60 dark:bg-gray-800/40 dark:border-gray-700"
+      class="flex flex-col items-center justify-center py-16 text-center"
     >
-      <div
-        class="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center text-2xl mb-4 dark:bg-primary/20"
-      >
-        <i class="fa-solid fa-book-open"></i>
-      </div>
-      <h2 class="text-xl font-semibold text-text-primary mb-2 dark:text-gray-100">
+      <AppIcon name="book-open" :size="32" class="text-primary/60 mb-4" />
+      <h2 class="text-xl font-semibold text-text-primary mb-2">
         {{ t("textReading.missingTitle") }}
       </h2>
-      <p class="text-text-secondary mb-1 max-w-sm dark:text-gray-400">
+      <p class="text-text-secondary mb-1 max-w-sm">
         {{ t("textReading.missingDescription") }}
       </p>
-      <p class="text-xs text-text-secondary/60 dark:text-gray-600">{{ appendHebrewNumeral(textEntry.name) }}</p>
+      <p class="text-xs text-text-secondary/60">{{ appendHebrewNumeral(textEntry.name) }}</p>
     </div>
 
-    <div
-      v-else-if="error"
-      class="flex flex-col items-center justify-center p-12 text-center bg-red-50 rounded-2xl border border-red-100 dark:bg-red-900/10 dark:border-red-900/30"
-    >
-      <div
-        class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-2xl mb-4 dark:bg-red-900/20 dark:text-red-400"
-      >
-        <i class="fa-solid fa-triangle-exclamation"></i>
-      </div>
-      <p class="text-red-700 font-medium mb-6 dark:text-red-400">{{ t("textReading.loadError") }}</p>
-      <button
-        @click="loadContent"
-        class="px-6 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors"
-      >
+    <div v-else-if="error" class="flex flex-col items-center justify-center py-16 text-center">
+      <AppIcon name="alert-triangle" :size="32" class="text-red-500 mb-4" />
+      <p class="text-text-primary font-medium mb-6">{{ t("textReading.loadError") }}</p>
+      <button @click="loadContent" class="btn btn-soft">
         {{ t("textReading.retry") }}
       </button>
     </div>
@@ -412,19 +391,19 @@ watch(textId, loadContent);
         <p class="text-sm font-semibold text-primary uppercase tracking-wide mb-1">
           {{ textEntry.livre }}
         </p>
-        <h1 class="text-3xl md:text-4xl font-bold text-text-primary dark:text-gray-100">
+        <h1 class="text-3xl md:text-4xl font-bold text-text-primary">
           {{ appendHebrewNumeral(textEntry.name) }}
         </h1>
         <p
           v-if="currentSection && !isSingleSection"
-          class="mt-2 text-text-secondary dark:text-gray-400"
+          class="mt-2 text-text-secondary"
         >
           {{ currentSection.label }}
         </p>
       </header>
 
       <!-- SEO intro (public /bibliotheque reading pages only) -->
-      <p v-if="isEtudeRoute" class="-mt-4 mb-8 text-text-secondary leading-relaxed dark:text-gray-400">
+      <p v-if="isEtudeRoute" class="-mt-4 mb-8 text-text-secondary leading-relaxed">
         {{ readingLead }}
       </p>
 
@@ -436,9 +415,9 @@ watch(textId, loadContent);
           :next-label="nextText ? appendHebrewNumeral(nextText.name) : null"
           @prev="prevText && goToText(prevText)"
           @next="nextText && goToText(nextText)"
-          class="mb-6 pb-5 border-b border-black/5 dark:border-white/10"
+          class="mb-8"
         />
-        <p class="text-sm text-text-secondary mb-4 dark:text-gray-400">
+        <p class="text-sm text-text-secondary mb-4">
           {{ t("textReading.sectionsCount", { count: content.sections.length }) }}
         </p>
         <div class="space-y-2">
@@ -446,31 +425,37 @@ watch(textId, loadContent);
             v-for="section in content.sections"
             :key="section.index"
             @click="goToSection(section.index)"
-            class="w-full flex items-center justify-between gap-3 p-4 rounded-xl bg-white/60 backdrop-blur-sm border border-white/40 hover:border-primary hover:shadow-md transition-all text-left group dark:bg-gray-800/60 dark:border-gray-700 dark:hover:border-primary"
+            class="card card-hover w-full flex items-center justify-between gap-3 p-4 transition-all text-left group"
           >
             <span class="flex items-center gap-3 min-w-0">
               <span
-                class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-sm dark:bg-primary/20"
+                class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-sm"
               >
                 {{ section.index }}
               </span>
-              <span class="font-medium text-text-primary truncate dark:text-gray-200">
+              <span class="font-medium text-text-primary truncate group-hover:text-primary transition-colors">
                 {{ section.label }}
               </span>
             </span>
             <span class="flex items-center gap-2 flex-shrink-0">
-              <i
+              <AppIcon
                 v-if="isSessionMode && findReservation(section.index)?.isCompleted"
-                class="fa-solid fa-circle-check text-green-500"
+                name="circle-check"
+                :size="16"
+                class="text-green-500"
                 :title="t('textReading.read')"
-              ></i>
-              <i
+              />
+              <AppIcon
                 v-else-if="isSessionMode && findReservation(section.index)"
-                class="fa-solid fa-user-clock text-amber-500"
-              ></i>
-              <i
-                class="fa-solid fa-chevron-right text-text-secondary/40 group-hover:text-primary transition-colors"
-              ></i>
+                name="user-clock"
+                :size="16"
+                class="text-amber-500"
+              />
+              <AppIcon
+                name="chevron-right"
+                :size="15"
+                class="text-text-secondary/40 group-hover:text-primary transition-colors"
+              />
             </span>
           </button>
         </div>
@@ -480,40 +465,37 @@ watch(textId, loadContent);
           :next-label="nextText ? appendHebrewNumeral(nextText.name) : null"
           @prev="prevText && goToText(prevText)"
           @next="nextText && goToText(nextText)"
-          class="mt-8 pt-6 border-t border-black/5 dark:border-white/10"
+          class="mt-10"
         />
       </div>
 
       <!-- Reading a passage -->
       <div v-else-if="currentSection">
         <!-- Reservation bar (session mode) -->
-        <div
-          v-if="showReservationBar"
-          class="mb-8 p-4 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/40 dark:bg-gray-800/60 dark:border-gray-700"
-        >
+        <div v-if="showReservationBar" class="mb-8 p-4 card">
           <!-- Current session -->
           <router-link
             :to="`/share-reading/session/${sessionSlug}`"
-            class="flex items-center gap-2 mb-3 pb-3 border-b border-black/5 text-sm font-semibold text-text-primary hover:text-primary transition-colors dark:text-gray-200 dark:border-white/10"
+            class="flex items-center gap-2 mb-3 text-sm font-semibold text-text-primary hover:text-primary transition-colors"
           >
-            <i class="fa-solid fa-people-group text-primary flex-shrink-0"></i>
+            <AppIcon name="users" :size="16" class="text-primary flex-shrink-0" />
             <span class="truncate">{{ session?.name }}</span>
           </router-link>
 
           <!-- Reserved by me -->
           <div v-if="isMine" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <span
-              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold w-fit"
+              class="chip !text-sm w-fit"
               :class="
                 currentReservation?.isCompleted
-                  ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                  : 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200'
+                  ? 'bg-green-600/10 text-green-700 dark:text-green-300'
+                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-200'
               "
             >
-              <i
-                class="fa-solid"
-                :class="currentReservation?.isCompleted ? 'fa-circle-check' : 'fa-user-clock'"
-              ></i>
+              <AppIcon
+                :name="currentReservation?.isCompleted ? 'circle-check' : 'user-clock'"
+                :size="14"
+              />
               {{
                 currentReservation?.isCompleted
                   ? t("textReading.readByYou")
@@ -524,23 +506,23 @@ watch(textId, loadContent);
               <button
                 @click="toggleRead"
                 :disabled="isReserving"
-                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50"
+                class="btn !px-3 !py-1.5 text-sm"
                 :class="
                   currentReservation?.isCompleted
-                    ? 'border-gray-200 text-text-secondary hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700'
-                    : 'border-green-500/30 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20'
+                    ? 'btn-soft'
+                    : 'bg-green-600/10 text-green-700 hover:bg-green-600/20 dark:text-green-300'
                 "
               >
-                <i class="fa-solid fa-check text-xs"></i>
+                <AppIcon name="check" :size="13" />
                 {{ currentReservation?.isCompleted ? t("textReading.unmarkRead") : t("textReading.markRead") }}
               </button>
               <button
                 @click="cancelReservation"
                 :disabled="isReserving"
-                class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 text-text-secondary hover:text-red-600 hover:border-red-300 transition-colors disabled:opacity-50 dark:border-gray-600 dark:text-gray-400"
+                class="icon-btn hover:!text-red-600 disabled:opacity-50"
                 :title="t('textReading.cancel')"
               >
-                <i class="fa-solid fa-xmark"></i>
+                <AppIcon name="x" :size="16" />
               </button>
             </div>
           </div>
@@ -548,17 +530,17 @@ watch(textId, loadContent);
           <!-- Reserved by someone else -->
           <div v-else-if="reservedStatus.isReserved" class="flex items-center gap-2">
             <span
-              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold w-fit"
+              class="chip !text-sm w-fit"
               :class="
                 currentReservation?.isCompleted
-                  ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                  : 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200'
+                  ? 'bg-green-600/10 text-green-700 dark:text-green-300'
+                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-200'
               "
             >
-              <i
-                class="fa-solid"
-                :class="currentReservation?.isCompleted ? 'fa-circle-check' : 'fa-user'"
-              ></i>
+              <AppIcon
+                :name="currentReservation?.isCompleted ? 'circle-check' : 'user'"
+                :size="14"
+              />
               {{
                 currentReservation?.isCompleted
                   ? t("textReading.readBy", { name: reservedStatus.reservedBy || t("textReading.someone") })
@@ -570,17 +552,13 @@ watch(textId, loadContent);
           <!-- Available -->
           <div v-else>
             <div v-if="!currentUser" class="mb-4">
-              <p class="text-sm text-text-secondary mb-3 dark:text-gray-400">
+              <p class="text-sm text-text-secondary mb-3">
                 {{ t("textReading.guestIntro") }}
               </p>
               <GuestForm v-model:reservation-form="reservationForm" />
             </div>
-            <button
-              @click="reserve"
-              :disabled="isReserving"
-              class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
-            >
-              <i class="fa-solid fa-bookmark text-xs"></i>
+            <button @click="reserve" :disabled="isReserving" class="btn btn-primary text-sm">
+              <AppIcon name="bookmark" :size="13" />
               {{ t("textReading.reserve") }}
             </button>
           </div>
@@ -595,7 +573,7 @@ watch(textId, loadContent);
           @prev="prevSection"
           @next="nextSection"
           @middle="backToSectionList"
-          class="mb-6 pb-5 border-b border-black/5 dark:border-white/10"
+          class="mb-8"
         />
         <ReadingNav
           v-else-if="prevText || nextText"
@@ -603,21 +581,44 @@ watch(textId, loadContent);
           :next-label="nextText ? appendHebrewNumeral(nextText.name) : null"
           @prev="prevText && goToText(prevText)"
           @next="nextText && goToText(nextText)"
-          class="mb-6 pb-5 border-b border-black/5 dark:border-white/10"
+          class="mb-8"
         />
 
-        <!-- Hebrew / phonetic toggle -->
-        <div v-if="canTransliterate" class="flex justify-end mb-5">
+        <!-- Reading toolbar: text size + Hebrew / phonetic toggle -->
+        <div class="flex items-center justify-end gap-3 mb-5">
           <div
-            class="inline-flex p-0.5 rounded-lg bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+            class="inline-flex items-center rounded-lg bg-black/5 dark:bg-white/10"
+            role="group"
+            :aria-label="t('textReading.textSize')"
           >
+            <button
+              @click="readingSize.decrease()"
+              :disabled="!readingSize.canDecrease.value"
+              class="px-3 py-1.5 text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors disabled:opacity-35"
+              :aria-label="t('textReading.textSizeDecrease')"
+              :title="t('textReading.textSizeDecrease')"
+            >
+              A−
+            </button>
+            <button
+              @click="readingSize.increase()"
+              :disabled="!readingSize.canIncrease.value"
+              class="px-3 py-1.5 text-base font-semibold text-text-secondary hover:text-text-primary transition-colors disabled:opacity-35"
+              :aria-label="t('textReading.textSizeIncrease')"
+              :title="t('textReading.textSizeIncrease')"
+            >
+              A+
+            </button>
+          </div>
+
+          <div v-if="canTransliterate" class="inline-flex p-0.5 rounded-lg bg-black/5 dark:bg-white/10">
             <button
               @click="showPhonetic = false"
               class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
               :class="
                 !showPhonetic
-                  ? 'bg-white text-primary shadow-sm dark:bg-gray-700 dark:text-primary'
-                  : 'text-text-secondary dark:text-gray-400'
+                  ? 'bg-surface text-primary shadow-sm'
+                  : 'text-text-secondary'
               "
             >
               {{ t("textReading.hebrew") }}
@@ -627,8 +628,8 @@ watch(textId, loadContent);
               class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
               :class="
                 showPhonetic
-                  ? 'bg-white text-primary shadow-sm dark:bg-gray-700 dark:text-primary'
-                  : 'text-text-secondary dark:text-gray-400'
+                  ? 'bg-surface text-primary shadow-sm'
+                  : 'text-text-secondary'
               "
             >
               {{ t("textReading.phonetic") }}
@@ -637,60 +638,48 @@ watch(textId, loadContent);
         </div>
 
         <!-- Talmud: continuous text with a marker at each daf change -->
-        <div v-if="content.type === 'Talmud Bavli'">
+        <div
+          v-if="content.type === 'Talmud Bavli'"
+          :style="{ '--reading-scale': readingSize.scale.value }"
+        >
           <template v-for="block in currentSection.dafBlocks ?? []" :key="block.daf">
-            <div class="flex items-center gap-3 my-6">
-              <span class="flex-1 border-t border-black/10 dark:border-white/10"></span>
-              <span
-                class="text-xs font-semibold text-primary/70 uppercase tracking-wider whitespace-nowrap dark:text-primary"
-              >
-                Daf {{ block.daf }}
-              </span>
-              <span class="flex-1 border-t border-black/10 dark:border-white/10"></span>
-            </div>
+            <p class="mt-6 mb-2 text-sm font-semibold text-primary">Daf {{ block.daf }}</p>
             <p
               v-if="!showPhonetic"
               dir="rtl"
-              class="font-hebrew text-2xl leading-loose text-text-primary dark:text-gray-100"
+              class="font-hebrew leading-loose text-text-primary reading-he"
             >
               {{ block.lines.join(" ") }}
             </p>
-            <p
-              v-else
-              dir="ltr"
-              class="text-lg leading-relaxed italic text-text-secondary dark:text-gray-300"
-            >
+            <p v-else dir="ltr" class="leading-relaxed italic text-text-secondary reading-tl">
               {{ block.lines.map(transliterate).join(" ") }}
             </p>
           </template>
         </div>
 
         <!-- Verses / mishnayot (numbered for reference texts) -->
-        <div v-else class="space-y-4">
-          <div v-for="(line, index) in currentSection.he" :key="index">
-            <div class="flex items-start gap-3">
-              <span
-                v-if="showVerseNumbers"
-                class="mt-1.5 flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-primary/10 text-xs text-primary font-semibold select-none dark:bg-primary/20"
-              >
-                {{ index + 1 }}
-              </span>
-              <p
-                v-if="!showPhonetic"
-                dir="rtl"
-                class="flex-1 min-w-0 font-hebrew text-2xl leading-loose text-text-primary dark:text-gray-100"
-              >
-                {{ line }}
-              </p>
-              <p
-                v-else
-                dir="ltr"
-                class="flex-1 min-w-0 text-lg leading-relaxed italic text-text-secondary dark:text-gray-300"
-              >
-                {{ transliterate(line) }}
-              </p>
-            </div>
-            <div class="mt-4 border-b border-black/5 dark:border-white/5"></div>
+        <div v-else class="space-y-6" :style="{ '--reading-scale': readingSize.scale.value }">
+          <div v-for="(line, index) in currentSection.he" :key="index" class="flex items-start gap-3">
+            <span
+              v-if="showVerseNumbers"
+              class="mt-2 flex-shrink-0 w-6 text-right text-xs text-primary font-semibold select-none"
+            >
+              {{ index + 1 }}
+            </span>
+            <p
+              v-if="!showPhonetic"
+              dir="rtl"
+              class="flex-1 min-w-0 font-hebrew leading-loose text-text-primary reading-he"
+            >
+              {{ line }}
+            </p>
+            <p
+              v-else
+              dir="ltr"
+              class="flex-1 min-w-0 leading-relaxed italic text-text-secondary reading-tl"
+            >
+              {{ transliterate(line) }}
+            </p>
           </div>
         </div>
 
@@ -703,7 +692,7 @@ watch(textId, loadContent);
           @prev="prevSection"
           @next="nextSection"
           @middle="backToSectionList"
-          class="mt-10 pt-6 border-t border-black/5 dark:border-white/10"
+          class="mt-12"
         />
         <ReadingNav
           v-else-if="prevText || nextText"
@@ -711,14 +700,14 @@ watch(textId, loadContent);
           :next-label="nextText ? appendHebrewNumeral(nextText.name) : null"
           @prev="prevText && goToText(prevText)"
           @next="nextText && goToText(nextText)"
-          class="mt-10 pt-6 border-t border-black/5 dark:border-white/10"
+          class="mt-12"
         />
       </div>
 
       <!-- Internal links (public /bibliotheque reading pages only) -->
       <section
         v-if="isEtudeRoute"
-        class="mt-12 pt-6 border-t border-black/5 text-sm text-text-secondary dark:border-white/10 dark:text-gray-400"
+        class="mt-14 text-sm text-text-secondary"
       >
         <nav class="flex flex-wrap gap-x-5 gap-y-2">
           <RouterLink to="/bibliotheque" class="hover:text-primary transition-colors">Bibliothèque</RouterLink>
@@ -736,3 +725,13 @@ watch(textId, loadContent);
     </template>
   </main>
 </template>
+
+<style scoped>
+/* Reader text sizes follow the A− / A+ control (useReadingSize). */
+.reading-he {
+  font-size: calc(1.5rem * var(--reading-scale, 1));
+}
+.reading-tl {
+  font-size: calc(1.125rem * var(--reading-scale, 1));
+}
+</style>
