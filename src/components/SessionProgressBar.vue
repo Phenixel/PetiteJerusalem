@@ -40,8 +40,9 @@ const stats = computed(() => {
     </div>
 
     <div class="relative h-3 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden mb-3">
+      <!-- Réservés : toujours bleu, indépendamment du thème (comme le vert des lus) -->
       <div
-        class="absolute top-0 left-0 h-full bg-primary transition-all duration-1000 ease-out rounded-full"
+        class="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-1000 ease-out rounded-full"
         :style="{ width: `${stats.reservedPercentage}%` }"
       ></div>
 
@@ -56,8 +57,8 @@ const stats = computed(() => {
         <div class="w-2 h-2 rounded-full bg-green-500"></div>
         <span>{{ read }} {{ t("progressBar.read") }}</span>
       </div>
-      <div class="flex items-center gap-1.5 text-primary">
-        <div class="w-2 h-2 rounded-full bg-primary"></div>
+      <div class="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+        <div class="w-2 h-2 rounded-full bg-blue-500"></div>
         <span>{{ reserved }} {{ t("progressBar.reserved") }}</span>
       </div>
       <div class="flex items-center gap-1.5 text-text-secondary">
