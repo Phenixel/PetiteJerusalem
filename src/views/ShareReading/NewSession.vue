@@ -9,6 +9,7 @@ import { authService } from "../../services/authService";
 import type { User } from "../../services/authService";
 import { seoService } from "../../services/seoService";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
+import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
 
 const router = useRouter();
@@ -149,161 +150,142 @@ const goBack = () => {
 <template>
   <main class="mx-auto px-6 py-12 min-h-screen">
     <div class="text-center mb-12 animate-[fadeIn_0.5s_ease]">
-      <h2
-        class="text-3xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent md:text-4xl font-bold text-text-primary mb-4"
-      >
+      <h2 class="text-3xl md:text-4xl font-bold text-text-primary mb-4 tracking-tight">
         {{ t("newSession.title") }}
       </h2>
-      <p class="text-text-secondary text-lg dark:text-gray-300">
+      <p class="text-text-secondary text-lg">
         {{ t("newSession.subtitle") }}
       </p>
     </div>
 
-    <div
-      class="bg-white/60 backdrop-blur-xl rounded-2xl shadow-xl border border-white/40 p-8 md:p-10 animate-[fadeIn_0.5s_ease_0.1s] text-left dark:bg-gray-800/60 dark:border-gray-700"
-    >
+    <div class="card p-6 md:p-8 animate-[fadeIn_0.5s_ease_0.1s] text-left">
       <form @submit.prevent="createSession" class="space-y-6">
         <div>
-          <label
-            for="name"
-            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-200"
-            >{{ t("newSession.sessionTitle") }}</label
-          >
+          <label for="name" class="block text-sm font-semibold text-text-secondary mb-2">{{
+            t("newSession.sessionTitle")
+          }}</label>
           <input
             type="text"
             id="name"
             v-model="sessionData.name"
             :placeholder="t('newSession.sessionTitlePlaceholder')"
             required
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-600"
+            class="field"
           />
         </div>
 
         <div>
-          <label
-            for="description"
-            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-200"
-            >{{ t("newSession.sessionDescription") }}</label
-          >
+          <label for="description" class="block text-sm font-semibold text-text-secondary mb-2">{{
+            t("newSession.sessionDescription")
+          }}</label>
           <textarea
             id="description"
             v-model="sessionData.description"
             :placeholder="t('newSession.sessionDescriptionPlaceholder')"
             required
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-y dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-600"
+            class="field resize-y"
             rows="4"
           ></textarea>
         </div>
 
         <div>
-          <label
-            for="type"
-            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-200"
-            >{{ t("newSession.textType") }}</label
-          >
+          <label for="type" class="block text-sm font-semibold text-text-secondary mb-2">{{
+            t("newSession.textType")
+          }}</label>
           <div class="relative">
             <select
               name="type"
               id="type"
               v-model="sessionData.type"
               required
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none cursor-pointer dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-600"
+              class="field appearance-none cursor-pointer"
             >
               <option value="">{{ t("newSession.selectType") }}</option>
               <option v-for="type in textStudyTypes" :key="type.value" :value="type.value">
                 {{ type.label }}
               </option>
             </select>
-            <i
-              class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none dark:text-gray-400"
-            ></i>
+            <AppIcon
+              name="chevron-down"
+              :size="14"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
+            />
           </div>
         </div>
 
         <!-- Sélection des parties/livres (s'affiche uniquement si des livres sont disponibles) -->
         <div v-if="isBookSelectionEnabled" class="animate-[fadeIn_0.3s_ease]">
-          <label class="block text-sm font-semibold text-text-primary mb-3 dark:text-gray-200">
+          <label class="block text-sm font-semibold text-text-secondary mb-3">
             {{ t("newSession.selectParts") }}
-            <span class="text-xs font-normal text-text-secondary ml-2 dark:text-gray-400">
+            <span class="text-xs font-normal text-text-secondary/70 ml-2">
               ({{ selectedBooks.length }}/{{ availableBooks.length }})
             </span>
           </label>
 
           <div
-            class="bg-white/50 rounded-xl border border-gray-200 p-4 max-h-60 overflow-y-auto custom-scrollbar dark:bg-gray-700/50 dark:border-gray-600"
+            class="rounded-lg bg-black/[0.03] p-4 max-h-60 overflow-y-auto custom-scrollbar dark:bg-white/5"
           >
-            <div class="flex items-center mb-3 pb-2 border-b border-gray-200 dark:border-gray-600">
+            <div class="flex items-center mb-3">
               <label class="inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
-                  class="w-5 h-5 rounded text-primary border-gray-300 focus:ring-primary accent-primary"
+                  class="w-5 h-5 rounded accent-primary cursor-pointer"
                   :checked="selectedBooks.length === availableBooks.length"
                   :indeterminate="
                     selectedBooks.length > 0 && selectedBooks.length < availableBooks.length
                   "
                   @change="toggleAllBooks"
                 />
-                <span class="ml-2 text-sm font-semibold text-text-primary dark:text-gray-200">{{
+                <span class="ml-2 text-sm font-semibold text-text-primary">{{
                   t("newSession.selectAll")
                 }}</span>
               </label>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1">
               <label
                 v-for="book in availableBooks"
                 :key="book"
-                class="inline-flex items-center cursor-pointer hover:bg-black/5 p-1 rounded transition-colors dark:hover:bg-white/5"
+                class="inline-flex items-center cursor-pointer hover:bg-black/[0.04] px-1.5 py-1 rounded-lg transition-colors dark:hover:bg-white/5"
               >
                 <input
                   type="checkbox"
-                  class="w-4 h-4 rounded text-primary border-gray-300 focus:ring-primary accent-primary"
+                  class="w-4 h-4 rounded accent-primary cursor-pointer"
                   :value="book"
                   v-model="selectedBooks"
                 />
-                <span class="ml-2 text-sm text-text-secondary dark:text-gray-300">{{
-                  formatBookName(book)
-                }}</span>
+                <span class="ml-2 text-sm text-text-secondary">{{ formatBookName(book) }}</span>
               </label>
             </div>
           </div>
           <p
             v-if="selectedBooks.length === 0"
-            class="text-xs text-red-500 mt-1 flex items-center gap-1"
+            class="text-xs text-red-600 mt-1.5 flex items-center gap-1 dark:text-red-400"
           >
-            <i class="fa-solid fa-triangle-exclamation"></i>
+            <AppIcon name="alert-triangle" :size="13" />
             {{ t("newSession.selectAtLeastOne") }}
           </p>
         </div>
 
         <div>
-          <label
-            for="dateLimit"
-            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-200"
-            >{{ t("common.dateLimit") }}</label
-          >
+          <label for="dateLimit" class="block text-sm font-semibold text-text-secondary mb-2">{{
+            t("common.dateLimit")
+          }}</label>
           <input
             type="date"
             id="dateLimit"
             v-model="sessionData.dateLimit"
             required
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none cursor-pointer dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-600 dark:[color-scheme:dark]"
+            class="field cursor-pointer dark:[color-scheme:dark]"
           />
         </div>
 
         <div class="flex flex-col-reverse sm:flex-row gap-4 pt-4">
-          <button
-            type="button"
-            @click="goBack"
-            class="px-6 py-3 bg-white border border-gray-200 text-text-secondary font-bold rounded-xl hover:bg-gray-50 transition-colors w-full sm:w-auto dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
-          >
+          <button type="button" @click="goBack" class="btn btn-soft w-full sm:w-auto">
             {{ t("common.cancel") }}
           </button>
-          <button
-            type="submit"
-            class="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all w-full sm:flex-1 disabled:opacity-70 disabled:cursor-wait"
-            :disabled="isLoading"
-          >
+          <button type="submit" class="btn btn-primary w-full sm:flex-1" :disabled="isLoading">
+            <AppIcon v-if="isLoading" name="spinner" :size="15" class="animate-spin" />
             {{ buttonText }}
           </button>
         </div>
@@ -312,15 +294,15 @@ const goBack = () => {
 
     <div
       v-if="message"
-      class="mt-6 p-4 rounded-xl text-center font-medium animate-[fadeIn_0.3s_ease]"
+      class="mt-6 flex items-center justify-center gap-2 text-center font-medium animate-[fadeIn_0.3s_ease]"
       :class="
         messageType === 'success'
-          ? 'bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/30'
-          : 'bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30'
+          ? 'text-green-700 dark:text-green-300'
+          : 'text-red-600 dark:text-red-400'
       "
     >
-      <i class="fa-solid fa-check-circle mr-2" v-if="messageType === 'success'"></i>
-      <i class="fa-solid fa-exclamation-circle mr-2" v-if="messageType === 'error'"></i>
+      <AppIcon v-if="messageType === 'success'" name="circle-check" :size="15" />
+      <AppIcon v-if="messageType === 'error'" name="alert-circle" :size="15" />
       {{ message }}
     </div>
 

@@ -10,6 +10,7 @@ import ShareModal from "../../components/ShareModal.vue";
 import SessionProgressBar from "../../components/SessionProgressBar.vue";
 import BatchSelectionBar from "../../components/BatchSelectionBar.vue";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
+import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import SessionHeader from "./detailSession/SessionHeader.vue";
 import SessionInstructions from "./detailSession/SessionInstructions.vue";
@@ -56,9 +57,7 @@ const groupedTextStudies = computed(() => {
 
   if (showOnlyAvailable.value && session.value) {
     const currentSession = session.value;
-    filtered = filtered.filter(
-      (text) => !sessionService.isTextFullyReserved(text, currentSession),
-    );
+    filtered = filtered.filter((text) => !sessionService.isTextFullyReserved(text, currentSession));
   }
 
   if (currentUser.value) {
@@ -413,15 +412,10 @@ watch(session, (s) => applySessionSeo(s));
     </div>
 
     <!-- État d'erreur -->
-    <div
-      v-else-if="error"
-      class="flex flex-col items-center justify-center p-12 text-center bg-red-50 rounded-2xl border border-red-100 dark:bg-red-900/10 dark:border-red-900/30"
-    >
-      <p class="text-red-700 font-medium mb-4 dark:text-red-400">{{ error }}</p>
-      <button
-        @click="loadSessionData"
-        class="px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
-      >
+    <div v-else-if="error" class="flex flex-col items-center justify-center py-16 text-center">
+      <AppIcon name="alert-triangle" :size="32" class="text-red-500 mb-4" />
+      <p class="text-text-primary font-medium mb-6">{{ error }}</p>
+      <button @click="loadSessionData" class="btn btn-soft">
         {{ t("common.retry") }}
       </button>
     </div>
@@ -446,12 +440,8 @@ watch(session, (s) => applySessionSeo(s));
       <SessionInstructions />
 
       <!-- Formulaire de réservation pour invités (composant unifié) -->
-      <div
-        id="guest-form"
-        v-if="!currentUser"
-        class="mb-8 p-6 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 shadow-sm dark:bg-gray-800/60 dark:border-gray-700"
-      >
-        <h3 class="font-bold text-lg text-text-primary mb-4 dark:text-gray-100">
+      <div id="guest-form" v-if="!currentUser" class="card p-6 mb-8">
+        <h3 class="font-bold text-lg text-text-primary mb-4">
           {{ t("detailSession.guestTitle") }}
         </h3>
         <GuestForm v-model:reservationForm="reservationForm" />
@@ -460,45 +450,44 @@ watch(session, (s) => applySessionSeo(s));
       <!-- Barre de recherche -->
       <div class="sticky top-4 z-20 mb-8">
         <div class="relative max-w-xl mx-auto">
+          <AppIcon
+            name="search"
+            :size="16"
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
+          />
           <input
             type="text"
             v-model="searchTerm"
             :placeholder="t('detailSession.searchPlaceholder')"
-            class="w-full pl-12 pr-10 py-4 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none dark:bg-gray-800/90 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:bg-gray-800"
+            class="field !pl-11 !pr-10 shadow-card"
           />
-          <i class="fa-solid fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
           <button
             v-if="searchTerm"
             @click="clearSearch"
-            class="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 text-xs transition-colors dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
             :title="t('detailSession.clearSearch')"
           >
-            <i class="fa-solid fa-times"></i>
+            <AppIcon name="x" :size="14" />
           </button>
         </div>
-        <div
-          v-if="searchTerm"
-          class="text-center mt-2 text-sm text-text-secondary bg-white/50 backdrop-blur py-1 px-3 rounded-full inline-block mx-auto left-0 right-0 w-fit relative dark:bg-gray-700/50 dark:text-gray-300"
-        >
+        <div v-if="searchTerm" class="text-center mt-2 text-sm text-text-secondary">
           {{ t("detailSession.searchFor") }} : "{{ searchTerm }}"
         </div>
       </div>
 
       <!-- Filtre : masquer les textes entièrement réservés (non sticky) -->
       <div class="flex justify-center mb-8 -mt-4">
-        <label
-          class="inline-flex items-center gap-2.5 cursor-pointer bg-white/80 backdrop-blur px-4 py-2 rounded-full border border-gray-200 shadow-sm dark:bg-gray-800/80 dark:border-gray-700"
-        >
+        <label class="inline-flex items-center gap-2.5 cursor-pointer">
           <span class="relative inline-flex items-center">
             <input type="checkbox" v-model="showOnlyAvailable" class="sr-only peer" />
             <span
-              class="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-primary transition-colors dark:bg-gray-600"
+              class="w-9 h-5 bg-black/15 rounded-full peer peer-checked:bg-primary transition-colors dark:bg-white/20"
             ></span>
             <span
-              class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"
+              class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform peer-checked:translate-x-4"
             ></span>
           </span>
-          <span class="text-sm font-medium text-text-secondary dark:text-gray-300">
+          <span class="text-sm font-medium text-text-secondary">
             {{ t("detailSession.availableOnly") }}
           </span>
         </label>
@@ -519,25 +508,15 @@ watch(session, (s) => applySessionSeo(s));
 
       <!-- CTA : inviter le visiteur à créer sa propre session -->
       <section class="mt-14 mb-2">
-        <div
-          class="max-w-3xl mx-auto text-center p-8 rounded-3xl bg-gradient-to-br from-primary/10 to-secondary/10 border border-white/60 backdrop-blur-sm dark:from-primary/15 dark:to-secondary/15 dark:border-gray-700"
-        >
-          <div
-            class="w-14 h-14 mx-auto mb-4 flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary text-white text-2xl shadow-md"
-          >
-            <i class="fa-solid fa-people-group" aria-hidden="true"></i>
-          </div>
-          <h3 class="text-xl md:text-2xl font-bold text-text-primary mb-2 dark:text-gray-100">
+        <div class="card p-6 max-w-3xl mx-auto text-center">
+          <h3 class="text-xl md:text-2xl font-bold text-text-primary mb-2">
             {{ t("detailSession.createYourOwnTitle") }}
           </h3>
-          <p class="text-text-secondary max-w-xl mx-auto mb-6 leading-relaxed dark:text-gray-300">
+          <p class="text-text-secondary max-w-xl mx-auto mb-6 leading-relaxed">
             {{ t("detailSession.createYourOwnText") }}
           </p>
-          <button
-            @click="router.push('/share-reading')"
-            class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
-          >
-            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+          <button @click="router.push('/share-reading')" class="btn btn-primary">
+            <AppIcon name="plus" :size="16" />
             {{ t("detailSession.createYourOwnButton") }}
           </button>
         </div>
