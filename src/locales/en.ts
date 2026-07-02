@@ -253,6 +253,7 @@ const en: LocaleMessages = {
     cancelError: "Error cancelling. Please try again.",
     reservationError: "Error reserving. Please try again.",
     updateError: "Error updating reservation",
+    reservationsConfirmed: "Reservation confirmed! | Reservations confirmed!",
     manageSession: "Manage session",
     createYourOwnTitle: "Your turn to study together",
     createYourOwnText:
@@ -266,6 +267,7 @@ const en: LocaleMessages = {
     },
   },
   sessionManagement: {
+    reservationCreatedSuccess: "Reservation saved | Reservations saved",
     reservationCreateError: "Error creating the reservation",
     reservationUpdateError: "Error updating the reservation",
     reservationDeleteError: "Error deleting the reservation",
@@ -406,6 +408,7 @@ const en: LocaleMessages = {
     reservedBy: "Reserved by {name}.",
     readBy: "Read by {name}.",
     someone: "someone",
+    reserveSuccess: "Passage reserved!",
     reserveError: "The reservation failed.",
     cancelError: "The cancellation failed.",
     updateError: "The update failed.",

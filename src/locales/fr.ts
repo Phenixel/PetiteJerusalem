@@ -254,6 +254,7 @@ const fr = {
     cancelError: "Erreur lors de l'annulation. Veuillez réessayer.",
     reservationError: "Erreur lors de la réservation. Veuillez réessayer.",
     updateError: "Erreur lors de la mise à jour de la réservation",
+    reservationsConfirmed: "Réservation confirmée ! | Réservations confirmées !",
     manageSession: "Gérer la session",
     createYourOwnTitle: "À votre tour d'étudier ensemble",
     createYourOwnText:
@@ -267,6 +268,7 @@ const fr = {
     },
   },
   sessionManagement: {
+    reservationCreatedSuccess: "Réservation enregistrée | Réservations enregistrées",
     reservationCreateError: "Erreur lors de la création de la réservation",
     reservationUpdateError: "Erreur lors de la mise à jour de la réservation",
     reservationDeleteError: "Erreur lors de la suppression de la réservation",
@@ -408,6 +410,7 @@ const fr = {
     reservedBy: "Réservé par {name}.",
     readBy: "Lu par {name}.",
     someone: "quelqu'un",
+    reserveSuccess: "Passage réservé !",
     reserveError: "La réservation a échoué.",
     cancelError: "L'annulation a échoué.",
     updateError: "La mise à jour a échoué.",

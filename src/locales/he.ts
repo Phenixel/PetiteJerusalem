@@ -250,6 +250,7 @@ const he: LocaleMessages = {
     cancelError: "שגיאה בביטול. אנא נסה שוב.",
     reservationError: "שגיאה בהזמנה. אנא נסה שוב.",
     updateError: "שגיאה בעדכון ההזמנה",
+    reservationsConfirmed: "ההזמנה אושרה! | ההזמנות אושרו!",
     manageSession: "נהל סשן",
     createYourOwnTitle: "תורכם ללמוד יחד",
     createYourOwnText:
@@ -263,6 +264,7 @@ const he: LocaleMessages = {
     },
   },
   sessionManagement: {
+    reservationCreatedSuccess: "ההזמנה נשמרה | ההזמנות נשמרו",
     reservationCreateError: "שגיאה ביצירת ההזמנה",
     reservationUpdateError: "שגיאה בעדכון ההזמנה",
     reservationDeleteError: "שגיאה במחיקת ההזמנה",
@@ -397,6 +399,7 @@ const he: LocaleMessages = {
     reservedBy: "נשמר על ידי {name}.",
     readBy: "נקרא על ידי {name}.",
     someone: "מישהו",
+    reserveSuccess: "הקטע נשמר!",
     reserveError: "ההזמנה נכשלה.",
     cancelError: "הביטול נכשל.",
     updateError: "העדכון נכשל.",

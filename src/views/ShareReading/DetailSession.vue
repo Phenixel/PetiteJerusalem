@@ -270,7 +270,10 @@ const confirmReservations = async () => {
     selectedItems.value.clear();
 
     if (!currentUser.value) {
+      // Les invités voient la modale d'inscription, qui confirme déjà la réservation.
       showSignupPrompt.value = true;
+    } else {
+      toast.success(t("detailSession.reservationsConfirmed", newReservations.length));
     }
   } catch (err) {
     console.error("Erreur lors de la confirmation globale:", err);

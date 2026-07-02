@@ -239,6 +239,7 @@ async function reserve() {
       reservationForm.value,
     );
     session.value.reservations = [...session.value.reservations, local];
+    toast.success(t("textReading.reserveSuccess"));
   } catch (e) {
     toast.errorFromException(
       e,

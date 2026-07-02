@@ -134,6 +134,7 @@ const createGuestReservation = async () => {
 
   try {
     isLoading.value = true;
+    let createdCount = 0;
 
     if (selectedItems.value.size > 0) {
       isSubmittingBatch.value = true;
@@ -160,6 +161,7 @@ const createGuestReservation = async () => {
           undefined, // userName
           guestForm.value.name, // guestName
         );
+        createdCount++;
       }
 
       selectedItems.value.clear();
@@ -173,10 +175,14 @@ const createGuestReservation = async () => {
         undefined, // userName
         guestForm.value.name, // guestName
       );
+      createdCount++;
     }
 
     await reloadSession();
     showGuestForm.value = false;
+    if (createdCount > 0) {
+      toast.success(t("sessionManagement.reservationCreatedSuccess", createdCount));
+    }
   } catch (error) {
     console.error("Erreur lors de la création de la réservation:", error);
     toast.errorFromException(error, t("sessionManagement.reservationCreateError"));
