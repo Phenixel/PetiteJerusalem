@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 import { authService } from "../services/authService";
 import { reservationService } from "../services/reservationService";
 import { seoService } from "../services/seoService";
+import AppIcon from "../components/icons/AppIcon.vue";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -117,48 +118,36 @@ onMounted(async () => {
 
 <template>
   <main class="min-h-screen py-16 px-6 flex items-center justify-center">
-    <section
-      class="w-full max-w-lg bg-white/60 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/40 p-8 md:p-12 animate-[fadeIn_0.5s_ease] dark:bg-gray-800/60 dark:border-gray-700"
-    >
+    <section class="w-full max-w-lg card p-8 animate-[fadeIn_0.5s_ease]">
       <div class="text-center mb-10">
-        <h1 class="text-3xl font-bold text-text-primary mb-2 dark:text-gray-100">
+        <h1 class="text-3xl font-bold text-text-primary mb-2">
           {{ t("login.welcome") }}
         </h1>
-        <p class="text-text-secondary dark:text-gray-400">{{ t("login.connectToContinue") }}</p>
+        <p class="text-text-secondary">{{ t("login.connectToContinue") }}</p>
       </div>
 
       <div class="mb-8">
-        <button
-          class="w-full py-3 px-6 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl font-semibold text-text-primary shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
-          @click="loginWithGoogle"
-        >
-          <i class="fa-brands fa-google text-[#4285F4]"></i>
+        <button class="btn btn-soft w-full" @click="loginWithGoogle">
+          <AppIcon name="google" :size="16" />
           {{ t("login.signInWithGoogle") }}
         </button>
       </div>
 
-      <div class="flex items-center gap-4 mb-8">
-        <div class="h-px bg-gray-200 flex-1 dark:bg-gray-700"></div>
-        <p class="text-sm text-text-secondary/60 font-medium dark:text-gray-500">
-          {{ t("common.or") }}
-        </p>
-        <div class="h-px bg-gray-200 flex-1 dark:bg-gray-700"></div>
-      </div>
+      <p class="text-center text-sm text-text-secondary/60 font-medium mb-8">
+        {{ t("common.or") }}
+      </p>
 
-      <div
-        class="relative grid grid-cols-2 gap-0 bg-gray-100/50 p-1 rounded-full mb-8 border border-gray-200/50 dark:bg-gray-700/50 dark:border-gray-600"
-      >
+      <div class="relative grid grid-cols-2 gap-0 bg-black/5 p-1 rounded-lg mb-8 dark:bg-white/10">
         <div
-          class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white dark:bg-gray-600 rounded-full shadow-sm transition-all duration-300 ease-out"
+          class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-surface rounded-md shadow-sm transition-all duration-300 ease-out"
           :class="mode === 'login' ? 'left-1' : 'left-1 translate-x-full'"
         ></div>
         <button
           type="button"
-          class="relative z-10 py-2.5 text-sm font-bold text-center transition-colors duration-300 rounded-full"
+          class="relative z-10 py-2.5 text-sm font-bold text-center transition-colors duration-300"
           :class="{
-            'text-text-primary dark:text-gray-100': mode === 'login',
-            'text-text-secondary hover:text-text-primary dark:text-gray-400 dark:hover:text-gray-200':
-              mode !== 'login',
+            'text-text-primary': mode === 'login',
+            'text-text-secondary hover:text-text-primary': mode !== 'login',
           }"
           @click="setMode('login')"
           :disabled="loading"
@@ -167,11 +156,10 @@ onMounted(async () => {
         </button>
         <button
           type="button"
-          class="relative z-10 py-2.5 text-sm font-bold text-center transition-colors duration-300 rounded-full"
+          class="relative z-10 py-2.5 text-sm font-bold text-center transition-colors duration-300"
           :class="{
-            'text-text-primary dark:text-gray-100': mode === 'signup',
-            'text-text-secondary hover:text-text-primary dark:text-gray-400 dark:hover:text-gray-200':
-              mode !== 'signup',
+            'text-text-primary': mode === 'signup',
+            'text-text-secondary hover:text-text-primary': mode !== 'signup',
           }"
           @click="setMode('signup')"
           :disabled="loading"
@@ -183,48 +171,42 @@ onMounted(async () => {
       <form @submit.prevent="submitForm" class="flex flex-col">
         <Transition name="slide-up">
           <div v-if="mode === 'signup'" class="mb-5 overflow-hidden">
-            <label
-              class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
-              for="displayName"
-              >{{ t("login.displayName") }}</label
-            >
+            <label class="block text-sm font-semibold text-text-primary mb-2" for="displayName">{{
+              t("login.displayName")
+            }}</label>
             <input
               id="displayName"
               v-model="displayName"
               type="text"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
+              class="field"
               :placeholder="t('login.displayNamePlaceholder')"
             />
           </div>
         </Transition>
 
         <div class="mb-5">
-          <label
-            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
-            for="email"
-            >{{ t("common.email") }}</label
-          >
+          <label class="block text-sm font-semibold text-text-primary mb-2" for="email">{{
+            t("common.email")
+          }}</label>
           <input
             id="email"
             v-model="email"
             type="email"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
+            class="field"
             :placeholder="t('login.emailPlaceholder')"
             required
           />
         </div>
 
         <div class="mb-5">
-          <label
-            class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
-            for="password"
-            >{{ t("common.password") }}</label
-          >
+          <label class="block text-sm font-semibold text-text-primary mb-2" for="password">{{
+            t("common.password")
+          }}</label>
           <input
             id="password"
             v-model="password"
             type="password"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
+            class="field"
             placeholder="••••••••"
             required
           />
@@ -233,7 +215,7 @@ onMounted(async () => {
         <Transition name="slide-up">
           <div v-if="mode === 'signup'" class="mb-5 overflow-hidden">
             <label
-              class="block text-sm font-semibold text-text-primary mb-2 dark:text-gray-300"
+              class="block text-sm font-semibold text-text-primary mb-2"
               for="confirmPassword"
               >{{ t("login.confirmPassword") }}</label
             >
@@ -241,26 +223,23 @@ onMounted(async () => {
               id="confirmPassword"
               v-model="confirmPassword"
               type="password"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/80 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-100 dark:focus:bg-gray-700"
+              class="field"
               placeholder="••••••••"
               required
             />
           </div>
         </Transition>
 
-        <div
+        <p
           v-if="errorMessage"
-          class="p-4 mb-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium animate-[shake_0.4s_ease] dark:bg-red-900/10 dark:border-red-900/30 dark:text-red-400"
+          class="mb-4 flex items-center gap-2 text-sm text-red-600 dark:text-red-400"
         >
-          <i class="fa-solid fa-circle-exclamation mr-2"></i>{{ errorMessage }}
-        </div>
+          <AppIcon name="alert-circle" :size="14" />
+          {{ errorMessage }}
+        </p>
 
-        <button
-          class="w-full py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
-          type="submit"
-          :disabled="loading"
-        >
-          <i v-if="loading" class="fa-solid fa-circle-notch fa-spin mr-2"></i>
+        <button class="btn btn-primary w-full" type="submit" :disabled="loading">
+          <AppIcon v-if="loading" name="spinner" :size="15" class="animate-spin" />
           {{ buttonText }}
         </button>
       </form>
