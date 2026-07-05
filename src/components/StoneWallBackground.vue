@@ -1,26 +1,24 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
-
 /* Jerusalem-stone wall, hidden behind the whole app.
    The stones themselves are invisible: what you see is a warm light that
    drifts slowly BEHIND the wall and seeps through the mortar joints. Where
    the light passes, the joints glow softly and the stones read as dark
    silhouettes — you guess the wall rather than see it. A faint mineral
-   grain covers everything, and the wall drifts slightly on scroll.
+   grain covers everything.
 
    Performance: everything per-frame must stay off the main thread. The
    joint network is baked once into a static SVG data-URI used as a CSS
    `mask-image`, and the light blobs are plain divs animated with
    compositor-friendly transform/opacity only. (The previous SVG-`<mask>`
    version forced a full re-raster of the masked group on every frame and
-   dragged the whole site down to ~24 fps.) */
+   dragged the whole site down to ~24 fps.) The wall layer itself never
+   moves: a scroll parallax was tried and dropped — it was the only part
+   still running JS on every scrolled frame, and moving a masked layer can
+   invalidate its cached render surface on modest GPUs, for a barely
+   visible effect. */
 
 const VIEW_W = 1600;
 const VIEW_H = 1100;
-
-/** Extra wall height (px) so the parallax drift never uncovers the bottom. */
-const OVERSCAN = 240;
-const PARALLAX = 0.06;
 
 /* Deterministic PRNG (mulberry32) — the wall must not change between visits. */
 function mulberry32(seed: number) {
@@ -120,32 +118,11 @@ const grain = (() => {
     `<rect width="320" height="320" filter="url(#g)"/></svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 })();
-
-const offset = ref(0);
-let rafId = 0;
-
-function onScroll() {
-  if (rafId) return;
-  rafId = requestAnimationFrame(() => {
-    rafId = 0;
-    offset.value = Math.min(window.scrollY * PARALLAX, OVERSCAN - 20);
-  });
-}
-
-onMounted(() => {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  window.addEventListener("scroll", onScroll, { passive: true });
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener("scroll", onScroll);
-  if (rafId) cancelAnimationFrame(rafId);
-});
 </script>
 
 <template>
   <div class="stone-wall" aria-hidden="true">
-    <div class="stone-wall__wall" :style="{ transform: `translate3d(0, ${-offset}px, 0)` }">
+    <div class="stone-wall__wall">
       <div class="sw-grain" :style="{ backgroundImage: grain }" />
       <!-- The light behind the wall, seen through the mortar joints (full)
            and on the stone faces (faint, baked into the mask's alpha). -->
@@ -180,10 +157,10 @@ onBeforeUnmount(() => {
 
 .stone-wall__wall {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: calc(100% + 240px);
+  inset: 0;
+  /* Own compositor layer: without it the masked light repaints into the
+     root layer on every animation frame. Static promotion only — never
+     move this layer (see the parallax note above). */
   will-change: transform;
 }
 
