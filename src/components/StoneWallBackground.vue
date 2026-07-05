@@ -1,23 +1,196 @@
+<script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from "vue";
+
+/* Jerusalem-stone wall, drawn behind the whole app on the beige background.
+   The wall is generated once (seeded PRNG, so it is identical on every
+   load): courses of varying heights, stones of varying widths — some cells
+   split into two small stacked stones like on the Kotel — and every edge is
+   slightly crooked, like hand-hewn stone. Two very quiet effects on top:
+   - a handful of stone outlines are traced by a thin travelling light, one
+     after the other, as if the stones were sketching themselves;
+   - the whole wall drifts a little slower than the page on scroll. */
+
+const VIEW_W = 1600;
+const VIEW_H = 1100;
+
+/** Extra SVG height (px) so the parallax drift never uncovers the bottom. */
+const OVERSCAN = 240;
+const PARALLAX = 0.06;
+
+interface Stone {
+  id: number;
+  d: string;
+  fillOpacity: number;
+}
+
+interface Trace {
+  id: number;
+  d: string;
+  dash: number;
+  dur: number;
+  delay: number;
+}
+
+/* Deterministic PRNG (mulberry32) — the wall must not change between visits. */
+function mulberry32(seed: number) {
+  let a = seed;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const rand = mulberry32(5786);
+const between = (min: number, max: number) => min + rand() * (max - min);
+
+/** Hand-hewn stone outline: inset the cell a little (the mortar joint),
+    jitter the corners, and break every edge with wobbly midpoints. */
+function stonePath(x: number, y: number, w: number, h: number): string {
+  const inset = between(3, 5.5);
+  const jitter = () => between(-3, 3);
+  const corners: Array<[number, number]> = [
+    [x + inset + jitter(), y + inset + jitter()],
+    [x + w - inset + jitter(), y + inset + jitter()],
+    [x + w - inset + jitter(), y + h - inset + jitter()],
+    [x + inset + jitter(), y + h - inset + jitter()],
+  ];
+  const pts: Array<[number, number]> = [];
+  for (let i = 0; i < 4; i++) {
+    const [ax, ay] = corners[i];
+    const [bx, by] = corners[(i + 1) % 4];
+    pts.push([ax, ay]);
+    // 1 or 2 midpoints per edge, pushed slightly off the straight line.
+    const mids = rand() < 0.5 ? 1 : 2;
+    for (let m = 1; m <= mids; m++) {
+      const t = m / (mids + 1);
+      const wob = between(-2.5, 2.5);
+      // Perpendicular offset (edges are near-axis-aligned, so swap suffices).
+      const horizontal = Math.abs(bx - ax) > Math.abs(by - ay);
+      pts.push([
+        ax + (bx - ax) * t + (horizontal ? 0 : wob),
+        ay + (by - ay) * t + (horizontal ? wob : 0),
+      ]);
+    }
+  }
+  return (
+    pts.map(([px, py], i) => `${i === 0 ? "M" : "L"}${px.toFixed(1)} ${py.toFixed(1)}`).join("") +
+    "Z"
+  );
+}
+
+function buildWall(): { stones: Stone[]; traces: Trace[] } {
+  const stones: Stone[] = [];
+  const cells: Array<{ x: number; y: number; w: number; h: number }> = [];
+  let id = 0;
+  let y = -between(20, 60);
+
+  while (y < VIEW_H) {
+    const courseH = between(72, 150);
+    let x = -between(20, 120);
+    while (x < VIEW_W) {
+      const w = courseH * between(1.2, 2.6);
+      // Like on the Kotel: a few cells hold two small stacked stones.
+      if (courseH > 95 && rand() < 0.16) {
+        const split = courseH * between(0.42, 0.58);
+        cells.push({ x, y, w, h: split });
+        cells.push({ x, y: y + split, w, h: courseH - split });
+      } else {
+        cells.push({ x, y, w, h: courseH });
+      }
+      x += w;
+    }
+    y += courseH;
+  }
+
+  for (const c of cells) {
+    stones.push({
+      id: id++,
+      d: stonePath(c.x, c.y, c.w, c.h),
+      // Barely-there face tint; some stones are outline-only.
+      fillOpacity: rand() < 0.25 ? 0 : between(0.008, 0.024),
+    });
+  }
+
+  // A scattered handful of stones get the travelling-light trace.
+  const traces: Trace[] = [];
+  const step = Math.floor(stones.length / 12);
+  for (let i = Math.floor(step / 2); i < stones.length && traces.length < 12; i += step) {
+    const s = stones[Math.min(i + Math.floor(between(0, step * 0.8)), stones.length - 1)];
+    traces.push({
+      id: s.id,
+      d: s.d,
+      dash: between(10, 22),
+      dur: between(10, 18),
+      delay: between(0, 40),
+    });
+  }
+  return { stones, traces };
+}
+
+const { stones, traces } = buildWall();
+
+const offset = ref(0);
+let rafId = 0;
+
+function onScroll() {
+  if (rafId) return;
+  rafId = requestAnimationFrame(() => {
+    rafId = 0;
+    offset.value = Math.min(window.scrollY * PARALLAX, OVERSCAN - 20);
+  });
+}
+
+onMounted(() => {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  window.addEventListener("scroll", onScroll, { passive: true });
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("scroll", onScroll);
+  if (rafId) cancelAnimationFrame(rafId);
+});
+</script>
+
 <template>
   <div class="stone-wall" aria-hidden="true">
-    <div class="stone-wall__glow"></div>
+    <svg
+      class="stone-wall__svg"
+      :viewBox="`0 0 ${VIEW_W} ${VIEW_H}`"
+      preserveAspectRatio="xMidYMin slice"
+      :style="{ transform: `translate3d(0, ${-offset}px, 0)` }"
+    >
+      <path
+        v-for="s in stones"
+        :key="s.id"
+        class="stone-wall__stone"
+        :d="s.d"
+        :fill-opacity="s.fillOpacity"
+      />
+      <path
+        v-for="t in traces"
+        :key="`t${t.id}`"
+        class="stone-wall__trace"
+        :d="t.d"
+        pathLength="100"
+        :style="{
+          strokeDasharray: `${t.dash} ${100 - t.dash}`,
+          animationDuration: `${t.dur}s`,
+          animationDelay: `${t.delay}s`,
+        }"
+      />
+    </svg>
   </div>
 </template>
 
 <style scoped>
-/* Jerusalem-stone wall, drawn behind the whole app on the beige background.
-   Two layers share the same 480×320 ashlar tile (running bond, wrap-around
-   stones on rows 2 and 4 so the tiling never shows a vertical seam):
-   - a static texture layer: each stone face a slightly different beige;
-   - a glow layer masked to the stone outlines, lit by two huge soft light
-     blobs that drift very slowly, so the joints appear to shimmer as the
-     light passes over them.
-   Both layers are alpha masks over a plain color, so dark mode only has to
-   swap the two custom properties below. */
 .stone-wall {
   --wall-ink: #57492c;
-  --wall-glow-rgb: 164 132 72;
-  --wall-glow-a: 0.18;
+  --wall-line-a: 0.045;
+  --wall-trace-rgb: 167 133 71;
+  --wall-trace-a: 0.4;
   position: fixed;
   inset: 0;
   z-index: -1;
@@ -27,101 +200,63 @@
 
 :root.dark .stone-wall {
   --wall-ink: #d6d3c8;
-  --wall-glow-rgb: 222 205 160;
-  --wall-glow-a: 0.09;
+  --wall-line-a: 0.035;
+  --wall-trace-rgb: 222 205 160;
+  --wall-trace-a: 0.22;
 }
 
-/* Stone faces: constant tint, the per-stone alpha lives in the mask. */
-.stone-wall::before {
-  content: "";
+.stone-wall__svg {
   position: absolute;
-  inset: 0;
-  background-color: var(--wall-ink);
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='480'%20height='320'%3E%3Cg%20fill='%23fff'%20stroke='%23fff'%20stroke-opacity='.06'%20stroke-width='1.5'%3E%3Crect%20x='0'%20y='0'%20width='150'%20height='72'%20rx='3'%20fill-opacity='0.028'/%3E%3Crect%20x='158'%20y='0'%20width='172'%20height='72'%20rx='3'%20fill-opacity='0.018'/%3E%3Crect%20x='338'%20y='0'%20width='134'%20height='72'%20rx='3'%20fill-opacity='0.038'/%3E%3Crect%20x='-104'%20y='80'%20width='192'%20height='72'%20rx='3'%20fill-opacity='0.024'/%3E%3Crect%20x='376'%20y='80'%20width='192'%20height='72'%20rx='3'%20fill-opacity='0.024'/%3E%3Crect%20x='96'%20y='80'%20width='144'%20height='72'%20rx='3'%20fill-opacity='0.04'/%3E%3Crect%20x='248'%20y='80'%20width='120'%20height='72'%20rx='3'%20fill-opacity='0.016'/%3E%3Crect%20x='0'%20y='160'%20width='198'%20height='72'%20rx='3'%20fill-opacity='0.02'/%3E%3Crect%20x='206'%20y='160'%20width='114'%20height='72'%20rx='3'%20fill-opacity='0.042'/%3E%3Crect%20x='328'%20y='160'%20width='144'%20height='72'%20rx='3'%20fill-opacity='0.026'/%3E%3Crect%20x='64'%20y='240'%20width='160'%20height='72'%20rx='3'%20fill-opacity='0.036'/%3E%3Crect%20x='232'%20y='240'%20width='150'%20height='72'%20rx='3'%20fill-opacity='0.02'/%3E%3Crect%20x='390'%20y='240'%20width='146'%20height='72'%20rx='3'%20fill-opacity='0.03'/%3E%3Crect%20x='-90'%20y='240'%20width='146'%20height='72'%20rx='3'%20fill-opacity='0.03'/%3E%3C/g%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='480'%20height='320'%3E%3Cg%20fill='%23fff'%20stroke='%23fff'%20stroke-opacity='.06'%20stroke-width='1.5'%3E%3Crect%20x='0'%20y='0'%20width='150'%20height='72'%20rx='3'%20fill-opacity='0.028'/%3E%3Crect%20x='158'%20y='0'%20width='172'%20height='72'%20rx='3'%20fill-opacity='0.018'/%3E%3Crect%20x='338'%20y='0'%20width='134'%20height='72'%20rx='3'%20fill-opacity='0.038'/%3E%3Crect%20x='-104'%20y='80'%20width='192'%20height='72'%20rx='3'%20fill-opacity='0.024'/%3E%3Crect%20x='376'%20y='80'%20width='192'%20height='72'%20rx='3'%20fill-opacity='0.024'/%3E%3Crect%20x='96'%20y='80'%20width='144'%20height='72'%20rx='3'%20fill-opacity='0.04'/%3E%3Crect%20x='248'%20y='80'%20width='120'%20height='72'%20rx='3'%20fill-opacity='0.016'/%3E%3Crect%20x='0'%20y='160'%20width='198'%20height='72'%20rx='3'%20fill-opacity='0.02'/%3E%3Crect%20x='206'%20y='160'%20width='114'%20height='72'%20rx='3'%20fill-opacity='0.042'/%3E%3Crect%20x='328'%20y='160'%20width='144'%20height='72'%20rx='3'%20fill-opacity='0.026'/%3E%3Crect%20x='64'%20y='240'%20width='160'%20height='72'%20rx='3'%20fill-opacity='0.036'/%3E%3Crect%20x='232'%20y='240'%20width='150'%20height='72'%20rx='3'%20fill-opacity='0.02'/%3E%3Crect%20x='390'%20y='240'%20width='146'%20height='72'%20rx='3'%20fill-opacity='0.03'/%3E%3Crect%20x='-90'%20y='240'%20width='146'%20height='72'%20rx='3'%20fill-opacity='0.03'/%3E%3C/g%3E%3C/svg%3E");
-  -webkit-mask-size: 480px 320px;
-  mask-size: 480px 320px;
-  -webkit-mask-repeat: repeat;
-  mask-repeat: repeat;
-}
-
-/* Joint lines, revealed only where a light blob passes. */
-.stone-wall__glow {
-  position: absolute;
-  inset: 0;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='480'%20height='320'%3E%3Cg%20fill='%23fff'%20fill-opacity='.10'%20stroke='%23fff'%20stroke-width='2'%3E%3Crect%20x='0'%20y='0'%20width='150'%20height='72'%20rx='3'%20/%3E%3Crect%20x='158'%20y='0'%20width='172'%20height='72'%20rx='3'%20/%3E%3Crect%20x='338'%20y='0'%20width='134'%20height='72'%20rx='3'%20/%3E%3Crect%20x='-104'%20y='80'%20width='192'%20height='72'%20rx='3'%20/%3E%3Crect%20x='376'%20y='80'%20width='192'%20height='72'%20rx='3'%20/%3E%3Crect%20x='96'%20y='80'%20width='144'%20height='72'%20rx='3'%20/%3E%3Crect%20x='248'%20y='80'%20width='120'%20height='72'%20rx='3'%20/%3E%3Crect%20x='0'%20y='160'%20width='198'%20height='72'%20rx='3'%20/%3E%3Crect%20x='206'%20y='160'%20width='114'%20height='72'%20rx='3'%20/%3E%3Crect%20x='328'%20y='160'%20width='144'%20height='72'%20rx='3'%20/%3E%3Crect%20x='64'%20y='240'%20width='160'%20height='72'%20rx='3'%20/%3E%3Crect%20x='232'%20y='240'%20width='150'%20height='72'%20rx='3'%20/%3E%3Crect%20x='390'%20y='240'%20width='146'%20height='72'%20rx='3'%20/%3E%3Crect%20x='-90'%20y='240'%20width='146'%20height='72'%20rx='3'%20/%3E%3C/g%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='480'%20height='320'%3E%3Cg%20fill='%23fff'%20fill-opacity='.10'%20stroke='%23fff'%20stroke-width='2'%3E%3Crect%20x='0'%20y='0'%20width='150'%20height='72'%20rx='3'%20/%3E%3Crect%20x='158'%20y='0'%20width='172'%20height='72'%20rx='3'%20/%3E%3Crect%20x='338'%20y='0'%20width='134'%20height='72'%20rx='3'%20/%3E%3Crect%20x='-104'%20y='80'%20width='192'%20height='72'%20rx='3'%20/%3E%3Crect%20x='376'%20y='80'%20width='192'%20height='72'%20rx='3'%20/%3E%3Crect%20x='96'%20y='80'%20width='144'%20height='72'%20rx='3'%20/%3E%3Crect%20x='248'%20y='80'%20width='120'%20height='72'%20rx='3'%20/%3E%3Crect%20x='0'%20y='160'%20width='198'%20height='72'%20rx='3'%20/%3E%3Crect%20x='206'%20y='160'%20width='114'%20height='72'%20rx='3'%20/%3E%3Crect%20x='328'%20y='160'%20width='144'%20height='72'%20rx='3'%20/%3E%3Crect%20x='64'%20y='240'%20width='160'%20height='72'%20rx='3'%20/%3E%3Crect%20x='232'%20y='240'%20width='150'%20height='72'%20rx='3'%20/%3E%3Crect%20x='390'%20y='240'%20width='146'%20height='72'%20rx='3'%20/%3E%3Crect%20x='-90'%20y='240'%20width='146'%20height='72'%20rx='3'%20/%3E%3C/g%3E%3C/svg%3E");
-  -webkit-mask-size: 480px 320px;
-  mask-size: 480px 320px;
-  -webkit-mask-repeat: repeat;
-  mask-repeat: repeat;
-}
-
-.stone-wall__glow::before,
-.stone-wall__glow::after {
-  content: "";
-  position: absolute;
-  top: -36vmax;
-  left: -36vmax;
-  width: 72vmax;
-  height: 72vmax;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle closest-side,
-    rgb(var(--wall-glow-rgb) / var(--wall-glow-a)),
-    transparent 68%
-  );
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(100% + 240px);
   will-change: transform;
 }
 
-.stone-wall__glow::before {
-  animation: stone-wall-drift-a 55s ease-in-out infinite alternate;
+.stone-wall__stone {
+  fill: var(--wall-ink);
+  stroke: var(--wall-ink);
+  stroke-opacity: var(--wall-line-a);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
 }
 
-.stone-wall__glow::after {
-  width: 56vmax;
-  height: 56vmax;
-  top: -28vmax;
-  left: -28vmax;
-  opacity: 0.7;
-  animation: stone-wall-drift-b 75s ease-in-out infinite alternate;
-  animation-delay: -30s;
+/* Thin light travelling along a stone's crooked outline: draws in, runs the
+   full perimeter, fades out, then rests for the tail of its cycle. */
+.stone-wall__trace {
+  fill: none;
+  stroke: rgb(var(--wall-trace-rgb) / var(--wall-trace-a));
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  opacity: 0;
+  animation-name: stone-wall-trace;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
-@keyframes stone-wall-drift-a {
+@keyframes stone-wall-trace {
   0% {
-    transform: translate3d(-10vw, -5vh, 0) scale(1);
+    stroke-dashoffset: 200;
+    opacity: 0;
   }
-  50% {
-    transform: translate3d(45vw, 55vh, 0) scale(1.15);
+  10% {
+    opacity: 1;
   }
+  58% {
+    opacity: 1;
+  }
+  70%,
   100% {
-    transform: translate3d(95vw, 15vh, 0) scale(0.95);
-  }
-}
-
-@keyframes stone-wall-drift-b {
-  0% {
-    transform: translate3d(105vw, 90vh, 0) scale(1.1);
-  }
-  50% {
-    transform: translate3d(50vw, 20vh, 0) scale(0.9);
-  }
-  100% {
-    transform: translate3d(0vw, 80vh, 0) scale(1.05);
+    stroke-dashoffset: 0;
+    opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stone-wall__glow::before,
-  .stone-wall__glow::after {
+  .stone-wall__trace {
     animation: none;
-  }
-  .stone-wall__glow::before {
-    transform: translate3d(50vw, 30vh, 0);
-  }
-  .stone-wall__glow::after {
-    transform: translate3d(20vw, 80vh, 0);
   }
 }
 </style>
