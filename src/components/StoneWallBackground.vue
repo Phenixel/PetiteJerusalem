@@ -8,23 +8,19 @@ import { onBeforeUnmount, onMounted, ref } from "vue";
    silhouettes — you guess the wall rather than see it. A faint mineral
    grain covers everything, and the wall drifts slightly on scroll.
 
-   Implementation: the generated stone outlines are only ever used inside
-   two masks — one keeping the joints (light between the stones), one
-   keeping the faces (a much fainter wash on the stone themselves). Two
-   radial-gradient blobs wander inside those masked groups; the masks stay
-   fixed to the wall, so the light moves behind a static stone layout. */
+   Performance: everything per-frame must stay off the main thread. The
+   joint network is baked once into a static SVG data-URI used as a CSS
+   `mask-image`, and the light blobs are plain divs animated with
+   compositor-friendly transform/opacity only. (The previous SVG-`<mask>`
+   version forced a full re-raster of the masked group on every frame and
+   dragged the whole site down to ~24 fps.) */
 
 const VIEW_W = 1600;
 const VIEW_H = 1100;
 
-/** Extra SVG height (px) so the parallax drift never uncovers the bottom. */
+/** Extra wall height (px) so the parallax drift never uncovers the bottom. */
 const OVERSCAN = 240;
 const PARALLAX = 0.06;
-
-interface Stone {
-  id: number;
-  d: string;
-}
 
 /* Deterministic PRNG (mulberry32) — the wall must not change between visits. */
 function mulberry32(seed: number) {
@@ -76,9 +72,8 @@ function stonePath(x: number, y: number, w: number, h: number): string {
 
 /** Tight coursed masonry: rows of varying heights, stones of varying widths,
     a few cells split into two small stacked stones like on the Kotel. */
-function buildWall(): Stone[] {
-  const stones: Stone[] = [];
-  let id = 0;
+function buildWall(): string[] {
+  const paths: string[] = [];
   let y = -between(10, 40);
 
   while (y < VIEW_H) {
@@ -88,19 +83,43 @@ function buildWall(): Stone[] {
       const w = courseH * between(1.15, 2.3);
       if (courseH > 62 && rand() < 0.18) {
         const split = courseH * between(0.42, 0.58);
-        stones.push({ id: id++, d: stonePath(x, y, w, split) });
-        stones.push({ id: id++, d: stonePath(x, y + split, w, courseH - split) });
+        paths.push(stonePath(x, y, w, split));
+        paths.push(stonePath(x, y + split, w, courseH - split));
       } else {
-        stones.push({ id: id++, d: stonePath(x, y, w, courseH) });
+        paths.push(stonePath(x, y, w, courseH));
       }
       x += w;
     }
     y += courseH;
   }
-  return stones;
+  return paths;
 }
 
-const stones = buildWall();
+/* Wall mask: one big lit rectangle with every stone punched out
+   (fill-rule evenodd) so the light pours through the joints, plus the same
+   stones repainted at low alpha so a faint wash warms the stone faces too.
+   Softly blurred, baked once into a data-URI; never re-rasterized. */
+const wallMask = (() => {
+  const stones = buildWall().join("");
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${VIEW_W}" height="${VIEW_H}" viewBox="0 0 ${VIEW_W} ${VIEW_H}">` +
+    `<filter id="b" x="-2%" y="-2%" width="104%" height="104%"><feGaussianBlur stdDeviation="2.2"/></filter>` +
+    `<g filter="url(#b)">` +
+    `<path fill="#fff" fill-rule="evenodd" d="M0 0H${VIEW_W}V${VIEW_H}H0Z${stones}"/>` +
+    `<path fill="#fff" fill-opacity="0.18" d="${stones}"/>` +
+    `</g></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+})();
+
+/* Mineral grain, as a small repeating tile (static, painted once). */
+const grain = (() => {
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320">` +
+    `<filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/>` +
+    `<feColorMatrix type="matrix" values="0 0 0 0 0.5  0 0 0 0 0.47  0 0 0 0 0.42  0.4 0.4 0.4 0 0"/></filter>` +
+    `<rect width="320" height="320" filter="url(#g)"/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+})();
 
 const offset = ref(0);
 let rafId = 0;
@@ -126,59 +145,18 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="stone-wall" aria-hidden="true">
-    <svg
-      class="stone-wall__svg"
-      :viewBox="`0 0 ${VIEW_W} ${VIEW_H}`"
-      preserveAspectRatio="xMidYMin slice"
-      :style="{ transform: `translate3d(0, ${-offset}px, 0)` }"
-    >
-      <defs>
-        <radialGradient id="sw-glow">
-          <stop class="sw-glow-stop" offset="0" stop-opacity="0.85" />
-          <stop class="sw-glow-stop" offset="0.45" stop-opacity="0.35" />
-          <stop class="sw-glow-stop" offset="1" stop-opacity="0" />
-        </radialGradient>
-        <filter id="sw-soften" x="-5%" y="-5%" width="110%" height="110%">
-          <feGaussianBlur stdDeviation="2.2" />
-        </filter>
-        <filter id="sw-soften-more" x="-5%" y="-5%" width="110%" height="110%">
-          <feGaussianBlur stdDeviation="7" />
-        </filter>
-        <filter id="sw-grain" x="0" y="0" width="100%" height="100%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch" />
-          <feColorMatrix
-            type="matrix"
-            values="0 0 0 0 0.5  0 0 0 0 0.47  0 0 0 0 0.42  0.4 0.4 0.4 0 0"
-          />
-          <feComposite operator="in" in2="SourceGraphic" />
-        </filter>
-        <!-- Light between the stones: everything is lit except the stones. -->
-        <mask id="sw-joints">
-          <g filter="url(#sw-soften)">
-            <rect x="0" y="0" :width="VIEW_W" :height="VIEW_H" fill="white" />
-            <path v-for="s in stones" :key="s.id" :d="s.d" fill="black" />
-          </g>
-        </mask>
-        <!-- Faint wash on the stone faces themselves. -->
-        <mask id="sw-faces">
-          <g filter="url(#sw-soften-more)">
-            <rect x="0" y="0" :width="VIEW_W" :height="VIEW_H" fill="black" />
-            <path v-for="s in stones" :key="s.id" :d="s.d" fill="white" />
-          </g>
-        </mask>
-      </defs>
-
-      <rect class="sw-grain" x="0" y="0" :width="VIEW_W" :height="VIEW_H" filter="url(#sw-grain)" />
-
-      <g class="sw-light sw-light--faces" mask="url(#sw-faces)">
-        <circle class="sw-blob sw-blob--a" r="480" fill="url(#sw-glow)" />
-        <circle class="sw-blob sw-blob--b" r="360" fill="url(#sw-glow)" />
-      </g>
-      <g class="sw-light sw-light--joints" mask="url(#sw-joints)">
-        <circle class="sw-blob sw-blob--a" r="480" fill="url(#sw-glow)" />
-        <circle class="sw-blob sw-blob--b" r="360" fill="url(#sw-glow)" />
-      </g>
-    </svg>
+    <div class="stone-wall__wall" :style="{ transform: `translate3d(0, ${-offset}px, 0)` }">
+      <div class="sw-grain" :style="{ backgroundImage: grain }" />
+      <!-- The light behind the wall, seen through the mortar joints (full)
+           and on the stone faces (faint, baked into the mask's alpha). -->
+      <div
+        class="sw-light sw-light--joints"
+        :style="{ maskImage: wallMask, WebkitMaskImage: wallMask }"
+      >
+        <div class="sw-blob sw-blob--a" />
+        <div class="sw-blob sw-blob--b" />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -186,7 +164,6 @@ onBeforeUnmount(() => {
 .stone-wall {
   --sw-glow-rgb: 186 137 66;
   --sw-joints-a: 0.55;
-  --sw-faces-a: 0.1;
   --sw-grain-a: 0.05;
   position: fixed;
   inset: 0;
@@ -198,11 +175,10 @@ onBeforeUnmount(() => {
 :root.dark .stone-wall {
   --sw-glow-rgb: 235 214 165;
   --sw-joints-a: 0.33;
-  --sw-faces-a: 0.06;
   --sw-grain-a: 0.06;
 }
 
-.stone-wall__svg {
+.stone-wall__wall {
   position: absolute;
   top: 0;
   left: 0;
@@ -211,82 +187,106 @@ onBeforeUnmount(() => {
   will-change: transform;
 }
 
-.sw-glow-stop {
-  stop-color: rgb(var(--sw-glow-rgb));
+.sw-grain {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+  background-size: 320px 320px;
+  opacity: var(--sw-grain-a);
 }
 
-.sw-grain {
-  fill: #fff;
-  opacity: var(--sw-grain-a);
+.sw-light {
+  position: absolute;
+  inset: 0;
 }
 
 .sw-light--joints {
   opacity: var(--sw-joints-a);
+  mask-repeat: no-repeat;
+  mask-size: cover;
+  mask-position: top center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: cover;
+  -webkit-mask-position: top center;
 }
 
-.sw-light--faces {
-  opacity: var(--sw-faces-a);
+/* The light wanders behind the wall; the mask stays fixed to the stones.
+   Blobs only ever animate transform/opacity, so they live on the compositor. */
+.sw-blob {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform, opacity;
+  background: radial-gradient(
+    closest-side,
+    rgb(var(--sw-glow-rgb) / 0.85),
+    rgb(var(--sw-glow-rgb) / 0.32) 45%,
+    transparent 100%
+  );
 }
 
-/* The light wanders behind the wall; the masks stay fixed to the stones. */
 .sw-blob--a {
-  transform: translate(640px, 640px);
+  width: 60vmax;
+  height: 60vmax;
+  transform: translate(calc(40vw - 50%), calc(58vh - 50%));
   animation: sw-drift-a 85s ease-in-out infinite;
 }
 
 .sw-blob--b {
-  transform: translate(900px, 300px);
+  width: 45vmax;
+  height: 45vmax;
+  transform: translate(calc(56vw - 50%), calc(27vh - 50%));
   animation: sw-drift-b 115s ease-in-out infinite;
   animation-delay: -45s;
 }
 
 @keyframes sw-drift-a {
   0% {
-    transform: translate(250px, 280px);
+    transform: translate(calc(15vw - 50%), calc(25vh - 50%));
     opacity: 0.35;
   }
   20% {
     opacity: 0.9;
   }
   30% {
-    transform: translate(640px, 640px);
+    transform: translate(calc(40vw - 50%), calc(58vh - 50%));
   }
   55% {
-    transform: translate(1230px, 430px);
+    transform: translate(calc(77vw - 50%), calc(39vh - 50%));
     opacity: 0.75;
   }
   70% {
     opacity: 0.25;
   }
   80% {
-    transform: translate(830px, 180px);
+    transform: translate(calc(52vw - 50%), calc(16vh - 50%));
     opacity: 0.6;
   }
   100% {
-    transform: translate(250px, 280px);
+    transform: translate(calc(15vw - 50%), calc(25vh - 50%));
     opacity: 0.35;
   }
 }
 
 @keyframes sw-drift-b {
   0% {
-    transform: translate(1350px, 780px);
+    transform: translate(calc(84vw - 50%), calc(71vh - 50%));
     opacity: 0.3;
   }
   25% {
-    transform: translate(900px, 300px);
+    transform: translate(calc(56vw - 50%), calc(27vh - 50%));
     opacity: 0.8;
   }
   50% {
-    transform: translate(420px, 720px);
+    transform: translate(calc(26vw - 50%), calc(65vh - 50%));
     opacity: 0.5;
   }
   75% {
-    transform: translate(1050px, 900px);
+    transform: translate(calc(66vw - 50%), calc(82vh - 50%));
     opacity: 0.85;
   }
   100% {
-    transform: translate(1350px, 780px);
+    transform: translate(calc(84vw - 50%), calc(71vh - 50%));
     opacity: 0.3;
   }
 }
