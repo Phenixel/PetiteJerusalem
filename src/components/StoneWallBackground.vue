@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
-/* Jerusalem-stone wall, drawn behind the whole app on the beige background.
-   The wall is generated once (seeded PRNG, so it is identical on every
-   load): courses of varying heights, stones of varying widths — some cells
-   split into two small stacked stones like on the Kotel — and every edge is
-   slightly crooked, like hand-hewn stone. Two very quiet effects on top:
-   - a handful of stone outlines are traced by a thin travelling light, one
-     after the other, as if the stones were sketching themselves;
-   - the whole wall drifts a little slower than the page on scroll. */
+/* Jerusalem-stone wall, hidden behind the whole app.
+   The stones themselves are invisible: what you see is a warm light that
+   drifts slowly BEHIND the wall and seeps through the mortar joints. Where
+   the light passes, the joints glow softly and the stones read as dark
+   silhouettes — you guess the wall rather than see it. A faint mineral
+   grain covers everything, and the wall drifts slightly on scroll.
+
+   Implementation: the generated stone outlines are only ever used inside
+   two masks — one keeping the joints (light between the stones), one
+   keeping the faces (a much fainter wash on the stone themselves). Two
+   radial-gradient blobs wander inside those masked groups; the masks stay
+   fixed to the wall, so the light moves behind a static stone layout. */
 
 const VIEW_W = 1600;
 const VIEW_H = 1100;
@@ -20,15 +24,6 @@ const PARALLAX = 0.06;
 interface Stone {
   id: number;
   d: string;
-  fillOpacity: number;
-}
-
-interface Trace {
-  id: number;
-  d: string;
-  dash: number;
-  dur: number;
-  delay: number;
 }
 
 /* Deterministic PRNG (mulberry32) — the wall must not change between visits. */
@@ -43,14 +38,14 @@ function mulberry32(seed: number) {
   };
 }
 
-const rand = mulberry32(5786);
+const rand = mulberry32(40917);
 const between = (min: number, max: number) => min + rand() * (max - min);
 
 /** Hand-hewn stone outline: inset the cell a little (the mortar joint),
     jitter the corners, and break every edge with wobbly midpoints. */
 function stonePath(x: number, y: number, w: number, h: number): string {
-  const inset = between(3, 5.5);
-  const jitter = () => between(-3, 3);
+  const inset = between(2.5, 4.5);
+  const jitter = () => between(-2.2, 2.2);
   const corners: Array<[number, number]> = [
     [x + inset + jitter(), y + inset + jitter()],
     [x + w - inset + jitter(), y + inset + jitter()],
@@ -62,12 +57,10 @@ function stonePath(x: number, y: number, w: number, h: number): string {
     const [ax, ay] = corners[i];
     const [bx, by] = corners[(i + 1) % 4];
     pts.push([ax, ay]);
-    // 1 or 2 midpoints per edge, pushed slightly off the straight line.
     const mids = rand() < 0.5 ? 1 : 2;
     for (let m = 1; m <= mids; m++) {
       const t = m / (mids + 1);
-      const wob = between(-2.5, 2.5);
-      // Perpendicular offset (edges are near-axis-aligned, so swap suffices).
+      const wob = between(-1.8, 1.8);
       const horizontal = Math.abs(bx - ax) > Math.abs(by - ay);
       pts.push([
         ax + (bx - ax) * t + (horizontal ? 0 : wob),
@@ -81,56 +74,33 @@ function stonePath(x: number, y: number, w: number, h: number): string {
   );
 }
 
-function buildWall(): { stones: Stone[]; traces: Trace[] } {
+/** Tight coursed masonry: rows of varying heights, stones of varying widths,
+    a few cells split into two small stacked stones like on the Kotel. */
+function buildWall(): Stone[] {
   const stones: Stone[] = [];
-  const cells: Array<{ x: number; y: number; w: number; h: number }> = [];
   let id = 0;
-  let y = -between(20, 60);
+  let y = -between(10, 40);
 
   while (y < VIEW_H) {
-    const courseH = between(72, 150);
-    let x = -between(20, 120);
+    const courseH = between(48, 100);
+    let x = -between(20, 100);
     while (x < VIEW_W) {
-      const w = courseH * between(1.2, 2.6);
-      // Like on the Kotel: a few cells hold two small stacked stones.
-      if (courseH > 95 && rand() < 0.16) {
+      const w = courseH * between(1.15, 2.3);
+      if (courseH > 62 && rand() < 0.18) {
         const split = courseH * between(0.42, 0.58);
-        cells.push({ x, y, w, h: split });
-        cells.push({ x, y: y + split, w, h: courseH - split });
+        stones.push({ id: id++, d: stonePath(x, y, w, split) });
+        stones.push({ id: id++, d: stonePath(x, y + split, w, courseH - split) });
       } else {
-        cells.push({ x, y, w, h: courseH });
+        stones.push({ id: id++, d: stonePath(x, y, w, courseH) });
       }
       x += w;
     }
     y += courseH;
   }
-
-  for (const c of cells) {
-    stones.push({
-      id: id++,
-      d: stonePath(c.x, c.y, c.w, c.h),
-      // Barely-there face tint; some stones are outline-only.
-      fillOpacity: rand() < 0.25 ? 0 : between(0.008, 0.024),
-    });
-  }
-
-  // A scattered handful of stones get the travelling-light trace.
-  const traces: Trace[] = [];
-  const step = Math.floor(stones.length / 12);
-  for (let i = Math.floor(step / 2); i < stones.length && traces.length < 12; i += step) {
-    const s = stones[Math.min(i + Math.floor(between(0, step * 0.8)), stones.length - 1)];
-    traces.push({
-      id: s.id,
-      d: s.d,
-      dash: between(10, 22),
-      dur: between(10, 18),
-      delay: between(0, 40),
-    });
-  }
-  return { stones, traces };
+  return stones;
 }
 
-const { stones, traces } = buildWall();
+const stones = buildWall();
 
 const offset = ref(0);
 let rafId = 0;
@@ -162,35 +132,62 @@ onBeforeUnmount(() => {
       preserveAspectRatio="xMidYMin slice"
       :style="{ transform: `translate3d(0, ${-offset}px, 0)` }"
     >
-      <path
-        v-for="s in stones"
-        :key="s.id"
-        class="stone-wall__stone"
-        :d="s.d"
-        :fill-opacity="s.fillOpacity"
-      />
-      <path
-        v-for="t in traces"
-        :key="`t${t.id}`"
-        class="stone-wall__trace"
-        :d="t.d"
-        pathLength="100"
-        :style="{
-          strokeDasharray: `${t.dash} ${100 - t.dash}`,
-          animationDuration: `${t.dur}s`,
-          animationDelay: `${t.delay}s`,
-        }"
-      />
+      <defs>
+        <radialGradient id="sw-glow">
+          <stop class="sw-glow-stop" offset="0" stop-opacity="0.85" />
+          <stop class="sw-glow-stop" offset="0.45" stop-opacity="0.35" />
+          <stop class="sw-glow-stop" offset="1" stop-opacity="0" />
+        </radialGradient>
+        <filter id="sw-soften" x="-5%" y="-5%" width="110%" height="110%">
+          <feGaussianBlur stdDeviation="2.2" />
+        </filter>
+        <filter id="sw-soften-more" x="-5%" y="-5%" width="110%" height="110%">
+          <feGaussianBlur stdDeviation="7" />
+        </filter>
+        <filter id="sw-grain" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch" />
+          <feColorMatrix
+            type="matrix"
+            values="0 0 0 0 0.5  0 0 0 0 0.47  0 0 0 0 0.42  0.4 0.4 0.4 0 0"
+          />
+          <feComposite operator="in" in2="SourceGraphic" />
+        </filter>
+        <!-- Light between the stones: everything is lit except the stones. -->
+        <mask id="sw-joints">
+          <g filter="url(#sw-soften)">
+            <rect x="0" y="0" :width="VIEW_W" :height="VIEW_H" fill="white" />
+            <path v-for="s in stones" :key="s.id" :d="s.d" fill="black" />
+          </g>
+        </mask>
+        <!-- Faint wash on the stone faces themselves. -->
+        <mask id="sw-faces">
+          <g filter="url(#sw-soften-more)">
+            <rect x="0" y="0" :width="VIEW_W" :height="VIEW_H" fill="black" />
+            <path v-for="s in stones" :key="s.id" :d="s.d" fill="white" />
+          </g>
+        </mask>
+      </defs>
+
+      <rect class="sw-grain" x="0" y="0" :width="VIEW_W" :height="VIEW_H" filter="url(#sw-grain)" />
+
+      <g class="sw-light sw-light--faces" mask="url(#sw-faces)">
+        <circle class="sw-blob sw-blob--a" r="480" fill="url(#sw-glow)" />
+        <circle class="sw-blob sw-blob--b" r="360" fill="url(#sw-glow)" />
+      </g>
+      <g class="sw-light sw-light--joints" mask="url(#sw-joints)">
+        <circle class="sw-blob sw-blob--a" r="480" fill="url(#sw-glow)" />
+        <circle class="sw-blob sw-blob--b" r="360" fill="url(#sw-glow)" />
+      </g>
     </svg>
   </div>
 </template>
 
 <style scoped>
 .stone-wall {
-  --wall-ink: #57492c;
-  --wall-line-a: 0.045;
-  --wall-trace-rgb: 167 133 71;
-  --wall-trace-a: 0.4;
+  --sw-glow-rgb: 186 137 66;
+  --sw-joints-a: 0.55;
+  --sw-faces-a: 0.1;
+  --sw-grain-a: 0.05;
   position: fixed;
   inset: 0;
   z-index: -1;
@@ -199,10 +196,10 @@ onBeforeUnmount(() => {
 }
 
 :root.dark .stone-wall {
-  --wall-ink: #d6d3c8;
-  --wall-line-a: 0.035;
-  --wall-trace-rgb: 222 205 160;
-  --wall-trace-a: 0.22;
+  --sw-glow-rgb: 235 214 165;
+  --sw-joints-a: 0.33;
+  --sw-faces-a: 0.06;
+  --sw-grain-a: 0.06;
 }
 
 .stone-wall__svg {
@@ -214,49 +211,91 @@ onBeforeUnmount(() => {
   will-change: transform;
 }
 
-.stone-wall__stone {
-  fill: var(--wall-ink);
-  stroke: var(--wall-ink);
-  stroke-opacity: var(--wall-line-a);
-  stroke-width: 1.4;
-  stroke-linejoin: round;
+.sw-glow-stop {
+  stop-color: rgb(var(--sw-glow-rgb));
 }
 
-/* Thin light travelling along a stone's crooked outline: draws in, runs the
-   full perimeter, fades out, then rests for the tail of its cycle. */
-.stone-wall__trace {
-  fill: none;
-  stroke: rgb(var(--wall-trace-rgb) / var(--wall-trace-a));
-  stroke-width: 1.6;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-  opacity: 0;
-  animation-name: stone-wall-trace;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
+.sw-grain {
+  fill: #fff;
+  opacity: var(--sw-grain-a);
 }
 
-@keyframes stone-wall-trace {
+.sw-light--joints {
+  opacity: var(--sw-joints-a);
+}
+
+.sw-light--faces {
+  opacity: var(--sw-faces-a);
+}
+
+/* The light wanders behind the wall; the masks stay fixed to the stones. */
+.sw-blob--a {
+  transform: translate(640px, 640px);
+  animation: sw-drift-a 85s ease-in-out infinite;
+}
+
+.sw-blob--b {
+  transform: translate(900px, 300px);
+  animation: sw-drift-b 115s ease-in-out infinite;
+  animation-delay: -45s;
+}
+
+@keyframes sw-drift-a {
   0% {
-    stroke-dashoffset: 200;
-    opacity: 0;
+    transform: translate(250px, 280px);
+    opacity: 0.35;
   }
-  10% {
-    opacity: 1;
+  20% {
+    opacity: 0.9;
   }
-  58% {
-    opacity: 1;
+  30% {
+    transform: translate(640px, 640px);
   }
-  70%,
+  55% {
+    transform: translate(1230px, 430px);
+    opacity: 0.75;
+  }
+  70% {
+    opacity: 0.25;
+  }
+  80% {
+    transform: translate(830px, 180px);
+    opacity: 0.6;
+  }
   100% {
-    stroke-dashoffset: 0;
-    opacity: 0;
+    transform: translate(250px, 280px);
+    opacity: 0.35;
+  }
+}
+
+@keyframes sw-drift-b {
+  0% {
+    transform: translate(1350px, 780px);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translate(900px, 300px);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(420px, 720px);
+    opacity: 0.5;
+  }
+  75% {
+    transform: translate(1050px, 900px);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(1350px, 780px);
+    opacity: 0.3;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stone-wall__trace {
+  .sw-blob--a,
+  .sw-blob--b {
     animation: none;
+    opacity: 0.4;
   }
 }
 </style>
