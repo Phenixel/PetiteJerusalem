@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 import Navbar from "./components/NavbarComponents.vue";
+import StoneWallBackground from "./components/StoneWallBackground.vue";
 import SiteFooter from "./components/SiteFooter.vue";
 import ScrollToTop from "./components/ScrollToTop.vue";
 import ToastContainer from "./components/ToastContainer.vue";
@@ -29,9 +30,12 @@ onAuthStateChanged(auth, (user) => {
 </script>
 
 <template>
+  <!-- The stone wall sits at z-index:-1, so this root div must stay
+       transparent (the dark background lives on <body>) or it would hide it. -->
   <div
-    class="min-h-screen flex flex-col text-text-primary transition-colors duration-300 dark:bg-gray-900 dark:text-gray-100"
+    class="min-h-screen flex flex-col text-text-primary transition-colors duration-300 dark:text-gray-100"
   >
+    <StoneWallBackground />
     <Navbar />
     <RouterView />
     <SiteFooter v-if="!isHome" />
