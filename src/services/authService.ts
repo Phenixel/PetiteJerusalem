@@ -13,6 +13,7 @@ import {
   updatePassword,
   reauthenticateWithCredential,
   EmailAuthProvider,
+  OAuthProvider,
   deleteUser,
 } from "firebase/auth";
 import { app, googleAuthProvider } from "../../firebase";
@@ -109,6 +110,26 @@ export class AuthService {
   async signInWithGooglePopup(): Promise<User> {
     const auth = getAuth(app);
     const result = await signInWithPopup(auth, googleAuthProvider);
+    return {
+      id: result.user.uid,
+      name: result.user.displayName || result.user.email || "Utilisateur",
+      email: result.user.email || "",
+    };
+  }
+
+  // Connexion Apple. Requise par Apple (règle 4.8) sur l'app iOS dès lors que
+  // l'on propose un autre login tiers (Google). Affichée côté UI uniquement sur iOS.
+  //
+  // NOTE Capacitor : sur le web cette popup fonctionne directement. Sur l'app
+  // native iOS, il faudra basculer sur `@capacitor-firebase/authentication`
+  // (`signInWithApple`) une fois le projet Xcode + la capability "Sign in with
+  // Apple" en place — c'est le même chantier "auth native" que pour Google.
+  async signInWithApple(): Promise<User> {
+    const auth = getAuth(app);
+    const provider = new OAuthProvider("apple.com");
+    provider.addScope("email");
+    provider.addScope("name");
+    const result = await signInWithPopup(auth, provider);
     return {
       id: result.user.uid,
       name: result.user.displayName || result.user.email || "Utilisateur",

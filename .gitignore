@@ -46,3 +46,7 @@ coverage/
 # Build outputs
 build/
 out/
+
+# Capacitor native projects (generated via `npx cap add android|ios`)
+/android
+/ios
