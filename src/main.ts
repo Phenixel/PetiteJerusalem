@@ -26,3 +26,10 @@ app.use(router);
 app.use(i18n);
 
 app.mount("#app");
+
+// App native uniquement : navigation quand on touche une notification push.
+// Import dynamique pour ne rien ajouter au bundle initial du site web.
+import("./composables/useNativeApp").then(({ isNativeApp }) => {
+  if (!isNativeApp) return;
+  import("./services/pushService").then(({ pushService }) => pushService.initDeepLinks(router));
+});

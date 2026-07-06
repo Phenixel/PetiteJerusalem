@@ -1,5 +1,13 @@
 # Application mobile — Revue de la PR #73 et feuille de route
 
+> **État d'avancement** : les phases 0 à 4 sont implémentées sur cette branche
+> (POC intégré et rebasé, bundle natif allégé, téléchargement hors ligne +
+> page /telechargements, persistance Firestore, auth native Google/Apple,
+> push client + Cloud Function `dailyReadingReminder`). Restent : la
+> configuration hors code (consoles Firebase/Apple, APNs, Xcode — voir
+> `docs/capacitor-poc.md`), les tests sur appareil réel, et la phase 5
+> (publication).
+
 > Objectif produit : une app iOS/Android **minimale, centrée sur la lecture**, où l'on
 > télécharge sa liste de lectures en local pour lire **hors ligne**, avec des
 > **notifications** de rappel. La bibliothèque grandira au fil du temps — l'app ne doit

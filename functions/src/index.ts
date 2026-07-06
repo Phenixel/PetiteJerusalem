@@ -25,6 +25,9 @@ const db = getFirestore();
 // Cap concurrency to keep costs bounded; previews are tiny and cached.
 setGlobalOptions({ maxInstances: 3 });
 
+// Rappel quotidien de lecture (push FCM vers l'app mobile).
+export { dailyReadingReminder } from "./dailyReminder";
+
 const SITE_URL = "https://petite-jerusalem.fr";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 

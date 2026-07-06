@@ -90,7 +90,9 @@ async function loginWithApple() {
 
     const user = await authService.signInWithApple();
 
-    reservationService.migrateGuestReservations(user.email, user.id, user.name);
+    reservationService
+      .migrateGuestReservations(user.email, user.id, user.name)
+      .catch((error) => console.error("Migration des réservations invité échouée:", error));
 
     router.push(redirectPath);
   } catch (e: unknown) {

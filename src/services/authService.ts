@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   signInWithRedirect,
   signInWithPopup,
+  signInWithCredential,
   reauthenticateWithPopup,
   getRedirectResult,
   signOut,
@@ -13,13 +14,24 @@ import {
   updatePassword,
   reauthenticateWithCredential,
   EmailAuthProvider,
+  GoogleAuthProvider,
   OAuthProvider,
   deleteUser,
 } from "firebase/auth";
+import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { app, googleAuthProvider } from "../../firebase";
+import { isNativeApp } from "../composables/useNativeApp";
 import type { User } from "../models/models";
 
 export type { User };
+
+function toUser(firebaseUser: FirebaseUser): User {
+  return {
+    id: firebaseUser.uid,
+    name: firebaseUser.displayName || firebaseUser.email || "Utilisateur",
+    email: firebaseUser.email || "",
+  };
+}
 
 export class AuthService {
   onAuthChanged(callback: (user: User | null) => void): () => void {
@@ -103,38 +115,66 @@ export class AuthService {
   }
 
   async signInWithGoogleRedirect(): Promise<void> {
+    if (isNativeApp) {
+      // Pas de redirect possible en webview : on passe par le flux natif.
+      await this.signInWithGoogleNative();
+      return;
+    }
     const auth = getAuth(app);
     await signInWithRedirect(auth, googleAuthProvider);
   }
 
   async signInWithGooglePopup(): Promise<User> {
+    if (isNativeApp) {
+      return this.signInWithGoogleNative();
+    }
     const auth = getAuth(app);
     const result = await signInWithPopup(auth, googleAuthProvider);
-    return {
-      id: result.user.uid,
-      name: result.user.displayName || result.user.email || "Utilisateur",
-      email: result.user.email || "",
-    };
+    return toUser(result.user);
+  }
+
+  // App native : le plugin ouvre le sélecteur de compte Google natif et rend
+  // les credentials (skipNativeAuth dans capacitor.config.ts) ; la connexion
+  // Firebase se fait ensuite dans le SDK JS de la webview, pour que
+  // onAuthStateChanged & co continuent de fonctionner comme sur le web.
+  private async signInWithGoogleNative(): Promise<User> {
+    const result = await FirebaseAuthentication.signInWithGoogle();
+    const idToken = result.credential?.idToken;
+    if (!idToken) {
+      throw new Error("Connexion Google annulée ou incomplète");
+    }
+    const credential = GoogleAuthProvider.credential(idToken, result.credential?.accessToken);
+    const cred = await signInWithCredential(getAuth(app), credential);
+    return toUser(cred.user);
   }
 
   // Connexion Apple. Requise par Apple (règle 4.8) sur l'app iOS dès lors que
   // l'on propose un autre login tiers (Google). Affichée côté UI uniquement sur iOS.
-  //
-  // NOTE Capacitor : sur le web cette popup fonctionne directement. Sur l'app
-  // native iOS, il faudra basculer sur `@capacitor-firebase/authentication`
-  // (`signInWithApple`) une fois le projet Xcode + la capability "Sign in with
-  // Apple" en place — c'est le même chantier "auth native" que pour Google.
   async signInWithApple(): Promise<User> {
     const auth = getAuth(app);
     const provider = new OAuthProvider("apple.com");
+
+    if (isNativeApp) {
+      // Flux natif iOS : la feuille "Sign in with Apple" du système, puis
+      // bridge du credential (avec le rawNonce, spécificité Apple) vers le
+      // SDK JS. La popup Firebase ne fonctionne pas en webview.
+      const result = await FirebaseAuthentication.signInWithApple();
+      const idToken = result.credential?.idToken;
+      if (!idToken) {
+        throw new Error("Connexion Apple annulée ou incomplète");
+      }
+      const credential = provider.credential({
+        idToken,
+        rawNonce: result.credential?.nonce ?? undefined,
+      });
+      const cred = await signInWithCredential(auth, credential);
+      return toUser(cred.user);
+    }
+
     provider.addScope("email");
     provider.addScope("name");
     const result = await signInWithPopup(auth, provider);
-    return {
-      id: result.user.uid,
-      name: result.user.displayName || result.user.email || "Utilisateur",
-      email: result.user.email || "",
-    };
+    return toUser(result.user);
   }
 
   async getGoogleRedirectResult(): Promise<User | null> {
@@ -231,6 +271,11 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
+    if (isNativeApp) {
+      // Déconnecte aussi la couche native (sinon le prochain login Google
+      // resauterait le sélecteur de compte).
+      await FirebaseAuthentication.signOut().catch(() => {});
+    }
     const auth = getAuth(app);
     await signOut(auth);
   }

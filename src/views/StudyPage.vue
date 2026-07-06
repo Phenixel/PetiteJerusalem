@@ -7,6 +7,7 @@ import { sessionService } from "../services/sessionService";
 import { seoService } from "../services/seoService";
 import { appendHebrewNumeral } from "../services/hebrewNumerals";
 import { hubPath } from "../content/etudeTexts";
+import { isNativeApp } from "../composables/useNativeApp";
 import AppIcon from "../components/icons/AppIcon.vue";
 
 const { t } = useI18n();
@@ -79,6 +80,11 @@ onMounted(() => {
       <p class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
         {{ t("study.subtitle") }}
       </p>
+      <!-- App native : raccourci vers la lecture hors ligne. -->
+      <RouterLink v-if="isNativeApp" to="/telechargements" class="btn btn-soft mt-5 inline-flex">
+        <AppIcon name="download" :size="14" />
+        {{ t("downloads.title") }}
+      </RouterLink>
     </div>
 
     <!-- Controls -->

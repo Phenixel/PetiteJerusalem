@@ -107,6 +107,7 @@ const en: LocaleMessages = {
       myInfo: "My Information",
       security: "Security",
       theme: "Appearance",
+      notifications: "Notifications",
     },
     noParticipatedSessions: "No participated sessions",
     noParticipatedSessionsDesc: "You haven't participated in any study sessions yet.",
@@ -468,6 +469,31 @@ const en: LocaleMessages = {
     textSize: "Text size",
     textSizeIncrease: "Increase text size",
     textSizeDecrease: "Decrease text size",
+  },
+  downloads: {
+    navTitle: "Offline",
+    title: "Downloads",
+    subtitle:
+      "Download books to read them without a connection. Your daily reading is downloaded automatically.",
+    total: "Storage used: {size}",
+    downloadAll: "Download all",
+    download: "Download",
+    downloading: "Downloading…",
+    downloaded: "Downloaded",
+    delete: "Delete",
+    error: "Download failed. Check your connection.",
+    webNotice:
+      "On the web, downloaded texts speed up reading. For full offline reading, use the mobile app.",
+  },
+  notifications: {
+    title: "Reading reminder",
+    description: "Get a daily notification if your daily reading isn't finished.",
+    enable: "Enable daily reminder",
+    disable: "Disable reminder",
+    enabled: "Reminder on: you'll be notified every day at 6pm if your reading isn't done.",
+    permissionDenied:
+      "Notifications are blocked for this app. Allow them in your phone settings, then try again.",
+    error: "Could not update the notification setting. Please try again.",
   },
   study: {
     title: "Library",

@@ -27,6 +27,12 @@ export const ICONS = {
   "chevron-up": { body: '<path d="m18 15-6-6-6 6"/>' },
   x: { body: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>' },
   plus: { body: '<path d="M5 12h14"/><path d="M12 5v14"/>' },
+  download: {
+    body: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+  },
+  bell: {
+    body: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  },
   check: { body: '<path d="M20 6 9 17l-5-5"/>' },
   "check-double": {
     body: '<path d="M18 6 7 17l-4-4"/><path d="m22 10-7.5 7.5L13 16"/>',

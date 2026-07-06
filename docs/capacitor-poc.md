@@ -55,15 +55,26 @@ serveur de dev :
 | `npm run cap:android` | build + ouvre Android Studio |
 | `npm run cap:ios` | build + ouvre Xcode |
 
-## Lecture hors-ligne : déjà fonctionnelle ✅
+## Lecture hors-ligne : téléchargement à la demande ✅
 
-Les textes (`public/texts/**`, ~38 Mo) sont des assets statiques chargés en
-chemins relatifs (`fetch('/texts/...')` dans `textService.ts`). Lors du build
-Capacitor, `public/` est copié dans `dist/`, puis `cap sync` l'embarque dans le
-bundle natif. L'app les sert depuis son origine locale (`capacitor://localhost`)
-→ **lecture 100 % offline, sans réseau, sans code supplémentaire.**
+> Évolution depuis le POC : les corpus volumineux ne sont **plus embarqués**
+> dans le binaire (voir `docs/mobile-app-roadmap.md`, décision n° 2).
 
-Aucune action requise : ouvre un texte avec le mode avion activé pour le vérifier.
+- `npm run app:build` retire `dist/texts/{talmud,mishna,tanakh}` (~38 Mo) du
+  bundle natif via `scripts/prune-native-bundle.mjs`. Seuls `tehilim.json`
+  (~370 Ko) et `talmud-chapters.json` (~40 Ko) restent embarqués.
+- Les livres se téléchargent depuis la page **/telechargements** (lien dans la
+  navbar de l'app) ou automatiquement pour la liste de lecture quotidienne.
+  Stockage : `Directory.Data` en natif (`@capacitor/file-transfer` +
+  `@capacitor/filesystem`), Cache Storage sur le web ; index dans
+  `@capacitor/preferences` (`src/services/offlineTextStore.ts` et
+  `offlineLibraryService.ts`).
+- `textService.loadText` passe par `fetchTextResponse` : copie locale d'abord,
+  réseau (`https://petite-jerusalem.fr`) sinon.
+- La progression (« marquer comme lu ») fonctionne aussi hors ligne :
+  cache Firestore persistant activé dans `firebase.ts`.
+
+Vérification : télécharger un livre, activer le mode avion, l'ouvrir.
 
 ## Connexion Apple (« Sign in with Apple »)
 

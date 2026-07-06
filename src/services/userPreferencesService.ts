@@ -19,6 +19,12 @@ export interface UserPreferences {
   dailyReadingIds: number[];
   /** Per-day read tracking for the daily reading list. */
   dailyReadingProgress: DailyReadingProgress;
+  /** FCM tokens of the user's devices (native app), read by the reminder Cloud Function. */
+  fcmTokens: string[];
+  /** Whether the daily reading push reminder is on (native app). */
+  pushReminderEnabled: boolean;
+  /** Locale the reminder notifications are sent in (fr/en/he). */
+  pushLocale: string;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -27,6 +33,9 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   fontHebrew: "frank",
   dailyReadingIds: [],
   dailyReadingProgress: { date: "", completedIds: [] },
+  fcmTokens: [],
+  pushReminderEnabled: false,
+  pushLocale: "fr",
 };
 
 class UserPreferencesService {

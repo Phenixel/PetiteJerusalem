@@ -15,6 +15,17 @@ const config: CapacitorConfig = {
   appId: 'fr.petitejerusalem.app',
   appName: 'Petite Jérusalem',
   webDir: 'dist',
+  plugins: {
+    // Auth native Google/Apple : le plugin ne fait qu'obtenir les credentials
+    // (skipNativeAuth), la connexion Firebase elle-même passe par le SDK JS de
+    // la webview (signInWithCredential dans authService) — indispensable pour
+    // le flux Apple sur iOS (rawNonce) et pour que l'état d'auth reste celui
+    // de l'app web.
+    FirebaseAuthentication: {
+      skipNativeAuth: true,
+      providers: ['google.com', 'apple.com'],
+    },
+  },
 }
 
 export default config

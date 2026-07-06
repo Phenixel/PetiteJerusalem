@@ -14,6 +14,7 @@ const DetailChiour = () => import("../views/Chiourim/DetailChiour.vue");
 const AuteurChiourimPage = () => import("../views/Chiourim/AuteurChiourimPage.vue");
 const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue");
 const StudyPage = () => import("../views/StudyPage.vue");
+const DownloadsPage = () => import("../views/DownloadsPage.vue");
 const ContentPage = () => import("../views/ContentPage.vue");
 const TehilimPage = () => import("../views/TehilimPage.vue");
 
@@ -59,6 +60,13 @@ export default [
     path: "/bibliotheque",
     name: "study",
     component: StudyPage,
+  },
+  // Gestion des textes téléchargés pour la lecture hors ligne (pensé pour
+  // l'app native ; sur le web la même page alimente le Cache Storage).
+  {
+    path: "/telechargements",
+    name: "downloads",
+    component: DownloadsPage,
   },
   // Public reading pages for the whole library (Tehilim, Tanakh, Michna, Talmud):
   // the same reader as /lire, served at canonical keyword URLs and prerendered

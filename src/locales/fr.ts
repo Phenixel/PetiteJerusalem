@@ -105,6 +105,7 @@ const fr = {
       myInfo: "Mes Informations",
       security: "Sécurité",
       theme: "Apparence",
+      notifications: "Notifications",
     },
     noParticipatedSessions: "Aucune session participée",
     noParticipatedSessionsDesc: "Vous n'avez pas encore participé à des sessions d'étude.",
@@ -470,6 +471,32 @@ const fr = {
     textSize: "Taille du texte",
     textSizeIncrease: "Agrandir le texte",
     textSizeDecrease: "Réduire le texte",
+  },
+  downloads: {
+    navTitle: "Hors ligne",
+    title: "Téléchargements",
+    subtitle:
+      "Téléchargez des livres pour les lire sans connexion. Votre lecture quotidienne est téléchargée automatiquement.",
+    total: "Espace utilisé : {size}",
+    downloadAll: "Tout télécharger",
+    download: "Télécharger",
+    downloading: "Téléchargement…",
+    downloaded: "Téléchargé",
+    delete: "Supprimer",
+    error: "Téléchargement impossible. Vérifiez votre connexion.",
+    webNotice:
+      "Sur le web, les textes téléchargés accélèrent la lecture. Pour la lecture hors ligne complète, utilisez l'application mobile.",
+  },
+  notifications: {
+    title: "Rappel de lecture",
+    description:
+      "Recevez chaque jour une notification si votre lecture quotidienne n'est pas terminée.",
+    enable: "Activer le rappel quotidien",
+    disable: "Désactiver le rappel",
+    enabled: "Rappel activé : vous serez notifié chaque jour à 18h si votre lecture n'est pas terminée.",
+    permissionDenied:
+      "Les notifications sont bloquées pour cette application. Autorisez-les dans les réglages du téléphone, puis réessayez.",
+    error: "Impossible de modifier le réglage des notifications. Réessayez.",
   },
   study: {
     title: "Bibliothèque",
