@@ -68,6 +68,18 @@ Checklist complète dans `docs/capacitor-test-plan.md`. Le strict minimum :
 > Si le login Google échoue avec une erreur DEVELOPER_ERROR : SHA-1 manquante
 > ou mauvaise dans Firebase (étape A3.3), re-télécharger `google-services.json`.
 
+### Dépannage (constaté au premier test APK)
+
+| Symptôme | Cause | Remède |
+|---|---|---|
+| `"FirebaseAuthentication" plugin is not implemented on android` (idem pour les notifications) | Le projet `android/` a été généré/synchronisé avant l'installation des plugins : ils ne sont pas enregistrés côté natif | `npm install && npx cap sync android`, puis rebuild. Vérifier que `android/capacitor.settings.gradle` liste `capacitor-firebase-authentication`, `capacitor-firebase-messaging`, `capacitor-file-transfer`, `capacitor-text-zoom` |
+| « Impossible de modifier le réglage des notifications » | Plugin messaging absent (cf. ci-dessus) **ou** `google-services.json` manquant (étapes A3/A4) | Sync + config Firebase, rebuild |
+| Textes agrandis, pages qui débordent à droite, menu coupé en bas | La WebView applique l'échelle de police système (textZoom) | Corrigé dans le code (`@capacitor/text-zoom` remis à 100 % au démarrage + garde-fous CSS) — nécessite `npm install && npx cap sync android` + rebuild |
+
+**Après chaque `git pull` : `npm install && npm run app:build` avant de rebuilder
+dans Android Studio** — c'est le `cap sync` inclus qui pousse plugins et bundle
+web dans `android/`.
+
 ---
 
 ## Phase B — Lancer la review Play Store aujourd'hui

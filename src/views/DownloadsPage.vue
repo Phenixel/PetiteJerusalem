@@ -100,8 +100,8 @@ onMounted(async () => {
     </div>
 
     <section v-for="group in groups" :key="group.key" class="mb-10">
-      <div class="flex items-center justify-between gap-4 mb-4">
-        <h2 class="text-2xl font-bold text-text-primary">
+      <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-4">
+        <h2 class="text-2xl font-bold text-text-primary min-w-0">
           {{ t(group.labelKey) }}
           <span class="text-sm font-medium text-text-secondary ml-2">
             {{ group.downloadedCount }}/{{ group.books.length }}
@@ -109,7 +109,7 @@ onMounted(async () => {
         </h2>
         <button
           v-if="group.downloadedCount < group.books.length"
-          class="btn btn-soft"
+          class="btn btn-soft shrink-0"
           @click="onDownloadAll(group.books)"
         >
           <AppIcon name="download" :size="14" />
@@ -117,7 +117,7 @@ onMounted(async () => {
         </button>
       </div>
 
-      <ul class="grid gap-2 sm:grid-cols-2">
+      <ul class="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <li
           v-for="book in group.books"
           :key="book.path"

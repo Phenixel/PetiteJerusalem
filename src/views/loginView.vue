@@ -75,8 +75,10 @@ async function loginWithGoogle() {
 
     router.push(redirectPath);
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : t("login.googleError");
-    errorMessage.value = msg;
+    // Message i18n uniquement : les erreurs Firebase/plugin ("popup closed",
+    // "plugin not implemented"…) sont techniques et en anglais.
+    console.error("Connexion Google échouée:", e);
+    errorMessage.value = t("login.googleError");
   }
 }
 
@@ -96,8 +98,8 @@ async function loginWithApple() {
 
     router.push(redirectPath);
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : t("login.appleError");
-    errorMessage.value = msg;
+    console.error("Connexion Apple échouée:", e);
+    errorMessage.value = t("login.appleError");
   }
 }
 
