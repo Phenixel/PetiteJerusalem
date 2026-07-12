@@ -8,6 +8,29 @@
 
 ---
 
+## État au 12/07/2026 — Phase A quasi terminée ✅
+
+Fait (vérifié sur émulateur Pixel 7 / Android 16) :
+- `android/` généré, JDK 21 installé (`brew install openjdk@21`), `local.properties` créé
+- Permission `POST_NOTIFICATIONS` ajoutée au manifest
+- **APK debug construit** : `android/app/build/outputs/apk/debug/app-debug.apk`
+- App lancée sur émulateur : home, Bibliothèque, lecture Tehilim (hébreu + nikkoud) OK
+- **Fix bouton retour Android** : plugin `@capacitor/app` + listener `backButton`
+  dans `main.ts` (avant : le bouton retour quittait l'app)
+- **Icônes + splash** générées depuis le logo (`assets/logo.png`,
+  `npx @capacitor/assets generate --android`)
+- `npm run verify` vert (ignores `android/`, `ios/`, `.claude/` ajoutés à ESLint/Vitest)
+- `scripts/setup-android.mjs` : réapplique les modifs natives après un futur `cap add android`
+- SHA-1 debug : `5A:AF:2D:F2:E8:85:34:E3:9B:66:33:14:FB:0A:4F:A2:DA:A3:37:89`
+
+Reste (bloqué sur credentials Google expirés sur la machine) :
+- Enregistrer l'app Android dans Firebase + `google-services.json` (étape A3)
+  → sans lui, **seuls** le login Google natif et le push ne marchent pas ;
+  tout le reste de l'APK actuel est fonctionnel (email/mdp inclus)
+- À surveiller sur vrai téléphone : léger ghosting visuel constaté sur la page
+  Bibliothèque **sur émulateur uniquement** (rendu logiciel swiftshader,
+  probablement lié aux effets de flou) — pages Accueil et lecture impeccables
+
 ## Phase A — APK de test sur ton téléphone (~30-45 min)
 
 ### A1. Prérequis machine **[Toi, une fois]**

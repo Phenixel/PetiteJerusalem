@@ -41,4 +41,16 @@ import("./composables/useNativeApp").then(({ isNativeApp }) => {
     .catch(() => {
       // Vieux binaire sans le plugin : sans gravité.
     });
+  // Bouton retour matériel Android : sans listener, il quitte l'app au lieu
+  // de revenir en arrière dans la navigation.
+  import("@capacitor/app").then(({ App: CapacitorApp }) => {
+    CapacitorApp.addListener("backButton", ({ canGoBack }) => {
+      if (canGoBack) {
+        router.back();
+      } else {
+        // Sur la home : comportement Android standard, l'app passe en arrière-plan.
+        CapacitorApp.minimizeApp();
+      }
+    });
+  });
 });
