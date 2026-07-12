@@ -23,13 +23,25 @@ Fait (vérifié sur émulateur Pixel 7 / Android 16) :
 - `scripts/setup-android.mjs` : réapplique les modifs natives après un futur `cap add android`
 - SHA-1 debug : `5A:AF:2D:F2:E8:85:34:E3:9B:66:33:14:FB:0A:4F:A2:DA:A3:37:89`
 
-Reste (bloqué sur credentials Google expirés sur la machine) :
-- Enregistrer l'app Android dans Firebase + `google-services.json` (étape A3)
-  → sans lui, **seuls** le login Google natif et le push ne marchent pas ;
-  tout le reste de l'APK actuel est fonctionnel (email/mdp inclus)
+**Mise à jour 12/07 soir — Phase A terminée ✅** :
+- App Android enregistrée dans Firebase via l'API REST (appId
+  `1:152837353533:android:aecff510966f8dccd07a54`), SHA-1 debug ajoutée,
+  `google-services.json` téléchargé (racine du repo + `android/app/`, git-ignoré)
+- Vérifié sur émulateur : `FirebaseApp initialization successful`, plugin
+  FirebaseAuthentication chargé, flux Google natif déclenché (échec
+  `No credentials available` = normal, aucun compte Google sur l'émulateur)
+- Correctifs du premier test téléphone (c9bcc17) revérifiés avec police
+  système ×1.3 : plus de débordements, menu complet, page Téléchargements OK ;
+  téléchargement hors ligne du Tehilim testé (363 Ko)
+- ⚠️ Piège Gradle : après l'ajout de `google-services.json`, builder avec
+  `--no-configuration-cache` une fois (le cache de config avait mémorisé
+  l'absence du fichier et le plugin ne s'appliquait pas)
+
+Reste :
 - À surveiller sur vrai téléphone : léger ghosting visuel constaté sur la page
   Bibliothèque **sur émulateur uniquement** (rendu logiciel swiftshader,
   probablement lié aux effets de flou) — pages Accueil et lecture impeccables
+- Phase B (Play Store) : en attente de la validation du compte développeur Google
 
 ## Phase A — APK de test sur ton téléphone (~30-45 min)
 
