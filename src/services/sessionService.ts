@@ -438,10 +438,15 @@ export class SessionService {
 
   async updateSession(
     sessionId: string,
-    sessionData: { name: string; description: string; dateLimit: string },
+    sessionData: { name: string; description: string; dateLimit: string; slug?: string },
   ): Promise<void> {
     try {
-      const slug = await this.generateUniqueSlug(sessionData.name, sessionId);
+      // Le slug est l'identifiant public qui compose le lien de partage. On ne
+      // le régénère JAMAIS lors d'un renommage : sinon tous les liens déjà
+      // partagés deviennent « session introuvable ». On n'en génère un que pour
+      // les sessions héritées qui n'en ont pas encore.
+      const slug =
+        sessionData.slug?.trim() || (await this.generateUniqueSlug(sessionData.name, sessionId));
       await firestoreService.updateSession(sessionId, {
         name: sessionData.name,
         description: sessionData.description,
