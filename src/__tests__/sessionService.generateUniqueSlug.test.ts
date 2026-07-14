@@ -99,36 +99,37 @@ describe("sessionService - slug unique à la mise à jour", () => {
     vi.mocked(firestoreService.updateSession).mockResolvedValue(undefined);
   });
 
-  it("réutilise son propre slug sans suffixe si le nom n'a pas changé", async () => {
-    vi.mocked(firestoreService.getSessionBySlug).mockResolvedValue(baseSession);
-
+  it("conserve le slug existant lors d'un renommage (les liens partagés restent valides)", async () => {
+    // Le slug fait office de lien de partage : renommer la session ne doit
+    // PAS le changer, sinon tous les liens déjà diffusés cassent.
     await sessionService.updateSession("abc123", {
-      name: "Étude du Talmud",
+      name: "Nom complètement différent",
       description: "desc",
       dateLimit: "2026-12-31",
+      slug: "etude-du-talmud",
     });
 
     expect(firestoreService.updateSession).toHaveBeenCalledWith(
       "abc123",
       expect.objectContaining({ slug: "etude-du-talmud" }),
     );
+    // On ne recalcule pas le slug quand il en existe déjà un.
+    expect(firestoreService.getSessionBySlug).not.toHaveBeenCalled();
   });
 
-  it("génère slug-1 si le nouveau nom est déjà pris par une autre session", async () => {
-    const otherSession = { ...baseSession, id: "other-id", slug: "nouveau-nom" };
-    vi.mocked(firestoreService.getSessionBySlug)
-      .mockResolvedValueOnce(otherSession) // "nouveau-nom" pris par autre session
-      .mockResolvedValueOnce(null); // "nouveau-nom-1" libre
+  it("génère un slug pour une session héritée qui n'en a pas encore", async () => {
+    vi.mocked(firestoreService.getSessionBySlug).mockResolvedValue(null);
 
     await sessionService.updateSession("abc123", {
-      name: "Nouveau nom",
+      name: "Étude du Talmud",
       description: "desc",
       dateLimit: "2026-12-31",
+      // slug absent : session héritée créée avant l'introduction des slugs.
     });
 
     expect(firestoreService.updateSession).toHaveBeenCalledWith(
       "abc123",
-      expect.objectContaining({ slug: "nouveau-nom-1" }),
+      expect.objectContaining({ slug: "etude-du-talmud" }),
     );
   });
 });
