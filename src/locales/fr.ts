@@ -412,6 +412,9 @@ const fr = {
     rewind: "Reculer de 15s",
     forward: "Avancer de 30s",
     speed: "Vitesse de lecture",
+    close: "Fermer le lecteur",
+    nowPlaying: "Lecture en cours",
+    goToChiour: "Ouvrir la page du cours",
   },
   signupPrompt: {
     reservationConfirmed: "Réservation confirmée !",

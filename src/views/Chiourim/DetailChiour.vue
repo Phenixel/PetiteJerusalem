@@ -159,7 +159,7 @@ watch(() => route.params.slug, loadChiour);
 
       <!-- Audio Player -->
       <div v-if="chiour.mediaUrl" class="mb-8">
-        <AudioPlayer :src="chiour.mediaUrl" :title="chiour.name" />
+        <AudioPlayer :src="chiour.mediaUrl" :title="chiour.name" :slug="chiour.slug" />
       </div>
 
       <div v-else class="mb-8 py-8 text-center">
