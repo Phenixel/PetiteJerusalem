@@ -493,7 +493,8 @@ const fr = {
       "Recevez chaque jour une notification si votre lecture quotidienne n'est pas terminée.",
     enable: "Activer le rappel quotidien",
     disable: "Désactiver le rappel",
-    enabled: "Rappel activé : vous serez notifié chaque jour à 18h si votre lecture n'est pas terminée.",
+    enabled: "Rappel activé : vous serez notifié chaque jour à {hour} h si votre lecture n'est pas terminée.",
+    hourLabel: "Heure du rappel",
     permissionDenied:
       "Les notifications sont bloquées pour cette application. Autorisez-les dans les réglages du téléphone, puis réessayez.",
     error: "Impossible de modifier le réglage des notifications. Réessayez.",

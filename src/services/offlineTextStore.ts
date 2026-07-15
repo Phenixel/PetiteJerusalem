@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import { FileTransfer } from "@capacitor/file-transfer";
 import { Preferences } from "@capacitor/preferences";
@@ -118,7 +118,19 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
     } catch {
       // Asset absent du bundle (corpus retiré) : réseau.
     }
-    return fetch(remoteUrl(webPath));
+    // HTTP natif (pas la fetch de la webview) : l'origine de l'app
+    // (https://localhost) n'est pas autorisée par CORS sur le site, une
+    // fetch JS serait bloquée alors que l'appareil est bien en ligne.
+    const res = await CapacitorHttp.get({
+      url: remoteUrl(webPath),
+      responseType: "text",
+      headers: { Accept: "application/json" },
+    });
+    const body = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
+    return new Response(body, {
+      status: res.status,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   return fetch(webPath);

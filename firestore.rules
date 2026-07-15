@@ -97,6 +97,7 @@ service cloud.firestore {
         // envoi échoue.
         && (!('fcmTokens' in request.resource.data) || (request.resource.data.fcmTokens is list && request.resource.data.fcmTokens.size() <= 20))
         && (!('pushReminderEnabled' in request.resource.data) || request.resource.data.pushReminderEnabled is bool)
+        && (!('pushReminderHour' in request.resource.data) || (request.resource.data.pushReminderHour is int && request.resource.data.pushReminderHour >= 0 && request.resource.data.pushReminderHour <= 23))
         && (!('pushLocale' in request.resource.data) || (request.resource.data.pushLocale is string && request.resource.data.pushLocale.size() <= 5));
       allow delete: if isAuthenticated() && request.auth.uid == userId;
     }

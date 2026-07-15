@@ -43,6 +43,32 @@ Reste :
   probablement lié aux effets de flou) — pages Accueil et lecture impeccables
 - Phase B (Play Store) : en attente de la validation du compte développeur Google
 
+**Mise à jour 15/07 — retours du second test APK, corrigés :**
+- **Lecture en ligne des textes non téléchargés** : c'était un blocage CORS
+  (l'origine `https://localhost` de la WebView n'est pas autorisée sur
+  `petite-jerusalem.fr`). Corrigé : le fetch distant passe par le HTTP natif
+  (`CapacitorHttp`, sans CORS) ; en-tête `Access-Control-Allow-Origin: *`
+  ajouté sur `/texts/**` dans `firebase.json` (actif au prochain déploiement
+  du hosting, en ceinture-bretelles)
+- **Téléchargement depuis la bibliothèque** : chaque carte de la bibliothèque
+  a maintenant son bouton télécharger/supprimer (app uniquement) — la page
+  « Hors ligne » reste pour la vue d'ensemble
+- **Heure du rappel configurable** : sélecteur d'heure (0-23) dans
+  Profil → Notifications, stocké dans `pushReminderHour` ; la function tourne
+  désormais toutes les heures et n'envoie qu'aux utilisateurs dont c'est l'heure
+- ⚠️ **Pourquoi aucune notification reçue pour l'instant** : la Cloud Function
+  et les règles Firestore n'ont **jamais été déployées** (aucun `firebase deploy`
+  depuis ces changements), et le token FCM n'a pas pu s'enregistrer tant que le
+  plugin messaging n'était pas dans l'APK. Après ce pull :
+  ```bash
+  npm install && npm run app:build      # rebuild APK (plugins + fixes)
+  npm run build                          # bundle web complet (avec textes) pour le hosting
+  npx firebase deploy --only firestore:rules,functions:dailyReadingReminder,hosting
+  ```
+  Puis dans l'app : Profil → Notifications → choisir l'heure → Activer.
+  Test rapide sans attendre l'heure choisie : régler le rappel à l'heure
+  suivante, laisser une lecture du jour non cochée, verrouiller le téléphone.
+
 ## Phase A — APK de test sur ton téléphone (~30-45 min)
 
 ### A1. Prérequis machine **[Toi, une fois]**

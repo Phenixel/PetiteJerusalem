@@ -48,8 +48,23 @@ function todayKey(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
 }
 
+/** Heure courante à Paris (0-23), pour respecter l'heure choisie par chacun. */
+function currentParisHour(): number {
+  return Number(
+    new Intl.DateTimeFormat("fr-FR", {
+      timeZone: "Europe/Paris",
+      hour: "numeric",
+      hour12: false,
+    }).format(new Date()),
+  );
+}
+
+const DEFAULT_REMINDER_HOUR = 18;
+
+// Tourne toutes les heures : chaque utilisateur choisit son heure de rappel
+// (`pushReminderHour`) dans l'app, on n'envoie qu'à ceux dont c'est l'heure.
 export const dailyReadingReminder = onSchedule(
-  { schedule: "0 18 * * *", timeZone: "Europe/Paris" },
+  { schedule: "0 * * * *", timeZone: "Europe/Paris" },
   async () => {
     const db = getFirestore();
     const snap = await db
@@ -60,10 +75,14 @@ export const dailyReadingReminder = onSchedule(
 
     const messaging = getMessaging();
     const today = todayKey();
+    const hour = currentParisHour();
     let sent = 0;
 
     for (const docSnap of snap.docs) {
       const prefs = docSnap.data();
+      const wantedHour =
+        typeof prefs.pushReminderHour === "number" ? prefs.pushReminderHour : DEFAULT_REMINDER_HOUR;
+      if (wantedHour !== hour) continue;
       const tokens: string[] = Array.isArray(prefs.fcmTokens)
         ? prefs.fcmTokens.filter((t: unknown): t is string => typeof t === "string" && t.length > 0)
         : [];

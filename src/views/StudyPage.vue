@@ -8,9 +8,43 @@ import { seoService } from "../services/seoService";
 import { appendHebrewNumeral } from "../services/hebrewNumerals";
 import { hubPath } from "../content/etudeTexts";
 import { isNativeApp } from "../composables/useNativeApp";
+import {
+  bookForEntry,
+  downloadBook,
+  downloadingPaths,
+  isBookDownloaded,
+  removeBook,
+} from "../services/offlineLibraryService";
+import { ensureManifestLoaded } from "../services/offlineTextStore";
+import { useToast } from "../composables/useToast";
 import AppIcon from "../components/icons/AppIcon.vue";
 
 const { t } = useI18n();
+const toast = useToast();
+
+// App native : état de téléchargement affiché sur chaque carte de la bibliothèque.
+type BookState = "none" | "downloading" | "downloaded" | "idle";
+function bookState(text: TextStudyJsonEntry): BookState {
+  if (!isNativeApp) return "none";
+  const book = bookForEntry(text);
+  if (!book) return "none";
+  if (downloadingPaths.has(book.path)) return "downloading";
+  return isBookDownloaded(book) ? "downloaded" : "idle";
+}
+
+async function toggleDownload(text: TextStudyJsonEntry) {
+  const book = bookForEntry(text);
+  if (!book) return;
+  try {
+    if (isBookDownloaded(book)) {
+      await removeBook(book);
+    } else {
+      await downloadBook(book);
+    }
+  } catch {
+    toast.error(t("downloads.error"));
+  }
+}
 
 const ALL_TYPE = "Tout";
 
@@ -61,6 +95,9 @@ function formatBookName(livre: string): string {
 }
 
 onMounted(() => {
+  if (isNativeApp) {
+    ensureManifestLoaded();
+  }
   const url = window.location.origin + "/bibliotheque";
   seoService.setMeta({
     title: `${t("study.title")} | Petite Jérusalem`,
@@ -153,11 +190,47 @@ onMounted(() => {
                   {{ t("study.sections", { count: text.totalSections }) }}
                 </span>
               </span>
-              <AppIcon
-                name="book-open"
-                :size="16"
-                class="text-text-secondary/40 group-hover:text-primary transition-colors shrink-0"
-              />
+              <span class="shrink-0 flex items-center gap-1.5">
+                <!-- App native : télécharger/supprimer le livre sans quitter la bibliothèque. -->
+                <button
+                  v-if="bookState(text) !== 'none'"
+                  @click.prevent.stop="toggleDownload(text)"
+                  class="p-1 -m-1 transition-colors"
+                  :class="
+                    bookState(text) === 'downloaded'
+                      ? 'text-primary'
+                      : 'text-text-secondary/50 hover:text-primary'
+                  "
+                  :aria-label="
+                    bookState(text) === 'downloaded'
+                      ? t('downloads.delete')
+                      : t('downloads.download')
+                  "
+                  :title="
+                    bookState(text) === 'downloaded'
+                      ? t('downloads.delete')
+                      : t('downloads.download')
+                  "
+                >
+                  <AppIcon
+                    v-if="bookState(text) === 'downloading'"
+                    name="spinner"
+                    :size="15"
+                    class="animate-spin text-primary"
+                  />
+                  <AppIcon
+                    v-else-if="bookState(text) === 'downloaded'"
+                    name="circle-check"
+                    :size="15"
+                  />
+                  <AppIcon v-else name="download" :size="15" />
+                </button>
+                <AppIcon
+                  name="book-open"
+                  :size="16"
+                  class="text-text-secondary/40 group-hover:text-primary transition-colors"
+                />
+              </span>
             </router-link>
           </div>
         </section>

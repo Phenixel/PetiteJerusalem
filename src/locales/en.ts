@@ -490,7 +490,8 @@ const en: LocaleMessages = {
     description: "Get a daily notification if your daily reading isn't finished.",
     enable: "Enable daily reminder",
     disable: "Disable reminder",
-    enabled: "Reminder on: you'll be notified every day at 6pm if your reading isn't done.",
+    enabled: "Reminder on: you'll be notified every day at {hour}:00 if your reading isn't done.",
+    hourLabel: "Reminder time",
     permissionDenied:
       "Notifications are blocked for this app. Allow them in your phone settings, then try again.",
     error: "Could not update the notification setting. Please try again.",

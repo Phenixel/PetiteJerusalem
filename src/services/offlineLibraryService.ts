@@ -55,6 +55,23 @@ function buildBooks(): OfflineBook[] {
 
 export const offlineBooks: OfflineBook[] = buildBooks();
 
+const bookByEntryId = new Map<number | string, OfflineBook | null>();
+
+/** Livre téléchargeable correspondant à une entrée du catalogue (memoïsé). */
+export function bookForEntry(entry: TextStudyJsonEntry): OfflineBook | null {
+  if (!bookByEntryId.has(entry.id)) {
+    let book: OfflineBook | null = null;
+    try {
+      const path = resolveFilePath(entry);
+      book = offlineBooks.find((b) => b.path === path) ?? null;
+    } catch {
+      // Type non supporté.
+    }
+    bookByEntryId.set(entry.id, book);
+  }
+  return bookByEntryId.get(entry.id) ?? null;
+}
+
 /** Chemins en cours de téléchargement (spinners de l'UI). */
 export const downloadingPaths = reactive(new Set<string>());
 

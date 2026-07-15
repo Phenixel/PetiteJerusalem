@@ -23,6 +23,8 @@ export interface UserPreferences {
   fcmTokens: string[];
   /** Whether the daily reading push reminder is on (native app). */
   pushReminderEnabled: boolean;
+  /** Hour of day (0-23, Paris time) the reminder is sent at. */
+  pushReminderHour: number;
   /** Locale the reminder notifications are sent in (fr/en/he). */
   pushLocale: string;
 }
@@ -35,6 +37,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   dailyReadingProgress: { date: "", completedIds: [] },
   fcmTokens: [],
   pushReminderEnabled: false,
+  pushReminderHour: 18,
   pushLocale: "fr",
 };
 
