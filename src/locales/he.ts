@@ -402,6 +402,9 @@ const he: LocaleMessages = {
     rewind: "15 שניות אחורה",
     forward: "30 שניות קדימה",
     speed: "מהירות השמעה",
+    close: "סגירת הנגן",
+    nowPlaying: "מתנגן כעת",
+    goToChiour: "פתיחת דף השיעור",
   },
   signupPrompt: {
     reservationConfirmed: "ההזמנה אושרה!",

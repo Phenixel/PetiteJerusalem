@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import AppIcon from "./icons/AppIcon.vue";
+import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
 
 const isVisible = ref(false);
+const isMiniPlayerVisible = useMiniPlayerVisible();
 
 const checkScroll = () => {
   isVisible.value = window.scrollY > 300;
@@ -36,7 +38,8 @@ onUnmounted(() => {
     <button
       v-if="isVisible"
       @click="scrollToTop"
-      class="fixed bottom-20 right-6 w-11 h-11 flex items-center justify-center rounded-full bg-surface text-text-primary shadow-pop hover:text-primary transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary z-50"
+      class="fixed right-6 w-11 h-11 flex items-center justify-center rounded-full bg-surface text-text-primary shadow-pop hover:text-primary transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary z-50"
+      :class="isMiniPlayerVisible ? 'bottom-36' : 'bottom-20'"
       aria-label="Retour en haut"
     >
       <AppIcon name="arrow-up" :size="18" />

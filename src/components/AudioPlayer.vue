@@ -2,38 +2,61 @@
 import { ref, computed, watch, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
+import { useAudioPlayer, formatTime } from "../composables/useAudioPlayer";
 
 const { t } = useI18n();
 
 interface Props {
   src: string;
   title?: string;
+  slug?: string;
 }
 
 const props = defineProps<Props>();
 
-const audio = ref<HTMLAudioElement | null>(null);
-const isPlaying = ref(false);
-const currentTime = ref(0);
-const duration = ref(0);
-const volume = ref(1);
-const previousVolume = ref(1);
-const playbackRate = ref(1);
-const isLoaded = ref(false);
+const player = useAudioPlayer();
 const showSpeedMenu = ref(false);
 
 const speeds = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
-const formatTime = (seconds: number): string => {
-  if (!isFinite(seconds) || seconds < 0) return "0:00";
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  const sStr = s.toString().padStart(2, "0");
-  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${sStr}`;
-  return `${m}:${sStr}`;
-};
+// Ce composant est une vue sur le lecteur global : il est « actif » quand le
+// morceau chargé dans le lecteur global est le sien.
+const isCurrent = computed(() => player.track.value?.src === props.src);
+const isPlaying = computed(() => isCurrent.value && player.isPlaying.value);
 
+// Durée affichée avant lecture : sondée via un <audio> jetable (métadonnées
+// seules), sans toucher au lecteur global qui joue peut-être un autre morceau.
+const probedDuration = ref(0);
+let probe: HTMLAudioElement | null = null;
+
+function probeDuration(src: string) {
+  probedDuration.value = 0;
+  if (probe) {
+    probe.removeAttribute("src");
+    probe = null;
+  }
+  if (!src) return;
+  probe = new Audio();
+  probe.preload = "metadata";
+  probe.addEventListener("loadedmetadata", function (this: HTMLAudioElement) {
+    if (probe === this) probedDuration.value = this.duration;
+  });
+  probe.src = src;
+}
+
+watch(() => props.src, probeDuration, { immediate: true });
+
+onUnmounted(() => {
+  if (probe) {
+    probe.removeAttribute("src");
+    probe = null;
+  }
+});
+
+const currentTime = computed(() => (isCurrent.value ? player.currentTime.value : 0));
+const duration = computed(() =>
+  isCurrent.value && player.duration.value ? player.duration.value : probedDuration.value,
+);
 const progress = computed(() => {
   if (!duration.value) return 0;
   return (currentTime.value / duration.value) * 100;
@@ -41,110 +64,50 @@ const progress = computed(() => {
 
 const formattedCurrent = computed(() => formatTime(currentTime.value));
 const formattedDuration = computed(() => formatTime(duration.value));
-const isMuted = computed(() => volume.value === 0);
+const isMuted = computed(() => player.isMuted.value);
+const volume = computed(() => player.volume.value);
+const playbackRate = computed(() => player.playbackRate.value);
+
+function ownTrack() {
+  return { src: props.src, title: props.title ?? "", slug: props.slug };
+}
 
 function togglePlay() {
-  if (!audio.value) return;
-  if (isPlaying.value) {
-    audio.value.pause();
+  if (isCurrent.value) {
+    player.toggle();
   } else {
-    audio.value.play();
+    player.play(ownTrack());
   }
 }
 
 function seek(event: MouseEvent) {
-  if (!audio.value || !duration.value) return;
   const bar = event.currentTarget as HTMLElement;
   const rect = bar.getBoundingClientRect();
   const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-  audio.value.currentTime = ratio * duration.value;
+  if (!isCurrent.value) player.play(ownTrack());
+  player.seekRatio(ratio);
 }
 
 function skip(seconds: number) {
-  if (!audio.value) return;
-  audio.value.currentTime = Math.max(
-    0,
-    Math.min(duration.value, audio.value.currentTime + seconds),
-  );
+  if (!isCurrent.value) return;
+  player.skip(seconds);
 }
 
 function setVolume(event: MouseEvent) {
   const bar = event.currentTarget as HTMLElement;
   const rect = bar.getBoundingClientRect();
   const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-  volume.value = ratio;
-  if (audio.value) audio.value.volume = ratio;
-}
-
-function toggleMute() {
-  if (volume.value > 0) {
-    previousVolume.value = volume.value;
-    volume.value = 0;
-  } else {
-    volume.value = previousVolume.value || 1;
-  }
-  if (audio.value) audio.value.volume = volume.value;
+  player.setVolume(ratio);
 }
 
 function setSpeed(speed: number) {
-  playbackRate.value = speed;
-  if (audio.value) audio.value.playbackRate = speed;
+  player.setSpeed(speed);
   showSpeedMenu.value = false;
 }
-
-function onLoadedMetadata() {
-  if (audio.value) {
-    duration.value = audio.value.duration;
-    isLoaded.value = true;
-  }
-}
-
-function onTimeUpdate() {
-  if (audio.value) currentTime.value = audio.value.currentTime;
-}
-
-function onEnded() {
-  isPlaying.value = false;
-}
-
-function onPlay() {
-  isPlaying.value = true;
-}
-
-function onPause() {
-  isPlaying.value = false;
-}
-
-watch(
-  () => props.src,
-  () => {
-    isPlaying.value = false;
-    currentTime.value = 0;
-    duration.value = 0;
-    isLoaded.value = false;
-  },
-);
-
-onUnmounted(() => {
-  if (audio.value) {
-    audio.value.pause();
-  }
-});
 </script>
 
 <template>
   <div class="card p-6">
-    <audio
-      ref="audio"
-      :src="src"
-      preload="metadata"
-      @loadedmetadata="onLoadedMetadata"
-      @timeupdate="onTimeUpdate"
-      @ended="onEnded"
-      @play="onPlay"
-      @pause="onPause"
-    ></audio>
-
     <!-- Titre si fourni -->
     <p v-if="title" class="text-sm font-medium text-text-secondary mb-4 truncate">
       <AppIcon name="headphones" :size="14" class="mr-2 text-primary" />{{ title }}
@@ -176,7 +139,7 @@ onUnmounted(() => {
       <!-- Gauche : volume -->
       <div class="flex items-center gap-2 w-1/4">
         <button
-          @click="toggleMute"
+          @click="player.toggleMute()"
           class="text-text-secondary hover:text-primary transition-colors"
           :title="isMuted ? t('audioPlayer.unmute') : t('audioPlayer.mute')"
         >
@@ -200,7 +163,7 @@ onUnmounted(() => {
       <div class="flex items-center gap-4">
         <button
           @click="skip(-15)"
-          class="text-text-secondary hover:text-primary transition-colors text-sm"
+          class="inline-flex items-center whitespace-nowrap text-text-secondary hover:text-primary transition-colors text-sm"
           :title="t('audioPlayer.rewind')"
         >
           <AppIcon name="backward" :size="14" />
@@ -209,7 +172,7 @@ onUnmounted(() => {
 
         <button
           @click="togglePlay"
-          class="w-12 h-12 flex items-center justify-center bg-primary text-white rounded-full transition-colors"
+          class="w-12 h-12 flex items-center justify-center bg-primary text-white rounded-full transition-colors shrink-0"
           :title="isPlaying ? t('audioPlayer.pause') : t('audioPlayer.play')"
         >
           <AppIcon
@@ -221,7 +184,7 @@ onUnmounted(() => {
 
         <button
           @click="skip(30)"
-          class="text-text-secondary hover:text-primary transition-colors text-sm"
+          class="inline-flex items-center whitespace-nowrap text-text-secondary hover:text-primary transition-colors text-sm"
           :title="t('audioPlayer.forward')"
         >
           <span class="text-[10px] mr-0.5">30</span>
