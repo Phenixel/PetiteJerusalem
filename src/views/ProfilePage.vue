@@ -145,7 +145,10 @@ const saveSessionChanges = async (sessionData: {
   if (!selectedSession.value) return;
 
   try {
-    await sessionService.updateSession(selectedSession.value.id, sessionData);
+    await sessionService.updateSession(selectedSession.value.id, {
+      ...sessionData,
+      slug: selectedSession.value.slug,
+    });
 
     const sessionIndex = createdSessions.value.findIndex((s) => s.id === selectedSession.value!.id);
     if (sessionIndex > -1) {

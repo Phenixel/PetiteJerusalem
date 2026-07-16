@@ -94,6 +94,14 @@ body {
   flex-direction: column;
 }
 
+/* Les <main> des vues sont des flex items du layout colonne ci-dessus.
+   Leurs marges auto (mx-auto) désactivent le stretch : sans largeur définie,
+   ils passent en shrink-to-fit et le moindre contenu insécable (titre en
+   nowrap du lecteur audio…) élargit toute la page au-delà du viewport. */
+main {
+  width: 100%;
+}
+
 h1,
 h2,
 h3,

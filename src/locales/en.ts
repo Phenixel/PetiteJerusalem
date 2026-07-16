@@ -413,6 +413,9 @@ const en: LocaleMessages = {
     rewind: "Rewind 15s",
     forward: "Forward 30s",
     speed: "Playback speed",
+    close: "Close player",
+    nowPlaying: "Now playing",
+    goToChiour: "Open the lesson page",
   },
   signupPrompt: {
     reservationConfirmed: "Reservation confirmed!",
