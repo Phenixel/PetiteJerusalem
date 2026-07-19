@@ -62,6 +62,9 @@
         >
           {{ t("footer.legal") }}
         </a>
+        <RouterLink class="hover:text-primary transition-colors" to="/confidentialite">
+          {{ t("footer.privacy") }}
+        </RouterLink>
         <a
           class="hover:text-primary transition-colors"
           href="https://phenixel.notion.site/26b35db90d4d809aada8e077937652d4?pvs=105"

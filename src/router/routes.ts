@@ -116,6 +116,11 @@ export default [
     name: "partage-tehilim",
     component: ContentPage,
   },
+  {
+    path: "/confidentialite",
+    name: "confidentialite",
+    component: ContentPage,
+  },
   // Tehilim par intention: hub + intention pages, rendered from
   // src/content/seoPages.ts (same markup the prerender step serves to crawlers).
   {

@@ -442,6 +442,269 @@ function buildLanding(path: string, s: LandingStrings): LandingLocaleContent {
   };
 }
 
+// ---- Legal / policy pages: simple heading + rich-text sections ----------
+
+type LegalSection = { heading: string; html: string };
+
+type LegalStrings = {
+  lang: string; // BCP-47 tag for JSON-LD inLanguage
+  title: string;
+  description: string;
+  h1: string;
+  updated: string;
+  intro: string;
+  sections: LegalSection[];
+  breadcrumbHome: string;
+  breadcrumbName: string;
+};
+
+/** Build one locale's content for a policy page (no FAQ/why/how structure, just sections). */
+function buildLegal(path: string, s: LegalStrings): LandingLocaleContent {
+  const bodyHtml = `
+  <main class="seo-article legal-page">
+    <h1>${s.h1}</h1>
+    <p class="seo-lead">${s.intro}</p>
+    <p class="legal-updated"><em>${s.updated}</em></p>
+    ${s.sections
+      .map((sec) => `<section class="seo-section">\n      <h2>${sec.heading}</h2>\n      ${sec.html}\n    </section>`)
+      .join("\n    ")}
+  </main>`;
+
+  return {
+    title: s.title,
+    description: s.description,
+    bodyHtml,
+    jsonLd: [
+      breadcrumb([
+        { name: s.breadcrumbHome, path: "/" },
+        { name: s.breadcrumbName, path },
+      ]),
+    ],
+  };
+}
+
+// ---- confidentialite: localized strings ----
+//
+// Facts reflected here (kept in sync with the actual code, see
+// src/services/authService.ts, userPreferencesService.ts, reservationService.ts,
+// firestore.rules): Firebase Auth (email/password, Google, Apple) is the only
+// account data; userPreferences/{uid} holds theme/fonts/reading progress/FCM
+// tokens/reminder settings and is deleted on account deletion (deleteAccount());
+// shared reading sessions store a display name (and a guest's email if they
+// reserve without an account) and are publicly readable via their link; no
+// analytics/ad tracker is used anywhere in the app.
+
+const PRIVACY_FR: LegalStrings = {
+  lang: "fr-FR",
+  title: "Politique de confidentialité | Petite Jérusalem",
+  description:
+    "Quelles données Petite Jérusalem collecte, pourquoi, et comment les supprimer. Compte facultatif, aucune publicité, aucun traceur tiers.",
+  h1: "Politique de confidentialité",
+  intro:
+    "Cette page explique quelles données Petite Jérusalem collecte, pourquoi, et comment les gérer ou les supprimer.",
+  updated: "Dernière mise à jour : 19 juillet 2026",
+  sections: [
+    {
+      heading: "Qui est responsable de vos données ?",
+      html: `<p>Petite Jérusalem est un projet indépendant édité par Phenixel. Pour toute question sur vos données, écrivez à <a href="mailto:contact.phenixel@gmail.com">contact.phenixel@gmail.com</a>.</p>`,
+    },
+    {
+      heading: "Peut-on utiliser Petite Jérusalem sans compte ?",
+      html: `<p>Oui. La lecture des textes, la bibliothèque et le téléchargement hors ligne sont accessibles sans créer de compte. Un compte gratuit (email/mot de passe, Google ou Apple) sert uniquement à retrouver ses préférences, sa progression de lecture et à recevoir un rappel de lecture quotidien.</p>`,
+    },
+    {
+      heading: "Quelles données sont collectées ?",
+      html: `<ul>
+        <li><strong>Si vous créez un compte</strong> : adresse email et nom affiché, fournis par vous ou par Google/Apple lors de la connexion.</li>
+        <li><strong>Préférences et progression</strong> : thème, polices choisies, liste et progression de vos lectures quotidiennes.</li>
+        <li><strong>Notifications</strong> : si vous activez le rappel de lecture quotidien, un identifiant technique (jeton) de votre appareil, l'heure choisie et la langue de la notification.</li>
+        <li><strong>Partage de lecture</strong> : si vous créez ou rejoignez une session partagée (Talmud, Tehilim…), le nom que vous indiquez — et votre email si vous participez sans créer de compte — est visible par toute personne disposant du lien de la session.</li>
+      </ul>
+      <p>Nous ne collectons aucune donnée à des fins publicitaires et n'utilisons aucun outil de suivi ou d'analyse tiers (pas de Google Analytics, pas de traceur publicitaire).</p>`,
+    },
+    {
+      heading: "Où sont hébergées ces données ?",
+      html: `<p>Petite Jérusalem utilise Firebase (Google) comme sous-traitant technique : authentification, base de données (Firestore), fonctions serveur et hébergement du site. Les données sont hébergées sur l'infrastructure Google (principalement aux États-Unis). Google agit uniquement en tant que prestataire technique et n'utilise pas ces données à ses propres fins.</p>`,
+    },
+    {
+      heading: "Pourquoi ces données sont-elles utilisées ?",
+      html: `<ul>
+        <li>vous authentifier et sécuriser votre compte ;</li>
+        <li>personnaliser votre expérience de lecture (thème, police, progression) ;</li>
+        <li>vous envoyer, si vous l'activez, un rappel quotidien de lecture ;</li>
+        <li>faire fonctionner le partage de lecture entre participants.</li>
+      </ul>`,
+    },
+    {
+      heading: "Combien de temps sont-elles conservées ?",
+      html: `<p>Vos préférences et votre progression sont conservées tant que votre compte existe. Si vous supprimez votre compte (Profil → Sécurité), votre compte d'authentification <strong>et</strong> vos préférences (thème, progression, tokens de notification) sont supprimés immédiatement. Les sessions de lecture partagée que vous avez créées restent visibles tant qu'elles ne sont pas supprimées, y compris après la suppression de votre compte.</p>`,
+    },
+    {
+      heading: "Vos droits",
+      html: `<p>Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, de suppression et d'opposition sur vos données. Vous pouvez :</p>
+      <ul>
+        <li>supprimer votre compte et vos données à tout moment depuis Profil → Sécurité ;</li>
+        <li>nous écrire à <a href="mailto:contact.phenixel@gmail.com">contact.phenixel@gmail.com</a> pour toute autre demande ;</li>
+        <li>introduire une réclamation auprès de la CNIL (cnil.fr) ou de l'autorité de protection des données compétente.</li>
+      </ul>`,
+    },
+    {
+      heading: "Sécurité",
+      html: `<p>Les échanges avec l'application sont chiffrés (HTTPS/TLS). L'accès à vos données dans la base est restreint par des règles techniques : seul votre compte peut lire ou modifier vos propres préférences.</p>`,
+    },
+    {
+      heading: "Mineurs",
+      html: `<p>Petite Jérusalem est une application à contenu religieux et éducatif adaptée à tous les publics. Elle ne collecte pas sciemment de données visant spécifiquement des enfants en dehors du fonctionnement normal d'un compte familial.</p>`,
+    },
+    {
+      heading: "Modifications de cette politique",
+      html: `<p>Cette politique peut évoluer avec l'application. La date de dernière mise à jour est indiquée en haut de cette page.</p>`,
+    },
+  ],
+  breadcrumbHome: "Accueil",
+  breadcrumbName: "Confidentialité",
+};
+
+const PRIVACY_EN: LegalStrings = {
+  lang: "en-US",
+  title: "Privacy Policy | Petite Jérusalem",
+  description:
+    "What data Petite Jérusalem collects, why, and how to delete it. Optional account, no ads, no third-party trackers.",
+  h1: "Privacy Policy",
+  intro:
+    "This page explains what data Petite Jérusalem collects, why, and how to manage or delete it.",
+  updated: "Last updated: July 19, 2026",
+  sections: [
+    {
+      heading: "Who is responsible for your data?",
+      html: `<p>Petite Jérusalem is an independent project run by Phenixel. For any question about your data, write to <a href="mailto:contact.phenixel@gmail.com">contact.phenixel@gmail.com</a>.</p>`,
+    },
+    {
+      heading: "Can I use Petite Jérusalem without an account?",
+      html: `<p>Yes. Reading texts, browsing the library, and offline downloads are all available without creating an account. A free account (email/password, Google, or Apple) is only needed to keep your preferences, reading progress, and receive a daily reading reminder.</p>`,
+    },
+    {
+      heading: "What data is collected?",
+      html: `<ul>
+        <li><strong>If you create an account</strong>: your email address and display name, provided by you or by Google/Apple when you sign in.</li>
+        <li><strong>Preferences and progress</strong>: theme, chosen fonts, your daily reading list and progress.</li>
+        <li><strong>Notifications</strong>: if you enable the daily reading reminder, a technical device token, the chosen time, and the notification language.</li>
+        <li><strong>Shared reading</strong>: if you create or join a shared session (Talmud, Tehilim…), the name you provide — and your email if you take part without an account — is visible to anyone with the session link.</li>
+      </ul>
+      <p>We do not collect any data for advertising purposes and do not use any third-party tracking or analytics tools (no Google Analytics, no ad tracker).</p>`,
+    },
+    {
+      heading: "Where is this data hosted?",
+      html: `<p>Petite Jérusalem uses Firebase (Google) as its technical processor: authentication, database (Firestore), server functions, and site hosting. Data is hosted on Google's infrastructure (primarily in the United States). Google acts solely as a technical provider and does not use this data for its own purposes.</p>`,
+    },
+    {
+      heading: "Why is this data used?",
+      html: `<ul>
+        <li>to authenticate you and secure your account;</li>
+        <li>to personalize your reading experience (theme, font, progress);</li>
+        <li>to send you a daily reading reminder, if you enable it;</li>
+        <li>to power shared reading between participants.</li>
+      </ul>`,
+    },
+    {
+      heading: "How long is it kept?",
+      html: `<p>Your preferences and progress are kept for as long as your account exists. If you delete your account (Profile → Security), both your authentication account <strong>and</strong> your preferences (theme, progress, notification tokens) are deleted immediately. Shared reading sessions you created remain visible until deleted, even after your account is deleted.</p>`,
+    },
+    {
+      heading: "Your rights",
+      html: `<p>Under GDPR, you have the right to access, rectify, delete, and object to the processing of your data. You can:</p>
+      <ul>
+        <li>delete your account and data at any time from Profile → Security;</li>
+        <li>write to us at <a href="mailto:contact.phenixel@gmail.com">contact.phenixel@gmail.com</a> for any other request;</li>
+        <li>file a complaint with the CNIL (cnil.fr) or your local data protection authority.</li>
+      </ul>`,
+    },
+    {
+      heading: "Security",
+      html: `<p>All communication with the app is encrypted (HTTPS/TLS). Access to your data in the database is technically restricted: only your account can read or modify your own preferences.</p>`,
+    },
+    {
+      heading: "Minors",
+      html: `<p>Petite Jérusalem is a religious and educational app suitable for all audiences. It does not knowingly collect data specifically targeting children beyond the normal operation of a family account.</p>`,
+    },
+    {
+      heading: "Changes to this policy",
+      html: `<p>This policy may evolve along with the app. The last update date is shown at the top of this page.</p>`,
+    },
+  ],
+  breadcrumbHome: "Home",
+  breadcrumbName: "Privacy",
+};
+
+const PRIVACY_HE: LegalStrings = {
+  lang: "he-IL",
+  title: "מדיניות פרטיות | פטיט ירושלים",
+  description: "אילו נתונים פטיט ירושלים אוספת, מדוע וכיצד למחוק אותם. חשבון אופציונלי, ללא פרסומות, ללא מעקב צד שלישי.",
+  h1: "מדיניות פרטיות",
+  intro: "עמוד זה מסביר אילו נתונים פטיט ירושלים אוספת, מדוע, וכיצד לנהל או למחוק אותם.",
+  updated: "עודכן לאחרונה: 19 ביולי 2026",
+  sections: [
+    {
+      heading: "מי אחראי על הנתונים שלך?",
+      html: `<p>פטיט ירושלים הוא פרויקט עצמאי המנוהל על ידי Phenixel. לכל שאלה בנוגע לנתונים שלך, כתבו אל <a href="mailto:contact.phenixel@gmail.com">contact.phenixel@gmail.com</a>.</p>`,
+    },
+    {
+      heading: "האם אפשר להשתמש בפטיט ירושלים בלי חשבון?",
+      html: `<p>כן. קריאת הטקסטים, עיון בספרייה והורדה לשימוש לא מקוון זמינים ללא יצירת חשבון. חשבון חינמי (אימייל/סיסמה, Google או Apple) נדרש רק כדי לשמור את ההעדפות שלך, את התקדמות הקריאה ולקבל תזכורת קריאה יומית.</p>`,
+    },
+    {
+      heading: "אילו נתונים נאספים?",
+      html: `<ul>
+        <li><strong>אם אתם יוצרים חשבון</strong>: כתובת האימייל והשם המוצג שלכם, שסופקו על ידכם או על ידי Google/Apple בעת ההתחברות.</li>
+        <li><strong>העדפות והתקדמות</strong>: ערכת נושא, גופנים שנבחרו, רשימת הקריאה היומית וההתקדמות בה.</li>
+        <li><strong>התראות</strong>: אם תפעילו את תזכורת הקריאה היומית, אסימון מכשיר טכני, השעה שנבחרה ושפת ההתראה.</li>
+        <li><strong>שיתוף קריאה</strong>: אם תיצרו או תצטרפו לפגישת קריאה משותפת (תלמוד, תהילים...), השם שתמסרו — והאימייל שלכם אם אתם משתתפים ללא חשבון — גלוי לכל מי שיש לו את קישור הפגישה.</li>
+      </ul>
+      <p>איננו אוספים נתונים לצרכי פרסום ואיננו משתמשים בכלי מעקב או ניתוח של צד שלישי (ללא Google Analytics, ללא עוקב פרסומי).</p>`,
+    },
+    {
+      heading: "היכן מאוחסנים הנתונים?",
+      html: `<p>פטיט ירושלים משתמשת ב-Firebase (Google) כמעבד טכני: אימות, מסד נתונים (Firestore), פונקציות שרת ואירוח האתר. הנתונים מאוחסנים על תשתית Google (בעיקר בארצות הברית). Google פועלת אך ורק כספקית טכנית ואינה משתמשת בנתונים אלה למטרותיה שלה.</p>`,
+    },
+    {
+      heading: "מדוע נעשה שימוש בנתונים אלה?",
+      html: `<ul>
+        <li>לאמת אתכם ולאבטח את חשבונכם;</li>
+        <li>להתאים אישית את חוויית הקריאה שלכם (ערכת נושא, גופן, התקדמות);</li>
+        <li>לשלוח לכם תזכורת קריאה יומית, אם תפעילו זאת;</li>
+        <li>להפעיל את שיתוף הקריאה בין המשתתפים.</li>
+      </ul>`,
+    },
+    {
+      heading: "כמה זמן הם נשמרים?",
+      html: `<p>ההעדפות וההתקדמות שלכם נשמרות כל עוד החשבון שלכם קיים. אם תמחקו את חשבונכם (פרופיל ← אבטחה), הן חשבון האימות והן ההעדפות שלכם (ערכת נושא, התקדמות, אסימוני התראה) יימחקו באופן מיידי. פגישות קריאה משותפת שיצרתם יישארו גלויות עד שיימחקו, גם לאחר מחיקת חשבונכם.</p>`,
+    },
+    {
+      heading: "הזכויות שלכם",
+      html: `<p>בהתאם ל-GDPR, יש לכם זכות גישה, תיקון, מחיקה והתנגדות לגבי הנתונים שלכם. תוכלו:</p>
+      <ul>
+        <li>למחוק את חשבונכם ואת נתוניכם בכל עת דרך פרופיל ← אבטחה;</li>
+        <li>לכתוב אלינו אל <a href="mailto:contact.phenixel@gmail.com">contact.phenixel@gmail.com</a> לכל בקשה אחרת;</li>
+        <li>להגיש תלונה לרשות הגנת המידע הרלוונטית.</li>
+      </ul>`,
+    },
+    {
+      heading: "אבטחה",
+      html: `<p>כל התקשורת עם האפליקציה מוצפנת (HTTPS/TLS). הגישה לנתונים שלכם במסד הנתונים מוגבלת מבחינה טכנית: רק החשבון שלכם יכול לקרוא או לשנות את ההעדפות שלכם.</p>`,
+    },
+    {
+      heading: "קטינים",
+      html: `<p>פטיט ירושלים היא אפליקציה בעלת תוכן דתי וחינוכי המתאימה לכל הקהלים. היא אינה אוספת ביודעין נתונים המכוונים במיוחד לילדים מעבר לפעולה הרגילה של חשבון משפחתי.</p>`,
+    },
+    {
+      heading: "שינויים במדיניות זו",
+      html: `<p>מדיניות זו עשויה להשתנות יחד עם האפליקציה. תאריך העדכון האחרון מוצג בראש עמוד זה.</p>`,
+    },
+  ],
+  breadcrumbHome: "בית",
+  breadcrumbName: "פרטיות",
+};
+
 // ---- finir-le-chass: localized strings ----
 
 const FINIR_FR: LandingStrings = {
@@ -715,6 +978,16 @@ export const landingPages: LandingPage[] = [
       fr: buildLanding("/partage-tehilim", TEHILIM_FR),
       en: buildLanding("/partage-tehilim", TEHILIM_EN),
       he: buildLanding("/partage-tehilim", TEHILIM_HE),
+    },
+  },
+  {
+    file: "confidentialite.html",
+    path: "/confidentialite",
+    sitemap: { priority: 0.1, changefreq: "yearly" },
+    locales: {
+      fr: buildLegal("/confidentialite", PRIVACY_FR),
+      en: buildLegal("/confidentialite", PRIVACY_EN),
+      he: buildLegal("/confidentialite", PRIVACY_HE),
     },
   },
 ];

@@ -46,6 +46,7 @@ const fr = {
     madeBy: "Fait par",
     about: "À propos",
     legal: "Mentions légales",
+    privacy: "Confidentialité",
     reportIssue: "Signaler un problème",
     discover: "Découvrir",
     finishChass: "Finir le Chass",

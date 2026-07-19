@@ -48,6 +48,7 @@ const en: LocaleMessages = {
     madeBy: "Made by",
     about: "About",
     legal: "Legal notices",
+    privacy: "Privacy",
     reportIssue: "Report an issue",
     discover: "Discover",
     finishChass: "Finish the Shas",
