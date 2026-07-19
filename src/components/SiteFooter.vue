@@ -46,22 +46,12 @@
         class="flex flex-col md:flex-row gap-2 md:gap-4 items-center justify-center"
         :aria-label="t('footer.about')"
       >
-        <a
-          class="hover:text-primary transition-colors"
-          href="https://phenixel.notion.site/petite-jerusalem-a-propos"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <RouterLink class="hover:text-primary transition-colors" to="/a-propos">
           {{ t("footer.about") }}
-        </a>
-        <a
-          class="hover:text-primary transition-colors"
-          href="https://phenixel.notion.site/petite-jerusalem-mentions-legales"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        </RouterLink>
+        <RouterLink class="hover:text-primary transition-colors" to="/mentions-legales">
           {{ t("footer.legal") }}
-        </a>
+        </RouterLink>
         <RouterLink class="hover:text-primary transition-colors" to="/confidentialite">
           {{ t("footer.privacy") }}
         </RouterLink>

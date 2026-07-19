@@ -451,7 +451,8 @@ type LegalStrings = {
   title: string;
   description: string;
   h1: string;
-  updated: string;
+  /** "Last updated" line; omitted on pages where it makes no sense (e.g. à propos). */
+  updated?: string;
   intro: string;
   sections: LegalSection[];
   breadcrumbHome: string;
@@ -464,7 +465,7 @@ function buildLegal(path: string, s: LegalStrings): LandingLocaleContent {
   <main class="seo-article legal-page">
     <h1>${s.h1}</h1>
     <p class="seo-lead">${s.intro}</p>
-    <p class="legal-updated"><em>${s.updated}</em></p>
+    ${s.updated ? `<p class="legal-updated"><em>${s.updated}</em></p>` : ""}
     ${s.sections
       .map((sec) => `<section class="seo-section">\n      <h2>${sec.heading}</h2>\n      ${sec.html}\n    </section>`)
       .join("\n    ")}
@@ -506,7 +507,7 @@ const PRIVACY_FR: LegalStrings = {
   sections: [
     {
       heading: "Qui est responsable de vos données ?",
-      html: `<p>Petite Jérusalem est un projet indépendant édité par Phenixel. Pour toute question sur vos données, écrivez à <a href="mailto:contact.phenixel@gmail.com">contact.phenixel@gmail.com</a>.</p>`,
+      html: `<p>Petite Jérusalem est un projet indépendant édité par Phenixel. Pour toute question sur vos données, écrivez à <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a>.</p>`,
     },
     {
       heading: "Peut-on utiliser Petite Jérusalem sans compte ?",
@@ -544,7 +545,7 @@ const PRIVACY_FR: LegalStrings = {
       html: `<p>Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, de suppression et d'opposition sur vos données. Vous pouvez :</p>
       <ul>
         <li>supprimer votre compte et vos données à tout moment depuis Profil → Sécurité ;</li>
-        <li>nous écrire à <a href="mailto:contact.phenixel@gmail.com">contact.phenixel@gmail.com</a> pour toute autre demande ;</li>
+        <li>nous écrire à <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a> pour toute autre demande ;</li>
         <li>introduire une réclamation auprès de la CNIL (cnil.fr) ou de l'autorité de protection des données compétente.</li>
       </ul>`,
     },
@@ -577,7 +578,7 @@ const PRIVACY_EN: LegalStrings = {
   sections: [
     {
       heading: "Who is responsible for your data?",
-      html: `<p>Petite Jérusalem is an independent project run by Phenixel. For any question about your data, write to <a href="mailto:contact.phenixel@gmail.com">contact.phenixel@gmail.com</a>.</p>`,
+      html: `<p>Petite Jérusalem is an independent project run by Phenixel. For any question about your data, write to <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a>.</p>`,
     },
     {
       heading: "Can I use Petite Jérusalem without an account?",
@@ -615,7 +616,7 @@ const PRIVACY_EN: LegalStrings = {
       html: `<p>Under GDPR, you have the right to access, rectify, delete, and object to the processing of your data. You can:</p>
       <ul>
         <li>delete your account and data at any time from Profile → Security;</li>
-        <li>write to us at <a href="mailto:contact.phenixel@gmail.com">contact.phenixel@gmail.com</a> for any other request;</li>
+        <li>write to us at <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a> for any other request;</li>
         <li>file a complaint with the CNIL (cnil.fr) or your local data protection authority.</li>
       </ul>`,
     },
@@ -646,7 +647,7 @@ const PRIVACY_HE: LegalStrings = {
   sections: [
     {
       heading: "מי אחראי על הנתונים שלך?",
-      html: `<p>פטיט ירושלים הוא פרויקט עצמאי המנוהל על ידי Phenixel. לכל שאלה בנוגע לנתונים שלך, כתבו אל <a href="mailto:contact.phenixel@gmail.com">contact.phenixel@gmail.com</a>.</p>`,
+      html: `<p>פטיט ירושלים הוא פרויקט עצמאי המנוהל על ידי Phenixel. לכל שאלה בנוגע לנתונים שלך, כתבו אל <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a>.</p>`,
     },
     {
       heading: "האם אפשר להשתמש בפטיט ירושלים בלי חשבון?",
@@ -684,7 +685,7 @@ const PRIVACY_HE: LegalStrings = {
       html: `<p>בהתאם ל-GDPR, יש לכם זכות גישה, תיקון, מחיקה והתנגדות לגבי הנתונים שלכם. תוכלו:</p>
       <ul>
         <li>למחוק את חשבונכם ואת נתוניכם בכל עת דרך פרופיל ← אבטחה;</li>
-        <li>לכתוב אלינו אל <a href="mailto:contact.phenixel@gmail.com">contact.phenixel@gmail.com</a> לכל בקשה אחרת;</li>
+        <li>לכתוב אלינו אל <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a> לכל בקשה אחרת;</li>
         <li>להגיש תלונה לרשות הגנת המידע הרלוונטית.</li>
       </ul>`,
     },
@@ -703,6 +704,267 @@ const PRIVACY_HE: LegalStrings = {
   ],
   breadcrumbHome: "בית",
   breadcrumbName: "פרטיות",
+};
+
+// ---- a-propos: localized strings ----
+//
+// Kept in sync with the features actually shipped (bibliothèque Tehilim/Michna/
+// Talmud/Tanakh, partage de lecture, hors ligne, rappel quotidien, chiourim).
+
+const ABOUT_FR: LegalStrings = {
+  lang: "fr-FR",
+  title: "À propos | Petite Jérusalem",
+  description:
+    "Petite Jérusalem est une plateforme gratuite et sans publicité pour étudier et partager la Torah : Tehilim, Michna, Talmud, Tanakh, chiourim.",
+  h1: "À propos de Petite Jérusalem",
+  intro:
+    "Petite Jérusalem est une plateforme gratuite dédiée à l'étude et au partage de la Torah, seul ou à plusieurs.",
+  sections: [
+    {
+      heading: "Notre mission",
+      html: `<p>Faciliter l'accès à l'étude des textes sacrés en offrant une plateforme intuitive, accessible et sans publicité. Petite Jérusalem est née du désir d'aider notre communauté : simplifier la création de chaînes d'étude collectives — pour une refoua chelema, un ilouï nichmat, un mariage ou toute autre intention — et permettre à chacun d'étudier à son rythme, où qu'il soit.</p>`,
+    },
+    {
+      heading: "Ce que propose Petite Jérusalem",
+      html: `<ul>
+        <li><strong>Une bibliothèque complète</strong> : Tehilim, Michna, Talmud et Tanakh, en lecture libre et gratuite, avec suivi de progression.</li>
+        <li><strong>Le partage de lecture</strong> : créez une session collective (finir le Chass, réciter les Tehilim à plusieurs…), partagez le lien, et chacun réserve sa part — la progression du groupe est suivie en temps réel.</li>
+        <li><strong>La lecture hors ligne</strong> : téléchargez les textes pour étudier sans connexion.</li>
+        <li><strong>Un rappel quotidien</strong> : recevez chaque jour une notification pour ne pas interrompre votre lecture.</li>
+        <li><strong>Des chiourim</strong> : des cours audio pour approfondir l'étude.</li>
+        <li><strong>Trois langues</strong> : l'interface est disponible en français, en anglais et en hébreu.</li>
+      </ul>`,
+    },
+    {
+      heading: "Un projet indépendant",
+      html: `<p>Petite Jérusalem est un projet indépendant édité par Phenixel, sans publicité et sans exploitation commerciale de vos données. Le service est entièrement gratuit.</p>`,
+    },
+    {
+      heading: "Nous contacter",
+      html: `<p>Une question, une suggestion, une envie de contribuer ? Écrivez-nous à <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a>. Votre retour est précieux pour améliorer la plateforme.</p>`,
+    },
+  ],
+  breadcrumbHome: "Accueil",
+  breadcrumbName: "À propos",
+};
+
+const ABOUT_EN: LegalStrings = {
+  lang: "en-US",
+  title: "About | Petite Jérusalem",
+  description:
+    "Petite Jérusalem is a free, ad-free platform to study and share Torah: Tehilim, Mishna, Talmud, Tanakh, audio classes.",
+  h1: "About Petite Jérusalem",
+  intro:
+    "Petite Jérusalem is a free platform dedicated to studying and sharing Torah, on your own or together with others.",
+  sections: [
+    {
+      heading: "Our mission",
+      html: `<p>Making the study of sacred texts easier through an intuitive, accessible, ad-free platform. Petite Jérusalem was born from a desire to help our community: simplifying collective study chains — for a refuah shlema, an ilui nishmat, a wedding or any other intention — and letting everyone study at their own pace, wherever they are.</p>`,
+    },
+    {
+      heading: "What Petite Jérusalem offers",
+      html: `<ul>
+        <li><strong>A complete library</strong>: Tehilim, Mishna, Talmud and Tanakh, free to read, with progress tracking.</li>
+        <li><strong>Shared reading</strong>: create a collective session (finish Shas, recite Tehilim together…), share the link, and everyone reserves their part — the group's progress is tracked in real time.</li>
+        <li><strong>Offline reading</strong>: download the texts to study without a connection.</li>
+        <li><strong>A daily reminder</strong>: get a daily notification so you never break your reading streak.</li>
+        <li><strong>Audio classes (chiourim)</strong>: recorded classes to deepen your study.</li>
+        <li><strong>Three languages</strong>: the interface is available in French, English and Hebrew.</li>
+      </ul>`,
+    },
+    {
+      heading: "An independent project",
+      html: `<p>Petite Jérusalem is an independent project published by Phenixel, with no ads and no commercial use of your data. The service is entirely free.</p>`,
+    },
+    {
+      heading: "Contact us",
+      html: `<p>A question, a suggestion, a desire to contribute? Write to us at <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a>. Your feedback helps us improve the platform.</p>`,
+    },
+  ],
+  breadcrumbHome: "Home",
+  breadcrumbName: "About",
+};
+
+const ABOUT_HE: LegalStrings = {
+  lang: "he-IL",
+  title: "אודות | פטיט ירושלים",
+  description:
+    "פטיט ירושלים היא פלטפורמה חינמית וללא פרסומות ללימוד ושיתוף תורה: תהילים, משנה, תלמוד, תנ״ך ושיעורים.",
+  h1: "אודות פטיט ירושלים",
+  intro: "פטיט ירושלים היא פלטפורמה חינמית ללימוד ושיתוף תורה, לבד או יחד עם אחרים.",
+  sections: [
+    {
+      heading: "המשימה שלנו",
+      html: `<p>להנגיש את לימוד הטקסטים הקדושים באמצעות פלטפורמה אינטואיטיבית, נגישה וללא פרסומות. פטיט ירושלים נולדה מתוך רצון לעזור לקהילה שלנו: לפשט יצירת שרשראות לימוד משותפות — לרפואה שלמה, לעילוי נשמת, לחתונה או לכל כוונה אחרת — ולאפשר לכל אחד ללמוד בקצב שלו, בכל מקום.</p>`,
+    },
+    {
+      heading: "מה מציעה פטיט ירושלים",
+      html: `<ul>
+        <li><strong>ספרייה מלאה</strong>: תהילים, משנה, תלמוד ותנ״ך, בקריאה חופשית וחינמית, עם מעקב התקדמות.</li>
+        <li><strong>שיתוף קריאה</strong>: צרו פגישה משותפת (סיום הש״ס, אמירת תהילים יחד...), שתפו את הקישור, וכל אחד שומר לעצמו חלק — התקדמות הקבוצה נעקבת בזמן אמת.</li>
+        <li><strong>קריאה לא מקוונת</strong>: הורידו את הטקסטים כדי ללמוד ללא חיבור לאינטרנט.</li>
+        <li><strong>תזכורת יומית</strong>: קבלו התראה יומית כדי לא להפסיק את רצף הקריאה.</li>
+        <li><strong>שיעורים</strong>: שיעורי אודיו להעמקת הלימוד.</li>
+        <li><strong>שלוש שפות</strong>: הממשק זמין בצרפתית, באנגלית ובעברית.</li>
+      </ul>`,
+    },
+    {
+      heading: "פרויקט עצמאי",
+      html: `<p>פטיט ירושלים הוא פרויקט עצמאי המנוהל על ידי Phenixel, ללא פרסומות וללא שימוש מסחרי בנתונים שלכם. השירות חינמי לחלוטין.</p>`,
+    },
+    {
+      heading: "צרו קשר",
+      html: `<p>שאלה, הצעה, רצון לתרום? כתבו לנו אל <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a>. המשוב שלכם יקר לנו לשיפור הפלטפורמה.</p>`,
+    },
+  ],
+  breadcrumbHome: "בית",
+  breadcrumbName: "אודות",
+};
+
+// ---- mentions-legales: localized strings ----
+
+const LEGAL_FR: LegalStrings = {
+  lang: "fr-FR",
+  title: "Mentions légales | Petite Jérusalem",
+  description:
+    "Mentions légales et conditions générales d'utilisation du site petite-jerusalem.fr : éditeur, hébergement, propriété intellectuelle.",
+  h1: "Mentions légales",
+  updated: "Dernière mise à jour : 19 juillet 2026",
+  intro:
+    "Mentions légales et conditions générales d'utilisation du site et de l'application Petite Jérusalem.",
+  sections: [
+    {
+      heading: "Éditeur du site",
+      html: `<p>Petite Jérusalem est un projet indépendant édité par Phenixel.</p>
+      <ul>
+        <li>Directeur de la publication : Yonathan Cardoso</li>
+        <li>Contact : <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a></li>
+      </ul>`,
+    },
+    {
+      heading: "Hébergement",
+      html: `<p>Le site est hébergé par Firebase Hosting (Google) :</p>
+      <ul>
+        <li>Google Cloud EMEA Limited, 70 Sir John Rogerson's Quay, Dublin 2, Irlande</li>
+      </ul>`,
+    },
+    {
+      heading: "Propriété intellectuelle",
+      html: `<p>L'interface, les éléments graphiques et les développements du site sont la propriété de Phenixel. Toute reproduction ou adaptation, même partielle, est interdite sans accord écrit préalable.</p>
+      <p>Les textes de la bibliothèque (Tehilim, Michna, Talmud, Tanakh) appartiennent au patrimoine commun ; ils sont issus de sources ouvertes, notamment <a href="https://www.sefaria.org" target="_blank" rel="noopener noreferrer">Sefaria</a>. Les chiourim (cours audio) restent la propriété de leurs auteurs respectifs.</p>`,
+    },
+    {
+      heading: "Responsabilité",
+      html: `<p>Petite Jérusalem ne saurait être tenue responsable des dommages directs ou indirects causés au matériel de l'utilisateur lors de l'accès au site, résultant de l'utilisation d'un matériel inadapté, d'un bug ou d'une incompatibilité.</p>`,
+    },
+    {
+      heading: "Conditions générales d'utilisation",
+      html: `<p><strong>Acceptation.</strong> L'accès et l'utilisation du site petite-jerusalem.fr et de l'application sont soumis aux présentes conditions. En les utilisant, vous acceptez d'y être lié.</p>
+      <p><strong>Accès.</strong> Le service est accessible gratuitement à tout utilisateur disposant d'un accès à Internet. Les frais d'accès (matériel, connexion) restent à la charge de l'utilisateur.</p>
+      <p><strong>Inscription.</strong> La création d'un compte est facultative et gratuite. L'utilisateur s'engage à fournir des informations exactes.</p>
+      <p><strong>Utilisation.</strong> L'utilisateur s'engage à utiliser le service conformément aux lois en vigueur. Il s'interdit notamment de publier des contenus illicites ou portant atteinte aux droits d'autrui (par exemple dans le nom affiché d'une session de lecture partagée), d'utiliser le service à des fins commerciales sans autorisation, ou de tenter d'accéder de manière non autorisée aux systèmes du site.</p>
+      <p><strong>Données personnelles.</strong> Le traitement des données personnelles est décrit dans notre <a href="/confidentialite">politique de confidentialité</a>.</p>
+      <p><strong>Modification.</strong> Phenixel se réserve le droit de modifier les présentes conditions à tout moment ; les modifications prennent effet dès leur publication.</p>
+      <p><strong>Loi applicable.</strong> Les présentes conditions sont régies par la loi française. En cas de litige, et après tentative de résolution amiable, les tribunaux français seront seuls compétents.</p>`,
+    },
+  ],
+  breadcrumbHome: "Accueil",
+  breadcrumbName: "Mentions légales",
+};
+
+const LEGAL_EN: LegalStrings = {
+  lang: "en-US",
+  title: "Legal Notice | Petite Jérusalem",
+  description:
+    "Legal notice and terms of use for petite-jerusalem.fr: publisher, hosting, intellectual property.",
+  h1: "Legal Notice",
+  updated: "Last updated: July 19, 2026",
+  intro: "Legal notice and terms of use for the Petite Jérusalem website and app.",
+  sections: [
+    {
+      heading: "Publisher",
+      html: `<p>Petite Jérusalem is an independent project published by Phenixel.</p>
+      <ul>
+        <li>Publication director: Yonathan Cardoso</li>
+        <li>Contact: <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a></li>
+      </ul>`,
+    },
+    {
+      heading: "Hosting",
+      html: `<p>The site is hosted by Firebase Hosting (Google):</p>
+      <ul>
+        <li>Google Cloud EMEA Limited, 70 Sir John Rogerson's Quay, Dublin 2, Ireland</li>
+      </ul>`,
+    },
+    {
+      heading: "Intellectual property",
+      html: `<p>The interface, graphic elements and code of the site are the property of Phenixel. Any reproduction or adaptation, even partial, is forbidden without prior written consent.</p>
+      <p>The library texts (Tehilim, Mishna, Talmud, Tanakh) belong to the common heritage; they come from open sources, notably <a href="https://www.sefaria.org" target="_blank" rel="noopener noreferrer">Sefaria</a>. The chiourim (audio classes) remain the property of their respective authors.</p>`,
+    },
+    {
+      heading: "Liability",
+      html: `<p>Petite Jérusalem cannot be held liable for direct or indirect damage to the user's equipment when accessing the site, resulting from unsuitable hardware, a bug or an incompatibility.</p>`,
+    },
+    {
+      heading: "Terms of use",
+      html: `<p><strong>Acceptance.</strong> Access to and use of petite-jerusalem.fr and the app are subject to these terms. By using them, you agree to be bound by them.</p>
+      <p><strong>Access.</strong> The service is free for any user with Internet access. Access costs (hardware, connection) remain the user's responsibility.</p>
+      <p><strong>Registration.</strong> Creating an account is optional and free. The user agrees to provide accurate information.</p>
+      <p><strong>Use.</strong> The user agrees to use the service in accordance with applicable law. In particular, they must not publish unlawful content or content infringing the rights of others (for example in the display name of a shared reading session), use the service commercially without authorization, or attempt unauthorized access to the site's systems.</p>
+      <p><strong>Personal data.</strong> The processing of personal data is described in our <a href="/confidentialite">privacy policy</a>.</p>
+      <p><strong>Changes.</strong> Phenixel reserves the right to modify these terms at any time; changes take effect upon publication.</p>
+      <p><strong>Governing law.</strong> These terms are governed by French law. In the event of a dispute, and after an attempt at amicable resolution, the French courts shall have sole jurisdiction.</p>`,
+    },
+  ],
+  breadcrumbHome: "Home",
+  breadcrumbName: "Legal Notice",
+};
+
+const LEGAL_HE: LegalStrings = {
+  lang: "he-IL",
+  title: "מידע משפטי | פטיט ירושלים",
+  description: "מידע משפטי ותנאי שימוש של petite-jerusalem.fr: מוציא לאור, אחסון, קניין רוחני.",
+  h1: "מידע משפטי",
+  updated: "עודכן לאחרונה: 19 ביולי 2026",
+  intro: "מידע משפטי ותנאי שימוש של אתר ואפליקציית פטיט ירושלים.",
+  sections: [
+    {
+      heading: "המוציא לאור",
+      html: `<p>פטיט ירושלים הוא פרויקט עצמאי המנוהל על ידי Phenixel.</p>
+      <ul>
+        <li>מנהל הפרסום: Yonathan Cardoso</li>
+        <li>יצירת קשר: <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a></li>
+      </ul>`,
+    },
+    {
+      heading: "אחסון",
+      html: `<p>האתר מאוחסן על ידי Firebase Hosting (Google):</p>
+      <ul>
+        <li>Google Cloud EMEA Limited, 70 Sir John Rogerson's Quay, דבלין 2, אירלנד</li>
+      </ul>`,
+    },
+    {
+      heading: "קניין רוחני",
+      html: `<p>הממשק, האלמנטים הגרפיים והפיתוחים של האתר הם רכושה של Phenixel. כל שעתוק או עיבוד, גם חלקי, אסור ללא הסכמה מראש ובכתב.</p>
+      <p>טקסטי הספרייה (תהילים, משנה, תלמוד, תנ״ך) שייכים למורשת המשותפת; הם מגיעים ממקורות פתוחים, בייחוד <a href="https://www.sefaria.org" target="_blank" rel="noopener noreferrer">ספריא</a>. השיעורים (שיעורי אודיו) נשארים רכושם של מחבריהם.</p>`,
+    },
+    {
+      heading: "אחריות",
+      html: `<p>פטיט ירושלים אינה אחראית לנזקים ישירים או עקיפים לציוד המשתמש בעת הגישה לאתר, הנובעים משימוש בציוד לא מתאים, מתקלה או מאי-תאימות.</p>`,
+    },
+    {
+      heading: "תנאי שימוש",
+      html: `<p><strong>הסכמה.</strong> הגישה והשימוש באתר petite-jerusalem.fr ובאפליקציה כפופים לתנאים אלה. בשימוש בהם, אתם מסכימים להיות מחויבים להם.</p>
+      <p><strong>גישה.</strong> השירות חינמי לכל משתמש בעל גישה לאינטרנט. עלויות הגישה (ציוד, חיבור) הן באחריות המשתמש.</p>
+      <p><strong>הרשמה.</strong> יצירת חשבון היא אופציונלית וחינמית. המשתמש מתחייב למסור מידע מדויק.</p>
+      <p><strong>שימוש.</strong> המשתמש מתחייב להשתמש בשירות בהתאם לחוק. בפרט, אסור לפרסם תוכן בלתי חוקי או פוגעני (למשל בשם המוצג בפגישת קריאה משותפת), להשתמש בשירות למטרות מסחריות ללא אישור, או לנסות לגשת ללא הרשאה למערכות האתר.</p>
+      <p><strong>נתונים אישיים.</strong> עיבוד הנתונים האישיים מתואר ב<a href="/confidentialite">מדיניות הפרטיות</a> שלנו.</p>
+      <p><strong>שינויים.</strong> Phenixel שומרת לעצמה את הזכות לשנות תנאים אלה בכל עת; השינויים נכנסים לתוקף עם פרסומם.</p>
+      <p><strong>הדין החל.</strong> תנאים אלה כפופים לדין הצרפתי. במקרה של מחלוקת, ולאחר ניסיון ליישוב ידידותי, לבתי המשפט בצרפת תהיה סמכות שיפוט בלעדית.</p>`,
+    },
+  ],
+  breadcrumbHome: "בית",
+  breadcrumbName: "מידע משפטי",
 };
 
 // ---- finir-le-chass: localized strings ----
@@ -988,6 +1250,26 @@ export const landingPages: LandingPage[] = [
       fr: buildLegal("/confidentialite", PRIVACY_FR),
       en: buildLegal("/confidentialite", PRIVACY_EN),
       he: buildLegal("/confidentialite", PRIVACY_HE),
+    },
+  },
+  {
+    file: "a-propos.html",
+    path: "/a-propos",
+    sitemap: { priority: 0.3, changefreq: "yearly" },
+    locales: {
+      fr: buildLegal("/a-propos", ABOUT_FR),
+      en: buildLegal("/a-propos", ABOUT_EN),
+      he: buildLegal("/a-propos", ABOUT_HE),
+    },
+  },
+  {
+    file: "mentions-legales.html",
+    path: "/mentions-legales",
+    sitemap: { priority: 0.1, changefreq: "yearly" },
+    locales: {
+      fr: buildLegal("/mentions-legales", LEGAL_FR),
+      en: buildLegal("/mentions-legales", LEGAL_EN),
+      he: buildLegal("/mentions-legales", LEGAL_HE),
     },
   },
 ];

@@ -121,6 +121,16 @@ export default [
     name: "confidentialite",
     component: ContentPage,
   },
+  {
+    path: "/a-propos",
+    name: "a-propos",
+    component: ContentPage,
+  },
+  {
+    path: "/mentions-legales",
+    name: "mentions-legales",
+    component: ContentPage,
+  },
   // Tehilim par intention: hub + intention pages, rendered from
   // src/content/seoPages.ts (same markup the prerender step serves to crawlers).
   {
