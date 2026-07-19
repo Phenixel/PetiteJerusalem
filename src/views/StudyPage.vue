@@ -175,12 +175,14 @@ onMounted(() => {
         </button>
       </div>
 
-      <div class="flex flex-wrap gap-2 justify-center">
+      <!-- Filtres volontairement imposants : ils servent de porte d'entrée
+           principale vers chaque corpus. -->
+      <div class="flex flex-wrap gap-2.5 md:gap-3 justify-center">
         <button
           v-for="ty in TYPES"
           :key="ty.key"
           @click="selectedType = ty.key"
-          class="chip transition-colors"
+          class="px-5 py-2.5 md:px-6 md:py-3 rounded-full text-sm md:text-base font-semibold transition-colors"
           :class="
             selectedType === ty.key
               ? 'bg-primary text-white'

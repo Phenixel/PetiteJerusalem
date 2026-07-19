@@ -73,6 +73,10 @@ const he: LocaleMessages = {
       },
     },
     comingSoon: "בקרוב",
+    profileCard: {
+      title: "שלום {name}",
+      description: "המפגשים, הקריאה היומית, התזכורות וההעדפות שלכם מחכים בפרופיל.",
+    },
     memorial: {
       title: "לזכר",
       dedication:

@@ -71,6 +71,11 @@ const fr = {
       },
     },
     comingSoon: "Bientôt",
+    profileCard: {
+      title: "Bonjour {name}",
+      description:
+        "Vos sessions, votre lecture quotidienne, vos rappels et vos préférences vous attendent dans votre profil.",
+    },
     memorial: {
       title: "À la mémoire de",
       dedication:

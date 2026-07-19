@@ -73,6 +73,11 @@ const en: LocaleMessages = {
       },
     },
     comingSoon: "Coming Soon",
+    profileCard: {
+      title: "Hello {name}",
+      description:
+        "Your sessions, daily reading, reminders and preferences are waiting in your profile.",
+    },
     memorial: {
       title: "In memory of",
       dedication:

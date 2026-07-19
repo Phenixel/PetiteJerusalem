@@ -1,15 +1,22 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
-import { onMounted, computed, type Component } from "vue";
+import { onMounted, onUnmounted, ref, computed, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { seoService } from "../services/seoService";
+import { authService } from "../services/authService";
 import SiteFooter from "../components/SiteFooter.vue";
+import AppIcon from "../components/icons/AppIcon.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
 import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
 import IllustrationBibliotheque from "../components/illustrations/IllustrationBibliotheque.vue";
 
 const router = useRouter();
 const { t } = useI18n();
+
+// Connecté : une carte dédiée pousse vers le profil (sessions, lecture
+// quotidienne, rappels… beaucoup de fonctionnalités y vivent).
+const username = ref<string | null>(null);
+let unsubscribeAuth: (() => void) | null = null;
 
 const features = computed<
   { illustration: Component; title: string; description: string; route: string }[]
@@ -35,6 +42,9 @@ const features = computed<
 ]);
 
 onMounted(() => {
+  unsubscribeAuth = authService.onAuthChanged((user) => {
+    username.value = user?.name ?? null;
+  });
   const url = window.location.origin + "/";
   seoService.setMeta({
     title: t("seo.homeTitle"),
@@ -42,6 +52,10 @@ onMounted(() => {
     canonical: url,
     og: { url },
   });
+});
+
+onUnmounted(() => {
+  unsubscribeAuth?.();
 });
 </script>
 
@@ -57,6 +71,35 @@ onMounted(() => {
     </div>
 
     <div class="w-full max-w-6xl mx-auto">
+      <!-- Connecté : invitation à explorer son profil, au-dessus des trois cartes. -->
+      <button
+        v-if="username"
+        class="feature-card card card-hover group w-full flex items-center gap-5 p-6 text-left cursor-pointer mb-5 md:mb-6"
+        :style="{ '--enter-delay': '0s' }"
+        @click="router.push('/profile')"
+      >
+        <div
+          class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0"
+        >
+          <AppIcon name="user" :size="24" />
+        </div>
+        <div class="flex-1 min-w-0">
+          <h3
+            class="text-lg font-bold mb-1 text-text-primary group-hover:text-primary transition-colors"
+          >
+            {{ t("home.profileCard.title", { name: username }) }}
+          </h3>
+          <p class="text-text-secondary text-sm leading-relaxed">
+            {{ t("home.profileCard.description") }}
+          </p>
+        </div>
+        <AppIcon
+          name="chevron-right"
+          :size="20"
+          class="shrink-0 text-text-secondary/40 group-hover:text-primary transition-colors rtl:rotate-180"
+        />
+      </button>
+
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mb-10 items-stretch">
         <button
           v-for="(feature, index) in features"
