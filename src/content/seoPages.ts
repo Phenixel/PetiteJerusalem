@@ -519,7 +519,7 @@ const PRIVACY_FR: LegalStrings = {
         <li><strong>Si vous créez un compte</strong> : adresse email et nom affiché, fournis par vous ou par Google/Apple lors de la connexion.</li>
         <li><strong>Préférences et progression</strong> : thème, polices choisies, liste et progression de vos lectures quotidiennes.</li>
         <li><strong>Notifications</strong> : si vous activez le rappel de lecture quotidien, un identifiant technique (jeton) de votre appareil, l'heure choisie et la langue de la notification.</li>
-        <li><strong>Partage de lecture</strong> : si vous créez ou rejoignez une session partagée (Talmud, Tehilim…), le nom que vous indiquez — et votre email si vous participez sans créer de compte — est visible par toute personne disposant du lien de la session.</li>
+        <li><strong>Partage de lecture</strong> : si vous créez ou rejoignez une session partagée (Talmud, Tehilim…), le nom que vous indiquez (et votre email si vous participez sans créer de compte) est visible par toute personne disposant du lien de la session.</li>
       </ul>
       <p>Nous ne collectons aucune donnée à des fins publicitaires et n'utilisons aucun outil de suivi ou d'analyse tiers (pas de Google Analytics, pas de traceur publicitaire).</p>`,
     },
@@ -590,7 +590,7 @@ const PRIVACY_EN: LegalStrings = {
         <li><strong>If you create an account</strong>: your email address and display name, provided by you or by Google/Apple when you sign in.</li>
         <li><strong>Preferences and progress</strong>: theme, chosen fonts, your daily reading list and progress.</li>
         <li><strong>Notifications</strong>: if you enable the daily reading reminder, a technical device token, the chosen time, and the notification language.</li>
-        <li><strong>Shared reading</strong>: if you create or join a shared session (Talmud, Tehilim…), the name you provide — and your email if you take part without an account — is visible to anyone with the session link.</li>
+        <li><strong>Shared reading</strong>: if you create or join a shared session (Talmud, Tehilim…), the name you provide (and your email if you take part without an account) is visible to anyone with the session link.</li>
       </ul>
       <p>We do not collect any data for advertising purposes and do not use any third-party tracking or analytics tools (no Google Analytics, no ad tracker).</p>`,
     },
@@ -659,7 +659,7 @@ const PRIVACY_HE: LegalStrings = {
         <li><strong>אם אתם יוצרים חשבון</strong>: כתובת האימייל והשם המוצג שלכם, שסופקו על ידכם או על ידי Google/Apple בעת ההתחברות.</li>
         <li><strong>העדפות והתקדמות</strong>: ערכת נושא, גופנים שנבחרו, רשימת הקריאה היומית וההתקדמות בה.</li>
         <li><strong>התראות</strong>: אם תפעילו את תזכורת הקריאה היומית, אסימון מכשיר טכני, השעה שנבחרה ושפת ההתראה.</li>
-        <li><strong>שיתוף קריאה</strong>: אם תיצרו או תצטרפו לפגישת קריאה משותפת (תלמוד, תהילים...), השם שתמסרו — והאימייל שלכם אם אתם משתתפים ללא חשבון — גלוי לכל מי שיש לו את קישור הפגישה.</li>
+        <li><strong>שיתוף קריאה</strong>: אם תיצרו או תצטרפו לפגישת קריאה משותפת (תלמוד, תהילים...), השם שתמסרו (והאימייל שלכם אם אתם משתתפים ללא חשבון) גלוי לכל מי שיש לו את קישור הפגישה.</li>
       </ul>
       <p>איננו אוספים נתונים לצרכי פרסום ואיננו משתמשים בכלי מעקב או ניתוח של צד שלישי (ללא Google Analytics, ללא עוקב פרסומי).</p>`,
     },
@@ -722,13 +722,13 @@ const ABOUT_FR: LegalStrings = {
   sections: [
     {
       heading: "Notre mission",
-      html: `<p>Faciliter l'accès à l'étude des textes sacrés en offrant une plateforme intuitive, accessible et sans publicité. Petite Jérusalem est née du désir d'aider notre communauté : simplifier la création de chaînes d'étude collectives — pour une refoua chelema, un ilouï nichmat, un mariage ou toute autre intention — et permettre à chacun d'étudier à son rythme, où qu'il soit.</p>`,
+      html: `<p>Faciliter l'accès à l'étude des textes sacrés en offrant une plateforme intuitive, accessible et sans publicité. Petite Jérusalem est née du désir d'aider notre communauté : simplifier la création de chaînes d'étude collectives (pour une refoua chelema, un ilouï nichmat, un mariage ou toute autre intention) et permettre à chacun d'étudier à son rythme, où qu'il soit.</p>`,
     },
     {
       heading: "Ce que propose Petite Jérusalem",
       html: `<ul>
         <li><strong>Une bibliothèque complète</strong> : Tehilim, Michna, Talmud et Tanakh, en lecture libre et gratuite, avec suivi de progression.</li>
-        <li><strong>Le partage de lecture</strong> : créez une session collective (finir le Chass, réciter les Tehilim à plusieurs…), partagez le lien, et chacun réserve sa part — la progression du groupe est suivie en temps réel.</li>
+        <li><strong>Le partage de lecture</strong> : créez une session collective (finir le Chass, réciter les Tehilim à plusieurs…), partagez le lien, et chacun réserve sa part ; la progression du groupe est suivie en temps réel.</li>
         <li><strong>La lecture hors ligne</strong> : téléchargez les textes pour étudier sans connexion.</li>
         <li><strong>Un rappel quotidien</strong> : recevez chaque jour une notification pour ne pas interrompre votre lecture.</li>
         <li><strong>Des chiourim</strong> : des cours audio pour approfondir l'étude.</li>
@@ -759,13 +759,13 @@ const ABOUT_EN: LegalStrings = {
   sections: [
     {
       heading: "Our mission",
-      html: `<p>Making the study of sacred texts easier through an intuitive, accessible, ad-free platform. Petite Jérusalem was born from a desire to help our community: simplifying collective study chains — for a refuah shlema, an ilui nishmat, a wedding or any other intention — and letting everyone study at their own pace, wherever they are.</p>`,
+      html: `<p>Making the study of sacred texts easier through an intuitive, accessible, ad-free platform. Petite Jérusalem was born from a desire to help our community: simplifying collective study chains (for a refuah shlema, an ilui nishmat, a wedding or any other intention) and letting everyone study at their own pace, wherever they are.</p>`,
     },
     {
       heading: "What Petite Jérusalem offers",
       html: `<ul>
         <li><strong>A complete library</strong>: Tehilim, Mishna, Talmud and Tanakh, free to read, with progress tracking.</li>
-        <li><strong>Shared reading</strong>: create a collective session (finish Shas, recite Tehilim together…), share the link, and everyone reserves their part — the group's progress is tracked in real time.</li>
+        <li><strong>Shared reading</strong>: create a collective session (finish Shas, recite Tehilim together…), share the link, and everyone reserves their part; the group's progress is tracked in real time.</li>
         <li><strong>Offline reading</strong>: download the texts to study without a connection.</li>
         <li><strong>A daily reminder</strong>: get a daily notification so you never break your reading streak.</li>
         <li><strong>Audio classes (chiourim)</strong>: recorded classes to deepen your study.</li>
@@ -795,13 +795,13 @@ const ABOUT_HE: LegalStrings = {
   sections: [
     {
       heading: "המשימה שלנו",
-      html: `<p>להנגיש את לימוד הטקסטים הקדושים באמצעות פלטפורמה אינטואיטיבית, נגישה וללא פרסומות. פטיט ירושלים נולדה מתוך רצון לעזור לקהילה שלנו: לפשט יצירת שרשראות לימוד משותפות — לרפואה שלמה, לעילוי נשמת, לחתונה או לכל כוונה אחרת — ולאפשר לכל אחד ללמוד בקצב שלו, בכל מקום.</p>`,
+      html: `<p>להנגיש את לימוד הטקסטים הקדושים באמצעות פלטפורמה אינטואיטיבית, נגישה וללא פרסומות. פטיט ירושלים נולדה מתוך רצון לעזור לקהילה שלנו: לפשט יצירת שרשראות לימוד משותפות (לרפואה שלמה, לעילוי נשמת, לחתונה או לכל כוונה אחרת) ולאפשר לכל אחד ללמוד בקצב שלו, בכל מקום.</p>`,
     },
     {
       heading: "מה מציעה פטיט ירושלים",
       html: `<ul>
         <li><strong>ספרייה מלאה</strong>: תהילים, משנה, תלמוד ותנ״ך, בקריאה חופשית וחינמית, עם מעקב התקדמות.</li>
-        <li><strong>שיתוף קריאה</strong>: צרו פגישה משותפת (סיום הש״ס, אמירת תהילים יחד...), שתפו את הקישור, וכל אחד שומר לעצמו חלק — התקדמות הקבוצה נעקבת בזמן אמת.</li>
+        <li><strong>שיתוף קריאה</strong>: צרו פגישה משותפת (סיום הש״ס, אמירת תהילים יחד...), שתפו את הקישור, וכל אחד שומר לעצמו חלק; התקדמות הקבוצה נעקבת בזמן אמת.</li>
         <li><strong>קריאה לא מקוונת</strong>: הורידו את הטקסטים כדי ללמוד ללא חיבור לאינטרנט.</li>
         <li><strong>תזכורת יומית</strong>: קבלו התראה יומית כדי לא להפסיק את רצף הקריאה.</li>
         <li><strong>שיעורים</strong>: שיעורי אודיו להעמקת הלימוד.</li>
@@ -1491,7 +1491,7 @@ const INTENTIONS: Intention[] = [
     slug: "reussite",
     title: "Tehilim pour la réussite (hatslakha) | Petite Jérusalem",
     description:
-      "Quels Tehilim lire pour la réussite (hatslakha) — examen, projet, entreprise : psaumes 4, 20, 32 et 90, à lire seul ou à plusieurs.",
+      "Quels Tehilim lire pour la réussite (hatslakha), pour un examen, un projet ou une entreprise : psaumes 4, 20, 32 et 90, à lire seul ou à plusieurs.",
     h1: "Tehilim pour la réussite (hatslakha)",
     lead: "La <strong>hatslakha</strong> est la réussite, la bénédiction dans ce que l'on entreprend&nbsp;: un examen, un projet, une nouvelle entreprise. On a coutume de lire des Tehilim (Psaumes) pour la demander.",
     psalms: [4, 20, 32, 90],

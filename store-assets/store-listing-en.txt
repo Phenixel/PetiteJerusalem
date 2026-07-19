@@ -1,5 +1,5 @@
 TITLE (≤30 characters)
-Petite Jérusalem — Torah
+Petite Jérusalem - Torah
 
 SHORT DESCRIPTION (≤80 characters)
 Study and share Torah together: Tehilim, Talmud, Tanakh. Free, no ads.
@@ -9,7 +9,7 @@ Petite Jérusalem is a free app to study and share Torah, on your own or togethe
 
 📚 Full library: Tehilim, Mishnah, Talmud (Gemara) and Tanakh, with a reader built for Hebrew text and its translation.
 
-🤝 Shared reading: create a session to split study between several people — finish the Chass (Talmud) together by sharing out the tractates, read all 150 Tehilim as a group for a refuah shelemah or in memory of a loved one — and track progress all the way to the siyum.
+🤝 Shared reading: create a session to split study between several people (finish the Chass together by sharing out the Talmud tractates, read all 150 Tehilim as a group for a refuah shelemah or in memory of a loved one) and track progress all the way to the siyum.
 
 📖 Offline reading: download texts to read them without a connection, on a plane or off the grid.
 
