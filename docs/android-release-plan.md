@@ -119,7 +119,7 @@ ou `adb install`), ou envoi de l'APK par n'importe quel canal.
 ### A6. Recette rapide sur téléphone **[Toi, ~15 min]**
 Checklist complète dans `docs/capacitor-test-plan.md`. Le strict minimum :
 - [ ] Bibliothèque → un texte s'ouvre (réseau requis la 1re fois)
-- [ ] `/telechargements` (lien navbar) → télécharger un livre → **mode avion** → il se lit
+- [ ] Bibliothèque → bouton télécharger sur un livre → **mode avion** → il se lit
 - [ ] Lecture quotidienne : choisir des textes, couper le réseau, marquer « lu », rallumer → ça se synchronise
 - [ ] Login email/mot de passe, et login Google natif (sélecteur de compte système)
 - [ ] Profil → « Rappel de lecture » : la permission de notification est demandée

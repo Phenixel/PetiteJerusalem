@@ -3,7 +3,6 @@ import { ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { authService } from "../services/authService";
 import { useDarkMode } from "../composables/useDarkMode";
-import { isNativeApp } from "../composables/useNativeApp";
 import LanguageSelector from "./LanguageSelector.vue";
 import AppIcon from "./icons/AppIcon.vue";
 
@@ -19,8 +18,6 @@ const navLinks = [
   { to: "/share-reading", labelKey: "common.shareReading", exact: true },
   { to: "/bibliotheque", labelKey: "study.title", exact: true },
   { to: "/chiourim", labelKey: "common.chiourim", exact: true },
-  // App native : accès direct à la lecture hors ligne.
-  ...(isNativeApp ? [{ to: "/telechargements", labelKey: "downloads.navTitle", exact: true }] : []),
 ];
 
 function toggleMobileMenu() {

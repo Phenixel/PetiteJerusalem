@@ -474,19 +474,12 @@ const en: LocaleMessages = {
     textSizeDecrease: "Decrease text size",
   },
   downloads: {
-    navTitle: "Offline",
-    title: "Downloads",
-    subtitle:
-      "Download books to read them without a connection. Your daily reading is downloaded automatically.",
     total: "Storage used: {size}",
     downloadAll: "Download all",
+    allDownloaded: "Everything is downloaded",
     download: "Download",
-    downloading: "Downloading…",
-    downloaded: "Downloaded",
     delete: "Delete",
     error: "Download failed. Check your connection.",
-    webNotice:
-      "On the web, downloaded texts speed up reading. For full offline reading, use the mobile app.",
   },
   notifications: {
     title: "Reading reminder",

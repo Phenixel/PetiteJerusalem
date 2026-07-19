@@ -465,17 +465,12 @@ const he: LocaleMessages = {
     textSizeDecrease: "הקטנת הטקסט",
   },
   downloads: {
-    navTitle: "לא מקוון",
-    title: "הורדות",
-    subtitle: "הורידו ספרים כדי לקרוא אותם ללא חיבור. הקריאה היומית שלכם מורדת אוטומטית.",
     total: "שטח בשימוש: {size}",
     downloadAll: "להוריד הכול",
+    allDownloaded: "הכול הורד",
     download: "הורדה",
-    downloading: "מוריד…",
-    downloaded: "הורד",
     delete: "מחיקה",
     error: "ההורדה נכשלה. בדקו את החיבור.",
-    webNotice: "באתר, טקסטים שהורדו מאיצים את הקריאה. לקריאה מלאה ללא חיבור, השתמשו באפליקציה.",
   },
   notifications: {
     title: "תזכורת קריאה",

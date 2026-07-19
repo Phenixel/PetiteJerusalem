@@ -13,7 +13,10 @@ import {
   downloadBook,
   downloadingPaths,
   isBookDownloaded,
+  offlineBooks,
   removeBook,
+  totalDownloadedSize,
+  type OfflineBook,
 } from "../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../services/offlineTextStore";
 import { useToast } from "../composables/useToast";
@@ -90,6 +93,36 @@ const groupedByType = computed(() => {
 
 const hasResults = computed(() => filtered.value.length > 0);
 
+// App native : « Tout télécharger » sur l'onglet courant + espace utilisé
+// (remplace l'ancienne page Hors ligne).
+const tabBooks = computed<OfflineBook[]>(() => {
+  if (!isNativeApp) return [];
+  return isAllSelected.value
+    ? offlineBooks
+    : offlineBooks.filter((b) => b.corpus === selectedType.value);
+});
+
+const tabAllDownloaded = computed(
+  () => tabBooks.value.length > 0 && tabBooks.value.every((b) => isBookDownloaded(b)),
+);
+
+async function downloadAllInTab() {
+  for (const book of tabBooks.value) {
+    if (isBookDownloaded(book)) continue;
+    try {
+      await downloadBook(book);
+    } catch {
+      toast.error(t("downloads.error"));
+      return; // Probablement hors connexion : inutile d'enchaîner les échecs.
+    }
+  }
+}
+
+function formatSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+  return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
+}
+
 function formatBookName(livre: string): string {
   return sessionService.formatBookName(livre);
 }
@@ -117,11 +150,6 @@ onMounted(() => {
       <p class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
         {{ t("study.subtitle") }}
       </p>
-      <!-- App native : raccourci vers la lecture hors ligne. -->
-      <RouterLink v-if="isNativeApp" to="/telechargements" class="btn btn-soft mt-5 inline-flex">
-        <AppIcon name="download" :size="14" />
-        {{ t("downloads.title") }}
-      </RouterLink>
     </div>
 
     <!-- Controls -->
@@ -161,6 +189,30 @@ onMounted(() => {
         >
           {{ t(ty.labelKey) }}
         </button>
+      </div>
+
+      <!-- App native : tout télécharger (onglet courant) + espace utilisé. -->
+      <div
+        v-if="isNativeApp && tabBooks.length > 0"
+        class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
+      >
+        <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
+          <AppIcon
+            v-if="downloadingPaths.size > 0"
+            name="spinner"
+            :size="14"
+            class="animate-spin"
+          />
+          <AppIcon v-else name="download" :size="14" />
+          {{ t("downloads.downloadAll") }}
+        </button>
+        <p v-else class="flex items-center gap-1.5 text-sm text-primary">
+          <AppIcon name="circle-check" :size="14" />
+          {{ t("downloads.allDownloaded") }}
+        </p>
+        <p v-if="totalDownloadedSize > 0" class="text-sm text-text-secondary">
+          {{ t("downloads.total", { size: formatSize(totalDownloadedSize) }) }}
+        </p>
       </div>
     </div>
 

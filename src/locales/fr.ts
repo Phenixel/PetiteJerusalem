@@ -476,19 +476,12 @@ const fr = {
     textSizeDecrease: "Réduire le texte",
   },
   downloads: {
-    navTitle: "Hors ligne",
-    title: "Téléchargements",
-    subtitle:
-      "Téléchargez des livres pour les lire sans connexion. Votre lecture quotidienne est téléchargée automatiquement.",
     total: "Espace utilisé : {size}",
     downloadAll: "Tout télécharger",
+    allDownloaded: "Tout est téléchargé",
     download: "Télécharger",
-    downloading: "Téléchargement…",
-    downloaded: "Téléchargé",
     delete: "Supprimer",
     error: "Téléchargement impossible. Vérifiez votre connexion.",
-    webNotice:
-      "Sur le web, les textes téléchargés accélèrent la lecture. Pour la lecture hors ligne complète, utilisez l'application mobile.",
   },
   notifications: {
     title: "Rappel de lecture",
