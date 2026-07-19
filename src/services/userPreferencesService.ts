@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 
 /** Daily reading completion for a single day. Resets when the date changes. */
@@ -67,6 +67,12 @@ class UserPreferencesService {
       console.error("Erreur lors de la sauvegarde des préférences:", error);
       throw new Error("Erreur lors de la sauvegarde des préférences.");
     }
+  }
+
+  /** Supprime définitivement le document de préférences (suppression de compte). */
+  async deletePreferences(userId: string): Promise<void> {
+    const docRef = doc(db, this.collectionName, userId);
+    await deleteDoc(docRef);
   }
 }
 

@@ -22,6 +22,7 @@ import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { app, googleAuthProvider } from "../../firebase";
 import { isNativeApp } from "../composables/useNativeApp";
 import type { User } from "../models/models";
+import { userPreferencesService } from "./userPreferencesService";
 
 export type { User };
 
@@ -233,6 +234,17 @@ export class AuthService {
     if (password && user.email) {
       const credential = EmailAuthProvider.credential(user.email, password);
       await reauthenticateWithCredential(user, credential);
+    }
+
+    // Purge des données Firestore associées (préférences, progression de
+    // lecture, tokens de notification) tant que l'utilisateur est encore
+    // authentifié — les règles Firestore exigent request.auth.uid == userId.
+    // Best-effort : un échec ne doit pas empêcher la suppression du compte
+    // lui-même (sinon l'utilisateur resterait bloqué).
+    try {
+      await userPreferencesService.deletePreferences(user.uid);
+    } catch (error) {
+      console.error("Erreur lors de la suppression des préférences utilisateur:", error);
     }
 
     await deleteUser(user);

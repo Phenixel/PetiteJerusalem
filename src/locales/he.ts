@@ -48,6 +48,7 @@ const he: LocaleMessages = {
     madeBy: "נוצר על ידי",
     about: "אודות",
     legal: "מידע משפטי",
+    privacy: "פרטיות",
     reportIssue: "דווח על בעיה",
     discover: "גלה",
     finishChass: "לסיים את הש״ס",
