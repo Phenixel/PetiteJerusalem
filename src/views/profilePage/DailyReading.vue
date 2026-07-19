@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../../models/models";
 import { userPreferencesService } from "../../services/userPreferencesService";
+import { syncDailyReadingDownloads } from "../../services/offlineLibraryService";
 import { sessionService } from "../../services/sessionService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import DailyReadingItem from "./DailyReadingItem.vue";
@@ -56,6 +57,10 @@ onMounted(async () => {
     const prefs = await userPreferencesService.getPreferences(props.userId);
     selectedIds.value = (prefs.dailyReadingIds ?? []).map(String);
 
+    // App native : garantit en tâche de fond que la lecture du jour est
+    // disponible hors ligne (no-op sur le web).
+    syncDailyReadingDownloads((prefs.dailyReadingIds ?? []).map(Number)).catch(() => {});
+
     const progress = prefs.dailyReadingProgress;
     if (progress && progress.date === todayKey()) {
       completedIds.value = new Set(progress.completedIds.map(String));
@@ -79,6 +84,8 @@ async function persistSelection() {
     await userPreferencesService.savePreferences(props.userId, {
       dailyReadingIds: selectedIds.value.map(Number),
     });
+    // La nouvelle liste doit rester lisible hors ligne (no-op sur le web).
+    syncDailyReadingDownloads(selectedIds.value.map(Number)).catch(() => {});
   } finally {
     saving.value = false;
   }

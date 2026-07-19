@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="15 20 70 70" width="512" height="512" role="img" aria-label="Petite Jérusalem">
+  <g fill="#C79A3B">
+    <!-- tour crénelée -->
+    <path d="M22 34h8v20h-8z"/><path d="M22 32h2v2.5h-2zm3 0h2v2.5h-2zm3 0h2v2.5h-2z"/>
+    <!-- mur du Kotel -->
+    <rect x="20" y="44" width="60" height="16" rx="1.5"/>
+    <!-- dôme (Dôme du Rocher) + flèche -->
+    <path d="M59 44a9 9 0 0 1 18 0z"/><path d="M68 30.5l1.3 5h-2.6z"/>
+    <!-- cyprès -->
+    <path d="M49 34.5c1.3 2.4 1.8 5 1.8 7.8 0 .8-3.6.8-3.6 0 0-2.8.5-5.4 1.8-7.8z"/><rect x="48.4" y="41.6" width="1.2" height="2.4"/>
+    <path d="M54.4 36c1.05 2 1.5 4 1.5 6 0 .7-3 .7-3 0 0-2 .45-4 1.5-6z"/><rect x="53.9" y="41.9" width="1" height="2.1"/>
+  </g>
+  <g stroke="#F1E7CF" stroke-width="1" opacity=".9">
+    <line x1="20" y1="49.3" x2="80" y2="49.3"/><line x1="20" y1="54.6" x2="80" y2="54.6"/>
+    <line x1="33" y1="44" x2="33" y2="49.3"/><line x1="47" y1="44" x2="47" y2="49.3"/><line x1="61" y1="44" x2="61" y2="49.3"/>
+    <line x1="27" y1="49.3" x2="27" y2="54.6"/><line x1="40" y1="49.3" x2="40" y2="54.6"/><line x1="54" y1="49.3" x2="54" y2="54.6"/><line x1="68" y1="49.3" x2="68" y2="54.6"/>
+    <line x1="33" y1="54.6" x2="33" y2="60"/><line x1="47" y1="54.6" x2="47" y2="60"/><line x1="61" y1="54.6" x2="61" y2="60"/>
+  </g>
+  <g>
+    <path d="M50 62C40 57 27 58 15 63v13c12-5 25-6 35-1z" fill="#1D6FDB"/>
+    <path d="M50 62C60 57 73 58 85 63v13c-12-5-25-6-35-1z" fill="#2E7BE6"/>
+    <path d="M50 62v14" stroke="#16467e" stroke-width="2" stroke-linecap="round"/>
+    <g stroke="#CFE1FB" stroke-width="1.1" fill="none" opacity=".85">
+      <path d="M22 65.5c8-2.5 17-2.7 25 .6"/><path d="M22 69.5c8-2.5 17-2.7 25 .6"/>
+      <path d="M53 66.1c8-3.3 17-3.1 25-.6"/><path d="M53 70.1c8-3.3 17-3.1 25-.6"/>
+    </g>
+  </g></svg>

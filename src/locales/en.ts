@@ -73,6 +73,11 @@ const en: LocaleMessages = {
       },
     },
     comingSoon: "Coming Soon",
+    profileCard: {
+      title: "Hello {name}",
+      description:
+        "Your sessions, daily reading, reminders and preferences are waiting in your profile.",
+    },
     memorial: {
       title: "In memory of",
       dedication:
@@ -83,6 +88,7 @@ const en: LocaleMessages = {
     welcome: "Welcome",
     connectToContinue: "Sign in to continue",
     signInWithGoogle: "Sign in with Google",
+    signInWithApple: "Sign in with Apple",
     signIn: "Sign in",
     signUp: "Create account",
     displayName: "Display name",
@@ -92,6 +98,7 @@ const en: LocaleMessages = {
     passwordsDoNotMatch: "Passwords do not match",
     loginError: "Login error",
     googleError: "Google error",
+    appleError: "Apple error",
     displayNamePlaceholder: "Ex: David Cohen",
     emailPlaceholder: "example{'@'}email.com",
   },
@@ -105,6 +112,7 @@ const en: LocaleMessages = {
       myInfo: "My Information",
       security: "Security",
       theme: "Appearance",
+      notifications: "Notifications",
     },
     noParticipatedSessions: "No participated sessions",
     noParticipatedSessionsDesc: "You haven't participated in any study sessions yet.",
@@ -469,6 +477,32 @@ const en: LocaleMessages = {
     textSize: "Text size",
     textSizeIncrease: "Increase text size",
     textSizeDecrease: "Decrease text size",
+  },
+  accountCta: {
+    title: "Create your free account",
+    description:
+      "Share readings with others, follow your daily reading and get a reminder every day.",
+    signup: "Sign up",
+    login: "Sign in",
+  },
+  downloads: {
+    total: "Storage used: {size}",
+    downloadAll: "Download all",
+    allDownloaded: "Everything is downloaded",
+    download: "Download",
+    delete: "Delete",
+    error: "Download failed. Check your connection.",
+  },
+  notifications: {
+    title: "Reading reminder",
+    description: "Get a daily notification if your daily reading isn't finished.",
+    enable: "Enable daily reminder",
+    disable: "Disable reminder",
+    enabled: "Reminder on: you'll be notified every day at {hour}:00 if your reading isn't done.",
+    hourLabel: "Reminder time",
+    permissionDenied:
+      "Notifications are blocked for this app. Allow them in your phone settings, then try again.",
+    error: "Could not update the notification setting. Please try again.",
   },
   study: {
     title: "Library",

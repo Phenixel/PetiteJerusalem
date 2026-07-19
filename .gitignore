@@ -46,3 +46,12 @@ coverage/
 # Build outputs
 build/
 out/
+
+# Capacitor native projects (generated via `npx cap add android|ios`)
+/android
+/ios
+
+# Config Firebase Android + clés de signature (jamais dans le repo)
+google-services.json
+*.keystore
+keystore.properties

@@ -60,6 +60,12 @@ export default [
     name: "study",
     component: StudyPage,
   },
+  // L'ancienne page « Hors ligne » a été fusionnée dans la bibliothèque
+  // (boutons de téléchargement sur chaque carte + « Tout télécharger »).
+  {
+    path: "/telechargements",
+    redirect: "/bibliotheque",
+  },
   // Public reading pages for the whole library (Tehilim, Tanakh, Michna, Talmud):
   // the same reader as /lire, served at canonical keyword URLs and prerendered
   // for SEO (static body from src/content/etudeTexts.ts).

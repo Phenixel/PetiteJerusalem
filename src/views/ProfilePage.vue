@@ -17,7 +17,9 @@ import UserInfoForm from "./profilePage/UserInfoForm.vue";
 import SecuritySettings from "./profilePage/SecuritySettings.vue";
 import ThemeSelector from "./profilePage/ThemeSelector.vue";
 import DailyReading from "./profilePage/DailyReading.vue";
+import NotificationSettings from "./profilePage/NotificationSettings.vue";
 import { useToast } from "../composables/useToast";
+import { isNativeApp } from "../composables/useNativeApp";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -25,7 +27,13 @@ const toast = useToast();
 
 const currentUser = ref<User | null>(null);
 const activeTab = ref<
-  "daily-reading" | "sessions-participated" | "sessions-created" | "my-info" | "security" | "theme"
+  | "daily-reading"
+  | "sessions-participated"
+  | "sessions-created"
+  | "my-info"
+  | "security"
+  | "theme"
+  | "notifications"
 >("sessions-participated");
 const isLoading = ref(true);
 
@@ -226,6 +234,20 @@ onMounted(async () => {
                 {{ t("profile.tabs.dailyReading") }}
               </button>
             </li>
+            <!-- App native uniquement : rappel push de la lecture du jour. -->
+            <li v-if="isNativeApp">
+              <button
+                @click="setActiveTab('notifications')"
+                :class="[
+                  'w-full text-left px-4 py-3 rounded-lg font-medium transition-colors',
+                  activeTab === 'notifications'
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',
+                ]"
+              >
+                {{ t("profile.tabs.notifications") }}
+              </button>
+            </li>
             <li>
               <button
                 @click="setActiveTab('sessions-participated')"
@@ -332,6 +354,10 @@ onMounted(async () => {
 
           <div v-if="activeTab === 'theme'">
             <ThemeSelector :user-id="currentUser.id" />
+          </div>
+
+          <div v-if="activeTab === 'notifications'">
+            <NotificationSettings :user-id="currentUser.id" />
           </div>
         </div>
       </div>

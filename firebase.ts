@@ -1,7 +1,12 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app'
 import { GoogleAuthProvider, getAuth, connectAuthEmulator } from 'firebase/auth'
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  connectFirestoreEmulator,
+} from 'firebase/firestore'
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -25,8 +30,13 @@ googleAuthProvider.setCustomParameters({
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig)
 
-// Initialize Firestore
-export const db = getFirestore(app)
+// Initialize Firestore avec cache local persistant (IndexedDB) : le marquage
+// « lu », les préférences et les sessions consultées restent disponibles hors
+// ligne et se synchronisent au retour du réseau — indispensable pour l'app
+// mobile, sans effet négatif sur le web.
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+})
 
 // Initialize Auth
 export const auth = getAuth(app)

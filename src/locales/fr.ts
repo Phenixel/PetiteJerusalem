@@ -71,6 +71,11 @@ const fr = {
       },
     },
     comingSoon: "Bientôt",
+    profileCard: {
+      title: "Bonjour {name}",
+      description:
+        "Vos sessions, votre lecture quotidienne, vos rappels et vos préférences vous attendent dans votre profil.",
+    },
     memorial: {
       title: "À la mémoire de",
       dedication:
@@ -81,6 +86,7 @@ const fr = {
     welcome: "Bienvenue",
     connectToContinue: "Connectez-vous pour continuer",
     signInWithGoogle: "Se connecter avec Google",
+    signInWithApple: "Se connecter avec Apple",
     signIn: "Se connecter",
     signUp: "Créer un compte",
     displayName: "Nom affiché",
@@ -90,6 +96,7 @@ const fr = {
     passwordsDoNotMatch: "Les mots de passe ne correspondent pas",
     loginError: "Erreur de connexion",
     googleError: "Erreur Google",
+    appleError: "Erreur Apple",
     displayNamePlaceholder: "Ex: David Cohen",
     emailPlaceholder: "exemple{'@'}email.com",
   },
@@ -103,6 +110,7 @@ const fr = {
       myInfo: "Mes Informations",
       security: "Sécurité",
       theme: "Apparence",
+      notifications: "Notifications",
     },
     noParticipatedSessions: "Aucune session participée",
     noParticipatedSessionsDesc: "Vous n'avez pas encore participé à des sessions d'étude.",
@@ -471,6 +479,33 @@ const fr = {
     textSize: "Taille du texte",
     textSizeIncrease: "Agrandir le texte",
     textSizeDecrease: "Réduire le texte",
+  },
+  accountCta: {
+    title: "Créez votre compte gratuit",
+    description:
+      "Partagez des lectures à plusieurs, suivez votre lecture quotidienne et recevez un rappel chaque jour.",
+    signup: "Créer un compte",
+    login: "Se connecter",
+  },
+  downloads: {
+    total: "Espace utilisé : {size}",
+    downloadAll: "Tout télécharger",
+    allDownloaded: "Tout est téléchargé",
+    download: "Télécharger",
+    delete: "Supprimer",
+    error: "Téléchargement impossible. Vérifiez votre connexion.",
+  },
+  notifications: {
+    title: "Rappel de lecture",
+    description:
+      "Recevez chaque jour une notification si votre lecture quotidienne n'est pas terminée.",
+    enable: "Activer le rappel quotidien",
+    disable: "Désactiver le rappel",
+    enabled: "Rappel activé : vous serez notifié chaque jour à {hour} h si votre lecture n'est pas terminée.",
+    hourLabel: "Heure du rappel",
+    permissionDenied:
+      "Les notifications sont bloquées pour cette application. Autorisez-les dans les réglages du téléphone, puis réessayez.",
+    error: "Impossible de modifier le réglage des notifications. Réessayez.",
   },
   study: {
     title: "Bibliothèque",

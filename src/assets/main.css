@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+/* Neutralise l'auto-agrandissement du texte des navigateurs mobiles (font
+   boosting / text-size-adjust), qui gonfle certains blocs dans la WebView de
+   l'app et fait déborder les mises en page. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Aucune page du site ne défile horizontalement : un élément qui déborde
+   (texte agrandi, mot hébreu long…) est rogné au lieu d'élargir la page. */
+body {
+  overflow-x: clip;
+}
+
 @theme {
   /* Colors — the beige background and the 3 selectable theme pairs are fixed;
      --color-primary/--color-secondary are re-written at runtime by useTheme. */
@@ -98,10 +112,14 @@ h6 {
   line-height: 1.2;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-  transition: all 0.3s ease;
+/* Dans @layer base pour que les classes (btn-primary, text-*…) gardent la
+   main sur la couleur des liens — hors layer, cette règle écraserait tout. */
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
 }
 
 button,

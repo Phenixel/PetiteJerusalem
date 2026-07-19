@@ -5,6 +5,7 @@ import { chiourService } from "../../services/chiourService";
 import type { Chiour } from "../../models/models";
 import ChiourCard from "../../components/ChiourCard.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import AccountCta from "../../components/AccountCta.vue";
 import { seoService } from "../../services/seoService";
 
 const { t } = useI18n();
@@ -249,5 +250,7 @@ onMounted(() => {
         </p>
       </div>
     </div>
+
+    <AccountCta class="max-w-3xl mx-auto mt-12" />
   </main>
 </template>

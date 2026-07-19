@@ -90,7 +90,15 @@ service cloud.firestore {
         && (!('fontLatin' in request.resource.data) || (request.resource.data.fontLatin is string && request.resource.data.fontLatin.size() <= 20))
         && (!('fontHebrew' in request.resource.data) || (request.resource.data.fontHebrew is string && request.resource.data.fontHebrew.size() <= 20))
         && (!('dailyReadingIds' in request.resource.data) || (request.resource.data.dailyReadingIds is list && request.resource.data.dailyReadingIds.size() <= 200))
-        && (!('dailyReadingProgress' in request.resource.data) || request.resource.data.dailyReadingProgress is map);
+        && (!('dailyReadingProgress' in request.resource.data) || request.resource.data.dailyReadingProgress is map)
+        // Notifications push (app native) : tokens FCM des appareils, rappel
+        // on/off, langue des notifications. 20 tokens max — les tokens morts
+        // sont purgés par la Cloud Function dailyReadingReminder quand un
+        // envoi échoue.
+        && (!('fcmTokens' in request.resource.data) || (request.resource.data.fcmTokens is list && request.resource.data.fcmTokens.size() <= 20))
+        && (!('pushReminderEnabled' in request.resource.data) || request.resource.data.pushReminderEnabled is bool)
+        && (!('pushReminderHour' in request.resource.data) || (request.resource.data.pushReminderHour is int && request.resource.data.pushReminderHour >= 0 && request.resource.data.pushReminderHour <= 23))
+        && (!('pushLocale' in request.resource.data) || (request.resource.data.pushLocale is string && request.resource.data.pushLocale.size() <= 5));
       allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
 

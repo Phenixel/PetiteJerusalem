@@ -146,9 +146,14 @@ function goToLogin() {
     <Transition name="slide-menu">
       <nav
         v-if="isMobileMenuOpen"
-        class="fixed top-0 left-0 w-[85vw] max-w-[320px] h-full z-[9999] overflow-y-auto bg-surface shadow-pop"
+        class="fixed top-0 left-0 w-[85vw] max-w-[320px] h-dvh z-[9999] overflow-y-auto bg-surface shadow-pop"
       >
-        <div class="relative flex flex-col h-full p-6">
+        <!-- min-h + pb safe-area : le bloc profil/déconnexion (mt-auto) reste
+             atteignable même quand le contenu dépasse l'écran (petits écrans,
+             texte agrandi) et n'est pas masqué par la barre système Android. -->
+        <div
+          class="relative flex flex-col min-h-full p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+        >
           <div class="mb-8 pt-2">
             <h2
               class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"

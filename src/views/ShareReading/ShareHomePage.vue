@@ -7,6 +7,7 @@ import type { Session } from "../../models/models";
 import type { EnumTypeTextStudy } from "../../models/typeTextStudy";
 import SessionCard from "../../components/SessionCard.vue";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
+import AccountCta from "../../components/AccountCta.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import { authService } from "../../services/authService";
@@ -374,6 +375,8 @@ const handleCreateClick = () => {
           {{ t("shareReading.createFirstSession") }}
         </p>
       </div>
+
+      <AccountCta class="max-w-3xl mx-auto mt-12" />
     </div>
   </main>
 </template>

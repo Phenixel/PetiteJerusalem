@@ -7,9 +7,48 @@ import { sessionService } from "../services/sessionService";
 import { seoService } from "../services/seoService";
 import { appendHebrewNumeral } from "../services/hebrewNumerals";
 import { hubPath } from "../content/etudeTexts";
+import { isNativeApp } from "../composables/useNativeApp";
+import {
+  bookForEntry,
+  downloadBook,
+  downloadingPaths,
+  isBookDownloaded,
+  offlineBooks,
+  removeBook,
+  totalDownloadedSize,
+  type OfflineBook,
+} from "../services/offlineLibraryService";
+import { ensureManifestLoaded } from "../services/offlineTextStore";
+import { useToast } from "../composables/useToast";
 import AppIcon from "../components/icons/AppIcon.vue";
+import AccountCta from "../components/AccountCta.vue";
 
 const { t } = useI18n();
+const toast = useToast();
+
+// App native : état de téléchargement affiché sur chaque carte de la bibliothèque.
+type BookState = "none" | "downloading" | "downloaded" | "idle";
+function bookState(text: TextStudyJsonEntry): BookState {
+  if (!isNativeApp) return "none";
+  const book = bookForEntry(text);
+  if (!book) return "none";
+  if (downloadingPaths.has(book.path)) return "downloading";
+  return isBookDownloaded(book) ? "downloaded" : "idle";
+}
+
+async function toggleDownload(text: TextStudyJsonEntry) {
+  const book = bookForEntry(text);
+  if (!book) return;
+  try {
+    if (isBookDownloaded(book)) {
+      await removeBook(book);
+    } else {
+      await downloadBook(book);
+    }
+  } catch {
+    toast.error(t("downloads.error"));
+  }
+}
 
 const ALL_TYPE = "Tout";
 
@@ -55,11 +94,44 @@ const groupedByType = computed(() => {
 
 const hasResults = computed(() => filtered.value.length > 0);
 
+// App native : « Tout télécharger » sur l'onglet courant + espace utilisé
+// (remplace l'ancienne page Hors ligne).
+const tabBooks = computed<OfflineBook[]>(() => {
+  if (!isNativeApp) return [];
+  return isAllSelected.value
+    ? offlineBooks
+    : offlineBooks.filter((b) => b.corpus === selectedType.value);
+});
+
+const tabAllDownloaded = computed(
+  () => tabBooks.value.length > 0 && tabBooks.value.every((b) => isBookDownloaded(b)),
+);
+
+async function downloadAllInTab() {
+  for (const book of tabBooks.value) {
+    if (isBookDownloaded(book)) continue;
+    try {
+      await downloadBook(book);
+    } catch {
+      toast.error(t("downloads.error"));
+      return; // Probablement hors connexion : inutile d'enchaîner les échecs.
+    }
+  }
+}
+
+function formatSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+  return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
+}
+
 function formatBookName(livre: string): string {
   return sessionService.formatBookName(livre);
 }
 
 onMounted(() => {
+  if (isNativeApp) {
+    ensureManifestLoaded();
+  }
   const url = window.location.origin + "/bibliotheque";
   seoService.setMeta({
     title: `${t("study.title")} | Petite Jérusalem`,
@@ -104,12 +176,14 @@ onMounted(() => {
         </button>
       </div>
 
-      <div class="flex flex-wrap gap-2 justify-center">
+      <!-- Filtres volontairement imposants : ils servent de porte d'entrée
+           principale vers chaque corpus. -->
+      <div class="flex flex-wrap gap-2.5 md:gap-3 justify-center">
         <button
           v-for="ty in TYPES"
           :key="ty.key"
           @click="selectedType = ty.key"
-          class="chip transition-colors"
+          class="px-5 py-2.5 md:px-6 md:py-3 rounded-full text-sm md:text-base font-semibold transition-colors"
           :class="
             selectedType === ty.key
               ? 'bg-primary text-white'
@@ -118,6 +192,30 @@ onMounted(() => {
         >
           {{ t(ty.labelKey) }}
         </button>
+      </div>
+
+      <!-- App native : tout télécharger (onglet courant) + espace utilisé. -->
+      <div
+        v-if="isNativeApp && tabBooks.length > 0"
+        class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
+      >
+        <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
+          <AppIcon
+            v-if="downloadingPaths.size > 0"
+            name="spinner"
+            :size="14"
+            class="animate-spin"
+          />
+          <AppIcon v-else name="download" :size="14" />
+          {{ t("downloads.downloadAll") }}
+        </button>
+        <p v-else class="flex items-center gap-1.5 text-sm text-primary">
+          <AppIcon name="circle-check" :size="14" />
+          {{ t("downloads.allDownloaded") }}
+        </p>
+        <p v-if="totalDownloadedSize > 0" class="text-sm text-text-secondary">
+          {{ t("downloads.total", { size: formatSize(totalDownloadedSize) }) }}
+        </p>
       </div>
     </div>
 
@@ -147,11 +245,47 @@ onMounted(() => {
                   {{ t("study.sections", { count: text.totalSections }) }}
                 </span>
               </span>
-              <AppIcon
-                name="book-open"
-                :size="16"
-                class="text-text-secondary/40 group-hover:text-primary transition-colors shrink-0"
-              />
+              <span class="shrink-0 flex items-center gap-1.5">
+                <!-- App native : télécharger/supprimer le livre sans quitter la bibliothèque. -->
+                <button
+                  v-if="bookState(text) !== 'none'"
+                  @click.prevent.stop="toggleDownload(text)"
+                  class="p-1 -m-1 transition-colors"
+                  :class="
+                    bookState(text) === 'downloaded'
+                      ? 'text-primary'
+                      : 'text-text-secondary/50 hover:text-primary'
+                  "
+                  :aria-label="
+                    bookState(text) === 'downloaded'
+                      ? t('downloads.delete')
+                      : t('downloads.download')
+                  "
+                  :title="
+                    bookState(text) === 'downloaded'
+                      ? t('downloads.delete')
+                      : t('downloads.download')
+                  "
+                >
+                  <AppIcon
+                    v-if="bookState(text) === 'downloading'"
+                    name="spinner"
+                    :size="15"
+                    class="animate-spin text-primary"
+                  />
+                  <AppIcon
+                    v-else-if="bookState(text) === 'downloaded'"
+                    name="circle-check"
+                    :size="15"
+                  />
+                  <AppIcon v-else name="download" :size="15" />
+                </button>
+                <AppIcon
+                  name="book-open"
+                  :size="16"
+                  class="text-text-secondary/40 group-hover:text-primary transition-colors"
+                />
+              </span>
             </router-link>
           </div>
         </section>
@@ -163,5 +297,7 @@ onMounted(() => {
       <AppIcon name="search" :size="32" class="text-text-secondary/40 mb-4" />
       <p class="text-text-secondary">{{ t("study.noResults") }}</p>
     </div>
+
+    <AccountCta class="max-w-3xl mx-auto mt-12" />
   </main>
 </template>

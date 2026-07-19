@@ -1,5 +1,6 @@
 import type { TextStudyJsonEntry } from "../models/models";
 import { formatNumberWithHebrew } from "./hebrewNumerals";
+import { fetchTextResponse } from "./offlineTextStore";
 
 /**
  * Loads the locally-stored texts under `public/texts/`.
@@ -111,7 +112,7 @@ let talmudChaptersCache: Record<string, TalmudChapter[]> | null = null;
 /** Chapter → daf-range map, fetched once and memoized. */
 async function getTalmudChapters(): Promise<Record<string, TalmudChapter[]>> {
   if (talmudChaptersCache) return talmudChaptersCache;
-  const res = await fetch("/texts/talmud-chapters.json");
+  const res = await fetchTextResponse("/texts/talmud-chapters.json");
   talmudChaptersCache = res.ok ? await res.json() : {};
   return talmudChaptersCache!;
 }
@@ -224,7 +225,8 @@ export function parseContent(
 }
 
 export async function loadText(textStudy: TextStudyJsonEntry): Promise<TextContent> {
-  const res = await fetch(resolveFilePath(textStudy));
+  // Copie locale (téléchargement hors ligne) d'abord, réseau sinon.
+  const res = await fetchTextResponse(resolveFilePath(textStudy));
   if (!res.ok) {
     if (res.status === 404) throw new MissingTextFileError();
     throw new Error(`Texte non disponible (${res.status})`);

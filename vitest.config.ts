@@ -7,7 +7,14 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: 'jsdom',
-      exclude: [...configDefaults.exclude, 'e2e/**'],
+      exclude: [
+        ...configDefaults.exclude,
+        'e2e/**',
+        // Projets natifs Capacitor (générés) et worktrees de session
+        'android/**',
+        'ios/**',
+        '.claude/**',
+      ],
       root: fileURLToPath(new URL('./', import.meta.url)),
     },
   }),

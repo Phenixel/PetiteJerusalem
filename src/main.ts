@@ -26,3 +26,31 @@ app.use(router);
 app.use(i18n);
 
 app.mount("#app");
+
+// App native uniquement — imports dynamiques pour ne rien ajouter au bundle
+// initial du site web.
+import("./composables/useNativeApp").then(({ isNativeApp }) => {
+  if (!isNativeApp) return;
+  // Navigation quand on touche une notification push.
+  import("./services/pushService").then(({ pushService }) => pushService.initDeepLinks(router));
+  // La WebView Android applique l'échelle de police système (textZoom), ce qui
+  // casse les mises en page (textes agrandis, débordements). On la neutralise :
+  // la taille de lecture se règle dans l'app (useReadingSize).
+  import("@capacitor/text-zoom")
+    .then(({ TextZoom }) => TextZoom.set({ value: 1 }))
+    .catch(() => {
+      // Vieux binaire sans le plugin : sans gravité.
+    });
+  // Bouton retour matériel Android : sans listener, il quitte l'app au lieu
+  // de revenir en arrière dans la navigation.
+  import("@capacitor/app").then(({ App: CapacitorApp }) => {
+    CapacitorApp.addListener("backButton", ({ canGoBack }) => {
+      if (canGoBack) {
+        router.back();
+      } else {
+        // Sur la home : comportement Android standard, l'app passe en arrière-plan.
+        CapacitorApp.minimizeApp();
+      }
+    });
+  });
+});
