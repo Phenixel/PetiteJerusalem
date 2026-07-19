@@ -22,6 +22,9 @@
 export const SITE_URL = "https://petite-jerusalem.fr";
 export const SITE_NAME = "Petite Jérusalem";
 export const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
+/** Logo carré (favicon) pour les données structurées Organization ; l'og-image
+ *  est une bannière large 1200×630, inadaptée au champ `logo`. */
+export const LOGO_IMAGE = `${SITE_URL}/favicon.png`;
 
 /** Escape a value so it is safe inside a double-quoted HTML attribute. */
 export function escapeAttr(value: string): string {
@@ -431,7 +434,7 @@ function buildLanding(path: string, s: LandingStrings): LandingLocaleContent {
         publisher: {
           "@type": "Organization",
           name: SITE_NAME,
-          logo: { "@type": "ImageObject", url: OG_IMAGE },
+          logo: { "@type": "ImageObject", url: LOGO_IMAGE },
         },
       },
       faqJsonLd(s.faq),
