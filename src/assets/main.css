@@ -112,10 +112,14 @@ h6 {
   line-height: 1.2;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-  transition: all 0.3s ease;
+/* Dans @layer base pour que les classes (btn-primary, text-*…) gardent la
+   main sur la couleur des liens — hors layer, cette règle écraserait tout. */
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
 }
 
 button,
