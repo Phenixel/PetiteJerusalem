@@ -21,6 +21,7 @@ import {
 import { ensureManifestLoaded } from "../services/offlineTextStore";
 import { useToast } from "../composables/useToast";
 import AppIcon from "../components/icons/AppIcon.vue";
+import AccountCta from "../components/AccountCta.vue";
 
 const { t } = useI18n();
 const toast = useToast();
@@ -296,5 +297,7 @@ onMounted(() => {
       <AppIcon name="search" :size="32" class="text-text-secondary/40 mb-4" />
       <p class="text-text-secondary">{{ t("study.noResults") }}</p>
     </div>
+
+    <AccountCta class="max-w-3xl mx-auto mt-12" />
   </main>
 </template>

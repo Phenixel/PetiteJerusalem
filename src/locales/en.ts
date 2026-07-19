@@ -478,6 +478,13 @@ const en: LocaleMessages = {
     textSizeIncrease: "Increase text size",
     textSizeDecrease: "Decrease text size",
   },
+  accountCta: {
+    title: "Create your free account",
+    description:
+      "Share readings with others, follow your daily reading and get a reminder every day.",
+    signup: "Sign up",
+    login: "Sign in",
+  },
   downloads: {
     total: "Storage used: {size}",
     downloadAll: "Download all",

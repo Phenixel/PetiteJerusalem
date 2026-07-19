@@ -468,6 +468,12 @@ const he: LocaleMessages = {
     textSizeIncrease: "הגדלת הטקסט",
     textSizeDecrease: "הקטנת הטקסט",
   },
+  accountCta: {
+    title: "צרו חשבון חינם",
+    description: "שתפו קריאות עם אחרים, עקבו אחרי הקריאה היומית וקבלו תזכורת בכל יום.",
+    signup: "הרשמה",
+    login: "התחברות",
+  },
   downloads: {
     total: "שטח בשימוש: {size}",
     downloadAll: "להוריד הכול",

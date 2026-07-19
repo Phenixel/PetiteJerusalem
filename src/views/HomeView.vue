@@ -5,10 +5,11 @@ import { useI18n } from "vue-i18n";
 import { seoService } from "../services/seoService";
 import { authService } from "../services/authService";
 import SiteFooter from "../components/SiteFooter.vue";
-import AppIcon from "../components/icons/AppIcon.vue";
+import AccountCta from "../components/AccountCta.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
 import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
 import IllustrationBibliotheque from "../components/illustrations/IllustrationBibliotheque.vue";
+import IllustrationProfil from "../components/illustrations/IllustrationProfil.vue";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -71,21 +72,17 @@ onUnmounted(() => {
     </div>
 
     <div class="w-full max-w-6xl mx-auto">
-      <!-- Connecté : invitation à explorer son profil, au-dessus des trois cartes. -->
+      <!-- Connecté : invitation à explorer son profil, au-dessus des trois cartes.
+           Déconnecté : incitation à créer un compte (AccountCta se cache seul). -->
       <button
         v-if="username"
         class="feature-card card card-hover group w-full flex items-center gap-5 p-6 text-left cursor-pointer mb-5 md:mb-6"
         :style="{ '--enter-delay': '0s' }"
         @click="router.push('/profile')"
       >
-        <div
-          class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0"
-        >
-          <AppIcon name="user" :size="24" />
-        </div>
         <div class="flex-1 min-w-0">
           <h3
-            class="text-lg font-bold mb-1 text-text-primary group-hover:text-primary transition-colors"
+            class="text-lg font-bold mb-1.5 text-text-primary group-hover:text-primary transition-colors"
           >
             {{ t("home.profileCard.title", { name: username }) }}
           </h3>
@@ -93,12 +90,11 @@ onUnmounted(() => {
             {{ t("home.profileCard.description") }}
           </p>
         </div>
-        <AppIcon
-          name="chevron-right"
-          :size="20"
-          class="shrink-0 text-text-secondary/40 group-hover:text-primary transition-colors rtl:rotate-180"
-        />
+        <div class="w-24 h-24 sm:w-28 sm:h-28 md:w-24 md:h-24 lg:w-28 lg:h-28 shrink-0 text-primary">
+          <IllustrationProfil />
+        </div>
       </button>
+      <AccountCta v-else class="mb-5 md:mb-6" />
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mb-10 items-stretch">
         <button

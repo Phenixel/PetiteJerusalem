@@ -480,6 +480,13 @@ const fr = {
     textSizeIncrease: "Agrandir le texte",
     textSizeDecrease: "Réduire le texte",
   },
+  accountCta: {
+    title: "Créez votre compte gratuit",
+    description:
+      "Partagez des lectures à plusieurs, suivez votre lecture quotidienne et recevez un rappel chaque jour.",
+    signup: "Créer un compte",
+    login: "Se connecter",
+  },
   downloads: {
     total: "Espace utilisé : {size}",
     downloadAll: "Tout télécharger",
