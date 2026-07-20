@@ -114,6 +114,7 @@ const en: LocaleMessages = {
       myInfo: "My Information",
       security: "Security",
       preferences: "Preferences",
+      about: "About",
     },
     noParticipatedSessions: "No participated sessions",
     noParticipatedSessionsDesc: "You haven't participated in any study sessions yet.",

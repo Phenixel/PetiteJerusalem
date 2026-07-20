@@ -4,6 +4,7 @@ import { onMounted, onUnmounted, ref, computed, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { seoService } from "../services/seoService";
 import { authService } from "../services/authService";
+import { isNativeApp } from "../composables/useNativeApp";
 import SiteFooter from "../components/SiteFooter.vue";
 import AccountCta from "../components/AccountCta.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
@@ -66,7 +67,11 @@ onUnmounted(() => {
       <h2 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight">
         {{ t("home.heroTitle") }}
       </h2>
-      <p class="text-base md:text-lg text-text-secondary max-w-2xl mx-auto leading-relaxed">
+      <!-- Le descriptif ne sert que le site : SEO + premier contact. -->
+      <p
+        v-if="!isNativeApp"
+        class="text-base md:text-lg text-text-secondary max-w-2xl mx-auto leading-relaxed"
+      >
         {{ t("home.heroDescription") }}
       </p>
     </div>
@@ -133,7 +138,8 @@ onUnmounted(() => {
     </div>
   </main>
 
-  <SiteFooter />
+  <!-- App native : pas de footer de site (l'essentiel vit dans le profil). -->
+  <SiteFooter v-if="!isNativeApp" />
 </template>
 
 <style scoped>

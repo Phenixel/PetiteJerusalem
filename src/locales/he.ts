@@ -113,6 +113,7 @@ const he: LocaleMessages = {
       myInfo: "המידע שלי",
       security: "אבטחה",
       preferences: "העדפות",
+      about: "אודות",
     },
     noParticipatedSessions: "אין סשנים שהשתתפת בהם",
     noParticipatedSessionsDesc: "עדיין לא השתתפת בסשני לימוד.",

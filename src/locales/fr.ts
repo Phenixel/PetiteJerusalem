@@ -112,6 +112,7 @@ const fr = {
       myInfo: "Mes Informations",
       security: "Sécurité",
       preferences: "Préférences",
+      about: "À propos",
     },
     noParticipatedSessions: "Aucune session participée",
     noParticipatedSessionsDesc: "Vous n'avez pas encore participé à des sessions d'étude.",

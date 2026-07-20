@@ -74,7 +74,9 @@ onAuthStateChanged(auth, (user) => {
     <Navbar />
     <OfflineNotice v-if="showOfflineNotice" />
     <RouterView v-else />
-    <SiteFooter v-if="!isHome" />
+    <!-- App native : pas de footer de site ; l'essentiel (à propos, mentions
+         légales…) vit dans l'onglet À propos du profil. -->
+    <SiteFooter v-if="!isHome && !isNativeApp" />
     <ScrollToTop />
     <ToastContainer />
     <GlobalAudioPlayer />
