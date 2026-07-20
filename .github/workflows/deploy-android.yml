@@ -10,8 +10,10 @@ name: Deploy Android
 # En plus de l'AAB, chaque publication envoie les notes de version
 # (« Nouveautés ») et synchronise la fiche Play Store (titre, descriptions,
 # captures d'écran) depuis store-assets/metadata/android/, puis crée une
-# release GitHub avec l'AAB signé. Avant chaque release, penser à mettre à
-# jour store-assets/metadata/android/<locale>/changelogs/default.txt.
+# release GitHub avec l'AAB signé. Les notes reprennent le texte de la
+# release GitHub du tag si elle existe (créer la release depuis l'interface
+# GitHub avec son texte publie donc ces notes sur le Play Store), sinon les
+# changelogs/default.txt du repo.
 #
 # Secrets requis (voir docs/android-ci-cd.md pour les créer) :
 #   ANDROID_KEYSTORE_BASE64   keystore de release encodé en base64
@@ -160,16 +162,17 @@ jobs:
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
 
-      # Notes de version (« Nouveautés ») attachées à la release, au format
-      # attendu par upload-google-play : un fichier whatsnew-<locale> par langue,
-      # copié depuis store-assets/metadata/android/<locale>/changelogs/default.txt.
+      # Notes de version (« Nouveautés ») : le texte de la release GitHub du
+      # tag si elle existe (rédigé à la main en créant la release), sinon les
+      # changelogs/default.txt du repo — voir scripts/prepare-whatsnew.mjs.
       - name: Préparer les notes de version
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p whatsnew
-          for dir in store-assets/metadata/android/*/; do
-            locale="$(basename "$dir")"
-            cp "$dir/changelogs/default.txt" "whatsnew/whatsnew-$locale"
-          done
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/v${{ steps.version.outputs.name }}" \
+            --jq '.body // ""' > release-body.md || rm -f release-body.md
+          node scripts/prepare-whatsnew.mjs release-body.md
           ls whatsnew
 
       - name: Publier sur le Play Store
@@ -189,12 +192,14 @@ jobs:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: node scripts/play-listing.mjs
 
-      # Release GitHub sur le tag : AAB signé + notes de version françaises,
-      # pour retrouver chaque build publié sans passer par l'onglet Actions.
+      # Release GitHub sur le tag : AAB signé + notes de version, pour
+      # retrouver chaque build publié sans passer par l'onglet Actions. Si la
+      # release existe déjà (créée à la main avec son texte), l'AAB y est
+      # simplement attaché : sans `body`, l'action conserve le texte d'origine.
       - name: Créer la release GitHub
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           name: v${{ steps.version.outputs.name }}
-          body_path: store-assets/metadata/android/fr-FR/changelogs/default.txt
+          body_path: ${{ steps.notes.outputs.has_release_body != 'true' && 'store-assets/metadata/android/fr-FR/changelogs/default.txt' || '' }}
           files: android/app/build/outputs/bundle/release/app-release.aab

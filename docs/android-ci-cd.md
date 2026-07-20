@@ -68,8 +68,17 @@ store-assets/metadata/android/<locale>/   # fr-FR, en-US, iw-IL (hébreu)
 ```
 
 - Les notes de version sont attachées à la release Play par
-  `upload-google-play` (paramètre `whatsNewDirectory`) : **mettre à jour les
-  `changelogs/default.txt` avant de poser le tag**.
+  `upload-google-play` (paramètre `whatsNewDirectory`), préparées par
+  `scripts/prepare-whatsnew.mjs` :
+  1. **si une release GitHub existe pour le tag** (créée depuis l'interface
+     GitHub avec son texte), c'est ce texte qui part sur le Play Store
+     (markdown allégé, tronqué à 500 caractères) — en français, les autres
+     langues retombent sur la langue par défaut dans la console ;
+  2. **sinon**, les `changelogs/default.txt` du repo (une version par
+     langue) : les mettre à jour avant de poser le tag.
+
+  La release GitHub est de toute façon créée/complétée par la CI avec l'AAB
+  signé ; si elle existe déjà, son texte n'est pas touché.
 - La fiche est envoyée par `node scripts/play-listing.mjs` (API Android
   Publisher, même compte de service). `node scripts/play-listing.mjs --check`
   vérifie les limites de caractères en local, sans réseau.
