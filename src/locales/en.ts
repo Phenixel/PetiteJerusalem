@@ -494,6 +494,12 @@ const en: LocaleMessages = {
     delete: "Delete",
     error: "Download failed. Check your connection.",
   },
+  offline: {
+    title: "No connection",
+    description: "This page needs an Internet connection. Check your network and try again.",
+    retry: "Try again",
+    library: "Open the library",
+  },
   notifications: {
     title: "Reading reminder",
     description: "Get a daily notification if your daily reading isn't finished.",

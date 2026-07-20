@@ -483,6 +483,12 @@ const he: LocaleMessages = {
     delete: "מחיקה",
     error: "ההורדה נכשלה. בדקו את החיבור.",
   },
+  offline: {
+    title: "אין חיבור",
+    description: "עמוד זה דורש חיבור לאינטרנט. בדקו את הרשת ונסו שוב.",
+    retry: "לנסות שוב",
+    library: "לפתוח את הספרייה",
+  },
   notifications: {
     title: "תזכורת קריאה",
     description: "קבלו התראה יומית אם הקריאה היומית שלכם לא הושלמה.",

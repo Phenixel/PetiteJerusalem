@@ -7,7 +7,9 @@ import SiteFooter from "./components/SiteFooter.vue";
 import ScrollToTop from "./components/ScrollToTop.vue";
 import ToastContainer from "./components/ToastContainer.vue";
 import GlobalAudioPlayer from "./components/GlobalAudioPlayer.vue";
+import OfflineNotice from "./components/OfflineNotice.vue";
 import { useMiniPlayerVisible } from "./composables/useAudioPlayer";
+import { useOnline } from "./composables/useOnline";
 import { RouterView } from "vue-router";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
@@ -20,6 +22,12 @@ const { loadFonts, resetFonts } = useFonts();
 
 const isHome = computed(() => route.name === "home");
 const isMiniPlayerVisible = useMiniPlayerVisible();
+
+// Hors ligne : les pages qui dépendent du réseau (sessions, chiourim, profil…)
+// affichent un message clair au lieu d'échouer en silence. Les pages marquées
+// meta.offlineOk (bibliothèque, lecture, contenus embarqués) restent servies.
+const online = useOnline();
+const showOfflineNotice = computed(() => !online.value && !route.meta.offlineOk);
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
@@ -41,7 +49,8 @@ onAuthStateChanged(auth, (user) => {
   >
     <StoneWallBackground />
     <Navbar />
-    <RouterView />
+    <OfflineNotice v-if="showOfflineNotice" />
+    <RouterView v-else />
     <SiteFooter v-if="!isHome" />
     <ScrollToTop />
     <ToastContainer />

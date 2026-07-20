@@ -13,6 +13,7 @@
  * Usage : node scripts/setup-android.mjs
  * Icônes/splash : npx @capacitor/assets generate --android (logo dans assets/logo.png)
  */
+import { execSync } from "node:child_process";
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -112,6 +113,52 @@ if (!existsSync(keystorePropertiesExample)) {
     `storeFile=/Users/phenixel/petite-jerusalem-release.keystore\nstorePassword=***\nkeyAlias=petite-jerusalem\nkeyPassword=***\n`,
   );
   console.log("setup-android: keystore.properties.example créé (à copier en keystore.properties et remplir)");
+}
+
+// 6. Icônes launcher + splash générées depuis assets/logo.png. Sans cette
+//    étape, un android/ fraîchement scaffoldé garde les icônes par défaut de
+//    Capacitor (ou d'anciennes icônes), différentes de la fiche Play Store.
+//    Marqueur d'idempotence : le splash-dark n'existe pas dans le scaffold nu.
+const generatedMarker = join(androidDir, "app/src/main/res/drawable-port-night-xxxhdpi/splash.png");
+if (!existsSync(generatedMarker)) {
+  try {
+    execSync("npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'", {
+      cwd: root,
+      stdio: "inherit",
+    });
+    console.log("setup-android: icônes et splash générés depuis assets/logo.png");
+  } catch {
+    console.warn(
+      "setup-android: ⚠️ génération des icônes échouée — lancer à la main :\n" +
+        "  npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'",
+    );
+  }
+}
+
+// 7. Icône adaptative : @capacitor/assets insère la couche de fond avec un
+//    inset de 16.7 %, ce qui laisse un anneau autour de l'icône sur le
+//    launcher. On remplace le fond par une couleur pleine (le beige du logo),
+//    seule la couche avant garde son inset.
+const launcherBgColor = join(androidDir, "app/src/main/res/values/ic_launcher_background.xml");
+const anydpiDir = join(androidDir, "app/src/main/res/mipmap-anydpi-v26");
+if (existsSync(anydpiDir)) {
+  writeFileSync(
+    launcherBgColor,
+    `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#F5EEDC</color>\n</resources>`,
+  );
+  for (const name of ["ic_launcher.xml", "ic_launcher_round.xml"]) {
+    const iconXmlPath = join(anydpiDir, name);
+    if (!existsSync(iconXmlPath)) continue;
+    const iconXml = readFileSync(iconXmlPath, "utf8");
+    const patched = iconXml.replace(
+      /<background>[\s\S]*?<\/background>/,
+      `<background android:drawable="@color/ic_launcher_background" />`,
+    );
+    if (patched !== iconXml) {
+      writeFileSync(iconXmlPath, patched);
+      console.log(`setup-android: fond plein appliqué à ${name}`);
+    }
+  }
 }
 
 console.log("setup-android: terminé.");

@@ -496,6 +496,13 @@ const fr = {
     delete: "Supprimer",
     error: "Téléchargement impossible. Vérifiez votre connexion.",
   },
+  offline: {
+    title: "Connexion impossible",
+    description:
+      "Cette page a besoin d'une connexion Internet. Vérifiez votre réseau puis réessayez.",
+    retry: "Réessayer",
+    library: "Ouvrir la bibliothèque",
+  },
   notifications: {
     title: "Rappel de lecture",
     description:
