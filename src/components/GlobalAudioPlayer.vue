@@ -40,7 +40,7 @@ function goToChiour() {
       class="fixed inset-x-0 z-40 bg-surface shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
       :class="
         isNativeApp
-          ? 'bottom-[calc(3.5rem+env(safe-area-inset-bottom))]'
+          ? 'bottom-[calc(3.5rem+var(--safe-bottom))]'
           : 'bottom-0 pb-[env(safe-area-inset-bottom)]'
       "
       role="region"

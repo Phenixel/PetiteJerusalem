@@ -35,12 +35,14 @@ const showOfflineNotice = computed(() => !online.value && !route.meta.offlineOk)
 // La barre système Android prend la couleur du fond de l'app (no-op sur web/iOS).
 useNativeStatusBar();
 
-// Réserve la place des barres fixes du bas : bottom bar native, mini-lecteur audio.
-const bottomPadClass = computed(() => {
+// Réserve la place des zones système (safe-areas, app native en edge-to-edge)
+// et des barres fixes du bas : bottom bar native, mini-lecteur audio.
+const chromePadClass = computed(() => {
   if (isNativeApp) {
-    return isMiniPlayerVisible.value
-      ? "pb-[calc(8.5rem+env(safe-area-inset-bottom))]"
-      : "pb-[calc(3.5rem+env(safe-area-inset-bottom))]";
+    const bottom = isMiniPlayerVisible.value
+      ? "pb-[calc(8.5rem+var(--safe-bottom))]"
+      : "pb-[calc(3.5rem+var(--safe-bottom))]";
+    return `pt-[var(--safe-top)] ${bottom}`;
   }
   return isMiniPlayerVisible.value ? "pb-20" : "";
 });
@@ -61,7 +63,7 @@ onAuthStateChanged(auth, (user) => {
        transparent (the dark background lives on <body>) or it would hide it. -->
   <div
     class="min-h-screen flex flex-col text-text-primary transition-colors duration-300 dark:text-gray-100"
-    :class="bottomPadClass"
+    :class="chromePadClass"
   >
     <StoneWallBackground />
     <Navbar />

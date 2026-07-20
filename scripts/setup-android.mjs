@@ -211,4 +211,38 @@ if (!existsSync(nightStyles)) {
   console.log("setup-android: values-night/styles.xml créé (barre système sombre)");
 }
 
+// 9. Overscroll : l'effet d'étirement d'Android déforme toute la WebView
+//    (bottom bar comprise). Le CSS overscroll-behavior ne suffit pas, il faut
+//    le désactiver sur la vue native.
+const mainActivityPath = join(
+  androidDir,
+  "app/src/main/java/fr/petitejerusalem/app/MainActivity.java",
+);
+if (existsSync(mainActivityPath)) {
+  const mainActivity = readFileSync(mainActivityPath, "utf8");
+  if (!mainActivity.includes("setOverScrollMode")) {
+    writeFileSync(
+      mainActivityPath,
+      `package fr.petitejerusalem.app;
+
+import android.os.Bundle;
+import android.view.View;
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // L'étirement d'overscroll d'Android (stretch) déforme toute la
+        // WebView, bottom bar comprise ; le CSS overscroll-behavior ne le
+        // désactive pas, seul le mode natif de la vue le fait.
+        this.bridge.getWebView().setOverScrollMode(View.OVER_SCROLL_NEVER);
+    }
+}
+`,
+    );
+    console.log("setup-android: overscroll désactivé dans MainActivity");
+  }
+}
+
 console.log("setup-android: terminé.");

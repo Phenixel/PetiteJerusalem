@@ -17,7 +17,7 @@ const tabs = [
      site). Fixée au-dessus de la barre de gestes Android (safe-area). -->
 <template>
   <nav
-    class="fixed bottom-0 inset-x-0 z-50 bg-surface border-t border-black/5 dark:border-white/10 pb-[env(safe-area-inset-bottom)]"
+    class="fixed bottom-0 inset-x-0 z-50 bg-surface border-t border-black/5 dark:border-white/10 pb-[var(--safe-bottom)]"
     :aria-label="t('navbar.mainMenu')"
   >
     <div class="flex items-stretch justify-around h-14">
