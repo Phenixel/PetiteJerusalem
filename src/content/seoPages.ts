@@ -521,7 +521,7 @@ const PRIVACY_FR: LegalStrings = {
         <li><strong>Notifications</strong> : si vous activez le rappel de lecture quotidien, un identifiant technique (jeton) de votre appareil, l'heure choisie et la langue de la notification.</li>
         <li><strong>Partage de lecture</strong> : si vous créez ou rejoignez une session partagée (Talmud, Tehilim…), le nom que vous indiquez (et votre email si vous participez sans créer de compte) est visible par toute personne disposant du lien de la session.</li>
       </ul>
-      <p>Nous ne collectons aucune donnée à des fins publicitaires et n'utilisons aucun outil de suivi ou d'analyse tiers (pas de Google Analytics, pas de traceur publicitaire).</p>`,
+      <p>Nous ne collectons aucune donnée à des fins publicitaires et n'utilisons aucun traceur publicitaire. Nous utilisons uniquement des outils de mesure d'audience (Google Analytics) afin de surveiller le bon fonctionnement de l'application et de l'améliorer.</p>`,
     },
     {
       heading: "Où sont hébergées ces données ?",
@@ -592,7 +592,7 @@ const PRIVACY_EN: LegalStrings = {
         <li><strong>Notifications</strong>: if you enable the daily reading reminder, a technical device token, the chosen time, and the notification language.</li>
         <li><strong>Shared reading</strong>: if you create or join a shared session (Talmud, Tehilim…), the name you provide (and your email if you take part without an account) is visible to anyone with the session link.</li>
       </ul>
-      <p>We do not collect any data for advertising purposes and do not use any third-party tracking or analytics tools (no Google Analytics, no ad tracker).</p>`,
+      <p>We do not collect any data for advertising purposes and do not use any ad trackers. We only use audience measurement tools (Google Analytics) to monitor the app's proper functioning and improve it.</p>`,
     },
     {
       heading: "Where is this data hosted?",
@@ -661,7 +661,7 @@ const PRIVACY_HE: LegalStrings = {
         <li><strong>התראות</strong>: אם תפעילו את תזכורת הקריאה היומית, אסימון מכשיר טכני, השעה שנבחרה ושפת ההתראה.</li>
         <li><strong>שיתוף קריאה</strong>: אם תיצרו או תצטרפו לפגישת קריאה משותפת (תלמוד, תהילים...), השם שתמסרו (והאימייל שלכם אם אתם משתתפים ללא חשבון) גלוי לכל מי שיש לו את קישור הפגישה.</li>
       </ul>
-      <p>איננו אוספים נתונים לצרכי פרסום ואיננו משתמשים בכלי מעקב או ניתוח של צד שלישי (ללא Google Analytics, ללא עוקב פרסומי).</p>`,
+      <p>איננו אוספים נתונים לצרכי פרסום ואיננו משתמשים בעוקבים פרסומיים. אנו משתמשים בכלי מדידת קהל (Google Analytics) בלבד כדי לנטר את תקינות האפליקציה ולשפר אותה.</p>`,
     },
     {
       heading: "היכן מאוחסנים הנתונים?",

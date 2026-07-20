@@ -85,7 +85,7 @@ const en: LocaleMessages = {
       sessionsTitle: "My sessions",
       endsToday: "ends today",
       endsInDays: "ends in {count} d",
-      noEndingSoon: "{count} active session(s) — none ends this week.",
+      noEndingSoon: "{count} active session(s), none ends this week.",
       noSessions: "Join or create a shared study session.",
       sessionsCta: "See Reading Share",
     },
