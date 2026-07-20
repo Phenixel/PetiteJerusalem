@@ -59,6 +59,28 @@ async function toggle() {
   }
 }
 
+const testBusy = ref(false);
+
+/** Envoi immédiat d'une notification de test pour vérifier la chaîne push. */
+async function sendTest() {
+  testBusy.value = true;
+  try {
+    const result = await pushService.sendTest();
+    if (result.successCount > 0) {
+      toast.success(t("notifications.testSent", { count: result.successCount }));
+    } else if (result.tokenCount === 0) {
+      toast.error(t("notifications.testNoToken"));
+    } else {
+      toast.error(t("notifications.testFailed", { error: result.errorCodes.join(", ") || "?" }));
+    }
+  } catch (e: unknown) {
+    console.error("Notification de test échouée:", e);
+    toast.error(t("notifications.error"));
+  } finally {
+    testBusy.value = false;
+  }
+}
+
 async function onHourChange() {
   if (!enabled.value) return; // sera enregistrée à l'activation
   try {
@@ -110,6 +132,17 @@ async function onHourChange() {
         <AppIcon name="circle-check" :size="14" />
         {{ t("notifications.enabled", { hour: reminderHour }) }}
       </p>
+
+      <button
+        v-if="enabled"
+        class="btn btn-soft mt-4 w-full sm:w-auto"
+        :disabled="testBusy"
+        @click="sendTest"
+      >
+        <AppIcon v-if="testBusy" name="spinner" :size="15" class="animate-spin" />
+        <AppIcon v-else name="bell" :size="15" />
+        {{ t("notifications.test") }}
+      </button>
       <p
         v-if="permissionDenied"
         class="mt-4 flex items-center gap-2 text-sm text-red-600 dark:text-red-400"

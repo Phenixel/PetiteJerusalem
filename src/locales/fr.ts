@@ -517,6 +517,12 @@ const fr = {
     permissionDenied:
       "Les notifications sont bloquées pour cette application. Autorisez-les dans les réglages du téléphone, puis réessayez.",
     error: "Impossible de modifier le réglage des notifications. Réessayez.",
+    test: "Envoyer une notification de test",
+    testSent:
+      "Notification de test envoyée sur {count} appareil(s). Si elle n'apparaît pas, vérifiez les réglages du téléphone.",
+    testNoToken:
+      "Aucun appareil enregistré pour ce compte. Désactivez puis réactivez le rappel, et réessayez.",
+    testFailed: "Échec de l'envoi ({error}). Désactivez puis réactivez le rappel, et réessayez.",
   },
   study: {
     title: "Bibliothèque",

@@ -44,8 +44,8 @@ app.mount("#app");
 // initial du site web.
 import("./composables/useNativeApp").then(({ isNativeApp }) => {
   if (!isNativeApp) return;
-  // Navigation quand on touche une notification push.
-  import("./services/pushService").then(({ pushService }) => pushService.initDeepLinks(router));
+  // Notifications push : deep-links au toucher + affichage en premier plan.
+  import("./services/pushService").then(({ pushService }) => pushService.init(router));
   // La WebView Android applique l'échelle de police système (textZoom), ce qui
   // casse les mises en page (textes agrandis, débordements). On la neutralise :
   // la taille de lecture se règle dans l'app (useReadingSize).
