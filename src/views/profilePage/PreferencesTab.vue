@@ -3,6 +3,7 @@ import { ref, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useTheme, type ThemeOption } from "../../composables/useTheme";
 import { useFonts, type FontOption } from "../../composables/useFonts";
+import { useLocale } from "../../composables/useLocale";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
@@ -10,6 +11,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+const { currentLocale, availableLocales, setLocale } = useLocale();
 const { currentThemeId, themes, setTheme, previewTheme, cancelPreview } = useTheme();
 const {
   currentLatinId,
@@ -81,6 +83,38 @@ const selectHebrewFont = async (font: FontOption) => {
 
 <template>
   <div>
+    <!-- Langue -->
+    <h2 class="text-2xl font-bold mb-2 text-text-primary">
+      {{ t("profile.languageTitle") }}
+    </h2>
+    <p class="text-text-secondary mb-8">
+      {{ t("profile.languageDescription") }}
+    </p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+      <button
+        v-for="locale in availableLocales"
+        :key="locale.code"
+        @click="setLocale(locale.code)"
+        :class="[
+          'card p-4 text-left transition-all duration-300 cursor-pointer',
+          currentLocale === locale.code ? 'ring-2 ring-primary' : 'card-hover',
+        ]"
+      >
+        <span class="flex items-center gap-3">
+          <span class="text-2xl">{{ locale.flag }}</span>
+          <span class="font-semibold text-text-primary" :dir="locale.dir">{{ locale.label }}</span>
+          <AppIcon
+            v-if="currentLocale === locale.code"
+            name="check"
+            :size="14"
+            class="text-primary ml-auto"
+          />
+        </span>
+      </button>
+    </div>
+
+    <!-- Thème -->
     <h2 class="text-2xl font-bold mb-2 text-text-primary">
       {{ t("profile.themeTitle") }}
     </h2>

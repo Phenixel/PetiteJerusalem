@@ -13,6 +13,7 @@ import { useMiniPlayerVisible } from "./composables/useAudioPlayer";
 import { useOnline } from "./composables/useOnline";
 import { isNativeApp } from "./composables/useNativeApp";
 import { useNativeStatusBar } from "./composables/useNativeStatusBar";
+import { useLocale } from "./composables/useLocale";
 import { RouterView } from "vue-router";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
@@ -34,6 +35,10 @@ const showOfflineNotice = computed(() => !online.value && !route.meta.offlineOk)
 
 // La barre système Android prend la couleur du fond de l'app (no-op sur web/iOS).
 useNativeStatusBar();
+
+// Applique dir/lang au document dès la racine : dans l'app native, le
+// LanguageSelector (navbar/footer) n'est pas monté, personne d'autre ne le fait.
+useLocale();
 
 // Réserve la place des zones système (safe-areas, app native en edge-to-edge)
 // et des barres fixes du bas : bottom bar native, mini-lecteur audio.
