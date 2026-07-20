@@ -1,0 +1,4 @@
+Rappel de lecture quotidien : choisissez l'heure de votre notification depuis votre profil.
+Notifications visibles même quand l'application est ouverte.
+Nouvel onglet À propos et améliorations de l'interface.
+Corrections de bugs et améliorations de performance.

@@ -47,7 +47,35 @@ gh secret set PLAY_SERVICE_ACCOUNT_JSON < ~/Downloads/petite-jerusalem-play-ci.j
    autorisations → Inviter un utilisateur → l'adresse e-mail du compte de
    service (`play-ci@….iam.gserviceaccount.com`) → autorisations sur l'app
    Petite Jérusalem : « Publier des releases en production » (et pistes de
-   test).
+   test) + « Modifier la fiche Play Store » (pour la synchronisation des
+   descriptions et captures d'écran par la CI).
+
+## Fiche Play Store et notes de version
+
+La fiche (titre, descriptions, captures d'écran) et les notes de version
+vivent dans le repo, au format fastlane, et sont synchronisées à chaque
+publication :
+
+```
+store-assets/metadata/android/<locale>/   # fr-FR, en-US, iw-IL (hébreu)
+├── title.txt                 # ≤ 30 caractères
+├── short_description.txt     # ≤ 80
+├── full_description.txt      # ≤ 4000
+├── changelogs/default.txt    # ≤ 500 — notes « Nouveautés » de la release
+└── images/
+    ├── phoneScreenshots/     # ≥ 2 captures sinon elles ne sont pas envoyées
+    └── featureGraphic.png    # bannière 1024×500 (optionnelle)
+```
+
+- Les notes de version sont attachées à la release Play par
+  `upload-google-play` (paramètre `whatsNewDirectory`) : **mettre à jour les
+  `changelogs/default.txt` avant de poser le tag**.
+- La fiche est envoyée par `node scripts/play-listing.mjs` (API Android
+  Publisher, même compte de service). `node scripts/play-listing.mjs --check`
+  vérifie les limites de caractères en local, sans réseau.
+- Les captures d'une langue remplacent **tout** le jeu existant dans la
+  console ; une langue sans captures dans le repo laisse la console
+  intacte (les langues sans images retombent sur la langue par défaut).
 
 ## Piste de publication
 
