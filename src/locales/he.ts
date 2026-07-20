@@ -3,6 +3,7 @@ import type { LocaleMessages } from "./fr";
 const he: LocaleMessages = {
   common: {
     home: "בית",
+    profile: "פרופיל",
     login: "התחברות",
     logout: "התנתקות",
     shareReading: "שיתוף קריאות",

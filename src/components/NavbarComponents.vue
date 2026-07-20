@@ -62,19 +62,8 @@ function goToLogin() {
 </script>
 
 <template>
-  <!-- App native : pas de bandeau de site (effet « site web embarqué »), le
-       contenu prend tout l'écran et seul un bouton menu flottant subsiste. -->
-  <button
-    v-if="isNativeApp"
-    @click="toggleMobileMenu"
-    class="fixed top-3 right-4 z-[1000] flex flex-col justify-around w-11 h-11 p-3 rounded-full bg-surface/90 backdrop-blur-md shadow-md border border-black/5 dark:border-white/10 cursor-pointer text-text-primary"
-    :aria-label="$t('navbar.mainMenu')"
-  >
-    <span class="w-full h-[2.5px] bg-current rounded-sm"></span>
-    <span class="w-full h-[2.5px] bg-current rounded-sm"></span>
-    <span class="w-full h-[2.5px] bg-current rounded-sm"></span>
-  </button>
-
+  <!-- App native : pas de bandeau de site (effet « site web embarqué ») ; la
+       navigation passe par la bottom bar (BottomTabBar dans App.vue). -->
   <header
     v-if="!isNativeApp"
     class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-beige/90 backdrop-blur-md dark:bg-gray-900/90 transition-colors duration-300"

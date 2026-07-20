@@ -8,8 +8,11 @@ import ScrollToTop from "./components/ScrollToTop.vue";
 import ToastContainer from "./components/ToastContainer.vue";
 import GlobalAudioPlayer from "./components/GlobalAudioPlayer.vue";
 import OfflineNotice from "./components/OfflineNotice.vue";
+import BottomTabBar from "./components/BottomTabBar.vue";
 import { useMiniPlayerVisible } from "./composables/useAudioPlayer";
 import { useOnline } from "./composables/useOnline";
+import { isNativeApp } from "./composables/useNativeApp";
+import { useNativeStatusBar } from "./composables/useNativeStatusBar";
 import { RouterView } from "vue-router";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
@@ -29,6 +32,19 @@ const isMiniPlayerVisible = useMiniPlayerVisible();
 const online = useOnline();
 const showOfflineNotice = computed(() => !online.value && !route.meta.offlineOk);
 
+// La barre système Android prend la couleur du fond de l'app (no-op sur web/iOS).
+useNativeStatusBar();
+
+// Réserve la place des barres fixes du bas : bottom bar native, mini-lecteur audio.
+const bottomPadClass = computed(() => {
+  if (isNativeApp) {
+    return isMiniPlayerVisible.value
+      ? "pb-[calc(8.5rem+env(safe-area-inset-bottom))]"
+      : "pb-[calc(3.5rem+env(safe-area-inset-bottom))]";
+  }
+  return isMiniPlayerVisible.value ? "pb-20" : "";
+});
+
 onAuthStateChanged(auth, (user) => {
   if (user) {
     loadTheme(user.uid);
@@ -45,7 +61,7 @@ onAuthStateChanged(auth, (user) => {
        transparent (the dark background lives on <body>) or it would hide it. -->
   <div
     class="min-h-screen flex flex-col text-text-primary transition-colors duration-300 dark:text-gray-100"
-    :class="{ 'pb-20': isMiniPlayerVisible }"
+    :class="bottomPadClass"
   >
     <StoneWallBackground />
     <Navbar />
@@ -55,5 +71,6 @@ onAuthStateChanged(auth, (user) => {
     <ScrollToTop />
     <ToastContainer />
     <GlobalAudioPlayer />
+    <BottomTabBar v-if="isNativeApp" />
   </div>
 </template>

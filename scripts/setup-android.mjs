@@ -161,4 +161,52 @@ if (existsSync(anydpiDir)) {
   }
 }
 
+// 8. Barre système aux couleurs de l'app (statusBarColor est ignoré par les
+//    API récentes ; c'est le windowBackground qui colore la bande sous la
+//    barre d'état en edge-to-edge). Valeurs synchronisées avec
+//    src/assets/main.css (--color-bg-beige et le fond sombre du body) et
+//    src/composables/useNativeStatusBar.ts.
+const stylesPath = join(androidDir, "app/src/main/res/values/styles.xml");
+const styles = readFileSync(stylesPath, "utf8");
+const noActionBarMarker =
+  '<style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">';
+if (styles.includes(noActionBarMarker) && !styles.includes("android:windowBackground")) {
+  writeFileSync(
+    stylesPath,
+    styles.replace(
+      noActionBarMarker,
+      `${noActionBarMarker}
+        <item name="android:statusBarColor">#F4F1EA</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">#F4F1EA</item>
+        <item name="android:windowBackground">#F4F1EA</item>`,
+    ),
+  );
+  console.log("setup-android: couleurs de barre système ajoutées à styles.xml");
+}
+const nightDir = join(androidDir, "app/src/main/res/values-night");
+const nightStyles = join(nightDir, "styles.xml");
+if (!existsSync(nightStyles)) {
+  const { mkdirSync } = await import("node:fs");
+  mkdirSync(nightDir, { recursive: true });
+  writeFileSync(
+    nightStyles,
+    `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mode sombre : la barre système suit le fond sombre de l'app (main.css). -->
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@null</item>
+        <item name="android:statusBarColor">#111827</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">#111827</item>
+        <item name="android:windowBackground">#111827</item>
+    </style>
+</resources>
+`,
+  );
+  console.log("setup-android: values-night/styles.xml créé (barre système sombre)");
+}
+
 console.log("setup-android: terminé.");

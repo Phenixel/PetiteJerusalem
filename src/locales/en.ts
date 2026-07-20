@@ -3,6 +3,7 @@ import type { LocaleMessages } from "./fr";
 const en: LocaleMessages = {
   common: {
     home: "Home",
+    profile: "Profile",
     login: "Sign in",
     logout: "Logout",
     shareReading: "Reading Share",

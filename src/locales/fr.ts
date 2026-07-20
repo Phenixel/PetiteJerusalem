@@ -1,6 +1,7 @@
 const fr = {
   common: {
     home: "Accueil",
+    profile: "Profil",
     login: "Se connecter",
     logout: "Déconnexion",
     shareReading: "Partage de lectures",

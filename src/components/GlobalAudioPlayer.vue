@@ -7,6 +7,7 @@ import {
   useMiniPlayerVisible,
   formatTime,
 } from "../composables/useAudioPlayer";
+import { isNativeApp } from "../composables/useNativeApp";
 import { computed } from "vue";
 
 const { t } = useI18n();
@@ -36,7 +37,12 @@ function goToChiour() {
   <Transition name="slide-up">
     <div
       v-if="isVisible && player.track.value"
-      class="fixed bottom-0 inset-x-0 z-40 bg-surface shadow-[0_-4px_20px_rgba(0,0,0,0.1)] pb-[env(safe-area-inset-bottom)]"
+      class="fixed inset-x-0 z-40 bg-surface shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
+      :class="
+        isNativeApp
+          ? 'bottom-[calc(3.5rem+env(safe-area-inset-bottom))]'
+          : 'bottom-0 pb-[env(safe-area-inset-bottom)]'
+      "
       role="region"
       :aria-label="t('audioPlayer.nowPlaying')"
     >
