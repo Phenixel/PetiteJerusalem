@@ -37,7 +37,7 @@ const COPY: Record<string, ReminderCopy> = {
   },
 };
 
-const INVALID_TOKEN_CODES = new Set([
+export const INVALID_TOKEN_CODES = new Set([
   "messaging/registration-token-not-registered",
   "messaging/invalid-registration-token",
   "messaging/invalid-argument",

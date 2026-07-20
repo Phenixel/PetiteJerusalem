@@ -513,6 +513,11 @@ const en: LocaleMessages = {
     permissionDenied:
       "Notifications are blocked for this app. Allow them in your phone settings, then try again.",
     error: "Could not update the notification setting. Please try again.",
+    test: "Send a test notification",
+    testSent:
+      "Test notification sent to {count} device(s). If it doesn't show up, check your phone settings.",
+    testNoToken: "No device registered for this account. Turn the reminder off and on, then retry.",
+    testFailed: "Sending failed ({error}). Turn the reminder off and on, then retry.",
   },
   study: {
     title: "Library",

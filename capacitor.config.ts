@@ -25,6 +25,12 @@ const config: CapacitorConfig = {
       skipNativeAuth: true,
       providers: ['google.com', 'apple.com'],
     },
+    // iOS : affiche les notifications push même quand l'app est au premier
+    // plan (sinon iOS les avale). L'équivalent Android est géré dans
+    // pushService via @capacitor/local-notifications.
+    FirebaseMessaging: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
   },
 }
 

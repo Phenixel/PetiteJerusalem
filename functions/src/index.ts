@@ -27,6 +27,8 @@ setGlobalOptions({ maxInstances: 3 });
 
 // Rappel quotidien de lecture (push FCM vers l'app mobile).
 export { dailyReadingReminder } from "./dailyReminder";
+// Notification de test à la demande (bouton dans les réglages de l'app).
+export { sendTestNotification } from "./testNotification";
 
 const SITE_URL = "https://petite-jerusalem.fr";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;

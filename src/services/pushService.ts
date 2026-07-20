@@ -1,7 +1,9 @@
 import { FirebaseMessaging } from "@capacitor-firebase/messaging";
+import { Capacitor } from "@capacitor/core";
+import { LocalNotifications } from "@capacitor/local-notifications";
 import { arrayRemove, arrayUnion, doc, setDoc } from "firebase/firestore";
 import type { Router } from "vue-router";
-import { db } from "../../firebase";
+import { app, db } from "../../firebase";
 import { isNativeApp } from "../composables/useNativeApp";
 
 /**
@@ -19,6 +21,14 @@ import { isNativeApp } from "../composables/useNativeApp";
  */
 
 export type PushPermission = "granted" | "denied" | "prompt";
+
+/** Résultat de la Cloud Function `sendTestNotification` (functions/src/testNotification.ts). */
+export interface TestNotificationResult {
+  tokenCount: number;
+  successCount: number;
+  failureCount: number;
+  errorCodes: string[];
+}
 
 class PushService {
   /** Les push ne sont proposés que dans l'app native. */
@@ -79,11 +89,62 @@ class PushService {
     await FirebaseMessaging.deleteToken().catch(() => {});
   }
 
-  /** Navigation quand l'utilisateur touche une notification (deep-link `data.url`). */
-  initDeepLinks(router: Router): void {
+  /**
+   * Envoie immédiatement une notification de test sur tous les appareils du
+   * compte, via la Cloud Function `sendTestNotification`. Import dynamique :
+   * `firebase/functions` ne rentre pas dans le bundle web, qui n'en a pas besoin.
+   */
+  async sendTest(): Promise<TestNotificationResult> {
+    const { getFunctions, httpsCallable } = await import("firebase/functions");
+    const call = httpsCallable<void, TestNotificationResult>(
+      getFunctions(app),
+      "sendTestNotification",
+    );
+    const { data } = await call();
+    return data;
+  }
+
+  /**
+   * Écouteurs de notifications, à appeler une fois au démarrage :
+   * deep-links au toucher, et affichage quand l'app est au premier plan.
+   *
+   * Premier plan : le système n'affiche pas les push quand l'app est ouverte.
+   * Sur iOS, `presentationOptions` dans capacitor.config.ts suffit. Sur
+   * Android, rien n'existe nativement : on rejoue la notification reçue via
+   * une notification locale (@capacitor/local-notifications), qui partage la
+   * permission POST_NOTIFICATIONS déjà accordée pour les push.
+   */
+  init(router: Router): void {
     if (!this.isAvailable) return;
+
+    // Deep-link quand l'utilisateur touche une notification push (`data.url`).
     FirebaseMessaging.addListener("notificationActionPerformed", (event) => {
       const url = (event.notification.data as { url?: string } | undefined)?.url;
+      if (url) router.push(url);
+    });
+
+    if (Capacitor.getPlatform() !== "android") return;
+    // `notificationReceived` n'est émis qu'app au premier plan sur Android :
+    // pas de risque de doublon avec l'affichage système en arrière-plan.
+    FirebaseMessaging.addListener("notificationReceived", (event) => {
+      const { title, body, data } = event.notification;
+      if (!title && !body) return;
+      void LocalNotifications.schedule({
+        notifications: [
+          {
+            // Id 32 bits requis par Android ; les millisecondes tronquées
+            // suffisent à éviter les collisions entre deux rappels.
+            id: Date.now() % 2147483647,
+            title: title ?? "",
+            body: body ?? "",
+            extra: data,
+          },
+        ],
+      }).catch((e) => console.error("Affichage de la notification en premier plan échoué:", e));
+    });
+    // Toucher la notification locale doit deep-linker comme la push d'origine.
+    LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
+      const url = (event.notification.extra as { url?: string } | undefined)?.url;
       if (url) router.push(url);
     });
   }
