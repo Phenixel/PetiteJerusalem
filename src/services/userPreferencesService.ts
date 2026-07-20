@@ -25,6 +25,8 @@ export interface UserPreferences {
   pushReminderEnabled: boolean;
   /** Hour of day (0-23, Paris time) the reminder is sent at. */
   pushReminderHour: number;
+  /** Minute of the hour (0-55, 5-minute steps) the reminder is sent at. */
+  pushReminderMinute: number;
   /** Locale the reminder notifications are sent in (fr/en/he). */
   pushLocale: string;
 }
@@ -38,6 +40,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   fcmTokens: [],
   pushReminderEnabled: false,
   pushReminderHour: 18,
+  pushReminderMinute: 0,
   pushLocale: "fr",
 };
 

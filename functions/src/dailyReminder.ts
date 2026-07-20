@@ -1,12 +1,13 @@
 /**
  * Rappel quotidien de lecture par notification push (FCM).
  *
- * Chaque soir à 18h (heure de Paris — audience du site), parcourt les
- * `userPreferences` dont `pushReminderEnabled` est vrai : si la liste de
- * lecture quotidienne du jour n'est pas terminée, envoie un rappel sur tous
- * les appareils enregistrés (`fcmTokens`, alimentés par l'app native via
- * src/services/pushService.ts). Les tokens morts (app désinstallée,
- * rotation) sont purgés au fil des envois en échec.
+ * Toutes les 5 minutes (heure de Paris — audience du site), parcourt les
+ * `userPreferences` dont `pushReminderEnabled` est vrai : si c'est le moment
+ * choisi par l'utilisateur (`pushReminderHour`/`pushReminderMinute`) et que
+ * sa liste de lecture quotidienne du jour n'est pas terminée, envoie un
+ * rappel sur tous les appareils enregistrés (`fcmTokens`, alimentés par
+ * l'app native via src/services/pushService.ts). Les tokens morts (app
+ * désinstallée, rotation) sont purgés au fil des envois en échec.
  *
  * Prérequis hors code : clé APNs uploadée dans la console Firebase (iOS).
  */
@@ -48,23 +49,31 @@ function todayKey(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
 }
 
-/** Heure courante à Paris (0-23), pour respecter l'heure choisie par chacun. */
-function currentParisHour(): number {
-  return Number(
-    new Intl.DateTimeFormat("fr-FR", {
-      timeZone: "Europe/Paris",
-      hour: "numeric",
-      hour12: false,
-    }).format(new Date()),
-  );
+/** Heure courante à Paris ({ hour, minute }), pour respecter le moment choisi par chacun. */
+function currentParisTime(): { hour: number; minute: number } {
+  const parts = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Europe/Paris",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  }).formatToParts(new Date());
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  return { hour: get("hour"), minute: get("minute") };
 }
 
 const DEFAULT_REMINDER_HOUR = 18;
+const DEFAULT_REMINDER_MINUTE = 0;
 
-// Tourne toutes les heures : chaque utilisateur choisit son heure de rappel
-// (`pushReminderHour`) dans l'app, on n'envoie qu'à ceux dont c'est l'heure.
+/** Cale une minute sur le créneau de 5 min en cours (17 → 15), pas du scheduler. */
+function toSlot(minute: number): number {
+  return Math.floor(minute / 5) * 5;
+}
+
+// Tourne toutes les 5 minutes : chaque utilisateur choisit le moment de son
+// rappel (`pushReminderHour`/`pushReminderMinute`, minutes de 5 en 5) dans
+// l'app, on n'envoie qu'à ceux dont c'est le créneau.
 export const dailyReadingReminder = onSchedule(
-  { schedule: "0 * * * *", timeZone: "Europe/Paris" },
+  { schedule: "*/5 * * * *", timeZone: "Europe/Paris" },
   async () => {
     const db = getFirestore();
     const snap = await db
@@ -75,14 +84,19 @@ export const dailyReadingReminder = onSchedule(
 
     const messaging = getMessaging();
     const today = todayKey();
-    const hour = currentParisHour();
+    const now = currentParisTime();
+    const currentSlot = toSlot(now.minute);
     let sent = 0;
 
     for (const docSnap of snap.docs) {
       const prefs = docSnap.data();
       const wantedHour =
         typeof prefs.pushReminderHour === "number" ? prefs.pushReminderHour : DEFAULT_REMINDER_HOUR;
-      if (wantedHour !== hour) continue;
+      const wantedMinute =
+        typeof prefs.pushReminderMinute === "number"
+          ? toSlot(prefs.pushReminderMinute)
+          : DEFAULT_REMINDER_MINUTE;
+      if (wantedHour !== now.hour || wantedMinute !== currentSlot) continue;
       const tokens: string[] = Array.isArray(prefs.fcmTokens)
         ? prefs.fcmTokens.filter((t: unknown): t is string => typeof t === "string" && t.length > 0)
         : [];

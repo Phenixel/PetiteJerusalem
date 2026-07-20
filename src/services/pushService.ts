@@ -45,10 +45,11 @@ class PushService {
   /**
    * Active les rappels : permission système (Android 13+ et iOS affichent le
    * prompt), token FCM, puis enregistrement dans les préférences utilisateur.
-   * `locale` fige la langue des notifications ; `hour` l'heure d'envoi (0-23,
-   * heure de Paris).
+   * `locale` fige la langue des notifications ; `hour`/`minute` le moment
+   * d'envoi (heure de Paris, minutes par pas de 5 — cadence de la Cloud
+   * Function dailyReadingReminder).
    */
-  async enable(userId: string, locale: string, hour: number): Promise<void> {
+  async enable(userId: string, locale: string, hour: number, minute: number): Promise<void> {
     const permission = await FirebaseMessaging.requestPermissions();
     if (permission.receive !== "granted") {
       throw new Error("PERMISSION_DENIED");
@@ -60,15 +61,11 @@ class PushService {
         fcmTokens: arrayUnion(token),
         pushReminderEnabled: true,
         pushReminderHour: hour,
+        pushReminderMinute: minute,
         pushLocale: locale,
       },
       { merge: true },
     );
-  }
-
-  /** Change l'heure d'envoi du rappel (0-23, heure de Paris). */
-  async setReminderHour(userId: string, hour: number): Promise<void> {
-    await setDoc(doc(db, "userPreferences", userId), { pushReminderHour: hour }, { merge: true });
   }
 
   /** Coupe les rappels et retire le token de cet appareil. */
