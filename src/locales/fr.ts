@@ -73,10 +73,20 @@ const fr = {
       },
     },
     comingSoon: "Bientôt",
-    profileCard: {
-      title: "Bonjour {name}",
-      description:
-        "Vos sessions, votre lecture quotidienne, vos rappels et vos préférences vous attendent dans votre profil.",
+    dashboard: {
+      hello: "Bonjour",
+      helloEvening: "Bonsoir",
+      subtitle: "Voici où vous en êtes aujourd'hui.",
+      readingEmpty: "Composez la liste des textes que vous lisez chaque jour.",
+      readingCta: "Reprendre ma lecture",
+      readingSetupCta: "Choisir mes textes",
+      sessionsTitle: "Mes sessions",
+      endsToday: "se termine aujourd'hui",
+      endsInDays: "se termine dans {count} j",
+      noEndingSoon:
+        "{count} session(s) en cours — aucune ne se termine cette semaine.",
+      noSessions: "Rejoignez ou créez une session d'étude partagée.",
+      sessionsCta: "Voir le partage de lectures",
     },
     memorial: {
       title: "À la mémoire de",

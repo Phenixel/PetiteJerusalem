@@ -75,10 +75,19 @@ const en: LocaleMessages = {
       },
     },
     comingSoon: "Coming Soon",
-    profileCard: {
-      title: "Hello {name}",
-      description:
-        "Your sessions, daily reading, reminders and preferences are waiting in your profile.",
+    dashboard: {
+      hello: "Hello",
+      helloEvening: "Good evening",
+      subtitle: "Here's where you stand today.",
+      readingEmpty: "Build the list of texts you read every day.",
+      readingCta: "Resume my reading",
+      readingSetupCta: "Pick my texts",
+      sessionsTitle: "My sessions",
+      endsToday: "ends today",
+      endsInDays: "ends in {count} d",
+      noEndingSoon: "{count} active session(s) — none ends this week.",
+      noSessions: "Join or create a shared study session.",
+      sessionsCta: "See Reading Share",
     },
     memorial: {
       title: "In memory of",

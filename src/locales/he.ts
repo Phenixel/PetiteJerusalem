@@ -75,9 +75,19 @@ const he: LocaleMessages = {
       },
     },
     comingSoon: "בקרוב",
-    profileCard: {
-      title: "שלום {name}",
-      description: "המפגשים, הקריאה היומית, התזכורות וההעדפות שלכם מחכים בפרופיל.",
+    dashboard: {
+      hello: "שלום",
+      helloEvening: "ערב טוב",
+      subtitle: "הנה איפה אתם עומדים היום.",
+      readingEmpty: "הרכיבו את רשימת הטקסטים שאתם קוראים כל יום.",
+      readingCta: "להמשיך בקריאה",
+      readingSetupCta: "לבחור טקסטים",
+      sessionsTitle: "הסשנים שלי",
+      endsToday: "מסתיים היום",
+      endsInDays: "מסתיים בעוד {count} ימים",
+      noEndingSoon: "{count} סשנים פעילים — אף אחד לא מסתיים השבוע.",
+      noSessions: "הצטרפו לסשן לימוד משותף או צרו אחד.",
+      sessionsCta: "לשיתוף הקריאות",
     },
     memorial: {
       title: "לזכר",
