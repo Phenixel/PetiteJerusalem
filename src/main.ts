@@ -4,6 +4,19 @@ import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
 import i18n from "./i18n";
+import { isNativeApp } from "./composables/useNativeApp";
+
+// App native : à faire de façon SYNCHRONE avant le premier rendu.
+// - viewport-fit=cover fait passer la webview en vrai edge-to-edge (Capacitor
+//   lit ce meta au DOMContentLoaded) : le fond de l'app remplit les zones de
+//   la barre d'état et de la barre de gestes, les safe-areas prennent le relais.
+// - la classe native-app active les styles réservés à l'app (main.css).
+if (isNativeApp) {
+  document
+    .querySelector('meta[name="viewport"]')
+    ?.setAttribute("content", "width=device-width, initial-scale=1.0, viewport-fit=cover");
+  document.documentElement.classList.add("native-app");
+}
 
 const app = createApp(App);
 

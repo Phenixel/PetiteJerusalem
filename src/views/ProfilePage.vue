@@ -15,7 +15,7 @@ import ParticipatedSessions from "./profilePage/ParticipatedSessions.vue";
 import CreatedSessions from "./profilePage/CreatedSessions.vue";
 import UserInfoForm from "./profilePage/UserInfoForm.vue";
 import SecuritySettings from "./profilePage/SecuritySettings.vue";
-import ThemeSelector from "./profilePage/ThemeSelector.vue";
+import PreferencesTab from "./profilePage/PreferencesTab.vue";
 import DailyReading from "./profilePage/DailyReading.vue";
 import NotificationSettings from "./profilePage/NotificationSettings.vue";
 import { useToast } from "../composables/useToast";
@@ -32,7 +32,7 @@ const activeTab = ref<
   | "sessions-created"
   | "my-info"
   | "security"
-  | "theme"
+  | "preferences"
   | "notifications"
 >("sessions-participated");
 const isLoading = ref(true);
@@ -302,15 +302,15 @@ onMounted(async () => {
             </li>
             <li>
               <button
-                @click="setActiveTab('theme')"
+                @click="setActiveTab('preferences')"
                 :class="[
                   'w-full text-left px-4 py-3 rounded-lg font-medium transition-colors',
-                  activeTab === 'theme'
+                  activeTab === 'preferences'
                     ? 'bg-primary/10 text-primary font-semibold'
                     : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',
                 ]"
               >
-                {{ t("profile.tabs.theme") }}
+                {{ t("profile.tabs.preferences") }}
               </button>
             </li>
           </ul>
@@ -352,8 +352,8 @@ onMounted(async () => {
             <SecuritySettings />
           </div>
 
-          <div v-if="activeTab === 'theme'">
-            <ThemeSelector :user-id="currentUser.id" />
+          <div v-if="activeTab === 'preferences'">
+            <PreferencesTab :user-id="currentUser.id" />
           </div>
 
           <div v-if="activeTab === 'notifications'">

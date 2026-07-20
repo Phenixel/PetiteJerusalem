@@ -3,6 +3,7 @@ import type { LocaleMessages } from "./fr";
 const he: LocaleMessages = {
   common: {
     home: "בית",
+    profile: "פרופיל",
     login: "התחברות",
     logout: "התנתקות",
     shareReading: "שיתוף קריאות",
@@ -111,7 +112,7 @@ const he: LocaleMessages = {
       createdSessions: "סשנים שיצרתי",
       myInfo: "המידע שלי",
       security: "אבטחה",
-      theme: "מראה",
+      preferences: "העדפות",
       notifications: "התראות",
     },
     noParticipatedSessions: "אין סשנים שהשתתפת בהם",
@@ -134,6 +135,8 @@ const he: LocaleMessages = {
     myInformation: "המידע שלי",
     displayName: "שם תצוגה",
     userId: "מזהה משתמש",
+    languageTitle: "שפה",
+    languageDescription: "בחרו את שפת הממשק.",
     themeTitle: "ערכת נושא",
     themeDescription: "בחרו את הצבעים שמתאימים לכם. ערכת הנושא חלה על כל האתר.",
     themeActive: "פעיל",
@@ -482,6 +485,12 @@ const he: LocaleMessages = {
     download: "הורדה",
     delete: "מחיקה",
     error: "ההורדה נכשלה. בדקו את החיבור.",
+  },
+  offline: {
+    title: "אין חיבור",
+    description: "עמוד זה דורש חיבור לאינטרנט. בדקו את הרשת ונסו שוב.",
+    retry: "לנסות שוב",
+    library: "לפתוח את הספרייה",
   },
   notifications: {
     title: "תזכורת קריאה",

@@ -21,6 +21,7 @@ export default [
   {
     path: "/",
     name: "home",
+    meta: { offlineOk: true },
     component: HomeView,
   },
   {
@@ -58,6 +59,7 @@ export default [
   {
     path: "/bibliotheque",
     name: "study",
+    meta: { offlineOk: true },
     component: StudyPage,
   },
   // L'ancienne page « Hors ligne » a été fusionnée dans la bibliothèque
@@ -72,11 +74,13 @@ export default [
   {
     path: "/bibliotheque/:corpus/:slug",
     name: "etude-reading",
+    meta: { offlineOk: true },
     component: TextReadingPage,
   },
   {
     path: "/bibliotheque/:corpus/:slug/:section",
     name: "etude-reading-section",
+    meta: { offlineOk: true },
     component: TextReadingPage,
   },
   {
@@ -97,11 +101,13 @@ export default [
   {
     path: "/lire/:textId",
     name: "text-reading",
+    meta: { offlineOk: true },
     component: TextReadingPage,
   },
   {
     path: "/lire/:textId/:section",
     name: "text-reading-section",
+    meta: { offlineOk: true },
     component: TextReadingPage,
   },
   // SEO landing pages, rendered from src/content/seoPages.ts (same markup the
@@ -109,26 +115,31 @@ export default [
   {
     path: "/finir-le-chass",
     name: "finir-le-chass",
+    meta: { offlineOk: true },
     component: ContentPage,
   },
   {
     path: "/partage-tehilim",
     name: "partage-tehilim",
+    meta: { offlineOk: true },
     component: ContentPage,
   },
   {
     path: "/confidentialite",
     name: "confidentialite",
+    meta: { offlineOk: true },
     component: ContentPage,
   },
   {
     path: "/a-propos",
     name: "a-propos",
+    meta: { offlineOk: true },
     component: ContentPage,
   },
   {
     path: "/mentions-legales",
     name: "mentions-legales",
+    meta: { offlineOk: true },
     component: ContentPage,
   },
   // Tehilim par intention: hub + intention pages, rendered from
@@ -136,16 +147,19 @@ export default [
   {
     path: "/tehilim",
     name: "tehilim-hub",
+    meta: { offlineOk: true },
     component: TehilimPage,
   },
   {
     path: "/tehilim/:slug",
     name: "tehilim-intention",
+    meta: { offlineOk: true },
     component: TehilimPage,
   },
   {
     path: "/:pathMatch(.*)*",
     name: "not-found",
+    meta: { offlineOk: true },
     component: NotFound,
   },
 ];

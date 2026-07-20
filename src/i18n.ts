@@ -13,7 +13,7 @@ export const SUPPORTED_LOCALES = [
 
 const STORAGE_KEY = "petite-jerusalem-locale";
 
-function getStoredLocale(): SupportedLocale {
+function getStoredLocale(): SupportedLocale | null {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored && SUPPORTED_LOCALES.some((l) => l.code === stored)) {
@@ -22,7 +22,29 @@ function getStoredLocale(): SupportedLocale {
   } catch {
     // localStorage indisponible (tests Node, navigation privée…)
   }
-  return "fr";
+  return null;
+}
+
+function getDeviceLocale(): SupportedLocale | null {
+  if (typeof navigator === "undefined") return null;
+  const candidates = navigator.languages?.length ? navigator.languages : [navigator.language];
+  for (const candidate of candidates) {
+    let code = candidate?.slice(0, 2).toLowerCase();
+    if (code === "iw") code = "he"; // ancien code ISO de l'hébreu, encore renvoyé par certains Android
+    if (SUPPORTED_LOCALES.some((l) => l.code === code)) {
+      return code as SupportedLocale;
+    }
+  }
+  return null;
+}
+
+/**
+ * Choix explicite de l'utilisateur s'il existe, sinon la langue de l'appareil
+ * (navigator.language reflète la langue système, dans la webview Capacitor
+ * comme sur le web), sinon le français.
+ */
+function getInitialLocale(): SupportedLocale {
+  return getStoredLocale() ?? getDeviceLocale() ?? "fr";
 }
 
 export function setStoredLocale(locale: SupportedLocale): void {
@@ -36,7 +58,7 @@ export function setStoredLocale(locale: SupportedLocale): void {
 export const i18n = createI18n({
   legacy: false,
   globalInjection: true,
-  locale: getStoredLocale(),
+  locale: getInitialLocale(),
   fallbackLocale: "fr",
   messages: {
     fr,

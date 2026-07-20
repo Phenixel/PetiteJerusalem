@@ -88,6 +88,22 @@ body {
   color: #f3f4f6; /* gray-100 */
 }
 
+/* App native uniquement (classe posée par main.ts) : sans ça, l'étirement
+   d'overscroll d'Android déforme toute la page, bottom bar comprise.
+   (Complété par overScrollMode NEVER côté natif, cf. setup-android.mjs.) */
+:root.native-app,
+:root.native-app body {
+  overscroll-behavior: none;
+}
+
+/* Safe-areas : env() est fourni par les WebViews récentes (viewport-fit=cover),
+   les variables --safe-area-inset-* sont injectées par Capacitor en secours.
+   max() prend celle qui est renseignée. */
+:root {
+  --safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+}
+
 #app {
   min-height: 100vh;
   display: flex;

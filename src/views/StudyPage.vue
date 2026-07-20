@@ -230,7 +230,8 @@ onMounted(() => {
           <h3 class="text-xl font-bold text-text-primary mb-4">
             {{ formatBookName(String(livre)) }}
           </h3>
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <!-- Une seule colonne sur téléphone : les noms restent lisibles en entier. -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             <router-link
               v-for="text in texts"
               :key="text.id"

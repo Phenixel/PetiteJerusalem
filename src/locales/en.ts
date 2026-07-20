@@ -3,6 +3,7 @@ import type { LocaleMessages } from "./fr";
 const en: LocaleMessages = {
   common: {
     home: "Home",
+    profile: "Profile",
     login: "Sign in",
     logout: "Logout",
     shareReading: "Reading Share",
@@ -112,7 +113,7 @@ const en: LocaleMessages = {
       createdSessions: "Created Sessions",
       myInfo: "My Information",
       security: "Security",
-      theme: "Appearance",
+      preferences: "Preferences",
       notifications: "Notifications",
     },
     noParticipatedSessions: "No participated sessions",
@@ -135,6 +136,8 @@ const en: LocaleMessages = {
     myInformation: "My information",
     displayName: "Display name",
     userId: "User ID",
+    languageTitle: "Language",
+    languageDescription: "Choose the interface language.",
     themeTitle: "Site theme",
     themeDescription: "Choose the colors that suit you. The theme applies across the entire site.",
     themeActive: "Active",
@@ -493,6 +496,12 @@ const en: LocaleMessages = {
     download: "Download",
     delete: "Delete",
     error: "Download failed. Check your connection.",
+  },
+  offline: {
+    title: "No connection",
+    description: "This page needs an Internet connection. Check your network and try again.",
+    retry: "Try again",
+    library: "Open the library",
   },
   notifications: {
     title: "Reading reminder",

@@ -32,6 +32,7 @@ import ReadingNav from "../../components/ReadingNav.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
 import { useReadingSize } from "../../composables/useReadingSize";
+import { isNativeApp } from "../../composables/useNativeApp";
 
 const route = useRoute();
 const router = useRouter();
@@ -402,8 +403,9 @@ watch(textId, loadContent);
         </p>
       </header>
 
-      <!-- SEO intro (public /bibliotheque reading pages only) -->
-      <p v-if="isEtudeRoute" class="-mt-4 mb-8 text-text-secondary leading-relaxed">
+      <!-- SEO intro (public /bibliotheque reading pages only ; masquée dans
+           l'app native où elle n'apporte rien au lecteur) -->
+      <p v-if="isEtudeRoute && !isNativeApp" class="-mt-4 mb-8 text-text-secondary leading-relaxed">
         {{ readingLead }}
       </p>
 

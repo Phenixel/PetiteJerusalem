@@ -1,6 +1,7 @@
 const fr = {
   common: {
     home: "Accueil",
+    profile: "Profil",
     login: "Se connecter",
     logout: "Déconnexion",
     shareReading: "Partage de lectures",
@@ -110,7 +111,7 @@ const fr = {
       createdSessions: "Sessions Créées",
       myInfo: "Mes Informations",
       security: "Sécurité",
-      theme: "Apparence",
+      preferences: "Préférences",
       notifications: "Notifications",
     },
     noParticipatedSessions: "Aucune session participée",
@@ -134,6 +135,8 @@ const fr = {
     myInformation: "Mes informations",
     displayName: "Nom d'affichage",
     userId: "ID utilisateur",
+    languageTitle: "Langue",
+    languageDescription: "Choisissez la langue de l'interface.",
     themeTitle: "Thème du site",
     themeDescription: "Choisissez les couleurs qui vous correspondent. Le thème s'applique à l'ensemble du site.",
     themeActive: "Actif",
@@ -495,6 +498,13 @@ const fr = {
     download: "Télécharger",
     delete: "Supprimer",
     error: "Téléchargement impossible. Vérifiez votre connexion.",
+  },
+  offline: {
+    title: "Connexion impossible",
+    description:
+      "Cette page a besoin d'une connexion Internet. Vérifiez votre réseau puis réessayez.",
+    retry: "Réessayer",
+    library: "Ouvrir la bibliothèque",
   },
   notifications: {
     title: "Rappel de lecture",

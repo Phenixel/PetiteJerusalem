@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { authService } from "../services/authService";
 import { useDarkMode } from "../composables/useDarkMode";
+import { isNativeApp } from "../composables/useNativeApp";
 import LanguageSelector from "./LanguageSelector.vue";
 import AppIcon from "./icons/AppIcon.vue";
 
@@ -61,7 +62,10 @@ function goToLogin() {
 </script>
 
 <template>
+  <!-- App native : pas de bandeau de site (effet « site web embarqué ») ; la
+       navigation passe par la bottom bar (BottomTabBar dans App.vue). -->
   <header
+    v-if="!isNativeApp"
     class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-beige/90 backdrop-blur-md dark:bg-gray-900/90 transition-colors duration-300"
   >
     <RouterLink to="/" class="group">
