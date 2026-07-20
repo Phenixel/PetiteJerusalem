@@ -154,9 +154,9 @@ export const READING_LEAD =
 /** A short human title for a section, used in H1 / breadcrumbs. */
 export function sectionHeading(entry: TextStudyJsonEntry, section: TextSection): string {
   const corpus = corpusOf(entry);
-  if (corpus === "tehilim") return `Tehilim ${slugOf(entry)} — Psaume ${slugOf(entry)}`;
+  if (corpus === "tehilim") return `Tehilim ${slugOf(entry)}, Psaume ${slugOf(entry)}`;
   if (corpus === "tanakh") return `Parashat ${latinName(entry)}`;
-  return `${CORPUS_LABEL[corpus]} ${latinName(entry)} — ${section.label}`;
+  return `${CORPUS_LABEL[corpus]} ${latinName(entry)}, ${section.label}`;
 }
 
 export function hubHeading(entry: TextStudyJsonEntry): string {
