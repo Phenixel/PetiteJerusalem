@@ -17,7 +17,7 @@ const pages = [
 </script>
 
 <template>
-  <section class="card p-6">
+  <section class="card p-6 animate-[fadeIn_0.5s_ease]">
     <h2 class="text-2xl font-bold text-text-primary mb-6">
       {{ t("profile.tabs.about") }}
     </h2>

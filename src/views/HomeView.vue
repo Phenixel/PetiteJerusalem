@@ -143,7 +143,7 @@ onUnmounted(() => {
   <main class="flex-1 container mx-auto px-4 py-6 flex flex-col justify-center">
     <!-- ===== Connecté : accueil personnalisé, hors carte ===== -->
     <template v-if="user">
-      <div class="w-full max-w-6xl mx-auto mb-8">
+      <div class="w-full max-w-6xl mx-auto mb-8 enter-rise">
         <h2 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight">
           {{ greeting }},
           <span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">{{
@@ -260,13 +260,19 @@ onUnmounted(() => {
 
     <!-- ===== Non connecté : hero de bienvenue, CTA hors carte ===== -->
     <div v-else class="text-center mb-10 space-y-4">
-      <h2 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight">
+      <h2 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight enter-rise">
         {{ t("home.heroTitle") }}
       </h2>
-      <p class="text-base md:text-lg text-text-secondary max-w-2xl mx-auto leading-relaxed">
+      <p
+        class="text-base md:text-lg text-text-secondary max-w-2xl mx-auto leading-relaxed enter-rise"
+        style="--enter-delay: 0.1s"
+      >
         {{ t("home.heroDescription") }}
       </p>
-      <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+      <div
+        class="flex flex-wrap items-center justify-center gap-3 pt-2 enter-rise"
+        style="--enter-delay: 0.2s"
+      >
         <RouterLink to="/login?mode=signup" class="btn btn-primary !px-7 !py-3">
           {{ t("accountCta.signup") }}
         </RouterLink>
@@ -305,7 +311,7 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="text-center max-w-2xl mx-auto">
+      <div class="text-center max-w-2xl mx-auto enter-rise" style="--enter-delay: 0.4s">
         <p class="font-serif italic text-text-secondary">{{ t("home.memorial.title") }}</p>
         <p class="mt-1 font-serif italic text-text-primary">
           {{ t("home.memorial.dedication") }}
@@ -319,9 +325,10 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Staggered entrance for the feature and dashboard cards. */
+/* Staggered entrance: cards, greeting/hero and memorial all rise into place. */
 .feature-card,
-.dash-card {
+.dash-card,
+.enter-rise {
   opacity: 0;
   transform: translateY(14px);
   animation: card-enter 0.55s ease-out forwards;
@@ -337,7 +344,8 @@ onUnmounted(() => {
 
 @media (prefers-reduced-motion: reduce) {
   .feature-card,
-  .dash-card {
+  .dash-card,
+  .enter-rise {
     animation: none;
     opacity: 1;
     transform: none;
