@@ -178,7 +178,8 @@ if (styles.includes(noActionBarMarker) && !styles.includes("android:windowBackgr
       `${noActionBarMarker}
         <item name="android:statusBarColor">#F4F1EA</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:navigationBarColor">#F4F1EA</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:windowLightNavigationBar">true</item>
         <item name="android:windowBackground">#F4F1EA</item>`,
     ),
   );
@@ -200,7 +201,8 @@ if (!existsSync(nightStyles)) {
         <item name="android:background">@null</item>
         <item name="android:statusBarColor">#111827</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:navigationBarColor">#111827</item>
+        <item name="android:navigationBarColor">#1F2937</item>
+        <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowBackground">#111827</item>
     </style>
 </resources>

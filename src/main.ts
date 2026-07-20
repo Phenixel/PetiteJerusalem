@@ -31,6 +31,9 @@ app.mount("#app");
 // initial du site web.
 import("./composables/useNativeApp").then(({ isNativeApp }) => {
   if (!isNativeApp) return;
+  // Styles réservés à l'app (ex. suppression de l'étirement d'overscroll qui
+  // déformait la bottom bar, cf. main.css).
+  document.documentElement.classList.add("native-app");
   // Navigation quand on touche une notification push.
   import("./services/pushService").then(({ pushService }) => pushService.initDeepLinks(router));
   // La WebView Android applique l'échelle de police système (textZoom), ce qui
