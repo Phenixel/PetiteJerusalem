@@ -1,0 +1,158 @@
+name: Deploy Android
+
+# Publie l'app Android sur le Play Store à chaque tag de version (le même
+# déclencheur que le déploiement web dans deploy.yml : un tag vX.Y.Z met en
+# prod le site ET l'app). Le dossier android/ étant git-ignoré, il est
+# régénéré ici de zéro : `cap add android` + scripts/setup-android.mjs
+# reproduisent exactement le projet natif local (icônes, barre système,
+# signature, MainActivity…).
+#
+# Secrets requis (voir docs/android-ci-cd.md pour les créer) :
+#   ANDROID_KEYSTORE_BASE64   keystore de release encodé en base64
+#   ANDROID_KEYSTORE_PASSWORD mot de passe du keystore
+#   ANDROID_KEY_ALIAS         alias de la clé (petite-jerusalem)
+#   ANDROID_KEY_PASSWORD      mot de passe de la clé
+#   GOOGLE_SERVICES_JSON      contenu de google-services.json (config Firebase)
+#   PLAY_SERVICE_ACCOUNT_JSON compte de service lié au Play Console
+#
+# Variable optionnelle : ANDROID_PLAY_TRACK (défaut "production") — mettre
+# "internal" tant que l'app n'a pas encore eu de release production validée
+# dans le Play Console (l'API refuse la piste production sur une app en
+# brouillon).
+
+on:
+  push:
+    tags:
+      - "v*"
+  # Lancement manuel (test du workflow, re-publication) : reprend le dernier
+  # tag vX.Y.Z atteignable depuis la branche choisie.
+  workflow_dispatch:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          # Historique complet : `git describe` doit retrouver le dernier tag
+          # lors d'un lancement manuel.
+          fetch-depth: 0
+
+      - name: Vérifier les secrets requis
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          missing=()
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD GOOGLE_SERVICES_JSON PLAY_SERVICE_ACCOUNT_JSON; do
+            [ -z "${!name}" ] && missing+=("$name")
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Secrets GitHub manquants : ${missing[*]} — voir docs/android-ci-cd.md"
+            exit 1
+          fi
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      # Gradle/AGP de Capacitor 8 requièrent le JDK 21 (comme en local).
+      - name: Use JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Déterminer la version (tag vX.Y.Z)
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="$(git describe --tags --abbrev=0)"
+            VERSION="${VERSION#v}"
+          fi
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version invalide : « $VERSION » (attendu X.Y.Z)"
+            exit 1
+          fi
+          IFS=. read -r MAJ MIN PAT <<< "$VERSION"
+          # versionCode strictement croissant, dérivé du semver (le Play Store
+          # refuse tout code déjà utilisé) : v3.0.1 -> 3000100. Pour re-publier
+          # un build, il faut donc un nouveau tag (patch +1).
+          echo "name=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "code=$((MAJ * 1000000 + MIN * 10000 + PAT * 100))" >> "$GITHUB_OUTPUT"
+
+      - name: Scaffolder le projet natif
+        run: npx cap add android
+
+      - name: Restaurer google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: printf '%s' "$GOOGLE_SERVICES_JSON" > google-services.json
+
+      # Manifest, icônes/splash, barre système, MainActivity, signingConfigs…
+      # (le même script qu'en local, cf. l'en-tête de scripts/setup-android.mjs)
+      - name: Appliquer les ajustements natifs
+        run: node scripts/setup-android.mjs
+
+      - name: Restaurer la clé de signature release
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+          # storeFile est résolu relativement à android/app/ par build.gradle.
+          cat > android/keystore.properties <<EOF
+          storeFile=release.keystore
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
+      - name: Aligner versionName/versionCode sur le tag
+        run: |
+          sed -i -E "s/versionCode [0-9]+/versionCode ${{ steps.version.outputs.code }}/" android/app/build.gradle
+          sed -i -E "s/versionName \"[^\"]+\"/versionName \"${{ steps.version.outputs.name }}\"/" android/app/build.gradle
+          grep -E "versionCode|versionName" android/app/build.gradle
+
+      # Build web (type-check + vite + prerender), prune du bundle natif,
+      # puis cap sync copie dist/ dans le projet Android.
+      - name: Build web + sync Capacitor
+        run: npm run app:build
+
+      - name: Build AAB release
+        run: cd android && ./gradlew bundleRelease --no-daemon
+
+      # L'AAB signé reste téléchargeable 90 jours depuis l'onglet Actions,
+      # même si la publication Play échoue.
+      - name: Archiver l'AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-${{ steps.version.outputs.name }}
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+      - name: Publier sur le Play Store
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: fr.petitejerusalem.app
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          track: ${{ vars.ANDROID_PLAY_TRACK || 'production' }}
+          status: completed
