@@ -5,13 +5,18 @@ import textStudiesJson from "../../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../../models/models";
 import { userPreferencesService } from "../../services/userPreferencesService";
 import { syncDailyReadingDownloads } from "../../services/offlineLibraryService";
+import { pushService } from "../../services/pushService";
 import { sessionService } from "../../services/sessionService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
+import { isNativeApp } from "../../composables/useNativeApp";
+import { useToast } from "../../composables/useToast";
 import DailyReadingItem from "./DailyReadingItem.vue";
+import ReminderTimeModal from "./ReminderTimeModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{ userId: string }>();
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const toast = useToast();
 
 const ALL_TYPE = "Tout";
 
@@ -40,6 +45,13 @@ const completedIds = ref<Set<string>>(new Set());
 // and marking a text as read folds it so only unread texts stay expanded.
 const collapsedIds = ref<Set<string>>(new Set());
 
+// --- Rappel push (app native uniquement) : la cloche de l'en-tête. ---
+const reminderEnabled = ref(false);
+const reminderHour = ref(18);
+const reminderMinute = ref(0);
+const reminderBusy = ref(false);
+const showReminderModal = ref(false);
+
 const selectedEntries = computed(
   () => selectedIds.value.map((id) => byId.get(id)).filter(Boolean) as TextStudyJsonEntry[],
 );
@@ -56,6 +68,10 @@ onMounted(async () => {
   try {
     const prefs = await userPreferencesService.getPreferences(props.userId);
     selectedIds.value = (prefs.dailyReadingIds ?? []).map(String);
+
+    reminderEnabled.value = prefs.pushReminderEnabled === true;
+    reminderHour.value = prefs.pushReminderHour ?? 18;
+    reminderMinute.value = prefs.pushReminderMinute ?? 0;
 
     // App native : garantit en tâche de fond que la lecture du jour est
     // disponible hors ligne (no-op sur le web).
@@ -150,6 +166,56 @@ const progressPct = computed(() =>
   totalCount.value === 0 ? 0 : Math.round((completedCount.value / totalCount.value) * 100),
 );
 
+// --- Rappel push : cloche inactive → modal horloge ; cloche active → coupe le rappel. ---
+function onBellClick() {
+  if (reminderBusy.value) return;
+  if (reminderEnabled.value) {
+    void disableReminder();
+  } else {
+    showReminderModal.value = true;
+  }
+}
+
+function formatReminderTime(hour: number, minute: number): string {
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+async function enableReminder(time: { hour: number; minute: number }) {
+  reminderBusy.value = true;
+  try {
+    await pushService.enable(props.userId, String(locale.value), time.hour, time.minute);
+    reminderEnabled.value = true;
+    reminderHour.value = time.hour;
+    reminderMinute.value = time.minute;
+    toast.success(
+      t("notifications.enabledToast", { time: formatReminderTime(time.hour, time.minute) }),
+    );
+  } catch (e: unknown) {
+    if (e instanceof Error && e.message === "PERMISSION_DENIED") {
+      toast.error(t("notifications.permissionDenied"));
+    } else {
+      console.error("Activation du rappel échouée:", e);
+      toast.error(t("notifications.error"));
+    }
+  } finally {
+    reminderBusy.value = false;
+  }
+}
+
+async function disableReminder() {
+  reminderBusy.value = true;
+  try {
+    await pushService.disable(props.userId);
+    reminderEnabled.value = false;
+    toast.success(t("notifications.disabledToast"));
+  } catch (e: unknown) {
+    console.error("Désactivation du rappel échouée:", e);
+    toast.error(t("notifications.error"));
+  } finally {
+    reminderBusy.value = false;
+  }
+}
+
 // --- Manage view (browse the library, like the Bibliothèque) ---
 const searchTerm = ref("");
 const selectedType = ref(ALL_TYPE);
@@ -194,19 +260,44 @@ function formatBookName(livre: string): string {
         </p>
       </div>
 
-      <button
-        v-if="mode === 'reading'"
-        @click="mode = 'manage'"
-        class="btn btn-primary flex-shrink-0"
-      >
-        <AppIcon name="settings" :size="14" />
-        {{ t("dailyReading.manage") }}
-      </button>
-      <button v-else @click="mode = 'reading'" class="btn btn-soft flex-shrink-0">
-        <AppIcon name="check" :size="14" />
-        {{ t("dailyReading.done") }}
-      </button>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <!-- App native : la cloche active/coupe le rappel push quotidien. -->
+        <button
+          v-if="isNativeApp"
+          @click="onBellClick"
+          :disabled="reminderBusy"
+          :class="[
+            'inline-flex items-center justify-center w-11 h-11 rounded-full transition-colors',
+            reminderEnabled
+              ? 'bg-primary/10 text-primary'
+              : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',
+          ]"
+          :aria-label="
+            reminderEnabled ? t('notifications.disableAria') : t('notifications.enableAria')
+          "
+          :aria-pressed="reminderEnabled"
+        >
+          <AppIcon v-if="reminderBusy" name="spinner" :size="20" class="animate-spin" />
+          <AppIcon v-else name="bell" :size="20" />
+        </button>
+
+        <button v-if="mode === 'reading'" @click="mode = 'manage'" class="btn btn-primary">
+          <AppIcon name="settings" :size="14" />
+          {{ t("dailyReading.manage") }}
+        </button>
+        <button v-else @click="mode = 'reading'" class="btn btn-soft">
+          <AppIcon name="check" :size="14" />
+          {{ t("dailyReading.done") }}
+        </button>
+      </div>
     </div>
+
+    <ReminderTimeModal
+      v-model:show="showReminderModal"
+      :hour="reminderHour"
+      :minute="reminderMinute"
+      @confirm="enableReminder"
+    />
 
     <!-- Loading -->
     <div v-if="loading" class="animate-pulse space-y-4">

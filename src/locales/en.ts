@@ -114,7 +114,6 @@ const en: LocaleMessages = {
       myInfo: "My Information",
       security: "Security",
       preferences: "Preferences",
-      notifications: "Notifications",
     },
     noParticipatedSessions: "No participated sessions",
     noParticipatedSessionsDesc: "You haven't participated in any study sessions yet.",
@@ -506,18 +505,15 @@ const en: LocaleMessages = {
   notifications: {
     title: "Reading reminder",
     description: "Get a daily notification if your daily reading isn't finished.",
-    enable: "Enable daily reminder",
-    disable: "Disable reminder",
-    enabled: "Reminder on: you'll be notified every day at {hour}:00 if your reading isn't done.",
-    hourLabel: "Reminder time",
+    enableAria: "Enable the reading reminder",
+    disableAria: "Disable the reading reminder",
+    pickHour: "Pick the hour",
+    pickMinute: "Pick the minutes",
+    enabledToast: "Reminder on: every day at {time}.",
+    disabledToast: "Reminder off.",
     permissionDenied:
       "Notifications are blocked for this app. Allow them in your phone settings, then try again.",
     error: "Could not update the notification setting. Please try again.",
-    test: "Send a test notification",
-    testSent:
-      "Test notification sent to {count} device(s). If it doesn't show up, check your phone settings.",
-    testNoToken: "No device registered for this account. Turn the reminder off and on, then retry.",
-    testFailed: "Sending failed ({error}). Turn the reminder off and on, then retry.",
   },
   study: {
     title: "Library",

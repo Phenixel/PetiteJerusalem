@@ -112,7 +112,6 @@ const fr = {
       myInfo: "Mes Informations",
       security: "Sécurité",
       preferences: "Préférences",
-      notifications: "Notifications",
     },
     noParticipatedSessions: "Aucune session participée",
     noParticipatedSessionsDesc: "Vous n'avez pas encore participé à des sessions d'étude.",
@@ -510,19 +509,15 @@ const fr = {
     title: "Rappel de lecture",
     description:
       "Recevez chaque jour une notification si votre lecture quotidienne n'est pas terminée.",
-    enable: "Activer le rappel quotidien",
-    disable: "Désactiver le rappel",
-    enabled: "Rappel activé : vous serez notifié chaque jour à {hour} h si votre lecture n'est pas terminée.",
-    hourLabel: "Heure du rappel",
+    enableAria: "Activer le rappel de lecture",
+    disableAria: "Désactiver le rappel de lecture",
+    pickHour: "Choisir l'heure",
+    pickMinute: "Choisir les minutes",
+    enabledToast: "Rappel activé : tous les jours à {time}.",
+    disabledToast: "Rappel désactivé.",
     permissionDenied:
       "Les notifications sont bloquées pour cette application. Autorisez-les dans les réglages du téléphone, puis réessayez.",
     error: "Impossible de modifier le réglage des notifications. Réessayez.",
-    test: "Envoyer une notification de test",
-    testSent:
-      "Notification de test envoyée sur {count} appareil(s). Si elle n'apparaît pas, vérifiez les réglages du téléphone.",
-    testNoToken:
-      "Aucun appareil enregistré pour ce compte. Désactivez puis réactivez le rappel, et réessayez.",
-    testFailed: "Échec de l'envoi ({error}). Désactivez puis réactivez le rappel, et réessayez.",
   },
   study: {
     title: "Bibliothèque",

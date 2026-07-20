@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 
@@ -11,6 +12,16 @@ const tabs = [
   { to: "/chiourim", icon: "headphones", labelKey: "common.chiourim", exact: false },
   { to: "/profile", icon: "user", labelKey: "common.profile", exact: false },
 ] as const;
+
+// Onglet dont l'icône rebondit. Remis à null d'abord pour que l'animation
+// reparte même en retouchant l'onglet déjà actif.
+const poppedTab = ref<string | null>(null);
+function popIcon(to: string) {
+  poppedTab.value = null;
+  requestAnimationFrame(() => {
+    poppedTab.value = to;
+  });
+}
 </script>
 
 <!-- Barre de navigation basse de l'app native (remplace le menu hamburger du
@@ -28,8 +39,15 @@ const tabs = [
         class="tab-item"
         :exact-active-class="tab.exact ? 'tab-item-active' : 'tab-item-noop'"
         :active-class="tab.exact ? 'tab-item-noop' : 'tab-item-active'"
+        @click="popIcon(tab.to)"
       >
-        <AppIcon :name="tab.icon" :size="21" />
+        <span
+          class="tab-icon"
+          :class="{ 'tab-icon-pop': poppedTab === tab.to }"
+          @animationend="poppedTab = null"
+        >
+          <AppIcon :name="tab.icon" :size="21" />
+        </span>
         <span class="text-[11px] font-medium leading-none">{{ t(tab.labelKey) }}</span>
       </RouterLink>
     </div>
@@ -49,5 +67,25 @@ const tabs = [
 }
 .tab-item-active {
   color: var(--color-primary);
+}
+.tab-icon {
+  display: inline-flex;
+}
+.tab-icon-pop {
+  animation: tab-icon-pop 0.35s ease;
+}
+@keyframes tab-icon-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(0.75);
+  }
+  70% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 </style>
