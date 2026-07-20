@@ -11,6 +11,7 @@ import AccountCta from "../../components/AccountCta.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import { authService } from "../../services/authService";
+import { isNativeApp } from "../../composables/useNativeApp";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -181,7 +182,8 @@ const handleCreateClick = () => {
       <h2 class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight">
         {{ t("shareReading.title") }}
       </h2>
-      <p class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
+      <!-- Le sous-titre explicatif ne sert que le site : SEO + découverte. -->
+      <p v-if="!isNativeApp" class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
         {{ t("shareReading.subtitle") }}
       </p>
 

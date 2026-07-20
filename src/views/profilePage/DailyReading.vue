@@ -255,7 +255,8 @@ function formatBookName(livre: string): string {
         <h2 class="text-2xl font-bold mb-2 text-text-primary">
           {{ t("dailyReading.title") }}
         </h2>
-        <p class="text-text-secondary max-w-xl">
+        <!-- Le descriptif ne sert que le site ; l'état vide explique déjà la fonction. -->
+        <p v-if="!isNativeApp" class="text-text-secondary max-w-xl">
           {{ t("dailyReading.description") }}
         </p>
       </div>
@@ -312,7 +313,8 @@ function formatBookName(livre: string): string {
         {{ t("dailyReading.selectedCount", { count: totalCount }) }}
       </p>
 
-      <div class="flex flex-col items-center gap-4 mb-8">
+      <!-- Recherche : collante sur l'app pour rester accessible au scroll. -->
+      <div :class="isNativeApp ? 'app-sticky-search' : ''" class="flex justify-center mb-4">
         <div class="relative w-full md:w-96">
           <AppIcon
             name="search"
@@ -333,7 +335,9 @@ function formatBookName(livre: string): string {
             <AppIcon name="x" :size="14" />
           </button>
         </div>
+      </div>
 
+      <div class="flex flex-col items-center gap-4 mb-8">
         <div class="flex flex-wrap gap-2 justify-center">
           <button
             v-for="ty in TYPES"

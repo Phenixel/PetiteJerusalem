@@ -281,6 +281,23 @@ button,
     color: var(--color-primary);
   }
 
+  /* App native : barre de recherche collante sous la barre système, pour
+     rester accessible pendant le scroll. Déborde du padding horizontal des
+     pages (px-6) pour couvrir toute la largeur de l'écran. */
+  .app-sticky-search {
+    position: sticky;
+    top: var(--safe-top);
+    z-index: 40;
+    margin-inline: -1.5rem;
+    padding: 0.5rem 1.5rem 0.75rem;
+    background-color: color-mix(in srgb, var(--color-bg-beige) 92%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  :root.dark .app-sticky-search {
+    background-color: color-mix(in srgb, #111827 92%, transparent);
+  }
+
   /* Modal building blocks — one modal style for the whole app. */
   .modal-overlay {
     position: fixed;

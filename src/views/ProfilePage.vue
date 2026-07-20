@@ -17,7 +17,9 @@ import UserInfoForm from "./profilePage/UserInfoForm.vue";
 import SecuritySettings from "./profilePage/SecuritySettings.vue";
 import PreferencesTab from "./profilePage/PreferencesTab.vue";
 import DailyReading from "./profilePage/DailyReading.vue";
+import AboutTab from "./profilePage/AboutTab.vue";
 import { useToast } from "../composables/useToast";
+import { isNativeApp } from "../composables/useNativeApp";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -31,6 +33,7 @@ const activeTab = ref<
   | "my-info"
   | "security"
   | "preferences"
+  | "about"
 >("daily-reading");
 const isLoading = ref(true);
 
@@ -296,6 +299,20 @@ onMounted(async () => {
                 {{ t("profile.tabs.preferences") }}
               </button>
             </li>
+            <!-- App native uniquement : reprend l'essentiel du footer du site. -->
+            <li v-if="isNativeApp">
+              <button
+                @click="setActiveTab('about')"
+                :class="[
+                  'w-full text-left px-4 py-3 rounded-lg font-medium transition-colors',
+                  activeTab === 'about'
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',
+                ]"
+              >
+                {{ t("profile.tabs.about") }}
+              </button>
+            </li>
           </ul>
 
           <button @click="authService.logout()" class="btn btn-danger w-full">
@@ -337,6 +354,10 @@ onMounted(async () => {
 
           <div v-if="activeTab === 'preferences'">
             <PreferencesTab :user-id="currentUser.id" />
+          </div>
+
+          <div v-if="activeTab === 'about'">
+            <AboutTab />
           </div>
         </div>
       </div>

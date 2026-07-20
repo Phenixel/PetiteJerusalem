@@ -7,6 +7,7 @@ import ChiourCard from "../../components/ChiourCard.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import AccountCta from "../../components/AccountCta.vue";
 import { seoService } from "../../services/seoService";
+import { isNativeApp } from "../../composables/useNativeApp";
 
 const { t } = useI18n();
 
@@ -80,21 +81,21 @@ onMounted(() => {
 
 <template>
   <main class="mx-auto px-6 py-12">
-    <!-- Header -->
-    <div class="text-center mb-12 animate-[fadeIn_0.5s_ease]">
-      <h2 class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight">
+    <!-- Header (le sous-titre explicatif ne sert que le site : SEO + découverte) -->
+    <div class="text-center animate-[fadeIn_0.5s_ease]" :class="isNativeApp ? 'mb-6' : 'mb-12'">
+      <h2 class="text-4xl md:text-5xl font-bold text-text-primary tracking-tight">
         {{ t("chiourim.title") }}
       </h2>
-      <p class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
+      <p v-if="!isNativeApp" class="mt-4 text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
         {{ t("chiourim.subtitle") }}
       </p>
     </div>
 
-    <!-- Filtres -->
+    <!-- Recherche : collante sur l'app pour rester accessible au scroll. -->
     <div
-      class="mb-10 flex flex-col md:flex-row gap-4 items-center justify-center animate-[fadeIn_0.5s_ease]"
+      :class="isNativeApp ? 'app-sticky-search' : ''"
+      class="flex justify-center mb-4 animate-[fadeIn_0.5s_ease]"
     >
-      <!-- Barre de recherche -->
       <div class="relative w-full md:w-96">
         <AppIcon
           name="search"
@@ -115,34 +116,34 @@ onMounted(() => {
           <AppIcon name="x" :size="14" />
         </button>
       </div>
+    </div>
 
-      <!-- Filtre par catégorie -->
-      <div class="flex flex-wrap gap-2 justify-center">
-        <button
-          @click="selectedCategory = 'all'"
-          class="chip transition-colors"
-          :class="
-            selectedCategory === 'all'
-              ? 'bg-primary text-white'
-              : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
-          "
-        >
-          {{ t("chiourim.allCategories") }}
-        </button>
-        <button
-          v-for="cat in dynamicCategories"
-          :key="cat"
-          @click="selectedCategory = cat"
-          class="chip transition-colors"
-          :class="
-            selectedCategory === cat
-              ? 'bg-primary text-white'
-              : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
-          "
-        >
-          {{ cat }}
-        </button>
-      </div>
+    <!-- Filtre par catégorie -->
+    <div class="mb-10 flex flex-wrap gap-2 justify-center animate-[fadeIn_0.5s_ease]">
+      <button
+        @click="selectedCategory = 'all'"
+        class="chip transition-colors"
+        :class="
+          selectedCategory === 'all'
+            ? 'bg-primary text-white'
+            : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
+        "
+      >
+        {{ t("chiourim.allCategories") }}
+      </button>
+      <button
+        v-for="cat in dynamicCategories"
+        :key="cat"
+        @click="selectedCategory = cat"
+        class="chip transition-colors"
+        :class="
+          selectedCategory === cat
+            ? 'bg-primary text-white'
+            : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
+        "
+      >
+        {{ cat }}
+      </button>
     </div>
 
     <div class="relative">

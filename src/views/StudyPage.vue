@@ -143,18 +143,21 @@ onMounted(() => {
 
 <template>
   <main class="mx-auto px-6 py-12">
-    <!-- Hero -->
-    <div class="text-center mb-10">
-      <h1 class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight pb-1">
+    <!-- Hero (le sous-titre explicatif ne sert que le site : SEO + découverte) -->
+    <div class="text-center animate-[fadeIn_0.5s_ease]" :class="isNativeApp ? 'mb-6' : 'mb-10'">
+      <h1 class="text-4xl md:text-5xl font-bold text-text-primary tracking-tight pb-1">
         {{ t("study.title") }}
       </h1>
-      <p class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
+      <p v-if="!isNativeApp" class="mt-4 text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
         {{ t("study.subtitle") }}
       </p>
     </div>
 
-    <!-- Controls -->
-    <div class="flex flex-col items-center gap-4 mb-10">
+    <!-- Recherche : collante sur l'app pour rester accessible au scroll. -->
+    <div
+      :class="isNativeApp ? 'app-sticky-search' : ''"
+      class="flex justify-center mb-4 animate-[fadeIn_0.5s_ease]"
+    >
       <div class="relative w-full md:w-96">
         <AppIcon
           name="search"
@@ -175,7 +178,10 @@ onMounted(() => {
           <AppIcon name="x" :size="14" />
         </button>
       </div>
+    </div>
 
+    <!-- Controls -->
+    <div class="flex flex-col items-center gap-4 mb-10 animate-[fadeIn_0.5s_ease]">
       <!-- Filtres volontairement imposants : ils servent de porte d'entrée
            principale vers chaque corpus. -->
       <div class="flex flex-wrap gap-2.5 md:gap-3 justify-center">
@@ -220,7 +226,7 @@ onMounted(() => {
     </div>
 
     <!-- Results -->
-    <div v-if="hasResults" class="max-w-5xl mx-auto space-y-12">
+    <div v-if="hasResults" class="max-w-5xl mx-auto space-y-12 animate-[fadeIn_0.5s_ease]">
       <div v-for="typeGroup in groupedByType" :key="typeGroup.key" class="space-y-10">
         <!-- Type heading: shown only on the "Tout" tab, where several corpora mix. -->
         <h2 v-if="isAllSelected" class="text-2xl font-bold text-text-primary">
@@ -246,47 +252,40 @@ onMounted(() => {
                   {{ t("study.sections", { count: text.totalSections }) }}
                 </span>
               </span>
-              <span class="shrink-0 flex items-center gap-1.5">
-                <!-- App native : télécharger/supprimer le livre sans quitter la bibliothèque. -->
-                <button
-                  v-if="bookState(text) !== 'none'"
-                  @click.prevent.stop="toggleDownload(text)"
-                  class="p-1 -m-1 transition-colors"
-                  :class="
-                    bookState(text) === 'downloaded'
-                      ? 'text-primary'
-                      : 'text-text-secondary/50 hover:text-primary'
-                  "
-                  :aria-label="
-                    bookState(text) === 'downloaded'
-                      ? t('downloads.delete')
-                      : t('downloads.download')
-                  "
-                  :title="
-                    bookState(text) === 'downloaded'
-                      ? t('downloads.delete')
-                      : t('downloads.download')
-                  "
-                >
-                  <AppIcon
-                    v-if="bookState(text) === 'downloading'"
-                    name="spinner"
-                    :size="15"
-                    class="animate-spin text-primary"
-                  />
-                  <AppIcon
-                    v-else-if="bookState(text) === 'downloaded'"
-                    name="circle-check"
-                    :size="15"
-                  />
-                  <AppIcon v-else name="download" :size="15" />
-                </button>
+              <!-- App native : télécharger/supprimer le livre sans quitter la bibliothèque. -->
+              <button
+                v-if="bookState(text) !== 'none'"
+                @click.prevent.stop="toggleDownload(text)"
+                class="shrink-0 p-1.5 -m-1.5 transition-colors"
+                :class="
+                  bookState(text) === 'downloaded'
+                    ? 'text-primary'
+                    : 'text-text-secondary/50 hover:text-primary'
+                "
+                :aria-label="
+                  bookState(text) === 'downloaded'
+                    ? t('downloads.delete')
+                    : t('downloads.download')
+                "
+                :title="
+                  bookState(text) === 'downloaded'
+                    ? t('downloads.delete')
+                    : t('downloads.download')
+                "
+              >
                 <AppIcon
-                  name="book-open"
-                  :size="16"
-                  class="text-text-secondary/40 group-hover:text-primary transition-colors"
+                  v-if="bookState(text) === 'downloading'"
+                  name="spinner"
+                  :size="19"
+                  class="animate-spin text-primary"
                 />
-              </span>
+                <AppIcon
+                  v-else-if="bookState(text) === 'downloaded'"
+                  name="circle-check"
+                  :size="19"
+                />
+                <AppIcon v-else name="download" :size="19" />
+              </button>
             </router-link>
           </div>
         </section>
