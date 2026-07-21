@@ -12,6 +12,7 @@ import BatchSelectionBar from "../../components/BatchSelectionBar.vue";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
+import { SITE_URL } from "../../content/seoPages";
 import SessionHeader from "./detailSession/SessionHeader.vue";
 import SessionInstructions from "./detailSession/SessionInstructions.vue";
 import TextStudiesList from "./detailSession/TextStudiesList.vue";
@@ -351,7 +352,11 @@ const clearSearch = () => {
 };
 
 const openShareModal = () => {
-  shareUrl.value = window.location.href;
+  // Domaine canonique plutôt que window.location.href : ce dernier vaut
+  // localhost (ou capacitor://localhost) en dev et dans l'app native, ce qui
+  // produirait un lien de partage inutilisable.
+  const s = session.value;
+  shareUrl.value = s ? `${SITE_URL}/share-reading/session/${s.slug || s.id}` : SITE_URL;
   showShareModal.value = true;
 };
 

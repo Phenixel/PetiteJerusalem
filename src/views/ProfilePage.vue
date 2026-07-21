@@ -7,6 +7,7 @@ import { sessionService } from "../services/sessionService";
 import type { User } from "../services/authService";
 import type { Session, TextStudy } from "../models/models";
 import { seoService } from "../services/seoService";
+import { SITE_URL } from "../content/seoPages";
 import ShareModal from "../components/ShareModal.vue";
 import EditSessionModal from "../components/EditSessionModal.vue";
 import AppIcon from "../components/icons/AppIcon.vue";
@@ -128,7 +129,9 @@ const updateUserInfo = async (data: { name: string; email: string }) => {
 
 const openShareModal = (session: Session) => {
   selectedSession.value = session;
-  shareUrl.value = `${window.location.origin}/share-reading/session/${session.slug || session.id}`;
+  // Domaine canonique : window.location.origin vaut localhost (ou
+  // capacitor://localhost) en dev et dans l'app native → lien inutilisable.
+  shareUrl.value = `${SITE_URL}/share-reading/session/${session.slug || session.id}`;
   showShareModal.value = true;
 };
 

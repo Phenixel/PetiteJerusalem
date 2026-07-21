@@ -26,27 +26,17 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
+interface QrCode {
+  addData(data: string): void;
+  make(): void;
+  createSvgTag(options: { cellSize?: number; margin?: number; scalable?: boolean }): string;
+}
+
 declare global {
   interface Window {
-    QRCode: {
-      new (
-        element: HTMLElement,
-        options: {
-          text: string;
-          width: number;
-          height: number;
-          colorDark: string;
-          colorLight: string;
-          correctLevel: number;
-        },
-      ): void;
-      CorrectLevel: {
-        L: number;
-        M: number;
-        Q: number;
-        H: number;
-      };
-    };
+    // qrcode-generator : factory qrcode(typeNumber, errorCorrectionLevel).
+    // typeNumber 0 = auto-détection de la version → gère les URLs longues.
+    qrcode?: (typeNumber: number, errorCorrectionLevel: string) => QrCode;
   }
 }
 
@@ -54,37 +44,50 @@ const closeModal = () => {
   emit("update:show", false);
 };
 
+/** Charge la librairie QR (vendorisée, même origine) une seule fois. */
+const loadQrLibrary = () =>
+  new Promise<void>((resolve, reject) => {
+    if (window.qrcode) {
+      resolve();
+      return;
+    }
+    const script = document.createElement("script");
+    // Servie depuis notre propre origine (public/vendor) et non depuis un CDN
+    // externe : les scripts tiers sont souvent bloqués (Brave Shields,
+    // bloqueurs de pub, CSP).
+    script.src = "/vendor/qrcode-generator.js";
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Erreur lors du chargement de la librairie QR"));
+    document.head.appendChild(script);
+  });
+
 const generateQRCode = async () => {
   const qrContainer = document.getElementById("qr-code");
-  if (qrContainer && props.shareUrl) {
-    qrContainer.innerHTML = "";
+  if (!qrContainer || !props.shareUrl) return;
 
-    try {
-      await new Promise((resolve, reject) => {
-        if (window.QRCode) {
-          resolve(true);
-          return;
-        }
+  qrContainer.innerHTML = "";
 
-        const script = document.createElement("script");
-        script.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
-        script.onload = () => resolve(true);
-        script.onerror = () => reject(new Error("Erreur lors du chargement de QRCode"));
-        document.head.appendChild(script);
-      });
+  try {
+    await loadQrLibrary();
+    if (!window.qrcode) throw new Error("Librairie QR indisponible");
 
-      new window.QRCode(qrContainer, {
-        text: props.shareUrl,
-        width: 200,
-        height: 200,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: window.QRCode.CorrectLevel.H,
-      });
-    } catch (error) {
-      console.error("Erreur lors de la génération du QR code:", error);
-      qrContainer.innerHTML = `<p class="text-red-500 font-medium">${t("shareModal.qrError")}</p>`;
+    // typeNumber 0 = auto-détection de la version. qrcodejs (l'ancienne
+    // librairie) sous-estimait la taille et jetait « code length overflow »
+    // sur les chiourim aux titres longs ; qrcode-generator dimensionne
+    // correctement, quelle que soit la longueur de l'URL.
+    const qr = window.qrcode(0, "M");
+    qr.addData(props.shareUrl);
+    qr.make();
+
+    qrContainer.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 1, scalable: true });
+    const svg = qrContainer.querySelector("svg");
+    if (svg) {
+      svg.setAttribute("width", "200");
+      svg.setAttribute("height", "200");
     }
+  } catch (error) {
+    console.error("Erreur lors de la génération du QR code:", error);
+    qrContainer.innerHTML = `<p class="text-red-500 font-medium">${t("shareModal.qrError")}</p>`;
   }
 };
 
