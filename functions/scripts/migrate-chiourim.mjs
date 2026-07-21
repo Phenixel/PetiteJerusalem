@@ -118,7 +118,6 @@ async function main() {
             duration: null,
             fileSize: null,
             published: false, // invisible tant qu'il n'y a pas d'audio
-            order: null,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           },
@@ -164,7 +163,6 @@ async function main() {
           duration: null,
           fileSize: buffer.length,
           published: true,
-          order: null,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         },

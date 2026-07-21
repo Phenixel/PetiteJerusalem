@@ -39,7 +39,6 @@ export interface ChiourAdminFields {
   niveau?: string | null;
   serieId?: string | null;
   episode?: number | null;
-  order?: number | null;
   published?: boolean;
   duration?: number | null;
 }

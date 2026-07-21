@@ -94,8 +94,6 @@ export interface Chiour {
   auteurId: string | null;
   serieId: string | null;
   episode: number | null;
-  /** Ordre d'affichage optionnel (issu de Firestore). Usage interne au tri. */
-  _order?: number | null;
 }
 
 /**
@@ -115,7 +113,6 @@ export interface ChiourDoc {
   duration?: number | null;
   fileSize?: number | null;
   published: boolean;
-  order?: number | null;
   // Backoffice : rattachement à un auteur (collection `auteurs`) et à une
   // série (collection `series`). `auteur` (string) reste la source affichée
   // par les apps mobiles déjà déployées — toujours dénormalisé depuis

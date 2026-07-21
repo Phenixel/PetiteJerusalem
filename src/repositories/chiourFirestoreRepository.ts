@@ -10,7 +10,7 @@ import type { Chiour, ChiourDoc } from "../models/models";
  *
  * Le catalogue étant de taille modeste, le filtrage `published` et le tri se font
  * côté client (pas d'index composite à maintenir). Si le volume grossit, basculer
- * vers une requête `where('published','==',true).orderBy('order')` + index.
+ * vers une requête `where('published','==',true)` + index.
  */
 export class ChiourFirestoreRepository {
   async fetchAll(): Promise<Chiour[]> {
@@ -31,19 +31,12 @@ export class ChiourFirestoreRepository {
           auteurId: doc.auteurId ?? null,
           serieId: doc.serieId ?? null,
           episode: doc.episode ?? null,
-          _order: doc.order ?? null,
         }),
       );
 
-    // Tri : `order` croissant si défini, sinon par nom
-    chiourim.sort((a, b) => {
-      const ao = a._order;
-      const bo = b._order;
-      if (ao != null && bo != null) return ao - bo;
-      if (ao != null) return -1;
-      if (bo != null) return 1;
-      return a.name.localeCompare(b.name, "fr");
-    });
+    // Tri alphabétique du catalogue ; l'ordre fin se joue dans les séries
+    // (numéro d'épisode).
+    chiourim.sort((a, b) => a.name.localeCompare(b.name, "fr"));
 
     return chiourim;
   }

@@ -279,7 +279,6 @@ export const studioSubmitChiour = onCall(async (request) => {
       duration: meta.duration,
       fileSize: audio.fileSize,
       published: false, // brouillon : publication réservée à l'admin
-      order: null,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
