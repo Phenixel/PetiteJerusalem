@@ -74,7 +74,14 @@ phonétique**, avec un lecteur pensé pour le texte hébreu et sa traduction :
 
 ### 🎧 Les Chiourim (cours de Torah en audio)
 Une sélection de **cours et leçons de Torah à écouter**, classés par rav ou par
-thème. Format **audio** pour apprendre à son rythme, partout.
+thème. Format **audio** pour apprendre à son rythme, partout. Lecteur audio
+persistant (lecture/pause, avance/recul, vitesse de lecture).
+
+### 🕯️ Tehilim par intention
+Un espace qui relie les Psaumes à des **intentions de prière** précises. 7
+intentions : *refoua chelema* (guérison), *mariage / zivoug*, *parnassa*
+(subsistance), *protection* (danger, voyage), *ilouï nechama* (mémoire d'un
+défunt), *grossesse & accouchement*, *réussite / hatslakha*.
 
 ### 👤 L'espace Profil *(à mettre particulièrement en avant)*
 C'est le cœur personnel de l'application, aujourd'hui trop peu visible et
@@ -145,14 +152,41 @@ Un **mode sombre** existe (fond `#181818`, surfaces `#1F2937` / `#273244`).
 - Pour un titre d'affiche chaleureux et « étude », **Lora** (serif) en titre +
   **Inter** en texte fonctionne bien avec l'univers du site.
 
-### Logo & assets fournis
+### Logo, wordmark & assets fournis
 
 - Logo : `assets/logo.png`
 - Icône / favicon : `public/favicon.png`, `public/favicon.svg`
 - Bannière sociale (Open Graph, 1200 × 630) : `public/og-image.jpg`
 
+**Wordmark** : sur le site, le nom « Petite Jérusalem » est affiché en texte
+avec un **dégradé du bleu primaire vers le cyan secondaire** (`#1D6FDB` →
+`#06B6D4`). C'est un traitement identitaire à reprendre volontiers sur l'affiche.
+
 *(Ces fichiers sont dans le dépôt et peuvent vous être transmis en pièces
 jointes.)*
+
+### Univers visuel & motifs (fortement identitaires)
+
+Deux motifs propres à l'app, très utiles pour une affiche « ownable » :
+
+- **Le mur de pierre de Jérusalem** : en fond de toute l'application, un mur de
+  pierres de Jérusalem discret, avec une **lumière chaude qui diffuse à travers
+  les joints**. C'est le motif signature idéal comme fond ou texture d'affiche.
+- **Quatre illustrations de marque** (une par pilier), en trait fin — bonne base
+  d'iconographie :
+  - **Partage de lecture** : un livre ouvert **partagé entre trois lecteurs**
+    reliés par des traits.
+  - **Bibliothèque** : des **livres sur une étagère**.
+  - **Chiourim** : un **casque audio avec un égaliseur**.
+  - **Profil** : une **personne accueillie par de petites étincelles**.
+
+Style graphique de l'app : cartes plates séparées par des **ombres chaudes et
+douces (pas de bordures)**, **coins arrondis** (rayons 8 / 12 / 16 px), petites
+animations d'apparition en fondu. Iconographie en **traits fins** (style Lucide :
+livre, casque, cloche, calendrier, sablier…).
+
+Emojis employés dans la communication existante (si un registre illustré est
+souhaité) : 📚 bibliothèque · 🤝 partage · 📖 hors ligne · ⏰ rappel · 🎧 chiourim.
 
 ### Ton & style
 
