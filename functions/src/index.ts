@@ -29,6 +29,14 @@ setGlobalOptions({ maxInstances: 3 });
 export { dailyReadingReminder } from "./dailyReminder";
 // Notification de test à la demande (bouton dans les réglages de l'app).
 export { sendTestNotification } from "./testNotification";
+// Studio auteurs : dépôt de chiourim via lien secret (/studio/:token).
+export {
+  studioSubmitChiour,
+  studioUpdateChiour,
+  studioDeleteChiour,
+  studioCreateSerie,
+  studioReorderSerie,
+} from "./studio";
 
 const SITE_URL = "https://petite-jerusalem.fr";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
@@ -142,8 +150,8 @@ async function getShell(): Promise<string> {
 
 type ChiourPreview = {
   name: string;
-  property_description: string;
-  property_auteur: string | null;
+  description: string;
+  auteur: string | null;
 };
 
 let chiourimCache: { data: ChiourPreview[]; ts: number } | null = null;
@@ -161,14 +169,17 @@ async function getChiourim(): Promise<ChiourPreview[]> {
     return chiourimCache.data;
   }
   const snap = await db.collection("chiourim").get();
-  const data: ChiourPreview[] = snap.docs.map((d) => {
-    const x = d.data();
-    return {
-      name: (x.name as string) ?? "",
-      property_description: (x.description as string) ?? "",
-      property_auteur: (x.auteur as string | null) ?? null,
-    };
-  });
+  const data: ChiourPreview[] = snap.docs
+    // Brouillons exclus : pas d'aperçu social pour un chiour non publié.
+    .filter((d) => d.data().published !== false)
+    .map((d) => {
+      const x = d.data();
+      return {
+        name: (x.name as string) ?? "",
+        description: (x.description as string) ?? "",
+        auteur: (x.auteur as string | null) ?? null,
+      };
+    });
   chiourimCache = { data, ts: Date.now() };
   return data;
 }
@@ -220,11 +231,11 @@ async function resolveChiourMeta(slug: string): Promise<Meta | null> {
   const found = chiourim.find((c) => chiourSlug(c.name) === slug);
   if (!found) return null;
 
-  const description = found.property_description
-    ? clamp(found.property_description)
+  const description = found.description
+    ? clamp(found.description)
     : "Écoutez ce chiour : cours et leçons de Torah sur Petite Jérusalem.";
 
-  const author = found.property_auteur ? ` par ${found.property_auteur}` : "";
+  const author = found.auteur ? ` par ${found.auteur}` : "";
 
   return {
     title: `${found.name}${author} | Chiour – Petite Jérusalem`,
@@ -237,11 +248,11 @@ async function resolveChiourMeta(slug: string): Promise<Meta | null> {
 async function resolveAuteurMeta(slug: string): Promise<Meta | null> {
   const chiourim = await getChiourim();
   const author = chiourim
-    .map((c) => c.property_auteur)
+    .map((c) => c.auteur)
     .find((a): a is string => !!a && chiourSlug(a) === slug);
   if (!author) return null;
 
-  const count = chiourim.filter((c) => c.property_auteur === author).length;
+  const count = chiourim.filter((c) => c.auteur === author).length;
 
   return {
     title: `${author} | Chiourim – Petite Jérusalem`,

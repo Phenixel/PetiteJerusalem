@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../../firebase";
 
 /** Daily reading completion for a single day. Resets when the date changes. */
@@ -29,6 +29,8 @@ export interface UserPreferences {
   pushReminderMinute: number;
   /** Locale the reminder notifications are sent in (fr/en/he). */
   pushLocale: string;
+  /** Slugs des chiourim déjà ouverts par l'utilisateur (marqueur « Vu »). */
+  viewedChiourim: string[];
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -42,6 +44,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   pushReminderHour: 18,
   pushReminderMinute: 0,
   pushLocale: "fr",
+  viewedChiourim: [],
 };
 
 class UserPreferencesService {
@@ -70,6 +73,12 @@ class UserPreferencesService {
       console.error("Erreur lors de la sauvegarde des préférences:", error);
       throw new Error("Erreur lors de la sauvegarde des préférences.");
     }
+  }
+
+  /** Ajoute un chiour à la liste des « déjà vus » (idempotent via arrayUnion). */
+  async markChiourViewed(userId: string, slug: string): Promise<void> {
+    const docRef = doc(db, this.collectionName, userId);
+    await setDoc(docRef, { viewedChiourim: arrayUnion(slug) }, { merge: true });
   }
 
   /** Supprime définitivement le document de préférences (suppression de compte). */

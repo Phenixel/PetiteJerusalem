@@ -75,6 +75,7 @@ function projectEmulatorPorts() {
       emu.firestore?.port,
       emu.firestore?.websocketPort,
       emu.storage?.port,
+      emu.functions?.port,
       emu.ui?.port,
       emu.hub?.port,
       emu.logging?.port,
@@ -139,10 +140,14 @@ function reapOrphanEmulators() {
 
 reapOrphanEmulators()
 
+// Storage et Functions sont nécessaires au studio auteurs (/studio/:token) :
+// upload direct vers la zone de staging (règles cross-service Storage→Firestore)
+// puis callable de finalisation. Les functions sont compilées à la volée par
+// l'émulateur depuis functions/lib (penser à `npm --prefix functions run build`).
 const args = [
   'emulators:start',
   '--only',
-  'auth,firestore',
+  'auth,firestore,storage,functions',
   '--export-on-exit',
   DATA_DIR,
 ]

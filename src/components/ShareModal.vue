@@ -13,6 +13,10 @@ interface Props {
   shareUrl: string;
   /** Session text type (e.g. "Tehilim") used to tailor the pre-filled invite. */
   sessionType?: string;
+  /** Clé i18n du titre du modal (défaut : partage de session). */
+  titleKey?: string;
+  /** Clé i18n du message d'invitation pré-rempli ({name} interpolé). */
+  messageKey?: string;
 }
 
 interface Emits {
@@ -92,7 +96,8 @@ const generateQRCode = async () => {
  */
 const buildShareMessage = () => {
   const key =
-    props.sessionType === "Tehilim" ? "shareModal.inviteTehilim" : "shareModal.inviteStudy";
+    props.messageKey ??
+    (props.sessionType === "Tehilim" ? "shareModal.inviteTehilim" : "shareModal.inviteStudy");
   return `${t(key, { name: props.sessionName })}\n\n${props.shareUrl}`;
 };
 
@@ -145,7 +150,7 @@ watch(
     <div class="modal-panel animate-[scaleIn_0.3s_ease]" @click.stop>
       <div class="flex justify-between items-center mb-5">
         <h3 class="text-lg font-bold text-text-primary">
-          {{ t("shareModal.title") }}
+          {{ t(titleKey ?? "shareModal.title") }}
         </h3>
         <button @click="closeModal" class="icon-btn" :aria-label="t('common.close')">
           <AppIcon name="x" :size="18" />

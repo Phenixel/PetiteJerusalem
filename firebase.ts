@@ -7,6 +7,8 @@ import {
   persistentMultipleTabManager,
   connectFirestoreEmulator,
 } from 'firebase/firestore'
+import { getStorage, connectStorageEmulator } from 'firebase/storage'
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions'
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -41,13 +43,21 @@ export const db = initializeFirestore(app, {
 // Initialize Auth
 export const auth = getAuth(app)
 
+// Storage (upload des audios du studio auteurs / de l'admin) et Functions
+// (callables studio*). La lecture des audios publics passe par des URLs
+// permanentes et ne dépend pas de cet objet.
+export const storage = getStorage(app)
+export const functions = getFunctions(app)
+
 // Connect to emulators in development.
-// Plage de ports dédiée à ce projet (8470-8476) pour ne pas entrer en conflit
+// Plage de ports dédiée à ce projet (8470-8477) pour ne pas entrer en conflit
 // avec d'autres projets Firebase tournant en parallèle (qui gardent les ports
 // par défaut 8080 / 9099 …). À garder en phase avec le bloc "emulators" de firebase.json.
 if (import.meta.env.DEV) {
   connectFirestoreEmulator(db, 'localhost', 8470)
   connectAuthEmulator(auth, 'http://localhost:8471', { disableWarnings: true })
+  connectStorageEmulator(storage, 'localhost', 8472)
+  connectFunctionsEmulator(functions, 'localhost', 8477)
 }
 
 // Initialize Analytics (prod only). Import dynamique : le module analytics

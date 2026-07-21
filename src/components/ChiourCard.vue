@@ -3,13 +3,17 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import type { Chiour } from "../models/models";
 import { chiourService } from "../services/chiourService";
+import { useViewedChiourim } from "../composables/useViewedChiourim";
 import AppIcon from "./icons/AppIcon.vue";
 
 const { t } = useI18n();
 const router = useRouter();
+const { isViewed } = useViewedChiourim();
 
 interface Props {
   chiour: Chiour;
+  /** Nom de la série du chiour, si la page appelante le connaît (badge épisode). */
+  serieName?: string;
 }
 
 defineProps<Props>();
@@ -29,16 +33,34 @@ function goToAuteur(event: Event, auteur: string) {
     class="card card-hover flex flex-col p-6 cursor-pointer group"
     @click="goToDetail(chiour)"
   >
-    <div class="flex justify-between items-start mb-3">
+    <div class="flex justify-between items-start gap-3 mb-3">
       <h4
         class="text-lg font-bold text-text-primary group-hover:text-primary transition-colors line-clamp-2"
       >
         {{ chiour.name }}
       </h4>
+      <!-- Déjà vu (utilisateur connecté uniquement), en haut à droite -->
+      <span
+        v-if="isViewed(chiour.slug)"
+        class="chip bg-green-600/10 text-green-700 inline-flex items-center gap-1 shrink-0 dark:text-green-300"
+      >
+        <AppIcon name="circle-check" :size="12" />
+        {{ t("common.viewed") }}
+      </span>
     </div>
 
     <!-- Categories badges -->
     <div class="flex flex-wrap gap-2 mb-3">
+      <span
+        v-if="serieName"
+        class="chip bg-secondary/10 text-secondary inline-flex items-center gap-1"
+      >
+        <AppIcon name="book-open" :size="12" />
+        <template v-if="chiour.episode != null">
+          {{ t("serie.episodeBadge", { n: chiour.episode }) }}
+        </template>
+        <template v-else>{{ serieName }}</template>
+      </span>
       <span v-for="cat in chiour.categories" :key="cat" class="chip bg-primary/10 text-primary">
         {{ cat }}
       </span>

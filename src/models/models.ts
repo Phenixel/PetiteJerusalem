@@ -91,8 +91,9 @@ export interface Chiour {
   categories: string[];
   mediaUrl: string;
   niveau: string | null;
-  /** Ordre d'affichage optionnel (issu de Firestore). Usage interne au tri. */
-  _order?: number | null;
+  auteurId: string | null;
+  serieId: string | null;
+  episode: number | null;
 }
 
 /**
@@ -112,7 +113,49 @@ export interface ChiourDoc {
   duration?: number | null;
   fileSize?: number | null;
   published: boolean;
-  order?: number | null;
+  /**
+   * Nombre de vues (ouvertures de la page du chiour), incrémenté par les
+   * clients publics sous contrôle des rules (+1 strict, chiour publié).
+   */
+  views?: number;
+  // Backoffice : rattachement à un auteur (collection `auteurs`) et à une
+  // série (collection `series`). `auteur` (string) reste la source affichée
+  // par les apps mobiles déjà déployées — toujours dénormalisé depuis
+  // `auteurs.name`, jamais supprimé.
+  auteurId?: string | null;
+  serieId?: string | null;
+  episode?: number | null;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+/** Document de la collection `auteurs` (doc ID = slug). */
+export interface AuteurDoc {
+  name: string;
+  slug: string;
+  bio: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+/** Document de la collection `series` (doc ID = `${auteurId}--${slug de la série}`). */
+export interface SerieDoc {
+  name: string;
+  slug: string;
+  auteurId: string;
+  description: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+/**
+ * Document de la collection `studioTokens` (doc ID = le token secret).
+ * Le doc ID est le seul secret : il n'est jamais recopié dans un champ
+ * lisible ailleurs (chiourim, storage public, etc.).
+ */
+export interface StudioTokenDoc {
+  auteurId: string;
+  auteurName: string;
+  active: boolean;
+  createdAt?: Date;
 }

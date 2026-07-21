@@ -2,10 +2,14 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Mêmes admins que les règles Firestore
+    // Mêmes admins que les règles Firestore. email_verified est indispensable :
+    // n'importe qui peut CRÉER un compte email/mot de passe avec cette adresse,
+    // mais seul le vrai propriétaire de la boîte mail peut le faire vérifier
+    // (et la connexion Google arrive toujours déjà vérifiée).
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email in ['admin@phenixel.fr'];
+        && request.auth.token.email in ['admin@phenixel.fr']
+        && request.auth.token.email_verified == true;
     }
 
     // Fichiers audio des chiourim : lecture publique, écriture réservée aux admins
@@ -15,6 +19,18 @@ service firebase.storage {
         && request.resource.size < 200 * 1024 * 1024          // 200 Mo max par fichier
         && request.resource.contentType.matches('audio/.*');  // audio uniquement
       allow delete: if isAdmin();
+    }
+
+    // Zone de dépôt du studio auteurs. Le token (segment de chemin) est validé
+    // contre Firestore (règle cross-service) : seul un porteur de lien actif
+    // peut déposer. Jamais de lecture publique : le fichier n'est servi
+    // qu'après déplacement vers chiourim/ par la Function studioSubmitChiour,
+    // sous un chemin qui ne contient pas le token.
+    match /studioUploads/{token}/{fileName} {
+      allow write: if firestore.get(/databases/(default)/documents/studioTokens/$(token)).data.active == true
+        && request.resource.size < 200 * 1024 * 1024          // 200 Mo max par fichier
+        && request.resource.contentType.matches('audio/.*');  // audio uniquement
+      allow read, delete: if isAdmin();
     }
 
     // Tout le reste fermé par défaut

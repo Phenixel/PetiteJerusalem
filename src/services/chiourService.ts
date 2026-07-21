@@ -1,3 +1,5 @@
+import { doc, updateDoc, increment } from "firebase/firestore";
+import { db } from "../../firebase";
 import type { Chiour } from "../models/models";
 import { chiourFirestoreRepository } from "../repositories/chiourFirestoreRepository";
 
@@ -44,6 +46,32 @@ export class ChiourService {
 
   getCachedChiourim(): Chiour[] | null {
     return this.chiourimCache?.data ?? null;
+  }
+
+  /** À appeler après toute mutation admin pour refléter le changement sans attendre le TTL. */
+  invalidateCache(): void {
+    this.chiourimCache = null;
+    this.categoriesCache = null;
+  }
+
+  /**
+   * Comptabilise une vue (ouverture de la page du chiour), une seule fois par
+   * session de navigation. Best effort : jamais bloquant pour le visiteur,
+   * les rules ne laissent passer que l'incrément +1 sur un chiour publié.
+   */
+  registerView(slug: string): void {
+    const key = `chiour-viewed:${slug}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      // sessionStorage indisponible (navigation privée stricte…) : on compte
+      // quand même la vue, au pire un rechargement en comptera une de plus.
+    }
+    updateDoc(doc(db, "chiourim", slug), { views: increment(1) }).catch((error) => {
+      // Hors ligne, brouillon, ou doc supprimé : la vue est simplement perdue.
+      console.warn("Vue non comptabilisée:", error?.code ?? error);
+    });
   }
 
   isCacheStale(): boolean {

@@ -74,9 +74,55 @@ service cloud.firestore {
       allow delete: if isSessionOwner() || isAdmin();
     }
 
-    // Chiourim (catalogue audio) : lecture publique, écriture réservée aux admins
+    // Compteur de vues d'un chiour : ouvert aux visiteurs non connectés,
+    // mais borné au strict incrément (+1 sur le seul champ `views`, chiour
+    // publié uniquement). Même esprit que les réservations des sessions.
+    function currentViews() {
+      return resource.data.keys().hasAny(['views']) && resource.data.views is int
+        ? resource.data.views
+        : 0;
+    }
+
+    function isViewsIncrementOnly() {
+      // affectedKeys (et non changedKeys) : à la toute première vue, le champ
+      // `views` est AJOUTÉ au document, pas modifié.
+      let keys = request.resource.data.diff(resource.data).affectedKeys();
+      return keys.hasAll(['views']) && keys.size() == 1
+        && resource.data.published == true
+        && request.resource.data.views is int
+        && request.resource.data.views == currentViews() + 1;
+    }
+
+    // Chiourim (catalogue audio) : lecture publique, écriture réservée aux admins.
+    // Les auteurs invités écrivent via les Cloud Functions studio* (admin SDK),
+    // qui vérifient leur token et n'autorisent que leurs brouillons.
     match /chiourim/{chiourId} {
       allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || isViewsIncrementOnly();
+    }
+
+    // Auteurs de chiourim : lecture publique (pages auteur), écriture admin
+    match /auteurs/{auteurId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Séries de chiourim : lecture publique, écriture admin. La création par
+    // un auteur invité passe par la Cloud Function studioSubmitChiour
+    // (firebase-admin, non soumis à ces règles).
+    match /series/{serieId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Tokens du studio auteurs : le doc ID EST le secret (32 octets aléatoires).
+    // `get` ouvert : connaître le token, c'est être l'auteur — il n'est pas
+    // devinable et le doc ne contient rien de sensible. `list` interdit aux
+    // non-admins : aucune énumération possible.
+    match /studioTokens/{token} {
+      allow get: if true;
+      allow list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
@@ -85,7 +131,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && request.auth.uid == userId;
       allow create, update: if isAuthenticated()
         && request.auth.uid == userId
-        && request.resource.data.size() <= 10
+        && request.resource.data.size() <= 12
         && (!('theme' in request.resource.data) || (request.resource.data.theme is string && request.resource.data.theme.size() <= 20))
         && (!('fontLatin' in request.resource.data) || (request.resource.data.fontLatin is string && request.resource.data.fontLatin.size() <= 20))
         && (!('fontHebrew' in request.resource.data) || (request.resource.data.fontHebrew is string && request.resource.data.fontHebrew.size() <= 20))
@@ -98,7 +144,9 @@ service cloud.firestore {
         && (!('fcmTokens' in request.resource.data) || (request.resource.data.fcmTokens is list && request.resource.data.fcmTokens.size() <= 20))
         && (!('pushReminderEnabled' in request.resource.data) || request.resource.data.pushReminderEnabled is bool)
         && (!('pushReminderHour' in request.resource.data) || (request.resource.data.pushReminderHour is int && request.resource.data.pushReminderHour >= 0 && request.resource.data.pushReminderHour <= 23))
-        && (!('pushLocale' in request.resource.data) || (request.resource.data.pushLocale is string && request.resource.data.pushLocale.size() <= 5));
+        && (!('pushLocale' in request.resource.data) || (request.resource.data.pushLocale is string && request.resource.data.pushLocale.size() <= 5))
+        // Chiourim déjà vus (slugs) : marqueur « Vu » des utilisateurs connectés.
+        && (!('viewedChiourim' in request.resource.data) || (request.resource.data.viewedChiourim is list && request.resource.data.viewedChiourim.size() <= 1000));
       allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
 

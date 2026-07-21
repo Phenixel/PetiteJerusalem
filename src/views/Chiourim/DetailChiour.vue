@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, computed, watch, watchEffect } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { chiourService } from "../../services/chiourService";
+import { serieService, type Serie } from "../../services/serieService";
+import { useViewedChiourim } from "../../composables/useViewedChiourim";
 import type { Chiour } from "../../models/models";
 import AudioPlayer from "../../components/AudioPlayer.vue";
 import ChiourCard from "../../components/ChiourCard.vue";
+import ShareModal from "../../components/ShareModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 
@@ -17,14 +20,51 @@ function goToAuteur(auteur: string) {
 }
 const { t } = useI18n();
 
+const { isViewed, markViewed, isLoaded: viewedLoaded } = useViewedChiourim();
+
 const chiour = ref<Chiour | null>(null);
 const allChiourim = ref<Chiour[]>([]);
+const serie = ref<Serie | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
+// Vrai si l'utilisateur connecté avait DÉJÀ vu ce chiour avant cette visite.
+// Capturé juste avant le marquage, une fois la liste des vus chargée (elle
+// arrive après le premier rendu au chargement complet de la page).
+const wasAlreadyViewed = ref(false);
+const viewMarkedFor = ref<string | null>(null);
 
+// Partage (même modal que les sessions de lecture : WhatsApp, SMS, QR, copie)
+const showShareModal = ref(false);
+const shareUrl = computed(() =>
+  chiour.value ? `${window.location.origin}/chiourim/${chiour.value.slug}` : "",
+);
+
+watchEffect(() => {
+  const current = chiour.value;
+  if (!current || !viewedLoaded.value || viewMarkedFor.value === current.slug) return;
+  viewMarkedFor.value = current.slug;
+  wasAlreadyViewed.value = isViewed(current.slug);
+  markViewed(current.slug);
+});
+
+const nextEpisode = computed(() => {
+  if (!chiour.value || !allChiourim.value.length) return null;
+  return serieService.getNextEpisode(chiour.value, allChiourim.value);
+});
+
+const previousEpisode = computed(() => {
+  if (!chiour.value || !allChiourim.value.length) return null;
+  return serieService.getPreviousEpisode(chiour.value, allChiourim.value);
+});
+
+// Les épisodes voisins ont leur propre bloc : les recommandations proposent
+// autre chose (mêmes catégories / même auteur), sans les dupliquer.
 const recommendations = computed(() => {
   if (!chiour.value || !allChiourim.value.length) return [];
-  return chiourService.getRecommendations(chiour.value, allChiourim.value, 2);
+  return chiourService
+    .getRecommendations(chiour.value, allChiourim.value, 4)
+    .filter((r) => r.slug !== nextEpisode.value?.slug && r.slug !== previousEpisode.value?.slug)
+    .slice(0, 2);
 });
 
 function applyChiour(all: Chiour[], slug: string): boolean {
@@ -32,6 +72,16 @@ function applyChiour(all: Chiour[], slug: string): boolean {
   const found = all.find((c) => c.slug === slug) ?? null;
   if (!found) return false;
   chiour.value = found;
+  serie.value = null;
+  if (found.serieId) {
+    serieService
+      .getSerie(found.serieId)
+      .then((s) => {
+        // Le visiteur a pu naviguer vers un autre chiour entre-temps.
+        if (chiour.value?.serieId === s?.id) serie.value = s;
+      })
+      .catch(() => {});
+  }
   seoService.setMeta({
     title: `${found.name} – Petite Jerusalem`,
     description: found.description || t("seo.chiourimDescription"),
@@ -47,6 +97,7 @@ const loadChiour = async () => {
   // Instant display from cache (even if media URLs are stale)
   const cached = chiourService.getCachedChiourim();
   if (cached && applyChiour(cached, slug)) {
+    chiourService.registerView(slug);
     isLoading.value = false;
     // If media URLs may be expired, refresh in background
     if (chiourService.isCacheStale()) {
@@ -61,6 +112,8 @@ const loadChiour = async () => {
     const all = await chiourService.getAllChiourim();
     if (!applyChiour(all, slug)) {
       error.value = t("detailChiour.notFound");
+    } else {
+      chiourService.registerView(slug);
     }
   } catch (err) {
     console.error("Erreur lors du chargement du chiour:", err);
@@ -132,13 +185,35 @@ watch(() => route.params.slug, loadChiour);
 
         <!-- Categories -->
         <div class="flex flex-wrap gap-2 mb-5">
+          <!-- Déjà vu lors d'une visite précédente (connecté uniquement) -->
+          <span
+            v-if="wasAlreadyViewed"
+            class="chip bg-green-600/10 text-green-700 inline-flex items-center gap-1 dark:text-green-300"
+          >
+            <AppIcon name="circle-check" :size="12" />
+            {{ t("common.viewed") }}
+          </span>
           <span v-for="cat in chiour.categories" :key="cat" class="chip bg-primary/10 text-primary">
             {{ cat }}
           </span>
         </div>
 
-        <!-- Meta : auteur + niveau -->
-        <div class="flex flex-wrap items-center gap-6 text-text-secondary">
+        <!-- Série : pastille cliquable «#n · Nom de la série» vers la page série -->
+        <div v-if="serie" class="mb-5">
+          <router-link
+            :to="`/chiourim/serie/${serie.id}`"
+            class="chip bg-secondary/10 text-secondary inline-flex items-center gap-1.5 transition-colors hover:bg-secondary/20"
+          >
+            <AppIcon name="book-open" :size="13" />
+            <span class="font-semibold">
+              <template v-if="chiour.episode != null">#{{ chiour.episode }} · </template>{{ serie.name }}
+            </span>
+            <AppIcon name="chevron-right" :size="12" />
+          </router-link>
+        </div>
+
+        <!-- Meta : auteur + niveau + partage -->
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-3 text-text-secondary">
           <button
             v-if="chiour.auteur"
             @click="goToAuteur(chiour.auteur)"
@@ -154,22 +229,19 @@ watch(() => route.params.slug, loadChiour);
             <AppIcon name="signal" :size="16" class="text-primary" />
             <span>{{ chiour.niveau }}</span>
           </div>
+          <button class="btn btn-soft ml-auto" @click="showShareModal = true">
+            <AppIcon name="share" :size="15" />
+            {{ t("common.share") }}
+          </button>
         </div>
       </div>
 
-      <!-- Audio Player -->
+      <!-- Audio Player (aucun bloc si le chiour n'a pas d'audio) -->
       <div v-if="chiour.mediaUrl" class="mb-8">
         <AudioPlayer :src="chiour.mediaUrl" :title="chiour.name" :slug="chiour.slug" />
       </div>
 
-      <div v-else class="mb-8 py-8 text-center">
-        <AppIcon name="volume-x" :size="24" class="text-text-secondary/40 mb-2" />
-        <p class="text-text-secondary">
-          {{ t("detailChiour.noAudio") }}
-        </p>
-      </div>
-
-      <!-- Description -->
+      <!-- Description : carte standard, comme les cours -->
       <div v-if="chiour.description" class="mb-12 card p-6">
         <h2 class="text-lg font-bold text-text-primary mb-3">
           {{ t("common.description") }}
@@ -178,6 +250,53 @@ watch(() => route.params.slug, loadChiour);
           {{ chiour.description }}
         </p>
       </div>
+
+      <!-- Navigation dans la série : liens fantômes (fond léger au survol),
+           ni carte ni filet. Grille à 2 colonnes : précédent à gauche, suivant
+           à droite, TOUJOURS sur la même ligne (jamais de chevauchement, même
+           sur mobile) grâce aux placements col-start explicites. -->
+      <nav
+        v-if="serie && (previousEpisode || nextEpisode)"
+        class="mb-12 -mx-3 grid grid-cols-2 gap-2"
+      >
+        <router-link
+          v-if="previousEpisode"
+          :to="`/chiourim/${previousEpisode.slug}`"
+          class="group flex items-center gap-2.5 min-w-0 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5"
+          :class="nextEpisode ? 'col-start-1' : 'col-span-2'"
+        >
+          <AppIcon
+            name="chevron-left"
+            :size="16"
+            class="text-text-secondary shrink-0 transition-transform group-hover:-translate-x-0.5 group-hover:text-primary"
+          />
+          <span class="min-w-0">
+            <span class="block text-xs uppercase tracking-wide text-text-secondary">{{ t("serie.previous") }}</span>
+            <span class="block font-semibold text-text-primary group-hover:text-primary transition-colors truncate">
+              <template v-if="previousEpisode.episode != null">{{ previousEpisode.episode }}. </template>{{ previousEpisode.name }}
+            </span>
+          </span>
+        </router-link>
+
+        <router-link
+          v-if="nextEpisode"
+          :to="`/chiourim/${nextEpisode.slug}`"
+          class="group flex items-center justify-end gap-2.5 min-w-0 text-right rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5"
+          :class="previousEpisode ? 'col-start-2' : 'col-span-2'"
+        >
+          <span class="min-w-0">
+            <span class="block text-xs uppercase tracking-wide text-text-secondary">{{ t("serie.next") }}</span>
+            <span class="block font-semibold text-text-primary group-hover:text-primary transition-colors truncate">
+              <template v-if="nextEpisode.episode != null">{{ nextEpisode.episode }}. </template>{{ nextEpisode.name }}
+            </span>
+          </span>
+          <AppIcon
+            name="chevron-right"
+            :size="16"
+            class="text-text-secondary shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+          />
+        </router-link>
+      </nav>
 
       <!-- Recommandations -->
       <div v-if="recommendations.length > 0">
@@ -190,10 +309,20 @@ watch(() => route.params.slug, loadChiour);
             v-for="rec in recommendations"
             :key="rec.slug"
             :chiour="rec"
+            :serie-name="serie && rec.serieId === serie.id ? serie.name : undefined"
             class="h-full"
           />
         </div>
       </div>
     </div>
+
+    <ShareModal
+      v-if="chiour"
+      v-model:show="showShareModal"
+      :session-name="chiour.name"
+      :share-url="shareUrl"
+      title-key="shareModal.titleChiour"
+      message-key="shareModal.inviteChiour"
+    />
   </main>
 </template>
