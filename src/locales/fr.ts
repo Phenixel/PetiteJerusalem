@@ -616,7 +616,6 @@ const fr = {
   serie: {
     label: "Série",
     episodeBadge: "Épisode {n}",
-    episodeOf: "Épisode {n} de la série {serie}",
     nextEpisode: "Épisode suivant",
     previousEpisode: "Épisode précédent",
     episodesCount: "{count} épisode(s)",

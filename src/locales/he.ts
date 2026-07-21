@@ -600,7 +600,6 @@ const he: LocaleMessages = {
   serie: {
     label: "סדרה",
     episodeBadge: "פרק {n}",
-    episodeOf: "פרק {n} בסדרה {serie}",
     nextEpisode: "הפרק הבא",
     previousEpisode: "הפרק הקודם",
     episodesCount: "{count} פרקים",

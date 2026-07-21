@@ -611,7 +611,6 @@ const en: LocaleMessages = {
   serie: {
     label: "Series",
     episodeBadge: "Episode {n}",
-    episodeOf: "Episode {n} of the series {serie}",
     nextEpisode: "Next episode",
     previousEpisode: "Previous episode",
     episodesCount: "{count} episode(s)",

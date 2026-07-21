@@ -198,19 +198,17 @@ watch(() => route.params.slug, loadChiour);
           </span>
         </div>
 
-        <!-- Série : lien vers la page série + numéro d'épisode -->
+        <!-- Série : pastille cliquable «#n · Nom de la série» vers la page série -->
         <div v-if="serie" class="mb-5">
           <router-link
             :to="`/chiourim/serie/${serie.id}`"
-            class="inline-flex items-center gap-2 text-text-secondary hover:text-primary transition-colors"
+            class="chip bg-secondary/10 text-secondary inline-flex items-center gap-1.5 transition-colors hover:bg-secondary/20"
           >
-            <AppIcon name="book-open" :size="15" class="text-secondary" />
-            <span>
-              <template v-if="chiour.episode != null">
-                {{ t("serie.episodeOf", { n: chiour.episode, serie: serie.name }) }}
-              </template>
-              <template v-else>{{ serie.name }}</template>
+            <AppIcon name="book-open" :size="13" />
+            <span class="font-semibold">
+              <template v-if="chiour.episode != null">#{{ chiour.episode }} · </template>{{ serie.name }}
             </span>
+            <AppIcon name="chevron-right" :size="12" />
           </router-link>
         </div>
 
@@ -254,10 +252,11 @@ watch(() => route.params.slug, loadChiour);
       </div>
 
       <!-- Navigation dans la série : liens fantômes (fond léger au survol),
-           ni carte ni filet, les cartes restent réservées aux cours -->
+           ni carte ni filet. Sur mobile, chaque lien prend sa propre ligne
+           (précédent puis suivant) pour ne jamais se chevaucher. -->
       <nav
         v-if="serie && (previousEpisode || nextEpisode)"
-        class="mb-12 -mx-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-1"
+        class="mb-12 -mx-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-x-6"
       >
         <router-link
           v-if="previousEpisode"
@@ -278,16 +277,9 @@ watch(() => route.params.slug, loadChiour);
         </router-link>
 
         <router-link
-          :to="`/chiourim/serie/${serie.id}`"
-          class="order-last w-full text-center text-sm text-primary font-medium hover:underline sm:order-none sm:w-auto"
-        >
-          {{ t("serie.seeAll") }}
-        </router-link>
-
-        <router-link
           v-if="nextEpisode"
           :to="`/chiourim/${nextEpisode.slug}`"
-          class="group flex items-center gap-3 min-w-0 ml-auto text-right rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5"
+          class="group flex items-center justify-end gap-3 min-w-0 text-right rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5 sm:ml-auto"
         >
           <span class="min-w-0">
             <span class="block text-xs uppercase tracking-wide text-text-secondary">{{ t("serie.nextEpisode") }}</span>
