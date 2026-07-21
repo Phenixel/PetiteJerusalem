@@ -28,6 +28,9 @@ export class ChiourFirestoreRepository {
           categories: doc.categories ?? [],
           mediaUrl: doc.mediaUrl ?? "",
           niveau: doc.niveau ?? null,
+          auteurId: doc.auteurId ?? null,
+          serieId: doc.serieId ?? null,
+          episode: doc.episode ?? null,
           _order: doc.order ?? null,
         }),
       );

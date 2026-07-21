@@ -46,6 +46,12 @@ export class ChiourService {
     return this.chiourimCache?.data ?? null;
   }
 
+  /** À appeler après toute mutation admin pour refléter le changement sans attendre le TTL. */
+  invalidateCache(): void {
+    this.chiourimCache = null;
+    this.categoriesCache = null;
+  }
+
   isCacheStale(): boolean {
     if (!this.chiourimCache) return true;
     return Date.now() - this.chiourimCache.fetchedAt >= CACHE_TTL;

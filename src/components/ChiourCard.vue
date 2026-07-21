@@ -10,6 +10,8 @@ const router = useRouter();
 
 interface Props {
   chiour: Chiour;
+  /** Nom de la série du chiour, si la page appelante le connaît (badge épisode). */
+  serieName?: string;
 }
 
 defineProps<Props>();
@@ -39,6 +41,16 @@ function goToAuteur(event: Event, auteur: string) {
 
     <!-- Categories badges -->
     <div class="flex flex-wrap gap-2 mb-3">
+      <span
+        v-if="serieName"
+        class="chip bg-secondary/10 text-secondary inline-flex items-center gap-1"
+      >
+        <AppIcon name="book-open" :size="12" />
+        <template v-if="chiour.episode != null">
+          {{ t("serie.episodeBadge", { n: chiour.episode }) }}
+        </template>
+        <template v-else>{{ serieName }}</template>
+      </span>
       <span v-for="cat in chiour.categories" :key="cat" class="chip bg-primary/10 text-primary">
         {{ cat }}
       </span>

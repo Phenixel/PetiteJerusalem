@@ -74,9 +74,35 @@ service cloud.firestore {
       allow delete: if isSessionOwner() || isAdmin();
     }
 
-    // Chiourim (catalogue audio) : lecture publique, écriture réservée aux admins
+    // Chiourim (catalogue audio) : lecture publique, écriture réservée aux admins.
+    // Les auteurs invités écrivent via les Cloud Functions studio* (admin SDK),
+    // qui vérifient leur token et n'autorisent que leurs brouillons.
     match /chiourim/{chiourId} {
       allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Auteurs de chiourim : lecture publique (pages auteur), écriture admin
+    match /auteurs/{auteurId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Séries de chiourim : lecture publique, écriture admin. La création par
+    // un auteur invité passe par la Cloud Function studioSubmitChiour
+    // (firebase-admin, non soumis à ces règles).
+    match /series/{serieId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Tokens du studio auteurs : le doc ID EST le secret (32 octets aléatoires).
+    // `get` ouvert : connaître le token, c'est être l'auteur — il n'est pas
+    // devinable et le doc ne contient rien de sensible. `list` interdit aux
+    // non-admins : aucune énumération possible.
+    match /studioTokens/{token} {
+      allow get: if true;
+      allow list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 

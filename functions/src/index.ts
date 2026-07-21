@@ -29,6 +29,8 @@ setGlobalOptions({ maxInstances: 3 });
 export { dailyReadingReminder } from "./dailyReminder";
 // Notification de test à la demande (bouton dans les réglages de l'app).
 export { sendTestNotification } from "./testNotification";
+// Studio auteurs : dépôt de chiourim via lien secret (/studio/:token).
+export { studioSubmitChiour, studioUpdateChiour, studioDeleteChiour } from "./studio";
 
 const SITE_URL = "https://petite-jerusalem.fr";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
@@ -161,14 +163,17 @@ async function getChiourim(): Promise<ChiourPreview[]> {
     return chiourimCache.data;
   }
   const snap = await db.collection("chiourim").get();
-  const data: ChiourPreview[] = snap.docs.map((d) => {
-    const x = d.data();
-    return {
-      name: (x.name as string) ?? "",
-      property_description: (x.description as string) ?? "",
-      property_auteur: (x.auteur as string | null) ?? null,
-    };
-  });
+  const data: ChiourPreview[] = snap.docs
+    // Brouillons exclus : pas d'aperçu social pour un chiour non publié.
+    .filter((d) => d.data().published !== false)
+    .map((d) => {
+      const x = d.data();
+      return {
+        name: (x.name as string) ?? "",
+        property_description: (x.description as string) ?? "",
+        property_auteur: (x.auteur as string | null) ?? null,
+      };
+    });
   chiourimCache = { data, ts: Date.now() };
   return data;
 }

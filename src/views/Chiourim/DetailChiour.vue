@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { chiourService } from "../../services/chiourService";
+import { serieService, type Serie } from "../../services/serieService";
 import type { Chiour } from "../../models/models";
 import AudioPlayer from "../../components/AudioPlayer.vue";
 import ChiourCard from "../../components/ChiourCard.vue";
@@ -19,12 +20,22 @@ const { t } = useI18n();
 
 const chiour = ref<Chiour | null>(null);
 const allChiourim = ref<Chiour[]>([]);
+const serie = ref<Serie | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 
+const nextEpisode = computed(() => {
+  if (!chiour.value || !allChiourim.value.length) return null;
+  return serieService.getNextEpisode(chiour.value, allChiourim.value);
+});
+
+// L'épisode suivant de la série passe en tête des recommandations.
 const recommendations = computed(() => {
   if (!chiour.value || !allChiourim.value.length) return [];
-  return chiourService.getRecommendations(chiour.value, allChiourim.value, 2);
+  const recs = chiourService.getRecommendations(chiour.value, allChiourim.value, 2);
+  const next = nextEpisode.value;
+  if (!next) return recs;
+  return [next, ...recs.filter((r) => r.slug !== next.slug)].slice(0, 2);
 });
 
 function applyChiour(all: Chiour[], slug: string): boolean {
@@ -32,6 +43,16 @@ function applyChiour(all: Chiour[], slug: string): boolean {
   const found = all.find((c) => c.slug === slug) ?? null;
   if (!found) return false;
   chiour.value = found;
+  serie.value = null;
+  if (found.serieId) {
+    serieService
+      .getSerie(found.serieId)
+      .then((s) => {
+        // Le visiteur a pu naviguer vers un autre chiour entre-temps.
+        if (chiour.value?.serieId === s?.id) serie.value = s;
+      })
+      .catch(() => {});
+  }
   seoService.setMeta({
     title: `${found.name} – Petite Jerusalem`,
     description: found.description || t("seo.chiourimDescription"),
@@ -137,6 +158,22 @@ watch(() => route.params.slug, loadChiour);
           </span>
         </div>
 
+        <!-- Série : lien vers la page série + numéro d'épisode -->
+        <div v-if="serie" class="mb-5">
+          <router-link
+            :to="`/chiourim/serie/${serie.id}`"
+            class="inline-flex items-center gap-2 text-text-secondary hover:text-primary transition-colors"
+          >
+            <AppIcon name="book-open" :size="15" class="text-secondary" />
+            <span>
+              <template v-if="chiour.episode != null">
+                {{ t("serie.episodeOf", { n: chiour.episode, serie: serie.name }) }}
+              </template>
+              <template v-else>{{ serie.name }}</template>
+            </span>
+          </router-link>
+        </div>
+
         <!-- Meta : auteur + niveau -->
         <div class="flex flex-wrap items-center gap-6 text-text-secondary">
           <button
@@ -179,6 +216,27 @@ watch(() => route.params.slug, loadChiour);
         </p>
       </div>
 
+      <!-- Épisode suivant -->
+      <div v-if="nextEpisode" class="mb-10">
+        <router-link
+          :to="`/chiourim/${nextEpisode.slug}`"
+          class="card card-hover p-5 flex items-center gap-4 group"
+        >
+          <div
+            class="flex items-center justify-center w-11 h-11 rounded-lg bg-secondary/10 text-secondary shrink-0"
+          >
+            <AppIcon name="forward" :size="18" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-text-secondary">{{ t("serie.nextEpisode") }}</p>
+            <p class="font-bold text-text-primary group-hover:text-primary transition-colors truncate">
+              <template v-if="nextEpisode.episode != null">{{ nextEpisode.episode }}. </template>{{ nextEpisode.name }}
+            </p>
+          </div>
+          <AppIcon name="chevron-right" :size="16" class="text-text-secondary shrink-0" />
+        </router-link>
+      </div>
+
       <!-- Recommandations -->
       <div v-if="recommendations.length > 0">
         <h2 class="text-2xl font-bold text-text-primary mb-6">
@@ -190,6 +248,7 @@ watch(() => route.params.slug, loadChiour);
             v-for="rec in recommendations"
             :key="rec.slug"
             :chiour="rec"
+            :serie-name="serie && rec.serieId === serie.id ? serie.name : undefined"
             class="h-full"
           />
         </div>

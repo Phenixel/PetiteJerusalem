@@ -12,10 +12,17 @@ const DetailSession = () => import("../views/ShareReading/DetailSession.vue");
 const ChiourimPage = () => import("../views/Chiourim/ChiourimPage.vue");
 const DetailChiour = () => import("../views/Chiourim/DetailChiour.vue");
 const AuteurChiourimPage = () => import("../views/Chiourim/AuteurChiourimPage.vue");
+const SerieChiourimPage = () => import("../views/Chiourim/SerieChiourimPage.vue");
 const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue");
 const StudyPage = () => import("../views/StudyPage.vue");
 const ContentPage = () => import("../views/ContentPage.vue");
 const TehilimPage = () => import("../views/TehilimPage.vue");
+const StudioPage = () => import("../views/Studio/StudioPage.vue");
+const AdminLayout = () => import("../views/Admin/AdminLayout.vue");
+const AdminChiourimPage = () => import("../views/Admin/AdminChiourimPage.vue");
+const AdminChiourEditPage = () => import("../views/Admin/AdminChiourEditPage.vue");
+const AdminAuteursPage = () => import("../views/Admin/AdminAuteursPage.vue");
+const AdminAuteurDetailPage = () => import("../views/Admin/AdminAuteurDetailPage.vue");
 
 export default [
   {
@@ -94,9 +101,35 @@ export default [
     component: AuteurChiourimPage,
   },
   {
+    path: "/chiourim/serie/:serieId",
+    name: "serie-chiourim",
+    component: SerieChiourimPage,
+  },
+  {
     path: "/chiourim/:slug",
     name: "detail-chiour",
     component: DetailChiour,
+  },
+  // Studio auteurs : accès par lien secret distribué par l'admin (pas de
+  // compte). Page volontairement absente de toute navigation, et noindex.
+  {
+    path: "/studio/:token",
+    name: "studio",
+    component: StudioPage,
+  },
+  // Backoffice admin (web uniquement, hors navigation) : réservé au compte
+  // admin. La garde requiresAdmin est UX ; les rules font la vraie sécurité.
+  {
+    path: "/admin",
+    component: AdminLayout,
+    meta: { requiresAuth: true, requiresAdmin: true },
+    children: [
+      { path: "", redirect: "/admin/chiourim" },
+      { path: "chiourim", name: "admin-chiourim", component: AdminChiourimPage },
+      { path: "chiourim/:slug", name: "admin-chiour-edit", component: AdminChiourEditPage },
+      { path: "auteurs", name: "admin-auteurs", component: AdminAuteursPage },
+      { path: "auteurs/:auteurId", name: "admin-auteur-detail", component: AdminAuteurDetailPage },
+    ],
   },
   {
     path: "/lire/:textId",

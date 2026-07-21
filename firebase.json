@@ -78,6 +78,9 @@
     "storage": {
       "port": 8472
     },
+    "functions": {
+      "port": 8477
+    },
     "ui": {
       "enabled": true,
       "port": 8473
