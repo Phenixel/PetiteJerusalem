@@ -24,7 +24,8 @@
     "app:prune": "node scripts/prune-native-bundle.mjs",
     "cap:sync": "cap sync",
     "cap:android": "run-s app:build && cap open android",
-    "cap:ios": "run-s app:build && cap open ios"
+    "cap:ios": "run-s app:build && cap open ios",
+    "store:screenshots": "node scripts/store-screenshots.mjs"
   },
   "dependencies": {
     "@capacitor-firebase/authentication": "^8.3.0",
@@ -47,6 +48,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.4.1",
+    "@googleapis/androidpublisher": "^36.0.0",
     "@tsconfig/node22": "^22.0.2",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^22.16.5",
@@ -57,9 +59,11 @@
     "@vue/tsconfig": "^0.7.0",
     "eslint": "^9.31.0",
     "eslint-plugin-vue": "~10.3.0",
+    "google-auth-library": "^10.9.0",
     "jiti": "^2.4.2",
     "jsdom": "^26.1.0",
     "npm-run-all2": "^8.0.4",
+    "playwright": "^1.61.1",
     "prettier": "3.6.2",
     "tailwindcss": "^4.1.17",
     "typescript": "~5.8.0",

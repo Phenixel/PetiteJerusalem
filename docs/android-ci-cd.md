@@ -47,7 +47,55 @@ gh secret set PLAY_SERVICE_ACCOUNT_JSON < ~/Downloads/petite-jerusalem-play-ci.j
    autorisations → Inviter un utilisateur → l'adresse e-mail du compte de
    service (`play-ci@….iam.gserviceaccount.com`) → autorisations sur l'app
    Petite Jérusalem : « Publier des releases en production » (et pistes de
-   test).
+   test) + « Modifier la fiche Play Store » (pour la synchronisation des
+   descriptions et captures d'écran par la CI).
+
+## Fiche Play Store et notes de version
+
+La fiche (titre, descriptions, captures d'écran) et les notes de version
+vivent dans le repo, au format fastlane, et sont synchronisées à chaque
+publication :
+
+```
+store-assets/metadata/android/<locale>/   # fr-FR, en-US, iw-IL (hébreu)
+├── title.txt                 # ≤ 30 caractères
+├── short_description.txt     # ≤ 80
+├── full_description.txt      # ≤ 4000
+├── changelogs/default.txt    # ≤ 500 — notes « Nouveautés » de la release
+└── images/
+    ├── phoneScreenshots/     # ≥ 2 captures sinon elles ne sont pas envoyées
+    └── featureGraphic.png    # bannière 1024×500 (optionnelle)
+```
+
+- Les notes de version sont attachées à la release Play par
+  `upload-google-play` (paramètre `whatsNewDirectory`), préparées par
+  `scripts/prepare-whatsnew.mjs` :
+  1. **si une release GitHub existe pour le tag** (créée depuis l'interface
+     GitHub avec son texte), c'est ce texte qui part sur le Play Store
+     (markdown allégé, tronqué à 500 caractères) — en français, les autres
+     langues retombent sur la langue par défaut dans la console ;
+  2. **sinon**, les `changelogs/default.txt` du repo (une version par
+     langue) : les mettre à jour avant de poser le tag.
+
+  La release GitHub est de toute façon créée/complétée par la CI avec l'AAB
+  signé ; si elle existe déjà, son texte n'est pas touché.
+- La fiche est envoyée par `node scripts/play-listing.mjs` (API Android
+  Publisher, même compte de service). `node scripts/play-listing.mjs --check`
+  vérifie les limites de caractères en local, sans réseau.
+- Les captures d'une langue remplacent **tout** le jeu existant dans la
+  console ; une langue sans captures dans le repo laisse la console
+  intacte (les langues sans images retombent sur la langue par défaut).
+- Les captures se régénèrent avec `npm run store:screenshots`
+  (scripts/store-screenshots.mjs) : émulateurs Firebase éphémères + données
+  de démo fixes (compte « Sarah Levy », session Tehilim, chiourim), puis
+  l'app **native** (build debug Capacitor branché sur le Vite local via
+  `CAP_SERVER_URL` + `adb reverse`) sur l'AVD dédié `pj-store` (1080×1920,
+  créé automatiquement), pilotée par Playwright à travers sa webview et
+  capturée par `adb screencap` (barre de statut en mode démo SystemUI,
+  barre d'onglets native visible). Reproductible : mêmes données à chaque
+  exécution, il suffit de committer les PNG produits. Variante rapide sans
+  émulateur Android : `npm run store:screenshots -- --web` (rendu site
+  mobile, sans la barre d'onglets).
 
 ## Piste de publication
 

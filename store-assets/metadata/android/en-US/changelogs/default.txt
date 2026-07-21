@@ -1,0 +1,4 @@
+Daily reading reminder: pick your notification time from your profile.
+Notifications now show even while the app is open.
+New About tab and interface improvements.
+Bug fixes and performance improvements.

@@ -12,7 +12,9 @@ export default defineConfig({
   server: {
     port: 5473,
   },
-  plugins: [vue(), vueDevTools(), tailwindcss()],
+  // Le badge flottant Vue DevTools polluerait les captures d'écran de la
+  // fiche Play Store (scripts/store-screenshots.mjs).
+  plugins: [vue(), ...(process.env.STORE_SCREENSHOTS ? [] : [vueDevTools()]), tailwindcss()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

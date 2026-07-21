@@ -15,6 +15,12 @@ const config: CapacitorConfig = {
   appId: 'fr.petitejerusalem.app',
   appName: 'Petite Jérusalem',
   webDir: 'dist',
+  // CAP_SERVER_URL : charge l'app depuis un serveur de dev au lieu du bundle
+  // (itération rapide, et captures d'écran natives — scripts/store-screenshots.mjs
+  // le pointe sur son Vite : `adb reverse` rend le localhost du device = la machine).
+  ...(process.env.CAP_SERVER_URL
+    ? { server: { url: process.env.CAP_SERVER_URL, cleartext: true } }
+    : {}),
   plugins: {
     // Auth native Google/Apple : le plugin ne fait qu'obtenir les credentials
     // (skipNativeAuth), la connexion Firebase elle-même passe par le SDK JS de

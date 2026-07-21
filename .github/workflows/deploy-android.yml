@@ -7,6 +7,14 @@ name: Deploy Android
 # reproduisent exactement le projet natif local (icônes, barre système,
 # signature, MainActivity…).
 #
+# En plus de l'AAB, chaque publication envoie les notes de version
+# (« Nouveautés ») et synchronise la fiche Play Store (titre, descriptions,
+# captures d'écran) depuis store-assets/metadata/android/, puis crée une
+# release GitHub avec l'AAB signé. Les notes reprennent le texte de la
+# release GitHub du tag si elle existe (créer la release depuis l'interface
+# GitHub avec son texte publie donc ces notes sur le Play Store), sinon les
+# changelogs/default.txt du repo.
+#
 # Secrets requis (voir docs/android-ci-cd.md pour les créer) :
 #   ANDROID_KEYSTORE_BASE64   keystore de release encodé en base64
 #   ANDROID_KEYSTORE_PASSWORD mot de passe du keystore
@@ -32,7 +40,8 @@ jobs:
   android:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # write : création de la release GitHub (AAB + notes de version) sur tag.
+      contents: write
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -75,6 +84,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # Échec rapide si un texte de la fiche dépasse les limites Play Console
+      # (titre ≤ 30, description courte ≤ 80, longue ≤ 4000, notes ≤ 500).
+      - name: Vérifier les textes de la fiche Play Store
+        run: node scripts/play-listing.mjs --check
 
       - name: Déterminer la version (tag vX.Y.Z)
         id: version
@@ -148,6 +162,19 @@ jobs:
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
 
+      # Notes de version (« Nouveautés ») : le texte de la release GitHub du
+      # tag si elle existe (rédigé à la main en créant la release), sinon les
+      # changelogs/default.txt du repo — voir scripts/prepare-whatsnew.mjs.
+      - name: Préparer les notes de version
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/v${{ steps.version.outputs.name }}" \
+            --jq '.body // ""' > release-body.md || rm -f release-body.md
+          node scripts/prepare-whatsnew.mjs release-body.md
+          ls whatsnew
+
       - name: Publier sur le Play Store
         uses: r0adkll/upload-google-play@v1
         with:
@@ -156,3 +183,23 @@ jobs:
           releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
           track: ${{ vars.ANDROID_PLAY_TRACK || 'production' }}
           status: completed
+          whatsNewDirectory: whatsnew
+
+      # Fiche Play Store (titre, descriptions, captures d'écran) synchronisée
+      # depuis store-assets/metadata/android/ — voir scripts/play-listing.mjs.
+      - name: Mettre à jour la fiche Play Store
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: node scripts/play-listing.mjs
+
+      # Release GitHub sur le tag : AAB signé + notes de version, pour
+      # retrouver chaque build publié sans passer par l'onglet Actions. Si la
+      # release existe déjà (créée à la main avec son texte), l'AAB y est
+      # simplement attaché : sans `body`, l'action conserve le texte d'origine.
+      - name: Créer la release GitHub
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: v${{ steps.version.outputs.name }}
+          body_path: ${{ steps.notes.outputs.has_release_body != 'true' && 'store-assets/metadata/android/fr-FR/changelogs/default.txt' || '' }}
+          files: android/app/build/outputs/bundle/release/app-release.aab
