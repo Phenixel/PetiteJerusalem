@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
+import { useBottomChromeHeight } from "../composables/useBottomChrome";
 
 const { t } = useI18n();
+
+// Se pose au-dessus des barres fixes du bas (bottom bar native, mini-lecteur)
+// pour ne plus être masquée par la barre de navigation de l'app.
+const bottomOffset = useBottomChromeHeight();
 
 defineProps<{
   count: number;
@@ -18,7 +23,11 @@ defineEmits<{
 </script>
 
 <template>
-  <div v-if="count > 0" class="fixed bottom-0 left-0 right-0 p-4 z-50 animate-[fadeIn_0.3s_ease]">
+  <div
+    v-if="count > 0"
+    class="fixed left-0 right-0 p-4 z-50 animate-[fadeIn_0.3s_ease]"
+    :style="{ bottom: bottomOffset }"
+  >
     <div
       class="max-w-2xl mx-auto bg-surface shadow-pop rounded-lg p-4 flex items-center justify-between gap-4"
     >
