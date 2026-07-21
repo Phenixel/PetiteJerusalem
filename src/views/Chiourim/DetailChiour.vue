@@ -11,6 +11,7 @@ import ChiourCard from "../../components/ChiourCard.vue";
 import ShareModal from "../../components/ShareModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
+import { SITE_URL } from "../../content/seoPages";
 
 const route = useRoute();
 const router = useRouter();
@@ -35,8 +36,11 @@ const viewMarkedFor = ref<string | null>(null);
 
 // Partage (même modal que les sessions de lecture : WhatsApp, SMS, QR, copie)
 const showShareModal = ref(false);
+// Toujours le domaine canonique : window.location.origin vaut "localhost"
+// (ou capacitor://localhost) en dev et dans l'app native, ce qui produirait
+// un lien de partage inutilisable.
 const shareUrl = computed(() =>
-  chiour.value ? `${window.location.origin}/chiourim/${chiour.value.slug}` : "",
+  chiour.value ? `${SITE_URL}/chiourim/${chiour.value.slug}` : "",
 );
 
 watchEffect(() => {
