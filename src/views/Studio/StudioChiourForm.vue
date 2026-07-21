@@ -221,7 +221,7 @@ async function save() {
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div v-if="!isLimited">
+      <div>
         <label for="studio-serie" class="block text-sm font-semibold text-text-secondary mb-2">
           {{ t("studio.form.serie") }}
         </label>
@@ -261,7 +261,7 @@ async function save() {
       </div>
     </div>
 
-    <div v-if="serieChoice === NEW_SERIE && !isLimited">
+    <div v-if="serieChoice === NEW_SERIE">
       <label for="studio-new-serie" class="block text-sm font-semibold text-text-secondary mb-2">
         {{ t("studio.form.newSerieName") }}
       </label>

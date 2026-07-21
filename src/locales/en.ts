@@ -589,7 +589,7 @@ const en: LocaleMessages = {
       audioHint: "MP3, M4A, WAV or OGG, 200 MB max.",
       audioKeep: "The current audio is kept unless you pick a new file.",
       publishedNotice:
-        "This chiour is published: you can edit the description, the categories and the episode number. For anything else, contact the administrator.",
+        "This chiour is published: you can edit the description, the categories, the series and the episode number. For anything else, contact the administrator.",
       replaceAudio: "Replace audio",
       uploading: "Uploading audio: {percent}%",
       submit: "Send the chiour",

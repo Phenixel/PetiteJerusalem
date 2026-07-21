@@ -594,7 +594,7 @@ const fr = {
       audioHint: "MP3, M4A, WAV ou OGG, 200 Mo maximum.",
       audioKeep: "L'audio actuel est conservé si vous ne choisissez pas de nouveau fichier.",
       publishedNotice:
-        "Ce chiour est publié : vous pouvez modifier la description, les catégories et le numéro d'épisode. Pour le reste, contactez l'administrateur.",
+        "Ce chiour est publié : vous pouvez modifier la description, les catégories, la série et le numéro d'épisode. Pour le reste, contactez l'administrateur.",
       replaceAudio: "Remplacer l'audio",
       uploading: "Envoi de l'audio : {percent}%",
       submit: "Envoyer le chiour",

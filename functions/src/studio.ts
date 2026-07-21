@@ -307,8 +307,9 @@ export const studioUpdateChiour = onCall(async (request) => {
   const meta = parseMetadata(data);
 
   // Chiour publié : édition restreinte. L'auteur peut retoucher la
-  // description, les catégories et le numéro d'épisode ; le titre, le
-  // niveau, la série et l'audio sont figés (c'est l'admin qui tranche).
+  // description, les catégories, la série (assigner, changer, retirer,
+  // y compris vers une nouvelle série) et le numéro d'épisode ; le titre,
+  // le niveau et l'audio sont figés (c'est l'admin qui tranche).
   if (published) {
     if (data.stagingPath != null) {
       throw new HttpsError(
@@ -316,10 +317,12 @@ export const studioUpdateChiour = onCall(async (request) => {
         "Ce chiour est publié : l'audio ne peut plus être remplacé. Contactez l'administrateur.",
       );
     }
+    const serieId = await resolveSerie(meta, author);
     await ref.set(
       {
         description: meta.description,
         categories: meta.categories,
+        serieId,
         episode: meta.episode,
         updatedAt: FieldValue.serverTimestamp(),
       },
