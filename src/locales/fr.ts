@@ -84,7 +84,7 @@ const fr = {
       endsToday: "se termine aujourd'hui",
       endsInDays: "se termine dans {count} j",
       noEndingSoon:
-        "{count} session(s) en cours — aucune ne se termine cette semaine.",
+        "{count} session(s) en cours, aucune ne se termine cette semaine.",
       noSessions: "Rejoignez ou créez une session d'étude partagée.",
       sessionsCta: "Voir le partage de lectures",
     },

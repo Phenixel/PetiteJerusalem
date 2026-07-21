@@ -85,6 +85,11 @@ store-assets/metadata/android/<locale>/   # fr-FR, en-US, iw-IL (hébreu)
 - Les captures d'une langue remplacent **tout** le jeu existant dans la
   console ; une langue sans captures dans le repo laisse la console
   intacte (les langues sans images retombent sur la langue par défaut).
+- Les captures se régénèrent avec `npm run store:screenshots`
+  (scripts/store-screenshots.mjs) : émulateurs Firebase éphémères + données
+  de démo fixes (compte « Sarah Levy », session Tehilim, chiourim) +
+  captures Playwright en 1080×1920. Reproductible : mêmes données à chaque
+  exécution, il suffit de committer les PNG produits.
 
 ## Piste de publication
 

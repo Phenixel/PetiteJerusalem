@@ -24,7 +24,8 @@
     "app:prune": "node scripts/prune-native-bundle.mjs",
     "cap:sync": "cap sync",
     "cap:android": "run-s app:build && cap open android",
-    "cap:ios": "run-s app:build && cap open ios"
+    "cap:ios": "run-s app:build && cap open ios",
+    "store:screenshots": "node scripts/store-screenshots.mjs"
   },
   "dependencies": {
     "@capacitor-firebase/authentication": "^8.3.0",
@@ -62,6 +63,7 @@
     "jiti": "^2.4.2",
     "jsdom": "^26.1.0",
     "npm-run-all2": "^8.0.4",
+    "playwright": "^1.61.1",
     "prettier": "3.6.2",
     "tailwindcss": "^4.1.17",
     "typescript": "~5.8.0",
