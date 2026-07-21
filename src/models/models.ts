@@ -139,7 +139,6 @@ export interface SerieDoc {
   slug: string;
   auteurId: string;
   description: string;
-  order?: number | null;
   createdAt?: Date;
   updatedAt?: Date;
 }

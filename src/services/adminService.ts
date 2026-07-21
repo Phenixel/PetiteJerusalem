@@ -271,14 +271,13 @@ export class AdminService {
       slug: serieId,
       auteurId,
       description: "",
-      order: null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
     return serieId;
   }
 
-  async updateSerie(serieId: string, fields: Partial<Pick<SerieDoc, "name" | "description" | "order">>): Promise<void> {
+  async updateSerie(serieId: string, fields: Partial<Pick<SerieDoc, "name" | "description">>): Promise<void> {
     await updateDoc(doc(db, "series", serieId), { ...fields, updatedAt: serverTimestamp() });
   }
 

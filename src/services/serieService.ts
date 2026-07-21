@@ -20,14 +20,7 @@ export class SerieService {
       this.fetchPromise = getDocs(collection(db, "series"))
         .then((snap) => {
           const series = snap.docs.map((d) => ({ ...(d.data() as SerieDoc), id: d.id }));
-          series.sort((a, b) => {
-            const ao = a.order;
-            const bo = b.order;
-            if (ao != null && bo != null) return ao - bo;
-            if (ao != null) return -1;
-            if (bo != null) return 1;
-            return a.name.localeCompare(b.name, "fr");
-          });
+          series.sort((a, b) => a.name.localeCompare(b.name, "fr"));
           this.cache = { data: series, fetchedAt: Date.now() };
           return series;
         })

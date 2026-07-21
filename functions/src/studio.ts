@@ -155,7 +155,6 @@ async function createSerieForAuthor(name: string, author: StudioAuthor): Promise
       slug: serieId,
       auteurId: author.auteurId,
       description: "",
-      order: null,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
