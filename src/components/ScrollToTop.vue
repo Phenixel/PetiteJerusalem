@@ -5,6 +5,9 @@ import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
 import { isNativeApp } from "../composables/useNativeApp";
 
 const isVisible = ref(false);
+// Le pointeur survole le bouton : on ne le masque pas sous la main de
+// l'utilisateur qui s'apprête à cliquer.
+const isHovered = ref(false);
 const isMiniPlayerVisible = useMiniPlayerVisible();
 
 // Reste au-dessus du mini-lecteur et, dans l'app, de la bottom bar.
@@ -13,8 +16,37 @@ const bottomClass = computed(() => {
   return isMiniPlayerVisible.value ? "bottom-36" : "bottom-20";
 });
 
+// Le bouton n'apparaît que pendant le défilement et s'efface après un court
+// temps d'inactivité : au repos (ex. en bas de l'accueil, sur la dédicace
+// « À la mémoire de »), il ne recouvre plus le contenu.
+const IDLE_HIDE_MS = 1600;
+let hideTimer: ReturnType<typeof setTimeout> | undefined;
+
+const armHideTimer = () => {
+  if (hideTimer) clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => {
+    if (!isHovered.value) isVisible.value = false;
+  }, IDLE_HIDE_MS);
+};
+
 const checkScroll = () => {
-  isVisible.value = window.scrollY > 300;
+  if (window.scrollY > 300) {
+    isVisible.value = true;
+    armHideTimer();
+  } else {
+    if (hideTimer) clearTimeout(hideTimer);
+    isVisible.value = false;
+  }
+};
+
+const onPointerEnter = () => {
+  isHovered.value = true;
+  if (hideTimer) clearTimeout(hideTimer);
+};
+
+const onPointerLeave = () => {
+  isHovered.value = false;
+  armHideTimer();
 };
 
 const scrollToTop = () => {
@@ -25,11 +57,12 @@ const scrollToTop = () => {
 };
 
 onMounted(() => {
-  window.addEventListener("scroll", checkScroll);
+  window.addEventListener("scroll", checkScroll, { passive: true });
 });
 
 onUnmounted(() => {
   window.removeEventListener("scroll", checkScroll);
+  if (hideTimer) clearTimeout(hideTimer);
 });
 </script>
 
@@ -45,6 +78,8 @@ onUnmounted(() => {
     <button
       v-if="isVisible"
       @click="scrollToTop"
+      @pointerenter="onPointerEnter"
+      @pointerleave="onPointerLeave"
       class="fixed right-6 w-11 h-11 flex items-center justify-center rounded-full bg-surface text-text-primary shadow-pop hover:text-primary transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary z-50"
       :class="bottomClass"
       aria-label="Retour en haut"

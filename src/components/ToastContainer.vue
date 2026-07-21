@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { useToast, type ToastType } from "../composables/useToast";
+import { useBottomChromeHeight } from "../composables/useBottomChrome";
 import AppIcon from "./icons/AppIcon.vue";
 import type { IconName } from "./icons/registry";
 
 const { t } = useI18n();
 const { toasts, dismiss } = useToast();
+
+// Empile les toasts au-dessus des barres fixes du bas (bottom bar native,
+// mini-lecteur) en conservant l'écart visuel d'origine (1.5rem).
+const bottomOffset = useBottomChromeHeight("1.5rem");
 
 const ICONS: Record<ToastType, { name: IconName; class: string }> = {
   success: { name: "circle-check", class: "text-emerald-500" },
@@ -16,7 +21,8 @@ const ICONS: Record<ToastType, { name: IconName; class: string }> = {
 
 <template>
   <div
-    class="fixed bottom-6 inset-x-0 z-[100] flex flex-col items-center gap-2 px-4 pointer-events-none"
+    class="fixed inset-x-0 z-[100] flex flex-col items-center gap-2 px-4 pointer-events-none"
+    :style="{ bottom: bottomOffset }"
     aria-live="polite"
   >
     <TransitionGroup name="toast">
