@@ -19,6 +19,7 @@ const en: LocaleMessages = {
     deleting: "Deleting...",
     edit: "Edit",
     delete: "Delete",
+    viewsCount: "{count} view(s)",
     share: "Share",
     or: "or",
     name: "Name",

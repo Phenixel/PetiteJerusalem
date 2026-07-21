@@ -19,6 +19,7 @@ const he: LocaleMessages = {
     deleting: "מוחק...",
     edit: "עריכה",
     delete: "מחיקה",
+    viewsCount: "{count} צפיות",
     share: "שתף",
     or: "או",
     name: "שם",

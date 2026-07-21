@@ -113,6 +113,11 @@ export interface ChiourDoc {
   duration?: number | null;
   fileSize?: number | null;
   published: boolean;
+  /**
+   * Nombre de vues (ouvertures de la page du chiour), incrémenté par les
+   * clients publics sous contrôle des rules (+1 strict, chiour publié).
+   */
+  views?: number;
   // Backoffice : rattachement à un auteur (collection `auteurs`) et à une
   // série (collection `series`). `auteur` (string) reste la source affichée
   // par les apps mobiles déjà déployées — toujours dénormalisé depuis

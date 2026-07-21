@@ -68,6 +68,7 @@ const loadChiour = async () => {
   // Instant display from cache (even if media URLs are stale)
   const cached = chiourService.getCachedChiourim();
   if (cached && applyChiour(cached, slug)) {
+    chiourService.registerView(slug);
     isLoading.value = false;
     // If media URLs may be expired, refresh in background
     if (chiourService.isCacheStale()) {
@@ -82,6 +83,8 @@ const loadChiour = async () => {
     const all = await chiourService.getAllChiourim();
     if (!applyChiour(all, slug)) {
       error.value = t("detailChiour.notFound");
+    } else {
+      chiourService.registerView(slug);
     }
   } catch (err) {
     console.error("Erreur lors du chargement du chiour:", err);

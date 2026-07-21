@@ -17,6 +17,7 @@ const fr = {
     deleting: "Suppression...",
     edit: "Modifier",
     delete: "Supprimer",
+    viewsCount: "{count} vue(s)",
     share: "Partager",
     or: "ou",
     name: "Nom",

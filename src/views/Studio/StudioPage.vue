@@ -302,6 +302,13 @@ async function removeChiour(chiour: ChiourDoc) {
                 >
                   {{ chiour.published ? t("studio.published") : t("studio.draft") }}
                 </span>
+                <span
+                  v-if="chiour.published"
+                  class="inline-flex items-center gap-1 text-sm text-text-secondary"
+                >
+                  <AppIcon name="eye" :size="14" />
+                  {{ t("common.viewsCount", { count: chiour.views ?? 0 }) }}
+                </span>
                 <button class="btn btn-soft" @click="openEdit(chiour)">
                   {{ t("common.edit") }}
                 </button>
@@ -418,6 +425,13 @@ async function removeChiour(chiour: ChiourDoc) {
                   "
                 >
                   {{ chiour.published ? t("studio.published") : t("studio.draft") }}
+                </span>
+                <span
+                  v-if="chiour.published"
+                  class="inline-flex items-center gap-1 text-sm text-text-secondary"
+                >
+                  <AppIcon name="eye" :size="14" />
+                  {{ t("common.viewsCount", { count: chiour.views ?? 0 }) }}
                 </span>
                 <button class="btn btn-soft" @click="openEdit(chiour)">
                   {{ t("common.edit") }}

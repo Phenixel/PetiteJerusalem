@@ -325,6 +325,13 @@ async function removeAuteur() {
             >
               {{ chiour.published ? t("admin.chiourim.statusPublished") : t("admin.chiourim.statusDraft") }}
             </span>
+            <span
+              v-if="chiour.published"
+              class="inline-flex items-center gap-1 text-xs text-text-secondary"
+            >
+              <AppIcon name="eye" :size="13" />
+              {{ t("common.viewsCount", { count: chiour.views ?? 0 }) }}
+            </span>
           </div>
         </li>
       </ul>
