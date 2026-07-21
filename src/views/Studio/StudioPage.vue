@@ -250,13 +250,15 @@ async function removeChiour(chiour: ChiourDoc) {
         </p>
 
         <ul v-else class="space-y-2">
+          <!-- Le titre occupe toute la ligne ; badge de statut et actions
+               passent en dessous, pour rester lisible sur mobile. -->
           <li
             v-for="(chiour, index) in serieEpisodes"
             :key="chiour.slug"
-            class="card p-3 md:p-4 flex flex-wrap items-center gap-3"
+            class="card p-3 md:p-4 flex items-start gap-3"
           >
             <!-- Réordonnancement -->
-            <div class="flex flex-col gap-0.5">
+            <div class="flex flex-col gap-0.5 shrink-0">
               <button
                 class="icon-btn !p-1 disabled:opacity-30"
                 :disabled="index === 0 || isReordering"
@@ -284,41 +286,40 @@ async function removeChiour(chiour: ChiourDoc) {
             </span>
 
             <div class="flex-1 min-w-0">
-              <p class="font-semibold text-text-primary truncate">{{ chiour.name }}</p>
+              <p class="font-semibold text-text-primary break-words">{{ chiour.name }}</p>
               <p v-if="chiour.categories.length" class="text-sm text-text-secondary truncate">
                 {{ chiour.categories.join(", ") }}
               </p>
-            </div>
 
-            <span
-              class="chip"
-              :class="
-                chiour.published
-                  ? 'bg-green-600/10 text-green-700 dark:text-green-300'
-                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-              "
-            >
-              {{ chiour.published ? t("studio.published") : t("studio.draft") }}
-            </span>
-
-            <div class="flex gap-2">
-              <button class="btn btn-soft" @click="openEdit(chiour)">
-                {{ t("common.edit") }}
-              </button>
-              <button
-                v-if="!chiour.published"
-                class="btn btn-soft text-red-600 dark:text-red-400"
-                :disabled="deletingSlug === chiour.slug"
-                @click="removeChiour(chiour)"
-              >
-                <AppIcon
-                  v-if="deletingSlug === chiour.slug"
-                  name="spinner"
-                  :size="14"
-                  class="animate-spin"
-                />
-                {{ t("common.delete") }}
-              </button>
+              <div class="flex flex-wrap items-center gap-2 mt-2.5">
+                <span
+                  class="chip"
+                  :class="
+                    chiour.published
+                      ? 'bg-green-600/10 text-green-700 dark:text-green-300'
+                      : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                  "
+                >
+                  {{ chiour.published ? t("studio.published") : t("studio.draft") }}
+                </span>
+                <button class="btn btn-soft" @click="openEdit(chiour)">
+                  {{ t("common.edit") }}
+                </button>
+                <button
+                  v-if="!chiour.published"
+                  class="btn btn-soft text-red-600 dark:text-red-400"
+                  :disabled="deletingSlug === chiour.slug"
+                  @click="removeChiour(chiour)"
+                >
+                  <AppIcon
+                    v-if="deletingSlug === chiour.slug"
+                    name="spinner"
+                    :size="14"
+                    class="animate-spin"
+                  />
+                  {{ t("common.delete") }}
+                </button>
+              </div>
             </div>
           </li>
         </ul>
@@ -395,30 +396,29 @@ async function removeChiour(chiour: ChiourDoc) {
           </p>
 
           <ul v-else class="space-y-3">
+            <!-- Même disposition que la page série : titre pleine largeur,
+                 statut et actions en dessous (lisible sur mobile). -->
             <li
               v-for="chiour in horsSerie"
               :key="chiour.slug"
-              class="card p-4 md:p-5 flex flex-wrap items-center gap-3"
+              class="card p-4 md:p-5"
             >
-              <div class="flex-1 min-w-0">
-                <p class="font-semibold text-text-primary truncate">{{ chiour.name }}</p>
-                <p class="text-sm text-text-secondary truncate">
-                  {{ chiour.categories.join(", ") }}
-                </p>
-              </div>
+              <p class="font-semibold text-text-primary break-words">{{ chiour.name }}</p>
+              <p v-if="chiour.categories.length" class="text-sm text-text-secondary truncate">
+                {{ chiour.categories.join(", ") }}
+              </p>
 
-              <span
-                class="chip"
-                :class="
-                  chiour.published
-                    ? 'bg-green-600/10 text-green-700 dark:text-green-300'
-                    : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                "
-              >
-                {{ chiour.published ? t("studio.published") : t("studio.draft") }}
-              </span>
-
-              <div class="flex gap-2">
+              <div class="flex flex-wrap items-center gap-2 mt-2.5">
+                <span
+                  class="chip"
+                  :class="
+                    chiour.published
+                      ? 'bg-green-600/10 text-green-700 dark:text-green-300'
+                      : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                  "
+                >
+                  {{ chiour.published ? t("studio.published") : t("studio.draft") }}
+                </span>
                 <button class="btn btn-soft" @click="openEdit(chiour)">
                   {{ t("common.edit") }}
                 </button>

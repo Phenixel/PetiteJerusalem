@@ -202,21 +202,23 @@ async function togglePublished(chiour: ChiourDoc) {
       </label>
 
       <ul class="space-y-2">
+        <!-- Titre pleine largeur ; statut et actions en dessous, pour rester
+             lisible sur mobile (même disposition que le studio). -->
         <li
           v-for="chiour in filtered"
           :key="chiour.slug"
-          class="card p-3 md:p-4 flex flex-wrap items-center gap-3"
+          class="card p-3 md:p-4 flex items-start gap-3"
         >
           <input
             type="checkbox"
-            class="w-4 h-4 rounded accent-primary cursor-pointer shrink-0"
+            class="w-4 h-4 mt-1 rounded accent-primary cursor-pointer shrink-0"
             :checked="selected.has(chiour.slug)"
             @change="toggleSelect(chiour.slug)"
           />
           <div class="flex-1 min-w-0">
             <router-link
               :to="`/admin/chiourim/${chiour.slug}`"
-              class="font-semibold text-text-primary hover:text-primary truncate block"
+              class="font-semibold text-text-primary hover:text-primary break-words block"
             >
               {{ chiour.name }}
             </router-link>
@@ -230,36 +232,38 @@ async function togglePublished(chiour: ChiourDoc) {
                 <template v-if="chiour.episode">({{ chiour.episode }})</template>
               </template>
             </p>
+
+            <div class="flex flex-wrap items-center gap-2 mt-2.5">
+              <span
+                class="chip"
+                :class="
+                  chiour.published
+                    ? 'bg-green-600/10 text-green-700 dark:text-green-300'
+                    : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                "
+              >
+                {{ chiour.published ? t("admin.chiourim.statusPublished") : t("admin.chiourim.statusDraft") }}
+              </span>
+
+              <button
+                class="btn btn-soft"
+                :disabled="togglingSlug === chiour.slug"
+                @click="togglePublished(chiour)"
+              >
+                <AppIcon
+                  v-if="togglingSlug === chiour.slug"
+                  name="spinner"
+                  :size="14"
+                  class="animate-spin"
+                />
+                {{ chiour.published ? t("admin.chiourim.unpublish") : t("admin.chiourim.publish") }}
+              </button>
+
+              <router-link :to="`/admin/chiourim/${chiour.slug}`" class="btn btn-soft">
+                <AppIcon name="pencil" :size="14" />
+              </router-link>
+            </div>
           </div>
-
-          <span
-            class="chip"
-            :class="
-              chiour.published
-                ? 'bg-green-600/10 text-green-700 dark:text-green-300'
-                : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-            "
-          >
-            {{ chiour.published ? t("admin.chiourim.statusPublished") : t("admin.chiourim.statusDraft") }}
-          </span>
-
-          <button
-            class="btn btn-soft"
-            :disabled="togglingSlug === chiour.slug"
-            @click="togglePublished(chiour)"
-          >
-            <AppIcon
-              v-if="togglingSlug === chiour.slug"
-              name="spinner"
-              :size="14"
-              class="animate-spin"
-            />
-            {{ chiour.published ? t("admin.chiourim.unpublish") : t("admin.chiourim.publish") }}
-          </button>
-
-          <router-link :to="`/admin/chiourim/${chiour.slug}`" class="btn btn-soft">
-            <AppIcon name="pencil" :size="14" />
-          </router-link>
         </li>
       </ul>
     </template>

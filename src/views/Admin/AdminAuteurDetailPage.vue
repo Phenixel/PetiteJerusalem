@@ -303,27 +303,29 @@ async function removeAuteur() {
         <li
           v-for="chiour in chiourim"
           :key="chiour.slug"
-          class="flex items-center gap-3 rounded-lg bg-black/[0.03] px-3 py-2 dark:bg-white/5"
+          class="rounded-lg bg-black/[0.03] px-3 py-2 dark:bg-white/5"
         >
           <router-link
             :to="`/admin/chiourim/${chiour.slug}`"
-            class="flex-1 min-w-0 font-medium text-text-primary hover:text-primary truncate"
+            class="font-medium text-text-primary hover:text-primary break-words block"
           >
             {{ chiour.name }}
           </router-link>
-          <span v-if="chiour.serieId && serieNameById.get(chiour.serieId)" class="text-xs text-text-secondary truncate">
-            {{ serieNameById.get(chiour.serieId) }}<template v-if="chiour.episode"> ({{ chiour.episode }})</template>
-          </span>
-          <span
-            class="chip"
-            :class="
-              chiour.published
-                ? 'bg-green-600/10 text-green-700 dark:text-green-300'
-                : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-            "
-          >
-            {{ chiour.published ? t("admin.chiourim.statusPublished") : t("admin.chiourim.statusDraft") }}
-          </span>
+          <div class="flex flex-wrap items-center gap-2 mt-1">
+            <span v-if="chiour.serieId && serieNameById.get(chiour.serieId)" class="text-xs text-text-secondary">
+              {{ serieNameById.get(chiour.serieId) }}<template v-if="chiour.episode"> ({{ chiour.episode }})</template>
+            </span>
+            <span
+              class="chip"
+              :class="
+                chiour.published
+                  ? 'bg-green-600/10 text-green-700 dark:text-green-300'
+                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+              "
+            >
+              {{ chiour.published ? t("admin.chiourim.statusPublished") : t("admin.chiourim.statusDraft") }}
+            </span>
+          </div>
         </li>
       </ul>
       <p v-else class="text-sm text-text-secondary">{{ t("admin.auteurDetail.chiourimEmpty") }}</p>
