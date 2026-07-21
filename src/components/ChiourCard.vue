@@ -33,24 +33,24 @@ function goToAuteur(event: Event, auteur: string) {
     class="card card-hover flex flex-col p-6 cursor-pointer group"
     @click="goToDetail(chiour)"
   >
-    <div class="flex justify-between items-start mb-3">
+    <div class="flex justify-between items-start gap-3 mb-3">
       <h4
         class="text-lg font-bold text-text-primary group-hover:text-primary transition-colors line-clamp-2"
       >
         {{ chiour.name }}
       </h4>
-    </div>
-
-    <!-- Categories badges -->
-    <div class="flex flex-wrap gap-2 mb-3">
-      <!-- Déjà vu (utilisateur connecté uniquement) -->
+      <!-- Déjà vu (utilisateur connecté uniquement), en haut à droite -->
       <span
         v-if="isViewed(chiour.slug)"
-        class="chip bg-green-600/10 text-green-700 inline-flex items-center gap-1 dark:text-green-300"
+        class="chip bg-green-600/10 text-green-700 inline-flex items-center gap-1 shrink-0 dark:text-green-300"
       >
         <AppIcon name="circle-check" :size="12" />
         {{ t("common.viewed") }}
       </span>
+    </div>
+
+    <!-- Categories badges -->
+    <div class="flex flex-wrap gap-2 mb-3">
       <span
         v-if="serieName"
         class="chip bg-secondary/10 text-secondary inline-flex items-center gap-1"

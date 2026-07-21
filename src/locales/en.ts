@@ -352,11 +352,13 @@ const en: LocaleMessages = {
     copyLink: "Copy link",
     linkCopied: "Link copied to clipboard!",
     scanQR: "Or scan the QR code",
-    scanQRDesc: "Scan this code to access the session directly",
+    scanQRDesc: "Scan this code to open the page directly",
     qrError: "Error generating QR code",
     inviteTehilim:
       "Join the Tehilim chain « {name} » 📖 Everyone reads a few psalms and we finish together. Reserve yours here:",
     inviteStudy: "Join the shared study « {name} » 📖 Reserve your passages and let's learn together:",
+    titleChiour: "Share this chiour",
+    inviteChiour: "Listen to the chiour « {name} » 🎧 A Torah lesson to discover on Petite Jerusalem:",
   },
   batchSelection: {
     textsSelected: "{count} texts selected",

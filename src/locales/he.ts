@@ -349,11 +349,13 @@ const he: LocaleMessages = {
     copyLink: "העתק קישור",
     linkCopied: "הקישור הועתק ללוח!",
     scanQR: "או סרוק את קוד ה-QR",
-    scanQRDesc: "סרוק קוד זה כדי לגשת ישירות לסשן",
+    scanQRDesc: "סרקו קוד זה כדי לפתוח את הדף ישירות",
     qrError: "שגיאה ביצירת קוד QR",
     inviteTehilim:
       "הצטרפו לשרשרת התהילים « {name} » 📖 כל אחד קורא כמה פרקים ומסיימים יחד. הזמינו את שלכם כאן:",
     inviteStudy: "הצטרפו ללימוד המשותף « {name} » 📖 הזמינו את הקטעים שלכם ונלמד יחד:",
+    titleChiour: "שיתוף השיעור",
+    inviteChiour: "האזינו לשיעור « {name} » 🎧 שיעור תורה לגלות בפטיט ירושלים:",
   },
   batchSelection: {
     textsSelected: "{count} טקסטים נבחרו",

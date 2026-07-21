@@ -8,6 +8,7 @@ import { useViewedChiourim } from "../../composables/useViewedChiourim";
 import type { Chiour } from "../../models/models";
 import AudioPlayer from "../../components/AudioPlayer.vue";
 import ChiourCard from "../../components/ChiourCard.vue";
+import ShareModal from "../../components/ShareModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 
@@ -31,6 +32,12 @@ const error = ref<string | null>(null);
 // arrive après le premier rendu au chargement complet de la page).
 const wasAlreadyViewed = ref(false);
 const viewMarkedFor = ref<string | null>(null);
+
+// Partage (même modal que les sessions de lecture : WhatsApp, SMS, QR, copie)
+const showShareModal = ref(false);
+const shareUrl = computed(() =>
+  chiour.value ? `${window.location.origin}/chiourim/${chiour.value.slug}` : "",
+);
 
 watchEffect(() => {
   const current = chiour.value;
@@ -207,8 +214,8 @@ watch(() => route.params.slug, loadChiour);
           </router-link>
         </div>
 
-        <!-- Meta : auteur + niveau -->
-        <div class="flex flex-wrap items-center gap-6 text-text-secondary">
+        <!-- Meta : auteur + niveau + partage -->
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-3 text-text-secondary">
           <button
             v-if="chiour.auteur"
             @click="goToAuteur(chiour.auteur)"
@@ -224,6 +231,10 @@ watch(() => route.params.slug, loadChiour);
             <AppIcon name="signal" :size="16" class="text-primary" />
             <span>{{ chiour.niveau }}</span>
           </div>
+          <button class="btn btn-soft ml-auto" @click="showShareModal = true">
+            <AppIcon name="share" :size="15" />
+            {{ t("common.share") }}
+          </button>
         </div>
       </div>
 
@@ -242,18 +253,22 @@ watch(() => route.params.slug, loadChiour);
         </p>
       </div>
 
-      <!-- Navigation dans la série : liens sobres entre deux filets, pas de
-           cartes (elles sont réservées aux cours eux-mêmes) -->
+      <!-- Navigation dans la série : liens fantômes (fond léger au survol),
+           ni carte ni filet, les cartes restent réservées aux cours -->
       <nav
         v-if="serie && (previousEpisode || nextEpisode)"
-        class="mb-12 border-y border-line py-4 flex flex-wrap items-center justify-between gap-x-8 gap-y-3"
+        class="mb-12 -mx-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-1"
       >
         <router-link
           v-if="previousEpisode"
           :to="`/chiourim/${previousEpisode.slug}`"
-          class="group flex items-center gap-3 min-w-0"
+          class="group flex items-center gap-3 min-w-0 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5"
         >
-          <AppIcon name="chevron-left" :size="16" class="text-text-secondary shrink-0 group-hover:text-primary transition-colors" />
+          <AppIcon
+            name="chevron-left"
+            :size="16"
+            class="text-text-secondary shrink-0 transition-transform group-hover:-translate-x-0.5 group-hover:text-primary"
+          />
           <span class="min-w-0">
             <span class="block text-xs uppercase tracking-wide text-text-secondary">{{ t("serie.previousEpisode") }}</span>
             <span class="block font-semibold text-text-primary group-hover:text-primary transition-colors truncate">
@@ -272,7 +287,7 @@ watch(() => route.params.slug, loadChiour);
         <router-link
           v-if="nextEpisode"
           :to="`/chiourim/${nextEpisode.slug}`"
-          class="group flex items-center gap-3 min-w-0 ml-auto text-right"
+          class="group flex items-center gap-3 min-w-0 ml-auto text-right rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5"
         >
           <span class="min-w-0">
             <span class="block text-xs uppercase tracking-wide text-text-secondary">{{ t("serie.nextEpisode") }}</span>
@@ -280,7 +295,11 @@ watch(() => route.params.slug, loadChiour);
               <template v-if="nextEpisode.episode != null">{{ nextEpisode.episode }}. </template>{{ nextEpisode.name }}
             </span>
           </span>
-          <AppIcon name="chevron-right" :size="16" class="text-text-secondary shrink-0 group-hover:text-primary transition-colors" />
+          <AppIcon
+            name="chevron-right"
+            :size="16"
+            class="text-text-secondary shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+          />
         </router-link>
       </nav>
 
@@ -301,5 +320,14 @@ watch(() => route.params.slug, loadChiour);
         </div>
       </div>
     </div>
+
+    <ShareModal
+      v-if="chiour"
+      v-model:show="showShareModal"
+      :session-name="chiour.name"
+      :share-url="shareUrl"
+      title-key="shareModal.titleChiour"
+      message-key="shareModal.inviteChiour"
+    />
   </main>
 </template>

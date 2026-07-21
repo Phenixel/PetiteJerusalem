@@ -354,12 +354,14 @@ const fr = {
     copyLink: "Copier le lien",
     linkCopied: "Lien copié dans le presse-papiers !",
     scanQR: "Ou scanner le QR code",
-    scanQRDesc: "Scannez ce code pour accéder directement à la session",
+    scanQRDesc: "Scannez ce code pour ouvrir directement la page",
     qrError: "Erreur lors de la génération du QR code",
     inviteTehilim:
       "Rejoignez la chaîne de Tehilim « {name} » 📖 Chacun lit quelques psaumes et l'on termine ensemble. Réservez les vôtres ici :",
     inviteStudy:
       "Rejoignez l'étude partagée « {name} » 📖 Réservez vos passages et étudions ensemble :",
+    titleChiour: "Partager ce chiour",
+    inviteChiour: "Écoutez le chiour « {name} » 🎧 Un cours de Torah à découvrir sur Petite Jérusalem :",
   },
   batchSelection: {
     textsSelected: "{count} textes sélectionnés",
