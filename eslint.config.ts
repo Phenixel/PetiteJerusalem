@@ -15,6 +15,8 @@ export default defineConfigWithVueTs(
     '**/dist-ssr/**',
     '**/coverage/**',
     'functions/**',
+    // Librairies tierces vendorisées (servies telles quelles, non éditées)
+    'public/vendor/**',
     // Projets natifs Capacitor (générés par `npx cap add`) et worktrees de session
     'android/**',
     'ios/**',
