@@ -2,10 +2,14 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Mêmes admins que les règles Firestore
+    // Mêmes admins que les règles Firestore. email_verified est indispensable :
+    // n'importe qui peut CRÉER un compte email/mot de passe avec cette adresse,
+    // mais seul le vrai propriétaire de la boîte mail peut le faire vérifier
+    // (et la connexion Google arrive toujours déjà vérifiée).
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email in ['admin@phenixel.fr'];
+        && request.auth.token.email in ['admin@phenixel.fr']
+        && request.auth.token.email_verified == true;
     }
 
     // Fichiers audio des chiourim : lecture publique, écriture réservée aux admins
