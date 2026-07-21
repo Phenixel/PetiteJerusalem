@@ -655,7 +655,6 @@ const fr = {
       notFound: "Chiour introuvable.",
       auteur: "Auteur",
       noAuteur: "Aucun auteur",
-      order: "Ordre global",
       published: "Publié (visible dans l'application)",
       saved: "Chiour enregistré.",
       deleteConfirm: "Supprimer définitivement ce chiour et son audio ?",

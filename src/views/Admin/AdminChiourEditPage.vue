@@ -30,7 +30,6 @@ const newCategory = ref("");
 const niveau = ref("");
 const serieId = ref("");
 const episode = ref<number | null>(null);
-const order = ref<number | null>(null);
 const published = ref(false);
 
 const audioFile = ref<File | null>(null);
@@ -69,7 +68,6 @@ onMounted(async () => {
       niveau.value = doc.niveau ?? "";
       serieId.value = doc.serieId ?? "";
       episode.value = doc.episode ?? null;
-      order.value = doc.order ?? null;
       published.value = doc.published;
     }
   } finally {
@@ -135,7 +133,6 @@ async function save() {
       niveau: niveau.value.trim() || null,
       serieId: serieId.value || null,
       episode: episode.value,
-      order: order.value,
       published: published.value,
     });
     toast.success(t("admin.chiourEdit.saved"));
@@ -257,7 +254,7 @@ async function remove() {
         </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-semibold text-text-secondary mb-2">{{
             t("studio.form.serie")
@@ -272,12 +269,6 @@ async function remove() {
             t("studio.form.episode")
           }}</label>
           <input v-model.number="episode" type="number" min="1" step="1" class="field" />
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-text-secondary mb-2">{{
-            t("admin.chiourEdit.order")
-          }}</label>
-          <input v-model.number="order" type="number" min="0" step="1" class="field" />
         </div>
       </div>
 

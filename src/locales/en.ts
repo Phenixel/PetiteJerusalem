@@ -650,7 +650,6 @@ const en: LocaleMessages = {
       notFound: "Chiour not found.",
       auteur: "Author",
       noAuteur: "No author",
-      order: "Global order",
       published: "Published (visible in the app)",
       saved: "Chiour saved.",
       deleteConfirm: "Permanently delete this chiour and its audio?",

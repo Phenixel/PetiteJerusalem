@@ -639,7 +639,6 @@ const he: LocaleMessages = {
       notFound: "השיעור לא נמצא.",
       auteur: "מרצה",
       noAuteur: "ללא מרצה",
-      order: "סדר כללי",
       published: "מפורסם (מוצג באפליקציה)",
       saved: "השיעור נשמר.",
       deleteConfirm: "למחוק לצמיתות את השיעור ואת קובץ השמע שלו?",
