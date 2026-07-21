@@ -40,6 +40,7 @@ export interface Session {
   endedAt?: Date;
   updatedAt?: Date;
   selectedBooks?: string[];
+  isPrivate?: boolean;
 }
 
 export interface TextStudyReservation {
