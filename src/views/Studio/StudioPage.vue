@@ -22,17 +22,20 @@ const chiourim = ref<ChiourDoc[]>([]);
 const series = ref<(SerieDoc & { id: string })[]>([]);
 const categorySuggestions = ref<string[]>([]);
 
-// null = liste ; sinon le formulaire est ouvert (chiour édité, ou null = ajout)
+// Navigation interne : accueil, page d'une série, ou formulaire.
+// editing : undefined = fermé, null = ajout, ChiourDoc = édition.
 const editing = ref<ChiourDoc | null | undefined>(undefined);
+const openSerieId = ref<string | null>(null);
+const formPresetSerieId = ref<string | null>(null);
+
+// Mini-formulaire « Ajouter une série »
+const addingSerie = ref(false);
+const serieName = ref("");
+const isCreatingSerie = ref(false);
+
 const deletingSlug = ref<string | null>(null);
+const isReordering = ref(false);
 
-const serieNameById = computed(() => {
-  const map = new Map<string, string>();
-  series.value.forEach((s) => map.set(s.id, s.name));
-  return map;
-});
-
-// Nombre d'épisodes par série (brouillons compris), pour la section « Vos séries ».
 const episodeCountBySerie = computed(() => {
   const map = new Map<string, number>();
   chiourim.value.forEach((c) => {
@@ -40,6 +43,25 @@ const episodeCountBySerie = computed(() => {
   });
   return map;
 });
+
+const openSerie = computed(
+  () => series.value.find((s) => s.id === openSerieId.value) ?? null,
+);
+
+// Épisodes de la série ouverte, triés par numéro (les sans-numéro en fin).
+const serieEpisodes = computed(() => {
+  const episodes = chiourim.value.filter((c) => c.serieId === openSerieId.value);
+  episodes.sort((a, b) => {
+    if (a.episode != null && b.episode != null) return a.episode - b.episode;
+    if (a.episode != null) return -1;
+    if (b.episode != null) return 1;
+    return a.name.localeCompare(b.name, "fr");
+  });
+  return episodes;
+});
+
+// Chiourim hors série sur l'accueil (les autres se gèrent depuis leur série).
+const horsSerie = computed(() => chiourim.value.filter((c) => !c.serieId));
 
 async function refresh() {
   if (!author.value) return;
@@ -72,18 +94,71 @@ onMounted(async () => {
   }
 });
 
-function openAdd() {
+function openAdd(presetSerieId: string | null = null) {
+  formPresetSerieId.value = presetSerieId;
   editing.value = null;
 }
 
 function openEdit(chiour: ChiourDoc) {
+  formPresetSerieId.value = null;
   editing.value = chiour;
+}
+
+function closeForm() {
+  editing.value = undefined;
+  formPresetSerieId.value = null;
 }
 
 async function onSaved() {
   toast.success(editing.value ? t("studio.form.updateSuccess") : t("studio.form.success"));
-  editing.value = undefined;
+  closeForm();
   await refresh();
+}
+
+async function createSerie() {
+  const name = serieName.value.trim();
+  if (!name) return;
+  isCreatingSerie.value = true;
+  try {
+    const serieId = await studioService.createSerie(token.value, name);
+    serieName.value = "";
+    addingSerie.value = false;
+    toast.success(t("studio.serieCreated"));
+    await refresh();
+    openSerieId.value = serieId;
+  } catch (error) {
+    console.error("Erreur lors de la création de la série:", error);
+    toast.error(t("studio.form.error"));
+  } finally {
+    isCreatingSerie.value = false;
+  }
+}
+
+async function moveEpisode(index: number, delta: number) {
+  const target = index + delta;
+  const list = [...serieEpisodes.value];
+  if (!openSerieId.value || target < 0 || target >= list.length) return;
+  [list[index], list[target]] = [list[target], list[index]];
+
+  isReordering.value = true;
+  try {
+    await studioService.reorderSerie(
+      token.value,
+      openSerieId.value,
+      list.map((c) => c.slug),
+    );
+    // Reflet local immédiat : le serveur a réattribué episode = 1..n.
+    list.forEach((c, i) => {
+      c.episode = i + 1;
+    });
+    chiourim.value = [...chiourim.value];
+  } catch (error) {
+    console.error("Erreur lors du réordonnancement:", error);
+    toast.error(t("studio.form.error"));
+    await refresh();
+  } finally {
+    isReordering.value = false;
+  }
 }
 
 async function removeChiour(chiour: ChiourDoc) {
@@ -127,7 +202,7 @@ async function removeChiour(chiour: ChiourDoc) {
         <p class="text-text-secondary text-lg">{{ t("studio.intro") }}</p>
       </div>
 
-      <!-- Formulaire (ajout ou édition d'un brouillon) -->
+      <!-- Formulaire (ajout ou édition) -->
       <div v-if="editing !== undefined" class="card p-6 md:p-8 animate-[fadeIn_0.3s_ease]">
         <h2 class="text-xl font-bold text-text-primary mb-6">
           {{ editing ? t("studio.editChiour") : t("studio.addChiour") }}
@@ -138,64 +213,79 @@ async function removeChiour(chiour: ChiourDoc) {
           :series="series"
           :category-suggestions="categorySuggestions"
           :chiour="editing"
+          :preset-serie-id="formPresetSerieId"
+          :preset-episode="formPresetSerieId ? serieEpisodes.length + 1 : null"
           @saved="onSaved"
-          @cancel="editing = undefined"
+          @cancel="closeForm"
         />
       </div>
 
-      <!-- Liste des chiourim de l'auteur -->
-      <template v-else>
-        <!-- Vos séries : vue d'ensemble (créées via le formulaire d'ajout) -->
-        <section v-if="series.length" class="mb-10">
-          <h2 class="text-xl font-bold text-text-primary mb-4">{{ t("studio.yourSeries") }}</h2>
-          <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <li
-              v-for="serie in series"
-              :key="serie.id"
-              class="card p-4 flex items-center gap-3"
-            >
-              <div
-                class="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary/10 text-secondary shrink-0"
-              >
-                <AppIcon name="book-open" :size="17" />
-              </div>
-              <div class="min-w-0">
-                <p class="font-semibold text-text-primary truncate">{{ serie.name }}</p>
-                <p class="text-sm text-text-secondary">
-                  {{ t("serie.episodesCount", { count: episodeCountBySerie.get(serie.id) ?? 0 }) }}
-                </p>
-              </div>
-            </li>
-          </ul>
-          <p class="text-xs text-text-secondary/70 mt-2">{{ t("studio.seriesHint") }}</p>
-        </section>
+      <!-- Page d'une série : épisodes ordonnés + réordonnancement -->
+      <template v-else-if="openSerie">
+        <button
+          class="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary mb-6"
+          @click="openSerieId = null"
+        >
+          <AppIcon name="arrow-left" :size="14" />
+          {{ t("studio.serieView.back") }}
+        </button>
 
-        <div class="flex items-center justify-between mb-5">
-          <h2 class="text-xl font-bold text-text-primary">{{ t("studio.yourChiourim") }}</h2>
-          <button class="btn btn-primary" @click="openAdd">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-2">
+          <h2 class="text-2xl font-bold text-text-primary flex items-center gap-2">
+            <AppIcon name="book-open" :size="20" class="text-secondary" />
+            {{ openSerie.name }}
+          </h2>
+          <button class="btn btn-primary" @click="openAdd(openSerie.id)">
             <AppIcon name="plus" :size="15" />
-            {{ t("studio.addChiour") }}
+            {{ t("studio.serieView.addChiour") }}
           </button>
         </div>
-
-        <p v-if="chiourim.length === 0" class="card p-8 text-center text-text-secondary">
-          {{ t("studio.empty") }}
+        <p class="text-sm text-text-secondary mb-6">
+          {{ t("serie.episodesCount", { count: serieEpisodes.length }) }}
+          <template v-if="serieEpisodes.length > 1"> · {{ t("studio.serieView.reorderHint") }}</template>
         </p>
 
-        <ul v-else class="space-y-3">
+        <p v-if="serieEpisodes.length === 0" class="card p-8 text-center text-text-secondary">
+          {{ t("studio.serieView.empty") }}
+        </p>
+
+        <ul v-else class="space-y-2">
           <li
-            v-for="chiour in chiourim"
+            v-for="(chiour, index) in serieEpisodes"
             :key="chiour.slug"
-            class="card p-4 md:p-5 flex flex-wrap items-center gap-3"
+            class="card p-3 md:p-4 flex flex-wrap items-center gap-3"
           >
+            <!-- Réordonnancement -->
+            <div class="flex flex-col gap-0.5">
+              <button
+                class="icon-btn !p-1 disabled:opacity-30"
+                :disabled="index === 0 || isReordering"
+                :aria-label="t('studio.serieView.moveUp')"
+                :title="t('studio.serieView.moveUp')"
+                @click="moveEpisode(index, -1)"
+              >
+                <AppIcon name="chevron-up" :size="14" />
+              </button>
+              <button
+                class="icon-btn !p-1 disabled:opacity-30"
+                :disabled="index === serieEpisodes.length - 1 || isReordering"
+                :aria-label="t('studio.serieView.moveDown')"
+                :title="t('studio.serieView.moveDown')"
+                @click="moveEpisode(index, 1)"
+              >
+                <AppIcon name="chevron-down" :size="14" />
+              </button>
+            </div>
+
+            <span
+              class="flex items-center justify-center w-8 h-8 rounded-lg bg-secondary/10 text-secondary font-bold text-sm shrink-0"
+            >
+              {{ chiour.episode ?? "?" }}
+            </span>
+
             <div class="flex-1 min-w-0">
               <p class="font-semibold text-text-primary truncate">{{ chiour.name }}</p>
-              <p class="text-sm text-text-secondary truncate">
-                <template v-if="chiour.serieId && serieNameById.get(chiour.serieId)">
-                  {{ serieNameById.get(chiour.serieId) }}
-                  <template v-if="chiour.episode"> · {{ t("common.chapter") }} {{ chiour.episode }}</template>
-                  <template v-if="chiour.categories.length"> · </template>
-                </template>
+              <p v-if="chiour.categories.length" class="text-sm text-text-secondary truncate">
                 {{ chiour.categories.join(", ") }}
               </p>
             </div>
@@ -211,12 +301,12 @@ async function removeChiour(chiour: ChiourDoc) {
               {{ chiour.published ? t("studio.published") : t("studio.draft") }}
             </span>
 
-            <!-- Un chiour publié n'est plus modifiable par l'auteur -->
-            <div v-if="!chiour.published" class="flex gap-2">
+            <div class="flex gap-2">
               <button class="btn btn-soft" @click="openEdit(chiour)">
                 {{ t("common.edit") }}
               </button>
               <button
+                v-if="!chiour.published"
                 class="btn btn-soft text-red-600 dark:text-red-400"
                 :disabled="deletingSlug === chiour.slug"
                 @click="removeChiour(chiour)"
@@ -232,6 +322,124 @@ async function removeChiour(chiour: ChiourDoc) {
             </div>
           </li>
         </ul>
+      </template>
+
+      <!-- Accueil du studio -->
+      <template v-else>
+        <!-- Actions principales -->
+        <div class="flex flex-wrap gap-3 mb-8">
+          <button class="btn btn-primary" @click="openAdd()">
+            <AppIcon name="plus" :size="15" />
+            {{ t("studio.addChiour") }}
+          </button>
+          <button class="btn btn-soft" @click="addingSerie = !addingSerie">
+            <AppIcon name="book-open" :size="15" />
+            {{ t("studio.addSerie") }}
+          </button>
+        </div>
+
+        <!-- Mini-formulaire de création de série -->
+        <form
+          v-if="addingSerie"
+          class="card p-4 mb-8 flex flex-col sm:flex-row gap-3 animate-[fadeIn_0.3s_ease]"
+          @submit.prevent="createSerie"
+        >
+          <input
+            v-model="serieName"
+            type="text"
+            :placeholder="t('studio.form.newSerieName')"
+            required
+            class="field flex-1"
+          />
+          <button type="submit" class="btn btn-primary" :disabled="isCreatingSerie">
+            <AppIcon v-if="isCreatingSerie" name="spinner" :size="15" class="animate-spin" />
+            {{ t("studio.createSerie") }}
+          </button>
+        </form>
+
+        <!-- Vos séries : cartes cliquables -->
+        <section v-if="series.length" class="mb-10">
+          <h2 class="text-xl font-bold text-text-primary mb-4">{{ t("studio.yourSeries") }}</h2>
+          <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <li v-for="serie in series" :key="serie.id">
+              <button
+                class="card card-hover p-4 flex items-center gap-3 w-full text-left"
+                @click="openSerieId = serie.id"
+              >
+                <div
+                  class="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary/10 text-secondary shrink-0"
+                >
+                  <AppIcon name="book-open" :size="17" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="font-semibold text-text-primary truncate">{{ serie.name }}</p>
+                  <p class="text-sm text-text-secondary">
+                    {{ t("serie.episodesCount", { count: episodeCountBySerie.get(serie.id) ?? 0 }) }}
+                  </p>
+                </div>
+                <AppIcon name="chevron-right" :size="15" class="text-text-secondary shrink-0" />
+              </button>
+            </li>
+          </ul>
+          <p class="text-xs text-text-secondary/70 mt-2">{{ t("studio.seriesHint") }}</p>
+        </section>
+
+        <!-- Chiourim hors série -->
+        <section>
+          <h2 class="text-xl font-bold text-text-primary mb-5">
+            {{ series.length ? t("studio.outOfSerie") : t("studio.yourChiourim") }}
+          </h2>
+
+          <p v-if="horsSerie.length === 0" class="card p-8 text-center text-text-secondary">
+            {{ series.length ? t("studio.outOfSerieEmpty") : t("studio.empty") }}
+          </p>
+
+          <ul v-else class="space-y-3">
+            <li
+              v-for="chiour in horsSerie"
+              :key="chiour.slug"
+              class="card p-4 md:p-5 flex flex-wrap items-center gap-3"
+            >
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold text-text-primary truncate">{{ chiour.name }}</p>
+                <p class="text-sm text-text-secondary truncate">
+                  {{ chiour.categories.join(", ") }}
+                </p>
+              </div>
+
+              <span
+                class="chip"
+                :class="
+                  chiour.published
+                    ? 'bg-green-600/10 text-green-700 dark:text-green-300'
+                    : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                "
+              >
+                {{ chiour.published ? t("studio.published") : t("studio.draft") }}
+              </span>
+
+              <div class="flex gap-2">
+                <button class="btn btn-soft" @click="openEdit(chiour)">
+                  {{ t("common.edit") }}
+                </button>
+                <button
+                  v-if="!chiour.published"
+                  class="btn btn-soft text-red-600 dark:text-red-400"
+                  :disabled="deletingSlug === chiour.slug"
+                  @click="removeChiour(chiour)"
+                >
+                  <AppIcon
+                    v-if="deletingSlug === chiour.slug"
+                    name="spinner"
+                    :size="14"
+                    class="animate-spin"
+                  />
+                  {{ t("common.delete") }}
+                </button>
+              </div>
+            </li>
+          </ul>
+        </section>
       </template>
     </template>
   </main>

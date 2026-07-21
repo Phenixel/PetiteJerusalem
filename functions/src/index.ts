@@ -30,7 +30,13 @@ export { dailyReadingReminder } from "./dailyReminder";
 // Notification de test à la demande (bouton dans les réglages de l'app).
 export { sendTestNotification } from "./testNotification";
 // Studio auteurs : dépôt de chiourim via lien secret (/studio/:token).
-export { studioSubmitChiour, studioUpdateChiour, studioDeleteChiour } from "./studio";
+export {
+  studioSubmitChiour,
+  studioUpdateChiour,
+  studioDeleteChiour,
+  studioCreateSerie,
+  studioReorderSerie,
+} from "./studio";
 
 const SITE_URL = "https://petite-jerusalem.fr";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;

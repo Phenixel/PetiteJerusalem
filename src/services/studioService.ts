@@ -173,6 +173,28 @@ export class StudioService {
     );
     await call({ token, slug });
   }
+
+  /** Crée une série vide depuis le bouton « Ajouter une série ». */
+  async createSerie(token: string, name: string): Promise<string> {
+    const call = httpsCallable<Record<string, unknown>, { serieId: string }>(
+      functions,
+      "studioCreateSerie",
+    );
+    const res = await call({ token, name });
+    return res.data.serieId;
+  }
+
+  /**
+   * Réordonne les épisodes d'une série : envoie la liste complète des slugs
+   * dans l'ordre voulu, le serveur réattribue episode = 1..n.
+   */
+  async reorderSerie(token: string, serieId: string, slugs: string[]): Promise<void> {
+    const call = httpsCallable<Record<string, unknown>, { count: number }>(
+      functions,
+      "studioReorderSerie",
+    );
+    await call({ token, serieId, slugs });
+  }
 }
 
 export const studioService = new StudioService();

@@ -141,35 +141,39 @@ function parseStagingPath(stagingPath: unknown, token: string): { path: string; 
   return { path: stagingPath, ext };
 }
 
+/** Crée (ou retrouve) une série de l'auteur à partir de son nom. */
+async function createSerieForAuthor(name: string, author: StudioAuthor): Promise<string> {
+  const db = getFirestore();
+  const slug = generateSlug(name);
+  if (!slug) throw new HttpsError("invalid-argument", "Nom de série invalide.");
+  const serieId = `${author.auteurId}--${slug}`;
+  const ref = db.collection("series").doc(serieId);
+  const existing = await ref.get();
+  if (!existing.exists) {
+    await ref.set({
+      name,
+      slug: serieId,
+      auteurId: author.auteurId,
+      description: "",
+      order: null,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  }
+  return serieId;
+}
+
 /**
  * Résout ou crée la série du chiour. Renvoie l'ID de série (ou null hors
  * série). Refuse une série appartenant à un autre auteur.
  */
 async function resolveSerie(meta: ChiourMetadata, author: StudioAuthor): Promise<string | null> {
-  const db = getFirestore();
-
   if (meta.newSerieName) {
-    const slug = generateSlug(meta.newSerieName);
-    if (!slug) throw new HttpsError("invalid-argument", "Nom de série invalide.");
-    const serieId = `${author.auteurId}--${slug}`;
-    const ref = db.collection("series").doc(serieId);
-    const existing = await ref.get();
-    if (!existing.exists) {
-      await ref.set({
-        name: meta.newSerieName,
-        slug: serieId,
-        auteurId: author.auteurId,
-        description: "",
-        order: null,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      });
-    }
-    return serieId;
+    return createSerieForAuthor(meta.newSerieName, author);
   }
 
   if (meta.serieId) {
-    const snap = await db.collection("series").doc(meta.serieId).get();
+    const snap = await getFirestore().collection("series").doc(meta.serieId).get();
     if (!snap.exists || snap.data()?.auteurId !== author.auteurId) {
       throw new HttpsError("permission-denied", "Série inconnue pour cet auteur.");
     }
@@ -178,6 +182,15 @@ async function resolveSerie(meta: ChiourMetadata, author: StudioAuthor): Promise
 
   return null;
 }
+
+/** Création d'une série depuis le studio (bouton « Ajouter une série »). */
+export const studioCreateSerie = onCall(async (request) => {
+  const data = (request.data ?? {}) as Record<string, unknown>;
+  const author = await requireAuthor(data.token);
+  const name = asTrimmedString(data.name, "name", 200, true);
+  const serieId = await createSerieForAuthor(name, author);
+  return { serieId };
+});
 
 /**
  * Déplace l'audio du staging vers son chemin public `chiourim/{slug}/audio.{ext}`,
@@ -274,8 +287,8 @@ export const studioSubmitChiour = onCall(async (request) => {
   return { slug };
 });
 
-/** Charge un chiour et vérifie qu'il est bien un brouillon de cet auteur. */
-async function requireOwnDraft(slug: unknown, author: StudioAuthor) {
+/** Charge un chiour et vérifie qu'il appartient bien à cet auteur. */
+async function requireOwnChiour(slug: unknown, author: StudioAuthor) {
   if (typeof slug !== "string" || !slug || slug.length > 300) {
     throw new HttpsError("invalid-argument", "Chiour invalide.");
   }
@@ -286,17 +299,37 @@ async function requireOwnDraft(slug: unknown, author: StudioAuthor) {
   if (doc.auteurId !== author.auteurId) {
     throw new HttpsError("permission-denied", "Ce chiour ne vous appartient pas.");
   }
-  if (doc.published === true) {
-    throw new HttpsError("failed-precondition", "Ce chiour est publié : contactez l'administrateur pour le modifier.");
-  }
-  return { ref, doc };
+  return { ref, doc, published: doc.published === true };
 }
 
 export const studioUpdateChiour = onCall(async (request) => {
   const data = (request.data ?? {}) as Record<string, unknown>;
   const author = await requireAuthor(data.token);
-  const { ref, doc } = await requireOwnDraft(data.slug, author);
+  const { ref, doc, published } = await requireOwnChiour(data.slug, author);
   const meta = parseMetadata(data);
+
+  // Chiour publié : édition restreinte. L'auteur peut retoucher la
+  // description, les catégories et le numéro d'épisode ; le titre, le
+  // niveau, la série et l'audio sont figés (c'est l'admin qui tranche).
+  if (published) {
+    if (data.stagingPath != null) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Ce chiour est publié : l'audio ne peut plus être remplacé. Contactez l'administrateur.",
+      );
+    }
+    await ref.set(
+      {
+        description: meta.description,
+        categories: meta.categories,
+        episode: meta.episode,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+    return { slug: ref.id };
+  }
+
   const serieId = await resolveSerie(meta, author);
 
   const update: Record<string, unknown> = {
@@ -330,10 +363,73 @@ export const studioUpdateChiour = onCall(async (request) => {
   return { slug: ref.id };
 });
 
+/**
+ * Réordonne les épisodes d'une série de l'auteur : reçoit la liste complète
+ * des slugs dans l'ordre voulu et réattribue episode = 1..n. Seul le numéro
+ * d'épisode change, c'est pourquoi les chiourim déjà publiés sont acceptés
+ * (contrairement à studioUpdateChiour, réservé aux brouillons).
+ */
+export const studioReorderSerie = onCall(async (request) => {
+  const data = (request.data ?? {}) as Record<string, unknown>;
+  const author = await requireAuthor(data.token);
+
+  const serieId = asTrimmedString(data.serieId, "serieId", 300, true);
+  const db = getFirestore();
+  const serie = await db.collection("series").doc(serieId).get();
+  if (!serie.exists || serie.data()?.auteurId !== author.auteurId) {
+    throw new HttpsError("permission-denied", "Série inconnue pour cet auteur.");
+  }
+
+  const slugs = data.slugs;
+  if (!Array.isArray(slugs) || slugs.length === 0 || slugs.length > 500) {
+    throw new HttpsError("invalid-argument", "Liste d'épisodes invalide.");
+  }
+  if (slugs.some((s) => typeof s !== "string" || !s || s.length > 300)) {
+    throw new HttpsError("invalid-argument", "Liste d'épisodes invalide.");
+  }
+  if (new Set(slugs).size !== slugs.length) {
+    throw new HttpsError("invalid-argument", "Liste d'épisodes en double.");
+  }
+
+  // La liste doit couvrir exactement les chiourim de la série de cet auteur :
+  // pas d'oubli silencieux, pas de slug étranger.
+  const snap = await db
+    .collection("chiourim")
+    .where("serieId", "==", serieId)
+    .where("auteurId", "==", author.auteurId)
+    .get();
+  const existing = new Set(snap.docs.map((d) => d.id));
+  if (existing.size !== slugs.length || slugs.some((s) => !existing.has(s as string))) {
+    throw new HttpsError(
+      "failed-precondition",
+      "La liste ne correspond plus aux épisodes de la série. Rechargez la page.",
+    );
+  }
+
+  const batch = db.batch();
+  (slugs as string[]).forEach((slug, index) => {
+    batch.update(db.collection("chiourim").doc(slug), {
+      episode: index + 1,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  });
+  await batch.commit();
+
+  return { count: slugs.length };
+});
+
 export const studioDeleteChiour = onCall(async (request) => {
   const data = (request.data ?? {}) as Record<string, unknown>;
   const author = await requireAuthor(data.token);
-  const { ref, doc } = await requireOwnDraft(data.slug, author);
+  const { ref, doc, published } = await requireOwnChiour(data.slug, author);
+  // La suppression reste réservée aux brouillons : un chiour publié se
+  // dépublie/supprime côté admin.
+  if (published) {
+    throw new HttpsError(
+      "failed-precondition",
+      "Ce chiour est publié : contactez l'administrateur pour le retirer.",
+    );
+  }
 
   const audioPath = doc.audioPath as string | undefined;
   if (audioPath) {

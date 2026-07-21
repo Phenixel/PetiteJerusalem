@@ -9,8 +9,12 @@ const props = defineProps<{
   token: string;
   series: (SerieDoc & { id: string })[];
   categorySuggestions: string[];
-  /** Chiour en cours d'édition (brouillon), ou null pour un ajout. */
+  /** Chiour en cours d'édition, ou null pour un ajout. */
   chiour: ChiourDoc | null;
+  /** Série imposée (ajout depuis la page d'une série) : champ série figé. */
+  presetSerieId?: string | null;
+  /** Numéro d'épisode proposé par défaut (ajout depuis une série). */
+  presetEpisode?: number | null;
 }>();
 
 const emit = defineEmits<{
@@ -28,9 +32,9 @@ const description = ref(props.chiour?.description ?? "");
 const niveau = ref(props.chiour?.niveau ?? "");
 const selectedCategories = ref<string[]>([...(props.chiour?.categories ?? [])]);
 const newCategory = ref("");
-const serieChoice = ref<string>(props.chiour?.serieId ?? "");
+const serieChoice = ref<string>(props.chiour?.serieId ?? props.presetSerieId ?? "");
 const newSerieName = ref("");
-const episode = ref<number | null>(props.chiour?.episode ?? null);
+const episode = ref<number | null>(props.chiour?.episode ?? props.presetEpisode ?? null);
 
 const audioFile = ref<File | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -40,6 +44,9 @@ const uploadPercent = ref<number | null>(null);
 const errorMessage = ref("");
 
 const isEditing = computed(() => props.chiour !== null);
+// Chiour publié : édition restreinte (description, catégories, épisode).
+// Le serveur applique la même limite, ceci n'est que le reflet UX.
+const isLimited = computed(() => props.chiour?.published === true);
 
 const allCategories = computed(() => {
   const set = new Set([...props.categorySuggestions, ...selectedCategories.value]);
@@ -131,6 +138,13 @@ async function save() {
 
 <template>
   <form @submit.prevent="save" class="space-y-6 text-left">
+    <p
+      v-if="isLimited"
+      class="rounded-lg bg-primary/5 border border-primary/20 p-3 text-sm text-text-secondary"
+    >
+      {{ t("studio.form.publishedNotice") }}
+    </p>
+
     <div>
       <label for="studio-name" class="block text-sm font-semibold text-text-secondary mb-2">
         {{ t("studio.form.title") }}
@@ -141,7 +155,8 @@ async function save() {
         type="text"
         :placeholder="t('studio.form.titlePlaceholder')"
         required
-        class="field"
+        :disabled="isLimited"
+        class="field disabled:opacity-60 disabled:cursor-not-allowed"
       />
     </div>
 
@@ -192,7 +207,7 @@ async function save() {
       </div>
     </div>
 
-    <div>
+    <div v-if="!isLimited">
       <label for="studio-niveau" class="block text-sm font-semibold text-text-secondary mb-2">
         {{ t("studio.form.niveau") }}
       </label>
@@ -206,12 +221,17 @@ async function save() {
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div>
+      <div v-if="!isLimited">
         <label for="studio-serie" class="block text-sm font-semibold text-text-secondary mb-2">
           {{ t("studio.form.serie") }}
         </label>
         <div class="relative">
-          <select id="studio-serie" v-model="serieChoice" class="field appearance-none cursor-pointer">
+          <select
+            id="studio-serie"
+            v-model="serieChoice"
+            :disabled="!!presetSerieId"
+            class="field appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          >
             <option value="">{{ t("studio.form.noSerie") }}</option>
             <option v-for="serie in series" :key="serie.id" :value="serie.id">
               {{ serie.name }}
@@ -241,14 +261,14 @@ async function save() {
       </div>
     </div>
 
-    <div v-if="serieChoice === NEW_SERIE">
+    <div v-if="serieChoice === NEW_SERIE && !isLimited">
       <label for="studio-new-serie" class="block text-sm font-semibold text-text-secondary mb-2">
         {{ t("studio.form.newSerieName") }}
       </label>
       <input id="studio-new-serie" v-model="newSerieName" type="text" class="field" required />
     </div>
 
-    <div>
+    <div v-if="!isLimited">
       <label for="studio-audio" class="block text-sm font-semibold text-text-secondary mb-2">
         {{ isEditing ? t("studio.form.replaceAudio") : t("studio.form.audio") }}
       </label>
