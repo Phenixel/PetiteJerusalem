@@ -87,9 +87,15 @@ store-assets/metadata/android/<locale>/   # fr-FR, en-US, iw-IL (hébreu)
   intacte (les langues sans images retombent sur la langue par défaut).
 - Les captures se régénèrent avec `npm run store:screenshots`
   (scripts/store-screenshots.mjs) : émulateurs Firebase éphémères + données
-  de démo fixes (compte « Sarah Levy », session Tehilim, chiourim) +
-  captures Playwright en 1080×1920. Reproductible : mêmes données à chaque
-  exécution, il suffit de committer les PNG produits.
+  de démo fixes (compte « Sarah Levy », session Tehilim, chiourim), puis
+  l'app **native** (build debug Capacitor branché sur le Vite local via
+  `CAP_SERVER_URL` + `adb reverse`) sur l'AVD dédié `pj-store` (1080×1920,
+  créé automatiquement), pilotée par Playwright à travers sa webview et
+  capturée par `adb screencap` (barre de statut en mode démo SystemUI,
+  barre d'onglets native visible). Reproductible : mêmes données à chaque
+  exécution, il suffit de committer les PNG produits. Variante rapide sans
+  émulateur Android : `npm run store:screenshots -- --web` (rendu site
+  mobile, sans la barre d'onglets).
 
 ## Piste de publication
 
