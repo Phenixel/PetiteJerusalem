@@ -241,22 +241,14 @@ watch(() => route.params.slug, loadChiour);
         <AudioPlayer :src="chiour.mediaUrl" :title="chiour.name" :slug="chiour.slug" />
       </div>
 
-      <!-- Description : encart de lecture. Surface opaque (lisible par-dessus
-           le mur), mais volontairement plat (pas l'ombre des cartes) avec une
-           barre d'accent : un encart qui « repose », pas une carte qui flotte. -->
-      <div
-        v-if="chiour.description"
-        class="mb-12 flex gap-4 rounded-2xl bg-surface p-5 ring-1 ring-line md:p-6"
-      >
-        <div class="w-1 shrink-0 rounded-full bg-secondary/50"></div>
-        <div class="min-w-0">
-          <h2 class="text-lg font-bold text-text-primary mb-2">
-            {{ t("common.description") }}
-          </h2>
-          <p class="text-text-secondary leading-relaxed whitespace-pre-line">
-            {{ chiour.description }}
-          </p>
-        </div>
+      <!-- Description : carte standard, comme les cours -->
+      <div v-if="chiour.description" class="mb-12 card p-6">
+        <h2 class="text-lg font-bold text-text-primary mb-3">
+          {{ t("common.description") }}
+        </h2>
+        <p class="text-text-secondary leading-relaxed whitespace-pre-line">
+          {{ chiour.description }}
+        </p>
       </div>
 
       <!-- Navigation dans la série : liens fantômes (fond léger au survol),
