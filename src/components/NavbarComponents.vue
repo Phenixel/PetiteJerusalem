@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { authService } from "../services/authService";
+import { isAdminEmail } from "../config/admin";
 import { useDarkMode } from "../composables/useDarkMode";
 import { isNativeApp } from "../composables/useNativeApp";
 import LanguageSelector from "./LanguageSelector.vue";
@@ -9,6 +10,9 @@ import AppIcon from "./icons/AppIcon.vue";
 
 const router = useRouter();
 const username = ref<string | null>(null);
+// Lien vers le backoffice, affiché uniquement pour le compte admin (garde
+// UX : la vraie protection reste la garde de route + les rules Firebase).
+const isAdmin = ref(false);
 const isMobileMenuOpen = ref(false);
 let unsubscribeAuth: (() => void) | null = null;
 
@@ -39,6 +43,7 @@ function closeMobileMenu() {
 onMounted(() => {
   unsubscribeAuth = authService.onAuthChanged((user) => {
     username.value = user?.name ?? null;
+    isAdmin.value = isAdminEmail(user?.email);
   });
 });
 
@@ -117,6 +122,10 @@ function goToLogin() {
           {{ $t("common.login") }}
         </button>
         <div v-else class="flex items-center gap-2 font-medium text-text-primary">
+          <RouterLink v-if="isAdmin" to="/admin" class="btn btn-soft">
+            <AppIcon name="settings" :size="15" />
+            {{ $t("admin.title") }}
+          </RouterLink>
           <RouterLink
             to="/profile"
             class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-black/5 transition-colors dark:hover:bg-white/10"
@@ -193,6 +202,15 @@ function goToLogin() {
                 {{ $t("common.login") }}
               </button>
               <template v-else>
+                <RouterLink
+                  v-if="isAdmin"
+                  to="/admin"
+                  @click="closeMobileMenu"
+                  class="btn btn-soft w-full !justify-start"
+                >
+                  <AppIcon name="settings" :size="16" />
+                  {{ $t("admin.title") }}
+                </RouterLink>
                 <RouterLink
                   to="/profile"
                   @click="closeMobileMenu"

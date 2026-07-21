@@ -536,6 +536,8 @@ const he: LocaleMessages = {
     invalidLink: "הקישור אינו תקין או הושבת",
     invalidLinkHint: "פנו למנהל של פטיט ירושלים לקבלת קישור חדש.",
     yourChiourim: "השיעורים שלכם",
+    yourSeries: "הסדרות שלכם",
+    seriesHint: "סדרה נוצרת מטופס הוספת שיעור (שדה סדרה, אפשרות סדרה חדשה).",
     empty: "אין עדיין שיעורים. הוסיפו את הראשון!",
     addChiour: "הוספת שיעור",
     editChiour: "עריכת שיעור",

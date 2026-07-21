@@ -552,6 +552,9 @@ const fr = {
     invalidLink: "Ce lien n'est pas valide ou a été désactivé",
     invalidLinkHint: "Contactez l'administrateur de Petite Jérusalem pour obtenir un nouveau lien.",
     yourChiourim: "Vos chiourim",
+    yourSeries: "Vos séries",
+    seriesHint:
+      "Une série se crée depuis le formulaire d'ajout d'un chiour (champ Série, option Nouvelle série).",
     empty: "Aucun chiour pour le moment. Ajoutez le premier !",
     addChiour: "Ajouter un chiour",
     editChiour: "Modifier le chiour",

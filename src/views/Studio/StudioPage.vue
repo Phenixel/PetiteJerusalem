@@ -32,6 +32,15 @@ const serieNameById = computed(() => {
   return map;
 });
 
+// Nombre d'épisodes par série (brouillons compris), pour la section « Vos séries ».
+const episodeCountBySerie = computed(() => {
+  const map = new Map<string, number>();
+  chiourim.value.forEach((c) => {
+    if (c.serieId) map.set(c.serieId, (map.get(c.serieId) ?? 0) + 1);
+  });
+  return map;
+});
+
 async function refresh() {
   if (!author.value) return;
   [chiourim.value, series.value] = await Promise.all([
@@ -44,15 +53,23 @@ onMounted(async () => {
   // Page privée par nature (lien secret) : pas d'indexation.
   seoService.setMeta({ title: t("studio.title"), robots: "noindex, nofollow" });
 
-  author.value = await studioService.resolveToken(token.value);
-  if (author.value) {
-    await refresh();
-    // Suggestions de catégories : celles déjà utilisées dans le catalogue.
-    chiourService.getCategories().then((cats) => {
-      categorySuggestions.value = cats;
-    });
+  try {
+    author.value = await studioService.resolveToken(token.value);
+    if (author.value) {
+      await refresh();
+      // Suggestions de catégories : celles déjà utilisées dans le catalogue.
+      chiourService.getCategories().then((cats) => {
+        categorySuggestions.value = cats;
+      });
+    }
+  } catch (error) {
+    // Erreur de chargement : on retombe sur l'écran « lien invalide » plutôt
+    // que de rester bloqué sur le chargement.
+    console.error("Erreur lors du chargement du studio:", error);
+    author.value = null;
+  } finally {
+    isLoading.value = false;
   }
-  isLoading.value = false;
 });
 
 function openAdd() {
@@ -128,6 +145,31 @@ async function removeChiour(chiour: ChiourDoc) {
 
       <!-- Liste des chiourim de l'auteur -->
       <template v-else>
+        <!-- Vos séries : vue d'ensemble (créées via le formulaire d'ajout) -->
+        <section v-if="series.length" class="mb-10">
+          <h2 class="text-xl font-bold text-text-primary mb-4">{{ t("studio.yourSeries") }}</h2>
+          <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <li
+              v-for="serie in series"
+              :key="serie.id"
+              class="card p-4 flex items-center gap-3"
+            >
+              <div
+                class="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary/10 text-secondary shrink-0"
+              >
+                <AppIcon name="book-open" :size="17" />
+              </div>
+              <div class="min-w-0">
+                <p class="font-semibold text-text-primary truncate">{{ serie.name }}</p>
+                <p class="text-sm text-text-secondary">
+                  {{ t("serie.episodesCount", { count: episodeCountBySerie.get(serie.id) ?? 0 }) }}
+                </p>
+              </div>
+            </li>
+          </ul>
+          <p class="text-xs text-text-secondary/70 mt-2">{{ t("studio.seriesHint") }}</p>
+        </section>
+
         <div class="flex items-center justify-between mb-5">
           <h2 class="text-xl font-bold text-text-primary">{{ t("studio.yourChiourim") }}</h2>
           <button class="btn btn-primary" @click="openAdd">

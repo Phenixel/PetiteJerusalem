@@ -547,6 +547,9 @@ const en: LocaleMessages = {
     invalidLink: "This link is not valid or has been disabled",
     invalidLinkHint: "Contact the Petite Jerusalem administrator to get a new link.",
     yourChiourim: "Your chiourim",
+    yourSeries: "Your series",
+    seriesHint:
+      "A series is created from the chiour form (Series field, New series option).",
     empty: "No chiour yet. Add the first one!",
     addChiour: "Add a chiour",
     editChiour: "Edit chiour",

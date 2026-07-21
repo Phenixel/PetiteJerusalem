@@ -55,7 +55,10 @@ export class StudioService {
       const snap = await getDoc(doc(db, "studioTokens", token));
       const data = snap.data() as StudioTokenDoc | undefined;
       if (!snap.exists() || data?.active !== true) return null;
-      return { auteurId: data.auteurId, auteurName: data.auteurName };
+      // Doc token incomplet (ne devrait pas arriver) : traité comme invalide
+      // plutôt que de laisser des requêtes partir avec un auteurId undefined.
+      if (typeof data.auteurId !== "string" || !data.auteurId) return null;
+      return { auteurId: data.auteurId, auteurName: data.auteurName ?? data.auteurId };
     } catch {
       return null;
     }

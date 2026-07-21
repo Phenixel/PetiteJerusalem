@@ -58,10 +58,13 @@ async function requireAuthor(token: unknown): Promise<StudioAuthor> {
   }
   const snap = await getFirestore().collection("studioTokens").doc(token).get();
   const data = snap.data();
-  if (!snap.exists || data?.active !== true) {
+  if (!snap.exists || data?.active !== true || typeof data.auteurId !== "string" || !data.auteurId) {
     throw new HttpsError("permission-denied", "Lien invalide ou révoqué.");
   }
-  return { auteurId: data.auteurId as string, auteurName: data.auteurName as string };
+  return {
+    auteurId: data.auteurId,
+    auteurName: typeof data.auteurName === "string" && data.auteurName ? data.auteurName : data.auteurId,
+  };
 }
 
 function asTrimmedString(value: unknown, field: string, max: number, required = false): string {
