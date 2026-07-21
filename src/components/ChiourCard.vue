@@ -3,10 +3,12 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import type { Chiour } from "../models/models";
 import { chiourService } from "../services/chiourService";
+import { useViewedChiourim } from "../composables/useViewedChiourim";
 import AppIcon from "./icons/AppIcon.vue";
 
 const { t } = useI18n();
 const router = useRouter();
+const { isViewed } = useViewedChiourim();
 
 interface Props {
   chiour: Chiour;
@@ -41,6 +43,14 @@ function goToAuteur(event: Event, auteur: string) {
 
     <!-- Categories badges -->
     <div class="flex flex-wrap gap-2 mb-3">
+      <!-- Déjà vu (utilisateur connecté uniquement) -->
+      <span
+        v-if="isViewed(chiour.slug)"
+        class="chip bg-green-600/10 text-green-700 inline-flex items-center gap-1 dark:text-green-300"
+      >
+        <AppIcon name="circle-check" :size="12" />
+        {{ t("common.viewed") }}
+      </span>
       <span
         v-if="serieName"
         class="chip bg-secondary/10 text-secondary inline-flex items-center gap-1"

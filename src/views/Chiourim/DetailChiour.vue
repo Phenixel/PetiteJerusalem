@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, computed, watch, watchEffect } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { chiourService } from "../../services/chiourService";
 import { serieService, type Serie } from "../../services/serieService";
+import { useViewedChiourim } from "../../composables/useViewedChiourim";
 import type { Chiour } from "../../models/models";
 import AudioPlayer from "../../components/AudioPlayer.vue";
 import ChiourCard from "../../components/ChiourCard.vue";
@@ -18,24 +19,45 @@ function goToAuteur(auteur: string) {
 }
 const { t } = useI18n();
 
+const { isViewed, markViewed, isLoaded: viewedLoaded } = useViewedChiourim();
+
 const chiour = ref<Chiour | null>(null);
 const allChiourim = ref<Chiour[]>([]);
 const serie = ref<Serie | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
+// Vrai si l'utilisateur connecté avait DÉJÀ vu ce chiour avant cette visite.
+// Capturé juste avant le marquage, une fois la liste des vus chargée (elle
+// arrive après le premier rendu au chargement complet de la page).
+const wasAlreadyViewed = ref(false);
+const viewMarkedFor = ref<string | null>(null);
+
+watchEffect(() => {
+  const current = chiour.value;
+  if (!current || !viewedLoaded.value || viewMarkedFor.value === current.slug) return;
+  viewMarkedFor.value = current.slug;
+  wasAlreadyViewed.value = isViewed(current.slug);
+  markViewed(current.slug);
+});
 
 const nextEpisode = computed(() => {
   if (!chiour.value || !allChiourim.value.length) return null;
   return serieService.getNextEpisode(chiour.value, allChiourim.value);
 });
 
-// L'épisode suivant de la série passe en tête des recommandations.
+const previousEpisode = computed(() => {
+  if (!chiour.value || !allChiourim.value.length) return null;
+  return serieService.getPreviousEpisode(chiour.value, allChiourim.value);
+});
+
+// Les épisodes voisins ont leur propre bloc : les recommandations proposent
+// autre chose (mêmes catégories / même auteur), sans les dupliquer.
 const recommendations = computed(() => {
   if (!chiour.value || !allChiourim.value.length) return [];
-  const recs = chiourService.getRecommendations(chiour.value, allChiourim.value, 2);
-  const next = nextEpisode.value;
-  if (!next) return recs;
-  return [next, ...recs.filter((r) => r.slug !== next.slug)].slice(0, 2);
+  return chiourService
+    .getRecommendations(chiour.value, allChiourim.value, 4)
+    .filter((r) => r.slug !== nextEpisode.value?.slug && r.slug !== previousEpisode.value?.slug)
+    .slice(0, 2);
 });
 
 function applyChiour(all: Chiour[], slug: string): boolean {
@@ -156,6 +178,14 @@ watch(() => route.params.slug, loadChiour);
 
         <!-- Categories -->
         <div class="flex flex-wrap gap-2 mb-5">
+          <!-- Déjà vu lors d'une visite précédente (connecté uniquement) -->
+          <span
+            v-if="wasAlreadyViewed"
+            class="chip bg-green-600/10 text-green-700 inline-flex items-center gap-1 dark:text-green-300"
+          >
+            <AppIcon name="circle-check" :size="12" />
+            {{ t("common.viewed") }}
+          </span>
           <span v-for="cat in chiour.categories" :key="cat" class="chip bg-primary/10 text-primary">
             {{ cat }}
           </span>
@@ -197,16 +227,9 @@ watch(() => route.params.slug, loadChiour);
         </div>
       </div>
 
-      <!-- Audio Player -->
+      <!-- Audio Player (aucun bloc si le chiour n'a pas d'audio) -->
       <div v-if="chiour.mediaUrl" class="mb-8">
         <AudioPlayer :src="chiour.mediaUrl" :title="chiour.name" :slug="chiour.slug" />
-      </div>
-
-      <div v-else class="mb-8 py-8 text-center">
-        <AppIcon name="volume-x" :size="24" class="text-text-secondary/40 mb-2" />
-        <p class="text-text-secondary">
-          {{ t("detailChiour.noAudio") }}
-        </p>
       </div>
 
       <!-- Description -->
@@ -219,25 +242,56 @@ watch(() => route.params.slug, loadChiour);
         </p>
       </div>
 
-      <!-- Épisode suivant -->
-      <div v-if="nextEpisode" class="mb-10">
-        <router-link
-          :to="`/chiourim/${nextEpisode.slug}`"
-          class="card card-hover p-5 flex items-center gap-4 group"
-        >
-          <div
-            class="flex items-center justify-center w-11 h-11 rounded-lg bg-secondary/10 text-secondary shrink-0"
+      <!-- Navigation dans la série : épisodes précédent et suivant -->
+      <div v-if="serie && (previousEpisode || nextEpisode)" class="mb-12">
+        <div class="flex flex-wrap items-baseline justify-between gap-3 mb-5">
+          <h2 class="text-2xl font-bold text-text-primary">{{ t("serie.inSerie") }}</h2>
+          <router-link
+            :to="`/chiourim/serie/${serie.id}`"
+            class="text-sm text-primary font-medium hover:underline"
           >
-            <AppIcon name="forward" :size="18" />
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm text-text-secondary">{{ t("serie.nextEpisode") }}</p>
-            <p class="font-bold text-text-primary group-hover:text-primary transition-colors truncate">
-              <template v-if="nextEpisode.episode != null">{{ nextEpisode.episode }}. </template>{{ nextEpisode.name }}
-            </p>
-          </div>
-          <AppIcon name="chevron-right" :size="16" class="text-text-secondary shrink-0" />
-        </router-link>
+            {{ t("serie.seeAll") }}
+          </router-link>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <router-link
+            v-if="previousEpisode"
+            :to="`/chiourim/${previousEpisode.slug}`"
+            class="card card-hover p-5 flex items-center gap-4 group"
+          >
+            <div
+              class="flex items-center justify-center w-11 h-11 rounded-lg bg-secondary/10 text-secondary shrink-0"
+            >
+              <AppIcon name="backward" :size="18" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-text-secondary">{{ t("serie.previousEpisode") }}</p>
+              <p class="font-bold text-text-primary group-hover:text-primary transition-colors truncate">
+                <template v-if="previousEpisode.episode != null">{{ previousEpisode.episode }}. </template>{{ previousEpisode.name }}
+              </p>
+            </div>
+          </router-link>
+
+          <router-link
+            v-if="nextEpisode"
+            :to="`/chiourim/${nextEpisode.slug}`"
+            class="card card-hover p-5 flex items-center gap-4 group"
+            :class="{ 'sm:col-start-2': !previousEpisode }"
+          >
+            <div class="flex-1 min-w-0 text-right">
+              <p class="text-sm text-text-secondary">{{ t("serie.nextEpisode") }}</p>
+              <p class="font-bold text-text-primary group-hover:text-primary transition-colors truncate">
+                <template v-if="nextEpisode.episode != null">{{ nextEpisode.episode }}. </template>{{ nextEpisode.name }}
+              </p>
+            </div>
+            <div
+              class="flex items-center justify-center w-11 h-11 rounded-lg bg-secondary/10 text-secondary shrink-0"
+            >
+              <AppIcon name="forward" :size="18" />
+            </div>
+          </router-link>
+        </div>
       </div>
 
       <!-- Recommandations -->

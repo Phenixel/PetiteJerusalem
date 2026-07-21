@@ -70,3 +70,23 @@ describe("serieService.getNextEpisode", () => {
     expect(serieService.getNextEpisode(sansNumero, catalogue)).toBeNull();
   });
 });
+
+describe("serieService.getPreviousEpisode", () => {
+  it("renvoie l'épisode au numéro immédiatement inférieur", () => {
+    const current = catalogue.find((c) => c.slug === "ep3")!;
+    expect(serieService.getPreviousEpisode(current, catalogue)?.slug).toBe("ep2");
+  });
+
+  it("saute les trous de numérotation", () => {
+    const sansEp2 = catalogue.filter((c) => c.slug !== "ep2");
+    const current = catalogue.find((c) => c.slug === "ep3")!;
+    expect(serieService.getPreviousEpisode(current, sansEp2)?.slug).toBe("ep1");
+  });
+
+  it("renvoie null pour le premier épisode et hors série", () => {
+    const premier = catalogue.find((c) => c.slug === "ep1")!;
+    const horsSerie = catalogue.find((c) => c.slug === "hors-serie")!;
+    expect(serieService.getPreviousEpisode(premier, catalogue)).toBeNull();
+    expect(serieService.getPreviousEpisode(horsSerie, catalogue)).toBeNull();
+  });
+});

@@ -70,6 +70,20 @@ export class SerieService {
     candidates.sort((a, b) => (a.episode as number) - (b.episode as number));
     return candidates[0] ?? null;
   }
+
+  /** Épisode précédent du même chiour dans sa série, ou null. */
+  getPreviousEpisode(current: Chiour, all: Chiour[]): Chiour | null {
+    if (!current.serieId || current.episode == null) return null;
+    const candidates = all.filter(
+      (c) =>
+        c.serieId === current.serieId &&
+        c.slug !== current.slug &&
+        c.episode != null &&
+        c.episode < (current.episode as number),
+    );
+    candidates.sort((a, b) => (b.episode as number) - (a.episode as number));
+    return candidates[0] ?? null;
+  }
 }
 
 export const serieService = new SerieService();

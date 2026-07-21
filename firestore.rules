@@ -131,7 +131,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && request.auth.uid == userId;
       allow create, update: if isAuthenticated()
         && request.auth.uid == userId
-        && request.resource.data.size() <= 10
+        && request.resource.data.size() <= 12
         && (!('theme' in request.resource.data) || (request.resource.data.theme is string && request.resource.data.theme.size() <= 20))
         && (!('fontLatin' in request.resource.data) || (request.resource.data.fontLatin is string && request.resource.data.fontLatin.size() <= 20))
         && (!('fontHebrew' in request.resource.data) || (request.resource.data.fontHebrew is string && request.resource.data.fontHebrew.size() <= 20))
@@ -144,7 +144,9 @@ service cloud.firestore {
         && (!('fcmTokens' in request.resource.data) || (request.resource.data.fcmTokens is list && request.resource.data.fcmTokens.size() <= 20))
         && (!('pushReminderEnabled' in request.resource.data) || request.resource.data.pushReminderEnabled is bool)
         && (!('pushReminderHour' in request.resource.data) || (request.resource.data.pushReminderHour is int && request.resource.data.pushReminderHour >= 0 && request.resource.data.pushReminderHour <= 23))
-        && (!('pushLocale' in request.resource.data) || (request.resource.data.pushLocale is string && request.resource.data.pushLocale.size() <= 5));
+        && (!('pushLocale' in request.resource.data) || (request.resource.data.pushLocale is string && request.resource.data.pushLocale.size() <= 5))
+        // Chiourim déjà vus (slugs) : marqueur « Vu » des utilisateurs connectés.
+        && (!('viewedChiourim' in request.resource.data) || (request.resource.data.viewedChiourim is list && request.resource.data.viewedChiourim.size() <= 1000));
       allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
 
