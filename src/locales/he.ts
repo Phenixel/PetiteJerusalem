@@ -602,6 +602,8 @@ const he: LocaleMessages = {
     episodeBadge: "פרק {n}",
     nextEpisode: "הפרק הבא",
     previousEpisode: "הפרק הקודם",
+    previous: "הקודם",
+    next: "הבא",
     episodesCount: "{count} פרקים",
     seeAll: "לכל הסדרה",
     outOfSerie: "שיעורים נוספים",

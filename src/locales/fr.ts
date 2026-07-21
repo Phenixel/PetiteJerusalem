@@ -618,6 +618,8 @@ const fr = {
     episodeBadge: "Épisode {n}",
     nextEpisode: "Épisode suivant",
     previousEpisode: "Épisode précédent",
+    previous: "Précédent",
+    next: "Suivant",
     episodesCount: "{count} épisode(s)",
     seeAll: "Voir toute la série",
     outOfSerie: "Autres chiourim",

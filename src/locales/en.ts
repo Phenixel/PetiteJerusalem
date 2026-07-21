@@ -613,6 +613,8 @@ const en: LocaleMessages = {
     episodeBadge: "Episode {n}",
     nextEpisode: "Next episode",
     previousEpisode: "Previous episode",
+    previous: "Previous",
+    next: "Next",
     episodesCount: "{count} episode(s)",
     seeAll: "See the whole series",
     outOfSerie: "Other chiourim",

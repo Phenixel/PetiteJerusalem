@@ -241,27 +241,37 @@ watch(() => route.params.slug, loadChiour);
         <AudioPlayer :src="chiour.mediaUrl" :title="chiour.name" :slug="chiour.slug" />
       </div>
 
-      <!-- Description : simple section texte, sans carte -->
-      <div v-if="chiour.description" class="mb-12">
-        <h2 class="text-lg font-bold text-text-primary mb-3">
-          {{ t("common.description") }}
-        </h2>
-        <p class="text-text-secondary leading-relaxed whitespace-pre-line">
-          {{ chiour.description }}
-        </p>
+      <!-- Description : encart de lecture. Surface opaque (lisible par-dessus
+           le mur), mais volontairement plat (pas l'ombre des cartes) avec une
+           barre d'accent : un encart qui « repose », pas une carte qui flotte. -->
+      <div
+        v-if="chiour.description"
+        class="mb-12 flex gap-4 rounded-2xl bg-surface p-5 ring-1 ring-line md:p-6"
+      >
+        <div class="w-1 shrink-0 rounded-full bg-secondary/50"></div>
+        <div class="min-w-0">
+          <h2 class="text-lg font-bold text-text-primary mb-2">
+            {{ t("common.description") }}
+          </h2>
+          <p class="text-text-secondary leading-relaxed whitespace-pre-line">
+            {{ chiour.description }}
+          </p>
+        </div>
       </div>
 
       <!-- Navigation dans la série : liens fantômes (fond léger au survol),
-           ni carte ni filet. Sur mobile, chaque lien prend sa propre ligne
-           (précédent puis suivant) pour ne jamais se chevaucher. -->
+           ni carte ni filet. Grille à 2 colonnes : précédent à gauche, suivant
+           à droite, TOUJOURS sur la même ligne (jamais de chevauchement, même
+           sur mobile) grâce aux placements col-start explicites. -->
       <nav
         v-if="serie && (previousEpisode || nextEpisode)"
-        class="mb-12 -mx-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-x-6"
+        class="mb-12 -mx-3 grid grid-cols-2 gap-2"
       >
         <router-link
           v-if="previousEpisode"
           :to="`/chiourim/${previousEpisode.slug}`"
-          class="group flex items-center gap-3 min-w-0 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5"
+          class="group flex items-center gap-2.5 min-w-0 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5"
+          :class="nextEpisode ? 'col-start-1' : 'col-span-2'"
         >
           <AppIcon
             name="chevron-left"
@@ -269,7 +279,7 @@ watch(() => route.params.slug, loadChiour);
             class="text-text-secondary shrink-0 transition-transform group-hover:-translate-x-0.5 group-hover:text-primary"
           />
           <span class="min-w-0">
-            <span class="block text-xs uppercase tracking-wide text-text-secondary">{{ t("serie.previousEpisode") }}</span>
+            <span class="block text-xs uppercase tracking-wide text-text-secondary">{{ t("serie.previous") }}</span>
             <span class="block font-semibold text-text-primary group-hover:text-primary transition-colors truncate">
               <template v-if="previousEpisode.episode != null">{{ previousEpisode.episode }}. </template>{{ previousEpisode.name }}
             </span>
@@ -279,10 +289,11 @@ watch(() => route.params.slug, loadChiour);
         <router-link
           v-if="nextEpisode"
           :to="`/chiourim/${nextEpisode.slug}`"
-          class="group flex items-center justify-end gap-3 min-w-0 text-right rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5 sm:ml-auto"
+          class="group flex items-center justify-end gap-2.5 min-w-0 text-right rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5"
+          :class="previousEpisode ? 'col-start-2' : 'col-span-2'"
         >
           <span class="min-w-0">
-            <span class="block text-xs uppercase tracking-wide text-text-secondary">{{ t("serie.nextEpisode") }}</span>
+            <span class="block text-xs uppercase tracking-wide text-text-secondary">{{ t("serie.next") }}</span>
             <span class="block font-semibold text-text-primary group-hover:text-primary transition-colors truncate">
               <template v-if="nextEpisode.episode != null">{{ nextEpisode.episode }}. </template>{{ nextEpisode.name }}
             </span>
