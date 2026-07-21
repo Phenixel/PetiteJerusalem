@@ -601,7 +601,6 @@ const he: LocaleMessages = {
     episodeOf: "פרק {n} בסדרה {serie}",
     nextEpisode: "הפרק הבא",
     previousEpisode: "הפרק הקודם",
-    inSerie: "בסדרה זו",
     episodesCount: "{count} פרקים",
     seeAll: "לכל הסדרה",
     outOfSerie: "שיעורים נוספים",

@@ -617,7 +617,6 @@ const fr = {
     episodeOf: "Épisode {n} de la série {serie}",
     nextEpisode: "Épisode suivant",
     previousEpisode: "Épisode précédent",
-    inSerie: "Dans cette série",
     episodesCount: "{count} épisode(s)",
     seeAll: "Voir toute la série",
     outOfSerie: "Autres chiourim",

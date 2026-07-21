@@ -612,7 +612,6 @@ const en: LocaleMessages = {
     episodeOf: "Episode {n} of the series {serie}",
     nextEpisode: "Next episode",
     previousEpisode: "Previous episode",
-    inSerie: "In this series",
     episodesCount: "{count} episode(s)",
     seeAll: "See the whole series",
     outOfSerie: "Other chiourim",
