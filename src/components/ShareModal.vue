@@ -67,7 +67,11 @@ const generateQRCode = async () => {
         }
 
         const script = document.createElement("script");
-        script.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+        // Librairie servie depuis notre propre origine (public/vendor) et non
+        // depuis un CDN externe : les scripts tiers sont souvent bloqués (Brave
+        // Shields, bloqueurs de pub, CSP), ce qui provoquait l'"Erreur lors de
+        // la génération du QR code".
+        script.src = "/vendor/qrcode.min.js";
         script.onload = () => resolve(true);
         script.onerror = () => reject(new Error("Erreur lors du chargement de QRCode"));
         document.head.appendChild(script);
