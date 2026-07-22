@@ -280,10 +280,16 @@ const fr = {
     fillAllFields: "Veuillez remplir tous les champs",
     createdSuccess: "Session créée avec succès !",
     createError: "Erreur lors de la création de la session. Veuillez réessayer.",
+    requireGuestEmail: "Exiger l'email des invités",
+    requireGuestEmailHint:
+      "Décochée, cette option permet aux invités de réserver en indiquant seulement leur nom.",
   },
   detailSession: {
     loadingSession: "Chargement de la session...",
-    guestTitle: "Invité ?",
+    guestTitle: "Vous voulez réserver sans compte ?",
+    guestSubtitle: "C'est possible : renseignez simplement votre nom, puis choisissez vos textes.",
+    guestSubtitleWithEmail:
+      "Renseignez votre nom et votre email, puis choisissez vos textes.",
     searchPlaceholder: "Rechercher un texte, un livre ou un chapitre...",
     clearSearch: "Effacer la recherche",
     searchFor: "Recherche",
@@ -293,6 +299,7 @@ const fr = {
     confirmAsGuest: "Finaliser en tant qu'invité",
     reserving: "Réservation...",
     fillNameAndEmail: "Veuillez remplir votre nom et email pour confirmer les réservations.",
+    fillName: "Veuillez renseigner votre nom pour confirmer les réservations.",
     cancelReservationConfirm: "Voulez-vous annuler cette réservation ?",
     canOnlyCancelOwn: "Vous ne pouvez annuler que vos propres réservations.",
     cancelError: "Erreur lors de l'annulation. Veuillez réessayer.",
@@ -309,6 +316,24 @@ const fr = {
       step1: "Cochez les cases pour réserver une section ou un texte",
       step2: "Vous pouvez décocher vos propres réservations pour les annuler",
       step3: "Cliquez sur la carte du texte pour voir les sections disponibles",
+    },
+    textList: {
+      selected: "Sélectionné",
+      reserve: "Réserver",
+      read: "Lire",
+      readThisText: "Lire ce texte",
+      readThisChapter: "Lire ce chapitre",
+      readBy: "Lu par {name}",
+      reservedBy: "Réservé par {name}",
+      someone: "quelqu'un",
+      completed: "Terminé",
+      readToggle: "Lu",
+      partiallyReserved: "Partiellement réservé",
+      available: "Disponible",
+      reserved: "Réservé",
+      availableSections: "Sections disponibles ({count})",
+      selectAll: "Tout sélectionner",
+      deselectAll: "Tout désélectionner",
     },
   },
   sessionManagement: {
@@ -465,6 +490,12 @@ const fr = {
     alreadyHaveAccount:
       "Vous avez déjà un compte ? Vos réservations invité seront automatiquement récupérées.",
   },
+  guestForm: {
+    optional: "optionnel",
+    addEmail: "Ajouter mon email",
+    noEmailHint:
+      "Sans email, vos réservations ne pourront être retrouvées que depuis ce navigateur.",
+  },
   textReading: {
     back: "Retour",
     backToSession: "Retour à la session",
@@ -495,6 +526,7 @@ const fr = {
     cancelError: "L'annulation a échoué.",
     updateError: "La mise à jour a échoué.",
     guestIntro: "Renseignez votre nom et votre email pour réserver ce passage.",
+    guestIntroNameOnly: "Renseignez votre nom pour réserver ce passage.",
     textSize: "Taille du texte",
     textSizeIncrease: "Agrandir le texte",
     textSizeDecrease: "Réduire le texte",

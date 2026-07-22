@@ -192,6 +192,14 @@ function goToText(target: TextStudyJsonEntry) {
 const session = ref<Session | null>(null);
 const currentUser = ref<User | null>(null);
 const reservationForm = ref({ name: "", email: "" });
+
+// Absent sur les sessions créées avant l'introduction du réglage : l'email
+// des invités y est optionnel.
+const guestEmailRequired = computed(() => session.value?.guestEmailRequired === true);
+
+const guestIntroText = computed(() =>
+  guestEmailRequired.value ? t("textReading.guestIntro") : t("textReading.guestIntroNameOnly"),
+);
 const isReserving = ref(false);
 
 const isSessionMode = computed(() => sessionSlug.value !== null && session.value !== null);
@@ -222,8 +230,11 @@ const isMine = computed(() => {
 
 async function reserve() {
   if (!session.value || reservationUnit.value === undefined) return;
-  if (!currentUser.value && (!reservationForm.value.name || !reservationForm.value.email)) {
-    toast.info(t("textReading.guestIntro"));
+  if (
+    !currentUser.value &&
+    (!reservationForm.value.name || (guestEmailRequired.value && !reservationForm.value.email))
+  ) {
+    toast.info(guestIntroText.value);
     return;
   }
   isReserving.value = true;
@@ -234,6 +245,7 @@ async function reserve() {
       reservationUnit.value,
       currentUser.value,
       reservationForm.value,
+      guestEmailRequired.value,
     );
     const local = sessionService.createLocalReservation(
       id,
@@ -555,9 +567,12 @@ watch(textId, loadContent);
           <div v-else>
             <div v-if="!currentUser" class="mb-4">
               <p class="text-sm text-text-secondary mb-3">
-                {{ t("textReading.guestIntro") }}
+                {{ guestIntroText }}
               </p>
-              <GuestForm v-model:reservation-form="reservationForm" />
+              <GuestForm
+                v-model:reservation-form="reservationForm"
+                :email-required="guestEmailRequired"
+              />
             </div>
             <button @click="reserve" :disabled="isReserving" class="btn btn-primary text-sm">
               <AppIcon name="bookmark" :size="13" />

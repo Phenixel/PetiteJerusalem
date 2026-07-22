@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 import { Capacitor } from "@capacitor/core";
 import { authService } from "../services/authService";
 import { reservationService } from "../services/reservationService";
+import { guestService } from "../services/guestService";
 import { seoService } from "../services/seoService";
 import AppIcon from "../components/icons/AppIcon.vue";
 
@@ -49,7 +50,12 @@ async function submitForm() {
     const currentUser = await authService.getCurrentUser();
     if (currentUser) {
       reservationService
-        .migrateGuestReservations(currentUser.email, currentUser.id, currentUser.name)
+        .migrateGuestReservations(
+          currentUser.email,
+          currentUser.id,
+          currentUser.name,
+          guestService.getLocalGuestId(),
+        )
         .catch((error) => console.error("Migration des réservations invité échouée:", error));
     }
 
@@ -70,7 +76,7 @@ async function loginWithGoogle() {
     const user = await authService.signInWithGooglePopup();
 
     reservationService
-      .migrateGuestReservations(user.email, user.id, user.name)
+      .migrateGuestReservations(user.email, user.id, user.name, guestService.getLocalGuestId())
       .catch((error) => console.error("Migration des réservations invité échouée:", error));
 
     router.push(redirectPath);
@@ -93,7 +99,7 @@ async function loginWithApple() {
     const user = await authService.signInWithApple();
 
     reservationService
-      .migrateGuestReservations(user.email, user.id, user.name)
+      .migrateGuestReservations(user.email, user.id, user.name, guestService.getLocalGuestId())
       .catch((error) => console.error("Migration des réservations invité échouée:", error));
 
     router.push(redirectPath);

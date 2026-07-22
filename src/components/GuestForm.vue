@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
@@ -11,14 +12,25 @@ interface Props {
     name: string;
     email: string;
   };
+  // Défini par le créateur de la session : lorsque false, l'invité peut
+  // réserver avec son nom seul.
+  emailRequired?: boolean;
 }
 
 interface Emits {
   (e: "update:reservationForm", value: { name: string; email: string }): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  emailRequired: false,
+});
 const emit = defineEmits<Emits>();
+
+// Email optionnel : le champ est masqué pour ne pas freiner la réservation,
+// un bouton discret permet de l'ajouter (recommandé pour retrouver ses
+// réservations ailleurs que sur ce navigateur).
+const emailFieldRevealed = ref(false);
+const showEmailField = computed(() => props.emailRequired || emailFieldRevealed.value);
 
 const updateField = (field: "name" | "email", value: string) => {
   emit("update:reservationForm", {
@@ -30,7 +42,7 @@ const updateField = (field: "name" | "email", value: string) => {
 
 <template>
   <div class="w-full">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 gap-4" :class="{ 'md:grid-cols-2': showEmailField }">
       <div>
         <label for="guest-name" class="block text-sm font-semibold text-text-primary mb-2">{{
           t("common.name")
@@ -44,10 +56,13 @@ const updateField = (field: "name" | "email", value: string) => {
           class="field"
         />
       </div>
-      <div>
-        <label for="guest-email" class="block text-sm font-semibold text-text-primary mb-2">{{
-          t("common.email")
-        }}</label>
+      <div v-if="showEmailField">
+        <label for="guest-email" class="block text-sm font-semibold text-text-primary mb-2">
+          {{ t("common.email") }}
+          <span v-if="!emailRequired" class="font-normal text-text-secondary/70">
+            ({{ t("guestForm.optional") }})
+          </span>
+        </label>
         <input
           type="email"
           id="guest-email"
@@ -59,21 +74,33 @@ const updateField = (field: "name" | "email", value: string) => {
       </div>
     </div>
 
-    <!-- Hint pour inciter à la création de compte -->
-    <div class="mt-4 flex items-start gap-2.5 px-4 py-3 rounded-lg bg-primary/5 dark:bg-primary/10">
-      <AppIcon name="lightbulb" :size="14" class="text-primary mt-0.5 shrink-0" />
-      <p class="text-sm text-text-secondary">
-        <span class="font-semibold text-primary">{{ t("signupPrompt.tip") }}</span>
-        {{ " " }}
-        {{ t("signupPrompt.guestHint") }}
-        {{ " " }}
-        <router-link
-          :to="{ path: '/login', query: { redirect: route.fullPath, mode: 'signup' } }"
-          class="font-semibold text-primary hover:underline"
-        >
-          {{ t("signupPrompt.guestHintLink") }} <AppIcon name="chevron-right" :size="12" />
-        </router-link>
+    <!-- Email optionnel masqué : expliquer la limite et inciter à l'ajouter. -->
+    <div v-if="!showEmailField" class="mt-3">
+      <button
+        type="button"
+        @click="emailFieldRevealed = true"
+        class="text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1.5"
+      >
+        <AppIcon name="plus" :size="12" />
+        {{ t("guestForm.addEmail") }}
+      </button>
+      <p class="mt-1 text-xs text-text-secondary/80">
+        {{ t("guestForm.noEmailHint") }}
       </p>
     </div>
+
+    <!-- Incitation discrète à la création de compte : une simple ligne,
+         le formulaire invité doit rester le plus léger possible. -->
+    <p class="mt-3 text-xs text-text-secondary/80">
+      <AppIcon name="lightbulb" :size="11" class="text-primary" />
+      {{ t("signupPrompt.guestHint") }}
+      {{ " " }}
+      <router-link
+        :to="{ path: '/login', query: { redirect: route.fullPath, mode: 'signup' } }"
+        class="font-semibold text-primary hover:underline"
+      >
+        {{ t("signupPrompt.guestHintLink") }} <AppIcon name="chevron-right" :size="10" />
+      </router-link>
+    </p>
   </div>
 </template>

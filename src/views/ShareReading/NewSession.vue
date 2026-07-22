@@ -31,6 +31,8 @@ const sessionData = reactive({
   description: "",
   type: "" as EnumTypeTextStudy | "",
   dateLimit: "",
+  // Décoché par défaut : les invités peuvent réserver avec leur nom seul.
+  guestEmailRequired: false,
 });
 
 const availableBooks = ref<string[]>([]);
@@ -124,6 +126,7 @@ const createSession = async () => {
       currentUser.value!.id,
       currentUser.value!.name,
       selectedBooks.value.length > 0 ? selectedBooks.value : undefined,
+      sessionData.guestEmailRequired,
     );
 
     // Le toast est monté au niveau de l'app : il survit à la redirection et
@@ -278,6 +281,24 @@ const goBack = () => {
             required
             class="field cursor-pointer dark:[color-scheme:dark]"
           />
+        </div>
+
+        <div>
+          <label class="inline-flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              v-model="sessionData.guestEmailRequired"
+              class="w-5 h-5 mt-0.5 rounded accent-primary cursor-pointer shrink-0"
+            />
+            <span>
+              <span class="block text-sm font-semibold text-text-primary">
+                {{ t("newSession.requireGuestEmail") }}
+              </span>
+              <span class="block text-xs text-text-secondary mt-0.5">
+                {{ t("newSession.requireGuestEmailHint") }}
+              </span>
+            </span>
+          </label>
         </div>
 
         <div class="flex flex-col-reverse sm:flex-row gap-4 pt-4">

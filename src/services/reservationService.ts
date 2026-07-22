@@ -2,6 +2,7 @@ import type { Session, TextStudy, TextStudyReservation, ReservationRecord } from
 import { db } from "../../firebase";
 import { doc, runTransaction, collection, getDocs } from "firebase/firestore";
 import { firestoreService } from "./firestoreService";
+import { guestService } from "./guestService";
 
 export interface ReservationForm {
   name: string;
@@ -175,24 +176,33 @@ export class ReservationService {
     firestoreService.invalidateSessionsCache();
   }
 
+  /**
+   * L'identité invité du navigateur courant : l'email saisi dans le
+   * formulaire (identifiant historique) et l'UUID local. L'un ou l'autre
+   * peut correspondre au `chosenByGuestId` d'une réservation.
+   */
+  getGuestIdentifiers(guestEmail?: string): string[] {
+    const ids: string[] = [];
+    if (guestEmail?.trim()) ids.push(guestEmail.trim());
+    const localId = guestService.getLocalGuestId();
+    if (localId) ids.push(localId);
+    return ids;
+  }
+
   canUserDeleteReservation(
     reservation: TextStudyReservation,
     currentUser: { id: string; email: string } | null,
     guestEmail?: string,
   ): boolean {
-    if (!currentUser && !guestEmail) {
+    if (currentUser) {
+      return reservation.chosenById === currentUser.id;
+    }
+
+    if (!reservation.chosenByGuestId) {
       return false;
     }
 
-    if (currentUser && reservation.chosenById === currentUser.id) {
-      return true;
-    }
-
-    if (guestEmail && reservation.chosenByGuestId === guestEmail) {
-      return true;
-    }
-
-    return false;
+    return this.getGuestIdentifiers(guestEmail).includes(reservation.chosenByGuestId);
   }
 
   isTextOrSectionReserved(
@@ -265,12 +275,31 @@ export class ReservationService {
     return { status: "available", reservedBy: null };
   }
 
+  /**
+   * Identifiant d'une réservation invité : l'email s'il est fourni
+   * (récupérable depuis n'importe quel appareil), sinon l'UUID local du
+   * navigateur (créé à la volée).
+   */
+  resolveGuestId(reservationForm: ReservationForm): string {
+    return reservationForm.email.trim() || guestService.getOrCreateLocalGuestId();
+  }
+
+  /** Valide le formulaire invité selon l'exigence d'email de la session. */
+  private assertGuestFormValid(reservationForm: ReservationForm, guestEmailRequired: boolean) {
+    if (!reservationForm.name || (guestEmailRequired && !reservationForm.email.trim())) {
+      throw new Error(
+        guestEmailRequired ? "Veuillez remplir votre nom et email" : "Veuillez remplir votre nom",
+      );
+    }
+  }
+
   async createReservationForUser(
     sessionId: string,
     textStudyId: string,
     section: number | undefined,
     currentUser: { id: string; name: string; email: string } | null,
     reservationForm: ReservationForm,
+    guestEmailRequired: boolean = false,
   ): Promise<string> {
     if (currentUser) {
       return this.createReservation(
@@ -283,16 +312,14 @@ export class ReservationService {
         undefined,
       );
     } else {
-      if (!reservationForm.name || !reservationForm.email) {
-        throw new Error("Veuillez remplir votre nom et email");
-      }
+      this.assertGuestFormValid(reservationForm, guestEmailRequired);
 
       return this.createReservation(
         sessionId,
         textStudyId,
         section,
         undefined,
-        reservationForm.email,
+        this.resolveGuestId(reservationForm),
         undefined,
         reservationForm.name,
       );
@@ -315,7 +342,7 @@ export class ReservationService {
       isCompleted: false,
       createdAt: new Date(),
       ...(currentUser?.id && { chosenById: currentUser.id }),
-      ...(!currentUser && reservationForm.email && { chosenByGuestId: reservationForm.email }),
+      ...(!currentUser && { chosenByGuestId: this.resolveGuestId(reservationForm) }),
     };
   }
 
@@ -352,8 +379,15 @@ export class ReservationService {
     userEmail: string,
     userId: string,
     userName: string,
+    localGuestId?: string | null,
   ): Promise<number> {
     let migratedCount = 0;
+
+    // Réservations faites avec l'email OU avec l'identité locale du
+    // navigateur (invités sans email) : les deux sont rattachées au compte.
+    const guestIds = new Set([userEmail, ...(localGuestId ? [localGuestId] : [])]);
+    const isOwnGuestReservation = (r: ReservationRecord) =>
+      r.chosenByGuestId !== undefined && guestIds.has(r.chosenByGuestId);
 
     const sessionsSnapshot = await getDocs(collection(db, "sessions"));
 
@@ -361,7 +395,7 @@ export class ReservationService {
       const data = sessionDoc.data() as { reservations?: ReservationRecord[] };
       const reservations = Array.isArray(data.reservations) ? data.reservations : [];
 
-      const hasGuestReservations = reservations.some((r) => r.chosenByGuestId === userEmail);
+      const hasGuestReservations = reservations.some(isOwnGuestReservation);
 
       if (!hasGuestReservations) continue;
 
@@ -380,7 +414,7 @@ export class ReservationService {
 
           let count = 0;
           const updatedReservations = freshReservations.map((r) => {
-            if (r.chosenByGuestId === userEmail) {
+            if (isOwnGuestReservation(r)) {
               count++;
               const updated: ReservationRecord = {
                 id: r.id,

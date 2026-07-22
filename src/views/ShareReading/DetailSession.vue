@@ -141,6 +141,10 @@ const confirmButtonLabel = computed(() => {
     : t("detailSession.confirmReservation");
 });
 
+// Absent sur les sessions créées avant l'introduction du réglage : l'email
+// des invités y est optionnel.
+const guestEmailRequired = computed(() => session.value?.guestEmailRequired === true);
+
 const loadSessionData = async () => {
   try {
     isLoading.value = true;
@@ -193,6 +197,28 @@ const isReserved = (textStudyId: string, section?: number) => {
   return sessionService.isTextOrSectionReserved(textStudyId, section, session.value);
 };
 
+// Sélectionne d'un coup toutes les sections encore disponibles d'un texte
+// (ou les désélectionne si elles le sont déjà toutes). Les sections réservées
+// ne sont jamais touchées.
+const handleToggleSelectAll = (textStudyId: string) => {
+  const text = textStudies.value.find((t) => t.id === textStudyId);
+  if (!text) return;
+
+  const availableKeys = sessionService
+    .generateChapters(text.totalSections)
+    .filter((chapter) => !isReserved(textStudyId, chapter).isReserved)
+    .map((chapter) => `${textStudyId}#${chapter}`);
+
+  const allSelected =
+    availableKeys.length > 0 && availableKeys.every((key) => selectedItems.value.has(key));
+
+  if (allSelected) {
+    availableKeys.forEach((key) => selectedItems.value.delete(key));
+  } else {
+    availableKeys.forEach((key) => selectedItems.value.add(key));
+  }
+};
+
 const handleItemClick = (textStudyId: string, section?: number) => {
   const key = section ? `${textStudyId}#${section}` : `${textStudyId}#full`;
 
@@ -217,8 +243,13 @@ const handleItemClick = (textStudyId: string, section?: number) => {
 const confirmReservations = async () => {
   if (!session.value || selectedItems.value.size === 0) return;
 
-  if (!currentUser.value && (!reservationForm.value.name || !reservationForm.value.email)) {
-    toast.info(t("detailSession.fillNameAndEmail"));
+  if (
+    !currentUser.value &&
+    (!reservationForm.value.name || (guestEmailRequired.value && !reservationForm.value.email))
+  ) {
+    toast.info(
+      guestEmailRequired.value ? t("detailSession.fillNameAndEmail") : t("detailSession.fillName"),
+    );
     const formElement = document.getElementById("guest-form");
     if (formElement) {
       const offset = 120;
@@ -257,6 +288,7 @@ const confirmReservations = async () => {
       unreservedItems,
       currentUser.value,
       reservationForm.value,
+      guestEmailRequired.value,
     );
 
     const newReservations = sessionService.createLocalReservations(
@@ -407,7 +439,7 @@ watch(session, (s) => applySessionSeo(s));
 </script>
 
 <template>
-  <main class="mx-auto px-6 py-8 flex-1 w-full">
+  <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full">
     <!-- État de chargement -->
     <div v-if="isLoading" class="flex flex-col items-center justify-center text-text-secondary">
       <div
@@ -445,11 +477,18 @@ watch(session, (s) => applySessionSeo(s));
       <SessionInstructions />
 
       <!-- Formulaire de réservation pour invités (composant unifié) -->
-      <div id="guest-form" v-if="!currentUser" class="card p-6 mb-8">
-        <h3 class="font-bold text-lg text-text-primary mb-4">
+      <div id="guest-form" v-if="!currentUser" class="card p-5 mb-8">
+        <h3 class="font-bold text-lg text-text-primary">
           {{ t("detailSession.guestTitle") }}
         </h3>
-        <GuestForm v-model:reservationForm="reservationForm" />
+        <p class="text-sm text-text-secondary mt-0.5 mb-4">
+          {{
+            guestEmailRequired
+              ? t("detailSession.guestSubtitleWithEmail")
+              : t("detailSession.guestSubtitle")
+          }}
+        </p>
+        <GuestForm v-model:reservationForm="reservationForm" :email-required="guestEmailRequired" />
       </div>
 
       <!-- Barre de recherche -->
@@ -509,6 +548,7 @@ watch(session, (s) => applySessionSeo(s));
         :is-reserving="isReserving"
         @item-click="handleItemClick"
         @toggle-completion="toggleReservationCompletion"
+        @toggle-select-all="handleToggleSelectAll"
       />
 
       <!-- CTA : inviter le visiteur à créer sa propre session -->
