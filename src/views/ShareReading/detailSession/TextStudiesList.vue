@@ -2,6 +2,7 @@
 import { sessionService } from "../../../services/sessionService";
 import { appendHebrewNumeral, formatNumberWithHebrew } from "../../../services/hebrewNumerals";
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import type { Session, TextStudy, TextStudyReservation } from "../../../models/models";
 import type { User } from "../../../services/authService";
 import AppIcon from "../../../components/icons/AppIcon.vue";
@@ -36,10 +37,18 @@ const isTextExpanded = (textId: string) => {
   return expandedTexts.value.has(textId);
 };
 
+const { t } = useI18n();
+
 const formatBookName = (bookName: string) => {
-  if (bookName === "Mes réservations") return bookName;
+  // Le groupe « Mes réservations » est une clé virtuelle injectée par la page
+  // parente, pas un nom de livre : ne pas le passer au formateur.
+  if (bookName === t("detailSession.myReservations")) return bookName;
   return sessionService.formatBookName(bookName);
 };
+
+// Nom affiché sur les badges « Réservé par / Lu par ».
+const reservedByName = (name: string | null | undefined) =>
+  name || t("detailSession.textList.someone");
 
 const generateChapters = (totalSections: number) => {
   return sessionService.generateChapters(totalSections);
@@ -177,7 +186,11 @@ const handleCardClick = (text: TextStudy) => {
                     "
                   />
                   <span class="text-sm font-medium text-text-secondary">
-                    {{ isSelected(text.id, 1) ? "Sélectionné" : "Réserver" }}
+                    {{
+                      isSelected(text.id, 1)
+                        ? t("detailSession.textList.selected")
+                        : t("detailSession.textList.reserve")
+                    }}
                   </span>
                 </label>
               </div>
@@ -190,11 +203,11 @@ const handleCardClick = (text: TextStudy) => {
                     query: { session: session.slug ?? session.id },
                   }"
                   class="btn btn-soft !px-3.5 !py-2 text-sm hover:!text-primary"
-                  title="Lire ce texte"
+                  :title="t('detailSession.textList.readThisText')"
                   @click.stop
                 >
                   <AppIcon name="book-open" :size="15" />
-                  Lire
+                  {{ t("detailSession.textList.read") }}
                 </router-link>
                 <button
                   v-if="text.totalSections > 1"
@@ -234,8 +247,12 @@ const handleCardClick = (text: TextStudy) => {
                 />
                 {{
                   getReservation(text.id, 1)?.isCompleted
-                    ? `Lu par ${isReserved(text.id, 1).reservedBy || "quelqu'un"}`
-                    : `Réservé par ${isReserved(text.id, 1).reservedBy || "quelqu'un"}`
+                    ? t("detailSession.textList.readBy", {
+                        name: reservedByName(isReserved(text.id, 1).reservedBy),
+                      })
+                    : t("detailSession.textList.reservedBy", {
+                        name: reservedByName(isReserved(text.id, 1).reservedBy),
+                      })
                 }}
               </span>
 
@@ -255,7 +272,9 @@ const handleCardClick = (text: TextStudy) => {
                     class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform peer-checked:translate-x-4"
                   ></span>
                 </label>
-                <span class="text-xs font-medium text-text-secondary">Terminé</span>
+                <span class="text-xs font-medium text-text-secondary">{{
+                  t("detailSession.textList.completed")
+                }}</span>
               </div>
             </div>
             <!-- Pour les textes à plusieurs chapitres -->
@@ -270,21 +289,28 @@ const handleCardClick = (text: TextStudy) => {
                 "
               >
                 <AppIcon v-if="isTextFullyRead(text)" name="circle-check" :size="12" />
-                {{ isTextFullyRead(text) ? "Lu par" : "Réservé par" }}
-                {{ getTextDisplayStatus(text.id, text).reservedBy || "quelqu'un" }}
+                {{
+                  isTextFullyRead(text)
+                    ? t("detailSession.textList.readBy", {
+                        name: reservedByName(getTextDisplayStatus(text.id, text).reservedBy),
+                      })
+                    : t("detailSession.textList.reservedBy", {
+                        name: reservedByName(getTextDisplayStatus(text.id, text).reservedBy),
+                      })
+                }}
               </span>
               <span
                 v-else-if="getTextDisplayStatus(text.id, text).status === 'partially_reserved'"
                 class="chip bg-amber-500/10 text-amber-700 dark:text-amber-200"
               >
-                Partiellement réservé
+                {{ t("detailSession.textList.partiallyReserved") }}
               </span>
               <span v-else class="chip bg-green-600/10 text-green-700 dark:text-green-300">
-                Disponible
+                {{ t("detailSession.textList.available") }}
               </span>
             </div>
             <span v-else class="chip bg-green-600/10 text-green-700 dark:text-green-300">
-              Disponible
+              {{ t("detailSession.textList.available") }}
             </span>
           </div>
 
@@ -295,14 +321,18 @@ const handleCardClick = (text: TextStudy) => {
           >
             <div class="px-5 pb-1 flex items-center justify-between gap-3">
               <h5 class="text-xs font-semibold text-text-secondary">
-                Sections disponibles ({{ text.totalSections }})
+                {{ t("detailSession.textList.availableSections", { count: text.totalSections }) }}
               </h5>
               <button
                 v-if="availableChapters(text).length > 1"
                 @click.stop="emit('toggle-select-all', text.id)"
                 class="text-xs font-semibold text-primary hover:underline"
               >
-                {{ areAllAvailableSelected(text) ? "Tout désélectionner" : "Tout sélectionner" }}
+                {{
+                  areAllAvailableSelected(text)
+                    ? t("detailSession.textList.deselectAll")
+                    : t("detailSession.textList.selectAll")
+                }}
               </button>
             </div>
 
@@ -346,7 +376,7 @@ const handleCardClick = (text: TextStudy) => {
                     "
                   />
                   <span class="font-medium text-sm text-text-primary"
-                    >Chapitre {{ formatNumberWithHebrew(chapter) }}</span
+                    >{{ t("common.chapter") }} {{ formatNumberWithHebrew(chapter) }}</span
                   >
                 </div>
 
@@ -362,7 +392,7 @@ const handleCardClick = (text: TextStudy) => {
                     >
                       <span
                         class="text-xs text-text-secondary group-hover:text-text-primary transition-colors"
-                        >Lu</span
+                        >{{ t("detailSession.textList.readToggle") }}</span
                       >
                       <div class="relative">
                         <input
@@ -393,7 +423,10 @@ const handleCardClick = (text: TextStudy) => {
                         :name="getReservation(text.id, chapter)?.isCompleted ? 'check' : 'user'"
                         :size="11"
                       />
-                      {{ isReserved(text.id, chapter).reservedBy || "Réservé" }}
+                      {{
+                        isReserved(text.id, chapter).reservedBy ||
+                        t("detailSession.textList.reserved")
+                      }}
                     </span>
                   </template>
 
@@ -403,12 +436,12 @@ const handleCardClick = (text: TextStudy) => {
                     class="chip bg-primary/10 text-primary"
                   >
                     <AppIcon name="plus" :size="11" />
-                    Sélectionné
+                    {{ t("detailSession.textList.selected") }}
                   </span>
 
                   <!-- Si disponible -->
                   <span v-else class="chip bg-black/5 text-text-secondary dark:bg-white/10">
-                    Disponible
+                    {{ t("detailSession.textList.available") }}
                   </span>
 
                   <!-- Lien lecture interne -->
@@ -419,7 +452,7 @@ const handleCardClick = (text: TextStudy) => {
                       query: { session: session.slug ?? session.id },
                     }"
                     class="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex-shrink-0"
-                    title="Lire ce chapitre"
+                    :title="t('detailSession.textList.readThisChapter')"
                     @click.stop
                   >
                     <AppIcon name="book-reader" :size="16" />
