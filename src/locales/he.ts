@@ -275,6 +275,8 @@ const he: LocaleMessages = {
     fillAllFields: "אנא מלא את כל השדות",
     createdSuccess: "הסשן נוצר בהצלחה!",
     createError: "שגיאה ביצירת הסשן. אנא נסה שוב.",
+    requireGuestEmail: "לדרוש אימייל מהאורחים",
+    requireGuestEmailHint: "כשהאפשרות לא מסומנת, אורחים יכולים להזמין עם שמם בלבד.",
   },
   detailSession: {
     loadingSession: "טוען סשן...",
@@ -288,6 +290,7 @@ const he: LocaleMessages = {
     confirmAsGuest: "סיים כאורח",
     reserving: "מזמין...",
     fillNameAndEmail: "אנא מלא את שמך ואימייל כדי לאשר הזמנות.",
+    fillName: "אנא מלא את שמך כדי לאשר הזמנות.",
     cancelReservationConfirm: "האם ברצונך לבטל הזמנה זו?",
     canOnlyCancelOwn: "אתה יכול לבטל רק את ההזמנות שלך.",
     cancelError: "שגיאה בביטול. אנא נסה שוב.",
@@ -453,6 +456,10 @@ const he: LocaleMessages = {
     tip: "טיפ",
     alreadyHaveAccount: "כבר יש לך חשבון? ההזמנות שלך כאורח ישוחזרו אוטומטית.",
   },
+  guestForm: {
+    optional: "אופציונלי",
+    noEmailHint: "ללא אימייל, ניתן יהיה למצוא את ההזמנות שלך רק מדפדפן זה.",
+  },
   textReading: {
     back: "חזרה",
     backToSession: "חזרה למפגש",
@@ -483,6 +490,7 @@ const he: LocaleMessages = {
     cancelError: "הביטול נכשל.",
     updateError: "העדכון נכשל.",
     guestIntro: "הזן את שמך והאימייל שלך כדי לשמור קטע זה.",
+    guestIntroNameOnly: "הזן את שמך כדי לשמור קטע זה.",
     textSize: "גודל הטקסט",
     textSizeIncrease: "הגדלת הטקסט",
     textSizeDecrease: "הקטנת הטקסט",

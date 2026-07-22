@@ -30,7 +30,8 @@ service cloud.firestore {
     }
 
     // Ajout de réservations (taille +1 à +100) et aucune autre modif.
-    // Autorisé sans authentification : les invités réservent avec nom + email.
+    // Autorisé sans authentification : les invités réservent avec leur nom
+    // (email optionnel selon le réglage de la session).
     // Bornes pour empêcher un gonflement illimité du document.
     function isAppendReservationsOnly() {
       return onlyReservationsChanged() &&

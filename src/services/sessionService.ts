@@ -168,6 +168,7 @@ export class SessionService {
     section: number | undefined,
     currentUser: User | null,
     reservationForm: ReservationForm,
+    guestEmailRequired: boolean = false,
   ): Promise<string> {
     return await reservationService.createReservationForUser(
       sessionId,
@@ -175,6 +176,7 @@ export class SessionService {
       section,
       currentUser,
       reservationForm,
+      guestEmailRequired,
     );
   }
 
@@ -199,6 +201,7 @@ export class SessionService {
     items: Array<{ textStudyId: string; section?: number }>,
     currentUser: User | null,
     reservationForm: ReservationForm,
+    guestEmailRequired: boolean = false,
   ): Promise<string[]> {
     if (currentUser) {
       return await reservationService.createBatchReservations(
@@ -210,14 +213,16 @@ export class SessionService {
         undefined,
       );
     } else {
-      if (!reservationForm.name || !reservationForm.email) {
-        throw new Error("Veuillez remplir votre nom et email");
+      if (!reservationForm.name || (guestEmailRequired && !reservationForm.email.trim())) {
+        throw new Error(
+          guestEmailRequired ? "Veuillez remplir votre nom et email" : "Veuillez remplir votre nom",
+        );
       }
       return await reservationService.createBatchReservations(
         sessionId,
         items,
         undefined,
-        reservationForm.email,
+        reservationService.resolveGuestId(reservationForm),
         undefined,
         reservationForm.name,
       );
@@ -273,6 +278,7 @@ export class SessionService {
     personId: string,
     creatorName: string,
     selectedBooks?: string[],
+    guestEmailRequired: boolean = false,
   ): Promise<string> {
     if (!name || !description || !type || !dateLimit || !personId || !creatorName) {
       throw new Error("Tous les champs sont obligatoires");
@@ -289,6 +295,7 @@ export class SessionService {
       creatorName,
       slug,
       selectedBooks,
+      guestEmailRequired,
     };
 
     return await this.createSession(sessionData);
@@ -438,7 +445,13 @@ export class SessionService {
 
   async updateSession(
     sessionId: string,
-    sessionData: { name: string; description: string; dateLimit: string; slug?: string },
+    sessionData: {
+      name: string;
+      description: string;
+      dateLimit: string;
+      slug?: string;
+      guestEmailRequired?: boolean;
+    },
   ): Promise<void> {
     try {
       // Le slug est l'identifiant public qui compose le lien de partage. On ne
@@ -453,6 +466,9 @@ export class SessionService {
         dateLimit: new Date(sessionData.dateLimit),
         slug,
         updatedAt: new Date(),
+        ...(sessionData.guestEmailRequired !== undefined && {
+          guestEmailRequired: sessionData.guestEmailRequired,
+        }),
       });
     } catch (error) {
       console.error("Erreur lors de la mise à jour de la session:", error);

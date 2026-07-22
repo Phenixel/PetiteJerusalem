@@ -144,6 +144,7 @@ const saveSessionChanges = async (sessionData: {
   name: string;
   description: string;
   dateLimit: string;
+  guestEmailRequired: boolean;
 }) => {
   if (!selectedSession.value) return;
 
@@ -160,6 +161,7 @@ const saveSessionChanges = async (sessionData: {
         name: sessionData.name,
         description: sessionData.description,
         dateLimit: new Date(sessionData.dateLimit),
+        guestEmailRequired: sessionData.guestEmailRequired,
         updatedAt: new Date(),
       };
     }

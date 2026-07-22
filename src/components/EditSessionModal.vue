@@ -15,7 +15,15 @@ interface Props {
 
 interface Emits {
   (e: "update:show", value: boolean): void;
-  (e: "save", sessionData: { name: string; description: string; dateLimit: string }): void;
+  (
+    e: "save",
+    sessionData: {
+      name: string;
+      description: string;
+      dateLimit: string;
+      guestEmailRequired: boolean;
+    },
+  ): void;
 }
 
 const props = defineProps<Props>();
@@ -25,6 +33,7 @@ const editForm = ref({
   name: "",
   description: "",
   dateLimit: "",
+  guestEmailRequired: false,
 });
 
 const isLoading = ref(false);
@@ -50,6 +59,7 @@ const saveSession = async () => {
       name: editForm.value.name.trim(),
       description: editForm.value.description.trim(),
       dateLimit: editForm.value.dateLimit,
+      guestEmailRequired: editForm.value.guestEmailRequired,
     });
     closeModal();
   } catch (error) {
@@ -71,6 +81,7 @@ watch(
           newSession.dateLimit instanceof Date
             ? newSession.dateLimit.toISOString().slice(0, 16)
             : newSession.dateLimit,
+        guestEmailRequired: newSession.guestEmailRequired === true,
       };
     }
   },
@@ -88,6 +99,7 @@ watch(
           props.session.dateLimit instanceof Date
             ? props.session.dateLimit.toISOString().slice(0, 16)
             : props.session.dateLimit,
+        guestEmailRequired: props.session.guestEmailRequired === true,
       };
     }
   },
@@ -137,6 +149,24 @@ watch(
             >{{ t("common.dateLimit") }} *</label
           >
           <input v-model="editForm.dateLimit" class="field" type="datetime-local" required />
+        </div>
+
+        <div>
+          <label class="inline-flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              v-model="editForm.guestEmailRequired"
+              class="w-5 h-5 mt-0.5 rounded accent-primary cursor-pointer shrink-0"
+            />
+            <span>
+              <span class="block text-sm font-semibold text-text-primary">
+                {{ t("newSession.requireGuestEmail") }}
+              </span>
+              <span class="block text-xs text-text-secondary mt-0.5">
+                {{ t("newSession.requireGuestEmailHint") }}
+              </span>
+            </span>
+          </label>
         </div>
 
         <div class="flex gap-3 justify-end pt-2">

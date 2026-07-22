@@ -11,13 +11,18 @@ interface Props {
     name: string;
     email: string;
   };
+  // Défini par le créateur de la session : lorsque false, l'invité peut
+  // réserver avec son nom seul.
+  emailRequired?: boolean;
 }
 
 interface Emits {
   (e: "update:reservationForm", value: { name: string; email: string }): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  emailRequired: false,
+});
 const emit = defineEmits<Emits>();
 
 const updateField = (field: "name" | "email", value: string) => {
@@ -45,9 +50,12 @@ const updateField = (field: "name" | "email", value: string) => {
         />
       </div>
       <div>
-        <label for="guest-email" class="block text-sm font-semibold text-text-primary mb-2">{{
-          t("common.email")
-        }}</label>
+        <label for="guest-email" class="block text-sm font-semibold text-text-primary mb-2">
+          {{ t("common.email") }}
+          <span v-if="!emailRequired" class="font-normal text-text-secondary/70">
+            ({{ t("guestForm.optional") }})
+          </span>
+        </label>
         <input
           type="email"
           id="guest-email"
@@ -56,6 +64,14 @@ const updateField = (field: "name" | "email", value: string) => {
           placeholder="email@example.com"
           class="field"
         />
+        <!-- Sans email, l'identité de l'invité ne vit que dans ce navigateur :
+             prévenir avant la réservation plutôt que décevoir après. -->
+        <p
+          v-if="!emailRequired && !reservationForm.email"
+          class="mt-1.5 text-xs text-text-secondary/80"
+        >
+          {{ t("guestForm.noEmailHint") }}
+        </p>
       </div>
     </div>
 

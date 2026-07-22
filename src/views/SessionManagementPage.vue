@@ -129,9 +129,14 @@ const openGuestForm = (textStudy: TextStudy, section?: number) => {
 };
 
 const createGuestReservation = async () => {
-  if (!guestForm.value.name || !guestForm.value.email || !session.value) {
+  if (!guestForm.value.name || !session.value) {
     return;
   }
+
+  // L'email reste l'identifiant de l'invité quand il est fourni (il pourra
+  // récupérer ses réservations en créant un compte). Sans email, un UUID
+  // jetable sert d'identifiant : seule la page de gestion pourra l'annuler.
+  const guestId = guestForm.value.email.trim() || `guest-${crypto.randomUUID()}`;
 
   try {
     isLoading.value = true;
@@ -158,7 +163,7 @@ const createGuestReservation = async () => {
           session.value.id,
           unreservedItems.map((item) => ({ textStudyId: item.textId, section: item.section })),
           undefined, // userId
-          guestForm.value.email, // guestId (email as ID for guests mostly)
+          guestId, // email si fourni, sinon UUID jetable
           undefined, // userName
           guestForm.value.name, // guestName
         );
@@ -172,7 +177,7 @@ const createGuestReservation = async () => {
         selectedTextStudy.value.id,
         selectedSection.value,
         undefined, // userId
-        guestForm.value.email, // guestId
+        guestId, // email si fourni, sinon UUID jetable
         undefined, // userName
         guestForm.value.name, // guestName
       );
@@ -626,15 +631,17 @@ onMounted(() => {
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-text-secondary mb-2">{{
-              t("sessionManagement.guestEmail")
-            }}</label>
+            <label class="block text-sm font-semibold text-text-secondary mb-2">
+              {{ t("sessionManagement.guestEmail") }}
+              <span class="font-normal text-text-secondary/70">
+                ({{ t("guestForm.optional") }})
+              </span>
+            </label>
             <input
               v-model="guestForm.email"
               type="email"
               class="field"
               placeholder="email@example.com"
-              required
             />
           </div>
 
@@ -645,7 +652,7 @@ onMounted(() => {
             <button
               @click="createGuestReservation"
               class="btn btn-primary flex-1"
-              :disabled="!guestForm.name || !guestForm.email || isLoading"
+              :disabled="!guestForm.name || isLoading"
             >
               <AppIcon v-if="isLoading" name="spinner" :size="15" class="animate-spin" />
               {{ isLoading ? t("sessionManagement.creating") : t("sessionManagement.create") }}

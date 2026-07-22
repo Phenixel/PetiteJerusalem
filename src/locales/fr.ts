@@ -280,6 +280,9 @@ const fr = {
     fillAllFields: "Veuillez remplir tous les champs",
     createdSuccess: "Session créée avec succès !",
     createError: "Erreur lors de la création de la session. Veuillez réessayer.",
+    requireGuestEmail: "Exiger l'email des invités",
+    requireGuestEmailHint:
+      "Décochée, cette option permet aux invités de réserver en indiquant seulement leur nom.",
   },
   detailSession: {
     loadingSession: "Chargement de la session...",
@@ -293,6 +296,7 @@ const fr = {
     confirmAsGuest: "Finaliser en tant qu'invité",
     reserving: "Réservation...",
     fillNameAndEmail: "Veuillez remplir votre nom et email pour confirmer les réservations.",
+    fillName: "Veuillez renseigner votre nom pour confirmer les réservations.",
     cancelReservationConfirm: "Voulez-vous annuler cette réservation ?",
     canOnlyCancelOwn: "Vous ne pouvez annuler que vos propres réservations.",
     cancelError: "Erreur lors de l'annulation. Veuillez réessayer.",
@@ -465,6 +469,11 @@ const fr = {
     alreadyHaveAccount:
       "Vous avez déjà un compte ? Vos réservations invité seront automatiquement récupérées.",
   },
+  guestForm: {
+    optional: "optionnel",
+    noEmailHint:
+      "Sans email, vos réservations ne pourront être retrouvées que depuis ce navigateur.",
+  },
   textReading: {
     back: "Retour",
     backToSession: "Retour à la session",
@@ -495,6 +504,7 @@ const fr = {
     cancelError: "L'annulation a échoué.",
     updateError: "La mise à jour a échoué.",
     guestIntro: "Renseignez votre nom et votre email pour réserver ce passage.",
+    guestIntroNameOnly: "Renseignez votre nom pour réserver ce passage.",
     textSize: "Taille du texte",
     textSizeIncrease: "Agrandir le texte",
     textSizeDecrease: "Réduire le texte",

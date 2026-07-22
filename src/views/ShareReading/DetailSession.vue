@@ -141,6 +141,10 @@ const confirmButtonLabel = computed(() => {
     : t("detailSession.confirmReservation");
 });
 
+// Absent sur les sessions créées avant l'introduction du réglage : l'email
+// des invités y est optionnel.
+const guestEmailRequired = computed(() => session.value?.guestEmailRequired === true);
+
 const loadSessionData = async () => {
   try {
     isLoading.value = true;
@@ -217,8 +221,13 @@ const handleItemClick = (textStudyId: string, section?: number) => {
 const confirmReservations = async () => {
   if (!session.value || selectedItems.value.size === 0) return;
 
-  if (!currentUser.value && (!reservationForm.value.name || !reservationForm.value.email)) {
-    toast.info(t("detailSession.fillNameAndEmail"));
+  if (
+    !currentUser.value &&
+    (!reservationForm.value.name || (guestEmailRequired.value && !reservationForm.value.email))
+  ) {
+    toast.info(
+      guestEmailRequired.value ? t("detailSession.fillNameAndEmail") : t("detailSession.fillName"),
+    );
     const formElement = document.getElementById("guest-form");
     if (formElement) {
       const offset = 120;
@@ -257,6 +266,7 @@ const confirmReservations = async () => {
       unreservedItems,
       currentUser.value,
       reservationForm.value,
+      guestEmailRequired.value,
     );
 
     const newReservations = sessionService.createLocalReservations(
@@ -449,7 +459,7 @@ watch(session, (s) => applySessionSeo(s));
         <h3 class="font-bold text-lg text-text-primary mb-4">
           {{ t("detailSession.guestTitle") }}
         </h3>
-        <GuestForm v-model:reservationForm="reservationForm" />
+        <GuestForm v-model:reservationForm="reservationForm" :email-required="guestEmailRequired" />
       </div>
 
       <!-- Barre de recherche -->

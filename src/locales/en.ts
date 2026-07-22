@@ -278,6 +278,8 @@ const en: LocaleMessages = {
     fillAllFields: "Please fill in all fields",
     createdSuccess: "Session created successfully!",
     createError: "Error creating session. Please try again.",
+    requireGuestEmail: "Require guests' email",
+    requireGuestEmailHint: "When unchecked, guests can reserve by entering their name only.",
   },
   detailSession: {
     loadingSession: "Loading session...",
@@ -291,6 +293,7 @@ const en: LocaleMessages = {
     confirmAsGuest: "Finalize as guest",
     reserving: "Reserving...",
     fillNameAndEmail: "Please fill in your name and email to confirm reservations.",
+    fillName: "Please fill in your name to confirm reservations.",
     cancelReservationConfirm: "Do you want to cancel this reservation?",
     canOnlyCancelOwn: "You can only cancel your own reservations.",
     cancelError: "Error cancelling. Please try again.",
@@ -462,6 +465,10 @@ const en: LocaleMessages = {
     alreadyHaveAccount:
       "Already have an account? Your guest reservations will be recovered automatically.",
   },
+  guestForm: {
+    optional: "optional",
+    noEmailHint: "Without an email, your reservations can only be found from this browser.",
+  },
   textReading: {
     back: "Back",
     backToSession: "Back to session",
@@ -492,6 +499,7 @@ const en: LocaleMessages = {
     cancelError: "The cancellation failed.",
     updateError: "The update failed.",
     guestIntro: "Enter your name and email to reserve this passage.",
+    guestIntroNameOnly: "Enter your name to reserve this passage.",
     textSize: "Text size",
     textSizeIncrease: "Increase text size",
     textSizeDecrease: "Decrease text size",

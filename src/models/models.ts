@@ -40,6 +40,11 @@ export interface Session {
   endedAt?: Date;
   updatedAt?: Date;
   selectedBooks?: string[];
+  /**
+   * Impose l'email aux invités qui réservent. Absent (sessions existantes)
+   * ou false : les invités peuvent réserver avec leur nom seul.
+   */
+  guestEmailRequired?: boolean;
 }
 
 export interface TextStudyReservation {
