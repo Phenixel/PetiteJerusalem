@@ -280,7 +280,9 @@ const he: LocaleMessages = {
   },
   detailSession: {
     loadingSession: "טוען סשן...",
-    guestTitle: "אורח?",
+    guestTitle: "רוצים להזמין בלי חשבון?",
+    guestSubtitle: "אין בעיה: פשוט הזינו את שמכם ובחרו את הטקסטים שלכם.",
+    guestSubtitleWithEmail: "הזינו את שמכם והאימייל שלכם, ואז בחרו את הטקסטים שלכם.",
     searchPlaceholder: "חפש טקסט, ספר או פרק...",
     clearSearch: "נקה חיפוש",
     searchFor: "חיפוש",

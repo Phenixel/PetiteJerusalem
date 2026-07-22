@@ -283,7 +283,9 @@ const en: LocaleMessages = {
   },
   detailSession: {
     loadingSession: "Loading session...",
-    guestTitle: "Guest?",
+    guestTitle: "Want to reserve without an account?",
+    guestSubtitle: "No problem: just enter your name, then pick your texts.",
+    guestSubtitleWithEmail: "Enter your name and email, then pick your texts.",
     searchPlaceholder: "Search for a text, book or chapter...",
     clearSearch: "Clear search",
     searchFor: "Search",

@@ -455,10 +455,17 @@ watch(session, (s) => applySessionSeo(s));
       <SessionInstructions />
 
       <!-- Formulaire de réservation pour invités (composant unifié) -->
-      <div id="guest-form" v-if="!currentUser" class="card p-6 mb-8">
-        <h3 class="font-bold text-lg text-text-primary mb-4">
+      <div id="guest-form" v-if="!currentUser" class="card p-5 mb-8">
+        <h3 class="font-bold text-lg text-text-primary">
           {{ t("detailSession.guestTitle") }}
         </h3>
+        <p class="text-sm text-text-secondary mt-0.5 mb-4">
+          {{
+            guestEmailRequired
+              ? t("detailSession.guestSubtitleWithEmail")
+              : t("detailSession.guestSubtitle")
+          }}
+        </p>
         <GuestForm v-model:reservationForm="reservationForm" :email-required="guestEmailRequired" />
       </div>
 

@@ -286,7 +286,10 @@ const fr = {
   },
   detailSession: {
     loadingSession: "Chargement de la session...",
-    guestTitle: "Invité ?",
+    guestTitle: "Vous voulez réserver sans compte ?",
+    guestSubtitle: "C'est possible : renseignez simplement votre nom, puis choisissez vos textes.",
+    guestSubtitleWithEmail:
+      "Renseignez votre nom et votre email, puis choisissez vos textes.",
     searchPlaceholder: "Rechercher un texte, un livre ou un chapitre...",
     clearSearch: "Effacer la recherche",
     searchFor: "Recherche",

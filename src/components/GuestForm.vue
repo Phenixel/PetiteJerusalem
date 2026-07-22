@@ -89,21 +89,18 @@ const updateField = (field: "name" | "email", value: string) => {
       </p>
     </div>
 
-    <!-- Hint pour inciter à la création de compte -->
-    <div class="mt-4 flex items-start gap-2.5 px-4 py-3 rounded-lg bg-primary/5 dark:bg-primary/10">
-      <AppIcon name="lightbulb" :size="14" class="text-primary mt-0.5 shrink-0" />
-      <p class="text-sm text-text-secondary">
-        <span class="font-semibold text-primary">{{ t("signupPrompt.tip") }}</span>
-        {{ " " }}
-        {{ t("signupPrompt.guestHint") }}
-        {{ " " }}
-        <router-link
-          :to="{ path: '/login', query: { redirect: route.fullPath, mode: 'signup' } }"
-          class="font-semibold text-primary hover:underline"
-        >
-          {{ t("signupPrompt.guestHintLink") }} <AppIcon name="chevron-right" :size="12" />
-        </router-link>
-      </p>
-    </div>
+    <!-- Incitation discrète à la création de compte : une simple ligne,
+         le formulaire invité doit rester le plus léger possible. -->
+    <p class="mt-3 text-xs text-text-secondary/80">
+      <AppIcon name="lightbulb" :size="11" class="text-primary" />
+      {{ t("signupPrompt.guestHint") }}
+      {{ " " }}
+      <router-link
+        :to="{ path: '/login', query: { redirect: route.fullPath, mode: 'signup' } }"
+        class="font-semibold text-primary hover:underline"
+      >
+        {{ t("signupPrompt.guestHintLink") }} <AppIcon name="chevron-right" :size="10" />
+      </router-link>
+    </p>
   </div>
 </template>
