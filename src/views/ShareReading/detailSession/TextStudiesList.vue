@@ -19,6 +19,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "item-click", textId: string, section?: number): void;
   (e: "toggle-completion", textId: string, section: number): void;
+  (e: "toggle-select-all", textId: string): void;
 }>();
 
 const expandedTexts = ref<Set<string>>(new Set());
@@ -62,6 +63,18 @@ const canCancelReservation = (textStudyId: string, section?: number) => {
   if (!reservation) return false;
 
   return sessionService.canUserDeleteReservation(reservation, props.currentUser, props.guestEmail);
+};
+
+// Sections non réservées d'un texte : cibles du bouton « Tout sélectionner ».
+const availableChapters = (text: TextStudy) => {
+  return generateChapters(text.totalSections).filter(
+    (chapter) => !isReserved(text.id, chapter).isReserved,
+  );
+};
+
+const areAllAvailableSelected = (text: TextStudy) => {
+  const chapters = availableChapters(text);
+  return chapters.length > 0 && chapters.every((chapter) => isSelected(text.id, chapter));
 };
 
 const getTextDisplayStatus = (textStudyId: string, text: TextStudy) => {
@@ -280,9 +293,18 @@ const handleCardClick = (text: TextStudy) => {
             v-if="text.totalSections > 1 && isTextExpanded(text.id)"
             class="animate-[fadeIn_0.3s_ease]"
           >
-            <h5 class="px-5 pb-1 text-xs font-semibold text-text-secondary">
-              Sections disponibles ({{ text.totalSections }})
-            </h5>
+            <div class="px-5 pb-1 flex items-center justify-between gap-3">
+              <h5 class="text-xs font-semibold text-text-secondary">
+                Sections disponibles ({{ text.totalSections }})
+              </h5>
+              <button
+                v-if="availableChapters(text).length > 1"
+                @click.stop="emit('toggle-select-all', text.id)"
+                class="text-xs font-semibold text-primary hover:underline"
+              >
+                {{ areAllAvailableSelected(text) ? "Tout désélectionner" : "Tout sélectionner" }}
+              </button>
+            </div>
 
             <div class="max-h-[300px] overflow-y-auto custom-scrollbar p-2">
               <div

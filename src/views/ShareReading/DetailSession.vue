@@ -197,6 +197,28 @@ const isReserved = (textStudyId: string, section?: number) => {
   return sessionService.isTextOrSectionReserved(textStudyId, section, session.value);
 };
 
+// Sélectionne d'un coup toutes les sections encore disponibles d'un texte
+// (ou les désélectionne si elles le sont déjà toutes). Les sections réservées
+// ne sont jamais touchées.
+const handleToggleSelectAll = (textStudyId: string) => {
+  const text = textStudies.value.find((t) => t.id === textStudyId);
+  if (!text) return;
+
+  const availableKeys = sessionService
+    .generateChapters(text.totalSections)
+    .filter((chapter) => !isReserved(textStudyId, chapter).isReserved)
+    .map((chapter) => `${textStudyId}#${chapter}`);
+
+  const allSelected =
+    availableKeys.length > 0 && availableKeys.every((key) => selectedItems.value.has(key));
+
+  if (allSelected) {
+    availableKeys.forEach((key) => selectedItems.value.delete(key));
+  } else {
+    availableKeys.forEach((key) => selectedItems.value.add(key));
+  }
+};
+
 const handleItemClick = (textStudyId: string, section?: number) => {
   const key = section ? `${textStudyId}#${section}` : `${textStudyId}#full`;
 
@@ -417,7 +439,7 @@ watch(session, (s) => applySessionSeo(s));
 </script>
 
 <template>
-  <main class="mx-auto px-6 py-8 flex-1 w-full">
+  <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full">
     <!-- État de chargement -->
     <div v-if="isLoading" class="flex flex-col items-center justify-center text-text-secondary">
       <div
@@ -526,6 +548,7 @@ watch(session, (s) => applySessionSeo(s));
         :is-reserving="isReserving"
         @item-click="handleItemClick"
         @toggle-completion="toggleReservationCompletion"
+        @toggle-select-all="handleToggleSelectAll"
       />
 
       <!-- CTA : inviter le visiteur à créer sa propre session -->
