@@ -458,6 +458,7 @@ const he: LocaleMessages = {
   },
   guestForm: {
     optional: "אופציונלי",
+    addEmail: "הוסף את האימייל שלי",
     noEmailHint: "ללא אימייל, ניתן יהיה למצוא את ההזמנות שלך רק מדפדפן זה.",
   },
   textReading: {

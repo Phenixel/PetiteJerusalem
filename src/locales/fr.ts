@@ -471,6 +471,7 @@ const fr = {
   },
   guestForm: {
     optional: "optionnel",
+    addEmail: "Ajouter mon email",
     noEmailHint:
       "Sans email, vos réservations ne pourront être retrouvées que depuis ce navigateur.",
   },

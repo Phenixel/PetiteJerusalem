@@ -467,6 +467,7 @@ const en: LocaleMessages = {
   },
   guestForm: {
     optional: "optional",
+    addEmail: "Add my email",
     noEmailHint: "Without an email, your reservations can only be found from this browser.",
   },
   textReading: {

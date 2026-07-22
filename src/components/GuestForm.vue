@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
@@ -25,6 +26,12 @@ const props = withDefaults(defineProps<Props>(), {
 });
 const emit = defineEmits<Emits>();
 
+// Email optionnel : le champ est masqué pour ne pas freiner la réservation,
+// un bouton discret permet de l'ajouter (recommandé pour retrouver ses
+// réservations ailleurs que sur ce navigateur).
+const emailFieldRevealed = ref(false);
+const showEmailField = computed(() => props.emailRequired || emailFieldRevealed.value);
+
 const updateField = (field: "name" | "email", value: string) => {
   emit("update:reservationForm", {
     ...props.reservationForm,
@@ -35,7 +42,7 @@ const updateField = (field: "name" | "email", value: string) => {
 
 <template>
   <div class="w-full">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 gap-4" :class="{ 'md:grid-cols-2': showEmailField }">
       <div>
         <label for="guest-name" class="block text-sm font-semibold text-text-primary mb-2">{{
           t("common.name")
@@ -49,7 +56,7 @@ const updateField = (field: "name" | "email", value: string) => {
           class="field"
         />
       </div>
-      <div>
+      <div v-if="showEmailField">
         <label for="guest-email" class="block text-sm font-semibold text-text-primary mb-2">
           {{ t("common.email") }}
           <span v-if="!emailRequired" class="font-normal text-text-secondary/70">
@@ -64,15 +71,22 @@ const updateField = (field: "name" | "email", value: string) => {
           placeholder="email@example.com"
           class="field"
         />
-        <!-- Sans email, l'identité de l'invité ne vit que dans ce navigateur :
-             prévenir avant la réservation plutôt que décevoir après. -->
-        <p
-          v-if="!emailRequired && !reservationForm.email"
-          class="mt-1.5 text-xs text-text-secondary/80"
-        >
-          {{ t("guestForm.noEmailHint") }}
-        </p>
       </div>
+    </div>
+
+    <!-- Email optionnel masqué : expliquer la limite et inciter à l'ajouter. -->
+    <div v-if="!showEmailField" class="mt-3">
+      <button
+        type="button"
+        @click="emailFieldRevealed = true"
+        class="text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1.5"
+      >
+        <AppIcon name="plus" :size="12" />
+        {{ t("guestForm.addEmail") }}
+      </button>
+      <p class="mt-1 text-xs text-text-secondary/80">
+        {{ t("guestForm.noEmailHint") }}
+      </p>
     </div>
 
     <!-- Hint pour inciter à la création de compte -->
