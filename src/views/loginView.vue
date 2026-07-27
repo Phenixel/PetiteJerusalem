@@ -7,6 +7,7 @@ import { authService } from "../services/authService";
 import { reservationService } from "../services/reservationService";
 import { guestService } from "../services/guestService";
 import { seoService } from "../services/seoService";
+import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
 
 const router = useRouter();
@@ -68,6 +69,8 @@ async function submitForm() {
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/";
     router.push(redirectPath);
   } catch (e: unknown) {
+    // Pas de captureException ici : les échecs email sont presque toujours des
+    // erreurs utilisateur (mauvais mot de passe), pas des bugs.
     const msg = e instanceof Error ? e.message : t("login.loginError");
     errorMessage.value = msg;
   } finally {
@@ -90,6 +93,7 @@ async function loginWithGoogle() {
     router.push(redirectPath);
   } catch (e: unknown) {
     console.error("Connexion Google échouée:", e);
+    analyticsService.captureException(e, { auth_flow: "google" });
     errorMessage.value = t("login.googleError");
     errorDetail.value = e instanceof Error ? e.message : String(e);
   }
@@ -114,6 +118,7 @@ async function loginWithApple() {
     router.push(redirectPath);
   } catch (e: unknown) {
     console.error("Connexion Apple échouée:", e);
+    analyticsService.captureException(e, { auth_flow: "apple" });
     errorMessage.value = t("login.appleError");
     errorDetail.value = e instanceof Error ? e.message : String(e);
   }

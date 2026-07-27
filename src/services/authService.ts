@@ -23,6 +23,7 @@ import { app, googleAuthProvider } from "../../firebase";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import type { User } from "../models/models";
 import { userPreferencesService } from "./userPreferencesService";
+import { analyticsService } from "./analyticsService";
 
 export type { User };
 
@@ -98,6 +99,7 @@ export class AuthService {
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
+    analyticsService.capture("signed_up", { method: "email" });
     return {
       id: cred.user.uid,
       name: displayName || cred.user.displayName || cred.user.email || "Utilisateur",
@@ -108,6 +110,7 @@ export class AuthService {
   async signInWithEmail(email: string, password: string): Promise<User> {
     const auth = getAuth(app);
     const cred = await signInWithEmailAndPassword(auth, email, password);
+    analyticsService.capture("signed_in", { method: "email" });
     return {
       id: cred.user.uid,
       name: cred.user.displayName || cred.user.email || "Utilisateur",
@@ -131,6 +134,7 @@ export class AuthService {
     }
     const auth = getAuth(app);
     const result = await signInWithPopup(auth, googleAuthProvider);
+    analyticsService.capture("signed_in", { method: "google" });
     return toUser(result.user);
   }
 
@@ -146,6 +150,7 @@ export class AuthService {
     }
     const credential = GoogleAuthProvider.credential(idToken, result.credential?.accessToken);
     const cred = await signInWithCredential(getAuth(app), credential);
+    analyticsService.capture("signed_in", { method: "google" });
     return toUser(cred.user);
   }
 
@@ -165,6 +170,9 @@ export class AuthService {
         throw error;
       }
       console.warn("Credential Manager indisponible, repli sur le sélecteur classique:", error);
+      // Suivi du bug « bouton Google inerte » : mesure combien d'appareils
+      // passent par le repli, et avec quelle erreur d'origine.
+      analyticsService.capture("google_signin_fallback_used", { credential_manager_error: message });
       return FirebaseAuthentication.signInWithGoogle({ useCredentialManager: false });
     }
   }
@@ -189,12 +197,14 @@ export class AuthService {
         rawNonce: result.credential?.nonce ?? undefined,
       });
       const cred = await signInWithCredential(auth, credential);
+      analyticsService.capture("signed_in", { method: "apple" });
       return toUser(cred.user);
     }
 
     provider.addScope("email");
     provider.addScope("name");
     const result = await signInWithPopup(auth, provider);
+    analyticsService.capture("signed_in", { method: "apple" });
     return toUser(result.user);
   }
 
@@ -310,6 +320,8 @@ export class AuthService {
     }
     const auth = getAuth(app);
     await signOut(auth);
+    // Déconnexion explicite : les événements suivants repartent anonymes.
+    analyticsService.reset();
   }
 }
 

@@ -40,6 +40,10 @@ app.use(i18n);
 
 app.mount("#app");
 
+// Suivi produit + traque d'erreurs (PostHog, prod uniquement). Import
+// dynamique et best-effort : jamais bloquant pour le démarrage.
+import("./services/analyticsService").then(({ analyticsService }) => analyticsService.init());
+
 // App native uniquement — imports dynamiques pour ne rien ajouter au bundle
 // initial du site web.
 import("./composables/useNativeApp").then(({ isNativeApp }) => {
