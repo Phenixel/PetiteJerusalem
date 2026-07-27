@@ -20,7 +20,7 @@ import {
 } from "firebase/auth";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { app, googleAuthProvider } from "../../firebase";
-import { isNativeApp } from "../composables/useNativeApp";
+import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import type { User } from "../models/models";
 import { userPreferencesService } from "./userPreferencesService";
 
@@ -139,7 +139,7 @@ export class AuthService {
   // Firebase se fait ensuite dans le SDK JS de la webview, pour que
   // onAuthStateChanged & co continuent de fonctionner comme sur le web.
   private async signInWithGoogleNative(): Promise<User> {
-    const result = await FirebaseAuthentication.signInWithGoogle();
+    const result = await this.getGoogleCredentialNative();
     const idToken = result.credential?.idToken;
     if (!idToken) {
       throw new Error("Connexion Google annulée ou incomplète");
@@ -147,6 +147,26 @@ export class AuthService {
     const credential = GoogleAuthProvider.credential(idToken, result.credential?.accessToken);
     const cred = await signInWithCredential(getAuth(app), credential);
     return toUser(cred.user);
+  }
+
+  // Sur Android, le plugin passe par le Credential Manager, qui est cassé sur
+  // certains appareils (Play Services obsolète, gestionnaire de mots de passe
+  // tiers type Samsung Pass...) : l'appel échoue sans qu'aucune UI n'apparaisse.
+  // Dans ce cas, on retente avec le sélecteur de compte Google classique
+  // (useCredentialManager: false). On ne retente pas si l'utilisateur a
+  // simplement annulé le sélecteur.
+  private async getGoogleCredentialNative() {
+    try {
+      return await FirebaseAuthentication.signInWithGoogle();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const isUserCancellation = /cancel/i.test(message);
+      if (appPlatform !== "android" || isUserCancellation) {
+        throw error;
+      }
+      console.warn("Credential Manager indisponible, repli sur le sélecteur classique:", error);
+      return FirebaseAuthentication.signInWithGoogle({ useCredentialManager: false });
+    }
   }
 
   // Connexion Apple. Requise par Apple (règle 4.8) sur l'app iOS dès lors que
