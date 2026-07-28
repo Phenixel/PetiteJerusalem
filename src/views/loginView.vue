@@ -81,6 +81,10 @@ async function submitForm() {
 async function loginWithGoogle() {
   errorMessage.value = null;
   errorDetail.value = null;
+  // Funnel de connexion Google (suivi du bug « bouton inerte ») :
+  // google_signin_clicked → signed_in {method: google}, avec en route
+  // google_signin_fallback_used et/ou google_signin_failed.
+  analyticsService.capture("google_signin_clicked");
   try {
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
 
@@ -94,6 +98,9 @@ async function loginWithGoogle() {
   } catch (e: unknown) {
     console.error("Connexion Google échouée:", e);
     analyticsService.captureException(e, { auth_flow: "google" });
+    analyticsService.capture("google_signin_failed", {
+      error_message: e instanceof Error ? e.message : String(e),
+    });
     errorMessage.value = t("login.googleError");
     errorDetail.value = e instanceof Error ? e.message : String(e);
   }

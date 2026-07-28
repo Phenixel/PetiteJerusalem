@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
+import { analyticsService } from "../services/analyticsService";
 
 const { t } = useI18n();
 
@@ -19,6 +20,9 @@ const tabs = [
 // reparte même en retouchant l'onglet déjà actif.
 const poppedTab = ref<string | null>(null);
 function popIcon(to: string) {
+  if (to === "/profile") {
+    analyticsService.capture("profile_opened", { source: "bottom_bar" });
+  }
   poppedTab.value = null;
   requestAnimationFrame(() => {
     poppedTab.value = to;

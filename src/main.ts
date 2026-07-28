@@ -38,6 +38,15 @@ app.directive("click-outside", {
 app.use(router);
 app.use(i18n);
 
+// Les erreurs de rendu/handlers Vue ne remontent pas jusqu'à window.onerror :
+// sans ce handler, elles seraient invisibles dans l'Error tracking PostHog.
+app.config.errorHandler = (err, _instance, info) => {
+  console.error("Erreur Vue non gérée:", err, info);
+  import("./services/analyticsService").then(({ analyticsService }) =>
+    analyticsService.captureException(err, { vue_error_info: info }),
+  );
+};
+
 app.mount("#app");
 
 // Suivi produit + traque d'erreurs (PostHog, prod uniquement). Import

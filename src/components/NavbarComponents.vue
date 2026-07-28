@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { authService } from "../services/authService";
+import { analyticsService } from "../services/analyticsService";
 import { isAdminEmail } from "../config/admin";
 import { useDarkMode } from "../composables/useDarkMode";
 import { isNativeApp } from "../composables/useNativeApp";
@@ -38,6 +39,13 @@ function toggleMobileMenu() {
 function closeMobileMenu() {
   isMobileMenuOpen.value = false;
   document.body.classList.remove("menu-open");
+}
+
+// D'où les utilisateurs ouvrent leur profil (navbar desktop / menu mobile /
+// bottom bar native) : sert à comparer l'usage des points d'entrée.
+function trackProfileOpened(source: "navbar" | "navbar_mobile") {
+  analyticsService.capture("profile_opened", { source });
+  if (source === "navbar_mobile") closeMobileMenu();
 }
 
 onMounted(() => {
@@ -129,6 +137,7 @@ function goToLogin() {
           <RouterLink
             to="/profile"
             class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-black/5 transition-colors dark:hover:bg-white/10"
+            @click="trackProfileOpened('navbar')"
           >
             <AppIcon name="user" :size="16" />
             <span>{{ username }}</span>
@@ -213,7 +222,7 @@ function goToLogin() {
                 </RouterLink>
                 <RouterLink
                   to="/profile"
-                  @click="closeMobileMenu"
+                  @click="trackProfileOpened('navbar_mobile')"
                   class="btn btn-soft w-full !justify-start"
                 >
                   <AppIcon name="user" :size="16" />
