@@ -18,6 +18,20 @@ if (isNativeApp) {
   document.documentElement.classList.add("native-app");
 }
 
+// Après un déploiement, les chunks lazy-loadés changent de hash : un onglet
+// resté ouvert sur l'ancienne version obtient un 404 en naviguant (« Failed to
+// fetch dynamically imported module ») et la page reste blanche. On recharge
+// une seule fois (garde sessionStorage pour ne pas boucler si le réseau est
+// vraiment en panne) : le HTML frais référence les nouveaux chunks.
+window.addEventListener("vite:preloadError", (event) => {
+  const RELOAD_KEY = "pj_chunk_reload_at";
+  const lastReload = Number(sessionStorage.getItem(RELOAD_KEY) ?? 0);
+  if (Date.now() - lastReload < 60_000) return;
+  sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+  event.preventDefault();
+  window.location.reload();
+});
+
 const app = createApp(App);
 
 // Click outside directive for dropdowns

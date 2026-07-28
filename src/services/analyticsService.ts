@@ -120,6 +120,9 @@ class AnalyticsService {
         person_profiles: "identified_only",
         // Erreurs JS non attrapées + promesses rejetées → produit Error tracking.
         capture_exceptions: true,
+        // Core Web Vitals (LCP, INP, CLS, FCP) → onglet Web vitals de Web
+        // analytics : mesure terrain des performances réelles, page par page.
+        capture_performance: { web_vitals: true },
         // Session replay : les saisies sont masquées par défaut, on ne relâche
         // pas ce masquage (mots de passe, emails...).
         session_recording: {
