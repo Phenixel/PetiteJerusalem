@@ -1,7 +1,5 @@
 import { createI18n } from "vue-i18n";
 import fr from "./locales/fr";
-import en from "./locales/en";
-import he from "./locales/he";
 
 export type SupportedLocale = "fr" | "en" | "he";
 
@@ -55,16 +53,55 @@ export function setStoredLocale(locale: SupportedLocale): void {
   }
 }
 
+/**
+ * Seul le français (la langue de repli) est embarqué dans le bundle initial :
+ * en + he représentaient ~60 kB de source chargés pour tout le monde. Les
+ * autres locales arrivent par import dynamique — au démarrage pour la langue
+ * détectée/choisie, ou au moment du changement de langue (setLocale).
+ * En attendant le chunk (quelques dizaines de ms, puis cache navigateur),
+ * vue-i18n retombe silencieusement sur le français.
+ */
+type LocaleMessages = typeof fr;
+
+const localeLoaders: Record<SupportedLocale, (() => Promise<{ default: LocaleMessages }>) | null> = {
+  fr: null,
+  en: () => import("./locales/en"),
+  he: () => import("./locales/he"),
+};
+
+const loadedLocales = new Set<SupportedLocale>(["fr"]);
+
+export async function loadLocaleMessages(locale: SupportedLocale): Promise<void> {
+  const loader = localeLoaders[locale];
+  if (!loader || loadedLocales.has(locale)) return;
+  try {
+    const messages = await loader();
+    i18n.global.setLocaleMessage(locale, messages.default);
+    loadedLocales.add(locale);
+  } catch {
+    // Chunk introuvable (réseau, déploiement entre-temps) : le repli français
+    // reste affiché ; le prochain setLocale retentera.
+  }
+}
+
+const initialLocale = getInitialLocale();
+
 export const i18n = createI18n({
   legacy: false,
   globalInjection: true,
-  locale: getInitialLocale(),
+  locale: initialLocale,
   fallbackLocale: "fr",
+  // Le repli silencieux est le comportement voulu pendant le chargement d'une
+  // locale : pas de log pour chaque clé en attente.
+  missingWarn: false,
+  fallbackWarn: false,
   messages: {
     fr,
-    en,
-    he,
   },
 });
+
+if (initialLocale !== "fr") {
+  void loadLocaleMessages(initialLocale);
+}
 
 export default i18n;

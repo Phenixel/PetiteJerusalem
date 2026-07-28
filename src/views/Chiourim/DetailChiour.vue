@@ -11,7 +11,7 @@ import ChiourCard from "../../components/ChiourCard.vue";
 import ShareModal from "../../components/ShareModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
-import { SITE_URL } from "../../content/seoPages";
+import { SITE_URL } from "../../config/site";
 
 const route = useRoute();
 const router = useRouter();
@@ -75,6 +75,11 @@ function applyChiour(all: Chiour[], slug: string): boolean {
   allChiourim.value = all;
   const found = all.find((c) => c.slug === slug) ?? null;
   if (!found) return false;
+  applyFound(found);
+  return true;
+}
+
+function applyFound(found: Chiour): void {
   chiour.value = found;
   serie.value = null;
   if (found.serieId) {
@@ -91,7 +96,6 @@ function applyChiour(all: Chiour[], slug: string): boolean {
     description: found.description || t("seo.chiourimDescription"),
     canonical: window.location.origin + `/chiourim/${found.slug}`,
   });
-  return true;
 }
 
 const loadChiour = async () => {
@@ -110,14 +114,22 @@ const loadChiour = async () => {
     return;
   }
 
-  // No cache, full load with skeleton
+  // Pas de cache (arrivée à froid sur un lien partagé) : on n'attend que le
+  // document du chiour lui-même — un seul doc au lieu du catalogue entier.
+  // Le catalogue se charge ensuite en arrière-plan pour les recommandations
+  // et les épisodes voisins (leurs computed restent vides d'ici là).
   try {
     isLoading.value = true;
-    const all = await chiourService.getAllChiourim();
-    if (!applyChiour(all, slug)) {
+    const single = await chiourService.getChiourBySlug(slug);
+    if (!single) {
       error.value = t("detailChiour.notFound");
     } else {
+      applyFound(single);
       chiourService.registerView(slug);
+      chiourService
+        .getAllChiourim()
+        .then((all) => applyChiour(all, slug))
+        .catch(() => {});
     }
   } catch (err) {
     console.error("Erreur lors du chargement du chiour:", err);

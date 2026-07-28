@@ -48,6 +48,19 @@ export class ChiourService {
     return this.chiourimCache?.data ?? null;
   }
 
+  /**
+   * Un chiour précis, au coût d'un seul document : sert le premier rendu
+   * d'un lien partagé à froid. Le cache catalogue est utilisé s'il est frais ;
+   * sinon on lit le document seul, sans déclencher le chargement du catalogue
+   * (les recommandations le chargeront en arrière-plan).
+   */
+  async getChiourBySlug(slug: string): Promise<Chiour | null> {
+    if (this.chiourimCache && Date.now() - this.chiourimCache.fetchedAt < CACHE_TTL) {
+      return this.chiourimCache.data.find((c) => c.slug === slug) ?? null;
+    }
+    return chiourFirestoreRepository.fetchBySlug(slug);
+  }
+
   /** À appeler après toute mutation admin pour refléter le changement sans attendre le TTL. */
   invalidateCache(): void {
     this.chiourimCache = null;

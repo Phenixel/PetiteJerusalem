@@ -261,13 +261,16 @@ export class SessionService {
     const existing = await firestoreService.getSessionBySlug(base);
     if (!existing || existing.id === excludeSessionId) return base;
 
-    let counter = 1;
-    while (true) {
+    // Suffixes séquentiels d'abord (slugs lisibles : nom-1, nom-2…), mais
+    // bornés : chaque essai coûte une requête Firestore, et un nom très
+    // populaire en enchaînerait autant que de doublons. Au-delà, un suffixe
+    // aléatoire court règle la question en un seul essai supplémentaire.
+    for (let counter = 1; counter <= 3; counter++) {
       const candidate = `${base}-${counter}`;
       const found = await firestoreService.getSessionBySlug(candidate);
       if (!found || found.id === excludeSessionId) return candidate;
-      counter++;
     }
+    return `${base}-${Math.random().toString(36).slice(2, 8)}`;
   }
 
   async createSessionWithValidation(

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
@@ -72,11 +72,23 @@ const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
 const selectedType = ref(ALL_TYPE);
 const searchTerm = ref("");
 
+// Chaque frappe re-filtre et re-groupe les 328 entrées du catalogue : sur un
+// appareil lent, taper devient poussif. On ne recalcule que 150 ms après la
+// dernière frappe — l'input, lui, reste réactif (v-model sur searchTerm).
+const debouncedTerm = ref("");
+let searchDebounce: ReturnType<typeof setTimeout> | undefined;
+watch(searchTerm, (value) => {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => {
+    debouncedTerm.value = value;
+  }, 150);
+});
+
 // "Tout" shows every corpus at once; any other tab stays scoped to itself.
 const isAllSelected = computed(() => selectedType.value === ALL_TYPE);
 
 const filtered = computed(() => {
-  const term = searchTerm.value.trim().toLowerCase();
+  const term = debouncedTerm.value.trim().toLowerCase();
   return allTexts.filter((txt) => {
     const matchesTerm = term === "" || txt.name.toLowerCase().includes(term);
     const matchesType = isAllSelected.value || String(txt.type) === selectedType.value;

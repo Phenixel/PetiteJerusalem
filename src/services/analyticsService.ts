@@ -120,11 +120,22 @@ class AnalyticsService {
         person_profiles: "identified_only",
         // Erreurs JS non attrapées + promesses rejetées → produit Error tracking.
         capture_exceptions: true,
+        // Core Web Vitals (LCP, INP, CLS, FCP) → onglet Web vitals de Web
+        // analytics : mesure terrain des performances réelles, page par page.
+        capture_performance: { web_vitals: true },
         // Session replay : les saisies sont masquées par défaut, on ne relâche
-        // pas ce masquage (mots de passe, emails...).
+        // pas ce masquage (mots de passe, emails...). Config conservée pour le
+        // jour où l'enregistrement sera réactivé.
         session_recording: {
           maskAllInputs: true,
         },
+        // Replay désactivé POUR TOUT LE MONDE pour l'instant : l'enregistrement
+        // (rrweb) observe et sérialise le DOM en continu, c'est le seul poste
+        // du tracking qui coûte du CPU pendant toute la visite, et un testeur
+        // signale un site lent depuis son ajout. À réactiver (au moins en
+        // échantillonné) une fois la lenteur objectivée via les Web Vitals.
+        // Les événements produit, l'Error tracking et les Web Vitals restent actifs.
+        disable_session_recording: true,
         // Dans la webview Capacitor, les cookies sur https://localhost sont
         // fragiles : localStorage est le stockage fiable.
         persistence: isNativeApp ? "localStorage" : "localStorage+cookie",

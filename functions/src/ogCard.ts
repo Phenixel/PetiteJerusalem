@@ -22,7 +22,10 @@ const CONTENT_WIDTH = WIDTH - MARGIN * 2;
 const FONT_LATIN = "Noto Sans";
 const FONT_HEBREW = "Noto Sans Hebrew";
 
-/** Bundled font files (functions/fonts), resolved relative to the compiled lib/. */
+/** Bundled font files (functions/fonts), resolved relative to the compiled lib/.
+ *  (Le binding natif de resvg ne prend que des chemins — `fontBuffers` est
+ *  réservé au build WASM ; le coût par requête est amorti par le s-maxage
+ *  de 24 h du CDN sur les PNG.) */
 const FONT_DIR = join(__dirname, "..", "fonts");
 const FONT_FILES = [
   join(FONT_DIR, "NotoSans-Regular.ttf"),

@@ -50,7 +50,21 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 class UserPreferencesService {
   private collectionName = "userPreferences";
 
-  async getPreferences(userId: string): Promise<UserPreferences> {
+  // Au démarrage d'une session connectée, useTheme, useFonts et la home
+  // demandent chacun les préférences en même temps : on partage la requête en
+  // vol au lieu de lire trois fois le même document. Pas de cache durable
+  // (l'entrée est retirée dès la résolution) : aucune donnée périmée possible.
+  private inflight = new Map<string, Promise<UserPreferences>>();
+
+  getPreferences(userId: string): Promise<UserPreferences> {
+    const pending = this.inflight.get(userId);
+    if (pending) return pending;
+    const request = this.fetchPreferences(userId).finally(() => this.inflight.delete(userId));
+    this.inflight.set(userId, request);
+    return request;
+  }
+
+  private async fetchPreferences(userId: string): Promise<UserPreferences> {
     try {
       const docRef = doc(db, this.collectionName, userId);
       const docSnap = await getDoc(docRef);

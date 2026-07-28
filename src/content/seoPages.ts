@@ -19,12 +19,13 @@
  * `localStorage`, no `node:*`): it must run in both environments.
  */
 
-export const SITE_URL = "https://petite-jerusalem.fr";
-export const SITE_NAME = "Petite Jérusalem";
-export const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
-/** Logo carré (favicon) pour les données structurées Organization ; l'og-image
- *  est une bannière large 1200×630, inadaptée au champ `logo`. */
-export const LOGO_IMAGE = `${SITE_URL}/favicon.png`;
+// Constantes d'identité du site : définies dans src/config/site.ts (module
+// minuscule) pour que les vues qui n'ont besoin que de SITE_URL n'embarquent
+// pas ce fichier de contenu (~94 kB) dans leur chunk. Ré-exportées ici pour
+// le prerender et les consommateurs historiques.
+import { SITE_URL, SITE_NAME, OG_IMAGE, LOGO_IMAGE } from "../config/site";
+
+export { SITE_URL, SITE_NAME, OG_IMAGE, LOGO_IMAGE };
 
 /** Escape a value so it is safe inside a double-quoted HTML attribute. */
 export function escapeAttr(value: string): string {

@@ -2,7 +2,7 @@
 import { ref, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useTheme, type ThemeOption } from "../../composables/useTheme";
-import { useFonts, type FontOption } from "../../composables/useFonts";
+import { ensureAllFontsLoaded, useFonts, type FontOption } from "../../composables/useFonts";
 import { useLocale } from "../../composables/useLocale";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
@@ -24,6 +24,11 @@ const {
 
 const saving = ref(false);
 const previewingId = ref<string | null>(null);
+
+// Le sélecteur affiche chaque option dans sa propre police : on charge ici les
+// familles non embarquées dans index.html (elles n'arrivent qu'à l'ouverture
+// de cet écran, pas pour tous les visiteurs du site).
+ensureAllFontsLoaded();
 
 const selectTheme = async (themeId: string) => {
   if (themeId === currentThemeId.value) return;

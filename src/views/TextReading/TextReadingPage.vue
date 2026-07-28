@@ -98,6 +98,25 @@ const currentSection = computed<TextSection | null>(() => {
 
 const canTransliterate = computed(() => currentSection.value?.he.some((line) => hasNiqqud(line)) ?? false);
 
+// Translittération mémoïsée : appelée depuis le template, elle était recalculée
+// pour toute la section (des dizaines de lignes × plusieurs passes regex) à
+// CHAQUE re-rendu de la page — y compris ceux qui n'ont rien à voir (tick du
+// lecteur audio, changement de taille de lecture…). Les computed ne refont le
+// travail qu'au changement de section, et rien du tout hors mode phonétique.
+const phoneticByDaf = computed(() => {
+  const byDaf = new Map<string, string>();
+  if (!showPhonetic.value) return byDaf;
+  for (const block of currentSection.value?.dafBlocks ?? []) {
+    byDaf.set(block.daf, block.lines.map(transliterate).join(" "));
+  }
+  return byDaf;
+});
+
+const phoneticLines = computed(() => {
+  if (!showPhonetic.value) return [];
+  return (currentSection.value?.he ?? []).map(transliterate);
+});
+
 const sectionIndexInList = computed(() => {
   if (!content.value || !currentSection.value) return -1;
   return content.value.sections.indexOf(currentSection.value);
@@ -720,7 +739,7 @@ watch(textId, loadContent);
               {{ block.lines.join(" ") }}
             </p>
             <p v-else dir="ltr" class="leading-relaxed italic text-text-secondary reading-tl">
-              {{ block.lines.map(transliterate).join(" ") }}
+              {{ phoneticByDaf.get(block.daf) }}
             </p>
           </template>
         </div>
@@ -746,7 +765,7 @@ watch(textId, loadContent);
               dir="ltr"
               class="flex-1 min-w-0 leading-relaxed italic text-text-secondary reading-tl"
             >
-              {{ transliterate(line) }}
+              {{ phoneticLines[index] }}
             </p>
           </div>
         </div>

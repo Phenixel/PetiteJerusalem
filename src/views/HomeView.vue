@@ -6,7 +6,10 @@ import { seoService } from "../services/seoService";
 import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
 import { userPreferencesService } from "../services/userPreferencesService";
-import { sessionService } from "../services/sessionService";
+// firestoreService directement (et non sessionService) : la home est la seule
+// vue du bundle initial, et sessionService tire textStudies.json (~64 kB) +
+// la chaîne des réservations — inutiles ici, on ne fait que lister les sessions.
+import { firestoreService } from "../services/firestoreService";
 import { isNativeApp } from "../composables/useNativeApp";
 import SiteFooter from "../components/SiteFooter.vue";
 import AppIcon from "../components/icons/AppIcon.vue";
@@ -52,7 +55,7 @@ async function loadDashboard(u: User) {
   try {
     const [prefs, sessions] = await Promise.all([
       userPreferencesService.getPreferences(u.id),
-      sessionService.getAllSessions().catch(() => []),
+      firestoreService.getSessions().catch(() => []),
     ]);
 
     readingTotal.value = (prefs.dailyReadingIds ?? []).length;

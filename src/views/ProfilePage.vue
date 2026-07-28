@@ -8,7 +8,7 @@ import { sessionService } from "../services/sessionService";
 import type { User } from "../services/authService";
 import type { Session, TextStudy } from "../models/models";
 import { seoService } from "../services/seoService";
-import { SITE_URL } from "../content/seoPages";
+import { SITE_URL } from "../config/site";
 import ShareModal from "../components/ShareModal.vue";
 import EditSessionModal from "../components/EditSessionModal.vue";
 import AppIcon from "../components/icons/AppIcon.vue";
