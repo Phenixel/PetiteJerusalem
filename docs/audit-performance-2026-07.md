@@ -21,12 +21,12 @@ page en particulier. Par ordre de probabilité :
 1. **Session replay PostHog** — c'est la nouveauté récente qui coûte du
    CPU pendant *toute* la visite : rrweb observe et sérialise chaque
    mutation du DOM. Imperceptible sur une machine récente, sensible sur un
-   téléphone d'entrée de gamme ou un vieux laptop. → **Mitigé** :
-   `disable_session_recording` sur les appareils modestes
-   (`useDevicePerf.ts` : ≤ 4 cœurs ou ≤ 4 Go). Les événements produit et
-   l'Error tracking restent actifs partout. Réglage complémentaire sans
-   redéploiement : l'échantillonnage du replay dans PostHog
-   (Settings → Session replay → sampling).
+   téléphone d'entrée de gamme ou un vieux laptop. → **Désactivé pour tout
+   le monde pour l'instant** (`disable_session_recording: true`), le temps
+   d'objectiver la lenteur via les Web Vitals. Les événements produit et
+   l'Error tracking restent actifs partout. À la réactivation, préférer un
+   échantillonnage (PostHog → Settings → Session replay → sampling) et/ou
+   l'exclusion des appareils modestes (`useDevicePerf.ts`).
 2. **Le mur de pierre animé** (`StoneWallBackground.vue`) — deux halos de
    60/45 vmax en animation infinie derrière un mask SVG plein écran, sur
    toutes les pages, plus un `backdrop-filter: blur(12px)` sur les barres

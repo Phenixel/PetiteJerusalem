@@ -1,6 +1,5 @@
 import type { BeforeSendFn, PostHog, Properties } from "posthog-js";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
-import { isLowEndDevice } from "../composables/useDevicePerf";
 import { getConsentChoice, onConsentChange } from "../composables/useConsent";
 import { i18n } from "../i18n";
 import type { User } from "../models/models";
@@ -125,15 +124,18 @@ class AnalyticsService {
         // analytics : mesure terrain des performances réelles, page par page.
         capture_performance: { web_vitals: true },
         // Session replay : les saisies sont masquées par défaut, on ne relâche
-        // pas ce masquage (mots de passe, emails...).
+        // pas ce masquage (mots de passe, emails...). Config conservée pour le
+        // jour où l'enregistrement sera réactivé.
         session_recording: {
           maskAllInputs: true,
         },
-        // L'enregistrement replay (rrweb) observe et sérialise le DOM en
-        // continu : c'est le seul poste du tracking qui coûte du CPU pendant
-        // toute la visite. Sur un appareil modeste, on le coupe — les
-        // événements produit et l'Error tracking, eux, restent actifs.
-        disable_session_recording: isLowEndDevice,
+        // Replay désactivé POUR TOUT LE MONDE pour l'instant : l'enregistrement
+        // (rrweb) observe et sérialise le DOM en continu, c'est le seul poste
+        // du tracking qui coûte du CPU pendant toute la visite, et un testeur
+        // signale un site lent depuis son ajout. À réactiver (au moins en
+        // échantillonné) une fois la lenteur objectivée via les Web Vitals.
+        // Les événements produit, l'Error tracking et les Web Vitals restent actifs.
+        disable_session_recording: true,
         // Dans la webview Capacitor, les cookies sur https://localhost sont
         // fragiles : localStorage est le stockage fiable.
         persistence: isNativeApp ? "localStorage" : "localStorage+cookie",
