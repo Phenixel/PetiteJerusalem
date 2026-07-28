@@ -1,8 +1,26 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
 import type { TextStudyReservation } from "../models/models";
 import { EnumTypeTextStudy } from "../models/typeTextStudy";
 
 vi.mock("../services/firestoreService");
+
+// Node >= 22 expose un getter global `localStorage` (undefined sans
+// --localstorage-file) qui masque celui de jsdom, y compris via `window`
+// puisque vitest fusionne window et globalThis. Stub mémoire minimal pour
+// que la persistance reste testable.
+beforeAll(() => {
+  const store = new Map<string, string>();
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => void store.set(key, String(value)),
+    removeItem: (key: string) => void store.delete(key),
+    clear: () => store.clear(),
+    key: (index: number) => Array.from(store.keys())[index] ?? null,
+    get length() {
+      return store.size;
+    },
+  });
+});
 
 import { guestService } from "../services/guestService";
 import { reservationService } from "../services/reservationService";
