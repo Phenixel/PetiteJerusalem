@@ -1,5 +1,6 @@
 import type { PostHog } from "posthog-js";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
+import { getConsentChoice, onConsentChange } from "../composables/useConsent";
 import type { User } from "../models/models";
 
 /**
@@ -22,8 +23,30 @@ const POSTHOG_HOST = "https://eu.i.posthog.com";
 class AnalyticsService {
   private posthog: PostHog | null = null;
 
-  async init(): Promise<void> {
+  /**
+   * ePrivacy/RGPD : rien ne se charge tant que l'utilisateur n'a pas accepté
+   * la mesure d'audience (bannière ConsentBanner). Un refus après coup coupe
+   * la capture ; un nouvel accord la réactive.
+   */
+  init(): void {
     if (!import.meta.env.PROD || !POSTHOG_KEY) return;
+    if (getConsentChoice() === "granted") {
+      void this.load();
+    }
+    onConsentChange((choice) => {
+      if (choice === "granted") {
+        if (this.posthog) {
+          this.posthog.opt_in_capturing();
+        } else {
+          void this.load();
+        }
+      } else if (this.posthog) {
+        this.posthog.opt_out_capturing();
+      }
+    });
+  }
+
+  private async load(): Promise<void> {
     try {
       const { default: posthog } = await import("posthog-js");
       posthog.init(POSTHOG_KEY, {

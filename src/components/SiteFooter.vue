@@ -63,6 +63,9 @@
         >
           {{ t("footer.reportIssue") }}
         </a>
+        <button class="hover:text-primary transition-colors" type="button" @click="reopen">
+          {{ t("footer.manageCookies") }}
+        </button>
       </nav>
 
       <div
@@ -99,6 +102,9 @@
 import { useI18n } from "vue-i18n";
 import LanguageSelector from "./LanguageSelector.vue";
 import AppIcon from "./icons/AppIcon.vue";
+import { useConsent } from "../composables/useConsent";
 
 const { t } = useI18n();
+// Réouvre la bannière de consentement (retrait du consentement possible à tout moment).
+const { reopen } = useConsent();
 </script>

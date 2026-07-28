@@ -58,6 +58,15 @@ const en: LocaleMessages = {
     finishChass: "Finish the Shas",
     shareTehilim: "Share Tehilim",
     tehilimIntentions: "Tehilim by intention",
+    manageCookies: "Manage cookies",
+  },
+  consent: {
+    title: "Analytics",
+    message:
+      "With your consent, we measure how the app is used (page views, journeys, technical errors) to improve it. No ads, no data resale. You can change your mind at any time.",
+    learnMore: "Learn more",
+    accept: "Accept",
+    decline: "Decline",
   },
   home: {
     heroTitle: "Your digital spiritual center",

@@ -492,18 +492,20 @@ function buildLegal(path: string, s: LegalStrings): LandingLocaleContent {
 // account data; userPreferences/{uid} holds theme/fonts/reading progress/FCM
 // tokens/reminder settings and is deleted on account deletion (deleteAccount());
 // shared reading sessions store a display name (and a guest's email if they
-// reserve without an account) and are publicly readable via their link; no
-// analytics/ad tracker is used anywhere in the app.
+// reserve without an account) and are publicly readable via their link;
+// audience measurement is PostHog (EU cloud), loaded only after opt-in consent
+// (ConsentBanner / analyticsService), with session replay inputs masked; no ad
+// tracker anywhere.
 
 const PRIVACY_FR: LegalStrings = {
   lang: "fr-FR",
   title: "Politique de confidentialité | Petite Jérusalem",
   description:
-    "Quelles données Petite Jérusalem collecte, pourquoi, et comment les supprimer. Compte facultatif, aucune publicité, aucun traceur tiers.",
+    "Quelles données Petite Jérusalem collecte, pourquoi, et comment les supprimer. Compte facultatif, aucune publicité, mesure d'audience soumise à votre accord.",
   h1: "Politique de confidentialité",
   intro:
     "Cette page explique quelles données Petite Jérusalem collecte, pourquoi, et comment les gérer ou les supprimer.",
-  updated: "Dernière mise à jour : 19 juillet 2026",
+  updated: "Dernière mise à jour : 28 juillet 2026",
   sections: [
     {
       heading: "Qui est responsable de vos données ?",
@@ -521,11 +523,16 @@ const PRIVACY_FR: LegalStrings = {
         <li><strong>Notifications</strong> : si vous activez le rappel de lecture quotidien, un identifiant technique (jeton) de votre appareil, l'heure choisie et la langue de la notification.</li>
         <li><strong>Partage de lecture</strong> : si vous créez ou rejoignez une session partagée (Talmud, Tehilim…), le nom que vous indiquez (et votre email si vous participez sans créer de compte) est visible par toute personne disposant du lien de la session.</li>
       </ul>
-      <p>Nous ne collectons aucune donnée à des fins publicitaires et n'utilisons aucun traceur publicitaire. Nous utilisons uniquement des outils de mesure d'audience (Google Analytics) afin de surveiller le bon fonctionnement de l'application et de l'améliorer.</p>`,
+      <p>Nous ne collectons aucune donnée à des fins publicitaires et n'utilisons aucun traceur publicitaire.</p>`,
+    },
+    {
+      heading: "Mesure d'audience et cookies",
+      html: `<p>Avec votre accord (bannière affichée à la première visite), nous utilisons PostHog pour comprendre comment l'application est utilisée et corriger ses bugs : pages vues, interactions, erreurs techniques, et enregistrements de session dans lesquels tout ce que vous tapez est masqué. Ces données sont hébergées dans l'Union européenne.</p>
+      <p>Tant que vous n'avez pas accepté, aucun cookie ni traceur de mesure d'audience n'est déposé. Vous pouvez retirer ou donner votre accord à tout moment via le lien « Gérer les cookies » en bas de page (ou dans l'onglet À propos de l'application).</p>`,
     },
     {
       heading: "Où sont hébergées ces données ?",
-      html: `<p>Petite Jérusalem utilise Firebase (Google) comme sous-traitant technique : authentification, base de données (Firestore), fonctions serveur et hébergement du site. Les données sont hébergées sur l'infrastructure Google (principalement aux États-Unis). Google agit uniquement en tant que prestataire technique et n'utilise pas ces données à ses propres fins.</p>`,
+      html: `<p>Petite Jérusalem utilise Firebase (Google) comme sous-traitant technique : authentification, base de données (Firestore), fonctions serveur et hébergement du site. Les données sont hébergées sur l'infrastructure Google (principalement aux États-Unis). Google agit uniquement en tant que prestataire technique et n'utilise pas ces données à ses propres fins. Les données de mesure d'audience sont traitées par PostHog et hébergées dans l'Union européenne.</p>`,
     },
     {
       heading: "Pourquoi ces données sont-elles utilisées ?",
@@ -570,11 +577,11 @@ const PRIVACY_EN: LegalStrings = {
   lang: "en-US",
   title: "Privacy Policy | Petite Jérusalem",
   description:
-    "What data Petite Jérusalem collects, why, and how to delete it. Optional account, no ads, no third-party trackers.",
+    "What data Petite Jérusalem collects, why, and how to delete it. Optional account, no ads, analytics only with your consent.",
   h1: "Privacy Policy",
   intro:
     "This page explains what data Petite Jérusalem collects, why, and how to manage or delete it.",
-  updated: "Last updated: July 19, 2026",
+  updated: "Last updated: July 28, 2026",
   sections: [
     {
       heading: "Who is responsible for your data?",
@@ -592,11 +599,16 @@ const PRIVACY_EN: LegalStrings = {
         <li><strong>Notifications</strong>: if you enable the daily reading reminder, a technical device token, the chosen time, and the notification language.</li>
         <li><strong>Shared reading</strong>: if you create or join a shared session (Talmud, Tehilim…), the name you provide (and your email if you take part without an account) is visible to anyone with the session link.</li>
       </ul>
-      <p>We do not collect any data for advertising purposes and do not use any ad trackers. We only use audience measurement tools (Google Analytics) to monitor the app's proper functioning and improve it.</p>`,
+      <p>We do not collect any data for advertising purposes and do not use any ad trackers.</p>`,
+    },
+    {
+      heading: "Analytics and cookies",
+      html: `<p>With your consent (a banner is shown on your first visit), we use PostHog to understand how the app is used and fix its bugs: page views, interactions, technical errors, and session recordings in which everything you type is masked. This data is hosted in the European Union.</p>
+      <p>Until you accept, no analytics cookie or tracker is set. You can withdraw or give your consent at any time via the "Manage cookies" link at the bottom of the page (or in the app's About tab).</p>`,
     },
     {
       heading: "Where is this data hosted?",
-      html: `<p>Petite Jérusalem uses Firebase (Google) as its technical processor: authentication, database (Firestore), server functions, and site hosting. Data is hosted on Google's infrastructure (primarily in the United States). Google acts solely as a technical provider and does not use this data for its own purposes.</p>`,
+      html: `<p>Petite Jérusalem uses Firebase (Google) as its technical processor: authentication, database (Firestore), server functions, and site hosting. Data is hosted on Google's infrastructure (primarily in the United States). Google acts solely as a technical provider and does not use this data for its own purposes. Analytics data is processed by PostHog and hosted in the European Union.</p>`,
     },
     {
       heading: "Why is this data used?",
@@ -640,10 +652,10 @@ const PRIVACY_EN: LegalStrings = {
 const PRIVACY_HE: LegalStrings = {
   lang: "he-IL",
   title: "מדיניות פרטיות | פטיט ירושלים",
-  description: "אילו נתונים פטיט ירושלים אוספת, מדוע וכיצד למחוק אותם. חשבון אופציונלי, ללא פרסומות, ללא מעקב צד שלישי.",
+  description: "אילו נתונים פטיט ירושלים אוספת, מדוע וכיצד למחוק אותם. חשבון אופציונלי, ללא פרסומות, מדידת שימוש רק בהסכמתכם.",
   h1: "מדיניות פרטיות",
   intro: "עמוד זה מסביר אילו נתונים פטיט ירושלים אוספת, מדוע, וכיצד לנהל או למחוק אותם.",
-  updated: "עודכן לאחרונה: 19 ביולי 2026",
+  updated: "עודכן לאחרונה: 28 ביולי 2026",
   sections: [
     {
       heading: "מי אחראי על הנתונים שלך?",
@@ -661,11 +673,16 @@ const PRIVACY_HE: LegalStrings = {
         <li><strong>התראות</strong>: אם תפעילו את תזכורת הקריאה היומית, אסימון מכשיר טכני, השעה שנבחרה ושפת ההתראה.</li>
         <li><strong>שיתוף קריאה</strong>: אם תיצרו או תצטרפו לפגישת קריאה משותפת (תלמוד, תהילים...), השם שתמסרו (והאימייל שלכם אם אתם משתתפים ללא חשבון) גלוי לכל מי שיש לו את קישור הפגישה.</li>
       </ul>
-      <p>איננו אוספים נתונים לצרכי פרסום ואיננו משתמשים בעוקבים פרסומיים. אנו משתמשים בכלי מדידת קהל (Google Analytics) בלבד כדי לנטר את תקינות האפליקציה ולשפר אותה.</p>`,
+      <p>איננו אוספים נתונים לצרכי פרסום ואיננו משתמשים בעוקבים פרסומיים.</p>`,
+    },
+    {
+      heading: "מדידת שימוש ועוגיות",
+      html: `<p>בהסכמתכם (באנר המוצג בביקור הראשון), אנו משתמשים ב-PostHog כדי להבין כיצד נעשה שימוש באפליקציה ולתקן תקלות: צפיות בעמודים, אינטראקציות, שגיאות טכניות והקלטות שימוש שבהן כל מה שאתם מקלידים מוסתר. נתונים אלה מאוחסנים באיחוד האירופי.</p>
+      <p>כל עוד לא אישרתם, לא מוצבת אף עוגיית מדידה. תוכלו לתת או לבטל את הסכמתכם בכל עת דרך הקישור «ניהול עוגיות» בתחתית העמוד (או בלשונית אודות באפליקציה).</p>`,
     },
     {
       heading: "היכן מאוחסנים הנתונים?",
-      html: `<p>פטיט ירושלים משתמשת ב-Firebase (Google) כמעבד טכני: אימות, מסד נתונים (Firestore), פונקציות שרת ואירוח האתר. הנתונים מאוחסנים על תשתית Google (בעיקר בארצות הברית). Google פועלת אך ורק כספקית טכנית ואינה משתמשת בנתונים אלה למטרותיה שלה.</p>`,
+      html: `<p>פטיט ירושלים משתמשת ב-Firebase (Google) כמעבד טכני: אימות, מסד נתונים (Firestore), פונקציות שרת ואירוח האתר. הנתונים מאוחסנים על תשתית Google (בעיקר בארצות הברית). Google פועלת אך ורק כספקית טכנית ואינה משתמשת בנתונים אלה למטרותיה שלה. נתוני מדידת השימוש מעובדים על ידי PostHog ומאוחסנים באיחוד האירופי.</p>`,
     },
     {
       heading: "מדוע נעשה שימוש בנתונים אלה?",

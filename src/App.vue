@@ -6,6 +6,7 @@ import StoneWallBackground from "./components/StoneWallBackground.vue";
 import SiteFooter from "./components/SiteFooter.vue";
 import ScrollToTop from "./components/ScrollToTop.vue";
 import ToastContainer from "./components/ToastContainer.vue";
+import ConsentBanner from "./components/ConsentBanner.vue";
 import GlobalAudioPlayer from "./components/GlobalAudioPlayer.vue";
 import OfflineNotice from "./components/OfflineNotice.vue";
 import BottomTabBar from "./components/BottomTabBar.vue";
@@ -79,6 +80,7 @@ onAuthStateChanged(auth, (user) => {
     <SiteFooter v-if="!isHome && !isNativeApp" />
     <ScrollToTop />
     <ToastContainer />
+    <ConsentBanner />
     <GlobalAudioPlayer />
     <BottomTabBar v-if="isNativeApp" />
   </div>

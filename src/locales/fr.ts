@@ -56,6 +56,15 @@ const fr = {
     finishChass: "Finir le Chass",
     shareTehilim: "Partage de Tehilim",
     tehilimIntentions: "Tehilim par intention",
+    manageCookies: "Gérer les cookies",
+  },
+  consent: {
+    title: "Mesure d'audience",
+    message:
+      "Avec votre accord, nous mesurons l'utilisation de l'application (pages vues, parcours, erreurs techniques) pour l'améliorer. Aucune publicité, aucune revente de données. Vous pouvez changer d'avis à tout moment.",
+    learnMore: "En savoir plus",
+    accept: "Accepter",
+    decline: "Refuser",
   },
   home: {
     heroTitle: "Étudier et partager la Torah, à plusieurs",

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import { useConsent } from "../../composables/useConsent";
 
 /**
  * App native uniquement : reprend l'essentiel du footer du site (retiré de
@@ -8,6 +9,8 @@ import AppIcon from "../../components/icons/AppIcon.vue";
  */
 
 const { t } = useI18n();
+// Réouvre la bannière de consentement (retrait du consentement possible à tout moment).
+const { reopen } = useConsent();
 
 const pages = [
   { to: "/a-propos", labelKey: "footer.about", icon: "info" },
@@ -48,6 +51,19 @@ const pages = [
           </span>
           <AppIcon name="external-link" :size="15" class="text-text-secondary/50" />
         </a>
+      </li>
+      <li>
+        <button
+          type="button"
+          class="w-full flex items-center justify-between gap-3 py-3.5 text-text-primary hover:text-primary transition-colors"
+          @click="reopen"
+        >
+          <span class="flex items-center gap-3">
+            <AppIcon name="eye" :size="17" class="text-text-secondary/70" />
+            {{ t("footer.manageCookies") }}
+          </span>
+          <AppIcon name="chevron-right" :size="15" class="text-text-secondary/50 rtl:rotate-180" />
+        </button>
       </li>
     </ul>
 
