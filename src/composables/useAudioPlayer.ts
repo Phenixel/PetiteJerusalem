@@ -93,7 +93,13 @@ function ensureAudio(): HTMLAudioElement {
   });
   audio.addEventListener("timeupdate", () => {
     if (!audio) return;
-    currentTime.value = audio.currentTime;
+    // timeupdate tire ~4×/s : publier chaque tick re-rendrait les composants
+    // abonnés (mini-lecteur monté sur toutes les pages) 4×/s pendant toute
+    // l'écoute. L'affichage est à la seconde (formatTime, barre de progression),
+    // on ne publie donc qu'au changement de seconde — les seeks passent aussi.
+    if (Math.abs(audio.currentTime - currentTime.value) >= 1) {
+      currentTime.value = audio.currentTime;
+    }
     if (duration.value > 0) {
       const pct = (audio.currentTime / duration.value) * 100;
       if (pct >= 75) trackMilestone(75);

@@ -1,9 +1,52 @@
 # Audit de performance — juillet 2026
 
-Contexte : après l'ajout de PostHog, un utilisateur a signalé un site
-« tout blanc » (ordinateur + téléphone). Cet audit couvre : la cause de
-l'écran blanc, l'impact réel du tracking PostHog, et un état des lieux
-des problèmes de performance de la codebase (web + Firestore + functions).
+> Note : le signalement initial parlait d'un « site blanc » (erreur de
+> dictée vocale) ; le symptôme réel est un **site lent**. La section 1
+> (cache HTML → écran blanc post-déploiement) reste un bug réel confirmé
+> par l'Error tracking et les correctifs sont conservés, mais la cause du
+> signalement est à chercher en section 0.
+
+Contexte : après l'ajout de PostHog, un testeur a signalé un site devenu
+**lent** — sur tout le site, ordinateur et téléphone — alors que le
+propriétaire ne voit rien sur sa machine. Cet audit couvre : les causes
+plausibles d'une lenteur généralisée, l'impact réel du tracking PostHog,
+et un état des lieux complet (bundle, Firestore, functions, rendu).
+
+## 0. Lenteur généralisée sur un appareil donné : suspects et mitigations
+
+Une lenteur qui touche *toutes* les pages chez un utilisateur (mais pas
+chez tout le monde) pointe vers ce qui tourne en continu, pas vers une
+page en particulier. Par ordre de probabilité :
+
+1. **Session replay PostHog** — c'est la nouveauté récente qui coûte du
+   CPU pendant *toute* la visite : rrweb observe et sérialise chaque
+   mutation du DOM. Imperceptible sur une machine récente, sensible sur un
+   téléphone d'entrée de gamme ou un vieux laptop. → **Mitigé** :
+   `disable_session_recording` sur les appareils modestes
+   (`useDevicePerf.ts` : ≤ 4 cœurs ou ≤ 4 Go). Les événements produit et
+   l'Error tracking restent actifs partout. Réglage complémentaire sans
+   redéploiement : l'échantillonnage du replay dans PostHog
+   (Settings → Session replay → sampling).
+2. **Le mur de pierre animé** (`StoneWallBackground.vue`) — deux halos de
+   60/45 vmax en animation infinie derrière un mask SVG plein écran, sur
+   toutes les pages, plus un `backdrop-filter: blur(12px)` sur les barres
+   de recherche sticky au-dessus d'un fond qui bouge en permanence : le
+   flou est recalculé à chaque frame même sans interaction. → **Mitigé** :
+   animation figée sur les appareils modestes (même rendu que
+   `prefers-reduced-motion`). Test A/B facile pour le testeur : activer
+   « réduire les animations » dans les réglages de son OS — si ça règle la
+   lenteur, c'est confirmé.
+3. **Le mini-lecteur audio** — `currentTime` (ref globale) était publié
+   ~4×/s pendant toute l'écoute → re-rendus continus sur toutes les pages
+   tant qu'un chiour joue (et autant de mutations DOM à sérialiser pour le
+   replay). → **Corrigé** : publication au changement de seconde (1 Hz).
+4. **Le poids du chargement initial** (§4) et **les lectures Firestore
+   complètes** (§1) — ils rendent chaque *navigation* lente sur petite
+   connexion, sans expliquer à eux seuls une lenteur d'interaction.
+
+Pour objectiver tout ça : les Core Web Vitals sont désormais capturés
+(INP en particulier mesure la lenteur d'interaction réelle, par page et
+par appareil) — PostHog → Web analytics → Web vitals après déploiement.
 
 ## 1. L'écran blanc : cache HTML + chunks hashés (corrigé)
 
@@ -38,7 +81,7 @@ PostHog (prod + consentement accordé). Un écran blanc au chargement initial
 n'apparaîtra jamais dans PostHog — le no-cache sur le HTML est la vraie
 protection.
 
-## 2. PostHog ralentit-il le site ? Non — rien à désactiver
+## 2. PostHog ralentit-il le site ? Pas le tracking — seul le replay pèse
 
 L'intégration (`src/services/analyticsService.ts`) est déjà faite dans les
 règles de l'art :
@@ -51,9 +94,10 @@ règles de l'art :
   (adblock, échec réseau) : aucun appel ne peut casser l'app.
 
 Le seul poste réellement coûteux côté client est le **session replay**
-(enregistrement rrweb : CPU + réseau en continu). Au volume actuel c'est
-négligeable ; si un jour il faut alléger, c'est le premier réglage à
-échantillonner ou couper — pas les événements produit.
+(enregistrement rrweb : CPU + réseau en continu pendant toute la visite).
+Désormais coupé sur les appareils modestes (voir §0) ; si un jour il faut
+alléger davantage, c'est ce réglage qu'on échantillonne ou qu'on coupe —
+pas les événements produit, qui ne coûtent rien.
 
 Ajout fait : `capture_performance: { web_vitals: true }` → l'onglet
 **Web analytics → Web vitals** de PostHog donnera des mesures terrain

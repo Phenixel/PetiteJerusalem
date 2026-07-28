@@ -1,5 +1,6 @@
 import type { BeforeSendFn, PostHog, Properties } from "posthog-js";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
+import { isLowEndDevice } from "../composables/useDevicePerf";
 import { getConsentChoice, onConsentChange } from "../composables/useConsent";
 import { i18n } from "../i18n";
 import type { User } from "../models/models";
@@ -128,6 +129,11 @@ class AnalyticsService {
         session_recording: {
           maskAllInputs: true,
         },
+        // L'enregistrement replay (rrweb) observe et sérialise le DOM en
+        // continu : c'est le seul poste du tracking qui coûte du CPU pendant
+        // toute la visite. Sur un appareil modeste, on le coupe — les
+        // événements produit et l'Error tracking, eux, restent actifs.
+        disable_session_recording: isLowEndDevice,
         // Dans la webview Capacitor, les cookies sur https://localhost sont
         // fragiles : localStorage est le stockage fiable.
         persistence: isNativeApp ? "localStorage" : "localStorage+cookie",

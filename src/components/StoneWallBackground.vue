@@ -17,6 +17,8 @@
    invalidate its cached render surface on modest GPUs, for a barely
    visible effect. */
 
+import { isLowEndDevice } from "../composables/useDevicePerf";
+
 const VIEW_W = 1600;
 const VIEW_H = 1100;
 
@@ -121,7 +123,10 @@ const grain = (() => {
 </script>
 
 <template>
-  <div class="stone-wall" aria-hidden="true">
+  <!-- Appareils modestes : la lumière reste figée (comme prefers-reduced-motion).
+       Même compositor-only, deux blobs animés en permanence derrière un mask
+       plein écran se paient en fluidité sur un vieux téléphone. -->
+  <div class="stone-wall" :class="{ 'stone-wall--static': isLowEndDevice }" aria-hidden="true">
     <div class="stone-wall__wall">
       <div class="sw-grain" :style="{ backgroundImage: grain }" />
       <!-- The light behind the wall, seen through the mortar joints (full)
@@ -274,5 +279,11 @@ const grain = (() => {
     animation: none;
     opacity: 0.4;
   }
+}
+
+.stone-wall--static .sw-blob--a,
+.stone-wall--static .sw-blob--b {
+  animation: none;
+  opacity: 0.4;
 }
 </style>
