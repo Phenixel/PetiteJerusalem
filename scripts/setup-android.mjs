@@ -245,4 +245,36 @@ public class MainActivity extends BridgeActivity {
   }
 }
 
+// 10. Connexion Google native : sans ces variables, le plugin
+//     @capacitor-firebase/authentication retombe sur androidx.credentials
+//     1.2.0-rc01, une release candidate dont le Credential Manager est cassé
+//     sur certains appareils (le bouton Google ne fait alors rien du tout,
+//     issue capawesome capacitor-firebase#836). On épingle des versions stables.
+const variablesGradlePath = join(androidDir, "variables.gradle");
+const variablesGradle = readFileSync(variablesGradlePath, "utf8");
+if (!variablesGradle.includes("androidxCredentialsVersion")) {
+  writeFileSync(
+    variablesGradlePath,
+    variablesGradle.replace(
+      /\n\}/,
+      `
+
+    // Connexion Google native (@capacitor-firebase/authentication).
+    // rgcfaIncludeGoogle embarque les dépendances Google du plugin dans l'app
+    // (sinon elles sont compileOnly et le runtime hérite des versions
+    // transitives de firebase-auth, dont androidx.credentials 1.2.0-rc01, une
+    // release candidate dont le Credential Manager est cassé sur certains
+    // appareils : le bouton Google ne fait alors rien du tout, issue capawesome
+    // capacitor-firebase#836). On épingle donc des versions stables.
+    rgcfaIncludeGoogle = true
+    androidxCredentialsVersion = '1.5.0'
+    androidxCredentialsPlayServicesAuthVersion = '1.5.0'
+    playServicesAuthVersion = '21.3.0'
+    librariesIdentityGoogleidVersion = '1.1.1'
+}`,
+    ),
+  );
+  console.log("setup-android: versions androidx.credentials épinglées dans variables.gradle");
+}
+
 console.log("setup-android: terminé.");

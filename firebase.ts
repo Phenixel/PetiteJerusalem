@@ -60,12 +60,6 @@ if (import.meta.env.DEV) {
   connectFunctionsEmulator(functions, 'localhost', 8477)
 }
 
-// Initialize Analytics (prod only). Import dynamique : le module analytics
-// ne rentre pas dans le bundle initial et ne bloque jamais le démarrage.
-if (import.meta.env.PROD) {
-  import('firebase/analytics')
-    .then(({ getAnalytics }) => getAnalytics(app))
-    .catch(() => {
-      // Analytics bloqué (adblock…) : sans impact sur l'app.
-    })
-}
+// La mesure d'audience est assurée par PostHog (src/services/analyticsService),
+// soumise au consentement (bannière ConsentBanner). Firebase/Google Analytics
+// a été retiré : il faisait doublon et partait sans consentement.

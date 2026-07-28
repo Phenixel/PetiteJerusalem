@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { authService } from "../services/authService";
+import { analyticsService } from "../services/analyticsService";
 import { sessionService } from "../services/sessionService";
 import type { User } from "../services/authService";
 import type { Session, TextStudy } from "../models/models";
@@ -105,6 +106,8 @@ const loadTextStudiesForSessions = async (sessions: Session[]) => {
 };
 
 const setActiveTab = (tab: typeof activeTab.value) => {
+  // Quels onglets du profil sont réellement utilisés (menus latéraux).
+  analyticsService.capture("profile_tab_opened", { tab });
   activeTab.value = tab;
   if (window.innerWidth < 1024) {
     setTimeout(() => {

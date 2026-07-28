@@ -7,6 +7,7 @@ import { authService } from "../services/authService";
 import { reservationService } from "../services/reservationService";
 import { guestService } from "../services/guestService";
 import { seoService } from "../services/seoService";
+import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
 
 const router = useRouter();
@@ -19,10 +20,15 @@ const confirmPassword = ref("");
 const displayName = ref("");
 const loading = ref(false);
 const errorMessage = ref<string | null>(null);
+// Message brut de l'erreur Firebase/plugin, affiché en petit sous le message
+// i18n : indispensable pour diagnostiquer à distance les échecs de connexion
+// Google/Apple remontés par les testeurs (l'erreur varie selon l'appareil).
+const errorDetail = ref<string | null>(null);
 
 function setMode(newMode: "login" | "signup") {
   mode.value = newMode;
   errorMessage.value = null;
+  errorDetail.value = null;
 }
 
 const buttonText = computed(() => {
@@ -32,6 +38,7 @@ const buttonText = computed(() => {
 
 async function submitForm() {
   errorMessage.value = null;
+  errorDetail.value = null;
   loading.value = true;
   try {
     if (mode.value === "signup") {
@@ -62,6 +69,8 @@ async function submitForm() {
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/";
     router.push(redirectPath);
   } catch (e: unknown) {
+    // Pas de captureException ici : les échecs email sont presque toujours des
+    // erreurs utilisateur (mauvais mot de passe), pas des bugs.
     const msg = e instanceof Error ? e.message : t("login.loginError");
     errorMessage.value = msg;
   } finally {
@@ -70,6 +79,12 @@ async function submitForm() {
 }
 
 async function loginWithGoogle() {
+  errorMessage.value = null;
+  errorDetail.value = null;
+  // Funnel de connexion Google (suivi du bug « bouton inerte ») :
+  // google_signin_clicked → signed_in {method: google}, avec en route
+  // google_signin_fallback_used et/ou google_signin_failed.
+  analyticsService.capture("google_signin_clicked");
   try {
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
 
@@ -81,10 +96,13 @@ async function loginWithGoogle() {
 
     router.push(redirectPath);
   } catch (e: unknown) {
-    // Message i18n uniquement : les erreurs Firebase/plugin ("popup closed",
-    // "plugin not implemented"…) sont techniques et en anglais.
     console.error("Connexion Google échouée:", e);
+    analyticsService.captureException(e, { auth_flow: "google" });
+    analyticsService.capture("google_signin_failed", {
+      error_message: e instanceof Error ? e.message : String(e),
+    });
     errorMessage.value = t("login.googleError");
+    errorDetail.value = e instanceof Error ? e.message : String(e);
   }
 }
 
@@ -93,6 +111,8 @@ async function loginWithGoogle() {
 const isApplePlatform = computed(() => Capacitor.getPlatform() === "ios");
 
 async function loginWithApple() {
+  errorMessage.value = null;
+  errorDetail.value = null;
   try {
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
 
@@ -105,7 +125,9 @@ async function loginWithApple() {
     router.push(redirectPath);
   } catch (e: unknown) {
     console.error("Connexion Apple échouée:", e);
+    analyticsService.captureException(e, { auth_flow: "apple" });
     errorMessage.value = t("login.appleError");
+    errorDetail.value = e instanceof Error ? e.message : String(e);
   }
 }
 
@@ -269,13 +291,15 @@ onMounted(async () => {
           </div>
         </Transition>
 
-        <p
-          v-if="errorMessage"
-          class="mb-4 flex items-center gap-2 text-sm text-red-600 dark:text-red-400"
-        >
-          <AppIcon name="alert-circle" :size="14" />
-          {{ errorMessage }}
-        </p>
+        <div v-if="errorMessage" class="mb-4">
+          <p class="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+            <AppIcon name="alert-circle" :size="14" />
+            {{ errorMessage }}
+          </p>
+          <p v-if="errorDetail" class="mt-1 text-xs text-text-secondary/70 break-words">
+            {{ errorDetail }}
+          </p>
+        </div>
 
         <button class="btn btn-primary w-full" type="submit" :disabled="loading">
           <AppIcon v-if="loading" name="spinner" :size="15" class="animate-spin" />

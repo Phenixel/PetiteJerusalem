@@ -20,9 +20,10 @@ import {
 } from "firebase/auth";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { app, googleAuthProvider } from "../../firebase";
-import { isNativeApp } from "../composables/useNativeApp";
+import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import type { User } from "../models/models";
 import { userPreferencesService } from "./userPreferencesService";
+import { analyticsService } from "./analyticsService";
 
 export type { User };
 
@@ -98,6 +99,7 @@ export class AuthService {
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
+    analyticsService.capture("signed_up", { method: "email" });
     return {
       id: cred.user.uid,
       name: displayName || cred.user.displayName || cred.user.email || "Utilisateur",
@@ -108,6 +110,7 @@ export class AuthService {
   async signInWithEmail(email: string, password: string): Promise<User> {
     const auth = getAuth(app);
     const cred = await signInWithEmailAndPassword(auth, email, password);
+    analyticsService.capture("signed_in", { method: "email" });
     return {
       id: cred.user.uid,
       name: cred.user.displayName || cred.user.email || "Utilisateur",
@@ -131,6 +134,7 @@ export class AuthService {
     }
     const auth = getAuth(app);
     const result = await signInWithPopup(auth, googleAuthProvider);
+    analyticsService.capture("signed_in", { method: "google" });
     return toUser(result.user);
   }
 
@@ -139,14 +143,38 @@ export class AuthService {
   // Firebase se fait ensuite dans le SDK JS de la webview, pour que
   // onAuthStateChanged & co continuent de fonctionner comme sur le web.
   private async signInWithGoogleNative(): Promise<User> {
-    const result = await FirebaseAuthentication.signInWithGoogle();
+    const result = await this.getGoogleCredentialNative();
     const idToken = result.credential?.idToken;
     if (!idToken) {
       throw new Error("Connexion Google annulée ou incomplète");
     }
     const credential = GoogleAuthProvider.credential(idToken, result.credential?.accessToken);
     const cred = await signInWithCredential(getAuth(app), credential);
+    analyticsService.capture("signed_in", { method: "google" });
     return toUser(cred.user);
+  }
+
+  // Sur Android, le plugin passe par le Credential Manager, qui est cassé sur
+  // certains appareils (Play Services obsolète, gestionnaire de mots de passe
+  // tiers type Samsung Pass...) : l'appel échoue sans qu'aucune UI n'apparaisse.
+  // Dans ce cas, on retente avec le sélecteur de compte Google classique
+  // (useCredentialManager: false). On ne retente pas si l'utilisateur a
+  // simplement annulé le sélecteur.
+  private async getGoogleCredentialNative() {
+    try {
+      return await FirebaseAuthentication.signInWithGoogle();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const isUserCancellation = /cancel/i.test(message);
+      if (appPlatform !== "android" || isUserCancellation) {
+        throw error;
+      }
+      console.warn("Credential Manager indisponible, repli sur le sélecteur classique:", error);
+      // Suivi du bug « bouton Google inerte » : mesure combien d'appareils
+      // passent par le repli, et avec quelle erreur d'origine.
+      analyticsService.capture("google_signin_fallback_used", { credential_manager_error: message });
+      return FirebaseAuthentication.signInWithGoogle({ useCredentialManager: false });
+    }
   }
 
   // Connexion Apple. Requise par Apple (règle 4.8) sur l'app iOS dès lors que
@@ -169,12 +197,14 @@ export class AuthService {
         rawNonce: result.credential?.nonce ?? undefined,
       });
       const cred = await signInWithCredential(auth, credential);
+      analyticsService.capture("signed_in", { method: "apple" });
       return toUser(cred.user);
     }
 
     provider.addScope("email");
     provider.addScope("name");
     const result = await signInWithPopup(auth, provider);
+    analyticsService.capture("signed_in", { method: "apple" });
     return toUser(result.user);
   }
 
@@ -290,6 +320,8 @@ export class AuthService {
     }
     const auth = getAuth(app);
     await signOut(auth);
+    // Déconnexion explicite : les événements suivants repartent anonymes.
+    analyticsService.reset();
   }
 }
 
