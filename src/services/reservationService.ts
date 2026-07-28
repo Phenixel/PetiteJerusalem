@@ -3,6 +3,7 @@ import { db } from "../../firebase";
 import { doc, runTransaction, collection, getDocs } from "firebase/firestore";
 import { firestoreService } from "./firestoreService";
 import { guestService } from "./guestService";
+import { analyticsService } from "./analyticsService";
 
 export interface ReservationForm {
   name: string;
@@ -445,6 +446,9 @@ export class ReservationService {
 
     if (migratedCount > 0) {
       firestoreService.invalidateSessionsCache();
+      // Preuve chiffrée du funnel « invité qui réserve → compte » : des
+      // réservations invité viennent d'être rattachées à un compte.
+      analyticsService.capture("guest_reservations_migrated", { migrated_count: migratedCount });
     }
     return migratedCount;
   }

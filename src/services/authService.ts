@@ -278,6 +278,9 @@ export class AuthService {
     }
 
     await deleteUser(user);
+    // Après le deleteUser (une suppression qui échoue ne doit pas compter),
+    // mais avant tout reset : l'événement reste rattaché au compte supprimé.
+    analyticsService.capture("account_deleted");
   }
 
   async reauthenticateWithGoogle(): Promise<void> {
@@ -320,6 +323,8 @@ export class AuthService {
     }
     const auth = getAuth(app);
     await signOut(auth);
+    // Capturé avant le reset pour rester rattaché au compte qui se déconnecte.
+    analyticsService.capture("signed_out");
     // Déconnexion explicite : les événements suivants repartent anonymes.
     analyticsService.reset();
   }

@@ -2,6 +2,7 @@
 import { nextTick, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useToast } from "../composables/useToast";
+import { analyticsService } from "../services/analyticsService";
 import AppIcon from "./icons/AppIcon.vue";
 
 const { t } = useI18n();
@@ -17,6 +18,8 @@ interface Props {
   titleKey?: string;
   /** Clé i18n du message d'invitation pré-rempli ({name} interpolé). */
   messageKey?: string;
+  /** Nature du contenu partagé, pour les stats de viralité par type. */
+  contentType?: "session" | "chiour";
 }
 
 interface Emits {
@@ -104,22 +107,34 @@ const buildShareMessage = () => {
   return `${t(key, { name: props.sessionName })}\n\n${props.shareUrl}`;
 };
 
+/** Mesure la boucle virale : quel canal part le plus, pour quel contenu. */
+const trackChannel = (channel: "whatsapp" | "sms" | "facebook" | "copy") => {
+  analyticsService.capture("share_channel_selected", {
+    channel,
+    content_type: props.contentType ?? "session",
+  });
+};
+
 const shareToWhatsApp = () => {
+  trackChannel("whatsapp");
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(buildShareMessage())}`;
   window.open(whatsappUrl, "_blank");
 };
 
 const shareToSMS = () => {
+  trackChannel("sms");
   const smsUrl = `sms:?body=${encodeURIComponent(buildShareMessage())}`;
   window.location.href = smsUrl;
 };
 
 const shareToFacebook = () => {
+  trackChannel("facebook");
   const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(props.shareUrl)}`;
   window.open(facebookUrl, "_blank", "width=600,height=400");
 };
 
 const copyToClipboard = async () => {
+  trackChannel("copy");
   try {
     await navigator.clipboard.writeText(props.shareUrl);
     toast.success(t("shareModal.linkCopied"));
@@ -140,6 +155,10 @@ watch(
   () => props.show,
   (newValue) => {
     if (newValue) {
+      // Dénominateur du funnel de partage (ouvertures → canal choisi).
+      analyticsService.capture("share_modal_opened", {
+        content_type: props.contentType ?? "session",
+      });
       nextTick(() => {
         generateQRCode();
       });

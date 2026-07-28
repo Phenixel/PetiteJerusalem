@@ -3,6 +3,7 @@ import { useRouter } from "vue-router";
 import { onMounted, onUnmounted, ref, computed, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { seoService } from "../services/seoService";
+import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
 import { userPreferencesService } from "../services/userPreferencesService";
 import { sessionService } from "../services/sessionService";
@@ -113,9 +114,25 @@ const features = computed<
   },
 ]);
 
+// Ce que voit un visiteur qui (re)vient : la landing anonyme ou le tableau de
+// bord connecté. Une seule capture, au premier état d'auth connu.
+let hasTrackedHomeView = false;
+
+/** Clic sur un bloc de l'accueil : dit ce que les gens viennent y chercher. */
+const trackCard = (card: string) => {
+  analyticsService.capture("home_card_clicked", {
+    card,
+    variant: user.value ? "dashboard" : "landing",
+  });
+};
+
 onMounted(() => {
   unsubscribeAuth = authService.onAuthChanged((u) => {
     user.value = u;
+    if (!hasTrackedHomeView) {
+      hasTrackedHomeView = true;
+      analyticsService.capture("home_viewed", { variant: u ? "dashboard" : "landing" });
+    }
     if (u) {
       loadDashboard(u);
     } else {
@@ -162,7 +179,11 @@ onUnmounted(() => {
 
         <template v-else>
           <!-- Lecture quotidienne : où j'en suis aujourd'hui -->
-          <RouterLink to="/profile" class="dash-card card card-hover p-6 block group">
+          <RouterLink
+            to="/profile"
+            class="dash-card card card-hover p-6 block group"
+            @click="trackCard('daily_reading')"
+          >
             <div class="flex items-center justify-between gap-3 mb-4">
               <h3
                 class="font-bold text-text-primary flex items-center gap-2.5 group-hover:text-primary transition-colors"
@@ -220,6 +241,7 @@ onUnmounted(() => {
                 <RouterLink
                   :to="session.path"
                   class="flex items-center justify-between gap-3 py-2 text-sm group"
+                  @click="trackCard('ending_session')"
                 >
                   <span class="min-w-0 truncate font-medium text-text-primary group-hover:text-primary transition-colors">
                     {{ session.name }}
@@ -250,6 +272,7 @@ onUnmounted(() => {
             <RouterLink
               to="/share-reading"
               class="mt-4 text-sm font-medium text-primary flex items-center gap-1.5 hover:underline"
+              @click="trackCard('sessions_cta')"
             >
               {{ t("home.dashboard.sessionsCta") }}
             </RouterLink>
@@ -273,10 +296,14 @@ onUnmounted(() => {
         class="flex flex-wrap items-center justify-center gap-3 pt-2 enter-rise"
         style="--enter-delay: 0.2s"
       >
-        <RouterLink to="/login?mode=signup" class="btn btn-primary !px-7 !py-3">
+        <RouterLink
+          to="/login?mode=signup"
+          class="btn btn-primary !px-7 !py-3"
+          @click="trackCard('signup_cta')"
+        >
           {{ t("accountCta.signup") }}
         </RouterLink>
-        <RouterLink to="/login" class="btn btn-soft !px-7 !py-3">
+        <RouterLink to="/login" class="btn btn-soft !px-7 !py-3" @click="trackCard('login_cta')">
           {{ t("accountCta.login") }}
         </RouterLink>
       </div>
@@ -289,7 +316,10 @@ onUnmounted(() => {
           :key="feature.title"
           class="feature-card card card-hover group flex items-center gap-5 p-6 text-left cursor-pointer"
           :style="{ '--enter-delay': `${index * 0.12}s` }"
-          @click="router.push(feature.route)"
+          @click="
+            trackCard(`feature_${feature.route}`);
+            router.push(feature.route);
+          "
         >
           <!-- Texte à gauche, illustration à droite, tout reste dans la carte
                (une ligne par carte sur mobile, trois cartes côte à côte sur

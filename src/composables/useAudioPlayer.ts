@@ -1,5 +1,6 @@
 import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
+import { analyticsService } from "../services/analyticsService";
 
 /**
  * Lecteur audio global (singleton au niveau module).
@@ -29,6 +30,33 @@ let audio: HTMLAudioElement | null = null;
 // Seek demandé avant que les métadonnées soient chargées (clic sur la barre
 // d'un morceau pas encore lancé) : appliqué dès loadedmetadata.
 let pendingSeekRatio: number | null = null;
+
+// --- Engagement audio : écoute réelle, pas seulement des pages vues. ---
+// `chiour_played` une fois par morceau lancé, puis `chiour_progress` aux
+// jalons 25/50/75 (temps de lecture) et 100 (fin du morceau).
+let trackedSrc: string | null = null;
+const reachedMilestones = new Set<number>();
+
+function trackProperties() {
+  return {
+    chiour_slug: track.value?.slug ?? null,
+    chiour_title: track.value?.title ?? null,
+    duration_seconds: Math.round(duration.value) || null,
+  };
+}
+
+function trackPlayStarted() {
+  if (!track.value || track.value.src === trackedSrc) return;
+  trackedSrc = track.value.src;
+  reachedMilestones.clear();
+  analyticsService.capture("chiour_played", trackProperties());
+}
+
+function trackMilestone(milestone: number) {
+  if (!track.value || track.value.src !== trackedSrc || reachedMilestones.has(milestone)) return;
+  reachedMilestones.add(milestone);
+  analyticsService.capture("chiour_progress", { ...trackProperties(), milestone });
+}
 
 export function formatTime(seconds: number): string {
   if (!isFinite(seconds) || seconds < 0) return "0:00";
@@ -64,16 +92,25 @@ function ensureAudio(): HTMLAudioElement {
     }
   });
   audio.addEventListener("timeupdate", () => {
-    if (audio) currentTime.value = audio.currentTime;
+    if (!audio) return;
+    currentTime.value = audio.currentTime;
+    if (duration.value > 0) {
+      const pct = (audio.currentTime / duration.value) * 100;
+      if (pct >= 75) trackMilestone(75);
+      else if (pct >= 50) trackMilestone(50);
+      else if (pct >= 25) trackMilestone(25);
+    }
   });
   audio.addEventListener("play", () => {
     isPlaying.value = true;
+    trackPlayStarted();
   });
   audio.addEventListener("pause", () => {
     isPlaying.value = false;
   });
   audio.addEventListener("ended", () => {
     isPlaying.value = false;
+    trackMilestone(100);
   });
 
   if ("mediaSession" in navigator) {

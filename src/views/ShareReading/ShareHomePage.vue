@@ -11,6 +11,7 @@ import AccountCta from "../../components/AccountCta.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import { authService } from "../../services/authService";
+import { analyticsService } from "../../services/analyticsService";
 import { isNativeApp } from "../../composables/useNativeApp";
 
 const router = useRouter();
@@ -168,6 +169,10 @@ const handleSessionClick = (session: Session) => {
 
 // Logged-in users go straight to the form; visitors get the sign-in prompt.
 const handleCreateClick = () => {
+  analyticsService.capture("create_chain_cta_clicked", {
+    source: "share_home",
+    is_authenticated: isAuthenticated.value,
+  });
   if (isAuthenticated.value) {
     router.push("/share-reading/new-session");
   } else {
