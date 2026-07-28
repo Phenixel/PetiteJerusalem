@@ -1,4 +1,4 @@
-import type { PostHog } from "posthog-js";
+import type { BeforeSendFn, PostHog, Properties } from "posthog-js";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import { getConsentChoice, onConsentChange } from "../composables/useConsent";
 import type { User } from "../models/models";
@@ -19,6 +19,50 @@ import type { User } from "../models/models";
 // Clé publique du projet PostHog (project settings → Project API key).
 const POSTHOG_KEY = "phc_qV5GtjgB46gGmPGpXq8edRXRK94jmgGkiNLdFA6tyRSW";
 const POSTHOG_HOST = "https://eu.i.posthog.com";
+
+/**
+ * Dans l'app, la webview Capacitor sert le bundle depuis `https://localhost` :
+ * les événements arrivent avec la même URL que du vrai trafic web local, et
+ * `$lib` vaut « web » (c'est bien posthog-js qui tourne). On réécrit donc
+ * l'origine en `app://android` / `app://ios` pour que l'app soit lisible d'un
+ * coup d'œil dans PostHog, sans toucher au chemin (les insights par page
+ * restent comparables entre le site et l'app).
+ */
+const NATIVE_ORIGIN = /^https?:\/\/localhost(?::\d+)?/;
+const APP_ORIGIN = `app://${appPlatform}`;
+const APP_HOST = `app.${appPlatform}`;
+const URL_KEYS = ["$current_url", "$referrer", "$initial_current_url", "$initial_referrer"];
+const HOST_KEYS = ["$host", "$initial_host", "$referring_domain", "$initial_referring_domain"];
+
+function rewriteNativeUrls(bag: Properties | undefined): void {
+  if (!bag) return;
+  for (const key of URL_KEYS) {
+    if (typeof bag[key] === "string") bag[key] = bag[key].replace(NATIVE_ORIGIN, APP_ORIGIN);
+  }
+  for (const key of HOST_KEYS) {
+    if (typeof bag[key] === "string" && bag[key].startsWith("localhost")) bag[key] = APP_HOST;
+  }
+}
+
+/**
+ * Estampille chaque événement avec la plateforme d'exécution.
+ *
+ * Passe par `before_send` plutôt que par `posthog.register()` : les super
+ * propriétés ne couvrent ni le `$pageview` initial (capturé pendant `init()`,
+ * donc avant tout `register()`), ni les événements qui suivent un `reset()`
+ * de déconnexion, qui vide la persistance. `before_send` s'applique à tout,
+ * y compris aux `$exception` d'Error tracking.
+ */
+const stampPlatform: BeforeSendFn = (event) => {
+  if (!event) return event;
+  event.properties.app_platform = appPlatform;
+  if (isNativeApp) {
+    rewriteNativeUrls(event.properties);
+    rewriteNativeUrls(event.$set);
+    rewriteNativeUrls(event.$set_once);
+  }
+  return event;
+};
 
 class AnalyticsService {
   private posthog: PostHog | null = null;
@@ -67,9 +111,9 @@ class AnalyticsService {
         // Dans la webview Capacitor, les cookies sur https://localhost sont
         // fragiles : localStorage est le stockage fiable.
         persistence: isNativeApp ? "localStorage" : "localStorage+cookie",
+        // Plateforme + URL lisible sur chaque événement (voir stampPlatform).
+        before_send: stampPlatform,
       });
-      // Présent sur chaque événement : permet de segmenter web / android / ios.
-      posthog.register({ app_platform: appPlatform });
       this.posthog = posthog;
 
       // Rattache les événements au compte dès qu'une session existe (connexion
