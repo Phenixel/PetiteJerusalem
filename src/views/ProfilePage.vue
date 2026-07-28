@@ -105,6 +105,16 @@ const loadTextStudiesForSessions = async (sessions: Session[]) => {
   }
 };
 
+// La garde de route ne se rejoue qu'à la navigation : sans redirection, la page
+// profil reste affichée après la déconnexion, avec ses menus, alors que toutes
+// les écritures Firestore sont désormais refusées (préférences, infos perso...).
+// On quitte donc la page tout de suite, en `replace` pour que le retour arrière
+// ne ramène pas sur un profil auquel on n'a plus accès.
+const logout = async () => {
+  await authService.logout();
+  router.replace("/");
+};
+
 const setActiveTab = (tab: typeof activeTab.value) => {
   // Quels onglets du profil sont réellement utilisés (menus latéraux).
   analyticsService.capture("profile_tab_opened", { tab });
@@ -323,7 +333,7 @@ onMounted(async () => {
             </li>
           </ul>
 
-          <button @click="authService.logout()" class="btn btn-danger w-full">
+          <button @click="logout" class="btn btn-danger w-full">
             <AppIcon name="logout" :size="15" />
             {{ t("common.logout") }}
           </button>
