@@ -1,6 +1,6 @@
 import { computed, watch, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
-import { setStoredLocale, type SupportedLocale, SUPPORTED_LOCALES } from "../i18n";
+import { loadLocaleMessages, setStoredLocale, type SupportedLocale, SUPPORTED_LOCALES } from "../i18n";
 
 export interface LocaleOption {
   code: SupportedLocale;
@@ -26,6 +26,9 @@ export function useLocale() {
   const isRtl = computed(() => currentLocaleOption.value.dir === "rtl");
 
   function setLocale(newLocale: SupportedLocale) {
+    // Locale non embarquée (en/he) : chargée à la volée ; le français sert de
+    // repli pendant le court chargement du chunk.
+    void loadLocaleMessages(newLocale);
     locale.value = newLocale;
     setStoredLocale(newLocale);
     updateDocumentDirection(newLocale);

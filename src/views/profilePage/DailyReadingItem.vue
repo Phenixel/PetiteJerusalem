@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import type { TextStudyJsonEntry } from "../../models/models";
 import { loadText, MissingTextFileError } from "../../services/textService";
@@ -34,11 +34,40 @@ async function load() {
   }
 }
 
-onMounted(load);
+/*
+ * Chargement à la visibilité, pas au montage : chaque entrée charge le fichier
+ * COMPLET de son livre (jusqu'à ~1,8 Mo pour un traité du Talmud). Une liste de
+ * lecture de 3 traités tirait ~5 Mo en parallèle à l'ouverture du profil, y
+ * compris pour les textes repliés (v-show) ou sous la ligne de flottaison. On
+ * n'hydrate qu'à l'approche du viewport (marge de 200 px pour précharger juste
+ * avant l'arrivée du lecteur).
+ */
+const root = ref<HTMLElement | null>(null);
+let observer: IntersectionObserver | null = null;
+
+onMounted(() => {
+  if (typeof IntersectionObserver === "undefined" || !root.value) {
+    void load();
+    return;
+  }
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        observer?.disconnect();
+        observer = null;
+        void load();
+      }
+    },
+    { rootMargin: "200px" },
+  );
+  observer.observe(root.value);
+});
+
+onUnmounted(() => observer?.disconnect());
 </script>
 
 <template>
-  <div>
+  <div ref="root">
     <div v-if="loading" class="animate-pulse space-y-3 py-2">
       <div class="h-5 bg-black/10 rounded w-full dark:bg-white/10"></div>
       <div class="h-5 bg-black/10 rounded w-5/6 dark:bg-white/10"></div>

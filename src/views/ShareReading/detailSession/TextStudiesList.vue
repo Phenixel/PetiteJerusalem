@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { sessionService } from "../../../services/sessionService";
 import { appendHebrewNumeral, formatNumberWithHebrew } from "../../../services/hebrewNumerals";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Session, TextStudy, TextStudyReservation } from "../../../models/models";
 import type { User } from "../../../services/authService";
@@ -50,12 +50,71 @@ const formatBookName = (bookName: string) => {
 const reservedByName = (name: string | null | undefined) =>
   name || t("detailSession.textList.someone");
 
+/*
+ * Les fonctions ci-dessous sont appelées depuis le template, donc réévaluées à
+ * CHAQUE rendu, pour CHAQUE carte et CHAQUE section. Sur une chaîne de Tehilim
+ * (150 cartes) avec des dizaines de réservations, les parcours linéaires de
+ * `session.reservations` rendaient chaque frappe de la recherche quadratique.
+ * On précalcule donc des index (Map/Set) en `computed` — reconstruits
+ * uniquement quand les réservations ou la sélection changent — et les
+ * fonctions du template deviennent de simples lookups O(1).
+ */
+
+/** Clé d'un emplacement réservable : un chapitre précis ou le texte entier. */
+const slotKey = (textStudyId: string, section?: number) =>
+  section === undefined ? `${textStudyId}#full` : `${textStudyId}#${section}`;
+
+// generateChapters allouait un tableau [1..n] par carte et par rendu.
+const chaptersCache = new Map<number, number[]>();
 const generateChapters = (totalSections: number) => {
-  return sessionService.generateChapters(totalSections);
+  let chapters = chaptersCache.get(totalSections);
+  if (!chapters) {
+    chapters = sessionService.generateChapters(totalSections);
+    chaptersCache.set(totalSections, chapters);
+  }
+  return chapters;
 };
 
+// Index emplacement → réservation, sur les deux sources que recevait le
+// composant (session.reservations pour le statut, la prop reservations pour
+// la complétion) ; `has` avant `set` pour garder la sémantique « premier
+// trouvé » de l'ancien .find() en cas de doublon.
+const sessionSlotIndex = computed(() => {
+  const bySlot = new Map<string, TextStudyReservation>();
+  for (const r of props.session.reservations ?? []) {
+    const key = slotKey(r.textStudyId, r.section);
+    if (!bySlot.has(key)) bySlot.set(key, r);
+  }
+  return bySlot;
+});
+
+const reservationSlotIndex = computed(() => {
+  const bySlot = new Map<string, TextStudyReservation>();
+  for (const r of props.reservations) {
+    const key = slotKey(r.textStudyId, r.section);
+    if (!bySlot.has(key)) bySlot.set(key, r);
+  }
+  return bySlot;
+});
+
+// Emplacements dont la réservation est annulable par le visiteur courant.
+// Évalué une fois par changement de réservations/identité : la version
+// précédente relisait le localStorage (identité invitée) à chaque appel.
+const cancellableSlots = computed(() => {
+  const slots = new Set<string>();
+  for (const [key, reservation] of reservationSlotIndex.value) {
+    if (sessionService.canUserDeleteReservation(reservation, props.currentUser, props.guestEmail)) {
+      slots.add(key);
+    }
+  }
+  return slots;
+});
+
 const isReserved = (textStudyId: string, section?: number) => {
-  return sessionService.isTextOrSectionReserved(textStudyId, section, props.session);
+  const r = sessionSlotIndex.value.get(slotKey(textStudyId, section));
+  return r
+    ? { isReserved: true, reservedBy: r.chosenByName || r.chosenById || r.chosenByGuestId }
+    : { isReserved: false };
 };
 
 const isSelected = (textStudyId: string, section?: number) => {
@@ -64,15 +123,25 @@ const isSelected = (textStudyId: string, section?: number) => {
 };
 
 const getReservation = (textStudyId: string, section?: number) => {
-  return props.reservations.find((r) => r.textStudyId === textStudyId && r.section === section);
+  return reservationSlotIndex.value.get(slotKey(textStudyId, section));
 };
 
 const canCancelReservation = (textStudyId: string, section?: number) => {
-  const reservation = getReservation(textStudyId, section);
-  if (!reservation) return false;
-
-  return sessionService.canUserDeleteReservation(reservation, props.currentUser, props.guestEmail);
+  return cancellableSlots.value.has(slotKey(textStudyId, section));
 };
+
+// Textes ayant au moins une section sélectionnée (anneau de surbrillance de la
+// carte) : dérivé de la sélection elle-même, au lieu de tester chaque chapitre
+// de chaque carte à chaque rendu. Les clés `#full` sont ignorées comme avant
+// (l'ancien test ne regardait que les sections numérotées).
+const textsWithSelectedSection = computed(() => {
+  const ids = new Set<string>();
+  for (const key of props.selectedItems) {
+    const hashIndex = key.lastIndexOf("#");
+    if (hashIndex > 0 && key.slice(hashIndex + 1) !== "full") ids.add(key.slice(0, hashIndex));
+  }
+  return ids;
+});
 
 // Sections non réservées d'un texte : cibles du bouton « Tout sélectionner ».
 const availableChapters = (text: TextStudy) => {
@@ -86,17 +155,43 @@ const areAllAvailableSelected = (text: TextStudy) => {
   return chapters.length > 0 && chapters.every((chapter) => isSelected(text.id, chapter));
 };
 
+// Statut d'affichage par texte, calculé une fois par changement de session au
+// lieu de re-parcourir toutes les réservations pour chaque carte à chaque rendu.
+const displayStatusByText = computed(() => {
+  const statuses = new Map<string, ReturnType<typeof sessionService.getTextDisplayStatus>>();
+  for (const texts of Object.values(props.groupedTextStudies)) {
+    for (const text of texts) {
+      if (!statuses.has(text.id)) {
+        statuses.set(text.id, sessionService.getTextDisplayStatus(text.id, text, props.session));
+      }
+    }
+  }
+  return statuses;
+});
+
 const getTextDisplayStatus = (textStudyId: string, text: TextStudy) => {
-  // We need to pass text object as well
-  return sessionService.getTextDisplayStatus(textStudyId, text, props.session);
+  return (
+    displayStatusByText.value.get(textStudyId) ??
+    sessionService.getTextDisplayStatus(textStudyId, text, props.session)
+  );
 };
+
+// Réservations de chapitres par texte (sections définies uniquement).
+const chapterReservationsByText = computed(() => {
+  const byText = new Map<string, TextStudyReservation[]>();
+  for (const r of props.reservations) {
+    if (r.section === undefined) continue;
+    const list = byText.get(r.textStudyId);
+    if (list) list.push(r);
+    else byText.set(r.textStudyId, [r]);
+  }
+  return byText;
+});
 
 // Vrai lorsque toutes les sections d'un texte sont réservées ET marquées comme
 // lues : on affiche alors « Lu par » plutôt que « Réservé par ».
 const isTextFullyRead = (text: TextStudy) => {
-  const chapterReservations = props.reservations.filter(
-    (r) => r.textStudyId === text.id && r.section !== undefined,
-  );
+  const chapterReservations = chapterReservationsByText.value.get(text.id) ?? [];
   return (
     chapterReservations.length === text.totalSections &&
     chapterReservations.every((r) => r.isCompleted)
@@ -136,10 +231,7 @@ const handleCardClick = (text: TextStudy) => {
           :key="text.id"
           class="card flex flex-col"
           :class="{
-            'ring-2 ring-primary/50':
-              isSelected(text.id, 1) ||
-              (text.totalSections > 1 &&
-                generateChapters(text.totalSections).some((c) => isSelected(text.id, c))),
+            'ring-2 ring-primary/50': textsWithSelectedSection.has(text.id),
           }"
         >
           <!-- En-tête du texte -->

@@ -130,7 +130,7 @@ function injectMeta(shell: string, meta: Meta): string {
 let shellCache: { html: string; ts: number } | null = null;
 const SHELL_TTL = 10 * 60 * 1000;
 
-async function getShell(): Promise<string> {
+async function getShell(): Promise<string | null> {
   if (shellCache && Date.now() - shellCache.ts < SHELL_TTL) {
     return shellCache.html;
   }
@@ -138,12 +138,21 @@ async function getShell(): Promise<string> {
   // rather than "/", because "/" now ships prerendered homepage body content that
   // would otherwise leak into every dynamic preview. app.html carries the
   // up-to-date asset hashes and is served statically (not routed to this function).
-  const res = await fetch(`${SITE_URL}/app`, {
-    headers: { "User-Agent": "PetiteJerusalem-SocialPreview" },
-  });
-  const html = await res.text();
-  shellCache = { html, ts: Date.now() };
-  return html;
+  try {
+    const res = await fetch(`${SITE_URL}/app`, {
+      headers: { "User-Agent": "PetiteJerusalem-SocialPreview" },
+    });
+    if (!res.ok) throw new Error(`shell fetch: HTTP ${res.status}`);
+    const html = await res.text();
+    shellCache = { html, ts: Date.now() };
+    return html;
+  } catch (err) {
+    // Origin injoignable : un shell périmé (vieux hashes d'assets) vaut mieux
+    // qu'une 500 sur une page visitée par des humains ; sans aucun cache, le
+    // caller redirige vers le shell statique.
+    console.error("[socialPreview] shell fetch failed:", err);
+    return shellCache?.html ?? null;
+  }
 }
 
 // ---- Chiourim (Firestore, cached) ----
@@ -227,8 +236,22 @@ async function resolveSessionCard(slug: string): Promise<OgCardOptions | null> {
 }
 
 async function resolveChiourMeta(slug: string): Promise<Meta | null> {
-  const chiourim = await getChiourim();
-  const found = chiourim.find((c) => chiourSlug(c.name) === slug);
+  // L'id du document EST le slug (comme côté client) : un seul doc suffit dans
+  // le cas courant. Le scan du catalogue ne reste qu'en filet de sécurité pour
+  // d'éventuels documents hérités dont l'id ne suit pas cette convention.
+  let found: ChiourPreview | null = null;
+  const direct = await db.collection("chiourim").doc(slug).get();
+  const directData = direct.exists ? direct.data() : undefined;
+  if (directData && directData.published !== false && directData.name) {
+    found = {
+      name: (directData.name as string) ?? "",
+      description: (directData.description as string) ?? "",
+      auteur: (directData.auteur as string | null) ?? null,
+    };
+  } else {
+    const chiourim = await getChiourim();
+    found = chiourim.find((c) => chiourSlug(c.name) === slug) ?? null;
+  }
   if (!found) return null;
 
   const description = found.description
@@ -283,8 +306,19 @@ async function resolveMeta(pathname: string): Promise<Meta | null> {
   return null;
 }
 
-export const socialPreview = onRequest(async (req, res) => {
+// Ces deux routes servent aussi les visiteurs humains (liens partagés) : leur
+// concurrence est dimensionnée à part du plafond global de 3 instances, pour
+// qu'un lien qui circule (diffusion WhatsApp) ne mette pas les visiteurs en
+// file d'attente derrière les callables studio et le rappel quotidien.
+export const socialPreview = onRequest({ maxInstances: 10 }, async (req, res) => {
   const shell = await getShell();
+  if (!shell) {
+    // Origine injoignable et aucun shell en cache : on renvoie le visiteur
+    // vers le shell statique plutôt que d'échouer.
+    res.set("Cache-Control", "no-store");
+    res.redirect(302, `${SITE_URL}/app`);
+    return;
+  }
 
   let meta: Meta | null = null;
   try {
@@ -300,8 +334,11 @@ export const socialPreview = onRequest(async (req, res) => {
     url: `${SITE_URL}${req.path}`,
   });
 
-  // Safe to cache on the CDN: the response depends only on the URL.
-  res.set("Cache-Control", "public, max-age=300, s-maxage=600");
+  // Le CDN absorbe le trafic (la réponse ne dépend que de l'URL) mais le
+  // navigateur revalide à chaque visite : ce HTML référence des chunks hashés,
+  // le laisser vieillir en cache navigateur recréerait des pages cassées
+  // après chaque déploiement (même politique que le no-cache du hosting).
+  res.set("Cache-Control", "public, max-age=0, s-maxage=600, stale-while-revalidate=86400");
   res.set("Content-Type", "text/html; charset=utf-8");
   res.status(200).send(html);
 });
@@ -312,7 +349,7 @@ export const socialPreview = onRequest(async (req, res) => {
  * session, render failure) it redirects to the static og-image.jpg so shared
  * links never end up without a preview.
  */
-export const ogImage = onRequest(async (req, res) => {
+export const ogImage = onRequest({ maxInstances: 5 }, async (req, res) => {
   try {
     const last = req.path.split("/").filter(Boolean).pop() ?? "";
     const slug = decodeURIComponent(last).replace(/\.png$/i, "");

@@ -50,6 +50,39 @@ export const HEBREW_FONT_OPTIONS: FontOption[] = [
 const DEFAULT_LATIN = LATIN_FONT_OPTIONS[0];
 const DEFAULT_HEBREW = HEBREW_FONT_OPTIONS[0];
 
+/**
+ * Chargement à la demande des familles NON par défaut.
+ *
+ * index.html n'embarque en bloquant que Inter + Frank Ruhl Libre (+ Noto Serif
+ * Hebrew, repli des teamim) : télécharger les 7 familles pour tous les
+ * visiteurs retardait le premier rendu de chaque page. Les alternatives ne
+ * concernent que les utilisateurs qui les ont choisies (et l'écran de
+ * préférences, qui affiche chaque option dans sa propre police).
+ */
+const FONT_STYLESHEETS: Record<string, string> = {
+  lora: "family=Lora:wght@400;500;600;700",
+  nunito: "family=Nunito:wght@400;600;700",
+  david: "family=David+Libre:wght@400;500;700",
+  heebo: "family=Heebo:wght@400;500;700",
+};
+
+const injectedFonts = new Set<string>();
+
+function ensureFontLoaded(fontId: string): void {
+  const spec = FONT_STYLESHEETS[fontId];
+  if (!spec || injectedFonts.has(fontId) || typeof document === "undefined") return;
+  injectedFonts.add(fontId);
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?${spec}&display=swap`;
+  document.head.appendChild(link);
+}
+
+/** Pour l'écran de préférences : chaque option du sélecteur s'affiche dans sa police. */
+export function ensureAllFontsLoaded(): void {
+  Object.keys(FONT_STYLESHEETS).forEach(ensureFontLoaded);
+}
+
 const currentLatinId = ref(DEFAULT_LATIN.id);
 const currentHebrewId = ref(DEFAULT_HEBREW.id);
 let loadedForUserId: string | null = null;
@@ -81,6 +114,8 @@ export function useFonts() {
       currentHebrewId.value = HEBREW_FONT_OPTIONS.some((f) => f.id === prefs.fontHebrew)
         ? prefs.fontHebrew
         : DEFAULT_HEBREW.id;
+      ensureFontLoaded(currentLatinId.value);
+      ensureFontLoaded(currentHebrewId.value);
       applyFonts(currentLatin.value, currentHebrew.value);
       loadedForUserId = userId;
     } catch {
@@ -91,6 +126,7 @@ export function useFonts() {
 
   async function setLatinFont(userId: string, fontId: string) {
     if (!LATIN_FONT_OPTIONS.some((f) => f.id === fontId)) return;
+    ensureFontLoaded(fontId);
     const previous = currentLatinId.value;
     fontsVersion++;
     loadedForUserId = userId;
@@ -107,6 +143,7 @@ export function useFonts() {
 
   async function setHebrewFont(userId: string, fontId: string) {
     if (!HEBREW_FONT_OPTIONS.some((f) => f.id === fontId)) return;
+    ensureFontLoaded(fontId);
     const previous = currentHebrewId.value;
     fontsVersion++;
     loadedForUserId = userId;

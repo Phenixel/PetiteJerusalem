@@ -12,7 +12,7 @@ import BatchSelectionBar from "../../components/BatchSelectionBar.vue";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
-import { SITE_URL } from "../../content/seoPages";
+import { SITE_URL } from "../../config/site";
 import SessionHeader from "./detailSession/SessionHeader.vue";
 import SessionInstructions from "./detailSession/SessionInstructions.vue";
 import TextStudiesList from "./detailSession/TextStudiesList.vue";

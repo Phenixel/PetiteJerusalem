@@ -105,6 +105,13 @@ Ajout fait : `capture_performance: { web_vitals: true }` → l'onglet
 
 ## 3. Problèmes de performance identifiés (par priorité)
 
+> État (fin de la PR de performance) : tout ce qui suit est **corrigé**, sauf
+> (a) la dénormalisation Firestore de `sessions` (`participantIds`) — elle
+> demande une migration de données coordonnée, hors périmètre d'une PR
+> front — et (b) le pré-découpage des textes par chapitre, qui touche le mode
+> hors-ligne et mérite sa propre PR testée. Détail des correctifs dans la
+> description de la PR.
+
 ### Priorité 1 — Firestore : lectures de collections entières
 
 | Où | Problème |

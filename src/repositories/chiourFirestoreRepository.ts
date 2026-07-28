@@ -1,6 +1,21 @@
-import { collection, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db } from "../../firebase";
 import type { Chiour, ChiourDoc } from "../models/models";
+
+function toChiour(docData: ChiourDoc): Chiour {
+  return {
+    slug: docData.slug,
+    name: docData.name,
+    description: docData.description ?? "",
+    auteur: docData.auteur ?? null,
+    categories: docData.categories ?? [],
+    mediaUrl: docData.mediaUrl ?? "",
+    niveau: docData.niveau ?? null,
+    auteurId: docData.auteurId ?? null,
+    serieId: docData.serieId ?? null,
+    episode: docData.episode ?? null,
+  };
+}
 
 /**
  * Lecture des chiourim depuis Firestore (collection `chiourim`).
@@ -19,26 +34,26 @@ export class ChiourFirestoreRepository {
     const chiourim = snap.docs
       .map((d) => d.data() as ChiourDoc)
       .filter((doc) => doc.published !== false) // visible sauf brouillon explicite
-      .map(
-        (doc): Chiour => ({
-          slug: doc.slug,
-          name: doc.name,
-          description: doc.description ?? "",
-          auteur: doc.auteur ?? null,
-          categories: doc.categories ?? [],
-          mediaUrl: doc.mediaUrl ?? "",
-          niveau: doc.niveau ?? null,
-          auteurId: doc.auteurId ?? null,
-          serieId: doc.serieId ?? null,
-          episode: doc.episode ?? null,
-        }),
-      );
+      .map(toChiour);
 
     // Tri alphabétique du catalogue ; l'ordre fin se joue dans les séries
     // (numéro d'épisode).
     chiourim.sort((a, b) => a.name.localeCompare(b.name, "fr"));
 
     return chiourim;
+  }
+
+  /**
+   * Un seul chiour par slug (l'id du document EST le slug) : la page détail
+   * d'un lien partagé n'a pas besoin de télécharger tout le catalogue pour
+   * afficher son contenu — le catalogue ne sert qu'aux recommandations.
+   */
+  async fetchBySlug(slug: string): Promise<Chiour | null> {
+    const snap = await getDoc(doc(db, "chiourim", slug));
+    if (!snap.exists()) return null;
+    const data = snap.data() as ChiourDoc;
+    if (data.published === false) return null;
+    return toChiour(data);
   }
 }
 
