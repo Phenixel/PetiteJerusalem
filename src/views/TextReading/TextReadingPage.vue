@@ -33,6 +33,7 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
 import { useReadingSize } from "../../composables/useReadingSize";
 import { isNativeApp } from "../../composables/useNativeApp";
+import { analyticsService } from "../../services/analyticsService";
 
 const route = useRoute();
 const router = useRouter();
@@ -72,6 +73,12 @@ const error = ref(false);
 const content = ref<TextContent | null>(null);
 const showPhonetic = ref(false);
 
+// La translittération phonétique est une aide de lecture peu visible : mesurer
+// si elle est trouvée et utilisée.
+watch(showPhonetic, (enabled) => {
+  analyticsService.capture("phonetic_toggled", { enabled });
+});
+
 // --- Reading ---
 const isSingleSection = computed(() => content.value?.sections.length === 1);
 
@@ -102,6 +109,13 @@ const hasNext = computed(
 
 async function loadContent() {
   if (!textEntry.value) return;
+  // Usage de la bibliothèque vs lecture dans le cadre d'une chaîne.
+  analyticsService.capture("text_opened", {
+    text_id: textEntry.value.id,
+    corpus: textEntry.value.type,
+    book: textEntry.value.livre,
+    source: sessionSlug.value ? "session" : "library",
+  });
   loading.value = true;
   error.value = false;
   missingFile.value = false;
@@ -230,10 +244,21 @@ const isMine = computed(() => {
 
 async function reserve() {
   if (!session.value || reservationUnit.value === undefined) return;
+  analyticsService.capture("reservation_confirm_clicked", {
+    session_id: session.value.id,
+    sections_count: 1,
+    is_guest: currentUser.value == null,
+    source: "reading_page",
+  });
   if (
     !currentUser.value &&
     (!reservationForm.value.name || (guestEmailRequired.value && !reservationForm.value.email))
   ) {
+    analyticsService.capture("reservation_failed", {
+      session_id: session.value.id,
+      reason: !reservationForm.value.name ? "missing_name" : "missing_email",
+      source: "reading_page",
+    });
     toast.info(guestIntroText.value);
     return;
   }
@@ -255,8 +280,23 @@ async function reserve() {
       reservationForm.value,
     );
     session.value.reservations = [...session.value.reservations, local];
+    analyticsService.capture("reservation_completed", {
+      session_id: session.value.id,
+      text_type: session.value.type,
+      sections_count: 1,
+      is_guest: currentUser.value == null,
+      guest_has_email: currentUser.value == null && reservationForm.value.email.trim() !== "",
+      source: "reading_page",
+    });
     toast.success(t("textReading.reserveSuccess"));
   } catch (e) {
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    analyticsService.capture("reservation_failed", {
+      session_id: session.value.id,
+      reason: errorMessage.includes("déjà réservée") ? "conflict" : "error",
+      error_message: errorMessage,
+      source: "reading_page",
+    });
     toast.errorFromException(
       e,
       e instanceof Error && e.message ? e.message : t("textReading.reserveError"),
@@ -274,6 +314,11 @@ async function cancelReservation() {
   try {
     await sessionService.deleteReservation(session.value.id, r.id);
     session.value.reservations = session.value.reservations.filter((x) => x.id !== r.id);
+    analyticsService.capture("reservation_cancelled", {
+      session_id: session.value.id,
+      is_guest: currentUser.value == null,
+      source: "reading_page",
+    });
   } catch (e) {
     toast.errorFromException(e, t("textReading.cancelError"));
   } finally {
@@ -290,6 +335,12 @@ async function toggleRead() {
     await sessionService.markReservationAsCompleted(session.value.id, r.id, next);
     r.isCompleted = next;
     session.value.reservations = [...session.value.reservations];
+    analyticsService.capture("section_marked_read", {
+      session_id: session.value.id,
+      marked: next,
+      is_guest: currentUser.value == null,
+      source: "reading_page",
+    });
   } catch (e) {
     toast.errorFromException(e, t("textReading.updateError"));
   } finally {

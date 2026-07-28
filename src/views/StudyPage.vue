@@ -20,6 +20,7 @@ import {
 } from "../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../services/offlineTextStore";
 import { useToast } from "../composables/useToast";
+import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
 import AccountCta from "../components/AccountCta.vue";
 
@@ -42,8 +43,12 @@ async function toggleDownload(text: TextStudyJsonEntry) {
   try {
     if (isBookDownloaded(book)) {
       await removeBook(book);
+      analyticsService.capture("offline_download_deleted", { scope: "book", book: book.path });
     } else {
       await downloadBook(book);
+      // Téléchargements déclenchés par l'utilisateur uniquement (la synchro en
+      // arrière-plan de la lecture du jour n'est pas trackée).
+      analyticsService.capture("offline_download_completed", { scope: "book", book: book.path });
     }
   } catch {
     toast.error(t("downloads.error"));
@@ -108,6 +113,11 @@ const tabAllDownloaded = computed(
 );
 
 async function downloadAllInTab() {
+  analyticsService.capture("offline_download_started", {
+    scope: "all",
+    tab: selectedType.value,
+    books_count: tabBooks.value.filter((b) => !isBookDownloaded(b)).length,
+  });
   for (const book of tabBooks.value) {
     if (isBookDownloaded(book)) continue;
     try {
@@ -117,6 +127,7 @@ async function downloadAllInTab() {
       return; // Probablement hors connexion : inutile d'enchaîner les échecs.
     }
   }
+  analyticsService.capture("offline_download_completed", { scope: "all", tab: selectedType.value });
 }
 
 function formatSize(bytes: number): string {

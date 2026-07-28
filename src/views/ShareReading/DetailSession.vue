@@ -17,6 +17,7 @@ import SessionHeader from "./detailSession/SessionHeader.vue";
 import SessionInstructions from "./detailSession/SessionInstructions.vue";
 import TextStudiesList from "./detailSession/TextStudiesList.vue";
 import { useToast } from "../../composables/useToast";
+import { analyticsService } from "../../services/analyticsService";
 
 const route = useRoute();
 const router = useRouter();
@@ -47,6 +48,20 @@ const shareUrl = ref("");
 const selectedItems = ref<Set<string>>(new Set());
 const isSubmittingBatch = ref(false);
 const showSignupPrompt = ref(false);
+
+// Funnel réservation : un seul événement par visite pour la 1re sélection et
+// la 1re recherche, sinon chaque clic de chapitre noierait les stats.
+let hasTrackedSelection = false;
+let hasTrackedSearch = false;
+
+const trackFirstSelection = () => {
+  if (hasTrackedSelection) return;
+  hasTrackedSelection = true;
+  analyticsService.capture("session_section_selected", {
+    session_id: session.value?.id,
+    is_authenticated: currentUser.value != null,
+  });
+};
 
 const groupedTextStudies = computed(() => {
   if (!textStudies.value.length) return {};
@@ -216,6 +231,7 @@ const handleToggleSelectAll = (textStudyId: string) => {
     availableKeys.forEach((key) => selectedItems.value.delete(key));
   } else {
     availableKeys.forEach((key) => selectedItems.value.add(key));
+    if (availableKeys.length > 0) trackFirstSelection();
   }
 };
 
@@ -237,16 +253,29 @@ const handleItemClick = (textStudyId: string, section?: number) => {
     selectedItems.value.delete(key);
   } else {
     selectedItems.value.add(key);
+    trackFirstSelection();
   }
 };
 
 const confirmReservations = async () => {
   if (!session.value || selectedItems.value.size === 0) return;
 
+  analyticsService.capture("reservation_confirm_clicked", {
+    session_id: session.value.id,
+    sections_count: selectedItems.value.size,
+    is_guest: currentUser.value == null,
+    source: "session_page",
+  });
+
   if (
     !currentUser.value &&
     (!reservationForm.value.name || (guestEmailRequired.value && !reservationForm.value.email))
   ) {
+    analyticsService.capture("reservation_failed", {
+      session_id: session.value.id,
+      reason: !reservationForm.value.name ? "missing_name" : "missing_email",
+      source: "session_page",
+    });
     toast.info(
       guestEmailRequired.value ? t("detailSession.fillNameAndEmail") : t("detailSession.fillName"),
     );
@@ -301,6 +330,15 @@ const confirmReservations = async () => {
     reservations.value.push(...newReservations);
     selectedItems.value.clear();
 
+    analyticsService.capture("reservation_completed", {
+      session_id: session.value.id,
+      text_type: session.value.type,
+      sections_count: newReservations.length,
+      is_guest: currentUser.value == null,
+      guest_has_email: currentUser.value == null && reservationForm.value.email.trim() !== "",
+      source: "session_page",
+    });
+
     if (!currentUser.value) {
       // Les invités voient la modale d'inscription, qui confirme déjà la réservation.
       showSignupPrompt.value = true;
@@ -309,6 +347,15 @@ const confirmReservations = async () => {
     }
   } catch (err) {
     console.error("Erreur lors de la confirmation globale:", err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    analyticsService.capture("reservation_failed", {
+      session_id: session.value.id,
+      // Le conflit (section prise entre-temps) vient du message de
+      // reservationService.createBatchReservations.
+      reason: errorMessage.includes("déjà réservée") ? "conflict" : "error",
+      error_message: errorMessage,
+      source: "session_page",
+    });
     toast.errorFromException(
       err,
       err instanceof Error && err.message ? err.message : t("detailSession.reservationError"),
@@ -348,6 +395,12 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
       if (session.value) {
         session.value.reservations = reservations.value;
       }
+
+      analyticsService.capture("reservation_cancelled", {
+        session_id: session.value?.id,
+        is_guest: currentUser.value == null,
+        source: "session_page",
+      });
     }
   } catch (err) {
     console.error("Erreur lors de l'annulation:", err);
@@ -373,6 +426,13 @@ const toggleReservationCompletion = async (textStudyId: string, section: number)
     );
 
     reservation.isCompleted = newCompletionStatus;
+
+    analyticsService.capture("section_marked_read", {
+      session_id: session.value.id,
+      marked: newCompletionStatus,
+      is_guest: currentUser.value == null,
+      source: "session",
+    });
   } catch (error) {
     console.error("Erreur lors de la mise à jour de la réservation:", error);
     toast.errorFromException(error, t("detailSession.updateError"));
@@ -401,6 +461,11 @@ const goToManagement = () => {
   if (session.value) {
     router.push(`/session-management/${session.value.id}`);
   }
+};
+
+const goToCreateChain = () => {
+  analyticsService.capture("create_chain_cta_clicked", { source: "session_detail" });
+  router.push("/share-reading");
 };
 
 const applySessionSeo = (s: typeof session.value) => {
@@ -433,6 +498,38 @@ onMounted(async () => {
   currentUser.value = await sessionService.getCurrentUser();
   await loadSessionData();
   applySessionSeo(session.value);
+
+  // Point d'entrée du funnel de réservation. Pas de nom de session dans les
+  // propriétés : les intitulés portent souvent des noms de personnes.
+  const s = session.value;
+  if (s) {
+    analyticsService.capture("session_viewed", {
+      session_id: s.id,
+      text_type: s.type,
+      is_ended: s.isEnded === true || s.isCompleted === true,
+      is_expired: s.dateLimit instanceof Date && s.dateLimit.getTime() < Date.now(),
+      sections_total: progressStats.value.total,
+      sections_reserved_pct: Math.round(progressStats.value.reservedPercentage),
+      participants_count: progressStats.value.participants,
+      is_authenticated: currentUser.value != null,
+    });
+  }
+});
+
+// La recherche et le filtre signalent une intention active de trouver une
+// section libre : trackés une fois (recherche) ou à chaque bascule (filtre).
+watch(searchTerm, (value) => {
+  if (!value.trim() || hasTrackedSearch) return;
+  hasTrackedSearch = true;
+  analyticsService.capture("session_search_used", { session_id: session.value?.id });
+});
+
+watch(showOnlyAvailable, (enabled) => {
+  analyticsService.capture("session_filter_toggled", {
+    session_id: session.value?.id,
+    filter: "available_only",
+    enabled,
+  });
 });
 
 watch(session, (s) => applySessionSeo(s));
@@ -560,7 +657,7 @@ watch(session, (s) => applySessionSeo(s));
           <p class="text-text-secondary max-w-xl mx-auto mb-6 leading-relaxed">
             {{ t("detailSession.createYourOwnText") }}
           </p>
-          <button @click="router.push('/share-reading')" class="btn btn-primary">
+          <button @click="goToCreateChain" class="btn btn-primary">
             <AppIcon name="plus" :size="16" />
             {{ t("detailSession.createYourOwnButton") }}
           </button>

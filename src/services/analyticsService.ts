@@ -1,6 +1,7 @@
 import type { BeforeSendFn, PostHog, Properties } from "posthog-js";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import { getConsentChoice, onConsentChange } from "../composables/useConsent";
+import { i18n } from "../i18n";
 import type { User } from "../models/models";
 
 /**
@@ -53,9 +54,20 @@ function rewriteNativeUrls(bag: Properties | undefined): void {
  * de déconnexion, qui vide la persistance. `before_send` s'applique à tout,
  * y compris aux `$exception` d'Error tracking.
  */
+/**
+ * Le backoffice admin et le studio auteurs sont des outils internes : leurs
+ * événements pollueraient les stats produit (funnels, pageviews, replays).
+ */
+const INTERNAL_PATHS = /^\/(admin|studio)(\/|$)/;
+
 const stampPlatform: BeforeSendFn = (event) => {
   if (!event) return event;
+  if (INTERNAL_PATHS.test(window.location.pathname)) return null;
   event.properties.app_platform = appPlatform;
+  // Segmentation anonyme/connecté et par langue sur tous les événements, y
+  // compris les $pageview automatiques (mêmes raisons que app_platform).
+  event.properties.is_logged_in = isLoggedIn;
+  event.properties.locale = i18n.global.locale.value;
   if (isNativeApp) {
     rewriteNativeUrls(event.properties);
     rewriteNativeUrls(event.$set);
@@ -63,6 +75,11 @@ const stampPlatform: BeforeSendFn = (event) => {
   }
   return event;
 };
+
+// Tenu à jour par l'abonnement auth de load() ; false tant que Firebase n'a
+// pas restauré la session (les tout premiers événements d'un utilisateur
+// connecté peuvent donc partir en anonyme, c'est assumé).
+let isLoggedIn = false;
 
 class AnalyticsService {
   private posthog: PostHog | null = null;
@@ -121,6 +138,7 @@ class AnalyticsService {
       // Firebase dans le chemin de chargement de PostHog.
       const { authService } = await import("./authService");
       authService.onAuthChanged((user) => {
+        isLoggedIn = user != null;
         if (user) this.identify(user);
       });
     } catch {

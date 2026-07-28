@@ -327,6 +327,7 @@ watch(() => route.params.slug, loadChiour);
       :share-url="shareUrl"
       title-key="shareModal.titleChiour"
       message-key="shareModal.inviteChiour"
+      content-type="chiour"
     />
   </main>
 </template>

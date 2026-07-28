@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter, useRoute } from "vue-router";
+import { analyticsService } from "../services/analyticsService";
 import AppIcon from "./icons/AppIcon.vue";
 import type { IconName } from "./icons/registry";
 
@@ -48,11 +49,32 @@ const footerNote = computed(() =>
   isAuth.value ? t("signupPrompt.createSessionHaveAccount") : t("signupPrompt.alreadyHaveAccount"),
 );
 
+// Funnel invité → compte : la modale est le principal point de conversion.
+watch(
+  () => props.show,
+  (shown) => {
+    if (shown) {
+      analyticsService.capture("signup_prompt_shown", { variant: props.variant });
+    }
+  },
+);
+
+const trackAction = (action: "google" | "email" | "signin" | "later") => {
+  analyticsService.capture("signup_prompt_clicked", { variant: props.variant, action });
+};
+
 const closeModal = () => {
   emit("update:show", false);
 };
 
+/** Fermeture sans donner suite (« Plus tard », clic hors de la modale). */
+const dismiss = () => {
+  trackAction("later");
+  closeModal();
+};
+
 const goToLogin = (mode: "signup" | "google" | "login") => {
+  trackAction(mode === "signup" ? "email" : mode === "google" ? "google" : "signin");
   const currentPath = route.fullPath;
   const query: Record<string, string> = { redirect: currentPath };
   if (mode === "signup") {
@@ -69,7 +91,7 @@ const goToLogin = (mode: "signup" | "google" | "login") => {
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="show" class="modal-overlay" @click="closeModal">
+      <div v-if="show" class="modal-overlay" @click="dismiss">
         <div class="modal-panel animate-[scaleIn_0.3s_ease]" @click.stop>
           <!-- Header : confirmation ou invitation à se connecter -->
           <div class="text-center">
@@ -130,7 +152,7 @@ const goToLogin = (mode: "signup" | "google" | "login") => {
             </button>
 
             <button
-              @click="closeModal"
+              @click="dismiss"
               class="w-full py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
             >
               {{ t("signupPrompt.later") }}

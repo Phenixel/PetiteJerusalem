@@ -8,6 +8,7 @@ import { TextTypeService } from "../../services/textTypeService";
 import { authService } from "../../services/authService";
 import type { User } from "../../services/authService";
 import { seoService } from "../../services/seoService";
+import { analyticsService } from "../../services/analyticsService";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
@@ -79,6 +80,10 @@ const formatBookName = (bookName: string) => {
 
 onMounted(async () => {
   currentUser.value = await authService.getCurrentUser();
+  // Entrée du funnel de création (session_created en est la sortie).
+  analyticsService.capture("session_create_started", {
+    is_authenticated: currentUser.value != null,
+  });
   if (!currentUser.value) {
     showAuthPrompt.value = true;
   }
@@ -129,12 +134,23 @@ const createSession = async () => {
       sessionData.guestEmailRequired,
     );
 
+    analyticsService.capture("session_created", {
+      session_id: sessionId,
+      text_type: sessionData.type,
+      books_count: selectedBooks.value.length,
+      guest_email_required: sessionData.guestEmailRequired,
+      deadline_days: Math.ceil(
+        (new Date(sessionData.dateLimit).getTime() - Date.now()) / (24 * 3600 * 1000),
+      ),
+    });
+
     // Le toast est monté au niveau de l'app : il survit à la redirection et
     // reste visible sur la page de la session nouvellement créée.
     toast.success(t("newSession.createdSuccess"));
     router.push(`/share-reading/session/${sessionId}`);
   } catch (error) {
     console.error("Erreur lors de la création de la session:", error);
+    analyticsService.captureException(error, { flow: "session_create" });
     message.value = t("newSession.createError");
     messageType.value = "error";
     isLoading.value = false;

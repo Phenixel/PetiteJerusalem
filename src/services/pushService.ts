@@ -5,6 +5,7 @@ import { arrayRemove, arrayUnion, doc, setDoc } from "firebase/firestore";
 import type { Router } from "vue-router";
 import { app, db } from "../../firebase";
 import { isNativeApp } from "../composables/useNativeApp";
+import { analyticsService } from "./analyticsService";
 
 /**
  * Notifications push (app native uniquement — le site web n'en envoie pas).
@@ -117,6 +118,8 @@ class PushService {
     // Deep-link quand l'utilisateur touche une notification push (`data.url`).
     FirebaseMessaging.addListener("notificationActionPerformed", (event) => {
       const url = (event.notification.data as { url?: string } | undefined)?.url;
+      // Efficacité du rappel quotidien : combien de retours viennent des push.
+      analyticsService.capture("push_notification_opened", { url: url ?? null });
       if (url) router.push(url);
     });
 
@@ -142,6 +145,7 @@ class PushService {
     // Toucher la notification locale doit deep-linker comme la push d'origine.
     LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
       const url = (event.notification.extra as { url?: string } | undefined)?.url;
+      analyticsService.capture("push_notification_opened", { url: url ?? null });
       if (url) router.push(url);
     });
   }

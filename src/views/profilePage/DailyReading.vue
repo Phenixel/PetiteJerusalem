@@ -10,6 +10,7 @@ import { sessionService } from "../../services/sessionService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useToast } from "../../composables/useToast";
+import { analyticsService } from "../../services/analyticsService";
 import DailyReadingItem from "./DailyReadingItem.vue";
 import ReminderTimeModal from "./ReminderTimeModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
@@ -122,7 +123,8 @@ function isSelected(id: string | number): boolean {
 
 async function toggleSelect(entry: TextStudyJsonEntry) {
   const id = String(entry.id);
-  if (selectedIds.value.includes(id)) {
+  const removed = selectedIds.value.includes(id);
+  if (removed) {
     selectedIds.value = selectedIds.value.filter((x) => x !== id);
     const next = new Set(completedIds.value);
     next.delete(id);
@@ -132,6 +134,10 @@ async function toggleSelect(entry: TextStudyJsonEntry) {
     selectedIds.value = [...selectedIds.value, id];
   }
   await persistSelection();
+  analyticsService.capture("daily_reading_configured", {
+    action: removed ? "removed" : "added",
+    texts_count: selectedIds.value.length,
+  });
 }
 
 async function toggleCompleted(id: string) {
@@ -143,6 +149,12 @@ async function toggleCompleted(id: string) {
   // Marking read folds the text away; un-marking reopens it to keep reading.
   setCollapsed(id, nowRead);
   await persistProgress();
+  analyticsService.capture("daily_reading_marked_read", {
+    marked: nowRead,
+    done_count: completedCount.value,
+    total_count: totalCount.value,
+    all_done: allDone.value,
+  });
 }
 
 function setCollapsed(id: string, collapsed: boolean) {
@@ -187,11 +199,14 @@ async function enableReminder(time: { hour: number; minute: number }) {
     reminderEnabled.value = true;
     reminderHour.value = time.hour;
     reminderMinute.value = time.minute;
+    analyticsService.capture("reminder_enabled", { hour: time.hour, minute: time.minute });
     toast.success(
       t("notifications.enabledToast", { time: formatReminderTime(time.hour, time.minute) }),
     );
   } catch (e: unknown) {
     if (e instanceof Error && e.message === "PERMISSION_DENIED") {
+      // Friction push : l'utilisateur voulait le rappel mais l'OS a dit non.
+      analyticsService.capture("reminder_enable_failed", { reason: "permission_denied" });
       toast.error(t("notifications.permissionDenied"));
     } else {
       console.error("Activation du rappel échouée:", e);
@@ -207,6 +222,7 @@ async function disableReminder() {
   try {
     await pushService.disable(props.userId);
     reminderEnabled.value = false;
+    analyticsService.capture("reminder_disabled");
     toast.success(t("notifications.disabledToast"));
   } catch (e: unknown) {
     console.error("Désactivation du rappel échouée:", e);
