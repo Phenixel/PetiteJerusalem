@@ -3,6 +3,7 @@ import { watch } from "vue";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import { isDegradedRendering } from "../composables/useDevicePerf";
 import { getConsentChoice, onConsentChange } from "../composables/useConsent";
+import { resolveUserType } from "../config/analyticsAudience";
 import { i18n } from "../i18n";
 import type { User } from "../models/models";
 
@@ -244,7 +245,13 @@ class AnalyticsService {
 
   /** À la connexion : rattache les événements au compte (id Firebase). */
   identify(user: User): void {
-    this.posthog?.identify(user.id, { email: user.email, name: user.name });
+    if (!this.posthog) return;
+    this.posthog.identify(user.id, { email: user.email, name: user.name });
+    // Segmentation interne / testeur / vrai utilisateur (voir la liste dans
+    // config/analyticsAudience.ts). Posée à chaque identification, pas
+    // seulement à la création du profil : une liste éditée doit se propager
+    // aux comptes déjà connus dès leur prochaine session.
+    this.posthog.setPersonProperties({ user_type: resolveUserType(user.email) });
   }
 
   /**
