@@ -20,16 +20,72 @@ if (isNativeApp) {
 
 // Après un déploiement, les chunks lazy-loadés changent de hash : un onglet
 // resté ouvert sur l'ancienne version obtient un 404 en naviguant (« Failed to
-// fetch dynamically imported module ») et la page reste blanche. On recharge
-// une seule fois (garde sessionStorage pour ne pas boucler si le réseau est
-// vraiment en panne) : le HTML frais référence les nouveaux chunks.
+// fetch dynamically imported module ») et la navigation échoue, page blanche à
+// la clé. On recharge une seule fois (garde sessionStorage pour ne pas boucler
+// si le réseau est vraiment en panne) : le HTML frais référence les nouveaux
+// chunks.
+//
+// Trois sources d'écoute, parce qu'elles ne se recouvrent pas :
+//  - vite:preloadError — échec du PRÉchargement des dépendances d'un chunk ;
+//  - router.onError — échec de l'import() du composant de route lui-même, qui
+//    ne déclenche aucun vite:preloadError. C'est le cas réellement observé en
+//    production, et il n'était pas rattrapé ;
+//  - unhandledrejection — les import() hors routeur (services, composants).
+const CHUNK_RELOAD_KEY = "pj_chunk_reload_at";
+
+// Messages des navigateurs pour un module dynamique injoignable : Chrome
+// (« Failed to fetch dynamically imported module »), Firefox (« error loading
+// dynamically imported module »), Safari (« Importing a module script failed »).
+const CHUNK_ERROR = /dynamically imported module|Importing a module script failed/i;
+
+function chunkNameFrom(message: string): string | null {
+  const url = message.match(/https?:\/\/\S+?\.(?:js|mjs|css)/)?.[0];
+  return url ? (url.split("/").pop() ?? null) : null;
+}
+
+/** Un seul rechargement par minute et par onglet : sinon un vrai incident réseau boucle. */
+function claimReload(): boolean {
+  try {
+    const lastReload = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) ?? 0);
+    if (Date.now() - lastReload < 60_000) return false;
+    sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+  } catch {
+    // Stockage indisponible : on recharge quand même, sans garde.
+  }
+  return true;
+}
+
+/** Renvoie true si l'erreur est bien un chunk manquant ET qu'on recharge. */
+function handleChunkLoadError(error: unknown, source: string): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  if (!CHUNK_ERROR.test(message)) return false;
+
+  const reloading = claimReload();
+  // Capture AVANT le rechargement : PostHog vide sa file en sendBeacon au
+  // pagehide déclenché par reload(), l'événement n'est donc pas perdu.
+  void import("./services/analyticsService")
+    .then(({ analyticsService }) =>
+      analyticsService.capture("chunk_load_error", {
+        chunk: chunkNameFrom(message),
+        route: window.location.pathname,
+        source,
+        reloaded: reloading,
+      }),
+    )
+    .finally(() => {
+      if (reloading) window.location.reload();
+    });
+  return reloading;
+}
+
 window.addEventListener("vite:preloadError", (event) => {
-  const RELOAD_KEY = "pj_chunk_reload_at";
-  const lastReload = Number(sessionStorage.getItem(RELOAD_KEY) ?? 0);
-  if (Date.now() - lastReload < 60_000) return;
-  sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
-  event.preventDefault();
-  window.location.reload();
+  // On n'étouffe l'erreur que si on la traite : au 2e échec d'affilée, elle
+  // doit redevenir visible (Error tracking) plutôt que disparaître.
+  if (handleChunkLoadError(event.payload, "vite_preload")) event.preventDefault();
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  handleChunkLoadError(event.reason, "unhandled_rejection");
 });
 
 const app = createApp(App);
@@ -51,6 +107,12 @@ app.directive("click-outside", {
 
 app.use(router);
 app.use(i18n);
+
+// Le composant de route est importé APRÈS les gardes et AVANT que l'URL ne
+// change : quand son chunk a disparu (déploiement), l'échec remonte ici, pas
+// dans vite:preloadError, et l'utilisateur reste bloqué sur la page de départ
+// sans rien voir. C'est exactement ce qui s'est produit en prod le 28/07.
+router.onError((error) => handleChunkLoadError(error, "router"));
 
 // Les erreurs de rendu/handlers Vue ne remontent pas jusqu'à window.onerror :
 // sans ce handler, elles seraient invisibles dans l'Error tracking PostHog.
