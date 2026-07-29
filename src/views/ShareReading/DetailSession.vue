@@ -621,7 +621,8 @@ watch(session, (s) => applySessionSeo(s));
         <GuestForm v-model:reservationForm="reservationForm" :email-required="guestEmailRequired" />
       </div>
 
-      <!-- Barre de recherche -->
+      <!-- Barre de recherche + filtre : collants ensemble en haut, pour rester
+           à portée pendant le défilement de la liste des textes. -->
       <div class="sticky top-4 z-20 mb-8">
         <div class="relative max-w-xl mx-auto">
           <AppIcon
@@ -647,24 +648,27 @@ watch(session, (s) => applySessionSeo(s));
         <div v-if="searchTerm" class="text-center mt-2 text-sm text-text-secondary">
           {{ t("detailSession.searchFor") }} : "{{ searchTerm }}"
         </div>
-      </div>
 
-      <!-- Filtre : masquer les textes entièrement réservés (non sticky) -->
-      <div class="flex justify-center mb-8 -mt-4">
-        <label class="inline-flex items-center gap-2.5 cursor-pointer">
-          <span class="relative inline-flex items-center">
-            <input type="checkbox" v-model="showOnlyAvailable" class="sr-only peer" />
-            <span
-              class="w-9 h-5 bg-black/15 rounded-full peer peer-checked:bg-primary transition-colors dark:bg-white/20"
-            ></span>
-            <span
-              class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform peer-checked:translate-x-4"
-            ></span>
-          </span>
-          <span class="text-sm font-medium text-text-secondary">
-            {{ t("detailSession.availableOnly") }}
-          </span>
-        </label>
+        <!-- Filtre : masquer les textes entièrement réservés. Fond opaque en
+             pastille : la liste défile juste en dessous. -->
+        <div class="flex justify-center mt-3">
+          <label
+            class="inline-flex items-center gap-2.5 cursor-pointer bg-surface rounded-full pl-3.5 pr-4 py-2 shadow-card"
+          >
+            <span class="relative inline-flex items-center">
+              <input type="checkbox" v-model="showOnlyAvailable" class="sr-only peer" />
+              <span
+                class="w-9 h-5 bg-black/15 rounded-full peer peer-checked:bg-primary transition-colors dark:bg-white/20"
+              ></span>
+              <span
+                class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform peer-checked:translate-x-4"
+              ></span>
+            </span>
+            <span class="text-sm font-medium text-text-secondary">
+              {{ t("detailSession.availableOnly") }}
+            </span>
+          </label>
+        </div>
       </div>
 
       <!-- Liste des textes groupés par livre -->
