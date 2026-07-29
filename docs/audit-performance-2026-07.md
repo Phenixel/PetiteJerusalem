@@ -27,7 +27,18 @@ page en particulier. Par ordre de probabilité :
    l'Error tracking restent actifs partout. À la réactivation, préférer un
    échantillonnage (PostHog → Settings → Session replay → sampling) et/ou
    l'exclusion des appareils modestes (`useDevicePerf.ts`).
-2. **Le mur de pierre animé** (`StoneWallBackground.vue`) — deux halos de
+2. **Les illustrations SVG en animation infinie** — CONFIRMÉ par une trace
+   Firefox Profiler (le problème ne se reproduit pas sous Chrome) : 154
+   animations CSS actives sur la session, thread du site réveillé en
+   permanence (~18 repaints/s à vide), retards d'entrée jusqu'à 136 ms.
+   Deux aggravants : `illu-flow` anime `stroke-dashoffset`, que Firefox ne
+   peut pas composer sur GPU (repaint du SVG à chaque frame), et
+   `IllustrationProfil` (étincelles infinies) vit dans AccountCta, affiché
+   aux visiteurs non connectés sur plusieurs pages — d'où « tout le site »
+   lent. → **Corrigé** : les boucles d'attente des 4 illustrations sont
+   finies (2-3 itérations, ~10 s de vie après l'entrée, fin sur l'état de
+   repos) ; les animations de survol, auto-limitées, restent infinies.
+3. **Le mur de pierre animé** (`StoneWallBackground.vue`) — deux halos de
    60/45 vmax en animation infinie derrière un mask SVG plein écran, sur
    toutes les pages, plus un `backdrop-filter: blur(12px)` sur les barres
    de recherche sticky au-dessus d'un fond qui bouge en permanence : le
@@ -36,11 +47,11 @@ page en particulier. Par ordre de probabilité :
    `prefers-reduced-motion`). Test A/B facile pour le testeur : activer
    « réduire les animations » dans les réglages de son OS — si ça règle la
    lenteur, c'est confirmé.
-3. **Le mini-lecteur audio** — `currentTime` (ref globale) était publié
+4. **Le mini-lecteur audio** — `currentTime` (ref globale) était publié
    ~4×/s pendant toute l'écoute → re-rendus continus sur toutes les pages
    tant qu'un chiour joue (et autant de mutations DOM à sérialiser pour le
    replay). → **Corrigé** : publication au changement de seconde (1 Hz).
-4. **Le poids du chargement initial** (§4) et **les lectures Firestore
+5. **Le poids du chargement initial** (§4) et **les lectures Firestore
    complètes** (§1) — ils rendent chaque *navigation* lente sur petite
    connexion, sans expliquer à eux seuls une lenteur d'interaction.
 
@@ -95,9 +106,9 @@ règles de l'art :
 
 Le seul poste réellement coûteux côté client est le **session replay**
 (enregistrement rrweb : CPU + réseau en continu pendant toute la visite).
-Désormais coupé sur les appareils modestes (voir §0) ; si un jour il faut
-alléger davantage, c'est ce réglage qu'on échantillonne ou qu'on coupe —
-pas les événements produit, qui ne coûtent rien.
+Désormais coupé pour tout le monde (voir §0) ; à la réactivation, préférer
+l'échantillonnage — et ne jamais toucher aux événements produit, qui ne
+coûtent rien.
 
 Ajout fait : `capture_performance: { web_vitals: true }` → l'onglet
 **Web analytics → Web vitals** de PostHog donnera des mesures terrain
