@@ -261,6 +261,31 @@ const isMine = computed(() => {
   return !!r && sessionService.canUserDeleteReservation(r, currentUser.value, reservationForm.value.email);
 });
 
+// Entrée du funnel de réservation : le lecteur atteint une section libre et la
+// barre de réservation s'affiche. C'était le pas manquant entre session_viewed
+// et reservation_confirm_clicked — le trou de conversion à mesurer est là,
+// entre voir le formulaire et cliquer sur « Confirmer ».
+const canReserveNow = computed(() => showReservationBar.value && !reservedStatus.value.isReserved);
+
+// Une seule fois par unité réservable : la navigation latérale entre textes
+// (goToText) ne recrée pas le composant, et le formulaire invité fait changer
+// les computeds à chaque frappe.
+let lastReservationStartKey: string | null = null;
+
+watch([canReserveNow, reservationUnit], ([canReserve, unit]) => {
+  if (!canReserve || !session.value) return;
+  const key = `${session.value.id}#${textId.value}#${unit}`;
+  if (lastReservationStartKey === key) return;
+  lastReservationStartKey = key;
+  analyticsService.capture("reservation_started", {
+    session_id: session.value.id,
+    text_type: session.value.type,
+    sections_count: 1,
+    is_guest: currentUser.value == null,
+    source: "reading_page",
+  });
+});
+
 async function reserve() {
   if (!session.value || reservationUnit.value === undefined) return;
   analyticsService.capture("reservation_confirm_clicked", {

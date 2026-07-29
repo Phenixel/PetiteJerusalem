@@ -3,15 +3,17 @@ import { watch } from "vue";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import { isDegradedRendering } from "../composables/useDevicePerf";
 import { getConsentChoice, onConsentChange } from "../composables/useConsent";
+import { resolveUserType } from "../config/analyticsAudience";
 import { i18n } from "../i18n";
 import type { User } from "../models/models";
 
 /**
  * Suivi produit et traque d'erreurs via PostHog (instance EU).
  *
- * - Chargé uniquement en production, par import dynamique : le SDK ne rentre
- *   pas dans le bundle initial et ne bloque jamais le démarrage (même schéma
- *   que Firebase Analytics dans firebase.ts).
+ * - Chargé uniquement sur les surfaces de production (voir isTrackedSurface),
+ *   par import dynamique : le SDK ne rentre pas dans le bundle initial et ne
+ *   bloque jamais le démarrage (même schéma que Firebase Analytics dans
+ *   firebase.ts).
  * - La clé du projet est publique (elle part dans le bundle, comme la config
  *   Firebase) : ce n'est pas un secret.
  * - Tant que PostHog n'est pas chargé (dev, adblock, échec réseau), toutes les
@@ -22,6 +24,61 @@ import type { User } from "../models/models";
 // Clé publique du projet PostHog (project settings → Project API key).
 const POSTHOG_KEY = "phc_qV5GtjgB46gGmPGpXq8edRXRK94jmgGkiNLdFA6tyRSW";
 const POSTHOG_HOST = "https://eu.i.posthog.com";
+
+/**
+ * Hôtes web considérés comme de la production. Tout le reste (localhost,
+ * `npm run preview` sur :4173, canaux de preview Firebase en
+ * `petite-jerusalem-dev--pr*.web.app`) envoyait ses événements dans le même
+ * projet et faussait les stats : sur 14 jours, la preview d'une seule PR
+ * pesait 184 événements, 4e hôte en volume.
+ */
+const PRODUCTION_HOSTS = ["petite-jerusalem.fr", "www.petite-jerusalem.fr"];
+
+/**
+ * Porte de sortie manuelle : `localStorage.setItem('ph_debug', '1')` force le
+ * chargement de PostHog n'importe où (dev, preview), pour vérifier une
+ * instrumentation avant de la déployer. Les événements partent alors avec
+ * `env: 'preview'`, ce qui permet de les exclure de toutes les analyses.
+ */
+const DEBUG_STORAGE_KEY = "ph_debug";
+
+function isDebugOverride(): boolean {
+  try {
+    return localStorage.getItem(DEBUG_STORAGE_KEY) === "1";
+  } catch {
+    // Stockage indisponible (mode restreint) : pas de débogage forcé.
+    return false;
+  }
+}
+
+/**
+ * Vraie surface de production : le site public, ou l'app native.
+ *
+ * L'app ne peut pas être reconnue à son hôte : la webview Capacitor sert le
+ * bundle depuis `https://localhost` (c'est `stampPlatform` qui réécrit ensuite
+ * le `$host` des événements en `app.android` / `app.ios`). Le seul signal
+ * fiable au moment de l'init est donc `isNativeApp`.
+ */
+function isProductionSurface(): boolean {
+  return isNativeApp || PRODUCTION_HOSTS.includes(window.location.hostname);
+}
+
+function isTrackedSurface(): boolean {
+  if (isDebugOverride()) return true;
+  // `npm run dev` : jamais de suivi automatique, même sur un hôte de prod.
+  if (!import.meta.env.PROD) return false;
+  return isProductionSurface();
+}
+
+/** Super propriétés (A2) : contexte de release attaché à chaque événement. */
+const APP_ENV = isProductionSurface() ? "production" : "preview";
+const APP_VERSION = __APP_VERSION__;
+
+const SUPER_PROPERTIES = {
+  env: APP_ENV,
+  app_platform: appPlatform,
+  app_version: APP_VERSION,
+} as const;
 
 /**
  * Dans l'app, la webview Capacitor sert le bundle depuis `https://localhost` :
@@ -48,13 +105,15 @@ function rewriteNativeUrls(bag: Properties | undefined): void {
 }
 
 /**
- * Estampille chaque événement avec la plateforme d'exécution.
+ * Estampille chaque événement avec le contexte de release (env, plateforme,
+ * version) et l'état de la session.
  *
- * Passe par `before_send` plutôt que par `posthog.register()` : les super
+ * Double ceinture avec le `posthog.register()` de load() : les super
  * propriétés ne couvrent ni le `$pageview` initial (capturé pendant `init()`,
- * donc avant tout `register()`), ni les événements qui suivent un `reset()`
- * de déconnexion, qui vide la persistance. `before_send` s'applique à tout,
- * y compris aux `$exception` d'Error tracking.
+ * donc avant que la ligne suivante ne s'exécute), ni les événements qui
+ * suivent un `reset()` de déconnexion, qui vide la persistance. `before_send`
+ * s'applique à tout, y compris aux `$exception` d'Error tracking. Les deux
+ * écrivent les mêmes valeurs : aucun conflit possible.
  */
 /**
  * Le backoffice admin et le studio auteurs sont des outils internes : leurs
@@ -65,7 +124,7 @@ const INTERNAL_PATHS = /^\/(admin|studio)(\/|$)/;
 const stampPlatform: BeforeSendFn = (event) => {
   if (!event) return event;
   if (INTERNAL_PATHS.test(window.location.pathname)) return null;
-  event.properties.app_platform = appPlatform;
+  Object.assign(event.properties, SUPER_PROPERTIES);
   // Segmentation anonyme/connecté et par langue sur tous les événements, y
   // compris les $pageview automatiques (mêmes raisons que app_platform).
   event.properties.is_logged_in = isLoggedIn;
@@ -92,7 +151,7 @@ class AnalyticsService {
    * la capture ; un nouvel accord la réactive.
    */
   init(): void {
-    if (!import.meta.env.PROD || !POSTHOG_KEY) return;
+    if (!POSTHOG_KEY || !isTrackedSurface()) return;
     if (getConsentChoice() === "granted") {
       void this.load();
     }
@@ -142,6 +201,12 @@ class AnalyticsService {
         // Plateforme + URL lisible sur chaque événement (voir stampPlatform).
         before_send: stampPlatform,
       });
+      // MÊME TICK que init(), impérativement : pas de useEffect, pas de
+      // callback async, pas d'await entre les deux. Un register() différé
+      // laisse partir les premiers événements sans les propriétés (écarts déjà
+      // mesurés de 47 ms à 30 s, et des sessions courtes entièrement non
+      // taguées). `stampPlatform` rattrape le reste — voir son commentaire.
+      posthog.register(SUPER_PROPERTIES);
       this.posthog = posthog;
 
       // Dégradation détectée APRÈS le chargement (sonde FPS de useDevicePerf) :
@@ -180,7 +245,13 @@ class AnalyticsService {
 
   /** À la connexion : rattache les événements au compte (id Firebase). */
   identify(user: User): void {
-    this.posthog?.identify(user.id, { email: user.email, name: user.name });
+    if (!this.posthog) return;
+    this.posthog.identify(user.id, { email: user.email, name: user.name });
+    // Segmentation interne / testeur / vrai utilisateur (voir la liste dans
+    // config/analyticsAudience.ts). Posée à chaque identification, pas
+    // seulement à la création du profil : une liste éditée doit se propager
+    // aux comptes déjà connus dès leur prochaine session.
+    this.posthog.setPersonProperties({ user_type: resolveUserType(user.email) });
   }
 
   /**
