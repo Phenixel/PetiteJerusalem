@@ -25,19 +25,47 @@ const memoryGb = (navigator as Navigator & { deviceMemory?: number }).deviceMemo
 
 export const isLowEndDevice = cores <= 4 || memoryGb <= 4;
 
-export const isDegradedRendering: Ref<boolean> = ref(isLowEndDevice);
+/**
+ * Gecko (Firefox), détecté de façon SYNCHRONE : le mur de pierre y bascule en
+ * rendu raster dès le premier frame (voir StoneWallBackground) — Firefox
+ * re-rasterise un mask SVG + feTurbulence à chaque tick quand du contenu bouge
+ * derrière (bug Mozilla 1860510), quel que soit le matériel.
+ */
+export const isGecko =
+  typeof CSS !== "undefined" && CSS.supports?.("-moz-appearance", "none") === true;
+
+// Décision mémorisée : les sondes (WebGL, FPS) mettent quelques secondes à
+// conclure — on persiste leur verdict pour que les visites suivantes
+// démarrent directement en mode allégé, sans secondes lentes au chargement.
+const DEGRADED_STORAGE_KEY = "pj_perf_degraded";
+
+function readStoredDegraded(): boolean {
+  try {
+    return localStorage.getItem(DEGRADED_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export const isDegradedRendering: Ref<boolean> = ref(isLowEndDevice || readStoredDegraded());
 
 // La classe perf-lite sur <html> permet aux feuilles de style de couper les
-// effets coûteux en rendu logiciel (backdrop-filter des barres sticky…).
+// effets coûteux en rendu logiciel (backdrop-filter de la navbar et des
+// barres sticky…).
 function applyPerfLiteClass(): void {
   document.documentElement.classList.add("perf-lite");
 }
-if (isLowEndDevice && typeof document !== "undefined") applyPerfLiteClass();
+if (isDegradedRendering.value && typeof document !== "undefined") applyPerfLiteClass();
 
 function markDegraded(reason: string, detail?: string): void {
   if (isDegradedRendering.value) return;
   isDegradedRendering.value = true;
   applyPerfLiteClass();
+  try {
+    localStorage.setItem(DEGRADED_STORAGE_KEY, "1");
+  } catch {
+    // Stockage indisponible : la décision vaudra pour cette session.
+  }
   // Trace produit : permet de voir dans PostHog combien de visiteurs passent
   // en rendu allégé, et pourquoi (import dynamique — jamais bloquant).
   import("../services/analyticsService")

@@ -17,7 +17,8 @@
    invalidate its cached render surface on modest GPUs, for a barely
    visible effect. */
 
-import { isDegradedRendering } from "../composables/useDevicePerf";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { isDegradedRendering, isGecko } from "../composables/useDevicePerf";
 
 const VIEW_W = 1600;
 const VIEW_H = 1100;
@@ -99,7 +100,7 @@ function buildWall(): string[] {
    (fill-rule evenodd) so the light pours through the joints, plus the same
    stones repainted at low alpha so a faint wash warms the stone faces too.
    Softly blurred, baked once into a data-URI; never re-rasterized. */
-const wallMask = (() => {
+const wallMaskUri = (() => {
   const stones = buildWall().join("");
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${VIEW_W}" height="${VIEW_H}" viewBox="0 0 ${VIEW_W} ${VIEW_H}">` +
@@ -108,34 +109,183 @@ const wallMask = (() => {
     `<path fill="#fff" fill-rule="evenodd" d="M0 0H${VIEW_W}V${VIEW_H}H0Z${stones}"/>` +
     `<path fill="#fff" fill-opacity="0.18" d="${stones}"/>` +
     `</g></svg>`;
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 })();
+const wallMask = `url("${wallMaskUri}")`;
 
 /* Mineral grain, as a small repeating tile (static, painted once). */
-const grain = (() => {
+const grainUri = (() => {
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320">` +
     `<filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/>` +
     `<feColorMatrix type="matrix" values="0 0 0 0 0.5  0 0 0 0 0.47  0 0 0 0 0.42  0.4 0.4 0.4 0 0"/></filter>` +
     `<rect width="320" height="320" filter="url(#g)"/></svg>`;
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 })();
+const grain = `url("${grainUri}")`;
+
+/* ------------------------------------------------------------------------
+   Mode raster : le mur peint UNE FOIS dans un <canvas>, puis plus rien.
+
+   Firefox re-rasterise le mask SVG (1600×1100, flouté) et le grain
+   (feTurbulence) à chaque tick de rendu tant que quelque chose bouge derrière
+   — halos, transitions de hover, scroll (bug Mozilla 1860510). Même figée, la
+   version CSS/SVG reste donc coûteuse chez Gecko. Un canvas est de simples
+   pixels : composé une fois, retenu tel quel par le compositeur.
+
+   - Gecko : toujours en raster (décision synchrone, aucun frame lent).
+   - Autres navigateurs : raster seulement si le rendu est dégradé (peu de
+     cœurs/RAM, renderer logiciel, FPS mesuré mauvais — useDevicePerf).
+   Chrome/Safari sur machine saine gardent la version animée d'origine.
+   ------------------------------------------------------------------------ */
+const useRaster = computed(() => isGecko || isDegradedRendering.value);
+const rasterFailed = ref(false);
+const rootEl = ref<HTMLElement | null>(null);
+const rasterCanvas = ref<HTMLCanvasElement | null>(null);
+
+let maskImagePromise: Promise<HTMLImageElement> | null = null;
+let grainImagePromise: Promise<HTMLImageElement> | null = null;
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+/** Un seul rendu par « génération » : les redraws obsolètes (resize/thème en
+    rafale) sont abandonnés au lieu de se peindre les uns sur les autres. */
+let drawGeneration = 0;
+
+async function drawRasterWall(): Promise<void> {
+  const canvas = rasterCanvas.value;
+  const root = rootEl.value;
+  if (!canvas || !root) return;
+  const generation = ++drawGeneration;
+  try {
+    maskImagePromise ??= loadImage(wallMaskUri);
+    grainImagePromise ??= loadImage(grainUri);
+    const [maskImg, grainImg] = await Promise.all([maskImagePromise, grainImagePromise]);
+    if (generation !== drawGeneration || !rasterCanvas.value) return;
+
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    // Fond doux : la demi-résolution suffit largement et divise la mémoire par 4.
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+
+    // Teinte et opacités du thème courant (variables posées sur .stone-wall).
+    const styles = getComputedStyle(root);
+    const glow = (styles.getPropertyValue("--sw-glow-rgb").trim() || "186 137 66")
+      .split(/\s+/)
+      .map(Number);
+    const jointsAlpha = parseFloat(styles.getPropertyValue("--sw-joints-a")) || 0.55;
+    const grainAlpha = parseFloat(styles.getPropertyValue("--sw-grain-a")) || 0.05;
+
+    // Couche lumière : les deux halos à leur position de repos (mêmes valeurs
+    // que l'état statique CSS : opacité 0.4), masqués par les joints du mur.
+    const light = document.createElement("canvas");
+    light.width = Math.round(w * dpr);
+    light.height = Math.round(h * dpr);
+    const lctx = light.getContext("2d");
+    const ctx = canvas.getContext("2d");
+    if (!lctx || !ctx) throw new Error("canvas 2d indisponible");
+    lctx.scale(dpr, dpr);
+
+    const vmax = Math.max(w, h) / 100;
+    const blob = (cx: number, cy: number, radius: number) => {
+      const g = lctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+      const [r, gr, b] = glow;
+      g.addColorStop(0, `rgba(${r}, ${gr}, ${b}, ${0.85 * 0.4})`);
+      g.addColorStop(0.45, `rgba(${r}, ${gr}, ${b}, ${0.32 * 0.4})`);
+      g.addColorStop(1, `rgba(${r}, ${gr}, ${b}, 0)`);
+      lctx.fillStyle = g;
+      lctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+    };
+    blob((40 * w) / 100, (58 * h) / 100, 30 * vmax); // sw-blob--a (60vmax)
+    blob((56 * w) / 100, (27 * h) / 100, 22.5 * vmax); // sw-blob--b (45vmax)
+
+    // Équivalent de mask-size: cover / mask-position: top center.
+    const scale = Math.max(w / VIEW_W, h / VIEW_H);
+    const dw = VIEW_W * scale;
+    lctx.globalCompositeOperation = "destination-in";
+    lctx.drawImage(maskImg, (w - dw) / 2, 0, dw, VIEW_H * scale);
+
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+    ctx.globalAlpha = jointsAlpha;
+    ctx.drawImage(light, 0, 0, w, h);
+    const pattern = ctx.createPattern(grainImg, "repeat");
+    if (pattern) {
+      ctx.globalAlpha = grainAlpha;
+      ctx.fillStyle = pattern;
+      ctx.fillRect(0, 0, w, h);
+    }
+    ctx.globalAlpha = 1;
+  } catch {
+    // Peinture impossible (canvas bloqué, image refusée…) : on retombe sur la
+    // version DOM figée — moins bien sous Gecko, mais jamais de mur absent.
+    rasterFailed.value = true;
+  }
+}
+
+let redrawTimer: ReturnType<typeof setTimeout> | undefined;
+function scheduleRedraw() {
+  clearTimeout(redrawTimer);
+  redrawTimer = setTimeout(() => void drawRasterWall(), 250);
+}
+
+// Le thème (clair/sombre, couleur d'ambiance) vit dans des classes sur <html> :
+// on repeint quand elles changent. Une repeinte = quelques millisecondes, une
+// fois — sans commune mesure avec un mask animé en continu.
+let themeObserver: MutationObserver | null = null;
+
+onMounted(() => {
+  if (!useRaster.value) return;
+  void drawRasterWall();
+  window.addEventListener("resize", scheduleRedraw);
+  themeObserver = new MutationObserver(scheduleRedraw);
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+});
+
+// Rendu dégradé détecté APRÈS le montage (sonde FPS) : on bascule en raster.
+watch(useRaster, (raster) => {
+  if (!raster) return;
+  void nextTick().then(() => drawRasterWall());
+  window.addEventListener("resize", scheduleRedraw);
+  if (!themeObserver) {
+    themeObserver = new MutationObserver(scheduleRedraw);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+  }
+});
+
+onUnmounted(() => {
+  clearTimeout(redrawTimer);
+  window.removeEventListener("resize", scheduleRedraw);
+  themeObserver?.disconnect();
+  themeObserver = null;
+});
 </script>
 
 <template>
-  <!-- Machines en rendu dégradé (peu de cœurs/RAM, rendu logiciel sans GPU,
-       cadence mesurée mauvaise) : la lumière reste figée, comme avec
-       prefers-reduced-motion. Même compositor-only, deux blobs animés en
-       permanence derrière un mask plein écran se paient en fluidité — et en
-       rendu logiciel (Firefox sur driver GPU blacklisté), ils sont rasterisés
-       au CPU à chaque frame. Réactif : peut se figer quelques secondes après
-       le chargement, quand la sonde FPS a conclu. -->
-  <div
-    class="stone-wall"
-    :class="{ 'stone-wall--static': isDegradedRendering }"
-    aria-hidden="true"
-  >
-    <div class="stone-wall__wall">
+  <!-- Deux rendus :
+       - <canvas> : mur peint une fois (Gecko toujours, autres navigateurs en
+         rendu dégradé) — de simples pixels, rien à re-rasteriser.
+       - version DOM/SVG animée : Chrome/Safari sur machine saine ; figée
+         (--static) si le raster a échoué sur une machine dégradée. -->
+  <div ref="rootEl" class="stone-wall" aria-hidden="true">
+    <canvas v-if="useRaster && !rasterFailed" ref="rasterCanvas" class="sw-raster"></canvas>
+    <div
+      v-else
+      class="stone-wall__wall"
+      :class="{ 'stone-wall--static': isDegradedRendering }"
+    >
       <div class="sw-grain" :style="{ backgroundImage: grain }" />
       <!-- The light behind the wall, seen through the mortar joints (full)
            and on the stone faces (faint, baked into the mask's alpha). -->
@@ -166,6 +316,14 @@ const grain = (() => {
   --sw-glow-rgb: 235 214 165;
   --sw-joints-a: 0.33;
   --sw-grain-a: 0.06;
+}
+
+/* Rendu raster : de simples pixels plein écran, jamais repeints par le site. */
+.sw-raster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .stone-wall__wall {

@@ -48,15 +48,23 @@ page en particulier. Par ordre de probabilité :
    animés sont alors rasterisés au CPU à chaque frame, pendant que Chrome
    garde l'accélération → « lent sous Firefox mais pas sous Chrome », avec un
    thread principal presque idle dans le profiler (le coût vit dans le
-   processus GPU, absent de la trace fournie). → **Mitigé** (`useDevicePerf`) :
-   le mur se fige et le backdrop-filter se coupe (classe `perf-lite`) quand
-   (a) peu de cœurs/RAM, (b) le renderer WebGL est logiciel
-   (llvmpipe/SwiftShader…) ou absent, ou (c) une sonde rAF mesure < 40 fps au
-   repos après chargement. Chaque déclenchement envoie l'événement
-   `perf_degraded_rendering` (raison + renderer) à PostHog. Tests côté
-   testeur : `about:support` → section Graphics → ligne « Compositing »
-   (WebRender vs WebRender (Software)), et « réduire les animations » dans
-   l'OS.
+   processus GPU, absent de la trace fournie). Aggravant structurel chez
+   Gecko, indépendant du matériel : Firefox re-rasterise le mask SVG
+   (1600×1100 flouté) et le grain feTurbulence à chaque tick tant que du
+   contenu bouge derrière (bug Mozilla 1860510) — figer les halos ne suffit
+   donc pas. → **Corrigé** (`StoneWallBackground` + `useDevicePerf`) :
+   - **Firefox : mur rasterisé une fois dans un `<canvas>`** (halos au repos +
+     mask + grain composés en pixels), décision **synchrone** — aucun frame
+     lent au démarrage. Plus aucun SVG à repeindre ; Chrome/Safari gardent la
+     version animée.
+   - Autres navigateurs : même rendu raster quand le rendu est dégradé —
+     (a) peu de cœurs/RAM, (b) renderer WebGL logiciel
+     (llvmpipe/SwiftShader…) ou absent, (c) sonde rAF < 40 fps. Le verdict
+     des sondes est **persisté en localStorage** : les visites suivantes
+     démarrent directement en mode allégé.
+   - La classe `perf-lite` coupe aussi les backdrop-filter (navbar + barres
+     sticky) sur ces machines. Chaque déclenchement envoie
+     `perf_degraded_rendering` (raison + renderer) à PostHog.
 4. **Le mini-lecteur audio** — `currentTime` (ref globale) était publié
    ~4×/s pendant toute l'écoute → re-rendus continus sur toutes les pages
    tant qu'un chiour joue (et autant de mutations DOM à sérialiser pour le
