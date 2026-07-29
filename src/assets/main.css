@@ -102,6 +102,9 @@ body {
 :root {
   --safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
   --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  /* Hauteur réelle du bandeau de site, publiée par NavbarComponents. Reste à
+     0 dans l'app native, où le bandeau n'est pas rendu. */
+  --navbar-height: 0px;
 }
 
 #app {
@@ -279,6 +282,15 @@ button,
   }
   .back-link:hover {
     color: var(--color-primary);
+  }
+
+  /* Barre collante d'une page : s'arrête juste sous le bandeau de site (web)
+     ou sous la barre système (app native, où --navbar-height vaut 0), au lieu
+     de glisser dessous et d'être coupée. */
+  .sticky-under-chrome {
+    position: sticky;
+    top: calc(var(--safe-top) + var(--navbar-height) + 0.75rem);
+    z-index: 20;
   }
 
   /* App native : barre de recherche collante sous la barre système, pour

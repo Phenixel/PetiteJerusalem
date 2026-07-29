@@ -17,6 +17,17 @@ const isAdmin = ref(false);
 const isMobileMenuOpen = ref(false);
 let unsubscribeAuth: (() => void) | null = null;
 
+// Le bandeau est collant (top-0) : les barres collantes des pages doivent
+// s'arrêter juste en dessous, sinon elles passent dessous et sont coupées.
+// On publie sa hauteur réelle (elle change avec le retour à la ligne du titre
+// ou la largeur d'écran) plutôt que de la figer dans le CSS.
+const header = ref<HTMLElement | null>(null);
+let headerObserver: ResizeObserver | null = null;
+
+function publishHeaderHeight(height: number) {
+  document.documentElement.style.setProperty("--navbar-height", `${Math.round(height)}px`);
+}
+
 useDarkMode();
 
 const navLinks = [
@@ -53,12 +64,25 @@ onMounted(() => {
     username.value = user?.name ?? null;
     isAdmin.value = isAdminEmail(user?.email);
   });
+
+  // App native : pas de bandeau rendu, la variable reste à 0.
+  if (!header.value) return;
+  publishHeaderHeight(header.value.getBoundingClientRect().height);
+  if (typeof ResizeObserver === "undefined") return;
+  // getBoundingClientRect plutôt que contentRect : ce dernier exclut le
+  // padding vertical du bandeau (py-4).
+  headerObserver = new ResizeObserver(([entry]) => {
+    publishHeaderHeight(entry.target.getBoundingClientRect().height);
+  });
+  headerObserver.observe(header.value);
 });
 
 onUnmounted(() => {
   if (unsubscribeAuth) {
     unsubscribeAuth();
   }
+  headerObserver?.disconnect();
+  document.documentElement.style.removeProperty("--navbar-height");
 });
 
 async function logout() {
@@ -79,6 +103,7 @@ function goToLogin() {
        navigation passe par la bottom bar (BottomTabBar dans App.vue). -->
   <header
     v-if="!isNativeApp"
+    ref="header"
     class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-beige/90 backdrop-blur-md dark:bg-gray-900/90 transition-colors duration-300"
   >
     <RouterLink to="/" class="group">

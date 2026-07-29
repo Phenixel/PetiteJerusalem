@@ -623,7 +623,7 @@ watch(session, (s) => applySessionSeo(s));
 
       <!-- Barre de recherche + filtre : collants ensemble en haut, pour rester
            à portée pendant le défilement de la liste des textes. -->
-      <div class="sticky top-4 z-20 mb-8">
+      <div class="sticky-under-chrome mb-8">
         <div class="relative max-w-xl mx-auto">
           <AppIcon
             name="search"
