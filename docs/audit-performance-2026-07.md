@@ -18,15 +18,15 @@ Une lenteur qui touche *toutes* les pages chez un utilisateur (mais pas
 chez tout le monde) pointe vers ce qui tourne en continu, pas vers une
 page en particulier. Par ordre de probabilité :
 
-1. **Session replay PostHog** — c'est la nouveauté récente qui coûte du
-   CPU pendant *toute* la visite : rrweb observe et sérialise chaque
-   mutation du DOM. Imperceptible sur une machine récente, sensible sur un
-   téléphone d'entrée de gamme ou un vieux laptop. → **Désactivé pour tout
-   le monde pour l'instant** (`disable_session_recording: true`), le temps
-   d'objectiver la lenteur via les Web Vitals. Les événements produit et
-   l'Error tracking restent actifs partout. À la réactivation, préférer un
-   échantillonnage (PostHog → Settings → Session replay → sampling) et/ou
-   l'exclusion des appareils modestes (`useDevicePerf.ts`).
+1. **Session replay PostHog** — coûte du CPU pendant *toute* la visite :
+   rrweb observe et sérialise chaque mutation du DOM. Imperceptible sur une
+   machine récente, sensible sur un téléphone d'entrée de gamme ou un vieux
+   laptop. → **Réactivé, sauf machines en rendu dégradé** (verdict
+   `useDevicePerf` persisté en localStorage) ; si la sonde FPS conclut en
+   cours de session, l'enregistrement s'arrête immédiatement. Les événements
+   produit, l'Error tracking et les Web Vitals restent actifs partout.
+   Réglage complémentaire sans redéploiement : l'échantillonnage
+   (PostHog → Settings → Session replay → sampling).
 2. **Les illustrations SVG en animation infinie** — CONFIRMÉ par une trace
    Firefox Profiler (le problème ne se reproduit pas sous Chrome) : 154
    animations CSS actives sur la session, thread du site réveillé en
@@ -124,9 +124,9 @@ règles de l'art :
 
 Le seul poste réellement coûteux côté client est le **session replay**
 (enregistrement rrweb : CPU + réseau en continu pendant toute la visite).
-Désormais coupé pour tout le monde (voir §0) ; à la réactivation, préférer
-l'échantillonnage — et ne jamais toucher aux événements produit, qui ne
-coûtent rien.
+Actif, sauf sur les machines en rendu dégradé (voir §0) ; s'il faut alléger
+davantage, passer par l'échantillonnage — et ne jamais toucher aux
+événements produit, qui ne coûtent rien.
 
 Ajout fait : `capture_performance: { web_vitals: true }` → l'onglet
 **Web analytics → Web vitals** de PostHog donnera des mesures terrain
