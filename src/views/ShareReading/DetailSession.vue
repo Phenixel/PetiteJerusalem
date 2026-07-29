@@ -61,6 +61,17 @@ const trackFirstSelection = () => {
     session_id: session.value?.id,
     is_authenticated: currentUser.value != null,
   });
+  // Entrée du funnel de réservation : sur cette page, cocher une première
+  // section EST l'ouverture du flux (la barre de confirmation apparaît).
+  // session_section_selected reste l'événement d'usage de la page ;
+  // reservation_started est l'étape de funnel, commune avec la page de lecture.
+  analyticsService.capture("reservation_started", {
+    session_id: session.value?.id,
+    text_type: session.value?.type,
+    sections_count: selectedItems.value.size,
+    is_guest: currentUser.value == null,
+    source: "session_page",
+  });
 };
 
 const groupedTextStudies = computed(() => {
