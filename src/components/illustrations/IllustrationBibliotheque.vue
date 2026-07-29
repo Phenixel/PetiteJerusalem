@@ -68,9 +68,12 @@
 .tome-3 {
   transform-box: fill-box;
   transform-origin: bottom center;
+  /* Boucle d'attente FINIE (2 balancements puis repos) : les animations
+     décoratives infinies gardent le rendu éveillé en permanence — coûteux
+     sous Firefox (cf. audit de performance). Le survol relance tout. */
   animation:
     illu-rise 0.5s ease-out 0.65s forwards,
-    tome-sway 5s ease-in-out 2s infinite;
+    tome-sway 5s ease-in-out 2s 2;
 }
 
 /* idle: the leaning book rocks gently while nothing happens */

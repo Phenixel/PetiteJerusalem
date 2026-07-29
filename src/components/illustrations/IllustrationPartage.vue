@@ -87,9 +87,14 @@
 
 .link {
   opacity: 0;
+  /* Boucle d'attente FINIE (3 tours puis repos) : illu-flow anime
+     stroke-dashoffset, que le navigateur ne peut pas composer sur GPU —
+     en infini, Firefox repeignait ce SVG à chaque frame pour toujours
+     (cause principale du site « lent » relevée au Firefox Profiler).
+     Le survol de la carte relance la boucle (règles :global plus bas). */
   animation:
     illu-fade 0.4s ease-out 1s forwards,
-    illu-flow 3.5s linear 1.4s infinite;
+    illu-flow 3.5s linear 1.4s 3;
 }
 
 @keyframes illu-draw {

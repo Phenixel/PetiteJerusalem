@@ -81,20 +81,23 @@
 .bar-x {
   animation: none;
 }
+/* Boucles d'attente FINIES (3 respirations puis repos) : des animations
+   décoratives infinies gardent le thread de rendu éveillé en permanence —
+   coûteux sous Firefox (cf. audit de performance). Le survol relance tout. */
 .bar-1 {
   animation:
     illu-rise 0.45s ease-out 0.85s forwards,
-    illu-breathe 3.2s ease-in-out 1.5s infinite;
+    illu-breathe 3.2s ease-in-out 1.5s 3;
 }
 .bar-2 {
   animation:
     illu-rise 0.45s ease-out 0.95s forwards,
-    illu-breathe 3.2s ease-in-out 1.9s infinite;
+    illu-breathe 3.2s ease-in-out 1.9s 3;
 }
 .bar-3 {
   animation:
     illu-rise 0.45s ease-out 1.05s forwards,
-    illu-breathe 3.2s ease-in-out 2.3s infinite;
+    illu-breathe 3.2s ease-in-out 2.3s 3;
 }
 
 /* idle: the equalizer breathes softly while nothing happens */

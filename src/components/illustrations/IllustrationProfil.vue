@@ -55,9 +55,13 @@
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
+  /* Boucle d'attente FINIE (3 scintillements puis repos) : cette illustration
+     vit aussi dans AccountCta, affiché aux visiteurs non connectés sur
+     plusieurs pages — en infini, les étincelles gardaient le rendu éveillé
+     sur tout le site (cf. audit de performance). Le survol relance tout. */
   animation:
     spark-pop 0.4s ease-out forwards,
-    spark-twinkle 4s ease-in-out 2s infinite;
+    spark-twinkle 4s ease-in-out 2s 3;
 }
 .spark-1 {
   animation-delay: 0.55s, 2s;
