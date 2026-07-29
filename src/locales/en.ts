@@ -303,8 +303,6 @@ const en: LocaleMessages = {
     confirmReservation: "Confirm reservation",
     confirmAsGuest: "Finalize as guest",
     reserving: "Reserving...",
-    fillNameAndEmail: "Please fill in your name and email to confirm reservations.",
-    fillName: "Please fill in your name to confirm reservations.",
     cancelReservationConfirm: "Do you want to cancel this reservation?",
     canOnlyCancelOwn: "You can only cancel your own reservations.",
     cancelError: "Error cancelling. Please try again.",
@@ -493,6 +491,16 @@ const en: LocaleMessages = {
     tip: "Tip",
     alreadyHaveAccount:
       "Already have an account? Your guest reservations will be recovered automatically.",
+  },
+  guestIdentity: {
+    title: "Thank you! One last step",
+    subtitle: "Enter your name to confirm your {count} selected section(s).",
+    subtitleWithEmail: "Enter your name and email to confirm your {count} selected section(s).",
+    nameRequired: "Please enter your name.",
+    emailRequired: "Please enter your email.",
+    emailInvalid: "This email doesn't look valid.",
+    confirm: "Confirm my reservation",
+    confirming: "Reserving...",
   },
   guestForm: {
     optional: "optional",

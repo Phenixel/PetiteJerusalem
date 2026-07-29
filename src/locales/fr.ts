@@ -307,8 +307,6 @@ const fr = {
     confirmReservation: "Confirmer la réservation",
     confirmAsGuest: "Finaliser en tant qu'invité",
     reserving: "Réservation...",
-    fillNameAndEmail: "Veuillez remplir votre nom et email pour confirmer les réservations.",
-    fillName: "Veuillez renseigner votre nom pour confirmer les réservations.",
     cancelReservationConfirm: "Voulez-vous annuler cette réservation ?",
     canOnlyCancelOwn: "Vous ne pouvez annuler que vos propres réservations.",
     cancelError: "Erreur lors de l'annulation. Veuillez réessayer.",
@@ -498,6 +496,17 @@ const fr = {
     tip: "Astuce",
     alreadyHaveAccount:
       "Vous avez déjà un compte ? Vos réservations invité seront automatiquement récupérées.",
+  },
+  guestIdentity: {
+    title: "Merci ! Dernière étape",
+    subtitle: "Indiquez votre nom pour valider vos {count} section(s) réservée(s).",
+    subtitleWithEmail:
+      "Indiquez votre nom et votre email pour valider vos {count} section(s) réservée(s).",
+    nameRequired: "Merci d'indiquer votre nom.",
+    emailRequired: "Merci d'indiquer votre email.",
+    emailInvalid: "Cet email ne semble pas valide.",
+    confirm: "Valider ma réservation",
+    confirming: "Réservation...",
   },
   guestForm: {
     optional: "optionnel",
