@@ -10,6 +10,7 @@ import ShareModal from "../../components/ShareModal.vue";
 import SessionProgressBar from "../../components/SessionProgressBar.vue";
 import BatchSelectionBar from "../../components/BatchSelectionBar.vue";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
+import GuestIdentityModal from "../../components/GuestIdentityModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
@@ -48,6 +49,7 @@ const shareUrl = ref("");
 const selectedItems = ref<Set<string>>(new Set());
 const isSubmittingBatch = ref(false);
 const showSignupPrompt = ref(false);
+const showGuestIdentityModal = ref(false);
 
 // Funnel réservation : un seul événement par visite pour la 1re sélection et
 // la 1re recherche, sinon chaque clic de chapitre noierait les stats.
@@ -268,6 +270,14 @@ const handleItemClick = (textStudyId: string, section?: number) => {
   }
 };
 
+// Invité : l'identité est complète quand le nom est saisi, et l'email aussi
+// lorsque la session l'exige.
+const guestIdentityComplete = computed(() => {
+  if (currentUser.value) return true;
+  const { name, email } = reservationForm.value;
+  return name.trim() !== "" && (!guestEmailRequired.value || email.trim() !== "");
+});
+
 const confirmReservations = async () => {
   if (!session.value || selectedItems.value.size === 0) return;
 
@@ -278,31 +288,43 @@ const confirmReservations = async () => {
     source: "session_page",
   });
 
-  if (
-    !currentUser.value &&
-    (!reservationForm.value.name || (guestEmailRequired.value && !reservationForm.value.email))
-  ) {
-    analyticsService.capture("reservation_failed", {
+  // Invité qui n'a pas rempli le formulaire en haut de page : plutôt qu'une
+  // erreur qui l'oblige à remonter et à recliquer sur Confirmer, on lui demande
+  // son nom dans une modale et la réservation part dans la foulée.
+  if (!guestIdentityComplete.value) {
+    analyticsService.capture("guest_identity_prompted", {
       session_id: session.value.id,
-      reason: !reservationForm.value.name ? "missing_name" : "missing_email",
+      reason: !reservationForm.value.name.trim() ? "missing_name" : "missing_email",
+      sections_count: selectedItems.value.size,
       source: "session_page",
     });
-    toast.info(
-      guestEmailRequired.value ? t("detailSession.fillNameAndEmail") : t("detailSession.fillName"),
-    );
-    const formElement = document.getElementById("guest-form");
-    if (formElement) {
-      const offset = 120;
-      const elementPosition = formElement.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.scrollY - offset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth",
-      });
-    }
+    showGuestIdentityModal.value = true;
     return;
   }
+
+  await submitReservations();
+};
+
+/** Identité saisie dans la modale : on réserve immédiatement avec elle. */
+const submitGuestIdentity = async (identity: { name: string; email: string }) => {
+  reservationForm.value = { ...identity };
+
+  analyticsService.capture("guest_identity_submitted", {
+    session_id: session.value?.id,
+    has_email: identity.email !== "",
+    sections_count: selectedItems.value.size,
+    source: "session_page",
+  });
+
+  await submitReservations();
+  // La modale a rempli son rôle, que la réservation ait abouti ou non : le nom
+  // est désormais mémorisé dans le formulaire de la page, un nouvel essai
+  // depuis la barre de confirmation partira directement.
+  showGuestIdentityModal.value = false;
+};
+
+const submitReservations = async () => {
+  if (!session.value || selectedItems.value.size === 0) return;
 
   try {
     isSubmittingBatch.value = true;
@@ -599,8 +621,9 @@ watch(session, (s) => applySessionSeo(s));
         <GuestForm v-model:reservationForm="reservationForm" :email-required="guestEmailRequired" />
       </div>
 
-      <!-- Barre de recherche -->
-      <div class="sticky top-4 z-20 mb-8">
+      <!-- Barre de recherche + filtre : collants ensemble en haut, pour rester
+           à portée pendant le défilement de la liste des textes. -->
+      <div class="sticky-under-chrome mb-8">
         <div class="relative max-w-xl mx-auto">
           <AppIcon
             name="search"
@@ -625,24 +648,27 @@ watch(session, (s) => applySessionSeo(s));
         <div v-if="searchTerm" class="text-center mt-2 text-sm text-text-secondary">
           {{ t("detailSession.searchFor") }} : "{{ searchTerm }}"
         </div>
-      </div>
 
-      <!-- Filtre : masquer les textes entièrement réservés (non sticky) -->
-      <div class="flex justify-center mb-8 -mt-4">
-        <label class="inline-flex items-center gap-2.5 cursor-pointer">
-          <span class="relative inline-flex items-center">
-            <input type="checkbox" v-model="showOnlyAvailable" class="sr-only peer" />
-            <span
-              class="w-9 h-5 bg-black/15 rounded-full peer peer-checked:bg-primary transition-colors dark:bg-white/20"
-            ></span>
-            <span
-              class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform peer-checked:translate-x-4"
-            ></span>
-          </span>
-          <span class="text-sm font-medium text-text-secondary">
-            {{ t("detailSession.availableOnly") }}
-          </span>
-        </label>
+        <!-- Filtre : masquer les textes entièrement réservés. Fond opaque en
+             pastille : la liste défile juste en dessous. -->
+        <div class="flex justify-center mt-3">
+          <label
+            class="inline-flex items-center gap-2.5 cursor-pointer bg-surface rounded-full pl-3.5 pr-4 py-2 shadow-card"
+          >
+            <span class="relative inline-flex items-center">
+              <input type="checkbox" v-model="showOnlyAvailable" class="sr-only peer" />
+              <span
+                class="w-9 h-5 bg-black/15 rounded-full peer peer-checked:bg-primary transition-colors dark:bg-white/20"
+              ></span>
+              <span
+                class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform peer-checked:translate-x-4"
+              ></span>
+            </span>
+            <span class="text-sm font-medium text-text-secondary">
+              {{ t("detailSession.availableOnly") }}
+            </span>
+          </label>
+        </div>
       </div>
 
       <!-- Liste des textes groupés par livre -->
@@ -685,6 +711,18 @@ watch(session, (s) => applySessionSeo(s));
       :button-text="t('common.confirm')"
       :button-loading-text="t('detailSession.reserving')"
       @confirm="confirmReservations"
+    />
+
+    <!-- Dernière étape pour l'invité qui n'a pas rempli le formulaire du haut :
+         son nom (et son email si la session l'exige), puis réservation directe -->
+    <GuestIdentityModal
+      v-model:show="showGuestIdentityModal"
+      :email-required="guestEmailRequired"
+      :count="selectedItems.size"
+      :name="reservationForm.name"
+      :email="reservationForm.email"
+      :loading="isSubmittingBatch"
+      @confirm="submitGuestIdentity"
     />
 
     <!-- Modal d'incitation à la création de compte -->
