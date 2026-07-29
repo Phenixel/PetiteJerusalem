@@ -42,11 +42,21 @@ page en particulier. Par ordre de probabilité :
    60/45 vmax en animation infinie derrière un mask SVG plein écran, sur
    toutes les pages, plus un `backdrop-filter: blur(12px)` sur les barres
    de recherche sticky au-dessus d'un fond qui bouge en permanence : le
-   flou est recalculé à chaque frame même sans interaction. → **Mitigé** :
-   animation figée sur les appareils modestes (même rendu que
-   `prefers-reduced-motion`). Test A/B facile pour le testeur : activer
-   « réduire les animations » dans les réglages de son OS — si ça règle la
-   lenteur, c'est confirmé.
+   flou est recalculé à chaque frame même sans interaction. Aggravant décisif
+   sous Firefox : si le GPU est sur liste noire des drivers, Firefox rend en
+   **logiciel** (Software WebRender) — mask, backdrop-filter et gradients
+   animés sont alors rasterisés au CPU à chaque frame, pendant que Chrome
+   garde l'accélération → « lent sous Firefox mais pas sous Chrome », avec un
+   thread principal presque idle dans le profiler (le coût vit dans le
+   processus GPU, absent de la trace fournie). → **Mitigé** (`useDevicePerf`) :
+   le mur se fige et le backdrop-filter se coupe (classe `perf-lite`) quand
+   (a) peu de cœurs/RAM, (b) le renderer WebGL est logiciel
+   (llvmpipe/SwiftShader…) ou absent, ou (c) une sonde rAF mesure < 40 fps au
+   repos après chargement. Chaque déclenchement envoie l'événement
+   `perf_degraded_rendering` (raison + renderer) à PostHog. Tests côté
+   testeur : `about:support` → section Graphics → ligne « Compositing »
+   (WebRender vs WebRender (Software)), et « réduire les animations » dans
+   l'OS.
 4. **Le mini-lecteur audio** — `currentTime` (ref globale) était publié
    ~4×/s pendant toute l'écoute → re-rendus continus sur toutes les pages
    tant qu'un chiour joue (et autant de mutations DOM à sérialiser pour le

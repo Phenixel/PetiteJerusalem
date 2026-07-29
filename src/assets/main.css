@@ -297,6 +297,18 @@ button,
   :root.dark .app-sticky-search {
     background-color: color-mix(in srgb, #111827 92%, transparent);
   }
+  /* Rendu dégradé (perf-lite posé par useDevicePerf : rendu logiciel, petite
+     machine, cadence mesurée mauvaise) : le flou de backdrop est re-rasterisé
+     au CPU à chaque frame — on le coupe, le fond à 92 % d'opacité suffit à la
+     lisibilité. Fond opacifié en compensation. */
+  :root.perf-lite .app-sticky-search {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: color-mix(in srgb, var(--color-bg-beige) 97%, transparent);
+  }
+  :root.perf-lite.dark .app-sticky-search {
+    background-color: color-mix(in srgb, #111827 97%, transparent);
+  }
 
   /* Modal building blocks — one modal style for the whole app. */
   .modal-overlay {

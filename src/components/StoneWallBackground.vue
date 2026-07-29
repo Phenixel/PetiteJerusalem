@@ -17,7 +17,7 @@
    invalidate its cached render surface on modest GPUs, for a barely
    visible effect. */
 
-import { isLowEndDevice } from "../composables/useDevicePerf";
+import { isDegradedRendering } from "../composables/useDevicePerf";
 
 const VIEW_W = 1600;
 const VIEW_H = 1100;
@@ -123,10 +123,18 @@ const grain = (() => {
 </script>
 
 <template>
-  <!-- Appareils modestes : la lumière reste figée (comme prefers-reduced-motion).
-       Même compositor-only, deux blobs animés en permanence derrière un mask
-       plein écran se paient en fluidité sur un vieux téléphone. -->
-  <div class="stone-wall" :class="{ 'stone-wall--static': isLowEndDevice }" aria-hidden="true">
+  <!-- Machines en rendu dégradé (peu de cœurs/RAM, rendu logiciel sans GPU,
+       cadence mesurée mauvaise) : la lumière reste figée, comme avec
+       prefers-reduced-motion. Même compositor-only, deux blobs animés en
+       permanence derrière un mask plein écran se paient en fluidité — et en
+       rendu logiciel (Firefox sur driver GPU blacklisté), ils sont rasterisés
+       au CPU à chaque frame. Réactif : peut se figer quelques secondes après
+       le chargement, quand la sonde FPS a conclu. -->
+  <div
+    class="stone-wall"
+    :class="{ 'stone-wall--static': isDegradedRendering }"
+    aria-hidden="true"
+  >
     <div class="stone-wall__wall">
       <div class="sw-grain" :style="{ backgroundImage: grain }" />
       <!-- The light behind the wall, seen through the mortar joints (full)
