@@ -16,6 +16,18 @@ export interface DafBlock {
   lines: string[];
 }
 
+/**
+ * Visual sub-division of a single-section text (chapter of a Na"kh book,
+ * montée d'une paracha) : the text stays one continuous reading — and one
+ * reservation unit — with a marker at each block start.
+ */
+export interface TextBlock {
+  label: string;
+  lines: string[];
+  /** Index of the block's first line within the section's flattened `he`. */
+  offset: number;
+}
+
 export interface TextSection {
   /** Section index (chapter / daf chapter). Doubles as the URL and reservation id. */
   index: number;
@@ -24,6 +36,8 @@ export interface TextSection {
   he: string[];
   /** Talmud only: the section's lines grouped by daf. */
   dafBlocks?: DafBlock[];
+  /** Single-section texts: the same lines grouped by chapter / montée. */
+  blocks?: TextBlock[];
 }
 
 export interface TextContent {
@@ -183,15 +197,32 @@ function parseTalmud(
 
 function loadTanakh(
   textStudy: TextStudyJsonEntry,
-  data: { title?: string; he?: unknown[] },
+  data: { title?: string; he?: unknown[]; blockLabels?: string[]; chapters?: string },
 ): TextContent {
   const heChapters = data.he ?? [];
   const title = data.title ?? textStudy.name;
 
-  // Reserved as a whole (totalSections=1) → flatten everything into one section.
+  // Reserved as a whole (totalSections=1) → one section, one continuous text,
+  // but keep the groups (chapters / montées) as visual blocks instead of
+  // flattening them away.
   if (textStudy.totalSections === 1) {
-    const allLines = heChapters.flatMap((chapter) => normalizeLines(chapter));
-    return { title, type: "Tanakh", sections: [buildSection(1, textStudy.name, allLines)] };
+    // Legacy offline parasha files carry `chapters: "6-11"` (chapter-sliced):
+    // number their chapter markers from the real starting chapter.
+    const startChapter = Number(data.chapters?.match(/^(\d+)/)?.[1] ?? 1);
+    const blocks: TextBlock[] = [];
+    let offset = 0;
+    heChapters.forEach((group, i) => {
+      const lines = normalizeLines(group);
+      if (lines.length === 0) return;
+      const label =
+        data.blockLabels?.[i] ?? `Chapitre ${formatNumberWithHebrew(startChapter + i)}`;
+      blocks.push({ label, lines, offset });
+      offset += lines.length;
+    });
+    const allLines = blocks.flatMap((b) => b.lines);
+    const section = buildSection(1, textStudy.name, allLines);
+    if (blocks.length > 1) section.blocks = blocks;
+    return { title, type: "Tanakh", sections: [section] };
   }
 
   return { title, type: "Tanakh", sections: chaptersToSections(heChapters) };

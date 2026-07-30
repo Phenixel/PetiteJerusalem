@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc, deleteDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../../firebase";
+import type { Bookmark, ReadingPosition } from "./readingProgressService";
 
 /** Daily reading completion for a single day. Resets when the date changes. */
 export interface DailyReadingProgress {
@@ -31,6 +32,10 @@ export interface UserPreferences {
   pushLocale: string;
   /** Slugs des chiourim déjà ouverts par l'utilisateur (marqueur « Vu »). */
   viewedChiourim: string[];
+  /** Dernière position de lecture par texte (reprise inter-appareils). */
+  readingPositions: Record<string, ReadingPosition>;
+  /** Marque-pages posés dans les textes de la bibliothèque. */
+  bookmarks: Bookmark[];
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -45,6 +50,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   pushReminderMinute: 0,
   pushLocale: "fr",
   viewedChiourim: [],
+  readingPositions: {},
+  bookmarks: [],
 };
 
 class UserPreferencesService {

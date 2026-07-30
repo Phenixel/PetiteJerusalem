@@ -106,14 +106,31 @@ onUnmounted(() => observer?.disconnect());
           </template>
         </template>
 
-        <!-- Verses / mishnayot / psalm lines: each on its own line, flowing on the background -->
-        <p v-else dir="rtl" class="font-hebrew text-xl leading-loose text-text-primary">
-          <template v-for="(line, index) in section.he" :key="index">
-            <span v-if="showVerseNumbers" class="text-xs align-super text-primary/60 select-none">
-              {{ index + 1 }}&#8201;</span
-            >{{ line }}<br />
+        <!-- Verses / mishnayot / psalm lines: each on its own line, flowing on
+             the background, with a marker at each chapter / montée block -->
+        <template v-else>
+          <template
+            v-for="block in section.blocks ?? [{ label: '', lines: section.he, offset: 0 }]"
+            :key="block.offset"
+          >
+            <p
+              v-if="block.label"
+              class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center"
+            >
+              {{ block.label }}
+            </p>
+            <p dir="rtl" class="font-hebrew text-xl leading-loose text-text-primary">
+              <template v-for="(line, index) in block.lines" :key="block.offset + index">
+                <span
+                  v-if="showVerseNumbers || block.label"
+                  class="text-xs align-super text-primary/60 select-none"
+                >
+                  {{ index + 1 }}&#8201;</span
+                >{{ line }}<br />
+              </template>
+            </p>
           </template>
-        </p>
+        </template>
       </section>
     </div>
   </div>

@@ -6,6 +6,7 @@ import { seoService } from "../services/seoService";
 import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
 import { userPreferencesService } from "../services/userPreferencesService";
+import { readingProgressService, type ReadingPosition } from "../services/readingProgressService";
 // firestoreService directement (et non sessionService) : la home est la seule
 // vue du bundle initial, et sessionService tire textStudies.json (~64 kB) +
 // la chaîne des réservations — inutiles ici, on ne fait que lister les sessions.
@@ -38,6 +39,22 @@ const greeting = computed(() => {
 const readingPct = computed(() =>
   readingTotal.value === 0 ? 0 : Math.round((readingDone.value / readingTotal.value) * 100),
 );
+
+// Dernière position de lecture (bibliothèque) : le vrai « Reprendre ma lecture ».
+const lastReading = ref<ReadingPosition | null>(null);
+const resumeLink = computed(() =>
+  lastReading.value
+    ? { path: lastReading.value.path, query: { verset: String(lastReading.value.line) } }
+    : null,
+);
+
+function trackResume() {
+  if (!lastReading.value) return;
+  analyticsService.capture("reading_resumed", {
+    text_id: lastReading.value.textId,
+    source: "home",
+  });
+}
 const readingAllDone = computed(
   () => readingTotal.value > 0 && readingDone.value >= readingTotal.value,
 );
@@ -130,6 +147,11 @@ const trackCard = (card: string) => {
 };
 
 onMounted(() => {
+  // Position locale tout de suite, affinée quand la synchro du compte aboutit.
+  lastReading.value = readingProgressService.getLastPosition();
+  void readingProgressService.ensureSynced().then(() => {
+    lastReading.value = readingProgressService.getLastPosition();
+  });
   unsubscribeAuth = authService.onAuthChanged((u) => {
     user.value = u;
     if (!hasTrackedHomeView) {
@@ -172,6 +194,28 @@ onUnmounted(() => {
         </h2>
         <p class="text-text-secondary mt-1.5">{{ t("home.dashboard.subtitle") }}</p>
       </div>
+
+      <!-- Reprendre la dernière lecture de la bibliothèque, au verset près -->
+      <RouterLink
+        v-if="lastReading && resumeLink"
+        :to="resumeLink"
+        class="dash-card card card-hover w-full max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-3 mb-5 group"
+        @click="trackResume(); trackCard('resume_reading')"
+      >
+        <span class="flex items-center gap-2.5 min-w-0">
+          <AppIcon name="book-open" :size="17" class="text-primary flex-shrink-0" />
+          <span
+            class="font-medium text-text-primary truncate group-hover:text-primary transition-colors"
+          >
+            {{ t("home.dashboard.resumeCta", { label: lastReading.label }) }}
+          </span>
+        </span>
+        <AppIcon
+          name="chevron-right"
+          :size="15"
+          class="text-text-secondary/50 flex-shrink-0 rtl:rotate-180"
+        />
+      </RouterLink>
 
       <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mb-10">
         <!-- Squelettes pendant le chargement -->
