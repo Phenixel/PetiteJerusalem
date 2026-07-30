@@ -55,6 +55,51 @@ const showGuestIdentityModal = ref(false);
 // la 1re recherche, sinon chaque clic de chapitre noierait les stats.
 let hasTrackedSelection = false;
 let hasTrackedSearch = false;
+let hasTrackedExpansion = false;
+let hasTrackedGuestForm = false;
+
+/**
+ * Étape manquante entre « voir la chaîne » et « cocher une section » : sur un
+ * texte à plusieurs chapitres, il faut d'abord le déplier. Sans cet événement,
+ * impossible de distinguer « n'a jamais ouvert un texte » (l'interaction n'est
+ * pas comprise) de « a ouvert et n'a rien coché » (plus rien de libre, ou
+ * hésitation).
+ */
+const trackTextExpanded = (textStudyId: string) => {
+  if (hasTrackedExpansion) return;
+  hasTrackedExpansion = true;
+  const index = textStudies.value.findIndex((text) => text.id === textStudyId);
+  const text = index >= 0 ? textStudies.value[index] : null;
+  const currentSession = session.value;
+  analyticsService.capture("session_text_expanded", {
+    session_id: currentSession?.id,
+    text_type: currentSession?.type,
+    // Rang dans l'ordre de la chaîne (pas dans l'ordre affiché, qui dépend du
+    // filtre et de la recherche) : ouvrir le 1er texte ou le 120e ne dit pas la
+    // même chose de l'effort fourni pour trouver une section libre.
+    rank: index >= 0 ? index + 1 : null,
+    has_available_sections:
+      text && currentSession ? !sessionService.isTextFullyReserved(text, currentSession) : null,
+    is_authenticated: currentUser.value != null,
+  });
+};
+
+/**
+ * Première frappe de l'invité dans le formulaire nom/email. C'est le meilleur
+ * prédicteur de la réservation effective : `reservation_failed` montre que la
+ * moitié des clics de confirmation repartent vers ce formulaire resté vide.
+ * `has_selection` dit s'il le remplit avant ou après avoir coché ses sections.
+ */
+const trackGuestFormFilled = (field: "name" | "email") => {
+  if (hasTrackedGuestForm) return;
+  hasTrackedGuestForm = true;
+  analyticsService.capture("guest_form_filled", {
+    session_id: session.value?.id,
+    field,
+    has_selection: selectedItems.value.size > 0,
+    source: "session_page",
+  });
+};
 
 const trackFirstSelection = () => {
   if (hasTrackedSelection) return;
@@ -618,7 +663,11 @@ watch(session, (s) => applySessionSeo(s));
               : t("detailSession.guestSubtitle")
           }}
         </p>
-        <GuestForm v-model:reservationForm="reservationForm" :email-required="guestEmailRequired" />
+        <GuestForm
+          v-model:reservationForm="reservationForm"
+          :email-required="guestEmailRequired"
+          @first-input="trackGuestFormFilled"
+        />
       </div>
 
       <!-- Barre de recherche + filtre : collants ensemble en haut, pour rester
@@ -683,6 +732,7 @@ watch(session, (s) => applySessionSeo(s));
         @item-click="handleItemClick"
         @toggle-completion="toggleReservationCompletion"
         @toggle-select-all="handleToggleSelectAll"
+        @text-expanded="trackTextExpanded"
       />
 
       <!-- CTA : inviter le visiteur à créer sa propre session -->
