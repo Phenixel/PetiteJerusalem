@@ -21,6 +21,9 @@ const emit = defineEmits<{
   (e: "item-click", textId: string, section?: number): void;
   (e: "toggle-completion", textId: string, section: number): void;
   (e: "toggle-select-all", textId: string): void;
+  // Dépliage d'un texte pour voir ses chapitres : passage obligé avant de
+  // cocher une section. La page parente en fait une étape de funnel.
+  (e: "text-expanded", textId: string): void;
 }>();
 
 const expandedTexts = ref<Set<string>>(new Set());
@@ -30,6 +33,7 @@ const toggleTextExpansion = (textId: string) => {
     expandedTexts.value.delete(textId);
   } else {
     expandedTexts.value.add(textId);
+    emit("text-expanded", textId);
   }
 };
 

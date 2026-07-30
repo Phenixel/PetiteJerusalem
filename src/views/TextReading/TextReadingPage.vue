@@ -286,6 +286,24 @@ watch([canReserveNow, reservationUnit], ([canReserve, unit]) => {
   });
 });
 
+// Même signal que sur la page de chaîne : la première frappe dans le
+// formulaire invité, une seule fois par visite (voir trackGuestFormFilled dans
+// DetailSession.vue).
+let hasTrackedGuestForm = false;
+
+function trackGuestFormFilled(field: "name" | "email") {
+  if (hasTrackedGuestForm || !session.value) return;
+  hasTrackedGuestForm = true;
+  analyticsService.capture("guest_form_filled", {
+    session_id: session.value.id,
+    field,
+    // Toujours vrai ici : le formulaire ne s'affiche que sur une section libre
+    // déjà ouverte, il n'y a rien à cocher au préalable.
+    has_selection: true,
+    source: "reading_page",
+  });
+}
+
 async function reserve() {
   if (!session.value || reservationUnit.value === undefined) return;
   analyticsService.capture("reservation_confirm_clicked", {
@@ -667,6 +685,7 @@ watch(textId, loadContent);
               <GuestForm
                 v-model:reservation-form="reservationForm"
                 :email-required="guestEmailRequired"
+                @first-input="trackGuestFormFilled"
               />
             </div>
             <button @click="reserve" :disabled="isReserving" class="btn btn-primary text-sm">

@@ -19,6 +19,11 @@ interface Props {
 
 interface Emits {
   (e: "update:reservationForm", value: { name: string; email: string }): void;
+  // Première frappe réelle dans le formulaire. Le composant ne capture rien
+  // lui-même : il sert aussi la page de gestion (le propriétaire saisit un
+  // invité à la main), qui n'a rien à voir avec le funnel de réservation.
+  // Chaque page décide donc si ce signal l'intéresse.
+  (e: "firstInput", field: "name" | "email"): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -32,11 +37,17 @@ const emit = defineEmits<Emits>();
 const emailFieldRevealed = ref(false);
 const showEmailField = computed(() => props.emailRequired || emailFieldRevealed.value);
 
+let hasEmittedFirstInput = false;
+
 const updateField = (field: "name" | "email", value: string) => {
   emit("update:reservationForm", {
     ...props.reservationForm,
     [field]: value,
   });
+  if (!hasEmittedFirstInput && value.trim()) {
+    hasEmittedFirstInput = true;
+    emit("firstInput", field);
+  }
 };
 </script>
 
