@@ -14,6 +14,8 @@ export interface DailyReadingProgress {
    * bascule aussi dans `completedIds`.
    */
   completedSections?: Record<string, number[]>;
+  /** Lectures du moment (paracha, cycles Tehilim) marquées lues aujourd'hui. */
+  completedOptions?: string[];
 }
 
 export interface UserPreferences {
@@ -24,6 +26,8 @@ export interface UserPreferences {
   fontHebrew: string;
   /** Ordered ids of the texts the user reads every day (their daily reading list). */
   dailyReadingIds: number[];
+  /** Lectures du moment activées (clés de dailyCycles : paracha, cycles Tehilim). */
+  dailyReadingOptions: string[];
   /** Per-day read tracking for the daily reading list. */
   dailyReadingProgress: DailyReadingProgress;
   /** FCM tokens of the user's devices (native app), read by the reminder Cloud Function. */
@@ -49,6 +53,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   fontLatin: "inter",
   fontHebrew: "frank",
   dailyReadingIds: [],
+  dailyReadingOptions: [],
   dailyReadingProgress: { date: "", completedIds: [] },
   fcmTokens: [],
   pushReminderEnabled: false,

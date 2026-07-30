@@ -75,10 +75,13 @@ async function loadDashboard(u: User) {
       firestoreService.getSessions().catch(() => []),
     ]);
 
-    readingTotal.value = (prefs.dailyReadingIds ?? []).length;
+    readingTotal.value =
+      (prefs.dailyReadingIds ?? []).length + (prefs.dailyReadingOptions ?? []).length;
     const progress = prefs.dailyReadingProgress;
     readingDone.value =
-      progress && progress.date === todayKey() ? progress.completedIds.length : 0;
+      progress && progress.date === todayKey()
+        ? progress.completedIds.length + (progress.completedOptions ?? []).length
+        : 0;
 
     // Sessions où l'utilisateur est impliqué (créées ou avec une réservation).
     const mine = sessions.filter(

@@ -101,16 +101,21 @@ export const dailyReadingReminder = onSchedule(
         ? prefs.fcmTokens.filter((t: unknown): t is string => typeof t === "string" && t.length > 0)
         : [];
       const readingIds: unknown[] = Array.isArray(prefs.dailyReadingIds) ? prefs.dailyReadingIds : [];
-      if (tokens.length === 0 || readingIds.length === 0) continue;
+      // Lectures du moment (paracha, cycles Tehilim) : comptent comme les textes.
+      const readingOptions: unknown[] = Array.isArray(prefs.dailyReadingOptions)
+        ? prefs.dailyReadingOptions
+        : [];
+      const totalReadings = readingIds.length + readingOptions.length;
+      if (tokens.length === 0 || totalReadings === 0) continue;
 
       const progress = prefs.dailyReadingProgress as
-        | { date?: string; completedIds?: unknown[] }
+        | { date?: string; completedIds?: unknown[]; completedOptions?: unknown[] }
         | undefined;
+      const isToday = progress?.date === today;
       const completedToday =
-        progress?.date === today && Array.isArray(progress.completedIds)
-          ? progress.completedIds.length
-          : 0;
-      const remaining = readingIds.length - completedToday;
+        (isToday && Array.isArray(progress.completedIds) ? progress.completedIds.length : 0) +
+        (isToday && Array.isArray(progress.completedOptions) ? progress.completedOptions.length : 0);
+      const remaining = totalReadings - completedToday;
       if (remaining <= 0) continue;
 
       const copy = COPY[typeof prefs.pushLocale === "string" ? prefs.pushLocale : "fr"] ?? COPY.fr;

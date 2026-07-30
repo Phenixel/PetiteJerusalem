@@ -206,6 +206,25 @@ const fr = {
     sectionMarkRead: "Marquer lu",
     sectionRead: "Lu",
     resetsDaily: "Le suivi se remet à zéro chaque jour.",
+    options: {
+      title: "Lectures du moment",
+      description:
+        "Des lectures qui suivent le calendrier : elles s'affichent en tête de votre liste et se mettent à jour toutes seules.",
+      parashaTitle: "Chnei mikra (paracha de la semaine)",
+      parashaDescription:
+        "La paracha de la semaine, montée par montée, affichée automatiquement toute la semaine.",
+      tehilimDayTitle: "Tehilim du jour",
+      tehilimDayDescription:
+        "Le cycle mensuel : les psaumes du jour du mois hébraïque, pour finir les Tehilim chaque mois.",
+      tehilimWeekTitle: "Tehilim de la semaine",
+      tehilimWeekDescription:
+        "Le cycle en 7 jours : les psaumes du jour, pour finir les Tehilim chaque semaine.",
+      parashaReading: "Paracha de la semaine",
+      tehilimDayReading: "Tehilim du jour · {day} du mois",
+      tehilimWeekReading: "Tehilim de la semaine",
+      psalmsOne: "Tehilim {n}",
+      psalmsRange: "Tehilim {from} à {to}",
+    },
     loadError: "Impossible de charger ce texte.",
   },
   security: {

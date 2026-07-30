@@ -202,6 +202,23 @@ const he: LocaleMessages = {
     readToday: "נקרא היום",
     sectionMarkRead: "סמן כנקרא",
     sectionRead: "נקרא",
+    options: {
+      title: "קריאות לפי הלוח",
+      description:
+        "קריאות שעוקבות אחרי הלוח העברי: הן מופיעות בראש הרשימה ומתעדכנות מעצמן.",
+      parashaTitle: "שניים מקרא (פרשת השבוע)",
+      parashaDescription: "פרשת השבוע, עלייה אחר עלייה, מוצגת אוטומטית כל השבוע.",
+      tehilimDayTitle: "תהילים יומי",
+      tehilimDayDescription:
+        "החלוקה החודשית: פרקי היום לפי היום בחודש העברי, לסיום תהילים כל חודש.",
+      tehilimWeekTitle: "תהילים שבועי",
+      tehilimWeekDescription: "החלוקה השבועית: פרקי היום, לסיום תהילים כל שבוע.",
+      parashaReading: "פרשת השבוע",
+      tehilimDayReading: "תהילים יומי · {day} בחודש",
+      tehilimWeekReading: "תהילים שבועי",
+      psalmsOne: "תהילים {n}",
+      psalmsRange: "תהילים {from} עד {to}",
+    },
     resetsDaily: "המעקב מתאפס מדי יום.",
     loadError: "לא ניתן לטעון טקסט זה.",
   },

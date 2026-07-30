@@ -15,6 +15,13 @@ import DailyReadingItem from "./DailyReadingItem.vue";
 import ReminderTimeModal from "./ReminderTimeModal.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import { anchorToElement } from "../../composables/scrollAnchor";
+import {
+  DAILY_OPTION_KEYS,
+  getWeeklyParasha,
+  getTehilimOfDay,
+  getTehilimOfWeek,
+  type DailyOptionKey,
+} from "../../services/dailyCycles";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{ userId: string }>();
@@ -81,6 +88,130 @@ const selectedEntries = computed(
   () => selectedIds.value.map((id) => byId.get(id)).filter(Boolean) as TextStudyJsonEntry[],
 );
 
+// --- Lectures du moment (paracha de la semaine, cycles Tehilim) ---
+const selectedOptions = ref<string[]>([]);
+const completedOptions = ref<Set<string>>(new Set());
+
+const OPTION_META: { key: DailyOptionKey; titleKey: string; descriptionKey: string }[] = [
+  {
+    key: "parasha",
+    titleKey: "dailyReading.options.parashaTitle",
+    descriptionKey: "dailyReading.options.parashaDescription",
+  },
+  {
+    key: "tehilim-jour",
+    titleKey: "dailyReading.options.tehilimDayTitle",
+    descriptionKey: "dailyReading.options.tehilimDayDescription",
+  },
+  {
+    key: "tehilim-semaine",
+    titleKey: "dailyReading.options.tehilimWeekTitle",
+    descriptionKey: "dailyReading.options.tehilimWeekDescription",
+  },
+];
+
+interface DynamicReading {
+  key: DailyOptionKey;
+  title: string;
+  subtitle: string;
+  entries: TextStudyJsonEntry[];
+}
+
+function psalmsLabel(psalms: number[]): string {
+  if (psalms.length === 1) return t("dailyReading.options.psalmsOne", { n: psalms[0] });
+  return t("dailyReading.options.psalmsRange", {
+    from: psalms[0],
+    to: psalms[psalms.length - 1],
+  });
+}
+
+// Les lectures calculées pour aujourd'hui, dans un ordre fixe, en tête de liste.
+const dynamicReadings = computed<DynamicReading[]>(() => {
+  const out: DynamicReading[] = [];
+  for (const key of DAILY_OPTION_KEYS) {
+    if (!selectedOptions.value.includes(key)) continue;
+    if (key === "parasha") {
+      const parasha = getWeeklyParasha();
+      if (!parasha) continue;
+      out.push({
+        key,
+        title: t("dailyReading.options.parashaReading"),
+        subtitle: parasha.entries.map((e) => appendHebrewNumeral(e.name)).join(" · "),
+        entries: parasha.entries,
+      });
+    } else if (key === "tehilim-jour") {
+      const cycle = getTehilimOfDay();
+      out.push({
+        key,
+        title: t("dailyReading.options.tehilimDayReading", { day: cycle.day }),
+        subtitle: psalmsLabel(cycle.psalms),
+        entries: cycle.entries,
+      });
+    } else {
+      const cycle = getTehilimOfWeek();
+      out.push({
+        key,
+        title: t("dailyReading.options.tehilimWeekReading"),
+        subtitle: psalmsLabel(cycle.psalms),
+        entries: cycle.entries,
+      });
+    }
+  }
+  return out;
+});
+
+function isOptionSelected(key: string): boolean {
+  return selectedOptions.value.includes(key);
+}
+
+async function toggleOption(key: DailyOptionKey) {
+  const removed = isOptionSelected(key);
+  if (removed) {
+    selectedOptions.value = selectedOptions.value.filter((k) => k !== key);
+    const next = new Set(completedOptions.value);
+    next.delete(key);
+    completedOptions.value = next;
+    setCollapsed(key, false);
+  } else {
+    // Ordre fixe des options, indépendant de l'ordre des clics.
+    selectedOptions.value = DAILY_OPTION_KEYS.filter(
+      (k) => k === key || selectedOptions.value.includes(k),
+    );
+  }
+  saving.value = true;
+  try {
+    await userPreferencesService.savePreferences(props.userId, {
+      dailyReadingOptions: [...selectedOptions.value],
+    });
+  } finally {
+    saving.value = false;
+  }
+  analyticsService.capture("daily_reading_configured", {
+    action: removed ? "option_removed" : "option_added",
+    option: key,
+    texts_count: selectedIds.value.length,
+  });
+}
+
+async function toggleOptionCompleted(key: DailyOptionKey) {
+  const next = new Set(completedOptions.value);
+  const nowRead = !next.has(key);
+  if (nowRead) next.add(key);
+  else next.delete(key);
+  completedOptions.value = next;
+  setCollapsed(key, nowRead);
+  if (nowRead) anchorToElement(articleEls.get(key) ?? null);
+  await persistProgress();
+  analyticsService.capture("daily_reading_marked_read", {
+    marked: nowRead,
+    scope: "option",
+    option: key,
+    done_count: completedCount.value,
+    total_count: totalCount.value,
+    all_done: allDone.value,
+  });
+}
+
 /** Local calendar day (YYYY-MM-DD), so the daily tracking resets at local midnight. */
 function todayKey(): string {
   const d = new Date();
@@ -94,6 +225,9 @@ onMounted(async () => {
     const prefs = await userPreferencesService.getPreferences(props.userId);
     // Les listes composées avant l'introduction du tri sont réordonnées ici.
     selectedIds.value = sortByCatalog((prefs.dailyReadingIds ?? []).map(String));
+    selectedOptions.value = (prefs.dailyReadingOptions ?? []).filter((k) =>
+      (DAILY_OPTION_KEYS as readonly string[]).includes(k),
+    );
 
     reminderEnabled.value = prefs.pushReminderEnabled === true;
     reminderHour.value = prefs.pushReminderHour ?? 18;
@@ -107,15 +241,18 @@ onMounted(async () => {
     if (progress && progress.date === todayKey()) {
       completedIds.value = new Set(progress.completedIds.map(String));
       completedSections.value = { ...(progress.completedSections ?? {}) };
+      completedOptions.value = new Set(progress.completedOptions ?? []);
       // Texts already read today start folded so unread ones stand out.
-      collapsedIds.value = new Set(completedIds.value);
+      collapsedIds.value = new Set([...completedIds.value, ...completedOptions.value]);
     } else {
       // New day (or never tracked): start fresh and persist the reset once.
       completedIds.value = new Set();
       completedSections.value = {};
+      completedOptions.value = new Set();
       if (
         progress &&
         (progress.completedIds.length > 0 ||
+          (progress.completedOptions ?? []).length > 0 ||
           Object.keys(progress.completedSections ?? {}).length > 0)
       ) {
         await persistProgress();
@@ -151,6 +288,9 @@ async function persistProgress() {
       date: todayKey(),
       completedIds: [...completedIds.value].map(Number),
       completedSections: sections,
+      completedOptions: [...completedOptions.value].filter((k) =>
+        selectedOptions.value.includes(k),
+      ),
     },
   });
 }
@@ -254,9 +394,11 @@ function toggleCollapse(id: string) {
 }
 
 const completedCount = computed(
-  () => selectedIds.value.filter((id) => completedIds.value.has(id)).length,
+  () =>
+    selectedIds.value.filter((id) => completedIds.value.has(id)).length +
+    selectedOptions.value.filter((k) => completedOptions.value.has(k)).length,
 );
-const totalCount = computed(() => selectedIds.value.length);
+const totalCount = computed(() => selectedIds.value.length + selectedOptions.value.length);
 const allDone = computed(() => totalCount.value > 0 && completedCount.value === totalCount.value);
 const progressPct = computed(() =>
   totalCount.value === 0 ? 0 : Math.round((completedCount.value / totalCount.value) * 100),
@@ -413,6 +555,40 @@ function formatBookName(livre: string): string {
         {{ t("dailyReading.selectedCount", { count: totalCount }) }}
       </p>
 
+      <!-- Lectures du moment : suivent le calendrier au lieu d'être choisies -->
+      <section class="mb-8">
+        <h3 class="text-lg font-bold text-text-primary mb-1">
+          {{ t("dailyReading.options.title") }}
+        </h3>
+        <p class="text-sm text-text-secondary mb-3 max-w-xl">
+          {{ t("dailyReading.options.description") }}
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <button
+            v-for="opt in OPTION_META"
+            :key="opt.key"
+            @click="toggleOption(opt.key)"
+            :class="[
+              'flex flex-col gap-1 p-3 rounded-lg transition-colors text-left',
+              isOptionSelected(opt.key)
+                ? 'bg-primary/10'
+                : 'bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/5 dark:hover:bg-white/10',
+            ]"
+          >
+            <span class="flex items-center justify-between gap-2">
+              <span class="font-medium text-text-primary">{{ t(opt.titleKey) }}</span>
+              <AppIcon
+                :name="isOptionSelected(opt.key) ? 'circle-check' : 'circle-plus'"
+                :size="14"
+                :class="isOptionSelected(opt.key) ? 'text-primary' : 'text-text-secondary/60'"
+                class="flex-shrink-0"
+              />
+            </span>
+            <span class="text-xs text-text-secondary">{{ t(opt.descriptionKey) }}</span>
+          </button>
+        </div>
+      </section>
+
       <!-- Recherche : collante sur l'app pour rester accessible au scroll. -->
       <div :class="isNativeApp ? 'app-sticky-search' : ''" class="flex justify-center mb-4">
         <div class="relative w-full md:w-96">
@@ -562,6 +738,84 @@ function formatBookName(livre: string): string {
 
         <!-- Texts, one after another, directly on the page background -->
         <div class="space-y-12">
+          <!-- Lectures du moment : calculées pour aujourd'hui, en tête -->
+          <article
+            v-for="reading in dynamicReadings"
+            :key="reading.key"
+            :ref="(el) => setArticleEl(reading.key, el)"
+            :class="completedOptions.has(reading.key) ? 'opacity-60' : ''"
+          >
+            <header class="mb-4">
+              <button
+                type="button"
+                @click="toggleCollapse(reading.key)"
+                class="group flex w-full items-start gap-3 text-left"
+              >
+                <AppIcon
+                  name="chevron-down"
+                  :size="13"
+                  class="mt-1.5 text-text-secondary/60 transition-transform duration-200"
+                  :class="collapsedIds.has(reading.key) ? '-rotate-90' : ''"
+                />
+                <span class="min-w-0">
+                  <span class="block text-xs font-semibold text-primary">
+                    {{ reading.title }}
+                  </span>
+                  <span
+                    class="flex items-center gap-2 text-lg font-bold text-text-primary transition-colors group-hover:text-primary"
+                  >
+                    {{ reading.subtitle }}
+                    <AppIcon
+                      v-if="completedOptions.has(reading.key)"
+                      name="circle-check"
+                      :size="15"
+                      class="text-green-500"
+                    />
+                  </span>
+                </span>
+              </button>
+            </header>
+
+            <CollapseTransition>
+              <div v-show="!collapsedIds.has(reading.key)">
+                <div class="space-y-8">
+                  <DailyReadingItem
+                    v-for="entry in reading.entries"
+                    :key="entry.id"
+                    :entry="entry"
+                  />
+                </div>
+
+                <div class="mt-4">
+                  <button
+                    @click="toggleOptionCompleted(reading.key)"
+                    :class="[
+                      'inline-flex items-center gap-2 text-sm font-medium transition-colors',
+                      completedOptions.has(reading.key)
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-text-secondary hover:text-primary',
+                    ]"
+                  >
+                    <AppIcon
+                      v-if="completedOptions.has(reading.key)"
+                      name="circle-check"
+                      :size="15"
+                    />
+                    <span
+                      v-else
+                      class="w-3.5 h-3.5 rounded-full border-2 border-current shrink-0"
+                    ></span>
+                    {{
+                      completedOptions.has(reading.key)
+                        ? t("dailyReading.readToday")
+                        : t("dailyReading.markRead")
+                    }}
+                  </button>
+                </div>
+              </div>
+            </CollapseTransition>
+          </article>
+
           <article
             v-for="entry in selectedEntries"
             :key="entry.id"

@@ -205,6 +205,25 @@ const en: LocaleMessages = {
     readToday: "Read today",
     sectionMarkRead: "Mark read",
     sectionRead: "Read",
+    options: {
+      title: "Readings of the moment",
+      description:
+        "Readings that follow the calendar: they appear at the top of your list and update on their own.",
+      parashaTitle: "Shnayim mikra (weekly parasha)",
+      parashaDescription:
+        "The weekly parasha, aliyah by aliyah, shown automatically all week long.",
+      tehilimDayTitle: "Daily Tehilim",
+      tehilimDayDescription:
+        "The monthly cycle: the psalms of the Hebrew day of the month, to finish Tehilim every month.",
+      tehilimWeekTitle: "Weekly Tehilim",
+      tehilimWeekDescription:
+        "The 7-day cycle: today's psalms, to finish Tehilim every week.",
+      parashaReading: "Parasha of the week",
+      tehilimDayReading: "Daily Tehilim · day {day} of the month",
+      tehilimWeekReading: "Weekly Tehilim",
+      psalmsOne: "Tehilim {n}",
+      psalmsRange: "Tehilim {from} to {to}",
+    },
     resetsDaily: "Tracking resets every day.",
     loadError: "Unable to load this text.",
   },
