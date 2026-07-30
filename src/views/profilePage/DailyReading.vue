@@ -37,6 +37,16 @@ const CORPUS_TYPES = TYPES.filter((ty) => ty.key !== ALL_TYPE);
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
 const byId = new Map<string, TextStudyJsonEntry>(allTexts.map((txt) => [String(txt.id), txt]));
 
+// La liste se lit dans l'ordre du catalogue (Tehilim 1, 4, 8… puis Michna,
+// Talmud, Tanakh), pas dans l'ordre où les textes ont été ajoutés.
+const catalogRank = new Map<string, number>(allTexts.map((txt, i) => [String(txt.id), i]));
+
+function sortByCatalog(ids: string[]): string[] {
+  return [...ids].sort(
+    (a, b) => (catalogRank.get(a) ?? Infinity) - (catalogRank.get(b) ?? Infinity),
+  );
+}
+
 const loading = ref(true);
 const saving = ref(false);
 const mode = ref<"reading" | "manage">("reading");
@@ -82,7 +92,8 @@ function todayKey(): string {
 onMounted(async () => {
   try {
     const prefs = await userPreferencesService.getPreferences(props.userId);
-    selectedIds.value = (prefs.dailyReadingIds ?? []).map(String);
+    // Les listes composées avant l'introduction du tri sont réordonnées ici.
+    selectedIds.value = sortByCatalog((prefs.dailyReadingIds ?? []).map(String));
 
     reminderEnabled.value = prefs.pushReminderEnabled === true;
     reminderHour.value = prefs.pushReminderHour ?? 18;
@@ -161,7 +172,7 @@ async function toggleSelect(entry: TextStudyJsonEntry) {
     completedSections.value = rest;
     setCollapsed(id, false);
   } else {
-    selectedIds.value = [...selectedIds.value, id];
+    selectedIds.value = sortByCatalog([...selectedIds.value, id]);
   }
   await persistSelection();
   analyticsService.capture("daily_reading_configured", {
