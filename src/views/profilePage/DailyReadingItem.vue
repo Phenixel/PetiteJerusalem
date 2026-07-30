@@ -3,10 +3,16 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import type { TextStudyJsonEntry } from "../../models/models";
 import { loadText, MissingTextFileError } from "../../services/textService";
-import type { TextContent } from "../../services/textService";
+import type { TextContent, TextSection } from "../../services/textService";
+import { anchorToElement } from "../../composables/scrollAnchor";
+import CollapseTransition from "../../components/CollapseTransition.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
-const props = defineProps<{ entry: TextStudyJsonEntry }>();
+const props = defineProps<{ entry: TextStudyJsonEntry; readSections?: number[] }>();
+const emit = defineEmits<{
+  "toggle-section": [index: number];
+  "sections-loaded": [indexes: number[]];
+}>();
 const { t } = useI18n();
 
 const loading = ref(true);
@@ -19,6 +25,18 @@ const content = ref<TextContent | null>(null);
 const showVerseNumbers = computed(() => (props.entry.totalSections ?? 1) > 1);
 const isMultiSection = computed(() => (content.value?.sections.length ?? 0) > 1);
 
+const readSet = computed(() => new Set(props.readSections ?? []));
+
+// Marquer un chapitre lu le replie : on garde son titre en vue pour que la
+// lecture continue au chapitre suivant, sans saut de scroll.
+function onToggleSection(section: TextSection, evt: MouseEvent) {
+  const willRead = !readSet.value.has(section.index);
+  emit("toggle-section", section.index);
+  if (willRead) {
+    anchorToElement((evt.currentTarget as HTMLElement).closest("section"));
+  }
+}
+
 async function load() {
   loading.value = true;
   error.value = false;
@@ -26,6 +44,8 @@ async function load() {
   content.value = null;
   try {
     content.value = await loadText(props.entry);
+    // Le parent a besoin des index réels pour savoir quand tout est lu.
+    emit("sections-loaded", content.value.sections.map((s) => s.index));
   } catch (e) {
     if (e instanceof MissingTextFileError) missing.value = true;
     else error.value = true;
@@ -87,50 +107,80 @@ onUnmounted(() => observer?.disconnect());
 
     <div v-else-if="content" class="space-y-6">
       <section v-for="section in content.sections" :key="section.index">
-        <p
-          v-if="isMultiSection"
-          class="mb-3 text-sm font-semibold text-primary/80 dark:text-primary"
-        >
-          {{ section.label }}
-        </p>
-
-        <!-- Talmud: continuous text with a marker at each daf change -->
-        <template v-if="content.type === 'Talmud Bavli'">
-          <template v-for="block in section.dafBlocks ?? []" :key="block.daf">
-            <p class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center">
-              Daf {{ block.daf }}
-            </p>
-            <p dir="rtl" class="font-hebrew text-xl leading-loose text-text-primary">
-              {{ block.lines.join(" ") }}
-            </p>
-          </template>
-        </template>
-
-        <!-- Verses / mishnayot / psalm lines: each on its own line, flowing on
-             the background, with a marker at each chapter / montée block -->
-        <template v-else>
-          <template
-            v-for="block in section.blocks ?? [{ label: '', lines: section.he, offset: 0 }]"
-            :key="block.offset"
+        <!-- Chaptered texts: per-chapter header with its own "mark read". -->
+        <div v-if="isMultiSection" class="mb-3 flex items-center justify-between gap-3">
+          <p
+            class="text-sm font-semibold"
+            :class="
+              readSet.has(section.index)
+                ? 'text-text-secondary/60'
+                : 'text-primary/80 dark:text-primary'
+            "
           >
-            <p
-              v-if="block.label"
-              class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center"
-            >
-              {{ block.label }}
-            </p>
-            <p dir="rtl" class="font-hebrew text-xl leading-loose text-text-primary">
-              <template v-for="(line, index) in block.lines" :key="block.offset + index">
-                <span
-                  v-if="showVerseNumbers || block.label"
-                  class="text-xs align-super text-primary/60 select-none"
+            {{ section.label }}
+          </p>
+          <button
+            @click="onToggleSection(section, $event)"
+            :class="[
+              'inline-flex items-center gap-1.5 text-xs font-medium transition-colors shrink-0',
+              readSet.has(section.index)
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-text-secondary hover:text-primary',
+            ]"
+          >
+            <AppIcon v-if="readSet.has(section.index)" name="circle-check" :size="14" />
+            <span v-else class="w-3 h-3 rounded-full border-2 border-current shrink-0"></span>
+            {{
+              readSet.has(section.index)
+                ? t("dailyReading.sectionRead")
+                : t("dailyReading.sectionMarkRead")
+            }}
+          </button>
+        </div>
+
+        <CollapseTransition>
+          <div v-show="!readSet.has(section.index)">
+            <!-- Talmud: continuous text with a marker at each daf change -->
+            <template v-if="content.type === 'Talmud Bavli'">
+              <template v-for="block in section.dafBlocks ?? []" :key="block.daf">
+                <p
+                  class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center"
                 >
-                  {{ index + 1 }}&#8201;</span
-                >{{ line }}<br />
+                  Daf {{ block.daf }}
+                </p>
+                <p dir="rtl" class="font-hebrew text-xl leading-loose text-text-primary">
+                  {{ block.lines.join(" ") }}
+                </p>
               </template>
-            </p>
-          </template>
-        </template>
+            </template>
+
+            <!-- Verses / mishnayot / psalm lines: each on its own line, flowing on
+                 the background, with a marker at each chapter / montée block -->
+            <template v-else>
+              <template
+                v-for="block in section.blocks ?? [{ label: '', lines: section.he, offset: 0 }]"
+                :key="block.offset"
+              >
+                <p
+                  v-if="block.label"
+                  class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center"
+                >
+                  {{ block.label }}
+                </p>
+                <p dir="rtl" class="font-hebrew text-xl leading-loose text-text-primary">
+                  <template v-for="(line, index) in block.lines" :key="block.offset + index">
+                    <span
+                      v-if="showVerseNumbers || block.label"
+                      class="text-xs align-super text-primary/60 select-none"
+                    >
+                      {{ index + 1 }}&#8201;</span
+                    >{{ line }}<br />
+                  </template>
+                </p>
+              </template>
+            </template>
+          </div>
+        </CollapseTransition>
       </section>
     </div>
   </div>

@@ -203,6 +203,8 @@ const en: LocaleMessages = {
     allReadDescription: "Come back tomorrow for your next reading.",
     markRead: "Mark as read",
     readToday: "Read today",
+    sectionMarkRead: "Mark read",
+    sectionRead: "Read",
     resetsDaily: "Tracking resets every day.",
     loadError: "Unable to load this text.",
   },

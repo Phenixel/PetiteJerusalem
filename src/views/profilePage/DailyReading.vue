@@ -13,6 +13,8 @@ import { useToast } from "../../composables/useToast";
 import { analyticsService } from "../../services/analyticsService";
 import DailyReadingItem from "./DailyReadingItem.vue";
 import ReminderTimeModal from "./ReminderTimeModal.vue";
+import CollapseTransition from "../../components/CollapseTransition.vue";
+import { anchorToElement } from "../../composables/scrollAnchor";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{ userId: string }>();
@@ -42,9 +44,21 @@ const mode = ref<"reading" | "manage">("reading");
 // Ids kept as strings for reliable Map lookups; converted back to numbers on save.
 const selectedIds = ref<string[]>([]);
 const completedIds = ref<Set<string>>(new Set());
+// Chapitres lus par texte (id → index de sections) pour les textes chapitrés.
+const completedSections = ref<Record<string, number[]>>({});
+// Index réels des sections de chaque texte, remontés par DailyReadingItem au
+// chargement : sert à savoir quand « tous les chapitres sont lus ».
+const sectionIndexes = new Map<string, number[]>();
 // Texts whose content is folded away (UI-only): clicking the title toggles this,
 // and marking a text as read folds it so only unread texts stay expanded.
 const collapsedIds = ref<Set<string>>(new Set());
+// Repère de scroll par texte : le titre reste en vue quand le contenu se replie.
+const articleEls = new Map<string, HTMLElement>();
+
+function setArticleEl(id: string, el: unknown) {
+  if (el instanceof HTMLElement) articleEls.set(id, el);
+  else articleEls.delete(id);
+}
 
 // --- Rappel push (app native uniquement) : la cloche de l'en-tête. ---
 const reminderEnabled = ref(false);
@@ -81,12 +95,18 @@ onMounted(async () => {
     const progress = prefs.dailyReadingProgress;
     if (progress && progress.date === todayKey()) {
       completedIds.value = new Set(progress.completedIds.map(String));
+      completedSections.value = { ...(progress.completedSections ?? {}) };
       // Texts already read today start folded so unread ones stand out.
       collapsedIds.value = new Set(completedIds.value);
     } else {
       // New day (or never tracked): start fresh and persist the reset once.
       completedIds.value = new Set();
-      if (progress && progress.completedIds.length > 0) {
+      completedSections.value = {};
+      if (
+        progress &&
+        (progress.completedIds.length > 0 ||
+          Object.keys(progress.completedSections ?? {}).length > 0)
+      ) {
         await persistProgress();
       }
     }
@@ -109,10 +129,17 @@ async function persistSelection() {
 }
 
 async function persistProgress() {
+  // On ne garde que les textes encore dans la liste, avec des chapitres cochés.
+  const sections: Record<string, number[]> = {};
+  for (const id of selectedIds.value) {
+    const list = completedSections.value[id];
+    if (list?.length) sections[id] = list;
+  }
   await userPreferencesService.savePreferences(props.userId, {
     dailyReadingProgress: {
       date: todayKey(),
       completedIds: [...completedIds.value].map(Number),
+      completedSections: sections,
     },
   });
 }
@@ -129,6 +156,9 @@ async function toggleSelect(entry: TextStudyJsonEntry) {
     const next = new Set(completedIds.value);
     next.delete(id);
     completedIds.value = next;
+    const rest = { ...completedSections.value };
+    delete rest[id];
+    completedSections.value = rest;
     setCollapsed(id, false);
   } else {
     selectedIds.value = [...selectedIds.value, id];
@@ -146,15 +176,58 @@ async function toggleCompleted(id: string) {
   if (nowRead) next.add(id);
   else next.delete(id);
   completedIds.value = next;
+  // Marquer le texte entier aligne aussi ses chapitres (cohérence des coches).
+  const indexes = sectionIndexes.get(id);
+  if (indexes?.length) {
+    completedSections.value = { ...completedSections.value, [id]: nowRead ? [...indexes] : [] };
+  }
   // Marking read folds the text away; un-marking reopens it to keep reading.
   setCollapsed(id, nowRead);
+  if (nowRead) anchorToElement(articleEls.get(id) ?? null);
   await persistProgress();
   analyticsService.capture("daily_reading_marked_read", {
     marked: nowRead,
+    scope: "text",
     done_count: completedCount.value,
     total_count: totalCount.value,
     all_done: allDone.value,
   });
+}
+
+/** Coche/décoche un chapitre ; le texte bascule « lu » quand tout y est. */
+async function toggleSection(id: string, sectionIndex: number) {
+  const current = new Set(completedSections.value[id] ?? []);
+  const nowRead = !current.has(sectionIndex);
+  if (nowRead) current.add(sectionIndex);
+  else current.delete(sectionIndex);
+  completedSections.value = { ...completedSections.value, [id]: [...current] };
+
+  const indexes = sectionIndexes.get(id) ?? [];
+  const allRead = indexes.length > 0 && indexes.every((i) => current.has(i));
+  const ids = new Set(completedIds.value);
+  const wasComplete = ids.has(id);
+  if (allRead) ids.add(id);
+  else ids.delete(id);
+  completedIds.value = ids;
+  // Dernier chapitre coché : le texte entier se replie, comme un « marquer lu ».
+  if (allRead && !wasComplete) {
+    setCollapsed(id, true);
+    anchorToElement(articleEls.get(id) ?? null);
+  }
+
+  await persistProgress();
+  analyticsService.capture("daily_reading_marked_read", {
+    marked: nowRead,
+    scope: "section",
+    done_count: completedCount.value,
+    total_count: totalCount.value,
+    all_done: allDone.value,
+  });
+}
+
+/** Chapitres lus d'un texte (chip « 3/8 » de l'en-tête). */
+function sectionsReadCount(id: string): number {
+  return completedSections.value[id]?.length ?? 0;
 }
 
 function setCollapsed(id: string, collapsed: boolean) {
@@ -481,6 +554,7 @@ function formatBookName(livre: string): string {
           <article
             v-for="entry in selectedEntries"
             :key="entry.id"
+            :ref="(el) => setArticleEl(String(entry.id), el)"
             :class="completedIds.has(String(entry.id)) ? 'opacity-60' : ''"
           >
             <!-- Discreet heading: click to fold/unfold the text -->
@@ -510,14 +584,28 @@ function formatBookName(livre: string): string {
                       :size="15"
                       class="text-green-500"
                     />
+                    <!-- Lecture par chapitres entamée : où on en est -->
+                    <span
+                      v-else-if="entry.totalSections > 1 && sectionsReadCount(String(entry.id)) > 0"
+                      class="text-xs font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5"
+                    >
+                      {{ sectionsReadCount(String(entry.id)) }}/{{ entry.totalSections }}
+                    </span>
                   </span>
                 </span>
               </button>
             </header>
 
-            <!-- Text content + "mark as read", hidden (but kept loaded) when folded -->
+            <!-- Text content + "mark as read", hidden (but kept loaded) when
+                 folded ; le repli est animé pour ne pas faire sauter le scroll -->
+            <CollapseTransition>
             <div v-show="!collapsedIds.has(String(entry.id))">
-              <DailyReadingItem :entry="entry" />
+              <DailyReadingItem
+                :entry="entry"
+                :read-sections="completedSections[String(entry.id)] ?? []"
+                @toggle-section="(index) => toggleSection(String(entry.id), index)"
+                @sections-loaded="(indexes) => sectionIndexes.set(String(entry.id), indexes)"
+              />
 
               <!-- Discreet "mark as read" button -->
               <div class="mt-4">
@@ -547,6 +635,7 @@ function formatBookName(livre: string): string {
                 </button>
               </div>
             </div>
+            </CollapseTransition>
           </article>
         </div>
       </template>

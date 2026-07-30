@@ -203,6 +203,8 @@ const fr = {
     allReadDescription: "Revenez demain pour votre prochaine lecture.",
     markRead: "Marquer comme lu",
     readToday: "Lu aujourd'hui",
+    sectionMarkRead: "Marquer lu",
+    sectionRead: "Lu",
     resetsDaily: "Le suivi se remet à zéro chaque jour.",
     loadError: "Impossible de charger ce texte.",
   },

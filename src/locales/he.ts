@@ -200,6 +200,8 @@ const he: LocaleMessages = {
     allReadDescription: "חזרו מחר לקריאה הבאה שלכם.",
     markRead: "סמן כנקרא",
     readToday: "נקרא היום",
+    sectionMarkRead: "סמן כנקרא",
+    sectionRead: "נקרא",
     resetsDaily: "המעקב מתאפס מדי יום.",
     loadError: "לא ניתן לטעון טקסט זה.",
   },

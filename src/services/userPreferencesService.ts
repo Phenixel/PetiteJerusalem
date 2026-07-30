@@ -6,8 +6,14 @@ import type { Bookmark, ReadingPosition } from "./readingProgressService";
 export interface DailyReadingProgress {
   /** Local calendar day (YYYY-MM-DD) the completions belong to. */
   date: string;
-  /** Ids of the texts marked as read on that day. */
+  /** Ids of the texts fully marked as read on that day. */
   completedIds: number[];
+  /**
+   * Chapitres lus par texte (id → index de sections), pour les textes qui se
+   * lisent chapitre par chapitre. Un texte dont tous les chapitres sont lus
+   * bascule aussi dans `completedIds`.
+   */
+  completedSections?: Record<string, number[]>;
 }
 
 export interface UserPreferences {
