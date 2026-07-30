@@ -556,6 +556,10 @@ const fr = {
     bookmarks: "Marque-pages",
     bookmarkAdd: "Ajouter un marque-page",
     bookmarkRemove: "Retirer le marque-page",
+    backToBookmark: "Revenir au marque-page",
+    bookmarksCount: "{count} marque-pages",
+    goCta: "Y aller",
+    seeCta: "Voir",
   },
   accountCta: {
     title: "Créez votre compte gratuit",

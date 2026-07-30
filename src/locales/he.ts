@@ -540,6 +540,10 @@ const he: LocaleMessages = {
     bookmarks: "סימניות",
     bookmarkAdd: "הוספת סימנייה",
     bookmarkRemove: "הסרת הסימנייה",
+    backToBookmark: "לחזרה לסימנייה",
+    bookmarksCount: "{count} סימניות",
+    goCta: "לעבור",
+    seeCta: "להציג",
   },
   accountCta: {
     title: "צרו חשבון חינם",

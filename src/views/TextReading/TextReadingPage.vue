@@ -823,6 +823,61 @@ watch(textId, () => {
         </div>
       </div>
 
+      <!-- Revenir au marque-page : visible dès l'arrivée sur le texte,
+           sommaire compris -->
+      <div v-if="bookmarks.length" class="mb-6 p-4 card flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-text-primary flex items-center gap-2">
+            <AppIcon name="bookmark" :size="15" class="text-primary flex-shrink-0" />
+            {{ t("textReading.backToBookmark") }}
+          </p>
+          <p class="text-sm text-text-secondary mt-0.5 truncate">
+            {{
+              bookmarks.length === 1
+                ? bookmarkPlace(bookmarks[0])
+                : t("textReading.bookmarksCount", { count: bookmarks.length })
+            }}
+          </p>
+        </div>
+        <button
+          v-if="bookmarks.length === 1"
+          @click="goToBookmark(bookmarks[0])"
+          class="btn btn-primary !px-3 !py-1.5 text-sm flex-shrink-0"
+        >
+          {{ t("textReading.goCta") }}
+        </button>
+        <button
+          v-else
+          @click="showBookmarksPanel = !showBookmarksPanel"
+          class="btn btn-soft !px-3 !py-1.5 text-sm flex-shrink-0"
+        >
+          {{ t("textReading.seeCta") }}
+        </button>
+      </div>
+
+      <!-- Marque-pages du texte -->
+      <div v-if="showBookmarksPanel && bookmarks.length" class="mb-6 card p-3">
+        <p class="text-xs font-semibold uppercase tracking-wide text-text-secondary px-1 mb-1.5">
+          {{ t("textReading.bookmarks") }}
+        </p>
+        <div v-for="b in bookmarks" :key="b.id" class="flex items-center gap-1">
+          <button
+            @click="goToBookmark(b)"
+            class="flex-1 min-w-0 text-left px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-sm text-text-primary flex items-center gap-2 transition-colors"
+          >
+            <AppIcon name="bookmark" :size="13" class="text-primary flex-shrink-0" />
+            <span class="truncate">{{ bookmarkPlace(b) }}</span>
+          </button>
+          <button
+            @click="removeBookmarkItem(b)"
+            class="icon-btn hover:!text-red-600"
+            :title="t('textReading.bookmarkRemove')"
+          >
+            <AppIcon name="x" :size="14" />
+          </button>
+        </div>
+      </div>
+
       <!-- Passage list (multi-section texts) -->
       <div v-if="showSectionList">
         <ReadingNav
@@ -1063,29 +1118,6 @@ watch(textId, () => {
               "
             >
               {{ t("textReading.phonetic") }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Marque-pages du texte -->
-        <div v-if="showBookmarksPanel && bookmarks.length" class="mb-5 card p-3">
-          <p class="text-xs font-semibold uppercase tracking-wide text-text-secondary px-1 mb-1.5">
-            {{ t("textReading.bookmarks") }}
-          </p>
-          <div v-for="b in bookmarks" :key="b.id" class="flex items-center gap-1">
-            <button
-              @click="goToBookmark(b)"
-              class="flex-1 min-w-0 text-left px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-sm text-text-primary flex items-center gap-2 transition-colors"
-            >
-              <AppIcon name="bookmark" :size="13" class="text-primary flex-shrink-0" />
-              <span class="truncate">{{ bookmarkPlace(b) }}</span>
-            </button>
-            <button
-              @click="removeBookmarkItem(b)"
-              class="icon-btn hover:!text-red-600"
-              :title="t('textReading.bookmarkRemove')"
-            >
-              <AppIcon name="x" :size="14" />
             </button>
           </div>
         </div>

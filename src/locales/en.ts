@@ -549,6 +549,10 @@ const en: LocaleMessages = {
     bookmarks: "Bookmarks",
     bookmarkAdd: "Add a bookmark",
     bookmarkRemove: "Remove bookmark",
+    backToBookmark: "Back to your bookmark",
+    bookmarksCount: "{count} bookmarks",
+    goCta: "Go",
+    seeCta: "See",
   },
   accountCta: {
     title: "Create your free account",

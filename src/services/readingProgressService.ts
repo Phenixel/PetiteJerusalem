@@ -150,6 +150,13 @@ class ReadingProgressService {
       .sort((a, b) => (a.section ?? 0) - (b.section ?? 0) || a.line - b.line);
   }
 
+  /** Nombre de marque-pages par texte (badges de la bibliothèque). */
+  getBookmarkCounts(): Record<string, number> {
+    const counts: Record<string, number> = {};
+    for (const b of this.bookmarksAll()) counts[b.textId] = (counts[b.textId] ?? 0) + 1;
+    return counts;
+  }
+
   isBookmarked(textId: string, section: number | null, line: number): boolean {
     const id = bookmarkId(textId, section, line);
     return this.bookmarksAll().some((b) => b.id === id);
