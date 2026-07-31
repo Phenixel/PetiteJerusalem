@@ -72,6 +72,7 @@ describe("sessionService - tirage aléatoire", () => {
       localId,
       undefined,
       "Anonyme",
+      { expiresAt: expect.any(String) },
     );
     expect(result!.reservation).toMatchObject({
       id: "rid-1",
@@ -81,6 +82,11 @@ describe("sessionService - tirage aléatoire", () => {
       chosenByGuestId: localId,
       isCompleted: false,
     });
+    // Le tirage expire dans environ une heure : non lu d'ici là, il sera
+    // libéré automatiquement.
+    const ttl = new Date(result!.reservation.expiresAt!).getTime() - Date.now();
+    expect(ttl).toBeGreaterThan(55 * 60 * 1000);
+    expect(ttl).toBeLessThanOrEqual(60 * 60 * 1000);
   });
 
   it("préfère le nom du formulaire invité quand il est rempli", async () => {
@@ -109,7 +115,9 @@ describe("sessionService - tirage aléatoire", () => {
       "Anonyme",
     );
 
-    expect(spy).toHaveBeenCalledWith("s1", "103", 1, "u1", undefined, "Shimon", undefined);
+    expect(spy).toHaveBeenCalledWith("s1", "103", 1, "u1", undefined, "Shimon", undefined, {
+      expiresAt: expect.any(String),
+    });
     expect(result!.reservation).toMatchObject({ chosenById: "u1", chosenByName: "Shimon" });
   });
 
@@ -181,6 +189,84 @@ describe("sessionService - tirage aléatoire", () => {
 
     expect(result).toBeNull();
     expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("considère comme disponible un tirage expiré sans lecture", async () => {
+    vi.spyOn(reservationService, "createReservation").mockResolvedValue("rid-6");
+    const session = makeSession([
+      {
+        id: "r1",
+        textStudyId: "103",
+        section: 1,
+        available: false,
+        isCompleted: false,
+        createdAt: new Date(),
+        // Tirage abandonné : expiré depuis une minute, jamais lu.
+        expiresAt: new Date(Date.now() - 60 * 1000).toISOString(),
+      },
+    ]);
+
+    const result = await sessionService.reserveRandomAvailableText(
+      session,
+      [makeText("103")],
+      null,
+      emptyForm,
+      "Anonyme",
+    );
+
+    expect(result!.text.id).toBe("103");
+  });
+
+  it("un tirage expiré mais lu reste réservé", async () => {
+    const spy = vi.spyOn(reservationService, "createReservation");
+    const session = makeSession([
+      {
+        id: "r1",
+        textStudyId: "103",
+        section: 1,
+        available: false,
+        isCompleted: true,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() - 60 * 1000).toISOString(),
+      },
+    ]);
+
+    const result = await sessionService.reserveRandomAvailableText(
+      session,
+      [makeText("103")],
+      null,
+      emptyForm,
+      "Anonyme",
+    );
+
+    expect(result).toBeNull();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("isReservationExpired ne vise que les tirages non lus et périmés", () => {
+    const base = {
+      id: "r1",
+      textStudyId: "103",
+      available: false,
+      createdAt: new Date(),
+    };
+    const past = new Date(Date.now() - 1000).toISOString();
+    const future = new Date(Date.now() + 1000).toISOString();
+
+    // Réservation manuelle (sans expiresAt) : n'expire jamais.
+    expect(sessionService.isReservationExpired({ ...base, isCompleted: false })).toBe(false);
+    // Tirage encore dans les temps.
+    expect(
+      sessionService.isReservationExpired({ ...base, isCompleted: false, expiresAt: future }),
+    ).toBe(false);
+    // Tirage périmé sans lecture : libéré.
+    expect(
+      sessionService.isReservationExpired({ ...base, isCompleted: false, expiresAt: past }),
+    ).toBe(true);
+    // Tirage lu avant ou après l'échéance : acquis.
+    expect(
+      sessionService.isReservationExpired({ ...base, isCompleted: true, expiresAt: past }),
+    ).toBe(false);
   });
 
   it("laisse remonter les autres erreurs sans repiocher", async () => {

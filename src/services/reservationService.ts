@@ -10,10 +10,44 @@ export interface ReservationForm {
   email: string;
 }
 
+/**
+ * Durée de vie d'une réservation issue du tirage aléatoire : non lue au bout
+ * d'une heure, elle est considérée comme abandonnée et redevient prenable.
+ */
+export const RANDOM_RESERVATION_TTL_MS = 60 * 60 * 1000;
+
 export class ReservationService {
   /**
+   * Une réservation à durée limitée (tirage aléatoire) qui n'a pas été lue à
+   * temps : elle est ignorée par tous les affichages et remplacée à la
+   * prochaine réservation du même emplacement.
+   */
+  isReservationExpired(reservation: { expiresAt?: string; isCompleted: boolean }): boolean {
+    return (
+      reservation.expiresAt !== undefined &&
+      !reservation.isCompleted &&
+      new Date(reservation.expiresAt).getTime() < Date.now()
+    );
+  }
+
+  private conflictsWithSlot(
+    reservation: ReservationRecord,
+    textStudyId: string,
+    section: number | undefined,
+  ): boolean {
+    return (
+      reservation.textStudyId === textStudyId &&
+      (reservation.section === section ||
+        reservation.section === undefined ||
+        section === undefined)
+    );
+  }
+
+  /**
    * Une réservation « texte entier » (section undefined) et des réservations
-   * « par section » sont mutuellement exclusives pour un même texte.
+   * « par section » sont mutuellement exclusives pour un même texte. Les
+   * réservations expirées ne comptent pas : l'appelant doit les retirer du
+   * tableau qu'il écrit (voir dropExpiredForSlot).
    */
   private findConflictingReservation(
     reservations: ReservationRecord[],
@@ -21,9 +55,23 @@ export class ReservationService {
     section: number | undefined,
   ): ReservationRecord | undefined {
     return reservations.find(
-      (r) =>
-        r.textStudyId === textStudyId &&
-        (r.section === section || r.section === undefined || section === undefined),
+      (r) => this.conflictsWithSlot(r, textStudyId, section) && !this.isReservationExpired(r),
+    );
+  }
+
+  /**
+   * Retire les réservations expirées de l'emplacement qu'on s'apprête à
+   * réserver. Uniquement celles de CET emplacement : les règles Firestore
+   * bornent la variation de taille du tableau à une réservation près, un
+   * grand ménage global pourrait dépasser la borne et être rejeté.
+   */
+  private dropExpiredForSlot(
+    reservations: ReservationRecord[],
+    textStudyId: string,
+    section: number | undefined,
+  ): ReservationRecord[] {
+    return reservations.filter(
+      (r) => !(this.conflictsWithSlot(r, textStudyId, section) && this.isReservationExpired(r)),
     );
   }
 
@@ -35,6 +83,7 @@ export class ReservationService {
     guestId: string | undefined,
     userName: string | undefined,
     guestName: string | undefined,
+    options?: { expiresAt?: string },
   ): Promise<string> {
     if (!userId && !guestId) {
       throw new Error("Une réservation doit être associée à un utilisateur ou un invité");
@@ -50,13 +99,16 @@ export class ReservationService {
         }
 
         const data = sfDoc.data() as { reservations?: ReservationRecord[] };
-        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
+        const existing: ReservationRecord[] = Array.isArray(data.reservations)
           ? data.reservations
           : [];
 
-        if (this.findConflictingReservation(reservations, textStudyId, section) !== undefined) {
+        if (this.findConflictingReservation(existing, textStudyId, section) !== undefined) {
           throw new Error("Cette section est déjà réservée");
         }
+
+        // Un tirage aléatoire abandonné sur cet emplacement cède sa place.
+        const reservations = this.dropExpiredForSlot(existing, textStudyId, section);
 
         const newReservation: ReservationRecord = {
           id: reservationId,
@@ -77,6 +129,10 @@ export class ReservationService {
 
         if (guestId) {
           newReservation.chosenByGuestId = guestId;
+        }
+
+        if (options?.expiresAt !== undefined) {
+          newReservation.expiresAt = options.expiresAt;
         }
 
         reservations.push(newReservation);
@@ -112,9 +168,15 @@ export class ReservationService {
         }
 
         const data = sfDoc.data() as { reservations?: ReservationRecord[] };
-        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
+        const existing: ReservationRecord[] = Array.isArray(data.reservations)
           ? data.reservations
           : [];
+
+        // Les emplacements demandés dont la réservation a expiré sont libérés.
+        const reservations = items.reduce(
+          (kept, item) => this.dropExpiredForSlot(kept, item.textStudyId, item.section),
+          existing,
+        );
 
         const newReservations: ReservationRecord[] = items.map((item, index) => {
           if (
@@ -214,8 +276,12 @@ export class ReservationService {
     const reservations = this.getReservationsBySession(session);
     // Une réservation « texte entier » (section absente) couvre chacune de
     // ses sections : demander « le chapitre 3 est-il pris ? » doit dire oui.
+    // Les réservations expirées (tirage aléatoire abandonné) ne comptent pas.
     const reservation = reservations.find(
-      (r) => r.textStudyId === textStudyId && (r.section === section || r.section === undefined),
+      (r) =>
+        r.textStudyId === textStudyId &&
+        (r.section === section || r.section === undefined) &&
+        !this.isReservationExpired(r),
     );
 
     if (reservation) {
@@ -239,7 +305,9 @@ export class ReservationService {
     session: Session,
   ): { status: "available" | "fully_reserved" | "partially_reserved"; reservedBy: string | null } {
     const reservations = this.getReservationsBySession(session);
-    const textReservations = reservations.filter((r) => r.textStudyId === textStudyId);
+    const textReservations = reservations.filter(
+      (r) => r.textStudyId === textStudyId && !this.isReservationExpired(r),
+    );
 
     // Réservation du texte entier (section undefined) : le texte est pris.
     const fullReservation = textReservations.find((r) => r.section === undefined);
@@ -430,6 +498,9 @@ export class ReservationService {
               };
               if (r.section !== undefined) {
                 updated.section = r.section;
+              }
+              if (r.expiresAt !== undefined) {
+                updated.expiresAt = r.expiresAt;
               }
               return updated;
             }

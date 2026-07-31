@@ -345,16 +345,10 @@ const fr = {
     randomDraw: {
       title: "Un Téhilim au hasard",
       subtitle:
-        "Laissez le hasard choisir pour vous : le Téhilim tiré est aussitôt réservé à votre nom, même sans compte.",
+        "Laissez le hasard choisir pour vous : le Téhilim s'ouvre aussitôt, réservé à votre nom, même sans compte.",
       button: "Tirer un Téhilim",
       drawing: "Tirage en cours...",
       noneAvailable: "Tous les Téhilim de cette session sont déjà réservés.",
-      yourDraw: "Votre tirage",
-      reservedForYou: "Réservé pour vous",
-      readThanks: "Lu, merci !",
-      markRead: "Marquer comme lu",
-      cancel: "Annuler",
-      drawAnother: "Tirer un autre Téhilim",
       anonymous: "Anonyme",
     },
     instructions: {
@@ -584,6 +578,8 @@ const fr = {
     updateError: "La mise à jour a échoué.",
     guestIntro: "Renseignez votre nom et votre email pour réserver ce passage.",
     guestIntroNameOnly: "Renseignez votre nom pour réserver ce passage.",
+    finishPrompt: "Vous avez terminé cette lecture ?",
+    drawAnother: "Un autre Téhilim",
     textSize: "Taille du texte",
     textSizeIncrease: "Agrandir le texte",
     textSizeDecrease: "Réduire le texte",

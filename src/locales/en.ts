@@ -341,16 +341,10 @@ const en: LocaleMessages = {
     randomDraw: {
       title: "A random Tehilim",
       subtitle:
-        "Let chance choose for you: the drawn Tehilim is instantly reserved under your name, even without an account.",
+        "Let chance choose for you: the Tehilim opens right away, reserved under your name, even without an account.",
       button: "Draw a Tehilim",
       drawing: "Drawing...",
       noneAvailable: "All the Tehilim of this session are already reserved.",
-      yourDraw: "Your draw",
-      reservedForYou: "Reserved for you",
-      readThanks: "Read, thank you!",
-      markRead: "Mark as read",
-      cancel: "Cancel",
-      drawAnother: "Draw another Tehilim",
       anonymous: "Anonymous",
     },
     instructions: {
@@ -577,6 +571,8 @@ const en: LocaleMessages = {
     updateError: "The update failed.",
     guestIntro: "Enter your name and email to reserve this passage.",
     guestIntroNameOnly: "Enter your name to reserve this passage.",
+    finishPrompt: "Finished reading?",
+    drawAnother: "Another Tehilim",
     textSize: "Text size",
     textSizeIncrease: "Increase text size",
     textSizeDecrease: "Decrease text size",

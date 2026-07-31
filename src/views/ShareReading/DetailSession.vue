@@ -184,12 +184,18 @@ const progressStats = computed(() => {
 
   const total = textStudies.value.reduce((acc, textStudy) => acc + textStudy.totalSections, 0);
 
-  const reserved = reservations.value.length;
+  // Les tirages aléatoires abandonnés (expirés sans lecture) ne comptent
+  // plus : leurs emplacements sont redevenus disponibles.
+  const activeReservations = reservations.value.filter(
+    (r) => !sessionService.isReservationExpired(r),
+  );
 
-  const read = reservations.value.filter((r) => r.isCompleted).length;
+  const reserved = activeReservations.length;
+
+  const read = activeReservations.filter((r) => r.isCompleted).length;
 
   const uniqueParticipants = new Set<string>();
-  reservations.value.forEach((r) => {
+  activeReservations.forEach((r) => {
     if (r.chosenById) {
       uniqueParticipants.add(`user:${r.chosenById}`);
     } else if (r.chosenByGuestId) {
@@ -525,7 +531,6 @@ const clearSearch = () => {
 
 // --- Tirage aléatoire (sessions Tehilim uniquement) ---
 
-const randomDraw = ref<{ text: TextStudy; reservation: TextStudyReservation } | null>(null);
 const isDrawingRandom = ref(false);
 
 const isTehilimSession = computed(() => session.value?.type === EnumTypeTextStudy.Tehilim);
@@ -539,7 +544,9 @@ const randomAvailableCount = computed(() => {
 /**
  * Réserve un Tehilim au hasard, sans aucun prérequis : même un visiteur qui
  * n'a rien rempli repart avec un texte, réservé au nom « Anonyme » pour que
- * personne d'autre ne le prenne en attendant.
+ * personne d'autre ne le prenne en attendant. On ouvre aussitôt la page de
+ * lecture ; c'est elle qui porte la suite (marquer lu, repiocher, ou libérer
+ * le texte si le lecteur repart sans l'avoir lu).
  */
 const drawRandomTehilim = async () => {
   if (!session.value || isDrawingRandom.value) return;
@@ -548,6 +555,7 @@ const drawRandomTehilim = async () => {
     session_id: session.value.id,
     available_count: randomAvailableCount.value,
     is_guest: currentUser.value == null,
+    source: "session_page",
   });
 
   try {
@@ -566,7 +574,6 @@ const drawRandomTehilim = async () => {
     }
 
     reservations.value.push(result.reservation);
-    randomDraw.value = result;
 
     analyticsService.capture("reservation_completed", {
       session_id: session.value.id,
@@ -575,6 +582,12 @@ const drawRandomTehilim = async () => {
       is_guest: currentUser.value == null,
       guest_has_email: currentUser.value == null && reservationForm.value.email.trim() !== "",
       source: "random_button",
+    });
+
+    router.push({
+      name: "text-reading",
+      params: { textId: result.text.id },
+      query: { session: session.value.slug ?? session.value.id, tirage: "1" },
     });
   } catch (err) {
     console.error("Erreur lors du tirage aléatoire:", err);
@@ -588,23 +601,6 @@ const drawRandomTehilim = async () => {
   } finally {
     isDrawingRandom.value = false;
   }
-};
-
-const cancelRandomDraw = async () => {
-  const drawn = randomDraw.value;
-  if (!drawn) return;
-  await cancelReservation(drawn.text.id, drawn.reservation.section);
-  // cancelReservation gère lui-même les refus et les erreurs : on ne réarme
-  // le tirage que si la réservation a réellement disparu.
-  if (!reservations.value.some((r) => r.id === drawn.reservation.id)) {
-    randomDraw.value = null;
-  }
-};
-
-const markRandomDrawAsRead = async () => {
-  const drawn = randomDraw.value;
-  if (!drawn || drawn.reservation.isCompleted) return;
-  await toggleReservationCompletion(drawn.reservation.textStudyId, drawn.reservation.section ?? 1);
 };
 
 const openShareModal = () => {
@@ -731,13 +727,9 @@ watch(session, (s) => applySessionSeo(s));
            avec ou sans compte -->
       <RandomTehilimCard
         v-if="isTehilimSession"
-        :drawn="randomDraw"
         :loading="isDrawingRandom"
         :available-count="randomAvailableCount"
-        :session-slug="session.slug ?? session.id"
         @draw="drawRandomTehilim"
-        @cancel="cancelRandomDraw"
-        @mark-read="markRandomDrawAsRead"
       />
 
       <!-- Barre de progression -->
