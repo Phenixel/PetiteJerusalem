@@ -338,6 +338,21 @@ const en: LocaleMessages = {
     createYourOwnText:
       "Inspired by this session? Create your own in a few clicks: choose a text (Talmud, Tehilim, Mishnah, Tanakh), split it up and invite your community to finish it with you.",
     createYourOwnButton: "Create my session",
+    randomDraw: {
+      title: "A random Tehilim",
+      subtitle:
+        "Let chance choose for you: the drawn Tehilim is instantly reserved under your name, even without an account.",
+      button: "Draw a Tehilim",
+      drawing: "Drawing...",
+      noneAvailable: "All the Tehilim of this session are already reserved.",
+      yourDraw: "Your draw",
+      reservedForYou: "Reserved for you",
+      readThanks: "Read, thank you!",
+      markRead: "Mark as read",
+      cancel: "Cancel",
+      drawAnother: "Draw another Tehilim",
+      anonymous: "Anonymous",
+    },
     instructions: {
       title: "Instructions",
       step1: "Check the boxes to reserve a section or text",

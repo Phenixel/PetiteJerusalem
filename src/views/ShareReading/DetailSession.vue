@@ -17,6 +17,8 @@ import { SITE_URL } from "../../config/site";
 import SessionHeader from "./detailSession/SessionHeader.vue";
 import SessionInstructions from "./detailSession/SessionInstructions.vue";
 import TextStudiesList from "./detailSession/TextStudiesList.vue";
+import RandomTehilimCard from "./detailSession/RandomTehilimCard.vue";
+import { EnumTypeTextStudy } from "../../models/typeTextStudy";
 import { useToast } from "../../composables/useToast";
 import { analyticsService } from "../../services/analyticsService";
 
@@ -521,6 +523,90 @@ const clearSearch = () => {
   searchTerm.value = "";
 };
 
+// --- Tirage aléatoire (sessions Tehilim uniquement) ---
+
+const randomDraw = ref<{ text: TextStudy; reservation: TextStudyReservation } | null>(null);
+const isDrawingRandom = ref(false);
+
+const isTehilimSession = computed(() => session.value?.type === EnumTypeTextStudy.Tehilim);
+
+const randomAvailableCount = computed(() => {
+  const s = session.value;
+  if (!s) return 0;
+  return textStudies.value.filter((text) => !isReserved(text.id, 1).isReserved).length;
+});
+
+/**
+ * Réserve un Tehilim au hasard, sans aucun prérequis : même un visiteur qui
+ * n'a rien rempli repart avec un texte, réservé au nom « Anonyme » pour que
+ * personne d'autre ne le prenne en attendant.
+ */
+const drawRandomTehilim = async () => {
+  if (!session.value || isDrawingRandom.value) return;
+
+  analyticsService.capture("random_tehilim_clicked", {
+    session_id: session.value.id,
+    available_count: randomAvailableCount.value,
+    is_guest: currentUser.value == null,
+  });
+
+  try {
+    isDrawingRandom.value = true;
+    const result = await sessionService.reserveRandomAvailableText(
+      session.value,
+      textStudies.value,
+      currentUser.value,
+      reservationForm.value,
+      t("detailSession.randomDraw.anonymous"),
+    );
+
+    if (!result) {
+      toast.error(t("detailSession.randomDraw.noneAvailable"));
+      return;
+    }
+
+    reservations.value.push(result.reservation);
+    randomDraw.value = result;
+
+    analyticsService.capture("reservation_completed", {
+      session_id: session.value.id,
+      text_type: session.value.type,
+      sections_count: 1,
+      is_guest: currentUser.value == null,
+      guest_has_email: currentUser.value == null && reservationForm.value.email.trim() !== "",
+      source: "random_button",
+    });
+  } catch (err) {
+    console.error("Erreur lors du tirage aléatoire:", err);
+    analyticsService.capture("reservation_failed", {
+      session_id: session.value.id,
+      reason: "error",
+      error_message: err instanceof Error ? err.message : String(err),
+      source: "random_button",
+    });
+    toast.errorFromException(err, t("detailSession.reservationError"));
+  } finally {
+    isDrawingRandom.value = false;
+  }
+};
+
+const cancelRandomDraw = async () => {
+  const drawn = randomDraw.value;
+  if (!drawn) return;
+  await cancelReservation(drawn.text.id, drawn.reservation.section);
+  // cancelReservation gère lui-même les refus et les erreurs : on ne réarme
+  // le tirage que si la réservation a réellement disparu.
+  if (!reservations.value.some((r) => r.id === drawn.reservation.id)) {
+    randomDraw.value = null;
+  }
+};
+
+const markRandomDrawAsRead = async () => {
+  const drawn = randomDraw.value;
+  if (!drawn || drawn.reservation.isCompleted) return;
+  await toggleReservationCompletion(drawn.reservation.textStudyId, drawn.reservation.section ?? 1);
+};
+
 const openShareModal = () => {
   // Domaine canonique plutôt que window.location.href : ce dernier vaut
   // localhost (ou capacitor://localhost) en dev et dans l'app native, ce qui
@@ -639,6 +725,19 @@ watch(session, (s) => applySessionSeo(s));
         :is-owner="isOwner"
         @share="openShareModal"
         @manage="goToManagement"
+      />
+
+      <!-- Tirage aléatoire : recevoir un Tehilim disponible en un clic,
+           avec ou sans compte -->
+      <RandomTehilimCard
+        v-if="isTehilimSession"
+        :drawn="randomDraw"
+        :loading="isDrawingRandom"
+        :available-count="randomAvailableCount"
+        :session-slug="session.slug ?? session.id"
+        @draw="drawRandomTehilim"
+        @cancel="cancelRandomDraw"
+        @mark-read="markRandomDrawAsRead"
       />
 
       <!-- Barre de progression -->

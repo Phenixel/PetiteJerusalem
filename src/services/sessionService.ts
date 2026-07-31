@@ -229,6 +229,62 @@ export class SessionService {
     }
   }
 
+  /**
+   * Tire au sort un texte encore entièrement disponible et le réserve
+   * immédiatement, y compris pour un visiteur sans compte ni nom : la
+   * réservation part alors avec l'identité invitée locale, au nom
+   * `anonymousName`. En cas de course (texte pris entre-temps, le cache des
+   * sessions peut avoir 60 s de retard), on repioche parmi les restants.
+   * Renvoie null quand plus aucun texte n'est disponible.
+   */
+  async reserveRandomAvailableText(
+    session: Session,
+    textStudies: TextStudy[],
+    currentUser: User | null,
+    reservationForm: ReservationForm,
+    anonymousName: string,
+  ): Promise<{ text: TextStudy; reservation: TextStudyReservation } | null> {
+    const pool = textStudies.filter(
+      (text) => !reservationService.isTextOrSectionReserved(text.id, 1, session).isReserved,
+    );
+    if (pool.length === 0) return null;
+
+    const guestName = currentUser ? undefined : reservationForm.name.trim() || anonymousName;
+    const guestId = currentUser ? undefined : reservationService.resolveGuestId(reservationForm);
+
+    while (pool.length > 0) {
+      const [text] = pool.splice(Math.floor(Math.random() * pool.length), 1);
+      try {
+        const reservationId = await reservationService.createReservation(
+          session.id,
+          text.id,
+          1,
+          currentUser?.id,
+          guestId,
+          currentUser?.name,
+          guestName,
+        );
+
+        const reservation: TextStudyReservation = {
+          id: reservationId,
+          textStudyId: text.id,
+          section: 1,
+          chosenByName: currentUser?.name || guestName,
+          available: false,
+          isCompleted: false,
+          createdAt: new Date(),
+          ...(currentUser ? { chosenById: currentUser.id } : { chosenByGuestId: guestId }),
+        };
+        return { text, reservation };
+      } catch (error) {
+        if (error instanceof Error && error.message.includes("déjà réservée")) continue;
+        throw error;
+      }
+    }
+
+    return null;
+  }
+
   createLocalReservations(
     items: Array<{ textStudyId: string; section?: number }>,
     reservationIds: string[],

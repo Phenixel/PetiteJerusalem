@@ -342,6 +342,21 @@ const fr = {
     createYourOwnText:
       "Cette session vous inspire ? Créez la vôtre en quelques clics : choisissez un texte (Talmud, Tehilim, Michna, Tanakh), répartissez-le et invitez votre communauté à le terminer avec vous.",
     createYourOwnButton: "Créer ma session",
+    randomDraw: {
+      title: "Un Téhilim au hasard",
+      subtitle:
+        "Laissez le hasard choisir pour vous : le Téhilim tiré est aussitôt réservé à votre nom, même sans compte.",
+      button: "Tirer un Téhilim",
+      drawing: "Tirage en cours...",
+      noneAvailable: "Tous les Téhilim de cette session sont déjà réservés.",
+      yourDraw: "Votre tirage",
+      reservedForYou: "Réservé pour vous",
+      readThanks: "Lu, merci !",
+      markRead: "Marquer comme lu",
+      cancel: "Annuler",
+      drawAnother: "Tirer un autre Téhilim",
+      anonymous: "Anonyme",
+    },
     instructions: {
       title: "Instructions",
       step1: "Cochez les cases pour réserver une section ou un texte",
