@@ -132,11 +132,13 @@ service cloud.firestore {
       allow read: if isAuthenticated() && request.auth.uid == userId;
       allow create, update: if isAuthenticated()
         && request.auth.uid == userId
-        && request.resource.data.size() <= 12
+        && request.resource.data.size() <= 16
         && (!('theme' in request.resource.data) || (request.resource.data.theme is string && request.resource.data.theme.size() <= 20))
         && (!('fontLatin' in request.resource.data) || (request.resource.data.fontLatin is string && request.resource.data.fontLatin.size() <= 20))
         && (!('fontHebrew' in request.resource.data) || (request.resource.data.fontHebrew is string && request.resource.data.fontHebrew.size() <= 20))
         && (!('dailyReadingIds' in request.resource.data) || (request.resource.data.dailyReadingIds is list && request.resource.data.dailyReadingIds.size() <= 200))
+        // Lectures du moment (paracha de la semaine, cycles Tehilim).
+        && (!('dailyReadingOptions' in request.resource.data) || (request.resource.data.dailyReadingOptions is list && request.resource.data.dailyReadingOptions.size() <= 10))
         && (!('dailyReadingProgress' in request.resource.data) || request.resource.data.dailyReadingProgress is map)
         // Notifications push (app native) : tokens FCM des appareils, rappel
         // on/off, langue des notifications. 20 tokens max — les tokens morts
@@ -147,7 +149,13 @@ service cloud.firestore {
         && (!('pushReminderHour' in request.resource.data) || (request.resource.data.pushReminderHour is int && request.resource.data.pushReminderHour >= 0 && request.resource.data.pushReminderHour <= 23))
         && (!('pushLocale' in request.resource.data) || (request.resource.data.pushLocale is string && request.resource.data.pushLocale.size() <= 5))
         // Chiourim déjà vus (slugs) : marqueur « Vu » des utilisateurs connectés.
-        && (!('viewedChiourim' in request.resource.data) || (request.resource.data.viewedChiourim is list && request.resource.data.viewedChiourim.size() <= 1000));
+        && (!('viewedChiourim' in request.resource.data) || (request.resource.data.viewedChiourim is list && request.resource.data.viewedChiourim.size() <= 1000))
+        // Reprise de lecture (une position par texte) et marque-pages.
+        && (!('readingPositions' in request.resource.data) || request.resource.data.readingPositions is map)
+        && (!('bookmarks' in request.resource.data) || (request.resource.data.bookmarks is list && request.resource.data.bookmarks.size() <= 200))
+        // Marque-pages supprimés (tombstones de synchronisation). Le client
+        // taille à 300 entrées ; borne large pour empêcher un gonflement du doc.
+        && (!('deletedBookmarks' in request.resource.data) || (request.resource.data.deletedBookmarks is map && request.resource.data.deletedBookmarks.size() <= 400));
       allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
 

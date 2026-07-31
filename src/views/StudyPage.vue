@@ -19,6 +19,7 @@ import {
   type OfflineBook,
 } from "../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../services/offlineTextStore";
+import { readingProgressService } from "../services/readingProgressService";
 import { useToast } from "../composables/useToast";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
@@ -151,7 +152,15 @@ function formatBookName(livre: string): string {
   return sessionService.formatBookName(livre);
 }
 
+// Badge marque-pages sur les cartes : lecture locale immédiate, affinée quand
+// la synchro du compte aboutit.
+const bookmarkCounts = ref<Record<string, number>>({});
+
 onMounted(() => {
+  bookmarkCounts.value = readingProgressService.getBookmarkCounts();
+  void readingProgressService.ensureSynced().then(() => {
+    bookmarkCounts.value = readingProgressService.getBookmarkCounts();
+  });
   if (isNativeApp) {
     ensureManifestLoaded();
   }
@@ -274,6 +283,15 @@ onMounted(() => {
                 <span v-if="text.totalSections > 1" class="text-xs text-text-secondary">
                   {{ t("study.sections", { count: text.totalSections }) }}
                 </span>
+              </span>
+              <!-- Un marque-page attend dans ce texte -->
+              <span
+                v-if="bookmarkCounts[String(text.id)]"
+                class="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-primary"
+                :title="t('textReading.bookmarks')"
+              >
+                <AppIcon name="bookmark" :size="13" />
+                {{ bookmarkCounts[String(text.id)] }}
               </span>
               <!-- App native : télécharger/supprimer le livre sans quitter la bibliothèque. -->
               <button

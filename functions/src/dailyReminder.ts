@@ -100,17 +100,34 @@ export const dailyReadingReminder = onSchedule(
       const tokens: string[] = Array.isArray(prefs.fcmTokens)
         ? prefs.fcmTokens.filter((t: unknown): t is string => typeof t === "string" && t.length > 0)
         : [];
-      const readingIds: unknown[] = Array.isArray(prefs.dailyReadingIds) ? prefs.dailyReadingIds : [];
-      if (tokens.length === 0 || readingIds.length === 0) continue;
+      const readingIds = (Array.isArray(prefs.dailyReadingIds) ? prefs.dailyReadingIds : []).map(
+        String,
+      );
+      // Lectures du moment quotidiennes : comptent comme les textes. La paracha
+      // (chnei mikra) est un suivi hebdomadaire, hors du décompte du jour.
+      const readingOptions: unknown[] = (
+        Array.isArray(prefs.dailyReadingOptions) ? prefs.dailyReadingOptions : []
+      ).filter((k: unknown) => k !== "parasha");
+      const totalReadings = readingIds.length + readingOptions.length;
+      if (tokens.length === 0 || totalReadings === 0) continue;
 
       const progress = prefs.dailyReadingProgress as
-        | { date?: string; completedIds?: unknown[] }
+        | { date?: string; completedIds?: unknown[]; completedOptions?: unknown[] }
         | undefined;
+      const isToday = progress?.date === today;
+      // Même règle que countDailyProgress (src/services/userPreferencesService.ts) :
+      // on intersecte les complétions avec les listes actives, une entrée
+      // obsolète (texte retiré, option désactivée) ne doit pas annuler le rappel.
+      const completedIds = new Set(
+        (isToday && Array.isArray(progress.completedIds) ? progress.completedIds : []).map(String),
+      );
+      const completedOptions = new Set(
+        isToday && Array.isArray(progress.completedOptions) ? progress.completedOptions : [],
+      );
       const completedToday =
-        progress?.date === today && Array.isArray(progress.completedIds)
-          ? progress.completedIds.length
-          : 0;
-      const remaining = readingIds.length - completedToday;
+        readingIds.filter((id) => completedIds.has(id)).length +
+        readingOptions.filter((k) => completedOptions.has(k)).length;
+      const remaining = totalReadings - completedToday;
       if (remaining <= 0) continue;
 
       const copy = COPY[typeof prefs.pushLocale === "string" ? prefs.pushLocale : "fr"] ?? COPY.fr;

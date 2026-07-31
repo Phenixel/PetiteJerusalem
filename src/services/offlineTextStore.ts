@@ -27,10 +27,28 @@ const REMOTE_TEXTS_BASE = "https://petite-jerusalem.fr";
 const MANIFEST_KEY = "offline-texts:manifest";
 const WEB_CACHE_NAME = "pj-texts-v1";
 
+/**
+ * Version des données `/texts/**` : à incrémenter quand le format des fichiers
+ * change (ex. v2 : montées + targoum des parachiot). Les fichiers sont servis
+ * avec un cache HTTP d'une semaine ; le paramètre de version invalide ce cache
+ * immédiatement. Les clés locales (manifest, disque, Cache API) restent le
+ * chemin nu, mais chaque téléchargement enregistre sa version dans le
+ * manifest : un fichier d'une version antérieure est considéré périmé — servi
+ * seulement en dernier recours (hors ligne) et re-téléchargé par
+ * syncDailyReadingDownloads.
+ */
+const TEXTS_VERSION = "2";
+
+function versionedUrl(url: string): string {
+  return `${url}${url.includes("?") ? "&" : "?"}v=${TEXTS_VERSION}`;
+}
+
 export interface DownloadedFile {
   /** Taille en octets, mesurée après téléchargement. */
   size: number;
   downloadedAt: string;
+  /** Version des données au téléchargement. Absente : fichier d'avant v2. */
+  version?: string;
 }
 
 export interface DownloadManifest {
@@ -76,6 +94,11 @@ export function isDownloaded(webPath: string): boolean {
   return webPath in downloadManifest.value.files;
 }
 
+/** Copie locale au format courant (un fichier d'une version antérieure est périmé). */
+export function isDownloadCurrent(webPath: string): boolean {
+  return downloadManifest.value.files[webPath]?.version === TEXTS_VERSION;
+}
+
 async function webCache(): Promise<Cache | null> {
   // Absente en contexte non sécurisé ou environnement de test.
   if (typeof caches === "undefined") return null;
@@ -87,53 +110,78 @@ async function webCache(): Promise<Cache | null> {
  * Renvoie une `Response` pour que l'appelant garde la même gestion
  * ok/status qu'avec un `fetch` direct.
  */
+/** Copie locale téléchargée (disque natif / Cache API), null si illisible. */
+async function readLocalCopy(webPath: string): Promise<Response | null> {
+  try {
+    if (isNative) {
+      const { uri } = await Filesystem.getUri({
+        directory: Directory.Data,
+        path: localPath(webPath),
+      });
+      const res = await fetch(Capacitor.convertFileSrc(uri));
+      return res.ok ? res : null;
+    }
+    const cache = await webCache();
+    return (await cache?.match(webPath)) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchTextResponse(webPath: string): Promise<Response> {
   await ensureManifestLoaded();
 
-  if (isDownloaded(webPath)) {
-    try {
-      if (isNative) {
-        const { uri } = await Filesystem.getUri({
-          directory: Directory.Data,
-          path: localPath(webPath),
-        });
-        const res = await fetch(Capacitor.convertFileSrc(uri));
-        if (res.ok) return res;
-      } else {
-        const cache = await webCache();
-        const hit = await cache?.match(webPath);
-        if (hit) return hit;
+  // Copie locale à jour : on la sert directement. Une copie d'une version
+  // antérieure (format différent) ne sert que de secours hors ligne.
+  if (isDownloaded(webPath) && isDownloadCurrent(webPath)) {
+    const local = await readLocalCopy(webPath);
+    if (local) return local;
+  }
+
+  try {
+    if (isNative) {
+      // Les petits fichiers (tehilim, talmud-chapters) restent embarqués dans
+      // le binaire : on tente d'abord l'asset local, puis le site.
+      try {
+        const local = await fetch(webPath);
+        if (local.ok) return local;
+      } catch {
+        // Asset absent du bundle (corpus retiré) : réseau.
       }
-    } catch {
-      // Copie locale illisible : on retombe sur le réseau ci-dessous.
+      // HTTP natif (pas la fetch de la webview) : l'origine de l'app
+      // (https://localhost) n'est pas autorisée par CORS sur le site, une
+      // fetch JS serait bloquée alors que l'appareil est bien en ligne.
+      const res = await CapacitorHttp.get({
+        url: versionedUrl(remoteUrl(webPath)),
+        responseType: "text",
+        headers: { Accept: "application/json" },
+      });
+      const body = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
+      if (res.status >= 200 && res.status < 300) {
+        return new Response(body, {
+          status: res.status,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      // Réseau en échec : la copie périmée vaut mieux que rien.
+      const stale = isDownloaded(webPath) ? await readLocalCopy(webPath) : null;
+      return (
+        stale ??
+        new Response(body, { status: res.status, headers: { "Content-Type": "application/json" } })
+      );
     }
-  }
 
-  if (isNative) {
-    // Les petits fichiers (tehilim, talmud-chapters) restent embarqués dans
-    // le binaire : on tente d'abord l'asset local, puis le site.
-    try {
-      const local = await fetch(webPath);
-      if (local.ok) return local;
-    } catch {
-      // Asset absent du bundle (corpus retiré) : réseau.
-    }
-    // HTTP natif (pas la fetch de la webview) : l'origine de l'app
-    // (https://localhost) n'est pas autorisée par CORS sur le site, une
-    // fetch JS serait bloquée alors que l'appareil est bien en ligne.
-    const res = await CapacitorHttp.get({
-      url: remoteUrl(webPath),
-      responseType: "text",
-      headers: { Accept: "application/json" },
-    });
-    const body = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
-    return new Response(body, {
-      status: res.status,
-      headers: { "Content-Type": "application/json" },
-    });
+    const res = await fetch(versionedUrl(webPath));
+    if (res.ok) return res;
+    const stale = isDownloaded(webPath) ? await readLocalCopy(webPath) : null;
+    return stale ?? res;
+  } catch (error) {
+    // Hors ligne : une copie périmée (ancien format, dégradé mais lisible)
+    // vaut mieux qu'une erreur.
+    const stale = isDownloaded(webPath) ? await readLocalCopy(webPath) : null;
+    if (stale) return stale;
+    throw error;
   }
-
-  return fetch(webPath);
 }
 
 /** Télécharge un fichier et l'enregistre localement (natif : disque, web : Cache API). */
@@ -152,13 +200,13 @@ export async function downloadFile(webPath: string): Promise<void> {
       );
     }
     const { uri } = await Filesystem.getUri({ directory: Directory.Data, path });
-    await FileTransfer.downloadFile({ url: remoteUrl(webPath), path: uri });
+    await FileTransfer.downloadFile({ url: versionedUrl(remoteUrl(webPath)), path: uri });
     const stat = await Filesystem.stat({ directory: Directory.Data, path });
     size = stat.size;
   } else {
     const cache = await webCache();
     if (!cache) throw new Error("Cache Storage indisponible dans ce navigateur");
-    const res = await fetch(webPath);
+    const res = await fetch(versionedUrl(webPath));
     if (!res.ok) throw new Error(`Téléchargement échoué (${res.status})`);
     size = (await res.clone().blob()).size;
     await cache.put(webPath, res);
@@ -167,7 +215,7 @@ export async function downloadFile(webPath: string): Promise<void> {
   downloadManifest.value = {
     files: {
       ...downloadManifest.value.files,
-      [webPath]: { size, downloadedAt: new Date().toISOString() },
+      [webPath]: { size, downloadedAt: new Date().toISOString(), version: TEXTS_VERSION },
     },
   };
   await saveManifest();

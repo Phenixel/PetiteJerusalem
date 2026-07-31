@@ -16,6 +16,18 @@ export interface DafBlock {
   lines: string[];
 }
 
+/**
+ * Visual sub-division of a single-section text (chapter of a Na"kh book,
+ * montée d'une paracha) : the text stays one continuous reading — and one
+ * reservation unit — with a marker at each block start.
+ */
+export interface TextBlock {
+  label: string;
+  lines: string[];
+  /** Index of the block's first line within the section's flattened `he`. */
+  offset: number;
+}
+
 export interface TextSection {
   /** Section index (chapter / daf chapter). Doubles as the URL and reservation id. */
   index: number;
@@ -24,12 +36,41 @@ export interface TextSection {
   he: string[];
   /** Talmud only: the section's lines grouped by daf. */
   dafBlocks?: DafBlock[];
+  /** Single-section texts: the same lines grouped by chapter / montée. */
+  blocks?: TextBlock[];
+  /** Parachiot : Targoum Onkelos aligné ligne à ligne sur `he` (chnei mikra). */
+  targum?: string[];
 }
 
 export interface TextContent {
   title: string;
   type: string;
   sections: TextSection[];
+}
+
+/**
+ * "Chapitre 2 (ב) · 3e montée · verset 14" : libellé d'une position (reprise,
+ * marque-page). Unique implémentation, partagée par le lecteur de la
+ * bibliothèque et la lecture quotidienne — les deux doivent décrire le même
+ * verset de la même façon. `verseN` rend le libellé du numéro de verset
+ * (i18n, ex. t("textReading.verseN", { n })).
+ */
+export function placeLabel(
+  sections: TextSection[],
+  sectionIndex: number | null,
+  line: number,
+  verseN: (n: number) => string,
+): string {
+  const section = sections.find((s) => s.index === (sectionIndex ?? 1)) ?? sections[0] ?? null;
+  const parts: string[] = [];
+  if (section && sections.length > 1) parts.push(section.label);
+  const block = section?.blocks?.length
+    ? [...section.blocks].reverse().find((b) => b.offset <= line)
+    : undefined;
+  if (block) parts.push(block.label);
+  const verse = block ? line - block.offset + 1 : line + 1;
+  parts.push(verseN(verse));
+  return parts.join(" · ");
 }
 
 /** Thrown when the text file is not available locally yet (404). */
@@ -183,15 +224,59 @@ function parseTalmud(
 
 function loadTanakh(
   textStudy: TextStudyJsonEntry,
-  data: { title?: string; he?: unknown[] },
+  data: {
+    title?: string;
+    he?: unknown[];
+    targum?: unknown[];
+    blockLabels?: string[];
+    chapters?: string;
+  },
 ): TextContent {
   const heChapters = data.he ?? [];
   const title = data.title ?? textStudy.name;
 
-  // Reserved as a whole (totalSections=1) → flatten everything into one section.
+  // Reserved as a whole (totalSections=1) → one section, one continuous text,
+  // but keep the groups (chapters / montées) as visual blocks instead of
+  // flattening them away.
   if (textStudy.totalSections === 1) {
-    const allLines = heChapters.flatMap((chapter) => normalizeLines(chapter));
-    return { title, type: "Tanakh", sections: [buildSection(1, textStudy.name, allLines)] };
+    // Legacy offline parasha files carry `chapters: "6-11"` (chapter-sliced):
+    // number their chapter markers from the real starting chapter.
+    const startChapter = Number(data.chapters?.match(/^(\d+)/)?.[1] ?? 1);
+    const blocks: TextBlock[] = [];
+    // Targoum aligné verset à verset : on avance dans les deux textes ensemble,
+    // en ne retirant jamais une ligne d'un seul côté.
+    const targumAll: string[] = [];
+    let hasTargum = false;
+    let offset = 0;
+    heChapters.forEach((group, i) => {
+      const targumGroup = Array.isArray(data.targum?.[i]) ? (data.targum[i] as unknown[]) : null;
+      let lines: string[];
+      if (targumGroup && Array.isArray(group)) {
+        lines = [];
+        (group as unknown[]).forEach((verse, j) => {
+          const heLine = typeof verse === "string" ? cleanText(verse) : normalizeLines(verse).join(" ");
+          if (!heLine) return;
+          lines.push(heLine);
+          const targumVerse = targumGroup[j];
+          const cleaned = typeof targumVerse === "string" ? cleanText(targumVerse) : "";
+          targumAll.push(cleaned);
+          if (cleaned) hasTargum = true;
+        });
+      } else {
+        lines = normalizeLines(group);
+        for (let k = 0; k < lines.length; k++) targumAll.push("");
+      }
+      if (lines.length === 0) return;
+      const label =
+        data.blockLabels?.[i] ?? `Chapitre ${formatNumberWithHebrew(startChapter + i)}`;
+      blocks.push({ label, lines, offset });
+      offset += lines.length;
+    });
+    const allLines = blocks.flatMap((b) => b.lines);
+    const section = buildSection(1, textStudy.name, allLines);
+    if (blocks.length > 1) section.blocks = blocks;
+    if (hasTargum) section.targum = targumAll;
+    return { title, type: "Tanakh", sections: [section] };
   }
 
   return { title, type: "Tanakh", sections: chaptersToSections(heChapters) };

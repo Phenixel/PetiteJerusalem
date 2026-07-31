@@ -83,6 +83,12 @@ export function slugOf(entry: TextStudyJsonEntry): string {
 export const isMultiSection = (entry: TextStudyJsonEntry): boolean =>
   (entry.totalSections ?? 1) > 1;
 
+/** Torah entries are parashiot ; the rest of the Tanakh corpus is plain books.
+ * Exporté : dailyCycles s'en sert pour retrouver la paracha de la semaine. */
+export const TORAH_LIVRES = new Set(["Berechit", "Chemot", "Vayikra", "Bamidbar", "Devarim"]);
+const isParasha = (entry: TextStudyJsonEntry): boolean =>
+  corpusOf(entry) === "tanakh" && TORAH_LIVRES.has(entry.livre);
+
 const ETUDE = "/bibliotheque";
 
 export const hubPath = (entry: TextStudyJsonEntry): string =>
@@ -133,7 +139,8 @@ function linesHtml(lines: string[], numbered: boolean): string {
     .join("\n      ");
 }
 
-/** Render a section's text (Talmud groups lines under daf sub-headers). */
+/** Render a section's text (Talmud groups lines under daf sub-headers,
+ * single-section Tanakh under chapter / montée sub-headers). */
 function sectionTextHtml(section: TextSection, numbered: boolean): string {
   if (section.dafBlocks?.length) {
     return section.dafBlocks
@@ -141,6 +148,15 @@ function sectionTextHtml(section: TextSection, numbered: boolean): string {
         (block) =>
           `<h3 class="daf-label">Daf ${esc(block.daf)}</h3>\n` +
           `      <ol class="reading-lines">\n      ${linesHtml(block.lines, false)}\n      </ol>`,
+      )
+      .join("\n      ");
+  }
+  if (section.blocks?.length) {
+    return section.blocks
+      .map(
+        (block) =>
+          `<h3 class="daf-label">${esc(block.label)}</h3>\n` +
+          `      <ol class="reading-lines">\n      ${linesHtml(block.lines, numbered)}\n      </ol>`,
       )
       .join("\n      ");
   }
@@ -155,7 +171,10 @@ export const READING_LEAD =
 export function sectionHeading(entry: TextStudyJsonEntry, section: TextSection): string {
   const corpus = corpusOf(entry);
   if (corpus === "tehilim") return `Tehilim ${slugOf(entry)}, Psaume ${slugOf(entry)}`;
-  if (corpus === "tanakh") return `Parashat ${latinName(entry)}`;
+  if (corpus === "tanakh") {
+    if (isParasha(entry)) return `Parashat ${latinName(entry)}`;
+    return isMultiSection(entry) ? `${latinName(entry)}, ${section.label}` : latinName(entry);
+  }
   return `${CORPUS_LABEL[corpus]} ${latinName(entry)}, ${section.label}`;
 }
 
@@ -169,8 +188,12 @@ export function sectionTitle(entry: TextStudyJsonEntry, section: TextSection): s
   const corpus = corpusOf(entry);
   if (corpus === "tehilim")
     return `Tehilim ${slugOf(entry)} en phonétique et en hébreu (Psaume ${slugOf(entry)}) | Petite Jérusalem`;
-  if (corpus === "tanakh")
-    return `Parashat ${latinName(entry)} en hébreu et phonétique | Petite Jérusalem`;
+  if (corpus === "tanakh") {
+    if (isParasha(entry))
+      return `Parashat ${latinName(entry)} en hébreu et phonétique | Petite Jérusalem`;
+    const sec = isMultiSection(entry) ? ` ${section.label}` : "";
+    return `${latinName(entry)}${sec} en hébreu et phonétique | Petite Jérusalem`;
+  }
   return `${CORPUS_LABEL[corpus]} ${latinName(entry)} ${section.label} en hébreu et phonétique | Petite Jérusalem`;
 }
 
@@ -180,7 +203,11 @@ export function sectionDescription(entry: TextStudyJsonEntry, section: TextSecti
     corpus === "tehilim"
       ? `le Tehilim ${slugOf(entry)} (Psaume ${slugOf(entry)})`
       : corpus === "tanakh"
-        ? `la parasha ${latinName(entry)}`
+        ? isParasha(entry)
+          ? `la parasha ${latinName(entry)}`
+          : isMultiSection(entry)
+            ? `${latinName(entry)}, ${section.label.toLowerCase()}`
+            : latinName(entry)
         : `${CORPUS_LABEL[corpus]} ${latinName(entry)}, ${section.label.toLowerCase()}`;
   return `Lisez ${what} en hébreu avec la phonétique pour le lire facilement. Texte intégral, navigation et partage de la lecture à plusieurs.`;
 }

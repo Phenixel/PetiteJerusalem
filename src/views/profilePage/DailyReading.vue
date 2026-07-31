@@ -1,23 +1,34 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../../models/models";
-import { userPreferencesService } from "../../services/userPreferencesService";
+import { countDailyProgress, userPreferencesService } from "../../services/userPreferencesService";
 import { syncDailyReadingDownloads } from "../../services/offlineLibraryService";
 import { pushService } from "../../services/pushService";
 import { sessionService } from "../../services/sessionService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { isNativeApp } from "../../composables/useNativeApp";
+import { useReadingSize } from "../../composables/useReadingSize";
 import { useToast } from "../../composables/useToast";
 import { analyticsService } from "../../services/analyticsService";
 import DailyReadingItem from "./DailyReadingItem.vue";
 import ReminderTimeModal from "./ReminderTimeModal.vue";
+import CollapseTransition from "../../components/CollapseTransition.vue";
+import { anchorToElement } from "../../composables/scrollAnchor";
+import {
+  DAILY_OPTION_KEYS,
+  getWeeklyParasha,
+  getTehilimOfDay,
+  type DailyOptionKey,
+} from "../../services/dailyCycles";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{ userId: string }>();
 const { t, locale } = useI18n();
 const toast = useToast();
+// Même préférence de taille que le lecteur de la bibliothèque (A− / A+).
+const readingSize = useReadingSize();
 
 const ALL_TYPE = "Tout";
 
@@ -35,16 +46,41 @@ const CORPUS_TYPES = TYPES.filter((ty) => ty.key !== ALL_TYPE);
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
 const byId = new Map<string, TextStudyJsonEntry>(allTexts.map((txt) => [String(txt.id), txt]));
 
+// La liste se lit dans l'ordre du catalogue (Tehilim 1, 4, 8… puis Michna,
+// Talmud, Tanakh), pas dans l'ordre où les textes ont été ajoutés.
+const catalogRank = new Map<string, number>(allTexts.map((txt, i) => [String(txt.id), i]));
+
+function sortByCatalog(ids: string[]): string[] {
+  return [...ids].sort(
+    (a, b) => (catalogRank.get(a) ?? Infinity) - (catalogRank.get(b) ?? Infinity),
+  );
+}
+
 const loading = ref(true);
 const saving = ref(false);
 const mode = ref<"reading" | "manage">("reading");
+// Deux onglets en mode lecture : le quotidien d'abord, le chnei mikra
+// (hebdomadaire) dans « Cette semaine » pour ne pas allonger la page du jour.
+const activeTab = ref<"today" | "week">("today");
 
 // Ids kept as strings for reliable Map lookups; converted back to numbers on save.
 const selectedIds = ref<string[]>([]);
 const completedIds = ref<Set<string>>(new Set());
+// Chapitres lus par texte (id → index de sections) pour les textes chapitrés.
+const completedSections = ref<Record<string, number[]>>({});
+// Index réels des sections de chaque texte, remontés par DailyReadingItem au
+// chargement : sert à savoir quand « tous les chapitres sont lus ».
+const sectionIndexes = new Map<string, number[]>();
 // Texts whose content is folded away (UI-only): clicking the title toggles this,
 // and marking a text as read folds it so only unread texts stay expanded.
 const collapsedIds = ref<Set<string>>(new Set());
+// Repère de scroll par texte : le titre reste en vue quand le contenu se replie.
+const articleEls = new Map<string, HTMLElement>();
+
+function setArticleEl(id: string, el: unknown) {
+  if (el instanceof HTMLElement) articleEls.set(id, el);
+  else articleEls.delete(id);
+}
 
 // --- Rappel push (app native uniquement) : la cloche de l'en-tête. ---
 const reminderEnabled = ref(false);
@@ -57,6 +93,153 @@ const selectedEntries = computed(
   () => selectedIds.value.map((id) => byId.get(id)).filter(Boolean) as TextStudyJsonEntry[],
 );
 
+// --- Lectures du moment (paracha de la semaine, cycles Tehilim) ---
+const selectedOptions = ref<string[]>([]);
+const completedOptions = ref<Set<string>>(new Set());
+
+const OPTION_META: { key: DailyOptionKey; titleKey: string; descriptionKey: string }[] = [
+  {
+    key: "parasha",
+    titleKey: "dailyReading.options.parashaTitle",
+    descriptionKey: "dailyReading.options.parashaDescription",
+  },
+  {
+    key: "tehilim-jour",
+    titleKey: "dailyReading.options.tehilimDayTitle",
+    descriptionKey: "dailyReading.options.tehilimDayDescription",
+  },
+];
+
+interface DynamicReading {
+  key: DailyOptionKey;
+  title: string;
+  subtitle: string;
+  entries: TextStudyJsonEntry[];
+}
+
+function psalmsLabel(psalms: number[]): string {
+  if (psalms.length === 1) return t("dailyReading.options.psalmsOne", { n: psalms[0] });
+  return t("dailyReading.options.psalmsRange", {
+    from: psalms[0],
+    to: psalms[psalms.length - 1],
+  });
+}
+
+// Les lectures calculées pour aujourd'hui, en tête de la liste quotidienne.
+// Le chnei mikra n'en fait pas partie : c'est une lecture de la semaine,
+// affichée dans sa propre section (voir weeklyParasha).
+const dynamicReadings = computed<DynamicReading[]>(() => {
+  const out: DynamicReading[] = [];
+  if (selectedOptions.value.includes("tehilim-jour")) {
+    const cycle = getTehilimOfDay();
+    out.push({
+      key: "tehilim-jour",
+      title: t("dailyReading.options.tehilimDayReading", { day: cycle.day }),
+      subtitle: psalmsLabel(cycle.psalms),
+      entries: cycle.entries,
+    });
+  }
+  return out;
+});
+
+// --- Chnei mikra : section « Cette semaine », suivi jusqu'au changement de paracha ---
+const weeklyParasha = computed(() =>
+  selectedOptions.value.includes("parasha") ? getWeeklyParasha() : null,
+);
+// Option paracha désactivée : l'onglet « Cette semaine » disparaît.
+watch(weeklyParasha, (week) => {
+  if (!week) activeTab.value = "today";
+});
+
+function switchTab(tab: "today" | "week") {
+  if (activeTab.value === tab) return;
+  activeTab.value = tab;
+  analyticsService.capture("daily_reading_tab_switched", { tab });
+}
+const parashaCompleted = ref(false);
+// Dernier suivi hebdomadaire connu, persisté tel quel : savePreferences
+// REMPLACE dailyReadingProgress en entier, donc la coche de la semaine doit
+// être réécrite à chaque sauvegarde même quand l'option paracha est inactive.
+const storedParashaProgress = ref<{ week: string; completed: boolean } | null>(null);
+
+const parashaSubtitle = computed(() =>
+  (weeklyParasha.value?.entries ?? []).map((e) => appendHebrewNumeral(e.name)).join(" · "),
+);
+
+async function toggleParashaCompleted() {
+  if (!weeklyParasha.value) return;
+  parashaCompleted.value = !parashaCompleted.value;
+  storedParashaProgress.value = {
+    week: weeklyParasha.value.weekKey,
+    completed: parashaCompleted.value,
+  };
+  setCollapsed("parasha", parashaCompleted.value);
+  if (parashaCompleted.value) anchorToElement(articleEls.get("parasha") ?? null);
+  await persistProgress();
+  analyticsService.capture("daily_reading_marked_read", {
+    marked: parashaCompleted.value,
+    scope: "parasha_week",
+    done_count: completedCount.value,
+    total_count: totalCount.value,
+    all_done: allDone.value,
+  });
+}
+
+function isOptionSelected(key: string): boolean {
+  return selectedOptions.value.includes(key);
+}
+
+async function toggleOption(key: DailyOptionKey) {
+  const removed = isOptionSelected(key);
+  if (removed) {
+    selectedOptions.value = selectedOptions.value.filter((k) => k !== key);
+    const next = new Set(completedOptions.value);
+    next.delete(key);
+    completedOptions.value = next;
+    setCollapsed(key, false);
+  } else {
+    // Ordre fixe des options, indépendant de l'ordre des clics.
+    selectedOptions.value = DAILY_OPTION_KEYS.filter(
+      (k) => k === key || selectedOptions.value.includes(k),
+    );
+  }
+  saving.value = true;
+  try {
+    await userPreferencesService.savePreferences(props.userId, {
+      dailyReadingOptions: [...selectedOptions.value],
+    });
+    // Option retirée : sa complétion du jour doit disparaître aussi du cloud,
+    // sinon l'accueil et le rappel push continueraient de la compter.
+    if (removed) await persistProgress();
+  } finally {
+    saving.value = false;
+  }
+  analyticsService.capture("daily_reading_configured", {
+    action: removed ? "option_removed" : "option_added",
+    option: key,
+    texts_count: selectedIds.value.length,
+  });
+}
+
+async function toggleOptionCompleted(key: DailyOptionKey) {
+  const next = new Set(completedOptions.value);
+  const nowRead = !next.has(key);
+  if (nowRead) next.add(key);
+  else next.delete(key);
+  completedOptions.value = next;
+  setCollapsed(key, nowRead);
+  if (nowRead) anchorToElement(articleEls.get(key) ?? null);
+  await persistProgress();
+  analyticsService.capture("daily_reading_marked_read", {
+    marked: nowRead,
+    scope: "option",
+    option: key,
+    done_count: completedCount.value,
+    total_count: totalCount.value,
+    all_done: allDone.value,
+  });
+}
+
 /** Local calendar day (YYYY-MM-DD), so the daily tracking resets at local midnight. */
 function todayKey(): string {
   const d = new Date();
@@ -68,7 +251,11 @@ function todayKey(): string {
 onMounted(async () => {
   try {
     const prefs = await userPreferencesService.getPreferences(props.userId);
-    selectedIds.value = (prefs.dailyReadingIds ?? []).map(String);
+    // Les listes composées avant l'introduction du tri sont réordonnées ici.
+    selectedIds.value = sortByCatalog((prefs.dailyReadingIds ?? []).map(String));
+    selectedOptions.value = (prefs.dailyReadingOptions ?? []).filter((k) =>
+      (DAILY_OPTION_KEYS as readonly string[]).includes(k),
+    );
 
     reminderEnabled.value = prefs.pushReminderEnabled === true;
     reminderHour.value = prefs.pushReminderHour ?? 18;
@@ -79,17 +266,39 @@ onMounted(async () => {
     syncDailyReadingDownloads((prefs.dailyReadingIds ?? []).map(Number)).catch(() => {});
 
     const progress = prefs.dailyReadingProgress;
+    // Chnei mikra : la coche tient tant que la paracha n'a pas changé,
+    // indépendamment de la remise à zéro quotidienne.
+    storedParashaProgress.value = progress?.parashaProgress ?? null;
+    const currentWeek = weeklyParasha.value?.weekKey;
+    parashaCompleted.value =
+      !!currentWeek &&
+      progress?.parashaProgress?.week === currentWeek &&
+      progress.parashaProgress.completed === true;
+    if (parashaCompleted.value) setCollapsed("parasha", true);
+
     if (progress && progress.date === todayKey()) {
       completedIds.value = new Set(progress.completedIds.map(String));
+      completedSections.value = { ...(progress.completedSections ?? {}) };
+      completedOptions.value = new Set(progress.completedOptions ?? []);
       // Texts already read today start folded so unread ones stand out.
-      collapsedIds.value = new Set(completedIds.value);
+      collapsedIds.value = new Set([...completedIds.value, ...completedOptions.value]);
     } else {
       // New day (or never tracked): start fresh and persist the reset once.
       completedIds.value = new Set();
-      if (progress && progress.completedIds.length > 0) {
+      completedSections.value = {};
+      completedOptions.value = new Set();
+      if (
+        progress &&
+        (progress.completedIds.length > 0 ||
+          (progress.completedOptions ?? []).length > 0 ||
+          Object.keys(progress.completedSections ?? {}).length > 0)
+      ) {
         await persistProgress();
       }
     }
+
+    // Rien dans la liste du jour : on ouvre directement sur « Cette semaine ».
+    if (weeklyParasha.value && totalCount.value === 0) activeTab.value = "week";
   } finally {
     loading.value = false;
   }
@@ -109,10 +318,23 @@ async function persistSelection() {
 }
 
 async function persistProgress() {
+  // On ne garde que les textes encore dans la liste, avec des chapitres cochés.
+  const sections: Record<string, number[]> = {};
+  for (const id of selectedIds.value) {
+    const list = completedSections.value[id];
+    if (list?.length) sections[id] = list;
+  }
   await userPreferencesService.savePreferences(props.userId, {
     dailyReadingProgress: {
       date: todayKey(),
       completedIds: [...completedIds.value].map(Number),
+      completedSections: sections,
+      completedOptions: [...completedOptions.value].filter((k) =>
+        selectedOptions.value.includes(k),
+      ),
+      // Le chnei mikra vit à la semaine : sa coche est rattachée au Chabbat de
+      // la paracha et survit à la remise à zéro quotidienne.
+      ...(storedParashaProgress.value ? { parashaProgress: storedParashaProgress.value } : {}),
     },
   });
 }
@@ -129,9 +351,12 @@ async function toggleSelect(entry: TextStudyJsonEntry) {
     const next = new Set(completedIds.value);
     next.delete(id);
     completedIds.value = next;
+    const rest = { ...completedSections.value };
+    delete rest[id];
+    completedSections.value = rest;
     setCollapsed(id, false);
   } else {
-    selectedIds.value = [...selectedIds.value, id];
+    selectedIds.value = sortByCatalog([...selectedIds.value, id]);
   }
   await persistSelection();
   analyticsService.capture("daily_reading_configured", {
@@ -146,15 +371,58 @@ async function toggleCompleted(id: string) {
   if (nowRead) next.add(id);
   else next.delete(id);
   completedIds.value = next;
+  // Marquer le texte entier aligne aussi ses chapitres (cohérence des coches).
+  const indexes = sectionIndexes.get(id);
+  if (indexes?.length) {
+    completedSections.value = { ...completedSections.value, [id]: nowRead ? [...indexes] : [] };
+  }
   // Marking read folds the text away; un-marking reopens it to keep reading.
   setCollapsed(id, nowRead);
+  if (nowRead) anchorToElement(articleEls.get(id) ?? null);
   await persistProgress();
   analyticsService.capture("daily_reading_marked_read", {
     marked: nowRead,
+    scope: "text",
     done_count: completedCount.value,
     total_count: totalCount.value,
     all_done: allDone.value,
   });
+}
+
+/** Coche/décoche un chapitre ; le texte bascule « lu » quand tout y est. */
+async function toggleSection(id: string, sectionIndex: number) {
+  const current = new Set(completedSections.value[id] ?? []);
+  const nowRead = !current.has(sectionIndex);
+  if (nowRead) current.add(sectionIndex);
+  else current.delete(sectionIndex);
+  completedSections.value = { ...completedSections.value, [id]: [...current] };
+
+  const indexes = sectionIndexes.get(id) ?? [];
+  const allRead = indexes.length > 0 && indexes.every((i) => current.has(i));
+  const ids = new Set(completedIds.value);
+  const wasComplete = ids.has(id);
+  if (allRead) ids.add(id);
+  else ids.delete(id);
+  completedIds.value = ids;
+  // Dernier chapitre coché : le texte entier se replie, comme un « marquer lu ».
+  if (allRead && !wasComplete) {
+    setCollapsed(id, true);
+    anchorToElement(articleEls.get(id) ?? null);
+  }
+
+  await persistProgress();
+  analyticsService.capture("daily_reading_marked_read", {
+    marked: nowRead,
+    scope: "section",
+    done_count: completedCount.value,
+    total_count: totalCount.value,
+    all_done: allDone.value,
+  });
+}
+
+/** Chapitres lus d'un texte (chip « 3/8 » de l'en-tête). */
+function sectionsReadCount(id: string): number {
+  return completedSections.value[id]?.length ?? 0;
 }
 
 function setCollapsed(id: string, collapsed: boolean) {
@@ -169,10 +437,18 @@ function toggleCollapse(id: string) {
   setCollapsed(id, !collapsedIds.value.has(id));
 }
 
-const completedCount = computed(
-  () => selectedIds.value.filter((id) => completedIds.value.has(id)).length,
+// Règle de comptage partagée avec l'accueil (le chnei mikra, hebdomadaire,
+// ne compte pas dans la progression du jour).
+const progressCounts = computed(() =>
+  countDailyProgress({
+    textIds: selectedIds.value,
+    options: selectedOptions.value,
+    completedTextIds: completedIds.value,
+    completedOptions: completedOptions.value,
+  }),
 );
-const totalCount = computed(() => selectedIds.value.length);
+const completedCount = computed(() => progressCounts.value.done);
+const totalCount = computed(() => progressCounts.value.total);
 const allDone = computed(() => totalCount.value > 0 && completedCount.value === totalCount.value);
 const progressPct = computed(() =>
   totalCount.value === 0 ? 0 : Math.round((completedCount.value / totalCount.value) * 100),
@@ -235,6 +511,9 @@ async function disableReminder() {
 // --- Manage view (browse the library, like the Bibliothèque) ---
 const searchTerm = ref("");
 const selectedType = ref(ALL_TYPE);
+// La ligne « X textes dans votre liste » se déplie pour retirer un texte
+// sans avoir à le retrouver dans le catalogue.
+const showSelectedPanel = ref(false);
 
 // "Tout" shows every corpus at once; any other tab stays scoped to itself.
 const isAllSelected = computed(() => selectedType.value === ALL_TYPE);
@@ -324,10 +603,81 @@ function formatBookName(livre: string): string {
 
     <!-- ===== Manage mode: pick texts from the library ===== -->
     <template v-else-if="mode === 'manage'">
-      <p class="text-sm text-text-secondary mb-4 flex items-center gap-1.5">
+      <button
+        v-if="selectedEntries.length"
+        @click="showSelectedPanel = !showSelectedPanel"
+        class="text-sm text-text-secondary mb-4 flex items-center gap-1.5 hover:text-text-primary transition-colors"
+      >
         <AppIcon name="info" :size="14" />
-        {{ t("dailyReading.selectedCount", { count: totalCount }) }}
+        {{ t("dailyReading.selectedCount", { count: selectedEntries.length }) }}
+        <AppIcon
+          name="chevron-down"
+          :size="12"
+          class="transition-transform duration-200"
+          :class="showSelectedPanel ? 'rotate-180' : ''"
+        />
+      </button>
+      <p v-else class="text-sm text-text-secondary mb-4 flex items-center gap-1.5">
+        <AppIcon name="info" :size="14" />
+        {{ t("dailyReading.selectedCount", { count: selectedEntries.length }) }}
       </p>
+
+      <!-- Les textes de la liste, retirables d'un clic -->
+      <CollapseTransition>
+        <div v-show="showSelectedPanel && selectedEntries.length" class="mb-6">
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="entry in selectedEntries"
+              :key="entry.id"
+              class="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-primary/10 text-sm font-medium text-text-primary"
+            >
+              {{ appendHebrewNumeral(entry.name) }}
+              <button
+                @click="toggleSelect(entry)"
+                class="p-0.5 rounded-full text-text-secondary hover:text-red-600 transition-colors"
+                :title="t('dailyReading.removeFromList')"
+                :aria-label="t('dailyReading.removeFromList')"
+              >
+                <AppIcon name="x" :size="13" />
+              </button>
+            </span>
+          </div>
+        </div>
+      </CollapseTransition>
+
+      <!-- Lectures du moment : suivent le calendrier au lieu d'être choisies -->
+      <section class="mb-8">
+        <h3 class="text-lg font-bold text-text-primary mb-1">
+          {{ t("dailyReading.options.title") }}
+        </h3>
+        <p class="text-sm text-text-secondary mb-3 max-w-xl">
+          {{ t("dailyReading.options.description") }}
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button
+            v-for="opt in OPTION_META"
+            :key="opt.key"
+            @click="toggleOption(opt.key)"
+            :class="[
+              'flex flex-col gap-1 p-3 rounded-lg transition-colors text-left',
+              isOptionSelected(opt.key)
+                ? 'bg-primary/10'
+                : 'bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/5 dark:hover:bg-white/10',
+            ]"
+          >
+            <span class="flex items-center justify-between gap-2">
+              <span class="font-medium text-text-primary">{{ t(opt.titleKey) }}</span>
+              <AppIcon
+                :name="isOptionSelected(opt.key) ? 'circle-check' : 'circle-plus'"
+                :size="14"
+                :class="isOptionSelected(opt.key) ? 'text-primary' : 'text-text-secondary/60'"
+                class="flex-shrink-0"
+              />
+            </span>
+            <span class="text-xs text-text-secondary">{{ t(opt.descriptionKey) }}</span>
+          </button>
+        </div>
+      </section>
 
       <!-- Recherche : collante sur l'app pour rester accessible au scroll. -->
       <div :class="isNativeApp ? 'app-sticky-search' : ''" class="flex justify-center mb-4">
@@ -426,7 +776,7 @@ function formatBookName(livre: string): string {
     <template v-else>
       <!-- Empty list -->
       <div
-        v-if="totalCount === 0"
+        v-if="totalCount === 0 && !weeklyParasha"
         class="flex flex-col items-center justify-center py-16 text-center"
       >
         <AppIcon name="book" :size="32" class="text-primary/50 mb-4" />
@@ -443,6 +793,180 @@ function formatBookName(livre: string): string {
       </div>
 
       <template v-else>
+        <!-- Onglets Aujourd'hui / Cette semaine + taille du texte -->
+        <div class="flex items-center justify-between gap-3 mb-6 flex-wrap">
+          <div
+            v-if="weeklyParasha"
+            class="inline-flex items-center gap-1 rounded-lg bg-black/5 p-1 dark:bg-white/10"
+            role="tablist"
+          >
+            <button
+              role="tab"
+              :aria-selected="activeTab === 'today'"
+              @click="switchTab('today')"
+              :class="[
+                'px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors',
+                activeTab === 'today'
+                  ? 'bg-primary text-white'
+                  : 'text-text-secondary hover:text-text-primary',
+              ]"
+            >
+              {{ t("dailyReading.tabToday") }}
+            </button>
+            <button
+              role="tab"
+              :aria-selected="activeTab === 'week'"
+              @click="switchTab('week')"
+              :class="[
+                'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors',
+                activeTab === 'week'
+                  ? 'bg-primary text-white'
+                  : 'text-text-secondary hover:text-text-primary',
+              ]"
+            >
+              {{ t("dailyReading.tabWeek") }}
+              <!-- Coche : chnei mikra lu cette semaine ; point : encore à lire -->
+              <AppIcon
+                v-if="parashaCompleted"
+                name="circle-check"
+                :size="13"
+                :class="activeTab === 'week' ? 'text-white' : 'text-green-500'"
+              />
+              <span
+                v-else
+                class="w-1.5 h-1.5 rounded-full"
+                :class="activeTab === 'week' ? 'bg-white' : 'bg-primary'"
+              ></span>
+            </button>
+          </div>
+
+          <!-- Taille du texte (même réglage que le lecteur de la bibliothèque) -->
+          <div
+            class="ml-auto inline-flex items-center rounded-lg bg-black/5 dark:bg-white/10"
+            role="group"
+            :aria-label="t('textReading.textSize')"
+          >
+            <button
+              @click="readingSize.decrease()"
+              :disabled="!readingSize.canDecrease.value"
+              class="px-3 py-1.5 text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors disabled:opacity-35"
+              :aria-label="t('textReading.textSizeDecrease')"
+              :title="t('textReading.textSizeDecrease')"
+            >
+              A−
+            </button>
+            <button
+              @click="readingSize.increase()"
+              :disabled="!readingSize.canIncrease.value"
+              class="px-3 py-1.5 text-base font-semibold text-text-secondary hover:text-text-primary transition-colors disabled:opacity-35"
+              :aria-label="t('textReading.textSizeIncrease')"
+              :title="t('textReading.textSizeIncrease')"
+            >
+              A+
+            </button>
+          </div>
+        </div>
+
+        <!-- Onglet « Cette semaine » : le chnei mikra, à part de la liste du
+             jour. Sa coche tient jusqu'au changement de paracha. -->
+        <section v-if="weeklyParasha && activeTab === 'week'" class="mb-10">
+          <p class="text-xs text-text-secondary/70 mb-3">
+            {{ t("dailyReading.options.weeklyNote") }}
+          </p>
+          <article
+            :ref="(el) => setArticleEl('parasha', el)"
+            :class="parashaCompleted ? 'opacity-60' : ''"
+          >
+            <header class="mb-4">
+              <button
+                type="button"
+                @click="toggleCollapse('parasha')"
+                class="group flex w-full items-start gap-3 text-left"
+              >
+                <AppIcon
+                  name="chevron-down"
+                  :size="13"
+                  class="mt-1.5 text-text-secondary/60 transition-transform duration-200"
+                  :class="collapsedIds.has('parasha') ? '-rotate-90' : ''"
+                />
+                <span class="min-w-0">
+                  <span class="block text-xs font-semibold text-primary">
+                    {{ t("dailyReading.options.parashaReading") }}
+                  </span>
+                  <span
+                    class="flex items-center gap-2 text-lg font-bold text-text-primary transition-colors group-hover:text-primary"
+                  >
+                    {{ parashaSubtitle }}
+                    <AppIcon
+                      v-if="parashaCompleted"
+                      name="circle-check"
+                      :size="15"
+                      class="text-green-500"
+                    />
+                  </span>
+                </span>
+              </button>
+            </header>
+
+            <CollapseTransition>
+              <div v-show="!collapsedIds.has('parasha')">
+                <div class="space-y-8">
+                  <DailyReadingItem
+                    v-for="entry in weeklyParasha.entries"
+                    :key="entry.id"
+                    :entry="entry"
+                    :with-targoum="true"
+                  />
+                </div>
+
+                <div class="mt-4">
+                  <button
+                    @click="toggleParashaCompleted"
+                    :class="[
+                      'inline-flex items-center gap-2 text-sm font-medium transition-colors',
+                      parashaCompleted
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-text-secondary hover:text-primary',
+                    ]"
+                  >
+                    <AppIcon v-if="parashaCompleted" name="circle-check" :size="15" />
+                    <span
+                      v-else
+                      class="w-3.5 h-3.5 rounded-full border-2 border-current shrink-0"
+                    ></span>
+                    {{
+                      parashaCompleted
+                        ? t("dailyReading.options.readThisWeek")
+                        : t("dailyReading.markRead")
+                    }}
+                  </button>
+                </div>
+              </div>
+            </CollapseTransition>
+          </article>
+        </section>
+
+        <!-- Onglet « Aujourd'hui » : progression et liste du jour -->
+        <template v-else>
+          <!-- Seul le chnei mikra est suivi : la liste du jour est vide -->
+          <div
+            v-if="totalCount === 0"
+            class="flex flex-col items-center justify-center py-16 text-center"
+          >
+            <AppIcon name="book" :size="32" class="text-primary/50 mb-4" />
+            <h3 class="text-xl font-semibold text-text-primary mb-2">
+              {{ t("dailyReading.emptyTitle") }}
+            </h3>
+            <p class="text-text-secondary mb-6 max-w-sm">
+              {{ t("dailyReading.emptyDescription") }}
+            </p>
+            <button @click="mode = 'manage'" class="btn btn-primary">
+              <AppIcon name="plus" :size="14" />
+              {{ t("dailyReading.addTexts") }}
+            </button>
+          </div>
+
+          <template v-else>
         <!-- Daily progress -->
         <div class="card p-5 mb-8">
           <div v-if="allDone" class="flex items-start gap-3">
@@ -478,9 +1002,88 @@ function formatBookName(livre: string): string {
 
         <!-- Texts, one after another, directly on the page background -->
         <div class="space-y-12">
+          <!-- Lectures du moment : calculées pour aujourd'hui, en tête -->
+          <article
+            v-for="reading in dynamicReadings"
+            :key="reading.key"
+            :ref="(el) => setArticleEl(reading.key, el)"
+            :class="completedOptions.has(reading.key) ? 'opacity-60' : ''"
+          >
+            <header class="mb-4">
+              <button
+                type="button"
+                @click="toggleCollapse(reading.key)"
+                class="group flex w-full items-start gap-3 text-left"
+              >
+                <AppIcon
+                  name="chevron-down"
+                  :size="13"
+                  class="mt-1.5 text-text-secondary/60 transition-transform duration-200"
+                  :class="collapsedIds.has(reading.key) ? '-rotate-90' : ''"
+                />
+                <span class="min-w-0">
+                  <span class="block text-xs font-semibold text-primary">
+                    {{ reading.title }}
+                  </span>
+                  <span
+                    class="flex items-center gap-2 text-lg font-bold text-text-primary transition-colors group-hover:text-primary"
+                  >
+                    {{ reading.subtitle }}
+                    <AppIcon
+                      v-if="completedOptions.has(reading.key)"
+                      name="circle-check"
+                      :size="15"
+                      class="text-green-500"
+                    />
+                  </span>
+                </span>
+              </button>
+            </header>
+
+            <CollapseTransition>
+              <div v-show="!collapsedIds.has(reading.key)">
+                <div class="space-y-8">
+                  <DailyReadingItem
+                    v-for="entry in reading.entries"
+                    :key="entry.id"
+                    :entry="entry"
+                  />
+                </div>
+
+                <div class="mt-4">
+                  <button
+                    @click="toggleOptionCompleted(reading.key)"
+                    :class="[
+                      'inline-flex items-center gap-2 text-sm font-medium transition-colors',
+                      completedOptions.has(reading.key)
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-text-secondary hover:text-primary',
+                    ]"
+                  >
+                    <AppIcon
+                      v-if="completedOptions.has(reading.key)"
+                      name="circle-check"
+                      :size="15"
+                    />
+                    <span
+                      v-else
+                      class="w-3.5 h-3.5 rounded-full border-2 border-current shrink-0"
+                    ></span>
+                    {{
+                      completedOptions.has(reading.key)
+                        ? t("dailyReading.readToday")
+                        : t("dailyReading.markRead")
+                    }}
+                  </button>
+                </div>
+              </div>
+            </CollapseTransition>
+          </article>
+
           <article
             v-for="entry in selectedEntries"
             :key="entry.id"
+            :ref="(el) => setArticleEl(String(entry.id), el)"
             :class="completedIds.has(String(entry.id)) ? 'opacity-60' : ''"
           >
             <!-- Discreet heading: click to fold/unfold the text -->
@@ -510,14 +1113,28 @@ function formatBookName(livre: string): string {
                       :size="15"
                       class="text-green-500"
                     />
+                    <!-- Lecture par chapitres entamée : où on en est -->
+                    <span
+                      v-else-if="entry.totalSections > 1 && sectionsReadCount(String(entry.id)) > 0"
+                      class="text-xs font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5"
+                    >
+                      {{ sectionsReadCount(String(entry.id)) }}/{{ entry.totalSections }}
+                    </span>
                   </span>
                 </span>
               </button>
             </header>
 
-            <!-- Text content + "mark as read", hidden (but kept loaded) when folded -->
+            <!-- Text content + "mark as read", hidden (but kept loaded) when
+                 folded ; le repli est animé pour ne pas faire sauter le scroll -->
+            <CollapseTransition>
             <div v-show="!collapsedIds.has(String(entry.id))">
-              <DailyReadingItem :entry="entry" />
+              <DailyReadingItem
+                :entry="entry"
+                :read-sections="completedSections[String(entry.id)] ?? []"
+                @toggle-section="(index) => toggleSection(String(entry.id), index)"
+                @sections-loaded="(indexes) => sectionIndexes.set(String(entry.id), indexes)"
+              />
 
               <!-- Discreet "mark as read" button -->
               <div class="mt-4">
@@ -547,8 +1164,11 @@ function formatBookName(livre: string): string {
                 </button>
               </div>
             </div>
+            </CollapseTransition>
           </article>
         </div>
+          </template>
+        </template>
       </template>
     </template>
   </div>

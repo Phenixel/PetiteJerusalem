@@ -5,7 +5,8 @@ import { useI18n } from "vue-i18n";
 import { seoService } from "../services/seoService";
 import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
-import { userPreferencesService } from "../services/userPreferencesService";
+import { countDailyProgress, userPreferencesService } from "../services/userPreferencesService";
+import { readingProgressService, type ReadingPosition } from "../services/readingProgressService";
 // firestoreService directement (et non sessionService) : la home est la seule
 // vue du bundle initial, et sessionService tire textStudies.json (~64 kB) +
 // la chaîne des réservations — inutiles ici, on ne fait que lister les sessions.
@@ -38,6 +39,35 @@ const greeting = computed(() => {
 const readingPct = computed(() =>
   readingTotal.value === 0 ? 0 : Math.round((readingDone.value / readingTotal.value) * 100),
 );
+
+// Dernière position de lecture (bibliothèque) : le vrai « Reprendre ma lecture ».
+const lastReading = ref<ReadingPosition | null>(null);
+const resumeLink = computed(() =>
+  lastReading.value
+    ? { path: lastReading.value.path, query: { verset: String(lastReading.value.line) } }
+    : null,
+);
+
+function trackResume() {
+  if (!lastReading.value) return;
+  analyticsService.capture("reading_resumed", {
+    text_id: lastReading.value.textId,
+    source: "home",
+  });
+}
+
+// Lecture terminée (ou abandonnée) : la croix retire la position pour ne plus
+// la proposer. S'il reste une lecture récente, elle prend le relais.
+function dismissResume() {
+  const current = lastReading.value;
+  if (!current) return;
+  readingProgressService.clearPosition(current.textId);
+  lastReading.value = readingProgressService.getLastPosition();
+  analyticsService.capture("reading_resume_dismissed", {
+    text_id: current.textId,
+    source: "home",
+  });
+}
 const readingAllDone = computed(
   () => readingTotal.value > 0 && readingDone.value >= readingTotal.value,
 );
@@ -58,10 +88,18 @@ async function loadDashboard(u: User) {
       firestoreService.getSessions().catch(() => []),
     ]);
 
-    readingTotal.value = (prefs.dailyReadingIds ?? []).length;
+    // Même règle de comptage que la page Lecture quotidienne (chnei mikra
+    // hebdomadaire exclu, complétions intersectées avec les listes actives).
     const progress = prefs.dailyReadingProgress;
-    readingDone.value =
-      progress && progress.date === todayKey() ? progress.completedIds.length : 0;
+    const isToday = progress?.date === todayKey();
+    const counts = countDailyProgress({
+      textIds: prefs.dailyReadingIds ?? [],
+      options: prefs.dailyReadingOptions ?? [],
+      completedTextIds: isToday ? (progress.completedIds ?? []) : [],
+      completedOptions: isToday ? (progress.completedOptions ?? []) : [],
+    });
+    readingTotal.value = counts.total;
+    readingDone.value = counts.done;
 
     // Sessions où l'utilisateur est impliqué (créées ou avec une réservation).
     const mine = sessions.filter(
@@ -130,6 +168,11 @@ const trackCard = (card: string) => {
 };
 
 onMounted(() => {
+  // Position locale tout de suite, affinée quand la synchro du compte aboutit.
+  lastReading.value = readingProgressService.getLastPosition();
+  void readingProgressService.ensureSynced().then(() => {
+    lastReading.value = readingProgressService.getLastPosition();
+  });
   unsubscribeAuth = authService.onAuthChanged((u) => {
     user.value = u;
     if (!hasTrackedHomeView) {
@@ -172,6 +215,38 @@ onUnmounted(() => {
         </h2>
         <p class="text-text-secondary mt-1.5">{{ t("home.dashboard.subtitle") }}</p>
       </div>
+
+      <!-- Reprendre la dernière lecture de la bibliothèque, au verset près -->
+      <RouterLink
+        v-if="lastReading && resumeLink"
+        :to="resumeLink"
+        class="dash-card card card-hover w-full max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-3 mb-5 group"
+        @click="trackResume()"
+      >
+        <span class="flex items-center gap-2.5 min-w-0">
+          <AppIcon name="book-open" :size="17" class="text-primary flex-shrink-0" />
+          <span
+            class="font-medium text-text-primary truncate group-hover:text-primary transition-colors"
+          >
+            {{ t("home.dashboard.resumeCta", { label: lastReading.label }) }}
+          </span>
+        </span>
+        <span class="flex items-center gap-1 flex-shrink-0">
+          <AppIcon
+            name="chevron-right"
+            :size="15"
+            class="text-text-secondary/50 rtl:rotate-180"
+          />
+          <button
+            @click.prevent.stop="dismissResume"
+            class="p-1.5 -m-0.5 rounded-full text-text-secondary/60 hover:text-red-600 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            :title="t('home.dashboard.resumeDismiss')"
+            :aria-label="t('home.dashboard.resumeDismiss')"
+          >
+            <AppIcon name="x" :size="14" />
+          </button>
+        </span>
+      </RouterLink>
 
       <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mb-10">
         <!-- Squelettes pendant le chargement -->

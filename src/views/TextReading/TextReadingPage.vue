@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../datas/textStudies.json";
@@ -10,8 +10,13 @@ import type {
   TextStudyJsonEntry,
 } from "../../models/models";
 import type { User } from "../../services/authService";
-import { loadText, MissingTextFileError } from "../../services/textService";
-import type { TextContent, TextSection } from "../../services/textService";
+import {
+  loadText,
+  MissingTextFileError,
+  placeLabel as describePlace,
+} from "../../services/textService";
+import type { TextBlock, TextContent, TextSection } from "../../services/textService";
+import { scrollToVerse } from "../../composables/scrollAnchor";
 import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { sessionService } from "../../services/sessionService";
@@ -32,6 +37,8 @@ import ReadingNav from "../../components/ReadingNav.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
 import { useReadingSize } from "../../composables/useReadingSize";
+import { readingProgressService, bookmarkId } from "../../services/readingProgressService";
+import type { Bookmark, ReadingPosition } from "../../services/readingProgressService";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { analyticsService } from "../../services/analyticsService";
 
@@ -82,8 +89,21 @@ watch(showPhonetic, (enabled) => {
 // --- Reading ---
 const isSingleSection = computed(() => content.value?.sections.length === 1);
 
-// Texts reserved as a whole (Tehilim, full parasha) don't need verse numbers.
-const showVerseNumbers = computed(() => (textEntry.value?.totalSections ?? 1) > 1);
+// Single-section texts read as one continuous flow, with a visual marker at
+// each chapter / montée (same pattern as the Talmud daf markers). Texts
+// without blocks render as one unlabelled group.
+const verseBlocks = computed<TextBlock[]>(() => {
+  const section = currentSection.value;
+  if (!section) return [];
+  if (section.blocks?.length) return section.blocks;
+  return [{ label: "", lines: section.he, offset: 0 }];
+});
+
+// Verse numbers for chaptered texts, and within each chapter / montée block.
+// Whole short texts without blocks (a single psalm) stay unnumbered.
+const showVerseNumbers = computed(
+  () => (textEntry.value?.totalSections ?? 1) > 1 || (currentSection.value?.blocks?.length ?? 0) > 0,
+);
 
 const showSectionList = computed(() => !isSingleSection.value && sectionParam.value === undefined);
 
@@ -153,13 +173,14 @@ async function loadContent() {
 // (next/previous) replaces it, since moving along is lateral navigation within
 // the same text rather than a new page to step back through.
 function goToSection(index: number, replace = false) {
+  userNavigated = true;
   const to =
     isEtudeRoute.value && textEntry.value
       ? sectionPath(textEntry.value, index)
       : { name: "text-reading-section", params: { textId: textId.value, section: index }, query: route.query };
   if (replace) router.replace(to);
   else router.push(to);
-  window.scrollTo({ top: 0 });
+  scrollTopProgrammatic();
 }
 
 function backToSectionList() {
@@ -168,7 +189,7 @@ function backToSectionList() {
       ? hubPath(textEntry.value)
       : { name: "text-reading", params: { textId: textId.value }, query: route.query };
   router.push(to);
-  window.scrollTo({ top: 0 });
+  scrollTopProgrammatic();
 }
 
 function exitReading() {
@@ -218,7 +239,241 @@ function goToText(target: TextStudyJsonEntry) {
     ? hubPath(target)
     : { name: "text-reading", params: { textId: String(target.id) }, query: route.query };
   router.replace(to);
+  scrollTopProgrammatic();
+}
+
+// --- Reprise de lecture & marque-pages ---
+const savedPosition = ref<ReadingPosition | null>(null);
+const resumeDismissed = ref(false);
+const highlightedLine = ref<number | null>(null);
+const selectedLine = ref<number | null>(null);
+const bookmarks = ref<Bookmark[]>([]);
+const showBookmarksPanel = ref(false);
+
+/** Section utilisée dans les positions/marque-pages (null pour un texte entier). */
+const positionSection = computed(() =>
+  isSingleSection.value ? null : (sectionParam.value ?? null),
+);
+
+const canonicalReadingPath = computed(() => {
+  const e = textEntry.value;
+  if (!e) return "";
+  return !isSingleSection.value && sectionParam.value !== undefined
+    ? sectionPath(e, sectionParam.value)
+    : hubPath(e);
+});
+
+const positionLabel = computed(() => {
+  const e = textEntry.value;
+  if (!e) return "";
+  const base = appendHebrewNumeral(e.name);
+  return currentSection.value && !isSingleSection.value
+    ? `${base} · ${currentSection.value.label}`
+    : base;
+});
+
+/** "Chapitre 2 (ב) · 3e montée · verset 14" pour une position donnée. */
+function placeLabel(sectionIndex: number | null, line: number): string {
+  return describePlace(content.value?.sections ?? [], sectionIndex, line, (n) =>
+    t("textReading.verseN", { n }),
+  );
+}
+
+const showResumeBanner = computed(() => {
+  const p = savedPosition.value;
+  if (!p || resumeDismissed.value || route.query.verset !== undefined || !content.value)
+    return false;
+  if (isSingleSection.value) return p.line > 2;
+  if (showSectionList.value) return true;
+  return p.section !== sectionParam.value || p.line > 2;
+});
+
+const resumePlace = computed(() =>
+  savedPosition.value ? placeLabel(savedPosition.value.section, savedPosition.value.line) : "",
+);
+
+/** Navigue vers une position (autre chapitre → route, sinon scroll direct). */
+function goToPlace(section: number | null, line: number) {
+  if (!isSingleSection.value && section !== null && section !== sectionParam.value) {
+    const to =
+      isEtudeRoute.value && textEntry.value
+        ? { path: sectionPath(textEntry.value, section), query: { verset: String(line) } }
+        : {
+            name: "text-reading-section",
+            params: { textId: textId.value, section },
+            query: { ...route.query, verset: String(line) },
+          };
+    router.push(to);
+  } else {
+    scrollToLine(line);
+  }
+}
+
+function resumeReading() {
+  const p = savedPosition.value;
+  if (!p || !textEntry.value) return;
+  analyticsService.capture("reading_resumed", { text_id: textEntry.value.id, source: "banner" });
+  resumeDismissed.value = true;
+  goToPlace(p.section, p.line);
+}
+
+function dismissResume() {
+  resumeDismissed.value = true;
+}
+
+function scrollToLine(line: number) {
+  void nextTick(() =>
+    scrollToVerse(() => document.querySelector(`[data-line="${line}"]`), line, highlightedLine),
+  );
+}
+
+// Arrivée avec ?verset=N (reprise, marque-page, lien partagé) : on scrolle au
+// verset dès que le contenu correspondant est rendu.
+watch(
+  [content, sectionParam, () => route.query.verset],
+  ([loaded, , verset]) => {
+    if (!loaded || verset === undefined) return;
+    const line = Number(verset);
+    if (Number.isInteger(line) && line >= 0) scrollToLine(line);
+  },
+);
+
+// --- Suivi de la position (sauvegarde silencieuse au scroll) ---
+// La position ne s'enregistre qu'après un geste du lecteur (scroll, choix d'un
+// chapitre), jamais à la simple ouverture : sinon on écraserait la position à
+// reprendre avant même d'avoir affiché la bannière.
+let scrollSaveTimer: number | null = null;
+let sessionSaved = false;
+// Les remises en haut de page (navigation) déclenchent l'événement scroll
+// comme un geste du lecteur : on les marque pour ne pas les compter.
+let programmaticScrollAt = 0;
+
+function scrollTopProgrammatic() {
+  programmaticScrollAt = Date.now();
   window.scrollTo({ top: 0 });
+}
+
+function clearScrollSaveTimer() {
+  if (scrollSaveTimer !== null) {
+    clearTimeout(scrollSaveTimer);
+    scrollSaveTimer = null;
+  }
+}
+
+function savePositionNow(line: number, sectionIndex = positionSection.value) {
+  if (!textEntry.value) return;
+  sessionSaved = true;
+  readingProgressService.savePosition({
+    textId: textId.value,
+    section: sectionIndex,
+    line,
+    path: canonicalReadingPath.value,
+    label: positionLabel.value,
+  });
+}
+
+function capturePosition() {
+  if (!currentSection.value || showSectionList.value) return;
+  const els = document.querySelectorAll<HTMLElement>("[data-line]");
+  if (els.length === 0) {
+    // Talmud : pas d'éléments par verset, on retient le chapitre.
+    savePositionNow(0);
+    return;
+  }
+  // Premier verset encore visible sous l'en-tête : c'est là qu'on reprendra.
+  let line = 0;
+  for (const el of els) {
+    if (el.getBoundingClientRect().bottom >= 96) {
+      line = Number(el.dataset.line ?? 0);
+      break;
+    }
+  }
+  savePositionNow(line);
+}
+
+function onScroll() {
+  if (Date.now() - programmaticScrollAt < 300) return;
+  if (scrollSaveTimer !== null || !currentSection.value || showSectionList.value) return;
+  scrollSaveTimer = window.setTimeout(() => {
+    scrollSaveTimer = null;
+    capturePosition();
+  }, 600);
+}
+
+// Choisir un chapitre est aussi un geste de lecture : on retient le chapitre
+// ouvert (ligne 0), le scroll affine ensuite. `userNavigated` évite de compter
+// l'ouverture initiale de la page. Exception : une position profonde dans un
+// AUTRE chapitre n'est pas écrasée à la simple ouverture — jeter « chapitre 3,
+// verset 120 » parce qu'on a jeté un œil au chapitre 5 serait irréversible ;
+// le premier scroll dans le nouveau chapitre prendra le relais.
+let userNavigated = false;
+watch(currentSection, (section) => {
+  if (!userNavigated || !section || showSectionList.value) return;
+  const saved = readingProgressService.getPosition(textId.value);
+  const deepElsewhere = saved !== null && saved.line > 2 && saved.section !== positionSection.value;
+  if (!deepElsewhere) savePositionNow(0);
+});
+
+// --- Marque-pages ---
+const bookmarkIds = computed(() => new Set(bookmarks.value.map((b) => b.id)));
+
+function isLineBookmarked(line: number): boolean {
+  return bookmarkIds.value.has(bookmarkId(textId.value, positionSection.value, line));
+}
+
+function onVerseClick(line: number) {
+  selectedLine.value = selectedLine.value === line ? null : line;
+}
+
+function toggleBookmarkAt(line: number) {
+  if (!textEntry.value) return;
+  const added = readingProgressService.toggleBookmark({
+    textId: textId.value,
+    section: positionSection.value,
+    line,
+    path: canonicalReadingPath.value,
+    label: positionLabel.value,
+  });
+  bookmarks.value = readingProgressService.getBookmarks(textId.value);
+  analyticsService.capture(added ? "bookmark_added" : "bookmark_removed", {
+    text_id: textEntry.value.id,
+    corpus: textEntry.value.type,
+  });
+  selectedLine.value = null;
+}
+
+function bookmarkPlace(b: Bookmark): string {
+  return placeLabel(b.section, b.line);
+}
+
+function goToBookmark(b: Bookmark) {
+  if (!textEntry.value) return;
+  showBookmarksPanel.value = false;
+  analyticsService.capture("reading_resumed", { text_id: textEntry.value.id, source: "bookmark" });
+  goToPlace(b.section, b.line);
+}
+
+function removeBookmarkItem(b: Bookmark) {
+  readingProgressService.toggleBookmark({
+    textId: b.textId,
+    section: b.section,
+    line: b.line,
+    path: b.path,
+    label: b.label,
+  });
+  bookmarks.value = readingProgressService.getBookmarks(textId.value);
+  analyticsService.capture("bookmark_removed", {
+    text_id: textEntry.value?.id,
+    corpus: textEntry.value?.type,
+  });
+}
+
+function refreshProgressState() {
+  savedPosition.value = readingProgressService.getPosition(textId.value);
+  bookmarks.value = readingProgressService.getBookmarks(textId.value);
+  resumeDismissed.value = false;
+  selectedLine.value = null;
+  showBookmarksPanel.value = false;
 }
 
 // --- Reservation (session mode) ---
@@ -459,13 +714,41 @@ onMounted(async () => {
     router.replace(target);
     return;
   }
+  // Position et marque-pages : lecture locale immédiate (avant tout
+  // enregistrement), puis rafraîchie quand la synchro du compte aboutit,
+  // sauf si le lecteur a déjà commencé à lire.
+  refreshProgressState();
+  void readingProgressService.ensureSynced().then(() => {
+    if (!sessionSaved) savedPosition.value = readingProgressService.getPosition(textId.value);
+    bookmarks.value = readingProgressService.getBookmarks(textId.value);
+  });
+  window.addEventListener("scroll", onScroll, { passive: true });
+
   await loadContent();
   if (sessionSlug.value) {
     currentUser.value = await sessionService.getCurrentUser();
     session.value = await sessionService.resolveSession(sessionSlug.value);
   }
 });
-watch(textId, loadContent);
+
+onBeforeUnmount(() => {
+  window.removeEventListener("scroll", onScroll);
+  if (scrollSaveTimer !== null) {
+    clearScrollSaveTimer();
+    // Une capture était en attente : on fige la position avant de partir.
+    capturePosition();
+  }
+});
+
+watch(textId, () => {
+  // Une capture armée par un scroll dans l'ANCIEN texte ne doit pas
+  // s'exécuter sur le nouveau (elle écraserait sa position par la ligne 0).
+  clearScrollSaveTimer();
+  sessionSaved = false;
+  userNavigated = false;
+  refreshProgressState();
+  void loadContent();
+});
 </script>
 
 <template>
@@ -533,6 +816,25 @@ watch(textId, loadContent);
       <p v-if="isEtudeRoute && !isNativeApp" class="-mt-4 mb-8 text-text-secondary leading-relaxed">
         {{ readingLead }}
       </p>
+
+      <!-- Reprise de lecture : là où le lecteur s'était arrêté -->
+      <div v-if="showResumeBanner" class="mb-6 p-4 card flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-text-primary flex items-center gap-2">
+            <AppIcon name="book-open" :size="15" class="text-primary flex-shrink-0" />
+            {{ t("textReading.resumeTitle") }}
+          </p>
+          <p class="text-sm text-text-secondary mt-0.5 truncate">{{ resumePlace }}</p>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button @click="resumeReading" class="btn btn-primary !px-3 !py-1.5 text-sm">
+            {{ t("textReading.resumeCta") }}
+          </button>
+          <button @click="dismissResume" class="icon-btn" :title="t('textReading.resumeDismiss')">
+            <AppIcon name="x" :size="15" />
+          </button>
+        </div>
+      </div>
 
       <!-- Passage list (multi-section texts) -->
       <div v-if="showSectionList">
@@ -717,6 +1019,16 @@ watch(textId, loadContent);
 
         <!-- Reading toolbar: text size + Hebrew / phonetic toggle -->
         <div class="flex items-center justify-end gap-3 mb-5">
+          <button
+            v-if="bookmarks.length"
+            @click="showBookmarksPanel = !showBookmarksPanel"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-sm font-medium transition-colors"
+            :class="showBookmarksPanel ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
+            :title="t('textReading.bookmarks')"
+          >
+            <AppIcon name="bookmark" :size="14" />
+            {{ bookmarks.length }}
+          </button>
           <div
             class="inline-flex items-center rounded-lg bg-black/5 dark:bg-white/10"
             role="group"
@@ -768,6 +1080,29 @@ watch(textId, loadContent);
           </div>
         </div>
 
+        <!-- Marque-pages du texte (ouvert depuis l'icône de la barre d'outils) -->
+        <div v-if="showBookmarksPanel && bookmarks.length" class="mb-5 card p-3">
+          <p class="text-xs font-semibold uppercase tracking-wide text-text-secondary px-1 mb-1.5">
+            {{ t("textReading.bookmarks") }}
+          </p>
+          <div v-for="b in bookmarks" :key="b.id" class="flex items-center gap-1">
+            <button
+              @click="goToBookmark(b)"
+              class="flex-1 min-w-0 text-left px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-sm text-text-primary flex items-center gap-2 transition-colors"
+            >
+              <AppIcon name="bookmark" :size="13" class="text-primary flex-shrink-0" />
+              <span class="truncate">{{ bookmarkPlace(b) }}</span>
+            </button>
+            <button
+              @click="removeBookmarkItem(b)"
+              class="icon-btn hover:!text-red-600"
+              :title="t('textReading.bookmarkRemove')"
+            >
+              <AppIcon name="x" :size="14" />
+            </button>
+          </div>
+        </div>
+
         <!-- Talmud: continuous text with a marker at each daf change -->
         <div
           v-if="content.type === 'Talmud Bavli'"
@@ -788,30 +1123,75 @@ watch(textId, loadContent);
           </template>
         </div>
 
-        <!-- Verses / mishnayot (numbered for reference texts) -->
-        <div v-else class="space-y-6" :style="{ '--reading-scale': readingSize.scale.value }">
-          <div v-for="(line, index) in currentSection.he" :key="index" class="flex items-start gap-3">
-            <span
-              v-if="showVerseNumbers"
-              class="mt-2 flex-shrink-0 w-6 text-right text-xs text-primary font-semibold select-none"
-            >
-              {{ index + 1 }}
-            </span>
+        <!-- Verses / mishnayot (numbered for reference texts), grouped by
+             chapter / montée with a marker at each block start -->
+        <div v-else :style="{ '--reading-scale': readingSize.scale.value }">
+          <template v-for="block in verseBlocks" :key="block.offset">
             <p
-              v-if="!showPhonetic"
-              dir="rtl"
-              class="flex-1 min-w-0 font-hebrew leading-loose text-text-primary reading-he"
+              v-if="block.label"
+              class="mt-10 mb-4 pt-4 border-t border-black/10 dark:border-white/10 text-sm font-semibold text-primary first:mt-0 first:pt-0 first:border-t-0"
             >
-              {{ line }}
+              {{ block.label }}
             </p>
-            <p
-              v-else
-              dir="ltr"
-              class="flex-1 min-w-0 leading-relaxed italic text-text-secondary reading-tl"
-            >
-              {{ phoneticLines[index] }}
-            </p>
-          </div>
+            <div class="space-y-6 mb-6">
+              <template v-for="(line, index) in block.lines" :key="block.offset + index">
+                <div
+                  :data-line="block.offset + index"
+                  @click="onVerseClick(block.offset + index)"
+                  class="flex items-start gap-3 rounded-lg transition-colors duration-500 -mx-2 px-2"
+                  :class="{
+                    'bg-primary/10': highlightedLine === block.offset + index,
+                    'bg-black/5 dark:bg-white/10':
+                      selectedLine === block.offset + index &&
+                      highlightedLine !== block.offset + index,
+                  }"
+                >
+                  <span
+                    v-if="showVerseNumbers || isLineBookmarked(block.offset + index)"
+                    class="mt-2 flex-shrink-0 w-6 flex flex-col items-end gap-1 text-right text-xs text-primary font-semibold select-none"
+                  >
+                    <span v-if="showVerseNumbers">{{ index + 1 }}</span>
+                    <AppIcon
+                      v-if="isLineBookmarked(block.offset + index)"
+                      name="bookmark"
+                      :size="11"
+                    />
+                  </span>
+                  <p
+                    v-if="!showPhonetic"
+                    dir="rtl"
+                    class="flex-1 min-w-0 font-hebrew leading-loose text-text-primary reading-he"
+                  >
+                    {{ line }}
+                  </p>
+                  <p
+                    v-else
+                    dir="ltr"
+                    class="flex-1 min-w-0 leading-relaxed italic text-text-secondary reading-tl"
+                  >
+                    {{ phoneticLines[block.offset + index] }}
+                  </p>
+                </div>
+                <!-- Verset sélectionné : proposer le marque-page -->
+                <div
+                  v-if="selectedLine === block.offset + index"
+                  class="flex justify-end !mt-2"
+                >
+                  <button
+                    @click.stop="toggleBookmarkAt(block.offset + index)"
+                    class="btn btn-soft !px-3 !py-1.5 text-sm"
+                  >
+                    <AppIcon name="bookmark" :size="13" />
+                    {{
+                      isLineBookmarked(block.offset + index)
+                        ? t("textReading.bookmarkRemove")
+                        : t("textReading.bookmarkAdd")
+                    }}
+                  </button>
+                </div>
+              </template>
+            </div>
+          </template>
         </div>
 
         <!-- Bottom navigation -->
