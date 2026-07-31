@@ -5,6 +5,7 @@ import type { TextStudyJsonEntry } from "../../models/models";
 import { loadText, MissingTextFileError } from "../../services/textService";
 import type { TextContent, TextSection } from "../../services/textService";
 import { anchorToElement } from "../../composables/scrollAnchor";
+import { useReadingSize } from "../../composables/useReadingSize";
 import { readingProgressService, bookmarkId } from "../../services/readingProgressService";
 import type { Bookmark } from "../../services/readingProgressService";
 import { hubPath, sectionPath } from "../../content/etudeTexts";
@@ -24,6 +25,8 @@ const emit = defineEmits<{
   "sections-loaded": [indexes: number[]];
 }>();
 const { t } = useI18n();
+// Taille de lecture partagée avec le lecteur de la bibliothèque (A− / A+).
+const readingSize = useReadingSize();
 
 const loading = ref(true);
 const error = ref(false);
@@ -206,7 +209,7 @@ onUnmounted(() => observer?.disconnect());
 </script>
 
 <template>
-  <div ref="root">
+  <div ref="root" :style="{ '--reading-scale': readingSize.scale.value }">
     <div v-if="loading" class="animate-pulse space-y-3 py-2">
       <div class="h-5 bg-black/10 rounded w-full dark:bg-white/10"></div>
       <div class="h-5 bg-black/10 rounded w-5/6 dark:bg-white/10"></div>
@@ -286,7 +289,7 @@ onUnmounted(() => observer?.disconnect());
                 >
                   Daf {{ block.daf }}
                 </p>
-                <p dir="rtl" class="font-hebrew text-xl leading-loose text-text-primary">
+                <p dir="rtl" class="font-hebrew leading-loose text-text-primary daily-he">
                   {{ block.lines.join(" ") }}
                 </p>
               </template>
@@ -305,7 +308,7 @@ onUnmounted(() => observer?.disconnect());
                 >
                   {{ block.label }}
                 </p>
-                <p dir="rtl" class="font-hebrew text-xl leading-loose text-text-primary">
+                <p dir="rtl" class="font-hebrew leading-loose text-text-primary daily-he">
                   <template v-for="(line, index) in block.lines" :key="block.offset + index">
                     <span
                       :data-verse="verseKey(section.index, block.offset + index)"
@@ -336,7 +339,7 @@ onUnmounted(() => observer?.disconnect());
                     <span
                       v-if="targumLine(section, block.offset + index)"
                       dir="rtl"
-                      class="block mb-2 font-hebrew text-base leading-relaxed text-text-secondary"
+                      class="block mb-2 font-hebrew leading-relaxed text-text-secondary daily-tl"
                     >
                       {{ targumLine(section, block.offset + index) }}
                     </span>
@@ -368,3 +371,13 @@ onUnmounted(() => observer?.disconnect());
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Tailles pilotées par le réglage A− / A+ (useReadingSize), comme le lecteur. */
+.daily-he {
+  font-size: calc(1.25rem * var(--reading-scale, 1));
+}
+.daily-tl {
+  font-size: calc(1rem * var(--reading-scale, 1));
+}
+</style>

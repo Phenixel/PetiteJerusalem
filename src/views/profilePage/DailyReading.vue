@@ -9,6 +9,7 @@ import { pushService } from "../../services/pushService";
 import { sessionService } from "../../services/sessionService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { isNativeApp } from "../../composables/useNativeApp";
+import { useReadingSize } from "../../composables/useReadingSize";
 import { useToast } from "../../composables/useToast";
 import { analyticsService } from "../../services/analyticsService";
 import DailyReadingItem from "./DailyReadingItem.vue";
@@ -26,6 +27,8 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 const props = defineProps<{ userId: string }>();
 const { t, locale } = useI18n();
 const toast = useToast();
+// Même préférence de taille que le lecteur de la bibliothèque (A− / A+).
+const readingSize = useReadingSize();
 
 const ALL_TYPE = "Tout";
 
@@ -766,6 +769,34 @@ function formatBookName(livre: string): string {
       </div>
 
       <template v-else>
+        <!-- Taille du texte (même réglage que le lecteur de la bibliothèque) -->
+        <div class="flex justify-end mb-4">
+          <div
+            class="inline-flex items-center rounded-lg bg-black/5 dark:bg-white/10"
+            role="group"
+            :aria-label="t('textReading.textSize')"
+          >
+            <button
+              @click="readingSize.decrease()"
+              :disabled="!readingSize.canDecrease.value"
+              class="px-3 py-1.5 text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors disabled:opacity-35"
+              :aria-label="t('textReading.textSizeDecrease')"
+              :title="t('textReading.textSizeDecrease')"
+            >
+              A−
+            </button>
+            <button
+              @click="readingSize.increase()"
+              :disabled="!readingSize.canIncrease.value"
+              class="px-3 py-1.5 text-base font-semibold text-text-secondary hover:text-text-primary transition-colors disabled:opacity-35"
+              :aria-label="t('textReading.textSizeIncrease')"
+              :title="t('textReading.textSizeIncrease')"
+            >
+              A+
+            </button>
+          </div>
+        </div>
+
         <!-- Chnei mikra : lecture de la semaine, à part de la liste du jour.
              Sa coche tient jusqu'au changement de paracha. -->
         <section v-if="weeklyParasha" class="mb-10">
