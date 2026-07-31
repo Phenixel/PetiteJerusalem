@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../../models/models";
@@ -59,6 +59,9 @@ function sortByCatalog(ids: string[]): string[] {
 const loading = ref(true);
 const saving = ref(false);
 const mode = ref<"reading" | "manage">("reading");
+// Deux onglets en mode lecture : le quotidien d'abord, le chnei mikra
+// (hebdomadaire) dans « Cette semaine » pour ne pas allonger la page du jour.
+const activeTab = ref<"today" | "week">("today");
 
 // Ids kept as strings for reliable Map lookups; converted back to numbers on save.
 const selectedIds = ref<string[]>([]);
@@ -143,6 +146,16 @@ const dynamicReadings = computed<DynamicReading[]>(() => {
 const weeklyParasha = computed(() =>
   selectedOptions.value.includes("parasha") ? getWeeklyParasha() : null,
 );
+// Option paracha désactivée : l'onglet « Cette semaine » disparaît.
+watch(weeklyParasha, (week) => {
+  if (!week) activeTab.value = "today";
+});
+
+function switchTab(tab: "today" | "week") {
+  if (activeTab.value === tab) return;
+  activeTab.value = tab;
+  analyticsService.capture("daily_reading_tab_switched", { tab });
+}
 const parashaCompleted = ref(false);
 // Dernier suivi hebdomadaire connu, persisté tel quel : savePreferences
 // REMPLACE dailyReadingProgress en entier, donc la coche de la semaine doit
@@ -283,6 +296,9 @@ onMounted(async () => {
         await persistProgress();
       }
     }
+
+    // Rien dans la liste du jour : on ouvre directement sur « Cette semaine ».
+    if (weeklyParasha.value && totalCount.value === 0) activeTab.value = "week";
   } finally {
     loading.value = false;
   }
@@ -777,10 +793,56 @@ function formatBookName(livre: string): string {
       </div>
 
       <template v-else>
-        <!-- Taille du texte (même réglage que le lecteur de la bibliothèque) -->
-        <div class="flex justify-end mb-4">
+        <!-- Onglets Aujourd'hui / Cette semaine + taille du texte -->
+        <div class="flex items-center justify-between gap-3 mb-6 flex-wrap">
           <div
-            class="inline-flex items-center rounded-lg bg-black/5 dark:bg-white/10"
+            v-if="weeklyParasha"
+            class="inline-flex items-center gap-1 rounded-lg bg-black/5 p-1 dark:bg-white/10"
+            role="tablist"
+          >
+            <button
+              role="tab"
+              :aria-selected="activeTab === 'today'"
+              @click="switchTab('today')"
+              :class="[
+                'px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors',
+                activeTab === 'today'
+                  ? 'bg-primary text-white'
+                  : 'text-text-secondary hover:text-text-primary',
+              ]"
+            >
+              {{ t("dailyReading.tabToday") }}
+            </button>
+            <button
+              role="tab"
+              :aria-selected="activeTab === 'week'"
+              @click="switchTab('week')"
+              :class="[
+                'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors',
+                activeTab === 'week'
+                  ? 'bg-primary text-white'
+                  : 'text-text-secondary hover:text-text-primary',
+              ]"
+            >
+              {{ t("dailyReading.tabWeek") }}
+              <!-- Coche : chnei mikra lu cette semaine ; point : encore à lire -->
+              <AppIcon
+                v-if="parashaCompleted"
+                name="circle-check"
+                :size="13"
+                :class="activeTab === 'week' ? 'text-white' : 'text-green-500'"
+              />
+              <span
+                v-else
+                class="w-1.5 h-1.5 rounded-full"
+                :class="activeTab === 'week' ? 'bg-white' : 'bg-primary'"
+              ></span>
+            </button>
+          </div>
+
+          <!-- Taille du texte (même réglage que le lecteur de la bibliothèque) -->
+          <div
+            class="ml-auto inline-flex items-center rounded-lg bg-black/5 dark:bg-white/10"
             role="group"
             :aria-label="t('textReading.textSize')"
           >
@@ -805,17 +867,12 @@ function formatBookName(livre: string): string {
           </div>
         </div>
 
-        <!-- Chnei mikra : lecture de la semaine, à part de la liste du jour.
-             Sa coche tient jusqu'au changement de paracha. -->
-        <section v-if="weeklyParasha" class="mb-10">
-          <div class="flex items-baseline justify-between gap-3 mb-3">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-text-secondary">
-              {{ t("dailyReading.options.weeklyTitle") }}
-            </h3>
-            <span class="text-xs text-text-secondary/70">
-              {{ t("dailyReading.options.weeklyNote") }}
-            </span>
-          </div>
+        <!-- Onglet « Cette semaine » : le chnei mikra, à part de la liste du
+             jour. Sa coche tient jusqu'au changement de paracha. -->
+        <section v-if="weeklyParasha && activeTab === 'week'" class="mb-10">
+          <p class="text-xs text-text-secondary/70 mb-3">
+            {{ t("dailyReading.options.weeklyNote") }}
+          </p>
           <article
             :ref="(el) => setArticleEl('parasha', el)"
             :class="parashaCompleted ? 'opacity-60' : ''"
@@ -889,8 +946,29 @@ function formatBookName(livre: string): string {
           </article>
         </section>
 
+        <!-- Onglet « Aujourd'hui » : progression et liste du jour -->
+        <template v-else>
+          <!-- Seul le chnei mikra est suivi : la liste du jour est vide -->
+          <div
+            v-if="totalCount === 0"
+            class="flex flex-col items-center justify-center py-16 text-center"
+          >
+            <AppIcon name="book" :size="32" class="text-primary/50 mb-4" />
+            <h3 class="text-xl font-semibold text-text-primary mb-2">
+              {{ t("dailyReading.emptyTitle") }}
+            </h3>
+            <p class="text-text-secondary mb-6 max-w-sm">
+              {{ t("dailyReading.emptyDescription") }}
+            </p>
+            <button @click="mode = 'manage'" class="btn btn-primary">
+              <AppIcon name="plus" :size="14" />
+              {{ t("dailyReading.addTexts") }}
+            </button>
+          </div>
+
+          <template v-else>
         <!-- Daily progress -->
-        <div v-if="totalCount > 0" class="card p-5 mb-8">
+        <div class="card p-5 mb-8">
           <div v-if="allDone" class="flex items-start gap-3">
             <AppIcon name="circle-check" :size="20" class="text-green-500 mt-0.5" />
             <div>
@@ -1089,6 +1167,8 @@ function formatBookName(livre: string): string {
             </CollapseTransition>
           </article>
         </div>
+          </template>
+        </template>
       </template>
     </template>
   </div>
