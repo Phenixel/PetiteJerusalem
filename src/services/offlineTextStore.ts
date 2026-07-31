@@ -27,6 +27,19 @@ const REMOTE_TEXTS_BASE = "https://petite-jerusalem.fr";
 const MANIFEST_KEY = "offline-texts:manifest";
 const WEB_CACHE_NAME = "pj-texts-v1";
 
+/**
+ * Version des données `/texts/**` : à incrémenter quand le format des fichiers
+ * change (ex. v2 : montées + targoum des parachiot). Les fichiers sont servis
+ * avec un cache HTTP d'une semaine ; le paramètre de version invalide ce cache
+ * immédiatement, sans toucher aux clés locales (manifest, disque, Cache API),
+ * qui restent le chemin nu.
+ */
+const TEXTS_VERSION = "2";
+
+function versionedUrl(url: string): string {
+  return `${url}${url.includes("?") ? "&" : "?"}v=${TEXTS_VERSION}`;
+}
+
 export interface DownloadedFile {
   /** Taille en octets, mesurée après téléchargement. */
   size: number;
@@ -122,7 +135,7 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
     // (https://localhost) n'est pas autorisée par CORS sur le site, une
     // fetch JS serait bloquée alors que l'appareil est bien en ligne.
     const res = await CapacitorHttp.get({
-      url: remoteUrl(webPath),
+      url: versionedUrl(remoteUrl(webPath)),
       responseType: "text",
       headers: { Accept: "application/json" },
     });
@@ -133,7 +146,7 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
     });
   }
 
-  return fetch(webPath);
+  return fetch(versionedUrl(webPath));
 }
 
 /** Télécharge un fichier et l'enregistre localement (natif : disque, web : Cache API). */
@@ -152,13 +165,13 @@ export async function downloadFile(webPath: string): Promise<void> {
       );
     }
     const { uri } = await Filesystem.getUri({ directory: Directory.Data, path });
-    await FileTransfer.downloadFile({ url: remoteUrl(webPath), path: uri });
+    await FileTransfer.downloadFile({ url: versionedUrl(remoteUrl(webPath)), path: uri });
     const stat = await Filesystem.stat({ directory: Directory.Data, path });
     size = stat.size;
   } else {
     const cache = await webCache();
     if (!cache) throw new Error("Cache Storage indisponible dans ce navigateur");
-    const res = await fetch(webPath);
+    const res = await fetch(versionedUrl(webPath));
     if (!res.ok) throw new Error(`Téléchargement échoué (${res.status})`);
     size = (await res.clone().blob()).size;
     await cache.put(webPath, res);
