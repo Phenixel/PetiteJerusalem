@@ -484,6 +484,9 @@ async function disableReminder() {
 // --- Manage view (browse the library, like the Bibliothèque) ---
 const searchTerm = ref("");
 const selectedType = ref(ALL_TYPE);
+// La ligne « X textes dans votre liste » se déplie pour retirer un texte
+// sans avoir à le retrouver dans le catalogue.
+const showSelectedPanel = ref(false);
 
 // "Tout" shows every corpus at once; any other tab stays scoped to itself.
 const isAllSelected = computed(() => selectedType.value === ALL_TYPE);
@@ -573,10 +576,47 @@ function formatBookName(livre: string): string {
 
     <!-- ===== Manage mode: pick texts from the library ===== -->
     <template v-else-if="mode === 'manage'">
-      <p class="text-sm text-text-secondary mb-4 flex items-center gap-1.5">
+      <button
+        v-if="selectedEntries.length"
+        @click="showSelectedPanel = !showSelectedPanel"
+        class="text-sm text-text-secondary mb-4 flex items-center gap-1.5 hover:text-text-primary transition-colors"
+      >
+        <AppIcon name="info" :size="14" />
+        {{ t("dailyReading.selectedCount", { count: totalCount }) }}
+        <AppIcon
+          name="chevron-down"
+          :size="12"
+          class="transition-transform duration-200"
+          :class="showSelectedPanel ? 'rotate-180' : ''"
+        />
+      </button>
+      <p v-else class="text-sm text-text-secondary mb-4 flex items-center gap-1.5">
         <AppIcon name="info" :size="14" />
         {{ t("dailyReading.selectedCount", { count: totalCount }) }}
       </p>
+
+      <!-- Les textes de la liste, retirables d'un clic -->
+      <CollapseTransition>
+        <div v-show="showSelectedPanel && selectedEntries.length" class="mb-6">
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="entry in selectedEntries"
+              :key="entry.id"
+              class="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-primary/10 text-sm font-medium text-text-primary"
+            >
+              {{ appendHebrewNumeral(entry.name) }}
+              <button
+                @click="toggleSelect(entry)"
+                class="p-0.5 rounded-full text-text-secondary hover:text-red-600 transition-colors"
+                :title="t('dailyReading.removeFromList')"
+                :aria-label="t('dailyReading.removeFromList')"
+              >
+                <AppIcon name="x" :size="13" />
+              </button>
+            </span>
+          </div>
+        </div>
+      </CollapseTransition>
 
       <!-- Lectures du moment : suivent le calendrier au lieu d'être choisies -->
       <section class="mb-8">

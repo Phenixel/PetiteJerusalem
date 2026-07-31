@@ -195,6 +195,7 @@ const en: LocaleMessages = {
     add: "Add",
     added: "Added",
     selectedCount: "{count} text(s) in your list",
+    removeFromList: "Remove from list",
     emptyTitle: "Your list is empty",
     emptyDescription:
       "Add the psalms or passages you read daily to find them grouped together here.",

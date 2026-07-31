@@ -195,6 +195,7 @@ const fr = {
     add: "Ajouter",
     added: "Ajouté",
     selectedCount: "{count} texte(s) dans votre liste",
+    removeFromList: "Retirer de la liste",
     emptyTitle: "Votre liste est vide",
     emptyDescription:
       "Ajoutez les psaumes ou passages que vous lisez quotidiennement pour les retrouver regroupés ici.",

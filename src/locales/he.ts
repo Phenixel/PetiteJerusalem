@@ -193,6 +193,7 @@ const he: LocaleMessages = {
     add: "הוסף",
     added: "נוסף",
     selectedCount: "{count} טקסטים ברשימה שלך",
+    removeFromList: "הסרה מהרשימה",
     emptyTitle: "הרשימה שלך ריקה",
     emptyDescription: "הוסיפו את המזמורים או הקטעים שאתם קוראים מדי יום כדי למצוא אותם מקובצים כאן.",
     progress: "{done} מתוך {total} נקראו היום",
