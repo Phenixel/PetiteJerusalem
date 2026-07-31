@@ -1,11 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  getWeeklyParasha,
-  getTehilimOfDay,
-  getTehilimOfWeek,
-  TEHILIM_MONTHLY,
-  TEHILIM_WEEKLY,
-} from "../services/dailyCycles";
+import { getWeeklyParasha, getTehilimOfDay, TEHILIM_MONTHLY } from "../services/dailyCycles";
 
 describe("getWeeklyParasha", () => {
   it("résout une paracha du catalogue pour chaque semaine sur 4 ans", () => {
@@ -17,6 +11,7 @@ describe("getWeeklyParasha", () => {
     for (let ts = start; ts < end; ts += 7 * 24 * 3600 * 1000) {
       const parasha = getWeeklyParasha(new Date(ts));
       expect(parasha).not.toBeNull();
+      expect(parasha!.weekKey).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(parasha!.entries.length).toBe(parasha!.names.length);
       expect(parasha!.entries.length).toBeGreaterThanOrEqual(1);
       expect(parasha!.entries.length).toBeLessThanOrEqual(2);
@@ -47,16 +42,6 @@ describe("cycles de Tehilim", () => {
     expect(TEHILIM_MONTHLY.length).toBe(30);
   });
 
-  it("le cycle hebdomadaire couvre les 150 psaumes sans trou ni doublon", () => {
-    const all: number[] = [];
-    for (const [from, to] of TEHILIM_WEEKLY) {
-      for (let n = from; n <= to; n++) all.push(n);
-    }
-    expect(all.length).toBe(150);
-    expect(new Set(all).size).toBe(150);
-    expect(TEHILIM_WEEKLY.length).toBe(7);
-  });
-
   it("résout chaque psaume du jour vers une entrée du catalogue", () => {
     // 40 jours consécutifs : couvre un mois hébraïque entier, y compris le
     // cas du mois de 29 jours.
@@ -68,13 +53,4 @@ describe("cycles de Tehilim", () => {
     }
   });
 
-  it("résout les psaumes de chaque jour de la semaine", () => {
-    for (let day = 0; day < 7; day++) {
-      const date = new Date(2026, 0, 4 + day); // 4 janvier 2026 = dimanche
-      const cycle = getTehilimOfWeek(date);
-      expect(cycle.day).toBe(day);
-      expect(cycle.entries.length).toBe(cycle.psalms.length);
-      expect(cycle.psalms.length).toBeGreaterThan(0);
-    }
-  });
 });

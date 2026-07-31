@@ -215,14 +215,13 @@ const en: LocaleMessages = {
       tehilimDayTitle: "Daily Tehilim",
       tehilimDayDescription:
         "The monthly cycle: the psalms of the Hebrew day of the month, to finish Tehilim every month.",
-      tehilimWeekTitle: "Weekly Tehilim",
-      tehilimWeekDescription:
-        "The 7-day cycle: today's psalms, to finish Tehilim every week.",
       parashaReading: "Parasha of the week",
       tehilimDayReading: "Daily Tehilim · day {day} of the month",
-      tehilimWeekReading: "Weekly Tehilim",
       psalmsOne: "Tehilim {n}",
       psalmsRange: "Tehilim {from} to {to}",
+      weeklyTitle: "This week",
+      weeklyNote: "To finish before Shabbat",
+      readThisWeek: "Read this week",
     },
     resetsDaily: "Tracking resets every day.",
     loadError: "Unable to load this text.",
@@ -570,10 +569,6 @@ const en: LocaleMessages = {
     bookmarks: "Bookmarks",
     bookmarkAdd: "Add a bookmark",
     bookmarkRemove: "Remove bookmark",
-    backToBookmark: "Back to your bookmark",
-    bookmarksCount: "{count} bookmarks",
-    goCta: "Go",
-    seeCta: "See",
   },
   accountCta: {
     title: "Create your free account",

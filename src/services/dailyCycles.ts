@@ -8,14 +8,13 @@ import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
  *
  * - Paracha de la semaine (chnei mikra) : la paracha lue au prochain Chabbat,
  *   affichée toute la semaine. Calendrier de diaspora (le public de
- *   l'application est en France).
+ *   l'application est en France). C'est une lecture de la semaine : son suivi
+ *   tient jusqu'au changement de paracha, pas jusqu'à minuit.
  * - Tehilim du jour : le cycle mensuel traditionnel (les 150 psaumes répartis
  *   sur les jours du mois hébraïque).
- * - Tehilim de la semaine : le cycle en 7 jours (répartis sur la semaine
- *   civile, dimanche → Chabbat).
  */
 
-export const DAILY_OPTION_KEYS = ["parasha", "tehilim-jour", "tehilim-semaine"] as const;
+export const DAILY_OPTION_KEYS = ["parasha", "tehilim-jour"] as const;
 export type DailyOptionKey = (typeof DAILY_OPTION_KEYS)[number];
 
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
@@ -62,6 +61,11 @@ export interface WeeklyParasha {
   names: string[];
   /** Entrées du catalogue correspondantes (2 pour une paracha double). */
   entries: TextStudyJsonEntry[];
+  /**
+   * Identifiant de la semaine : la date civile (YYYY-MM-DD) du Chabbat où
+   * cette paracha est lue. Sert au suivi hebdomadaire du chnei mikra.
+   */
+  weekKey: string;
 }
 
 /**
@@ -79,8 +83,11 @@ export function getWeeklyParasha(date: Date = new Date()): WeeklyParasha | null 
       const entries = reading.parsha
         .map((name) => parashaByKey.get(HEBCAL_ALIASES[normalize(name)] ?? normalize(name)))
         .filter((e): e is TextStudyJsonEntry => Boolean(e));
+      const month = String(saturday.getMonth() + 1).padStart(2, "0");
+      const day = String(saturday.getDate()).padStart(2, "0");
+      const weekKey = `${saturday.getFullYear()}-${month}-${day}`;
       return entries.length === reading.parsha.length
-        ? { names: [...reading.parsha], entries }
+        ? { names: [...reading.parsha], entries, weekKey }
         : null;
     }
     saturday.setDate(saturday.getDate() + 7);
@@ -126,17 +133,6 @@ export const TEHILIM_MONTHLY: [number, number][] = [
   [145, 150],
 ];
 
-/** Cycle hebdomadaire des Tehilim, dimanche (0) → Chabbat (6). */
-export const TEHILIM_WEEKLY: [number, number][] = [
-  [1, 29],
-  [30, 50],
-  [51, 72],
-  [73, 89],
-  [90, 106],
-  [107, 119],
-  [120, 150],
-];
-
 export interface TehilimCycle {
   /** Jour du cycle : jour du mois hébraïque (1..30) ou de la semaine (0..6). */
   day: number;
@@ -172,10 +168,4 @@ export function getTehilimOfDay(date: Date = new Date()): TehilimCycle {
   // Mois de 29 jours : le 29 couvre aussi la part du 30.
   if (day === 29 && hd.daysInMonth() === 29) ranges.push(TEHILIM_MONTHLY[29]);
   return toCycle(day, ranges);
-}
-
-/** Les psaumes du jour de la semaine (cycle en 7 jours). */
-export function getTehilimOfWeek(date: Date = new Date()): TehilimCycle {
-  const day = date.getDay();
-  return toCycle(day, [TEHILIM_WEEKLY[day]]);
 }

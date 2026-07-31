@@ -19,7 +19,6 @@ import {
   DAILY_OPTION_KEYS,
   getWeeklyParasha,
   getTehilimOfDay,
-  getTehilimOfWeek,
   type DailyOptionKey,
 } from "../../services/dailyCycles";
 import AppIcon from "../../components/icons/AppIcon.vue";
@@ -103,11 +102,6 @@ const OPTION_META: { key: DailyOptionKey; titleKey: string; descriptionKey: stri
     titleKey: "dailyReading.options.tehilimDayTitle",
     descriptionKey: "dailyReading.options.tehilimDayDescription",
   },
-  {
-    key: "tehilim-semaine",
-    titleKey: "dailyReading.options.tehilimWeekTitle",
-    descriptionKey: "dailyReading.options.tehilimWeekDescription",
-  },
 ];
 
 interface DynamicReading {
@@ -125,40 +119,47 @@ function psalmsLabel(psalms: number[]): string {
   });
 }
 
-// Les lectures calculées pour aujourd'hui, dans un ordre fixe, en tête de liste.
+// Les lectures calculées pour aujourd'hui, en tête de la liste quotidienne.
+// Le chnei mikra n'en fait pas partie : c'est une lecture de la semaine,
+// affichée dans sa propre section (voir weeklyParasha).
 const dynamicReadings = computed<DynamicReading[]>(() => {
   const out: DynamicReading[] = [];
-  for (const key of DAILY_OPTION_KEYS) {
-    if (!selectedOptions.value.includes(key)) continue;
-    if (key === "parasha") {
-      const parasha = getWeeklyParasha();
-      if (!parasha) continue;
-      out.push({
-        key,
-        title: t("dailyReading.options.parashaReading"),
-        subtitle: parasha.entries.map((e) => appendHebrewNumeral(e.name)).join(" · "),
-        entries: parasha.entries,
-      });
-    } else if (key === "tehilim-jour") {
-      const cycle = getTehilimOfDay();
-      out.push({
-        key,
-        title: t("dailyReading.options.tehilimDayReading", { day: cycle.day }),
-        subtitle: psalmsLabel(cycle.psalms),
-        entries: cycle.entries,
-      });
-    } else {
-      const cycle = getTehilimOfWeek();
-      out.push({
-        key,
-        title: t("dailyReading.options.tehilimWeekReading"),
-        subtitle: psalmsLabel(cycle.psalms),
-        entries: cycle.entries,
-      });
-    }
+  if (selectedOptions.value.includes("tehilim-jour")) {
+    const cycle = getTehilimOfDay();
+    out.push({
+      key: "tehilim-jour",
+      title: t("dailyReading.options.tehilimDayReading", { day: cycle.day }),
+      subtitle: psalmsLabel(cycle.psalms),
+      entries: cycle.entries,
+    });
   }
   return out;
 });
+
+// --- Chnei mikra : section « Cette semaine », suivi jusqu'au changement de paracha ---
+const weeklyParasha = computed(() =>
+  selectedOptions.value.includes("parasha") ? getWeeklyParasha() : null,
+);
+const parashaCompleted = ref(false);
+
+const parashaSubtitle = computed(() =>
+  (weeklyParasha.value?.entries ?? []).map((e) => appendHebrewNumeral(e.name)).join(" · "),
+);
+
+async function toggleParashaCompleted() {
+  if (!weeklyParasha.value) return;
+  parashaCompleted.value = !parashaCompleted.value;
+  setCollapsed("parasha", parashaCompleted.value);
+  if (parashaCompleted.value) anchorToElement(articleEls.get("parasha") ?? null);
+  await persistProgress();
+  analyticsService.capture("daily_reading_marked_read", {
+    marked: parashaCompleted.value,
+    scope: "parasha_week",
+    done_count: completedCount.value,
+    total_count: totalCount.value,
+    all_done: allDone.value,
+  });
+}
 
 function isOptionSelected(key: string): boolean {
   return selectedOptions.value.includes(key);
@@ -194,6 +195,7 @@ async function toggleOption(key: DailyOptionKey) {
 }
 
 async function toggleOptionCompleted(key: DailyOptionKey) {
+  if (key === "parasha") return; // suivi hebdomadaire dédié (toggleParashaCompleted)
   const next = new Set(completedOptions.value);
   const nowRead = !next.has(key);
   if (nowRead) next.add(key);
@@ -238,6 +240,15 @@ onMounted(async () => {
     syncDailyReadingDownloads((prefs.dailyReadingIds ?? []).map(Number)).catch(() => {});
 
     const progress = prefs.dailyReadingProgress;
+    // Chnei mikra : la coche tient tant que la paracha n'a pas changé,
+    // indépendamment de la remise à zéro quotidienne.
+    const currentWeek = weeklyParasha.value?.weekKey;
+    parashaCompleted.value =
+      !!currentWeek &&
+      progress?.parashaProgress?.week === currentWeek &&
+      progress.parashaProgress.completed === true;
+    if (parashaCompleted.value) setCollapsed("parasha", true);
+
     if (progress && progress.date === todayKey()) {
       completedIds.value = new Set(progress.completedIds.map(String));
       completedSections.value = { ...(progress.completedSections ?? {}) };
@@ -291,6 +302,16 @@ async function persistProgress() {
       completedOptions: [...completedOptions.value].filter((k) =>
         selectedOptions.value.includes(k),
       ),
+      // Le chnei mikra vit à la semaine : sa coche est rattachée au Chabbat de
+      // la paracha et survit à la remise à zéro quotidienne.
+      ...(weeklyParasha.value
+        ? {
+            parashaProgress: {
+              week: weeklyParasha.value.weekKey,
+              completed: parashaCompleted.value,
+            },
+          }
+        : {}),
     },
   });
 }
@@ -393,12 +414,14 @@ function toggleCollapse(id: string) {
   setCollapsed(id, !collapsedIds.value.has(id));
 }
 
+// Le chnei mikra (hebdomadaire) ne compte pas dans la progression du jour.
+const dailyOptions = computed(() => selectedOptions.value.filter((k) => k !== "parasha"));
 const completedCount = computed(
   () =>
     selectedIds.value.filter((id) => completedIds.value.has(id)).length +
-    selectedOptions.value.filter((k) => completedOptions.value.has(k)).length,
+    dailyOptions.value.filter((k) => completedOptions.value.has(k)).length,
 );
-const totalCount = computed(() => selectedIds.value.length + selectedOptions.value.length);
+const totalCount = computed(() => selectedIds.value.length + dailyOptions.value.length);
 const allDone = computed(() => totalCount.value > 0 && completedCount.value === totalCount.value);
 const progressPct = computed(() =>
   totalCount.value === 0 ? 0 : Math.round((completedCount.value / totalCount.value) * 100),
@@ -686,7 +709,7 @@ function formatBookName(livre: string): string {
     <template v-else>
       <!-- Empty list -->
       <div
-        v-if="totalCount === 0"
+        v-if="totalCount === 0 && !weeklyParasha"
         class="flex flex-col items-center justify-center py-16 text-center"
       >
         <AppIcon name="book" :size="32" class="text-primary/50 mb-4" />
@@ -703,8 +726,92 @@ function formatBookName(livre: string): string {
       </div>
 
       <template v-else>
+        <!-- Chnei mikra : lecture de la semaine, à part de la liste du jour.
+             Sa coche tient jusqu'au changement de paracha. -->
+        <section v-if="weeklyParasha" class="mb-10">
+          <div class="flex items-baseline justify-between gap-3 mb-3">
+            <h3 class="text-sm font-semibold uppercase tracking-wide text-text-secondary">
+              {{ t("dailyReading.options.weeklyTitle") }}
+            </h3>
+            <span class="text-xs text-text-secondary/70">
+              {{ t("dailyReading.options.weeklyNote") }}
+            </span>
+          </div>
+          <article
+            :ref="(el) => setArticleEl('parasha', el)"
+            :class="parashaCompleted ? 'opacity-60' : ''"
+          >
+            <header class="mb-4">
+              <button
+                type="button"
+                @click="toggleCollapse('parasha')"
+                class="group flex w-full items-start gap-3 text-left"
+              >
+                <AppIcon
+                  name="chevron-down"
+                  :size="13"
+                  class="mt-1.5 text-text-secondary/60 transition-transform duration-200"
+                  :class="collapsedIds.has('parasha') ? '-rotate-90' : ''"
+                />
+                <span class="min-w-0">
+                  <span class="block text-xs font-semibold text-primary">
+                    {{ t("dailyReading.options.parashaReading") }}
+                  </span>
+                  <span
+                    class="flex items-center gap-2 text-lg font-bold text-text-primary transition-colors group-hover:text-primary"
+                  >
+                    {{ parashaSubtitle }}
+                    <AppIcon
+                      v-if="parashaCompleted"
+                      name="circle-check"
+                      :size="15"
+                      class="text-green-500"
+                    />
+                  </span>
+                </span>
+              </button>
+            </header>
+
+            <CollapseTransition>
+              <div v-show="!collapsedIds.has('parasha')">
+                <div class="space-y-8">
+                  <DailyReadingItem
+                    v-for="entry in weeklyParasha.entries"
+                    :key="entry.id"
+                    :entry="entry"
+                    :with-targoum="true"
+                  />
+                </div>
+
+                <div class="mt-4">
+                  <button
+                    @click="toggleParashaCompleted"
+                    :class="[
+                      'inline-flex items-center gap-2 text-sm font-medium transition-colors',
+                      parashaCompleted
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-text-secondary hover:text-primary',
+                    ]"
+                  >
+                    <AppIcon v-if="parashaCompleted" name="circle-check" :size="15" />
+                    <span
+                      v-else
+                      class="w-3.5 h-3.5 rounded-full border-2 border-current shrink-0"
+                    ></span>
+                    {{
+                      parashaCompleted
+                        ? t("dailyReading.options.readThisWeek")
+                        : t("dailyReading.markRead")
+                    }}
+                  </button>
+                </div>
+              </div>
+            </CollapseTransition>
+          </article>
+        </section>
+
         <!-- Daily progress -->
-        <div class="card p-5 mb-8">
+        <div v-if="totalCount > 0" class="card p-5 mb-8">
           <div v-if="allDone" class="flex items-start gap-3">
             <AppIcon name="circle-check" :size="20" class="text-green-500 mt-0.5" />
             <div>

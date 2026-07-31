@@ -14,8 +14,14 @@ export interface DailyReadingProgress {
    * bascule aussi dans `completedIds`.
    */
   completedSections?: Record<string, number[]>;
-  /** Lectures du moment (paracha, cycles Tehilim) marquées lues aujourd'hui. */
+  /** Lectures du moment quotidiennes (cycles Tehilim) marquées lues aujourd'hui. */
   completedOptions?: string[];
+  /**
+   * Suivi hebdomadaire du chnei mikra : `week` est la date du Chabbat de la
+   * paracha (weekKey). Contrairement au reste, il ne se remet à zéro qu'au
+   * changement de paracha.
+   */
+  parashaProgress?: { week: string; completed: boolean };
 }
 
 export interface UserPreferences {

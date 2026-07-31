@@ -216,14 +216,13 @@ const fr = {
       tehilimDayTitle: "Tehilim du jour",
       tehilimDayDescription:
         "Le cycle mensuel : les psaumes du jour du mois hébraïque, pour finir les Tehilim chaque mois.",
-      tehilimWeekTitle: "Tehilim de la semaine",
-      tehilimWeekDescription:
-        "Le cycle en 7 jours : les psaumes du jour, pour finir les Tehilim chaque semaine.",
       parashaReading: "Paracha de la semaine",
       tehilimDayReading: "Tehilim du jour · {day} du mois",
-      tehilimWeekReading: "Tehilim de la semaine",
       psalmsOne: "Tehilim {n}",
       psalmsRange: "Tehilim {from} à {to}",
+      weeklyTitle: "Cette semaine",
+      weeklyNote: "À terminer avant Chabbat",
+      readThisWeek: "Lu cette semaine",
     },
     loadError: "Impossible de charger ce texte.",
   },
@@ -577,10 +576,6 @@ const fr = {
     bookmarks: "Marque-pages",
     bookmarkAdd: "Ajouter un marque-page",
     bookmarkRemove: "Retirer le marque-page",
-    backToBookmark: "Revenir au marque-page",
-    bookmarksCount: "{count} marque-pages",
-    goCta: "Y aller",
-    seeCta: "Voir",
   },
   accountCta: {
     title: "Créez votre compte gratuit",

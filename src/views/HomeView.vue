@@ -75,8 +75,11 @@ async function loadDashboard(u: User) {
       firestoreService.getSessions().catch(() => []),
     ]);
 
+    // Le chnei mikra (paracha) est un suivi hebdomadaire : il ne compte pas
+    // dans la progression du jour.
     readingTotal.value =
-      (prefs.dailyReadingIds ?? []).length + (prefs.dailyReadingOptions ?? []).length;
+      (prefs.dailyReadingIds ?? []).length +
+      (prefs.dailyReadingOptions ?? []).filter((k) => k !== "parasha").length;
     const progress = prefs.dailyReadingProgress;
     readingDone.value =
       progress && progress.date === todayKey()

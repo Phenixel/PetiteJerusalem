@@ -101,10 +101,11 @@ export const dailyReadingReminder = onSchedule(
         ? prefs.fcmTokens.filter((t: unknown): t is string => typeof t === "string" && t.length > 0)
         : [];
       const readingIds: unknown[] = Array.isArray(prefs.dailyReadingIds) ? prefs.dailyReadingIds : [];
-      // Lectures du moment (paracha, cycles Tehilim) : comptent comme les textes.
-      const readingOptions: unknown[] = Array.isArray(prefs.dailyReadingOptions)
-        ? prefs.dailyReadingOptions
-        : [];
+      // Lectures du moment quotidiennes : comptent comme les textes. La paracha
+      // (chnei mikra) est un suivi hebdomadaire, hors du décompte du jour.
+      const readingOptions: unknown[] = (
+        Array.isArray(prefs.dailyReadingOptions) ? prefs.dailyReadingOptions : []
+      ).filter((k: unknown) => k !== "parasha");
       const totalReadings = readingIds.length + readingOptions.length;
       if (tokens.length === 0 || totalReadings === 0) continue;
 
