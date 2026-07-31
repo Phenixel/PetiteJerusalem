@@ -565,7 +565,7 @@ const fr = {
     cancel: "Annuler la réservation",
     cancelConfirm: "Annuler cette réservation ?",
     markRead: "Marquer comme lu",
-    unmarkRead: "Marquer comme non lu",
+    unmarkRead: "Remettre en non lu",
     read: "Lu",
     reservedByYou: "Vous avez réservé ce passage.",
     readByYou: "Vous avez lu ce passage.",

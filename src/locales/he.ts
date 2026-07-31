@@ -547,7 +547,7 @@ const he: LocaleMessages = {
     cancel: "ביטול ההזמנה",
     cancelConfirm: "לבטל את ההזמנה?",
     markRead: "סמן כנקרא",
-    unmarkRead: "סמן כלא נקרא",
+    unmarkRead: "החזרה למצב לא נקרא",
     read: "נקרא",
     reservedByYou: "שמרת קטע זה.",
     readByYou: "קראת קטע זה.",

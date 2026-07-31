@@ -558,7 +558,7 @@ const en: LocaleMessages = {
     cancel: "Cancel reservation",
     cancelConfirm: "Cancel this reservation?",
     markRead: "Mark as read",
-    unmarkRead: "Mark as unread",
+    unmarkRead: "Set back to unread",
     read: "Read",
     reservedByYou: "You reserved this passage.",
     readByYou: "You read this passage.",

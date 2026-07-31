@@ -1065,7 +1065,13 @@ watch(textId, (_, previousTextId) => {
                     : 'bg-green-600/10 text-green-700 hover:bg-green-600/20 dark:text-green-300'
                 "
               >
-                <AppIcon name="check" :size="13" />
+                <!-- Icône « retour en arrière » quand le bouton annule le
+                     marquage : une coche prêterait à confusion avec
+                     « Marquer comme lu ». -->
+                <AppIcon
+                  :name="currentReservation?.isCompleted ? 'rotate' : 'check'"
+                  :size="13"
+                />
                 {{ currentReservation?.isCompleted ? t("textReading.unmarkRead") : t("textReading.markRead") }}
               </button>
               <button
