@@ -95,6 +95,7 @@ const he: LocaleMessages = {
       readingCta: "לקריאה היומית שלי",
       readingSetupCta: "לבחור טקסטים",
       resumeCta: "להמשיך בקריאה: {label}",
+      resumeDismiss: "להפסיק להציע קריאה זו",
       sessionsTitle: "הסשנים שלי",
       endsToday: "מסתיים היום",
       endsInDays: "מסתיים בעוד {count} ימים",

@@ -95,6 +95,7 @@ const en: LocaleMessages = {
       readingCta: "See my daily reading",
       readingSetupCta: "Pick my texts",
       resumeCta: "Resume my reading: {label}",
+      resumeDismiss: "Stop suggesting this reading",
       sessionsTitle: "My sessions",
       endsToday: "ends today",
       endsInDays: "ends in {count} d",

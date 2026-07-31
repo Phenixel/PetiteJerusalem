@@ -55,6 +55,19 @@ function trackResume() {
     source: "home",
   });
 }
+
+// Lecture terminée (ou abandonnée) : la croix retire la position pour ne plus
+// la proposer. S'il reste une lecture récente, elle prend le relais.
+function dismissResume() {
+  const current = lastReading.value;
+  if (!current) return;
+  readingProgressService.clearPosition(current.textId);
+  lastReading.value = readingProgressService.getLastPosition();
+  analyticsService.capture("reading_resume_dismissed", {
+    text_id: current.textId,
+    source: "home",
+  });
+}
 const readingAllDone = computed(
   () => readingTotal.value > 0 && readingDone.value >= readingTotal.value,
 );
@@ -216,11 +229,21 @@ onUnmounted(() => {
             {{ t("home.dashboard.resumeCta", { label: lastReading.label }) }}
           </span>
         </span>
-        <AppIcon
-          name="chevron-right"
-          :size="15"
-          class="text-text-secondary/50 flex-shrink-0 rtl:rotate-180"
-        />
+        <span class="flex items-center gap-1 flex-shrink-0">
+          <AppIcon
+            name="chevron-right"
+            :size="15"
+            class="text-text-secondary/50 rtl:rotate-180"
+          />
+          <button
+            @click.prevent.stop="dismissResume"
+            class="p-1.5 -m-0.5 rounded-full text-text-secondary/60 hover:text-red-600 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            :title="t('home.dashboard.resumeDismiss')"
+            :aria-label="t('home.dashboard.resumeDismiss')"
+          >
+            <AppIcon name="x" :size="14" />
+          </button>
+        </span>
       </RouterLink>
 
       <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mb-10">

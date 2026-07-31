@@ -93,6 +93,7 @@ const fr = {
       readingCta: "Voir ma lecture quotidienne",
       readingSetupCta: "Choisir mes textes",
       resumeCta: "Reprendre ma lecture : {label}",
+      resumeDismiss: "Ne plus proposer cette lecture",
       sessionsTitle: "Mes sessions",
       endsToday: "se termine aujourd'hui",
       endsInDays: "se termine dans {count} j",
