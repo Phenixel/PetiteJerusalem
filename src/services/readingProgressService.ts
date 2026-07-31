@@ -49,8 +49,10 @@ export interface Bookmark {
 
 const POSITIONS_KEY = "pj-reading-positions";
 const BOOKMARKS_KEY = "pj-bookmarks";
+const TOMBSTONES_KEY = "pj-bookmark-tombstones";
 const MAX_POSITIONS = 50;
 const MAX_BOOKMARKS = 200;
+const MAX_TOMBSTONES = 300;
 /** Délai avant d'envoyer les positions au cloud (regroupe les scrolls). */
 const CLOUD_SAVE_DELAY_MS = 8000;
 
@@ -81,6 +83,35 @@ function writeJson(key: string, value: unknown): void {
   } catch {
     // Stockage plein ou indisponible : la lecture reste possible sans reprise.
   }
+}
+
+/**
+ * Sérialisation canonique (clés d'objets triées) pour comparer l'état local à
+ * l'état cloud : Firestore renvoie les maps triées alphabétiquement alors que
+ * les positions locales sont rangées par récence — un JSON.stringify naïf les
+ * verrait toujours différentes et pousserait une écriture à chaque lancement.
+ */
+function stableStringify(value: unknown): string {
+  return JSON.stringify(value, (_key, val: unknown) =>
+    val && typeof val === "object" && !Array.isArray(val)
+      ? Object.fromEntries(
+          Object.entries(val as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)),
+        )
+      : val,
+  );
+}
+
+/** Les marque-pages, dans un ordre stable pour la comparaison ci-dessus. */
+function sortedById(bookmarks: Bookmark[]): Bookmark[] {
+  return [...bookmarks].sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/** Garde les tombstones les plus récentes (l'inventaire ne grossit pas sans fin). */
+function pruneTombstones(tombstones: Record<string, number>): Record<string, number> {
+  const entries = Object.entries(tombstones)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, MAX_TOMBSTONES);
+  return Object.fromEntries(entries);
 }
 
 class ReadingProgressService {
@@ -175,9 +206,9 @@ class ReadingProgressService {
     return counts;
   }
 
-  isBookmarked(textId: string, section: number | null, line: number): boolean {
-    const id = bookmarkId(textId, section, line);
-    return this.bookmarksAll().some((b) => b.id === id);
+  /** Marque-pages supprimés (id → date), pour que la fusion ne les ressuscite pas. */
+  private tombstones(): Record<string, number> {
+    return readJson<Record<string, number>>(TOMBSTONES_KEY, {});
   }
 
   /** Ajoute ou retire le marque-page du verset. Renvoie l'état final. */
@@ -192,6 +223,7 @@ class ReadingProgressService {
     const exists = all.some((b) => b.id === id);
     if (exists) {
       all = all.filter((b) => b.id !== id);
+      writeJson(TOMBSTONES_KEY, pruneTombstones({ ...this.tombstones(), [id]: Date.now() }));
     } else {
       all = [...all, { ...bookmark, id, at: Date.now() }]
         .sort((a, b) => b.at - a.at)
@@ -220,6 +252,7 @@ class ReadingProgressService {
       await userPreferencesService.savePreferences(this.user.id, {
         readingPositions: this.positions(),
         bookmarks: this.bookmarksAll(),
+        deletedBookmarks: this.tombstones(),
       });
     } catch {
       // Hors-ligne ou refus : l'état local reste la référence, on réessaiera
@@ -244,14 +277,36 @@ class ReadingProgressService {
       Object.fromEntries(mergedList.map((p) => [p.textId, p])),
     );
 
+    // Tombstones : union (la suppression la plus récente par id gagne), pour
+    // qu'un marque-page supprimé sur un appareil ne soit pas ressuscité par un
+    // autre resté avec l'ancienne liste. Un re-ajout postérieur (b.at plus
+    // récent que la tombstone) reprend le dessus.
+    const cloudTombstones = prefs.deletedBookmarks ?? {};
+    const tombstones: Record<string, number> = { ...cloudTombstones };
+    for (const [id, at] of Object.entries(this.tombstones())) {
+      if (!tombstones[id] || at > tombstones[id]) tombstones[id] = at;
+    }
+    const prunedTombstones = pruneTombstones(tombstones);
+    writeJson(TOMBSTONES_KEY, prunedTombstones);
+
     const byId = new Map<string, Bookmark>();
-    for (const b of [...(prefs.bookmarks ?? []), ...this.bookmarksAll()]) byId.set(b.id, b);
+    for (const b of [...(prefs.bookmarks ?? []), ...this.bookmarksAll()]) {
+      const deletedAt = prunedTombstones[b.id];
+      if (deletedAt !== undefined && deletedAt >= b.at) continue;
+      const existing = byId.get(b.id);
+      if (!existing || b.at > existing.at) byId.set(b.id, b);
+    }
     const mergedBookmarks = [...byId.values()].sort((a, b) => b.at - a.at).slice(0, MAX_BOOKMARKS);
     writeJson(BOOKMARKS_KEY, mergedBookmarks);
 
-    // N'écrit au cloud que si la fusion apporte quelque chose de local.
-    const cloudState = JSON.stringify([cloud, prefs.bookmarks ?? []]);
-    const mergedState = JSON.stringify([this.positions(), this.bookmarksAll()]);
+    // N'écrit au cloud que si la fusion apporte quelque chose de local
+    // (comparaison canonique : l'ordre des clés/éléments ne compte pas).
+    const cloudState = stableStringify([cloud, sortedById(prefs.bookmarks ?? []), cloudTombstones]);
+    const mergedState = stableStringify([
+      this.positions(),
+      sortedById(this.bookmarksAll()),
+      prunedTombstones,
+    ]);
     if (cloudState !== mergedState) await this.pushToCloud();
   }
 }

@@ -5,7 +5,7 @@ import { useI18n } from "vue-i18n";
 import { seoService } from "../services/seoService";
 import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
-import { userPreferencesService } from "../services/userPreferencesService";
+import { countDailyProgress, userPreferencesService } from "../services/userPreferencesService";
 import { readingProgressService, type ReadingPosition } from "../services/readingProgressService";
 // firestoreService directement (et non sessionService) : la home est la seule
 // vue du bundle initial, et sessionService tire textStudies.json (~64 kB) +
@@ -88,16 +88,18 @@ async function loadDashboard(u: User) {
       firestoreService.getSessions().catch(() => []),
     ]);
 
-    // Le chnei mikra (paracha) est un suivi hebdomadaire : il ne compte pas
-    // dans la progression du jour.
-    readingTotal.value =
-      (prefs.dailyReadingIds ?? []).length +
-      (prefs.dailyReadingOptions ?? []).filter((k) => k !== "parasha").length;
+    // Même règle de comptage que la page Lecture quotidienne (chnei mikra
+    // hebdomadaire exclu, complétions intersectées avec les listes actives).
     const progress = prefs.dailyReadingProgress;
-    readingDone.value =
-      progress && progress.date === todayKey()
-        ? progress.completedIds.length + (progress.completedOptions ?? []).length
-        : 0;
+    const isToday = progress?.date === todayKey();
+    const counts = countDailyProgress({
+      textIds: prefs.dailyReadingIds ?? [],
+      options: prefs.dailyReadingOptions ?? [],
+      completedTextIds: isToday ? (progress.completedIds ?? []) : [],
+      completedOptions: isToday ? (progress.completedOptions ?? []) : [],
+    });
+    readingTotal.value = counts.total;
+    readingDone.value = counts.done;
 
     // Sessions où l'utilisateur est impliqué (créées ou avec une réservation).
     const mine = sessions.filter(
@@ -219,7 +221,7 @@ onUnmounted(() => {
         v-if="lastReading && resumeLink"
         :to="resumeLink"
         class="dash-card card card-hover w-full max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-3 mb-5 group"
-        @click="trackResume(); trackCard('resume_reading')"
+        @click="trackResume()"
       >
         <span class="flex items-center gap-2.5 min-w-0">
           <AppIcon name="book-open" :size="17" class="text-primary flex-shrink-0" />

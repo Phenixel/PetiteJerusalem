@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../../models/models";
-import { userPreferencesService } from "../../services/userPreferencesService";
+import { countDailyProgress, userPreferencesService } from "../../services/userPreferencesService";
 import { syncDailyReadingDownloads } from "../../services/offlineLibraryService";
 import { pushService } from "../../services/pushService";
 import { sessionService } from "../../services/sessionService";
@@ -144,6 +144,10 @@ const weeklyParasha = computed(() =>
   selectedOptions.value.includes("parasha") ? getWeeklyParasha() : null,
 );
 const parashaCompleted = ref(false);
+// Dernier suivi hebdomadaire connu, persisté tel quel : savePreferences
+// REMPLACE dailyReadingProgress en entier, donc la coche de la semaine doit
+// être réécrite à chaque sauvegarde même quand l'option paracha est inactive.
+const storedParashaProgress = ref<{ week: string; completed: boolean } | null>(null);
 
 const parashaSubtitle = computed(() =>
   (weeklyParasha.value?.entries ?? []).map((e) => appendHebrewNumeral(e.name)).join(" · "),
@@ -152,6 +156,10 @@ const parashaSubtitle = computed(() =>
 async function toggleParashaCompleted() {
   if (!weeklyParasha.value) return;
   parashaCompleted.value = !parashaCompleted.value;
+  storedParashaProgress.value = {
+    week: weeklyParasha.value.weekKey,
+    completed: parashaCompleted.value,
+  };
   setCollapsed("parasha", parashaCompleted.value);
   if (parashaCompleted.value) anchorToElement(articleEls.get("parasha") ?? null);
   await persistProgress();
@@ -187,6 +195,9 @@ async function toggleOption(key: DailyOptionKey) {
     await userPreferencesService.savePreferences(props.userId, {
       dailyReadingOptions: [...selectedOptions.value],
     });
+    // Option retirée : sa complétion du jour doit disparaître aussi du cloud,
+    // sinon l'accueil et le rappel push continueraient de la compter.
+    if (removed) await persistProgress();
   } finally {
     saving.value = false;
   }
@@ -198,7 +209,6 @@ async function toggleOption(key: DailyOptionKey) {
 }
 
 async function toggleOptionCompleted(key: DailyOptionKey) {
-  if (key === "parasha") return; // suivi hebdomadaire dédié (toggleParashaCompleted)
   const next = new Set(completedOptions.value);
   const nowRead = !next.has(key);
   if (nowRead) next.add(key);
@@ -245,6 +255,7 @@ onMounted(async () => {
     const progress = prefs.dailyReadingProgress;
     // Chnei mikra : la coche tient tant que la paracha n'a pas changé,
     // indépendamment de la remise à zéro quotidienne.
+    storedParashaProgress.value = progress?.parashaProgress ?? null;
     const currentWeek = weeklyParasha.value?.weekKey;
     parashaCompleted.value =
       !!currentWeek &&
@@ -307,14 +318,7 @@ async function persistProgress() {
       ),
       // Le chnei mikra vit à la semaine : sa coche est rattachée au Chabbat de
       // la paracha et survit à la remise à zéro quotidienne.
-      ...(weeklyParasha.value
-        ? {
-            parashaProgress: {
-              week: weeklyParasha.value.weekKey,
-              completed: parashaCompleted.value,
-            },
-          }
-        : {}),
+      ...(storedParashaProgress.value ? { parashaProgress: storedParashaProgress.value } : {}),
     },
   });
 }
@@ -417,14 +421,18 @@ function toggleCollapse(id: string) {
   setCollapsed(id, !collapsedIds.value.has(id));
 }
 
-// Le chnei mikra (hebdomadaire) ne compte pas dans la progression du jour.
-const dailyOptions = computed(() => selectedOptions.value.filter((k) => k !== "parasha"));
-const completedCount = computed(
-  () =>
-    selectedIds.value.filter((id) => completedIds.value.has(id)).length +
-    dailyOptions.value.filter((k) => completedOptions.value.has(k)).length,
+// Règle de comptage partagée avec l'accueil (le chnei mikra, hebdomadaire,
+// ne compte pas dans la progression du jour).
+const progressCounts = computed(() =>
+  countDailyProgress({
+    textIds: selectedIds.value,
+    options: selectedOptions.value,
+    completedTextIds: completedIds.value,
+    completedOptions: completedOptions.value,
+  }),
 );
-const totalCount = computed(() => selectedIds.value.length + dailyOptions.value.length);
+const completedCount = computed(() => progressCounts.value.done);
+const totalCount = computed(() => progressCounts.value.total);
 const allDone = computed(() => totalCount.value > 0 && completedCount.value === totalCount.value);
 const progressPct = computed(() =>
   totalCount.value === 0 ? 0 : Math.round((completedCount.value / totalCount.value) * 100),
@@ -585,7 +593,7 @@ function formatBookName(livre: string): string {
         class="text-sm text-text-secondary mb-4 flex items-center gap-1.5 hover:text-text-primary transition-colors"
       >
         <AppIcon name="info" :size="14" />
-        {{ t("dailyReading.selectedCount", { count: totalCount }) }}
+        {{ t("dailyReading.selectedCount", { count: selectedEntries.length }) }}
         <AppIcon
           name="chevron-down"
           :size="12"
@@ -595,7 +603,7 @@ function formatBookName(livre: string): string {
       </button>
       <p v-else class="text-sm text-text-secondary mb-4 flex items-center gap-1.5">
         <AppIcon name="info" :size="14" />
-        {{ t("dailyReading.selectedCount", { count: totalCount }) }}
+        {{ t("dailyReading.selectedCount", { count: selectedEntries.length }) }}
       </p>
 
       <!-- Les textes de la liste, retirables d'un clic -->
@@ -629,7 +637,7 @@ function formatBookName(livre: string): string {
         <p class="text-sm text-text-secondary mb-3 max-w-xl">
           {{ t("dailyReading.options.description") }}
         </p>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <button
             v-for="opt in OPTION_META"
             :key="opt.key"
@@ -961,7 +969,6 @@ function formatBookName(livre: string): string {
                     v-for="entry in reading.entries"
                     :key="entry.id"
                     :entry="entry"
-                    :with-targoum="reading.key === 'parasha'"
                   />
                 </div>
 

@@ -52,6 +52,12 @@ export interface UserPreferences {
   readingPositions: Record<string, ReadingPosition>;
   /** Marque-pages posés dans les textes de la bibliothèque. */
   bookmarks: Bookmark[];
+  /**
+   * Marque-pages supprimés (id → epoch ms de la suppression) : sans cette
+   * trace, un appareil resté avec l'ancienne liste ré-ajouterait le
+   * marque-page à la prochaine fusion.
+   */
+  deletedBookmarks: Record<string, number>;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -69,7 +75,34 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   viewedChiourim: [],
   readingPositions: {},
   bookmarks: [],
+  deletedBookmarks: {},
 };
+
+/**
+ * Progression de la lecture du jour : LA règle de comptage, partagée entre la
+ * page Lecture quotidienne et le tableau de bord de l'accueil (et recopiée
+ * dans functions/src/dailyReminder.ts, qui ne peut pas importer src/).
+ * Le chnei mikra (« parasha ») est un suivi hebdomadaire : hors décompte.
+ * Les complétions sont intersectées avec les listes actives : une entrée
+ * obsolète (texte retiré, option désactivée) ne compte pas.
+ */
+export function countDailyProgress(input: {
+  textIds: Array<string | number>;
+  options: string[];
+  completedTextIds: Iterable<string | number>;
+  completedOptions: Iterable<string>;
+}): { done: number; total: number } {
+  const textIds = input.textIds.map(String);
+  const options = input.options.filter((k) => k !== "parasha");
+  const doneTexts = new Set([...input.completedTextIds].map(String));
+  const doneOptions = new Set(input.completedOptions);
+  return {
+    total: textIds.length + options.length,
+    done:
+      textIds.filter((id) => doneTexts.has(id)).length +
+      options.filter((k) => doneOptions.has(k)).length,
+  };
+}
 
 class UserPreferencesService {
   private collectionName = "userPreferences";
@@ -106,7 +139,11 @@ class UserPreferencesService {
   async savePreferences(userId: string, preferences: Partial<UserPreferences>): Promise<void> {
     try {
       const docRef = doc(db, this.collectionName, userId);
-      await setDoc(docRef, preferences, { merge: true });
+      // mergeFields (et non merge:true) : chaque champ fourni REMPLACE sa
+      // valeur. merge:true fusionnerait en profondeur les maps
+      // (readingPositions, dailyReadingProgress.completedSections…) et une clé
+      // retirée localement ne serait jamais supprimée du document.
+      await setDoc(docRef, preferences, { mergeFields: Object.keys(preferences) });
     } catch (error) {
       console.error("Erreur lors de la sauvegarde des préférences:", error);
       throw new Error("Erreur lors de la sauvegarde des préférences.");

@@ -1,6 +1,7 @@
 import { HDate, Sedra } from "@hebcal/core";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
+import { TORAH_LIVRES } from "../content/etudeTexts";
 
 /**
  * Lectures « du moment » de la lecture quotidienne : des entrées qui suivent
@@ -18,8 +19,6 @@ export const DAILY_OPTION_KEYS = ["parasha", "tehilim-jour"] as const;
 export type DailyOptionKey = (typeof DAILY_OPTION_KEYS)[number];
 
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
-
-const TORAH_LIVRES = new Set(["Berechit", "Chemot", "Vayikra", "Bamidbar", "Devarim"]);
 
 const normalize = (name: string): string => name.toLowerCase().replace(/[^a-z]/g, "");
 
@@ -134,7 +133,7 @@ export const TEHILIM_MONTHLY: [number, number][] = [
 ];
 
 export interface TehilimCycle {
-  /** Jour du cycle : jour du mois hébraïque (1..30) ou de la semaine (0..6). */
+  /** Jour du cycle : jour du mois hébraïque (1..30). */
   day: number;
   /** Numéros des psaumes du jour. */
   psalms: number[];

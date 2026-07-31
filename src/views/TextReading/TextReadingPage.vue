@@ -10,8 +10,13 @@ import type {
   TextStudyJsonEntry,
 } from "../../models/models";
 import type { User } from "../../services/authService";
-import { loadText, MissingTextFileError } from "../../services/textService";
+import {
+  loadText,
+  MissingTextFileError,
+  placeLabel as describePlace,
+} from "../../services/textService";
 import type { TextBlock, TextContent, TextSection } from "../../services/textService";
+import { scrollToVerse } from "../../composables/scrollAnchor";
 import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { sessionService } from "../../services/sessionService";
@@ -175,7 +180,7 @@ function goToSection(index: number, replace = false) {
       : { name: "text-reading-section", params: { textId: textId.value, section: index }, query: route.query };
   if (replace) router.replace(to);
   else router.push(to);
-  window.scrollTo({ top: 0 });
+  scrollTopProgrammatic();
 }
 
 function backToSectionList() {
@@ -184,7 +189,7 @@ function backToSectionList() {
       ? hubPath(textEntry.value)
       : { name: "text-reading", params: { textId: textId.value }, query: route.query };
   router.push(to);
-  window.scrollTo({ top: 0 });
+  scrollTopProgrammatic();
 }
 
 function exitReading() {
@@ -234,7 +239,7 @@ function goToText(target: TextStudyJsonEntry) {
     ? hubPath(target)
     : { name: "text-reading", params: { textId: String(target.id) }, query: route.query };
   router.replace(to);
-  window.scrollTo({ top: 0 });
+  scrollTopProgrammatic();
 }
 
 // --- Reprise de lecture & marque-pages ---
@@ -269,19 +274,9 @@ const positionLabel = computed(() => {
 
 /** "Chapitre 2 (ב) · 3e montée · verset 14" pour une position donnée. */
 function placeLabel(sectionIndex: number | null, line: number): string {
-  const section =
-    content.value?.sections.find((s) => s.index === (sectionIndex ?? 1)) ??
-    content.value?.sections[0] ??
-    null;
-  const parts: string[] = [];
-  if (section && !isSingleSection.value) parts.push(section.label);
-  const block = section?.blocks?.length
-    ? [...section.blocks].reverse().find((b) => b.offset <= line)
-    : undefined;
-  if (block) parts.push(block.label);
-  const verse = block ? line - block.offset + 1 : line + 1;
-  parts.push(t("textReading.verseN", { n: verse }));
-  return parts.join(" · ");
+  return describePlace(content.value?.sections ?? [], sectionIndex, line, (n) =>
+    t("textReading.verseN", { n }),
+  );
 }
 
 const showResumeBanner = computed(() => {
@@ -327,15 +322,9 @@ function dismissResume() {
 }
 
 function scrollToLine(line: number) {
-  void nextTick(() => {
-    const el = document.querySelector(`[data-line="${line}"]`);
-    if (!(el instanceof HTMLElement)) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    highlightedLine.value = line;
-    setTimeout(() => {
-      if (highlightedLine.value === line) highlightedLine.value = null;
-    }, 2600);
-  });
+  void nextTick(() =>
+    scrollToVerse(() => document.querySelector(`[data-line="${line}"]`), line, highlightedLine),
+  );
 }
 
 // Arrivée avec ?verset=N (reprise, marque-page, lien partagé) : on scrolle au
@@ -355,6 +344,21 @@ watch(
 // reprendre avant même d'avoir affiché la bannière.
 let scrollSaveTimer: number | null = null;
 let sessionSaved = false;
+// Les remises en haut de page (navigation) déclenchent l'événement scroll
+// comme un geste du lecteur : on les marque pour ne pas les compter.
+let programmaticScrollAt = 0;
+
+function scrollTopProgrammatic() {
+  programmaticScrollAt = Date.now();
+  window.scrollTo({ top: 0 });
+}
+
+function clearScrollSaveTimer() {
+  if (scrollSaveTimer !== null) {
+    clearTimeout(scrollSaveTimer);
+    scrollSaveTimer = null;
+  }
+}
 
 function savePositionNow(line: number, sectionIndex = positionSection.value) {
   if (!textEntry.value) return;
@@ -388,6 +392,7 @@ function capturePosition() {
 }
 
 function onScroll() {
+  if (Date.now() - programmaticScrollAt < 300) return;
   if (scrollSaveTimer !== null || !currentSection.value || showSectionList.value) return;
   scrollSaveTimer = window.setTimeout(() => {
     scrollSaveTimer = null;
@@ -397,10 +402,16 @@ function onScroll() {
 
 // Choisir un chapitre est aussi un geste de lecture : on retient le chapitre
 // ouvert (ligne 0), le scroll affine ensuite. `userNavigated` évite de compter
-// l'ouverture initiale de la page.
+// l'ouverture initiale de la page. Exception : une position profonde dans un
+// AUTRE chapitre n'est pas écrasée à la simple ouverture — jeter « chapitre 3,
+// verset 120 » parce qu'on a jeté un œil au chapitre 5 serait irréversible ;
+// le premier scroll dans le nouveau chapitre prendra le relais.
 let userNavigated = false;
 watch(currentSection, (section) => {
-  if (userNavigated && section && !showSectionList.value) savePositionNow(0);
+  if (!userNavigated || !section || showSectionList.value) return;
+  const saved = readingProgressService.getPosition(textId.value);
+  const deepElsewhere = saved !== null && saved.line > 2 && saved.section !== positionSection.value;
+  if (!deepElsewhere) savePositionNow(0);
 });
 
 // --- Marque-pages ---
@@ -723,14 +734,16 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener("scroll", onScroll);
   if (scrollSaveTimer !== null) {
-    clearTimeout(scrollSaveTimer);
-    scrollSaveTimer = null;
+    clearScrollSaveTimer();
     // Une capture était en attente : on fige la position avant de partir.
     capturePosition();
   }
 });
 
 watch(textId, () => {
+  // Une capture armée par un scroll dans l'ANCIEN texte ne doit pas
+  // s'exécuter sur le nouveau (elle écraserait sa position par la ligne 0).
+  clearScrollSaveTimer();
   sessionSaved = false;
   userNavigated = false;
   refreshProgressState();

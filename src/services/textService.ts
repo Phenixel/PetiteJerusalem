@@ -48,6 +48,31 @@ export interface TextContent {
   sections: TextSection[];
 }
 
+/**
+ * "Chapitre 2 (ב) · 3e montée · verset 14" : libellé d'une position (reprise,
+ * marque-page). Unique implémentation, partagée par le lecteur de la
+ * bibliothèque et la lecture quotidienne — les deux doivent décrire le même
+ * verset de la même façon. `verseN` rend le libellé du numéro de verset
+ * (i18n, ex. t("textReading.verseN", { n })).
+ */
+export function placeLabel(
+  sections: TextSection[],
+  sectionIndex: number | null,
+  line: number,
+  verseN: (n: number) => string,
+): string {
+  const section = sections.find((s) => s.index === (sectionIndex ?? 1)) ?? sections[0] ?? null;
+  const parts: string[] = [];
+  if (section && sections.length > 1) parts.push(section.label);
+  const block = section?.blocks?.length
+    ? [...section.blocks].reverse().find((b) => b.offset <= line)
+    : undefined;
+  if (block) parts.push(block.label);
+  const verse = block ? line - block.offset + 1 : line + 1;
+  parts.push(verseN(verse));
+  return parts.join(" · ");
+}
+
 /** Thrown when the text file is not available locally yet (404). */
 export class MissingTextFileError extends Error {
   readonly isMissing = true;

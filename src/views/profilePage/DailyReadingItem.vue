@@ -2,9 +2,9 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from "vue";
 import { useI18n } from "vue-i18n";
 import type { TextStudyJsonEntry } from "../../models/models";
-import { loadText, MissingTextFileError } from "../../services/textService";
+import { loadText, MissingTextFileError, placeLabel } from "../../services/textService";
 import type { TextContent, TextSection } from "../../services/textService";
-import { anchorToElement } from "../../composables/scrollAnchor";
+import { anchorToElement, scrollToVerse } from "../../composables/scrollAnchor";
 import { useReadingSize } from "../../composables/useReadingSize";
 import { readingProgressService, bookmarkId } from "../../services/readingProgressService";
 import type { Bookmark } from "../../services/readingProgressService";
@@ -98,19 +98,9 @@ function toggleBookmarkAt(section: TextSection, line: number) {
 
 /** "Chapitre 2 (ב) · 3e montée · verset 14" pour un marque-page. */
 function bookmarkPlace(b: Bookmark): string {
-  const section =
-    content.value?.sections.find((s) => s.index === (b.section ?? 1)) ??
-    content.value?.sections[0] ??
-    null;
-  const parts: string[] = [];
-  if (section && isMultiSection.value) parts.push(section.label);
-  const block = section?.blocks?.length
-    ? [...section.blocks].reverse().find((bl) => bl.offset <= b.line)
-    : undefined;
-  if (block) parts.push(block.label);
-  const verse = block ? b.line - block.offset + 1 : b.line + 1;
-  parts.push(t("textReading.verseN", { n: verse }));
-  return parts.join(" · ");
+  return placeLabel(content.value?.sections ?? [], b.section, b.line, (n) =>
+    t("textReading.verseN", { n }),
+  );
 }
 
 function goToBookmark(b: Bookmark) {
@@ -119,15 +109,9 @@ function goToBookmark(b: Bookmark) {
     peekedSections.value = new Set([...peekedSections.value, b.section]);
   }
   const key = `${b.section ?? 0}#${b.line}`;
-  void nextTick(() => {
-    const el = root.value?.querySelector(`[data-verse="${key}"]`);
-    if (!(el instanceof HTMLElement)) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    highlightedVerse.value = key;
-    setTimeout(() => {
-      if (highlightedVerse.value === key) highlightedVerse.value = null;
-    }, 2600);
-  });
+  void nextTick(() =>
+    scrollToVerse(() => root.value?.querySelector(`[data-verse="${key}"]`), key, highlightedVerse),
+  );
   analyticsService.capture("reading_resumed", {
     text_id: props.entry.id,
     source: "daily_reading_bookmark",

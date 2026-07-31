@@ -83,8 +83,9 @@ export function slugOf(entry: TextStudyJsonEntry): string {
 export const isMultiSection = (entry: TextStudyJsonEntry): boolean =>
   (entry.totalSections ?? 1) > 1;
 
-/** Torah entries are parashiot ; the rest of the Tanakh corpus is plain books. */
-const TORAH_LIVRES = new Set(["Berechit", "Chemot", "Vayikra", "Bamidbar", "Devarim"]);
+/** Torah entries are parashiot ; the rest of the Tanakh corpus is plain books.
+ * Exporté : dailyCycles s'en sert pour retrouver la paracha de la semaine. */
+export const TORAH_LIVRES = new Set(["Berechit", "Chemot", "Vayikra", "Bamidbar", "Devarim"]);
 const isParasha = (entry: TextStudyJsonEntry): boolean =>
   corpusOf(entry) === "tanakh" && TORAH_LIVRES.has(entry.livre);
 

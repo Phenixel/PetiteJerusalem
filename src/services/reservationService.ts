@@ -212,8 +212,10 @@ export class ReservationService {
     session: Session,
   ): { isReserved: boolean; reservedBy?: string } {
     const reservations = this.getReservationsBySession(session);
+    // Une réservation « texte entier » (section absente) couvre chacune de
+    // ses sections : demander « le chapitre 3 est-il pris ? » doit dire oui.
     const reservation = reservations.find(
-      (r) => r.textStudyId === textStudyId && r.section === section,
+      (r) => r.textStudyId === textStudyId && (r.section === section || r.section === undefined),
     );
 
     if (reservation) {

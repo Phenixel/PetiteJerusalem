@@ -7,6 +7,7 @@ import {
   downloadManifest,
   ensureManifestLoaded,
   isDownloaded,
+  isDownloadCurrent,
   removeFile,
 } from "./offlineTextStore";
 import { isNativeApp } from "../composables/useNativeApp";
@@ -125,8 +126,16 @@ export async function syncDailyReadingDownloads(dailyReadingIds: number[]): Prom
     }
   }
 
+  // Livres déjà téléchargés (y compris depuis la page Téléchargements) dans
+  // une version antérieure du format : on les remet au format courant.
+  for (const path of Object.keys(downloadManifest.value.files)) {
+    if (!isDownloadCurrent(path)) wanted.add(path);
+  }
+
   for (const path of wanted) {
-    if (isDownloaded(path)) continue;
+    // Déjà téléchargé ET au format courant : rien à faire. Un fichier d'une
+    // version antérieure (ex. paracha sans montées ni targoum) est re-téléchargé.
+    if (isDownloaded(path) && isDownloadCurrent(path)) continue;
     const book = offlineBooks.find((b) => b.path === path);
     if (!book) continue;
     try {

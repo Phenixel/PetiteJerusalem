@@ -100,7 +100,9 @@ export const dailyReadingReminder = onSchedule(
       const tokens: string[] = Array.isArray(prefs.fcmTokens)
         ? prefs.fcmTokens.filter((t: unknown): t is string => typeof t === "string" && t.length > 0)
         : [];
-      const readingIds: unknown[] = Array.isArray(prefs.dailyReadingIds) ? prefs.dailyReadingIds : [];
+      const readingIds = (Array.isArray(prefs.dailyReadingIds) ? prefs.dailyReadingIds : []).map(
+        String,
+      );
       // Lectures du moment quotidiennes : comptent comme les textes. La paracha
       // (chnei mikra) est un suivi hebdomadaire, hors du décompte du jour.
       const readingOptions: unknown[] = (
@@ -113,9 +115,18 @@ export const dailyReadingReminder = onSchedule(
         | { date?: string; completedIds?: unknown[]; completedOptions?: unknown[] }
         | undefined;
       const isToday = progress?.date === today;
+      // Même règle que countDailyProgress (src/services/userPreferencesService.ts) :
+      // on intersecte les complétions avec les listes actives, une entrée
+      // obsolète (texte retiré, option désactivée) ne doit pas annuler le rappel.
+      const completedIds = new Set(
+        (isToday && Array.isArray(progress.completedIds) ? progress.completedIds : []).map(String),
+      );
+      const completedOptions = new Set(
+        isToday && Array.isArray(progress.completedOptions) ? progress.completedOptions : [],
+      );
       const completedToday =
-        (isToday && Array.isArray(progress.completedIds) ? progress.completedIds.length : 0) +
-        (isToday && Array.isArray(progress.completedOptions) ? progress.completedOptions.length : 0);
+        readingIds.filter((id) => completedIds.has(id)).length +
+        readingOptions.filter((k) => completedOptions.has(k)).length;
       const remaining = totalReadings - completedToday;
       if (remaining <= 0) continue;
 
