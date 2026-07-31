@@ -26,9 +26,16 @@ export interface ReadingPosition {
   at: number;
 }
 
+/**
+ * Espace des marque-pages : ceux posés dans la bibliothèque et ceux posés
+ * dans la lecture quotidienne vivent séparément (même verset marquable des
+ * deux côtés, listes indépendantes).
+ */
+export type BookmarkScope = "library" | "daily";
+
 /** Marque-page posé par le lecteur sur un verset. */
 export interface Bookmark {
-  /** `${textId}#${section ?? 0}#${line}` : un seul marque-page par verset. */
+  /** Un seul marque-page par verset et par espace (préfixe `daily:` pour la lecture quotidienne). */
   id: string;
   textId: string;
   section: number | null;
@@ -36,6 +43,8 @@ export interface Bookmark {
   path: string;
   label: string;
   at: number;
+  /** Absent sur les marque-pages historiques : ils sont de la bibliothèque. */
+  scope?: BookmarkScope;
 }
 
 const POSITIONS_KEY = "pj-reading-positions";
@@ -45,8 +54,14 @@ const MAX_BOOKMARKS = 200;
 /** Délai avant d'envoyer les positions au cloud (regroupe les scrolls). */
 const CLOUD_SAVE_DELAY_MS = 8000;
 
-export function bookmarkId(textId: string, section: number | null, line: number): string {
-  return `${textId}#${section ?? 0}#${line}`;
+export function bookmarkId(
+  textId: string,
+  section: number | null,
+  line: number,
+  scope: BookmarkScope = "library",
+): string {
+  const base = `${textId}#${section ?? 0}#${line}`;
+  return scope === "daily" ? `daily:${base}` : base;
 }
 
 function readJson<T>(key: string, fallback: T): T {
@@ -144,16 +159,19 @@ class ReadingProgressService {
     return readJson<Bookmark[]>(BOOKMARKS_KEY, []);
   }
 
-  getBookmarks(textId: string): Bookmark[] {
+  getBookmarks(textId: string, scope: BookmarkScope = "library"): Bookmark[] {
     return this.bookmarksAll()
-      .filter((b) => b.textId === textId)
+      .filter((b) => b.textId === textId && (b.scope ?? "library") === scope)
       .sort((a, b) => (a.section ?? 0) - (b.section ?? 0) || a.line - b.line);
   }
 
   /** Nombre de marque-pages par texte (badges de la bibliothèque). */
-  getBookmarkCounts(): Record<string, number> {
+  getBookmarkCounts(scope: BookmarkScope = "library"): Record<string, number> {
     const counts: Record<string, number> = {};
-    for (const b of this.bookmarksAll()) counts[b.textId] = (counts[b.textId] ?? 0) + 1;
+    for (const b of this.bookmarksAll()) {
+      if ((b.scope ?? "library") !== scope) continue;
+      counts[b.textId] = (counts[b.textId] ?? 0) + 1;
+    }
     return counts;
   }
 
@@ -164,7 +182,12 @@ class ReadingProgressService {
 
   /** Ajoute ou retire le marque-page du verset. Renvoie l'état final. */
   toggleBookmark(bookmark: Omit<Bookmark, "id" | "at">): boolean {
-    const id = bookmarkId(bookmark.textId, bookmark.section, bookmark.line);
+    const id = bookmarkId(
+      bookmark.textId,
+      bookmark.section,
+      bookmark.line,
+      bookmark.scope ?? "library",
+    );
     let all = this.bookmarksAll();
     const exists = all.some((b) => b.id === id);
     if (exists) {

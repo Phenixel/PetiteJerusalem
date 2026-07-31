@@ -38,6 +38,8 @@ export interface TextSection {
   dafBlocks?: DafBlock[];
   /** Single-section texts: the same lines grouped by chapter / montée. */
   blocks?: TextBlock[];
+  /** Parachiot : Targoum Onkelos aligné ligne à ligne sur `he` (chnei mikra). */
+  targum?: string[];
 }
 
 export interface TextContent {
@@ -197,7 +199,13 @@ function parseTalmud(
 
 function loadTanakh(
   textStudy: TextStudyJsonEntry,
-  data: { title?: string; he?: unknown[]; blockLabels?: string[]; chapters?: string },
+  data: {
+    title?: string;
+    he?: unknown[];
+    targum?: unknown[];
+    blockLabels?: string[];
+    chapters?: string;
+  },
 ): TextContent {
   const heChapters = data.he ?? [];
   const title = data.title ?? textStudy.name;
@@ -210,9 +218,29 @@ function loadTanakh(
     // number their chapter markers from the real starting chapter.
     const startChapter = Number(data.chapters?.match(/^(\d+)/)?.[1] ?? 1);
     const blocks: TextBlock[] = [];
+    // Targoum aligné verset à verset : on avance dans les deux textes ensemble,
+    // en ne retirant jamais une ligne d'un seul côté.
+    const targumAll: string[] = [];
+    let hasTargum = false;
     let offset = 0;
     heChapters.forEach((group, i) => {
-      const lines = normalizeLines(group);
+      const targumGroup = Array.isArray(data.targum?.[i]) ? (data.targum[i] as unknown[]) : null;
+      let lines: string[];
+      if (targumGroup && Array.isArray(group)) {
+        lines = [];
+        (group as unknown[]).forEach((verse, j) => {
+          const heLine = typeof verse === "string" ? cleanText(verse) : normalizeLines(verse).join(" ");
+          if (!heLine) return;
+          lines.push(heLine);
+          const targumVerse = targumGroup[j];
+          const cleaned = typeof targumVerse === "string" ? cleanText(targumVerse) : "";
+          targumAll.push(cleaned);
+          if (cleaned) hasTargum = true;
+        });
+      } else {
+        lines = normalizeLines(group);
+        for (let k = 0; k < lines.length; k++) targumAll.push("");
+      }
       if (lines.length === 0) return;
       const label =
         data.blockLabels?.[i] ?? `Chapitre ${formatNumberWithHebrew(startChapter + i)}`;
@@ -222,6 +250,7 @@ function loadTanakh(
     const allLines = blocks.flatMap((b) => b.lines);
     const section = buildSection(1, textStudy.name, allLines);
     if (blocks.length > 1) section.blocks = blocks;
+    if (hasTargum) section.targum = targumAll;
     return { title, type: "Tanakh", sections: [section] };
   }
 

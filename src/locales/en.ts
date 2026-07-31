@@ -211,7 +211,7 @@ const en: LocaleMessages = {
         "Readings that follow the calendar: they appear at the top of your list and update on their own.",
       parashaTitle: "Shnayim mikra (weekly parasha)",
       parashaDescription:
-        "The weekly parasha, aliyah by aliyah, shown automatically all week long.",
+        "The weekly parasha, aliyah by aliyah, with Targum Onkelos under each verse.",
       tehilimDayTitle: "Daily Tehilim",
       tehilimDayDescription:
         "The monthly cycle: the psalms of the Hebrew day of the month, to finish Tehilim every month.",

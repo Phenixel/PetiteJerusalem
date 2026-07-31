@@ -212,7 +212,7 @@ const fr = {
         "Des lectures qui suivent le calendrier : elles s'affichent en tête de votre liste et se mettent à jour toutes seules.",
       parashaTitle: "Chnei mikra (paracha de la semaine)",
       parashaDescription:
-        "La paracha de la semaine, montée par montée, affichée automatiquement toute la semaine.",
+        "La paracha de la semaine, montée par montée, avec le Targoum Onkelos sous chaque verset.",
       tehilimDayTitle: "Tehilim du jour",
       tehilimDayDescription:
         "Le cycle mensuel : les psaumes du jour du mois hébraïque, pour finir les Tehilim chaque mois.",

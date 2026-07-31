@@ -367,6 +367,22 @@ if (shouldRun('tanakh')) {
   }
   console.log(`  ✓ Index des parachiot (${Object.keys(parashaIndex).length} parachiot, montées incluses)`);
 
+  // Targoum Onkelos des 5 livres (chnei mikra) : même grille chapitre:verset
+  // que le texte massorétique, donc découpable avec les mêmes refs de montées.
+  const onkelosCache = {}; // book -> [...chapters][...verses]
+  await Promise.all(TORAH_BOOKS.map(async (book) => {
+    try {
+      const data = await withRetry(
+        () => fetchJson(`${GCS}/Tanakh/Targum/Onkelos/Torah/Onkelos ${book}/Hebrew/merged.json`),
+        `Onkelos ${book}`
+      );
+      onkelosCache[book] = (data.text ?? []).map(ch => (ch ?? []).map(v => stripHtml(v ?? '')));
+      console.log(`  ✓ Downloaded Onkelos ${book}`);
+    } catch (e) {
+      console.error(`  ✗ Onkelos ${book}: ${e.message}`);
+    }
+  }));
+
   // Books needed: referenced Na"kh books, the 5 Torah books, Trei Asar, Ezra+Nehemiah.
   const booksNeeded = new Set(TORAH_BOOKS);
   for (const entry of tanakhEntries) {
@@ -420,6 +436,8 @@ if (shouldRun('tanakh')) {
       if (!book) { console.error(`  ✗ ${entry.name}: livre ${parasha.book} absent`); continue; }
       const whole = parseRef(parasha.wholeRef);
       const aliyot = parasha.refs.map(ref => sliceRef(book.raw, parseRef(ref)));
+      const onkelos = onkelosCache[parasha.book];
+      const targum = onkelos ? parasha.refs.map(ref => sliceRef(onkelos, parseRef(ref))) : undefined;
       writeFileSync(outPath, JSON.stringify({
         title: entry.name,
         fromBook: parasha.book,
@@ -427,8 +445,9 @@ if (shouldRun('tanakh')) {
         grouping: 'aliyot',
         blockLabels: ALIYA_LABELS.slice(0, aliyot.length),
         he: aliyot,
+        ...(targum ? { targum } : {}),
       }), 'utf8');
-      console.log(`  ✓ ${entry.name} (${parasha.wholeRef}, ${aliyot.length} montées) → tanakh/${slug}.json`);
+      console.log(`  ✓ ${entry.name} (${parasha.wholeRef}, ${aliyot.length} montées${targum ? ', targoum' : ''}) → tanakh/${slug}.json`);
       continue;
     }
 

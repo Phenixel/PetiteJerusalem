@@ -783,6 +783,7 @@ function formatBookName(livre: string): string {
                     v-for="entry in reading.entries"
                     :key="entry.id"
                     :entry="entry"
+                    :with-targoum="reading.key === 'parasha'"
                   />
                 </div>
 

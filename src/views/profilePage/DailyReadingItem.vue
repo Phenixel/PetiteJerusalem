@@ -1,14 +1,24 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick } from "vue";
 import { useI18n } from "vue-i18n";
 import type { TextStudyJsonEntry } from "../../models/models";
 import { loadText, MissingTextFileError } from "../../services/textService";
 import type { TextContent, TextSection } from "../../services/textService";
 import { anchorToElement } from "../../composables/scrollAnchor";
+import { readingProgressService, bookmarkId } from "../../services/readingProgressService";
+import type { Bookmark } from "../../services/readingProgressService";
+import { hubPath, sectionPath } from "../../content/etudeTexts";
+import { appendHebrewNumeral } from "../../services/hebrewNumerals";
+import { analyticsService } from "../../services/analyticsService";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
-const props = defineProps<{ entry: TextStudyJsonEntry; readSections?: number[] }>();
+const props = defineProps<{
+  entry: TextStudyJsonEntry;
+  readSections?: number[];
+  /** Chnei mikra : affiche le Targoum Onkelos sous chaque verset. */
+  withTargoum?: boolean;
+}>();
 const emit = defineEmits<{
   "toggle-section": [index: number];
   "sections-loaded": [indexes: number[]];
@@ -27,10 +37,118 @@ const isMultiSection = computed(() => (content.value?.sections.length ?? 0) > 1)
 
 const readSet = computed(() => new Set(props.readSections ?? []));
 
+// --- Marque-pages : même stockage que le lecteur de la bibliothèque, donc un
+// marque-page posé ici se retrouve là-bas (et inversement). ---
+const bookmarks = ref<Bookmark[]>([]);
+/** Verset sélectionné (appui) : "section#ligne". */
+const selectedVerse = ref<string | null>(null);
+const highlightedVerse = ref<string | null>(null);
+// Sections lues (repliées) rouvertes temporairement pour voir un marque-page.
+const peekedSections = ref<Set<number>>(new Set());
+
+function refreshBookmarks() {
+  bookmarks.value = readingProgressService.getBookmarks(String(props.entry.id), "daily");
+}
+
+const bookmarkedIds = computed(() => new Set(bookmarks.value.map((b) => b.id)));
+
+/** Section telle que stockée dans un marque-page (null pour un texte entier). */
+function storeSection(sectionIndex: number): number | null {
+  return isMultiSection.value ? sectionIndex : null;
+}
+
+function verseKey(sectionIndex: number, line: number): string {
+  return `${storeSection(sectionIndex) ?? 0}#${line}`;
+}
+
+function isVerseBookmarked(sectionIndex: number, line: number): boolean {
+  return bookmarkedIds.value.has(
+    bookmarkId(String(props.entry.id), storeSection(sectionIndex), line, "daily"),
+  );
+}
+
+function onVerseClick(sectionIndex: number, line: number) {
+  const key = verseKey(sectionIndex, line);
+  selectedVerse.value = selectedVerse.value === key ? null : key;
+}
+
+function toggleBookmarkAt(section: TextSection, line: number) {
+  const label = isMultiSection.value
+    ? `${appendHebrewNumeral(props.entry.name)} · ${section.label}`
+    : appendHebrewNumeral(props.entry.name);
+  const added = readingProgressService.toggleBookmark({
+    textId: String(props.entry.id),
+    section: storeSection(section.index),
+    line,
+    path: isMultiSection.value ? sectionPath(props.entry, section.index) : hubPath(props.entry),
+    label,
+    scope: "daily",
+  });
+  refreshBookmarks();
+  selectedVerse.value = null;
+  analyticsService.capture(added ? "bookmark_added" : "bookmark_removed", {
+    text_id: props.entry.id,
+    corpus: props.entry.type,
+    source: "daily_reading",
+  });
+}
+
+/** "Chapitre 2 (ב) · 3e montée · verset 14" pour un marque-page. */
+function bookmarkPlace(b: Bookmark): string {
+  const section =
+    content.value?.sections.find((s) => s.index === (b.section ?? 1)) ??
+    content.value?.sections[0] ??
+    null;
+  const parts: string[] = [];
+  if (section && isMultiSection.value) parts.push(section.label);
+  const block = section?.blocks?.length
+    ? [...section.blocks].reverse().find((bl) => bl.offset <= b.line)
+    : undefined;
+  if (block) parts.push(block.label);
+  const verse = block ? b.line - block.offset + 1 : b.line + 1;
+  parts.push(t("textReading.verseN", { n: verse }));
+  return parts.join(" · ");
+}
+
+function goToBookmark(b: Bookmark) {
+  // Section repliée (déjà lue) : on la rouvre le temps de la consultation.
+  if (b.section !== null && readSet.value.has(b.section)) {
+    peekedSections.value = new Set([...peekedSections.value, b.section]);
+  }
+  const key = `${b.section ?? 0}#${b.line}`;
+  void nextTick(() => {
+    const el = root.value?.querySelector(`[data-verse="${key}"]`);
+    if (!(el instanceof HTMLElement)) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    highlightedVerse.value = key;
+    setTimeout(() => {
+      if (highlightedVerse.value === key) highlightedVerse.value = null;
+    }, 2600);
+  });
+  analyticsService.capture("reading_resumed", {
+    text_id: props.entry.id,
+    source: "daily_reading_bookmark",
+  });
+}
+
+function isSectionVisible(sectionIndex: number): boolean {
+  return !readSet.value.has(sectionIndex) || peekedSections.value.has(sectionIndex);
+}
+
+/** Ligne de Targoum Onkelos alignée sur le verset (chnei mikra). */
+function targumLine(section: TextSection, line: number): string {
+  if (!props.withTargoum) return "";
+  return section.targum?.[line] ?? "";
+}
+
 // Marquer un chapitre lu le replie : on garde son titre en vue pour que la
 // lecture continue au chapitre suivant, sans saut de scroll.
 function onToggleSection(section: TextSection, evt: MouseEvent) {
   const willRead = !readSet.value.has(section.index);
+  // Une consultation temporaire (marque-page) ne survit pas au changement d'état.
+  peekedSections.value = new Set(
+    [...peekedSections.value].filter((i) => i !== section.index),
+  );
   emit("toggle-section", section.index);
   if (willRead) {
     anchorToElement((evt.currentTarget as HTMLElement).closest("section"));
@@ -66,6 +184,7 @@ const root = ref<HTMLElement | null>(null);
 let observer: IntersectionObserver | null = null;
 
 onMounted(() => {
+  refreshBookmarks();
   if (typeof IntersectionObserver === "undefined" || !root.value) {
     void load();
     return;
@@ -106,6 +225,25 @@ onUnmounted(() => observer?.disconnect());
     </p>
 
     <div v-else-if="content" class="space-y-6">
+      <!-- Marque-pages posés dans cette lecture : retour direct au verset -->
+      <div
+        v-if="bookmarks.length"
+        class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm"
+      >
+        <span class="inline-flex items-center gap-1.5 text-text-secondary">
+          <AppIcon name="bookmark" :size="13" class="text-primary" />
+          {{ t("textReading.bookmarks") }}
+        </span>
+        <button
+          v-for="b in bookmarks"
+          :key="b.id"
+          @click="goToBookmark(b)"
+          class="text-primary hover:underline"
+        >
+          {{ bookmarkPlace(b) }}
+        </button>
+      </div>
+
       <section v-for="section in content.sections" :key="section.index">
         <!-- Chaptered texts: per-chapter header with its own "mark read". -->
         <div v-if="isMultiSection" class="mb-3 flex items-center justify-between gap-3">
@@ -139,7 +277,7 @@ onUnmounted(() => observer?.disconnect());
         </div>
 
         <CollapseTransition>
-          <div v-show="!readSet.has(section.index)">
+          <div v-show="isSectionVisible(section.index)">
             <!-- Talmud: continuous text with a marker at each daf change -->
             <template v-if="content.type === 'Talmud Bavli'">
               <template v-for="block in section.dafBlocks ?? []" :key="block.daf">
@@ -170,11 +308,56 @@ onUnmounted(() => observer?.disconnect());
                 <p dir="rtl" class="font-hebrew text-xl leading-loose text-text-primary">
                   <template v-for="(line, index) in block.lines" :key="block.offset + index">
                     <span
-                      v-if="showVerseNumbers || block.label"
-                      class="text-xs align-super text-primary/60 select-none"
+                      :data-verse="verseKey(section.index, block.offset + index)"
+                      @click="onVerseClick(section.index, block.offset + index)"
+                      class="cursor-pointer rounded transition-colors duration-500 box-decoration-clone px-0.5 -mx-0.5"
+                      :class="{
+                        'bg-primary/10':
+                          highlightedVerse === verseKey(section.index, block.offset + index),
+                        'bg-black/5 dark:bg-white/10':
+                          selectedVerse === verseKey(section.index, block.offset + index) &&
+                          highlightedVerse !== verseKey(section.index, block.offset + index),
+                      }"
                     >
-                      {{ index + 1 }}&#8201;</span
-                    >{{ line }}<br />
+                      <AppIcon
+                        v-if="isVerseBookmarked(section.index, block.offset + index)"
+                        name="bookmark"
+                        :size="11"
+                        class="inline-block align-super text-primary"
+                      />
+                      <span
+                        v-if="showVerseNumbers || block.label"
+                        class="text-xs align-super text-primary/60 select-none"
+                      >
+                        {{ index + 1 }}&#8201;</span
+                      >{{ line }}</span
+                    >
+                    <!-- Chnei mikra : le Targoum Onkelos du verset, en dessous -->
+                    <span
+                      v-if="targumLine(section, block.offset + index)"
+                      dir="rtl"
+                      class="block mb-2 font-hebrew text-base leading-relaxed text-text-secondary"
+                    >
+                      {{ targumLine(section, block.offset + index) }}
+                    </span>
+                    <!-- Verset sélectionné : proposer le marque-page -->
+                    <span
+                      v-if="selectedVerse === verseKey(section.index, block.offset + index)"
+                      class="block my-2"
+                    >
+                      <button
+                        @click.stop="toggleBookmarkAt(section, block.offset + index)"
+                        class="btn btn-soft !px-3 !py-1.5 text-sm"
+                      >
+                        <AppIcon name="bookmark" :size="13" />
+                        {{
+                          isVerseBookmarked(section.index, block.offset + index)
+                            ? t("textReading.bookmarkRemove")
+                            : t("textReading.bookmarkAdd")
+                        }}
+                      </button>
+                    </span>
+                    <br v-else-if="!targumLine(section, block.offset + index)" />
                   </template>
                 </p>
               </template>
