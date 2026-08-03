@@ -62,8 +62,9 @@ const isSessionFinished = (session: Session): boolean => {
 
 // --- « Mes sessions » : celles que je suis (participation ou création),
 // affichées avant le reste — c'est ce qu'on vient chercher en revenant.
-// Les sessions terminées ne sont plus affichées nulle part (les données
-// restent en base, seul l'affichage les ignore). ---
+// Les sessions terminées où je participais disparaissent de l'affichage
+// (les données restent en base) ; celles que j'ai créées restent
+// accessibles derrière un « Afficher les terminées » dans la liste. ---
 const participatedSessions = computed(() => {
   const u = currentUser.value;
   if (!u) return [];
@@ -77,8 +78,14 @@ const participatedSessions = computed(() => {
 const createdSessions = computed(() => {
   const u = currentUser.value;
   if (!u) return [];
-  return sessions.value.filter((s) => !isSessionFinished(s) && s.personId === u.id);
+  return sessions.value.filter((s) => s.personId === u.id);
 });
+
+// Le compteur de l'onglet ne compte que les sessions en cours (les terminées
+// sont repliées derrière « Afficher les terminées »).
+const createdOngoingCount = computed(
+  () => createdSessions.value.filter((s) => !isSessionFinished(s)).length,
+);
 
 const hasMySessions = computed(
   () => participatedSessions.value.length > 0 || createdSessions.value.length > 0,
@@ -330,7 +337,7 @@ const handleCreateClick = () => {
             @click="switchMyTab('created')"
           >
             {{ t("shareReading.myCreated") }}
-            <span class="opacity-75">{{ createdSessions.length }}</span>
+            <span class="opacity-75">{{ createdOngoingCount }}</span>
           </button>
         </div>
       </div>
