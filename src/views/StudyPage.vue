@@ -373,17 +373,19 @@ onUnmounted(() => {
     </template>
 
     <!-- ===== Accueil de la bibliothèque : hero ===== -->
+    <!-- Hero resserré sur téléphone : chaque ligne gagnée remonte les livres
+         au-dessus de la pliure. -->
     <div
       v-else
       class="text-center animate-[fadeIn_0.5s_ease]"
-      :class="isNativeApp ? 'mb-6' : 'mb-10'"
+      :class="isNativeApp ? 'mb-6' : 'mb-6 md:mb-10'"
     >
-      <h1 class="text-4xl md:text-5xl font-bold text-text-primary tracking-tight pb-1">
+      <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight pb-1">
         {{ t("study.title") }}
       </h1>
       <p
         v-if="!isNativeApp"
-        class="mt-4 text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed"
+        class="mt-2 md:mt-4 text-sm md:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed"
       >
         {{ t("study.subtitle") }}
       </p>
@@ -439,64 +441,69 @@ onUnmounted(() => {
 
     <!-- ===== Accueil sans recherche : le tableau de bord ===== -->
     <template v-if="!showList">
-      <!-- Connecté : la lecture du jour, avant tout. -->
-      <div v-if="user" class="max-w-3xl mx-auto mb-6 animate-[fadeIn_0.5s_ease]">
-        <!-- Lecture du jour : où j'en suis aujourd'hui -->
-        <RouterLink to="/bibliotheque/lecture-du-jour" class="card card-hover p-6 block group">
-          <div class="flex items-center justify-between gap-3 mb-4">
-            <h2
-              class="font-bold text-text-primary flex items-center gap-2.5 group-hover:text-primary transition-colors"
-            >
-              <AppIcon name="book" :size="17" class="text-primary" />
-              {{ t("dailyReading.title") }}
-            </h2>
-            <AppIcon
-              name="chevron-right"
-              :size="15"
-              class="text-text-secondary/50 rtl:rotate-180"
-            />
-          </div>
+      <!-- Les grandes sections d'abord : on est dans la bibliothèque, les
+           livres sont la porte d'entrée principale — visibles sans scroller,
+           même sur téléphone. -->
+      <div class="mt-2 md:mt-6">
+        <LibraryShelf :books="shelfBooks" @open="trackCorpusOpened" />
+      </div>
 
-          <div
-            v-if="dailyLoading"
-            class="h-10 rounded-lg bg-black/5 dark:bg-white/10 animate-pulse"
-          ></div>
-
-          <!-- Liste vide : inviter à la composer -->
-          <p v-else-if="readingTotal === 0" class="text-sm text-text-secondary leading-relaxed">
-            {{ t("home.dashboard.readingEmpty") }}
-          </p>
-
-          <template v-else>
-            <div class="flex items-center justify-between mb-2">
+      <!-- Connecté : la lecture du jour, en rangée compacte sous l'étagère
+           (une ligne avec sa mini-jauge — la grande carte poussait les livres
+           hors de l'écran). -->
+      <div v-if="user" class="max-w-xl mx-auto mt-10 animate-[fadeIn_0.5s_ease]">
+        <RouterLink
+          to="/bibliotheque/lecture-du-jour"
+          class="card card-hover px-4 py-3 flex items-center gap-3 group"
+        >
+          <AppIcon name="book" :size="16" class="shrink-0 text-primary" />
+          <span class="min-w-0 flex-1">
+            <span class="flex items-baseline justify-between gap-3">
               <span
-                class="text-sm font-medium"
-                :class="readingAllDone ? 'text-green-600 dark:text-green-400' : 'text-text-primary'"
+                class="text-sm font-semibold text-text-primary truncate group-hover:text-primary transition-colors"
               >
-                <template v-if="readingAllDone">
-                  {{ t("dailyReading.allReadTitle") }}
-                </template>
-                <template v-else>
-                  {{ t("dailyReading.progress", { done: readingDone, total: readingTotal }) }}
-                </template>
+                {{ t("dailyReading.title") }}
               </span>
-              <span class="text-sm font-semibold text-primary">{{ readingPct }}%</span>
-            </div>
-            <div class="h-2 w-full rounded-full bg-black/5 overflow-hidden dark:bg-white/10">
-              <div
-                class="h-full rounded-full bg-primary transition-all duration-500"
+              <span
+                v-if="!dailyLoading"
+                class="shrink-0 text-xs font-semibold"
+                :class="
+                  readingAllDone
+                    ? 'text-green-600 dark:text-green-400'
+                    : readingTotal === 0
+                      ? 'text-primary'
+                      : 'text-text-secondary'
+                "
+              >
+                {{
+                  readingTotal === 0
+                    ? t("home.dashboard.readingSetupCta")
+                    : readingAllDone
+                      ? t("dailyReading.allReadTitle")
+                      : `${readingDone}/${readingTotal}`
+                }}
+              </span>
+            </span>
+            <span
+              v-if="dailyLoading"
+              class="block h-1.5 mt-2 rounded-full bg-black/5 dark:bg-white/10 animate-pulse"
+            ></span>
+            <span
+              v-else-if="readingTotal > 0"
+              class="block h-1.5 mt-2 rounded-full bg-black/5 overflow-hidden dark:bg-white/10"
+            >
+              <span
+                class="block h-full rounded-full transition-all duration-500"
+                :class="readingAllDone ? 'bg-green-500' : 'bg-primary'"
                 :style="{ width: `${readingPct}%` }"
-              ></div>
-            </div>
-          </template>
-
-          <p class="mt-4 text-sm font-medium text-primary flex items-center gap-1.5">
-            {{
-              readingTotal === 0
-                ? t("home.dashboard.readingSetupCta")
-                : t("home.dashboard.readingCta")
-            }}
-          </p>
+              ></span>
+            </span>
+          </span>
+          <AppIcon
+            name="chevron-right"
+            :size="14"
+            class="shrink-0 text-text-secondary/50 rtl:rotate-180"
+          />
         </RouterLink>
       </div>
 
@@ -504,7 +511,7 @@ onUnmounted(() => {
            discrète (la carte prenait trop de place pour un raccourci). -->
       <div
         v-if="lastReading && resumeLink"
-        class="flex items-center justify-center gap-1 mb-8 animate-[fadeIn_0.5s_ease]"
+        class="flex items-center justify-center gap-1 mt-4 animate-[fadeIn_0.5s_ease]"
       >
         <RouterLink
           :to="resumeLink"
@@ -524,12 +531,6 @@ onUnmounted(() => {
         >
           <AppIcon name="x" :size="12" />
         </button>
-      </div>
-
-      <!-- Les grandes sections : des livres posés sur une étagère, la porte
-           d'entrée principale vers chaque corpus. -->
-      <div class="mt-2" :class="user ? '' : 'md:mt-6'">
-        <LibraryShelf :books="shelfBooks" @open="trackCorpusOpened" />
       </div>
     </template>
 
