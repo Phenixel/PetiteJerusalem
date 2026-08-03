@@ -12,8 +12,8 @@ import HowItWorksTimeline from "../../components/HowItWorksTimeline.vue";
 import ShareModal from "../../components/ShareModal.vue";
 import EditSessionModal from "../../components/EditSessionModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
-import ParticipatedSessions from "../profilePage/ParticipatedSessions.vue";
-import CreatedSessions from "../profilePage/CreatedSessions.vue";
+import MyParticipatedSessions from "./MyParticipatedSessions.vue";
+import MyCreatedSessions from "./MyCreatedSessions.vue";
 import { seoService } from "../../services/seoService";
 import { authService, type User } from "../../services/authService";
 import { analyticsService } from "../../services/analyticsService";
@@ -332,14 +332,14 @@ const handleCreateClick = () => {
         </div>
       </div>
 
-      <div class="card p-6 md:p-8">
-        <ParticipatedSessions
+      <div class="card px-5 py-2 md:px-6 md:py-3">
+        <MyParticipatedSessions
           v-if="myTab === 'participated'"
           :sessions="participatedSessions"
           :current-user="currentUser"
           :text-studies-map="textStudiesMap"
         />
-        <CreatedSessions
+        <MyCreatedSessions
           v-else
           :sessions="createdSessions"
           :current-user="currentUser"

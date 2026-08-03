@@ -288,6 +288,9 @@ const en: LocaleMessages = {
     myParticipated: "I participate",
     myCreated: "Created by me",
     allSessions: "All sessions",
+    readCount: "{done}/{total} read",
+    allRead: "All read",
+    daysLeftChip: "{count}d left",
     howItWorks: {
       title: "How it works",
       subtitle: "Split a text between several people and finish it together, in four steps.",

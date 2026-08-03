@@ -284,6 +284,9 @@ const he: LocaleMessages = {
     myParticipated: "אני משתתף",
     myCreated: "נוצרו על ידי",
     allSessions: "כל הסשנים",
+    readCount: "{done}/{total} נקראו",
+    allRead: "הכול נקרא",
+    daysLeftChip: "עוד {count} ימים",
     howItWorks: {
       title: "איך זה עובד",
       subtitle: "חלקו טקסט בין כמה אנשים וסיימו אותו יחד, בארבעה שלבים.",

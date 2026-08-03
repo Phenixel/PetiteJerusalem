@@ -289,6 +289,9 @@ const fr = {
     myParticipated: "Je participe",
     myCreated: "Créées par moi",
     allSessions: "Toutes les sessions",
+    readCount: "{done}/{total} lues",
+    allRead: "Tout lu",
+    daysLeftChip: "J-{count}",
     howItWorks: {
       title: "Comment ça marche",
       subtitle:
