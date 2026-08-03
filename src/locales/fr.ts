@@ -582,6 +582,8 @@ const fr = {
     textSize: "Taille du texte",
     textSizeIncrease: "Agrandir le texte",
     textSizeDecrease: "Réduire le texte",
+    resumeTitle: "Reprendre votre lecture",
+    resumeCta: "Reprendre",
     resumeDismiss: "Ignorer",
     verseN: "verset {n}",
     bookmarks: "Marque-pages",

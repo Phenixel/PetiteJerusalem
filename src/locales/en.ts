@@ -575,6 +575,8 @@ const en: LocaleMessages = {
     textSize: "Text size",
     textSizeIncrease: "Increase text size",
     textSizeDecrease: "Decrease text size",
+    resumeTitle: "Resume your reading",
+    resumeCta: "Resume",
     resumeDismiss: "Dismiss",
     verseN: "verse {n}",
     bookmarks: "Bookmarks",

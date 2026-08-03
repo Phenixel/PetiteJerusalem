@@ -565,6 +565,8 @@ const he: LocaleMessages = {
     textSize: "גודל הטקסט",
     textSizeIncrease: "הגדלת הטקסט",
     textSizeDecrease: "הקטנת הטקסט",
+    resumeTitle: "להמשיך בקריאה",
+    resumeCta: "להמשיך",
     resumeDismiss: "לסגור",
     verseN: "פסוק {n}",
     bookmarks: "סימניות",
