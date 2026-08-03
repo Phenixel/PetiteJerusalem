@@ -582,8 +582,6 @@ const fr = {
     textSize: "Taille du texte",
     textSizeIncrease: "Agrandir le texte",
     textSizeDecrease: "Réduire le texte",
-    resumeTitle: "Reprendre votre lecture",
-    resumeCta: "Reprendre",
     resumeDismiss: "Ignorer",
     verseN: "verset {n}",
     bookmarks: "Marque-pages",
@@ -648,8 +646,6 @@ const fr = {
       tractatesCount: "{count} traités",
       textsCount: "{count} textes",
     },
-    resumeTitle: "Reprendre ma lecture",
-    resumeCta: "Reprendre là où je me suis arrêté",
   },
   studio: {
     title: "Studio auteurs",

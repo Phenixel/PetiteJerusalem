@@ -274,15 +274,13 @@ function bindingOf(corpus: string): string {
   border-radius: 8px;
 }
 
-/* La planche : un bois clair et chaud, hors thème elle aussi. */
+/* La planche : un bois clair et chaud, hors thème elle aussi. Présente
+   d'emblée — seuls les livres viennent s'y poser. */
 .shelf-board {
   height: 9px;
   border-radius: 3px;
   background: linear-gradient(#c3a87f, #a98c62);
   box-shadow: 0 3px 6px rgb(58 46 30 / 0.18);
-  transform: scaleX(0);
-  transform-origin: center;
-  animation: shelf-draw 0.55s ease-out forwards;
 }
 
 :root.dark .shelf-board {
@@ -290,15 +288,8 @@ function bindingOf(corpus: string): string {
   box-shadow: 0 3px 8px rgb(0 0 0 / 0.5);
 }
 
-@keyframes shelf-draw {
-  to {
-    transform: scaleX(1);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .book-rise,
-  .shelf-board,
   .book-count {
     animation: none;
     opacity: 1;

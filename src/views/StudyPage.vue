@@ -103,8 +103,8 @@ const CORPUS_META: {
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
 
 // Corpus courant, piloté par la route (/bibliotheque = accueil, sans corpus).
-const currentCorpus = computed(() =>
-  CORPUS_META.find((c) => c.corpus === String(route.params.corpus ?? "")) ?? null,
+const currentCorpus = computed(
+  () => CORPUS_META.find((c) => c.corpus === String(route.params.corpus ?? "")) ?? null,
 );
 
 const corpusCounts = computed<Record<string, number>>(() => {
@@ -355,7 +355,10 @@ onUnmounted(() => {
   <main class="mx-auto px-6 py-12">
     <!-- ===== Page corpus : liste détaillée d'une grande section ===== -->
     <template v-if="currentCorpus">
-      <div class="max-w-5xl mx-auto animate-[fadeIn_0.4s_ease]" :class="isNativeApp ? 'mb-4' : 'mb-8'">
+      <div
+        class="max-w-5xl mx-auto animate-[fadeIn_0.4s_ease]"
+        :class="isNativeApp ? 'mb-4' : 'mb-8'"
+      >
         <RouterLink to="/bibliotheque" class="back-link mb-4">
           <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
           {{ t("study.title") }}
@@ -378,7 +381,10 @@ onUnmounted(() => {
       <h1 class="text-4xl md:text-5xl font-bold text-text-primary tracking-tight pb-1">
         {{ t("study.title") }}
       </h1>
-      <p v-if="!isNativeApp" class="mt-4 text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
+      <p
+        v-if="!isNativeApp"
+        class="mt-4 text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed"
+      >
         {{ t("study.subtitle") }}
       </p>
     </div>
@@ -418,12 +424,7 @@ onUnmounted(() => {
       class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-8 animate-[fadeIn_0.5s_ease]"
     >
       <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
-        <AppIcon
-          v-if="downloadingPaths.size > 0"
-          name="spinner"
-          :size="14"
-          class="animate-spin"
-        />
+        <AppIcon v-if="downloadingPaths.size > 0" name="spinner" :size="14" class="animate-spin" />
         <AppIcon v-else name="download" :size="14" />
         {{ t("downloads.downloadAll") }}
       </button>
@@ -438,105 +439,91 @@ onUnmounted(() => {
 
     <!-- ===== Accueil sans recherche : le tableau de bord ===== -->
     <template v-if="!showList">
-      <!-- Connecté : la lecture du jour et la reprise de lecture, avant tout. -->
-      <div v-if="user" class="max-w-5xl mx-auto mb-10 animate-[fadeIn_0.5s_ease]">
-        <div class="grid grid-cols-1 gap-5" :class="resumeLink ? 'md:grid-cols-2' : ''">
-          <!-- Lecture du jour : où j'en suis aujourd'hui -->
-          <RouterLink
-            to="/bibliotheque/lecture-du-jour"
-            class="card card-hover p-6 block group"
-          >
-            <div class="flex items-center justify-between gap-3 mb-4">
-              <h2
-                class="font-bold text-text-primary flex items-center gap-2.5 group-hover:text-primary transition-colors"
+      <!-- Connecté : la lecture du jour, avant tout. -->
+      <div v-if="user" class="max-w-3xl mx-auto mb-6 animate-[fadeIn_0.5s_ease]">
+        <!-- Lecture du jour : où j'en suis aujourd'hui -->
+        <RouterLink to="/bibliotheque/lecture-du-jour" class="card card-hover p-6 block group">
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <h2
+              class="font-bold text-text-primary flex items-center gap-2.5 group-hover:text-primary transition-colors"
+            >
+              <AppIcon name="book" :size="17" class="text-primary" />
+              {{ t("dailyReading.title") }}
+            </h2>
+            <AppIcon
+              name="chevron-right"
+              :size="15"
+              class="text-text-secondary/50 rtl:rotate-180"
+            />
+          </div>
+
+          <div
+            v-if="dailyLoading"
+            class="h-10 rounded-lg bg-black/5 dark:bg-white/10 animate-pulse"
+          ></div>
+
+          <!-- Liste vide : inviter à la composer -->
+          <p v-else-if="readingTotal === 0" class="text-sm text-text-secondary leading-relaxed">
+            {{ t("home.dashboard.readingEmpty") }}
+          </p>
+
+          <template v-else>
+            <div class="flex items-center justify-between mb-2">
+              <span
+                class="text-sm font-medium"
+                :class="readingAllDone ? 'text-green-600 dark:text-green-400' : 'text-text-primary'"
               >
-                <AppIcon name="book" :size="17" class="text-primary" />
-                {{ t("dailyReading.title") }}
-              </h2>
-              <AppIcon
-                name="chevron-right"
-                :size="15"
-                class="text-text-secondary/50 rtl:rotate-180"
-              />
-            </div>
-
-            <div v-if="dailyLoading" class="h-10 rounded-lg bg-black/5 dark:bg-white/10 animate-pulse"></div>
-
-            <!-- Liste vide : inviter à la composer -->
-            <p v-else-if="readingTotal === 0" class="text-sm text-text-secondary leading-relaxed">
-              {{ t("home.dashboard.readingEmpty") }}
-            </p>
-
-            <template v-else>
-              <div class="flex items-center justify-between mb-2">
-                <span
-                  class="text-sm font-medium"
-                  :class="readingAllDone ? 'text-green-600 dark:text-green-400' : 'text-text-primary'"
-                >
-                  <template v-if="readingAllDone">
-                    {{ t("dailyReading.allReadTitle") }}
-                  </template>
-                  <template v-else>
-                    {{ t("dailyReading.progress", { done: readingDone, total: readingTotal }) }}
-                  </template>
-                </span>
-                <span class="text-sm font-semibold text-primary">{{ readingPct }}%</span>
-              </div>
-              <div class="h-2 w-full rounded-full bg-black/5 overflow-hidden dark:bg-white/10">
-                <div
-                  class="h-full rounded-full bg-primary transition-all duration-500"
-                  :style="{ width: `${readingPct}%` }"
-                ></div>
-              </div>
-            </template>
-
-            <p class="mt-4 text-sm font-medium text-primary flex items-center gap-1.5">
-              {{
-                readingTotal === 0
-                  ? t("home.dashboard.readingSetupCta")
-                  : t("home.dashboard.readingCta")
-              }}
-            </p>
-          </RouterLink>
-
-          <!-- Reprendre la dernière lecture, au verset près -->
-          <RouterLink
-            v-if="lastReading && resumeLink"
-            :to="resumeLink"
-            class="card card-hover p-6 block group"
-            @click="trackResume()"
-          >
-            <div class="flex items-center justify-between gap-3 mb-4">
-              <h2
-                class="font-bold text-text-primary flex items-center gap-2.5 group-hover:text-primary transition-colors"
-              >
-                <AppIcon name="bookmark" :size="17" class="text-primary" />
-                {{ t("study.resumeTitle") }}
-              </h2>
-              <span class="flex items-center gap-1 flex-shrink-0">
-                <AppIcon
-                  name="chevron-right"
-                  :size="15"
-                  class="text-text-secondary/50 rtl:rotate-180"
-                />
-                <button
-                  @click.prevent.stop="dismissResume"
-                  class="p-1.5 -m-0.5 rounded-full text-text-secondary/60 hover:text-red-600 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                  :title="t('home.dashboard.resumeDismiss')"
-                  :aria-label="t('home.dashboard.resumeDismiss')"
-                >
-                  <AppIcon name="x" :size="14" />
-                </button>
+                <template v-if="readingAllDone">
+                  {{ t("dailyReading.allReadTitle") }}
+                </template>
+                <template v-else>
+                  {{ t("dailyReading.progress", { done: readingDone, total: readingTotal }) }}
+                </template>
               </span>
+              <span class="text-sm font-semibold text-primary">{{ readingPct }}%</span>
             </div>
-            <p class="text-sm text-text-secondary leading-relaxed truncate">
-              {{ lastReading.label }}
-            </p>
-            <p class="mt-4 text-sm font-medium text-primary flex items-center gap-1.5">
-              {{ t("study.resumeCta") }}
-            </p>
-          </RouterLink>
-        </div>
+            <div class="h-2 w-full rounded-full bg-black/5 overflow-hidden dark:bg-white/10">
+              <div
+                class="h-full rounded-full bg-primary transition-all duration-500"
+                :style="{ width: `${readingPct}%` }"
+              ></div>
+            </div>
+          </template>
+
+          <p class="mt-4 text-sm font-medium text-primary flex items-center gap-1.5">
+            {{
+              readingTotal === 0
+                ? t("home.dashboard.readingSetupCta")
+                : t("home.dashboard.readingCta")
+            }}
+          </p>
+        </RouterLink>
+      </div>
+
+      <!-- Reprendre la dernière lecture, au verset près : une simple ligne
+           discrète (la carte prenait trop de place pour un raccourci). -->
+      <div
+        v-if="lastReading && resumeLink"
+        class="flex items-center justify-center gap-1 mb-8 animate-[fadeIn_0.5s_ease]"
+      >
+        <RouterLink
+          :to="resumeLink"
+          class="group inline-flex items-center gap-1.5 min-w-0 text-sm text-text-secondary hover:text-primary transition-colors"
+          @click="trackResume()"
+        >
+          <AppIcon name="bookmark" :size="13" class="shrink-0 text-primary/70" />
+          <span class="truncate">
+            {{ t("home.dashboard.resumeCta", { label: lastReading.label }) }}
+          </span>
+        </RouterLink>
+        <button
+          @click="dismissResume"
+          class="shrink-0 p-1 rounded-full text-text-secondary/50 hover:text-red-600 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+          :title="t('home.dashboard.resumeDismiss')"
+          :aria-label="t('home.dashboard.resumeDismiss')"
+        >
+          <AppIcon name="x" :size="12" />
+        </button>
       </div>
 
       <!-- Les grandes sections : des livres posés sur une étagère, la porte

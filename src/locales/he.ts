@@ -565,8 +565,6 @@ const he: LocaleMessages = {
     textSize: "גודל הטקסט",
     textSizeIncrease: "הגדלת הטקסט",
     textSizeDecrease: "הקטנת הטקסט",
-    resumeTitle: "להמשיך בקריאה",
-    resumeCta: "להמשיך",
     resumeDismiss: "לסגור",
     verseN: "פסוק {n}",
     bookmarks: "סימניות",
@@ -627,8 +625,6 @@ const he: LocaleMessages = {
       tractatesCount: "{count} מסכתות",
       textsCount: "{count} טקסטים",
     },
-    resumeTitle: "להמשיך את הקריאה שלי",
-    resumeCta: "להמשיך מהמקום שבו עצרתי",
   },
   studio: {
     title: "סטודיו למרצים",

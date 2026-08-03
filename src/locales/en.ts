@@ -575,8 +575,6 @@ const en: LocaleMessages = {
     textSize: "Text size",
     textSizeIncrease: "Increase text size",
     textSizeDecrease: "Decrease text size",
-    resumeTitle: "Resume your reading",
-    resumeCta: "Resume",
     resumeDismiss: "Dismiss",
     verseN: "verse {n}",
     bookmarks: "Bookmarks",
@@ -639,8 +637,6 @@ const en: LocaleMessages = {
       tractatesCount: "{count} tractates",
       textsCount: "{count} texts",
     },
-    resumeTitle: "Resume my reading",
-    resumeCta: "Pick up where I left off",
   },
   studio: {
     title: "Authors studio",
