@@ -1,8 +1,9 @@
 <script setup lang="ts">
-// « Je participe » : liste compacte des sessions où j'ai des réservations.
+// « Je participe » : liste compacte des sessions en cours où j'ai des
+// réservations (les terminées ne sont plus affichées — filtrées en amont).
 // Une ligne par session (nom, type, échéance, avancement de mes lectures) ;
 // le clic déplie la liste de mes réservations à cocher, sans quitter la page.
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { sessionService } from "../../services/sessionService";
@@ -23,19 +24,11 @@ const props = defineProps<{
   textStudiesMap: Map<string, TextStudy>;
 }>();
 
-const isSessionFinished = (session: Session): boolean => {
-  if (session.isEnded) return true;
-  const limit = new Date(session.dateLimit);
-  limit.setHours(23, 59, 59, 999);
-  return new Date() > limit;
-};
-
-const ongoingSessions = computed(() => props.sessions.filter((s) => !isSessionFinished(s)));
-const finishedSessions = computed(() => props.sessions.filter((s) => isSessionFinished(s)));
-
 // Lignes dépliées (mes réservations à cocher). La première session est
 // ouverte d'office : c'est ce qu'on vient faire ici.
-const expandedIds = ref<Set<string>>(new Set(ongoingSessions.value[0] ? [ongoingSessions.value[0].id] : []));
+const expandedIds = ref<Set<string>>(
+  new Set(props.sessions[0] ? [props.sessions[0].id] : []),
+);
 
 function toggleExpand(id: string) {
   const next = new Set(expandedIds.value);
@@ -110,7 +103,7 @@ const goToSession = (session: Session) => {
     <div v-else>
       <!-- En cours : une ligne par session, dépliable -->
       <ul class="divide-y divide-line">
-        <li v-for="session in ongoingSessions" :key="session.id">
+        <li v-for="session in sessions" :key="session.id">
           <div class="flex items-center gap-2 py-3">
             <button
               class="flex-1 min-w-0 flex items-center gap-2 text-left group"
@@ -234,27 +227,6 @@ const goToSession = (session: Session) => {
         </li>
       </ul>
 
-      <!-- Terminées : simple rappel, tout au bout -->
-      <div v-if="finishedSessions.length > 0" class="mt-2 pt-3 border-t border-line opacity-75">
-        <ul class="divide-y divide-line">
-          <li
-            v-for="session in finishedSessions"
-            :key="session.id"
-            class="flex items-center gap-2 py-2.5"
-          >
-            <AppIcon name="flag" :size="12" class="shrink-0 text-text-secondary/60" />
-            <button
-              class="flex-1 min-w-0 text-left text-sm font-medium text-text-secondary truncate hover:text-primary transition-colors"
-              @click="goToSession(session)"
-            >
-              {{ session.name }}
-            </button>
-            <span class="shrink-0 text-xs text-text-secondary">
-              {{ t("profile.reservationsCount", { count: myReservations(session).length }) }}
-            </span>
-          </li>
-        </ul>
-      </div>
     </div>
   </div>
 </template>

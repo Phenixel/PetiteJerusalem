@@ -2,7 +2,6 @@
 // « Créées par moi » : liste compacte orientée gestion. Une ligne par
 // session : nom, type, jauge de réservation, et les actions bien en avant —
 // Gérer en premier, puis partager, modifier, terminer.
-import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { sessionService } from "../../services/sessionService";
@@ -13,7 +12,7 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 const router = useRouter();
 const { t } = useI18n();
 
-const props = defineProps<{
+defineProps<{
   sessions: Session[];
   currentUser: User | null;
 }>();
@@ -23,16 +22,6 @@ const emit = defineEmits<{
   (e: "edit", session: Session): void;
   (e: "end", session: Session): void;
 }>();
-
-const isSessionFinished = (session: Session): boolean => {
-  if (session.isEnded) return true;
-  const limit = new Date(session.dateLimit);
-  limit.setHours(23, 59, 59, 999);
-  return new Date() > limit;
-};
-
-const ongoingSessions = computed(() => props.sessions.filter((s) => !isSessionFinished(s)));
-const finishedSessions = computed(() => props.sessions.filter((s) => isSessionFinished(s)));
 
 const stats = (session: Session) => sessionService.getSessionReservationStats(session);
 
@@ -61,7 +50,7 @@ const goToNewSession = () => {
       <!-- En cours : la gestion à portée de main -->
       <ul class="divide-y divide-line">
         <li
-          v-for="session in ongoingSessions"
+          v-for="session in sessions"
           :key="session.id"
           class="py-3.5 flex flex-col sm:flex-row sm:items-center gap-3"
         >
@@ -127,27 +116,6 @@ const goToNewSession = () => {
         </li>
       </ul>
 
-      <!-- Terminées : simple rappel, tout au bout -->
-      <div v-if="finishedSessions.length > 0" class="mt-2 pt-3 border-t border-line opacity-75">
-        <ul class="divide-y divide-line">
-          <li
-            v-for="session in finishedSessions"
-            :key="session.id"
-            class="flex items-center gap-2 py-2.5"
-          >
-            <AppIcon name="flag" :size="12" class="shrink-0 text-text-secondary/60" />
-            <button
-              class="flex-1 min-w-0 text-left text-sm font-medium text-text-secondary truncate hover:text-primary transition-colors"
-              @click="openSessionManagement(session)"
-            >
-              {{ session.name }}
-            </button>
-            <span class="chip bg-black/5 text-text-secondary dark:bg-white/10 shrink-0">
-              {{ t("common.finished") }}
-            </span>
-          </li>
-        </ul>
-      </div>
     </div>
   </div>
 </template>

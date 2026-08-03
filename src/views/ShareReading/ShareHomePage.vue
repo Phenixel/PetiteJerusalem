@@ -61,19 +61,23 @@ const isSessionFinished = (session: Session): boolean => {
 };
 
 // --- « Mes sessions » : celles que je suis (participation ou création),
-// affichées avant le reste — c'est ce qu'on vient chercher en revenant. ---
+// affichées avant le reste — c'est ce qu'on vient chercher en revenant.
+// Les sessions terminées ne sont plus affichées nulle part (les données
+// restent en base, seul l'affichage les ignore). ---
 const participatedSessions = computed(() => {
   const u = currentUser.value;
   if (!u) return [];
-  return sessions.value.filter((s) =>
-    s.reservations?.some((r) => r.chosenById === u.id || r.chosenByGuestId === u.email),
+  return sessions.value.filter(
+    (s) =>
+      !isSessionFinished(s) &&
+      s.reservations?.some((r) => r.chosenById === u.id || r.chosenByGuestId === u.email),
   );
 });
 
 const createdSessions = computed(() => {
   const u = currentUser.value;
   if (!u) return [];
-  return sessions.value.filter((s) => s.personId === u.id);
+  return sessions.value.filter((s) => !isSessionFinished(s) && s.personId === u.id);
 });
 
 const hasMySessions = computed(
@@ -206,7 +210,6 @@ const filteredSessions = computed(() => {
 const hasActiveFilter = computed(() => searchTerm.value.trim() !== "" || selectedType.value !== "");
 
 const ongoingSessions = computed(() => filteredSessions.value.filter((s) => !isSessionFinished(s)));
-const finishedSessions = computed(() => filteredSessions.value.filter((s) => isSessionFinished(s)));
 
 const clearFilters = () => {
   searchTerm.value = "";
@@ -470,25 +473,6 @@ const handleCreateClick = () => {
           </div>
         </div>
 
-        <!-- Sessions terminées -->
-        <div v-if="finishedSessions.length > 0" class="animate-[fadeIn_0.5s_ease] opacity-80">
-          <h3 class="text-2xl font-bold text-text-primary mb-6 flex items-baseline gap-3">
-            {{ t("shareReading.archives") }}
-            <span class="text-sm font-normal text-text-secondary">{{
-              finishedSessions.length
-            }}</span>
-          </h3>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <SessionCard
-              v-for="session in finishedSessions"
-              :key="session.id"
-              :session="session"
-              @click="handleSessionClick"
-              class="h-full grayscale-[0.3] hover:grayscale-0 transition-all duration-300"
-            />
-          </div>
-        </div>
       </div>
 
       <!-- Aucune session -->
