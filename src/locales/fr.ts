@@ -292,6 +292,8 @@ const fr = {
     readCount: "{done}/{total} lues",
     allRead: "Tout lu",
     daysLeftChip: "J-{count}",
+    showFinished: "Afficher les sessions terminées ({count})",
+    hideFinished: "Masquer les sessions terminées",
     howItWorks: {
       title: "Comment ça marche",
       subtitle:

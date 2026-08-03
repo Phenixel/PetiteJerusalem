@@ -291,6 +291,8 @@ const en: LocaleMessages = {
     readCount: "{done}/{total} read",
     allRead: "All read",
     daysLeftChip: "{count}d left",
+    showFinished: "Show finished sessions ({count})",
+    hideFinished: "Hide finished sessions",
     howItWorks: {
       title: "How it works",
       subtitle: "Split a text between several people and finish it together, in four steps.",

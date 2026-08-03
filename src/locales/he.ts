@@ -287,6 +287,8 @@ const he: LocaleMessages = {
     readCount: "{done}/{total} נקראו",
     allRead: "הכול נקרא",
     daysLeftChip: "עוד {count} ימים",
+    showFinished: "הצגת סשנים שהסתיימו ({count})",
+    hideFinished: "הסתרת סשנים שהסתיימו",
     howItWorks: {
       title: "איך זה עובד",
       subtitle: "חלקו טקסט בין כמה אנשים וסיימו אותו יחד, בארבעה שלבים.",

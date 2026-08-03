@@ -1,18 +1,22 @@
 <script setup lang="ts">
 // « Créées par moi » : liste compacte orientée gestion. Une ligne par
 // session : nom, type, jauge de réservation, et les actions bien en avant —
-// Gérer en premier, puis partager, modifier, terminer.
+// Gérer en premier, puis partager, modifier, terminer. Les sessions
+// terminées sont masquées par défaut, mais leur créateur peut les
+// réafficher au besoin (« Afficher les terminées »).
+import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { sessionService } from "../../services/sessionService";
 import type { Session } from "../../models/models";
 import type { User } from "../../services/authService";
+import CollapseTransition from "../../components/CollapseTransition.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const router = useRouter();
 const { t } = useI18n();
 
-defineProps<{
+const props = defineProps<{
   sessions: Session[];
   currentUser: User | null;
 }>();
@@ -22,6 +26,18 @@ const emit = defineEmits<{
   (e: "edit", session: Session): void;
   (e: "end", session: Session): void;
 }>();
+
+const isSessionFinished = (session: Session): boolean => {
+  if (session.isEnded) return true;
+  const limit = new Date(session.dateLimit);
+  limit.setHours(23, 59, 59, 999);
+  return new Date() > limit;
+};
+
+const ongoingSessions = computed(() => props.sessions.filter((s) => !isSessionFinished(s)));
+const finishedSessions = computed(() => props.sessions.filter((s) => isSessionFinished(s)));
+
+const showFinished = ref(false);
 
 const stats = (session: Session) => sessionService.getSessionReservationStats(session);
 
@@ -36,7 +52,7 @@ const goToNewSession = () => {
 
 <template>
   <div class="animate-[fadeIn_0.3s_ease]">
-    <!-- Vide -->
+    <!-- Vide (aucune session, même terminée) -->
     <div v-if="sessions.length === 0" class="flex flex-col items-center py-10 text-center">
       <AppIcon name="circle-plus" :size="28" class="text-text-secondary/40 mb-3" />
       <p class="font-semibold text-text-primary mb-1">{{ t("profile.noCreatedSessions") }}</p>
@@ -50,7 +66,7 @@ const goToNewSession = () => {
       <!-- En cours : la gestion à portée de main -->
       <ul class="divide-y divide-line">
         <li
-          v-for="session in sessions"
+          v-for="session in ongoingSessions"
           :key="session.id"
           class="py-3.5 flex flex-col sm:flex-row sm:items-center gap-3"
         >
@@ -116,6 +132,48 @@ const goToNewSession = () => {
         </li>
       </ul>
 
+      <!-- Terminées : masquées par défaut, réaffichables au besoin -->
+      <div v-if="finishedSessions.length > 0" class="pt-1">
+        <button
+          class="flex items-center gap-1.5 py-2 text-xs font-medium text-text-secondary/80 hover:text-text-primary transition-colors"
+          @click="showFinished = !showFinished"
+          :aria-expanded="showFinished"
+        >
+          <AppIcon
+            name="chevron-right"
+            :size="11"
+            class="transition-transform duration-200 rtl:rotate-180"
+            :class="showFinished ? '!rotate-90' : ''"
+          />
+          {{
+            showFinished
+              ? t("shareReading.hideFinished")
+              : t("shareReading.showFinished", { count: finishedSessions.length })
+          }}
+        </button>
+        <CollapseTransition>
+          <div v-show="showFinished">
+            <ul class="divide-y divide-line opacity-75 pb-1">
+              <li
+                v-for="session in finishedSessions"
+                :key="session.id"
+                class="flex items-center gap-2 py-2.5"
+              >
+                <AppIcon name="flag" :size="12" class="shrink-0 text-text-secondary/60" />
+                <button
+                  class="flex-1 min-w-0 text-left text-sm font-medium text-text-secondary truncate hover:text-primary transition-colors"
+                  @click="openSessionManagement(session)"
+                >
+                  {{ session.name }}
+                </button>
+                <span class="chip bg-black/5 text-text-secondary dark:bg-white/10 shrink-0">
+                  {{ t("common.finished") }}
+                </span>
+              </li>
+            </ul>
+          </div>
+        </CollapseTransition>
+      </div>
     </div>
   </div>
 </template>
