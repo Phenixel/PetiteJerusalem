@@ -131,13 +131,16 @@ const en: LocaleMessages = {
     loadingProfile: "Loading your profile...",
     activeMember: "Active Member",
     tabs: {
-      dailyReading: "Daily Reading",
-      participatedSessions: "Participated Sessions",
-      createdSessions: "Created Sessions",
       myInfo: "My Information",
       security: "Security",
       preferences: "Preferences",
       about: "About",
+    },
+    shortcuts: {
+      title: "Also find",
+      accountTitle: "My account",
+      dailyReadingHint: "in the Library",
+      mySessionsHint: "in Reading Share",
     },
     noParticipatedSessions: "No participated sessions",
     noParticipatedSessionsDesc: "You haven't participated in any study sessions yet.",
@@ -281,6 +284,10 @@ const en: LocaleMessages = {
     allTypes: "All types",
     noSearchResults: "No session matches your search.",
     clearFilters: "Reset filters",
+    mySessions: "My sessions",
+    myParticipated: "I participate",
+    myCreated: "Created by me",
+    allSessions: "All sessions",
     howItWorks: {
       title: "How it works",
       subtitle: "Split a text between several people and finish it together, in four steps.",
@@ -370,7 +377,7 @@ const en: LocaleMessages = {
     reservationDeleteError: "Error deleting the reservation",
     deleteReservationConfirm: "Are you sure you want to delete this reservation?",
     loading: "Loading session...",
-    backToProfile: "Back to profile",
+    backToSessions: "Back to my sessions",
     stats: {
       reservations: "Reservations",
       completed: "Completed",
@@ -443,6 +450,9 @@ const en: LocaleMessages = {
     profileTitle: "My Profile – Petite Jérusalem",
     profileDescription:
       "Manage your information, view your participated and created study sessions.",
+    dailyReadingTitle: "My daily reading – Petite Jérusalem",
+    dailyReadingDescription:
+      "Find your daily reading texts every day: Tehilim, the weekly parasha and your chosen texts, with progress tracking.",
     notFoundTitle: "Page not found – Petite Jérusalem",
     notFoundDescription: "The requested page does not exist.",
     shareReadingTitle: "Shared Torah reading and study – Petite Jérusalem",
@@ -620,6 +630,17 @@ const en: LocaleMessages = {
       talmud: "Talmud",
       tanakh: "Tanakh",
     },
+    corpus: {
+      tehilimDesc: "The 150 psalms, in Hebrew and phonetics, to read alone or share.",
+      michnaDesc: "The six sedarim of the Mishnah, tractate by tractate, chapter by chapter.",
+      talmudDesc: "The Gemara: the tractates of the Babylonian Talmud, daf after daf.",
+      tanakhDesc: "The Torah parasha by parasha, the Neviim and the Ketuvim.",
+      psalmsCount: "{count} psalms",
+      tractatesCount: "{count} tractates",
+      textsCount: "{count} texts",
+    },
+    resumeTitle: "Resume my reading",
+    resumeCta: "Pick up where I left off",
   },
   studio: {
     title: "Authors studio",

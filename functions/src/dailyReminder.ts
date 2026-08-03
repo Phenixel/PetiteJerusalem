@@ -136,7 +136,7 @@ export const dailyReadingReminder = onSchedule(
         tokens,
         notification: { title: copy.title, body: copy.body(remaining) },
         // Deep-link géré par pushService.initDeepLinks côté app.
-        data: { url: "/profile" },
+        data: { url: "/bibliotheque/lecture-du-jour" },
         apns: { payload: { aps: { sound: "default" } } },
       });
       sent += result.successCount;

@@ -1,26 +1,35 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { sessionService } from "../../services/sessionService";
-import type { Session } from "../../models/models";
+import type { Session, TextStudy } from "../../models/models";
 import type { EnumTypeTextStudy } from "../../models/typeTextStudy";
 import SessionCard from "../../components/SessionCard.vue";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
 import AccountCta from "../../components/AccountCta.vue";
+import HowItWorksTimeline from "../../components/HowItWorksTimeline.vue";
+import ShareModal from "../../components/ShareModal.vue";
+import EditSessionModal from "../../components/EditSessionModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import ParticipatedSessions from "../profilePage/ParticipatedSessions.vue";
+import CreatedSessions from "../profilePage/CreatedSessions.vue";
 import { seoService } from "../../services/seoService";
-import { authService } from "../../services/authService";
+import { authService, type User } from "../../services/authService";
 import { analyticsService } from "../../services/analyticsService";
 import { isNativeApp } from "../../composables/useNativeApp";
+import { useToast } from "../../composables/useToast";
+import { SITE_URL } from "../../config/site";
 
 const router = useRouter();
 const { t } = useI18n();
+const toast = useToast();
 
 const sessions = ref<Session[]>([]);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
-const isAuthenticated = ref(false);
+const currentUser = ref<User | null>(null);
+const isAuthenticated = computed(() => currentUser.value !== null);
 // Visitors without an account can still click "create a session": instead of a
 // disabled button they get a prompt inviting them to sign in / sign up.
 const showAuthPrompt = ref(false);
@@ -29,11 +38,6 @@ let unsubscribeAuth: (() => void) | null = null;
 // Search & type filter over the session list.
 const searchTerm = ref("");
 const selectedType = ref<EnumTypeTextStudy | "">("");
-
-// Animated "how it works" timeline: plays once when scrolled into view.
-const timelineRef = ref<HTMLElement | null>(null);
-const timelineInView = ref(false);
-let timelineObserver: IntersectionObserver | null = null;
 
 const loadSessions = async () => {
   try {
@@ -54,6 +58,130 @@ const isSessionFinished = (session: Session): boolean => {
   const limit = new Date(session.dateLimit);
   limit.setHours(23, 59, 59, 999);
   return new Date() > limit;
+};
+
+// --- « Mes sessions » : celles que je suis (participation ou création),
+// affichées avant le reste — c'est ce qu'on vient chercher en revenant. ---
+const participatedSessions = computed(() => {
+  const u = currentUser.value;
+  if (!u) return [];
+  return sessions.value.filter((s) =>
+    s.reservations?.some((r) => r.chosenById === u.id || r.chosenByGuestId === u.email),
+  );
+});
+
+const createdSessions = computed(() => {
+  const u = currentUser.value;
+  if (!u) return [];
+  return sessions.value.filter((s) => s.personId === u.id);
+});
+
+const hasMySessions = computed(
+  () => participatedSessions.value.length > 0 || createdSessions.value.length > 0,
+);
+
+// Sous-onglet de « Mes sessions » : participation d'abord (le cas le plus
+// courant), création sinon.
+const myTab = ref<"participated" | "created">("participated");
+const myTabInitialized = ref(false);
+
+function switchMyTab(tab: "participated" | "created") {
+  myTab.value = tab;
+  analyticsService.capture("share_home_my_sessions_tab", { tab });
+}
+
+// Les noms des textes réservés (affichés par ParticipatedSessions).
+const textStudiesMap = ref<Map<string, TextStudy>>(new Map());
+
+const loadTextStudiesForSessions = async (sessionsList: Session[]) => {
+  try {
+    const types = [...new Set(sessionsList.map((s) => s.type))];
+    for (const type of types) {
+      const textStudies = await sessionService.getTextStudiesByType(type);
+      textStudies.forEach((textStudy) => {
+        textStudiesMap.value.set(textStudy.id, textStudy);
+      });
+    }
+  } catch (error) {
+    console.error("Erreur lors du chargement des textes d'étude:", error);
+  }
+};
+
+// --- Actions du créateur (partager, modifier, terminer) : reprises du profil. ---
+const showShareModal = ref(false);
+const showEditModal = ref(false);
+const selectedSession = ref<Session | null>(null);
+const shareUrl = ref("");
+
+const openShareModal = (session: Session) => {
+  selectedSession.value = session;
+  // Domaine canonique : window.location.origin vaut localhost (ou
+  // capacitor://localhost) en dev et dans l'app native → lien inutilisable.
+  shareUrl.value = `${SITE_URL}/share-reading/session/${session.slug || session.id}`;
+  showShareModal.value = true;
+};
+
+const openEditModal = (session: Session) => {
+  selectedSession.value = session;
+  showEditModal.value = true;
+};
+
+const saveSessionChanges = async (sessionData: {
+  name: string;
+  description: string;
+  dateLimit: string;
+  guestEmailRequired: boolean;
+}) => {
+  if (!selectedSession.value) return;
+
+  try {
+    await sessionService.updateSession(selectedSession.value.id, {
+      ...sessionData,
+      slug: selectedSession.value.slug,
+    });
+
+    const sessionIndex = sessions.value.findIndex((s) => s.id === selectedSession.value!.id);
+    if (sessionIndex > -1) {
+      sessions.value[sessionIndex] = {
+        ...sessions.value[sessionIndex],
+        name: sessionData.name,
+        description: sessionData.description,
+        dateLimit: new Date(sessionData.dateLimit),
+        guestEmailRequired: sessionData.guestEmailRequired,
+        updatedAt: new Date(),
+      };
+    }
+
+    toast.success(t("profile.sessionUpdatedSuccess"));
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour:", error);
+    toast.errorFromException(error, t("profile.sessionUpdateError"));
+  }
+};
+
+const endSession = async (session: Session) => {
+  if (!confirm(t("profile.endSessionConfirm"))) {
+    return;
+  }
+
+  try {
+    await sessionService.endSession(session.id);
+
+    const sessionIndex = sessions.value.findIndex((s) => s.id === session.id);
+    if (sessionIndex > -1) {
+      sessions.value[sessionIndex] = {
+        ...sessions.value[sessionIndex],
+        isEnded: true,
+        endedAt: new Date(),
+        updatedAt: new Date(),
+      };
+    }
+
+    toast.success(t("profile.sessionEndedSuccess"));
+  } catch (error) {
+    console.error("Erreur lors de la fin de session:", error);
+    toast.errorFromException(error, t("profile.sessionEndError"));
+  }
 };
 
 const availableTypes = computed(() => {
@@ -85,34 +213,10 @@ const clearFilters = () => {
   selectedType.value = "";
 };
 
-// Visual "how it works" steps shown between the create button and the session list.
-const howItWorksSteps = computed(() => [
-  {
-    icon: "circle-plus" as const,
-    title: t("shareReading.howItWorks.step1Title"),
-    description: t("shareReading.howItWorks.step1Desc"),
-  },
-  {
-    icon: "book-open" as const,
-    title: t("shareReading.howItWorks.step2Title"),
-    description: t("shareReading.howItWorks.step2Desc"),
-  },
-  {
-    icon: "share" as const,
-    title: t("shareReading.howItWorks.step3Title"),
-    description: t("shareReading.howItWorks.step3Desc"),
-  },
-  {
-    icon: "flag" as const,
-    title: t("shareReading.howItWorks.step4Title"),
-    description: t("shareReading.howItWorks.step4Desc"),
-  },
-]);
-
 onMounted(() => {
   loadSessions();
   unsubscribeAuth = authService.onAuthChanged((user) => {
-    isAuthenticated.value = !!user;
+    currentUser.value = user;
   });
   const url = window.location.origin + "/share-reading";
   seoService.setMeta({
@@ -121,47 +225,28 @@ onMounted(() => {
     canonical: url,
     og: { url },
   });
-
-  setupTimelineReveal();
 });
-
-// Play the timeline animation once: immediately if it's already on screen at
-// load, otherwise the first time it scrolls into view. Falls back to simply
-// showing it if observers are unavailable.
-function setupTimelineReveal() {
-  const el = timelineRef.value;
-  const activate = () => {
-    timelineInView.value = true;
-    timelineObserver?.disconnect();
-    timelineObserver = null;
-  };
-
-  if (!el || typeof IntersectionObserver === "undefined") {
-    activate();
-    return;
-  }
-
-  // Already on screen at load: activate now (the CSS animation plays as the
-  // class is applied). Otherwise wait for it to scroll into view.
-  const rect = el.getBoundingClientRect();
-  if (rect.top < window.innerHeight && rect.bottom > 0) {
-    activate();
-    return;
-  }
-
-  timelineObserver = new IntersectionObserver(
-    (entries) => {
-      if (entries.some((e) => e.isIntersecting)) activate();
-    },
-    { threshold: 0.2 },
-  );
-  timelineObserver.observe(el);
-}
 
 onUnmounted(() => {
   if (unsubscribeAuth) unsubscribeAuth();
-  timelineObserver?.disconnect();
 });
+
+// Une fois sessions + utilisateur connus (deux chargements asynchrones) :
+// ouvrir « Mes sessions » sur le bon sous-onglet (participation si j'en ai,
+// sinon mes créations) et charger les noms de textes des réservations.
+watch(
+  [currentUser, isLoading],
+  () => {
+    if (myTabInitialized.value) return;
+    if (!currentUser.value || isLoading.value) return;
+    myTabInitialized.value = true;
+    if (participatedSessions.value.length === 0 && createdSessions.value.length > 0) {
+      myTab.value = "created";
+    }
+    void loadTextStudiesForSessions(participatedSessions.value);
+  },
+  { immediate: true },
+);
 
 const handleSessionClick = (session: Session) => {
   router.push(`/share-reading/session/${session.slug || session.id}`);
@@ -205,42 +290,76 @@ const handleCreateClick = () => {
     <!-- Invitation à se connecter pour les visiteurs sans compte -->
     <SignupPromptModal v-model:show="showAuthPrompt" variant="auth" />
 
-    <!-- Comment ça marche : timeline animée -->
-    <section class="max-w-5xl mx-auto mb-16">
-      <div class="text-center mb-10">
-        <h3 class="text-2xl md:text-3xl font-bold text-text-primary">
-          {{ t("shareReading.howItWorks.title") }}
+    <!-- Visiteur : comment ça marche, avant la liste (découverte). Les
+         connectés retrouvent la timeline en bas de page. -->
+    <HowItWorksTimeline v-if="!isAuthenticated" class="mb-16" />
+
+    <!-- ===== Mes sessions : ce que je suis venu retrouver ===== -->
+    <section
+      v-if="isAuthenticated && myTabInitialized && hasMySessions"
+      class="max-w-7xl mx-auto mb-16 animate-[fadeIn_0.5s_ease]"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <h3 class="text-2xl font-bold text-text-primary flex items-center gap-2.5">
+          <AppIcon name="user" :size="20" class="text-primary" />
+          {{ t("shareReading.mySessions") }}
         </h3>
-        <p class="text-text-secondary max-w-2xl mx-auto mt-2">
-          {{ t("shareReading.howItWorks.subtitle") }}
-        </p>
+        <div class="flex flex-wrap gap-2">
+          <button
+            class="chip !px-4 !py-2 transition-colors"
+            :class="
+              myTab === 'participated'
+                ? 'bg-primary text-white'
+                : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
+            "
+            @click="switchMyTab('participated')"
+          >
+            {{ t("shareReading.myParticipated") }}
+            <span class="opacity-75">{{ participatedSessions.length }}</span>
+          </button>
+          <button
+            class="chip !px-4 !py-2 transition-colors"
+            :class="
+              myTab === 'created'
+                ? 'bg-primary text-white'
+                : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
+            "
+            @click="switchMyTab('created')"
+          >
+            {{ t("shareReading.myCreated") }}
+            <span class="opacity-75">{{ createdSessions.length }}</span>
+          </button>
+        </div>
       </div>
 
-      <ol ref="timelineRef" class="timeline" :class="{ 'is-active': timelineInView }">
-        <li
-          v-for="(step, index) in howItWorksSteps"
-          :key="step.title"
-          class="timeline__step"
-          :style="{ '--i': index }"
-        >
-          <span class="timeline__connector bg-black/[0.08] dark:bg-white/[0.12]" aria-hidden="true">
-            <span class="timeline__fill"></span>
-            <span class="timeline__runner"></span>
-          </span>
-          <span class="timeline__node">
-            <AppIcon :name="step.icon" :size="20" />
-          </span>
-          <div class="timeline__content">
-            <h4 class="timeline__title text-text-primary">{{ step.title }}</h4>
-            <p class="timeline__desc text-text-secondary">
-              {{ step.description }}
-            </p>
-          </div>
-        </li>
-      </ol>
+      <div class="card p-6 md:p-8">
+        <ParticipatedSessions
+          v-if="myTab === 'participated'"
+          :sessions="participatedSessions"
+          :current-user="currentUser"
+          :text-studies-map="textStudiesMap"
+        />
+        <CreatedSessions
+          v-else
+          :sessions="createdSessions"
+          :current-user="currentUser"
+          @share="openShareModal"
+          @edit="openEditModal"
+          @end="endSession"
+        />
+      </div>
     </section>
 
     <div class="relative max-w-7xl mx-auto">
+      <!-- Titre de la liste publique : la distingue de « Mes sessions ». -->
+      <h3
+        v-if="isAuthenticated && hasMySessions && sessions.length > 0"
+        class="text-2xl font-bold text-text-primary mb-6 flex items-center gap-2.5"
+      >
+        <AppIcon name="users" :size="20" class="text-primary" />
+        {{ t("shareReading.allSessions") }}
+      </h3>
+
       <!-- Recherche et filtres -->
       <div v-if="sessions.length > 0" class="flex flex-col md:flex-row gap-3 mb-10 md:items-center">
         <div class="relative flex-1 max-w-md">
@@ -383,235 +502,23 @@ const handleCreateClick = () => {
         </p>
       </div>
 
+      <!-- Connecté : la timeline explicative vit en bas de page. -->
+      <HowItWorksTimeline v-if="isAuthenticated" class="mt-20" />
+
       <AccountCta class="max-w-3xl mx-auto mt-12" />
     </div>
+
+    <ShareModal
+      v-model:show="showShareModal"
+      :session-name="selectedSession?.name || ''"
+      :share-url="shareUrl"
+      :session-type="selectedSession?.type"
+    />
+
+    <EditSessionModal
+      v-model:show="showEditModal"
+      :session="selectedSession"
+      @save="saveSessionChanges"
+    />
   </main>
 </template>
-
-<style scoped>
-/* Animated "how it works" timeline.
-   Mobile = vertical, desktop (>=768px) = horizontal. The connecting line fills
-   step by step and a dot travels along it as each node lights up;
-   the whole sequence plays once when the timeline scrolls into view. */
-.timeline {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.timeline__step {
-  position: relative;
-  display: grid;
-  grid-template-columns: 3rem 1fr;
-  column-gap: 1.25rem;
-  padding-bottom: 2.5rem;
-}
-.timeline__step:last-child {
-  padding-bottom: 0;
-}
-
-/* --- node --- */
-.timeline__node {
-  position: relative;
-  z-index: 2;
-  grid-column: 1;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  background: var(--color-primary);
-  /* idle state before activation */
-  filter: grayscale(1);
-  opacity: 0.4;
-  transform: scale(0.88);
-}
-/* --- text --- */
-.timeline__content {
-  grid-column: 2;
-  align-self: center;
-}
-/* Title/description colors are set via Tailwind utilities in the template
-   (text-text-*) so dark mode adapts via the flipped CSS variables. */
-.timeline__title {
-  font-weight: 700;
-  font-size: 1.05rem;
-  margin-bottom: 0.2rem;
-}
-.timeline__desc {
-  font-size: 0.875rem;
-  line-height: 1.55;
-}
-
-/* --- connector (mobile: vertical) --- */
-.timeline__connector {
-  position: absolute;
-  z-index: 1;
-  inset-inline-start: 1.5rem;
-  top: 3rem;
-  width: 3px;
-  height: calc(100% - 3rem);
-  transform: translateX(-50%);
-  border-radius: 9999px;
-  /* track color set via Tailwind (bg-black/[0.08] dark:bg-white/[0.12]) */
-}
-.timeline__step:last-child .timeline__connector {
-  display: none;
-}
-.timeline__fill {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--color-primary);
-  transform: scaleY(0);
-  transform-origin: top center;
-}
-.timeline__runner {
-  position: absolute;
-  inset-inline-start: 50%;
-  top: 0;
-  width: 0.7rem;
-  height: 0.7rem;
-  border-radius: 9999px;
-  transform: translate(-50%, -50%);
-  background: var(--color-secondary);
-  opacity: 0;
-}
-
-/* --- activation (plays once when .is-active is added) --- */
-.timeline.is-active .timeline__node {
-  animation: tl-node 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  animation-delay: calc(var(--i) * 0.5s);
-}
-.timeline.is-active .timeline__fill {
-  animation: tl-fill-y 0.5s ease forwards;
-  animation-delay: calc(var(--i) * 0.5s + 0.25s);
-}
-.timeline.is-active .timeline__runner {
-  animation: tl-run-y 0.55s ease forwards;
-  animation-delay: calc(var(--i) * 0.5s + 0.25s);
-}
-
-@keyframes tl-node {
-  0% {
-    filter: grayscale(1);
-    opacity: 0.4;
-    transform: scale(0.85);
-  }
-  60% {
-    transform: scale(1.12);
-  }
-  100% {
-    filter: grayscale(0);
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-@keyframes tl-fill-y {
-  to {
-    transform: scaleY(1);
-  }
-}
-@keyframes tl-run-y {
-  0% {
-    top: 0;
-    opacity: 1;
-  }
-  85% {
-    opacity: 1;
-  }
-  100% {
-    top: 100%;
-    opacity: 0;
-  }
-}
-@keyframes tl-fill-x {
-  to {
-    transform: scaleX(1);
-  }
-}
-@keyframes tl-run-x {
-  0% {
-    inset-inline-start: 0;
-    opacity: 1;
-  }
-  85% {
-    opacity: 1;
-  }
-  100% {
-    inset-inline-start: 100%;
-    opacity: 0;
-  }
-}
-
-/* --- desktop: horizontal --- */
-@media (min-width: 768px) {
-  .timeline {
-    flex-direction: row;
-    align-items: flex-start;
-  }
-  .timeline__step {
-    flex: 1;
-    grid-template-columns: none;
-    grid-template-rows: 3.5rem auto;
-    row-gap: 1.1rem;
-    justify-items: center;
-    text-align: center;
-    padding-bottom: 0;
-    padding-inline: 0.5rem;
-  }
-  .timeline__node {
-    grid-column: auto;
-    grid-row: 1;
-    width: 3.5rem;
-    height: 3.5rem;
-  }
-  .timeline__content {
-    grid-column: auto;
-    grid-row: 2;
-  }
-  .timeline__connector {
-    top: 1.75rem;
-    inset-inline-start: 50%;
-    width: 100%;
-    height: 3px;
-    transform: translateY(-50%);
-  }
-  .timeline__fill {
-    transform: scaleX(0);
-    transform-origin: left center;
-  }
-  .timeline__runner {
-    inset-inline-start: 0;
-    top: 50%;
-    transform: translate(-50%, -50%);
-  }
-  .timeline.is-active .timeline__fill {
-    animation-name: tl-fill-x;
-  }
-  .timeline.is-active .timeline__runner {
-    animation-name: tl-run-x;
-  }
-}
-
-/* --- respect reduced-motion: show the final state, no movement --- */
-@media (prefers-reduced-motion: reduce) {
-  .timeline__node {
-    filter: none;
-    opacity: 1;
-    transform: scale(1);
-    animation: none;
-  }
-  .timeline__fill {
-    transform: none;
-    animation: none;
-  }
-  .timeline__runner {
-    display: none;
-  }
-}
-</style>

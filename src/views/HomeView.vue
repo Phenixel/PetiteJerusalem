@@ -258,7 +258,7 @@ onUnmounted(() => {
         <template v-else>
           <!-- Lecture quotidienne : où j'en suis aujourd'hui -->
           <RouterLink
-            to="/profile"
+            to="/bibliotheque/lecture-du-jour"
             class="dash-card card card-hover p-6 block group"
             @click="trackCard('daily_reading')"
           >

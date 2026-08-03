@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
@@ -19,14 +20,18 @@ import {
   type OfflineBook,
 } from "../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../services/offlineTextStore";
-import { readingProgressService } from "../services/readingProgressService";
+import { readingProgressService, type ReadingPosition } from "../services/readingProgressService";
+import { authService, type User } from "../services/authService";
+import { countDailyProgress, userPreferencesService } from "../services/userPreferencesService";
 import { useToast } from "../composables/useToast";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
+import type { IconName } from "../components/icons/registry";
 import AccountCta from "../components/AccountCta.vue";
 
 const { t } = useI18n();
 const toast = useToast();
+const route = useRoute();
 
 // App native : état de téléchargement affiché sur chaque carte de la bibliothèque.
 type BookState = "none" | "downloading" | "downloaded" | "idle";
@@ -56,21 +61,65 @@ async function toggleDownload(text: TextStudyJsonEntry) {
   }
 }
 
-const ALL_TYPE = "Tout";
-
-const TYPES = [
-  { key: ALL_TYPE, labelKey: "study.types.all" },
-  { key: "Tehilim", labelKey: "study.types.tehilim" },
-  { key: "Mishna", labelKey: "study.types.mishna" },
-  { key: "Talmud Bavli", labelKey: "study.types.talmud" },
-  { key: "Tanakh", labelKey: "study.types.tanakh" },
+// La bibliothèque est un tableau de bord : l'accueil ne montre que les grandes
+// sections (corpus) ; la liste détaillée des textes vit sur /bibliotheque/:corpus.
+const CORPUS_META: {
+  corpus: string;
+  typeKey: string;
+  labelKey: string;
+  descKey: string;
+  countKey: string;
+  icon: IconName;
+}[] = [
+  {
+    corpus: "tehilim",
+    typeKey: "Tehilim",
+    labelKey: "study.types.tehilim",
+    descKey: "study.corpus.tehilimDesc",
+    countKey: "study.corpus.psalmsCount",
+    icon: "book-open",
+  },
+  {
+    corpus: "michna",
+    typeKey: "Mishna",
+    labelKey: "study.types.mishna",
+    descKey: "study.corpus.michnaDesc",
+    countKey: "study.corpus.tractatesCount",
+    icon: "book",
+  },
+  {
+    corpus: "talmud",
+    typeKey: "Talmud Bavli",
+    labelKey: "study.types.talmud",
+    descKey: "study.corpus.talmudDesc",
+    countKey: "study.corpus.tractatesCount",
+    icon: "graduation-cap",
+  },
+  {
+    corpus: "tanakh",
+    typeKey: "Tanakh",
+    labelKey: "study.types.tanakh",
+    descKey: "study.corpus.tanakhDesc",
+    countKey: "study.corpus.textsCount",
+    icon: "book-reader",
+  },
 ];
 
-// Type tabs that map to an actual corpus (everything except the "Tout" tab).
-const CORPUS_TYPES = TYPES.filter((ty) => ty.key !== ALL_TYPE);
-
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
-const selectedType = ref(ALL_TYPE);
+
+// Corpus courant, piloté par la route (/bibliotheque = accueil, sans corpus).
+const currentCorpus = computed(() =>
+  CORPUS_META.find((c) => c.corpus === String(route.params.corpus ?? "")) ?? null,
+);
+
+const corpusCounts = computed<Record<string, number>>(() => {
+  const counts: Record<string, number> = {};
+  for (const txt of allTexts) {
+    counts[String(txt.type)] = (counts[String(txt.type)] ?? 0) + 1;
+  }
+  return counts;
+});
+
 const searchTerm = ref("");
 
 // Chaque frappe re-filtre et re-groupe les 328 entrées du catalogue : sur un
@@ -85,40 +134,131 @@ watch(searchTerm, (value) => {
   }, 150);
 });
 
-// "Tout" shows every corpus at once; any other tab stays scoped to itself.
-const isAllSelected = computed(() => selectedType.value === ALL_TYPE);
+// La recherche de l'accueil couvre toute la bibliothèque ; celle d'un corpus
+// reste dans le corpus. Changer de page remet la recherche à zéro.
+watch(currentCorpus, () => {
+  searchTerm.value = "";
+  debouncedTerm.value = "";
+  applySeoMeta();
+});
+
+const hasSearch = computed(() => debouncedTerm.value.trim() !== "");
 
 const filtered = computed(() => {
   const term = debouncedTerm.value.trim().toLowerCase();
   return allTexts.filter((txt) => {
     const matchesTerm = term === "" || txt.name.toLowerCase().includes(term);
-    const matchesType = isAllSelected.value || String(txt.type) === selectedType.value;
+    const matchesType =
+      currentCorpus.value === null || String(txt.type) === currentCorpus.value.typeKey;
     return matchesTerm && matchesType;
   });
 });
 
-// Group results by type (a type heading is only shown on the "Tout" tab), then
-// by book/seder, so each section stays readable.
+// Group results by type (a type heading is only shown when several corpora can
+// mix, i.e. searching from the dashboard), then by book/seder, so each section
+// stays readable.
 const groupedByType = computed(() => {
-  return CORPUS_TYPES.map((ty) => {
-    const texts = filtered.value.filter((txt) => String(txt.type) === ty.key);
+  return CORPUS_META.map((ty) => {
+    const texts = filtered.value.filter((txt) => String(txt.type) === ty.typeKey);
     const groups: Record<string, TextStudyJsonEntry[]> = {};
     for (const txt of texts) {
       (groups[txt.livre] ??= []).push(txt);
     }
-    return { key: ty.key, labelKey: ty.labelKey, groups, count: texts.length };
+    return { key: ty.typeKey, labelKey: ty.labelKey, groups, count: texts.length };
   }).filter((group) => group.count > 0);
 });
 
 const hasResults = computed(() => filtered.value.length > 0);
 
-// App native : « Tout télécharger » sur l'onglet courant + espace utilisé
-// (remplace l'ancienne page Hors ligne).
+// La liste détaillée s'affiche sur une page corpus, ou dès qu'on cherche
+// depuis l'accueil (la recherche reste la porte d'entrée la plus rapide).
+const showList = computed(() => currentCorpus.value !== null || hasSearch.value);
+
+// --- Connecté : lecture du jour et reprise de lecture, en tête de la
+// bibliothèque (ces fonctionnalités vivaient dans le profil). ---
+const user = ref<User | null>(null);
+let unsubscribeAuth: (() => void) | null = null;
+const dailyLoading = ref(false);
+const readingTotal = ref(0);
+const readingDone = ref(0);
+const readingPct = computed(() =>
+  readingTotal.value === 0 ? 0 : Math.round((readingDone.value / readingTotal.value) * 100),
+);
+const readingAllDone = computed(
+  () => readingTotal.value > 0 && readingDone.value >= readingTotal.value,
+);
+
+// Dernière position de lecture : le vrai « Reprendre ma lecture ».
+const lastReading = ref<ReadingPosition | null>(null);
+const resumeLink = computed(() =>
+  lastReading.value
+    ? { path: lastReading.value.path, query: { verset: String(lastReading.value.line) } }
+    : null,
+);
+
+function trackResume() {
+  if (!lastReading.value) return;
+  analyticsService.capture("reading_resumed", {
+    text_id: lastReading.value.textId,
+    source: "library",
+  });
+}
+
+// Lecture terminée (ou abandonnée) : la croix retire la position pour ne plus
+// la proposer. S'il reste une lecture récente, elle prend le relais.
+function dismissResume() {
+  const current = lastReading.value;
+  if (!current) return;
+  readingProgressService.clearPosition(current.textId);
+  lastReading.value = readingProgressService.getLastPosition();
+  analyticsService.capture("reading_resume_dismissed", {
+    text_id: current.textId,
+    source: "library",
+  });
+}
+
+/** Local calendar day (YYYY-MM-DD) — même convention que DailyReading. */
+function todayKey(): string {
+  const d = new Date();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
+async function loadDailySummary(u: User) {
+  dailyLoading.value = true;
+  try {
+    const prefs = await userPreferencesService.getPreferences(u.id);
+    // Même règle de comptage que la page Lecture du jour (chnei mikra
+    // hebdomadaire exclu, complétions intersectées avec les listes actives).
+    const progress = prefs.dailyReadingProgress;
+    const isToday = progress?.date === todayKey();
+    const counts = countDailyProgress({
+      textIds: prefs.dailyReadingIds ?? [],
+      options: prefs.dailyReadingOptions ?? [],
+      completedTextIds: isToday ? (progress.completedIds ?? []) : [],
+      completedOptions: isToday ? (progress.completedOptions ?? []) : [],
+    });
+    readingTotal.value = counts.total;
+    readingDone.value = counts.done;
+  } catch (error) {
+    console.error("Erreur lors du chargement de la lecture du jour:", error);
+  } finally {
+    dailyLoading.value = false;
+  }
+}
+
+function trackCorpusOpened(corpus: string) {
+  analyticsService.capture("library_corpus_opened", { corpus });
+}
+
+// App native : « Tout télécharger » (toute la bibliothèque sur l'accueil, le
+// corpus courant sur sa page) + espace utilisé.
 const tabBooks = computed<OfflineBook[]>(() => {
   if (!isNativeApp) return [];
-  return isAllSelected.value
+  return currentCorpus.value === null
     ? offlineBooks
-    : offlineBooks.filter((b) => b.corpus === selectedType.value);
+    : offlineBooks.filter((b) => b.corpus === currentCorpus.value?.typeKey);
 });
 
 const tabAllDownloaded = computed(
@@ -128,7 +268,7 @@ const tabAllDownloaded = computed(
 async function downloadAllInTab() {
   analyticsService.capture("offline_download_started", {
     scope: "all",
-    tab: selectedType.value,
+    tab: currentCorpus.value?.typeKey ?? "Tout",
     books_count: tabBooks.value.filter((b) => !isBookDownloaded(b)).length,
   });
   for (const book of tabBooks.value) {
@@ -140,7 +280,10 @@ async function downloadAllInTab() {
       return; // Probablement hors connexion : inutile d'enchaîner les échecs.
     }
   }
-  analyticsService.capture("offline_download_completed", { scope: "all", tab: selectedType.value });
+  analyticsService.capture("offline_download_completed", {
+    scope: "all",
+    tab: currentCorpus.value?.typeKey ?? "Tout",
+  });
 }
 
 function formatSize(bytes: number): string {
@@ -156,27 +299,77 @@ function formatBookName(livre: string): string {
 // la synchro du compte aboutit.
 const bookmarkCounts = ref<Record<string, number>>({});
 
+function applySeoMeta() {
+  const corpus = currentCorpus.value;
+  if (corpus) {
+    const url = window.location.origin + `/bibliotheque/${corpus.corpus}`;
+    seoService.setMeta({
+      title: `${t(corpus.labelKey)} | ${t("study.title")} | Petite Jérusalem`,
+      description: t(corpus.descKey),
+      canonical: url,
+    });
+  } else {
+    const url = window.location.origin + "/bibliotheque";
+    seoService.setMeta({
+      title: `${t("study.title")} | Petite Jérusalem`,
+      description: t("study.subtitle"),
+      canonical: url,
+    });
+  }
+}
+
 onMounted(() => {
   bookmarkCounts.value = readingProgressService.getBookmarkCounts();
+  // Position locale tout de suite, affinée quand la synchro du compte aboutit.
+  lastReading.value = readingProgressService.getLastPosition();
   void readingProgressService.ensureSynced().then(() => {
     bookmarkCounts.value = readingProgressService.getBookmarkCounts();
+    lastReading.value = readingProgressService.getLastPosition();
+  });
+  unsubscribeAuth = authService.onAuthChanged((u) => {
+    user.value = u;
+    if (u) {
+      loadDailySummary(u);
+    } else {
+      readingTotal.value = 0;
+      readingDone.value = 0;
+    }
   });
   if (isNativeApp) {
     ensureManifestLoaded();
   }
-  const url = window.location.origin + "/bibliotheque";
-  seoService.setMeta({
-    title: `${t("study.title")} | Petite Jérusalem`,
-    description: t("study.subtitle"),
-    canonical: url,
-  });
+  applySeoMeta();
+});
+
+onUnmounted(() => {
+  unsubscribeAuth?.();
 });
 </script>
 
 <template>
   <main class="mx-auto px-6 py-12">
-    <!-- Hero (le sous-titre explicatif ne sert que le site : SEO + découverte) -->
-    <div class="text-center animate-[fadeIn_0.5s_ease]" :class="isNativeApp ? 'mb-6' : 'mb-10'">
+    <!-- ===== Page corpus : liste détaillée d'une grande section ===== -->
+    <template v-if="currentCorpus">
+      <div class="max-w-5xl mx-auto animate-[fadeIn_0.4s_ease]" :class="isNativeApp ? 'mb-4' : 'mb-8'">
+        <RouterLink to="/bibliotheque" class="back-link mb-4">
+          <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
+          {{ t("study.title") }}
+        </RouterLink>
+        <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight pb-1">
+          {{ t(currentCorpus.labelKey) }}
+        </h1>
+        <p v-if="!isNativeApp" class="mt-2 text-lg text-text-secondary max-w-2xl leading-relaxed">
+          {{ t(currentCorpus.descKey) }}
+        </p>
+      </div>
+    </template>
+
+    <!-- ===== Accueil de la bibliothèque : hero ===== -->
+    <div
+      v-else
+      class="text-center animate-[fadeIn_0.5s_ease]"
+      :class="isNativeApp ? 'mb-6' : 'mb-10'"
+    >
       <h1 class="text-4xl md:text-5xl font-bold text-text-primary tracking-tight pb-1">
         {{ t("study.title") }}
       </h1>
@@ -185,10 +378,11 @@ onMounted(() => {
       </p>
     </div>
 
-    <!-- Recherche : collante sur l'app pour rester accessible au scroll. -->
+    <!-- Recherche : collante sur l'app pour rester accessible au scroll.
+         Depuis l'accueil elle cherche dans toute la bibliothèque. -->
     <div
       :class="isNativeApp ? 'app-sticky-search' : ''"
-      class="flex justify-center mb-4 animate-[fadeIn_0.5s_ease]"
+      class="flex justify-center mb-6 animate-[fadeIn_0.5s_ease]"
     >
       <div class="relative w-full md:w-96">
         <AppIcon
@@ -212,132 +406,257 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Controls -->
-    <div class="flex flex-col items-center gap-4 mb-10 animate-[fadeIn_0.5s_ease]">
-      <!-- Filtres volontairement imposants : ils servent de porte d'entrée
-           principale vers chaque corpus. -->
-      <div class="flex flex-wrap gap-2.5 md:gap-3 justify-center">
-        <button
-          v-for="ty in TYPES"
-          :key="ty.key"
-          @click="selectedType = ty.key"
-          class="px-5 py-2.5 md:px-6 md:py-3 rounded-full text-sm md:text-base font-semibold transition-colors"
-          :class="
-            selectedType === ty.key
-              ? 'bg-primary text-white'
-              : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
-          "
-        >
-          {{ t(ty.labelKey) }}
-        </button>
-      </div>
-
-      <!-- App native : tout télécharger (onglet courant) + espace utilisé. -->
-      <div
-        v-if="isNativeApp && tabBooks.length > 0"
-        class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
-      >
-        <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
-          <AppIcon
-            v-if="downloadingPaths.size > 0"
-            name="spinner"
-            :size="14"
-            class="animate-spin"
-          />
-          <AppIcon v-else name="download" :size="14" />
-          {{ t("downloads.downloadAll") }}
-        </button>
-        <p v-else class="flex items-center gap-1.5 text-sm text-primary">
-          <AppIcon name="circle-check" :size="14" />
-          {{ t("downloads.allDownloaded") }}
-        </p>
-        <p v-if="totalDownloadedSize > 0" class="text-sm text-text-secondary">
-          {{ t("downloads.total", { size: formatSize(totalDownloadedSize) }) }}
-        </p>
-      </div>
+    <!-- App native : tout télécharger (bibliothèque entière ou corpus courant)
+         + espace utilisé. -->
+    <div
+      v-if="isNativeApp && tabBooks.length > 0"
+      class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-8 animate-[fadeIn_0.5s_ease]"
+    >
+      <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
+        <AppIcon
+          v-if="downloadingPaths.size > 0"
+          name="spinner"
+          :size="14"
+          class="animate-spin"
+        />
+        <AppIcon v-else name="download" :size="14" />
+        {{ t("downloads.downloadAll") }}
+      </button>
+      <p v-else class="flex items-center gap-1.5 text-sm text-primary">
+        <AppIcon name="circle-check" :size="14" />
+        {{ t("downloads.allDownloaded") }}
+      </p>
+      <p v-if="totalDownloadedSize > 0" class="text-sm text-text-secondary">
+        {{ t("downloads.total", { size: formatSize(totalDownloadedSize) }) }}
+      </p>
     </div>
 
-    <!-- Results -->
-    <div v-if="hasResults" class="max-w-5xl mx-auto space-y-12 animate-[fadeIn_0.5s_ease]">
-      <div v-for="typeGroup in groupedByType" :key="typeGroup.key" class="space-y-10">
-        <!-- Type heading: shown only on the "Tout" tab, where several corpora mix. -->
-        <h2 v-if="isAllSelected" class="text-2xl font-bold text-text-primary">
-          {{ t(typeGroup.labelKey) }}
-        </h2>
-        <section v-for="(texts, livre) in typeGroup.groups" :key="livre">
-          <h3 class="text-xl font-bold text-text-primary mb-4">
-            {{ formatBookName(String(livre)) }}
-          </h3>
-          <!-- Une seule colonne sur téléphone : les noms restent lisibles en entier. -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            <router-link
-              v-for="text in texts"
-              :key="text.id"
-              :to="hubPath(text)"
-              class="card card-hover p-4 flex items-center justify-between gap-2 group"
+    <!-- ===== Accueil sans recherche : le tableau de bord ===== -->
+    <template v-if="!showList">
+      <!-- Connecté : la lecture du jour et la reprise de lecture, avant tout. -->
+      <div v-if="user" class="max-w-5xl mx-auto mb-10 animate-[fadeIn_0.5s_ease]">
+        <div class="grid grid-cols-1 gap-5" :class="resumeLink ? 'md:grid-cols-2' : ''">
+          <!-- Lecture du jour : où j'en suis aujourd'hui -->
+          <RouterLink
+            to="/bibliotheque/lecture-du-jour"
+            class="card card-hover p-6 block group"
+          >
+            <div class="flex items-center justify-between gap-3 mb-4">
+              <h2
+                class="font-bold text-text-primary flex items-center gap-2.5 group-hover:text-primary transition-colors"
+              >
+                <AppIcon name="book" :size="17" class="text-primary" />
+                {{ t("dailyReading.title") }}
+              </h2>
+              <AppIcon
+                name="chevron-right"
+                :size="15"
+                class="text-text-secondary/50 rtl:rotate-180"
+              />
+            </div>
+
+            <div v-if="dailyLoading" class="h-10 rounded-lg bg-black/5 dark:bg-white/10 animate-pulse"></div>
+
+            <!-- Liste vide : inviter à la composer -->
+            <p v-else-if="readingTotal === 0" class="text-sm text-text-secondary leading-relaxed">
+              {{ t("home.dashboard.readingEmpty") }}
+            </p>
+
+            <template v-else>
+              <div class="flex items-center justify-between mb-2">
+                <span
+                  class="text-sm font-medium"
+                  :class="readingAllDone ? 'text-green-600 dark:text-green-400' : 'text-text-primary'"
+                >
+                  <template v-if="readingAllDone">
+                    {{ t("dailyReading.allReadTitle") }}
+                  </template>
+                  <template v-else>
+                    {{ t("dailyReading.progress", { done: readingDone, total: readingTotal }) }}
+                  </template>
+                </span>
+                <span class="text-sm font-semibold text-primary">{{ readingPct }}%</span>
+              </div>
+              <div class="h-2 w-full rounded-full bg-black/5 overflow-hidden dark:bg-white/10">
+                <div
+                  class="h-full rounded-full bg-primary transition-all duration-500"
+                  :style="{ width: `${readingPct}%` }"
+                ></div>
+              </div>
+            </template>
+
+            <p class="mt-4 text-sm font-medium text-primary flex items-center gap-1.5">
+              {{
+                readingTotal === 0
+                  ? t("home.dashboard.readingSetupCta")
+                  : t("home.dashboard.readingCta")
+              }}
+            </p>
+          </RouterLink>
+
+          <!-- Reprendre la dernière lecture, au verset près -->
+          <RouterLink
+            v-if="lastReading && resumeLink"
+            :to="resumeLink"
+            class="card card-hover p-6 block group"
+            @click="trackResume()"
+          >
+            <div class="flex items-center justify-between gap-3 mb-4">
+              <h2
+                class="font-bold text-text-primary flex items-center gap-2.5 group-hover:text-primary transition-colors"
+              >
+                <AppIcon name="bookmark" :size="17" class="text-primary" />
+                {{ t("study.resumeTitle") }}
+              </h2>
+              <span class="flex items-center gap-1 flex-shrink-0">
+                <AppIcon
+                  name="chevron-right"
+                  :size="15"
+                  class="text-text-secondary/50 rtl:rotate-180"
+                />
+                <button
+                  @click.prevent.stop="dismissResume"
+                  class="p-1.5 -m-0.5 rounded-full text-text-secondary/60 hover:text-red-600 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                  :title="t('home.dashboard.resumeDismiss')"
+                  :aria-label="t('home.dashboard.resumeDismiss')"
+                >
+                  <AppIcon name="x" :size="14" />
+                </button>
+              </span>
+            </div>
+            <p class="text-sm text-text-secondary leading-relaxed truncate">
+              {{ lastReading.label }}
+            </p>
+            <p class="mt-4 text-sm font-medium text-primary flex items-center gap-1.5">
+              {{ t("study.resumeCta") }}
+            </p>
+          </RouterLink>
+        </div>
+      </div>
+
+      <!-- Les grandes sections : la porte d'entrée principale vers chaque corpus. -->
+      <div class="max-w-5xl mx-auto animate-[fadeIn_0.5s_ease]">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <RouterLink
+            v-for="corpus in CORPUS_META"
+            :key="corpus.corpus"
+            :to="`/bibliotheque/${corpus.corpus}`"
+            class="card card-hover p-6 flex items-start gap-5 group"
+            @click="trackCorpusOpened(corpus.corpus)"
+          >
+            <span
+              class="shrink-0 w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center"
             >
-              <span class="min-w-0">
-                <span class="block font-medium text-text-primary truncate">
-                  {{ appendHebrewNumeral(text.name) }}
+              <AppIcon :name="corpus.icon" :size="26" :stroke-width="1.75" />
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="flex items-center justify-between gap-2">
+                <span
+                  class="text-xl font-bold text-text-primary group-hover:text-primary transition-colors"
+                >
+                  {{ t(corpus.labelKey) }}
                 </span>
-                <span v-if="text.totalSections > 1" class="text-xs text-text-secondary">
-                  {{ t("study.sections", { count: text.totalSections }) }}
-                </span>
-              </span>
-              <!-- Un marque-page attend dans ce texte -->
-              <span
-                v-if="bookmarkCounts[String(text.id)]"
-                class="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-primary"
-                :title="t('textReading.bookmarks')"
-              >
-                <AppIcon name="bookmark" :size="13" />
-                {{ bookmarkCounts[String(text.id)] }}
-              </span>
-              <!-- App native : télécharger/supprimer le livre sans quitter la bibliothèque. -->
-              <button
-                v-if="bookState(text) !== 'none'"
-                @click.prevent.stop="toggleDownload(text)"
-                class="shrink-0 p-1.5 -m-1.5 transition-colors"
-                :class="
-                  bookState(text) === 'downloaded'
-                    ? 'text-primary'
-                    : 'text-text-secondary/50 hover:text-primary'
-                "
-                :aria-label="
-                  bookState(text) === 'downloaded'
-                    ? t('downloads.delete')
-                    : t('downloads.download')
-                "
-                :title="
-                  bookState(text) === 'downloaded'
-                    ? t('downloads.delete')
-                    : t('downloads.download')
-                "
-              >
                 <AppIcon
-                  v-if="bookState(text) === 'downloading'"
-                  name="spinner"
-                  :size="19"
-                  class="animate-spin text-primary"
+                  name="chevron-right"
+                  :size="16"
+                  class="shrink-0 text-text-secondary/50 rtl:rotate-180"
                 />
-                <AppIcon
-                  v-else-if="bookState(text) === 'downloaded'"
-                  name="circle-check"
-                  :size="19"
-                />
-                <AppIcon v-else name="download" :size="19" />
-              </button>
-            </router-link>
-          </div>
-        </section>
+              </span>
+              <span class="block text-xs font-semibold text-primary mt-0.5">
+                {{ t(corpus.countKey, { count: corpusCounts[corpus.typeKey] ?? 0 }) }}
+              </span>
+              <span class="block text-sm text-text-secondary leading-relaxed mt-2">
+                {{ t(corpus.descKey) }}
+              </span>
+            </span>
+          </RouterLink>
+        </div>
       </div>
-    </div>
+    </template>
 
-    <!-- Empty -->
-    <div v-else class="flex flex-col items-center justify-center py-16 text-center">
-      <AppIcon name="search" :size="32" class="text-text-secondary/40 mb-4" />
-      <p class="text-text-secondary">{{ t("study.noResults") }}</p>
-    </div>
+    <!-- ===== Liste détaillée : page corpus, ou recherche depuis l'accueil ===== -->
+    <template v-else>
+      <div v-if="hasResults" class="max-w-5xl mx-auto space-y-12 animate-[fadeIn_0.5s_ease]">
+        <div v-for="typeGroup in groupedByType" :key="typeGroup.key" class="space-y-10">
+          <!-- Type heading: shown only when searching across the whole library. -->
+          <h2 v-if="!currentCorpus" class="text-2xl font-bold text-text-primary">
+            {{ t(typeGroup.labelKey) }}
+          </h2>
+          <section v-for="(texts, livre) in typeGroup.groups" :key="livre">
+            <h3 class="text-xl font-bold text-text-primary mb-4">
+              {{ formatBookName(String(livre)) }}
+            </h3>
+            <!-- Une seule colonne sur téléphone : les noms restent lisibles en entier. -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              <router-link
+                v-for="text in texts"
+                :key="text.id"
+                :to="hubPath(text)"
+                class="card card-hover p-4 flex items-center justify-between gap-2 group"
+              >
+                <span class="min-w-0">
+                  <span class="block font-medium text-text-primary truncate">
+                    {{ appendHebrewNumeral(text.name) }}
+                  </span>
+                  <span v-if="text.totalSections > 1" class="text-xs text-text-secondary">
+                    {{ t("study.sections", { count: text.totalSections }) }}
+                  </span>
+                </span>
+                <!-- Un marque-page attend dans ce texte -->
+                <span
+                  v-if="bookmarkCounts[String(text.id)]"
+                  class="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-primary"
+                  :title="t('textReading.bookmarks')"
+                >
+                  <AppIcon name="bookmark" :size="13" />
+                  {{ bookmarkCounts[String(text.id)] }}
+                </span>
+                <!-- App native : télécharger/supprimer le livre sans quitter la bibliothèque. -->
+                <button
+                  v-if="bookState(text) !== 'none'"
+                  @click.prevent.stop="toggleDownload(text)"
+                  class="shrink-0 p-1.5 -m-1.5 transition-colors"
+                  :class="
+                    bookState(text) === 'downloaded'
+                      ? 'text-primary'
+                      : 'text-text-secondary/50 hover:text-primary'
+                  "
+                  :aria-label="
+                    bookState(text) === 'downloaded'
+                      ? t('downloads.delete')
+                      : t('downloads.download')
+                  "
+                  :title="
+                    bookState(text) === 'downloaded'
+                      ? t('downloads.delete')
+                      : t('downloads.download')
+                  "
+                >
+                  <AppIcon
+                    v-if="bookState(text) === 'downloading'"
+                    name="spinner"
+                    :size="19"
+                    class="animate-spin text-primary"
+                  />
+                  <AppIcon
+                    v-else-if="bookState(text) === 'downloaded'"
+                    name="circle-check"
+                    :size="19"
+                  />
+                  <AppIcon v-else name="download" :size="19" />
+                </button>
+              </router-link>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Empty -->
+      <div v-else class="flex flex-col items-center justify-center py-16 text-center">
+        <AppIcon name="search" :size="32" class="text-text-secondary/40 mb-4" />
+        <p class="text-text-secondary">{{ t("study.noResults") }}</p>
+      </div>
+    </template>
 
     <AccountCta class="max-w-3xl mx-auto mt-12" />
   </main>

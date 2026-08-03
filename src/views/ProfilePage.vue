@@ -4,49 +4,25 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { authService } from "../services/authService";
 import { analyticsService } from "../services/analyticsService";
-import { sessionService } from "../services/sessionService";
 import type { User } from "../services/authService";
-import type { Session, TextStudy } from "../models/models";
 import { seoService } from "../services/seoService";
-import { SITE_URL } from "../config/site";
-import ShareModal from "../components/ShareModal.vue";
-import EditSessionModal from "../components/EditSessionModal.vue";
 import AppIcon from "../components/icons/AppIcon.vue";
 import ProfileHeader from "./profilePage/ProfileHeader.vue";
-import ParticipatedSessions from "./profilePage/ParticipatedSessions.vue";
-import CreatedSessions from "./profilePage/CreatedSessions.vue";
 import UserInfoForm from "./profilePage/UserInfoForm.vue";
 import SecuritySettings from "./profilePage/SecuritySettings.vue";
 import PreferencesTab from "./profilePage/PreferencesTab.vue";
-import DailyReading from "./profilePage/DailyReading.vue";
 import AboutTab from "./profilePage/AboutTab.vue";
-import { useToast } from "../composables/useToast";
 import { isNativeApp } from "../composables/useNativeApp";
 
 const router = useRouter();
 const { t } = useI18n();
-const toast = useToast();
 
 const currentUser = ref<User | null>(null);
-const activeTab = ref<
-  | "daily-reading"
-  | "sessions-participated"
-  | "sessions-created"
-  | "my-info"
-  | "security"
-  | "preferences"
-  | "about"
->("daily-reading");
+// Le profil ne garde que le compte : la lecture du jour vit dans la
+// bibliothèque et les sessions suivies/créées dans le partage de lectures
+// (les raccourcis du menu y mènent).
+const activeTab = ref<"my-info" | "security" | "preferences" | "about">("my-info");
 const isLoading = ref(true);
-
-const participatedSessions = ref<Session[]>([]);
-const createdSessions = ref<Session[]>([]);
-const textStudiesMap = ref<Map<string, TextStudy>>(new Map());
-
-const showShareModal = ref(false);
-const showEditModal = ref(false);
-const selectedSession = ref<Session | null>(null);
-const shareUrl = ref("");
 
 const userDisplayName = computed(() => currentUser.value?.name || "Utilisateur");
 
@@ -64,44 +40,6 @@ const loadUserData = async () => {
     router.push("/");
   } finally {
     isLoading.value = false;
-  }
-};
-
-const loadSessions = async () => {
-  if (!currentUser.value) return;
-
-  try {
-    const allSessions = await sessionService.getAllSessions();
-
-    participatedSessions.value = allSessions.filter((session) =>
-      session.reservations?.some(
-        (reservation) =>
-          reservation.chosenById === currentUser.value?.id ||
-          reservation.chosenByGuestId === currentUser.value?.email,
-      ),
-    );
-
-    createdSessions.value = allSessions.filter(
-      (session) => session.personId === currentUser.value?.id,
-    );
-
-    await loadTextStudiesForSessions(participatedSessions.value);
-  } catch (error) {
-    console.error("Erreur lors du chargement des sessions:", error);
-  }
-};
-
-const loadTextStudiesForSessions = async (sessions: Session[]) => {
-  try {
-    const types = [...new Set(sessions.map((s) => s.type))];
-    for (const type of types) {
-      const textStudies = await sessionService.getTextStudiesByType(type);
-      textStudies.forEach((textStudy) => {
-        textStudiesMap.value.set(textStudy.id, textStudy);
-      });
-    }
-  } catch (error) {
-    console.error("Erreur lors du chargement des textes d'étude:", error);
   }
 };
 
@@ -129,6 +67,12 @@ const setActiveTab = (tab: typeof activeTab.value) => {
   }
 };
 
+// Les fonctionnalités qui vivaient ici sont désormais dans leurs sections :
+// on trace les raccourcis pour vérifier que les habitués les retrouvent.
+const trackShortcut = (shortcut: string) => {
+  analyticsService.capture("profile_shortcut_clicked", { shortcut });
+};
+
 const updateUserInfo = async (data: { name: string; email: string }) => {
   if (!currentUser.value) return;
 
@@ -140,80 +84,8 @@ const updateUserInfo = async (data: { name: string; email: string }) => {
   }
 };
 
-const openShareModal = (session: Session) => {
-  selectedSession.value = session;
-  // Domaine canonique : window.location.origin vaut localhost (ou
-  // capacitor://localhost) en dev et dans l'app native → lien inutilisable.
-  shareUrl.value = `${SITE_URL}/share-reading/session/${session.slug || session.id}`;
-  showShareModal.value = true;
-};
-
-const openEditModal = (session: Session) => {
-  selectedSession.value = session;
-  showEditModal.value = true;
-};
-
-const saveSessionChanges = async (sessionData: {
-  name: string;
-  description: string;
-  dateLimit: string;
-  guestEmailRequired: boolean;
-}) => {
-  if (!selectedSession.value) return;
-
-  try {
-    await sessionService.updateSession(selectedSession.value.id, {
-      ...sessionData,
-      slug: selectedSession.value.slug,
-    });
-
-    const sessionIndex = createdSessions.value.findIndex((s) => s.id === selectedSession.value!.id);
-    if (sessionIndex > -1) {
-      createdSessions.value[sessionIndex] = {
-        ...createdSessions.value[sessionIndex],
-        name: sessionData.name,
-        description: sessionData.description,
-        dateLimit: new Date(sessionData.dateLimit),
-        guestEmailRequired: sessionData.guestEmailRequired,
-        updatedAt: new Date(),
-      };
-    }
-
-    toast.success(t("profile.sessionUpdatedSuccess"));
-  } catch (error) {
-    console.error("Erreur lors de la mise à jour:", error);
-    toast.errorFromException(error, t("profile.sessionUpdateError"));
-  }
-};
-
-const endSession = async (session: Session) => {
-  if (!confirm(t("profile.endSessionConfirm"))) {
-    return;
-  }
-
-  try {
-    await sessionService.endSession(session.id);
-
-    const sessionIndex = createdSessions.value.findIndex((s) => s.id === session.id);
-    if (sessionIndex > -1) {
-      createdSessions.value[sessionIndex] = {
-        ...createdSessions.value[sessionIndex],
-        isEnded: true,
-        endedAt: new Date(),
-        updatedAt: new Date(),
-      };
-    }
-
-    toast.success(t("profile.sessionEndedSuccess"));
-  } catch (error) {
-    console.error("Erreur lors de la fin de session:", error);
-    toast.errorFromException(error, t("profile.sessionEndError"));
-  }
-};
-
 onMounted(async () => {
   await loadUserData();
-  await loadSessions();
   const url = window.location.origin + "/profile";
   seoService.setMeta({
     title: t("seo.profileTitle"),
@@ -238,46 +110,47 @@ onMounted(async () => {
 
       <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
         <nav class="lg:sticky lg:top-24 h-fit card p-3">
+          <!-- Raccourcis vers les fonctionnalités déplacées dans leurs sections. -->
+          <p class="px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary/70">
+            {{ t("profile.shortcuts.title") }}
+          </p>
+          <ul class="flex flex-col gap-1 mb-4">
+            <li>
+              <RouterLink
+                to="/bibliotheque/lecture-du-jour"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors dark:hover:bg-white/10 group"
+                @click="trackShortcut('daily_reading')"
+              >
+                <AppIcon name="book" :size="15" class="text-primary shrink-0" />
+                <span class="min-w-0">
+                  {{ t("dailyReading.title") }}
+                  <span class="block text-xs font-normal text-text-secondary/80">
+                    {{ t("profile.shortcuts.dailyReadingHint") }}
+                  </span>
+                </span>
+              </RouterLink>
+            </li>
+            <li>
+              <RouterLink
+                to="/share-reading"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors dark:hover:bg-white/10 group"
+                @click="trackShortcut('my_sessions')"
+              >
+                <AppIcon name="users" :size="15" class="text-primary shrink-0" />
+                <span class="min-w-0">
+                  {{ t("home.dashboard.sessionsTitle") }}
+                  <span class="block text-xs font-normal text-text-secondary/80">
+                    {{ t("profile.shortcuts.mySessionsHint") }}
+                  </span>
+                </span>
+              </RouterLink>
+            </li>
+          </ul>
+
+          <p class="px-4 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary/70">
+            {{ t("profile.shortcuts.accountTitle") }}
+          </p>
           <ul class="flex flex-col gap-1 mb-6">
-            <li>
-              <button
-                @click="setActiveTab('daily-reading')"
-                :class="[
-                  'w-full text-left px-4 py-3 rounded-lg font-medium transition-colors',
-                  activeTab === 'daily-reading'
-                    ? 'bg-primary/10 text-primary font-semibold'
-                    : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',
-                ]"
-              >
-                {{ t("profile.tabs.dailyReading") }}
-              </button>
-            </li>
-            <li>
-              <button
-                @click="setActiveTab('sessions-participated')"
-                :class="[
-                  'w-full text-left px-4 py-3 rounded-lg font-medium transition-colors',
-                  activeTab === 'sessions-participated'
-                    ? 'bg-primary/10 text-primary font-semibold'
-                    : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',
-                ]"
-              >
-                {{ t("profile.tabs.participatedSessions") }}
-              </button>
-            </li>
-            <li>
-              <button
-                @click="setActiveTab('sessions-created')"
-                :class="[
-                  'w-full text-left px-4 py-3 rounded-lg font-medium transition-colors',
-                  activeTab === 'sessions-created'
-                    ? 'bg-primary/10 text-primary font-semibold'
-                    : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',
-                ]"
-              >
-                {{ t("profile.tabs.createdSessions") }}
-              </button>
-            </li>
             <li>
               <button
                 @click="setActiveTab('my-info')"
@@ -340,28 +213,6 @@ onMounted(async () => {
         </nav>
 
         <div id="profile-content">
-          <div v-if="activeTab === 'daily-reading'">
-            <DailyReading :user-id="currentUser.id" />
-          </div>
-
-          <div v-if="activeTab === 'sessions-participated'">
-            <ParticipatedSessions
-              :sessions="participatedSessions"
-              :current-user="currentUser"
-              :text-studies-map="textStudiesMap"
-            />
-          </div>
-
-          <div v-if="activeTab === 'sessions-created'">
-            <CreatedSessions
-              :sessions="createdSessions"
-              :current-user="currentUser"
-              @share="openShareModal"
-              @edit="openEditModal"
-              @end="endSession"
-            />
-          </div>
-
           <div v-if="activeTab === 'my-info'">
             <UserInfoForm :user="currentUser" @update="updateUserInfo" />
           </div>
@@ -380,18 +231,5 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-
-    <ShareModal
-      v-model:show="showShareModal"
-      :session-name="selectedSession?.name || ''"
-      :share-url="shareUrl"
-      :session-type="selectedSession?.type"
-    />
-
-    <EditSessionModal
-      v-model:show="showEditModal"
-      :session="selectedSession"
-      @save="saveSessionChanges"
-    />
   </main>
 </template>

@@ -50,12 +50,12 @@ const loadData = async () => {
     session.value = await sessionService.getSessionById(sessionId);
 
     if (!session.value) {
-      router.push("/profile");
+      router.push("/share-reading");
       return;
     }
 
     if (!sessionService.canManageSession(session.value, currentUser.value)) {
-      router.push("/profile");
+      router.push("/share-reading");
       return;
     }
 
@@ -70,7 +70,7 @@ const loadData = async () => {
     });
   } catch (error) {
     console.error("Erreur lors du chargement des données:", error);
-    router.push("/profile");
+    router.push("/share-reading");
   } finally {
     isLoading.value = false;
   }
@@ -293,8 +293,8 @@ const sessionStats = computed(() => {
   };
 });
 
-const goBackToProfile = () => {
-  router.push("/profile");
+const goBackToSessions = () => {
+  router.push("/share-reading");
 };
 
 onMounted(() => {
@@ -316,9 +316,9 @@ onMounted(() => {
     <div v-else-if="session" class="max-w-7xl mx-auto px-6 pt-8 animate-[fadeIn_0.5s_ease]">
       <!-- En-tête -->
       <header class="mb-10">
-        <button @click="goBackToProfile" class="back-link mb-6">
+        <button @click="goBackToSessions" class="back-link mb-6">
           <AppIcon name="chevron-left" :size="14" />
-          {{ t("sessionManagement.backToProfile") }}
+          {{ t("sessionManagement.backToSessions") }}
         </button>
 
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
