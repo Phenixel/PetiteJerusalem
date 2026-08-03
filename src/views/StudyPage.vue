@@ -26,8 +26,8 @@ import { countDailyProgress, userPreferencesService } from "../services/userPref
 import { useToast } from "../composables/useToast";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
-import type { IconName } from "../components/icons/registry";
 import AccountCta from "../components/AccountCta.vue";
+import LibraryShelf, { type ShelfBook } from "../components/LibraryShelf.vue";
 
 const { t } = useI18n();
 const toast = useToast();
@@ -69,7 +69,6 @@ const CORPUS_META: {
   labelKey: string;
   descKey: string;
   countKey: string;
-  icon: IconName;
 }[] = [
   {
     corpus: "tehilim",
@@ -77,7 +76,6 @@ const CORPUS_META: {
     labelKey: "study.types.tehilim",
     descKey: "study.corpus.tehilimDesc",
     countKey: "study.corpus.psalmsCount",
-    icon: "book-open",
   },
   {
     corpus: "michna",
@@ -85,7 +83,6 @@ const CORPUS_META: {
     labelKey: "study.types.mishna",
     descKey: "study.corpus.michnaDesc",
     countKey: "study.corpus.tractatesCount",
-    icon: "book",
   },
   {
     corpus: "talmud",
@@ -93,7 +90,6 @@ const CORPUS_META: {
     labelKey: "study.types.talmud",
     descKey: "study.corpus.talmudDesc",
     countKey: "study.corpus.tractatesCount",
-    icon: "graduation-cap",
   },
   {
     corpus: "tanakh",
@@ -101,7 +97,6 @@ const CORPUS_META: {
     labelKey: "study.types.tanakh",
     descKey: "study.corpus.tanakhDesc",
     countKey: "study.corpus.textsCount",
-    icon: "book-reader",
   },
 ];
 
@@ -119,6 +114,16 @@ const corpusCounts = computed<Record<string, number>>(() => {
   }
   return counts;
 });
+
+// Les livres de l'étagère : un par grande section, titre sur la tranche.
+const shelfBooks = computed<ShelfBook[]>(() =>
+  CORPUS_META.map((c) => ({
+    corpus: c.corpus,
+    to: `/bibliotheque/${c.corpus}`,
+    label: t(c.labelKey),
+    count: t(c.countKey, { count: corpusCounts.value[c.typeKey] ?? 0 }),
+  })),
+);
 
 const searchTerm = ref("");
 
@@ -534,43 +539,10 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Les grandes sections : la porte d'entrée principale vers chaque corpus. -->
-      <div class="max-w-5xl mx-auto animate-[fadeIn_0.5s_ease]">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <RouterLink
-            v-for="corpus in CORPUS_META"
-            :key="corpus.corpus"
-            :to="`/bibliotheque/${corpus.corpus}`"
-            class="card card-hover p-6 flex items-start gap-5 group"
-            @click="trackCorpusOpened(corpus.corpus)"
-          >
-            <span
-              class="shrink-0 w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center"
-            >
-              <AppIcon :name="corpus.icon" :size="26" :stroke-width="1.75" />
-            </span>
-            <span class="min-w-0 flex-1">
-              <span class="flex items-center justify-between gap-2">
-                <span
-                  class="text-xl font-bold text-text-primary group-hover:text-primary transition-colors"
-                >
-                  {{ t(corpus.labelKey) }}
-                </span>
-                <AppIcon
-                  name="chevron-right"
-                  :size="16"
-                  class="shrink-0 text-text-secondary/50 rtl:rotate-180"
-                />
-              </span>
-              <span class="block text-xs font-semibold text-primary mt-0.5">
-                {{ t(corpus.countKey, { count: corpusCounts[corpus.typeKey] ?? 0 }) }}
-              </span>
-              <span class="block text-sm text-text-secondary leading-relaxed mt-2">
-                {{ t(corpus.descKey) }}
-              </span>
-            </span>
-          </RouterLink>
-        </div>
+      <!-- Les grandes sections : des livres posés sur une étagère, la porte
+           d'entrée principale vers chaque corpus. -->
+      <div class="mt-2" :class="user ? '' : 'md:mt-6'">
+        <LibraryShelf :books="shelfBooks" @open="trackCorpusOpened" />
       </div>
     </template>
 
