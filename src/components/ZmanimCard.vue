@@ -57,7 +57,12 @@ const countdown = computed(() => {
   const duration =
     minutes < 60
       ? t("zmanim.durationM", { m: minutes })
-      : t("zmanim.durationHM", { h: Math.floor(minutes / 60), m: minutes % 60 });
+      : t("zmanim.durationHM", {
+          h: Math.floor(minutes / 60),
+          // « 4 h 02 » et non « 4 h 2 » : les minutes d'une durée se lisent
+          // comme celles d'une heure.
+          m: String(minutes % 60).padStart(2, "0"),
+        });
   return t("zmanim.nextIn", { duration });
 });
 
