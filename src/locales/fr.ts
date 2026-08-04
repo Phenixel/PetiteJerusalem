@@ -339,6 +339,8 @@ const fr = {
     clearSearch: "Effacer la recherche",
     searchFor: "Recherche",
     availableOnly: "Disponibles uniquement",
+    availableOnlyHidden: "{count} texte entièrement réservé masqué | {count} textes entièrement réservés masqués",
+    availableOnlyNothingHidden: "Aucun texte n'est encore entièrement réservé : rien à masquer.",
     myReservations: "Mes réservations",
     confirmReservation: "Confirmer la réservation",
     confirmAsGuest: "Finaliser en tant qu'invité",

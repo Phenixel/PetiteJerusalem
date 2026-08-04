@@ -121,13 +121,31 @@ const trackFirstSelection = () => {
   });
 };
 
+// Textes retenus par la recherche, avant le filtre de disponibilité : base
+// commune au regroupement affiché et au décompte des textes que le filtre
+// masquerait.
+const searchedTextStudies = computed(() => {
+  if (!searchTerm.value.trim()) return textStudies.value;
+  return sessionService.filterTextStudiesBySearch(textStudies.value, searchTerm.value);
+});
+
+// Ce que « Disponibles uniquement » retire réellement de la liste. Un texte
+// n'est « entièrement réservé » que si toutes ses sections sont prises par la
+// même personne : sur une chaîne encore peu remplie le compte est nul, la
+// bascule ne change alors rien à l'affichage. Sans le dire, l'utilisateur
+// croit le filtre cassé et reclique (rage clicks mesurés en prod).
+const hiddenByAvailabilityCount = computed(() => {
+  const currentSession = session.value;
+  if (!currentSession) return 0;
+  return searchedTextStudies.value.filter((text) =>
+    sessionService.isTextFullyReserved(text, currentSession),
+  ).length;
+});
+
 const groupedTextStudies = computed(() => {
   if (!textStudies.value.length) return {};
 
-  let filtered = textStudies.value;
-  if (searchTerm.value.trim()) {
-    filtered = sessionService.filterTextStudiesBySearch(filtered, searchTerm.value);
-  }
+  let filtered = searchedTextStudies.value;
 
   if (showOnlyAvailable.value && session.value) {
     const currentSession = session.value;
@@ -607,6 +625,10 @@ watch(showOnlyAvailable, (enabled) => {
     session_id: session.value?.id,
     filter: "available_only",
     enabled,
+    // Sans ce compte, impossible de distinguer un filtre cassé d'un filtre
+    // qui n'a simplement rien à masquer : c'est ce qui rendait les rage
+    // clicks mesurés sur cette bascule inexploitables.
+    hidden_count: hiddenByAvailabilityCount.value,
   });
 });
 
@@ -700,7 +722,7 @@ watch(session, (s) => applySessionSeo(s));
 
         <!-- Filtre : masquer les textes entièrement réservés. Fond opaque en
              pastille : la liste défile juste en dessous. -->
-        <div class="flex justify-center mt-3">
+        <div class="flex flex-col items-center mt-3">
           <label
             class="inline-flex items-center gap-2.5 cursor-pointer bg-surface rounded-full pl-3.5 pr-4 py-2 shadow-card"
           >
@@ -717,6 +739,19 @@ watch(session, (s) => applySessionSeo(s));
               {{ t("detailSession.availableOnly") }}
             </span>
           </label>
+          <!-- Réponse immédiate au clic : sur une chaîne peu réservée la liste
+               ne bouge pas, la légende est alors le seul retour visible. -->
+          <p
+            v-if="showOnlyAvailable"
+            class="text-xs text-text-secondary/80 mt-2 text-center px-4"
+            aria-live="polite"
+          >
+            {{
+              hiddenByAvailabilityCount > 0
+                ? t("detailSession.availableOnlyHidden", hiddenByAvailabilityCount)
+                : t("detailSession.availableOnlyNothingHidden")
+            }}
+          </p>
         </div>
       </div>
 

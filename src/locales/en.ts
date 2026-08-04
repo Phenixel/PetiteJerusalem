@@ -335,6 +335,8 @@ const en: LocaleMessages = {
     clearSearch: "Clear search",
     searchFor: "Search",
     availableOnly: "Available only",
+    availableOnlyHidden: "{count} fully reserved text hidden | {count} fully reserved texts hidden",
+    availableOnlyNothingHidden: "No text is fully reserved yet — nothing to hide.",
     myReservations: "My reservations",
     confirmReservation: "Confirm reservation",
     confirmAsGuest: "Finalize as guest",

@@ -331,6 +331,8 @@ const he: LocaleMessages = {
     clearSearch: "נקה חיפוש",
     searchFor: "חיפוש",
     availableOnly: "זמינים בלבד",
+    availableOnlyHidden: "טקסט אחד שמור במלואו הוסתר | {count} טקסטים שמורים במלואם הוסתרו",
+    availableOnlyNothingHidden: "אף טקסט אינו שמור במלואו עדיין — אין מה להסתיר.",
     myReservations: "ההזמנות שלי",
     confirmReservation: "אשר הזמנה",
     confirmAsGuest: "סיים כאורח",
