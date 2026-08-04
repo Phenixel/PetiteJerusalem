@@ -52,6 +52,7 @@ const guestForm = ref<ReservationForm>({
 // Invité repris dans la liste des participants existants : son identifiant
 // prime sur l'email saisi, les nouvelles réservations lui sont rattachées.
 const selectedGuestId = ref<string | null>(null);
+const guestNameInput = ref<HTMLInputElement | null>(null);
 const showGuestSuggestions = ref(false);
 const activeSuggestion = ref(-1);
 
@@ -180,8 +181,10 @@ const selectGuest = (guest: { guestId: string; name: string }) => {
 
 const clearSelectedGuest = () => {
   selectedGuestId.value = null;
-  showGuestSuggestions.value = true;
   activeSuggestion.value = -1;
+  // Le champ reprend la main : « Changer » sert à taper un autre nom, et c'est
+  // le focus qui rouvre la liste, plutôt qu'elle flotte sous un champ inactif.
+  guestNameInput.value?.focus();
 };
 
 const onGuestNameInput = () => {
@@ -880,6 +883,7 @@ onMounted(() => {
             <div class="relative">
               <input
                 id="guest-name"
+                ref="guestNameInput"
                 v-model="guestForm.name"
                 type="text"
                 class="field"
