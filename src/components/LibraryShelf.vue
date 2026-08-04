@@ -15,8 +15,6 @@ export interface ShelfBook {
   to: string;
   /** Titre écrit sur la couverture. */
   label: string;
-  /** Sous-texte affiché sous l'étagère (« 150 psaumes »…). */
-  count: string;
 }
 
 defineProps<{ books: ShelfBook[] }>();
@@ -47,7 +45,7 @@ function bindingOf(corpus: string): string {
         class="book"
         :style="{ '--i': index, '--binding': bindingOf(book.corpus) }"
         role="listitem"
-        :aria-label="`${book.label} — ${book.count}`"
+        :aria-label="book.label"
         @click="emit('open', book.corpus)"
       >
         <span class="book-rise">
@@ -124,12 +122,6 @@ function bindingOf(corpus: string): string {
     </div>
     <!-- la planche de l'étagère, en bois clair -->
     <div class="shelf-board" aria-hidden="true"></div>
-    <!-- les compteurs, alignés sous chaque livre (même grille que les livres) -->
-    <div class="shelf-counts" aria-hidden="true">
-      <span v-for="book in books" :key="book.corpus" class="book-count">
-        {{ book.count }}
-      </span>
-    </div>
   </div>
 </template>
 
@@ -139,8 +131,7 @@ function bindingOf(corpus: string): string {
   margin-inline: auto;
 }
 
-.shelf-books,
-.shelf-counts {
+.shelf-books {
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -148,20 +139,15 @@ function bindingOf(corpus: string): string {
 }
 
 @media (min-width: 640px) {
-  .shelf-books,
-  .shelf-counts {
+  .shelf-books {
     gap: 1rem;
   }
 }
 
-.book,
-.book-count {
+.book {
   flex: 1 1 0;
   max-width: 8rem;
   min-width: 0;
-}
-
-.book {
   display: block;
   -webkit-tap-highlight-color: transparent;
 }
@@ -228,26 +214,6 @@ function bindingOf(corpus: string): string {
   background: rgb(0 0 0 / 0.55);
 }
 
-.shelf-counts {
-  margin-top: 0.65rem;
-}
-
-.book-count {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  text-align: center;
-  opacity: 0;
-  animation: count-appear 0.5s ease-out forwards;
-  animation-delay: 0.85s;
-}
-
-@keyframes count-appear {
-  to {
-    opacity: 1;
-  }
-}
-
 /* --- Survol : le livre se soulève doucement de l'étagère --- */
 @media (hover: hover) {
   .book:hover .book-lift {
@@ -289,8 +255,7 @@ function bindingOf(corpus: string): string {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .book-rise,
-  .book-count {
+  .book-rise {
     animation: none;
     opacity: 1;
     transform: none;

@@ -614,6 +614,7 @@ const he: LocaleMessages = {
     title: "ספרייה",
     subtitle: "קראו ולמדו את הטקסטים: תהילים, משנה, תלמוד ותנ״ך.",
     searchPlaceholder: "חיפוש טקסט…",
+    searchAllPlaceholder: "חיפוש בכל הטקסטים…",
     noResults: "לא נמצא טקסט תואם.",
     sections: "{count} פרקים",
     types: {
@@ -628,9 +629,10 @@ const he: LocaleMessages = {
       michnaDesc: "שישה סדרי משנה, מסכת אחר מסכת, פרק אחר פרק.",
       talmudDesc: "הגמרא: מסכתות התלמוד הבבלי, דף אחר דף.",
       tanakhDesc: "התורה פרשה אחר פרשה, הנביאים והכתובים.",
-      psalmsCount: "{count} פרקים",
-      tractatesCount: "{count} מסכתות",
-      textsCount: "{count} טקסטים",
+      tehilimSearch: "חיפוש פרק תהילים…",
+      michnaSearch: "חיפוש מסכת משנה…",
+      talmudSearch: "חיפוש מסכת תלמוד…",
+      tanakhSearch: "חיפוש פרשה או ספר…",
     },
   },
   studio: {

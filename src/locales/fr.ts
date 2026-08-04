@@ -635,6 +635,7 @@ const fr = {
     title: "Bibliothèque",
     subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud et Tanakh.",
     searchPlaceholder: "Rechercher un texte…",
+    searchAllPlaceholder: "Rechercher dans tous les textes…",
     noResults: "Aucun texte ne correspond à votre recherche.",
     sections: "{count} sections",
     types: {
@@ -649,9 +650,10 @@ const fr = {
       michnaDesc: "Les six sédarim de la Michna, traité par traité, chapitre par chapitre.",
       talmudDesc: "La Guemara : les traités du Talmud Bavli, pour avancer daf après daf.",
       tanakhDesc: "La Torah paracha par paracha, les Neviim et les Ketouvim.",
-      psalmsCount: "{count} psaumes",
-      tractatesCount: "{count} traités",
-      textsCount: "{count} textes",
+      tehilimSearch: "Rechercher un tehilim…",
+      michnaSearch: "Rechercher une michna…",
+      talmudSearch: "Rechercher un traité du Talmud…",
+      tanakhSearch: "Rechercher une paracha ou un livre…",
     },
   },
   studio: {

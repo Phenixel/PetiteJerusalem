@@ -360,6 +360,10 @@ const handleCreateClick = () => {
       </div>
     </section>
 
+    <!-- Connecté : la timeline explicative vit entre « Mes sessions » et la
+         liste publique. -->
+    <HowItWorksTimeline v-if="isAuthenticated" class="mb-16" />
+
     <div class="relative max-w-7xl mx-auto">
       <!-- Titre de la liste publique : la distingue de « Mes sessions ». -->
       <h3
@@ -492,9 +496,6 @@ const handleCreateClick = () => {
           {{ t("shareReading.createFirstSession") }}
         </p>
       </div>
-
-      <!-- Connecté : la timeline explicative vit en bas de page. -->
-      <HowItWorksTimeline v-if="isAuthenticated" class="mt-20" />
 
       <AccountCta class="max-w-3xl mx-auto mt-12" />
     </div>

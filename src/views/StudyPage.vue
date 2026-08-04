@@ -27,6 +27,7 @@ import { useToast } from "../composables/useToast";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
 import AccountCta from "../components/AccountCta.vue";
+import DailyReadingCard from "../components/DailyReadingCard.vue";
 import LibraryShelf, { type ShelfBook } from "../components/LibraryShelf.vue";
 
 const { t } = useI18n();
@@ -68,35 +69,35 @@ const CORPUS_META: {
   typeKey: string;
   labelKey: string;
   descKey: string;
-  countKey: string;
+  searchKey: string;
 }[] = [
   {
     corpus: "tehilim",
     typeKey: "Tehilim",
     labelKey: "study.types.tehilim",
     descKey: "study.corpus.tehilimDesc",
-    countKey: "study.corpus.psalmsCount",
+    searchKey: "study.corpus.tehilimSearch",
   },
   {
     corpus: "michna",
     typeKey: "Mishna",
     labelKey: "study.types.mishna",
     descKey: "study.corpus.michnaDesc",
-    countKey: "study.corpus.tractatesCount",
+    searchKey: "study.corpus.michnaSearch",
   },
   {
     corpus: "talmud",
     typeKey: "Talmud Bavli",
     labelKey: "study.types.talmud",
     descKey: "study.corpus.talmudDesc",
-    countKey: "study.corpus.tractatesCount",
+    searchKey: "study.corpus.talmudSearch",
   },
   {
     corpus: "tanakh",
     typeKey: "Tanakh",
     labelKey: "study.types.tanakh",
     descKey: "study.corpus.tanakhDesc",
-    countKey: "study.corpus.textsCount",
+    searchKey: "study.corpus.tanakhSearch",
   },
 ];
 
@@ -107,22 +108,19 @@ const currentCorpus = computed(
   () => CORPUS_META.find((c) => c.corpus === String(route.params.corpus ?? "")) ?? null,
 );
 
-const corpusCounts = computed<Record<string, number>>(() => {
-  const counts: Record<string, number> = {};
-  for (const txt of allTexts) {
-    counts[String(txt.type)] = (counts[String(txt.type)] ?? 0) + 1;
-  }
-  return counts;
-});
-
-// Les livres de l'étagère : un par grande section, titre sur la tranche.
+// Les livres de l'étagère : un par grande section, titre sur la couverture.
 const shelfBooks = computed<ShelfBook[]>(() =>
   CORPUS_META.map((c) => ({
     corpus: c.corpus,
     to: `/bibliotheque/${c.corpus}`,
     label: t(c.labelKey),
-    count: t(c.countKey, { count: corpusCounts.value[c.typeKey] ?? 0 }),
   })),
+);
+
+// La recherche de l'accueil couvre toute la bibliothèque, celle d'une page
+// corpus reste dans le corpus : le placeholder le dit explicitement.
+const searchPlaceholder = computed(() =>
+  currentCorpus.value ? t(currentCorpus.value.searchKey) : t("study.searchAllPlaceholder"),
 );
 
 const searchTerm = ref("");
@@ -186,12 +184,6 @@ let unsubscribeAuth: (() => void) | null = null;
 const dailyLoading = ref(false);
 const readingTotal = ref(0);
 const readingDone = ref(0);
-const readingPct = computed(() =>
-  readingTotal.value === 0 ? 0 : Math.round((readingDone.value / readingTotal.value) * 100),
-);
-const readingAllDone = computed(
-  () => readingTotal.value > 0 && readingDone.value >= readingTotal.value,
-);
 
 // Dernière position de lecture : le vrai « Reprendre ma lecture ».
 const lastReading = ref<ReadingPosition | null>(null);
@@ -406,7 +398,7 @@ onUnmounted(() => {
         <input
           v-model="searchTerm"
           type="text"
-          :placeholder="t('study.searchPlaceholder')"
+          :placeholder="searchPlaceholder"
           class="field !pl-11"
         />
         <button
@@ -441,77 +433,11 @@ onUnmounted(() => {
 
     <!-- ===== Accueil sans recherche : le tableau de bord ===== -->
     <template v-if="!showList">
-      <!-- Les grandes sections d'abord : on est dans la bibliothèque, les
-           livres sont la porte d'entrée principale — visibles sans scroller,
-           même sur téléphone. -->
-      <div class="mt-2 md:mt-6">
-        <LibraryShelf :books="shelfBooks" @open="trackCorpusOpened" />
-      </div>
-
-      <!-- Connecté : la lecture du jour, en rangée compacte sous l'étagère
-           (une ligne avec sa mini-jauge — la grande carte poussait les livres
-           hors de l'écran). -->
-      <div v-if="user" class="max-w-xl mx-auto mt-10 animate-[fadeIn_0.5s_ease]">
-        <RouterLink
-          to="/bibliotheque/lecture-du-jour"
-          class="card card-hover px-4 py-3 flex items-center gap-3 group"
-        >
-          <AppIcon name="book" :size="16" class="shrink-0 text-primary" />
-          <span class="min-w-0 flex-1">
-            <span class="flex items-baseline justify-between gap-3">
-              <span
-                class="text-sm font-semibold text-text-primary truncate group-hover:text-primary transition-colors"
-              >
-                {{ t("dailyReading.title") }}
-              </span>
-              <span
-                v-if="!dailyLoading"
-                class="shrink-0 text-xs font-semibold"
-                :class="
-                  readingAllDone
-                    ? 'text-green-600 dark:text-green-400'
-                    : readingTotal === 0
-                      ? 'text-primary'
-                      : 'text-text-secondary'
-                "
-              >
-                {{
-                  readingTotal === 0
-                    ? t("home.dashboard.readingSetupCta")
-                    : readingAllDone
-                      ? t("dailyReading.allReadTitle")
-                      : `${readingDone}/${readingTotal}`
-                }}
-              </span>
-            </span>
-            <span
-              v-if="dailyLoading"
-              class="block h-1.5 mt-2 rounded-full bg-black/5 dark:bg-white/10 animate-pulse"
-            ></span>
-            <span
-              v-else-if="readingTotal > 0"
-              class="block h-1.5 mt-2 rounded-full bg-black/5 overflow-hidden dark:bg-white/10"
-            >
-              <span
-                class="block h-full rounded-full transition-all duration-500"
-                :class="readingAllDone ? 'bg-green-500' : 'bg-primary'"
-                :style="{ width: `${readingPct}%` }"
-              ></span>
-            </span>
-          </span>
-          <AppIcon
-            name="chevron-right"
-            :size="14"
-            class="shrink-0 text-text-secondary/50 rtl:rotate-180"
-          />
-        </RouterLink>
-      </div>
-
       <!-- Reprendre la dernière lecture, au verset près : une simple ligne
-           discrète (la carte prenait trop de place pour un raccourci). -->
+           discrète juste sous la recherche. -->
       <div
         v-if="lastReading && resumeLink"
-        class="flex items-center justify-center gap-1 mt-4 animate-[fadeIn_0.5s_ease]"
+        class="flex items-center justify-center gap-1 -mt-2 mb-6 animate-[fadeIn_0.5s_ease]"
       >
         <RouterLink
           :to="resumeLink"
@@ -531,6 +457,20 @@ onUnmounted(() => {
         >
           <AppIcon name="x" :size="12" />
         </button>
+      </div>
+
+      <!-- Les grandes sections : on est dans la bibliothèque, les livres sont
+           la porte d'entrée principale — visibles sans scroller, même sur
+           téléphone. -->
+      <div class="mt-2 md:mt-6">
+        <LibraryShelf :books="shelfBooks" @open="trackCorpusOpened" />
+      </div>
+
+      <!-- Connecté : la lecture du jour en bas de page — même carte que le
+           tableau de bord de l'accueil (un seul design pour la même chose). -->
+      <div v-if="user" class="max-w-3xl mx-auto mt-14 animate-[fadeIn_0.5s_ease]">
+        <div v-if="dailyLoading" class="card p-6 h-36 animate-pulse"></div>
+        <DailyReadingCard v-else :done="readingDone" :total="readingTotal" />
       </div>
     </template>
 

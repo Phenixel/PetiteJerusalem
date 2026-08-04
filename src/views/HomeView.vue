@@ -14,6 +14,7 @@ import { firestoreService } from "../services/firestoreService";
 import { isNativeApp } from "../composables/useNativeApp";
 import SiteFooter from "../components/SiteFooter.vue";
 import AppIcon from "../components/icons/AppIcon.vue";
+import DailyReadingCard from "../components/DailyReadingCard.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
 import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
 import IllustrationBibliotheque from "../components/illustrations/IllustrationBibliotheque.vue";
@@ -36,9 +37,6 @@ const greeting = computed(() => {
   const hour = new Date().getHours();
   return hour >= 18 || hour < 5 ? t("home.dashboard.helloEvening") : t("home.dashboard.hello");
 });
-const readingPct = computed(() =>
-  readingTotal.value === 0 ? 0 : Math.round((readingDone.value / readingTotal.value) * 100),
-);
 
 // Dernière position de lecture (bibliothèque) : le vrai « Reprendre ma lecture ».
 const lastReading = ref<ReadingPosition | null>(null);
@@ -68,9 +66,6 @@ function dismissResume() {
     source: "home",
   });
 }
-const readingAllDone = computed(
-  () => readingTotal.value > 0 && readingDone.value >= readingTotal.value,
-);
 
 /** Local calendar day (YYYY-MM-DD) — même convention que DailyReading. */
 function todayKey(): string {
@@ -256,55 +251,14 @@ onUnmounted(() => {
         </template>
 
         <template v-else>
-          <!-- Lecture quotidienne : où j'en suis aujourd'hui -->
-          <RouterLink
-            to="/bibliotheque/lecture-du-jour"
-            class="dash-card card card-hover p-6 block group"
+          <!-- Lecture quotidienne : où j'en suis aujourd'hui (carte partagée
+               avec la bibliothèque) -->
+          <DailyReadingCard
+            :done="readingDone"
+            :total="readingTotal"
+            class="dash-card"
             @click="trackCard('daily_reading')"
-          >
-            <div class="flex items-center justify-between gap-3 mb-4">
-              <h3
-                class="font-bold text-text-primary flex items-center gap-2.5 group-hover:text-primary transition-colors"
-              >
-                <AppIcon name="book" :size="17" class="text-primary" />
-                {{ t("dailyReading.title") }}
-              </h3>
-              <AppIcon
-                name="chevron-right"
-                :size="15"
-                class="text-text-secondary/50 rtl:rotate-180"
-              />
-            </div>
-
-            <!-- Liste vide : inviter à la composer -->
-            <p v-if="readingTotal === 0" class="text-sm text-text-secondary leading-relaxed">
-              {{ t("home.dashboard.readingEmpty") }}
-            </p>
-
-            <template v-else>
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium" :class="readingAllDone ? 'text-green-600 dark:text-green-400' : 'text-text-primary'">
-                  <template v-if="readingAllDone">
-                    {{ t("dailyReading.allReadTitle") }}
-                  </template>
-                  <template v-else>
-                    {{ t("dailyReading.progress", { done: readingDone, total: readingTotal }) }}
-                  </template>
-                </span>
-                <span class="text-sm font-semibold text-primary">{{ readingPct }}%</span>
-              </div>
-              <div class="h-2 w-full rounded-full bg-black/5 overflow-hidden dark:bg-white/10">
-                <div
-                  class="h-full rounded-full bg-primary transition-all duration-500"
-                  :style="{ width: `${readingPct}%` }"
-                ></div>
-              </div>
-            </template>
-
-            <p class="mt-4 text-sm font-medium text-primary flex items-center gap-1.5">
-              {{ readingTotal === 0 ? t("home.dashboard.readingSetupCta") : t("home.dashboard.readingCta") }}
-            </p>
-          </RouterLink>
+          />
 
           <!-- Sessions : celles qui se terminent bientôt -->
           <div class="dash-card card p-6" style="--enter-delay: 0.1s">

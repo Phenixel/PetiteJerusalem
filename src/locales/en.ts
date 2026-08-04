@@ -626,6 +626,7 @@ const en: LocaleMessages = {
     title: "Library",
     subtitle: "Read and study the texts: Tehilim, Mishnah, Talmud and Tanakh.",
     searchPlaceholder: "Search a text…",
+    searchAllPlaceholder: "Search all texts…",
     noResults: "No text matches your search.",
     sections: "{count} sections",
     types: {
@@ -640,9 +641,10 @@ const en: LocaleMessages = {
       michnaDesc: "The six sedarim of the Mishnah, tractate by tractate, chapter by chapter.",
       talmudDesc: "The Gemara: the tractates of the Babylonian Talmud, daf after daf.",
       tanakhDesc: "The Torah parasha by parasha, the Neviim and the Ketuvim.",
-      psalmsCount: "{count} psalms",
-      tractatesCount: "{count} tractates",
-      textsCount: "{count} texts",
+      tehilimSearch: "Search a tehilim…",
+      michnaSearch: "Search a mishnah…",
+      talmudSearch: "Search a Talmud tractate…",
+      tanakhSearch: "Search a parasha or book…",
     },
   },
   studio: {
