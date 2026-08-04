@@ -398,7 +398,7 @@ const he: LocaleMessages = {
     reservationsCount: "{count} הזמנה(ות)",
     reservedBy: "על ידי: {name}",
     fullText: "טקסט מלא",
-    reserveCountTitle: "הזמנת {count} טקסטים",
+    reserveCountTitle: "הזמנת טקסט אחד | הזמנת {count} טקסטים",
     markCompleted: "סימון כהושלם",
     selectAll: "לבחור הכול",
     deselectAll: "לבטל את בחירת הכול",

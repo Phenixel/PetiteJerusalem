@@ -407,7 +407,7 @@ const fr = {
     reservationsCount: "{count} réservation(s)",
     reservedBy: "Par : {name}",
     fullText: "Texte complet",
-    reserveCountTitle: "Réserver {count} textes",
+    reserveCountTitle: "Réserver 1 texte | Réserver {count} textes",
     markCompleted: "Marquer comme terminé",
     selectAll: "Tout sélectionner",
     deselectAll: "Tout désélectionner",

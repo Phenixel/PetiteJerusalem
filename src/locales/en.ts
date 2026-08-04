@@ -403,7 +403,7 @@ const en: LocaleMessages = {
     reservationsCount: "{count} reservation(s)",
     reservedBy: "By: {name}",
     fullText: "Full text",
-    reserveCountTitle: "Reserve {count} texts",
+    reserveCountTitle: "Reserve 1 text | Reserve {count} texts",
     markCompleted: "Mark as completed",
     selectAll: "Select all",
     deselectAll: "Deselect all",

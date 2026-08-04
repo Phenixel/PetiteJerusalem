@@ -866,7 +866,7 @@ onMounted(() => {
       <div class="modal-panel animate-[scaleIn_0.3s_ease]" @click.stop>
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-xl font-bold text-text-primary">
-            {{ t("sessionManagement.reserveCountTitle", { count: selectedItems.size }) }}
+            {{ t("sessionManagement.reserveCountTitle", selectedItems.size) }}
           </h3>
           <button @click="showGuestForm = false" class="icon-btn" :aria-label="t('common.close')">
             <AppIcon name="x" :size="16" />
