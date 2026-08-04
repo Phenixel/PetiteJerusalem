@@ -7,11 +7,12 @@ import { sessionService } from "../services/sessionService";
 import { reservationService, type ReservationForm } from "../services/reservationService";
 import { authService } from "../services/authService";
 import { appendHebrewNumeral, formatNumberWithHebrew } from "../services/hebrewNumerals";
-import type { Session, TextStudy } from "../models/models";
+import type { Session, TextStudy, TextStudyReservation } from "../models/models";
 import type { User } from "../services/authService";
 import { seoService } from "../services/seoService";
 
 import BatchSelectionBar from "../components/BatchSelectionBar.vue";
+import EditSessionModal from "../components/EditSessionModal.vue";
 import AppIcon from "../components/icons/AppIcon.vue";
 
 const router = useRouter();
@@ -25,16 +26,34 @@ const textStudies = ref<TextStudy[]>([]);
 const searchTerm = ref("");
 const selectedBook = ref<string>("");
 const showGuestForm = ref(false);
-const selectedTextStudy = ref<TextStudy | null>(null);
-const selectedSection = ref<number | undefined>(undefined);
 
+// Les cases à cocher sont la seule mécanique de la page : les sections libres
+// cochées partent en réservation, les réservations cochées en suppression.
+// Un bouton d'action par ligne (réserver / supprimer) doublonnait avec elles et
+// rendait la sélection multiple confuse.
 const selectedItems = ref<Set<string>>(new Set());
+const selectedReservations = ref<Set<string>>(new Set());
 const isSubmittingBatch = ref(false);
+const isDeletingBatch = ref(false);
+
+// Gestion de la session depuis la page qui sert à la piloter.
+const showEditModal = ref(false);
+
+// Correction du nom d'un invité inscrit depuis cette page.
+const renameTarget = ref<TextStudyReservation | null>(null);
+const renameName = ref("");
+const isRenaming = ref(false);
 
 const guestForm = ref<ReservationForm>({
   name: "",
   email: "",
 });
+
+// Invité repris dans la liste des participants existants : son identifiant
+// prime sur l'email saisi, les nouvelles réservations lui sont rattachées.
+const selectedGuestId = ref<string | null>(null);
+const showGuestSuggestions = ref(false);
+const activeSuggestion = ref(-1);
 
 const loadData = async () => {
   try {
@@ -121,73 +140,123 @@ const getSectionReservation = (textStudyId: string, section: number) => {
   );
 };
 
-const openGuestForm = (textStudy: TextStudy, section?: number) => {
-  selectedTextStudy.value = textStudy;
-  selectedSection.value = section;
-  showGuestForm.value = true;
-  guestForm.value = { name: "", email: "" };
+// Invités déjà présents dans la session, dédoublonnés par identifiant. Sans
+// cette liste, réattribuer un chapitre à quelqu'un qui a déjà réservé créait un
+// invité de plus : même nom, identifiant différent, réservations dispersées.
+const sessionGuests = computed(() => {
+  const byGuestId = new Map<string, { guestId: string; name: string; count: number }>();
+
+  for (const reservation of session.value?.reservations ?? []) {
+    if (reservation.chosenById || !reservation.chosenByGuestId) continue;
+    const existing = byGuestId.get(reservation.chosenByGuestId);
+    if (existing) {
+      existing.count++;
+    } else {
+      byGuestId.set(reservation.chosenByGuestId, {
+        guestId: reservation.chosenByGuestId,
+        name: reservation.chosenByName || "",
+        count: 1,
+      });
+    }
+  }
+
+  return Array.from(byGuestId.values()).sort((a, b) => a.name.localeCompare(b.name));
+});
+
+const guestSuggestions = computed(() => {
+  const term = guestForm.value.name.trim().toLowerCase();
+  const matches = term
+    ? sessionGuests.value.filter((guest) => guest.name.toLowerCase().includes(term))
+    : sessionGuests.value;
+  return matches.slice(0, 6);
+});
+
+const selectGuest = (guest: { guestId: string; name: string }) => {
+  guestForm.value.name = guest.name;
+  selectedGuestId.value = guest.guestId;
+  showGuestSuggestions.value = false;
+  activeSuggestion.value = -1;
+};
+
+const clearSelectedGuest = () => {
+  selectedGuestId.value = null;
+  showGuestSuggestions.value = true;
+  activeSuggestion.value = -1;
+};
+
+const onGuestNameInput = () => {
+  // Un nom retouché à la main ne désigne plus l'invité choisi dans la liste.
+  selectedGuestId.value = null;
+  showGuestSuggestions.value = true;
+  activeSuggestion.value = -1;
+};
+
+const moveSuggestion = (delta: number) => {
+  const count = guestSuggestions.value.length;
+  if (count === 0) return;
+  showGuestSuggestions.value = true;
+  const next = activeSuggestion.value + delta;
+  activeSuggestion.value = next < 0 ? count - 1 : next >= count ? 0 : next;
+};
+
+// Entrée valide la suggestion mise en avant à la flèche, sinon crée directement :
+// le gérant qui tape un nom neuf n'a pas à viser le bouton.
+const onGuestNameEnter = () => {
+  if (showGuestSuggestions.value && activeSuggestion.value >= 0) {
+    selectGuest(guestSuggestions.value[activeSuggestion.value]);
+    return;
+  }
+  createGuestReservation();
 };
 
 const createGuestReservation = async () => {
-  if (!guestForm.value.name || !session.value) {
+  if (!guestForm.value.name || !session.value || selectedItems.value.size === 0) {
     return;
   }
 
-  // L'email reste l'identifiant de l'invité quand il est fourni (il pourra
-  // récupérer ses réservations en créant un compte). Sans email, un UUID
-  // jetable sert d'identifiant : seule la page de gestion pourra l'annuler.
-  const guestId = guestForm.value.email.trim() || `guest-${crypto.randomUUID()}`;
+  // Invité repris dans la liste : on réutilise son identifiant pour que toutes
+  // ses réservations restent celles d'une seule et même personne. Sinon l'email
+  // sert d'identifiant quand il est fourni (il pourra récupérer ses
+  // réservations en créant un compte), et à défaut un UUID jetable : seule la
+  // page de gestion pourra alors les annuler.
+  const guestId =
+    selectedGuestId.value || guestForm.value.email.trim() || `guest-${crypto.randomUUID()}`;
 
   try {
     isLoading.value = true;
-    let createdCount = 0;
+    isSubmittingBatch.value = true;
 
-    if (selectedItems.value.size > 0) {
-      isSubmittingBatch.value = true;
-      const itemsToReserve = Array.from(selectedItems.value).map((key) => {
-        const [textId, sectionStr] = key.split("#");
-        return {
-          textId,
-          section: sectionStr === "full" ? undefined : parseInt(sectionStr),
-        };
-      });
+    const itemsToReserve = Array.from(selectedItems.value).map((key) => {
+      const [textId, sectionStr] = key.split("#");
+      return {
+        textStudyId: textId,
+        section: sectionStr === "full" ? undefined : parseInt(sectionStr),
+      };
+    });
 
-      const unreservedItems = itemsToReserve.filter(
-        (item) => item.section === undefined || !isSectionReserved(item.textId, item.section),
-      );
+    const unreservedItems = itemsToReserve.filter(
+      (item) => item.section === undefined || !isSectionReserved(item.textStudyId, item.section),
+    );
 
-      // Une seule transaction atomique : soit tout passe, soit rien
-      // (la boucle précédente pouvait laisser un état partiel en cas d'échec).
-      if (unreservedItems.length > 0) {
-        await reservationService.createBatchReservations(
-          session.value.id,
-          unreservedItems.map((item) => ({ textStudyId: item.textId, section: item.section })),
-          undefined, // userId
-          guestId, // email si fourni, sinon UUID jetable
-          undefined, // userName
-          guestForm.value.name, // guestName
-        );
-        createdCount++;
-      }
-
-      selectedItems.value.clear();
-    } else if (selectedTextStudy.value) {
-      await reservationService.createReservation(
+    // Une seule transaction atomique : soit tout passe, soit rien
+    // (la boucle précédente pouvait laisser un état partiel en cas d'échec).
+    if (unreservedItems.length > 0) {
+      await reservationService.createBatchReservations(
         session.value.id,
-        selectedTextStudy.value.id,
-        selectedSection.value,
+        unreservedItems,
         undefined, // userId
         guestId, // email si fourni, sinon UUID jetable
         undefined, // userName
         guestForm.value.name, // guestName
       );
-      createdCount++;
     }
+
+    selectedItems.value.clear();
 
     await reloadSession();
     showGuestForm.value = false;
-    if (createdCount > 0) {
-      toast.success(t("sessionManagement.reservationCreatedSuccess", createdCount));
+    if (unreservedItems.length > 0) {
+      toast.success(t("sessionManagement.reservationCreatedSuccess", unreservedItems.length));
     }
   } catch (error) {
     console.error("Erreur lors de la création de la réservation:", error);
@@ -212,10 +281,140 @@ const isSelected = (textId: string, section: number) => {
   return selectedItems.value.has(key);
 };
 
+// Sections encore libres d'un texte : cibles du « Tout sélectionner », qui
+// évite de cocher 150 chapitres un par un pour un même lecteur.
+const availableSections = (textStudy: TextStudy) =>
+  sessionService
+    .generateChapters(textStudy.totalSections)
+    .filter((section) => !isSectionReserved(textStudy.id, section));
+
+const areAllAvailableSelected = (textStudy: TextStudy) => {
+  const sections = availableSections(textStudy);
+  return sections.length > 0 && sections.every((section) => isSelected(textStudy.id, section));
+};
+
+const toggleSelectAll = (textStudy: TextStudy) => {
+  const keys = availableSections(textStudy).map((section) => `${textStudy.id}#${section}`);
+  if (keys.length === 0) return;
+
+  if (keys.every((key) => selectedItems.value.has(key))) {
+    keys.forEach((key) => selectedItems.value.delete(key));
+  } else {
+    keys.forEach((key) => selectedItems.value.add(key));
+  }
+};
+
 const openBatchGuestForm = () => {
-  selectedTextStudy.value = null;
-  selectedSection.value = undefined;
+  guestForm.value = { name: "", email: "" };
+  selectedGuestId.value = null;
+  showGuestSuggestions.value = false;
+  activeSuggestion.value = -1;
   showGuestForm.value = true;
+};
+
+const toggleReservationSelection = (reservationId: string) => {
+  if (selectedReservations.value.has(reservationId)) {
+    selectedReservations.value.delete(reservationId);
+  } else {
+    selectedReservations.value.add(reservationId);
+  }
+};
+
+const isReservationSelected = (reservationId: string) =>
+  selectedReservations.value.has(reservationId);
+
+const deleteSelectedReservations = async () => {
+  if (!session.value || selectedReservations.value.size === 0) return;
+
+  const count = selectedReservations.value.size;
+  if (!confirm(t("sessionManagement.deleteReservationsConfirm", count))) {
+    return;
+  }
+
+  try {
+    isDeletingBatch.value = true;
+    await sessionService.deleteReservations(
+      session.value.id,
+      Array.from(selectedReservations.value),
+    );
+    selectedReservations.value.clear();
+    await reloadSession();
+    toast.success(t("sessionManagement.reservationsDeletedSuccess", count));
+  } catch (error) {
+    console.error("Erreur lors de la suppression des réservations:", error);
+    toast.errorFromException(error, t("sessionManagement.reservationDeleteError"));
+  } finally {
+    isDeletingBatch.value = false;
+  }
+};
+
+const batchLabel = computed(() => {
+  if (selectedItems.value.size > 0 && selectedReservations.value.size > 0) {
+    return t("sessionManagement.batchMixedLabel");
+  }
+  if (selectedReservations.value.size > 0) {
+    return t("sessionManagement.batchDeleteLabel");
+  }
+  return t("sessionManagement.batchLabel");
+});
+
+// Le nom d'un invité vient de ce que le créateur a tapé : une faute de frappe
+// se corrige ici, et sur toutes ses réservations à la fois.
+const openRenameModal = (reservation: TextStudyReservation) => {
+  renameTarget.value = reservation;
+  renameName.value = reservation.chosenByName || "";
+};
+
+const submitRename = async () => {
+  const target = renameTarget.value;
+  if (!session.value || !target || !renameName.value.trim()) return;
+
+  try {
+    isRenaming.value = true;
+    await sessionService.renameGuest(session.value.id, target.id, renameName.value);
+    await reloadSession();
+    renameTarget.value = null;
+    toast.success(t("sessionManagement.guestRenamedSuccess"));
+  } catch (error) {
+    console.error("Erreur lors du renommage de l'invité:", error);
+    toast.errorFromException(error, t("sessionManagement.guestRenameError"));
+  } finally {
+    isRenaming.value = false;
+  }
+};
+
+const saveSessionChanges = async (sessionData: {
+  name: string;
+  description: string;
+  dateLimit: string;
+  guestEmailRequired: boolean;
+}) => {
+  if (!session.value) return;
+
+  try {
+    await sessionService.updateSession(session.value.id, {
+      ...sessionData,
+      slug: session.value.slug,
+    });
+    await reloadSession();
+    toast.success(t("profile.sessionUpdatedSuccess"));
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour:", error);
+    toast.errorFromException(error, t("profile.sessionUpdateError"));
+  }
+};
+
+const endCurrentSession = async () => {
+  if (!session.value || !confirm(t("profile.endSessionConfirm"))) return;
+
+  try {
+    await sessionService.endSession(session.value.id);
+    await reloadSession();
+    toast.success(t("profile.sessionEndedSuccess"));
+  } catch (error) {
+    console.error("Erreur lors de la fin de session:", error);
+    toast.errorFromException(error, t("profile.sessionEndError"));
+  }
 };
 
 const toggleReservationCompletion = async (reservationId: string, isCompleted: boolean) => {
@@ -227,22 +426,6 @@ const toggleReservationCompletion = async (reservationId: string, isCompleted: b
   } catch (error) {
     console.error("Erreur lors de la mise à jour:", error);
     toast.errorFromException(error, t("sessionManagement.reservationUpdateError"));
-  }
-};
-
-const deleteReservation = async (reservationId: string) => {
-  if (!confirm(t("sessionManagement.deleteReservationConfirm"))) {
-    return;
-  }
-
-  if (!session.value) return;
-
-  try {
-    await sessionService.deleteReservation(session.value.id, reservationId);
-    await reloadSession();
-  } catch (error) {
-    console.error("Erreur lors de la suppression:", error);
-    toast.errorFromException(error, t("sessionManagement.reservationDeleteError"));
   }
 };
 
@@ -330,14 +513,42 @@ onMounted(() => {
               {{ session.description }}
             </p>
           </div>
-          <div class="flex gap-2">
-            <span class="chip bg-primary/10 text-primary">{{
-              sessionService.formatTextType(session.type)
-            }}</span>
-            <span class="chip bg-black/5 text-text-secondary dark:bg-white/10"
-              >{{ t("common.dateLimit") }} :
-              {{ sessionService.formatDate(session.dateLimit) }}</span
-            >
+          <div class="flex flex-col items-start md:items-end gap-3">
+            <div class="flex flex-wrap gap-2">
+              <span class="chip bg-primary/10 text-primary">{{
+                sessionService.formatTextType(session.type)
+              }}</span>
+              <span class="chip bg-black/5 text-text-secondary dark:bg-white/10"
+                >{{ t("common.dateLimit") }} :
+                {{ sessionService.formatDate(session.dateLimit) }}</span
+              >
+              <span
+                v-if="session.isEnded"
+                class="chip bg-black/5 text-text-secondary dark:bg-white/10"
+              >
+                {{ t("common.finished") }}
+              </span>
+            </div>
+
+            <!-- Piloter la session sans repasser par « Partage de lectures » -->
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-if="sessionService.canEditSession(session)"
+                @click="showEditModal = true"
+                class="btn btn-soft !px-3.5 !py-2 !text-sm"
+              >
+                <AppIcon name="pencil" :size="14" />
+                {{ t("common.edit") }}
+              </button>
+              <button
+                v-if="sessionService.canEndSession(session)"
+                @click="endCurrentSession"
+                class="btn btn-danger !px-3.5 !py-2 !text-sm"
+              >
+                <AppIcon name="flag" :size="14" />
+                {{ t("sessionManagement.endSession") }}
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -425,17 +636,17 @@ onMounted(() => {
             {{ sessionService.formatBookName(bookName) }}
           </h3>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <div
-              v-for="textStudy in texts"
-              :key="textStudy.id"
-              class="card p-5 flex flex-col h-full"
-            >
+          <!-- items-start : sans hauteur imposée, chaque carte s'arrête après
+               son dernier chapitre au lieu de s'étirer sur la plus longue. -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
+            <div v-for="textStudy in texts" :key="textStudy.id" class="card p-5 flex flex-col">
               <!-- En-tête du texte -->
               <div class="mb-4">
                 <div class="flex justify-between items-start gap-4 mb-1.5">
+                  <!-- Nom complet, hébreu compris, comme partout ailleurs :
+                       formatBookName ne gardait que la translittération. -->
                   <h4 class="font-bold text-lg text-text-primary leading-tight">
-                    {{ appendHebrewNumeral(sessionService.formatBookName(textStudy.name)) }}
+                    {{ appendHebrewNumeral(textStudy.name) }}
                   </h4>
                   <span
                     class="chip"
@@ -480,11 +691,28 @@ onMounted(() => {
 
               <!-- Gestion des réservations -->
               <div class="flex-1 flex flex-col">
-                <div class="space-y-1 max-h-[240px] overflow-y-auto pr-2">
+                <!-- Cocher les 150 chapitres d'un livre un par un n'était pas
+                     tenable pour attribuer un texte entier à un lecteur. -->
+                <div v-if="availableSections(textStudy).length > 1" class="flex justify-end mb-1">
+                  <button
+                    @click="toggleSelectAll(textStudy)"
+                    class="text-xs font-semibold text-primary hover:underline"
+                  >
+                    {{
+                      areAllAvailableSelected(textStudy)
+                        ? t("sessionManagement.deselectAll")
+                        : t("sessionManagement.selectAll")
+                    }}
+                  </button>
+                </div>
+
+                <!-- Pas de hauteur maximale : un scroll par carte, à l'intérieur
+                     du scroll de la page, faisait perdre les chapitres du bas. -->
+                <div class="space-y-1">
                   <div
                     v-for="section in sessionService.generateChapters(textStudy.totalSections)"
                     :key="section"
-                    class="flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm"
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm"
                     :class="{
                       'bg-primary/5 dark:bg-primary/10':
                         isSectionReserved(textStudy.id, section) &&
@@ -499,7 +727,36 @@ onMounted(() => {
                       ),
                     }"
                   >
-                    <div class="flex flex-col min-w-0">
+                    <!-- Une seule case par ligne : elle réserve la section
+                         libre, ou sélectionne la réservation à supprimer. -->
+                    <input
+                      type="checkbox"
+                      class="w-4.5 h-4.5 rounded cursor-pointer shrink-0"
+                      :class="
+                        isSectionReserved(textStudy.id, section)
+                          ? 'accent-red-600'
+                          : 'accent-primary'
+                      "
+                      :checked="
+                        isSectionReserved(textStudy.id, section)
+                          ? isReservationSelected(getSectionReservation(textStudy.id, section)!.id)
+                          : isSelected(textStudy.id, section)
+                      "
+                      :aria-label="
+                        isSectionReserved(textStudy.id, section)
+                          ? t('sessionManagement.selectReservation')
+                          : t('sessionManagement.selectSection')
+                      "
+                      @change="
+                        isSectionReserved(textStudy.id, section)
+                          ? toggleReservationSelection(
+                              getSectionReservation(textStudy.id, section)!.id,
+                            )
+                          : toggleSelection(textStudy.id, section)
+                      "
+                    />
+
+                    <div class="flex flex-col min-w-0 flex-1">
                       <span class="font-medium text-text-primary">
                         {{
                           textStudy.totalSections > 1
@@ -515,55 +772,40 @@ onMounted(() => {
                       </span>
                     </div>
 
-                    <div class="flex items-center gap-2 ml-2">
-                      <input
-                        v-if="!isSectionReserved(textStudy.id, section)"
-                        type="checkbox"
-                        class="w-4.5 h-4.5 rounded accent-primary cursor-pointer"
-                        :checked="isSelected(textStudy.id, section)"
-                        @change="toggleSelection(textStudy.id, section)"
-                      />
-
-                      <button
-                        v-if="!isSectionReserved(textStudy.id, section)"
-                        @click="openGuestForm(textStudy, section)"
-                        class="w-7 h-7 rounded-lg flex items-center justify-center text-text-secondary hover:bg-primary hover:text-white transition-colors focus:outline-none"
-                        :title="t('sessionManagement.reserveForGuest')"
+                    <div
+                      v-if="isSectionReserved(textStudy.id, section)"
+                      class="flex items-center gap-1.5"
+                    >
+                      <label
+                        class="relative inline-flex items-center cursor-pointer"
+                        :title="t('sessionManagement.markCompleted')"
                       >
-                        <AppIcon name="plus" :size="14" />
-                      </button>
-
-                      <div v-else class="flex items-center gap-2">
-                        <label
-                          class="relative inline-flex items-center cursor-pointer"
-                          :title="t('sessionManagement.markCompleted')"
-                        >
-                          <input
-                            type="checkbox"
-                            class="sr-only peer"
-                            :checked="getSectionReservation(textStudy.id, section)?.isCompleted"
-                            @change="
-                              toggleReservationCompletion(
-                                getSectionReservation(textStudy.id, section)!.id,
-                                ($event.target as HTMLInputElement).checked,
-                              )
-                            "
-                          />
-                          <div
-                            class="w-8 h-4 bg-black/15 peer-focus-visible:outline-2 peer-focus-visible:outline-primary rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[0px] after:left-[0px] after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all peer-checked:bg-green-500 dark:bg-white/20 dark:peer-checked:bg-green-600"
-                          ></div>
-                        </label>
-
-                        <button
-                          @click="
-                            deleteReservation(getSectionReservation(textStudy.id, section)!.id)
+                        <input
+                          type="checkbox"
+                          class="sr-only peer"
+                          :checked="getSectionReservation(textStudy.id, section)?.isCompleted"
+                          @change="
+                            toggleReservationCompletion(
+                              getSectionReservation(textStudy.id, section)!.id,
+                              ($event.target as HTMLInputElement).checked,
+                            )
                           "
-                          class="w-7 h-7 rounded-lg flex items-center justify-center text-text-secondary hover:bg-red-600/10 hover:text-red-600 transition-colors focus:outline-none dark:hover:text-red-400"
-                          :title="t('sessionManagement.deleteReservation')"
-                        >
-                          <AppIcon name="trash" :size="14" />
-                        </button>
-                      </div>
+                        />
+                        <div
+                          class="w-8 h-4 bg-black/15 peer-focus-visible:outline-2 peer-focus-visible:outline-primary rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[0px] after:left-[0px] after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all peer-checked:bg-green-500 dark:bg-white/20 dark:peer-checked:bg-green-600"
+                        ></div>
+                      </label>
+
+                      <!-- Seuls les invités inscrits ici sont renommables :
+                           le nom d'un compte vient de son profil. -->
+                      <button
+                        v-if="!getSectionReservation(textStudy.id, section)?.chosenById"
+                        @click="openRenameModal(getSectionReservation(textStudy.id, section)!)"
+                        class="w-7 h-7 rounded-lg flex items-center justify-center text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors focus:outline-none dark:hover:bg-white/10"
+                        :title="t('sessionManagement.renameGuest')"
+                      >
+                        <AppIcon name="pencil" :size="13" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -574,15 +816,43 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Sticky Bottom Bar pour Batch -->
+    <!-- Sticky Bottom Bar pour Batch : réserver et supprimer partagent la même
+         barre, chaque action n'apparaissant que si elle a une sélection. -->
     <BatchSelectionBar
-      :count="selectedItems.size"
-      :loading="isSubmittingBatch"
-      :label="t('sessionManagement.batchLabel')"
-      :button-text="t('sessionManagement.batchButton')"
-      :button-loading-text="t('sessionManagement.batchLoading')"
-      @confirm="openBatchGuestForm"
-    />
+      :count="selectedItems.size + selectedReservations.size"
+      :label="batchLabel"
+    >
+      <template #actions>
+        <button
+          v-if="selectedItems.size > 0"
+          @click="openBatchGuestForm"
+          :disabled="isSubmittingBatch"
+          class="btn btn-primary"
+        >
+          <AppIcon v-if="isSubmittingBatch" name="spinner" :size="15" class="animate-spin" />
+          <AppIcon v-else name="check" :size="15" />
+          {{
+            isSubmittingBatch
+              ? t("sessionManagement.batchLoading")
+              : `${t("sessionManagement.batchButton")} (${selectedItems.size})`
+          }}
+        </button>
+        <button
+          v-if="selectedReservations.size > 0"
+          @click="deleteSelectedReservations"
+          :disabled="isDeletingBatch"
+          class="btn btn-danger"
+        >
+          <AppIcon v-if="isDeletingBatch" name="spinner" :size="15" class="animate-spin" />
+          <AppIcon v-else name="trash" :size="15" />
+          {{
+            isDeletingBatch
+              ? t("common.deleting")
+              : `${t("common.delete")} (${selectedReservations.size})`
+          }}
+        </button>
+      </template>
+    </BatchSelectionBar>
 
     <!-- Modal pour les invités -->
     <div
@@ -593,51 +863,99 @@ onMounted(() => {
       <div class="modal-panel animate-[scaleIn_0.3s_ease]" @click.stop>
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-xl font-bold text-text-primary">
-            {{
-              selectedItems.size > 0
-                ? t("sessionManagement.reserveCountTitle", { count: selectedItems.size })
-                : t("sessionManagement.reserveForGuest")
-            }}
+            {{ t("sessionManagement.reserveCountTitle", { count: selectedItems.size }) }}
           </h3>
           <button @click="showGuestForm = false" class="icon-btn" :aria-label="t('common.close')">
             <AppIcon name="x" :size="16" />
           </button>
         </div>
 
-        <div class="space-y-4">
-          <div
-            v-if="selectedTextStudy"
-            class="p-3 bg-primary/10 rounded-lg text-sm text-text-primary mb-2"
-          >
-            <span class="font-semibold">{{
-              appendHebrewNumeral(sessionService.formatBookName(selectedTextStudy?.name || ""))
-            }}</span>
-            <span v-if="selectedSection">
-              – {{ t("common.chapter") }} {{ formatNumberWithHebrew(selectedSection) }}</span
+        <form @submit.prevent="createGuestReservation" class="space-y-4">
+          <div>
+            <label
+              for="guest-name"
+              class="block text-sm font-semibold text-text-secondary mb-2"
+              >{{ t("sessionManagement.guestName") }}</label
             >
+            <div class="relative">
+              <input
+                id="guest-name"
+                v-model="guestForm.name"
+                type="text"
+                class="field"
+                :placeholder="t('sessionManagement.guestNamePlaceholder')"
+                required
+                autocomplete="off"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-controls="guest-suggestions"
+                :aria-expanded="showGuestSuggestions && guestSuggestions.length > 0"
+                @input="onGuestNameInput"
+                @focus="showGuestSuggestions = true"
+                @blur="showGuestSuggestions = false"
+                @keydown.down.prevent="moveSuggestion(1)"
+                @keydown.up.prevent="moveSuggestion(-1)"
+                @keydown.esc="showGuestSuggestions = false"
+                @keydown.enter.prevent="onGuestNameEnter"
+              />
+
+              <!-- Les invités de la session, proposés dès la mise au point du
+                   champ : réattribuer un chapitre à quelqu'un de déjà présent
+                   ne doit pas demander de retaper son nom à l'identique. -->
+              <ul
+                v-if="showGuestSuggestions && guestSuggestions.length > 0"
+                id="guest-suggestions"
+                role="listbox"
+                class="absolute z-10 left-0 right-0 mt-1 py-1 bg-surface rounded-lg shadow-pop max-h-56 overflow-y-auto"
+              >
+                <li
+                  v-for="(guest, index) in guestSuggestions"
+                  :key="guest.guestId"
+                  role="option"
+                  :aria-selected="index === activeSuggestion"
+                  class="flex items-center justify-between gap-3 px-3 py-2 cursor-pointer text-sm"
+                  :class="
+                    index === activeSuggestion
+                      ? 'bg-primary/10 text-text-primary'
+                      : 'hover:bg-black/[0.03] dark:hover:bg-white/5'
+                  "
+                  @mousedown.prevent="selectGuest(guest)"
+                >
+                  <span class="font-medium text-text-primary truncate">{{ guest.name }}</span>
+                  <span class="text-xs text-text-secondary shrink-0">
+                    {{ t("sessionManagement.reservationsCount", { count: guest.count }) }}
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            <p
+              v-if="selectedGuestId"
+              class="flex items-center gap-2 text-xs text-text-secondary mt-2"
+            >
+              <AppIcon name="check" :size="12" class="text-primary shrink-0" />
+              {{ t("sessionManagement.guestLinkedTo", { name: guestForm.name }) }}
+              <button
+                type="button"
+                class="font-semibold text-primary hover:underline"
+                @click="clearSelectedGuest"
+              >
+                {{ t("sessionManagement.guestLinkChange") }}
+              </button>
+            </p>
           </div>
 
-          <div>
-            <label class="block text-sm font-semibold text-text-secondary mb-2">{{
-              t("sessionManagement.guestName")
-            }}</label>
-            <input
-              v-model="guestForm.name"
-              type="text"
-              class="field"
-              :placeholder="t('sessionManagement.guestNamePlaceholder')"
-              required
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-semibold text-text-secondary mb-2">
+          <!-- L'email ne sert qu'à identifier un NOUVEL invité : un invité repris
+               dans la liste a déjà son identifiant. -->
+          <div v-if="!selectedGuestId">
+            <label for="guest-email" class="block text-sm font-semibold text-text-secondary mb-2">
               {{ t("sessionManagement.guestEmail") }}
               <span class="font-normal text-text-secondary/70">
                 ({{ t("guestForm.optional") }})
               </span>
             </label>
             <input
+              id="guest-email"
               v-model="guestForm.email"
               type="email"
               class="field"
@@ -646,11 +964,11 @@ onMounted(() => {
           </div>
 
           <div class="flex gap-3 mt-6">
-            <button @click="showGuestForm = false" class="btn btn-soft flex-1">
+            <button type="button" @click="showGuestForm = false" class="btn btn-soft flex-1">
               {{ t("common.cancel") }}
             </button>
             <button
-              @click="createGuestReservation"
+              type="submit"
               class="btn btn-primary flex-1"
               :disabled="!guestForm.name || isLoading"
             >
@@ -658,8 +976,61 @@ onMounted(() => {
               {{ isLoading ? t("sessionManagement.creating") : t("sessionManagement.create") }}
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
+
+    <!-- Renommer un invité : le nouveau nom s'applique à toutes ses
+         réservations dans cette session. -->
+    <div
+      v-if="renameTarget"
+      class="modal-overlay animate-[fadeIn_0.3s_ease]"
+      @click="renameTarget = null"
+    >
+      <div class="modal-panel !max-w-md animate-[scaleIn_0.3s_ease]" @click.stop>
+        <div class="flex justify-between items-center mb-5">
+          <h3 class="text-xl font-bold text-text-primary">
+            {{ t("sessionManagement.renameGuest") }}
+          </h3>
+          <button @click="renameTarget = null" class="icon-btn" :aria-label="t('common.close')">
+            <AppIcon name="x" :size="16" />
+          </button>
+        </div>
+
+        <form @submit.prevent="submitRename" class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold text-text-secondary mb-2">{{
+              t("sessionManagement.guestName")
+            }}</label>
+            <input
+              v-model="renameName"
+              type="text"
+              class="field"
+              :placeholder="t('sessionManagement.guestNamePlaceholder')"
+              required
+            />
+            <p class="text-xs text-text-secondary mt-2">
+              {{ t("sessionManagement.renameGuestHint") }}
+            </p>
+          </div>
+
+          <div class="flex gap-3 mt-6">
+            <button type="button" @click="renameTarget = null" class="btn btn-soft flex-1">
+              {{ t("common.cancel") }}
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary flex-1"
+              :disabled="!renameName.trim() || isRenaming"
+            >
+              <AppIcon v-if="isRenaming" name="spinner" :size="15" class="animate-spin" />
+              {{ isRenaming ? t("common.saving") : t("common.save") }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <EditSessionModal v-model:show="showEditModal" :session="session" @save="saveSessionChanges" />
   </main>
 </template>
