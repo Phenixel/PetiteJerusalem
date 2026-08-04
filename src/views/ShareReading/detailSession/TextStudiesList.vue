@@ -296,7 +296,7 @@ const handleCardClick = (text: TextStudy) => {
                   :to="{
                     name: 'text-reading',
                     params: { textId: text.id },
-                    query: { session: session.slug ?? session.id },
+                    query: { session: session.slug || session.id },
                   }"
                   class="btn btn-soft !px-3.5 !py-2 text-sm hover:!text-primary"
                   :title="t('detailSession.textList.readThisText')"
@@ -545,7 +545,7 @@ const handleCardClick = (text: TextStudy) => {
                     :to="{
                       name: 'text-reading-section',
                       params: { textId: text.id, section: chapter },
-                      query: { session: session.slug ?? session.id },
+                      query: { session: session.slug || session.id },
                     }"
                     class="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex-shrink-0"
                     :title="t('detailSession.textList.readThisChapter')"
