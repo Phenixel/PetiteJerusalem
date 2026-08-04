@@ -355,6 +355,15 @@ const fr = {
     createYourOwnText:
       "Cette session vous inspire ? Créez la vôtre en quelques clics : choisissez un texte (Talmud, Tehilim, Michna, Tanakh), répartissez-le et invitez votre communauté à le terminer avec vous.",
     createYourOwnButton: "Créer ma session",
+    randomDraw: {
+      title: "Un Téhilim au hasard",
+      subtitle:
+        "Laissez le hasard choisir pour vous : le Téhilim s'ouvre aussitôt, réservé à votre nom, même sans compte.",
+      button: "Tirer un Téhilim",
+      drawing: "Tirage en cours...",
+      noneAvailable: "Tous les Téhilim de cette session sont déjà réservés.",
+      anonymous: "Anonyme",
+    },
     instructions: {
       title: "Instructions",
       step1: "Cochez les cases pour réserver une section ou un texte",
@@ -585,7 +594,7 @@ const fr = {
     cancel: "Annuler la réservation",
     cancelConfirm: "Annuler cette réservation ?",
     markRead: "Marquer comme lu",
-    unmarkRead: "Marquer comme non lu",
+    unmarkRead: "Remettre en non lu",
     read: "Lu",
     reservedByYou: "Vous avez réservé ce passage.",
     readByYou: "Vous avez lu ce passage.",
@@ -598,6 +607,8 @@ const fr = {
     updateError: "La mise à jour a échoué.",
     guestIntro: "Renseignez votre nom et votre email pour réserver ce passage.",
     guestIntroNameOnly: "Renseignez votre nom pour réserver ce passage.",
+    finishPrompt: "Vous avez terminé cette lecture ?",
+    drawAnother: "Un autre Téhilim",
     textSize: "Taille du texte",
     textSizeIncrease: "Agrandir le texte",
     textSizeDecrease: "Réduire le texte",

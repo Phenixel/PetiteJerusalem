@@ -351,6 +351,15 @@ const en: LocaleMessages = {
     createYourOwnText:
       "Inspired by this session? Create your own in a few clicks: choose a text (Talmud, Tehilim, Mishnah, Tanakh), split it up and invite your community to finish it with you.",
     createYourOwnButton: "Create my session",
+    randomDraw: {
+      title: "A random Tehilim",
+      subtitle:
+        "Let chance choose for you: the Tehilim opens right away, reserved under your name, even without an account.",
+      button: "Draw a Tehilim",
+      drawing: "Drawing...",
+      noneAvailable: "All the Tehilim of this session are already reserved.",
+      anonymous: "Anonymous",
+    },
     instructions: {
       title: "Instructions",
       step1: "Check the boxes to reserve a section or text",
@@ -578,7 +587,7 @@ const en: LocaleMessages = {
     cancel: "Cancel reservation",
     cancelConfirm: "Cancel this reservation?",
     markRead: "Mark as read",
-    unmarkRead: "Mark as unread",
+    unmarkRead: "Set back to unread",
     read: "Read",
     reservedByYou: "You reserved this passage.",
     readByYou: "You read this passage.",
@@ -591,6 +600,8 @@ const en: LocaleMessages = {
     updateError: "The update failed.",
     guestIntro: "Enter your name and email to reserve this passage.",
     guestIntroNameOnly: "Enter your name to reserve this passage.",
+    finishPrompt: "Finished reading?",
+    drawAnother: "Another Tehilim",
     textSize: "Text size",
     textSizeIncrease: "Increase text size",
     textSizeDecrease: "Decrease text size",
