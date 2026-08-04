@@ -45,6 +45,12 @@ const openSessionManagement = (session: Session) => {
   router.push({ name: "session-management", params: { id: session.id } });
 };
 
+// Le titre mène à la session elle-même : c'est la page qu'on partage et celle
+// qu'on veut relire, la gestion ayant déjà son bouton dédié.
+const openSession = (session: Session) => {
+  router.push(`/share-reading/session/${session.slug || session.id}`);
+};
+
 const goToNewSession = () => {
   router.push("/share-reading/new-session");
 };
@@ -72,7 +78,13 @@ const goToNewSession = () => {
         >
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-1.5">
-              <span class="font-semibold text-text-primary truncate">{{ session.name }}</span>
+              <button
+                class="font-semibold text-text-primary truncate hover:text-primary transition-colors text-left"
+                :title="t('shareReading.openSession')"
+                @click="openSession(session)"
+              >
+                {{ session.name }}
+              </button>
               <span class="chip bg-primary/10 text-primary shrink-0">
                 {{ sessionService.formatTextType(session.type) }}
               </span>
@@ -162,7 +174,8 @@ const goToNewSession = () => {
                 <AppIcon name="flag" :size="12" class="shrink-0 text-text-secondary/60" />
                 <button
                   class="flex-1 min-w-0 text-left text-sm font-medium text-text-secondary truncate hover:text-primary transition-colors"
-                  @click="openSessionManagement(session)"
+                  :title="t('shareReading.openSession')"
+                  @click="openSession(session)"
                 >
                   {{ session.name }}
                 </button>

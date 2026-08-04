@@ -178,6 +178,98 @@ export class ReservationService {
   }
 
   /**
+   * Supprime plusieurs réservations en une seule transaction : la page de
+   * gestion permet d'en cocher un lot, et les supprimer une par une laisserait
+   * un état partiel si l'une d'elles échouait.
+   */
+  async deleteReservations(sessionId: string, reservationIds: string[]): Promise<void> {
+    if (reservationIds.length === 0) return;
+
+    const idsToRemove = new Set(reservationIds);
+    const sfDocRef = doc(db, "sessions", sessionId);
+
+    await runTransaction(db, (transaction) => {
+      return transaction.get(sfDocRef).then((sfDoc) => {
+        if (!sfDoc.exists()) {
+          throw new Error("Document de session introuvable");
+        }
+        const data = sfDoc.data() as { reservations?: ReservationRecord[] };
+        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
+          ? data.reservations
+          : [];
+        const filtered = reservations.filter((r) => !idsToRemove.has(r.id));
+        transaction.update(sfDocRef, { reservations: filtered });
+      });
+    });
+
+    firestoreService.invalidateSessionsCache();
+  }
+
+  /**
+   * Corrige le nom d'un invité inscrit par le créateur de la session. Un même
+   * invité (identifié par `chosenByGuestId`) peut avoir réservé plusieurs
+   * chapitres : on les renomme tous d'un coup, sinon la correction d'une faute
+   * de frappe demanderait autant de modifications que de réservations.
+   * Les réservations rattachées à un compte ne sont pas modifiables : leur nom
+   * vient du profil de la personne.
+   *
+   * @returns le nombre de réservations renommées.
+   */
+  async renameGuest(sessionId: string, reservationId: string, newName: string): Promise<number> {
+    const trimmedName = newName.trim();
+    if (!trimmedName) {
+      throw new Error("Le nom de l'invité ne peut pas être vide");
+    }
+
+    const sfDocRef = doc(db, "sessions", sessionId);
+
+    const renamedCount = await runTransaction(db, (transaction) => {
+      return transaction.get(sfDocRef).then((sfDoc) => {
+        if (!sfDoc.exists()) {
+          throw new Error("Document de session introuvable");
+        }
+
+        const data = sfDoc.data() as { reservations?: ReservationRecord[] };
+        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
+          ? data.reservations
+          : [];
+
+        const target = reservations.find((r) => r.id === reservationId);
+        if (!target) {
+          throw new Error("Réservation introuvable");
+        }
+        if (target.chosenById) {
+          throw new Error("Le nom d'un participant inscrit ne peut pas être modifié");
+        }
+
+        // Sans `chosenByGuestId` (donnée héritée), seule la réservation ciblée
+        // peut être rattachée à l'invité de façon fiable.
+        const shouldRename = (r: ReservationRecord) =>
+          target.chosenByGuestId
+            ? !r.chosenById && r.chosenByGuestId === target.chosenByGuestId
+            : r.id === reservationId;
+
+        let count = 0;
+        const updated = reservations.map((r) => {
+          if (!shouldRename(r)) return r;
+          count++;
+          return { ...r, chosenByName: trimmedName };
+        });
+
+        if (count > 0) {
+          transaction.update(sfDocRef, { reservations: updated });
+        }
+        return count;
+      });
+    });
+
+    if (renamedCount > 0) {
+      firestoreService.invalidateSessionsCache();
+    }
+    return renamedCount;
+  }
+
+  /**
    * L'identité invité du navigateur courant : l'email saisi dans le
    * formulaire (identifiant historique) et l'UUID local. L'un ou l'autre
    * peut correspondre au `chosenByGuestId` d'une réservation.

@@ -14,6 +14,7 @@ defineProps<{
 const emit = defineEmits<{
   (e: "share"): void;
   (e: "manage"): void;
+  (e: "edit"): void;
 }>();
 </script>
 
@@ -41,6 +42,16 @@ const emit = defineEmits<{
       >
         <AppIcon name="settings" :size="14" />
         {{ t("common.manage") }}
+      </button>
+      <!-- Corriger un intitulé ou une date depuis la page où on s'en aperçoit -->
+      <button
+        v-if="isOwner && sessionService.canEditSession(session)"
+        @click="emit('edit')"
+        class="btn btn-soft !px-3.5 !py-1.5 !text-sm"
+        :title="t('common.edit')"
+      >
+        <AppIcon name="pencil" :size="14" />
+        {{ t("common.edit") }}
       </button>
       <button
         @click="emit('share')"

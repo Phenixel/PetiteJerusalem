@@ -229,7 +229,9 @@ const handleCardClick = (text: TextStudy) => {
         {{ formatBookName(String(bookName)) }}
       </h3>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <!-- items-start : une carte dépliée s'allonge seule, sans étirer ses
+           voisines repliées à la même hauteur. -->
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
         <div
           v-for="text in texts"
           :key="text.id"
@@ -432,7 +434,9 @@ const handleCardClick = (text: TextStudy) => {
               </button>
             </div>
 
-            <div class="max-h-[300px] overflow-y-auto custom-scrollbar p-2">
+            <!-- Pas de hauteur maximale : un scroll par carte, à l'intérieur du
+                 scroll de la page, faisait perdre les chapitres du bas. -->
+            <div class="p-2">
               <div
                 v-for="chapter in generateChapters(text.totalSections)"
                 :key="chapter"

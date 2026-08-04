@@ -154,6 +154,15 @@ export class SessionService {
   async deleteReservation(sessionId: string, reservationId: string): Promise<void> {
     return await reservationService.deleteReservation(sessionId, reservationId);
   }
+
+  async deleteReservations(sessionId: string, reservationIds: string[]): Promise<void> {
+    return await reservationService.deleteReservations(sessionId, reservationIds);
+  }
+
+  async renameGuest(sessionId: string, reservationId: string, newName: string): Promise<number> {
+    return await reservationService.renameGuest(sessionId, reservationId, newName);
+  }
+
   canUserDeleteReservation(
     reservation: TextStudyReservation,
     currentUser: User | null,
