@@ -78,5 +78,11 @@ describe("UtilsService.generateSlug", () => {
     it("gère une chaîne sans diacritiques", () => {
       expect(UtilsService.generateSlug("Mishna Berachot")).toBe("mishna-berachot");
     });
+
+    // Les appelants doivent prévoir un repli (voir sessionService.generateUniqueSlug) :
+    // un slug vide stocké tel quel casse les liens ?session= de la page de session.
+    it("retourne une chaîne vide pour un nom entièrement en hébreu", () => {
+      expect(UtilsService.generateSlug("לעילוי נשמת פפי שלום")).toBe("");
+    });
   });
 });

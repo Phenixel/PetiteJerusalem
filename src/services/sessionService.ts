@@ -257,7 +257,10 @@ export class SessionService {
   }
 
   private async generateUniqueSlug(baseName: string, excludeSessionId?: string): Promise<string> {
-    const base = UtilsService.generateSlug(baseName);
+    // Un nom écrit entièrement en alphabet non latin (hébreu…) donne un slug
+    // vide une fois les caractères hors a-z0-9 supprimés : sans base de repli,
+    // la session serait stockée avec slug "" et les liens ?session= seraient vides.
+    const base = UtilsService.generateSlug(baseName) || "session";
     const existing = await firestoreService.getSessionBySlug(base);
     if (!existing || existing.id === excludeSessionId) return base;
 
