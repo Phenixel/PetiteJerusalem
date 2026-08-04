@@ -16,6 +16,8 @@ const tabs = [
   { to: "/profile", icon: "user", labelKey: "common.profile", exact: false, anim: "hop" },
 ] as const;
 
+const ZMANIM_PATH = "/horaires";
+
 // Onglet dont l'icône s'anime. Remis à null d'abord pour que l'animation
 // reparte même en retouchant l'onglet déjà actif.
 const poppedTab = ref<string | null>(null);
@@ -28,33 +30,59 @@ function popIcon(to: string) {
     poppedTab.value = to;
   });
 }
+
+function popZmanim() {
+  analyticsService.capture("zmanim_opened", { source: "bottom_bar" });
+  popIcon(ZMANIM_PATH);
+}
 </script>
 
 <!-- Barre de navigation basse de l'app native (remplace le menu hamburger du
-     site). Fixée au-dessus de la barre de gestes Android (safe-area). -->
+     site). Fixée au-dessus de la barre de gestes Android (safe-area).
+     Au centre, un bouton rond en accès rapide aux horaires du jour : c'est ce
+     qu'on vient vérifier le plus souvent, et toujours en vitesse. -->
 <template>
   <nav
     class="fixed bottom-0 inset-x-0 z-50 bg-surface border-t border-black/5 dark:border-white/10 pb-[var(--safe-bottom)]"
     :aria-label="t('navbar.mainMenu')"
   >
-    <div class="flex items-stretch justify-around h-14">
+    <div class="relative flex items-stretch h-14">
+      <template v-for="(tab, index) in tabs" :key="tab.to">
+        <!-- Place réservée au bouton rond, à mi-parcours des onglets -->
+        <span v-if="index === tabs.length / 2" class="w-16 shrink-0" aria-hidden="true"></span>
+        <RouterLink
+          :to="tab.to"
+          class="tab-item"
+          :exact-active-class="tab.exact ? 'tab-item-active' : 'tab-item-noop'"
+          :active-class="tab.exact ? 'tab-item-noop' : 'tab-item-active'"
+          @click="popIcon(tab.to)"
+        >
+          <span
+            class="tab-icon"
+            :class="poppedTab === tab.to ? `tab-icon-${tab.anim}` : ''"
+            @animationend="poppedTab = null"
+          >
+            <AppIcon :name="tab.icon" :size="21" />
+          </span>
+          <span class="text-[11px] font-medium leading-none">{{ t(tab.labelKey) }}</span>
+        </RouterLink>
+      </template>
+
       <RouterLink
-        v-for="tab in tabs"
-        :key="tab.to"
-        :to="tab.to"
-        class="tab-item"
-        :exact-active-class="tab.exact ? 'tab-item-active' : 'tab-item-noop'"
-        :active-class="tab.exact ? 'tab-item-noop' : 'tab-item-active'"
-        @click="popIcon(tab.to)"
+        to="/horaires"
+        class="zmanim-fab"
+        active-class="zmanim-fab-active"
+        :aria-label="t('zmanim.title')"
+        :title="t('zmanim.title')"
+        @click="popZmanim()"
       >
         <span
           class="tab-icon"
-          :class="poppedTab === tab.to ? `tab-icon-${tab.anim}` : ''"
+          :class="poppedTab === ZMANIM_PATH ? 'tab-icon-pop' : ''"
           @animationend="poppedTab = null"
         >
-          <AppIcon :name="tab.icon" :size="21" />
+          <AppIcon name="clock" :size="24" />
         </span>
-        <span class="text-[11px] font-medium leading-none">{{ t(tab.labelKey) }}</span>
       </RouterLink>
     </div>
   </nav>
@@ -77,6 +105,35 @@ function popIcon(to: string) {
 .tab-icon {
   display: inline-flex;
   transform-origin: center;
+}
+
+/* Bouton rond central : posé au milieu de la barre, il déborde légèrement
+   au-dessus pour se détacher des onglets sans masquer la page. */
+.zmanim-fab {
+  position: absolute;
+  left: 50%;
+  bottom: 0.6rem;
+  transform: translateX(-50%);
+  width: 3.25rem;
+  height: 3.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-color: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--color-primary) 45%, transparent);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.zmanim-fab:active {
+  transform: translateX(-50%) scale(0.92);
+}
+.zmanim-fab-active {
+  box-shadow:
+    0 6px 18px color-mix(in srgb, var(--color-primary) 45%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--color-primary) 28%, transparent);
 }
 
 /* Accueil : la maison gonfle d'aise, on arrive chez soi. */

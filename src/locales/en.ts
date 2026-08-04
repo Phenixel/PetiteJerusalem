@@ -97,11 +97,6 @@ const en: LocaleMessages = {
       resumeCta: "Resume my reading: {label}",
       resumeDismiss: "Stop suggesting this reading",
       sessionsTitle: "My sessions",
-      endsToday: "ends today",
-      endsInDays: "ends in {count} d",
-      noEndingSoon: "{count} active session(s), none ends this week.",
-      noSessions: "Join or create a shared study session.",
-      sessionsCta: "See Reading Share",
     },
     memorial: {
       title: "In memory of",

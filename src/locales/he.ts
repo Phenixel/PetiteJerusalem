@@ -97,11 +97,6 @@ const he: LocaleMessages = {
       resumeCta: "להמשיך בקריאה: {label}",
       resumeDismiss: "להפסיק להציע קריאה זו",
       sessionsTitle: "הסשנים שלי",
-      endsToday: "מסתיים היום",
-      endsInDays: "מסתיים בעוד {count} ימים",
-      noEndingSoon: "{count} סשנים פעילים, אף אחד לא מסתיים השבוע.",
-      noSessions: "הצטרפו לסשן לימוד משותף או צרו אחד.",
-      sessionsCta: "לשיתוף הקריאות",
     },
     memorial: {
       title: "לזכר",
