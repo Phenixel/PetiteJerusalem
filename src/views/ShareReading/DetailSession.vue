@@ -7,6 +7,7 @@ import type { Session, TextStudy, TextStudyReservation } from "../../models/mode
 import type { User } from "../../services/authService";
 import GuestForm from "../../components/GuestForm.vue";
 import ShareModal from "../../components/ShareModal.vue";
+import EditSessionModal from "../../components/EditSessionModal.vue";
 import SessionProgressBar from "../../components/SessionProgressBar.vue";
 import BatchSelectionBar from "../../components/BatchSelectionBar.vue";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
@@ -44,6 +45,7 @@ const searchTerm = ref("");
 const showOnlyAvailable = ref(false);
 
 const showShareModal = ref(false);
+const showEditModal = ref(false);
 const shareUrl = ref("");
 
 const selectedItems = ref<Set<string>>(new Set());
@@ -541,6 +543,34 @@ const goToManagement = () => {
   }
 };
 
+// Le créateur qui relit sa session repère souvent une coquille dans l'intitulé
+// ou une date limite à décaler : la correction se fait sur place.
+const saveSessionChanges = async (sessionData: {
+  name: string;
+  description: string;
+  dateLimit: string;
+  guestEmailRequired: boolean;
+}) => {
+  const current = session.value;
+  if (!current) return;
+
+  try {
+    await sessionService.updateSession(current.id, { ...sessionData, slug: current.slug });
+    session.value = {
+      ...current,
+      name: sessionData.name,
+      description: sessionData.description,
+      dateLimit: new Date(sessionData.dateLimit),
+      guestEmailRequired: sessionData.guestEmailRequired,
+      updatedAt: new Date(),
+    };
+    toast.success(t("profile.sessionUpdatedSuccess"));
+  } catch (err) {
+    console.error("Erreur lors de la mise à jour:", err);
+    toast.errorFromException(err, t("profile.sessionUpdateError"));
+  }
+};
+
 const goToCreateChain = () => {
   analyticsService.capture("create_chain_cta_clicked", { source: "session_detail" });
   router.push("/share-reading");
@@ -639,6 +669,7 @@ watch(session, (s) => applySessionSeo(s));
         :is-owner="isOwner"
         @share="openShareModal"
         @manage="goToManagement"
+        @edit="showEditModal = true"
       />
 
       <!-- Barre de progression -->
@@ -785,5 +816,8 @@ watch(session, (s) => applySessionSeo(s));
       :share-url="shareUrl"
       :session-type="session?.type"
     />
+
+    <!-- Modification de la session, réservée à son créateur -->
+    <EditSessionModal v-model:show="showEditModal" :session="session" @save="saveSessionChanges" />
   </main>
 </template>
