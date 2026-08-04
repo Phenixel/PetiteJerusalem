@@ -130,13 +130,16 @@ const fr = {
     loadingProfile: "Chargement de votre profil...",
     activeMember: "Membre Actif",
     tabs: {
-      dailyReading: "Lecture Quotidienne",
-      participatedSessions: "Sessions Participées",
-      createdSessions: "Sessions Créées",
       myInfo: "Mes Informations",
       security: "Sécurité",
       preferences: "Préférences",
       about: "À propos",
+    },
+    shortcuts: {
+      title: "Retrouvez aussi",
+      accountTitle: "Mon compte",
+      dailyReadingHint: "dans la Bibliothèque",
+      mySessionsHint: "dans le Partage de lectures",
     },
     noParticipatedSessions: "Aucune session participée",
     noParticipatedSessionsDesc: "Vous n'avez pas encore participé à des sessions d'étude.",
@@ -282,6 +285,15 @@ const fr = {
     allTypes: "Tous les types",
     noSearchResults: "Aucune session ne correspond à votre recherche.",
     clearFilters: "Réinitialiser les filtres",
+    mySessions: "Mes sessions",
+    myParticipated: "Je participe",
+    myCreated: "Créées par moi",
+    allSessions: "Toutes les sessions",
+    readCount: "{done}/{total} lues",
+    allRead: "Tout lu",
+    daysLeftChip: "J-{count}",
+    showFinished: "Afficher les sessions terminées ({count})",
+    hideFinished: "Masquer les sessions terminées",
     howItWorks: {
       title: "Comment ça marche",
       subtitle:
@@ -374,7 +386,7 @@ const fr = {
     reservationDeleteError: "Erreur lors de la suppression de la réservation",
     deleteReservationConfirm: "Êtes-vous sûr de vouloir supprimer cette réservation ?",
     loading: "Chargement de la session...",
-    backToProfile: "Retour au profil",
+    backToSessions: "Retour à mes sessions",
     stats: {
       reservations: "Réservations",
       completed: "Terminées",
@@ -448,6 +460,9 @@ const fr = {
     profileTitle: "Mon profil – Petite Jérusalem",
     profileDescription:
       "Gérez vos informations, consultez vos sessions d'étude participées et créées.",
+    dailyReadingTitle: "Ma lecture du jour – Petite Jérusalem",
+    dailyReadingDescription:
+      "Retrouvez chaque jour les textes de votre lecture quotidienne : Tehilim, paracha de la semaine et vos textes choisis, avec suivi de progression.",
     notFoundTitle: "Page non trouvée – Petite Jérusalem",
     notFoundDescription: "La page demandée n'existe pas.",
     shareReadingTitle: "Partage de lectures : organiser une étude de Torah à plusieurs – Petite Jérusalem",
@@ -620,6 +635,7 @@ const fr = {
     title: "Bibliothèque",
     subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud et Tanakh.",
     searchPlaceholder: "Rechercher un texte…",
+    searchAllPlaceholder: "Rechercher dans tous les textes…",
     noResults: "Aucun texte ne correspond à votre recherche.",
     sections: "{count} sections",
     types: {
@@ -628,6 +644,16 @@ const fr = {
       mishna: "Michna",
       talmud: "Talmud",
       tanakh: "Tanakh",
+    },
+    corpus: {
+      tehilimDesc: "Les 150 psaumes, en hébreu et en phonétique, à lire seul ou à partager.",
+      michnaDesc: "Les six sédarim de la Michna, traité par traité, chapitre par chapitre.",
+      talmudDesc: "La Guemara : les traités du Talmud Bavli, pour avancer daf après daf.",
+      tanakhDesc: "La Torah paracha par paracha, les Neviim et les Ketouvim.",
+      tehilimSearch: "Rechercher un tehilim…",
+      michnaSearch: "Rechercher une michna…",
+      talmudSearch: "Rechercher un traité du Talmud…",
+      tanakhSearch: "Rechercher une paracha ou un livre…",
     },
   },
   studio: {

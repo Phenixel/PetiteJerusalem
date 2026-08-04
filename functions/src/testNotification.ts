@@ -63,7 +63,7 @@ export const sendTestNotification = onCall<void, Promise<TestNotificationResult>
     const result = await getMessaging().sendEachForMulticast({
       tokens,
       notification: { title: copy.title, body: copy.body },
-      data: { url: "/profile" },
+      data: { url: "/bibliotheque/lecture-du-jour" },
       apns: { payload: { aps: { sound: "default" } } },
     });
 

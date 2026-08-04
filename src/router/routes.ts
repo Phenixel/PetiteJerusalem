@@ -15,6 +15,7 @@ const AuteurChiourimPage = () => import("../views/Chiourim/AuteurChiourimPage.vu
 const SerieChiourimPage = () => import("../views/Chiourim/SerieChiourimPage.vue");
 const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue");
 const StudyPage = () => import("../views/StudyPage.vue");
+const DailyReadingPage = () => import("../views/Library/DailyReadingPage.vue");
 const ContentPage = () => import("../views/ContentPage.vue");
 const TehilimPage = () => import("../views/TehilimPage.vue");
 const StudioPage = () => import("../views/Studio/StudioPage.vue");
@@ -66,6 +67,23 @@ export default [
   {
     path: "/bibliotheque",
     name: "study",
+    meta: { offlineOk: true },
+    component: StudyPage,
+  },
+  // Lecture quotidienne : déplacée du profil vers la bibliothèque (elle vit à
+  // côté des textes qu'elle fait lire). Route statique, prioritaire sur
+  // /bibliotheque/:corpus ci-dessous.
+  {
+    path: "/bibliotheque/lecture-du-jour",
+    name: "daily-reading",
+    component: DailyReadingPage,
+    meta: { requiresAuth: true },
+  },
+  // Détail d'un corpus de la bibliothèque (liste des textes) : la page
+  // d'accueil de la bibliothèque ne montre que les grandes sections.
+  {
+    path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh)",
+    name: "study-corpus",
     meta: { offlineOk: true },
     component: StudyPage,
   },
