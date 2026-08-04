@@ -47,11 +47,19 @@ defineEmits<{
         </div>
       </div>
 
-      <button @click="$emit('confirm')" :disabled="loading" class="btn btn-primary">
-        <AppIcon v-if="loading" name="spinner" :size="15" class="animate-spin" />
-        <AppIcon v-else name="check" :size="15" />
-        {{ loading ? buttonLoadingText || t("common.loading") : buttonText || t("common.confirm") }}
-      </button>
+      <!-- Une sélection peut ouvrir sur plusieurs actions (réserver, supprimer) :
+           le slot les remplace toutes, le bouton unique reste le cas courant. -->
+      <div class="flex items-center gap-2">
+        <slot name="actions">
+          <button @click="$emit('confirm')" :disabled="loading" class="btn btn-primary">
+            <AppIcon v-if="loading" name="spinner" :size="15" class="animate-spin" />
+            <AppIcon v-else name="check" :size="15" />
+            {{
+              loading ? buttonLoadingText || t("common.loading") : buttonText || t("common.confirm")
+            }}
+          </button>
+        </slot>
+      </div>
     </div>
   </div>
 </template>
