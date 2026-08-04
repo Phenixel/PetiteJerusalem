@@ -170,6 +170,29 @@ export const ICONS = {
     body: '<path d="M3 7V5h13v2"/><path d="M9.5 5v14"/><path d="M7 19h5"/><path d="M15 13v-1h6v1"/><path d="M18 12v7"/><path d="M17 19h2"/>',
   },
 
+  // --- horaires (zmanim) : course du soleil et repères de la journée ---
+  clock: {
+    body: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  },
+  sunrise: {
+    body: '<path d="M12 2v8"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/><path d="m4.93 10.93 1.41 1.41"/><path d="m19.07 10.93-1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="M2 22h20"/>',
+  },
+  sun: {
+    body: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="m4.93 19.07 1.41-1.41"/><path d="m17.66 6.34 1.41-1.41"/>',
+  },
+  sunset: {
+    body: '<path d="M12 10V2"/><path d="m8 6 4 4 4-4"/><path d="M16 18a4 4 0 0 0-8 0"/><path d="m4.93 10.93 1.41 1.41"/><path d="m19.07 10.93-1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="M2 22h20"/>',
+  },
+  moon: {
+    body: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  },
+  "map-pin": {
+    body: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  },
+  locate: {
+    body: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/><path d="M2 12h3"/><path d="M19 12h3"/><path d="M12 2v3"/><path d="M12 19v3"/>',
+  },
+
   // --- audio ---
   headphones: {
     body: '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',

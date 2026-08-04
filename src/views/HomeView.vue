@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
-import { onMounted, onUnmounted, ref, computed, type Component } from "vue";
+import { onMounted, onUnmounted, ref, computed, defineAsyncComponent, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { seoService } from "../services/seoService";
 import { analyticsService } from "../services/analyticsService";
@@ -18,6 +18,11 @@ import DailyReadingCard from "../components/DailyReadingCard.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
 import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
 import IllustrationBibliotheque from "../components/illustrations/IllustrationBibliotheque.vue";
+
+// Chargée à la demande : la carte tire le moteur de calcul des horaires
+// (@hebcal/core), qui pèse plus lourd que tout le bundle initial réuni. Elle
+// apparaît juste après le rendu de l'accueil, sans le retarder.
+const ZmanimCard = defineAsyncComponent(() => import("../components/ZmanimCard.vue"));
 
 const router = useRouter();
 const { t } = useI18n();
@@ -243,9 +248,10 @@ onUnmounted(() => {
         </span>
       </RouterLink>
 
-      <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mb-10">
+      <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 mb-10">
         <!-- Squelettes pendant le chargement -->
         <template v-if="dashLoading">
+          <div class="card p-6 h-36 animate-pulse"></div>
           <div class="card p-6 h-36 animate-pulse"></div>
           <div class="card p-6 h-36 animate-pulse"></div>
         </template>
@@ -309,6 +315,9 @@ onUnmounted(() => {
               {{ t("home.dashboard.sessionsCta") }}
             </RouterLink>
           </div>
+
+          <!-- Horaires du jour : calculés sur l'appareil, rien à charger -->
+          <ZmanimCard class="dash-card" style="--enter-delay: 0.2s" @click="trackCard('zmanim')" />
         </template>
       </div>
     </template>
@@ -372,6 +381,15 @@ onUnmounted(() => {
           </div>
         </button>
       </div>
+
+      <!-- Visiteur non connecté : les horaires du jour sont utiles tout de
+           suite, sans compte. Les connectés l'ont dans leur tableau de bord. -->
+      <ZmanimCard
+        v-if="!user"
+        class="dash-card max-w-md mx-auto mb-10"
+        style="--enter-delay: 0.36s"
+        @click="trackCard('zmanim')"
+      />
 
       <div class="text-center max-w-2xl mx-auto enter-rise" style="--enter-delay: 0.4s">
         <p class="font-serif italic text-text-secondary">{{ t("home.memorial.title") }}</p>

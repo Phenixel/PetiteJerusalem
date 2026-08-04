@@ -17,6 +17,7 @@ const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue")
 const StudyPage = () => import("../views/StudyPage.vue");
 const DailyReadingPage = () => import("../views/Library/DailyReadingPage.vue");
 const ContentPage = () => import("../views/ContentPage.vue");
+const ZmanimPage = () => import("../views/Zmanim/ZmanimPage.vue");
 const TehilimPage = () => import("../views/TehilimPage.vue");
 const StudioPage = () => import("../views/Studio/StudioPage.vue");
 const AdminLayout = () => import("../views/Admin/AdminLayout.vue");
@@ -107,6 +108,14 @@ export default [
     name: "etude-reading-section",
     meta: { offlineOk: true },
     component: TextReadingPage,
+  },
+  // Horaires (zmanim) : tout est calculé sur l'appareil, la page reste donc
+  // servie hors ligne comme la bibliothèque.
+  {
+    path: "/horaires",
+    name: "zmanim",
+    meta: { offlineOk: true },
+    component: ZmanimPage,
   },
   {
     path: "/chiourim",

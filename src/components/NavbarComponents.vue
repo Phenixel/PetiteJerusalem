@@ -35,6 +35,7 @@ const navLinks = [
   { to: "/share-reading", labelKey: "common.shareReading", exact: true },
   { to: "/bibliotheque", labelKey: "study.title", exact: true },
   { to: "/chiourim", labelKey: "common.chiourim", exact: true },
+  { to: "/horaires", labelKey: "zmanim.navTitle", exact: true },
 ];
 
 function toggleMobileMenu() {
