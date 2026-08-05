@@ -1,5 +1,5 @@
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../firebase";
+import { db } from "../firebase/firestore";
 import type { Chiour, SerieDoc } from "../models/models";
 
 export type Serie = SerieDoc & { id: string };

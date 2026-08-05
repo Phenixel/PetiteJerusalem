@@ -1,7 +1,9 @@
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { ref as storageRef, uploadBytesResumable } from "firebase/storage";
 import { httpsCallable } from "firebase/functions";
-import { db, storage, functions } from "../../firebase";
+import { db } from "../firebase/firestore";
+import { storage } from "../firebase/storage";
+import { functions } from "../firebase/functions";
 import type { ChiourDoc, SerieDoc, StudioTokenDoc } from "../models/models";
 
 /**

@@ -1,5 +1,5 @@
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
-import { db } from "../../firebase";
+import { db } from "../firebase/firestore";
 import type { Chiour, ChiourDoc } from "../models/models";
 
 function toChiour(docData: ChiourDoc): Chiour {

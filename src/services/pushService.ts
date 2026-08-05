@@ -3,7 +3,8 @@ import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { arrayRemove, arrayUnion, doc, setDoc } from "firebase/firestore";
 import type { Router } from "vue-router";
-import { app, db } from "../../firebase";
+import { app } from "../firebase/core";
+import { db } from "../firebase/firestore";
 import { isNativeApp } from "../composables/useNativeApp";
 import { analyticsService } from "./analyticsService";
 

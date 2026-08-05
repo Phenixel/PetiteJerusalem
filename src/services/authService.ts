@@ -1,5 +1,4 @@
 import {
-  getAuth,
   onAuthStateChanged,
   type User as FirebaseUser,
   createUserWithEmailAndPassword,
@@ -19,7 +18,7 @@ import {
   deleteUser,
 } from "firebase/auth";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
-import { app, googleAuthProvider } from "../../firebase";
+import { auth, googleAuthProvider } from "../firebase/core";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import type { User } from "../models/models";
 import { userPreferencesService } from "./userPreferencesService";
@@ -37,34 +36,16 @@ function toUser(firebaseUser: FirebaseUser): User {
 
 export class AuthService {
   onAuthChanged(callback: (user: User | null) => void): () => void {
-    const auth = getAuth(app);
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
-        callback({
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || firebaseUser.email || "Utilisateur",
-          email: firebaseUser.email || "",
-        });
-      } else {
-        callback(null);
-      }
+      callback(firebaseUser ? toUser(firebaseUser) : null);
     });
     return unsubscribe;
   }
 
   async getCurrentUser(): Promise<User | null> {
     return new Promise((resolve) => {
-      const auth = getAuth(app);
       const unsubscribe = onAuthStateChanged(auth, (user: FirebaseUser | null) => {
-        if (user) {
-          resolve({
-            id: user.uid,
-            name: user.displayName || user.email || "Utilisateur",
-            email: user.email || "",
-          });
-        } else {
-          resolve(null);
-        }
+        resolve(user ? toUser(user) : null);
         unsubscribe();
       });
     });
@@ -90,7 +71,6 @@ export class AuthService {
   // ===== MÉTHODES D'AUTHENTIFICATION =====
 
   async signUpWithEmail(email: string, password: string, displayName?: string): Promise<User> {
-    const auth = getAuth(app);
     const cred = await createUserWithEmailAndPassword(auth, email, password);
 
     if (displayName) {
@@ -108,7 +88,6 @@ export class AuthService {
   }
 
   async signInWithEmail(email: string, password: string): Promise<User> {
-    const auth = getAuth(app);
     const cred = await signInWithEmailAndPassword(auth, email, password);
     analyticsService.capture("signed_in", { method: "email" });
     return {
@@ -124,7 +103,6 @@ export class AuthService {
       await this.signInWithGoogleNative();
       return;
     }
-    const auth = getAuth(app);
     await signInWithRedirect(auth, googleAuthProvider);
   }
 
@@ -132,7 +110,6 @@ export class AuthService {
     if (isNativeApp) {
       return this.signInWithGoogleNative();
     }
-    const auth = getAuth(app);
     const result = await signInWithPopup(auth, googleAuthProvider);
     analyticsService.capture("signed_in", { method: "google" });
     return toUser(result.user);
@@ -149,7 +126,7 @@ export class AuthService {
       throw new Error("Connexion Google annulée ou incomplète");
     }
     const credential = GoogleAuthProvider.credential(idToken, result.credential?.accessToken);
-    const cred = await signInWithCredential(getAuth(app), credential);
+    const cred = await signInWithCredential(auth, credential);
     analyticsService.capture("signed_in", { method: "google" });
     return toUser(cred.user);
   }
@@ -180,7 +157,6 @@ export class AuthService {
   // Connexion Apple. Requise par Apple (règle 4.8) sur l'app iOS dès lors que
   // l'on propose un autre login tiers (Google). Affichée côté UI uniquement sur iOS.
   async signInWithApple(): Promise<User> {
-    const auth = getAuth(app);
     const provider = new OAuthProvider("apple.com");
 
     if (isNativeApp) {
@@ -209,15 +185,10 @@ export class AuthService {
   }
 
   async getGoogleRedirectResult(): Promise<User | null> {
-    const auth = getAuth(app);
     try {
       const result = await getRedirectResult(auth);
       if (result && result.user) {
-        return {
-          id: result.user.uid,
-          name: result.user.displayName || result.user.email || "Utilisateur",
-          email: result.user.email || "",
-        };
+        return toUser(result.user);
       }
       return null;
     } catch (error) {
@@ -240,7 +211,6 @@ export class AuthService {
   }
 
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    const auth = getAuth(app);
     const user = auth.currentUser;
 
     if (!user || !user.email) {
@@ -254,7 +224,6 @@ export class AuthService {
   }
 
   async deleteAccount(password?: string): Promise<void> {
-    const auth = getAuth(app);
     const user = auth.currentUser;
 
     if (!user) {
@@ -284,7 +253,6 @@ export class AuthService {
   }
 
   async reauthenticateWithGoogle(): Promise<void> {
-    const auth = getAuth(app);
     const user = auth.currentUser;
 
     if (!user) {
@@ -298,7 +266,6 @@ export class AuthService {
   }
 
   isGoogleUser(): boolean {
-    const auth = getAuth(app);
     const user = auth.currentUser;
 
     if (!user) return false;
@@ -307,7 +274,6 @@ export class AuthService {
   }
 
   hasPasswordProvider(): boolean {
-    const auth = getAuth(app);
     const user = auth.currentUser;
 
     if (!user) return false;
@@ -321,7 +287,6 @@ export class AuthService {
       // resauterait le sélecteur de compte).
       await FirebaseAuthentication.signOut().catch(() => {});
     }
-    const auth = getAuth(app);
     await signOut(auth);
     // Capturé avant le reset pour rester rattaché au compte qui se déconnecte.
     analyticsService.capture("signed_out");

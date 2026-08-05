@@ -1,5 +1,5 @@
 import { doc, updateDoc, increment } from "firebase/firestore";
-import { db } from "../../firebase";
+import { db } from "../firebase/firestore";
 import type { Chiour } from "../models/models";
 import { chiourFirestoreRepository } from "../repositories/chiourFirestoreRepository";
 

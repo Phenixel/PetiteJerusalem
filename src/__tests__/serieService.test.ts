@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Chiour } from "../models/models";
 
-// serieService importe l'app Firebase : on la neutralise, les fonctions
+// serieService importe Firestore : on le neutralise, les fonctions
 // testées ici (tri des épisodes, épisode suivant) sont pures.
-vi.mock("../../firebase", () => ({ db: {}, auth: {}, storage: {}, functions: {} }));
+vi.mock("../firebase/firestore", () => ({ db: {} }));
 
 import { serieService } from "../services/serieService";
 
