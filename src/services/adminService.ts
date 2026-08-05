@@ -12,7 +12,8 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { ref as storageRef, uploadBytesResumable, deleteObject, getDownloadURL } from "firebase/storage";
-import { db, storage } from "../../firebase";
+import { db } from "../firebase/firestore";
+import { storage } from "../firebase/storage";
 import type { AuteurDoc, ChiourDoc, SerieDoc, StudioTokenDoc } from "../models/models";
 import { chiourService } from "./chiourService";
 import { studioService } from "./studioService";

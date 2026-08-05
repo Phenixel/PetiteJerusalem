@@ -91,7 +91,7 @@ if (!appBuildGradle.includes("keystorePropertiesFile")) {
       `apply plugin: 'com.android.application'
 
 // Clé de signature release (android/keystore.properties, git-ignoré — voir
-// docs/android-release-plan.md étape 1). Absente sur les autres machines/CI :
+// docs/android-ci-cd.md). Absente sur les autres machines/CI :
 // le build de release retombe alors sur la signature debug pour ne pas casser
 // \`./gradlew bundleRelease\`/\`assembleRelease\` ailleurs que sur la machine qui
 // publie réellement sur le Play Store.

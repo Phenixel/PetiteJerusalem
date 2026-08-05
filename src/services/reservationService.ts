@@ -1,5 +1,5 @@
 import type { Session, TextStudy, TextStudyReservation, ReservationRecord } from "../models/models";
-import { db } from "../../firebase";
+import { db } from "../firebase/firestore";
 import { doc, runTransaction, collection, getDocs } from "firebase/firestore";
 import { firestoreService } from "./firestoreService";
 import { guestService } from "./guestService";

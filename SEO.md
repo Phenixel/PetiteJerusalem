@@ -35,15 +35,21 @@ touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
     rewrite target, so deep app routes (`/profile`, …) never flash homepage
     content. (`firebase.json`: `"**" → "/app.html"`.)
   - Also regenerates **`dist/sitemap.xml`** from the same page list.
-- `src/views/ContentPage.vue` renders the long-form landing pages
-  (`/finir-le-chass`, `/partage-tehilim`) from the same `bodyHtml`, so a human
-  and a crawler get identical content.
+- `src/views/ContentPage.vue` renders the long-form landing and legal pages
+  (`landingPages` in `seoPages.ts`: `/finir-le-chass`, `/partage-tehilim`,
+  `/confidentialite`, `/a-propos`, `/mentions-legales`) from the same
+  `bodyHtml`, so a human and a crawler get identical content.
 - `functions/src/index.ts` (`socialPreview`) injects per-page `<head>` + a small
   `<body>` for **dynamic** routes (individual sessions, chiourim, authors) that
   can't be known at build time.
 
-Prerendered/indexable pages: `/`, `/share-reading`, `/etude`, `/chiourim`,
-`/finir-le-chass`, `/partage-tehilim`. (`/login` is `noindex`.)
+Prerendered/indexable pages (~1200 in total, all listed in the generated
+`sitemap.xml`): the static pages declared in `seoPages.ts` — `/`,
+`/share-reading`, `/bibliotheque`, `/chiourim`, the landing/legal pages above,
+and the Tehilim-by-intention hub + its intention pages — plus the Bibliothèque
+reading pages generated per corpus/book/chapter by `prerender-seo.mjs`.
+(`/login` is `noindex`; the old `/etude` URLs 301-redirect to
+`/bibliotheque` in `firebase.json`.)
 
 Structured data emitted: `WebSite`, `Organization`, `WebApplication`, `HowTo`,
 `Article`, `FAQPage`, `BreadcrumbList`, `ItemList`.
@@ -65,7 +71,7 @@ After `npm run build` and `firebase deploy`:
    - Add the property `petite-jerusalem.fr` (Domain property → DNS TXT verify).
    - Submit `https://petite-jerusalem.fr/sitemap.xml`.
    - Use **URL Inspection → Request indexing** for `/`, `/share-reading`,
-     `/finir-le-chass`, `/partage-tehilim`, `/etude`.
+     `/finir-le-chass`, `/partage-tehilim`, `/bibliotheque`.
 3. **Bing Webmaster Tools** (https://www.bing.com/webmasters): add the site,
    submit the sitemap. (Bing also feeds ChatGPT search.)
 4. Confirm the old `petite-jerusalem.web.app` either redirects to `.fr` or stays

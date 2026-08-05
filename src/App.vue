@@ -17,7 +17,7 @@ import { useNativeStatusBar } from "./composables/useNativeStatusBar";
 import { useLocale } from "./composables/useLocale";
 import { RouterView } from "vue-router";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth } from "./firebase/core";
 import { useTheme } from "./composables/useTheme";
 import { useFonts } from "./composables/useFonts";
 

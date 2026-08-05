@@ -179,7 +179,11 @@ Ajout fait : `capture_performance: { web_vitals: true }` → l'onglet
 
 - Chunk `firebase` : **872 kB (214 kB gzip)** chargé dès la home (App.vue
   importe `auth` en statique). Piste : séparer `firestore`/`storage` du
-  chunk, et différer ce qui n'est pas l'auth.
+  chunk, et différer ce qui n'est pas l'auth. → **Corrigé (2026-08)** :
+  `firebase.ts` éclaté en `src/firebase/{core,firestore,storage,functions}.ts`
+  — seul le cœur (app + auth, 201 kB / 40 kB gzip) reste dans le bundle
+  initial, Firestore et le reste se chargent à la demande. JS préchargé :
+  321 → 143 kB gzip.
 - `index.html` : stylesheet Google Fonts **bloquante** avec 7 familles /
   19 graisses — toutes les alternatives sélectionnables sont téléchargées
   par tous les visiteurs. Fix : ne garder en bloquant que les familles par

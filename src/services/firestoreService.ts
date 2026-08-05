@@ -13,7 +13,7 @@ import {
   type DocumentData,
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
-import { db } from "../../firebase";
+import { db } from "../firebase/firestore";
 import type { Session } from "../models/models";
 
 // Durée de vie du cache de la liste des sessions. Court : les réservations

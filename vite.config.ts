@@ -61,8 +61,14 @@ export default defineConfig({
       output: {
         // Sépare les vendors du code applicatif : une modif applicative
         // n'invalide pas le cache navigateur des gros chunks stables.
+        // Firebase est volontairement scindé en deux : le cœur (app + auth,
+        // requis dès le premier rendu) et Firestore, chargé à la demande via
+        // src/firebase/firestore.ts — les regrouper ramènerait Firestore dans
+        // le chargement initial. Storage et Functions, petits et cantonnés au
+        // studio/admin, suivent le découpage naturel de Rollup.
         manualChunks: {
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          'firebase-core': ['firebase/app', 'firebase/auth'],
+          'firebase-firestore': ['firebase/firestore'],
           vue: ['vue', 'vue-router', 'vue-i18n'],
         },
       },

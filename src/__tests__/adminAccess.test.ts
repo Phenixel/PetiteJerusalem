@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("../../firebase", () => ({ db: {}, auth: {}, storage: {}, functions: {} }));
+// adminService tire studioService, qui tire Storage et Functions : on
+// neutralise les trois modules d'init Firebase, les fonctions testées ici
+// sont pures.
+vi.mock("../firebase/firestore", () => ({ db: {} }));
+vi.mock("../firebase/storage", () => ({ storage: {} }));
+vi.mock("../firebase/functions", () => ({ functions: {} }));
 
 import { isAdminEmail } from "../config/admin";
 import { generateStudioToken } from "../services/adminService";

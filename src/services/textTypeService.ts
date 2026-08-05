@@ -18,8 +18,4 @@ export class TextTypeService {
   static formatType(type: EnumTypeTextStudy): string {
     return this.TYPE_LABELS[type] || type;
   }
-
-  static isValidType(type: string): type is EnumTypeTextStudy {
-    return Object.values(EnumTypeTextStudy).includes(type as EnumTypeTextStudy);
-  }
 }

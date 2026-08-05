@@ -2,7 +2,7 @@ import { firestoreService } from "./firestoreService";
 import { reservationService, type ReservationForm } from "./reservationService";
 import { SearchService } from "./searchService";
 import { authService, type User } from "./authService";
-import { UtilsService } from "./Services";
+import { generateSlug } from "./slugService";
 import type {
   Session,
   TextStudy,
@@ -112,17 +112,6 @@ export class SessionService {
 
   async getCurrentUser(): Promise<User | null> {
     return await authService.getCurrentUser();
-  }
-
-  async isUserAuthenticated(): Promise<boolean> {
-    return await authService.isUserAuthenticated();
-  }
-
-  async requireAuthentication(
-    router: { push: (path: string) => void },
-    redirectPath: string = "/",
-  ): Promise<User | null> {
-    return await authService.requireAuthentication(router, redirectPath);
   }
 
   // === MÉTHODES DE RÉSERVATION ===
@@ -269,7 +258,7 @@ export class SessionService {
     // Un nom écrit entièrement en alphabet non latin (hébreu…) donne un slug
     // vide une fois les caractères hors a-z0-9 supprimés : sans base de repli,
     // la session serait stockée avec slug "" et les liens ?session= seraient vides.
-    const base = UtilsService.generateSlug(baseName) || "session";
+    const base = generateSlug(baseName) || "session";
     const existing = await firestoreService.getSessionBySlug(base);
     if (!existing || existing.id === excludeSessionId) return base;
 
@@ -316,10 +305,6 @@ export class SessionService {
     return await this.createSession(sessionData);
   }
 
-  async deleteSession(sessionId: string): Promise<void> {
-    return await firestoreService.deleteSession(sessionId);
-  }
-
   formatTextType(type: EnumTypeTextStudy): string {
     return TextTypeService.formatType(type);
   }
@@ -328,22 +313,9 @@ export class SessionService {
     return DateService.formatDate(date);
   }
 
-  isSessionOverdue(session: Session): boolean {
-    return DateService.isDatePast(session.dateLimit) && !session.isCompleted;
-  }
-  filterSessionsByType(sessions: Session[], type: EnumTypeTextStudy): Session[] {
-    return sessions.filter((session) => session.type === type);
-  }
-
   sortSessionsByDate(sessions: Session[]): Session[] {
     return [...sessions].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-  }
-
-  sortSessionsByDeadline(sessions: Session[]): Session[] {
-    return [...sessions].sort(
-      (a, b) => new Date(a.dateLimit).getTime() - new Date(b.dateLimit).getTime(),
     );
   }
 
@@ -423,41 +395,6 @@ export class SessionService {
     );
   }
 
-  // === MÉTHODES DE GESTION DES DONNÉES DE SESSION ===
-  async loadSessionData(sessionId: string): Promise<{
-    session: Session;
-    textStudies: TextStudy[];
-    reservations: TextStudyReservation[];
-  }> {
-    const session = await this.getSessionById(sessionId);
-    if (!session) {
-      throw new Error("Session non trouvée");
-    }
-
-    let textStudies = await this.getTextStudiesByType(session.type);
-
-    if (session.selectedBooks && session.selectedBooks.length > 0) {
-      textStudies = textStudies.filter((text) => session.selectedBooks!.includes(text.livre));
-    }
-
-    const reservations = this.getReservationsBySession(session);
-
-    return { session, textStudies, reservations };
-  }
-
-  getGroupedAndFilteredTextStudies(
-    textStudies: TextStudy[],
-    searchTerm: string,
-  ): Record<string, TextStudy[]> {
-    let filteredTexts = textStudies;
-
-    if (searchTerm.trim()) {
-      filteredTexts = this.filterTextStudiesBySearch(textStudies, searchTerm);
-    }
-
-    return this.groupTextStudiesByBook(filteredTexts);
-  }
-
   async updateSession(
     sessionId: string,
     sessionData: {
@@ -514,58 +451,9 @@ export class SessionService {
 
   // === MÉTHODES DE GESTION POUR LES CRÉATEURS ===
 
-  async createGuestReservation(
-    sessionId: string,
-    textStudyId: string,
-    section: number | undefined,
-    guestName: string,
-    guestEmail: string,
-  ): Promise<string> {
-    return await reservationService.createReservation(
-      sessionId,
-      textStudyId,
-      section,
-      undefined,
-      guestEmail,
-      undefined,
-      guestName,
-    );
-  }
-
-  getTextReservations(session: Session, textStudyId: string): TextStudyReservation[] {
-    return session.reservations?.filter((r) => r.textStudyId === textStudyId) || [];
-  }
   canManageSession(session: Session, currentUser: User | null): boolean {
     if (!currentUser) return false;
     return session.personId === currentUser.id;
-  }
-
-  getTextReservationStatus(
-    textStudy: TextStudy,
-    session: Session,
-  ): {
-    status: "available" | "fully_reserved" | "partially_reserved";
-    reservedBy: string | null;
-    reservations: TextStudyReservation[];
-  } {
-    const reservations = this.getTextReservations(session, textStudy.id);
-    const status = reservationService.getTextDisplayStatus(textStudy.id, textStudy, session);
-
-    return {
-      ...status,
-      reservations,
-    };
-  }
-
-  getSessionsByCreator(sessions: Session[], creatorId: string): Session[] {
-    return sessions.filter((session) => session.personId === creatorId);
-  }
-  getActiveSessionsByCreator(sessions: Session[], creatorId: string): Session[] {
-    return this.getSessionsByCreator(sessions, creatorId).filter((session) => !session.isEnded);
-  }
-
-  getCompletedSessionsByCreator(sessions: Session[], creatorId: string): Session[] {
-    return this.getSessionsByCreator(sessions, creatorId).filter((session) => session.isEnded);
   }
 }
 

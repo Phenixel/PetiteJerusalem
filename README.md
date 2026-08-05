@@ -50,7 +50,7 @@ To run the project locally:
 ### 🔥 Local Firebase (emulators)
 
 In development the app automatically connects to the Firebase **Auth** and
-**Firestore** emulators (see `firebase.ts`), so you can sign up, log in and
+**Firestore** emulators (see `src/firebase/`), so you can sign up, log in and
 create sessions entirely offline, with no access to the cloud project needed.
 
 **Prerequisites**
@@ -82,8 +82,8 @@ This runs the Vite dev server and the emulators in parallel. Then:
 > This project uses a **dedicated port range** (`5473` for Vite, `8470`–`8476`
 > for the emulators) instead of the Firebase/Vite defaults, so it can run in
 > parallel with other Firebase projects without port clashes. The ports live in
-> `firebase.json` (`emulators` block) and `firebase.ts` (client `connect*Emulator`
-> calls) — keep the two in sync. On startup the emulator script also reaps any
+> `firebase.json` (`emulators` block) and `src/firebase/*.ts` (client
+> `connect*Emulator` calls) — keep the two in sync. On startup the emulator script also reaps any
 > orphaned emulator left holding one of these ports, and on exit it shuts the
 > emulators down cleanly so none is orphaned.
 

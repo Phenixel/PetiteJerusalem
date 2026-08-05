@@ -3,7 +3,8 @@ import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { arrayRemove, arrayUnion, doc, setDoc } from "firebase/firestore";
 import type { Router } from "vue-router";
-import { app, db } from "../../firebase";
+import { app } from "../firebase/core";
+import { db } from "../firebase/firestore";
 import { isNativeApp } from "../composables/useNativeApp";
 import { analyticsService } from "./analyticsService";
 
@@ -18,7 +19,7 @@ import { analyticsService } from "./analyticsService";
  *
  * Config hors code requise avant que cela fonctionne sur appareil :
  * clé APNs dans la console Firebase + capability Push dans Xcode (iOS),
- * google-services.json (Android) — voir docs/capacitor-poc.md.
+ * google-services.json (Android) — voir docs/app-native.md.
  */
 
 export type PushPermission = "granted" | "denied" | "prompt";

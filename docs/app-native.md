@@ -1,17 +1,23 @@
-# POC Capacitor — App mobile à partir du site Vue existant
+# App native (Capacitor) — générer, builder, tester
 
-But de ce POC : **valider qu'on peut emballer l'app Vue actuelle dans un shell
-natif iOS/Android sans réécriture**, et juger la fluidité sur un vrai appareil
-avant de s'engager (Capacitor vs réécriture Flutter).
+L'app iOS/Android est le site Vue emballé dans un shell natif
+[Capacitor](https://capacitorjs.com/) — décision actée après le POC de
+juillet 2026 (fluidité validée sur appareil, zéro réécriture, vs Flutter).
+Deux choix d'architecture en découlent :
 
-Ce qui est dans cette PR = la **configuration** (deps + `capacitor.config.ts` +
-scripts). Les projets natifs (`android/`, `ios/`) sont **générés localement** et
-volontairement git-ignorés (code généré, lourd, dépendant de la machine).
+1. **Les corpus volumineux ne sont pas embarqués** dans le binaire : l'app
+   reste légère pendant que la bibliothèque grossit, les textes se
+   téléchargent à la demande (voir plus bas).
+2. **Les projets natifs (`android/`, `ios/`) sont générés localement et
+   git-ignorés** (code généré, lourd, dépendant de la machine). Tout
+   ajustement natif doit être scripté dans `scripts/setup-android.mjs` pour
+   rester reproductible — la CI régénère `android/` de zéro à chaque release
+   (voir `docs/android-ci-cd.md`).
 
 ## Prérequis
 
 - Node 22 (déjà requis par le projet)
-- **Android** : Android Studio + un SDK Android installé
+- **Android** : Android Studio + un SDK Android installé + JDK 21
 - **iOS** : macOS + Xcode (+ CocoaPods : `sudo gem install cocoapods`)
 
 ## Démarrage
@@ -22,7 +28,8 @@ npm install
 
 # 2. Générer les projets natifs (une seule fois)
 npx cap add android
-npx cap add ios          # macOS uniquement
+node scripts/setup-android.mjs   # réapplique les ajustements natifs (permissions, signature…)
+npx cap add ios                  # macOS uniquement
 
 # 3. Builder le web + synchroniser vers le natif, puis ouvrir l'IDE
 npm run cap:android      # ouvre Android Studio
@@ -32,6 +39,10 @@ npm run cap:ios          # ouvre Xcode (macOS)
 Dans Android Studio / Xcode : choisis un émulateur ou ton téléphone branché,
 puis **Run**. L'app démarre sur le bundle Vue (le même que le site).
 
+> Après chaque `git pull` : `npm install && npm run app:build` avant de
+> rebuilder dans l'IDE — c'est le `cap sync` inclus qui pousse plugins et
+> bundle web dans `android/`.
+
 ## Itération rapide (sans rebuild à chaque fois)
 
 Plutôt que rebuilder + `cap copy` à chaque changement, pointe l'app sur le
@@ -40,25 +51,24 @@ serveur de dev :
 1. `npm run dev -- --host` (expose Vite sur le réseau local)
 2. Dans `capacitor.config.ts`, décommente / ajoute :
    ```ts
-   server: { url: 'http://<ton-ip-locale>:5173', cleartext: true }
+   server: { url: 'http://<ton-ip-locale>:5473', cleartext: true }
    ```
+   (le projet utilise le port **5473**, pas le 5173 par défaut de Vite)
 3. `npx cap sync` puis relance depuis l'IDE. Le hot-reload du web fonctionne.
 
 > ⚠️ Retire le bloc `server` avant tout build destiné à un store.
 
-## Scripts ajoutés
+## Scripts
 
 | Script | Rôle |
 |---|---|
-| `npm run app:build` | `build` web + `cap sync` (copie le bundle vers le natif) |
+| `npm run app:build` | build web + retrait des corpus volumineux (`app:prune`) + `cap sync` |
 | `npm run cap:sync` | synchronise web + plugins vers les projets natifs |
 | `npm run cap:android` | build + ouvre Android Studio |
 | `npm run cap:ios` | build + ouvre Xcode |
+| `npm run store:screenshots` | régénère les captures de la fiche Play Store (voir `docs/android-ci-cd.md`) |
 
-## Lecture hors-ligne : téléchargement à la demande ✅
-
-> Évolution depuis le POC : les corpus volumineux ne sont **plus embarqués**
-> dans le binaire (voir `docs/mobile-app-roadmap.md`, décision n° 2).
+## Lecture hors-ligne : téléchargement à la demande
 
 - `npm run app:build` retire `dist/texts/{talmud,mishna,tanakh}` (~38 Mo) du
   bundle natif via `scripts/prune-native-bundle.mjs`. Seuls `tehilim.json`
@@ -72,29 +82,39 @@ serveur de dev :
 - `textService.loadText` passe par `fetchTextResponse` : copie locale d'abord,
   réseau (`https://petite-jerusalem.fr`) sinon.
 - La progression (« marquer comme lu ») fonctionne aussi hors ligne :
-  cache Firestore persistant activé dans `firebase.ts`.
+  cache Firestore persistant activé dans `src/firebase/firestore.ts`.
 
 Vérification : télécharger un livre, activer le mode avion, l'ouvrir.
 
-## Connexion Apple (« Sign in with Apple »)
+## Authentification native (Google / Apple)
 
-Apple **impose** « Sign in with Apple » sur l'app iOS dès qu'un autre login tiers
-(ici Google) est proposé (règle App Store 4.8). Le bouton est donc câblé mais
-**affiché uniquement sur iOS** (`Capacitor.getPlatform() === 'ios'`) — invisible
-sur le site web.
+Les flux OAuth par popup/redirect du SDK JS Firebase ne fonctionnent pas dans
+une webview : l'app passe par `@capacitor-firebase/authentication`
+(`src/services/authService.ts`) — sélecteur de compte Google natif (avec repli
+si le Credential Manager Android est cassé) et feuille « Sign in with Apple »
+système sur iOS, puis bridge du credential vers le SDK JS pour que
+`onAuthStateChanged` continue de fonctionner comme sur le web.
 
-Le **code** est en place (`authService.signInWithApple` + bouton). Restent les
-étapes **hors-code** (non automatisables ici) pour que ça fonctionne :
+Apple **impose** « Sign in with Apple » sur l'app iOS dès qu'un autre login
+tiers (ici Google) est proposé (règle App Store 4.8). Le bouton est
+**affiché uniquement sur iOS** — invisible sur le site web et sur Android.
+
+Étapes **hors-code** à faire une fois pour iOS :
 
 1. **Firebase Console** → Authentication → activer le provider **Apple**.
 2. **Apple Developer** → créer un *Service ID*, une *Sign in with Apple Key*,
    renseigner le *Return URL* fourni par Firebase.
 3. **Xcode** (projet iOS généré) → onglet *Signing & Capabilities* → ajouter la
    capability **Sign in with Apple**.
-4. **Production native** : pour un flux 100 % natif (recommandé sur iOS),
-   basculer `signInWithApple` sur le plugin
-   `@capacitor-firebase/authentication`. La popup JS SDK actuelle suffit pour le
-   web et pour valider le POC.
+
+## Notifications push
+
+Implémentées côté client (`src/services/pushService.ts`,
+`@capacitor-firebase/messaging` : token FCM stocké dans
+`userPreferences/{uid}.fcmTokens`, deep-links au toucher) et côté serveur
+(Cloud Function planifiée `dailyReadingReminder`). Côté iOS, la clé APNs doit
+être uploadée dans la console Firebase et la capability Push Notifications
+ajoutée dans Xcode.
 
 ## Géolocalisation (horaires du jour)
 
@@ -115,18 +135,10 @@ le calcul est local, les coordonnées restent en `localStorage`.
 
   Sans cette clé, iOS **ferme l'app** à la première demande de position.
 
-## Autres limites connues du POC (attendues, pas des bugs)
+## Publication
 
-- **Connexion Google** : `signInWithRedirect/popup` de Firebase ne fonctionne
-  pas idéalement dans une webview native. Pour le POC, teste avec **email/mot de
-  passe**. La V1 réelle nécessitera le plugin `@capacitor-firebase/authentication`
-  (auth Google + Apple natives). C'est le premier vrai chantier identifié.
-- **Pas de push** dans ce POC : les notifications (FCM + Cloud Functions
-  planifiées + clé APNs côté Apple) sont une phase ultérieure.
-
-## Ce qu'on cherche à conclure
-
-Lance-le sur ton téléphone et juge : navigation entre sessions, scroll des
-listes, lecture de texte. **Si c'est fluide → Capacitor suffit et on évite une
-réécriture Flutter complète. Si ça te paraît mou → on saura que Flutter se
-justifie.**
+La publication Android est automatisée : chaque tag `vX.Y.Z` déclenche
+`deploy-android.yml`, qui régénère `android/`, builde l'AAB signé et l'envoie
+au Play Store avec la fiche et les notes de version — tout est documenté dans
+`docs/android-ci-cd.md`. iOS (App Store) reste à faire : compte Apple
+Developer, `npx cap add ios`, config consoles ci-dessus, TestFlight.
