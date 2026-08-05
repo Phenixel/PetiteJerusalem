@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { getWeeklyParasha, getTehilimOfDay, TEHILIM_MONTHLY } from "../services/dailyCycles";
+import {
+  getWeeklyParasha,
+  getParashaForShabbat,
+  getTehilimOfDay,
+  TEHILIM_MONTHLY,
+} from "../services/dailyCycles";
 
 describe("getWeeklyParasha", () => {
   it("résout une paracha du catalogue pour chaque semaine sur 4 ans", () => {
@@ -28,6 +33,29 @@ describe("getWeeklyParasha", () => {
       const parasha = getWeeklyParasha(new Date(Date.UTC(2025, 10, day)));
       expect(parasha?.names).toEqual(reference?.names);
     }
+  });
+});
+
+describe("getParashaForShabbat", () => {
+  it("donne la paracha du samedi demandé", () => {
+    // Chabbat 8 août 2026 : Re'eh.
+    const parasha = getParashaForShabbat(new Date(2026, 7, 8, 22, 0, 0));
+    expect(parasha?.names).toEqual(["Re'eh"]);
+    expect(parasha?.weekKey).toBe("2026-08-08");
+  });
+
+  it("ne renvoie rien quand ce Chabbat tombe un jour de fête", () => {
+    // 3 octobre 2026 : Chabbat 'Hol Hamoed Souccot, sans paracha ordinaire.
+    // getWeeklyParasha anticiperait sur la suivante, pas getParashaForShabbat.
+    const shabbat = new Date(2026, 9, 3, 22, 0, 0);
+    expect(getWeeklyParasha(shabbat)).not.toBeNull();
+    expect(getParashaForShabbat(shabbat)).toBeNull();
+  });
+
+  it("suit le samedi, pas la date d'aujourd'hui", () => {
+    // Deux Chabbats consécutifs : chacun sa paracha.
+    expect(getParashaForShabbat(new Date(2026, 7, 8, 22, 0, 0))?.names).toEqual(["Re'eh"]);
+    expect(getParashaForShabbat(new Date(2026, 7, 15, 22, 0, 0))?.names).toEqual(["Shoftim"]);
   });
 });
 

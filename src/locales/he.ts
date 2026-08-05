@@ -259,6 +259,7 @@ const he: LocaleMessages = {
     },
     shabbat: {
       title: "שבת",
+      parasha: "פרשת",
       candleLighting: "הדלקת נרות",
       havdalah: "צאת שבת",
       note: "הדלקת נרות 18 דקות לפני השקיעה, צאת שבת בצאת הכוכבים.",

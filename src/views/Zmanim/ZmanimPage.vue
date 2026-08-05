@@ -11,6 +11,8 @@ import { analyticsService } from "../../services/analyticsService";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
+import { getParashaForShabbat } from "../../services/dailyCycles";
+import { hubPath } from "../../content/etudeTexts";
 import {
   computeZmanim,
   formatHebrewDate,
@@ -23,6 +25,7 @@ import {
   type ZmanPeriod,
   type ZmanTime,
 } from "../../services/zmanimService";
+import { revealFromOrigin } from "../../composables/useRevealOrigin";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const { t, locale } = useI18n();
@@ -44,6 +47,15 @@ const isToday = computed(() => dayOffset.value === 0);
 const times = computed(() => computeZmanim(place.value, day.value));
 const upcoming = computed(() => (isToday.value ? nextZman(times.value, now.value) : null));
 const shabbat = computed(() => getShabbatTimes(place.value, now.value));
+
+/**
+ * La paracha de ce Chabbat-là — celui dont les horaires sont affichés, et non
+ * celui d'aujourd'hui : le samedi soir après la sortie, le bloc montre déjà
+ * le Chabbat suivant, sa paracha doit suivre.
+ */
+const parasha = computed(() =>
+  shabbat.value ? getParashaForShabbat(shabbat.value.havdalah) : null,
+);
 
 const byPeriod = computed(() =>
   ZMAN_PERIODS.map((period) => ({
@@ -87,7 +99,11 @@ async function locateMe() {
   analyticsService.capture("zmanim_location_requested", { granted });
 }
 
+/** Racine de la page : cible du dévoilement circulaire (bouton rond natif). */
+const root = ref<HTMLElement | null>(null);
+
 onMounted(() => {
+  revealFromOrigin(root.value);
   ticker = setInterval(() => (now.value = new Date()), 30_000);
   const url = `${SITE_URL}/horaires`;
   seoService.setMeta({
@@ -104,7 +120,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main class="flex-1 mx-auto w-full max-w-3xl px-6 py-10">
+  <main ref="root" class="flex-1 mx-auto w-full max-w-3xl px-6 py-10">
     <h1 class="text-2xl md:text-3xl font-bold text-text-primary tracking-tight">
       {{ t("zmanim.title") }}
     </h1>
@@ -238,10 +254,22 @@ onUnmounted(() => {
 
     <!-- Entrée et sortie du Chabbat (celui en cours, sinon le prochain) -->
     <section v-if="shabbat" class="card p-5 mt-5">
-      <h2 class="font-bold text-text-primary flex items-center gap-2.5 mb-3">
+      <h2 class="font-bold text-text-primary flex items-center gap-2.5">
         <AppIcon name="flame" :size="17" class="text-primary" />
         {{ t("zmanim.shabbat.title") }}
       </h2>
+
+      <!-- La paracha de ce Chabbat, cliquable pour la lire -->
+      <p v-if="parasha" class="mt-1 mb-3 flex flex-wrap items-center gap-x-1.5 text-sm">
+        <span class="text-text-secondary">{{ t("zmanim.shabbat.parasha") }}</span>
+        <template v-for="(entry, index) in parasha.entries" :key="entry.id">
+          <span v-if="index > 0" class="text-text-secondary">·</span>
+          <RouterLink :to="hubPath(entry)" class="font-medium text-primary hover:underline">
+            {{ entry.name }}
+          </RouterLink>
+        </template>
+      </p>
+      <div v-else class="mb-3"></div>
       <ul class="flex flex-col divide-y divide-line">
         <li class="flex items-center justify-between gap-4 py-2.5">
           <span class="min-w-0">

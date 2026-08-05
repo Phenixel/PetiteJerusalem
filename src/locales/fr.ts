@@ -262,6 +262,7 @@ const fr = {
     },
     shabbat: {
       title: "Chabbat",
+      parasha: "Parachat",
       candleLighting: "Allumage des bougies",
       havdalah: "Sortie de Chabbat",
       note: "Allumage 18 minutes avant le coucher du soleil, sortie à la sortie des étoiles.",

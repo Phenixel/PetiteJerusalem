@@ -263,6 +263,7 @@ const en: LocaleMessages = {
     },
     shabbat: {
       title: "Shabbat",
+      parasha: "Parashat",
       candleLighting: "Candle lighting",
       havdalah: "Shabbat ends",
       note: "Candle lighting 18 minutes before sunset, Shabbat ends at nightfall.",

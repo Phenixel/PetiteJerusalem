@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import { analyticsService } from "../services/analyticsService";
+import { setRevealOrigin } from "../composables/useRevealOrigin";
 
 const { t } = useI18n();
 
@@ -31,8 +32,11 @@ function popIcon(to: string) {
   });
 }
 
-function popZmanim() {
+// La page des horaires s'ouvre en cercle depuis ce bouton : on lui passe le
+// point de départ avant de naviguer.
+function popZmanim(event: MouseEvent) {
   analyticsService.capture("zmanim_opened", { source: "bottom_bar" });
+  setRevealOrigin(event.currentTarget as HTMLElement);
   popIcon(ZMANIM_PATH);
 }
 </script>
@@ -74,7 +78,7 @@ function popZmanim() {
         active-class="zmanim-fab-active"
         :aria-label="t('zmanim.title')"
         :title="t('zmanim.title')"
-        @click="popZmanim()"
+        @click="popZmanim"
       >
         <span
           class="tab-icon"
