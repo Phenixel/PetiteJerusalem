@@ -92,7 +92,6 @@ const he: LocaleMessages = {
       helloEvening: "ערב טוב",
       subtitle: "הנה איפה אתם עומדים היום.",
       readingEmpty: "הרכיבו את רשימת הטקסטים שאתם קוראים כל יום.",
-      readingCta: "לקריאה היומית שלי",
       readingSetupCta: "לבחור טקסטים",
       resumeCta: "להמשיך בקריאה: {label}",
       resumeDismiss: "להפסיק להציע קריאה זו",
@@ -678,6 +677,13 @@ const he: LocaleMessages = {
     allDownloaded: "הכול הורד",
     download: "הורדה",
     delete: "מחיקה",
+    deleteAll: "למחוק הכול",
+    deleteAllCorpus: "למחוק את החלק הזה",
+    deleteAllConfirm: "למחוק את הספרים שהורדו ({count})? הטקסטים יישארו זמינים לקריאה באינטרנט.",
+    deleteAllCorpusConfirm:
+      "למחוק את הספרים שהורדו מתוך {corpus} ({count})? הטקסטים יישארו זמינים לקריאה באינטרנט.",
+    deleteAllDone: "ההורדות נמחקו.",
+    deleteError: "המחיקה נכשלה. נסו שוב.",
     error: "ההורדה נכשלה. בדקו את החיבור.",
   },
   offline: {

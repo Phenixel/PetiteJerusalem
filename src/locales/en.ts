@@ -92,7 +92,6 @@ const en: LocaleMessages = {
       helloEvening: "Good evening",
       subtitle: "Here's where you stand today.",
       readingEmpty: "Build the list of texts you read every day.",
-      readingCta: "See my daily reading",
       readingSetupCta: "Pick my texts",
       resumeCta: "Resume my reading: {label}",
       resumeDismiss: "Stop suggesting this reading",
@@ -690,6 +689,13 @@ const en: LocaleMessages = {
     allDownloaded: "Everything is downloaded",
     download: "Download",
     delete: "Delete",
+    deleteAll: "Delete all",
+    deleteAllCorpus: "Delete this section",
+    deleteAllConfirm: "Delete the downloaded books ({count})? Texts stay readable online.",
+    deleteAllCorpusConfirm:
+      "Delete the downloaded books from {corpus} ({count})? Texts stay readable online.",
+    deleteAllDone: "Downloads deleted.",
+    deleteError: "Could not delete. Please try again.",
     error: "Download failed. Check your connection.",
   },
   offline: {
