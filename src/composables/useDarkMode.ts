@@ -30,12 +30,7 @@ initDarkMode();
 export function useDarkMode() {
   watchEffect(() => applyTheme());
 
-  const toggleDark = () => {
-    isDark.value = !isDark.value;
-  };
-
   return {
     isDark,
-    toggleDark,
   };
 }

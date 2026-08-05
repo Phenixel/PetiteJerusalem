@@ -1,88 +1,88 @@
 import { describe, it, expect } from "vitest";
-import { UtilsService } from "../services/Services";
+import { generateSlug } from "../services/slugService";
 
-describe("UtilsService.generateSlug", () => {
+describe("generateSlug", () => {
   describe("diacritiques français", () => {
     it("remplace é, è, ê, ë par e", () => {
-      expect(UtilsService.generateSlug("été")).toBe("ete");
-      expect(UtilsService.generateSlug("fête")).toBe("fete");
-      expect(UtilsService.generateSlug("noël")).toBe("noel");
+      expect(generateSlug("été")).toBe("ete");
+      expect(generateSlug("fête")).toBe("fete");
+      expect(generateSlug("noël")).toBe("noel");
     });
 
     it("remplace à, â, ä par a", () => {
-      expect(UtilsService.generateSlug("pâte")).toBe("pate");
-      expect(UtilsService.generateSlug("à")).toBe("a");
+      expect(generateSlug("pâte")).toBe("pate");
+      expect(generateSlug("à")).toBe("a");
     });
 
     it("remplace î, ï par i", () => {
-      expect(UtilsService.generateSlug("île")).toBe("ile");
-      expect(UtilsService.generateSlug("naïf")).toBe("naif");
+      expect(generateSlug("île")).toBe("ile");
+      expect(generateSlug("naïf")).toBe("naif");
     });
 
     it("remplace ô, ö par o", () => {
-      expect(UtilsService.generateSlug("côte")).toBe("cote");
+      expect(generateSlug("côte")).toBe("cote");
     });
 
     it("remplace û, ü, ù par u", () => {
-      expect(UtilsService.generateSlug("sûr")).toBe("sur");
-      expect(UtilsService.generateSlug("où")).toBe("ou");
+      expect(generateSlug("sûr")).toBe("sur");
+      expect(generateSlug("où")).toBe("ou");
     });
 
     it("remplace ç par c", () => {
-      expect(UtilsService.generateSlug("façon")).toBe("facon");
-      expect(UtilsService.generateSlug("garçon")).toBe("garcon");
+      expect(generateSlug("façon")).toBe("facon");
+      expect(generateSlug("garçon")).toBe("garcon");
     });
   });
 
   describe("espaces et tirets", () => {
     it("convertit les espaces en tirets", () => {
-      expect(UtilsService.generateSlug("hello world")).toBe("hello-world");
+      expect(generateSlug("hello world")).toBe("hello-world");
     });
 
     it("collapse les espaces multiples en un seul tiret", () => {
-      expect(UtilsService.generateSlug("hello   world")).toBe("hello-world");
+      expect(generateSlug("hello   world")).toBe("hello-world");
     });
 
     it("trim les espaces en début et fin", () => {
-      expect(UtilsService.generateSlug("  hello world  ")).toBe("hello-world");
+      expect(generateSlug("  hello world  ")).toBe("hello-world");
     });
 
     it("collapse les tirets consécutifs en un seul", () => {
-      expect(UtilsService.generateSlug("hello--world")).toBe("hello-world");
+      expect(generateSlug("hello--world")).toBe("hello-world");
     });
   });
 
   describe("caractères spéciaux et casse", () => {
     it("supprime les caractères spéciaux", () => {
-      expect(UtilsService.generateSlug("hello!@#world")).toBe("helloworld");
+      expect(generateSlug("hello!@#world")).toBe("helloworld");
     });
 
     it("conserve les chiffres", () => {
-      expect(UtilsService.generateSlug("session 42")).toBe("session-42");
+      expect(generateSlug("session 42")).toBe("session-42");
     });
 
     it("met tout en minuscule", () => {
-      expect(UtilsService.generateSlug("Hello World")).toBe("hello-world");
+      expect(generateSlug("Hello World")).toBe("hello-world");
     });
   });
 
   describe("cas d'usage réels", () => {
     it("génère un slug correct pour un nom de session typique", () => {
-      expect(UtilsService.generateSlug("Étude du Talmud Bavli")).toBe("etude-du-talmud-bavli");
+      expect(generateSlug("Étude du Talmud Bavli")).toBe("etude-du-talmud-bavli");
     });
 
     it("gère un nom avec plusieurs diacritiques combinés", () => {
-      expect(UtilsService.generateSlug("Réservation Générale")).toBe("reservation-generale");
+      expect(generateSlug("Réservation Générale")).toBe("reservation-generale");
     });
 
     it("gère une chaîne sans diacritiques", () => {
-      expect(UtilsService.generateSlug("Mishna Berachot")).toBe("mishna-berachot");
+      expect(generateSlug("Mishna Berachot")).toBe("mishna-berachot");
     });
 
     // Les appelants doivent prévoir un repli (voir sessionService.generateUniqueSlug) :
     // un slug vide stocké tel quel casse les liens ?session= de la page de session.
     it("retourne une chaîne vide pour un nom entièrement en hébreu", () => {
-      expect(UtilsService.generateSlug("לעילוי נשמת פפי שלום")).toBe("");
+      expect(generateSlug("לעילוי נשמת פפי שלום")).toBe("");
     });
   });
 });

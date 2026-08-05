@@ -80,10 +80,6 @@ export const totalDownloadedSize = computed(() =>
   Object.values(downloadManifest.value.files).reduce((sum, f) => sum + f.size, 0),
 );
 
-export function bookDownloadedSize(book: OfflineBook): number | null {
-  return downloadManifest.value.files[book.path]?.size ?? null;
-}
-
 export function isBookDownloaded(book: OfflineBook): boolean {
   return isDownloaded(book.path);
 }
