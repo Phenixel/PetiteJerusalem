@@ -5,9 +5,10 @@ import { GeoLocation, HDate, Zmanim } from "@hebcal/core";
  *
  * Aucune API, aucun réseau : `@hebcal/core` — déjà présent pour la paracha de
  * la semaine (voir dailyCycles) — embarque le moteur solaire NOAA. Les heures
- * se calculent donc hors ligne, pour n'importe quelle date et n'importe quel
- * point du globe, ce qui va bien avec les pages `offlineOk` de la
- * bibliothèque et avec l'app native.
+ * se calculent donc sans réseau, pour n'importe quelle date et n'importe quel
+ * point du globe : une fois la page chargée, elle n'a plus besoin de rien —
+ * et dans l'app native, dont les fichiers sont embarqués, elle s'ouvre aussi
+ * connexion coupée.
  *
  * Position et fuseau sont deux champs distincts : la position vient de
  * l'appareil (ou du repli parisien), le fuseau du navigateur.

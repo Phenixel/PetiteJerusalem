@@ -230,6 +230,8 @@ const fr = {
     title: "Horaires du jour",
     navTitle: "Horaires",
     description:
+      "Horaires halakhiques calculés pour votre position, directement sur votre appareil : votre position n'est envoyée nulle part.",
+    descriptionOffline:
       "Horaires halakhiques calculés pour votre position, sur votre appareil : ils restent disponibles hors connexion, et votre position n'est envoyée nulle part.",
     next: "Prochain horaire",
     nextIn: "dans {duration}",

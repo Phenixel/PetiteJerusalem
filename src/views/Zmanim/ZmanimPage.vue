@@ -4,12 +4,16 @@
 //
 // Rien n'est chargé depuis le réseau : les horaires se calculent sur
 // l'appareil (voir zmanimService), y compris pour les jours qu'on parcourt
-// avec les flèches. La page reste donc utilisable hors ligne.
+// avec les flèches. Une fois la page ouverte, elle continue donc de servir
+// sans connexion — et dans l'app native, dont les fichiers sont embarqués,
+// elle s'ouvre aussi hors ligne. Le site web, lui, n'a pas de service
+// worker : là, il faut le réseau pour charger la page (mais pas après).
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { analyticsService } from "../../services/analyticsService";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
+import { isNativeApp } from "../../composables/useNativeApp";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { getParashaForShabbat } from "../../services/dailyCycles";
 import {
@@ -189,7 +193,7 @@ onUnmounted(() => {
           ? t("zmanim.place.denied")
           : status === "unavailable"
             ? t("zmanim.place.unavailable")
-            : t("zmanim.description")
+            : t(isNativeApp ? "zmanim.descriptionOffline" : "zmanim.description")
       }}
     </p>
 

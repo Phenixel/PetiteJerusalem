@@ -6,8 +6,8 @@
 // Le vendredi, c'est l'entrée du Chabbat qui prend la place du prochain
 // horaire — puis sa sortie, une fois les bougies allumées.
 //
-// Tout est calculé sur l'appareil (voir zmanimService) : la carte s'affiche
-// aussi vite hors ligne qu'en ligne, sans rien attendre du réseau.
+// Tout est calculé sur l'appareil (voir zmanimService) : la carte n'attend
+// rien du réseau et reste juste même connexion coupée.
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useZmanimLocation } from "../composables/useZmanimLocation";

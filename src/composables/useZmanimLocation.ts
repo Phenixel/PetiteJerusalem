@@ -13,7 +13,8 @@ import { isNativeApp } from "./useNativeApp";
  *
  * La position n'est jamais envoyée nulle part : elle sert au calcul local des
  * zmanim et reste dans le localStorage de l'appareil, pour ne pas redemander
- * la permission à chaque visite et pour que la page fonctionne hors ligne.
+ * la permission à chaque visite et pour que le lieu soit connu même sans
+ * réseau.
  * Le bouton « Revenir à Paris » l'efface.
  *
  * Web et app native ne demandent pas la position de la même façon : le
