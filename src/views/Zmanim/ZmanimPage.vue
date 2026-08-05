@@ -15,6 +15,7 @@ import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
+import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
 import { getParashaForShabbat } from "../../services/dailyCycles";
 import {
   computeZmanim,
@@ -38,7 +39,7 @@ const CityPicker = defineAsyncComponent(() => import("./CityPicker.vue"));
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const { t, locale } = useI18n();
-const { place, status, useDevicePlace, useCity } = useZmanimLocation();
+const { place, status, useDevicePlace, useCity, ensureNearby } = useZmanimLocation();
 
 const now = ref(new Date());
 let ticker: ReturnType<typeof setInterval> | null = null;
@@ -105,10 +106,12 @@ const hebrewDate = computed(() =>
   formatHebrewDate(hebrewDateFor(place.value, day.value, now.value), locale.value),
 );
 
-const placeLabel = computed(() => place.value.city ?? t("zmanim.place.device"));
+const placeLabel = useZmanimPlaceLabel(place);
+// Les coordonnées restent affichées, entre parenthèses : le nom dit où l'on
+// est, elles disent avec quelle précision les horaires sont calculés.
 const coordinates = computed(() =>
   place.value.source === "device"
-    ? `${place.value.latitude.toFixed(3)}, ${place.value.longitude.toFixed(3)}`
+    ? `(${place.value.latitude.toFixed(3)}, ${place.value.longitude.toFixed(3)})`
     : null,
 );
 
@@ -129,6 +132,10 @@ const root = ref<HTMLElement | null>(null);
 
 onMounted(() => {
   revealFromOrigin(root.value);
+  // Position partagée avant que l'app ne sache la nommer : on la nomme ici,
+  // sur la page où l'utilisateur regarde son lieu (le catalogue de villes y
+  // est de toute façon à un clic, via le choix de ville).
+  void ensureNearby();
   ticker = setInterval(() => (now.value = new Date()), 30_000);
   const url = `${SITE_URL}/horaires`;
   seoService.setMeta({

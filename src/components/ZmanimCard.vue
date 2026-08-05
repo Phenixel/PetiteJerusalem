@@ -12,6 +12,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
+import { useZmanimPlaceLabel } from "../composables/useZmanimPlaceLabel";
 import {
   computeZmanim,
   formatZmanTime,
@@ -88,7 +89,7 @@ function countdown(date: Date): string {
   return t("zmanim.nextIn", { duration });
 }
 
-const placeLabel = computed(() => place.value.city ?? t("zmanim.place.device"));
+const placeLabel = useZmanimPlaceLabel(place);
 </script>
 
 <template>

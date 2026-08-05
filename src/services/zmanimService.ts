@@ -24,6 +24,44 @@ export interface ZmanimPlace {
   tzid: string;
   /** Nom affichable — connu sauf pour une position brute de l'appareil. */
   city: string | null;
+  /**
+   * Position de l'appareil : la ville connue la plus proche, pour nommer le
+   * lieu (voir services/nearestCity). `null` quand rien d'assez proche n'a été
+   * trouvé, absent quand la recherche n'a pas encore eu lieu.
+   */
+  nearby?: NearbyPlace | null;
+}
+
+/** Ville connue la plus proche d'une position, et sa distance. */
+export interface NearbyPlace {
+  city: string;
+  /** Code ISO 3166 alpha-2, pour nommer le pays dans la langue de l'interface. */
+  country: string;
+  km: number;
+}
+
+// Une position d'appareil se nomme d'autant plus prudemment qu'elle est loin
+// de la ville la plus proche : dans la ville, près d'elle, ou seulement le
+// pays. Le catalogue est dense en France et en Israël, clairsemé ailleurs :
+// mieux vaut « États-Unis » qu'une ville à 400 km.
+const IN_CITY_KM = 25;
+const NEAR_KM = 150;
+/** Au-delà, la ville la plus proche n'apprend plus rien — pas même le pays. */
+export const KNOWN_PLACE_KM = 800;
+
+/** Comment nommer une position d'après la ville connue la plus proche. */
+export type PlaceNaming =
+  | { kind: "city"; city: string }
+  | { kind: "near"; city: string }
+  | { kind: "country"; country: string }
+  | { kind: "unknown" };
+
+export function describeNearby(nearby: NearbyPlace | null | undefined): PlaceNaming {
+  if (!nearby) return { kind: "unknown" };
+  if (nearby.km <= IN_CITY_KM) return { kind: "city", city: nearby.city };
+  if (nearby.km <= NEAR_KM) return { kind: "near", city: nearby.city };
+  if (nearby.km <= KNOWN_PLACE_KM) return { kind: "country", country: nearby.country };
+  return { kind: "unknown" };
 }
 
 /** Une ville de la liste (voir src/datas/cities.json, scripts/generate-cities.mjs). */
