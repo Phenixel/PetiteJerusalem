@@ -19,6 +19,7 @@ import SessionHeader from "./detailSession/SessionHeader.vue";
 import SessionInstructions from "./detailSession/SessionInstructions.vue";
 import TextStudiesList from "./detailSession/TextStudiesList.vue";
 import { useToast } from "../../composables/useToast";
+import { liveValue } from "../../composables/liveInput";
 import { analyticsService } from "../../services/analyticsService";
 
 const route = useRoute();
@@ -712,7 +713,8 @@ watch(session, (s) => applySessionSeo(s));
           />
           <input
             type="text"
-            v-model="searchTerm"
+            :value="searchTerm"
+            @input="searchTerm = liveValue($event)"
             :placeholder="t('detailSession.searchPlaceholder')"
             class="field !pl-11 !pr-10 shadow-card"
           />

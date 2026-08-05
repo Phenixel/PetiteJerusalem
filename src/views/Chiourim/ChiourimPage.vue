@@ -8,6 +8,7 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 import AccountCta from "../../components/AccountCta.vue";
 import { seoService } from "../../services/seoService";
 import { isNativeApp } from "../../composables/useNativeApp";
+import { liveValue } from "../../composables/liveInput";
 
 const { t } = useI18n();
 
@@ -103,7 +104,8 @@ onMounted(() => {
           class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
         />
         <input
-          v-model="searchTerm"
+          :value="searchTerm"
+          @input="searchTerm = liveValue($event)"
           type="text"
           :placeholder="t('chiourim.searchPlaceholder')"
           class="field !pl-11"

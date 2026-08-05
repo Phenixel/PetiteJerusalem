@@ -10,6 +10,7 @@ import { useI18n } from "vue-i18n";
 import citiesJson from "../../datas/cities.json";
 import type { City } from "../../services/zmanimService";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import { liveValue } from "../../composables/liveInput";
 
 const props = defineProps<{ show: boolean; current: string | null }>();
 const emit = defineEmits<{
@@ -106,7 +107,8 @@ function choose(city: City) {
             />
             <input
               ref="input"
-              v-model="query"
+              :value="query"
+              @input="query = liveValue($event)"
               type="search"
               class="field ps-9"
               :placeholder="t('zmanim.place.searchCity')"

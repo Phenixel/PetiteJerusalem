@@ -23,6 +23,7 @@ import {
   type DailyOptionKey,
 } from "../../services/dailyCycles";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import { liveValue } from "../../composables/liveInput";
 
 const props = defineProps<{ userId: string }>();
 const { t, locale } = useI18n();
@@ -688,7 +689,8 @@ function formatBookName(livre: string): string {
             class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
           />
           <input
-            v-model="searchTerm"
+            :value="searchTerm"
+            @input="searchTerm = liveValue($event)"
             type="text"
             :placeholder="t('study.searchPlaceholder')"
             class="field !pl-11"

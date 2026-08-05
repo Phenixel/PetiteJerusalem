@@ -19,6 +19,7 @@ import { authService, type User } from "../../services/authService";
 import { analyticsService } from "../../services/analyticsService";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useToast } from "../../composables/useToast";
+import { liveValue } from "../../composables/liveInput";
 import { SITE_URL } from "../../config/site";
 
 const router = useRouter();
@@ -383,7 +384,8 @@ const handleCreateClick = () => {
             class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
           />
           <input
-            v-model="searchTerm"
+            :value="searchTerm"
+            @input="searchTerm = liveValue($event)"
             type="text"
             :placeholder="t('shareReading.searchPlaceholder')"
             class="field !pl-11"
