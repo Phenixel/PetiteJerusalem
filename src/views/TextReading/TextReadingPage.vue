@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import type { RouteLocationRaw } from "vue-router";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../datas/textStudies.json";
 import type {
@@ -17,6 +18,7 @@ import {
 } from "../../services/textService";
 import type { TextBlock, TextContent, TextSection } from "../../services/textService";
 import { scrollToVerse } from "../../composables/scrollAnchor";
+import { resolveBackNavigation, stripQuery } from "../../composables/readingBack";
 import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { sessionService } from "../../services/sessionService";
@@ -53,6 +55,8 @@ const readingSize = useReadingSize();
 // (/bibliotheque/:corpus/:slug[/:section], keyword URLs). `isEtudeRoute` switches
 // navigation + metadata between the two.
 const isEtudeRoute = computed(() => route.params.corpus !== undefined);
+/** Corpus ayant leur page de bibliothèque (route `study-corpus`). */
+const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh"]);
 const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
   isEtudeRoute.value
     ? entryByCorpusSlug(String(route.params.corpus), String(route.params.slug))
@@ -183,13 +187,58 @@ function goToSection(index: number, replace = false) {
   scrollTopProgrammatic();
 }
 
-function backToSectionList() {
-  const to =
-    isEtudeRoute.value && textEntry.value
-      ? hubPath(textEntry.value)
-      : { name: "text-reading", params: { textId: textId.value }, query: route.query };
-  router.push(to);
+/** Chemin (sans query) de l'entrée d'historique précédente, null si on est entré directement. */
+function previousHistoryPath(): string | null {
+  const back = router.options.history.state.back;
+  return typeof back === "string" ? stripQuery(back) : null;
+}
+
+/** Une page du texte en cours de lecture : sa liste de chapitres ou l'un d'eux. */
+function isCurrentTextPath(path: string): boolean {
+  const base =
+    isEtudeRoute.value && textEntry.value ? hubPath(textEntry.value) : `/lire/${textId.value}`;
+  return path === base || path.startsWith(`${base}/`);
+}
+
+/** La bibliothèque du corpus lu (Tehilim, Talmud…), à défaut son accueil. */
+function libraryLocation(): string {
+  const corpus = isEtudeRoute.value ? String(route.params.corpus) : "";
+  return LIBRARY_CORPORA.has(corpus) ? `/bibliotheque/${corpus}` : "/bibliotheque";
+}
+
+/**
+ * « Retour » remonte d'un cran (chapitre → liste des chapitres → bibliothèque).
+ * Il ne POUSSE jamais la page parente : soit elle est déjà l'entrée précédente
+ * et on y revient, soit on remplace l'entrée courante. Empiler la faisait
+ * revenir en arrière sur le chapitre qu'on venait de quitter — chapitre →
+ * texte → chapitre, sans fin.
+ */
+function goUp(target: RouteLocationRaw, preferHistory: boolean) {
+  const action = resolveBackNavigation({
+    previousPath: previousHistoryPath(),
+    parentPath: router.resolve(target).path,
+    isCurrentTextPath,
+    preferHistory,
+  });
+  if (action === "back") {
+    // Le routeur restaure la position enregistrée : pas de remise en haut, mais
+    // ce défilement n'est pas un geste du lecteur pour autant.
+    markProgrammaticScroll();
+    router.back();
+    return;
+  }
+  router.replace(target);
   scrollTopProgrammatic();
+}
+
+function sectionListLocation(): RouteLocationRaw {
+  return isEtudeRoute.value && textEntry.value
+    ? hubPath(textEntry.value)
+    : { name: "text-reading", params: { textId: textId.value }, query: route.query };
+}
+
+function backToSectionList() {
+  goUp(sectionListLocation(), false);
 }
 
 function exitReading() {
@@ -204,7 +253,10 @@ function exitReading() {
     backToSectionList();
     return;
   }
-  router.back();
+  // Sur la liste des chapitres, « Retour » quitte le texte : on rend la main à
+  // l'écran d'où vient le lecteur, sauf s'il s'agit d'un chapitre de ce même
+  // texte (lien direct vers un chapitre) — on remonte alors à la bibliothèque.
+  goUp(libraryLocation(), true);
 }
 
 function prevSection() {
@@ -348,8 +400,12 @@ let sessionSaved = false;
 // comme un geste du lecteur : on les marque pour ne pas les compter.
 let programmaticScrollAt = 0;
 
-function scrollTopProgrammatic() {
+function markProgrammaticScroll() {
   programmaticScrollAt = Date.now();
+}
+
+function scrollTopProgrammatic() {
+  markProgrammaticScroll();
   window.scrollTo({ top: 0 });
 }
 
