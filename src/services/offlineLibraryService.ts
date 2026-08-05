@@ -104,6 +104,30 @@ export async function downloadBook(book: OfflineBook): Promise<void> {
 
 export async function removeBook(book: OfflineBook): Promise<void> {
   await removeFile(book.path);
+  await removeOrphanTalmudChapters();
+}
+
+/**
+ * Supprime les copies locales d'un lot de livres (toute la bibliothèque ou un
+ * seul corpus). Les textes restent lisibles en ligne : seul l'espace disque
+ * est libéré.
+ */
+export async function removeBooks(books: OfflineBook[]): Promise<void> {
+  for (const book of books) {
+    await removeFile(book.path);
+  }
+  await removeOrphanTalmudChapters();
+}
+
+/**
+ * Le découpage en chapitres du Talmud n'est qu'une dépendance du lecteur,
+ * téléchargée avec la première guemara. Sans guemara téléchargée il n'a plus
+ * de raison d'occuper de la place (ni d'apparaître dans l'espace utilisé).
+ */
+async function removeOrphanTalmudChapters(): Promise<void> {
+  if (!isDownloaded(TALMUD_CHAPTERS_PATH)) return;
+  const hasTalmud = offlineBooks.some((b) => b.corpus === "Talmud Bavli" && isDownloaded(b.path));
+  if (!hasTalmud) await removeFile(TALMUD_CHAPTERS_PATH);
 }
 
 /**

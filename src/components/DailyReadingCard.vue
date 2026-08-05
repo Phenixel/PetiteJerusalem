@@ -57,8 +57,11 @@ const allDone = computed(() => props.total > 0 && props.done >= props.total);
       </div>
     </template>
 
-    <p class="mt-4 text-sm font-medium text-primary flex items-center gap-1.5">
-      {{ total === 0 ? t("home.dashboard.readingSetupCta") : t("home.dashboard.readingCta") }}
+    <!-- Liste déjà composée : pas de « voir ma lecture » — la carte entière est
+         un lien (chevron compris), l'invitation à cliquer serait redondante.
+         Liste vide, en revanche, la suite ne va pas de soi : on l'annonce. -->
+    <p v-if="total === 0" class="mt-4 text-sm font-medium text-primary flex items-center gap-1.5">
+      {{ t("home.dashboard.readingSetupCta") }}
     </p>
   </RouterLink>
 </template>

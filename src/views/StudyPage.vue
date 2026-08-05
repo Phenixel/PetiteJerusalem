@@ -16,6 +16,7 @@ import {
   isBookDownloaded,
   offlineBooks,
   removeBook,
+  removeBooks,
   totalDownloadedSize,
   type OfflineBook,
 } from "../services/offlineLibraryService";
@@ -283,6 +284,40 @@ async function downloadAllInTab() {
   });
 }
 
+// Libérer de la place : symétrique de « Tout télécharger », donc au même
+// endroit et avec la même portée — toute la bibliothèque depuis l'accueil, le
+// corpus courant depuis sa page.
+const tabDownloadedBooks = computed(() => tabBooks.value.filter((b) => isBookDownloaded(b)));
+
+const removingAll = ref(false);
+
+async function removeAllInTab() {
+  if (removingAll.value) return;
+  const books = tabDownloadedBooks.value;
+  if (books.length === 0) return;
+  const corpus = currentCorpus.value;
+  const confirmed = window.confirm(
+    corpus
+      ? t("downloads.deleteAllCorpusConfirm", { count: books.length, corpus: t(corpus.labelKey) })
+      : t("downloads.deleteAllConfirm", { count: books.length }),
+  );
+  if (!confirmed) return;
+  removingAll.value = true;
+  try {
+    await removeBooks(books);
+    analyticsService.capture("offline_download_deleted", {
+      scope: "all",
+      tab: corpus?.typeKey ?? "Tout",
+      books_count: books.length,
+    });
+    toast.success(t("downloads.deleteAllDone"));
+  } catch {
+    toast.error(t("downloads.deleteError"));
+  } finally {
+    removingAll.value = false;
+  }
+}
+
 function formatSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
   return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
@@ -426,6 +461,18 @@ onUnmounted(() => {
         <AppIcon name="circle-check" :size="14" />
         {{ t("downloads.allDownloaded") }}
       </p>
+      <!-- Faire de la place : proposé dès qu'il y a quelque chose à supprimer
+           dans la portée courante (bibliothèque entière ou corpus affiché). -->
+      <button
+        v-if="tabDownloadedBooks.length > 0"
+        class="btn btn-danger"
+        :disabled="removingAll"
+        @click="removeAllInTab()"
+      >
+        <AppIcon v-if="removingAll" name="spinner" :size="14" class="animate-spin" />
+        <AppIcon v-else name="trash" :size="14" />
+        {{ currentCorpus ? t("downloads.deleteAllCorpus") : t("downloads.deleteAll") }}
+      </button>
       <p v-if="totalDownloadedSize > 0" class="text-sm text-text-secondary">
         {{ t("downloads.total", { size: formatSize(totalDownloadedSize) }) }}
       </p>

@@ -90,7 +90,6 @@ const fr = {
       helloEvening: "Bonsoir",
       subtitle: "Voici où vous en êtes aujourd'hui.",
       readingEmpty: "Composez la liste des textes que vous lisez chaque jour.",
-      readingCta: "Voir ma lecture quotidienne",
       readingSetupCta: "Choisir mes textes",
       resumeCta: "Reprendre ma lecture : {label}",
       resumeDismiss: "Ne plus proposer cette lecture",
@@ -696,6 +695,14 @@ const fr = {
     allDownloaded: "Tout est téléchargé",
     download: "Télécharger",
     delete: "Supprimer",
+    deleteAll: "Tout supprimer",
+    deleteAllCorpus: "Supprimer cette section",
+    deleteAllConfirm:
+      "Supprimer les livres téléchargés ({count}) ? Les textes restent lisibles en ligne.",
+    deleteAllCorpusConfirm:
+      "Supprimer les livres téléchargés de {corpus} ({count}) ? Les textes restent lisibles en ligne.",
+    deleteAllDone: "Téléchargements supprimés.",
+    deleteError: "Suppression impossible. Réessayez.",
     error: "Téléchargement impossible. Vérifiez votre connexion.",
   },
   offline: {
