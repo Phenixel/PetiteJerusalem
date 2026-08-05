@@ -30,7 +30,7 @@ import {
   type ZmanTime,
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
-import ShabbatTimesCard from "./ShabbatTimesCard.vue";
+import ShabbatTimes from "./ShabbatTimes.vue";
 
 // Chargé à la demande : le sélecteur embarque la liste des villes, inutile
 // tant qu'on ne l'ouvre pas.
@@ -221,46 +221,38 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <!-- Le prochain horaire du jour, mis en avant -->
-    <div
-      v-if="upcoming"
-      class="card p-4 mt-5 flex items-center justify-between gap-3 bg-primary/5 dark:bg-primary/10"
-    >
-      <span class="min-w-0">
-        <span class="block text-xs uppercase tracking-wide text-text-secondary">
-          {{ t("zmanim.next") }}
-        </span>
-        <span class="block font-medium text-text-primary leading-snug">
-          {{ t(`zmanim.names.${upcoming.key}`) }}
-        </span>
-      </span>
-      <span class="shrink-0 text-xl font-semibold text-primary tabular-nums">
-        {{ clock(upcoming.date) }}
-      </span>
-    </div>
+    <!-- Le prochain horaire : une ligne suffit, la liste le repère aussi -->
+    <p v-if="upcoming" class="mt-3 text-center text-sm text-text-secondary">
+      {{ t("zmanim.next") }} ·
+      <span class="font-medium text-text-primary">{{ t(`zmanim.names.${upcoming.key}`) }}</span>
+      <span class="ms-1 font-semibold text-primary tabular-nums">{{ clock(upcoming.date) }}</span>
+    </p>
 
     <p v-if="times.length === 0" class="mt-6 text-text-secondary">{{ t("zmanim.unavailable") }}</p>
 
     <!-- Vendredi : le Chabbat d'abord, c'est ce qu'on vient vérifier -->
-    <ShabbatTimesCard
+    <ShabbatTimes
       v-if="shabbat && shabbatFirst"
       :times="shabbat"
       :parasha="parasha"
       :tzid="place.tzid"
-      class="mt-5"
     />
 
-    <!-- Les horaires, groupés par moment de la journée -->
-    <section v-for="group in byPeriod" :key="group.period" class="card p-5 mt-5">
-      <h2 class="font-bold text-text-primary flex items-center gap-2.5 mb-3">
-        <AppIcon :name="PERIOD_ICONS[group.period]" :size="17" class="text-primary" />
+    <!-- Les horaires à la suite : chaque titre ouvre son groupe et sert de
+         séparation. Sans cadres, la journée se lit d'un trait — et tient en
+         beaucoup moins de défilement. -->
+    <section v-for="group in byPeriod" :key="group.period">
+      <h2
+        class="flex items-center gap-2 border-t border-line pt-4 pb-1 text-sm font-bold uppercase tracking-wide text-text-secondary"
+      >
+        <AppIcon :name="PERIOD_ICONS[group.period]" :size="15" class="text-primary" />
         {{ t(`zmanim.periods.${group.period}`) }}
       </h2>
       <ul class="flex flex-col divide-y divide-line">
         <li
           v-for="zman in group.zmanim"
           :key="zman.key"
-          class="flex items-center justify-between gap-4 py-2.5"
+          class="flex items-center justify-between gap-4 py-2"
         >
           <span class="min-w-0">
             <span
@@ -283,15 +275,16 @@ onUnmounted(() => {
       </ul>
     </section>
 
-    <ShabbatTimesCard
+    <ShabbatTimes
       v-if="shabbat && !shabbatFirst"
       :times="shabbat"
       :parasha="parasha"
       :tzid="place.tzid"
-      class="mt-5"
     />
 
-    <p class="mt-6 text-xs text-text-secondary leading-relaxed">{{ t("zmanim.disclaimer") }}</p>
+    <p class="mt-5 border-t border-line pt-3 text-xs text-text-secondary leading-relaxed">
+      {{ t("zmanim.disclaimer") }}
+    </p>
 
     <CityPicker v-model:show="pickerOpen" :current="place.city" @select="chooseCity" />
   </main>
