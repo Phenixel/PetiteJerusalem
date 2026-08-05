@@ -1,6 +1,11 @@
 <script setup lang="ts">
-// Carte « Horaires du jour » du tableau de bord : le prochain horaire, et les
-// deux repères que l'on cherche le plus souvent (fin du Chéma, chkia).
+// Carte « horaires » du tableau de bord : une seule heure, celle qu'on vient
+// vérifier. Le détail (les quatorze horaires du jour, le Chabbat, les autres
+// jours) vit sur la page dédiée, à un clic.
+//
+// Le vendredi, c'est l'entrée du Chabbat qui prend la place du prochain
+// horaire — puis sa sortie, une fois les bougies allumées.
+//
 // Tout est calculé sur l'appareil (voir zmanimService) : la carte s'affiche
 // aussi vite hors ligne qu'en ligne, sans rien attendre du réseau.
 import { computed, onMounted, onUnmounted, ref } from "vue";
@@ -9,9 +14,9 @@ import { useZmanimLocation } from "../composables/useZmanimLocation";
 import {
   computeZmanim,
   formatZmanTime,
-  HIGHLIGHT_KEYS,
+  getShabbatTimes,
+  isErevShabbat,
   nextZman,
-  type ZmanTime,
 } from "../services/zmanimService";
 import AppIcon from "./icons/AppIcon.vue";
 
@@ -30,29 +35,48 @@ onUnmounted(() => {
   if (ticker) clearInterval(ticker);
 });
 
-const times = computed(() => computeZmanim(place.value, now.value));
+const clock = (date: Date) => formatZmanTime(date, place.value.tzid, locale.value);
 
-/** Après le dernier horaire de la nuit, on enchaîne sur l'aube du lendemain. */
-const upcoming = computed<ZmanTime | null>(() => {
-  const today = nextZman(times.value, now.value);
+/** Le prochain horaire du jour, ou le premier du lendemain une fois la nuit passée. */
+const upcoming = computed(() => {
+  const today = nextZman(computeZmanim(place.value, now.value), now.value);
   if (today) return today;
   const tomorrow = new Date(now.value);
   tomorrow.setDate(tomorrow.getDate() + 1);
   return computeZmanim(place.value, tomorrow)[0] ?? null;
 });
 
-const highlights = computed(() =>
-  HIGHLIGHT_KEYS.map((key) => times.value.find((zman) => zman.key === key)).filter(
-    (zman): zman is ZmanTime => Boolean(zman),
-  ),
+const shabbat = computed(() =>
+  isErevShabbat(place.value, now.value) ? getShabbatTimes(place.value, now.value) : null,
 );
 
-const clock = (date: Date) => formatZmanTime(date, place.value.tzid, locale.value);
+/** Ce que la carte annonce : une heure, son nom, et une ligne de contexte. */
+const headline = computed(() => {
+  const week = shabbat.value;
+  if (week) {
+    const lit = now.value.getTime() >= week.candleLighting.getTime();
+    return {
+      icon: "candle" as const,
+      label: t(lit ? "zmanim.shabbat.havdalah" : "zmanim.shabbat.candleLighting"),
+      date: lit ? week.havdalah : week.candleLighting,
+      // Avant l'allumage, la sortie donne l'autre bout du Chabbat ; après,
+      // elle est déjà l'heure annoncée et n'a pas à être répétée.
+      note: lit ? "" : `${t("zmanim.shabbat.havdalah")} ${clock(week.havdalah)}`,
+    };
+  }
+  const zman = upcoming.value;
+  if (!zman) return null;
+  return {
+    icon: "clock" as const,
+    label: t(`zmanim.names.${zman.key}`),
+    date: zman.date,
+    note: countdown(zman.date),
+  };
+});
 
-/** « dans 2 h 15 » / « dans 35 min » : le compte à rebours du prochain horaire. */
-const countdown = computed(() => {
-  if (!upcoming.value) return "";
-  const minutes = Math.round((upcoming.value.date.getTime() - now.value.getTime()) / 60_000);
+/** « dans 2 h 15 » / « dans 35 min » : le temps qui reste avant l'horaire. */
+function countdown(date: Date): string {
+  const minutes = Math.round((date.getTime() - now.value.getTime()) / 60_000);
   if (minutes <= 0) return "";
   const duration =
     minutes < 60
@@ -64,63 +88,38 @@ const countdown = computed(() => {
           m: String(minutes % 60).padStart(2, "0"),
         });
   return t("zmanim.nextIn", { duration });
-});
+}
 
 const placeLabel = computed(() => place.value.city ?? t("zmanim.place.device"));
 </script>
 
 <template>
-  <RouterLink to="/horaires" class="card card-hover p-6 block group">
-    <div class="flex items-center justify-between gap-3 mb-4">
-      <h3
-        class="font-bold text-text-primary flex items-center gap-2.5 group-hover:text-primary transition-colors"
-      >
-        <AppIcon name="clock" :size="17" class="text-primary" />
-        {{ t("zmanim.title") }}
-      </h3>
-      <AppIcon name="chevron-right" :size="15" class="text-text-secondary/50 rtl:rotate-180" />
-    </div>
-
-    <!-- Le prochain horaire : ce qu'on vient vérifier en un coup d'œil -->
-    <div v-if="upcoming" class="flex items-baseline justify-between gap-3">
-      <span class="min-w-0">
-        <span class="block text-xs uppercase tracking-wide text-text-secondary">
-          {{ t("zmanim.next") }}
-        </span>
-        <span class="block font-medium text-text-primary truncate">
-          {{ t(`zmanim.names.${upcoming.key}`) }}
+  <RouterLink
+    to="/horaires"
+    class="card card-hover p-5 flex items-center justify-between gap-3 group"
+  >
+    <template v-if="headline">
+      <span class="flex items-center gap-3 min-w-0">
+        <AppIcon :name="headline.icon" :size="20" class="text-primary shrink-0" />
+        <span class="min-w-0">
+          <!-- Pas de troncature sur le nom : « Fin du Chéma (Maguen Avraham) »
+               réduit à « Fin du Chéma… » ferait passer une heure pour l'autre,
+               et les deux opinions sont séparées d'une bonne demi-heure. -->
+          <span
+            class="block font-medium text-text-primary leading-snug group-hover:text-primary transition-colors"
+          >
+            {{ headline.label }}
+          </span>
+          <span class="block text-xs text-text-secondary truncate">
+            <template v-if="headline.note">{{ headline.note }} · </template>{{ placeLabel }}
+          </span>
         </span>
       </span>
-      <span class="shrink-0 text-right">
-        <span class="block text-xl font-semibold text-primary tabular-nums">
-          {{ clock(upcoming.date) }}
-        </span>
-        <span v-if="countdown" class="block text-xs text-text-secondary">{{ countdown }}</span>
+      <span class="shrink-0 text-2xl font-semibold text-primary tabular-nums">
+        {{ clock(headline.date) }}
       </span>
-    </div>
-    <p v-else class="text-sm text-text-secondary leading-relaxed">
-      {{ t("zmanim.unavailable") }}
-    </p>
+    </template>
 
-    <!-- Les deux repères les plus consultés de la journée -->
-    <ul v-if="highlights.length" class="mt-4 flex flex-col divide-y divide-line">
-      <li
-        v-for="zman in highlights"
-        :key="zman.key"
-        class="flex items-center justify-between gap-3 py-1.5 text-sm"
-      >
-        <span class="min-w-0 truncate text-text-secondary">
-          {{ t(`zmanim.names.${zman.key}`) }}
-        </span>
-        <span class="shrink-0 font-medium text-text-primary tabular-nums">
-          {{ clock(zman.date) }}
-        </span>
-      </li>
-    </ul>
-
-    <p class="mt-4 text-sm font-medium text-primary flex items-center gap-1.5">
-      <AppIcon name="map-pin" :size="13" />
-      {{ placeLabel }}
-    </p>
+    <span v-else class="text-sm text-text-secondary">{{ t("zmanim.unavailable") }}</span>
   </RouterLink>
 </template>

@@ -4,7 +4,10 @@
  * (le dossier android/ est git-ignoré, ce script rend le scaffold reproductible).
  *
  * - android/local.properties : chemin du SDK Android
- * - AndroidManifest.xml : permission POST_NOTIFICATIONS (rappel de lecture, Android 13+)
+ * - AndroidManifest.xml : permissions POST_NOTIFICATIONS (rappel de lecture,
+ *   Android 13+) et ACCESS_COARSE/FINE_LOCATION (horaires calculés pour la
+ *   position de l'appareil — le plugin @capacitor/geolocation livre un
+ *   manifest vide, l'app doit donc les déclarer elle-même)
  * - android/app/google-services.json : copié depuis la racine s'il s'y trouve
  *   (fichier téléchargé depuis la console Firebase, git-ignoré)
  * - android/app/build.gradle : signingConfigs.release (lit android/keystore.properties,
@@ -34,19 +37,34 @@ if (!existsSync(localProps)) {
   console.log(`setup-android: local.properties créé (sdk.dir=${sdkDir})`);
 }
 
-// 2. Permission POST_NOTIFICATIONS
+// 2. Permissions du manifest.
+//    Le manifest d'un plugin Capacitor est fusionné dans celui de l'app, mais
+//    celui de @capacitor/geolocation est vide : sans les deux lignes
+//    ACCESS_*_LOCATION ci-dessous, requestPermissions() est refusé d'office et
+//    la page Horaires reste bloquée sur Paris.
 const manifestPath = join(androidDir, "app/src/main/AndroidManifest.xml");
-const manifest = readFileSync(manifestPath, "utf8");
-if (!manifest.includes("android.permission.POST_NOTIFICATIONS")) {
-  writeFileSync(
-    manifestPath,
-    manifest.replace(
-      /(<uses-permission android:name="android\.permission\.INTERNET"\s*\/>)/,
-      `$1\n    <!-- Rappel de lecture quotidien (Android 13+ exige la permission explicite) -->\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />`,
-    ),
+let manifest = readFileSync(manifestPath, "utf8");
+const PERMISSIONS = [
+  {
+    name: "android.permission.POST_NOTIFICATIONS",
+    comment: "Rappel de lecture quotidien (Android 13+ exige la permission explicite)",
+  },
+  {
+    name: "android.permission.ACCESS_COARSE_LOCATION",
+    comment: "Horaires (zmanim) calculés pour la position de l'appareil",
+  },
+  { name: "android.permission.ACCESS_FINE_LOCATION" },
+];
+for (const { name, comment } of [...PERMISSIONS].reverse()) {
+  if (manifest.includes(name)) continue;
+  const line = `${comment ? `\n    <!-- ${comment} -->` : ""}\n    <uses-permission android:name="${name}" />`;
+  manifest = manifest.replace(
+    /(<uses-permission android:name="android\.permission\.INTERNET"\s*\/>)/,
+    `$1${line}`,
   );
-  console.log("setup-android: permission POST_NOTIFICATIONS ajoutée au manifest");
+  console.log(`setup-android: permission ${name.split(".").pop()} ajoutée au manifest`);
 }
+writeFileSync(manifestPath, manifest);
 
 // 3. google-services.json (config Firebase — requis pour auth native + push)
 const gsSource = join(root, "google-services.json");

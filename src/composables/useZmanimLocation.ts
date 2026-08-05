@@ -73,18 +73,62 @@ function browserPosition(): Promise<GeolocationPosition> {
   });
 }
 
-/** Position via le plugin Capacitor (app native) : demande la permission système. */
+/** Refus explicite de l'utilisateur — à distinguer d'une panne technique. */
+class PermissionDeniedError extends Error {}
+
+/**
+ * Position via le plugin Capacitor (app native) : demande la permission
+ * système au besoin.
+ *
+ * Seul un refus franc interrompt la démarche. Le reste (API de permissions
+ * absente, `requestPermissions` non implémenté — c'est le cas de la
+ * plateforme web du plugin) ne prouve rien : `getCurrentPosition` sait aussi
+ * déclencher la demande, on le laisse essayer plutôt que d'abandonner.
+ */
 async function nativePosition(): Promise<{ latitude: number; longitude: number }> {
   const { Geolocation } = await import("@capacitor/geolocation");
-  const permission = await Geolocation.requestPermissions();
-  if (permission.location === "denied" && permission.coarseLocation === "denied") {
-    throw new Error("permission denied");
+
+  let granted = false;
+  try {
+    const current = await Geolocation.checkPermissions();
+    granted = current.location === "granted" || current.coarseLocation === "granted";
+  } catch {
+    // Statut inconnu : on demandera quand même.
   }
+  if (!granted) {
+    try {
+      const asked = await Geolocation.requestPermissions();
+      if (asked.location === "denied" && asked.coarseLocation === "denied") {
+        throw new PermissionDeniedError();
+      }
+    } catch (error) {
+      if (error instanceof PermissionDeniedError) throw error;
+    }
+  }
+
   const position = await Geolocation.getCurrentPosition({
     enableHighAccuracy: false,
     timeout: 10_000,
   });
   return { latitude: position.coords.latitude, longitude: position.coords.longitude };
+}
+
+/**
+ * La position de l'appareil, par le chemin le plus sûr de la plateforme.
+ *
+ * Dans l'app native, le plugin d'abord : lui seul sait ouvrir la demande de
+ * permission système. S'il échoue pour une raison technique, la webview reste
+ * capable de géolocaliser dès que l'app détient la permission — autant s'en
+ * servir plutôt que de renvoyer l'utilisateur sur Paris.
+ */
+async function devicePosition(): Promise<{ latitude: number; longitude: number }> {
+  if (!isNativeApp) return (await browserPosition()).coords;
+  try {
+    return await nativePosition();
+  } catch (error) {
+    if (error instanceof PermissionDeniedError) throw error;
+    return (await browserPosition()).coords;
+  }
 }
 
 export function useZmanimLocation() {
@@ -95,7 +139,7 @@ export function useZmanimLocation() {
   async function useDevicePlace(): Promise<boolean> {
     status.value = "loading";
     try {
-      const coords = isNativeApp ? await nativePosition() : (await browserPosition()).coords;
+      const coords = await devicePosition();
       const devicePlace: ZmanimPlace = {
         source: "device",
         latitude: coords.latitude,
@@ -108,11 +152,16 @@ export function useZmanimLocation() {
       status.value = "idle";
       return true;
     } catch (error) {
+      // PERMISSION_DENIED (code 1) côté navigateur, PermissionDeniedError côté
+      // plugin : dans les deux cas l'utilisateur a dit non, le message doit le
+      // dire plutôt que d'évoquer une panne.
       const denied =
-        typeof error === "object" &&
-        error !== null &&
-        ("code" in error ? (error as GeolocationPositionError).code === 1 : false);
-      status.value = denied || String(error).includes("denied") ? "denied" : "unavailable";
+        error instanceof PermissionDeniedError ||
+        (typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          (error as GeolocationPositionError).code === 1);
+      status.value = denied ? "denied" : "unavailable";
       return false;
     }
   }

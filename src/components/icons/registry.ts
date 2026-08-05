@@ -186,6 +186,9 @@ export const ICONS = {
   moon: {
     body: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
   },
+  candle: {
+    body: '<path d="M12 2c1 1.1 1.5 2 1.5 2.8a1.5 1.5 0 0 1-3 0C10.5 4 11 3.1 12 2Z"/><path d="M12 6.8v1.7"/><rect x="8.5" y="8.5" width="7" height="12.5" rx="1.75"/>',
+  },
   "map-pin": {
     body: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
   },

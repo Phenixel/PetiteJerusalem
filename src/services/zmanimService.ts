@@ -76,9 +76,6 @@ const ZMAN_DEFS = [
 
 export type ZmanKey = (typeof ZMAN_DEFS)[number]["key"];
 
-/** Les deux horaires mis en avant hors de la page dédiée (carte d'accueil). */
-export const HIGHLIGHT_KEYS: ZmanKey[] = ["sofZmanShma", "sunset"];
-
 export interface ZmanTime {
   key: ZmanKey;
   period: ZmanPeriod;
@@ -98,6 +95,29 @@ function geoLocationOf(place: ZmanimPlace): GeoLocation {
   );
 }
 
+/**
+ * Le jour civil du lieu, ramené dans le repère local de la machine.
+ *
+ * hebcal lit l'année, le mois et le jour d'une `Date` dans le fuseau du
+ * navigateur. Sans cette conversion, un appareil réglé loin du lieu affiché
+ * calcule le mauvais jour : à 9 h à Auckland il est encore la veille à Paris,
+ * et la page servirait les horaires du lendemain. On repasse donc par la date
+ * telle qu'elle est vécue **au lieu**, à midi pour ne jamais frôler un
+ * changement de jour.
+ */
+function dayInPlace(place: ZmanimPlace, date: Date): Date {
+  const [year, month, day] = new Intl.DateTimeFormat("en-CA", {
+    timeZone: place.tzid,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .format(date)
+    .split("-")
+    .map(Number);
+  return new Date(year, month - 1, day, 12);
+}
+
 /** Une date renvoyée par hebcal peut être invalide aux latitudes extrêmes. */
 function isUsable(date: Date): boolean {
   return date instanceof Date && !Number.isNaN(date.getTime());
@@ -106,8 +126,9 @@ function isUsable(date: Date): boolean {
 /** Les horaires d'un jour civil, dans l'ordre chronologique. */
 export function computeZmanim(place: ZmanimPlace, day: Date = new Date()): ZmanTime[] {
   const gloc = geoLocationOf(place);
-  const zmanim = new Zmanim(gloc, day, false);
-  const nextDay = new Date(day);
+  const localDay = dayInPlace(place, day);
+  const zmanim = new Zmanim(gloc, localDay, false);
+  const nextDay = new Date(localDay);
   nextDay.setDate(nextDay.getDate() + 1);
   const nextZmanim = new Zmanim(gloc, nextDay, false);
 
@@ -144,8 +165,7 @@ export function getShabbatTimes(place: ZmanimPlace, now: Date = new Date()): Sha
   const gloc = geoLocationOf(place);
 
   const times = (weeksAhead: number): ShabbatTimes | null => {
-    const saturday = new Date(now);
-    saturday.setHours(12, 0, 0, 0);
+    const saturday = dayInPlace(place, now);
     // 6 = samedi : on recule sur le samedi de la semaine en cours.
     saturday.setDate(saturday.getDate() - saturday.getDay() + 6 + weeksAhead * 7);
     const friday = new Date(saturday);
@@ -172,8 +192,16 @@ export function getShabbatTimes(place: ZmanimPlace, now: Date = new Date()): Sha
  * autre jour, seule la date civile compte.
  */
 export function hebrewDateFor(place: ZmanimPlace, day: Date, now: Date = new Date()): HDate {
-  const isToday = day.toDateString() === now.toDateString();
-  return isToday ? Zmanim.makeSunsetAwareHDate(geoLocationOf(place), now, false) : new HDate(day);
+  const localDay = dayInPlace(place, day);
+  const hd = new HDate(localDay);
+  if (localDay.getTime() !== dayInPlace(place, now).getTime()) return hd;
+
+  // Aujourd'hui : après la chkia, le jour hébraïque a déjà changé. Le calcul
+  // est fait ici plutôt qu'avec `Zmanim.makeSunsetAwareHDate`, qui déduit le
+  // jour de base du fuseau du navigateur et se trompe d'un jour dès que
+  // l'appareil est réglé loin du lieu affiché.
+  const sunset = new Zmanim(geoLocationOf(place), localDay, false).sunset();
+  return isUsable(sunset) && now.getTime() >= sunset.getTime() ? hd.next() : hd;
 }
 
 /**
@@ -206,6 +234,28 @@ export function formatHebrewDate(hd: HDate, locale: string): string {
     return `${hd.getDate()} ${FRENCH_MONTHS[month] ?? month} ${hd.getFullYear()}`;
   }
   return hd.render("en");
+}
+
+/**
+ * Jour de la semaine au lieu affiché (0 = dimanche … 6 = samedi).
+ *
+ * Le fuseau de la machine ne fait pas foi : à 23 h à Paris, un appareil réglé
+ * sur New York est encore la veille, et le vendredi — celui qui décide d'
+ * afficher le Chabbat — se déclencherait au mauvais moment.
+ */
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+export function weekdayIn(place: ZmanimPlace, date: Date): number {
+  const short = new Intl.DateTimeFormat("en-US", {
+    timeZone: place.tzid,
+    weekday: "short",
+  }).format(date);
+  return WEEKDAYS.indexOf(short);
+}
+
+/** Vendredi : le jour où l'on regarde d'abord l'entrée du Chabbat. */
+export function isErevShabbat(place: ZmanimPlace, date: Date): boolean {
+  return weekdayIn(place, date) === 5;
 }
 
 /** "06:27" dans le fuseau du lieu — jamais celui du navigateur. */

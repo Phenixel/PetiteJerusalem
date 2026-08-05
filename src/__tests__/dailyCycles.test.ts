@@ -28,9 +28,11 @@ describe("getWeeklyParasha", () => {
 
   it("donne la même paracha toute la semaine (dimanche → samedi)", () => {
     // Semaine ordinaire : 2 au 8 novembre 2025 (dimanche → samedi suivant).
-    const reference = getWeeklyParasha(new Date(Date.UTC(2025, 10, 2)));
+    // Dates locales (et non UTC) : minuit UTC tombe la veille à l'ouest de
+    // Greenwich, ce qui décalait la semaine testée d'un cran.
+    const reference = getWeeklyParasha(new Date(2025, 10, 2, 12));
     for (let day = 3; day <= 8; day++) {
-      const parasha = getWeeklyParasha(new Date(Date.UTC(2025, 10, day)));
+      const parasha = getWeeklyParasha(new Date(2025, 10, day, 12));
       expect(parasha?.names).toEqual(reference?.names);
     }
   });

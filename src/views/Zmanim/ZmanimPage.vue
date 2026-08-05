@@ -12,20 +12,20 @@ import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { getParashaForShabbat } from "../../services/dailyCycles";
-import { hubPath } from "../../content/etudeTexts";
 import {
   computeZmanim,
   formatHebrewDate,
-  formatZmanDay,
   formatZmanTime,
   getShabbatTimes,
   hebrewDateFor,
+  isErevShabbat,
   nextZman,
   ZMAN_PERIODS,
   type ZmanPeriod,
   type ZmanTime,
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
+import ShabbatTimesCard from "./ShabbatTimesCard.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const { t, locale } = useI18n();
@@ -46,7 +46,12 @@ const isToday = computed(() => dayOffset.value === 0);
 
 const times = computed(() => computeZmanim(place.value, day.value));
 const upcoming = computed(() => (isToday.value ? nextZman(times.value, now.value) : null));
-const shabbat = computed(() => getShabbatTimes(place.value, now.value));
+// Le Chabbat suit le jour affiché : parcourir le calendrier avec les flèches
+// doit montrer le Chabbat de cette semaine-là, pas toujours celui d'à côté.
+const shabbat = computed(() => getShabbatTimes(place.value, day.value));
+
+/** Vendredi : l'entrée du Chabbat passe devant les horaires du jour. */
+const shabbatFirst = computed(() => isErevShabbat(place.value, day.value));
 
 /**
  * La paracha de ce Chabbat-là — celui dont les horaires sont affichés, et non
@@ -209,7 +214,7 @@ onUnmounted(() => {
         <span class="block text-xs uppercase tracking-wide text-text-secondary">
           {{ t("zmanim.next") }}
         </span>
-        <span class="block font-medium text-text-primary truncate">
+        <span class="block font-medium text-text-primary leading-snug">
           {{ t(`zmanim.names.${upcoming.key}`) }}
         </span>
       </span>
@@ -219,6 +224,15 @@ onUnmounted(() => {
     </div>
 
     <p v-if="times.length === 0" class="mt-6 text-text-secondary">{{ t("zmanim.unavailable") }}</p>
+
+    <!-- Vendredi : le Chabbat d'abord, c'est ce qu'on vient vérifier -->
+    <ShabbatTimesCard
+      v-if="shabbat && shabbatFirst"
+      :times="shabbat"
+      :parasha="parasha"
+      :tzid="place.tzid"
+      class="mt-5"
+    />
 
     <!-- Les horaires, groupés par moment de la journée -->
     <section v-for="group in byPeriod" :key="group.period" class="card p-5 mt-5">
@@ -234,7 +248,7 @@ onUnmounted(() => {
         >
           <span class="min-w-0">
             <span
-              class="block font-medium truncate"
+              class="block font-medium leading-snug"
               :class="isNext(zman) ? 'text-primary' : 'text-text-primary'"
             >
               {{ t(`zmanim.names.${zman.key}`) }}
@@ -253,54 +267,13 @@ onUnmounted(() => {
       </ul>
     </section>
 
-    <!-- Entrée et sortie du Chabbat (celui en cours, sinon le prochain) -->
-    <section v-if="shabbat" class="card p-5 mt-5">
-      <h2 class="font-bold text-text-primary flex items-center gap-2.5">
-        <AppIcon name="flame" :size="17" class="text-primary" />
-        {{ t("zmanim.shabbat.title") }}
-      </h2>
-
-      <!-- La paracha de ce Chabbat, cliquable pour la lire -->
-      <p v-if="parasha" class="mt-1 mb-3 flex flex-wrap items-center gap-x-1.5 text-sm">
-        <span class="text-text-secondary">{{ t("zmanim.shabbat.parasha") }}</span>
-        <template v-for="(entry, index) in parasha.entries" :key="entry.id">
-          <span v-if="index > 0" class="text-text-secondary">·</span>
-          <RouterLink :to="hubPath(entry)" class="font-medium text-primary hover:underline">
-            {{ entry.name }}
-          </RouterLink>
-        </template>
-      </p>
-      <div v-else class="mb-3"></div>
-      <ul class="flex flex-col divide-y divide-line">
-        <li class="flex items-center justify-between gap-4 py-2.5">
-          <span class="min-w-0">
-            <span class="block font-medium text-text-primary">
-              {{ t("zmanim.shabbat.candleLighting") }}
-            </span>
-            <span class="block text-xs text-text-secondary">
-              {{ formatZmanDay(shabbat.candleLighting, place.tzid, locale) }}
-            </span>
-          </span>
-          <span class="shrink-0 font-semibold text-text-primary tabular-nums">
-            {{ clock(shabbat.candleLighting) }}
-          </span>
-        </li>
-        <li class="flex items-center justify-between gap-4 py-2.5">
-          <span class="min-w-0">
-            <span class="block font-medium text-text-primary">
-              {{ t("zmanim.shabbat.havdalah") }}
-            </span>
-            <span class="block text-xs text-text-secondary">
-              {{ formatZmanDay(shabbat.havdalah, place.tzid, locale) }}
-            </span>
-          </span>
-          <span class="shrink-0 font-semibold text-text-primary tabular-nums">
-            {{ clock(shabbat.havdalah) }}
-          </span>
-        </li>
-      </ul>
-      <p class="mt-3 text-xs text-text-secondary">{{ t("zmanim.shabbat.note") }}</p>
-    </section>
+    <ShabbatTimesCard
+      v-if="shabbat && !shabbatFirst"
+      :times="shabbat"
+      :parasha="parasha"
+      :tzid="place.tzid"
+      class="mt-5"
+    />
 
     <p class="mt-6 text-xs text-text-secondary leading-relaxed">{{ t("zmanim.disclaimer") }}</p>
   </main>
