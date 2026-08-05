@@ -1,10 +1,15 @@
 import { ref, type Ref } from "vue";
-import { DEFAULT_PLACE, type ZmanimPlace } from "../services/zmanimService";
+import {
+  DEFAULT_PLACE,
+  placeFromCity,
+  type City,
+  type ZmanimPlace,
+} from "../services/zmanimService";
 import { isNativeApp } from "./useNativeApp";
 
 /**
- * Lieu de calcul des horaires : Paris par défaut, la position de l'appareil
- * si l'utilisateur la partage.
+ * Lieu de calcul des horaires : Paris par défaut, une ville choisie dans la
+ * liste, ou la position de l'appareil si l'utilisateur la partage.
  *
  * La position n'est jamais envoyée nulle part : elle sert au calcul local des
  * zmanim et reste dans le localStorage de l'appareil, pour ne pas redemander
@@ -30,11 +35,12 @@ function readStoredPlace(): ZmanimPlace | null {
     if (typeof parsed.latitude !== "number" || typeof parsed.longitude !== "number") return null;
     if (typeof parsed.tzid !== "string" || !parsed.tzid) return null;
     return {
-      source: "device",
+      // Une valeur écrite par une version antérieure n'avait que « device ».
+      source: parsed.source === "city" ? "city" : "device",
       latitude: parsed.latitude,
       longitude: parsed.longitude,
       tzid: parsed.tzid,
-      city: null,
+      city: typeof parsed.city === "string" ? parsed.city : null,
     };
   } catch {
     return null;
@@ -166,12 +172,22 @@ export function useZmanimLocation() {
     }
   }
 
-  /** Retour au repli parisien : la position mémorisée est effacée. */
+  /** Une ville choisie dans la liste remplace le lieu courant. */
+  function useCity(city: City): void {
+    const chosen = placeFromCity(city);
+    place.value = chosen;
+    status.value = "idle";
+    // Paris étant déjà le repli, le mémoriser n'apporte rien et laisse une
+    // trace là où l'utilisateur n'a rien choisi de particulier.
+    persist(chosen.city === DEFAULT_PLACE.city ? null : chosen);
+  }
+
+  /** Retour au repli parisien : le lieu mémorisé est effacé. */
   function useDefaultPlace(): void {
     place.value = DEFAULT_PLACE;
     status.value = "idle";
     persist(null);
   }
 
-  return { place, status, useDevicePlace, useDefaultPlace };
+  return { place, status, useDevicePlace, useCity, useDefaultPlace };
 }

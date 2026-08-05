@@ -248,6 +248,9 @@ const fr = {
       useMine: "Utiliser ma position",
       locating: "Localisation…",
       refresh: "Actualiser ma position",
+      chooseCity: "Choisir ma ville",
+      searchCity: "Rechercher une ville…",
+      noCity: "Aucune ville ne correspond à « {query} ».",
       reset: "Revenir à Paris",
       denied:
         "Position refusée. Les horaires restent calculés pour Paris — autorisez la localisation dans les réglages pour les vôtres.",

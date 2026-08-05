@@ -5,7 +5,7 @@
 // Rien n'est chargé depuis le réseau : les horaires se calculent sur
 // l'appareil (voir zmanimService), y compris pour les jours qu'on parcourt
 // avec les flèches. La page reste donc utilisable hors ligne.
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { analyticsService } from "../../services/analyticsService";
 import { seoService } from "../../services/seoService";
@@ -19,6 +19,7 @@ import {
   getShabbatTimes,
   hebrewDateFor,
   isErevShabbat,
+  type City,
   nextZman,
   ZMAN_PERIODS,
   type ZmanPeriod,
@@ -26,10 +27,14 @@ import {
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
 import ShabbatTimesCard from "./ShabbatTimesCard.vue";
+
+// Chargé à la demande : le sélecteur embarque la liste des villes, inutile
+// tant qu'on ne l'ouvre pas.
+const CityPicker = defineAsyncComponent(() => import("./CityPicker.vue"));
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const { t, locale } = useI18n();
-const { place, status, useDevicePlace, useDefaultPlace } = useZmanimLocation();
+const { place, status, useDevicePlace, useCity } = useZmanimLocation();
 
 const now = ref(new Date());
 let ticker: ReturnType<typeof setInterval> | null = null;
@@ -104,6 +109,13 @@ async function locateMe() {
   analyticsService.capture("zmanim_location_requested", { granted });
 }
 
+const pickerOpen = ref(false);
+
+function chooseCity(city: City) {
+  useCity(city);
+  analyticsService.capture("zmanim_city_chosen", { city: city.name, country: city.country });
+}
+
 /** Racine de la page : cible du dévoilement circulaire (bouton rond natif). */
 const root = ref<HTMLElement | null>(null);
 
@@ -160,12 +172,12 @@ onUnmounted(() => {
         }}
       </button>
       <button
-        v-if="place.source === 'device'"
         type="button"
-        class="text-text-secondary hover:underline"
-        @click="useDefaultPlace"
+        class="flex items-center gap-1.5 text-text-secondary hover:text-primary hover:underline"
+        @click="pickerOpen = true"
       >
-        {{ t("zmanim.place.reset") }}
+        <AppIcon name="search" :size="14" />
+        {{ t("zmanim.place.chooseCity") }}
       </button>
     </div>
 
@@ -276,5 +288,7 @@ onUnmounted(() => {
     />
 
     <p class="mt-6 text-xs text-text-secondary leading-relaxed">{{ t("zmanim.disclaimer") }}</p>
+
+    <CityPicker v-model:show="pickerOpen" :current="place.city" @select="chooseCity" />
   </main>
 </template>

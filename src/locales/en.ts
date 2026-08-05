@@ -249,6 +249,9 @@ const en: LocaleMessages = {
       useMine: "Use my location",
       locating: "Locating…",
       refresh: "Refresh my location",
+      chooseCity: "Choose my city",
+      searchCity: "Search for a city…",
+      noCity: "No city matches “{query}”.",
       reset: "Back to Paris",
       denied:
         "Location denied. Times are still computed for Paris — allow location in your settings to get yours.",

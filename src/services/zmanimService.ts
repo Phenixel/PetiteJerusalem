@@ -15,14 +15,35 @@ import { GeoLocation, HDate, Zmanim } from "@hebcal/core";
 
 /** Lieu de calcul des horaires. */
 export interface ZmanimPlace {
-  /** Repli (Paris), ou position réelle de l'appareil. */
-  source: "default" | "device";
+  /** Repli parisien, ville choisie dans la liste, ou position de l'appareil. */
+  source: "default" | "city" | "device";
   latitude: number;
   longitude: number;
   /** Fuseau IANA ("Europe/Paris") : les heures sont affichées dedans. */
   tzid: string;
-  /** Nom de ville affichable, quand on en connaît un (repli uniquement). */
+  /** Nom affichable — connu sauf pour une position brute de l'appareil. */
   city: string | null;
+}
+
+/** Une ville de la liste (voir src/datas/cities.json, scripts/generate-cities.mjs). */
+export interface City {
+  name: string;
+  /** Code ISO 3166 alpha-2, affiché pour distinguer les homonymes. */
+  country: string;
+  lat: number;
+  lon: number;
+  tz: string;
+}
+
+/** La ville choisie devient le lieu de calcul. */
+export function placeFromCity(city: City): ZmanimPlace {
+  return {
+    source: "city",
+    latitude: city.lat,
+    longitude: city.lon,
+    tzid: city.tz,
+    city: city.name,
+  };
 }
 
 /**
