@@ -234,7 +234,6 @@ const en: LocaleMessages = {
       "Halachic times computed for your location, right on your device: your location is never sent anywhere.",
     descriptionOffline:
       "Halachic times computed for your location, on your device: they stay available offline, and your location is never sent anywhere.",
-    next: "Next time",
     nextIn: "in {duration}",
     durationHM: "{h}h {m}m",
     durationM: "{m} min",

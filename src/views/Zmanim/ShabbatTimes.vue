@@ -5,8 +5,9 @@
 // passe devant les horaires du jour, c'est ce qu'on vient chercher. Le sortir
 // ici évite d'écrire deux fois le même bloc pour deux positions.
 //
-// Même mise en page que les groupes d'horaires : un titre qui fait office de
-// séparateur, puis les lignes. Aucun cadre — la page se lit d'un trait.
+// Encadré, contrairement aux groupes d'horaires qui s'enchaînent à plat : le
+// Chabbat n'est pas un moment de la journée affichée mais un rendez-vous de la
+// semaine, et le cadre marque cette différence de nature.
 import { useI18n } from "vue-i18n";
 import { hubPath } from "../../content/etudeTexts";
 import type { WeeklyParasha } from "../../services/dailyCycles";
@@ -28,24 +29,18 @@ const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
 </script>
 
 <template>
-  <section>
-    <!-- Le titre sépare, la règle du dessus tient lieu de bordure. Il porte le
-         nom de la paracha : c'est l'identité de ce Chabbat-là. -->
-    <h2
-      class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-t border-line pt-4 pb-1 text-sm font-bold uppercase tracking-wide text-text-secondary"
-    >
-      <span class="flex items-center gap-2">
-        <AppIcon name="candle" :size="15" class="text-primary" />
+  <section class="card p-5">
+    <!-- Le titre porte le nom de la paracha : c'est l'identité de ce Chabbat-là -->
+    <h2 class="mb-3 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-bold text-text-primary">
+      <span class="flex items-center gap-2.5">
+        <AppIcon name="candle" :size="17" class="text-primary" />
         {{ t("zmanim.shabbat.title") }}
       </span>
-      <span
-        v-if="parasha"
-        class="flex flex-wrap items-baseline gap-x-1.5 normal-case tracking-normal"
-      >
-        <span class="font-normal">{{ t("zmanim.shabbat.parasha") }}</span>
+      <span v-if="parasha" class="flex flex-wrap items-baseline gap-x-1.5 text-sm font-normal">
+        <span class="text-text-secondary">{{ t("zmanim.shabbat.parasha") }}</span>
         <template v-for="(entry, index) in parasha.entries" :key="entry.id">
-          <span v-if="index > 0" class="font-normal">·</span>
-          <RouterLink :to="hubPath(entry)" class="font-semibold text-primary hover:underline">
+          <span v-if="index > 0" class="text-text-secondary">·</span>
+          <RouterLink :to="hubPath(entry)" class="font-medium text-primary hover:underline">
             {{ entry.name }}
           </RouterLink>
         </template>
@@ -55,28 +50,28 @@ const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
     <ul class="flex flex-col divide-y divide-line">
       <li class="flex items-center justify-between gap-4 py-2">
         <span class="min-w-0">
-          <span class="block font-medium text-text-primary leading-snug">
+          <span class="block font-medium leading-snug text-text-primary">
             {{ t("zmanim.shabbat.candleLighting") }}
           </span>
           <span class="block text-xs text-text-secondary">{{ dayOf(times.candleLighting) }}</span>
         </span>
-        <span class="shrink-0 font-semibold text-text-primary tabular-nums">
+        <span class="shrink-0 font-semibold tabular-nums text-text-primary">
           {{ clock(times.candleLighting) }}
         </span>
       </li>
       <li class="flex items-center justify-between gap-4 py-2">
         <span class="min-w-0">
-          <span class="block font-medium text-text-primary leading-snug">
+          <span class="block font-medium leading-snug text-text-primary">
             {{ t("zmanim.shabbat.havdalah") }}
           </span>
           <span class="block text-xs text-text-secondary">{{ dayOf(times.havdalah) }}</span>
         </span>
-        <span class="shrink-0 font-semibold text-text-primary tabular-nums">
+        <span class="shrink-0 font-semibold tabular-nums text-text-primary">
           {{ clock(times.havdalah) }}
         </span>
       </li>
     </ul>
 
-    <p class="mt-2 text-xs text-text-secondary">{{ t("zmanim.shabbat.note") }}</p>
+    <p class="mt-2.5 text-xs text-text-secondary">{{ t("zmanim.shabbat.note") }}</p>
   </section>
 </template>

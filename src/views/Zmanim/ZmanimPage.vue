@@ -221,12 +221,19 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <!-- Le prochain horaire : une ligne suffit, la liste le repère aussi -->
-    <p v-if="upcoming" class="mt-3 text-center text-sm text-text-secondary">
-      {{ t("zmanim.next") }} ·
-      <span class="font-medium text-text-primary">{{ t(`zmanim.names.${upcoming.key}`) }}</span>
-      <span class="ms-1 font-semibold text-primary tabular-nums">{{ clock(upcoming.date) }}</span>
-    </p>
+    <!-- Le prochain horaire, mis en avant. Pas d'intitulé : une heure isolée
+         au-dessus de la liste, en couleur, ne peut être que celle-là. -->
+    <div
+      v-if="upcoming"
+      class="card mt-4 flex items-center justify-between gap-3 bg-primary/5 p-4 dark:bg-primary/10"
+    >
+      <span class="min-w-0 font-medium leading-snug text-text-primary">
+        {{ t(`zmanim.names.${upcoming.key}`) }}
+      </span>
+      <span class="shrink-0 text-xl font-semibold tabular-nums text-primary">
+        {{ clock(upcoming.date) }}
+      </span>
+    </div>
 
     <p v-if="times.length === 0" class="mt-6 text-text-secondary">{{ t("zmanim.unavailable") }}</p>
 
@@ -236,6 +243,7 @@ onUnmounted(() => {
       :times="shabbat"
       :parasha="parasha"
       :tzid="place.tzid"
+      class="mt-5"
     />
 
     <!-- Les horaires à la suite : chaque titre ouvre son groupe et sert de
