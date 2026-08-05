@@ -275,9 +275,27 @@ export function weekdayIn(place: ZmanimPlace, date: Date): number {
   return WEEKDAYS.indexOf(short);
 }
 
-/** Vendredi : le jour où l'on regarde d'abord l'entrée du Chabbat. */
-export function isErevShabbat(place: ZmanimPlace, date: Date): boolean {
-  return weekdayIn(place, date) === 5;
+/**
+ * Les horaires du Chabbat, quand c'est lui qu'on vient regarder — sinon null.
+ *
+ * C'est le cas le vendredi, et le samedi tant qu'il n'est pas sorti. Passé la
+ * sortie, la semaine reprend ses droits : `getShabbatTimes` vise alors le
+ * Chabbat suivant, qu'il serait trompeur de mettre en avant un samedi soir.
+ * On le reconnaît à sa sortie, qui ne tombe plus le jour affiché.
+ */
+export function featuredShabbat(place: ZmanimPlace, date: Date = new Date()): ShabbatTimes | null {
+  const weekday = weekdayIn(place, date);
+  if (weekday !== 5 && weekday !== 6) return null;
+
+  const times = getShabbatTimes(place, date);
+  if (!times) return null;
+  if (weekday === 6 && !isSameDayInPlace(place, times.havdalah, date)) return null;
+  return times;
+}
+
+/** Deux instants tombent-ils le même jour civil, au lieu affiché ? */
+function isSameDayInPlace(place: ZmanimPlace, a: Date, b: Date): boolean {
+  return dayInPlace(place, a).getTime() === dayInPlace(place, b).getTime();
 }
 
 /** "06:27" dans le fuseau du lieu — jamais celui du navigateur. */

@@ -7,7 +7,7 @@ import {
   formatZmanTime,
   getShabbatTimes,
   hebrewDateFor,
-  isErevShabbat,
+  featuredShabbat,
   weekdayIn,
   nextZman,
   type ZmanimPlace,
@@ -141,19 +141,38 @@ describe("jour de la semaine", () => {
     expect(weekdayIn(jerusalem, instant)).toBe(6);
     expect(weekdayIn(newYork, instant)).toBe(5);
   });
+});
 
-  it("reconnaît le vendredi, et lui seul", () => {
+describe("featuredShabbat", () => {
+  it("met le Chabbat en avant le vendredi et le samedi, pas les autres jours", () => {
     // Du dimanche 2 au samedi 8 août 2026, à midi (Paris).
     const days = [0, 1, 2, 3, 4, 5, 6].map((i) => new Date(Date.UTC(2026, 7, 2 + i, 10)));
-    expect(days.map((d) => isErevShabbat(DEFAULT_PLACE, d))).toEqual([
+    expect(days.map((d) => featuredShabbat(DEFAULT_PLACE, d) !== null)).toEqual([
       false,
       false,
       false,
       false,
       false,
       true,
-      false,
+      true,
     ]);
+  });
+
+  it("le samedi, s'efface une fois le Chabbat sorti", () => {
+    // Sortie le 8 août à 22 h 12 (Paris).
+    const before = new Date(Date.UTC(2026, 7, 8, 19)); // 21 h à Paris
+    const after = new Date(Date.UTC(2026, 7, 8, 21)); // 23 h à Paris
+    expect(on(DEFAULT_PLACE, featuredShabbat(DEFAULT_PLACE, before)!.havdalah)).toBe(
+      "samedi 8 août",
+    );
+    expect(featuredShabbat(DEFAULT_PLACE, after)).toBeNull();
+  });
+
+  it("le vendredi, annonce déjà le Chabbat qui arrive", () => {
+    const fridayMorning = new Date(Date.UTC(2026, 7, 7, 8)); // 10 h à Paris
+    const shabbat = featuredShabbat(DEFAULT_PLACE, fridayMorning)!;
+    expect(on(DEFAULT_PLACE, shabbat.candleLighting)).toBe("vendredi 7 août");
+    expect(at(DEFAULT_PLACE, shabbat.candleLighting)).toBe("21:01");
   });
 });
 

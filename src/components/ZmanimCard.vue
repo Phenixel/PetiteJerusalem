@@ -3,8 +3,9 @@
 // vérifier. Le détail (les quatorze horaires du jour, le Chabbat, les autres
 // jours) vit sur la page dédiée, à un clic.
 //
-// Le vendredi, c'est l'entrée du Chabbat qui prend la place du prochain
-// horaire — puis sa sortie, une fois les bougies allumées.
+// Du vendredi à la sortie du Chabbat, c'est lui qui prend la place du
+// prochain horaire : son entrée d'abord, puis sa sortie une fois les bougies
+// allumées.
 //
 // Tout est calculé sur l'appareil (voir zmanimService) : la carte n'attend
 // rien du réseau et reste juste même connexion coupée.
@@ -14,8 +15,7 @@ import { useZmanimLocation } from "../composables/useZmanimLocation";
 import {
   computeZmanim,
   formatZmanTime,
-  getShabbatTimes,
-  isErevShabbat,
+  featuredShabbat,
   nextZman,
 } from "../services/zmanimService";
 import AppIcon from "./icons/AppIcon.vue";
@@ -46,9 +46,7 @@ const upcoming = computed(() => {
   return computeZmanim(place.value, tomorrow)[0] ?? null;
 });
 
-const shabbat = computed(() =>
-  isErevShabbat(place.value, now.value) ? getShabbatTimes(place.value, now.value) : null,
-);
+const shabbat = computed(() => featuredShabbat(place.value, now.value));
 
 /** Ce que la carte annonce : une heure, son nom, et une ligne de contexte. */
 const headline = computed(() => {

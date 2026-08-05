@@ -22,7 +22,7 @@ import {
   formatZmanTime,
   getShabbatTimes,
   hebrewDateFor,
-  isErevShabbat,
+  featuredShabbat,
   type City,
   nextZman,
   ZMAN_PERIODS,
@@ -59,8 +59,12 @@ const upcoming = computed(() => (isToday.value ? nextZman(times.value, now.value
 // doit montrer le Chabbat de cette semaine-là, pas toujours celui d'à côté.
 const shabbat = computed(() => getShabbatTimes(place.value, day.value));
 
-/** Vendredi : l'entrée du Chabbat passe devant les horaires du jour. */
-const shabbatFirst = computed(() => isErevShabbat(place.value, day.value));
+/**
+ * Vendredi et samedi, le Chabbat passe devant les horaires du jour : c'est ce
+ * qu'on vient vérifier ces jours-là. Le samedi soir, une fois sorti, il
+ * retrouve sa place en bas.
+ */
+const shabbatFirst = computed(() => featuredShabbat(place.value, day.value) !== null);
 
 /**
  * La paracha de ce Chabbat-là — celui dont les horaires sont affichés, et non
