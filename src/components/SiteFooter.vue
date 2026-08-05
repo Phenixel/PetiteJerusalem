@@ -16,6 +16,9 @@
       <RouterLink class="hover:text-primary transition-colors" to="/chiourim">{{
         t("common.chiourim")
       }}</RouterLink>
+      <RouterLink class="hover:text-primary transition-colors" to="/horaires">{{
+        t("zmanim.navTitle")
+      }}</RouterLink>
       <RouterLink class="hover:text-primary transition-colors" to="/finir-le-chass">{{
         t("footer.finishChass")
       }}</RouterLink>

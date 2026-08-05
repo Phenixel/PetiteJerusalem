@@ -96,6 +96,25 @@ Le **code** est en place (`authService.signInWithApple` + bouton). Restent les
    `@capacitor-firebase/authentication`. La popup JS SDK actuelle suffit pour le
    web et pour valider le POC.
 
+## Géolocalisation (horaires du jour)
+
+La page **Horaires** calcule les zmanim pour la position de l'appareil quand
+l'utilisateur la partage (repli sur Paris sinon). Rien ne sort de l'appareil :
+le calcul est local, les coordonnées restent en `localStorage`.
+
+- **Android** : `scripts/setup-android.mjs` ajoute `ACCESS_COARSE_LOCATION` et
+  `ACCESS_FINE_LOCATION` au manifest. C'est indispensable — le manifest livré
+  par `@capacitor/geolocation` est **vide**, donc sans ces lignes
+  `requestPermissions()` est refusé d'office et la page reste sur Paris.
+- **iOS** (projet généré, non versionné) : ajouter dans `ios/App/App/Info.plist`
+
+  ```xml
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>Votre position sert à calculer les horaires du jour (zmanim) sur votre appareil. Elle n'est envoyée nulle part.</string>
+  ```
+
+  Sans cette clé, iOS **ferme l'app** à la première demande de position.
+
 ## Autres limites connues du POC (attendues, pas des bugs)
 
 - **Connexion Google** : `signInWithRedirect/popup` de Firebase ne fonctionne

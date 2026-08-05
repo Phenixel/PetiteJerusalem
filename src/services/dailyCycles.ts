@@ -95,6 +95,22 @@ export function getWeeklyParasha(date: Date = new Date()): WeeklyParasha | null 
 }
 
 /**
+ * La paracha lue à un Chabbat donné, ou null si ce Chabbat n'en a pas.
+ *
+ * `getWeeklyParasha` anticipe : sur une semaine de fête, elle renvoie la
+ * paracha du Chabbat ordinaire suivant, ce que veut le chnei mikra. Pour
+ * annoncer « la paracha de CE Chabbat », cette anticipation est trompeuse —
+ * on ne garde donc le résultat que s'il tombe bien sur le samedi demandé.
+ */
+export function getParashaForShabbat(saturday: Date): WeeklyParasha | null {
+  const parasha = getWeeklyParasha(saturday);
+  if (!parasha) return null;
+  const month = String(saturday.getMonth() + 1).padStart(2, "0");
+  const day = String(saturday.getDate()).padStart(2, "0");
+  return parasha.weekKey === `${saturday.getFullYear()}-${month}-${day}` ? parasha : null;
+}
+
+/**
  * Cycle mensuel des Tehilim : plages de psaumes par jour du mois hébraïque
  * (1..30). Les jours 25 et 26 se partagent traditionnellement le psaume 119
  * (moitié chacun) ; l'application affiche le psaume entier les deux jours.

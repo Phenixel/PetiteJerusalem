@@ -1,16 +1,12 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
-import { onMounted, onUnmounted, ref, computed, type Component } from "vue";
+import { onMounted, onUnmounted, ref, computed, defineAsyncComponent, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { seoService } from "../services/seoService";
 import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
 import { countDailyProgress, userPreferencesService } from "../services/userPreferencesService";
 import { readingProgressService, type ReadingPosition } from "../services/readingProgressService";
-// firestoreService directement (et non sessionService) : la home est la seule
-// vue du bundle initial, et sessionService tire textStudies.json (~64 kB) +
-// la chaîne des réservations — inutiles ici, on ne fait que lister les sessions.
-import { firestoreService } from "../services/firestoreService";
 import { isNativeApp } from "../composables/useNativeApp";
 import SiteFooter from "../components/SiteFooter.vue";
 import AppIcon from "../components/icons/AppIcon.vue";
@@ -19,18 +15,21 @@ import IllustrationPartage from "../components/illustrations/IllustrationPartage
 import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
 import IllustrationBibliotheque from "../components/illustrations/IllustrationBibliotheque.vue";
 
+// Chargée à la demande : la carte tire le moteur de calcul des horaires
+// (@hebcal/core), qui pèse plus lourd que tout le bundle initial réuni. Elle
+// apparaît juste après le rendu de l'accueil, sans le retarder.
+const ZmanimCard = defineAsyncComponent(() => import("../components/ZmanimCard.vue"));
+
 const router = useRouter();
 const { t } = useI18n();
 
 const user = ref<User | null>(null);
 let unsubscribeAuth: (() => void) | null = null;
 
-// --- Tableau de bord (connecté) : lecture du jour + sessions qui se terminent. ---
+// --- Tableau de bord (connecté) : lecture du jour et horaires du jour. ---
 const dashLoading = ref(false);
 const readingTotal = ref(0);
 const readingDone = ref(0);
-const activeSessionsCount = ref(0);
-const endingSoon = ref<{ id: string; name: string; path: string; daysLeft: number }[]>([]);
 
 const firstName = computed(() => (user.value?.name ?? "").split(" ")[0] || user.value?.name || "");
 const greeting = computed(() => {
@@ -78,10 +77,7 @@ function todayKey(): string {
 async function loadDashboard(u: User) {
   dashLoading.value = true;
   try {
-    const [prefs, sessions] = await Promise.all([
-      userPreferencesService.getPreferences(u.id),
-      firestoreService.getSessions().catch(() => []),
-    ]);
+    const prefs = await userPreferencesService.getPreferences(u.id);
 
     // Même règle de comptage que la page Lecture quotidienne (chnei mikra
     // hebdomadaire exclu, complétions intersectées avec les listes actives).
@@ -95,31 +91,6 @@ async function loadDashboard(u: User) {
     });
     readingTotal.value = counts.total;
     readingDone.value = counts.done;
-
-    // Sessions où l'utilisateur est impliqué (créées ou avec une réservation).
-    const mine = sessions.filter(
-      (s) =>
-        !s.isEnded &&
-        (s.personId === u.id ||
-          s.reservations?.some(
-            (r) => r.chosenById === u.id || r.chosenByGuestId === u.email,
-          )),
-    );
-    activeSessionsCount.value = mine.length;
-
-    const now = Date.now();
-    const week = 7 * 24 * 3600 * 1000;
-    endingSoon.value = mine
-      .map((s) => ({ s, msLeft: new Date(s.dateLimit).getTime() - now }))
-      .filter((x) => x.msLeft > 0 && x.msLeft <= week)
-      .sort((a, b) => a.msLeft - b.msLeft)
-      .slice(0, 3)
-      .map(({ s, msLeft }) => ({
-        id: s.id,
-        name: s.name,
-        path: `/share-reading/session/${s.slug || s.id}`,
-        daysLeft: Math.ceil(msLeft / (24 * 3600 * 1000)),
-      }));
   } catch (error) {
     console.error("Erreur lors du chargement du tableau de bord:", error);
   } finally {
@@ -179,8 +150,6 @@ onMounted(() => {
     } else {
       readingTotal.value = 0;
       readingDone.value = 0;
-      activeSessionsCount.value = 0;
-      endingSoon.value = [];
     }
   });
   const url = window.location.origin + "/";
@@ -260,85 +229,48 @@ onUnmounted(() => {
             @click="trackCard('daily_reading')"
           />
 
-          <!-- Sessions : celles qui se terminent bientôt -->
-          <div class="dash-card card p-6" style="--enter-delay: 0.1s">
-            <h3 class="font-bold text-text-primary flex items-center gap-2.5 mb-4">
-              <AppIcon name="calendar" :size="17" class="text-primary" />
-              {{ t("home.dashboard.sessionsTitle") }}
-            </h3>
-
-            <!-- Des sessions se terminent cette semaine : les lister -->
-            <ul v-if="endingSoon.length > 0" class="flex flex-col divide-y divide-line">
-              <li v-for="session in endingSoon" :key="session.id">
-                <RouterLink
-                  :to="session.path"
-                  class="flex items-center justify-between gap-3 py-2 text-sm group"
-                  @click="trackCard('ending_session')"
-                >
-                  <span class="min-w-0 truncate font-medium text-text-primary group-hover:text-primary transition-colors">
-                    {{ session.name }}
-                  </span>
-                  <span
-                    class="shrink-0 flex items-center gap-1.5"
-                    :class="session.daysLeft <= 1 ? 'text-accent-secondary font-semibold' : 'text-text-secondary'"
-                  >
-                    <AppIcon name="hourglass" :size="13" />
-                    {{
-                      session.daysLeft <= 1
-                        ? t("home.dashboard.endsToday")
-                        : t("home.dashboard.endsInDays", { count: session.daysLeft })
-                    }}
-                  </span>
-                </RouterLink>
-              </li>
-            </ul>
-
-            <!-- Rien d'urgent -->
-            <p v-else-if="activeSessionsCount > 0" class="text-sm text-text-secondary leading-relaxed">
-              {{ t("home.dashboard.noEndingSoon", { count: activeSessionsCount }) }}
-            </p>
-            <p v-else class="text-sm text-text-secondary leading-relaxed">
-              {{ t("home.dashboard.noSessions") }}
-            </p>
-
-            <RouterLink
-              to="/share-reading"
-              class="mt-4 text-sm font-medium text-primary flex items-center gap-1.5 hover:underline"
-              @click="trackCard('sessions_cta')"
-            >
-              {{ t("home.dashboard.sessionsCta") }}
-            </RouterLink>
-          </div>
+          <!-- Horaires du jour : calculés sur l'appareil, rien à charger.
+               Le partage de lectures reste à un clic (navbar, footer, cartes
+               de découverte plus bas). -->
+          <ZmanimCard class="dash-card" style="--enter-delay: 0.1s" @click="trackCard('zmanim')" />
         </template>
       </div>
     </template>
 
-    <!-- ===== Non connecté : hero de bienvenue, CTA hors carte ===== -->
-    <div v-else class="text-center mb-10 space-y-4">
-      <h2 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight enter-rise">
-        {{ t("home.heroTitle") }}
-      </h2>
-      <p
-        class="text-base md:text-lg text-text-secondary max-w-2xl mx-auto leading-relaxed enter-rise"
-        style="--enter-delay: 0.1s"
-      >
-        {{ t("home.heroDescription") }}
-      </p>
-      <div
-        class="flex flex-wrap items-center justify-center gap-3 pt-2 enter-rise"
-        style="--enter-delay: 0.2s"
-      >
-        <RouterLink
-          to="/login?mode=signup"
-          class="btn btn-primary !px-7 !py-3"
-          @click="trackCard('signup_cta')"
+    <!-- ===== Non connecté : invitation à gauche, horaires du jour à droite,
+         à la place qu'occupent les cartes du tableau de bord ===== -->
+    <div
+      v-else
+      class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 items-center mb-10"
+    >
+      <div class="space-y-4 text-center md:text-start">
+        <h2 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight enter-rise">
+          {{ t("home.heroTitle") }}
+        </h2>
+        <p
+          class="text-base md:text-lg text-text-secondary leading-relaxed enter-rise"
+          style="--enter-delay: 0.1s"
         >
-          {{ t("accountCta.signup") }}
-        </RouterLink>
-        <RouterLink to="/login" class="btn btn-soft !px-7 !py-3" @click="trackCard('login_cta')">
-          {{ t("accountCta.login") }}
-        </RouterLink>
+          {{ t("home.heroDescription") }}
+        </p>
+        <div
+          class="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2 enter-rise"
+          style="--enter-delay: 0.2s"
+        >
+          <RouterLink
+            to="/login?mode=signup"
+            class="btn btn-primary !px-7 !py-3"
+            @click="trackCard('signup_cta')"
+          >
+            {{ t("accountCta.signup") }}
+          </RouterLink>
+          <RouterLink to="/login" class="btn btn-soft !px-7 !py-3" @click="trackCard('login_cta')">
+            {{ t("accountCta.login") }}
+          </RouterLink>
+        </div>
       </div>
+
+      <ZmanimCard class="dash-card" style="--enter-delay: 0.3s" @click="trackCard('zmanim')" />
     </div>
 
     <div class="w-full max-w-6xl mx-auto">

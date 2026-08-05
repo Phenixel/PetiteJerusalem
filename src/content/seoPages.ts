@@ -506,7 +506,7 @@ const PRIVACY_FR: LegalStrings = {
   h1: "Politique de confidentialité",
   intro:
     "Cette page explique quelles données Petite Jérusalem collecte, pourquoi, et comment les gérer ou les supprimer.",
-  updated: "Dernière mise à jour : 28 juillet 2026",
+  updated: "Dernière mise à jour : 4 août 2026",
   sections: [
     {
       heading: "Qui est responsable de vos données ?",
@@ -523,6 +523,7 @@ const PRIVACY_FR: LegalStrings = {
         <li><strong>Préférences et progression</strong> : thème, polices choisies, liste et progression de vos lectures quotidiennes.</li>
         <li><strong>Notifications</strong> : si vous activez le rappel de lecture quotidien, un identifiant technique (jeton) de votre appareil, l'heure choisie et la langue de la notification.</li>
         <li><strong>Partage de lecture</strong> : si vous créez ou rejoignez une session partagée (Talmud, Tehilim…), le nom que vous indiquez (et votre email si vous participez sans créer de compte) est visible par toute personne disposant du lien de la session.</li>
+        <li><strong>Horaires (zmanim)</strong> : si vous demandez les horaires de votre position, vos coordonnées sont enregistrées dans le stockage local de votre appareil pour le calcul, qui se fait entièrement hors ligne. Elles ne sont transmises à personne, et le bouton « Revenir à Paris » les efface.</li>
       </ul>
       <p>Nous ne collectons aucune donnée à des fins publicitaires et n'utilisons aucun traceur publicitaire.</p>`,
     },
@@ -582,7 +583,7 @@ const PRIVACY_EN: LegalStrings = {
   h1: "Privacy Policy",
   intro:
     "This page explains what data Petite Jérusalem collects, why, and how to manage or delete it.",
-  updated: "Last updated: July 28, 2026",
+  updated: "Last updated: August 4, 2026",
   sections: [
     {
       heading: "Who is responsible for your data?",
@@ -599,6 +600,7 @@ const PRIVACY_EN: LegalStrings = {
         <li><strong>Preferences and progress</strong>: theme, chosen fonts, your daily reading list and progress.</li>
         <li><strong>Notifications</strong>: if you enable the daily reading reminder, a technical device token, the chosen time, and the notification language.</li>
         <li><strong>Shared reading</strong>: if you create or join a shared session (Talmud, Tehilim…), the name you provide (and your email if you take part without an account) is visible to anyone with the session link.</li>
+        <li><strong>Zmanim</strong>: if you ask for the times of your location, your coordinates are saved in your device's local storage for the computation, which happens entirely offline. They are never sent to anyone, and the “Back to Paris” button erases them.</li>
       </ul>
       <p>We do not collect any data for advertising purposes and do not use any ad trackers.</p>`,
     },
@@ -656,7 +658,7 @@ const PRIVACY_HE: LegalStrings = {
   description: "אילו נתונים פטיט ירושלים אוספת, מדוע וכיצד למחוק אותם. חשבון אופציונלי, ללא פרסומות, מדידת שימוש רק בהסכמתכם.",
   h1: "מדיניות פרטיות",
   intro: "עמוד זה מסביר אילו נתונים פטיט ירושלים אוספת, מדוע, וכיצד לנהל או למחוק אותם.",
-  updated: "עודכן לאחרונה: 28 ביולי 2026",
+  updated: "עודכן לאחרונה: 4 באוגוסט 2026",
   sections: [
     {
       heading: "מי אחראי על הנתונים שלך?",
@@ -673,6 +675,7 @@ const PRIVACY_HE: LegalStrings = {
         <li><strong>העדפות והתקדמות</strong>: ערכת נושא, גופנים שנבחרו, רשימת הקריאה היומית וההתקדמות בה.</li>
         <li><strong>התראות</strong>: אם תפעילו את תזכורת הקריאה היומית, אסימון מכשיר טכני, השעה שנבחרה ושפת ההתראה.</li>
         <li><strong>שיתוף קריאה</strong>: אם תיצרו או תצטרפו לפגישת קריאה משותפת (תלמוד, תהילים...), השם שתמסרו (והאימייל שלכם אם אתם משתתפים ללא חשבון) גלוי לכל מי שיש לו את קישור הפגישה.</li>
+        <li><strong>זמני היום</strong>: אם תבקשו את הזמנים למיקומכם, הקואורדינטות נשמרות באחסון המקומי של המכשיר לצורך החישוב, המתבצע כולו ללא חיבור לאינטרנט. הן אינן נשלחות לאיש, והכפתור «חזרה לפריז» מוחק אותן.</li>
       </ul>
       <p>איננו אוספים נתונים לצרכי פרסום ואיננו משתמשים בעוקבים פרסומיים.</p>`,
     },
