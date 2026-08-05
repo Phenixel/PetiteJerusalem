@@ -30,21 +30,21 @@ const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
 
 <template>
   <section class="card p-5">
-    <!-- Le titre porte le nom de la paracha : c'est l'identité de ce Chabbat-là -->
-    <h2 class="mb-3 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-bold text-text-primary">
-      <span class="flex items-center gap-2.5">
-        <AppIcon name="candle" :size="17" class="text-primary" />
-        {{ t("zmanim.shabbat.title") }}
-      </span>
-      <span v-if="parasha" class="flex flex-wrap items-baseline gap-x-1.5 text-sm font-normal">
-        <span class="text-text-secondary">{{ t("zmanim.shabbat.parasha") }}</span>
-        <template v-for="(entry, index) in parasha.entries" :key="entry.id">
-          <span v-if="index > 0" class="text-text-secondary">·</span>
-          <RouterLink :to="hubPath(entry)" class="font-medium text-primary hover:underline">
-            {{ entry.name }}
-          </RouterLink>
-        </template>
-      </span>
+    <!-- Le titre porte le nom de la paracha : c'est l'identité de ce Chabbat-là.
+         Tout tient dans un seul flux de texte, sans boîte intermédiaire : une
+         icône enfermée dans son propre conteneur imposerait sa ligne de base au
+         titre, et « Parachat » ne s'alignerait plus sur « Chabbat ». -->
+    <h2 class="mb-3 font-bold text-text-primary">
+      <AppIcon name="candle" :size="17" class="me-2 text-primary" />{{ t("zmanim.shabbat.title")
+      }}<span v-if="parasha" class="text-sm font-normal"
+        >{{ " " }}<span class="text-text-secondary">{{ t("zmanim.shabbat.parasha") }}</span
+        ><template v-for="(entry, index) in parasha.entries" :key="entry.id"
+          ><span v-if="index > 0" class="text-text-secondary"> ·</span>{{ " "
+          }}<RouterLink :to="hubPath(entry)" class="font-medium text-primary hover:underline">{{
+            entry.name
+          }}</RouterLink></template
+        ></span
+      >
     </h2>
 
     <ul class="flex flex-col divide-y divide-line">
