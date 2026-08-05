@@ -124,59 +124,60 @@ onUnmounted(() => {
     <h1 class="text-2xl md:text-3xl font-bold text-text-primary tracking-tight">
       {{ t("zmanim.title") }}
     </h1>
-    <p class="mt-2 text-text-secondary leading-relaxed">{{ t("zmanim.description") }}</p>
 
-    <!-- Lieu de calcul : Paris tant que la position n'est pas partagée -->
-    <div class="card p-4 mt-6 flex flex-wrap items-center justify-between gap-3">
-      <span class="flex items-center gap-2 min-w-0">
-        <AppIcon name="map-pin" :size="16" class="text-primary shrink-0" />
-        <span class="min-w-0">
-          <span class="block font-medium text-text-primary truncate">{{ placeLabel }}</span>
-          <span v-if="coordinates" class="block text-xs text-text-secondary tabular-nums">
-            {{ coordinates }}
-          </span>
+    <!-- Lieu de calcul, sur une ligne : le titre et les horaires doivent
+         rester en vue, pas être repoussés par un bloc de réglages. -->
+    <div class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+      <span class="flex items-center gap-1.5 min-w-0">
+        <AppIcon name="map-pin" :size="14" class="text-primary shrink-0" />
+        <span class="font-medium text-text-primary truncate">{{ placeLabel }}</span>
+        <span v-if="coordinates" class="text-xs text-text-secondary tabular-nums shrink-0">
+          {{ coordinates }}
         </span>
       </span>
-      <span class="flex items-center gap-2">
-        <button
-          type="button"
-          class="btn btn-soft text-sm"
-          :disabled="status === 'loading'"
-          @click="locateMe"
-        >
-          <AppIcon
-            :name="status === 'loading' ? 'spinner' : 'locate'"
-            :size="15"
-            :class="status === 'loading' ? 'animate-spin' : ''"
-          />
-          {{
-            status === "loading"
-              ? t("zmanim.place.locating")
-              : place.source === "device"
-                ? t("zmanim.place.refresh")
-                : t("zmanim.place.useMine")
-          }}
-        </button>
-        <button
-          v-if="place.source === 'device'"
-          type="button"
-          class="btn btn-soft text-sm"
-          @click="useDefaultPlace"
-        >
-          {{ t("zmanim.place.reset") }}
-        </button>
-      </span>
+      <button
+        type="button"
+        class="flex items-center gap-1.5 font-medium text-primary hover:underline disabled:opacity-60"
+        :disabled="status === 'loading'"
+        @click="locateMe"
+      >
+        <AppIcon
+          :name="status === 'loading' ? 'spinner' : 'locate'"
+          :size="14"
+          :class="status === 'loading' ? 'animate-spin' : ''"
+        />
+        {{
+          status === "loading"
+            ? t("zmanim.place.locating")
+            : place.source === "device"
+              ? t("zmanim.place.refresh")
+              : t("zmanim.place.useMine")
+        }}
+      </button>
+      <button
+        v-if="place.source === 'device'"
+        type="button"
+        class="text-text-secondary hover:underline"
+        @click="useDefaultPlace"
+      >
+        {{ t("zmanim.place.reset") }}
+      </button>
     </div>
-    <p v-if="status === 'denied'" class="mt-2 text-sm text-text-secondary">
-      {{ t("zmanim.place.denied") }}
+
+    <!-- Une seule ligne d'explication : ce que sont ces horaires, et ce qu'il
+         advient de la position. Un refus prend sa place, il est plus urgent. -->
+    <p class="mt-1.5 text-xs text-text-secondary leading-relaxed">
+      {{
+        status === "denied"
+          ? t("zmanim.place.denied")
+          : status === "unavailable"
+            ? t("zmanim.place.unavailable")
+            : t("zmanim.description")
+      }}
     </p>
-    <p v-else-if="status === 'unavailable'" class="mt-2 text-sm text-text-secondary">
-      {{ t("zmanim.place.unavailable") }}
-    </p>
-    <p v-else class="mt-2 text-xs text-text-secondary">{{ t("zmanim.place.privacy") }}</p>
 
     <!-- Jour affiché : les flèches parcourent le calendrier sans rien recharger -->
-    <div class="mt-8 flex items-center justify-between gap-3">
+    <div class="mt-6 flex items-center justify-between gap-3">
       <button
         type="button"
         class="icon-btn"

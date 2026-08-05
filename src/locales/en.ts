@@ -231,7 +231,7 @@ const en: LocaleMessages = {
     title: "Today's times",
     navTitle: "Zmanim",
     description:
-      "The halachic times of the day, computed for your location. Everything is computed on your device, so the times stay available offline.",
+      "Halachic times computed for your location, on your device: they stay available offline, and your location is never sent anywhere.",
     next: "Next time",
     nextIn: "in {duration}",
     durationHM: "{h}h {m}m",
@@ -253,7 +253,6 @@ const en: LocaleMessages = {
       denied:
         "Location denied. Times are still computed for Paris — allow location in your settings to get yours.",
       unavailable: "Location unavailable. Times are still computed for Paris.",
-      privacy: "Your location stays on this device and is never sent anywhere.",
     },
     periods: {
       dawn: "Dawn and sunrise",

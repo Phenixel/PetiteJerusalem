@@ -230,7 +230,7 @@ const fr = {
     title: "Horaires du jour",
     navTitle: "Horaires",
     description:
-      "Les horaires halakhiques de la journée, calculés pour votre position. Tout se calcule sur votre appareil : les horaires restent disponibles hors connexion.",
+      "Horaires halakhiques calculés pour votre position, sur votre appareil : ils restent disponibles hors connexion, et votre position n'est envoyée nulle part.",
     next: "Prochain horaire",
     nextIn: "dans {duration}",
     durationHM: "{h} h {m}",
@@ -252,7 +252,6 @@ const fr = {
       denied:
         "Position refusée. Les horaires restent calculés pour Paris — autorisez la localisation dans les réglages pour les vôtres.",
       unavailable: "Position indisponible. Les horaires restent calculés pour Paris.",
-      privacy: "Votre position reste sur cet appareil et n'est envoyée nulle part.",
     },
     periods: {
       dawn: "Aube et lever",
