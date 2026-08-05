@@ -30,6 +30,7 @@ import AppIcon from "../components/icons/AppIcon.vue";
 import AccountCta from "../components/AccountCta.vue";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
 import LibraryShelf, { type ShelfBook } from "../components/LibraryShelf.vue";
+import { liveValue } from "../composables/liveInput";
 
 const { t } = useI18n();
 const toast = useToast();
@@ -128,7 +129,7 @@ const searchTerm = ref("");
 
 // Chaque frappe re-filtre et re-groupe les 328 entrées du catalogue : sur un
 // appareil lent, taper devient poussif. On ne recalcule que 150 ms après la
-// dernière frappe — l'input, lui, reste réactif (v-model sur searchTerm).
+// dernière frappe — l'input, lui, reste réactif (searchTerm suit la frappe).
 const debouncedTerm = ref("");
 let searchDebounce: ReturnType<typeof setTimeout> | undefined;
 watch(searchTerm, (value) => {
@@ -431,7 +432,8 @@ onUnmounted(() => {
           class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
         />
         <input
-          v-model="searchTerm"
+          :value="searchTerm"
+          @input="searchTerm = liveValue($event)"
           type="text"
           :placeholder="searchPlaceholder"
           class="field !pl-11"

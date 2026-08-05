@@ -246,6 +246,7 @@ const en: LocaleMessages = {
       "Times computed from the position of the sun (sea level). For practice, follow the times of your community.",
     place: {
       device: "My location",
+      near: "Near {city}",
       useMine: "Use my location",
       locating: "Locating…",
       refresh: "Refresh my location",

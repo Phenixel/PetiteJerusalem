@@ -3,6 +3,7 @@ import {
   DEFAULT_PLACE,
   placeFromCity,
   type City,
+  type NearbyPlace,
   type ZmanimPlace,
 } from "../services/zmanimService";
 import { isNativeApp } from "./useNativeApp";
@@ -28,6 +29,16 @@ const STORAGE_KEY = "pj_zmanim_place";
 /** État de la dernière demande de position. */
 export type GeoStatus = "idle" | "loading" | "denied" | "unavailable";
 
+/** Ville proche mémorisée : `undefined` tant qu'aucune recherche n'a eu lieu. */
+function readStoredNearby(value: unknown): NearbyPlace | null | undefined {
+  if (value === null) return null; // recherche faite, rien d'assez proche
+  if (typeof value !== "object" || value === null) return undefined;
+  const nearby = value as Partial<NearbyPlace>;
+  if (typeof nearby.city !== "string" || typeof nearby.country !== "string") return undefined;
+  if (typeof nearby.km !== "number") return undefined;
+  return { city: nearby.city, country: nearby.country, km: nearby.km };
+}
+
 function readStoredPlace(): ZmanimPlace | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -42,6 +53,7 @@ function readStoredPlace(): ZmanimPlace | null {
       longitude: parsed.longitude,
       tzid: parsed.tzid,
       city: typeof parsed.city === "string" ? parsed.city : null,
+      nearby: readStoredNearby(parsed.nearby),
     };
   } catch {
     return null;
@@ -138,6 +150,27 @@ async function devicePosition(): Promise<{ latitude: number; longitude: number }
   }
 }
 
+/**
+ * Nomme une position d'après le catalogue de villes embarqué, pour que
+ * l'utilisateur voie « Sarcelles » plutôt que deux nombres et comprenne qu'il
+ * a bien été localisé.
+ *
+ * Le catalogue est chargé à la demande — il n'a pas sa place dans le bundle de
+ * l'accueil — et son absence (chunk non téléchargé hors ligne) n'est pas une
+ * panne : le lieu reste utilisable, seulement sans nom.
+ */
+async function lookupNearby(
+  latitude: number,
+  longitude: number,
+): Promise<NearbyPlace | null | undefined> {
+  try {
+    const { nearestCity } = await import("../services/nearestCity");
+    return nearestCity(latitude, longitude);
+  } catch {
+    return undefined; // catalogue indisponible : on retentera plus tard
+  }
+}
+
 export function useZmanimLocation() {
   /**
    * Demande la position de l'appareil. En cas de refus ou d'échec, le lieu
@@ -157,6 +190,9 @@ export function useZmanimLocation() {
       place.value = devicePlace;
       persist(devicePlace);
       status.value = "idle";
+      // Les horaires du nouveau lieu s'affichent tout de suite ; son nom suit,
+      // le temps de charger le catalogue de villes.
+      await ensureNearby();
       return true;
     } catch (error) {
       // PERMISSION_DENIED (code 1) côté navigateur, PermissionDeniedError côté
@@ -190,5 +226,20 @@ export function useZmanimLocation() {
     persist(null);
   }
 
-  return { place, status, useDevicePlace, useCity, useDefaultPlace };
+  /**
+   * Nomme après coup une position mémorisée avant que la page ne sache le
+   * faire : sans quoi elle resterait « Ma position » jusqu'à ce que
+   * l'utilisateur redemande sa localisation.
+   */
+  async function ensureNearby(): Promise<void> {
+    const current = place.value;
+    if (current.source !== "device" || current.nearby !== undefined) return;
+    const nearby = await lookupNearby(current.latitude, current.longitude);
+    if (nearby === undefined || place.value !== current) return;
+    const named: ZmanimPlace = { ...current, nearby };
+    place.value = named;
+    persist(named);
+  }
+
+  return { place, status, useDevicePlace, useCity, useDefaultPlace, ensureNearby };
 }

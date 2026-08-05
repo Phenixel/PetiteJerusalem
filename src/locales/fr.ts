@@ -245,6 +245,7 @@ const fr = {
       "Horaires calculés à partir de la position du soleil (niveau de la mer). Pour la pratique, suivez les horaires de votre communauté.",
     place: {
       device: "Ma position",
+      near: "Près de {city}",
       useMine: "Utiliser ma position",
       locating: "Localisation…",
       refresh: "Actualiser ma position",

@@ -5,6 +5,7 @@ import type { ChiourDoc } from "../../models/models";
 import { adminService, type AuteurWithId, type SerieWithId } from "../../services/adminService";
 import { useToast } from "../../composables/useToast";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import { liveValue } from "../../composables/liveInput";
 
 const { t } = useI18n();
 const toast = useToast();
@@ -146,7 +147,8 @@ async function togglePublished(chiour: ChiourDoc) {
           class="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
         />
         <input
-          v-model="search"
+          :value="search"
+          @input="search = liveValue($event)"
           type="search"
           :placeholder="t('admin.chiourim.searchPlaceholder')"
           class="field pl-9 w-56"

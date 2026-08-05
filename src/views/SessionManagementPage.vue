@@ -14,6 +14,7 @@ import { seoService } from "../services/seoService";
 import BatchSelectionBar from "../components/BatchSelectionBar.vue";
 import EditSessionModal from "../components/EditSessionModal.vue";
 import AppIcon from "../components/icons/AppIcon.vue";
+import { liveValue } from "../composables/liveInput";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -611,7 +612,8 @@ onMounted(() => {
             class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
           />
           <input
-            v-model="searchTerm"
+            :value="searchTerm"
+            @input="searchTerm = liveValue($event)"
             type="text"
             :placeholder="t('sessionManagement.searchPlaceholder')"
             class="field !pl-11"
