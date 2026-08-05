@@ -72,7 +72,7 @@ serveur de dev :
 - `textService.loadText` passe par `fetchTextResponse` : copie locale d'abord,
   réseau (`https://petite-jerusalem.fr`) sinon.
 - La progression (« marquer comme lu ») fonctionne aussi hors ligne :
-  cache Firestore persistant activé dans `firebase.ts`.
+  cache Firestore persistant activé dans `src/firebase/firestore.ts`.
 
 Vérification : télécharger un livre, activer le mode avion, l'ouvrir.
 
