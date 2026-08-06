@@ -733,11 +733,15 @@ const en: LocaleMessages = {
   },
   chneiMikra: {
     title: "Shnayim mikra",
+    bannerParasha: "This week's parasha: {parasha}",
+    pageDescription:
+      "The weekly parasha, aliyah by aliyah, each verse followed by its Targum Onkelos.",
     shabbatOn: "Read on Shabbat {date}",
     hint: "Each verse with Targum Onkelos underneath.",
     previous: "Previous parasha",
     next: "Next parasha",
     backToThisWeek: "Back to this week's parasha",
+    unavailable: "This week's parasha could not be determined.",
   },
   study: {
     title: "Library",

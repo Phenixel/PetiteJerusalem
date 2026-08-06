@@ -720,11 +720,14 @@ const he: LocaleMessages = {
   },
   chneiMikra: {
     title: "שניים מקרא",
+    bannerParasha: "פרשת השבוע: {parasha}",
+    pageDescription: "פרשת השבוע, עלייה אחר עלייה, כל פסוק ואחריו תרגום אונקלוס.",
     shabbatOn: "נקראת בשבת {date}",
     hint: "כל פסוק עם תרגום אונקלוס מתחתיו.",
     previous: "הפרשה הקודמת",
     next: "הפרשה הבאה",
     backToThisWeek: "חזרה לפרשת השבוע",
+    unavailable: "לא ניתן לקבוע את פרשת השבוע.",
   },
   study: {
     title: "ספרייה",

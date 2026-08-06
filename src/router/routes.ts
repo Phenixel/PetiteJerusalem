@@ -16,6 +16,7 @@ const SerieChiourimPage = () => import("../views/Chiourim/SerieChiourimPage.vue"
 const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue");
 const StudyPage = () => import("../views/StudyPage.vue");
 const DailyReadingPage = () => import("../views/Library/DailyReadingPage.vue");
+const ChneiMikraPage = () => import("../views/Library/ChneiMikraPage.vue");
 const ContentPage = () => import("../views/ContentPage.vue");
 const ZmanimPage = () => import("../views/Zmanim/ZmanimPage.vue");
 const TehilimPage = () => import("../views/TehilimPage.vue");
@@ -79,6 +80,17 @@ export default [
     name: "daily-reading",
     component: DailyReadingPage,
     meta: { requiresAuth: true },
+  },
+  // Chnei mikra : la paracha de la semaine avec son Targoum, ouverte à tous.
+  // La semaine se choisit en query (`?semaine=2026-08-15`) plutôt qu'en
+  // segment, qui se confondrait avec /bibliotheque/:corpus/:slug.
+  // Tout est calculé sur l'appareil (hebcal) et les textes sont embarqués dans
+  // l'app native : la page a sa place parmi les `offlineOk`.
+  {
+    path: "/bibliotheque/chnei-mikra",
+    name: "chnei-mikra",
+    meta: { offlineOk: true },
+    component: ChneiMikraPage,
   },
   // Détail d'un corpus de la bibliothèque (liste des textes) : la page
   // d'accueil de la bibliothèque ne montre que les grandes sections.
