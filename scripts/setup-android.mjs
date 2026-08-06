@@ -231,53 +231,68 @@ if (!existsSync(nightStyles)) {
   console.log("setup-android: values-night/styles.xml créé (barre système sombre)");
 }
 
-// 9. Overscroll : l'effet d'étirement d'Android déforme toute la WebView
-//    (bottom bar comprise). Le CSS overscroll-behavior ne suffit pas, il faut
-//    le désactiver sur la vue native.
+// 9. Widgets d'écran d'accueil (Horaires, Lecture du jour) : le code natif
+//    vit dans native/android/ (versionné) et se recopie ici à chaque setup —
+//    android/ étant régénéré de zéro par la CI. Les providers lisent les
+//    payloads JSON que l'app pousse via le plugin PjWidgets (voir
+//    src/services/widgetService.ts et docs/app-widgets.md).
+//    Copié AVANT le patch de MainActivity ci-dessous, qui référence la classe
+//    PjWidgetsPlugin : un échec de copie doit interrompre avant ce patch,
+//    jamais après (android/ resterait incompilable).
+const widgetsSource = join(root, "native/android/app/src/main");
+cpSync(widgetsSource, join(androidDir, "app/src/main"), { recursive: true });
+console.log("setup-android: fichiers widgets copiés depuis native/android/");
+
+//    Enregistrement du plugin + désactivation de l'overscroll (l'étirement
+//    d'Android déforme toute la WebView ; le CSS overscroll-behavior ne
+//    suffit pas). Patchs ADDITIFS : une MainActivity personnalisée à la main
+//    n'est jamais réécrite en entier, chaque insertion est indépendante.
 const mainActivityPath = join(
   androidDir,
   "app/src/main/java/fr/petitejerusalem/app/MainActivity.java",
 );
 if (existsSync(mainActivityPath)) {
-  const mainActivity = readFileSync(mainActivityPath, "utf8");
-  if (!mainActivity.includes("PjWidgetsPlugin")) {
-    writeFileSync(
-      mainActivityPath,
-      `package fr.petitejerusalem.app;
+  let mainActivity = readFileSync(mainActivityPath, "utf8");
+  // Scaffold nu (pas de onCreate) : on pose le squelette complet.
+  if (!mainActivity.includes("onCreate")) {
+    mainActivity = `package fr.petitejerusalem.app;
 
 import android.os.Bundle;
-import android.view.View;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        // Widgets d'écran d'accueil : le plugin maison doit être connu du
-        // bridge avant sa création (donc avant super.onCreate).
-        registerPlugin(PjWidgetsPlugin.class);
         super.onCreate(savedInstanceState);
-        // L'étirement d'overscroll d'Android (stretch) déforme toute la
-        // WebView, bottom bar comprise ; le CSS overscroll-behavior ne le
-        // désactive pas, seul le mode natif de la vue le fait.
-        this.bridge.getWebView().setOverScrollMode(View.OVER_SCROLL_NEVER);
     }
 }
-`,
-    );
-    console.log("setup-android: overscroll + plugin PjWidgets dans MainActivity");
+`;
   }
+  if (!mainActivity.includes("PjWidgetsPlugin")) {
+    // Le plugin doit être connu du bridge avant sa création (avant super.onCreate).
+    mainActivity = mainActivity.replace(
+      /(\n\s*)(super\.onCreate\(savedInstanceState\);)/,
+      `$1// Widgets d'écran d'accueil (voir native/android/ et docs/app-widgets.md).$1registerPlugin(PjWidgetsPlugin.class);$1$2`,
+    );
+    console.log("setup-android: plugin PjWidgets enregistré dans MainActivity");
+  }
+  if (!mainActivity.includes("setOverScrollMode")) {
+    mainActivity = mainActivity.replace(
+      /(\n\s*)(super\.onCreate\(savedInstanceState\);)/,
+      `$1$2$1// L'étirement d'overscroll d'Android (stretch) déforme toute la$1// WebView, bottom bar comprise ; le CSS overscroll-behavior ne le$1// désactive pas, seul le mode natif de la vue le fait.$1this.bridge.getWebView().setOverScrollMode(View.OVER_SCROLL_NEVER);`,
+    );
+    if (!mainActivity.includes("import android.view.View;")) {
+      mainActivity = mainActivity.replace(
+        "import com.getcapacitor.BridgeActivity;",
+        "import android.view.View;\nimport com.getcapacitor.BridgeActivity;",
+      );
+    }
+    console.log("setup-android: overscroll désactivé dans MainActivity");
+  }
+  writeFileSync(mainActivityPath, mainActivity);
 }
 
-// 10. Widgets d'écran d'accueil (Horaires, Lecture du jour) : le code natif
-//     vit dans native/android/ (versionné) et se recopie ici à chaque setup —
-//     android/ étant régénéré de zéro par la CI. Les providers lisent les
-//     payloads JSON que l'app pousse via le plugin PjWidgets (voir
-//     src/services/widgetService.ts et docs/app-widgets.md).
-const widgetsSource = join(root, "native/android/app/src/main");
-cpSync(widgetsSource, join(androidDir, "app/src/main"), { recursive: true });
-console.log("setup-android: fichiers widgets copiés depuis native/android/");
-
-//     Déclaration des deux widgets dans le manifest.
+// 10. Déclaration des deux widgets dans le manifest.
 let widgetManifest = readFileSync(manifestPath, "utf8");
 if (!widgetManifest.includes("HorairesWidgetProvider")) {
   widgetManifest = widgetManifest.replace(

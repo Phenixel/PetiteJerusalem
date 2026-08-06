@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   buildDailyReadingWidgetPayload,
   buildZmanimWidgetPayload,
-  localDayKey,
   ZMANIM_WIDGET_DAYS,
 } from "../services/widgetPayloads";
+import { localDayKey } from "../services/dateService";
 import { DEFAULT_PLACE } from "../services/zmanimService";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson } from "../models/models";
@@ -16,9 +16,8 @@ describe("buildZmanimWidgetPayload", () => {
   const now = new Date(2026, 7, 6, 10, 0); // 6 août 2026, 10h locale
   const payload = buildZmanimWidgetPayload(DEFAULT_PLACE, t, "fr", now);
 
-  it("embarque une semaine d'horaires triés, labels localisés", () => {
+  it("embarque une semaine d'horaires triés, labels et heures pré-formatés", () => {
     expect(payload.v).toBe(1);
-    expect(payload.tzid).toBe("Europe/Paris");
     expect(payload.place).toBe("Paris");
     // ~14 zmanim par jour sur 7 jours (certains peuvent manquer aux latitudes extrêmes)
     expect(payload.times.length).toBeGreaterThanOrEqual(ZMANIM_WIDGET_DAYS * 10);
@@ -26,6 +25,12 @@ describe("buildZmanimWidgetPayload", () => {
       expect(payload.times[i].epoch).toBeGreaterThanOrEqual(payload.times[i - 1].epoch);
     }
     expect(payload.times[0].label).toMatch(/^zmanim\.names\./);
+    // Les heures partent déjà formatées : le natif n'a aucun DateFormatter
+    // (le réglage 12 h/24 h et le calendrier de l'appareil fausseraient tout).
+    for (const zman of payload.times) expect(zman.time).toMatch(/^\d{2}:\d{2}$/);
+    // Le gabarit « puis… » garde ses {placeholders} malgré la traduction.
+    expect(payload.then).toContain("{label}");
+    expect(payload.then).toContain("{time}");
     // Le widget doit toujours trouver un « prochain » horaire aujourd'hui.
     expect(payload.times.some((z) => z.epoch > now.getTime())).toBe(true);
     // Et le dernier couvre bien la fin de la fenêtre de 7 jours.
@@ -45,6 +50,15 @@ describe("buildDailyReadingWidgetPayload", () => {
     expect(payload.items).toEqual([]);
     expect(payload.emptyLabel).toBe("dailyReading.widget.empty");
     expect(payload.date).toBe(today);
+  });
+
+  it("expire au prochain minuit local", () => {
+    const payload = buildDailyReadingWidgetPayload(null, t, now);
+    const expiry = new Date(payload.expiresAt);
+    expect(payload.expiresAt).toBeGreaterThan(now.getTime());
+    expect(expiry.getHours()).toBe(0);
+    expect(expiry.getMinutes()).toBe(0);
+    expect(localDayKey(new Date(payload.expiresAt - 1000))).toBe(today);
   });
 
   it("liste + option tehilim, progression du jour respectée", () => {
@@ -72,6 +86,23 @@ describe("buildDailyReadingWidgetPayload", () => {
     // La paracha (suivi hebdomadaire) est à part, hors items quotidiens.
     expect(payload.parasha).toBeTruthy();
     expect(payload.parashaDone).toBe(false);
+  });
+
+  it("la paracha seule suffit à être configuré", () => {
+    const payload = buildDailyReadingWidgetPayload(
+      {
+        dailyReadingIds: [],
+        dailyReadingOptions: ["parasha"],
+        dailyReadingProgress: { date: "", completedIds: [] },
+      },
+      t,
+      now,
+    );
+    // Un lecteur du chnei mikra sans liste quotidienne ne doit pas être
+    // invité à « composer sa liste » par un widget qui affiche sa paracha.
+    expect(payload.configured).toBe(true);
+    expect(payload.items).toEqual([]);
+    expect(payload.parasha).toBeTruthy();
   });
 
   it("une progression d'un autre jour repart de zéro", () => {

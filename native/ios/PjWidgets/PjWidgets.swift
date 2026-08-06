@@ -6,12 +6,18 @@ import WidgetKit
  * Android de native/android/).
  *
  * Tout le contenu vient des payloads JSON poussés par l'app via
- * PjWidgetsPlugin dans l'App Group (contrat : src/services/widgetPayloads.ts,
- * libellés déjà localisés). Les widgets ne calculent rien :
- * - Horaires : une entrée de timeline par zman de la fenêtre embarquée (7 j),
- *   WidgetKit affiche donc toujours le prochain horaire sans réveiller l'app ;
- * - Lecture : une entrée maintenant + une à minuit (les coches sont
- *   quotidiennes, le widget repart de zéro sans rouvrir l'app).
+ * PjWidgetsPlugin dans l'App Group (contrat : src/services/widgetPayloads.ts).
+ * Libellés ET heures y sont déjà localisés et formatés : aucun DateFormatter
+ * ici — le réglage 12 h/24 h et le calendrier de l'appareil (hébraïque chez
+ * une partie du public) réécriraient l'affichage. Les widgets comparent des
+ * epochs, rien d'autre.
+ *
+ * - Horaires : une entrée de timeline par zman à venir (fenêtre bornée, les
+ *   entrées ne portent que leurs chaînes — pas le payload entier) ; fenêtre
+ *   épuisée → une entrée « rouvrez l'app » en .never, l'app relancera tout au
+ *   prochain push.
+ * - Lecture : une entrée maintenant, redessin à l'échéance du payload
+ *   (expiresAt, minuit local calculé côté app).
  *
  * Fichier à ajouter à la cible d'extension « PjWidgets » du projet Xcode
  * (généré, non versionné) — voir docs/app-widgets.md.
@@ -26,11 +32,16 @@ func loadPayload<T: Decodable>(_ key: String, as type: T.Type) -> T? {
     return try? JSONDecoder().decode(T.self, from: data)
 }
 
+/** Repli quand aucun payload n'existe (widget posé avant le premier lancement). */
+let openAppFallback = "Ouvrez Petite Jérusalem pour préparer le widget"
+
 // MARK: - Horaires
 
 struct ZmanTime: Decodable {
     let key: String
     let label: String
+    /// "17:42", déjà formaté dans le fuseau du lieu par l'app.
+    let time: String
     /// Epoch en millisecondes (Date.getTime() côté JS).
     let epoch: Double
 
@@ -41,92 +52,121 @@ struct ZmanimPayload: Decodable {
     let v: Int
     let title: String
     let place: String
-    let tzid: String
+    /// Gabarit localisé de la ligne « puis… » : {label}/{time} à remplacer.
+    let then: String
     let stale: String
     let times: [ZmanTime]
 }
 
+/// Une entrée ne porte que ce qu'elle affiche — surtout pas le payload entier,
+/// que WidgetKit archiverait avec CHAQUE entrée de la timeline.
 struct ZmanimEntry: TimelineEntry {
     let date: Date
-    let payload: ZmanimPayload?
-    /// Le prochain horaire à l'instant `date`, nil quand la fenêtre est épuisée.
-    let next: ZmanTime?
-    let following: ZmanTime?
+    let title: String
+    let place: String
+    /// Prochain zman à l'instant `date` — nil quand `message` prend la place.
+    let nextLabel: String?
+    let nextTime: String?
+    let followingText: String?
+    /// Fenêtre épuisée ou payload absent : message à afficher seul.
+    let message: String?
 }
 
 struct ZmanimProvider: TimelineProvider {
+    /// Nombre maximal d'entrées par timeline (~3 jours de zmanim) : WidgetKit
+    /// redemande la suite en fin de timeline (.atEnd), inutile d'archiver plus.
+    static let maxEntries = 45
+
     func placeholder(in context: Context) -> ZmanimEntry {
-        ZmanimEntry(date: Date(), payload: nil, next: nil, following: nil)
+        ZmanimEntry(
+            date: Date(), title: "Horaires", place: "",
+            nextLabel: nil, nextTime: nil, followingText: nil, message: openAppFallback)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (ZmanimEntry) -> Void) {
-        completion(entry(at: Date()))
+        let timeline = buildTimeline(now: Date())
+        completion(timeline.entries.first ?? placeholder(in: context))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<ZmanimEntry>) -> Void) {
-        guard let payload = loadPayload("zmanim", as: ZmanimPayload.self) else {
-            // Pas encore de payload : on retentera quand l'app en poussera un.
-            completion(Timeline(entries: [entry(at: Date())], policy: .never))
-            return
-        }
-        let now = Date()
-        // Une entrée par zman à venir : chacune affiche le zman suivant.
-        var entries: [ZmanimEntry] = [entry(at: now, payload: payload)]
-        for time in payload.times where time.date > now {
-            entries.append(entry(at: time.date.addingTimeInterval(1), payload: payload))
-        }
-        completion(Timeline(entries: entries, policy: .atEnd))
+        completion(buildTimeline(now: Date()))
     }
 
-    private func entry(at date: Date, payload: ZmanimPayload? = nil) -> ZmanimEntry {
-        let payload = payload ?? loadPayload("zmanim", as: ZmanimPayload.self)
-        let upcoming = payload?.times.filter { $0.date > date } ?? []
-        return ZmanimEntry(
-            date: date,
-            payload: payload,
-            next: upcoming.first,
-            following: upcoming.count > 1 ? upcoming[1] : nil
-        )
+    private func buildTimeline(now: Date) -> Timeline<ZmanimEntry> {
+        guard let payload = loadPayload("zmanim", as: ZmanimPayload.self) else {
+            // Pas encore de payload : rien à replanifier, l'app rechargera les
+            // timelines au premier push.
+            return Timeline(
+                entries: [ZmanimEntry(
+                    date: now, title: "Horaires", place: "",
+                    nextLabel: nil, nextTime: nil, followingText: nil, message: openAppFallback)],
+                policy: .never)
+        }
+
+        let upcoming = payload.times.filter { $0.date > now }
+        if upcoming.isEmpty {
+            // Fenêtre épuisée : surtout pas .atEnd (une timeline déjà finie
+            // serait redemandée en boucle et grillerait le budget de refresh).
+            return Timeline(
+                entries: [ZmanimEntry(
+                    date: now, title: payload.title, place: payload.place,
+                    nextLabel: nil, nextTime: nil, followingText: nil, message: payload.stale)],
+                policy: .never)
+        }
+
+        var entries: [ZmanimEntry] = []
+        for (i, next) in upcoming.prefix(Self.maxEntries).enumerated() {
+            // L'entrée i affiche `next` ; elle prend effet maintenant pour la
+            // première, au passage du zman précédent pour les suivantes.
+            let at = i == 0 ? now : upcoming[i - 1].date.addingTimeInterval(1)
+            let following = i + 1 < upcoming.count ? upcoming[i + 1] : nil
+            entries.append(ZmanimEntry(
+                date: at,
+                title: payload.title,
+                place: payload.place,
+                nextLabel: next.label,
+                nextTime: next.time,
+                followingText: following.map {
+                    payload.then
+                        .replacingOccurrences(of: "{label}", with: $0.label)
+                        .replacingOccurrences(of: "{time}", with: $0.time)
+                },
+                message: nil))
+        }
+        return Timeline(entries: entries, policy: .atEnd)
     }
 }
 
 struct HorairesWidgetView: View {
     let entry: ZmanimEntry
 
-    private var timeFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        formatter.timeZone = TimeZone(identifier: entry.payload?.tzid ?? "Europe/Paris")
-        return formatter
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(entry.payload?.title ?? "Horaires")
+                Text(entry.title)
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text(entry.payload?.place ?? "")
+                Text(entry.place)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            if let next = entry.next {
-                Text(next.label)
+            if let label = entry.nextLabel, let time = entry.nextTime {
+                Text(label)
                     .font(.footnote)
                     .lineLimit(2)
-                Text(timeFormatter.string(from: next.date))
+                Text(time)
                     .font(.system(size: 30, weight: .bold, design: .rounded))
-                if let following = entry.following {
-                    Text("Puis \(following.label) à \(timeFormatter.string(from: following.date))")
+                if let following = entry.followingText {
+                    Text(following)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
             } else {
                 Spacer()
-                Text(entry.payload?.stale ?? "Ouvrez Petite Jérusalem pour préparer le widget")
+                Text(entry.message ?? openAppFallback)
                     .font(.footnote)
             }
             Spacer(minLength: 0)
@@ -162,14 +202,17 @@ struct DailyItem: Decodable {
 struct DailyPayload: Decodable {
     let v: Int
     let title: String
-    /// Jour civil local (YYYY-MM-DD) auquel les `done` se rapportent.
     let date: String
+    /// Epoch ms du minuit local qui suit : au-delà, les `done` ne comptent plus.
+    let expiresAt: Double
     let configured: Bool
     let emptyLabel: String
     let allDoneLabel: String
     let items: [DailyItem]
     let parasha: String?
     let parashaDone: Bool
+
+    var expiryDate: Date { Date(timeIntervalSince1970: expiresAt / 1000) }
 }
 
 struct DailyEntry: TimelineEntry {
@@ -188,30 +231,33 @@ struct DailyProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<DailyEntry>) -> Void) {
         let now = Date()
-        let entry = DailyEntry(date: now, payload: loadPayload("daily", as: DailyPayload.self))
-        // À minuit, les coches du jour ne valent plus : la vue re-filtre par
-        // date, il suffit de redessiner.
-        var midnight = Calendar.current.startOfDay(for: now)
-        midnight = Calendar.current.date(byAdding: .day, value: 1, to: midnight) ?? now
-        completion(Timeline(entries: [entry], policy: .after(midnight)))
+        let payload = loadPayload("daily", as: DailyPayload.self)
+        let entry = DailyEntry(date: now, payload: payload)
+        // Redessin à l'échéance du payload (minuit local, calculé côté app) :
+        // la vue re-filtre les coches, il suffit de rejouer le rendu. Échéance
+        // passée ou payload absent : rien à attendre, le prochain push de
+        // l'app rechargera la timeline.
+        if let payload, payload.expiryDate > now {
+            completion(Timeline(entries: [entry], policy: .after(payload.expiryDate.addingTimeInterval(1))))
+        } else {
+            completion(Timeline(entries: [entry], policy: .never))
+        }
     }
 }
 
 struct LectureWidgetView: View {
     let entry: DailyEntry
 
-    /// Les coches ne comptent que si le payload couvre le jour affiché.
-    private var isFresh: Bool {
-        guard let payload = entry.payload else { return false }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: entry.date) == payload.date
-    }
-
     var body: some View {
+        // Les coches ne valent que jusqu'au minuit local du payload — simple
+        // comparaison d'epochs, aucun calendrier en jeu.
         let payload = entry.payload
+        let isFresh = payload.map { entry.date < $0.expiryDate } ?? false
         let doneCount = isFresh ? (payload?.items.filter { $0.done }.count ?? 0) : 0
         let nextItem = payload?.items.first { !(isFresh && $0.done) }
+        let parashaLine = payload?.parasha.map { payload!.parashaDone ? "\($0) ✓" : $0 }
+        // Chnei mikra seul : la paracha EST la lecture, pas de décompte quotidien.
+        let parashaOnly = (payload?.configured ?? false) && payload?.items.isEmpty == true
 
         VStack(alignment: .leading, spacing: 4) {
             HStack {
@@ -219,7 +265,7 @@ struct LectureWidgetView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.secondary)
                 Spacer()
-                if let payload, payload.configured {
+                if let payload, payload.configured, !parashaOnly {
                     Text("\(doneCount)/\(payload.items.count)")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(.secondary)
@@ -228,19 +274,23 @@ struct LectureWidgetView: View {
             if let payload {
                 if !payload.configured {
                     Text(payload.emptyLabel).font(.footnote)
+                } else if parashaOnly {
+                    Text(parashaLine ?? payload.emptyLabel)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(2)
                 } else {
                     Text(nextItem?.label ?? payload.allDoneLabel)
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(2)
-                }
-                if let parasha = payload.parasha {
-                    Text(payload.parashaDone ? "\(parasha) ✓" : parasha)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    if let parashaLine {
+                        Text(parashaLine)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
             } else {
-                Text("Ouvrez Petite Jérusalem pour préparer le widget").font(.footnote)
+                Text(openAppFallback).font(.footnote)
             }
             Spacer(minLength: 0)
         }

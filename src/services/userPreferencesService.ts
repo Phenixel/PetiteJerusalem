@@ -142,6 +142,19 @@ class UserPreferencesService {
   private inflight = new Map<string, Promise<UserPreferences>>();
 
   getPreferences(userId: string): Promise<UserPreferences> {
+    return this.getPreferencesOrThrow(userId).catch((error) => {
+      console.error("Erreur lors de la récupération des préférences:", error);
+      return { ...DEFAULT_PREFERENCES };
+    });
+  }
+
+  /**
+   * Comme getPreferences, mais laisse l'erreur remonter : indispensable quand
+   * l'appelant doit distinguer « profil vide » de « Firestore injoignable » —
+   * le widget de lecture, par exemple, ne doit pas écraser son dernier état
+   * avec des préférences par défaut qui ne sont qu'un échec de lecture.
+   */
+  getPreferencesOrThrow(userId: string): Promise<UserPreferences> {
     const pending = this.inflight.get(userId);
     if (pending) return pending;
     const request = this.fetchPreferences(userId).finally(() => this.inflight.delete(userId));
@@ -150,19 +163,14 @@ class UserPreferencesService {
   }
 
   private async fetchPreferences(userId: string): Promise<UserPreferences> {
-    try {
-      const { sdk, db } = await firestore();
-      const docRef = sdk.doc(db, this.collectionName, userId);
-      const docSnap = await sdk.getDoc(docRef);
+    const { sdk, db } = await firestore();
+    const docRef = sdk.doc(db, this.collectionName, userId);
+    const docSnap = await sdk.getDoc(docRef);
 
-      if (docSnap.exists()) {
-        return { ...DEFAULT_PREFERENCES, ...docSnap.data() } as UserPreferences;
-      }
-      return { ...DEFAULT_PREFERENCES };
-    } catch (error) {
-      console.error("Erreur lors de la récupération des préférences:", error);
-      return { ...DEFAULT_PREFERENCES };
+    if (docSnap.exists()) {
+      return { ...DEFAULT_PREFERENCES, ...docSnap.data() } as UserPreferences;
     }
+    return { ...DEFAULT_PREFERENCES };
   }
 
   async savePreferences(userId: string, preferences: Partial<UserPreferences>): Promise<void> {

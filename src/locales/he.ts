@@ -232,6 +232,7 @@ const he: LocaleMessages = {
     navTitle: "זמנים",
     widget: {
       title: "זמני היום",
+      then: "אחר כך {label} בשעה {time}",
       stale: "פתחו את האפליקציה לעדכון הזמנים",
     },
     description:

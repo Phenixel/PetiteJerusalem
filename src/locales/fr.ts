@@ -235,6 +235,7 @@ const fr = {
     navTitle: "Horaires",
     widget: {
       title: "Horaires",
+      then: "Puis {label} à {time}",
       stale: "Ouvrez l'app pour actualiser les horaires",
     },
     description:

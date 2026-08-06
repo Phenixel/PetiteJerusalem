@@ -236,6 +236,7 @@ const en: LocaleMessages = {
     navTitle: "Zmanim",
     widget: {
       title: "Zmanim",
+      then: "Then {label} at {time}",
       stale: "Open the app to refresh the times",
     },
     description:

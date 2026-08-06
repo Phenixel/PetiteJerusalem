@@ -26,17 +26,34 @@ widgetService.refresh()
 ```
 
 - **Contrat** : `src/services/widgetPayloads.ts` (champ `v` pour les évolutions
-  incompatibles). Les libellés sont localisés côté app — le natif n'a aucune
-  chaîne métier.
+  incompatibles). Tout ce qui s'affiche vient du payload, déjà localisé ET
+  déjà formaté — heures comprises (`time: "17:42"`, gabarit `then` pour la
+  ligne « puis… », `expiresAt` pour l'échéance de minuit) : le natif ne
+  traduit rien, ne formate rien, ne compare que des epochs. Les DateFormatter
+  natifs subiraient le réglage 12 h/24 h et le calendrier de l'appareil
+  (hébraïque chez une partie du public), qui fausseraient l'affichage. Seule
+  exception : le sélecteur de widgets du launcher et l'état « aucun payload »
+  (avant le premier lancement), portés par des ressources natives.
 - **Rafraîchi** au lancement, au retour au premier plan, à la
-  connexion/déconnexion, au changement de lieu des horaires, et à chaque
-  progression de la lecture du jour (`src/services/widgetService.ts`).
+  connexion/déconnexion, au changement de lieu des horaires, au changement de
+  langue, et à chaque progression de la lecture du jour
+  (`src/services/widgetService.ts`). Un payload inchangé n'est pas renvoyé, et
+  le natif ne recharge que le widget dont le payload a changé (le budget de
+  rafraîchissement WidgetKit n'est pas extensible) ; la page Lecture du jour
+  fournit ses préférences en mémoire pour éviter une relecture Firestore.
 - **Entre deux ouvertures de l'app**, le natif vit sur ses réserves : une
   semaine d'horaires est embarquée (le widget se replanifie au prochain zman),
-  et le payload lecture porte sa date (passé minuit, les coches ne comptent
-  plus). Fenêtre épuisée → le widget invite à rouvrir l'app.
-- **Deep-links** : les widgets ouvrent l'app avec une URL ; le listener
-  `appUrlOpen` de `src/main.ts` route vers la bonne page.
+  et le payload lecture porte son échéance (passé `expiresAt`, les coches ne
+  comptent plus). Fenêtre épuisée → le widget invite à rouvrir l'app et cesse
+  de se replanifier jusqu'au prochain payload.
+- **Deep-links** : les widgets ouvrent l'app avec une URL du site ; le
+  listener `appUrlOpen` de `src/main.ts` ne route QUE les URLs de
+  `petite-jerusalem.fr` (un callback OAuth natif ou un intent tiers ne doit
+  pas naviguer) et attend `router.isReady()` pour survivre au démarrage à
+  froid.
+- **Cas particulier** : un utilisateur dont la seule lecture est la paracha
+  (chnei mikra hebdomadaire) est bien « configuré » — le widget affiche la
+  paracha comme lecture principale, sans décompte quotidien.
 
 ## Android — automatique
 

@@ -149,15 +149,25 @@ import("./composables/useNativeApp").then(({ isNativeApp }) => {
   // Bouton retour matériel Android : sans listener, il quitte l'app au lieu
   // de revenir en arrière dans la navigation.
   import("@capacitor/app").then(({ App: CapacitorApp }) => {
-    // Toucher un widget ouvre l'app sur sa page (l'intent porte l'URL du
-    // site) ; le listener vaut pour tout lien https ouvert dans l'app.
+    // Toucher un widget ouvre l'app sur sa page : l'intent porte une URL du
+    // site (https sur Android, scheme petitejerusalem:// sur iOS). Seules ces
+    // URLs-là naviguent — tout autre lien délivré ici (callback OAuth natif,
+    // intent tiers) doit laisser l'app où elle est, sous peine d'arracher
+    // l'utilisateur vers une 404 en pleine connexion Google par exemple.
     CapacitorApp.addListener("appUrlOpen", ({ url }) => {
+      let parsed: URL;
       try {
-        const parsed = new URL(url);
-        router.push(parsed.pathname + parsed.search);
+        parsed = new URL(url);
       } catch {
-        // URL illisible : on reste où on est.
+        return; // URL illisible : on reste où on est.
       }
+      if (parsed.hostname !== "petite-jerusalem.fr") return;
+      // Au démarrage à froid, l'événement (retenu par Capacitor) arrive
+      // pendant la navigation initiale : attendre le router pour que le
+      // deep-link ne soit pas écarté par elle.
+      void router
+        .isReady()
+        .then(() => router.push(parsed.pathname + parsed.search + parsed.hash));
     });
     CapacitorApp.addListener("backButton", ({ canGoBack }) => {
       if (canGoBack) {

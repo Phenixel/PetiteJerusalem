@@ -30,9 +30,16 @@ public class PjWidgetsPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("App Group \(Self.appGroup) indisponible — vérifier la capability App Groups.")
             return
         }
-        if let zmanim = call.getString("zmanim") { defaults.set(zmanim, forKey: "zmanim") }
-        if let daily = call.getString("daily") { defaults.set(daily, forKey: "daily") }
-        WidgetCenter.shared.reloadAllTimelines()
+        // Seuls les widgets dont le payload a changé sont rechargés : chaque
+        // reload consomme le budget de rafraîchissement WidgetKit.
+        if let zmanim = call.getString("zmanim") {
+            defaults.set(zmanim, forKey: "zmanim")
+            WidgetCenter.shared.reloadTimelines(ofKind: "HorairesWidget")
+        }
+        if let daily = call.getString("daily") {
+            defaults.set(daily, forKey: "daily")
+            WidgetCenter.shared.reloadTimelines(ofKind: "LectureWidget")
+        }
         call.resolve()
     }
 }

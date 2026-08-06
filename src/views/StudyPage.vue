@@ -6,6 +6,7 @@ import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { sessionService } from "../services/sessionService";
 import { seoService } from "../services/seoService";
+import { localDayKey } from "../services/dateService";
 import { appendHebrewNumeral } from "../services/hebrewNumerals";
 import { hubPath } from "../content/etudeTexts";
 import { isNativeApp } from "../composables/useNativeApp";
@@ -234,14 +235,6 @@ function dismissResume() {
   });
 }
 
-/** Local calendar day (YYYY-MM-DD) — même convention que DailyReading. */
-function todayKey(): string {
-  const d = new Date();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${month}-${day}`;
-}
-
 async function loadDailySummary(u: User) {
   dailyLoading.value = true;
   try {
@@ -249,7 +242,7 @@ async function loadDailySummary(u: User) {
     // Même règle de comptage que la page Lecture du jour (chnei mikra
     // hebdomadaire exclu, complétions intersectées avec les listes actives).
     const progress = prefs.dailyReadingProgress;
-    const isToday = progress?.date === todayKey();
+    const isToday = progress?.date === localDayKey();
     const counts = countDailyProgress({
       textIds: prefs.dailyReadingIds ?? [],
       options: prefs.dailyReadingOptions ?? [],

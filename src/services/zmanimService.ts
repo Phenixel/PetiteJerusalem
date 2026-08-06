@@ -64,6 +64,42 @@ export function describeNearby(nearby: NearbyPlace | null | undefined): PlaceNam
   return { kind: "unknown" };
 }
 
+/**
+ * Nom affichable du lieu de calcul — LA règle de nommage, partagée entre la
+ * page des horaires, la carte de l'accueil (via useZmanimPlaceLabel) et les
+ * widgets d'écran d'accueil (via widgetPayloads).
+ *
+ * Une ville choisie porte son nom ; une position d'appareil est nommée par la
+ * ville connue la plus proche, avec la prudence que commande la distance
+ * (describeNearby) : la ville tout près, « Près de X » un peu plus loin,
+ * seulement le pays au-delà.
+ */
+export function formatPlaceLabel(
+  place: ZmanimPlace,
+  t: (key: string, params?: Record<string, unknown>) => string,
+  locale: string,
+): string {
+  if (place.city) return place.city;
+  const naming = describeNearby(place.nearby);
+  switch (naming.kind) {
+    case "city":
+      return naming.city;
+    case "near":
+      return t("zmanim.place.near", { city: naming.city });
+    case "country":
+      try {
+        return (
+          new Intl.DisplayNames([locale], { type: "region" }).of(naming.country) ??
+          t("zmanim.place.device")
+        );
+      } catch {
+        return t("zmanim.place.device"); // API absente ou code inconnu
+      }
+    default:
+      return t("zmanim.place.device");
+  }
+}
+
 /** Une ville de la liste (voir src/datas/cities.json, scripts/generate-cities.mjs). */
 export interface City {
   name: string;

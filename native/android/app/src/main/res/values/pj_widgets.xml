@@ -5,12 +5,12 @@
     <color name="pj_widget_text">#1F2937</color>
     <color name="pj_widget_text_secondary">#6B7280</color>
 
-    <!-- Libellés statiques (choix du widget, états sans payload). Le contenu
-         affiché vient, lui, des payloads localisés poussés par l'app. -->
+    <!-- Seuls libellés natifs : le sélecteur de widgets du launcher et l'état
+         « aucun payload » (widget posé avant le premier lancement de l'app).
+         Tout le reste vient des payloads, déjà localisés et formatés. -->
     <string name="pj_widget_horaires_label">Horaires</string>
     <string name="pj_widget_horaires_description">Le prochain horaire (zman) de votre journée</string>
     <string name="pj_widget_lecture_label">Lecture du jour</string>
     <string name="pj_widget_lecture_description">Votre lecture quotidienne et sa progression</string>
     <string name="pj_widget_open_app">Ouvrez Petite Jérusalem pour préparer le widget</string>
-    <string name="pj_widget_then">Puis %1$s à %2$s</string>
 </resources>

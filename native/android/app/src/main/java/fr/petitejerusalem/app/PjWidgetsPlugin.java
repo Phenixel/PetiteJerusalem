@@ -38,8 +38,9 @@ public class PjWidgetsPlugin extends Plugin {
         if (daily != null) editor.putString(KEY_DAILY, daily);
         editor.apply();
 
-        HorairesWidgetProvider.requestUpdate(context);
-        LectureWidgetProvider.requestUpdate(context);
+        // Seuls les widgets dont le payload a changé sont redessinés.
+        if (zmanim != null) PjWidgetProvider.requestUpdate(context, HorairesWidgetProvider.class);
+        if (daily != null) PjWidgetProvider.requestUpdate(context, LectureWidgetProvider.class);
         call.resolve();
     }
 }
