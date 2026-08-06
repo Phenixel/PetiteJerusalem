@@ -731,6 +731,14 @@ const en: LocaleMessages = {
       "Notifications are blocked for this app. Allow them in your phone settings, then try again.",
     error: "Could not update the notification setting. Please try again.",
   },
+  chneiMikra: {
+    title: "Shnayim mikra",
+    shabbatOn: "Read on Shabbat {date}",
+    hint: "Each verse with Targum Onkelos underneath.",
+    previous: "Previous parasha",
+    next: "Next parasha",
+    backToThisWeek: "Back to this week's parasha",
+  },
   study: {
     title: "Library",
     subtitle: "Read and study the texts: Tehilim, Mishnah, Talmud and Tanakh.",

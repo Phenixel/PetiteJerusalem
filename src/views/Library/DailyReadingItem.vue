@@ -19,6 +19,8 @@ const props = defineProps<{
   readSections?: number[];
   /** Chnei mikra : affiche le Targoum Onkelos sous chaque verset. */
   withTargoum?: boolean;
+  /** D'où le texte est lu, pour la mesure d'audience (le chnei mikra a deux entrées). */
+  source?: string;
 }>();
 const emit = defineEmits<{
   "toggle-section": [index: number];
@@ -92,7 +94,7 @@ function toggleBookmarkAt(section: TextSection, line: number) {
   analyticsService.capture(added ? "bookmark_added" : "bookmark_removed", {
     text_id: props.entry.id,
     corpus: props.entry.type,
-    source: "daily_reading",
+    source: props.source ?? "daily_reading",
   });
 }
 
@@ -114,7 +116,7 @@ function goToBookmark(b: Bookmark) {
   );
   analyticsService.capture("reading_resumed", {
     text_id: props.entry.id,
-    source: "daily_reading_bookmark",
+    source: `${props.source ?? "daily_reading"}_bookmark`,
   });
 }
 

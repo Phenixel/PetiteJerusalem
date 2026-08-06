@@ -739,6 +739,14 @@ const fr = {
       "Les notifications sont bloquées pour cette application. Autorisez-les dans les réglages du téléphone, puis réessayez.",
     error: "Impossible de modifier le réglage des notifications. Réessayez.",
   },
+  chneiMikra: {
+    title: "Chnei mikra",
+    shabbatOn: "Lue Chabbat {date}",
+    hint: "Chaque verset avec le Targoum Onkelos en dessous.",
+    previous: "Paracha précédente",
+    next: "Paracha suivante",
+    backToThisWeek: "Revenir à la paracha de cette semaine",
+  },
   study: {
     title: "Bibliothèque",
     subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud et Tanakh.",

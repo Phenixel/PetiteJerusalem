@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
+  adjacentParasha,
   getWeeklyParasha,
   getParashaForShabbat,
   getTehilimOfDay,
+  shabbatOfWeek,
   TEHILIM_MONTHLY,
 } from "../services/dailyCycles";
 
@@ -58,6 +60,39 @@ describe("getParashaForShabbat", () => {
     // Deux Chabbats consécutifs : chacun sa paracha.
     expect(getParashaForShabbat(new Date(2026, 7, 8, 22, 0, 0))?.names).toEqual(["Re'eh"]);
     expect(getParashaForShabbat(new Date(2026, 7, 15, 22, 0, 0))?.names).toEqual(["Shoftim"]);
+  });
+});
+
+describe("adjacentParasha", () => {
+  // Les flèches du chnei mikra, en tête du Tanakh : elles feuillettent les
+  // parachiot une à une, dans les deux sens.
+  it("passe à la paracha suivante et à la précédente", () => {
+    expect(adjacentParasha("2026-08-08", 1)?.names).toEqual(["Shoftim"]);
+    expect(adjacentParasha("2026-08-08", -1)?.names).toEqual(["Eikev"]);
+  });
+
+  it("enjambe les Chabbats de fête, qui n'ont pas de paracha ordinaire", () => {
+    // Chabbat 26 septembre 2026 : Ha'azinou. Le suivant (3 octobre) est
+    // 'Hol Hamoed Souccot — la paracha d'après est Berechit, le 10.
+    expect(getParashaForShabbat(new Date(2026, 9, 3, 12))).toBeNull();
+    const next = adjacentParasha("2026-09-26", 1);
+    expect(next?.names).toEqual(["Bereshit"]);
+    expect(next?.weekKey).toBe("2026-10-10");
+  });
+
+  it("revient sur ses pas : avancer puis reculer ramène au point de départ", () => {
+    // Sur deux ans, y compris les semaines de fête et les parachiot doubles.
+    let week = "2025-01-04";
+    for (let step = 0; step < 104; step++) {
+      const next = adjacentParasha(week, 1);
+      expect(next).not.toBeNull();
+      expect(adjacentParasha(next!.weekKey, -1)?.weekKey).toBe(week);
+      week = next!.weekKey;
+    }
+  });
+
+  it("le Chabbat d'une semaine est bien un samedi", () => {
+    expect(shabbatOfWeek("2026-08-08").getDay()).toBe(6);
   });
 });
 

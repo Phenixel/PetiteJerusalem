@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { ref, computed, defineAsyncComponent, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../datas/textStudies.json";
@@ -31,6 +31,10 @@ import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
 import AccountCta from "../components/AccountCta.vue";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
+// Le chnei mikra n'existe que sur le Tanakh, et il tire le calendrier hébraïque
+// (hebcal) avec le lecteur de la paracha : chargé à la demande, la bibliothèque
+// et ses trois autres corpus n'en portent rien.
+const ChneiMikraCard = defineAsyncComponent(() => import("../components/ChneiMikraCard.vue"));
 import LibraryShelf, { type ShelfBook } from "../components/LibraryShelf.vue";
 import CollapseTransition from "../components/CollapseTransition.vue";
 import { liveValue } from "../composables/liveInput";
@@ -181,6 +185,12 @@ const groupedByType = computed(() => {
 });
 
 const hasResults = computed(() => filtered.value.length > 0);
+
+// Le chnei mikra coiffe le Tanakh : c'est là qu'on vient chercher la paracha
+// de la semaine. Il s'efface pendant une recherche, qui vise autre chose.
+const showChneiMikra = computed(
+  () => currentCorpus.value?.corpus === "tanakh" && !hasSearch.value && !searching.value,
+);
 
 // La liste détaillée s'affiche sur une page corpus, ou dès qu'on cherche
 // depuis l'accueil (la recherche reste la porte d'entrée la plus rapide).
@@ -513,6 +523,9 @@ onUnmounted(() => {
         {{ t("downloads.total", { size: formatSize(totalDownloadedSize) }) }}
       </p>
     </div>
+
+    <!-- Tanakh : la paracha de la semaine avec son Targoum, en tête du corpus. -->
+    <ChneiMikraCard v-if="showChneiMikra" class="max-w-5xl mx-auto" />
 
     <!-- ===== Accueil sans recherche : le tableau de bord ===== -->
     <template v-if="!showList">

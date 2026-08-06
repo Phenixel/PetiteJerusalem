@@ -110,6 +110,31 @@ export function getParashaForShabbat(saturday: Date): WeeklyParasha | null {
   return parasha.weekKey === `${saturday.getFullYear()}-${month}-${day}` ? parasha : null;
 }
 
+/** Le Chabbat d'une `weekKey` ("2026-08-08"), dans le repère local. */
+export function shabbatOfWeek(weekKey: string): Date {
+  const [year, month, day] = weekKey.split("-").map(Number);
+  return new Date(year, month - 1, day, 12);
+}
+
+/**
+ * La paracha du Chabbat ordinaire qui suit (`direction` = 1) ou précède (-1)
+ * celui de `weekKey` : de quoi feuilleter les parachiot une à une.
+ *
+ * Les Chabbats de fête n'ont pas de paracha ordinaire (`getParashaForShabbat`
+ * renvoie null) ; on les enjambe plutôt que de s'arrêter sur une semaine vide.
+ * Deux Chabbats de fête ne se suivent jamais de plus de deux crans, la borne
+ * est large.
+ */
+export function adjacentParasha(weekKey: string, direction: 1 | -1): WeeklyParasha | null {
+  const saturday = shabbatOfWeek(weekKey);
+  for (let step = 0; step < 8; step++) {
+    saturday.setDate(saturday.getDate() + direction * 7);
+    const parasha = getParashaForShabbat(saturday);
+    if (parasha) return parasha;
+  }
+  return null;
+}
+
 /**
  * Cycle mensuel des Tehilim : plages de psaumes par jour du mois hébraïque
  * (1..30). Les jours 25 et 26 se partagent traditionnellement le psaume 119
