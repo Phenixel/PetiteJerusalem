@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mode sombre : mêmes tons que la barre système (setup-android.mjs). -->
+    <color name="pj_widget_bg">#1F2937</color>
+    <color name="pj_widget_text">#F9FAFB</color>
+    <color name="pj_widget_text_secondary">#9CA3AF</color>
+</resources>

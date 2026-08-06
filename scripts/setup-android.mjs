@@ -12,12 +12,14 @@
  *   (fichier téléchargé depuis la console Firebase, git-ignoré)
  * - android/app/build.gradle : signingConfigs.release (lit android/keystore.properties,
  *   git-ignoré ; fallback signature debug si absent) + versionName aligné sur le tag git
+ * - Widgets d'écran d'accueil : copie native/android/ (providers Java, layouts)
+ *   et déclare les receivers dans le manifest (voir docs/app-widgets.md)
  *
  * Usage : node scripts/setup-android.mjs
  * Icônes/splash : npx @capacitor/assets generate --android (logo dans assets/logo.png)
  */
 import { execSync } from "node:child_process";
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -238,7 +240,7 @@ const mainActivityPath = join(
 );
 if (existsSync(mainActivityPath)) {
   const mainActivity = readFileSync(mainActivityPath, "utf8");
-  if (!mainActivity.includes("setOverScrollMode")) {
+  if (!mainActivity.includes("PjWidgetsPlugin")) {
     writeFileSync(
       mainActivityPath,
       `package fr.petitejerusalem.app;
@@ -250,6 +252,9 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // Widgets d'écran d'accueil : le plugin maison doit être connu du
+        // bridge avant sa création (donc avant super.onCreate).
+        registerPlugin(PjWidgetsPlugin.class);
         super.onCreate(savedInstanceState);
         // L'étirement d'overscroll d'Android (stretch) déforme toute la
         // WebView, bottom bar comprise ; le CSS overscroll-behavior ne le
@@ -259,11 +264,55 @@ public class MainActivity extends BridgeActivity {
 }
 `,
     );
-    console.log("setup-android: overscroll désactivé dans MainActivity");
+    console.log("setup-android: overscroll + plugin PjWidgets dans MainActivity");
   }
 }
 
-// 10. Connexion Google native : sans ces variables, le plugin
+// 10. Widgets d'écran d'accueil (Horaires, Lecture du jour) : le code natif
+//     vit dans native/android/ (versionné) et se recopie ici à chaque setup —
+//     android/ étant régénéré de zéro par la CI. Les providers lisent les
+//     payloads JSON que l'app pousse via le plugin PjWidgets (voir
+//     src/services/widgetService.ts et docs/app-widgets.md).
+const widgetsSource = join(root, "native/android/app/src/main");
+cpSync(widgetsSource, join(androidDir, "app/src/main"), { recursive: true });
+console.log("setup-android: fichiers widgets copiés depuis native/android/");
+
+//     Déclaration des deux widgets dans le manifest.
+let widgetManifest = readFileSync(manifestPath, "utf8");
+if (!widgetManifest.includes("HorairesWidgetProvider")) {
+  widgetManifest = widgetManifest.replace(
+    /(\n\s*<\/application>)/,
+    `
+
+        <!-- Widgets d'écran d'accueil (voir native/android/ et docs/app-widgets.md) -->
+        <receiver
+            android:name=".HorairesWidgetProvider"
+            android:exported="false"
+            android:label="@string/pj_widget_horaires_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_horaires_info" />
+        </receiver>
+        <receiver
+            android:name=".LectureWidgetProvider"
+            android:exported="false"
+            android:label="@string/pj_widget_lecture_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_lecture_info" />
+        </receiver>$1`,
+  );
+  writeFileSync(manifestPath, widgetManifest);
+  console.log("setup-android: widgets Horaires et Lecture déclarés dans le manifest");
+}
+
+// 11. Connexion Google native : sans ces variables, le plugin
 //     @capacitor-firebase/authentication retombe sur androidx.credentials
 //     1.2.0-rc01, une release candidate dont le Credential Manager est cassé
 //     sur certains appareils (le bouton Google ne fait alors rien du tout,

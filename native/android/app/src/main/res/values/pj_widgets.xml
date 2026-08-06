@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Couleurs synchronisées avec src/assets/main.css (beige de l'app). -->
+    <color name="pj_widget_bg">#F4F1EA</color>
+    <color name="pj_widget_text">#1F2937</color>
+    <color name="pj_widget_text_secondary">#6B7280</color>
+
+    <!-- Libellés statiques (choix du widget, états sans payload). Le contenu
+         affiché vient, lui, des payloads localisés poussés par l'app. -->
+    <string name="pj_widget_horaires_label">Horaires</string>
+    <string name="pj_widget_horaires_description">Le prochain horaire (zman) de votre journée</string>
+    <string name="pj_widget_lecture_label">Lecture du jour</string>
+    <string name="pj_widget_lecture_description">Votre lecture quotidienne et sa progression</string>
+    <string name="pj_widget_open_app">Ouvrez Petite Jérusalem pour préparer le widget</string>
+    <string name="pj_widget_then">Puis %1$s à %2$s</string>
+</resources>

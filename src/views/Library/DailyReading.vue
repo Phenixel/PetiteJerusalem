@@ -7,6 +7,7 @@ import { countDailyProgress, userPreferencesService } from "../../services/userP
 import { syncDailyReadingDownloads } from "../../services/offlineLibraryService";
 import { pushService } from "../../services/pushService";
 import { sessionService } from "../../services/sessionService";
+import { widgetService } from "../../services/widgetService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useReadingSize } from "../../composables/useReadingSize";
@@ -234,6 +235,7 @@ async function toggleOption(key: DailyOptionKey) {
     // Option retirée : sa complétion du jour doit disparaître aussi du cloud,
     // sinon l'accueil et le rappel push continueraient de la compter.
     if (removed) await persistProgress();
+    else void widgetService.refresh();
   } finally {
     saving.value = false;
   }
@@ -337,6 +339,8 @@ async function persistSelection() {
     });
     // La nouvelle liste doit rester lisible hors ligne (no-op sur le web).
     syncDailyReadingDownloads(selectedIds.value.map(Number)).catch(() => {});
+    // Le widget d'écran d'accueil affiche cette liste (no-op sur le web).
+    void widgetService.refresh();
   } finally {
     saving.value = false;
   }
@@ -362,6 +366,8 @@ async function persistProgress() {
       ...(storedParashaProgress.value ? { parashaProgress: storedParashaProgress.value } : {}),
     },
   });
+  // Le widget d'écran d'accueil suit la progression (no-op sur le web).
+  void widgetService.refresh();
 }
 
 function isSelected(id: string | number): boolean {

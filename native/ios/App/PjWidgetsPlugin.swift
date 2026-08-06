@@ -1,0 +1,38 @@
+import Capacitor
+import Foundation
+import WidgetKit
+
+/**
+ * Pont app → widgets d'écran d'accueil (pendant iOS de
+ * native/android/.../PjWidgetsPlugin.java).
+ *
+ * La webview pousse ici les payloads JSON pré-calculés
+ * (src/services/widgetService.ts) ; ils sont stockés dans l'App Group — seul
+ * espace lisible par l'extension de widgets — puis WidgetKit recharge les
+ * timelines.
+ *
+ * Fichier à ajouter à la cible App du projet Xcode (généré, non versionné) et
+ * à enregistrer via PjViewController — voir docs/app-widgets.md.
+ */
+@objc(PjWidgetsPlugin)
+public class PjWidgetsPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "PjWidgetsPlugin"
+    public let jsName = "PjWidgets"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "setPayloads", returnType: CAPPluginReturnPromise)
+    ]
+
+    /// Doit exister dans Signing & Capabilities des DEUX cibles (App + widgets).
+    static let appGroup = "group.fr.petitejerusalem.app"
+
+    @objc func setPayloads(_ call: CAPPluginCall) {
+        guard let defaults = UserDefaults(suiteName: Self.appGroup) else {
+            call.reject("App Group \(Self.appGroup) indisponible — vérifier la capability App Groups.")
+            return
+        }
+        if let zmanim = call.getString("zmanim") { defaults.set(zmanim, forKey: "zmanim") }
+        if let daily = call.getString("daily") { defaults.set(daily, forKey: "daily") }
+        WidgetCenter.shared.reloadAllTimelines()
+        call.resolve()
+    }
+}

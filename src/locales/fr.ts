@@ -207,6 +207,10 @@ const fr = {
     sectionMarkRead: "Marquer lu",
     sectionRead: "Lu",
     resetsDaily: "Le suivi se remet à zéro chaque jour.",
+    widget: {
+      title: "Lecture du jour",
+      empty: "Ouvrez l'app pour composer votre liste de lecture",
+    },
     options: {
       title: "Lectures du moment",
       description:
@@ -229,6 +233,10 @@ const fr = {
   zmanim: {
     title: "Horaires du jour",
     navTitle: "Horaires",
+    widget: {
+      title: "Horaires",
+      stale: "Ouvrez l'app pour actualiser les horaires",
+    },
     description:
       "Horaires halakhiques calculés pour votre position, directement sur votre appareil : votre position n'est envoyée nulle part.",
     descriptionOffline:

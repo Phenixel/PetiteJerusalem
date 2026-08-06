@@ -135,6 +135,9 @@ import("./composables/useNativeApp").then(({ isNativeApp }) => {
   if (!isNativeApp) return;
   // Notifications push : deep-links au toucher + affichage en premier plan.
   import("./services/pushService").then(({ pushService }) => pushService.init(router));
+  // Widgets d'écran d'accueil : pousse les horaires et la lecture du jour au
+  // natif (lancement, retour au premier plan, changement de lieu…).
+  import("./services/widgetService").then(({ widgetService }) => widgetService.init());
   // La WebView Android applique l'échelle de police système (textZoom), ce qui
   // casse les mises en page (textes agrandis, débordements). On la neutralise :
   // la taille de lecture se règle dans l'app (useReadingSize).
@@ -146,6 +149,16 @@ import("./composables/useNativeApp").then(({ isNativeApp }) => {
   // Bouton retour matériel Android : sans listener, il quitte l'app au lieu
   // de revenir en arrière dans la navigation.
   import("@capacitor/app").then(({ App: CapacitorApp }) => {
+    // Toucher un widget ouvre l'app sur sa page (l'intent porte l'URL du
+    // site) ; le listener vaut pour tout lien https ouvert dans l'app.
+    CapacitorApp.addListener("appUrlOpen", ({ url }) => {
+      try {
+        const parsed = new URL(url);
+        router.push(parsed.pathname + parsed.search);
+      } catch {
+        // URL illisible : on reste où on est.
+      }
+    });
     CapacitorApp.addListener("backButton", ({ canGoBack }) => {
       if (canGoBack) {
         router.back();

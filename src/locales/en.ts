@@ -225,11 +225,19 @@ const en: LocaleMessages = {
       readThisWeek: "Read this week",
     },
     resetsDaily: "Tracking resets every day.",
+    widget: {
+      title: "Daily reading",
+      empty: "Open the app to set up your reading list",
+    },
     loadError: "Unable to load this text.",
   },
   zmanim: {
     title: "Today's times",
     navTitle: "Zmanim",
+    widget: {
+      title: "Zmanim",
+      stale: "Open the app to refresh the times",
+    },
     description:
       "Halachic times computed for your location, right on your device: your location is never sent anywhere.",
     descriptionOffline:

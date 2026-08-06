@@ -221,11 +221,19 @@ const he: LocaleMessages = {
       readThisWeek: "נקרא השבוע",
     },
     resetsDaily: "המעקב מתאפס מדי יום.",
+    widget: {
+      title: "הקריאה היומית",
+      empty: "פתחו את האפליקציה כדי להרכיב את רשימת הקריאה",
+    },
     loadError: "לא ניתן לטעון טקסט זה.",
   },
   zmanim: {
     title: "זמני היום",
     navTitle: "זמנים",
+    widget: {
+      title: "זמני היום",
+      stale: "פתחו את האפליקציה לעדכון הזמנים",
+    },
     description:
       "זמנים הלכתיים המחושבים למיקום שלכם, במכשיר עצמו: המיקום שלכם אינו נשלח לשום מקום.",
     descriptionOffline:
