@@ -32,6 +32,7 @@ import AppIcon from "../components/icons/AppIcon.vue";
 import AccountCta from "../components/AccountCta.vue";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
 import LibraryShelf, { type ShelfBook } from "../components/LibraryShelf.vue";
+import CollapseTransition from "../components/CollapseTransition.vue";
 import { liveValue } from "../composables/liveInput";
 
 const { t } = useI18n();
@@ -397,46 +398,49 @@ onUnmounted(() => {
 
 <template>
   <main class="mx-auto px-6 py-12">
-    <!-- Pendant une recherche, tout ce qui précède la barre s'efface : elle
-         remonte en haut de l'écran et les résultats prennent la place laissée
-         par le clavier (voir useSearchMode). -->
-    <!-- ===== Page corpus : liste détaillée d'une grande section ===== -->
-    <template v-if="currentCorpus && !searching">
-      <div
-        class="max-w-5xl mx-auto animate-[fadeIn_0.4s_ease]"
-        :class="isNativeApp ? 'mb-4' : 'mb-8'"
-      >
-        <RouterLink to="/bibliotheque" class="back-link mb-4">
-          <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
-          {{ t("study.title") }}
-        </RouterLink>
-        <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight pb-1">
-          {{ t(currentCorpus.labelKey) }}
-        </h1>
-        <p v-if="!isNativeApp" class="mt-2 text-lg text-text-secondary max-w-2xl leading-relaxed">
-          {{ t(currentCorpus.descKey) }}
-        </p>
-      </div>
-    </template>
+    <!-- Pendant une recherche, tout ce qui précède la barre se replie : elle
+         glisse jusqu'en haut de l'écran et les résultats prennent la place
+         laissée par le clavier (voir useSearchMode). -->
+    <CollapseTransition>
+      <div v-show="!searching">
+        <!-- ===== Page corpus : liste détaillée d'une grande section ===== -->
+        <div
+          v-if="currentCorpus"
+          class="max-w-5xl mx-auto animate-[fadeIn_0.4s_ease]"
+          :class="isNativeApp ? 'mb-4' : 'mb-8'"
+        >
+          <RouterLink to="/bibliotheque" class="back-link mb-4">
+            <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
+            {{ t("study.title") }}
+          </RouterLink>
+          <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight pb-1">
+            {{ t(currentCorpus.labelKey) }}
+          </h1>
+          <p v-if="!isNativeApp" class="mt-2 text-lg text-text-secondary max-w-2xl leading-relaxed">
+            {{ t(currentCorpus.descKey) }}
+          </p>
+        </div>
 
-    <!-- ===== Accueil de la bibliothèque : hero ===== -->
-    <!-- Hero resserré sur téléphone : chaque ligne gagnée remonte les livres
-         au-dessus de la pliure. -->
-    <div
-      v-else-if="!searching"
-      class="text-center animate-[fadeIn_0.5s_ease]"
-      :class="isNativeApp ? 'mb-6' : 'mb-6 md:mb-10'"
-    >
-      <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight pb-1">
-        {{ t("study.title") }}
-      </h1>
-      <p
-        v-if="!isNativeApp"
-        class="mt-2 md:mt-4 text-sm md:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed"
-      >
-        {{ t("study.subtitle") }}
-      </p>
-    </div>
+        <!-- ===== Accueil de la bibliothèque : hero ===== -->
+        <!-- Hero resserré sur téléphone : chaque ligne gagnée remonte les livres
+             au-dessus de la pliure. -->
+        <div
+          v-else
+          class="text-center animate-[fadeIn_0.5s_ease]"
+          :class="isNativeApp ? 'mb-6' : 'mb-6 md:mb-10'"
+        >
+          <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight pb-1">
+            {{ t("study.title") }}
+          </h1>
+          <p
+            v-if="!isNativeApp"
+            class="mt-2 md:mt-4 text-sm md:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed"
+          >
+            {{ t("study.subtitle") }}
+          </p>
+        </div>
+      </div>
+    </CollapseTransition>
 
     <!-- Recherche : collante sur l'app pour rester accessible au scroll.
          Depuis l'accueil elle cherche dans toute la bibliothèque. -->

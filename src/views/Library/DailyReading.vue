@@ -606,86 +606,88 @@ function formatBookName(livre: string): string {
 
     <!-- ===== Manage mode: pick texts from the library ===== -->
     <template v-else-if="mode === 'manage'">
-      <!-- Tout ce qui précède la barre de recherche s'efface dès la première
-           lettre : la barre remonte en haut de l'écran, et le catalogue filtré
+      <!-- Tout ce qui précède la barre de recherche se replie dès la première
+           lettre : la barre glisse en haut de l'écran, et le catalogue filtré
            occupe la place que le clavier laisse (voir useSearchMode). -->
-      <template v-if="!searching">
-        <button
-          v-if="selectedEntries.length"
-          @click="showSelectedPanel = !showSelectedPanel"
-          class="text-sm text-text-secondary mb-4 flex items-center gap-1.5 hover:text-text-primary transition-colors"
-        >
-          <AppIcon name="info" :size="14" />
-          {{ t("dailyReading.selectedCount", { count: selectedEntries.length }) }}
-          <AppIcon
-            name="chevron-down"
-            :size="12"
-            class="transition-transform duration-200"
-            :class="showSelectedPanel ? 'rotate-180' : ''"
-          />
-        </button>
-        <p v-else class="text-sm text-text-secondary mb-4 flex items-center gap-1.5">
-          <AppIcon name="info" :size="14" />
-          {{ t("dailyReading.selectedCount", { count: selectedEntries.length }) }}
-        </p>
-
-        <!-- Les textes de la liste, retirables d'un clic -->
-        <CollapseTransition>
-          <div v-show="showSelectedPanel && selectedEntries.length" class="mb-6">
-            <div class="flex flex-wrap gap-2">
-              <span
-                v-for="entry in selectedEntries"
-                :key="entry.id"
-                class="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-primary/10 text-sm font-medium text-text-primary"
-              >
-                {{ appendHebrewNumeral(entry.name) }}
-                <button
-                  @click="toggleSelect(entry)"
-                  class="p-0.5 rounded-full text-text-secondary hover:text-red-600 transition-colors"
-                  :title="t('dailyReading.removeFromList')"
-                  :aria-label="t('dailyReading.removeFromList')"
-                >
-                  <AppIcon name="x" :size="13" />
-                </button>
-              </span>
-            </div>
-          </div>
-        </CollapseTransition>
-
-        <!-- Lectures du moment : suivent le calendrier au lieu d'être choisies -->
-        <section class="mb-8">
-          <h3 class="text-lg font-bold text-text-primary mb-1">
-            {{ t("dailyReading.options.title") }}
-          </h3>
-          <p class="text-sm text-text-secondary mb-3 max-w-xl">
-            {{ t("dailyReading.options.description") }}
+      <CollapseTransition>
+        <div v-show="!searching">
+          <button
+            v-if="selectedEntries.length"
+            @click="showSelectedPanel = !showSelectedPanel"
+            class="text-sm text-text-secondary mb-4 flex items-center gap-1.5 hover:text-text-primary transition-colors"
+          >
+            <AppIcon name="info" :size="14" />
+            {{ t("dailyReading.selectedCount", { count: selectedEntries.length }) }}
+            <AppIcon
+              name="chevron-down"
+              :size="12"
+              class="transition-transform duration-200"
+              :class="showSelectedPanel ? 'rotate-180' : ''"
+            />
+          </button>
+          <p v-else class="text-sm text-text-secondary mb-4 flex items-center gap-1.5">
+            <AppIcon name="info" :size="14" />
+            {{ t("dailyReading.selectedCount", { count: selectedEntries.length }) }}
           </p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button
-              v-for="opt in OPTION_META"
-              :key="opt.key"
-              @click="toggleOption(opt.key)"
-              :class="[
-                'flex flex-col gap-1 p-3 rounded-lg transition-colors text-left',
-                isOptionSelected(opt.key)
-                  ? 'bg-primary/10'
-                  : 'bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/5 dark:hover:bg-white/10',
-              ]"
-            >
-              <span class="flex items-center justify-between gap-2">
-                <span class="font-medium text-text-primary">{{ t(opt.titleKey) }}</span>
-                <AppIcon
-                  :name="isOptionSelected(opt.key) ? 'circle-check' : 'circle-plus'"
-                  :size="14"
-                  :class="isOptionSelected(opt.key) ? 'text-primary' : 'text-text-secondary/60'"
-                  class="flex-shrink-0"
-                />
-              </span>
-              <span class="text-xs text-text-secondary">{{ t(opt.descriptionKey) }}</span>
-            </button>
-          </div>
-        </section>
-      </template>
+
+          <!-- Les textes de la liste, retirables d'un clic -->
+          <CollapseTransition>
+            <div v-show="showSelectedPanel && selectedEntries.length" class="mb-6">
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="entry in selectedEntries"
+                  :key="entry.id"
+                  class="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-primary/10 text-sm font-medium text-text-primary"
+                >
+                  {{ appendHebrewNumeral(entry.name) }}
+                  <button
+                    @click="toggleSelect(entry)"
+                    class="p-0.5 rounded-full text-text-secondary hover:text-red-600 transition-colors"
+                    :title="t('dailyReading.removeFromList')"
+                    :aria-label="t('dailyReading.removeFromList')"
+                  >
+                    <AppIcon name="x" :size="13" />
+                  </button>
+                </span>
+              </div>
+            </div>
+          </CollapseTransition>
+
+          <!-- Lectures du moment : suivent le calendrier au lieu d'être choisies -->
+          <section class="mb-8">
+            <h3 class="text-lg font-bold text-text-primary mb-1">
+              {{ t("dailyReading.options.title") }}
+            </h3>
+            <p class="text-sm text-text-secondary mb-3 max-w-xl">
+              {{ t("dailyReading.options.description") }}
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                v-for="opt in OPTION_META"
+                :key="opt.key"
+                @click="toggleOption(opt.key)"
+                :class="[
+                  'flex flex-col gap-1 p-3 rounded-lg transition-colors text-left',
+                  isOptionSelected(opt.key)
+                    ? 'bg-primary/10'
+                    : 'bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/5 dark:hover:bg-white/10',
+                ]"
+              >
+                <span class="flex items-center justify-between gap-2">
+                  <span class="font-medium text-text-primary">{{ t(opt.titleKey) }}</span>
+                  <AppIcon
+                    :name="isOptionSelected(opt.key) ? 'circle-check' : 'circle-plus'"
+                    :size="14"
+                    :class="isOptionSelected(opt.key) ? 'text-primary' : 'text-text-secondary/60'"
+                    class="flex-shrink-0"
+                  />
+                </span>
+                <span class="text-xs text-text-secondary">{{ t(opt.descriptionKey) }}</span>
+              </button>
+            </div>
+          </section>
+        </div>
+      </CollapseTransition>
 
       <!-- Recherche : collante sur l'app pour rester accessible au scroll. -->
       <div :class="isNativeApp ? 'app-sticky-search' : ''" class="flex justify-center mb-4">

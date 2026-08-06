@@ -294,35 +294,19 @@ button,
   }
 
   /* App native : barre de recherche collante sous la barre système, pour
-     rester accessible pendant le scroll. Déborde du padding horizontal des
-     pages (px-6) pour couvrir toute la largeur de l'écran. */
+     rester accessible pendant le scroll. Rien de plus : le fond pleine largeur
+     et son flou dessinaient un bandeau derrière le champ, étranger au reste de
+     l'app. Le champ est opaque, il se suffit. */
   .app-sticky-search {
     position: sticky;
     top: var(--safe-top);
     z-index: 40;
-    margin-inline: -1.5rem;
-    padding: 0.5rem 1.5rem 0.75rem;
-    background-color: color-mix(in srgb, var(--color-bg-beige) 92%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-  }
-  :root.dark .app-sticky-search {
-    background-color: color-mix(in srgb, #111827 92%, transparent);
+    padding-block: 0.5rem;
   }
   /* Rendu dégradé (perf-lite posé par useDevicePerf : rendu logiciel, petite
      machine, cadence mesurée mauvaise) : le flou de backdrop est re-rasterisé
-     au CPU à chaque frame — on le coupe, le fond à 92 % d'opacité suffit à la
-     lisibilité. Fond opacifié en compensation. */
-  :root.perf-lite .app-sticky-search {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    background-color: color-mix(in srgb, var(--color-bg-beige) 97%, transparent);
-  }
-  :root.perf-lite.dark .app-sticky-search {
-    background-color: color-mix(in srgb, #111827 97%, transparent);
-  }
-  /* Même logique pour le flou de la navbar (classe utilitaire Tailwind) : son
-     fond à 90 % d'opacité reste lisible sans le blur. */
+     au CPU à chaque frame — on le coupe pour la navbar (classe utilitaire
+     Tailwind), son fond à 90 % d'opacité reste lisible sans lui. */
   :root.perf-lite .backdrop-blur-md {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
