@@ -16,6 +16,7 @@ import { SITE_URL } from "../../config/site";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
+import { useZmanCountdown } from "../../composables/useZmanCountdown";
 import { getParashaForShabbat } from "../../services/dailyCycles";
 import {
   computeZmanim,
@@ -92,6 +93,13 @@ const PERIOD_ICONS: Record<ZmanPeriod, "sunrise" | "sun" | "clock" | "moon"> = {
 
 const clock = (date: Date) => formatZmanTime(date, place.value.tzid, locale.value);
 const isNext = (zman: ZmanTime) => upcoming.value?.key === zman.key;
+
+// « dans 2 h 15 » sous le prochain horaire, comme sur la carte de l'accueil :
+// l'heure dit quand, le décompte dit s'il faut se presser.
+const countdown = useZmanCountdown();
+const timeLeft = computed(() =>
+  upcoming.value ? countdown(upcoming.value.date, now.value) : "",
+);
 
 const civilDate = computed(() =>
   new Intl.DateTimeFormat(locale.value, {
@@ -238,8 +246,12 @@ onUnmounted(() => {
       v-if="upcoming"
       class="card mt-4 flex items-center justify-between gap-3 bg-primary/5 p-4 dark:bg-primary/10"
     >
-      <span class="min-w-0 font-medium leading-snug text-text-primary">
-        {{ t(`zmanim.names.${upcoming.key}`) }}
+      <span class="min-w-0">
+        <span class="block font-medium leading-snug text-text-primary">
+          {{ t(`zmanim.names.${upcoming.key}`) }}
+        </span>
+        <!-- Le temps qui reste : c'est lui qui dit s'il faut se presser. -->
+        <span v-if="timeLeft" class="block text-xs text-text-secondary">{{ timeLeft }}</span>
       </span>
       <span class="shrink-0 text-xl font-semibold tabular-nums text-primary">
         {{ clock(upcoming.date) }}

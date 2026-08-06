@@ -13,6 +13,7 @@ import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../composables/useZmanimPlaceLabel";
+import { useZmanCountdown } from "../composables/useZmanCountdown";
 import {
   computeZmanim,
   formatZmanTime,
@@ -23,6 +24,7 @@ import AppIcon from "./icons/AppIcon.vue";
 
 const { t, locale } = useI18n();
 const { place } = useZmanimLocation();
+const countdown = useZmanCountdown();
 
 // L'horaire mis en avant change au fil de la journée : on suit l'heure à la
 // minute plutôt que de figer l'état au montage.
@@ -69,25 +71,9 @@ const headline = computed(() => {
     icon: "clock" as const,
     label: t(`zmanim.names.${zman.key}`),
     date: zman.date,
-    note: countdown(zman.date),
+    note: countdown(zman.date, now.value),
   };
 });
-
-/** « dans 2 h 15 » / « dans 35 min » : le temps qui reste avant l'horaire. */
-function countdown(date: Date): string {
-  const minutes = Math.round((date.getTime() - now.value.getTime()) / 60_000);
-  if (minutes <= 0) return "";
-  const duration =
-    minutes < 60
-      ? t("zmanim.durationM", { m: minutes })
-      : t("zmanim.durationHM", {
-          h: Math.floor(minutes / 60),
-          // « 4 h 02 » et non « 4 h 2 » : les minutes d'une durée se lisent
-          // comme celles d'une heure.
-          m: String(minutes % 60).padStart(2, "0"),
-        });
-  return t("zmanim.nextIn", { duration });
-}
 
 const placeLabel = useZmanimPlaceLabel(place);
 </script>
