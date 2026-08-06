@@ -698,10 +698,10 @@ const fr = {
     delete: "Supprimer",
     deleteAll: "Tout supprimer",
     deleteAllCorpus: "Supprimer cette section",
-    deleteAllConfirm:
-      "Supprimer les livres téléchargés ({count}) ? Les textes restent lisibles en ligne.",
-    deleteAllCorpusConfirm:
-      "Supprimer les livres téléchargés de {corpus} ({count}) ? Les textes restent lisibles en ligne.",
+    deleteAllTitle: "Supprimer les téléchargements ?",
+    deleteAllCorpusTitle: "Supprimer les téléchargements de {corpus} ?",
+    deleteAllExplain:
+      "Le livre téléchargé sera retiré de cet appareil. Les textes restent lisibles en ligne, et retéléchargeables à tout moment. | Les {count} livres téléchargés seront retirés de cet appareil. Les textes restent lisibles en ligne, et retéléchargeables à tout moment.",
     deleteAllDone: "Téléchargements supprimés.",
     deleteError: "Suppression impossible. Réessayez.",
     error: "Téléchargement impossible. Vérifiez votre connexion.",

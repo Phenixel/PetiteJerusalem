@@ -25,6 +25,7 @@ import { readingProgressService, type ReadingPosition } from "../services/readin
 import { authService, type User } from "../services/authService";
 import { countDailyProgress, userPreferencesService } from "../services/userPreferencesService";
 import { useToast } from "../composables/useToast";
+import { useConfirm } from "../composables/useConfirm";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
 import AccountCta from "../components/AccountCta.vue";
@@ -34,6 +35,7 @@ import { liveValue } from "../composables/liveInput";
 
 const { t } = useI18n();
 const toast = useToast();
+const { confirm } = useConfirm();
 const route = useRoute();
 
 // App native : état de téléchargement affiché sur chaque carte de la bibliothèque.
@@ -292,16 +294,26 @@ const tabDownloadedBooks = computed(() => tabBooks.value.filter((b) => isBookDow
 
 const removingAll = ref(false);
 
+/** Libellé du bouton : il n'est plus écrit à l'écran (infobulle et modale). */
+const deleteAllLabel = computed(() =>
+  currentCorpus.value ? t("downloads.deleteAllCorpus") : t("downloads.deleteAll"),
+);
+
 async function removeAllInTab() {
   if (removingAll.value) return;
   const books = tabDownloadedBooks.value;
   if (books.length === 0) return;
   const corpus = currentCorpus.value;
-  const confirmed = window.confirm(
-    corpus
-      ? t("downloads.deleteAllCorpusConfirm", { count: books.length, corpus: t(corpus.labelKey) })
-      : t("downloads.deleteAllConfirm", { count: books.length }),
-  );
+  // Le bouton est discret : c'est la modale qui explique ce qui va disparaître,
+  // et ce qui reste accessible ensuite.
+  const confirmed = await confirm({
+    title: corpus
+      ? t("downloads.deleteAllCorpusTitle", { corpus: t(corpus.labelKey) })
+      : t("downloads.deleteAllTitle"),
+    message: t("downloads.deleteAllExplain", books.length),
+    confirmLabel: t("common.delete"),
+    danger: true,
+  });
   if (!confirmed) return;
   removingAll.value = true;
   try {
@@ -454,27 +466,31 @@ onUnmounted(() => {
       v-if="isNativeApp && tabBooks.length > 0"
       class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-8 animate-[fadeIn_0.5s_ease]"
     >
-      <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
-        <AppIcon v-if="downloadingPaths.size > 0" name="spinner" :size="14" class="animate-spin" />
-        <AppIcon v-else name="download" :size="14" />
-        {{ t("downloads.downloadAll") }}
-      </button>
-      <p v-else class="flex items-center gap-1.5 text-sm text-primary">
-        <AppIcon name="circle-check" :size="14" />
-        {{ t("downloads.allDownloaded") }}
-      </p>
-      <!-- Faire de la place : proposé dès qu'il y a quelque chose à supprimer
-           dans la portée courante (bibliothèque entière ou corpus affiché). -->
-      <button
-        v-if="tabDownloadedBooks.length > 0"
-        class="btn btn-danger"
-        :disabled="removingAll"
-        @click="removeAllInTab()"
-      >
-        <AppIcon v-if="removingAll" name="spinner" :size="14" class="animate-spin" />
-        <AppIcon v-else name="trash" :size="14" />
-        {{ currentCorpus ? t("downloads.deleteAllCorpus") : t("downloads.deleteAll") }}
-      </button>
+      <!-- Télécharger et supprimer vont ensemble : le second est une petite
+           icône posée contre le premier. Supprimer reste l'exception, il n'a
+           pas à peser autant à l'écran — la modale, elle, explique tout. -->
+      <span class="flex items-center gap-1">
+        <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
+          <AppIcon v-if="downloadingPaths.size > 0" name="spinner" :size="14" class="animate-spin" />
+          <AppIcon v-else name="download" :size="14" />
+          {{ t("downloads.downloadAll") }}
+        </button>
+        <p v-else class="flex items-center gap-1.5 text-sm text-primary">
+          <AppIcon name="circle-check" :size="14" />
+          {{ t("downloads.allDownloaded") }}
+        </p>
+        <button
+          v-if="tabDownloadedBooks.length > 0"
+          class="icon-btn hover:text-red-600 dark:hover:text-red-400"
+          :disabled="removingAll"
+          :title="deleteAllLabel"
+          :aria-label="deleteAllLabel"
+          @click="removeAllInTab()"
+        >
+          <AppIcon v-if="removingAll" name="spinner" :size="15" class="animate-spin" />
+          <AppIcon v-else name="trash" :size="15" />
+        </button>
+      </span>
       <p v-if="totalDownloadedSize > 0" class="text-sm text-text-secondary">
         {{ t("downloads.total", { size: formatSize(totalDownloadedSize) }) }}
       </p>
