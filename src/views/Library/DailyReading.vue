@@ -24,6 +24,7 @@ import {
 } from "../../services/dailyCycles";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { liveValue } from "../../composables/liveInput";
+import { useSearchMode } from "../../composables/useSearchMode";
 
 const props = defineProps<{ userId: string }>();
 const { t, locale } = useI18n();
@@ -511,6 +512,7 @@ async function disableReminder() {
 
 // --- Manage view (browse the library, like the Bibliothèque) ---
 const searchTerm = ref("");
+const { searching } = useSearchMode(searchTerm);
 const selectedType = ref(ALL_TYPE);
 // La ligne « X textes dans votre liste » se déplie pour retirer un texte
 // sans avoir à le retrouver dans le catalogue.
@@ -604,81 +606,88 @@ function formatBookName(livre: string): string {
 
     <!-- ===== Manage mode: pick texts from the library ===== -->
     <template v-else-if="mode === 'manage'">
-      <button
-        v-if="selectedEntries.length"
-        @click="showSelectedPanel = !showSelectedPanel"
-        class="text-sm text-text-secondary mb-4 flex items-center gap-1.5 hover:text-text-primary transition-colors"
-      >
-        <AppIcon name="info" :size="14" />
-        {{ t("dailyReading.selectedCount", { count: selectedEntries.length }) }}
-        <AppIcon
-          name="chevron-down"
-          :size="12"
-          class="transition-transform duration-200"
-          :class="showSelectedPanel ? 'rotate-180' : ''"
-        />
-      </button>
-      <p v-else class="text-sm text-text-secondary mb-4 flex items-center gap-1.5">
-        <AppIcon name="info" :size="14" />
-        {{ t("dailyReading.selectedCount", { count: selectedEntries.length }) }}
-      </p>
-
-      <!-- Les textes de la liste, retirables d'un clic -->
+      <!-- Tout ce qui précède la barre de recherche se replie dès la première
+           lettre : la barre glisse en haut de l'écran, et le catalogue filtré
+           occupe la place que le clavier laisse (voir useSearchMode). -->
       <CollapseTransition>
-        <div v-show="showSelectedPanel && selectedEntries.length" class="mb-6">
-          <div class="flex flex-wrap gap-2">
-            <span
-              v-for="entry in selectedEntries"
-              :key="entry.id"
-              class="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-primary/10 text-sm font-medium text-text-primary"
-            >
-              {{ appendHebrewNumeral(entry.name) }}
+        <div v-show="!searching">
+          <button
+            v-if="selectedEntries.length"
+            @click="showSelectedPanel = !showSelectedPanel"
+            class="text-sm text-text-secondary mb-4 flex items-center gap-1.5 hover:text-text-primary transition-colors"
+          >
+            <AppIcon name="info" :size="14" />
+            {{ t("dailyReading.selectedCount", { count: selectedEntries.length }) }}
+            <AppIcon
+              name="chevron-down"
+              :size="12"
+              class="transition-transform duration-200"
+              :class="showSelectedPanel ? 'rotate-180' : ''"
+            />
+          </button>
+          <p v-else class="text-sm text-text-secondary mb-4 flex items-center gap-1.5">
+            <AppIcon name="info" :size="14" />
+            {{ t("dailyReading.selectedCount", { count: selectedEntries.length }) }}
+          </p>
+
+          <!-- Les textes de la liste, retirables d'un clic -->
+          <CollapseTransition>
+            <div v-show="showSelectedPanel && selectedEntries.length" class="mb-6">
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="entry in selectedEntries"
+                  :key="entry.id"
+                  class="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-primary/10 text-sm font-medium text-text-primary"
+                >
+                  {{ appendHebrewNumeral(entry.name) }}
+                  <button
+                    @click="toggleSelect(entry)"
+                    class="p-0.5 rounded-full text-text-secondary hover:text-red-600 transition-colors"
+                    :title="t('dailyReading.removeFromList')"
+                    :aria-label="t('dailyReading.removeFromList')"
+                  >
+                    <AppIcon name="x" :size="13" />
+                  </button>
+                </span>
+              </div>
+            </div>
+          </CollapseTransition>
+
+          <!-- Lectures du moment : suivent le calendrier au lieu d'être choisies -->
+          <section class="mb-8">
+            <h3 class="text-lg font-bold text-text-primary mb-1">
+              {{ t("dailyReading.options.title") }}
+            </h3>
+            <p class="text-sm text-text-secondary mb-3 max-w-xl">
+              {{ t("dailyReading.options.description") }}
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
-                @click="toggleSelect(entry)"
-                class="p-0.5 rounded-full text-text-secondary hover:text-red-600 transition-colors"
-                :title="t('dailyReading.removeFromList')"
-                :aria-label="t('dailyReading.removeFromList')"
+                v-for="opt in OPTION_META"
+                :key="opt.key"
+                @click="toggleOption(opt.key)"
+                :class="[
+                  'flex flex-col gap-1 p-3 rounded-lg transition-colors text-left',
+                  isOptionSelected(opt.key)
+                    ? 'bg-primary/10'
+                    : 'bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/5 dark:hover:bg-white/10',
+                ]"
               >
-                <AppIcon name="x" :size="13" />
+                <span class="flex items-center justify-between gap-2">
+                  <span class="font-medium text-text-primary">{{ t(opt.titleKey) }}</span>
+                  <AppIcon
+                    :name="isOptionSelected(opt.key) ? 'circle-check' : 'circle-plus'"
+                    :size="14"
+                    :class="isOptionSelected(opt.key) ? 'text-primary' : 'text-text-secondary/60'"
+                    class="flex-shrink-0"
+                  />
+                </span>
+                <span class="text-xs text-text-secondary">{{ t(opt.descriptionKey) }}</span>
               </button>
-            </span>
-          </div>
+            </div>
+          </section>
         </div>
       </CollapseTransition>
-
-      <!-- Lectures du moment : suivent le calendrier au lieu d'être choisies -->
-      <section class="mb-8">
-        <h3 class="text-lg font-bold text-text-primary mb-1">
-          {{ t("dailyReading.options.title") }}
-        </h3>
-        <p class="text-sm text-text-secondary mb-3 max-w-xl">
-          {{ t("dailyReading.options.description") }}
-        </p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <button
-            v-for="opt in OPTION_META"
-            :key="opt.key"
-            @click="toggleOption(opt.key)"
-            :class="[
-              'flex flex-col gap-1 p-3 rounded-lg transition-colors text-left',
-              isOptionSelected(opt.key)
-                ? 'bg-primary/10'
-                : 'bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/5 dark:hover:bg-white/10',
-            ]"
-          >
-            <span class="flex items-center justify-between gap-2">
-              <span class="font-medium text-text-primary">{{ t(opt.titleKey) }}</span>
-              <AppIcon
-                :name="isOptionSelected(opt.key) ? 'circle-check' : 'circle-plus'"
-                :size="14"
-                :class="isOptionSelected(opt.key) ? 'text-primary' : 'text-text-secondary/60'"
-                class="flex-shrink-0"
-              />
-            </span>
-            <span class="text-xs text-text-secondary">{{ t(opt.descriptionKey) }}</span>
-          </button>
-        </div>
-      </section>
 
       <!-- Recherche : collante sur l'app pour rester accessible au scroll. -->
       <div :class="isNativeApp ? 'app-sticky-search' : ''" class="flex justify-center mb-4">
@@ -969,206 +978,208 @@ function formatBookName(livre: string): string {
           </div>
 
           <template v-else>
-        <!-- Daily progress -->
-        <div class="card p-5 mb-8">
-          <div v-if="allDone" class="flex items-start gap-3">
-            <AppIcon name="circle-check" :size="20" class="text-green-500 mt-0.5" />
-            <div>
-              <p class="font-semibold text-text-primary">
-                {{ t("dailyReading.allReadTitle") }}
-              </p>
-              <p class="text-sm text-text-secondary">
-                {{ t("dailyReading.allReadDescription") }}
-              </p>
-            </div>
-          </div>
-          <template v-else>
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-sm font-medium text-text-primary">
-                {{ t("dailyReading.progress", { done: completedCount, total: totalCount }) }}
-              </span>
-              <span class="text-sm font-semibold text-primary">{{ progressPct }}%</span>
-            </div>
-            <div class="h-2 w-full rounded-full bg-black/5 overflow-hidden dark:bg-white/10">
-              <div
-                class="h-full rounded-full bg-primary transition-all duration-500"
-                :style="{ width: `${progressPct}%` }"
-              ></div>
-            </div>
-          </template>
-          <p class="text-xs text-text-secondary/70 mt-3 flex items-center gap-1.5">
-            <AppIcon name="rotate" :size="12" />
-            {{ t("dailyReading.resetsDaily") }}
-          </p>
-        </div>
-
-        <!-- Texts, one after another, directly on the page background -->
-        <div class="space-y-12">
-          <!-- Lectures du moment : calculées pour aujourd'hui, en tête -->
-          <article
-            v-for="reading in dynamicReadings"
-            :key="reading.key"
-            :ref="(el) => setArticleEl(reading.key, el)"
-            :class="completedOptions.has(reading.key) ? 'opacity-60' : ''"
-          >
-            <header class="mb-4">
-              <button
-                type="button"
-                @click="toggleCollapse(reading.key)"
-                class="group flex w-full items-start gap-3 text-left"
-              >
-                <AppIcon
-                  name="chevron-down"
-                  :size="13"
-                  class="mt-1.5 text-text-secondary/60 transition-transform duration-200"
-                  :class="collapsedIds.has(reading.key) ? '-rotate-90' : ''"
-                />
-                <span class="min-w-0">
-                  <span class="block text-xs font-semibold text-primary">
-                    {{ reading.title }}
-                  </span>
-                  <span
-                    class="flex items-center gap-2 text-lg font-bold text-text-primary transition-colors group-hover:text-primary"
-                  >
-                    {{ reading.subtitle }}
-                    <AppIcon
-                      v-if="completedOptions.has(reading.key)"
-                      name="circle-check"
-                      :size="15"
-                      class="text-green-500"
-                    />
-                  </span>
-                </span>
-              </button>
-            </header>
-
-            <CollapseTransition>
-              <div v-show="!collapsedIds.has(reading.key)">
-                <div class="space-y-8">
-                  <DailyReadingItem
-                    v-for="entry in reading.entries"
-                    :key="entry.id"
-                    :entry="entry"
-                  />
+            <!-- Daily progress -->
+            <div class="card p-5 mb-8">
+              <div v-if="allDone" class="flex items-start gap-3">
+                <AppIcon name="circle-check" :size="20" class="text-green-500 mt-0.5" />
+                <div>
+                  <p class="font-semibold text-text-primary">
+                    {{ t("dailyReading.allReadTitle") }}
+                  </p>
+                  <p class="text-sm text-text-secondary">
+                    {{ t("dailyReading.allReadDescription") }}
+                  </p>
                 </div>
+              </div>
+              <template v-else>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-medium text-text-primary">
+                    {{ t("dailyReading.progress", { done: completedCount, total: totalCount }) }}
+                  </span>
+                  <span class="text-sm font-semibold text-primary">{{ progressPct }}%</span>
+                </div>
+                <div class="h-2 w-full rounded-full bg-black/5 overflow-hidden dark:bg-white/10">
+                  <div
+                    class="h-full rounded-full bg-primary transition-all duration-500"
+                    :style="{ width: `${progressPct}%` }"
+                  ></div>
+                </div>
+              </template>
+              <p class="text-xs text-text-secondary/70 mt-3 flex items-center gap-1.5">
+                <AppIcon name="rotate" :size="12" />
+                {{ t("dailyReading.resetsDaily") }}
+              </p>
+            </div>
 
-                <div class="mt-4">
+            <!-- Texts, one after another, directly on the page background -->
+            <div class="space-y-12">
+              <!-- Lectures du moment : calculées pour aujourd'hui, en tête -->
+              <article
+                v-for="reading in dynamicReadings"
+                :key="reading.key"
+                :ref="(el) => setArticleEl(reading.key, el)"
+                :class="completedOptions.has(reading.key) ? 'opacity-60' : ''"
+              >
+                <header class="mb-4">
                   <button
-                    @click="toggleOptionCompleted(reading.key)"
-                    :class="[
-                      'inline-flex items-center gap-2 text-sm font-medium transition-colors',
-                      completedOptions.has(reading.key)
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-text-secondary hover:text-primary',
-                    ]"
+                    type="button"
+                    @click="toggleCollapse(reading.key)"
+                    class="group flex w-full items-start gap-3 text-left"
                   >
                     <AppIcon
-                      v-if="completedOptions.has(reading.key)"
-                      name="circle-check"
-                      :size="15"
+                      name="chevron-down"
+                      :size="13"
+                      class="mt-1.5 text-text-secondary/60 transition-transform duration-200"
+                      :class="collapsedIds.has(reading.key) ? '-rotate-90' : ''"
                     />
-                    <span
-                      v-else
-                      class="w-3.5 h-3.5 rounded-full border-2 border-current shrink-0"
-                    ></span>
-                    {{
-                      completedOptions.has(reading.key)
-                        ? t("dailyReading.readToday")
-                        : t("dailyReading.markRead")
-                    }}
-                  </button>
-                </div>
-              </div>
-            </CollapseTransition>
-          </article>
-
-          <article
-            v-for="entry in selectedEntries"
-            :key="entry.id"
-            :ref="(el) => setArticleEl(String(entry.id), el)"
-            :class="completedIds.has(String(entry.id)) ? 'opacity-60' : ''"
-          >
-            <!-- Discreet heading: click to fold/unfold the text -->
-            <header class="mb-4">
-              <button
-                type="button"
-                @click="toggleCollapse(String(entry.id))"
-                class="group flex w-full items-start gap-3 text-left"
-              >
-                <AppIcon
-                  name="chevron-down"
-                  :size="13"
-                  class="mt-1.5 text-text-secondary/60 transition-transform duration-200"
-                  :class="collapsedIds.has(String(entry.id)) ? '-rotate-90' : ''"
-                />
-                <span class="min-w-0">
-                  <span class="block text-xs font-semibold text-primary">
-                    {{ formatBookName(entry.livre) }}
-                  </span>
-                  <span
-                    class="flex items-center gap-2 text-lg font-bold text-text-primary transition-colors group-hover:text-primary"
-                  >
-                    {{ appendHebrewNumeral(entry.name) }}
-                    <AppIcon
-                      v-if="completedIds.has(String(entry.id))"
-                      name="circle-check"
-                      :size="15"
-                      class="text-green-500"
-                    />
-                    <!-- Lecture par chapitres entamée : où on en est -->
-                    <span
-                      v-else-if="entry.totalSections > 1 && sectionsReadCount(String(entry.id)) > 0"
-                      class="text-xs font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5"
-                    >
-                      {{ sectionsReadCount(String(entry.id)) }}/{{ entry.totalSections }}
+                    <span class="min-w-0">
+                      <span class="block text-xs font-semibold text-primary">
+                        {{ reading.title }}
+                      </span>
+                      <span
+                        class="flex items-center gap-2 text-lg font-bold text-text-primary transition-colors group-hover:text-primary"
+                      >
+                        {{ reading.subtitle }}
+                        <AppIcon
+                          v-if="completedOptions.has(reading.key)"
+                          name="circle-check"
+                          :size="15"
+                          class="text-green-500"
+                        />
+                      </span>
                     </span>
-                  </span>
-                </span>
-              </button>
-            </header>
+                  </button>
+                </header>
 
-            <!-- Text content + "mark as read", hidden (but kept loaded) when
+                <CollapseTransition>
+                  <div v-show="!collapsedIds.has(reading.key)">
+                    <div class="space-y-8">
+                      <DailyReadingItem
+                        v-for="entry in reading.entries"
+                        :key="entry.id"
+                        :entry="entry"
+                      />
+                    </div>
+
+                    <div class="mt-4">
+                      <button
+                        @click="toggleOptionCompleted(reading.key)"
+                        :class="[
+                          'inline-flex items-center gap-2 text-sm font-medium transition-colors',
+                          completedOptions.has(reading.key)
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-text-secondary hover:text-primary',
+                        ]"
+                      >
+                        <AppIcon
+                          v-if="completedOptions.has(reading.key)"
+                          name="circle-check"
+                          :size="15"
+                        />
+                        <span
+                          v-else
+                          class="w-3.5 h-3.5 rounded-full border-2 border-current shrink-0"
+                        ></span>
+                        {{
+                          completedOptions.has(reading.key)
+                            ? t("dailyReading.readToday")
+                            : t("dailyReading.markRead")
+                        }}
+                      </button>
+                    </div>
+                  </div>
+                </CollapseTransition>
+              </article>
+
+              <article
+                v-for="entry in selectedEntries"
+                :key="entry.id"
+                :ref="(el) => setArticleEl(String(entry.id), el)"
+                :class="completedIds.has(String(entry.id)) ? 'opacity-60' : ''"
+              >
+                <!-- Discreet heading: click to fold/unfold the text -->
+                <header class="mb-4">
+                  <button
+                    type="button"
+                    @click="toggleCollapse(String(entry.id))"
+                    class="group flex w-full items-start gap-3 text-left"
+                  >
+                    <AppIcon
+                      name="chevron-down"
+                      :size="13"
+                      class="mt-1.5 text-text-secondary/60 transition-transform duration-200"
+                      :class="collapsedIds.has(String(entry.id)) ? '-rotate-90' : ''"
+                    />
+                    <span class="min-w-0">
+                      <span class="block text-xs font-semibold text-primary">
+                        {{ formatBookName(entry.livre) }}
+                      </span>
+                      <span
+                        class="flex items-center gap-2 text-lg font-bold text-text-primary transition-colors group-hover:text-primary"
+                      >
+                        {{ appendHebrewNumeral(entry.name) }}
+                        <AppIcon
+                          v-if="completedIds.has(String(entry.id))"
+                          name="circle-check"
+                          :size="15"
+                          class="text-green-500"
+                        />
+                        <!-- Lecture par chapitres entamée : où on en est -->
+                        <span
+                          v-else-if="
+                            entry.totalSections > 1 && sectionsReadCount(String(entry.id)) > 0
+                          "
+                          class="text-xs font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5"
+                        >
+                          {{ sectionsReadCount(String(entry.id)) }}/{{ entry.totalSections }}
+                        </span>
+                      </span>
+                    </span>
+                  </button>
+                </header>
+
+                <!-- Text content + "mark as read", hidden (but kept loaded) when
                  folded ; le repli est animé pour ne pas faire sauter le scroll -->
-            <CollapseTransition>
-            <div v-show="!collapsedIds.has(String(entry.id))">
-              <DailyReadingItem
-                :entry="entry"
-                :read-sections="completedSections[String(entry.id)] ?? []"
-                @toggle-section="(index) => toggleSection(String(entry.id), index)"
-                @sections-loaded="(indexes) => sectionIndexes.set(String(entry.id), indexes)"
-              />
+                <CollapseTransition>
+                  <div v-show="!collapsedIds.has(String(entry.id))">
+                    <DailyReadingItem
+                      :entry="entry"
+                      :read-sections="completedSections[String(entry.id)] ?? []"
+                      @toggle-section="(index) => toggleSection(String(entry.id), index)"
+                      @sections-loaded="(indexes) => sectionIndexes.set(String(entry.id), indexes)"
+                    />
 
-              <!-- Discreet "mark as read" button -->
-              <div class="mt-4">
-                <button
-                  @click="toggleCompleted(String(entry.id))"
-                  :class="[
-                    'inline-flex items-center gap-2 text-sm font-medium transition-colors',
-                    completedIds.has(String(entry.id))
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-text-secondary hover:text-primary',
-                  ]"
-                >
-                  <AppIcon
-                    v-if="completedIds.has(String(entry.id))"
-                    name="circle-check"
-                    :size="15"
-                  />
-                  <span
-                    v-else
-                    class="w-3.5 h-3.5 rounded-full border-2 border-current shrink-0"
-                  ></span>
-                  {{
-                    completedIds.has(String(entry.id))
-                      ? t("dailyReading.readToday")
-                      : t("dailyReading.markRead")
-                  }}
-                </button>
-              </div>
+                    <!-- Discreet "mark as read" button -->
+                    <div class="mt-4">
+                      <button
+                        @click="toggleCompleted(String(entry.id))"
+                        :class="[
+                          'inline-flex items-center gap-2 text-sm font-medium transition-colors',
+                          completedIds.has(String(entry.id))
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-text-secondary hover:text-primary',
+                        ]"
+                      >
+                        <AppIcon
+                          v-if="completedIds.has(String(entry.id))"
+                          name="circle-check"
+                          :size="15"
+                        />
+                        <span
+                          v-else
+                          class="w-3.5 h-3.5 rounded-full border-2 border-current shrink-0"
+                        ></span>
+                        {{
+                          completedIds.has(String(entry.id))
+                            ? t("dailyReading.readToday")
+                            : t("dailyReading.markRead")
+                        }}
+                      </button>
+                    </div>
+                  </div>
+                </CollapseTransition>
+              </article>
             </div>
-            </CollapseTransition>
-          </article>
-        </div>
           </template>
         </template>
       </template>

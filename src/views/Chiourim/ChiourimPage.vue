@@ -6,9 +6,11 @@ import type { Chiour } from "../../models/models";
 import ChiourCard from "../../components/ChiourCard.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import AccountCta from "../../components/AccountCta.vue";
+import CollapseTransition from "../../components/CollapseTransition.vue";
 import { seoService } from "../../services/seoService";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { liveValue } from "../../composables/liveInput";
+import { useSearchMode } from "../../composables/useSearchMode";
 
 const { t } = useI18n();
 
@@ -17,6 +19,7 @@ const dynamicCategories = ref<string[]>([]);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const searchTerm = ref("");
+const { searching } = useSearchMode(searchTerm);
 const selectedCategory = ref<string>("all");
 
 const loadChiourim = async () => {
@@ -82,15 +85,26 @@ onMounted(() => {
 
 <template>
   <main class="mx-auto px-6 py-12">
-    <!-- Header (le sous-titre explicatif ne sert que le site : SEO + découverte) -->
-    <div class="text-center animate-[fadeIn_0.5s_ease]" :class="isNativeApp ? 'mb-6' : 'mb-12'">
-      <h2 class="text-4xl md:text-5xl font-bold text-text-primary tracking-tight">
-        {{ t("chiourim.title") }}
-      </h2>
-      <p v-if="!isNativeApp" class="mt-4 text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
-        {{ t("chiourim.subtitle") }}
-      </p>
-    </div>
+    <!-- Header (le sous-titre explicatif ne sert que le site : SEO + découverte).
+         Replié pendant une recherche : la barre glisse en haut de l'écran et
+         les résultats occupent la place laissée par le clavier. -->
+    <CollapseTransition>
+      <div
+        v-show="!searching"
+        class="text-center animate-[fadeIn_0.5s_ease]"
+        :class="isNativeApp ? 'mb-6' : 'mb-12'"
+      >
+        <h2 class="text-4xl md:text-5xl font-bold text-text-primary tracking-tight">
+          {{ t("chiourim.title") }}
+        </h2>
+        <p
+          v-if="!isNativeApp"
+          class="mt-4 text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed"
+        >
+          {{ t("chiourim.subtitle") }}
+        </p>
+      </div>
+    </CollapseTransition>
 
     <!-- Recherche : collante sur l'app pour rester accessible au scroll. -->
     <div

@@ -25,15 +25,19 @@ import { readingProgressService, type ReadingPosition } from "../services/readin
 import { authService, type User } from "../services/authService";
 import { countDailyProgress, userPreferencesService } from "../services/userPreferencesService";
 import { useToast } from "../composables/useToast";
+import { useConfirm } from "../composables/useConfirm";
+import { useSearchMode } from "../composables/useSearchMode";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
 import AccountCta from "../components/AccountCta.vue";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
 import LibraryShelf, { type ShelfBook } from "../components/LibraryShelf.vue";
+import CollapseTransition from "../components/CollapseTransition.vue";
 import { liveValue } from "../composables/liveInput";
 
 const { t } = useI18n();
 const toast = useToast();
+const { confirm } = useConfirm();
 const route = useRoute();
 
 // App native : état de téléchargement affiché sur chaque carte de la bibliothèque.
@@ -126,6 +130,9 @@ const searchPlaceholder = computed(() =>
 );
 
 const searchTerm = ref("");
+
+// Recherche en cours : l'écran se replie autour de la barre et des résultats.
+const { searching } = useSearchMode(searchTerm);
 
 // Chaque frappe re-filtre et re-groupe les 328 entrées du catalogue : sur un
 // appareil lent, taper devient poussif. On ne recalcule que 150 ms après la
@@ -292,16 +299,26 @@ const tabDownloadedBooks = computed(() => tabBooks.value.filter((b) => isBookDow
 
 const removingAll = ref(false);
 
+/** Libellé du bouton : il n'est plus écrit à l'écran (infobulle et modale). */
+const deleteAllLabel = computed(() =>
+  currentCorpus.value ? t("downloads.deleteAllCorpus") : t("downloads.deleteAll"),
+);
+
 async function removeAllInTab() {
   if (removingAll.value) return;
   const books = tabDownloadedBooks.value;
   if (books.length === 0) return;
   const corpus = currentCorpus.value;
-  const confirmed = window.confirm(
-    corpus
-      ? t("downloads.deleteAllCorpusConfirm", { count: books.length, corpus: t(corpus.labelKey) })
-      : t("downloads.deleteAllConfirm", { count: books.length }),
-  );
+  // Le bouton est discret : c'est la modale qui explique ce qui va disparaître,
+  // et ce qui reste accessible ensuite.
+  const confirmed = await confirm({
+    title: corpus
+      ? t("downloads.deleteAllCorpusTitle", { corpus: t(corpus.labelKey) })
+      : t("downloads.deleteAllTitle"),
+    message: t("downloads.deleteAllExplain", books.length),
+    confirmLabel: t("common.delete"),
+    danger: true,
+  });
   if (!confirmed) return;
   removingAll.value = true;
   try {
@@ -381,43 +398,49 @@ onUnmounted(() => {
 
 <template>
   <main class="mx-auto px-6 py-12">
-    <!-- ===== Page corpus : liste détaillée d'une grande section ===== -->
-    <template v-if="currentCorpus">
-      <div
-        class="max-w-5xl mx-auto animate-[fadeIn_0.4s_ease]"
-        :class="isNativeApp ? 'mb-4' : 'mb-8'"
-      >
-        <RouterLink to="/bibliotheque" class="back-link mb-4">
-          <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
-          {{ t("study.title") }}
-        </RouterLink>
-        <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight pb-1">
-          {{ t(currentCorpus.labelKey) }}
-        </h1>
-        <p v-if="!isNativeApp" class="mt-2 text-lg text-text-secondary max-w-2xl leading-relaxed">
-          {{ t(currentCorpus.descKey) }}
-        </p>
-      </div>
-    </template>
+    <!-- Pendant une recherche, tout ce qui précède la barre se replie : elle
+         glisse jusqu'en haut de l'écran et les résultats prennent la place
+         laissée par le clavier (voir useSearchMode). -->
+    <CollapseTransition>
+      <div v-show="!searching">
+        <!-- ===== Page corpus : liste détaillée d'une grande section ===== -->
+        <div
+          v-if="currentCorpus"
+          class="max-w-5xl mx-auto animate-[fadeIn_0.4s_ease]"
+          :class="isNativeApp ? 'mb-4' : 'mb-8'"
+        >
+          <RouterLink to="/bibliotheque" class="back-link mb-4">
+            <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
+            {{ t("study.title") }}
+          </RouterLink>
+          <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight pb-1">
+            {{ t(currentCorpus.labelKey) }}
+          </h1>
+          <p v-if="!isNativeApp" class="mt-2 text-lg text-text-secondary max-w-2xl leading-relaxed">
+            {{ t(currentCorpus.descKey) }}
+          </p>
+        </div>
 
-    <!-- ===== Accueil de la bibliothèque : hero ===== -->
-    <!-- Hero resserré sur téléphone : chaque ligne gagnée remonte les livres
-         au-dessus de la pliure. -->
-    <div
-      v-else
-      class="text-center animate-[fadeIn_0.5s_ease]"
-      :class="isNativeApp ? 'mb-6' : 'mb-6 md:mb-10'"
-    >
-      <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight pb-1">
-        {{ t("study.title") }}
-      </h1>
-      <p
-        v-if="!isNativeApp"
-        class="mt-2 md:mt-4 text-sm md:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed"
-      >
-        {{ t("study.subtitle") }}
-      </p>
-    </div>
+        <!-- ===== Accueil de la bibliothèque : hero ===== -->
+        <!-- Hero resserré sur téléphone : chaque ligne gagnée remonte les livres
+             au-dessus de la pliure. -->
+        <div
+          v-else
+          class="text-center animate-[fadeIn_0.5s_ease]"
+          :class="isNativeApp ? 'mb-6' : 'mb-6 md:mb-10'"
+        >
+          <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight pb-1">
+            {{ t("study.title") }}
+          </h1>
+          <p
+            v-if="!isNativeApp"
+            class="mt-2 md:mt-4 text-sm md:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed"
+          >
+            {{ t("study.subtitle") }}
+          </p>
+        </div>
+      </div>
+    </CollapseTransition>
 
     <!-- Recherche : collante sur l'app pour rester accessible au scroll.
          Depuis l'accueil elle cherche dans toute la bibliothèque. -->
@@ -449,32 +472,43 @@ onUnmounted(() => {
     </div>
 
     <!-- App native : tout télécharger (bibliothèque entière ou corpus courant)
-         + espace utilisé. -->
+         + espace utilisé. Retiré pendant une recherche : cette ligne n'a rien à
+         voir avec ce qu'on cherche, et elle repousserait les résultats sous le
+         clavier. -->
     <div
-      v-if="isNativeApp && tabBooks.length > 0"
+      v-if="isNativeApp && !searching && tabBooks.length > 0"
       class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-8 animate-[fadeIn_0.5s_ease]"
     >
-      <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
-        <AppIcon v-if="downloadingPaths.size > 0" name="spinner" :size="14" class="animate-spin" />
-        <AppIcon v-else name="download" :size="14" />
-        {{ t("downloads.downloadAll") }}
-      </button>
-      <p v-else class="flex items-center gap-1.5 text-sm text-primary">
-        <AppIcon name="circle-check" :size="14" />
-        {{ t("downloads.allDownloaded") }}
-      </p>
-      <!-- Faire de la place : proposé dès qu'il y a quelque chose à supprimer
-           dans la portée courante (bibliothèque entière ou corpus affiché). -->
-      <button
-        v-if="tabDownloadedBooks.length > 0"
-        class="btn btn-danger"
-        :disabled="removingAll"
-        @click="removeAllInTab()"
-      >
-        <AppIcon v-if="removingAll" name="spinner" :size="14" class="animate-spin" />
-        <AppIcon v-else name="trash" :size="14" />
-        {{ currentCorpus ? t("downloads.deleteAllCorpus") : t("downloads.deleteAll") }}
-      </button>
+      <!-- Télécharger et supprimer vont ensemble : le second est une petite
+           icône posée contre le premier. Supprimer reste l'exception, il n'a
+           pas à peser autant à l'écran — la modale, elle, explique tout. -->
+      <span class="flex items-center gap-1">
+        <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
+          <AppIcon
+            v-if="downloadingPaths.size > 0"
+            name="spinner"
+            :size="14"
+            class="animate-spin"
+          />
+          <AppIcon v-else name="download" :size="14" />
+          {{ t("downloads.downloadAll") }}
+        </button>
+        <p v-else class="flex items-center gap-1.5 text-sm text-primary">
+          <AppIcon name="circle-check" :size="14" />
+          {{ t("downloads.allDownloaded") }}
+        </p>
+        <button
+          v-if="tabDownloadedBooks.length > 0"
+          class="icon-btn hover:text-red-600 dark:hover:text-red-400"
+          :disabled="removingAll"
+          :title="deleteAllLabel"
+          :aria-label="deleteAllLabel"
+          @click="removeAllInTab()"
+        >
+          <AppIcon v-if="removingAll" name="spinner" :size="15" class="animate-spin" />
+          <AppIcon v-else name="trash" :size="15" />
+        </button>
+      </span>
       <p v-if="totalDownloadedSize > 0" class="text-sm text-text-secondary">
         {{ t("downloads.total", { size: formatSize(totalDownloadedSize) }) }}
       </p>

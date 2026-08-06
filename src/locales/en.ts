@@ -692,9 +692,10 @@ const en: LocaleMessages = {
     delete: "Delete",
     deleteAll: "Delete all",
     deleteAllCorpus: "Delete this section",
-    deleteAllConfirm: "Delete the downloaded books ({count})? Texts stay readable online.",
-    deleteAllCorpusConfirm:
-      "Delete the downloaded books from {corpus} ({count})? Texts stay readable online.",
+    deleteAllTitle: "Delete downloads?",
+    deleteAllCorpusTitle: "Delete {corpus} downloads?",
+    deleteAllExplain:
+      "The downloaded book will be removed from this device. Texts stay readable online, and can be downloaded again at any time. | The {count} downloaded books will be removed from this device. Texts stay readable online, and can be downloaded again at any time.",
     deleteAllDone: "Downloads deleted.",
     deleteError: "Could not delete. Please try again.",
     error: "Download failed. Check your connection.",
