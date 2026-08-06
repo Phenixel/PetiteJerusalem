@@ -9,6 +9,7 @@ import AccountCta from "../../components/AccountCta.vue";
 import { seoService } from "../../services/seoService";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { liveValue } from "../../composables/liveInput";
+import { useSearchMode } from "../../composables/useSearchMode";
 
 const { t } = useI18n();
 
@@ -17,6 +18,7 @@ const dynamicCategories = ref<string[]>([]);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const searchTerm = ref("");
+const { searching } = useSearchMode(searchTerm);
 const selectedCategory = ref<string>("all");
 
 const loadChiourim = async () => {
@@ -82,12 +84,21 @@ onMounted(() => {
 
 <template>
   <main class="mx-auto px-6 py-12">
-    <!-- Header (le sous-titre explicatif ne sert que le site : SEO + découverte) -->
-    <div class="text-center animate-[fadeIn_0.5s_ease]" :class="isNativeApp ? 'mb-6' : 'mb-12'">
+    <!-- Header (le sous-titre explicatif ne sert que le site : SEO + découverte).
+         Effacé pendant une recherche : la barre remonte en haut de l'écran et
+         les résultats occupent la place laissée par le clavier. -->
+    <div
+      v-if="!searching"
+      class="text-center animate-[fadeIn_0.5s_ease]"
+      :class="isNativeApp ? 'mb-6' : 'mb-12'"
+    >
       <h2 class="text-4xl md:text-5xl font-bold text-text-primary tracking-tight">
         {{ t("chiourim.title") }}
       </h2>
-      <p v-if="!isNativeApp" class="mt-4 text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
+      <p
+        v-if="!isNativeApp"
+        class="mt-4 text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed"
+      >
         {{ t("chiourim.subtitle") }}
       </p>
     </div>

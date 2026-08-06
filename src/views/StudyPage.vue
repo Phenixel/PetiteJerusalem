@@ -26,6 +26,7 @@ import { authService, type User } from "../services/authService";
 import { countDailyProgress, userPreferencesService } from "../services/userPreferencesService";
 import { useToast } from "../composables/useToast";
 import { useConfirm } from "../composables/useConfirm";
+import { useSearchMode } from "../composables/useSearchMode";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
 import AccountCta from "../components/AccountCta.vue";
@@ -128,6 +129,9 @@ const searchPlaceholder = computed(() =>
 );
 
 const searchTerm = ref("");
+
+// Recherche en cours : l'écran se replie autour de la barre et des résultats.
+const { searching } = useSearchMode(searchTerm);
 
 // Chaque frappe re-filtre et re-groupe les 328 entrées du catalogue : sur un
 // appareil lent, taper devient poussif. On ne recalcule que 150 ms après la
@@ -393,8 +397,11 @@ onUnmounted(() => {
 
 <template>
   <main class="mx-auto px-6 py-12">
+    <!-- Pendant une recherche, tout ce qui précède la barre s'efface : elle
+         remonte en haut de l'écran et les résultats prennent la place laissée
+         par le clavier (voir useSearchMode). -->
     <!-- ===== Page corpus : liste détaillée d'une grande section ===== -->
-    <template v-if="currentCorpus">
+    <template v-if="currentCorpus && !searching">
       <div
         class="max-w-5xl mx-auto animate-[fadeIn_0.4s_ease]"
         :class="isNativeApp ? 'mb-4' : 'mb-8'"
@@ -416,7 +423,7 @@ onUnmounted(() => {
     <!-- Hero resserré sur téléphone : chaque ligne gagnée remonte les livres
          au-dessus de la pliure. -->
     <div
-      v-else
+      v-else-if="!searching"
       class="text-center animate-[fadeIn_0.5s_ease]"
       :class="isNativeApp ? 'mb-6' : 'mb-6 md:mb-10'"
     >
@@ -461,9 +468,11 @@ onUnmounted(() => {
     </div>
 
     <!-- App native : tout télécharger (bibliothèque entière ou corpus courant)
-         + espace utilisé. -->
+         + espace utilisé. Retiré pendant une recherche : cette ligne n'a rien à
+         voir avec ce qu'on cherche, et elle repousserait les résultats sous le
+         clavier. -->
     <div
-      v-if="isNativeApp && tabBooks.length > 0"
+      v-if="isNativeApp && !searching && tabBooks.length > 0"
       class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-8 animate-[fadeIn_0.5s_ease]"
     >
       <!-- Télécharger et supprimer vont ensemble : le second est une petite
@@ -471,7 +480,12 @@ onUnmounted(() => {
            pas à peser autant à l'écran — la modale, elle, explique tout. -->
       <span class="flex items-center gap-1">
         <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
-          <AppIcon v-if="downloadingPaths.size > 0" name="spinner" :size="14" class="animate-spin" />
+          <AppIcon
+            v-if="downloadingPaths.size > 0"
+            name="spinner"
+            :size="14"
+            class="animate-spin"
+          />
           <AppIcon v-else name="download" :size="14" />
           {{ t("downloads.downloadAll") }}
         </button>
