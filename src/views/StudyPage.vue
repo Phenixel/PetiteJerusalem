@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { ref, computed, defineAsyncComponent, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../datas/textStudies.json";
@@ -34,6 +34,11 @@ import DailyReadingCard from "../components/DailyReadingCard.vue";
 import LibraryShelf, { type ShelfBook } from "../components/LibraryShelf.vue";
 import CollapseTransition from "../components/CollapseTransition.vue";
 import { liveValue } from "../composables/liveInput";
+
+// L'encart du chnei mikra n'existe que sur le Tanakh, et il tire le calendrier
+// hébraïque (hebcal) avec lui : chargé à la demande, la bibliothèque et ses
+// trois autres corpus n'en portent rien.
+const ChneiMikraBanner = defineAsyncComponent(() => import("../components/ChneiMikraBanner.vue"));
 
 const { t } = useI18n();
 const toast = useToast();
@@ -181,6 +186,12 @@ const groupedByType = computed(() => {
 });
 
 const hasResults = computed(() => filtered.value.length > 0);
+
+// Le chnei mikra coiffe le Tanakh : c'est là qu'on vient chercher la paracha
+// de la semaine. L'encart s'efface pendant une recherche, qui vise autre chose.
+const showChneiMikra = computed(
+  () => currentCorpus.value?.corpus === "tanakh" && !hasSearch.value && !searching.value,
+);
 
 // La liste détaillée s'affiche sur une page corpus, ou dès qu'on cherche
 // depuis l'accueil (la recherche reste la porte d'entrée la plus rapide).
@@ -513,6 +524,9 @@ onUnmounted(() => {
         {{ t("downloads.total", { size: formatSize(totalDownloadedSize) }) }}
       </p>
     </div>
+
+    <!-- Tanakh : l'entrée du chnei mikra, qui se lit sur sa propre page. -->
+    <ChneiMikraBanner v-if="showChneiMikra" class="max-w-5xl mx-auto mb-10" />
 
     <!-- ===== Accueil sans recherche : le tableau de bord ===== -->
     <template v-if="!showList">

@@ -7,6 +7,7 @@ import { app } from "../firebase/core";
 import { db } from "../firebase/firestore";
 import { isNativeApp } from "../composables/useNativeApp";
 import { analyticsService } from "./analyticsService";
+import type { ReminderPlace } from "./zmanimService";
 
 /**
  * Notifications push (app native uniquement — le site web n'en envoie pas).
@@ -23,6 +24,23 @@ import { analyticsService } from "./analyticsService";
  */
 
 export type PushPermission = "granted" | "denied" | "prompt";
+
+/** Les rappels choisis par l'utilisateur, tels que la modale les remonte. */
+export interface ReminderSettings {
+  /** Rappel à heure fixe. */
+  daily: boolean;
+  /** Heure du rappel fixe (heure de Paris, minutes par pas de 5). */
+  hour: number;
+  minute: number;
+  /** Rappel « dernier appel » 20 minutes avant la chkia. */
+  sunset: boolean;
+  /**
+   * Lieu du calcul de la chkia (arrondi, voir coarsePlace) : requis pour le
+   * rappel d'avant-chkia, `null` quand il n'est pas demandé — la position
+   * n'est alors pas envoyée du tout.
+   */
+  place: ReminderPlace | null;
+}
 
 /** Résultat de la Cloud Function `sendTestNotification` (functions/src/testNotification.ts). */
 export interface TestNotificationResult {
@@ -47,11 +65,11 @@ class PushService {
   /**
    * Active les rappels : permission système (Android 13+ et iOS affichent le
    * prompt), token FCM, puis enregistrement dans les préférences utilisateur.
-   * `locale` fige la langue des notifications ; `hour`/`minute` le moment
-   * d'envoi (heure de Paris, minutes par pas de 5 — cadence de la Cloud
-   * Function dailyReadingReminder).
+   * `locale` fige la langue des notifications ; `settings` dit quels rappels
+   * envoyer — l'heure fixe (heure de Paris, minutes par pas de 5 — cadence de
+   * la Cloud Function dailyReadingReminder) et/ou le dernier appel d'avant-chkia.
    */
-  async enable(userId: string, locale: string, hour: number, minute: number): Promise<void> {
+  async enable(userId: string, locale: string, settings: ReminderSettings): Promise<void> {
     const permission = await FirebaseMessaging.requestPermissions();
     if (permission.receive !== "granted") {
       throw new Error("PERMISSION_DENIED");
@@ -62,28 +80,37 @@ class PushService {
       {
         fcmTokens: arrayUnion(token),
         pushReminderEnabled: true,
-        pushReminderHour: hour,
-        pushReminderMinute: minute,
+        pushReminderDailyEnabled: settings.daily,
+        pushReminderHour: settings.hour,
+        pushReminderMinute: settings.minute,
+        pushSunsetReminderEnabled: settings.sunset,
+        // Rappel d'avant-chkia coupé : le lieu mémorisé est effacé plutôt que
+        // laissé à traîner dans le document.
+        pushReminderPlace: settings.sunset ? settings.place : null,
         pushLocale: locale,
       },
       { merge: true },
     );
   }
 
-  /** Coupe les rappels et retire le token de cet appareil. */
+  /**
+   * Coupe les rappels et retire le token de cet appareil. Le lieu de calcul de
+   * la chkia part avec eux : plus de rappel, plus de raison de le conserver.
+   */
   async disable(userId: string): Promise<void> {
+    const off = { pushReminderEnabled: false, pushReminderPlace: null };
     try {
       const { token } = await FirebaseMessaging.getToken();
       await setDoc(
         doc(db, "userPreferences", userId),
-        { fcmTokens: arrayRemove(token), pushReminderEnabled: false },
+        { fcmTokens: arrayRemove(token), ...off },
         { merge: true },
       );
     } catch {
       // Token irrécupérable (permission retirée depuis les réglages système) :
       // on coupe quand même le rappel ; le token mort sera purgé par la
       // Cloud Function au premier envoi en échec.
-      await setDoc(doc(db, "userPreferences", userId), { pushReminderEnabled: false }, { merge: true });
+      await setDoc(doc(db, "userPreferences", userId), off, { merge: true });
     }
     await FirebaseMessaging.deleteToken().catch(() => {});
   }

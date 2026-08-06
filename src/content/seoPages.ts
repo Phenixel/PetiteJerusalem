@@ -521,9 +521,9 @@ const PRIVACY_FR: LegalStrings = {
       html: `<ul>
         <li><strong>Si vous créez un compte</strong> : adresse email et nom affiché, fournis par vous ou par Google/Apple lors de la connexion.</li>
         <li><strong>Préférences et progression</strong> : thème, polices choisies, liste et progression de vos lectures quotidiennes.</li>
-        <li><strong>Notifications</strong> : si vous activez le rappel de lecture quotidien, un identifiant technique (jeton) de votre appareil, l'heure choisie et la langue de la notification.</li>
+        <li><strong>Notifications</strong> : si vous activez les rappels de lecture, un identifiant technique (jeton) de votre appareil, les rappels choisis (heure fixe, dernier appel avant la chkia) et la langue de la notification. Le rappel d'avant-chkia enregistre en plus votre position arrondie au dixième de degré (environ 11 km) et votre fuseau horaire : la chkia doit être calculée pendant que votre téléphone dort. Ils sont effacés dès que ce rappel est désactivé.</li>
         <li><strong>Partage de lecture</strong> : si vous créez ou rejoignez une session partagée (Talmud, Tehilim…), le nom que vous indiquez (et votre email si vous participez sans créer de compte) est visible par toute personne disposant du lien de la session.</li>
-        <li><strong>Horaires (zmanim)</strong> : si vous demandez les horaires de votre position, vos coordonnées sont enregistrées dans le stockage local de votre appareil pour le calcul, qui se fait entièrement hors ligne. Elles ne sont transmises à personne, et le bouton « Revenir à Paris » les efface.</li>
+        <li><strong>Horaires (zmanim)</strong> : si vous demandez les horaires de votre position, vos coordonnées sont enregistrées dans le stockage local de votre appareil pour le calcul, qui se fait entièrement hors ligne. Elles ne quittent l'appareil que si vous activez le rappel d'avant-chkia, et arrondies (voir ci-dessus) ; le bouton « Revenir à Paris » les efface.</li>
       </ul>
       <p>Nous ne collectons aucune donnée à des fins publicitaires et n'utilisons aucun traceur publicitaire.</p>`,
     },
@@ -541,7 +541,7 @@ const PRIVACY_FR: LegalStrings = {
       html: `<ul>
         <li>vous authentifier et sécuriser votre compte ;</li>
         <li>personnaliser votre expérience de lecture (thème, police, progression) ;</li>
-        <li>vous envoyer, si vous l'activez, un rappel quotidien de lecture ;</li>
+        <li>vous envoyer, si vous les activez, vos rappels de lecture ;</li>
         <li>faire fonctionner le partage de lecture entre participants.</li>
       </ul>`,
     },
@@ -598,9 +598,9 @@ const PRIVACY_EN: LegalStrings = {
       html: `<ul>
         <li><strong>If you create an account</strong>: your email address and display name, provided by you or by Google/Apple when you sign in.</li>
         <li><strong>Preferences and progress</strong>: theme, chosen fonts, your daily reading list and progress.</li>
-        <li><strong>Notifications</strong>: if you enable the daily reading reminder, a technical device token, the chosen time, and the notification language.</li>
+        <li><strong>Notifications</strong>: if you enable the reading reminders, a technical device token, the reminders you chose (set time, last call before shkia), and the notification language. The before-shkia reminder additionally stores your location rounded to a tenth of a degree (about 11 km) and your time zone: shkia has to be computed while your phone sleeps. Both are erased as soon as that reminder is turned off.</li>
         <li><strong>Shared reading</strong>: if you create or join a shared session (Talmud, Tehilim…), the name you provide (and your email if you take part without an account) is visible to anyone with the session link.</li>
-        <li><strong>Zmanim</strong>: if you ask for the times of your location, your coordinates are saved in your device's local storage for the computation, which happens entirely offline. They are never sent to anyone, and the “Back to Paris” button erases them.</li>
+        <li><strong>Zmanim</strong>: if you ask for the times of your location, your coordinates are saved in your device's local storage for the computation, which happens entirely offline. They only leave the device if you enable the before-shkia reminder, and rounded (see above); the “Back to Paris” button erases them.</li>
       </ul>
       <p>We do not collect any data for advertising purposes and do not use any ad trackers.</p>`,
     },
@@ -618,7 +618,7 @@ const PRIVACY_EN: LegalStrings = {
       html: `<ul>
         <li>to authenticate you and secure your account;</li>
         <li>to personalize your reading experience (theme, font, progress);</li>
-        <li>to send you a daily reading reminder, if you enable it;</li>
+        <li>to send you your reading reminders, if you enable them;</li>
         <li>to power shared reading between participants.</li>
       </ul>`,
     },
@@ -673,9 +673,9 @@ const PRIVACY_HE: LegalStrings = {
       html: `<ul>
         <li><strong>אם אתם יוצרים חשבון</strong>: כתובת האימייל והשם המוצג שלכם, שסופקו על ידכם או על ידי Google/Apple בעת ההתחברות.</li>
         <li><strong>העדפות והתקדמות</strong>: ערכת נושא, גופנים שנבחרו, רשימת הקריאה היומית וההתקדמות בה.</li>
-        <li><strong>התראות</strong>: אם תפעילו את תזכורת הקריאה היומית, אסימון מכשיר טכני, השעה שנבחרה ושפת ההתראה.</li>
+        <li><strong>התראות</strong>: אם תפעילו את תזכורות הקריאה, אסימון מכשיר טכני, התזכורות שבחרתם (שעה קבועה, קריאה אחרונה לפני השקיעה) ושפת ההתראה. תזכורת טרום-השקיעה שומרת בנוסף את מיקומכם מעוגל לעשירית מעלה (כ-11 ק״מ) ואת אזור הזמן שלכם: את השקיעה יש לחשב בזמן שהטלפון שלכם ישן. הם נמחקים ברגע שתזכורת זו מכובה.</li>
         <li><strong>שיתוף קריאה</strong>: אם תיצרו או תצטרפו לפגישת קריאה משותפת (תלמוד, תהילים...), השם שתמסרו (והאימייל שלכם אם אתם משתתפים ללא חשבון) גלוי לכל מי שיש לו את קישור הפגישה.</li>
-        <li><strong>זמני היום</strong>: אם תבקשו את הזמנים למיקומכם, הקואורדינטות נשמרות באחסון המקומי של המכשיר לצורך החישוב, המתבצע כולו ללא חיבור לאינטרנט. הן אינן נשלחות לאיש, והכפתור «חזרה לפריז» מוחק אותן.</li>
+        <li><strong>זמני היום</strong>: אם תבקשו את הזמנים למיקומכם, הקואורדינטות נשמרות באחסון המקומי של המכשיר לצורך החישוב, המתבצע כולו ללא חיבור לאינטרנט. הן עוזבות את המכשיר רק אם תפעילו את תזכורת טרום-השקיעה, ומעוגלות (ראו למעלה); הכפתור «חזרה לפריז» מוחק אותן.</li>
       </ul>
       <p>איננו אוספים נתונים לצרכי פרסום ואיננו משתמשים בעוקבים פרסומיים.</p>`,
     },
@@ -693,7 +693,7 @@ const PRIVACY_HE: LegalStrings = {
       html: `<ul>
         <li>לאמת אתכם ולאבטח את חשבונכם;</li>
         <li>להתאים אישית את חוויית הקריאה שלכם (ערכת נושא, גופן, התקדמות);</li>
-        <li>לשלוח לכם תזכורת קריאה יומית, אם תפעילו זאת;</li>
+        <li>לשלוח לכם את תזכורות הקריאה שלכם, אם תפעילו אותן;</li>
         <li>להפעיל את שיתוף הקריאה בין המשתתפים.</li>
       </ul>`,
     },
@@ -751,7 +751,7 @@ const ABOUT_FR: LegalStrings = {
         <li><strong>Une bibliothèque complète</strong> : Tehilim, Michna, Talmud et Tanakh, en lecture libre et gratuite, avec suivi de progression.</li>
         <li><strong>Le partage de lecture</strong> : créez une session collective (finir le Chass, réciter les Tehilim à plusieurs…), partagez le lien, et chacun réserve sa part ; la progression du groupe est suivie en temps réel.</li>
         <li><strong>La lecture hors ligne</strong> : téléchargez les textes pour étudier sans connexion.</li>
-        <li><strong>Un rappel quotidien</strong> : recevez chaque jour une notification pour ne pas interrompre votre lecture.</li>
+        <li><strong>Des rappels de lecture</strong> : une notification à l'heure de votre choix, et un dernier appel avant la chkia s'il vous reste des textes à lire.</li>
         <li><strong>Des chiourim</strong> : des cours audio pour approfondir l'étude.</li>
         <li><strong>Trois langues</strong> : l'interface est disponible en français, en anglais et en hébreu.</li>
       </ul>`,
@@ -788,7 +788,7 @@ const ABOUT_EN: LegalStrings = {
         <li><strong>A complete library</strong>: Tehilim, Mishna, Talmud and Tanakh, free to read, with progress tracking.</li>
         <li><strong>Shared reading</strong>: create a collective session (finish Shas, recite Tehilim together…), share the link, and everyone reserves their part; the group's progress is tracked in real time.</li>
         <li><strong>Offline reading</strong>: download the texts to study without a connection.</li>
-        <li><strong>A daily reminder</strong>: get a daily notification so you never break your reading streak.</li>
+        <li><strong>Reading reminders</strong>: a notification at the time you choose, plus a last call before shkia if you still have texts to read.</li>
         <li><strong>Audio classes (chiourim)</strong>: recorded classes to deepen your study.</li>
         <li><strong>Three languages</strong>: the interface is available in French, English and Hebrew.</li>
       </ul>`,
