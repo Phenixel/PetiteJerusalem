@@ -10,10 +10,18 @@ import { sessionService } from "../../services/sessionService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useReadingSize } from "../../composables/useReadingSize";
+import { useZmanimLocation } from "../../composables/useZmanimLocation";
+import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
+import {
+  coarsePlace,
+  formatZmanTime,
+  getSunset,
+  SUNSET_REMINDER_OFFSET_MINUTES,
+} from "../../services/zmanimService";
 import { useToast } from "../../composables/useToast";
 import { analyticsService } from "../../services/analyticsService";
 import DailyReadingItem from "./DailyReadingItem.vue";
-import ReminderTimeModal from "./ReminderTimeModal.vue";
+import ReminderSettingsModal from "./ReminderSettingsModal.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import { anchorToElement } from "../../composables/scrollAnchor";
 import {
@@ -84,12 +92,25 @@ function setArticleEl(id: string, el: unknown) {
   else articleEls.delete(id);
 }
 
-// --- Rappel push (app native uniquement) : la cloche de l'en-tête. ---
+// --- Rappels push (app native uniquement) : la cloche de l'en-tête. ---
 const reminderEnabled = ref(false);
+// Rappel à heure fixe : vrai par défaut, c'était le seul rappel avant le
+// dernier appel d'avant-chkia (voir pushReminderDailyEnabled).
+const reminderDaily = ref(true);
 const reminderHour = ref(18);
 const reminderMinute = ref(0);
+const reminderSunset = ref(false);
 const reminderBusy = ref(false);
 const showReminderModal = ref(false);
+
+// Lieu des horaires (Paris par défaut, une ville ou la position de l'appareil) :
+// c'est lui qui donne la chkia du rappel « dernier appel ».
+const { place: zmanimPlace } = useZmanimLocation();
+const zmanimPlaceLabel = useZmanimPlaceLabel(zmanimPlace);
+const sunsetToday = computed(() => {
+  const sunset = getSunset(zmanimPlace.value);
+  return sunset ? formatZmanTime(sunset, zmanimPlace.value.tzid, locale.value) : null;
+});
 
 const selectedEntries = computed(
   () => selectedIds.value.map((id) => byId.get(id)).filter(Boolean) as TextStudyJsonEntry[],
@@ -260,8 +281,10 @@ onMounted(async () => {
     );
 
     reminderEnabled.value = prefs.pushReminderEnabled === true;
+    reminderDaily.value = prefs.pushReminderDailyEnabled !== false;
     reminderHour.value = prefs.pushReminderHour ?? 18;
     reminderMinute.value = prefs.pushReminderMinute ?? 0;
+    reminderSunset.value = prefs.pushSunsetReminderEnabled === true;
 
     // App native : garantit en tâche de fond que la lecture du jour est
     // disponible hors ligne (no-op sur le web).
@@ -456,31 +479,70 @@ const progressPct = computed(() =>
   totalCount.value === 0 ? 0 : Math.round((completedCount.value / totalCount.value) * 100),
 );
 
-// --- Rappel push : cloche inactive → modal horloge ; cloche active → coupe le rappel. ---
+/** Ce que la modale des réglages renvoie une fois validée. */
+interface ReminderChoice {
+  enabled: boolean;
+  daily: boolean;
+  hour: number;
+  minute: number;
+  sunset: boolean;
+}
+
+// La cloche ouvre toujours les réglages : c'est là qu'on active comme qu'on
+// coupe. Auparavant un second appui coupait les rappels sans un mot, et sans
+// jamais laisser voir les options.
 function onBellClick() {
   if (reminderBusy.value) return;
-  if (reminderEnabled.value) {
-    void disableReminder();
-  } else {
-    showReminderModal.value = true;
-  }
+  showReminderModal.value = true;
 }
 
 function formatReminderTime(hour: number, minute: number): string {
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
-async function enableReminder(time: { hour: number; minute: number }) {
+/** Résumé des rappels retenus, pour le toast de confirmation. */
+function reminderSummary(choice: ReminderChoice): string {
+  const parts: string[] = [];
+  if (choice.daily) {
+    parts.push(t("notifications.summaryDaily", { time: formatReminderTime(choice.hour, choice.minute) }));
+  }
+  if (choice.sunset) {
+    parts.push(t("notifications.summarySunset", { minutes: SUNSET_REMINDER_OFFSET_MINUTES }));
+  }
+  return parts.join(t("notifications.summaryJoin"));
+}
+
+function saveReminder(choice: ReminderChoice) {
+  if (!choice.enabled) {
+    void disableReminder();
+    return;
+  }
+  void enableReminder(choice);
+}
+
+async function enableReminder(choice: ReminderChoice) {
   reminderBusy.value = true;
   try {
-    await pushService.enable(props.userId, String(locale.value), time.hour, time.minute);
+    await pushService.enable(props.userId, String(locale.value), {
+      daily: choice.daily,
+      hour: choice.hour,
+      minute: choice.minute,
+      sunset: choice.sunset,
+      // La position ne quitte l'appareil que pour ce rappel-là, et arrondie.
+      place: choice.sunset ? coarsePlace(zmanimPlace.value) : null,
+    });
     reminderEnabled.value = true;
-    reminderHour.value = time.hour;
-    reminderMinute.value = time.minute;
-    analyticsService.capture("reminder_enabled", { hour: time.hour, minute: time.minute });
-    toast.success(
-      t("notifications.enabledToast", { time: formatReminderTime(time.hour, time.minute) }),
-    );
+    reminderDaily.value = choice.daily;
+    reminderHour.value = choice.hour;
+    reminderMinute.value = choice.minute;
+    reminderSunset.value = choice.sunset;
+    analyticsService.capture("reminder_enabled", {
+      hour: choice.hour,
+      minute: choice.minute,
+      daily: choice.daily,
+      sunset: choice.sunset,
+    });
+    toast.success(t("notifications.enabledToast", { reminders: reminderSummary(choice) }));
   } catch (e: unknown) {
     if (e instanceof Error && e.message === "PERMISSION_DENIED") {
       // Friction push : l'utilisateur voulait le rappel mais l'OS a dit non.
@@ -560,7 +622,7 @@ function formatBookName(livre: string): string {
       </div>
 
       <div class="flex items-center gap-2 flex-shrink-0">
-        <!-- App native : la cloche active/coupe le rappel push quotidien. -->
+        <!-- App native : la cloche ouvre les réglages des rappels push. -->
         <button
           v-if="isNativeApp"
           @click="onBellClick"
@@ -572,9 +634,9 @@ function formatBookName(livre: string): string {
               : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',
           ]"
           :aria-label="
-            reminderEnabled ? t('notifications.disableAria') : t('notifications.enableAria')
+            reminderEnabled ? t('notifications.settingsAriaOn') : t('notifications.settingsAriaOff')
           "
-          :aria-pressed="reminderEnabled"
+          aria-haspopup="dialog"
         >
           <AppIcon v-if="reminderBusy" name="spinner" :size="20" class="animate-spin" />
           <AppIcon v-else name="bell" :size="20" />
@@ -591,11 +653,17 @@ function formatBookName(livre: string): string {
       </div>
     </div>
 
-    <ReminderTimeModal
+    <ReminderSettingsModal
       v-model:show="showReminderModal"
+      :enabled="reminderEnabled"
+      :daily="reminderDaily"
       :hour="reminderHour"
       :minute="reminderMinute"
-      @confirm="enableReminder"
+      :sunset="reminderSunset"
+      :sunset-offset="SUNSET_REMINDER_OFFSET_MINUTES"
+      :sunset-time="sunsetToday"
+      :place-label="zmanimPlaceLabel"
+      @save="saveReminder"
     />
 
     <!-- Loading -->

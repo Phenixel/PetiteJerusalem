@@ -116,6 +116,16 @@ Implémentées côté client (`src/services/pushService.ts`,
 être uploadée dans la console Firebase et la capability Push Notifications
 ajoutée dans Xcode.
 
+Deux rappels, réglés depuis la cloche de la page **Lecture du jour** et
+envoyés tant que la lecture du jour n'est pas terminée : à l'heure fixe
+choisie, et 20 minutes avant la chkia (`pushSunsetReminderEnabled`). Le second
+a besoin d'un lieu, la Cloud Function ne pouvant pas interroger un téléphone
+endormi : `pushReminderPlace` reçoit la position arrondie au dixième de degré
+(voir `coarsePlace`) et le fuseau, effacés dès que le rappel est coupé. La
+chkia est recalculée côté serveur dans `functions/src/sunsetReminder.ts` —
+`@hebcal/core`, qui la donne dans l'application, est publié en ESM seul quand
+`functions/` compile en CommonJS.
+
 ## Géolocalisation (horaires du jour)
 
 La page **Horaires** calcule les zmanim pour la position de l'appareil quand

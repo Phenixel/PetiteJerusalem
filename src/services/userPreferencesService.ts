@@ -1,4 +1,5 @@
 import type { Bookmark, ReadingPosition } from "./readingProgressService";
+import type { ReminderPlace } from "./zmanimService";
 
 // Ce module est chargé dès le démarrage (useTheme et useFonts, montés par
 // App.vue, ainsi que la home). Firestore y est donc importé DYNAMIQUEMENT :
@@ -48,12 +49,26 @@ export interface UserPreferences {
   dailyReadingProgress: DailyReadingProgress;
   /** FCM tokens of the user's devices (native app), read by the reminder Cloud Function. */
   fcmTokens: string[];
-  /** Whether the daily reading push reminder is on (native app). */
+  /** Interrupteur général des rappels de lecture (app native). */
   pushReminderEnabled: boolean;
+  /**
+   * Rappel à heure fixe. Indépendant du rappel d'avant-chkia : les deux vivent
+   * sous `pushReminderEnabled`. Absent des profils antérieurs à l'ajout du
+   * rappel d'avant-chkia, où l'heure fixe était le seul rappel — d'où le
+   * défaut à vrai, ici comme dans la Cloud Function.
+   */
+  pushReminderDailyEnabled: boolean;
   /** Hour of day (0-23, Paris time) the reminder is sent at. */
   pushReminderHour: number;
   /** Minute of the hour (0-55, 5-minute steps) the reminder is sent at. */
   pushReminderMinute: number;
+  /** Rappel « dernier appel » 20 minutes avant la chkia. */
+  pushSunsetReminderEnabled: boolean;
+  /**
+   * Lieu (arrondi) du calcul de la chkia, écrit seulement quand le rappel
+   * d'avant-chkia est actif — voir coarsePlace dans zmanimService.
+   */
+  pushReminderPlace: ReminderPlace | null;
   /** Locale the reminder notifications are sent in (fr/en/he). */
   pushLocale: string;
   /** Slugs des chiourim déjà ouverts par l'utilisateur (marqueur « Vu »). */
@@ -79,8 +94,11 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   dailyReadingProgress: { date: "", completedIds: [] },
   fcmTokens: [],
   pushReminderEnabled: false,
+  pushReminderDailyEnabled: true,
   pushReminderHour: 18,
   pushReminderMinute: 0,
+  pushSunsetReminderEnabled: false,
+  pushReminderPlace: null,
   pushLocale: "fr",
   viewedChiourim: [],
   readingPositions: {},

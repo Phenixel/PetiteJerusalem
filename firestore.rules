@@ -132,7 +132,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && request.auth.uid == userId;
       allow create, update: if isAuthenticated()
         && request.auth.uid == userId
-        && request.resource.data.size() <= 16
+        && request.resource.data.size() <= 20
         && (!('theme' in request.resource.data) || (request.resource.data.theme is string && request.resource.data.theme.size() <= 20))
         && (!('fontLatin' in request.resource.data) || (request.resource.data.fontLatin is string && request.resource.data.fontLatin.size() <= 20))
         && (!('fontHebrew' in request.resource.data) || (request.resource.data.fontHebrew is string && request.resource.data.fontHebrew.size() <= 20))
@@ -140,13 +140,20 @@ service cloud.firestore {
         // Lectures du moment (paracha de la semaine, cycles Tehilim).
         && (!('dailyReadingOptions' in request.resource.data) || (request.resource.data.dailyReadingOptions is list && request.resource.data.dailyReadingOptions.size() <= 10))
         && (!('dailyReadingProgress' in request.resource.data) || request.resource.data.dailyReadingProgress is map)
-        // Notifications push (app native) : tokens FCM des appareils, rappel
+        // Notifications push (app native) : tokens FCM des appareils, rappels
         // on/off, langue des notifications. 20 tokens max — les tokens morts
         // sont purgés par la Cloud Function dailyReadingReminder quand un
         // envoi échoue.
         && (!('fcmTokens' in request.resource.data) || (request.resource.data.fcmTokens is list && request.resource.data.fcmTokens.size() <= 20))
         && (!('pushReminderEnabled' in request.resource.data) || request.resource.data.pushReminderEnabled is bool)
+        && (!('pushReminderDailyEnabled' in request.resource.data) || request.resource.data.pushReminderDailyEnabled is bool)
         && (!('pushReminderHour' in request.resource.data) || (request.resource.data.pushReminderHour is int && request.resource.data.pushReminderHour >= 0 && request.resource.data.pushReminderHour <= 23))
+        && (!('pushReminderMinute' in request.resource.data) || (request.resource.data.pushReminderMinute is int && request.resource.data.pushReminderMinute >= 0 && request.resource.data.pushReminderMinute <= 59))
+        // Rappel « dernier appel » avant la chkia : son lieu de calcul (latitude,
+        // longitude, fuseau — arrondi par le client) est effacé, donc null, dès
+        // que le rappel est coupé.
+        && (!('pushSunsetReminderEnabled' in request.resource.data) || request.resource.data.pushSunsetReminderEnabled is bool)
+        && (!('pushReminderPlace' in request.resource.data) || request.resource.data.pushReminderPlace == null || (request.resource.data.pushReminderPlace is map && request.resource.data.pushReminderPlace.size() <= 3))
         && (!('pushLocale' in request.resource.data) || (request.resource.data.pushLocale is string && request.resource.data.pushLocale.size() <= 5))
         // Chiourim déjà vus (slugs) : marqueur « Vu » des utilisateurs connectés.
         && (!('viewedChiourim' in request.resource.data) || (request.resource.data.viewedChiourim is list && request.resource.data.viewedChiourim.size() <= 1000))

@@ -206,6 +206,50 @@ export function nextZman(times: ZmanTime[], now: Date = new Date()): ZmanTime | 
   return times.find((zman) => zman.date.getTime() > now.getTime()) ?? null;
 }
 
+/** La chkia (coucher du soleil) d'un jour civil — null aux latitudes extrêmes. */
+export function getSunset(place: ZmanimPlace, day: Date = new Date()): Date | null {
+  const sunset = new Zmanim(geoLocationOf(place), dayInPlace(place, day), false).sunset();
+  return isUsable(sunset) ? sunset : null;
+}
+
+/**
+ * Combien de minutes avant la chkia part le rappel « dernier appel ».
+ * Recopié dans functions/src/sunsetReminder.ts, qui ne peut pas importer src/.
+ */
+export const SUNSET_REMINDER_OFFSET_MINUTES = 20;
+
+/** L'instant du rappel d'avant-chkia, pour le jour civil demandé. */
+export function sunsetReminderAt(place: ZmanimPlace, day: Date = new Date()): Date | null {
+  const sunset = getSunset(place, day);
+  return sunset ? new Date(sunset.getTime() - SUNSET_REMINDER_OFFSET_MINUTES * 60_000) : null;
+}
+
+/** Le strict nécessaire au calcul de la chkia côté serveur. */
+export interface ReminderPlace {
+  latitude: number;
+  longitude: number;
+  /** Fuseau IANA : sert à savoir de quel jour civil la chkia est calculée. */
+  tzid: string;
+}
+
+/**
+ * Le lieu tel qu'il est confié au serveur pour le rappel d'avant-chkia.
+ *
+ * C'est la seule chose que l'application envoie de la position de l'appareil,
+ * et seulement si l'utilisateur active ce rappel : la Cloud Function tourne
+ * quand le téléphone dort, elle ne peut pas demander sa position. On l'arrondit
+ * donc au dixième de degré (~11 km) — de quoi ne pas transmettre une position
+ * précise, sans rien changer à l'heure obtenue : 0,1° de longitude déplace la
+ * chkia de 24 secondes, quand le rappel part par créneaux de 5 minutes.
+ */
+export function coarsePlace(place: ZmanimPlace): ReminderPlace {
+  return {
+    latitude: Math.round(place.latitude * 10) / 10,
+    longitude: Math.round(place.longitude * 10) / 10,
+    tzid: place.tzid,
+  };
+}
+
 export interface ShabbatTimes {
   /** Vendredi, 18 minutes avant le coucher du soleil. */
   candleLighting: Date;
