@@ -70,7 +70,7 @@ const fr = {
   home: {
     heroTitle: "Étudier et partager la Torah, à plusieurs",
     heroDescription:
-      "Répartissez un texte entre plusieurs personnes pour le terminer ensemble : finir le Chass, lire les Tehilim à plusieurs, suivre la progression de votre limoud. Gratuit, en français, en anglais et en hébreu.",
+      "Répartissez un texte entre plusieurs personnes pour le terminer ensemble : finir le Chass, lire les Tehilim à plusieurs, suivre la progression de votre limoud. Gratuit, en français, en anglais et en hébreu.",
     features: {
       shareReading: {
         title: "Partage de Lectures",
@@ -92,7 +92,7 @@ const fr = {
       subtitle: "Voici où vous en êtes aujourd'hui.",
       readingEmpty: "Composez la liste des textes que vous lisez chaque jour.",
       readingSetupCta: "Choisir mes textes",
-      resumeCta: "Reprendre ma lecture : {label}",
+      resumeCta: "Reprendre ma lecture : {label}",
       resumeDismiss: "Ne plus proposer cette lecture",
       sessionsTitle: "Mes sessions",
     },
@@ -149,7 +149,7 @@ const fr = {
     sessionUpdatedSuccess: "Session mise à jour avec succès",
     sessionUpdateError: "Erreur lors de la mise à jour de la session",
     endSessionConfirm:
-      "Êtes-vous sûr de vouloir terminer cette session ? Cette action est irréversible.",
+      "Êtes-vous sûr de vouloir terminer cette session ? Cette action est irréversible.",
     sessionEndedSuccess: "Session terminée avec succès",
     sessionEndError: "Erreur lors de la fin de session",
     reservationUpdateError: "Erreur lors de la mise à jour de la réservation",
@@ -200,7 +200,7 @@ const fr = {
     emptyDescription:
       "Ajoutez les psaumes ou passages que vous lisez quotidiennement pour les retrouver regroupés ici.",
     progress: "{done} sur {total} lus aujourd'hui",
-    allReadTitle: "Bravo, tout est lu pour aujourd'hui !",
+    allReadTitle: "Bravo, tout est lu pour aujourd'hui !",
     allReadDescription: "Revenez demain pour votre prochaine lecture.",
     markRead: "Marquer comme lu",
     readToday: "Lu aujourd'hui",
@@ -210,13 +210,13 @@ const fr = {
     options: {
       title: "Lectures du moment",
       description:
-        "Des lectures qui suivent le calendrier : elles s'affichent en tête de votre liste et se mettent à jour toutes seules.",
+        "Des lectures qui suivent le calendrier : elles s'affichent en tête de votre liste et se mettent à jour toutes seules.",
       parashaTitle: "Chnei mikra (paracha de la semaine)",
       parashaDescription:
         "La paracha de la semaine, montée par montée, avec le Targoum Onkelos sous chaque verset.",
       tehilimDayTitle: "Tehilim du jour",
       tehilimDayDescription:
-        "Le cycle mensuel : les psaumes du jour du mois hébraïque, pour finir les Tehilim chaque mois.",
+        "Le cycle mensuel : les psaumes du jour du mois hébraïque, pour finir les Tehilim chaque mois.",
       parashaReading: "Paracha de la semaine",
       tehilimDayReading: "Tehilim du jour · {day} du mois",
       psalmsOne: "Tehilim {n}",
@@ -228,26 +228,26 @@ const fr = {
     saveError: "Enregistrement impossible. Réessayez.",
     offline: {
       banner:
-        "Hors connexion : vous lisez les textes téléchargés sur cet appareil. Vos lectures cochées sont gardées ici et synchronisées au retour du réseau ; la liste, elle, ne peut pas être modifiée d'ici là.",
-      readOnly: "Pas de connexion : votre liste ne peut pas être modifiée pour le moment.",
-      progressKept: "Sans connexion : votre lecture est cochée sur cet appareil et sera synchronisée.",
-      notDownloaded: "Ce texte n'est pas téléchargé sur cet appareil : il n'est pas lisible hors connexion.",
+        "Hors connexion : vous lisez les textes téléchargés sur cet appareil. Vos lectures cochées sont gardées ici et synchronisées au retour du réseau ; la liste, elle, ne peut pas être modifiée d'ici là.",
+      readOnly: "Pas de connexion : votre liste ne peut pas être modifiée pour le moment.",
+      progressKept: "Sans connexion : votre lecture est cochée sur cet appareil et sera synchronisée.",
+      notDownloaded: "Ce texte n'est pas téléchargé sur cet appareil : il n'est pas lisible hors connexion.",
       promptTitle: "Ce texte n'est pas téléchargé",
       promptMessage:
-        "{name} n'est pas encore sur cet appareil : sans connexion, il ne pourra pas être lu. Le télécharger maintenant ?",
+        "{name} n'est pas encore sur cet appareil : sans connexion, il ne pourra pas être lu. Le télécharger maintenant ?",
       promptLater: "Plus tard",
-      downloadDone: "Textes téléchargés : votre lecture est disponible hors connexion.",
+      downloadDone: "Textes téléchargés : votre lecture est disponible hors connexion.",
       missing:
-        "Un texte de votre lecture du jour n'est pas téléchargé : il ne sera pas lisible hors connexion. | {count} textes de votre lecture du jour ne sont pas téléchargés : ils ne seront pas lisibles hors connexion.",
+        "Un texte de votre lecture du jour n'est pas téléchargé : il ne sera pas lisible hors connexion. | {count} textes de votre lecture du jour ne sont pas téléchargés : ils ne seront pas lisibles hors connexion.",
     },
   },
   zmanim: {
     title: "Horaires du jour",
     navTitle: "Horaires",
     description:
-      "Horaires halakhiques calculés pour votre position, directement sur votre appareil : votre position n'est envoyée nulle part.",
+      "Horaires halakhiques calculés pour votre position, directement sur votre appareil : votre position n'est envoyée nulle part.",
     descriptionOffline:
-      "Horaires halakhiques calculés pour votre position, sur votre appareil : ils restent disponibles hors connexion, et votre position n'est envoyée nulle part.",
+      "Horaires halakhiques calculés pour votre position, sur votre appareil : ils restent disponibles hors connexion, et votre position n'est envoyée nulle part.",
     nextIn: "dans {duration}",
     durationHM: "{h} h {m}",
     durationM: "{m} min",
@@ -267,7 +267,7 @@ const fr = {
       refresh: "Actualiser ma position",
       chooseCity: "Choisir ma ville",
       searchCity: "Rechercher une ville…",
-      noCity: "Aucune ville ne correspond à « {query} ».",
+      noCity: "Aucune ville ne correspond à « {query} ».",
       reset: "Revenir à Paris",
       denied:
         "Position refusée. Les horaires restent calculés pour Paris — autorisez la localisation dans les réglages pour les vôtres.",
@@ -303,7 +303,7 @@ const fr = {
       chatzotNight: "'Hatsot de la nuit",
     },
     hints: {
-      alotHaShachar: "Aube : début du jour halakhique",
+      alotHaShachar: "Aube : début du jour halakhique",
       misheyakir: "Talit et téfilines",
       sunrise: "Lever du soleil",
       sofZmanShmaMGA: "Lecture du Chéma, opinion la plus tôt",
@@ -314,8 +314,8 @@ const fr = {
       minchaGedola: "Min'ha peut être dite à partir de là",
       minchaKetana: "Moment privilégié pour Min'ha",
       plagHaMincha: "Limite pour anticiper Arvit",
-      sunset: "Coucher du soleil : fin du jour",
-      tzeit: "Nuit : Arvit, fin de Chabbat et des jeûnes",
+      sunset: "Coucher du soleil : fin du jour",
+      tzeit: "Nuit : Arvit, fin de Chabbat et des jeûnes",
       chatzotNight: "Milieu de la nuit",
     },
   },
@@ -342,7 +342,7 @@ const fr = {
     deleteAccountWarning:
       "Cette action est irréversible. Toutes vos données seront définitivement supprimées.",
     deleteConfirmGoogle: "Pour confirmer, vous devrez vous ré-authentifier avec Google.",
-    deleteConfirmPassword: "Confirmez-vous vouloir supprimer définitivement votre compte ?",
+    deleteConfirmPassword: "Confirmez-vous vouloir supprimer définitivement votre compte ?",
     confirmWithGoogle: "Confirmer avec Google",
     confirmDeletion: "Confirmer la suppression",
     deleteMyAccount: "Supprimer mon compte",
@@ -357,14 +357,14 @@ const fr = {
   },
   shareReading: {
     title: "Partage de Lectures",
-    subtitle: "Répartissez un texte entre plusieurs personnes et étudiez ensemble : pour finir le Chass, lire les Tehilim à plusieurs ou avancer dans la Michna",
+    subtitle: "Répartissez un texte entre plusieurs personnes et étudiez ensemble : pour finir le Chass, lire les Tehilim à plusieurs ou avancer dans la Michna",
     createSession: "Créer une session",
     loadingSessions: "Chargement des sessions...",
     ongoingSessions: "Sessions en cours",
     archives: "Archives",
     noOngoingSessions: "Aucune session en cours pour le moment.",
     noSessions: "Aucune session existante",
-    createFirstSession: "Créez la première session de partage de lectures !",
+    createFirstSession: "Créez la première session de partage de lectures !",
     reservedPercent: "{percent}% réservé",
     sessionFull: "Complet",
     sessionAvailable: "Places disponibles",
@@ -387,13 +387,13 @@ const fr = {
       subtitle:
         "Répartissez un texte entre plusieurs personnes et terminez-le ensemble, en quatre étapes.",
       step1Title: "Créez une session",
-      step1Desc: "Donnez-lui un nom et une intention (par exemple « à la mémoire de… »).",
+      step1Desc: "Donnez-lui un nom et une intention (par exemple « à la mémoire de… »).",
       step2Title: "Choisissez le texte",
       step2Desc: "Talmud, Tehilim, Michna ou Tanakh, et les parties à inclure.",
       step3Title: "Partagez le lien",
       step3Desc: "Invitez votre communauté, votre famille ou vos amis, même sans compte.",
       step4Title: "Suivez la progression",
-      step4Desc: "Chacun réserve ses passages et les lit ; avancez ensemble jusqu'au siyoum.",
+      step4Desc: "Chacun réserve ses passages et les lit ; avancez ensemble jusqu'au siyoum.",
     },
   },
   newSession: {
@@ -411,7 +411,7 @@ const fr = {
     creating: "Création en cours...",
     create: "Créer la session",
     fillAllFields: "Veuillez remplir tous les champs",
-    createdSuccess: "Session créée avec succès !",
+    createdSuccess: "Session créée avec succès !",
     createError: "Erreur lors de la création de la session. Veuillez réessayer.",
     requireGuestEmail: "Exiger l'email des invités",
     requireGuestEmailHint:
@@ -419,8 +419,8 @@ const fr = {
   },
   detailSession: {
     loadingSession: "Chargement de la session...",
-    guestTitle: "Vous voulez réserver sans compte ?",
-    guestSubtitle: "C'est possible : renseignez simplement votre nom, puis choisissez vos textes.",
+    guestTitle: "Vous voulez réserver sans compte ?",
+    guestSubtitle: "C'est possible : renseignez simplement votre nom, puis choisissez vos textes.",
     guestSubtitleWithEmail:
       "Renseignez votre nom et votre email, puis choisissez vos textes.",
     searchPlaceholder: "Rechercher un texte, un livre ou un chapitre...",
@@ -431,16 +431,16 @@ const fr = {
     confirmReservation: "Confirmer la réservation",
     confirmAsGuest: "Finaliser en tant qu'invité",
     reserving: "Réservation...",
-    cancelReservationConfirm: "Voulez-vous annuler cette réservation ?",
+    cancelReservationConfirm: "Voulez-vous annuler cette réservation ?",
     canOnlyCancelOwn: "Vous ne pouvez annuler que vos propres réservations.",
     cancelError: "Erreur lors de l'annulation. Veuillez réessayer.",
     reservationError: "Erreur lors de la réservation. Veuillez réessayer.",
     updateError: "Erreur lors de la mise à jour de la réservation",
-    reservationsConfirmed: "Réservation confirmée ! | Réservations confirmées !",
+    reservationsConfirmed: "Réservation confirmée ! | Réservations confirmées !",
     manageSession: "Gérer la session",
     createYourOwnTitle: "À votre tour d'étudier ensemble",
     createYourOwnText:
-      "Cette session vous inspire ? Créez la vôtre en quelques clics : choisissez un texte (Talmud, Tehilim, Michna, Tanakh), répartissez-le et invitez votre communauté à le terminer avec vous.",
+      "Cette session vous inspire ? Créez la vôtre en quelques clics : choisissez un texte (Talmud, Tehilim, Michna, Tanakh), répartissez-le et invitez votre communauté à le terminer avec vous.",
     createYourOwnButton: "Créer ma session",
     instructions: {
       title: "Instructions",
@@ -473,7 +473,7 @@ const fr = {
     reservationUpdateError: "Erreur lors de la mise à jour de la réservation",
     reservationDeleteError: "Erreur lors de la suppression de la réservation",
     deleteReservationsConfirm:
-      "Supprimer cette réservation ? | Supprimer ces {count} réservations ?",
+      "Supprimer cette réservation ? | Supprimer ces {count} réservations ?",
     reservationsDeletedSuccess: "Réservation supprimée | {count} réservations supprimées",
     loading: "Chargement de la session...",
     backToSessions: "Retour à mes sessions",
@@ -492,7 +492,7 @@ const fr = {
       partiallyReserved: "Partiellement réservé",
     },
     reservationsCount: "{count} réservation(s)",
-    reservedBy: "Par : {name}",
+    reservedBy: "Par : {name}",
     fullText: "Texte complet",
     reserveCountTitle: "Réserver 1 texte | Réserver {count} textes",
     markCompleted: "Marquer comme terminé",
@@ -521,16 +521,16 @@ const fr = {
   shareModal: {
     title: "Partager cette session",
     copyLink: "Copier le lien",
-    linkCopied: "Lien copié dans le presse-papiers !",
+    linkCopied: "Lien copié dans le presse-papiers !",
     scanQR: "Ou scanner le QR code",
     scanQRDesc: "Scannez ce code pour ouvrir directement la page",
     qrError: "Erreur lors de la génération du QR code",
     inviteTehilim:
-      "Rejoignez la chaîne de Tehilim « {name} » 📖 Chacun lit quelques psaumes et l'on termine ensemble. Réservez les vôtres ici :",
+      "Rejoignez la chaîne de Tehilim « {name} » 📖 Chacun lit quelques psaumes et l'on termine ensemble. Réservez les vôtres ici :",
     inviteStudy:
-      "Rejoignez l'étude partagée « {name} » 📖 Réservez vos passages et étudions ensemble :",
+      "Rejoignez l'étude partagée « {name} » 📖 Réservez vos passages et étudions ensemble :",
     titleChiour: "Partager ce chiour",
-    inviteChiour: "Écoutez le chiour « {name} » 🎧 Un cours de Torah à découvrir sur Petite Jérusalem :",
+    inviteChiour: "Écoutez le chiour « {name} » 🎧 Un cours de Torah à découvrir sur Petite Jérusalem :",
   },
   batchSelection: {
     textsSelected: "{count} textes sélectionnés",
@@ -592,7 +592,7 @@ const fr = {
     noResults: "Aucun chiour ne correspond à votre recherche.",
     clearFilters: "Réinitialiser les filtres",
     noChiourim: "Aucun chiour disponible",
-    noChiourimDesc: "Les chiourim seront bientôt ajoutés. Revenez vite !",
+    noChiourimDesc: "Les chiourim seront bientôt ajoutés. Revenez vite !",
     listen: "Écouter",
   },
   detailChiour: {
@@ -619,10 +619,10 @@ const fr = {
     goToChiour: "Ouvrir la page du cours",
   },
   signupPrompt: {
-    reservationConfirmed: "Réservation confirmée !",
+    reservationConfirmed: "Réservation confirmée !",
     createSessionTitle: "Connectez-vous pour créer une session",
     createSessionSubtitle: "Inscrivez-vous ou connectez-vous pour lancer votre partage de lecture",
-    createSessionHaveAccount: "Vous avez déjà un compte ?",
+    createSessionHaveAccount: "Vous avez déjà un compte ?",
     subtitle: "Plus qu'un mot de passe pour profiter de toutes les fonctionnalités",
     benefits: {
       recover: "Retrouvez vos réservations passées et futures",
@@ -638,10 +638,10 @@ const fr = {
     guestHintLink: "Se connecter",
     tip: "Astuce",
     alreadyHaveAccount:
-      "Vous avez déjà un compte ? Vos réservations invité seront automatiquement récupérées.",
+      "Vous avez déjà un compte ? Vos réservations invité seront automatiquement récupérées.",
   },
   guestIdentity: {
-    title: "Merci ! Dernière étape",
+    title: "Merci ! Dernière étape",
     subtitle: "Indiquez votre nom pour valider vos {count} section(s) réservée(s).",
     subtitleWithEmail:
       "Indiquez votre nom et votre email pour valider vos {count} section(s) réservée(s).",
@@ -673,7 +673,7 @@ const fr = {
     hebrew: "Hébreu",
     reserve: "Réserver ce passage",
     cancel: "Annuler la réservation",
-    cancelConfirm: "Annuler cette réservation ?",
+    cancelConfirm: "Annuler cette réservation ?",
     markRead: "Marquer comme lu",
     unmarkRead: "Marquer comme non lu",
     read: "Lu",
@@ -682,7 +682,7 @@ const fr = {
     reservedBy: "Réservé par {name}.",
     readBy: "Lu par {name}.",
     someone: "quelqu'un",
-    reserveSuccess: "Passage réservé !",
+    reserveSuccess: "Passage réservé !",
     reserveError: "La réservation a échoué.",
     cancelError: "L'annulation a échoué.",
     updateError: "La mise à jour a échoué.",
@@ -707,15 +707,15 @@ const fr = {
     login: "Se connecter",
   },
   downloads: {
-    total: "Espace utilisé : {size}",
+    total: "Espace utilisé : {size}",
     downloadAll: "Tout télécharger",
     allDownloaded: "Tout est téléchargé",
     download: "Télécharger",
     delete: "Supprimer",
     deleteAll: "Tout supprimer",
     deleteAllCorpus: "Supprimer cette section",
-    deleteAllTitle: "Supprimer les téléchargements ?",
-    deleteAllCorpusTitle: "Supprimer les téléchargements de {corpus} ?",
+    deleteAllTitle: "Supprimer les téléchargements ?",
+    deleteAllCorpusTitle: "Supprimer les téléchargements de {corpus} ?",
     deleteAllExplain:
       "Le livre téléchargé sera retiré de cet appareil. Les textes restent lisibles en ligne, et retéléchargeables à tout moment. | Les {count} livres téléchargés seront retirés de cet appareil. Les textes restent lisibles en ligne, et retéléchargeables à tout moment.",
     deleteAllDone: "Téléchargements supprimés.",
@@ -748,7 +748,7 @@ const fr = {
     summaryDaily: "tous les jours à {time}",
     summarySunset: "{minutes} minutes avant la chkia",
     summaryJoin: ", et ",
-    enabledToast: "Rappels activés : {reminders}.",
+    enabledToast: "Rappels activés : {reminders}.",
     disabledToast: "Rappels désactivés.",
     permissionDenied:
       "Les notifications sont bloquées pour cette application. Autorisez-les dans les réglages du téléphone, puis réessayez.",
@@ -756,7 +756,7 @@ const fr = {
   },
   chneiMikra: {
     title: "Chnei mikra",
-    bannerParasha: "Paracha de la semaine : {parasha}",
+    bannerParasha: "Paracha de la semaine : {parasha}",
     pageDescription:
       "La paracha de la semaine, montée par montée, chaque verset suivi de son Targoum Onkelos.",
     shabbatOn: "Lue Chabbat {date}",
@@ -768,7 +768,7 @@ const fr = {
   },
   study: {
     title: "Bibliothèque",
-    subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud et Tanakh.",
+    subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud et Tanakh.",
     searchPlaceholder: "Rechercher un texte…",
     searchAllPlaceholder: "Rechercher dans tous les textes…",
     noResults: "Aucun texte ne correspond à votre recherche.",
@@ -783,7 +783,7 @@ const fr = {
     corpus: {
       tehilimDesc: "Les 150 psaumes, en hébreu et en phonétique, à lire seul ou à partager.",
       michnaDesc: "Les six sédarim de la Michna, traité par traité, chapitre par chapitre.",
-      talmudDesc: "La Guemara : les traités du Talmud Bavli, pour avancer daf après daf.",
+      talmudDesc: "La Guemara : les traités du Talmud Bavli, pour avancer daf après daf.",
       tanakhDesc: "La Torah paracha par paracha, les Neviim et les Ketouvim.",
       tehilimSearch: "Rechercher un tehilim…",
       michnaSearch: "Rechercher une michna…",
@@ -794,7 +794,7 @@ const fr = {
   studio: {
     title: "Studio auteurs",
     hello: "Bonjour {name}",
-    intro: "Ajoutez vos chiourim : ils seront relus puis publiés par l'administrateur.",
+    intro: "Ajoutez vos chiourim : ils seront relus puis publiés par l'administrateur.",
     invalidLink: "Ce lien n'est pas valide ou a été désactivé",
     invalidLinkHint: "Contactez l'administrateur de Petite Jérusalem pour obtenir un nouveau lien.",
     yourChiourim: "Vos chiourim",
@@ -813,12 +813,12 @@ const fr = {
       moveUp: "Monter",
       moveDown: "Descendre",
     },
-    empty: "Aucun chiour pour le moment. Ajoutez le premier !",
+    empty: "Aucun chiour pour le moment. Ajoutez le premier !",
     addChiour: "Ajouter un chiour",
     editChiour: "Modifier le chiour",
     draft: "En attente de publication",
     published: "Publié",
-    deleteConfirm: "Supprimer ce chiour ?",
+    deleteConfirm: "Supprimer ce chiour ?",
     deleted: "Chiour supprimé.",
     form: {
       title: "Titre",
@@ -840,9 +840,9 @@ const fr = {
       audioHint: "MP3, M4A, WAV ou OGG, 200 Mo maximum.",
       audioKeep: "L'audio actuel est conservé si vous ne choisissez pas de nouveau fichier.",
       publishedNotice:
-        "Ce chiour est publié : vous pouvez modifier la description, les catégories, la série et le numéro d'épisode. Pour le reste, contactez l'administrateur.",
+        "Ce chiour est publié : vous pouvez modifier la description, les catégories, la série et le numéro d'épisode. Pour le reste, contactez l'administrateur.",
       replaceAudio: "Remplacer l'audio",
-      uploading: "Envoi de l'audio : {percent}%",
+      uploading: "Envoi de l'audio : {percent}%",
       submit: "Envoyer le chiour",
       submitting: "Envoi en cours...",
       update: "Enregistrer les modifications",
@@ -850,7 +850,7 @@ const fr = {
       missingAudio: "Ajoutez un fichier audio.",
       notAudio: "Ce fichier n'est pas un fichier audio pris en charge.",
       tooBig: "Le fichier dépasse 200 Mo.",
-      success: "Chiour envoyé ! Il sera publié après validation.",
+      success: "Chiour envoyé ! Il sera publié après validation.",
       updateSuccess: "Modifications enregistrées.",
       error: "L'envoi a échoué. Vérifiez votre connexion puis réessayez.",
     },
@@ -866,7 +866,7 @@ const fr = {
     seeAll: "Voir toute la série",
     outOfSerie: "Autres chiourim",
     notFound: "Série introuvable.",
-    seoDescription: "Tous les épisodes de la série {serie} : cours et leçons de Torah à écouter.",
+    seoDescription: "Tous les épisodes de la série {serie} : cours et leçons de Torah à écouter.",
   },
   admin: {
     title: "Backoffice",
@@ -905,7 +905,7 @@ const fr = {
       noAuteur: "Aucun auteur",
       published: "Publié (visible dans l'application)",
       saved: "Chiour enregistré.",
-      deleteConfirm: "Supprimer définitivement ce chiour et son audio ?",
+      deleteConfirm: "Supprimer définitivement ce chiour et son audio ?",
       deleted: "Chiour supprimé.",
     },
     auteurs: {
@@ -915,7 +915,7 @@ const fr = {
       created: "Auteur créé.",
       alreadyExists: "Ce nom existe déjà.",
       linkReady: "Lien studio de {name}",
-      linkOnce: "Copiez ce lien et transmettez-le à l'auteur : il ne sera plus affiché ensuite.",
+      linkOnce: "Copiez ce lien et transmettez-le à l'auteur : il ne sera plus affiché ensuite.",
       copy: "Copier",
       linkCopied: "Lien copié.",
       empty: "Aucun auteur pour le moment.",
@@ -932,10 +932,10 @@ const fr = {
       linkInactive: "Aucun lien actif",
       regenerate: "Régénérer le lien",
       regenerateConfirm:
-        "Régénérer le lien ? L'ancien lien cessera de fonctionner immédiatement.",
+        "Régénérer le lien ? L'ancien lien cessera de fonctionner immédiatement.",
       regenerated: "Nouveau lien généré.",
       revoke: "Révoquer",
-      revokeConfirm: "Révoquer ce lien ? L'auteur ne pourra plus rien ajouter.",
+      revokeConfirm: "Révoquer ce lien ? L'auteur ne pourra plus rien ajouter.",
       revoked: "Lien révoqué.",
       seriesTitle: "Séries",
       seriePlaceholder: "Nom de la série",
@@ -943,21 +943,21 @@ const fr = {
       serieCreated: "Série créée.",
       serieCount: "{count} épisode(s)",
       serieDeleteConfirm:
-        "Supprimer la série « {name} » ? Ses chiourim resteront, sans série.",
+        "Supprimer la série « {name} » ? Ses chiourim resteront, sans série.",
       serieDeleted: "Série supprimée.",
       seriesEmpty: "Aucune série.",
       chiourimEmpty: "Aucun chiour pour cet auteur.",
       delete: "Supprimer l'auteur",
-      deleteConfirm: "Supprimer cet auteur et ses liens studio ?",
+      deleteConfirm: "Supprimer cet auteur et ses liens studio ?",
       deleted: "Auteur supprimé.",
       deleteHasChiourim:
-        "Impossible : des chiourim sont rattachés à cet auteur. Réattribuez-les d'abord.",
+        "Impossible : des chiourim sont rattachés à cet auteur. Réattribuez-les d'abord.",
     },
   },
 };
 
 type DeepStringify<T> = {
-  [K in keyof T]: T[K] extends string ? string : DeepStringify<T[K]>;
+  [K in keyof T]: T[K] extends string ? string : DeepStringify<T[K]>;
 };
 
 export type LocaleMessages = DeepStringify<typeof fr>;
