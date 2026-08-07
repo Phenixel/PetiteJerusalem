@@ -3,6 +3,7 @@ import { watch } from "vue";
 import { isNativeApp } from "../composables/useNativeApp";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import { i18n, loadLocaleMessages, type SupportedLocale } from "../i18n";
+import { localDayKey } from "./dateService";
 import { authService, type User } from "./authService";
 import { userPreferencesService, type UserPreferences } from "./userPreferencesService";
 import { buildDailyReadingWidgetPayload, buildZmanimWidgetPayload } from "./widgetPayloads";
@@ -64,7 +65,10 @@ class WidgetService {
   private pendingDaily: DailyWidgetPrefs | null = null;
 
   // Dernier état poussé, pour ne pas renvoyer un payload identique (chaque
-  // envoi fait recharger les widgets natifs, budgété côté iOS).
+  // envoi fait recharger les widgets natifs, budgété côté iOS). La clé des
+  // horaires porte leurs seules entrées (lieu, jour, langue) : tant qu'elle
+  // ne bouge pas, les ~100 calculs solaires ne sont même pas refaits.
+  private lastZmanimKey: string | null = null;
   private lastZmanimJson: string | null = null;
   private lastDailyJson: string | null = null;
 
@@ -120,13 +124,18 @@ class WidgetService {
       await loadLocaleMessages(locale as SupportedLocale);
       const t = i18n.global.t as (key: string, params?: Record<string, unknown>) => string;
 
-      // Horaires : recalculés seulement si quelque chose a bougé (lieu, jour,
-      // langue) — la comparaison porte sur le JSON final, stable par
-      // construction. Hors premier calcul du jour, ce bloc ne coûte rien.
+      // Horaires : recalculés seulement si une de leurs entrées a bougé —
+      // une coche de lecture, par exemple, ne les recalcule pas.
       const { place } = useZmanimLocation();
-      await nextIdle();
-      const zmanimJson = JSON.stringify(buildZmanimWidgetPayload(place.value, t, locale));
-      const zmanim = zmanimJson === this.lastZmanimJson ? undefined : zmanimJson;
+      const zmanimKey = `${locale}|${localDayKey()}|${JSON.stringify(place.value)}`;
+      let zmanim: string | undefined;
+      let freshZmanimKey: string | null = null;
+      if (zmanimKey !== this.lastZmanimKey) {
+        await nextIdle();
+        const json = JSON.stringify(buildZmanimWidgetPayload(place.value, t, locale));
+        freshZmanimKey = zmanimKey;
+        zmanim = json === this.lastZmanimJson ? undefined : json;
+      }
 
       // Lecture du jour : prefs fournies par la page si possible, Firestore
       // sinon. En cas d'échec de lecture (hors ligne), on n'écrase PAS le
@@ -147,8 +156,15 @@ class WidgetService {
       }
       if (daily === this.lastDailyJson) daily = undefined;
 
-      if (zmanim === undefined && daily === undefined) return;
+      if (zmanim === undefined && daily === undefined) {
+        // Rien de neuf à livrer : le calcul du jour peut quand même être acté.
+        if (freshZmanimKey) this.lastZmanimKey = freshZmanimKey;
+        return;
+      }
       await PjWidgets.setPayloads({ zmanim, daily });
+      // Mémorisé seulement après un envoi réussi : un échec (vieux binaire
+      // sans le plugin) laissera le prochain push tout retenter.
+      if (freshZmanimKey) this.lastZmanimKey = freshZmanimKey;
       if (zmanim !== undefined) this.lastZmanimJson = zmanim;
       if (daily !== undefined) this.lastDailyJson = daily;
     } catch {

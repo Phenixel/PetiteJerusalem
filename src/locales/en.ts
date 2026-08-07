@@ -230,6 +230,21 @@ const en: LocaleMessages = {
       empty: "Open the app to set up your reading list",
     },
     loadError: "Unable to load this text.",
+    saveError: "Could not save. Please try again.",
+    offline: {
+      banner:
+        "Offline: you are reading the texts downloaded on this device. What you tick off is kept here and synced when the network is back; your list, however, cannot be changed until then.",
+      readOnly: "No connection: your list cannot be changed right now.",
+      progressKept: "No connection: your reading is ticked off on this device and will be synced.",
+      notDownloaded: "This text is not downloaded on this device: it cannot be read offline.",
+      promptTitle: "This text is not downloaded",
+      promptMessage:
+        "{name} is not on this device yet: without a connection, it will not be readable. Download it now?",
+      promptLater: "Later",
+      downloadDone: "Texts downloaded: your reading is available offline.",
+      missing:
+        "One text of your daily reading is not downloaded: it will not be readable offline. | {count} texts of your daily reading are not downloaded: they will not be readable offline.",
+    },
   },
   zmanim: {
     title: "Today's times",
