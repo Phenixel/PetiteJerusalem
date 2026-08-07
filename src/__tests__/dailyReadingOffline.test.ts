@@ -106,6 +106,56 @@ describe("préférences de la lecture quotidienne hors connexion", () => {
     expect((await userPreferencesService.getPreferences("user-e")).dailyReadingIds).toEqual([5, 9]);
   });
 
+  it("garde sur l'appareil une lecture cochée hors connexion", async () => {
+    const { userPreferencesService } = await import("../services/userPreferencesService");
+    getDoc.mockResolvedValue(snapshot({ dailyReadingIds: [5, 12] }));
+    await userPreferencesService.getPreferences("user-g");
+
+    setOnline(false);
+    const result = await userPreferencesService.saveDailyProgress("user-g", {
+      date: "2026-08-07",
+      completedIds: [12],
+    });
+    expect(result).toBe("queued");
+    expect(setDoc).not.toHaveBeenCalled();
+    // La coche est visible tout de suite, y compris depuis l'accueil.
+    const offlinePrefs = await userPreferencesService.getPreferences("user-g");
+    expect(offlinePrefs.dailyReadingProgress.completedIds).toEqual([12]);
+  });
+
+  it("renvoie au serveur, fusionnée, la lecture cochée hors connexion", async () => {
+    const { userPreferencesService } = await import("../services/userPreferencesService");
+    getDoc.mockResolvedValue(snapshot({ dailyReadingIds: [5, 12] }));
+    await userPreferencesService.getPreferences("user-h");
+
+    setOnline(false);
+    await userPreferencesService.saveDailyProgress("user-h", {
+      date: "2026-08-07",
+      completedIds: [12],
+    });
+
+    // Retour du réseau : le serveur a coché un autre texte entre-temps.
+    setOnline(true);
+    setDoc.mockResolvedValue(undefined);
+    getDoc.mockResolvedValue(
+      snapshot({
+        dailyReadingIds: [5, 12],
+        dailyReadingProgress: { date: "2026-08-07", completedIds: [5] },
+      }),
+    );
+    const prefs = await userPreferencesService.getPreferences("user-h");
+    expect(prefs.dailyReadingProgress.completedIds).toEqual([5, 12]);
+    expect(setDoc).toHaveBeenCalledTimes(1);
+    expect(setDoc.mock.calls[0][1]).toEqual({
+      dailyReadingProgress: expect.objectContaining({ completedIds: [5, 12] }),
+    });
+
+    // Une fois envoyé, le suivi n'est plus en attente.
+    setDoc.mockClear();
+    await userPreferencesService.getPreferences("user-h");
+    expect(setDoc).not.toHaveBeenCalled();
+  });
+
   it("oublie la copie locale à la déconnexion", async () => {
     const { userPreferencesService, clearPreferencesCache } = await import(
       "../services/userPreferencesService"

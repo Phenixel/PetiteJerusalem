@@ -148,11 +148,16 @@ function writeCache(userId: string, preferences: UserPreferences): void {
   }
 }
 
-/** Oublie la copie locale (déconnexion, suppression de compte). */
+/**
+ * Oublie la copie locale (déconnexion, suppression de compte). Le suivi coché
+ * hors ligne et pas encore synchronisé part avec elle : il appartient au compte
+ * qui s'en va, et le serveur reste seul dépositaire de ce qui a été lu.
+ */
 export function clearPreferencesCache(userId: string): void {
   if (typeof localStorage === "undefined") return;
   try {
     localStorage.removeItem(cacheKey(userId));
+    localStorage.removeItem(pendingKey(userId));
   } catch {
     // Rien à nettoyer.
   }
@@ -182,6 +187,115 @@ export class OfflineWriteError extends Error {
 
 export function isOfflineWriteError(error: unknown): boolean {
   return error instanceof OfflineWriteError;
+}
+
+/**
+ * Suivi de lecture coché hors connexion, en attente d'être envoyé au serveur.
+ * Contrairement à la liste (que le serveur seul décide), une lecture marquée
+ * lue ne se perd pas : elle est gardée ici et fusionnée au retour du réseau.
+ */
+const PENDING_PROGRESS_PREFIX = "pj-daily-progress-pending:";
+
+function pendingKey(userId: string): string {
+  return `${PENDING_PROGRESS_PREFIX}${userId}`;
+}
+
+function readPendingProgress(userId: string): DailyReadingProgress | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(pendingKey(userId));
+    return raw ? (JSON.parse(raw) as DailyReadingProgress) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePendingProgress(userId: string, progress: DailyReadingProgress): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(pendingKey(userId), JSON.stringify(progress));
+  } catch {
+    // Stockage plein : la coche reste affichée, mais ne survivra pas.
+  }
+}
+
+function clearPendingProgress(userId: string): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(pendingKey(userId));
+  } catch {
+    // Rien à nettoyer.
+  }
+}
+
+function unique(values: Iterable<string | number> | undefined): number[] {
+  return [...new Set([...(values ?? [])].map(Number))];
+}
+
+/** Chapitres lus par texte : union des deux côtés, texte par texte. */
+function mergeSections(
+  a: Record<string, number[]> = {},
+  b: Record<string, number[]> = {},
+): Record<string, number[]> {
+  const merged: Record<string, number[]> = {};
+  for (const id of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    merged[id] = [...new Set([...(a[id] ?? []), ...(b[id] ?? [])])].sort((x, y) => x - y);
+  }
+  return merged;
+}
+
+type ParashaProgress = NonNullable<DailyReadingProgress["parashaProgress"]>;
+
+/** Chnei mikra : même semaine → lu d'un côté suffit ; sinon la semaine la plus récente. */
+function mergeParashaProgress(
+  a: ParashaProgress | undefined,
+  b: ParashaProgress | undefined,
+): ParashaProgress | undefined {
+  if (!a) return b;
+  if (!b) return a;
+  if (a.week === b.week) return { week: a.week, completed: a.completed || b.completed };
+  return a.week > b.week ? a : b;
+}
+
+/**
+ * Fusionne deux suivis de la lecture du jour — celui du serveur et celui coché
+ * sur l'appareil pendant une coupure.
+ *
+ * Règle : **c'est le « lu » qui gagne**. Un même jour, les deux suivis
+ * s'additionnent (lu d'un côté = lu). Décocher hors ligne quelque chose que le
+ * serveur sait déjà lu ne tient donc pas au retour du réseau — personne ne
+ * décoche, et perdre une lecture faite serait plus gênant.
+ *
+ * Jours différents (la coupure a passé minuit) : le suivi du jour le plus
+ * récent l'emporte en bloc, la journée d'avant n'ayant plus lieu d'être. Le
+ * chnei mikra, lui, vit à la semaine : il se fusionne à part.
+ */
+export function mergeDailyProgress(
+  server: DailyReadingProgress | undefined,
+  local: DailyReadingProgress | undefined,
+): DailyReadingProgress {
+  const parashaProgress = mergeParashaProgress(server?.parashaProgress, local?.parashaProgress);
+  const withParasha = (progress: DailyReadingProgress): DailyReadingProgress => {
+    const merged = { ...progress };
+    // Le suivi hebdomadaire est fusionné à part : celui du bloc retenu ne doit
+    // pas repasser devant.
+    if (parashaProgress) merged.parashaProgress = parashaProgress;
+    else delete merged.parashaProgress;
+    return merged;
+  };
+
+  if (!server?.date) return withParasha(local ?? { date: "", completedIds: [] });
+  if (!local?.date) return withParasha(server);
+  if (server.date !== local.date) return withParasha(server.date > local.date ? server : local);
+
+  return withParasha({
+    date: server.date,
+    completedIds: unique([...(server.completedIds ?? []), ...(local.completedIds ?? [])]),
+    completedSections: mergeSections(server.completedSections, local.completedSections),
+    completedOptions: [
+      ...new Set([...(server.completedOptions ?? []), ...(local.completedOptions ?? [])]),
+    ],
+  });
 }
 
 /**
@@ -242,7 +356,10 @@ class UserPreferencesService {
       const prefs = docSnap.exists()
         ? ({ ...DEFAULT_PREFERENCES, ...docSnap.data() } as UserPreferences)
         : { ...DEFAULT_PREFERENCES };
-      // Le serveur a toujours raison : sa réponse remplace la copie locale.
+      // Le serveur a toujours raison sur la liste ; le suivi coché hors ligne,
+      // lui, remonte (voir mergeDailyProgress : le « lu » gagne).
+      await this.flushPendingProgress(userId, prefs);
+      // Réponse du serveur (suivi fusionné compris) : elle remplace la copie locale.
       writeCache(userId, prefs);
       return prefs;
     } catch (error) {
@@ -250,6 +367,64 @@ class UserPreferencesService {
       // Réseau capricieux (l'appareil se croit en ligne) : la dernière copie
       // connue vaut mieux que des préférences vides.
       return readCache(userId) ?? { ...DEFAULT_PREFERENCES };
+    }
+  }
+
+  /**
+   * Renvoie au serveur le suivi coché pendant une coupure, fusionné avec le
+   * sien. `prefs` est modifié sur place pour porter le suivi fusionné : c'est
+   * lui que la page affichera, sans attendre une seconde lecture.
+   */
+  private async flushPendingProgress(userId: string, prefs: UserPreferences): Promise<void> {
+    const pending = readPendingProgress(userId);
+    if (!pending) return;
+    const merged = mergeDailyProgress(prefs.dailyReadingProgress, pending);
+    prefs.dailyReadingProgress = merged;
+    try {
+      const { sdk, db } = await firestore();
+      await sdk.setDoc(
+        sdk.doc(db, this.collectionName, userId),
+        { dailyReadingProgress: merged },
+        { mergeFields: ["dailyReadingProgress"] },
+      );
+      clearPendingProgress(userId);
+    } catch (error) {
+      // Le serveur n'a pas confirmé : le suivi reste en attente et repartira
+      // au prochain passage. Rien n'est perdu, rien n'est affirmé à tort.
+      console.warn("Suivi de lecture hors ligne pas encore synchronisé:", error);
+    }
+  }
+
+  /**
+   * Enregistre le suivi de la lecture du jour (« marquer comme lu »).
+   *
+   * Contrairement à la liste, il n'est pas bloqué hors connexion : la coche est
+   * gardée sur l'appareil et fusionnée avec le serveur au retour du réseau, où
+   * c'est toujours le « lu » qui l'emporte. Renvoie `"queued"` quand le serveur
+   * n'a pas (encore) pu confirmer.
+   */
+  async saveDailyProgress(
+    userId: string,
+    progress: DailyReadingProgress,
+  ): Promise<"saved" | "queued"> {
+    const keepLocally = () => {
+      writePendingProgress(userId, progress);
+      writeCache(userId, {
+        ...(readCache(userId) ?? DEFAULT_PREFERENCES),
+        dailyReadingProgress: progress,
+      });
+      return "queued" as const;
+    };
+
+    if (isOffline()) return keepLocally();
+    try {
+      await this.savePreferences(userId, { dailyReadingProgress: progress });
+      // Ce qui était en attente vient d'être englobé par cette écriture.
+      clearPendingProgress(userId);
+      return "saved";
+    } catch {
+      // Réseau perdu en cours de route : la lecture faite ne se perd pas.
+      return keepLocally();
     }
   }
 

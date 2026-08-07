@@ -52,7 +52,8 @@ const { t, locale } = useI18n();
 const toast = useToast();
 const { confirm } = useConfirm();
 // Hors connexion, la page reste lisible (textes téléchargés + copie locale des
-// préférences) mais devient en lecture seule : voir requireOnline.
+// préférences) et les lectures se cochent encore ; seule la composition de la
+// liste attend le retour du réseau. Voir requireOnline et persistProgress.
 const online = useOnline();
 // Même préférence de taille que le lecteur de la bibliothèque (A− / A+).
 const readingSize = useReadingSize();
@@ -208,7 +209,6 @@ const parashaSubtitle = computed(() =>
 
 async function toggleParashaCompleted() {
   if (!weeklyParasha.value) return;
-  if (!requireOnline()) return;
   parashaCompleted.value = !parashaCompleted.value;
   storedParashaProgress.value = {
     week: weeklyParasha.value.weekKey,
@@ -273,7 +273,6 @@ async function toggleOption(key: DailyOptionKey) {
 }
 
 async function toggleOptionCompleted(key: DailyOptionKey) {
-  if (!requireOnline()) return;
   const next = new Set(completedOptions.value);
   const nowRead = !next.has(key);
   if (nowRead) next.add(key);
@@ -346,9 +345,9 @@ async function applyPreferences(prefs: UserPreferences, initial: boolean) {
         (progress.completedOptions ?? []).length > 0 ||
         Object.keys(progress.completedSections ?? {}).length > 0)
     ) {
-      // Hors ligne, la remise à zéro n'est qu'affichée : elle sera écrite au
-      // retour du réseau (le serveur reste seul à décider de ce qui est stocké).
-      if (online.value && !resyncing) await persistProgress();
+      // Pas pendant une resynchronisation : elle ne fait que réafficher ce que
+      // le serveur vient de renvoyer, elle n'a rien à lui réécrire.
+      if (!resyncing) await persistProgress();
     }
   }
 
@@ -392,14 +391,20 @@ onMounted(async () => {
  */
 watch(online, (isOnline, wasOnline) => {
   if (!isOnline || wasOnline) return;
+  queuedNoticeShown = false;
+  // La resynchronisation renvoie au passage le suivi coché hors ligne.
   void loadPreferences().catch(() => {});
   void refreshStaleDownloads();
 });
 
+// Coupure en cours : l'avertissement « gardé sur l'appareil » a déjà été dit.
+let queuedNoticeShown = false;
+
 /**
- * Toute modification passe par le serveur. Sans connexion, on ne touche à
- * rien — ni la liste, ni le suivi — et on le dit plutôt que de laisser croire
- * à un changement qui serait balayé à la reconnexion.
+ * La composition de la liste (textes, lectures du moment, rappels) appartient
+ * au serveur : sans connexion on n'y touche pas, et on le dit plutôt que de
+ * laisser croire à un changement qui serait balayé à la reconnexion. Le suivi
+ * de lecture, lui, n'est pas concerné : voir persistProgress.
  */
 function requireOnline(): boolean {
   if (online.value) return true;
@@ -439,19 +444,24 @@ async function persistProgress() {
     const list = completedSections.value[id];
     if (list?.length) sections[id] = list;
   }
-  await persist({
-    dailyReadingProgress: {
-      date: todayKey(),
-      completedIds: [...completedIds.value].map(Number),
-      completedSections: sections,
-      completedOptions: [...completedOptions.value].filter((k) =>
-        selectedOptions.value.includes(k),
-      ),
-      // Le chnei mikra vit à la semaine : sa coche est rattachée au Chabbat de
-      // la paracha et survit à la remise à zéro quotidienne.
-      ...(storedParashaProgress.value ? { parashaProgress: storedParashaProgress.value } : {}),
-    },
+  // Le suivi, lui, s'enregistre même hors connexion : la coche est gardée sur
+  // l'appareil et fusionnée avec le serveur au retour du réseau, où le « lu »
+  // l'emporte toujours (voir mergeDailyProgress).
+  const result = await userPreferencesService.saveDailyProgress(props.userId, {
+    date: todayKey(),
+    completedIds: [...completedIds.value].map(Number),
+    completedSections: sections,
+    completedOptions: [...completedOptions.value].filter((k) => selectedOptions.value.includes(k)),
+    // Le chnei mikra vit à la semaine : sa coche est rattachée au Chabbat de
+    // la paracha et survit à la remise à zéro quotidienne.
+    ...(storedParashaProgress.value ? { parashaProgress: storedParashaProgress.value } : {}),
   });
+  // Une seule fois par coupure : la coche est bien prise, mais pas encore
+  // arrivée chez le serveur. Le répéter à chaque texte lu serait du bruit.
+  if (result === "queued" && !queuedNoticeShown) {
+    queuedNoticeShown = true;
+    toast.info(t("dailyReading.offline.progressKept"));
+  }
 }
 
 // --- Disponibilité hors ligne (app native) ---
@@ -542,7 +552,6 @@ async function toggleSelect(entry: TextStudyJsonEntry) {
 }
 
 async function toggleCompleted(id: string) {
-  if (!requireOnline()) return;
   const next = new Set(completedIds.value);
   const nowRead = !next.has(id);
   if (nowRead) next.add(id);
@@ -568,7 +577,6 @@ async function toggleCompleted(id: string) {
 
 /** Coche/décoche un chapitre ; le texte bascule « lu » quand tout y est. */
 async function toggleSection(id: string, sectionIndex: number) {
-  if (!requireOnline()) return;
   const current = new Set(completedSections.value[id] ?? []);
   const nowRead = !current.has(sectionIndex);
   if (nowRead) current.add(sectionIndex);

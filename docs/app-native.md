@@ -102,20 +102,28 @@ sans réseau, elle s'ouvre et se lit, à partir de deux copies locales.
   `refreshStaleDownloads` ne fait que remettre au format courant des fichiers
   **déjà** téléchargés.
 
-**Synchronisation : le serveur a toujours raison.** Hors connexion la page
-passe en lecture seule — modifier la liste, cocher une lecture ou régler les
-rappels affiche « pas de connexion » plutôt que d'enregistrer quoi que ce soit.
-Sans cette règle, le cache Firestore persistant
-(`src/firebase/firestore.ts`) garderait l'écriture en attente et l'imposerait
-au serveur au retour du réseau, en écrasant ce qui a pu changer ailleurs
-(`savePreferences` lève `OfflineWriteError` sans rien tenter). Dès que la
-connexion revient, la page se réaligne sur le serveur et relance la mise à jour
-des fichiers.
+**Synchronisation.** Deux règles, selon ce qu'on touche :
+
+- **La composition de la liste appartient au serveur.** Hors connexion,
+  ajouter un texte, activer une lecture du moment ou régler les rappels affiche
+  « pas de connexion » au lieu d'enregistrer. Sans ce garde-fou, le cache
+  Firestore persistant (`src/firebase/firestore.ts`) garderait l'écriture en
+  attente et l'imposerait au serveur au retour du réseau, en écrasant ce qui a
+  pu changer ailleurs — `savePreferences` lève donc `OfflineWriteError` sans
+  rien tenter. Au retour du réseau, la page se réaligne sur le serveur.
+- **Une lecture faite ne se perd pas.** Le « marquer comme lu » s'enregistre
+  hors connexion (`saveDailyProgress` : suivi gardé en `localStorage`, clé
+  `pj-daily-progress-pending:<uid>`) et repart au serveur à la première lecture
+  réussie des préférences. `mergeDailyProgress` arbitre : **le « lu » gagne** —
+  même jour, les deux suivis s'additionnent ; jours différents (la coupure a
+  passé minuit), le plus récent l'emporte ; le chnei mikra se fusionne à part,
+  à la semaine. Conséquence assumée : décocher hors ligne quelque chose que le
+  serveur sait déjà lu ne tient pas au retour du réseau.
 
 Vérification : composer une liste, mode avion, rouvrir la lecture du jour (les
 textes téléchargés s'affichent, les autres disent qu'ils ne sont pas
-téléchargés), tenter d'ajouter un texte (refusé), revenir en ligne (la liste se
-resynchronise).
+téléchargés), cocher une lecture (gardée), tenter d'ajouter un texte (refusé),
+revenir en ligne (la liste se resynchronise, la coche remonte).
 
 ## Authentification native (Google / Apple)
 

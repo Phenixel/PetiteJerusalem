@@ -229,8 +229,9 @@ const en: LocaleMessages = {
     saveError: "Could not save. Please try again.",
     offline: {
       banner:
-        "Offline: you are reading the texts downloaded on this device. Your list and tracking cannot be changed until the connection is back.",
+        "Offline: you are reading the texts downloaded on this device. What you tick off is kept here and synced when the network is back; your list, however, cannot be changed until then.",
       readOnly: "No connection: your list cannot be changed right now.",
+      progressKept: "No connection: your reading is ticked off on this device and will be synced.",
       notDownloaded: "This text is not downloaded on this device: it cannot be read offline.",
       promptTitle: "This text is not downloaded",
       promptMessage:

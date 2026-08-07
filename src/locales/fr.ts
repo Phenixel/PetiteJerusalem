@@ -228,8 +228,9 @@ const fr = {
     saveError: "Enregistrement impossible. Réessayez.",
     offline: {
       banner:
-        "Hors connexion : vous lisez les textes téléchargés sur cet appareil. La liste et le suivi ne peuvent pas être modifiés tant que la connexion n'est pas revenue.",
+        "Hors connexion : vous lisez les textes téléchargés sur cet appareil. Vos lectures cochées sont gardées ici et synchronisées au retour du réseau ; la liste, elle, ne peut pas être modifiée d'ici là.",
       readOnly: "Pas de connexion : votre liste ne peut pas être modifiée pour le moment.",
+      progressKept: "Sans connexion : votre lecture est cochée sur cet appareil et sera synchronisée.",
       notDownloaded: "Ce texte n'est pas téléchargé sur cet appareil : il n'est pas lisible hors connexion.",
       promptTitle: "Ce texte n'est pas téléchargé",
       promptMessage:
