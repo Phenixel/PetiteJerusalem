@@ -184,6 +184,14 @@ le calcul est local, les coordonnées restent en `localStorage`.
 
   Sans cette clé, iOS **ferme l'app** à la première demande de position.
 
+## Widgets d'écran d'accueil
+
+Deux widgets (Horaires, Lecture du jour) accompagnent l'app : l'app pré-calcule
+leurs contenus et les pousse au natif via le plugin maison PjWidgets. Côté
+Android tout est scripté (`native/android/` + `setup-android.mjs`) ; côté iOS
+quelques étapes Xcode manuelles restent nécessaires — voir
+`docs/app-widgets.md`.
+
 ## Publication
 
 La publication Android est automatisée : chaque tag `vX.Y.Z` déclenche

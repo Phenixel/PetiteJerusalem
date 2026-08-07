@@ -334,6 +334,19 @@ class UserPreferencesService {
   private inflight = new Map<string, Promise<UserPreferences>>();
 
   getPreferences(userId: string): Promise<UserPreferences> {
+    return this.getPreferencesOrThrow(userId).catch((error) => {
+      console.error("Erreur lors de la récupération des préférences:", error);
+      return { ...DEFAULT_PREFERENCES };
+    });
+  }
+
+  /**
+   * Comme getPreferences, mais laisse l'erreur remonter : indispensable quand
+   * l'appelant doit distinguer « profil vide » de « Firestore injoignable » —
+   * le widget de lecture, par exemple, ne doit pas écraser son dernier état
+   * avec des préférences par défaut qui ne sont qu'un échec de lecture.
+   */
+  getPreferencesOrThrow(userId: string): Promise<UserPreferences> {
     const pending = this.inflight.get(userId);
     if (pending) return pending;
     const request = this.fetchPreferences(userId).finally(() => this.inflight.delete(userId));
@@ -363,10 +376,14 @@ class UserPreferencesService {
       writeCache(userId, prefs);
       return prefs;
     } catch (error) {
-      console.error("Erreur lors de la récupération des préférences:", error);
       // Réseau capricieux (l'appareil se croit en ligne) : la dernière copie
       // connue vaut mieux que des préférences vides.
-      return readCache(userId) ?? { ...DEFAULT_PREFERENCES };
+      const cached = readCache(userId);
+      if (cached) return cached;
+      // Ni serveur ni copie locale : l'erreur remonte — getPreferences retombe
+      // sur les valeurs par défaut, getPreferencesOrThrow laisse l'appelant
+      // décider (le widget garde alors son dernier état au lieu de l'écraser).
+      throw error;
     }
   }
 

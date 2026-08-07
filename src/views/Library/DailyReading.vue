@@ -18,6 +18,8 @@ import {
 import { ensureManifestLoaded } from "../../services/offlineTextStore";
 import { pushService } from "../../services/pushService";
 import { sessionService } from "../../services/sessionService";
+import { widgetService } from "../../services/widgetService";
+import { localDayKey } from "../../services/dateService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useReadingSize } from "../../composables/useReadingSize";
@@ -252,6 +254,7 @@ async function toggleOption(key: DailyOptionKey) {
     // Option retirée : sa complétion du jour doit disparaître aussi du cloud,
     // sinon l'accueil et le rappel push continueraient de la compter.
     if (removed && saved) await persistProgress();
+    else if (saved) void widgetService.refresh(widgetPrefs());
   } finally {
     saving.value = false;
   }
@@ -291,13 +294,6 @@ async function toggleOptionCompleted(key: DailyOptionKey) {
   });
 }
 
-/** Local calendar day (YYYY-MM-DD), so the daily tracking resets at local midnight. */
-function todayKey(): string {
-  const d = new Date();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${month}-${day}`;
-}
 
 /**
  * Applique les préférences du compte à la page. Hors connexion, elles viennent
@@ -328,7 +324,7 @@ async function applyPreferences(prefs: UserPreferences, initial: boolean) {
     progress.parashaProgress.completed === true;
   if (parashaCompleted.value) setCollapsed("parasha", true);
 
-  if (progress && progress.date === todayKey()) {
+  if (progress && progress.date === localDayKey()) {
     completedIds.value = new Set(progress.completedIds.map(String));
     completedSections.value = { ...(progress.completedSections ?? {}) };
     completedOptions.value = new Set(progress.completedOptions ?? []);
@@ -431,10 +427,33 @@ async function persist(preferences: Partial<UserPreferences>): Promise<boolean> 
 async function persistSelection(): Promise<boolean> {
   saving.value = true;
   try {
-    return await persist({ dailyReadingIds: selectedIds.value.map(Number) });
+    const saved = await persist({ dailyReadingIds: selectedIds.value.map(Number) });
+    // Le widget d'écran d'accueil affiche cette liste (no-op sur le web).
+    if (saved) void widgetService.refresh(widgetPrefs());
+    return saved;
   } finally {
     saving.value = false;
   }
+}
+
+/**
+ * L'état courant, sous la forme des préférences dont dépend le widget
+ * d'écran d'accueil : lui éviter de relire dans Firestore le document que la
+ * page vient d'écrire (et de recalculer pour rien le payload des horaires).
+ */
+function widgetPrefs() {
+  return {
+    dailyReadingIds: selectedIds.value.map(Number),
+    dailyReadingOptions: [...selectedOptions.value],
+    dailyReadingProgress: {
+      date: localDayKey(),
+      completedIds: [...completedIds.value].map(Number),
+      completedOptions: [...completedOptions.value].filter((k) =>
+        selectedOptions.value.includes(k),
+      ),
+      ...(storedParashaProgress.value ? { parashaProgress: storedParashaProgress.value } : {}),
+    },
+  };
 }
 
 async function persistProgress() {
@@ -448,7 +467,7 @@ async function persistProgress() {
   // l'appareil et fusionnée avec le serveur au retour du réseau, où le « lu »
   // l'emporte toujours (voir mergeDailyProgress).
   const result = await userPreferencesService.saveDailyProgress(props.userId, {
-    date: todayKey(),
+    date: localDayKey(),
     completedIds: [...completedIds.value].map(Number),
     completedSections: sections,
     completedOptions: [...completedOptions.value].filter((k) => selectedOptions.value.includes(k)),
@@ -456,6 +475,9 @@ async function persistProgress() {
     // la paracha et survit à la remise à zéro quotidienne.
     ...(storedParashaProgress.value ? { parashaProgress: storedParashaProgress.value } : {}),
   });
+  // Le widget d'écran d'accueil suit la progression — y compris une coche
+  // gardée sur l'appareil en attendant le réseau (no-op sur le web).
+  void widgetService.refresh(widgetPrefs());
   // Une seule fois par coupure : la coche est bien prise, mais pas encore
   // arrivée chez le serveur. Le répéter à chaque texte lu serait du bruit.
   if (result === "queued" && !queuedNoticeShown) {
