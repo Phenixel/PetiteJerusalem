@@ -12,6 +12,7 @@ import SessionProgressBar from "../../components/SessionProgressBar.vue";
 import BatchSelectionBar from "../../components/BatchSelectionBar.vue";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
 import GuestIdentityModal from "../../components/GuestIdentityModal.vue";
+import ReportSessionModal from "../../components/ReportSessionModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
@@ -21,6 +22,7 @@ import TextStudiesList from "./detailSession/TextStudiesList.vue";
 import { useToast } from "../../composables/useToast";
 import { liveValue } from "../../composables/liveInput";
 import { analyticsService } from "../../services/analyticsService";
+import { moderationService } from "../../services/moderationService";
 
 const route = useRoute();
 const router = useRouter();
@@ -53,6 +55,12 @@ const selectedItems = ref<Set<string>>(new Set());
 const isSubmittingBatch = ref(false);
 const showSignupPrompt = ref(false);
 const showGuestIdentityModal = ref(false);
+
+// Modération : modale de signalement, session déjà signalée depuis cet
+// appareil, et créateur bloqué par le visiteur.
+const showReportModal = ref(false);
+const hasReported = ref(false);
+const isCreatorBlocked = ref(false);
 
 // Funnel réservation : un seul événement par visite pour la 1re sélection et
 // la 1re recherche, sinon chaque clic de chapitre noierait les stats.
@@ -260,6 +268,9 @@ const loadSessionData = async () => {
     session.value = sessionData;
     textStudies.value = filteredTextStudies;
     reservations.value = sessionData.reservations;
+
+    hasReported.value = moderationService.hasReportedSession(sessionData.id);
+    isCreatorBlocked.value = moderationService.isCreatorBlocked(sessionData.personId);
   } catch (err) {
     console.error("Erreur lors du chargement des données:", err);
     error.value = err instanceof Error ? err.message : "Erreur lors du chargement";
@@ -538,6 +549,16 @@ const isOwner = computed(() => {
   return currentUser.value.id === session.value.personId;
 });
 
+// Session masquée par la modération : le public voit un écran « masquée »,
+// seul le créateur voit encore le contenu (avec un bandeau explicatif).
+const isHiddenForViewer = computed(() => session.value?.hidden === true && !isOwner.value);
+
+const unblockCreator = () => {
+  if (!session.value?.personId) return;
+  moderationService.unblockCreator(session.value.personId);
+  isCreatorBlocked.value = false;
+};
+
 const goToManagement = () => {
   if (session.value) {
     router.push(`/session-management/${session.value.id}`);
@@ -663,14 +684,61 @@ watch(session, (s) => applySessionSeo(s));
       </button>
     </div>
 
+    <!-- Session masquée par la modération : rien du contenu n'est montré au public. -->
+    <div
+      v-else-if="session && isHiddenForViewer"
+      class="flex flex-col items-center justify-center py-16 text-center max-w-xl mx-auto"
+    >
+      <AppIcon name="eye" :size="32" class="text-text-secondary/60 mb-4" />
+      <h2 class="text-2xl font-bold text-text-primary mb-2">
+        {{ t("moderation.hiddenTitle") }}
+      </h2>
+      <p class="text-text-secondary mb-8">{{ t("moderation.hiddenMessage") }}</p>
+      <RouterLink to="/share-reading" class="btn btn-soft">
+        {{ t("sessionManagement.backToSessions") }}
+      </RouterLink>
+    </div>
+
+    <!-- Créateur bloqué par le visiteur : contenu caché, déblocage possible. -->
+    <div
+      v-else-if="session && isCreatorBlocked"
+      class="flex flex-col items-center justify-center py-16 text-center max-w-xl mx-auto"
+    >
+      <AppIcon name="eye" :size="32" class="text-text-secondary/60 mb-4" />
+      <h2 class="text-2xl font-bold text-text-primary mb-2">
+        {{ t("moderation.blockedCreatorTitle") }}
+      </h2>
+      <p class="text-text-secondary mb-8">{{ t("moderation.blockedCreatorMessage") }}</p>
+      <div class="flex flex-wrap justify-center gap-3">
+        <RouterLink to="/share-reading" class="btn btn-soft">
+          {{ t("sessionManagement.backToSessions") }}
+        </RouterLink>
+        <button @click="unblockCreator" class="btn btn-primary">
+          {{ t("moderation.unblockCreator") }}
+        </button>
+      </div>
+    </div>
+
     <!-- Contenu de la session -->
     <div v-else-if="session" class="animate-[fadeIn_0.5s_ease]">
+      <!-- Bandeau réservé au créateur d'une session masquée : il doit savoir
+           pourquoi elle ne reçoit plus de visites. -->
+      <div
+        v-if="session.hidden"
+        class="mb-8 flex items-start gap-3 rounded-xl bg-amber-500/10 p-4 text-amber-800 dark:text-amber-200"
+      >
+        <AppIcon name="alert-triangle" :size="18" class="mt-0.5 shrink-0" />
+        <p class="text-sm font-medium">{{ t("moderation.hiddenOwnerBanner") }}</p>
+      </div>
+
       <SessionHeader
         :session="session"
         :is-owner="isOwner"
+        :has-reported="hasReported"
         @share="openShareModal"
         @manage="goToManagement"
         @edit="showEditModal = true"
+        @report="showReportModal = true"
       />
 
       <!-- Barre de progression -->
@@ -821,5 +889,13 @@ watch(session, (s) => applySessionSeo(s));
 
     <!-- Modification de la session, réservée à son créateur -->
     <EditSessionModal v-model:show="showEditModal" :session="session" @save="saveSessionChanges" />
+
+    <!-- Signalement de la session (modération App Store) -->
+    <ReportSessionModal
+      v-model:show="showReportModal"
+      :session="session"
+      @reported="hasReported = true"
+      @creator-blocked="isCreatorBlocked = true"
+    />
   </main>
 </template>

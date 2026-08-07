@@ -9,12 +9,14 @@ const { t } = useI18n();
 defineProps<{
   session: Session;
   isOwner?: boolean;
+  hasReported?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: "share"): void;
   (e: "manage"): void;
   (e: "edit"): void;
+  (e: "report"): void;
 }>();
 </script>
 
@@ -60,6 +62,18 @@ const emit = defineEmits<{
       >
         <AppIcon name="share" :size="14" />
         {{ t("common.share") }}
+      </button>
+      <!-- Signalement (modération App Store) : ouvert à tous sauf au créateur,
+           désactivé une fois la session signalée depuis cet appareil. -->
+      <button
+        v-if="!isOwner"
+        @click="emit('report')"
+        class="btn btn-soft !px-3.5 !py-1.5 !text-sm"
+        :disabled="hasReported"
+        :title="hasReported ? t('moderation.alreadyReported') : t('moderation.reportButton')"
+      >
+        <AppIcon name="flag" :size="14" />
+        {{ hasReported ? t("moderation.reported") : t("moderation.reportButton") }}
       </button>
     </div>
   </div>

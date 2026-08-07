@@ -348,11 +348,16 @@ const en: LocaleMessages = {
     googleAccountDesc:
       "Your account is linked to Google. You cannot change your password here. To modify your security settings, go to your Google account settings.",
     googleSettings: "Google Settings",
+    appleAccount: "Apple Account",
+    appleAccountDesc:
+      "Your account is linked to Apple. You cannot change your password here: your Apple ID security is managed in your Apple account settings.",
     deleteAccount: "Delete account",
     deleteAccountWarning: "This action is irreversible. All your data will be permanently deleted.",
     deleteConfirmGoogle: "To confirm, you will need to re-authenticate with Google.",
+    deleteConfirmApple: "To confirm, you will need to re-authenticate with Apple.",
     deleteConfirmPassword: "Do you confirm you want to permanently delete your account?",
     confirmWithGoogle: "Confirm with Google",
+    confirmWithApple: "Confirm with Apple",
     confirmDeletion: "Confirm deletion",
     deleteMyAccount: "Delete my account",
     authCancelled: "Authentication cancelled",
@@ -869,12 +874,66 @@ const en: LocaleMessages = {
     notFound: "Series not found.",
     seoDescription: "All the episodes of the series {serie}: Torah lessons to listen to.",
   },
+  moderation: {
+    bannedWord: "This text contains a forbidden term: “{word}”",
+    reportButton: "Report",
+    reported: "Reported",
+    alreadyReported: "You have already reported this session from this device",
+    reportTitle: "Report this session",
+    reportSubtitle:
+      "Tell us what the problem is. The session will be reviewed by moderation, and hidden automatically after 3 reports.",
+    reasonLabel: "Reason for the report",
+    reasons: {
+      inappropriate: "Inappropriate content",
+      offensive: "Offensive or hateful content",
+      spam: "Spam or advertising",
+      other: "Other",
+    },
+    detailsLabel: "Details",
+    detailsPlaceholder: "Describe the problem…",
+    reporting: "Sending…",
+    reportSuccess: "Thank you, your report has been submitted.",
+    reportError: "The report failed. Please try again.",
+    blockCreator: "Block this creator",
+    blockCreatorHint: "Their sessions will no longer be shown on this device.",
+    hiddenTitle: "Session hidden",
+    hiddenMessage:
+      "This session has been hidden following reports and is being reviewed by moderation.",
+    hiddenOwnerBanner:
+      "Your session has been hidden by moderation following reports: it is no longer visible to the public while under review.",
+    hiddenChip: "Hidden",
+    blockedCreatorTitle: "Creator blocked",
+    blockedCreatorMessage:
+      "You blocked the creator of this session: their content is no longer shown on this device.",
+    unblockCreator: "Unblock this creator",
+  },
   admin: {
     title: "Backoffice",
     error: "The operation failed. Try again.",
     nav: {
       chiourim: "Chiourim",
       auteurs: "Authors",
+      sessions: "Sessions",
+    },
+    sessions: {
+      filters: {
+        all: "All",
+        reported: "Reported",
+        hidden: "Hidden",
+      },
+      searchPlaceholder: "Search...",
+      empty: "No session matches.",
+      hiddenAuto: "Hidden (reports)",
+      hiddenByAdmin: "Hidden (admin)",
+      reportsCount: "{count} report(s)",
+      hide: "Hide",
+      unhide: "Unhide",
+      hiddenOk: "Session hidden.",
+      unhiddenOk: "Session unhidden, reports resolved.",
+      resolveReport: "Resolve",
+      reportResolvedOk: "Report resolved.",
+      deleteConfirm: "Permanently delete the session “{name}” and its reports?",
+      deletedOk: "Session deleted.",
     },
     chiourim: {
       filters: {

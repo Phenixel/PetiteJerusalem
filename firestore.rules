@@ -60,19 +60,69 @@ service cloud.firestore {
              request.resource.data.reservations.size() == currentReservationsSize();
     }
 
+    // Champs de modération (masquage, compteur de signalements) : écrits par
+    // l'admin et la Cloud Function de modération (SDK admin) UNIQUEMENT. Le
+    // créateur ne peut ni masquer ni démasquer sa propre session.
+    function moderationFieldsUntouched() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['hidden', 'hiddenAt', 'hiddenReason', 'reportsCount']);
+    }
+
+    // Une session masquée par la modération n'accepte plus de réservations.
+    function sessionNotHidden() {
+      return resource.data.get('hidden', false) != true;
+    }
+
     // Sessions : lecture publique (le partage de lecture est ouvert à tous)
     match /sessions/{sessionId} {
       allow read: if true;
-      // Création : utilisateur connecté, qui ne peut créer que SES sessions
-      allow create: if isAuthenticated() && request.resource.data.personId == request.auth.uid;
+      // Création : utilisateur connecté, qui ne peut créer que SES sessions,
+      // sans champs de modération pré-remplis.
+      allow create: if isAuthenticated()
+        && request.resource.data.personId == request.auth.uid
+        && !request.resource.data.keys().hasAny(['hidden', 'hiddenAt', 'hiddenReason', 'reportsCount']);
 
-      // Mise à jour : propriétaire/admin, ou opérations bornées sur le seul
-      // champ 'reservations' (réservation, annulation, statut de lecture —
-      // ouvertes aux invités non connectés, voir plus haut)
-      allow update: if isSessionOwner() || isAdmin() || isAppendReservationsOnly() || isRemoveOneReservationOnly() || isUpdateReservationOnly();
+      // Mise à jour : propriétaire (hors champs de modération)/admin, ou
+      // opérations bornées sur le seul champ 'reservations' (réservation,
+      // annulation, statut de lecture — ouvertes aux invités non connectés,
+      // voir plus haut), refusées sur une session masquée
+      allow update: if (isSessionOwner() && moderationFieldsUntouched())
+        || isAdmin()
+        || ((isAppendReservationsOnly() || isRemoveOneReservationOnly() || isUpdateReservationOnly()) && sessionNotHidden());
 
       // Suppression : propriétaire ou admin uniquement
       allow delete: if isSessionOwner() || isAdmin();
+    }
+
+    // Signalements de sessions (modération App Store). Création ouverte à
+    // tous, invités compris — mais strictement bornée : champs imposés, motif
+    // dans la liste fermée, détails limités, session cible existante, et
+    // l'identité du signaleur cohérente avec l'authentification. Lecture et
+    // traitement réservés à l'admin (backoffice) ; le masquage automatique au
+    // 3e signalement est fait par la Cloud Function onSessionReported.
+    match /reports/{reportId} {
+      allow get, list: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly([
+          'sessionId', 'sessionName', 'reason', 'details',
+          'reporterId', 'reporterGuestId', 'status', 'createdAt'
+        ])
+        && request.resource.data.sessionId is string
+        && request.resource.data.sessionId.size() > 0
+        && request.resource.data.sessionId.size() <= 100
+        && exists(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId))
+        && request.resource.data.sessionName is string
+        && request.resource.data.sessionName.size() <= 300
+        && request.resource.data.reason in ['inappropriate', 'offensive', 'spam', 'other']
+        && request.resource.data.details is string
+        && request.resource.data.details.size() <= 1000
+        && request.resource.data.status == 'open'
+        && (isAuthenticated()
+              ? request.resource.data.reporterId == request.auth.uid
+              : request.resource.data.reporterId == null)
+        && (request.resource.data.reporterGuestId == null
+              || (request.resource.data.reporterGuestId is string
+                  && request.resource.data.reporterGuestId.size() <= 100));
+      allow update, delete: if isAdmin();
     }
 
     // Compteur de vues d'un chiour : ouvert aux visiteurs non connectés,

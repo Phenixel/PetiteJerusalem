@@ -21,10 +21,19 @@ const successMessage = ref("");
 const errorMessage = ref("");
 
 const isGoogleUser = ref(false);
+const isAppleUser = ref(false);
 const hasPasswordProvider = ref(false);
+
+// Compte sans mot de passe : la suppression exige une ré-authentification
+// auprès du fournisseur (Google ou Apple, exigence Firebase de connexion récente).
+const needsGoogleReauth = computed(() => isGoogleUser.value && !hasPasswordProvider.value);
+const needsAppleReauth = computed(
+  () => isAppleUser.value && !isGoogleUser.value && !hasPasswordProvider.value,
+);
 
 onMounted(() => {
   isGoogleUser.value = authService.isGoogleUser();
+  isAppleUser.value = authService.isAppleUser();
   hasPasswordProvider.value = authService.hasPasswordProvider();
 });
 
@@ -95,8 +104,10 @@ const deleteAccount = async () => {
   try {
     isDeletingAccount.value = true;
 
-    if (isGoogleUser.value && !hasPasswordProvider.value) {
+    if (needsGoogleReauth.value) {
       await authService.reauthenticateWithGoogle();
+    } else if (needsAppleReauth.value) {
+      await authService.reauthenticateWithApple();
     }
 
     await authService.deleteAccount();
@@ -235,6 +246,17 @@ const deleteAccount = async () => {
         </a>
       </div>
 
+      <!-- Info compte Apple - la sécurité se gère chez Apple -->
+      <div v-else-if="isAppleUser">
+        <h3 class="text-xl font-bold text-text-primary mb-3 flex items-center gap-2">
+          <i class="fa-brands fa-apple text-lg"></i>
+          {{ t("security.appleAccount") }}
+        </h3>
+        <p class="text-text-secondary">
+          {{ t("security.appleAccountDesc") }}
+        </p>
+      </div>
+
       <!-- Suppression du compte -->
       <div>
         <h3 class="text-xl font-bold text-text-primary mb-2">
@@ -248,8 +270,11 @@ const deleteAccount = async () => {
         <div v-if="showDeleteConfirmation" class="space-y-4 mb-4">
           <p class="text-sm font-medium text-red-700 dark:text-red-300 flex items-start gap-2">
             <AppIcon name="alert-triangle" :size="16" class="mt-0.5" />
-            <span v-if="isGoogleUser && !hasPasswordProvider">
+            <span v-if="needsGoogleReauth">
               {{ t("security.deleteConfirmGoogle") }}
+            </span>
+            <span v-else-if="needsAppleReauth">
+              {{ t("security.deleteConfirmApple") }}
             </span>
             <span v-else> {{ t("security.deleteConfirmPassword") }} </span>
           </p>
@@ -261,13 +286,16 @@ const deleteAccount = async () => {
               class="btn btn-danger flex-1"
             >
               <AppIcon v-if="isDeletingAccount" name="spinner" :size="15" class="animate-spin" />
-              <AppIcon v-else-if="isGoogleUser && !hasPasswordProvider" name="google" :size="14" />
+              <AppIcon v-else-if="needsGoogleReauth" name="google" :size="14" />
+              <i v-else-if="needsAppleReauth" class="fa-brands fa-apple"></i>
               {{
                 isDeletingAccount
                   ? t("common.deleting")
-                  : isGoogleUser && !hasPasswordProvider
+                  : needsGoogleReauth
                     ? t("security.confirmWithGoogle")
-                    : t("security.confirmDeletion")
+                    : needsAppleReauth
+                      ? t("security.confirmWithApple")
+                      : t("security.confirmDeletion")
               }}
             </button>
             <button @click="cancelDelete" type="button" class="btn btn-soft">

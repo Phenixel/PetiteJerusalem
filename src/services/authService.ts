@@ -23,6 +23,7 @@ import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import type { User } from "../models/models";
 import { clearPreferencesCache, userPreferencesService } from "./userPreferencesService";
 import { analyticsService } from "./analyticsService";
+import { moderationService } from "./moderationService";
 
 export type { User };
 
@@ -71,6 +72,10 @@ export class AuthService {
   // ===== MÉTHODES D'AUTHENTIFICATION =====
 
   async signUpWithEmail(email: string, password: string, displayName?: string): Promise<User> {
+    // Modération App Store : le pseudo s'affiche publiquement (créateur de
+    // session, participant). Vérifié AVANT la création du compte.
+    moderationService.assertClean(displayName);
+
     const cred = await createUserWithEmailAndPassword(auth, email, password);
 
     if (displayName) {
@@ -265,12 +270,49 @@ export class AuthService {
     await reauthenticateWithPopup(user, googleAuthProvider);
   }
 
+  // Ré-authentification Apple avant suppression de compte : même exigence de
+  // connexion récente que Google, mais via la feuille Apple (native) ou la
+  // popup Apple (web).
+  async reauthenticateWithApple(): Promise<void> {
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error("Aucun utilisateur connecté");
+    }
+
+    const provider = new OAuthProvider("apple.com");
+
+    if (isNativeApp) {
+      const result = await FirebaseAuthentication.signInWithApple();
+      const idToken = result.credential?.idToken;
+      if (!idToken) {
+        throw new Error("Ré-authentification Apple annulée ou incomplète");
+      }
+      const credential = provider.credential({
+        idToken,
+        rawNonce: result.credential?.nonce ?? undefined,
+      });
+      await reauthenticateWithCredential(user, credential);
+      return;
+    }
+
+    await reauthenticateWithPopup(user, provider);
+  }
+
   isGoogleUser(): boolean {
     const user = auth.currentUser;
 
     if (!user) return false;
 
     return user.providerData.some((provider) => provider.providerId === "google.com");
+  }
+
+  isAppleUser(): boolean {
+    const user = auth.currentUser;
+
+    if (!user) return false;
+
+    return user.providerData.some((provider) => provider.providerId === "apple.com");
   }
 
   hasPasswordProvider(): boolean {

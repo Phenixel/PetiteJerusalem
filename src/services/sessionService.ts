@@ -2,6 +2,7 @@ import { firestoreService } from "./firestoreService";
 import { reservationService, type ReservationForm } from "./reservationService";
 import { SearchService } from "./searchService";
 import { authService, type User } from "./authService";
+import { moderationService } from "./moderationService";
 import { generateSlug } from "./slugService";
 import type {
   Session,
@@ -288,6 +289,9 @@ export class SessionService {
       throw new Error("Tous les champs sont obligatoires");
     }
 
+    // Modération App Store : pas de terme interdit dans le titre ni la description.
+    moderationService.assertClean(name, description);
+
     const slug = await this.generateUniqueSlug(name);
 
     const sessionData: Omit<Session, "id" | "createdAt" | "isCompleted" | "reservations"> = {
@@ -405,6 +409,9 @@ export class SessionService {
       guestEmailRequired?: boolean;
     },
   ): Promise<void> {
+    // Même filtre qu'à la création : une session propre ne doit pas pouvoir
+    // devenir problématique par une modification ultérieure.
+    moderationService.assertClean(sessionData.name, sessionData.description);
     try {
       // Le slug est l'identifiant public qui compose le lien de partage. On ne
       // le régénère JAMAIS lors d'un renommage : sinon tous les liens déjà

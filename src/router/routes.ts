@@ -27,6 +27,7 @@ const AdminChiourimPage = () => import("../views/Admin/AdminChiourimPage.vue");
 const AdminChiourEditPage = () => import("../views/Admin/AdminChiourEditPage.vue");
 const AdminAuteursPage = () => import("../views/Admin/AdminAuteursPage.vue");
 const AdminAuteurDetailPage = () => import("../views/Admin/AdminAuteurDetailPage.vue");
+const AdminSessionsPage = () => import("../views/Admin/AdminSessionsPage.vue");
 
 export default [
   {
@@ -174,6 +175,8 @@ export default [
       { path: "chiourim/:slug", name: "admin-chiour-edit", component: AdminChiourEditPage },
       { path: "auteurs", name: "admin-auteurs", component: AdminAuteursPage },
       { path: "auteurs/:auteurId", name: "admin-auteur-detail", component: AdminAuteurDetailPage },
+      // Modération des sessions signalées (exigence App Store 1.2).
+      { path: "sessions", name: "admin-sessions", component: AdminSessionsPage },
     ],
   },
   {

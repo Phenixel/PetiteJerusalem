@@ -347,12 +347,17 @@ const fr = {
     googleAccountDesc:
       "Votre compte est lié à Google. Vous ne pouvez pas changer votre mot de passe ici. Pour modifier vos paramètres de sécurité, rendez-vous dans les paramètres de votre compte Google.",
     googleSettings: "Paramètres Google",
+    appleAccount: "Compte Apple",
+    appleAccountDesc:
+      "Votre compte est lié à Apple. Vous ne pouvez pas changer votre mot de passe ici : la sécurité de votre identifiant se gère dans les réglages de votre compte Apple.",
     deleteAccount: "Supprimer le compte",
     deleteAccountWarning:
       "Cette action est irréversible. Toutes vos données seront définitivement supprimées.",
     deleteConfirmGoogle: "Pour confirmer, vous devrez vous ré-authentifier avec Google.",
+    deleteConfirmApple: "Pour confirmer, vous devrez vous ré-authentifier avec Apple.",
     deleteConfirmPassword: "Confirmez-vous vouloir supprimer définitivement votre compte ?",
     confirmWithGoogle: "Confirmer avec Google",
+    confirmWithApple: "Confirmer avec Apple",
     confirmDeletion: "Confirmer la suppression",
     deleteMyAccount: "Supprimer mon compte",
     authCancelled: "Authentification annulée",
@@ -877,12 +882,66 @@ const fr = {
     notFound: "Série introuvable.",
     seoDescription: "Tous les épisodes de la série {serie} : cours et leçons de Torah à écouter.",
   },
+  moderation: {
+    bannedWord: "Ce texte contient un terme non autorisé : « {word} »",
+    reportButton: "Signaler",
+    reported: "Signalé",
+    alreadyReported: "Vous avez déjà signalé cette session depuis cet appareil",
+    reportTitle: "Signaler cette session",
+    reportSubtitle:
+      "Dites-nous ce qui pose problème. La session sera examinée par la modération, et masquée automatiquement à partir de 3 signalements.",
+    reasonLabel: "Motif du signalement",
+    reasons: {
+      inappropriate: "Contenu inapproprié",
+      offensive: "Contenu offensant ou haineux",
+      spam: "Spam ou publicité",
+      other: "Autre",
+    },
+    detailsLabel: "Précisions",
+    detailsPlaceholder: "Décrivez le problème…",
+    reporting: "Envoi…",
+    reportSuccess: "Merci, votre signalement a bien été transmis.",
+    reportError: "Le signalement a échoué. Veuillez réessayer.",
+    blockCreator: "Bloquer ce créateur",
+    blockCreatorHint: "Ses sessions ne seront plus affichées sur cet appareil.",
+    hiddenTitle: "Session masquée",
+    hiddenMessage:
+      "Cette session a été masquée à la suite de signalements et est en cours d'examen par la modération.",
+    hiddenOwnerBanner:
+      "Votre session a été masquée par la modération à la suite de signalements : elle n'est plus visible du public pendant son examen.",
+    hiddenChip: "Masquée",
+    blockedCreatorTitle: "Créateur bloqué",
+    blockedCreatorMessage:
+      "Vous avez bloqué le créateur de cette session : son contenu n'est plus affiché sur cet appareil.",
+    unblockCreator: "Débloquer ce créateur",
+  },
   admin: {
     title: "Backoffice",
     error: "L'opération a échoué. Réessayez.",
     nav: {
       chiourim: "Chiourim",
       auteurs: "Auteurs",
+      sessions: "Sessions",
+    },
+    sessions: {
+      filters: {
+        all: "Toutes",
+        reported: "Signalées",
+        hidden: "Masquées",
+      },
+      searchPlaceholder: "Rechercher...",
+      empty: "Aucune session ne correspond.",
+      hiddenAuto: "Masquée (signalements)",
+      hiddenByAdmin: "Masquée (admin)",
+      reportsCount: "{count} signalement(s)",
+      hide: "Masquer",
+      unhide: "Démasquer",
+      hiddenOk: "Session masquée.",
+      unhiddenOk: "Session démasquée, signalements résolus.",
+      resolveReport: "Résoudre",
+      reportResolvedOk: "Signalement résolu.",
+      deleteConfirm: "Supprimer définitivement la session « {name} » et ses signalements ?",
+      deletedOk: "Session supprimée.",
     },
     chiourim: {
       filters: {

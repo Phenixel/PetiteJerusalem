@@ -50,6 +50,7 @@ export class FirestoreService {
       slug: data.slug || "",
       endedAt: data.endedAt?.toDate() || undefined,
       updatedAt: data.updatedAt?.toDate() || undefined,
+      hiddenAt: data.hiddenAt?.toDate() || undefined,
     } as Session;
   }
 

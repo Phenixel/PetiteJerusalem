@@ -17,6 +17,7 @@ import MyCreatedSessions from "./MyCreatedSessions.vue";
 import { seoService } from "../../services/seoService";
 import { authService, type User } from "../../services/authService";
 import { analyticsService } from "../../services/analyticsService";
+import { moderationService } from "../../services/moderationService";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useToast } from "../../composables/useToast";
 import { liveValue } from "../../composables/liveInput";
@@ -72,6 +73,7 @@ const participatedSessions = computed(() => {
   return sessions.value.filter(
     (s) =>
       !isSessionFinished(s) &&
+      s.hidden !== true &&
       s.reservations?.some((r) => r.chosenById === u.id || r.chosenByGuestId === u.email),
   );
 });
@@ -204,7 +206,11 @@ const availableTypes = computed(() => {
 
 const filteredSessions = computed(() => {
   const term = searchTerm.value.trim().toLowerCase();
+  // Modération : les sessions masquées et celles des créateurs bloqués par
+  // le visiteur ne figurent pas dans la liste publique.
+  const blockedCreators = new Set(moderationService.getBlockedCreatorIds());
   return sessions.value.filter((s) => {
+    if (s.hidden === true || blockedCreators.has(s.personId)) return false;
     if (selectedType.value && s.type !== selectedType.value) return false;
     if (!term) return true;
     return (
