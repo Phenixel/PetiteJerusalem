@@ -225,6 +225,20 @@ const fr = {
       readThisWeek: "Lu cette semaine",
     },
     loadError: "Impossible de charger ce texte.",
+    saveError: "Enregistrement impossible. Réessayez.",
+    offline: {
+      banner:
+        "Hors connexion : vous lisez les textes téléchargés sur cet appareil. La liste et le suivi ne peuvent pas être modifiés tant que la connexion n'est pas revenue.",
+      readOnly: "Pas de connexion : votre liste ne peut pas être modifiée pour le moment.",
+      notDownloaded: "Ce texte n'est pas téléchargé sur cet appareil : il n'est pas lisible hors connexion.",
+      promptTitle: "Ce texte n'est pas téléchargé",
+      promptMessage:
+        "{name} n'est pas encore sur cet appareil : sans connexion, il ne pourra pas être lu. Le télécharger maintenant ?",
+      promptLater: "Plus tard",
+      downloadDone: "Textes téléchargés : votre lecture est disponible hors connexion.",
+      missing:
+        "Un texte de votre lecture du jour n'est pas téléchargé : il ne sera pas lisible hors connexion. | {count} textes de votre lecture du jour ne sont pas téléchargés : ils ne seront pas lisibles hors connexion.",
+    },
   },
   zmanim: {
     title: "Horaires du jour",

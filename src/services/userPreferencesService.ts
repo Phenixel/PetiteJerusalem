@@ -107,6 +107,84 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 };
 
 /**
+ * Copie locale des préférences (app native : lecture quotidienne hors ligne).
+ *
+ * Le document `userPreferences` reste la source de vérité — le serveur a
+ * toujours raison — mais sans copie sur l'appareil, la liste du jour n'existe
+ * plus dès que le réseau manque : la page repartirait des valeurs par défaut
+ * (liste vide, thème d'origine). On garde donc le dernier document reçu tel
+ * quel, par compte, et on le sert quand Firestore est injoignable. Il n'est
+ * JAMAIS modifié hors connexion : toute écriture passe par le serveur, et
+ * chaque lecture réussie le remplace.
+ *
+ * Le cache persistant de Firestore répondrait souvent aussi, mais il est un
+ * effet de bord du SDK : cette copie-ci est explicite, immédiate (aucun aller-
+ * retour à tenter avant d'abandonner) et lisible même si le document n'a
+ * jamais transité par ce cache-là.
+ */
+const CACHE_PREFIX = "pj-preferences:";
+
+function cacheKey(userId: string): string {
+  return `${CACHE_PREFIX}${userId}`;
+}
+
+function readCache(userId: string): UserPreferences | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(cacheKey(userId));
+    if (!raw) return null;
+    return { ...DEFAULT_PREFERENCES, ...(JSON.parse(raw) as Partial<UserPreferences>) };
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(userId: string, preferences: UserPreferences): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(cacheKey(userId), JSON.stringify(preferences));
+  } catch {
+    // Stockage plein ou indisponible : l'app fonctionne, mais en ligne seulement.
+  }
+}
+
+/** Oublie la copie locale (déconnexion, suppression de compte). */
+export function clearPreferencesCache(userId: string): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(cacheKey(userId));
+  } catch {
+    // Rien à nettoyer.
+  }
+}
+
+/** Appareil hors ligne (webview Capacitor comme navigateur). */
+export function isOffline(): boolean {
+  return typeof navigator !== "undefined" && navigator.onLine === false;
+}
+
+/**
+ * Écriture demandée sans connexion. Hors ligne, une écriture Firestore ne
+ * remonte pas d'erreur : le cache persistant (voir firebase/firestore.ts)
+ * l'applique localement et la garde en attente jusqu'au retour du réseau. Elle
+ * laisserait donc l'interface bloquée sur « en cours », puis s'imposerait au
+ * serveur à la reconnexion — en écrasant ce qui a pu changer depuis un autre
+ * appareil. Le serveur ayant toujours raison, on refuse l'écriture tout de
+ * suite, pour que l'appelant le dise à l'utilisateur.
+ */
+export class OfflineWriteError extends Error {
+  readonly isOffline = true;
+  constructor() {
+    super("OFFLINE");
+    this.name = "OfflineWriteError";
+  }
+}
+
+export function isOfflineWriteError(error: unknown): boolean {
+  return error instanceof OfflineWriteError;
+}
+
+/**
  * Progression de la lecture du jour : LA règle de comptage, partagée entre la
  * page Lecture quotidienne et le tableau de bord de l'accueil (et recopiée
  * dans functions/src/dailyReminder.ts, qui ne peut pas importer src/).
@@ -150,22 +228,36 @@ class UserPreferencesService {
   }
 
   private async fetchPreferences(userId: string): Promise<UserPreferences> {
+    // Hors ligne : la copie locale directement, sans attendre que Firestore
+    // renonce. C'est ce qui rend la lecture quotidienne lisible sans réseau.
+    if (isOffline()) {
+      const cached = readCache(userId);
+      if (cached) return cached;
+    }
     try {
       const { sdk, db } = await firestore();
       const docRef = sdk.doc(db, this.collectionName, userId);
       const docSnap = await sdk.getDoc(docRef);
 
-      if (docSnap.exists()) {
-        return { ...DEFAULT_PREFERENCES, ...docSnap.data() } as UserPreferences;
-      }
-      return { ...DEFAULT_PREFERENCES };
+      const prefs = docSnap.exists()
+        ? ({ ...DEFAULT_PREFERENCES, ...docSnap.data() } as UserPreferences)
+        : { ...DEFAULT_PREFERENCES };
+      // Le serveur a toujours raison : sa réponse remplace la copie locale.
+      writeCache(userId, prefs);
+      return prefs;
     } catch (error) {
       console.error("Erreur lors de la récupération des préférences:", error);
-      return { ...DEFAULT_PREFERENCES };
+      // Réseau capricieux (l'appareil se croit en ligne) : la dernière copie
+      // connue vaut mieux que des préférences vides.
+      return readCache(userId) ?? { ...DEFAULT_PREFERENCES };
     }
   }
 
   async savePreferences(userId: string, preferences: Partial<UserPreferences>): Promise<void> {
+    // Voir OfflineWriteError : sans connexion, l'écriture ne serait ni
+    // confirmée ni perdue, juste en attente — et gagnerait contre le serveur
+    // à la reconnexion. On la refuse.
+    if (isOffline()) throw new OfflineWriteError();
     try {
       const { sdk, db } = await firestore();
       const docRef = sdk.doc(db, this.collectionName, userId);
@@ -178,6 +270,10 @@ class UserPreferencesService {
       console.error("Erreur lors de la sauvegarde des préférences:", error);
       throw new Error("Erreur lors de la sauvegarde des préférences.");
     }
+    // Écriture confirmée par le serveur : la copie locale suit, pour que la
+    // prochaine ouverture hors ligne montre bien la liste à jour.
+    const cached = readCache(userId);
+    if (cached) writeCache(userId, { ...cached, ...preferences });
   }
 
   /** Ajoute un chiour à la liste des « déjà vus » (idempotent via arrayUnion). */
@@ -192,6 +288,7 @@ class UserPreferencesService {
     const { sdk, db } = await firestore();
     const docRef = sdk.doc(db, this.collectionName, userId);
     await sdk.deleteDoc(docRef);
+    clearPreferencesCache(userId);
   }
 }
 

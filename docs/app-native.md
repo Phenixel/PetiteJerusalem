@@ -73,18 +73,49 @@ serveur de dev :
 - `npm run app:build` retire `dist/texts/{talmud,mishna,tanakh}` (~38 Mo) du
   bundle natif via `scripts/prune-native-bundle.mjs`. Seuls `tehilim.json`
   (~370 Ko) et `talmud-chapters.json` (~40 Ko) restent embarqués.
-- Les livres se téléchargent depuis la page **/telechargements** (lien dans la
-  navbar de l'app) ou automatiquement pour la liste de lecture quotidienne.
-  Stockage : `Directory.Data` en natif (`@capacitor/file-transfer` +
-  `@capacitor/filesystem`), Cache Storage sur le web ; index dans
-  `@capacitor/preferences` (`src/services/offlineTextStore.ts` et
-  `offlineLibraryService.ts`).
+- Les livres se téléchargent depuis la bibliothèque (bouton sur chaque carte,
+  « Tout télécharger » par corpus) ou sur proposition de la lecture du jour
+  (voir plus bas). Stockage : `Directory.Data` en natif
+  (`@capacitor/file-transfer` + `@capacitor/filesystem`), Cache Storage sur le
+  web ; index dans `@capacitor/preferences` (`src/services/offlineTextStore.ts`
+  et `offlineLibraryService.ts`).
 - `textService.loadText` passe par `fetchTextResponse` : copie locale d'abord,
   réseau (`https://petite-jerusalem.fr`) sinon.
-- La progression (« marquer comme lu ») fonctionne aussi hors ligne :
-  cache Firestore persistant activé dans `src/firebase/firestore.ts`.
 
 Vérification : télécharger un livre, activer le mode avion, l'ouvrir.
+
+## Lecture quotidienne hors-ligne
+
+La page **/bibliotheque/lecture-du-jour** est `offlineOk` dans l'app native :
+sans réseau, elle s'ouvre et se lit, à partir de deux copies locales.
+
+- **La liste et son suivi** : `userPreferencesService` garde le dernier
+  document `userPreferences` reçu en `localStorage` (clé `pj-preferences:<uid>`)
+  et le sert quand l'appareil est hors ligne. Il est effacé à la déconnexion et
+  à la suppression du compte.
+- **Les textes** : ceux que l'utilisateur a acceptés de télécharger. À l'ajout
+  d'un texte (ou à l'activation d'une lecture du moment) dont le livre n'est pas
+  sur l'appareil, une modale prévient qu'il ne sera pas lisible hors connexion
+  et propose de le télécharger. Un bandeau propose la même chose quand la
+  lecture du jour comporte des textes absents — la paracha de la semaine change
+  toute seule, par exemple. Rien n'est téléchargé sans cet accord :
+  `refreshStaleDownloads` ne fait que remettre au format courant des fichiers
+  **déjà** téléchargés.
+
+**Synchronisation : le serveur a toujours raison.** Hors connexion la page
+passe en lecture seule — modifier la liste, cocher une lecture ou régler les
+rappels affiche « pas de connexion » plutôt que d'enregistrer quoi que ce soit.
+Sans cette règle, le cache Firestore persistant
+(`src/firebase/firestore.ts`) garderait l'écriture en attente et l'imposerait
+au serveur au retour du réseau, en écrasant ce qui a pu changer ailleurs
+(`savePreferences` lève `OfflineWriteError` sans rien tenter). Dès que la
+connexion revient, la page se réaligne sur le serveur et relance la mise à jour
+des fichiers.
+
+Vérification : composer une liste, mode avion, rouvrir la lecture du jour (les
+textes téléchargés s'affichent, les autres disent qu'ils ne sont pas
+téléchargés), tenter d'ajouter un texte (refusé), revenir en ligne (la liste se
+resynchronise).
 
 ## Authentification native (Google / Apple)
 

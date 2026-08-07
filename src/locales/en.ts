@@ -226,6 +226,20 @@ const en: LocaleMessages = {
     },
     resetsDaily: "Tracking resets every day.",
     loadError: "Unable to load this text.",
+    saveError: "Could not save. Please try again.",
+    offline: {
+      banner:
+        "Offline: you are reading the texts downloaded on this device. Your list and tracking cannot be changed until the connection is back.",
+      readOnly: "No connection: your list cannot be changed right now.",
+      notDownloaded: "This text is not downloaded on this device: it cannot be read offline.",
+      promptTitle: "This text is not downloaded",
+      promptMessage:
+        "{name} is not on this device yet: without a connection, it will not be readable. Download it now?",
+      promptLater: "Later",
+      downloadDone: "Texts downloaded: your reading is available offline.",
+      missing:
+        "One text of your daily reading is not downloaded: it will not be readable offline. | {count} texts of your daily reading are not downloaded: they will not be readable offline.",
+    },
   },
   zmanim: {
     title: "Today's times",
