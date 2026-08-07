@@ -21,7 +21,7 @@ import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { auth, googleAuthProvider } from "../firebase/core";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import type { User } from "../models/models";
-import { userPreferencesService } from "./userPreferencesService";
+import { clearPreferencesCache, userPreferencesService } from "./userPreferencesService";
 import { analyticsService } from "./analyticsService";
 
 export type { User };
@@ -282,6 +282,10 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
+    // La copie locale des préférences (lecture quotidienne hors ligne) ne
+    // survit pas à la déconnexion : elle sera reconstruite au prochain login.
+    const uid = auth.currentUser?.uid;
+    if (uid) clearPreferencesCache(uid);
     if (isNativeApp) {
       // Déconnecte aussi la couche native (sinon le prochain login Google
       // resauterait le sélecteur de compte).

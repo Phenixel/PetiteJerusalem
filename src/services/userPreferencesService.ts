@@ -107,6 +107,198 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 };
 
 /**
+ * Copie locale des préférences (app native : lecture quotidienne hors ligne).
+ *
+ * Le document `userPreferences` reste la source de vérité — le serveur a
+ * toujours raison — mais sans copie sur l'appareil, la liste du jour n'existe
+ * plus dès que le réseau manque : la page repartirait des valeurs par défaut
+ * (liste vide, thème d'origine). On garde donc le dernier document reçu tel
+ * quel, par compte, et on le sert quand Firestore est injoignable. Il n'est
+ * JAMAIS modifié hors connexion : toute écriture passe par le serveur, et
+ * chaque lecture réussie le remplace.
+ *
+ * Le cache persistant de Firestore répondrait souvent aussi, mais il est un
+ * effet de bord du SDK : cette copie-ci est explicite, immédiate (aucun aller-
+ * retour à tenter avant d'abandonner) et lisible même si le document n'a
+ * jamais transité par ce cache-là.
+ */
+const CACHE_PREFIX = "pj-preferences:";
+
+function cacheKey(userId: string): string {
+  return `${CACHE_PREFIX}${userId}`;
+}
+
+function readCache(userId: string): UserPreferences | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(cacheKey(userId));
+    if (!raw) return null;
+    return { ...DEFAULT_PREFERENCES, ...(JSON.parse(raw) as Partial<UserPreferences>) };
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(userId: string, preferences: UserPreferences): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(cacheKey(userId), JSON.stringify(preferences));
+  } catch {
+    // Stockage plein ou indisponible : l'app fonctionne, mais en ligne seulement.
+  }
+}
+
+/**
+ * Oublie la copie locale (déconnexion, suppression de compte). Le suivi coché
+ * hors ligne et pas encore synchronisé part avec elle : il appartient au compte
+ * qui s'en va, et le serveur reste seul dépositaire de ce qui a été lu.
+ */
+export function clearPreferencesCache(userId: string): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(cacheKey(userId));
+    localStorage.removeItem(pendingKey(userId));
+  } catch {
+    // Rien à nettoyer.
+  }
+}
+
+/** Appareil hors ligne (webview Capacitor comme navigateur). */
+export function isOffline(): boolean {
+  return typeof navigator !== "undefined" && navigator.onLine === false;
+}
+
+/**
+ * Écriture demandée sans connexion. Hors ligne, une écriture Firestore ne
+ * remonte pas d'erreur : le cache persistant (voir firebase/firestore.ts)
+ * l'applique localement et la garde en attente jusqu'au retour du réseau. Elle
+ * laisserait donc l'interface bloquée sur « en cours », puis s'imposerait au
+ * serveur à la reconnexion — en écrasant ce qui a pu changer depuis un autre
+ * appareil. Le serveur ayant toujours raison, on refuse l'écriture tout de
+ * suite, pour que l'appelant le dise à l'utilisateur.
+ */
+export class OfflineWriteError extends Error {
+  readonly isOffline = true;
+  constructor() {
+    super("OFFLINE");
+    this.name = "OfflineWriteError";
+  }
+}
+
+export function isOfflineWriteError(error: unknown): boolean {
+  return error instanceof OfflineWriteError;
+}
+
+/**
+ * Suivi de lecture coché hors connexion, en attente d'être envoyé au serveur.
+ * Contrairement à la liste (que le serveur seul décide), une lecture marquée
+ * lue ne se perd pas : elle est gardée ici et fusionnée au retour du réseau.
+ */
+const PENDING_PROGRESS_PREFIX = "pj-daily-progress-pending:";
+
+function pendingKey(userId: string): string {
+  return `${PENDING_PROGRESS_PREFIX}${userId}`;
+}
+
+function readPendingProgress(userId: string): DailyReadingProgress | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(pendingKey(userId));
+    return raw ? (JSON.parse(raw) as DailyReadingProgress) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePendingProgress(userId: string, progress: DailyReadingProgress): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(pendingKey(userId), JSON.stringify(progress));
+  } catch {
+    // Stockage plein : la coche reste affichée, mais ne survivra pas.
+  }
+}
+
+function clearPendingProgress(userId: string): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(pendingKey(userId));
+  } catch {
+    // Rien à nettoyer.
+  }
+}
+
+function unique(values: Iterable<string | number> | undefined): number[] {
+  return [...new Set([...(values ?? [])].map(Number))];
+}
+
+/** Chapitres lus par texte : union des deux côtés, texte par texte. */
+function mergeSections(
+  a: Record<string, number[]> = {},
+  b: Record<string, number[]> = {},
+): Record<string, number[]> {
+  const merged: Record<string, number[]> = {};
+  for (const id of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    merged[id] = [...new Set([...(a[id] ?? []), ...(b[id] ?? [])])].sort((x, y) => x - y);
+  }
+  return merged;
+}
+
+type ParashaProgress = NonNullable<DailyReadingProgress["parashaProgress"]>;
+
+/** Chnei mikra : même semaine → lu d'un côté suffit ; sinon la semaine la plus récente. */
+function mergeParashaProgress(
+  a: ParashaProgress | undefined,
+  b: ParashaProgress | undefined,
+): ParashaProgress | undefined {
+  if (!a) return b;
+  if (!b) return a;
+  if (a.week === b.week) return { week: a.week, completed: a.completed || b.completed };
+  return a.week > b.week ? a : b;
+}
+
+/**
+ * Fusionne deux suivis de la lecture du jour — celui du serveur et celui coché
+ * sur l'appareil pendant une coupure.
+ *
+ * Règle : **c'est le « lu » qui gagne**. Un même jour, les deux suivis
+ * s'additionnent (lu d'un côté = lu). Décocher hors ligne quelque chose que le
+ * serveur sait déjà lu ne tient donc pas au retour du réseau — personne ne
+ * décoche, et perdre une lecture faite serait plus gênant.
+ *
+ * Jours différents (la coupure a passé minuit) : le suivi du jour le plus
+ * récent l'emporte en bloc, la journée d'avant n'ayant plus lieu d'être. Le
+ * chnei mikra, lui, vit à la semaine : il se fusionne à part.
+ */
+export function mergeDailyProgress(
+  server: DailyReadingProgress | undefined,
+  local: DailyReadingProgress | undefined,
+): DailyReadingProgress {
+  const parashaProgress = mergeParashaProgress(server?.parashaProgress, local?.parashaProgress);
+  const withParasha = (progress: DailyReadingProgress): DailyReadingProgress => {
+    const merged = { ...progress };
+    // Le suivi hebdomadaire est fusionné à part : celui du bloc retenu ne doit
+    // pas repasser devant.
+    if (parashaProgress) merged.parashaProgress = parashaProgress;
+    else delete merged.parashaProgress;
+    return merged;
+  };
+
+  if (!server?.date) return withParasha(local ?? { date: "", completedIds: [] });
+  if (!local?.date) return withParasha(server);
+  if (server.date !== local.date) return withParasha(server.date > local.date ? server : local);
+
+  return withParasha({
+    date: server.date,
+    completedIds: unique([...(server.completedIds ?? []), ...(local.completedIds ?? [])]),
+    completedSections: mergeSections(server.completedSections, local.completedSections),
+    completedOptions: [
+      ...new Set([...(server.completedOptions ?? []), ...(local.completedOptions ?? [])]),
+    ],
+  });
+}
+
+/**
  * Progression de la lecture du jour : LA règle de comptage, partagée entre la
  * page Lecture quotidienne et le tableau de bord de l'accueil (et recopiée
  * dans functions/src/dailyReminder.ts, qui ne peut pas importer src/).
@@ -150,22 +342,97 @@ class UserPreferencesService {
   }
 
   private async fetchPreferences(userId: string): Promise<UserPreferences> {
+    // Hors ligne : la copie locale directement, sans attendre que Firestore
+    // renonce. C'est ce qui rend la lecture quotidienne lisible sans réseau.
+    if (isOffline()) {
+      const cached = readCache(userId);
+      if (cached) return cached;
+    }
     try {
       const { sdk, db } = await firestore();
       const docRef = sdk.doc(db, this.collectionName, userId);
       const docSnap = await sdk.getDoc(docRef);
 
-      if (docSnap.exists()) {
-        return { ...DEFAULT_PREFERENCES, ...docSnap.data() } as UserPreferences;
-      }
-      return { ...DEFAULT_PREFERENCES };
+      const prefs = docSnap.exists()
+        ? ({ ...DEFAULT_PREFERENCES, ...docSnap.data() } as UserPreferences)
+        : { ...DEFAULT_PREFERENCES };
+      // Le serveur a toujours raison sur la liste ; le suivi coché hors ligne,
+      // lui, remonte (voir mergeDailyProgress : le « lu » gagne).
+      await this.flushPendingProgress(userId, prefs);
+      // Réponse du serveur (suivi fusionné compris) : elle remplace la copie locale.
+      writeCache(userId, prefs);
+      return prefs;
     } catch (error) {
       console.error("Erreur lors de la récupération des préférences:", error);
-      return { ...DEFAULT_PREFERENCES };
+      // Réseau capricieux (l'appareil se croit en ligne) : la dernière copie
+      // connue vaut mieux que des préférences vides.
+      return readCache(userId) ?? { ...DEFAULT_PREFERENCES };
+    }
+  }
+
+  /**
+   * Renvoie au serveur le suivi coché pendant une coupure, fusionné avec le
+   * sien. `prefs` est modifié sur place pour porter le suivi fusionné : c'est
+   * lui que la page affichera, sans attendre une seconde lecture.
+   */
+  private async flushPendingProgress(userId: string, prefs: UserPreferences): Promise<void> {
+    const pending = readPendingProgress(userId);
+    if (!pending) return;
+    const merged = mergeDailyProgress(prefs.dailyReadingProgress, pending);
+    prefs.dailyReadingProgress = merged;
+    try {
+      const { sdk, db } = await firestore();
+      await sdk.setDoc(
+        sdk.doc(db, this.collectionName, userId),
+        { dailyReadingProgress: merged },
+        { mergeFields: ["dailyReadingProgress"] },
+      );
+      clearPendingProgress(userId);
+    } catch (error) {
+      // Le serveur n'a pas confirmé : le suivi reste en attente et repartira
+      // au prochain passage. Rien n'est perdu, rien n'est affirmé à tort.
+      console.warn("Suivi de lecture hors ligne pas encore synchronisé:", error);
+    }
+  }
+
+  /**
+   * Enregistre le suivi de la lecture du jour (« marquer comme lu »).
+   *
+   * Contrairement à la liste, il n'est pas bloqué hors connexion : la coche est
+   * gardée sur l'appareil et fusionnée avec le serveur au retour du réseau, où
+   * c'est toujours le « lu » qui l'emporte. Renvoie `"queued"` quand le serveur
+   * n'a pas (encore) pu confirmer.
+   */
+  async saveDailyProgress(
+    userId: string,
+    progress: DailyReadingProgress,
+  ): Promise<"saved" | "queued"> {
+    const keepLocally = () => {
+      writePendingProgress(userId, progress);
+      writeCache(userId, {
+        ...(readCache(userId) ?? DEFAULT_PREFERENCES),
+        dailyReadingProgress: progress,
+      });
+      return "queued" as const;
+    };
+
+    if (isOffline()) return keepLocally();
+    try {
+      await this.savePreferences(userId, { dailyReadingProgress: progress });
+      // Ce qui était en attente vient d'être englobé par cette écriture.
+      clearPendingProgress(userId);
+      return "saved";
+    } catch {
+      // Réseau perdu en cours de route : la lecture faite ne se perd pas.
+      return keepLocally();
     }
   }
 
   async savePreferences(userId: string, preferences: Partial<UserPreferences>): Promise<void> {
+    // Voir OfflineWriteError : sans connexion, l'écriture ne serait ni
+    // confirmée ni perdue, juste en attente — et gagnerait contre le serveur
+    // à la reconnexion. On la refuse.
+    if (isOffline()) throw new OfflineWriteError();
     try {
       const { sdk, db } = await firestore();
       const docRef = sdk.doc(db, this.collectionName, userId);
@@ -178,6 +445,10 @@ class UserPreferencesService {
       console.error("Erreur lors de la sauvegarde des préférences:", error);
       throw new Error("Erreur lors de la sauvegarde des préférences.");
     }
+    // Écriture confirmée par le serveur : la copie locale suit, pour que la
+    // prochaine ouverture hors ligne montre bien la liste à jour.
+    const cached = readCache(userId);
+    if (cached) writeCache(userId, { ...cached, ...preferences });
   }
 
   /** Ajoute un chiour à la liste des « déjà vus » (idempotent via arrayUnion). */
@@ -192,6 +463,7 @@ class UserPreferencesService {
     const { sdk, db } = await firestore();
     const docRef = sdk.doc(db, this.collectionName, userId);
     await sdk.deleteDoc(docRef);
+    clearPreferencesCache(userId);
   }
 }
 

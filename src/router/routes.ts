@@ -1,5 +1,6 @@
 import HomeView from "../views/HomeView.vue";
 import NotFound from "../views/NotFound.vue";
+import { isNativeApp } from "../composables/useNativeApp";
 
 // Toutes les autres vues sont lazy-loadées : Vite génère un chunk par vue,
 // le bundle initial ne contient que la home (et la 404, minuscule).
@@ -75,11 +76,15 @@ export default [
   // Lecture quotidienne : déplacée du profil vers la bibliothèque (elle vit à
   // côté des textes qu'elle fait lire). Route statique, prioritaire sur
   // /bibliotheque/:corpus ci-dessous.
+  // Dans l'app native, la lecture du jour se lit sans connexion : les textes
+  // téléchargés viennent de l'appareil et la liste est relue de sa copie
+  // locale (la page passe alors en lecture seule). Sur le web il n'y a rien
+  // de téléchargé : la page a besoin du réseau, comme avant.
   {
     path: "/bibliotheque/lecture-du-jour",
     name: "daily-reading",
     component: DailyReadingPage,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, offlineOk: isNativeApp },
   },
   // Chnei mikra : la paracha de la semaine avec son Targoum, ouverte à tous.
   // La semaine se choisit en query (`?semaine=2026-08-15`) plutôt qu'en
