@@ -79,18 +79,57 @@ serveur de dev :
 - `npm run app:build` retire `dist/texts/{talmud,mishna,tanakh}` (~38 Mo) du
   bundle natif via `scripts/prune-native-bundle.mjs`. Seuls `tehilim.json`
   (~370 Ko) et `talmud-chapters.json` (~40 Ko) restent embarqués.
-- Les livres se téléchargent depuis la page **/telechargements** (lien dans la
-  navbar de l'app) ou automatiquement pour la liste de lecture quotidienne.
-  Stockage : `Directory.Data` en natif (`@capacitor/file-transfer` +
-  `@capacitor/filesystem`), Cache Storage sur le web ; index dans
-  `@capacitor/preferences` (`src/services/offlineTextStore.ts` et
-  `offlineLibraryService.ts`).
+- Les livres se téléchargent depuis la bibliothèque (bouton sur chaque carte,
+  « Tout télécharger » par corpus) ou sur proposition de la lecture du jour
+  (voir plus bas). Stockage : `Directory.Data` en natif
+  (`@capacitor/file-transfer` + `@capacitor/filesystem`), Cache Storage sur le
+  web ; index dans `@capacitor/preferences` (`src/services/offlineTextStore.ts`
+  et `offlineLibraryService.ts`).
 - `textService.loadText` passe par `fetchTextResponse` : copie locale d'abord,
   réseau (`https://petite-jerusalem.fr`) sinon.
-- La progression (« marquer comme lu ») fonctionne aussi hors ligne :
-  cache Firestore persistant activé dans `src/firebase/firestore.ts`.
 
 Vérification : télécharger un livre, activer le mode avion, l'ouvrir.
+
+## Lecture quotidienne hors-ligne
+
+La page **/bibliotheque/lecture-du-jour** est `offlineOk` dans l'app native :
+sans réseau, elle s'ouvre et se lit, à partir de deux copies locales.
+
+- **La liste et son suivi** : `userPreferencesService` garde le dernier
+  document `userPreferences` reçu en `localStorage` (clé `pj-preferences:<uid>`)
+  et le sert quand l'appareil est hors ligne. Il est effacé à la déconnexion et
+  à la suppression du compte.
+- **Les textes** : ceux que l'utilisateur a acceptés de télécharger. À l'ajout
+  d'un texte (ou à l'activation d'une lecture du moment) dont le livre n'est pas
+  sur l'appareil, une modale prévient qu'il ne sera pas lisible hors connexion
+  et propose de le télécharger. Un bandeau propose la même chose quand la
+  lecture du jour comporte des textes absents — la paracha de la semaine change
+  toute seule, par exemple. Rien n'est téléchargé sans cet accord :
+  `refreshStaleDownloads` ne fait que remettre au format courant des fichiers
+  **déjà** téléchargés.
+
+**Synchronisation.** Deux règles, selon ce qu'on touche :
+
+- **La composition de la liste appartient au serveur.** Hors connexion,
+  ajouter un texte, activer une lecture du moment ou régler les rappels affiche
+  « pas de connexion » au lieu d'enregistrer. Sans ce garde-fou, le cache
+  Firestore persistant (`src/firebase/firestore.ts`) garderait l'écriture en
+  attente et l'imposerait au serveur au retour du réseau, en écrasant ce qui a
+  pu changer ailleurs — `savePreferences` lève donc `OfflineWriteError` sans
+  rien tenter. Au retour du réseau, la page se réaligne sur le serveur.
+- **Une lecture faite ne se perd pas.** Le « marquer comme lu » s'enregistre
+  hors connexion (`saveDailyProgress` : suivi gardé en `localStorage`, clé
+  `pj-daily-progress-pending:<uid>`) et repart au serveur à la première lecture
+  réussie des préférences. `mergeDailyProgress` arbitre : **le « lu » gagne** —
+  même jour, les deux suivis s'additionnent ; jours différents (la coupure a
+  passé minuit), le plus récent l'emporte ; le chnei mikra se fusionne à part,
+  à la semaine. Conséquence assumée : décocher hors ligne quelque chose que le
+  serveur sait déjà lu ne tient pas au retour du réseau.
+
+Vérification : composer une liste, mode avion, rouvrir la lecture du jour (les
+textes téléchargés s'affichent, les autres disent qu'ils ne sont pas
+téléchargés), cocher une lecture (gardée), tenter d'ajouter un texte (refusé),
+revenir en ligne (la liste se resynchronise, la coche remonte).
 
 ## Authentification native (Google / Apple)
 
@@ -148,6 +187,14 @@ le calcul est local, les coordonnées restent en `localStorage`.
 - **iOS** : `scripts/setup-ios.mjs` ajoute `NSLocationWhenInUseUsageDescription`
   à `ios/App/App/Info.plist`. C'est indispensable — sans cette clé, iOS
   **ferme l'app** à la première demande de position.
+
+## Widgets d'écran d'accueil
+
+Deux widgets (Horaires, Lecture du jour) accompagnent l'app : l'app pré-calcule
+leurs contenus et les pousse au natif via le plugin maison PjWidgets. Côté
+Android tout est scripté (`native/android/` + `setup-android.mjs`) ; côté iOS
+quelques étapes Xcode manuelles restent nécessaires — voir
+`docs/app-widgets.md`.
 
 ## Publication
 

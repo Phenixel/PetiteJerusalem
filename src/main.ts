@@ -135,6 +135,9 @@ import("./composables/useNativeApp").then(({ isNativeApp }) => {
   if (!isNativeApp) return;
   // Notifications push : deep-links au toucher + affichage en premier plan.
   import("./services/pushService").then(({ pushService }) => pushService.init(router));
+  // Widgets d'écran d'accueil : pousse les horaires et la lecture du jour au
+  // natif (lancement, retour au premier plan, changement de lieu…).
+  import("./services/widgetService").then(({ widgetService }) => widgetService.init());
   // La WebView Android applique l'échelle de police système (textZoom), ce qui
   // casse les mises en page (textes agrandis, débordements). On la neutralise :
   // la taille de lecture se règle dans l'app (useReadingSize).
@@ -146,6 +149,26 @@ import("./composables/useNativeApp").then(({ isNativeApp }) => {
   // Bouton retour matériel Android : sans listener, il quitte l'app au lieu
   // de revenir en arrière dans la navigation.
   import("@capacitor/app").then(({ App: CapacitorApp }) => {
+    // Toucher un widget ouvre l'app sur sa page : l'intent porte une URL du
+    // site (https sur Android, scheme petitejerusalem:// sur iOS). Seules ces
+    // URLs-là naviguent — tout autre lien délivré ici (callback OAuth natif,
+    // intent tiers) doit laisser l'app où elle est, sous peine d'arracher
+    // l'utilisateur vers une 404 en pleine connexion Google par exemple.
+    CapacitorApp.addListener("appUrlOpen", ({ url }) => {
+      let parsed: URL;
+      try {
+        parsed = new URL(url);
+      } catch {
+        return; // URL illisible : on reste où on est.
+      }
+      if (parsed.hostname !== "petite-jerusalem.fr") return;
+      // Au démarrage à froid, l'événement (retenu par Capacitor) arrive
+      // pendant la navigation initiale : attendre le router pour que le
+      // deep-link ne soit pas écarté par elle.
+      void router
+        .isReady()
+        .then(() => router.push(parsed.pathname + parsed.search + parsed.hash));
+    });
     CapacitorApp.addListener("backButton", ({ canGoBack }) => {
       if (canGoBack) {
         router.back();

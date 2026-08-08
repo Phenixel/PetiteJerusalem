@@ -21,6 +21,13 @@ import { isNativeApp } from "../composables/useNativeApp";
 
 const TALMUD_CHAPTERS_PATH = "/texts/talmud-chapters.json";
 
+/**
+ * Fichiers embarqués dans le binaire natif : ils sont lisibles hors ligne sans
+ * rien télécharger. Les corpus volumineux, eux, sont retirés du bundle — voir
+ * scripts/prune-native-bundle.mjs, qui doit rester d'accord avec cette liste.
+ */
+const BUNDLED_PATHS = new Set(["/texts/tehilim.json", TALMUD_CHAPTERS_PATH]);
+
 export interface OfflineBook {
   /** Chemin web du fichier — clé unique du livre. */
   path: string;
@@ -127,42 +134,65 @@ async function removeOrphanTalmudChapters(): Promise<void> {
 }
 
 /**
- * Télécharge en arrière-plan les livres de la liste de lecture quotidienne
- * (app native uniquement) : la lecture du jour est ainsi toujours disponible
- * hors ligne, sans action de l'utilisateur.
+ * Le livre d'une entrée est-il lisible sans connexion ? (app native : il doit
+ * être téléchargé ; sur le web les textes sont servis par le site.)
  */
-export async function syncDailyReadingDownloads(dailyReadingIds: number[]): Promise<void> {
-  if (!isNativeApp) return;
-  await ensureManifestLoaded();
+export function isEntryAvailableOffline(entry: TextStudyJsonEntry): boolean {
+  if (!isNativeApp) return true;
+  const book = bookForEntry(entry);
+  // Type non lisible par le lecteur : rien à télécharger.
+  if (!book) return true;
+  return BUNDLED_PATHS.has(book.path) || isDownloaded(book.path);
+}
 
-  const wanted = new Set<string>();
-  for (const id of dailyReadingIds) {
-    const entry = allTexts.find((t: TextStudyJsonEntry) => Number(t.id) === id);
-    if (!entry) continue;
-    try {
-      wanted.add(resolveFilePath(entry));
-    } catch {
-      // Type non supporté.
-    }
+/** Livres à télécharger pour que ces entrées soient lisibles hors ligne (sans doublon). */
+export function missingBooksForEntries(entries: TextStudyJsonEntry[]): OfflineBook[] {
+  if (!isNativeApp) return [];
+  const byPath = new Map<string, OfflineBook>();
+  for (const entry of entries) {
+    const book = bookForEntry(entry);
+    if (!book || BUNDLED_PATHS.has(book.path) || isDownloaded(book.path)) continue;
+    byPath.set(book.path, book);
   }
+  return [...byPath.values()];
+}
 
-  // Livres déjà téléchargés (y compris depuis la page Téléchargements) dans
-  // une version antérieure du format : on les remet au format courant.
-  for (const path of Object.keys(downloadManifest.value.files)) {
-    if (!isDownloadCurrent(path)) wanted.add(path);
-  }
-
-  for (const path of wanted) {
-    // Déjà téléchargé ET au format courant : rien à faire. Un fichier d'une
-    // version antérieure (ex. paracha sans montées ni targoum) est re-téléchargé.
-    if (isDownloaded(path) && isDownloadCurrent(path)) continue;
-    const book = offlineBooks.find((b) => b.path === path);
-    if (!book) continue;
+/**
+ * Télécharge une liste de livres, l'un après l'autre (les téléchargements
+ * proposés à l'utilisateur : lecture quotidienne, paracha de la semaine).
+ * Renvoie les livres qui n'ont pas pu être récupérés — l'appelant décide quoi
+ * en dire ; rien n'est perdu, ils restent proposés au prochain passage.
+ */
+export async function downloadBooks(books: OfflineBook[]): Promise<OfflineBook[]> {
+  const failed: OfflineBook[] = [];
+  for (const book of books) {
     try {
       await downloadBook(book);
     } catch (error) {
-      // Hors connexion ou serveur indisponible : on retentera au prochain passage.
-      console.warn(`Téléchargement de ${path} impossible pour l'instant:`, error);
+      console.warn(`Téléchargement de ${book.path} impossible:`, error);
+      failed.push(book);
     }
   }
+  return failed;
+}
+
+/**
+ * Remet au format courant les livres déjà téléchargés dans une version
+ * antérieure des données (ex. paracha d'avant les montées et le targoum).
+ * Ne télécharge JAMAIS de nouveau livre : ce qui vit sur l'appareil reste ce
+ * que l'utilisateur a accepté d'y mettre (voir la proposition de
+ * téléchargement à l'ajout d'un texte, dans la lecture quotidienne).
+ */
+export async function refreshStaleDownloads(): Promise<void> {
+  if (!isNativeApp) return;
+  await ensureManifestLoaded();
+  // Hors connexion, chaque téléchargement échouerait : on attend le retour du
+  // réseau, la page relance la synchro à ce moment-là.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+
+  const stale = Object.keys(downloadManifest.value.files)
+    .filter((path) => !isDownloadCurrent(path))
+    .map((path) => offlineBooks.find((b) => b.path === path))
+    .filter((book): book is OfflineBook => Boolean(book));
+  await downloadBooks(stale);
 }

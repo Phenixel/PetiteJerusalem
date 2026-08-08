@@ -12,12 +12,14 @@
  *   (fichier téléchargé depuis la console Firebase, git-ignoré)
  * - android/app/build.gradle : signingConfigs.release (lit android/keystore.properties,
  *   git-ignoré ; fallback signature debug si absent) + versionName aligné sur le tag git
+ * - Widgets d'écran d'accueil : copie native/android/ (providers Java, layouts)
+ *   et déclare les receivers dans le manifest (voir docs/app-widgets.md)
  *
  * Usage : node scripts/setup-android.mjs
  * Icônes/splash : npx @capacitor/assets generate --android (logo dans assets/logo.png)
  */
 import { execSync } from "node:child_process";
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -229,41 +231,103 @@ if (!existsSync(nightStyles)) {
   console.log("setup-android: values-night/styles.xml créé (barre système sombre)");
 }
 
-// 9. Overscroll : l'effet d'étirement d'Android déforme toute la WebView
-//    (bottom bar comprise). Le CSS overscroll-behavior ne suffit pas, il faut
-//    le désactiver sur la vue native.
+// 9. Widgets d'écran d'accueil (Horaires, Lecture du jour) : le code natif
+//    vit dans native/android/ (versionné) et se recopie ici à chaque setup —
+//    android/ étant régénéré de zéro par la CI. Les providers lisent les
+//    payloads JSON que l'app pousse via le plugin PjWidgets (voir
+//    src/services/widgetService.ts et docs/app-widgets.md).
+//    Copié AVANT le patch de MainActivity ci-dessous, qui référence la classe
+//    PjWidgetsPlugin : un échec de copie doit interrompre avant ce patch,
+//    jamais après (android/ resterait incompilable).
+const widgetsSource = join(root, "native/android/app/src/main");
+cpSync(widgetsSource, join(androidDir, "app/src/main"), { recursive: true });
+console.log("setup-android: fichiers widgets copiés depuis native/android/");
+
+//    Enregistrement du plugin + désactivation de l'overscroll (l'étirement
+//    d'Android déforme toute la WebView ; le CSS overscroll-behavior ne
+//    suffit pas). Patchs ADDITIFS : une MainActivity personnalisée à la main
+//    n'est jamais réécrite en entier, chaque insertion est indépendante.
 const mainActivityPath = join(
   androidDir,
   "app/src/main/java/fr/petitejerusalem/app/MainActivity.java",
 );
 if (existsSync(mainActivityPath)) {
-  const mainActivity = readFileSync(mainActivityPath, "utf8");
-  if (!mainActivity.includes("setOverScrollMode")) {
-    writeFileSync(
-      mainActivityPath,
-      `package fr.petitejerusalem.app;
+  let mainActivity = readFileSync(mainActivityPath, "utf8");
+  // Scaffold nu (pas de onCreate) : on pose le squelette complet.
+  if (!mainActivity.includes("onCreate")) {
+    mainActivity = `package fr.petitejerusalem.app;
 
 import android.os.Bundle;
-import android.view.View;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // L'étirement d'overscroll d'Android (stretch) déforme toute la
-        // WebView, bottom bar comprise ; le CSS overscroll-behavior ne le
-        // désactive pas, seul le mode natif de la vue le fait.
-        this.bridge.getWebView().setOverScrollMode(View.OVER_SCROLL_NEVER);
     }
 }
-`,
+`;
+  }
+  if (!mainActivity.includes("PjWidgetsPlugin")) {
+    // Le plugin doit être connu du bridge avant sa création (avant super.onCreate).
+    mainActivity = mainActivity.replace(
+      /(\n\s*)(super\.onCreate\(savedInstanceState\);)/,
+      `$1// Widgets d'écran d'accueil (voir native/android/ et docs/app-widgets.md).$1registerPlugin(PjWidgetsPlugin.class);$1$2`,
     );
+    console.log("setup-android: plugin PjWidgets enregistré dans MainActivity");
+  }
+  if (!mainActivity.includes("setOverScrollMode")) {
+    mainActivity = mainActivity.replace(
+      /(\n\s*)(super\.onCreate\(savedInstanceState\);)/,
+      `$1$2$1// L'étirement d'overscroll d'Android (stretch) déforme toute la$1// WebView, bottom bar comprise ; le CSS overscroll-behavior ne le$1// désactive pas, seul le mode natif de la vue le fait.$1this.bridge.getWebView().setOverScrollMode(View.OVER_SCROLL_NEVER);`,
+    );
+    if (!mainActivity.includes("import android.view.View;")) {
+      mainActivity = mainActivity.replace(
+        "import com.getcapacitor.BridgeActivity;",
+        "import android.view.View;\nimport com.getcapacitor.BridgeActivity;",
+      );
+    }
     console.log("setup-android: overscroll désactivé dans MainActivity");
   }
+  writeFileSync(mainActivityPath, mainActivity);
 }
 
-// 10. Connexion Google native : sans ces variables, le plugin
+// 10. Déclaration des deux widgets dans le manifest.
+let widgetManifest = readFileSync(manifestPath, "utf8");
+if (!widgetManifest.includes("HorairesWidgetProvider")) {
+  widgetManifest = widgetManifest.replace(
+    /(\n\s*<\/application>)/,
+    `
+
+        <!-- Widgets d'écran d'accueil (voir native/android/ et docs/app-widgets.md) -->
+        <receiver
+            android:name=".HorairesWidgetProvider"
+            android:exported="false"
+            android:label="@string/pj_widget_horaires_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_horaires_info" />
+        </receiver>
+        <receiver
+            android:name=".LectureWidgetProvider"
+            android:exported="false"
+            android:label="@string/pj_widget_lecture_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_lecture_info" />
+        </receiver>$1`,
+  );
+  writeFileSync(manifestPath, widgetManifest);
+  console.log("setup-android: widgets Horaires et Lecture déclarés dans le manifest");
+}
+
+// 11. Connexion Google native : sans ces variables, le plugin
 //     @capacitor-firebase/authentication retombe sur androidx.credentials
 //     1.2.0-rc01, une release candidate dont le Credential Manager est cassé
 //     sur certains appareils (le bouton Google ne fait alors rien du tout,

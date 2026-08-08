@@ -3,6 +3,7 @@ import { useRouter } from "vue-router";
 import { onMounted, onUnmounted, ref, computed, defineAsyncComponent, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { seoService } from "../services/seoService";
+import { localDayKey } from "../services/dateService";
 import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
 import { countDailyProgress, userPreferencesService } from "../services/userPreferencesService";
@@ -66,14 +67,6 @@ function dismissResume() {
   });
 }
 
-/** Local calendar day (YYYY-MM-DD) — même convention que DailyReading. */
-function todayKey(): string {
-  const d = new Date();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${month}-${day}`;
-}
-
 async function loadDashboard(u: User) {
   dashLoading.value = true;
   try {
@@ -82,7 +75,7 @@ async function loadDashboard(u: User) {
     // Même règle de comptage que la page Lecture quotidienne (chnei mikra
     // hebdomadaire exclu, complétions intersectées avec les listes actives).
     const progress = prefs.dailyReadingProgress;
-    const isToday = progress?.date === todayKey();
+    const isToday = progress?.date === localDayKey();
     const counts = countDailyProgress({
       textIds: prefs.dailyReadingIds ?? [],
       options: prefs.dailyReadingOptions ?? [],

@@ -3,10 +3,23 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../../models/models";
-import { countDailyProgress, userPreferencesService } from "../../services/userPreferencesService";
-import { syncDailyReadingDownloads } from "../../services/offlineLibraryService";
+import {
+  countDailyProgress,
+  isOfflineWriteError,
+  userPreferencesService,
+  type UserPreferences,
+} from "../../services/userPreferencesService";
+import {
+  downloadBooks,
+  missingBooksForEntries,
+  refreshStaleDownloads,
+  type OfflineBook,
+} from "../../services/offlineLibraryService";
+import { ensureManifestLoaded } from "../../services/offlineTextStore";
 import { pushService } from "../../services/pushService";
 import { sessionService } from "../../services/sessionService";
+import { widgetService } from "../../services/widgetService";
+import { localDayKey } from "../../services/dateService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useReadingSize } from "../../composables/useReadingSize";
@@ -19,6 +32,8 @@ import {
   SUNSET_REMINDER_OFFSET_MINUTES,
 } from "../../services/zmanimService";
 import { useToast } from "../../composables/useToast";
+import { useConfirm } from "../../composables/useConfirm";
+import { useOnline } from "../../composables/useOnline";
 import { analyticsService } from "../../services/analyticsService";
 import DailyReadingItem from "./DailyReadingItem.vue";
 import ReminderSettingsModal from "./ReminderSettingsModal.vue";
@@ -37,6 +52,11 @@ import { useSearchMode } from "../../composables/useSearchMode";
 const props = defineProps<{ userId: string }>();
 const { t, locale } = useI18n();
 const toast = useToast();
+const { confirm } = useConfirm();
+// Hors connexion, la page reste lisible (textes téléchargés + copie locale des
+// préférences) et les lectures se cochent encore ; seule la composition de la
+// liste attend le retour du réseau. Voir requireOnline et persistProgress.
+const online = useOnline();
 // Même préférence de taille que le lecteur de la bibliothèque (A− / A+).
 const readingSize = useReadingSize();
 
@@ -213,6 +233,7 @@ function isOptionSelected(key: string): boolean {
 }
 
 async function toggleOption(key: DailyOptionKey) {
+  if (!requireOnline()) return;
   const removed = isOptionSelected(key);
   if (removed) {
     selectedOptions.value = selectedOptions.value.filter((k) => k !== key);
@@ -227,13 +248,13 @@ async function toggleOption(key: DailyOptionKey) {
     );
   }
   saving.value = true;
+  let saved = false;
   try {
-    await userPreferencesService.savePreferences(props.userId, {
-      dailyReadingOptions: [...selectedOptions.value],
-    });
+    saved = await persist({ dailyReadingOptions: [...selectedOptions.value] });
     // Option retirée : sa complétion du jour doit disparaître aussi du cloud,
     // sinon l'accueil et le rappel push continueraient de la compter.
-    if (removed) await persistProgress();
+    if (removed && saved) await persistProgress();
+    else if (saved) void widgetService.refresh(widgetPrefs());
   } finally {
     saving.value = false;
   }
@@ -242,6 +263,16 @@ async function toggleOption(key: DailyOptionKey) {
     option: key,
     texts_count: selectedIds.value.length,
   });
+  // Option activée : ses textes suivent le calendrier (la paracha change
+  // chaque semaine), on propose de les emporter comme un texte ajouté.
+  if (!removed && saved) {
+    const entries =
+      key === "parasha"
+        ? (weeklyParasha.value?.entries ?? [])
+        : (dynamicReadings.value.find((reading) => reading.key === key)?.entries ?? []);
+    const title = OPTION_META.find((opt) => opt.key === key)?.titleKey;
+    await proposeOfflineDownload(entries, title ? t(title) : key);
+  }
 }
 
 async function toggleOptionCompleted(key: DailyOptionKey) {
@@ -263,83 +294,166 @@ async function toggleOptionCompleted(key: DailyOptionKey) {
   });
 }
 
-/** Local calendar day (YYYY-MM-DD), so the daily tracking resets at local midnight. */
-function todayKey(): string {
-  const d = new Date();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${month}-${day}`;
+
+/**
+ * Applique les préférences du compte à la page. Hors connexion, elles viennent
+ * de la copie locale du dernier passage (userPreferencesService) : la liste du
+ * jour et son suivi restent affichés, tels que le serveur les connaît.
+ */
+async function applyPreferences(prefs: UserPreferences, initial: boolean) {
+  // Les listes composées avant l'introduction du tri sont réordonnées ici.
+  selectedIds.value = sortByCatalog((prefs.dailyReadingIds ?? []).map(String));
+  selectedOptions.value = (prefs.dailyReadingOptions ?? []).filter((k) =>
+    (DAILY_OPTION_KEYS as readonly string[]).includes(k),
+  );
+
+  reminderEnabled.value = prefs.pushReminderEnabled === true;
+  reminderDaily.value = prefs.pushReminderDailyEnabled !== false;
+  reminderHour.value = prefs.pushReminderHour ?? 18;
+  reminderMinute.value = prefs.pushReminderMinute ?? 0;
+  reminderSunset.value = prefs.pushSunsetReminderEnabled === true;
+
+  const progress = prefs.dailyReadingProgress;
+  // Chnei mikra : la coche tient tant que la paracha n'a pas changé,
+  // indépendamment de la remise à zéro quotidienne.
+  storedParashaProgress.value = progress?.parashaProgress ?? null;
+  const currentWeek = weeklyParasha.value?.weekKey;
+  parashaCompleted.value =
+    !!currentWeek &&
+    progress?.parashaProgress?.week === currentWeek &&
+    progress.parashaProgress.completed === true;
+  if (parashaCompleted.value) setCollapsed("parasha", true);
+
+  if (progress && progress.date === localDayKey()) {
+    completedIds.value = new Set(progress.completedIds.map(String));
+    completedSections.value = { ...(progress.completedSections ?? {}) };
+    completedOptions.value = new Set(progress.completedOptions ?? []);
+    // Texts already read today start folded so unread ones stand out.
+    collapsedIds.value = new Set([...completedIds.value, ...completedOptions.value]);
+  } else {
+    // New day (or never tracked): start fresh and persist the reset once.
+    completedIds.value = new Set();
+    completedSections.value = {};
+    completedOptions.value = new Set();
+    if (
+      progress &&
+      (progress.completedIds.length > 0 ||
+        (progress.completedOptions ?? []).length > 0 ||
+        Object.keys(progress.completedSections ?? {}).length > 0)
+    ) {
+      // Pas pendant une resynchronisation : elle ne fait que réafficher ce que
+      // le serveur vient de renvoyer, elle n'a rien à lui réécrire.
+      if (!resyncing) await persistProgress();
+    }
+  }
+
+  // Rien dans la liste du jour : on ouvre directement sur « Cette semaine ».
+  // Seulement à l'ouverture : une resynchro ne doit pas changer d'onglet sous
+  // les doigts de l'utilisateur.
+  if (initial && weeklyParasha.value && totalCount.value === 0) activeTab.value = "week";
+}
+
+// Une resynchronisation en cours : elle réaffiche l'état du serveur, elle ne
+// lui écrit rien (sans quoi un échec d'écriture pourrait se rappeler lui-même).
+let resyncing = false;
+
+async function loadPreferences(initial = false, resync = false) {
+  const prefs = await userPreferencesService.getPreferences(props.userId);
+  resyncing = resync;
+  try {
+    await applyPreferences(prefs, initial);
+  } finally {
+    resyncing = false;
+  }
 }
 
 onMounted(async () => {
   try {
-    const prefs = await userPreferencesService.getPreferences(props.userId);
-    // Les listes composées avant l'introduction du tri sont réordonnées ici.
-    selectedIds.value = sortByCatalog((prefs.dailyReadingIds ?? []).map(String));
-    selectedOptions.value = (prefs.dailyReadingOptions ?? []).filter((k) =>
-      (DAILY_OPTION_KEYS as readonly string[]).includes(k),
-    );
-
-    reminderEnabled.value = prefs.pushReminderEnabled === true;
-    reminderDaily.value = prefs.pushReminderDailyEnabled !== false;
-    reminderHour.value = prefs.pushReminderHour ?? 18;
-    reminderMinute.value = prefs.pushReminderMinute ?? 0;
-    reminderSunset.value = prefs.pushSunsetReminderEnabled === true;
-
-    // App native : garantit en tâche de fond que la lecture du jour est
-    // disponible hors ligne (no-op sur le web).
-    syncDailyReadingDownloads((prefs.dailyReadingIds ?? []).map(Number)).catch(() => {});
-
-    const progress = prefs.dailyReadingProgress;
-    // Chnei mikra : la coche tient tant que la paracha n'a pas changé,
-    // indépendamment de la remise à zéro quotidienne.
-    storedParashaProgress.value = progress?.parashaProgress ?? null;
-    const currentWeek = weeklyParasha.value?.weekKey;
-    parashaCompleted.value =
-      !!currentWeek &&
-      progress?.parashaProgress?.week === currentWeek &&
-      progress.parashaProgress.completed === true;
-    if (parashaCompleted.value) setCollapsed("parasha", true);
-
-    if (progress && progress.date === todayKey()) {
-      completedIds.value = new Set(progress.completedIds.map(String));
-      completedSections.value = { ...(progress.completedSections ?? {}) };
-      completedOptions.value = new Set(progress.completedOptions ?? []);
-      // Texts already read today start folded so unread ones stand out.
-      collapsedIds.value = new Set([...completedIds.value, ...completedOptions.value]);
-    } else {
-      // New day (or never tracked): start fresh and persist the reset once.
-      completedIds.value = new Set();
-      completedSections.value = {};
-      completedOptions.value = new Set();
-      if (
-        progress &&
-        (progress.completedIds.length > 0 ||
-          (progress.completedOptions ?? []).length > 0 ||
-          Object.keys(progress.completedSections ?? {}).length > 0)
-      ) {
-        await persistProgress();
-      }
-    }
-
-    // Rien dans la liste du jour : on ouvre directement sur « Cette semaine ».
-    if (weeklyParasha.value && totalCount.value === 0) activeTab.value = "week";
+    // L'index des téléchargements doit être lu avant de savoir quels textes
+    // manquent sur l'appareil (no-op hors app native).
+    if (isNativeApp) await ensureManifestLoaded();
+    await loadPreferences(true);
   } finally {
     loading.value = false;
   }
+  // Fichiers téléchargés dans un format antérieur : remis à jour en tâche de
+  // fond. Aucun nouveau livre n'est téléchargé sans l'accord de l'utilisateur.
+  void refreshStaleDownloads();
 });
 
-async function persistSelection() {
+/**
+ * Le serveur a toujours raison : au retour de la connexion, on se réaligne sur
+ * lui — la liste a pu changer depuis un autre appareil pendant la coupure.
+ */
+watch(online, (isOnline, wasOnline) => {
+  if (!isOnline || wasOnline) return;
+  queuedNoticeShown = false;
+  // La resynchronisation renvoie au passage le suivi coché hors ligne.
+  void loadPreferences().catch(() => {});
+  void refreshStaleDownloads();
+});
+
+// Coupure en cours : l'avertissement « gardé sur l'appareil » a déjà été dit.
+let queuedNoticeShown = false;
+
+/**
+ * La composition de la liste (textes, lectures du moment, rappels) appartient
+ * au serveur : sans connexion on n'y touche pas, et on le dit plutôt que de
+ * laisser croire à un changement qui serait balayé à la reconnexion. Le suivi
+ * de lecture, lui, n'est pas concerné : voir persistProgress.
+ */
+function requireOnline(): boolean {
+  if (online.value) return true;
+  toast.error(t("dailyReading.offline.readOnly"));
+  return false;
+}
+
+/** Écrit dans les préférences, ou dit pourquoi ça n'a pas pu se faire. */
+async function persist(preferences: Partial<UserPreferences>): Promise<boolean> {
+  try {
+    await userPreferencesService.savePreferences(props.userId, preferences);
+    return true;
+  } catch (error) {
+    toast.error(
+      isOfflineWriteError(error) ? t("dailyReading.offline.readOnly") : t("dailyReading.saveError"),
+    );
+    // Connexion perdue entre-temps : on revient à ce que le serveur connaît
+    // plutôt que de garder à l'écran une liste qu'il ignore.
+    await loadPreferences(false, true).catch(() => {});
+    return false;
+  }
+}
+
+async function persistSelection(): Promise<boolean> {
   saving.value = true;
   try {
-    await userPreferencesService.savePreferences(props.userId, {
-      dailyReadingIds: selectedIds.value.map(Number),
-    });
-    // La nouvelle liste doit rester lisible hors ligne (no-op sur le web).
-    syncDailyReadingDownloads(selectedIds.value.map(Number)).catch(() => {});
+    const saved = await persist({ dailyReadingIds: selectedIds.value.map(Number) });
+    // Le widget d'écran d'accueil affiche cette liste (no-op sur le web).
+    if (saved) void widgetService.refresh(widgetPrefs());
+    return saved;
   } finally {
     saving.value = false;
   }
+}
+
+/**
+ * L'état courant, sous la forme des préférences dont dépend le widget
+ * d'écran d'accueil : lui éviter de relire dans Firestore le document que la
+ * page vient d'écrire (et de recalculer pour rien le payload des horaires).
+ */
+function widgetPrefs() {
+  return {
+    dailyReadingIds: selectedIds.value.map(Number),
+    dailyReadingOptions: [...selectedOptions.value],
+    dailyReadingProgress: {
+      date: localDayKey(),
+      completedIds: [...completedIds.value].map(Number),
+      completedOptions: [...completedOptions.value].filter((k) =>
+        selectedOptions.value.includes(k),
+      ),
+      ...(storedParashaProgress.value ? { parashaProgress: storedParashaProgress.value } : {}),
+    },
+  };
 }
 
 async function persistProgress() {
@@ -349,19 +463,83 @@ async function persistProgress() {
     const list = completedSections.value[id];
     if (list?.length) sections[id] = list;
   }
-  await userPreferencesService.savePreferences(props.userId, {
-    dailyReadingProgress: {
-      date: todayKey(),
-      completedIds: [...completedIds.value].map(Number),
-      completedSections: sections,
-      completedOptions: [...completedOptions.value].filter((k) =>
-        selectedOptions.value.includes(k),
-      ),
-      // Le chnei mikra vit à la semaine : sa coche est rattachée au Chabbat de
-      // la paracha et survit à la remise à zéro quotidienne.
-      ...(storedParashaProgress.value ? { parashaProgress: storedParashaProgress.value } : {}),
-    },
+  // Le suivi, lui, s'enregistre même hors connexion : la coche est gardée sur
+  // l'appareil et fusionnée avec le serveur au retour du réseau, où le « lu »
+  // l'emporte toujours (voir mergeDailyProgress).
+  const result = await userPreferencesService.saveDailyProgress(props.userId, {
+    date: localDayKey(),
+    completedIds: [...completedIds.value].map(Number),
+    completedSections: sections,
+    completedOptions: [...completedOptions.value].filter((k) => selectedOptions.value.includes(k)),
+    // Le chnei mikra vit à la semaine : sa coche est rattachée au Chabbat de
+    // la paracha et survit à la remise à zéro quotidienne.
+    ...(storedParashaProgress.value ? { parashaProgress: storedParashaProgress.value } : {}),
   });
+  // Le widget d'écran d'accueil suit la progression — y compris une coche
+  // gardée sur l'appareil en attendant le réseau (no-op sur le web).
+  void widgetService.refresh(widgetPrefs());
+  // Une seule fois par coupure : la coche est bien prise, mais pas encore
+  // arrivée chez le serveur. Le répéter à chaque texte lu serait du bruit.
+  if (result === "queued" && !queuedNoticeShown) {
+    queuedNoticeShown = true;
+    toast.info(t("dailyReading.offline.progressKept"));
+  }
+}
+
+// --- Disponibilité hors ligne (app native) ---
+// Tout ce qui s'affiche aujourd'hui : la liste choisie, les lectures du moment
+// et le chnei mikra. Ce sont ces fichiers-là qui doivent être sur l'appareil
+// pour que la page se lise sans connexion.
+const todayEntries = computed<TextStudyJsonEntry[]>(() => [
+  ...selectedEntries.value,
+  ...dynamicReadings.value.flatMap((reading) => reading.entries),
+  ...(weeklyParasha.value?.entries ?? []),
+]);
+
+/** Livres de la lecture du jour absents de l'appareil (vide hors app native). */
+const missingBooks = computed(() => missingBooksForEntries(todayEntries.value));
+
+const downloading = ref(false);
+
+/** Télécharge les livres demandés et rend compte du résultat. */
+async function downloadForOffline(books: OfflineBook[]): Promise<void> {
+  if (books.length === 0 || downloading.value) return;
+  if (!requireOnline()) return;
+  downloading.value = true;
+  try {
+    const failed = await downloadBooks(books);
+    if (failed.length > 0) toast.error(t("downloads.error"));
+    else toast.success(t("dailyReading.offline.downloadDone"));
+    analyticsService.capture("offline_download_completed", {
+      scope: "daily_reading",
+      books_count: books.length - failed.length,
+      failed_count: failed.length,
+    });
+  } finally {
+    downloading.value = false;
+  }
+}
+
+/**
+ * Texte ajouté à la liste alors que son livre n'est pas sur l'appareil : on
+ * prévient qu'il ne sera pas lisible hors connexion et on propose de
+ * télécharger ce texte-là, tout de suite. Rien n'est téléchargé sans cet
+ * accord — la place occupée reste le choix de l'utilisateur.
+ */
+async function proposeOfflineDownload(entries: TextStudyJsonEntry[], name: string) {
+  const books = missingBooksForEntries(entries);
+  if (books.length === 0) return;
+  const accepted = await confirm({
+    title: t("dailyReading.offline.promptTitle"),
+    message: t("dailyReading.offline.promptMessage", { name }),
+    confirmLabel: t("downloads.download"),
+    cancelLabel: t("dailyReading.offline.promptLater"),
+  });
+  analyticsService.capture("daily_reading_offline_prompt", {
+    accepted,
+    books_count: books.length,
+  });
+  if (accepted) await downloadForOffline(books);
 }
 
 function isSelected(id: string | number): boolean {
@@ -369,6 +547,7 @@ function isSelected(id: string | number): boolean {
 }
 
 async function toggleSelect(entry: TextStudyJsonEntry) {
+  if (!requireOnline()) return;
   const id = String(entry.id);
   const removed = selectedIds.value.includes(id);
   if (removed) {
@@ -383,11 +562,15 @@ async function toggleSelect(entry: TextStudyJsonEntry) {
   } else {
     selectedIds.value = sortByCatalog([...selectedIds.value, id]);
   }
-  await persistSelection();
+  const saved = await persistSelection();
   analyticsService.capture("daily_reading_configured", {
     action: removed ? "removed" : "added",
     texts_count: selectedIds.value.length,
   });
+  // Texte ajouté : s'il n'est pas sur l'appareil, on le propose maintenant.
+  if (!removed && saved) {
+    await proposeOfflineDownload([entry], appendHebrewNumeral(entry.name));
+  }
 }
 
 async function toggleCompleted(id: string) {
@@ -493,6 +676,8 @@ interface ReminderChoice {
 // jamais laisser voir les options.
 function onBellClick() {
   if (reminderBusy.value) return;
+  // Les rappels s'enregistrent dans le compte : sans connexion, rien à régler.
+  if (!requireOnline()) return;
   showReminderModal.value = true;
 }
 
@@ -651,6 +836,40 @@ function formatBookName(livre: string): string {
           {{ t("dailyReading.done") }}
         </button>
       </div>
+    </div>
+
+    <!-- Hors connexion : la page reste lisible (textes téléchargés), mais rien
+         n'est modifiable — le serveur reste seul maître de la liste. -->
+    <div
+      v-if="!online"
+      class="card p-4 mb-6 flex items-start gap-3"
+      role="status"
+    >
+      <AppIcon name="signal" :size="16" class="text-text-secondary/70 mt-0.5 shrink-0" />
+      <p class="text-sm text-text-secondary leading-relaxed">
+        {{ t("dailyReading.offline.banner") }}
+      </p>
+    </div>
+
+    <!-- App native : des textes de la lecture du jour ne sont pas sur
+         l'appareil (ajoutés ailleurs, ou paracha de la nouvelle semaine). -->
+    <div
+      v-else-if="isNativeApp && !loading && missingBooks.length > 0"
+      class="card p-4 mb-6 flex flex-wrap items-center justify-between gap-3"
+    >
+      <p class="text-sm text-text-secondary leading-relaxed flex items-start gap-2 min-w-0">
+        <AppIcon name="alert-triangle" :size="16" class="text-amber-500 mt-0.5 shrink-0" />
+        {{ t("dailyReading.offline.missing", missingBooks.length) }}
+      </p>
+      <button
+        class="btn btn-soft shrink-0"
+        :disabled="downloading"
+        @click="downloadForOffline(missingBooks)"
+      >
+        <AppIcon v-if="downloading" name="spinner" :size="14" class="animate-spin" />
+        <AppIcon v-else name="download" :size="14" />
+        {{ t("downloads.download") }}
+      </button>
     </div>
 
     <ReminderSettingsModal

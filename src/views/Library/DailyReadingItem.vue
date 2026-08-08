@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { TextStudyJsonEntry } from "../../models/models";
 import { loadText, MissingTextFileError, placeLabel } from "../../services/textService";
 import type { TextContent, TextSection } from "../../services/textService";
+import { isEntryAvailableOffline } from "../../services/offlineLibraryService";
+import { ensureManifestLoaded } from "../../services/offlineTextStore";
+import { useOnline } from "../../composables/useOnline";
 import { anchorToElement, scrollToVerse } from "../../composables/scrollAnchor";
 import { useReadingSize } from "../../composables/useReadingSize";
 import { readingProgressService, bookmarkId } from "../../services/readingProgressService";
@@ -29,10 +32,14 @@ const emit = defineEmits<{
 const { t } = useI18n();
 // Taille de lecture partagée avec le lecteur de la bibliothèque (A− / A+).
 const readingSize = useReadingSize();
+const online = useOnline();
 
 const loading = ref(true);
 const error = ref(false);
 const missing = ref(false);
+// Hors connexion et texte absent de l'appareil : ce n'est pas une erreur, mais
+// un texte qui n'a pas été téléchargé — on le dit tel quel.
+const notDownloaded = ref(false);
 const content = ref<TextContent | null>(null);
 
 // Reference texts (more than one section) get verse numbers; texts read as a
@@ -148,18 +155,33 @@ async function load() {
   loading.value = true;
   error.value = false;
   missing.value = false;
+  notDownloaded.value = false;
   content.value = null;
   try {
+    // Hors ligne, un texte qui n'est pas sur l'appareil ne viendra pas du
+    // réseau : on l'annonce au lieu d'attendre l'échec.
+    await ensureManifestLoaded();
+    if (!online.value && !isEntryAvailableOffline(props.entry)) {
+      notDownloaded.value = true;
+      return;
+    }
     content.value = await loadText(props.entry);
     // Le parent a besoin des index réels pour savoir quand tout est lu.
     emit("sections-loaded", content.value.sections.map((s) => s.index));
   } catch (e) {
-    if (e instanceof MissingTextFileError) missing.value = true;
+    if (!online.value) notDownloaded.value = true;
+    else if (e instanceof MissingTextFileError) missing.value = true;
     else error.value = true;
   } finally {
     loading.value = false;
   }
 }
+
+// Connexion revenue : un texte resté sur son message « pas téléchargé » (ou en
+// erreur réseau) se charge enfin, sans que l'utilisateur ait à quitter la page.
+watch(online, (isOnline) => {
+  if (isOnline && (notDownloaded.value || error.value)) void load();
+});
 
 /*
  * Chargement à la visibilité, pas au montage : chaque entrée charge le fichier
@@ -201,6 +223,14 @@ onUnmounted(() => observer?.disconnect());
       <div class="h-5 bg-black/10 rounded w-5/6 dark:bg-white/10"></div>
       <div class="h-5 bg-black/10 rounded w-2/3 dark:bg-white/10"></div>
     </div>
+
+    <p
+      v-else-if="notDownloaded"
+      class="py-2 text-sm text-text-secondary flex items-center gap-1.5"
+    >
+      <AppIcon name="download" :size="14" class="text-text-secondary/60" />
+      {{ t("dailyReading.offline.notDownloaded") }}
+    </p>
 
     <p
       v-else-if="missing || error"
