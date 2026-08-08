@@ -205,11 +205,15 @@ if (!existsSync(entitlementsPath)) {
 \t<array>
 \t\t<string>Default</string>
 \t</array>
+\t<key>com.apple.security.application-groups</key>
+\t<array>
+\t\t<string>group.fr.petitejerusalem.app</string>
+\t</array>
 </dict>
 </plist>
 `,
   );
-  console.log("setup-ios: App.entitlements créé (Sign in with Apple + push)");
+  console.log("setup-ios: App.entitlements créé (Sign in with Apple + push + App Group)");
 }
 
 // ---------------------------------------------------------------------------

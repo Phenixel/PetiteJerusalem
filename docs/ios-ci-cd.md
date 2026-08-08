@@ -19,6 +19,34 @@ archivé en artifact du run (90 jours).
 l'examen depuis App Store Connect. La CI s'arrête à TestFlight (voir
 [ios-release-plan.md](ios-release-plan.md#étape-8--soumission)).
 
+## ⚠️ Limite connue : les widgets ne passent pas par cette CI
+
+`docs/app-widgets.md` le dit : la cible `PjWidgets` se crée **à la main dans
+Xcode**, une cible ne se scriptant pas comme un module Gradle. Or ce workflow
+régénère `ios/` de zéro à chaque tag — il produit donc un build **sans les
+widgets**, sans rien signaler.
+
+Ce que `scripts/setup-ios.mjs` sait faire malgré tout, parce que c'est du
+fichier et non de la structure de projet : l'entitlement App Group
+`group.fr.petitejerusalem.app` sur la cible App, et le schéma d'URL
+`petitejerusalem` des deep-links, aux côtés du `REVERSED_CLIENT_ID` de Google
+— **dans le même tableau `CFBundleURLTypes`**, la clé étant unique.
+
+Restent hors de portée : la cible d'extension, son entitlement App Group, le
+glissement des sources de `native/ios/` et le changement de classe du view
+controller dans `Main.storyboard`.
+
+Trois issues possibles, à trancher avant de poser un tag :
+
+| Option | Effet |
+|---|---|
+| **Builder les releases depuis le Mac** | le plus simple ; la CI ne sert plus qu'à vérifier que le projet se génère |
+| **Versionner `ios/`** | la CI redevient fidèle, mais contredit le choix d'architecture de `docs/app-native.md` et alourdit le dépôt |
+| **Scripter la cible** (gem `xcodeproj`) | garde tout automatique, mais c'est du vrai travail et une dépendance Ruby de plus |
+
+Tant que ce n'est pas tranché, **ne pas utiliser ce workflow pour une release
+publique** : il conviendrait à un build de test sans widget, pas à l'App Store.
+
 ## Signature « dans le nuage »
 
 Aucun certificat ni profil de provisionnement n'est stocké dans le repo,
