@@ -55,6 +55,9 @@
         <RouterLink class="hover:text-primary transition-colors" to="/mentions-legales">
           {{ t("footer.legal") }}
         </RouterLink>
+        <RouterLink class="hover:text-primary transition-colors" to="/conditions-utilisation">
+          {{ t("footer.terms") }}
+        </RouterLink>
         <RouterLink class="hover:text-primary transition-colors" to="/confidentialite">
           {{ t("footer.privacy") }}
         </RouterLink>

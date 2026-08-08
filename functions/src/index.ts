@@ -37,6 +37,8 @@ export {
   studioCreateSerie,
   studioReorderSerie,
 } from "./studio";
+// Modération : compteur de signalements + masquage auto au 3e signalement.
+export { onSessionReported } from "./moderation";
 
 const SITE_URL = "https://petite-jerusalem.fr";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
@@ -195,7 +197,7 @@ async function getChiourim(): Promise<ChiourPreview[]> {
 
 // ---- Metadata resolution per route ----
 
-type SessionDoc = { name?: string; description?: string; type?: string };
+type SessionDoc = { name?: string; description?: string; type?: string; hidden?: boolean };
 
 /** Fetch a session by slug (then by document id), like the client does. */
 async function fetchSession(slug: string): Promise<SessionDoc | null> {
@@ -203,6 +205,8 @@ async function fetchSession(slug: string): Promise<SessionDoc | null> {
   const docSnap = bySlug.empty ? await db.collection("sessions").doc(slug).get() : bySlug.docs[0];
   if (!docSnap || !docSnap.exists) return null;
   const data = docSnap.data() as SessionDoc | undefined;
+  // Session masquée par la modération : pas d'aperçu social ni de carte OG.
+  if (data?.hidden === true) return null;
   return data?.name ? data : null;
 }
 

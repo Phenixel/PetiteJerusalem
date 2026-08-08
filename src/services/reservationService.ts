@@ -4,6 +4,7 @@ import { doc, runTransaction, collection, getDocs } from "firebase/firestore";
 import { firestoreService } from "./firestoreService";
 import { guestService } from "./guestService";
 import { analyticsService } from "./analyticsService";
+import { moderationService } from "./moderationService";
 
 export interface ReservationForm {
   name: string;
@@ -39,6 +40,9 @@ export class ReservationService {
     if (!userId && !guestId) {
       throw new Error("Une réservation doit être associée à un utilisateur ou un invité");
     }
+
+    // Modération App Store : le nom d'invité s'affiche publiquement sur la session.
+    moderationService.assertClean(guestName);
 
     const reservationId = crypto.randomUUID();
     const sfDocRef = doc(db, "sessions", sessionId);
@@ -99,6 +103,9 @@ export class ReservationService {
     if (!userId && !guestId) {
       throw new Error("Une réservation doit être associée à un utilisateur ou un invité");
     }
+
+    // Modération App Store : le nom d'invité s'affiche publiquement sur la session.
+    moderationService.assertClean(guestName);
 
     if (items.length === 0) return [];
 
@@ -220,6 +227,7 @@ export class ReservationService {
     if (!trimmedName) {
       throw new Error("Le nom de l'invité ne peut pas être vide");
     }
+    moderationService.assertClean(trimmedName);
 
     const sfDocRef = doc(db, "sessions", sessionId);
 

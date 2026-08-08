@@ -45,6 +45,36 @@ export interface Session {
    * ou false : les invités peuvent réserver avec leur nom seul.
    */
   guestEmailRequired?: boolean;
+  /**
+   * Modération : session masquée du public (admin ou automatiquement au 3e
+   * signalement). Seuls le créateur (bandeau d'information) et le backoffice
+   * la voient encore.
+   */
+  hidden?: boolean;
+  hiddenAt?: Date;
+  /** "reports" (masquage automatique) ou "admin" (décision manuelle). */
+  hiddenReason?: "reports" | "admin";
+  /** Signalements ouverts distincts, dénormalisé par la Cloud Function. */
+  reportsCount?: number;
+}
+
+// === MODÉRATION (exigence App Store 1.2) ===
+
+export type ReportReason = "inappropriate" | "offensive" | "spam" | "other";
+
+/** Document de la collection `reports` : un signalement de session. */
+export interface ReportDoc {
+  sessionId: string;
+  /** Nom de la session au moment du signalement (affichage backoffice). */
+  sessionName: string;
+  reason: ReportReason;
+  details: string;
+  /** uid du signaleur connecté, sinon null. */
+  reporterId: string | null;
+  /** Identifiant invité local du signaleur non connecté, sinon null. */
+  reporterGuestId: string | null;
+  status: "open" | "resolved";
+  createdAt?: Date;
 }
 
 export interface TextStudyReservation {

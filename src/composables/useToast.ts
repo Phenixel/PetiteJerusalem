@@ -1,5 +1,6 @@
 import { ref } from "vue";
 import { i18n } from "../i18n";
+import { ModerationError } from "../services/moderationService";
 
 export type ToastType = "success" | "error" | "info";
 
@@ -53,6 +54,11 @@ export function useToast() {
    * indisponible ont chacun leur message, sinon `fallbackMessage`.
    */
   const errorFromException = (err: unknown, fallbackMessage: string) => {
+    // Terme interdit détecté par la modération : le message dit QUEL terme
+    // pose problème, bien plus actionnable que le message générique.
+    if (err instanceof ModerationError) {
+      return error(err.message);
+    }
     const code = firebaseErrorCode(err);
     if (code === "permission-denied") {
       return error(i18n.global.t("errors.permissionDenied"));

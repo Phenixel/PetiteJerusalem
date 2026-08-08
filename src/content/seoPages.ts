@@ -988,6 +988,170 @@ const LEGAL_HE: LegalStrings = {
   breadcrumbName: "מידע משפטי",
 };
 
+// ---- conditions-utilisation: localized strings ----
+//
+// Conditions d'utilisation dédiées au contenu publié par les utilisateurs
+// (sessions de partage de lecture). Exigence App Store 1.2 : des conditions
+// que l'utilisateur accepte (lien à l'inscription, voir loginView), avec une
+// clause de TOLÉRANCE ZÉRO pour les contenus répréhensibles et les
+// utilisateurs abusifs, et la description des outils de modération
+// (signalement, masquage, blocage — voir docs/moderation.md).
+
+const TERMS_FR: LegalStrings = {
+  lang: "fr-FR",
+  title: "Conditions d'utilisation | Petite Jérusalem",
+  description:
+    "Conditions d'utilisation de Petite Jérusalem : règles de publication, tolérance zéro pour les contenus abusifs, signalement et modération.",
+  h1: "Conditions d'utilisation",
+  updated: "Dernière mise à jour : 8 août 2026",
+  intro:
+    "En utilisant Petite Jérusalem — et en particulier en créant un compte ou en publiant une session de partage de lecture — vous acceptez les présentes conditions.",
+  sections: [
+    {
+      heading: "Le service",
+      html: `<p>Petite Jérusalem est un service gratuit d'étude et de partage de textes de la tradition juive : bibliothèque de lecture, sessions de lecture partagée, chiourim, horaires. La création d'un compte est facultative et gratuite ; l'utilisateur s'engage à fournir des informations exactes.</p>`,
+    },
+    {
+      heading: "Contenus publiés par les utilisateurs",
+      html: `<p>Certains contenus sont écrits par les utilisateurs et visibles par les autres : le titre et la description des sessions de partage de lecture, le nom affiché du créateur et les noms des participants. Vous êtes seul responsable des contenus que vous publiez.</p>`,
+    },
+    {
+      heading: "Tolérance zéro pour les contenus abusifs",
+      html: `<p>Petite Jérusalem applique une <strong>tolérance zéro</strong> à l'égard des contenus répréhensibles et des utilisateurs abusifs. Il est notamment interdit de publier :</p>
+      <ul>
+        <li>des contenus haineux, discriminatoires, antisémites, racistes ou faisant l'apologie de la violence ;</li>
+        <li>des insultes, du harcèlement, des menaces ou des attaques personnelles ;</li>
+        <li>des contenus obscènes, pornographiques ou choquants ;</li>
+        <li>du spam, de la publicité ou des contenus trompeurs ;</li>
+        <li>des contenus illicites ou portant atteinte aux droits d'autrui.</li>
+      </ul>
+      <p>Tout manquement peut entraîner, sans préavis, le masquage ou la suppression du contenu et le blocage ou la suppression du compte.</p>`,
+    },
+    {
+      heading: "Signalement et modération",
+      html: `<p>Un filtre automatique bloque les termes manifestement injurieux ou haineux à la publication. Chaque session peut être <strong>signalée</strong> par n'importe quel visiteur (bouton « Signaler » sur la page de la session) ; une session signalée par plusieurs personnes est <strong>masquée automatiquement</strong> en attendant son examen. Les signalements sont examinés rapidement, en règle générale sous 24 heures, et donnent lieu au retrait des contenus contraires aux présentes conditions. Chaque utilisateur peut aussi <strong>bloquer</strong> un créateur pour ne plus voir ses contenus sur son appareil.</p>
+      <p>Pour signaler un contenu ou un abus, vous pouvez également écrire à <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a>.</p>`,
+    },
+    {
+      heading: "Comptes",
+      html: `<p>Vous pouvez supprimer votre compte et vos données à tout moment depuis Profil → Sécurité. Phenixel se réserve le droit de suspendre ou supprimer un compte utilisé en violation des présentes conditions.</p>`,
+    },
+    {
+      heading: "Données personnelles",
+      html: `<p>Le traitement des données personnelles est décrit dans la <a href="/confidentialite">politique de confidentialité</a>.</p>`,
+    },
+    {
+      heading: "Modification et droit applicable",
+      html: `<p>Phenixel peut modifier les présentes conditions à tout moment ; les modifications prennent effet dès leur publication sur cette page. Les présentes conditions sont régies par la loi française. Voir aussi les <a href="/mentions-legales">mentions légales</a>.</p>`,
+    },
+  ],
+  breadcrumbHome: "Accueil",
+  breadcrumbName: "Conditions d'utilisation",
+};
+
+const TERMS_EN: LegalStrings = {
+  lang: "en-US",
+  title: "Terms of Use | Petite Jérusalem",
+  description:
+    "Terms of use for Petite Jérusalem: publishing rules, zero tolerance for abusive content, reporting and moderation.",
+  h1: "Terms of Use",
+  updated: "Last updated: August 8, 2026",
+  intro:
+    "By using Petite Jérusalem — in particular by creating an account or publishing a shared reading session — you agree to these terms.",
+  sections: [
+    {
+      heading: "The service",
+      html: `<p>Petite Jérusalem is a free service for studying and sharing texts of the Jewish tradition: reading library, shared reading sessions, chiourim, halachic times. Creating an account is optional and free; users agree to provide accurate information.</p>`,
+    },
+    {
+      heading: "User-generated content",
+      html: `<p>Some content is written by users and visible to others: the title and description of shared reading sessions, the creator's display name and participants' names. You are solely responsible for the content you publish.</p>`,
+    },
+    {
+      heading: "Zero tolerance for abusive content",
+      html: `<p>Petite Jérusalem applies <strong>zero tolerance</strong> towards objectionable content and abusive users. It is in particular forbidden to publish:</p>
+      <ul>
+        <li>hateful, discriminatory, antisemitic or racist content, or content glorifying violence;</li>
+        <li>insults, harassment, threats or personal attacks;</li>
+        <li>obscene, pornographic or shocking content;</li>
+        <li>spam, advertising or misleading content;</li>
+        <li>unlawful content or content infringing the rights of others.</li>
+      </ul>
+      <p>Any breach may lead, without notice, to the content being hidden or removed and the account being blocked or deleted.</p>`,
+    },
+    {
+      heading: "Reporting and moderation",
+      html: `<p>An automatic filter blocks clearly offensive or hateful terms at publication time. Any visitor can <strong>report</strong> a session (the “Report” button on the session page); a session reported by several people is <strong>hidden automatically</strong> pending review. Reports are reviewed promptly, as a rule within 24 hours, and content that breaches these terms is removed. Every user can also <strong>block</strong> a creator to stop seeing their content on their device.</p>
+      <p>To report content or abuse, you can also write to <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a>.</p>`,
+    },
+    {
+      heading: "Accounts",
+      html: `<p>You can delete your account and data at any time from Profile → Security. Phenixel reserves the right to suspend or delete an account used in breach of these terms.</p>`,
+    },
+    {
+      heading: "Personal data",
+      html: `<p>The processing of personal data is described in the <a href="/confidentialite">privacy policy</a>.</p>`,
+    },
+    {
+      heading: "Changes and governing law",
+      html: `<p>Phenixel may change these terms at any time; changes take effect as soon as they are published on this page. These terms are governed by French law. See also the <a href="/mentions-legales">legal notice</a>.</p>`,
+    },
+  ],
+  breadcrumbHome: "Home",
+  breadcrumbName: "Terms of Use",
+};
+
+const TERMS_HE: LegalStrings = {
+  lang: "he-IL",
+  title: "תנאי שימוש | פטיט ירושלים",
+  description: "תנאי השימוש של פטיט ירושלים: כללי פרסום, אפס סובלנות לתוכן פוגעני, דיווח וניהול תוכן.",
+  h1: "תנאי שימוש",
+  updated: "עדכון אחרון: 8 באוגוסט 2026",
+  intro:
+    "בשימוש בפטיט ירושלים — ובפרט ביצירת חשבון או בפרסום מפגש קריאה משותפת — אתם מסכימים לתנאים אלה.",
+  sections: [
+    {
+      heading: "השירות",
+      html: `<p>פטיט ירושלים הוא שירות חינמי ללימוד ולשיתוף טקסטים מהמסורת היהודית: ספריית קריאה, מפגשי קריאה משותפת, שיעורים וזמני היום. יצירת חשבון היא אופציונלית וחינמית; המשתמש מתחייב למסור מידע מדויק.</p>`,
+    },
+    {
+      heading: "תוכן שנכתב על ידי משתמשים",
+      html: `<p>חלק מהתוכן נכתב על ידי המשתמשים וגלוי לאחרים: כותרת ותיאור של מפגשי קריאה משותפת, השם המוצג של היוצר ושמות המשתתפים. אתם האחראים הבלעדיים לתוכן שאתם מפרסמים.</p>`,
+    },
+    {
+      heading: "אפס סובלנות לתוכן פוגעני",
+      html: `<p>פטיט ירושלים נוקטת מדיניות של <strong>אפס סובלנות</strong> כלפי תוכן פסול ומשתמשים פוגעניים. אסור בפרט לפרסם:</p>
+      <ul>
+        <li>תוכן שנאה, מפלה, אנטישמי, גזעני או מהלל אלימות;</li>
+        <li>עלבונות, הטרדה, איומים או התקפות אישיות;</li>
+        <li>תוכן מגונה, פורנוגרפי או מזעזע;</li>
+        <li>ספאם, פרסומת או תוכן מטעה;</li>
+        <li>תוכן בלתי חוקי או הפוגע בזכויות אחרים.</li>
+      </ul>
+      <p>כל הפרה עלולה להוביל, ללא התראה מוקדמת, להסתרת התוכן או להסרתו ולחסימת החשבון או למחיקתו.</p>`,
+    },
+    {
+      heading: "דיווח וניהול תוכן",
+      html: `<p>מסנן אוטומטי חוסם ביטויים פוגעניים בעת הפרסום. כל מבקר יכול <strong>לדווח</strong> על מפגש (כפתור «דיווח» בעמוד המפגש); מפגש שדווח על ידי כמה אנשים <strong>מוסתר אוטומטית</strong> עד לבדיקתו. הדיווחים נבדקים במהירות, ככלל בתוך 24 שעות, ותוכן המפר תנאים אלה מוסר. כל משתמש יכול גם <strong>לחסום</strong> יוצר כדי לא לראות יותר את התוכן שלו במכשירו.</p>
+      <p>לדיווח על תוכן או שימוש לרעה אפשר גם לכתוב אל <a href="mailto:contact@phenixel.fr">contact@phenixel.fr</a>.</p>`,
+    },
+    {
+      heading: "חשבונות",
+      html: `<p>אפשר למחוק את החשבון והנתונים בכל עת דרך פרופיל ← אבטחה. Phenixel שומרת לעצמה את הזכות להשעות או למחוק חשבון המשמש בניגוד לתנאים אלה.</p>`,
+    },
+    {
+      heading: "נתונים אישיים",
+      html: `<p>עיבוד הנתונים האישיים מתואר ב<a href="/confidentialite">מדיניות הפרטיות</a>.</p>`,
+    },
+    {
+      heading: "שינויים והדין החל",
+      html: `<p>Phenixel רשאית לשנות תנאים אלה בכל עת; השינויים נכנסים לתוקף עם פרסומם בעמוד זה. תנאים אלה כפופים לדין הצרפתי. ראו גם את <a href="/mentions-legales">המידע המשפטי</a>.</p>`,
+    },
+  ],
+  breadcrumbHome: "בית",
+  breadcrumbName: "תנאי שימוש",
+};
+
 // ---- finir-le-chass: localized strings ----
 
 const FINIR_FR: LandingStrings = {
@@ -1291,6 +1455,16 @@ export const landingPages: LandingPage[] = [
       fr: buildLegal("/mentions-legales", LEGAL_FR),
       en: buildLegal("/mentions-legales", LEGAL_EN),
       he: buildLegal("/mentions-legales", LEGAL_HE),
+    },
+  },
+  {
+    file: "conditions-utilisation.html",
+    path: "/conditions-utilisation",
+    sitemap: { priority: 0.1, changefreq: "yearly" },
+    locales: {
+      fr: buildLegal("/conditions-utilisation", TERMS_FR),
+      en: buildLegal("/conditions-utilisation", TERMS_EN),
+      he: buildLegal("/conditions-utilisation", TERMS_HE),
     },
   },
 ];

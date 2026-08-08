@@ -35,6 +35,14 @@ onMounted(() => {
           <AppIcon name="users" :size="15" />
           {{ t("admin.nav.auteurs") }}
         </router-link>
+        <router-link
+          to="/admin/sessions"
+          class="btn btn-soft"
+          active-class="btn-primary"
+        >
+          <AppIcon name="flag" :size="15" />
+          {{ t("admin.nav.sessions") }}
+        </router-link>
       </nav>
     </div>
 

@@ -14,8 +14,9 @@ import {
 import { ref as storageRef, uploadBytesResumable, deleteObject, getDownloadURL } from "firebase/storage";
 import { db } from "../firebase/firestore";
 import { storage } from "../firebase/storage";
-import type { AuteurDoc, ChiourDoc, SerieDoc, StudioTokenDoc } from "../models/models";
+import type { AuteurDoc, ChiourDoc, ReportDoc, SerieDoc, Session, StudioTokenDoc } from "../models/models";
 import { chiourService } from "./chiourService";
+import { firestoreService } from "./firestoreService";
 import { studioService } from "./studioService";
 
 /**
@@ -29,6 +30,7 @@ import { studioService } from "./studioService";
 export type AuteurWithId = AuteurDoc & { id: string };
 export type SerieWithId = SerieDoc & { id: string };
 export type TokenWithId = StudioTokenDoc & { id: string };
+export type ReportWithId = ReportDoc & { id: string };
 
 /** Champs éditables d'un chiour côté admin. */
 export interface ChiourAdminFields {
@@ -55,6 +57,77 @@ export function generateStudioToken(): string {
 }
 
 export class AdminService {
+  // --- Sessions (modération) ----------------------------------------------
+
+  /** Toutes les sessions, masquées comprises, sans passer par le cache. */
+  async listAllSessions(): Promise<Session[]> {
+    firestoreService.invalidateSessionsCache();
+    return firestoreService.getSessions();
+  }
+
+  /** Tous les signalements, les plus récents d'abord. */
+  async listReports(): Promise<ReportWithId[]> {
+    const snap = await getDocs(collection(db, "reports"));
+    const reports = snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        ...(data as ReportDoc),
+        id: d.id,
+        createdAt: data.createdAt?.toDate?.() ?? undefined,
+      };
+    });
+    reports.sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
+    return reports;
+  }
+
+  /** Masque une session (décision admin) : elle disparaît de l'app publique. */
+  async hideSession(sessionId: string): Promise<void> {
+    await updateDoc(doc(db, "sessions", sessionId), {
+      hidden: true,
+      hiddenAt: serverTimestamp(),
+      hiddenReason: "admin",
+    });
+    firestoreService.invalidateSessionsCache();
+  }
+
+  /**
+   * Démasque une session ET résout ses signalements ouverts (compteur remis à
+   * zéro) : sinon le prochain signalement re-déclencherait aussitôt le
+   * masquage automatique.
+   */
+  async unhideSession(sessionId: string, openReports: ReportWithId[]): Promise<void> {
+    const batch = writeBatch(db);
+    batch.update(doc(db, "sessions", sessionId), { hidden: false, reportsCount: 0 });
+    for (const report of openReports) {
+      batch.update(doc(db, "reports", report.id), { status: "resolved" });
+    }
+    await batch.commit();
+    firestoreService.invalidateSessionsCache();
+  }
+
+  /**
+   * Résout un signalement sans démasquer la session, et réaligne le compteur
+   * dénormalisé (la Cloud Function ne recompte qu'à la création).
+   */
+  async resolveReport(reportId: string, sessionId: string, remainingOpenCount: number): Promise<void> {
+    const batch = writeBatch(db);
+    batch.update(doc(db, "reports", reportId), { status: "resolved" });
+    batch.update(doc(db, "sessions", sessionId), { reportsCount: remainingOpenCount });
+    await batch.commit();
+    firestoreService.invalidateSessionsCache();
+  }
+
+  /** Supprime une session et tous ses signalements. */
+  async deleteSessionWithReports(sessionId: string, reports: ReportWithId[]): Promise<void> {
+    const batch = writeBatch(db);
+    batch.delete(doc(db, "sessions", sessionId));
+    for (const report of reports) {
+      batch.delete(doc(db, "reports", report.id));
+    }
+    await batch.commit();
+    firestoreService.invalidateSessionsCache();
+  }
+
   // --- Chiourim -----------------------------------------------------------
 
   /** Tous les chiourim, brouillons inclus, sans cache. */

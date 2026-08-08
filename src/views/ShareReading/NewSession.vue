@@ -6,6 +6,7 @@ import { EnumTypeTextStudy } from "../../models/typeTextStudy";
 import { sessionService } from "../../services/sessionService";
 import { TextTypeService } from "../../services/textTypeService";
 import { authService } from "../../services/authService";
+import { ModerationError } from "../../services/moderationService";
 import type { User } from "../../services/authService";
 import { seoService } from "../../services/seoService";
 import { analyticsService } from "../../services/analyticsService";
@@ -150,8 +151,13 @@ const createSession = async () => {
     router.push(`/share-reading/session/${sessionId}`);
   } catch (error) {
     console.error("Erreur lors de la création de la session:", error);
-    analyticsService.captureException(error, { flow: "session_create" });
-    message.value = t("newSession.createError");
+    if (error instanceof ModerationError) {
+      // Terme interdit : erreur utilisateur (pas un bug), avec le terme en cause.
+      message.value = error.message;
+    } else {
+      analyticsService.captureException(error, { flow: "session_create" });
+      message.value = t("newSession.createError");
+    }
     messageType.value = "error";
     isLoading.value = false;
   } finally {

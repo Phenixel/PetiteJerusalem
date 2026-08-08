@@ -88,6 +88,14 @@ const goToNewSession = () => {
               <span class="chip bg-primary/10 text-primary shrink-0">
                 {{ sessionService.formatTextType(session.type) }}
               </span>
+              <!-- Session masquée par la modération : le créateur doit le voir. -->
+              <span
+                v-if="session.hidden"
+                class="chip bg-amber-500/15 text-amber-700 dark:text-amber-300 shrink-0"
+                :title="t('moderation.hiddenOwnerBanner')"
+              >
+                {{ t("moderation.hiddenChip") }}
+              </span>
             </div>
             <!-- Jauge de réservation : l'info clé du créateur -->
             <div v-if="stats(session).total > 0" class="flex items-center gap-2.5">
