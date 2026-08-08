@@ -51,11 +51,17 @@ out/
 /android
 /ios
 
-# Config Firebase Android + clés de signature (jamais dans le repo)
+# Config Firebase Android/iOS + clés de signature (jamais dans le repo)
 google-services.json
+GoogleService-Info.plist
 *.keystore
 keystore.properties
+# Clés Apple (APNs, App Store Connect API)
+*.p8
 
 # Notes de version Play Store générées par scripts/prepare-whatsnew.mjs (CI)
 /whatsnew
 /release-body.md
+
+# Configuration locale des agents (Claude Code / Cowork)
+.claude/

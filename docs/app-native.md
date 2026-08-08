@@ -10,15 +10,19 @@ Deux choix d'architecture en découlent :
    téléchargent à la demande (voir plus bas).
 2. **Les projets natifs (`android/`, `ios/`) sont générés localement et
    git-ignorés** (code généré, lourd, dépendant de la machine). Tout
-   ajustement natif doit être scripté dans `scripts/setup-android.mjs` pour
-   rester reproductible — la CI régénère `android/` de zéro à chaque release
-   (voir `docs/android-ci-cd.md`).
+   ajustement natif doit être scripté dans `scripts/setup-android.mjs` ou
+   `scripts/setup-ios.mjs` pour rester reproductible — la CI régénère les
+   deux de zéro à chaque release (voir `docs/android-ci-cd.md` et
+   `docs/ios-ci-cd.md`).
 
 ## Prérequis
 
 - Node 22 (déjà requis par le projet)
 - **Android** : Android Studio + un SDK Android installé + JDK 21
-- **iOS** : macOS + Xcode (+ CocoaPods : `sudo gem install cocoapods`)
+- **iOS** : macOS + **Xcode 26** (exigé par Capacitor 8 et par l'App Store
+  depuis le 28 avril 2026). Le build passe par Swift Package Manager, mais la
+  CLI Capacitor exige quand même CocoaPods installé pour `cap add ios`
+  (`sudo gem install cocoapods`).
 
 ## Démarrage
 
@@ -29,7 +33,9 @@ npm install
 # 2. Générer les projets natifs (une seule fois)
 npx cap add android
 node scripts/setup-android.mjs   # réapplique les ajustements natifs (permissions, signature…)
+
 npx cap add ios                  # macOS uniquement
+IOS_DEVELOPMENT_TEAM=XXXXXXXXXX node scripts/setup-ios.mjs
 
 # 3. Builder le web + synchroniser vers le natif, puis ouvrir l'IDE
 npm run cap:android      # ouvre Android Studio
@@ -99,13 +105,11 @@ Apple **impose** « Sign in with Apple » sur l'app iOS dès qu'un autre login
 tiers (ici Google) est proposé (règle App Store 4.8). Le bouton est
 **affiché uniquement sur iOS** — invisible sur le site web et sur Android.
 
-Étapes **hors-code** à faire une fois pour iOS :
-
-1. **Firebase Console** → Authentication → activer le provider **Apple**.
-2. **Apple Developer** → créer un *Service ID*, une *Sign in with Apple Key*,
-   renseigner le *Return URL* fourni par Firebase.
-3. **Xcode** (projet iOS généré) → onglet *Signing & Capabilities* → ajouter la
-   capability **Sign in with Apple**.
+Étapes **hors-code** à faire une fois pour iOS (détaillées dans
+`docs/ios-release-plan.md`) : activer le fournisseur **Apple** dans la console
+Firebase, et cocher la capacité **Sign in with Apple** sur l'App ID Apple
+Developer. Le *Service ID* et la *Sign in with Apple Key* ne servent qu'au
+flux web. Côté projet Xcode, `scripts/setup-ios.mjs` écrit l'entitlement.
 
 ## Notifications push
 
@@ -115,6 +119,11 @@ Implémentées côté client (`src/services/pushService.ts`,
 (Cloud Function planifiée `dailyReadingReminder`). Côté iOS, la clé APNs doit
 être uploadée dans la console Firebase et la capability Push Notifications
 ajoutée dans Xcode.
+
+Côté iOS, `scripts/setup-ios.mjs` pose l'entitlement `aps-environment` (sandbox
+en Debug, production en Release), le background mode `remote-notification` et
+les trois hooks APNs dans `AppDelegate.swift` ; la clé APNs doit être importée
+dans la console Firebase (voir `docs/ios-release-plan.md`).
 
 Deux rappels, réglés depuis la cloche de la page **Lecture du jour** et
 envoyés tant que la lecture du jour n'est pas terminée : à l'heure fixe
@@ -136,19 +145,21 @@ le calcul est local, les coordonnées restent en `localStorage`.
   `ACCESS_FINE_LOCATION` au manifest. C'est indispensable — le manifest livré
   par `@capacitor/geolocation` est **vide**, donc sans ces lignes
   `requestPermissions()` est refusé d'office et la page reste sur Paris.
-- **iOS** (projet généré, non versionné) : ajouter dans `ios/App/App/Info.plist`
-
-  ```xml
-  <key>NSLocationWhenInUseUsageDescription</key>
-  <string>Votre position sert à calculer les horaires du jour (zmanim) sur votre appareil. Elle n'est envoyée nulle part.</string>
-  ```
-
-  Sans cette clé, iOS **ferme l'app** à la première demande de position.
+- **iOS** : `scripts/setup-ios.mjs` ajoute `NSLocationWhenInUseUsageDescription`
+  à `ios/App/App/Info.plist`. C'est indispensable — sans cette clé, iOS
+  **ferme l'app** à la première demande de position.
 
 ## Publication
 
-La publication Android est automatisée : chaque tag `vX.Y.Z` déclenche
-`deploy-android.yml`, qui régénère `android/`, builde l'AAB signé et l'envoie
-au Play Store avec la fiche et les notes de version — tout est documenté dans
-`docs/android-ci-cd.md`. iOS (App Store) reste à faire : compte Apple
-Developer, `npx cap add ios`, config consoles ci-dessus, TestFlight.
+Un tag `vX.Y.Z` publie tout d'un coup :
+
+| Workflow | Cible | Résultat |
+|---|---|---|
+| `deploy.yml` | site | mise en ligne de `petite-jerusalem.fr` |
+| `deploy-android.yml` | Play Store | AAB signé + fiche + notes de version, publiés (`docs/android-ci-cd.md`) |
+| `deploy-ios.yml` | App Store | IPA signé envoyé sur **TestFlight** + fiche (`docs/ios-ci-cd.md`) |
+
+Côté iOS, la mise en vente reste un geste manuel dans App Store Connect
+(Apple exige une soumission explicite à l'examen). Le chemin complet — compte
+Apple Developer, consoles, premier build, soumission — est décrit dans
+`docs/ios-release-plan.md`.

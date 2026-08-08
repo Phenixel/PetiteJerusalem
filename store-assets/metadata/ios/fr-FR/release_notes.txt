@@ -1,0 +1,3 @@
+Première version de Petite Jérusalem sur iPhone.
+
+Bibliothèque complète (Tehilim, Michna, Talmud, Tanakh), sessions de lecture partagée, lecture hors ligne, rappel de lecture quotidien, horaires du jour et chiourim audio.
