@@ -23,6 +23,28 @@ describe("moderationService.findBannedWord", () => {
     expect(moderationService.findBannedWord("איזה חרא")).toBe("חרא");
   });
 
+  it("détecte les termes antisémites, contournements compris", () => {
+    expect(moderationService.findBannedWord("bande de youpins")).toBe("youpins");
+    expect(moderationService.findBannedWord("H1tler avait raison")).toBe("hitler");
+    expect(moderationService.findBannedWord("Mort aux Juifs")).toBe("mort aux juifs");
+    expect(moderationService.findBannedWord("mort à Israël")).toBe("mort a israel");
+    expect(moderationService.findBannedWord("espece de sionazi")).toBe("sionazi");
+  });
+
+  it("laisse passer les termes historiques et mémoriels", () => {
+    // Des sessions de Tehilim à la mémoire de victimes emploient ces mots :
+    // ils ne doivent jamais être bloqués.
+    expect(
+      moderationService.findBannedWord("À la mémoire des victimes de la Shoah"),
+    ).toBeNull();
+    expect(
+      moderationService.findBannedWord("Tehilim pour les rescapés de l'Holocauste"),
+    ).toBeNull();
+    expect(
+      moderationService.findBannedWord("Pour les victimes de l'intifada et les otages"),
+    ).toBeNull();
+  });
+
   it("ne déclenche pas sur un mot contenant un terme interdit", () => {
     // « députée » contient « pute », « calcul » contient « cul » : la
     // comparaison mot à mot ne doit pas les signaler.
