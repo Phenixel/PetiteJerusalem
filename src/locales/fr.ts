@@ -51,6 +51,7 @@ const fr = {
     madeBy: "Fait par",
     about: "À propos",
     legal: "Mentions légales",
+    terms: "Conditions d'utilisation",
     privacy: "Confidentialité",
     reportIssue: "Signaler un problème",
     discover: "Découvrir",
@@ -119,6 +120,10 @@ const fr = {
     appleError: "Erreur Apple",
     displayNamePlaceholder: "Ex: David Cohen",
     emailPlaceholder: "exemple{'@'}email.com",
+    termsNotice: "En vous connectant ou en créant un compte, vous acceptez les",
+    termsLink: "conditions d'utilisation",
+    termsAnd: "et la",
+    privacyLink: "politique de confidentialité",
   },
   profile: {
     loadingProfile: "Chargement de votre profil...",

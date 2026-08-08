@@ -53,6 +53,7 @@ const en: LocaleMessages = {
     madeBy: "Made by",
     about: "About",
     legal: "Legal notices",
+    terms: "Terms of Use",
     privacy: "Privacy",
     reportIssue: "Report an issue",
     discover: "Discover",
@@ -121,6 +122,10 @@ const en: LocaleMessages = {
     appleError: "Apple error",
     displayNamePlaceholder: "Ex: David Cohen",
     emailPlaceholder: "example{'@'}email.com",
+    termsNotice: "By signing in or creating an account, you agree to the",
+    termsLink: "terms of use",
+    termsAnd: "and the",
+    privacyLink: "privacy policy",
   },
   profile: {
     loadingProfile: "Loading your profile...",

@@ -223,6 +223,15 @@ export default [
     meta: { offlineOk: true },
     component: ContentPage,
   },
+  // Conditions d'utilisation (contenu utilisateur, tolérance zéro, modération) :
+  // exigées par l'App Store (règle 1.2), liées depuis le pied de page et
+  // l'inscription.
+  {
+    path: "/conditions-utilisation",
+    name: "conditions-utilisation",
+    meta: { offlineOk: true },
+    component: ContentPage,
+  },
   // Tehilim par intention: hub + intention pages, rendered from
   // src/content/seoPages.ts (same markup the prerender step serves to crawlers).
   {

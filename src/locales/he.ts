@@ -53,6 +53,7 @@ const he: LocaleMessages = {
     madeBy: "נוצר על ידי",
     about: "אודות",
     legal: "מידע משפטי",
+    terms: "תנאי שימוש",
     privacy: "פרטיות",
     reportIssue: "דווח על בעיה",
     discover: "גלה",
@@ -121,6 +122,10 @@ const he: LocaleMessages = {
     appleError: "שגיאת Apple",
     displayNamePlaceholder: "לדוגמה: דוד כהן",
     emailPlaceholder: "example{'@'}email.com",
+    termsNotice: "בהתחברות או ביצירת חשבון, אתם מסכימים ל",
+    termsLink: "תנאי השימוש",
+    termsAnd: "ול",
+    privacyLink: "מדיניות הפרטיות",
   },
   profile: {
     loadingProfile: "טוען את הפרופיל שלך...",

@@ -61,6 +61,20 @@ déclenche à chaque document créé dans `reports` :
 - Les aperçus sociaux (`socialPreview`, `ogImage`) ne servent plus les
   sessions masquées.
 
+## Conditions d'utilisation et contact
+
+Apple exige aussi, pour le contenu utilisateur, des conditions que
+l'utilisateur accepte (avec tolérance zéro affichée pour les contenus
+abusifs) et un moyen de contact publié :
+
+- **`/conditions-utilisation`** (fr/en/he, `src/content/seoPages.ts`) :
+  règles de publication, clause de tolérance zéro, description du
+  signalement/masquage/blocage, engagement d'examen des signalements sous
+  24 h. Liée depuis le pied de page, et depuis la page de connexion
+  (« En vous connectant ou en créant un compte, vous acceptez… »).
+- **Contact** : contact@phenixel.fr, publié sur les conditions, les mentions
+  légales, la page À propos et la politique de confidentialité.
+
 ## Connexion Apple
 
 « Se connecter avec Apple » est en place (obligatoire dès qu'un login Google

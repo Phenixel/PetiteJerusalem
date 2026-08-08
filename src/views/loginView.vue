@@ -306,6 +306,19 @@ onMounted(async () => {
           {{ buttonText }}
         </button>
       </form>
+
+      <!-- Acceptation des conditions (exigence App Store 1.2 pour le contenu
+           utilisateur) : vaut pour l'inscription comme pour les logins Google/Apple. -->
+      <p class="mt-6 text-center text-xs text-text-secondary/80 leading-relaxed">
+        {{ t("login.termsNotice") }}
+        <RouterLink to="/conditions-utilisation" class="underline hover:text-text-primary">
+          {{ t("login.termsLink") }}
+        </RouterLink>
+        {{ t("login.termsAnd") }}
+        <RouterLink to="/confidentialite" class="underline hover:text-text-primary">
+          {{ t("login.privacyLink") }}
+        </RouterLink>
+      </p>
     </section>
   </main>
 </template>
