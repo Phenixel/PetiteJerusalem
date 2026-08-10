@@ -138,6 +138,9 @@ import("./composables/useNativeApp").then(({ isNativeApp }) => {
   // Widgets d'écran d'accueil : pousse les horaires et la lecture du jour au
   // natif (lancement, retour au premier plan, changement de lieu…).
   import("./services/widgetService").then(({ widgetService }) => widgetService.init());
+  // Bandeau de mise à jour : compare le binaire installé à la version publiée
+  // sur le store (lancement, puis retour au premier plan).
+  import("./services/appUpdateService").then(({ appUpdateService }) => appUpdateService.init());
   // La WebView Android applique l'échelle de police système (textZoom), ce qui
   // casse les mises en page (textes agrandis, débordements). On la neutralise :
   // la taille de lecture se règle dans l'app (useReadingSize).

@@ -748,6 +748,12 @@ const fr = {
     retry: "Réessayer",
     library: "Ouvrir la bibliothèque",
   },
+  appUpdate: {
+    title: "Mise à jour disponible",
+    message: "La version {version} de l'application est disponible sur le store.",
+    action: "Mettre à jour",
+    dismiss: "Masquer ce message",
+  },
   notifications: {
     title: "Rappels de lecture",
     description:

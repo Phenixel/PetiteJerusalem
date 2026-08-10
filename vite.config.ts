@@ -2,7 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { execFileSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
@@ -38,10 +38,36 @@ function resolveAppVersion(): string {
   }
 }
 
+/**
+ * Publie la version de la release sur le site : `dist/app-version.json`.
+ *
+ * L'app Android y lit la dernière version publiée pour se savoir périmée et
+ * proposer la mise à jour (src/services/appUpdateService.ts) — le Play Store
+ * n'expose aucune API publique de version. Émis par le build plutôt que
+ * maintenu à la main dans `public/` : le même tag déploie le site et publie
+ * l'app (deploy.yml / deploy-android.yml), le fichier ne peut donc pas mentir
+ * sur la release en cours.
+ */
+function appVersionManifest(version: string): Plugin {
+  return {
+    name: 'pj-app-version-manifest',
+    apply: 'build',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'app-version.json',
+        source: `${JSON.stringify({ version: version.replace(/^v/, '') }, null, 2)}\n`,
+      })
+    },
+  }
+}
+
+const appVersion = resolveAppVersion()
+
 // https://vite.dev/config/
 export default defineConfig({
   define: {
-    __APP_VERSION__: JSON.stringify(resolveAppVersion()),
+    __APP_VERSION__: JSON.stringify(appVersion),
   },
   // Port dédié à ce projet pour pouvoir bosser sur plusieurs projets en
   // parallèle sans collision avec le 5173 par défaut de Vite.
@@ -50,7 +76,12 @@ export default defineConfig({
   },
   // Le badge flottant Vue DevTools polluerait les captures d'écran de la
   // fiche Play Store (scripts/store-screenshots.mjs).
-  plugins: [vue(), ...(process.env.STORE_SCREENSHOTS ? [] : [vueDevTools()]), tailwindcss()],
+  plugins: [
+    vue(),
+    ...(process.env.STORE_SCREENSHOTS ? [] : [vueDevTools()]),
+    tailwindcss(),
+    appVersionManifest(appVersion),
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

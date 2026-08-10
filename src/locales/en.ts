@@ -741,6 +741,12 @@ const en: LocaleMessages = {
     retry: "Try again",
     library: "Open the library",
   },
+  appUpdate: {
+    title: "Update available",
+    message: "Version {version} of the app is available on the store.",
+    action: "Update",
+    dismiss: "Hide this message",
+  },
   notifications: {
     title: "Reading reminders",
     description: "Get a notification while your daily reading isn't finished.",

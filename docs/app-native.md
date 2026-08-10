@@ -192,6 +192,35 @@ Android tout est scripté (`native/android/` + `setup-android.mjs`) ; côté iOS
 quelques étapes Xcode manuelles restent nécessaires — voir
 `docs/app-widgets.md`.
 
+## Bandeau « mise à jour disponible »
+
+Une app installée peut rester des mois en arrière (mises à jour automatiques
+désactivées) : les correctifs ne l'atteignent jamais. Au lancement — puis à
+chaque retour au premier plan, au plus une fois toutes les 6 h —
+`src/services/appUpdateService.ts` compare la version installée
+(`App.getInfo()`) à la version publiée, et affiche un bandeau refusable en
+tête de l'app, avec un lien vers la fiche du store
+(`components/AppUpdateBanner.vue`). Un refus vaut jusqu'à la version suivante.
+
+La version publiée vient d'une source différente par plateforme, faute d'API
+commune :
+
+- **iOS** — `itunes.apple.com/lookup?bundleId=…`, l'API publique de l'App
+  Store, qui fait autorité : la publication iOS est manuelle et passe par une
+  revue de plusieurs jours, se fier au tag de release annoncerait une mise à
+  jour encore introuvable.
+- **Android** — `https://petite-jerusalem.fr/app-version.json` : le Play Store
+  n'expose aucune API publique de version, et le tag qui déploie le site
+  déclenche aussi la publication Play, les deux ne divergent donc que le temps
+  de la revue Google.
+
+`app-version.json` est émis par le build du site (plugin `appVersionManifest`
+dans `vite.config.ts`) à partir de la même version que `__APP_VERSION__` : rien
+à maintenir à la main. Tant que l'app n'est pas publiée sur l'App Store, le
+lookup ne renvoie aucun résultat et le bandeau n'apparaît jamais sur iOS. Tout
+échec (hors ligne, store injoignable, version illisible) laisse simplement le
+bandeau masqué — jamais de faux positif.
+
 ## Publication
 
 La publication Android est automatisée : chaque tag `vX.Y.Z` déclenche

@@ -728,6 +728,12 @@ const he: LocaleMessages = {
     retry: "לנסות שוב",
     library: "לפתוח את הספרייה",
   },
+  appUpdate: {
+    title: "עדכון זמין",
+    message: "גרסה {version} של האפליקציה זמינה בחנות.",
+    action: "לעדכן",
+    dismiss: "להסתיר הודעה זו",
+  },
   notifications: {
     title: "תזכורות קריאה",
     description: "קבלו התראה כל עוד הקריאה היומית שלכם לא הושלמה.",
