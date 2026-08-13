@@ -21,6 +21,20 @@ const config: CapacitorConfig = {
   ...(process.env.CAP_SERVER_URL
     ? { server: { url: process.env.CAP_SERVER_URL, cleartext: true } }
     : {}),
+  // iOS (Capacitor 8 = Swift Package Manager, plus de CocoaPods) : les deux
+  // plugins @capacitor-firebase déclarent le même identifiant SwiftPM que les
+  // paquets Firebase qu'ils embarquent. Sans `symlink`, la résolution échoue
+  // sur « package identity collision » (capawesome-team/capacitor-firebase#959).
+  experimental: {
+    ios: {
+      spm: {
+        packageOptions: {
+          "@capacitor-firebase/authentication": { symlink: true },
+          "@capacitor-firebase/messaging": { symlink: true },
+        },
+      },
+    },
+  },
   plugins: {
     // Auth native Google/Apple : le plugin ne fait qu'obtenir les credentials
     // (skipNativeAuth), la connexion Firebase elle-même passe par le SDK JS de
