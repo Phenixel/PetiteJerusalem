@@ -11,6 +11,7 @@ import ConsentBanner from "./components/ConsentBanner.vue";
 import GlobalAudioPlayer from "./components/GlobalAudioPlayer.vue";
 import OfflineNotice from "./components/OfflineNotice.vue";
 import BottomTabBar from "./components/BottomTabBar.vue";
+import AppUpdateBanner from "./components/AppUpdateBanner.vue";
 import { useMiniPlayerVisible } from "./composables/useAudioPlayer";
 import { useOnline } from "./composables/useOnline";
 import { isNativeApp } from "./composables/useNativeApp";
@@ -74,6 +75,9 @@ onAuthStateChanged(auth, (user) => {
   >
     <StoneWallBackground />
     <Navbar />
+    <!-- App native seulement : ne s'affiche que si le binaire installé est
+         antérieur à la version publiée sur le store (appUpdateService). -->
+    <AppUpdateBanner />
     <OfflineNotice v-if="showOfflineNotice" />
     <RouterView v-else />
     <!-- App native : pas de footer de site ; l'essentiel (à propos, mentions
