@@ -15,7 +15,8 @@
  * - AppDelegate.swift : hooks APNs (@capacitor-firebase/messaging) et
  *   Auth.auth().canHandle(url) (@capacitor-firebase/authentication)
  * - project.pbxproj : bundle id, équipe de signature, entitlements, versions,
- *   iPhone seulement, et enregistrement des deux ressources ci-dessus
+ *   familles d'appareils (iPhone + iPad), et enregistrement des deux
+ *   ressources ci-dessus
  * - Icônes / splash générés depuis assets/logo.png
  *
  * Usage : node scripts/setup-ios.mjs
