@@ -8,8 +8,8 @@
  *    par la CI via `gh api`) : c'est ce que l'utilisateur a écrit à la main en
  *    créant la release. Français → whatsnew-fr-FR uniquement, les autres
  *    langues retombent sur la langue par défaut dans la Play Console.
- * 2. Sinon, store-assets/metadata/android/<locale>/changelogs/default.txt
- *    pour chaque langue.
+ * 2. Sinon, la phrase par défaut de scripts/release-notes.mjs
+ *    (« Correction de bugs mineurs. », traduite par langue).
  *
  * Le markdown est allégé (titres, puces, gras, liens) car le Play Store
  * affiche du texte brut, et le tout est tronqué à 500 caractères (limite
@@ -27,23 +27,13 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { defaultReleaseNotes, markdownToPlain } from "./release-notes.mjs";
 
 const LIMIT = 500;
 const root = join(import.meta.dirname, "..");
 const metadataDir = join(root, "store-assets/metadata/android");
 const outDir = join(root, "whatsnew");
 mkdirSync(outDir, { recursive: true });
-
-function markdownToPlain(text) {
-  return text
-    .replace(/\r/g, "")
-    .replace(/^#+\s*/gm, "")
-    .replace(/^\s*[-*]\s+/gm, "• ")
-    .replace(/\*\*|__/g, "")
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
 
 function truncate(text, label) {
   const chars = [...text];
@@ -75,14 +65,10 @@ if (releaseBody) {
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
   for (const locale of locales) {
-    const text = readFileSync(join(metadataDir, locale, "changelogs/default.txt"), "utf8").trim();
-    writeFileSync(
-      join(outDir, `whatsnew-${locale}`),
-      truncate(text, `${locale}/changelogs/default.txt`),
-    );
+    writeFileSync(join(outDir, `whatsnew-${locale}`), defaultReleaseNotes(locale));
   }
   console.log(
-    `prepare-whatsnew: pas de release GitHub pour ce tag, notes prises depuis changelogs/default.txt (${locales.join(", ")})`,
+    `prepare-whatsnew: pas de release GitHub pour ce tag, phrase par défaut (${locales.join(", ")})`,
   );
 }
 

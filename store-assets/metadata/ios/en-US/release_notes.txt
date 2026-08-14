@@ -1,3 +1,0 @@
-First release of Petite Jérusalem on iPhone.
-
-Full library (Tehilim, Mishnah, Talmud, Tanakh), shared reading sessions, offline reading, daily reading reminder, daily times and audio shiurim.

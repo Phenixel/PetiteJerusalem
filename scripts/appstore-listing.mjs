@@ -10,8 +10,6 @@
  *   <locale>/keywords.txt          (≤ 100, séparés par des virgules sans espace)
  *   <locale>/promotional_text.txt  (≤ 170, modifiable sans nouvelle version)
  *   <locale>/description.txt       (≤ 4000)
- *   <locale>/release_notes.txt     (≤ 4000, « Nouveautés » — ignoré sur la
- *                                   toute première version, Apple l'interdit)
  *   <locale>/support_url.txt       (obligatoire)
  *   <locale>/marketing_url.txt     (optionnel)
  *   <locale>/privacy_url.txt       (obligatoire, identique pour toutes les langues)
@@ -20,11 +18,19 @@
  * upload en plusieurs morceaux avec somme de contrôle) : elles se déposent à la
  * main dans App Store Connect, une seule fois — voir docs/ios-ci-cd.md.
  *
+ * Les notes de version (« Nouveautés ») ne viennent pas d'un fichier du repo :
+ * la CI passe le corps de la release GitHub du tag via --release-notes, et à
+ * défaut c'est la phrase par défaut de scripts/release-notes.mjs qui part —
+ * même logique que le Play Store (scripts/prepare-whatsnew.mjs). Le corps,
+ * rédigé en français, n'alimente que fr-FR ; les autres langues reçoivent la
+ * phrase par défaut. Apple refuse `whatsNew` sur la toute première version :
+ * le script réessaie alors sans.
+ *
  * Usage :
- *   node scripts/appstore-listing.mjs --check     vérifie les limites de
- *                                                 caractères (aucun réseau)
+ *   node scripts/appstore-listing.mjs --check     vérifie limites et caractères
+ *                                                 (aucun réseau)
  *   ASC_KEY_ID=… ASC_ISSUER_ID=… ASC_PRIVATE_KEY="$(cat AuthKey_XXX.p8)" \
- *     node scripts/appstore-listing.mjs [--version 3.6.4]
+ *     node scripts/appstore-listing.mjs [--version 3.6.4] [--release-notes body.md]
  *
  * Sans --version, le script prend la version App Store à l'état
  * « modifiable » (PREPARE_FOR_SUBMISSION et assimilés).
@@ -32,6 +38,7 @@
 import { createPrivateKey, sign as cryptoSign } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { defaultReleaseNotes, markdownToPlain, releaseBodyApplies } from "./release-notes.mjs";
 
 const BUNDLE_ID = "fr.petitejerusalem.app";
 const metadataDir = join(import.meta.dirname, "../store-assets/metadata/ios");
@@ -44,8 +51,15 @@ const LIMITS = {
   "keywords.txt": 100,
   "promotional_text.txt": 170,
   "description.txt": 4000,
-  "release_notes.txt": 4000,
 };
+
+// App Store Connect rejette les émojis et assimilés (« Ce champ contient un ou
+// plusieurs caractères non valides ») : tout ce qui est hors BMP (émojis
+// proprement dits), plus les blocs symboliques du BMP rendus en émoji
+// (⌚ ⏰ ☀ ✅ ⭐…) et les caractères de composition d'émojis. Détecté ici pour
+// planter au --check du début de workflow, pas après 40 minutes de build.
+const FORBIDDEN_CHARS =
+  /[\u{10000}-\u{10FFFF}\u{2300}-\u{23FF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}]/gu;
 // promotional_text.txt et marketing_url.txt sont facultatifs côté Apple.
 const OPTIONAL = new Set(["promotional_text.txt", "marketing_url.txt"]);
 const REQUIRED = [...Object.keys(LIMITS), "support_url.txt", "privacy_url.txt"].filter(
@@ -88,6 +102,20 @@ for (const locale of locales) {
   if (existsSync(join(metadataDir, locale, "keywords.txt")) && read(locale, "keywords.txt").includes(", ")) {
     console.error(`appstore-listing: ${locale}/keywords.txt contient « , » — séparer par des virgules sans espace`);
     errors++;
+  }
+  // Caractères refusés par l'API App Store Connect (émojis…).
+  for (const file of new Set([...Object.keys(LIMITS), ...REQUIRED])) {
+    if (!existsSync(join(metadataDir, locale, file))) continue;
+    const lines = readFileSync(join(metadataDir, locale, file), "utf8").split("\n");
+    lines.forEach((line, index) => {
+      for (const match of line.matchAll(FORBIDDEN_CHARS)) {
+        const codePoint = match[0].codePointAt(0).toString(16).toUpperCase().padStart(4, "0");
+        console.error(
+          `appstore-listing: ${locale}/${file}:${index + 1} — caractère refusé par App Store Connect : « ${match[0]} » (U+${codePoint})`,
+        );
+        errors++;
+      }
+    });
   }
 }
 if (errors > 0) process.exit(1);
@@ -160,6 +188,29 @@ console.log(`appstore-listing: app ${BUNDLE_ID} trouvée (${app.id})`);
 
 const versionArg = process.argv.indexOf("--version");
 const wantedVersion = versionArg !== -1 ? process.argv[versionArg + 1] : null;
+
+// --- Notes de version : release GitHub (fr-FR) ou phrase par défaut ----------
+const WHATS_NEW_LIMIT = 4000;
+const notesArg = process.argv.indexOf("--release-notes");
+const notesFile = notesArg !== -1 ? process.argv[notesArg + 1] : null;
+const releaseBody =
+  notesFile && existsSync(notesFile) ? markdownToPlain(readFileSync(notesFile, "utf8")) : "";
+function whatsNewFor(locale) {
+  if (releaseBody && releaseBodyApplies(locale)) {
+    const chars = [...releaseBody];
+    if (chars.length <= WHATS_NEW_LIMIT) return releaseBody;
+    console.warn(
+      `appstore-listing: notes de la release GitHub tronquées à ${WHATS_NEW_LIMIT} caractères (${chars.length})`,
+    );
+    return `${chars.slice(0, WHATS_NEW_LIMIT - 1).join("").trimEnd()}…`;
+  }
+  return defaultReleaseNotes(locale);
+}
+console.log(
+  releaseBody
+    ? "appstore-listing: notes de version prises depuis la release GitHub (fr-FR), phrase par défaut ailleurs"
+    : "appstore-listing: pas de texte de release GitHub, notes de version = phrase par défaut",
+);
 // États dans lesquels les textes d'une version sont encore modifiables.
 // (WAITING_FOR_REVIEW n'en fait pas partie : l'API répond 409 STATE_ERROR.)
 const EDITABLE_STATES = [
@@ -237,7 +288,7 @@ for (const locale of locales) {
     promotionalText: readIfExists(locale, "promotional_text.txt") ?? undefined,
     supportUrl: read(locale, "support_url.txt"),
     marketingUrl: readIfExists(locale, "marketing_url.txt") ?? undefined,
-    whatsNew: read(locale, "release_notes.txt"),
+    whatsNew: whatsNewFor(locale),
   };
   const existingVersion = versionLocalizations.data.find((l) => l.attributes.locale === locale);
 

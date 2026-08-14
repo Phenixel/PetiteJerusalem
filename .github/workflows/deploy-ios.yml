@@ -236,7 +236,9 @@ jobs:
           fi
 
       # Fiche App Store (nom, sous-titre, description, mots-clés, nouveautés)
-      # synchronisée depuis store-assets/metadata/ios/. Non bloquant : la
+      # synchronisée depuis store-assets/metadata/ios/. Les « Nouveautés »
+      # viennent du corps de la release GitHub du tag (sinon phrase par
+      # défaut) — même logique que deploy-android.yml. Non bloquant : la
       # version cible n'existe dans App Store Connect qu'une fois créée à la
       # main, et le binaire est déjà envoyé à ce stade.
       - name: Mettre à jour la fiche App Store
@@ -245,4 +247,9 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
-        run: node scripts/appstore-listing.mjs --version "${{ steps.version.outputs.name }}"
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/v${{ steps.version.outputs.name }}" \
+            --jq '.body // ""' > release-body.md || rm -f release-body.md
+          node scripts/appstore-listing.mjs --version "${{ steps.version.outputs.name }}" \
+            --release-notes release-body.md

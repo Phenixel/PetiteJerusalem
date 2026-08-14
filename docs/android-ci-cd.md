@@ -61,7 +61,6 @@ store-assets/metadata/android/<locale>/   # fr-FR, en-US, iw-IL (hébreu)
 ├── title.txt                 # ≤ 30 caractères
 ├── short_description.txt     # ≤ 80
 ├── full_description.txt      # ≤ 4000
-├── changelogs/default.txt    # ≤ 500 — notes « Nouveautés » de la release
 └── images/
     ├── phoneScreenshots/     # ≥ 2 captures sinon elles ne sont pas envoyées
     └── featureGraphic.png    # bannière 1024×500 (optionnelle)
@@ -74,8 +73,9 @@ store-assets/metadata/android/<locale>/   # fr-FR, en-US, iw-IL (hébreu)
      GitHub avec son texte), c'est ce texte qui part sur le Play Store
      (markdown allégé, tronqué à 500 caractères) — en français, les autres
      langues retombent sur la langue par défaut dans la console ;
-  2. **sinon**, les `changelogs/default.txt` du repo (une version par
-     langue) : les mettre à jour avant de poser le tag.
+  2. **sinon**, la phrase par défaut de `scripts/release-notes.mjs`
+     (« Correction de bugs mineurs. », traduite par langue) — il n'y a plus
+     de `changelogs/default.txt` dans le repo.
 
   La release GitHub est de toute façon créée/complétée par la CI avec l'AAB
   signé ; si elle existe déjà, son texte n'est pas touché.
