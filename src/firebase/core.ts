@@ -7,7 +7,14 @@
 // servent. Un module du bundle initial ne doit JAMAIS les importer
 // statiquement (voir userPreferencesService pour le motif d'import dynamique).
 import { initializeApp } from "firebase/app";
-import { GoogleAuthProvider, getAuth, connectAuthEmulator } from "firebase/auth";
+import {
+  GoogleAuthProvider,
+  getAuth,
+  initializeAuth,
+  indexedDBLocalPersistence,
+  connectAuthEmulator,
+} from "firebase/auth";
+import { isNativeApp } from "../composables/useNativeApp";
 
 // Configuration publique du projet (les clés Web Firebase ne sont pas des
 // secrets : la sécurité repose sur les règles Firestore/Storage).
@@ -23,7 +30,17 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
+// Dans l'app native, PAS de getAuth() : il embarque browserPopupRedirectResolver,
+// qui charge une iframe depuis authDomain. Dans la WKWebView iOS (origine
+// capacitor://localhost) cette iframe échoue silencieusement et l'initialisation
+// d'Auth ne se termine jamais — et comme Firestore attend le premier jeton
+// d'Auth, TOUTES les lectures Firestore pendent (écrans figés sur leurs
+// squelettes). La connexion native passe par @capacitor-firebase/authentication
+// puis signInWithCredential : le resolver popup/redirect est inutile sur natif.
+// C'est la configuration recommandée par @capacitor-firebase/authentication.
+export const auth = isNativeApp
+  ? initializeAuth(app, { persistence: indexedDBLocalPersistence })
+  : getAuth(app);
 
 export const googleAuthProvider = new GoogleAuthProvider();
 googleAuthProvider.setCustomParameters({
