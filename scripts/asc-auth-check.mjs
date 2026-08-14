@@ -62,8 +62,30 @@ for (const path of ENDPOINTS) {
   if (path !== "/v1/apps" && !response.ok) provisioningBlocked = true;
   if (!response.ok) failed = true;
 }
+// La signature automatique d'une ARCHIVE passe par un profil de
+// développement, et le portail refuse d'en générer un pour une équipe sans
+// appareil (« Your team has no devices from which to generate a provisioning
+// profile ») — erreur qu'xcodebuild peut maquiller en « Authentication
+// failed: bearer token » sur un runner CI. Autant le dire ici, en deux
+// secondes et en clair.
 if (!failed) {
-  console.log(`asc-auth-check: OK — la clé ${keyId} a accès à l'App Store Connect ET au provisioning`);
+  const devices = await fetch("https://api.appstoreconnect.apple.com/v1/devices?limit=1", {
+    headers: { Authorization: `Bearer ${token}` },
+  }).then((r) => (r.ok ? r.json() : null));
+  const deviceCount = devices?.meta?.paging?.total ?? null;
+  if (deviceCount === 0) {
+    console.error(
+      "asc-auth-check: AUCUN appareil enregistré sur l'équipe — la signature automatique de\n" +
+        "  l'archive échouera (un profil de développement exige au moins un appareil).\n" +
+        "  Enregistrer un iPhone (UDID) sur developer.apple.com/account/resources/devices,\n" +
+        "  puis relancer.",
+    );
+    process.exit(1);
+  }
+  console.log(
+    `asc-auth-check: OK — la clé ${keyId} a accès à l'App Store Connect ET au provisioning` +
+      (deviceCount === null ? "" : ` (${deviceCount} appareil(s) enregistré(s))`),
+  );
   process.exit(0);
 }
 if (appsOk && provisioningBlocked) {
