@@ -75,6 +75,27 @@ jobs:
             exit 1
           fi
 
+      # Les identifiants collés dans l'interface GitHub embarquent facilement
+      # un blanc ou un retour à la ligne final. Nos scripts Node les .trim()ent
+      # — mais xcodebuild et altool les reçoivent BRUTS : un kid « XXX\n » dans
+      # le JWT suffit à produire « Authentication failed: bearer token » avec
+      # une clé pourtant parfaitement valide. Les valeurs nettoyées sont
+      # exposées à tout le job via GITHUB_ENV ; les étapes suivantes ne
+      # redéclarent PAS ces variables depuis les secrets.
+      - name: Normaliser les identifiants ASC
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
+        run: |
+          for name in ASC_KEY_ID ASC_ISSUER_ID IOS_DEVELOPMENT_TEAM; do
+            cleaned="$(printf '%s' "${!name}" | tr -d '[:space:]')"
+            if [ "${!name}" != "$cleaned" ]; then
+              echo "::warning::$name contenait des blancs ou un retour à la ligne — valeur nettoyée pour ce run, corriger le secret."
+            fi
+            printf '%s=%s\n' "$name" "$cleaned" >> "$GITHUB_ENV"
+          done
+
       - name: Use Node.js 22
         uses: actions/setup-node@v4
         with:
@@ -103,8 +124,6 @@ jobs:
       # dirait qu'après un quart d'heure, d'un « bearer token » cryptique.
       - name: Vérifier l'accès App Store Connect
         env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
         run: node scripts/asc-auth-check.mjs
 
@@ -141,7 +160,6 @@ jobs:
       # (le même script qu'en local, cf. l'en-tête de scripts/setup-ios.mjs).
       - name: Appliquer les ajustements natifs
         env:
-          IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
           IOS_MARKETING_VERSION: ${{ steps.version.outputs.name }}
           IOS_BUILD_NUMBER: ${{ steps.version.outputs.build }}
         run: node scripts/setup-ios.mjs
@@ -154,7 +172,6 @@ jobs:
       # xcodebuild et altool lisent la clé d'API dans ce dossier conventionnel.
       - name: Installer la clé d'API App Store Connect
         env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
         run: |
           mkdir -p ~/private_keys
@@ -187,10 +204,6 @@ jobs:
       # renouvelle certificat et profil (Sign in with Apple + push compris) à
       # partir de la clé d'API, sans rien stocker dans le repo.
       - name: Archiver l'app
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
         run: |
           xcodebuild archive \
             -project ios/App/App.xcodeproj \
@@ -206,10 +219,6 @@ jobs:
             CODE_SIGN_STYLE=Automatic
 
       - name: Exporter l'IPA
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
         run: |
           # « app-store-connect » remplace « app-store » depuis Xcode 15.3.
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
@@ -260,9 +269,6 @@ jobs:
       # Le code de sortie n'est pas fiable (altool a déjà rendu 0 après un
       # « UPLOAD FAILED »), d'où la relecture explicite de la sortie.
       - name: Envoyer sur TestFlight
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           set -o pipefail
           IPA="$(ls "$RUNNER_TEMP"/export/*.ipa | head -1)"
@@ -283,8 +289,6 @@ jobs:
       - name: Mettre à jour la fiche App Store
         continue-on-error: true
         env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: |
