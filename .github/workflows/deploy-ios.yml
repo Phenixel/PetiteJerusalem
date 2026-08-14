@@ -155,15 +155,26 @@ jobs:
           # littéraux (c'est le format que tolère aussi appstore-listing.mjs) :
           # %b les convertit en vrais sauts de ligne et laisse intact un PEM
           # multi-ligne, la base64 PEM ne contenant jamais d'antislash.
-          printf '%b' "$ASC_PRIVATE_KEY" > ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
-          chmod 600 ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
-          # Échec immédiat et lisible si la clé n'est pas un PEM valide,
-          # plutôt qu'un « Authentication failed: bearer token » cryptique
-          # d'xcodebuild après six minutes de build.
-          if ! openssl pkey -in ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 -noout 2>/dev/null; then
+          printf '%b' "$ASC_PRIVATE_KEY" > ~/private_keys/AuthKey_${ASC_KEY_ID}.raw
+          # Xcode parse la clé avec CryptoKit, strict sur la forme du PEM
+          # (CRLF, BOM, blancs résiduels → « Authentication failed: bearer
+          # token » générique) là où openssl, Node et l'API ASC tolèrent
+          # tout : la clé est réécrite en PEM canonique — et le run échoue
+          # ici, en secondes et lisiblement, si elle n'est pas valide.
+          if ! openssl pkey -in ~/private_keys/AuthKey_${ASC_KEY_ID}.raw \
+              -out ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 2>/dev/null; then
             echo "::error::ASC_PRIVATE_KEY n'est pas un PEM valide — recoller le contenu exact du fichier AuthKey_${ASC_KEY_ID}.p8 (gh secret set ASC_PRIVATE_KEY < AuthKey_${ASC_KEY_ID}.p8)"
             exit 1
           fi
+          rm ~/private_keys/AuthKey_${ASC_KEY_ID}.raw
+          chmod 600 ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          # Toutes les phases d'Xcode n'honorent pas -authenticationKeyPath :
+          # certaines ne regardent que les emplacements standard (./private_keys,
+          # ~/private_keys, ~/.private_keys, ~/.appstoreconnect/private_keys).
+          # La clé est donc posée partout où elle peut être cherchée.
+          mkdir -p ~/.appstoreconnect/private_keys ./private_keys
+          cp ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 ~/.appstoreconnect/private_keys/
+          cp ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 ./private_keys/
 
       # Signature automatique par Apple : -allowProvisioningUpdates crée ou
       # renouvelle certificat et profil (Sign in with Apple + push compris) à
