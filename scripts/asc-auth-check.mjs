@@ -42,20 +42,44 @@ const signature = cryptoSign("sha256", Buffer.from(signingInput), {
 });
 const token = `${signingInput}.${base64url(signature)}`;
 
-const response = await fetch("https://api.appstoreconnect.apple.com/v1/apps?limit=1", {
-  headers: { Authorization: `Bearer ${token}` },
-});
-if (response.ok) {
-  console.log(`asc-auth-check: OK — l'API App Store Connect accepte la clé ${keyId}`);
+// /v1/apps vérifie les identifiants ; /v1/bundleIds, /v1/certificates et
+// /v1/profiles sont les endpoints de PROVISIONING qu'utilise la signature
+// automatique d'xcodebuild — ils peuvent répondre 403 avec une clé pourtant
+// valide (accord de licence Apple Developer en attente, clé sans accès au
+// portail…), ce qu'xcodebuild maquille en « Authentication failed: bearer
+// token ».
+const ENDPOINTS = ["/v1/apps", "/v1/bundleIds", "/v1/certificates", "/v1/profiles"];
+let failed = false;
+let appsOk = false;
+let provisioningBlocked = false;
+for (const path of ENDPOINTS) {
+  const response = await fetch(`https://api.appstoreconnect.apple.com${path}?limit=1`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const body = response.ok ? "" : (await response.text()).slice(0, 300);
+  console.log(`asc-auth-check: ${path} → ${response.status}${body ? `\n  ${body}` : ""}`);
+  if (path === "/v1/apps" && response.ok) appsOk = true;
+  if (path !== "/v1/apps" && !response.ok) provisioningBlocked = true;
+  if (!response.ok) failed = true;
+}
+if (!failed) {
+  console.log(`asc-auth-check: OK — la clé ${keyId} a accès à l'App Store Connect ET au provisioning`);
   process.exit(0);
 }
-const body = await response.text();
-console.error(
-  `asc-auth-check: l'API App Store Connect répond ${response.status} — les secrets sont incohérents.\n` +
-    `  Vérifier que ASC_PRIVATE_KEY est bien le AuthKey_${keyId}.p8 de la clé d'API « App Store Connect »\n` +
-    "  (PAS la clé APNs, qui est aussi un .p8), et que ASC_KEY_ID / ASC_ISSUER_ID viennent de la même page\n" +
-    "  Users and Access → Integrations. Une clé perdue ne se retélécharge pas : en créer une nouvelle\n" +
-    "  et mettre à jour les trois secrets.\n" +
-    `  Réponse : ${body.slice(0, 300)}`,
-);
+if (appsOk && provisioningBlocked) {
+  console.error(
+    "asc-auth-check: la clé est valide mais les endpoints de PROVISIONING refusent —\n" +
+      "  cause classique : un accord de licence Apple Developer en attente d'acceptation.\n" +
+      "  Vérifier sur developer.apple.com (bandeau en haut du compte) et sur\n" +
+      "  appstoreconnect.apple.com → Business/Accords, accepter, puis relancer.",
+  );
+} else {
+  console.error(
+    "asc-auth-check: authentification refusée — les secrets sont incohérents.\n" +
+      `  Vérifier que ASC_PRIVATE_KEY est bien le AuthKey_${keyId}.p8 de la clé d'API « App Store Connect »\n` +
+      "  (PAS la clé APNs, qui est aussi un .p8), et que ASC_KEY_ID / ASC_ISSUER_ID viennent de la même page\n" +
+      "  Users and Access → Integrations. Une clé perdue ne se retélécharge pas : en créer une nouvelle\n" +
+      "  et mettre à jour les trois secrets.",
+  );
+}
 process.exit(1);
