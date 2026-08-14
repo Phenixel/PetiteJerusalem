@@ -1,15 +1,15 @@
 Petite Jérusalem est une application gratuite pour étudier et partager la Torah, seul ou à plusieurs.
 
-📚 Bibliothèque complète : Tehilim, Michna, Talmud (Guemara) et Tanakh, avec un lecteur pensé pour le texte hébreu et sa traduction.
+• Bibliothèque complète : Tehilim, Michna, Talmud (Guemara) et Tanakh, avec un lecteur pensé pour le texte hébreu et sa traduction.
 
-🤝 Partage de lecture : créez une session pour répartir l'étude entre plusieurs personnes (finir le Chass à plusieurs en se répartissant le Talmud, lire les 150 Tehilim en groupe pour une refoua chelema ou à la mémoire d'un proche) et suivez la progression jusqu'au siyoum.
+• Partage de lecture : créez une session pour répartir l'étude entre plusieurs personnes (finir le Chass à plusieurs en se répartissant le Talmud, lire les 150 Tehilim en groupe pour une refoua chelema ou à la mémoire d'un proche) et suivez la progression jusqu'au siyoum.
 
-📖 Lecture hors ligne : téléchargez vos textes pour les lire sans connexion, en avion ou en dehors du réseau.
+• Lecture hors ligne : téléchargez vos textes pour les lire sans connexion, en avion ou en dehors du réseau.
 
-⏰ Rappel de lecture quotidien : une notification à l'heure de votre choix pour ne jamais manquer votre lecture du jour.
+• Rappel de lecture quotidien : une notification à l'heure de votre choix pour ne jamais manquer votre lecture du jour.
 
-🕯 Horaires du jour : les zmanim calculés sur votre appareil pour votre position, sans que celle-ci ne soit envoyée nulle part.
+• Horaires du jour : les zmanim calculés sur votre appareil pour votre position, sans que celle-ci ne soit envoyée nulle part.
 
-🎧 Chiourim : une sélection de cours audio à écouter.
+• Chiourim : une sélection de cours audio à écouter.
 
 Petite Jérusalem est entièrement gratuite, sans publicité, et disponible en français, en anglais et en hébreu. Un compte est utile pour retrouver vos préférences et votre progression, mais n'est pas obligatoire pour lire.

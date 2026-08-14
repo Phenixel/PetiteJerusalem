@@ -8,8 +8,6 @@
  *   <locale>/title.txt                    (≤ 30 caractères)
  *   <locale>/short_description.txt        (≤ 80)
  *   <locale>/full_description.txt         (≤ 4000)
- *   <locale>/changelogs/default.txt       (≤ 500, notes de version — lues par
- *                                          la CI pour whatsNewDirectory, pas ici)
  *   <locale>/images/phoneScreenshots/*.png|jpg  (remplacées seulement si ≥ 2,
  *                                          le minimum exigé par la Play Console)
  *   <locale>/images/featureGraphic.png    (bannière 1024×500, optionnelle)
@@ -28,11 +26,12 @@ const metadataDir = join(import.meta.dirname, "../store-assets/metadata/android"
 
 // Les limites de la Play Console comptent les caractères Unicode (code points),
 // pas les octets — important pour l'hébreu et les émojis.
+// Les notes de version ne sont pas validées ici : elles viennent de la
+// release GitHub ou de la phrase par défaut (scripts/release-notes.mjs).
 const LIMITS = {
   "title.txt": 30,
   "short_description.txt": 80,
   "full_description.txt": 4000,
-  "changelogs/default.txt": 500,
 };
 
 const locales = readdirSync(metadataDir, { withFileTypes: true })

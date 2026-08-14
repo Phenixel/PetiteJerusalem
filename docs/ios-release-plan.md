@@ -184,12 +184,19 @@ l'appareil :
 Sur [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → Mes apps
 → `+` → Nouvelle app.
 
-- Plateforme **iOS**, nom **Petite Jérusalem - Torah**, langue principale
-  **français**, bundle ID `fr.petitejerusalem.app`, SKU `petite-jerusalem`.
+- Plateforme **iOS**, nom **Petite Jérusalem** (sans « - Torah »,
+  contrairement au Play Store — choix confirmé, ne pas « harmoniser »),
+  langue principale **français**, bundle ID `fr.petitejerusalem.app`,
+  SKU `petite-jerusalem`.
 - **Prix** : gratuit. **Disponibilité** : tous les pays.
-- **Conformité DSA** (onglet Entreprise) : déclarer le statut *trader* et les
-  coordonnées affichées dans l'UE. Sans cette déclaration, la distribution
+- **Conformité DSA** (onglet Entreprise) : sans déclaration, la distribution
   européenne est bloquée — c'est-à-dire le marché principal de l'app.
+  **Fait (14/08/2026)** : statut déclaré **non-commerçant** au niveau du
+  compte (l'app est gratuite, sans revenus ; aucune coordonnée publiée sur la
+  fiche). Le jour où une app monétisée sort, le compte devra passer
+  commerçant — et le statut commerçant se désactivera alors app par app pour
+  Petite Jérusalem (*Informations sur l'app → Réglementations et
+  autorisations → Digital Services Act*).
 - **Catégorie** : Références (principale) ; Style de vie (secondaire).
 - **Classification par âge** : répondre au questionnaire — l'app ne contient
   ni contenu généré par les utilisateurs public, ni violence, ni achats ;
@@ -209,7 +216,14 @@ Sur [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → Mes apps
 - **Textes de la fiche** : ils vivent dans le repo
   (`store-assets/metadata/ios/<locale>/`) et sont poussés par
   `node scripts/appstore-listing.mjs` — inutile de les retaper.
-  Vérifier avant : `node scripts/appstore-listing.mjs --check`.
+  Vérifier avant : `node scripts/appstore-listing.mjs --check` (limites de
+  caractères **et** caractères refusés par App Store Connect — les émojis,
+  acceptés par le Play Store, sont interdits ici). Les « Nouveautés »
+  viennent du corps de la release GitHub du tag, sinon d'une phrase par
+  défaut (voir `docs/ios-ci-cd.md`).
+  **Fait (14/08/2026)** : la fiche 3.7.0 (fr-FR) a été remplie à la main dans
+  App Store Connect, copyright « © 2026 Phenixel » compris ; les pushes
+  suivants de la CI la maintiendront alignée sur le repo.
 - **Captures d'écran** : deux séries, l'app étant universelle (iPhone + iPad).
   - **iPhone 6,9 pouces** : 1320 × 2868, 1290 × 2796 ou 1260 × 2736.
   - **iPad 13 pouces** : 2064 × 2752 ou 2048 × 2732.
@@ -241,6 +255,12 @@ site, l'app Android **et** envoie le build iOS sur TestFlight.
 
 Dans App Store Connect, sur la version : sélectionner le build TestFlight,
 puis **Ajouter pour examen**.
+
+**État (14/08/2026)** : les notes ci-dessous sont collées dans la version
+3.7.0, le compte de démonstration est renseigné, le mode de publication est
+**manuel**, les captures (6 × iPhone 6,9", 1 × iPad 13") sont déposées et les
+droits relatifs au contenu déclarés. Il ne manque que le build (posé par le
+tag) et le clic « Ajouter pour examen ».
 
 **Notes pour l'examen** (champ « Notes »), à recopier :
 
@@ -288,16 +308,23 @@ un nouveau tag (patch +1) et resoumettre — pas besoin de recommencer la fiche.
 
 ## Récapitulatif
 
-- [ ] Apple ID avec 2FA, nom identique à la pièce d'identité
-- [ ] Apple Developer Program (individuel) validé — 99 $/an
-- [ ] Statut DSA (*trader*) déclaré dans App Store Connect
-- [ ] App ID `fr.petitejerusalem.app` + capacités Push et Sign in with Apple
-- [ ] Clé APNs `.p8` créée et sauvegardée
-- [ ] App iOS Firebase créée, `GoogleService-Info.plist` à la racine du repo
-- [ ] Clé APNs importée dans Firebase, fournisseur Apple activé
-- [ ] `npx cap add ios` + `node scripts/setup-ios.mjs` + build sur iPhone OK
-- [ ] App créée dans App Store Connect, confidentialité et classification remplies
-- [ ] Captures 6,9" déposées
-- [ ] Secrets GitHub créés, workflow « Deploy iOS » vert
-- [ ] Build validé en TestFlight
-- [ ] Compte de démo + notes d'examen renseignés, version soumise
+État au 14/08/2026 :
+
+- [x] Apple ID avec 2FA, nom identique à la pièce d'identité
+- [x] Apple Developer Program (individuel) validé — 99 $/an
+- [x] Statut DSA déclaré dans App Store Connect (**non-commerçant**, au
+      niveau du compte — voir étape 5 pour la bascule future en commerçant)
+- [x] App ID `fr.petitejerusalem.app` + capacités Push et Sign in with Apple
+- [x] Clé APNs `.p8` créée et sauvegardée, importée dans Firebase (dev et
+      prod), fournisseur Apple activé
+- [x] App iOS Firebase créée, `GoogleService-Info.plist` à la racine du repo
+- [x] `npx cap add ios` + `node scripts/setup-ios.mjs` + build simulateur OK
+      (correctif WebView : PR #145)
+- [x] App créée dans App Store Connect (version 3.7.0), confidentialité,
+      classification 4+, droits du contenu, fiche fr-FR et captures remplis
+- [x] Secrets GitHub créés
+- [x] Compte de démo + notes d'examen renseignés, publication manuelle
+- [ ] Tag `v3.7.0` posé → workflow « Deploy iOS » vert (premier run réel)
+- [ ] Vérification du build TestFlight sur un iPhone réel (connexion Apple,
+      push, position — invérifiables en simulateur)
+- [ ] Build sélectionné sur la version, « Ajouter pour examen »

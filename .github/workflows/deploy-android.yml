@@ -12,8 +12,8 @@ name: Deploy Android
 # captures d'écran) depuis store-assets/metadata/android/, puis crée une
 # release GitHub avec l'AAB signé. Les notes reprennent le texte de la
 # release GitHub du tag si elle existe (créer la release depuis l'interface
-# GitHub avec son texte publie donc ces notes sur le Play Store), sinon les
-# changelogs/default.txt du repo.
+# GitHub avec son texte publie donc ces notes sur le Play Store), sinon la
+# phrase par défaut de scripts/release-notes.mjs.
 #
 # Secrets requis (voir docs/android-ci-cd.md pour les créer) :
 #   ANDROID_KEYSTORE_BASE64   keystore de release encodé en base64
@@ -163,8 +163,8 @@ jobs:
           if-no-files-found: error
 
       # Notes de version (« Nouveautés ») : le texte de la release GitHub du
-      # tag si elle existe (rédigé à la main en créant la release), sinon les
-      # changelogs/default.txt du repo — voir scripts/prepare-whatsnew.mjs.
+      # tag si elle existe (rédigé à la main en créant la release), sinon la
+      # phrase par défaut — voir scripts/prepare-whatsnew.mjs.
       - name: Préparer les notes de version
         id: notes
         env:
@@ -196,10 +196,11 @@ jobs:
       # retrouver chaque build publié sans passer par l'onglet Actions. Si la
       # release existe déjà (créée à la main avec son texte), l'AAB y est
       # simplement attaché : sans `body`, l'action conserve le texte d'origine.
+      # Sinon, le corps reprend whatsnew-fr-FR (la phrase par défaut).
       - name: Créer la release GitHub
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           name: v${{ steps.version.outputs.name }}
-          body_path: ${{ steps.notes.outputs.has_release_body != 'true' && 'store-assets/metadata/android/fr-FR/changelogs/default.txt' || '' }}
+          body_path: ${{ steps.notes.outputs.has_release_body != 'true' && 'whatsnew/whatsnew-fr-FR' || '' }}
           files: android/app/build/outputs/bundle/release/app-release.aab

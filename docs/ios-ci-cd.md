@@ -107,15 +107,23 @@ store-assets/metadata/ios/<locale>/   # fr-FR, en-US, he
 ├── keywords.txt             # ≤ 100, virgules SANS espace
 ├── promotional_text.txt     # ≤ 170 — modifiable sans nouvelle version
 ├── description.txt          # ≤ 4000
-├── release_notes.txt        # ≤ 4000 — « Nouveautés »
 ├── support_url.txt          # obligatoire
 ├── marketing_url.txt        # optionnel
 └── privacy_url.txt          # obligatoire
 ```
 
-- `node scripts/appstore-listing.mjs --check` vérifie les limites de
-  caractères en local, sans réseau (la CI le fait en début de run et échoue
-  vite si un texte est trop long).
+- Les « Nouveautés » ne viennent pas d'un fichier du repo : la CI passe au
+  script le corps de la release GitHub du tag (`--release-notes`), et à
+  défaut c'est la phrase par défaut de `scripts/release-notes.mjs`
+  (« Correction de bugs mineurs. », traduite par langue) qui part — même
+  logique que le Play Store. Le corps, rédigé en français, n'alimente que
+  fr-FR ; les autres langues reçoivent la phrase par défaut.
+- `node scripts/appstore-listing.mjs --check` vérifie en local, sans réseau,
+  les limites de caractères **et** l'absence de caractères refusés par l'API
+  App Store Connect (émojis, symboles hors BMP…) : la CI le fait en début de
+  run et échoue avant les 40 minutes de build macOS, en indiquant fichier,
+  ligne et caractère fautif. Le Play Store, lui, accepte les émojis — les
+  fiches Android n'ont pas cette contrainte.
 - Le script écrit sur la version App Store **modifiable** (état
   `PREPARE_FOR_SUBMISSION` et assimilés). Si aucune version n'est ouverte dans
   App Store Connect, il s'arrête sans rien casser : l'étape est
