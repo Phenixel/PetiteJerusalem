@@ -91,6 +91,16 @@ jobs:
       - name: Vérifier les textes de la fiche App Store
         run: node scripts/appstore-listing.mjs --check
 
+      # Échec en deux secondes si les secrets ASC sont incohérents (mauvaise
+      # clé .p8, Key ID/Issuer ID erronés, clé révoquée) : xcodebuild ne le
+      # dirait qu'après un quart d'heure, d'un « bearer token » cryptique.
+      - name: Vérifier l'accès App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: node scripts/asc-auth-check.mjs
+
       - name: Déterminer la version (tag vX.Y.Z)
         id: version
         run: |
