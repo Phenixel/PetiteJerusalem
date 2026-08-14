@@ -43,6 +43,13 @@ jobs:
     # Store depuis le 28 avril 2026 (SDK iOS 26 minimum).
     runs-on: macos-26
     timeout-minutes: 45
+    env:
+      # Xcode épinglé en 26.2 (17C52) : le 26.6 par défaut de l'image échoue
+      # sur « Authentication failed: bearer token » pendant la signature
+      # automatique, avec des identifiants pourtant valides (la sonde ASC
+      # passe, le PEM est canonique, la clé est dans tous les emplacements
+      # standard). 26.2 est la version validée en local sur le même projet.
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
