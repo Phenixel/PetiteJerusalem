@@ -141,8 +141,19 @@ jobs:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
         run: |
           mkdir -p ~/private_keys
-          printf '%s' "$ASC_PRIVATE_KEY" > ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          # Le secret peut avoir été collé en une ligne avec des « \n »
+          # littéraux (c'est le format que tolère aussi appstore-listing.mjs) :
+          # %b les convertit en vrais sauts de ligne et laisse intact un PEM
+          # multi-ligne, la base64 PEM ne contenant jamais d'antislash.
+          printf '%b' "$ASC_PRIVATE_KEY" > ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
           chmod 600 ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          # Échec immédiat et lisible si la clé n'est pas un PEM valide,
+          # plutôt qu'un « Authentication failed: bearer token » cryptique
+          # d'xcodebuild après six minutes de build.
+          if ! openssl pkey -in ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 -noout 2>/dev/null; then
+            echo "::error::ASC_PRIVATE_KEY n'est pas un PEM valide — recoller le contenu exact du fichier AuthKey_${ASC_KEY_ID}.p8 (gh secret set ASC_PRIVATE_KEY < AuthKey_${ASC_KEY_ID}.p8)"
+            exit 1
+          fi
 
       # Signature automatique par Apple : -allowProvisioningUpdates crée ou
       # renouvelle certificat et profil (Sign in with Apple + push compris) à
