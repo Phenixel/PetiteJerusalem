@@ -19,11 +19,16 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      # `npm ci` comme dans les quatre autres workflows : la PR est validée
+      # avec exactement l'arbre de dépendances du lockfile qui partira en prod
+      # (`npm install` pouvait le réécrire en silence).
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run Verification
         run: npm run verify
 
+      # Pas `npm run build` : il referait le type-check que verify vient
+      # d'exécuter. On ne garde que la compilation et le prerender SEO.
       - name: Build project
-        run: npm run build
+        run: npm run build-only && npm run prerender
