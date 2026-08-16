@@ -8,10 +8,15 @@ name: Deploy iOS
 # confidentialité, AppDelegate, icônes, schéma Xcode…).
 #
 # Le build est signé « dans le nuage » : aucun certificat ni profil de
-# provisionnement n'est stocké dans le repo. xcodebuild demande à Apple de
-# créer/renouveler ce qu'il faut avec la clé d'API App Store Connect
-# (-allowProvisioningUpdates), qui sert aussi à l'envoi de l'IPA et à la
+# provisionnement n'est stocké dans le repo. scripts/ios-signing.mjs en
+# fabrique un jeu éphémère avec la clé d'API App Store Connect au début du
+# run et le détruit à la fin ; la même clé sert à l'envoi de l'IPA et à la
 # synchronisation de la fiche.
+#
+# La signature est MANUELLE, pas automatique : `xcodebuild archive` en mode
+# automatique réclame un profil de *développement*, lequel exige au moins un
+# appareil enregistré dans l'équipe — ce compte individuel n'en a aucun. Un
+# profil « App Store » n'en demande pas. Détails dans scripts/ios-signing.mjs.
 #
 # Le binaire part sur TestFlight ; la mise en vente reste un geste manuel dans
 # App Store Connect (« Envoyer pour examen ») — voir docs/ios-release-plan.md.
@@ -162,8 +167,17 @@ jobs:
           GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
         run: printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" > GoogleService-Info.plist
 
+      # Certificat de distribution + profil « App Store » éphémères, créés via
+      # l'API et installés dans un trousseau temporaire. Expose
+      # IOS_PROVISIONING_PROFILE et IOS_CODE_SIGN_IDENTITY au reste du job —
+      # que l'étape suivante inscrit dans la cible App du projet Xcode.
+      - name: Créer le certificat et le profil de distribution
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: node scripts/ios-signing.mjs --setup
+
       # Info.plist, entitlements, PrivacyInfo.xcprivacy, AppDelegate, icônes,
-      # schéma Xcode, bundle id, équipe et versions
+      # schéma Xcode, bundle id, équipe, versions et réglages de signature
       # (le même script qu'en local, cf. l'en-tête de scripts/setup-ios.mjs).
       - name: Appliquer les ajustements natifs
         env:
@@ -209,9 +223,10 @@ jobs:
           cp ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 ~/.appstoreconnect/private_keys/
           cp ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 ./private_keys/
 
-      # Signature automatique par Apple : -allowProvisioningUpdates crée ou
-      # renouvelle certificat et profil (Sign in with Apple + push compris) à
-      # partir de la clé d'API, sans rien stocker dans le repo.
+      # Aucun réglage de signature en ligne de commande : ils s'appliqueraient
+      # à TOUS les targets, paquets SPM compris, qui les refusent (« has
+      # conflicting provisioning settings »). Tout est dans la cible App du
+      # pbxproj, posé par setup-ios.mjs.
       # En mode debug, xcodebuild tourne avec les journaux de provisioning
       # verbeux, capturés dans un fichier et REFILTRÉS avant affichage : le
       # repo est public, ces journaux peuvent contenir des jetons éphémères.
@@ -220,20 +235,14 @@ jobs:
         run: |
           defaults write com.apple.dt.Xcode DVTProvisioningLogLevel 3
           defaults write com.apple.dt.Xcode IDEProvisioningLogLevel 3
+          security find-identity -v -p codesigning "$IOS_SIGNING_KEYCHAIN"
           set +e
           xcodebuild archive \
             -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/App.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            DEVELOPMENT_TEAM="$IOS_DEVELOPMENT_TEAM" \
-            CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY="Apple Distribution" > "$RUNNER_TEMP/archive-debug.log" 2>&1
+            -archivePath "$RUNNER_TEMP/App.xcarchive" > "$RUNNER_TEMP/archive-debug.log" 2>&1
           echo "===== journaux de provisioning (filtrés) ====="
           grep -viE "authorization|bearer ey|x-apple|token[\"':= ]" "$RUNNER_TEMP/archive-debug.log" \
             | grep -iE "provision|sign|auth|team|profile|certificate|error|fail|http|status|register" \
@@ -248,14 +257,7 @@ jobs:
             -scheme App \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/App.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            DEVELOPMENT_TEAM="$IOS_DEVELOPMENT_TEAM" \
-            CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY="Apple Distribution"
+            -archivePath "$RUNNER_TEMP/App.xcarchive"
 
       - name: Exporter l'IPA
         run: |
@@ -269,8 +271,17 @@ jobs:
             <string>app-store-connect</string>
             <key>teamID</key>
             <string>$IOS_DEVELOPMENT_TEAM</string>
+            <!-- Manuel comme l'archive : le certificat et le profil de ce run
+                 sont déjà installés, Apple n'a rien à créer de plus. -->
             <key>signingStyle</key>
-            <string>automatic</string>
+            <string>manual</string>
+            <key>signingCertificate</key>
+            <string>$IOS_CODE_SIGN_IDENTITY</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>fr.petitejerusalem.app</key>
+              <string>$IOS_PROVISIONING_PROFILE</string>
+            </dict>
             <key>uploadSymbols</key>
             <true/>
             <key>destination</key>
@@ -284,11 +295,7 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
-            -exportPath "$RUNNER_TEMP/export" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+            -exportPath "$RUNNER_TEMP/export"
           ls -lh "$RUNNER_TEMP/export"
 
       # L'IPA signé reste téléchargeable 90 jours depuis l'onglet Actions,
@@ -335,3 +342,14 @@ jobs:
             --jq '.body // ""' > release-body.md || rm -f release-body.md
           node scripts/appstore-listing.mjs --version "${{ steps.version.outputs.name }}" \
             --release-notes release-body.md
+
+      # Le certificat de ce run est révoqué et le profil supprimé, même si le
+      # build a échoué : le compte reste propre et sous son quota de trois
+      # certificats de distribution. Les binaires déjà envoyés n'en pâtissent
+      # pas — Apple re-signe tout ce qui passe par TestFlight et l'App Store.
+      - name: Révoquer le certificat et le profil du run
+        if: always()
+        continue-on-error: true
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: node scripts/ios-signing.mjs --cleanup

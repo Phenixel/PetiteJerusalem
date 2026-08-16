@@ -50,10 +50,46 @@ publique** : il conviendrait à un build de test sans widget, pas à l'App Store
 ## Signature « dans le nuage »
 
 Aucun certificat ni profil de provisionnement n'est stocké dans le repo,
-contrairement au keystore Android. `xcodebuild -allowProvisioningUpdates`
-demande à Apple de créer ou renouveler ce qu'il faut à partir de la clé d'API
-App Store Connect, à chaque build. La même clé sert à l'envoi de l'IPA et à la
-synchronisation de la fiche : c'est le seul secret sensible du workflow.
+contrairement au keystore Android. `scripts/ios-signing.mjs` en fabrique un jeu
+**éphémère** au début de chaque run à partir de la clé d'API App Store Connect
+— certificat de distribution, profil « App Store », trousseau temporaire — et
+le détruit à la fin (`--cleanup`, exécuté même quand le build échoue). La même
+clé sert à l'envoi de l'IPA et à la synchronisation de la fiche : c'est le seul
+secret sensible du workflow.
+
+### Pourquoi manuelle et non automatique
+
+`xcodebuild -allowProvisioningUpdates` (signature automatique) semblait plus
+simple, mais il est inutilisable ici : pour **archiver**, Xcode réclame un
+profil de *développement*, et Apple n'en délivre aucun à une équipe qui n'a pas
+au moins un appareil enregistré — ce compte individuel n'en a aucun. L'erreur
+remontait d'abord sous la forme trompeuse « Authentication failed: bearer
+token », puis, une fois Xcode épinglé en 26.2, en clair : « No profiles for
+'fr.petitejerusalem.app' were found ».
+
+Forcer `CODE_SIGN_IDENTITY="Apple Distribution"` par-dessus le mode automatique
+ne marche pas davantage : Xcode refuse le mélange (« has conflicting
+provisioning settings »), sur la cible App **et** sur chacun des paquets SPM.
+
+Un profil « App Store », lui, n'exige aucun appareil. D'où le mode manuel, avec
+deux conséquences visibles dans `scripts/setup-ios.mjs` :
+
+- les réglages de signature sont écrits dans la **cible App du pbxproj**, jamais
+  passés en argument d'`xcodebuild` (un argument s'appliquerait aussi aux
+  paquets SPM, qui le rejettent) ;
+- l'entitlement `aps-environment` vaut `production` (il doit correspondre au
+  profil qui signe), et l'App Group des widgets disparaît du build CI : l'API
+  App Store Connect ne sait pas créer de groupe, et les widgets ne sont pas
+  dans la v1 (`docs/app-widgets.md`).
+
+Les capacités de l'App ID nécessaires au profil — notifications push et Sign in
+with Apple — sont activées par le script lui-même, ce qu'Xcode faisait
+auparavant tout seul en mode automatique.
+
+Le certificat créé pour le run est **révoqué** à la fin : c'est ce que fait
+aussi Xcode Cloud, et cela garde le compte sous son quota de trois certificats
+de distribution. Les binaires déjà envoyés n'en souffrent pas — Apple re-signe
+tout ce qui passe par TestFlight et l'App Store.
 
 Conséquence : la clé d'API doit avoir le rôle **Admin**. C'est contre-intuitif
 pour une clé de CI, mais Apple réserve la création des certificats de

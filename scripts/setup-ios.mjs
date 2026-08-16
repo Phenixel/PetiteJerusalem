@@ -48,6 +48,12 @@ const DISPLAY_NAME = "Petite Jérusalem";
 const TEAM_ID = process.env.IOS_DEVELOPMENT_TEAM?.trim();
 const MARKETING_VERSION = process.env.IOS_MARKETING_VERSION?.trim();
 const BUILD_NUMBER = process.env.IOS_BUILD_NUMBER?.trim();
+// Signature manuelle : uniquement en CI, où scripts/ios-signing.mjs a posé un
+// profil « App Store » et son identité (cf. l'en-tête de ce script pour le
+// pourquoi). En local, Xcode continue de gérer la signature tout seul.
+const PROVISIONING_PROFILE = process.env.IOS_PROVISIONING_PROFILE?.trim();
+const CODE_SIGN_IDENTITY = process.env.IOS_CODE_SIGN_IDENTITY?.trim();
+const MANUAL_SIGNING = Boolean(PROVISIONING_PROFILE && CODE_SIGN_IDENTITY);
 
 /** Identifiant pbxproj (24 hexa majuscules) stable pour un même nom de fichier. */
 const stableId = (seed) => createHash("md5").update(seed).digest("hex").slice(0, 24).toUpperCase();
@@ -186,12 +192,19 @@ writeFileSync(infoPlistPath, infoPlist);
 // ---------------------------------------------------------------------------
 // Apple **impose** « Sign in with Apple » dès qu'un autre login tiers est
 // proposé (règle App Store 4.8, ici Google) — voir docs/app-native.md.
-// aps-environment reste sur « development », comme le fait Xcode quand on
-// coche la capacité Push Notifications : l'archive est signée avec un profil
-// de développement, et c'est `xcodebuild -exportArchive` (method
-// app-store-connect) qui re-signe avec le profil de distribution et bascule
-// l'entitlement en « production ». Écrire « production » ici casserait au
-// contraire l'archivage (l'entitlement ne correspondrait plus au profil).
+//
+// Les entitlements doivent correspondre EXACTEMENT au profil qui signe, sinon
+// l'archive échoue (« doesn't match the entitlements file ») :
+//
+// - En local (signature automatique), Xcode archive avec un profil de
+//   développement : aps-environment = development, et c'est
+//   `xcodebuild -exportArchive` qui bascule l'entitlement en production en
+//   re-signant. L'App Group des widgets, qu'Xcode sait créer tout seul, y a
+//   sa place (docs/app-widgets.md).
+// - En CI (signature manuelle, scripts/ios-signing.mjs), l'archive est
+//   directement signée avec un profil « App Store » : aps-environment vaut
+//   production, et l'App Group disparaît — l'API App Store Connect ne sait pas
+//   créer de groupe, et les widgets ne font pas partie de la v1.
 const entitlementsPath = join(appDir, "App.entitlements");
 if (!existsSync(entitlementsPath)) {
   writeFileSync(
@@ -201,20 +214,26 @@ if (!existsSync(entitlementsPath)) {
 <plist version="1.0">
 <dict>
 \t<key>aps-environment</key>
-\t<string>development</string>
+\t<string>${MANUAL_SIGNING ? "production" : "development"}</string>
 \t<key>com.apple.developer.applesignin</key>
 \t<array>
 \t\t<string>Default</string>
 \t</array>
-\t<key>com.apple.security.application-groups</key>
+${
+  MANUAL_SIGNING
+    ? ""
+    : `\t<key>com.apple.security.application-groups</key>
 \t<array>
 \t\t<string>group.fr.petitejerusalem.app</string>
 \t</array>
-</dict>
+`
+}</dict>
 </plist>
 `,
   );
-  console.log("setup-ios: App.entitlements créé (Sign in with Apple + push + App Group)");
+  console.log(
+    `setup-ios: App.entitlements créé (Sign in with Apple + push${MANUAL_SIGNING ? " production" : " + App Group"})`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -419,7 +438,17 @@ pbxproj = pbxproj.replace(
     configsPatched++;
     let out = block;
     out = setSetting(out, "CODE_SIGN_ENTITLEMENTS", "App/App.entitlements");
-    out = setSetting(out, "CODE_SIGN_STYLE", "Automatic");
+    // Les réglages de signature vivent ici, dans la cible App, et jamais en
+    // argument d'xcodebuild : passés en ligne de commande ils s'appliqueraient
+    // AUSSI aux dizaines de paquets SPM (Firebase, GoogleUtilities…), qui les
+    // rejettent (« has conflicting provisioning settings »).
+    if (MANUAL_SIGNING) {
+      out = setSetting(out, "CODE_SIGN_STYLE", "Manual");
+      out = setSetting(out, "CODE_SIGN_IDENTITY", `"${CODE_SIGN_IDENTITY}"`);
+      out = setSetting(out, "PROVISIONING_PROFILE_SPECIFIER", `"${PROVISIONING_PROFILE}"`);
+    } else {
+      out = setSetting(out, "CODE_SIGN_STYLE", "Automatic");
+    }
     // 1,2 = iPhone + iPad (la valeur par défaut du template). L'app est le
     // site responsive : elle tourne telle quelle sur iPad, et une app
     // iPhone-seule y serait affichée dans une fenêtre à l'échelle, en moins
