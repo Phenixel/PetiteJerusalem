@@ -161,9 +161,11 @@ store-assets/metadata/ios/<locale>/   # fr-FR, en-US, he
   ligne et caractère fautif. Le Play Store, lui, accepte les émojis — les
   fiches Android n'ont pas cette contrainte.
 - Le script écrit sur la version App Store **modifiable** (état
-  `PREPARE_FOR_SUBMISSION` et assimilés). Si aucune version n'est ouverte dans
-  App Store Connect, il s'arrête sans rien casser : l'étape est
-  `continue-on-error`, le binaire est déjà parti sur TestFlight.
+  `PREPARE_FOR_SUBMISSION` et assimilés), et l'aligne sur le tag : il utilise
+  la version portant le bon numéro, sinon renomme la version modifiable
+  existante, sinon en crée une. Les versions en examen ou déjà publiées ne
+  sont jamais touchées. En cas d'échec malgré tout, le binaire est déjà parti
+  sur TestFlight : l'étape n'échoue pas le run, elle affiche un avertissement.
 - Apple refuse le champ « Nouveautés » sur la toute première version : le
   script réessaie automatiquement sans.
 
@@ -191,13 +193,13 @@ ranger dans `store-assets/metadata/ios/screenshots/<locale>/`.
 
 ## Notes
 
-- ⚠️ **Le numéro de version d'App Store Connect doit être identique au tag.**
-  À la création, Apple ouvre une version « 1.0 ». Le build produit par la CI
-  porte le numéro du tag (`v3.7.0` → `3.7.0`) : tant que les deux ne
-  correspondent pas, le build arrive bien dans TestFlight mais **n'est pas
-  proposé** au moment de choisir le build de la version. Corriger le champ
-  *Version* dans App Store Connect (modifiable tant que la version est « À
-  finaliser avant soumission ») **avant** de poser le tag.
+- **Le numéro de version d'App Store Connect doit être identique au tag**,
+  sans quoi le build arrive bien dans TestFlight mais n'est pas proposé au
+  moment de choisir le build de la version. C'est désormais automatique :
+  `appstore-listing.mjs` renomme la version modifiable (ou en crée une) pour
+  qu'elle porte le numéro du tag. À la création de l'app, Apple ouvre une
+  version « 1.0 » — le premier tag la renomme. Le geste manuel ne subsiste que
+  si la synchro de la fiche échoue (avertissement dans le journal du run).
 - Le `CFBundleVersion` est dérivé du semver du tag : re-publier exige un
   nouveau tag (patch +1). App Store Connect refuse tout numéro de build déjà
   utilisé pour une même version marketing.

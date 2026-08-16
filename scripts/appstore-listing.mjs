@@ -222,16 +222,60 @@ const EDITABLE_STATES = [
 ];
 // `appStoreState` est déprécié depuis l'API 3.3 au profit d'`appVersionState`.
 const versionState = (v) => v.attributes.appVersionState ?? v.attributes.appStoreState;
-const versions = await api(
-  "GET",
-  `/v1/apps/${app.id}/appStoreVersions?limit=20${wantedVersion ? `&filter[versionString]=${wantedVersion}` : ""}`,
-);
-// Tri côté client (plus récente d'abord) : sans --version, plusieurs versions
-// peuvent être modifiables, dont d'anciennes rejetées.
-const version = versions.data
+const versions = await api("GET", `/v1/apps/${app.id}/appStoreVersions?limit=20`);
+// Tri côté client (plus récente d'abord) : plusieurs versions peuvent être
+// modifiables, dont d'anciennes rejetées.
+const editable = versions.data
   .slice()
   .sort((a, b) => (b.attributes.createdDate ?? "").localeCompare(a.attributes.createdDate ?? ""))
-  .find((v) => EDITABLE_STATES.includes(versionState(v)));
+  .filter((v) => EDITABLE_STATES.includes(versionState(v)));
+
+// La version App Store est un objet distinct du build : Apple ne la crée ni ne
+// la renomme quand un binaire arrive. Sans ce qui suit, chaque tag exigeait de
+// renommer la version à la main (1.0 → 3.7.0 → 3.7.1…) sous peine de voir la
+// synchro de la fiche s'arrêter sur « aucune version modifiable ». Le tag
+// redevient donc la source unique de vérité, comme pour Android :
+//   1. la version demandée existe et est modifiable → on l'utilise ;
+//   2. une autre version est modifiable → on la renomme ;
+//   3. aucune → on la crée.
+// Les versions en examen ou publiées ne sont jamais touchées : elles ne sont
+// pas dans EDITABLE_STATES.
+let version = wantedVersion
+  ? editable.find((v) => v.attributes.versionString === wantedVersion)
+  : editable[0];
+
+if (!version && wantedVersion) {
+  const renamable = editable[0];
+  if (renamable) {
+    version = await api("PATCH", `/v1/appStoreVersions/${renamable.id}`, {
+      data: {
+        type: "appStoreVersions",
+        id: renamable.id,
+        attributes: { versionString: wantedVersion },
+      },
+    }).then((r) => r.data);
+    console.log(
+      `appstore-listing: version ${renamable.attributes.versionString} renommée en ${wantedVersion}`,
+    );
+  } else {
+    version = await api("POST", "/v1/appStoreVersions", {
+      data: {
+        type: "appStoreVersions",
+        attributes: {
+          versionString: wantedVersion,
+          platform: "IOS",
+          // Publication manuelle : la mise en vente reste un geste délibéré
+          // après l'accord d'Apple. Posé à la création seulement — un choix
+          // fait ensuite dans App Store Connect n'est jamais réécrit.
+          releaseType: "MANUAL",
+        },
+        relationships: { app: { data: { type: "apps", id: app.id } } },
+      },
+    }).then((r) => r.data);
+    console.log(`appstore-listing: version ${wantedVersion} créée`);
+  }
+}
+
 if (!version) {
   console.error(
     "appstore-listing: aucune version modifiable trouvée" +
