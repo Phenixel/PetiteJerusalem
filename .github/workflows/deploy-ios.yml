@@ -18,8 +18,11 @@ name: Deploy iOS
 # appareil enregistré dans l'équipe — ce compte individuel n'en a aucun. Un
 # profil « App Store » n'en demande pas. Détails dans scripts/ios-signing.mjs.
 #
-# Le binaire part sur TestFlight ; la mise en vente reste un geste manuel dans
-# App Store Connect (« Envoyer pour examen ») — voir docs/ios-release-plan.md.
+# Le binaire part sur TestFlight, puis le job `submit` (Linux) attend la fin
+# du traitement Apple et soumet la version à l'examen via l'API
+# (scripts/asc-submit.mjs) — débrayable avec la variable de repo
+# IOS_AUTO_SUBMIT=false. La mise en vente, elle, reste un geste manuel dans
+# App Store Connect (releaseType MANUAL) — voir docs/ios-release-plan.md.
 #
 # Secrets requis (voir docs/ios-ci-cd.md pour les créer) :
 #   ASC_KEY_ID                identifiant de la clé d'API App Store Connect
@@ -55,6 +58,11 @@ jobs:
     # Store depuis le 28 avril 2026 (SDK iOS 26 minimum).
     runs-on: macos-26
     timeout-minutes: 45
+    # Consommées par le job `submit` : la version et le numéro de build sont
+    # dérivés du tag une seule fois, ici.
+    outputs:
+      version_name: ${{ steps.version.outputs.name }}
+      build_number: ${{ steps.version.outputs.build }}
     env:
       # Xcode épinglé en 26.2 (17C52) : le 26.6 par défaut de l'image échoue
       # sur « Authentication failed: bearer token » pendant la signature
@@ -308,7 +316,8 @@ jobs:
           if-no-files-found: error
 
       # Le build arrive dans TestFlight après quelques minutes de traitement
-      # côté Apple ; la soumission à l'examen reste manuelle.
+      # côté Apple ; la soumission à l'examen est reprise par le job `submit`
+      # une fois ce traitement terminé.
       #
       # `-t`/`-f` plutôt que `--type`/`--file` : l'altool de Xcode 26 est un
       # binaire réécrit qui ne documente plus les formes longues.
@@ -356,3 +365,34 @@ jobs:
         env:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
         run: node scripts/ios-signing.mjs --cleanup
+
+  # La soumission à l'examen ne peut partir qu'une fois le binaire traité par
+  # Apple (15 à 40 minutes) : poller depuis le job macOS gaspillerait des
+  # minutes facturées 10× plus cher, donc ce job Linux prend le relais. Il
+  # attend le build, l'attache à la version du tag (créée par l'étape « fiche »
+  # du job macOS) et la soumet (scripts/asc-submit.mjs, node pur, aucun npm ci).
+  # La mise en vente reste un geste manuel dans App Store Connect.
+  # Débrayable sans toucher au code : variable de repo IOS_AUTO_SUBMIT=false.
+  submit:
+    needs: ios
+    if: ${{ !inputs.debug_signing && vars.IOS_AUTO_SUBMIT != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Attendre le traitement du build et soumettre à l'examen
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          node scripts/asc-submit.mjs \
+            --version "${{ needs.ios.outputs.version_name }}" \
+            --build-number "${{ needs.ios.outputs.build_number }}"

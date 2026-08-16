@@ -15,8 +15,13 @@ Le dossier `ios/` étant git-ignoré, la CI le régénère de zéro
 3070000), archive, exporte l'IPA signé et l'envoie à Apple. L'IPA est aussi
 archivé en artifact du run (90 jours).
 
-**La mise en vente reste manuelle** : Apple exige une soumission explicite à
-l'examen depuis App Store Connect. La CI s'arrête à TestFlight (voir
+**La soumission à l'examen est automatique** : après le job macOS, le job
+`submit` (Linux) attend la fin du traitement du build par Apple (15 à 40 min),
+l'attache à la version du tag et la soumet via l'API
+(`scripts/asc-submit.mjs`). Il s'arrête proprement si une soumission
+précédente est encore en examen, et se débraye avec la variable de repo
+`IOS_AUTO_SUBMIT=false`. **Seule la mise en vente reste manuelle**
+(publication en mode manuel — voir
 [ios-release-plan.md](ios-release-plan.md#étape-8--soumission)).
 
 ## ⚠️ Limite connue : les widgets ne passent pas par cette CI

@@ -253,8 +253,11 @@ site, l'app Android **et** envoie le build iOS sur TestFlight.
 
 ## Étape 8 — Soumission
 
-Dans App Store Connect, sur la version : sélectionner le build TestFlight,
-puis **Ajouter pour examen**.
+Automatique depuis que le job `submit` de deploy-ios.yml existe : il attend le
+traitement du build, l'attache à la version du tag et la soumet à l'examen
+(`scripts/asc-submit.mjs` — débrayable avec la variable de repo
+`IOS_AUTO_SUBMIT=false`). À la main si besoin : dans App Store Connect, sur la
+version, sélectionner le build TestFlight puis **Ajouter pour examen**.
 
 **État (14/08/2026)** : les notes ci-dessous sont collées dans la version
 3.7.0, le compte de démonstration est renseigné, le mode de publication est
