@@ -332,16 +332,19 @@ jobs:
       # défaut) — même logique que deploy-android.yml. Non bloquant : la
       # version cible n'existe dans App Store Connect qu'une fois créée à la
       # main, et le binaire est déjà envoyé à ce stade.
+      # Non bloquant, mais PAS silencieux : `continue-on-error` affichait
+      # l'étape en vert et l'échec ne se voyait qu'en dépliant le journal.
       - name: Mettre à jour la fiche App Store
-        continue-on-error: true
         env:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/v${{ steps.version.outputs.name }}" \
             --jq '.body // ""' > release-body.md || rm -f release-body.md
-          node scripts/appstore-listing.mjs --version "${{ steps.version.outputs.name }}" \
-            --release-notes release-body.md
+          if ! node scripts/appstore-listing.mjs --version "${{ steps.version.outputs.name }}" \
+              --release-notes release-body.md; then
+            echo "::warning::Fiche App Store non synchronisée (voir le journal) — le binaire, lui, est bien parti ; les textes se corrigent à la main dans App Store Connect."
+          fi
 
       # Le certificat de ce run est révoqué et le profil supprimé, même si le
       # build a échoué : le compte reste propre et sous son quota de trois
