@@ -232,7 +232,8 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             DEVELOPMENT_TEAM="$IOS_DEVELOPMENT_TEAM" \
-            CODE_SIGN_STYLE=Automatic > "$RUNNER_TEMP/archive-debug.log" 2>&1
+            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_IDENTITY="Apple Distribution" > "$RUNNER_TEMP/archive-debug.log" 2>&1
           echo "===== journaux de provisioning (filtrés) ====="
           grep -viE "authorization|bearer ey|x-apple|token[\"':= ]" "$RUNNER_TEMP/archive-debug.log" \
             | grep -iE "provision|sign|auth|team|profile|certificate|error|fail|http|status|register" \
@@ -253,7 +254,8 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             DEVELOPMENT_TEAM="$IOS_DEVELOPMENT_TEAM" \
-            CODE_SIGN_STYLE=Automatic
+            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_IDENTITY="Apple Distribution"
 
       - name: Exporter l'IPA
         run: |
