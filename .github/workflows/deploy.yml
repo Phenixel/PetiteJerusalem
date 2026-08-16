@@ -91,18 +91,14 @@ jobs:
             --only firestore:rules,firestore:indexes \
             --project petite-jerusalem-dev --non-interactive
 
-      # Déployé à part, et sans faire échouer le job : le service account de la
-      # CI n'a pas `firebasestorage.defaultBucket.get`, et firebase-tools plante
-      # à la PRÉPARATION du déploiement Storage — donc en les groupant avec
-      # Firestore, ce 403 emportait aussi les règles Firestore, qui ne
-      # partaient jamais. L'échec reste visible en avertissement plutôt que de
-      # rougir un run dont le site est en ligne.
+      # Déployé à part de Firestore : firebase-tools commence par lire le bucket
+      # par défaut, et tant que ce droit manquait, le 403 emportait aussi les
+      # règles Firestore de la même commande. Les droits nécessaires au service
+      # account sont documentés dans docs/firebase-ci-cd.md.
       - name: Deploy Storage rules
         run: |
-          if ! firebase deploy --only storage \
-              --project petite-jerusalem-dev --non-interactive; then
-            echo "::warning::Règles Storage non déployées — le service account n'a pas accès au bucket par défaut (firebasestorage.defaultBucket.get). Les pousser à la main, ou lui accorder le rôle Firebase Admin sur le projet."
-          fi
+          firebase deploy --only storage \
+            --project petite-jerusalem-dev --non-interactive
 
       # Deployed AFTER hosting so a transient functions error can never block the
       # front release. Retries once to absorb a transient 409 "unable to queue
