@@ -85,11 +85,24 @@ jobs:
       # failure must not hold the site release hostage. Indexes ship with them:
       # they are declared in the same firebase.json and a missing index fails
       # queries exactly like a missing rule.
-      - name: Deploy Firestore and Storage rules
+      - name: Deploy Firestore rules and indexes
         run: |
           firebase deploy \
-            --only firestore:rules,firestore:indexes,storage \
+            --only firestore:rules,firestore:indexes \
             --project petite-jerusalem-dev --non-interactive
+
+      # Déployé à part, et sans faire échouer le job : le service account de la
+      # CI n'a pas `firebasestorage.defaultBucket.get`, et firebase-tools plante
+      # à la PRÉPARATION du déploiement Storage — donc en les groupant avec
+      # Firestore, ce 403 emportait aussi les règles Firestore, qui ne
+      # partaient jamais. L'échec reste visible en avertissement plutôt que de
+      # rougir un run dont le site est en ligne.
+      - name: Deploy Storage rules
+        run: |
+          if ! firebase deploy --only storage \
+              --project petite-jerusalem-dev --non-interactive; then
+            echo "::warning::Règles Storage non déployées — le service account n'a pas accès au bucket par défaut (firebasestorage.defaultBucket.get). Les pousser à la main, ou lui accorder le rôle Firebase Admin sur le projet."
+          fi
 
       # Deployed AFTER hosting so a transient functions error can never block the
       # front release. Retries once to absorb a transient 409 "unable to queue
