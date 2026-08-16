@@ -88,7 +88,16 @@ l'Apple Developer Portal.
 
 ## Déploiement
 
-Le dispositif touche trois surfaces à déployer :
+Le dispositif touche trois surfaces — règles Firestore (reports, champs de
+modération), Cloud Function `onSessionReported` et app web — et **un tag
+`vX.Y.Z` les déploie toutes les trois**, sans geste manuel. Ça n'a pas
+toujours été le cas : le compte de service de la CI n'avait longtemps le droit
+de publier que le site, et les règles devaient être poussées à la main après
+chaque modification. Les droits qui l'ont débloqué sont consignés dans
+[docs/firebase-ci-cd.md](firebase-ci-cd.md).
+
+Pour déployer une surface hors release (correction urgente d'une règle,
+itération sur la fonction) :
 
 ```bash
 firebase deploy --only firestore:rules   # nouvelles règles (reports, champs de modération)
