@@ -259,71 +259,104 @@ const versionLocalizations = await api(
   `/v1/appStoreVersions/${version.id}/appStoreVersionLocalizations?limit=50`,
 );
 
-for (const locale of locales) {
-  // 1. Nom, sous-titre, URL de politique de confidentialité.
-  const infoAttributes = {
-    name: read(locale, "name.txt"),
-    subtitle: read(locale, "subtitle.txt"),
-    privacyPolicyUrl: read(locale, "privacy_url.txt"),
-  };
-  const existingInfo = infoLocalizations.data.find((l) => l.attributes.locale === locale);
-  if (existingInfo) {
-    await api("PATCH", `/v1/appInfoLocalizations/${existingInfo.id}`, {
-      data: { type: "appInfoLocalizations", id: existingInfo.id, attributes: infoAttributes },
-    });
-  } else {
-    await api("POST", "/v1/appInfoLocalizations", {
-      data: {
-        type: "appInfoLocalizations",
-        attributes: { locale, ...infoAttributes },
-        relationships: { appInfo: { data: { type: "appInfos", id: appInfo.id } } },
-      },
+/**
+ * Écrit une localisation : PATCH quand la liste lue plus haut la connaît, POST
+ * sinon — et si Apple répond « already exists » (une fiche remplie à la main
+ * n'apparaît pas toujours dans la liste au moment où on la lit), on relit et
+ * on bascule sur un PATCH plutôt que d'abandonner.
+ */
+async function writeLocalization({ collection, type, locale, attributes, relationships, listPath, known }) {
+  if (known) {
+    return api("PATCH", `/v1/${collection}/${known.id}`, {
+      data: { type, id: known.id, attributes },
     });
   }
-
-  // 2. Description, mots-clés, texte promotionnel, nouveautés, URLs.
-  const versionAttributes = {
-    description: read(locale, "description.txt"),
-    keywords: read(locale, "keywords.txt"),
-    promotionalText: readIfExists(locale, "promotional_text.txt") ?? undefined,
-    supportUrl: read(locale, "support_url.txt"),
-    marketingUrl: readIfExists(locale, "marketing_url.txt") ?? undefined,
-    whatsNew: whatsNewFor(locale),
-  };
-  const existingVersion = versionLocalizations.data.find((l) => l.attributes.locale === locale);
-
-  /** Apple refuse `whatsNew` sur la toute première version : on réessaie sans. */
-  async function pushVersionLocalization(attributes) {
-    try {
-      if (existingVersion) {
-        await api("PATCH", `/v1/appStoreVersionLocalizations/${existingVersion.id}`, {
-          data: { type: "appStoreVersionLocalizations", id: existingVersion.id, attributes },
-        });
-      } else {
-        await api("POST", "/v1/appStoreVersionLocalizations", {
-          data: {
-            type: "appStoreVersionLocalizations",
-            attributes: { locale, ...attributes },
-            relationships: {
-              appStoreVersion: { data: { type: "appStoreVersions", id: version.id } },
-            },
-          },
-        });
-      }
-    } catch (error) {
-      const isWhatsNewRejected =
-        attributes.whatsNew !== undefined &&
-        JSON.stringify(error.body ?? "").includes("whatsNew");
-      if (!isWhatsNewRejected) throw error;
-      console.warn(
-        `appstore-listing: ${locale} — « Nouveautés » refusé (première version de l'app), envoi sans.`,
+  try {
+    return await api("POST", `/v1/${collection}`, {
+      data: { type, attributes: { locale, ...attributes }, relationships },
+    });
+  } catch (error) {
+    const duplicate = error.status === 409 && /already exists/i.test(JSON.stringify(error.body ?? ""));
+    if (!duplicate) throw error;
+    const fresh = await api("GET", listPath);
+    const existing = fresh.data.find((l) => l.attributes.locale === locale);
+    if (!existing) {
+      const seen = fresh.data.map((l) => l.attributes.locale).join(", ") || "aucune";
+      throw new Error(
+        `${collection} : Apple refuse « ${locale} » comme doublon mais ne le renvoie pas (locales listées : ${seen})`,
       );
-      await pushVersionLocalization({ ...attributes, whatsNew: undefined });
     }
+    return api("PATCH", `/v1/${collection}/${existing.id}`, {
+      data: { type, id: existing.id, attributes },
+    });
   }
-  await pushVersionLocalization(versionAttributes);
-
-  console.log(`appstore-listing: fiche ${locale} mise à jour`);
 }
 
+// Une langue en échec ne doit pas emporter les suivantes : chacune est tentée,
+// et le bilan est fait à la fin.
+const failures = [];
+for (const locale of locales) {
+  try {
+    // 1. Nom, sous-titre, URL de politique de confidentialité.
+    await writeLocalization({
+      collection: "appInfoLocalizations",
+      type: "appInfoLocalizations",
+      locale,
+      attributes: {
+        name: read(locale, "name.txt"),
+        subtitle: read(locale, "subtitle.txt"),
+        privacyPolicyUrl: read(locale, "privacy_url.txt"),
+      },
+      relationships: { appInfo: { data: { type: "appInfos", id: appInfo.id } } },
+      listPath: `/v1/appInfos/${appInfo.id}/appInfoLocalizations?limit=50`,
+      known: infoLocalizations.data.find((l) => l.attributes.locale === locale),
+    });
+
+    // 2. Description, mots-clés, texte promotionnel, nouveautés, URLs.
+    const versionAttributes = {
+      description: read(locale, "description.txt"),
+      keywords: read(locale, "keywords.txt"),
+      promotionalText: readIfExists(locale, "promotional_text.txt") ?? undefined,
+      supportUrl: read(locale, "support_url.txt"),
+      marketingUrl: readIfExists(locale, "marketing_url.txt") ?? undefined,
+      whatsNew: whatsNewFor(locale),
+    };
+
+    /** Apple refuse `whatsNew` sur la toute première version : on réessaie sans. */
+    async function pushVersionLocalization(attributes) {
+      try {
+        await writeLocalization({
+          collection: "appStoreVersionLocalizations",
+          type: "appStoreVersionLocalizations",
+          locale,
+          attributes,
+          relationships: {
+            appStoreVersion: { data: { type: "appStoreVersions", id: version.id } },
+          },
+          listPath: `/v1/appStoreVersions/${version.id}/appStoreVersionLocalizations?limit=50`,
+          known: versionLocalizations.data.find((l) => l.attributes.locale === locale),
+        });
+      } catch (error) {
+        const isWhatsNewRejected =
+          attributes.whatsNew !== undefined && JSON.stringify(error.body ?? "").includes("whatsNew");
+        if (!isWhatsNewRejected) throw error;
+        console.warn(
+          `appstore-listing: ${locale} — « Nouveautés » refusé (première version de l'app), envoi sans.`,
+        );
+        await pushVersionLocalization({ ...attributes, whatsNew: undefined });
+      }
+    }
+    await pushVersionLocalization(versionAttributes);
+
+    console.log(`appstore-listing: fiche ${locale} mise à jour`);
+  } catch (error) {
+    failures.push(locale);
+    console.error(`appstore-listing: ${locale} — échec\n  ${error.message}`);
+  }
+}
+
+if (failures.length > 0) {
+  console.error(`appstore-listing: fiche NON synchronisée pour ${failures.join(", ")}`);
+  process.exit(1);
+}
 console.log("appstore-listing: fiche App Store publiée");

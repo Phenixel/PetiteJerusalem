@@ -63,23 +63,17 @@ for (const path of ENDPOINTS) {
   if (!response.ok) failed = true;
 }
 // Une équipe SANS appareil enregistré ne peut pas obtenir de profil de
-// développement (« Your team has no devices from which to generate a
+// DÉVELOPPEMENT (« Your team has no devices from which to generate a
 // provisioning profile ») — c'est ce qui a masqué l'échec des premiers runs
-// derrière un « Authentication failed: bearer token ». L'archive signe
-// depuis en distribution (CODE_SIGN_IDENTITY="Apple Distribution" dans
-// deploy-ios.yml), qui n'exige aucun appareil : simple avertissement.
+// derrière un « Authentication failed: bearer token ». La CI n'en dépend plus :
+// elle signe manuellement avec un profil « App Store », qui n'exige aucun
+// appareil (scripts/ios-signing.mjs). Le compte reste affiché à titre
+// d'information.
 if (!failed) {
   const devices = await fetch("https://api.appstoreconnect.apple.com/v1/devices?limit=1", {
     headers: { Authorization: `Bearer ${token}` },
   }).then((r) => (r.ok ? r.json() : null));
   const deviceCount = devices?.meta?.paging?.total ?? null;
-  if (deviceCount === 0) {
-    console.warn(
-      "asc-auth-check: équipe sans appareil enregistré — un profil de DÉVELOPPEMENT est\n" +
-        "  impossible ; l'archive doit rester signée en distribution (CODE_SIGN_IDENTITY\n" +
-        "  « Apple Distribution » dans deploy-ios.yml).",
-    );
-  }
   console.log(
     `asc-auth-check: OK — la clé ${keyId} a accès à l'App Store Connect ET au provisioning` +
       (deviceCount === null ? "" : ` (${deviceCount} appareil(s) enregistré(s))`),

@@ -78,6 +78,19 @@ jobs:
           echo "::error::Hosting release never became active (served=${served:-<none>}, expected=$expected)."
           exit 1
 
+      # Security rules were the one thing this workflow never shipped: every
+      # rules change (moderation, #142) had to be pushed by hand, and a rule
+      # left behind silently breaks reads and writes the new front-end expects.
+      # Deployed AFTER hosting for the same reason as functions — a rules
+      # failure must not hold the site release hostage. Indexes ship with them:
+      # they are declared in the same firebase.json and a missing index fails
+      # queries exactly like a missing rule.
+      - name: Deploy Firestore and Storage rules
+        run: |
+          firebase deploy \
+            --only firestore:rules,firestore:indexes,storage \
+            --project petite-jerusalem-dev --non-interactive
+
       # Deployed AFTER hosting so a transient functions error can never block the
       # front release. Retries once to absorb a transient 409 "unable to queue
       # the operation" (concurrent operation on the function).
