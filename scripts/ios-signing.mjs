@@ -183,8 +183,11 @@ for (const capabilityType of CAPABILITIES) {
     });
     console.log(`ios-signing: capacité ${capabilityType} activée`);
   } catch (error) {
-    // 409 = déjà activée : c'est le cas nominal des runs suivants.
-    if (error.status === 409) console.log(`ios-signing: capacité ${capabilityType} déjà active`);
+    // Capacité déjà active : c'est le cas nominal dès le deuxième run. Apple
+    // répond 409, ou 400 avec « already exists » selon les endpoints.
+    const alreadyThere =
+      error.status === 409 || (error.status === 400 && /already|exist/i.test(error.message));
+    if (alreadyThere) console.log(`ios-signing: capacité ${capabilityType} déjà active`);
     else throw error;
   }
 }
