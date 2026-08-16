@@ -145,10 +145,24 @@ addEntry(
 
 // Sans cette clé, iOS **ferme l'app** à la première demande de position
 // (page Horaires : les zmanim sont calculés localement pour la position).
+const LOCATION_PURPOSE =
+  "Votre position sert à calculer les horaires du jour (zmanim) sur votre appareil. Elle n’est envoyée nulle part.";
 addEntry(
   "NSLocationWhenInUseUsageDescription",
-  "\t<string>Votre position sert à calculer les horaires du jour (zmanim) sur votre appareil. Elle n’est envoyée nulle part.</string>",
+  `\t<string>${LOCATION_PURPOSE}</string>`,
   "NSLocationWhenInUseUsageDescription",
+);
+
+// L'app ne demande QUE l'autorisation « quand l'app est utilisée », mais
+// @capacitor/geolocation s'appuie sur ion-ios-geolocation, dont le code
+// référence l'API « always » — il n'en faut pas plus pour qu'Apple exige la
+// chaîne correspondante (ITMS-90683 sur le build 3.7.0 : « Missing purpose
+// string in Info.plist »). L'invite ne sera jamais montrée à l'utilisateur,
+// d'où le même texte que ci-dessus, comme le recommande le plugin.
+addEntry(
+  "NSLocationAlwaysAndWhenInUseUsageDescription",
+  `\t<string>${LOCATION_PURPOSE}</string>`,
+  "NSLocationAlwaysAndWhenInUseUsageDescription",
 );
 
 // Réception des notifications push quand l'app est en arrière-plan.
