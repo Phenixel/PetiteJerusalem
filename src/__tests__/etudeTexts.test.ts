@@ -63,7 +63,7 @@ describe("etudeTexts URLs", () => {
     expect(slihot).toBeTruthy();
     expect(corpusOf(slihot!)).toBe("slihot");
     expect(hubPath(slihot!)).toBe("/bibliotheque/slihot/slihot");
-    expect(resolveFilePath(slihot!)).toBe(`/texts/tefila/${slihot!.id}.json`);
+    expect(resolveFilePath(slihot!)).toBe("/texts/tefila/slihot.json");
 
     for (const slug of ["brakha-aharona", "birkat-hamazon", "cheva-brahot", "birkat-halevana"]) {
       const e = entryByCorpusSlug("brahot", slug);

@@ -521,13 +521,17 @@ if (shouldRun('tefila')) {
     if (!entry) throw new Error(`Entrée absente du catalogue : ${latin}`);
     return entry;
   };
+  // Fichiers nommés par le slug latin de l'entrée — même règle que
+  // textService.resolveFilePath (« Brakha A'harona » → brakha-aharona.json).
+  const tefilaSlug = latin => latin.toLowerCase().replace(/ /g, '-').replace(/['’‘`]/g, '');
   const writeTefila = (latin, blocks) => {
     const entry = tefilaEntry(latin);
-    writeFileSync(`${OUT}/tefila/${entry.id}.json`, JSON.stringify({
+    const file = `tefila/${tefilaSlug(latin)}.json`;
+    writeFileSync(`${OUT}/${file}`, JSON.stringify({
       title: entry.name,
       blocks,
     }), 'utf8');
-    console.log(`  ✓ ${latin} → tefila/${entry.id}.json (${blocks.length} blocs)`);
+    console.log(`  ✓ ${latin} → ${file} (${blocks.length} blocs)`);
   };
   // Les repères textuels se cherchent sans vocalisation.
   const stripNiqqud = s => s.normalize('NFC').replace(/[֑-ׇ]/g, '');

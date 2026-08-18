@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { HDate } from "@hebcal/core";
 import { activeOccasions } from "../services/dailyCycles";
-import { parseContent } from "../services/textService";
+import { parseContent, resolveFilePath } from "../services/textService";
 import { entryByCorpusSlug } from "../content/etudeTexts";
 
 // Les textes de tefila : blocs conditionnels de Birkat Hamazon (ajouts du
@@ -50,7 +50,7 @@ describe("activeOccasions", () => {
 describe("fichiers de tefila", () => {
   const load = (corpus: string, slug: string) => {
     const entry = entryByCorpusSlug(corpus, slug)!;
-    const data = JSON.parse(readFileSync(`public/texts/tefila/${entry.id}.json`, "utf8"));
+    const data = JSON.parse(readFileSync(`public${resolveFilePath(entry)}`, "utf8"));
     return parseContent(entry, data);
   };
 

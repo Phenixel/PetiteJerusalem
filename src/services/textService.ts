@@ -125,10 +125,14 @@ export function resolveFilePath(textStudy: TextStudyJsonEntry): string {
       return `/texts/talmud/${tractateSlug(tractateFromLink(textStudy.link))}.json`;
     case "Tanakh":
       return `/texts/tanakh/${textStudy.id}.json`;
-    // Liturgie (Sli'hot, Brahot) : mêmes fichiers « un par entrée » que le Tanakh.
+    // Liturgie (Sli'hot, Brahot) : un fichier par entrée, nommé par sa
+    // translittération latine — « ברכה אחרונה (Brakha A'harona) » →
+    // brakha-aharona.json — comme les traités de la Michna et du Talmud.
     case "Slihot":
-    case "Brahot":
-      return `/texts/tefila/${textStudy.id}.json`;
+    case "Brahot": {
+      const latin = textStudy.name.match(/\(([^)]+)\)\s*$/)?.[1] ?? String(textStudy.id);
+      return `/texts/tefila/${tractateSlug(latin)}.json`;
+    }
     default:
       throw new Error(`Type non supporté : ${textStudy.type}`);
   }

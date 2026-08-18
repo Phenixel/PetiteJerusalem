@@ -51,6 +51,13 @@
         ]
       },
       {
+        "source": "/texts/tefila/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" },
+          { "key": "Access-Control-Allow-Origin", "value": "*" }
+        ]
+      },
+      {
         "source": "/app-version.json",
         "headers": [
           { "key": "Cache-Control", "value": "no-cache" },
