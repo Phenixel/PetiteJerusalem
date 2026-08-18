@@ -355,11 +355,17 @@ jobs:
             echo "::warning::Fiche App Store non synchronisée (voir le journal) — le binaire, lui, est bien parti ; les textes se corrigent à la main dans App Store Connect."
           fi
 
-      # Le certificat de ce run est révoqué et le profil supprimé, même si le
-      # build a échoué : le compte reste propre et sous son quota de trois
-      # certificats de distribution. Les binaires déjà envoyés n'en pâtissent
-      # pas — Apple re-signe tout ce qui passe par TestFlight et l'App Store.
-      - name: Révoquer le certificat et le profil du run
+      # Le profil de ce run est supprimé, même si le build a échoué. Le
+      # CERTIFICAT, LUI, EST CONSERVÉ : il l'était autrefois révoqué ici, en
+      # pariant qu'Apple re-signe tout ce qui passe par TestFlight et l'App
+      # Store. C'est faux à l'examen, où Apple re-valide la signature d'origine.
+      # Le build 3.7.3 (3070300) est passé par TestFlight le 17 août 2026 puis a
+      # été rejeté à sa mise en file d'examen — « ITMS-90035: Invalid
+      # Signature » — son certificat ayant été révoqué juste après l'envoi.
+      # Le quota est de trois certificats de distribution : si --setup le
+      # heurte, il affiche la liste et leur expiration. N'en révoquer un qu'une
+      # fois certain qu'aucun build signé avec lui n'est en examen ni en vente.
+      - name: Supprimer le profil du run
         if: always()
         continue-on-error: true
         env:
