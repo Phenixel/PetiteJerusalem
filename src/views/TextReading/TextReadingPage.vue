@@ -31,7 +31,9 @@ import {
   hubTitle,
   sectionDescription,
   hubDescription,
+  isLiturgy,
   READING_LEAD,
+  readingLead as readingLeadOf,
   SITE_URL,
 } from "../../content/etudeTexts";
 import GuestForm from "../../components/GuestForm.vue";
@@ -56,7 +58,7 @@ const readingSize = useReadingSize();
 // navigation + metadata between the two.
 const isEtudeRoute = computed(() => route.params.corpus !== undefined);
 /** Corpus ayant leur page de bibliothèque (route `study-corpus`). */
-const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh"]);
+const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh", "slihot", "brahot"]);
 const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
   isEtudeRoute.value
     ? entryByCorpusSlug(String(route.params.corpus), String(route.params.slug))
@@ -69,8 +71,11 @@ const textId = computed(() =>
 const sectionParam = computed(() => (route.params.section ? Number(route.params.section) : undefined));
 const sessionSlug = computed(() => (route.query.session ? String(route.query.session) : null));
 
-/** Reading lead is shown on the public /bibliotheque pages (not in the session reader). */
-const readingLead = READING_LEAD;
+/** Reading lead is shown on the public /bibliotheque pages (not in the session reader).
+ * Les corpus liturgiques (non partageables) reçoivent la variante sans partage. */
+const readingLead = computed(() =>
+  etudeEntry.value ? readingLeadOf(etudeEntry.value) : READING_LEAD,
+);
 const isTehilimEtude = computed(
   () => isEtudeRoute.value && String(route.params.corpus) === "tehilim",
 );
@@ -104,9 +109,12 @@ const verseBlocks = computed<TextBlock[]>(() => {
 });
 
 // Verse numbers for chaptered texts, and within each chapter / montée block.
-// Whole short texts without blocks (a single psalm) stay unnumbered.
+// Whole short texts without blocks (a single psalm) stay unnumbered, and the
+// liturgy (Sli'hot, Brahot) too: on ne cite pas une bénédiction par numéro.
 const showVerseNumbers = computed(
-  () => (textEntry.value?.totalSections ?? 1) > 1 || (currentSection.value?.blocks?.length ?? 0) > 0,
+  () =>
+    !(textEntry.value && isLiturgy(textEntry.value)) &&
+    ((textEntry.value?.totalSections ?? 1) > 1 || (currentSection.value?.blocks?.length ?? 0) > 0),
 );
 
 const showSectionList = computed(() => !isSingleSection.value && sectionParam.value === undefined);
@@ -269,8 +277,11 @@ function nextSection() {
 }
 
 // Sibling texts of the same type (all Tehilim, all tractates…), in catalog order.
+// Pas pour la liturgie : les brahot ne se suivent pas, on n'y feuillette pas.
 const siblings = computed(() =>
-  textEntry.value ? allTexts.filter((s) => s.type === textEntry.value!.type) : [],
+  textEntry.value && !isLiturgy(textEntry.value)
+    ? allTexts.filter((s) => s.type === textEntry.value!.type)
+    : [],
 );
 const siblingIndex = computed(() => siblings.value.findIndex((s) => String(s.id) === textId.value));
 const prevText = computed<TextStudyJsonEntry | null>(() =>

@@ -7,7 +7,7 @@
 // le déploiement web, qui sert les textes depuis dist/.
 import { existsSync, rmSync } from "node:fs";
 
-const PRUNED_DIRS = ["dist/texts/talmud", "dist/texts/mishna", "dist/texts/tanakh"];
+const PRUNED_DIRS = ["dist/texts/talmud", "dist/texts/mishna", "dist/texts/tanakh", "dist/texts/tefila"];
 
 for (const dir of PRUNED_DIRS) {
   if (!existsSync(dir)) continue;

@@ -24,6 +24,7 @@ const shouldRun = corpus => !ONLY || ONLY === corpus;
 mkdirSync(`${OUT}/mishna`, { recursive: true });
 mkdirSync(`${OUT}/talmud`, { recursive: true });
 mkdirSync(`${OUT}/tanakh`, { recursive: true });
+mkdirSync(`${OUT}/tefila`, { recursive: true });
 
 // ---------- Utilities ----------
 
@@ -499,6 +500,107 @@ if (shouldRun('tanakh')) {
     }
 
     console.warn(`  ✗ ${entry.name} (${rawRef}): no mapping found`);
+  }
+}
+
+// ---------- Tefila : Sli'hot + Brahot (liturgie) ----------
+//
+// Textes du rite séfarade (Edot HaMizrach), comme le public de l'application.
+// Un fichier par entrée du catalogue, nommé par son id (comme le Tanakh), au
+// format « tanakh une section » : he = groupes de lignes, blockLabels = titres.
+
+if (shouldRun('tefila')) {
+  console.log('\n=== Tefila (Sli\'hot + Brahot) ===');
+
+  const tefilaEntries = textStudies.filter(t => t.type === 'Slihot' || t.type === 'Brahot');
+  const tefilaEntry = latin => {
+    const entry = tefilaEntries.find(t => t.name.includes(`(${latin})`));
+    if (!entry) throw new Error(`Entrée absente du catalogue : ${latin}`);
+    return entry;
+  };
+  const writeTefila = (latin, he, blockLabels) => {
+    const entry = tefilaEntry(latin);
+    writeFileSync(`${OUT}/tefila/${entry.id}.json`, JSON.stringify({
+      title: entry.name,
+      he,
+      ...(blockLabels ? { blockLabels } : {}),
+    }), 'utf8');
+    console.log(`  ✓ ${latin} → tefila/${entry.id}.json`);
+  };
+  // Les repères textuels ci-dessous se cherchent sans vocalisation.
+  const stripNiqqud = s => s.normalize('NFC').replace(/[֑-ׇ]/g, '');
+
+  // Sli'hot : le rite quotidien d'Eloul et des dix jours, un texte continu.
+  try {
+    const data = await withRetry(
+      () => fetchJson(`${GCS}/Liturgy/High Holidays/Selichot Edot HaMizrach/Hebrew/merged.json`),
+      'Selichot',
+    );
+    writeTefila("Sli'hot", [cleanTextArray(data.text)]);
+  } catch (e) {
+    console.error(`  ✗ Sli'hot: ${e.message}`);
+  }
+
+  // Birkat Hamazon : le livret complet, une bénédiction par bloc. Les Cheva
+  // Brahot en sont extraites comme entrée à part (c'est ainsi qu'on les cherche).
+  const BIRKAT_HAMAZON_SECTIONS = [
+    [['Preliminary Psalms'], "Psaumes d'ouverture"],
+    [['Zimmun'], 'Zimoun'],
+    [['Blessing on the Food'], 'Birkat Hazan — la nourriture'],
+    [['Blessing on the Land'], 'Birkat Haarets — la terre'],
+    [['Blessing on Jerusalem'], 'Boné Yerouchalayim — Jérusalem'],
+    [['Hatov Vehametiv'], 'Hatov véhamétiv'],
+    [['Blessings After Other Foods', "M'ainShalosh"], "Mé'ein chaloch — Al hami'hya"],
+    [['Blessings After Other Foods', 'Bore Nefashot'], 'Boré nefachot'],
+    [['HaRachaman of Brit Milah'], "Hara'haman d'une brit mila"],
+  ];
+  try {
+    const data = await withRetry(
+      () => fetchJson(`${GCS}/Liturgy/Other Liturgy Works/Birkat Hamazon/Hebrew/merged.json`),
+      'Birkat Hamazon',
+    );
+    const he = [];
+    const blockLabels = [];
+    for (const [path, label] of BIRKAT_HAMAZON_SECTIONS) {
+      const lines = cleanTextArray(path.reduce((node, key) => node?.[key], data.text));
+      if (lines.length === 0) throw new Error(`section vide : ${path.join('/')}`);
+      he.push(lines);
+      blockLabels.push(label);
+    }
+    writeTefila('Birkat Hamazon', he, blockLabels);
+
+    const sheva = cleanTextArray(data.text?.['Sheva Brachot']);
+    if (sheva.length === 0) throw new Error('section vide : Sheva Brachot');
+    writeTefila('Cheva Brahot', [sheva]);
+  } catch (e) {
+    console.error(`  ✗ Birkat Hamazon / Cheva Brahot: ${e.message}`);
+  }
+
+  // Siddur Edot HaMizrach : Me'ein Cheva et Birkat Halevana.
+  try {
+    const data = await withRetry(
+      () => fetchJson(`${GCS}/Liturgy/Siddur/Siddur Edot HaMizrach/Hebrew/merged.json`),
+      'Siddur Edot HaMizrach',
+    );
+
+    // Le nœud « Magen Avot » contient toute la Amida du vendredi soir : le
+    // Me'ein Cheva proprement dit commence deux lignes avant l'indication
+    // « ואומר החזן ברכת מעין שבע לבדו » (Vayekhoulou debout) et se termine
+    // deux lignes après (la bénédiction et sa conclusion).
+    const magen = data.text?.['Shabbat Arvit']?.['Magen Avot'] ?? [];
+    const anchor = magen.findIndex(l => stripNiqqud(stripHtml(l)).includes('מעין שבע'));
+    if (anchor < 2 || anchor + 2 >= magen.length) throw new Error('repère מעין שבע introuvable');
+    const meein = cleanTextArray(magen.slice(anchor - 2, anchor + 3));
+    if (!stripNiqqud(meein[meein.length - 1] ?? '').includes('מקדש השבת')) {
+      throw new Error('le Me\'ein Cheva ne se conclut pas par מקדש השבת — structure amont changée');
+    }
+    writeTefila("Me'ein Cheva", [meein]);
+
+    const levana = cleanTextArray(data.text?.['Blessing of the Moon']);
+    if (levana.length === 0) throw new Error('section vide : Blessing of the Moon');
+    writeTefila('Birkat Halevana', [levana]);
+  } catch (e) {
+    console.error(`  ✗ Siddur Edot HaMizrach: ${e.message}`);
   }
 }
 

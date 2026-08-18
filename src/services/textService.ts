@@ -117,6 +117,10 @@ export function resolveFilePath(textStudy: TextStudyJsonEntry): string {
       return `/texts/talmud/${tractateSlug(tractateFromLink(textStudy.link))}.json`;
     case "Tanakh":
       return `/texts/tanakh/${textStudy.id}.json`;
+    // Liturgie (Sli'hot, Brahot) : mêmes fichiers « un par entrée » que le Tanakh.
+    case "Slihot":
+    case "Brahot":
+      return `/texts/tefila/${textStudy.id}.json`;
     default:
       throw new Error(`Type non supporté : ${textStudy.type}`);
   }
@@ -304,6 +308,14 @@ export function parseContent(
       return parseTalmud(textStudy, data as { title?: string; he?: unknown[] }, talmudChapters);
     case "Tanakh":
       return loadTanakh(textStudy, data as { title?: string; he?: unknown[] });
+    // Liturgie : même format de fichier que le Tanakh à une section (texte
+    // continu, blocs titrés) — seul le type affiché change.
+    case "Slihot":
+    case "Brahot":
+      return {
+        ...loadTanakh(textStudy, data as { title?: string; he?: unknown[] }),
+        type: String(textStudy.type),
+      };
     default:
       throw new Error(`Type non supporté : ${textStudy.type}`);
   }
