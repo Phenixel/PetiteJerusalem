@@ -548,7 +548,7 @@ if (shouldRun('tefila')) {
     [14, 'רחמנא', 'Rahamana'],
     [54, 'אנשי אמונה', 'Anché émouna'],
     [57, 'תמהנו', 'Tamahnou méraot'],
-    [60, 'אנחנו בושנו', 'Vidoui — Achamnou'],
+    [60, 'אנחנו בושנו', 'Vidoui (Achamnou)'],
     [71, 'שמע ישראל', 'Chéma Israël'],
     [86, 'אלהינו שבשמים', 'Élohénou chébachamayim'],
     [150, 'ברגז רחם', 'Anénou'],
@@ -594,10 +594,10 @@ if (shouldRun('tefila')) {
     // אומרים ») sont retirées : la carte et son titre les remplacent.
     const BIRKAT_ZONES = [
       { from: 1, to: 16 },
-      { from: 18, to: 20, when: 'nissim', label: 'Hanouka et Pourim — Al hanissim', check: [17, 'בחנוכה ופורים'] },
+      { from: 18, to: 20, when: 'nissim', label: 'Al hanissim', check: [17, 'בחנוכה ופורים'] },
       { from: 21, to: 22 },
-      { from: 24, to: 24, when: 'shabbat', label: 'Chabbat — Retsé véhahalitsénou', check: [23, 'בשבת'] },
-      { from: 26, to: 33, when: 'moed', label: 'Roch Hodech et jours de fête — Yaalé véyavo', check: [25, 'בראש חודש'] },
+      { from: 24, to: 24, when: 'shabbat', label: 'Retsé véhahalitsénou', check: [23, 'בשבת'] },
+      { from: 26, to: 33, when: 'moed', label: 'Yaalé véyavo', check: [25, 'בראש חודש'] },
       { from: 34, to: 34 },
       { from: 35, to: 40, when: 'shabbat-or-moed', label: "En cas d'oubli de Retsé ou de Yaalé véyavo", check: [35, 'אם שכח'] },
       { from: 41, to: 42 },
@@ -627,7 +627,7 @@ if (shouldRun('tefila')) {
     const nefashot = enjoyments.find(l => stripNiqqud(stripHtml(l)).includes('בורא נפשות'));
     if (!nefashot) throw new Error('Boré nefachot introuvable dans le siddour');
     writeTefila("Brakha A'harona", [
-      { label: "Mé'ein chaloch — Al hami'hya", lines: cleanTextArray(mihya.slice(1)) },
+      { label: "Mé'ein chaloch (Al hami'hya)", lines: cleanTextArray(mihya.slice(1)) },
       { label: 'Boré nefachot', lines: cleanTextArray([nefashot]) },
     ]);
 

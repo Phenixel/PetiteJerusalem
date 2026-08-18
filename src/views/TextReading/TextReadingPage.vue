@@ -130,12 +130,12 @@ const visibleBlocks = computed(() =>
   verseBlocks.value.filter((b) => !b.when || occasions.value.has(b.when)),
 );
 
-/** Style du titre d'un bloc : carte d'ajout du calendrier, ou séparation du
+/** Style du titre d'un bloc : cadre d'ajout du calendrier, ou séparation du
     fil du texte (sans filet au-dessus du tout premier bloc). */
 function blockLabelClass(block: TextBlock, index: number): string {
-  if (block.when) return "mb-4 flex items-center gap-2 text-sm font-semibold text-primary";
   const base = "mb-4 text-sm font-semibold text-primary";
-  return index === 0 ? base : `${base} mt-10 pt-4 border-t border-black/10 dark:border-white/10`;
+  if (block.when || index === 0) return base;
+  return `${base} mt-10 pt-4 border-t border-black/10 dark:border-white/10`;
 }
 
 // Verse numbers for chaptered texts, and within each chapter / montée block.
@@ -1229,11 +1229,10 @@ watch(textId, () => {
              chapter / montée with a marker at each block start -->
         <div v-else :style="{ '--reading-scale': readingSize.scale.value }">
           <template v-for="(block, blockIndex) in visibleBlocks" :key="block.offset">
-            <!-- Ajout du calendrier (`when`) : une carte, affichée seulement le
-                 jour où il se dit (voir visibleBlocks). -->
-            <div :class="block.when ? 'card p-5 mb-6 border-s-4 border-primary/50' : undefined">
+            <!-- Ajout du calendrier (`when`) : un cadre sobre avec son titre,
+                 affiché seulement le jour où il se dit (voir visibleBlocks). -->
+            <div :data-when="block.when" :class="block.when ? 'card p-5 mb-6' : undefined">
               <p v-if="block.label" :class="blockLabelClass(block, blockIndex)">
-                <AppIcon v-if="block.when" name="calendar" :size="14" />
                 {{ block.label }}
               </p>
               <div class="space-y-6" :class="block.when ? undefined : 'mb-6'">

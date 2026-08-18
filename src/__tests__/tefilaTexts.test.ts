@@ -76,7 +76,7 @@ describe("fichiers de tefila", () => {
   it("Brakha A'harona : le Mé'ein chaloch complet puis Boré nefachot", () => {
     const content = load("brahot", "brakha-aharona");
     const blocks = content.sections[0].blocks ?? [];
-    expect(blocks.map((b) => b.label)).toEqual(["Mé'ein chaloch — Al hami'hya", "Boré nefachot"]);
+    expect(blocks.map((b) => b.label)).toEqual(["Mé'ein chaloch (Al hami'hya)", "Boré nefachot"]);
     // Comparé sans vocalisation : l'ordre des signes varie d'une source à l'autre.
     const stripNiqqud = (s: string) => s.normalize("NFC").replace(/[֑-ׇ]/g, "");
     const all = stripNiqqud(content.sections[0].he.join(" "));
