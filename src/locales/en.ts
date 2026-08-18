@@ -812,7 +812,7 @@ const en: LocaleMessages = {
       slihotDesc:
         "The Sephardic Selichot, in Hebrew and phonetics, for Elul and the ten days of teshuva.",
       brahotDesc:
-        "Birkat Hamazon, Me'ein Sheva, Sheva Berakhot, Birkat Halevana: the blessings at hand.",
+        "Birkat Hamazon, bracha acharona, Sheva Berakhot, Birkat Halevana: the blessings at hand.",
       tehilimSearch: "Search a tehilim…",
       michnaSearch: "Search a mishnah…",
       talmudSearch: "Search a Talmud tractate…",

@@ -17,7 +17,14 @@ export interface ShelfBook {
   label: string;
 }
 
-defineProps<{ books: ShelfBook[] }>();
+withDefaults(
+  defineProps<{
+    books: ShelfBook[];
+    /** Décalage de l'animation d'entrée : la 2e étagère se garnit après la 1re. */
+    startIndex?: number;
+  }>(),
+  { startIndex: 0 },
+);
 
 const emit = defineEmits<{ (e: "open", corpus: string): void }>();
 
@@ -28,6 +35,8 @@ const BINDINGS: Record<string, string> = {
   michna: "#7d6a4c",
   talmud: "#6d5743",
   tanakh: "#84483f",
+  slihot: "#7a5c36",
+  brahot: "#5f6249",
 };
 
 function bindingOf(corpus: string): string {
@@ -43,7 +52,7 @@ function bindingOf(corpus: string): string {
         :key="book.corpus"
         :to="book.to"
         class="book"
-        :style="{ '--i': index, '--binding': bindingOf(book.corpus) }"
+        :style="{ '--i': startIndex + index, '--binding': bindingOf(book.corpus) }"
         role="listitem"
         :aria-label="book.label"
         @click="emit('open', book.corpus)"

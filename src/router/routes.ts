@@ -101,10 +101,16 @@ export default [
   // Détail d'un corpus de la bibliothèque (liste des textes) : la page
   // d'accueil de la bibliothèque ne montre que les grandes sections.
   {
-    path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh|slihot|brahot)",
+    path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh|brahot)",
     name: "study-corpus",
     meta: { offlineOk: true },
     component: StudyPage,
+  },
+  // Les Sli'hot n'ont qu'un texte : le livre s'ouvre directement dessus, pas
+  // sur une liste à un seul élément.
+  {
+    path: "/bibliotheque/slihot",
+    redirect: "/bibliotheque/slihot/slihot",
   },
   // L'ancienne page « Hors ligne » a été fusionnée dans la bibliothèque
   // (boutons de téléchargement sur chaque carte + « Tout télécharger »).

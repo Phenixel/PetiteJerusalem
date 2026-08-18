@@ -57,8 +57,10 @@ const readingSize = useReadingSize();
 // (/bibliotheque/:corpus/:slug[/:section], keyword URLs). `isEtudeRoute` switches
 // navigation + metadata between the two.
 const isEtudeRoute = computed(() => route.params.corpus !== undefined);
-/** Corpus ayant leur page de bibliothèque (route `study-corpus`). */
-const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh", "slihot", "brahot"]);
+/** Corpus ayant leur page de bibliothèque (route `study-corpus`). Pas les
+ * Sli'hot : leur unique texte EST la page du corpus (redirection), le retour
+ * ramène donc à l'accueil de la bibliothèque. */
+const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh", "brahot"]);
 const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
   isEtudeRoute.value
     ? entryByCorpusSlug(String(route.params.corpus), String(route.params.slug))

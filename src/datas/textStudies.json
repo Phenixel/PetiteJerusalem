@@ -2633,18 +2633,18 @@
       "type": "Slihot"
     },
     {
-      "id": 341,
-      "name": "מעין שבע (Me'ein Cheva)",
-      "livre": "ברכות (Brahot)",
-      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Shabbat_Arvit,_Magen_Avot",
-      "totalSections": 1,
-      "type": "Brahot"
-    },
-    {
       "id": 342,
       "name": "ברכת המזון (Birkat Hamazon)",
       "livre": "ברכות (Brahot)",
       "link": "https://www.sefaria.org/Birkat_Hamazon",
+      "totalSections": 1,
+      "type": "Brahot"
+    },
+    {
+      "id": 341,
+      "name": "ברכה אחרונה (Brakha A'harona)",
+      "livre": "ברכות (Brahot)",
+      "link": "https://www.sefaria.org/Birkat_Hamazon,_Blessings_After_Other_Foods",
       "totalSections": 1,
       "type": "Brahot"
     },

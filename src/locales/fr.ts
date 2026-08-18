@@ -820,7 +820,7 @@ const fr = {
       slihotDesc:
         "Les Sli'hot du rite séfarade, en hébreu et en phonétique, pour Eloul et les dix jours de techouva.",
       brahotDesc:
-        "Birkat Hamazon, Me'ein Cheva, Cheva Brahot, Birkat Halevana : les bénédictions à portée de main.",
+        "Birkat Hamazon, brakha a'harona, Cheva Brahot, Birkat Halevana : les bénédictions à portée de main.",
       tehilimSearch: "Rechercher un tehilim…",
       michnaSearch: "Rechercher une michna…",
       talmudSearch: "Rechercher un traité du Talmud…",
