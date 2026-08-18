@@ -47,6 +47,14 @@ export interface Bookmark {
   scope?: BookmarkScope;
 }
 
+/**
+ * Textes liturgiques (Sli'hot, Brahot) : pas de « reprendre là où vous
+ * étiez ». Le lecteur n'enregistre plus leurs positions, et celles héritées
+ * d'une version antérieure (localStorage ou compte) sont purgées à la
+ * lecture — reconnues à leur chemin, pour ne pas embarquer le catalogue ici.
+ */
+const LITURGY_PATH = /^\/bibliotheque\/(?:slihot|brahot)\//;
+
 const POSITIONS_KEY = "pj-reading-positions";
 const BOOKMARKS_KEY = "pj-bookmarks";
 const TOMBSTONES_KEY = "pj-bookmark-tombstones";
@@ -146,7 +154,18 @@ class ReadingProgressService {
   // ---- Positions ----
 
   private positions(): Record<string, ReadingPosition> {
-    return readJson<Record<string, ReadingPosition>>(POSITIONS_KEY, {});
+    const byText = readJson<Record<string, ReadingPosition>>(POSITIONS_KEY, {});
+    // Purge des positions liturgiques héritées : la prochaine écriture cloud
+    // (savePosition/toggleBookmark) emporte aussi ce nettoyage côté compte.
+    let changed = false;
+    for (const [textId, position] of Object.entries(byText)) {
+      if (LITURGY_PATH.test(position.path)) {
+        delete byText[textId];
+        changed = true;
+      }
+    }
+    if (changed) writeJson(POSITIONS_KEY, byText);
+    return byText;
   }
 
   /** Dernière position enregistrée pour un texte, sinon null. */
@@ -270,6 +289,9 @@ class ReadingProgressService {
       if (!merged[textId] || position.at > merged[textId].at) merged[textId] = position;
     }
     const mergedList = Object.values(merged)
+      // Le cloud peut encore porter des positions liturgiques : filtrées ici,
+      // la comparaison ci-dessous verra la différence et poussera la purge.
+      .filter((p) => !LITURGY_PATH.test(p.path))
       .sort((a, b) => b.at - a.at)
       .slice(0, MAX_POSITIONS);
     writeJson(
