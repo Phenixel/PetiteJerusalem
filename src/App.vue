@@ -30,6 +30,11 @@ const { loadFonts, resetFonts } = useFonts();
 const isHome = computed(() => route.name === "home");
 const isMiniPlayerVisible = useMiniPlayerVisible();
 
+// Pages de lecture (meta.plainBackground) : le mur de pierre disparaît pour
+// laisser le texte seul sur le fond uni. v-show plutôt que v-if : le mur n'est
+// pas re-généré (re-rasterisé, en mode canvas) à chaque aller-retour.
+const showStoneWall = computed(() => !route.meta.plainBackground);
+
 // Hors ligne : les pages qui dépendent du réseau (sessions, chiourim, profil…)
 // affichent un message clair au lieu d'échouer en silence. Les pages marquées
 // meta.offlineOk (bibliothèque, lecture, contenus embarqués) restent servies.
@@ -73,7 +78,7 @@ onAuthStateChanged(auth, (user) => {
     class="min-h-screen flex flex-col text-text-primary transition-colors duration-300 dark:text-gray-100"
     :class="chromePadClass"
   >
-    <StoneWallBackground />
+    <StoneWallBackground v-show="showStoneWall" />
     <Navbar />
     <!-- App native seulement : ne s'affiche que si le binaire installé est
          antérieur à la version publiée sur le store (appUpdateService). -->

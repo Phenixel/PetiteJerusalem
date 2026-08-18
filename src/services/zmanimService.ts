@@ -1,4 +1,7 @@
-import { GeoLocation, HDate, Zmanim } from "@hebcal/core";
+import { GeoLocation, HDate, Zmanim, getHolidaysOnDate, tachanun } from "@hebcal/core";
+// Noms des fêtes en français : hebcal ne les rend qu'en anglais ou en hébreu
+// sans ce catalogue (4 Ko), qui s'enregistre auprès de hebcal à l'import.
+import "@hebcal/locales/fr";
 
 /**
  * Horaires de la journée (zmanim), calculés en local.
@@ -342,6 +345,46 @@ export function hebrewDateFor(place: ZmanimPlace, day: Date, now: Date = new Dat
   // l'appareil est réglé loin du lieu affiché.
   const sunset = new Zmanim(geoLocationOf(place), localDay, false).sunset();
   return isUsable(sunset) && now.getTime() >= sunset.getTime() ? hd.next() : hd;
+}
+
+/**
+ * Israël ou diaspora : décide du calendrier des fêtes (deuxièmes jours de Yom
+ * Tov) et des règles du tahanoun. Le fuseau suffit à trancher : une ville
+ * d'Israël du catalogue comme une position d'appareil en Israël vivent toutes
+ * deux en Asia/Jerusalem.
+ */
+const isIsraelPlace = (place: ZmanimPlace): boolean => place.tzid === "Asia/Jerusalem";
+
+/**
+ * Roch Hodech, fêtes, jeûnes et Chabbatot spéciaux du jour hébraïque affiché,
+ * nommés dans la langue de l'interface (hebcal porte les catalogues en, he et
+ * fr — voir l'import de @hebcal/locales/fr en tête de fichier).
+ */
+export function holidayNames(place: ZmanimPlace, hd: HDate, locale: string): string[] {
+  const events = getHolidaysOnDate(hd, isIsraelPlace(place)) ?? [];
+  const lg = locale === "he" || locale === "fr" ? locale : "en";
+  return events.map((ev) => ev.render(lg));
+}
+
+/**
+ * Dit-on le tahanoun ce jour hébraïque-là ?
+ *
+ * - "full" : à Cha'harit et à Min'ha (jour ordinaire) ;
+ * - "shacharitOnly" : le matin seulement — veille d'un jour sans tahanoun
+ *   (dont chaque vendredi, veille de Chabbat) ;
+ * - "none" : pas du tout (Roch Hodech, fêtes, tout Nissan…).
+ *
+ * Le Chabbat renvoie null : le tahanoun n'y existe pas, la question ne se
+ * pose pas (le champ mincha de hebcal y décrit le Tsidkatekha, pas un
+ * tahanoun — l'afficher sèmerait la confusion).
+ */
+export type TachanunStatus = "full" | "shacharitOnly" | "none";
+
+export function tachanunStatus(place: ZmanimPlace, hd: HDate): TachanunStatus | null {
+  if (hd.getDay() === 6) return null;
+  const said = tachanun(hd, isIsraelPlace(place));
+  if (!said.shacharit) return "none";
+  return said.mincha ? "full" : "shacharitOnly";
 }
 
 /**

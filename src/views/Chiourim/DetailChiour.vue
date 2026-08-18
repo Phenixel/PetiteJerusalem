@@ -29,7 +29,7 @@ const serie = ref<Serie | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 // Vrai si l'utilisateur connecté avait DÉJÀ vu ce chiour avant cette visite.
-// Capturé juste avant le marquage, une fois la liste des vus chargée (elle
+// Capturé à l'arrivée sur la page, une fois la liste des vus chargée (elle
 // arrive après le premier rendu au chargement complet de la page).
 const wasAlreadyViewed = ref(false);
 const viewMarkedFor = ref<string | null>(null);
@@ -48,7 +48,10 @@ watchEffect(() => {
   if (!current || !viewedLoaded.value || viewMarkedFor.value === current.slug) return;
   viewMarkedFor.value = current.slug;
   wasAlreadyViewed.value = isViewed(current.slug);
-  markViewed(current.slug);
+  // Un chiour avec audio n'est marqué vu qu'au démarrage de l'écoute (voir
+  // useAudioPlayer) : arriver sur la page ne prouve pas qu'on l'a écouté.
+  // Sans audio, il n'y a rien à écouter : la visite reste le seul signal.
+  if (!current.mediaUrl) markViewed(current.slug);
 });
 
 const nextEpisode = computed(() => {

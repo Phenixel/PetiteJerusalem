@@ -289,6 +289,11 @@ const he: LocaleMessages = {
       afternoon: "אחר הצהריים",
       evening: "ערב ולילה",
     },
+    tachanun: {
+      full: "אומרים תחנון.",
+      shacharitOnly: "תחנון בשחרית בלבד, לא במנחה.",
+      none: "אין תחנון.",
+    },
     shabbat: {
       title: "שבת",
       parasha: "פרשת",
@@ -770,7 +775,7 @@ const he: LocaleMessages = {
   },
   study: {
     title: "ספרייה",
-    subtitle: "קראו ולמדו את הטקסטים: תהילים, משנה, תלמוד ותנ״ך.",
+    subtitle: "קראו ולמדו את הטקסטים: תהילים, משנה, תלמוד, תנ״ך, סליחות וברכות.",
     searchPlaceholder: "חיפוש טקסט…",
     searchAllPlaceholder: "חיפוש בכל הטקסטים…",
     noResults: "לא נמצא טקסט תואם.",
@@ -781,16 +786,22 @@ const he: LocaleMessages = {
       mishna: "משנה",
       talmud: "תלמוד",
       tanakh: "תנ״ך",
+      slihot: "סליחות",
+      brahot: "ברכות",
     },
     corpus: {
       tehilimDesc: "150 פרקי התהילים, בעברית ובתעתיק, לקריאה לבד או בשיתוף.",
       michnaDesc: "שישה סדרי משנה, מסכת אחר מסכת, פרק אחר פרק.",
       talmudDesc: "הגמרא: מסכתות התלמוד הבבלי, דף אחר דף.",
       tanakhDesc: "התורה פרשה אחר פרשה, הנביאים והכתובים.",
+      slihotDesc: "סליחות כמנהג עדות המזרח, לחודש אלול ולעשרת ימי תשובה.",
+      brahotDesc: "ברכת המזון, מעין שבע, שבע ברכות, ברכת הלבנה: הברכות בהישג יד.",
       tehilimSearch: "חיפוש פרק תהילים…",
       michnaSearch: "חיפוש מסכת משנה…",
       talmudSearch: "חיפוש מסכת תלמוד…",
       tanakhSearch: "חיפוש פרשה או ספר…",
+      slihotSearch: "חיפוש בסליחות…",
+      brahotSearch: "חיפוש ברכה…",
     },
   },
   studio: {

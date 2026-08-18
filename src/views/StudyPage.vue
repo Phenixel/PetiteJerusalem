@@ -38,8 +38,10 @@ import { liveValue } from "../composables/liveInput";
 
 // L'encart du chnei mikra n'existe que sur le Tanakh, et il tire le calendrier
 // hébraïque (hebcal) avec lui : chargé à la demande, la bibliothèque et ses
-// trois autres corpus n'en portent rien.
+// trois autres corpus n'en portent rien. Même logique pour les psaumes du
+// jour, qui coiffent les Tehilim.
 const ChneiMikraBanner = defineAsyncComponent(() => import("../components/ChneiMikraBanner.vue"));
+const TehilimDayBanner = defineAsyncComponent(() => import("../components/TehilimDayBanner.vue"));
 
 const { t } = useI18n();
 const toast = useToast();
@@ -110,6 +112,22 @@ const CORPUS_META: {
     labelKey: "study.types.tanakh",
     descKey: "study.corpus.tanakhDesc",
     searchKey: "study.corpus.tanakhSearch",
+  },
+  // Liturgie : des textes qu'on lit, pas qu'on partage — jamais proposés au
+  // partage de lecture (voir isShareable dans content/etudeTexts).
+  {
+    corpus: "slihot",
+    typeKey: "Slihot",
+    labelKey: "study.types.slihot",
+    descKey: "study.corpus.slihotDesc",
+    searchKey: "study.corpus.slihotSearch",
+  },
+  {
+    corpus: "brahot",
+    typeKey: "Brahot",
+    labelKey: "study.types.brahot",
+    descKey: "study.corpus.brahotDesc",
+    searchKey: "study.corpus.brahotSearch",
   },
 ];
 
@@ -192,6 +210,11 @@ const hasResults = computed(() => filtered.value.length > 0);
 // de la semaine. L'encart s'efface pendant une recherche, qui vise autre chose.
 const showChneiMikra = computed(
   () => currentCorpus.value?.corpus === "tanakh" && !hasSearch.value && !searching.value,
+);
+
+// Les psaumes du jour (cycle mensuel) coiffent les Tehilim, de la même façon.
+const showTehilimDay = computed(
+  () => currentCorpus.value?.corpus === "tehilim" && !hasSearch.value && !searching.value,
 );
 
 // La liste détaillée s'affiche sur une page corpus, ou dès qu'on cherche
@@ -520,6 +543,9 @@ onUnmounted(() => {
 
     <!-- Tanakh : l'entrée du chnei mikra, qui se lit sur sa propre page. -->
     <ChneiMikraBanner v-if="showChneiMikra" class="max-w-5xl mx-auto mb-10" />
+
+    <!-- Tehilim : les psaumes du jour du mois hébraïque, chacun vers sa page. -->
+    <TehilimDayBanner v-if="showTehilimDay" class="max-w-5xl mx-auto mb-10" />
 
     <!-- ===== Accueil sans recherche : le tableau de bord ===== -->
     <template v-if="!showList">

@@ -24,7 +24,9 @@ import {
   formatZmanTime,
   getShabbatTimes,
   hebrewDateFor,
+  holidayNames,
   featuredShabbat,
+  tachanunStatus,
   type City,
   nextZman,
   ZMAN_PERIODS,
@@ -110,9 +112,13 @@ const civilDate = computed(() =>
     year: "numeric",
   }).format(day.value),
 );
-const hebrewDate = computed(() =>
-  formatHebrewDate(hebrewDateFor(place.value, day.value, now.value), locale.value),
-);
+const hebrewDay = computed(() => hebrewDateFor(place.value, day.value, now.value));
+const hebrewDate = computed(() => formatHebrewDate(hebrewDay.value, locale.value));
+
+// Roch Hodech, fêtes et jeûnes du jour affiché — et, au passage, si l'on dit
+// le tahanoun (null le Chabbat : la question ne s'y pose pas).
+const holidays = computed(() => holidayNames(place.value, hebrewDay.value, locale.value));
+const tachanun = computed(() => tachanunStatus(place.value, hebrewDay.value));
 
 const placeLabel = useZmanimPlaceLabel(place);
 // Les coordonnées restent affichées, entre parenthèses : le nom dit où l'on
@@ -238,6 +244,25 @@ onUnmounted(() => {
       <button type="button" class="text-sm font-medium text-primary" @click="dayOffset = 0">
         {{ t("zmanim.backToToday") }}
       </button>
+    </div>
+
+    <!-- Le jour dans le calendrier : Roch Hodech, fête ou jeûne s'il y en a,
+         et si l'on dit le tahanoun. Rien ne s'affiche un jour ordinaire de
+         semaine à part la ligne du tahanoun, volontairement discrète. -->
+    <div v-if="holidays.length > 0 || tachanun" class="mt-3 text-center">
+      <div v-if="holidays.length > 0" class="flex flex-wrap justify-center gap-2">
+        <span
+          v-for="name in holidays"
+          :key="name"
+          class="chip bg-primary/10 text-primary inline-flex items-center gap-1.5"
+        >
+          <AppIcon name="calendar" :size="12" />
+          {{ name }}
+        </span>
+      </div>
+      <p v-if="tachanun" class="mt-1.5 text-xs text-text-secondary">
+        {{ t(`zmanim.tachanun.${tachanun}`) }}
+      </p>
     </div>
 
     <!-- Le prochain horaire, mis en avant. Pas d'intitulé : une heure isolée
