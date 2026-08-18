@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Signature iOS en CI : fabrique un certificat de distribution et un profil
- * « App Store » ÉPHÉMÈRES via l'API App Store Connect, les installe sur le
- * runner, et les détruit en fin de run.
+ * « App Store » via l'API App Store Connect, les installe sur le runner. Le
+ * profil est détruit en fin de run ; le certificat, NON — voir plus bas.
  *
  * Pourquoi ne pas laisser xcodebuild signer tout seul (-allowProvisioningUpdates) :
  * `xcodebuild archive` en signature AUTOMATIQUE réclame un profil de
@@ -15,9 +15,21 @@
  * provisioning settings ») sur la cible App *et* sur chaque paquet SPM.
  *
  * D'où la signature MANUELLE : un profil « App Store » n'a besoin d'aucun
- * appareil. Le certificat est créé pour le run puis révoqué (même principe
- * qu'Xcode Cloud) — les binaires déjà envoyés n'en souffrent pas, Apple
- * re-signe tout ce qui passe par TestFlight et l'App Store.
+ * appareil.
+ *
+ * POURQUOI LE CERTIFICAT N'EST PLUS RÉVOQUÉ EN FIN DE RUN
+ * Il l'était, en pariant qu'« Apple re-signe tout ce qui passe par TestFlight
+ * et l'App Store ». C'est faux pour l'examen : Apple re-valide la signature
+ * D'ORIGINE au moment de la soumission. Le build 3.7.3 (3070300) a été accepté
+ * par TestFlight le 17 août 2026, installé et testé — puis rejeté dès sa mise
+ * en file d'examen : « ITMS-90035: Invalid Signature », parce que son
+ * certificat avait été révoqué quelques minutes après l'envoi.
+ * Un certificat doit donc survivre à tout binaire signé avec lui tant que
+ * celui-ci est en examen ou en vente. Seul le profil reste éphémère : le
+ * recréer est sans conséquence.
+ * Le quota Apple est de trois certificats de distribution ; en conserver un
+ * n'a rien d'anormal, c'est l'usage courant. Si le quota est atteint, --setup
+ * échoue avec la liste des certificats et leur date d'expiration.
  *
  * Rien n'est stocké dans le repo : ni .p12, ni profil, ni mot de passe.
  *
@@ -30,7 +42,8 @@
  * par l'export de l'IPA) :
  *   IOS_PROVISIONING_PROFILE     nom du profil (PROVISIONING_PROFILE_SPECIFIER)
  *   IOS_CODE_SIGN_IDENTITY       nom complet de l'identité de signature
- *   IOS_SIGNING_CERTIFICATE_ID   id ASC du certificat, pour --cleanup
+ *   IOS_SIGNING_CERTIFICATE_ID   id ASC du certificat (trace de run ; --cleanup
+ *                                ne le révoque PAS, cf. plus haut)
  *   IOS_SIGNING_PROFILE_ID       id ASC du profil, pour --cleanup
  *   IOS_SIGNING_KEYCHAIN         trousseau temporaire, pour --cleanup
  */
@@ -127,24 +140,28 @@ const workDir = process.env.RUNNER_TEMP || tmpdir();
 const keychainPath = join(workDir, "petitejerusalem-signing.keychain-db");
 
 // ---------------------------------------------------------------------------
-// Nettoyage : révoque le certificat, supprime le profil et le trousseau.
+// Nettoyage : supprime le profil et le trousseau. PAS le certificat.
 // ---------------------------------------------------------------------------
+// Révoquer le certificat ici invaliderait la signature du binaire qui vient
+// d'être envoyé, dès qu'Apple la re-valide à la soumission à l'examen
+// (ITMS-90035). Il reste donc en place ; l'en-tête du fichier détaille le cas.
 if (isCleanup) {
-  const certificateId = process.env.IOS_SIGNING_CERTIFICATE_ID;
   const profileId = process.env.IOS_SIGNING_PROFILE_ID;
-  for (const [label, path] of [
-    ["profil", profileId && `/v1/profiles/${profileId}`],
-    ["certificat", certificateId && `/v1/certificates/${certificateId}`],
-  ]) {
+  for (const [label, path] of [["profil", profileId && `/v1/profiles/${profileId}`]]) {
     if (!path) continue;
     try {
       await api("DELETE", path);
       console.log(`ios-signing: ${label} supprimé côté Apple`);
     } catch (error) {
       // Un nettoyage raté ne doit pas masquer le résultat du run : le pire cas
-      // est un certificat de trop, révocable à la main sur developer.apple.com.
+      // est un profil de trop, supprimable à la main sur developer.apple.com.
       console.warn(`ios-signing: ⚠️ ${label} non supprimé — ${error.message}`);
     }
+  }
+  if (process.env.IOS_SIGNING_CERTIFICATE_ID) {
+    console.log(
+      `ios-signing: certificat ${process.env.IOS_SIGNING_CERTIFICATE_ID} conservé (requis tant qu'un build signé avec lui est en examen ou en vente)`,
+    );
   }
   const keychain = process.env.IOS_SIGNING_KEYCHAIN || keychainPath;
   if (existsSync(keychain)) {
