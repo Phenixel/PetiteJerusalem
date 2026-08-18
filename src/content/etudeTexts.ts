@@ -169,11 +169,13 @@ function sectionTextHtml(section: TextSection, numbered: boolean): string {
       .join("\n      ");
   }
   if (section.blocks?.length) {
+    // Tefila : les blocs du fil principal n'ont pas de titre ; la page
+    // statique, sans date, montre aussi les ajouts conditionnels (`when`).
     return section.blocks
       .map(
         (block) =>
-          `<h3 class="daf-label">${esc(block.label)}</h3>\n` +
-          `      <ol class="reading-lines">\n      ${linesHtml(block.lines, numbered)}\n      </ol>`,
+          (block.label ? `<h3 class="daf-label">${esc(block.label)}</h3>\n      ` : "") +
+          `<ol class="reading-lines">\n      ${linesHtml(block.lines, numbered)}\n      </ol>`,
       )
       .join("\n      ");
   }

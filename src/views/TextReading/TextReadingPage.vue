@@ -17,6 +17,9 @@ import {
   placeLabel as describePlace,
 } from "../../services/textService";
 import type { TextBlock, TextContent, TextSection } from "../../services/textService";
+import { activeOccasions } from "../../services/dailyCycles";
+import { hebrewDateFor } from "../../services/zmanimService";
+import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { scrollToVerse } from "../../composables/scrollAnchor";
 import { resolveBackNavigation, stripQuery } from "../../composables/readingBack";
 import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
@@ -51,6 +54,9 @@ const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
 const readingSize = useReadingSize();
+// Lieu des horaires : donne le jour hébraïque (sensible à la chkia) qui
+// conditionne les ajouts de calendrier des textes de tefila.
+const { place: zmanimPlace } = useZmanimLocation();
 
 // This view serves two URL shapes with the SAME UI: the in-session reader
 // (/lire/:textId, numeric id) and the public, indexable reading pages
@@ -109,6 +115,28 @@ const verseBlocks = computed<TextBlock[]>(() => {
   if (section.blocks?.length) return section.blocks;
   return [{ label: "", lines: section.he, offset: 0 }];
 });
+
+// Tefila : les ajouts liés au calendrier (Retsé le Chabbat, Yaalé véyavo à
+// Roch Hodech, Al hanissim à Hanouka…) ne s'affichent que le jour où ils se
+// disent — dans une carte, pour les distinguer du fil du texte. Le jour
+// hébraïque suit le lieu des horaires (après la chkia, on est déjà demain).
+const occasions = computed(() =>
+  activeOccasions(
+    hebrewDateFor(zmanimPlace.value, new Date()),
+    zmanimPlace.value.tzid === "Asia/Jerusalem",
+  ),
+);
+const visibleBlocks = computed(() =>
+  verseBlocks.value.filter((b) => !b.when || occasions.value.has(b.when)),
+);
+
+/** Style du titre d'un bloc : carte d'ajout du calendrier, ou séparation du
+    fil du texte (sans filet au-dessus du tout premier bloc). */
+function blockLabelClass(block: TextBlock, index: number): string {
+  if (block.when) return "mb-4 flex items-center gap-2 text-sm font-semibold text-primary";
+  const base = "mb-4 text-sm font-semibold text-primary";
+  return index === 0 ? base : `${base} mt-10 pt-4 border-t border-black/10 dark:border-white/10`;
+}
 
 // Verse numbers for chaptered texts, and within each chapter / montée block.
 // Whole short texts without blocks (a single psalm) stay unnumbered, and the
@@ -345,6 +373,9 @@ function placeLabel(sectionIndex: number | null, line: number): string {
 }
 
 const showResumeBanner = computed(() => {
+  // Liturgie : les marque-pages restent, mais pas de « reprendre là où vous
+  // étiez » — une brakha ou les Sli'hot se lisent du début, pas en cours.
+  if (textEntry.value && isLiturgy(textEntry.value)) return false;
   const p = savedPosition.value;
   if (!p || resumeDismissed.value || route.query.verset !== undefined || !content.value)
     return false;
@@ -430,7 +461,9 @@ function clearScrollSaveTimer() {
 }
 
 function savePositionNow(line: number, sectionIndex = positionSection.value) {
-  if (!textEntry.value) return;
+  // Liturgie : pas de position retenue (ni bannière de reprise ici, ni
+  // « Reprendre ma lecture » sur l'accueil de la bibliothèque).
+  if (!textEntry.value || isLiturgy(textEntry.value)) return;
   sessionSaved = true;
   readingProgressService.savePosition({
     textId: textId.value,
@@ -1195,14 +1228,15 @@ watch(textId, () => {
         <!-- Verses / mishnayot (numbered for reference texts), grouped by
              chapter / montée with a marker at each block start -->
         <div v-else :style="{ '--reading-scale': readingSize.scale.value }">
-          <template v-for="block in verseBlocks" :key="block.offset">
-            <p
-              v-if="block.label"
-              class="mt-10 mb-4 pt-4 border-t border-black/10 dark:border-white/10 text-sm font-semibold text-primary first:mt-0 first:pt-0 first:border-t-0"
-            >
-              {{ block.label }}
-            </p>
-            <div class="space-y-6 mb-6">
+          <template v-for="(block, blockIndex) in visibleBlocks" :key="block.offset">
+            <!-- Ajout du calendrier (`when`) : une carte, affichée seulement le
+                 jour où il se dit (voir visibleBlocks). -->
+            <div :class="block.when ? 'card p-5 mb-6 border-s-4 border-primary/50' : undefined">
+              <p v-if="block.label" :class="blockLabelClass(block, blockIndex)">
+                <AppIcon v-if="block.when" name="calendar" :size="14" />
+                {{ block.label }}
+              </p>
+              <div class="space-y-6" :class="block.when ? undefined : 'mb-6'">
               <template v-for="(line, index) in block.lines" :key="block.offset + index">
                 <div
                   :data-line="block.offset + index"
@@ -1259,6 +1293,7 @@ watch(textId, () => {
                   </button>
                 </div>
               </template>
+              </div>
             </div>
           </template>
         </div>
