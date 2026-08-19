@@ -91,11 +91,16 @@ body {
 /* App native uniquement (classe posée par main.ts) : sans ça, l'étirement
    d'overscroll d'Android déforme toute la page, bottom bar comprise.
    (Complété par overScrollMode NEVER côté natif, cf. setup-android.mjs.)
+   Sur l'axe vertical seulement : `overscroll-behavior` sans suffixe vaut aussi
+   pour l'horizontale, et WebKit y voit l'ordre de couper le retour arrière par
+   glissement depuis le bord de l'écran, le geste système des iPhone (son
+   équivalent Android, le bouton retour, passe par le natif et n'est donc pas
+   concerné, ce qui explique que le bug ne se voyait que sur iOS).
    `touch-action: manipulation` coupe en plus le zoom au double-tap, que le
    meta viewport ne suffit pas à neutraliser sur toutes les webviews. */
 :root.native-app,
 :root.native-app body {
-  overscroll-behavior: none;
+  overscroll-behavior-y: none;
   touch-action: manipulation;
 }
 

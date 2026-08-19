@@ -12,8 +12,9 @@
  * - PrivacyInfo.xcprivacy : manifeste de confidentialité (obligatoire depuis
  *   mai 2024 ; sans lui, l'upload déclenche les avertissements ITMS-91053)
  * - GoogleService-Info.plist : copié depuis la racine s'il s'y trouve
- * - AppDelegate.swift : hooks APNs (@capacitor-firebase/messaging) et
- *   Auth.auth().canHandle(url) (@capacitor-firebase/authentication)
+ * - AppDelegate.swift : hooks APNs (@capacitor-firebase/messaging),
+ *   Auth.auth().canHandle(url) (@capacitor-firebase/authentication) et
+ *   retour arrière par glissement depuis le bord de l'écran
  * - project.pbxproj : bundle id, équipe de signature, entitlements, versions,
  *   familles d'appareils (iPhone + iPad), et enregistrement des deux
  *   ressources ci-dessus
@@ -387,6 +388,36 @@ if (!appDelegate.includes("capacitorDidRegisterForRemoteNotifications")) {
   );
   writeFileSync(appDelegatePath, appDelegate);
   console.log("setup-ios: AppDelegate.swift, hooks APNs et Firebase Auth ajoutés");
+}
+
+// Retour arrière par glissement depuis le bord de l'écran : le geste système
+// que tout iPhone propose, et que les WKWebView désactivent par défaut. Sur
+// Android l'équivalent est le bouton retour, câblé dans src/main.ts, d'où un
+// retour arrière qui marchait là-bas et pas ici. Capacitor n'expose aucune
+// option de configuration pour ce réglage : il faut le poser sur la webview,
+// qui n'existe qu'une fois la vue du contrôleur chargée, d'où l'attente de
+// la notification capacitorViewDidAppear.
+// (Le pendant côté web est dans src/assets/main.css : overscroll-behavior sur
+// l'axe horizontal couperait le geste malgré ce réglage.)
+// Bloc à part, avec sa propre garde : il doit s'appliquer aussi aux projets
+// ios/ déjà passés par une version antérieure de ce script.
+if (!appDelegate.includes("allowsBackForwardNavigationGestures")) {
+  appDelegate = mustReplace(
+    appDelegate,
+    "        // (FirebaseApp.configure() est appelé par les plugins @capacitor-firebase.)\n        return true",
+    "        // (FirebaseApp.configure() est appelé par les plugins @capacitor-firebase.)\n" +
+      "        // Retour arrière par glissement depuis le bord de l'écran : désactivé\n" +
+      "        // par défaut sur WKWebView, et sans réglage Capacitor pour l'activer.\n" +
+      "        // L'observateur vit autant que l'app : rien à désenregistrer.\n" +
+      "        _ = NotificationCenter.default.addObserver(forName: .capacitorViewDidAppear, object: nil, queue: .main) { [weak self] _ in\n" +
+      "            let controller = self?.window?.rootViewController as? CAPBridgeViewController\n" +
+      "            controller?.webView?.allowsBackForwardNavigationGestures = true\n" +
+      "        }\n" +
+      "        return true",
+    "AppDelegate : retour arrière par glissement",
+  );
+  writeFileSync(appDelegatePath, appDelegate);
+  console.log("setup-ios: AppDelegate.swift, retour arrière par glissement activé");
 }
 
 // ---------------------------------------------------------------------------
