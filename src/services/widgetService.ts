@@ -13,7 +13,7 @@ import { buildDailyReadingWidgetPayload, buildZmanimWidgetPayload } from "./widg
  *
  * Les widgets natifs ne peuvent pas exécuter le code de la webview : l'app
  * leur pousse des payloads JSON pré-calculés (voir widgetPayloads) via le
- * plugin natif PjWidgets — SharedPreferences côté Android, App Group côté iOS,
+ * plugin natif PjWidgets, SharedPreferences côté Android, App Group côté iOS,
  * qui rafraîchit les widgets concernés dans la foulée. Le natif se débrouille
  * ensuite seul : une semaine d'horaires est embarquée, et la lecture du jour
  * porte son échéance (expiresAt) pour se remettre à zéro à minuit sans rouvrir
@@ -55,7 +55,7 @@ class WidgetService {
 
   // File d'attente des push : les appels qui arrivent pendant un push en vol
   // partagent le suivant. La promesse rendue par refresh() ne se résout
-  // qu'après un push démarré à ou après l'appel — jamais celle d'un push
+  // qu'après un push démarré à ou après l'appel, jamais celle d'un push
   // antérieur porteur de données plus vieilles.
   private queue: Promise<void> = Promise.resolve();
   private queued = false;
@@ -124,7 +124,7 @@ class WidgetService {
       await loadLocaleMessages(locale as SupportedLocale);
       const t = i18n.global.t as (key: string, params?: Record<string, unknown>) => string;
 
-      // Horaires : recalculés seulement si une de leurs entrées a bougé —
+      // Horaires : recalculés seulement si une de leurs entrées a bougé
       // une coche de lecture, par exemple, ne les recalcule pas.
       const { place } = useZmanimLocation();
       const zmanimKey = `${locale}|${localDayKey()}|${JSON.stringify(place.value)}`;

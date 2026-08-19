@@ -23,7 +23,7 @@ import {
  * même chkia que celle affichée dans l'application.
  */
 
-/** Mardi 4 août 2026, milieu de journée — même repère que zmanim.test.ts. */
+/** Mardi 4 août 2026, milieu de journée, même repère que zmanim.test.ts. */
 const PARIS_DAY = new Date(Date.UTC(2026, 7, 4, 12));
 
 const PLACES: { name: string; place: ZmanimPlace }[] = [
@@ -91,7 +91,7 @@ describe("sunsetOn (calcul serveur)", () => {
 
   it("ne renvoie rien là où le soleil ne se couche pas", () => {
     // Tromsø, au-delà du cercle polaire : soleil de minuit en juin, nuit
-    // polaire en décembre — le rappel d'avant-chkia n'a alors rien à viser.
+    // polaire en décembre, le rappel d'avant-chkia n'a alors rien à viser.
     expect(sunsetOn(2026, 6, 21, 69.6496, 18.956)).toBeNull();
     expect(sunsetOn(2026, 12, 21, 69.6496, 18.956)).toBeNull();
   });

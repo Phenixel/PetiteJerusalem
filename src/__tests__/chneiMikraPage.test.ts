@@ -8,7 +8,7 @@ import ChneiMikraPage from "../views/Library/ChneiMikraPage.vue";
 
 /**
  * Le chnei mikra : un encart dans le Tanakh qui mène à sa page, et sur cette
- * page le feuilletage des semaines — dans l'URL, pour que le bouton
+ * page le feuilletage des semaines, dans l'URL, pour que le bouton
  * « précédent » du navigateur défasse un feuilletage.
  */
 

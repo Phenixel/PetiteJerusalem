@@ -14,14 +14,14 @@ import tailwindcss from '@tailwindcss/vite'
  * breakdown des tuiles d'erreurs du dashboard produit.
  *
  * Repli, du plus fiable au plus dégradé :
- *  1. APP_VERSION — override explicite (build de test, CI maison)
- *  2. tag Git du build de release — deploy.yml et deploy-android.yml sont
+ *  1. APP_VERSION, override explicite (build de test, CI maison)
+ *  2. tag Git du build de release, deploy.yml et deploy-android.yml sont
  *     déclenchés par un push de tag vX.Y.Z, que GitHub expose dans
  *     GITHUB_REF_NAME (le checkout y est superficiel : `git describe` ne
  *     retrouverait rien)
- *  3. `git describe` — dev local et canaux de preview (dernier tag + nombre
+ *  3. `git describe`, dev local et canaux de preview (dernier tag + nombre
  *     de commits depuis, ex. v3.3.4-7-gabc1234)
- *  4. version du package.json — dernier recours (clone sans historique Git)
+ *  4. version du package.json, dernier recours (clone sans historique Git)
  */
 function resolveAppVersion(): string {
   if (process.env.APP_VERSION) return process.env.APP_VERSION
@@ -42,7 +42,7 @@ function resolveAppVersion(): string {
  * Publie la version de la release sur le site : `dist/app-version.json`.
  *
  * L'app Android y lit la dernière version publiée pour se savoir périmée et
- * proposer la mise à jour (src/services/appUpdateService.ts) — le Play Store
+ * proposer la mise à jour (src/services/appUpdateService.ts), le Play Store
  * n'expose aucune API publique de version. Émis par le build plutôt que
  * maintenu à la main dans `public/` : le même tag déploie le site et publie
  * l'app (deploy.yml / deploy-android.yml), le fichier ne peut donc pas mentir
@@ -94,7 +94,7 @@ export default defineConfig({
         // n'invalide pas le cache navigateur des gros chunks stables.
         // Firebase est volontairement scindé en deux : le cœur (app + auth,
         // requis dès le premier rendu) et Firestore, chargé à la demande via
-        // src/firebase/firestore.ts — les regrouper ramènerait Firestore dans
+        // src/firebase/firestore.ts, les regrouper ramènerait Firestore dans
         // le chargement initial. Storage et Functions, petits et cantonnés au
         // studio/admin, suivent le découpage naturel de Rollup.
         manualChunks: {

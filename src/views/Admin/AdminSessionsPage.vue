@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Modération des sessions (exigence App Store 1.2) : toutes les sessions,
-// leurs signalements, et les actions admin — masquer/démasquer, modifier,
+// leurs signalements, et les actions admin, masquer/démasquer, modifier,
 // supprimer, résoudre les signalements. Les sessions signalées remontent en
 // tête de liste ; au 3e signalement distinct la Cloud Function les a déjà
 // masquées automatiquement.

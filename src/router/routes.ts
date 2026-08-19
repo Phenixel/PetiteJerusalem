@@ -20,6 +20,7 @@ const DailyReadingPage = () => import("../views/Library/DailyReadingPage.vue");
 const ChneiMikraPage = () => import("../views/Library/ChneiMikraPage.vue");
 const ContentPage = () => import("../views/ContentPage.vue");
 const ZmanimPage = () => import("../views/Zmanim/ZmanimPage.vue");
+const CalendarPage = () => import("../views/Zmanim/CalendarPage.vue");
 const TehilimPage = () => import("../views/TehilimPage.vue");
 const StudioPage = () => import("../views/Studio/StudioPage.vue");
 const AdminLayout = () => import("../views/Admin/AdminLayout.vue");
@@ -134,13 +135,20 @@ export default [
     component: TextReadingPage,
   },
   // Horaires (zmanim) : tout est calculé sur l'appareil, aucune donnée à
-  // charger — la page a donc sa place parmi les `offlineOk`, qui n'affichent
+  // charger, la page a donc sa place parmi les `offlineOk`, qui n'affichent
   // pas l'écran « hors ligne » quand le réseau manque.
   {
     path: "/horaires",
     name: "zmanim",
     meta: { offlineOk: true },
     component: ZmanimPage,
+  },
+  // Calendrier des fêtes : même moteur, même absence de réseau.
+  {
+    path: "/calendrier",
+    name: "calendar",
+    meta: { offlineOk: true },
+    component: CalendarPage,
   },
   {
     path: "/chiourim",

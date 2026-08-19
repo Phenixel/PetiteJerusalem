@@ -5,7 +5,7 @@
 // Rien n'est chargé depuis le réseau : les horaires se calculent sur
 // l'appareil (voir zmanimService), y compris pour les jours qu'on parcourt
 // avec les flèches. Une fois la page ouverte, elle continue donc de servir
-// sans connexion — et dans l'app native, dont les fichiers sont embarqués,
+// sans connexion, et dans l'app native, dont les fichiers sont embarqués,
 // elle s'ouvre aussi hors ligne. Le site web, lui, n'a pas de service
 // worker : là, il faut le réseau pour charger la page (mais pas après).
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from "vue";
@@ -20,12 +20,13 @@ import { useZmanCountdown } from "../../composables/useZmanCountdown";
 import { getParashaForShabbat } from "../../services/dailyCycles";
 import {
   computeZmanim,
+  dayHighlights,
+  festivalsOn,
   formatHebrewDate,
   formatZmanTime,
-  getShabbatTimes,
   hebrewDateFor,
-  holidayNames,
-  featuredShabbat,
+  restPeriodsNear,
+  sameCivilDay,
   tachanunStatus,
   type City,
   nextZman,
@@ -34,7 +35,7 @@ import {
   type ZmanTime,
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
-import ShabbatTimes from "./ShabbatTimes.vue";
+import RestTimes from "./RestTimes.vue";
 
 // Chargé à la demande : le sélecteur embarque la liste des villes, inutile
 // tant qu'on ne l'ouvre pas.
@@ -59,25 +60,34 @@ const isToday = computed(() => dayOffset.value === 0);
 
 const times = computed(() => computeZmanim(place.value, day.value));
 const upcoming = computed(() => (isToday.value ? nextZman(times.value, now.value) : null));
-// Le Chabbat suit le jour affiché : parcourir le calendrier avec les flèches
-// doit montrer le Chabbat de cette semaine-là, pas toujours celui d'à côté.
-const shabbat = computed(() => getShabbatTimes(place.value, day.value));
 
 /**
- * Vendredi et samedi, le Chabbat passe devant les horaires du jour : c'est ce
- * qu'on vient vérifier ces jours-là. Le samedi soir, une fois sorti, il
- * retrouve sa place en bas.
+ * Les temps de repos qui suivent le jour affiché : le Chabbat, un Yom Tov, ou
+ * les deux d'un coup quand ils se touchent. Parcourir le calendrier avec les
+ * flèches doit montrer ceux de cette semaine-là, pas toujours ceux d'à côté.
  */
-const shabbatFirst = computed(() => featuredShabbat(place.value, day.value) !== null);
+const restPeriods = computed(() => restPeriodsNear(place.value, day.value, locale.value));
 
 /**
- * La paracha de ce Chabbat-là — celui dont les horaires sont affichés, et non
- * celui d'aujourd'hui : le samedi soir après la sortie, le bloc montre déjà
- * le Chabbat suivant, sa paracha doit suivre.
+ * Le repos passe devant les horaires du jour le jour où il entre et tant qu'il
+ * dure : le vendredi, l'heure d'allumage est ce qu'on vient vérifier. Les
+ * autres jours, il garde sa place en bas de la page.
  */
-const parasha = computed(() =>
-  shabbat.value ? getParashaForShabbat(shabbat.value.havdalah) : null,
-);
+const restFirst = computed(() => {
+  const period = restPeriods.value[0];
+  if (!period) return false;
+  return (
+    period.start.getTime() <= day.value.getTime() ||
+    sameCivilDay(place.value, period.start, day.value)
+  );
+});
+
+/**
+ * La paracha du Chabbat couvert par un bloc, celui dont les horaires sont
+ * affichés, et non celui d'aujourd'hui : le samedi soir après la sortie, le
+ * bloc montre déjà le Chabbat suivant, sa paracha doit suivre.
+ */
+const parashaOf = (shabbat: Date | null) => (shabbat ? getParashaForShabbat(shabbat) : null);
 
 const byPeriod = computed(() =>
   ZMAN_PERIODS.map((period) => ({
@@ -115,9 +125,23 @@ const civilDate = computed(() =>
 const hebrewDay = computed(() => hebrewDateFor(place.value, day.value, now.value));
 const hebrewDate = computed(() => formatHebrewDate(hebrewDay.value, locale.value));
 
-// Roch Hodech, fêtes et jeûnes du jour affiché — et, au passage, si l'on dit
-// le tahanoun (null le Chabbat : la question ne s'y pose pas).
-const holidays = computed(() => holidayNames(place.value, hebrewDay.value, locale.value));
+/**
+ * Ce que le jour a de particulier : Roch Hodech, 'Hanouka, un jeûne,
+ * 'Hol haMoed… Les Yom Tov n'y sont d'ordinaire pas répétés, ils ont leur
+ * cadre, avec leurs heures d'entrée et de sortie ; ils reviennent ici quand
+ * aucun cadre affiché ne couvre le jour (un jour parcouru avec les flèches
+ * dont le repos est déjà sorti à cette heure-là, un lieu sans chkia
+ * calculable), plutôt que de laisser une fête sans nom.
+ */
+const holidays = computed(() => {
+  const abs = hebrewDay.value.abs();
+  const covered = restPeriods.value.some(
+    (period) => period.first.abs() <= abs && abs <= period.last.abs(),
+  );
+  const festivals = covered ? [] : festivalsOn(place.value, hebrewDay.value, locale.value);
+  return [...festivals, ...dayHighlights(place.value, hebrewDay.value, locale.value)];
+});
+/** Dit-on le tahanoun (null le Chabbat : la question ne s'y pose pas). */
 const tachanun = computed(() => tachanunStatus(place.value, hebrewDay.value));
 
 const placeLabel = useZmanimPlaceLabel(place);
@@ -208,6 +232,13 @@ onUnmounted(() => {
         <AppIcon name="search" :size="14" />
         {{ t("zmanim.place.chooseCity") }}
       </button>
+      <RouterLink
+        to="/calendrier"
+        class="flex items-center gap-1.5 text-text-secondary hover:text-primary hover:underline"
+      >
+        <AppIcon name="calendar" :size="14" />
+        {{ t("calendar.link") }}
+      </RouterLink>
     </div>
 
     <!-- Une seule ligne d'explication : ce que sont ces horaires, et ce qu'il
@@ -246,24 +277,27 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <!-- Le jour dans le calendrier : Roch Hodech, fête ou jeûne s'il y en a,
-         et si l'on dit le tahanoun. Rien ne s'affiche un jour ordinaire de
-         semaine à part la ligne du tahanoun, volontairement discrète. -->
-    <div v-if="holidays.length > 0 || tachanun" class="mt-3 text-center">
-      <div v-if="holidays.length > 0" class="flex flex-wrap justify-center gap-2">
-        <span
-          v-for="name in holidays"
-          :key="name"
-          class="chip bg-primary/10 text-primary inline-flex items-center gap-1.5"
-        >
-          <AppIcon name="calendar" :size="12" />
-          {{ name }}
-        </span>
-      </div>
-      <p v-if="tachanun" class="mt-1.5 text-xs text-text-secondary">
+    <!-- Le jour dans le calendrier : Roch Hodech, 'Hanouka, un jeûne… et si
+         l'on dit le tahanoun. Un cadre, comme le Chabbat : ce sont des repères
+         du jour, pas des étiquettes. Les fêtes déjà portées par le cadre du
+         repos (avec leurs heures) n'y sont pas répétées. -->
+    <section v-if="holidays.length > 0 || tachanun" class="card mt-4 p-4">
+      <p
+        v-for="name in holidays"
+        :key="name"
+        class="flex items-center gap-2 font-medium text-text-primary"
+      >
+        <AppIcon name="calendar" :size="15" class="shrink-0 text-primary" />
+        {{ name }}
+      </p>
+      <p
+        v-if="tachanun"
+        class="text-sm text-text-secondary"
+        :class="holidays.length > 0 ? 'mt-2' : ''"
+      >
         {{ t(`zmanim.tachanun.${tachanun}`) }}
       </p>
-    </div>
+    </section>
 
     <!-- Le prochain horaire, mis en avant. Pas d'intitulé : une heure isolée
          au-dessus de la liste, en couleur, ne peut être que celle-là. -->
@@ -285,17 +319,18 @@ onUnmounted(() => {
 
     <p v-if="times.length === 0" class="mt-6 text-text-secondary">{{ t("zmanim.unavailable") }}</p>
 
-    <!-- Vendredi : le Chabbat d'abord, c'est ce qu'on vient vérifier -->
-    <ShabbatTimes
-      v-if="shabbat && shabbatFirst"
-      :times="shabbat"
-      :parasha="parasha"
+    <!-- Le repos commencé passe devant : c'est ce qu'on vient vérifier -->
+    <RestTimes
+      v-for="period in restFirst ? restPeriods : []"
+      :key="period.start.getTime()"
+      :period="period"
+      :parasha="parashaOf(period.shabbat)"
       :tzid="place.tzid"
       class="mt-5"
     />
 
     <!-- Les horaires à la suite : chaque titre ouvre son groupe et sert de
-         séparation. Sans cadres, la journée se lit d'un trait — et tient en
+         séparation. Sans cadres, la journée se lit d'un trait, et tient en
          beaucoup moins de défilement. -->
     <section v-for="group in byPeriod" :key="group.period">
       <h2
@@ -331,11 +366,13 @@ onUnmounted(() => {
       </ul>
     </section>
 
-    <ShabbatTimes
-      v-if="shabbat && !shabbatFirst"
-      :times="shabbat"
-      :parasha="parasha"
+    <RestTimes
+      v-for="period in restFirst ? [] : restPeriods"
+      :key="period.start.getTime()"
+      :period="period"
+      :parasha="parashaOf(period.shabbat)"
       :tzid="place.tzid"
+      class="mt-5 first:mt-0"
     />
 
     <p class="mt-5 border-t border-line pt-3 text-xs text-text-secondary leading-relaxed">

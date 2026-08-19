@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // « Je participe » : liste compacte des sessions en cours où j'ai des
-// réservations (les terminées ne sont plus affichées — filtrées en amont).
+// réservations (les terminées ne sont plus affichées, filtrées en amont).
 // Une ligne par session (nom, type, échéance, avancement de mes lectures) ;
 // le clic déplie la liste de mes réservations à cocher, sans quitter la page.
 import { ref } from "vue";

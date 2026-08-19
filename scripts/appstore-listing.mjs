@@ -16,11 +16,11 @@
  *
  * Les captures d'écran ne sont **pas** envoyées par ce script (l'API impose un
  * upload en plusieurs morceaux avec somme de contrôle) : elles se déposent à la
- * main dans App Store Connect, une seule fois — voir docs/ios-ci-cd.md.
+ * main dans App Store Connect, une seule fois, voir docs/ios-ci-cd.md.
  *
  * Les notes de version (« Nouveautés ») ne viennent pas d'un fichier du repo :
  * la CI passe le corps de la release GitHub du tag via --release-notes, et à
- * défaut c'est la phrase par défaut de scripts/release-notes.mjs qui part —
+ * défaut c'est la phrase par défaut de scripts/release-notes.mjs qui part
  * même logique que le Play Store (scripts/prepare-whatsnew.mjs). Le corps,
  * rédigé en français, n'alimente que fr-FR ; les autres langues reçoivent la
  * phrase par défaut. Apple refuse `whatsNew` sur la toute première version :
@@ -44,7 +44,7 @@ const BUNDLE_ID = "fr.petitejerusalem.app";
 const metadataDir = join(import.meta.dirname, "../store-assets/metadata/ios");
 
 // Les limites d'App Store Connect comptent les caractères Unicode (code
-// points), pas les octets — important pour l'hébreu et les émojis.
+// points), pas les octets, important pour l'hébreu et les émojis.
 const LIMITS = {
   "name.txt": 30,
   "subtitle.txt": 30,
@@ -84,7 +84,7 @@ let errors = 0;
 for (const locale of locales) {
   for (const file of REQUIRED) {
     if (existsSync(join(metadataDir, locale, file))) continue;
-    console.error(`appstore-listing: fichier manquant — ${locale}/${file}`);
+    console.error(`appstore-listing: fichier manquant, ${locale}/${file}`);
     errors++;
   }
   for (const [file, limit] of Object.entries(LIMITS)) {
@@ -94,13 +94,13 @@ for (const locale of locales) {
       console.error(`appstore-listing: ${locale}/${file} fait ${length} caractères (max ${limit})`);
       errors++;
     } else {
-      console.log(`appstore-listing: ${locale}/${file} — ${length}/${limit} caractères`);
+      console.log(`appstore-listing: ${locale}/${file}, ${length}/${limit} caractères`);
     }
   }
   // Apple rejette les mots-clés séparés par « , » avec espace : chaque espace
   // perdu est un caractère de moins pour un mot-clé utile.
   if (existsSync(join(metadataDir, locale, "keywords.txt")) && read(locale, "keywords.txt").includes(", ")) {
-    console.error(`appstore-listing: ${locale}/keywords.txt contient « , » — séparer par des virgules sans espace`);
+    console.error(`appstore-listing: ${locale}/keywords.txt contient « , », séparer par des virgules sans espace`);
     errors++;
   }
   // Caractères refusés par l'API App Store Connect (émojis…).
@@ -111,7 +111,7 @@ for (const locale of locales) {
       for (const match of line.matchAll(FORBIDDEN_CHARS)) {
         const codePoint = match[0].codePointAt(0).toString(16).toUpperCase().padStart(4, "0");
         console.error(
-          `appstore-listing: ${locale}/${file}:${index + 1} — caractère refusé par App Store Connect : « ${match[0]} » (U+${codePoint})`,
+          `appstore-listing: ${locale}/${file}:${index + 1}, caractère refusé par App Store Connect : « ${match[0]} » (U+${codePoint})`,
         );
         errors++;
       }
@@ -130,7 +130,7 @@ const issuerId = process.env.ASC_ISSUER_ID;
 const privateKeyPem = process.env.ASC_PRIVATE_KEY;
 if (!keyId || !issuerId || !privateKeyPem) {
   console.error(
-    "appstore-listing: ASC_KEY_ID, ASC_ISSUER_ID et ASC_PRIVATE_KEY sont requis — voir docs/ios-ci-cd.md",
+    "appstore-listing: ASC_KEY_ID, ASC_ISSUER_ID et ASC_PRIVATE_KEY sont requis, voir docs/ios-ci-cd.md",
   );
   process.exit(1);
 }
@@ -166,7 +166,7 @@ async function api(method, path, body) {
   const text = await response.text();
   const json = text ? JSON.parse(text) : null;
   if (!response.ok) {
-    const detail = json?.errors?.map((e) => `${e.title} — ${e.detail}`).join("\n  ") ?? text;
+    const detail = json?.errors?.map((e) => `${e.title} : ${e.detail}`).join("\n  ") ?? text;
     const error = new Error(`${method} ${path} → ${response.status}\n  ${detail}`);
     error.status = response.status;
     error.body = json;
@@ -180,7 +180,7 @@ const apps = await api("GET", `/v1/apps?filter[bundleId]=${BUNDLE_ID}`);
 const app = apps.data[0];
 if (!app) {
   console.error(
-    `appstore-listing: aucune app ${BUNDLE_ID} dans App Store Connect — la créer d'abord (voir docs/ios-release-plan.md).`,
+    `appstore-listing: aucune app ${BUNDLE_ID} dans App Store Connect, la créer d'abord (voir docs/ios-release-plan.md).`,
   );
   process.exit(1);
 }
@@ -265,7 +265,7 @@ if (!version && wantedVersion) {
           versionString: wantedVersion,
           platform: "IOS",
           // Publication manuelle : la mise en vente reste un geste délibéré
-          // après l'accord d'Apple. Posé à la création seulement — un choix
+          // après l'accord d'Apple. Posé à la création seulement, un choix
           // fait ensuite dans App Store Connect n'est jamais réécrit.
           releaseType: "MANUAL",
         },
@@ -280,7 +280,7 @@ if (!version) {
   console.error(
     "appstore-listing: aucune version modifiable trouvée" +
       (wantedVersion ? ` pour ${wantedVersion}` : "") +
-      " — créer la version dans App Store Connect (ou attendre que le build soit traité).",
+      ", créer la version dans App Store Connect (ou attendre que le build soit traité).",
   );
   process.exit(1);
 }
@@ -305,7 +305,7 @@ const versionLocalizations = await api(
 
 /**
  * Écrit une localisation : PATCH quand la liste lue plus haut la connaît, POST
- * sinon — et si Apple répond « already exists » (une fiche remplie à la main
+ * sinon, et si Apple répond « already exists » (une fiche remplie à la main
  * n'apparaît pas toujours dans la liste au moment où on la lit), on relit et
  * on bascule sur un PATCH plutôt que d'abandonner.
  */
@@ -385,7 +385,7 @@ for (const locale of locales) {
           attributes.whatsNew !== undefined && JSON.stringify(error.body ?? "").includes("whatsNew");
         if (!isWhatsNewRejected) throw error;
         console.warn(
-          `appstore-listing: ${locale} — « Nouveautés » refusé (première version de l'app), envoi sans.`,
+          `appstore-listing: ${locale}, « Nouveautés » refusé (première version de l'app), envoi sans.`,
         );
         await pushVersionLocalization({ ...attributes, whatsNew: undefined });
       }
@@ -395,7 +395,7 @@ for (const locale of locales) {
     console.log(`appstore-listing: fiche ${locale} mise à jour`);
   } catch (error) {
     failures.push(locale);
-    console.error(`appstore-listing: ${locale} — échec\n  ${error.message}`);
+    console.error(`appstore-listing: échec pour ${locale}\n  ${error.message}`);
   }
 }
 

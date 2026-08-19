@@ -8,19 +8,19 @@ import WidgetKit
  * Tout le contenu vient des payloads JSON poussés par l'app via
  * PjWidgetsPlugin dans l'App Group (contrat : src/services/widgetPayloads.ts).
  * Libellés ET heures y sont déjà localisés et formatés : aucun DateFormatter
- * ici — le réglage 12 h/24 h et le calendrier de l'appareil (hébraïque chez
+ * ici, le réglage 12 h/24 h et le calendrier de l'appareil (hébraïque chez
  * une partie du public) réécriraient l'affichage. Les widgets comparent des
  * epochs, rien d'autre.
  *
  * - Horaires : une entrée de timeline par zman à venir (fenêtre bornée, les
- *   entrées ne portent que leurs chaînes — pas le payload entier) ; fenêtre
+ *   entrées ne portent que leurs chaînes, pas le payload entier) ; fenêtre
  *   épuisée → une entrée « rouvrez l'app » en .never, l'app relancera tout au
  *   prochain push.
  * - Lecture : une entrée maintenant, redessin à l'échéance du payload
  *   (expiresAt, minuit local calculé côté app).
  *
  * Fichier à ajouter à la cible d'extension « PjWidgets » du projet Xcode
- * (généré, non versionné) — voir docs/app-widgets.md.
+ * (généré, non versionné), voir docs/app-widgets.md.
  */
 
 let appGroup = "group.fr.petitejerusalem.app"
@@ -48,28 +48,55 @@ struct ZmanTime: Decodable {
     var date: Date { Date(timeIntervalSince1970: epoch / 1000) }
 }
 
-struct ZmanimPayload: Decodable {
-    let v: Int
-    let title: String
-    let place: String
-    /// Gabarit localisé de la ligne « puis… » : {label}/{time} à remplacer.
-    let then: String
-    let stale: String
-    let times: [ZmanTime]
+/// Le jour hébraïque, borné par les chkiot qui l'ouvrent et le ferment.
+struct ZmanimDay: Decodable {
+    /// Epoch ms du début (la chkia de la veille) et de la fin (la sienne).
+    let from: Double
+    let until: Double
+    let hebrewDate: String
+    let parasha: String?
+    let tachanun: String?
+    /// Vrai les jours SANS tahanoun : à repérer d'un coup d'œil, donc en gras.
+    let tachanunStrong: Bool
+
+    func covers(_ instant: Date) -> Bool {
+        let ms = instant.timeIntervalSince1970 * 1000
+        return from <= ms && ms < until
+    }
 }
 
-/// Une entrée ne porte que ce qu'elle affiche — surtout pas le payload entier,
+struct ZmanimPayload: Decodable {
+    let v: Int
+    let place: String
+    let stale: String
+    let times: [ZmanTime]
+    /// Absent des payloads d'avant la v2 : les lignes du jour restent vides.
+    let days: [ZmanimDay]?
+}
+
+/// Une entrée ne porte que ce qu'elle affiche, surtout pas le payload entier,
 /// que WidgetKit archiverait avec CHAQUE entrée de la timeline.
 struct ZmanimEntry: TimelineEntry {
     let date: Date
-    let title: String
     let place: String
-    /// Prochain zman à l'instant `date` — nil quand `message` prend la place.
+    let hebrewDate: String
+    let parasha: String?
+    let tachanun: String?
+    let tachanunStrong: Bool
+    /// Prochain zman à l'instant `date`, nil quand `message` prend la place.
     let nextLabel: String?
     let nextTime: String?
-    let followingText: String?
     /// Fenêtre épuisée ou payload absent : message à afficher seul.
     let message: String?
+}
+
+extension ZmanimEntry {
+    /// L'entrée vide : un message seul, sans jour ni horaire.
+    static func message(_ text: String, at date: Date, place: String = "") -> ZmanimEntry {
+        ZmanimEntry(
+            date: date, place: place, hebrewDate: "", parasha: nil, tachanun: nil,
+            tachanunStrong: false, nextLabel: nil, nextTime: nil, message: text)
+    }
 }
 
 struct ZmanimProvider: TimelineProvider {
@@ -78,9 +105,7 @@ struct ZmanimProvider: TimelineProvider {
     static let maxEntries = 45
 
     func placeholder(in context: Context) -> ZmanimEntry {
-        ZmanimEntry(
-            date: Date(), title: "Horaires", place: "",
-            nextLabel: nil, nextTime: nil, followingText: nil, message: openAppFallback)
+        .message(openAppFallback, at: Date())
     }
 
     func getSnapshot(in context: Context, completion: @escaping (ZmanimEntry) -> Void) {
@@ -96,11 +121,7 @@ struct ZmanimProvider: TimelineProvider {
         guard let payload = loadPayload("zmanim", as: ZmanimPayload.self) else {
             // Pas encore de payload : rien à replanifier, l'app rechargera les
             // timelines au premier push.
-            return Timeline(
-                entries: [ZmanimEntry(
-                    date: now, title: "Horaires", place: "",
-                    nextLabel: nil, nextTime: nil, followingText: nil, message: openAppFallback)],
-                policy: .never)
+            return Timeline(entries: [.message(openAppFallback, at: now)], policy: .never)
         }
 
         let upcoming = payload.times.filter { $0.date > now }
@@ -108,9 +129,7 @@ struct ZmanimProvider: TimelineProvider {
             // Fenêtre épuisée : surtout pas .atEnd (une timeline déjà finie
             // serait redemandée en boucle et grillerait le budget de refresh).
             return Timeline(
-                entries: [ZmanimEntry(
-                    date: now, title: payload.title, place: payload.place,
-                    nextLabel: nil, nextTime: nil, followingText: nil, message: payload.stale)],
+                entries: [.message(payload.stale, at: now, place: payload.place)],
                 policy: .never)
         }
 
@@ -119,18 +138,18 @@ struct ZmanimProvider: TimelineProvider {
             // L'entrée i affiche `next` ; elle prend effet maintenant pour la
             // première, au passage du zman précédent pour les suivantes.
             let at = i == 0 ? now : upcoming[i - 1].date.addingTimeInterval(1)
-            let following = i + 1 < upcoming.count ? upcoming[i + 1] : nil
+            // Le jour hébraïque de CET instant-là : la date, la paracha et le
+            // tahanoun changent à la chkia, pas au zman.
+            let day = payload.days?.first { $0.covers(at) }
             entries.append(ZmanimEntry(
                 date: at,
-                title: payload.title,
                 place: payload.place,
+                hebrewDate: day?.hebrewDate ?? "",
+                parasha: day?.parasha,
+                tachanun: day?.tachanun,
+                tachanunStrong: day?.tachanunStrong ?? false,
                 nextLabel: next.label,
                 nextTime: next.time,
-                followingText: following.map {
-                    payload.then
-                        .replacingOccurrences(of: "{label}", with: $0.label)
-                        .replacingOccurrences(of: "{time}", with: $0.time)
-                },
                 message: nil))
         }
         return Timeline(entries: entries, policy: .atEnd)
@@ -143,9 +162,10 @@ struct HorairesWidgetView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(entry.title)
+                Text(entry.hebrewDate)
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
                 Spacer()
                 Text(entry.place)
                     .font(.caption)
@@ -158,10 +178,17 @@ struct HorairesWidgetView: View {
                     .lineLimit(2)
                 Text(time)
                     .font(.system(size: 30, weight: .bold, design: .rounded))
-                if let following = entry.followingText {
-                    Text(following)
+                if let parasha = entry.parasha {
+                    Text(parasha)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                if let tachanun = entry.tachanun {
+                    // Les jours sans tahanoun se repèrent d'un coup d'œil.
+                    Text(tachanun)
+                        .font(entry.tachanunStrong ? .caption.weight(.bold) : .caption)
+                        .foregroundStyle(entry.tachanunStrong ? .primary : .secondary)
                         .lineLimit(1)
                 }
             } else {
@@ -249,7 +276,7 @@ struct LectureWidgetView: View {
     let entry: DailyEntry
 
     var body: some View {
-        // Les coches ne valent que jusqu'au minuit local du payload — simple
+        // Les coches ne valent que jusqu'au minuit local du payload, simple
         // comparaison d'epochs, aucun calendrier en jeu.
         let payload = entry.payload
         let isFresh = payload.map { entry.date < $0.expiryDate } ?? false

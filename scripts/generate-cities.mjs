@@ -8,12 +8,12 @@
  *
  * Pourquoi une liste *curée* plutôt qu'un jeu de données complet : geonames
  * compte 140 000 villes. Cherchez « Paris », vous obtenez le Texas et l'Ontario
- * avant l'Île-de-France. La liste ci-dessous est écrite à la main — les villes
- * où l'application est réellement lue — et le script ne fait qu'y attacher les
+ * avant l'Île-de-France. La liste ci-dessous est écrite à la main, les villes
+ * où l'application est réellement lue, et le script ne fait qu'y attacher les
  * coordonnées exactes de geonames, pour ne pas les saisir à la main.
  *
  * Le fuseau vient du pays : tous ceux retenus n'en ont qu'un, sauf les quelques
- * cas notés explicitement (`tz`) — États-Unis, Canada, Brésil, Australie.
+ * cas notés explicitement (`tz`), États-Unis, Canada, Brésil, Australie.
  *
  * Usage : node scripts/generate-cities.mjs
  * (le résultat est versionné : ce script ne tourne qu'à la mise à jour)
@@ -24,7 +24,7 @@ import { join } from "node:path";
 const SOURCE = "https://raw.githubusercontent.com/lutangar/cities.json/master/cities.json";
 const OUT = join(import.meta.dirname, "..", "src", "datas", "cities.json");
 
-/** Fuseau par défaut d'un pays — surchargé ville par ville si besoin. */
+/** Fuseau par défaut d'un pays, surchargé ville par ville si besoin. */
 const COUNTRY_TZ = {
   FR: "Europe/Paris",
   IL: "Asia/Jerusalem",
@@ -74,7 +74,7 @@ const COUNTRY_TZ = {
  * Les villes proposées. `[nom affiché, pays, options]` :
  * - `geo` quand le nom de geonames diffère de celui qu'on affiche ;
  * - `tz` pour les pays à plusieurs fuseaux ;
- * - `near: [lat, lon]` pour départager les homonymes — la France compte
+ * - `near: [lat, lon]` pour départager les homonymes, la France compte
  *   plusieurs Montreuil, et le premier venu dans geonames est celui du
  *   Pas-de-Calais, pas celui de Seine-Saint-Denis.
  */
@@ -375,7 +375,7 @@ for (const [name, country, options = {}] of CITIES) {
   const searched = options.geo ?? name;
   const candidates = byCountry.get(`${country}:${normalize(searched)}`) ?? [];
   if (candidates.length === 0) {
-    missing.push(`${name} (${country}) — cherché : « ${searched} »`);
+    missing.push(`${name} (${country}), cherché : « ${searched} »`);
     continue;
   }
   let match = candidates[0];
@@ -385,7 +385,7 @@ for (const [name, country, options = {}] of CITIES) {
     );
   } else if (candidates.length > 1) {
     ambiguous.push(
-      `${name} (${country}) — ${candidates.length} homonymes, retenu ${match.lat},${match.lng} ; ` +
+      `${name} (${country}), ${candidates.length} homonymes, retenu ${match.lat},${match.lng} ; ` +
         `autres : ${candidates
           .slice(1, 4)
           .map((c) => `${c.lat},${c.lng}`)
@@ -394,7 +394,7 @@ for (const [name, country, options = {}] of CITIES) {
   }
   const tzid = options.tz ?? COUNTRY_TZ[country];
   if (!tzid) {
-    missing.push(`${name} (${country}) — fuseau inconnu pour ce pays`);
+    missing.push(`${name} (${country}), fuseau inconnu pour ce pays`);
     continue;
   }
   cities.push({
@@ -408,7 +408,7 @@ for (const [name, country, options = {}] of CITIES) {
 
 if (ambiguous.length) {
   console.warn(
-    `generate-cities: ⚠️ ${ambiguous.length} nom(s) ambigu(s) — vérifier, et départager avec \`near\` :`,
+    `generate-cities: ⚠️ ${ambiguous.length} nom(s) ambigu(s), vérifier, et départager avec \`near\` :`,
   );
   for (const line of ambiguous) console.warn(`  - ${line}`);
 }

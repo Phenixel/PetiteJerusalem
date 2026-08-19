@@ -94,7 +94,7 @@ function setCanonical(html: string, href: string): string {
 function bodyFor(meta: Meta): string {
   return (
     `<main class="seo-article">` +
-    `<h1>${escapeAttr(meta.title.split(" | ")[0].split(" – ")[0])}</h1>` +
+    `<h1>${escapeAttr(meta.title.split(" | ")[0])}</h1>` +
     `<p>${escapeAttr(meta.description)}</p>` +
     `<p><a href="${escapeAttr(meta.url)}">Voir sur Petite Jérusalem</a></p>` +
     `</main>`
@@ -219,7 +219,7 @@ async function resolveSessionMeta(slug: string): Promise<Meta | null> {
     : "Rejoignez cette session de partage de lecture et d'étude de Torah sur Petite Jérusalem.";
 
   return {
-    title: `${data.name} | Session de partage de lecture – Petite Jérusalem`,
+    title: `${data.name} | Session de partage de lecture | Petite Jérusalem`,
     description,
     url: `${SITE_URL}/share-reading/session/${slug}`,
     type: "article",
@@ -265,7 +265,7 @@ async function resolveChiourMeta(slug: string): Promise<Meta | null> {
   const author = found.auteur ? ` par ${found.auteur}` : "";
 
   return {
-    title: `${found.name}${author} | Chiour – Petite Jérusalem`,
+    title: `${found.name}${author} | Chiour | Petite Jérusalem`,
     description,
     url: `${SITE_URL}/chiourim/${slug}`,
     type: "article",
@@ -282,7 +282,7 @@ async function resolveAuteurMeta(slug: string): Promise<Meta | null> {
   const count = chiourim.filter((c) => c.auteur === author).length;
 
   return {
-    title: `${author} | Chiourim – Petite Jérusalem`,
+    title: `${author} | Chiourim | Petite Jérusalem`,
     description: `Tous les chiourim de ${author} sur Petite Jérusalem : ${count} cours et leçons de Torah à écouter.`,
     url: `${SITE_URL}/chiourim/auteur/${slug}`,
     type: "website",

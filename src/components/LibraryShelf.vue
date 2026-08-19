@@ -3,7 +3,7 @@
 // posés côte à côte sur une planche, à la manière d'un rayonnage de sefarim.
 // Volontairement hors du thème de couleurs sélectionnable : les livres gardent
 // des teintes chaudes et mates (terre cuite, bronze, brun) qui prolongent le
-// fond beige du site — comme de vrais objets, identiques en mode sombre.
+// fond beige du site, comme de vrais objets, identiques en mode sombre.
 // Titre horizontal en serif dans un cadre estampé crème, tranche de pages
 // ivoire sur la droite. Au survol (ou au toucher), le livre se soulève
 // doucement de l'étagère ; à l'arrivée, les livres se posent un à un.
@@ -250,7 +250,7 @@ function bindingOf(corpus: string): string {
 }
 
 /* La planche : un bois clair et chaud, hors thème elle aussi. Présente
-   d'emblée — seuls les livres viennent s'y poser. */
+   d'emblée, seuls les livres viennent s'y poser. */
 .shelf-board {
   height: 9px;
   border-radius: 3px;

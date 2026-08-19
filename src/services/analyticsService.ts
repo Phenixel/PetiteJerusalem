@@ -192,7 +192,7 @@ class AnalyticsService {
         // L'enregistrement replay (rrweb) sérialise le DOM en continu : c'est
         // le seul poste du tracking qui coûte du CPU pendant toute la visite.
         // On l'épargne aux machines en rendu dégradé (peu de cœurs/RAM, rendu
-        // logiciel, FPS mesuré mauvais — verdict persisté en localStorage) ;
+        // logiciel, FPS mesuré mauvais, verdict persisté en localStorage) ;
         // leurs événements produit, Error tracking et Web Vitals restent actifs.
         disable_session_recording: isDegradedRendering.value,
         // Dans la webview Capacitor, les cookies sur https://localhost sont
@@ -205,7 +205,7 @@ class AnalyticsService {
       // callback async, pas d'await entre les deux. Un register() différé
       // laisse partir les premiers événements sans les propriétés (écarts déjà
       // mesurés de 47 ms à 30 s, et des sessions courtes entièrement non
-      // taguées). `stampPlatform` rattrape le reste — voir son commentaire.
+      // taguées). `stampPlatform` rattrape le reste, voir son commentaire.
       posthog.register(SUPER_PROPERTIES);
       this.posthog = posthog;
 

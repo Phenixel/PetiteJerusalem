@@ -6,7 +6,7 @@
  * - android/local.properties : chemin du SDK Android
  * - AndroidManifest.xml : permissions POST_NOTIFICATIONS (rappel de lecture,
  *   Android 13+) et ACCESS_COARSE/FINE_LOCATION (horaires calculés pour la
- *   position de l'appareil — le plugin @capacitor/geolocation livre un
+ *   position de l'appareil, le plugin @capacitor/geolocation livre un
  *   manifest vide, l'app doit donc les déclarer elle-même)
  * - android/app/google-services.json : copié depuis la racine s'il s'y trouve
  *   (fichier téléchargé depuis la console Firebase, git-ignoré)
@@ -27,7 +27,7 @@ const root = join(import.meta.dirname, "..");
 const androidDir = join(root, "android");
 
 if (!existsSync(androidDir)) {
-  console.error("setup-android: dossier android/ absent — lancer `npx cap add android` d'abord.");
+  console.error("setup-android: dossier android/ absent, lancer `npx cap add android` d'abord.");
   process.exit(1);
 }
 
@@ -68,7 +68,7 @@ for (const { name, comment } of [...PERMISSIONS].reverse()) {
 }
 writeFileSync(manifestPath, manifest);
 
-// 3. google-services.json (config Firebase — requis pour auth native + push)
+// 3. google-services.json (config Firebase, requis pour auth native + push)
 const gsSource = join(root, "google-services.json");
 const gsDest = join(androidDir, "app/google-services.json");
 if (existsSync(gsSource) && !existsSync(gsDest)) {
@@ -76,7 +76,7 @@ if (existsSync(gsSource) && !existsSync(gsDest)) {
   console.log("setup-android: google-services.json copié dans android/app/");
 } else if (!existsSync(gsDest)) {
   console.warn(
-    "setup-android: ⚠️ google-services.json introuvable — l'auth native Google et le push ne fonctionneront pas.\n" +
+    "setup-android: ⚠️ google-services.json introuvable, l'auth native Google et le push ne fonctionneront pas.\n" +
       "  Console Firebase → projet → app Android fr.petitejerusalem.app → télécharger google-services.json\n" +
       "  puis le placer à la racine du repo ou dans android/app/.",
   );
@@ -92,7 +92,7 @@ if (!appBuildGradle.includes("keystorePropertiesFile")) {
       "apply plugin: 'com.android.application'\n",
       `apply plugin: 'com.android.application'
 
-// Clé de signature release (android/keystore.properties, git-ignoré — voir
+// Clé de signature release (android/keystore.properties, git-ignoré, voir
 // docs/android-ci-cd.md). Absente sur les autres machines/CI :
 // le build de release retombe alors sur la signature debug pour ne pas casser
 // \`./gradlew bundleRelease\`/\`assembleRelease\` ailleurs que sur la machine qui
@@ -149,7 +149,7 @@ if (!existsSync(generatedMarker)) {
     console.log("setup-android: icônes et splash générés depuis assets/logo.png");
   } catch {
     console.warn(
-      "setup-android: ⚠️ génération des icônes échouée — lancer à la main :\n" +
+      "setup-android: ⚠️ génération des icônes échouée, lancer à la main :\n" +
         "  npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'",
     );
   }
@@ -232,7 +232,7 @@ if (!existsSync(nightStyles)) {
 }
 
 // 9. Widgets d'écran d'accueil (Horaires, Lecture du jour) : le code natif
-//    vit dans native/android/ (versionné) et se recopie ici à chaque setup —
+//    vit dans native/android/ (versionné) et se recopie ici à chaque setup
 //    android/ étant régénéré de zéro par la CI. Les providers lisent les
 //    payloads JSON que l'app pousse via le plugin PjWidgets (voir
 //    src/services/widgetService.ts et docs/app-widgets.md).

@@ -3,7 +3,7 @@
    The stones themselves are invisible: what you see is a warm light that
    drifts slowly BEHIND the wall and seeps through the mortar joints. Where
    the light passes, the joints glow softly and the stones read as dark
-   silhouettes — you guess the wall rather than see it. A faint mineral
+   silhouettes, you guess the wall rather than see it. A faint mineral
    grain covers everything.
 
    Performance: everything per-frame must stay off the main thread. The
@@ -12,7 +12,7 @@
    compositor-friendly transform/opacity only. (The previous SVG-`<mask>`
    version forced a full re-raster of the masked group on every frame and
    dragged the whole site down to ~24 fps.) The wall layer itself never
-   moves: a scroll parallax was tried and dropped — it was the only part
+   moves: a scroll parallax was tried and dropped, it was the only part
    still running JS on every scrolled frame, and moving a masked layer can
    invalidate its cached render surface on modest GPUs, for a barely
    visible effect. */
@@ -23,7 +23,7 @@ import { isDegradedRendering, isGecko } from "../composables/useDevicePerf";
 const VIEW_W = 1600;
 const VIEW_H = 1100;
 
-/* Deterministic PRNG (mulberry32) — the wall must not change between visits. */
+/* Deterministic PRNG (mulberry32), the wall must not change between visits. */
 function mulberry32(seed: number) {
   let a = seed;
   return () => {
@@ -129,13 +129,13 @@ const grain = `url("${grainUri}")`;
 
    Firefox re-rasterise le mask SVG (1600×1100, flouté) et le grain
    (feTurbulence) à chaque tick de rendu tant que quelque chose bouge derrière
-   — halos, transitions de hover, scroll (bug Mozilla 1860510). Même figée, la
+   - halos, transitions de hover, scroll (bug Mozilla 1860510). Même figée, la
    version CSS/SVG reste donc coûteuse chez Gecko. Un canvas est de simples
    pixels : composé une fois, retenu tel quel par le compositeur.
 
    - Gecko : toujours en raster (décision synchrone, aucun frame lent).
    - Autres navigateurs : raster seulement si le rendu est dégradé (peu de
-     cœurs/RAM, renderer logiciel, FPS mesuré mauvais — useDevicePerf).
+     cœurs/RAM, renderer logiciel, FPS mesuré mauvais, useDevicePerf).
    Chrome/Safari sur machine saine gardent la version animée d'origine.
    ------------------------------------------------------------------------ */
 const useRaster = computed(() => isGecko || isDegradedRendering.value);
@@ -227,7 +227,7 @@ async function drawRasterWall(): Promise<void> {
     ctx.globalAlpha = 1;
   } catch {
     // Peinture impossible (canvas bloqué, image refusée…) : on retombe sur la
-    // version DOM figée — moins bien sous Gecko, mais jamais de mur absent.
+    // version DOM figée, moins bien sous Gecko, mais jamais de mur absent.
     rasterFailed.value = true;
   }
 }
@@ -240,7 +240,7 @@ function scheduleRedraw() {
 
 // Le thème (clair/sombre, couleur d'ambiance) vit dans des classes sur <html> :
 // on repeint quand elles changent. Une repeinte = quelques millisecondes, une
-// fois — sans commune mesure avec un mask animé en continu.
+// fois, sans commune mesure avec un mask animé en continu.
 let themeObserver: MutationObserver | null = null;
 
 onMounted(() => {
@@ -276,7 +276,7 @@ onUnmounted(() => {
 <template>
   <!-- Deux rendus :
        - <canvas> : mur peint une fois (Gecko toujours, autres navigateurs en
-         rendu dégradé) — de simples pixels, rien à re-rasteriser.
+         rendu dégradé), de simples pixels, rien à re-rasteriser.
        - version DOM/SVG animée : Chrome/Safari sur machine saine ; figée
          (--static) si le raster a échoué sur une machine dégradée. -->
   <div ref="rootEl" class="stone-wall" aria-hidden="true">
@@ -330,7 +330,7 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   /* Own compositor layer: without it the masked light repaints into the
-     root layer on every animation frame. Static promotion only — never
+     root layer on every animation frame. Static promotion only, never
      move this layer (see the parallax note above). */
   will-change: transform;
 }

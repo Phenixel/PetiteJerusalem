@@ -12,7 +12,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  *
  * La webview pousse ici les payloads JSON pré-calculés (src/services/
  * widgetService.ts) ; ils sont stockés en SharedPreferences puis les widgets
- * sont rafraîchis. Les providers lisent ce même store — le natif n'a aucune
+ * sont rafraîchis. Les providers lisent ce même store, le natif n'a aucune
  * logique métier, tout (horaires, libellés localisés) vient de l'app.
  *
  * Fichier versionné dans native/android/, copié dans android/ (git-ignoré)

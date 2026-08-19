@@ -15,14 +15,14 @@ name: Deploy iOS
 #
 # La signature est MANUELLE, pas automatique : `xcodebuild archive` en mode
 # automatique réclame un profil de *développement*, lequel exige au moins un
-# appareil enregistré dans l'équipe — ce compte individuel n'en a aucun. Un
+# appareil enregistré dans l'équipe, ce compte individuel n'en a aucun. Un
 # profil « App Store » n'en demande pas. Détails dans scripts/ios-signing.mjs.
 #
 # Le binaire part sur TestFlight, puis le job `submit` (Linux) attend la fin
 # du traitement Apple et soumet la version à l'examen via l'API
-# (scripts/asc-submit.mjs) — débrayable avec la variable de repo
+# (scripts/asc-submit.mjs), débrayable avec la variable de repo
 # IOS_AUTO_SUBMIT=false. La mise en vente, elle, reste un geste manuel dans
-# App Store Connect (releaseType MANUAL) — voir docs/ios-release-plan.md.
+# App Store Connect (releaseType MANUAL), voir docs/ios-release-plan.md.
 #
 # Secrets requis (voir docs/ios-ci-cd.md pour les créer) :
 #   ASC_KEY_ID                identifiant de la clé d'API App Store Connect
@@ -91,13 +91,13 @@ jobs:
             [ -z "${!name}" ] && missing+=("$name")
           done
           if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::error::Secrets GitHub manquants : ${missing[*]} — voir docs/ios-ci-cd.md"
+            echo "::error::Secrets GitHub manquants : ${missing[*]}, voir docs/ios-ci-cd.md"
             exit 1
           fi
 
       # Les identifiants collés dans l'interface GitHub embarquent facilement
-      # un blanc ou un retour à la ligne final. Nos scripts Node les .trim()ent
-      # — mais xcodebuild et altool les reçoivent BRUTS : un kid « XXX\n » dans
+      # un blanc ou un retour à la ligne final. Nos scripts Node les .trim()ent,
+      # mais xcodebuild et altool les reçoivent BRUTS : un kid « XXX\n » dans
       # le JWT suffit à produire « Authentication failed: bearer token » avec
       # une clé pourtant parfaitement valide. Les valeurs nettoyées sont
       # exposées à tout le job via GITHUB_ENV ; les étapes suivantes ne
@@ -111,7 +111,7 @@ jobs:
           for name in ASC_KEY_ID ASC_ISSUER_ID IOS_DEVELOPMENT_TEAM; do
             cleaned="$(printf '%s' "${!name}" | tr -d '[:space:]')"
             if [ "${!name}" != "$cleaned" ]; then
-              echo "::warning::$name contenait des blancs ou un retour à la ligne — valeur nettoyée pour ce run, corriger le secret."
+              echo "::warning::$name contenait des blancs ou un retour à la ligne, valeur nettoyée pour ce run, corriger le secret."
             fi
             printf '%s=%s\n' "$name" "$cleaned" >> "$GITHUB_ENV"
           done
@@ -127,7 +127,7 @@ jobs:
           xcodebuild -version
           major="$(xcodebuild -version | head -1 | sed -E 's/Xcode ([0-9]+).*/\1/')"
           if [ "$major" -lt 26 ]; then
-            echo "::error::Xcode $major détecté — Capacitor 8 et l'App Store exigent Xcode 26+"
+            echo "::error::Xcode $major détecté, Capacitor 8 et l'App Store exigent Xcode 26+"
             exit 1
           fi
 
@@ -177,7 +177,7 @@ jobs:
 
       # Certificat de distribution + profil « App Store » éphémères, créés via
       # l'API et installés dans un trousseau temporaire. Expose
-      # IOS_PROVISIONING_PROFILE et IOS_CODE_SIGN_IDENTITY au reste du job —
+      # IOS_PROVISIONING_PROFILE et IOS_CODE_SIGN_IDENTITY au reste du job
       # que l'étape suivante inscrit dans la cible App du projet Xcode.
       - name: Créer le certificat et le profil de distribution
         env:
@@ -214,11 +214,11 @@ jobs:
           # Xcode parse la clé avec CryptoKit, strict sur la forme du PEM
           # (CRLF, BOM, blancs résiduels → « Authentication failed: bearer
           # token » générique) là où openssl, Node et l'API ASC tolèrent
-          # tout : la clé est réécrite en PEM canonique — et le run échoue
+          # tout : la clé est réécrite en PEM canonique, et le run échoue
           # ici, en secondes et lisiblement, si elle n'est pas valide.
           if ! openssl pkey -in ~/private_keys/AuthKey_${ASC_KEY_ID}.raw \
               -out ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 2>/dev/null; then
-            echo "::error::ASC_PRIVATE_KEY n'est pas un PEM valide — recoller le contenu exact du fichier AuthKey_${ASC_KEY_ID}.p8 (gh secret set ASC_PRIVATE_KEY < AuthKey_${ASC_KEY_ID}.p8)"
+            echo "::error::ASC_PRIVATE_KEY n'est pas un PEM valide, recoller le contenu exact du fichier AuthKey_${ASC_KEY_ID}.p8 (gh secret set ASC_PRIVATE_KEY < AuthKey_${ASC_KEY_ID}.p8)"
             exit 1
           fi
           rm ~/private_keys/AuthKey_${ASC_KEY_ID}.raw
@@ -331,14 +331,14 @@ jobs:
             --apiKey "$ASC_KEY_ID" \
             --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee "$RUNNER_TEMP/altool.log"
           if grep -qiE "UPLOAD FAILED|ERROR ITMS" "$RUNNER_TEMP/altool.log"; then
-            echo "::error::altool a signalé un échec d'envoi — voir le journal ci-dessus"
+            echo "::error::altool a signalé un échec d'envoi, voir le journal ci-dessus"
             exit 1
           fi
 
       # Fiche App Store (nom, sous-titre, description, mots-clés, nouveautés)
       # synchronisée depuis store-assets/metadata/ios/. Les « Nouveautés »
       # viennent du corps de la release GitHub du tag (sinon phrase par
-      # défaut) — même logique que deploy-android.yml. Non bloquant : la
+      # défaut), même logique que deploy-android.yml. Non bloquant : la
       # version cible n'existe dans App Store Connect qu'une fois créée à la
       # main, et le binaire est déjà envoyé à ce stade.
       # Non bloquant, mais PAS silencieux : `continue-on-error` affichait
@@ -352,7 +352,7 @@ jobs:
             --jq '.body // ""' > release-body.md || rm -f release-body.md
           if ! node scripts/appstore-listing.mjs --version "${{ steps.version.outputs.name }}" \
               --release-notes release-body.md; then
-            echo "::warning::Fiche App Store non synchronisée (voir le journal) — le binaire, lui, est bien parti ; les textes se corrigent à la main dans App Store Connect."
+            echo "::warning::Fiche App Store non synchronisée (voir le journal), le binaire, lui, est bien parti ; les textes se corrigent à la main dans App Store Connect."
           fi
 
       # Le profil de ce run est supprimé, même si le build a échoué. Le
@@ -360,8 +360,8 @@ jobs:
       # pariant qu'Apple re-signe tout ce qui passe par TestFlight et l'App
       # Store. C'est faux à l'examen, où Apple re-valide la signature d'origine.
       # Le build 3.7.3 (3070300) est passé par TestFlight le 17 août 2026 puis a
-      # été rejeté à sa mise en file d'examen — « ITMS-90035: Invalid
-      # Signature » — son certificat ayant été révoqué juste après l'envoi.
+      # été rejeté à sa mise en file d'examen, « ITMS-90035: Invalid
+      # Signature », son certificat ayant été révoqué juste après l'envoi.
       # Le quota est de trois certificats de distribution : si --setup le
       # heurte, il affiche la liste et leur expiration. N'en révoquer un qu'une
       # fois certain qu'aucun build signé avec lui n'est en examen ni en vente.

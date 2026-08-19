@@ -4,8 +4,13 @@ import { localDayKey } from "./dateService";
 import { getTehilimOfDay, getWeeklyParasha } from "./dailyCycles";
 import {
   computeZmanim,
+  dayInPlace,
+  formatHebrewDate,
   formatPlaceLabel,
   formatZmanTime,
+  getSunset,
+  hebrewDayOf,
+  tachanunStatus,
   type ZmanimPlace,
 } from "./zmanimService";
 import type { UserPreferences } from "./userPreferencesService";
@@ -16,13 +21,13 @@ import type { UserPreferences } from "./userPreferencesService";
  * Les widgets natifs ne peuvent pas exécuter le code de la webview : l'app
  * pré-calcule ici tout ce qu'ils affichent (horaires à venir, lecture du jour)
  * et le leur transmet en JSON via le plugin PjWidgets (voir widgetService).
- * Tout ce qui se voit est produit ici, déjà localisé et déjà formaté — heures
+ * Tout ce qui se voit est produit ici, déjà localisé et déjà formaté, heures
  * comprises : le natif ne traduit rien, ne formate rien, ne calcule rien
  * (les DateFormatter natifs subissent réglage 12 h/24 h et calendrier de
  * l'appareil, qui casseraient l'affichage).
  *
  * Le contrat est consommé par native/android/ (org.json) et native/ios/
- * (Codable) — toute évolution doit rester rétro-compatible ou incrémenter `v`.
+ * (Codable), toute évolution doit rester rétro-compatible ou incrémenter `v`.
  */
 
 type Translate = (key: string, params?: Record<string, unknown>) => string;
@@ -31,23 +36,49 @@ type Translate = (key: string, params?: Record<string, unknown>) => string;
 export interface ZmanimWidgetTime {
   key: string;
   label: string;
-  /** "17:42" dans le fuseau du lieu — le natif l'affiche tel quel. */
+  /** "17:42" dans le fuseau du lieu, le natif l'affiche tel quel. */
   time: string;
   /** Epoch ms : sert au natif à choisir le prochain horaire et à se replanifier. */
   epoch: number;
 }
 
+/**
+ * Le jour hébraïque, avec ce qui le caractérise. Une entrée par jour embarqué :
+ * le widget choisit celle qui couvre l'instant courant, et reste juste même si
+ * l'app n'est pas rouverte de la semaine.
+ */
+export interface ZmanimWidgetDay {
+  /** Epoch ms du début du jour hébraïque (la chkia de la veille). */
+  from: number;
+  /** Epoch ms de sa fin (sa propre chkia). */
+  until: number;
+  /** "21 Eloul 5786", déjà localisé. */
+  hebrewDate: string;
+  /** "Parachat Ki Tavo", ou null si la paracha n'est pas connue. */
+  parasha: string | null;
+  /** "Pas de Ta'hanoun.", null le Chabbat, où la question ne se pose pas. */
+  tachanun: string | null;
+  /** Vrai quand il n'y a PAS de tahanoun : le natif le met en gras. */
+  tachanunStrong: boolean;
+}
+
 export interface ZmanimWidgetPayload {
-  v: 1;
+  v: 2;
+  /**
+   * Titre et gabarit « puis… » : plus affichés depuis la v2, gardés pour les
+   * binaires installés avant elle, leur décodage échoue si un champ manque,
+   * et le widget retomberait sur « rouvrez l'app » jusqu'à la mise à jour.
+   */
   title: string;
+  then: string;
   /** Nom affichable du lieu ("Paris", "Près de Lyon"…). */
   place: string;
-  /** Ligne "puis…" : gabarit localisé, {label}/{time} remplacés par le natif. */
-  then: string;
   /** Message quand tous les horaires embarqués sont passés (app pas rouverte). */
   stale: string;
   /** Horaires triés, d'aujourd'hui à J+6 : le widget choisit le prochain. */
   times: ZmanimWidgetTime[];
+  /** Jours hébraïques couverts, dans l'ordre. */
+  days: ZmanimWidgetDay[];
 }
 
 /**
@@ -56,6 +87,52 @@ export interface ZmanimWidgetPayload {
  */
 export const ZMANIM_WIDGET_DAYS = 7;
 
+/**
+ * Le jour hébraïque d'un jour civil : sa date, la paracha de la semaine et le
+ * tahanoun, bornés par les chkiot qui l'ouvrent et le ferment.
+ *
+ * Le jour hébraïque commence au coucher du soleil : ses bornes sont la chkia
+ * de la veille et la sienne. Un jour polaire sans chkia ne borne rien, la
+ * journée civile sert alors de repli, plutôt que de perdre l'entrée.
+ */
+function widgetDay(
+  place: ZmanimPlace,
+  civil: Date,
+  t: Translate,
+  locale: string,
+): ZmanimWidgetDay {
+  const previous = new Date(civil);
+  previous.setDate(previous.getDate() - 1);
+  // Le jour du LIEU, pas celui de l'appareil : à 1 h du matin à Paris, un lieu
+  // américain est encore la veille, et c'est sa journée à lui que le widget
+  // annonce. `getSunset` fait la conversion lui-même, à partir de l'instant ;
+  // le repli polaire et la paracha, eux, raisonnent en date et la demandent
+  // ici, sans quoi la date hébraïque et la paracha pourraient se contredire
+  // d'une semaine le samedi soir.
+  const local = dayInPlace(place, civil);
+  const midnight = new Date(local);
+  midnight.setHours(0, 0, 0, 0);
+  const from = getSunset(place, previous) ?? midnight;
+  const until = getSunset(place, civil) ?? new Date(midnight.getTime() + 86_400_000);
+
+  // La fenêtre [chkia de la veille, chkia du jour) EST le jour hébraïque de ce
+  // jour civil : pas de bascule à appliquer ici, elle est déjà dans les bornes.
+  const hd = hebrewDayOf(place, civil);
+  const status = tachanunStatus(place, hd);
+  const week = getWeeklyParasha(local);
+  const parasha = week
+    ? `${t("zmanim.shabbat.parasha")} ${week.entries.map((e) => e.name).join(" · ")}`
+    : null;
+  return {
+    from: from.getTime(),
+    until: until.getTime(),
+    hebrewDate: formatHebrewDate(hd, locale),
+    parasha,
+    tachanun: status ? t(`zmanim.tachanun.${status}`) : null,
+    tachanunStrong: status === "none",
+  };
+}
+
 export function buildZmanimWidgetPayload(
   place: ZmanimPlace,
   t: Translate,
@@ -63,6 +140,7 @@ export function buildZmanimWidgetPayload(
   now: Date = new Date(),
 ): ZmanimWidgetPayload {
   const times: ZmanimWidgetTime[] = [];
+  const days: ZmanimWidgetDay[] = [];
   for (let i = 0; i < ZMANIM_WIDGET_DAYS; i++) {
     const day = new Date(now);
     day.setDate(day.getDate() + i);
@@ -74,10 +152,11 @@ export function buildZmanimWidgetPayload(
         epoch: zman.date.getTime(),
       });
     }
+    days.push(widgetDay(place, day, t, locale));
   }
   times.sort((a, b) => a.epoch - b.epoch);
   return {
-    v: 1,
+    v: 2,
     title: t("zmanim.widget.title"),
     place: formatPlaceLabel(place, t, locale),
     // Les {label}/{time} doivent survivre à la traduction : on les passe en
@@ -85,6 +164,7 @@ export function buildZmanimWidgetPayload(
     then: t("zmanim.widget.then", { label: "{label}", time: "{time}" }),
     stale: t("zmanim.widget.stale"),
     times,
+    days,
   };
 }
 
@@ -102,7 +182,7 @@ export interface DailyReadingWidgetPayload {
   date: string;
   /**
    * Epoch ms du minuit local qui suit : passé cet instant, les `done` ne
-   * comptent plus et le natif repart de zéro — comparaison numérique, aucune
+   * comptent plus et le natif repart de zéro, comparaison numérique, aucune
    * logique de calendrier côté natif (le calendrier de l'appareil peut être
    * hébraïque, ce qui fausserait tout formatage de date natif).
    */

@@ -29,4 +29,4 @@ plus petits de chaque famille.
 **Comment les produire** : lancer l'app dans le simulateur iOS avec les
 données de démo, puis `⌘S` pour enregistrer une capture sur le bureau.
 Les captures Android du repo ont les bons écrans mais ni le bon ratio ni la
-bonne barre système — ne pas les réutiliser telles quelles.
+bonne barre système, ne pas les réutiliser telles quelles.

@@ -64,7 +64,7 @@ function extFor(contentType, url) {
 // --- Migration ------------------------------------------------------------
 async function main() {
   console.log(
-    `\n=== Migration chiourim — mode ${COMMIT ? "COMMIT (écriture réelle)" : "DRY-RUN (aucune écriture)"} ===\n`,
+    `\n=== Migration chiourim, mode ${COMMIT ? "COMMIT (écriture réelle)" : "DRY-RUN (aucune écriture)"} ===\n`,
   );
 
   admin.initializeApp({ projectId: PROJECT_ID, storageBucket: STORAGE_BUCKET });
@@ -172,7 +172,7 @@ async function main() {
 
     done += 1;
     console.log(
-      `  ✅ ${name} — ${(buffer.length / 1024 / 1024).toFixed(1)} Mo${COMMIT ? "" : " (simulé)"}`,
+      `  ✅ ${name}, ${(buffer.length / 1024 / 1024).toFixed(1)} Mo${COMMIT ? "" : " (simulé)"}`,
     );
   }
 

@@ -47,8 +47,8 @@ export function takeRevealOrigin(): RevealOrigin | null {
  * `clip-path` s'y rapporte), mais le rayon final se calcule sur la fenêtre :
  * une page longue mesure plusieurs milliers de pixels, un cercle taillé pour
  * la couvrir entièrement remplirait l'écran en deux images et l'animation ne
- * se verrait pas. Sans origine — ou si l'utilisateur a demandé moins
- * d'animations — la fonction ne fait rien.
+ * se verrait pas. Sans origine, ou si l'utilisateur a demandé moins
+ * d'animations, la fonction ne fait rien.
  */
 export function revealFromOrigin(element: HTMLElement | null): void {
   const origin = takeRevealOrigin();

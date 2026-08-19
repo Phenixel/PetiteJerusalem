@@ -5,7 +5,7 @@ import { useI18n } from "vue-i18n";
  *
  * Partagé par la carte de l'accueil et la page des horaires, qui mettent en
  * avant le même « prochain horaire » et doivent le compter de la même façon.
- * L'appelant fournit `now` — les deux vues le rafraîchissent déjà toutes les
+ * L'appelant fournit `now`, les deux vues le rafraîchissent déjà toutes les
  * 30 secondes pour suivre la journée, la durée se recalcule avec.
  *
  * Chaîne vide quand l'horaire est passé : il n'y a plus rien à annoncer, et

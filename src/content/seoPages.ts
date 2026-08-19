@@ -300,7 +300,7 @@ export const appPages: SeoPage[] = [
   {
     file: "login.html",
     path: "/login",
-    title: "Connexion – Petite Jérusalem",
+    title: "Connexion | Petite Jérusalem",
     description:
       "Connectez-vous pour créer des sessions de partage de lectures, réserver des textes et suivre vos études.",
     robots: "noindex, follow",
@@ -995,7 +995,7 @@ const LEGAL_HE: LegalStrings = {
 // que l'utilisateur accepte (lien à l'inscription, voir loginView), avec une
 // clause de TOLÉRANCE ZÉRO pour les contenus répréhensibles et les
 // utilisateurs abusifs, et la description des outils de modération
-// (signalement, masquage, blocage — voir docs/moderation.md).
+// (signalement, masquage, blocage, voir docs/moderation.md).
 
 const TERMS_FR: LegalStrings = {
   lang: "fr-FR",
@@ -1005,7 +1005,7 @@ const TERMS_FR: LegalStrings = {
   h1: "Conditions d'utilisation",
   updated: "Dernière mise à jour : 8 août 2026",
   intro:
-    "En utilisant Petite Jérusalem — et en particulier en créant un compte ou en publiant une session de partage de lecture — vous acceptez les présentes conditions.",
+    "En utilisant Petite Jérusalem, et en particulier en créant un compte ou en publiant une session de partage de lecture, vous acceptez les présentes conditions.",
   sections: [
     {
       heading: "Le service",
@@ -1057,7 +1057,7 @@ const TERMS_EN: LegalStrings = {
   h1: "Terms of Use",
   updated: "Last updated: August 8, 2026",
   intro:
-    "By using Petite Jérusalem — in particular by creating an account or publishing a shared reading session — you agree to these terms.",
+    "By using Petite Jérusalem, in particular by creating an account or publishing a shared reading session, you agree to these terms.",
   sections: [
     {
       heading: "The service",
@@ -1108,7 +1108,7 @@ const TERMS_HE: LegalStrings = {
   h1: "תנאי שימוש",
   updated: "עדכון אחרון: 8 באוגוסט 2026",
   intro:
-    "בשימוש בפטיט ירושלים — ובפרט ביצירת חשבון או בפרסום מפגש קריאה משותפת — אתם מסכימים לתנאים אלה.",
+    "בשימוש בפטיט ירושלים, ובפרט ביצירת חשבון או בפרסום מפגש קריאה משותפת, אתם מסכימים לתנאים אלה.",
   sections: [
     {
       heading: "השירות",

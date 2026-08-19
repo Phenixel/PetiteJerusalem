@@ -7,14 +7,14 @@ import { Preferences } from "@capacitor/preferences";
 /**
  * Stockage local des fichiers de textes (`/texts/**`).
  *
- * L'app native n'embarque pas les corpus volumineux (talmud, mishna, tanakh —
+ * L'app native n'embarque pas les corpus volumineux (talmud, mishna, tanakh
  * retirés du bundle par `scripts/prune-native-bundle.mjs`) : ils se
  * téléchargent à la demande depuis le site, ce qui garde le binaire léger
  * pendant que la bibliothèque grandit.
  *
  * Deux backends selon la plateforme :
  * - natif : fichiers dans `Directory.Data` (téléchargés via FileTransfer,
- *   relus par la webview via `convertFileSrc` — jamais en base64, les
+ *   relus par la webview via `convertFileSrc`, jamais en base64, les
  *   fichiers font jusqu'à ~2 Mo) ;
  * - web : Cache Storage API (accélère la lecture, et prépare un futur
  *   service worker pour l'offline navigateur).
@@ -22,7 +22,7 @@ import { Preferences } from "@capacitor/preferences";
  * L'index des téléchargements (manifest) vit dans Preferences.
  */
 
-/** Origine du site — seule source des textes quand l'app native ne les embarque pas. */
+/** Origine du site, seule source des textes quand l'app native ne les embarque pas. */
 const REMOTE_TEXTS_BASE = "https://petite-jerusalem.fr";
 const MANIFEST_KEY = "offline-texts:manifest";
 const WEB_CACHE_NAME = "pj-texts-v1";
@@ -33,7 +33,7 @@ const WEB_CACHE_NAME = "pj-texts-v1";
  * avec un cache HTTP d'une semaine ; le paramètre de version invalide ce cache
  * immédiatement. Les clés locales (manifest, disque, Cache API) restent le
  * chemin nu, mais chaque téléchargement enregistre sa version dans le
- * manifest : un fichier d'une version antérieure est considéré périmé — servi
+ * manifest : un fichier d'une version antérieure est considéré périmé, servi
  * seulement en dernier recours (hors ligne) et re-téléchargé par
  * syncDailyReadingDownloads.
  */

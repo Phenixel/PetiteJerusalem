@@ -5,7 +5,7 @@ import { useConsent } from "../../composables/useConsent";
 
 /**
  * App native uniquement : reprend l'essentiel du footer du site (retiré de
- * l'app) — pages d'info, signalement de problème, crédits et réseaux.
+ * l'app), pages d'info, signalement de problème, crédits et réseaux.
  */
 
 const { t } = useI18n();

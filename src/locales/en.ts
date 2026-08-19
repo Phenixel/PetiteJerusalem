@@ -71,6 +71,10 @@ const en: LocaleMessages = {
     decline: "Decline",
   },
   home: {
+    birkatHalevana: {
+      title: "Blessing of the moon",
+      until: "To be said tonight, until {date}.",
+    },
     heroTitle: "Your digital spiritual center",
     heroDescription:
       "A modern platform dedicated to study, sharing and spiritual growth of the Jewish community.",
@@ -191,8 +195,7 @@ const en: LocaleMessages = {
   },
   dailyReading: {
     title: "My daily reading",
-    description:
-      "Pick the texts you read every day so you can find them here, one after another.",
+    description: "Pick the texts you read every day so you can find them here, one after another.",
     manage: "Manage my list",
     done: "Done",
     tabToday: "Today",
@@ -251,6 +254,19 @@ const en: LocaleMessages = {
         "One text of your daily reading is not downloaded: it will not be readable offline. | {count} texts of your daily reading are not downloaded: they will not be readable offline.",
     },
   },
+  calendar: {
+    title: "Holiday calendar",
+    link: "Holiday calendar",
+    description:
+      "The festivals and fasts of the year, with candle lighting and end times for your location.",
+    year: "Year {year}",
+    previousYear: "Previous year",
+    nextYear: "Next year",
+    backToCurrent: "Back to the current year",
+    range: "{from} to {to}",
+    start: "Lighting",
+    end: "Ends",
+  },
   zmanim: {
     title: "Today's times",
     navTitle: "Zmanim",
@@ -285,7 +301,7 @@ const en: LocaleMessages = {
       noCity: "No city matches “{query}”.",
       reset: "Back to Paris",
       denied:
-        "Location denied. Times are still computed for Paris — allow location in your settings to get yours.",
+        "Location denied. Times are still computed for Paris; allow location in your settings to get yours.",
       unavailable: "Location unavailable. Times are still computed for Paris.",
     },
     periods: {
@@ -298,6 +314,10 @@ const en: LocaleMessages = {
       full: "Tachanun is recited.",
       shacharitOnly: "Tachanun at Shacharit only, not at Mincha.",
       none: "No Tachanun.",
+    },
+    rest: {
+      end: "Ends",
+      note: "Candle lighting 18 minutes before sunset, ends at nightfall. When a festival follows Shabbat, light after nightfall from an existing flame.",
     },
     shabbat: {
       title: "Shabbat",
@@ -493,8 +513,7 @@ const en: LocaleMessages = {
     reservationCreateError: "Error creating the reservation",
     reservationUpdateError: "Error updating the reservation",
     reservationDeleteError: "Error deleting the reservation",
-    deleteReservationsConfirm:
-      "Delete this reservation? | Delete these {count} reservations?",
+    deleteReservationsConfirm: "Delete this reservation? | Delete these {count} reservations?",
     reservationsDeletedSuccess: "Reservation deleted | {count} reservations deleted",
     loading: "Loading session...",
     backToSessions: "Back to my sessions",
@@ -548,9 +567,11 @@ const en: LocaleMessages = {
     qrError: "Error generating QR code",
     inviteTehilim:
       "Join the Tehilim chain « {name} » 📖 Everyone reads a few psalms and we finish together. Reserve yours here:",
-    inviteStudy: "Join the shared study « {name} » 📖 Reserve your passages and let's learn together:",
+    inviteStudy:
+      "Join the shared study « {name} » 📖 Reserve your passages and let's learn together:",
     titleChiour: "Share this chiour",
-    inviteChiour: "Listen to the chiour « {name} » 🎧 A Torah lesson to discover on Petite Jerusalem:",
+    inviteChiour:
+      "Listen to the chiour « {name} » 🎧 A Torah lesson to discover on Petite Jerusalem:",
   },
   batchSelection: {
     textsSelected: "{count} texts selected",
@@ -575,30 +596,33 @@ const en: LocaleMessages = {
     homeTitle: "Petite Jérusalem | Shared Torah reading and study",
     homeDescription:
       "Create and join shared Torah reading and study sessions. Reserve texts, study together and track your progress, free and online.",
-    loginTitle: "Login – Petite Jérusalem",
+    loginTitle: "Login | Petite Jérusalem",
     loginDescription:
       "Sign in to create shared reading sessions, reserve texts and track your studies.",
-    profileTitle: "My Profile – Petite Jérusalem",
+    profileTitle: "My Profile | Petite Jérusalem",
     profileDescription:
       "Manage your information, view your participated and created study sessions.",
-    zmanimTitle: "Zmanim: Shema, sunset and Shabbat times – Petite Jérusalem",
+    zmanimTitle: "Zmanim: Shema, sunset and Shabbat times | Petite Jérusalem",
+    calendarTitle: "Jewish holiday calendar: dates and times | Petite Jérusalem",
+    calendarDescription:
+      "The festivals and fasts of the Hebrew year, with their dates and, for each festival, candle lighting and end times computed for your location.",
     zmanimDescription:
       "The halachic times of the day computed for your location: alot hashachar, sunrise, latest Shema, chatzot, mincha, sunset, nightfall, candle lighting and Shabbat end.",
-    dailyReadingTitle: "My daily reading – Petite Jérusalem",
+    dailyReadingTitle: "My daily reading | Petite Jérusalem",
     dailyReadingDescription:
       "Find your daily reading texts every day: Tehilim, the weekly parasha and your chosen texts, with progress tracking.",
-    notFoundTitle: "Page not found – Petite Jérusalem",
+    notFoundTitle: "Page not found | Petite Jérusalem",
     notFoundDescription: "The requested page does not exist.",
-    shareReadingTitle: "Shared Torah reading and study – Petite Jérusalem",
+    shareReadingTitle: "Shared Torah reading and study | Petite Jérusalem",
     shareReadingDescription:
       "Discover and create shared Torah reading and study sessions. Reserve texts, study together and move forward with the community.",
-    newSessionTitle: "Create a shared reading session – Petite Jérusalem",
+    newSessionTitle: "Create a shared reading session | Petite Jérusalem",
     newSessionDescription:
       "Create a shared reading or Torah study session and invite the community to study with you.",
-    sessionTitle: "Shared reading session – Petite Jérusalem",
+    sessionTitle: "Shared reading session | Petite Jérusalem",
     sessionDefaultDescription:
       "Join this shared Torah reading and study session on Petite Jérusalem.",
-    chiourimTitle: "Shiurim – Torah courses and lessons – Petite Jérusalem",
+    chiourimTitle: "Shiurim | Torah courses and lessons | Petite Jérusalem",
     chiourimDescription:
       "Listen to shiurim: Torah courses and lessons shared by the community on Petite Jérusalem.",
   },
@@ -716,6 +740,24 @@ const en: LocaleMessages = {
     bookmarks: "Bookmarks",
     bookmarkAdd: "Add a bookmark",
     bookmarkRemove: "Remove bookmark",
+    // Tefila (Selichot, Berakhot): liturgical text layout.
+    fold: {
+      teshuva: "Addition for the Ten Days of Repentance",
+      zimoun: "Zimun",
+    },
+    repeatTimes: "(\u00d7 {n})",
+    slihotHours: "Selichot times",
+    slihotRange: "From {start} to {end}",
+    slihotHoursInfo: "About these times",
+    slihotWindowExplained:
+      "Selichot are said during the last watch of the night, the ashmoret haboker:",
+    slihotWindowNight:
+      "From chatzot, the middle of the night ({start}): the period when they may first be said.",
+    slihotWindowDawn:
+      "At the end of the night, before sunrise ({end}): the most fitting moment, right before the morning prayer.",
+    slihotWindowDay:
+      "During the day, if the night was not possible: they may still be said until shkia, sunset ({sunset}).",
+    slihotWindowPlace: "Times for {city}.",
   },
   accountCta: {
     title: "Create your free account",
@@ -755,8 +797,8 @@ const en: LocaleMessages = {
   notifications: {
     title: "Reading reminders",
     description: "Get a notification while your daily reading isn't finished.",
-    settingsAriaOn: "Reading reminders on — open settings",
-    settingsAriaOff: "Reading reminders off — open settings",
+    settingsAriaOn: "Reading reminders on: open settings",
+    settingsAriaOff: "Reading reminders off: open settings",
     enable: "Turn reminders on",
     dailyOption: "Reminder at a set time",
     dailyOptionHint: "Every day, at the time you choose.",
@@ -1025,7 +1067,7 @@ const en: LocaleMessages = {
       serieAdd: "Create",
       serieCreated: "Series created.",
       serieCount: "{count} episode(s)",
-      serieDeleteConfirm: "Delete the series \"{name}\"? Its chiourim will remain, without a series.",
+      serieDeleteConfirm: 'Delete the series "{name}"? Its chiourim will remain, without a series.',
       serieDeleted: "Series deleted.",
       seriesEmpty: "No series.",
       chiourimEmpty: "No chiour for this author.",

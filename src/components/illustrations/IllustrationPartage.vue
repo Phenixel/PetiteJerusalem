@@ -88,7 +88,7 @@
 .link {
   opacity: 0;
   /* Boucle d'attente FINIE (3 tours puis repos) : illu-flow anime
-     stroke-dashoffset, que le navigateur ne peut pas composer sur GPU —
+     stroke-dashoffset, que le navigateur ne peut pas composer sur GPU
      en infini, Firefox repeignait ce SVG à chaque frame pour toujours
      (cause principale du site « lent » relevée au Firefox Profiler).
      Le survol de la carte relance la boucle (règles :global plus bas). */
@@ -115,8 +115,8 @@
 }
 
 /* --- hover (parent card): readers bob toward the book in turn, links flow
-   fast, page lines ripple — the drawing lives, nothing is scaled up ---
-   NOTE: the WHOLE selector must live inside :global() — Vue's scoped
+   fast, page lines ripple, the drawing lives, nothing is scaled up ---
+   NOTE: the WHOLE selector must live inside :global(), Vue's scoped
    compiler drops anything written after :global(...). */
 :global(.feature-card:hover .illu-partage .link) {
   animation: illu-flow 0.7s linear infinite;

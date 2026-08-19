@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // « Créées par moi » : liste compacte orientée gestion. Une ligne par
-// session : nom, type, jauge de réservation, et les actions bien en avant —
+// session : nom, type, jauge de réservation, et les actions bien en avant
 // Gérer en premier, puis partager, modifier, terminer. Les sessions
 // terminées sont masquées par défaut, mais leur créateur peut les
 // réafficher au besoin (« Afficher les terminées »).

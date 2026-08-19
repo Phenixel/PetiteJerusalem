@@ -15,7 +15,7 @@ body {
 }
 
 @theme {
-  /* Colors — the beige background and the 3 selectable theme pairs are fixed;
+  /* Colors, the beige background and the 3 selectable theme pairs are fixed;
      --color-primary/--color-secondary are re-written at runtime by useTheme. */
   --color-primary: #1d6fdb;
   --color-secondary: #06b6d4;
@@ -32,7 +32,7 @@ body {
   --color-surface: #ffffff;
   --color-surface-soft: #f8f5ef;
 
-  /* Text — warm-tinted neutrals to sit naturally on the beige background. */
+  /* Text, warm-tinted neutrals to sit naturally on the beige background. */
   --color-text-primary: #35312a;
   --color-text-secondary: #6d6759;
   --color-text-light: #ffffff;
@@ -40,7 +40,7 @@ body {
   /* Hairlines for the few separators that remain. */
   --color-line: rgb(53 49 42 / 0.08);
 
-  /* Fonts — --font-sans / --font-hebrew are re-written at runtime by useFonts. */
+  /* Fonts, --font-sans / --font-hebrew are re-written at runtime by useFonts. */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-serif: "Lora", "Georgia", serif;
   --font-hebrew: "Frank Ruhl Libre", "Noto Serif Hebrew", "David Libre", Georgia, serif;
@@ -50,7 +50,7 @@ body {
   --radius-md: 12px;
   --radius-lg: 16px;
 
-  /* Soft, warm-tinted shadows — flat surfaces are separated from the beige
+  /* Soft, warm-tinted shadows, flat surfaces are separated from the beige
      background by shadow alone (no borders). */
   --shadow-card: 0 1px 2px rgb(58 50 30 / 0.05), 0 2px 8px rgb(58 50 30 / 0.05);
   --shadow-card-hover: 0 2px 4px rgb(58 50 30 / 0.06), 0 8px 24px rgb(58 50 30 / 0.09);
@@ -90,10 +90,13 @@ body {
 
 /* App native uniquement (classe posée par main.ts) : sans ça, l'étirement
    d'overscroll d'Android déforme toute la page, bottom bar comprise.
-   (Complété par overScrollMode NEVER côté natif, cf. setup-android.mjs.) */
+   (Complété par overScrollMode NEVER côté natif, cf. setup-android.mjs.)
+   `touch-action: manipulation` coupe en plus le zoom au double-tap, que le
+   meta viewport ne suffit pas à neutraliser sur toutes les webviews. */
 :root.native-app,
 :root.native-app body {
   overscroll-behavior: none;
+  touch-action: manipulation;
 }
 
 /* Safe-areas : env() est fourni par les WebViews récentes (viewport-fit=cover),
@@ -132,7 +135,7 @@ h6 {
 }
 
 /* Dans @layer base pour que les classes (btn-primary, text-*…) gardent la
-   main sur la couleur des liens — hors layer, cette règle écraserait tout. */
+   main sur la couleur des liens, hors layer, cette règle écraserait tout. */
 @layer base {
   a {
     color: inherit;
@@ -159,7 +162,7 @@ button,
     box-shadow: var(--shadow-card);
   }
 
-  /* Clickable card: shadow deepens on hover — content inside reacts
+  /* Clickable card: shadow deepens on hover, content inside reacts
      (title color, illustration…), the box itself stays put. */
   .card-hover {
     transition:
@@ -305,14 +308,14 @@ button,
   }
   /* Rendu dégradé (perf-lite posé par useDevicePerf : rendu logiciel, petite
      machine, cadence mesurée mauvaise) : le flou de backdrop est re-rasterisé
-     au CPU à chaque frame — on le coupe pour la navbar (classe utilitaire
+     au CPU à chaque frame, on le coupe pour la navbar (classe utilitaire
      Tailwind), son fond à 90 % d'opacité reste lisible sans lui. */
   :root.perf-lite .backdrop-blur-md {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
 
-  /* Modal building blocks — one modal style for the whole app. */
+  /* Modal building blocks, one modal style for the whole app. */
   .modal-overlay {
     position: fixed;
     inset: 0;
@@ -579,6 +582,14 @@ button,
   color: var(--color-text-secondary);
   font-style: italic;
   line-height: 1.6;
+}
+
+/* Tefila : la didascalie qui précède un paragraphe (« les convives répondent »). */
+.reading-page .rubric {
+  font-size: 0.85rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
 }
 
 /* Talmud: daf sub-header above each folio's lines. */

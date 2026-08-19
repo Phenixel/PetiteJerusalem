@@ -15,7 +15,7 @@ export function hasNiqqud(text: string): boolean {
 }
 
 // Marks dropped before parsing: cantillation (te'amim), meteg, rafe, paseq, dots,
-// and bidi/zero-width controls. Never the niqqud we keep (U+05B0–U+05BC, U+05C1/2/7).
+// and bidi/zero-width controls. Never the niqqud we keep (U+05B0 to U+05BC, U+05C1/2/7).
 const STRIP = /[֑-ֽֿ֯׀ׅׄ׆׈-׏​-‏]/g;
 
 const SHEVA = "ְ";

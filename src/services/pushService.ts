@@ -10,7 +10,7 @@ import { analyticsService } from "./analyticsService";
 import type { ReminderPlace } from "./zmanimService";
 
 /**
- * Notifications push (app native uniquement — le site web n'en envoie pas).
+ * Notifications push (app native uniquement, le site web n'en envoie pas).
  *
  * Côté client : permission + token FCM via `@capacitor-firebase/messaging`
  * (token unifié iOS/Android, le mapping APNs→FCM est géré par le plugin).
@@ -20,7 +20,7 @@ import type { ReminderPlace } from "./zmanimService";
  *
  * Config hors code requise avant que cela fonctionne sur appareil :
  * clé APNs dans la console Firebase + capability Push dans Xcode (iOS),
- * google-services.json (Android) — voir docs/app-native.md.
+ * google-services.json (Android), voir docs/app-native.md.
  */
 
 export type PushPermission = "granted" | "denied" | "prompt";
@@ -36,7 +36,7 @@ export interface ReminderSettings {
   sunset: boolean;
   /**
    * Lieu du calcul de la chkia (arrondi, voir coarsePlace) : requis pour le
-   * rappel d'avant-chkia, `null` quand il n'est pas demandé — la position
+   * rappel d'avant-chkia, `null` quand il n'est pas demandé, la position
    * n'est alors pas envoyée du tout.
    */
   place: ReminderPlace | null;
@@ -66,7 +66,7 @@ class PushService {
    * Active les rappels : permission système (Android 13+ et iOS affichent le
    * prompt), token FCM, puis enregistrement dans les préférences utilisateur.
    * `locale` fige la langue des notifications ; `settings` dit quels rappels
-   * envoyer — l'heure fixe (heure de Paris, minutes par pas de 5 — cadence de
+   * envoyer, l'heure fixe (heure de Paris, minutes par pas de 5, cadence de
    * la Cloud Function dailyReadingReminder) et/ou le dernier appel d'avant-chkia.
    */
   async enable(userId: string, locale: string, settings: ReminderSettings): Promise<void> {

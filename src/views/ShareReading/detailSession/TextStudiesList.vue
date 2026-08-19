@@ -59,8 +59,8 @@ const reservedByName = (name: string | null | undefined) =>
  * CHAQUE rendu, pour CHAQUE carte et CHAQUE section. Sur une chaîne de Tehilim
  * (150 cartes) avec des dizaines de réservations, les parcours linéaires de
  * `session.reservations` rendaient chaque frappe de la recherche quadratique.
- * On précalcule donc des index (Map/Set) en `computed` — reconstruits
- * uniquement quand les réservations ou la sélection changent — et les
+ * On précalcule donc des index (Map/Set) en `computed`, reconstruits
+ * uniquement quand les réservations ou la sélection changent, et les
  * fonctions du template deviennent de simples lookups O(1).
  */
 

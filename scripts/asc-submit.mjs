@@ -7,11 +7,11 @@
  * le runner macOS gaspillerait des minutes facturées 10× plus cher. Étapes :
  *
  *   1. attendre que le build (CFBundleVersion dérivé du tag) apparaisse et
- *      passe à l'état VALID — échec franc s'il finit FAILED/INVALID ;
+ *      passe à l'état VALID, échec franc s'il finit FAILED/INVALID ;
  *   2. déclarer usesNonExemptEncryption=false si Apple pose la question
  *      (filet de sécurité : ITSAppUsesNonExemptEncryption=false est déjà dans
  *      l'Info.plist via scripts/setup-ios.mjs, HTTPS seulement = exempt) ;
- *   3. attacher le build à la version App Store du tag — créée ou renommée en
+ *   3. attacher le build à la version App Store du tag, créée ou renommée en
  *      amont par scripts/appstore-listing.mjs dans le job macOS ;
  *   4. créer la « review submission » et l'envoyer. La mise en vente reste un
  *      geste manuel : la version est créée avec releaseType MANUAL.
@@ -42,13 +42,13 @@ if (!versionString || !buildNumber) {
 }
 
 // Les secrets collés dans l'interface GitHub embarquent facilement un blanc ou
-// un retour à la ligne — ce job reçoit les secrets BRUTS (pas la normalisation
+// un retour à la ligne, ce job reçoit les secrets BRUTS (pas la normalisation
 // GITHUB_ENV du job macOS), donc .trim() comme les autres scripts Node.
 const keyId = process.env.ASC_KEY_ID?.trim();
 const issuerId = process.env.ASC_ISSUER_ID?.trim();
 const privateKeyPem = process.env.ASC_PRIVATE_KEY;
 if (!keyId || !issuerId || !privateKeyPem) {
-  console.error("asc-submit: ASC_KEY_ID, ASC_ISSUER_ID et ASC_PRIVATE_KEY sont requis — voir docs/ios-ci-cd.md");
+  console.error("asc-submit: ASC_KEY_ID, ASC_ISSUER_ID et ASC_PRIVATE_KEY sont requis, voir docs/ios-ci-cd.md");
   process.exit(1);
 }
 
@@ -87,7 +87,7 @@ async function api(method, path, body) {
   const text = await response.text();
   const json = text ? JSON.parse(text) : null;
   if (!response.ok) {
-    const detail = json?.errors?.map((e) => `${e.title} — ${e.detail}`).join("\n  ") ?? text;
+    const detail = json?.errors?.map((e) => `${e.title} : ${e.detail}`).join("\n  ") ?? text;
     const error = new Error(`${method} ${path} → ${response.status}\n  ${detail}`);
     error.status = response.status;
     error.body = json;
@@ -120,12 +120,12 @@ for (;;) {
   const state = build?.attributes.processingState;
   if (state === "VALID") break;
   if (state === "FAILED" || state === "INVALID") {
-    console.error(`asc-submit: le build ${buildNumber} a été rejeté par le traitement Apple (${state}) — voir les e-mails App Store Connect.`);
+    console.error(`asc-submit: le build ${buildNumber} a été rejeté par le traitement Apple (${state}), voir les e-mails App Store Connect.`);
     process.exit(1);
   }
   if (Date.now() > deadline) {
     console.error(
-      `asc-submit: build ${buildNumber} toujours ${state ?? "absent"} après ${timeoutMinutes} min — ` +
+      `asc-submit: build ${buildNumber} toujours ${state ?? "absent"} après ${timeoutMinutes} min, ` +
         "relancer ce job quand TestFlight l'affiche, ou soumettre à la main.",
     );
     process.exit(1);
@@ -162,7 +162,7 @@ const versions = await api(
 const version = versions.data[0];
 if (!version) {
   console.error(
-    `asc-submit: aucune version ${versionString} dans App Store Connect — ` +
+    `asc-submit: aucune version ${versionString} dans App Store Connect, ` +
       "l'étape « Mettre à jour la fiche App Store » du job iOS a dû échouer (elle la crée) ; corriger puis relancer.",
   );
   process.exit(1);
@@ -181,7 +181,7 @@ console.log(`asc-submit: build ${buildNumber} attaché à la version ${versionSt
 // --- 4. Soumettre à l'examen -------------------------------------------------
 // Une seule soumission ouverte par plateforme : un brouillon (READY_FOR_REVIEW)
 // est réutilisé, une soumission déjà partie (tag précédent en examen) arrête
-// le script — la re-soumission se décide dans App Store Connect, pas ici.
+// le script, la re-soumission se décide dans App Store Connect, pas ici.
 const OPEN_STATES = ["WAITING_FOR_REVIEW", "IN_REVIEW", "UNRESOLVED_ISSUES", "CANCELING", "COMPLETING"];
 const submissions = await api(
   "GET",
@@ -190,7 +190,7 @@ const submissions = await api(
 const open = submissions.data.find((s) => OPEN_STATES.includes(s.attributes.state));
 if (open) {
   console.error(
-    `asc-submit: une soumission est déjà en cours (état ${open.attributes.state}) — ` +
+    `asc-submit: une soumission est déjà en cours (état ${open.attributes.state}), ` +
       `l'annuler ou attendre son verdict dans App Store Connect avant de soumettre ${versionString}.`,
   );
   process.exit(1);

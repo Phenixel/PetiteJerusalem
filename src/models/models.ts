@@ -155,7 +155,7 @@ export interface ChiourDoc {
   views?: number;
   // Backoffice : rattachement à un auteur (collection `auteurs`) et à une
   // série (collection `series`). `auteur` (string) reste la source affichée
-  // par les apps mobiles déjà déployées — toujours dénormalisé depuis
+  // par les apps mobiles déjà déployées, toujours dénormalisé depuis
   // `auteurs.name`, jamais supprimé.
   auteurId?: string | null;
   serieId?: string | null;

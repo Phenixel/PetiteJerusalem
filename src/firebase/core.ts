@@ -2,7 +2,7 @@
 // auth uniquement (la navbar, App.vue et la garde du routeur ont besoin de
 // l'état de connexion dès le premier rendu). Firestore, Storage et Functions
 // vivent dans leurs modules dédiés (./firestore, ./storage, ./functions) pour
-// que leur poids — Firestore surtout, ~600 kB minifiés — ne pèse pas sur le
+// que leur poids, Firestore surtout, ~600 kB minifiés, ne pèse pas sur le
 // chargement initial du site : ils ne sont tirés que par les écrans qui s'en
 // servent. Un module du bundle initial ne doit JAMAIS les importer
 // statiquement (voir userPreferencesService pour le motif d'import dynamique).
@@ -33,7 +33,7 @@ export const app = initializeApp(firebaseConfig);
 // Dans l'app native, PAS de getAuth() : il embarque browserPopupRedirectResolver,
 // qui charge une iframe depuis authDomain. Dans la WKWebView iOS (origine
 // capacitor://localhost) cette iframe échoue silencieusement et l'initialisation
-// d'Auth ne se termine jamais — et comme Firestore attend le premier jeton
+// d'Auth ne se termine jamais, et comme Firestore attend le premier jeton
 // d'Auth, TOUTES les lectures Firestore pendent (écrans figés sur leurs
 // squelettes). La connexion native passe par @capacitor-firebase/authentication
 // puis signInWithCredential : le resolver popup/redirect est inutile sur natif.

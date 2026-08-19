@@ -23,6 +23,7 @@ import { localDayKey } from "../../services/dateService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useReadingSize } from "../../composables/useReadingSize";
+import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
 import {
@@ -59,6 +60,8 @@ const { confirm } = useConfirm();
 const online = useOnline();
 // Même préférence de taille que le lecteur de la bibliothèque (A− / A+).
 const readingSize = useReadingSize();
+// App native : pincer dans la page agrandit le texte lu, pas la page.
+useReadingPinch();
 
 const ALL_TYPE = "Tout";
 
@@ -201,7 +204,7 @@ function switchTab(tab: "today" | "week") {
 }
 
 /** Fin de la composition de la liste : retour à la lecture, remonté en haut
-    de page — le catalogue laisse sinon le lecteur loin en bas. */
+    de page, le catalogue laisse sinon le lecteur loin en bas. */
 function finishManage() {
   mode.value = "reading";
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -390,7 +393,7 @@ onMounted(async () => {
 
 /**
  * Le serveur a toujours raison : au retour de la connexion, on se réaligne sur
- * lui — la liste a pu changer depuis un autre appareil pendant la coupure.
+ * lui, la liste a pu changer depuis un autre appareil pendant la coupure.
  */
 watch(online, (isOnline, wasOnline) => {
   if (!isOnline || wasOnline) return;
@@ -482,7 +485,7 @@ async function persistProgress() {
     // la paracha et survit à la remise à zéro quotidienne.
     ...(storedParashaProgress.value ? { parashaProgress: storedParashaProgress.value } : {}),
   });
-  // Le widget d'écran d'accueil suit la progression — y compris une coche
+  // Le widget d'écran d'accueil suit la progression, y compris une coche
   // gardée sur l'appareil en attendant le réseau (no-op sur le web).
   void widgetService.refresh(widgetPrefs());
   // Une seule fois par coupure : la coche est bien prise, mais pas encore
@@ -531,7 +534,7 @@ async function downloadForOffline(books: OfflineBook[]): Promise<void> {
  * Texte ajouté à la liste alors que son livre n'est pas sur l'appareil : on
  * prévient qu'il ne sera pas lisible hors connexion et on propose de
  * télécharger ce texte-là, tout de suite. Rien n'est téléchargé sans cet
- * accord — la place occupée reste le choix de l'utilisateur.
+ * accord, la place occupée reste le choix de l'utilisateur.
  */
 async function proposeOfflineDownload(entries: TextStudyJsonEntry[], name: string) {
   const books = missingBooksForEntries(entries);
@@ -846,7 +849,7 @@ function formatBookName(livre: string): string {
     </div>
 
     <!-- Hors connexion : la page reste lisible (textes téléchargés), mais rien
-         n'est modifiable — le serveur reste seul maître de la liste. -->
+         n'est modifiable, le serveur reste seul maître de la liste. -->
     <div
       v-if="!online"
       class="card p-4 mb-6 flex items-start gap-3"

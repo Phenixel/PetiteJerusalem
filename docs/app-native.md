@@ -1,7 +1,7 @@
-# App native (Capacitor) — générer, builder, tester
+# App native (Capacitor) : générer, builder, tester
 
 L'app iOS/Android est le site Vue emballé dans un shell natif
-[Capacitor](https://capacitorjs.com/) — décision actée après le POC de
+[Capacitor](https://capacitorjs.com/), décision actée après le POC de
 juillet 2026 (fluidité validée sur appareil, zéro réécriture, vs Flutter).
 Deux choix d'architecture en découlent :
 
@@ -11,7 +11,7 @@ Deux choix d'architecture en découlent :
 2. **Les projets natifs (`android/`, `ios/`) sont générés localement et
    git-ignorés** (code généré, lourd, dépendant de la machine). Tout
    ajustement natif doit être scripté dans `scripts/setup-android.mjs` ou
-   `scripts/setup-ios.mjs` pour rester reproductible — la CI régénère les
+   `scripts/setup-ios.mjs` pour rester reproductible, la CI régénère les
    deux de zéro à chaque release (voir `docs/android-ci-cd.md` et
    `docs/ios-ci-cd.md`).
 
@@ -46,7 +46,7 @@ Dans Android Studio / Xcode : choisis un émulateur ou ton téléphone branché,
 puis **Run**. L'app démarre sur le bundle Vue (le même que le site).
 
 > Après chaque `git pull` : `npm install && npm run app:build` avant de
-> rebuilder dans l'IDE — c'est le `cap sync` inclus qui pousse plugins et
+> rebuilder dans l'IDE, c'est le `cap sync` inclus qui pousse plugins et
 > bundle web dans `android/`.
 
 ## Itération rapide (sans rebuild à chaque fois)
@@ -103,7 +103,7 @@ sans réseau, elle s'ouvre et se lit, à partir de deux copies locales.
   d'un texte (ou à l'activation d'une lecture du moment) dont le livre n'est pas
   sur l'appareil, une modale prévient qu'il ne sera pas lisible hors connexion
   et propose de le télécharger. Un bandeau propose la même chose quand la
-  lecture du jour comporte des textes absents — la paracha de la semaine change
+  lecture du jour comporte des textes absents, la paracha de la semaine change
   toute seule, par exemple. Rien n'est téléchargé sans cet accord :
   `refreshStaleDownloads` ne fait que remettre au format courant des fichiers
   **déjà** téléchargés.
@@ -115,12 +115,12 @@ sans réseau, elle s'ouvre et se lit, à partir de deux copies locales.
   « pas de connexion » au lieu d'enregistrer. Sans ce garde-fou, le cache
   Firestore persistant (`src/firebase/firestore.ts`) garderait l'écriture en
   attente et l'imposerait au serveur au retour du réseau, en écrasant ce qui a
-  pu changer ailleurs — `savePreferences` lève donc `OfflineWriteError` sans
+  pu changer ailleurs, `savePreferences` lève donc `OfflineWriteError` sans
   rien tenter. Au retour du réseau, la page se réaligne sur le serveur.
 - **Une lecture faite ne se perd pas.** Le « marquer comme lu » s'enregistre
   hors connexion (`saveDailyProgress` : suivi gardé en `localStorage`, clé
   `pj-daily-progress-pending:<uid>`) et repart au serveur à la première lecture
-  réussie des préférences. `mergeDailyProgress` arbitre : **le « lu » gagne** —
+  réussie des préférences. `mergeDailyProgress` arbitre : **le « lu » gagne**
   même jour, les deux suivis s'additionnent ; jours différents (la coupure a
   passé minuit), le plus récent l'emporte ; le chnei mikra se fusionne à part,
   à la semaine. Conséquence assumée : décocher hors ligne quelque chose que le
@@ -135,14 +135,14 @@ revenir en ligne (la liste se resynchronise, la coche remonte).
 
 Les flux OAuth par popup/redirect du SDK JS Firebase ne fonctionnent pas dans
 une webview : l'app passe par `@capacitor-firebase/authentication`
-(`src/services/authService.ts`) — sélecteur de compte Google natif (avec repli
+(`src/services/authService.ts`), sélecteur de compte Google natif (avec repli
 si le Credential Manager Android est cassé) et feuille « Sign in with Apple »
 système sur iOS, puis bridge du credential vers le SDK JS pour que
 `onAuthStateChanged` continue de fonctionner comme sur le web.
 
 Apple **impose** « Sign in with Apple » sur l'app iOS dès qu'un autre login
 tiers (ici Google) est proposé (règle App Store 4.8). Le bouton est
-**affiché uniquement sur iOS** — invisible sur le site web et sur Android.
+**affiché uniquement sur iOS**, invisible sur le site web et sur Android.
 
 Étapes **hors-code** à faire une fois pour iOS (détaillées dans
 `docs/ios-release-plan.md`) : activer le fournisseur **Apple** dans la console
@@ -170,7 +170,7 @@ choisie, et 20 minutes avant la chkia (`pushSunsetReminderEnabled`). Le second
 a besoin d'un lieu, la Cloud Function ne pouvant pas interroger un téléphone
 endormi : `pushReminderPlace` reçoit la position arrondie au dixième de degré
 (voir `coarsePlace`) et le fuseau, effacés dès que le rappel est coupé. La
-chkia est recalculée côté serveur dans `functions/src/sunsetReminder.ts` —
+chkia est recalculée côté serveur dans `functions/src/sunsetReminder.ts`
 `@hebcal/core`, qui la donne dans l'application, est publié en ESM seul quand
 `functions/` compile en CommonJS.
 
@@ -181,11 +181,11 @@ l'utilisateur la partage (repli sur Paris sinon). Rien ne sort de l'appareil :
 le calcul est local, les coordonnées restent en `localStorage`.
 
 - **Android** : `scripts/setup-android.mjs` ajoute `ACCESS_COARSE_LOCATION` et
-  `ACCESS_FINE_LOCATION` au manifest. C'est indispensable — le manifest livré
+  `ACCESS_FINE_LOCATION` au manifest. C'est indispensable, le manifest livré
   par `@capacitor/geolocation` est **vide**, donc sans ces lignes
   `requestPermissions()` est refusé d'office et la page reste sur Paris.
 - **iOS** : `scripts/setup-ios.mjs` ajoute `NSLocationWhenInUseUsageDescription`
-  à `ios/App/App/Info.plist`. C'est indispensable — sans cette clé, iOS
+  à `ios/App/App/Info.plist`. C'est indispensable, sans cette clé, iOS
   **ferme l'app** à la première demande de position.
 
 ## Widgets d'écran d'accueil
@@ -193,14 +193,14 @@ le calcul est local, les coordonnées restent en `localStorage`.
 Deux widgets (Horaires, Lecture du jour) accompagnent l'app : l'app pré-calcule
 leurs contenus et les pousse au natif via le plugin maison PjWidgets. Côté
 Android tout est scripté (`native/android/` + `setup-android.mjs`) ; côté iOS
-quelques étapes Xcode manuelles restent nécessaires — voir
+quelques étapes Xcode manuelles restent nécessaires, voir
 `docs/app-widgets.md`.
 
 ## Bandeau « mise à jour disponible »
 
 Une app installée peut rester des mois en arrière (mises à jour automatiques
-désactivées) : les correctifs ne l'atteignent jamais. Au lancement — puis à
-chaque retour au premier plan, au plus une fois toutes les 6 h —
+désactivées) : les correctifs ne l'atteignent jamais. Au lancement, puis à
+chaque retour au premier plan, au plus une fois toutes les 6 h
 `src/services/appUpdateService.ts` compare la version installée
 (`App.getInfo()`) à la version publiée, et affiche un bandeau refusable en
 tête de l'app, avec un lien vers la fiche du store
@@ -209,11 +209,11 @@ tête de l'app, avec un lien vers la fiche du store
 La version publiée vient d'une source différente par plateforme, faute d'API
 commune :
 
-- **iOS** — `itunes.apple.com/lookup?bundleId=…`, l'API publique de l'App
+- **iOS** : `itunes.apple.com/lookup?bundleId=…`, l'API publique de l'App
   Store, qui fait autorité : la publication iOS est manuelle et passe par une
   revue de plusieurs jours, se fier au tag de release annoncerait une mise à
   jour encore introuvable.
-- **Android** — `https://petite-jerusalem.fr/app-version.json` : le Play Store
+- **Android** : `https://petite-jerusalem.fr/app-version.json`. Le Play Store
   n'expose aucune API publique de version, et le tag qui déploie le site
   déclenche aussi la publication Play, les deux ne divergent donc que le temps
   de la revue Google.
@@ -223,7 +223,7 @@ dans `vite.config.ts`) à partir de la même version que `__APP_VERSION__` : rie
 à maintenir à la main. Tant que l'app n'est pas publiée sur l'App Store, le
 lookup ne renvoie aucun résultat et le bandeau n'apparaît jamais sur iOS. Tout
 échec (hors ligne, store injoignable, version illisible) laisse simplement le
-bandeau masqué — jamais de faux positif.
+bandeau masqué, jamais de faux positif.
 
 ## Publication
 
@@ -236,6 +236,6 @@ Un tag `vX.Y.Z` publie tout d'un coup :
 | `deploy-ios.yml` | App Store | IPA signé envoyé sur **TestFlight** + fiche (`docs/ios-ci-cd.md`) |
 
 Côté iOS, la mise en vente reste un geste manuel dans App Store Connect
-(Apple exige une soumission explicite à l'examen). Le chemin complet — compte
-Apple Developer, consoles, premier build, soumission — est décrit dans
+(Apple exige une soumission explicite à l'examen). Le chemin complet, compte
+Apple Developer, consoles, premier build, soumission, est décrit dans
 `docs/ios-release-plan.md`.

@@ -3,7 +3,7 @@
  *
  * Vit dans son propre module minuscule : plusieurs vues (DetailSession,
  * DetailChiour, ProfilePage…) n'ont besoin que de l'URL canonique pour
- * construire des liens de partage — importer `content/seoPages.ts` (~94 kB de
+ * construire des liens de partage, importer `content/seoPages.ts` (~94 kB de
  * contenu éditorial) pour une constante gonflait leurs chunks pour rien.
  * `seoPages.ts` ré-exporte ces constantes pour le prerender et les pages SEO.
  *

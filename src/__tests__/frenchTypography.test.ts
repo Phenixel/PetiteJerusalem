@@ -6,7 +6,7 @@ import fr from "../locales/fr";
  * une espace **insécable** (fine avant ! ? ;, normale avant : et dans « »).
  *
  * Ce n'est pas qu'une question de règle : avec une espace ordinaire, le signe
- * part seul à la ligne dès que la largeur s'y prête — un « ! » orphelin sous
+ * part seul à la ligne dès que la largeur s'y prête, un « ! » orphelin sous
  * « Bravo, tout est lu pour aujourd'hui » sur l'écran d'un téléphone. Aucune
  * taille de police ne met à l'abri de ça ; l'espace insécable, si.
  *

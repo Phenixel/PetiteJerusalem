@@ -69,7 +69,7 @@
   transform-box: fill-box;
   transform-origin: bottom center;
   /* Boucle d'attente FINIE (2 balancements puis repos) : les animations
-     décoratives infinies gardent le rendu éveillé en permanence — coûteux
+     décoratives infinies gardent le rendu éveillé en permanence, coûteux
      sous Firefox (cf. audit de performance). Le survol relance tout. */
   animation:
     illu-rise 0.5s ease-out 0.65s forwards,
@@ -100,7 +100,7 @@
 }
 
 /* --- hover (parent card): the books tidy themselves up ---
-   NOTE: the WHOLE selector must live inside :global() — Vue's scoped
+   NOTE: the WHOLE selector must live inside :global(), Vue's scoped
    compiler drops anything written after :global(...). */
 :global(.feature-card:hover .illu-biblio .tome) {
   opacity: 1;

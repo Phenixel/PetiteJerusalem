@@ -120,7 +120,7 @@ const CORPUS_META: {
     searchKey: "study.corpus.tanakhSearch",
     shelf: 1,
   },
-  // Liturgie : des textes qu'on lit, pas qu'on partage — jamais proposés au
+  // Liturgie : des textes qu'on lit, pas qu'on partage, jamais proposés au
   // partage de lecture (voir isShareable dans content/etudeTexts).
   {
     corpus: "slihot",
@@ -171,7 +171,7 @@ const { searching } = useSearchMode(searchTerm);
 
 // Chaque frappe re-filtre et re-groupe les 328 entrées du catalogue : sur un
 // appareil lent, taper devient poussif. On ne recalcule que 150 ms après la
-// dernière frappe — l'input, lui, reste réactif (searchTerm suit la frappe).
+// dernière frappe, l'input, lui, reste réactif (searchTerm suit la frappe).
 const debouncedTerm = ref("");
 let searchDebounce: ReturnType<typeof setTimeout> | undefined;
 watch(searchTerm, (value) => {
@@ -331,7 +331,7 @@ async function downloadAllInTab() {
 }
 
 // Libérer de la place : symétrique de « Tout télécharger », donc au même
-// endroit et avec la même portée — toute la bibliothèque depuis l'accueil, le
+// endroit et avec la même portée, toute la bibliothèque depuis l'accueil, le
 // corpus courant depuis sa page.
 const tabDownloadedBooks = computed(() => tabBooks.value.filter((b) => isBookDownloaded(b)));
 
@@ -519,7 +519,7 @@ onUnmounted(() => {
     >
       <!-- Télécharger et supprimer vont ensemble : le second est une petite
            icône posée contre le premier. Supprimer reste l'exception, il n'a
-           pas à peser autant à l'écran — la modale, elle, explique tout. -->
+           pas à peser autant à l'écran, la modale, elle, explique tout. -->
       <span class="flex items-center gap-1">
         <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
           <AppIcon
@@ -587,7 +587,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Les grandes sections : on est dans la bibliothèque, les livres sont
-           la porte d'entrée principale — visibles sans scroller, même sur
+           la porte d'entrée principale, visibles sans scroller, même sur
            téléphone. Deux étagères : l'étude, puis la liturgie (pas plus de
            quatre volumes par planche). -->
       <div class="mt-2 md:mt-6">
@@ -600,7 +600,7 @@ onUnmounted(() => {
         />
       </div>
 
-      <!-- Connecté : la lecture du jour en bas de page — même carte que le
+      <!-- Connecté : la lecture du jour en bas de page, même carte que le
            tableau de bord de l'accueil (un seul design pour la même chose). -->
       <div v-if="user" class="max-w-3xl mx-auto mt-14 animate-[fadeIn_0.5s_ease]">
         <div v-if="dailyLoading" class="card p-6 h-36 animate-pulse"></div>

@@ -64,7 +64,7 @@ const CHIOUR_SLUG = "la-force-de-la-priere";
 
 // --- Préparation de l'environnement -----------------------------------------
 
-// Émulateurs Firebase, Gradle et avdmanager exigent Java >= 21 — mais le JDK
+// Émulateurs Firebase, Gradle et avdmanager exigent Java >= 21, mais le JDK
 // 21 exact de préférence : Gradle (AGP de Capacitor 8) ne supporte pas les
 // class files des JDK plus récents (« Unsupported class file major version »).
 if (process.platform === "darwin") {
@@ -99,7 +99,7 @@ function portTaken(port) {
 for (const port of [FIRESTORE_PORT, AUTH_PORT, VITE_PORT]) {
   if (portTaken(port)) {
     console.error(
-      `store-screenshots: le port ${port} est occupé — arrêter les émulateurs/serveurs de dev (npm run dev:local) avant de lancer les captures.`,
+      `store-screenshots: le port ${port} est occupé, arrêter les émulateurs/serveurs de dev (npm run dev:local) avant de lancer les captures.`,
     );
     process.exit(1);
   }
@@ -547,7 +547,7 @@ if (device) {
     spawnSync("npx", ["cap", "copy", "android"], { cwd: root, stdio: "ignore" });
   } else {
     console.warn(
-      "store-screenshots: dist/ absent — lancer `npm run app:build` pour remettre android/ en config bundle.",
+      "store-screenshots: dist/ absent, lancer `npm run app:build` pour remettre android/ en config bundle.",
     );
   }
   await device.close();

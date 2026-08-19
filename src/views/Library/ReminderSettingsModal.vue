@@ -7,14 +7,14 @@ import CollapseTransition from "../../components/CollapseTransition.vue";
 /**
  * Réglages des rappels de lecture.
  *
- * La cloche de l'en-tête ouvre toujours cette modale — activer comme couper
+ * La cloche de l'en-tête ouvre toujours cette modale, activer comme couper
  * passe par ici, sinon un appui malheureux coupait les rappels sans un mot.
  * Deux rappels indépendants sous un même interrupteur : l'heure fixe, et le
  * dernier appel d'avant-chkia pour qui n'a pas trouvé le temps de la journée.
  *
  * L'heure fixe se choisit sur une horloge (heures puis minutes), façon
  * sélecteur d'heure Android, présentée comme un second écran de la modale. Les
- * minutes vont de 5 en 5 — même pas que la Cloud Function
+ * minutes vont de 5 en 5, même pas que la Cloud Function
  * `dailyReadingReminder` qui tourne toutes les 5 minutes.
  */
 

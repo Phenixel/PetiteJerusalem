@@ -10,14 +10,14 @@ import { analyticsService } from "./analyticsService";
  * Une app installée peut rester des mois en arrière (mises à jour
  * automatiques désactivées, appareil peu connecté au store) : les correctifs
  * ne l'atteignent jamais et les bugs remontés portent sur du code enterré.
- * D'où ce bandeau, informatif et refusable — il ne bloque rien.
+ * D'où ce bandeau, informatif et refusable, il ne bloque rien.
  *
  * Version installée : `App.getInfo()` (versionName Android /
  * CFBundleShortVersionString iOS), et pas `__APP_VERSION__`, qui décrit le
  * bundle web servi et vaudrait la version du serveur de dev en itération
  * rapide (capacitor.config.ts, `server.url`).
  *
- * Version publiée, par plateforme — deux sources, parce qu'aucune ne couvre
+ * Version publiée, par plateforme, deux sources, parce qu'aucune ne couvre
  * les deux stores :
  * - iOS : l'API publique de lookup de l'App Store, qui fait autorité (la
  *   publication iOS est manuelle et passe par une revue de plusieurs jours :
@@ -56,7 +56,7 @@ interface StoreRelease {
  * Nombres de version d'un `versionName` / `CFBundleShortVersionString`.
  *
  * Tolérant sur ce qui suit : un build local est décrit par `git describe`
- * (`v3.4.0-7-gabc1234`, soit « 7 commits après v3.4.0 ») et vaut donc 3.4.0 —
+ * (`v3.4.0-7-gabc1234`, soit « 7 commits après v3.4.0 ») et vaut donc 3.4.0
  * un build de dev entre deux tags ne doit pas se croire périmé.
  */
 function parseVersion(raw: string): number[] | null {
@@ -79,7 +79,7 @@ export function isOutdated(installed: string, latest: string): boolean {
 /**
  * GET JSON par la couche HTTP native : la webview sert le bundle depuis
  * `https://localhost`, un `fetch` vers le site ou l'App Store serait soumis au
- * CORS. Rend `null` sur tout échec — l'appelant n'affiche alors rien.
+ * CORS. Rend `null` sur tout échec, l'appelant n'affiche alors rien.
  */
 async function getJson(url: string): Promise<unknown | null> {
   try {

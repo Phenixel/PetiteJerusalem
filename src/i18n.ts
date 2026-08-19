@@ -56,7 +56,7 @@ export function setStoredLocale(locale: SupportedLocale): void {
 /**
  * Seul le français (la langue de repli) est embarqué dans le bundle initial :
  * en + he représentaient ~60 kB de source chargés pour tout le monde. Les
- * autres locales arrivent par import dynamique — au démarrage pour la langue
+ * autres locales arrivent par import dynamique, au démarrage pour la langue
  * détectée/choisie, ou au moment du changement de langue (setLocale).
  * En attendant le chunk (quelques dizaines de ms, puis cache navigateur),
  * vue-i18n retombe silencieusement sur le français.

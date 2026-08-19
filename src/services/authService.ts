@@ -242,7 +242,7 @@ export class AuthService {
 
     // Purge des données Firestore associées (préférences, progression de
     // lecture, tokens de notification) tant que l'utilisateur est encore
-    // authentifié — les règles Firestore exigent request.auth.uid == userId.
+    // authentifié, les règles Firestore exigent request.auth.uid == userId.
     // Best-effort : un échec ne doit pas empêcher la suppression du compte
     // lui-même (sinon l'utilisateur resterait bloqué).
     try {
@@ -265,7 +265,7 @@ export class AuthService {
     }
 
     // reauthenticateWithPopup (et non signInWithPopup) : échoue si le compte
-    // choisi dans le popup n'est pas le compte courant — sinon une suppression
+    // choisi dans le popup n'est pas le compte courant, sinon une suppression
     // de compte qui suit pourrait viser un autre compte Google.
     await reauthenticateWithPopup(user, googleAuthProvider);
   }

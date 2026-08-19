@@ -2,9 +2,10 @@
 
 Deux widgets accompagnent l'app native :
 
-- **Horaires** : le prochain zman du lieu de l'utilisateur (et celui d'après),
-  aux couleurs de l'app, mis à jour à chaque horaire passé. Toucher le widget
-  ouvre la page `/horaires`.
+- **Horaires** : la date hébraïque, le prochain zman du lieu de l'utilisateur,
+  la paracha de la semaine et le ta'hanoun (en gras les jours où l'on n'en dit
+  pas), aux couleurs de l'app, mis à jour à chaque horaire passé. Toucher le
+  widget ouvre la page `/horaires`.
 - **Lecture du jour** : la progression de la liste quotidienne (« 2/4 », la
   prochaine lecture à faire, la paracha de la semaine), remise à zéro à minuit.
   Toucher le widget ouvre `/bibliotheque/lecture-du-jour`.
@@ -27,9 +28,13 @@ widgetService.refresh()
 
 - **Contrat** : `src/services/widgetPayloads.ts` (champ `v` pour les évolutions
   incompatibles). Tout ce qui s'affiche vient du payload, déjà localisé ET
-  déjà formaté — heures comprises (`time: "17:42"`, gabarit `then` pour la
-  ligne « puis… », `expiresAt` pour l'échéance de minuit) : le natif ne
-  traduit rien, ne formate rien, ne compare que des epochs. Les DateFormatter
+  déjà formaté, heures comprises (`time: "17:42"`, date hébraïque, libellé du
+  ta'hanoun, `expiresAt` pour l'échéance de minuit) : le natif ne traduit rien,
+  ne formate rien, ne compare que des epochs. Les repères qui changent à la
+  chkia (date hébraïque, paracha, ta'hanoun) sont livrés jour par jour dans
+  `days`, chacun borné par les chkiot qui l'ouvrent et le ferment : le widget
+  choisit celui qui couvre l'instant affiché, et reste juste une semaine sans
+  que l'app soit rouverte. Les DateFormatter
   natifs subiraient le réglage 12 h/24 h et le calendrier de l'appareil
   (hébraïque chez une partie du public), qui fausseraient l'affichage. Seule
   exception : le sélecteur de widgets du launcher et l'état « aucun payload »
@@ -52,10 +57,10 @@ widgetService.refresh()
   pas naviguer) et attend `router.isReady()` pour survivre au démarrage à
   froid.
 - **Cas particulier** : un utilisateur dont la seule lecture est la paracha
-  (chnei mikra hebdomadaire) est bien « configuré » — le widget affiche la
+  (chnei mikra hebdomadaire) est bien « configuré », le widget affiche la
   paracha comme lecture principale, sans décompte quotidien.
 
-## Android — automatique
+## Android : automatique
 
 Le code natif est versionné dans `native/android/` (providers Java, layouts,
 couleurs jour/nuit) et recopié dans `android/` (git-ignoré, régénéré par la CI)
@@ -73,7 +78,7 @@ launcher, ouvrir l'app une fois (elle pousse les payloads), vérifier que le
 widget Horaires bascule au passage d'un zman et que « marquer comme lu » met à
 jour le widget Lecture.
 
-## iOS — étapes manuelles (une fois, sur macOS)
+## iOS : étapes manuelles (une fois, sur macOS)
 
 Le projet `ios/` est généré (`npx cap add ios`) et non versionné ; Xcode ne se
 scripte pas comme Gradle, les cibles se créent à la main. Les sources sont
@@ -89,7 +94,7 @@ prêtes dans `native/ios/` :
    sans configuration intent. Supprimer les fichiers d'exemple générés et y
    glisser `PjWidgets.swift`.
 2. **App Group** : Signing & Capabilities → *App Groups* →
-   `group.fr.petitejerusalem.app` — sur **les deux cibles** (App et PjWidgets).
+   `group.fr.petitejerusalem.app`, sur **les deux cibles** (App et PjWidgets).
    (À créer aussi dans le portail Apple Developer pour les builds signés.)
 3. **Plugin** : glisser les deux fichiers de `native/ios/App/` dans la cible
    App, puis dans `Main.storyboard` remplacer la classe du view controller
@@ -115,7 +120,7 @@ comme sur Android.
 ## Évolutions
 
 - Toute nouvelle donnée affichée par un widget passe par le payload
-  (`widgetPayloads.ts`) — jamais de calcul métier côté natif.
+  (`widgetPayloads.ts`), jamais de calcul métier côté natif.
 - Champ retiré ou renommé : incrémenter `v` et faire lire les deux versions au
   natif le temps d'une release (les payloads persistent sur l'appareil).
 - Les tests du contrat vivent dans `src/__tests__/widgetPayloads.test.ts`.

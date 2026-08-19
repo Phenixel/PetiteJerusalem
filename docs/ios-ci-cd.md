@@ -1,4 +1,4 @@
-# CI/CD iOS — envoi automatique sur TestFlight
+# CI/CD iOS : envoi automatique sur TestFlight
 
 Le workflow [.github/workflows/deploy-ios.yml](../.github/workflows/deploy-ios.yml)
 construit l'app iOS et l'envoie sur TestFlight **à chaque tag `vX.Y.Z`**, en
@@ -21,21 +21,21 @@ l'attache à la version du tag et la soumet via l'API
 (`scripts/asc-submit.mjs`). Il s'arrête proprement si une soumission
 précédente est encore en examen, et se débraye avec la variable de repo
 `IOS_AUTO_SUBMIT=false`. **Seule la mise en vente reste manuelle**
-(publication en mode manuel — voir
+(publication en mode manuel, voir
 [ios-release-plan.md](ios-release-plan.md#étape-8--soumission)).
 
 ## ⚠️ Limite connue : les widgets ne passent pas par cette CI
 
 `docs/app-widgets.md` le dit : la cible `PjWidgets` se crée **à la main dans
 Xcode**, une cible ne se scriptant pas comme un module Gradle. Or ce workflow
-régénère `ios/` de zéro à chaque tag — il produit donc un build **sans les
+régénère `ios/` de zéro à chaque tag, il produit donc un build **sans les
 widgets**, sans rien signaler.
 
 Ce que `scripts/setup-ios.mjs` sait faire malgré tout, parce que c'est du
 fichier et non de la structure de projet : l'entitlement App Group
 `group.fr.petitejerusalem.app` sur la cible App, et le schéma d'URL
 `petitejerusalem` des deep-links, aux côtés du `REVERSED_CLIENT_ID` de Google
-— **dans le même tableau `CFBundleURLTypes`**, la clé étant unique.
+(**dans le même tableau `CFBundleURLTypes`**, la clé étant unique).
 
 Restent hors de portée : la cible d'extension, son entitlement App Group, le
 glissement des sources de `native/ios/` et le changement de classe du view
@@ -57,7 +57,7 @@ publique** : il conviendrait à un build de test sans widget, pas à l'App Store
 Aucun certificat ni profil de provisionnement n'est stocké dans le repo,
 contrairement au keystore Android. `scripts/ios-signing.mjs` en fabrique un jeu
 **éphémère** au début de chaque run à partir de la clé d'API App Store Connect
-— certificat de distribution, profil « App Store », trousseau temporaire — et
+- certificat de distribution, profil « App Store », trousseau temporaire, et
 le détruit à la fin (`--cleanup`, exécuté même quand le build échoue). La même
 clé sert à l'envoi de l'IPA et à la synchronisation de la fiche : c'est le seul
 secret sensible du workflow.
@@ -67,7 +67,7 @@ secret sensible du workflow.
 `xcodebuild -allowProvisioningUpdates` (signature automatique) semblait plus
 simple, mais il est inutilisable ici : pour **archiver**, Xcode réclame un
 profil de *développement*, et Apple n'en délivre aucun à une équipe qui n'a pas
-au moins un appareil enregistré — ce compte individuel n'en a aucun. L'erreur
+au moins un appareil enregistré, ce compte individuel n'en a aucun. L'erreur
 remontait d'abord sous la forme trompeuse « Authentication failed: bearer
 token », puis, une fois Xcode épinglé en 26.2, en clair : « No profiles for
 'fr.petitejerusalem.app' were found ».
@@ -87,18 +87,18 @@ deux conséquences visibles dans `scripts/setup-ios.mjs` :
   App Store Connect ne sait pas créer de groupe, et les widgets ne sont pas
   dans la v1 (`docs/app-widgets.md`).
 
-Les capacités de l'App ID nécessaires au profil — notifications push et Sign in
-with Apple — sont activées par le script lui-même, ce qu'Xcode faisait
+Les capacités de l'App ID nécessaires au profil, notifications push et Sign in
+with Apple, sont activées par le script lui-même, ce qu'Xcode faisait
 auparavant tout seul en mode automatique.
 
 Le certificat créé pour le run est **révoqué** à la fin : c'est ce que fait
 aussi Xcode Cloud, et cela garde le compte sous son quota de trois certificats
-de distribution. Les binaires déjà envoyés n'en souffrent pas — Apple re-signe
+de distribution. Les binaires déjà envoyés n'en souffrent pas, Apple re-signe
 tout ce qui passe par TestFlight et l'App Store.
 
 Conséquence : la clé d'API doit avoir le rôle **Admin**. C'est contre-intuitif
 pour une clé de CI, mais Apple réserve la création des certificats de
-**distribution** à ce rôle — une clé « App Manager » suffit pour TestFlight et
+**distribution** à ce rôle, une clé « App Manager » suffit pour TestFlight et
 la fiche, pas pour signer l'archive. Et le rôle d'une clé **ne peut pas être
 modifié après création** : se tromper oblige à en générer une nouvelle.
 
@@ -110,7 +110,7 @@ modifié après création** : se tromper oblige à en générer une nouvelle.
    l'accès à l'API (case à cocher + Soumettre, approbation immédiate).
 2. Nom `github ci` (pas de tiret : Apple refuse les caractères spéciaux),
    accès **Admin** → Générer.
-3. Télécharger le fichier `AuthKey_XXXXXXXXXX.p8` — **téléchargeable une seule
+3. Télécharger le fichier `AuthKey_XXXXXXXXXX.p8`, **téléchargeable une seule
    fois**, le ranger dans le gestionnaire de mots de passe.
 4. Noter sur la même page le **Key ID** (10 caractères) et l'**Issuer ID**
    (un UUID, commun à toutes les clés du compte).
@@ -146,7 +146,7 @@ store-assets/metadata/ios/<locale>/   # fr-FR, en-US, he
 ├── name.txt                 # ≤ 30 caractères
 ├── subtitle.txt             # ≤ 30
 ├── keywords.txt             # ≤ 100, virgules SANS espace
-├── promotional_text.txt     # ≤ 170 — modifiable sans nouvelle version
+├── promotional_text.txt     # ≤ 170, modifiable sans nouvelle version
 ├── description.txt          # ≤ 4000
 ├── support_url.txt          # obligatoire
 ├── marketing_url.txt        # optionnel
@@ -156,14 +156,14 @@ store-assets/metadata/ios/<locale>/   # fr-FR, en-US, he
 - Les « Nouveautés » ne viennent pas d'un fichier du repo : la CI passe au
   script le corps de la release GitHub du tag (`--release-notes`), et à
   défaut c'est la phrase par défaut de `scripts/release-notes.mjs`
-  (« Correction de bugs mineurs. », traduite par langue) qui part — même
+  (« Correction de bugs mineurs. », traduite par langue) qui part, même
   logique que le Play Store. Le corps, rédigé en français, n'alimente que
   fr-FR ; les autres langues reçoivent la phrase par défaut.
 - `node scripts/appstore-listing.mjs --check` vérifie en local, sans réseau,
   les limites de caractères **et** l'absence de caractères refusés par l'API
   App Store Connect (émojis, symboles hors BMP…) : la CI le fait en début de
   run et échoue avant les 40 minutes de build macOS, en indiquant fichier,
-  ligne et caractère fautif. Le Play Store, lui, accepte les émojis — les
+  ligne et caractère fautif. Le Play Store, lui, accepte les émojis, les
   fiches Android n'ont pas cette contrainte.
 - Le script écrit sur la version App Store **modifiable** (état
   `PREPARE_FOR_SUBMISSION` et assimilés), et l'aligne sur le tag : il utilise
@@ -203,7 +203,7 @@ ranger dans `store-assets/metadata/ios/screenshots/<locale>/`.
   moment de choisir le build de la version. C'est désormais automatique :
   `appstore-listing.mjs` renomme la version modifiable (ou en crée une) pour
   qu'elle porte le numéro du tag. À la création de l'app, Apple ouvre une
-  version « 1.0 » — le premier tag la renomme. Le geste manuel ne subsiste que
+  version « 1.0 », le premier tag la renomme. Le geste manuel ne subsiste que
   si la synchro de la fiche échoue (avertissement dans le journal du run).
 - Le `CFBundleVersion` est dérivé du semver du tag : re-publier exige un
   nouveau tag (patch +1). App Store Connect refuse tout numéro de build déjà

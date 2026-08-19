@@ -95,7 +95,7 @@ function applyFound(found: Chiour): void {
       .catch(() => {});
   }
   seoService.setMeta({
-    title: `${found.name} – Petite Jerusalem`,
+    title: `${found.name} | Petite Jerusalem`,
     description: found.description || t("seo.chiourimDescription"),
     canonical: window.location.origin + `/chiourim/${found.slug}`,
   });
@@ -118,7 +118,7 @@ const loadChiour = async () => {
   }
 
   // Pas de cache (arrivée à froid sur un lien partagé) : on n'attend que le
-  // document du chiour lui-même — un seul doc au lieu du catalogue entier.
+  // document du chiour lui-même, un seul doc au lieu du catalogue entier.
   // Le catalogue se charge ensuite en arrière-plan pour les recommandations
   // et les épisodes voisins (leurs computed restent vides d'ici là).
   try {

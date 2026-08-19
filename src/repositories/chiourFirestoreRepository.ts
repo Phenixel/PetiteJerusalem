@@ -46,7 +46,7 @@ export class ChiourFirestoreRepository {
   /**
    * Un seul chiour par slug (l'id du document EST le slug) : la page détail
    * d'un lien partagé n'a pas besoin de télécharger tout le catalogue pour
-   * afficher son contenu — le catalogue ne sert qu'aux recommandations.
+   * afficher son contenu, le catalogue ne sert qu'aux recommandations.
    */
   async fetchBySlug(slug: string): Promise<Chiour | null> {
     const snap = await getDoc(doc(db, "chiourim", slug));

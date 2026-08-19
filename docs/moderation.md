@@ -78,7 +78,7 @@ abusifs) et un moyen de contact publié :
 ## Connexion Apple
 
 « Se connecter avec Apple » est en place (obligatoire dès qu'un login Google
-est proposé — règle 4.8), affiché sur iOS uniquement. La suppression de compte
+est proposé, règle 4.8), affiché sur iOS uniquement. La suppression de compte
 (règle 5.1.1(v)) gère la ré-authentification récente pour les trois types de
 comptes : mot de passe, Google et Apple.
 
@@ -88,8 +88,8 @@ l'Apple Developer Portal.
 
 ## Déploiement
 
-Le dispositif touche trois surfaces — règles Firestore (reports, champs de
-modération), Cloud Function `onSessionReported` et app web — et **un tag
+Le dispositif touche trois surfaces, règles Firestore (reports, champs de
+modération), Cloud Function `onSessionReported` et app web, et **un tag
 `vX.Y.Z` les déploie toutes les trois**, sans geste manuel. Ça n'a pas
 toujours été le cas : le compte de service de la CI n'avait longtemps le droit
 de publier que le site, et les règles devaient être poussées à la main après

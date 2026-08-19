@@ -13,6 +13,7 @@ import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { seoService } from "../../services/seoService";
 import { analyticsService } from "../../services/analyticsService";
 import { useReadingSize } from "../../composables/useReadingSize";
+import { useReadingPinch } from "../../composables/useReadingPinch";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import DailyReadingItem from "./DailyReadingItem.vue";
 
@@ -34,6 +35,8 @@ const route = useRoute();
 const router = useRouter();
 // Même réglage de taille que le reste de la bibliothèque (A− / A+).
 const readingSize = useReadingSize();
+// App native : pincer dans la page agrandit le texte lu, pas la page.
+useReadingPinch();
 
 const WEEK_PARAM = "semaine";
 
@@ -57,7 +60,7 @@ const title = computed(() =>
   (parasha.value?.entries ?? []).map((e) => appendHebrewNumeral(e.name)).join(" · "),
 );
 
-/** « Chabbat 8 août » — le Chabbat où la paracha affichée est lue. */
+/** « Chabbat 8 août », le Chabbat où la paracha affichée est lue. */
 const shabbatLabel = computed(() => {
   if (!parasha.value) return "";
   const date = new Intl.DateTimeFormat(locale.value, {

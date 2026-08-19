@@ -46,7 +46,7 @@ describe("resolveBackNavigation", () => {
   });
 
   // Le bug : chapitre → « Retour » empilait la liste des chapitres, dont
-  // « Retour » revenait sur le chapitre — et ainsi de suite sans fin.
+  // « Retour » revenait sur le chapitre, et ainsi de suite sans fin.
   it("sort du texte en deux « Retour », sans aller-retour sans fin", () => {
     // Bibliothèque → liste des chapitres → chapitre.
     expect(fromSection(HUB)).toBe("back"); // 1er retour : la liste, sans empiler.

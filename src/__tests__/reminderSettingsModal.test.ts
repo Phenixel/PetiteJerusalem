@@ -8,8 +8,8 @@ import ReminderSettingsModal from "../views/Library/ReminderSettingsModal.vue";
  * La modale des rappels de lecture, ouverte par la cloche de la page.
  *
  * Ce qu'elle doit garantir : la cloche n'agit plus dans le dos de
- * l'utilisateur. Tout passe par ici — activer, couper, choisir l'heure fixe,
- * ajouter le dernier appel d'avant-chkia — et rien n'est enregistré qui
+ * l'utilisateur. Tout passe par ici, activer, couper, choisir l'heure fixe,
+ * ajouter le dernier appel d'avant-chkia, et rien n'est enregistré qui
  * n'enverrait jamais rien.
  */
 

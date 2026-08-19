@@ -1,7 +1,7 @@
 # Plan de publication iOS (App Store)
 
 Chemin complet, de « aucun compte Apple » à « app en vente », pour la même
-base de code que le site et l'app Android (Capacitor — voir
+base de code que le site et l'app Android (Capacitor, voir
 [app-native.md](app-native.md)). La CI/CD est décrite à part dans
 [ios-ci-cd.md](ios-ci-cd.md).
 
@@ -24,11 +24,11 @@ vérification d'entité à attendre : tout peut être bouclé en quelques jours.
 
 ---
 
-## Étape 1 — Compte Apple Developer (individuel)
+## Étape 1. Compte Apple Developer (individuel)
 
 Apple réserve l'inscription « organisation » aux **personnes morales** :
 [sa documentation](https://developer.apple.com/help/account/membership/program-enrollment/)
-est explicite — une entreprise individuelle ou une société unipersonnelle sans
+est explicite, une entreprise individuelle ou une société unipersonnelle sans
 personnalité morale distincte doit s'inscrire en **individuel**, et c'est le
 **nom légal de la personne** qui apparaît comme vendeur sur la fiche App
 Store. Ni les noms commerciaux, ni les DBA, ni les enseignes ne sont acceptés
@@ -43,7 +43,7 @@ Conséquences concrètes :
   le cadre de son activité entre dans cette catégorie ; la déclaration se fait
   dans App Store Connect (Entreprise → Conformité DSA) et **conditionne la
   distribution dans l'UE**. Le statut à déclarer dépend de la situation
-  réelle — en cas de doute, un conseil juridique est préférable, je ne suis
+  réelle, en cas de doute, un conseil juridique est préférable, je ne suis
   pas juriste.
 - Si Phenixel devient une société (SASU, EURL…), la bascule individuel →
   organisation est possible plus tard, sans perdre l'app ni ses avis.
@@ -55,7 +55,7 @@ Conséquences concrètes :
    rattaché qu'à un seul compte développeur, et c'est lui qui détient le rôle
    d'Account Holder, les clés de signature, App Store Connect et la
    facturation. Migrer un compte développeur vers un autre Apple ID n'existe
-   pas — d'où le choix d'une adresse pérenne, sur le domaine de l'entreprise
+   pas, d'où le choix d'une adresse pérenne, sur le domaine de l'entreprise
    (ce qu'Apple recommande de toute façon pour une inscription organisation,
    la conversion visée à terme).
 
@@ -66,7 +66,7 @@ Conséquences concrètes :
      connecter (Xcode → Réglages → Comptes, App Store Connect, app Apple
      Developer).
    - Récupération : 2FA sur un numéro durable, contact de secours ou clé de
-     récupération, et **maintenir le domaine `phenixel.fr` renouvelé** — c'est
+     récupération, et **maintenir le domaine `phenixel.fr` renouvelé**, c'est
      la boîte de récupération du compte qui détient l'app.
 2. **Inscription** sur
    [developer.apple.com/programs/enroll](https://developer.apple.com/programs/enroll/)
@@ -94,7 +94,7 @@ affiché sur les sites Apple, pas le nom vendeur de l'App Store. Il faut passer
 par la demande ci-dessus.
 
 Dans les deux cas, l'app garde son identifiant, ses avis, ses notes et ses
-téléchargements — c'est le **même compte** qui change de nom.
+téléchargements, c'est le **même compte** qui change de nom.
 
 > ⚠️ À ne pas confondre avec un **transfert d'app** vers un autre compte.
 > Celui-là est bien plus risqué ici : les identifiants « Sign in with Apple »
@@ -107,7 +107,7 @@ téléchargements — c'est le **même compte** qui change de nom.
 > (IDFV) est réinitialisé à la mise à jour suivante. Sans conséquence ici,
 > l'app identifiant ses utilisateurs par leur UID Firebase.
 
-## Étape 2 — Identifiants Apple (après validation)
+## Étape 2. Identifiants Apple (après validation)
 
 Sur [developer.apple.com/account](https://developer.apple.com/account) →
 **Certificates, Identifiers & Profiles**.
@@ -120,7 +120,7 @@ Sur [developer.apple.com/account](https://developer.apple.com/account) →
 2. **Clé APNs** : Keys → `+` → nom sans caractère spécial (les tirets sont
    refusés), cocher **Apple Push Notifications service**, puis **Configure** :
    environnement **Sandbox & Production** et restriction **Team Scoped (All
-   Topics)** — une seule clé couvre alors dev, TestFlight, App Store et toutes
+   Topics)**, une seule clé couvre alors dev, TestFlight, App Store et toutes
    les apps du compte. Ces deux réglages sont **définitifs**.
    Le `.p8` n'est téléchargeable **qu'une fois** : le ranger dans le
    gestionnaire de mots de passe avec son **Key ID** et le **Team ID**.
@@ -131,7 +131,7 @@ Sur [developer.apple.com/account](https://developer.apple.com/account) →
 4. Noter le **Team ID** (10 caractères, en haut à droite de la page
    Membership) : il sera demandé partout.
 
-## Étape 3 — Firebase
+## Étape 3. Firebase
 
 Console Firebase, projet `petite-jerusalem-dev` (le même que l'app Android).
 
@@ -147,7 +147,7 @@ Console Firebase, projet `petite-jerusalem-dev` (le même que l'app Android).
 4. **Authentication → Settings → Authorized domains** : rien à ajouter, le
    flux natif ne passe pas par un domaine.
 
-## Étape 4 — Premier build local
+## Étape 4. Premier build local
 
 Prérequis : macOS + **Xcode 26** (exigé à la fois par Capacitor 8 et par
 l'App Store depuis le 28 avril 2026). Capacitor 8 construit avec Swift Package
@@ -179,29 +179,29 @@ l'appareil :
 - [ ] rappel de lecture : réception d'une notification
 - [ ] affichage de la barre d'état et des zones sûres (encoche, Dynamic Island)
 
-## Étape 5 — App Store Connect
+## Étape 5. App Store Connect
 
 Sur [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → Mes apps
 → `+` → Nouvelle app.
 
 - Plateforme **iOS**, nom **Petite Jérusalem** (sans « - Torah »,
-  contrairement au Play Store — choix confirmé, ne pas « harmoniser »),
+  contrairement au Play Store, choix confirmé, ne pas « harmoniser »),
   langue principale **français**, bundle ID `fr.petitejerusalem.app`,
   SKU `petite-jerusalem`.
 - **Prix** : gratuit. **Disponibilité** : tous les pays.
 - **Conformité DSA** (onglet Entreprise) : sans déclaration, la distribution
-  européenne est bloquée — c'est-à-dire le marché principal de l'app.
+  européenne est bloquée, c'est-à-dire le marché principal de l'app.
   **Fait (14/08/2026)** : statut déclaré **non-commerçant** au niveau du
   compte (l'app est gratuite, sans revenus ; aucune coordonnée publiée sur la
   fiche). Le jour où une app monétisée sort, le compte devra passer
-  commerçant — et le statut commerçant se désactivera alors app par app pour
+  commerçant, et le statut commerçant se désactivera alors app par app pour
   Petite Jérusalem (*Informations sur l'app → Réglementations et
   autorisations → Digital Services Act*).
 - **Catégorie** : Références (principale) ; Style de vie (secondaire).
-- **Classification par âge** : répondre au questionnaire — l'app ne contient
+- **Classification par âge** : répondre au questionnaire, l'app ne contient
   ni contenu généré par les utilisateurs public, ni violence, ni achats ;
   attendu **4+**.
-- **Confidentialité de l'app** (« nutrition labels ») — à déclarer,
+- **Confidentialité de l'app** (« nutrition labels »), à déclarer,
   cohérent avec `PrivacyInfo.xcprivacy` généré par le script :
 
   | Donnée | Liée à l'utilisateur | Suivi publicitaire | Usage |
@@ -215,9 +215,9 @@ Sur [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → Mes apps
   `https://petite-jerusalem.fr/confidentialite`.
 - **Textes de la fiche** : ils vivent dans le repo
   (`store-assets/metadata/ios/<locale>/`) et sont poussés par
-  `node scripts/appstore-listing.mjs` — inutile de les retaper.
+  `node scripts/appstore-listing.mjs`, inutile de les retaper.
   Vérifier avant : `node scripts/appstore-listing.mjs --check` (limites de
-  caractères **et** caractères refusés par App Store Connect — les émojis,
+  caractères **et** caractères refusés par App Store Connect, les émojis,
   acceptés par le Play Store, sont interdits ici). Les « Nouveautés »
   viennent du corps de la release GitHub du tag, sinon d'une phrase par
   défaut (voir `docs/ios-ci-cd.md`).
@@ -231,15 +231,15 @@ Sur [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → Mes apps
   PNG ou JPEG sRGB **sans transparence**. Apple redimensionne pour les
   appareils plus petits de chaque famille. À déposer à la main la première
   fois (l'API impose un envoi en plusieurs morceaux, hors périmètre du
-  script) — voir [ios-ci-cd.md](ios-ci-cd.md#captures-décran).
+  script), voir [ios-ci-cd.md](ios-ci-cd.md#captures-décran).
 
-## Étape 6 — CI/CD
+## Étape 6. CI/CD
 
 Créer les cinq secrets GitHub et vérifier le workflow : tout est dans
 [ios-ci-cd.md](ios-ci-cd.md). Une fois en place, un tag `vX.Y.Z` publie le
 site, l'app Android **et** envoie le build iOS sur TestFlight.
 
-## Étape 7 — TestFlight
+## Étape 7. TestFlight
 
 1. Poser un tag (`git tag v3.7.0 && git push origin v3.7.0`) ou lancer
    « Deploy iOS » à la main depuis l'onglet Actions.
@@ -251,11 +251,11 @@ site, l'app Android **et** envoie le build iOS sur TestFlight.
 4. Facultatif : test externe (jusqu'à 10 000 testeurs, demande un examen
    Apple léger, ~24 h).
 
-## Étape 8 — Soumission
+## Étape 8. Soumission
 
 Automatique depuis que le job `submit` de deploy-ios.yml existe : il attend le
 traitement du build, l'attache à la version du tag et la soumet à l'examen
-(`scripts/asc-submit.mjs` — débrayable avec la variable de repo
+(`scripts/asc-submit.mjs`, débrayable avec la variable de repo
 `IOS_AUTO_SUBMIT=false`). À la main si besoin : dans App Store Connect, sur la
 version, sélectionner le build TestFlight puis **Ajouter pour examen**.
 
@@ -280,11 +280,11 @@ tag) et le clic « Ajouter pour examen ».
 > Deux fonctions **n'existent que dans l'application** et sont absentes du
 > site web :
 >
-> 1. **Lecture hors ligne** — les textes (Talmud, Michna, Tanakh) se
+> 1. **Lecture hors ligne**, les textes (Talmud, Michna, Tanakh) se
 >    téléchargent sur l'appareil depuis l'onglet Téléchargements et se lisent
 >    sans aucune connexion. Pour le vérifier : télécharger un livre, activer
 >    le mode avion, l'ouvrir.
-> 2. **Notifications de rappel de lecture** (APNs) — réglables depuis la
+> 2. **Notifications de rappel de lecture** (APNs), réglables depuis la
 >    cloche de la page « Lecture du jour » : un rappel à l'heure choisie, et
 >    un second 20 minutes avant le coucher du soleil, calculé pour la
 >    position de l'appareil.
@@ -299,24 +299,24 @@ dans la section prévue : sans lui, l'examen est refusé au premier tour.
 
 | Règle | Risque | État |
 |---|---|---|
-| **4.2 Minimum Functionality** — « site web emballé » | le plus probable pour une app Capacitor, mais l'app fait bien plus que le site | lecture hors ligne et notifications de rappel **n'existent que dans l'app** ; s'y ajoutent la géolocalisation et la connexion Apple natives. Les deux premières sont détaillées dans les notes d'examen, avec la manip pour les vérifier |
-| **4.8 Sign in with Apple** — obligatoire dès qu'un autre login tiers existe | élevé si oublié | implémenté, bouton visible uniquement sur iOS |
+| **4.2 Minimum Functionality** (« site web emballé ») | le plus probable pour une app Capacitor, mais l'app fait bien plus que le site | lecture hors ligne et notifications de rappel **n'existent que dans l'app** ; s'y ajoutent la géolocalisation et la connexion Apple natives. Les deux premières sont détaillées dans les notes d'examen, avec la manip pour les vérifier |
+| **4.8 Sign in with Apple** (obligatoire dès qu'un autre login tiers existe) | élevé si oublié | implémenté, bouton visible uniquement sur iOS |
 | **5.1.1(v) Suppression de compte** dans l'app | élevé si oublié | Profil → Sécurité → Supprimer mon compte |
 | **2.1** compte de démonstration manquant | quasi systématique | à remplir dans le formulaire de soumission |
 | **5.1.2** étiquettes de confidentialité incohérentes | moyen | tableau de l'étape 5 aligné sur `PrivacyInfo.xcprivacy` |
 | **2.3** captures d'écran non représentatives | faible | mêmes écrans que la fiche Play Store |
 
 En cas de refus, Apple répond dans le **Resolution Center** : corriger, poser
-un nouveau tag (patch +1) et resoumettre — pas besoin de recommencer la fiche.
+un nouveau tag (patch +1) et resoumettre, pas besoin de recommencer la fiche.
 
 ## Récapitulatif
 
 État au 14/08/2026 :
 
 - [x] Apple ID avec 2FA, nom identique à la pièce d'identité
-- [x] Apple Developer Program (individuel) validé — 99 $/an
+- [x] Apple Developer Program (individuel) validé, 99 $/an
 - [x] Statut DSA déclaré dans App Store Connect (**non-commerçant**, au
-      niveau du compte — voir étape 5 pour la bascule future en commerçant)
+      niveau du compte, voir étape 5 pour la bascule future en commerçant)
 - [x] App ID `fr.petitejerusalem.app` + capacités Push et Sign in with Apple
 - [x] Clé APNs `.p8` créée et sauvegardée, importée dans Firebase (dev et
       prod), fournisseur Apple activé
@@ -329,5 +329,5 @@ un nouveau tag (patch +1) et resoumettre — pas besoin de recommencer la fiche.
 - [x] Compte de démo + notes d'examen renseignés, publication manuelle
 - [ ] Tag `v3.7.0` posé → workflow « Deploy iOS » vert (premier run réel)
 - [ ] Vérification du build TestFlight sur un iPhone réel (connexion Apple,
-      push, position — invérifiables en simulateur)
+      push, position, invérifiables en simulateur)
 - [ ] Build sélectionné sur la version, « Ajouter pour examen »

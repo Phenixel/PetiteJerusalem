@@ -44,7 +44,7 @@ service cloud.firestore {
     // Suppression d'UNE réservation (taille -1) et aucune autre modif.
     // Autorisé sans authentification : un invité doit pouvoir annuler sa
     // réservation. NB : la propriété fine par élément n'est pas vérifiable
-    // dans les rules avec ce modèle (tableau embarqué) — voir la note du
+    // dans les rules avec ce modèle (tableau embarqué), voir la note du
     // README de PR ; une migration vers une sous-collection permettrait
     // de la faire respecter côté serveur.
     function isRemoveOneReservationOnly() {
@@ -84,7 +84,7 @@ service cloud.firestore {
 
       // Mise à jour : propriétaire (hors champs de modération)/admin, ou
       // opérations bornées sur le seul champ 'reservations' (réservation,
-      // annulation, statut de lecture — ouvertes aux invités non connectés,
+      // annulation, statut de lecture, ouvertes aux invités non connectés,
       // voir plus haut), refusées sur une session masquée
       allow update: if (isSessionOwner() && moderationFieldsUntouched())
         || isAdmin()
@@ -95,7 +95,7 @@ service cloud.firestore {
     }
 
     // Signalements de sessions (modération App Store). Création ouverte à
-    // tous, invités compris — mais strictement bornée : champs imposés, motif
+    // tous, invités compris, mais strictement bornée : champs imposés, motif
     // dans la liste fermée, détails limités, session cible existante, et
     // l'identité du signaleur cohérente avec l'authentification. Lecture et
     // traitement réservés à l'admin (backoffice) ; le masquage automatique au
@@ -168,7 +168,7 @@ service cloud.firestore {
     }
 
     // Tokens du studio auteurs : le doc ID EST le secret (32 octets aléatoires).
-    // `get` ouvert : connaître le token, c'est être l'auteur — il n'est pas
+    // `get` ouvert : connaître le token, c'est être l'auteur, il n'est pas
     // devinable et le doc ne contient rien de sensible. `list` interdit aux
     // non-admins : aucune énumération possible.
     match /studioTokens/{token} {
@@ -191,7 +191,7 @@ service cloud.firestore {
         && (!('dailyReadingOptions' in request.resource.data) || (request.resource.data.dailyReadingOptions is list && request.resource.data.dailyReadingOptions.size() <= 10))
         && (!('dailyReadingProgress' in request.resource.data) || request.resource.data.dailyReadingProgress is map)
         // Notifications push (app native) : tokens FCM des appareils, rappels
-        // on/off, langue des notifications. 20 tokens max — les tokens morts
+        // on/off, langue des notifications. 20 tokens max, les tokens morts
         // sont purgés par la Cloud Function dailyReadingReminder quand un
         // envoi échoue.
         && (!('fcmTokens' in request.resource.data) || (request.resource.data.fcmTokens is list && request.resource.data.fcmTokens.size() <= 20))
@@ -200,7 +200,7 @@ service cloud.firestore {
         && (!('pushReminderHour' in request.resource.data) || (request.resource.data.pushReminderHour is int && request.resource.data.pushReminderHour >= 0 && request.resource.data.pushReminderHour <= 23))
         && (!('pushReminderMinute' in request.resource.data) || (request.resource.data.pushReminderMinute is int && request.resource.data.pushReminderMinute >= 0 && request.resource.data.pushReminderMinute <= 59))
         // Rappel « dernier appel » avant la chkia : son lieu de calcul (latitude,
-        // longitude, fuseau — arrondi par le client) est effacé, donc null, dès
+        // longitude, fuseau, arrondi par le client) est effacé, donc null, dès
         // que le rappel est coupé.
         && (!('pushSunsetReminderEnabled' in request.resource.data) || request.resource.data.pushSunsetReminderEnabled is bool)
         && (!('pushReminderPlace' in request.resource.data) || request.resource.data.pushReminderPlace == null || (request.resource.data.pushReminderPlace is map && request.resource.data.pushReminderPlace.size() <= 3))

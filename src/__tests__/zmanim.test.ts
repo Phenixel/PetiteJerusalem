@@ -5,11 +5,11 @@ import {
   formatHebrewDate,
   formatZmanDay,
   formatZmanTime,
-  getShabbatTimes,
   hebrewDateFor,
-  featuredShabbat,
+  restPeriodsNear,
   weekdayIn,
   nextZman,
+  slihotWindow,
   type ZmanimPlace,
 } from "../services/zmanimService";
 
@@ -20,7 +20,7 @@ import {
 const PARIS_DAY = new Date(Date.UTC(2026, 7, 4, 12));
 
 const at = (place: ZmanimPlace, date: Date) => formatZmanTime(date, place.tzid, "fr");
-/** Le jour tel qu'il est vécu au lieu — `getDay()` lirait celui de la machine. */
+/** Le jour tel qu'il est vécu au lieu, `getDay()` lirait celui de la machine. */
 const on = (place: ZmanimPlace, date: Date) => formatZmanDay(date, place.tzid, "fr");
 
 describe("computeZmanim", () => {
@@ -91,29 +91,41 @@ describe("nextZman", () => {
   });
 });
 
-describe("getShabbatTimes", () => {
+describe("restPeriodsNear : le Chabbat d'une semaine ordinaire", () => {
+  /** Le premier temps de repos annoncé à cet instant-là. */
+  const first = (date: Date) => restPeriodsNear(DEFAULT_PLACE, date, "fr")[0] ?? null;
+
   it("donne l'allumage du vendredi et la sortie du samedi", () => {
     // Mardi 4 août 2026 → Chabbat des 7 et 8 août.
-    const shabbat = getShabbatTimes(DEFAULT_PLACE, PARIS_DAY)!;
-    expect(on(DEFAULT_PLACE, shabbat.candleLighting)).toBe("vendredi 7 août");
-    expect(on(DEFAULT_PLACE, shabbat.havdalah)).toBe("samedi 8 août");
-    expect(at(DEFAULT_PLACE, shabbat.candleLighting)).toBe("21:01");
-    expect(at(DEFAULT_PLACE, shabbat.havdalah)).toBe("22:12");
+    const shabbat = first(PARIS_DAY)!;
+    expect(shabbat.festivals).toEqual([]);
+    expect(on(DEFAULT_PLACE, shabbat.start)).toBe("vendredi 7 août");
+    expect(on(DEFAULT_PLACE, shabbat.end)).toBe("samedi 8 août");
+    expect(at(DEFAULT_PLACE, shabbat.start)).toBe("21:01");
+    expect(at(DEFAULT_PLACE, shabbat.end)).toBe("22:12");
   });
 
   it("garde le Chabbat en cours tant qu'il n'est pas sorti", () => {
     // Samedi 8 août 2026, 20 h (Paris) : la sortie n'a pas eu lieu, elle est le soir même.
     const saturdayEvening = new Date(Date.UTC(2026, 7, 8, 18)); // 20 h à Paris
-    const shabbat = getShabbatTimes(DEFAULT_PLACE, saturdayEvening)!;
-    expect(on(DEFAULT_PLACE, shabbat.havdalah)).toBe("samedi 8 août");
+    expect(on(DEFAULT_PLACE, first(saturdayEvening)!.end)).toBe("samedi 8 août");
   });
 
   it("passe au Chabbat suivant une fois la sortie passée", () => {
     // Samedi 8 août 2026, 23 h (Paris) : sortie passée, on vise le 14/15 août.
     const afterHavdalah = new Date(Date.UTC(2026, 7, 8, 21)); // 23 h à Paris
-    const shabbat = getShabbatTimes(DEFAULT_PLACE, afterHavdalah)!;
-    expect(on(DEFAULT_PLACE, shabbat.candleLighting)).toBe("vendredi 14 août");
-    expect(on(DEFAULT_PLACE, shabbat.havdalah)).toBe("samedi 15 août");
+    const shabbat = first(afterHavdalah)!;
+    expect(on(DEFAULT_PLACE, shabbat.start)).toBe("vendredi 14 août");
+    expect(on(DEFAULT_PLACE, shabbat.end)).toBe("samedi 15 août");
+  });
+
+  it("n'annonce qu'un seul Chabbat dans la semaine, sans fête", () => {
+    // Du dimanche 2 au samedi 8 août 2026, à midi (Paris) : toujours celui du 8.
+    for (let i = 0; i < 7; i++) {
+      const periods = restPeriodsNear(DEFAULT_PLACE, new Date(Date.UTC(2026, 7, 2 + i, 10)), "fr");
+      expect(periods).toHaveLength(1);
+      expect(on(DEFAULT_PLACE, periods[0].end)).toBe("samedi 8 août");
+    }
   });
 });
 
@@ -134,45 +146,12 @@ describe("jour de la semaine", () => {
   };
 
   it("compte les jours dans le fuseau du lieu", () => {
-    // Vendredi 7 août 2026, 23 h à Paris — soit déjà samedi à Jérusalem, et
+    // Vendredi 7 août 2026, 23 h à Paris, soit déjà samedi à Jérusalem, et
     // encore vendredi après-midi à New York.
     const instant = new Date(Date.UTC(2026, 7, 7, 21));
     expect(weekdayIn(DEFAULT_PLACE, instant)).toBe(5);
     expect(weekdayIn(jerusalem, instant)).toBe(6);
     expect(weekdayIn(newYork, instant)).toBe(5);
-  });
-});
-
-describe("featuredShabbat", () => {
-  it("met le Chabbat en avant le vendredi et le samedi, pas les autres jours", () => {
-    // Du dimanche 2 au samedi 8 août 2026, à midi (Paris).
-    const days = [0, 1, 2, 3, 4, 5, 6].map((i) => new Date(Date.UTC(2026, 7, 2 + i, 10)));
-    expect(days.map((d) => featuredShabbat(DEFAULT_PLACE, d) !== null)).toEqual([
-      false,
-      false,
-      false,
-      false,
-      false,
-      true,
-      true,
-    ]);
-  });
-
-  it("le samedi, s'efface une fois le Chabbat sorti", () => {
-    // Sortie le 8 août à 22 h 12 (Paris).
-    const before = new Date(Date.UTC(2026, 7, 8, 19)); // 21 h à Paris
-    const after = new Date(Date.UTC(2026, 7, 8, 21)); // 23 h à Paris
-    expect(on(DEFAULT_PLACE, featuredShabbat(DEFAULT_PLACE, before)!.havdalah)).toBe(
-      "samedi 8 août",
-    );
-    expect(featuredShabbat(DEFAULT_PLACE, after)).toBeNull();
-  });
-
-  it("le vendredi, annonce déjà le Chabbat qui arrive", () => {
-    const fridayMorning = new Date(Date.UTC(2026, 7, 7, 8)); // 10 h à Paris
-    const shabbat = featuredShabbat(DEFAULT_PLACE, fridayMorning)!;
-    expect(on(DEFAULT_PLACE, shabbat.candleLighting)).toBe("vendredi 7 août");
-    expect(at(DEFAULT_PLACE, shabbat.candleLighting)).toBe("21:01");
   });
 });
 
@@ -191,5 +170,27 @@ describe("date hébraïque", () => {
     expect(formatHebrewDate(hd, "fr")).toBe("21 Av 5786");
     expect(formatHebrewDate(hd, "en")).toBe("21st of Av, 5786");
     expect(formatHebrewDate(hd, "he")).toContain("אָב");
+  });
+});
+
+describe("plage des Sli'hot", () => {
+  it("va de hatsot au lever du soleil de la nuit qui vient", () => {
+    // Mardi 4 août 2026, midi : le jour est levé, la plage annoncée est celle
+    // de la nuit du 4 au 5.
+    const window = slihotWindow(DEFAULT_PLACE, PARIS_DAY)!;
+    expect(window.tonight).toBe(false);
+    expect(at(DEFAULT_PLACE, window.start)).toBe("01:56");
+    expect(at(DEFAULT_PLACE, window.end)).toBe("06:29");
+    expect(on(DEFAULT_PLACE, window.end)).toContain("5");
+    expect(window.start.getTime()).toBeLessThan(window.end.getTime());
+  });
+
+  it("avant le lever du soleil, c'est encore la nuit en cours", () => {
+    // Mercredi 5 août 2026, 4 h à Paris : on est dans la plage.
+    const beforeDawn = new Date(Date.UTC(2026, 7, 5, 2));
+    const window = slihotWindow(DEFAULT_PLACE, beforeDawn)!;
+    expect(window.tonight).toBe(true);
+    expect(window.start.getTime()).toBeLessThan(beforeDawn.getTime());
+    expect(window.end.getTime()).toBeGreaterThan(beforeDawn.getTime());
   });
 });

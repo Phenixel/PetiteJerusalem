@@ -71,9 +71,12 @@ const he: LocaleMessages = {
     decline: "סירוב",
   },
   home: {
+    birkatHalevana: {
+      title: "ברכת הלבנה",
+      until: "לאומרה הלילה, עד {date}.",
+    },
     heroTitle: "המרכז הרוחני הדיגיטלי שלכם",
-    heroDescription:
-      "פלטפורמה מודרנית המוקדשת ללימוד, שיתוף וצמיחה רוחנית של הקהילה היהודית.",
+    heroDescription: "פלטפורמה מודרנית המוקדשת ללימוד, שיתוף וצמיחה רוחנית של הקהילה היהודית.",
     features: {
       shareReading: {
         title: "שיתוף קריאות",
@@ -201,7 +204,8 @@ const he: LocaleMessages = {
     selectedCount: "{count} טקסטים ברשימה שלך",
     removeFromList: "הסרה מהרשימה",
     emptyTitle: "הרשימה שלך ריקה",
-    emptyDescription: "הוסיפו את המזמורים או הקטעים שאתם קוראים מדי יום כדי למצוא אותם מקובצים כאן.",
+    emptyDescription:
+      "הוסיפו את המזמורים או הקטעים שאתם קוראים מדי יום כדי למצוא אותם מקובצים כאן.",
     progress: "{done} מתוך {total} נקראו היום",
     allReadTitle: "כל הכבוד, הכול נקרא להיום!",
     allReadDescription: "חזרו מחר לקריאה הבאה שלכם.",
@@ -211,8 +215,7 @@ const he: LocaleMessages = {
     sectionRead: "נקרא",
     options: {
       title: "קריאות לפי הלוח",
-      description:
-        "קריאות שעוקבות אחרי הלוח העברי: הן מופיעות בראש הרשימה ומתעדכנות מעצמן.",
+      description: "קריאות שעוקבות אחרי הלוח העברי: הן מופיעות בראש הרשימה ומתעדכנות מעצמן.",
       parashaTitle: "שניים מקרא (פרשת השבוע)",
       parashaDescription: "פרשת השבוע, עלייה אחר עלייה, עם תרגום אונקלוס מתחת לכל פסוק.",
       tehilimDayTitle: "תהילים יומי",
@@ -245,6 +248,18 @@ const he: LocaleMessages = {
       missing:
         "טקסט אחד מהקריאה היומית אינו מורד: לא ניתן יהיה לקרוא אותו ללא חיבור. | {count} טקסטים מהקריאה היומית אינם מורדים: לא ניתן יהיה לקרוא אותם ללא חיבור.",
     },
+  },
+  calendar: {
+    title: "לוח החגים",
+    link: "לוח החגים",
+    description: "חגי השנה והצומות, עם זמני הדלקת הנרות והיציאה למיקום שלכם.",
+    year: "שנת {year}",
+    previousYear: "השנה הקודמת",
+    nextYear: "השנה הבאה",
+    backToCurrent: "חזרה לשנה הנוכחית",
+    range: "מ־{from} עד {to}",
+    start: "הדלקה",
+    end: "צאת החג",
   },
   zmanim: {
     title: "זמני היום",
@@ -280,7 +295,7 @@ const he: LocaleMessages = {
       noCity: "לא נמצאה עיר התואמת ל״{query}״.",
       reset: "חזרה לפריז",
       denied:
-        "הגישה למיקום נדחתה. הזמנים ממשיכים להיות מחושבים לפריז — אפשרו מיקום בהגדרות כדי לקבל את שלכם.",
+        "הגישה למיקום נדחתה. הזמנים ממשיכים להיות מחושבים לפריז; אפשרו מיקום בהגדרות כדי לקבל את שלכם.",
       unavailable: "המיקום אינו זמין. הזמנים ממשיכים להיות מחושבים לפריז.",
     },
     periods: {
@@ -293,6 +308,10 @@ const he: LocaleMessages = {
       full: "אומרים תחנון.",
       shacharitOnly: "תחנון בשחרית בלבד, לא במנחה.",
       none: "אין תחנון.",
+    },
+    rest: {
+      end: "צאת החג",
+      note: "הדלקת נרות 18 דקות לפני השקיעה, והיציאה בצאת הכוכבים. יום טוב שחל במוצאי שבת: מדליקים אחרי צאת השבת, מאש קיימת.",
     },
     shabbat: {
       title: "שבת",
@@ -569,26 +588,29 @@ const he: LocaleMessages = {
     homeTitle: "פטיט ירושלים | שיתוף קריאות ולימוד תורה",
     homeDescription:
       "צרו והצטרפו לסשנים של שיתוף קריאות ולימוד תורה. הזמינו טקסטים, למדו יחד ועקבו אחר ההתקדמות שלכם, בחינם ואונליין.",
-    loginTitle: "התחברות – פטיט ירושלים",
+    loginTitle: "התחברות | פטיט ירושלים",
     loginDescription: "התחברו כדי ליצור סשני שיתוף קריאות, להזמין טקסטים ולעקוב אחר הלימודים שלכם.",
-    profileTitle: "הפרופיל שלי – פטיט ירושלים",
+    profileTitle: "הפרופיל שלי | פטיט ירושלים",
     profileDescription: "נהלו את המידע שלכם, צפו בסשנים שהשתתפתם ויצרתם.",
-    zmanimTitle: "זמני היום: קריאת שמע, שקיעה ושבת – Petite Jérusalem",
+    zmanimTitle: "זמני היום: קריאת שמע, שקיעה ושבת | Petite Jérusalem",
+    calendarTitle: "לוח החגים: תאריכים וזמנים | Petite Jérusalem",
+    calendarDescription:
+      "חגי השנה העברית והצומות, עם התאריכים שלהם, וזמני הדלקת הנרות והיציאה המחושבים למיקום שלכם.",
     zmanimDescription:
       "זמני היום ההלכתיים המחושבים למיקום שלכם: עלות השחר, נץ החמה, סוף זמן ק״ש, חצות, מנחה, שקיעה, צאת הכוכבים, הדלקת נרות וצאת שבת.",
-    dailyReadingTitle: "הקריאה היומית שלי – פטיט ירושלים",
+    dailyReadingTitle: "הקריאה היומית שלי | פטיט ירושלים",
     dailyReadingDescription:
       "מצאו בכל יום את טקסטי הקריאה היומית שלכם: תהילים, פרשת השבוע והטקסטים שבחרתם, עם מעקב התקדמות.",
-    notFoundTitle: "הדף לא נמצא – פטיט ירושלים",
+    notFoundTitle: "הדף לא נמצא | פטיט ירושלים",
     notFoundDescription: "הדף המבוקש אינו קיים.",
-    shareReadingTitle: "שיתוף קריאות ולימוד תורה – פטיט ירושלים",
+    shareReadingTitle: "שיתוף קריאות ולימוד תורה | פטיט ירושלים",
     shareReadingDescription:
       "גלו וצרו סשנים של שיתוף קריאות ולימוד תורה. הזמינו טקסטים, למדו יחד והתקדמו עם הקהילה.",
-    newSessionTitle: "יצירת סשן שיתוף קריאה – פטיט ירושלים",
+    newSessionTitle: "יצירת סשן שיתוף קריאה | פטיט ירושלים",
     newSessionDescription: "צרו סשן שיתוף קריאה או לימוד תורה והזמינו את הקהילה ללמוד אתכם.",
-    sessionTitle: "סשן שיתוף קריאה – פטיט ירושלים",
+    sessionTitle: "סשן שיתוף קריאה | פטיט ירושלים",
     sessionDefaultDescription: "הצטרפו לסשן שיתוף קריאה ולימוד תורה זה בפטיט ירושלים.",
-    chiourimTitle: "שיעורים – שיעורי תורה ולימודים – פטיט ירושלים",
+    chiourimTitle: "שיעורים | שיעורי תורה ולימודים | פטיט ירושלים",
     chiourimDescription: "האזינו לשיעורים: שיעורי תורה ולימודים שמשתפת הקהילה בפטיט ירושלים.",
   },
   chiourim: {
@@ -704,6 +726,20 @@ const he: LocaleMessages = {
     bookmarks: "סימניות",
     bookmarkAdd: "הוספת סימנייה",
     bookmarkRemove: "הסרת הסימנייה",
+    // תפילה (סליחות, ברכות) : עיצוב הטקסט הליטורגי.
+    fold: {
+      teshuva: "תוספת לעשרת ימי תשובה",
+      zimoun: "זימון",
+    },
+    repeatTimes: "(\u00d7 {n})",
+    slihotHours: "זמן הסליחות",
+    slihotRange: "מ־{start} עד {end}",
+    slihotHoursInfo: "על אודות הזמן הזה",
+    slihotWindowExplained: "הסליחות נאמרות באשמורת הבוקר, האחרונה שבאשמורות הלילה:",
+    slihotWindowNight: "מחצות הלילה ({start}): מכאן ואילך אפשר להתחיל לאומרן.",
+    slihotWindowDawn: "בסוף הלילה, לפני הנץ החמה ({end}): הזמן המובחר, סמוך לתפילת שחרית.",
+    slihotWindowDay: "ביום, למי שלא הספיק בלילה: אפשר עדיין לאומרן עד השקיעה ({sunset}).",
+    slihotWindowPlace: "הזמנים עבור {city}.",
   },
   accountCta: {
     title: "צרו חשבון חינם",
@@ -742,8 +778,8 @@ const he: LocaleMessages = {
   notifications: {
     title: "תזכורות קריאה",
     description: "קבלו התראה כל עוד הקריאה היומית שלכם לא הושלמה.",
-    settingsAriaOn: "תזכורות הקריאה פעילות — פתיחת ההגדרות",
-    settingsAriaOff: "תזכורות הקריאה כבויות — פתיחת ההגדרות",
+    settingsAriaOn: "תזכורות הקריאה פעילות: פתיחת ההגדרות",
+    settingsAriaOff: "תזכורות הקריאה כבויות: פתיחת ההגדרות",
     enable: "הפעלת התזכורות",
     dailyOption: "תזכורת בשעה קבועה",
     dailyOptionHint: "כל יום, בשעה שתבחרו.",
@@ -1006,7 +1042,7 @@ const he: LocaleMessages = {
       serieAdd: "יצירה",
       serieCreated: "הסדרה נוצרה.",
       serieCount: "{count} פרקים",
-      serieDeleteConfirm: "למחוק את הסדרה \"{name}\"? השיעורים יישארו, ללא סדרה.",
+      serieDeleteConfirm: 'למחוק את הסדרה "{name}"? השיעורים יישארו, ללא סדרה.',
       serieDeleted: "הסדרה נמחקה.",
       seriesEmpty: "אין סדרות.",
       chiourimEmpty: "אין שיעורים למרצה זה.",

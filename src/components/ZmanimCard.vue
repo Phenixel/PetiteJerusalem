@@ -3,9 +3,9 @@
 // vérifier. Le détail (les quatorze horaires du jour, le Chabbat, les autres
 // jours) vit sur la page dédiée, à un clic.
 //
-// Du vendredi à la sortie du Chabbat, c'est lui qui prend la place du
-// prochain horaire : son entrée d'abord, puis sa sortie une fois les bougies
-// allumées.
+// Du jour d'entrée à la sortie du repos (Chabbat, fête, ou les deux quand
+// ils se suivent), c'est lui qui prend la place du prochain horaire : son
+// entrée d'abord, puis sa sortie une fois les bougies allumées.
 //
 // Tout est calculé sur l'appareil (voir zmanimService) : la carte n'attend
 // rien du réseau et reste juste même connexion coupée.
@@ -17,8 +17,9 @@ import { useZmanCountdown } from "../composables/useZmanCountdown";
 import {
   computeZmanim,
   formatZmanTime,
-  featuredShabbat,
   nextZman,
+  restPeriodsNear,
+  sameCivilDay,
 } from "../services/zmanimService";
 import AppIcon from "./icons/AppIcon.vue";
 
@@ -49,20 +50,28 @@ const upcoming = computed(() => {
   return computeZmanim(place.value, tomorrow)[0] ?? null;
 });
 
-const shabbat = computed(() => featuredShabbat(place.value, now.value));
+/** Le repos en cours, ou celui qui entre aujourd'hui, sinon rien à annoncer. */
+const rest = computed(() => {
+  const period = restPeriodsNear(place.value, now.value, locale.value)[0];
+  if (!period) return null;
+  const entering = sameCivilDay(place.value, period.start, now.value);
+  return period.start.getTime() <= now.value.getTime() || entering ? period : null;
+});
 
 /** Ce que la carte annonce : une heure, son nom, et une ligne de contexte. */
 const headline = computed(() => {
-  const week = shabbat.value;
-  if (week) {
-    const lit = now.value.getTime() >= week.candleLighting.getTime();
+  const period = rest.value;
+  if (period) {
+    const lit = now.value.getTime() >= period.start.getTime();
+    // « Sortie de Chabbat » ne convient plus quand une fête s'y ajoute.
+    const endLabel = t(period.festivals.length > 0 ? "zmanim.rest.end" : "zmanim.shabbat.havdalah");
     return {
       icon: "candle" as const,
-      label: t(lit ? "zmanim.shabbat.havdalah" : "zmanim.shabbat.candleLighting"),
-      date: lit ? week.havdalah : week.candleLighting,
-      // Avant l'allumage, la sortie donne l'autre bout du Chabbat ; après,
-      // elle est déjà l'heure annoncée et n'a pas à être répétée.
-      note: lit ? "" : `${t("zmanim.shabbat.havdalah")} ${clock(week.havdalah)}`,
+      label: lit ? endLabel : t("zmanim.shabbat.candleLighting"),
+      date: lit ? period.end : period.start,
+      // Avant l'allumage, la sortie donne l'autre bout du repos ; après, elle
+      // est déjà l'heure annoncée et n'a pas à être répétée.
+      note: lit ? "" : `${endLabel} ${clock(period.end)}`,
     };
   }
   const zman = upcoming.value;

@@ -39,6 +39,8 @@ import {
   readingLead as readingLeadOf,
   SITE_URL,
 } from "../../content/etudeTexts";
+import LiturgyText from "./LiturgyText.vue";
+import SlihotHours from "./SlihotHours.vue";
 import GuestForm from "../../components/GuestForm.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
@@ -47,6 +49,7 @@ import { useReadingSize } from "../../composables/useReadingSize";
 import { readingProgressService, bookmarkId } from "../../services/readingProgressService";
 import type { Bookmark, ReadingPosition } from "../../services/readingProgressService";
 import { isNativeApp } from "../../composables/useNativeApp";
+import { useReadingPinch } from "../../composables/useReadingPinch";
 import { analyticsService } from "../../services/analyticsService";
 
 const route = useRoute();
@@ -54,6 +57,8 @@ const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
 const readingSize = useReadingSize();
+// App native : pincer dans la page agrandit le texte lu, pas la page.
+useReadingPinch();
 // Lieu des horaires : donne le jour hébraïque (sensible à la chkia) qui
 // conditionne les ajouts de calendrier des textes de tefila.
 const { place: zmanimPlace } = useZmanimLocation();
@@ -76,7 +81,9 @@ const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
 const textId = computed(() =>
   isEtudeRoute.value ? String(etudeEntry.value?.id ?? "") : String(route.params.textId),
 );
-const sectionParam = computed(() => (route.params.section ? Number(route.params.section) : undefined));
+const sectionParam = computed(() =>
+  route.params.section ? Number(route.params.section) : undefined,
+);
 const sessionSlug = computed(() => (route.query.session ? String(route.query.session) : null));
 
 /** Reading lead is shown on the public /bibliotheque pages (not in the session reader).
@@ -118,11 +125,16 @@ const verseBlocks = computed<TextBlock[]>(() => {
 
 // Tefila : les ajouts liés au calendrier (Retsé le Chabbat, Yaalé véyavo à
 // Roch Hodech, Al hanissim à Hanouka…) ne s'affichent que le jour où ils se
-// disent — dans une carte, pour les distinguer du fil du texte. Le jour
+// disent, dans une carte, pour les distinguer du fil du texte. Le jour
 // hébraïque suit le lieu des horaires (après la chkia, on est déjà demain).
+//
+// L'heure est donc une donnée du rendu, pas une valeur figée à l'ouverture :
+// on bénit après la chkia du vendredi une page ouverte avant elle, et Retsé
+// doit apparaître sans qu'on ait à la recharger (minuteur plus bas).
+const now = ref(new Date());
 const occasions = computed(() =>
   activeOccasions(
-    hebrewDateFor(zmanimPlace.value, new Date()),
+    hebrewDateFor(zmanimPlace.value, now.value, now.value),
     zmanimPlace.value.tzid === "Asia/Jerusalem",
   ),
 );
@@ -130,12 +142,32 @@ const visibleBlocks = computed(() =>
   verseBlocks.value.filter((b) => !b.when || occasions.value.has(b.when)),
 );
 
-/** Style du titre d'un bloc : cadre d'ajout du calendrier, ou séparation du
-    fil du texte (sans filet au-dessus du tout premier bloc). */
-function blockLabelClass(block: TextBlock, index: number): string {
+/** Tefila (Sli'hot, Brahot) : un rendu à part, voir LiturgyText. */
+const isLiturgyText = computed(() => !!textEntry.value && isLiturgy(textEntry.value));
+const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
+
+// Le minuteur des occasions : seuls les textes de tefila regardent l'heure,
+// il ne tourne donc que pour eux, et s'arrête dès qu'on ouvre autre chose.
+let occasionsTicker: ReturnType<typeof setInterval> | null = null;
+function stopOccasionsTicker() {
+  if (occasionsTicker !== null) clearInterval(occasionsTicker);
+  occasionsTicker = null;
+}
+watch(
+  isLiturgyText,
+  (liturgy) => {
+    stopOccasionsTicker();
+    if (!liturgy) return;
+    now.value = new Date();
+    occasionsTicker = setInterval(() => (now.value = new Date()), 60_000);
+  },
+  { immediate: true },
+);
+
+/** Séparation entre deux blocs (chapitre, montée), pas de filet au premier. */
+function blockLabelClass(index: number): string {
   const base = "mb-4 text-sm font-semibold text-primary";
-  if (block.when || index === 0) return base;
-  return `${base} mt-10 pt-4 border-t border-black/10 dark:border-white/10`;
+  return index === 0 ? base : `${base} mt-10 pt-4 border-t border-black/10 dark:border-white/10`;
 }
 
 // Verse numbers for chaptered texts, and within each chapter / montée block.
@@ -158,11 +190,13 @@ const currentSection = computed<TextSection | null>(() => {
   return null;
 });
 
-const canTransliterate = computed(() => currentSection.value?.he.some((line) => hasNiqqud(line)) ?? false);
+const canTransliterate = computed(
+  () => currentSection.value?.he.some((line) => hasNiqqud(line)) ?? false,
+);
 
 // Translittération mémoïsée : appelée depuis le template, elle était recalculée
 // pour toute la section (des dizaines de lignes × plusieurs passes regex) à
-// CHAQUE re-rendu de la page — y compris ceux qui n'ont rien à voir (tick du
+// CHAQUE re-rendu de la page, y compris ceux qui n'ont rien à voir (tick du
 // lecteur audio, changement de taille de lecture…). Les computed ne refont le
 // travail qu'au changement de section, et rien du tout hors mode phonétique.
 const phoneticByDaf = computed(() => {
@@ -219,7 +253,11 @@ function goToSection(index: number, replace = false) {
   const to =
     isEtudeRoute.value && textEntry.value
       ? sectionPath(textEntry.value, index)
-      : { name: "text-reading-section", params: { textId: textId.value, section: index }, query: route.query };
+      : {
+          name: "text-reading-section",
+          params: { textId: textId.value, section: index },
+          query: route.query,
+        };
   if (replace) router.replace(to);
   else router.push(to);
   scrollTopProgrammatic();
@@ -248,7 +286,7 @@ function libraryLocation(): string {
  * « Retour » remonte d'un cran (chapitre → liste des chapitres → bibliothèque).
  * Il ne POUSSE jamais la page parente : soit elle est déjà l'entrée précédente
  * et on y revient, soit on remplace l'entrée courante. Empiler la faisait
- * revenir en arrière sur le chapitre qu'on venait de quitter — chapitre →
+ * revenir en arrière sur le chapitre qu'on venait de quitter, chapitre →
  * texte → chapitre, sans fin.
  */
 function goUp(target: RouteLocationRaw, preferHistory: boolean) {
@@ -285,7 +323,7 @@ function exitReading() {
     return;
   }
   // While reading a chapter, "back" returns to this text's chapter list rather
-  // than the previously read chapter — readers paging through next/previous
+  // than the previously read chapter, readers paging through next/previous
   // expect to land back on the list to pick another passage.
   if (!isSingleSection.value && sectionParam.value !== undefined) {
     backToSectionList();
@@ -293,7 +331,7 @@ function exitReading() {
   }
   // Sur la liste des chapitres, « Retour » quitte le texte : on rend la main à
   // l'écran d'où vient le lecteur, sauf s'il s'agit d'un chapitre de ce même
-  // texte (lien direct vers un chapitre) — on remonte alors à la bibliothèque.
+  // texte (lien direct vers un chapitre), on remonte alors à la bibliothèque.
   goUp(libraryLocation(), true);
 }
 
@@ -374,7 +412,7 @@ function placeLabel(sectionIndex: number | null, line: number): string {
 
 const showResumeBanner = computed(() => {
   // Liturgie : les marque-pages restent, mais pas de « reprendre là où vous
-  // étiez » — une brakha ou les Sli'hot se lisent du début, pas en cours.
+  // étiez », une brakha ou les Sli'hot se lisent du début, pas en cours.
   if (textEntry.value && isLiturgy(textEntry.value)) return false;
   const p = savedPosition.value;
   if (!p || resumeDismissed.value || route.query.verset !== undefined || !content.value)
@@ -425,14 +463,11 @@ function scrollToLine(line: number) {
 
 // Arrivée avec ?verset=N (reprise, marque-page, lien partagé) : on scrolle au
 // verset dès que le contenu correspondant est rendu.
-watch(
-  [content, sectionParam, () => route.query.verset],
-  ([loaded, , verset]) => {
-    if (!loaded || verset === undefined) return;
-    const line = Number(verset);
-    if (Number.isInteger(line) && line >= 0) scrollToLine(line);
-  },
-);
+watch([content, sectionParam, () => route.query.verset], ([loaded, , verset]) => {
+  if (!loaded || verset === undefined) return;
+  const line = Number(verset);
+  if (Number.isInteger(line) && line >= 0) scrollToLine(line);
+});
 
 // --- Suivi de la position (sauvegarde silencieuse au scroll) ---
 // La position ne s'enregistre qu'après un geste du lecteur (scroll, choix d'un
@@ -505,7 +540,7 @@ function onScroll() {
 // Choisir un chapitre est aussi un geste de lecture : on retient le chapitre
 // ouvert (ligne 0), le scroll affine ensuite. `userNavigated` évite de compter
 // l'ouverture initiale de la page. Exception : une position profonde dans un
-// AUTRE chapitre n'est pas écrasée à la simple ouverture — jeter « chapitre 3,
+// AUTRE chapitre n'est pas écrasée à la simple ouverture, jeter « chapitre 3,
 // verset 120 » parce qu'on a jeté un œil au chapitre 5 serait irréversible ;
 // le premier scroll dans le nouveau chapitre prendra le relais.
 let userNavigated = false;
@@ -597,12 +632,15 @@ const isSessionMode = computed(() => sessionSlug.value !== null && session.value
 // Reservation unit: the current chapter, or 1 for a single-section text.
 const reservationUnit = computed(() => (isSingleSection.value ? 1 : sectionParam.value));
 
-const showReservationBar = computed(() => isSessionMode.value && reservationUnit.value !== undefined);
+const showReservationBar = computed(
+  () => isSessionMode.value && reservationUnit.value !== undefined,
+);
 
 function findReservation(unit: number | undefined): TextStudyReservation | null {
   if (!session.value || unit === undefined) return null;
   return (
-    session.value.reservations.find((r) => r.textStudyId === textId.value && r.section === unit) ?? null
+    session.value.reservations.find((r) => r.textStudyId === textId.value && r.section === unit) ??
+    null
   );
 }
 
@@ -615,12 +653,15 @@ const reservedStatus = computed(() => {
 
 const isMine = computed(() => {
   const r = currentReservation.value;
-  return !!r && sessionService.canUserDeleteReservation(r, currentUser.value, reservationForm.value.email);
+  return (
+    !!r &&
+    sessionService.canUserDeleteReservation(r, currentUser.value, reservationForm.value.email)
+  );
 });
 
 // Entrée du funnel de réservation : le lecteur atteint une section libre et la
 // barre de réservation s'affiche. C'était le pas manquant entre session_viewed
-// et reservation_confirm_clicked — le trou de conversion à mesurer est là,
+// et reservation_confirm_clicked, le trou de conversion à mesurer est là,
 // entre voir le formulaire et cliquer sur « Confirmer ».
 const canReserveNow = computed(() => showReservationBar.value && !reservedStatus.value.isReserved);
 
@@ -777,7 +818,8 @@ const pageTitle = computed(() => {
   if (isEtudeRoute.value) {
     return currentSection.value ? sectionTitle(e, currentSection.value) : hubTitle(e);
   }
-  const sec = currentSection.value && !isSingleSection.value ? ` · ${currentSection.value.label}` : "";
+  const sec =
+    currentSection.value && !isSingleSection.value ? ` · ${currentSection.value.label}` : "";
   return `${appendHebrewNumeral(e.name)}${sec} | Petite Jérusalem`;
 });
 const pageDescription = computed(() => {
@@ -835,6 +877,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("scroll", onScroll);
+  stopOccasionsTicker();
   if (scrollSaveTimer !== null) {
     clearScrollSaveTimer();
     // Une capture était en attente : on fige la position avant de partir.
@@ -905,10 +948,7 @@ watch(textId, () => {
         <h1 class="text-3xl md:text-4xl font-bold text-text-primary">
           {{ appendHebrewNumeral(textEntry.name) }}
         </h1>
-        <p
-          v-if="currentSection && !isSingleSection"
-          class="mt-2 text-text-secondary"
-        >
+        <p v-if="currentSection && !isSingleSection" class="mt-2 text-text-secondary">
           {{ currentSection.label }}
         </p>
       </header>
@@ -964,7 +1004,9 @@ watch(textId, () => {
               >
                 {{ section.index }}
               </span>
-              <span class="font-medium text-text-primary truncate group-hover:text-primary transition-colors">
+              <span
+                class="font-medium text-text-primary truncate group-hover:text-primary transition-colors"
+              >
                 {{ section.label }}
               </span>
             </span>
@@ -1002,6 +1044,8 @@ watch(textId, () => {
 
       <!-- Reading a passage -->
       <div v-else-if="currentSection">
+        <!-- Sli'hot : la plage horaire où elles se disent, avant le texte. -->
+        <SlihotHours v-if="isSlihot" />
         <!-- Reservation bar (session mode) -->
         <div v-if="showReservationBar" class="mb-8 p-4 card">
           <!-- Current session -->
@@ -1014,7 +1058,10 @@ watch(textId, () => {
           </router-link>
 
           <!-- Reserved by me -->
-          <div v-if="isMine" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div
+            v-if="isMine"
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          >
             <span
               class="chip !text-sm w-fit"
               :class="
@@ -1045,7 +1092,11 @@ watch(textId, () => {
                 "
               >
                 <AppIcon name="check" :size="13" />
-                {{ currentReservation?.isCompleted ? t("textReading.unmarkRead") : t("textReading.markRead") }}
+                {{
+                  currentReservation?.isCompleted
+                    ? t("textReading.unmarkRead")
+                    : t("textReading.markRead")
+                }}
               </button>
               <button
                 @click="cancelReservation"
@@ -1074,8 +1125,12 @@ watch(textId, () => {
               />
               {{
                 currentReservation?.isCompleted
-                  ? t("textReading.readBy", { name: reservedStatus.reservedBy || t("textReading.someone") })
-                  : t("textReading.reservedBy", { name: reservedStatus.reservedBy || t("textReading.someone") })
+                  ? t("textReading.readBy", {
+                      name: reservedStatus.reservedBy || t("textReading.someone"),
+                    })
+                  : t("textReading.reservedBy", {
+                      name: reservedStatus.reservedBy || t("textReading.someone"),
+                    })
               }}
             </span>
           </div>
@@ -1125,7 +1180,9 @@ watch(textId, () => {
             v-if="bookmarks.length"
             @click="showBookmarksPanel = !showBookmarksPanel"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-sm font-medium transition-colors"
-            :class="showBookmarksPanel ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
+            :class="
+              showBookmarksPanel ? 'text-primary' : 'text-text-secondary hover:text-text-primary'
+            "
             :title="t('textReading.bookmarks')"
           >
             <AppIcon name="bookmark" :size="14" />
@@ -1156,26 +1213,21 @@ watch(textId, () => {
             </button>
           </div>
 
-          <div v-if="canTransliterate" class="inline-flex p-0.5 rounded-lg bg-black/5 dark:bg-white/10">
+          <div
+            v-if="canTransliterate"
+            class="inline-flex p-0.5 rounded-lg bg-black/5 dark:bg-white/10"
+          >
             <button
               @click="showPhonetic = false"
               class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
-              :class="
-                !showPhonetic
-                  ? 'bg-surface text-primary shadow-sm'
-                  : 'text-text-secondary'
-              "
+              :class="!showPhonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
             >
               {{ t("textReading.hebrew") }}
             </button>
             <button
               @click="showPhonetic = true"
               class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
-              :class="
-                showPhonetic
-                  ? 'bg-surface text-primary shadow-sm'
-                  : 'text-text-secondary'
-              "
+              :class="showPhonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
             >
               {{ t("textReading.phonetic") }}
             </button>
@@ -1225,17 +1277,30 @@ watch(textId, () => {
           </template>
         </div>
 
+        <!-- Tefila : paragraphes justifiés, didascalies traduites, ajouts du
+             calendrier et encadrés des dix jours de pénitence. -->
+        <LiturgyText
+          v-else-if="isLiturgyText"
+          :style="{ '--reading-scale': readingSize.scale.value }"
+          :blocks="visibleBlocks"
+          :show-phonetic="showPhonetic"
+          :phonetic-lines="phoneticLines"
+          :occasions="occasions"
+          :highlighted-line="highlightedLine"
+          :selected-line="selectedLine"
+          :is-bookmarked="isLineBookmarked"
+          @select="onVerseClick"
+          @toggle-bookmark="toggleBookmarkAt"
+        />
+
         <!-- Verses / mishnayot (numbered for reference texts), grouped by
              chapter / montée with a marker at each block start -->
         <div v-else :style="{ '--reading-scale': readingSize.scale.value }">
-          <template v-for="(block, blockIndex) in visibleBlocks" :key="block.offset">
-            <!-- Ajout du calendrier (`when`) : un cadre sobre avec son titre,
-                 affiché seulement le jour où il se dit (voir visibleBlocks). -->
-            <div :data-when="block.when" :class="block.when ? 'card p-5 mb-6' : undefined">
-              <p v-if="block.label" :class="blockLabelClass(block, blockIndex)">
-                {{ block.label }}
-              </p>
-              <div class="space-y-6" :class="block.when ? undefined : 'mb-6'">
+          <template v-for="(block, blockIndex) in verseBlocks" :key="block.offset">
+            <p v-if="block.label" :class="blockLabelClass(blockIndex)">
+              {{ block.label }}
+            </p>
+            <div class="space-y-6 mb-6">
               <template v-for="(line, index) in block.lines" :key="block.offset + index">
                 <div
                   :data-line="block.offset + index"
@@ -1275,10 +1340,7 @@ watch(textId, () => {
                   </p>
                 </div>
                 <!-- Verset sélectionné : proposer le marque-page -->
-                <div
-                  v-if="selectedLine === block.offset + index"
-                  class="flex justify-end !mt-2"
-                >
+                <div v-if="selectedLine === block.offset + index" class="flex justify-end !mt-2">
                   <button
                     @click.stop="toggleBookmarkAt(block.offset + index)"
                     class="btn btn-soft !px-3 !py-1.5 text-sm"
@@ -1292,7 +1354,6 @@ watch(textId, () => {
                   </button>
                 </div>
               </template>
-              </div>
             </div>
           </template>
         </div>
@@ -1318,13 +1379,13 @@ watch(textId, () => {
         />
       </div>
 
-      <!-- Internal links (public /bibliotheque reading pages only) -->
-      <section
-        v-if="isEtudeRoute"
-        class="mt-14 text-sm text-text-secondary"
-      >
+      <!-- Internal links (public /bibliotheque reading pages only). Pas sous un
+           texte de tefila : on y vient prier, pas naviguer. -->
+      <section v-if="isEtudeRoute && !isLiturgyText" class="mt-14 text-sm text-text-secondary">
         <nav class="flex flex-wrap gap-x-5 gap-y-2">
-          <RouterLink to="/bibliotheque" class="hover:text-primary transition-colors">Bibliothèque</RouterLink>
+          <RouterLink to="/bibliotheque" class="hover:text-primary transition-colors"
+            >Bibliothèque</RouterLink
+          >
           <RouterLink
             v-if="isTehilimEtude"
             to="/tehilim"
