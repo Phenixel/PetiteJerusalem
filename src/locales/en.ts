@@ -750,7 +750,14 @@ const en: LocaleMessages = {
     slihotRange: "From {start} to {end}",
     slihotHoursInfo: "About these times",
     slihotWindowExplained:
-      "Selichot are said during the last watch of the night: from chatzot, midnight ({start}), until sunrise ({end}).",
+      "Selichot are said during the last watch of the night, the ashmoret haboker:",
+    slihotWindowNight:
+      "From chatzot, the middle of the night ({start}): the period when they may first be said.",
+    slihotWindowDawn:
+      "At the end of the night, before sunrise ({end}): the most fitting moment, right before the morning prayer.",
+    slihotWindowDay:
+      "During the day, if the night was not possible: they may still be said until shkia, sunset ({sunset}).",
+    slihotWindowPlace: "Times for {city}.",
   },
   accountCta: {
     title: "Create your free account",

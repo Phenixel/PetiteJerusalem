@@ -735,8 +735,11 @@ const he: LocaleMessages = {
     slihotHours: "זמן הסליחות",
     slihotRange: "מ־{start} עד {end}",
     slihotHoursInfo: "על אודות הזמן הזה",
-    slihotWindowExplained:
-      "הסליחות נאמרות באשמורת הבוקר: מחצות הלילה ({start}) ועד הנץ החמה ({end}).",
+    slihotWindowExplained: "הסליחות נאמרות באשמורת הבוקר, האחרונה שבאשמורות הלילה:",
+    slihotWindowNight: "מחצות הלילה ({start}): מכאן ואילך אפשר להתחיל לאומרן.",
+    slihotWindowDawn: "בסוף הלילה, לפני הנץ החמה ({end}): הזמן המובחר, סמוך לתפילת שחרית.",
+    slihotWindowDay: "ביום, למי שלא הספיק בלילה: אפשר עדיין לאומרן עד השקיעה ({sunset}).",
+    slihotWindowPlace: "הזמנים עבור {city}.",
   },
   accountCta: {
     title: "צרו חשבון חינם",

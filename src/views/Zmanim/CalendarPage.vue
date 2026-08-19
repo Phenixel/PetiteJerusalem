@@ -28,28 +28,49 @@ const { place } = useZmanimLocation();
 const placeLabel = useZmanimPlaceLabel(place);
 
 const now = ref(new Date());
-const today = computed(() => hebrewDayOf(place.value, now.value).abs());
+const todayHd = computed(() => hebrewDayOf(place.value, now.value));
+const today = computed(() => todayHd.value.abs());
+
+/**
+ * L'année courante et ses fêtes. Le calcul est le plus lourd de la page (tout
+ * le calendrier hébraïque de l'année, plus une entrée et une sortie par Yom
+ * Tov) : il ne se fait qu'une fois, et sert à la fois à choisir l'année qui
+ * s'ouvre et à la rendre.
+ */
+const currentYear = computed(() => todayHd.value.getFullYear());
+const currentEntries = computed(() => yearCalendar(place.value, currentYear.value, locale.value));
 
 /**
  * L'année ouverte : celle où l'on est, sauf dans les derniers jours d'Eloul,
  * où toutes ses fêtes sont passées. On ouvre alors sur la suivante : la page
  * sert à voir ce qui vient.
  */
-const openingYear = computed(() => {
-  const current = hebrewDayOf(place.value, now.value).getFullYear();
-  const entries = yearCalendar(place.value, current, locale.value);
-  return entries.some((entry) => entry.last.abs() >= today.value) ? current : current + 1;
-});
+const openingYear = computed(() =>
+  currentEntries.value.some((entry) => entry.last.abs() >= today.value)
+    ? currentYear.value
+    : currentYear.value + 1,
+);
 
 /** Décalage en années par rapport à celle qui s'ouvre. */
 const yearOffset = ref(0);
 const year = computed(() => openingYear.value + yearOffset.value);
 
-const entries = computed(() => yearCalendar(place.value, year.value, locale.value));
+const entries = computed(() =>
+  year.value === currentYear.value
+    ? currentEntries.value
+    : yearCalendar(place.value, year.value, locale.value),
+);
 
-/** La première fête qui n'est pas encore passée : celle qu'on cherche du regard. */
-const nextKey = computed(
-  () => entries.value.find((entry) => entry.last.abs() >= today.value)?.key ?? null,
+/**
+ * La première fête qui n'est pas encore passée : celle qu'on cherche du
+ * regard. Elle n'a de sens que sur l'année qui s'ouvre : dans une année à
+ * venir, tout est « pas encore passé », et la première entrée n'est pas pour
+ * autant la prochaine fête.
+ */
+const nextKey = computed(() =>
+  year.value === openingYear.value
+    ? (entries.value.find((entry) => entry.last.abs() >= today.value)?.key ?? null)
+    : null,
 );
 const isPast = (entry: CalendarEntry) => entry.last.abs() < today.value;
 

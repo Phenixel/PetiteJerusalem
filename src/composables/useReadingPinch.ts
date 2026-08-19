@@ -28,8 +28,11 @@ export function useReadingPinch(): void {
   // Écart de départ du geste en cours ; 0 quand aucun pincement n'est actif.
   let baseline = 0;
 
-  function onStart(event: TouchEvent) {
-    if (event.touches.length === 2) baseline = distance(event.touches);
+  // Le repère se reprend à chaque changement de main : sans cela, lever un
+  // doigt sur trois laisserait le repère d'une géométrie qui n'existe plus, et
+  // le premier mouvement à deux doigts sauterait aussitôt d'un cran.
+  function reframe(event: TouchEvent) {
+    baseline = event.touches.length === 2 ? distance(event.touches) : 0;
   }
 
   function onMove(event: TouchEvent) {
@@ -45,21 +48,17 @@ export function useReadingPinch(): void {
     baseline = current;
   }
 
-  function onEnd(event: TouchEvent) {
-    if (event.touches.length < 2) baseline = 0;
-  }
-
   onMounted(() => {
-    document.addEventListener("touchstart", onStart, { passive: true });
+    document.addEventListener("touchstart", reframe, { passive: true });
     document.addEventListener("touchmove", onMove, { passive: false });
-    document.addEventListener("touchend", onEnd, { passive: true });
-    document.addEventListener("touchcancel", onEnd, { passive: true });
+    document.addEventListener("touchend", reframe, { passive: true });
+    document.addEventListener("touchcancel", reframe, { passive: true });
   });
 
   onBeforeUnmount(() => {
-    document.removeEventListener("touchstart", onStart);
+    document.removeEventListener("touchstart", reframe);
     document.removeEventListener("touchmove", onMove);
-    document.removeEventListener("touchend", onEnd);
-    document.removeEventListener("touchcancel", onEnd);
+    document.removeEventListener("touchend", reframe);
+    document.removeEventListener("touchcancel", reframe);
   });
 }

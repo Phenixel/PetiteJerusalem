@@ -3,6 +3,7 @@ import { HDate } from "@hebcal/core";
 import {
   DEFAULT_PLACE,
   dayHighlights,
+  festivalsOn,
   restPeriodAt,
   restPeriodsNear,
   saysBirkatHalevana,
@@ -20,6 +21,16 @@ const israel: ZmanimPlace = {
   longitude: 35.21633,
   tzid: "Asia/Jerusalem",
   city: "Jérusalem",
+};
+
+// Tromsø : au-delà du cercle polaire, ni chkia ni sortie des étoiles une
+// partie de l'année. Les fêtes y tombent tout de même.
+const tromso: ZmanimPlace = {
+  source: "city",
+  latitude: 69.6496,
+  longitude: 18.9553,
+  tzid: "Europe/Oslo",
+  city: "Tromsø",
 };
 
 const hd = (y: number, m: number, d: number) => new HDate(new Date(y, m - 1, d, 12));
@@ -51,6 +62,24 @@ describe("dayHighlights", () => {
     const day = hd(2026, 4, 3);
     expect(dayHighlights(DEFAULT_PLACE, day, "en")).toEqual([]);
     expect(dayHighlights(israel, day, "en").join(" ")).toContain("CH’’M");
+  });
+});
+
+describe("festivalsOn", () => {
+  it("nomme le Yom Tov sans son numéro de jour", () => {
+    // 3 avril 2026 = 16 Nissan : Pessah II en diaspora. Un seul nom, celui de
+    // la fête, sans le « II ».
+    const names = festivalsOn(DEFAULT_PLACE, hd(2026, 4, 3), "fr");
+    expect(names).toHaveLength(1);
+    expect(names[0]).toContain("Pessa");
+    expect(names[0]).not.toContain("II");
+  });
+
+  it("ne retient que les Yom Tov", () => {
+    // 30 Av, Roch Hodech Eloul : pas un jour de fête chômé.
+    expect(festivalsOn(DEFAULT_PLACE, hd(2026, 8, 13), "fr")).toEqual([]);
+    // 'Hol haMoed non plus.
+    expect(festivalsOn(israel, hd(2026, 4, 3), "fr")).toEqual([]);
   });
 });
 
@@ -158,6 +187,16 @@ describe("yearCalendar", () => {
   it("ne porte ni Roch Hodech ni Chabbat ordinaire", () => {
     expect(named("Roch H\u2019odech")).toEqual([]);
     for (const entry of entries) expect(entry.name).not.toBe("");
+  });
+
+  it("garde les fêtes des lieux où les heures ne se calculent pas", () => {
+    // Sous le soleil de minuit, Chavouot n'a ni allumage ni sortie : la fête
+    // doit rester au calendrier, sans horaires, plutôt que d'en disparaître.
+    const polar = yearCalendar(tromso, 5787, "fr");
+    const chavouot = polar.filter((e) => e.name.includes("Chavou"));
+    expect(chavouot).toHaveLength(1);
+    expect(chavouot[0].period).toBeNull();
+    expect(polar.filter((e) => e.name.includes("Roch Hachanah"))).not.toEqual([]);
   });
 });
 

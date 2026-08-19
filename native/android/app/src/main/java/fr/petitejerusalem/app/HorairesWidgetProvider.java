@@ -132,8 +132,17 @@ public class HorairesWidgetProvider extends PjWidgetProvider {
         views.setTextViewText(viewId, text);
     }
 
+    /**
+     * Le repli : un message à la place de l'horaire. Les lignes du jour sont
+     * masquées, qu'elles n'aient jamais été remplies (payload absent : elles
+     * garderaient la visibilité du gabarit, deux lignes vides sous le message)
+     * ou qu'elles portent encore le jour d'avant (payload illisible en cours
+     * de lecture).
+     */
     private void showMessage(RemoteViews views, String message) {
         views.setTextViewText(R.id.pj_horaires_label, message);
         views.setViewVisibility(R.id.pj_horaires_time, View.GONE);
+        views.setViewVisibility(R.id.pj_horaires_parasha, View.GONE);
+        views.setViewVisibility(R.id.pj_horaires_tachanun, View.GONE);
     }
 }

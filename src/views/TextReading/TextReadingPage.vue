@@ -127,9 +127,14 @@ const verseBlocks = computed<TextBlock[]>(() => {
 // Roch Hodech, Al hanissim à Hanouka…) ne s'affichent que le jour où ils se
 // disent, dans une carte, pour les distinguer du fil du texte. Le jour
 // hébraïque suit le lieu des horaires (après la chkia, on est déjà demain).
+//
+// L'heure est donc une donnée du rendu, pas une valeur figée à l'ouverture :
+// on bénit après la chkia du vendredi une page ouverte avant elle, et Retsé
+// doit apparaître sans qu'on ait à la recharger (minuteur plus bas).
+const now = ref(new Date());
 const occasions = computed(() =>
   activeOccasions(
-    hebrewDateFor(zmanimPlace.value, new Date()),
+    hebrewDateFor(zmanimPlace.value, now.value, now.value),
     zmanimPlace.value.tzid === "Asia/Jerusalem",
   ),
 );
@@ -140,6 +145,24 @@ const visibleBlocks = computed(() =>
 /** Tefila (Sli'hot, Brahot) : un rendu à part, voir LiturgyText. */
 const isLiturgyText = computed(() => !!textEntry.value && isLiturgy(textEntry.value));
 const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
+
+// Le minuteur des occasions : seuls les textes de tefila regardent l'heure,
+// il ne tourne donc que pour eux, et s'arrête dès qu'on ouvre autre chose.
+let occasionsTicker: ReturnType<typeof setInterval> | null = null;
+function stopOccasionsTicker() {
+  if (occasionsTicker !== null) clearInterval(occasionsTicker);
+  occasionsTicker = null;
+}
+watch(
+  isLiturgyText,
+  (liturgy) => {
+    stopOccasionsTicker();
+    if (!liturgy) return;
+    now.value = new Date();
+    occasionsTicker = setInterval(() => (now.value = new Date()), 60_000);
+  },
+  { immediate: true },
+);
 
 /** Séparation entre deux blocs (chapitre, montée), pas de filet au premier. */
 function blockLabelClass(index: number): string {
@@ -440,7 +463,7 @@ function scrollToLine(line: number) {
 
 // Arrivée avec ?verset=N (reprise, marque-page, lien partagé) : on scrolle au
 // verset dès que le contenu correspondant est rendu.
-watch([content, sectionParam, () => route.query.verset], ([loaded, verset]) => {
+watch([content, sectionParam, () => route.query.verset], ([loaded, , verset]) => {
   if (!loaded || verset === undefined) return;
   const line = Number(verset);
   if (Number.isInteger(line) && line >= 0) scrollToLine(line);
@@ -854,6 +877,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("scroll", onScroll);
+  stopOccasionsTicker();
   if (scrollSaveTimer !== null) {
     clearScrollSaveTimer();
     // Une capture était en attente : on fige la position avant de partir.

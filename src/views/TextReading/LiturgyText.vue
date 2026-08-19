@@ -59,17 +59,20 @@ const inSeason = (block: TextBlock): boolean => !!block.fold && props.occasions.
 // Les encadrés (ajouts des dix jours de pénitence) s'ouvrent d'eux-mêmes le
 // jour où ils se disent ; le reste de l'année ils restent là, repliés. Le
 // lecteur peut toujours en décider autrement, bloc par bloc.
-const toggled = ref(new Set<number>());
+//
+// Ce qu'on retient est l'état voulu, pas « il a touché à celui-là » : la
+// saison peut changer sous la page ouverte (la chkia du 1er Tichri), et un
+// simple drapeau de bascule verrait alors son sens s'inverser, refermant
+// l'ajout le jour même où il se dit.
+const decided = ref(new Map<number, boolean>());
 function isOpen(block: TextBlock): boolean {
   if (!block.fold) return true;
-  const openByDefault = inSeason(block);
-  return toggled.value.has(block.offset) ? !openByDefault : openByDefault;
+  return decided.value.get(block.offset) ?? inSeason(block);
 }
 function toggleFold(block: TextBlock) {
-  const next = new Set(toggled.value);
-  if (next.has(block.offset)) next.delete(block.offset);
-  else next.add(block.offset);
-  toggled.value = next;
+  const next = new Map(decided.value);
+  next.set(block.offset, !isOpen(block));
+  decided.value = next;
 }
 
 /**

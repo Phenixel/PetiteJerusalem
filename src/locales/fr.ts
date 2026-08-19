@@ -762,7 +762,14 @@ const fr = {
     slihotRange: "De {start} à {end}",
     slihotHoursInfo: "À propos de cet horaire",
     slihotWindowExplained:
-      "Les Sli\u2019hot se disent dans la dernière veille de la nuit\u00a0: à partir de hatsot, le milieu de la nuit ({start}), et jusqu\u2019au lever du soleil ({end}).",
+      "Les Sli\u2019hot se disent dans la dernière veille de la nuit, l\u2019achmoret haboker\u00a0:",
+    slihotWindowNight:
+      "À partir de hatsot, le milieu de la nuit ({start})\u00a0: c\u2019est le début de la période propice pour les dire.",
+    slihotWindowDawn:
+      "À la fin de la nuit, avant le lever du soleil ({end})\u00a0: le moment le plus recommandé, juste avant la prière du matin.",
+    slihotWindowDay:
+      "En journée, si la nuit n\u2019a pas été possible\u00a0: on peut encore les rattraper jusqu\u2019à la chkia, le coucher du soleil ({sunset}).",
+    slihotWindowPlace: "Heures pour {city}.",
   },
   accountCta: {
     title: "Créez votre compte gratuit",

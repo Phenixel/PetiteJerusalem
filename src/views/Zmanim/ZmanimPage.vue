@@ -21,6 +21,7 @@ import { getParashaForShabbat } from "../../services/dailyCycles";
 import {
   computeZmanim,
   dayHighlights,
+  festivalsOn,
   formatHebrewDate,
   formatZmanTime,
   hebrewDateFor,
@@ -124,14 +125,23 @@ const civilDate = computed(() =>
 const hebrewDay = computed(() => hebrewDateFor(place.value, day.value, now.value));
 const hebrewDate = computed(() => formatHebrewDate(hebrewDay.value, locale.value));
 
-// Roch Hodech, fêtes et jeûnes du jour affiché, et, au passage, si l'on dit
-// le tahanoun (null le Chabbat : la question ne s'y pose pas).
 /**
- * Ce que le jour a de particulier, hors temps de repos : Roch Hodech, 'Hanouka,
- * un jeûne, 'Hol haMoed… Les Yom Tov n'y sont pas répétés : ils ont leur cadre,
- * avec leurs heures d'entrée et de sortie.
+ * Ce que le jour a de particulier : Roch Hodech, 'Hanouka, un jeûne,
+ * 'Hol haMoed… Les Yom Tov n'y sont d'ordinaire pas répétés, ils ont leur
+ * cadre, avec leurs heures d'entrée et de sortie ; ils reviennent ici quand
+ * aucun cadre affiché ne couvre le jour (un jour parcouru avec les flèches
+ * dont le repos est déjà sorti à cette heure-là, un lieu sans chkia
+ * calculable), plutôt que de laisser une fête sans nom.
  */
-const holidays = computed(() => dayHighlights(place.value, hebrewDay.value, locale.value));
+const holidays = computed(() => {
+  const abs = hebrewDay.value.abs();
+  const covered = restPeriods.value.some(
+    (period) => period.first.abs() <= abs && abs <= period.last.abs(),
+  );
+  const festivals = covered ? [] : festivalsOn(place.value, hebrewDay.value, locale.value);
+  return [...festivals, ...dayHighlights(place.value, hebrewDay.value, locale.value)];
+});
+/** Dit-on le tahanoun (null le Chabbat : la question ne s'y pose pas). */
 const tachanun = computed(() => tachanunStatus(place.value, hebrewDay.value));
 
 const placeLabel = useZmanimPlaceLabel(place);

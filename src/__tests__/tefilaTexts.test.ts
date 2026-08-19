@@ -54,6 +54,26 @@ describe("activeOccasions", () => {
     expect(occ.has("moed")).toBe(true);
     expect(occ.has("moadim")).toBe(true);
   });
+
+  it("Roch Hachana : son ajout le jour même, pas la veille", () => {
+    // 12 septembre 2026 = 1 Tichri 5787 ; le 11 est encore le 29 Eloul.
+    expect(activeOccasions(hd(2026, 9, 12), false).has("rosh-hashana")).toBe(true);
+    expect(activeOccasions(hd(2026, 9, 11), false).has("rosh-hashana")).toBe(false);
+  });
+
+  it("Les fêtes mineures homonymes n'ouvrent aucun ajout", () => {
+    // 14 août 2026 = 1 Eloul : « Rosh Hashana LaBehemot », le nouvel an du
+    // bétail, un mois avant Roch Hachana. Roch Hodech Eloul y est bien, lui.
+    const behemot = activeOccasions(hd(2026, 8, 14), false);
+    expect(behemot.has("rosh-hashana")).toBe(false);
+    expect(behemot.has("rosh-chodesh")).toBe(true);
+
+    // 1er mai 2026 = 14 Iyar, « Pessah Sheni » : un jour ordinaire, sans
+    // Yaalé véyavo.
+    const sheni = activeOccasions(hd(2026, 5, 1), false);
+    expect(sheni.has("moadim")).toBe(false);
+    expect(sheni.has("moed")).toBe(false);
+  });
 });
 
 describe("fichiers de tefila", () => {

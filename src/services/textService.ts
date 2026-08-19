@@ -19,7 +19,8 @@ export interface DafBlock {
 /**
  * Didascalie : la consigne de lecture qui accompagne un texte de tefila
  * (« le chalia'h tsibour dit », « à Roch Hodech on ajoute »…). Portée par le
- * fichier plutôt que par les locales : c'est du contenu, pas de l'interface, * mais donnée dans les trois langues, pour être lue dans celle du lecteur.
+ * fichier plutôt que par les locales : c'est du contenu, pas de l'interface,
+ * mais donnée dans les trois langues, pour être lue dans celle du lecteur.
  */
 export interface Rubric {
   fr: string;
@@ -466,8 +467,11 @@ function loadTefila(
 ): TextContent {
   const blocks: TextBlock[] = [];
   let offset = 0;
-  for (const raw of data.blocks ?? []) {
-    const paragraphs = (raw.lines ?? [])
+  // Le type d'un fichier n'est qu'une promesse de compilation : un fichier
+  // abîmé, ou une copie hors ligne d'une version antérieure, doit donner un
+  // bloc vide plutôt que faire échouer le chargement du texte entier.
+  for (const raw of Array.isArray(data.blocks) ? data.blocks : []) {
+    const paragraphs = (Array.isArray(raw?.lines) ? raw.lines : [])
       .map(parseTefilaLine)
       .filter((p): p is TextParagraph => p !== null);
     if (paragraphs.length === 0) continue;

@@ -17,6 +17,8 @@ const OUT = resolve(ROOT, 'public/texts');
 const GCS = 'https://storage.googleapis.com/sefaria-export/json';
 
 // `--only=tanakh` (ou tehilim/mishna/talmud) pour ne régénérer qu'un corpus.
+// `tefila` n'est jamais du lot par défaut : ses fichiers sont mis en forme à
+// la main après téléchargement, il faut le demander nommément (voir plus bas).
 const onlyArg = process.argv.find(a => a.startsWith('--only='));
 const ONLY = onlyArg ? onlyArg.split('=')[1] : null;
 const shouldRun = corpus => !ONLY || ONLY === corpus;
@@ -511,8 +513,18 @@ if (shouldRun('tanakh')) {
 // une séparation dans le fil du texte ; `when` (Chabbat, Roch Hodech,
 // Hanouka…) réserve le bloc au jour où son ajout se dit, le lecteur le rend
 // alors dans une carte (voir dailyCycles.activeOccasions et TextBlock.when).
+//
+// CE CORPUS NE SE RÉGÉNÈRE PAS AVEC LES AUTRES. Ce que le script écrit ici
+// n'est que le fil brut de Sefaria ; les fichiers livrés portent en plus une
+// mise en forme liturgique écrite à la main, que ce script ne sait pas
+// produire et qu'il écraserait : didascalies en trois langues (`rubric`),
+// reprises de l'assemblée (`b`), répétitions (`repeat`), strophes (`lead`,
+// `tight`), encadrés des dix jours (`fold`), variantes (`variants`), et deux
+// piyoutim absents de la source. Il faut donc le demander explicitement,
+// `node scripts/download-texts.mjs --only=tefila`, et reprendre la mise en
+// forme après coup (src/__tests__/tefilaTexts.test.ts la vérifie).
 
-if (shouldRun('tefila')) {
+if (ONLY === 'tefila') {
   console.log('\n=== Tefila (Sli\'hot + Brahot) ===');
 
   const tefilaEntries = textStudies.filter(t => t.type === 'Slihot' || t.type === 'Brahot');

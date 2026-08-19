@@ -4,6 +4,7 @@ import { localDayKey } from "./dateService";
 import { getTehilimOfDay, getWeeklyParasha } from "./dailyCycles";
 import {
   computeZmanim,
+  dayInPlace,
   formatHebrewDate,
   formatPlaceLabel,
   formatZmanTime,
@@ -102,7 +103,14 @@ function widgetDay(
 ): ZmanimWidgetDay {
   const previous = new Date(civil);
   previous.setDate(previous.getDate() - 1);
-  const midnight = new Date(civil);
+  // Le jour du LIEU, pas celui de l'appareil : à 1 h du matin à Paris, un lieu
+  // américain est encore la veille, et c'est sa journée à lui que le widget
+  // annonce. `getSunset` fait la conversion lui-même, à partir de l'instant ;
+  // le repli polaire et la paracha, eux, raisonnent en date et la demandent
+  // ici, sans quoi la date hébraïque et la paracha pourraient se contredire
+  // d'une semaine le samedi soir.
+  const local = dayInPlace(place, civil);
+  const midnight = new Date(local);
   midnight.setHours(0, 0, 0, 0);
   const from = getSunset(place, previous) ?? midnight;
   const until = getSunset(place, civil) ?? new Date(midnight.getTime() + 86_400_000);
@@ -111,7 +119,7 @@ function widgetDay(
   // jour civil : pas de bascule à appliquer ici, elle est déjà dans les bornes.
   const hd = hebrewDayOf(place, civil);
   const status = tachanunStatus(place, hd);
-  const week = getWeeklyParasha(civil);
+  const week = getWeeklyParasha(local);
   const parasha = week
     ? `${t("zmanim.shabbat.parasha")} ${week.entries.map((e) => e.name).join(" · ")}`
     : null;

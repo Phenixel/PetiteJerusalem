@@ -211,19 +211,26 @@ function toCycle(day: number, ranges: [number, number][]): TehilimCycle {
 export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   const events = getHolidaysOnDate(hd, il) ?? [];
   const has = (mask: number) => events.some((ev) => (ev.getFlags() & mask) !== 0);
-  const desc = (prefix: string) => events.some((ev) => ev.getDesc().startsWith(prefix));
+  // La fête elle-même, reconnue à son `basename` : « Pessah III (CH''M) » et
+  // « Roch Hachana 5787 » se ramènent à « Pesach » et « Rosh Hashana ». Un
+  // préfixe ne suffirait pas : « Rosh Hashana LaBehemot » (1 Eloul) et
+  // « Pesach Sheni » (14 Iyar) sont des fêtes mineures, sans aucun ajout, et
+  // commencent pourtant par le nom de la grande. Les veilles sont écartées :
+  // le basename d'« Erev Pessah » est « Pesach », mais on n'y dit rien.
+  const festival = (name: string) =>
+    events.some((ev) => (ev.getFlags() & flags.EREV) === 0 && ev.basename() === name);
   const occ = new Set<string>();
   if (hd.getDay() === 6) occ.add("shabbat");
   if (has(flags.ROSH_CHODESH)) occ.add("rosh-chodesh");
-  if (desc("Rosh Hashana")) occ.add("rosh-hashana");
+  if (festival("Rosh Hashana")) occ.add("rosh-hashana");
   if (has(flags.CHAG)) occ.add("yom-tov");
-  if (desc("Sukkot")) occ.add("sukkot");
+  if (festival("Sukkot")) occ.add("sukkot");
   // Hanouka : hebcal pose « 1 Candle » sur la VEILLE (l'allumage du soir) ;
   // le premier jour porte « 2 Candles », le dernier « 8th Day ».
   const hanukkah = events.some((ev) => /^Chanukah: (?:[2-8] Candles|8th Day)/.test(ev.getDesc()));
   const purim = events.some((ev) => ev.getDesc() === "Purim");
   if (hanukkah || purim) occ.add("nissim");
-  if (["Pesach", "Shavuot", "Sukkot", "Shmini Atzeret", "Simchat Torah"].some(desc))
+  if (["Pesach", "Shavuot", "Sukkot", "Shmini Atzeret", "Simchat Torah"].some(festival))
     occ.add("moadim");
   if (occ.has("rosh-chodesh") || has(flags.CHAG) || has(flags.CHOL_HAMOED)) occ.add("moed");
   if (occ.has("shabbat") || occ.has("moed")) occ.add("shabbat-or-moed");

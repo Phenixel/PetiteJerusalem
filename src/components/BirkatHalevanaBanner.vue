@@ -5,7 +5,7 @@ import { useZmanimLocation } from "../composables/useZmanimLocation";
 import {
   birkatHalevanaLastDay,
   formatHebrewDate,
-  hebrewDayOf,
+  hebrewDateFor,
   saysBirkatHalevana,
 } from "../services/zmanimService";
 import { analyticsService } from "../services/analyticsService";
@@ -21,7 +21,9 @@ import AppIcon from "./icons/AppIcon.vue";
 const { t, locale } = useI18n();
 const { place } = useZmanimLocation();
 
-// Le jour hébraïque change à la chkia : l'heure compte, on la suit.
+// Le jour hébraïque change à la chkia, et la bénédiction se dit la nuit :
+// c'est donc toujours du bon côté de la bascule qu'il faut la poser. D'où
+// hebrewDateFor, qui tient compte de l'heure, et le minuteur qui la suit.
 const now = ref(new Date());
 let ticker: ReturnType<typeof setInterval> | null = null;
 onMounted(() => {
@@ -31,7 +33,7 @@ onUnmounted(() => {
   if (ticker) clearInterval(ticker);
 });
 
-const hebrewDay = computed(() => hebrewDayOf(place.value, now.value));
+const hebrewDay = computed(() => hebrewDateFor(place.value, now.value, now.value));
 const visible = computed(() => saysBirkatHalevana(hebrewDay.value));
 
 /** La date limite : la moitié de la lunaison. */

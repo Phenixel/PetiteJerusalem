@@ -19,7 +19,8 @@ import "@hebcal/locales/fr";
  * Aucune API, aucun réseau : `@hebcal/core`, déjà présent pour la paracha de
  * la semaine (voir dailyCycles), embarque le moteur solaire NOAA. Les heures
  * se calculent donc sans réseau, pour n'importe quelle date et n'importe quel
- * point du globe : une fois la page chargée, elle n'a plus besoin de rien, * et dans l'app native, dont les fichiers sont embarqués, elle s'ouvre aussi
+ * point du globe : une fois la page chargée, elle n'a plus besoin de rien,
+ * et dans l'app native, dont les fichiers sont embarqués, elle s'ouvre aussi
  * connexion coupée.
  *
  * Position et fuseau sont deux champs distincts : la position vient de
@@ -213,7 +214,7 @@ function geoLocationOf(place: ZmanimPlace): GeoLocation {
  * telle qu'elle est vécue **au lieu**, à midi pour ne jamais frôler un
  * changement de jour.
  */
-function dayInPlace(place: ZmanimPlace, date: Date): Date {
+export function dayInPlace(place: ZmanimPlace, date: Date): Date {
   const [year, month, day] = new Intl.DateTimeFormat("en-CA", {
     timeZone: place.tzid,
     year: "numeric",
@@ -406,6 +407,28 @@ export function dayHighlights(place: ZmanimPlace, hd: HDate, locale: string): st
     .map((ev) => ev.render(hebcalLocale(locale)));
 }
 
+/**
+ * Les Yom Tov d'un jour hébraïque, sans leur numéro de jour : « Pessah », pas
+ * « Pessah II ».
+ *
+ * Le cadre du repos les porte d'ordinaire (voir RestPeriod), et c'est pour
+ * cela que `dayHighlights` les écarte. Mais ce cadre n'est pas toujours là :
+ * un jour parcouru avec les flèches dont le bloc est déjà sorti à l'heure
+ * qu'il est, ou un lieu où l'entrée et la sortie ne se calculent pas. Le jour
+ * ne doit pas rester anonyme pour autant : la page redemande alors les noms
+ * ici.
+ */
+export function festivalsOn(place: ZmanimPlace, hd: HDate, locale: string): string[] {
+  const lg = hebcalLocale(locale);
+  const names: string[] = [];
+  for (const ev of getHolidaysOnDate(hd, isIsraelPlace(place)) ?? []) {
+    if ((ev.getFlags() & flags.CHAG) === 0) continue;
+    const name = festivalName(ev, lg);
+    if (!names.includes(name)) names.push(name);
+  }
+  return names;
+}
+
 /** Le jour civil d'une date hébraïque, à midi, comme le veut `dayInPlace`. */
 function civilNoon(hd: HDate): Date {
   const greg = hd.greg();
@@ -456,14 +479,11 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
   const end = new Zmanim(gloc, civilNoon(last), false).tzeit();
   if (!isUsable(start) || !isUsable(end)) return null;
 
-  const lg = hebcalLocale(locale);
   const festivals: string[] = [];
   let shabbat: Date | null = null;
   for (let day = first; day.abs() <= last.abs(); day = day.next()) {
     if (day.getDay() === 6) shabbat = civilNoon(day);
-    for (const ev of getHolidaysOnDate(day, il) ?? []) {
-      if ((ev.getFlags() & flags.CHAG) === 0) continue;
-      const name = festivalName(ev, lg);
+    for (const name of festivalsOn(place, day, locale)) {
       if (!festivals.includes(name)) festivals.push(name);
     }
   }
@@ -556,9 +576,13 @@ export function yearCalendar(
     if ((eventFlags & CALENDAR_FLAGS) === 0 || (eventFlags & flags.EREV) !== 0) continue;
     const hd = ev.getDate();
 
-    if ((eventFlags & flags.CHAG) !== 0) {
-      const period = restPeriodAt(place, hd, locale);
-      if (!period || seenPeriods.has(period.first.abs())) continue;
+    // Une fête dont le bloc de repos n'a pas d'heures (pas de chkia ni de
+    // sortie des étoiles, aux latitudes extrêmes) reste une fête : elle rejoint
+    // alors les entrées sans horaires plus bas, plutôt que de disparaître du
+    // calendrier de qui vit à Tromsø.
+    const period = (eventFlags & flags.CHAG) !== 0 ? restPeriodAt(place, hd, locale) : null;
+    if (period) {
+      if (seenPeriods.has(period.first.abs())) continue;
       seenPeriods.add(period.first.abs());
       entries.push({
         key: `rest-${period.first.abs()}`,
