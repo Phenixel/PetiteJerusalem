@@ -1,22 +1,25 @@
 <script setup lang="ts">
-// Entrée et sortie du Chabbat, avec la paracha qu'on y lit.
+// Entrée et sortie d'un temps de repos : le Chabbat, un Yom Tov, ou les deux
+// quand ils se suivent — Roch Hachana un dimanche prolonge le Chabbat de la
+// veille, et l'ensemble n'a qu'une entrée et qu'une sortie. Un seul cadre,
+// donc, titré « Chabbat Roch Hachana » plutôt que deux qui se contrediraient.
 //
-// Composant à part parce que sa place dans la page change : le vendredi il
-// passe devant les horaires du jour, c'est ce qu'on vient chercher. Le sortir
-// ici évite d'écrire deux fois le même bloc pour deux positions.
+// Composant à part parce que sa place dans la page change : à l'approche du
+// repos il passe devant les horaires du jour, c'est ce qu'on vient chercher.
 //
-// Encadré, contrairement aux groupes d'horaires qui s'enchaînent à plat : le
-// Chabbat n'est pas un moment de la journée affichée mais un rendez-vous de la
+// Encadré, contrairement aux groupes d'horaires qui s'enchaînent à plat : ce
+// n'est pas un moment de la journée affichée mais un rendez-vous de la
 // semaine, et le cadre marque cette différence de nature.
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { hubPath } from "../../content/etudeTexts";
 import type { WeeklyParasha } from "../../services/dailyCycles";
-import { formatZmanDay, formatZmanTime, type ShabbatTimes } from "../../services/zmanimService";
+import { formatZmanDay, formatZmanTime, type RestPeriod } from "../../services/zmanimService";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
-  times: ShabbatTimes;
-  /** La paracha de ce Chabbat — absente les semaines de fête. */
+  period: RestPeriod;
+  /** La paracha du Chabbat couvert — absente les semaines de fête. */
   parasha: WeeklyParasha | null;
   /** Fuseau du lieu : les heures s'affichent dedans, pas dans celui du navigateur. */
   tzid: string;
@@ -26,6 +29,16 @@ const { t, locale } = useI18n();
 
 const clock = (date: Date) => formatZmanTime(date, props.tzid, locale.value);
 const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
+
+/** « Chabbat », « Roch Hachana », « Chabbat Roch Hachana » — un seul titre. */
+const title = computed(() => {
+  const festivals = props.period.festivals.join(" · ");
+  if (!props.period.shabbat) return festivals;
+  return festivals ? `${t("zmanim.shabbat.title")} ${festivals}` : t("zmanim.shabbat.title");
+});
+
+/** Un bloc de plusieurs jours (fête, ou fête accolée au Chabbat). */
+const isFestival = computed(() => props.period.festivals.length > 0);
 </script>
 
 <template>
@@ -35,7 +48,7 @@ const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
          icône enfermée dans son propre conteneur imposerait sa ligne de base au
          titre, et « Parachat » ne s'alignerait plus sur « Chabbat ». -->
     <h2 class="mb-3 font-bold text-text-primary">
-      <AppIcon name="candle" :size="17" class="me-2 text-primary" />{{ t("zmanim.shabbat.title")
+      <AppIcon name="candle" :size="17" class="me-2 text-primary" />{{ title
       }}<span v-if="parasha" class="text-sm font-normal"
         >{{ " " }}<span class="text-text-secondary">{{ t("zmanim.shabbat.parasha") }}</span
         ><template v-for="(entry, index) in parasha.entries" :key="entry.id"
@@ -53,25 +66,27 @@ const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
           <span class="block font-medium leading-snug text-text-primary">
             {{ t("zmanim.shabbat.candleLighting") }}
           </span>
-          <span class="block text-xs text-text-secondary">{{ dayOf(times.candleLighting) }}</span>
+          <span class="block text-xs text-text-secondary">{{ dayOf(period.start) }}</span>
         </span>
         <span class="shrink-0 font-semibold tabular-nums text-text-primary">
-          {{ clock(times.candleLighting) }}
+          {{ clock(period.start) }}
         </span>
       </li>
       <li class="flex items-center justify-between gap-4 py-2">
         <span class="min-w-0">
           <span class="block font-medium leading-snug text-text-primary">
-            {{ t("zmanim.shabbat.havdalah") }}
+            {{ isFestival ? t("zmanim.rest.end") : t("zmanim.shabbat.havdalah") }}
           </span>
-          <span class="block text-xs text-text-secondary">{{ dayOf(times.havdalah) }}</span>
+          <span class="block text-xs text-text-secondary">{{ dayOf(period.end) }}</span>
         </span>
         <span class="shrink-0 font-semibold tabular-nums text-text-primary">
-          {{ clock(times.havdalah) }}
+          {{ clock(period.end) }}
         </span>
       </li>
     </ul>
 
-    <p class="mt-2.5 text-xs text-text-secondary">{{ t("zmanim.shabbat.note") }}</p>
+    <p class="mt-2.5 text-xs text-text-secondary">
+      {{ isFestival ? t("zmanim.rest.note") : t("zmanim.shabbat.note") }}
+    </p>
   </section>
 </template>

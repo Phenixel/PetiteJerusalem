@@ -49,13 +49,16 @@ function foldTitle(block: TextBlock): string {
   return block.label ? `${occasion} · ${block.label}` : occasion;
 }
 
+/** Un encadré dont c'est la saison : c'est aujourd'hui qu'il se dit. */
+const inSeason = (block: TextBlock): boolean => !!block.fold && props.occasions.has(block.fold);
+
 // Les encadrés (ajouts des dix jours de pénitence) s'ouvrent d'eux-mêmes le
 // jour où ils se disent ; le reste de l'année ils restent là, repliés. Le
 // lecteur peut toujours en décider autrement, bloc par bloc.
 const toggled = ref(new Set<number>());
 function isOpen(block: TextBlock): boolean {
   if (!block.fold) return true;
-  const openByDefault = props.occasions.has(block.fold);
+  const openByDefault = inSeason(block);
   return toggled.value.has(block.offset) ? !openByDefault : openByDefault;
 }
 function toggleFold(block: TextBlock) {
@@ -96,9 +99,19 @@ function tightWith(block: TextBlock, index: number): boolean {
   return block.lines[index].length < SHORT_LINE && block.lines[index - 1].length < SHORT_LINE;
 }
 
-/** Classe de l'encadré d'un bloc : ajout du calendrier, encadré repliable, fil. */
+/**
+ * Classe de l'encadré d'un bloc. La couleur du thème dit « c'est maintenant » :
+ * un ajout du calendrier ne s'affiche que le jour où il se dit, et un encadré
+ * repliable ne se colore que pendant sa saison. Hors saison il reste là, en
+ * gris, dépliable — présent sans réclamer la lecture.
+ */
 function sectionClass(block: TextBlock): string {
-  if (block.fold) return "my-7 rounded-xl border border-primary/25 bg-primary/5 overflow-hidden";
+  if (block.fold) {
+    const base = "my-7 rounded-xl border overflow-hidden";
+    return inSeason(block)
+      ? `${base} border-primary/25 bg-primary/5`
+      : `${base} border-line bg-black/[0.02] dark:bg-white/[0.03]`;
+  }
   // Ajout du calendrier : à la couleur du thème, adossé à un filet.
   if (block.when) return "my-7 border-s-2 border-primary/40 ps-4 text-primary";
   return "";
@@ -141,11 +154,17 @@ const sections = computed(() =>
         :aria-expanded="isOpen(block)"
         @click="toggleFold(block)"
       >
-        <span class="text-sm font-semibold text-primary">{{ foldTitle(block) }}</span>
+        <span
+          class="text-sm font-semibold"
+          :class="inSeason(block) ? 'text-primary' : 'text-text-secondary'"
+        >
+          {{ foldTitle(block) }}
+        </span>
         <AppIcon
           :name="isOpen(block) ? 'chevron-up' : 'chevron-down'"
           :size="16"
-          class="text-primary flex-shrink-0"
+          class="flex-shrink-0"
+          :class="inSeason(block) ? 'text-primary' : 'text-text-secondary'"
         />
       </button>
       <p v-else-if="blockTitle(block)" :class="titleClass(block, index)">

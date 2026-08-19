@@ -4,8 +4,12 @@ import { localDayKey } from "./dateService";
 import { getTehilimOfDay, getWeeklyParasha } from "./dailyCycles";
 import {
   computeZmanim,
+  formatHebrewDate,
   formatPlaceLabel,
   formatZmanTime,
+  getSunset,
+  hebrewDayOf,
+  tachanunStatus,
   type ZmanimPlace,
 } from "./zmanimService";
 import type { UserPreferences } from "./userPreferencesService";
@@ -37,17 +41,43 @@ export interface ZmanimWidgetTime {
   epoch: number;
 }
 
+/**
+ * Le jour hébraïque, avec ce qui le caractérise. Une entrée par jour embarqué :
+ * le widget choisit celle qui couvre l'instant courant, et reste juste même si
+ * l'app n'est pas rouverte de la semaine.
+ */
+export interface ZmanimWidgetDay {
+  /** Epoch ms du début du jour hébraïque (la chkia de la veille). */
+  from: number;
+  /** Epoch ms de sa fin (sa propre chkia). */
+  until: number;
+  /** "21 Eloul 5786" — déjà localisé. */
+  hebrewDate: string;
+  /** "Parachat Ki Tavo", ou null si la paracha n'est pas connue. */
+  parasha: string | null;
+  /** "Pas de Ta'hanoun." — null le Chabbat, où la question ne se pose pas. */
+  tachanun: string | null;
+  /** Vrai quand il n'y a PAS de tahanoun : le natif le met en gras. */
+  tachanunStrong: boolean;
+}
+
 export interface ZmanimWidgetPayload {
-  v: 1;
+  v: 2;
+  /**
+   * Titre et gabarit « puis… » : plus affichés depuis la v2, gardés pour les
+   * binaires installés avant elle — leur décodage échoue si un champ manque,
+   * et le widget retomberait sur « rouvrez l'app » jusqu'à la mise à jour.
+   */
   title: string;
+  then: string;
   /** Nom affichable du lieu ("Paris", "Près de Lyon"…). */
   place: string;
-  /** Ligne "puis…" : gabarit localisé, {label}/{time} remplacés par le natif. */
-  then: string;
   /** Message quand tous les horaires embarqués sont passés (app pas rouverte). */
   stale: string;
   /** Horaires triés, d'aujourd'hui à J+6 : le widget choisit le prochain. */
   times: ZmanimWidgetTime[];
+  /** Jours hébraïques couverts, dans l'ordre. */
+  days: ZmanimWidgetDay[];
 }
 
 /**
@@ -56,6 +86,45 @@ export interface ZmanimWidgetPayload {
  */
 export const ZMANIM_WIDGET_DAYS = 7;
 
+/**
+ * Le jour hébraïque d'un jour civil : sa date, la paracha de la semaine et le
+ * tahanoun, bornés par les chkiot qui l'ouvrent et le ferment.
+ *
+ * Le jour hébraïque commence au coucher du soleil : ses bornes sont la chkia
+ * de la veille et la sienne. Un jour polaire sans chkia ne borne rien — la
+ * journée civile sert alors de repli, plutôt que de perdre l'entrée.
+ */
+function widgetDay(
+  place: ZmanimPlace,
+  civil: Date,
+  t: Translate,
+  locale: string,
+): ZmanimWidgetDay {
+  const previous = new Date(civil);
+  previous.setDate(previous.getDate() - 1);
+  const midnight = new Date(civil);
+  midnight.setHours(0, 0, 0, 0);
+  const from = getSunset(place, previous) ?? midnight;
+  const until = getSunset(place, civil) ?? new Date(midnight.getTime() + 86_400_000);
+
+  // La fenêtre [chkia de la veille, chkia du jour) EST le jour hébraïque de ce
+  // jour civil : pas de bascule à appliquer ici, elle est déjà dans les bornes.
+  const hd = hebrewDayOf(place, civil);
+  const status = tachanunStatus(place, hd);
+  const week = getWeeklyParasha(civil);
+  const parasha = week
+    ? `${t("zmanim.shabbat.parasha")} ${week.entries.map((e) => e.name).join(" · ")}`
+    : null;
+  return {
+    from: from.getTime(),
+    until: until.getTime(),
+    hebrewDate: formatHebrewDate(hd, locale),
+    parasha,
+    tachanun: status ? t(`zmanim.tachanun.${status}`) : null,
+    tachanunStrong: status === "none",
+  };
+}
+
 export function buildZmanimWidgetPayload(
   place: ZmanimPlace,
   t: Translate,
@@ -63,6 +132,7 @@ export function buildZmanimWidgetPayload(
   now: Date = new Date(),
 ): ZmanimWidgetPayload {
   const times: ZmanimWidgetTime[] = [];
+  const days: ZmanimWidgetDay[] = [];
   for (let i = 0; i < ZMANIM_WIDGET_DAYS; i++) {
     const day = new Date(now);
     day.setDate(day.getDate() + i);
@@ -74,10 +144,11 @@ export function buildZmanimWidgetPayload(
         epoch: zman.date.getTime(),
       });
     }
+    days.push(widgetDay(place, day, t, locale));
   }
   times.sort((a, b) => a.epoch - b.epoch);
   return {
-    v: 1,
+    v: 2,
     title: t("zmanim.widget.title"),
     place: formatPlaceLabel(place, t, locale),
     // Les {label}/{time} doivent survivre à la traduction : on les passe en
@@ -85,6 +156,7 @@ export function buildZmanimWidgetPayload(
     then: t("zmanim.widget.then", { label: "{label}", time: "{time}" }),
     stale: t("zmanim.widget.stale"),
     times,
+    days,
   };
 }
 

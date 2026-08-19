@@ -251,6 +251,18 @@ const en: LocaleMessages = {
         "One text of your daily reading is not downloaded: it will not be readable offline. | {count} texts of your daily reading are not downloaded: they will not be readable offline.",
     },
   },
+  calendar: {
+    title: "Holiday calendar",
+    link: "Holiday calendar",
+    description:
+      "The festivals and fasts of the year, with candle lighting and end times for your location.",
+    year: "Year {year}",
+    previousYear: "Previous year",
+    nextYear: "Next year",
+    backToCurrent: "Back to the current year",
+    start: "Lighting",
+    end: "Ends",
+  },
   zmanim: {
     title: "Today's times",
     navTitle: "Zmanim",
@@ -298,6 +310,10 @@ const en: LocaleMessages = {
       full: "Tachanun is recited.",
       shacharitOnly: "Tachanun at Shacharit only, not at Mincha.",
       none: "No Tachanun.",
+    },
+    rest: {
+      end: "Ends",
+      note: "Candle lighting 18 minutes before sunset, ends at nightfall. When a festival follows Shabbat, light after nightfall from an existing flame.",
     },
     shabbat: {
       title: "Shabbat",
@@ -582,6 +598,9 @@ const en: LocaleMessages = {
     profileDescription:
       "Manage your information, view your participated and created study sessions.",
     zmanimTitle: "Zmanim: Shema, sunset and Shabbat times – Petite Jérusalem",
+    calendarTitle: "Jewish holiday calendar: dates and times – Petite Jérusalem",
+    calendarDescription:
+      "The festivals and fasts of the Hebrew year, with their dates and, for each festival, candle lighting and end times computed for your location.",
     zmanimDescription:
       "The halachic times of the day computed for your location: alot hashachar, sunrise, latest Shema, chatzot, mincha, sunset, nightfall, candle lighting and Shabbat end.",
     dailyReadingTitle: "My daily reading – Petite Jérusalem",

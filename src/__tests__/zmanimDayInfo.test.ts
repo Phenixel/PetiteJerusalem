@@ -1,6 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { HDate } from "@hebcal/core";
-import { DEFAULT_PLACE, holidayNames, tachanunStatus, type ZmanimPlace } from "../services/zmanimService";
+import {
+  DEFAULT_PLACE,
+  dayHighlights,
+  restPeriodAt,
+  restPeriodsNear,
+  tachanunStatus,
+  yearCalendar,
+  type ZmanimPlace,
+} from "../services/zmanimService";
 
 // Le calendrier du jour sur la page des horaires : Roch Hodech et fêtes,
 // et la ligne du tahanoun.
@@ -15,10 +23,10 @@ const israel: ZmanimPlace = {
 
 const hd = (y: number, m: number, d: number) => new HDate(new Date(y, m - 1, d, 12));
 
-describe("holidayNames", () => {
+describe("dayHighlights", () => {
   it("nomme le Roch Hodech en français", () => {
     // 13 août 2026 = 30 Av 5786, Roch Hodech Eloul.
-    const names = holidayNames(DEFAULT_PLACE, hd(2026, 8, 13), "fr");
+    const names = dayHighlights(DEFAULT_PLACE, hd(2026, 8, 13), "fr");
     expect(names).toHaveLength(1);
     expect(names[0]).toContain("Roch");
     expect(names[0]).toContain("Eloul");
@@ -26,17 +34,22 @@ describe("holidayNames", () => {
 
   it("rend un jour ordinaire sans rien", () => {
     // 18 août 2026 = 5 Eloul 5786, jour de semaine ordinaire.
-    expect(holidayNames(DEFAULT_PLACE, hd(2026, 8, 18), "fr")).toEqual([]);
+    expect(dayHighlights(DEFAULT_PLACE, hd(2026, 8, 18), "fr")).toEqual([]);
+  });
+
+  it("écarte les Yom Tov : ils ont leur cadre, avec leurs heures", () => {
+    // 12 septembre 2026 = 1 Tichri 5787, Roch Hachana (et Chabbat).
+    const day = hd(2026, 9, 12);
+    expect(restPeriodAt(DEFAULT_PLACE, day, "fr")!.festivals).toEqual(["Roch Hachanah"]);
+    expect(dayHighlights(DEFAULT_PLACE, day, "fr")).toEqual([]);
   });
 
   it("suit le calendrier d'Israël en Asia/Jerusalem", () => {
-    // 3 avril 2026 = 16 Nissan 5786 : Yom Tov II de Pessah en diaspora, déjà
-    // 'Hol haMoed en Israël.
+    // 3 avril 2026 = 16 Nissan 5786 : Yom Tov II de Pessah en diaspora (donc
+    // dans le cadre du repos, pas ici), déjà 'Hol haMoed en Israël.
     const day = hd(2026, 4, 3);
-    const diaspora = holidayNames(DEFAULT_PLACE, day, "en").join(" ");
-    const israelNames = holidayNames(israel, day, "en").join(" ");
-    expect(diaspora).toContain("Pesach II");
-    expect(israelNames).toContain("CH’’M");
+    expect(dayHighlights(DEFAULT_PLACE, day, "en")).toEqual([]);
+    expect(dayHighlights(israel, day, "en").join(" ")).toContain("CH’’M");
   });
 });
 
@@ -56,5 +69,93 @@ describe("tachanunStatus", () => {
 
   it("Chabbat : pas de ligne du tout", () => {
     expect(tachanunStatus(DEFAULT_PLACE, hd(2026, 8, 22))).toBeNull();
+  });
+});
+
+describe("restPeriodsNear", () => {
+  const at = (y: number, m: number, d: number) => new Date(y, m - 1, d, 12);
+
+  it("semaine ordinaire : le seul Chabbat, sans fête", () => {
+    // Mercredi 19 août 2026.
+    const periods = restPeriodsNear(DEFAULT_PLACE, at(2026, 8, 19), "fr");
+    expect(periods).toHaveLength(1);
+    expect(periods[0].festivals).toEqual([]);
+    expect(periods[0].shabbat).not.toBeNull();
+    // Entrée le vendredi soir, sortie le samedi soir.
+    expect(periods[0].start.getDay()).toBe(5);
+    expect(periods[0].end.getDay()).toBe(6);
+  });
+
+  it("Roch Hachana un Chabbat : un seul bloc, du vendredi au dimanche soir", () => {
+    // 12 septembre 2026 = 1 Tichri 5787, un samedi ; le 2e jour suit le dimanche.
+    const periods = restPeriodsNear(DEFAULT_PLACE, at(2026, 9, 10), "fr");
+    expect(periods).toHaveLength(1);
+    expect(periods[0].festivals).toEqual(["Roch Hachanah"]);
+    expect(periods[0].shabbat).not.toBeNull();
+    expect(periods[0].start.getDate()).toBe(11); // vendredi 11, allumage
+    expect(periods[0].end.getDate()).toBe(13); // dimanche 13, sortie
+  });
+
+  it("Chemini Atséret et Sim'hat Torah tiennent dans le même bloc", () => {
+    const periods = restPeriodsNear(DEFAULT_PLACE, at(2026, 10, 1), "fr");
+    expect(periods[0].festivals).toHaveLength(2);
+    expect(periods[0].festivals[0]).toContain("Chemini");
+  });
+
+  it("Pessah : les premiers jours, puis les derniers, séparés par le 'Hol haMoed", () => {
+    // 5787 : veille de Pessah, le mercredi 21 avril 2027 à midi — avant
+    // l'allumage du soir, les deux blocs de la fête sont encore devant.
+    const periods = restPeriodsNear(DEFAULT_PLACE, at(2027, 4, 21), "fr");
+    expect(periods).toHaveLength(2);
+    // 15 à 17 Nissan : les deux jours de fête, prolongés par le Chabbat.
+    expect(periods[0].first.getDate()).toBe(15);
+    expect(periods[0].last.getDate()).toBe(17);
+    expect(periods[1].first.getDate()).toBe(21); // 21 Nissan, Pessah VII
+  });
+
+  it("une fois dedans, le bloc en cours suffit", () => {
+    // Samedi 12 septembre 2026 à midi : on est dans Roch Hachana.
+    const periods = restPeriodsNear(DEFAULT_PLACE, at(2026, 9, 12), "fr");
+    expect(periods).toHaveLength(1);
+    expect(periods[0].festivals).toEqual(["Roch Hachanah"]);
+  });
+});
+
+describe("yearCalendar", () => {
+  const entries = yearCalendar(DEFAULT_PLACE, 5787, "fr");
+  const named = (needle: string) => entries.filter((e) => e.name.includes(needle));
+
+  it("va de Roch Hachana à la fin de l'année, dans l'ordre", () => {
+    expect(entries.length).toBeGreaterThan(10);
+    expect(entries[0].name).toContain("Roch Hachanah");
+    for (let i = 1; i < entries.length; i++) {
+      expect(entries[i].first.abs()).toBeGreaterThanOrEqual(entries[i - 1].first.abs());
+    }
+  });
+
+  it("donne à chaque Yom Tov son entrée et sa sortie", () => {
+    const kippour = named("Yom Kippour")[0];
+    expect(kippour.period).not.toBeNull();
+    expect(kippour.period!.start.getTime()).toBeLessThan(kippour.period!.end.getTime());
+  });
+
+  it("sépare les deux blocs de Pessah, et laisse le 'Hol haMoed dehors", () => {
+    // Nom exact : « Pessah Cheni », un mois plus tard, est une autre fête.
+    const pessah = entries.filter((e) => e.name === named("Pessa")[0].name);
+    expect(pessah).toHaveLength(2);
+    expect(pessah[0].first.getDate()).toBe(15);
+    expect(pessah[1].first.getDate()).toBe(21);
+  });
+
+  it("'Hanouka tient en une entrée de huit jours, sans horaires", () => {
+    const hanouka = named("anoukah");
+    expect(hanouka).toHaveLength(1);
+    expect(hanouka[0].period).toBeNull();
+    expect(hanouka[0].last.abs() - hanouka[0].first.abs()).toBe(7);
+  });
+
+  it("ne porte ni Roch Hodech ni Chabbat ordinaire", () => {
+    expect(named("Roch H\u2019odech")).toEqual([]);
+    for (const entry of entries) expect(entry.name).not.toBe("");
   });
 });

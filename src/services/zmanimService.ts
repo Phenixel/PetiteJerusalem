@@ -1,4 +1,13 @@
-import { GeoLocation, HDate, Zmanim, getHolidaysOnDate, tachanun } from "@hebcal/core";
+import {
+  GeoLocation,
+  HDate,
+  HebrewCalendar,
+  Locale,
+  Zmanim,
+  flags,
+  getHolidaysOnDate,
+  tachanun,
+} from "@hebcal/core";
 // Noms des fêtes en français : hebcal ne les rend qu'en anglais ou en hébreu
 // sans ce catalogue (4 Ko), qui s'enregistre auprès de hebcal à l'import.
 import "@hebcal/locales/fr";
@@ -327,42 +336,12 @@ export function coarsePlace(place: ZmanimPlace): ReminderPlace {
   };
 }
 
-export interface ShabbatTimes {
-  /** Vendredi, 18 minutes avant le coucher du soleil. */
-  candleLighting: Date;
-  /** Samedi, à la sortie des étoiles. */
-  havdalah: Date;
-}
-
 /**
- * L'entrée et la sortie du Chabbat en cours, ou du prochain.
- *
- * Le samedi soir avant la sortie des étoiles, on est encore dans le Chabbat en
- * cours : c'est sa sortie qui intéresse, pas l'allumage de la semaine
- * suivante. Les fêtes ne sont pas couvertes ici — leurs allumages suivent le
- * calendrier des chagim, pas la semaine civile.
+ * Le jour hébraïque d'un jour civil au lieu, sans bascule à la chkia : celui
+ * qui court de la chkia de la veille à la sienne.
  */
-export function getShabbatTimes(place: ZmanimPlace, now: Date = new Date()): ShabbatTimes | null {
-  const gloc = geoLocationOf(place);
-
-  const times = (weeksAhead: number): ShabbatTimes | null => {
-    const saturday = dayInPlace(place, now);
-    // 6 = samedi : on recule sur le samedi de la semaine en cours.
-    saturday.setDate(saturday.getDate() - saturday.getDay() + 6 + weeksAhead * 7);
-    const friday = new Date(saturday);
-    friday.setDate(friday.getDate() - 1);
-
-    const candleLighting = new Zmanim(gloc, friday, false).sunsetOffset(
-      -CANDLE_LIGHTING_MINUTES,
-      true,
-    );
-    const havdalah = new Zmanim(gloc, saturday, false).tzeit();
-    return isUsable(candleLighting) && isUsable(havdalah) ? { candleLighting, havdalah } : null;
-  };
-
-  const current = times(0);
-  if (current && current.havdalah.getTime() > now.getTime()) return current;
-  return times(1);
+export function hebrewDayOf(place: ZmanimPlace, day: Date): HDate {
+  return new HDate(dayInPlace(place, day));
 }
 
 /**
@@ -374,7 +353,7 @@ export function getShabbatTimes(place: ZmanimPlace, now: Date = new Date()): Sha
  */
 export function hebrewDateFor(place: ZmanimPlace, day: Date, now: Date = new Date()): HDate {
   const localDay = dayInPlace(place, day);
-  const hd = new HDate(localDay);
+  const hd = hebrewDayOf(place, day);
   if (localDay.getTime() !== dayInPlace(place, now).getTime()) return hd;
 
   // Aujourd'hui : après la chkia, le jour hébraïque a déjà changé. Le calcul
@@ -393,15 +372,233 @@ export function hebrewDateFor(place: ZmanimPlace, day: Date, now: Date = new Dat
  */
 const isIsraelPlace = (place: ZmanimPlace): boolean => place.tzid === "Asia/Jerusalem";
 
+/** hebcal ne porte que trois catalogues : en, he et fr (voir l'import en tête). */
+const hebcalLocale = (locale: string): string =>
+  locale === "he" || locale === "fr" ? locale : "en";
+
+/** Jour où le travail est interdit : Chabbat ou Yom Tov — pas 'Hol haMoed. */
+function isRestDay(hd: HDate, il: boolean): boolean {
+  if (hd.getDay() === 6) return true;
+  return (getHolidaysOnDate(hd, il) ?? []).some((ev) => (ev.getFlags() & flags.CHAG) !== 0);
+}
+
 /**
- * Roch Hodech, fêtes, jeûnes et Chabbatot spéciaux du jour hébraïque affiché,
- * nommés dans la langue de l'interface (hebcal porte les catalogues en, he et
- * fr — voir l'import de @hebcal/locales/fr en tête de fichier).
+ * Le nom d'une fête, sans son numéro de jour ni son millésime : « Pessah II »
+ * et « Roch Hachanah 5787 » se ramènent à la fête elle-même, qu'on ne nomme
+ * qu'une fois pour un bloc de deux jours.
  */
-export function holidayNames(place: ZmanimPlace, hd: HDate, locale: string): string[] {
+const festivalName = (ev: { basename(): string }, lg: string): string =>
+  Locale.gettext(ev.basename(), lg);
+
+/**
+ * Ce que le jour a de particulier hors temps de repos : Roch Hodech, 'Hanouka,
+ * un jeûne, 'Hol haMoed, un Chabbat spécial… nommés dans la langue de
+ * l'interface (hebcal porte les catalogues en, he et fr — voir l'import de
+ * @hebcal/locales/fr en tête de fichier).
+ *
+ * Les Yom Tov en sont exclus : ils ont leur propre cadre, avec leurs heures
+ * d'entrée et de sortie (voir RestPeriod).
+ */
+export function dayHighlights(place: ZmanimPlace, hd: HDate, locale: string): string[] {
   const events = getHolidaysOnDate(hd, isIsraelPlace(place)) ?? [];
-  const lg = locale === "he" || locale === "fr" ? locale : "en";
-  return events.map((ev) => ev.render(lg));
+  return events
+    .filter((ev) => (ev.getFlags() & flags.CHAG) === 0)
+    .map((ev) => ev.render(hebcalLocale(locale)));
+}
+
+/** Le jour civil d'une date hébraïque, à midi, comme le veut `dayInPlace`. */
+function civilNoon(hd: HDate): Date {
+  const greg = hd.greg();
+  return new Date(greg.getFullYear(), greg.getMonth(), greg.getDate(), 12);
+}
+
+/**
+ * Un temps de repos : le Chabbat, un Yom Tov, ou la suite des deux quand ils
+ * se touchent — Roch Hachana un dimanche prolonge le Chabbat de la veille, et
+ * l'ensemble n'a qu'une entrée et qu'une sortie. C'est ce bloc-là qu'on
+ * affiche, pas un cadre par jour.
+ */
+export interface RestPeriod {
+  /** Allumage des bougies : 18 minutes avant la chkia de la veille. */
+  start: Date;
+  /** Sortie des étoiles du dernier jour. */
+  end: Date;
+  first: HDate;
+  last: HDate;
+  /** Le bloc couvre un Chabbat — son jour civil, pour retrouver la paracha. */
+  shabbat: Date | null;
+  /** Fêtes couvertes, nommées dans la langue demandée, sans numéro de jour. */
+  festivals: string[];
+}
+
+/** Trois jours de repos d'affilée au maximum (Yom Tov de deux jours + Chabbat). */
+const MAX_REST_DAYS = 3;
+
+/**
+ * Le temps de repos auquel appartient ce jour hébraïque, ou null si c'en est
+ * un ordinaire. Le bloc s'étend de part et d'autre tant que les jours se
+ * suivent : c'est ce qui réunit « Chabbat » et « Roch Hachana » sous un seul
+ * cadre au lieu de deux.
+ */
+export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): RestPeriod | null {
+  const il = isIsraelPlace(place);
+  if (!isRestDay(hd, il)) return null;
+
+  let first = hd;
+  for (let i = 0; i < MAX_REST_DAYS && isRestDay(first.prev(), il); i++) first = first.prev();
+  let last = hd;
+  for (let i = 0; i < MAX_REST_DAYS && isRestDay(last.next(), il); i++) last = last.next();
+
+  const gloc = geoLocationOf(place);
+  const eve = civilNoon(first);
+  eve.setDate(eve.getDate() - 1);
+  const start = new Zmanim(gloc, eve, false).sunsetOffset(-CANDLE_LIGHTING_MINUTES, true);
+  const end = new Zmanim(gloc, civilNoon(last), false).tzeit();
+  if (!isUsable(start) || !isUsable(end)) return null;
+
+  const lg = hebcalLocale(locale);
+  const festivals: string[] = [];
+  let shabbat: Date | null = null;
+  for (let day = first; day.abs() <= last.abs(); day = day.next()) {
+    if (day.getDay() === 6) shabbat = civilNoon(day);
+    for (const ev of getHolidaysOnDate(day, il) ?? []) {
+      if ((ev.getFlags() & flags.CHAG) === 0) continue;
+      const name = festivalName(ev, lg);
+      if (!festivals.includes(name)) festivals.push(name);
+    }
+  }
+  return { start, end, first, last, shabbat, festivals };
+}
+
+/**
+ * Une entrée du calendrier des fêtes : une fête (ou un bloc de fêtes qui se
+ * suivent), avec ses dates et, quand le travail y est interdit, ses heures.
+ */
+export interface CalendarEntry {
+  /** Clé stable d'affichage. */
+  key: string;
+  /** Nom localisé — pour les fêtes sans horaires ('Hanouka, Pourim, jeûnes). */
+  name: string;
+  first: HDate;
+  last: HDate;
+  /** Le temps de repos, quand c'en est un : ses heures et les fêtes couvertes. */
+  period: RestPeriod | null;
+}
+
+/**
+ * Ce que porte le calendrier : les fêtes et les jeûnes. Les Roch Hodech en
+ * sont exclus (douze par an, ils noieraient le reste), les commémorations
+ * civiles israéliennes aussi — la page sert à savoir quand commence et
+ * quand finit une fête.
+ */
+const CALENDAR_FLAGS =
+  flags.CHAG | flags.MAJOR_FAST | flags.MINOR_FAST | flags.MINOR_HOLIDAY;
+
+/**
+ * Les fêtes d'une année hébraïque, dans l'ordre.
+ *
+ * Les jours de Yom Tov qui se suivent — et le Chabbat qui les prolonge — sont
+ * réunis en un seul bloc, avec une entrée et une sortie : c'est ainsi qu'on
+ * les vit, et Pessah y compte bien deux blocs séparés par le 'Hol haMoed. Les
+ * fêtes sans interdit de travail ('Hanouka, Pourim, les jeûnes) donnent une
+ * entrée par fête, 'Hanouka couvrant ses huit jours d'un trait.
+ */
+export function yearCalendar(
+  place: ZmanimPlace,
+  hebrewYear: number,
+  locale: string,
+): CalendarEntry[] {
+  const il = isIsraelPlace(place);
+  const lg = hebcalLocale(locale);
+  const events = HebrewCalendar.calendar({
+    year: hebrewYear,
+    isHebrewYear: true,
+    il,
+    noRoshChodesh: true,
+    noSpecialShabbat: true,
+    noModern: true,
+    sedrot: false,
+    omer: false,
+  });
+
+  const entries: CalendarEntry[] = [];
+  // Un bloc de repos est atteint par chacun de ses jours : on ne le garde
+  // qu'une fois, reconnu à son premier jour.
+  const seenPeriods = new Set<number>();
+  // Dernière entrée ouverte par fête, pour recoller les jours qui se suivent.
+  const running = new Map<string, CalendarEntry>();
+
+  for (const ev of events) {
+    const eventFlags = ev.getFlags();
+    if ((eventFlags & CALENDAR_FLAGS) === 0 || (eventFlags & flags.EREV) !== 0) continue;
+    const hd = ev.getDate();
+
+    if ((eventFlags & flags.CHAG) !== 0) {
+      const period = restPeriodAt(place, hd, locale);
+      if (!period || seenPeriods.has(period.first.abs())) continue;
+      seenPeriods.add(period.first.abs());
+      entries.push({
+        key: `rest-${period.first.abs()}`,
+        name: period.festivals.join(" · "),
+        first: period.first,
+        last: period.last,
+        period,
+      });
+      continue;
+    }
+
+    const family = ev.basename();
+    const open = running.get(family);
+    if (open && hd.abs() === open.last.abs() + 1) {
+      open.last = hd;
+      continue;
+    }
+    const entry: CalendarEntry = {
+      key: `${family}-${hd.abs()}`,
+      name: festivalName(ev, lg),
+      first: hd,
+      last: hd,
+      period: null,
+    };
+    running.set(family, entry);
+    entries.push(entry);
+  }
+
+  return entries.sort((a, b) => a.first.abs() - b.first.abs());
+}
+
+/**
+ * Les temps de repos qui concernent le jour affiché : celui qui est en cours
+ * ou qui vient, puis le suivant s'il tombe dans la semaine. Une semaine de
+ * fête en compte deux (le Yom Tov, puis le Chabbat) ; une semaine ordinaire
+ * n'en a qu'un, le Chabbat.
+ *
+ * Un bloc déjà sorti ne s'annonce plus : le samedi soir après la sortie des
+ * étoiles, c'est le Chabbat suivant qui prend la place.
+ */
+export function restPeriodsNear(
+  place: ZmanimPlace,
+  day: Date,
+  locale: string,
+  horizonDays = 7,
+  limit = 2,
+): RestPeriod[] {
+  const periods: RestPeriod[] = [];
+  const firstAbs = new HDate(dayInPlace(place, day)).abs();
+  let abs = firstAbs;
+  while (abs <= firstAbs + horizonDays && periods.length < limit) {
+    const period = restPeriodAt(place, new HDate(abs), locale);
+    if (!period) {
+      abs++;
+      continue;
+    }
+    if (period.end.getTime() > day.getTime()) periods.push(period);
+    abs = period.last.abs() + 1;
+  }
+  // Une fois dedans, le bloc en cours suffit : annoncer le Chabbat suivant en
+  // plein Roch Hachana n'aide personne. C'est avant qu'il faut les deux.
+  const inProgress = periods[0] && periods[0].start.getTime() <= day.getTime();
+  return inProgress ? periods.slice(0, 1) : periods;
 }
 
 /**
@@ -474,26 +671,8 @@ export function weekdayIn(place: ZmanimPlace, date: Date): number {
   return WEEKDAYS.indexOf(short);
 }
 
-/**
- * Les horaires du Chabbat, quand c'est lui qu'on vient regarder — sinon null.
- *
- * C'est le cas le vendredi, et le samedi tant qu'il n'est pas sorti. Passé la
- * sortie, la semaine reprend ses droits : `getShabbatTimes` vise alors le
- * Chabbat suivant, qu'il serait trompeur de mettre en avant un samedi soir.
- * On le reconnaît à sa sortie, qui ne tombe plus le jour affiché.
- */
-export function featuredShabbat(place: ZmanimPlace, date: Date = new Date()): ShabbatTimes | null {
-  const weekday = weekdayIn(place, date);
-  if (weekday !== 5 && weekday !== 6) return null;
-
-  const times = getShabbatTimes(place, date);
-  if (!times) return null;
-  if (weekday === 6 && !isSameDayInPlace(place, times.havdalah, date)) return null;
-  return times;
-}
-
 /** Deux instants tombent-ils le même jour civil, au lieu affiché ? */
-function isSameDayInPlace(place: ZmanimPlace, a: Date, b: Date): boolean {
+export function sameCivilDay(place: ZmanimPlace, a: Date, b: Date): boolean {
   return dayInPlace(place, a).getTime() === dayInPlace(place, b).getTime();
 }
 

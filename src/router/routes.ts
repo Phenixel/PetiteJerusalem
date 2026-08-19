@@ -20,6 +20,7 @@ const DailyReadingPage = () => import("../views/Library/DailyReadingPage.vue");
 const ChneiMikraPage = () => import("../views/Library/ChneiMikraPage.vue");
 const ContentPage = () => import("../views/ContentPage.vue");
 const ZmanimPage = () => import("../views/Zmanim/ZmanimPage.vue");
+const CalendarPage = () => import("../views/Zmanim/CalendarPage.vue");
 const TehilimPage = () => import("../views/TehilimPage.vue");
 const StudioPage = () => import("../views/Studio/StudioPage.vue");
 const AdminLayout = () => import("../views/Admin/AdminLayout.vue");
@@ -141,6 +142,13 @@ export default [
     name: "zmanim",
     meta: { offlineOk: true },
     component: ZmanimPage,
+  },
+  // Calendrier des fêtes : même moteur, même absence de réseau.
+  {
+    path: "/calendrier",
+    name: "calendar",
+    meta: { offlineOk: true },
+    component: CalendarPage,
   },
   {
     path: "/chiourim",

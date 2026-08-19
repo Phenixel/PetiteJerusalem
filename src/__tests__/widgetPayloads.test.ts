@@ -17,7 +17,7 @@ describe("buildZmanimWidgetPayload", () => {
   const payload = buildZmanimWidgetPayload(DEFAULT_PLACE, t, "fr", now);
 
   it("embarque une semaine d'horaires triés, labels et heures pré-formatés", () => {
-    expect(payload.v).toBe(1);
+    expect(payload.v).toBe(2);
     expect(payload.place).toBe("Paris");
     // ~14 zmanim par jour sur 7 jours (certains peuvent manquer aux latitudes extrêmes)
     expect(payload.times.length).toBeGreaterThanOrEqual(ZMANIM_WIDGET_DAYS * 10);
@@ -36,6 +36,38 @@ describe("buildZmanimWidgetPayload", () => {
     // Et le dernier couvre bien la fin de la fenêtre de 7 jours.
     const lastDay = (payload.times.at(-1)!.epoch - now.getTime()) / 86_400_000;
     expect(lastDay).toBeGreaterThan(ZMANIM_WIDGET_DAYS - 1.5);
+  });
+
+  it("porte un jour hébraïque par jour embarqué, borné par les chkiot", () => {
+    expect(payload.days).toHaveLength(ZMANIM_WIDGET_DAYS);
+    // Les fenêtres se suivent sans trou : la fin de l'une ouvre la suivante.
+    for (let i = 1; i < payload.days.length; i++) {
+      expect(payload.days[i].from).toBe(payload.days[i - 1].until);
+    }
+    // L'instant courant tombe dans une fenêtre, une seule : le widget sait
+    // toujours quel jour afficher, même une semaine sans rouvrir l'app.
+    const covering = payload.days.filter((d) => d.from <= now.getTime() && now.getTime() < d.until);
+    expect(covering).toHaveLength(1);
+    // 6 août 2026 = 23 Av 5786 ; on dit le tahanoun, sans mise en avant.
+    expect(covering[0].hebrewDate).toBe("23 Av 5786");
+    expect(covering[0].tachanun).toBe("zmanim.tachanun.full");
+    expect(covering[0].tachanunStrong).toBe(false);
+    expect(covering[0].parasha).toContain("zmanim.shabbat.parasha");
+  });
+
+  it("met le tahanoun en avant les jours où l'on n'en dit pas", () => {
+    // 13 août 2026 = Roch Hodech Eloul : pas de tahanoun.
+    const roshChodesh = buildZmanimWidgetPayload(DEFAULT_PLACE, t, "fr", new Date(2026, 7, 13, 10));
+    const day = roshChodesh.days[0];
+    expect(day.tachanun).toBe("zmanim.tachanun.none");
+    expect(day.tachanunStrong).toBe(true);
+  });
+
+  it("laisse le Chabbat sans ligne de tahanoun", () => {
+    // Samedi 8 août 2026 : la question du tahanoun ne s'y pose pas.
+    const shabbat = buildZmanimWidgetPayload(DEFAULT_PLACE, t, "fr", new Date(2026, 7, 8, 10));
+    expect(shabbat.days[0].tachanun).toBeNull();
+    expect(shabbat.days[0].tachanunStrong).toBe(false);
   });
 });
 

@@ -250,6 +250,18 @@ const fr = {
         "Un texte de votre lecture du jour n'est pas téléchargé : il ne sera pas lisible hors connexion. | {count} textes de votre lecture du jour ne sont pas téléchargés : ils ne seront pas lisibles hors connexion.",
     },
   },
+  calendar: {
+    title: "Calendrier des fêtes",
+    link: "Calendrier des fêtes",
+    description:
+      "Les fêtes et les jeûnes de l\u2019année, avec l\u2019heure d\u2019allumage et l\u2019heure de sortie pour votre position.",
+    year: "Année {year}",
+    previousYear: "Année précédente",
+    nextYear: "Année suivante",
+    backToCurrent: "Revenir à l\u2019année en cours",
+    start: "Allumage",
+    end: "Sortie",
+  },
   zmanim: {
     title: "Horaires du jour",
     navTitle: "Horaires",
@@ -297,6 +309,10 @@ const fr = {
       full: "On dit Ta'hanoun.",
       shacharitOnly: "Ta'hanoun à Cha'harit seulement, pas à Min'ha.",
       none: "Pas de Ta'hanoun.",
+    },
+    rest: {
+      end: "Sortie",
+      note: "Allumage 18 minutes avant le coucher du soleil, sortie à la sortie des étoiles. Un jour de fête qui suit le Chabbat, on allume après la sortie, à partir d'une flamme déjà allumée.",
     },
     shabbat: {
       title: "Chabbat",
@@ -586,6 +602,9 @@ const fr = {
     profileDescription:
       "Gérez vos informations, consultez vos sessions d'étude participées et créées.",
     zmanimTitle: "Horaires du jour : Chéma, chkia et Chabbat – Petite Jérusalem",
+    calendarTitle: "Calendrier des fêtes juives : dates et horaires – Petite Jérusalem",
+    calendarDescription:
+      "Les fêtes et les jeûnes de l\u2019année hébraïque, avec leurs dates et, pour chaque fête, l\u2019heure d\u2019allumage et l\u2019heure de sortie calculées pour votre position.",
     zmanimDescription:
       "Les horaires halakhiques de la journée calculés pour votre position : alot haCha'har, netz, fin du Chéma, 'hatsot, min'ha, chkia, tsét haKokhavim, entrée et sortie de Chabbat.",
     dailyReadingTitle: "Ma lecture du jour – Petite Jérusalem",

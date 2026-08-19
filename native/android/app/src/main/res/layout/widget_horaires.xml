@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget « Horaires » : prochain zman. Couleurs jour/nuit via values(-night). -->
+<!-- Widget « Horaires » : le jour hébraïque, le prochain zman, la paracha et
+     le tahanoun. Couleurs jour/nuit via values(-night). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/pj_horaires_root"
     android:layout_width="match_parent"
@@ -14,12 +15,12 @@
         android:orientation="horizontal">
 
         <TextView
-            android:id="@+id/pj_horaires_title"
+            android:id="@+id/pj_horaires_hebrew_date"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:ellipsize="end"
             android:maxLines="1"
-            android:text="@string/pj_widget_horaires_label"
             android:textColor="@color/pj_widget_text_secondary"
             android:textSize="12sp"
             android:textStyle="bold" />
@@ -54,10 +55,20 @@
         android:textStyle="bold" />
 
     <TextView
-        android:id="@+id/pj_horaires_following"
+        android:id="@+id/pj_horaires_parasha"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/pj_widget_text_secondary"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/pj_horaires_tachanun"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
         android:ellipsize="end"
         android:maxLines="1"
         android:textColor="@color/pj_widget_text_secondary"
