@@ -149,6 +149,46 @@ describe("fichiers de tefila", () => {
     expect(paragraphs.filter((p) => p.repeat === 2).length).toBeGreaterThan(0);
   });
 
+  it("Sli'hot : les deux piyoutim relevés au siddour sont bien là", () => {
+    // Ils manquaient au fichier d'origine ; le texte vocalisé vient du siddour
+    // Torah-Box (pages 3 à 4 et 7). Comparé sans vocalisation : c'est la suite
+    // des consonnes qui fait foi, l'ordre des signes varie d'une source à l'autre.
+    const content = load("slihot", "slihot");
+    const bare = content.sections[0].he.join(" ").replace(/[֑-ׇ]/g, "");
+    expect(bare).toContain("אנא כעב זדוני תמחהו");
+    expect(bare).toContain("ויודע כי משיח אלהים הוא");
+    expect(bare).toContain("אלהים אתה ידעת לאולתי");
+    expect(bare).toContain("עננו אבינו עננו");
+    // Chaque strophe se ferme sur le refrain que reprend l'assemblée.
+    const ana = (content.sections[0].blocks ?? []).find((b) => b.label === "Ana ke'av zedoni")!;
+    expect(ana.lines).toHaveLength(8);
+    for (const paragraph of (ana.paragraphs ?? []).slice(0, 7)) {
+      expect(paragraph.runs.some((run) => run.kind === "he" && run.strong)).toBe(true);
+    }
+  });
+
+  it("aucun fragment ne commence par une ponctuation", () => {
+    // Les fragments d'un paragraphe sont rendus séparés d'une espace : un
+    // fragment ouvrant sur « : » afficherait « הוא : ». La ponctuation reste
+    // donc attachée au fragment qu'elle ferme.
+    for (const [corpus, slug] of [
+      ["slihot", "slihot"],
+      ["brahot", "birkat-hamazon"],
+      ["brahot", "birkat-halevana"],
+      ["brahot", "brakha-aharona"],
+      ["brahot", "cheva-brahot"],
+    ] as const) {
+      const paragraphs = (load(corpus, slug).sections[0].blocks ?? []).flatMap(
+        (b) => b.paragraphs ?? [],
+      );
+      for (const paragraph of paragraphs) {
+        for (const run of paragraph.runs) {
+          if (run.kind === "he") expect(run.text).not.toMatch(/^[.,;:!?]/);
+        }
+      }
+    }
+  });
+
   it("les didascalies hébraïques ne traînent plus dans le texte", () => {
     // Elles vivaient collées aux versets ; elles sont désormais traduites et
     // rendues à part, aucune ne doit rester dans ce qui se lit.

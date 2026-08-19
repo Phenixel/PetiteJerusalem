@@ -14,8 +14,10 @@ import { readFileSync } from "node:fs";
  * écrits ici : ils suivent la règle.
  */
 
-const EM_DASH = "—";
-const EN_DASH = "–";
+// Écrits en échappement : le test se lit lui-même, un caractère en clair ici
+// le ferait échouer sur son propre fichier.
+const EM_DASH = "\u2014";
+const EN_DASH = "\u2013";
 
 /** Les fichiers versionnés qu'on écrit : ni corpus importé, ni binaire. */
 const BINARY = /\.(png|jpe?g|gif|webp|ico|svg|pdf|zip|jar|keystore|ttf|otf|woff2?|mp3|mp4)$/i;
