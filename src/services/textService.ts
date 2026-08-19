@@ -51,6 +51,13 @@ export interface TextParagraph {
    * occasion) : affiché en retrait, pour que le fil principal reste net.
    */
   muted?: boolean;
+  /**
+   * Ouvre une strophe : l'invocation qui se dit une fois pour les demandes
+   * qui la suivent (« Élohénou chébachamayim », puis les demandes d'une même
+   * lettre de l'acrostiche). Les lignes d'une strophe se lisent serrées, le
+   * blanc allant d'une strophe à l'autre.
+   */
+  lead?: boolean;
 }
 
 /**
@@ -376,7 +383,8 @@ function loadTanakh(
  *     "rubric": { "fr": "…", "en": "…", "he": "…" },   // didascalie au-dessus
  *     "he": ["hébreu", { "b": "réponse de l'assemblée" },
  *            { "r": { "fr": "…", "en": "…", "he": "…" } }, "suite"],
- *     "repeat": 2                                       // se dit deux fois
+ *     "repeat": 2,                                      // se dit deux fois
+ *     "lead": true                                      // ouvre une strophe
  *   }
  *
  * `he` accepte aussi une simple chaîne. Les didascalies ne comptent pas dans
@@ -395,6 +403,7 @@ interface TefilaFileLine {
   he?: string | (string | TefilaRun)[];
   repeat?: number;
   muted?: boolean;
+  lead?: boolean;
 }
 
 interface TefilaFileBlock {
@@ -431,6 +440,7 @@ function parseTefilaLine(raw: string | TefilaFileLine): TextParagraph | null {
   if (raw.rubric) paragraph.rubric = raw.rubric;
   if (raw.repeat && raw.repeat > 1) paragraph.repeat = raw.repeat;
   if (raw.muted) paragraph.muted = true;
+  if (raw.lead) paragraph.lead = true;
   return paragraph;
 }
 

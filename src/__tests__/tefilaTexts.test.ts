@@ -167,6 +167,63 @@ describe("fichiers de tefila", () => {
     }
   });
 
+  it("Sli'hot : « Élohénou chébachamayim » ouvre une lettre, pas chaque demande", () => {
+    // Au siddour l'invocation s'écrit une fois, puis viennent les demandes de
+    // sa lettre. Le fichier d'origine la répétait devant chacune des soixante.
+    const content = load("slihot", "slihot");
+    const paragraphs = (content.sections[0].blocks ?? []).flatMap((b) => b.paragraphs ?? []);
+    const bare = (p: (typeof paragraphs)[number]) =>
+      p.runs
+        .filter((run) => run.kind === "he")
+        .map((run) => (run.kind === "he" ? run.text : ""))
+        .join(" ")
+        .replace(/[֑-ׇ]/g, "");
+    const invocation = "אלהינו שבשמים";
+    // Vingt-deux lettres de l'acrostiche, plus les « kotvenou » des dix jours,
+    // qui forment leur propre strophe dans leur encadré.
+    const leads = paragraphs.filter((p) => p.lead);
+    expect(leads).toHaveLength(23);
+    for (const paragraph of leads) expect(bare(paragraph)).toBe(invocation);
+    // Elle ne reste en tête de ligne que sur l'appel d'ouverture et les deux
+    // de clôture, qui ne sont pas de l'acrostiche.
+    const inline = paragraphs.filter((p) => !p.lead && bare(p).startsWith(invocation));
+    expect(inline).toHaveLength(3);
+    // Une strophe suit toujours son invocation : jamais deux d'affilée.
+    const acrostic = "אבגדהוזחטיכלמנסעפצקרשת";
+    let letter = -1;
+    for (let i = 0; i < paragraphs.length; i++) {
+      if (!paragraphs[i].lead) continue;
+      expect(paragraphs[i + 1]?.lead).toBeFalsy();
+      const next = acrostic.indexOf(bare(paragraphs[i + 1])[0]);
+      expect(next).toBeGreaterThanOrEqual(letter);
+      letter = next;
+    }
+  });
+
+  it("Sli'hot : le vidoui tient une ligne par lettre, l'aveu en gras", () => {
+    // « Achamnou. Akhalnou maakhalot assourot » : la formule de l'aveu porte
+    // la ligne, ce que le rite lui ajoute la suit en texte courant.
+    const content = load("slihot", "slihot");
+    const vidoui = (content.sections[0].blocks ?? []).find(
+      (b) => b.label === "Vidoui (Achamnou)",
+    )!;
+    const heads = (vidoui.paragraphs ?? [])
+      .map((p) => p.runs[0])
+      .filter((run) => run.kind === "he" && run.strong)
+      .map((run) => (run.kind === "he" ? run.text.replace(/[֑-ׇ]/g, "")[0] : ""));
+    // Le bloc porte aussi « Ribono chel olam » et les refrains de clôture,
+    // eux aussi mis en avant : l'acrostiche s'y suit d'un trait.
+    expect(heads.join("")).toContain("אבגדהוזחטיכלמנסעפצקרשת");
+    // « Ribono chel olam » : le verset qui ferme chaque strophe reste en texte
+    // courant, seuls les mots du paytan sont en avant.
+    const ribono = (vidoui.paragraphs ?? []).find((p) =>
+      p.runs.some((run) => run.kind === "he" && /רבונו של עולם/.test(run.text.replace(/[֑-ׇ]/g, ""))),
+    )!;
+    expect(ribono.runs).toHaveLength(2);
+    expect(ribono.runs[0]).toMatchObject({ strong: true });
+    expect(ribono.runs[1].kind === "he" && ribono.runs[1].strong).toBeFalsy();
+  });
+
   it("aucun fragment ne commence par une ponctuation", () => {
     // Les fragments d'un paragraphe sont rendus séparés d'une espace : un
     // fragment ouvrant sur « : » afficherait « הוא : ». La ponctuation reste

@@ -135,18 +135,19 @@ const plainParagraphs = (block: TextBlock): TextParagraph[] =>
   block.lines.map((text) => ({ runs: [{ kind: "he", text }] }));
 
 const sections = computed(() =>
-  props.blocks.map((block, index) => ({
-    block,
-    index,
-    paragraphs: block.paragraphs ?? plainParagraphs(block),
-  })),
+  props.blocks.map((block, index) => {
+    const paragraphs = block.paragraphs ?? plainParagraphs(block);
+    // Un bloc en strophes resserre ses lignes : c'est le blanc au-dessus de
+    // chaque invocation qui dit où l'une finit et l'autre commence.
+    return { block, index, paragraphs, strophes: paragraphs.some((p) => p.lead) };
+  }),
 );
 </script>
 
 <template>
   <div class="reading-liturgy">
     <section
-      v-for="{ block, index, paragraphs } in sections"
+      v-for="{ block, index, paragraphs, strophes } in sections"
       :key="block.offset"
       :data-when="block.when"
       :data-fold="block.fold"
@@ -183,6 +184,7 @@ const sections = computed(() =>
           :class="[
             block.fold ? 'px-4 pb-4' : '',
             block.numbered ? 'reading-numbered divide-y divide-line' : '',
+            strophes ? 'reading-strophes' : '',
           ]"
         >
           <template v-for="(paragraph, i) in paragraphs" :key="block.offset + i">
@@ -205,6 +207,7 @@ const sections = computed(() =>
                   :data-line="copy === 1 ? block.offset + i : undefined"
                   class="reading-para"
                   :class="{
+                    'reading-lead': paragraph.lead,
                     'reading-echo': copy > 1,
                     'bg-primary/10': highlightedLine === block.offset + i,
                     'bg-black/5 dark:bg-white/10':
@@ -330,6 +333,20 @@ const sections = computed(() =>
 
 /* Bénédictions numérotées : le numéro tient la marge, pas de blanc en plus. */
 .reading-numbered .reading-para {
+  margin-top: 0;
+}
+
+/* Strophes : les demandes d'une même lettre se serrent sous l'invocation qui
+   les ouvre, et c'est le blanc au-dessus de celle-ci qui les groupe. */
+.reading-strophes .reading-para {
+  margin-top: 0.2rem;
+}
+
+.reading-strophes .reading-lead {
+  margin-top: 1.75rem;
+}
+
+.reading-strophes > :first-child .reading-para {
   margin-top: 0;
 }
 </style>
