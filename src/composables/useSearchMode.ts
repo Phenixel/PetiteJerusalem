@@ -10,8 +10,8 @@ import { isNativeApp } from "./useNativeApp";
  * libre. Sans ça, le titre de la page pousse la barre vers le milieu, le
  * clavier mange le bas, et il faut faire défiler pour voir ce qu'on cherche.
  *
- * Le mouvement est animé des deux côtés — repli du contenu au-dessus
- * (CollapseTransition, côté vues) et remontée en douceur ici — pour qu'on voie
+ * Le mouvement est animé des deux côtés, repli du contenu au-dessus
+ * (CollapseTransition, côté vues) et remontée en douceur ici, pour qu'on voie
  * la barre monter plutôt que l'écran sauter.
  *
  * App native seulement : c'est là que le clavier prend la moitié de l'écran,

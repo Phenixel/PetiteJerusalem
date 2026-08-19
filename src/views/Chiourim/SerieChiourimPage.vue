@@ -36,7 +36,7 @@ const loadSerie = async () => {
     episodes.value = serieService.episodesOf(serieId, all);
     auteurName.value = episodes.value.find((c) => c.auteur)?.auteur ?? null;
     seoService.setMeta({
-      title: `${found.name} – ${t("chiourim.title")} – Petite Jerusalem`,
+      title: `${found.name} | ${t("chiourim.title")} | Petite Jerusalem`,
       description: found.description || t("serie.seoDescription", { serie: found.name }),
       canonical: window.location.origin + `/chiourim/serie/${serieId}`,
     });

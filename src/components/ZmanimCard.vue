@@ -3,8 +3,8 @@
 // vérifier. Le détail (les quatorze horaires du jour, le Chabbat, les autres
 // jours) vit sur la page dédiée, à un clic.
 //
-// Du jour d'entrée à la sortie du repos — Chabbat, fête, ou les deux quand
-// ils se suivent —, c'est lui qui prend la place du prochain horaire : son
+// Du jour d'entrée à la sortie du repos (Chabbat, fête, ou les deux quand
+// ils se suivent), c'est lui qui prend la place du prochain horaire : son
 // entrée d'abord, puis sa sortie une fois les bougies allumées.
 //
 // Tout est calculé sur l'appareil (voir zmanimService) : la carte n'attend
@@ -50,7 +50,7 @@ const upcoming = computed(() => {
   return computeZmanim(place.value, tomorrow)[0] ?? null;
 });
 
-/** Le repos en cours, ou celui qui entre aujourd'hui — sinon rien à annoncer. */
+/** Le repos en cours, ou celui qui entre aujourd'hui, sinon rien à annoncer. */
 const rest = computed(() => {
   const period = restPeriodsNear(place.value, now.value, locale.value)[0];
   if (!period) return null;

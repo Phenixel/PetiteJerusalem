@@ -5,7 +5,7 @@
 // Rien n'est chargé depuis le réseau : les horaires se calculent sur
 // l'appareil (voir zmanimService), y compris pour les jours qu'on parcourt
 // avec les flèches. Une fois la page ouverte, elle continue donc de servir
-// sans connexion — et dans l'app native, dont les fichiers sont embarqués,
+// sans connexion, et dans l'app native, dont les fichiers sont embarqués,
 // elle s'ouvre aussi hors ligne. Le site web, lui, n'a pas de service
 // worker : là, il faut le réseau pour charger la page (mais pas après).
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from "vue";
@@ -82,7 +82,7 @@ const restFirst = computed(() => {
 });
 
 /**
- * La paracha du Chabbat couvert par un bloc — celui dont les horaires sont
+ * La paracha du Chabbat couvert par un bloc, celui dont les horaires sont
  * affichés, et non celui d'aujourd'hui : le samedi soir après la sortie, le
  * bloc montre déjà le Chabbat suivant, sa paracha doit suivre.
  */
@@ -124,7 +124,7 @@ const civilDate = computed(() =>
 const hebrewDay = computed(() => hebrewDateFor(place.value, day.value, now.value));
 const hebrewDate = computed(() => formatHebrewDate(hebrewDay.value, locale.value));
 
-// Roch Hodech, fêtes et jeûnes du jour affiché — et, au passage, si l'on dit
+// Roch Hodech, fêtes et jeûnes du jour affiché, et, au passage, si l'on dit
 // le tahanoun (null le Chabbat : la question ne s'y pose pas).
 /**
  * Ce que le jour a de particulier, hors temps de repos : Roch Hodech, 'Hanouka,
@@ -320,7 +320,7 @@ onUnmounted(() => {
     />
 
     <!-- Les horaires à la suite : chaque titre ouvre son groupe et sert de
-         séparation. Sans cadres, la journée se lit d'un trait — et tient en
+         séparation. Sans cadres, la journée se lit d'un trait, et tient en
          beaucoup moins de défilement. -->
     <section v-for="group in byPeriod" :key="group.period">
       <h2

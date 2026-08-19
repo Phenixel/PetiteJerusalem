@@ -44,9 +44,9 @@ touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
   can't be known at build time.
 
 Prerendered/indexable pages (~1200 in total, all listed in the generated
-`sitemap.xml`): the static pages declared in `seoPages.ts` — `/`,
+`sitemap.xml`): the static pages declared in `seoPages.ts`, `/`,
 `/share-reading`, `/bibliotheque`, `/chiourim`, the landing/legal pages above,
-and the Tehilim-by-intention hub + its intention pages — plus the Bibliothèque
+and the Tehilim-by-intention hub + its intention pages, plus the Bibliothèque
 reading pages generated per corpus/book/chapter by `prerender-seo.mjs`.
 (`/login` is `noindex`; the old `/etude` URLs 301-redirect to
 `/bibliotheque` in `firebase.json`.)

@@ -2,7 +2,7 @@
 /**
  * Signature iOS en CI : fabrique un certificat de distribution et un profil
  * « App Store » via l'API App Store Connect, les installe sur le runner. Le
- * profil est détruit en fin de run ; le certificat, NON — voir plus bas.
+ * profil est détruit en fin de run ; le certificat, NON, voir plus bas.
  *
  * Pourquoi ne pas laisser xcodebuild signer tout seul (-allowProvisioningUpdates) :
  * `xcodebuild archive` en signature AUTOMATIQUE réclame un profil de
@@ -11,7 +11,7 @@
  * profil de développement exige au moins un appareil enregistré dans l'équipe.
  * Le compte est un compte individuel sans appareil : impasse. Forcer
  * CODE_SIGN_IDENTITY="Apple Distribution" par-dessus le mode automatique ne
- * marche pas non plus — Xcode refuse le mélange (« has conflicting
+ * marche pas non plus, Xcode refuse le mélange (« has conflicting
  * provisioning settings ») sur la cible App *et* sur chaque paquet SPM.
  *
  * D'où la signature MANUELLE : un profil « App Store » n'a besoin d'aucun
@@ -21,7 +21,7 @@
  * Il l'était, en pariant qu'« Apple re-signe tout ce qui passe par TestFlight
  * et l'App Store ». C'est faux pour l'examen : Apple re-valide la signature
  * D'ORIGINE au moment de la soumission. Le build 3.7.3 (3070300) a été accepté
- * par TestFlight le 17 août 2026, installé et testé — puis rejeté dès sa mise
+ * par TestFlight le 17 août 2026, installé et testé, puis rejeté dès sa mise
  * en file d'examen : « ITMS-90035: Invalid Signature », parce que son
  * certificat avait été révoqué quelques minutes après l'envoi.
  * Un certificat doit donc survivre à tout binaire signé avec lui tant que
@@ -121,7 +121,7 @@ async function api(method, path, body) {
   const text = await response.text();
   const json = text ? JSON.parse(text) : null;
   if (!response.ok) {
-    const detail = json?.errors?.map((e) => `${e.title} — ${e.detail}`).join("\n  ") ?? text;
+    const detail = json?.errors?.map((e) => `${e.title} : ${e.detail}`).join("\n  ") ?? text;
     const error = new Error(`${method} ${path} → ${response.status}\n  ${detail}`);
     error.status = response.status;
     error.body = json;
@@ -155,7 +155,7 @@ if (isCleanup) {
     } catch (error) {
       // Un nettoyage raté ne doit pas masquer le résultat du run : le pire cas
       // est un profil de trop, supprimable à la main sur developer.apple.com.
-      console.warn(`ios-signing: ⚠️ ${label} non supprimé — ${error.message}`);
+      console.warn(`ios-signing: ⚠️ ${label} non supprimé, ${error.message}`);
     }
   }
   if (process.env.IOS_SIGNING_CERTIFICATE_ID) {
@@ -247,7 +247,7 @@ try {
       .then((r) => r.data)
       .catch(() => []);
     console.error(
-      `ios-signing: Apple refuse de créer un certificat de distribution — ${error.message}\n` +
+      `ios-signing: Apple refuse de créer un certificat de distribution, ${error.message}\n` +
         `  ${existing.length} certificat(s) de distribution existent déjà (le quota est de 3) :\n` +
         existing
           .map((c) => `    ${c.id}  ${c.attributes.displayName ?? "?"}  expire le ${c.attributes.expirationDate ?? "?"}`)
@@ -313,7 +313,7 @@ try {
     run("security", ["import", wwdrPath, "-k", keychainPath, "-A"], { allowFailure: true });
   }
 } catch {
-  console.warn("ios-signing: ⚠️ autorité WWDR non téléchargée — on continue (elle est fournie par l'image macOS)");
+  console.warn("ios-signing: ⚠️ autorité WWDR non téléchargée, on continue (elle est fournie par l'image macOS)");
 }
 
 for (const file of [keyPath, csrPath, cerPath, pemPath, p12Path]) rmSync(file, { force: true });
@@ -328,7 +328,7 @@ if (!identity) {
   process.exit(1);
 }
 exportEnv("IOS_CODE_SIGN_IDENTITY", identity);
-console.log(`ios-signing: identité installée — ${identity}`);
+console.log(`ios-signing: identité installée, ${identity}`);
 
 // ---------------------------------------------------------------------------
 // 4. Profil de provisionnement App Store

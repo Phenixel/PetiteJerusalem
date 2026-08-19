@@ -135,7 +135,7 @@ export default [
     component: TextReadingPage,
   },
   // Horaires (zmanim) : tout est calculé sur l'appareil, aucune donnée à
-  // charger — la page a donc sa place parmi les `offlineOk`, qui n'affichent
+  // charger, la page a donc sa place parmi les `offlineOk`, qui n'affichent
   // pas l'écran « hors ligne » quand le réseau manque.
   {
     path: "/horaires",

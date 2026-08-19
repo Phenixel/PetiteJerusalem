@@ -4,12 +4,12 @@ import { readonly, ref, type DeepReadonly, type Ref } from "vue";
  * Confirmation avant une action sans retour, dans le style de l'app.
  *
  * `window.confirm` ouvre une boîte du système : police, boutons et libellés
- * du navigateur, sans rapport avec le reste de l'interface — et sur l'app
+ * du navigateur, sans rapport avec le reste de l'interface, et sur l'app
  * native, le nom du domaine s'affiche en en-tête. On rend donc la même
  * promesse (une question, oui ou non) avec la modale de l'app.
  *
  * État module-level : une seule demande à la fois pour toute l'app, affichée
- * par ConfirmDialog monté dans App.vue — le même schéma que les toasts.
+ * par ConfirmDialog monté dans App.vue, le même schéma que les toasts.
  */
 
 export interface ConfirmRequest {
@@ -37,8 +37,8 @@ function answer(accepted: boolean): void {
 export function useConfirm() {
   /** Pose la question et résout à `true` si l'utilisateur confirme. */
   function confirm(options: ConfirmRequest): Promise<boolean> {
-    // Une demande déjà à l'écran est abandonnée — deux confirmations
-    // superposées n'auraient aucun sens — mais sa promesse est tenue : son
+    // Une demande déjà à l'écran est abandonnée, deux confirmations
+    // superposées n'auraient aucun sens, mais sa promesse est tenue : son
     // appelant doit savoir qu'il n'a pas été confirmé.
     answer(false);
     request.value = options;

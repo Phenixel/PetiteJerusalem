@@ -6,7 +6,7 @@ import { KNOWN_PLACE_KM, type City, type NearbyPlace } from "./zmanimService";
  *
  * Aucun géocodage inverse : la position ne sort pas de l'appareil, c'est la
  * promesse tenue par toute la page des horaires. On se contente donc de la
- * ville connue la plus proche — dense en France et en Israël, plus lâche
+ * ville connue la plus proche, dense en France et en Israël, plus lâche
  * ailleurs, d'où le libellé prudent au-delà de quelques kilomètres (voir
  * describeNearby).
  *

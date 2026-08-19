@@ -8,19 +8,19 @@ import WidgetKit
  * Tout le contenu vient des payloads JSON poussés par l'app via
  * PjWidgetsPlugin dans l'App Group (contrat : src/services/widgetPayloads.ts).
  * Libellés ET heures y sont déjà localisés et formatés : aucun DateFormatter
- * ici — le réglage 12 h/24 h et le calendrier de l'appareil (hébraïque chez
+ * ici, le réglage 12 h/24 h et le calendrier de l'appareil (hébraïque chez
  * une partie du public) réécriraient l'affichage. Les widgets comparent des
  * epochs, rien d'autre.
  *
  * - Horaires : une entrée de timeline par zman à venir (fenêtre bornée, les
- *   entrées ne portent que leurs chaînes — pas le payload entier) ; fenêtre
+ *   entrées ne portent que leurs chaînes, pas le payload entier) ; fenêtre
  *   épuisée → une entrée « rouvrez l'app » en .never, l'app relancera tout au
  *   prochain push.
  * - Lecture : une entrée maintenant, redessin à l'échéance du payload
  *   (expiresAt, minuit local calculé côté app).
  *
  * Fichier à ajouter à la cible d'extension « PjWidgets » du projet Xcode
- * (généré, non versionné) — voir docs/app-widgets.md.
+ * (généré, non versionné), voir docs/app-widgets.md.
  */
 
 let appGroup = "group.fr.petitejerusalem.app"
@@ -74,7 +74,7 @@ struct ZmanimPayload: Decodable {
     let days: [ZmanimDay]?
 }
 
-/// Une entrée ne porte que ce qu'elle affiche — surtout pas le payload entier,
+/// Une entrée ne porte que ce qu'elle affiche, surtout pas le payload entier,
 /// que WidgetKit archiverait avec CHAQUE entrée de la timeline.
 struct ZmanimEntry: TimelineEntry {
     let date: Date
@@ -83,7 +83,7 @@ struct ZmanimEntry: TimelineEntry {
     let parasha: String?
     let tachanun: String?
     let tachanunStrong: Bool
-    /// Prochain zman à l'instant `date` — nil quand `message` prend la place.
+    /// Prochain zman à l'instant `date`, nil quand `message` prend la place.
     let nextLabel: String?
     let nextTime: String?
     /// Fenêtre épuisée ou payload absent : message à afficher seul.
@@ -276,7 +276,7 @@ struct LectureWidgetView: View {
     let entry: DailyEntry
 
     var body: some View {
-        // Les coches ne valent que jusqu'au minuit local du payload — simple
+        // Les coches ne valent que jusqu'au minuit local du payload, simple
         // comparaison d'epochs, aucun calendrier en jeu.
         let payload = entry.payload
         let isFresh = payload.map { entry.date < $0.expiryDate } ?? false

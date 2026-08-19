@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Entrée et sortie d'un temps de repos : le Chabbat, un Yom Tov, ou les deux
-// quand ils se suivent — Roch Hachana un dimanche prolonge le Chabbat de la
+// quand ils se suivent, Roch Hachana un dimanche prolonge le Chabbat de la
 // veille, et l'ensemble n'a qu'une entrée et qu'une sortie. Un seul cadre,
 // donc, titré « Chabbat Roch Hachana » plutôt que deux qui se contrediraient.
 //
@@ -19,7 +19,7 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
   period: RestPeriod;
-  /** La paracha du Chabbat couvert — absente les semaines de fête. */
+  /** La paracha du Chabbat couvert, absente les semaines de fête. */
   parasha: WeeklyParasha | null;
   /** Fuseau du lieu : les heures s'affichent dedans, pas dans celui du navigateur. */
   tzid: string;
@@ -30,7 +30,7 @@ const { t, locale } = useI18n();
 const clock = (date: Date) => formatZmanTime(date, props.tzid, locale.value);
 const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
 
-/** « Chabbat », « Roch Hachana », « Chabbat Roch Hachana » — un seul titre. */
+/** « Chabbat », « Roch Hachana », « Chabbat Roch Hachana », un seul titre. */
 const title = computed(() => {
   const festivals = props.period.festivals.join(" · ");
   if (!props.period.shabbat) return festivals;

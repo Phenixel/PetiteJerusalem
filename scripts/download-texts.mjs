@@ -246,7 +246,7 @@ if (shouldRun('talmud')) {
 
 // Map from Sefaria URL ref to GCS path
 const tanakhGcsMap = {
-  // Torah — the book links (Genesis…) resolve to the FIRST parasha of the book,
+  // Torah, the book links (Genesis…) resolve to the FIRST parasha of the book,
   // never the whole book (see torahBookFirstParasha below).
   // Nevi'im
   'Joshua': 'Tanakh/Prophets/Joshua',
@@ -317,7 +317,7 @@ const parashaKey = name => {
 
 // "Genesis 25:19-28:9" (ou "Deuteronomy 31:1-30", même chapitre) → { book, c1, v1, c2, v2 }
 function parseRef(ref) {
-  const m = ref.replace(/[–—]/g, '-').match(/^(.+) (\d+):(\d+)-(?:(\d+):)?(\d+)$/);
+  const m = ref.replace(/[\u2013]/g, '-').match(/^(.+) (\d+):(\d+)-(?:(\d+):)?(\d+)$/);
   if (!m) throw new Error(`Ref non reconnue : ${ref}`);
   return { book: m[1], c1: +m[2], v1: +m[3], c2: m[4] ? +m[4] : +m[2], v2: +m[5] };
 }
@@ -452,7 +452,7 @@ if (shouldRun('tanakh')) {
       continue;
     }
 
-    // Case 2: Trei Asar — the 12 books concatenated, labelled per chapter.
+    // Case 2: Trei Asar, the 12 books concatenated, labelled per chapter.
     if (rawRef === 'Trei Asar') {
       const he = [];
       const blockLabels = [];
@@ -471,7 +471,7 @@ if (shouldRun('tanakh')) {
       continue;
     }
 
-    // Case 3: Ezra-Nehemiah — both books, labelled per chapter.
+    // Case 3: Ezra-Nehemiah, both books, labelled per chapter.
     if (rawRef === 'Ezra-Nehemiah') {
       const ezra = bookCache['Ezra'];
       const nehemiah = bookCache['Nehemiah'];
@@ -509,7 +509,7 @@ if (shouldRun('tanakh')) {
 // Un fichier par entrée du catalogue, nommé par son id (comme le Tanakh), au
 // format tefila : une suite de blocs { label?, when?, lines }. `label` pose
 // une séparation dans le fil du texte ; `when` (Chabbat, Roch Hodech,
-// Hanouka…) réserve le bloc au jour où son ajout se dit — le lecteur le rend
+// Hanouka…) réserve le bloc au jour où son ajout se dit, le lecteur le rend
 // alors dans une carte (voir dailyCycles.activeOccasions et TextBlock.when).
 
 if (shouldRun('tefila')) {
@@ -521,7 +521,7 @@ if (shouldRun('tefila')) {
     if (!entry) throw new Error(`Entrée absente du catalogue : ${latin}`);
     return entry;
   };
-  // Fichiers nommés par le slug latin de l'entrée — même règle que
+  // Fichiers nommés par le slug latin de l'entrée, même règle que
   // textService.resolveFilePath (« Brakha A'harona » → brakha-aharona.json).
   const tefilaSlug = latin => latin.toLowerCase().replace(/ /g, '-').replace(/['’‘`]/g, '');
   const writeTefila = (latin, blocks) => {
@@ -537,7 +537,7 @@ if (shouldRun('tefila')) {
   const stripNiqqud = s => s.normalize('NFC').replace(/[֑-ׇ]/g, '');
   const checkAnchor = (lines, [at, needle]) => {
     if (!stripNiqqud(stripHtml(lines[at] ?? '')).includes(needle)) {
-      throw new Error(`repère « ${needle} » attendu à la ligne ${at} — structure amont changée`);
+      throw new Error(`repère « ${needle} » attendu à la ligne ${at}, structure amont changée`);
     }
   };
 

@@ -38,7 +38,7 @@ const loading = ref(true);
 const error = ref(false);
 const missing = ref(false);
 // Hors connexion et texte absent de l'appareil : ce n'est pas une erreur, mais
-// un texte qui n'a pas été téléchargé — on le dit tel quel.
+// un texte qui n'a pas été téléchargé, on le dit tel quel.
 const notDownloaded = ref(false);
 const content = ref<TextContent | null>(null);
 

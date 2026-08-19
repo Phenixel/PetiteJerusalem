@@ -57,7 +57,7 @@ const allDone = computed(() => props.total > 0 && props.done >= props.total);
       </div>
     </template>
 
-    <!-- Liste déjà composée : pas de « voir ma lecture » — la carte entière est
+    <!-- Liste déjà composée : pas de « voir ma lecture », la carte entière est
          un lien (chevron compris), l'invitation à cliquer serait redondante.
          Liste vide, en revanche, la suite ne va pas de soi : on l'annonce. -->
     <p v-if="total === 0" class="mt-4 text-sm font-medium text-primary flex items-center gap-1.5">

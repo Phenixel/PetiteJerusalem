@@ -34,9 +34,9 @@ function currentJavaMajor() {
 }
 
 // Les émulateurs tournent sur la JVM et firebase-tools exige désormais Java >= 21.
-// Sur macOS, si le Java courant est trop vieux (ou absent) — par ex. un
+// Sur macOS, si le Java courant est trop vieux (ou absent), par ex. un
 // `JAVA_HOME` fixé sur openjdk@11 dans ~/.zprofile, ou un keg-only qui passe
-// devant dans le PATH — on bascule sur un JDK >= 21 installé, au lieu de
+// devant dans le PATH, on bascule sur un JDK >= 21 installé, au lieu de
 // planter avec « no longer supports Java version before 21 ».
 if (process.platform === 'darwin') {
   const major = currentJavaMajor()
@@ -65,7 +65,7 @@ if (process.platform === 'darwin') {
 // firebase.json, source unique). Si un port est tenu par un émulateur Firebase
 // ORPHELIN (PPID 1), on le tue. S'il est tenu par autre chose (un autre projet
 // qui tournerait, un process tiers), on NE touche à rien et on s'arrête avec un
-// message clair — on ne casse jamais ce qui ne nous appartient pas.
+// message clair, on ne casse jamais ce qui ne nous appartient pas.
 
 function projectEmulatorPorts() {
   try {
@@ -117,7 +117,7 @@ function reapOrphanEmulators() {
         info.command,
       )
       if (isFirebaseEmu && info.ppid === 1) {
-        console.log(`ℹ Émulateur Firebase orphelin sur le port ${port} (pid ${pid}) — nettoyage…`)
+        console.log(`ℹ Émulateur Firebase orphelin sur le port ${port} (pid ${pid}), nettoyage…`)
         try {
           process.kill(Number(pid), 'SIGTERM')
         } catch {
@@ -164,7 +164,7 @@ const child = spawn('firebase', args, { stdio: 'inherit', shell: process.platfor
 // mort, on relaie le signal au CLI Firebase pour qu'il fasse son arrêt propre
 // (export-on-exit + extinction de la JVM) au lieu de la laisser orpheline.
 // On ne relaie pas SIGINT : un Ctrl+C interactif est déjà délivré à tout le
-// groupe, donc le CLI le reçoit directement — le relayer le doublerait et
+// groupe, donc le CLI le reçoit directement, le relayer le doublerait et
 // forcerait un arrêt brutal (« send the signal again to stop right now »).
 process.on('SIGTERM', () => {
   if (child.pid && !child.killed) {

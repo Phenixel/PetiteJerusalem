@@ -20,7 +20,7 @@ import {
 const PARIS_DAY = new Date(Date.UTC(2026, 7, 4, 12));
 
 const at = (place: ZmanimPlace, date: Date) => formatZmanTime(date, place.tzid, "fr");
-/** Le jour tel qu'il est vécu au lieu — `getDay()` lirait celui de la machine. */
+/** Le jour tel qu'il est vécu au lieu, `getDay()` lirait celui de la machine. */
 const on = (place: ZmanimPlace, date: Date) => formatZmanDay(date, place.tzid, "fr");
 
 describe("computeZmanim", () => {
@@ -146,7 +146,7 @@ describe("jour de la semaine", () => {
   };
 
   it("compte les jours dans le fuseau du lieu", () => {
-    // Vendredi 7 août 2026, 23 h à Paris — soit déjà samedi à Jérusalem, et
+    // Vendredi 7 août 2026, 23 h à Paris, soit déjà samedi à Jérusalem, et
     // encore vendredi après-midi à New York.
     const instant = new Date(Date.UTC(2026, 7, 7, 21));
     expect(weekdayIn(DEFAULT_PLACE, instant)).toBe(5);

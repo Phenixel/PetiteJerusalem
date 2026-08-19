@@ -1,7 +1,7 @@
 /**
  * Rappels quotidiens de lecture par notification push (FCM).
  *
- * Toutes les 5 minutes (heure de Paris — audience du site), parcourt les
+ * Toutes les 5 minutes (heure de Paris, audience du site), parcourt les
  * `userPreferences` dont `pushReminderEnabled` est vrai. Deux rappels
  * indépendants, tous deux conditionnés au fait que la liste de lecture du jour
  * ne soit pas terminée :
@@ -11,7 +11,7 @@
  *  - `SUNSET_OFFSET_MINUTES` avant la chkia (`pushSunsetReminderEnabled`), le
  *    dernier appel de qui n'a pas trouvé le temps de la journée. La chkia est
  *    calculée pour `pushReminderPlace`, le lieu (arrondi) que l'application a
- *    confié au moment de l'activation — à défaut, Paris.
+ *    confié au moment de l'activation, à défaut, Paris.
  *
  * Les envois vont sur tous les appareils enregistrés (`fcmTokens`, alimentés
  * par l'app native via src/services/pushService.ts). Les tokens morts (app
@@ -83,7 +83,7 @@ export const INVALID_TOKEN_CODES = new Set([
   "messaging/invalid-argument",
 ]);
 
-/** Jour calendaire YYYY-MM-DD à Paris — même convention que todayKey() côté client. */
+/** Jour calendaire YYYY-MM-DD à Paris, même convention que todayKey() côté client. */
 function todayKey(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
 }

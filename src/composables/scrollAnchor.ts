@@ -15,7 +15,7 @@ export function anchorToElement(el: HTMLElement | null, offset = 90): void {
 /**
  * Amène un verset à l'écran et le surligne le temps que l'œil le retrouve
  * (retour de marque-page, reprise de lecture). `highlight` reçoit `key`
- * pendant la surbrillance puis null — sauf si une autre surbrillance a pris
+ * pendant la surbrillance puis null, sauf si une autre surbrillance a pris
  * le relais entre-temps.
  */
 export function scrollToVerse<K>(

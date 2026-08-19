@@ -4,7 +4,7 @@
  * store-assets/metadata/android/<locale>/ via l'API Android Publisher.
  *
  * Arborescence attendue (format fastlane, un dossier par langue Play Store :
- * fr-FR, en-US, iw-IL — Google utilise encore « iw » pour l'hébreu) :
+ * fr-FR, en-US, iw-IL, Google utilise encore « iw » pour l'hébreu) :
  *   <locale>/title.txt                    (≤ 30 caractères)
  *   <locale>/short_description.txt        (≤ 80)
  *   <locale>/full_description.txt         (≤ 4000)
@@ -25,7 +25,7 @@ const PACKAGE_NAME = "fr.petitejerusalem.app";
 const metadataDir = join(import.meta.dirname, "../store-assets/metadata/android");
 
 // Les limites de la Play Console comptent les caractères Unicode (code points),
-// pas les octets — important pour l'hébreu et les émojis.
+// pas les octets, important pour l'hébreu et les émojis.
 // Les notes de version ne sont pas validées ici : elles viennent de la
 // release GitHub ou de la phrase par défaut (scripts/release-notes.mjs).
 const LIMITS = {
@@ -62,7 +62,7 @@ for (const locale of locales) {
   for (const [relPath, limit] of Object.entries(LIMITS)) {
     const filePath = join(metadataDir, locale, relPath);
     if (!existsSync(filePath)) {
-      console.error(`play-listing: fichier manquant — ${locale}/${relPath}`);
+      console.error(`play-listing: fichier manquant, ${locale}/${relPath}`);
       errors++;
       continue;
     }
@@ -71,13 +71,13 @@ for (const locale of locales) {
       console.error(`play-listing: ${locale}/${relPath} fait ${length} caractères (max ${limit})`);
       errors++;
     } else {
-      console.log(`play-listing: ${locale}/${relPath} — ${length}/${limit} caractères`);
+      console.log(`play-listing: ${locale}/${relPath}, ${length}/${limit} caractères`);
     }
   }
   const shots = screenshotFiles(locale);
   if (shots.length === 1) {
     console.warn(
-      `play-listing: ${locale} n'a qu'une capture d'écran — la Play Console en exige au moins 2, elles ne seront pas envoyées`,
+      `play-listing: ${locale} n'a qu'une capture d'écran, la Play Console en exige au moins 2, elles ne seront pas envoyées`,
     );
   }
 }

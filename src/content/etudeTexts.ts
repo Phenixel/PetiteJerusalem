@@ -41,7 +41,7 @@ const CORPUS_LABEL: Record<Corpus, string> = {
 
 /**
  * Corpus liturgiques (Sli'hot, Brahot) : des textes qu'on lit, pas des textes
- * qu'on partage. Ils ne sont jamais proposés au partage de lecture — le choix
+ * qu'on partage. Ils ne sont jamais proposés au partage de lecture, le choix
  * des sessions reste limité à EnumTypeTextStudy, et leurs pages n'affichent ni
  * l'appel au partage ni la phrase qui le promet.
  */
@@ -175,7 +175,7 @@ function sectionTextHtml(section: TextSection, numbered: boolean): string {
   if (section.blocks?.length) {
     // Tefila : les blocs du fil principal n'ont pas de titre ; la page
     // statique, sans date, montre aussi les ajouts conditionnels (`when`),
-    // et les didascalies en français — elles font partie du texte.
+    // et les didascalies en français, elles font partie du texte.
     return section.blocks
       .map((block) => {
         const title = block.labelText?.fr ?? block.label;
@@ -209,7 +209,7 @@ export function sectionHeading(entry: TextStudyJsonEntry, section: TextSection):
     if (isParasha(entry)) return `Parashat ${latinName(entry)}`;
     return isMultiSection(entry) ? `${latinName(entry)}, ${section.label}` : latinName(entry);
   }
-  // Liturgie : le nom seul — « Sli'hot Sli'hot » ou un libellé de section
+  // Liturgie : le nom seul, « Sli'hot Sli'hot » ou un libellé de section
   // n'apporteraient rien sur un texte unique.
   if (LITURGY_CORPORA.has(corpus)) return latinName(entry);
   return `${CORPUS_LABEL[corpus]} ${latinName(entry)}, ${section.label}`;

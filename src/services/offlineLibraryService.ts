@@ -14,7 +14,7 @@ import { isNativeApp } from "../composables/useNativeApp";
 
 /**
  * Vue « bibliothèque » du stockage hors ligne : regroupe le catalogue
- * (`textStudies.json`) en livres téléchargeables — un livre = un fichier
+ * (`textStudies.json`) en livres téléchargeables, un livre = un fichier
  * JSON sous `/texts/**` (tous les Tehilim partagent par exemple le même
  * fichier). S'appuie sur `offlineTextStore` pour le stockage lui-même.
  */
@@ -23,13 +23,13 @@ const TALMUD_CHAPTERS_PATH = "/texts/talmud-chapters.json";
 
 /**
  * Fichiers embarqués dans le binaire natif : ils sont lisibles hors ligne sans
- * rien télécharger. Les corpus volumineux, eux, sont retirés du bundle — voir
+ * rien télécharger. Les corpus volumineux, eux, sont retirés du bundle, voir
  * scripts/prune-native-bundle.mjs, qui doit rester d'accord avec cette liste.
  */
 const BUNDLED_PATHS = new Set(["/texts/tehilim.json", TALMUD_CHAPTERS_PATH]);
 
 export interface OfflineBook {
-  /** Chemin web du fichier — clé unique du livre. */
+  /** Chemin web du fichier, clé unique du livre. */
   path: string;
   name: string;
   /** Corpus (type) : "Tehilim" | "Mishna" | "Talmud Bavli" | "Tanakh". */
@@ -160,7 +160,7 @@ export function missingBooksForEntries(entries: TextStudyJsonEntry[]): OfflineBo
 /**
  * Télécharge une liste de livres, l'un après l'autre (les téléchargements
  * proposés à l'utilisateur : lecture quotidienne, paracha de la semaine).
- * Renvoie les livres qui n'ont pas pu être récupérés — l'appelant décide quoi
+ * Renvoie les livres qui n'ont pas pu être récupérés, l'appelant décide quoi
  * en dire ; rien n'est perdu, ils restent proposés au prochain passage.
  */
 export async function downloadBooks(books: OfflineBook[]): Promise<OfflineBook[]> {

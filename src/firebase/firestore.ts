@@ -15,7 +15,7 @@ import { app } from "./core";
 
 // Cache local persistant (IndexedDB) : le marquage « lu », les préférences et
 // les sessions consultées restent disponibles hors ligne et se synchronisent
-// au retour du réseau — indispensable pour l'app mobile, sans effet négatif
+// au retour du réseau, indispensable pour l'app mobile, sans effet négatif
 // sur le web.
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),

@@ -13,12 +13,12 @@
 
 const UNITS = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"];
 const TENS = ["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"];
-// Index 0–4 → 0, 100, 200, 300, 400. Higher hundreds stack onto ת (400).
+// Index 0 à 4 : 0, 100, 200, 300, 400. Higher hundreds stack onto ת (400).
 const HUNDREDS = ["", "ק", "ר", "ש", "ת"];
 
 const GERSHAYIM = "״";
 
-/** Hebrew letters for a number 1–999, with 15/16 written ט״ו/ט״ז (not יה/יו). */
+/** Hebrew letters for a number 1 to 999, with 15/16 written ט״ו/ט״ז (not יה/יו). */
 function lettersFor(n: number): string {
   const hundreds = Math.floor(n / 100);
   let out = "ת".repeat(Math.floor(hundreds / 4)) + HUNDREDS[hundreds % 4];

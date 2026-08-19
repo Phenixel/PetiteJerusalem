@@ -20,13 +20,13 @@ import type { UserPreferences } from "./userPreferencesService";
  * Les widgets natifs ne peuvent pas exécuter le code de la webview : l'app
  * pré-calcule ici tout ce qu'ils affichent (horaires à venir, lecture du jour)
  * et le leur transmet en JSON via le plugin PjWidgets (voir widgetService).
- * Tout ce qui se voit est produit ici, déjà localisé et déjà formaté — heures
+ * Tout ce qui se voit est produit ici, déjà localisé et déjà formaté, heures
  * comprises : le natif ne traduit rien, ne formate rien, ne calcule rien
  * (les DateFormatter natifs subissent réglage 12 h/24 h et calendrier de
  * l'appareil, qui casseraient l'affichage).
  *
  * Le contrat est consommé par native/android/ (org.json) et native/ios/
- * (Codable) — toute évolution doit rester rétro-compatible ou incrémenter `v`.
+ * (Codable), toute évolution doit rester rétro-compatible ou incrémenter `v`.
  */
 
 type Translate = (key: string, params?: Record<string, unknown>) => string;
@@ -35,7 +35,7 @@ type Translate = (key: string, params?: Record<string, unknown>) => string;
 export interface ZmanimWidgetTime {
   key: string;
   label: string;
-  /** "17:42" dans le fuseau du lieu — le natif l'affiche tel quel. */
+  /** "17:42" dans le fuseau du lieu, le natif l'affiche tel quel. */
   time: string;
   /** Epoch ms : sert au natif à choisir le prochain horaire et à se replanifier. */
   epoch: number;
@@ -51,11 +51,11 @@ export interface ZmanimWidgetDay {
   from: number;
   /** Epoch ms de sa fin (sa propre chkia). */
   until: number;
-  /** "21 Eloul 5786" — déjà localisé. */
+  /** "21 Eloul 5786", déjà localisé. */
   hebrewDate: string;
   /** "Parachat Ki Tavo", ou null si la paracha n'est pas connue. */
   parasha: string | null;
-  /** "Pas de Ta'hanoun." — null le Chabbat, où la question ne se pose pas. */
+  /** "Pas de Ta'hanoun.", null le Chabbat, où la question ne se pose pas. */
   tachanun: string | null;
   /** Vrai quand il n'y a PAS de tahanoun : le natif le met en gras. */
   tachanunStrong: boolean;
@@ -65,7 +65,7 @@ export interface ZmanimWidgetPayload {
   v: 2;
   /**
    * Titre et gabarit « puis… » : plus affichés depuis la v2, gardés pour les
-   * binaires installés avant elle — leur décodage échoue si un champ manque,
+   * binaires installés avant elle, leur décodage échoue si un champ manque,
    * et le widget retomberait sur « rouvrez l'app » jusqu'à la mise à jour.
    */
   title: string;
@@ -91,7 +91,7 @@ export const ZMANIM_WIDGET_DAYS = 7;
  * tahanoun, bornés par les chkiot qui l'ouvrent et le ferment.
  *
  * Le jour hébraïque commence au coucher du soleil : ses bornes sont la chkia
- * de la veille et la sienne. Un jour polaire sans chkia ne borne rien — la
+ * de la veille et la sienne. Un jour polaire sans chkia ne borne rien, la
  * journée civile sert alors de repli, plutôt que de perdre l'entrée.
  */
 function widgetDay(
@@ -174,7 +174,7 @@ export interface DailyReadingWidgetPayload {
   date: string;
   /**
    * Epoch ms du minuit local qui suit : passé cet instant, les `done` ne
-   * comptent plus et le natif repart de zéro — comparaison numérique, aucune
+   * comptent plus et le natif repart de zéro, comparaison numérique, aucune
    * logique de calendrier côté natif (le calendrier de l'appareil peut être
    * hébraïque, ce qui fausserait tout formatage de date natif).
    */

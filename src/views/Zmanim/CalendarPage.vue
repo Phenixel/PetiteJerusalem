@@ -31,7 +31,7 @@ const now = ref(new Date());
 const today = computed(() => hebrewDayOf(place.value, now.value).abs());
 
 /**
- * L'année ouverte : celle où l'on est — sauf dans les derniers jours d'Eloul,
+ * L'année ouverte : celle où l'on est, sauf dans les derniers jours d'Eloul,
  * où toutes ses fêtes sont passées. On ouvre alors sur la suivante : la page
  * sert à voir ce qui vient.
  */
@@ -61,7 +61,7 @@ function title(entry: CalendarEntry): string {
 
 const clock = (date: Date) => formatZmanTime(date, place.value.tzid, locale.value);
 
-/** « jeudi 22 avril 2027 », ou « jeudi 22 – vendredi 23 avril 2027 » sur deux jours. */
+/** « jeudi 22 avril 2027 », ou « du jeudi 22 au vendredi 23 avril 2027 ». */
 function civilRange(entry: CalendarEntry): string {
   const from = entry.first.greg();
   const to = entry.last.greg();
@@ -73,14 +73,14 @@ function civilRange(entry: CalendarEntry): string {
   });
   if (entry.first.abs() === entry.last.abs()) return long.format(from);
   const short = new Intl.DateTimeFormat(locale.value, { weekday: "long", day: "numeric" });
-  return `${short.format(from)} – ${long.format(to)}`;
+  return t("calendar.range", { from: short.format(from), to: long.format(to) });
 }
 
-/** « 15 Nissan 5787 », ou « 15 – 16 Nissan 5787 » sur plusieurs jours. */
+/** « 15 Nissan 5787 », ou « du 15 au 16 Nissan 5787 » sur plusieurs jours. */
 function hebrewRange(entry: CalendarEntry): string {
   const last = formatHebrewDate(entry.last, locale.value);
   if (entry.first.abs() === entry.last.abs()) return last;
-  return `${formatHebrewDate(entry.first, locale.value)} – ${last}`;
+  return t("calendar.range", { from: formatHebrewDate(entry.first, locale.value), to: last });
 }
 
 /** Racine de la page : cible du dévoilement circulaire (bouton rond natif). */

@@ -7,7 +7,7 @@ import AppIcon from "./icons/AppIcon.vue";
  * Bandeau « une nouvelle version est disponible », en tête de l'app native.
  *
  * Dans le flux (pas de position fixe) : il pousse le contenu sans recouvrir
- * la navigation, et disparaît dès qu'il est refusé — jusqu'à la version
+ * la navigation, et disparaît dès qu'il est refusé, jusqu'à la version
  * suivante. La détection vit dans services/appUpdateService.ts.
  */
 

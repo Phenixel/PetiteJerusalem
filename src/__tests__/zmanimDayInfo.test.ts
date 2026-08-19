@@ -5,6 +5,7 @@ import {
   dayHighlights,
   restPeriodAt,
   restPeriodsNear,
+  saysBirkatHalevana,
   tachanunStatus,
   yearCalendar,
   type ZmanimPlace,
@@ -103,7 +104,7 @@ describe("restPeriodsNear", () => {
   });
 
   it("Pessah : les premiers jours, puis les derniers, séparés par le 'Hol haMoed", () => {
-    // 5787 : veille de Pessah, le mercredi 21 avril 2027 à midi — avant
+    // 5787 : veille de Pessah, le mercredi 21 avril 2027 à midi, avant
     // l'allumage du soir, les deux blocs de la fête sont encore devant.
     const periods = restPeriodsNear(DEFAULT_PLACE, at(2027, 4, 21), "fr");
     expect(periods).toHaveLength(2);
@@ -157,5 +158,20 @@ describe("yearCalendar", () => {
   it("ne porte ni Roch Hodech ni Chabbat ordinaire", () => {
     expect(named("Roch H\u2019odech")).toEqual([]);
     for (const entry of entries) expect(entry.name).not.toBe("");
+  });
+});
+
+describe("saysBirkatHalevana", () => {
+  it("de sept jours révolus à la moitié de la lunaison", () => {
+    expect(saysBirkatHalevana(hd(2026, 8, 19))).toBe(false); // 6 Eloul, trop tôt
+    expect(saysBirkatHalevana(hd(2026, 8, 20))).toBe(true); // 7 Eloul
+    expect(saysBirkatHalevana(hd(2026, 8, 27))).toBe(true); // 14 Eloul
+    expect(saysBirkatHalevana(hd(2026, 8, 28))).toBe(false); // 15 Eloul, trop tard
+  });
+
+  it("attend la sortie de Tich'a beAv, et celle de Kippour", () => {
+    expect(saysBirkatHalevana(hd(2026, 7, 20))).toBe(false); // 6 Av, avant le jeûne
+    expect(saysBirkatHalevana(hd(2026, 9, 20))).toBe(false); // 9 Tichri, avant Kippour
+    expect(saysBirkatHalevana(hd(2026, 9, 22))).toBe(true); // 11 Tichri
   });
 });

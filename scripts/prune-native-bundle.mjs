@@ -3,7 +3,7 @@
 // L'app mobile ne doit pas embarquer les ~38 Mo de public/texts : elle garde
 // seulement les petits fichiers transverses (tehilim.json, ~370 Ko, et
 // talmud-chapters.json, ~40 Ko) et télécharge le reste depuis le site via
-// offlineTextStore. À lancer entre `vite build` et `cap sync` — jamais pour
+// offlineTextStore. À lancer entre `vite build` et `cap sync`, jamais pour
 // le déploiement web, qui sert les textes depuis dist/.
 import { existsSync, rmSync } from "node:fs";
 

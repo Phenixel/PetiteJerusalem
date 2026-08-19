@@ -1,4 +1,4 @@
-# CI/CD Android — publication Play Store automatique
+# CI/CD Android : publication Play Store automatique
 
 Le workflow [.github/workflows/deploy-android.yml](../.github/workflows/deploy-android.yml)
 publie l'app Android sur le Play Store **à chaque tag `vX.Y.Z`**, en parallèle
@@ -71,10 +71,10 @@ store-assets/metadata/android/<locale>/   # fr-FR, en-US, iw-IL (hébreu)
   `scripts/prepare-whatsnew.mjs` :
   1. **si une release GitHub existe pour le tag** (créée depuis l'interface
      GitHub avec son texte), c'est ce texte qui part sur le Play Store
-     (markdown allégé, tronqué à 500 caractères) — en français, les autres
+     (markdown allégé, tronqué à 500 caractères), en français, les autres
      langues retombent sur la langue par défaut dans la console ;
   2. **sinon**, la phrase par défaut de `scripts/release-notes.mjs`
-     (« Correction de bugs mineurs. », traduite par langue) — il n'y a plus
+     (« Correction de bugs mineurs. », traduite par langue), il n'y a plus
      de `changelogs/default.txt` dans le repo.
 
   La release GitHub est de toute façon créée/complétée par la CI avec l'AAB

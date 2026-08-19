@@ -7,12 +7,12 @@ import WidgetKit
  * native/android/.../PjWidgetsPlugin.java).
  *
  * La webview pousse ici les payloads JSON pré-calculés
- * (src/services/widgetService.ts) ; ils sont stockés dans l'App Group — seul
- * espace lisible par l'extension de widgets — puis WidgetKit recharge les
+ * (src/services/widgetService.ts) ; ils sont stockés dans l'App Group, seul
+ * espace lisible par l'extension de widgets, puis WidgetKit recharge les
  * timelines.
  *
  * Fichier à ajouter à la cible App du projet Xcode (généré, non versionné) et
- * à enregistrer via PjViewController — voir docs/app-widgets.md.
+ * à enregistrer via PjViewController, voir docs/app-widgets.md.
  */
 @objc(PjWidgetsPlugin)
 public class PjWidgetsPlugin: CAPPlugin, CAPBridgedPlugin {
@@ -27,7 +27,7 @@ public class PjWidgetsPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func setPayloads(_ call: CAPPluginCall) {
         guard let defaults = UserDefaults(suiteName: Self.appGroup) else {
-            call.reject("App Group \(Self.appGroup) indisponible — vérifier la capability App Groups.")
+            call.reject("App Group \(Self.appGroup) indisponible, vérifier la capability App Groups.")
             return
         }
         // Seuls les widgets dont le payload a changé sont rechargés : chaque

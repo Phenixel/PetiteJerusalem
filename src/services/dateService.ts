@@ -3,7 +3,7 @@ import { i18n } from "../i18n";
 /**
  * Jour civil local (YYYY-MM-DD) : LA clé du suivi quotidien de lecture, qui se
  * remet à zéro à minuit local. Partagée par la page Lecture du jour, l'accueil,
- * la bibliothèque et les payloads des widgets — quatre copies divergentes de
+ * la bibliothèque et les payloads des widgets, quatre copies divergentes de
  * cette règle feraient dérailler la comparaison `progress.date === todayKey`.
  */
 export function localDayKey(now: Date = new Date()): string {

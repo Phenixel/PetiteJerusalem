@@ -2,7 +2,7 @@
  * Submit the site's indexable URLs to IndexNow.
  *
  * IndexNow instantly notifies participating search engines (Bing, Yandex,
- * Seznam…) that URLs are new or updated — Bing also feeds ChatGPT's web search.
+ * Seznam…) that URLs are new or updated, Bing also feeds ChatGPT's web search.
  * Google does NOT use IndexNow; for Google, submit the sitemap in Search Console
  * (see SEO.md).
  *
@@ -14,7 +14,7 @@
  */
 import { createJiti } from "jiti";
 
-// Public by design — this is hosted at /<KEY>.txt on the domain.
+// Public by design, this is hosted at /<KEY>.txt on the domain.
 const KEY = "7928be0e14242cf92e167550affa3215";
 const ENDPOINT = "https://api.indexnow.org/indexnow";
 

@@ -12,7 +12,7 @@ import android.net.Uri;
 /**
  * Socle commun des deux widgets (Horaires, Lecture du jour) : diffusion des
  * mises à jour, alarme de redessin, toucher-pour-ouvrir. Les sous-classes ne
- * fournissent que leur rendu — qui dit aussi QUAND se redessiner (prochain
+ * fournissent que leur rendu, qui dit aussi QUAND se redessiner (prochain
  * zman, minuit), la planification elle-même vivant ici, en un seul endroit,
  * dans onUpdate.
  */
@@ -40,10 +40,10 @@ public abstract class PjWidgetProvider extends AppWidgetProvider {
         context.sendBroadcast(intent);
     }
 
-    /** Action de l'alarme de redessin — unique par widget. */
+    /** Action de l'alarme de redessin, unique par widget. */
     protected abstract String tickAction();
 
-    /** Request codes des PendingIntent — uniques par widget. */
+    /** Request codes des PendingIntent, uniques par widget. */
     protected abstract int alarmRequestCode();
 
     protected abstract int clickRequestCode();
@@ -70,7 +70,7 @@ public abstract class PjWidgetProvider extends AppWidgetProvider {
         if (alarms == null) return;
         if (rendered.tickAt > 0) {
             // RTC sans réveil : si l'appareil dort, le widget se redessinera à
-            // l'allumage de l'écran — personne ne le regarde avant.
+            // l'allumage de l'écran, personne ne le regarde avant.
             alarms.set(AlarmManager.RTC, rendered.tickAt, tickIntent(context));
         } else {
             // Plus rien à attendre (fenêtre épuisée, payload absent) : pas

@@ -81,7 +81,9 @@ const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
 const textId = computed(() =>
   isEtudeRoute.value ? String(etudeEntry.value?.id ?? "") : String(route.params.textId),
 );
-const sectionParam = computed(() => (route.params.section ? Number(route.params.section) : undefined));
+const sectionParam = computed(() =>
+  route.params.section ? Number(route.params.section) : undefined,
+);
 const sessionSlug = computed(() => (route.query.session ? String(route.query.session) : null));
 
 /** Reading lead is shown on the public /bibliotheque pages (not in the session reader).
@@ -123,7 +125,7 @@ const verseBlocks = computed<TextBlock[]>(() => {
 
 // Tefila : les ajouts liés au calendrier (Retsé le Chabbat, Yaalé véyavo à
 // Roch Hodech, Al hanissim à Hanouka…) ne s'affichent que le jour où ils se
-// disent — dans une carte, pour les distinguer du fil du texte. Le jour
+// disent, dans une carte, pour les distinguer du fil du texte. Le jour
 // hébraïque suit le lieu des horaires (après la chkia, on est déjà demain).
 const occasions = computed(() =>
   activeOccasions(
@@ -139,7 +141,7 @@ const visibleBlocks = computed(() =>
 const isLiturgyText = computed(() => !!textEntry.value && isLiturgy(textEntry.value));
 const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
 
-/** Séparation entre deux blocs (chapitre, montée) — pas de filet au premier. */
+/** Séparation entre deux blocs (chapitre, montée), pas de filet au premier. */
 function blockLabelClass(index: number): string {
   const base = "mb-4 text-sm font-semibold text-primary";
   return index === 0 ? base : `${base} mt-10 pt-4 border-t border-black/10 dark:border-white/10`;
@@ -165,11 +167,13 @@ const currentSection = computed<TextSection | null>(() => {
   return null;
 });
 
-const canTransliterate = computed(() => currentSection.value?.he.some((line) => hasNiqqud(line)) ?? false);
+const canTransliterate = computed(
+  () => currentSection.value?.he.some((line) => hasNiqqud(line)) ?? false,
+);
 
 // Translittération mémoïsée : appelée depuis le template, elle était recalculée
 // pour toute la section (des dizaines de lignes × plusieurs passes regex) à
-// CHAQUE re-rendu de la page — y compris ceux qui n'ont rien à voir (tick du
+// CHAQUE re-rendu de la page, y compris ceux qui n'ont rien à voir (tick du
 // lecteur audio, changement de taille de lecture…). Les computed ne refont le
 // travail qu'au changement de section, et rien du tout hors mode phonétique.
 const phoneticByDaf = computed(() => {
@@ -226,7 +230,11 @@ function goToSection(index: number, replace = false) {
   const to =
     isEtudeRoute.value && textEntry.value
       ? sectionPath(textEntry.value, index)
-      : { name: "text-reading-section", params: { textId: textId.value, section: index }, query: route.query };
+      : {
+          name: "text-reading-section",
+          params: { textId: textId.value, section: index },
+          query: route.query,
+        };
   if (replace) router.replace(to);
   else router.push(to);
   scrollTopProgrammatic();
@@ -255,7 +263,7 @@ function libraryLocation(): string {
  * « Retour » remonte d'un cran (chapitre → liste des chapitres → bibliothèque).
  * Il ne POUSSE jamais la page parente : soit elle est déjà l'entrée précédente
  * et on y revient, soit on remplace l'entrée courante. Empiler la faisait
- * revenir en arrière sur le chapitre qu'on venait de quitter — chapitre →
+ * revenir en arrière sur le chapitre qu'on venait de quitter, chapitre →
  * texte → chapitre, sans fin.
  */
 function goUp(target: RouteLocationRaw, preferHistory: boolean) {
@@ -292,7 +300,7 @@ function exitReading() {
     return;
   }
   // While reading a chapter, "back" returns to this text's chapter list rather
-  // than the previously read chapter — readers paging through next/previous
+  // than the previously read chapter, readers paging through next/previous
   // expect to land back on the list to pick another passage.
   if (!isSingleSection.value && sectionParam.value !== undefined) {
     backToSectionList();
@@ -300,7 +308,7 @@ function exitReading() {
   }
   // Sur la liste des chapitres, « Retour » quitte le texte : on rend la main à
   // l'écran d'où vient le lecteur, sauf s'il s'agit d'un chapitre de ce même
-  // texte (lien direct vers un chapitre) — on remonte alors à la bibliothèque.
+  // texte (lien direct vers un chapitre), on remonte alors à la bibliothèque.
   goUp(libraryLocation(), true);
 }
 
@@ -381,7 +389,7 @@ function placeLabel(sectionIndex: number | null, line: number): string {
 
 const showResumeBanner = computed(() => {
   // Liturgie : les marque-pages restent, mais pas de « reprendre là où vous
-  // étiez » — une brakha ou les Sli'hot se lisent du début, pas en cours.
+  // étiez », une brakha ou les Sli'hot se lisent du début, pas en cours.
   if (textEntry.value && isLiturgy(textEntry.value)) return false;
   const p = savedPosition.value;
   if (!p || resumeDismissed.value || route.query.verset !== undefined || !content.value)
@@ -432,14 +440,11 @@ function scrollToLine(line: number) {
 
 // Arrivée avec ?verset=N (reprise, marque-page, lien partagé) : on scrolle au
 // verset dès que le contenu correspondant est rendu.
-watch(
-  [content, sectionParam, () => route.query.verset],
-  ([loaded, , verset]) => {
-    if (!loaded || verset === undefined) return;
-    const line = Number(verset);
-    if (Number.isInteger(line) && line >= 0) scrollToLine(line);
-  },
-);
+watch([content, sectionParam, () => route.query.verset], ([loaded, verset]) => {
+  if (!loaded || verset === undefined) return;
+  const line = Number(verset);
+  if (Number.isInteger(line) && line >= 0) scrollToLine(line);
+});
 
 // --- Suivi de la position (sauvegarde silencieuse au scroll) ---
 // La position ne s'enregistre qu'après un geste du lecteur (scroll, choix d'un
@@ -512,7 +517,7 @@ function onScroll() {
 // Choisir un chapitre est aussi un geste de lecture : on retient le chapitre
 // ouvert (ligne 0), le scroll affine ensuite. `userNavigated` évite de compter
 // l'ouverture initiale de la page. Exception : une position profonde dans un
-// AUTRE chapitre n'est pas écrasée à la simple ouverture — jeter « chapitre 3,
+// AUTRE chapitre n'est pas écrasée à la simple ouverture, jeter « chapitre 3,
 // verset 120 » parce qu'on a jeté un œil au chapitre 5 serait irréversible ;
 // le premier scroll dans le nouveau chapitre prendra le relais.
 let userNavigated = false;
@@ -604,12 +609,15 @@ const isSessionMode = computed(() => sessionSlug.value !== null && session.value
 // Reservation unit: the current chapter, or 1 for a single-section text.
 const reservationUnit = computed(() => (isSingleSection.value ? 1 : sectionParam.value));
 
-const showReservationBar = computed(() => isSessionMode.value && reservationUnit.value !== undefined);
+const showReservationBar = computed(
+  () => isSessionMode.value && reservationUnit.value !== undefined,
+);
 
 function findReservation(unit: number | undefined): TextStudyReservation | null {
   if (!session.value || unit === undefined) return null;
   return (
-    session.value.reservations.find((r) => r.textStudyId === textId.value && r.section === unit) ?? null
+    session.value.reservations.find((r) => r.textStudyId === textId.value && r.section === unit) ??
+    null
   );
 }
 
@@ -622,12 +630,15 @@ const reservedStatus = computed(() => {
 
 const isMine = computed(() => {
   const r = currentReservation.value;
-  return !!r && sessionService.canUserDeleteReservation(r, currentUser.value, reservationForm.value.email);
+  return (
+    !!r &&
+    sessionService.canUserDeleteReservation(r, currentUser.value, reservationForm.value.email)
+  );
 });
 
 // Entrée du funnel de réservation : le lecteur atteint une section libre et la
 // barre de réservation s'affiche. C'était le pas manquant entre session_viewed
-// et reservation_confirm_clicked — le trou de conversion à mesurer est là,
+// et reservation_confirm_clicked, le trou de conversion à mesurer est là,
 // entre voir le formulaire et cliquer sur « Confirmer ».
 const canReserveNow = computed(() => showReservationBar.value && !reservedStatus.value.isReserved);
 
@@ -784,7 +795,8 @@ const pageTitle = computed(() => {
   if (isEtudeRoute.value) {
     return currentSection.value ? sectionTitle(e, currentSection.value) : hubTitle(e);
   }
-  const sec = currentSection.value && !isSingleSection.value ? ` · ${currentSection.value.label}` : "";
+  const sec =
+    currentSection.value && !isSingleSection.value ? ` · ${currentSection.value.label}` : "";
   return `${appendHebrewNumeral(e.name)}${sec} | Petite Jérusalem`;
 });
 const pageDescription = computed(() => {
@@ -912,10 +924,7 @@ watch(textId, () => {
         <h1 class="text-3xl md:text-4xl font-bold text-text-primary">
           {{ appendHebrewNumeral(textEntry.name) }}
         </h1>
-        <p
-          v-if="currentSection && !isSingleSection"
-          class="mt-2 text-text-secondary"
-        >
+        <p v-if="currentSection && !isSingleSection" class="mt-2 text-text-secondary">
           {{ currentSection.label }}
         </p>
       </header>
@@ -971,7 +980,9 @@ watch(textId, () => {
               >
                 {{ section.index }}
               </span>
-              <span class="font-medium text-text-primary truncate group-hover:text-primary transition-colors">
+              <span
+                class="font-medium text-text-primary truncate group-hover:text-primary transition-colors"
+              >
                 {{ section.label }}
               </span>
             </span>
@@ -1023,7 +1034,10 @@ watch(textId, () => {
           </router-link>
 
           <!-- Reserved by me -->
-          <div v-if="isMine" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div
+            v-if="isMine"
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          >
             <span
               class="chip !text-sm w-fit"
               :class="
@@ -1054,7 +1068,11 @@ watch(textId, () => {
                 "
               >
                 <AppIcon name="check" :size="13" />
-                {{ currentReservation?.isCompleted ? t("textReading.unmarkRead") : t("textReading.markRead") }}
+                {{
+                  currentReservation?.isCompleted
+                    ? t("textReading.unmarkRead")
+                    : t("textReading.markRead")
+                }}
               </button>
               <button
                 @click="cancelReservation"
@@ -1083,8 +1101,12 @@ watch(textId, () => {
               />
               {{
                 currentReservation?.isCompleted
-                  ? t("textReading.readBy", { name: reservedStatus.reservedBy || t("textReading.someone") })
-                  : t("textReading.reservedBy", { name: reservedStatus.reservedBy || t("textReading.someone") })
+                  ? t("textReading.readBy", {
+                      name: reservedStatus.reservedBy || t("textReading.someone"),
+                    })
+                  : t("textReading.reservedBy", {
+                      name: reservedStatus.reservedBy || t("textReading.someone"),
+                    })
               }}
             </span>
           </div>
@@ -1134,7 +1156,9 @@ watch(textId, () => {
             v-if="bookmarks.length"
             @click="showBookmarksPanel = !showBookmarksPanel"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-sm font-medium transition-colors"
-            :class="showBookmarksPanel ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
+            :class="
+              showBookmarksPanel ? 'text-primary' : 'text-text-secondary hover:text-text-primary'
+            "
             :title="t('textReading.bookmarks')"
           >
             <AppIcon name="bookmark" :size="14" />
@@ -1165,26 +1189,21 @@ watch(textId, () => {
             </button>
           </div>
 
-          <div v-if="canTransliterate" class="inline-flex p-0.5 rounded-lg bg-black/5 dark:bg-white/10">
+          <div
+            v-if="canTransliterate"
+            class="inline-flex p-0.5 rounded-lg bg-black/5 dark:bg-white/10"
+          >
             <button
               @click="showPhonetic = false"
               class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
-              :class="
-                !showPhonetic
-                  ? 'bg-surface text-primary shadow-sm'
-                  : 'text-text-secondary'
-              "
+              :class="!showPhonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
             >
               {{ t("textReading.hebrew") }}
             </button>
             <button
               @click="showPhonetic = true"
               class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
-              :class="
-                showPhonetic
-                  ? 'bg-surface text-primary shadow-sm'
-                  : 'text-text-secondary'
-              "
+              :class="showPhonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
             >
               {{ t("textReading.phonetic") }}
             </button>
@@ -1297,10 +1316,7 @@ watch(textId, () => {
                   </p>
                 </div>
                 <!-- Verset sélectionné : proposer le marque-page -->
-                <div
-                  v-if="selectedLine === block.offset + index"
-                  class="flex justify-end !mt-2"
-                >
+                <div v-if="selectedLine === block.offset + index" class="flex justify-end !mt-2">
                   <button
                     @click.stop="toggleBookmarkAt(block.offset + index)"
                     class="btn btn-soft !px-3 !py-1.5 text-sm"
@@ -1339,13 +1355,13 @@ watch(textId, () => {
         />
       </div>
 
-      <!-- Internal links (public /bibliotheque reading pages only) -->
-      <section
-        v-if="isEtudeRoute"
-        class="mt-14 text-sm text-text-secondary"
-      >
+      <!-- Internal links (public /bibliotheque reading pages only). Pas sous un
+           texte de tefila : on y vient prier, pas naviguer. -->
+      <section v-if="isEtudeRoute && !isLiturgyText" class="mt-14 text-sm text-text-secondary">
         <nav class="flex flex-wrap gap-x-5 gap-y-2">
-          <RouterLink to="/bibliotheque" class="hover:text-primary transition-colors">Bibliothèque</RouterLink>
+          <RouterLink to="/bibliotheque" class="hover:text-primary transition-colors"
+            >Bibliothèque</RouterLink
+          >
           <RouterLink
             v-if="isTehilimEtude"
             to="/tehilim"

@@ -13,7 +13,7 @@ import { isNativeApp } from "./composables/useNativeApp";
 // - user-scalable=no coupe le zoom de la webview : il agrandit la page entière
 //   (barres comprises), déborde du viewport et ne se remet jamais droit. Dans
 //   les pages de texte, le pincement pilote à la place la taille de lecture
-//   (useReadingPinch) — le réflexe reste le bon, l'effet devient utile.
+//   (useReadingPinch), le réflexe reste le bon, l'effet devient utile.
 // - la classe native-app active les styles réservés à l'app (main.css).
 if (isNativeApp) {
   document
@@ -33,11 +33,11 @@ if (isNativeApp) {
 // chunks.
 //
 // Trois sources d'écoute, parce qu'elles ne se recouvrent pas :
-//  - vite:preloadError — échec du PRÉchargement des dépendances d'un chunk ;
-//  - router.onError — échec de l'import() du composant de route lui-même, qui
+//  - vite:preloadError, échec du PRÉchargement des dépendances d'un chunk ;
+//  - router.onError, échec de l'import() du composant de route lui-même, qui
 //    ne déclenche aucun vite:preloadError. C'est le cas réellement observé en
 //    production, et il n'était pas rattrapé ;
-//  - unhandledrejection — les import() hors routeur (services, composants).
+//  - unhandledrejection, les import() hors routeur (services, composants).
 const CHUNK_RELOAD_KEY = "pj_chunk_reload_at";
 
 // Messages des navigateurs pour un module dynamique injoignable : Chrome
@@ -136,7 +136,7 @@ app.mount("#app");
 // dynamique et best-effort : jamais bloquant pour le démarrage.
 import("./services/analyticsService").then(({ analyticsService }) => analyticsService.init());
 
-// App native uniquement — imports dynamiques pour ne rien ajouter au bundle
+// App native uniquement, imports dynamiques pour ne rien ajouter au bundle
 // initial du site web.
 import("./composables/useNativeApp").then(({ isNativeApp }) => {
   if (!isNativeApp) return;
@@ -161,7 +161,7 @@ import("./composables/useNativeApp").then(({ isNativeApp }) => {
   import("@capacitor/app").then(({ App: CapacitorApp }) => {
     // Toucher un widget ouvre l'app sur sa page : l'intent porte une URL du
     // site (https sur Android, scheme petitejerusalem:// sur iOS). Seules ces
-    // URLs-là naviguent — tout autre lien délivré ici (callback OAuth natif,
+    // URLs-là naviguent, tout autre lien délivré ici (callback OAuth natif,
     // intent tiers) doit laisser l'app où elle est, sous peine d'arracher
     // l'utilisateur vers une 404 en pleine connexion Google par exemple.
     CapacitorApp.addListener("appUrlOpen", ({ url }) => {

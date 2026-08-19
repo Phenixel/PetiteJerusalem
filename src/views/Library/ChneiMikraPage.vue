@@ -60,7 +60,7 @@ const title = computed(() =>
   (parasha.value?.entries ?? []).map((e) => appendHebrewNumeral(e.name)).join(" · "),
 );
 
-/** « Chabbat 8 août » — le Chabbat où la paracha affichée est lue. */
+/** « Chabbat 8 août », le Chabbat où la paracha affichée est lue. */
 const shabbatLabel = computed(() => {
   if (!parasha.value) return "";
   const date = new Intl.DateTimeFormat(locale.value, {

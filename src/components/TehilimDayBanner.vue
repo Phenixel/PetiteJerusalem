@@ -7,7 +7,7 @@ import { analyticsService } from "../services/analyticsService";
 import AppIcon from "./icons/AppIcon.vue";
 
 /**
- * Les psaumes du jour, en tête des Tehilim de la bibliothèque — le pendant du
+ * Les psaumes du jour, en tête des Tehilim de la bibliothèque, le pendant du
  * ChneiMikraBanner sur le Tanakh.
  *
  * Le cycle mensuel n'a pas de page à lui : chaque psaume du jour est un lien

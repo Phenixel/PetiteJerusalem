@@ -63,7 +63,7 @@ function applyAuteur(all: Chiour[], slug: string): boolean {
     })
     .catch(() => {});
   seoService.setMeta({
-    title: `${name} – ${t("chiourim.title")} – Petite Jerusalem`,
+    title: `${name} | ${t("chiourim.title")} | Petite Jerusalem`,
     description: t("auteurPage.seoDescription", { auteur: name }),
     canonical: window.location.origin + `/chiourim/auteur/${slug}`,
   });

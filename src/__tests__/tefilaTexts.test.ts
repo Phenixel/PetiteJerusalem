@@ -89,7 +89,7 @@ describe("fichiers de tefila", () => {
       en: expect.any(String),
       he: expect.any(String),
     });
-    // Chaque réplique dit qui parle — le mezamen, puis les convives.
+    // Chaque réplique dit qui parle, le mezamen, puis les convives.
     for (const paragraph of zimun.paragraphs ?? []) expect(paragraph.rubric).toBeDefined();
     // « Chamayim », la réponse de l'assemblée, est mise en avant.
     const answered = (zimun.paragraphs ?? []).flatMap((p) => p.runs);
@@ -105,7 +105,13 @@ describe("fichiers de tefila", () => {
   it("Brakha A'harona : le Mé'ein chaloch complet puis Boré nefachot", () => {
     const content = load("brahot", "brakha-aharona");
     const blocks = content.sections[0].blocks ?? [];
-    expect(blocks.map((b) => b.label)).toEqual(["Mé'ein chaloch (Al hami'hya)", "Boré nefachot"]);
+    expect(blocks.map((b) => b.label).filter(Boolean)).toEqual([
+      "Mé'ein chaloch (Al hami'hya)",
+      "Boré nefachot",
+    ]);
+    // Ce qui change selon le repas ou selon le jour sort du fil, en blocs de
+    // variantes : on en choisit une, on ne les lit pas toutes.
+    expect(blocks.filter((b) => b.variants)).toHaveLength(4);
     // Comparé sans vocalisation : l'ordre des signes varie d'une source à l'autre.
     const stripNiqqud = (s: string) => s.normalize("NFC").replace(/[֑-ׇ]/g, "");
     const all = stripNiqqud(content.sections[0].he.join(" "));
@@ -145,7 +151,7 @@ describe("fichiers de tefila", () => {
 
   it("les didascalies hébraïques ne traînent plus dans le texte", () => {
     // Elles vivaient collées aux versets ; elles sont désormais traduites et
-    // rendues à part — aucune ne doit rester dans ce qui se lit.
+    // rendues à part, aucune ne doit rester dans ce qui se lit.
     const MARKERS = ["בעשרת ימי תשובה", "יש אומרים", "והמסובים עונים", "אומרים קדיש"];
     for (const [corpus, slug] of [
       ["slihot", "slihot"],

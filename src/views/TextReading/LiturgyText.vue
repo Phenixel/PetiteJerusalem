@@ -43,8 +43,12 @@ function blockTitle(block: TextBlock): string {
   return block.labelText ? say(block.labelText) : block.label;
 }
 
-/** Titre de l'encadré replié : l'occasion, puis le nom du passage s'il en a un. */
+/**
+ * Titre de l'encadré replié : le titre propre du bloc s'il en a un, sinon
+ * l'occasion qui l'ouvre, suivie du nom du passage.
+ */
 function foldTitle(block: TextBlock): string {
+  if (block.labelText) return say(block.labelText);
   const occasion = t(`textReading.fold.${block.fold}`);
   return block.label ? `${occasion} · ${block.label}` : occasion;
 }
@@ -69,8 +73,8 @@ function toggleFold(block: TextBlock) {
 }
 
 /**
- * Répétitions : jusqu'à trois fois, le passage est réellement réécrit — la
- * reprise en plus clair —, comme dans un siddour. Au-delà (« sept fois »),
+ * Répétitions : jusqu'à trois fois, le passage est réellement réécrit (la
+ * reprise en plus clair), comme dans un siddour. Au-delà (« sept fois »),
  * le réécrire noierait le fil : on annonce le compte.
  */
 const MAX_WRITTEN_REPEATS = 3;
@@ -89,40 +93,42 @@ const repeatBadge = (paragraph: TextParagraph): string =>
 const runText = (text: string, index: number): string => (index === 0 ? text : ` ${text}`);
 
 /**
- * Litanies (« Ra'hamana… », « Élohénou chébachamayim… ») : des dizaines de
- * lignes courtes, une par supplication. Les espacer comme des paragraphes les
- * étire sur des écrans entiers — deux lignes courtes qui se suivent se serrent.
- */
-const SHORT_LINE = 120;
-function tightWith(block: TextBlock, index: number): boolean {
-  if (index === 0) return false;
-  return block.lines[index].length < SHORT_LINE && block.lines[index - 1].length < SHORT_LINE;
-}
-
-/**
  * Classe de l'encadré d'un bloc. La couleur du thème dit « c'est maintenant » :
  * un ajout du calendrier ne s'affiche que le jour où il se dit, et un encadré
  * repliable ne se colore que pendant sa saison. Hors saison il reste là, en
- * gris, dépliable — présent sans réclamer la lecture.
+ * gris, dépliable, présent sans réclamer la lecture.
  */
 function sectionClass(block: TextBlock): string {
   if (block.fold) {
-    const base = "my-7 rounded-xl border overflow-hidden";
+    const base = "my-7 rounded-xl overflow-hidden";
     return inSeason(block)
-      ? `${base} border-primary/25 bg-primary/5`
-      : `${base} border-line bg-black/[0.02] dark:bg-white/[0.03]`;
+      ? `${base} bg-primary/5`
+      : `${base} bg-black/[0.04] dark:bg-white/[0.05]`;
   }
   // Ajout du calendrier : à la couleur du thème, adossé à un filet.
   if (block.when) return "my-7 border-s-2 border-primary/40 ps-4 text-primary";
+  // Variantes : à part du fil, sur un fond neutre, pour qu'on voie qu'on
+  // choisit au lieu de tout lire.
+  if (block.variants) return "my-6 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] p-4";
   return "";
 }
 
 /** Titre du fil du texte : filet de séparation, sauf au tout premier bloc. */
 function titleClass(block: TextBlock, index: number): string {
+  if (block.variants) return "mb-3 text-sm font-semibold text-text-secondary";
   const base = "mb-3 text-sm font-semibold text-primary";
   if (block.when || index === 0) return base;
   return `${base} mt-10 pt-4 border-t border-black/10 dark:border-white/10`;
 }
+
+/**
+ * Classe du texte d'un paragraphe. Ce qui ne se dit pas toujours passe au
+ * second plan : le fil qu'on lit d'un bout à l'autre doit rester le plus net.
+ */
+const paragraphTone = (block: TextBlock, paragraph: TextParagraph): string =>
+  // Un ajout du calendrier garde la couleur du thème : elle dit déjà « c'est
+  // aujourd'hui », l'atténuer reviendrait à le contredire.
+  !block.when && (paragraph.muted || block.variants) ? "text-text-secondary" : "";
 
 // Fichier sans mise en forme détaillée : un paragraphe par ligne, sans didascalie.
 const plainParagraphs = (block: TextBlock): TextParagraph[] =>
@@ -172,56 +178,87 @@ const sections = computed(() =>
       </p>
 
       <CollapseTransition>
-        <div v-show="isOpen(block)" :class="block.fold ? 'px-4 pb-4' : ''">
+        <div
+          v-show="isOpen(block)"
+          :class="[
+            block.fold ? 'px-4 pb-4' : '',
+            block.numbered ? 'reading-numbered divide-y divide-line' : '',
+          ]"
+        >
           <template v-for="(paragraph, i) in paragraphs" :key="block.offset + i">
-            <p v-if="paragraph.rubric" class="reading-rubric">{{ say(paragraph.rubric) }}</p>
-            <div
-              v-for="copy in copiesOf(paragraph)"
-              :key="copy"
-              :data-line="copy === 1 ? block.offset + i : undefined"
-              class="reading-para"
-              :class="{
-                'reading-para-tight': copy === 1 && tightWith(block, i),
-                'reading-echo': copy > 1,
-                'bg-primary/10': highlightedLine === block.offset + i,
-                'bg-black/5 dark:bg-white/10':
-                  selectedLine === block.offset + i && highlightedLine !== block.offset + i,
-              }"
-              @click="emit('select', block.offset + i)"
-            >
-              <p v-if="!showPhonetic" dir="rtl" class="reading-he">
-                <AppIcon
-                  v-if="copy === 1 && isBookmarked(block.offset + i)"
-                  name="bookmark"
-                  :size="13"
-                  class="text-primary me-1"
-                />
-                <template v-for="(run, r) in paragraph.runs" :key="r">
-                  <span v-if="run.kind === 'rubric'" class="reading-rubric-inline">{{
-                    say(run.rubric)
-                  }}</span>
-                  <span v-else :class="{ 'font-bold': run.strong }">{{
-                    runText(run.text, r)
-                  }}</span>
-                </template>
-                <span v-if="repeatBadge(paragraph)" class="reading-rubric-inline">{{
-                  repeatBadge(paragraph)
-                }}</span>
-              </p>
-              <p v-else dir="ltr" class="reading-tl">{{ phoneticLines[block.offset + i] }}</p>
-            </div>
-            <div v-if="selectedLine === block.offset + i" class="flex justify-end mt-2">
-              <button
-                class="btn btn-soft !px-3 !py-1.5 text-sm"
-                @click.stop="emit('toggle-bookmark', block.offset + i)"
+            <div :class="block.numbered ? 'flex items-start gap-3 py-2' : ''">
+              <span
+                v-if="block.numbered"
+                class="mt-2 w-6 shrink-0 text-sm font-semibold tabular-nums text-primary"
               >
-                <AppIcon name="bookmark" :size="13" />
-                {{
-                  isBookmarked(block.offset + i)
-                    ? t("textReading.bookmarkRemove")
-                    : t("textReading.bookmarkAdd")
-                }}
-              </button>
+                {{ i + 1 }}
+              </span>
+              <div class="min-w-0 flex-1">
+                <!-- Dans un bloc de variantes, le cas se lit en regard du texte,
+                     pas au-dessus : c'est ainsi qu'on voit qu'on en choisit une. -->
+                <p v-if="paragraph.rubric && !block.variants" class="reading-rubric">
+                  {{ say(paragraph.rubric) }}
+                </p>
+                <div
+                  v-for="copy in copiesOf(paragraph)"
+                  :key="copy"
+                  :data-line="copy === 1 ? block.offset + i : undefined"
+                  class="reading-para"
+                  :class="{
+                    'reading-echo': copy > 1,
+                    'bg-primary/10': highlightedLine === block.offset + i,
+                    'bg-black/5 dark:bg-white/10':
+                      selectedLine === block.offset + i && highlightedLine !== block.offset + i,
+                  }"
+                  @click="emit('select', block.offset + i)"
+                >
+                  <div :class="block.variants ? 'flex items-baseline gap-3' : ''">
+                    <span v-if="block.variants && paragraph.rubric" class="reading-variant-label">{{
+                      say(paragraph.rubric)
+                    }}</span>
+                    <p
+                      v-if="!showPhonetic"
+                      dir="rtl"
+                      class="reading-he min-w-0 flex-1"
+                      :class="paragraphTone(block, paragraph)"
+                    >
+                      <AppIcon
+                        v-if="copy === 1 && isBookmarked(block.offset + i)"
+                        name="bookmark"
+                        :size="13"
+                        class="text-primary me-1"
+                      />
+                      <template v-for="(run, r) in paragraph.runs" :key="r">
+                        <span v-if="run.kind === 'rubric'" class="reading-rubric-inline">{{
+                          say(run.rubric)
+                        }}</span>
+                        <span v-else :class="{ 'font-bold': run.strong }">{{
+                          runText(run.text, r)
+                        }}</span>
+                      </template>
+                      <span v-if="repeatBadge(paragraph)" class="reading-rubric-inline">{{
+                        repeatBadge(paragraph)
+                      }}</span>
+                    </p>
+                    <p v-else dir="ltr" class="reading-tl min-w-0 flex-1">
+                      {{ phoneticLines[block.offset + i] }}
+                    </p>
+                  </div>
+                </div>
+                <div v-if="selectedLine === block.offset + i" class="flex justify-end mt-2">
+                  <button
+                    class="btn btn-soft !px-3 !py-1.5 text-sm"
+                    @click.stop="emit('toggle-bookmark', block.offset + i)"
+                  >
+                    <AppIcon name="bookmark" :size="13" />
+                    {{
+                      isBookmarked(block.offset + i)
+                        ? t("textReading.bookmarkRemove")
+                        : t("textReading.bookmarkAdd")
+                    }}
+                  </button>
+                </div>
+              </div>
             </div>
           </template>
         </div>
@@ -275,14 +312,24 @@ const sections = computed(() =>
   transition: background-color 0.5s ease;
 }
 
-/* Litanies : les lignes courtes qui se suivent restent groupées. */
-.reading-para-tight {
-  margin-top: 0.2rem;
-}
-
 /* Reprise d'un passage qui se dit deux ou trois fois. */
 .reading-echo {
   margin-top: 0.2rem;
   opacity: 0.5;
+}
+
+/* Le cas d'une variante, en regard du texte : « après des mezonot », etc. */
+.reading-variant-label {
+  flex: 0 0 auto;
+  max-width: 45%;
+  font-size: calc(0.8rem * var(--reading-scale, 1));
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+/* Bénédictions numérotées : le numéro tient la marge, pas de blanc en plus. */
+.reading-numbered .reading-para {
+  margin-top: 0;
 }
 </style>

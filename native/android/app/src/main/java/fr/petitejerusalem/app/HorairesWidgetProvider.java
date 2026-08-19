@@ -14,7 +14,7 @@ import org.json.JSONObject;
  * l'utilisateur, avec la paracha de la semaine et le tahanoun.
  *
  * Tout vient du payload JSON poussé par l'app (une semaine d'horaires et de
- * jours hébraïques, libellés ET heures déjà localisés/formatés — voir
+ * jours hébraïques, libellés ET heures déjà localisés/formatés, voir
  * src/services/widgetPayloads.ts) : le widget ne calcule ni ne formate rien,
  * il choisit le premier horaire à venir et le jour qui couvre l'instant
  * courant, puis demande à se redessiner au prochain zman. Passé la fenêtre
@@ -82,7 +82,7 @@ public class HorairesWidgetProvider extends PjWidgetProvider {
 
     /**
      * Le jour hébraïque qui couvre l'instant courant : sa date, la paracha de
-     * la semaine et le tahanoun. Absent d'un payload d'avant la v2 — les
+     * la semaine et le tahanoun. Absent d'un payload d'avant la v2, les
      * lignes restent alors simplement masquées.
      */
     private void showDay(RemoteViews views, JSONArray days, long now) {

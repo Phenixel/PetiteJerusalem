@@ -6,7 +6,7 @@
  * doit filtrer les contenus problématiques. Le filtrage est fait par
  * moderationService, qui normalise le texte avant comparaison (minuscules,
  * accents retirés, chiffres « leet » convertis : p0te → pote), puis compare
- * MOT À MOT — « députée » ne déclenche donc pas « pute ».
+ * MOT À MOT, « députée » ne déclenche donc pas « pute ».
  *
  * Pour enrichir la liste : ajouter le terme en minuscules et SANS accents
  * (« encule », pas « enculé »). Les expressions de plusieurs mots vont dans
@@ -68,7 +68,7 @@ export const BANNED_WORDS: string[] = [
   "youpine",
   // --- Antisémitisme : injures visant les juifs ---
   // NB : les termes historiques ou mémoriels légitimes (shoah, holocauste,
-  // déportation…) ne sont volontairement PAS dans la liste — des sessions de
+  // déportation…) ne sont volontairement PAS dans la liste, des sessions de
   // Tehilim à la mémoire de victimes peuvent les employer.
   "youtre",
   "youtres",

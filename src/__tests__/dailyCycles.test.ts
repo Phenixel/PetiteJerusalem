@@ -73,7 +73,7 @@ describe("adjacentParasha", () => {
 
   it("enjambe les Chabbats de fête, qui n'ont pas de paracha ordinaire", () => {
     // Chabbat 26 septembre 2026 : Ha'azinou. Le suivant (3 octobre) est
-    // 'Hol Hamoed Souccot — la paracha d'après est Berechit, le 10.
+    // 'Hol Hamoed Souccot, la paracha d'après est Berechit, le 10.
     expect(getParashaForShabbat(new Date(2026, 9, 3, 12))).toBeNull();
     const next = adjacentParasha("2026-09-26", 1);
     expect(next?.names).toEqual(["Bereshit"]);

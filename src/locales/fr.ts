@@ -69,13 +69,18 @@ const fr = {
     decline: "Refuser",
   },
   home: {
+    birkatHalevana: {
+      title: "Bénédiction de la lune",
+      until: "À dire cette nuit, jusqu\u2019au {date}.",
+    },
     heroTitle: "Étudier et partager la Torah, à plusieurs",
     heroDescription:
       "Répartissez un texte entre plusieurs personnes pour le terminer ensemble : finir le Chass, lire les Tehilim à plusieurs, suivre la progression de votre limoud. Gratuit, en français, en anglais et en hébreu.",
     features: {
       shareReading: {
         title: "Partage de Lectures",
-        description: "Créez une session, répartissez un texte et étudiez à plusieurs jusqu'au siyoum",
+        description:
+          "Créez une session, répartissez un texte et étudiez à plusieurs jusqu'au siyoum",
       },
       study: {
         title: "Bibliothèque",
@@ -164,7 +169,8 @@ const fr = {
     languageTitle: "Langue",
     languageDescription: "Choisissez la langue de l'interface.",
     themeTitle: "Thème du site",
-    themeDescription: "Choisissez les couleurs qui vous correspondent. Le thème s'applique à l'ensemble du site.",
+    themeDescription:
+      "Choisissez les couleurs qui vous correspondent. Le thème s'applique à l'ensemble du site.",
     themeActive: "Actif",
     themeHint: "Survolez un thème pour le prévisualiser. Cliquez pour l'appliquer.",
     themes: {
@@ -239,8 +245,10 @@ const fr = {
       banner:
         "Hors connexion : vous lisez les textes téléchargés sur cet appareil. Vos lectures cochées sont gardées ici et synchronisées au retour du réseau ; la liste, elle, ne peut pas être modifiée d'ici là.",
       readOnly: "Pas de connexion : votre liste ne peut pas être modifiée pour le moment.",
-      progressKept: "Sans connexion : votre lecture est cochée sur cet appareil et sera synchronisée.",
-      notDownloaded: "Ce texte n'est pas téléchargé sur cet appareil : il n'est pas lisible hors connexion.",
+      progressKept:
+        "Sans connexion : votre lecture est cochée sur cet appareil et sera synchronisée.",
+      notDownloaded:
+        "Ce texte n'est pas téléchargé sur cet appareil : il n'est pas lisible hors connexion.",
       promptTitle: "Ce texte n'est pas téléchargé",
       promptMessage:
         "{name} n'est pas encore sur cet appareil : sans connexion, il ne pourra pas être lu. Le télécharger maintenant ?",
@@ -259,6 +267,7 @@ const fr = {
     previousYear: "Année précédente",
     nextYear: "Année suivante",
     backToCurrent: "Revenir à l\u2019année en cours",
+    range: "du {from} au {to}",
     start: "Allumage",
     end: "Sortie",
   },
@@ -296,7 +305,7 @@ const fr = {
       noCity: "Aucune ville ne correspond à « {query} ».",
       reset: "Revenir à Paris",
       denied:
-        "Position refusée. Les horaires restent calculés pour Paris — autorisez la localisation dans les réglages pour les vôtres.",
+        "Position refusée. Les horaires restent calculés pour Paris ; autorisez la localisation dans les réglages pour les vôtres.",
       unavailable: "Position indisponible. Les horaires restent calculés pour Paris.",
     },
     periods: {
@@ -397,7 +406,8 @@ const fr = {
   },
   shareReading: {
     title: "Partage de Lectures",
-    subtitle: "Répartissez un texte entre plusieurs personnes et étudiez ensemble : pour finir le Chass, lire les Tehilim à plusieurs ou avancer dans la Michna",
+    subtitle:
+      "Répartissez un texte entre plusieurs personnes et étudiez ensemble : pour finir le Chass, lire les Tehilim à plusieurs ou avancer dans la Michna",
     createSession: "Créer une session",
     loadingSessions: "Chargement des sessions...",
     ongoingSessions: "Sessions en cours",
@@ -461,8 +471,7 @@ const fr = {
     loadingSession: "Chargement de la session...",
     guestTitle: "Vous voulez réserver sans compte ?",
     guestSubtitle: "C'est possible : renseignez simplement votre nom, puis choisissez vos textes.",
-    guestSubtitleWithEmail:
-      "Renseignez votre nom et votre email, puis choisissez vos textes.",
+    guestSubtitleWithEmail: "Renseignez votre nom et votre email, puis choisissez vos textes.",
     searchPlaceholder: "Rechercher un texte, un livre ou un chapitre...",
     clearSearch: "Effacer la recherche",
     searchFor: "Recherche",
@@ -570,7 +579,8 @@ const fr = {
     inviteStudy:
       "Rejoignez l'étude partagée « {name} » 📖 Réservez vos passages et étudions ensemble :",
     titleChiour: "Partager ce chiour",
-    inviteChiour: "Écoutez le chiour « {name} » 🎧 Un cours de Torah à découvrir sur Petite Jérusalem :",
+    inviteChiour:
+      "Écoutez le chiour « {name} » 🎧 Un cours de Torah à découvrir sur Petite Jérusalem :",
   },
   batchSelection: {
     textsSelected: "{count} textes sélectionnés",
@@ -595,33 +605,34 @@ const fr = {
     homeTitle: "Petite Jérusalem | Partager l'étude de la Torah et finir le Chass à plusieurs",
     homeDescription:
       "Plateforme gratuite pour étudier et partager la Torah à plusieurs : répartissez le Talmud pour finir le Chass, lisez les Tehilim à plusieurs pour une refoua chelema ou à la mémoire d'un proche, suivez la progression jusqu'au siyoum.",
-    loginTitle: "Connexion – Petite Jérusalem",
+    loginTitle: "Connexion | Petite Jérusalem",
     loginDescription:
       "Connectez-vous pour créer des sessions de partage de lectures, réserver des textes et suivre vos études.",
-    profileTitle: "Mon profil – Petite Jérusalem",
+    profileTitle: "Mon profil | Petite Jérusalem",
     profileDescription:
       "Gérez vos informations, consultez vos sessions d'étude participées et créées.",
-    zmanimTitle: "Horaires du jour : Chéma, chkia et Chabbat – Petite Jérusalem",
-    calendarTitle: "Calendrier des fêtes juives : dates et horaires – Petite Jérusalem",
+    zmanimTitle: "Horaires du jour : Chéma, chkia et Chabbat | Petite Jérusalem",
+    calendarTitle: "Calendrier des fêtes juives : dates et horaires | Petite Jérusalem",
     calendarDescription:
       "Les fêtes et les jeûnes de l\u2019année hébraïque, avec leurs dates et, pour chaque fête, l\u2019heure d\u2019allumage et l\u2019heure de sortie calculées pour votre position.",
     zmanimDescription:
       "Les horaires halakhiques de la journée calculés pour votre position : alot haCha'har, netz, fin du Chéma, 'hatsot, min'ha, chkia, tsét haKokhavim, entrée et sortie de Chabbat.",
-    dailyReadingTitle: "Ma lecture du jour – Petite Jérusalem",
+    dailyReadingTitle: "Ma lecture du jour | Petite Jérusalem",
     dailyReadingDescription:
       "Retrouvez chaque jour les textes de votre lecture quotidienne : Tehilim, paracha de la semaine et vos textes choisis, avec suivi de progression.",
-    notFoundTitle: "Page non trouvée – Petite Jérusalem",
+    notFoundTitle: "Page non trouvée | Petite Jérusalem",
     notFoundDescription: "La page demandée n'existe pas.",
-    shareReadingTitle: "Partage de lectures : organiser une étude de Torah à plusieurs – Petite Jérusalem",
+    shareReadingTitle:
+      "Partage de lectures : organiser une étude de Torah à plusieurs | Petite Jérusalem",
     shareReadingDescription:
       "Créez une session de partage : choisissez un texte (Talmud, Tehilim, Michna, Tanakh), répartissez les passages entre les participants, partagez le lien et suivez la progression du limoud jusqu'au siyoum.",
-    newSessionTitle: "Créer une session de partage de lecture – Petite Jérusalem",
+    newSessionTitle: "Créer une session de partage de lecture | Petite Jérusalem",
     newSessionDescription:
       "Créez une session de partage de lecture ou d'étude de Torah et invitez la communauté à étudier avec vous.",
-    sessionTitle: "Session de partage de lecture – Petite Jérusalem",
+    sessionTitle: "Session de partage de lecture | Petite Jérusalem",
     sessionDefaultDescription:
       "Rejoignez cette session de partage de lecture et d'étude de Torah sur Petite Jérusalem.",
-    chiourimTitle: "Chiourim – Cours et leçons de Torah – Petite Jérusalem",
+    chiourimTitle: "Chiourim | Cours et leçons de Torah | Petite Jérusalem",
     chiourimDescription:
       "Écoutez des chiourim : cours et leçons de Torah partagés par la communauté sur Petite Jérusalem.",
   },
@@ -744,6 +755,7 @@ const fr = {
     // Tefila (Sli'hot, Brahot) : mise en forme du texte liturgique.
     fold: {
       teshuva: "Ajout des dix jours de pénitence",
+      zimoun: "Zimoun",
     },
     repeatTimes: "(\u00d7 {n})",
     slihotHours: "Horaire des Sli'hot",
@@ -790,10 +802,9 @@ const fr = {
   },
   notifications: {
     title: "Rappels de lecture",
-    description:
-      "Recevez une notification tant que votre lecture quotidienne n'est pas terminée.",
-    settingsAriaOn: "Rappels de lecture activés — ouvrir les réglages",
-    settingsAriaOff: "Rappels de lecture désactivés — ouvrir les réglages",
+    description: "Recevez une notification tant que votre lecture quotidienne n'est pas terminée.",
+    settingsAriaOn: "Rappels de lecture activés : ouvrir les réglages",
+    settingsAriaOff: "Rappels de lecture désactivés : ouvrir les réglages",
     enable: "Activer les rappels",
     dailyOption: "Rappel à heure fixe",
     dailyOptionHint: "Chaque jour, à l'heure de votre choix.",
@@ -1052,8 +1063,7 @@ const fr = {
       linkActive: "Actif",
       linkInactive: "Aucun lien actif",
       regenerate: "Régénérer le lien",
-      regenerateConfirm:
-        "Régénérer le lien ? L'ancien lien cessera de fonctionner immédiatement.",
+      regenerateConfirm: "Régénérer le lien ? L'ancien lien cessera de fonctionner immédiatement.",
       regenerated: "Nouveau lien généré.",
       revoke: "Révoquer",
       revokeConfirm: "Révoquer ce lien ? L'auteur ne pourra plus rien ajouter.",
@@ -1063,8 +1073,7 @@ const fr = {
       serieAdd: "Créer",
       serieCreated: "Série créée.",
       serieCount: "{count} épisode(s)",
-      serieDeleteConfirm:
-        "Supprimer la série « {name} » ? Ses chiourim resteront, sans série.",
+      serieDeleteConfirm: "Supprimer la série « {name} » ? Ses chiourim resteront, sans série.",
       serieDeleted: "Série supprimée.",
       seriesEmpty: "Aucune série.",
       chiourimEmpty: "Aucun chiour pour cet auteur.",
@@ -1078,7 +1087,7 @@ const fr = {
 };
 
 type DeepStringify<T> = {
-  [K in keyof T]: T[K] extends string ? string : DeepStringify<T[K]>;
+  [K in keyof T]: T[K] extends string ? string : DeepStringify<T[K]>;
 };
 
 export type LocaleMessages = DeepStringify<typeof fr>;

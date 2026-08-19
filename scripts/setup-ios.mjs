@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Réapplique les ajustements natifs iOS après un `npx cap add ios`
- * (le dossier ios/ est git-ignoré, ce script rend le scaffold reproductible —
+ * (le dossier ios/ est git-ignoré, ce script rend le scaffold reproductible
  * pendant iOS de scripts/setup-android.mjs).
  *
  * - Info.plist : nom affiché, langues, description d'usage de la position,
@@ -23,7 +23,7 @@
  *
  * Variables d'environnement (toutes optionnelles) :
  *   IOS_DEVELOPMENT_TEAM   Team ID Apple (10 caractères, ex. AB12CD34EF).
- *                          Requis pour signer — en local Xcode peut le poser
+ *                          Requis pour signer, en local Xcode peut le poser
  *                          lui-même, en CI il doit être fourni.
  *   IOS_MARKETING_VERSION  CFBundleShortVersionString (ex. 3.6.4)
  *   IOS_BUILD_NUMBER       CFBundleVersion (entier strictement croissant)
@@ -39,7 +39,7 @@ const appDir = join(iosDir, "App/App");
 const pbxprojPath = join(iosDir, "App/App.xcodeproj/project.pbxproj");
 
 if (!existsSync(pbxprojPath)) {
-  console.error("setup-ios: projet ios/ absent — lancer `npx cap add ios` d'abord (macOS + Xcode 26).");
+  console.error("setup-ios: projet ios/ absent, lancer `npx cap add ios` d'abord (macOS + Xcode 26).");
   process.exit(1);
 }
 
@@ -63,7 +63,7 @@ function mustReplace(text, pattern, replacement, what) {
   const next = text.replace(pattern, replacement);
   if (next === text) {
     console.error(
-      `setup-ios: impossible d'appliquer « ${what} » — le template Xcode de Capacitor a changé.\n` +
+      `setup-ios: impossible d'appliquer « ${what} », le template Xcode de Capacitor a changé.\n` +
         "  Comparer avec node_modules/@capacitor/cli/assets/ios-spm-template.tar.gz et mettre ce script à jour.",
     );
     process.exit(1);
@@ -72,7 +72,7 @@ function mustReplace(text, pattern, replacement, what) {
 }
 
 // ---------------------------------------------------------------------------
-// 1. GoogleService-Info.plist (config Firebase — auth native + push)
+// 1. GoogleService-Info.plist (config Firebase, auth native + push)
 // ---------------------------------------------------------------------------
 const gsDest = join(appDir, "GoogleService-Info.plist");
 const gsSource = join(root, "GoogleService-Info.plist");
@@ -82,7 +82,7 @@ if (!existsSync(gsDest) && existsSync(gsSource)) {
 }
 if (!existsSync(gsDest)) {
   console.warn(
-    "setup-ios: ⚠️ GoogleService-Info.plist introuvable — l'auth native Google/Apple et le push ne fonctionneront pas.\n" +
+    "setup-ios: ⚠️ GoogleService-Info.plist introuvable, l'auth native Google/Apple et le push ne fonctionneront pas.\n" +
       `  Console Firebase → projet → app iOS ${BUNDLE_ID} → télécharger GoogleService-Info.plist\n` +
       "  puis le placer à la racine du repo (il est git-ignoré) et relancer ce script.",
   );
@@ -97,7 +97,7 @@ if (existsSync(gsDest)) {
   reversedClientId = match?.[1] ?? null;
   if (!reversedClientId) {
     console.warn(
-      "setup-ios: ⚠️ REVERSED_CLIENT_ID absent de GoogleService-Info.plist — la connexion Google native échouera.",
+      "setup-ios: ⚠️ REVERSED_CLIENT_ID absent de GoogleService-Info.plist, la connexion Google native échouera.",
     );
   }
 }
@@ -127,7 +127,7 @@ function addEntry(key, valueXml, label = key) {
     `\t<key>${key}</key>\n${valueXml}\n</dict>\n</plist>\n`,
     `Info.plist : ajout de ${label}`,
   );
-  console.log(`setup-ios: Info.plist — ${label} ajouté`);
+  console.log(`setup-ios: Info.plist, ${label} ajouté`);
 }
 
 setString("CFBundleDisplayName", DISPLAY_NAME);
@@ -155,7 +155,7 @@ addEntry(
 
 // L'app ne demande QUE l'autorisation « quand l'app est utilisée », mais
 // @capacitor/geolocation s'appuie sur ion-ios-geolocation, dont le code
-// référence l'API « always » — il n'en faut pas plus pour qu'Apple exige la
+// référence l'API « always », il n'en faut pas plus pour qu'Apple exige la
 // chaîne correspondante (ITMS-90683 sur le build 3.7.0 : « Missing purpose
 // string in Info.plist »). L'invite ne sera jamais montrée à l'utilisateur,
 // d'où le même texte que ci-dessus, comme le recommande le plugin.
@@ -184,7 +184,7 @@ addEntry(
 // CFBundleURLTypes est unique, et `addEntry` ne l'écrit que si elle est
 // absente. Les déclarer séparément (Google ici, `petitejerusalem` à la main
 // pour les widgets, cf. docs/app-widgets.md) casserait silencieusement l'un
-// des deux — le second passage étant simplement ignoré.
+// des deux, le second passage étant simplement ignoré.
 const urlSchemes = [
   // Retour du flux Google Sign-In natif.
   ...(reversedClientId ? [reversedClientId] : []),
@@ -202,10 +202,10 @@ addEntry(
 writeFileSync(infoPlistPath, infoPlist);
 
 // ---------------------------------------------------------------------------
-// 3. App.entitlements — Sign in with Apple + APNs
+// 3. App.entitlements, Sign in with Apple + APNs
 // ---------------------------------------------------------------------------
 // Apple **impose** « Sign in with Apple » dès qu'un autre login tiers est
-// proposé (règle App Store 4.8, ici Google) — voir docs/app-native.md.
+// proposé (règle App Store 4.8, ici Google), voir docs/app-native.md.
 //
 // Les entitlements doivent correspondre EXACTEMENT au profil qui signe, sinon
 // l'archive échoue (« doesn't match the entitlements file ») :
@@ -217,7 +217,7 @@ writeFileSync(infoPlistPath, infoPlist);
 //   sa place (docs/app-widgets.md).
 // - En CI (signature manuelle, scripts/ios-signing.mjs), l'archive est
 //   directement signée avec un profil « App Store » : aps-environment vaut
-//   production, et l'App Group disparaît — l'API App Store Connect ne sait pas
+//   production, et l'App Group disparaît, l'API App Store Connect ne sait pas
 //   créer de groupe, et les widgets ne font pas partie de la v1.
 const entitlementsPath = join(appDir, "App.entitlements");
 if (!existsSync(entitlementsPath)) {
@@ -251,7 +251,7 @@ ${
 }
 
 // ---------------------------------------------------------------------------
-// 4. PrivacyInfo.xcprivacy — manifeste de confidentialité
+// 4. PrivacyInfo.xcprivacy, manifeste de confidentialité
 // ---------------------------------------------------------------------------
 // Obligatoire depuis mai 2024. Les « required reason APIs » utilisées ici
 // viennent des plugins Capacitor : UserDefaults (@capacitor/preferences,
@@ -330,7 +330,7 @@ ${collected("CrashData", ["AppFunctionality"], false)}
 }
 
 // ---------------------------------------------------------------------------
-// 5. AppDelegate.swift — hooks APNs et Firebase Auth
+// 5. AppDelegate.swift, hooks APNs et Firebase Auth
 // ---------------------------------------------------------------------------
 // Sans les trois méthodes APNs, @capacitor-firebase/messaging n'obtient
 // jamais de token FCM ; sans Auth.auth().canHandle(url), le retour du flux
@@ -386,7 +386,7 @@ if (!appDelegate.includes("capacitorDidRegisterForRemoteNotifications")) {
     "AppDelegate : méthodes APNs",
   );
   writeFileSync(appDelegatePath, appDelegate);
-  console.log("setup-ios: AppDelegate.swift — hooks APNs et Firebase Auth ajoutés");
+  console.log("setup-ios: AppDelegate.swift, hooks APNs et Firebase Auth ajoutés");
 }
 
 // ---------------------------------------------------------------------------
@@ -477,7 +477,7 @@ pbxproj = pbxproj.replace(
 
 if (configsPatched !== 2) {
   console.error(
-    `setup-ios: ${configsPatched} configuration(s) de build trouvée(s) au lieu de 2 — le template Xcode de Capacitor a changé.`,
+    `setup-ios: ${configsPatched} configuration(s) de build trouvée(s) au lieu de 2, le template Xcode de Capacitor a changé.`,
   );
   process.exit(1);
 }
@@ -492,7 +492,7 @@ console.log(
 
 if (!TEAM_ID) {
   console.warn(
-    "setup-ios: ⚠️ IOS_DEVELOPMENT_TEAM non défini — Xcode demandera l'équipe de signature à la première ouverture.",
+    "setup-ios: ⚠️ IOS_DEVELOPMENT_TEAM non défini, Xcode demandera l'équipe de signature à la première ouverture.",
   );
 }
 
@@ -508,7 +508,7 @@ const schemePath = join(schemeDir, "App.xcscheme");
 if (!existsSync(schemePath)) {
   const targetId = pbxproj.match(/([0-9A-F]{24}) \/\* App \*\/ = \{\s*isa = PBXNativeTarget;/)?.[1];
   if (!targetId) {
-    console.error("setup-ios: cible App introuvable dans le pbxproj — impossible de générer le schéma.");
+    console.error("setup-ios: cible App introuvable dans le pbxproj, impossible de générer le schéma.");
     process.exit(1);
   }
   const buildableReference = `<BuildableReference
@@ -603,7 +603,7 @@ if (!existsSync(iconMarker)) {
     console.log("setup-ios: icônes et splash générés depuis assets/logo.png");
   } catch {
     console.warn(
-      "setup-ios: ⚠️ génération des icônes échouée — lancer à la main :\n" +
+      "setup-ios: ⚠️ génération des icônes échouée, lancer à la main :\n" +
         "  npx @capacitor/assets generate --ios --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'",
     );
   }

@@ -92,7 +92,7 @@ function browserPosition(): Promise<GeolocationPosition> {
   });
 }
 
-/** Refus explicite de l'utilisateur — à distinguer d'une panne technique. */
+/** Refus explicite de l'utilisateur, à distinguer d'une panne technique. */
 class PermissionDeniedError extends Error {}
 
 /**
@@ -100,7 +100,7 @@ class PermissionDeniedError extends Error {}
  * système au besoin.
  *
  * Seul un refus franc interrompt la démarche. Le reste (API de permissions
- * absente, `requestPermissions` non implémenté — c'est le cas de la
+ * absente, `requestPermissions` non implémenté, c'est le cas de la
  * plateforme web du plugin) ne prouve rien : `getCurrentPosition` sait aussi
  * déclencher la demande, on le laisse essayer plutôt que d'abandonner.
  */
@@ -137,7 +137,7 @@ async function nativePosition(): Promise<{ latitude: number; longitude: number }
  *
  * Dans l'app native, le plugin d'abord : lui seul sait ouvrir la demande de
  * permission système. S'il échoue pour une raison technique, la webview reste
- * capable de géolocaliser dès que l'app détient la permission — autant s'en
+ * capable de géolocaliser dès que l'app détient la permission, autant s'en
  * servir plutôt que de renvoyer l'utilisateur sur Paris.
  */
 async function devicePosition(): Promise<{ latitude: number; longitude: number }> {
@@ -155,8 +155,8 @@ async function devicePosition(): Promise<{ latitude: number; longitude: number }
  * l'utilisateur voie « Sarcelles » plutôt que deux nombres et comprenne qu'il
  * a bien été localisé.
  *
- * Le catalogue est chargé à la demande — il n'a pas sa place dans le bundle de
- * l'accueil — et son absence (chunk non téléchargé hors ligne) n'est pas une
+ * Le catalogue est chargé à la demande, il n'a pas sa place dans le bundle de
+ * l'accueil, et son absence (chunk non téléchargé hors ligne) n'est pas une
  * panne : le lieu reste utilisable, seulement sans nom.
  */
 async function lookupNearby(

@@ -23,7 +23,7 @@ name: Deploy Android
 #   GOOGLE_SERVICES_JSON      contenu de google-services.json (config Firebase)
 #   PLAY_SERVICE_ACCOUNT_JSON compte de service lié au Play Console
 #
-# Variable optionnelle : ANDROID_PLAY_TRACK (défaut "production") — mettre
+# Variable optionnelle : ANDROID_PLAY_TRACK (défaut "production"), mettre
 # "internal" tant que l'app n'a pas encore eu de release production validée
 # dans le Play Console (l'API refuse la piste production sur une app en
 # brouillon).
@@ -64,7 +64,7 @@ jobs:
             [ -z "${!name}" ] && missing+=("$name")
           done
           if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::error::Secrets GitHub manquants : ${missing[*]} — voir docs/android-ci-cd.md"
+            echo "::error::Secrets GitHub manquants : ${missing[*]}, voir docs/android-ci-cd.md"
             exit 1
           fi
 
@@ -164,7 +164,7 @@ jobs:
 
       # Notes de version (« Nouveautés ») : le texte de la release GitHub du
       # tag si elle existe (rédigé à la main en créant la release), sinon la
-      # phrase par défaut — voir scripts/prepare-whatsnew.mjs.
+      # phrase par défaut, voir scripts/prepare-whatsnew.mjs.
       - name: Préparer les notes de version
         id: notes
         env:
@@ -186,7 +186,7 @@ jobs:
           whatsNewDirectory: whatsnew
 
       # Fiche Play Store (titre, descriptions, captures d'écran) synchronisée
-      # depuis store-assets/metadata/android/ — voir scripts/play-listing.mjs.
+      # depuis store-assets/metadata/android/, voir scripts/play-listing.mjs.
       - name: Mettre à jour la fiche Play Store
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}

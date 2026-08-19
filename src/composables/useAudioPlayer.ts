@@ -97,7 +97,7 @@ function ensureAudio(): HTMLAudioElement {
     // timeupdate tire ~4×/s : publier chaque tick re-rendrait les composants
     // abonnés (mini-lecteur monté sur toutes les pages) 4×/s pendant toute
     // l'écoute. L'affichage est à la seconde (formatTime, barre de progression),
-    // on ne publie donc qu'au changement de seconde — les seeks passent aussi.
+    // on ne publie donc qu'au changement de seconde, les seeks passent aussi.
     if (Math.abs(audio.currentTime - currentTime.value) >= 1) {
       currentTime.value = audio.currentTime;
     }
@@ -111,7 +111,7 @@ function ensureAudio(): HTMLAudioElement {
   audio.addEventListener("play", () => {
     isPlaying.value = true;
     trackPlayStarted();
-    // C'est le démarrage de l'écoute qui marque un chiour comme vu — pas
+    // C'est le démarrage de l'écoute qui marque un chiour comme vu, pas
     // l'arrivée sur sa page (voir DetailChiour). Idempotent et inerte pour un
     // visiteur non connecté.
     if (track.value?.slug) useViewedChiourim().markViewed(track.value.slug);

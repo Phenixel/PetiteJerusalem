@@ -1,5 +1,5 @@
 /**
- * Internal SVG icon registry — replaces the Font Awesome CDN kit.
+ * Internal SVG icon registry, replaces the Font Awesome CDN kit.
  *
  * Stroke icons are drawn on a 24×24 grid (stroke="currentColor", no fill),
  * geometry adapted from Lucide (ISC license). Brand logos are filled paths

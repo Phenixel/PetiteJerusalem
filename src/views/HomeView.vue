@@ -20,6 +20,9 @@ import IllustrationBibliotheque from "../components/illustrations/IllustrationBi
 // (@hebcal/core), qui pèse plus lourd que tout le bundle initial réuni. Elle
 // apparaît juste après le rendu de l'accueil, sans le retarder.
 const ZmanimCard = defineAsyncComponent(() => import("../components/ZmanimCard.vue"));
+const BirkatHalevanaBanner = defineAsyncComponent(
+  () => import("../components/BirkatHalevanaBanner.vue"),
+);
 
 const router = useRouter();
 const { t } = useI18n();
@@ -189,11 +192,7 @@ onUnmounted(() => {
           </span>
         </span>
         <span class="flex items-center gap-1 flex-shrink-0">
-          <AppIcon
-            name="chevron-right"
-            :size="15"
-            class="text-text-secondary/50 rtl:rotate-180"
-          />
+          <AppIcon name="chevron-right" :size="15" class="text-text-secondary/50 rtl:rotate-180" />
           <button
             @click.prevent.stop="dismissResume"
             class="p-1.5 -m-0.5 rounded-full text-text-secondary/60 hover:text-red-600 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
@@ -204,6 +203,10 @@ onUnmounted(() => {
           </button>
         </span>
       </RouterLink>
+
+      <!-- La bénédiction de la lune : une fenêtre de quelques nuits par mois,
+           qui se rate faute de rappel. Absente le reste du temps. -->
+      <BirkatHalevanaBanner class="w-full max-w-6xl mx-auto" />
 
       <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mb-10">
         <!-- Squelettes pendant le chargement -->
@@ -266,6 +269,8 @@ onUnmounted(() => {
       <ZmanimCard class="dash-card" style="--enter-delay: 0.3s" @click="trackCard('zmanim')" />
     </div>
 
+    <BirkatHalevanaBanner v-if="!user" class="w-full max-w-6xl mx-auto" />
+
     <div class="w-full max-w-6xl mx-auto">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mb-10 items-stretch">
         <button
@@ -292,7 +297,9 @@ onUnmounted(() => {
               {{ feature.description }}
             </p>
           </div>
-          <div class="w-24 h-24 sm:w-28 sm:h-28 md:w-24 md:h-24 lg:w-28 lg:h-28 shrink-0 text-primary">
+          <div
+            class="w-24 h-24 sm:w-28 sm:h-28 md:w-24 md:h-24 lg:w-28 lg:h-28 shrink-0 text-primary"
+          >
             <component :is="feature.illustration" />
           </div>
         </button>

@@ -19,8 +19,7 @@ export interface DafBlock {
 /**
  * Didascalie : la consigne de lecture qui accompagne un texte de tefila
  * (« le chalia'h tsibour dit », « à Roch Hodech on ajoute »…). Portée par le
- * fichier plutôt que par les locales : c'est du contenu, pas de l'interface —
- * mais donnée dans les trois langues, pour être lue dans celle du lecteur.
+ * fichier plutôt que par les locales : c'est du contenu, pas de l'interface, * mais donnée dans les trois langues, pour être lue dans celle du lecteur.
  */
 export interface Rubric {
   fr: string;
@@ -29,8 +28,8 @@ export interface Rubric {
 }
 
 /**
- * Fragment d'un paragraphe : de l'hébreu — mis en avant (`strong`) pour ce que
- * reprend l'assemblée — ou une didascalie glissée dans le fil du texte.
+ * Fragment d'un paragraphe : de l'hébreu, mis en avant (`strong`) pour ce que
+ * reprend l'assemblée, ou une didascalie glissée dans le fil du texte.
  */
 export type TextRun =
   | { kind: "he"; text: string; strong?: boolean }
@@ -47,12 +46,17 @@ export interface TextParagraph {
   runs: TextRun[];
   /** Passage qui se dit plusieurs fois : affiché autant de fois. */
   repeat?: number;
+  /**
+   * Passage qu'on ne dit pas toujours (« certains disent », ajout d'une
+   * occasion) : affiché en retrait, pour que le fil principal reste net.
+   */
+  muted?: boolean;
 }
 
 /**
  * Visual sub-division of a single-section text (chapter of a Na"kh book,
- * montée d'une paracha) : the text stays one continuous reading — and one
- * reservation unit — with a marker at each block start.
+ * montée d'une paracha) : the text stays one continuous reading, and one
+ * reservation unit, with a marker at each block start.
  */
 export interface TextBlock {
   label: string;
@@ -63,18 +67,26 @@ export interface TextBlock {
   offset: number;
   /**
    * Tefila : occasion du calendrier qui conditionne l'affichage du bloc
-   * (« shabbat », « moed », « nissim »… — voir dailyCycles.activeOccasions).
+   * (« shabbat », « moed », « nissim »…, voir dailyCycles.activeOccasions).
    * Le lecteur ne montre le bloc que le jour où son ajout se dit, dans une
    * carte qui le distingue du fil du texte. Absent = toujours affiché.
    */
   when?: string;
   /**
    * Tefila : occasion qui OUVRE le bloc au lieu de le révéler. Le bloc est
-   * toujours là, dans un encadré replié — les ajouts des dix jours de
+   * toujours là, dans un encadré replié, les ajouts des dix jours de
    * pénitence se lisent aussi hors saison, mais ne doivent pas couper le fil
    * des Sli'hot le reste de l'année.
    */
   fold?: string;
+  /**
+   * Tefila : un bloc de variantes dont on ne dit que ce qui s'applique
+   * (« après des mezonot », « à Roch Hodech »). Présenté à part du fil, chaque
+   * variante précédée de son cas : on choisit, on ne lit pas tout.
+   */
+  variants?: boolean;
+  /** Tefila : des paragraphes numérotés et séparés (les sept bénédictions). */
+  numbered?: boolean;
   /** Tefila : le détail de mise en forme, ligne à ligne. */
   paragraphs?: TextParagraph[];
 }
@@ -102,7 +114,7 @@ export interface TextContent {
 /**
  * "Chapitre 2 (ב) · 3e montée · verset 14" : libellé d'une position (reprise,
  * marque-page). Unique implémentation, partagée par le lecteur de la
- * bibliothèque et la lecture quotidienne — les deux doivent décrire le même
+ * bibliothèque et la lecture quotidienne, les deux doivent décrire le même
  * verset de la même façon. `verseN` rend le libellé du numéro de verset
  * (i18n, ex. t("textReading.verseN", { n })).
  */
@@ -118,7 +130,7 @@ export function placeLabel(
   const block = section?.blocks?.length
     ? [...section.blocks].reverse().find((b) => b.offset <= line)
     : undefined;
-  // Tefila : les blocs du fil principal n'ont pas de titre — rien à décrire.
+  // Tefila : les blocs du fil principal n'ont pas de titre, rien à décrire.
   if (block?.label) parts.push(block.label);
   const verse = block ? line - block.offset + 1 : line + 1;
   parts.push(verseN(verse));
@@ -170,8 +182,8 @@ export function resolveFilePath(textStudy: TextStudyJsonEntry): string {
     case "Tanakh":
       return `/texts/tanakh/${textStudy.id}.json`;
     // Liturgie (Sli'hot, Brahot) : un fichier par entrée, nommé par sa
-    // translittération latine — « ברכה אחרונה (Brakha A'harona) » →
-    // brakha-aharona.json — comme les traités de la Michna et du Talmud.
+    // translittération latine, « ברכה אחרונה (Brakha A'harona) » →
+    // brakha-aharona.json, comme les traités de la Michna et du Talmud.
     case "Slihot":
     case "Brahot": {
       const latin = textStudy.name.match(/\(([^)]+)\)\s*$/)?.[1] ?? String(textStudy.id);
@@ -225,11 +237,16 @@ function buildSection(index: number, label: string, he: string[]): TextSection {
 /** Splits a he[chapter][verse] array into one section per non-empty chapter. */
 function chaptersToSections(heChapters: unknown[]): TextSection[] {
   return heChapters
-    .map((chapter, i) => buildSection(i + 1, `Chapitre ${formatNumberWithHebrew(i + 1)}`, normalizeLines(chapter)))
+    .map((chapter, i) =>
+      buildSection(i + 1, `Chapitre ${formatNumberWithHebrew(i + 1)}`, normalizeLines(chapter)),
+    )
     .filter((s) => s.he.length > 0);
 }
 
-function loadTehilim(textStudy: TextStudyJsonEntry, data: Record<string, { he?: unknown }>): TextContent {
+function loadTehilim(
+  textStudy: TextStudyJsonEntry,
+  data: Record<string, { he?: unknown }>,
+): TextContent {
   const psalmNum = String(textStudy.link).split(".").pop() ?? "1";
   const psalm = data[psalmNum] ?? { he: [] };
   return {
@@ -258,12 +275,15 @@ function parseTalmud(
         const dafLines = normalizeLines(heDaf[i]);
         if (dafLines.length === 0) continue;
         lines.push(...dafLines);
-        dafBlocks.push({ daf: `${Math.floor(i / 2) + 2}${i % 2 === 0 ? "a" : "b"}`, lines: dafLines });
+        dafBlocks.push({
+          daf: `${Math.floor(i / 2) + 2}${i % 2 === 0 ? "a" : "b"}`,
+          lines: dafLines,
+        });
       }
       const dafRange =
         range.startDaf === range.endDaf
           ? `Daf ${range.startDaf}`
-          : `Daf ${range.startDaf}–${range.endDaf}`;
+          : `Daf ${range.startDaf} à ${range.endDaf}`;
       const label = `Chapitre ${formatNumberWithHebrew(range.chapter)} · ${dafRange}`;
       return { index: range.chapter, label, he: lines, dafBlocks };
     });
@@ -314,7 +334,8 @@ function loadTanakh(
       if (targumGroup && Array.isArray(group)) {
         lines = [];
         (group as unknown[]).forEach((verse, j) => {
-          const heLine = typeof verse === "string" ? cleanText(verse) : normalizeLines(verse).join(" ");
+          const heLine =
+            typeof verse === "string" ? cleanText(verse) : normalizeLines(verse).join(" ");
           if (!heLine) return;
           lines.push(heLine);
           const targumVerse = targumGroup[j];
@@ -327,8 +348,7 @@ function loadTanakh(
         for (let k = 0; k < lines.length; k++) targumAll.push("");
       }
       if (lines.length === 0) return;
-      const label =
-        data.blockLabels?.[i] ?? `Chapitre ${formatNumberWithHebrew(startChapter + i)}`;
+      const label = data.blockLabels?.[i] ?? `Chapitre ${formatNumberWithHebrew(startChapter + i)}`;
       blocks.push({ label, lines, offset });
       offset += lines.length;
     });
@@ -345,7 +365,7 @@ function loadTanakh(
 /**
  * Format des fichiers de tefila (public/texts/tefila/*) : une suite de blocs,
  * chacun avec ses lignes, un titre facultatif (séparations des Sli'hot,
- * bénédictions de la brakha a'harona) et une occasion facultative — `when`
+ * bénédictions de la brakha a'harona) et une occasion facultative, `when`
  * pour les ajouts qui ne se disent qu'à certaines dates (voir TextBlock.when),
  * `fold` pour ceux qui restent disponibles toute l'année dans un encadré
  * replié (voir TextBlock.fold).
@@ -374,6 +394,7 @@ interface TefilaFileLine {
   rubric?: Rubric;
   he?: string | (string | TefilaRun)[];
   repeat?: number;
+  muted?: boolean;
 }
 
 interface TefilaFileBlock {
@@ -381,6 +402,8 @@ interface TefilaFileBlock {
   labelText?: Rubric;
   when?: string;
   fold?: string;
+  variants?: boolean;
+  numbered?: boolean;
   lines?: (string | TefilaFileLine)[];
 }
 
@@ -407,6 +430,7 @@ function parseTefilaLine(raw: string | TefilaFileLine): TextParagraph | null {
   const paragraph: TextParagraph = { runs };
   if (raw.rubric) paragraph.rubric = raw.rubric;
   if (raw.repeat && raw.repeat > 1) paragraph.repeat = raw.repeat;
+  if (raw.muted) paragraph.muted = true;
   return paragraph;
 }
 
@@ -438,6 +462,8 @@ function loadTefila(
     if (raw.labelText) block.labelText = raw.labelText;
     if (raw.when) block.when = raw.when;
     if (raw.fold) block.fold = raw.fold;
+    if (raw.variants) block.variants = true;
+    if (raw.numbered) block.numbered = true;
     blocks.push(block);
     offset += block.lines.length;
   }
@@ -468,7 +494,11 @@ export function parseContent(
       return loadTehilim(textStudy, data as Record<string, { he?: unknown }>);
     case "Mishna": {
       const d = data as { title?: string; he?: unknown[] };
-      return { title: d.title ?? textStudy.name, type: "Mishna", sections: chaptersToSections(d.he ?? []) };
+      return {
+        title: d.title ?? textStudy.name,
+        type: "Mishna",
+        sections: chaptersToSections(d.he ?? []),
+      };
     }
     case "Talmud Bavli":
       return parseTalmud(textStudy, data as { title?: string; he?: unknown[] }, talmudChapters);
@@ -490,7 +520,6 @@ export async function loadText(textStudy: TextStudyJsonEntry): Promise<TextConte
     throw new Error(`Texte non disponible (${res.status})`);
   }
   const data = await res.json();
-  const talmudChapters =
-    String(textStudy.type) === "Talmud Bavli" ? await getTalmudChapters() : {};
+  const talmudChapters = String(textStudy.type) === "Talmud Bavli" ? await getTalmudChapters() : {};
   return parseContent(textStudy, data, talmudChapters);
 }

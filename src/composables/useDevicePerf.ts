@@ -6,16 +6,16 @@ import { ref, type Ref } from "vue";
  * Sert à débrayer ce qui coûte du CPU/GPU en continu (animation du mur de
  * pierre, session replay PostHog) sur les machines concernées. Deux étages :
  *
- * 1. `isLowEndDevice` — signal statique (cœurs/RAM), évalué immédiatement.
+ * 1. `isLowEndDevice`, signal statique (cœurs/RAM), évalué immédiatement.
  *    Les navigateurs qui n'exposent pas ces APIs (Safari/Firefox pour
- *    deviceMemory) sont considérés capables — on ne dégrade que sur signal
+ *    deviceMemory) sont considérés capables, on ne dégrade que sur signal
  *    explicite.
- * 2. `isDegradedRendering` — réactif, s'allume aussi APRÈS le démarrage si :
+ * 2. `isDegradedRendering`, réactif, s'allume aussi APRÈS le démarrage si :
  *    - le navigateur rend en LOGICIEL (llvmpipe/SwiftShader/Software
  *      WebRender…) : un CPU puissant n'y change rien, chaque effet plein
  *      écran (mask, backdrop-filter, gradients animés) est rasterisé au
  *      processeur à chaque frame. Cas typique : Firefox sur Linux avec un
- *      driver GPU sur liste noire — le site « rame sous Firefox mais pas
+ *      driver GPU sur liste noire, le site « rame sous Firefox mais pas
  *      sous Chrome » alors que le thread principal est presque idle ;
  *    - la cadence réelle mesurée à froid est mauvaise (sonde rAF), quel que
  *      soit le matériel déclaré.
@@ -27,7 +27,7 @@ export const isLowEndDevice = cores <= 4 || memoryGb <= 4;
 
 /**
  * Gecko (Firefox), détecté de façon SYNCHRONE : le mur de pierre y bascule en
- * rendu raster dès le premier frame (voir StoneWallBackground) — Firefox
+ * rendu raster dès le premier frame (voir StoneWallBackground), Firefox
  * re-rasterise un mask SVG + feTurbulence à chaque tick quand du contenu bouge
  * derrière (bug Mozilla 1860510), quel que soit le matériel.
  */
@@ -35,7 +35,7 @@ export const isGecko =
   typeof CSS !== "undefined" && CSS.supports?.("-moz-appearance", "none") === true;
 
 // Décision mémorisée : les sondes (WebGL, FPS) mettent quelques secondes à
-// conclure — on persiste leur verdict pour que les visites suivantes
+// conclure, on persiste leur verdict pour que les visites suivantes
 // démarrent directement en mode allégé, sans secondes lentes au chargement.
 const DEGRADED_STORAGE_KEY = "pj_perf_degraded";
 
@@ -67,7 +67,7 @@ function markDegraded(reason: string, detail?: string): void {
     // Stockage indisponible : la décision vaudra pour cette session.
   }
   // Trace produit : permet de voir dans PostHog combien de visiteurs passent
-  // en rendu allégé, et pourquoi (import dynamique — jamais bloquant).
+  // en rendu allégé, et pourquoi (import dynamique, jamais bloquant).
   import("../services/analyticsService")
     .then(({ analyticsService }) =>
       analyticsService.capture("perf_degraded_rendering", { reason, detail: detail ?? null }),
@@ -82,7 +82,7 @@ function detectSoftwareRenderer(): void {
     const gl = canvas.getContext("webgl");
     if (!gl) {
       // Pas de WebGL du tout : l'accélération graphique est très probablement
-      // désactivée — même signal qu'un renderer logiciel.
+      // désactivée, même signal qu'un renderer logiciel.
       markDegraded("no_webgl");
       return;
     }
@@ -102,7 +102,7 @@ function detectSoftwareRenderer(): void {
  * démarrage passé (les animations d'entrée sont finies). Sous ~40 fps au
  * repos, l'expérience est déjà dégradée : autant couper le décoratif.
  * Un trou entre deux frames (> 500 ms : onglet caché, machine suspendue)
- * invalide la mesure — on abandonne plutôt que de conclure à tort.
+ * invalide la mesure, on abandonne plutôt que de conclure à tort.
  */
 function probeFrameRate(): void {
   if (isDegradedRendering.value || typeof requestAnimationFrame !== "function") return;

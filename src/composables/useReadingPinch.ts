@@ -3,7 +3,7 @@ import { isNativeApp } from "./useNativeApp";
 import { useReadingSize } from "./useReadingSize";
 
 /**
- * App native : sur une page de texte, pincer agrandit le TEXTE lu — pas la
+ * App native : sur une page de texte, pincer agrandit le TEXTE lu, pas la
  * page. Le zoom de la webview est désactivé (voir main.ts) parce qu'il
  * agrandit tout, barres comprises, et laisse la page décalée ; le réflexe du
  * pincement reste le bon, il pilote ici le même réglage que les boutons

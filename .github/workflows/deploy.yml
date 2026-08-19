@@ -68,7 +68,7 @@ jobs:
           echo "Expected entry bundle: $expected"
           for i in $(seq 1 12); do
             served=$(curl -fsS "https://petite-jerusalem-dev.web.app/?cb=$(date +%s)" 2>/dev/null | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1)
-            echo "Attempt $i — served: ${served:-<none>}"
+            echo "Attempt $i, served: ${served:-<none>}"
             if [ "$served" = "$expected" ]; then
               echo "✓ New hosting version is live in production."
               exit 0
@@ -81,7 +81,7 @@ jobs:
       # Security rules were the one thing this workflow never shipped: every
       # rules change (moderation, #142) had to be pushed by hand, and a rule
       # left behind silently breaks reads and writes the new front-end expects.
-      # Deployed AFTER hosting for the same reason as functions — a rules
+      # Deployed AFTER hosting for the same reason as functions, a rules
       # failure must not hold the site release hostage. Indexes ship with them:
       # they are declared in the same firebase.json and a missing index fails
       # queries exactly like a missing rule.

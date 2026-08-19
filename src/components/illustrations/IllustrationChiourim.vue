@@ -82,7 +82,7 @@
   animation: none;
 }
 /* Boucles d'attente FINIES (3 respirations puis repos) : des animations
-   décoratives infinies gardent le thread de rendu éveillé en permanence —
+   décoratives infinies gardent le thread de rendu éveillé en permanence
    coûteux sous Firefox (cf. audit de performance). Le survol relance tout. */
 .bar-1 {
   animation:
@@ -130,7 +130,7 @@
 }
 
 /* --- hover (parent card): the headphones nod, the equalizer goes wild ---
-   NOTE: the WHOLE selector must live inside :global() — Vue's scoped
+   NOTE: the WHOLE selector must live inside :global(), Vue's scoped
    compiler drops anything written after :global(...). The .illu-chiourim
    root class keeps these global rules from leaking elsewhere. */
 :global(.feature-card:hover .illu-chiourim .phones) {

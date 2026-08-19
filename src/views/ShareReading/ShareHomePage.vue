@@ -63,7 +63,7 @@ const isSessionFinished = (session: Session): boolean => {
 };
 
 // --- « Mes sessions » : celles que je suis (participation ou création),
-// affichées avant le reste — c'est ce qu'on vient chercher en revenant.
+// affichées avant le reste, c'est ce qu'on vient chercher en revenant.
 // Les sessions terminées où je participais disparaissent de l'affichage
 // (les données restent en base) ; celles que j'ai créées restent
 // accessibles derrière un « Afficher les terminées » dans la liste. ---

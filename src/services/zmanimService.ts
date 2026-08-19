@@ -5,6 +5,7 @@ import {
   Locale,
   Zmanim,
   flags,
+  months,
   getHolidaysOnDate,
   tachanun,
 } from "@hebcal/core";
@@ -15,11 +16,10 @@ import "@hebcal/locales/fr";
 /**
  * Horaires de la journée (zmanim), calculés en local.
  *
- * Aucune API, aucun réseau : `@hebcal/core` — déjà présent pour la paracha de
- * la semaine (voir dailyCycles) — embarque le moteur solaire NOAA. Les heures
+ * Aucune API, aucun réseau : `@hebcal/core`, déjà présent pour la paracha de
+ * la semaine (voir dailyCycles), embarque le moteur solaire NOAA. Les heures
  * se calculent donc sans réseau, pour n'importe quelle date et n'importe quel
- * point du globe : une fois la page chargée, elle n'a plus besoin de rien —
- * et dans l'app native, dont les fichiers sont embarqués, elle s'ouvre aussi
+ * point du globe : une fois la page chargée, elle n'a plus besoin de rien, * et dans l'app native, dont les fichiers sont embarqués, elle s'ouvre aussi
  * connexion coupée.
  *
  * Position et fuseau sont deux champs distincts : la position vient de
@@ -34,7 +34,7 @@ export interface ZmanimPlace {
   longitude: number;
   /** Fuseau IANA ("Europe/Paris") : les heures sont affichées dedans. */
   tzid: string;
-  /** Nom affichable — connu sauf pour une position brute de l'appareil. */
+  /** Nom affichable, connu sauf pour une position brute de l'appareil. */
   city: string | null;
   /**
    * Position de l'appareil : la ville connue la plus proche, pour nommer le
@@ -58,7 +58,7 @@ export interface NearbyPlace {
 // mieux vaut « États-Unis » qu'une ville à 400 km.
 const IN_CITY_KM = 25;
 const NEAR_KM = 150;
-/** Au-delà, la ville la plus proche n'apprend plus rien — pas même le pays. */
+/** Au-delà, la ville la plus proche n'apprend plus rien, pas même le pays. */
 export const KNOWN_PLACE_KM = 800;
 
 /** Comment nommer une position d'après la ville connue la plus proche. */
@@ -77,7 +77,7 @@ export function describeNearby(nearby: NearbyPlace | null | undefined): PlaceNam
 }
 
 /**
- * Nom affichable du lieu de calcul — LA règle de nommage, partagée entre la
+ * Nom affichable du lieu de calcul, LA règle de nommage, partagée entre la
  * page des horaires, la carte de l'accueil (via useZmanimPlaceLabel) et les
  * widgets d'écran d'accueil (via widgetPayloads).
  *
@@ -156,7 +156,7 @@ export const ZMAN_PERIODS: ZmanPeriod[] = ["dawn", "morning", "afternoon", "even
  *
  * Deux opinions sont données là où la pratique les distingue vraiment (fin du
  * Chéma et de la Amida) : le Maguen Avraham compte le jour de l'aube à la
- * sortie des étoiles, le Gaon de Vilna du lever au coucher du soleil — l'écart
+ * sortie des étoiles, le Gaon de Vilna du lever au coucher du soleil, l'écart
  * atteint facilement une demi-heure.
  */
 const ZMAN_DEFS = [
@@ -254,7 +254,7 @@ export function nextZman(times: ZmanTime[], now: Date = new Date()): ZmanTime | 
   return times.find((zman) => zman.date.getTime() > now.getTime()) ?? null;
 }
 
-/** La chkia (coucher du soleil) d'un jour civil — null aux latitudes extrêmes. */
+/** La chkia (coucher du soleil) d'un jour civil, null aux latitudes extrêmes. */
 export function getSunset(place: ZmanimPlace, day: Date = new Date()): Date | null {
   const sunset = new Zmanim(geoLocationOf(place), dayInPlace(place, day), false).sunset();
   return isUsable(sunset) ? sunset : null;
@@ -262,7 +262,7 @@ export function getSunset(place: ZmanimPlace, day: Date = new Date()): Date | nu
 
 /** La plage où se disent les Sli'hot : de hatsot au lever du soleil. */
 export interface SlihotWindow {
-  /** Hatsot halayla — le milieu de la nuit, à partir duquel on peut commencer. */
+  /** Hatsot halayla, le milieu de la nuit, à partir duquel on peut commencer. */
   start: Date;
   /** Le lever du soleil (netz) : passé lui, ce n'est plus l'heure des Sli'hot. */
   end: Date;
@@ -271,7 +271,7 @@ export interface SlihotWindow {
 }
 
 /**
- * La plage horaire des Sli'hot pour la nuit en cours — ou, une fois le jour
+ * La plage horaire des Sli'hot pour la nuit en cours, ou, une fois le jour
  * levé, pour la nuit qui vient.
  *
  * L'usage séfarade est de les dire à l'achmoret haboker, la dernière veille de
@@ -324,7 +324,7 @@ export interface ReminderPlace {
  * C'est la seule chose que l'application envoie de la position de l'appareil,
  * et seulement si l'utilisateur active ce rappel : la Cloud Function tourne
  * quand le téléphone dort, elle ne peut pas demander sa position. On l'arrondit
- * donc au dixième de degré (~11 km) — de quoi ne pas transmettre une position
+ * donc au dixième de degré (~11 km), de quoi ne pas transmettre une position
  * précise, sans rien changer à l'heure obtenue : 0,1° de longitude déplace la
  * chkia de 24 secondes, quand le rappel part par créneaux de 5 minutes.
  */
@@ -376,7 +376,7 @@ const isIsraelPlace = (place: ZmanimPlace): boolean => place.tzid === "Asia/Jeru
 const hebcalLocale = (locale: string): string =>
   locale === "he" || locale === "fr" ? locale : "en";
 
-/** Jour où le travail est interdit : Chabbat ou Yom Tov — pas 'Hol haMoed. */
+/** Jour où le travail est interdit : Chabbat ou Yom Tov, pas 'Hol haMoed. */
 function isRestDay(hd: HDate, il: boolean): boolean {
   if (hd.getDay() === 6) return true;
   return (getHolidaysOnDate(hd, il) ?? []).some((ev) => (ev.getFlags() & flags.CHAG) !== 0);
@@ -393,7 +393,7 @@ const festivalName = (ev: { basename(): string }, lg: string): string =>
 /**
  * Ce que le jour a de particulier hors temps de repos : Roch Hodech, 'Hanouka,
  * un jeûne, 'Hol haMoed, un Chabbat spécial… nommés dans la langue de
- * l'interface (hebcal porte les catalogues en, he et fr — voir l'import de
+ * l'interface (hebcal porte les catalogues en, he et fr, voir l'import de
  * @hebcal/locales/fr en tête de fichier).
  *
  * Les Yom Tov en sont exclus : ils ont leur propre cadre, avec leurs heures
@@ -414,7 +414,7 @@ function civilNoon(hd: HDate): Date {
 
 /**
  * Un temps de repos : le Chabbat, un Yom Tov, ou la suite des deux quand ils
- * se touchent — Roch Hachana un dimanche prolonge le Chabbat de la veille, et
+ * se touchent, Roch Hachana un dimanche prolonge le Chabbat de la veille, et
  * l'ensemble n'a qu'une entrée et qu'une sortie. C'est ce bloc-là qu'on
  * affiche, pas un cadre par jour.
  */
@@ -425,7 +425,7 @@ export interface RestPeriod {
   end: Date;
   first: HDate;
   last: HDate;
-  /** Le bloc couvre un Chabbat — son jour civil, pour retrouver la paracha. */
+  /** Le bloc couvre un Chabbat, son jour civil, pour retrouver la paracha. */
   shabbat: Date | null;
   /** Fêtes couvertes, nommées dans la langue demandée, sans numéro de jour. */
   festivals: string[];
@@ -471,13 +471,37 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
 }
 
 /**
+ * Dit-on la bénédiction de la lune (Birkat Halevana) cette nuit-là ?
+ *
+ * Usage séfarade (Ben Ich 'Haï) : on attend sept jours complets depuis le
+ * molad, et on ne la dit plus passé la moitié de la lunaison. Deux reports
+ * d'usage, pour la dire dans la joie : en Av on attend la sortie de Tich'a
+ * beAv, en Tichri celle de Kippour.
+ */
+export function saysBirkatHalevana(hd: HDate): boolean {
+  const day = hd.getDate();
+  if (day > BIRKAT_HALEVANA_LAST_DAY) return false;
+  if (hd.getMonth() === months.AV) return day >= 10;
+  if (hd.getMonth() === months.TISHREI) return day >= 11;
+  return day >= 7;
+}
+
+/** La moitié de la lunaison : passé ce jour, la bénédiction ne se dit plus. */
+const BIRKAT_HALEVANA_LAST_DAY = 14;
+
+/** Le dernier jour où la bénédiction de la lune se dit, ce mois-là. */
+export function birkatHalevanaLastDay(hd: HDate): HDate {
+  return new HDate(BIRKAT_HALEVANA_LAST_DAY, hd.getMonth(), hd.getFullYear());
+}
+
+/**
  * Une entrée du calendrier des fêtes : une fête (ou un bloc de fêtes qui se
  * suivent), avec ses dates et, quand le travail y est interdit, ses heures.
  */
 export interface CalendarEntry {
   /** Clé stable d'affichage. */
   key: string;
-  /** Nom localisé — pour les fêtes sans horaires ('Hanouka, Pourim, jeûnes). */
+  /** Nom localisé, pour les fêtes sans horaires ('Hanouka, Pourim, jeûnes). */
   name: string;
   first: HDate;
   last: HDate;
@@ -488,16 +512,15 @@ export interface CalendarEntry {
 /**
  * Ce que porte le calendrier : les fêtes et les jeûnes. Les Roch Hodech en
  * sont exclus (douze par an, ils noieraient le reste), les commémorations
- * civiles israéliennes aussi — la page sert à savoir quand commence et
+ * civiles israéliennes aussi, la page sert à savoir quand commence et
  * quand finit une fête.
  */
-const CALENDAR_FLAGS =
-  flags.CHAG | flags.MAJOR_FAST | flags.MINOR_FAST | flags.MINOR_HOLIDAY;
+const CALENDAR_FLAGS = flags.CHAG | flags.MAJOR_FAST | flags.MINOR_FAST | flags.MINOR_HOLIDAY;
 
 /**
  * Les fêtes d'une année hébraïque, dans l'ordre.
  *
- * Les jours de Yom Tov qui se suivent — et le Chabbat qui les prolonge — sont
+ * Les jours de Yom Tov qui se suivent, et le Chabbat qui les prolonge, sont
  * réunis en un seul bloc, avec une entrée et une sortie : c'est ainsi qu'on
  * les vit, et Pessah y compte bien deux blocs séparés par le 'Hol haMoed. Les
  * fêtes sans interdit de travail ('Hanouka, Pourim, les jeûnes) donnent une
@@ -605,13 +628,13 @@ export function restPeriodsNear(
  * Dit-on le tahanoun ce jour hébraïque-là ?
  *
  * - "full" : à Cha'harit et à Min'ha (jour ordinaire) ;
- * - "shacharitOnly" : le matin seulement — veille d'un jour sans tahanoun
+ * - "shacharitOnly" : le matin seulement, veille d'un jour sans tahanoun
  *   (dont chaque vendredi, veille de Chabbat) ;
  * - "none" : pas du tout (Roch Hodech, fêtes, tout Nissan…).
  *
  * Le Chabbat renvoie null : le tahanoun n'y existe pas, la question ne se
  * pose pas (le champ mincha de hebcal y décrit le Tsidkatekha, pas un
- * tahanoun — l'afficher sèmerait la confusion).
+ * tahanoun, l'afficher sèmerait la confusion).
  */
 export type TachanunStatus = "full" | "shacharitOnly" | "none";
 
@@ -644,7 +667,7 @@ const FRENCH_MONTHS: Record<string, string> = {
   "Adar II": "Adar II",
 };
 
-/** "21 Av 5786" — en hébreu pointé pour la locale he, translittéré sinon. */
+/** "21 Av 5786", en hébreu pointé pour la locale he, translittéré sinon. */
 export function formatHebrewDate(hd: HDate, locale: string): string {
   if (locale === "he") return hd.renderGematriya();
   if (locale === "fr") {
@@ -658,8 +681,8 @@ export function formatHebrewDate(hd: HDate, locale: string): string {
  * Jour de la semaine au lieu affiché (0 = dimanche … 6 = samedi).
  *
  * Le fuseau de la machine ne fait pas foi : à 23 h à Paris, un appareil réglé
- * sur New York est encore la veille, et le vendredi — celui qui décide d'
- * afficher le Chabbat — se déclencherait au mauvais moment.
+ * sur New York est encore la veille, et le vendredi, celui qui décide d'
+ * afficher le Chabbat, se déclencherait au mauvais moment.
  */
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -676,7 +699,7 @@ export function sameCivilDay(place: ZmanimPlace, a: Date, b: Date): boolean {
   return dayInPlace(place, a).getTime() === dayInPlace(place, b).getTime();
 }
 
-/** "06:27" dans le fuseau du lieu — jamais celui du navigateur. */
+/** "06:27" dans le fuseau du lieu, jamais celui du navigateur. */
 export function formatZmanTime(date: Date, tzid: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
     timeZone: tzid,
@@ -686,7 +709,7 @@ export function formatZmanTime(date: Date, tzid: string, locale: string): string
   }).format(date);
 }
 
-/** "vendredi 7 août" — le jour d'un horaire, dans le fuseau du lieu. */
+/** "vendredi 7 août", le jour d'un horaire, dans le fuseau du lieu. */
 export function formatZmanDay(date: Date, tzid: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
     timeZone: tzid,

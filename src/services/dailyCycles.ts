@@ -99,7 +99,7 @@ export function getWeeklyParasha(date: Date = new Date()): WeeklyParasha | null 
  *
  * `getWeeklyParasha` anticipe : sur une semaine de fête, elle renvoie la
  * paracha du Chabbat ordinaire suivant, ce que veut le chnei mikra. Pour
- * annoncer « la paracha de CE Chabbat », cette anticipation est trompeuse —
+ * annoncer « la paracha de CE Chabbat », cette anticipation est trompeuse
  * on ne garde donc le résultat que s'il tombe bien sur le samedi demandé.
  */
 export function getParashaForShabbat(saturday: Date): WeeklyParasha | null {
@@ -203,7 +203,7 @@ function toCycle(day: number, ranges: [number, number][]): TehilimCycle {
 /**
  * Occasions du calendrier actives un jour hébraïque donné : les clés `when`
  * des blocs conditionnels des textes de tefila (public/texts/tefila/*),
- * qui ne s'affichent que le jour où leur ajout se dit — Retsé le Chabbat,
+ * qui ne s'affichent que le jour où leur ajout se dit, Retsé le Chabbat,
  * Yaalé véyavo à Roch Hodech et aux fêtes, Al hanissim à Hanouka et Pourim…
  *
  * `il` : calendrier d'Israël (un seul jour de Yom Tov) ou de diaspora.
@@ -228,7 +228,7 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   if (occ.has("rosh-chodesh") || has(flags.CHAG) || has(flags.CHOL_HAMOED)) occ.add("moed");
   if (occ.has("shabbat") || occ.has("moed")) occ.add("shabbat-or-moed");
   // Les dix jours de pénitence : de Roch Hachana à Yom Kippour, 1 au 10 Tichri.
-  // Ils n'ouvrent aucun ajout à eux seuls — ils déplient les encadrés des
+  // Ils n'ouvrent aucun ajout à eux seuls, ils déplient les encadrés des
   // Sli'hot, qui restent lisibles le reste de l'année (voir TextBlock.fold).
   if (hd.getMonth() === months.TISHREI && hd.getDate() <= 10) occ.add("teshuva");
   return occ;

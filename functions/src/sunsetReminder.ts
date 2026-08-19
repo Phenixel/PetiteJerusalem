@@ -1,15 +1,15 @@
 /**
  * Le rappel « dernier appel » avant la chkia : quand il doit partir.
  *
- * Ce module ne dépend que du calendrier — ni Firestore, ni FCM — pour que la
+ * Ce module ne dépend que du calendrier, ni Firestore, ni FCM, pour que la
  * décision se teste depuis la suite du site (src/__tests__/sunsetReminder.test.ts),
  * côte à côte avec les horaires qu'affiche l'application.
  *
  * Côté application c'est `@hebcal/core` qui donne les zmanim (voir
  * src/services/zmanimService.ts). Il est publié en ESM seul, quand ce paquet
  * de Cloud Functions est compilé en CommonJS : plutôt que de convertir tout
- * `functions/` pour un seul horaire, l'algorithme solaire NOAA est repris ici
- * — c'est celui-là même que `@hebcal/core` applique, via `@hebcal/noaa`, et
+ * `functions/` pour un seul horaire, l'algorithme solaire NOAA est repris ici.
+ * C'est celui-là même que `@hebcal/core` applique, via `@hebcal/noaa`, et
  * les deux implémentations sont comparées dans ce test (moins d'une seconde
  * d'écart, de Melbourne à Jérusalem).
  */
@@ -106,7 +106,7 @@ function sunsetHourAngle(latitude: number, solarDeclination: number): number | n
 
 /**
  * La chkia d'un jour civil (année/mois/jour tels qu'ils sont vécus au lieu),
- * pour une position en degrés décimaux — latitude nord et longitude est
+ * pour une position en degrés décimaux, latitude nord et longitude est
  * positives. `null` aux latitudes extrêmes, où le soleil ne se couche pas.
  */
 export function sunsetOn(
@@ -126,7 +126,7 @@ export function sunsetOn(
   };
 
   // Deux passes : la première situe le coucher dans la journée, la seconde
-  // reprend le calcul à cet instant-là plutôt qu'à minuit — la déclinaison
+  // reprend le calcul à cet instant-là plutôt qu'à minuit, la déclinaison
   // bouge assez en douze heures pour que l'écart se voie.
   const approx = minutesUTC(julianCenturies(julianDay));
   if (approx === null) return null;
@@ -136,7 +136,7 @@ export function sunsetOn(
   return new Date((julianDay - 2440587.5) * 86_400_000 + minutes * 60_000);
 }
 
-/** Minutes avant la chkia — même valeur que SUNSET_REMINDER_OFFSET_MINUTES côté client. */
+/** Minutes avant la chkia, même valeur que SUNSET_REMINDER_OFFSET_MINUTES côté client. */
 export const SUNSET_OFFSET_MINUTES = 20;
 
 /** Cadence du scheduler : tout se décide par créneaux de 5 minutes. */
@@ -197,7 +197,7 @@ export function sunsetReminderAt(place: ReminderPlace, now: Date): Date | null {
  * Le rappel tombe-t-il dans le créneau en cours ?
  *
  * Le scheduler ne repasse que dans 5 minutes : on envoie dès que l'instant visé
- * est dans le créneau, quitte à prendre jusqu'à 5 minutes d'avance — et une
+ * est dans le créneau, quitte à prendre jusqu'à 5 minutes d'avance, et une
  * seule fois, puisque les créneaux ne se chevauchent pas. `now` est calé sur le
  * début du créneau, un déclenchement en retard de quelques secondes ne devant
  * pas décaler la fenêtre.

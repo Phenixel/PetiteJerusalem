@@ -37,9 +37,9 @@ export interface DailyReadingProgress {
 
 export interface UserPreferences {
   theme: string;
-  /** Latin (UI) font choice — see LATIN_FONT_OPTIONS in useFonts. */
+  /** Latin (UI) font choice, see LATIN_FONT_OPTIONS in useFonts. */
   fontLatin: string;
-  /** Hebrew (reading) font choice — see HEBREW_FONT_OPTIONS in useFonts. */
+  /** Hebrew (reading) font choice, see HEBREW_FONT_OPTIONS in useFonts. */
   fontHebrew: string;
   /** Ordered ids of the texts the user reads every day (their daily reading list). */
   dailyReadingIds: number[];
@@ -54,7 +54,7 @@ export interface UserPreferences {
   /**
    * Rappel à heure fixe. Indépendant du rappel d'avant-chkia : les deux vivent
    * sous `pushReminderEnabled`. Absent des profils antérieurs à l'ajout du
-   * rappel d'avant-chkia, où l'heure fixe était le seul rappel — d'où le
+   * rappel d'avant-chkia, où l'heure fixe était le seul rappel, d'où le
    * défaut à vrai, ici comme dans la Cloud Function.
    */
   pushReminderDailyEnabled: boolean;
@@ -66,7 +66,7 @@ export interface UserPreferences {
   pushSunsetReminderEnabled: boolean;
   /**
    * Lieu (arrondi) du calcul de la chkia, écrit seulement quand le rappel
-   * d'avant-chkia est actif — voir coarsePlace dans zmanimService.
+   * d'avant-chkia est actif, voir coarsePlace dans zmanimService.
    */
   pushReminderPlace: ReminderPlace | null;
   /** Locale the reminder notifications are sent in (fr/en/he). */
@@ -109,8 +109,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 /**
  * Copie locale des préférences (app native : lecture quotidienne hors ligne).
  *
- * Le document `userPreferences` reste la source de vérité — le serveur a
- * toujours raison — mais sans copie sur l'appareil, la liste du jour n'existe
+ * Le document `userPreferences` reste la source de vérité, le serveur a
+ * toujours raison, mais sans copie sur l'appareil, la liste du jour n'existe
  * plus dès que le réseau manque : la page repartirait des valeurs par défaut
  * (liste vide, thème d'origine). On garde donc le dernier document reçu tel
  * quel, par compte, et on le sert quand Firestore est injoignable. Il n'est
@@ -173,7 +173,7 @@ export function isOffline(): boolean {
  * remonte pas d'erreur : le cache persistant (voir firebase/firestore.ts)
  * l'applique localement et la garde en attente jusqu'au retour du réseau. Elle
  * laisserait donc l'interface bloquée sur « en cours », puis s'imposerait au
- * serveur à la reconnexion — en écrasant ce qui a pu changer depuis un autre
+ * serveur à la reconnexion, en écrasant ce qui a pu changer depuis un autre
  * appareil. Le serveur ayant toujours raison, on refuse l'écriture tout de
  * suite, pour que l'appelant le dise à l'utilisateur.
  */
@@ -258,12 +258,12 @@ function mergeParashaProgress(
 }
 
 /**
- * Fusionne deux suivis de la lecture du jour — celui du serveur et celui coché
+ * Fusionne deux suivis de la lecture du jour, celui du serveur et celui coché
  * sur l'appareil pendant une coupure.
  *
  * Règle : **c'est le « lu » qui gagne**. Un même jour, les deux suivis
  * s'additionnent (lu d'un côté = lu). Décocher hors ligne quelque chose que le
- * serveur sait déjà lu ne tient donc pas au retour du réseau — personne ne
+ * serveur sait déjà lu ne tient donc pas au retour du réseau, personne ne
  * décoche, et perdre une lecture faite serait plus gênant.
  *
  * Jours différents (la coupure a passé minuit) : le suivi du jour le plus
@@ -342,7 +342,7 @@ class UserPreferencesService {
 
   /**
    * Comme getPreferences, mais laisse l'erreur remonter : indispensable quand
-   * l'appelant doit distinguer « profil vide » de « Firestore injoignable » —
+   * l'appelant doit distinguer « profil vide » de « Firestore injoignable »
    * le widget de lecture, par exemple, ne doit pas écraser son dernier état
    * avec des préférences par défaut qui ne sont qu'un échec de lecture.
    */
@@ -380,7 +380,7 @@ class UserPreferencesService {
       // connue vaut mieux que des préférences vides.
       const cached = readCache(userId);
       if (cached) return cached;
-      // Ni serveur ni copie locale : l'erreur remonte — getPreferences retombe
+      // Ni serveur ni copie locale : l'erreur remonte, getPreferences retombe
       // sur les valeurs par défaut, getPreferencesOrThrow laisse l'appelant
       // décider (le widget garde alors son dernier état au lieu de l'écraser).
       throw error;
@@ -447,7 +447,7 @@ class UserPreferencesService {
 
   async savePreferences(userId: string, preferences: Partial<UserPreferences>): Promise<void> {
     // Voir OfflineWriteError : sans connexion, l'écriture ne serait ni
-    // confirmée ni perdue, juste en attente — et gagnerait contre le serveur
+    // confirmée ni perdue, juste en attente, et gagnerait contre le serveur
     // à la reconnexion. On la refuse.
     if (isOffline()) throw new OfflineWriteError();
     try {

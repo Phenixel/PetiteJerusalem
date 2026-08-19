@@ -9,7 +9,7 @@ import { isNativeApp } from "./useNativeApp";
  *
  * Sert à ancrer les éléments flottants du bas (barre de sélection multiple,
  * toasts, bouton retour-en-haut) AU-DESSUS de ces barres, pour qu'ils ne
- * soient plus masqués par la bottom bar native — le bug remonté sur l'app.
+ * soient plus masqués par la bottom bar native, le bug remonté sur l'app.
  *
  * Retourne une expression CSS `calc(...)` à passer en `style="{ bottom }"`.
  * `extra` ajoute un écart supplémentaire (ex. marge visuelle des toasts).

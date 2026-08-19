@@ -51,7 +51,7 @@ export interface Bookmark {
  * Textes liturgiques (Sli'hot, Brahot) : pas de « reprendre là où vous
  * étiez ». Le lecteur n'enregistre plus leurs positions, et celles héritées
  * d'une version antérieure (localStorage ou compte) sont purgées à la
- * lecture — reconnues à leur chemin, pour ne pas embarquer le catalogue ici.
+ * lecture, reconnues à leur chemin, pour ne pas embarquer le catalogue ici.
  */
 const LITURGY_PATH = /^\/bibliotheque\/(?:slihot|brahot)\//;
 
@@ -96,7 +96,7 @@ function writeJson(key: string, value: unknown): void {
 /**
  * Sérialisation canonique (clés d'objets triées) pour comparer l'état local à
  * l'état cloud : Firestore renvoie les maps triées alphabétiquement alors que
- * les positions locales sont rangées par récence — un JSON.stringify naïf les
+ * les positions locales sont rangées par récence, un JSON.stringify naïf les
  * verrait toujours différentes et pousserait une écriture à chaque lancement.
  */
 function stableStringify(value: unknown): string {

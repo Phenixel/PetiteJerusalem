@@ -7,7 +7,7 @@
  *    en français : il n'alimente que la locale française, les autres reçoivent
  *    la phrase par défaut (Play : retombée sur la langue par défaut de la
  *    console ; App Store : chaque langue doit avoir son texte).
- * 2. Sinon, la phrase par défaut ci-dessous — rien d'autre : les anciens
+ * 2. Sinon, la phrase par défaut ci-dessous, rien d'autre : les anciens
  *    `release_notes.txt` (iOS) et `changelogs/default.txt` (Android) ont été
  *    supprimés pour ne pas maintenir deux sources.
  */
@@ -20,7 +20,7 @@ const DEFAULT_NOTES = {
 
 /**
  * Phrase par défaut pour une locale de store (« fr-FR », « en-US », « he »,
- * « iw-IL »… — Play utilise encore l'ancien code ISO « iw » pour l'hébreu).
+ * « iw-IL »…, Play utilise encore l'ancien code ISO « iw » pour l'hébreu).
  */
 export function defaultReleaseNotes(locale) {
   const lang = locale.toLowerCase().split(/[-_]/)[0];

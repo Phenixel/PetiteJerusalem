@@ -52,7 +52,7 @@ const showInfo = ref(false);
     </div>
     <p v-if="showInfo" class="mt-3 text-sm text-text-secondary leading-relaxed">
       {{ t("textReading.slihotWindowExplained", { start: startTime, end: endTime }) }}
-      <span v-if="place.city" class="text-text-secondary/70"> — {{ place.city }}</span>
+      <span v-if="place.city" class="text-text-secondary/70">, {{ place.city }}</span>
     </p>
   </div>
 </template>

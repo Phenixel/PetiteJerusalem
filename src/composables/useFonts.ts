@@ -9,7 +9,7 @@ export interface FontOption {
   stack: string;
 }
 
-/** Latin (UI) fonts — applied to --font-sans. */
+/** Latin (UI) fonts, applied to --font-sans. */
 export const LATIN_FONT_OPTIONS: FontOption[] = [
   {
     id: "inter",
@@ -28,7 +28,7 @@ export const LATIN_FONT_OPTIONS: FontOption[] = [
   },
 ];
 
-/** Hebrew (reading) fonts — applied to --font-hebrew. */
+/** Hebrew (reading) fonts, applied to --font-hebrew. */
 export const HEBREW_FONT_OPTIONS: FontOption[] = [
   {
     id: "frank",

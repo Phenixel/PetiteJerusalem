@@ -1,4 +1,4 @@
-# CI/CD Firebase — droits du service account
+# CI/CD Firebase : droits du service account
 
 Le workflow [.github/workflows/deploy.yml](../.github/workflows/deploy.yml)
 publie **à chaque tag `vX.Y.Z`**, dans cet ordre :
@@ -18,7 +18,7 @@ github-action-769913390@petite-jerusalem-dev.iam.gserviceaccount.com
 
 Ce compte a longtemps pu déployer le hosting **et rien d'autre** : les règles
 et les functions échouaient en 403, et devaient être poussées à la main après
-chaque modification. Les rôles ci-dessous corrigent ça — ils sont consignés
+chaque modification. Les rôles ci-dessous corrigent ça, ils sont consignés
 ici pour être rejoués tels quels si le compte est un jour recréé.
 
 ## Rôles du compte de service
@@ -35,7 +35,7 @@ Le déploiement des Cloud Functions échouait sur « *We failed to modify the IA
 policy* » : firebase-tools essayait d'accorder lui-même, au moment du déploiement,
 des rôles aux agents de service du projet. Lui en donner le pouvoir aurait
 voulu dire attribuer `roles/resourcemanager.projectIamAdmin` au compte de la
-CI — c'est-à-dire l'autoriser à s'octroyer **n'importe quel rôle** sur le
+CI, c'est-à-dire l'autoriser à s'octroyer **n'importe quel rôle** sur le
 projet, pour une clé qui vit dans un secret GitHub.
 
 Les trois liaisons que firebase-tools réclamait ont donc été posées une fois
@@ -74,7 +74,7 @@ gcloud projects add-iam-policy-binding "$PROJECT" \
 ```
 
 Pour vérifier un droit sans attendre un tag, s'authentifier **avec la clé du
-compte de service** — pas avec un compte propriétaire, sinon le test ne prouve
+compte de service**, pas avec un compte propriétaire, sinon le test ne prouve
 rien :
 
 ```bash
@@ -93,5 +93,5 @@ après la mise en ligne du site, qui n'est donc jamais retenue par leur échec.
 
 Un 403 qui réapparaîtrait signifie qu'une liaison ci-dessus a sauté (compte
 recréé, rôle retiré) : rejouer le bloc `gcloud` correspondant. Le message
-d'erreur de firebase-tools nomme la permission exacte qui manque — c'est elle
+d'erreur de firebase-tools nomme la permission exacte qui manque, c'est elle
 qui indique le rôle à remettre, pas l'inverse.

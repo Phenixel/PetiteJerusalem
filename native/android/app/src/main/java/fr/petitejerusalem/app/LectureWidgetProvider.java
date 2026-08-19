@@ -11,7 +11,7 @@ import org.json.JSONObject;
  *
  * Le payload (src/services/widgetPayloads.ts) porte son échéance (expiresAt,
  * le minuit local qui suit) : passé cet instant, les coches ne comptent plus
- * et le widget repart de zéro sans attendre que l'app soit rouverte — simple
+ * et le widget repart de zéro sans attendre que l'app soit rouverte, simple
  * comparaison d'epochs, aucune logique de calendrier ici (le calendrier de
  * l'appareil peut être hébraïque). La paracha de la semaine (chnei mikra)
  * s'affiche à part, elle ne se remet pas à zéro chaque jour.

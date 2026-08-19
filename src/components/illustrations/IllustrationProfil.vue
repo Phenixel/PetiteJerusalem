@@ -57,7 +57,7 @@
   transform-origin: center;
   /* Boucle d'attente FINIE (3 scintillements puis repos) : cette illustration
      vit aussi dans AccountCta, affiché aux visiteurs non connectés sur
-     plusieurs pages — en infini, les étincelles gardaient le rendu éveillé
+     plusieurs pages, en infini, les étincelles gardaient le rendu éveillé
      sur tout le site (cf. audit de performance). Le survol relance tout. */
   animation:
     spark-pop 0.4s ease-out forwards,
@@ -108,7 +108,7 @@
 }
 
 /* --- hover (parent card): friendly hop + spark burst ---
-   NOTE: the WHOLE selector must live inside :global() — Vue's scoped
+   NOTE: the WHOLE selector must live inside :global(), Vue's scoped
    compiler drops anything written after :global(...). */
 :global(.feature-card:hover .illu-profil .person) {
   opacity: 1;

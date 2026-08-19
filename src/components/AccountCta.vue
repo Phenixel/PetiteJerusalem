@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Carte d'incitation à créer un compte, affichée uniquement aux visiteurs
-// non connectés (beaucoup de fonctionnalités — sessions, lecture quotidienne,
-// rappels — passent par un compte). Même langage visuel que les cartes de
+// non connectés (beaucoup de fonctionnalités, sessions, lecture quotidienne,
+// rappels, passent par un compte). Même langage visuel que les cartes de
 // l'accueil : titre gras, texte secondaire, illustration animée à droite
 // (la classe .feature-card déclenche ses animations de survol).
 // Autonome : le composant s'occupe de l'état d'auth et ne rend rien tant
