@@ -17,6 +17,9 @@ import {
   placeLabel as describePlace,
 } from "../../services/textService";
 import type { TextBlock, TextContent, TextSection } from "../../services/textService";
+import { activeOccasions } from "../../services/dailyCycles";
+import { hebrewDateFor } from "../../services/zmanimService";
+import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { scrollToVerse } from "../../composables/scrollAnchor";
 import { resolveBackNavigation, stripQuery } from "../../composables/readingBack";
 import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
@@ -31,7 +34,9 @@ import {
   hubTitle,
   sectionDescription,
   hubDescription,
+  isLiturgy,
   READING_LEAD,
+  readingLead as readingLeadOf,
   SITE_URL,
 } from "../../content/etudeTexts";
 import GuestForm from "../../components/GuestForm.vue";
@@ -49,14 +54,19 @@ const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
 const readingSize = useReadingSize();
+// Lieu des horaires : donne le jour hébraïque (sensible à la chkia) qui
+// conditionne les ajouts de calendrier des textes de tefila.
+const { place: zmanimPlace } = useZmanimLocation();
 
 // This view serves two URL shapes with the SAME UI: the in-session reader
 // (/lire/:textId, numeric id) and the public, indexable reading pages
 // (/bibliotheque/:corpus/:slug[/:section], keyword URLs). `isEtudeRoute` switches
 // navigation + metadata between the two.
 const isEtudeRoute = computed(() => route.params.corpus !== undefined);
-/** Corpus ayant leur page de bibliothèque (route `study-corpus`). */
-const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh"]);
+/** Corpus ayant leur page de bibliothèque (route `study-corpus`). Pas les
+ * Sli'hot : leur unique texte EST la page du corpus (redirection), le retour
+ * ramène donc à l'accueil de la bibliothèque. */
+const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh", "brahot"]);
 const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
   isEtudeRoute.value
     ? entryByCorpusSlug(String(route.params.corpus), String(route.params.slug))
@@ -69,8 +79,11 @@ const textId = computed(() =>
 const sectionParam = computed(() => (route.params.section ? Number(route.params.section) : undefined));
 const sessionSlug = computed(() => (route.query.session ? String(route.query.session) : null));
 
-/** Reading lead is shown on the public /bibliotheque pages (not in the session reader). */
-const readingLead = READING_LEAD;
+/** Reading lead is shown on the public /bibliotheque pages (not in the session reader).
+ * Les corpus liturgiques (non partageables) reçoivent la variante sans partage. */
+const readingLead = computed(() =>
+  etudeEntry.value ? readingLeadOf(etudeEntry.value) : READING_LEAD,
+);
 const isTehilimEtude = computed(
   () => isEtudeRoute.value && String(route.params.corpus) === "tehilim",
 );
@@ -103,10 +116,35 @@ const verseBlocks = computed<TextBlock[]>(() => {
   return [{ label: "", lines: section.he, offset: 0 }];
 });
 
+// Tefila : les ajouts liés au calendrier (Retsé le Chabbat, Yaalé véyavo à
+// Roch Hodech, Al hanissim à Hanouka…) ne s'affichent que le jour où ils se
+// disent — dans une carte, pour les distinguer du fil du texte. Le jour
+// hébraïque suit le lieu des horaires (après la chkia, on est déjà demain).
+const occasions = computed(() =>
+  activeOccasions(
+    hebrewDateFor(zmanimPlace.value, new Date()),
+    zmanimPlace.value.tzid === "Asia/Jerusalem",
+  ),
+);
+const visibleBlocks = computed(() =>
+  verseBlocks.value.filter((b) => !b.when || occasions.value.has(b.when)),
+);
+
+/** Style du titre d'un bloc : cadre d'ajout du calendrier, ou séparation du
+    fil du texte (sans filet au-dessus du tout premier bloc). */
+function blockLabelClass(block: TextBlock, index: number): string {
+  const base = "mb-4 text-sm font-semibold text-primary";
+  if (block.when || index === 0) return base;
+  return `${base} mt-10 pt-4 border-t border-black/10 dark:border-white/10`;
+}
+
 // Verse numbers for chaptered texts, and within each chapter / montée block.
-// Whole short texts without blocks (a single psalm) stay unnumbered.
+// Whole short texts without blocks (a single psalm) stay unnumbered, and the
+// liturgy (Sli'hot, Brahot) too: on ne cite pas une bénédiction par numéro.
 const showVerseNumbers = computed(
-  () => (textEntry.value?.totalSections ?? 1) > 1 || (currentSection.value?.blocks?.length ?? 0) > 0,
+  () =>
+    !(textEntry.value && isLiturgy(textEntry.value)) &&
+    ((textEntry.value?.totalSections ?? 1) > 1 || (currentSection.value?.blocks?.length ?? 0) > 0),
 );
 
 const showSectionList = computed(() => !isSingleSection.value && sectionParam.value === undefined);
@@ -269,8 +307,11 @@ function nextSection() {
 }
 
 // Sibling texts of the same type (all Tehilim, all tractates…), in catalog order.
+// Pas pour la liturgie : les brahot ne se suivent pas, on n'y feuillette pas.
 const siblings = computed(() =>
-  textEntry.value ? allTexts.filter((s) => s.type === textEntry.value!.type) : [],
+  textEntry.value && !isLiturgy(textEntry.value)
+    ? allTexts.filter((s) => s.type === textEntry.value!.type)
+    : [],
 );
 const siblingIndex = computed(() => siblings.value.findIndex((s) => String(s.id) === textId.value));
 const prevText = computed<TextStudyJsonEntry | null>(() =>
@@ -332,6 +373,9 @@ function placeLabel(sectionIndex: number | null, line: number): string {
 }
 
 const showResumeBanner = computed(() => {
+  // Liturgie : les marque-pages restent, mais pas de « reprendre là où vous
+  // étiez » — une brakha ou les Sli'hot se lisent du début, pas en cours.
+  if (textEntry.value && isLiturgy(textEntry.value)) return false;
   const p = savedPosition.value;
   if (!p || resumeDismissed.value || route.query.verset !== undefined || !content.value)
     return false;
@@ -417,7 +461,9 @@ function clearScrollSaveTimer() {
 }
 
 function savePositionNow(line: number, sectionIndex = positionSection.value) {
-  if (!textEntry.value) return;
+  // Liturgie : pas de position retenue (ni bannière de reprise ici, ni
+  // « Reprendre ma lecture » sur l'accueil de la bibliothèque).
+  if (!textEntry.value || isLiturgy(textEntry.value)) return;
   sessionSaved = true;
   readingProgressService.savePosition({
     textId: textId.value,
@@ -1182,14 +1228,14 @@ watch(textId, () => {
         <!-- Verses / mishnayot (numbered for reference texts), grouped by
              chapter / montée with a marker at each block start -->
         <div v-else :style="{ '--reading-scale': readingSize.scale.value }">
-          <template v-for="block in verseBlocks" :key="block.offset">
-            <p
-              v-if="block.label"
-              class="mt-10 mb-4 pt-4 border-t border-black/10 dark:border-white/10 text-sm font-semibold text-primary first:mt-0 first:pt-0 first:border-t-0"
-            >
-              {{ block.label }}
-            </p>
-            <div class="space-y-6 mb-6">
+          <template v-for="(block, blockIndex) in visibleBlocks" :key="block.offset">
+            <!-- Ajout du calendrier (`when`) : un cadre sobre avec son titre,
+                 affiché seulement le jour où il se dit (voir visibleBlocks). -->
+            <div :data-when="block.when" :class="block.when ? 'card p-5 mb-6' : undefined">
+              <p v-if="block.label" :class="blockLabelClass(block, blockIndex)">
+                {{ block.label }}
+              </p>
+              <div class="space-y-6" :class="block.when ? undefined : 'mb-6'">
               <template v-for="(line, index) in block.lines" :key="block.offset + index">
                 <div
                   :data-line="block.offset + index"
@@ -1246,6 +1292,7 @@ watch(textId, () => {
                   </button>
                 </div>
               </template>
+              </div>
             </div>
           </template>
         </div>

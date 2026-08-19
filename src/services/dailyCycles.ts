@@ -1,4 +1,4 @@
-import { HDate, Sedra } from "@hebcal/core";
+import { HDate, Sedra, flags, getHolidaysOnDate } from "@hebcal/core";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { TORAH_LIVRES } from "../content/etudeTexts";
@@ -198,6 +198,36 @@ function toCycle(day: number, ranges: [number, number][]): TehilimCycle {
       .map((n) => psalmByNumber.get(n))
       .filter((e): e is TextStudyJsonEntry => Boolean(e)),
   };
+}
+
+/**
+ * Occasions du calendrier actives un jour hébraïque donné : les clés `when`
+ * des blocs conditionnels des textes de tefila (public/texts/tefila/*),
+ * qui ne s'affichent que le jour où leur ajout se dit — Retsé le Chabbat,
+ * Yaalé véyavo à Roch Hodech et aux fêtes, Al hanissim à Hanouka et Pourim…
+ *
+ * `il` : calendrier d'Israël (un seul jour de Yom Tov) ou de diaspora.
+ */
+export function activeOccasions(hd: HDate, il: boolean): Set<string> {
+  const events = getHolidaysOnDate(hd, il) ?? [];
+  const has = (mask: number) => events.some((ev) => (ev.getFlags() & mask) !== 0);
+  const desc = (prefix: string) => events.some((ev) => ev.getDesc().startsWith(prefix));
+  const occ = new Set<string>();
+  if (hd.getDay() === 6) occ.add("shabbat");
+  if (has(flags.ROSH_CHODESH)) occ.add("rosh-chodesh");
+  if (desc("Rosh Hashana")) occ.add("rosh-hashana");
+  if (has(flags.CHAG)) occ.add("yom-tov");
+  if (desc("Sukkot")) occ.add("sukkot");
+  // Hanouka : hebcal pose « 1 Candle » sur la VEILLE (l'allumage du soir) ;
+  // le premier jour porte « 2 Candles », le dernier « 8th Day ».
+  const hanukkah = events.some((ev) => /^Chanukah: (?:[2-8] Candles|8th Day)/.test(ev.getDesc()));
+  const purim = events.some((ev) => ev.getDesc() === "Purim");
+  if (hanukkah || purim) occ.add("nissim");
+  if (["Pesach", "Shavuot", "Sukkot", "Shmini Atzeret", "Simchat Torah"].some(desc))
+    occ.add("moadim");
+  if (occ.has("rosh-chodesh") || has(flags.CHAG) || has(flags.CHOL_HAMOED)) occ.add("moed");
+  if (occ.has("shabbat") || occ.has("moed")) occ.add("shabbat-or-moed");
+  return occ;
 }
 
 /** Les psaumes du jour du mois hébraïque. */

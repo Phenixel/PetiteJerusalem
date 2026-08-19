@@ -26,6 +26,13 @@ export interface TextBlock {
   lines: string[];
   /** Index of the block's first line within the section's flattened `he`. */
   offset: number;
+  /**
+   * Tefila : occasion du calendrier qui conditionne l'affichage du bloc
+   * (« shabbat », « moed », « nissim »… — voir dailyCycles.activeOccasions).
+   * Le lecteur ne montre le bloc que le jour où son ajout se dit, dans une
+   * carte qui le distingue du fil du texte. Absent = toujours affiché.
+   */
+  when?: string;
 }
 
 export interface TextSection {
@@ -67,7 +74,8 @@ export function placeLabel(
   const block = section?.blocks?.length
     ? [...section.blocks].reverse().find((b) => b.offset <= line)
     : undefined;
-  if (block) parts.push(block.label);
+  // Tefila : les blocs du fil principal n'ont pas de titre — rien à décrire.
+  if (block?.label) parts.push(block.label);
   const verse = block ? line - block.offset + 1 : line + 1;
   parts.push(verseN(verse));
   return parts.join(" · ");
@@ -117,6 +125,14 @@ export function resolveFilePath(textStudy: TextStudyJsonEntry): string {
       return `/texts/talmud/${tractateSlug(tractateFromLink(textStudy.link))}.json`;
     case "Tanakh":
       return `/texts/tanakh/${textStudy.id}.json`;
+    // Liturgie (Sli'hot, Brahot) : un fichier par entrée, nommé par sa
+    // translittération latine — « ברכה אחרונה (Brakha A'harona) » →
+    // brakha-aharona.json — comme les traités de la Michna et du Talmud.
+    case "Slihot":
+    case "Brahot": {
+      const latin = textStudy.name.match(/\(([^)]+)\)\s*$/)?.[1] ?? String(textStudy.id);
+      return `/texts/tefila/${tractateSlug(latin)}.json`;
+    }
     default:
       throw new Error(`Type non supporté : ${textStudy.type}`);
   }
@@ -283,6 +299,41 @@ function loadTanakh(
 }
 
 /**
+ * Format des fichiers de tefila (public/texts/tefila/*) : une suite de blocs,
+ * chacun avec ses lignes, un titre facultatif (séparations des Sli'hot,
+ * bénédictions de la brakha a'harona) et une occasion facultative (`when`)
+ * pour les ajouts qui ne se disent qu'à certaines dates (voir TextBlock.when).
+ */
+interface TefilaFileBlock {
+  label?: string;
+  when?: string;
+  lines?: unknown;
+}
+
+function loadTefila(
+  textStudy: TextStudyJsonEntry,
+  data: { title?: string; blocks?: TefilaFileBlock[] },
+): TextContent {
+  const blocks: TextBlock[] = [];
+  let offset = 0;
+  for (const raw of data.blocks ?? []) {
+    const lines = normalizeLines(raw.lines);
+    if (lines.length === 0) continue;
+    const block: TextBlock = { label: raw.label ?? "", lines, offset };
+    if (raw.when) block.when = raw.when;
+    blocks.push(block);
+    offset += lines.length;
+  }
+  const section = buildSection(
+    1,
+    textStudy.name,
+    blocks.flatMap((b) => b.lines),
+  );
+  if (blocks.length > 1) section.blocks = blocks;
+  return { title: data.title ?? textStudy.name, type: String(textStudy.type), sections: [section] };
+}
+
+/**
  * Pure parse of an already-loaded text file into ready-to-read sections.
  * Shared by the runtime reader (via {@link loadText}) and the SEO prerender
  * (which reads the files from disk), so both produce identical content.
@@ -304,6 +355,9 @@ export function parseContent(
       return parseTalmud(textStudy, data as { title?: string; he?: unknown[] }, talmudChapters);
     case "Tanakh":
       return loadTanakh(textStudy, data as { title?: string; he?: unknown[] });
+    case "Slihot":
+    case "Brahot":
+      return loadTefila(textStudy, data as { title?: string; blocks?: TefilaFileBlock[] });
     default:
       throw new Error(`Type non supporté : ${textStudy.type}`);
   }

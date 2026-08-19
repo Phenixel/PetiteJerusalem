@@ -38,8 +38,10 @@ import { liveValue } from "../composables/liveInput";
 
 // L'encart du chnei mikra n'existe que sur le Tanakh, et il tire le calendrier
 // hébraïque (hebcal) avec lui : chargé à la demande, la bibliothèque et ses
-// trois autres corpus n'en portent rien.
+// trois autres corpus n'en portent rien. Même logique pour les psaumes du
+// jour, qui coiffent les Tehilim.
 const ChneiMikraBanner = defineAsyncComponent(() => import("../components/ChneiMikraBanner.vue"));
+const TehilimDayBanner = defineAsyncComponent(() => import("../components/TehilimDayBanner.vue"));
 
 const { t } = useI18n();
 const toast = useToast();
@@ -76,12 +78,15 @@ async function toggleDownload(text: TextStudyJsonEntry) {
 
 // La bibliothèque est un tableau de bord : l'accueil ne montre que les grandes
 // sections (corpus) ; la liste détaillée des textes vit sur /bibliotheque/:corpus.
+// `shelf` répartit les livres sur les étagères de l'accueil : pas plus de
+// quatre volumes par planche, la liturgie a la sienne.
 const CORPUS_META: {
   corpus: string;
   typeKey: string;
   labelKey: string;
   descKey: string;
   searchKey: string;
+  shelf: number;
 }[] = [
   {
     corpus: "tehilim",
@@ -89,6 +94,7 @@ const CORPUS_META: {
     labelKey: "study.types.tehilim",
     descKey: "study.corpus.tehilimDesc",
     searchKey: "study.corpus.tehilimSearch",
+    shelf: 1,
   },
   {
     corpus: "michna",
@@ -96,6 +102,7 @@ const CORPUS_META: {
     labelKey: "study.types.mishna",
     descKey: "study.corpus.michnaDesc",
     searchKey: "study.corpus.michnaSearch",
+    shelf: 1,
   },
   {
     corpus: "talmud",
@@ -103,6 +110,7 @@ const CORPUS_META: {
     labelKey: "study.types.talmud",
     descKey: "study.corpus.talmudDesc",
     searchKey: "study.corpus.talmudSearch",
+    shelf: 1,
   },
   {
     corpus: "tanakh",
@@ -110,6 +118,25 @@ const CORPUS_META: {
     labelKey: "study.types.tanakh",
     descKey: "study.corpus.tanakhDesc",
     searchKey: "study.corpus.tanakhSearch",
+    shelf: 1,
+  },
+  // Liturgie : des textes qu'on lit, pas qu'on partage — jamais proposés au
+  // partage de lecture (voir isShareable dans content/etudeTexts).
+  {
+    corpus: "slihot",
+    typeKey: "Slihot",
+    labelKey: "study.types.slihot",
+    descKey: "study.corpus.slihotDesc",
+    searchKey: "study.corpus.slihotSearch",
+    shelf: 2,
+  },
+  {
+    corpus: "brahot",
+    typeKey: "Brahot",
+    labelKey: "study.types.brahot",
+    descKey: "study.corpus.brahotDesc",
+    searchKey: "study.corpus.brahotSearch",
+    shelf: 2,
   },
 ];
 
@@ -120,14 +147,16 @@ const currentCorpus = computed(
   () => CORPUS_META.find((c) => c.corpus === String(route.params.corpus ?? "")) ?? null,
 );
 
-// Les livres de l'étagère : un par grande section, titre sur la couverture.
-const shelfBooks = computed<ShelfBook[]>(() =>
-  CORPUS_META.map((c) => ({
+// Les livres des étagères : un par grande section, titre sur la couverture.
+// Deux planches : les quatre corpus d'étude, puis la liturgie en dessous.
+const shelfOf = (shelf: number): ShelfBook[] =>
+  CORPUS_META.filter((c) => c.shelf === shelf).map((c) => ({
     corpus: c.corpus,
     to: `/bibliotheque/${c.corpus}`,
     label: t(c.labelKey),
-  })),
-);
+  }));
+const studyShelfBooks = computed<ShelfBook[]>(() => shelfOf(1));
+const liturgyShelfBooks = computed<ShelfBook[]>(() => shelfOf(2));
 
 // La recherche de l'accueil couvre toute la bibliothèque, celle d'une page
 // corpus reste dans le corpus : le placeholder le dit explicitement.
@@ -192,6 +221,11 @@ const hasResults = computed(() => filtered.value.length > 0);
 // de la semaine. L'encart s'efface pendant une recherche, qui vise autre chose.
 const showChneiMikra = computed(
   () => currentCorpus.value?.corpus === "tanakh" && !hasSearch.value && !searching.value,
+);
+
+// Les psaumes du jour (cycle mensuel) coiffent les Tehilim, de la même façon.
+const showTehilimDay = computed(
+  () => currentCorpus.value?.corpus === "tehilim" && !hasSearch.value && !searching.value,
 );
 
 // La liste détaillée s'affiche sur une page corpus, ou dès qu'on cherche
@@ -521,6 +555,9 @@ onUnmounted(() => {
     <!-- Tanakh : l'entrée du chnei mikra, qui se lit sur sa propre page. -->
     <ChneiMikraBanner v-if="showChneiMikra" class="max-w-5xl mx-auto mb-10" />
 
+    <!-- Tehilim : les psaumes du jour du mois hébraïque, chacun vers sa page. -->
+    <TehilimDayBanner v-if="showTehilimDay" class="max-w-5xl mx-auto mb-10" />
+
     <!-- ===== Accueil sans recherche : le tableau de bord ===== -->
     <template v-if="!showList">
       <!-- Reprendre la dernière lecture, au verset près : une simple ligne
@@ -551,9 +588,16 @@ onUnmounted(() => {
 
       <!-- Les grandes sections : on est dans la bibliothèque, les livres sont
            la porte d'entrée principale — visibles sans scroller, même sur
-           téléphone. -->
+           téléphone. Deux étagères : l'étude, puis la liturgie (pas plus de
+           quatre volumes par planche). -->
       <div class="mt-2 md:mt-6">
-        <LibraryShelf :books="shelfBooks" @open="trackCorpusOpened" />
+        <LibraryShelf :books="studyShelfBooks" @open="trackCorpusOpened" />
+        <LibraryShelf
+          :books="liturgyShelfBooks"
+          :start-index="studyShelfBooks.length"
+          class="mt-7 !max-w-[19rem]"
+          @open="trackCorpusOpened"
+        />
       </div>
 
       <!-- Connecté : la lecture du jour en bas de page — même carte que le

@@ -19,13 +19,15 @@ import { transliterate, hasNiqqud } from "../services/hebrewTransliteration";
 
 export const SITE_URL = "https://petite-jerusalem.fr";
 
-export type Corpus = "tehilim" | "tanakh" | "michna" | "talmud";
+export type Corpus = "tehilim" | "tanakh" | "michna" | "talmud" | "slihot" | "brahot";
 
 const TYPE_TO_CORPUS: Record<string, Corpus> = {
   Tehilim: "tehilim",
   Tanakh: "tanakh",
   Mishna: "michna",
   "Talmud Bavli": "talmud",
+  Slihot: "slihot",
+  Brahot: "brahot",
 };
 
 const CORPUS_LABEL: Record<Corpus, string> = {
@@ -33,7 +35,22 @@ const CORPUS_LABEL: Record<Corpus, string> = {
   tanakh: "Tanakh",
   michna: "Michna",
   talmud: "Talmud",
+  slihot: "Sli'hot",
+  brahot: "Brahot",
 };
+
+/**
+ * Corpus liturgiques (Sli'hot, Brahot) : des textes qu'on lit, pas des textes
+ * qu'on partage. Ils ne sont jamais proposés au partage de lecture — le choix
+ * des sessions reste limité à EnumTypeTextStudy, et leurs pages n'affichent ni
+ * l'appel au partage ni la phrase qui le promet.
+ */
+const LITURGY_CORPORA: ReadonlySet<Corpus> = new Set(["slihot", "brahot"]);
+
+export const isLiturgy = (entry: TextStudyJsonEntry): boolean =>
+  LITURGY_CORPORA.has(corpusOf(entry));
+
+export const isShareable = (entry: TextStudyJsonEntry): boolean => !isLiturgy(entry);
 
 const allEntries = (textStudiesJson as TextStudiesJson).textStudies;
 
@@ -152,11 +169,13 @@ function sectionTextHtml(section: TextSection, numbered: boolean): string {
       .join("\n      ");
   }
   if (section.blocks?.length) {
+    // Tefila : les blocs du fil principal n'ont pas de titre ; la page
+    // statique, sans date, montre aussi les ajouts conditionnels (`when`).
     return section.blocks
       .map(
         (block) =>
-          `<h3 class="daf-label">${esc(block.label)}</h3>\n` +
-          `      <ol class="reading-lines">\n      ${linesHtml(block.lines, numbered)}\n      </ol>`,
+          (block.label ? `<h3 class="daf-label">${esc(block.label)}</h3>\n      ` : "") +
+          `<ol class="reading-lines">\n      ${linesHtml(block.lines, numbered)}\n      </ol>`,
       )
       .join("\n      ");
   }
@@ -167,6 +186,13 @@ function sectionTextHtml(section: TextSection, numbered: boolean): string {
 export const READING_LEAD =
   "Texte intégral en hébreu, accompagné de la phonétique pour le lire même sans maîtriser l'hébreu. Lisez-le seul ou partagez-en la lecture à plusieurs.";
 
+/** Même intro sans la promesse de partage, pour les corpus liturgiques. */
+export const READING_LEAD_SOLO =
+  "Texte intégral en hébreu, accompagné de la phonétique pour le lire même sans maîtriser l'hébreu.";
+
+export const readingLead = (entry: TextStudyJsonEntry): string =>
+  isShareable(entry) ? READING_LEAD : READING_LEAD_SOLO;
+
 /** A short human title for a section, used in H1 / breadcrumbs. */
 export function sectionHeading(entry: TextStudyJsonEntry, section: TextSection): string {
   const corpus = corpusOf(entry);
@@ -175,6 +201,9 @@ export function sectionHeading(entry: TextStudyJsonEntry, section: TextSection):
     if (isParasha(entry)) return `Parashat ${latinName(entry)}`;
     return isMultiSection(entry) ? `${latinName(entry)}, ${section.label}` : latinName(entry);
   }
+  // Liturgie : le nom seul — « Sli'hot Sli'hot » ou un libellé de section
+  // n'apporteraient rien sur un texte unique.
+  if (LITURGY_CORPORA.has(corpus)) return latinName(entry);
   return `${CORPUS_LABEL[corpus]} ${latinName(entry)}, ${section.label}`;
 }
 
@@ -194,6 +223,8 @@ export function sectionTitle(entry: TextStudyJsonEntry, section: TextSection): s
     const sec = isMultiSection(entry) ? ` ${section.label}` : "";
     return `${latinName(entry)}${sec} en hébreu et phonétique | Petite Jérusalem`;
   }
+  if (LITURGY_CORPORA.has(corpus))
+    return `${latinName(entry)} en hébreu et phonétique | Petite Jérusalem`;
   return `${CORPUS_LABEL[corpus]} ${latinName(entry)} ${section.label} en hébreu et phonétique | Petite Jérusalem`;
 }
 
@@ -208,8 +239,12 @@ export function sectionDescription(entry: TextStudyJsonEntry, section: TextSecti
           : isMultiSection(entry)
             ? `${latinName(entry)}, ${section.label.toLowerCase()}`
             : latinName(entry)
-        : `${CORPUS_LABEL[corpus]} ${latinName(entry)}, ${section.label.toLowerCase()}`;
-  return `Lisez ${what} en hébreu avec la phonétique pour le lire facilement. Texte intégral, navigation et partage de la lecture à plusieurs.`;
+        : LITURGY_CORPORA.has(corpus)
+          ? latinName(entry)
+          : `${CORPUS_LABEL[corpus]} ${latinName(entry)}, ${section.label.toLowerCase()}`;
+  return isShareable(entry)
+    ? `Lisez ${what} en hébreu avec la phonétique pour le lire facilement. Texte intégral, navigation et partage de la lecture à plusieurs.`
+    : `Lisez ${what} en hébreu avec la phonétique pour le lire facilement. Texte intégral, sur votre écran.`;
 }
 
 export function hubTitle(entry: TextStudyJsonEntry): string {
@@ -257,7 +292,8 @@ export function buildSectionBody(
       ? `<a class="next" href="${sectionPath(entry, next.index)}">${esc(next.label)} →</a>`
       : "<span></span>";
     nav = `${prevHtml}\n      ${nextHtml}`;
-  } else {
+  } else if (!isLiturgy(entry)) {
+    // Pas de précédent/suivant sur la liturgie : les brahot ne se suivent pas.
     const siblings = corpusEntries(corpus);
     const idx = siblings.findIndex((e) => e.id === entry.id);
     const prev = idx > 0 ? siblings[idx - 1] : null;
@@ -274,17 +310,15 @@ export function buildSectionBody(
   return `
   <main class="seo-article reading-page">
     <h1>${esc(sectionHeading(entry, section))}</h1>
-    <p class="seo-lead">${READING_LEAD}</p>
+    <p class="seo-lead">${readingLead(entry)}</p>
 
-    ${ctaHtml}
+    ${isShareable(entry) ? ctaHtml : ""}
 
     <section class="seo-section">
       ${sectionTextHtml(section, numbered)}
     </section>
 
-    <nav class="reading-nav" aria-label="Navigation">
-      ${nav}
-    </nav>
+    ${nav ? `<nav class="reading-nav" aria-label="Navigation">\n      ${nav}\n    </nav>` : ""}
 
     <section class="seo-section">
       <h2>Aller plus loin</h2>
@@ -311,7 +345,7 @@ export function buildHubBody(entry: TextStudyJsonEntry, content: TextContent): s
       chapitre, en hébreu avec la phonétique.
     </p>
 
-    ${ctaHtml}
+    ${isShareable(entry) ? ctaHtml : ""}
 
     <section class="seo-section">
       <h2>Chapitres</h2>

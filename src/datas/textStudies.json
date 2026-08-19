@@ -2623,7 +2623,47 @@
       "link": "https://www.sefaria.org/Divrei Hayamim Bet",
       "totalSections": 1,
       "type": "Tanakh"
+    },
+    {
+      "id": 340,
+      "name": "סליחות (Sli'hot)",
+      "livre": "סליחות (Sli'hot)",
+      "link": "https://www.sefaria.org/Selichot_Edot_HaMizrach",
+      "totalSections": 1,
+      "type": "Slihot"
+    },
+    {
+      "id": 342,
+      "name": "ברכת המזון (Birkat Hamazon)",
+      "livre": "ברכות (Brahot)",
+      "link": "https://www.sefaria.org/Birkat_Hamazon",
+      "totalSections": 1,
+      "type": "Brahot"
+    },
+    {
+      "id": 341,
+      "name": "ברכה אחרונה (Brakha A'harona)",
+      "livre": "ברכות (Brahot)",
+      "link": "https://www.sefaria.org/Birkat_Hamazon,_Blessings_After_Other_Foods",
+      "totalSections": 1,
+      "type": "Brahot"
+    },
+    {
+      "id": 343,
+      "name": "שבע ברכות (Cheva Brahot)",
+      "livre": "ברכות (Brahot)",
+      "link": "https://www.sefaria.org/Birkat_Hamazon,_Sheva_Brachot",
+      "totalSections": 1,
+      "type": "Brahot"
+    },
+    {
+      "id": 344,
+      "name": "ברכת הלבנה (Birkat Halevana)",
+      "livre": "ברכות (Brahot)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Blessing_of_the_Moon",
+      "totalSections": 1,
+      "type": "Brahot"
     }
   ],
-  "types": ["Talmud Bavli", "Mishna", "Tehilim", "Parasha Devarim", "Tanakh"]
+  "types": ["Talmud Bavli", "Mishna", "Tehilim", "Parasha Devarim", "Tanakh", "Slihot", "Brahot"]
 }

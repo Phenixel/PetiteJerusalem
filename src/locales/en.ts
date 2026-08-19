@@ -294,6 +294,11 @@ const en: LocaleMessages = {
       afternoon: "Afternoon",
       evening: "Evening and night",
     },
+    tachanun: {
+      full: "Tachanun is recited.",
+      shacharitOnly: "Tachanun at Shacharit only, not at Mincha.",
+      none: "No Tachanun.",
+    },
     shabbat: {
       title: "Shabbat",
       parasha: "Parashat",
@@ -785,7 +790,7 @@ const en: LocaleMessages = {
   },
   study: {
     title: "Library",
-    subtitle: "Read and study the texts: Tehilim, Mishnah, Talmud and Tanakh.",
+    subtitle: "Read and study the texts: Tehilim, Mishnah, Talmud, Tanakh, Selichot and Berakhot.",
     searchPlaceholder: "Search a text…",
     searchAllPlaceholder: "Search all texts…",
     noResults: "No text matches your search.",
@@ -796,16 +801,24 @@ const en: LocaleMessages = {
       mishna: "Mishnah",
       talmud: "Talmud",
       tanakh: "Tanakh",
+      slihot: "Selichot",
+      brahot: "Berakhot",
     },
     corpus: {
       tehilimDesc: "The 150 psalms, in Hebrew and phonetics, to read alone or share.",
       michnaDesc: "The six sedarim of the Mishnah, tractate by tractate, chapter by chapter.",
       talmudDesc: "The Gemara: the tractates of the Babylonian Talmud, daf after daf.",
       tanakhDesc: "The Torah parasha by parasha, the Neviim and the Ketuvim.",
+      slihotDesc:
+        "The Sephardic Selichot, in Hebrew and phonetics, for Elul and the ten days of teshuva.",
+      brahotDesc:
+        "Birkat Hamazon, bracha acharona, Sheva Berakhot, Birkat Halevana: the blessings at hand.",
       tehilimSearch: "Search a tehilim…",
       michnaSearch: "Search a mishnah…",
       talmudSearch: "Search a Talmud tractate…",
       tanakhSearch: "Search a parasha or book…",
+      slihotSearch: "Search the Selichot…",
+      brahotSearch: "Search a blessing…",
     },
   },
   studio: {

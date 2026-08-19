@@ -199,6 +199,13 @@ function switchTab(tab: "today" | "week") {
   activeTab.value = tab;
   analyticsService.capture("daily_reading_tab_switched", { tab });
 }
+
+/** Fin de la composition de la liste : retour à la lecture, remonté en haut
+    de page — le catalogue laisse sinon le lecteur loin en bas. */
+function finishManage() {
+  mode.value = "reading";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
 const parashaCompleted = ref(false);
 // Dernier suivi hebdomadaire connu, persisté tel quel : savePreferences
 // REMPLACE dailyReadingProgress en entier, donc la coche de la semaine doit
@@ -831,7 +838,7 @@ function formatBookName(livre: string): string {
           <AppIcon name="settings" :size="14" />
           {{ t("dailyReading.manage") }}
         </button>
-        <button v-else @click="mode = 'reading'" class="btn btn-soft">
+        <button v-else @click="finishManage" class="btn btn-soft">
           <AppIcon name="check" :size="14" />
           {{ t("dailyReading.done") }}
         </button>
@@ -1067,6 +1074,19 @@ function formatBookName(livre: string): string {
       <div v-else class="flex flex-col items-center justify-center py-16 text-center">
         <AppIcon name="search" :size="32" class="text-text-secondary/40 mb-4" />
         <p class="text-text-secondary">{{ t("study.noResults") }}</p>
+      </div>
+
+      <!-- « Terminé » collé en bas de l'écran : composer sa liste fait défiler
+           tout le catalogue, personne ne doit remonter en haut pour valider.
+           Dans l'app native, il se pose au-dessus de la barre d'onglets. -->
+      <div
+        class="sticky z-20 mt-8 flex justify-center pointer-events-none"
+        :class="isNativeApp ? 'bottom-[calc(4.5rem+var(--safe-bottom))]' : 'bottom-4'"
+      >
+        <button @click="finishManage" class="btn btn-primary shadow-pop pointer-events-auto">
+          <AppIcon name="check" :size="14" />
+          {{ t("dailyReading.done") }}
+        </button>
       </div>
     </template>
 

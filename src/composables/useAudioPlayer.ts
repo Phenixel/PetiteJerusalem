@@ -1,6 +1,7 @@
 import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { analyticsService } from "../services/analyticsService";
+import { useViewedChiourim } from "./useViewedChiourim";
 
 /**
  * Lecteur audio global (singleton au niveau module).
@@ -110,6 +111,10 @@ function ensureAudio(): HTMLAudioElement {
   audio.addEventListener("play", () => {
     isPlaying.value = true;
     trackPlayStarted();
+    // C'est le démarrage de l'écoute qui marque un chiour comme vu — pas
+    // l'arrivée sur sa page (voir DetailChiour). Idempotent et inerte pour un
+    // visiteur non connecté.
+    if (track.value?.slug) useViewedChiourim().markViewed(track.value.slug);
   });
   audio.addEventListener("pause", () => {
     isPlaying.value = false;

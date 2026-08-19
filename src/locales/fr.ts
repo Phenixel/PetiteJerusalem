@@ -293,6 +293,11 @@ const fr = {
       afternoon: "Après-midi",
       evening: "Soir et nuit",
     },
+    tachanun: {
+      full: "On dit Ta'hanoun.",
+      shacharitOnly: "Ta'hanoun à Cha'harit seulement, pas à Min'ha.",
+      none: "Pas de Ta'hanoun.",
+    },
     shabbat: {
       title: "Chabbat",
       parasha: "Parachat",
@@ -793,7 +798,7 @@ const fr = {
   },
   study: {
     title: "Bibliothèque",
-    subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud et Tanakh.",
+    subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud, Tanakh, Sli'hot et Brahot.",
     searchPlaceholder: "Rechercher un texte…",
     searchAllPlaceholder: "Rechercher dans tous les textes…",
     noResults: "Aucun texte ne correspond à votre recherche.",
@@ -804,16 +809,24 @@ const fr = {
       mishna: "Michna",
       talmud: "Talmud",
       tanakh: "Tanakh",
+      slihot: "Sli'hot",
+      brahot: "Brahot",
     },
     corpus: {
       tehilimDesc: "Les 150 psaumes, en hébreu et en phonétique, à lire seul ou à partager.",
       michnaDesc: "Les six sédarim de la Michna, traité par traité, chapitre par chapitre.",
       talmudDesc: "La Guemara : les traités du Talmud Bavli, pour avancer daf après daf.",
       tanakhDesc: "La Torah paracha par paracha, les Neviim et les Ketouvim.",
+      slihotDesc:
+        "Les Sli'hot du rite séfarade, en hébreu et en phonétique, pour Eloul et les dix jours de techouva.",
+      brahotDesc:
+        "Birkat Hamazon, brakha a'harona, Cheva Brahot, Birkat Halevana : les bénédictions à portée de main.",
       tehilimSearch: "Rechercher un tehilim…",
       michnaSearch: "Rechercher une michna…",
       talmudSearch: "Rechercher un traité du Talmud…",
       tanakhSearch: "Rechercher une paracha ou un livre…",
+      slihotSearch: "Rechercher dans les Sli'hot…",
+      brahotSearch: "Rechercher une brakha…",
     },
   },
   studio: {

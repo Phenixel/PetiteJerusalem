@@ -24,6 +24,7 @@ const shouldRun = corpus => !ONLY || ONLY === corpus;
 mkdirSync(`${OUT}/mishna`, { recursive: true });
 mkdirSync(`${OUT}/talmud`, { recursive: true });
 mkdirSync(`${OUT}/tanakh`, { recursive: true });
+mkdirSync(`${OUT}/tefila`, { recursive: true });
 
 // ---------- Utilities ----------
 
@@ -499,6 +500,159 @@ if (shouldRun('tanakh')) {
     }
 
     console.warn(`  ✗ ${entry.name} (${rawRef}): no mapping found`);
+  }
+}
+
+// ---------- Tefila : Sli'hot + Brahot (liturgie) ----------
+//
+// Textes du rite séfarade (Edot HaMizrach), comme le public de l'application.
+// Un fichier par entrée du catalogue, nommé par son id (comme le Tanakh), au
+// format tefila : une suite de blocs { label?, when?, lines }. `label` pose
+// une séparation dans le fil du texte ; `when` (Chabbat, Roch Hodech,
+// Hanouka…) réserve le bloc au jour où son ajout se dit — le lecteur le rend
+// alors dans une carte (voir dailyCycles.activeOccasions et TextBlock.when).
+
+if (shouldRun('tefila')) {
+  console.log('\n=== Tefila (Sli\'hot + Brahot) ===');
+
+  const tefilaEntries = textStudies.filter(t => t.type === 'Slihot' || t.type === 'Brahot');
+  const tefilaEntry = latin => {
+    const entry = tefilaEntries.find(t => t.name.includes(`(${latin})`));
+    if (!entry) throw new Error(`Entrée absente du catalogue : ${latin}`);
+    return entry;
+  };
+  // Fichiers nommés par le slug latin de l'entrée — même règle que
+  // textService.resolveFilePath (« Brakha A'harona » → brakha-aharona.json).
+  const tefilaSlug = latin => latin.toLowerCase().replace(/ /g, '-').replace(/['’‘`]/g, '');
+  const writeTefila = (latin, blocks) => {
+    const entry = tefilaEntry(latin);
+    const file = `tefila/${tefilaSlug(latin)}.json`;
+    writeFileSync(`${OUT}/${file}`, JSON.stringify({
+      title: entry.name,
+      blocks,
+    }), 'utf8');
+    console.log(`  ✓ ${latin} → ${file} (${blocks.length} blocs)`);
+  };
+  // Les repères textuels se cherchent sans vocalisation.
+  const stripNiqqud = s => s.normalize('NFC').replace(/[֑-ׇ]/g, '');
+  const checkAnchor = (lines, [at, needle]) => {
+    if (!stripNiqqud(stripHtml(lines[at] ?? '')).includes(needle)) {
+      throw new Error(`repère « ${needle} » attendu à la ligne ${at} — structure amont changée`);
+    }
+  };
+
+  // Sli'hot : le rite quotidien d'Eloul et des dix jours. Le texte est plat
+  // chez Sefaria ; on y pose des séparations aux grands jalons du rite,
+  // chacun validé par son incipit.
+  const SELICHOT_SECTIONS = [
+    [0, 'קמתי', 'Kamti béachmoret'],
+    [1, 'אשרי', 'Achré'],
+    [3, 'בן אדם', 'Ben Adam'],
+    [12, 'אל מלך', 'El Melekh · Vayaavor (13 middot)'],
+    [14, 'רחמנא', 'Rahamana'],
+    [54, 'אנשי אמונה', 'Anché émouna'],
+    [57, 'תמהנו', 'Tamahnou méraot'],
+    [60, 'אנחנו בושנו', 'Vidoui (Achamnou)'],
+    [71, 'שמע ישראל', 'Chéma Israël'],
+    [86, 'אלהינו שבשמים', 'Élohénou chébachamayim'],
+    [150, 'ברגז רחם', 'Anénou'],
+    [155, 'אל רחום שמך', 'El rahoum chemakh'],
+    [169, 'עשה למען', 'Assé lemaan'],
+    [185, 'אביוניך', 'Piyoutim'],
+    [193, 'אל מלך', 'El Melekh · Vayaavor'],
+    [195, 'בזכרי', 'Lekha Éli'],
+    [201, 'לדוד אליך', 'LeDavid élékha (Tehilim 25)'],
+    [202, 'אתאנו', 'Ataanou'],
+    [208, 'אבינו אב הרחמן', 'Hochiénou lemaan chemekha'],
+    [220, 'אבינו מלכנו', 'Avinou Malkénou'],
+    [222, 'שומר ישראל', 'Chomer Israël'],
+    [226, 'קדיש', 'Kaddich et clôture'],
+  ];
+  try {
+    const data = await withRetry(
+      () => fetchJson(`${GCS}/Liturgy/High Holidays/Selichot Edot HaMizrach/Hebrew/merged.json`),
+      'Selichot',
+    );
+    const raw = data.text ?? [];
+    for (const [at, needle] of SELICHOT_SECTIONS) checkAnchor(raw, [at, needle]);
+    const blocks = SELICHOT_SECTIONS.map(([from, , label], i) => {
+      const to = i + 1 < SELICHOT_SECTIONS.length ? SELICHOT_SECTIONS[i + 1][0] : raw.length;
+      return { label, lines: cleanTextArray(raw.slice(from, to)) };
+    });
+    writeTefila("Sli'hot", blocks);
+  } catch (e) {
+    console.error(`  ✗ Sli'hot: ${e.message}`);
+  }
+
+  // Siddur Edot HaMizrach : Birkat Hamazon (« Post Meal Blessing »),
+  // Brakha A'harona (« Al Hamihya » + Boré nefachot) et Birkat Halevana.
+  try {
+    const data = await withRetry(
+      () => fetchJson(`${GCS}/Liturgy/Siddur/Siddur Edot HaMizrach/Hebrew/merged.json`),
+      'Siddur Edot HaMizrach',
+    );
+
+    // Birkat Hamazon : le fil du texte en blocs sans titre (des paragraphes,
+    // pas de séparations), et les ajouts du calendrier en blocs `when`.
+    // Les lignes d'instruction qui ne font qu'énoncer la condition (« בשבת
+    // אומרים ») sont retirées : la carte et son titre les remplacent.
+    const BIRKAT_ZONES = [
+      { from: 1, to: 16 },
+      { from: 18, to: 20, when: 'nissim', label: 'Al hanissim', check: [17, 'בחנוכה ופורים'] },
+      { from: 21, to: 22 },
+      { from: 24, to: 24, when: 'shabbat', label: 'Retsé véhahalitsénou', check: [23, 'בשבת'] },
+      { from: 26, to: 33, when: 'moed', label: 'Yaalé véyavo', check: [25, 'בראש חודש'] },
+      { from: 34, to: 34 },
+      { from: 35, to: 40, when: 'shabbat-or-moed', label: "En cas d'oubli de Retsé ou de Yaalé véyavo", check: [35, 'אם שכח'] },
+      { from: 41, to: 42 },
+      { from: 44, to: 44, when: 'shabbat', label: 'Chabbat', check: [43, 'בשבת'] },
+      { from: 46, to: 46, when: 'rosh-chodesh', label: 'Roch Hodech', check: [45, 'בר'] },
+      { from: 48, to: 48, when: 'rosh-hashana', label: 'Roch Hachana', check: [47, 'ברה'] },
+      { from: 50, to: 50, when: 'sukkot', label: 'Souccot', check: [49, 'בסוכות'] },
+      { from: 52, to: 52, when: 'moadim', label: 'Jours de fête', check: [51, 'במועדים'] },
+      { from: 54, to: 54, when: 'yom-tov', label: 'Yom Tov', check: [53, 'ביו'] },
+      { from: 55, to: 58 },
+    ];
+    const pm = data.text?.['Post Meal Blessing'] ?? [];
+    checkAnchor(pm, [0, 'ברכת המזון']);
+    for (const zone of BIRKAT_ZONES) if (zone.check) checkAnchor(pm, zone.check);
+    writeTefila('Birkat Hamazon', BIRKAT_ZONES.map(zone => ({
+      ...(zone.label ? { label: zone.label } : {}),
+      ...(zone.when ? { when: zone.when } : {}),
+      lines: cleanTextArray(pm.slice(zone.from, zone.to + 1)),
+    })));
+
+    // Brakha a'harona : le Mé'ein chaloch complet du siddour (avec ses
+    // variantes selon l'aliment et les mentions des jours, telles qu'un
+    // siddour les imprime), puis Boré nefachot.
+    const mihya = data.text?.['Al Hamihya'] ?? [];
+    checkAnchor(mihya, [0, 'מעין שלוש']);
+    const enjoyments = data.text?.['Blessings on Enjoyments'] ?? [];
+    const nefashot = enjoyments.find(l => stripNiqqud(stripHtml(l)).includes('בורא נפשות'));
+    if (!nefashot) throw new Error('Boré nefachot introuvable dans le siddour');
+    writeTefila("Brakha A'harona", [
+      { label: "Mé'ein chaloch (Al hami'hya)", lines: cleanTextArray(mihya.slice(1)) },
+      { label: 'Boré nefachot', lines: cleanTextArray([nefashot]) },
+    ]);
+
+    const levana = data.text?.['Blessing of the Moon'] ?? [];
+    checkAnchor(levana, [0, 'ברכת הלבנה']);
+    writeTefila('Birkat Halevana', [{ lines: cleanTextArray(levana.slice(1)) }]);
+  } catch (e) {
+    console.error(`  ✗ Siddur Edot HaMizrach: ${e.message}`);
+  }
+
+  // Cheva Brahot : les sept bénédictions, du livret Birkat Hamazon.
+  try {
+    const data = await withRetry(
+      () => fetchJson(`${GCS}/Liturgy/Other Liturgy Works/Birkat Hamazon/Hebrew/merged.json`),
+      'Birkat Hamazon (livret)',
+    );
+    const sheva = cleanTextArray(data.text?.['Sheva Brachot']);
+    if (sheva.length === 0) throw new Error('section vide : Sheva Brachot');
+    writeTefila('Cheva Brahot', [{ lines: sheva }]);
+  } catch (e) {
+    console.error(`  ✗ Cheva Brahot: ${e.message}`);
   }
 }
 

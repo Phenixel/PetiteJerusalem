@@ -85,7 +85,7 @@ export default [
     path: "/bibliotheque/lecture-du-jour",
     name: "daily-reading",
     component: DailyReadingPage,
-    meta: { requiresAuth: true, offlineOk: isNativeApp },
+    meta: { requiresAuth: true, offlineOk: isNativeApp, plainBackground: true },
   },
   // Chnei mikra : la paracha de la semaine avec son Targoum, ouverte à tous.
   // La semaine se choisit en query (`?semaine=2026-08-15`) plutôt qu'en
@@ -95,16 +95,22 @@ export default [
   {
     path: "/bibliotheque/chnei-mikra",
     name: "chnei-mikra",
-    meta: { offlineOk: true },
+    meta: { offlineOk: true, plainBackground: true },
     component: ChneiMikraPage,
   },
   // Détail d'un corpus de la bibliothèque (liste des textes) : la page
   // d'accueil de la bibliothèque ne montre que les grandes sections.
   {
-    path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh)",
+    path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh|brahot)",
     name: "study-corpus",
     meta: { offlineOk: true },
     component: StudyPage,
+  },
+  // Les Sli'hot n'ont qu'un texte : le livre s'ouvre directement dessus, pas
+  // sur une liste à un seul élément.
+  {
+    path: "/bibliotheque/slihot",
+    redirect: "/bibliotheque/slihot/slihot",
   },
   // L'ancienne page « Hors ligne » a été fusionnée dans la bibliothèque
   // (boutons de téléchargement sur chaque carte + « Tout télécharger »).
@@ -118,13 +124,13 @@ export default [
   {
     path: "/bibliotheque/:corpus/:slug",
     name: "etude-reading",
-    meta: { offlineOk: true },
+    meta: { offlineOk: true, plainBackground: true },
     component: TextReadingPage,
   },
   {
     path: "/bibliotheque/:corpus/:slug/:section",
     name: "etude-reading-section",
-    meta: { offlineOk: true },
+    meta: { offlineOk: true, plainBackground: true },
     component: TextReadingPage,
   },
   // Horaires (zmanim) : tout est calculé sur l'appareil, aucune donnée à
@@ -182,13 +188,13 @@ export default [
   {
     path: "/lire/:textId",
     name: "text-reading",
-    meta: { offlineOk: true },
+    meta: { offlineOk: true, plainBackground: true },
     component: TextReadingPage,
   },
   {
     path: "/lire/:textId/:section",
     name: "text-reading-section",
-    meta: { offlineOk: true },
+    meta: { offlineOk: true, plainBackground: true },
     component: TextReadingPage,
   },
   // SEO landing pages, rendered from src/content/seoPages.ts (same markup the
