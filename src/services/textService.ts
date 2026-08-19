@@ -17,12 +17,47 @@ export interface DafBlock {
 }
 
 /**
+ * Didascalie : la consigne de lecture qui accompagne un texte de tefila
+ * (« le chalia'h tsibour dit », « à Roch Hodech on ajoute »…). Portée par le
+ * fichier plutôt que par les locales : c'est du contenu, pas de l'interface —
+ * mais donnée dans les trois langues, pour être lue dans celle du lecteur.
+ */
+export interface Rubric {
+  fr: string;
+  en: string;
+  he: string;
+}
+
+/**
+ * Fragment d'un paragraphe : de l'hébreu — mis en avant (`strong`) pour ce que
+ * reprend l'assemblée — ou une didascalie glissée dans le fil du texte.
+ */
+export type TextRun =
+  | { kind: "he"; text: string; strong?: boolean }
+  | { kind: "rubric"; rubric: Rubric };
+
+/**
+ * Tefila : un paragraphe du texte, avec sa didascalie et ses mises en avant.
+ * Un paragraphe = une ligne de {@link TextBlock.lines} (même index), pour que
+ * les marque-pages et la translittération continuent de raisonner en lignes.
+ */
+export interface TextParagraph {
+  /** Didascalie affichée au-dessus du paragraphe. */
+  rubric?: Rubric;
+  runs: TextRun[];
+  /** Passage qui se dit plusieurs fois : affiché autant de fois. */
+  repeat?: number;
+}
+
+/**
  * Visual sub-division of a single-section text (chapter of a Na"kh book,
  * montée d'une paracha) : the text stays one continuous reading — and one
  * reservation unit — with a marker at each block start.
  */
 export interface TextBlock {
   label: string;
+  /** Tefila : le titre du bloc dans la langue du lecteur, quand il en a un. */
+  labelText?: Rubric;
   lines: string[];
   /** Index of the block's first line within the section's flattened `he`. */
   offset: number;
@@ -33,6 +68,15 @@ export interface TextBlock {
    * carte qui le distingue du fil du texte. Absent = toujours affiché.
    */
   when?: string;
+  /**
+   * Tefila : occasion qui OUVRE le bloc au lieu de le révéler. Le bloc est
+   * toujours là, dans un encadré replié — les ajouts des dix jours de
+   * pénitence se lisent aussi hors saison, mais ne doivent pas couper le fil
+   * des Sli'hot le reste de l'année.
+   */
+  fold?: string;
+  /** Tefila : le détail de mise en forme, ligne à ligne. */
+  paragraphs?: TextParagraph[];
 }
 
 export interface TextSection {
@@ -301,13 +345,77 @@ function loadTanakh(
 /**
  * Format des fichiers de tefila (public/texts/tefila/*) : une suite de blocs,
  * chacun avec ses lignes, un titre facultatif (séparations des Sli'hot,
- * bénédictions de la brakha a'harona) et une occasion facultative (`when`)
- * pour les ajouts qui ne se disent qu'à certaines dates (voir TextBlock.when).
+ * bénédictions de la brakha a'harona) et une occasion facultative — `when`
+ * pour les ajouts qui ne se disent qu'à certaines dates (voir TextBlock.when),
+ * `fold` pour ceux qui restent disponibles toute l'année dans un encadré
+ * replié (voir TextBlock.fold).
+ *
+ * Une ligne est soit de l'hébreu brut, soit un paragraphe détaillé :
+ *
+ *   {
+ *     "rubric": { "fr": "…", "en": "…", "he": "…" },   // didascalie au-dessus
+ *     "he": ["hébreu", { "b": "réponse de l'assemblée" },
+ *            { "r": { "fr": "…", "en": "…", "he": "…" } }, "suite"],
+ *     "repeat": 2                                       // se dit deux fois
+ *   }
+ *
+ * `he` accepte aussi une simple chaîne. Les didascalies ne comptent pas dans
+ * le texte hébreu de la ligne : les marque-pages, la translittération et le
+ * repérage des versets ne voient que ce qui se lit.
  */
+interface TefilaRun {
+  /** Hébreu mis en avant (ce que reprend l'assemblée). */
+  b?: string;
+  /** Didascalie insérée dans le fil du texte. */
+  r?: Rubric;
+}
+
+interface TefilaFileLine {
+  rubric?: Rubric;
+  he?: string | (string | TefilaRun)[];
+  repeat?: number;
+}
+
 interface TefilaFileBlock {
   label?: string;
+  labelText?: Rubric;
   when?: string;
-  lines?: unknown;
+  fold?: string;
+  lines?: (string | TefilaFileLine)[];
+}
+
+/** Un paragraphe du fichier → ses fragments, ou null si rien ne se lit. */
+function parseTefilaLine(raw: string | TefilaFileLine): TextParagraph | null {
+  if (typeof raw === "string") {
+    const text = cleanText(raw);
+    return text ? { runs: [{ kind: "he", text }] } : null;
+  }
+  const parts = Array.isArray(raw.he) ? raw.he : raw.he ? [raw.he] : [];
+  const runs: TextRun[] = [];
+  for (const part of parts) {
+    if (typeof part === "string") {
+      const text = cleanText(part);
+      if (text) runs.push({ kind: "he", text });
+    } else if (part.b) {
+      const text = cleanText(part.b);
+      if (text) runs.push({ kind: "he", text, strong: true });
+    } else if (part.r) {
+      runs.push({ kind: "rubric", rubric: part.r });
+    }
+  }
+  if (!runs.some((run) => run.kind === "he")) return null;
+  const paragraph: TextParagraph = { runs };
+  if (raw.rubric) paragraph.rubric = raw.rubric;
+  if (raw.repeat && raw.repeat > 1) paragraph.repeat = raw.repeat;
+  return paragraph;
+}
+
+/** Le texte hébreu d'un paragraphe, didascalies exclues. */
+function paragraphText(paragraph: TextParagraph): string {
+  return paragraph.runs
+    .filter((run): run is Extract<TextRun, { kind: "he" }> => run.kind === "he")
+    .map((run) => run.text)
+    .join(" ");
 }
 
 function loadTefila(
@@ -317,19 +425,30 @@ function loadTefila(
   const blocks: TextBlock[] = [];
   let offset = 0;
   for (const raw of data.blocks ?? []) {
-    const lines = normalizeLines(raw.lines);
-    if (lines.length === 0) continue;
-    const block: TextBlock = { label: raw.label ?? "", lines, offset };
+    const paragraphs = (raw.lines ?? [])
+      .map(parseTefilaLine)
+      .filter((p): p is TextParagraph => p !== null);
+    if (paragraphs.length === 0) continue;
+    const block: TextBlock = {
+      label: raw.label ?? "",
+      lines: paragraphs.map(paragraphText),
+      offset,
+      paragraphs,
+    };
+    if (raw.labelText) block.labelText = raw.labelText;
     if (raw.when) block.when = raw.when;
+    if (raw.fold) block.fold = raw.fold;
     blocks.push(block);
-    offset += lines.length;
+    offset += block.lines.length;
   }
   const section = buildSection(
     1,
     textStudy.name,
     blocks.flatMap((b) => b.lines),
   );
-  if (blocks.length > 1) section.blocks = blocks;
+  // Toujours des blocs, même seul : c'est là que vit la mise en forme
+  // (didascalies, réponses de l'assemblée, répétitions).
+  section.blocks = blocks;
   return { title: data.title ?? textStudy.name, type: String(textStudy.type), sections: [section] };
 }
 

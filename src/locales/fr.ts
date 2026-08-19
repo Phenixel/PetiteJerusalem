@@ -722,6 +722,16 @@ const fr = {
     bookmarks: "Marque-pages",
     bookmarkAdd: "Ajouter un marque-page",
     bookmarkRemove: "Retirer le marque-page",
+    // Tefila (Sli'hot, Brahot) : mise en forme du texte liturgique.
+    fold: {
+      teshuva: "Ajout des dix jours de pénitence",
+    },
+    repeatTimes: "(\u00d7 {n})",
+    slihotHours: "Horaire des Sli'hot",
+    slihotRange: "De {start} à {end}",
+    slihotHoursInfo: "À propos de cet horaire",
+    slihotWindowExplained:
+      "Les Sli\u2019hot se disent dans la dernière veille de la nuit\u00a0: à partir de hatsot, le milieu de la nuit ({start}), et jusqu\u2019au lever du soleil ({end}).",
   },
   accountCta: {
     title: "Créez votre compte gratuit",

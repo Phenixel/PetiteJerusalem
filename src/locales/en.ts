@@ -716,6 +716,16 @@ const en: LocaleMessages = {
     bookmarks: "Bookmarks",
     bookmarkAdd: "Add a bookmark",
     bookmarkRemove: "Remove bookmark",
+    // Tefila (Selichot, Berakhot): liturgical text layout.
+    fold: {
+      teshuva: "Addition for the Ten Days of Repentance",
+    },
+    repeatTimes: "(\u00d7 {n})",
+    slihotHours: "Selichot times",
+    slihotRange: "From {start} to {end}",
+    slihotHoursInfo: "About these times",
+    slihotWindowExplained:
+      "Selichot are said during the last watch of the night: from chatzot, midnight ({start}), until sunrise ({end}).",
   },
   accountCta: {
     title: "Create your free account",

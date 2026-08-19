@@ -1,4 +1,4 @@
-import { HDate, Sedra, flags, getHolidaysOnDate } from "@hebcal/core";
+import { HDate, Sedra, flags, getHolidaysOnDate, months } from "@hebcal/core";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { TORAH_LIVRES } from "../content/etudeTexts";
@@ -227,6 +227,10 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
     occ.add("moadim");
   if (occ.has("rosh-chodesh") || has(flags.CHAG) || has(flags.CHOL_HAMOED)) occ.add("moed");
   if (occ.has("shabbat") || occ.has("moed")) occ.add("shabbat-or-moed");
+  // Les dix jours de pénitence : de Roch Hachana à Yom Kippour, 1 au 10 Tichri.
+  // Ils n'ouvrent aucun ajout à eux seuls — ils déplient les encadrés des
+  // Sli'hot, qui restent lisibles le reste de l'année (voir TextBlock.fold).
+  if (hd.getMonth() === months.TISHREI && hd.getDate() <= 10) occ.add("teshuva");
   return occ;
 }
 

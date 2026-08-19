@@ -39,6 +39,8 @@ import {
   readingLead as readingLeadOf,
   SITE_URL,
 } from "../../content/etudeTexts";
+import LiturgyText from "./LiturgyText.vue";
+import SlihotHours from "./SlihotHours.vue";
 import GuestForm from "../../components/GuestForm.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
@@ -47,6 +49,7 @@ import { useReadingSize } from "../../composables/useReadingSize";
 import { readingProgressService, bookmarkId } from "../../services/readingProgressService";
 import type { Bookmark, ReadingPosition } from "../../services/readingProgressService";
 import { isNativeApp } from "../../composables/useNativeApp";
+import { useReadingPinch } from "../../composables/useReadingPinch";
 import { analyticsService } from "../../services/analyticsService";
 
 const route = useRoute();
@@ -54,6 +57,8 @@ const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
 const readingSize = useReadingSize();
+// App native : pincer dans la page agrandit le texte lu, pas la page.
+useReadingPinch();
 // Lieu des horaires : donne le jour hébraïque (sensible à la chkia) qui
 // conditionne les ajouts de calendrier des textes de tefila.
 const { place: zmanimPlace } = useZmanimLocation();
@@ -130,12 +135,14 @@ const visibleBlocks = computed(() =>
   verseBlocks.value.filter((b) => !b.when || occasions.value.has(b.when)),
 );
 
-/** Style du titre d'un bloc : cadre d'ajout du calendrier, ou séparation du
-    fil du texte (sans filet au-dessus du tout premier bloc). */
-function blockLabelClass(block: TextBlock, index: number): string {
+/** Tefila (Sli'hot, Brahot) : un rendu à part, voir LiturgyText. */
+const isLiturgyText = computed(() => !!textEntry.value && isLiturgy(textEntry.value));
+const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
+
+/** Séparation entre deux blocs (chapitre, montée) — pas de filet au premier. */
+function blockLabelClass(index: number): string {
   const base = "mb-4 text-sm font-semibold text-primary";
-  if (block.when || index === 0) return base;
-  return `${base} mt-10 pt-4 border-t border-black/10 dark:border-white/10`;
+  return index === 0 ? base : `${base} mt-10 pt-4 border-t border-black/10 dark:border-white/10`;
 }
 
 // Verse numbers for chaptered texts, and within each chapter / montée block.
@@ -1002,6 +1009,8 @@ watch(textId, () => {
 
       <!-- Reading a passage -->
       <div v-else-if="currentSection">
+        <!-- Sli'hot : la plage horaire où elles se disent, avant le texte. -->
+        <SlihotHours v-if="isSlihot" />
         <!-- Reservation bar (session mode) -->
         <div v-if="showReservationBar" class="mb-8 p-4 card">
           <!-- Current session -->
@@ -1225,17 +1234,30 @@ watch(textId, () => {
           </template>
         </div>
 
+        <!-- Tefila : paragraphes justifiés, didascalies traduites, ajouts du
+             calendrier et encadrés des dix jours de pénitence. -->
+        <LiturgyText
+          v-else-if="isLiturgyText"
+          :style="{ '--reading-scale': readingSize.scale.value }"
+          :blocks="visibleBlocks"
+          :show-phonetic="showPhonetic"
+          :phonetic-lines="phoneticLines"
+          :occasions="occasions"
+          :highlighted-line="highlightedLine"
+          :selected-line="selectedLine"
+          :is-bookmarked="isLineBookmarked"
+          @select="onVerseClick"
+          @toggle-bookmark="toggleBookmarkAt"
+        />
+
         <!-- Verses / mishnayot (numbered for reference texts), grouped by
              chapter / montée with a marker at each block start -->
         <div v-else :style="{ '--reading-scale': readingSize.scale.value }">
-          <template v-for="(block, blockIndex) in visibleBlocks" :key="block.offset">
-            <!-- Ajout du calendrier (`when`) : un cadre sobre avec son titre,
-                 affiché seulement le jour où il se dit (voir visibleBlocks). -->
-            <div :data-when="block.when" :class="block.when ? 'card p-5 mb-6' : undefined">
-              <p v-if="block.label" :class="blockLabelClass(block, blockIndex)">
-                {{ block.label }}
-              </p>
-              <div class="space-y-6" :class="block.when ? undefined : 'mb-6'">
+          <template v-for="(block, blockIndex) in verseBlocks" :key="block.offset">
+            <p v-if="block.label" :class="blockLabelClass(blockIndex)">
+              {{ block.label }}
+            </p>
+            <div class="space-y-6 mb-6">
               <template v-for="(line, index) in block.lines" :key="block.offset + index">
                 <div
                   :data-line="block.offset + index"
@@ -1292,7 +1314,6 @@ watch(textId, () => {
                   </button>
                 </div>
               </template>
-              </div>
             </div>
           </template>
         </div>

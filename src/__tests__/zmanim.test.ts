@@ -10,6 +10,7 @@ import {
   featuredShabbat,
   weekdayIn,
   nextZman,
+  slihotWindow,
   type ZmanimPlace,
 } from "../services/zmanimService";
 
@@ -191,5 +192,27 @@ describe("date hébraïque", () => {
     expect(formatHebrewDate(hd, "fr")).toBe("21 Av 5786");
     expect(formatHebrewDate(hd, "en")).toBe("21st of Av, 5786");
     expect(formatHebrewDate(hd, "he")).toContain("אָב");
+  });
+});
+
+describe("plage des Sli'hot", () => {
+  it("va de hatsot au lever du soleil de la nuit qui vient", () => {
+    // Mardi 4 août 2026, midi : le jour est levé, la plage annoncée est celle
+    // de la nuit du 4 au 5.
+    const window = slihotWindow(DEFAULT_PLACE, PARIS_DAY)!;
+    expect(window.tonight).toBe(false);
+    expect(at(DEFAULT_PLACE, window.start)).toBe("01:56");
+    expect(at(DEFAULT_PLACE, window.end)).toBe("06:29");
+    expect(on(DEFAULT_PLACE, window.end)).toContain("5");
+    expect(window.start.getTime()).toBeLessThan(window.end.getTime());
+  });
+
+  it("avant le lever du soleil, c'est encore la nuit en cours", () => {
+    // Mercredi 5 août 2026, 4 h à Paris : on est dans la plage.
+    const beforeDawn = new Date(Date.UTC(2026, 7, 5, 2));
+    const window = slihotWindow(DEFAULT_PLACE, beforeDawn)!;
+    expect(window.tonight).toBe(true);
+    expect(window.start.getTime()).toBeLessThan(beforeDawn.getTime());
+    expect(window.end.getTime()).toBeGreaterThan(beforeDawn.getTime());
   });
 });

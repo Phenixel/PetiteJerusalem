@@ -38,6 +38,15 @@ describe("activeOccasions", () => {
     expect(activeOccasions(hd(2026, 12, 4), false).has("nissim")).toBe(false);
   });
 
+  it("Dix jours de pénitence : de Roch Hachana à Yom Kippour", () => {
+    // 5787 : Roch Hachana le 12 septembre 2026, Yom Kippour le 21.
+    expect(activeOccasions(hd(2026, 9, 12), false).has("teshuva")).toBe(true);
+    expect(activeOccasions(hd(2026, 9, 21), false).has("teshuva")).toBe(true);
+    // La veille (29 Eloul) et le lendemain (11 Tichri) n'en sont pas.
+    expect(activeOccasions(hd(2026, 9, 11), false).has("teshuva")).toBe(false);
+    expect(activeOccasions(hd(2026, 9, 22), false).has("teshuva")).toBe(false);
+  });
+
   it("Pessah : Yom Tov et jours de fête", () => {
     // 2 avril 2026 = 15 Nissan 5786.
     const occ = activeOccasions(hd(2026, 4, 2), false);
@@ -54,12 +63,10 @@ describe("fichiers de tefila", () => {
     return parseContent(entry, data);
   };
 
-  it("Birkat Hamazon : un fil sans titres, les ajouts du calendrier en blocs `when`", () => {
+  it("Birkat Hamazon : un fil continu, les ajouts du calendrier en blocs `when`", () => {
     const content = load("brahot", "birkat-hamazon");
     const blocks = content.sections[0].blocks ?? [];
     expect(blocks.length).toBeGreaterThan(5);
-    // Le fil principal n'a ni titre ni condition : des paragraphes continus.
-    for (const block of blocks.filter((b) => !b.when)) expect(block.label).toBe("");
     // Les ajouts connus sont là, chacun conditionné.
     const whens = blocks.filter((b) => b.when).map((b) => b.when);
     for (const expected of ["shabbat", "moed", "nissim"]) expect(whens).toContain(expected);
@@ -68,9 +75,31 @@ describe("fichiers de tefila", () => {
     let offset = 0;
     for (const block of blocks) {
       expect(block.offset).toBe(offset);
+      expect(block.paragraphs).toHaveLength(block.lines.length);
       offset += block.lines.length;
     }
     expect(content.sections[0].he.length).toBe(offset);
+  });
+
+  it("Birkat Hamazon : le zimoun porte ses didascalies dans les trois langues", () => {
+    const content = load("brahot", "birkat-hamazon");
+    const zimun = (content.sections[0].blocks ?? []).find((b) => b.label === "Zimoun")!;
+    expect(zimun.labelText).toMatchObject({
+      fr: expect.any(String),
+      en: expect.any(String),
+      he: expect.any(String),
+    });
+    // Chaque réplique dit qui parle — le mezamen, puis les convives.
+    for (const paragraph of zimun.paragraphs ?? []) expect(paragraph.rubric).toBeDefined();
+    // « Chamayim », la réponse de l'assemblée, est mise en avant.
+    const answered = (zimun.paragraphs ?? []).flatMap((p) => p.runs);
+    expect(answered.some((run) => run.kind === "he" && run.strong)).toBe(true);
+    // Une didascalie glissée dans le fil ne compte pas dans le texte hébreu.
+    const inline = (zimun.paragraphs ?? []).flatMap((p) =>
+      p.runs.filter((run) => run.kind === "rubric"),
+    );
+    expect(inline.length).toBeGreaterThan(0);
+    for (const line of zimun.lines) expect(line).not.toContain("בעשרה ויותר");
   });
 
   it("Brakha A'harona : le Mé'ein chaloch complet puis Boré nefachot", () => {
@@ -85,13 +114,48 @@ describe("fichiers de tefila", () => {
     expect(all).toContain("בורא נפשות");
   });
 
-  it("Sli'hot : des séparations titrées, sans condition", () => {
+  it("Sli'hot : des séparations titrées, aucun ajout masqué", () => {
     const content = load("slihot", "slihot");
     const blocks = content.sections[0].blocks ?? [];
     expect(blocks.length).toBeGreaterThan(10);
-    for (const block of blocks) {
-      expect(block.label).not.toBe("");
-      expect(block.when).toBeUndefined();
+    // Rien ne disparaît selon la date : les Sli'hot se lisent d'un bout à
+    // l'autre, les passages de saison sont repliés (`fold`), pas cachés.
+    for (const block of blocks) expect(block.when).toBeUndefined();
+    expect(blocks.filter((b) => b.label).length).toBeGreaterThan(10);
+  });
+
+  it("Sli'hot : les ajouts des dix jours de pénitence sont repliables", () => {
+    const content = load("slihot", "slihot");
+    const folded = (content.sections[0].blocks ?? []).filter((b) => b.fold);
+    expect(folded.length).toBeGreaterThan(2);
+    for (const block of folded) expect(block.fold).toBe("teshuva");
+    // L'occasion qui les déplie existe bien au calendrier.
+    expect(activeOccasions(hd(2026, 9, 15), false).has("teshuva")).toBe(true);
+  });
+
+  it("Sli'hot : les reprises de l'assemblée et les répétitions sont marquées", () => {
+    const content = load("slihot", "slihot");
+    const paragraphs = (content.sections[0].blocks ?? []).flatMap((b) => b.paragraphs ?? []);
+    // « בדיל ויעבור », « והושיענו למען שמך »… : ce que reprend l'assemblée.
+    const strong = paragraphs.filter((p) => p.runs.some((run) => run.kind === "he" && run.strong));
+    expect(strong.length).toBeGreaterThan(50);
+    // « HaChem hou haElohim » se dit deux fois : le paragraphe le porte.
+    expect(paragraphs.filter((p) => p.repeat === 2).length).toBeGreaterThan(0);
+  });
+
+  it("les didascalies hébraïques ne traînent plus dans le texte", () => {
+    // Elles vivaient collées aux versets ; elles sont désormais traduites et
+    // rendues à part — aucune ne doit rester dans ce qui se lit.
+    const MARKERS = ["בעשרת ימי תשובה", "יש אומרים", "והמסובים עונים", "אומרים קדיש"];
+    for (const [corpus, slug] of [
+      ["slihot", "slihot"],
+      ["brahot", "birkat-hamazon"],
+      ["brahot", "birkat-halevana"],
+      ["brahot", "brakha-aharona"],
+    ] as const) {
+      for (const line of load(corpus, slug).sections[0].he) {
+        for (const marker of MARKERS) expect(line).not.toContain(marker);
+      }
     }
   });
 });

@@ -704,6 +704,16 @@ const he: LocaleMessages = {
     bookmarks: "סימניות",
     bookmarkAdd: "הוספת סימנייה",
     bookmarkRemove: "הסרת הסימנייה",
+    // תפילה (סליחות, ברכות) : עיצוב הטקסט הליטורגי.
+    fold: {
+      teshuva: "תוספת לעשרת ימי תשובה",
+    },
+    repeatTimes: "(\u00d7 {n})",
+    slihotHours: "זמן הסליחות",
+    slihotRange: "מ־{start} עד {end}",
+    slihotHoursInfo: "על אודות הזמן הזה",
+    slihotWindowExplained:
+      "הסליחות נאמרות באשמורת הבוקר: מחצות הלילה ({start}) ועד הנץ החמה ({end}).",
   },
   accountCta: {
     title: "צרו חשבון חינם",

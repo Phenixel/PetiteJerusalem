@@ -141,15 +141,19 @@ function esc(value: string): string {
 
 const SHARE_NEW_SESSION = "/share-reading/new-session";
 
-/** Render lines as Hebrew + (where vocalized) French phonetic. */
-function linesHtml(lines: string[], numbered: boolean): string {
+/** Render lines as Hebrew + (where vocalized) French phonetic.
+ * `rubrics` : didascalies de tefila, en français, au-dessus de leur ligne. */
+function linesHtml(lines: string[], numbered: boolean, rubrics: (string | null)[] = []): string {
   return lines
     .map((line, i) => {
       const tl = hasNiqqud(line) ? transliterate(line) : "";
       const num = numbered ? `<span class="verse-num">${i + 1}</span>\n        ` : "";
+      const rubric = rubrics[i]
+        ? `<span class="rubric" lang="fr">${esc(rubrics[i]!)}</span>\n        `
+        : "";
       const tlHtml = tl ? `\n        <span class="tl" lang="fr">${esc(tl)}</span>` : "";
       return (
-        `<li>\n        ${num}<span class="he" lang="he" dir="rtl">${esc(line)}</span>` +
+        `<li>\n        ${rubric}${num}<span class="he" lang="he" dir="rtl">${esc(line)}</span>` +
         `${tlHtml}\n      </li>`
       );
     })
@@ -170,13 +174,17 @@ function sectionTextHtml(section: TextSection, numbered: boolean): string {
   }
   if (section.blocks?.length) {
     // Tefila : les blocs du fil principal n'ont pas de titre ; la page
-    // statique, sans date, montre aussi les ajouts conditionnels (`when`).
+    // statique, sans date, montre aussi les ajouts conditionnels (`when`),
+    // et les didascalies en français — elles font partie du texte.
     return section.blocks
-      .map(
-        (block) =>
-          (block.label ? `<h3 class="daf-label">${esc(block.label)}</h3>\n      ` : "") +
-          `<ol class="reading-lines">\n      ${linesHtml(block.lines, numbered)}\n      </ol>`,
-      )
+      .map((block) => {
+        const title = block.labelText?.fr ?? block.label;
+        const rubrics = (block.paragraphs ?? []).map((p) => p.rubric?.fr ?? null);
+        return (
+          (title ? `<h3 class="daf-label">${esc(title)}</h3>\n      ` : "") +
+          `<ol class="reading-lines">\n      ${linesHtml(block.lines, numbered, rubrics)}\n      </ol>`
+        );
+      })
       .join("\n      ");
   }
   return `<ol class="reading-lines">\n      ${linesHtml(section.he, numbered)}\n      </ol>`;

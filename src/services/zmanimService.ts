@@ -251,6 +251,44 @@ export function getSunset(place: ZmanimPlace, day: Date = new Date()): Date | nu
   return isUsable(sunset) ? sunset : null;
 }
 
+/** La plage où se disent les Sli'hot : de hatsot au lever du soleil. */
+export interface SlihotWindow {
+  /** Hatsot halayla — le milieu de la nuit, à partir duquel on peut commencer. */
+  start: Date;
+  /** Le lever du soleil (netz) : passé lui, ce n'est plus l'heure des Sli'hot. */
+  end: Date;
+  /** La nuit en cours (on est entre hatsot et le netz) ou celle qui vient. */
+  tonight: boolean;
+}
+
+/**
+ * La plage horaire des Sli'hot pour la nuit en cours — ou, une fois le jour
+ * levé, pour la nuit qui vient.
+ *
+ * L'usage séfarade est de les dire à l'achmoret haboker, la dernière veille de
+ * la nuit : jamais avant hatsot (le milieu de la nuit) et jusqu'au lever du
+ * soleil, la prière du matin prenant alors le relais.
+ *
+ * `chatzotNight` d'un jour hébraïque donné est le milieu de la nuit qui l'a
+ * précédé (voir ZMAN_DEFS) : le début et la fin se lisent donc tous deux sur
+ * le jour du MATIN où les Sli'hot s'achèvent.
+ */
+export function slihotWindow(place: ZmanimPlace, now: Date = new Date()): SlihotWindow | null {
+  const gloc = geoLocationOf(place);
+  const today = dayInPlace(place, now);
+  const sunriseToday = new Zmanim(gloc, today, false).sunrise();
+  // Avant le lever du soleil, la nuit en cours est encore celle des Sli'hot ;
+  // après, on annonce déjà la nuit suivante.
+  const tonight = !isUsable(sunriseToday) || now.getTime() < sunriseToday.getTime();
+  const morning = new Date(today);
+  if (!tonight) morning.setDate(morning.getDate() + 1);
+  const zmanim = new Zmanim(gloc, morning, false);
+  const start = zmanim.chatzotNight();
+  const end = zmanim.sunrise();
+  if (!isUsable(start) || !isUsable(end)) return null;
+  return { start, end, tonight };
+}
+
 /**
  * Combien de minutes avant la chkia part le rappel « dernier appel ».
  * Recopié dans functions/src/sunsetReminder.ts, qui ne peut pas importer src/.

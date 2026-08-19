@@ -90,10 +90,13 @@ body {
 
 /* App native uniquement (classe posée par main.ts) : sans ça, l'étirement
    d'overscroll d'Android déforme toute la page, bottom bar comprise.
-   (Complété par overScrollMode NEVER côté natif, cf. setup-android.mjs.) */
+   (Complété par overScrollMode NEVER côté natif, cf. setup-android.mjs.)
+   `touch-action: manipulation` coupe en plus le zoom au double-tap, que le
+   meta viewport ne suffit pas à neutraliser sur toutes les webviews. */
 :root.native-app,
 :root.native-app body {
   overscroll-behavior: none;
+  touch-action: manipulation;
 }
 
 /* Safe-areas : env() est fourni par les WebViews récentes (viewport-fit=cover),
@@ -579,6 +582,14 @@ button,
   color: var(--color-text-secondary);
   font-style: italic;
   line-height: 1.6;
+}
+
+/* Tefila : la didascalie qui précède un paragraphe (« les convives répondent »). */
+.reading-page .rubric {
+  font-size: 0.85rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
 }
 
 /* Talmud: daf sub-header above each folio's lines. */

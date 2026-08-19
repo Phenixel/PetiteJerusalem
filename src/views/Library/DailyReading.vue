@@ -23,6 +23,7 @@ import { localDayKey } from "../../services/dateService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useReadingSize } from "../../composables/useReadingSize";
+import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
 import {
@@ -59,6 +60,8 @@ const { confirm } = useConfirm();
 const online = useOnline();
 // Même préférence de taille que le lecteur de la bibliothèque (A− / A+).
 const readingSize = useReadingSize();
+// App native : pincer dans la page agrandit le texte lu, pas la page.
+useReadingPinch();
 
 const ALL_TYPE = "Tout";
 
