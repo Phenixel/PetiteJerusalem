@@ -135,19 +135,18 @@ const plainParagraphs = (block: TextBlock): TextParagraph[] =>
   block.lines.map((text) => ({ runs: [{ kind: "he", text }] }));
 
 const sections = computed(() =>
-  props.blocks.map((block, index) => {
-    const paragraphs = block.paragraphs ?? plainParagraphs(block);
-    // Un bloc en strophes resserre ses lignes : c'est le blanc au-dessus de
-    // chaque invocation qui dit où l'une finit et l'autre commence.
-    return { block, index, paragraphs, strophes: paragraphs.some((p) => p.lead) };
-  }),
+  props.blocks.map((block, index) => ({
+    block,
+    index,
+    paragraphs: block.paragraphs ?? plainParagraphs(block),
+  })),
 );
 </script>
 
 <template>
   <div class="reading-liturgy">
     <section
-      v-for="{ block, index, paragraphs, strophes } in sections"
+      v-for="{ block, index, paragraphs } in sections"
       :key="block.offset"
       :data-when="block.when"
       :data-fold="block.fold"
@@ -184,7 +183,6 @@ const sections = computed(() =>
           :class="[
             block.fold ? 'px-4 pb-4' : '',
             block.numbered ? 'reading-numbered divide-y divide-line' : '',
-            strophes ? 'reading-strophes' : '',
           ]"
         >
           <template v-for="(paragraph, i) in paragraphs" :key="block.offset + i">
@@ -208,6 +206,7 @@ const sections = computed(() =>
                   class="reading-para"
                   :class="{
                     'reading-lead': paragraph.lead,
+                    'reading-tight': paragraph.tight,
                     'reading-echo': copy > 1,
                     'bg-primary/10': highlightedLine === block.offset + i,
                     'bg-black/5 dark:bg-white/10':
@@ -336,17 +335,15 @@ const sections = computed(() =>
   margin-top: 0;
 }
 
-/* Strophes : les demandes d'une même lettre se serrent sous l'invocation qui
-   les ouvre, et c'est le blanc au-dessus de celle-ci qui les groupe. */
-.reading-strophes .reading-para {
-  margin-top: 0.2rem;
-}
-
-.reading-strophes .reading-lead {
-  margin-top: 1.75rem;
-}
-
-.reading-strophes > :first-child .reading-para {
+/* Passage d'un seul tenant : on va à la ligne comme le siddour, sans le blanc
+   qui sépare deux paragraphes. */
+.reading-tight {
   margin-top: 0;
+}
+
+/* Strophes : le blanc au-dessus de l'invocation groupe les demandes de sa
+   lettre, celles-ci se lisant serrées dessous. */
+.reading-lead {
+  margin-top: 1.75rem;
 }
 </style>

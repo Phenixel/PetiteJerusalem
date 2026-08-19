@@ -54,10 +54,15 @@ export interface TextParagraph {
   /**
    * Ouvre une strophe : l'invocation qui se dit une fois pour les demandes
    * qui la suivent (« Élohénou chébachamayim », puis les demandes d'une même
-   * lettre de l'acrostiche). Les lignes d'une strophe se lisent serrées, le
-   * blanc allant d'une strophe à l'autre.
+   * lettre de l'acrostiche). C'est le blanc au-dessus d'elle qui groupe.
    */
   lead?: boolean;
+  /**
+   * Ligne d'un passage d'un seul tenant : on va à la ligne là où le siddour y
+   * va, mais sans le blanc qui sépare deux paragraphes. Les vingt-deux aveux
+   * du vidoui, sinon, s'étirent sur trois écrans.
+   */
+  tight?: boolean;
 }
 
 /**
@@ -384,7 +389,8 @@ function loadTanakh(
  *     "he": ["hébreu", { "b": "réponse de l'assemblée" },
  *            { "r": { "fr": "…", "en": "…", "he": "…" } }, "suite"],
  *     "repeat": 2,                                      // se dit deux fois
- *     "lead": true                                      // ouvre une strophe
+ *     "lead": true,                                     // ouvre une strophe
+ *     "tight": true                                     // continue le passage
  *   }
  *
  * `he` accepte aussi une simple chaîne. Les didascalies ne comptent pas dans
@@ -404,6 +410,7 @@ interface TefilaFileLine {
   repeat?: number;
   muted?: boolean;
   lead?: boolean;
+  tight?: boolean;
 }
 
 interface TefilaFileBlock {
@@ -441,6 +448,7 @@ function parseTefilaLine(raw: string | TefilaFileLine): TextParagraph | null {
   if (raw.repeat && raw.repeat > 1) paragraph.repeat = raw.repeat;
   if (raw.muted) paragraph.muted = true;
   if (raw.lead) paragraph.lead = true;
+  if (raw.tight) paragraph.tight = true;
   return paragraph;
 }
 

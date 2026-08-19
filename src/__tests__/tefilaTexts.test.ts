@@ -224,6 +224,38 @@ describe("fichiers de tefila", () => {
     expect(ribono.runs[1].kind === "he" && ribono.runs[1].strong).toBeFalsy();
   });
 
+  it("Sli'hot : les piyoutim à deux voix portent leur première moitié en gras", () => {
+    // « Lekha Adonaï hatsedaka » : chaque ligne s'ouvre sur les mots du paytan
+    // et se ferme sur ce qui leur répond, que la ligne suivante reprendra.
+    const lekha = (load("slihot", "slihot").sections[0].blocks ?? []).find(
+      (b) => b.label === "Lekha Adonaï hatsedaka",
+    )!;
+    expect(lekha.paragraphs).toHaveLength(33);
+    for (const paragraph of lekha.paragraphs ?? []) {
+      const [head, answer] = paragraph.runs;
+      expect(paragraph.runs).toHaveLength(2);
+      expect(head).toMatchObject({ kind: "he", strong: true });
+      expect(head.kind === "he" && head.text.endsWith(".")).toBe(true);
+      expect(answer.kind === "he" && answer.strong).toBeFalsy();
+    }
+  });
+
+  it("Sli'hot : « HaChem melekh » referme chacun de ses deux tercets", () => {
+    // Les trois membres d'un tercet portent l'un après l'autre les trois temps
+    // de la reprise ; l'assemblée la redit entière à la fin de chacun.
+    const chema = (load("slihot", "slihot").sections[0].blocks ?? []).find(
+      (b) => b.label === "Chéma Israël",
+    )!;
+    const refrain = "יהוה מלך. יהוה מלך. יהוה ימלך לעולם ועד:";
+    const alone = chema.lines.filter((l) => l.replace(/[֑-ׇ]/g, "") === refrain);
+    expect(alone).toHaveLength(3);
+    // Un tercet se lit d'un trait : seule sa première ligne garde le blanc
+    // d'un paragraphe au-dessus d'elle.
+    const paragraphs = chema.paragraphs ?? [];
+    const tercet = paragraphs.slice(6, 10);
+    expect(tercet.map((p) => !!p.tight)).toEqual([false, true, true, true]);
+  });
+
   it("aucun fragment ne commence par une ponctuation", () => {
     // Les fragments d'un paragraphe sont rendus séparés d'une espace : un
     // fragment ouvrant sur « : » afficherait « הוא : ». La ponctuation reste
