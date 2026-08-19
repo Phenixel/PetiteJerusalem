@@ -36,11 +36,30 @@ function toUser(firebaseUser: FirebaseUser): User {
 }
 
 export class AuthService {
+  // Firebase ne rejoue pas onAuthStateChanged après un updateProfile : le nom
+  // affiché changerait dans le profil, et nulle part ailleurs (bandeau, menu
+  // du compte...) jusqu'au prochain rechargement. On garde donc la liste des
+  // abonnés pour les prévenir nous-mêmes, voir notifyProfileChanged.
+  private readonly profileListeners = new Set<(user: User | null) => void>();
+
   onAuthChanged(callback: (user: User | null) => void): () => void {
+    // Une enveloppe, et non `callback` lui-même : deux abonnements passant la
+    // même fonction resteraient deux entrées, et se désabonneraient chacun.
+    const listener = (user: User | null) => callback(user);
+    this.profileListeners.add(listener);
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      callback(firebaseUser ? toUser(firebaseUser) : null);
+      listener(firebaseUser ? toUser(firebaseUser) : null);
     });
-    return unsubscribe;
+    return () => {
+      this.profileListeners.delete(listener);
+      unsubscribe();
+    };
+  }
+
+  /** Rejoue les abonnés d'onAuthChanged avec l'utilisateur courant. */
+  private notifyProfileChanged(): void {
+    const user = auth.currentUser ? toUser(auth.currentUser) : null;
+    this.profileListeners.forEach((listener) => listener(user));
   }
 
   async getCurrentUser(): Promise<User | null> {
@@ -213,6 +232,30 @@ export class AuthService {
       return path;
     }
     return null;
+  }
+
+  /**
+   * Change le nom d'affichage du compte connecté. Ce nom est public (créateur
+   * de session, participant) : il passe donc par la modération, comme à
+   * l'inscription.
+   */
+  async updateDisplayName(name: string): Promise<User> {
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error("Aucun utilisateur connecté");
+    }
+
+    const displayName = name.trim();
+    if (!displayName) {
+      throw new Error("Le nom d'affichage ne peut pas être vide");
+    }
+
+    moderationService.assertClean(displayName);
+
+    await updateProfile(user, { displayName });
+    this.notifyProfileChanged();
+    return toUser(user);
   }
 
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {

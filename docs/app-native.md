@@ -188,6 +188,27 @@ le calcul est local, les coordonnées restent en `localStorage`.
   à `ios/App/App/Info.plist`. C'est indispensable, sans cette clé, iOS
   **ferme l'app** à la première demande de position.
 
+## Retour arrière
+
+Chaque plateforme a son geste, et l'app doit câbler les deux.
+
+- **Android** : le bouton (ou le geste) retour du système. Sans le listener
+  `backButton` de `src/main.ts`, il **quitte l'app** au lieu de revenir en
+  arrière dans la navigation ; sur l'accueil, il la met en arrière-plan, comme
+  toute app Android.
+- **iOS** : le glissement depuis le bord gauche de l'écran. Il est rendu par la
+  WebView, sur son propre historique, celui que le routeur alimente. Deux
+  réglages le conditionnent, et il ne se passe rien si l'un des deux manque :
+  - `allowsBackForwardNavigationGestures` sur la WKWebView, que
+    `scripts/setup-ios.mjs` pose dans l'`AppDelegate` (WKWebView le désactive
+    par défaut, et Capacitor n'expose pas d'option de configuration) ;
+  - `overscroll-behavior` laissé libre sur l'axe horizontal
+    (`src/assets/main.css`). La règle qui neutralise l'étirement vertical
+    d'Android vaut pour les deux axes si on ne la suffixe pas, et WebKit lit
+    l'horizontale comme l'ordre de couper la navigation par glissement.
+
+Un test tient les trois points (`src/__tests__/nativeBackNavigation.test.ts`).
+
 ## Widgets d'écran d'accueil
 
 Deux widgets (Horaires, Lecture du jour) accompagnent l'app : l'app pré-calcule

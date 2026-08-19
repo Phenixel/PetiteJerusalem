@@ -73,15 +73,10 @@ const trackShortcut = (shortcut: string) => {
   analyticsService.capture("profile_shortcut_clicked", { shortcut });
 };
 
-const updateUserInfo = async (data: { name: string; email: string }) => {
-  if (!currentUser.value) return;
-
-  try {
-    currentUser.value.name = data.name;
-    currentUser.value.email = data.email;
-  } catch (error) {
-    console.error("Erreur lors de la sauvegarde:", error);
-  }
+// L'enregistrement lui-même vit dans UserInfoForm (Firebase Auth) : la page
+// ne fait que reprendre l'utilisateur à jour, dont son titre dépend.
+const updateUserInfo = (user: User) => {
+  currentUser.value = user;
 };
 
 onMounted(async () => {
