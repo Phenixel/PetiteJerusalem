@@ -58,6 +58,15 @@ touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
   prerendered). Paris has no city page (`/horaires` is the Paris page) and
   Jérusalem is deliberately excluded (local custom is 40 minutes before
   sunset, the app computes 18 everywhere).
+- **None of this ships in the native app.** All the prerendered SEO content is
+  web-only: `scripts/prune-native-bundle.mjs` (run by `npm run app:build`,
+  between `vite build` and `cap sync`) strips every prerendered `.html` page,
+  `sitemap.xml`, `robots.txt` and `llms.txt` from the Capacitor bundle, and
+  replaces its `index.html` entry with the bare shell (`app.html`), so the app
+  never flashes SEO text at launch. In-app navigation is fully client-side and
+  never loads those files anyway; removing them also saves ~79 MB of HTML in
+  the APK/IPA. A test locks this behavior
+  (`src/__tests__/pruneNativeBundle.test.ts`).
 - `src/views/ContentPage.vue` renders the long-form landing and legal pages
   (`landingPages` in `seoPages.ts`: `/finir-le-chass`, `/partage-tehilim`,
   `/confidentialite`, `/a-propos`, `/mentions-legales`) from the same
