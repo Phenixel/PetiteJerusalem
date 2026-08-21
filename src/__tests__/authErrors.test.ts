@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isAuthCancellation } from "../services/authErrors";
+import {
+  isAppleSignInUnavailable,
+  isAuthBrowserUnavailable,
+  isAuthCancellation,
+} from "../services/authErrors";
 
 /**
  * Tri des erreurs de connexion Google/Apple. Les messages testés sont ceux
@@ -59,5 +63,46 @@ describe("isAuthCancellation", () => {
     expect(isAuthCancellation("User cancelled the selector")).toBe(true);
     expect(isAuthCancellation(null)).toBe(false);
     expect(isAuthCancellation(undefined)).toBe(false);
+  });
+});
+
+describe("isAuthBrowserUnavailable", () => {
+  it("reconnaît l'échec d'ouverture de la fenêtre de connexion Google (iOS)", () => {
+    expect(isAuthBrowserUnavailable(new Error("Unable to open Safari."))).toBe(true);
+  });
+
+  it("laisse passer le reste", () => {
+    expect(isAuthBrowserUnavailable(new Error("Firebase: Error (auth/network-request-failed)."))).toBe(
+      false,
+    );
+  });
+});
+
+describe("isAppleSignInUnavailable", () => {
+  it("reconnaît le code 1000 (feuille Apple imprésentable), message localisé", () => {
+    expect(
+      isAppleSignInUnavailable(
+        new Error(
+          "The operation couldn’t be completed. (com.apple.AuthenticationServices.AuthorizationError error 1000.)",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      isAppleSignInUnavailable(
+        new Error(
+          "L’opération n’a pas pu s’achever. (com.apple.AuthenticationServices.AuthorizationError erreur 1000.)",
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("ne confond pas le refus de l'utilisateur (1001) avec l'indisponibilité", () => {
+    expect(
+      isAppleSignInUnavailable(
+        new Error(
+          "The operation couldn’t be completed. (com.apple.AuthenticationServices.AuthorizationError error 1001.)",
+        ),
+      ),
+    ).toBe(false);
   });
 });

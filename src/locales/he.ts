@@ -123,6 +123,10 @@ const he: LocaleMessages = {
     loginError: "שגיאת התחברות",
     googleError: "שגיאת Google",
     appleError: "שגיאת Apple",
+    authBrowserUnavailable:
+      "לא ניתן לפתוח את חלון ההתחברות במכשיר זה (Safari מוגבל או לא זמין). נסו להתחבר עם אימייל למטה.",
+    appleSignInUnavailable:
+      "ההתחברות עם Apple אינה זמינה במכשיר זה. ודאו בהגדרות שחשבון Apple מחובר, או התחברו עם אימייל.",
     displayNamePlaceholder: "לדוגמה: דוד כהן",
     emailPlaceholder: "example{'@'}email.com",
     termsNotice: "בהתחברות או ביצירת חשבון, אתם מסכימים ל",

@@ -37,3 +37,24 @@ export function isAuthCancellation(error: unknown): boolean {
   const message = messageOf(error);
   return /cancel/i.test(message) || APPLE_CANCELLED.test(message);
 }
+
+/**
+ * Google Sign-In iOS n'a pas pu présenter sa fenêtre web de connexion :
+ * « Unable to open Safari. », remonté par AppAuth quand
+ * ASWebAuthenticationSession/Safari est indisponible sur l'appareil
+ * (restrictions Temps d'écran, profil géré...). Réessayer ne change rien :
+ * il faut orienter vers la connexion par email.
+ */
+export function isAuthBrowserUnavailable(error: unknown): boolean {
+  return /Unable to open Safari/i.test(messageOf(error));
+}
+
+/**
+ * Feuille « Sign in with Apple » en échec, code 1000
+ * (ASAuthorizationErrorUnknown) : l'appareil ne peut pas la présenter, le
+ * plus souvent parce qu'aucun compte Apple n'y est connecté. Message
+ * localisé par l'appareil, comme le 1001.
+ */
+export function isAppleSignInUnavailable(error: unknown): boolean {
+  return /AuthenticationServices\.AuthorizationError\D*1000\b/.test(messageOf(error));
+}

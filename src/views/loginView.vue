@@ -4,7 +4,11 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { Capacitor } from "@capacitor/core";
 import { authService } from "../services/authService";
-import { isAuthCancellation } from "../services/authErrors";
+import {
+  isAppleSignInUnavailable,
+  isAuthBrowserUnavailable,
+  isAuthCancellation,
+} from "../services/authErrors";
 import { reservationService } from "../services/reservationService";
 import { guestService } from "../services/guestService";
 import { seoService } from "../services/seoService";
@@ -110,7 +114,12 @@ async function loginWithGoogle() {
     analyticsService.capture("google_signin_failed", {
       error_message: e instanceof Error ? e.message : String(e),
     });
-    errorMessage.value = t("login.googleError");
+    // Safari indisponible (restrictions) : un « Erreur Google » générique
+    // fait réessayer en vain, observé en prod (trois tentatives puis abandon).
+    // On oriente vers la connexion par email.
+    errorMessage.value = isAuthBrowserUnavailable(e)
+      ? t("login.authBrowserUnavailable")
+      : t("login.googleError");
     errorDetail.value = e instanceof Error ? e.message : String(e);
   }
 }
@@ -137,7 +146,12 @@ async function loginWithApple() {
     if (isAuthCancellation(e)) return;
     console.error("Connexion Apple échouée:", e);
     analyticsService.captureException(e, { auth_flow: "apple" });
-    errorMessage.value = t("login.appleError");
+    // Code 1000 : la feuille Apple ne peut pas s'ouvrir sur cet appareil
+    // (le plus souvent, aucun compte Apple connecté). Réessayer ne change
+    // rien : on dit quoi vérifier, et vers quoi se replier.
+    errorMessage.value = isAppleSignInUnavailable(e)
+      ? t("login.appleSignInUnavailable")
+      : t("login.appleError");
     errorDetail.value = e instanceof Error ? e.message : String(e);
   }
 }

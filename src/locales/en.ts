@@ -124,6 +124,10 @@ const en: LocaleMessages = {
     loginError: "Login error",
     googleError: "Google error",
     appleError: "Apple error",
+    authBrowserUnavailable:
+      "The sign-in window could not open on this device (Safari restricted or unavailable). Try signing in with your email below.",
+    appleSignInUnavailable:
+      "Apple sign-in is unavailable on this device. Make sure an Apple account is signed in under Settings, or sign in with your email.",
     displayNamePlaceholder: "Ex: David Cohen",
     emailPlaceholder: "example{'@'}email.com",
     termsNotice: "By signing in or creating an account, you agree to the",
