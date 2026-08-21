@@ -28,22 +28,33 @@ export const LATIN_FONT_OPTIONS: FontOption[] = [
   },
 ];
 
-/** Hebrew (reading) fonts, applied to --font-hebrew. */
+/**
+ * Hebrew (reading) fonts, applied to --font-hebrew.
+ *
+ * Aucune des trois ne dessine les teamim : chaque pile intercale donc sa
+ * famille « Noto Teamim … », le sous-ensemble hébreu de Noto Serif Hebrew
+ * embarqué et ramené par size-adjust à la taille de la police principale
+ * (voir main.css), pour que les mots cantilés gardent le même corps que le
+ * reste du verset.
+ */
 export const HEBREW_FONT_OPTIONS: FontOption[] = [
   {
     id: "frank",
     label: "Frank Ruhl Libre",
-    stack: '"Frank Ruhl Libre", "Noto Serif Hebrew", "David Libre", Georgia, serif',
+    stack:
+      '"Frank Ruhl Libre", "Noto Teamim Frank", "Noto Serif Hebrew", "David Libre", Georgia, serif',
   },
   {
     id: "david",
     label: "David Libre",
-    stack: '"David Libre", "Frank Ruhl Libre", Georgia, serif',
+    stack:
+      '"David Libre", "Noto Teamim David", "Noto Serif Hebrew", "Frank Ruhl Libre", Georgia, serif',
   },
   {
     id: "heebo",
     label: "Heebo",
-    stack: '"Heebo", "Arial Hebrew", -apple-system, sans-serif',
+    stack:
+      '"Heebo", "Noto Teamim Heebo", "Noto Serif Hebrew", "Arial Hebrew", -apple-system, sans-serif',
   },
 ];
 
