@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import { analyticsService } from "../services/analyticsService";
 import { setRevealOrigin } from "../composables/useRevealOrigin";
 
 const { t } = useI18n();
+const route = useRoute();
+const router = useRouter();
 
 // Le Partage de lectures reste accessible depuis l'accueil et le footer.
 // `anim` : personnalité de l'icône au toucher, en écho aux illustrations de
@@ -32,12 +35,23 @@ function popIcon(to: string) {
   });
 }
 
-// La page des horaires s'ouvre en cercle depuis ce bouton : on lui passe le
-// point de départ avant de naviguer.
-function popZmanim(event: MouseEvent) {
+// La page des horaires se comporte en surcouche (voir App.vue) : le bouton
+// rond l'ouvre en cercle depuis lui-même, et la referme si elle est déjà là.
+const onZmanim = computed(() => route.path.startsWith(ZMANIM_PATH));
+
+function toggleZmanim(event: MouseEvent) {
+  popIcon(ZMANIM_PATH);
+  if (onZmanim.value) {
+    analyticsService.capture("zmanim_closed", { source: "bottom_bar" });
+    // Refermer, c'est revenir sur la page que la surcouche recouvrait.
+    // Ouverte par lien direct (widget) : rien derrière, on rend l'accueil.
+    if (router.options.history.state.back != null) router.back();
+    else void router.replace("/");
+    return;
+  }
   analyticsService.capture("zmanim_opened", { source: "bottom_bar" });
   setRevealOrigin(event.currentTarget as HTMLElement);
-  popIcon(ZMANIM_PATH);
+  void router.push(ZMANIM_PATH);
 }
 </script>
 
@@ -72,13 +86,14 @@ function popZmanim(event: MouseEvent) {
         </RouterLink>
       </template>
 
-      <RouterLink
-        to="/horaires"
+      <button
+        type="button"
         class="zmanim-fab"
-        active-class="zmanim-fab-active"
+        :class="{ 'zmanim-fab-active': onZmanim }"
         :aria-label="t('zmanim.title')"
         :title="t('zmanim.title')"
-        @click="popZmanim"
+        :aria-pressed="onZmanim"
+        @click="toggleZmanim"
       >
         <span
           class="tab-icon"
@@ -87,7 +102,7 @@ function popZmanim(event: MouseEvent) {
         >
           <AppIcon name="clock" :size="24" />
         </span>
-      </RouterLink>
+      </button>
     </div>
   </nav>
 </template>

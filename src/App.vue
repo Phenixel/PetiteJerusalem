@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRoute } from "vue-router";
+import { computed, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import Navbar from "./components/NavbarComponents.vue";
 import StoneWallBackground from "./components/StoneWallBackground.vue";
 import SiteFooter from "./components/SiteFooter.vue";
@@ -24,8 +24,28 @@ import { useTheme } from "./composables/useTheme";
 import { useFonts } from "./composables/useFonts";
 
 const route = useRoute();
+const router = useRouter();
 const { loadTheme, resetTheme } = useTheme();
 const { loadFonts, resetFonts } = useFonts();
+
+// App native : les horaires (et leur calendrier) se posent au-dessus de la
+// page en cours, comme un modal plein écran ; le bouton rond de la barre
+// basse les ouvre et les referme (BottomTabBar). La transition tient la page
+// quittée en place sous le cercle d'ouverture (useRevealOrigin), et replie la
+// page des horaires en cercle vers le bouton à la fermeture. Les styles
+// vivent plus bas ; le routeur retarde de son côté la remise à zéro du
+// défilement (voir router/index.ts).
+const isOverlayPath = (path: string) => /^\/(horaires|calendrier)/.test(path);
+const pageTransition = ref("");
+router.afterEach((to, from) => {
+  pageTransition.value = !isNativeApp
+    ? ""
+    : isOverlayPath(to.path) && !isOverlayPath(from.path)
+      ? "zmanim-open"
+      : isOverlayPath(from.path) && !isOverlayPath(to.path)
+        ? "zmanim-close"
+        : "";
+});
 
 const isHome = computed(() => route.name === "home");
 const isMiniPlayerVisible = useMiniPlayerVisible();
@@ -84,6 +104,14 @@ onAuthStateChanged(auth, (user) => {
          antérieur à la version publiée sur le store (appUpdateService). -->
     <AppUpdateBanner />
     <OfflineNotice v-if="showOfflineNotice" />
+    <!-- App native seulement : la Transition porte la surcouche des horaires.
+         Le web garde le RouterView nu (des vues multi-racines s'accommodent
+         mal d'une Transition, et la surcouche ne concerne que l'app). -->
+    <RouterView v-else-if="isNativeApp" v-slot="{ Component }">
+      <Transition :name="pageTransition">
+        <component :is="Component" />
+      </Transition>
+    </RouterView>
     <RouterView v-else />
     <!-- App native : pas de footer de site ; l'essentiel (à propos, mentions
          légales…) vit dans l'onglet À propos du profil. -->
@@ -96,3 +124,61 @@ onAuthStateChanged(auth, (user) => {
     <BottomTabBar v-if="isNativeApp" />
   </div>
 </template>
+
+<style scoped>
+/* App native : les horaires en surcouche (voir pageTransition dans le script).
+   Les classes s'appliquent aux racines des pages : un enfant reçoit aussi
+   l'attribut de scope de son parent. La page épinglée reçoit le fond de
+   l'app : sans lui, la page d'en dessous transparaîtrait au travers. */
+.zmanim-open-enter-active,
+.zmanim-close-leave-active {
+  position: fixed;
+  top: var(--safe-top);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  overflow: hidden;
+  background-color: var(--color-bg-beige);
+}
+:root.dark .zmanim-open-enter-active,
+:root.dark .zmanim-close-leave-active {
+  background-color: #111827; /* gray-900, le fond sombre du body */
+}
+/* Ouverture : la page arrive entière, c'est useRevealOrigin qui la dévoile en
+   cercle ; l'animation ne sert qu'à l'épingler le temps du cercle, pendant
+   que la page quittée reste montée dessous (zmanim-open-leave-active). */
+.zmanim-open-enter-active,
+.zmanim-open-leave-active {
+  animation: zmanim-hold 0.45s;
+}
+/* Fermeture : le cercle se replie vers le bouton rond de la barre basse,
+   la page recouverte réapparaît dessous, défilement retrouvé. */
+.zmanim-close-leave-active {
+  animation: zmanim-collapse 0.32s cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
+}
+@keyframes zmanim-hold {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes zmanim-collapse {
+  from {
+    clip-path: circle(120vmax at 50% calc(100% - 2.2rem));
+  }
+  to {
+    clip-path: circle(1.6rem at 50% calc(100% - 2.2rem));
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zmanim-open-enter-active,
+  .zmanim-open-leave-active,
+  .zmanim-close-leave-active {
+    animation: none;
+  }
+}
+</style>
