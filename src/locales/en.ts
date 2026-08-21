@@ -616,6 +616,9 @@ const en: LocaleMessages = {
       "The festivals and fasts of the Hebrew year, with their dates and, for each festival, candle lighting and end times computed for your location.",
     zmanimDescription:
       "The halachic times of the day computed for your location: alot hashachar, sunrise, latest Shema, chatzot, mincha, sunset, nightfall, candle lighting and Shabbat end.",
+    zmanimCityTitle: "Shabbat times in {city}: candle lighting and havdalah | Petite Jérusalem",
+    zmanimCityDescription:
+      "Candle lighting and Shabbat end times in {city}, week by week, plus all the halachic times of the day. Free, works offline.",
     dailyReadingTitle: "My daily reading | Petite Jérusalem",
     dailyReadingDescription:
       "Find your daily reading texts every day: Tehilim, the weekly parasha and your chosen texts, with progress tracking.",

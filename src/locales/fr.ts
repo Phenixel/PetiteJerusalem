@@ -619,12 +619,16 @@ const fr = {
     profileTitle: "Mon profil | Petite Jérusalem",
     profileDescription:
       "Gérez vos informations, consultez vos sessions d'étude participées et créées.",
-    zmanimTitle: "Horaires du jour : Chéma, chkia et Chabbat | Petite Jérusalem",
-    calendarTitle: "Calendrier des fêtes juives : dates et horaires | Petite Jérusalem",
+    zmanimTitle: "Horaires de Chabbat : allumage, sortie et zmanim du jour | Petite Jérusalem",
+    calendarTitle:
+      "Calendrier des fêtes juives : dates, entrée et sortie de chaque fête | Petite Jérusalem",
     calendarDescription:
-      "Les fêtes et les jeûnes de l\u2019année hébraïque, avec leurs dates et, pour chaque fête, l\u2019heure d\u2019allumage et l\u2019heure de sortie calculées pour votre position.",
+      "Les dates des fêtes juives (Roch Hachana, Kippour, Souccot, Hanouka, Pourim, Pessah, Chavouot) et des jeûnes, avec l\u2019heure d\u2019entrée et de sortie de chaque fête, calculées pour votre position.",
     zmanimDescription:
-      "Les horaires halakhiques de la journée calculés pour votre position : alot haCha'har, netz, fin du Chéma, 'hatsot, min'ha, chkia, tsét haKokhavim, entrée et sortie de Chabbat.",
+      "L\u2019heure d\u2019allumage des bougies et de sortie de Chabbat, et tous les zmanim du jour calculés pour votre position : alot haCha'har, netz, fin du Chéma, 'hatsot, min'ha, chkia, tsét haKokhavim.",
+    zmanimCityTitle: "Horaires de Chabbat à {city} : allumage et sortie | Petite Jérusalem",
+    zmanimCityDescription:
+      "L\u2019heure d\u2019allumage des bougies (entrée de Chabbat) et l\u2019heure de sortie de Chabbat à {city}, semaine par semaine, et tous les zmanim du jour. Gratuit, hors ligne.",
     dailyReadingTitle: "Ma lecture du jour | Petite Jérusalem",
     dailyReadingDescription:
       "Retrouvez chaque jour les textes de votre lecture quotidienne : Tehilim, paracha de la semaine et vos textes choisis, avec suivi de progression.",

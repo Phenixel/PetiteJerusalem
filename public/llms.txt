@@ -2,7 +2,7 @@
 
 > Plateforme gratuite, en français, en anglais et en hébreu, pour étudier et partager la Torah à plusieurs. On y répartit un texte entre plusieurs personnes pour le terminer ensemble : se partager le Talmud (Guemara) pour finir le Chass, lire les Tehilim (Psaumes) à plusieurs pour une refoua chelema (guérison) ou à la mémoire d'un proche (ilouï nechama), étudier la Michna ou le Tanakh. Chaque participant réserve ses passages (même sans compte) et tout le monde suit la progression jusqu'au siyoum.
 
-Mots-clés : partage de lecture, partage d'étude, finir le Chass, terminer le Talmud à plusieurs, partage de Tehilim, répartir les Psaumes, limoud collectif, siyoum, refoua chelema, ilouï nechama, hiloula, communauté juive.
+Mots-clés : partage de lecture, partage d'étude, finir le Chass, terminer le Talmud à plusieurs, partage de Tehilim, répartir les Psaumes, limoud collectif, siyoum, refoua chelema, ilouï nechama, hiloula, communauté juive, horaires de Chabbat, allumage des bougies, sortie de Chabbat, zmanim, calendrier des fêtes juives.
 
 ## Pages principales
 
@@ -12,6 +12,8 @@ Mots-clés : partage de lecture, partage d'étude, finir le Chass, terminer le T
 - [Tehilim par intention](https://petite-jerusalem.fr/tehilim) : quels psaumes lire selon l'intention (refoua chelema / guérison d'un malade, etc.) et comment les partager à plusieurs.
 - [Bibliothèque](https://petite-jerusalem.fr/bibliotheque) : lire les Tehilim, la Michna, le Talmud et le Tanakh en ligne, en hébreu et en phonétique.
 - [Chiourim](https://petite-jerusalem.fr/chiourim) : cours et leçons de Torah à écouter, par rav ou par thème.
+- [Horaires de Chabbat](https://petite-jerusalem.fr/horaires) : l'heure d'allumage des bougies et de sortie de Chabbat semaine par semaine, et tous les zmanim du jour, calculés pour n'importe quelle ville, avec une page par grande communauté (Marseille, Lyon, Strasbourg, Bruxelles, Genève, Montréal, Tel Aviv...).
+- [Calendrier des fêtes juives](https://petite-jerusalem.fr/calendrier) : les dates des fêtes et des jeûnes (Roch Hachana, Kippour, Souccot, Hanouka, Pourim, Pessah, Chavouot), avec l'heure d'entrée et de sortie de chaque fête.
 
 ## En bref
 

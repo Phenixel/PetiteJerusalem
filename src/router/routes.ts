@@ -143,6 +143,16 @@ export default [
     meta: { offlineOk: true },
     component: ZmanimPage,
   },
+  // Horaires d'une ville précise (/horaires/marseille) : même page, la ville
+  // de l'URL devient le lieu de calcul. Les grandes communautés ont leur page
+  // prérendue (voir src/content/zmanimCities.ts), mais toute ville du
+  // catalogue se résout ici.
+  {
+    path: "/horaires/:ville",
+    name: "zmanim-city",
+    meta: { offlineOk: true },
+    component: ZmanimPage,
+  },
   // Calendrier des fêtes : même moteur, même absence de réseau.
   {
     path: "/calendrier",

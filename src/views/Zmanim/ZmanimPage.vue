@@ -8,7 +8,8 @@
 // sans connexion, et dans l'app native, dont les fichiers sont embarqués,
 // elle s'ouvre aussi hors ligne. Le site web, lui, n'a pas de service
 // worker : là, il faut le réseau pour charger la page (mais pas après).
-import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from "vue";
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { analyticsService } from "../../services/analyticsService";
 import { seoService } from "../../services/seoService";
@@ -35,6 +36,7 @@ import {
   type ZmanTime,
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
+import { citySlug, findCityBySlug } from "../../content/zmanimCities";
 import RestTimes from "./RestTimes.vue";
 
 // Chargé à la demande : le sélecteur embarque la liste des villes, inutile
@@ -168,6 +170,54 @@ function chooseCity(city: City) {
 /** Racine de la page : cible du dévoilement circulaire (bouton rond natif). */
 const root = ref<HTMLElement | null>(null);
 
+const route = useRoute();
+const router = useRouter();
+
+/** Le titre et le canonique de la page : /horaires, ou /horaires/<ville>. */
+function setMeta(city: City | null): void {
+  const url = city ? `${SITE_URL}/horaires/${citySlug(city.name)}` : `${SITE_URL}/horaires`;
+  seoService.setMeta({
+    title: city ? t("seo.zmanimCityTitle", { city: city.name }) : t("seo.zmanimTitle"),
+    description: city
+      ? t("seo.zmanimCityDescription", { city: city.name })
+      : t("seo.zmanimDescription"),
+    canonical: url,
+    og: { url },
+  });
+}
+
+/**
+ * Applique la ville de l'URL (/horaires/:ville) : elle devient le lieu de
+ * calcul, comme si elle avait été choisie dans le sélecteur. Le catalogue est
+ * chargé à la demande, comme pour le sélecteur ; un slug inconnu ramène aux
+ * horaires du lieu courant.
+ */
+async function applyRouteCity(): Promise<void> {
+  const raw = route.params.ville;
+  const slug = typeof raw === "string" ? raw.toLowerCase() : "";
+  if (!slug) {
+    setMeta(null);
+    return;
+  }
+  const { default: cities } = await import("../../datas/cities.json");
+  const city = findCityBySlug(cities as City[], slug);
+  if (!city) {
+    void router.replace("/horaires");
+    return;
+  }
+  useCity(city);
+  setMeta(city);
+}
+
+// La même page sert /horaires et /horaires/:ville : passer de l'une à l'autre
+// ne remonte pas le composant, on suit donc le paramètre.
+watch(
+  () => route.params.ville,
+  () => {
+    if (route.name === "zmanim" || route.name === "zmanim-city") void applyRouteCity();
+  },
+);
+
 onMounted(() => {
   revealFromOrigin(root.value);
   // Position partagée avant que l'app ne sache la nommer : on la nomme ici,
@@ -175,13 +225,7 @@ onMounted(() => {
   // est de toute façon à un clic, via le choix de ville).
   void ensureNearby();
   ticker = setInterval(() => (now.value = new Date()), 30_000);
-  const url = `${SITE_URL}/horaires`;
-  seoService.setMeta({
-    title: t("seo.zmanimTitle"),
-    description: t("seo.zmanimDescription"),
-    canonical: url,
-    og: { url },
-  });
+  void applyRouteCity();
   analyticsService.capture("zmanim_viewed", { place: place.value.source });
 });
 onUnmounted(() => {
