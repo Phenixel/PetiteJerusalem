@@ -4,6 +4,11 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { Capacitor } from "@capacitor/core";
 import { authService } from "../services/authService";
+import {
+  isAppleSignInUnavailable,
+  isAuthBrowserUnavailable,
+  isAuthCancellation,
+} from "../services/authErrors";
 import { reservationService } from "../services/reservationService";
 import { guestService } from "../services/guestService";
 import { seoService } from "../services/seoService";
@@ -83,7 +88,8 @@ async function loginWithGoogle() {
   errorDetail.value = null;
   // Funnel de connexion Google (suivi du bug « bouton inerte ») :
   // google_signin_clicked → signed_in {method: google}, avec en route
-  // google_signin_fallback_used et/ou google_signin_failed.
+  // google_signin_fallback_used, google_signin_cancelled et/ou
+  // google_signin_failed.
   analyticsService.capture("google_signin_clicked");
   try {
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
@@ -96,12 +102,24 @@ async function loginWithGoogle() {
 
     router.push(redirectPath);
   } catch (e: unknown) {
+    // Sélecteur quitté, popup fermée : un renoncement, pas une panne. Ni
+    // Error tracking ni message à l'écran ; un événement funnel tout de même,
+    // pour que ces clics sans suite ne ressemblent pas au bug « bouton inerte ».
+    if (isAuthCancellation(e)) {
+      analyticsService.capture("google_signin_cancelled");
+      return;
+    }
     console.error("Connexion Google échouée:", e);
     analyticsService.captureException(e, { auth_flow: "google" });
     analyticsService.capture("google_signin_failed", {
       error_message: e instanceof Error ? e.message : String(e),
     });
-    errorMessage.value = t("login.googleError");
+    // Safari indisponible (restrictions) : un « Erreur Google » générique
+    // fait réessayer en vain, observé en prod (trois tentatives puis abandon).
+    // On oriente vers la connexion par email.
+    errorMessage.value = isAuthBrowserUnavailable(e)
+      ? t("login.authBrowserUnavailable")
+      : t("login.googleError");
     errorDetail.value = e instanceof Error ? e.message : String(e);
   }
 }
@@ -124,9 +142,16 @@ async function loginWithApple() {
 
     router.push(redirectPath);
   } catch (e: unknown) {
+    // Feuille Apple refusée par l'utilisateur : un renoncement, pas une panne.
+    if (isAuthCancellation(e)) return;
     console.error("Connexion Apple échouée:", e);
     analyticsService.captureException(e, { auth_flow: "apple" });
-    errorMessage.value = t("login.appleError");
+    // Code 1000 : la feuille Apple ne peut pas s'ouvrir sur cet appareil
+    // (le plus souvent, aucun compte Apple connecté). Réessayer ne change
+    // rien : on dit quoi vérifier, et vers quoi se replier.
+    errorMessage.value = isAppleSignInUnavailable(e)
+      ? t("login.appleSignInUnavailable")
+      : t("login.appleError");
     errorDetail.value = e instanceof Error ? e.message : String(e);
   }
 }

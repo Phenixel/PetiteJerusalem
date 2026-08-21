@@ -19,6 +19,7 @@ import {
 } from "firebase/auth";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { auth, googleAuthProvider } from "../firebase/core";
+import { isAuthCancellation } from "./authErrors";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import type { User } from "../models/models";
 import { clearPreferencesCache, userPreferencesService } from "./userPreferencesService";
@@ -165,11 +166,10 @@ export class AuthService {
     try {
       return await FirebaseAuthentication.signInWithGoogle();
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      const isUserCancellation = /cancel/i.test(message);
-      if (appPlatform !== "android" || isUserCancellation) {
+      if (appPlatform !== "android" || isAuthCancellation(error)) {
         throw error;
       }
+      const message = error instanceof Error ? error.message : String(error);
       console.warn("Credential Manager indisponible, repli sur le sélecteur classique:", error);
       // Suivi du bug « bouton Google inerte » : mesure combien d'appareils
       // passent par le repli, et avec quelle erreur d'origine.

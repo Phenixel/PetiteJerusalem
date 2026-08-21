@@ -123,6 +123,10 @@ const fr = {
     loginError: "Erreur de connexion",
     googleError: "Erreur Google",
     appleError: "Erreur Apple",
+    authBrowserUnavailable:
+      "Impossible d'ouvrir la fenêtre de connexion sur cet appareil (Safari restreint ou indisponible). Essayez la connexion par email ci-dessous.",
+    appleSignInUnavailable:
+      "La connexion Apple est indisponible sur cet appareil. Vérifiez dans les Réglages qu'un compte Apple y est connecté, ou utilisez la connexion par email.",
     displayNamePlaceholder: "Ex: David Cohen",
     emailPlaceholder: "exemple{'@'}email.com",
     termsNotice: "En vous connectant ou en créant un compte, vous acceptez les",

@@ -4,6 +4,7 @@ import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import { isDegradedRendering } from "../composables/useDevicePerf";
 import { getConsentChoice, onConsentChange } from "../composables/useConsent";
 import { resolveUserType } from "../config/analyticsAudience";
+import { isIgnoredException } from "../config/ignoredExceptions";
 import { i18n } from "../i18n";
 import type { User } from "../models/models";
 
@@ -121,9 +122,20 @@ function rewriteNativeUrls(bag: Properties | undefined): void {
  */
 const INTERNAL_PATHS = /^\/(admin|studio)(\/|$)/;
 
+/** Messages portés par un événement $exception (un par exception chaînée). */
+function exceptionValues(bag: Properties | undefined): unknown[] {
+  const list = bag?.$exception_list;
+  return Array.isArray(list) ? list.map((item: { value?: unknown }) => item?.value) : [];
+}
+
 const stampPlatform: BeforeSendFn = (event) => {
   if (!event) return event;
   if (INTERNAL_PATHS.test(window.location.pathname)) return null;
+  // Bruit connu et inactionnable (voir config/ignoredExceptions) : écarté ici
+  // plutôt que supprimé côté PostHog, pour que la règle soit versionnée.
+  if (event.event === "$exception" && isIgnoredException(exceptionValues(event.properties))) {
+    return null;
+  }
   Object.assign(event.properties, SUPER_PROPERTIES);
   // Segmentation anonyme/connecté et par langue sur tous les événements, y
   // compris les $pageview automatiques (mêmes raisons que app_platform).
