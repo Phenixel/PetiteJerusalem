@@ -16,6 +16,13 @@ describe("isIgnoredException", () => {
     expect(isIgnoredException([IDB_CLOSING])).toBe(true);
   });
 
+  it("écarte la « Script error. » opaque des scripts injectés cross-origin", () => {
+    expect(isIgnoredException(["Script error."])).toBe(true);
+    expect(isIgnoredException(["Script error"])).toBe(true);
+    // Une vraie erreur qui cite le message doit rester visible.
+    expect(isIgnoredException(["Error: loading chunk failed after Script error."])).toBe(false);
+  });
+
   it("laisse passer les vraies erreurs", () => {
     expect(isIgnoredException(["TypeError: undefined is not a function"])).toBe(false);
     expect(isIgnoredException(["Firebase: Error (auth/network-request-failed)."])).toBe(false);

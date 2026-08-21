@@ -16,6 +16,13 @@ const IGNORED_EXCEPTION_PATTERNS: RegExp[] = [
   // corriger côté app.
   /Connection to Indexed Database server lost/i,
   /database connection is closing/i,
+  // « Script error. » : une erreur cross-origin que le navigateur masque
+  // entièrement (ni message réel, ni pile, mécanisme synthétique). Le site ne
+  // charge aucun script cross-origin (les polices Google sont du CSS) : elle
+  // ne peut venir que d'un script injecté, extension ou webview tierce, sur
+  // lequel il n'y a aucune prise. Le message exact, sans rien autour, pour ne
+  // pas écarter une vraie erreur qui le citerait.
+  /^Script error\.?$/,
 ];
 
 /**
