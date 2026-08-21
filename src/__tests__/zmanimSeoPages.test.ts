@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildZmanimSeoPages, upcomingRestPeriods } from "../content/zmanimSeoPages";
+import { SEO_CITY_NAMES, citySlug, findCityBySlug } from "../content/zmanimCities";
 import { buildAppShell, staticFooterHtml } from "../content/seoPages";
+import { DEFAULT_PLACE, type City } from "../services/zmanimService";
+import citiesJson from "../datas/cities.json";
 
 /**
  * Les pages /horaires et /calendrier sont générées au build avec des heures
@@ -99,8 +102,73 @@ describe("zmanimSeoPages sitemap + maillage", () => {
   });
 });
 
+describe("zmanimSeoPages pages par ville", () => {
+  const marseille = pages.find((p) => p.path === "/horaires/marseille")!;
+
+  it("génère une page par ville de la liste, au bon chemin", () => {
+    for (const name of SEO_CITY_NAMES) {
+      const slug = citySlug(name);
+      const page = pages.find((p) => p.path === `/horaires/${slug}`);
+      expect(page).toBeDefined();
+      expect(page!.file).toBe(`horaires/${slug}.html`);
+      expect(page!.title).toContain(`à ${name}`);
+    }
+  });
+
+  it("chaque ville de la liste existe dans le catalogue, avec un slug unique", () => {
+    const slugs = new Set<string>();
+    for (const name of SEO_CITY_NAMES) {
+      const slug = citySlug(name);
+      expect(findCityBySlug(citiesJson as City[], slug)).not.toBeNull();
+      slugs.add(slug);
+    }
+    expect(slugs.size).toBe(SEO_CITY_NAMES.length);
+  });
+
+  it("la page de Marseille porte de vraies heures et le nom de la ville", () => {
+    expect(marseille.bodyHtml).toContain("Chabbat à Marseille");
+    const times = marseille.bodyHtml.match(/\d{2}:\d{2}/g) ?? [];
+    expect(times.length).toBeGreaterThanOrEqual(20);
+    // Marseille est à l'est et au sud de Paris : ses horaires diffèrent.
+    expect(marseille.bodyHtml).not.toBe(horaires.bodyHtml);
+  });
+
+  it("chaque page ville lie le hub, le calendrier et des villes voisines", () => {
+    for (const name of SEO_CITY_NAMES) {
+      const page = pages.find((p) => p.path === `/horaires/${citySlug(name)}`)!;
+      expect(page.bodyHtml).toContain('href="/horaires"');
+      expect(page.bodyHtml).toContain('href="/calendrier"');
+      expect(page.bodyHtml.match(/href="\/horaires\/[a-z-]+"/g)?.length).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("le hub lie chaque page ville", () => {
+    for (const name of SEO_CITY_NAMES) {
+      expect(horaires.bodyHtml).toContain(`href="/horaires/${citySlug(name)}"`);
+    }
+  });
+
+  it("émet un fil d'Ariane à trois niveaux + FAQPage", () => {
+    const types = (marseille.jsonLd ?? []).map((o) => o["@type"]);
+    expect(types).toContain("BreadcrumbList");
+    expect(types).toContain("FAQPage");
+    const breadcrumb = (marseille.jsonLd ?? []).find((o) => o["@type"] === "BreadcrumbList") as {
+      itemListElement: { name: string }[];
+    };
+    expect(breadcrumb.itemListElement).toHaveLength(3);
+    expect(breadcrumb.itemListElement[2].name).toBe("Marseille");
+  });
+
+  it("les slugs gomment accents et espaces", () => {
+    expect(citySlug("Genève")).toBe("geneve");
+    expect(citySlug("Tel Aviv")).toBe("tel-aviv");
+    expect(citySlug("Boulogne-Billancourt")).toBe("boulogne-billancourt");
+    expect(citySlug("Créteil")).toBe("creteil");
+  });
+});
+
 describe("upcomingRestPeriods", () => {
-  const periods = upcomingRestPeriods(NOW, 12 * 7);
+  const periods = upcomingRestPeriods(DEFAULT_PLACE, NOW, 12 * 7);
 
   it("couvre chaque semaine de l'horizon", () => {
     // Douze semaines contiennent au moins douze Chabbatot (les fêtes peuvent

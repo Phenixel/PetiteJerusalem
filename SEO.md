@@ -41,15 +41,23 @@ touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
     canonical on mount (`seoService`).
   - Also regenerates **`dist/sitemap.xml`** from the same page list.
 - `src/content/zmanimSeoPages.ts`: the **/horaires** (heures de Chabbat) and
-  **/calendrier** (dates des fêtes) pages. Their crawlable bodies embed real
-  times computed at build time with `@hebcal/core` (12 weeks of candle
-  lighting/havdala for Paris, the festival calendar of the current + next
-  Hebrew year, and "Quand tombe Roch Hachana/Kippour/Pessah… ?" FAQ answers).
-  This lives in its own module, not `seoPages.ts`, so hebcal stays out of the
-  Vue chunks that import `seoPages` (ContentPage, TehilimPage); only the
-  prerender step and the tests load it. Every row is dated, so the content
-  stays truthful between deploys, but **deploy at least every few weeks** to
-  keep the upcoming-times table ahead of the calendar.
+  **/calendrier** (dates des fêtes) pages, plus one **/horaires/&lt;ville&gt;**
+  page per big francophone community (list in `src/content/zmanimCities.ts`:
+  Marseille, Lyon, Strasbourg… + Bruxelles, Genève, Montréal, Tel Aviv…).
+  Their crawlable bodies embed real times computed at build time with
+  `@hebcal/core` (12 weeks of candle lighting/havdala per city, the festival
+  calendar of the current + next Hebrew year, and "Quand tombe Roch
+  Hachana/Kippour/Pessah… ?" FAQ answers). This lives in its own module, not
+  `seoPages.ts`, so hebcal stays out of the Vue chunks that import `seoPages`
+  (ContentPage, TehilimPage); only the prerender step and the tests load it.
+  Every row is dated, so the content stays truthful between deploys, but
+  **deploy at least every few weeks** to keep the upcoming-times table ahead
+  of the calendar. The `/horaires/:ville` route is real app behavior too:
+  ZmanimPage resolves the slug against the city catalogue and computes live
+  times for it (any catalogue city works, only the listed ones are
+  prerendered). Paris has no city page (`/horaires` is the Paris page) and
+  Jérusalem is deliberately excluded (local custom is 40 minutes before
+  sunset, the app computes 18 everywhere).
 - `src/views/ContentPage.vue` renders the long-form landing and legal pages
   (`landingPages` in `seoPages.ts`: `/finir-le-chass`, `/partage-tehilim`,
   `/confidentialite`, `/a-propos`, `/mentions-legales`) from the same

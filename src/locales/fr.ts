@@ -626,6 +626,9 @@ const fr = {
       "Les dates des fêtes juives (Roch Hachana, Kippour, Souccot, Hanouka, Pourim, Pessah, Chavouot) et des jeûnes, avec l\u2019heure d\u2019entrée et de sortie de chaque fête, calculées pour votre position.",
     zmanimDescription:
       "L\u2019heure d\u2019allumage des bougies et de sortie de Chabbat, et tous les zmanim du jour calculés pour votre position : alot haCha'har, netz, fin du Chéma, 'hatsot, min'ha, chkia, tsét haKokhavim.",
+    zmanimCityTitle: "Horaires de Chabbat à {city} : allumage et sortie | Petite Jérusalem",
+    zmanimCityDescription:
+      "L\u2019heure d\u2019allumage des bougies (entrée de Chabbat) et l\u2019heure de sortie de Chabbat à {city}, semaine par semaine, et tous les zmanim du jour. Gratuit, hors ligne.",
     dailyReadingTitle: "Ma lecture du jour | Petite Jérusalem",
     dailyReadingDescription:
       "Retrouvez chaque jour les textes de votre lecture quotidienne : Tehilim, paracha de la semaine et vos textes choisis, avec suivi de progression.",

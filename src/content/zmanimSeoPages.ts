@@ -23,43 +23,51 @@
  */
 
 import { HDate, Locale, Sedra } from "@hebcal/core";
+import citiesJson from "../datas/cities.json";
 import {
   DEFAULT_PLACE,
   formatZmanTime,
   hebrewDayOf,
+  placeFromCity,
   restPeriodAt,
   yearCalendar,
   type CalendarEntry,
+  type City,
   type RestPeriod,
+  type ZmanimPlace,
 } from "../services/zmanimService";
+import { SEO_CITY_NAMES, citySlug, findCityBySlug } from "./zmanimCities";
 import { breadcrumb, faqHtml, faqJsonLd, type SeoPage, type SitemapEntry } from "./seoPages";
 
 const TZ = DEFAULT_PLACE.tzid;
 
+/** Israël ou diaspora, pour le cycle des parachiot (même règle que zmanimService). */
+const isIsraelPlace = (place: ZmanimPlace): boolean => place.tzid === "Asia/Jerusalem";
+
 /** hebcal-fr écrit « H̲anoukah » (H + trait souscrit) : on retire la marque. */
 const cleanName = (name: string): string => name.replace(/[\u0331\u0332]/g, "");
 
-/** « 20:32 », l'instant vu de Paris. */
-const clock = (date: Date): string => formatZmanTime(date, TZ, "fr");
+/** « 20:32 », l'instant vu du lieu. */
+const clock = (date: Date, tz: string): string => formatZmanTime(date, tz, "fr");
 
-/** « vendredi 21 août 2026 », un instant précis vu de Paris. */
-const instantDayYear = (date: Date): string =>
+/** « vendredi 21 août 2026 », un instant précis vu du lieu. */
+const instantDayYear = (date: Date, tz: string): string =>
   new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
-    timeZone: TZ,
+    timeZone: tz,
   }).format(date);
 
 /** « ven. 11 sept. à 19:54 » : la cellule compacte d'un tableau d'horaires. */
-const instantCell = (date: Date): string =>
+const instantCell = (date: Date, tz: string): string =>
   `${new Intl.DateTimeFormat("fr-FR", {
     weekday: "short",
     day: "numeric",
     month: "short",
-    timeZone: TZ,
-  }).format(date)} à ${clock(date)}`;
+    timeZone: tz,
+  }).format(date)} à ${clock(date, tz)}`;
 
 // Les dates civiles issues de HDate.greg() sont construites à midi dans le
 // repère local de la machine : on les formate sans fuseau, dans ce même
@@ -79,16 +87,20 @@ const civilDayShort = (date: Date): string =>
   new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric" }).format(date);
 
 /**
- * Les temps de repos (Chabbat et Yom Tov) à venir à Paris, du jour du build à
- * l'horizon demandé. Même parcours que restPeriodsNear, sans sa limite à deux
- * blocs : ici on veut le tableau des semaines qui viennent.
+ * Les temps de repos (Chabbat et Yom Tov) à venir au lieu donné, du jour du
+ * build à l'horizon demandé. Même parcours que restPeriodsNear, sans sa
+ * limite à deux blocs : ici on veut le tableau des semaines qui viennent.
  */
-export function upcomingRestPeriods(now: Date, horizonDays: number): RestPeriod[] {
+export function upcomingRestPeriods(
+  place: ZmanimPlace,
+  now: Date,
+  horizonDays: number,
+): RestPeriod[] {
   const periods: RestPeriod[] = [];
-  const firstAbs = hebrewDayOf(DEFAULT_PLACE, now).abs();
+  const firstAbs = hebrewDayOf(place, now).abs();
   let abs = firstAbs;
   while (abs <= firstAbs + horizonDays) {
-    const period = restPeriodAt(DEFAULT_PLACE, new HDate(abs), "fr");
+    const period = restPeriodAt(place, new HDate(abs), "fr");
     if (!period) {
       abs += 1;
       continue;
@@ -100,22 +112,36 @@ export function upcomingRestPeriods(now: Date, horizonDays: number): RestPeriod[
 }
 
 /** « Ki Tétzé », ou « Nitzavim - Vayelekh » pour une paracha double. */
-function parashaName(period: RestPeriod): string | null {
+function parashaName(place: ZmanimPlace, period: RestPeriod): string | null {
   if (!period.shabbat) return null;
   const hd = new HDate(period.shabbat);
-  const reading = new Sedra(hd.getFullYear(), false).lookup(hd);
+  const reading = new Sedra(hd.getFullYear(), isIsraelPlace(place)).lookup(hd);
   if (reading.chag) return null;
   return reading.parsha.map((name) => cleanName(Locale.gettext(name, "fr"))).join(" - ");
 }
 
 /** « Chabbat Ki Tétzé », « Chabbat Roch Hachanah » ou « Yom Kippour ». */
-function periodLabel(period: RestPeriod): string {
+function periodLabel(place: ZmanimPlace, period: RestPeriod): string {
   if (period.festivals.length) {
     const names = cleanName(period.festivals.join(" · "));
     return period.shabbat ? `Chabbat ${names}` : names;
   }
-  const parasha = parashaName(period);
+  const parasha = parashaName(place, period);
   return parasha ? `Chabbat ${parasha}` : "Chabbat";
+}
+
+/** Les lignes du tableau entrée/sortie d'un lieu. */
+function restRows(place: ZmanimPlace, periods: RestPeriod[]): string {
+  return periods
+    .map(
+      (p) => `
+          <tr>
+            <td>${periodLabel(place, p)}</td>
+            <td>${instantCell(p.start, place.tzid)}</td>
+            <td>${instantCell(p.end, place.tzid)}</td>
+          </tr>`,
+    )
+    .join("");
 }
 
 // ---- /horaires : horaires de Chabbat semaine par semaine -----------------
@@ -124,31 +150,26 @@ function periodLabel(period: RestPeriod): string {
 const HORAIRES_HORIZON_DAYS = 12 * 7;
 
 function buildHorairesPage(now: Date): SeoPage {
-  const periods = upcomingRestPeriods(now, HORAIRES_HORIZON_DAYS);
+  const periods = upcomingRestPeriods(DEFAULT_PLACE, now, HORAIRES_HORIZON_DAYS);
   const nextShabbat = periods.find((p) => p.shabbat) ?? periods[0];
 
-  const rows = periods
-    .map(
-      (p) => `
-          <tr>
-            <td>${periodLabel(p)}</td>
-            <td>${instantCell(p.start)}</td>
-            <td>${instantCell(p.end)}</td>
-          </tr>`,
-    )
-    .join("");
+  const rows = restRows(DEFAULT_PLACE, periods);
+
+  const cityLinks = SEO_CITY_NAMES.map(
+    (name) => `<li><a href="/horaires/${citySlug(name)}">Horaires de Chabbat à ${name}</a></li>`,
+  ).join("\n        ");
 
   const faq = [
     {
       q: "A quelle heure commence Chabbat cette semaine ?",
       a: nextShabbat
-        ? `Le prochain Chabbat à Paris commence le ${instantDayYear(nextShabbat.start)} avec l'allumage des bougies à ${clock(nextShabbat.start)}, soit 18 minutes avant le coucher du soleil. L'application affiche l'heure exacte pour votre ville ou votre position.`
+        ? `Le prochain Chabbat à Paris commence le ${instantDayYear(nextShabbat.start, TZ)} avec l'allumage des bougies à ${clock(nextShabbat.start, TZ)}, soit 18 minutes avant le coucher du soleil. L'application affiche l'heure exacte pour votre ville ou votre position.`
         : "L'application affiche l'heure d'allumage des bougies de votre ville, 18 minutes avant le coucher du soleil.",
     },
     {
       q: "A quelle heure se termine Chabbat ?",
       a: nextShabbat
-        ? `Chabbat se termine à la sortie des étoiles (tsét haKokhavim), le moment de la havdala. Le prochain Chabbat à Paris se termine le ${instantDayYear(nextShabbat.end)} à ${clock(nextShabbat.end)}. Pour votre ville, ouvrez la page des horaires dans l'application.`
+        ? `Chabbat se termine à la sortie des étoiles (tsét haKokhavim), le moment de la havdala. Le prochain Chabbat à Paris se termine le ${instantDayYear(nextShabbat.end, TZ)} à ${clock(nextShabbat.end, TZ)}. Pour votre ville, ouvrez la page des horaires dans l'application.`
         : "Chabbat se termine à la sortie des étoiles (tsét haKokhavim), le moment de la havdala, calculée pour votre ville par l'application.",
     },
     {
@@ -188,9 +209,18 @@ function buildHorairesPage(now: Date): SeoPage {
         </tbody>
       </table>
       <p>Ces horaires valent pour Paris (entrée 18 minutes avant la chkia, sortie aux étoiles).
-      Pour Marseille, Lyon, Nice, Strasbourg, Toulouse, Sarcelles, Créteil, Jérusalem, Netanya ou
-      n'importe quelle autre ville, l'application calcule les mêmes horaires sur votre appareil,
-      à partir de votre position ou d'une ville choisie.</p>
+      Pour une autre ville, voir les pages ville par ville ci-dessous, ou ouvrez la page dans
+      l'application : elle calcule les mêmes horaires sur votre appareil, à partir de votre
+      position ou d'une ville choisie.</p>
+    </section>
+
+    <section class="seo-section">
+      <h2>Horaires de Chabbat, ville par ville</h2>
+      <p>L'heure d'allumage et de sortie de Chabbat pour les grandes communautés francophones et
+      d'Israël :</p>
+      <ul>
+        ${cityLinks}
+      </ul>
     </section>
 
     <section class="seo-section">
@@ -253,8 +283,8 @@ function calendarRow(entry: CalendarEntry): string {
           <tr>
             <td>${entryTitle(entry)}</td>
             <td>${entryRange(entry)}</td>
-            <td>${period ? instantCell(period.start) : ""}</td>
-            <td>${period ? instantCell(period.end) : ""}</td>
+            <td>${period ? instantCell(period.start, TZ) : ""}</td>
+            <td>${period ? instantCell(period.end, TZ) : ""}</td>
           </tr>`;
 }
 
@@ -265,7 +295,7 @@ function festivalFaq(entry: CalendarEntry, label: string): { q: string; a: strin
   if (entry.period) {
     return {
       q,
-      a: `${label} ${year} commence le ${instantDayYear(entry.period.start)} au soir (entrée à ${clock(entry.period.start)} à Paris) et se termine le ${instantDayYear(entry.period.end)} à la tombée de la nuit (${clock(entry.period.end)} à Paris).`,
+      a: `${label} ${year} commence le ${instantDayYear(entry.period.start, TZ)} au soir (entrée à ${clock(entry.period.start, TZ)} à Paris) et se termine le ${instantDayYear(entry.period.end, TZ)} à la tombée de la nuit (${clock(entry.period.end, TZ)} à Paris).`,
     };
   }
   if (label === "Hanouka") {
@@ -372,16 +402,110 @@ ${openingSection}
   };
 }
 
+// ---- /horaires/:ville : les horaires d'une grande communauté -------------
+
+function buildCityPage(city: City, now: Date): SeoPage {
+  const place = placeFromCity(city);
+  const slug = citySlug(city.name);
+  const tz = place.tzid;
+  const periods = upcomingRestPeriods(place, now, HORAIRES_HORIZON_DAYS);
+  const nextShabbat = periods.find((p) => p.shabbat) ?? periods[0];
+
+  // Trois villes voisines dans la liste, pour un maillage entre pages sans
+  // lier chaque ville à toutes les autres (le hub s'en charge).
+  const index = SEO_CITY_NAMES.indexOf(city.name);
+  const siblings = [1, 2, 3].map(
+    (step) => SEO_CITY_NAMES[(index + step) % SEO_CITY_NAMES.length],
+  );
+
+  const faq = [
+    {
+      q: `A quelle heure commence Chabbat à ${city.name} cette semaine ?`,
+      a: nextShabbat
+        ? `Le prochain Chabbat à ${city.name} commence le ${instantDayYear(nextShabbat.start, tz)} avec l'allumage des bougies à ${clock(nextShabbat.start, tz)}, soit 18 minutes avant le coucher du soleil.`
+        : `L'allumage des bougies à ${city.name} a lieu 18 minutes avant le coucher du soleil, calculé par l'application.`,
+    },
+    {
+      q: `A quelle heure se termine Chabbat à ${city.name} ?`,
+      a: nextShabbat
+        ? `Chabbat se termine à la sortie des étoiles (tsét haKokhavim), le moment de la havdala. Le prochain Chabbat à ${city.name} se termine le ${instantDayYear(nextShabbat.end, tz)} à ${clock(nextShabbat.end, tz)}.`
+        : `Chabbat se termine à la sortie des étoiles (tsét haKokhavim), calculée pour ${city.name} par l'application.`,
+    },
+    {
+      q: `Comment les horaires de Chabbat de ${city.name} sont-ils calculés ?`,
+      a: `L'entrée est fixée 18 minutes avant la chkia (le coucher du soleil) aux coordonnées de ${city.name}, la sortie à la tombée de la nuit (sortie des étoiles). Le calcul astronomique se fait sur votre appareil, gratuitement et même hors ligne, et la page affiche aussi tous les zmanim du jour.`,
+    },
+  ];
+
+  return {
+    file: `horaires/${slug}.html`,
+    path: `/horaires/${slug}`,
+    title: `Horaires de Chabbat à ${city.name} : allumage et sortie | Petite Jérusalem`,
+    description: `L'heure d'allumage des bougies (entrée de Chabbat) et l'heure de sortie de Chabbat à ${city.name}, semaine par semaine, et tous les zmanim du jour. Gratuit, hors ligne.`,
+    sitemap: { priority: 0.6, changefreq: "weekly" },
+    bodyHtml: `
+  <main class="seo-article">
+    <h1>Horaires de Chabbat à ${city.name}</h1>
+    <p class="seo-lead">
+      L'heure d'<strong>entrée de Chabbat à ${city.name}</strong> (allumage des bougies, 18 minutes
+      avant le coucher du soleil) et l'heure de <strong>sortie de Chabbat</strong> (sortie des
+      étoiles, havdala), semaine par semaine, ainsi que les fêtes à venir. La page affiche aussi
+      tous les zmanim du jour à ${city.name}, même hors ligne.
+    </p>
+
+    <section class="seo-section">
+      <h2>Entrée et sortie de Chabbat à ${city.name}</h2>
+      <table class="seo-table">
+        <thead>
+          <tr><th>Chabbat ou fête</th><th>Entrée (allumage)</th><th>Sortie</th></tr>
+        </thead>
+        <tbody>${restRows(place, periods)}
+        </tbody>
+      </table>
+      <p>Entrée calculée 18 minutes avant la chkia de ${city.name}, sortie à la sortie des
+      étoiles. Voir aussi les <a href="/horaires">horaires de Chabbat des autres villes</a> et le
+      <a href="/calendrier">calendrier des fêtes juives</a> avec leurs dates.</p>
+    </section>
+
+    <section class="seo-section">
+      <h2>Autres villes</h2>
+      <ul>
+        ${siblings.map((n) => `<li><a href="/horaires/${citySlug(n)}">Horaires de Chabbat à ${n}</a></li>`).join("\n        ")}
+      </ul>
+    </section>
+
+    ${faqHtml(faq, `Questions fréquentes sur les horaires de Chabbat à ${city.name}`)}
+  </main>`,
+    jsonLd: [
+      breadcrumb([
+        { name: "Accueil", path: "/" },
+        { name: "Horaires de Chabbat", path: "/horaires" },
+        { name: city.name, path: `/horaires/${slug}` },
+      ]),
+      faqJsonLd(faq),
+    ],
+  };
+}
+
 // ---- Assemblage ----------------------------------------------------------
 
 export type ZmanimSeoBuild = { pages: SeoPage[]; sitemapEntries: SitemapEntry[] };
 
 /**
- * Les deux pages et leurs entrées de sitemap, calculées à `now` (la date du
- * build en production, une date fixe dans les tests).
+ * Toutes les pages (hub des horaires, calendrier, une page par ville) et
+ * leurs entrées de sitemap, calculées à `now` (la date du build en
+ * production, une date fixe dans les tests).
  */
 export function buildZmanimSeoPages(now: Date = new Date()): ZmanimSeoBuild {
-  const pages = [buildHorairesPage(now), buildCalendrierPage(now)];
+  const cities = citiesJson as City[];
+  const cityPages = SEO_CITY_NAMES.map((name) => {
+    const city = findCityBySlug(cities, citySlug(name));
+    // Une ville absente du catalogue est une faute de frappe : mieux vaut
+    // casser le build que publier un lien mort.
+    if (!city) throw new Error(`Ville SEO absente du catalogue : ${name}`);
+    return buildCityPage(city, now);
+  });
+  const pages = [buildHorairesPage(now), buildCalendrierPage(now), ...cityPages];
   return {
     pages,
     sitemapEntries: pages.map((page) => {
