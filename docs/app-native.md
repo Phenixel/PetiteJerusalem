@@ -68,7 +68,7 @@ serveur de dev :
 
 | Script | Rôle |
 |---|---|
-| `npm run app:build` | build web + retrait des corpus volumineux (`app:prune`) + `cap sync` |
+| `npm run app:build` | build web + retrait des corpus volumineux (`app:prune`) + retrait des SDK OAuth inutilisés (`app:prune-spm`) + `cap sync` |
 | `npm run cap:sync` | synchronise web + plugins vers les projets natifs |
 | `npm run cap:android` | build + ouvre Android Studio |
 | `npm run cap:ios` | build + ouvre Xcode |
@@ -143,6 +143,14 @@ système sur iOS, puis bridge du credential vers le SDK JS pour que
 Apple **impose** « Sign in with Apple » sur l'app iOS dès qu'un autre login
 tiers (ici Google) est proposé (règle App Store 4.8). Le bouton est
 **affiché uniquement sur iOS**, invisible sur le site web et sur Android.
+
+Le Package.swift du plugin embarque par défaut les SDK de **tous** ses
+providers, SDK Facebook complet compris, environ 15 Mo de frameworks pour un
+bouton qui n'existe pas dans l'app. `scripts/prune-spm-providers.mjs` (rejoué
+à chaque `app:build`, npm install restaurant le fichier d'origine) retire
+Facebook du build iOS ; sur Android le plugin ne l'embarque que sur opt-in,
+que `setup-android.mjs` ne donne pas. Si un provider s'ajoute un jour à
+l'app, adapter ce script en même temps que `capacitor.config.ts`.
 
 Étapes **hors-code** à faire une fois pour iOS (détaillées dans
 `docs/ios-release-plan.md`) : activer le fournisseur **Apple** dans la console
