@@ -6,7 +6,11 @@ import { seoService } from "../services/seoService";
 import { localDayKey } from "../services/dateService";
 import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
-import { countDailyProgress, userPreferencesService } from "../services/userPreferencesService";
+import {
+  countDailyProgress,
+  userPreferencesService,
+  type UserPreferences,
+} from "../services/userPreferencesService";
 import { readingProgressService, type ReadingPosition } from "../services/readingProgressService";
 import { isNativeApp } from "../composables/useNativeApp";
 import SiteFooter from "../components/SiteFooter.vue";
@@ -70,23 +74,29 @@ function dismissResume() {
   });
 }
 
-async function loadDashboard(u: User) {
-  dashLoading.value = true;
-  try {
-    const prefs = await userPreferencesService.getPreferences(u.id);
+// Même règle de comptage que la page Lecture quotidienne (chnei mikra
+// hebdomadaire exclu, complétions intersectées avec les listes actives).
+function applyDashboardCounts(prefs: UserPreferences) {
+  const progress = prefs.dailyReadingProgress;
+  const isToday = progress?.date === localDayKey();
+  const counts = countDailyProgress({
+    textIds: prefs.dailyReadingIds ?? [],
+    options: prefs.dailyReadingOptions ?? [],
+    completedTextIds: isToday ? (progress.completedIds ?? []) : [],
+    completedOptions: isToday ? (progress.completedOptions ?? []) : [],
+  });
+  readingTotal.value = counts.total;
+  readingDone.value = counts.done;
+}
 
-    // Même règle de comptage que la page Lecture quotidienne (chnei mikra
-    // hebdomadaire exclu, complétions intersectées avec les listes actives).
-    const progress = prefs.dailyReadingProgress;
-    const isToday = progress?.date === localDayKey();
-    const counts = countDailyProgress({
-      textIds: prefs.dailyReadingIds ?? [],
-      options: prefs.dailyReadingOptions ?? [],
-      completedTextIds: isToday ? (progress.completedIds ?? []) : [],
-      completedOptions: isToday ? (progress.completedOptions ?? []) : [],
-    });
-    readingTotal.value = counts.total;
-    readingDone.value = counts.done;
+async function loadDashboard(u: User) {
+  // Copie locale d'abord : les compteurs du jour s'affichent tout de suite,
+  // sans squelette, et la lecture Firestore confirme ou corrige ensuite.
+  const cached = userPreferencesService.getCachedPreferences(u.id);
+  if (cached) applyDashboardCounts(cached);
+  dashLoading.value = !cached;
+  try {
+    applyDashboardCounts(await userPreferencesService.getPreferences(u.id));
   } catch (error) {
     console.error("Erreur lors du chargement du tableau de bord:", error);
   } finally {

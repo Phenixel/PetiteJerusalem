@@ -1,24 +1,49 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
+import type { IconName } from "./icons/registry";
 import { analyticsService } from "../services/analyticsService";
+import { authService } from "../services/authService";
 import { setRevealOrigin } from "../composables/useRevealOrigin";
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 
+// Sans compte, l'onglet profil s'annonce « Réglages », icône engrenage :
+// c'est ce que la page offre alors (langue, thème, polices), et personne
+// n'irait chercher des réglages sous un onglet « Profil » déconnecté.
+const isLoggedIn = ref(false);
+let unsubscribeAuth: (() => void) | null = null;
+onMounted(() => {
+  unsubscribeAuth = authService.onAuthChanged((user) => {
+    isLoggedIn.value = user != null;
+  });
+});
+onUnmounted(() => {
+  unsubscribeAuth?.();
+});
+
 // Le Partage de lectures reste accessible depuis l'accueil et le footer.
 // `anim` : personnalité de l'icône au toucher, en écho aux illustrations de
 // l'accueil (livre qui se redresse, casque qui hoche, personnage qui bondit).
-const tabs = [
+type Tab = { to: string; icon: IconName; labelKey: string; exact: boolean; anim: string };
+const tabs = computed<Tab[]>(() => [
   { to: "/", icon: "home", labelKey: "common.home", exact: true, anim: "pop" },
   { to: "/bibliotheque", icon: "book-open", labelKey: "study.title", exact: false, anim: "sway" },
   { to: "/chiourim", icon: "headphones", labelKey: "common.chiourim", exact: false, anim: "nod" },
-  { to: "/profile", icon: "user", labelKey: "common.profile", exact: false, anim: "hop" },
-] as const;
+  isLoggedIn.value
+    ? { to: "/profile", icon: "user", labelKey: "common.profile", exact: false, anim: "hop" }
+    : {
+        to: "/profile",
+        icon: "settings",
+        labelKey: "profile.guestTitle",
+        exact: false,
+        anim: "hop",
+      },
+]);
 
 const ZMANIM_PATH = "/horaires";
 

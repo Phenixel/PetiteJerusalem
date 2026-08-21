@@ -137,6 +137,15 @@ const en: LocaleMessages = {
   },
   profile: {
     loadingProfile: "Loading your profile...",
+    guestTitle: "Settings",
+    guestSettingsHint:
+      "Your settings are kept on this device. With a free account, you get much more:",
+    guestBenefits: {
+      sessions: "shared readings with others, followed through to the siyum",
+      dailyReading: "your daily reading and its progress, there every day",
+      reminders: "a daily reading reminder at the time you choose",
+      sync: "your settings, bookmarks and reading positions on all your devices",
+    },
     activeMember: "Active Member",
     tabs: {
       myInfo: "My Information",

@@ -1,15 +1,33 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp, h, nextTick } from "vue";
 import { createI18n } from "vue-i18n";
 import { createMemoryHistory, createRouter, type Router } from "vue-router";
-import fr from "../locales/fr";
-import BottomTabBar from "../components/BottomTabBar.vue";
 
 /**
  * La barre basse de l'app native : le bouton rond des horaires est une
  * bascule. Un appui ouvre la page (en surcouche, voir App.vue), un second
- * appui la referme et rend la page qu'elle recouvrait.
+ * appui la referme et rend la page qu'elle recouvrait. Et l'onglet profil
+ * s'annonce « Réglages » tant que personne n'est connecté.
  */
+
+// La barre interroge l'état de connexion (libellé Profil / Réglages) : les
+// abonnés sont gardés pour que les tests rendent le verdict eux-mêmes, sans
+// initialiser Firebase.
+const { authCallbacks } = vi.hoisted(() => ({
+  authCallbacks: [] as Array<(user: { id: string } | null) => void>,
+}));
+
+vi.mock("../services/authService", () => ({
+  authService: {
+    onAuthChanged: (callback: (user: { id: string } | null) => void) => {
+      authCallbacks.push(callback);
+      return () => {};
+    },
+  },
+}));
+
+import fr from "../locales/fr";
+import BottomTabBar from "../components/BottomTabBar.vue";
 
 function mount() {
   const i18n = createI18n({ legacy: false, locale: "fr", messages: { fr } });
@@ -26,15 +44,19 @@ function mount() {
 
   const fab = () =>
     host.querySelector('button[aria-label="Horaires du jour"]') as HTMLButtonElement;
+  const profileTab = () => host.querySelector('a[href="/profile"]') as HTMLAnchorElement;
   const click = async (el: Element) => {
     el.dispatchEvent(new MouseEvent("click"));
     await new Promise((resolve) => setTimeout(resolve, 0));
     await nextTick();
   };
-  return { router, fab, click };
+  return { router, fab, profileTab, click };
 }
 
 describe("BottomTabBar", () => {
+  beforeEach(() => {
+    authCallbacks.length = 0;
+  });
   it("le bouton rond ouvre les horaires, puis les referme", async () => {
     const bar = mount();
     await bar.router.push("/bibliotheque");
@@ -51,5 +73,23 @@ describe("BottomTabBar", () => {
     await bar.click(bar.fab());
     expect(bar.router.currentRoute.value.path).toBe("/");
     expect(bar.fab().getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("l'onglet profil s'annonce « Réglages » sans compte, « Profil » connecté", async () => {
+    const bar = mount();
+    await bar.router.isReady();
+    await nextTick();
+
+    // Personne de connecté (aucun verdict) : la page offre les réglages.
+    expect(bar.profileTab().textContent).toContain("Réglages");
+
+    authCallbacks.forEach((callback) => callback({ id: "u1" }));
+    await nextTick();
+    expect(bar.profileTab().textContent).toContain("Profil");
+
+    // Déconnexion : l'onglet redevient « Réglages ».
+    authCallbacks.forEach((callback) => callback(null));
+    await nextTick();
+    expect(bar.profileTab().textContent).toContain("Réglages");
   });
 });

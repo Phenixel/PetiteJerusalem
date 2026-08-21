@@ -163,6 +163,31 @@ export function clearPreferencesCache(userId: string): void {
   }
 }
 
+/**
+ * Réglages d'appareil, sans compte (app native : la page profil sert aussi de
+ * page de réglages). Seuls les champs qui ont un sens hors compte y vivent
+ * (thème, polices), et seulement ceux que la personne a explicitement
+ * choisis : une création de compte n'écrira jamais des valeurs par défaut
+ * qu'elle n'a pas touchées. À la connexion, le compte adopte ces choix pour
+ * les champs que son document ne définit pas encore (voir fetchPreferences) :
+ * ils suivent alors l'utilisateur d'un appareil à l'autre. La copie n'est pas
+ * purgée à la déconnexion : ce sont les réglages de l'appareil.
+ */
+const GUEST_PREFS_KEY = "pj-preferences:guest";
+
+/** Champs réglables sans compte. */
+export type GuestPreferences = Partial<Pick<UserPreferences, "theme" | "fontLatin" | "fontHebrew">>;
+
+function readGuestPreferences(): GuestPreferences | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(GUEST_PREFS_KEY);
+    return raw ? (JSON.parse(raw) as GuestPreferences) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Appareil hors ligne (webview Capacitor comme navigateur). */
 export function isOffline(): boolean {
   return typeof navigator !== "undefined" && navigator.onLine === false;
@@ -341,6 +366,53 @@ class UserPreferencesService {
   }
 
   /**
+   * La copie locale, en lecture synchrone : ce qui dépend du compte (thème,
+   * polices, tableau de bord) s'affiche avec elle dès le premier rendu,
+   * pendant que getPreferences interroge le serveur, qui a toujours raison
+   * et confirmera ou corrigera. Null quand le compte n'a jamais été lu sur
+   * cet appareil : l'appelant attend alors le serveur, comme avant.
+   */
+  getCachedPreferences(userId: string): UserPreferences | null {
+    return readCache(userId);
+  }
+
+  /** Réglages faits sans compte, gardés sur l'appareil (voir GUEST_PREFS_KEY). */
+  getGuestPreferences(): GuestPreferences | null {
+    return readGuestPreferences();
+  }
+
+  /** Retient un réglage fait sans compte : sur l'appareil seulement. */
+  saveGuestPreferences(preferences: GuestPreferences): void {
+    if (typeof localStorage === "undefined") return;
+    try {
+      localStorage.setItem(
+        GUEST_PREFS_KEY,
+        JSON.stringify({ ...readGuestPreferences(), ...preferences }),
+      );
+    } catch {
+      // Stockage indisponible : le réglage vaudra pour la session en cours.
+    }
+  }
+
+  /**
+   * Champs choisis sans compte que le document du compte ne définit pas :
+   * ceux-là seulement, pour ne jamais écraser un choix fait en ligne.
+   */
+  private adoptableGuestPreferences(data: Partial<UserPreferences>): GuestPreferences | null {
+    const guest = readGuestPreferences();
+    if (!guest) return null;
+    const adopted: GuestPreferences = {};
+    if (data.theme === undefined && guest.theme !== undefined) adopted.theme = guest.theme;
+    if (data.fontLatin === undefined && guest.fontLatin !== undefined) {
+      adopted.fontLatin = guest.fontLatin;
+    }
+    if (data.fontHebrew === undefined && guest.fontHebrew !== undefined) {
+      adopted.fontHebrew = guest.fontHebrew;
+    }
+    return Object.keys(adopted).length ? adopted : null;
+  }
+
+  /**
    * Comme getPreferences, mais laisse l'erreur remonter : indispensable quand
    * l'appelant doit distinguer « profil vide » de « Firestore injoignable »
    * le widget de lecture, par exemple, ne doit pas écraser son dernier état
@@ -366,9 +438,22 @@ class UserPreferencesService {
       const docRef = sdk.doc(db, this.collectionName, userId);
       const docSnap = await sdk.getDoc(docRef);
 
-      const prefs = docSnap.exists()
-        ? ({ ...DEFAULT_PREFERENCES, ...docSnap.data() } as UserPreferences)
-        : { ...DEFAULT_PREFERENCES };
+      const data: Partial<UserPreferences> = docSnap.exists()
+        ? (docSnap.data() as Partial<UserPreferences>)
+        : {};
+      const prefs = { ...DEFAULT_PREFERENCES, ...data } as UserPreferences;
+      // Réglages faits sans compte : le compte les adopte pour les champs que
+      // son document ne définit pas encore (jamais choisis en ligne), et les
+      // écrit pour qu'ils suivent l'utilisateur sur ses autres appareils. Un
+      // champ que le document définit reste tel quel : le serveur a raison.
+      const adopted = this.adoptableGuestPreferences(data);
+      if (adopted) {
+        Object.assign(prefs, adopted);
+        // En arrière-plan : un échec n'empêche rien, le prochain passage retentera.
+        sdk
+          .setDoc(docRef, adopted, { mergeFields: Object.keys(adopted) })
+          .catch((error) => console.warn("Réglages d'appareil pas encore adoptés:", error));
+      }
       // Le serveur a toujours raison sur la liste ; le suivi coché hors ligne,
       // lui, remonte (voir mergeDailyProgress : le « lu » gagne).
       await this.flushPendingProgress(userId, prefs);

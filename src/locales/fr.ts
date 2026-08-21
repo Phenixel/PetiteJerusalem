@@ -136,6 +136,15 @@ const fr = {
   },
   profile: {
     loadingProfile: "Chargement de votre profil...",
+    guestTitle: "Réglages",
+    guestSettingsHint:
+      "Vos réglages sont gardés sur cet appareil. Avec un compte gratuit, vous gagnez bien plus :",
+    guestBenefits: {
+      sessions: "des lectures partagées à plusieurs, suivies jusqu'au siyoum",
+      dailyReading: "votre lecture du jour et sa progression, retrouvées chaque jour",
+      reminders: "un rappel de lecture quotidien, à l'heure que vous choisissez",
+      sync: "vos réglages, marque-pages et reprises de lecture sur tous vos appareils",
+    },
     activeMember: "Membre Actif",
     tabs: {
       myInfo: "Mes Informations",

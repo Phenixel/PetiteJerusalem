@@ -136,6 +136,14 @@ const he: LocaleMessages = {
   },
   profile: {
     loadingProfile: "טוען את הפרופיל שלך...",
+    guestTitle: "הגדרות",
+    guestSettingsHint: "ההגדרות נשמרות במכשיר הזה. עם חשבון חינם מקבלים הרבה יותר:",
+    guestBenefits: {
+      sessions: "קריאות משותפות עם אחרים, עד הסיום",
+      dailyReading: "הקריאה היומית וההתקדמות שלכם, יום אחרי יום",
+      reminders: "תזכורת קריאה יומית בשעה שתבחרו",
+      sync: "ההגדרות, הסימניות ומיקומי הקריאה בכל המכשירים שלכם",
+    },
     activeMember: "חבר פעיל",
     tabs: {
       myInfo: "המידע שלי",

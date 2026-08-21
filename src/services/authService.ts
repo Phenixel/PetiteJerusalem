@@ -36,6 +36,52 @@ function toUser(firebaseUser: FirebaseUser): User {
   };
 }
 
+/**
+ * Session optimiste : le dernier compte connu, gardé sur l'appareil.
+ *
+ * Au lancement, Firebase relit sa persistance locale avant de rendre son
+ * premier verdict : quelques centaines de millisecondes sur le web, parfois
+ * plusieurs secondes dans la webview native. Pendant ce temps, l'app se
+ * croyait déconnectée : accueil anonyme, bandeau « Se connecter », thème par
+ * défaut, puis tout basculait d'un coup à l'arrivée du verdict.
+ *
+ * On garde donc le dernier compte connu et onAuthChanged le sert
+ * immédiatement à ses abonnés ; le verdict de Firebase confirme ensuite
+ * (même compte, rien ne bouge) ou infirme (déconnecté entre-temps :
+ * l'interface bascule et le cache est purgé). Purement une avance
+ * d'affichage : les gardes de route et les actions attendent, elles, le vrai
+ * verdict (getCurrentUser), et les règles Firestore restent la seule
+ * protection des données.
+ */
+const LAST_USER_KEY = "pj-last-user";
+
+function readLastKnownUser(): User | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(LAST_USER_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<User>;
+    if (typeof parsed.id !== "string" || typeof parsed.name !== "string") return null;
+    return {
+      id: parsed.id,
+      name: parsed.name,
+      email: typeof parsed.email === "string" ? parsed.email : "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeLastKnownUser(user: User | null): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    if (user) localStorage.setItem(LAST_USER_KEY, JSON.stringify(user));
+    else localStorage.removeItem(LAST_USER_KEY);
+  } catch {
+    // Stockage plein ou indisponible : le démarrage repart sans optimisme.
+  }
+}
+
 export class AuthService {
   // Firebase ne rejoue pas onAuthStateChanged après un updateProfile : le nom
   // affiché changerait dans le profil, et nulle part ailleurs (bandeau, menu
@@ -43,11 +89,33 @@ export class AuthService {
   // abonnés pour les prévenir nous-mêmes, voir notifyProfileChanged.
   private readonly profileListeners = new Set<(user: User | null) => void>();
 
+  // Premier verdict de Firebase rendu ? Avant lui, onAuthChanged sert le
+  // dernier compte connu (voir LAST_USER_KEY) ; après, auth fait foi et
+  // l'optimisme n'a plus lieu d'être.
+  private authResolved = false;
+
+  constructor() {
+    onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      this.authResolved = true;
+      // Le verdict fait référence : il devient le compte servi au prochain
+      // lancement (et une déconnexion purge le cache).
+      writeLastKnownUser(firebaseUser ? toUser(firebaseUser) : null);
+    });
+  }
+
   onAuthChanged(callback: (user: User | null) => void): () => void {
     // Une enveloppe, et non `callback` lui-même : deux abonnements passant la
     // même fonction resteraient deux entrées, et se désabonneraient chacun.
     const listener = (user: User | null) => callback(user);
     this.profileListeners.add(listener);
+    // Firebase n'a pas encore rendu son premier verdict : on sert tout de
+    // suite le dernier compte connu, pour que l'interface s'affiche d'emblée
+    // dans le bon état (bandeau, accueil, thème). Le verdict suit, et
+    // confirme ou corrige.
+    if (!this.authResolved) {
+      const lastKnown = readLastKnownUser();
+      if (lastKnown) listener(lastKnown);
+    }
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       listener(firebaseUser ? toUser(firebaseUser) : null);
     });
@@ -60,6 +128,9 @@ export class AuthService {
   /** Rejoue les abonnés d'onAuthChanged avec l'utilisateur courant. */
   private notifyProfileChanged(): void {
     const user = auth.currentUser ? toUser(auth.currentUser) : null;
+    // Le compte gardé suit le nouveau nom, sinon le prochain lancement
+    // afficherait l'ancien le temps du premier verdict.
+    if (user) writeLastKnownUser(user);
     this.profileListeners.forEach((listener) => listener(user));
   }
 
@@ -173,7 +244,9 @@ export class AuthService {
       console.warn("Credential Manager indisponible, repli sur le sélecteur classique:", error);
       // Suivi du bug « bouton Google inerte » : mesure combien d'appareils
       // passent par le repli, et avec quelle erreur d'origine.
-      analyticsService.capture("google_signin_fallback_used", { credential_manager_error: message });
+      analyticsService.capture("google_signin_fallback_used", {
+        credential_manager_error: message,
+      });
       return FirebaseAuthentication.signInWithGoogle({ useCredentialManager: false });
     }
   }
@@ -295,6 +368,8 @@ export class AuthService {
     }
 
     await deleteUser(user);
+    // Le compte n'existe plus : rien à servir au prochain lancement.
+    writeLastKnownUser(null);
     // Après le deleteUser (une suppression qui échoue ne doit pas compter),
     // mais avant tout reset : l'événement reste rattaché au compte supprimé.
     analyticsService.capture("account_deleted");
@@ -371,6 +446,10 @@ export class AuthService {
     // survit pas à la déconnexion : elle sera reconstruite au prochain login.
     const uid = auth.currentUser?.uid;
     if (uid) clearPreferencesCache(uid);
+    // Compte optimiste purgé tout de suite (sans attendre l'événement de
+    // déconnexion) : si l'app se ferme en plein logout, le prochain
+    // lancement ne fera pas semblant d'être connecté.
+    writeLastKnownUser(null);
     if (isNativeApp) {
       // Déconnecte aussi la couche native (sinon le prochain login Google
       // resauterait le sélecteur de compte).
