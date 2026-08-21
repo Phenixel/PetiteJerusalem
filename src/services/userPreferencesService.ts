@@ -341,6 +341,17 @@ class UserPreferencesService {
   }
 
   /**
+   * La copie locale, en lecture synchrone : ce qui dépend du compte (thème,
+   * polices, tableau de bord) s'affiche avec elle dès le premier rendu,
+   * pendant que getPreferences interroge le serveur, qui a toujours raison
+   * et confirmera ou corrigera. Null quand le compte n'a jamais été lu sur
+   * cet appareil : l'appelant attend alors le serveur, comme avant.
+   */
+  getCachedPreferences(userId: string): UserPreferences | null {
+    return readCache(userId);
+  }
+
+  /**
    * Comme getPreferences, mais laisse l'erreur remonter : indispensable quand
    * l'appelant doit distinguer « profil vide » de « Firestore injoignable »
    * le widget de lecture, par exemple, ne doit pas écraser son dernier état

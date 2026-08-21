@@ -64,6 +64,10 @@ const { authService } = await import("../services/authService");
 describe("authService.updateDisplayName", () => {
   beforeEach(() => {
     updateProfile.mockClear();
+    // updateDisplayName met aussi à jour le compte gardé de la session
+    // optimiste (voir optimisticAuth.test.ts) : on repart sans, pour que les
+    // abonnements n'observent que le changement de nom.
+    localStorage.clear();
     authMock.currentUser = { uid: "u1", displayName: "Ancien nom", email: "david@exemple.fr" };
   });
 

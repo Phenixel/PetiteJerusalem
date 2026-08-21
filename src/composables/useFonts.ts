@@ -116,6 +116,21 @@ export function useFonts() {
   async function loadFonts(userId: string) {
     if (loadedForUserId === userId) return;
     const versionAtStart = ++fontsVersion;
+    // Copie locale d'abord, en synchrone : les polices du compte partent en
+    // téléchargement et s'appliquent dès le premier rendu, sans attendre
+    // Firestore. La réponse du serveur, en dessous, confirme ou corrige.
+    const cached = userPreferencesService.getCachedPreferences(userId);
+    if (cached) {
+      if (LATIN_FONT_OPTIONS.some((f) => f.id === cached.fontLatin)) {
+        currentLatinId.value = cached.fontLatin;
+      }
+      if (HEBREW_FONT_OPTIONS.some((f) => f.id === cached.fontHebrew)) {
+        currentHebrewId.value = cached.fontHebrew;
+      }
+      ensureFontLoaded(currentLatinId.value);
+      ensureFontLoaded(currentHebrewId.value);
+      applyFonts(currentLatin.value, currentHebrew.value);
+    }
     try {
       const prefs = await userPreferencesService.getPreferences(userId);
       if (fontsVersion !== versionAtStart) return;

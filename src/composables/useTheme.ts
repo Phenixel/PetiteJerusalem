@@ -43,6 +43,16 @@ export function useTheme() {
   async function loadTheme(userId: string) {
     if (loadedForUserId === userId) return;
     const versionAtStart = ++themeVersion;
+    // Copie locale d'abord, en synchrone : les couleurs du compte tiennent
+    // dès le premier rendu au lieu d'arriver quelques secondes plus tard
+    // (chargement de Firestore puis aller-retour réseau). La réponse du
+    // serveur, en dessous, confirme ou corrige.
+    const cached = userPreferencesService.getCachedPreferences(userId);
+    const cachedTheme = cached && THEME_OPTIONS.find((t) => t.id === cached.theme);
+    if (cachedTheme) {
+      currentThemeId.value = cachedTheme.id;
+      applyThemeColors(cachedTheme);
+    }
     try {
       const prefs = await userPreferencesService.getPreferences(userId);
       if (themeVersion !== versionAtStart) return;

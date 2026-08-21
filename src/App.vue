@@ -18,8 +18,7 @@ import { isNativeApp } from "./composables/useNativeApp";
 import { useNativeStatusBar } from "./composables/useNativeStatusBar";
 import { useLocale } from "./composables/useLocale";
 import { RouterView } from "vue-router";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./firebase/core";
+import { authService } from "./services/authService";
 import { useTheme } from "./composables/useTheme";
 import { useFonts } from "./composables/useFonts";
 
@@ -80,10 +79,14 @@ const chromePadClass = computed(() => {
   return isMiniPlayerVisible.value ? "pb-20" : "";
 });
 
-onAuthStateChanged(auth, (user) => {
+// authService, et non onAuthStateChanged directement : avant le premier
+// verdict de Firebase, il rejoue le dernier compte connu, si bien que le
+// thème et les polices du compte (servis par leur copie locale) s'appliquent
+// dès le premier rendu au lieu d'arriver quelques secondes plus tard.
+authService.onAuthChanged((user) => {
   if (user) {
-    loadTheme(user.uid);
-    loadFonts(user.uid);
+    loadTheme(user.id);
+    loadFonts(user.id);
   } else {
     resetTheme();
     resetFonts();
