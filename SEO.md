@@ -33,8 +33,23 @@ touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
   is served straight from `dist/share-reading.html`.
   - Also writes **`dist/app.html`**: a bare empty shell used as the catch-all
     rewrite target, so deep app routes (`/profile`, …) never flash homepage
-    content. (`firebase.json`: `"**" → "/app.html"`.)
+    content. (`firebase.json`: `"**" → "/app.html"`.) Its canonical + `og:url`
+    tags are **stripped** (`buildAppShell` in `seoPages.ts`): the shell serves
+    every non-prerendered route, and keeping the homepage canonical there made
+    each of them claim to be a duplicate of `/` (Search Console "Duplicate
+    page, Google chose a different canonical"). The Vue views set the right
+    canonical on mount (`seoService`).
   - Also regenerates **`dist/sitemap.xml`** from the same page list.
+- `src/content/zmanimSeoPages.ts`: the **/horaires** (heures de Chabbat) and
+  **/calendrier** (dates des fêtes) pages. Their crawlable bodies embed real
+  times computed at build time with `@hebcal/core` (12 weeks of candle
+  lighting/havdala for Paris, the festival calendar of the current + next
+  Hebrew year, and "Quand tombe Roch Hachana/Kippour/Pessah… ?" FAQ answers).
+  This lives in its own module, not `seoPages.ts`, so hebcal stays out of the
+  Vue chunks that import `seoPages` (ContentPage, TehilimPage); only the
+  prerender step and the tests load it. Every row is dated, so the content
+  stays truthful between deploys, but **deploy at least every few weeks** to
+  keep the upcoming-times table ahead of the calendar.
 - `src/views/ContentPage.vue` renders the long-form landing and legal pages
   (`landingPages` in `seoPages.ts`: `/finir-le-chass`, `/partage-tehilim`,
   `/confidentialite`, `/a-propos`, `/mentions-legales`) from the same
@@ -46,7 +61,8 @@ touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
 Prerendered/indexable pages (~1200 in total, all listed in the generated
 `sitemap.xml`): the static pages declared in `seoPages.ts`, `/`,
 `/share-reading`, `/bibliotheque`, `/chiourim`, the landing/legal pages above,
-and the Tehilim-by-intention hub + its intention pages, plus the Bibliothèque
+the Tehilim-by-intention hub + its intention pages, `/horaires` and
+`/calendrier` (from `zmanimSeoPages.ts`), plus the Bibliothèque
 reading pages generated per corpus/book/chapter by `prerender-seo.mjs`.
 (`/login` is `noindex`; the old `/etude` URLs 301-redirect to
 `/bibliotheque` in `firebase.json`.)
@@ -71,7 +87,8 @@ After `npm run build` and `firebase deploy`:
    - Add the property `petite-jerusalem.fr` (Domain property → DNS TXT verify).
    - Submit `https://petite-jerusalem.fr/sitemap.xml`.
    - Use **URL Inspection → Request indexing** for `/`, `/share-reading`,
-     `/finir-le-chass`, `/partage-tehilim`, `/bibliotheque`.
+     `/finir-le-chass`, `/partage-tehilim`, `/bibliotheque`, `/horaires`,
+     `/calendrier`.
 3. **Bing Webmaster Tools** (https://www.bing.com/webmasters): add the site,
    submit the sitemap. (Bing also feeds ChatGPT search.)
 4. Confirm the old `petite-jerusalem.web.app` either redirects to `.fr` or stays

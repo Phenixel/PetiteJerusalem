@@ -20,9 +20,10 @@ const ENDPOINT = "https://api.indexnow.org/indexnow";
 
 const jiti = createJiti(import.meta.url);
 const { allPages, SITE_URL } = await jiti.import("../src/content/seoPages.ts");
+const { buildZmanimSeoPages } = await jiti.import("../src/content/zmanimSeoPages.ts");
 
 const host = new URL(SITE_URL).host;
-const urlList = allPages
+const urlList = [...allPages, ...buildZmanimSeoPages().pages]
   .filter((p) => p.sitemap !== false)
   .map((p) => `${SITE_URL}${p.path}`);
 

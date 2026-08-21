@@ -59,7 +59,7 @@ export type SeoPage = {
 
 // ---- Shared HTML building blocks ---------------------------------------
 
-const breadcrumb = (items: { name: string; path: string }[]): Record<string, unknown> => ({
+export const breadcrumb = (items: { name: string; path: string }[]): Record<string, unknown> => ({
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
   itemListElement: items.map((it, i) => ({
@@ -70,7 +70,7 @@ const breadcrumb = (items: { name: string; path: string }[]): Record<string, unk
   })),
 });
 
-const faqJsonLd = (faq: { q: string; a: string }[]): Record<string, unknown> => ({
+export const faqJsonLd = (faq: { q: string; a: string }[]): Record<string, unknown> => ({
   "@context": "https://schema.org",
   "@type": "FAQPage",
   mainEntity: faq.map((f) => ({
@@ -81,7 +81,7 @@ const faqJsonLd = (faq: { q: string; a: string }[]): Record<string, unknown> => 
 });
 
 /** Render a FAQ block both as visible HTML and (separately) as FAQPage JSON-LD. */
-const faqHtml = (faq: { q: string; a: string }[], heading: string): string => `
+export const faqHtml = (faq: { q: string; a: string }[], heading: string): string => `
   <section class="seo-section" aria-labelledby="faq-title">
     <h2 id="faq-title">${heading}</h2>
     <dl>
@@ -100,6 +100,8 @@ export const staticFooterHtml = `
       <a href="/finir-le-chass">Finir le Chass</a>
       <a href="/partage-tehilim">Partage de Tehilim</a>
       <a href="/tehilim">Tehilim par intention</a>
+      <a href="/horaires">Horaires de Chabbat</a>
+      <a href="/calendrier">Calendrier des fêtes</a>
     </nav>
     <p>Petite Jérusalem : étudier et partager la Torah, ensemble. Gratuit, en français, en anglais et en hébreu.</p>
   </footer>`;
@@ -139,6 +141,11 @@ export const appPages: SeoPage[] = [
         <li>
           <h3><a href="/chiourim">Chiourim</a></h3>
           <p>Écoutez des cours et leçons de Torah partagés par la communauté, par rav ou par thème.</p>
+        </li>
+        <li>
+          <h3><a href="/horaires">Horaires de Chabbat</a></h3>
+          <p>L'heure d'allumage des bougies et de sortie de Chabbat pour votre ville, tous les
+          zmanim du jour et le <a href="/calendrier">calendrier des fêtes juives</a> avec leurs dates.</p>
         </li>
       </ul>
     </section>
@@ -1932,6 +1939,20 @@ export function injectBody(template: string, page: SeoPage): string {
 /** Full transform: built shell + page → final static HTML. Pure. */
 export function renderPage(template: string, page: SeoPage): string {
   return injectBody(injectMeta(template, page), page);
+}
+
+/**
+ * Le shell `app.html` servi par la réécriture attrape-tout : toutes les routes
+ * non prérendues (/profile, /share-reading/new-session…) sont servies par lui.
+ * Il ne doit donc revendiquer ni le canonique ni l'og:url de l'accueil, sinon
+ * chaque route profonde se déclare copie de la page d'accueil auprès des
+ * moteurs (motif « Page en double » de la Search Console). Les vues posent le
+ * bon canonique au montage (seoService), y compris en le créant s'il manque.
+ */
+export function buildAppShell(template: string): string {
+  return template
+    .replace(/<link rel="canonical"[^>]*>\s*/, "")
+    .replace(/<meta property="og:url"[^>]*>\s*/, "");
 }
 
 export type SitemapEntry = { path: string; priority: number; changefreq: string };

@@ -33,9 +33,10 @@ import { createJiti } from "jiti";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const jiti = createJiti(import.meta.url);
 
-const { allPages, renderPage, buildSitemap, SITE_URL } = await jiti.import(
+const { allPages, renderPage, buildSitemap, buildAppShell, SITE_URL } = await jiti.import(
   "../src/content/seoPages.ts",
 );
+const { buildZmanimSeoPages } = await jiti.import("../src/content/zmanimSeoPages.ts");
 const {
   studyEntries,
   isMultiSection,
@@ -139,7 +140,11 @@ function main() {
   const template = readFileSync(join(dist, "index.html"), "utf-8");
 
   // 1. Bare SPA shell for the catch-all rewrite (no page-specific body).
-  writeFileSync(join(dist, "app.html"), template, "utf-8");
+  //    Canonical + og:url are stripped: the shell serves every deep route
+  //    (/profile, /share-reading/new-session…) and must not declare each of
+  //    them a duplicate of the homepage (Search Console "Duplicate page").
+  //    The views set the right canonical on mount (seoService).
+  writeFileSync(join(dist, "app.html"), buildAppShell(template), "utf-8");
 
   // 2. One static HTML file per indexable page (body + head + JSON-LD).
   //    Some pages live in a subfolder (e.g. tehilim/refoua-chelema.html), so
@@ -156,11 +161,22 @@ function main() {
   //     Talmud), generated from the text files and added to the sitemap below.
   const readingEntries = generateEtudePages(dist, template);
 
+  // 2c. Horaires de Chabbat (/horaires) + calendrier des fêtes (/calendrier) :
+  //     content computed at build time (hebcal), so it lives in its own module
+  //     (src/content/zmanimSeoPages.ts) instead of seoPages.ts, keeping hebcal
+  //     out of the Vue chunks that import seoPages.
+  const { pages: zmanimPages, sitemapEntries: zmanimEntries } = buildZmanimSeoPages();
+  for (const page of zmanimPages) {
+    writePage(dist, template, page);
+    console.log(`[prerender-seo] ${page.path} -> dist/${page.file}`);
+  }
+
   // 3. Sitemap, regenerated from the same lists so it can never drift.
   const lastmod = new Date().toISOString().slice(0, 10);
-  writeFileSync(join(dist, "sitemap.xml"), buildSitemap(lastmod, readingEntries), "utf-8");
+  const extraEntries = [...readingEntries, ...zmanimEntries];
+  writeFileSync(join(dist, "sitemap.xml"), buildSitemap(lastmod, extraEntries), "utf-8");
 
-  const total = allPages.length + readingEntries.length;
+  const total = allPages.length + zmanimPages.length + readingEntries.length;
   console.log(`[prerender-seo] Generated ${total} page(s) + app.html + sitemap.xml.`);
   console.log(`[prerender-seo] Canonical host: ${SITE_URL}`);
 }
