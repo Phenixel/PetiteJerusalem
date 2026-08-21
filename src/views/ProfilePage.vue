@@ -7,7 +7,6 @@ import { analyticsService } from "../services/analyticsService";
 import type { User } from "../services/authService";
 import { seoService } from "../services/seoService";
 import AppIcon from "../components/icons/AppIcon.vue";
-import AccountCta from "../components/AccountCta.vue";
 import ProfileHeader from "./profilePage/ProfileHeader.vue";
 import UserInfoForm from "./profilePage/UserInfoForm.vue";
 import SecuritySettings from "./profilePage/SecuritySettings.vue";
@@ -42,9 +41,7 @@ const visibleTabs = computed<{ id: TabId; label: string }[]>(() => {
   return tabs;
 });
 
-const headerTitle = computed(() =>
-  currentUser.value ? currentUser.value.name || "Utilisateur" : t("profile.guestTitle"),
-);
+const userDisplayName = computed(() => currentUser.value?.name || "Utilisateur");
 
 let unsubscribeAuth: (() => void) | null = null;
 
@@ -128,19 +125,36 @@ onUnmounted(() => {
          alors de page de réglages. Sur le web sans compte, l'abonnement
          ci-dessus renvoie à l'accueil. -->
     <div v-else-if="currentUser || isNativeApp">
-      <ProfileHeader :user-display-name="headerTitle" />
+      <ProfileHeader v-if="currentUser" :user-display-name="userDisplayName" />
+
+      <!-- Sans compte : le bandeau de tête EST l'invitation, en version
+           compacte : le titre de la page, une ligne qui dit où vivent les
+           réglages, et les deux boutons de connexion. Les réglages gardent
+           leur cadre dédié en dessous. -->
+      <div v-else class="bg-gradient-to-br from-primary to-secondary py-8 px-6 md:px-12 mb-8">
+        <div class="max-w-[1200px] mx-auto">
+          <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">
+            {{ t("profile.guestTitle") }}
+          </h1>
+          <p class="mt-1.5 text-sm leading-relaxed text-white/85 max-w-md">
+            {{ t("profile.guestSettingsHint") }}
+          </p>
+          <div class="mt-4 flex flex-wrap gap-2.5">
+            <RouterLink
+              to="/login?mode=signup"
+              class="btn bg-white !text-primary font-semibold hover:bg-white/90"
+            >
+              {{ t("accountCta.signup") }}
+            </RouterLink>
+            <RouterLink to="/login" class="btn border border-white/50 text-white hover:bg-white/10">
+              {{ t("accountCta.login") }}
+            </RouterLink>
+          </div>
+        </div>
+      </div>
 
       <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
         <nav class="lg:sticky lg:top-24 h-fit card p-3">
-          <!-- Sans compte : l'encart de connexion en tête, les réglages
-               restent utilisables en dessous. -->
-          <template v-if="!currentUser">
-            <AccountCta class="mb-2" />
-            <p class="px-4 pb-3 text-xs text-text-secondary">
-              {{ t("profile.guestSettingsHint") }}
-            </p>
-          </template>
-
           <template v-if="currentUser">
             <!-- Raccourcis vers les fonctionnalités déplacées dans leurs sections. -->
             <p
