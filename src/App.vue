@@ -24,8 +24,8 @@ import { useFonts } from "./composables/useFonts";
 
 const route = useRoute();
 const router = useRouter();
-const { loadTheme, resetTheme } = useTheme();
-const { loadFonts, resetFonts } = useFonts();
+const { loadTheme, loadGuestTheme } = useTheme();
+const { loadFonts, loadGuestFonts } = useFonts();
 
 // App native : les horaires (et leur calendrier) se posent au-dessus de la
 // page en cours, comme un modal plein écran ; le bouton rond de la barre
@@ -79,6 +79,13 @@ const chromePadClass = computed(() => {
   return isMiniPlayerVisible.value ? "pb-20" : "";
 });
 
+// Réglages d'appareil appliqués d'entrée, en synchrone : un visiteur sans
+// compte retrouve son thème et ses polices (réglages de l'app native) avant
+// le premier rendu. Pour un compte, l'abonnement juste en dessous repasse aux
+// valeurs du compte dans le même tick, avant tout affichage.
+loadGuestTheme();
+loadGuestFonts();
+
 // authService, et non onAuthStateChanged directement : avant le premier
 // verdict de Firebase, il rejoue le dernier compte connu, si bien que le
 // thème et les polices du compte (servis par leur copie locale) s'appliquent
@@ -88,8 +95,9 @@ authService.onAuthChanged((user) => {
     loadTheme(user.id);
     loadFonts(user.id);
   } else {
-    resetTheme();
-    resetFonts();
+    // Sans compte (ou déconnecté) : les réglages de l'appareil.
+    loadGuestTheme();
+    loadGuestFonts();
   }
 });
 </script>

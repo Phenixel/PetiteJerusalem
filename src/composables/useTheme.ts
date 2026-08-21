@@ -67,9 +67,23 @@ export function useTheme() {
     }
   }
 
-  async function setTheme(userId: string, themeId: string) {
+  /**
+   * Change le thème. Sans compte (userId null : réglages de l'app native), le
+   * choix est appliqué et gardé sur l'appareil seulement ; avec un compte, il
+   * part chez Firestore et suit l'utilisateur sur ses appareils.
+   */
+  async function setTheme(userId: string | null, themeId: string) {
     const theme = THEME_OPTIONS.find((t) => t.id === themeId);
     if (!theme) return;
+
+    if (!userId) {
+      themeVersion++;
+      loadedForUserId = null;
+      currentThemeId.value = themeId;
+      applyThemeColors(theme);
+      userPreferencesService.saveGuestPreferences({ theme: themeId });
+      return;
+    }
 
     const previousThemeId = currentThemeId.value;
     themeVersion++;
@@ -97,6 +111,19 @@ export function useTheme() {
     applyThemeColors(currentTheme.value);
   }
 
+  /**
+   * Sans compte : applique le thème gardé sur l'appareil (réglages de la page
+   * profil de l'app native), ou le thème d'origine s'il n'y en a pas.
+   */
+  function loadGuestTheme() {
+    themeVersion++;
+    loadedForUserId = null;
+    const guest = userPreferencesService.getGuestPreferences();
+    const theme = THEME_OPTIONS.find((t) => t.id === guest?.theme) ?? THEME_OPTIONS[0];
+    currentThemeId.value = theme.id;
+    applyThemeColors(theme);
+  }
+
   function resetTheme() {
     currentThemeId.value = "ocean";
     loadedForUserId = null;
@@ -108,6 +135,7 @@ export function useTheme() {
     currentTheme,
     themes: THEME_OPTIONS,
     loadTheme,
+    loadGuestTheme,
     setTheme,
     previewTheme,
     cancelPreview,

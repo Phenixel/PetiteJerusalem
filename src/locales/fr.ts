@@ -136,6 +136,9 @@ const fr = {
   },
   profile: {
     loadingProfile: "Chargement de votre profil...",
+    guestTitle: "Réglages",
+    guestSettingsHint:
+      "Vos réglages sont gardés sur cet appareil. Avec un compte, ils vous suivent sur tous vos appareils.",
     activeMember: "Membre Actif",
     tabs: {
       myInfo: "Mes Informations",

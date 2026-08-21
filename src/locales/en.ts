@@ -137,6 +137,9 @@ const en: LocaleMessages = {
   },
   profile: {
     loadingProfile: "Loading your profile...",
+    guestTitle: "Settings",
+    guestSettingsHint:
+      "Your settings are kept on this device. With an account, they follow you on all your devices.",
     activeMember: "Active Member",
     tabs: {
       myInfo: "My Information",

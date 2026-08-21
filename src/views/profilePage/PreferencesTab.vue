@@ -6,21 +6,18 @@ import { ensureAllFontsLoaded, useFonts, type FontOption } from "../../composabl
 import { useLocale } from "../../composables/useLocale";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
+// userId null : réglages sans compte (page profil de l'app native). Les choix
+// sont alors gardés sur l'appareil ; setTheme/setLatinFont/setHebrewFont s'en
+// chargent, et le compte les adoptera à la connexion (userPreferencesService).
 const props = defineProps<{
-  userId: string;
+  userId: string | null;
 }>();
 
 const { t } = useI18n();
 const { currentLocale, availableLocales, setLocale } = useLocale();
 const { currentThemeId, themes, setTheme, previewTheme, cancelPreview } = useTheme();
-const {
-  currentLatinId,
-  currentHebrewId,
-  latinFonts,
-  hebrewFonts,
-  setLatinFont,
-  setHebrewFont,
-} = useFonts();
+const { currentLatinId, currentHebrewId, latinFonts, hebrewFonts, setLatinFont, setHebrewFont } =
+  useFonts();
 
 const saving = ref(false);
 const previewingId = ref<string | null>(null);
@@ -136,9 +133,7 @@ const selectHebrewFont = async (font: FontOption) => {
         @mouseleave="onMouseLeave"
         :class="[
           'card group relative p-1 transition-all duration-300 cursor-pointer text-left',
-          currentThemeId === theme.id
-            ? 'ring-2 ring-primary shadow-card-hover'
-            : 'card-hover',
+          currentThemeId === theme.id ? 'ring-2 ring-primary shadow-card-hover' : 'card-hover',
         ]"
         :disabled="saving"
       >
@@ -175,10 +170,7 @@ const selectHebrewFont = async (font: FontOption) => {
             <div class="h-2 w-3/4 rounded-full bg-black/5 dark:bg-white/10"></div>
             <!-- Button preview -->
             <div class="pt-1">
-              <div
-                class="h-6 w-20 rounded-lg"
-                :style="{ backgroundColor: theme.primary }"
-              ></div>
+              <div class="h-6 w-20 rounded-lg" :style="{ backgroundColor: theme.primary }"></div>
             </div>
           </div>
         </div>
@@ -231,19 +223,16 @@ const selectHebrewFont = async (font: FontOption) => {
         >
         <span class="flex items-center justify-between">
           <span>
-            <span class="block font-semibold text-text-primary" :style="{ fontFamily: font.stack }">{{
-              font.label
-            }}</span>
+            <span
+              class="block font-semibold text-text-primary"
+              :style="{ fontFamily: font.stack }"
+              >{{ font.label }}</span
+            >
             <span class="block text-xs text-text-secondary mt-0.5">{{
               t(`profile.fontsLatin.${font.id}`)
             }}</span>
           </span>
-          <AppIcon
-            v-if="currentLatinId === font.id"
-            name="check"
-            :size="14"
-            class="text-primary"
-          />
+          <AppIcon v-if="currentLatinId === font.id" name="check" :size="14" class="text-primary" />
         </span>
       </button>
     </div>
