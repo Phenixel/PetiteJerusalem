@@ -7,6 +7,7 @@ import { analyticsService } from "../services/analyticsService";
 import type { User } from "../services/authService";
 import { seoService } from "../services/seoService";
 import AppIcon from "../components/icons/AppIcon.vue";
+import type { IconName } from "../components/icons/registry";
 import ProfileHeader from "./profilePage/ProfileHeader.vue";
 import UserInfoForm from "./profilePage/UserInfoForm.vue";
 import SecuritySettings from "./profilePage/SecuritySettings.vue";
@@ -42,6 +43,16 @@ const visibleTabs = computed<{ id: TabId; label: string }[]>(() => {
 });
 
 const userDisplayName = computed(() => currentUser.value?.name || "Utilisateur");
+
+// Ce que le compte apporte, énuméré dans le bandeau d'invitation. Chaque
+// entrée correspond à une fonctionnalité réellement portée par le compte :
+// les sessions suivies, la lecture du jour, les rappels, la synchronisation.
+const guestBenefits = computed<{ icon: IconName; label: string }[]>(() => [
+  { icon: "users", label: t("profile.guestBenefits.sessions") },
+  { icon: "book", label: t("profile.guestBenefits.dailyReading") },
+  { icon: "bell", label: t("profile.guestBenefits.reminders") },
+  { icon: "bookmark", label: t("profile.guestBenefits.sync") },
+]);
 
 let unsubscribeAuth: (() => void) | null = null;
 
@@ -139,7 +150,17 @@ onUnmounted(() => {
           <p class="mt-1.5 text-sm leading-relaxed text-white/85 max-w-md">
             {{ t("profile.guestSettingsHint") }}
           </p>
-          <div class="mt-4 flex flex-wrap gap-2.5">
+          <ul class="mt-3 space-y-1.5 text-sm leading-relaxed text-white/90 max-w-md">
+            <li
+              v-for="benefit in guestBenefits"
+              :key="benefit.icon"
+              class="flex items-start gap-2.5"
+            >
+              <AppIcon :name="benefit.icon" :size="15" class="mt-1 shrink-0 text-white/80" />
+              <span>{{ benefit.label }}</span>
+            </li>
+          </ul>
+          <div class="mt-5 flex flex-wrap gap-2.5">
             <RouterLink
               to="/login?mode=signup"
               class="btn bg-white !text-primary font-semibold hover:bg-white/90"
