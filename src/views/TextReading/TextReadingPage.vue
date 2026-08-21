@@ -1264,11 +1264,7 @@ watch(textId, () => {
         >
           <template v-for="block in currentSection.dafBlocks ?? []" :key="block.daf">
             <p class="mt-6 mb-2 text-sm font-semibold text-primary">Daf {{ block.daf }}</p>
-            <p
-              v-if="!showPhonetic"
-              dir="rtl"
-              class="font-hebrew leading-loose text-text-primary reading-he"
-            >
+            <p v-if="!showPhonetic" dir="rtl" class="font-hebrew text-text-primary reading-he">
               {{ block.lines.join(" ") }}
             </p>
             <p v-else dir="ltr" class="leading-relaxed italic text-text-secondary reading-tl">
@@ -1327,7 +1323,7 @@ watch(textId, () => {
                   <p
                     v-if="!showPhonetic"
                     dir="rtl"
-                    class="flex-1 min-w-0 font-hebrew leading-loose text-text-primary reading-he"
+                    class="flex-1 min-w-0 font-hebrew text-text-primary reading-he"
                   >
                     {{ line }}
                   </p>
@@ -1402,9 +1398,12 @@ watch(textId, () => {
 </template>
 
 <style scoped>
-/* Reader text sizes follow the A− / A+ control (useReadingSize). */
+/* Reader text sizes follow the A− / A+ control (useReadingSize).
+   L'interligne de l'hébreu est volontairement plus serré que leading-loose :
+   assez d'air pour les voyelles et les teamim, sans étirer la lecture. */
 .reading-he {
   font-size: calc(1.5rem * var(--reading-scale, 1));
+  line-height: 1.7;
 }
 .reading-tl {
   font-size: calc(1.125rem * var(--reading-scale, 1));

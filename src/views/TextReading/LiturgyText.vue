@@ -273,11 +273,13 @@ const sections = computed(() =>
 </template>
 
 <style scoped>
-/* Les tailles suivent le réglage A− / A+ (--reading-scale, useReadingSize). */
+/* Les tailles suivent le réglage A− / A+ (--reading-scale, useReadingSize).
+   Interligne aligné sur celui des autres lecteurs (1.7) : assez d'air pour
+   les voyelles, sans étirer la lecture. */
 .reading-he {
   font-family: var(--font-hebrew);
   font-size: calc(1.45rem * var(--reading-scale, 1));
-  line-height: 1.9;
+  line-height: 1.7;
   text-align: justify;
   color: inherit;
 }

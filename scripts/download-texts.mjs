@@ -16,9 +16,10 @@ const ROOT = resolve(__dirname, '..');
 const OUT = resolve(ROOT, 'public/texts');
 const GCS = 'https://storage.googleapis.com/sefaria-export/json';
 
-// `--only=tanakh` (ou tehilim/mishna/talmud) pour ne régénérer qu'un corpus.
-// `tefila` n'est jamais du lot par défaut : ses fichiers sont mis en forme à
-// la main après téléchargement, il faut le demander nommément (voir plus bas).
+// `--only=tanakh` (ou tehilim/mishna/talmud/rashi) pour ne régénérer qu'un
+// corpus. `tefila` n'est jamais du lot par défaut : ses fichiers sont mis en
+// forme à la main après téléchargement, il faut le demander nommément (voir
+// plus bas).
 const onlyArg = process.argv.find(a => a.startsWith('--only='));
 const ONLY = onlyArg ? onlyArg.split('=')[1] : null;
 const shouldRun = corpus => !ONLY || ONLY === corpus;
@@ -26,6 +27,7 @@ const shouldRun = corpus => !ONLY || ONLY === corpus;
 mkdirSync(`${OUT}/mishna`, { recursive: true });
 mkdirSync(`${OUT}/talmud`, { recursive: true });
 mkdirSync(`${OUT}/tanakh`, { recursive: true });
+mkdirSync(`${OUT}/rashi`, { recursive: true });
 mkdirSync(`${OUT}/tefila`, { recursive: true });
 
 // ---------- Utilities ----------
@@ -349,9 +351,10 @@ const TREI_ASAR_GCS = {
   'Haggai': 'Tanakh/Prophets/Haggai', 'Zechariah': 'Tanakh/Prophets/Zechariah', 'Malakhi': 'Tanakh/Prophets/Malachi',
 };
 
+const tanakhEntries = textStudies.filter(t => t.type === 'Tanakh');
+
 if (shouldRun('tanakh')) {
   console.log('\n=== Tanakh ===');
-  const tanakhEntries = textStudies.filter(t => t.type === 'Tanakh');
 
   // Parasha structures (verse-exact boundaries + the 7 aliyot) from the Sefaria index.
   const parashaIndex = {}; // parashaKey -> { book, wholeRef, refs }
@@ -502,6 +505,115 @@ if (shouldRun('tanakh')) {
     }
 
     console.warn(`  ✗ ${entry.name} (${rawRef}): no mapping found`);
+  }
+}
+
+// ---------- Rachi sur la Torah (option du chnei mikra) ----------
+//
+// Un fichier par entrée-paracha, séparé du fichier de la paracha
+// (public/texts/rashi/<id>.json) : le commentaire ne se télécharge que quand
+// le lecteur active l'option Rachi, la paracha seule reste légère.
+//
+// La découpe par montées ne repasse pas par l'index Sefaria : elle marche sur
+// les fichiers de paracha DÉJÀ générés (fromBook, range, longueur de chaque
+// montée), si bien que chaque fichier Rachi est aligné verset à verset sur le
+// fichier de paracha réellement livré. Le lecteur aplatit les deux de la même
+// façon et se repère par index (textService.loadParashaRashi) ; un verset sans
+// commentaire garde un tableau vide. Seul le gras du dibbour hamat'hil
+// (<b>…</b>) est conservé, le lecteur le met en avant.
+
+/** Nettoyage de Rachi : tout le HTML sauf <b>…</b> (dibbour hamat'hil). */
+function cleanRashiText(str) {
+  if (!str) return '';
+  return str
+    .replace(/<(?!\/?b>)[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ').replace(/&thinsp;/g, ' ')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
+/** Le texte d'un verset tel que le lecteur le voit (vide = ligne non affichée). */
+function verseText(verse) {
+  return (Array.isArray(verse) ? verse.flat(Infinity).join(' ') : String(verse ?? ''))
+    .replace(/<[^>]*>/g, '')
+    .replace(/\{[א-ת]\}/g, '')
+    .trim();
+}
+
+if (shouldRun('rashi')) {
+  console.log('\n=== Rachi sur la Torah ===');
+
+  // Rachi calé sur la grille massorétique : Sefaria tronque les chapitres
+  // après le dernier verset commenté, un chapitre plus court décalerait tous
+  // les versets suivants de la marche par montées.
+  const rashiCache = {}; // book -> [...chapters][...verses][commentaires]
+  await Promise.all(TORAH_BOOKS.map(async (book) => {
+    try {
+      const [heData, rashiData] = await Promise.all([
+        withRetry(() => fetchJson(`${GCS}/Tanakh/Torah/${book}/Hebrew/merged.json`), `${book}/He`),
+        withRetry(
+          () => fetchJson(`${GCS}/Tanakh/Rishonim on Tanakh/Rashi/Torah/Rashi on ${book}/Hebrew/merged.json`),
+          `Rashi ${book}`
+        ),
+      ]);
+      const grid = heData.text ?? [];
+      const rashi = rashiData.text ?? [];
+      rashiCache[book] = grid.map((chapter, c) => (chapter ?? []).map((_, v) => {
+        const raw = rashi[c]?.[v];
+        return (Array.isArray(raw) ? raw : raw ? [raw] : []).map(cleanRashiText).filter(Boolean);
+      }));
+      console.log(`  ✓ Downloaded Rashi ${book}`);
+    } catch (e) {
+      console.error(`  ✗ Rashi ${book}: ${e.message}`);
+    }
+  }));
+
+  for (const entry of tanakhEntries) {
+    let parashaFile;
+    try {
+      parashaFile = JSON.parse(readFileSync(`${OUT}/tanakh/${entry.id}.json`, 'utf8'));
+    } catch {
+      continue; // Pas de fichier : entrée non générée, rien à commenter.
+    }
+    if (parashaFile.grouping !== 'aliyot' || !parashaFile.fromBook || !parashaFile.range) continue;
+    const rashiBook = rashiCache[parashaFile.fromBook];
+    if (!rashiBook) { console.error(`  ✗ ${entry.name}: Rachi ${parashaFile.fromBook} absent`); continue; }
+
+    const m = parashaFile.range.match(/^(\d+):(\d+)-(\d+):(\d+)$/);
+    if (!m) { console.error(`  ✗ ${entry.name}: range illisible (${parashaFile.range})`); continue; }
+    // Curseur chapitre/verset (base 0) avançant sur la grille massorétique,
+    // une case par verset du fichier de paracha.
+    let c = +m[1] - 1;
+    let v = +m[2] - 1;
+    let lastC = c;
+    let lastV = v;
+    const groups = (parashaFile.he ?? []).map(group => {
+      const comments = [];
+      for (const verse of group) {
+        // Un verset vide n'est pas affiché par le lecteur : pas de ligne Rachi
+        // non plus, les index restent alignés.
+        if (verseText(verse)) comments.push(rashiBook[c]?.[v] ?? []);
+        lastC = c;
+        lastV = v;
+        v++;
+        if (v >= (rashiBook[c]?.length ?? 0)) { c++; v = 0; }
+      }
+      return comments;
+    });
+    if (lastC !== +m[3] - 1 || lastV !== +m[4] - 1) {
+      console.error(`  ✗ ${entry.name}: fin de marche ${lastC + 1}:${lastV + 1} ≠ range ${parashaFile.range}`);
+      continue;
+    }
+
+    const commented = groups.flat().filter(comments => comments.length > 0).length;
+    writeFileSync(`${OUT}/rashi/${entry.id}.json`, JSON.stringify({
+      title: entry.name,
+      fromBook: parashaFile.fromBook,
+      grouping: 'aliyot',
+      he: groups,
+    }), 'utf8');
+    console.log(`  ✓ Rachi ${entry.name} (${commented} versets commentés) → rashi/${entry.id}.json`);
   }
 }
 

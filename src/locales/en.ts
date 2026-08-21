@@ -840,6 +840,9 @@ const en: LocaleMessages = {
     next: "Next parasha",
     backToThisWeek: "Back to this week's parasha",
     unavailable: "This week's parasha could not be determined.",
+    doubleVerses: "Each verse twice",
+    withRashi: "Rashi's commentary",
+    rashiUnavailable: "Rashi's commentary could not be loaded.",
   },
   study: {
     title: "Library",

@@ -2,8 +2,13 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { TextStudyJsonEntry } from "../../models/models";
-import { loadText, MissingTextFileError, placeLabel } from "../../services/textService";
-import type { TextContent, TextSection } from "../../services/textService";
+import {
+  loadParashaRashi,
+  loadText,
+  MissingTextFileError,
+  placeLabel,
+} from "../../services/textService";
+import type { RashiComment, TextContent, TextSection } from "../../services/textService";
 import { isEntryAvailableOffline } from "../../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../../services/offlineTextStore";
 import { useOnline } from "../../composables/useOnline";
@@ -22,6 +27,10 @@ const props = defineProps<{
   readSections?: number[];
   /** Chnei mikra : affiche le Targoum Onkelos sous chaque verset. */
   withTargoum?: boolean;
+  /** Chnei mikra : écrit chaque verset deux fois (chnayim mikra). */
+  doubleVerses?: boolean;
+  /** Chnei mikra : affiche les commentaires de Rachi sous le Targoum. */
+  withRashi?: boolean;
   /** D'où le texte est lu, pour la mesure d'audience (le chnei mikra a deux entrées). */
   source?: string;
 }>();
@@ -137,14 +146,48 @@ function targumLine(section: TextSection, line: number): string {
   return section.targum?.[line] ?? "";
 }
 
+// --- Rachi (option du chnei mikra) : fichier séparé de la paracha, chargé
+// seulement quand l'option est active, pour que la paracha seule reste
+// légère. Aligné ligne à ligne sur `he` (voir textService.loadParashaRashi). --
+const rashiLines = ref<RashiComment[][] | null>(null);
+const rashiFailed = ref(false);
+let rashiLoading = false;
+
+async function loadRashi() {
+  if (rashiLoading || rashiLines.value) return;
+  rashiLoading = true;
+  rashiFailed.value = false;
+  try {
+    rashiLines.value = await loadParashaRashi(props.entry);
+  } catch {
+    // Hors ligne, ou entrée sans fichier Rachi (Na"kh) : la lecture continue
+    // sans le commentaire, un mot le dit sur les parachiot.
+    rashiFailed.value = true;
+  } finally {
+    // Un échec ne condamne pas l'option : désactiver puis réactiver réessaie.
+    rashiLoading = false;
+  }
+}
+
+watch(
+  () => props.withRashi && content.value !== null,
+  (wanted) => {
+    if (wanted) void loadRashi();
+  },
+  { immediate: true },
+);
+
+function rashiComments(line: number): RashiComment[] {
+  if (!props.withRashi) return [];
+  return rashiLines.value?.[line] ?? [];
+}
+
 // Marquer un chapitre lu le replie : on garde son titre en vue pour que la
 // lecture continue au chapitre suivant, sans saut de scroll.
 function onToggleSection(section: TextSection, evt: MouseEvent) {
   const willRead = !readSet.value.has(section.index);
   // Une consultation temporaire (marque-page) ne survit pas au changement d'état.
-  peekedSections.value = new Set(
-    [...peekedSections.value].filter((i) => i !== section.index),
-  );
+  peekedSections.value = new Set([...peekedSections.value].filter((i) => i !== section.index));
   emit("toggle-section", section.index);
   if (willRead) {
     anchorToElement((evt.currentTarget as HTMLElement).closest("section"));
@@ -167,7 +210,10 @@ async function load() {
     }
     content.value = await loadText(props.entry);
     // Le parent a besoin des index réels pour savoir quand tout est lu.
-    emit("sections-loaded", content.value.sections.map((s) => s.index));
+    emit(
+      "sections-loaded",
+      content.value.sections.map((s) => s.index),
+    );
   } catch (e) {
     if (!online.value) notDownloaded.value = true;
     else if (e instanceof MissingTextFileError) missing.value = true;
@@ -224,10 +270,7 @@ onUnmounted(() => observer?.disconnect());
       <div class="h-5 bg-black/10 rounded w-2/3 dark:bg-white/10"></div>
     </div>
 
-    <p
-      v-else-if="notDownloaded"
-      class="py-2 text-sm text-text-secondary flex items-center gap-1.5"
-    >
+    <p v-else-if="notDownloaded" class="py-2 text-sm text-text-secondary flex items-center gap-1.5">
       <AppIcon name="download" :size="14" class="text-text-secondary/60" />
       {{ t("dailyReading.offline.notDownloaded") }}
     </p>
@@ -245,10 +288,7 @@ onUnmounted(() => observer?.disconnect());
 
     <div v-else-if="content" class="space-y-6">
       <!-- Marque-pages posés dans cette lecture : retour direct au verset -->
-      <div
-        v-if="bookmarks.length"
-        class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm"
-      >
+      <div v-if="bookmarks.length" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <span class="inline-flex items-center gap-1.5 text-text-secondary">
           <AppIcon name="bookmark" :size="13" class="text-primary" />
           {{ t("textReading.bookmarks") }}
@@ -262,6 +302,15 @@ onUnmounted(() => observer?.disconnect());
           {{ bookmarkPlace(b) }}
         </button>
       </div>
+
+      <!-- Option Rachi active mais fichier introuvable (hors ligne, par exemple) -->
+      <p
+        v-if="withRashi && rashiFailed"
+        class="text-sm text-text-secondary flex items-center gap-1.5"
+      >
+        <AppIcon name="alert-triangle" :size="14" class="text-amber-500" />
+        {{ t("chneiMikra.rashiUnavailable") }}
+      </p>
 
       <section v-for="section in content.sections" :key="section.index">
         <!-- Chaptered texts: per-chapter header with its own "mark read". -->
@@ -300,12 +349,10 @@ onUnmounted(() => observer?.disconnect());
             <!-- Talmud: continuous text with a marker at each daf change -->
             <template v-if="content.type === 'Talmud Bavli'">
               <template v-for="block in section.dafBlocks ?? []" :key="block.daf">
-                <p
-                  class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center"
-                >
+                <p class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center">
                   Daf {{ block.daf }}
                 </p>
-                <p dir="rtl" class="font-hebrew leading-loose text-text-primary daily-he">
+                <p dir="rtl" class="font-hebrew text-text-primary daily-he">
                   {{ block.lines.join(" ") }}
                 </p>
               </template>
@@ -324,7 +371,7 @@ onUnmounted(() => observer?.disconnect());
                 >
                   {{ block.label }}
                 </p>
-                <p dir="rtl" class="font-hebrew leading-loose text-text-primary daily-he">
+                <p dir="rtl" class="font-hebrew text-text-primary daily-he">
                   <template v-for="(line, index) in block.lines" :key="block.offset + index">
                     <span
                       :data-verse="verseKey(section.index, block.offset + index)"
@@ -351,6 +398,10 @@ onUnmounted(() => observer?.disconnect());
                         {{ index + 1 }}&#8201;</span
                       >{{ line }}</span
                     >
+                    <!-- Chnayim mikra : le verset se lit deux fois, on l'écrit deux fois -->
+                    <span v-if="doubleVerses && withTargoum" dir="rtl" class="block">{{
+                      line
+                    }}</span>
                     <!-- Chnei mikra : le Targoum Onkelos du verset, en dessous -->
                     <span
                       v-if="targumLine(section, block.offset + index)"
@@ -358,6 +409,23 @@ onUnmounted(() => observer?.disconnect());
                       class="block mb-2 font-hebrew leading-relaxed text-text-secondary daily-tl"
                     >
                       {{ targumLine(section, block.offset + index) }}
+                    </span>
+                    <!-- Option Rachi : les commentaires du verset, dibbour hamat'hil en avant -->
+                    <span
+                      v-if="rashiComments(block.offset + index).length"
+                      dir="rtl"
+                      class="block mb-3 daily-rashi"
+                    >
+                      <span
+                        v-for="(comment, commentIndex) in rashiComments(block.offset + index)"
+                        :key="commentIndex"
+                        class="block font-hebrew text-text-secondary"
+                      >
+                        <span v-if="comment.lead" class="font-semibold text-text-primary/85">{{
+                          comment.lead
+                        }}</span>
+                        {{ comment.text }}
+                      </span>
                     </span>
                     <!-- Verset sélectionné : proposer le marque-page -->
                     <span
@@ -376,7 +444,12 @@ onUnmounted(() => observer?.disconnect());
                         }}
                       </button>
                     </span>
-                    <br v-else-if="!targumLine(section, block.offset + index)" />
+                    <br
+                      v-else-if="
+                        !targumLine(section, block.offset + index) &&
+                        !rashiComments(block.offset + index).length
+                      "
+                    />
                   </template>
                 </p>
               </template>
@@ -389,11 +462,22 @@ onUnmounted(() => observer?.disconnect());
 </template>
 
 <style scoped>
-/* Tailles pilotées par le réglage A− / A+ (useReadingSize), comme le lecteur. */
+/* Tailles pilotées par le réglage A− / A+ (useReadingSize), comme le lecteur.
+   L'interligne de l'hébreu est volontairement plus serré que leading-loose :
+   assez d'air pour les voyelles et les teamim, sans étirer la lecture. */
 .daily-he {
   font-size: calc(1.25rem * var(--reading-scale, 1));
+  line-height: 1.7;
 }
 .daily-tl {
   font-size: calc(1rem * var(--reading-scale, 1));
+}
+/* Rachi : sous le Targoum, plus petit et en retrait derrière un filet
+   (côté droit : le texte est en hébreu). */
+.daily-rashi {
+  font-size: calc(0.95rem * var(--reading-scale, 1));
+  line-height: 1.65;
+  padding-inline-start: 0.75rem;
+  border-inline-start: 2px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 </style>

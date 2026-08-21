@@ -38,7 +38,9 @@ import { useOnline } from "../../composables/useOnline";
 import { analyticsService } from "../../services/analyticsService";
 import DailyReadingItem from "./DailyReadingItem.vue";
 import ReminderSettingsModal from "./ReminderSettingsModal.vue";
+import ChneiMikraOptions from "../../components/ChneiMikraOptions.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
+import { useChneiMikraOptions } from "../../composables/useChneiMikraOptions";
 import { anchorToElement } from "../../composables/scrollAnchor";
 import {
   DAILY_OPTION_KEYS,
@@ -62,6 +64,9 @@ const online = useOnline();
 const readingSize = useReadingSize();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
+// Paracha (chnei mikra) : mêmes options d'affichage que sa page de la
+// bibliothèque, verset écrit deux fois et commentaire de Rachi.
+const { doubleVerses: chneiMikraDouble, withRashi: chneiMikraRashi } = useChneiMikraOptions();
 
 const ALL_TYPE = "Tout";
 
@@ -303,7 +308,6 @@ async function toggleOptionCompleted(key: DailyOptionKey) {
     all_done: allDone.value,
   });
 }
-
 
 /**
  * Applique les préférences du compte à la page. Hors connexion, elles viennent
@@ -699,7 +703,9 @@ function formatReminderTime(hour: number, minute: number): string {
 function reminderSummary(choice: ReminderChoice): string {
   const parts: string[] = [];
   if (choice.daily) {
-    parts.push(t("notifications.summaryDaily", { time: formatReminderTime(choice.hour, choice.minute) }));
+    parts.push(
+      t("notifications.summaryDaily", { time: formatReminderTime(choice.hour, choice.minute) }),
+    );
   }
   if (choice.sunset) {
     parts.push(t("notifications.summarySunset", { minutes: SUNSET_REMINDER_OFFSET_MINUTES }));
@@ -850,11 +856,7 @@ function formatBookName(livre: string): string {
 
     <!-- Hors connexion : la page reste lisible (textes téléchargés), mais rien
          n'est modifiable, le serveur reste seul maître de la liste. -->
-    <div
-      v-if="!online"
-      class="card p-4 mb-6 flex items-start gap-3"
-      role="status"
-    >
+    <div v-if="!online" class="card p-4 mb-6 flex items-start gap-3" role="status">
       <AppIcon name="signal" :size="16" class="text-text-secondary/70 mt-0.5 shrink-0" />
       <p class="text-sm text-text-secondary leading-relaxed">
         {{ t("dailyReading.offline.banner") }}
@@ -1231,12 +1233,17 @@ function formatBookName(livre: string): string {
 
             <CollapseTransition>
               <div v-show="!collapsedIds.has('parasha')">
+                <!-- Options de lecture : verset écrit deux fois, Rachi -->
+                <ChneiMikraOptions class="mb-5" source="daily_reading" />
+
                 <div class="space-y-8">
                   <DailyReadingItem
                     v-for="entry in weeklyParasha.entries"
                     :key="entry.id"
                     :entry="entry"
                     :with-targoum="true"
+                    :double-verses="chneiMikraDouble"
+                    :with-rashi="chneiMikraRashi"
                   />
                 </div>
 
