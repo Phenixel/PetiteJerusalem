@@ -854,6 +854,9 @@ const fr = {
     next: "Paracha suivante",
     backToThisWeek: "Revenir à la paracha de cette semaine",
     unavailable: "La paracha de cette semaine n'a pas pu être déterminée.",
+    doubleVerses: "Chaque verset deux fois",
+    withRashi: "Commentaire de Rachi",
+    rashiUnavailable: "Le commentaire de Rachi n'a pas pu être chargé.",
   },
   study: {
     title: "Bibliothèque",

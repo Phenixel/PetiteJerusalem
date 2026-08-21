@@ -819,6 +819,9 @@ const he: LocaleMessages = {
     next: "הפרשה הבאה",
     backToThisWeek: "חזרה לפרשת השבוע",
     unavailable: "לא ניתן לקבוע את פרשת השבוע.",
+    doubleVerses: "כל פסוק פעמיים",
+    withRashi: "פירוש רש״י",
+    rashiUnavailable: "לא ניתן לטעון את פירוש רש״י.",
   },
   study: {
     title: "ספרייה",

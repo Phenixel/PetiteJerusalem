@@ -114,6 +114,37 @@ describe("ChneiMikraPage", () => {
     expect(page.text()).toContain("Revenir à la paracha de cette semaine");
   });
 
+  it("propose les options de lecture et les retient", async () => {
+    const page = mount(ChneiMikraPage);
+    await page.router.push("/bibliotheque/chnei-mikra");
+    await page.router.isReady();
+    await nextTick();
+
+    expect(page.text()).toContain("Chaque verset deux fois");
+    expect(page.text()).toContain("Commentaire de Rachi");
+    const toggles = [...page.host.querySelectorAll('input[type="checkbox"]')] as HTMLInputElement[];
+    expect(toggles.length).toBe(2);
+    // Écrire le verset deux fois est la pratique même du chnei mikra : actif
+    // par défaut. Rachi est un accompagnement : à activer soi-même.
+    expect(toggles[0].checked).toBe(true);
+    expect(toggles[1].checked).toBe(false);
+
+    toggles[1].click();
+    await nextTick();
+    expect(JSON.parse(localStorage.getItem("pj-chnei-mikra-options")!)).toEqual({
+      doubleVerses: true,
+      withRashi: true,
+    });
+
+    // L'état par défaut est rendu aux tests suivants : le réglage est partagé.
+    toggles[1].click();
+    await nextTick();
+    expect(JSON.parse(localStorage.getItem("pj-chnei-mikra-options")!)).toEqual({
+      doubleVerses: true,
+      withRashi: false,
+    });
+  });
+
   it("retombe sur la semaine en cours quand l'URL ne vaut rien", async () => {
     // Lien tronqué, ou Chabbat de fête sans paracha ordinaire : une page utile
     // vaut mieux qu'une erreur.

@@ -14,7 +14,9 @@ import { seoService } from "../../services/seoService";
 import { analyticsService } from "../../services/analyticsService";
 import { useReadingSize } from "../../composables/useReadingSize";
 import { useReadingPinch } from "../../composables/useReadingPinch";
+import { useChneiMikraOptions } from "../../composables/useChneiMikraOptions";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import ChneiMikraOptions from "../../components/ChneiMikraOptions.vue";
 import DailyReadingItem from "./DailyReadingItem.vue";
 
 /**
@@ -37,6 +39,8 @@ const router = useRouter();
 const readingSize = useReadingSize();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
+// Verset écrit deux fois, Rachi : réglage partagé avec la lecture quotidienne.
+const { doubleVerses, withRashi } = useChneiMikraOptions();
 
 const WEEK_PARAM = "semaine";
 
@@ -184,6 +188,9 @@ watch(title, applySeoMeta, { immediate: true });
           </div>
         </div>
 
+        <!-- Options de lecture : verset écrit deux fois, commentaire de Rachi -->
+        <ChneiMikraOptions class="mt-4" source="library_chnei_mikra" />
+
         <!-- La paracha change : on remonte des composants neufs plutôt que de
              recycler ceux du texte précédent, marque-pages compris. -->
         <div :key="parasha.weekKey" class="mt-8 space-y-10">
@@ -192,6 +199,8 @@ watch(title, applySeoMeta, { immediate: true });
             :key="entry.id"
             :entry="entry"
             :with-targoum="true"
+            :double-verses="doubleVerses"
+            :with-rashi="withRashi"
             source="library_chnei_mikra"
           />
         </div>

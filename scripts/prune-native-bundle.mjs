@@ -21,9 +21,13 @@ import { join } from "node:path";
 
 const root = process.argv[2] ?? "dist";
 
-const PRUNED_DIRS = ["texts/talmud", "texts/mishna", "texts/tanakh", "texts/tefila"].map((d) =>
-  join(root, d),
-);
+const PRUNED_DIRS = [
+  "texts/talmud",
+  "texts/mishna",
+  "texts/tanakh",
+  "texts/rashi",
+  "texts/tefila",
+].map((d) => join(root, d));
 const PRUNED_FILES = ["sitemap.xml", "robots.txt", "llms.txt"].map((f) => join(root, f));
 
 /** Tous les fichiers .html sous `dir`, récursivement. */

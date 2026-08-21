@@ -545,3 +545,54 @@ export async function loadText(textStudy: TextStudyJsonEntry): Promise<TextConte
   const talmudChapters = String(textStudy.type) === "Talmud Bavli" ? await getTalmudChapters() : {};
   return parseContent(textStudy, data, talmudChapters);
 }
+
+// ---- Rachi sur la paracha (option du chnei mikra) -------------------------
+
+/** Un commentaire de Rachi, dibbour hamat'hil séparé pour la mise en avant. */
+export interface RashiComment {
+  /** Les mots du verset commentés (en gras dans la source), parfois absents. */
+  lead: string;
+  text: string;
+}
+
+/** « <b>וישמע יתרו.</b> מה שמועה שמע… » → dibbour en avant, texte nettoyé. */
+export function parseRashiComment(raw: string): RashiComment | null {
+  const m = raw.match(/^\s*<b>([^<]*)<\/b>\s*([\s\S]*)$/);
+  const lead = m ? cleanText(m[1]) : "";
+  const text = cleanText(m ? m[2] : raw);
+  if (!lead && !text) return null;
+  return { lead, text };
+}
+
+/**
+ * Le fichier Rachi d'une paracha (public/texts/rashi/<id>.json, voir
+ * download-texts.mjs) → les commentaires par verset, à plat dans l'ordre de
+ * lecture. Le fichier porte la même grille montées × versets que le fichier de
+ * la paracha : une fois aplati, l'index d'une ligne est celui du verset dans
+ * `he`, le lecteur n'a qu'à se repérer par index. Un verset sans commentaire a
+ * un tableau vide.
+ */
+export function parseParashaRashi(data: { he?: unknown[] }): RashiComment[][] {
+  const lines: RashiComment[][] = [];
+  for (const group of data.he ?? []) {
+    if (!Array.isArray(group)) continue;
+    for (const verse of group) {
+      lines.push(
+        (Array.isArray(verse) ? verse : [])
+          .map((comment) => parseRashiComment(String(comment)))
+          .filter((comment): comment is RashiComment => comment !== null),
+      );
+    }
+  }
+  return lines;
+}
+
+/** Rachi sur une paracha (option du chnei mikra), voir {@link parseParashaRashi}. */
+export async function loadParashaRashi(textStudy: TextStudyJsonEntry): Promise<RashiComment[][]> {
+  const res = await fetchTextResponse(`/texts/rashi/${textStudy.id}.json`);
+  if (!res.ok) {
+    if (res.status === 404) throw new MissingTextFileError();
+    throw new Error(`Rachi non disponible (${res.status})`);
+  }
+  return parseParashaRashi((await res.json()) as { he?: unknown[] });
+}
