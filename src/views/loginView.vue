@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { Capacitor } from "@capacitor/core";
 import { authService } from "../services/authService";
+import { isAuthCancellation } from "../services/authErrors";
 import { reservationService } from "../services/reservationService";
 import { guestService } from "../services/guestService";
 import { seoService } from "../services/seoService";
@@ -83,7 +84,8 @@ async function loginWithGoogle() {
   errorDetail.value = null;
   // Funnel de connexion Google (suivi du bug « bouton inerte ») :
   // google_signin_clicked → signed_in {method: google}, avec en route
-  // google_signin_fallback_used et/ou google_signin_failed.
+  // google_signin_fallback_used, google_signin_cancelled et/ou
+  // google_signin_failed.
   analyticsService.capture("google_signin_clicked");
   try {
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
@@ -96,6 +98,13 @@ async function loginWithGoogle() {
 
     router.push(redirectPath);
   } catch (e: unknown) {
+    // Sélecteur quitté, popup fermée : un renoncement, pas une panne. Ni
+    // Error tracking ni message à l'écran ; un événement funnel tout de même,
+    // pour que ces clics sans suite ne ressemblent pas au bug « bouton inerte ».
+    if (isAuthCancellation(e)) {
+      analyticsService.capture("google_signin_cancelled");
+      return;
+    }
     console.error("Connexion Google échouée:", e);
     analyticsService.captureException(e, { auth_flow: "google" });
     analyticsService.capture("google_signin_failed", {
@@ -124,6 +133,8 @@ async function loginWithApple() {
 
     router.push(redirectPath);
   } catch (e: unknown) {
+    // Feuille Apple refusée par l'utilisateur : un renoncement, pas une panne.
+    if (isAuthCancellation(e)) return;
     console.error("Connexion Apple échouée:", e);
     analyticsService.captureException(e, { auth_flow: "apple" });
     errorMessage.value = t("login.appleError");
