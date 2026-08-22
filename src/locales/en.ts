@@ -103,6 +103,17 @@ const en: LocaleMessages = {
       resumeDismiss: "Stop suggesting this reading",
       sessionsTitle: "My sessions",
     },
+    // Siddur shortcut: during a prayer's time window, the home page links
+    // straight to the text.
+    sidourNow: {
+      title: "It's time for {tefila}",
+      until: "until {time}",
+      names: {
+        chaharit: "Shacharit",
+        minha: "Mincha",
+        arvit: "Arvit",
+      },
+    },
     memorial: {
       title: "In memory of",
       dedication:
@@ -799,6 +810,51 @@ const en: LocaleMessages = {
     slihotWindowDay:
       "During the day, if the night was not possible: they may still be said until shkia, sunset ({sunset}).",
     slihotWindowPlace: "Times for {city}.",
+    // Siddur: the time of a moment of prayer, placed right before what is read
+    // (see TefilaZman.vue; keys d1..dN are the lines behind the "i").
+    zman: {
+      info: "About these times",
+      place: "Times for {city}.",
+      chaharit: {
+        title: "Shacharit times",
+        main: "From {misheyakir} to {hatsot}",
+        d1: "From misheyakir ({misheyakir}), when blue and white can be told apart, one may put on talit and tefillin and say the Shema.",
+        d2: "The most fitting moment for the Amida is sunrise ({netz}), like the vatikin.",
+        d3: "The Amida is best said within the first four solar hours, until {tefila}.",
+        d4: "If prevented, one may still pray until chatzot ({hatsot}).",
+      },
+      shema: {
+        title: "Latest time for Shema",
+        main: "Say it before {shema}",
+        d1: "The Shema is said within the first three solar hours of the day.",
+        d2: "Magen Avraham, counting from dawn: {shemaMGA}.",
+        d3: "Vilna Gaon, counting from sunrise: {shema}. Past that time it is still read, but without its mitzvah in its time.",
+      },
+      amida: {
+        title: "Latest time for the Amida",
+        main: "Say it before {tefila}",
+        d1: "The morning Amida is said within the first four solar hours: {tefilaMGA} per the Magen Avraham, {tefila} per the Vilna Gaon.",
+        d2: "Past that time one may still pray until chatzot ({hatsot}), without the reward of a prayer said in its time.",
+      },
+      minha: {
+        title: "Mincha times",
+        main: "From {minhaGuedola} to {chkia}",
+        d1: "Mincha gedola ({minhaGuedola}): half a solar hour after chatzot, the earliest time for Mincha.",
+        d2: "Mincha ketana ({minhaKetana}): the most fitting moment for most opinions.",
+        d3: "Plag hamincha ({plag}): after it, some already say Arvit.",
+        d4: "Mincha is said until shkia ({chkia}); when needed, some allow until nightfall.",
+      },
+      arvit: {
+        title: "Arvit times",
+        main: "From {tset}",
+        d1: "The evening Shema is said after nightfall ({tset}).",
+        d2: "It is best to pray before midnight ({hatsotLayla}).",
+        d3: "If prevented, Arvit may be said all night, until dawn.",
+      },
+    },
+    // Siddur: at the end of Mincha, Arvit is one tap away.
+    sidourNext: "Continue with {name}",
+    sidourNextHint: "After nightfall, Arvit follows Mincha.",
   },
   accountCta: {
     title: "Create your free account",
@@ -876,7 +932,8 @@ const en: LocaleMessages = {
   },
   study: {
     title: "Library",
-    subtitle: "Read and study the texts: Tehilim, Mishnah, Talmud, Tanakh, Selichot and Berakhot.",
+    subtitle:
+      "Read and study the texts: Tehilim, Mishnah, Talmud, Tanakh, Siddur, Selichot and Berakhot.",
     searchPlaceholder: "Search a text…",
     searchAllPlaceholder: "Search all texts…",
     noResults: "No text matches your search.",
@@ -887,6 +944,7 @@ const en: LocaleMessages = {
       mishna: "Mishnah",
       talmud: "Talmud",
       tanakh: "Tanakh",
+      sidour: "Siddur",
       slihot: "Selichot",
       brahot: "Berakhot",
     },
@@ -895,6 +953,8 @@ const en: LocaleMessages = {
       michnaDesc: "The six sedarim of the Mishnah, tractate by tractate, chapter by chapter.",
       talmudDesc: "The Gemara: the tractates of the Babylonian Talmud, daf after daf.",
       tanakhDesc: "The Torah parasha by parasha, the Neviim and the Ketuvim.",
+      sidourDesc:
+        "Weekday Shacharit, Mincha and Arvit, with prayer times for where you are and the day's calendar additions.",
       slihotDesc:
         "The Sephardic Selichot, in Hebrew and phonetics, for Elul and the ten days of teshuva.",
       brahotDesc:
@@ -903,6 +963,7 @@ const en: LocaleMessages = {
       michnaSearch: "Search a mishnah…",
       talmudSearch: "Search a Talmud tractate…",
       tanakhSearch: "Search a parasha or book…",
+      sidourSearch: "Search the Siddur…",
       slihotSearch: "Search the Selichot…",
       brahotSearch: "Search a blessing…",
     },

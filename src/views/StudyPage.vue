@@ -123,6 +123,14 @@ const CORPUS_META: {
   // Liturgie : des textes qu'on lit, pas qu'on partage, jamais proposés au
   // partage de lecture (voir isShareable dans content/etudeTexts).
   {
+    corpus: "sidour",
+    typeKey: "Sidour",
+    labelKey: "study.types.sidour",
+    descKey: "study.corpus.sidourDesc",
+    searchKey: "study.corpus.sidourSearch",
+    shelf: 2,
+  },
+  {
     corpus: "slihot",
     typeKey: "Slihot",
     labelKey: "study.types.slihot",

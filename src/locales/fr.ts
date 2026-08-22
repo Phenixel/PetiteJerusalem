@@ -102,6 +102,17 @@ const fr = {
       resumeDismiss: "Ne plus proposer cette lecture",
       sessionsTitle: "Mes sessions",
     },
+    // Raccourci du sidour : pendant la plage horaire d'un office, l'accueil
+    // mène directement au texte.
+    sidourNow: {
+      title: "C'est le temps de {tefila}",
+      until: "jusqu'à {time}",
+      names: {
+        chaharit: "Cha'harit",
+        minha: "Min'ha",
+        arvit: "Arvit",
+      },
+    },
     memorial: {
       title: "À la mémoire de",
       dedication:
@@ -811,6 +822,51 @@ const fr = {
     slihotWindowDay:
       "En journée, si la nuit n\u2019a pas été possible\u00a0: on peut encore les rattraper jusqu\u2019à la chkia, le coucher du soleil ({sunset}).",
     slihotWindowPlace: "Heures pour {city}.",
+    // Sidour : l'horaire d'un moment de la prière, posé avant ce qui se lit
+    // (voir TefilaZman.vue ; les clés d1..dN sont les lignes du « i »).
+    zman: {
+      info: "À propos de cet horaire",
+      place: "Heures pour {city}.",
+      chaharit: {
+        title: "Horaire de Cha'harit",
+        main: "De {misheyakir} à {hatsot}",
+        d1: "Dès misheyakir ({misheyakir}), quand on distingue le bleu du blanc, on peut mettre le talith et les tefilins et dire le Chéma.",
+        d2: "Le moment le plus indiqué pour la Amida est le lever du soleil ({netz}), comme les vatikin.",
+        d3: "La Amida se dit de préférence dans les quatre premières heures solaires, jusqu'à {tefila}.",
+        d4: "En cas d'empêchement, on peut encore prier jusqu'à 'hatsot ({hatsot}).",
+      },
+      shema: {
+        title: "Fin du Chéma",
+        main: "À dire avant {shema}",
+        d1: "Le Chéma se dit dans les trois premières heures solaires du jour.",
+        d2: "Selon le Maguen Avraham, qui compte depuis l'aube : {shemaMGA}.",
+        d3: "Selon le Gaon de Vilna, qui compte depuis le lever du soleil : {shema}. Passé l'heure, on le lit encore, mais sans sa mitsva à son heure.",
+      },
+      amida: {
+        title: "Fin de la Amida",
+        main: "À dire avant {tefila}",
+        d1: "La Amida du matin se dit dans les quatre premières heures solaires : {tefilaMGA} selon le Maguen Avraham, {tefila} selon le Gaon de Vilna.",
+        d2: "Passé l'heure, on peut encore prier jusqu'à 'hatsot ({hatsot}), sans la récompense de la prière dite à son heure.",
+      },
+      minha: {
+        title: "Horaire de Min'ha",
+        main: "De {minhaGuedola} à {chkia}",
+        d1: "Min'ha guedola ({minhaGuedola}) : une demi-heure solaire après 'hatsot, le début du temps de Min'ha.",
+        d2: "Min'ha ketana ({minhaKetana}) : le moment le plus indiqué selon la plupart des avis.",
+        d3: "Plag hamin'ha ({plag}) : après lui, certains disent déjà Arvit.",
+        d4: "On prie jusqu'à la chkia ({chkia}) ; en cas de besoin, certains permettent encore jusqu'à la sortie des étoiles.",
+      },
+      arvit: {
+        title: "Horaire d'Arvit",
+        main: "À partir de {tset}",
+        d1: "Le Chéma du soir se dit après la sortie des étoiles ({tset}).",
+        d2: "Le mieux est de prier avant 'hatsot de la nuit ({hatsotLayla}).",
+        d3: "En cas d'empêchement, Arvit se dit toute la nuit, jusqu'à l'aube.",
+      },
+    },
+    // Sidour : à la fin de Min'ha, Arvit est à un geste.
+    sidourNext: "Enchaîner avec {name}",
+    sidourNextHint: "À la sortie des étoiles, Arvit suit Min'ha.",
   },
   accountCta: {
     title: "Créez votre compte gratuit",
@@ -889,7 +945,8 @@ const fr = {
   },
   study: {
     title: "Bibliothèque",
-    subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud, Tanakh, Sli'hot et Brahot.",
+    subtitle:
+      "Lisez et étudiez les textes : Tehilim, Michna, Talmud, Tanakh, Sidour, Sli'hot et Brahot.",
     searchPlaceholder: "Rechercher un texte…",
     searchAllPlaceholder: "Rechercher dans tous les textes…",
     noResults: "Aucun texte ne correspond à votre recherche.",
@@ -900,6 +957,7 @@ const fr = {
       mishna: "Michna",
       talmud: "Talmud",
       tanakh: "Tanakh",
+      sidour: "Sidour",
       slihot: "Sli'hot",
       brahot: "Brahot",
     },
@@ -908,6 +966,8 @@ const fr = {
       michnaDesc: "Les six sédarim de la Michna, traité par traité, chapitre par chapitre.",
       talmudDesc: "La Guemara : les traités du Talmud Bavli, pour avancer daf après daf.",
       tanakhDesc: "La Torah paracha par paracha, les Neviim et les Ketouvim.",
+      sidourDesc:
+        "Cha'harit, Min'ha et Arvit de la semaine, avec les horaires au lieu où l'on se trouve et les ajouts du calendrier au jour le jour.",
       slihotDesc:
         "Les Sli'hot du rite séfarade, en hébreu et en phonétique, pour Eloul et les dix jours de techouva.",
       brahotDesc:
@@ -916,6 +976,7 @@ const fr = {
       michnaSearch: "Rechercher une michna…",
       talmudSearch: "Rechercher un traité du Talmud…",
       tanakhSearch: "Rechercher une paracha ou un livre…",
+      sidourSearch: "Rechercher dans le Sidour…",
       slihotSearch: "Rechercher dans les Sli'hot…",
       brahotSearch: "Rechercher une brakha…",
     },

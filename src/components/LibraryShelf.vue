@@ -35,6 +35,7 @@ const BINDINGS: Record<string, string> = {
   michna: "#7d6a4c",
   talmud: "#6d5743",
   tanakh: "#84483f",
+  sidour: "#6e4551",
   slihot: "#7a5c36",
   brahot: "#5f6249",
 };
