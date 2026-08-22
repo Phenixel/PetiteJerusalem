@@ -11,9 +11,29 @@ import { entryByCorpusSlug } from "../content/etudeTexts";
 const hd = (y: number, m: number, d: number) => new HDate(new Date(y, m - 1, d, 12));
 
 describe("activeOccasions", () => {
-  it("jour ordinaire : aucun ajout", () => {
-    // Mardi 18 août 2026, 5 Eloul.
-    expect(activeOccasions(hd(2026, 8, 18), false).size).toBe(0);
+  it("jour ordinaire : aucun ajout du calendrier", () => {
+    // Mardi 18 août 2026, 5 Eloul. Les clés permanentes du sidour (saison,
+    // tahanoun, jour de la semaine, Lédavid en Eloul) sont là ; aucun ajout
+    // de fête ne s'affiche.
+    const occ = activeOccasions(hd(2026, 8, 18), false);
+    const additions = [
+      "shabbat",
+      "shabbat-or-moed",
+      "rosh-chodesh",
+      "rosh-hashana",
+      "yom-tov",
+      "moed",
+      "moadim",
+      "nissim",
+      "teshuva",
+      "torah-semaine",
+    ];
+    expect(additions.filter((key) => occ.has(key))).toEqual([]);
+    expect(occ.has("ete")).toBe(true);
+    expect(occ.has("barkhenou")).toBe(true);
+    expect(occ.has("tahanoun")).toBe(true);
+    expect(occ.has("jour-2")).toBe(true);
+    expect(occ.has("ledavid")).toBe(true);
   });
 
   it("Chabbat : Retsé, mais pas Yaalé véyavo", () => {

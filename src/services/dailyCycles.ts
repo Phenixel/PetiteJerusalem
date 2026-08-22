@@ -1,4 +1,4 @@
-import { HDate, Sedra, flags, getHolidaysOnDate, months } from "@hebcal/core";
+import { HDate, Sedra, flags, getHolidaysOnDate, months, tachanun } from "@hebcal/core";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { TORAH_LIVRES } from "../content/etudeTexts";
@@ -201,6 +201,43 @@ function toCycle(day: number, ranges: [number, number][]): TehilimCycle {
 }
 
 /**
+ * L'hiver de la Amida (« machiv haroua'h oumorid haguéchem ») : du 22 Tichri
+ * au 14 Nissan inclus. Les bascules exactes se font à Moussaf de Chemini
+ * Atséret et de Pessah, deux Yom Tov où le sidour de semaine ne se lit pas :
+ * à la journée près, la règle est exacte pour tous les jours qu'il couvre.
+ */
+export function isWinterMention(hd: HDate): boolean {
+  const year = hd.getFullYear();
+  const start = new HDate(22, months.TISHREI, year).abs();
+  const end = new HDate(14, months.NISAN, year).abs();
+  const abs = hd.abs();
+  return abs >= start && abs <= end;
+}
+
+/** Année civile bissextile (grégorienne). */
+const isGregLeap = (y: number): boolean => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+
+/**
+ * La demande de pluie (« barekh alénou », avec tal oumatar) : en Israël dès le
+ * 7 'Hechvan, en diaspora depuis Arvit du 4 décembre (du 5 quand le février
+ * suivant compte 29 jours). Le jour hébraïque bascule à la chkia : celui qui
+ * commence le 4 décembre au soir porte la date civile du 5, la comparaison se
+ * fait donc sur le 5 (ou le 6). Dans les deux calendriers, on la dit jusqu'au
+ * 14 Nissan inclus, la veille de Pessah.
+ */
+export function isRainRequest(hd: HDate, il: boolean): boolean {
+  const year = hd.getFullYear();
+  const abs = hd.abs();
+  const end = new HDate(14, months.NISAN, year).abs();
+  if (abs > end) return false;
+  if (il) return abs >= new HDate(7, months.CHESHVAN, year).abs();
+  // Décembre de l'année civile où cette année hébraïque a commencé.
+  const civilYear = new HDate(1, months.TISHREI, year).greg().getFullYear();
+  const startDay = isGregLeap(civilYear + 1) ? 6 : 5;
+  return abs >= new HDate(new Date(civilYear, 11, startDay)).abs();
+}
+
+/**
  * Occasions du calendrier actives un jour hébraïque donné : les clés `when`
  * des blocs conditionnels des textes de tefila (public/texts/tefila/*),
  * qui ne s'affichent que le jour où leur ajout se dit, Retsé le Chabbat,
@@ -238,6 +275,48 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // Ils n'ouvrent aucun ajout à eux seuls, ils déplient les encadrés des
   // Sli'hot, qui restent lisibles le reste de l'année (voir TextBlock.fold).
   if (hd.getMonth() === months.TISHREI && hd.getDate() <= 10) occ.add("teshuva");
+
+  // --- Sidour de semaine ---------------------------------------------------
+  // L'été et l'hiver de la Amida : la mention de la pluie (22 Tichri au
+  // 14 Nissan) et sa demande (7 'Hechvan en Israël, début décembre en
+  // diaspora). Deux paires de clés exclusives : chaque variante du texte
+  // porte la sienne, seule celle du jour s'affiche.
+  occ.add(isWinterMention(hd) ? "hiver" : "ete");
+  occ.add(isRainRequest(hd, il) ? "barekh-alenou" : "barkhenou");
+  // Le tahanoun, par office : il tombe à Roch Hodech, aux fêtes, tout
+  // Nissan… et l'après-midi seulement la veille d'un jour où il tombe.
+  // Rien le Chabbat : le sidour de semaine ne s'y lit pas.
+  if (hd.getDay() !== 6) {
+    const said = tachanun(hd, il);
+    if (said.shacharit) occ.add("tahanoun");
+    if (said.mincha) occ.add("tahanoun-minha");
+    // Les supplications longues du lundi et du jeudi accompagnent le
+    // tahanoun : elles tombent avec lui.
+    if (said.shacharit && (hd.getDay() === 1 || hd.getDay() === 4))
+      occ.add("tahanoun-lundi-jeudi");
+  }
+  // La lecture de la Torah des lundis et jeudis ordinaires : le début de la
+  // paracha de la semaine. Les jours à lecture propre (Roch Hodech, 'Hanouka,
+  // Pourim, jeûnes publics, 'Hol haMoed) lisent leur passage, pas celui-là.
+  // Les jeûnes de coutume (BeHaB, Yom Kippour Katan) gardent la lecture
+  // ordinaire : hebcal les marque pourtant comme jeûnes, on les écarte.
+  const publicFast = events.some(
+    (ev) =>
+      (ev.getFlags() & (flags.MAJOR_FAST | flags.MINOR_FAST)) !== 0 &&
+      !/^(Ta'anit BeHaB|Yom Kippur Katan)/.test(ev.getDesc()),
+  );
+  const ownReading =
+    occ.has("rosh-chodesh") || occ.has("nissim") || publicFast || has(flags.CHOL_HAMOED);
+  if ((hd.getDay() === 1 || hd.getDay() === 4) && !ownReading) occ.add("torah-semaine");
+  // Le jour de la semaine (0 = dimanche) : le chir chel yom n'affiche que le
+  // psaume du jour.
+  occ.add(`jour-${hd.getDay()}`);
+  // Lédavid (psaume 27) : du 1er Eloul à Hochana Rabba (21 Tichri).
+  if (
+    hd.getMonth() === months.ELUL ||
+    (hd.getMonth() === months.TISHREI && hd.getDate() <= 21)
+  )
+    occ.add("ledavid");
   return occ;
 }
 
