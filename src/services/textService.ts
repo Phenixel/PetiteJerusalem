@@ -100,6 +100,30 @@ export interface TextBlock {
   variants?: boolean;
   /** Tefila : des paragraphes numérotés et séparés (les sept bénédictions). */
   numbered?: boolean;
+  /**
+   * Tefila : un bloc `when` qui garde le rendu du fil ordinaire. La couleur du
+   * thème dit « c'est l'ajout du jour » ; elle serait mensongère sur ce qui
+   * n'est pas un ajout, le psaume du jour ou le tahanoun, conditionnels mais
+   * ordinaires.
+   */
+  plain?: boolean;
+  /**
+   * Sidour : l'horaire à afficher avant ce qui se lit (« fin du Chéma » avant
+   * le Chéma…). Clé d'un horaire connu du lecteur (voir TefilaZman.vue) ;
+   * le bloc n'a alors pas de texte.
+   */
+  zman?: string;
+  /**
+   * Sidour : la halakha qui accompagne le passage (« en cas d'erreur, on
+   * reprend… »), affichée au-dessus du bloc dans la langue du lecteur.
+   */
+  halakha?: Rubric;
+  /**
+   * Sidour : à cet endroit s'insère la lecture de la Torah de la semaine (la
+   * 1re montée de la paracha), que le lecteur charge et injecte lui-même :
+   * elle change chaque semaine, le fichier ne peut pas la porter.
+   */
+  torahWeekly?: boolean;
   /** Tefila : le détail de mise en forme, ligne à ligne. */
   paragraphs?: TextParagraph[];
 }
@@ -194,11 +218,12 @@ export function resolveFilePath(textStudy: TextStudyJsonEntry): string {
       return `/texts/talmud/${tractateSlug(tractateFromLink(textStudy.link))}.json`;
     case "Tanakh":
       return `/texts/tanakh/${textStudy.id}.json`;
-    // Liturgie (Sli'hot, Brahot) : un fichier par entrée, nommé par sa
+    // Liturgie (Sli'hot, Brahot, Sidour) : un fichier par entrée, nommé par sa
     // translittération latine, « ברכה אחרונה (Brakha A'harona) » →
     // brakha-aharona.json, comme les traités de la Michna et du Talmud.
     case "Slihot":
-    case "Brahot": {
+    case "Brahot":
+    case "Sidour": {
       const latin = textStudy.name.match(/\(([^)]+)\)\s*$/)?.[1] ?? String(textStudy.id);
       return `/texts/tefila/${tractateSlug(latin)}.json`;
     }
@@ -421,6 +446,10 @@ interface TefilaFileBlock {
   fold?: string;
   variants?: boolean;
   numbered?: boolean;
+  plain?: boolean;
+  zman?: string;
+  halakha?: Rubric;
+  torahWeekly?: boolean;
   lines?: (string | TefilaFileLine)[];
 }
 
@@ -474,7 +503,9 @@ function loadTefila(
     const paragraphs = (Array.isArray(raw?.lines) ? raw.lines : [])
       .map(parseTefilaLine)
       .filter((p): p is TextParagraph => p !== null);
-    if (paragraphs.length === 0) continue;
+    // Les marqueurs (horaire, Torah de la semaine) n'ont pas de texte à eux :
+    // ils passent quand même, c'est le lecteur qui les remplit.
+    if (paragraphs.length === 0 && !raw?.zman && !raw?.torahWeekly) continue;
     const block: TextBlock = {
       label: raw.label ?? "",
       lines: paragraphs.map(paragraphText),
@@ -486,6 +517,10 @@ function loadTefila(
     if (raw.fold) block.fold = raw.fold;
     if (raw.variants) block.variants = true;
     if (raw.numbered) block.numbered = true;
+    if (raw.plain) block.plain = true;
+    if (raw.zman) block.zman = raw.zman;
+    if (raw.halakha) block.halakha = raw.halakha;
+    if (raw.torahWeekly) block.torahWeekly = true;
     blocks.push(block);
     offset += block.lines.length;
   }
@@ -528,6 +563,7 @@ export function parseContent(
       return loadTanakh(textStudy, data as { title?: string; he?: unknown[] });
     case "Slihot":
     case "Brahot":
+    case "Sidour":
       return loadTefila(textStudy, data as { title?: string; blocks?: TefilaFileBlock[] });
     default:
       throw new Error(`Type non supporté : ${textStudy.type}`);

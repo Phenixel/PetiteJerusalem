@@ -5,6 +5,7 @@ import type { Rubric, TextBlock, TextParagraph } from "../../services/textServic
 import type { SupportedLocale } from "../../i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
+import TefilaZman from "./TefilaZman.vue";
 
 /**
  * Rendu des textes de tefila (Sli'hot, Brahot) : le fil du texte en paragraphes
@@ -96,6 +97,13 @@ const repeatBadge = (paragraph: TextParagraph): string =>
 const runText = (text: string, index: number): string => (index === 0 ? text : ` ${text}`);
 
 /**
+ * Un ajout du calendrier au sens fort : conditionnel ET mis en avant. Les
+ * blocs `when` marqués `plain` (le psaume du jour, le tahanoun) sont
+ * conditionnels sans être des ajouts : ils gardent le rendu du fil ordinaire.
+ */
+const isCalendarAdd = (block: TextBlock): boolean => !!block.when && !block.plain;
+
+/**
  * Classe de l'encadré d'un bloc. La couleur du thème dit « c'est maintenant » :
  * un ajout du calendrier ne s'affiche que le jour où il se dit, et un encadré
  * repliable ne se colore que pendant sa saison. Hors saison il reste là, en
@@ -109,7 +117,7 @@ function sectionClass(block: TextBlock): string {
       : `${base} bg-black/[0.04] dark:bg-white/[0.05]`;
   }
   // Ajout du calendrier : à la couleur du thème, adossé à un filet.
-  if (block.when) return "my-7 border-s-2 border-primary/40 ps-4 text-primary";
+  if (isCalendarAdd(block)) return "my-7 border-s-2 border-primary/40 ps-4 text-primary";
   // Variantes : à part du fil, sur un fond neutre, pour qu'on voie qu'on
   // choisit au lieu de tout lire.
   if (block.variants) return "my-6 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] p-4";
@@ -120,7 +128,7 @@ function sectionClass(block: TextBlock): string {
 function titleClass(block: TextBlock, index: number): string {
   if (block.variants) return "mb-3 text-sm font-semibold text-text-secondary";
   const base = "mb-3 text-sm font-semibold text-primary";
-  if (block.when || index === 0) return base;
+  if (isCalendarAdd(block) || index === 0) return base;
   return `${base} mt-10 pt-4 border-t border-black/10 dark:border-white/10`;
 }
 
@@ -131,18 +139,22 @@ function titleClass(block: TextBlock, index: number): string {
 const paragraphTone = (block: TextBlock, paragraph: TextParagraph): string =>
   // Un ajout du calendrier garde la couleur du thème : elle dit déjà « c'est
   // aujourd'hui », l'atténuer reviendrait à le contredire.
-  !block.when && (paragraph.muted || block.variants) ? "text-text-secondary" : "";
+  !isCalendarAdd(block) && (paragraph.muted || block.variants) ? "text-text-secondary" : "";
 
 // Fichier sans mise en forme détaillée : un paragraphe par ligne, sans didascalie.
 const plainParagraphs = (block: TextBlock): TextParagraph[] =>
   block.lines.map((text) => ({ runs: [{ kind: "he", text }] }));
 
 const sections = computed(() =>
-  props.blocks.map((block, index) => ({
-    block,
-    index,
-    paragraphs: block.paragraphs ?? plainParagraphs(block),
-  })),
+  props.blocks
+    // Un marqueur resté vide (la Torah de la semaine qui n'a pas pu se
+    // charger) ne laisse pas un titre orphelin dans le fil.
+    .filter((block) => block.zman || block.lines.length > 0)
+    .map((block, index) => ({
+      block,
+      index,
+      paragraphs: block.paragraphs ?? plainParagraphs(block),
+    })),
 );
 </script>
 
@@ -150,14 +162,17 @@ const sections = computed(() =>
   <div class="reading-liturgy">
     <section
       v-for="{ block, index, paragraphs } in sections"
-      :key="block.offset"
+      :key="`${index}-${block.offset}`"
       :data-when="block.when"
       :data-fold="block.fold"
-      :class="sectionClass(block)"
+      :data-zman="block.zman"
+      :class="block.zman ? '' : sectionClass(block)"
     >
+      <!-- Horaire du moment (fin du Chéma, plage de Min'ha…), avant ce qui se lit. -->
+      <TefilaZman v-if="block.zman" :zman="block.zman" />
       <!-- Ajout des dix jours de pénitence : replié hors saison, mais jamais absent. -->
       <button
-        v-if="block.fold"
+        v-else-if="block.fold"
         type="button"
         class="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
         :aria-expanded="isOpen(block)"
@@ -180,7 +195,7 @@ const sections = computed(() =>
         {{ blockTitle(block) }}
       </p>
 
-      <CollapseTransition>
+      <CollapseTransition v-if="!block.zman">
         <div
           v-show="isOpen(block)"
           :class="[
@@ -188,6 +203,15 @@ const sections = computed(() =>
             block.numbered ? 'reading-numbered divide-y divide-line' : '',
           ]"
         >
+          <!-- La halakha du passage (« en cas d'erreur, on reprend… »), dans la
+               langue du lecteur, avant le texte qu'elle encadre. -->
+          <div
+            v-if="block.halakha"
+            class="mb-4 flex items-start gap-2.5 rounded-lg bg-black/[0.04] dark:bg-white/[0.05] px-3.5 py-2.5"
+          >
+            <AppIcon name="info" :size="14" class="mt-1 flex-shrink-0 text-primary/80" />
+            <p class="reading-halakha min-w-0">{{ say(block.halakha) }}</p>
+          </div>
           <template v-for="(paragraph, i) in paragraphs" :key="block.offset + i">
             <div :class="block.numbered ? 'flex items-start gap-3 py-2' : ''">
               <span
@@ -289,6 +313,15 @@ const sections = computed(() =>
   line-height: 1.75;
   font-style: italic;
   text-align: justify;
+  color: var(--color-text-secondary);
+}
+
+/* La halakha d'un passage : une consigne qui se lit, pas un texte qui se dit.
+   Même registre discret que les didascalies, dans son encadré. */
+.reading-halakha {
+  font-size: calc(0.85rem * var(--reading-scale, 1));
+  font-style: italic;
+  line-height: 1.55;
   color: var(--color-text-secondary);
 }
 
