@@ -204,14 +204,9 @@ const sections = computed(() =>
           ]"
         >
           <!-- La halakha du passage (« en cas d'erreur, on reprend… »), dans la
-               langue du lecteur, avant le texte qu'elle encadre. -->
-          <div
-            v-if="block.halakha"
-            class="mb-4 flex items-start gap-2.5 rounded-lg bg-black/[0.04] dark:bg-white/[0.05] px-3.5 py-2.5"
-          >
-            <AppIcon name="info" :size="14" class="mt-1 flex-shrink-0 text-primary/80" />
-            <p class="reading-halakha min-w-0">{{ say(block.halakha) }}</p>
-          </div>
+               langue du lecteur, avant le texte qu'elle encadre : une simple
+               ligne en petit, dans le registre des didascalies. -->
+          <p v-if="block.halakha" class="reading-halakha">{{ say(block.halakha) }}</p>
           <template v-for="(paragraph, i) in paragraphs" :key="block.offset + i">
             <div :class="block.numbered ? 'flex items-start gap-3 py-2' : ''">
               <span
@@ -317,8 +312,9 @@ const sections = computed(() =>
 }
 
 /* La halakha d'un passage : une consigne qui se lit, pas un texte qui se dit.
-   Même registre discret que les didascalies, dans son encadré. */
+   Même registre discret que les didascalies, en ligne au-dessus du texte. */
 .reading-halakha {
+  margin-bottom: 0.75rem;
   font-size: calc(0.85rem * var(--reading-scale, 1));
   font-style: italic;
   line-height: 1.55;
