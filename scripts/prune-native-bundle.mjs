@@ -14,6 +14,10 @@
 //    .html sont retirés, ainsi que sitemap.xml, robots.txt et llms.txt, qui
 //    parlent aux robots, pas à l'app.
 //
+// 3. Les fichiers de preuve des liens d'application (`.well-known/`) : ils
+//    s'adressent au système depuis le site, pour qu'un lien ouvre l'app
+//    installée ; embarqués dans le bundle, ils ne servent à rien.
+//
 // À lancer entre `vite build` et `cap sync` (voir app:build), jamais pour le
 // déploiement web, qui sert tout cela depuis dist/.
 import { copyFileSync, existsSync, readdirSync, rmdirSync, rmSync } from "node:fs";
@@ -29,6 +33,8 @@ const PRUNED_DIRS = [
   "texts/tefila",
 ].map((d) => join(root, d));
 const PRUNED_FILES = ["sitemap.xml", "robots.txt", "llms.txt"].map((f) => join(root, f));
+/** Ce que seul le site sert : les preuves des liens d'application. */
+const WEB_ONLY_DIRS = [".well-known"].map((d) => join(root, d));
 
 /** Tous les fichiers .html sous `dir`, récursivement. */
 function htmlFiles(dir) {
@@ -75,6 +81,12 @@ for (const dir of PRUNED_DIRS) {
   if (!existsSync(dir)) continue;
   rmSync(dir, { recursive: true });
   console.log(`prune-native-bundle: ${dir} retiré (téléchargeable à la demande dans l'app)`);
+}
+
+for (const dir of WEB_ONLY_DIRS) {
+  if (!existsSync(dir)) continue;
+  rmSync(dir, { recursive: true });
+  console.log(`prune-native-bundle: ${dir} retiré (web uniquement)`);
 }
 
 pruneEmptyDirs(root);

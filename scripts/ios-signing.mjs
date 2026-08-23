@@ -92,7 +92,10 @@ const buildNumber = process.env.IOS_BUILD_NUMBER?.trim();
 // les activait lui-même sur l'App ID ; en manuel, c'est à nous.
 // L'App Group des widgets n'y est pas : l'API App Store Connect ne sait pas
 // créer de groupe, et les widgets ne sont pas dans la v1 (docs/app-widgets.md).
-const CAPABILITIES = ["PUSH_NOTIFICATIONS", "APPLE_ID_AUTH"];
+// ASSOCIATED_DOMAINS : les liens du site ouvrent l'app (docs/app-links.md).
+// La capacité doit être active sur l'App ID avant la création du profil,
+// sinon l'archive est refusée (« doesn't match the entitlements file »).
+const CAPABILITIES = ["PUSH_NOTIFICATIONS", "APPLE_ID_AUTH", "ASSOCIATED_DOMAINS"];
 
 const mode = process.argv.includes("--cleanup") ? "cleanup" : "setup";
 const isCleanup = mode === "cleanup";

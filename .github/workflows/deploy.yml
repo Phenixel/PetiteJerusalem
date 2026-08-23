@@ -24,6 +24,13 @@ jobs:
         run: npm ci
 
       - name: Build web app (type-check, build, SEO prerender)
+        # Les deux valeurs ci-dessous nourrissent les fichiers /.well-known qui
+        # font qu'un lien du site ouvre l'app installée (docs/app-links.md).
+        # Elles sont publiques une fois servies ; absentes, le build passe et
+        # les liens restent simplement dans le navigateur.
+        env:
+          IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
+          ANDROID_APP_LINK_SHA256: ${{ secrets.ANDROID_APP_LINK_SHA256 }}
         run: npm run build
 
       - name: Install Functions dependencies
