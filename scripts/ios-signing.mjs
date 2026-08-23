@@ -17,19 +17,30 @@
  * D'où la signature MANUELLE : un profil « App Store » n'a besoin d'aucun
  * appareil.
  *
- * POURQUOI LE CERTIFICAT N'EST PLUS RÉVOQUÉ EN FIN DE RUN
- * Il l'était, en pariant qu'« Apple re-signe tout ce qui passe par TestFlight
- * et l'App Store ». C'est faux pour l'examen : Apple re-valide la signature
- * D'ORIGINE au moment de la soumission. Le build 3.7.3 (3070300) a été accepté
- * par TestFlight le 17 août 2026, installé et testé, puis rejeté dès sa mise
- * en file d'examen : « ITMS-90035: Invalid Signature », parce que son
- * certificat avait été révoqué quelques minutes après l'envoi.
- * Un certificat doit donc survivre à tout binaire signé avec lui tant que
- * celui-ci est en examen ou en vente. Seul le profil reste éphémère : le
- * recréer est sans conséquence.
- * Le quota Apple est de trois certificats de distribution ; en conserver un
- * n'a rien d'anormal, c'est l'usage courant. Si le quota est atteint, --setup
- * échoue avec la liste des certificats et leur date d'expiration.
+ * QUAND LE CERTIFICAT DU RUN EST RÉVOQUÉ, ET QUAND IL SURVIT
+ * Il était autrefois révoqué à tous les coups, en pariant qu'« Apple re-signe
+ * tout ce qui passe par TestFlight et l'App Store ». C'est faux pour l'examen :
+ * Apple re-valide la signature D'ORIGINE au moment de la soumission. Le build
+ * 3.7.3 (3070300) a été accepté par TestFlight le 17 août 2026, installé et
+ * testé, puis rejeté dès sa mise en file d'examen : « ITMS-90035: Invalid
+ * Signature », parce que son certificat avait été révoqué quelques minutes
+ * après l'envoi. Un certificat doit donc survivre à tout binaire signé avec
+ * lui tant que celui-ci est en examen ou en vente. Seul le profil est
+ * éphémère en toutes circonstances : le recréer est sans conséquence.
+ *
+ * Mais Apple plafonne le compte à TROIS certificats de distribution, et les
+ * garder tous a fini par bloquer le tag v3.7.8 : « You already have a current
+ * Distribution certificate ». Deux garde-fous tiennent le compte sous le
+ * quota, sans jamais toucher à un certificat encore utile :
+ *   --cleanup révoque le certificat du run si rien n'est parti chez Apple
+ *     (échec avant l'envoi, run de debug) : il ne signe alors aucun binaire.
+ *     C'est la variable IOS_BUILD_UPLOADED, posée par deploy-ios.yml juste
+ *     après l'envoi sur TestFlight, qui distingue les deux cas ;
+ *   --setup, avant de créer le sien, révoque les certificats dont plus aucun
+ *     binaire ne dépend. Qui peut partir se décide dans
+ *     scripts/lib/certificate-quota.mjs, testé sans réseau ni macOS ; si
+ *     aucun n'est libérable, le run échoue avec la liste des certificats et
+ *     la raison qui retient chacun.
  *
  * Rien n'est stocké dans le repo : ni .p12, ni profil, ni mot de passe.
  *
@@ -42,8 +53,8 @@
  * par l'export de l'IPA) :
  *   IOS_PROVISIONING_PROFILE     nom du profil (PROVISIONING_PROFILE_SPECIFIER)
  *   IOS_CODE_SIGN_IDENTITY       nom complet de l'identité de signature
- *   IOS_SIGNING_CERTIFICATE_ID   id ASC du certificat (trace de run ; --cleanup
- *                                ne le révoque PAS, cf. plus haut)
+ *   IOS_SIGNING_CERTIFICATE_ID   id ASC du certificat (--cleanup ne le révoque
+ *                                que si le run n'a rien envoyé, cf. plus haut)
  *   IOS_SIGNING_PROFILE_ID       id ASC du profil, pour --cleanup
  *   IOS_SIGNING_KEYCHAIN         trousseau temporaire, pour --cleanup
  */
@@ -52,6 +63,12 @@ import { createPrivateKey, randomBytes, sign as cryptoSign } from "node:crypto";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
+import {
+  CERTIFICATE_QUOTA,
+  distributionCertificates,
+  protectedUploads,
+  revocableCertificates,
+} from "./lib/certificate-quota.mjs";
 
 const BUNDLE_ID = "fr.petitejerusalem.app";
 // Préfixe reconnaissable : --setup fait le ménage des profils laissés par un
@@ -140,11 +157,12 @@ const workDir = process.env.RUNNER_TEMP || tmpdir();
 const keychainPath = join(workDir, "petitejerusalem-signing.keychain-db");
 
 // ---------------------------------------------------------------------------
-// Nettoyage : supprime le profil et le trousseau. PAS le certificat.
+// Nettoyage : supprime le profil, le trousseau, et le certificat du run si
+// celui-ci n'a envoyé aucun binaire.
 // ---------------------------------------------------------------------------
-// Révoquer le certificat ici invaliderait la signature du binaire qui vient
-// d'être envoyé, dès qu'Apple la re-valide à la soumission à l'examen
-// (ITMS-90035). Il reste donc en place ; l'en-tête du fichier détaille le cas.
+// Révoquer le certificat d'un binaire déjà envoyé invaliderait sa signature
+// dès qu'Apple la re-valide à la soumission à l'examen (ITMS-90035) : c'est
+// IOS_BUILD_UPLOADED qui tranche, l'en-tête du fichier détaille le cas.
 if (isCleanup) {
   const profileId = process.env.IOS_SIGNING_PROFILE_ID;
   for (const [label, path] of [["profil", profileId && `/v1/profiles/${profileId}`]]) {
@@ -158,10 +176,22 @@ if (isCleanup) {
       console.warn(`ios-signing: ⚠️ ${label} non supprimé, ${error.message}`);
     }
   }
-  if (process.env.IOS_SIGNING_CERTIFICATE_ID) {
+  const runCertificateId = process.env.IOS_SIGNING_CERTIFICATE_ID;
+  if (runCertificateId && process.env.IOS_BUILD_UPLOADED) {
     console.log(
-      `ios-signing: certificat ${process.env.IOS_SIGNING_CERTIFICATE_ID} conservé (requis tant qu'un build signé avec lui est en examen ou en vente)`,
+      `ios-signing: certificat ${runCertificateId} conservé (requis tant qu'un build signé avec lui est en examen ou en vente)`,
     );
+  } else if (runCertificateId) {
+    // Aucun binaire n'est parti chez Apple : ce certificat ne signe rien que
+    // qui que ce soit re-validera, et le garder mangerait une place du quota
+    // pendant un an. Seul l'IPA archivé dans l'onglet Actions devient
+    // inutilisable pour un envoi manuel ; il faut alors relancer le run.
+    try {
+      await api("DELETE", `/v1/certificates/${runCertificateId}`);
+      console.log(`ios-signing: certificat ${runCertificateId} révoqué, le run n'a envoyé aucun binaire`);
+    } catch (error) {
+      console.warn(`ios-signing: ⚠️ certificat ${runCertificateId} non révoqué, ${error.message}`);
+    }
   }
   const keychain = process.env.IOS_SIGNING_KEYCHAIN || keychainPath;
   if (existsSync(keychain)) {
@@ -209,6 +239,49 @@ for (const capabilityType of CAPABILITIES) {
   }
 }
 
+/**
+ * Fait de la place sous le quota, juste avant la création du certificat du
+ * run : révoque, du plus ancien au plus récent, ceux dont plus aucun binaire
+ * ne dépend, et juste assez pour que la création qui suit passe. La décision
+ * elle-même est dans scripts/lib/certificate-quota.mjs ; ici, les appels à
+ * Apple. Un inventaire impossible ne révoque rien du tout : mieux vaut un run
+ * rouge qu'une signature invalidée sous un binaire en examen.
+ */
+async function freeCertificateSlot(certificates) {
+  let needed = certificates.length - (CERTIFICATE_QUOTA - 1);
+  if (needed <= 0) return;
+  let revocable;
+  try {
+    const apps = await api("GET", `/v1/apps?filter[bundleId]=${BUNDLE_ID}`);
+    const app = apps.data[0];
+    if (!app) throw new Error(`aucune app ${BUNDLE_ID} dans App Store Connect`);
+    const [versions, builds] = await Promise.all([
+      api("GET", `/v1/apps/${app.id}/appStoreVersions?limit=20&include=build`),
+      api("GET", `/v1/builds?filter[app]=${app.id}&sort=-uploadedDate&limit=5`),
+    ]);
+    revocable = revocableCertificates(certificates, protectedUploads(versions, builds));
+  } catch (error) {
+    console.warn(`ios-signing: ⚠️ inventaire des binaires impossible, aucun certificat révoqué, ${error.message}`);
+    return;
+  }
+  for (const certificate of revocable) {
+    if (needed <= 0) break;
+    try {
+      await api("DELETE", `/v1/certificates/${certificate.id}`);
+      certificate.revoked = true;
+      needed -= 1;
+      console.log(
+        `ios-signing: certificat ${certificate.id} révoqué, plus aucun binaire en examen, en vente ou en attente de soumission n'en dépend`,
+      );
+    } catch (error) {
+      console.warn(`ios-signing: ⚠️ certificat ${certificate.id} non révoqué, ${error.message}`);
+    }
+  }
+  for (const certificate of certificates) {
+    if (certificate.keptFor) console.log(`ios-signing: certificat ${certificate.id} conservé, ${certificate.keptFor}`);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // 2. Certificat de distribution (clé privée générée ici, jamais transmise)
 // ---------------------------------------------------------------------------
@@ -233,6 +306,15 @@ run(OPENSSL, [
   "/CN=Petite Jerusalem CI/O=Petite Jerusalem/C=FR",
 ]);
 
+// Apple plafonne le compte à trois certificats de distribution et celui d'un
+// run lui survit (cf. l'en-tête) : sans ce ménage, un tag finit par échouer
+// sur « You already have a current Distribution certificate », ce qui est
+// arrivé au tag v3.7.8.
+const certificates = distributionCertificates(
+  (await api("GET", "/v1/certificates?filter[certificateType]=DISTRIBUTION&limit=200")).data,
+);
+await freeCertificateSlot(certificates);
+
 let certificate;
 try {
   certificate = await api("POST", "/v1/certificates", {
@@ -243,16 +325,19 @@ try {
   });
 } catch (error) {
   if (error.status === 403 || error.status === 409) {
-    const existing = await api("GET", "/v1/certificates?filter[certificateType]=DISTRIBUTION&limit=200")
-      .then((r) => r.data)
-      .catch(() => []);
+    const remaining = certificates.filter((c) => !c.revoked);
     console.error(
       `ios-signing: Apple refuse de créer un certificat de distribution, ${error.message}\n` +
-        `  ${existing.length} certificat(s) de distribution existent déjà (le quota est de 3) :\n` +
-        existing
-          .map((c) => `    ${c.id}  ${c.attributes.displayName ?? "?"}  expire le ${c.attributes.expirationDate ?? "?"}`)
+        `  ${remaining.length} certificat(s) de distribution occupent le quota (${CERTIFICATE_QUOTA}) :\n` +
+        remaining
+          .map(
+            (c) =>
+              `    ${c.id}  ${c.displayName}  expire le ${c.expiration}` +
+              (c.keptFor ? `  (conservé, ${c.keptFor})` : ""),
+          )
           .join("\n") +
-        "\n  En révoquer un sur developer.apple.com → Certificates, puis relancer.",
+        "\n  En révoquer un sur developer.apple.com → Certificates, une fois certain qu'aucun binaire" +
+        "\n  signé avec lui n'est en examen ni en vente, puis relancer.",
     );
     process.exit(1);
   }

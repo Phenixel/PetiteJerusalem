@@ -56,11 +56,12 @@ publique** : il conviendrait à un build de test sans widget, pas à l'App Store
 
 Aucun certificat ni profil de provisionnement n'est stocké dans le repo,
 contrairement au keystore Android. `scripts/ios-signing.mjs` en fabrique un jeu
-**éphémère** au début de chaque run à partir de la clé d'API App Store Connect
-- certificat de distribution, profil « App Store », trousseau temporaire, et
-le détruit à la fin (`--cleanup`, exécuté même quand le build échoue). La même
-clé sert à l'envoi de l'IPA et à la synchronisation de la fiche : c'est le seul
-secret sensible du workflow.
+au début de chaque run à partir de la clé d'API App Store Connect : certificat
+de distribution, profil « App Store », trousseau temporaire. Le nettoyage de
+fin (`--cleanup`, exécuté même quand le build échoue) détruit le trousseau et
+le profil ; le certificat, lui, ne part que si le run n'a rien envoyé chez
+Apple, voir le quota plus bas. La même clé sert à l'envoi de l'IPA et à la
+synchronisation de la fiche : c'est le seul secret sensible du workflow.
 
 ### Pourquoi manuelle et non automatique
 
@@ -91,10 +92,37 @@ Les capacités de l'App ID nécessaires au profil, notifications push et Sign in
 with Apple, sont activées par le script lui-même, ce qu'Xcode faisait
 auparavant tout seul en mode automatique.
 
-Le certificat créé pour le run est **révoqué** à la fin : c'est ce que fait
-aussi Xcode Cloud, et cela garde le compte sous son quota de trois certificats
-de distribution. Les binaires déjà envoyés n'en souffrent pas, Apple re-signe
-tout ce qui passe par TestFlight et l'App Store.
+### Le quota de trois certificats de distribution
+
+Apple n'accepte que **trois certificats de distribution** par compte, et le
+certificat d'un run ne peut pas toujours partir avec lui : contrairement à ce
+qu'on a d'abord cru, Apple ne re-signe pas tout ce qui passe par TestFlight,
+il re-valide la signature **d'origine** à la mise en file d'examen. Le build
+3.7.3, accepté par TestFlight le 17 août 2026, a été rejeté à l'examen d'un
+« ITMS-90035: Invalid Signature » pour cette raison : son certificat avait été
+révoqué quelques minutes après l'envoi.
+
+Un certificat doit donc vivre aussi longtemps qu'un binaire signé avec lui est
+en examen ou en vente, mais pas plus, sinon le quota se remplit et le tag
+suivant échoue sur « You already have a current Distribution certificate »
+(c'est ce qui est arrivé au tag v3.7.8). Deux garde-fous s'en chargent, sans
+qu'aucun geste manuel ne soit nécessaire :
+
+- en fin de run, `--cleanup` révoque le certificat **si rien n'est parti chez
+  Apple** : un run qui échoue avant l'envoi, ou un run de debug, ne laisse
+  donc rien derrière lui. La variable `IOS_BUILD_UPLOADED`, posée par le
+  workflow juste après l'envoi sur TestFlight, distingue les deux cas ;
+- au run suivant, `--setup` révoque, avant de créer le sien, les certificats
+  dont plus aucun binaire ne dépend. L'API ne dit pas quel certificat a signé
+  quel build, mais elle date les deux : un binaire est signé par le dernier
+  certificat créé avant son envoi. Sont protégés les binaires attachés à une
+  version en examen, en attente de publication ou en vente, la version la plus
+  récente de la fiche quel qu'en soit l'état, le dernier binaire envoyé et
+  ceux qu'Apple traite encore.
+
+Si plus rien n'est libérable, le run échoue en affichant la liste des
+certificats et ce qui retient chacun ; la décision revient alors à un humain,
+sur developer.apple.com.
 
 Conséquence : la clé d'API doit avoir le rôle **Admin**. C'est contre-intuitif
 pour une clé de CI, mais Apple réserve la création des certificats de

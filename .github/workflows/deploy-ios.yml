@@ -9,9 +9,12 @@ name: Deploy iOS
 #
 # Le build est signé « dans le nuage » : aucun certificat ni profil de
 # provisionnement n'est stocké dans le repo. scripts/ios-signing.mjs en
-# fabrique un jeu éphémère avec la clé d'API App Store Connect au début du
-# run et le détruit à la fin ; la même clé sert à l'envoi de l'IPA et à la
-# synchronisation de la fiche.
+# fabrique un jeu avec la clé d'API App Store Connect au début du run et fait
+# le ménage à la fin ; la même clé sert à l'envoi de l'IPA et à la
+# synchronisation de la fiche. Le profil est toujours détruit ; le certificat
+# survit au run quand un binaire signé avec lui est parti chez Apple, et le
+# quota de trois certificats de distribution est tenu en révoquant, au run
+# suivant, ceux dont plus aucun binaire ne dépend.
 #
 # La signature est MANUELLE, pas automatique : `xcodebuild archive` en mode
 # automatique réclame un profil de *développement*, lequel exige au moins un
@@ -334,6 +337,11 @@ jobs:
             echo "::error::altool a signalé un échec d'envoi, voir le journal ci-dessus"
             exit 1
           fi
+          # À partir d'ici, le certificat de ce run signe un binaire qu'Apple
+          # re-validera à l'examen : l'étape de nettoyage doit le garder.
+          # Sans cette marque, elle le révoque, et le quota de trois
+          # certificats de distribution ne se remplit plus pour rien.
+          echo "IOS_BUILD_UPLOADED=1" >> "$GITHUB_ENV"
 
       # Fiche App Store (nom, sous-titre, description, mots-clés, nouveautés)
       # synchronisée depuis store-assets/metadata/ios/. Les « Nouveautés »
@@ -356,16 +364,17 @@ jobs:
           fi
 
       # Le profil de ce run est supprimé, même si le build a échoué. Le
-      # CERTIFICAT, LUI, EST CONSERVÉ : il l'était autrefois révoqué ici, en
-      # pariant qu'Apple re-signe tout ce qui passe par TestFlight et l'App
-      # Store. C'est faux à l'examen, où Apple re-valide la signature d'origine.
-      # Le build 3.7.3 (3070300) est passé par TestFlight le 17 août 2026 puis a
-      # été rejeté à sa mise en file d'examen, « ITMS-90035: Invalid
-      # Signature », son certificat ayant été révoqué juste après l'envoi.
-      # Le quota est de trois certificats de distribution : si --setup le
-      # heurte, il affiche la liste et leur expiration. N'en révoquer un qu'une
-      # fois certain qu'aucun build signé avec lui n'est en examen ni en vente.
-      - name: Supprimer le profil du run
+      # CERTIFICAT ne l'est que si rien n'est parti chez Apple, c'est-à-dire
+      # si IOS_BUILD_UPLOADED n'a pas été posée par l'étape d'envoi : un
+      # certificat qui signe un binaire envoyé doit vivre aussi longtemps que
+      # celui-ci est en examen ou en vente, Apple re-validant la signature
+      # d'origine à la mise en file d'examen. Le build 3.7.3 (3070300) est
+      # passé par TestFlight le 17 août 2026 puis a été rejeté là, « ITMS-90035:
+      # Invalid Signature », son certificat ayant été révoqué juste après
+      # l'envoi. Le quota de trois certificats de distribution est tenu à
+      # l'autre bout, par --setup, qui révoque au besoin les certificats
+      # devenus inutiles avant de créer celui du run.
+      - name: Nettoyer la signature du run
         if: always()
         continue-on-error: true
         env:

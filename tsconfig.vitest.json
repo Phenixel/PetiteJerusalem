@@ -6,6 +6,12 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo",
 
     "lib": [],
-    "types": ["node", "jsdom"]
+    "types": ["node", "jsdom"],
+
+    // Les tests qui portent sur un script de CI l'importent directement
+    // (scripts/*.mjs) : sans ceci, TypeScript refuse un module sans
+    // déclaration. Les scripts eux-mêmes ne sont pas type-checkés
+    // (`checkJs` reste faux), seuls les tests le sont.
+    "allowJs": true
   }
 }
