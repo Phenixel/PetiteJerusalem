@@ -11,9 +11,12 @@ import { guidePages, SITE_URL } from "../content/seoPages";
 import { seoService } from "../services/seoService";
 import { useSeoContentNav } from "../composables/useSeoContentNav";
 import SignupPromptModal from "../components/SignupPromptModal.vue";
+import { useLocalePath } from "../composables/useLocalePath";
 
 const route = useRoute();
 const { showAuthPrompt, onContentClick } = useSeoContentNav();
+/** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
+const { localePath } = useLocalePath();
 
 const page = computed(() => guidePages.find((p) => p.path === route.path) ?? null);
 
@@ -39,7 +42,7 @@ watch([() => route.path], applyMeta);
     <h1>Page introuvable</h1>
     <p>
       Cette page n'existe pas.
-      <a href="/horaires">Voir les horaires de Chabbat</a>.
+      <RouterLink :to="localePath('horaires')">Voir les horaires de Chabbat</RouterLink>.
     </p>
   </main>
   <SignupPromptModal v-model:show="showAuthPrompt" variant="auth" />

@@ -630,16 +630,19 @@ const en: LocaleMessages = {
     profileTitle: "My Profile {'|'} Petite Jérusalem",
     profileDescription:
       "Manage your information, view your participated and created study sessions.",
-    zmanimTitle: "Zmanim: Shema, sunset and Shabbat times {'|'} Petite Jérusalem",
-    calendarTitle: "Jewish holiday calendar: dates and times {'|'} Petite Jérusalem",
+    zmanimTitle:
+      "Shabbat times: candle lighting, havdalah and the day's zmanim {'|'} Petite Jérusalem",
+    calendarTitle: "Jewish holiday calendar: dates, start and end times {'|'} Petite Jérusalem",
     calendarDescription:
-      "The festivals and fasts of the Hebrew year, with their dates and, for each festival, candle lighting and end times computed for your location.",
+      "The dates of the Jewish festivals: Rosh Hashanah, Yom Kippur, Sukkot, Hanukkah, Purim, Passover, Shavuot and the fasts, with the start and end time of each one, computed for your location.",
     zmanimDescription:
-      "The halachic times of the day computed for your location: alot hashachar, sunrise, latest Shema, chatzot, mincha, sunset, nightfall, candle lighting and Shabbat end.",
-    zmanimCityTitle: "Shabbat times in {city}: candle lighting and havdalah {'|'} Petite Jérusalem",
+      "Candle lighting and Shabbat end times week by week, plus all the zmanim of the day (alot, sunrise, latest Shema, shkia, tzeit hakochavim), computed for your city. Free, works offline.",
+    zmanimCityTitle:
+      "Shabbat times in {city}: candle lighting, havdalah and zmanim {'|'} Petite Jérusalem",
     zmanimCityDescription:
-      "Candle lighting and Shabbat end times in {city}, week by week, plus all the halachic times of the day. Free, works offline.",
-    parashaTitle: "Parashat hashavua: the calendar of parashiot and their texts {'|'} Petite Jérusalem",
+      "Candle lighting (the start of Shabbat) and havdalah times in {city}, week by week, plus all the zmanim of the day: sunrise, latest Shema, shkia, tzeit hakochavim. Free, works offline.",
+    parashaTitle:
+      "Parashat hashavua: the calendar of parashiot and their texts {'|'} Petite Jérusalem",
     parashaDescription:
       "The parasha read this Shabbat, the dated calendar of all 54 parashiot, and the text of each one in Hebrew and transliteration.",
     festivalTitle: "{festival}: dates, start and end times {'|'} Petite Jérusalem",

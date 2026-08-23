@@ -11,6 +11,7 @@
 import { computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { localeMessagesReady } from "../../i18n";
 import { hubPath } from "../../content/etudeTexts";
 import { parashaLabel, parashaWeeks } from "../../content/parashaCalendar";
 import { localeOfPath, sectionPath } from "../../content/seoLocales";
@@ -18,6 +19,10 @@ import { SITE_URL } from "../../config/site";
 import { analyticsService } from "../../services/analyticsService";
 import { seoService } from "../../services/seoService";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import { useLocalePath } from "../../composables/useLocalePath";
+
+/** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
+const { localePath } = useLocalePath();
 
 /** Un cycle complet et des poussières : chaque paracha y passe au moins une fois. */
 const CYCLE_WEEKS = 56;
@@ -69,7 +74,7 @@ onMounted(() => {
   analyticsService.capture("parasha_viewed");
 });
 
-watch([locale, () => route.path], applyMeta);
+watch([locale, localeMessagesReady, () => route.path], applyMeta);
 </script>
 
 <template>
@@ -137,7 +142,7 @@ watch([locale, () => route.path], applyMeta);
 
     <p class="mt-6 border-t border-line pt-3 text-xs text-text-secondary leading-relaxed">
       {{ t("paracha.shabbatNote") }}
-      <RouterLink to="/horaires" class="text-primary hover:underline">
+      <RouterLink :to="localePath('horaires')" class="text-primary hover:underline">
         {{ t("zmanim.navTitle") }}
       </RouterLink>
     </p>

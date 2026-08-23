@@ -75,6 +75,29 @@ describe("BottomTabBar", () => {
     expect(bar.fab().getAttribute("aria-pressed")).toBe("false");
   });
 
+  it("reste dans l'espace de langue de l'adresse ouverte", async () => {
+    const bar = mount();
+    // Arrivé d'un résultat de recherche anglais : le bouton rond doit se
+    // reconnaître actif, et ne pas ramener dans l'espace français au premier
+    // appui.
+    await bar.router.push("/en/shabbat-times/lyon");
+    await bar.router.isReady();
+    await nextTick();
+    expect(bar.fab().getAttribute("aria-pressed")).toBe("true");
+
+    await bar.router.push("/en/finish-the-shas");
+    await nextTick();
+    expect(bar.fab().getAttribute("aria-pressed")).toBe("false");
+    await bar.click(bar.fab());
+    expect(bar.router.currentRoute.value.path).toBe("/en/shabbat-times");
+
+    // Sur une adresse française, rien ne change : c'est l'historique.
+    await bar.router.push("/bibliotheque");
+    await nextTick();
+    await bar.click(bar.fab());
+    expect(bar.router.currentRoute.value.path).toBe("/horaires");
+  });
+
   it("l'onglet profil s'annonce « Réglages » sans compte, « Profil » connecté", async () => {
     const bar = mount();
     await bar.router.isReady();

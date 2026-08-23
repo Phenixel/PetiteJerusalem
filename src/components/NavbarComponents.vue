@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { authService } from "../services/authService";
 import { analyticsService } from "../services/analyticsService";
 import { isAdminEmail } from "../config/admin";
 import { useDarkMode } from "../composables/useDarkMode";
 import { isNativeApp } from "../composables/useNativeApp";
+import { useLocalePath } from "../composables/useLocalePath";
 import LanguageSelector from "./LanguageSelector.vue";
 import AppIcon from "./icons/AppIcon.vue";
 
@@ -30,13 +31,17 @@ function publishHeaderHeight(height: number) {
 
 useDarkMode();
 
-const navLinks = [
+// Les horaires ont une adresse par langue : le lien suit l'espace où l'on est,
+// sinon un visiteur venu d'un résultat anglais en sort au premier clic.
+const { localePath } = useLocalePath();
+
+const navLinks = computed(() => [
   { to: "/", labelKey: "common.home", exact: true },
   { to: "/share-reading", labelKey: "common.shareReading", exact: true },
   { to: "/bibliotheque", labelKey: "study.title", exact: true },
   { to: "/chiourim", labelKey: "common.chiourim", exact: true },
-  { to: "/horaires", labelKey: "zmanim.navTitle", exact: true },
-];
+  { to: localePath("horaires"), labelKey: "zmanim.navTitle", exact: true },
+]);
 
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value;

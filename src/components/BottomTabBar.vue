@@ -7,6 +7,8 @@ import type { IconName } from "./icons/registry";
 import { analyticsService } from "../services/analyticsService";
 import { authService } from "../services/authService";
 import { setRevealOrigin } from "../composables/useRevealOrigin";
+import { useLocalePath } from "../composables/useLocalePath";
+import { isSectionPath } from "../content/seoLocales";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -45,7 +47,13 @@ const tabs = computed<Tab[]>(() => [
       },
 ]);
 
-const ZMANIM_PATH = "/horaires";
+/**
+ * Le chemin des horaires dans l'espace de langue où l'on est : la page a une
+ * adresse par langue, et un chemin écrit en dur ferait sortir de l'espace
+ * anglais au premier appui, sans même que l'onglet se reconnaisse actif.
+ */
+const { localePath } = useLocalePath();
+const zmanimPath = computed(() => localePath("horaires"));
 
 // Onglet dont l'icône s'anime. Remis à null d'abord pour que l'animation
 // reparte même en retouchant l'onglet déjà actif.
@@ -62,10 +70,10 @@ function popIcon(to: string) {
 
 // La page des horaires se comporte en surcouche (voir App.vue) : le bouton
 // rond l'ouvre en cercle depuis lui-même, et la referme si elle est déjà là.
-const onZmanim = computed(() => route.path.startsWith(ZMANIM_PATH));
+const onZmanim = computed(() => isSectionPath(route.path, "horaires"));
 
 function toggleZmanim(event: MouseEvent) {
-  popIcon(ZMANIM_PATH);
+  popIcon(zmanimPath.value);
   if (onZmanim.value) {
     analyticsService.capture("zmanim_closed", { source: "bottom_bar" });
     // Refermer, c'est revenir sur la page que la surcouche recouvrait.
@@ -76,7 +84,7 @@ function toggleZmanim(event: MouseEvent) {
   }
   analyticsService.capture("zmanim_opened", { source: "bottom_bar" });
   setRevealOrigin(event.currentTarget as HTMLElement);
-  void router.push(ZMANIM_PATH);
+  void router.push(zmanimPath.value);
 }
 </script>
 
@@ -122,7 +130,7 @@ function toggleZmanim(event: MouseEvent) {
       >
         <span
           class="tab-icon"
-          :class="poppedTab === ZMANIM_PATH ? 'tab-icon-pop' : ''"
+          :class="poppedTab === zmanimPath ? 'tab-icon-pop' : ''"
           @animationend="poppedTab = null"
         >
           <AppIcon name="clock" :size="24" />

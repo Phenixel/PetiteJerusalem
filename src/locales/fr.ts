@@ -645,10 +645,11 @@ const fr = {
     calendarDescription:
       "Les dates des fêtes juives (Roch Hachana, Kippour, Souccot, Hanouka, Pourim, Pessah, Chavouot) et des jeûnes, avec l\u2019heure d\u2019entrée et de sortie de chaque fête, calculées pour votre position.",
     zmanimDescription:
-      "L\u2019heure d\u2019allumage des bougies et de sortie de Chabbat, et tous les zmanim du jour calculés pour votre position : alot haCha'har, netz, fin du Chéma, 'hatsot, min'ha, chkia, tsét haKokhavim.",
-    zmanimCityTitle: "Horaires de Chabbat à {city} : allumage et sortie {'|'} Petite Jérusalem",
+      "L\u2019heure d\u2019allumage des bougies et de sortie de Chabbat semaine par semaine, et tous les zmanim du jour (alot, netz, fin du Chéma, chkia, tsét haKokhavim), calculés pour votre ville. Gratuit, hors ligne.",
+    zmanimCityTitle:
+      "Horaires de Chabbat à {city} : allumage, sortie et zmanim {'|'} Petite Jérusalem",
     zmanimCityDescription:
-      "L\u2019heure d\u2019allumage des bougies (entrée de Chabbat) et l\u2019heure de sortie de Chabbat à {city}, semaine par semaine, et tous les zmanim du jour. Gratuit, hors ligne.",
+      "L\u2019heure d\u2019allumage des bougies (entrée de Chabbat) et l\u2019heure de sortie de Chabbat à {city}, semaine par semaine, et tous les zmanim du jour : netz, fin du Chéma, chkia, tsét haKokhavim. Gratuit, hors ligne.",
     parashaTitle:
       "Paracha de la semaine : le calendrier des parachiot et leurs textes {'|'} Petite Jérusalem",
     parashaDescription:

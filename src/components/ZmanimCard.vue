@@ -22,6 +22,10 @@ import {
   sameCivilDay,
 } from "../services/zmanimService";
 import AppIcon from "./icons/AppIcon.vue";
+import { useLocalePath } from "../composables/useLocalePath";
+
+/** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
+const { localePath } = useLocalePath();
 
 const { t, locale } = useI18n();
 const { place } = useZmanimLocation();
@@ -89,7 +93,7 @@ const placeLabel = useZmanimPlaceLabel(place);
 
 <template>
   <RouterLink
-    to="/horaires"
+    :to="localePath('horaires')"
     class="card card-hover p-5 flex items-center justify-between gap-3 group"
   >
     <template v-if="headline">

@@ -2,6 +2,10 @@
 import { useI18n } from "vue-i18n";
 import { useConsent } from "../composables/useConsent";
 import { isNativeApp } from "../composables/useNativeApp";
+import { useLocalePath } from "../composables/useLocalePath";
+
+/** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
+const { localePath } = useLocalePath();
 
 /**
  * Bannière de consentement à la mesure d'audience (PostHog). Affichée tant
@@ -27,7 +31,7 @@ const { choice, setChoice } = useConsent();
         <p class="font-semibold text-text-primary mb-1">{{ t("consent.title") }}</p>
         <p class="text-sm text-text-secondary mb-4">
           {{ t("consent.message") }}
-          <RouterLink to="/confidentialite" class="underline hover:text-primary">
+          <RouterLink :to="localePath('confidentialite')" class="underline hover:text-primary">
             {{ t("consent.learnMore") }}
           </RouterLink>
         </p>

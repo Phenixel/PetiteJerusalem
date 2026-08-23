@@ -3,6 +3,8 @@ import { createI18n } from "vue-i18n";
 import fr from "../locales/fr";
 import en from "../locales/en";
 import he from "../locales/he";
+import { ZMANIM_STRINGS } from "../content/zmanimSeoStrings";
+import type { SeoLocale } from "../content/seoLocales";
 
 /**
  * Les titres de page passent par `t()`, et vue-i18n lit le `|` comme un
@@ -13,6 +15,23 @@ import he from "../locales/he";
  * rien n'est coupé.
  */
 const LOCALES = { fr, en, he } as Record<string, { seo: Record<string, string> }>;
+
+/**
+ * Le prérendu et l'application posent le titre de la même page : s'ils
+ * divergent, un moteur voit un titre dans le HTML servi et un autre après
+ * exécution du script, et choisit lui-même. Ces couples-là doivent donc rester
+ * identiques, langue par langue.
+ */
+const ALIGNED: { key: string; prerendered: (locale: SeoLocale) => string }[] = [
+  { key: "zmanimTitle", prerendered: (l) => ZMANIM_STRINGS[l].hubTitle },
+  { key: "zmanimDescription", prerendered: (l) => ZMANIM_STRINGS[l].hubDescription },
+  { key: "zmanimCityTitle", prerendered: (l) => ZMANIM_STRINGS[l].cityTitle("{city}") },
+  {
+    key: "zmanimCityDescription",
+    prerendered: (l) => ZMANIM_STRINGS[l].cityDescription("{city}"),
+  },
+  { key: "calendarTitle", prerendered: (l) => ZMANIM_STRINGS[l].calendarTitle },
+];
 
 describe("titres de page", () => {
   for (const [code, messages] of Object.entries(LOCALES)) {
@@ -37,6 +56,20 @@ describe("titres de page", () => {
         expect(rendered).toBe(fill(raw));
         expect(rendered).toContain(" | ");
       }
+    });
+
+    it(`dit la même chose que le prérendu (${code})`, () => {
+      // L'apostrophe typographique des locales et l'apostrophe droite du
+      // prérendu disent la même chose : c'est le texte qu'on compare, pas la
+      // fonte. Le gabarit {city}, lui, reste tel quel des deux côtés.
+      const same = (value: string) => value.split("{'|'}").join("|").split("\u2019").join("'");
+      // La clé est portée dans le message comparé : un échec dit tout de
+      // suite laquelle a divergé.
+      const runtime = ALIGNED.map(({ key }) => `${key}: ${same(messages.seo[key] ?? "")}`);
+      const prerendered = ALIGNED.map(
+        ({ key, prerendered: build }) => `${key}: ${same(build(code as SeoLocale))}`,
+      );
+      expect(runtime).toEqual(prerendered);
     });
 
     it(`ne laisse aucune barre nue dans le bloc seo (${code})`, () => {

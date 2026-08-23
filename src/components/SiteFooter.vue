@@ -1,8 +1,5 @@
 <template>
-  <footer
-    class="mt-auto px-6 py-8 text-text-secondary transition-colors"
-    role="contentinfo"
-  >
+  <footer class="mt-auto px-6 py-8 text-text-secondary transition-colors" role="contentinfo">
     <nav
       class="mx-auto mb-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm"
       :aria-label="t('footer.discover')"
@@ -16,13 +13,13 @@
       <RouterLink class="hover:text-primary transition-colors" to="/chiourim">{{
         t("common.chiourim")
       }}</RouterLink>
-      <RouterLink class="hover:text-primary transition-colors" to="/horaires">{{
+      <RouterLink class="hover:text-primary transition-colors" :to="localePath('horaires')">{{
         t("zmanim.navTitle")
       }}</RouterLink>
-      <RouterLink class="hover:text-primary transition-colors" to="/finir-le-chass">{{
+      <RouterLink class="hover:text-primary transition-colors" :to="localePath('finirLeChass')">{{
         t("footer.finishChass")
       }}</RouterLink>
-      <RouterLink class="hover:text-primary transition-colors" to="/partage-tehilim">{{
+      <RouterLink class="hover:text-primary transition-colors" :to="localePath('partageTehilim')">{{
         t("footer.shareTehilim")
       }}</RouterLink>
       <RouterLink class="hover:text-primary transition-colors" to="/tehilim">{{
@@ -49,16 +46,22 @@
         class="flex flex-col md:flex-row gap-2 md:gap-4 items-center justify-center"
         :aria-label="t('footer.about')"
       >
-        <RouterLink class="hover:text-primary transition-colors" to="/a-propos">
+        <RouterLink class="hover:text-primary transition-colors" :to="localePath('aPropos')">
           {{ t("footer.about") }}
         </RouterLink>
-        <RouterLink class="hover:text-primary transition-colors" to="/mentions-legales">
+        <RouterLink
+          class="hover:text-primary transition-colors"
+          :to="localePath('mentionsLegales')"
+        >
           {{ t("footer.legal") }}
         </RouterLink>
-        <RouterLink class="hover:text-primary transition-colors" to="/conditions-utilisation">
+        <RouterLink class="hover:text-primary transition-colors" :to="localePath('conditions')">
           {{ t("footer.terms") }}
         </RouterLink>
-        <RouterLink class="hover:text-primary transition-colors" to="/confidentialite">
+        <RouterLink
+          class="hover:text-primary transition-colors"
+          :to="localePath('confidentialite')"
+        >
           {{ t("footer.privacy") }}
         </RouterLink>
         <a
@@ -106,11 +109,14 @@
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import { useLocalePath } from "../composables/useLocalePath";
 import LanguageSelector from "./LanguageSelector.vue";
 import AppIcon from "./icons/AppIcon.vue";
 import { useConsent } from "../composables/useConsent";
 
 const { t } = useI18n();
+// Les pages traduites suivent l'espace de langue de l'URL ouverte.
+const { localePath } = useLocalePath();
 // Réouvre la bannière de consentement (retrait du consentement possible à tout moment).
 const { reopen } = useConsent();
 </script>

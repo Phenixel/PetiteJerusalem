@@ -11,6 +11,7 @@
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { localeMessagesReady } from "../../i18n";
 import { analyticsService } from "../../services/analyticsService";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
@@ -45,6 +46,10 @@ import RestTimes from "./RestTimes.vue";
 // tant qu'on ne l'ouvre pas.
 const CityPicker = defineAsyncComponent(() => import("./CityPicker.vue"));
 import AppIcon from "../../components/icons/AppIcon.vue";
+import { useLocalePath } from "../../composables/useLocalePath";
+
+/** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
+const { localePath } = useLocalePath();
 
 const { t, locale } = useI18n();
 const { place, status, useDevicePlace, useCity, ensureNearby } = useZmanimLocation();
@@ -239,7 +244,7 @@ watch(
 
 // Les messages en et he arrivent par import dynamique : le titre se repose
 // quand ils sont là, avec le nom de la ville dans la bonne langue.
-watch(locale, () => setMeta(routeCity.value));
+watch([locale, localeMessagesReady], () => setMeta(routeCity.value));
 
 onMounted(() => {
   revealFromOrigin(root.value);
@@ -300,7 +305,7 @@ onUnmounted(() => {
         {{ t("zmanim.place.chooseCity") }}
       </button>
       <RouterLink
-        to="/calendrier"
+        :to="localePath('calendrier')"
         class="flex items-center gap-1.5 text-text-secondary hover:text-primary hover:underline"
       >
         <AppIcon name="calendar" :size="14" />

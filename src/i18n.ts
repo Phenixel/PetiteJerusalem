@@ -1,3 +1,4 @@
+import { ref } from "vue";
 import { createI18n } from "vue-i18n";
 import fr from "./locales/fr";
 
@@ -72,6 +73,16 @@ const localeLoaders: Record<SupportedLocale, (() => Promise<{ default: LocaleMes
 
 const loadedLocales = new Set<SupportedLocale>(["fr"]);
 
+/**
+ * Incrémenté chaque fois que les messages d'une langue viennent d'arriver.
+ *
+ * Le changement de langue est immédiat, mais les messages, eux, arrivent par
+ * import dynamique : ce qui a été calculé entre les deux l'a été avec le repli
+ * français. Les vues qui posent un titre de page (elles le font une fois, pas
+ * dans un rendu) surveillent ce compteur pour le reposer dans la bonne langue.
+ */
+export const localeMessagesReady = ref(0);
+
 export async function loadLocaleMessages(locale: SupportedLocale): Promise<void> {
   const loader = localeLoaders[locale];
   if (!loader || loadedLocales.has(locale)) return;
@@ -79,6 +90,7 @@ export async function loadLocaleMessages(locale: SupportedLocale): Promise<void>
     const messages = await loader();
     i18n.global.setLocaleMessage(locale, messages.default);
     loadedLocales.add(locale);
+    localeMessagesReady.value += 1;
   } catch {
     // Chunk introuvable (réseau, déploiement entre-temps) : le repli français
     // reste affiché ; le prochain setLocale retentera.

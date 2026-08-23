@@ -11,6 +11,7 @@ import {
 } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { localeMessagesReady } from "../i18n";
 import { seoService } from "../services/seoService";
 import { SITE_URL } from "../config/site";
 import { localeOfPath, sectionPath } from "../content/seoLocales";
@@ -191,7 +192,7 @@ onMounted(() => {
   applyHomeMeta();
 });
 
-watch([locale, () => route.path], applyHomeMeta);
+watch([locale, localeMessagesReady, () => route.path], applyHomeMeta);
 
 onUnmounted(() => {
   unsubscribeAuth?.();

@@ -9,6 +9,7 @@
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { localeMessagesReady } from "../../i18n";
 import { analyticsService } from "../../services/analyticsService";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
@@ -25,6 +26,10 @@ import { revealFromOrigin } from "../../composables/useRevealOrigin";
 import { findFestivalBySlug, type SeoFestival } from "../../content/zmanimFestivals";
 import { isSectionPath, localeOfPath, sectionPath, type SeoLocale } from "../../content/seoLocales";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import { useLocalePath } from "../../composables/useLocalePath";
+
+/** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
+const { localePath } = useLocalePath();
 
 const { t, locale } = useI18n();
 const { place } = useZmanimLocation();
@@ -210,7 +215,7 @@ watch(
 
 // Les messages en et he arrivent par import dynamique : le titre se repose
 // quand ils sont là.
-watch(locale, applyMeta);
+watch([locale, localeMessagesReady], applyMeta);
 
 onMounted(() => {
   revealFromOrigin(root.value);
@@ -221,7 +226,7 @@ onMounted(() => {
 
 <template>
   <main ref="root" class="flex-1 mx-auto w-full max-w-3xl px-6 py-10">
-    <RouterLink to="/horaires" class="back-link mb-6">
+    <RouterLink :to="localePath('horaires')" class="back-link mb-6">
       <AppIcon name="chevron-left" :size="14" />
       {{ t("zmanim.navTitle") }}
     </RouterLink>
