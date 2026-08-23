@@ -171,23 +171,6 @@ const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
 // sépare.
 const sidourNextEntry = computed(() => nextTefilaEntry(textEntry.value));
 
-// Sidour et Sli'hot : un office se cherche par sections ('Amida, Chéma,
-// ta'hanoun…). La page publie les blocs titrés du jour au menu flottant
-// (TefilaSectionNav), qui remplace le bouton « remonter en haut ». Les brahot
-// restent hors jeu : trop courtes pour qu'on s'y perde.
-const isTefilaNavText = computed(() => ["Sidour", "Slihot"].includes(String(textEntry.value?.type)));
-const tefilaNavSections = computed<TefilaNavSection[]>(() => {
-  if (!isTefilaNavText.value || !currentSection.value) return [];
-  return visibleBlocks.value
-    .filter((b) => !b.zman && !b.fold && (b.labelText || b.label))
-    .map((b) => ({
-      offset: b.offset,
-      label: b.labelText
-        ? b.labelText[locale.value as SupportedLocale] || b.labelText.fr
-        : b.label,
-    }));
-});
-watch(tefilaNavSections, (list) => setTefilaNavSections(list), { immediate: true });
 
 // Le minuteur des occasions : seuls les textes de tefila regardent l'heure,
 // il ne tourne donc que pour eux, et s'arrête dès qu'on ouvre autre chose.
@@ -236,6 +219,24 @@ const currentSection = computed<TextSection | null>(() => {
 const canTransliterate = computed(
   () => currentSection.value?.he.some((line) => hasNiqqud(line)) ?? false,
 );
+// Sidour et Sli'hot : un office se cherche par sections ('Amida, Chéma,
+// ta'hanoun…). La page publie les blocs titrés du jour au menu flottant
+// (TefilaSectionNav), qui remplace le bouton « remonter en haut ». Les brahot
+// restent hors jeu : trop courtes pour qu'on s'y perde.
+const isTefilaNavText = computed(() => ["Sidour", "Slihot"].includes(String(textEntry.value?.type)));
+const tefilaNavSections = computed<TefilaNavSection[]>(() => {
+  if (!isTefilaNavText.value || !currentSection.value) return [];
+  return visibleBlocks.value
+    .filter((b) => !b.zman && !b.fold && (b.labelText || b.label))
+    .map((b) => ({
+      offset: b.offset,
+      label: b.labelText
+        ? b.labelText[locale.value as SupportedLocale] || b.labelText.fr
+        : b.label,
+    }));
+});
+watch(tefilaNavSections, (list) => setTefilaNavSections(list), { immediate: true });
+
 
 // Translittération mémoïsée : appelée depuis le template, elle était recalculée
 // pour toute la section (des dizaines de lignes × plusieurs passes regex) à

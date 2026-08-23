@@ -157,7 +157,10 @@ function buildLine(spec, segs) {
   const line = {};
   if (spec.rubric) line.rubric = spec.rubric;
   if (spec.strong) line.he = [{ b: text }];
-  else if (spec.alt) line.he = [text, { r: spec.alt.rubric }, { v: spec.alt.text }];
+  else if (spec.alt) {
+    const when = spec.alt.when ? { when: spec.alt.when } : {};
+    line.he = [text, { r: spec.alt.rubric, ...when }, { v: spec.alt.text, ...when }];
+  }
   else line.he = text;
   if (spec.repeat) line.repeat = spec.repeat;
   if (spec.when) line.when = spec.when;
@@ -574,6 +577,7 @@ function amidaBlocks(src, ix) {
       {
         seg: ix.osse,
         alt: {
+          when: "teshuva",
           rubric: R(
             "Dix jours de techouva, on dit :",
             "Ten Days of Repentance, say:",

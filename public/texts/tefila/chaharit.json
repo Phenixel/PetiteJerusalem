@@ -881,10 +881,12 @@
                 "fr": "Dix jours de techouva, on dit :",
                 "en": "Ten Days of Repentance, say:",
                 "he": "בעשרת ימי תשובה אומרים:"
-              }
+              },
+              "when": "teshuva"
             },
             {
-              "v": "עוֹשֶׂה הַשָּׁלוֹם"
+              "v": "עוֹשֶׂה הַשָּׁלוֹם",
+              "when": "teshuva"
             }
           ]
         },
