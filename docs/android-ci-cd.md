@@ -34,6 +34,13 @@ gh secret set GOOGLE_SERVICES_JSON < google-services.json
 
 # 6. Compte de service Play (voir section suivante)
 gh secret set PLAY_SERVICE_ACCOUNT_JSON < ~/Downloads/petite-jerusalem-play-ci.json
+
+# 7. Empreinte SHA-256 du certificat de signature, pour que les liens du site
+#    ouvrent l'app (Play Console → Intégrité de l'app → Signature de l'app ;
+#    ajouter aussi celle du certificat d'importation, séparée par une virgule).
+#    Ce secret est lu par le déploiement du site, pas par celui de l'app,
+#    voir docs/app-links.md.
+gh secret set ANDROID_APP_LINK_SHA256 --body "AB:CD:…:EF"
 ```
 
 ## Compte de service Play Console (une fois, clics)

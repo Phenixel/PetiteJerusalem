@@ -225,6 +225,15 @@ Android tout est scripté (`native/android/` + `setup-android.mjs`) ; côté iOS
 quelques étapes Xcode manuelles restent nécessaires, voir
 `docs/app-widgets.md`.
 
+## Liens du site qui ouvrent l'app
+
+Un lien vers `petite-jerusalem.fr` (une session partagée reçue par message,
+par exemple) ouvre l'app quand elle est installée, et le navigateur sinon.
+Le domaine et l'app se reconnaissent par un fichier servi par le site
+(`/.well-known/`), les chemins concernés tiennent en une liste unique
+(`scripts/lib/app-links.mjs`) que les deux plateformes et un test partagent.
+Voir `docs/app-links.md`, notamment les deux valeurs de signature à fournir.
+
 ## Bandeau « mise à jour disponible »
 
 Une app installée peut rester des mois en arrière (mises à jour automatiques

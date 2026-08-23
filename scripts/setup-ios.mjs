@@ -8,7 +8,8 @@
  *   background mode « remote-notification », déclaration de chiffrement
  *   (ITSAppUsesNonExemptEncryption) et schéma d'URL Google (REVERSED_CLIENT_ID)
  * - App.entitlements : Sign in with Apple + APNs (aps-environment piloté par
- *   la configuration : development en Debug, production en Release)
+ *   la configuration : development en Debug, production en Release) +
+ *   domaine associé, pour qu'un lien du site ouvre l'app (docs/app-links.md)
  * - PrivacyInfo.xcprivacy : manifeste de confidentialité (obligatoire depuis
  *   mai 2024 ; sans lui, l'upload déclenche les avertissements ITMS-91053)
  * - GoogleService-Info.plist : copié depuis la racine s'il s'y trouve
@@ -33,6 +34,7 @@ import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { APP_LINK_DOMAIN } from "./lib/app-links.mjs";
 
 const root = join(import.meta.dirname, "..");
 const iosDir = join(root, "ios");
@@ -203,7 +205,7 @@ addEntry(
 writeFileSync(infoPlistPath, infoPlist);
 
 // ---------------------------------------------------------------------------
-// 3. App.entitlements, Sign in with Apple + APNs
+// 3. App.entitlements, Sign in with Apple + APNs + domaine associé
 // ---------------------------------------------------------------------------
 // Apple **impose** « Sign in with Apple » dès qu'un autre login tiers est
 // proposé (règle App Store 4.8, ici Google), voir docs/app-native.md.
@@ -220,6 +222,13 @@ writeFileSync(infoPlistPath, infoPlist);
 //   directement signée avec un profil « App Store » : aps-environment vaut
 //   production, et l'App Group disparaît, l'API App Store Connect ne sait pas
 //   créer de groupe, et les widgets ne font pas partie de la v1.
+//
+// Le domaine associé (`applinks:`) suit la même règle : la capacité Associated
+// Domains doit être active sur l'App ID, sinon l'archive est refusée. En CI,
+// scripts/ios-signing.mjs l'active avant de créer le profil ; en local, Xcode
+// s'en charge à la première archive. iOS confronte ensuite ce domaine au
+// fichier /.well-known/apple-app-site-association servi par le site (écrit par
+// scripts/well-known.mjs) : c'est lui qui dit quels chemins ouvrent l'app.
 const entitlementsPath = join(appDir, "App.entitlements");
 if (!existsSync(entitlementsPath)) {
   writeFileSync(
@@ -234,6 +243,10 @@ if (!existsSync(entitlementsPath)) {
 \t<array>
 \t\t<string>Default</string>
 \t</array>
+\t<key>com.apple.developer.associated-domains</key>
+\t<array>
+\t\t<string>applinks:${APP_LINK_DOMAIN}</string>
+\t</array>
 ${
   MANUAL_SIGNING
     ? ""
@@ -247,7 +260,7 @@ ${
 `,
   );
   console.log(
-    `setup-ios: App.entitlements créé (Sign in with Apple + push${MANUAL_SIGNING ? " production" : " + App Group"})`,
+    `setup-ios: App.entitlements créé (Sign in with Apple + push${MANUAL_SIGNING ? " production" : " + App Group"} + applinks:${APP_LINK_DOMAIN})`,
   );
 }
 

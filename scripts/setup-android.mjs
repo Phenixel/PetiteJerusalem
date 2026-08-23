@@ -14,6 +14,8 @@
  *   git-ignoré ; fallback signature debug si absent) + versionName aligné sur le tag git
  * - Widgets d'écran d'accueil : copie native/android/ (providers Java, layouts)
  *   et déclare les receivers dans le manifest (voir docs/app-widgets.md)
+ * - App Links : intent-filter vérifié sur le domaine, un lien du site ouvre
+ *   l'app quand elle est installée (voir docs/app-links.md)
  *
  * Usage : node scripts/setup-android.mjs
  * Icônes/splash : npx @capacitor/assets generate --android (logo dans assets/logo.png)
@@ -22,6 +24,7 @@ import { execSync } from "node:child_process";
 import { copyFileSync, cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { buildAndroidIntentFilter, APP_LINK_DOMAIN } from "./lib/app-links.mjs";
 
 const root = join(import.meta.dirname, "..");
 const androidDir = join(root, "android");
@@ -357,6 +360,34 @@ if (!variablesGradle.includes("androidxCredentialsVersion")) {
     ),
   );
   console.log("setup-android: versions androidx.credentials épinglées dans variables.gradle");
+}
+
+// 12. App Links : les liens du site ouvrent l'app installée.
+//     `autoVerify` fait vérifier le domaine par le système à l'installation,
+//     contre le fichier /.well-known/assetlinks.json servi par le site (écrit
+//     par scripts/well-known.mjs). Sans cette vérification, Android afficherait
+//     un sélecteur d'application au lieu d'ouvrir l'app ; sans intent-filter du
+//     tout, le lien resterait au navigateur.
+//     Les chemins couverts viennent de scripts/lib/app-links.mjs : la liste est
+//     volontairement positive, `/__/auth/` (redirection Firebase Auth) ne doit
+//     surtout pas être capturé.
+let linksManifest = readFileSync(manifestPath, "utf8");
+if (linksManifest.includes("android:autoVerify")) {
+  console.log("setup-android: App Links déjà déclarés dans le manifest");
+} else {
+  const patched = linksManifest.replace(
+    /(<category android:name="android\.intent\.category\.LAUNCHER"\s*\/>\s*<\/intent-filter>)/,
+    `$1\n\n${buildAndroidIntentFilter()}`,
+  );
+  if (patched === linksManifest) {
+    console.error(
+      "setup-android: intent-filter LAUNCHER introuvable dans le manifest, App Links non déclarés.\n" +
+        "  Le template Capacitor a changé : mettre ce script à jour (voir docs/app-links.md).",
+    );
+    process.exit(1);
+  }
+  writeFileSync(manifestPath, patched);
+  console.log(`setup-android: App Links déclarés pour ${APP_LINK_DOMAIN}`);
 }
 
 console.log("setup-android: terminé.");

@@ -18,7 +18,7 @@
   "hosting": {
     "public": "dist",
     "cleanUrls": true,
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": ["firebase.json", "**/.DS_Store", "**/node_modules/**"],
     "headers": [
       {
         "source": "**",
@@ -61,6 +61,21 @@
         "source": "/texts/tefila/**",
         "headers": [
           { "key": "Cache-Control", "value": "no-cache" },
+          { "key": "Access-Control-Allow-Origin", "value": "*" }
+        ]
+      },
+      {
+        "source": "/.well-known/apple-app-site-association",
+        "headers": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Cache-Control", "value": "public, max-age=3600" },
+          { "key": "Access-Control-Allow-Origin", "value": "*" }
+        ]
+      },
+      {
+        "source": "/.well-known/assetlinks.json",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=3600" },
           { "key": "Access-Control-Allow-Origin", "value": "*" }
         ]
       },

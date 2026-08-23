@@ -159,11 +159,17 @@ import("./composables/useNativeApp").then(({ isNativeApp }) => {
   // Bouton retour matériel Android : sans listener, il quitte l'app au lieu
   // de revenir en arrière dans la navigation.
   import("@capacitor/app").then(({ App: CapacitorApp }) => {
-    // Toucher un widget ouvre l'app sur sa page : l'intent porte une URL du
-    // site (https sur Android, scheme petitejerusalem:// sur iOS). Seules ces
-    // URLs-là naviguent, tout autre lien délivré ici (callback OAuth natif,
-    // intent tiers) doit laisser l'app où elle est, sous peine d'arracher
-    // l'utilisateur vers une 404 en pleine connexion Google par exemple.
+    // Deux façons d'entrer dans l'app par une URL, même traitement :
+    //  - toucher un widget, dont l'intent porte une URL du site (https sur
+    //    Android, scheme petitejerusalem:// sur iOS) ;
+    //  - ouvrir un lien du site depuis un message ou un navigateur, quand le
+    //    système a vérifié le domaine (App Links / Universal Links, voir
+    //    docs/app-links.md) : le lien partagé arrive ici plutôt que dans le
+    //    navigateur.
+    // Seules ces URLs-là naviguent, tout autre lien délivré ici (callback
+    // OAuth natif, intent tiers) doit laisser l'app où elle est, sous peine
+    // d'arracher l'utilisateur vers une 404 en pleine connexion Google par
+    // exemple.
     CapacitorApp.addListener("appUrlOpen", ({ url }) => {
       let parsed: URL;
       try {
