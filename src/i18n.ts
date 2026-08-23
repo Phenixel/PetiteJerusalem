@@ -63,11 +63,12 @@ export function setStoredLocale(locale: SupportedLocale): void {
  */
 type LocaleMessages = typeof fr;
 
-const localeLoaders: Record<SupportedLocale, (() => Promise<{ default: LocaleMessages }>) | null> = {
-  fr: null,
-  en: () => import("./locales/en"),
-  he: () => import("./locales/he"),
-};
+const localeLoaders: Record<SupportedLocale, (() => Promise<{ default: LocaleMessages }>) | null> =
+  {
+    fr: null,
+    en: () => import("./locales/en"),
+    he: () => import("./locales/he"),
+  };
 
 const loadedLocales = new Set<SupportedLocale>(["fr"]);
 
@@ -102,6 +103,28 @@ export const i18n = createI18n({
 
 if (initialLocale !== "fr") {
   void loadLocaleMessages(initialLocale);
+}
+
+/**
+ * Applique une langue : messages chargés en tâche de fond (le français sert de
+ * repli pendant le court chargement du chunk), langue mémorisée, `lang` et
+ * `dir` du document mis à jour.
+ *
+ * Sert au sélecteur de langue et au routeur : une URL préfixée (/en/…, /he/…)
+ * impose sa langue, sans quoi une page anglaise s'afficherait en français à
+ * qui arrive d'un moteur de recherche.
+ */
+export function applyLocale(locale: SupportedLocale): void {
+  void loadLocaleMessages(locale);
+  // `createI18n` ne reçoit que les messages français : vue-i18n en déduit que
+  // la locale ne peut valoir que « fr ». Les autres arrivent bien plus tard,
+  // par import dynamique ; le typage large rétablit ce que le code fait.
+  (i18n.global.locale as unknown as { value: string }).value = locale;
+  setStoredLocale(locale);
+  if (typeof document !== "undefined") {
+    document.documentElement.setAttribute("lang", locale);
+    document.documentElement.setAttribute("dir", locale === "he" ? "rtl" : "ltr");
+  }
 }
 
 export default i18n;

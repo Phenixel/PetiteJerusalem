@@ -24,6 +24,20 @@
 // pas ce fichier de contenu (~94 kB) dans leur chunk. Ré-exportées ici pour
 // le prerender et les consommateurs historiques.
 import { SITE_URL, SITE_NAME, OG_IMAGE, LOGO_IMAGE } from "../config/site";
+import {
+  DEFAULT_SEO_LOCALE,
+  HREFLANG,
+  alternatesOf,
+  fileForPath,
+  sectionPath,
+  type SeoSection,
+  HTML_DIR,
+  HTML_LANG,
+  OG_LOCALE,
+  SEO_LOCALES,
+  type Alternates,
+  type SeoLocale,
+} from "./seoLocales";
 
 export { SITE_URL, SITE_NAME, OG_IMAGE, LOGO_IMAGE };
 
@@ -55,6 +69,14 @@ export type SeoPage = {
   jsonLd?: Record<string, unknown>[];
   /** Sitemap hints. `false` keeps the page out of the sitemap (e.g. /login). */
   sitemap?: { priority: number; changefreq: string } | false;
+  /** La langue de la page. Absente, c'est le français (les pages historiques). */
+  locale?: SeoLocale;
+  /**
+   * Les chemins de la même page dans les autres langues. Ce sont eux qui
+   * deviennent les `hreflang` du `<head>` et du sitemap : sans eux, un moteur
+   * n'a aucun moyen de savoir que la version anglaise existe.
+   */
+  alternates?: Alternates;
 };
 
 // ---- Shared HTML building blocks ---------------------------------------
@@ -394,12 +416,36 @@ export type LandingLocaleContent = {
 };
 
 export type LandingPage = {
-  file: string;
-  path: string;
+  /** La section, qui donne son segment d'URL dans chaque langue. */
+  section: SeoSection;
   sitemap?: { priority: number; changefreq: string } | false;
+  /** Le chemin de la page dans chaque langue (`/en/finish-the-shas`…). */
+  paths: Record<Locale, string>;
   /** Same content in every supported language, picked at runtime by ContentPage. */
   locales: Record<Locale, LandingLocaleContent>;
 };
+
+/**
+ * Une page d'atterrissage, dans les trois langues, chacune à son adresse.
+ *
+ * Le contenu est bâti avec le chemin de sa propre langue : le fil d'Ariane et
+ * le JSON-LD d'une page anglaise doivent pointer vers l'URL anglaise, pas vers
+ * la française.
+ */
+function landingPage<S>(
+  section: SeoSection,
+  sitemap: LandingPage["sitemap"],
+  strings: Record<Locale, S>,
+  build: (path: string, s: S) => LandingLocaleContent,
+): LandingPage {
+  const paths = Object.fromEntries(
+    SEO_LOCALES.map((locale) => [locale, sectionPath(section, locale)]),
+  ) as Record<Locale, string>;
+  const locales = Object.fromEntries(
+    SEO_LOCALES.map((locale) => [locale, build(paths[locale], strings[locale])]),
+  ) as Record<Locale, LandingLocaleContent>;
+  return { section, sitemap, paths, locales };
+}
 
 /** Localized strings for one landing page; the HTML structure is shared across languages. */
 type LandingStrings = {
@@ -1442,77 +1488,60 @@ const TEHILIM_HE: LandingStrings = {
 };
 
 export const landingPages: LandingPage[] = [
-  {
-    file: "finir-le-chass.html",
-    path: "/finir-le-chass",
-    sitemap: { priority: 0.7, changefreq: "monthly" },
-    locales: {
-      fr: buildLanding("/finir-le-chass", FINIR_FR),
-      en: buildLanding("/finir-le-chass", FINIR_EN),
-      he: buildLanding("/finir-le-chass", FINIR_HE),
-    },
-  },
-  {
-    file: "partage-tehilim.html",
-    path: "/partage-tehilim",
-    sitemap: { priority: 0.7, changefreq: "monthly" },
-    locales: {
-      fr: buildLanding("/partage-tehilim", TEHILIM_FR),
-      en: buildLanding("/partage-tehilim", TEHILIM_EN),
-      he: buildLanding("/partage-tehilim", TEHILIM_HE),
-    },
-  },
-  {
-    file: "confidentialite.html",
-    path: "/confidentialite",
-    sitemap: { priority: 0.1, changefreq: "yearly" },
-    locales: {
-      fr: buildLegal("/confidentialite", PRIVACY_FR),
-      en: buildLegal("/confidentialite", PRIVACY_EN),
-      he: buildLegal("/confidentialite", PRIVACY_HE),
-    },
-  },
-  {
-    file: "a-propos.html",
-    path: "/a-propos",
-    sitemap: { priority: 0.3, changefreq: "yearly" },
-    locales: {
-      fr: buildLegal("/a-propos", ABOUT_FR),
-      en: buildLegal("/a-propos", ABOUT_EN),
-      he: buildLegal("/a-propos", ABOUT_HE),
-    },
-  },
-  {
-    file: "mentions-legales.html",
-    path: "/mentions-legales",
-    sitemap: { priority: 0.1, changefreq: "yearly" },
-    locales: {
-      fr: buildLegal("/mentions-legales", LEGAL_FR),
-      en: buildLegal("/mentions-legales", LEGAL_EN),
-      he: buildLegal("/mentions-legales", LEGAL_HE),
-    },
-  },
-  {
-    file: "conditions-utilisation.html",
-    path: "/conditions-utilisation",
-    sitemap: { priority: 0.1, changefreq: "yearly" },
-    locales: {
-      fr: buildLegal("/conditions-utilisation", TERMS_FR),
-      en: buildLegal("/conditions-utilisation", TERMS_EN),
-      he: buildLegal("/conditions-utilisation", TERMS_HE),
-    },
-  },
+  landingPage(
+    "finirLeChass",
+    { priority: 0.7, changefreq: "monthly" },
+    { fr: FINIR_FR, en: FINIR_EN, he: FINIR_HE },
+    buildLanding,
+  ),
+  landingPage(
+    "partageTehilim",
+    { priority: 0.7, changefreq: "monthly" },
+    { fr: TEHILIM_FR, en: TEHILIM_EN, he: TEHILIM_HE },
+    buildLanding,
+  ),
+  landingPage(
+    "confidentialite",
+    { priority: 0.1, changefreq: "yearly" },
+    { fr: PRIVACY_FR, en: PRIVACY_EN, he: PRIVACY_HE },
+    buildLegal,
+  ),
+  landingPage(
+    "aPropos",
+    { priority: 0.3, changefreq: "yearly" },
+    { fr: ABOUT_FR, en: ABOUT_EN, he: ABOUT_HE },
+    buildLegal,
+  ),
+  landingPage(
+    "mentionsLegales",
+    { priority: 0.1, changefreq: "yearly" },
+    { fr: LEGAL_FR, en: LEGAL_EN, he: LEGAL_HE },
+    buildLegal,
+  ),
+  landingPage(
+    "conditions",
+    { priority: 0.1, changefreq: "yearly" },
+    { fr: TERMS_FR, en: TERMS_EN, he: TERMS_HE },
+    buildLegal,
+  ),
 ];
 
-const DEFAULT_LANDING_LOCALE: Locale = "fr";
-
-/** Landing pages flattened to the default locale, for the static prerender + sitemap. */
-const landingAsSeoPages: SeoPage[] = landingPages.map((p) => ({
-  file: p.file,
-  path: p.path,
-  sitemap: p.sitemap,
-  ...p.locales[DEFAULT_LANDING_LOCALE],
-}));
+/**
+ * Les pages d'atterrissage, une par langue, pour le prérendu et le sitemap.
+ * Elles étaient déjà écrites en anglais et en hébreu, et n'étaient servies à
+ * personne : seul le français était prérendu, et rien ne disait aux moteurs
+ * que les deux autres existaient.
+ */
+const landingAsSeoPages: SeoPage[] = landingPages.flatMap((p) =>
+  SEO_LOCALES.map((locale) => ({
+    file: fileForPath(p.paths[locale]),
+    path: p.paths[locale],
+    locale,
+    alternates: alternatesOf(p.section),
+    sitemap: p.sitemap,
+    ...p.locales[locale],
+  })),
+);
 
 // ---- Tehilim par intention (hub + intention pages) ----------------------
 //
@@ -2112,8 +2141,10 @@ function replaceCanonical(html: string, href: string): string {
  */
 export function injectMeta(template: string, page: SeoPage): string {
   const url = `${SITE_URL}${page.path}`;
+  const locale = page.locale ?? DEFAULT_SEO_LOCALE;
   let html = template;
 
+  html = replaceLang(html, locale);
   html = replaceTitle(html, page.title);
   html = replaceMetaContent(html, "name", "description", page.description);
   html = replaceMetaContent(html, "property", "og:title", page.title);
@@ -2127,7 +2158,59 @@ export function injectMeta(template: string, page: SeoPage): string {
     html = replaceMetaContent(html, "name", "robots", page.robots);
   }
 
+  html = replaceOgLocale(html, locale);
+  html = injectAlternates(html, page.alternates);
+
   return html;
+}
+
+/**
+ * `lang` et `dir` du document : sans eux, une page hébraïque s'affiche de
+ * gauche à droite tant que Vue n'a pas pris la main, et se déclare française
+ * aux moteurs.
+ */
+function replaceLang(html: string, locale: SeoLocale): string {
+  const dir = HTML_DIR[locale];
+  return html.replace(
+    /<html\b[^>]*>/,
+    `<html lang="${HTML_LANG[locale]}"${dir === "rtl" ? ' dir="rtl"' : ""}>`,
+  );
+}
+
+/** `og:locale` suit la langue de la page ; les autres deviennent alternates. */
+function replaceOgLocale(html: string, locale: SeoLocale): string {
+  const others = SEO_LOCALES.filter((l) => l !== locale);
+  const alternates = others
+    .map((l) => `<meta property="og:locale:alternate" content="${OG_LOCALE[l]}" />`)
+    .join("\n    ");
+  return html
+    .replace(
+      /<meta property="og:locale" content="[^"]*" \/>/,
+      `<meta property="og:locale" content="${OG_LOCALE[locale]}" />`,
+    )
+    .replace(/\s*<meta property="og:locale:alternate" content="[^"]*" \/>/g, "")
+    .replace(/(<meta property="og:locale" content="[^"]*" \/>)/, `$1\n    ${alternates}`);
+}
+
+/**
+ * Les `hreflang` : chaque langue déclare ses sœurs, et se déclare elle-même
+ * (Google le demande). Le français porte en plus `x-default` : c'est la page
+ * servie à qui ne parle aucune des trois.
+ */
+function injectAlternates(html: string, alternates?: Alternates): string {
+  if (!alternates) return html;
+  const links = SEO_LOCALES.filter((locale) => alternates[locale]).map(
+    (locale) =>
+      `<link rel="alternate" hreflang="${HREFLANG[locale]}" href="${escapeAttr(`${SITE_URL}${alternates[locale]}`)}" />`,
+  );
+  const fallback = alternates[DEFAULT_SEO_LOCALE];
+  if (fallback) {
+    links.push(
+      `<link rel="alternate" hreflang="x-default" href="${escapeAttr(`${SITE_URL}${fallback}`)}" />`,
+    );
+  }
+  if (!links.length) return html;
+  return html.replace("</head>", `    ${links.join("\n    ")}\n  </head>`);
 }
 
 /** Inject crawlable body content + extra JSON-LD into the shell. Pure. */
@@ -2168,7 +2251,29 @@ export function buildAppShell(template: string): string {
     .replace(/<meta property="og:url"[^>]*>\s*/, "");
 }
 
-export type SitemapEntry = { path: string; priority: number; changefreq: string };
+/** Les `<xhtml:link>` d'une entrée de sitemap : la même page, langue par langue. */
+function alternateLinks(alternates?: Alternates): string[] {
+  if (!alternates) return [];
+  const links = SEO_LOCALES.filter((locale) => alternates[locale]).map(
+    (locale) =>
+      `    <xhtml:link rel="alternate" hreflang="${HREFLANG[locale]}" href="${SITE_URL}${alternates[locale]}" />`,
+  );
+  const fallback = alternates[DEFAULT_SEO_LOCALE];
+  if (fallback) {
+    links.push(
+      `    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE_URL}${fallback}" />`,
+    );
+  }
+  return links;
+}
+
+export type SitemapEntry = {
+  path: string;
+  priority: number;
+  changefreq: string;
+  /** Les URL sœurs, quand la page existe dans plusieurs langues. */
+  alternates?: Alternates;
+};
 
 /**
  * Build sitemap.xml from the indexable pages, plus any `extra` URLs (e.g. the
@@ -2180,7 +2285,12 @@ export function buildSitemap(lastmod: string, extra: SitemapEntry[] = []): strin
     .filter((p) => p.sitemap !== false)
     .map((p) => {
       const s = p.sitemap || { priority: 0.5, changefreq: "weekly" };
-      return { path: p.path, priority: s.priority, changefreq: s.changefreq };
+      return {
+        path: p.path,
+        priority: s.priority,
+        changefreq: s.changefreq,
+        alternates: p.alternates,
+      };
     });
 
   const urls = [...fromPages, ...extra]
@@ -2188,6 +2298,7 @@ export function buildSitemap(lastmod: string, extra: SitemapEntry[] = []): strin
       [
         "  <url>",
         `    <loc>${SITE_URL}${s.path === "/" ? "/" : s.path}</loc>`,
+        ...alternateLinks(s.alternates),
         `    <lastmod>${lastmod}</lastmod>`,
         `    <changefreq>${s.changefreq}</changefreq>`,
         `    <priority>${s.priority.toFixed(1)}</priority>`,
@@ -2196,5 +2307,8 @@ export function buildSitemap(lastmod: string, extra: SitemapEntry[] = []): strin
     )
     .join("\n");
 
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+  // xmlns:xhtml n'est déclaré que si des alternates existent : un espace de
+  // noms inutilisé dans chaque sitemap n'apprendrait rien à personne.
+  const xhtml = urls.includes("<xhtml:link") ? ' xmlns:xhtml="http://www.w3.org/1999/xhtml"' : "";
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"${xhtml}>\n${urls}\n</urlset>\n`;
 }
