@@ -264,7 +264,8 @@ Un tag `vX.Y.Z` publie tout d'un coup :
 | `deploy-android.yml` | Play Store | AAB signé + fiche + notes de version, publiés (`docs/android-ci-cd.md`) |
 | `deploy-ios.yml` | App Store | IPA signé envoyé sur **TestFlight** + fiche (`docs/ios-ci-cd.md`) |
 
-Côté iOS, la mise en vente reste un geste manuel dans App Store Connect
-(Apple exige une soumission explicite à l'examen). Le chemin complet, compte
-Apple Developer, consoles, premier build, soumission, est décrit dans
-`docs/ios-release-plan.md`.
+Côté iOS, le tag envoie le binaire, soumet la version à l'examen et la met en
+vente dès l'accord d'Apple, sans clic dans App Store Connect. Le seul délai qui
+reste est celui de l'examen, quelques heures à quelques jours. Le chemin
+complet, compte Apple Developer, consoles, premier build, soumission, est
+décrit dans `docs/ios-release-plan.md`.

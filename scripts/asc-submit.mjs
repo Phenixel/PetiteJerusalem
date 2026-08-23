@@ -13,8 +13,9 @@
  *      l'Info.plist via scripts/setup-ios.mjs, HTTPS seulement = exempt) ;
  *   3. attacher le build à la version App Store du tag, créée ou renommée en
  *      amont par scripts/appstore-listing.mjs dans le job macOS ;
- *   4. créer la « review submission » et l'envoyer. La mise en vente reste un
- *      geste manuel : la version est créée avec releaseType MANUAL.
+ *   4. créer la « review submission » et l'envoyer. La mise en vente, elle, se
+ *      fait toute seule dès l'accord d'Apple : scripts/appstore-listing.mjs
+ *      pose la version en releaseType AFTER_APPROVAL (sauf IOS_AUTO_RELEASE=false).
  *
  * Cas assumés sans soumission : version déjà soumise ou publiée (re-run d'un
  * tag) → sortie 0 ; une autre soumission encore ouverte dans App Store
@@ -229,4 +230,6 @@ await api("PATCH", `/v1/reviewSubmissions/${submission.id}`, {
   data: { type: "reviewSubmissions", id: submission.id, attributes: { submitted: true } },
 });
 console.log(`asc-submit: version ${versionString} (build ${buildNumber}) soumise à l'examen ✓`);
-console.log("asc-submit: la mise en vente restera à déclencher dans App Store Connect après l'accord d'Apple (publication manuelle).");
+console.log(
+  "asc-submit: la mise en vente se fera d'elle-même dès l'accord d'Apple (releaseType AFTER_APPROVAL, posé par appstore-listing.mjs).",
+);

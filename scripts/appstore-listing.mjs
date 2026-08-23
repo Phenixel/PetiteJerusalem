@@ -32,6 +32,11 @@
  *   ASC_KEY_ID=… ASC_ISSUER_ID=… ASC_PRIVATE_KEY="$(cat AuthKey_XXX.p8)" \
  *     node scripts/appstore-listing.mjs [--version 3.6.4] [--release-notes body.md]
  *
+ * La version est posée en mise en vente automatique dès l'accord d'Apple
+ * (releaseType AFTER_APPROVAL), à chaque run et pas seulement à sa création :
+ * un tag suffit donc à publier, sans clic dans App Store Connect. Mettre
+ * IOS_AUTO_RELEASE=false pour revenir à la mise en vente au clic (MANUAL).
+ *
  * Sans --version, le script prend la version App Store à l'état
  * « modifiable » (PREPARE_FOR_SUBMISSION et assimilés).
  */
@@ -211,6 +216,14 @@ console.log(
     ? "appstore-listing: notes de version prises depuis la release GitHub (fr-FR), phrase par défaut ailleurs"
     : "appstore-listing: pas de texte de release GitHub, notes de version = phrase par défaut",
 );
+// Mode de mise en vente. Par défaut AFTER_APPROVAL : la version part en vente
+// d'elle-même dès l'accord d'Apple, si bien qu'un tag suffit à publier, comme
+// sur le Play Store. La variable de repo IOS_AUTO_RELEASE=false rend la mise
+// en vente au clic dans App Store Connect (MANUAL).
+const releaseType = process.env.IOS_AUTO_RELEASE?.trim() === "false" ? "MANUAL" : "AFTER_APPROVAL";
+const releaseTypeLabel =
+  releaseType === "MANUAL" ? "manuelle" : "automatique dès l'accord d'Apple";
+
 // États dans lesquels les textes d'une version sont encore modifiables.
 // (WAITING_FOR_REVIEW n'en fait pas partie : l'API répond 409 STATE_ERROR.)
 const EDITABLE_STATES = [
@@ -264,10 +277,7 @@ if (!version && wantedVersion) {
         attributes: {
           versionString: wantedVersion,
           platform: "IOS",
-          // Publication manuelle : la mise en vente reste un geste délibéré
-          // après l'accord d'Apple. Posé à la création seulement, un choix
-          // fait ensuite dans App Store Connect n'est jamais réécrit.
-          releaseType: "MANUAL",
+          releaseType,
         },
         relationships: { app: { data: { type: "apps", id: app.id } } },
       },
@@ -285,6 +295,29 @@ if (!version) {
   process.exit(1);
 }
 console.log(`appstore-listing: version ${version.attributes.versionString} (${versionState(version)})`);
+
+// Le mode de mise en vente est réappliqué à chaque run, et pas seulement à la
+// création : la version du tag est le plus souvent une version qui existait
+// déjà (réutilisée ou renommée juste au-dessus), et elle garderait sinon le
+// mode reçu à sa propre création, dans App Store Connect ou lors d'un run
+// antérieur. C'est donc le repo qui décide, pas l'état laissé par un clic.
+if (version.attributes.releaseType !== releaseType) {
+  // Un refus d'Apple sur ce seul champ ne doit pas emporter le reste de la
+  // synchro (textes, notes de version) : la mise en vente se rattrape d'un
+  // clic, les textes non envoyés, eux, se recopient à la main.
+  try {
+    version = await api("PATCH", `/v1/appStoreVersions/${version.id}`, {
+      data: { type: "appStoreVersions", id: version.id, attributes: { releaseType } },
+    }).then((r) => r.data);
+    console.log(`appstore-listing: mise en vente ${releaseTypeLabel} (${releaseType})`);
+  } catch (error) {
+    console.warn(
+      `appstore-listing: mise en vente non passée en ${releaseType} (${error.message}), à régler dans App Store Connect`,
+    );
+  }
+} else {
+  console.log(`appstore-listing: mise en vente déjà ${releaseTypeLabel} (${releaseType})`);
+}
 
 // --- Informations d'app (nom, sous-titre, confidentialité) -------------------
 // Elles vivent sur l'« appInfo » modifiable, pas sur la version.
