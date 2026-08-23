@@ -22,6 +22,7 @@ const ContentPage = () => import("../views/ContentPage.vue");
 const ZmanimPage = () => import("../views/Zmanim/ZmanimPage.vue");
 const CalendarPage = () => import("../views/Zmanim/CalendarPage.vue");
 const TehilimPage = () => import("../views/TehilimPage.vue");
+const SeoGuidePage = () => import("../views/SeoGuidePage.vue");
 const StudioPage = () => import("../views/Studio/StudioPage.vue");
 const AdminLayout = () => import("../views/Admin/AdminLayout.vue");
 const AdminChiourimPage = () => import("../views/Admin/AdminChiourimPage.vue");
@@ -163,6 +164,16 @@ export default [
     meta: { offlineOk: true },
     component: CalendarPage,
   },
+  // Page d'une fête (/calendrier/pessah) : le calendrier s'ouvre sur l'année
+  // qui la porte et la met en avant. Les pages prérendues correspondantes
+  // (voir SEO_FESTIVALS dans src/content/zmanimFestivals.ts) portent, elles, ses
+  // dates sur plusieurs années ; un slug inconnu ramène au calendrier.
+  {
+    path: "/calendrier/:fete",
+    name: "calendar-festival",
+    meta: { offlineOk: true },
+    component: CalendarPage,
+  },
   {
     path: "/chiourim",
     name: "chiourim",
@@ -272,6 +283,14 @@ export default [
     name: "tehilim-intention",
     meta: { offlineOk: true },
     component: TehilimPage,
+  },
+  // Les zmanim expliqués : page de fond, rendue du même contenu que le
+  // prérendu (src/content/seoPages.ts, `guidePages`).
+  {
+    path: "/zmanim",
+    name: "zmanim-guide",
+    meta: { offlineOk: true },
+    component: SeoGuidePage,
   },
   {
     path: "/:pathMatch(.*)*",

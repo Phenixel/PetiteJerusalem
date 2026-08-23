@@ -338,14 +338,14 @@ const fr = {
     },
     rest: {
       end: "Sortie",
-      note: "Allumage 18 minutes avant le coucher du soleil, sortie à la sortie des étoiles. Un jour de fête qui suit le Chabbat, on allume après la sortie, à partir d'une flamme déjà allumée.",
+      note: "Allumage {minutes} minutes avant le coucher du soleil, sortie à la sortie des étoiles. Un jour de fête qui suit le Chabbat, on allume après la sortie, à partir d'une flamme déjà allumée.",
     },
     shabbat: {
       title: "Chabbat",
       parasha: "Parachat",
       candleLighting: "Allumage des bougies",
       havdalah: "Sortie de Chabbat",
-      note: "Allumage 18 minutes avant le coucher du soleil, sortie à la sortie des étoiles.",
+      note: "Allumage {minutes} minutes avant le coucher du soleil, sortie à la sortie des étoiles.",
     },
     names: {
       alotHaShachar: "Alot haCha'har",
@@ -638,6 +638,9 @@ const fr = {
     zmanimCityTitle: "Horaires de Chabbat à {city} : allumage et sortie | Petite Jérusalem",
     zmanimCityDescription:
       "L\u2019heure d\u2019allumage des bougies (entrée de Chabbat) et l\u2019heure de sortie de Chabbat à {city}, semaine par semaine, et tous les zmanim du jour. Gratuit, hors ligne.",
+    festivalTitle: "{festival} : dates, heure d\u2019entrée et de sortie | Petite Jérusalem",
+    festivalDescription:
+      "Quand tombe {festival} ? Les dates de {festival} sur plusieurs années, avec l\u2019heure d\u2019entrée et de sortie, calculées pour votre position.",
     dailyReadingTitle: "Ma lecture du jour | Petite Jérusalem",
     dailyReadingDescription:
       "Retrouvez chaque jour les textes de votre lecture quotidienne : Tehilim, paracha de la semaine et vos textes choisis, avec suivi de progression.",

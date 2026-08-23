@@ -20,6 +20,7 @@ import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
 import { useZmanCountdown } from "../../composables/useZmanCountdown";
 import { getParashaForShabbat } from "../../services/dailyCycles";
 import {
+  candleLightingMinutes,
   computeZmanim,
   dayHighlights,
   festivalsOn,
@@ -69,6 +70,9 @@ const upcoming = computed(() => (isToday.value ? nextZman(times.value, now.value
  * flèches doit montrer ceux de cette semaine-là, pas toujours ceux d'à côté.
  */
 const restPeriods = computed(() => restPeriodsNear(place.value, day.value, locale.value));
+
+/** 18 minutes avant la chkia, 40 à Jérusalem : la note le dit au lieu affiché. */
+const candleMinutes = computed(() => candleLightingMinutes(place.value));
 
 /**
  * Le repos passe devant les horaires du jour le jour où il entre et tant qu'il
@@ -370,6 +374,7 @@ onUnmounted(() => {
       :period="period"
       :parasha="parashaOf(period.shabbat)"
       :tzid="place.tzid"
+      :candle-minutes="candleMinutes"
       class="mt-5"
     />
 
@@ -416,6 +421,7 @@ onUnmounted(() => {
       :period="period"
       :parasha="parashaOf(period.shabbat)"
       :tzid="place.tzid"
+      :candle-minutes="candleMinutes"
       class="mt-5 first:mt-0"
     />
 

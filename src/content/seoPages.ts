@@ -102,6 +102,7 @@ export const staticFooterHtml = `
       <a href="/tehilim">Tehilim par intention</a>
       <a href="/horaires">Horaires de Chabbat</a>
       <a href="/calendrier">Calendrier des fêtes</a>
+      <a href="/zmanim">Les zmanim expliqués</a>
     </nav>
     <p>Petite Jérusalem : étudier et partager la Torah, ensemble. Gratuit, en français, en anglais et en hébreu.</p>
   </footer>`;
@@ -145,7 +146,8 @@ export const appPages: SeoPage[] = [
         <li>
           <h3><a href="/horaires">Horaires de Chabbat</a></h3>
           <p>L'heure d'allumage des bougies et de sortie de Chabbat pour votre ville, tous les
-          zmanim du jour et le <a href="/calendrier">calendrier des fêtes juives</a> avec leurs dates.</p>
+          <a href="/zmanim">zmanim du jour</a> et le
+          <a href="/calendrier">calendrier des fêtes juives</a> avec leurs dates.</p>
         </li>
       </ul>
     </section>
@@ -225,11 +227,31 @@ export const appPages: SeoPage[] = [
         name: "Organiser un partage de lecture de Torah à plusieurs",
         inLanguage: "fr-FR",
         step: [
-          { "@type": "HowToStep", name: "Créer une session", text: "Créez une session et nommez-la." },
-          { "@type": "HowToStep", name: "Choisir le texte", text: "Choisissez le texte (Talmud, Tehilim, Michna, Tanakh) et les parties." },
-          { "@type": "HowToStep", name: "Partager le lien", text: "Partagez le lien ou le QR code avec les participants." },
-          { "@type": "HowToStep", name: "Réserver les passages", text: "Chaque participant réserve les passages qu'il prend en charge." },
-          { "@type": "HowToStep", name: "Suivre la progression", text: "Suivez l'avancée jusqu'au siyoum." },
+          {
+            "@type": "HowToStep",
+            name: "Créer une session",
+            text: "Créez une session et nommez-la.",
+          },
+          {
+            "@type": "HowToStep",
+            name: "Choisir le texte",
+            text: "Choisissez le texte (Talmud, Tehilim, Michna, Tanakh) et les parties.",
+          },
+          {
+            "@type": "HowToStep",
+            name: "Partager le lien",
+            text: "Partagez le lien ou le QR code avec les participants.",
+          },
+          {
+            "@type": "HowToStep",
+            name: "Réserver les passages",
+            text: "Chaque participant réserve les passages qu'il prend en charge.",
+          },
+          {
+            "@type": "HowToStep",
+            name: "Suivre la progression",
+            text: "Suivez l'avancée jusqu'au siyoum.",
+          },
         ],
       },
     ],
@@ -475,7 +497,10 @@ function buildLegal(path: string, s: LegalStrings): LandingLocaleContent {
     <p class="seo-lead">${s.intro}</p>
     ${s.updated ? `<p class="legal-updated"><em>${s.updated}</em></p>` : ""}
     ${s.sections
-      .map((sec) => `<section class="seo-section">\n      <h2>${sec.heading}</h2>\n      ${sec.html}\n    </section>`)
+      .map(
+        (sec) =>
+          `<section class="seo-section">\n      <h2>${sec.heading}</h2>\n      ${sec.html}\n    </section>`,
+      )
       .join("\n    ")}
   </main>`;
 
@@ -662,7 +687,8 @@ const PRIVACY_EN: LegalStrings = {
 const PRIVACY_HE: LegalStrings = {
   lang: "he-IL",
   title: "מדיניות פרטיות | פטיט ירושלים",
-  description: "אילו נתונים פטיט ירושלים אוספת, מדוע וכיצד למחוק אותם. חשבון אופציונלי, ללא פרסומות, מדידת שימוש רק בהסכמתכם.",
+  description:
+    "אילו נתונים פטיט ירושלים אוספת, מדוע וכיצד למחוק אותם. חשבון אופציונלי, ללא פרסומות, מדידת שימוש רק בהסכמתכם.",
   h1: "מדיניות פרטיות",
   intro: "עמוד זה מסביר אילו נתונים פטיט ירושלים אוספת, מדוע, וכיצד לנהל או למחוק אותם.",
   updated: "עודכן לאחרונה: 4 באוגוסט 2026",
@@ -1111,7 +1137,8 @@ const TERMS_EN: LegalStrings = {
 const TERMS_HE: LegalStrings = {
   lang: "he-IL",
   title: "תנאי שימוש | פטיט ירושלים",
-  description: "תנאי השימוש של פטיט ירושלים: כללי פרסום, אפס סובלנות לתוכן פוגעני, דיווח וניהול תוכן.",
+  description:
+    "תנאי השימוש של פטיט ירושלים: כללי פרסום, אפס סובלנות לתוכן פוגעני, דיווח וניהול תוכן.",
   h1: "תנאי שימוש",
   updated: "עדכון אחרון: 8 באוגוסט 2026",
   intro:
@@ -1179,7 +1206,7 @@ const FINIR_FR: LandingStrings = {
   ],
   howTitle: "Comment l'organiser sur Petite Jérusalem",
   how: [
-    "Créez une <a href=\"/share-reading\">session de partage</a> et nommez-la (par ex. « Siyoum haShass à la mémoire de… »).",
+    'Créez une <a href="/share-reading">session de partage</a> et nommez-la (par ex. « Siyoum haShass à la mémoire de… »).',
     "Choisissez le Talmud et les traités à couvrir, puis répartissez-les en passages.",
     "Partagez le lien avec les participants : famille, amis, kehila.",
     "Chacun réserve les dapim qu'il étudie, puis les marque comme lus.",
@@ -1259,7 +1286,7 @@ const FINIR_HE: LandingStrings = {
   ],
   howTitle: "איך מארגנים ב-Petite Jérusalem",
   how: [
-    "צרו <a href=\"/share-reading\">סשן שיתוף</a> ותנו לו שם (למשל «סיום הש״ס לעילוי נשמת…»).",
+    'צרו <a href="/share-reading">סשן שיתוף</a> ותנו לו שם (למשל «סיום הש״ס לעילוי נשמת…»).',
     "בחרו את התלמוד ואת המסכתות לכיסוי, וחלקו אותן לקטעים.",
     "שתפו את הקישור עם המשתתפים: משפחה, חברים, קהילה.",
     "כל אחד מזמין את הדפים שהוא לומד, ומסמן אותם כנקראו.",
@@ -1308,7 +1335,7 @@ const TEHILIM_FR: LandingStrings = {
   ],
   howTitle: "Comment partager les Tehilim",
   how: [
-    "Créez une <a href=\"/share-reading\">session</a> de type Tehilim et précisez l'intention dans la description.",
+    'Créez une <a href="/share-reading">session</a> de type Tehilim et précisez l\'intention dans la description.',
     "Sélectionnez les chapitres (ou tout le sefer).",
     "Partagez le lien : chacun réserve et lit ses chapitres, même en tant qu'invité.",
     "Suivez en temps réel les Tehilim déjà lus jusqu'à terminer le sefer.",
@@ -1337,7 +1364,7 @@ const TEHILIM_EN: LandingStrings = {
   ],
   howTitle: "How to share the Tehilim",
   how: [
-    "Create a <a href=\"/share-reading\">session</a> of type Tehilim and state the intention in the description.",
+    'Create a <a href="/share-reading">session</a> of type Tehilim and state the intention in the description.',
     "Select the chapters (or the whole sefer).",
     "Share the link: everyone reserves and reads their chapters, even as a guest.",
     "Track in real time the Tehilim already read until the sefer is finished.",
@@ -1383,7 +1410,7 @@ const TEHILIM_HE: LandingStrings = {
   ],
   howTitle: "איך לחלק את התהילים",
   how: [
-    "צרו <a href=\"/share-reading\">סשן</a> מסוג תהילים וציינו את הכוונה בתיאור.",
+    'צרו <a href="/share-reading">סשן</a> מסוג תהילים וציינו את הכוונה בתיאור.',
     "בחרו את הפרקים (או את כל הספר).",
     "שתפו את הקישור: כל אחד מזמין וקורא את הפרקים שלו, גם כאורח.",
     "עקבו בזמן אמת אחר התהילים שכבר נקראו עד לסיום הספר.",
@@ -1535,7 +1562,8 @@ const INTENTIONS: Intention[] = [
     psalmsNote:
       "L'usage est de prier pour la personne avec son prénom hébraïque suivi de celui de sa mère (par ex. «&nbsp;Untel ben Unetelle&nbsp;»). Beaucoup ajoutent le psaume 119 selon les lettres du prénom du malade.",
     cardTitle: "Refoua chelema (guérison d'un malade)",
-    cardDesc: "Les psaumes à lire pour la guérison d'une personne malade.",    related: ["accouchement", "protection"],
+    cardDesc: "Les psaumes à lire pour la guérison d'une personne malade.",
+    related: ["accouchement", "protection"],
     faq: [
       {
         q: "Quels Tehilim lire pour un malade ?",
@@ -1563,9 +1591,11 @@ const INTENTIONS: Intention[] = [
     h1: "Tehilim pour trouver son conjoint (zivoug)",
     lead: "Le <strong>zivoug</strong> désigne l'âme sœur, le conjoint que l'on cherche à rencontrer. On a coutume de lire certains Tehilim (Psaumes) en priant pour trouver son conjoint et fonder un foyer. Lus à plusieurs, ils se terminent plus vite.",
     psalms: [32, 38, 70, 71, 121, 124, 133],
-    psalmsNote: "Certains lisent aussi les psaumes 23 et 25, notamment avant et le jour du mariage.",
+    psalmsNote:
+      "Certains lisent aussi les psaumes 23 et 25, notamment avant et le jour du mariage.",
     cardTitle: "Mariage (zivoug)",
-    cardDesc: "Les psaumes à lire pour trouver son conjoint et fonder un foyer.",    related: ["reussite", "parnassa"],
+    cardDesc: "Les psaumes à lire pour trouver son conjoint et fonder un foyer.",
+    related: ["reussite", "parnassa"],
     faq: [
       {
         q: "Quels Tehilim lire pour trouver son conjoint ?",
@@ -1592,7 +1622,8 @@ const INTENTIONS: Intention[] = [
     psalmsNote:
       "Il existe aussi une coutume de « cure » sur 40 jours&nbsp;: lire chaque jour les psaumes 20, 21, 23, 24, 29 et 91.",
     cardTitle: "Parnassa (subsistance)",
-    cardDesc: "Les psaumes à lire pour la subsistance et la réussite financière.",    related: ["reussite", "protection"],
+    cardDesc: "Les psaumes à lire pour la subsistance et la réussite financière.",
+    related: ["reussite", "protection"],
     faq: [
       {
         q: "Quels Tehilim lire pour la parnassa ?",
@@ -1619,7 +1650,8 @@ const INTENTIONS: Intention[] = [
     psalmsNote:
       "Contre le mauvais œil (ayin hara), on cite en particulier le psaume 31. Pour un voyage, on récite aussi la Tefilat haderekh (prière du voyageur).",
     cardTitle: "Protection (danger, voyage)",
-    cardDesc: "Les psaumes à lire pour la protection, le voyage et contre le mauvais œil.",    related: ["refoua-chelema", "accouchement"],
+    cardDesc: "Les psaumes à lire pour la protection, le voyage et contre le mauvais œil.",
+    related: ["refoua-chelema", "accouchement"],
     faq: [
       {
         q: "Quels Tehilim lire pour être protégé ?",
@@ -1646,7 +1678,8 @@ const INTENTIONS: Intention[] = [
     psalmsNote:
       "On lit aussi le psaume 119 (le plus long) en choisissant les sections (huit versets par lettre) qui forment les lettres du prénom du défunt, puis celles du mot נשמה (Nechama).",
     cardTitle: "Ilouï nechama (mémoire d'un défunt)",
-    cardDesc: "Les psaumes à lire pour l'élévation de l'âme d'un proche disparu.",    related: ["refoua-chelema", "protection"],
+    cardDesc: "Les psaumes à lire pour l'élévation de l'âme d'un proche disparu.",
+    related: ["refoua-chelema", "protection"],
     faq: [
       {
         q: "Quels Tehilim lire pour un défunt ?",
@@ -1673,7 +1706,8 @@ const INTENTIONS: Intention[] = [
     psalmsNote:
       "Le psaume 20 est le plus cité. Une liste élargie attribuée au Rav 'Haïm Kanievsky comprend les psaumes 1 à 4, 21 à 24, 33 à 47, 72 à 86 et 90.",
     cardTitle: "Grossesse & accouchement",
-    cardDesc: "Les psaumes à lire pour une grossesse et un accouchement sereins.",    related: ["refoua-chelema", "protection"],
+    cardDesc: "Les psaumes à lire pour une grossesse et un accouchement sereins.",
+    related: ["refoua-chelema", "protection"],
     faq: [
       {
         q: "Quel Tehilim lire pour un accouchement ?",
@@ -1698,9 +1732,10 @@ const INTENTIONS: Intention[] = [
     lead: "La <strong>hatslakha</strong> est la réussite, la bénédiction dans ce que l'on entreprend&nbsp;: un examen, un projet, une nouvelle entreprise. On a coutume de lire des Tehilim (Psaumes) pour la demander.",
     psalms: [4, 20, 32, 90],
     psalmsNote:
-      "Plusieurs de ces psaumes rejoignent ceux que l'on lit pour la <a href=\"/tehilim/parnassa\">parnassa</a>.",
+      'Plusieurs de ces psaumes rejoignent ceux que l\'on lit pour la <a href="/tehilim/parnassa">parnassa</a>.',
     cardTitle: "Réussite (hatslakha)",
-    cardDesc: "Les psaumes à lire pour la réussite d'un examen, d'un projet ou d'une entreprise.",    related: ["parnassa", "mariage"],
+    cardDesc: "Les psaumes à lire pour la réussite d'un examen, d'un projet ou d'une entreprise.",
+    related: ["parnassa", "mariage"],
     faq: [
       {
         q: "Quels Tehilim lire pour réussir un examen ou un projet ?",
@@ -1860,13 +1895,190 @@ function buildTehilimHub(): SeoPage {
   };
 }
 
+// ---- Guides : pages de fond servies par SeoGuidePage.vue ----------------
+//
+// Pages explicatives, sans heure calculée : elles répondent aux recherches
+// « c'est quoi alot hachahar », « à quelle heure finit le Chéma », « plag
+// hamin'ha » que les pages d'horaires ne peuvent pas porter (elles portent
+// des heures, pas des définitions). Le contenu vit ici, dans seoPages.ts, et
+// non dans zmanimSeoPages.ts : rien à calculer, donc rien qui demande hebcal.
+// Français seulement pour l'instant, comme les pages Tehilim par intention.
+
+const ZMANIM_GUIDE_PATH = "/zmanim";
+
+const ZMANIM_FAQ: { q: string; a: string }[] = [
+  {
+    q: "Qu'est-ce que les zmanim ?",
+    a: "Les zmanim sont les heures de la journée qui commandent la pratique : l'aube, le lever du soleil, la limite pour dire le Chéma et la Amida, le milieu du jour, les moments de Min'ha, le coucher du soleil et la sortie des étoiles. Ils suivent le soleil, pas l'horloge : ils changent chaque jour et d'un lieu à l'autre.",
+  },
+  {
+    q: "Qu'est-ce qu'une heure zmanit (cha'a zmanit) ?",
+    a: "Le jour halakhique est divisé en douze parts égales, quelle que soit sa longueur : ces douzièmes sont les heures zmaniot. En été une heure zmanit dépasse soixante minutes, en hiver elle est plus courte. C'est pourquoi « la troisième heure du jour » ne tombe jamais à la même heure de la montre.",
+  },
+  {
+    q: "A quelle heure faut-il dire le Chéma du matin ?",
+    a: "Le Chéma se dit jusqu'à la fin de la troisième heure zmanit de la journée. Deux opinions donnent deux limites : le Maguen Avraham, qui compte le jour de l'aube à la nuit, et le Gaon de Vilna, qui le compte du lever au coucher du soleil. L'écart atteint facilement une demi-heure ; les deux heures sont affichées côte à côte.",
+  },
+  {
+    q: "Quelle différence entre le Maguen Avraham et le Gaon de Vilna ?",
+    a: "Les deux découpent le jour en douze heures égales, mais pas le même jour : le Maguen Avraham le fait courir de l'aube (72 minutes avant le lever du soleil) à la tombée de la nuit, le Gaon de Vilna du lever au coucher du soleil. Le jour du Maguen Avraham est donc plus long, et ses limites du matin tombent plus tôt.",
+  },
+  {
+    q: "Qu'est-ce que le plag hamin'ha ?",
+    a: "Le plag hamin'ha est le milieu de la dernière portion de l'après-midi, une heure et quart zmanit avant la fin du jour. C'est la limite à partir de laquelle on peut, selon l'opinion qui le permet, dire Arvit et accueillir Chabbat par anticipation.",
+  },
+  {
+    q: "A partir de quand peut-on dire Min'ha ?",
+    a: "Min'ha guedola ouvre le temps de Min'ha, une demi-heure zmanit après le milieu du jour ('hatsot). Min'ha ketana, deux heures et demie zmaniot avant la nuit, est le moment privilégié pour la dire.",
+  },
+  {
+    q: "Quelle différence entre la chkia et le tsét haKokhavim ?",
+    a: "La chkia est le coucher du soleil, le tsét haKokhavim la sortie des étoiles, quand la nuit est faite. Entre les deux se place le bein hachmachot, un intervalle de statut douteux : c'est pourquoi Chabbat commence avant la chkia et ne se termine qu'au tsét.",
+  },
+  {
+    q: "Qu'est-ce qu'alot haCha'har et misheyakir ?",
+    a: "Alot haCha'har est l'aube, le premier jour dans le ciel : le jour halakhique commence là. Misheyakir vient ensuite, quand la lumière suffit à reconnaître un visage familier : c'est l'heure à partir de laquelle on met le talit et les téfilines.",
+  },
+  {
+    q: "A quelle heure allume-t-on les bougies de Chabbat ?",
+    a: "Dix-huit minutes avant le coucher du soleil dans la plupart des communautés, quarante minutes à Jérusalem. Chabbat se termine à la sortie des étoiles, le moment de la havdala. Les heures de votre ville sont sur la page des horaires.",
+  },
+  {
+    q: "Comment ces horaires sont-ils calculés ?",
+    a: "Par la position du soleil à vos coordonnées, au niveau de la mer : l'aube et la sortie des étoiles par la hauteur du soleil sous l'horizon (16,1° pour alot, 11,5° pour misheyakir, 8,5° pour le tsét), les limites du matin et de l'après-midi en heures zmaniot. Tout le calcul se fait sur votre appareil, sans connexion, et votre position ne part nulle part. Pour la pratique, suivez les horaires de votre communauté.",
+  },
+];
+
+const ZMANIM_GUIDE_BODY = `
+  <main class="seo-article">
+    <h1>Les zmanim expliqués : tous les horaires halakhiques de la journée</h1>
+    <p class="seo-lead">
+      Alot haCha'har, misheyakir, le netz, la fin du Chéma et de la Amida, 'hatsot, min'ha
+      guedola et ketana, le plag hamin'ha, la chkia, le tsét haKokhavim : ce que chacun de ces
+      horaires marque, comment il se calcule, et où le trouver pour votre ville. Les heures du
+      jour, elles, sont sur la page des <a href="/horaires">horaires</a>.
+    </p>
+
+    <section class="seo-section">
+      <h2>Le jour halakhique et les heures zmaniot</h2>
+      <p>Les zmanim ne suivent pas l'horloge mais le soleil. Le jour halakhique est divisé en
+      douze parts égales, les <strong>heures zmaniot</strong> (cha'ot zmaniot) : longues l'été,
+      courtes l'hiver. « La troisième heure du jour » ne tombe donc jamais à la même heure de la
+      montre, et change d'une ville à l'autre.</p>
+      <p>Deux écoles découpent ce jour différemment. Le <strong>Maguen Avraham</strong> le fait
+      courir de l'aube à la tombée de la nuit ; le <strong>Gaon de Vilna</strong> du lever au
+      coucher du soleil. Là où la pratique les distingue vraiment, la fin du Chéma et la fin de
+      la Amida, les deux heures sont données côte à côte.</p>
+    </section>
+
+    <section class="seo-section">
+      <h2>L'aube et le lever</h2>
+      <p><strong>Alot haCha'har</strong> : l'aube, quand le soleil est à 16,1° sous l'horizon.
+      Le jour halakhique commence là ; c'est aussi le début des jeûnes qui ne commencent pas la
+      veille au soir.</p>
+      <p><strong>Misheyakir</strong> : le soleil à 11,5° sous l'horizon, quand la lumière suffit
+      à reconnaître un visage familier. C'est l'heure à partir de laquelle on met le talit et les
+      téfilines.</p>
+      <p><strong>Netz haHama</strong> : le lever du soleil. Dire la Amida de Cha'harit juste à
+      cet instant est le meilleur usage (la prière des vatikin).</p>
+    </section>
+
+    <section class="seo-section">
+      <h2>Les limites du matin</h2>
+      <p><strong>Fin du Chéma</strong> : la fin de la troisième heure zmanit. Passé ce moment, on
+      lit encore le Chéma, mais on n'accomplit plus l'obligation de sa lecture au temps voulu.</p>
+      <p><strong>Fin de la Amida</strong> : la fin de la quatrième heure zmanit, dernière limite
+      pour la prière du matin.</p>
+      <p>Chacune de ces deux limites est donnée selon le Maguen Avraham (plus tôt) et selon le
+      Gaon de Vilna.</p>
+    </section>
+
+    <section class="seo-section">
+      <h2>L'après-midi</h2>
+      <p><strong>'Hatsot</strong> : le milieu du jour, à mi-chemin exact du lever et du coucher
+      du soleil.</p>
+      <p><strong>Min'ha guedola</strong> : une demi-heure zmanit après 'hatsot, l'ouverture du
+      temps de Min'ha.</p>
+      <p><strong>Min'ha ketana</strong> : deux heures et demie zmaniot avant la fin du jour, le
+      moment privilégié pour dire Min'ha.</p>
+      <p><strong>Plag hamin'ha</strong> : une heure et quart zmanit avant la fin du jour. C'est
+      la limite à partir de laquelle on peut, selon l'opinion qui le permet, dire Arvit et
+      accueillir Chabbat par anticipation.</p>
+    </section>
+
+    <section class="seo-section">
+      <h2>Le soir et la nuit</h2>
+      <p><strong>Chkia</strong> : le coucher du soleil, la fin du jour.</p>
+      <p><strong>Bein hachmachot</strong> : l'intervalle entre la chkia et la nuit, de statut
+      douteux. C'est pour l'enjamber que Chabbat commence avant la chkia et ne se termine qu'à
+      la nuit faite.</p>
+      <p><strong>Tsét haKokhavim</strong> : la sortie des étoiles, le soleil à 8,5° sous
+      l'horizon. C'est l'heure d'Arvit, la fin de Chabbat et des fêtes, la fin des jeûnes.</p>
+      <p><strong>'Hatsot de la nuit</strong> : le milieu de la nuit, le moment des Sli'hot et du
+      Tikoun 'Hatsot.</p>
+    </section>
+
+    <section class="seo-section">
+      <h2>Chabbat et les fêtes</h2>
+      <p>L'entrée de Chabbat est fixée <strong>18 minutes avant la chkia</strong> dans la plupart
+      des communautés, et <strong>40 minutes à Jérusalem</strong>, où l'usage local est plus
+      large. La sortie est au tsét haKokhavim, le moment de la havdala.</p>
+      <p>Les heures de votre ville sont sur la page des <a href="/horaires">horaires de
+      Chabbat</a>, semaine par semaine et ville par ville, et les dates des fêtes sur le
+      <a href="/calendrier">calendrier des fêtes juives</a>.</p>
+    </section>
+
+    <section class="seo-section">
+      <h2>Comment nous les calculons</h2>
+      <p>Par la position du soleil à vos coordonnées, au niveau de la mer. Le calcul se fait
+      entièrement <strong>sur votre appareil</strong> : il fonctionne sans connexion, et votre
+      position ne part nulle part. Pour la pratique, suivez les horaires de votre communauté :
+      les usages locaux priment sur un calcul astronomique.</p>
+    </section>
+
+    ${faqHtml(ZMANIM_FAQ, "Questions fréquentes sur les zmanim")}
+  </main>`;
+
+/** Pages de fond, rendues à l'identique par le prérendu et par SeoGuidePage.vue. */
+export const guidePages: SeoPage[] = [
+  {
+    file: "zmanim.html",
+    path: ZMANIM_GUIDE_PATH,
+    title: "Les zmanim expliqués : alot, netz, fin du Chéma, chkia, tsét | Petite Jérusalem",
+    description:
+      "Ce que marque chaque zman : alot haCha'har, misheyakir, le netz, la fin du Chéma et de la Amida (Maguen Avraham et Gaon de Vilna), 'hatsot, min'ha, le plag, la chkia et le tsét haKokhavim.",
+    sitemap: { priority: 0.7, changefreq: "monthly" },
+    bodyHtml: ZMANIM_GUIDE_BODY,
+    jsonLd: [
+      breadcrumb([
+        { name: "Accueil", path: "/" },
+        { name: "Les zmanim expliqués", path: ZMANIM_GUIDE_PATH },
+      ]),
+      faqJsonLd(ZMANIM_FAQ),
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: "Les zmanim expliqués : tous les horaires halakhiques de la journée",
+        inLanguage: "fr",
+        mainEntityOfPage: `${SITE_URL}${ZMANIM_GUIDE_PATH}`,
+        publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+      },
+    ],
+  },
+];
+
 export const tehilimHub: SeoPage = buildTehilimHub();
 export const tehilimIntentionPages: SeoPage[] = INTENTIONS.map(buildIntention);
 /** Hub + intention pages, consumed at runtime by TehilimPage.vue. */
 export const tehilimPages: SeoPage[] = [tehilimHub, ...tehilimIntentionPages];
 
 /** All pages that the prerender script turns into static HTML files. */
-export const allPages: SeoPage[] = [...appPages, ...landingAsSeoPages, ...tehilimPages];
+export const allPages: SeoPage[] = [
+  ...appPages,
+  ...landingAsSeoPages,
+  ...tehilimPages,
+  ...guidePages,
+];
 
 // ---- Pure HTML transforms (shared by prerender + tests) -----------------
 

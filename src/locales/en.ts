@@ -334,14 +334,14 @@ const en: LocaleMessages = {
     },
     rest: {
       end: "Ends",
-      note: "Candle lighting 18 minutes before sunset, ends at nightfall. When a festival follows Shabbat, light after nightfall from an existing flame.",
+      note: "Candle lighting {minutes} minutes before sunset, ends at nightfall. When a festival follows Shabbat, light after nightfall from an existing flame.",
     },
     shabbat: {
       title: "Shabbat",
       parasha: "Parashat",
       candleLighting: "Candle lighting",
       havdalah: "Shabbat ends",
-      note: "Candle lighting 18 minutes before sunset, Shabbat ends at nightfall.",
+      note: "Candle lighting {minutes} minutes before sunset, Shabbat ends at nightfall.",
     },
     names: {
       alotHaShachar: "Alot HaShachar",
@@ -628,6 +628,9 @@ const en: LocaleMessages = {
     zmanimCityTitle: "Shabbat times in {city}: candle lighting and havdalah | Petite Jérusalem",
     zmanimCityDescription:
       "Candle lighting and Shabbat end times in {city}, week by week, plus all the halachic times of the day. Free, works offline.",
+    festivalTitle: "{festival}: dates, start and end times | Petite Jérusalem",
+    festivalDescription:
+      "When is {festival}? The dates of {festival} over several years, with the start and end times of the festival, computed for your location.",
     dailyReadingTitle: "My daily reading | Petite Jérusalem",
     dailyReadingDescription:
       "Find your daily reading texts every day: Tehilim, the weekly parasha and your chosen texts, with progress tracking.",

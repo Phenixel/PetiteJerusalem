@@ -40,24 +40,42 @@ touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
     page, Google chose a different canonical"). The Vue views set the right
     canonical on mount (`seoService`).
   - Also regenerates **`dist/sitemap.xml`** from the same page list.
-- `src/content/zmanimSeoPages.ts`: the **/horaires** (heures de Chabbat) and
-  **/calendrier** (dates des fêtes) pages, plus one **/horaires/&lt;ville&gt;**
-  page per big francophone community (list in `src/content/zmanimCities.ts`:
-  Marseille, Lyon, Strasbourg… + Bruxelles, Genève, Montréal, Tel Aviv…).
-  Their crawlable bodies embed real times computed at build time with
-  `@hebcal/core` (12 weeks of candle lighting/havdala per city, the festival
-  calendar of the current + next Hebrew year, and "Quand tombe Roch
-  Hachana/Kippour/Pessah… ?" FAQ answers). This lives in its own module, not
-  `seoPages.ts`, so hebcal stays out of the Vue chunks that import `seoPages`
-  (ContentPage, TehilimPage); only the prerender step and the tests load it.
-  Every row is dated, so the content stays truthful between deploys, but
-  **deploy at least every few weeks** to keep the upcoming-times table ahead
-  of the calendar. The `/horaires/:ville` route is real app behavior too:
-  ZmanimPage resolves the slug against the city catalogue and computes live
-  times for it (any catalogue city works, only the listed ones are
-  prerendered). Paris has no city page (`/horaires` is the Paris page) and
-  Jérusalem is deliberately excluded (local custom is 40 minutes before
-  sunset, the app computes 18 everywhere).
+- `src/content/zmanimSeoPages.ts`: everything that needs computed dates or
+  times, prerendered from `@hebcal/core` at build time:
+  - **`/horaires`** (Paris): twelve weeks of candle lighting/havdala, the
+    day's full zmanim table (alot, misheyakir, netz, sof zman Shema/Tefilla in
+    both opinions, chatzot, mincha gedola/ketana, plag, shkia, tzeit, chatzot
+    halayla), the parasha of each upcoming Shabbat linked to its Bibliothèque
+    page, and the directory of every city page grouped by country.
+  - **`/horaires/<ville>`**, one per city in `src/datas/cities.json` (242,
+    every city except Paris, whose page _is_ `/horaires`): the same twelve
+    weeks and the same zmanim table computed at that city's coordinates, plus
+    its six nearest cities with distances. Jerusalem is included: candle
+    lighting there is 40 minutes before sunset, and `candleLightingMinutes`
+    in `zmanimService` carries that local usage (18 minutes everywhere else).
+    The list of highlighted communities lives in `src/content/zmanimCities.ts`
+    (`FEATURED_CITY_NAMES`), along with the slugs shared with the router.
+  - **`/calendrier`**: the festivals of the current + next Hebrew year with
+    entry/exit times, plus a "big festivals over seven Hebrew years" table.
+  - **`/calendrier/<fete>`**, one per festival in
+    `src/content/zmanimFestivals.ts` (15: roch-hachana, yom-kippour, souccot,
+    simhat-torah, hanouka, tou-bichvat, jeune-esther, pourim, pessah,
+    lag-baomer, chavouot, and the fasts): its dates over six upcoming years in
+    civil + Hebrew dates, entry/exit times when it is a Yom Tov, and a "Quand
+    tombe X <année> ?" FAQ per year. The route `/calendrier/:fete` is real app
+    behavior too: CalendarPage resolves the slug, opens the year that carries
+    the next occurrence and highlights it.
+    This lives in its own module, not `seoPages.ts`, so hebcal stays out of the
+    Vue chunks that import `seoPages` (ContentPage, TehilimPage); only the
+    prerender step, `indexnow.mjs` and the tests load it. Every row is dated, so
+    the content stays truthful between deploys, but **deploy at least every few
+    weeks** to keep the upcoming-times tables ahead of the calendar.
+    `/horaires/:ville` is real app behavior as well: ZmanimPage resolves the
+    slug against the city catalogue and computes live times for it.
+- `guidePages` in `src/content/seoPages.ts` holds the evergreen explainers
+  that need no computation, today **`/zmanim`** (what each zman marks, the two
+  opinions, how it is computed), rendered for humans by
+  `src/views/SeoGuidePage.vue` from the very same `bodyHtml`.
 - **None of this ships in the native app.** All the prerendered SEO content is
   web-only: `scripts/prune-native-bundle.mjs` (run by `npm run app:build`,
   between `vite build` and `cap sync`) strips every prerendered `.html` page,
@@ -75,12 +93,13 @@ touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
   `<body>` for **dynamic** routes (individual sessions, chiourim, authors) that
   can't be known at build time.
 
-Prerendered/indexable pages (~1200 in total, all listed in the generated
+Prerendered/indexable pages (~1465 in total, all listed in the generated
 `sitemap.xml`): the static pages declared in `seoPages.ts`, `/`,
 `/share-reading`, `/bibliotheque`, `/chiourim`, the landing/legal pages above,
-the Tehilim-by-intention hub + its intention pages, `/horaires` and
-`/calendrier` (from `zmanimSeoPages.ts`), plus the Bibliothèque
-reading pages generated per corpus/book/chapter by `prerender-seo.mjs`.
+`/zmanim`, the Tehilim-by-intention hub + its intention pages, `/horaires` +
+its 242 city pages and `/calendrier` + its 15 festival pages (from
+`zmanimSeoPages.ts`), plus the Bibliothèque reading pages generated per
+corpus/book/chapter by `prerender-seo.mjs`.
 (`/login` is `noindex`; the old `/etude` URLs 301-redirect to
 `/bibliotheque` in `firebase.json`.)
 
@@ -105,7 +124,7 @@ After `npm run build` and `firebase deploy`:
    - Submit `https://petite-jerusalem.fr/sitemap.xml`.
    - Use **URL Inspection → Request indexing** for `/`, `/share-reading`,
      `/finir-le-chass`, `/partage-tehilim`, `/bibliotheque`, `/horaires`,
-     `/calendrier`.
+     `/calendrier`, `/zmanim`.
 3. **Bing Webmaster Tools** (https://www.bing.com/webmasters): add the site,
    submit the sitemap. (Bing also feeds ChatGPT search.)
 4. Confirm the old `petite-jerusalem.web.app` either redirects to `.fr` or stays

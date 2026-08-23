@@ -23,6 +23,8 @@ const props = defineProps<{
   parasha: WeeklyParasha | null;
   /** Fuseau du lieu : les heures s'affichent dedans, pas dans celui du navigateur. */
   tzid: string;
+  /** Minutes d'avance de l'allumage au lieu affiché : 18, 40 à Jérusalem. */
+  candleMinutes: number;
 }>();
 
 const { t, locale } = useI18n();
@@ -86,7 +88,11 @@ const isFestival = computed(() => props.period.festivals.length > 0);
     </ul>
 
     <p class="mt-2.5 text-xs text-text-secondary">
-      {{ isFestival ? t("zmanim.rest.note") : t("zmanim.shabbat.note") }}
+      {{
+        isFestival
+          ? t("zmanim.rest.note", { minutes: candleMinutes })
+          : t("zmanim.shabbat.note", { minutes: candleMinutes })
+      }}
     </p>
   </section>
 </template>

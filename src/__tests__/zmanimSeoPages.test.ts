@@ -1,8 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { buildZmanimSeoPages, upcomingRestPeriods } from "../content/zmanimSeoPages";
-import { SEO_CITY_NAMES, citySlug, findCityBySlug } from "../content/zmanimCities";
-import { buildAppShell, staticFooterHtml } from "../content/seoPages";
-import { DEFAULT_PLACE, type City } from "../services/zmanimService";
+import {
+  FESTIVALS,
+  buildZmanimSeoPages,
+  seoCities,
+  upcomingRestPeriods,
+} from "../content/zmanimSeoPages";
+import { COUNTRIES, FEATURED_CITY_NAMES, citySlug, findCityBySlug } from "../content/zmanimCities";
+import { SEO_FESTIVALS, findFestivalBySlug } from "../content/zmanimFestivals";
+import { buildAppShell, guidePages, staticFooterHtml } from "../content/seoPages";
+import {
+  DEFAULT_PLACE,
+  candleLightingMinutes,
+  placeFromCity,
+  type City,
+} from "../services/zmanimService";
 import citiesJson from "../datas/cities.json";
 
 /**
@@ -104,9 +115,10 @@ describe("zmanimSeoPages sitemap + maillage", () => {
 
 describe("zmanimSeoPages pages par ville", () => {
   const marseille = pages.find((p) => p.path === "/horaires/marseille")!;
+  const cityNames = seoCities().map((city) => city.name);
 
-  it("génère une page par ville de la liste, au bon chemin", () => {
-    for (const name of SEO_CITY_NAMES) {
+  it("génère une page par ville du catalogue, au bon chemin", () => {
+    for (const name of cityNames) {
       const slug = citySlug(name);
       const page = pages.find((p) => p.path === `/horaires/${slug}`);
       expect(page).toBeDefined();
@@ -115,14 +127,38 @@ describe("zmanimSeoPages pages par ville", () => {
     }
   });
 
-  it("chaque ville de la liste existe dans le catalogue, avec un slug unique", () => {
+  it("couvre tout le catalogue sauf Paris, dont /horaires est déjà la page", () => {
+    expect(cityNames).toHaveLength((citiesJson as City[]).length - 1);
+    expect(cityNames).not.toContain("Paris");
+    expect(pages.find((p) => p.path === "/horaires/paris")).toBeUndefined();
+  });
+
+  it("chaque ville a un slug unique, résolu par le routeur", () => {
     const slugs = new Set<string>();
-    for (const name of SEO_CITY_NAMES) {
+    for (const name of cityNames) {
       const slug = citySlug(name);
       expect(findCityBySlug(citiesJson as City[], slug)).not.toBeNull();
       slugs.add(slug);
     }
-    expect(slugs.size).toBe(SEO_CITY_NAMES.length);
+    expect(slugs.size).toBe(cityNames.length);
+  });
+
+  it("nomme chaque pays du catalogue, préposition comprise", () => {
+    for (const city of citiesJson as City[]) {
+      const country = COUNTRIES[city.country];
+      expect(country).toBeDefined();
+      expect(country.where).toMatch(/^(en|au|aux|à) /);
+    }
+    // L'annuaire du hub titre avec la locution, pas avec un « en » plaqué.
+    expect(horaires.bodyHtml).toContain("Horaires de Chabbat au Maroc");
+    expect(horaires.bodyHtml).toContain("Horaires de Chabbat en France");
+    expect(horaires.bodyHtml).toContain("Horaires de Chabbat aux États-Unis");
+  });
+
+  it("chaque ville mise en avant existe dans le catalogue", () => {
+    for (const name of FEATURED_CITY_NAMES) {
+      expect(findCityBySlug(citiesJson as City[], citySlug(name))).not.toBeNull();
+    }
   });
 
   it("la page de Marseille porte de vraies heures et le nom de la ville", () => {
@@ -134,7 +170,7 @@ describe("zmanimSeoPages pages par ville", () => {
   });
 
   it("chaque page ville lie le hub, le calendrier et des villes voisines", () => {
-    for (const name of SEO_CITY_NAMES) {
+    for (const name of cityNames) {
       const page = pages.find((p) => p.path === `/horaires/${citySlug(name)}`)!;
       expect(page.bodyHtml).toContain('href="/horaires"');
       expect(page.bodyHtml).toContain('href="/calendrier"');
@@ -143,9 +179,40 @@ describe("zmanimSeoPages pages par ville", () => {
   });
 
   it("le hub lie chaque page ville", () => {
-    for (const name of SEO_CITY_NAMES) {
+    for (const name of cityNames) {
       expect(horaires.bodyHtml).toContain(`href="/horaires/${citySlug(name)}"`);
     }
+  });
+
+  it("prérend les zmanim du jour, nommés et chiffrés", () => {
+    for (const label of [
+      "Alot haCha'har",
+      "Netz haHama",
+      "Fin du Chéma (Gaon de Vilna)",
+      "Plag haMin'ha",
+      "Tsét haKokhavim",
+    ]) {
+      expect(marseille.bodyHtml).toContain(label);
+      expect(horaires.bodyHtml).toContain(label);
+    }
+    // « à quelle heure est le netz à … » : la question, et une heure.
+    expect(marseille.bodyHtml).toContain("netz haHama (lever du soleil) à Marseille");
+  });
+
+  it("Jérusalem allume 40 minutes avant la chkia, et le dit", () => {
+    const jerusalem = pages.find((p) => p.path === "/horaires/jerusalem")!;
+    expect(jerusalem.bodyHtml).toContain("40 minutes avant le coucher du soleil");
+    expect(jerusalem.bodyHtml).not.toContain("18 minutes avant le coucher du soleil");
+    const city = findCityBySlug(citiesJson as City[], "jerusalem")!;
+    expect(candleLightingMinutes(placeFromCity(city))).toBe(40);
+    expect(candleLightingMinutes(DEFAULT_PLACE)).toBe(18);
+  });
+
+  it("lie les villes les plus proches, distance à l'appui", () => {
+    // Villeurbanne est à quelques kilomètres de Lyon : elle ouvre la liste.
+    const lyon = pages.find((p) => p.path === "/horaires/lyon")!;
+    expect(lyon.bodyHtml).toContain('href="/horaires/villeurbanne"');
+    expect(lyon.bodyHtml).toMatch(/\(à \d+ km\)/);
   });
 
   it("émet un fil d'Ariane à trois niveaux + FAQPage", () => {
@@ -164,6 +231,105 @@ describe("zmanimSeoPages pages par ville", () => {
     expect(citySlug("Tel Aviv")).toBe("tel-aviv");
     expect(citySlug("Boulogne-Billancourt")).toBe("boulogne-billancourt");
     expect(citySlug("Créteil")).toBe("creteil");
+  });
+});
+
+describe("zmanimSeoPages pages par fête", () => {
+  const pessah = pages.find((p) => p.path === "/calendrier/pessah")!;
+  const tichaBeav = pages.find((p) => p.path === "/calendrier/ticha-beav")!;
+
+  it("génère une page par fête déclarée, au bon chemin", () => {
+    for (const festival of SEO_FESTIVALS) {
+      const page = pages.find((p) => p.path === `/calendrier/${festival.slug}`);
+      expect(page).toBeDefined();
+      expect(page!.file).toBe(`calendrier/${festival.slug}.html`);
+      expect(page!.title).toContain(festival.label);
+    }
+  });
+
+  it("chaque fête a son texte de présentation", () => {
+    for (const festival of FESTIVALS) {
+      expect(festival.intro.length).toBeGreaterThan(80);
+    }
+  });
+
+  it("le routeur et le prérendu partagent les mêmes slugs", () => {
+    for (const festival of SEO_FESTIVALS) {
+      expect(findFestivalBySlug(festival.slug)).toEqual(festival);
+    }
+    expect(findFestivalBySlug("fete-inconnue")).toBeNull();
+  });
+
+  it("donne les dates sur plusieurs années, sans occurrence passée", () => {
+    // Six lignes à partir de 2027 : Pessah 2026 est passé au 21 août 2026.
+    for (const year of ["2027", "2028", "2029", "2030", "2031", "2032"]) {
+      expect(pessah.bodyHtml).toContain(year);
+    }
+    expect(pessah.bodyHtml).not.toContain("Quand tombe Pessah 2026");
+  });
+
+  it("porte les heures d'entrée et de sortie d'un Yom Tov", () => {
+    expect(pessah.bodyHtml).toContain("Entrée");
+    expect(pessah.bodyHtml).toContain("Sortie");
+    expect(pessah.bodyHtml.match(/\d{2}:\d{2}/g)?.length).toBeGreaterThanOrEqual(10);
+    // Pessah compte deux blocs séparés par le 'Hol haMoed : la page le dit.
+    expect(pessah.bodyHtml).toContain("'Hol haMoed");
+  });
+
+  it("ne promet ni entrée ni sortie à un jour de jeûne", () => {
+    expect(tichaBeav.bodyHtml).not.toContain("<th>Entrée</th>");
+    expect(tichaBeav.bodyHtml).toContain("le travail y reste permis");
+    expect(tichaBeav.bodyHtml).toContain("Quand tombe 9 Av");
+  });
+
+  it("émet un fil d'Ariane à trois niveaux + FAQPage", () => {
+    const types = (pessah.jsonLd ?? []).map((o) => o["@type"]);
+    expect(types).toContain("BreadcrumbList");
+    expect(types).toContain("FAQPage");
+    const crumb = (pessah.jsonLd ?? []).find((o) => o["@type"] === "BreadcrumbList") as {
+      itemListElement: { name: string }[];
+    };
+    expect(crumb.itemListElement).toHaveLength(3);
+    expect(crumb.itemListElement[2].name).toBe("Pessah");
+  });
+
+  it("le calendrier lie chaque page de fête", () => {
+    for (const festival of SEO_FESTIVALS) {
+      expect(calendrier.bodyHtml).toContain(`href="/calendrier/${festival.slug}"`);
+    }
+  });
+});
+
+describe("guidePages /zmanim", () => {
+  const zmanim = guidePages.find((p) => p.path === "/zmanim")!;
+
+  it("explique chaque horaire de la journée", () => {
+    for (const term of [
+      "Alot haCha'har",
+      "Misheyakir",
+      "Netz haHama",
+      "Fin du Chéma",
+      "'Hatsot",
+      "Min'ha guedola",
+      "Plag hamin'ha",
+      "Chkia",
+      "Tsét haKokhavim",
+      "heures zmaniot",
+    ]) {
+      expect(zmanim.bodyHtml).toContain(term);
+    }
+  });
+
+  it("émet BreadcrumbList + FAQPage + Article", () => {
+    const types = (zmanim.jsonLd ?? []).map((o) => o["@type"]);
+    expect(types).toContain("BreadcrumbList");
+    expect(types).toContain("FAQPage");
+    expect(types).toContain("Article");
+  });
+
+  it("est liée depuis le pied de page et depuis les horaires", () => {
+    expect(staticFooterHtml).toContain('href="/zmanim"');
+    expect(horaires.bodyHtml).toContain('href="/zmanim"');
   });
 });
 
