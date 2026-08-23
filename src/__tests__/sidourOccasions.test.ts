@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { HDate, months } from "@hebcal/core";
-import { activeOccasions, isRainRequest, isWinterMention } from "../services/dailyCycles";
+import {
+  activeOccasions,
+  isRainRequest,
+  isWinterMention,
+  recentSeasonalChanges,
+} from "../services/dailyCycles";
 
 /**
  * Les occasions du sidour de semaine : l'été et l'hiver de la 'Amida, la
@@ -120,5 +125,86 @@ describe("Lédavid (psaume 27)", () => {
     expect(activeOccasions(new HDate(21, months.TISHREI, 5786), false).has("ledavid")).toBe(true);
     expect(activeOccasions(new HDate(22, months.TISHREI, 5786), false).has("ledavid")).toBe(false);
     expect(activeOccasions(new HDate(1, months.AV, 5786), false).has("ledavid")).toBe(false);
+  });
+});
+
+describe("bascules saisonnières récentes (affichage en rouge)", () => {
+  it("l'hiver de la mention : rouge trois semaines depuis le 22 Tichri", () => {
+    const start = new HDate(22, months.TISHREI, 5786);
+    expect(recentSeasonalChanges(start, false).has("hiver")).toBe(true);
+    expect(recentSeasonalChanges(new HDate(start.abs() + 20), false).has("hiver")).toBe(true);
+    expect(recentSeasonalChanges(new HDate(start.abs() + 21), false).has("hiver")).toBe(false);
+  });
+
+  it("l'été : mention et demande basculent ensemble le 15 Nissan", () => {
+    const pessah = new HDate(15, months.NISAN, 5786);
+    const recent = recentSeasonalChanges(pessah, false);
+    expect(recent.has("ete")).toBe(true);
+    expect(recent.has("barkhenou")).toBe(true);
+    const later = recentSeasonalChanges(new HDate(pessah.abs() + 25), false);
+    expect(later.has("ete")).toBe(false);
+    expect(later.has("barkhenou")).toBe(false);
+  });
+
+  it("la demande de pluie : rouge dès son premier jour, chaque calendrier", () => {
+    expect(
+      recentSeasonalChanges(new HDate(7, months.CHESHVAN, 5786), true).has("barekh-alenou"),
+    ).toBe(true);
+    expect(
+      recentSeasonalChanges(new HDate(new Date(2025, 11, 5)), false).has("barekh-alenou"),
+    ).toBe(true);
+    // Trois semaines plus tard, la demande n'est plus une nouveauté.
+    expect(
+      recentSeasonalChanges(new HDate(new Date(2026, 0, 15)), false).has("barekh-alenou"),
+    ).toBe(false);
+  });
+
+  it("au cœur d'une saison : rien de récent, rien de rouge", () => {
+    expect(recentSeasonalChanges(new HDate(1, months.SHVAT, 5786), false).size).toBe(0);
+    expect(recentSeasonalChanges(new HDate(1, months.AV, 5786), false).size).toBe(0);
+  });
+});
+
+describe("sortie du séfer Torah (Yehalelou)", () => {
+  const start = new HDate(10, months.CHESHVAN, 5786);
+  it("lundi et jeudi ordinaires, et les jours à lecture propre", () => {
+    expect(activeOccasions(hebrewDayOfWeek(1, start), false).has("sefer-torah")).toBe(true);
+    expect(activeOccasions(hebrewDayOfWeek(4, start), false).has("sefer-torah")).toBe(true);
+    expect(activeOccasions(hebrewDayOfWeek(2, start), false).has("sefer-torah")).toBe(false);
+    // Roch Hodech Eloul 5786 (13 août 2026, un jeudi) : lecture propre, le
+    // séfer sort même si la Torah de la semaine ne se lit pas.
+    const rh = activeOccasions(new HDate(30, months.AV, 5786), false);
+    expect(rh.has("torah-semaine")).toBe(false);
+    expect(rh.has("sefer-torah")).toBe(true);
+  });
+});
+
+describe("magdil / migdol du birkat hamazon", () => {
+  it("migdol les jours de Moussaf, magdil les autres, jamais les deux", () => {
+    const start = new HDate(10, months.CHESHVAN, 5786);
+    const mardi = activeOccasions(hebrewDayOfWeek(2, start), false);
+    expect(mardi.has("magdil")).toBe(true);
+    expect(mardi.has("migdol")).toBe(false);
+    const chabbat = activeOccasions(hebrewDayOfWeek(6, start), false);
+    expect(chabbat.has("migdol")).toBe(true);
+    expect(chabbat.has("magdil")).toBe(false);
+    const roshHodesh = activeOccasions(new HDate(30, months.AV, 5786), false);
+    expect(roshHodesh.has("migdol")).toBe(true);
+  });
+});
+
+describe("les fêtes nommées du Mé'ein chaloch", () => {
+  it("Pessah, Chavouot et Chemini Atséret portent leur clé", () => {
+    // 15 Nissan 5786 = 2 avril 2026.
+    expect(activeOccasions(new HDate(15, months.NISAN, 5786), false).has("pesach")).toBe(true);
+    expect(activeOccasions(new HDate(17, months.NISAN, 5786), false).has("pesach")).toBe(true);
+    expect(activeOccasions(new HDate(6, months.SIVAN, 5786), false).has("shavuot")).toBe(true);
+    expect(
+      activeOccasions(new HDate(22, months.TISHREI, 5786), false).has("shemini-atzeret"),
+    ).toBe(true);
+    // Un jour ordinaire ne porte aucune fête.
+    const ordinaire = activeOccasions(new HDate(10, months.CHESHVAN, 5786), false);
+    for (const key of ["pesach", "shavuot", "sukkot", "shemini-atzeret"])
+      expect(ordinaire.has(key)).toBe(false);
   });
 });

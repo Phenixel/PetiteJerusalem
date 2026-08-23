@@ -33,8 +33,20 @@ export interface Rubric {
  * reprend l'assemblée, ou une didascalie glissée dans le fil du texte.
  */
 export type TextRun =
-  | { kind: "he"; text: string; strong?: boolean }
-  | { kind: "rubric"; rubric: Rubric };
+  | {
+      kind: "he";
+      text: string;
+      strong?: boolean;
+      /**
+       * Texte affecté par une didascalie (« les jours de Moussaf on dit
+       * מגדול ») : rendu à la couleur du thème, pour qu'on voie d'un coup
+       * d'œil quelle partie du texte la consigne concerne.
+       */
+      accent?: boolean;
+      /** Fragment qui ne se dit qu'à cette occasion (voir TextBlock.when). */
+      when?: string;
+    }
+  | { kind: "rubric"; rubric: Rubric; when?: string };
 
 /**
  * Tefila : un paragraphe du texte, avec sa didascalie et ses mises en avant.
@@ -64,6 +76,12 @@ export interface TextParagraph {
    * du vidoui, sinon, s'étirent sur trois écrans.
    */
   tight?: boolean;
+  /**
+   * Paragraphe qui ne se dit qu'à cette occasion (les fêtes du Mé'ein
+   * chaloch). Il garde sa ligne, et donc son index, dans le texte de la
+   * section (marque-pages, translittération) ; seul l'affichage le masque.
+   */
+  when?: string;
 }
 
 /**
@@ -422,12 +440,23 @@ function loadTanakh(
  * `he` accepte aussi une simple chaîne. Les didascalies ne comptent pas dans
  * le texte hébreu de la ligne : les marque-pages, la translittération et le
  * repérage des versets ne voient que ce qui se lit.
+ *
+ * Une ligne et chaque fragment objet acceptent un `when` : l'occasion du
+ * calendrier sans laquelle ils ne s'affichent pas (les fêtes du Mé'ein
+ * chaloch, מגדול les jours de Moussaf). Le fragment `v` porte le texte
+ * affecté par une didascalie, rendu à la couleur du thème.
  */
 interface TefilaRun {
   /** Hébreu mis en avant (ce que reprend l'assemblée). */
   b?: string;
   /** Didascalie insérée dans le fil du texte. */
   r?: Rubric;
+  /** Texte affecté par une didascalie, à la couleur du thème. */
+  v?: string;
+  /** Hébreu ordinaire, sous forme d'objet pour porter un `when`. */
+  he?: string;
+  /** Occasion sans laquelle le fragment ne s'affiche pas. */
+  when?: string;
 }
 
 interface TefilaFileLine {
@@ -437,6 +466,7 @@ interface TefilaFileLine {
   muted?: boolean;
   lead?: boolean;
   tight?: boolean;
+  when?: string;
 }
 
 interface TefilaFileBlock {
@@ -465,11 +495,20 @@ function parseTefilaLine(raw: string | TefilaFileLine): TextParagraph | null {
     if (typeof part === "string") {
       const text = cleanText(part);
       if (text) runs.push({ kind: "he", text });
-    } else if (part.b) {
+      continue;
+    }
+    const when = part.when ? { when: part.when } : {};
+    if (part.b) {
       const text = cleanText(part.b);
-      if (text) runs.push({ kind: "he", text, strong: true });
+      if (text) runs.push({ kind: "he", text, strong: true, ...when });
+    } else if (part.v) {
+      const text = cleanText(part.v);
+      if (text) runs.push({ kind: "he", text, accent: true, ...when });
+    } else if (part.he) {
+      const text = cleanText(part.he);
+      if (text) runs.push({ kind: "he", text, ...when });
     } else if (part.r) {
-      runs.push({ kind: "rubric", rubric: part.r });
+      runs.push({ kind: "rubric", rubric: part.r, ...when });
     }
   }
   if (!runs.some((run) => run.kind === "he")) return null;
@@ -479,6 +518,7 @@ function parseTefilaLine(raw: string | TefilaFileLine): TextParagraph | null {
   if (raw.muted) paragraph.muted = true;
   if (raw.lead) paragraph.lead = true;
   if (raw.tight) paragraph.tight = true;
+  if (raw.when) paragraph.when = raw.when;
   return paragraph;
 }
 
