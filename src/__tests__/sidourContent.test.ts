@@ -41,6 +41,7 @@ const KNOWN_WHEN = new Set([
   "torah-semaine",
   "sefer-torah",
   "ledavid",
+  "lamnatseah-minha",
   ...Array.from({ length: 7 }, (_, day) => `jour-${day}`),
 ]);
 

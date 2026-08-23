@@ -110,6 +110,15 @@ describe("tahanoun et lecture de la Torah de la semaine", () => {
     expect(occ.has("tahanoun-minha")).toBe(false);
   });
 
+  it("le Lamnatséa'h de Min'ha : chaque jour de semaine, sauf le vendredi", () => {
+    expect(activeOccasions(mardi, false).has("lamnatseah-minha")).toBe(true);
+    const vendrediOcc = activeOccasions(vendredi, false);
+    expect(vendrediOcc.has("lamnatseah-minha")).toBe(false);
+    expect(vendrediOcc.has("jour-5")).toBe(true);
+    const chabbat = activeOccasions(hebrewDayOfWeek(6, start), false);
+    expect(chabbat.has("lamnatseah-minha")).toBe(false);
+  });
+
   it("Roch Hodech : ni tahanoun, ni lecture de la paracha", () => {
     const occ = activeOccasions(new HDate(1, months.KISLEV, 5786), false);
     expect(occ.has("rosh-chodesh")).toBe(true);
@@ -128,8 +137,8 @@ describe("Lédavid (psaume 27)", () => {
   });
 });
 
-describe("bascules saisonnières récentes (affichage en rouge)", () => {
-  it("l'hiver de la mention : rouge trois semaines depuis le 22 Tichri", () => {
+describe("bascules saisonnières récentes (à la couleur du thème)", () => {
+  it("l'hiver de la mention : signalé trois semaines depuis le 22 Tichri", () => {
     const start = new HDate(22, months.TISHREI, 5786);
     expect(recentSeasonalChanges(start, false).has("hiver")).toBe(true);
     expect(recentSeasonalChanges(new HDate(start.abs() + 20), false).has("hiver")).toBe(true);
@@ -146,7 +155,7 @@ describe("bascules saisonnières récentes (affichage en rouge)", () => {
     expect(later.has("barkhenou")).toBe(false);
   });
 
-  it("la demande de pluie : rouge dès son premier jour, chaque calendrier", () => {
+  it("la demande de pluie : signalée dès son premier jour, chaque calendrier", () => {
     expect(
       recentSeasonalChanges(new HDate(7, months.CHESHVAN, 5786), true).has("barekh-alenou"),
     ).toBe(true);
@@ -159,7 +168,7 @@ describe("bascules saisonnières récentes (affichage en rouge)", () => {
     ).toBe(false);
   });
 
-  it("au cœur d'une saison : rien de récent, rien de rouge", () => {
+  it("au cœur d'une saison : rien de récent, rien de signalé", () => {
     expect(recentSeasonalChanges(new HDate(1, months.SHVAT, 5786), false).size).toBe(0);
     expect(recentSeasonalChanges(new HDate(1, months.AV, 5786), false).size).toBe(0);
   });

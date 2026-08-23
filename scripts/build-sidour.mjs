@@ -139,7 +139,8 @@ function sliceBetween(text, { from, until }) {
  * `strip` retire des consignes restées dans le texte extrait ; `from`/`until`
  * découpent le segment entre deux repères (voir sliceBetween) ; `when` ne dit
  * la ligne qu'à cette occasion ; `alt` ajoute dans le fil une didascalie
- * suivie du texte qu'elle affecte, rendu à la couleur du thème.
+ * suivie du texte qu'elle affecte ; `splitAmen` déplie un kaddich en une
+ * phrase par ligne, chacune suivie de sa réponse (voir buildKaddishLines).
  */
 function buildLine(spec, segs) {
   let text;
@@ -173,6 +174,30 @@ function buildLine(spec, segs) {
   return line;
 }
 
+/**
+ * Un kaddich, une phrase par ligne : la source borne chaque réponse de
+ * l'assemblée d'un [אָמֵן] imbriqué dans un <small>. On découpe le segment sur
+ * ces marqueurs, et chaque phrase s'achève sur sa réponse (אָמֵן) en gras,
+ * comme une reprise de l'assemblée.
+ */
+function buildKaddishLines(spec, segs) {
+  return outerSmalls(segs[spec.seg])
+    .join(" ")
+    .split(/<small>\s*\[[^\]]+\]\s*<\/small>/)
+    .map((part) => {
+      let text = cleanFinal(dropSmalls(part));
+      for (const cut of spec.strip ?? []) text = text.split(cut).join(" ");
+      return text.replace(/\s+/g, " ").trim();
+    })
+    .filter((text) => text.length > 0)
+    .map((text, i) => {
+      const line = { he: [text, { b: "(אָמֵן)" }] };
+      if (i === 0 && spec.rubric) line.rubric = spec.rubric;
+      if (i > 0 || spec.tight) line.tight = true;
+      return line;
+    });
+}
+
 function buildBlock(spec, sections) {
   const block = {};
   if (spec.labelText) {
@@ -189,7 +214,9 @@ function buildBlock(spec, sections) {
   const segs = spec.src ? sections[spec.src] : [];
   if (spec.src && !segs) throw new Error(`Section source inconnue : ${spec.src}`);
   block.lines = (spec.lines ?? [])
-    .map((line) => buildLine(line, segs ?? []))
+    .flatMap((line) =>
+      line.splitAmen ? buildKaddishLines(line, segs ?? []) : [buildLine(line, segs ?? [])],
+    )
     .filter((line) => line !== null);
   if (!block.zman && !block.torahWeekly && block.lines.length === 0) {
     throw new Error(`Bloc vide : ${spec.labelText?.fr ?? spec.when ?? "?"}`);
@@ -238,9 +265,9 @@ const STRIP = {
 // écrite une fois, avec la table des index propres à chaque office.
 const HALAKHA = {
   amida: R(
-    "La 'Amida se dit debout, pieds joints, face à Jérusalem, à voix basse et sans interruption. Les ajouts qui dépendent du jour ou de la saison apparaissent à leur place, à la couleur du thème.",
-    "The Amidah is said standing, feet together, facing Jerusalem, in an undertone and without interruption. Additions that depend on the day or the season appear in their place, in the theme color.",
-    "העמידה נאמרת בעמידה, ברגליים צמודות, לכיוון ירושלים, בלחש וללא הפסקה. התוספות התלויות ביום או בעונה מופיעות במקומן, בצבע הערכה.",
+    "La 'Amida se dit debout, pieds joints, face à Jérusalem, à voix basse et sans interruption. Les ajouts qui dépendent du jour ou de la saison apparaissent à leur place. Les trois premières semaines après un changement de saison, ils sont à la couleur du thème.",
+    "The Amidah is said standing, feet together, facing Jerusalem, in an undertone and without interruption. Additions that depend on the day or the season appear in their place. For the first three weeks after a seasonal switch, they show in the theme color.",
+    "העמידה נאמרת בעמידה, ברגליים צמודות, לכיוון ירושלים, בלחש וללא הפסקה. התוספות התלויות ביום או בעונה מופיעות במקומן. בשלושת השבועות הראשונים אחרי חילוף עונה הן מוצגות בצבע הערכה.",
   ),
   eteMention: R(
     "Si l'on a dit machiv haroua'h oumorid haguéchem en été, on reprend au début de la bénédiction ; si la 'Amida est achevée, on la recommence.",
@@ -604,7 +631,7 @@ function kaddishHalf(src) {
     src,
     fold: "hazan",
     labelText: R("Demi-Kaddich (le 'hazan)", "Half Kaddish (the chazan)", "חצי קדיש (החזן)"),
-    lines: [{ seg: 4, mode: "small", rubric: RUBRIC.hazan }],
+    lines: [{ seg: 4, rubric: RUBRIC.hazan, splitAmen: true }],
   };
 }
 
@@ -618,12 +645,11 @@ function kaddishTitkabal(src) {
       "קדיש תתקבל (החזן)",
     ),
     lines: [
-      { seg: 4, mode: "small", rubric: RUBRIC.hazan },
-      { seg: 5, mode: "small", tight: true },
-      { seg: 6, mode: "small", tight: true },
+      { seg: 4, rubric: RUBRIC.hazan, splitAmen: true },
+      { seg: 5, tight: true, splitAmen: true },
+      { seg: 6, tight: true, splitAmen: true },
       {
         seg: 7,
-        mode: "small",
         strip: ["יפסע שלש פסיעות לאחור"],
         rubric: R(
           "Il recule de trois pas et dit :",
@@ -631,6 +657,7 @@ function kaddishTitkabal(src) {
           "יפסע שלוש פסיעות לאחור ויאמר:",
         ),
         tight: true,
+        splitAmen: true,
       },
     ],
   };
@@ -1461,6 +1488,27 @@ function minhaRecipe() {
         ],
       },
       kaddishTitkabal("Kaddish"),
+      // Entre le Kaddich Titkabal et 'Alénou : le psaume 67 (Lamnatséa'h
+      // binguinot), sauf la veille de Chabbat, où la consigne de la source
+      // le remplace par le psaume 93 (Adonaï malakh).
+      {
+        src: "Vidui",
+        when: "lamnatseah-minha",
+        plain: true,
+        labelText: R("Lamnatséa'h (psaume 67)", "Lamnatseach (Psalm 67)", "למנצח (תהלים סז)"),
+        lines: [{ seg: 16, strip: ["(תהלים סז)"] }],
+      },
+      {
+        src: "Vidui",
+        when: "jour-5",
+        plain: true,
+        labelText: R(
+          "Veille de Chabbat : Adonaï malakh (psaume 93)",
+          "Shabbat eve: Adonai malach (Psalm 93)",
+          "ערב שבת: ה' מלך (תהלים צג)",
+        ),
+        lines: [{ seg: 18, mode: "small" }],
+      },
       {
         src: "Alenu",
         labelText: R("'Alénou léchabéa'h", "Aleinu", "עלינו לשבח"),

@@ -246,8 +246,8 @@ function rainRequestStart(year: number, il: boolean): number {
  * Les variantes saisonnières de la 'Amida qui viennent de basculer : pendant
  * les trois premières semaines d'une mention (machiv haroua'h / morid hatal)
  * ou d'une demande (barekh 'alénou / barkhénou), le lecteur affiche le
- * passage en rouge plutôt qu'à la couleur du thème, le temps que le pli se
- * prenne, c'est là qu'on se trompe.
+ * passage à la couleur du thème plutôt qu'en couleur ordinaire, le temps que
+ * le pli se prenne, c'est là qu'on se trompe.
  */
 const RECENT_CHANGE_DAYS = 21;
 
@@ -364,6 +364,10 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // Le jour de la semaine (0 = dimanche) : le chir chel yom n'affiche que le
   // psaume du jour.
   occ.add(`jour-${hd.getDay()}`);
+  // Le Lamnatséa'h de Min'ha (psaume 67), entre le Kaddich Titkabal et
+  // 'Alénou : tous les jours de semaine, sauf la veille de Chabbat où le
+  // psaume 93 le remplace (bloc jour-5 du fichier).
+  if (hd.getDay() !== 5 && hd.getDay() !== 6) occ.add("lamnatseah-minha");
   // Lédavid (psaume 27) : du 1er Eloul à Hochana Rabba (21 Tichri).
   if (
     hd.getMonth() === months.ELUL ||
