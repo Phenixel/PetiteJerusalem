@@ -3,6 +3,7 @@ import { computed, ref, onMounted, onUnmounted } from "vue";
 import AppIcon from "./icons/AppIcon.vue";
 import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
 import { isNativeApp } from "../composables/useNativeApp";
+import { tefilaNavActive } from "../composables/useTefilaNav";
 
 const isVisible = ref(false);
 // Le pointeur survole le bouton : on ne le masque pas sous la main de
@@ -75,8 +76,9 @@ onUnmounted(() => {
     leave-from-class="transform translate-y-0 opacity-100"
     leave-to-class="transform translate-y-10 opacity-0"
   >
+    <!-- Sur une tefila, le menu de sections (TefilaSectionNav) prend sa place. -->
     <button
-      v-if="isVisible"
+      v-if="isVisible && !tefilaNavActive"
       @click="scrollToTop"
       @pointerenter="onPointerEnter"
       @pointerleave="onPointerLeave"

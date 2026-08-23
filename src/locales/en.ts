@@ -792,6 +792,9 @@ const en: LocaleMessages = {
     bookmarks: "Bookmarks",
     bookmarkAdd: "Add a bookmark",
     bookmarkRemove: "Remove bookmark",
+    // Tefilot (Siddur, Selichot): section navigation menu.
+    navSections: "Sections",
+    navTop: "Top of page",
     // Tefila (Selichot, Berakhot): liturgical text layout.
     fold: {
       teshuva: "Addition for the Ten Days of Repentance",

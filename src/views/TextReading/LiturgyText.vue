@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import type { Rubric, TextBlock, TextParagraph } from "../../services/textService";
+import type { Rubric, TextBlock, TextParagraph, TextRun } from "../../services/textService";
 import type { SupportedLocale } from "../../i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
@@ -23,6 +23,12 @@ const props = defineProps<{
   phoneticLines: string[];
   /** Occasions du jour : ouvrent d'emblée les encadrés qui les concernent. */
   occasions: Set<string>;
+  /**
+   * Occasions saisonnières qui viennent de basculer (machiv haroua'h en
+   * début d'hiver…) : leurs ajouts passent au rouge les trois premières
+   * semaines, le temps que le pli se prenne.
+   */
+  recentChanges: Set<string>;
   highlightedLine: number | null;
   selectedLine: number | null;
   isBookmarked: (line: number) => boolean;
@@ -116,8 +122,14 @@ function sectionClass(block: TextBlock): string {
       ? `${base} bg-primary/5`
       : `${base} bg-black/[0.04] dark:bg-white/[0.05]`;
   }
-  // Ajout du calendrier : à la couleur du thème, adossé à un filet.
-  if (isCalendarAdd(block)) return "my-7 border-s-2 border-primary/40 ps-4 text-primary";
+  // Ajout du calendrier : à la couleur du thème, adossé à un filet. S'il
+  // vient de basculer (machiv haroua'h les trois premières semaines de
+  // l'hiver…), le rouge crie « attention, ça a changé » à la place.
+  if (isCalendarAdd(block)) {
+    return block.when && props.recentChanges.has(block.when)
+      ? "my-7 border-s-2 border-red-500/50 ps-4 text-red-600 dark:text-red-400"
+      : "my-7 border-s-2 border-primary/40 ps-4 text-primary";
+  }
   // Variantes : à part du fil, sur un fond neutre, pour qu'on voie qu'on
   // choisit au lieu de tout lire.
   if (block.variants) return "my-6 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] p-4";
@@ -145,16 +157,35 @@ const paragraphTone = (block: TextBlock, paragraph: TextParagraph): string =>
 const plainParagraphs = (block: TextBlock): TextParagraph[] =>
   block.lines.map((text) => ({ runs: [{ kind: "he", text }] }));
 
+/**
+ * Un paragraphe prêt à rendre, avec sa ligne absolue dans la section : les
+ * lignes conditionnelles (`when`) masquées un jour donné ne décalent pas les
+ * index des marque-pages et de la translittération.
+ */
+interface ParagraphEntry {
+  paragraph: TextParagraph;
+  line: number;
+}
+
+const saidToday = (when?: string): boolean => !when || props.occasions.has(when);
+
+/** Les fragments d'un paragraphe qui se disent aujourd'hui. */
+const visibleRuns = (paragraph: TextParagraph): TextRun[] =>
+  paragraph.runs.filter((run) => saidToday(run.when));
+
 const sections = computed(() =>
   props.blocks
-    // Un marqueur resté vide (la Torah de la semaine qui n'a pas pu se
-    // charger) ne laisse pas un titre orphelin dans le fil.
-    .filter((block) => block.zman || block.lines.length > 0)
-    .map((block, index) => ({
+    .map((block) => ({
       block,
-      index,
-      paragraphs: block.paragraphs ?? plainParagraphs(block),
-    })),
+      paragraphs: (block.paragraphs ?? plainParagraphs(block))
+        .map((paragraph, i): ParagraphEntry => ({ paragraph, line: block.offset + i }))
+        .filter(({ paragraph }) => saidToday(paragraph.when)),
+    }))
+    // Un marqueur resté vide (la Torah de la semaine qui n'a pas pu se
+    // charger) ou un bloc dont aucune ligne ne se dit aujourd'hui (les fêtes
+    // du Mé'ein chaloch) ne laisse pas un titre orphelin dans le fil.
+    .filter(({ block, paragraphs }) => block.zman || paragraphs.length > 0)
+    .map((entry, index) => ({ ...entry, index })),
 );
 </script>
 
@@ -166,6 +197,7 @@ const sections = computed(() =>
       :data-when="block.when"
       :data-fold="block.fold"
       :data-zman="block.zman"
+      :data-block-anchor="block.zman ? undefined : block.offset"
       :class="block.zman ? '' : sectionClass(block)"
     >
       <!-- Horaire du moment (fin du Chéma, plage de Min'ha…), avant ce qui se lit. -->
@@ -207,7 +239,7 @@ const sections = computed(() =>
                langue du lecteur, avant le texte qu'elle encadre : une simple
                ligne en petit, dans le registre des didascalies. -->
           <p v-if="block.halakha" class="reading-halakha">{{ say(block.halakha) }}</p>
-          <template v-for="(paragraph, i) in paragraphs" :key="block.offset + i">
+          <template v-for="({ paragraph, line }, i) in paragraphs" :key="line">
             <div :class="block.numbered ? 'flex items-start gap-3 py-2' : ''">
               <span
                 v-if="block.numbered"
@@ -224,17 +256,17 @@ const sections = computed(() =>
                 <div
                   v-for="copy in copiesOf(paragraph)"
                   :key="copy"
-                  :data-line="copy === 1 ? block.offset + i : undefined"
+                  :data-line="copy === 1 ? line : undefined"
                   class="reading-para"
                   :class="{
                     'reading-lead': paragraph.lead,
                     'reading-tight': paragraph.tight,
                     'reading-echo': copy > 1,
-                    'bg-primary/10': highlightedLine === block.offset + i,
+                    'bg-primary/10': highlightedLine === line,
                     'bg-black/5 dark:bg-white/10':
-                      selectedLine === block.offset + i && highlightedLine !== block.offset + i,
+                      selectedLine === line && highlightedLine !== line,
                   }"
-                  @click="emit('select', block.offset + i)"
+                  @click="emit('select', line)"
                 >
                   <div :class="block.variants ? 'flex items-baseline gap-3' : ''">
                     <span v-if="block.variants && paragraph.rubric" class="reading-variant-label">{{
@@ -247,36 +279,38 @@ const sections = computed(() =>
                       :class="paragraphTone(block, paragraph)"
                     >
                       <AppIcon
-                        v-if="copy === 1 && isBookmarked(block.offset + i)"
+                        v-if="copy === 1 && isBookmarked(line)"
                         name="bookmark"
                         :size="13"
                         class="text-primary me-1"
                       />
-                      <template v-for="(run, r) in paragraph.runs" :key="r">
+                      <template v-for="(run, r) in visibleRuns(paragraph)" :key="r">
                         <span v-if="run.kind === 'rubric'" class="reading-rubric-inline">{{
                           say(run.rubric)
                         }}</span>
-                        <span v-else :class="{ 'font-bold': run.strong }">{{
-                          runText(run.text, r)
-                        }}</span>
+                        <span
+                          v-else
+                          :class="{ 'font-bold': run.strong, 'reading-accent': run.accent }"
+                          >{{ runText(run.text, r) }}</span
+                        >
                       </template>
                       <span v-if="repeatBadge(paragraph)" class="reading-rubric-inline">{{
                         repeatBadge(paragraph)
                       }}</span>
                     </p>
                     <p v-else dir="ltr" class="reading-tl min-w-0 flex-1">
-                      {{ phoneticLines[block.offset + i] }}
+                      {{ phoneticLines[line] }}
                     </p>
                   </div>
                 </div>
-                <div v-if="selectedLine === block.offset + i" class="flex justify-end mt-2">
+                <div v-if="selectedLine === line" class="flex justify-end mt-2">
                   <button
                     class="btn btn-soft !px-3 !py-1.5 text-sm"
-                    @click.stop="emit('toggle-bookmark', block.offset + i)"
+                    @click.stop="emit('toggle-bookmark', line)"
                   >
                     <AppIcon name="bookmark" :size="13" />
                     {{
-                      isBookmarked(block.offset + i)
+                      isBookmarked(line)
                         ? t("textReading.bookmarkRemove")
                         : t("textReading.bookmarkAdd")
                     }}
@@ -346,6 +380,12 @@ const sections = computed(() =>
   margin-inline: -0.5rem;
   border-radius: var(--radius-sm);
   transition: background-color 0.5s ease;
+}
+
+/* Le texte que la didascalie affecte (מגדול les jours de Moussaf…) : la
+   couleur du thème le détache du fil, comme les ajouts du calendrier. */
+.reading-accent {
+  color: var(--color-primary);
 }
 
 /* Reprise d'un passage qui se dit deux ou trois fois. */

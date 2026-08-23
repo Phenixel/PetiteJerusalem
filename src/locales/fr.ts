@@ -804,6 +804,9 @@ const fr = {
     bookmarks: "Marque-pages",
     bookmarkAdd: "Ajouter un marque-page",
     bookmarkRemove: "Retirer le marque-page",
+    // Tefilot (Sidour, Sli'hot) : menu de navigation par sections.
+    navSections: "Sections",
+    navTop: "Haut de page",
     // Tefila (Sli'hot, Brahot) : mise en forme du texte liturgique.
     fold: {
       teshuva: "Ajout des dix jours de pénitence",

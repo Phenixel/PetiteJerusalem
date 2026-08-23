@@ -17,7 +17,7 @@ import {
   placeLabel as describePlace,
 } from "../../services/textService";
 import type { TextBlock, TextContent, TextSection } from "../../services/textService";
-import { activeOccasions, getWeeklyParasha } from "../../services/dailyCycles";
+import { activeOccasions, getWeeklyParasha, recentSeasonalChanges } from "../../services/dailyCycles";
 import { injectWeeklyTorah, nextTefilaEntry, tefilaOf } from "../../services/sidourService";
 import { hebrewDateFor } from "../../services/zmanimService";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
@@ -43,6 +43,8 @@ import {
 } from "../../content/etudeTexts";
 import LiturgyText from "./LiturgyText.vue";
 import SlihotHours from "./SlihotHours.vue";
+import TefilaSectionNav from "./TefilaSectionNav.vue";
+import ReadingProgressBar from "./ReadingProgressBar.vue";
 import GuestForm from "../../components/GuestForm.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
@@ -51,6 +53,9 @@ import { useReadingSize } from "../../composables/useReadingSize";
 import { readingProgressService, bookmarkId } from "../../services/readingProgressService";
 import type { Bookmark, ReadingPosition } from "../../services/readingProgressService";
 import { isNativeApp } from "../../composables/useNativeApp";
+import { setTefilaNavSections } from "../../composables/useTefilaNav";
+import type { TefilaNavSection } from "../../composables/useTefilaNav";
+import type { SupportedLocale } from "../../i18n";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { analyticsService } from "../../services/analyticsService";
 import { useLocalePath } from "../../composables/useLocalePath";
@@ -60,7 +65,7 @@ const { localePath } = useLocalePath();
 
 const route = useRoute();
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const toast = useToast();
 const readingSize = useReadingSize();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
@@ -148,6 +153,15 @@ const visibleBlocks = computed(() =>
   verseBlocks.value.filter((b) => !b.when || occasions.value.has(b.when)),
 );
 
+// Les bascules saisonnières récentes (machiv haroua'h en début d'hiver…) :
+// leurs ajouts s'affichent en rouge les trois premières semaines.
+const recentChanges = computed(() =>
+  recentSeasonalChanges(
+    hebrewDateFor(zmanimPlace.value, now.value, now.value),
+    zmanimPlace.value.tzid === "Asia/Jerusalem",
+  ),
+);
+
 /** Tefila (Sli'hot, Brahot, Sidour) : un rendu à part, voir LiturgyText. */
 const isLiturgyText = computed(() => !!textEntry.value && isLiturgy(textEntry.value));
 const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
@@ -156,6 +170,24 @@ const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
 // les enchaîne). Pas de lien entre Cha'harit et le reste : la journée les
 // sépare.
 const sidourNextEntry = computed(() => nextTefilaEntry(textEntry.value));
+
+// Sidour et Sli'hot : un office se cherche par sections ('Amida, Chéma,
+// ta'hanoun…). La page publie les blocs titrés du jour au menu flottant
+// (TefilaSectionNav), qui remplace le bouton « remonter en haut ». Les brahot
+// restent hors jeu : trop courtes pour qu'on s'y perde.
+const isTefilaNavText = computed(() => ["Sidour", "Slihot"].includes(String(textEntry.value?.type)));
+const tefilaNavSections = computed<TefilaNavSection[]>(() => {
+  if (!isTefilaNavText.value || !currentSection.value) return [];
+  return visibleBlocks.value
+    .filter((b) => !b.zman && !b.fold && (b.labelText || b.label))
+    .map((b) => ({
+      offset: b.offset,
+      label: b.labelText
+        ? b.labelText[locale.value as SupportedLocale] || b.labelText.fr
+        : b.label,
+    }));
+});
+watch(tefilaNavSections, (list) => setTefilaNavSections(list), { immediate: true });
 
 // Le minuteur des occasions : seuls les textes de tefila regardent l'heure,
 // il ne tourne donc que pour eux, et s'arrête dès qu'on ouvre autre chose.
@@ -904,6 +936,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener("scroll", onScroll);
   stopOccasionsTicker();
+  setTefilaNavSections([]);
   if (scrollSaveTimer !== null) {
     clearScrollSaveTimer();
     // Une capture était en attente : on fige la position avant de partir.
@@ -1308,6 +1341,7 @@ watch(textId, () => {
           :show-phonetic="showPhonetic"
           :phonetic-lines="phoneticLines"
           :occasions="occasions"
+          :recent-changes="recentChanges"
           :highlighted-line="highlightedLine"
           :selected-line="selectedLine"
           :is-bookmarked="isLineBookmarked"
@@ -1449,6 +1483,11 @@ watch(textId, () => {
         </nav>
       </section>
     </template>
+
+    <!-- Tefilot (Sidour, Sli'hot) : le menu de sections remplace le bouton de
+         remontée, et la progression de lecture court au bas de l'écran. -->
+    <TefilaSectionNav v-if="tefilaNavSections.length" :sections="tefilaNavSections" />
+    <ReadingProgressBar v-if="isTefilaNavText && currentSection" />
   </main>
 </template>
 
