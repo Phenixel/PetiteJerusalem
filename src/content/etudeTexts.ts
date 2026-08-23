@@ -283,6 +283,12 @@ export function buildSectionBody(
   entry: TextStudyJsonEntry,
   content: TextContent,
   section: TextSection,
+  /**
+   * Encart HTML posé sous le chapeau : le prérendu y met la date de lecture
+   * d'une paracha (voir parashaSeoPages.ts), qui demande hebcal et n'a donc
+   * pas sa place dans ce module, chargé par les vues.
+   */
+  note = "",
 ): string {
   const corpus = corpusOf(entry);
   const numbered = (entry.totalSections ?? 1) > 1 || corpus === "tanakh";
@@ -319,6 +325,7 @@ export function buildSectionBody(
   <main class="seo-article reading-page">
     <h1>${esc(sectionHeading(entry, section))}</h1>
     <p class="seo-lead">${readingLead(entry)}</p>
+    ${note}
 
     ${isShareable(entry) ? ctaHtml : ""}
 

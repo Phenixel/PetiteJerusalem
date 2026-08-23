@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { authService } from "../services/authService";
 import { analyticsService } from "../services/analyticsService";
 import { isAdminEmail } from "../config/admin";
 import { useDarkMode } from "../composables/useDarkMode";
 import { isNativeApp } from "../composables/useNativeApp";
+import { useLocalePath } from "../composables/useLocalePath";
 import LanguageSelector from "./LanguageSelector.vue";
 import AppIcon from "./icons/AppIcon.vue";
 
@@ -30,13 +31,18 @@ function publishHeaderHeight(height: number) {
 
 useDarkMode();
 
-const navLinks = [
-  { to: "/", labelKey: "common.home", exact: true },
+// L'accueil et les horaires ont une adresse par langue : les liens suivent
+// l'espace où l'on est, sinon un visiteur venu d'un résultat anglais en sort
+// au premier clic.
+const { localePath } = useLocalePath();
+
+const navLinks = computed(() => [
+  { to: localePath("home"), labelKey: "common.home", exact: true },
   { to: "/share-reading", labelKey: "common.shareReading", exact: true },
   { to: "/bibliotheque", labelKey: "study.title", exact: true },
   { to: "/chiourim", labelKey: "common.chiourim", exact: true },
-  { to: "/horaires", labelKey: "zmanim.navTitle", exact: true },
-];
+  { to: localePath("horaires"), labelKey: "zmanim.navTitle", exact: true },
+]);
 
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value;
@@ -107,7 +113,7 @@ function goToLogin() {
     ref="header"
     class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-beige/90 backdrop-blur-md dark:bg-gray-900/90 transition-colors duration-300"
   >
-    <RouterLink to="/" class="group">
+    <RouterLink :to="localePath('home')" class="group">
       <h1
         class="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
       >

@@ -24,6 +24,21 @@
 // pas ce fichier de contenu (~94 kB) dans leur chunk. Ré-exportées ici pour
 // le prerender et les consommateurs historiques.
 import { SITE_URL, SITE_NAME, OG_IMAGE, LOGO_IMAGE } from "../config/site";
+import { ZMANIM_GUIDE } from "./zmanimGuideStrings";
+import {
+  DEFAULT_SEO_LOCALE,
+  HREFLANG,
+  alternatesOf,
+  fileForPath,
+  sectionPath,
+  type SeoSection,
+  HTML_DIR,
+  HTML_LANG,
+  OG_LOCALE,
+  SEO_LOCALES,
+  type Alternates,
+  type SeoLocale,
+} from "./seoLocales";
 
 export { SITE_URL, SITE_NAME, OG_IMAGE, LOGO_IMAGE };
 
@@ -55,6 +70,14 @@ export type SeoPage = {
   jsonLd?: Record<string, unknown>[];
   /** Sitemap hints. `false` keeps the page out of the sitemap (e.g. /login). */
   sitemap?: { priority: number; changefreq: string } | false;
+  /** La langue de la page. Absente, c'est le français (les pages historiques). */
+  locale?: SeoLocale;
+  /**
+   * Les chemins de la même page dans les autres langues. Ce sont eux qui
+   * deviennent les `hreflang` du `<head>` et du sitemap : sans eux, un moteur
+   * n'a aucun moyen de savoir que la version anglaise existe.
+   */
+  alternates?: Alternates;
 };
 
 // ---- Shared HTML building blocks ---------------------------------------
@@ -89,29 +112,246 @@ export const faqHtml = (faq: { q: string; a: string }[], heading: string): strin
     </dl>
   </section>`;
 
-/** Internal-link footer injected into every static page for crawlable site links. */
-export const staticFooterHtml = `
+/**
+ * Le pied de page interne, injecté dans chaque page statique : c'est lui qui
+ * donne aux crawlers les liens du site depuis n'importe quelle page.
+ *
+ * Une version par langue : sur une page anglaise, un pied de page français
+ * enverrait le visiteur (et le moteur) vers des adresses qu'il ne comprend
+ * pas. Les sections non traduites (bibliothèque, chiourim) gardent leur unique
+ * adresse, avec un libellé traduit.
+ */
+const FOOTER_STRINGS: Record<Locale, { links: [SeoSection | string, string][]; tagline: string }> =
+  {
+    fr: {
+      links: [
+        ["home", "Accueil"],
+        ["/share-reading", "Partage de lectures"],
+        ["/bibliotheque", "Bibliothèque"],
+        ["/chiourim", "Chiourim"],
+        ["finirLeChass", "Finir le Chass"],
+        ["partageTehilim", "Partage de Tehilim"],
+        ["/tehilim", "Tehilim par intention"],
+        ["paracha", "Paracha de la semaine"],
+        ["horaires", "Horaires de Chabbat"],
+        ["calendrier", "Calendrier des fêtes"],
+        ["zmanim", "Les zmanim expliqués"],
+      ],
+      tagline:
+        "Petite Jérusalem : étudier et partager la Torah, ensemble. Gratuit, en français, en anglais et en hébreu.",
+    },
+    en: {
+      links: [
+        ["home", "Home"],
+        ["/share-reading", "Shared readings"],
+        ["/bibliotheque", "Library"],
+        ["/chiourim", "Shiurim"],
+        ["finirLeChass", "Finish the Shas"],
+        ["partageTehilim", "Share Tehillim"],
+        ["/tehilim", "Tehillim by intention"],
+        ["paracha", "Parashat hashavua"],
+        ["horaires", "Shabbat times"],
+        ["calendrier", "Holiday calendar"],
+        ["zmanim", "Zmanim explained"],
+      ],
+      tagline:
+        "Petite Jérusalem: learning and sharing Torah, together. Free, in French, English and Hebrew.",
+    },
+    he: {
+      links: [
+        ["home", "דף הבית"],
+        ["/share-reading", "קריאה משותפת"],
+        ["/bibliotheque", "ספרייה"],
+        ["/chiourim", "שיעורים"],
+        ["finirLeChass", "לסיים את הש״ס"],
+        ["partageTehilim", "חלוקת תהילים"],
+        ["/tehilim", "תהילים לפי כוונה"],
+        ["paracha", "פרשת השבוע"],
+        ["horaires", "זמני שבת"],
+        ["calendrier", "לוח החגים"],
+        ["zmanim", "זמני היום ההלכתיים"],
+      ],
+      tagline: "פטיט ירושלים: ללמוד ולחלוק תורה, יחד. בחינם, בצרפתית, באנגלית ובעברית.",
+    },
+  };
+
+/** Le pied de page d'une langue. */
+export function footerHtml(locale: Locale = "fr"): string {
+  const { links, tagline } = FOOTER_STRINGS[locale];
+  const nav = links
+    .map(([target, label]) => {
+      const href = target.startsWith("/") ? target : sectionPath(target as SeoSection, locale);
+      return `<a href="${href}">${label}</a>`;
+    })
+    .join("\n      ");
+  return `
   <footer class="seo-footer" role="contentinfo">
-    <nav aria-label="Navigation du site">
-      <a href="/">Accueil</a>
-      <a href="/share-reading">Partage de lectures</a>
-      <a href="/bibliotheque">Bibliothèque</a>
-      <a href="/chiourim">Chiourim</a>
-      <a href="/finir-le-chass">Finir le Chass</a>
-      <a href="/partage-tehilim">Partage de Tehilim</a>
-      <a href="/tehilim">Tehilim par intention</a>
-      <a href="/horaires">Horaires de Chabbat</a>
-      <a href="/calendrier">Calendrier des fêtes</a>
+    <nav aria-label="${locale === "he" ? "ניווט באתר" : locale === "en" ? "Site navigation" : "Navigation du site"}">
+      ${nav}
     </nav>
-    <p>Petite Jérusalem : étudier et partager la Torah, ensemble. Gratuit, en français, en anglais et en hébreu.</p>
+    <p>${tagline}</p>
   </footer>`;
+}
+
+/** Le pied de page français, pour les consommateurs historiques et les tests. */
+export const staticFooterHtml = footerHtml("fr");
 
 // ---- Pages backed by an existing Vue view (static body = pre-paint) -----
+
+/**
+ * L'accueil anglais et hébreu (/en, /he).
+ *
+ * L'accueil français reste dans `appPages`, à la racine : c'est l'historique,
+ * et le x-default. Les deux autres sont écrits ici, avec les liens de leur
+ * langue quand la section est traduite, et les adresses uniques sinon
+ * (bibliothèque, chiourim, partage de lectures).
+ */
+const HOME_STRINGS: Record<
+  "en" | "he",
+  { title: string; description: string; body: (l: Record<string, string>) => string }
+> = {
+  en: {
+    title: "Petite Jérusalem | Learn and share Torah together, and finish the Shas",
+    description:
+      "A free platform to learn and share Torah together: split the Talmud to finish the Shas, read Tehillim together for a refuah shelemah or in someone's memory, and follow the progress through to the siyum.",
+    body: (l) => `
+  <main class="seo-article">
+    <h1>Learning and sharing Torah, together</h1>
+    <p class="seo-lead">
+      Petite Jérusalem is a <strong>free</strong> platform for organising collective learning of
+      Jewish texts. Split a text between several people, reserve your own portions and follow
+      everyone's progress through to the siyum, wherever you are.
+    </p>
+
+    <section class="seo-section">
+      <h2>What can you do here?</h2>
+      <ul class="seo-cards">
+        <li>
+          <h3><a href="/share-reading">Shared readings</a></h3>
+          <p>Create a session, pick a text (Talmud / Gemara, Tehillim, Mishnah, Tanakh) and split
+          the portions between the participants.</p>
+        </li>
+        <li>
+          <h3><a href="/bibliotheque">Library</a></h3>
+          <p>Read Tehillim, Mishnah, Talmud and Tanakh online, in Hebrew with transliteration.</p>
+        </li>
+        <li>
+          <h3><a href="/chiourim">Shiurim</a></h3>
+          <p>Listen to Torah classes shared by the community, by rav or by topic.</p>
+        </li>
+        <li>
+          <h3><a href="${l.horaires}">Shabbat times</a></h3>
+          <p>Candle lighting and havdalah times for your city, all the
+          <a href="${l.zmanim}">zmanim of the day</a> and the
+          <a href="${l.calendrier}">Jewish holiday calendar</a> with its dates.</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="seo-section">
+      <h2>Built for learning together</h2>
+      <ul>
+        <li><a href="${l.finirLeChass}">Finish the Shas together</a>: split the masechtot and dapim of the Talmud Bavli through to the siyum haShas.</li>
+        <li><a href="${l.partageTehilim}">Share Tehillim</a>: split the 150 Psalms for a refuah shelemah, an iluy neshamah or for someone's success.</li>
+        <li>Organise learning in someone's memory, for a hilula or for the success of an event.</li>
+        <li><a href="${l.paracha}">The weekly parasha</a>, with its text and the times of that Shabbat.</li>
+      </ul>
+      <p><a class="seo-cta" href="/share-reading">Create a shared reading</a></p>
+    </section>
+  </main>`,
+  },
+  he: {
+    title: "פטיט ירושלים | ללמוד ולחלוק תורה יחד, ולסיים את הש״ס",
+    description:
+      "פלטפורמה חינמית ללימוד ולחלוקת תורה יחד: חלוקת הש״ס לסיום משותף, קריאת תהילים לרפואה שלמה או לעילוי נשמה, ומעקב אחר ההתקדמות עד הסיום.",
+    body: (l) => `
+  <main class="seo-article">
+    <h1>ללמוד ולחלוק תורה, יחד</h1>
+    <p class="seo-lead">
+      פטיט ירושלים היא פלטפורמה <strong>חינמית</strong> לארגון לימוד משותף של מקורות יהודיים.
+      חלקו טקסט בין כמה אנשים, הזמינו את החלקים שלכם ועקבו אחר ההתקדמות של כולם עד הסיום, מכל
+      מקום.
+    </p>
+
+    <section class="seo-section">
+      <h2>מה אפשר לעשות כאן?</h2>
+      <ul class="seo-cards">
+        <li>
+          <h3><a href="/share-reading">קריאה משותפת</a></h3>
+          <p>פתחו מפגש, בחרו טקסט (תלמוד, תהילים, משנה, תנ״ך) וחלקו את החלקים בין המשתתפים.</p>
+        </li>
+        <li>
+          <h3><a href="/bibliotheque">ספרייה</a></h3>
+          <p>קראו תהילים, משנה, תלמוד ותנ״ך אונליין, בעברית ובתעתיק.</p>
+        </li>
+        <li>
+          <h3><a href="/chiourim">שיעורים</a></h3>
+          <p>האזינו לשיעורי תורה שהקהילה שיתפה, לפי רב או לפי נושא.</p>
+        </li>
+        <li>
+          <h3><a href="${l.horaires}">זמני שבת</a></h3>
+          <p>זמני הדלקת נרות וצאת השבת בעיר שלכם, כל <a href="${l.zmanim}">זמני היום</a>
+          ו<a href="${l.calendrier}">לוח החגים</a> עם התאריכים.</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="seo-section">
+      <h2>בנוי ללימוד משותף</h2>
+      <ul>
+        <li><a href="${l.finirLeChass}">לסיים את הש״ס יחד</a>: חלוקת המסכתות והדפים של התלמוד הבבלי עד סיום הש״ס.</li>
+        <li><a href="${l.partageTehilim}">חלוקת תהילים</a>: חלוקת 150 הפרקים לרפואה שלמה, לעילוי נשמה או להצלחה.</li>
+        <li>ארגון לימוד לעילוי נשמה, להילולא או להצלחת אירוע.</li>
+        <li><a href="${l.paracha}">פרשת השבוע</a>, עם הטקסט שלה וזמני אותה שבת.</li>
+      </ul>
+      <p><a class="seo-cta" href="/share-reading">פתיחת מפגש קריאה משותפת</a></p>
+    </section>
+  </main>`,
+  },
+};
+
+/** L'accueil anglais et hébreu, à leur adresse préfixée. */
+const localizedHomePages: SeoPage[] = (["en", "he"] as const).map((locale) => {
+  const s = HOME_STRINGS[locale];
+  const path = sectionPath("home", locale);
+  const links = Object.fromEntries(
+    (
+      ["horaires", "calendrier", "zmanim", "paracha", "finirLeChass", "partageTehilim"] as const
+    ).map((section) => [section, sectionPath(section, locale)]),
+  );
+  return {
+    file: fileForPath(path),
+    path,
+    locale,
+    alternates: alternatesOf("home"),
+    title: s.title,
+    description: s.description,
+    sitemap: { priority: 0.9, changefreq: "weekly" },
+    bodyHtml: s.body(links),
+    jsonLd: [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        name: SITE_NAME,
+        url: `${SITE_URL}${path}`,
+        applicationCategory: "LifestyleApplication",
+        operatingSystem: "Web",
+        inLanguage: locale,
+        offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+        description: s.description,
+      },
+    ],
+  };
+});
 
 export const appPages: SeoPage[] = [
   {
     file: "index.html",
     path: "/",
+    locale: "fr",
+    // L'accueil existe dans les trois langues : il doit déclarer ses sœurs,
+    // sinon /en et /he restent invisibles depuis la page la plus visitée.
+    alternates: alternatesOf("home"),
     title: "Petite Jérusalem | Partager l'étude de la Torah et finir le Chass à plusieurs",
     description:
       "Plateforme gratuite pour étudier et partager la Torah à plusieurs : répartissez le Talmud pour finir le Chass, lisez les Tehilim à plusieurs pour une refoua chelema ou à la mémoire d'un proche, suivez la progression jusqu'au siyoum.",
@@ -145,7 +385,8 @@ export const appPages: SeoPage[] = [
         <li>
           <h3><a href="/horaires">Horaires de Chabbat</a></h3>
           <p>L'heure d'allumage des bougies et de sortie de Chabbat pour votre ville, tous les
-          zmanim du jour et le <a href="/calendrier">calendrier des fêtes juives</a> avec leurs dates.</p>
+          <a href="/zmanim">zmanim du jour</a> et le
+          <a href="/calendrier">calendrier des fêtes juives</a> avec leurs dates.</p>
         </li>
       </ul>
     </section>
@@ -225,11 +466,31 @@ export const appPages: SeoPage[] = [
         name: "Organiser un partage de lecture de Torah à plusieurs",
         inLanguage: "fr-FR",
         step: [
-          { "@type": "HowToStep", name: "Créer une session", text: "Créez une session et nommez-la." },
-          { "@type": "HowToStep", name: "Choisir le texte", text: "Choisissez le texte (Talmud, Tehilim, Michna, Tanakh) et les parties." },
-          { "@type": "HowToStep", name: "Partager le lien", text: "Partagez le lien ou le QR code avec les participants." },
-          { "@type": "HowToStep", name: "Réserver les passages", text: "Chaque participant réserve les passages qu'il prend en charge." },
-          { "@type": "HowToStep", name: "Suivre la progression", text: "Suivez l'avancée jusqu'au siyoum." },
+          {
+            "@type": "HowToStep",
+            name: "Créer une session",
+            text: "Créez une session et nommez-la.",
+          },
+          {
+            "@type": "HowToStep",
+            name: "Choisir le texte",
+            text: "Choisissez le texte (Talmud, Tehilim, Michna, Tanakh) et les parties.",
+          },
+          {
+            "@type": "HowToStep",
+            name: "Partager le lien",
+            text: "Partagez le lien ou le QR code avec les participants.",
+          },
+          {
+            "@type": "HowToStep",
+            name: "Réserver les passages",
+            text: "Chaque participant réserve les passages qu'il prend en charge.",
+          },
+          {
+            "@type": "HowToStep",
+            name: "Suivre la progression",
+            text: "Suivez l'avancée jusqu'au siyoum.",
+          },
         ],
       },
     ],
@@ -371,12 +632,36 @@ export type LandingLocaleContent = {
 };
 
 export type LandingPage = {
-  file: string;
-  path: string;
+  /** La section, qui donne son segment d'URL dans chaque langue. */
+  section: SeoSection;
   sitemap?: { priority: number; changefreq: string } | false;
+  /** Le chemin de la page dans chaque langue (`/en/finish-the-shas`…). */
+  paths: Record<Locale, string>;
   /** Same content in every supported language, picked at runtime by ContentPage. */
   locales: Record<Locale, LandingLocaleContent>;
 };
+
+/**
+ * Une page d'atterrissage, dans les trois langues, chacune à son adresse.
+ *
+ * Le contenu est bâti avec le chemin de sa propre langue : le fil d'Ariane et
+ * le JSON-LD d'une page anglaise doivent pointer vers l'URL anglaise, pas vers
+ * la française.
+ */
+function landingPage<S>(
+  section: SeoSection,
+  sitemap: LandingPage["sitemap"],
+  strings: Record<Locale, S>,
+  build: (path: string, s: S) => LandingLocaleContent,
+): LandingPage {
+  const paths = Object.fromEntries(
+    SEO_LOCALES.map((locale) => [locale, sectionPath(section, locale)]),
+  ) as Record<Locale, string>;
+  const locales = Object.fromEntries(
+    SEO_LOCALES.map((locale) => [locale, build(paths[locale], strings[locale])]),
+  ) as Record<Locale, LandingLocaleContent>;
+  return { section, sitemap, paths, locales };
+}
 
 /** Localized strings for one landing page; the HTML structure is shared across languages. */
 type LandingStrings = {
@@ -475,7 +760,10 @@ function buildLegal(path: string, s: LegalStrings): LandingLocaleContent {
     <p class="seo-lead">${s.intro}</p>
     ${s.updated ? `<p class="legal-updated"><em>${s.updated}</em></p>` : ""}
     ${s.sections
-      .map((sec) => `<section class="seo-section">\n      <h2>${sec.heading}</h2>\n      ${sec.html}\n    </section>`)
+      .map(
+        (sec) =>
+          `<section class="seo-section">\n      <h2>${sec.heading}</h2>\n      ${sec.html}\n    </section>`,
+      )
       .join("\n    ")}
   </main>`;
 
@@ -662,7 +950,8 @@ const PRIVACY_EN: LegalStrings = {
 const PRIVACY_HE: LegalStrings = {
   lang: "he-IL",
   title: "מדיניות פרטיות | פטיט ירושלים",
-  description: "אילו נתונים פטיט ירושלים אוספת, מדוע וכיצד למחוק אותם. חשבון אופציונלי, ללא פרסומות, מדידת שימוש רק בהסכמתכם.",
+  description:
+    "אילו נתונים פטיט ירושלים אוספת, מדוע וכיצד למחוק אותם. חשבון אופציונלי, ללא פרסומות, מדידת שימוש רק בהסכמתכם.",
   h1: "מדיניות פרטיות",
   intro: "עמוד זה מסביר אילו נתונים פטיט ירושלים אוספת, מדוע, וכיצד לנהל או למחוק אותם.",
   updated: "עודכן לאחרונה: 4 באוגוסט 2026",
@@ -1111,7 +1400,8 @@ const TERMS_EN: LegalStrings = {
 const TERMS_HE: LegalStrings = {
   lang: "he-IL",
   title: "תנאי שימוש | פטיט ירושלים",
-  description: "תנאי השימוש של פטיט ירושלים: כללי פרסום, אפס סובלנות לתוכן פוגעני, דיווח וניהול תוכן.",
+  description:
+    "תנאי השימוש של פטיט ירושלים: כללי פרסום, אפס סובלנות לתוכן פוגעני, דיווח וניהול תוכן.",
   h1: "תנאי שימוש",
   updated: "עדכון אחרון: 8 באוגוסט 2026",
   intro:
@@ -1179,7 +1469,7 @@ const FINIR_FR: LandingStrings = {
   ],
   howTitle: "Comment l'organiser sur Petite Jérusalem",
   how: [
-    "Créez une <a href=\"/share-reading\">session de partage</a> et nommez-la (par ex. « Siyoum haShass à la mémoire de… »).",
+    'Créez une <a href="/share-reading">session de partage</a> et nommez-la (par ex. « Siyoum haShass à la mémoire de… »).',
     "Choisissez le Talmud et les traités à couvrir, puis répartissez-les en passages.",
     "Partagez le lien avec les participants : famille, amis, kehila.",
     "Chacun réserve les dapim qu'il étudie, puis les marque comme lus.",
@@ -1259,7 +1549,7 @@ const FINIR_HE: LandingStrings = {
   ],
   howTitle: "איך מארגנים ב-Petite Jérusalem",
   how: [
-    "צרו <a href=\"/share-reading\">סשן שיתוף</a> ותנו לו שם (למשל «סיום הש״ס לעילוי נשמת…»).",
+    'צרו <a href="/share-reading">סשן שיתוף</a> ותנו לו שם (למשל «סיום הש״ס לעילוי נשמת…»).',
     "בחרו את התלמוד ואת המסכתות לכיסוי, וחלקו אותן לקטעים.",
     "שתפו את הקישור עם המשתתפים: משפחה, חברים, קהילה.",
     "כל אחד מזמין את הדפים שהוא לומד, ומסמן אותם כנקראו.",
@@ -1308,7 +1598,7 @@ const TEHILIM_FR: LandingStrings = {
   ],
   howTitle: "Comment partager les Tehilim",
   how: [
-    "Créez une <a href=\"/share-reading\">session</a> de type Tehilim et précisez l'intention dans la description.",
+    'Créez une <a href="/share-reading">session</a> de type Tehilim et précisez l\'intention dans la description.',
     "Sélectionnez les chapitres (ou tout le sefer).",
     "Partagez le lien : chacun réserve et lit ses chapitres, même en tant qu'invité.",
     "Suivez en temps réel les Tehilim déjà lus jusqu'à terminer le sefer.",
@@ -1337,7 +1627,7 @@ const TEHILIM_EN: LandingStrings = {
   ],
   howTitle: "How to share the Tehilim",
   how: [
-    "Create a <a href=\"/share-reading\">session</a> of type Tehilim and state the intention in the description.",
+    'Create a <a href="/share-reading">session</a> of type Tehilim and state the intention in the description.',
     "Select the chapters (or the whole sefer).",
     "Share the link: everyone reserves and reads their chapters, even as a guest.",
     "Track in real time the Tehilim already read until the sefer is finished.",
@@ -1383,7 +1673,7 @@ const TEHILIM_HE: LandingStrings = {
   ],
   howTitle: "איך לחלק את התהילים",
   how: [
-    "צרו <a href=\"/share-reading\">סשן</a> מסוג תהילים וציינו את הכוונה בתיאור.",
+    'צרו <a href="/share-reading">סשן</a> מסוג תהילים וציינו את הכוונה בתיאור.',
     "בחרו את הפרקים (או את כל הספר).",
     "שתפו את הקישור: כל אחד מזמין וקורא את הפרקים שלו, גם כאורח.",
     "עקבו בזמן אמת אחר התהילים שכבר נקראו עד לסיום הספר.",
@@ -1414,77 +1704,60 @@ const TEHILIM_HE: LandingStrings = {
 };
 
 export const landingPages: LandingPage[] = [
-  {
-    file: "finir-le-chass.html",
-    path: "/finir-le-chass",
-    sitemap: { priority: 0.7, changefreq: "monthly" },
-    locales: {
-      fr: buildLanding("/finir-le-chass", FINIR_FR),
-      en: buildLanding("/finir-le-chass", FINIR_EN),
-      he: buildLanding("/finir-le-chass", FINIR_HE),
-    },
-  },
-  {
-    file: "partage-tehilim.html",
-    path: "/partage-tehilim",
-    sitemap: { priority: 0.7, changefreq: "monthly" },
-    locales: {
-      fr: buildLanding("/partage-tehilim", TEHILIM_FR),
-      en: buildLanding("/partage-tehilim", TEHILIM_EN),
-      he: buildLanding("/partage-tehilim", TEHILIM_HE),
-    },
-  },
-  {
-    file: "confidentialite.html",
-    path: "/confidentialite",
-    sitemap: { priority: 0.1, changefreq: "yearly" },
-    locales: {
-      fr: buildLegal("/confidentialite", PRIVACY_FR),
-      en: buildLegal("/confidentialite", PRIVACY_EN),
-      he: buildLegal("/confidentialite", PRIVACY_HE),
-    },
-  },
-  {
-    file: "a-propos.html",
-    path: "/a-propos",
-    sitemap: { priority: 0.3, changefreq: "yearly" },
-    locales: {
-      fr: buildLegal("/a-propos", ABOUT_FR),
-      en: buildLegal("/a-propos", ABOUT_EN),
-      he: buildLegal("/a-propos", ABOUT_HE),
-    },
-  },
-  {
-    file: "mentions-legales.html",
-    path: "/mentions-legales",
-    sitemap: { priority: 0.1, changefreq: "yearly" },
-    locales: {
-      fr: buildLegal("/mentions-legales", LEGAL_FR),
-      en: buildLegal("/mentions-legales", LEGAL_EN),
-      he: buildLegal("/mentions-legales", LEGAL_HE),
-    },
-  },
-  {
-    file: "conditions-utilisation.html",
-    path: "/conditions-utilisation",
-    sitemap: { priority: 0.1, changefreq: "yearly" },
-    locales: {
-      fr: buildLegal("/conditions-utilisation", TERMS_FR),
-      en: buildLegal("/conditions-utilisation", TERMS_EN),
-      he: buildLegal("/conditions-utilisation", TERMS_HE),
-    },
-  },
+  landingPage(
+    "finirLeChass",
+    { priority: 0.7, changefreq: "monthly" },
+    { fr: FINIR_FR, en: FINIR_EN, he: FINIR_HE },
+    buildLanding,
+  ),
+  landingPage(
+    "partageTehilim",
+    { priority: 0.7, changefreq: "monthly" },
+    { fr: TEHILIM_FR, en: TEHILIM_EN, he: TEHILIM_HE },
+    buildLanding,
+  ),
+  landingPage(
+    "confidentialite",
+    { priority: 0.1, changefreq: "yearly" },
+    { fr: PRIVACY_FR, en: PRIVACY_EN, he: PRIVACY_HE },
+    buildLegal,
+  ),
+  landingPage(
+    "aPropos",
+    { priority: 0.3, changefreq: "yearly" },
+    { fr: ABOUT_FR, en: ABOUT_EN, he: ABOUT_HE },
+    buildLegal,
+  ),
+  landingPage(
+    "mentionsLegales",
+    { priority: 0.1, changefreq: "yearly" },
+    { fr: LEGAL_FR, en: LEGAL_EN, he: LEGAL_HE },
+    buildLegal,
+  ),
+  landingPage(
+    "conditions",
+    { priority: 0.1, changefreq: "yearly" },
+    { fr: TERMS_FR, en: TERMS_EN, he: TERMS_HE },
+    buildLegal,
+  ),
 ];
 
-const DEFAULT_LANDING_LOCALE: Locale = "fr";
-
-/** Landing pages flattened to the default locale, for the static prerender + sitemap. */
-const landingAsSeoPages: SeoPage[] = landingPages.map((p) => ({
-  file: p.file,
-  path: p.path,
-  sitemap: p.sitemap,
-  ...p.locales[DEFAULT_LANDING_LOCALE],
-}));
+/**
+ * Les pages d'atterrissage, une par langue, pour le prérendu et le sitemap.
+ * Elles étaient déjà écrites en anglais et en hébreu, et n'étaient servies à
+ * personne : seul le français était prérendu, et rien ne disait aux moteurs
+ * que les deux autres existaient.
+ */
+const landingAsSeoPages: SeoPage[] = landingPages.flatMap((p) =>
+  SEO_LOCALES.map((locale) => ({
+    file: fileForPath(p.paths[locale]),
+    path: p.paths[locale],
+    locale,
+    alternates: alternatesOf(p.section),
+    sitemap: p.sitemap,
+    ...p.locales[locale],
+  })),
+);
 
 // ---- Tehilim par intention (hub + intention pages) ----------------------
 //
@@ -1535,7 +1808,8 @@ const INTENTIONS: Intention[] = [
     psalmsNote:
       "L'usage est de prier pour la personne avec son prénom hébraïque suivi de celui de sa mère (par ex. «&nbsp;Untel ben Unetelle&nbsp;»). Beaucoup ajoutent le psaume 119 selon les lettres du prénom du malade.",
     cardTitle: "Refoua chelema (guérison d'un malade)",
-    cardDesc: "Les psaumes à lire pour la guérison d'une personne malade.",    related: ["accouchement", "protection"],
+    cardDesc: "Les psaumes à lire pour la guérison d'une personne malade.",
+    related: ["accouchement", "protection"],
     faq: [
       {
         q: "Quels Tehilim lire pour un malade ?",
@@ -1563,9 +1837,11 @@ const INTENTIONS: Intention[] = [
     h1: "Tehilim pour trouver son conjoint (zivoug)",
     lead: "Le <strong>zivoug</strong> désigne l'âme sœur, le conjoint que l'on cherche à rencontrer. On a coutume de lire certains Tehilim (Psaumes) en priant pour trouver son conjoint et fonder un foyer. Lus à plusieurs, ils se terminent plus vite.",
     psalms: [32, 38, 70, 71, 121, 124, 133],
-    psalmsNote: "Certains lisent aussi les psaumes 23 et 25, notamment avant et le jour du mariage.",
+    psalmsNote:
+      "Certains lisent aussi les psaumes 23 et 25, notamment avant et le jour du mariage.",
     cardTitle: "Mariage (zivoug)",
-    cardDesc: "Les psaumes à lire pour trouver son conjoint et fonder un foyer.",    related: ["reussite", "parnassa"],
+    cardDesc: "Les psaumes à lire pour trouver son conjoint et fonder un foyer.",
+    related: ["reussite", "parnassa"],
     faq: [
       {
         q: "Quels Tehilim lire pour trouver son conjoint ?",
@@ -1592,7 +1868,8 @@ const INTENTIONS: Intention[] = [
     psalmsNote:
       "Il existe aussi une coutume de « cure » sur 40 jours&nbsp;: lire chaque jour les psaumes 20, 21, 23, 24, 29 et 91.",
     cardTitle: "Parnassa (subsistance)",
-    cardDesc: "Les psaumes à lire pour la subsistance et la réussite financière.",    related: ["reussite", "protection"],
+    cardDesc: "Les psaumes à lire pour la subsistance et la réussite financière.",
+    related: ["reussite", "protection"],
     faq: [
       {
         q: "Quels Tehilim lire pour la parnassa ?",
@@ -1619,7 +1896,8 @@ const INTENTIONS: Intention[] = [
     psalmsNote:
       "Contre le mauvais œil (ayin hara), on cite en particulier le psaume 31. Pour un voyage, on récite aussi la Tefilat haderekh (prière du voyageur).",
     cardTitle: "Protection (danger, voyage)",
-    cardDesc: "Les psaumes à lire pour la protection, le voyage et contre le mauvais œil.",    related: ["refoua-chelema", "accouchement"],
+    cardDesc: "Les psaumes à lire pour la protection, le voyage et contre le mauvais œil.",
+    related: ["refoua-chelema", "accouchement"],
     faq: [
       {
         q: "Quels Tehilim lire pour être protégé ?",
@@ -1646,7 +1924,8 @@ const INTENTIONS: Intention[] = [
     psalmsNote:
       "On lit aussi le psaume 119 (le plus long) en choisissant les sections (huit versets par lettre) qui forment les lettres du prénom du défunt, puis celles du mot נשמה (Nechama).",
     cardTitle: "Ilouï nechama (mémoire d'un défunt)",
-    cardDesc: "Les psaumes à lire pour l'élévation de l'âme d'un proche disparu.",    related: ["refoua-chelema", "protection"],
+    cardDesc: "Les psaumes à lire pour l'élévation de l'âme d'un proche disparu.",
+    related: ["refoua-chelema", "protection"],
     faq: [
       {
         q: "Quels Tehilim lire pour un défunt ?",
@@ -1673,7 +1952,8 @@ const INTENTIONS: Intention[] = [
     psalmsNote:
       "Le psaume 20 est le plus cité. Une liste élargie attribuée au Rav 'Haïm Kanievsky comprend les psaumes 1 à 4, 21 à 24, 33 à 47, 72 à 86 et 90.",
     cardTitle: "Grossesse & accouchement",
-    cardDesc: "Les psaumes à lire pour une grossesse et un accouchement sereins.",    related: ["refoua-chelema", "protection"],
+    cardDesc: "Les psaumes à lire pour une grossesse et un accouchement sereins.",
+    related: ["refoua-chelema", "protection"],
     faq: [
       {
         q: "Quel Tehilim lire pour un accouchement ?",
@@ -1698,9 +1978,10 @@ const INTENTIONS: Intention[] = [
     lead: "La <strong>hatslakha</strong> est la réussite, la bénédiction dans ce que l'on entreprend&nbsp;: un examen, un projet, une nouvelle entreprise. On a coutume de lire des Tehilim (Psaumes) pour la demander.",
     psalms: [4, 20, 32, 90],
     psalmsNote:
-      "Plusieurs de ces psaumes rejoignent ceux que l'on lit pour la <a href=\"/tehilim/parnassa\">parnassa</a>.",
+      'Plusieurs de ces psaumes rejoignent ceux que l\'on lit pour la <a href="/tehilim/parnassa">parnassa</a>.',
     cardTitle: "Réussite (hatslakha)",
-    cardDesc: "Les psaumes à lire pour la réussite d'un examen, d'un projet ou d'une entreprise.",    related: ["parnassa", "mariage"],
+    cardDesc: "Les psaumes à lire pour la réussite d'un examen, d'un projet ou d'une entreprise.",
+    related: ["parnassa", "mariage"],
     faq: [
       {
         q: "Quels Tehilim lire pour réussir un examen ou un projet ?",
@@ -1860,13 +2141,85 @@ function buildTehilimHub(): SeoPage {
   };
 }
 
+// ---- Guides : pages de fond servies par SeoGuidePage.vue ----------------
+//
+// Pages explicatives, sans heure calculée : elles répondent aux recherches
+// « c'est quoi alot hachahar », « à quelle heure finit le Chéma », « plag
+// hamin'ha » que les pages d'horaires ne peuvent pas porter (elles portent des
+// heures, pas des définitions). Le contenu vit ici, dans seoPages.ts, et non
+// dans zmanimSeoPages.ts : rien à calculer, donc rien qui demande hebcal.
+//
+// Les trois langues, chacune à son adresse (/zmanim, /en/zmanim, /he/zmanim) :
+// le texte est écrit dans chaque langue, pas transposé du français, parce
+// qu'on ne cherche pas « fin du Chéma » en anglais mais « sof zman shema ».
+
+/** Une page de fond, dans une langue, à son adresse. */
+function buildGuidePage(locale: Locale): SeoPage {
+  const path = sectionPath("zmanim", locale);
+  const s = ZMANIM_GUIDE[locale]({
+    horaires: sectionPath("horaires", locale),
+    calendrier: sectionPath("calendrier", locale),
+  });
+  const sections = s.sections
+    .map(
+      (section) => `
+    <section class="seo-section">
+      <h2>${section.h2}</h2>
+      ${section.html}
+    </section>`,
+    )
+    .join("\n");
+
+  return {
+    file: fileForPath(path),
+    path,
+    locale,
+    alternates: alternatesOf("zmanim"),
+    title: s.title,
+    description: s.description,
+    sitemap: { priority: 0.7, changefreq: "monthly" },
+    bodyHtml: `
+  <main class="seo-article">
+    <h1>${s.h1}</h1>
+    <p class="seo-lead">${s.lead}</p>
+${sections}
+
+    ${faqHtml(s.faq, s.faqHeading)}
+  </main>`,
+    jsonLd: [
+      breadcrumb([
+        { name: s.breadcrumbHome, path: sectionPath("home", locale) },
+        { name: s.breadcrumbName, path },
+      ]),
+      faqJsonLd(s.faq),
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: s.headline,
+        inLanguage: s.lang,
+        mainEntityOfPage: `${SITE_URL}${path}`,
+        publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+      },
+    ],
+  };
+}
+
+/** Pages de fond, rendues à l'identique par le prérendu et par SeoGuidePage.vue. */
+export const guidePages: SeoPage[] = SEO_LOCALES.map(buildGuidePage);
+
 export const tehilimHub: SeoPage = buildTehilimHub();
 export const tehilimIntentionPages: SeoPage[] = INTENTIONS.map(buildIntention);
 /** Hub + intention pages, consumed at runtime by TehilimPage.vue. */
 export const tehilimPages: SeoPage[] = [tehilimHub, ...tehilimIntentionPages];
 
 /** All pages that the prerender script turns into static HTML files. */
-export const allPages: SeoPage[] = [...appPages, ...landingAsSeoPages, ...tehilimPages];
+export const allPages: SeoPage[] = [
+  ...appPages,
+  ...localizedHomePages,
+  ...landingAsSeoPages,
+  ...tehilimPages,
+  ...guidePages,
+];
 
 // ---- Pure HTML transforms (shared by prerender + tests) -----------------
 
@@ -1899,8 +2252,10 @@ function replaceCanonical(html: string, href: string): string {
  */
 export function injectMeta(template: string, page: SeoPage): string {
   const url = `${SITE_URL}${page.path}`;
+  const locale = page.locale ?? DEFAULT_SEO_LOCALE;
   let html = template;
 
+  html = replaceLang(html, locale);
   html = replaceTitle(html, page.title);
   html = replaceMetaContent(html, "name", "description", page.description);
   html = replaceMetaContent(html, "property", "og:title", page.title);
@@ -1914,14 +2269,66 @@ export function injectMeta(template: string, page: SeoPage): string {
     html = replaceMetaContent(html, "name", "robots", page.robots);
   }
 
+  html = replaceOgLocale(html, locale);
+  html = injectAlternates(html, page.alternates);
+
   return html;
+}
+
+/**
+ * `lang` et `dir` du document : sans eux, une page hébraïque s'affiche de
+ * gauche à droite tant que Vue n'a pas pris la main, et se déclare française
+ * aux moteurs.
+ */
+function replaceLang(html: string, locale: SeoLocale): string {
+  const dir = HTML_DIR[locale];
+  return html.replace(
+    /<html\b[^>]*>/,
+    `<html lang="${HTML_LANG[locale]}"${dir === "rtl" ? ' dir="rtl"' : ""}>`,
+  );
+}
+
+/** `og:locale` suit la langue de la page ; les autres deviennent alternates. */
+function replaceOgLocale(html: string, locale: SeoLocale): string {
+  const others = SEO_LOCALES.filter((l) => l !== locale);
+  const alternates = others
+    .map((l) => `<meta property="og:locale:alternate" content="${OG_LOCALE[l]}" />`)
+    .join("\n    ");
+  return html
+    .replace(
+      /<meta property="og:locale" content="[^"]*" \/>/,
+      `<meta property="og:locale" content="${OG_LOCALE[locale]}" />`,
+    )
+    .replace(/\s*<meta property="og:locale:alternate" content="[^"]*" \/>/g, "")
+    .replace(/(<meta property="og:locale" content="[^"]*" \/>)/, `$1\n    ${alternates}`);
+}
+
+/**
+ * Les `hreflang` : chaque langue déclare ses sœurs, et se déclare elle-même
+ * (Google le demande). Le français porte en plus `x-default` : c'est la page
+ * servie à qui ne parle aucune des trois.
+ */
+function injectAlternates(html: string, alternates?: Alternates): string {
+  if (!alternates) return html;
+  const links = SEO_LOCALES.filter((locale) => alternates[locale]).map(
+    (locale) =>
+      `<link rel="alternate" hreflang="${HREFLANG[locale]}" href="${escapeAttr(`${SITE_URL}${alternates[locale]}`)}" />`,
+  );
+  const fallback = alternates[DEFAULT_SEO_LOCALE];
+  if (fallback) {
+    links.push(
+      `<link rel="alternate" hreflang="x-default" href="${escapeAttr(`${SITE_URL}${fallback}`)}" />`,
+    );
+  }
+  if (!links.length) return html;
+  return html.replace("</head>", `    ${links.join("\n    ")}\n  </head>`);
 }
 
 /** Inject crawlable body content + extra JSON-LD into the shell. Pure. */
 export function injectBody(template: string, page: SeoPage): string {
   let html = template;
 
-  const body = `${page.bodyHtml}\n${staticFooterHtml}`;
+  const body = `${page.bodyHtml}\n${footerHtml(page.locale ?? DEFAULT_SEO_LOCALE)}`;
   // The built shell ships an empty `<div id="app"></div>`; fill it so non-JS
   // crawlers see the content. Vue clears and re-renders #app on mount.
   html = html.replace(/(<div id="app">)(<\/div>)/, (_m, open, close) => `${open}${body}${close}`);
@@ -1955,7 +2362,29 @@ export function buildAppShell(template: string): string {
     .replace(/<meta property="og:url"[^>]*>\s*/, "");
 }
 
-export type SitemapEntry = { path: string; priority: number; changefreq: string };
+/** Les `<xhtml:link>` d'une entrée de sitemap : la même page, langue par langue. */
+function alternateLinks(alternates?: Alternates): string[] {
+  if (!alternates) return [];
+  const links = SEO_LOCALES.filter((locale) => alternates[locale]).map(
+    (locale) =>
+      `    <xhtml:link rel="alternate" hreflang="${HREFLANG[locale]}" href="${SITE_URL}${alternates[locale]}" />`,
+  );
+  const fallback = alternates[DEFAULT_SEO_LOCALE];
+  if (fallback) {
+    links.push(
+      `    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE_URL}${fallback}" />`,
+    );
+  }
+  return links;
+}
+
+export type SitemapEntry = {
+  path: string;
+  priority: number;
+  changefreq: string;
+  /** Les URL sœurs, quand la page existe dans plusieurs langues. */
+  alternates?: Alternates;
+};
 
 /**
  * Build sitemap.xml from the indexable pages, plus any `extra` URLs (e.g. the
@@ -1967,7 +2396,12 @@ export function buildSitemap(lastmod: string, extra: SitemapEntry[] = []): strin
     .filter((p) => p.sitemap !== false)
     .map((p) => {
       const s = p.sitemap || { priority: 0.5, changefreq: "weekly" };
-      return { path: p.path, priority: s.priority, changefreq: s.changefreq };
+      return {
+        path: p.path,
+        priority: s.priority,
+        changefreq: s.changefreq,
+        alternates: p.alternates,
+      };
     });
 
   const urls = [...fromPages, ...extra]
@@ -1975,6 +2409,7 @@ export function buildSitemap(lastmod: string, extra: SitemapEntry[] = []): strin
       [
         "  <url>",
         `    <loc>${SITE_URL}${s.path === "/" ? "/" : s.path}</loc>`,
+        ...alternateLinks(s.alternates),
         `    <lastmod>${lastmod}</lastmod>`,
         `    <changefreq>${s.changefreq}</changefreq>`,
         `    <priority>${s.priority.toFixed(1)}</priority>`,
@@ -1983,5 +2418,8 @@ export function buildSitemap(lastmod: string, extra: SitemapEntry[] = []): strin
     )
     .join("\n");
 
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+  // xmlns:xhtml n'est déclaré que si des alternates existent : un espace de
+  // noms inutilisé dans chaque sitemap n'apprendrait rien à personne.
+  const xhtml = urls.includes("<xhtml:link") ? ' xmlns:xhtml="http://www.w3.org/1999/xhtml"' : "";
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"${xhtml}>\n${urls}\n</urlset>\n`;
 }

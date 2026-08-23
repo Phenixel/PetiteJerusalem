@@ -14,6 +14,10 @@ import { guestService } from "../services/guestService";
 import { seoService } from "../services/seoService";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
+import { useLocalePath } from "../composables/useLocalePath";
+
+/** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
+const { localePath } = useLocalePath();
 
 const router = useRouter();
 const { t } = useI18n();
@@ -336,11 +340,11 @@ onMounted(async () => {
            utilisateur) : vaut pour l'inscription comme pour les logins Google/Apple. -->
       <p class="mt-6 text-center text-xs text-text-secondary/80 leading-relaxed">
         {{ t("login.termsNotice") }}
-        <RouterLink to="/conditions-utilisation" class="underline hover:text-text-primary">
+        <RouterLink :to="localePath('conditions')" class="underline hover:text-text-primary">
           {{ t("login.termsLink") }}
         </RouterLink>
         {{ t("login.termsAnd") }}
-        <RouterLink to="/confidentialite" class="underline hover:text-text-primary">
+        <RouterLink :to="localePath('confidentialite')" class="underline hover:text-text-primary">
           {{ t("login.privacyLink") }}
         </RouterLink>
       </p>

@@ -194,6 +194,27 @@ export interface ZmanTime {
 /** Minutes avant le coucher du soleil pour l'allumage des bougies (usage diaspora). */
 const CANDLE_LIGHTING_MINUTES = 18;
 
+/**
+ * Les villes dont l'usage local fixe l'allumage plus tôt que les 18 minutes
+ * habituelles. La table est volontairement courte : on n'y met qu'un usage
+ * unanime et vérifiable, sous peine d'annoncer une heure fausse. Jérusalem
+ * allume 40 minutes avant la chkia ; ailleurs, tant qu'un usage n'est pas
+ * établi ici, le calcul reste celui de la diaspora.
+ *
+ * La clé est le nom exact de la ville du catalogue (src/datas/cities.json) :
+ * une position relevée par l'appareil, elle, n'a pas de nom et suit donc la
+ * règle générale.
+ */
+const CANDLE_LIGHTING_BY_CITY: Record<string, number> = {
+  "Jérusalem": 40,
+};
+
+/** Les minutes d'avance de l'allumage à ce lieu : 18, sauf usage local. */
+export function candleLightingMinutes(place: ZmanimPlace): number {
+  const local = place.city ? CANDLE_LIGHTING_BY_CITY[place.city] : undefined;
+  return local ?? CANDLE_LIGHTING_MINUTES;
+}
+
 function geoLocationOf(place: ZmanimPlace): GeoLocation {
   return new GeoLocation(
     place.city ?? "",
@@ -442,7 +463,7 @@ function civilNoon(hd: HDate): Date {
  * affiche, pas un cadre par jour.
  */
 export interface RestPeriod {
-  /** Allumage des bougies : 18 minutes avant la chkia de la veille. */
+  /** Allumage des bougies : 18 minutes avant la chkia de la veille (40 à Jérusalem). */
   start: Date;
   /** Sortie des étoiles du dernier jour. */
   end: Date;
@@ -475,7 +496,7 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
   const gloc = geoLocationOf(place);
   const eve = civilNoon(first);
   eve.setDate(eve.getDate() - 1);
-  const start = new Zmanim(gloc, eve, false).sunsetOffset(-CANDLE_LIGHTING_MINUTES, true);
+  const start = new Zmanim(gloc, eve, false).sunsetOffset(-candleLightingMinutes(place), true);
   const end = new Zmanim(gloc, civilNoon(last), false).tzeit();
   if (!isUsable(start) || !isUsable(end)) return null;
 
@@ -488,6 +509,12 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
     }
   }
   return { start, end, first, last, shabbat, festivals };
+}
+
+/** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */
+export function nightfallOf(place: ZmanimPlace, hd: HDate): Date | null {
+  const end = new Zmanim(geoLocationOf(place), civilNoon(hd), false).tzeit();
+  return isUsable(end) ? end : null;
 }
 
 /**

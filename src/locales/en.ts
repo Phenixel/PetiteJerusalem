@@ -284,6 +284,18 @@ const en: LocaleMessages = {
     start: "Lighting",
     end: "Ends",
   },
+  paracha: {
+    title: "Parashat hashavua",
+    description:
+      "The parasha read this Shabbat, then the calendar of the Shabbatot that follow. Everything is computed on your device, even offline.",
+    thisWeek: "This week",
+    next: "Next parasha",
+    readOn: "Read on Shabbat {date}",
+    read: "Read {name}",
+    chneiMikra: "Shnayim mikra",
+    cycle: "The calendar of parashiot",
+    shabbatNote: "Candle lighting and havdalah times for this Shabbat, in your city:",
+  },
   zmanim: {
     title: "Today's times",
     navTitle: "Zmanim",
@@ -334,14 +346,14 @@ const en: LocaleMessages = {
     },
     rest: {
       end: "Ends",
-      note: "Candle lighting 18 minutes before sunset, ends at nightfall. When a festival follows Shabbat, light after nightfall from an existing flame.",
+      note: "Candle lighting {minutes} minutes before sunset, ends at nightfall. When a festival follows Shabbat, light after nightfall from an existing flame.",
     },
     shabbat: {
       title: "Shabbat",
       parasha: "Parashat",
       candleLighting: "Candle lighting",
       havdalah: "Shabbat ends",
-      note: "Candle lighting 18 minutes before sunset, Shabbat ends at nightfall.",
+      note: "Candle lighting {minutes} minutes before sunset, Shabbat ends at nightfall.",
     },
     names: {
       alotHaShachar: "Alot HaShachar",
@@ -610,39 +622,48 @@ const en: LocaleMessages = {
     remaining: "Remaining",
   },
   seo: {
-    homeTitle: "Petite Jérusalem | Shared Torah reading and study",
+    homeTitle: "Petite Jérusalem {'|'} Shared Torah reading and study",
     homeDescription:
       "Create and join shared Torah reading and study sessions. Reserve texts, study together and track your progress, free and online.",
-    loginTitle: "Login | Petite Jérusalem",
+    loginTitle: "Login {'|'} Petite Jérusalem",
     loginDescription:
       "Sign in to create shared reading sessions, reserve texts and track your studies.",
-    profileTitle: "My Profile | Petite Jérusalem",
+    profileTitle: "My Profile {'|'} Petite Jérusalem",
     profileDescription:
       "Manage your information, view your participated and created study sessions.",
-    zmanimTitle: "Zmanim: Shema, sunset and Shabbat times | Petite Jérusalem",
-    calendarTitle: "Jewish holiday calendar: dates and times | Petite Jérusalem",
+    zmanimTitle:
+      "Shabbat times: candle lighting, havdalah and the day's zmanim {'|'} Petite Jérusalem",
+    calendarTitle: "Jewish holiday calendar: dates, start and end times {'|'} Petite Jérusalem",
     calendarDescription:
-      "The festivals and fasts of the Hebrew year, with their dates and, for each festival, candle lighting and end times computed for your location.",
+      "The dates of the Jewish festivals: Rosh Hashanah, Yom Kippur, Sukkot, Hanukkah, Purim, Passover, Shavuot and the fasts, with the start and end time of each one, computed for your location.",
     zmanimDescription:
-      "The halachic times of the day computed for your location: alot hashachar, sunrise, latest Shema, chatzot, mincha, sunset, nightfall, candle lighting and Shabbat end.",
-    zmanimCityTitle: "Shabbat times in {city}: candle lighting and havdalah | Petite Jérusalem",
+      "Candle lighting and Shabbat end times week by week, plus all the zmanim of the day (alot, sunrise, latest Shema, shkia, tzeit hakochavim), computed for your city. Free, works offline.",
+    zmanimCityTitle:
+      "Shabbat times in {city}: candle lighting, havdalah and zmanim {'|'} Petite Jérusalem",
     zmanimCityDescription:
-      "Candle lighting and Shabbat end times in {city}, week by week, plus all the halachic times of the day. Free, works offline.",
-    dailyReadingTitle: "My daily reading | Petite Jérusalem",
+      "Candle lighting (the start of Shabbat) and havdalah times in {city}, week by week, plus all the zmanim of the day: sunrise, latest Shema, shkia, tzeit hakochavim. Free, works offline.",
+    parashaTitle:
+      "Parashat hashavua: the calendar of parashiot and their texts {'|'} Petite Jérusalem",
+    parashaDescription:
+      "The parasha read this Shabbat, the dated calendar of all 54 parashiot, and the text of each one in Hebrew and transliteration.",
+    festivalTitle: "{festival}: dates, start and end times {'|'} Petite Jérusalem",
+    festivalDescription:
+      "When is {festival}? The dates of {festival} over several years, with the start and end times of the festival, computed for your location.",
+    dailyReadingTitle: "My daily reading {'|'} Petite Jérusalem",
     dailyReadingDescription:
       "Find your daily reading texts every day: Tehilim, the weekly parasha and your chosen texts, with progress tracking.",
-    notFoundTitle: "Page not found | Petite Jérusalem",
+    notFoundTitle: "Page not found {'|'} Petite Jérusalem",
     notFoundDescription: "The requested page does not exist.",
-    shareReadingTitle: "Shared Torah reading and study | Petite Jérusalem",
+    shareReadingTitle: "Shared Torah reading and study {'|'} Petite Jérusalem",
     shareReadingDescription:
       "Discover and create shared Torah reading and study sessions. Reserve texts, study together and move forward with the community.",
-    newSessionTitle: "Create a shared reading session | Petite Jérusalem",
+    newSessionTitle: "Create a shared reading session {'|'} Petite Jérusalem",
     newSessionDescription:
       "Create a shared reading or Torah study session and invite the community to study with you.",
-    sessionTitle: "Shared reading session | Petite Jérusalem",
+    sessionTitle: "Shared reading session {'|'} Petite Jérusalem",
     sessionDefaultDescription:
       "Join this shared Torah reading and study session on Petite Jérusalem.",
-    chiourimTitle: "Shiurim | Torah courses and lessons | Petite Jérusalem",
+    chiourimTitle: "Shiurim {'|'} Torah courses and lessons {'|'} Petite Jérusalem",
     chiourimDescription:
       "Listen to shiurim: Torah courses and lessons shared by the community on Petite Jérusalem.",
   },

@@ -127,8 +127,11 @@ describe("seoPages data", () => {
 
   it("expose l'accueil et les pages de destination clés", () => {
     expect(appPages.some((p) => p.path === "/" && p.file === "index.html")).toBe(true);
-    expect(landingPages.map((p) => p.path)).toContain("/finir-le-chass");
-    expect(landingPages.map((p) => p.path)).toContain("/partage-tehilim");
+    expect(landingPages.map((p) => p.paths.fr)).toContain("/finir-le-chass");
+    expect(landingPages.map((p) => p.paths.fr)).toContain("/partage-tehilim");
+    // Les mêmes pages, à leur adresse anglaise et hébraïque.
+    expect(landingPages.map((p) => p.paths.en)).toContain("/en/finish-the-shas");
+    expect(landingPages.map((p) => p.paths.he)).toContain("/he/siyum-hashas");
   });
 
   it("cible le bon domaine canonique", () => {
@@ -141,9 +144,7 @@ describe("seoPages Tehilim par intention", () => {
     expect(tehilimHub.path).toBe("/tehilim");
     expect(tehilimHub.file).toBe("tehilim.html");
     expect(allPages).toContain(tehilimHub);
-    expect(buildSitemap("2026-06-21")).toContain(
-      "<loc>https://petite-jerusalem.fr/tehilim</loc>",
-    );
+    expect(buildSitemap("2026-06-21")).toContain("<loc>https://petite-jerusalem.fr/tehilim</loc>");
   });
 
   it("inclut au moins la page modèle refoua-chelema", () => {

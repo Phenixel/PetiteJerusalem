@@ -2,7 +2,7 @@
 
 > Plateforme gratuite, en français, en anglais et en hébreu, pour étudier et partager la Torah à plusieurs. On y répartit un texte entre plusieurs personnes pour le terminer ensemble : se partager le Talmud (Guemara) pour finir le Chass, lire les Tehilim (Psaumes) à plusieurs pour une refoua chelema (guérison) ou à la mémoire d'un proche (ilouï nechama), étudier la Michna ou le Tanakh. Chaque participant réserve ses passages (même sans compte) et tout le monde suit la progression jusqu'au siyoum.
 
-Mots-clés : partage de lecture, partage d'étude, finir le Chass, terminer le Talmud à plusieurs, partage de Tehilim, répartir les Psaumes, limoud collectif, siyoum, refoua chelema, ilouï nechama, hiloula, communauté juive, horaires de Chabbat, allumage des bougies, sortie de Chabbat, zmanim, calendrier des fêtes juives.
+Mots-clés : partage de lecture, partage d'étude, finir le Chass, terminer le Talmud à plusieurs, partage de Tehilim, répartir les Psaumes, limoud collectif, siyoum, refoua chelema, ilouï nechama, hiloula, communauté juive, horaires de Chabbat, allumage des bougies, sortie de Chabbat, havdala, zmanim, netz haHama, fin du Chéma, chkia, tsét haKokhavim, calendrier des fêtes juives, dates de Pessah, quand tombe Roch Hachana, paracha de la semaine, parachat hachavoua, chnei mikra.
 
 ## Pages principales
 
@@ -12,8 +12,20 @@ Mots-clés : partage de lecture, partage d'étude, finir le Chass, terminer le T
 - [Tehilim par intention](https://petite-jerusalem.fr/tehilim) : quels psaumes lire selon l'intention (refoua chelema / guérison d'un malade, etc.) et comment les partager à plusieurs.
 - [Bibliothèque](https://petite-jerusalem.fr/bibliotheque) : lire les Tehilim, la Michna, le Talmud et le Tanakh en ligne, en hébreu et en phonétique.
 - [Chiourim](https://petite-jerusalem.fr/chiourim) : cours et leçons de Torah à écouter, par rav ou par thème.
-- [Horaires de Chabbat](https://petite-jerusalem.fr/horaires) : l'heure d'allumage des bougies et de sortie de Chabbat semaine par semaine, et tous les zmanim du jour, calculés pour n'importe quelle ville, avec une page par grande communauté (Marseille, Lyon, Strasbourg, Bruxelles, Genève, Montréal, Tel Aviv...).
-- [Calendrier des fêtes juives](https://petite-jerusalem.fr/calendrier) : les dates des fêtes et des jeûnes (Roch Hachana, Kippour, Souccot, Hanouka, Pourim, Pessah, Chavouot), avec l'heure d'entrée et de sortie de chaque fête.
+- [Horaires de Chabbat](https://petite-jerusalem.fr/horaires) : l'heure d'allumage des bougies et de sortie de Chabbat semaine par semaine, les zmanim du jour et la paracha de chaque Chabbat, avec une page d'horaires par ville (plus de 240 villes : Marseille, Lyon, Strasbourg, Bruxelles, Genève, Montréal, Jérusalem, Tel Aviv...), à l'adresse https://petite-jerusalem.fr/horaires/<ville>.
+- [Calendrier des fêtes juives](https://petite-jerusalem.fr/calendrier) : les dates des fêtes et des jeûnes (Roch Hachana, Kippour, Souccot, Hanouka, Pourim, Pessah, Chavouot), avec l'heure d'entrée et de sortie de chaque fête, et les dates des grandes fêtes sur plusieurs années.
+- Une page par fête, avec ses dates sur six ans et ses heures d'entrée et de sortie : https://petite-jerusalem.fr/calendrier/<fete> (roch-hachana, yom-kippour, souccot, simhat-torah, hanouka, tou-bichvat, jeune-esther, pourim, pessah, lag-baomer, chavouot, jeune-guedalia, 10-tevet, 17-tamouz, ticha-beav).
+- [Paracha de la semaine](https://petite-jerusalem.fr/paracha) : la paracha lue ce Chabbat, le calendrier daté des 54 parachiot, et le texte de chacune en hébreu et en phonétique.
+- [Les zmanim expliqués](https://petite-jerusalem.fr/zmanim) : ce que marque chaque horaire halakhique (alot haCha'har, misheyakir, netz, fin du Chéma et de la Amida selon le Maguen Avraham et le Gaon de Vilna, 'hatsot, min'ha guedola et ketana, plag hamin'ha, chkia, tsét haKokhavim) et comment il se calcule.
+
+## Langues
+
+Le site existe en français, en anglais et en hébreu, avec une adresse par langue :
+le français à la racine, l'anglais sous /en et l'hébreu sous /he, segments traduits
+(https://petite-jerusalem.fr/en/shabbat-times/lyon, https://petite-jerusalem.fr/he/zmanei-shabbat/lyon,
+https://petite-jerusalem.fr/en/holidays/passover, https://petite-jerusalem.fr/he/chagim/pesach).
+Les pages d'horaires, le calendrier des fêtes, les pages par fête, les zmanim expliqués,
+la paracha de la semaine et les pages d'atterrissage existent dans les trois langues.
 
 ## En bref
 

@@ -7,6 +7,8 @@ import type { IconName } from "./icons/registry";
 import { analyticsService } from "../services/analyticsService";
 import { authService } from "../services/authService";
 import { setRevealOrigin } from "../composables/useRevealOrigin";
+import { useLocalePath } from "../composables/useLocalePath";
+import { isSectionPath } from "../content/seoLocales";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -26,12 +28,21 @@ onUnmounted(() => {
   unsubscribeAuth?.();
 });
 
+/**
+ * Les chemins traduits (accueil, horaires) dans l'espace de langue où l'on
+ * est : un chemin écrit en dur ferait sortir de l'espace anglais au premier
+ * appui, sans même que l'onglet se reconnaisse actif.
+ */
+const { localePath } = useLocalePath();
+
 // Le Partage de lectures reste accessible depuis l'accueil et le footer.
 // `anim` : personnalité de l'icône au toucher, en écho aux illustrations de
 // l'accueil (livre qui se redresse, casque qui hoche, personnage qui bondit).
 type Tab = { to: string; icon: IconName; labelKey: string; exact: boolean; anim: string };
 const tabs = computed<Tab[]>(() => [
-  { to: "/", icon: "home", labelKey: "common.home", exact: true, anim: "pop" },
+  // L'accueil est traduit (/, /en, /he) : l'onglet suit l'espace de langue,
+  // comme le bouton des horaires plus bas.
+  { to: localePath("home"), icon: "home", labelKey: "common.home", exact: true, anim: "pop" },
   { to: "/bibliotheque", icon: "book-open", labelKey: "study.title", exact: false, anim: "sway" },
   { to: "/chiourim", icon: "headphones", labelKey: "common.chiourim", exact: false, anim: "nod" },
   isLoggedIn.value
@@ -45,7 +56,7 @@ const tabs = computed<Tab[]>(() => [
       },
 ]);
 
-const ZMANIM_PATH = "/horaires";
+const zmanimPath = computed(() => localePath("horaires"));
 
 // Onglet dont l'icône s'anime. Remis à null d'abord pour que l'animation
 // reparte même en retouchant l'onglet déjà actif.
@@ -62,10 +73,10 @@ function popIcon(to: string) {
 
 // La page des horaires se comporte en surcouche (voir App.vue) : le bouton
 // rond l'ouvre en cercle depuis lui-même, et la referme si elle est déjà là.
-const onZmanim = computed(() => route.path.startsWith(ZMANIM_PATH));
+const onZmanim = computed(() => isSectionPath(route.path, "horaires"));
 
 function toggleZmanim(event: MouseEvent) {
-  popIcon(ZMANIM_PATH);
+  popIcon(zmanimPath.value);
   if (onZmanim.value) {
     analyticsService.capture("zmanim_closed", { source: "bottom_bar" });
     // Refermer, c'est revenir sur la page que la surcouche recouvrait.
@@ -76,7 +87,7 @@ function toggleZmanim(event: MouseEvent) {
   }
   analyticsService.capture("zmanim_opened", { source: "bottom_bar" });
   setRevealOrigin(event.currentTarget as HTMLElement);
-  void router.push(ZMANIM_PATH);
+  void router.push(zmanimPath.value);
 }
 </script>
 
@@ -122,7 +133,7 @@ function toggleZmanim(event: MouseEvent) {
       >
         <span
           class="tab-icon"
-          :class="poppedTab === ZMANIM_PATH ? 'tab-icon-pop' : ''"
+          :class="poppedTab === zmanimPath ? 'tab-icon-pop' : ''"
           @animationend="poppedTab = null"
         >
           <AppIcon name="clock" :size="24" />

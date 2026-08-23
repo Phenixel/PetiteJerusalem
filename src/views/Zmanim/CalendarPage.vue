@@ -6,8 +6,10 @@
 // Comme la page des horaires, tout est calculé sur l'appareil (voir
 // zmanimService) : les flèches parcourent les années sans rien charger, et la
 // page continue de servir sans connexion.
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { localeMessagesReady } from "../../i18n";
 import { analyticsService } from "../../services/analyticsService";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
@@ -21,7 +23,13 @@ import {
   type CalendarEntry,
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
+import { findFestivalBySlug, type SeoFestival } from "../../content/zmanimFestivals";
+import { isSectionPath, localeOfPath, sectionPath, type SeoLocale } from "../../content/seoLocales";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import { useLocalePath } from "../../composables/useLocalePath";
+
+/** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
+const { localePath } = useLocalePath();
 
 const { t, locale } = useI18n();
 const { place } = useZmanimLocation();
@@ -107,22 +115,126 @@ function hebrewRange(entry: CalendarEntry): string {
 /** Racine de la page : cible du dévoilement circulaire (bouton rond natif). */
 const root = ref<HTMLElement | null>(null);
 
-onMounted(() => {
-  revealFromOrigin(root.value);
-  const url = `${SITE_URL}/calendrier`;
+// ---- /calendrier/:fete : la page d'une fête ------------------------------
+//
+// Même page, ouverte sur une fête : l'année affichée devient celle de sa
+// prochaine occurrence, et son cadre est mis en avant. Les crawlers, eux,
+// reçoivent une page prérendue qui porte ses dates sur plusieurs années
+// (voir src/content/zmanimSeoPages.ts).
+
+const route = useRoute();
+const router = useRouter();
+
+/** La fête demandée par l'URL, ou null sur /calendrier. */
+const festival = ref<SeoFestival | null>(null);
+
+/** hebcal-fr écrit « H̲anoukah » : la marque diacritique ne compte pas. */
+const cleanName = (name: string): string => name.replace(/[\u0331\u0332]/g, "");
+
+/** L'entrée mise en avant : la prochaine occurrence de la fête demandée. */
+const festivalKey = computed(() => {
+  const wanted = festival.value;
+  if (!wanted) return null;
+  const found = entries.value.find(
+    (entry) =>
+      cleanName(entry.name) === wanted.names[calendarLocale.value] &&
+      entry.last.abs() >= today.value,
+  );
+  return found?.key ?? null;
+});
+
+/**
+ * La langue dans laquelle le calendrier est calculé : celle de l'interface,
+ * ramenée aux trois langues du site. C'est elle qui nomme les fêtes, donc elle
+ * qui sert à reconnaître celle de l'URL.
+ */
+const calendarLocale = computed<SeoLocale>(() => {
+  const code = locale.value as string;
+  return code === "en" || code === "he" ? code : "fr";
+});
+
+/** Le titre et le canonique : /calendrier, ou /calendrier/<fete>. */
+function applyMeta(): void {
+  const wanted = festival.value;
+  // Chaque fête a une adresse par langue : le canonique suit celle de la page
+  // ouverte, et le nom affiché suit la langue de l'interface.
+  const pathLocale = localeOfPath(route.path);
+  const url = `${SITE_URL}${
+    wanted
+      ? sectionPath("calendrier", pathLocale, wanted.slugs[pathLocale])
+      : sectionPath("calendrier", pathLocale)
+  }`;
+  const label = wanted?.labels[calendarLocale.value] ?? "";
   seoService.setMeta({
-    title: t("seo.calendarTitle"),
-    description: t("seo.calendarDescription"),
+    title: wanted ? t("seo.festivalTitle", { festival: label }) : t("seo.calendarTitle"),
+    description: wanted
+      ? t("seo.festivalDescription", { festival: label })
+      : t("seo.calendarDescription"),
     canonical: url,
     og: { url },
   });
-  analyticsService.capture("calendar_viewed");
+}
+
+/**
+ * Applique la fête de l'URL : on avance d'année en année jusqu'à celle qui la
+ * porte (jamais plus d'une, une fête tombant une fois par an, mais l'année en
+ * cours peut l'avoir déjà passée), puis on amène son cadre à l'écran. Un slug
+ * inconnu ramène au calendrier plutôt que d'afficher une page vide.
+ */
+async function applyRouteFestival(): Promise<void> {
+  const raw = route.params.fete;
+  const slug = typeof raw === "string" ? raw.toLowerCase() : "";
+  if (!slug) {
+    festival.value = null;
+    applyMeta();
+    return;
+  }
+  const found = findFestivalBySlug(slug);
+  if (!found) {
+    void router.replace(sectionPath("calendrier", localeOfPath(route.path)));
+    return;
+  }
+  // Slug d'une autre langue (le sélecteur de langue traduit la section, pas
+  // le slug de la fête) : on rétablit l'adresse canonique de cet espace, pour
+  // que l'URL partagée soit celle que le prérendu et les hreflang déclarent.
+  const pathLocale = localeOfPath(route.path);
+  if (slug !== found.slugs[pathLocale]) {
+    void router.replace(sectionPath("calendrier", pathLocale, found.slugs[pathLocale]));
+    return;
+  }
+  festival.value = found;
+  yearOffset.value = 0;
+  for (let step = 0; step < 2 && !festivalKey.value; step++) yearOffset.value += 1;
+  applyMeta();
+  await nextTick();
+  const key = festivalKey.value;
+  if (!key) return;
+  root.value
+    ?.querySelector(`[data-entry="${CSS.escape(key)}"]`)
+    ?.scrollIntoView({ block: "center" });
+}
+
+watch(
+  () => route.params.fete,
+  () => {
+    if (isSectionPath(route.path, "calendrier")) void applyRouteFestival();
+  },
+);
+
+// Les messages en et he arrivent par import dynamique : le titre se repose
+// quand ils sont là.
+watch([locale, localeMessagesReady], applyMeta);
+
+onMounted(() => {
+  revealFromOrigin(root.value);
+  void applyRouteFestival();
+  analyticsService.capture("calendar_viewed", { festival: festival.value?.slugs.fr ?? null });
 });
 </script>
 
 <template>
   <main ref="root" class="flex-1 mx-auto w-full max-w-3xl px-6 py-10">
-    <RouterLink to="/horaires" class="back-link mb-6">
+    <RouterLink :to="localePath('horaires')" class="back-link mb-6">
       <AppIcon name="chevron-left" :size="14" />
       {{ t("zmanim.navTitle") }}
     </RouterLink>
@@ -170,10 +282,13 @@ onMounted(() => {
       <li
         v-for="entry in entries"
         :key="entry.key"
+        :data-entry="entry.key"
         class="card p-4"
         :class="[
           isPast(entry) ? 'opacity-55' : '',
-          entry.key === nextKey ? 'border border-primary/30 bg-primary/5' : '',
+          entry.key === nextKey || entry.key === festivalKey
+            ? 'border border-primary/30 bg-primary/5'
+            : '',
         ]"
       >
         <div class="flex items-start justify-between gap-4">

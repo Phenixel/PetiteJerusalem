@@ -51,6 +51,10 @@ import type { Bookmark, ReadingPosition } from "../../services/readingProgressSe
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { analyticsService } from "../../services/analyticsService";
+import { useLocalePath } from "../../composables/useLocalePath";
+
+/** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
+const { localePath } = useLocalePath();
 
 const route = useRoute();
 const router = useRouter();
@@ -1388,7 +1392,9 @@ watch(textId, () => {
             class="hover:text-primary transition-colors"
             >Tehilim par intention</RouterLink
           >
-          <RouterLink to="/partage-tehilim" class="hover:text-primary transition-colors"
+          <RouterLink
+            :to="localePath('partageTehilim')"
+            class="hover:text-primary transition-colors"
             >Partage de Tehilim</RouterLink
           >
         </nav>

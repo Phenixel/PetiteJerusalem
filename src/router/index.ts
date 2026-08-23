@@ -3,9 +3,16 @@ import routes from "./routes";
 import { authService } from "../services/authService";
 import { isAdminEmail } from "../config/admin";
 import { isNativeApp } from "../composables/useNativeApp";
+import { DEFAULT_SEO_LOCALE, isSectionPath, localeOfPath } from "../content/seoLocales";
+import { applyLocale, type SupportedLocale } from "../i18n";
 
-/** App native : pages posées en surcouche au-dessus de la page en cours (App.vue). */
-const isOverlayPath = (path: string) => /^\/(horaires|calendrier)/.test(path);
+/**
+ * App native : pages posées en surcouche au-dessus de la page en cours
+ * (App.vue). Les horaires et le calendrier ont une adresse par langue : la
+ * reconnaissance passe par la table des sections, pas par le chemin français.
+ */
+const isOverlayPath = (path: string) =>
+  isSectionPath(path, "horaires") || isSectionPath(path, "calendrier");
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -23,6 +30,27 @@ const router = createRouter({
     if (savedPosition) return savedPosition;
     return { top: 0 };
   },
+});
+
+// Une URL préfixée (/en/…, /he/…) impose sa langue : c'est elle qui a été
+// indexée, et un visiteur venu d'un moteur doit voir la page dans la langue
+// qu'il a cliquée. Les adresses sans préfixe, elles, ne touchent à rien : la
+// langue y reste celle choisie par le visiteur ou son navigateur.
+//
+// `applyLocale` la mémorise, et c'est voulu : la plus grande partie du site
+// (bibliothèque, chiourim, partage de lectures) n'a qu'une adresse, sans
+// préfixe. Sans mémorisation, un visiteur arrivé sur /en/shabbat-times
+// retomberait en français au premier lien vers la bibliothèque, au milieu de
+// sa visite. Le prix est qu'un lien anglais suivi une fois bascule toute
+// l'application ; le sélecteur de langue le défait en un clic, et le retient
+// de la même façon.
+router.beforeEach(async (to) => {
+  const locale = localeOfPath(to.path);
+  // Attendu, et pas seulement lancé : les messages en et he arrivent par
+  // import dynamique, et la vue pose son titre au montage. Sans l'attente,
+  // une page anglaise s'ouvrirait avec un titre français.
+  if (locale !== DEFAULT_SEO_LOCALE) await applyLocale(locale as SupportedLocale);
+  return true;
 });
 
 // Les routes marquées requiresAuth redirigent vers /login AVANT le montage de

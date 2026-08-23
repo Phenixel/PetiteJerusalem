@@ -1,3 +1,4 @@
+import { ref } from "vue";
 import { createI18n } from "vue-i18n";
 import fr from "./locales/fr";
 
@@ -63,13 +64,24 @@ export function setStoredLocale(locale: SupportedLocale): void {
  */
 type LocaleMessages = typeof fr;
 
-const localeLoaders: Record<SupportedLocale, (() => Promise<{ default: LocaleMessages }>) | null> = {
-  fr: null,
-  en: () => import("./locales/en"),
-  he: () => import("./locales/he"),
-};
+const localeLoaders: Record<SupportedLocale, (() => Promise<{ default: LocaleMessages }>) | null> =
+  {
+    fr: null,
+    en: () => import("./locales/en"),
+    he: () => import("./locales/he"),
+  };
 
 const loadedLocales = new Set<SupportedLocale>(["fr"]);
+
+/**
+ * Incrémenté chaque fois que les messages d'une langue viennent d'arriver.
+ *
+ * Le changement de langue est immédiat, mais les messages, eux, arrivent par
+ * import dynamique : ce qui a été calculé entre les deux l'a été avec le repli
+ * français. Les vues qui posent un titre de page (elles le font une fois, pas
+ * dans un rendu) surveillent ce compteur pour le reposer dans la bonne langue.
+ */
+export const localeMessagesReady = ref(0);
 
 export async function loadLocaleMessages(locale: SupportedLocale): Promise<void> {
   const loader = localeLoaders[locale];
@@ -78,6 +90,7 @@ export async function loadLocaleMessages(locale: SupportedLocale): Promise<void>
     const messages = await loader();
     i18n.global.setLocaleMessage(locale, messages.default);
     loadedLocales.add(locale);
+    localeMessagesReady.value += 1;
   } catch {
     // Chunk introuvable (réseau, déploiement entre-temps) : le repli français
     // reste affiché ; le prochain setLocale retentera.
@@ -102,6 +115,32 @@ export const i18n = createI18n({
 
 if (initialLocale !== "fr") {
   void loadLocaleMessages(initialLocale);
+}
+
+/**
+ * Applique une langue : messages chargés en tâche de fond (le français sert de
+ * repli pendant le court chargement du chunk), langue mémorisée, `lang` et
+ * `dir` du document mis à jour.
+ *
+ * Sert au sélecteur de langue et au routeur : une URL préfixée (/en/…, /he/…)
+ * impose sa langue, sans quoi une page anglaise s'afficherait en français à
+ * qui arrive d'un moteur de recherche.
+ */
+export function applyLocale(locale: SupportedLocale): Promise<void> {
+  const loaded = loadLocaleMessages(locale);
+  // `createI18n` ne reçoit que les messages français : vue-i18n en déduit que
+  // la locale ne peut valoir que « fr ». Les autres arrivent bien plus tard,
+  // par import dynamique ; le typage large rétablit ce que le code fait.
+  (i18n.global.locale as unknown as { value: string }).value = locale;
+  setStoredLocale(locale);
+  if (typeof document !== "undefined") {
+    document.documentElement.setAttribute("lang", locale);
+    document.documentElement.setAttribute("dir", locale === "he" ? "rtl" : "ltr");
+  }
+  // La locale est posée tout de suite (le français sert de repli le temps du
+  // chunk) ; la promesse permet à qui en a besoin d'attendre les messages,
+  // comme le routeur avant d'ouvrir une page traduite dont le titre en dépend.
+  return loaded;
 }
 
 export default i18n;

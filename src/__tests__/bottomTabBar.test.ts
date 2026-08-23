@@ -28,6 +28,7 @@ vi.mock("../services/authService", () => ({
 
 import fr from "../locales/fr";
 import BottomTabBar from "../components/BottomTabBar.vue";
+import { setLocaleSpace } from "../composables/useLocalePath";
 
 function mount() {
   const i18n = createI18n({ legacy: false, locale: "fr", messages: { fr } });
@@ -45,17 +46,21 @@ function mount() {
   const fab = () =>
     host.querySelector('button[aria-label="Horaires du jour"]') as HTMLButtonElement;
   const profileTab = () => host.querySelector('a[href="/profile"]') as HTMLAnchorElement;
+  const link = (href: string) => host.querySelector(`a[href="${href}"]`);
   const click = async (el: Element) => {
     el.dispatchEvent(new MouseEvent("click"));
     await new Promise((resolve) => setTimeout(resolve, 0));
     await nextTick();
   };
-  return { router, fab, profileTab, click };
+  return { router, fab, profileTab, link, click };
 }
 
 describe("BottomTabBar", () => {
   beforeEach(() => {
     authCallbacks.length = 0;
+    // L'espace de langue colle à la session (module useLocalePath) : chaque
+    // test repart d'une session française neuve.
+    setLocaleSpace("fr");
   });
   it("le bouton rond ouvre les horaires, puis les referme", async () => {
     const bar = mount();
@@ -73,6 +78,54 @@ describe("BottomTabBar", () => {
     await bar.click(bar.fab());
     expect(bar.router.currentRoute.value.path).toBe("/");
     expect(bar.fab().getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("reste dans l'espace de langue de l'adresse ouverte", async () => {
+    const bar = mount();
+    // Arrivé d'un résultat de recherche anglais : le bouton rond doit se
+    // reconnaître actif, et ne pas ramener dans l'espace français au premier
+    // appui.
+    await bar.router.push("/en/shabbat-times/lyon");
+    await bar.router.isReady();
+    await nextTick();
+    expect(bar.fab().getAttribute("aria-pressed")).toBe("true");
+    // L'onglet Accueil aussi : il mène à /en, pas à l'accueil français.
+    expect(bar.link("/en")).toBeTruthy();
+    expect(bar.link("/")).toBeNull();
+
+    await bar.router.push("/en/finish-the-shas");
+    await nextTick();
+    expect(bar.fab().getAttribute("aria-pressed")).toBe("false");
+    await bar.click(bar.fab());
+    expect(bar.router.currentRoute.value.path).toBe("/en/shabbat-times");
+
+    // L'espace colle à la session : traverser une page sans préfixe (la
+    // bibliothèque n'a qu'une adresse) ne fait pas retomber dans le français.
+    await bar.router.push("/bibliotheque");
+    await nextTick();
+    expect(bar.link("/en")).toBeTruthy();
+    await bar.click(bar.fab());
+    expect(bar.router.currentRoute.value.path).toBe("/en/shabbat-times");
+
+    // Seul le sélecteur de langue (ou une URL d'une autre langue) change
+    // d'espace : revenu au français, les liens redeviennent sans préfixe.
+    await bar.router.push("/bibliotheque");
+    await nextTick();
+    setLocaleSpace("fr");
+    await nextTick();
+    expect(bar.link("/")).toBeTruthy();
+    await bar.click(bar.fab());
+    expect(bar.router.currentRoute.value.path).toBe("/horaires");
+  });
+
+  it("ne préfixe jamais une session qui n'a pas touché /en ni /he", async () => {
+    const bar = mount();
+    await bar.router.push("/bibliotheque");
+    await bar.router.isReady();
+    await nextTick();
+    expect(bar.link("/")).toBeTruthy();
+    await bar.click(bar.fab());
+    expect(bar.router.currentRoute.value.path).toBe("/horaires");
   });
 
   it("l'onglet profil s'annonce « Réglages » sans compte, « Profil » connecté", async () => {

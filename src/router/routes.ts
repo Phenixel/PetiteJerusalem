@@ -22,6 +22,17 @@ const ContentPage = () => import("../views/ContentPage.vue");
 const ZmanimPage = () => import("../views/Zmanim/ZmanimPage.vue");
 const CalendarPage = () => import("../views/Zmanim/CalendarPage.vue");
 const TehilimPage = () => import("../views/TehilimPage.vue");
+const SeoGuidePage = () => import("../views/SeoGuidePage.vue");
+const ParashaPage = () => import("../views/Library/ParashaPage.vue");
+
+import type { RouteRecordSingleView } from "vue-router";
+import {
+  DEFAULT_SEO_LOCALE,
+  SEO_LOCALES,
+  sectionPath,
+  type SeoLocale,
+  type SeoSection,
+} from "../content/seoLocales";
 const StudioPage = () => import("../views/Studio/StudioPage.vue");
 const AdminLayout = () => import("../views/Admin/AdminLayout.vue");
 const AdminChiourimPage = () => import("../views/Admin/AdminChiourimPage.vue");
@@ -29,6 +40,54 @@ const AdminChiourEditPage = () => import("../views/Admin/AdminChiourEditPage.vue
 const AdminAuteursPage = () => import("../views/Admin/AdminAuteursPage.vue");
 const AdminAuteurDetailPage = () => import("../views/Admin/AdminAuteurDetailPage.vue");
 const AdminSessionsPage = () => import("../views/Admin/AdminSessionsPage.vue");
+
+/** Les sections traduites, et la vue qui les rend. */
+type LocalizedSection = {
+  section: SeoSection;
+  component: RouteRecordSingleView["component"];
+  child?: string;
+};
+
+const LOCALIZED_SECTIONS: LocalizedSection[] = [
+  { section: "home", component: HomeView },
+  { section: "horaires", component: ZmanimPage, child: ":ville" },
+  { section: "calendrier", component: CalendarPage, child: ":fete" },
+  { section: "zmanim", component: SeoGuidePage },
+  { section: "paracha", component: ParashaPage },
+  { section: "finirLeChass", component: ContentPage },
+  { section: "partageTehilim", component: ContentPage },
+  { section: "confidentialite", component: ContentPage },
+  { section: "aPropos", component: ContentPage },
+  { section: "mentionsLegales", component: ContentPage },
+  { section: "conditions", component: ContentPage },
+];
+
+/** Une route par section traduite et par langue préfixée. */
+function localizedRoutes(): RouteRecordSingleView[] {
+  const locales = SEO_LOCALES.filter(
+    (locale): locale is SeoLocale => locale !== DEFAULT_SEO_LOCALE,
+  );
+  return locales.flatMap((locale) =>
+    LOCALIZED_SECTIONS.flatMap(({ section, component, child }) => [
+      {
+        path: sectionPath(section, locale),
+        name: `${section}-${locale}`,
+        meta: { offlineOk: true },
+        component,
+      },
+      ...(child
+        ? [
+            {
+              path: sectionPath(section, locale, child),
+              name: `${section}-child-${locale}`,
+              meta: { offlineOk: true },
+              component,
+            },
+          ]
+        : []),
+    ]),
+  );
+}
 
 export default [
   {
@@ -163,6 +222,16 @@ export default [
     meta: { offlineOk: true },
     component: CalendarPage,
   },
+  // Page d'une fête (/calendrier/pessah) : le calendrier s'ouvre sur l'année
+  // qui la porte et la met en avant. Les pages prérendues correspondantes
+  // (voir SEO_FESTIVALS dans src/content/zmanimFestivals.ts) portent, elles, ses
+  // dates sur plusieurs années ; un slug inconnu ramène au calendrier.
+  {
+    path: "/calendrier/:fete",
+    name: "calendar-festival",
+    meta: { offlineOk: true },
+    component: CalendarPage,
+  },
   {
     path: "/chiourim",
     name: "chiourim",
@@ -273,6 +342,33 @@ export default [
     meta: { offlineOk: true },
     component: TehilimPage,
   },
+  // Paracha de la semaine : celle de ce Chabbat, puis le calendrier des
+  // suivants. Tout se calcule sur l'appareil, la page tient hors connexion.
+  {
+    path: "/paracha",
+    name: "paracha",
+    meta: { offlineOk: true },
+    component: ParashaPage,
+  },
+  // Les zmanim expliqués : page de fond, rendue du même contenu que le
+  // prérendu (src/content/seoPages.ts, `guidePages`).
+  {
+    path: "/zmanim",
+    name: "zmanim-guide",
+    meta: { offlineOk: true },
+    component: SeoGuidePage,
+  },
+  // Les pages traduites, à leur adresse anglaise et hébraïque (/en/…, /he/…).
+  //
+  // Elles n'existaient pas : une seule URL servait les trois langues, choisies
+  // dans le navigateur, et un moteur de recherche n'avait donc aucun moyen de
+  // découvrir l'anglais ni l'hébreu. Les routes sont engendrées de la même
+  // table que le prérendu (src/content/seoLocales.ts), pour qu'un segment
+  // traduit ne puisse pas diverger entre les deux.
+  //
+  // Seules les sections réellement traduites en ont : ailleurs (bibliothèque,
+  // chiourim), il n'y a qu'un document, donc qu'une adresse.
+  ...localizedRoutes(),
   {
     path: "/:pathMatch(.*)*",
     name: "not-found",
