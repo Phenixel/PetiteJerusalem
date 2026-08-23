@@ -28,6 +28,7 @@ vi.mock("../services/authService", () => ({
 
 import fr from "../locales/fr";
 import BottomTabBar from "../components/BottomTabBar.vue";
+import { setLocaleSpace } from "../composables/useLocalePath";
 
 function mount() {
   const i18n = createI18n({ legacy: false, locale: "fr", messages: { fr } });
@@ -57,6 +58,9 @@ function mount() {
 describe("BottomTabBar", () => {
   beforeEach(() => {
     authCallbacks.length = 0;
+    // L'espace de langue colle à la session (module useLocalePath) : chaque
+    // test repart d'une session française neuve.
+    setLocaleSpace("fr");
   });
   it("le bouton rond ouvre les horaires, puis les referme", async () => {
     const bar = mount();
@@ -95,9 +99,31 @@ describe("BottomTabBar", () => {
     await bar.click(bar.fab());
     expect(bar.router.currentRoute.value.path).toBe("/en/shabbat-times");
 
-    // Sur une adresse française, rien ne change : c'est l'historique.
+    // L'espace colle à la session : traverser une page sans préfixe (la
+    // bibliothèque n'a qu'une adresse) ne fait pas retomber dans le français.
     await bar.router.push("/bibliotheque");
     await nextTick();
+    expect(bar.link("/en")).toBeTruthy();
+    await bar.click(bar.fab());
+    expect(bar.router.currentRoute.value.path).toBe("/en/shabbat-times");
+
+    // Seul le sélecteur de langue (ou une URL d'une autre langue) change
+    // d'espace : revenu au français, les liens redeviennent sans préfixe.
+    await bar.router.push("/bibliotheque");
+    await nextTick();
+    setLocaleSpace("fr");
+    await nextTick();
+    expect(bar.link("/")).toBeTruthy();
+    await bar.click(bar.fab());
+    expect(bar.router.currentRoute.value.path).toBe("/horaires");
+  });
+
+  it("ne préfixe jamais une session qui n'a pas touché /en ni /he", async () => {
+    const bar = mount();
+    await bar.router.push("/bibliotheque");
+    await bar.router.isReady();
+    await nextTick();
+    expect(bar.link("/")).toBeTruthy();
     await bar.click(bar.fab());
     expect(bar.router.currentRoute.value.path).toBe("/horaires");
   });

@@ -56,6 +56,13 @@ The standard scheme now applies, driven by `src/content/seoLocales.ts`:
   so the historical behavior is unchanged.
 - The language picker follows the address: on a translated page it navigates to
   the sibling URL, elsewhere it just swaps the text.
+- In-app links to translated sections follow the **session's language space**
+  (`useLocalePath`): the last prefixed URL opened, or the last picker choice.
+  Crossing a single-address page (Bibliotheque, chiourim, profile) does not
+  drop the `/en` from subsequent links, so the URL a visitor shares stays in
+  their language. The space is session-only, never stored: a fresh launch is
+  decided by the address alone, and a session that never touched `/en` or
+  `/he` never gets prefixed.
 
 Translated today: the home page, the landing + legal pages (their `en`/`he`
 content already existed), `/horaires` and its 242 city pages, `/calendrier` and

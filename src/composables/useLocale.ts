@@ -3,6 +3,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { applyLocale, type SupportedLocale, SUPPORTED_LOCALES } from "../i18n";
 import { translatePath } from "../content/seoLocales";
+import { setLocaleSpace } from "./useLocalePath";
 
 export interface LocaleOption {
   code: SupportedLocale;
@@ -34,6 +35,10 @@ export function useLocale() {
     // repli pendant le court chargement du chunk.
     applyLocale(newLocale);
     updateDocumentDirection(newLocale);
+    // Le sélecteur impose aussi l'espace de langue des liens (useLocalePath),
+    // y compris le retour au français : sur une page sans préfixe, aucune
+    // navigation ne le ferait à sa place.
+    setLocaleSpace(newLocale);
     // Les pages traduites ont une adresse par langue : changer de langue y
     // change d'adresse, sinon l'URL contredirait ce qui est affiché. Ailleurs
     // (bibliothèque, chiourim), il n'y a qu'un document et qu'une adresse :
