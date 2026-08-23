@@ -50,6 +50,12 @@ const APPLE_TEAM_ID_DEFAULT = "";
  */
 export const APP_LINK_PATHS = [
   "/",
+  // Les pages traduites vivent toutes sous un préfixe de langue (le français
+  // reste à la racine) : deux préfixes suffisent à couvrir /en/shabbat-times,
+  // /he/parasha et leurs voisines, y compris les sections traduites à venir.
+  // Le test de couverture les compare une à une (src/__tests__/appLinks.test.ts).
+  "/en",
+  "/he",
   "/a-propos",
   "/admin",
   "/bibliotheque",

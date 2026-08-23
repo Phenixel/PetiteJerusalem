@@ -5,6 +5,13 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  DEFAULT_SEO_LOCALE,
+  SECTION_SLUGS,
+  SEO_LOCALES,
+  sectionPath,
+  type SeoSection,
+} from "../content/seoLocales";
+import {
   APP_ID,
   APP_LINK_DOMAIN,
   APP_LINK_PATHS,
@@ -53,6 +60,25 @@ describe("liens d'application", () => {
     ).toEqual([]);
   });
 
+  it("couvre les adresses traduites", () => {
+    // Les routes par langue ne sont pas écrites en dur dans le routeur, elles
+    // sont dérivées de cette table : la lecture du texte de routes.ts ne les
+    // voit pas, il faut les reconstruire ici. C'est ce qui a manqué quand les
+    // pages traduites sont arrivées.
+    const sections = Object.keys(SECTION_SLUGS) as SeoSection[];
+    const uncovered = SEO_LOCALES.flatMap((locale) =>
+      sections.map((section) => sectionPath(section, locale)),
+    ).filter((path) => !isAppLinkPath(path));
+    expect(
+      uncovered,
+      `Adresses traduites absentes de APP_LINK_PATHS : leurs liens s'ouvriraient dans le navigateur au lieu de l'app.`,
+    ).toEqual([]);
+    // Le garde-fou de la lecture ci-dessus vaut ici aussi.
+    expect(SEO_LOCALES.length).toBeGreaterThan(1);
+    expect(sections.length).toBeGreaterThan(5);
+    expect(DEFAULT_SEO_LOCALE).toBe("fr");
+  });
+
   it("laisse au navigateur ce qui n'est pas une page", () => {
     for (const path of [
       "/__/auth/handler", // redirection Firebase Auth : l'app la capturerait en pleine connexion
@@ -72,6 +98,8 @@ describe("liens d'application", () => {
     expect(isAppLinkPath("/tehilim")).toBe(true);
     expect(isAppLinkPath("/tehilim/refoua-chelema")).toBe(true);
     expect(isAppLinkPath("/tehilim-autre-chose")).toBe(false);
+    expect(isAppLinkPath("/en")).toBe(true);
+    expect(isAppLinkPath("/enorme")).toBe(false);
     expect(isAppLinkPath("/")).toBe(true);
   });
 

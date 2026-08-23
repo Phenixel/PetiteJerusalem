@@ -35,6 +35,13 @@ l'app, et **la liste des chemins** qui ouvrent l'app. Trois consommateurs :
 Une fois l'app ouverte, c'est le listener `appUrlOpen` de `src/main.ts` qui
 navigue jusqu'à la page demandée, le même que celui des widgets.
 
+Les pages traduites vivent sous un préfixe de langue (`/en`, `/he` ; le
+français reste à la racine) et leurs routes ne sont pas écrites en dur dans le
+routeur, elles sont dérivées de `SECTION_SLUGS`. Le test les reconstruit à
+partir de cette table plutôt que de lire `routes.ts` : sans quoi une section
+traduite ajoutée plus tard s'ouvrirait dans le navigateur sans que rien ne le
+signale.
+
 La liste des chemins est **positive** : ce qui n'y figure pas reste au
 navigateur. Ce n'est pas un détail de forme. `/__/auth/` est la redirection de
 Firebase Auth (`authDomain` vaut le domaine du site) : capturée par l'app,
