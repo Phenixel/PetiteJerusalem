@@ -1,4 +1,4 @@
-import { HDate, Sedra, flags, getHolidaysOnDate, months } from "@hebcal/core";
+import { HDate, Sedra, flags, getHolidaysOnDate, months, tachanun } from "@hebcal/core";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { TORAH_LIVRES } from "../content/etudeTexts";
@@ -201,6 +201,81 @@ function toCycle(day: number, ranges: [number, number][]): TehilimCycle {
 }
 
 /**
+ * L'hiver de la Amida (« machiv haroua'h oumorid haguéchem ») : du 22 Tichri
+ * au 14 Nissan inclus. Les bascules exactes se font à Moussaf de Chemini
+ * Atséret et de Pessah, deux Yom Tov où le sidour de semaine ne se lit pas :
+ * à la journée près, la règle est exacte pour tous les jours qu'il couvre.
+ */
+export function isWinterMention(hd: HDate): boolean {
+  const year = hd.getFullYear();
+  const start = new HDate(22, months.TISHREI, year).abs();
+  const end = new HDate(14, months.NISAN, year).abs();
+  const abs = hd.abs();
+  return abs >= start && abs <= end;
+}
+
+/** Année civile bissextile (grégorienne). */
+const isGregLeap = (y: number): boolean => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+
+/**
+ * La demande de pluie (« barekh alénou », avec tal oumatar) : en Israël dès le
+ * 7 'Hechvan, en diaspora depuis Arvit du 4 décembre (du 5 quand le février
+ * suivant compte 29 jours). Le jour hébraïque bascule à la chkia : celui qui
+ * commence le 4 décembre au soir porte la date civile du 5, la comparaison se
+ * fait donc sur le 5 (ou le 6). Dans les deux calendriers, on la dit jusqu'au
+ * 14 Nissan inclus, la veille de Pessah.
+ */
+export function isRainRequest(hd: HDate, il: boolean): boolean {
+  const year = hd.getFullYear();
+  const abs = hd.abs();
+  const end = new HDate(14, months.NISAN, year).abs();
+  if (abs > end) return false;
+  return abs >= rainRequestStart(year, il);
+}
+
+/** Le jour (absolu) où la demande de pluie commence pour l'année hébraïque. */
+function rainRequestStart(year: number, il: boolean): number {
+  if (il) return new HDate(7, months.CHESHVAN, year).abs();
+  // Décembre de l'année civile où cette année hébraïque a commencé.
+  const civilYear = new HDate(1, months.TISHREI, year).greg().getFullYear();
+  const startDay = isGregLeap(civilYear + 1) ? 6 : 5;
+  return new HDate(new Date(civilYear, 11, startDay)).abs();
+}
+
+/**
+ * Les variantes saisonnières de la 'Amida qui viennent de basculer : pendant
+ * les trois premières semaines d'une mention (machiv haroua'h / morid hatal)
+ * ou d'une demande (barekh 'alénou / barkhénou), le lecteur affiche le
+ * passage à la couleur du thème plutôt qu'en couleur ordinaire, le temps que
+ * le pli se prenne, c'est là qu'on se trompe.
+ */
+const RECENT_CHANGE_DAYS = 21;
+
+export function recentSeasonalChanges(hd: HDate, il: boolean): Set<string> {
+  const recent = new Set<string>();
+  const abs = hd.abs();
+  const year = hd.getFullYear();
+  // L'été (mention et demande) commence le 15 Nissan ; pour les jours entre
+  // Tichri et Nissan, celui de l'année hébraïque précédente.
+  const summerStart = (() => {
+    const nissan = new HDate(15, months.NISAN, year).abs();
+    return abs >= nissan ? nissan : new HDate(15, months.NISAN, year - 1).abs();
+  })();
+  if (isWinterMention(hd)) {
+    if (abs - new HDate(22, months.TISHREI, year).abs() < RECENT_CHANGE_DAYS)
+      recent.add("hiver");
+  } else if (abs - summerStart < RECENT_CHANGE_DAYS) {
+    recent.add("ete");
+  }
+  if (isRainRequest(hd, il)) {
+    if (abs - rainRequestStart(year, il) < RECENT_CHANGE_DAYS) recent.add("barekh-alenou");
+  } else if (abs - summerStart < RECENT_CHANGE_DAYS) {
+    recent.add("barkhenou");
+  }
+  return recent;
+}
+
+/**
  * Occasions du calendrier actives un jour hébraïque donné : les clés `when`
  * des blocs conditionnels des textes de tefila (public/texts/tefila/*),
  * qui ne s'affichent que le jour où leur ajout se dit, Retsé le Chabbat,
@@ -232,12 +307,73 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   if (hanukkah || purim) occ.add("nissim");
   if (["Pesach", "Shavuot", "Sukkot", "Shmini Atzeret", "Simchat Torah"].some(festival))
     occ.add("moadim");
+  // La fête nommée, pour les ajouts qui la citent (le Mé'ein chaloch dit
+  // laquelle) : à Souccot déjà posée plus haut, ici ses trois sœurs.
+  if (festival("Pesach")) occ.add("pesach");
+  if (festival("Shavuot")) occ.add("shavuot");
+  if (festival("Shmini Atzeret") || festival("Simchat Torah")) occ.add("shemini-atzeret");
   if (occ.has("rosh-chodesh") || has(flags.CHAG) || has(flags.CHOL_HAMOED)) occ.add("moed");
   if (occ.has("shabbat") || occ.has("moed")) occ.add("shabbat-or-moed");
   // Les dix jours de pénitence : de Roch Hachana à Yom Kippour, 1 au 10 Tichri.
   // Ils n'ouvrent aucun ajout à eux seuls, ils déplient les encadrés des
   // Sli'hot, qui restent lisibles le reste de l'année (voir TextBlock.fold).
   if (hd.getMonth() === months.TISHREI && hd.getDate() <= 10) occ.add("teshuva");
+
+  // --- Sidour de semaine ---------------------------------------------------
+  // L'été et l'hiver de la Amida : la mention de la pluie (22 Tichri au
+  // 14 Nissan) et sa demande (7 'Hechvan en Israël, début décembre en
+  // diaspora). Deux paires de clés exclusives : chaque variante du texte
+  // porte la sienne, seule celle du jour s'affiche.
+  occ.add(isWinterMention(hd) ? "hiver" : "ete");
+  occ.add(isRainRequest(hd, il) ? "barekh-alenou" : "barkhenou");
+  // Le tahanoun, par office : il tombe à Roch Hodech, aux fêtes, tout
+  // Nissan… et l'après-midi seulement la veille d'un jour où il tombe.
+  // Rien le Chabbat : le sidour de semaine ne s'y lit pas.
+  if (hd.getDay() !== 6) {
+    const said = tachanun(hd, il);
+    if (said.shacharit) occ.add("tahanoun");
+    if (said.mincha) occ.add("tahanoun-minha");
+    // Les supplications longues du lundi et du jeudi accompagnent le
+    // tahanoun : elles tombent avec lui.
+    if (said.shacharit && (hd.getDay() === 1 || hd.getDay() === 4))
+      occ.add("tahanoun-lundi-jeudi");
+  }
+  // La lecture de la Torah des lundis et jeudis ordinaires : le début de la
+  // paracha de la semaine. Les jours à lecture propre (Roch Hodech, 'Hanouka,
+  // Pourim, jeûnes publics, 'Hol haMoed) lisent leur passage, pas celui-là.
+  // Les jeûnes de coutume (BeHaB, Yom Kippour Katan) gardent la lecture
+  // ordinaire : hebcal les marque pourtant comme jeûnes, on les écarte.
+  const publicFast = events.some(
+    (ev) =>
+      (ev.getFlags() & (flags.MAJOR_FAST | flags.MINOR_FAST)) !== 0 &&
+      !/^(Ta'anit BeHaB|Yom Kippur Katan)/.test(ev.getDesc()),
+  );
+  const ownReading =
+    occ.has("rosh-chodesh") || occ.has("nissim") || publicFast || has(flags.CHOL_HAMOED);
+  if ((hd.getDay() === 1 || hd.getDay() === 4) && !ownReading) occ.add("torah-semaine");
+  // Un séfer Torah est sorti à Cha'harit : lundi et jeudi, Chabbat, et les
+  // jours à lecture propre. C'est la clé de ce qui accompagne son retour
+  // (Yehalelou), quel que soit le passage lu.
+  if (hd.getDay() === 1 || hd.getDay() === 4 || hd.getDay() === 6 || ownReading)
+    occ.add("sefer-torah");
+  // Le birkat hamazon dit מגדול les jours où l'on dit Moussaf (Chabbat, Roch
+  // Hodech, fêtes et 'Hol haMoed) et à Pourim (pour sa séouda), מגדיל les
+  // autres jours. Paire exclusive, comme ete/hiver : le texte porte les deux,
+  // seule celle du jour s'affiche.
+  occ.add(occ.has("shabbat-or-moed") || purim ? "migdol" : "magdil");
+  // Le jour de la semaine (0 = dimanche) : le chir chel yom n'affiche que le
+  // psaume du jour.
+  occ.add(`jour-${hd.getDay()}`);
+  // Le Lamnatséa'h de Min'ha (psaume 67), entre le Kaddich Titkabal et
+  // 'Alénou : tous les jours de semaine, sauf la veille de Chabbat où le
+  // psaume 93 le remplace (bloc jour-5 du fichier).
+  if (hd.getDay() !== 5 && hd.getDay() !== 6) occ.add("lamnatseah-minha");
+  // Lédavid (psaume 27) : du 1er Eloul à Hochana Rabba (21 Tichri).
+  if (
+    hd.getMonth() === months.ELUL ||
+    (hd.getMonth() === months.TISHREI && hd.getDate() <= 21)
+  )
+    occ.add("ledavid");
   return occ;
 }
 

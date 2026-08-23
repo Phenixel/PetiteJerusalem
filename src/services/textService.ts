@@ -33,8 +33,22 @@ export interface Rubric {
  * reprend l'assemblée, ou une didascalie glissée dans le fil du texte.
  */
 export type TextRun =
-  | { kind: "he"; text: string; strong?: boolean }
-  | { kind: "rubric"; rubric: Rubric };
+  | {
+      kind: "he";
+      text: string;
+      strong?: boolean;
+      /**
+       * Texte affecté par une didascalie (« les jours de Moussaf on dit
+       * מגדול ») : mis en couleur pour qu'on voie d'un coup d'œil quelle
+       * partie du texte la consigne concerne. À la couleur du thème quand un
+       * `when` l'impose au jour dit, en gris quand l'application ne peut pas
+       * trancher (en Terre d'Israël, à dix convives).
+       */
+      accent?: boolean;
+      /** Fragment qui ne se dit qu'à cette occasion (voir TextBlock.when). */
+      when?: string;
+    }
+  | { kind: "rubric"; rubric: Rubric; when?: string };
 
 /**
  * Tefila : un paragraphe du texte, avec sa didascalie et ses mises en avant.
@@ -64,6 +78,12 @@ export interface TextParagraph {
    * du vidoui, sinon, s'étirent sur trois écrans.
    */
   tight?: boolean;
+  /**
+   * Paragraphe qui ne se dit qu'à cette occasion (les fêtes du Mé'ein
+   * chaloch). Il garde sa ligne, et donc son index, dans le texte de la
+   * section (marque-pages, translittération) ; seul l'affichage le masque.
+   */
+  when?: string;
 }
 
 /**
@@ -100,6 +120,30 @@ export interface TextBlock {
   variants?: boolean;
   /** Tefila : des paragraphes numérotés et séparés (les sept bénédictions). */
   numbered?: boolean;
+  /**
+   * Tefila : un bloc `when` qui garde le rendu du fil ordinaire. La couleur du
+   * thème dit « c'est l'ajout du jour » ; elle serait mensongère sur ce qui
+   * n'est pas un ajout, le psaume du jour ou le tahanoun, conditionnels mais
+   * ordinaires.
+   */
+  plain?: boolean;
+  /**
+   * Sidour : l'horaire à afficher avant ce qui se lit (« fin du Chéma » avant
+   * le Chéma…). Clé d'un horaire connu du lecteur (voir TefilaZman.vue) ;
+   * le bloc n'a alors pas de texte.
+   */
+  zman?: string;
+  /**
+   * Sidour : la halakha qui accompagne le passage (« en cas d'erreur, on
+   * reprend… »), affichée au-dessus du bloc dans la langue du lecteur.
+   */
+  halakha?: Rubric;
+  /**
+   * Sidour : à cet endroit s'insère la lecture de la Torah de la semaine (la
+   * 1re montée de la paracha), que le lecteur charge et injecte lui-même :
+   * elle change chaque semaine, le fichier ne peut pas la porter.
+   */
+  torahWeekly?: boolean;
   /** Tefila : le détail de mise en forme, ligne à ligne. */
   paragraphs?: TextParagraph[];
 }
@@ -194,11 +238,12 @@ export function resolveFilePath(textStudy: TextStudyJsonEntry): string {
       return `/texts/talmud/${tractateSlug(tractateFromLink(textStudy.link))}.json`;
     case "Tanakh":
       return `/texts/tanakh/${textStudy.id}.json`;
-    // Liturgie (Sli'hot, Brahot) : un fichier par entrée, nommé par sa
+    // Liturgie (Sli'hot, Brahot, Sidour) : un fichier par entrée, nommé par sa
     // translittération latine, « ברכה אחרונה (Brakha A'harona) » →
     // brakha-aharona.json, comme les traités de la Michna et du Talmud.
     case "Slihot":
-    case "Brahot": {
+    case "Brahot":
+    case "Sidour": {
       const latin = textStudy.name.match(/\(([^)]+)\)\s*$/)?.[1] ?? String(textStudy.id);
       return `/texts/tefila/${tractateSlug(latin)}.json`;
     }
@@ -397,12 +442,23 @@ function loadTanakh(
  * `he` accepte aussi une simple chaîne. Les didascalies ne comptent pas dans
  * le texte hébreu de la ligne : les marque-pages, la translittération et le
  * repérage des versets ne voient que ce qui se lit.
+ *
+ * Une ligne et chaque fragment objet acceptent un `when` : l'occasion du
+ * calendrier sans laquelle ils ne s'affichent pas (les fêtes du Mé'ein
+ * chaloch, מגדול les jours de Moussaf). Le fragment `v` porte le texte
+ * affecté par une didascalie, mis en couleur (voir TextRun.accent).
  */
 interface TefilaRun {
   /** Hébreu mis en avant (ce que reprend l'assemblée). */
   b?: string;
   /** Didascalie insérée dans le fil du texte. */
   r?: Rubric;
+  /** Texte affecté par une didascalie, à la couleur du thème. */
+  v?: string;
+  /** Hébreu ordinaire, sous forme d'objet pour porter un `when`. */
+  he?: string;
+  /** Occasion sans laquelle le fragment ne s'affiche pas. */
+  when?: string;
 }
 
 interface TefilaFileLine {
@@ -412,6 +468,7 @@ interface TefilaFileLine {
   muted?: boolean;
   lead?: boolean;
   tight?: boolean;
+  when?: string;
 }
 
 interface TefilaFileBlock {
@@ -421,6 +478,10 @@ interface TefilaFileBlock {
   fold?: string;
   variants?: boolean;
   numbered?: boolean;
+  plain?: boolean;
+  zman?: string;
+  halakha?: Rubric;
+  torahWeekly?: boolean;
   lines?: (string | TefilaFileLine)[];
 }
 
@@ -436,11 +497,20 @@ function parseTefilaLine(raw: string | TefilaFileLine): TextParagraph | null {
     if (typeof part === "string") {
       const text = cleanText(part);
       if (text) runs.push({ kind: "he", text });
-    } else if (part.b) {
+      continue;
+    }
+    const when = part.when ? { when: part.when } : {};
+    if (part.b) {
       const text = cleanText(part.b);
-      if (text) runs.push({ kind: "he", text, strong: true });
+      if (text) runs.push({ kind: "he", text, strong: true, ...when });
+    } else if (part.v) {
+      const text = cleanText(part.v);
+      if (text) runs.push({ kind: "he", text, accent: true, ...when });
+    } else if (part.he) {
+      const text = cleanText(part.he);
+      if (text) runs.push({ kind: "he", text, ...when });
     } else if (part.r) {
-      runs.push({ kind: "rubric", rubric: part.r });
+      runs.push({ kind: "rubric", rubric: part.r, ...when });
     }
   }
   if (!runs.some((run) => run.kind === "he")) return null;
@@ -450,6 +520,7 @@ function parseTefilaLine(raw: string | TefilaFileLine): TextParagraph | null {
   if (raw.muted) paragraph.muted = true;
   if (raw.lead) paragraph.lead = true;
   if (raw.tight) paragraph.tight = true;
+  if (raw.when) paragraph.when = raw.when;
   return paragraph;
 }
 
@@ -474,7 +545,9 @@ function loadTefila(
     const paragraphs = (Array.isArray(raw?.lines) ? raw.lines : [])
       .map(parseTefilaLine)
       .filter((p): p is TextParagraph => p !== null);
-    if (paragraphs.length === 0) continue;
+    // Les marqueurs (horaire, Torah de la semaine) n'ont pas de texte à eux :
+    // ils passent quand même, c'est le lecteur qui les remplit.
+    if (paragraphs.length === 0 && !raw?.zman && !raw?.torahWeekly) continue;
     const block: TextBlock = {
       label: raw.label ?? "",
       lines: paragraphs.map(paragraphText),
@@ -486,6 +559,10 @@ function loadTefila(
     if (raw.fold) block.fold = raw.fold;
     if (raw.variants) block.variants = true;
     if (raw.numbered) block.numbered = true;
+    if (raw.plain) block.plain = true;
+    if (raw.zman) block.zman = raw.zman;
+    if (raw.halakha) block.halakha = raw.halakha;
+    if (raw.torahWeekly) block.torahWeekly = true;
     blocks.push(block);
     offset += block.lines.length;
   }
@@ -528,6 +605,7 @@ export function parseContent(
       return loadTanakh(textStudy, data as { title?: string; he?: unknown[] });
     case "Slihot":
     case "Brahot":
+    case "Sidour":
       return loadTefila(textStudy, data as { title?: string; blocks?: TefilaFileBlock[] });
     default:
       throw new Error(`Type non supporté : ${textStudy.type}`);

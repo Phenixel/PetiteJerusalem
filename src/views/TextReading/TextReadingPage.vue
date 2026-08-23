@@ -17,7 +17,8 @@ import {
   placeLabel as describePlace,
 } from "../../services/textService";
 import type { TextBlock, TextContent, TextSection } from "../../services/textService";
-import { activeOccasions } from "../../services/dailyCycles";
+import { activeOccasions, getWeeklyParasha, recentSeasonalChanges } from "../../services/dailyCycles";
+import { injectWeeklyTorah, nextTefilaEntry, tefilaOf } from "../../services/sidourService";
 import { hebrewDateFor } from "../../services/zmanimService";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { scrollToVerse } from "../../composables/scrollAnchor";
@@ -35,12 +36,15 @@ import {
   sectionDescription,
   hubDescription,
   isLiturgy,
+  latinName,
   READING_LEAD,
   readingLead as readingLeadOf,
   SITE_URL,
 } from "../../content/etudeTexts";
 import LiturgyText from "./LiturgyText.vue";
 import SlihotHours from "./SlihotHours.vue";
+import TefilaSectionNav from "./TefilaSectionNav.vue";
+import ReadingProgressBar from "./ReadingProgressBar.vue";
 import GuestForm from "../../components/GuestForm.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
@@ -49,6 +53,9 @@ import { useReadingSize } from "../../composables/useReadingSize";
 import { readingProgressService, bookmarkId } from "../../services/readingProgressService";
 import type { Bookmark, ReadingPosition } from "../../services/readingProgressService";
 import { isNativeApp } from "../../composables/useNativeApp";
+import { setTefilaNavSections } from "../../composables/useTefilaNav";
+import type { TefilaNavSection } from "../../composables/useTefilaNav";
+import type { SupportedLocale } from "../../i18n";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { analyticsService } from "../../services/analyticsService";
 import { useLocalePath } from "../../composables/useLocalePath";
@@ -58,14 +65,14 @@ const { localePath } = useLocalePath();
 
 const route = useRoute();
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const toast = useToast();
 const readingSize = useReadingSize();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
 // Lieu des horaires : donne le jour hébraïque (sensible à la chkia) qui
 // conditionne les ajouts de calendrier des textes de tefila.
-const { place: zmanimPlace } = useZmanimLocation();
+const { place: zmanimPlace, useDevicePlace } = useZmanimLocation();
 
 // This view serves two URL shapes with the SAME UI: the in-session reader
 // (/lire/:textId, numeric id) and the public, indexable reading pages
@@ -75,7 +82,7 @@ const isEtudeRoute = computed(() => route.params.corpus !== undefined);
 /** Corpus ayant leur page de bibliothèque (route `study-corpus`). Pas les
  * Sli'hot : leur unique texte EST la page du corpus (redirection), le retour
  * ramène donc à l'accueil de la bibliothèque. */
-const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh", "brahot"]);
+const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh", "brahot", "sidour"]);
 const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
   isEtudeRoute.value
     ? entryByCorpusSlug(String(route.params.corpus), String(route.params.slug))
@@ -129,8 +136,8 @@ const verseBlocks = computed<TextBlock[]>(() => {
 
 // Tefila : les ajouts liés au calendrier (Retsé le Chabbat, Yaalé véyavo à
 // Roch Hodech, Al hanissim à Hanouka…) ne s'affichent que le jour où ils se
-// disent, dans une carte, pour les distinguer du fil du texte. Le jour
-// hébraïque suit le lieu des horaires (après la chkia, on est déjà demain).
+// disent, fondus dans le fil du texte. Le jour hébraïque suit le lieu des
+// horaires (après la chkia, on est déjà demain).
 //
 // L'heure est donc une donnée du rendu, pas une valeur figée à l'ouverture :
 // on bénit après la chkia du vendredi une page ouverte avant elle, et Retsé
@@ -146,9 +153,25 @@ const visibleBlocks = computed(() =>
   verseBlocks.value.filter((b) => !b.when || occasions.value.has(b.when)),
 );
 
-/** Tefila (Sli'hot, Brahot) : un rendu à part, voir LiturgyText. */
+// Les bascules saisonnières récentes (machiv haroua'h en début d'hiver…) :
+// leurs ajouts s'affichent à la couleur du thème les trois premières
+// semaines ; le reste du temps ils se fondent dans le fil.
+const recentChanges = computed(() =>
+  recentSeasonalChanges(
+    hebrewDateFor(zmanimPlace.value, now.value, now.value),
+    zmanimPlace.value.tzid === "Asia/Jerusalem",
+  ),
+);
+
+/** Tefila (Sli'hot, Brahot, Sidour) : un rendu à part, voir LiturgyText. */
 const isLiturgyText = computed(() => !!textEntry.value && isLiturgy(textEntry.value));
 const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
+
+// Sidour : à la fin de Min'ha, Arvit est à un geste (la sortie des étoiles
+// les enchaîne). Pas de lien entre Cha'harit et le reste : la journée les
+// sépare.
+const sidourNextEntry = computed(() => nextTefilaEntry(textEntry.value));
+
 
 // Le minuteur des occasions : seuls les textes de tefila regardent l'heure,
 // il ne tourne donc que pour eux, et s'arrête dès qu'on ouvre autre chose.
@@ -164,6 +187,23 @@ watch(
     if (!liturgy) return;
     now.value = new Date();
     occasionsTicker = setInterval(() => (now.value = new Date()), 60_000);
+  },
+  { immediate: true },
+);
+
+// Les horaires affichés en tête d'office (TefilaZman) valent ce que vaut le
+// lieu : à l'arrivée sur un office du sidour, on redemande la position de
+// l'appareil, comme le bouton de la page des horaires, pour que les heures
+// suivent l'endroit où l'on est et non celui du dernier passage. Une ville
+// choisie explicitement reste respectée, et un refus laisse le lieu courant
+// (voir useDevicePlace).
+watch(
+  () => (String(textEntry.value?.type) === "Sidour" ? textId.value : null),
+  (id) => {
+    if (!id || zmanimPlace.value.source === "city") return;
+    void useDevicePlace().then((granted) => {
+      analyticsService.capture("zmanim_location_requested", { granted, source: "sidour" });
+    });
   },
   { immediate: true },
 );
@@ -197,6 +237,24 @@ const currentSection = computed<TextSection | null>(() => {
 const canTransliterate = computed(
   () => currentSection.value?.he.some((line) => hasNiqqud(line)) ?? false,
 );
+// Sidour et Sli'hot : un office se cherche par sections ('Amida, Chéma,
+// ta'hanoun…). La page publie les blocs titrés du jour au menu flottant
+// (TefilaSectionNav), qui remplace le bouton « remonter en haut ». Les brahot
+// restent hors jeu : trop courtes pour qu'on s'y perde.
+const isTefilaNavText = computed(() => ["Sidour", "Slihot"].includes(String(textEntry.value?.type)));
+const tefilaNavSections = computed<TefilaNavSection[]>(() => {
+  if (!isTefilaNavText.value || !currentSection.value) return [];
+  return visibleBlocks.value
+    .filter((b) => !b.zman && !b.fold && (b.labelText || b.label))
+    .map((b) => ({
+      offset: b.offset,
+      label: b.labelText
+        ? b.labelText[locale.value as SupportedLocale] || b.labelText.fr
+        : b.label,
+    }));
+});
+watch(tefilaNavSections, (list) => setTefilaNavSections(list), { immediate: true });
+
 
 // Translittération mémoïsée : appelée depuis le template, elle était recalculée
 // pour toute la section (des dizaines de lignes × plusieurs passes regex) à
@@ -241,6 +299,21 @@ async function loadContent() {
   content.value = null;
   try {
     content.value = await loadText(textEntry.value);
+    // Sidour : le lundi et le jeudi, la lecture de la Torah de la semaine
+    // (la 1re montée de la paracha) prend la place de son marqueur dans
+    // Cha'harit. Elle change chaque semaine : c'est le lecteur qui la charge.
+    if (tefilaOf(textEntry.value) === "chaharit" && occasions.value.has("torah-semaine")) {
+      try {
+        const parasha = getWeeklyParasha(now.value);
+        if (parasha?.entries[0]) {
+          const parashaContent = await loadText(parasha.entries[0]);
+          content.value = injectWeeklyTorah(content.value, parasha, parashaContent);
+        }
+      } catch {
+        // Paracha indisponible (hors ligne, fichier manquant) : le marqueur
+        // reste vide et la section n'apparaît pas, le reste de l'office si.
+      }
+    }
   } catch (e) {
     if (e instanceof MissingTextFileError) missingFile.value = true;
     else error.value = true;
@@ -882,6 +955,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener("scroll", onScroll);
   stopOccasionsTicker();
+  setTefilaNavSections([]);
   if (scrollSaveTimer !== null) {
     clearScrollSaveTimer();
     // Une capture était en attente : on fige la position avant de partir.
@@ -1286,6 +1360,7 @@ watch(textId, () => {
           :show-phonetic="showPhonetic"
           :phonetic-lines="phoneticLines"
           :occasions="occasions"
+          :recent-changes="recentChanges"
           :highlighted-line="highlightedLine"
           :selected-line="selectedLine"
           :is-bookmarked="isLineBookmarked"
@@ -1358,6 +1433,33 @@ watch(textId, () => {
           </template>
         </div>
 
+        <!-- Sidour : à la fin de Min'ha, un geste suffit pour enchaîner
+             avec Arvit. -->
+        <RouterLink
+          v-if="sidourNextEntry"
+          :to="hubPath(sidourNextEntry)"
+          class="mt-12 card card-hover p-4 flex items-center justify-between gap-3 group"
+        >
+          <span class="flex items-center gap-3 min-w-0">
+            <AppIcon name="moon" :size="18" class="text-primary flex-shrink-0" />
+            <span class="min-w-0">
+              <span
+                class="block font-semibold text-text-primary group-hover:text-primary transition-colors"
+              >
+                {{ t("textReading.sidourNext", { name: latinName(sidourNextEntry) }) }}
+              </span>
+              <span class="block text-sm text-text-secondary">
+                {{ t("textReading.sidourNextHint") }}
+              </span>
+            </span>
+          </span>
+          <AppIcon
+            name="chevron-right"
+            :size="16"
+            class="flex-shrink-0 text-text-secondary/50 group-hover:text-primary transition-colors rtl:rotate-180"
+          />
+        </RouterLink>
+
         <!-- Bottom navigation -->
         <ReadingNav
           v-if="!isSingleSection"
@@ -1400,6 +1502,11 @@ watch(textId, () => {
         </nav>
       </section>
     </template>
+
+    <!-- Tefilot (Sidour, Sli'hot) : le menu de sections remplace le bouton de
+         remontée, et la progression de lecture court au bas de l'écran. -->
+    <TefilaSectionNav v-if="tefilaNavSections.length" :sections="tefilaNavSections" />
+    <ReadingProgressBar v-if="isTefilaNavText && currentSection" />
   </main>
 </template>
 

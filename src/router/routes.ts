@@ -164,7 +164,7 @@ export default [
   // Détail d'un corpus de la bibliothèque (liste des textes) : la page
   // d'accueil de la bibliothèque ne montre que les grandes sections.
   {
-    path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh|brahot)",
+    path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh|brahot|sidour)",
     name: "study-corpus",
     meta: { offlineOk: true },
     component: StudyPage,

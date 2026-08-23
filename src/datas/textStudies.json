@@ -2663,7 +2663,40 @@
       "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Blessing_of_the_Moon",
       "totalSections": 1,
       "type": "Brahot"
+    },
+    {
+      "id": 345,
+      "name": "שחרית (Chaharit)",
+      "livre": "סידור (Sidour)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Weekday_Shacharit",
+      "totalSections": 1,
+      "type": "Sidour"
+    },
+    {
+      "id": 346,
+      "name": "מנחה (Min'ha)",
+      "livre": "סידור (Sidour)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Weekday_Mincha",
+      "totalSections": 1,
+      "type": "Sidour"
+    },
+    {
+      "id": 347,
+      "name": "ערבית (Arvit)",
+      "livre": "סידור (Sidour)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Weekday_Arvit",
+      "totalSections": 1,
+      "type": "Sidour"
     }
   ],
-  "types": ["Talmud Bavli", "Mishna", "Tehilim", "Parasha Devarim", "Tanakh", "Slihot", "Brahot"]
+  "types": [
+    "Talmud Bavli",
+    "Mishna",
+    "Tehilim",
+    "Parasha Devarim",
+    "Tanakh",
+    "Slihot",
+    "Brahot",
+    "Sidour"
+  ]
 }

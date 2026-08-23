@@ -19,7 +19,7 @@ import { transliterate, hasNiqqud } from "../services/hebrewTransliteration";
 
 export const SITE_URL = "https://petite-jerusalem.fr";
 
-export type Corpus = "tehilim" | "tanakh" | "michna" | "talmud" | "slihot" | "brahot";
+export type Corpus = "tehilim" | "tanakh" | "michna" | "talmud" | "slihot" | "brahot" | "sidour";
 
 const TYPE_TO_CORPUS: Record<string, Corpus> = {
   Tehilim: "tehilim",
@@ -28,6 +28,7 @@ const TYPE_TO_CORPUS: Record<string, Corpus> = {
   "Talmud Bavli": "talmud",
   Slihot: "slihot",
   Brahot: "brahot",
+  Sidour: "sidour",
 };
 
 const CORPUS_LABEL: Record<Corpus, string> = {
@@ -37,15 +38,16 @@ const CORPUS_LABEL: Record<Corpus, string> = {
   talmud: "Talmud",
   slihot: "Sli'hot",
   brahot: "Brahot",
+  sidour: "Sidour",
 };
 
 /**
- * Corpus liturgiques (Sli'hot, Brahot) : des textes qu'on lit, pas des textes
- * qu'on partage. Ils ne sont jamais proposés au partage de lecture, le choix
- * des sessions reste limité à EnumTypeTextStudy, et leurs pages n'affichent ni
- * l'appel au partage ni la phrase qui le promet.
+ * Corpus liturgiques (Sli'hot, Brahot, Sidour) : des textes qu'on lit, pas des
+ * textes qu'on partage. Ils ne sont jamais proposés au partage de lecture, le
+ * choix des sessions reste limité à EnumTypeTextStudy, et leurs pages
+ * n'affichent ni l'appel au partage ni la phrase qui le promet.
  */
-const LITURGY_CORPORA: ReadonlySet<Corpus> = new Set(["slihot", "brahot"]);
+const LITURGY_CORPORA: ReadonlySet<Corpus> = new Set(["slihot", "brahot", "sidour"]);
 
 export const isLiturgy = (entry: TextStudyJsonEntry): boolean =>
   LITURGY_CORPORA.has(corpusOf(entry));

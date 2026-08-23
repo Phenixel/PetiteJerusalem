@@ -39,6 +39,9 @@ const ZmanimCard = defineAsyncComponent(() => import("../components/ZmanimCard.v
 const BirkatHalevanaBanner = defineAsyncComponent(
   () => import("../components/BirkatHalevanaBanner.vue"),
 );
+// Le raccourci du sidour : pendant la plage horaire d'un office, l'accueil
+// mène au texte. Même moteur d'horaires, même chargement à la demande.
+const SidourNowCard = defineAsyncComponent(() => import("../components/SidourNowCard.vue"));
 
 const router = useRouter();
 const { t, locale } = useI18n();
@@ -241,6 +244,10 @@ onUnmounted(() => {
         </span>
       </RouterLink>
 
+      <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
+           limite. Absent entre deux offices. -->
+      <SidourNowCard class="w-full max-w-6xl mx-auto mb-5" />
+
       <!-- La bénédiction de la lune : une fenêtre de quelques nuits par mois,
            qui se rate faute de rappel. Absente le reste du temps. -->
       <BirkatHalevanaBanner class="w-full max-w-6xl mx-auto" />
@@ -305,6 +312,8 @@ onUnmounted(() => {
 
       <ZmanimCard class="dash-card" style="--enter-delay: 0.3s" @click="trackCard('zmanim')" />
     </div>
+
+    <SidourNowCard v-if="!user" class="w-full max-w-6xl mx-auto mb-5" />
 
     <BirkatHalevanaBanner v-if="!user" class="w-full max-w-6xl mx-auto" />
 

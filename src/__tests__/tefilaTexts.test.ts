@@ -11,9 +11,29 @@ import { entryByCorpusSlug } from "../content/etudeTexts";
 const hd = (y: number, m: number, d: number) => new HDate(new Date(y, m - 1, d, 12));
 
 describe("activeOccasions", () => {
-  it("jour ordinaire : aucun ajout", () => {
-    // Mardi 18 août 2026, 5 Eloul.
-    expect(activeOccasions(hd(2026, 8, 18), false).size).toBe(0);
+  it("jour ordinaire : aucun ajout du calendrier", () => {
+    // Mardi 18 août 2026, 5 Eloul. Les clés permanentes du sidour (saison,
+    // tahanoun, jour de la semaine, Lédavid en Eloul) sont là ; aucun ajout
+    // de fête ne s'affiche.
+    const occ = activeOccasions(hd(2026, 8, 18), false);
+    const additions = [
+      "shabbat",
+      "shabbat-or-moed",
+      "rosh-chodesh",
+      "rosh-hashana",
+      "yom-tov",
+      "moed",
+      "moadim",
+      "nissim",
+      "teshuva",
+      "torah-semaine",
+    ];
+    expect(additions.filter((key) => occ.has(key))).toEqual([]);
+    expect(occ.has("ete")).toBe(true);
+    expect(occ.has("barkhenou")).toBe(true);
+    expect(occ.has("tahanoun")).toBe(true);
+    expect(occ.has("jour-2")).toBe(true);
+    expect(occ.has("ledavid")).toBe(true);
   });
 
   it("Chabbat : Retsé, mais pas Yaalé véyavo", () => {
@@ -120,6 +140,55 @@ describe("fichiers de tefila", () => {
     );
     expect(inline.length).toBeGreaterThan(0);
     for (const line of zimun.lines) expect(line).not.toContain("בעשרה ויותר");
+  });
+
+  it("Mé'ein chaloch : chaque fête ne s'affiche qu'à son jour", () => {
+    const content = load("brahot", "brakha-aharona");
+    const blocks = content.sections[0].blocks ?? [];
+    // Le bloc des fêtes : sept variantes, chacune conditionnée à son occasion.
+    const fetes = blocks.find((b) =>
+      (b.paragraphs ?? []).some((p) => p.when === "rosh-chodesh"),
+    )!;
+    expect(fetes.variants).toBe(true);
+    const whens = (fetes.paragraphs ?? []).map((p) => p.when);
+    expect(whens).toEqual([
+      "shabbat",
+      "rosh-chodesh",
+      "rosh-hashana",
+      "pesach",
+      "shavuot",
+      "sukkot",
+      "shemini-atzeret",
+    ]);
+    // Toutes ces occasions existent au calendrier : le 15 Nissan (Pessah,
+    // Yom Tov) doit en allumer, un mardi de 'Hechvan aucune.
+    const pessah = activeOccasions(new HDate(new Date(2026, 3, 2)), false);
+    expect(pessah.has("pesach")).toBe(true);
+    const ordinaire = activeOccasions(hd(2026, 8, 18), false);
+    for (const when of whens) expect(ordinaire.has(when!)).toBe(false);
+    // Les lignes gardent leur index : les offsets des blocs ne bougent pas.
+    expect(fetes.lines).toHaveLength(7);
+  });
+
+  it("les didascalies au fil du texte montrent le texte affecté (accent)", () => {
+    // « (les jours où l'on dit Moussaf … on dit) מגדול » : le lecteur voit en
+    // couleur la partie du texte que la consigne concerne, et מגדיל ne
+    // s'affiche que les jours ordinaires (clé magdil).
+    const birkat = load("brahot", "birkat-hamazon");
+    const paragraphs = (birkat.sections[0].blocks ?? []).flatMap((b) => b.paragraphs ?? []);
+    const magdil = paragraphs.find((p) =>
+      p.runs.some((run) => run.kind === "he" && run.when === "magdil"),
+    )!;
+    expect(magdil).toBeDefined();
+    const runs = magdil.runs;
+    expect(runs.some((run) => run.kind === "he" && run.accent)).toBe(true);
+    // La brakha a'harona : la variante d'Israël en accent, jamais masquée.
+    const aharona = load("brahot", "brakha-aharona");
+    const accented = (aharona.sections[0].blocks ?? [])
+      .flatMap((b) => b.paragraphs ?? [])
+      .flatMap((p) => p.runs)
+      .filter((run) => run.kind === "he" && run.accent);
+    expect(accented.length).toBeGreaterThanOrEqual(6);
   });
 
   it("Brakha A'harona : le Mé'ein chaloch complet puis Boré nefachot", () => {
