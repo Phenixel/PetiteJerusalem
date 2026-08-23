@@ -357,9 +357,10 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   if (hd.getDay() === 1 || hd.getDay() === 4 || hd.getDay() === 6 || ownReading)
     occ.add("sefer-torah");
   // Le birkat hamazon dit מגדול les jours où l'on dit Moussaf (Chabbat, Roch
-  // Hodech, fêtes et 'Hol haMoed), מגדיל les autres jours. Paire exclusive,
-  // comme ete/hiver : le texte porte les deux, seule celle du jour s'affiche.
-  occ.add(occ.has("shabbat-or-moed") ? "migdol" : "magdil");
+  // Hodech, fêtes et 'Hol haMoed) et à Pourim (pour sa séouda), מגדיל les
+  // autres jours. Paire exclusive, comme ete/hiver : le texte porte les deux,
+  // seule celle du jour s'affiche.
+  occ.add(occ.has("shabbat-or-moed") || purim ? "migdol" : "magdil");
   // Le jour de la semaine (0 = dimanche) : le chir chel yom n'affiche que le
   // psaume du jour.
   occ.add(`jour-${hd.getDay()}`);

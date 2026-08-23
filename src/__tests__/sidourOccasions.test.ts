@@ -190,6 +190,11 @@ describe("magdil / migdol du birkat hamazon", () => {
     expect(chabbat.has("magdil")).toBe(false);
     const roshHodesh = activeOccasions(new HDate(30, months.AV, 5786), false);
     expect(roshHodesh.has("migdol")).toBe(true);
+    // Pourim (14 Adar 5786 = 3 mars 2026) : migdol pour sa séouda, alors
+    // qu'aucun Moussaf ne s'y dit.
+    const pourim = activeOccasions(new HDate(new Date(2026, 2, 3, 12)), false);
+    expect(pourim.has("nissim")).toBe(true);
+    expect(pourim.has("migdol")).toBe(true);
   });
 });
 
