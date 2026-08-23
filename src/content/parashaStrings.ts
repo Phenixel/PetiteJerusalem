@@ -21,10 +21,21 @@ export type ParashaStrings = {
   title: (parasha: string) => string;
   description: (parasha: string, date: string) => string;
   h1: string;
-  /** Le chapeau, quand la paracha de la semaine est connue. */
+  /**
+   * Le chapeau, quand la paracha de la semaine est connue. Daté, jamais
+   * « cette semaine » : le prérendu ne se refait qu'au déploiement, et une
+   * promesse de fraîcheur se périme en sept jours ; une date reste vraie.
+   */
   lead: (parasha: string, date: string) => string;
   leadFallback: string;
   cycleTitle: string;
+  /**
+   * La 54e paracha : Vezot Haberakha ne se lit jamais un Chabbat ordinaire,
+   * le tableau des Chabbats ne la voit donc pas passer. Sans cette note, le
+   * hub annoncerait 54 parachiot et n'en montrerait que 53, et sa page de
+   * texte serait la seule que le hub ne relie pas.
+   */
+  vezotNote: (date: string, href: string) => string;
   tableHead: { parasha: string; shabbat: string; book: string };
   readTitle: string;
   readHtml: string;
@@ -41,12 +52,13 @@ export const PARASHA_FR = (links: ParashaLinks): ParashaStrings => ({
   title: () =>
     "Paracha de la semaine : le calendrier des parachiot et leurs textes | Petite Jérusalem",
   description: (parasha, date) =>
-    `La paracha de la semaine : Parachat ${parasha} le Chabbat ${date}, puis le calendrier daté des 54 parachiot, chacune liée à son texte en hébreu et en phonétique.`,
+    `Le Chabbat ${date}, on lit Parachat ${parasha} : le calendrier daté des 54 parachiot, chacune liée à son texte en hébreu et en phonétique.`,
   h1: "Paracha de la semaine",
-  lead: (parasha, date) =>
-    `Cette semaine, le Chabbat ${date}, on lit <strong>Parachat ${parasha}</strong>.`,
+  lead: (parasha, date) => `Le Chabbat ${date}, on lit <strong>Parachat ${parasha}</strong>.`,
   leadFallback: "La paracha lue à chaque Chabbat de l'année.",
   cycleTitle: "Le calendrier des parachiot",
+  vezotNote: (date, href) =>
+    `<a href="${href}">Vezot Haberakha</a> ne se lit pas un Chabbat ordinaire : elle achève la Torah à Simhat Torah, le ${date}.`,
   tableHead: { parasha: "Paracha", shabbat: "Chabbat", book: "Livre" },
   readTitle: "Lire la paracha",
   readHtml: `<p>Chaque paracha a sa page dans la bibliothèque, en hébreu et en phonétique. Pour le
@@ -90,12 +102,13 @@ export const PARASHA_EN = (links: ParashaLinks): ParashaStrings => ({
   lang: "en",
   title: () => "Parashat hashavua: the calendar of parashiot and their texts | Petite Jérusalem",
   description: (parasha, date) =>
-    `This week's parasha: Parashat ${parasha} on Shabbat ${date}, then the dated calendar of all 54 parashiot, each linked to its text in Hebrew and transliteration.`,
+    `On Shabbat ${date} we read Parashat ${parasha}: the dated calendar of all 54 parashiot, each linked to its text in Hebrew and transliteration.`,
   h1: "Parashat hashavua: this week's Torah portion",
-  lead: (parasha, date) =>
-    `This week, on Shabbat ${date}, we read <strong>Parashat ${parasha}</strong>.`,
+  lead: (parasha, date) => `On Shabbat ${date} we read <strong>Parashat ${parasha}</strong>.`,
   leadFallback: "The Torah portion read on each Shabbat of the year.",
   cycleTitle: "The calendar of parashiot",
+  vezotNote: (date, href) =>
+    `<a href="${href}">Vezot Haberakhah</a> is not read on an ordinary Shabbat: it closes the Torah on Simchat Torah, on ${date}.`,
   tableHead: { parasha: "Parasha", shabbat: "Shabbat", book: "Book" },
   readTitle: "Reading the parasha",
   readHtml: `<p>Every parasha has its page in the library, in Hebrew with transliteration. For
@@ -139,11 +152,13 @@ export const PARASHA_HE = (links: ParashaLinks): ParashaStrings => ({
   lang: "he",
   title: () => "פרשת השבוע: לוח הפרשות והטקסטים שלהן | פטיט ירושלים",
   description: (parasha, date) =>
-    `פרשת השבוע: פרשת ${parasha} בשבת ${date}, ולאחריה לוח מתוארך של 54 הפרשות, כל אחת מקושרת לטקסט שלה בעברית ובתעתיק.`,
+    `בשבת ${date} קוראים את פרשת ${parasha}: לוח מתוארך של 54 הפרשות, כל אחת מקושרת לטקסט שלה בעברית ובתעתיק.`,
   h1: "פרשת השבוע",
-  lead: (parasha, date) => `השבוע, בשבת ${date}, קוראים <strong>פרשת ${parasha}</strong>.`,
+  lead: (parasha, date) => `בשבת ${date} קוראים <strong>פרשת ${parasha}</strong>.`,
   leadFallback: "הפרשה הנקראת בכל שבת בשנה.",
   cycleTitle: "לוח הפרשות",
+  vezotNote: (date, href) =>
+    `<a href="${href}">וזאת הברכה</a> אינה נקראת בשבת רגילה: היא חותמת את התורה בשמחת תורה, ב־${date}.`,
   tableHead: { parasha: "פרשה", shabbat: "שבת", book: "ספר" },
   readTitle: "קריאת הפרשה",
   readHtml: `<p>לכל פרשה יש עמוד בספרייה, בעברית ובתעתיק. ל<a href="${links.chneiMikra}">שניים מקרא</a>

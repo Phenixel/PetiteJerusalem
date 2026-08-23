@@ -101,6 +101,21 @@ describe("hub /paracha", () => {
     expect(hub.bodyHtml).toContain('href="/bibliotheque/tanakh/');
   });
 
+  it("date son chapeau plutôt que de promettre « cette semaine »", () => {
+    // Le prérendu ne se refait qu'au déploiement : une promesse de fraîcheur
+    // se périme en sept jours, une date reste vraie.
+    expect(hub.bodyHtml).toContain("Le Chabbat 22 août 2026, on lit");
+    expect(hub.bodyHtml).not.toContain("Cette semaine,");
+  });
+
+  it("relie la 54e paracha, Vezot Haberakha, datée de Simhat Torah", () => {
+    // Elle ne se lit pas un Chabbat ordinaire : le tableau ne la voit pas
+    // passer, la note sous le tableau la date et la relie à son texte.
+    expect(hub.bodyHtml).toContain("Vezot Haberakha");
+    expect(hub.bodyHtml).toContain("4 octobre 2026");
+    expect(hub.bodyHtml).toContain('href="/bibliotheque/tanakh/vzot-haberachah"');
+  });
+
   it("lie le chnei mikra, les horaires et le calendrier", () => {
     expect(hub.bodyHtml).toContain('href="/bibliotheque/chnei-mikra"');
     expect(hub.bodyHtml).toContain('href="/horaires"');

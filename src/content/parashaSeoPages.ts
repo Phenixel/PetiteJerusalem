@@ -85,9 +85,12 @@ function torahEntries(): TextStudyJsonEntry[] {
  */
 function simhatTorahDates(now: Date): Date[] {
   const year = new HDate(now).getFullYear();
+  // Minuit du jour civil : `hd.greg()` rend minuit, comparer à l'heure du
+  // build exclurait Simhat Torah le matin même de Simhat Torah.
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   return [year, year + 1, year + 2]
     .map((y) => new HDate(23, months.TISHREI, y))
-    .filter((hd) => hd.greg().getTime() >= now.getTime())
+    .filter((hd) => hd.greg().getTime() >= today.getTime())
     .slice(0, 2)
     .map((hd) => hd.greg());
 }
@@ -159,6 +162,16 @@ function buildParashaHub(now: Date, locale: SeoLocale): SeoPage {
 
   const faq = s.faq(currentLabel, currentDate);
 
+  // La 54e paracha : Vezot Haberakha n'a pas de Chabbat, donc pas de ligne.
+  // La note sous le tableau la date de Simhat Torah et la relie à son texte.
+  const covered = new Set(weeks.flatMap((week) => week.parasha.entries.map((e) => String(e.id))));
+  const vezot = torahEntries().find((entry) => !covered.has(String(entry.id)));
+  const nextSimhatTorah = simhatTorahDates(now)[0];
+  const vezotNote =
+    vezot && nextSimhatTorah
+      ? `<p>${s.vezotNote(localeDay(nextSimhatTorah, locale), hubPath(vezot))}</p>`
+      : "";
+
   return {
     file: fileForPath(path),
     path,
@@ -181,6 +194,7 @@ function buildParashaHub(now: Date, locale: SeoLocale): SeoPage {
         <tbody>${rows}
         </tbody>
       </table>
+      ${vezotNote}
     </section>
 
     <section class="seo-section">

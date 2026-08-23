@@ -293,6 +293,7 @@ const fr = {
     description:
       "La paracha lue ce Chabbat, puis le calendrier des Chabbats qui suivent. Tout est calculé sur votre appareil, même hors connexion.",
     thisWeek: "Cette semaine",
+    next: "Prochaine paracha",
     readOn: "Lue le Chabbat {date}",
     read: "Lire {name}",
     chneiMikra: "Chnei mikra",

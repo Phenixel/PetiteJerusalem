@@ -289,6 +289,7 @@ const en: LocaleMessages = {
     description:
       "The parasha read this Shabbat, then the calendar of the Shabbatot that follow. Everything is computed on your device, even offline.",
     thisWeek: "This week",
+    next: "Next parasha",
     readOn: "Read on Shabbat {date}",
     read: "Read {name}",
     chneiMikra: "Shnayim mikra",

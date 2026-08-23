@@ -282,6 +282,7 @@ const he: LocaleMessages = {
     description:
       "הפרשה הנקראת בשבת זו, ולאחריה לוח השבתות הבאות. הכול מחושב במכשיר שלך, גם ללא חיבור לאינטרנט.",
     thisWeek: "השבוע",
+    next: "הפרשה הבאה",
     readOn: "נקראת בשבת {date}",
     read: "קריאת {name}",
     chneiMikra: "שניים מקרא",

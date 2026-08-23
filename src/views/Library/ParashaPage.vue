@@ -35,6 +35,26 @@ const current = computed(() => weeks.value[0] ?? null);
 const rest = computed(() => weeks.value.slice(1));
 
 /**
+ * « Cette semaine » n'est vrai que si ce Chabbat-là est bien le prochain :
+ * pendant les semaines de fête (Souccot, Pessah), le prochain Chabbat porte
+ * une lecture de fête, le calendrier des parachiot saute au Chabbat ordinaire
+ * suivant, parfois deux semaines plus loin, et l'étiquette mentirait.
+ */
+const isThisWeek = computed(() => {
+  const c = current.value;
+  if (!c) return false;
+  const today = new Date();
+  const nextShabbat = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  nextShabbat.setDate(nextShabbat.getDate() + ((6 - nextShabbat.getDay() + 7) % 7));
+  const shabbat = c.shabbat;
+  return (
+    shabbat.getFullYear() === nextShabbat.getFullYear() &&
+    shabbat.getMonth() === nextShabbat.getMonth() &&
+    shabbat.getDate() === nextShabbat.getDate()
+  );
+});
+
+/**
  * « 7 novembre 2026 », dans la langue affichée. Sans le jour de la semaine :
  * la date suit toujours le mot « Chabbat », qui le dit déjà.
  */
@@ -45,12 +65,17 @@ const dayYear = (date: Date): string =>
     year: "numeric",
   }).format(date);
 
-/** « sam. 7 nov. », la date d'une ligne du calendrier. */
+/**
+ * « sam. 7 nov. 2026 », la date d'une ligne du calendrier. Avec l'année : la
+ * liste couvre treize mois, et sans elle les dernières lignes ressembleraient
+ * à des doublons des premières.
+ */
 const dayShort = (date: Date): string =>
   new Intl.DateTimeFormat(locale.value, {
     weekday: "short",
     day: "numeric",
     month: "short",
+    year: "numeric",
   }).format(date);
 
 /**
@@ -94,7 +119,7 @@ watch([locale, localeMessagesReady, () => route.path], applyMeta);
     <!-- Ce qu'on vient chercher : la paracha de ce Chabbat, et de quoi la lire. -->
     <section v-if="current" class="card mt-6 p-5">
       <p class="text-xs font-semibold uppercase tracking-wide text-primary">
-        {{ t("paracha.thisWeek") }}
+        {{ isThisWeek ? t("paracha.thisWeek") : t("paracha.next") }}
       </p>
       <p class="mt-1 text-xl font-bold text-text-primary">{{ parashaLabel(current.parasha) }}</p>
       <p class="text-sm text-text-secondary">
