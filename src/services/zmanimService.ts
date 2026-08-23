@@ -511,6 +511,12 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
   return { start, end, first, last, shabbat, festivals };
 }
 
+/** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */
+export function nightfallOf(place: ZmanimPlace, hd: HDate): Date | null {
+  const end = new Zmanim(geoLocationOf(place), civilNoon(hd), false).tzeit();
+  return isUsable(end) ? end : null;
+}
+
 /**
  * Dit-on la bénédiction de la lune (Birkat Halevana) cette nuit-là ?
  *

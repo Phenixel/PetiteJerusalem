@@ -272,6 +272,28 @@ describe("zmanimSeoPages pages par fête", () => {
     expect(pessah.bodyHtml).not.toContain("Quand tombe Pessah 2026");
   });
 
+  it("date la fête de ses propres jours, pas du bloc de repos qui l'englobe", () => {
+    // Chavouot 5789 tombe les 6 et 7 Sivan (dimanche 20 et lundi 21 mai 2029) ;
+    // le samedi 19 est le Chabbat, réuni à la fête dans le même bloc de repos.
+    // La page date la fête, pas le bloc : sinon elle commencerait un jour trop tôt.
+    const chavouot = pages.find((p) => p.path === "/calendrier/chavouot")!;
+    expect(chavouot.bodyHtml).toContain("du dimanche 20 au lundi 21 mai 2029");
+    expect(chavouot.bodyHtml).toContain("Chavouot 2029 commence le samedi 19 mai 2029 au soir");
+    expect(chavouot.bodyHtml).not.toContain("vendredi 18 mai 2029");
+
+    // Sens inverse : Roch Hachana 5789 (jeudi 21 et vendredi 22 septembre 2028)
+    // est suivi du Chabbat, que ses dates ne doivent pas absorber.
+    const rochHachana = pages.find((p) => p.path === "/calendrier/roch-hachana")!;
+    expect(rochHachana.bodyHtml).toContain("du jeudi 21 au vendredi 22 septembre 2028");
+    expect(rochHachana.bodyHtml).not.toContain("au samedi 23 septembre 2028");
+  });
+
+  it("ne prête pas à Yom Kippour des jours de fête doublés en diaspora", () => {
+    const kippour = pages.find((p) => p.path === "/calendrier/yom-kippour")!;
+    expect(kippour.bodyHtml).toContain("le travail y est interdit comme à Chabbat");
+    expect(kippour.bodyHtml).not.toContain("doublés");
+  });
+
   it("porte les heures d'entrée et de sortie d'un Yom Tov", () => {
     expect(pessah.bodyHtml).toContain("Entrée");
     expect(pessah.bodyHtml).toContain("Sortie");

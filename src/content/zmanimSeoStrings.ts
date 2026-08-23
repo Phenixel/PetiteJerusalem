@@ -367,7 +367,7 @@ const FR: ZmanimStrings = {
   faqFestivalWork: (label, hasTimes, isFast) => ({
     q: `${label} est-il un jour où le travail est interdit ?`,
     a: hasTimes
-      ? `Oui : ${label} est un Yom Tov, le travail y est interdit comme à Chabbat, avec une entrée (allumage des bougies) et une sortie données dans le tableau ci-dessus. En diaspora, les jours de fête sont doublés.`
+      ? `Oui : ${label} est un Yom Tov, le travail y est interdit comme à Chabbat, avec une entrée (allumage des bougies) et une sortie données dans le tableau ci-dessus.`
       : isFast
         ? `Non : ${label} est un jour de jeûne, pas un Yom Tov ; le travail y reste permis.`
         : `Non : ${label} n'est pas un jour de Yom Tov, le travail y reste permis. La journée a ses usages propres, mais pas d'entrée ni de sortie comme Chabbat.`,
@@ -626,7 +626,7 @@ const EN: ZmanimStrings = {
   faqFestivalWork: (label, hasTimes, isFast) => ({
     q: `Is work forbidden on ${label}?`,
     a: hasTimes
-      ? `Yes: ${label} is a Yom Tov, work is forbidden as on Shabbat, with a start (candle lighting) and an end given in the table above. In the diaspora the festival days are doubled.`
+      ? `Yes: ${label} is a Yom Tov, work is forbidden as on Shabbat, with a start (candle lighting) and an end given in the table above.`
       : isFast
         ? `No: ${label} is a fast day, not a Yom Tov; work is allowed.`
         : `No: ${label} is not a Yom Tov, work is allowed. The day has its own customs, but no start and end the way Shabbat does.`,
@@ -869,7 +869,7 @@ const HE: ZmanimStrings = {
   faqFestivalWork: (label, hasTimes, isFast) => ({
     q: `האם המלאכה אסורה ב${label}?`,
     a: hasTimes
-      ? `כן: ${label} הוא יום טוב, והמלאכה אסורה בו כמו בשבת, עם זמן כניסה (הדלקת נרות) וזמן יציאה המופיעים בטבלה שלמעלה. בחוץ לארץ ימי החג כפולים.`
+      ? `כן: ${label} הוא יום טוב, והמלאכה אסורה בו כמו בשבת, עם זמן כניסה (הדלקת נרות) וזמן יציאה המופיעים בטבלה שלמעלה.`
       : isFast
         ? `לא: ${label} הוא יום צום ולא יום טוב; המלאכה מותרת בו.`
         : `לא: ${label} אינו יום טוב, והמלאכה מותרת בו. ליום יש מנהגים משלו, אך אין לו כניסה ויציאה כמו לשבת.`,
