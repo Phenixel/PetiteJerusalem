@@ -39,6 +39,7 @@ const KNOWN_WHEN = new Set([
   "tahanoun-minha",
   "tahanoun-lundi-jeudi",
   "torah-semaine",
+  "sefer-torah",
   "ledavid",
   ...Array.from({ length: 7 }, (_, day) => `jour-${day}`),
 ]);
@@ -104,6 +105,22 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       }
     });
 
+    it("replie ce qui ne se dit qu'avec le 'hazan (kedoucha, kaddich)", () => {
+      // Le fil de qui prie seul reste net : la kedoucha, Modim dérabanan et
+      // les Kaddich du 'hazan vivent dans des encadrés repliés (fold), jamais
+      // masqués. La clé « hazan » n'est pas une occasion du calendrier : rien
+      // ne les déplie d'office.
+      const folded = blocks.filter((b) => b.fold);
+      expect(folded.length).toBeGreaterThanOrEqual(2);
+      for (const block of folded) {
+        expect(block.fold).toBe("hazan");
+        expect(block.labelText).toBeDefined();
+        expect(block.lines.length).toBeGreaterThan(0);
+      }
+      const labels = folded.map((b) => b.label);
+      expect(labels.some((l) => l.includes("Kaddich"))).toBe(true);
+    });
+
     it("garde les variantes de saison, exclusives et à leur place", () => {
       const whens = blocks.map((b) => b.when).filter(Boolean);
       expect(whens).toContain("ete");
@@ -119,6 +136,25 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
 describe("Cha'harit : la Torah de la semaine", () => {
   const entry = sidourEntries.find((e) => resolveFilePath(e).includes("chaharit"))!;
   const content = parseContent(entry, loadRaw(entry));
+
+  it("Yehalelou ne s'affiche que les jours où le séfer est sorti", () => {
+    const blocks = content.sections[0].blocks ?? [];
+    const yehalelu = blocks.find((b) => b.when === "sefer-torah");
+    expect(yehalelu).toBeDefined();
+    // Nettoyé des signes (le paseq compris), c'est bien le psaume Yehalelou.
+    const bare = yehalelu!.lines.join(" ").replace(/[֑-ׇ]/g, "").replace(/\s+/g, " ");
+    expect(bare).toContain("יהללו אתשם יהוה");
+  });
+
+  it("la kedoucha de Ouva letsion marque ses voix, haute et basse", () => {
+    const blocks = content.sections[0].blocks ?? [];
+    const ouva = blocks.find((b) => b.label === "Ouva letsion")!;
+    const rubrics = (ouva.paragraphs ?? [])
+      .map((paragraph) => paragraph.rubric?.he ?? "")
+      .filter(Boolean);
+    expect(rubrics.filter((r) => r === "בקול רם:").length).toBeGreaterThanOrEqual(3);
+    expect(rubrics.filter((r) => r === "בלחש:").length).toBeGreaterThanOrEqual(3);
+  });
 
   it("porte le marqueur torahWeekly, conditionné au lundi/jeudi", () => {
     const marker = content.sections[0].blocks!.find((b) => b.torahWeekly);

@@ -39,7 +39,7 @@ function cleanFinal(s) {
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
-    .replace(/[–—]/g, "-")
+    .replace(/[\u2013\u2014]/g, "-")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -93,14 +93,53 @@ function segText(raw, mode = "body") {
   return cleanFinal(dropSmalls(s));
 }
 
+/**
+ * Signes hébraïques (voyelles, teamim) ignorés quand on cherche un repère :
+ * les consonnes font foi, les signes varient d'une édition à l'autre. La
+ * ponctuation (maqaf, paseq) reste : elle structure le texte.
+ */
+const HEBREW_MARKS = /[\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4-\u05C7]/;
+
+/**
+ * Découpe `text` entre deux repères (`from` inclus, `until` exclu), cherchés
+ * sans signes. Un repère absent fait échouer la construction : mieux vaut pas
+ * de fichier qu'un passage amputé en silence.
+ */
+function sliceBetween(text, { from, until }) {
+  const map = [];
+  let bare = "";
+  for (let i = 0; i < text.length; i++) {
+    if (HEBREW_MARKS.test(text[i])) continue;
+    map.push(i);
+    bare += text[i];
+  }
+  const stripMarks = (marker) => marker.replace(new RegExp(HEBREW_MARKS, "g"), "");
+  let start = 0;
+  let bareStart = 0;
+  if (from) {
+    bareStart = bare.indexOf(stripMarks(from));
+    if (bareStart < 0) throw new Error(`Repère introuvable : ${from}`);
+    start = map[bareStart];
+  }
+  let end = text.length;
+  if (until) {
+    const j = bare.indexOf(stripMarks(until), from ? bareStart + 1 : 0);
+    if (j < 0) throw new Error(`Repère introuvable : ${until}`);
+    end = map[j];
+  }
+  return text.slice(start, end).trim();
+}
+
 // ---------- Recette → fichier ----------
 
 /**
  * Une ligne de recette :
- *   { seg, mode?, strip?: [..], he?: "littéral", rubric?, muted?, tight?,
- *     lead?, repeat?, strong?, suffix?: Rubric }
- * `strip` retire des consignes restées dans le texte extrait ; `suffix`
- * ajoute une didascalie dans le fil (variante des dix jours de pénitence).
+ *   { seg, mode?, strip?: [..], from?, until?, he?: "littéral", rubric?,
+ *     when?, muted?, tight?, lead?, repeat?, strong?, alt?: { rubric, text } }
+ * `strip` retire des consignes restées dans le texte extrait ; `from`/`until`
+ * découpent le segment entre deux repères (voir sliceBetween) ; `when` ne dit
+ * la ligne qu'à cette occasion ; `alt` ajoute dans le fil une didascalie
+ * suivie du texte qu'elle affecte, rendu à la couleur du thème.
  */
 function buildLine(spec, segs) {
   let text;
@@ -112,14 +151,16 @@ function buildLine(spec, segs) {
   for (const cut of spec.strip ?? []) {
     text = text.split(cut).join(" ");
   }
+  if (spec.from || spec.until) text = sliceBetween(text, spec);
   text = text.replace(/\s+/g, " ").trim();
   if (!text) return null;
   const line = {};
   if (spec.rubric) line.rubric = spec.rubric;
   if (spec.strong) line.he = [{ b: text }];
-  else if (spec.suffix) line.he = [text, { r: spec.suffix }];
+  else if (spec.alt) line.he = [text, { r: spec.alt.rubric }, { v: spec.alt.text }];
   else line.he = text;
   if (spec.repeat) line.repeat = spec.repeat;
+  if (spec.when) line.when = spec.when;
   if (spec.muted) line.muted = true;
   if (spec.tight) line.tight = true;
   if (spec.lead) line.lead = true;
@@ -162,6 +203,7 @@ const RUBRIC = {
   kahal: R("L'assemblée répond :", "The congregation answers:", "ועונים הקהל:"),
   hazanReprend: R("Le 'hazan reprend :", "The chazan repeats:", "וחוזר החזן:"),
   bassevoix: R("À voix basse :", "In an undertone:", "בלחש:"),
+  hautevoix: R("À voix haute :", "Aloud:", "בקול רם:"),
   assis: R("Assis, on dit :", "Seated, say:", "ישב ויאמר:"),
   debout: R("Debout, on dit :", "Standing, say:", "עומדים ואומרים:"),
   certains: R("Certains ajoutent :", "Some add:", "יש נוהגים לומר:"),
@@ -333,11 +375,14 @@ function amidaBlocks(src, ix) {
     ],
   });
 
+  // La kedoucha ne se dit qu'avec la répétition du 'hazan : elle reste là,
+  // dans un encadré replié, sans couper le fil de qui prie seul.
   if (ix.kedushaText !== undefined) {
     blocks.push({
       src,
       labelText: R("Kedoucha", "Kedushah", "קדושה"),
-      lines: [{ seg: ix.kedushaText, mode: "small", rubric: RUBRIC.repetition, muted: true }],
+      fold: "hazan",
+      lines: [{ seg: ix.kedushaText, mode: "small", rubric: RUBRIC.repetition }],
     });
   }
 
@@ -466,6 +511,7 @@ function amidaBlocks(src, ix) {
     blocks.push({
       src,
       labelText: R("Modim dérabanan", "Modim derabanan", "מודים דרבנן"),
+      fold: "hazan",
       lines: [
         {
           seg: ix.modimDerabanan,
@@ -481,7 +527,6 @@ function amidaBlocks(src, ix) {
             "During the repetition, as the chazan says Modim, the congregation says:",
             "בחזרת הש״ץ, כשהחזן אומר מודים, הקהל אומרים:",
           ),
-          muted: true,
         },
       ],
     });
@@ -528,17 +573,63 @@ function amidaBlocks(src, ix) {
       { seg: ix.yihyu2, tight: true },
       {
         seg: ix.osse,
-        suffix: R(
-          "Dix jours de techouva : on dit « עוֹשֶׂה הַשָּׁלוֹם ».",
-          "Ten Days of Repentance: say “oseh hashalom”.",
-          "בעשרת ימי תשובה: עוֹשֶׂה הַשָּׁלוֹם.",
-        ),
+        alt: {
+          rubric: R(
+            "Dix jours de techouva, on dit :",
+            "Ten Days of Repentance, say:",
+            "בעשרת ימי תשובה אומרים:",
+          ),
+          text: "עוֹשֶׂה הַשָּׁלוֹם",
+        },
       },
       { seg: ix.yehiRatson, mode: "small" },
     ],
   });
 
   return blocks;
+}
+
+/**
+ * Le Kaddich du 'hazan, replié : celui qui prie seul ne le dit pas, mais à
+ * l'office on veut pouvoir le suivre. Le texte vit dans les segments 4 à 7 de
+ * « Uva LeSion » de Cha'harit (yitgadal, titkabal, yehé chelama, 'ossé
+ * chalom) ; Min'ha et Arvit le reçoivent sous la clé source `src`.
+ */
+function kaddishHalf(src) {
+  return {
+    src,
+    fold: "hazan",
+    labelText: R("Demi-Kaddich (le 'hazan)", "Half Kaddish (the chazan)", "חצי קדיש (החזן)"),
+    lines: [{ seg: 4, mode: "small", rubric: RUBRIC.hazan }],
+  };
+}
+
+function kaddishTitkabal(src) {
+  return {
+    src,
+    fold: "hazan",
+    labelText: R(
+      "Kaddich Titkabal (le 'hazan)",
+      "Kaddish Titkabbal (the chazan)",
+      "קדיש תתקבל (החזן)",
+    ),
+    lines: [
+      { seg: 4, mode: "small", rubric: RUBRIC.hazan },
+      { seg: 5, mode: "small", tight: true },
+      { seg: 6, mode: "small", tight: true },
+      {
+        seg: 7,
+        mode: "small",
+        strip: ["יפסע שלש פסיעות לאחור"],
+        rubric: R(
+          "Il recule de trois pas et dit :",
+          "He steps back three steps and says:",
+          "יפסע שלוש פסיעות לאחור ויאמר:",
+        ),
+        tight: true,
+      },
+    ],
+  };
 }
 
 /** Avinou Malkénou (dix jours de techouva), après la 'Amida. */
@@ -847,7 +938,21 @@ function chaharitRecipe() {
           { seg: 10 },
           { seg: 11 },
           { seg: 12 },
-          { seg: 14, rubric: R("Debout :", "Standing:", "יאמר מעומד:") },
+          {
+            seg: 14,
+            until: "אתה־הוא יהוה האלהים",
+            rubric: R("Debout :", "Standing:", "יאמר מעומד:"),
+          },
+          {
+            seg: 14,
+            from: "אתה־הוא יהוה האלהים",
+            rubric: R(
+              "On peut s'asseoir à partir d'ici :",
+              "One may be seated from here:",
+              "מכאן אפשר לשבת:",
+            ),
+            tight: true,
+          },
           { seg: 15 },
           { seg: 16 },
           { seg: 17 },
@@ -859,20 +964,12 @@ function chaharitRecipe() {
         when: "teshuva",
         lines: [{ seg: 20, mode: "small", rubric: RUBRIC.teshuvaOn }],
       },
+      kaddishHalf("Uva LeSion"),
       {
         src: "Pesukei D'Zimra",
         labelText: R("Barékhou", "Barechu", "ברכו"),
         lines: [
-          {
-            seg: 23,
-            mode: "full",
-            strip: ["ואומר החזן:"],
-            rubric: R(
-              "Le 'hazan dit le demi-Kaddich, puis :",
-              "The chazan says the half Kaddish, then:",
-              "ואומר החזן חצי קדיש, ואחר כך:",
-            ),
-          },
+          { seg: 23, mode: "full", strip: ["ואומר החזן:"], rubric: RUBRIC.hazan },
           { seg: 24, mode: "full", strip: ["ועונים הקהל:"], rubric: RUBRIC.kahal, tight: true },
           { seg: 25, mode: "full", strip: ["ואומר החזן:"], rubric: RUBRIC.hazanReprend, tight: true },
         ],
@@ -1113,17 +1210,36 @@ function chaharitRecipe() {
       {
         src: "Uva LeSion",
         labelText: R("Ouva letsion", "Uva letzion", "ובא לציון"),
+        halakha: R(
+          "Dans la kedoucha de Ouva letsion, les versets se disent à voix haute, leur targoum (araméen) à voix basse.",
+          "In the Kedushah of Uva letzion, the verses are said aloud and their Aramaic Targum in an undertone.",
+          "בקדושת ובא לציון אומרים את הפסוקים בקול רם ואת התרגום בלחש.",
+        ),
         lines: [
-          { seg: 1 },
+          { seg: 1, until: "וקרא זה אל־זה" },
+          { seg: 1, from: "וקרא זה אל־זה", until: "ומקבלין דין מן דין", rubric: RUBRIC.hautevoix, tight: true },
+          { seg: 1, from: "ומקבלין דין מן דין", until: "ותשאני רוח", rubric: RUBRIC.bassevoix, tight: true },
+          { seg: 1, from: "ותשאני רוח", until: "ונטלתני רוחא", rubric: RUBRIC.hautevoix, tight: true },
+          { seg: 1, from: "ונטלתני רוחא", until: "יהוה ׀ ימלך", rubric: RUBRIC.bassevoix, tight: true },
+          { seg: 1, from: "יהוה ׀ ימלך", until: "יהוה מלכותיה קאים", rubric: RUBRIC.hautevoix, tight: true },
+          { seg: 1, from: "יהוה מלכותיה קאים", until: "יהוה אלהי אברהם", rubric: RUBRIC.bassevoix, tight: true },
+          { seg: 1, from: "יהוה אלהי אברהם", tight: true },
           { seg: 2 },
+        ],
+      },
+      kaddishTitkabal("Uva LeSion"),
+      {
+        src: "Uva LeSion",
+        when: "sefer-torah",
+        plain: true,
+        lines: [
           {
             seg: 9,
             mode: "small",
-            muted: true,
             rubric: R(
-              "Le 'hazan dit le Kaddich Titkabal. Quand on rapporte le séfer Torah :",
-              "The chazan says Kaddish Titkabbal. As the Torah scroll is returned:",
-              "ואומר החזן קדיש תתקבל. כשמחזירים ספר תורה:",
+              "Quand on rapporte le séfer Torah :",
+              "As the Torah scroll is returned:",
+              "כשמחזירים ספר תורה:",
             ),
           },
         ],
@@ -1177,16 +1293,30 @@ function chaharitRecipe() {
           { he: "מוֹרִיד הַטָּל.", rubric: RUBRIC.ete, tight: true },
           { he: "מַשִּׁיב הָרֽוּחַ וּמוֹרִיד הַגֶּֽשֶׁם.", rubric: RUBRIC.hiver, tight: true },
           { seg: 6 },
+        ],
+      },
+      {
+        src: "RH.Mussaf",
+        when: "rosh-chodesh",
+        fold: "hazan",
+        labelText: R("Kedoucha de Moussaf (Keter)", "Kedushah of Musaf (Keter)", "כתר (קדושת מוסף)"),
+        lines: [
           {
             seg: 7,
             mode: "small",
-            muted: true,
             rubric: R(
               "Pendant la répétition, la kedoucha « Keter » :",
               "During the repetition, the “Keter” Kedushah:",
               "בחזרה אומרים כתר:",
             ),
           },
+        ],
+      },
+      {
+        src: "RH.Mussaf",
+        when: "rosh-chodesh",
+        plain: true,
+        lines: [
           { seg: 8 },
           { seg: 9 },
           { seg: 10 },
@@ -1303,16 +1433,10 @@ function minhaRecipe() {
           { seg: 10 },
           { seg: 11 },
           { seg: 12 },
-          {
-            seg: 13,
-            rubric: R(
-              "Puis le 'hazan dit le demi-Kaddich.",
-              "Then the chazan says the half Kaddish.",
-              "ואחר כך אומר החזן חצי קדיש.",
-            ),
-          },
+          { seg: 13 },
         ],
       },
+      kaddishHalf("Kaddish"),
       ...amida,
       avinouMalkenou("Amida", 73, 104),
       {
@@ -1332,14 +1456,10 @@ function minhaRecipe() {
           { seg: 9 },
         ],
       },
+      kaddishTitkabal("Kaddish"),
       {
         src: "Alenu",
         labelText: R("'Alénou léchabéa'h", "Aleinu", "עלינו לשבח"),
-        halakha: R(
-          "Avant 'Alénou, le 'hazan dit le Kaddich Titkabal.",
-          "Before Aleinu, the chazan says Kaddish Titkabbal.",
-          "קודם עלינו אומר החזן קדיש תתקבל.",
-        ),
         lines: [{ seg: 1 }, { seg: 2 }, { seg: 3, mode: "small", tight: true }],
       },
     ],
@@ -1418,16 +1538,13 @@ function arvitRecipe() {
       {
         src: "Barchu",
         labelText: R("Ouverture", "Opening", "פתיחה"),
+        lines: [{ seg: 4 }],
+      },
+      kaddishHalf("Kaddish"),
+      {
+        src: "Barchu",
         lines: [
-          { seg: 4 },
-          {
-            seg: 7,
-            rubric: R(
-              "Le 'hazan dit le demi-Kaddich, puis :",
-              "The chazan says the half Kaddish, then:",
-              "ואומר החזן חצי קדיש, ואחר כך:",
-            ),
-          },
+          { seg: 7 },
           { seg: 8, mode: "full", strip: ["ואומר החזן:"], rubric: RUBRIC.hazan },
           { seg: 9, mode: "full", strip: ["ועונים הקהל:"], rubric: RUBRIC.kahal, tight: true },
           { seg: 10, mode: "full", strip: ["ואומר החזן:"], rubric: RUBRIC.hazanReprend, tight: true },
@@ -1467,20 +1584,11 @@ function arvitRecipe() {
           { seg: 60, mode: "small" },
         ],
       },
+      kaddishTitkabal("Kaddish"),
       {
         src: "Amidah",
         labelText: R("Fin de l'office", "Closing", "סיום"),
-        lines: [
-          {
-            seg: 51,
-            rubric: R(
-              "Le 'hazan dit le Kaddich Titkabal, puis :",
-              "The chazan says Kaddish Titkabbal, then:",
-              "ואומר החזן קדיש תתקבל, ואחר כך:",
-            ),
-          },
-          { seg: 66 },
-        ],
+        lines: [{ seg: 51 }, { seg: 66 }],
       },
       {
         src: "Alenu",
@@ -1532,12 +1640,26 @@ function sourcesFor(office) {
       "RH.Barchi Nafshi": rh["Barchi Nafshi"],
     };
   }
+  // Le Kaddich (segments 4 à 7 de « Uva LeSion ») est le même aux trois
+  // offices : Min'ha et Arvit le reçoivent de Cha'harit.
   if (office === "minha") {
     const wm = text["Weekday Mincha"];
-    return { Offerings: wm["Offerings"], Amida: wm["Amida"], Vidui: wm["Vidui"], Alenu: wm["Alenu"] };
+    return {
+      Offerings: wm["Offerings"],
+      Amida: wm["Amida"],
+      Vidui: wm["Vidui"],
+      Alenu: wm["Alenu"],
+      Kaddish: ws["Uva LeSion"],
+    };
   }
   const wa = text["Weekday Arvit"];
-  return { Barchu: wa["Barchu"], "The Shema": wa["The Shema"], Amidah: wa["Amidah"], Alenu: wa["Alenu"] };
+  return {
+    Barchu: wa["Barchu"],
+    "The Shema": wa["The Shema"],
+    Amidah: wa["Amidah"],
+    Alenu: wa["Alenu"],
+    Kaddish: ws["Uva LeSion"],
+  };
 }
 
 const RECIPES = {
