@@ -39,8 +39,10 @@ export type TextRun =
       strong?: boolean;
       /**
        * Texte affecté par une didascalie (« les jours de Moussaf on dit
-       * מגדול ») : rendu à la couleur du thème, pour qu'on voie d'un coup
-       * d'œil quelle partie du texte la consigne concerne.
+       * מגדול ») : mis en couleur pour qu'on voie d'un coup d'œil quelle
+       * partie du texte la consigne concerne. À la couleur du thème quand un
+       * `when` l'impose au jour dit, en gris quand l'application ne peut pas
+       * trancher (en Terre d'Israël, à dix convives).
        */
       accent?: boolean;
       /** Fragment qui ne se dit qu'à cette occasion (voir TextBlock.when). */
@@ -444,7 +446,7 @@ function loadTanakh(
  * Une ligne et chaque fragment objet acceptent un `when` : l'occasion du
  * calendrier sans laquelle ils ne s'affichent pas (les fêtes du Mé'ein
  * chaloch, מגדול les jours de Moussaf). Le fragment `v` porte le texte
- * affecté par une didascalie, rendu à la couleur du thème.
+ * affecté par une didascalie, mis en couleur (voir TextRun.accent).
  */
 interface TefilaRun {
   /** Hébreu mis en avant (ce que reprend l'assemblée). */

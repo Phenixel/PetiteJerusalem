@@ -173,6 +173,20 @@ const saidToday = (when?: string): boolean => !when || props.occasions.has(when)
 const visibleRuns = (paragraph: TextParagraph): TextRun[] =>
   paragraph.runs.filter((run) => saidToday(run.when));
 
+/**
+ * Classe d'un fragment hébreu. Le texte qu'une didascalie affecte se
+ * distingue du fil, mais pas toujours pareil : quand le calendrier l'impose
+ * (un fragment `when` ne s'affiche que les jours où il se dit), la couleur du
+ * thème dit « aujourd'hui c'est lui » ; quand l'application ne peut pas
+ * trancher (en Terre d'Israël, à dix convives), le gris signale une
+ * possibilité sans la faire passer pour une lecture obligée.
+ */
+const runClass = (run: TextRun & { kind: "he" }) => ({
+  "font-bold": run.strong,
+  "reading-accent": run.accent && !!run.when,
+  "reading-alt": run.accent && !run.when,
+});
+
 const sections = computed(() =>
   props.blocks
     .map((block) => ({
@@ -288,11 +302,7 @@ const sections = computed(() =>
                         <span v-if="run.kind === 'rubric'" class="reading-rubric-inline">{{
                           say(run.rubric)
                         }}</span>
-                        <span
-                          v-else
-                          :class="{ 'font-bold': run.strong, 'reading-accent': run.accent }"
-                          >{{ runText(run.text, r) }}</span
-                        >
+                        <span v-else :class="runClass(run)">{{ runText(run.text, r) }}</span>
                       </template>
                       <span v-if="repeatBadge(paragraph)" class="reading-rubric-inline">{{
                         repeatBadge(paragraph)
@@ -382,10 +392,18 @@ const sections = computed(() =>
   transition: background-color 0.5s ease;
 }
 
-/* Le texte que la didascalie affecte (מגדול les jours de Moussaf…) : la
-   couleur du thème le détache du fil, comme les ajouts du calendrier. */
+/* Le texte que la didascalie affecte et que le calendrier impose aujourd'hui
+   (מגדול les jours de Moussaf…) : la couleur du thème, comme les ajouts du
+   calendrier, elle dit « c'est lui qu'on dit ». */
 .reading-accent {
   color: var(--color-primary);
+}
+
+/* Le texte que la didascalie affecte sans que l'application puisse trancher
+   (en Terre d'Israël, à dix convives) : en gris, une possibilité signalée,
+   pas une lecture imposée. */
+.reading-alt {
+  color: var(--color-text-secondary);
 }
 
 /* Reprise d'un passage qui se dit deux ou trois fois. */
