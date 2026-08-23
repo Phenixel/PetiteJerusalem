@@ -10,7 +10,8 @@ import TefilaZman from "./TefilaZman.vue";
 /**
  * Rendu des textes de tefila (Sli'hot, Brahot) : le fil du texte en paragraphes
  * justifiés, les didascalies dans la langue du lecteur, les reprises de
- * l'assemblée en gras, les ajouts du calendrier à la couleur du thème et ceux
+ * l'assemblée en gras, les ajouts du calendrier fondus dans le fil (à la
+ * couleur du thème les premières semaines d'une bascule saisonnière) et ceux
  * des dix jours de pénitence dans un encadré qui se replie.
  *
  * Le lecteur générique (versets numérotés, une ligne = un bloc espacé) ne sait
@@ -25,8 +26,9 @@ const props = defineProps<{
   occasions: Set<string>;
   /**
    * Occasions saisonnières qui viennent de basculer (machiv haroua'h en
-   * début d'hiver…) : leurs ajouts passent au rouge les trois premières
-   * semaines, le temps que le pli se prenne.
+   * début d'hiver…) : leurs ajouts prennent la couleur du thème les trois
+   * premières semaines, le temps que le pli se prenne. Le reste du temps,
+   * les ajouts se fondent dans le fil, à la couleur du texte.
    */
   recentChanges: Set<string>;
   highlightedLine: number | null;
@@ -109,11 +111,14 @@ const runText = (text: string, index: number): string => (index === 0 ? text : `
  */
 const isCalendarAdd = (block: TextBlock): boolean => !!block.when && !block.plain;
 
+/** Un ajout dont l'occasion vient de basculer : le seul qui se signale. */
+const isRecentAdd = (block: TextBlock): boolean =>
+  isCalendarAdd(block) && !!block.when && props.recentChanges.has(block.when);
+
 /**
- * Classe de l'encadré d'un bloc. La couleur du thème dit « c'est maintenant » :
- * un ajout du calendrier ne s'affiche que le jour où il se dit, et un encadré
- * repliable ne se colore que pendant sa saison. Hors saison il reste là, en
- * gris, dépliable, présent sans réclamer la lecture.
+ * Classe de l'encadré d'un bloc. Un encadré repliable ne se colore que
+ * pendant sa saison ; hors saison il reste là, en gris, dépliable, présent
+ * sans réclamer la lecture.
  */
 function sectionClass(block: TextBlock): string {
   if (block.fold) {
@@ -122,13 +127,12 @@ function sectionClass(block: TextBlock): string {
       ? `${base} bg-primary/5`
       : `${base} bg-black/[0.04] dark:bg-white/[0.05]`;
   }
-  // Ajout du calendrier : à la couleur du thème, adossé à un filet. S'il
-  // vient de basculer (machiv haroua'h les trois premières semaines de
-  // l'hiver…), le rouge crie « attention, ça a changé » à la place.
+  // Ajout du calendrier : dans le fil, comme le reste du texte, puisqu'il ne
+  // s'affiche que le jour où il se dit. Seule une bascule saisonnière récente
+  // (machiv haroua'h les trois premières semaines de l'hiver…) le passe à la
+  // couleur du thème : « attention, ça vient de changer ».
   if (isCalendarAdd(block)) {
-    return block.when && props.recentChanges.has(block.when)
-      ? "my-7 border-s-2 border-red-500/50 ps-4 text-red-600 dark:text-red-400"
-      : "my-7 border-s-2 border-primary/40 ps-4 text-primary";
+    return isRecentAdd(block) ? "text-primary" : "";
   }
   // Variantes : à part du fil, sur un fond neutre, pour qu'on voie qu'on
   // choisit au lieu de tout lire.
@@ -140,7 +144,7 @@ function sectionClass(block: TextBlock): string {
 function titleClass(block: TextBlock, index: number): string {
   if (block.variants) return "mb-3 text-sm font-semibold text-text-secondary";
   const base = "mb-3 text-sm font-semibold text-primary";
-  if (isCalendarAdd(block) || index === 0) return base;
+  if (index === 0) return base;
   return `${base} mt-10 pt-4 border-t border-black/10 dark:border-white/10`;
 }
 
@@ -149,9 +153,9 @@ function titleClass(block: TextBlock, index: number): string {
  * second plan : le fil qu'on lit d'un bout à l'autre doit rester le plus net.
  */
 const paragraphTone = (block: TextBlock, paragraph: TextParagraph): string =>
-  // Un ajout du calendrier garde la couleur du thème : elle dit déjà « c'est
-  // aujourd'hui », l'atténuer reviendrait à le contredire.
-  !isCalendarAdd(block) && (paragraph.muted || block.variants) ? "text-text-secondary" : "";
+  // Un ajout signalé (bascule récente) garde la couleur du thème : elle dit
+  // « ça vient de changer », l'atténuer reviendrait à la contredire.
+  !isRecentAdd(block) && (paragraph.muted || block.variants) ? "text-text-secondary" : "";
 
 // Fichier sans mise en forme détaillée : un paragraphe par ligne, sans didascalie.
 const plainParagraphs = (block: TextBlock): TextParagraph[] =>
@@ -174,16 +178,17 @@ const visibleRuns = (paragraph: TextParagraph): TextRun[] =>
   paragraph.runs.filter((run) => saidToday(run.when));
 
 /**
- * Classe d'un fragment hébreu. Le texte qu'une didascalie affecte se
- * distingue du fil, mais pas toujours pareil : quand le calendrier l'impose
- * (un fragment `when` ne s'affiche que les jours où il se dit), la couleur du
- * thème dit « aujourd'hui c'est lui » ; quand l'application ne peut pas
- * trancher (en Terre d'Israël, à dix convives), le gris signale une
- * possibilité sans la faire passer pour une lecture obligée.
+ * Classe d'un fragment hébreu. Le texte qu'une didascalie affecte suit la
+ * même règle que les blocs : quand le calendrier l'impose (un fragment `when`
+ * ne s'affiche que les jours où il se dit), il se lit dans le fil, à la
+ * couleur du texte, et seule une bascule saisonnière récente le passe à la
+ * couleur du thème ; quand l'application ne peut pas trancher (en Terre
+ * d'Israël, à dix convives), le gris signale une possibilité sans la faire
+ * passer pour une lecture obligée.
  */
 const runClass = (run: TextRun & { kind: "he" }) => ({
   "font-bold": run.strong,
-  "reading-accent": run.accent && !!run.when,
+  "reading-accent": run.accent && !!run.when && props.recentChanges.has(run.when),
   "reading-alt": run.accent && !run.when,
 });
 
@@ -392,9 +397,8 @@ const sections = computed(() =>
   transition: background-color 0.5s ease;
 }
 
-/* Le texte que la didascalie affecte et que le calendrier impose aujourd'hui
-   (מגדול les jours de Moussaf…) : la couleur du thème, comme les ajouts du
-   calendrier, elle dit « c'est lui qu'on dit ». */
+/* Le texte imposé par une occasion qui vient de basculer (machiv haroua'h en
+   début d'hiver…) : la couleur du thème, le temps que le pli se prenne. */
 .reading-accent {
   color: var(--color-primary);
 }

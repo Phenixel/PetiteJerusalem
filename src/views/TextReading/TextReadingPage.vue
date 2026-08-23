@@ -136,8 +136,8 @@ const verseBlocks = computed<TextBlock[]>(() => {
 
 // Tefila : les ajouts liés au calendrier (Retsé le Chabbat, Yaalé véyavo à
 // Roch Hodech, Al hanissim à Hanouka…) ne s'affichent que le jour où ils se
-// disent, dans une carte, pour les distinguer du fil du texte. Le jour
-// hébraïque suit le lieu des horaires (après la chkia, on est déjà demain).
+// disent, fondus dans le fil du texte. Le jour hébraïque suit le lieu des
+// horaires (après la chkia, on est déjà demain).
 //
 // L'heure est donc une donnée du rendu, pas une valeur figée à l'ouverture :
 // on bénit après la chkia du vendredi une page ouverte avant elle, et Retsé
@@ -154,7 +154,8 @@ const visibleBlocks = computed(() =>
 );
 
 // Les bascules saisonnières récentes (machiv haroua'h en début d'hiver…) :
-// leurs ajouts s'affichent en rouge les trois premières semaines.
+// leurs ajouts s'affichent à la couleur du thème les trois premières
+// semaines ; le reste du temps ils se fondent dans le fil.
 const recentChanges = computed(() =>
   recentSeasonalChanges(
     hebrewDateFor(zmanimPlace.value, now.value, now.value),
