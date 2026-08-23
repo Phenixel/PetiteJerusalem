@@ -8,18 +8,21 @@ import type { TefilaNavSection } from "../../composables/useTefilaNav";
 
 /**
  * Le menu de navigation d'une tefila (Sidour, Sli'hot) : à la place du bouton
- * « remonter en haut », un bouton flottant qui se déplie sur place, comme s'il
- * prenait plus de place, en petit panneau listant les sections de l'office.
- * Un office se dit d'un trait mais se cherche par sections : Chéma, 'Amida,
- * ta'hanoun… le panneau y mène sans faire défiler trois écrans.
+ * « remonter en haut », un bouton flottant d'où surgit un petit panneau
+ * listant les sections de l'office. Un office se dit d'un trait mais se
+ * cherche par sections : Chéma, 'Amida, ta'hanoun… le panneau y mène sans
+ * faire défiler trois écrans.
+ *
+ * Contrairement au bouton de remontée, le menu reste affiché tout au long de
+ * la lecture : c'est un repère permanent, pas un raccourci de passage. Il ne
+ * s'efface qu'une fois tout en bas de la page, où la fin de l'office porte
+ * ses propres boutons.
  */
 const props = defineProps<{ sections: TefilaNavSection[] }>();
 
 const { t } = useI18n();
 
 const open = ref(false);
-const isVisible = ref(false);
-const isHovered = ref(false);
 const isMiniPlayerVisible = useMiniPlayerVisible();
 
 // Mêmes règles de placement que ScrollToTop, qu'il remplace : au-dessus du
@@ -29,41 +32,17 @@ const bottomClass = computed(() => {
   return isMiniPlayerVisible.value ? "bottom-36" : "bottom-20";
 });
 
-// Même comportement d'apparition que ScrollToTop : pendant le défilement,
-// puis effacé après un court repos, sauf panneau ouvert ou pointeur dessus.
-const IDLE_HIDE_MS = 1600;
-let hideTimer: ReturnType<typeof setTimeout> | undefined;
-
-const armHideTimer = () => {
-  if (hideTimer) clearTimeout(hideTimer);
-  hideTimer = setTimeout(() => {
-    if (!isHovered.value && !open.value) isVisible.value = false;
-  }, IDLE_HIDE_MS);
-};
+// Tout en bas de l'office : le menu s'efface (panneau ouvert excepté).
+const BOTTOM_GAP = 24;
+const atBottom = ref(false);
 
 const checkScroll = () => {
-  if (window.scrollY > 300) {
-    isVisible.value = true;
-    armHideTimer();
-  } else if (!open.value) {
-    if (hideTimer) clearTimeout(hideTimer);
-    isVisible.value = false;
-  }
-};
-
-const onPointerEnter = () => {
-  isHovered.value = true;
-  if (hideTimer) clearTimeout(hideTimer);
-};
-
-const onPointerLeave = () => {
-  isHovered.value = false;
-  armHideTimer();
+  const doc = document.documentElement;
+  atBottom.value = window.innerHeight + window.scrollY >= doc.scrollHeight - BOTTOM_GAP;
 };
 
 function close() {
   open.value = false;
-  armHideTimer();
 }
 
 function goTop() {
@@ -87,14 +66,16 @@ const onKeydown = (e: KeyboardEvent) => {
 };
 
 onMounted(() => {
+  checkScroll();
   window.addEventListener("scroll", checkScroll, { passive: true });
+  window.addEventListener("resize", checkScroll, { passive: true });
   window.addEventListener("keydown", onKeydown);
 });
 
 onUnmounted(() => {
   window.removeEventListener("scroll", checkScroll);
+  window.removeEventListener("resize", checkScroll);
   window.removeEventListener("keydown", onKeydown);
-  if (hideTimer) clearTimeout(hideTimer);
 });
 </script>
 
@@ -110,29 +91,17 @@ onUnmounted(() => {
     leave-to-class="transform translate-y-10 opacity-0"
   >
     <div
-      v-if="isVisible || open"
-      class="fixed right-6 z-50"
+      v-show="!atBottom || open"
+      class="fixed right-6 z-50 h-11 w-11"
       :class="bottomClass"
-      @pointerenter="onPointerEnter"
-      @pointerleave="onPointerLeave"
     >
-      <!-- Le même élément grandit et s'arrondit autrement : le bouton semble
-           prendre plus de place plutôt qu'ouvrir un modal ailleurs. -->
-      <div
-        class="ms-auto overflow-hidden bg-surface shadow-pop transition-all duration-300 ease-out"
-        :class="open ? 'w-64 max-h-[min(24rem,65vh)] rounded-2xl' : 'w-11 max-h-11 rounded-full'"
-      >
-        <button
-          v-if="!open"
-          @click="open = true"
-          class="w-11 h-11 flex items-center justify-center text-text-primary hover:text-primary transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          :aria-label="t('textReading.navSections')"
-          aria-haspopup="menu"
-          :aria-expanded="false"
+      <!-- Le panneau surgit du coin du bouton, ancré à sa place : il grandit
+           sur place plutôt que d'ouvrir un modal ailleurs. -->
+      <transition name="nav-panel">
+        <div
+          v-if="open"
+          class="nav-panel absolute bottom-0 right-0 flex w-64 max-h-[min(24rem,65vh)] flex-col overflow-hidden rounded-2xl bg-surface shadow-pop"
         >
-          <AppIcon name="list" :size="18" />
-        </button>
-        <div v-else class="flex flex-col max-h-[min(24rem,65vh)]">
           <div class="flex items-center justify-between ps-4 pe-2 pt-2.5 pb-1 flex-shrink-0">
             <p class="text-xs font-semibold uppercase tracking-wide text-text-secondary">
               {{ t("textReading.navSections") }}
@@ -156,7 +125,19 @@ onUnmounted(() => {
             </button>
           </nav>
         </div>
-      </div>
+      </transition>
+      <transition name="nav-fab">
+        <button
+          v-if="!open"
+          @click="open = true"
+          class="absolute inset-0 flex items-center justify-center rounded-full bg-surface shadow-pop text-text-primary hover:text-primary transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          :aria-label="t('textReading.navSections')"
+          aria-haspopup="menu"
+          :aria-expanded="false"
+        >
+          <AppIcon name="list" :size="18" />
+        </button>
+      </transition>
     </div>
   </transition>
 </template>
@@ -178,5 +159,67 @@ onUnmounted(() => {
 .section-item:hover {
   background-color: color-mix(in srgb, currentColor 8%, transparent);
   color: var(--color-primary);
+}
+
+/* Le panneau surgit du coin du bouton : un léger ressort à l'ouverture, une
+   sortie brève et discrète. */
+.nav-panel {
+  transform-origin: bottom right;
+}
+
+.nav-panel-enter-active {
+  transition: opacity 0.15s ease-out, transform 0.3s cubic-bezier(0.3, 1.3, 0.55, 1);
+}
+
+.nav-panel-leave-active {
+  transition: opacity 0.12s ease-in, transform 0.12s ease-in;
+}
+
+.nav-panel-enter-from,
+.nav-panel-leave-to {
+  opacity: 0;
+  transform: translateY(8px) scale(0.85);
+}
+
+/* Le contenu suit d'un souffle : le panneau arrive, la liste se révèle. */
+.nav-panel-enter-active nav {
+  transition: opacity 0.18s ease-out 0.08s;
+}
+
+.nav-panel-enter-from nav {
+  opacity: 0;
+}
+
+/* Le bouton s'efface pendant que le panneau le remplace, et revient d'un
+   petit rebond quand celui-ci se referme. */
+.nav-fab-enter-active {
+  transition: opacity 0.15s ease-out 0.08s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s;
+}
+
+.nav-fab-leave-active {
+  transition: opacity 0.1s ease-in, transform 0.1s ease-in;
+}
+
+.nav-fab-enter-from,
+.nav-fab-leave-to {
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+/* Mouvement réduit : les fondus suffisent. */
+@media (prefers-reduced-motion: reduce) {
+  .nav-panel-enter-active,
+  .nav-panel-leave-active,
+  .nav-fab-enter-active,
+  .nav-fab-leave-active {
+    transition: opacity 0.15s ease;
+  }
+
+  .nav-panel-enter-from,
+  .nav-panel-leave-to,
+  .nav-fab-enter-from,
+  .nav-fab-leave-to {
+    transform: none;
+  }
 }
 </style>
