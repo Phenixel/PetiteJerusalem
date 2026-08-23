@@ -196,7 +196,7 @@ if (isCleanup) {
   const runCertificateId = process.env.IOS_SIGNING_CERTIFICATE_ID;
   if (runCertificateId && process.env.IOS_BUILD_UPLOADED) {
     console.log(
-      `ios-signing: certificat ${runCertificateId} conservé (requis tant qu'un build signé avec lui est en examen ou en vente)`,
+      `ios-signing: certificat ${runCertificateId} conservé, il signe un binaire qu'Apple regarde encore`,
     );
   } else if (runCertificateId) {
     // Aucun binaire n'est parti chez Apple : ce certificat ne signe rien que
