@@ -50,16 +50,15 @@ describe("quota de certificats de distribution", () => {
     expect(certificates().map((c) => c.id)).toEqual(["R33A4CCD5R", "T7X6S8JPNR", "SA7386DCQJ"]);
   });
 
-  it("libère une place sans toucher au certificat de la version en examen", () => {
-    // L'état du compte au moment du blocage : 3.7.6 en examen, 3.7.5 et 3.7.4
-    // restées en brouillon (leur job de soumission avait échoué), 3.7.3 en
-    // vente mais signée par un certificat déjà révoqué à l'époque.
+  it("libère une place quand les versions distribuées ont pris toute la place", () => {
+    // L'état réel du compte le 23 août 2026 : 3.7.6 et 3.7.5 distribuées,
+    // 3.7.4 restée en brouillon (son job de soumission avait échoué). Trois
+    // certificats, un par release, et le quota plein.
     const versions = {
       data: [
-        version("3.7.6", "IN_REVIEW", "b6", "2026-08-21T12:46:50.000+00:00"),
-        version("3.7.5", "PREPARE_FOR_SUBMISSION", "b5", "2026-08-19T15:47:20.000+00:00"),
+        version("3.7.6", "READY_FOR_DISTRIBUTION", "b6", "2026-08-21T12:46:50.000+00:00"),
+        version("3.7.5", "READY_FOR_DISTRIBUTION", "b5", "2026-08-19T15:47:20.000+00:00"),
         version("3.7.4", "PREPARE_FOR_SUBMISSION", "b4", "2026-08-19T00:12:40.000+00:00"),
-        version("3.7.3", "READY_FOR_SALE", "b3", "2026-08-16T20:29:00.000+00:00"),
       ],
       included: Object.values(BUILDS),
     };
@@ -68,24 +67,27 @@ describe("quota de certificats de distribution", () => {
     const list = certificates();
     const revocable = revocableCertificates(list, protectedUploads(versions, builds));
 
-    // Le plus ancien part, et lui seul : une place suffit.
+    // Le plus ancien part, et lui seul : une place suffit. 3.7.5 est
+    // distribuée, Apple n'en regardera plus la signature.
     expect(revocable.map((c) => c.id)).toEqual(["R33A4CCD5R"]);
-    // Celui de la version en examen reste, c'est tout l'enjeu (ITMS-90035),
-    // et son voisin aussi : l'envoi tombe dans la marge des deux fenêtres.
+    // La version la plus récente de la fiche retient le sien, et son voisin
+    // par la marge : l'envoi tombe dans les deux fenêtres.
     expect(list.find((c) => c.id === "SA7386DCQJ")?.keptFor).toBe("certificat du run précédent");
     expect(list.find((c) => c.id === "T7X6S8JPNR")?.keptFor).toContain("3.7.6");
   });
 
-  it("préfère ne rien libérer quand la version en vente tient le plus ancien", () => {
-    // Même compte, mais c'est 3.7.4 qui est en vente : son certificat, le plus
-    // ancien, devient intouchable, le dernier envoi retient les deux autres,
-    // et plus rien n'est libérable. Le run échoue alors en disant ce qui
-    // retient chacun, plutôt que de parier sur une signature.
+  it("ne touche à rien quand une version est en examen", () => {
+    // Même compte, mais 3.7.5 est repartie à l'examen : son certificat, et
+    // son voisin par la marge, redeviennent intouchables. Une place reste
+    // libérable, celle du plus ancien, seulement si son propre binaire ne
+    // retient rien : ici 3.7.4 est en brouillon, mais l'envoi de 3.7.5 tombe
+    // dans sa fenêtre, donc plus rien ne part et le run échoue en disant
+    // pourquoi, plutôt que de parier sur une signature.
     const versions = {
       data: [
         version("3.7.6", "PREPARE_FOR_SUBMISSION", "b6", "2026-08-21T12:46:50.000+00:00"),
-        version("3.7.5", "PREPARE_FOR_SUBMISSION", "b5", "2026-08-19T15:47:20.000+00:00"),
-        version("3.7.4", "READY_FOR_SALE", "b4", "2026-08-19T00:12:40.000+00:00"),
+        version("3.7.5", "IN_REVIEW", "b5", "2026-08-19T15:47:20.000+00:00"),
+        version("3.7.4", "PREPARE_FOR_SUBMISSION", "b4", "2026-08-19T00:12:40.000+00:00"),
       ],
       included: Object.values(BUILDS),
     };
@@ -95,7 +97,26 @@ describe("quota de certificats de distribution", () => {
     const revocable = revocableCertificates(list, protectedUploads(versions, builds));
 
     expect(revocable).toEqual([]);
-    expect(list.find((c) => c.id === "R33A4CCD5R")?.keptFor).toContain("3.7.4");
+    expect(list.find((c) => c.id === "R33A4CCD5R")?.keptFor).toContain("3.7.5");
+  });
+
+  it("ne protège pas une version distribuée que la suivante a remplacée", () => {
+    // 3.7.4 a été distribuée puis remplacée : Apple ne regardera plus sa
+    // signature, son certificat peut partir. Seule la plus récente de la
+    // fiche, 3.7.6, retient le sien.
+    const versions = {
+      data: [
+        version("3.7.6", "READY_FOR_DISTRIBUTION", "b6", "2026-08-21T12:46:50.000+00:00"),
+        version("3.7.4", "READY_FOR_DISTRIBUTION", "b4", "2026-08-19T00:12:40.000+00:00"),
+      ],
+      included: Object.values(BUILDS),
+    };
+    const builds = { data: [BUILDS["3070600"]] };
+
+    const list = certificates();
+    const revocable = revocableCertificates(list, protectedUploads(versions, builds));
+
+    expect(revocable.map((c) => c.id)).toEqual(["R33A4CCD5R"]);
   });
 
   it("protège le dernier binaire envoyé, que la fiche ne l'ait pas encore adopté", () => {

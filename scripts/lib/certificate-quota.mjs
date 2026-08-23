@@ -52,9 +52,17 @@ export function creationDate(expirationDate) {
 }
 
 /**
- * États d'une version où la signature de son binaire compte encore : Apple la
- * re-valide à la mise en file d'examen, et une version en vente reste adossée
- * au certificat qui l'a signée.
+ * États d'une version dont le certificat doit survivre : Apple a le binaire
+ * en main et n'a pas fini d'en regarder la signature. C'est exactement ce que
+ * dit Apple au moment de révoquer un certificat : sont invalidées les apps
+ * *soumises à l'examen* signées avec lui, celles déjà distribuées sur l'App
+ * Store ne sont pas touchées. Une version déjà distribuée ne retient donc
+ * plus rien, sauf à être la plus récente de la fiche, laquelle est protégée
+ * par ailleurs : c'est elle qu'on soumettra, ou re-soumettra après un rejet.
+ *
+ * Le contraire coûtait une place du quota par release passée : le tag v3.7.8
+ * a été bloqué par les certificats de 3.7.5 et 3.7.6, deux versions pourtant
+ * déjà distribuées.
  */
 export const VERSION_STATES_IN_FLIGHT = new Set([
   "WAITING_FOR_REVIEW",
@@ -63,8 +71,6 @@ export const VERSION_STATES_IN_FLIGHT = new Set([
   "PENDING_DEVELOPER_RELEASE",
   "PROCESSING_FOR_APP_STORE",
   "PROCESSING_FOR_DISTRIBUTION",
-  "READY_FOR_SALE",
-  "READY_FOR_DISTRIBUTION",
 ]);
 
 /**
@@ -90,7 +96,8 @@ export function distributionCertificates(data) {
  * /v1/apps/{id}/appStoreVersions?include=build et de /v1/builds trié par
  * envoi décroissant :
  *
- * - le binaire de toute version qu'Apple regarde ou qui est en vente ;
+ * - le binaire de toute version qu'Apple a encore en main (examen en cours,
+ *   traitement, publication en attente) ;
  * - celui de la version la plus récente de la fiche, quel qu'en soit l'état :
  *   c'est elle qu'on soumettra, ou re-soumettra après un rejet ;
  * - le dernier binaire envoyé, et ceux qu'Apple traite encore, que la fiche

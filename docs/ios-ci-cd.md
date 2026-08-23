@@ -116,9 +116,16 @@ qu'aucun geste manuel ne soit nécessaire :
   dont plus aucun binaire ne dépend. L'API ne dit pas quel certificat a signé
   quel build, mais elle date les deux : un binaire est signé par le dernier
   certificat créé avant son envoi. Sont protégés les binaires attachés à une
-  version en examen, en attente de publication ou en vente, la version la plus
-  récente de la fiche quel qu'en soit l'état, le dernier binaire envoyé et
-  ceux qu'Apple traite encore.
+  version qu'Apple a encore en main (examen, traitement, publication en
+  attente), celui de la version la plus récente de la fiche quel qu'en soit
+  l'état, le dernier binaire envoyé et ceux qu'Apple traite encore.
+
+Une version **déjà distribuée** ne retient rien, et c'est voulu : Apple le dit
+au moment de révoquer un certificat, sont invalidées les apps *soumises à
+l'examen* signées avec lui, celles déjà sur l'App Store ne sont pas touchées.
+Protéger les versions en vente gelait une place du quota par release passée,
+définitivement : au 23 août 2026, 3.7.5 et 3.7.6, toutes deux distribuées, en
+occupaient deux sur trois.
 
 Si plus rien n'est libérable, le run échoue en affichant la liste des
 certificats et ce qui retient chacun ; la décision revient alors à un humain,
