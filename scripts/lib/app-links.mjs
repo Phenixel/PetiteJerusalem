@@ -62,6 +62,7 @@ export const APP_LINK_PATHS = [
   "/lire",
   "/login",
   "/mentions-legales",
+  "/paracha",
   "/partage-tehilim",
   "/profile",
   "/session-management",
@@ -69,6 +70,7 @@ export const APP_LINK_PATHS = [
   "/studio",
   "/tehilim",
   "/telechargements",
+  "/zmanim",
 ];
 
 /** Un chemin est-il de ceux que l'app ouvre ? (préfixe exact ou sous-chemin) */
