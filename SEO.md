@@ -138,7 +138,10 @@ touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
   on an ordinary Shabbat, so it is dated from Simhat Torah instead. The
   calendar itself lives in `src/content/parashaCalendar.ts` (dailyCycles only,
   no `seoPages`), shared with `src/views/Library/ParashaPage.vue`, which
-  recomputes it live for visitors.
+  recomputes it live for visitors. This is the most deploy-sensitive page on
+  the site: its lead and its FAQ name the Shabbat they were built for, so they
+  never go false, but they do go stale. A weekly deploy keeps "this week"
+  actually meaning this week.
 - `guidePages` in `src/content/seoPages.ts` holds the evergreen explainers
   that need no computation, today **`/zmanim`** (what each zman marks, the two
   opinions, how it is computed), rendered for humans by

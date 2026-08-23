@@ -361,6 +361,19 @@ export const CITY_NAMES: Record<string, { en?: string; he?: string }> = {
 };
 
 /**
+ * Une lettre de service hébraïque attachée à un nom : « בליון », mais
+ * « ב־Charleroi ».
+ *
+ * En hébreu, les lettres de service (ב, ל, מ, ה…) se collent au mot ; devant
+ * un mot en caractères latins, l'usage veut un maqaf, sans quoi la lettre
+ * paraît avalée par le mot étranger. 83 villes du catalogue n'ont pas encore
+ * de nom hébreu et gardent leur graphie latine ; leur en donner un fait
+ * disparaître le maqaf de lui-même, sans rien changer d'autre.
+ */
+export const hePrefix = (letter: string, name: string): string =>
+  /^[\u0590-\u05ff]/.test(name) ? `${letter}${name}` : `${letter}\u05be${name}`;
+
+/**
  * Le nom d'une ville dans la langue demandée. Le catalogue est en français :
  * c'est lui qui sert de repli, y compris en hébreu, où une ville sans nom
  * hébreu garde sa graphie latine plutôt qu'une translittération inventée.
@@ -369,6 +382,18 @@ export function cityName(name: string, locale: SeoLocale = "fr"): string {
   if (locale === "fr") return name;
   return CITY_NAMES[name]?.[locale] ?? name;
 }
+
+/**
+ * Le nom d'une ville tel qu'il s'insère dans une phrase, quand la langue met
+ * la préposition sur le mot plutôt que dans le gabarit.
+ *
+ * Le français et l'anglais portent « à » et « in » dans leurs propres
+ * phrases : le nom leur suffit tel quel. L'hébreu colle sa lettre au nom,
+ * avec le maqaf qu'il faut : c'est donc ici que la préposition s'attache, et
+ * les gabarits hébreux n'en portent pas.
+ */
+export const cityInSentence = (name: string, locale: SeoLocale): string =>
+  locale === "he" ? hePrefix("\u05d1", cityName(name, locale)) : cityName(name, locale);
 
 /** La ville du catalogue qui porte ce slug, ou null. */
 export function findCityBySlug(cities: City[], slug: string): City | null {

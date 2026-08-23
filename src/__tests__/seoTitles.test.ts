@@ -5,6 +5,7 @@ import en from "../locales/en";
 import he from "../locales/he";
 import { ZMANIM_STRINGS } from "../content/zmanimSeoStrings";
 import type { SeoLocale } from "../content/seoLocales";
+import { cityInSentence, cityName } from "../content/zmanimCities";
 
 /**
  * Les titres de page passent par `t()`, et vue-i18n lit le `|` comme un
@@ -21,14 +22,31 @@ const LOCALES = { fr, en, he } as Record<string, { seo: Record<string, string> }
  * divergent, un moteur voit un titre dans le HTML servi et un autre après
  * exécution du script, et choisit lui-même. Ces couples-là doivent donc rester
  * identiques, langue par langue.
+ *
+ * Les gabarits de ville sont comparés sur de vrais noms, et non sur le
+ * gabarit brut : en hébreu la préposition se colle au nom (avec un maqaf
+ * devant un nom latin), elle voyage donc avec la valeur au runtime et non
+ * dans le gabarit. Ce qu'on veut tenir, c'est ce que le visiteur lit.
  */
-const ALIGNED: { key: string; prerendered: (locale: SeoLocale) => string }[] = [
+const CITIES = ["Lyon", "Jérusalem", "Charleroi"];
+
+const ALIGNED: {
+  key: string;
+  prerendered: (locale: SeoLocale, city: string) => string;
+  /** La valeur passée au gabarit runtime, telle que la vue la calcule. */
+  value?: (locale: SeoLocale, city: string) => string;
+}[] = [
   { key: "zmanimTitle", prerendered: (l) => ZMANIM_STRINGS[l].hubTitle },
   { key: "zmanimDescription", prerendered: (l) => ZMANIM_STRINGS[l].hubDescription },
-  { key: "zmanimCityTitle", prerendered: (l) => ZMANIM_STRINGS[l].cityTitle("{city}") },
+  {
+    key: "zmanimCityTitle",
+    prerendered: (l, city) => ZMANIM_STRINGS[l].cityTitle(cityName(city, l)),
+    value: (l, city) => cityInSentence(city, l),
+  },
   {
     key: "zmanimCityDescription",
-    prerendered: (l) => ZMANIM_STRINGS[l].cityDescription("{city}"),
+    prerendered: (l, city) => ZMANIM_STRINGS[l].cityDescription(cityName(city, l)),
+    value: (l, city) => cityInSentence(city, l),
   },
   { key: "calendarTitle", prerendered: (l) => ZMANIM_STRINGS[l].calendarTitle },
 ];
@@ -65,10 +83,24 @@ describe("titres de page", () => {
       const same = (value: string) => value.split("{'|'}").join("|").split("\u2019").join("'");
       // La clé est portée dans le message comparé : un échec dit tout de
       // suite laquelle a divergé.
-      const runtime = ALIGNED.map(({ key }) => `${key}: ${same(messages.seo[key] ?? "")}`);
-      const prerendered = ALIGNED.map(
-        ({ key, prerendered: build }) => `${key}: ${same(build(code as SeoLocale))}`,
-      );
+      const locale = code as SeoLocale;
+      const runtime: string[] = [];
+      const prerendered: string[] = [];
+      for (const entry of ALIGNED) {
+        // Une clé absente ressort comme une ligne vide dans la comparaison
+        // finale, qui nomme la clé : inutile d'assertion séparée.
+        const raw = messages.seo[entry.key] ?? "";
+        if (!entry.value) {
+          runtime.push(`${entry.key}: ${same(raw)}`);
+          prerendered.push(`${entry.key}: ${same(entry.prerendered(locale, ""))}`);
+          continue;
+        }
+        for (const city of CITIES) {
+          const filled = raw.split("{city}").join(entry.value(locale, city));
+          runtime.push(`${entry.key} (${city}): ${same(filled)}`);
+          prerendered.push(`${entry.key} (${city}): ${same(entry.prerendered(locale, city))}`);
+        }
+      }
       expect(runtime).toEqual(prerendered);
     });
 

@@ -38,7 +38,7 @@ import {
   type ZmanTime,
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
-import { cityName, citySlug, findCityBySlug } from "../../content/zmanimCities";
+import { cityInSentence, citySlug, findCityBySlug } from "../../content/zmanimCities";
 import { isSectionPath, localeOfPath, sectionPath } from "../../content/seoLocales";
 import RestTimes from "./RestTimes.vue";
 
@@ -195,9 +195,11 @@ function setMeta(city: City | null): void {
       : sectionPath("horaires", pathLocale)
   }`;
   // Le catalogue est en français : « Genève », « Jérusalem ». Le titre d'une
-  // page anglaise doit écrire Geneva, celui d'une page hébraïque ירושלים.
+  // page anglaise doit écrire Geneva, celui d'une page hébraïque ירושלים. En
+  // hébreu, la préposition se colle au nom (avec un maqaf devant un nom
+  // latin) : elle voyage donc avec la valeur, pas dans le gabarit.
   const uiLocale = locale.value === "en" || locale.value === "he" ? locale.value : "fr";
-  const name = city ? cityName(city.name, uiLocale) : "";
+  const name = city ? cityInSentence(city.name, uiLocale) : "";
   seoService.setMeta({
     title: city ? t("seo.zmanimCityTitle", { city: name }) : t("seo.zmanimTitle"),
     description: city ? t("seo.zmanimCityDescription", { city: name }) : t("seo.zmanimDescription"),

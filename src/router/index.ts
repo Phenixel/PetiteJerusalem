@@ -36,6 +36,14 @@ const router = createRouter({
 // indexée, et un visiteur venu d'un moteur doit voir la page dans la langue
 // qu'il a cliquée. Les adresses sans préfixe, elles, ne touchent à rien : la
 // langue y reste celle choisie par le visiteur ou son navigateur.
+//
+// `applyLocale` la mémorise, et c'est voulu : la plus grande partie du site
+// (bibliothèque, chiourim, partage de lectures) n'a qu'une adresse, sans
+// préfixe. Sans mémorisation, un visiteur arrivé sur /en/shabbat-times
+// retomberait en français au premier lien vers la bibliothèque, au milieu de
+// sa visite. Le prix est qu'un lien anglais suivi une fois bascule toute
+// l'application ; le sélecteur de langue le défait en un clic, et le retient
+// de la même façon.
 router.beforeEach(async (to) => {
   const locale = localeOfPath(to.path);
   // Attendu, et pas seulement lancé : les messages en et he arrivent par

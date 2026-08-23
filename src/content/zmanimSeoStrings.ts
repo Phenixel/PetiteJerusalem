@@ -12,6 +12,7 @@
  * « horaires de Chabbat à ».
  */
 
+import { hePrefix } from "./zmanimCities";
 import type { SeoLocale } from "./seoLocales";
 
 /** Les chemins vers lesquels les pages renvoient, dans leur propre langue. */
@@ -677,7 +678,7 @@ const HE: ZmanimStrings = {
   shabbat: "שבת",
   at: (date, time) => `${date} בשעה ${time}`,
   range: (from, to) => `מ־${from} עד ${to}`,
-  cityLink: (city) => `זמני שבת ב${city}`,
+  cityLink: (city) => `זמני שבת ${hePrefix("ב", city)}`,
   distance: (km) => `(${km} ק״מ)`,
 
   hubTitle: "זמני שבת: הדלקת נרות, צאת שבת וזמני היום | פטיט ירושלים",
@@ -686,22 +687,22 @@ const HE: ZmanimStrings = {
   hubH1: "זמני שבת: הדלקת נרות וצאת השבת",
   hubLead: (city) => `זמן <strong>כניסת השבת</strong> (הדלקת נרות, 18 דקות לפני השקיעה) וזמן
       <strong>צאת השבת</strong> (צאת הכוכבים, זמן ההבדלה), שבוע אחר שבוע. הזמנים שלהלן מחושבים
-      ל${city}; פתחו את העמוד באפליקציה כדי לקבל את הזמנים של העיר או המיקום המדויק שלכם, גם ללא
+      ${hePrefix("ל", city)}; פתחו את העמוד באפליקציה כדי לקבל את הזמנים של העיר או המיקום המדויק שלכם, גם ללא
       חיבור לאינטרנט.`,
   restHead: ["שבת או חג", "כניסה (הדלקת נרות)", "יציאה"],
-  hubRestTitle: (city) => `זמני השבתות והחגים הקרובים ב${city}`,
+  hubRestTitle: (city) => `זמני השבתות והחגים הקרובים ${hePrefix("ב", city)}`,
   hubRestNote: (
     city,
   ) => `הזמנים הללו הם של ${city} (הדלקה 18 דקות לפני השקיעה, יציאה בצאת הכוכבים). לעיר
       אחרת, ראו את המפתח שלהלן, או פתחו את העמוד באפליקציה: היא מחשבת את אותם זמנים במכשיר שלכם,
       לפי המיקום שלכם או לפי עיר שתבחרו.`,
   zmanimHead: ["זמן", "שעה", "מה הוא מציין"],
-  zmanimTitle: (city, day) => `זמני היום ב${city} (${day})`,
+  zmanimTitle: (city, day) => `זמני היום ${hePrefix("ב", city)} (${day})`,
   zmanimIntro: (
     city,
     day,
   ) => `זמני היום ההלכתיים: עלות השחר, הנץ, זמני הבוקר, אחר הצהריים והלילה. הטבלה היא
-      של ${day} ב${city}; האפליקציה מחשבת מחדש את זמני היום הנוכחי, למקום שתבחרו.`,
+      של ${day} ${hePrefix("ב", city)}; האפליקציה מחשבת מחדש את זמני היום הנוכחי, למקום שתבחרו.`,
   zmanimGuideNote: (link) => `מה מציין כל זמן, שיטה אחר שיטה: ראו
       <a href="${link}">זמני היום ההלכתיים</a>.`,
   parashaTitle: "פרשת השבוע, שבת אחר שבת",
@@ -728,17 +729,18 @@ const HE: ZmanimStrings = {
       <a href="${festivalPath("hanouka")}">חנוכה</a>).</p>`,
   hubFaqHeading: "שאלות נפוצות על זמני שבת",
 
-  cityTitle: (city) => `זמני שבת ב${city}: הדלקת נרות, צאת שבת וזמני היום | פטיט ירושלים`,
+  cityTitle: (city) =>
+    `זמני שבת ${hePrefix("ב", city)}: הדלקת נרות, צאת שבת וזמני היום | פטיט ירושלים`,
   cityDescription: (city) =>
-    `זמן הדלקת הנרות (כניסת השבת) וזמן צאת השבת ב${city}, שבוע אחר שבוע, וכל זמני היום: נץ, סוף זמן קריאת שמע, שקיעה וצאת הכוכבים. חינם וגם ללא חיבור לאינטרנט.`,
-  cityH1: (city) => `זמני שבת ב${city}`,
+    `זמן הדלקת הנרות (כניסת השבת) וזמן צאת השבת ${hePrefix("ב", city)}, שבוע אחר שבוע, וכל זמני היום: נץ, סוף זמן קריאת שמע, שקיעה וצאת הכוכבים. חינם וגם ללא חיבור לאינטרנט.`,
+  cityH1: (city) => `זמני שבת ${hePrefix("ב", city)}`,
   cityLead: (
     city,
     minutes,
-  ) => `זמן <strong>כניסת השבת ב${city}</strong> (הדלקת נרות, ${minutes} דקות לפני
+  ) => `זמן <strong>כניסת השבת ${hePrefix("ב", city)}</strong> (הדלקת נרות, ${minutes} דקות לפני
       השקיעה) וזמן <strong>צאת השבת</strong> (צאת הכוכבים, זמן ההבדלה), שבוע אחר שבוע, לצד החגים
-      הקרובים וכל זמני היום ב${city}, גם ללא חיבור לאינטרנט.`,
-  cityRestTitle: (city) => `כניסת השבת ויציאתה ב${city}`,
+      הקרובים וכל זמני היום ${hePrefix("ב", city)}, גם ללא חיבור לאינטרנט.`,
+  cityRestTitle: (city) => `כניסת השבת ויציאתה ${hePrefix("ב", city)}`,
   cityRestNote: (
     city,
     minutes,
@@ -748,30 +750,30 @@ const HE: ZmanimStrings = {
       <a href="${links.calendrier}">לוח החגים</a>.`,
   cityJerusalemNote: (
     city,
-  ) => `ב${city} המנהג להדליק 40 דקות לפני השקיעה, ולא 18 כמו ברוב הקהילות: הזמנים
+  ) => `${hePrefix("ב", city)} המנהג להדליק 40 דקות לפני השקיעה, ולא 18 כמו ברוב הקהילות: הזמנים
       שלמעלה הולכים אחרי מנהג זה.`,
   cityZmanimIntro: (
     city,
     day,
-  ) => `זמני היום ההלכתיים ב${city}: עלות השחר, הנץ, סוף זמן קריאת שמע ותפילה,
+  ) => `זמני היום ההלכתיים ${hePrefix("ב", city)}: עלות השחר, הנץ, סוף זמן קריאת שמע ותפילה,
       חצות, מנחה, שקיעה וצאת הכוכבים. הטבלה היא של ${day}; האפליקציה מחשבת מחדש את זמני היום
       הנוכחי במכשיר שלכם.`,
-  neighboursTitle: (city) => `ערים קרובות ל${city}`,
+  neighboursTitle: (city) => `ערים קרובות ${hePrefix("ל", city)}`,
   neighboursIntro: (
     city,
     where,
-  ) => `הזמנים משתנים בכמה דקות מעיר לעיר. הקרובות ביותר ל${city}, ${where}
+  ) => `הזמנים משתנים בכמה דקות מעיר לעיר. הקרובות ביותר ${hePrefix("ל", city)}, ${where}
       ובסביבתה:`,
-  cityFaqHeading: (city) => `שאלות נפוצות על זמני שבת ב${city}`,
+  cityFaqHeading: (city) => `שאלות נפוצות על זמני שבת ${hePrefix("ב", city)}`,
 
-  inCity: (city) => `ב${city}`,
+  inCity: (city) => `${hePrefix("ב", city)}`,
   faqShabbatStart: (city, day, time, minutes) => ({
-    q: `באיזו שעה נכנסת השבת ב${city} השבוע?`,
-    a: `השבת הקרובה ב${city} נכנסת ב${day}, עם הדלקת נרות בשעה ${time}, כלומר ${minutes} דקות לפני השקיעה.`,
+    q: `באיזו שעה נכנסת השבת ${hePrefix("ב", city)} השבוע?`,
+    a: `השבת הקרובה ${hePrefix("ב", city)} נכנסת ב${day}, עם הדלקת נרות בשעה ${time}, כלומר ${minutes} דקות לפני השקיעה.`,
   }),
   faqShabbatEnd: (city, day, time) => ({
-    q: `באיזו שעה יוצאת השבת ב${city}?`,
-    a: `השבת יוצאת בצאת הכוכבים, זמן ההבדלה. השבת הקרובה ב${city} יוצאת ב${day} בשעה ${time}.`,
+    q: `באיזו שעה יוצאת השבת ${hePrefix("ב", city)}?`,
+    a: `השבת יוצאת בצאת הכוכבים, זמן ההבדלה. השבת הקרובה ${hePrefix("ב", city)} יוצאת ב${day} בשעה ${time}.`,
   }),
   faqHowComputed: (city, minutes) => ({
     q: `כיצד מחושבים זמני השבת של ${city}?`,
@@ -849,7 +851,7 @@ const HE: ZmanimStrings = {
   festivalFaqHeading: (label) => `שאלות נפוצות על ${label}`,
   faqWhenFestival: (label, year, start, startTime, end, endTime, city) => ({
     q: `מתי חל ${label} ${year}?`,
-    a: `${label} ${year} מתחיל בערב ${start} (כניסה בשעה ${startTime} ב${city}) ומסתיים ב${end} בצאת הכוכבים (${endTime} ב${city}).`,
+    a: `${label} ${year} מתחיל בערב ${start} (כניסה בשעה ${startTime} ${hePrefix("ב", city)}) ומסתיים ב${end} בצאת הכוכבים (${endTime} ${hePrefix("ב", city)}).`,
   }),
   faqWhenHanukkah: (label, year, eve, range) => ({
     q: `מתי חל ${label} ${year}?`,

@@ -198,6 +198,19 @@ describe("zmanimSeoPages pages par ville", () => {
     expect(marseille.bodyHtml).toContain("netz haHama (lever du soleil) à Marseille");
   });
 
+  it("colle la lettre de service hébraïque au nom, avec un maqaf devant le latin", () => {
+    // Une ville qui a son nom hébreu : la lettre se colle, comme en hébreu.
+    const lyon = pages.find((p) => p.path === "/he/zmanei-shabbat/lyon")!;
+    expect(lyon.bodyHtml).toContain("בליון");
+    expect(lyon.bodyHtml).not.toContain("ב־ליון");
+    // Une ville encore en graphie latine : le maqaf, sans quoi la lettre est
+    // avalée par le mot étranger (« זמני שבת בCharleroi »).
+    const charleroi = pages.find((p) => p.path === "/he/zmanei-shabbat/charleroi")!;
+    expect(charleroi.bodyHtml).toContain("ב\u05beCharleroi");
+    expect(charleroi.bodyHtml).not.toMatch(/ב[A-Za-z]/);
+    expect(charleroi.title).toContain("ב\u05beCharleroi");
+  });
+
   it("Jérusalem allume 40 minutes avant la chkia, et le dit", () => {
     const jerusalem = pages.find((p) => p.path === "/horaires/jerusalem")!;
     expect(jerusalem.bodyHtml).toContain("40 minutes avant le coucher du soleil");
