@@ -45,12 +45,13 @@ function mount() {
   const fab = () =>
     host.querySelector('button[aria-label="Horaires du jour"]') as HTMLButtonElement;
   const profileTab = () => host.querySelector('a[href="/profile"]') as HTMLAnchorElement;
+  const link = (href: string) => host.querySelector(`a[href="${href}"]`);
   const click = async (el: Element) => {
     el.dispatchEvent(new MouseEvent("click"));
     await new Promise((resolve) => setTimeout(resolve, 0));
     await nextTick();
   };
-  return { router, fab, profileTab, click };
+  return { router, fab, profileTab, link, click };
 }
 
 describe("BottomTabBar", () => {
@@ -84,6 +85,9 @@ describe("BottomTabBar", () => {
     await bar.router.isReady();
     await nextTick();
     expect(bar.fab().getAttribute("aria-pressed")).toBe("true");
+    // L'onglet Accueil aussi : il mène à /en, pas à l'accueil français.
+    expect(bar.link("/en")).toBeTruthy();
+    expect(bar.link("/")).toBeNull();
 
     await bar.router.push("/en/finish-the-shas");
     await nextTick();

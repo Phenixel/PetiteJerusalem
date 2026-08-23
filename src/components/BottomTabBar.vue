@@ -28,12 +28,21 @@ onUnmounted(() => {
   unsubscribeAuth?.();
 });
 
+/**
+ * Les chemins traduits (accueil, horaires) dans l'espace de langue où l'on
+ * est : un chemin écrit en dur ferait sortir de l'espace anglais au premier
+ * appui, sans même que l'onglet se reconnaisse actif.
+ */
+const { localePath } = useLocalePath();
+
 // Le Partage de lectures reste accessible depuis l'accueil et le footer.
 // `anim` : personnalité de l'icône au toucher, en écho aux illustrations de
 // l'accueil (livre qui se redresse, casque qui hoche, personnage qui bondit).
 type Tab = { to: string; icon: IconName; labelKey: string; exact: boolean; anim: string };
 const tabs = computed<Tab[]>(() => [
-  { to: "/", icon: "home", labelKey: "common.home", exact: true, anim: "pop" },
+  // L'accueil est traduit (/, /en, /he) : l'onglet suit l'espace de langue,
+  // comme le bouton des horaires plus bas.
+  { to: localePath("home"), icon: "home", labelKey: "common.home", exact: true, anim: "pop" },
   { to: "/bibliotheque", icon: "book-open", labelKey: "study.title", exact: false, anim: "sway" },
   { to: "/chiourim", icon: "headphones", labelKey: "common.chiourim", exact: false, anim: "nod" },
   isLoggedIn.value
@@ -47,12 +56,6 @@ const tabs = computed<Tab[]>(() => [
       },
 ]);
 
-/**
- * Le chemin des horaires dans l'espace de langue où l'on est : la page a une
- * adresse par langue, et un chemin écrit en dur ferait sortir de l'espace
- * anglais au premier appui, sans même que l'onglet se reconnaisse actif.
- */
-const { localePath } = useLocalePath();
 const zmanimPath = computed(() => localePath("horaires"));
 
 // Onglet dont l'icône s'anime. Remis à null d'abord pour que l'animation

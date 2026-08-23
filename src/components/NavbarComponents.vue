@@ -31,12 +31,13 @@ function publishHeaderHeight(height: number) {
 
 useDarkMode();
 
-// Les horaires ont une adresse par langue : le lien suit l'espace où l'on est,
-// sinon un visiteur venu d'un résultat anglais en sort au premier clic.
+// L'accueil et les horaires ont une adresse par langue : les liens suivent
+// l'espace où l'on est, sinon un visiteur venu d'un résultat anglais en sort
+// au premier clic.
 const { localePath } = useLocalePath();
 
 const navLinks = computed(() => [
-  { to: "/", labelKey: "common.home", exact: true },
+  { to: localePath("home"), labelKey: "common.home", exact: true },
   { to: "/share-reading", labelKey: "common.shareReading", exact: true },
   { to: "/bibliotheque", labelKey: "study.title", exact: true },
   { to: "/chiourim", labelKey: "common.chiourim", exact: true },
@@ -112,7 +113,7 @@ function goToLogin() {
     ref="header"
     class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-beige/90 backdrop-blur-md dark:bg-gray-900/90 transition-colors duration-300"
   >
-    <RouterLink to="/" class="group">
+    <RouterLink :to="localePath('home')" class="group">
       <h1
         class="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
       >

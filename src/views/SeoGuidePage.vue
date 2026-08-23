@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
  * Rend les pages de fond (`guidePages` dans src/content/seoPages.ts, à ce jour
- * /zmanim) à partir du même contenu que le prérendu : un visiteur et un
- * crawler voient exactement le même texte. Même schéma que TehilimPage, en
- * français seulement pour l'instant.
+ * /zmanim et ses sœurs /en/zmanim et /he/zmanim) à partir du même contenu que
+ * le prérendu : un visiteur et un crawler voient exactement le même texte.
+ * Même schéma que TehilimPage ; la langue est celle de l'adresse ouverte,
+ * chaque chemin ayant sa page dans `guidePages`.
  */
 import { computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";

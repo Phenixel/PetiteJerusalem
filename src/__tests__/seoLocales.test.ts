@@ -60,6 +60,8 @@ describe("le modèle des URL par langue", () => {
   it("traduit un chemin d'une langue à l'autre, dans les deux sens", () => {
     expect(translatePath("/horaires/lyon", "en")).toBe("/en/shabbat-times/lyon");
     expect(translatePath("/en/shabbat-times/lyon", "fr")).toBe("/horaires/lyon");
+    // Le slug de fête passe tel quel (seoLocales ne connaît pas les fêtes) :
+    // CalendarPage le remet dans la langue de l'espace à l'ouverture.
     expect(translatePath("/he/chagim/pesach", "en")).toBe("/en/holidays/pesach");
     expect(translatePath("/", "he")).toBe("/he");
     // Une section non traduite n'a qu'une adresse : on ne bouge pas.

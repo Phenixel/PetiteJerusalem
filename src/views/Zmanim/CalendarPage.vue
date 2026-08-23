@@ -194,6 +194,14 @@ async function applyRouteFestival(): Promise<void> {
     void router.replace(sectionPath("calendrier", localeOfPath(route.path)));
     return;
   }
+  // Slug d'une autre langue (le sélecteur de langue traduit la section, pas
+  // le slug de la fête) : on rétablit l'adresse canonique de cet espace, pour
+  // que l'URL partagée soit celle que le prérendu et les hreflang déclarent.
+  const pathLocale = localeOfPath(route.path);
+  if (slug !== found.slugs[pathLocale]) {
+    void router.replace(sectionPath("calendrier", pathLocale, found.slugs[pathLocale]));
+    return;
+  }
   festival.value = found;
   yearOffset.value = 0;
   for (let step = 0; step < 2 && !festivalKey.value; step++) yearOffset.value += 1;

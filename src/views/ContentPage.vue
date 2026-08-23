@@ -7,13 +7,14 @@
  * Chaque page a une adresse par langue (/finir-le-chass, /en/finish-the-shas,
  * /he/siyum-hashas) : c'est l'URL ouverte qui décide de la langue affichée, et
  * le routeur a déjà posé cette langue dans i18n. Sur l'adresse française, le
- * sélecteur de langue continue de faire basculer le texte sans changer d'URL.
+ * sélecteur de langue emmène vers l'adresse sœur (voir useLocale) ; la langue
+ * du navigateur, elle, continue d'y choisir le texte sans changer d'URL.
  */
 import { computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { landingPages, SITE_URL, type Locale } from "../content/seoPages";
-import { DEFAULT_SEO_LOCALE, SEO_LOCALES } from "../content/seoLocales";
+import { DEFAULT_SEO_LOCALE, SEO_LOCALES, localeOfPath } from "../content/seoLocales";
 import { seoService } from "../services/seoService";
 import { useSeoContentNav } from "../composables/useSeoContentNav";
 import SignupPromptModal from "../components/SignupPromptModal.vue";
@@ -50,7 +51,11 @@ function applyMeta() {
   const c = content.value;
   const p = page.value;
   if (!c || !p) return;
-  const url = `${SITE_URL}${p.paths[pageLocale.value]}`;
+  // Le canonique suit l'URL ouverte, pas la langue affichée : le renderer de
+  // Googlebot parle anglais (navigator.language), et un canonique qui suivrait
+  // la langue ferait pointer la page française vers sa sœur anglaise, en
+  // contradiction avec le HTML prérendu.
+  const url = `${SITE_URL}${p.paths[localeOfPath(route.path)]}`;
   seoService.setMeta({
     title: c.title,
     description: c.description,
