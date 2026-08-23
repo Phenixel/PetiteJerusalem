@@ -30,23 +30,28 @@
  *
  * Mais Apple plafonne le compte à TROIS certificats de distribution, et les
  * garder tous a fini par bloquer le tag v3.7.8 : « You already have a current
- * Distribution certificate ». Deux garde-fous tiennent le compte sous le
+ * Distribution certificate ». Trois mécanismes tiennent le compte sous le
  * quota, sans jamais toucher à un certificat encore utile :
  *   --cleanup révoque le certificat du run si rien n'est parti chez Apple
  *     (échec avant l'envoi, run de debug) : il ne signe alors aucun binaire.
  *     C'est la variable IOS_BUILD_UPLOADED, posée par deploy-ios.yml juste
  *     après l'envoi sur TestFlight, qui distingue les deux cas ;
- *   --setup, avant de créer le sien, révoque les certificats dont plus aucun
- *     binaire ne dépend. Qui peut partir se décide dans
- *     scripts/lib/certificate-quota.mjs, testé sans réseau ni macOS ; si
- *     aucun n'est libérable, le run échoue avec la liste des certificats et
- *     la raison qui retient chacun.
+ *   --cleanup CONSERVE au contraire le profil quand le binaire est parti : son
+ *     nom porte le numéro de build et il référence le certificat signataire.
+ *     Ce marqueur est la seule trace du lien entre un certificat et ce qu'il a
+ *     signé, l'API App Store Connect ne le donnant pas ;
+ *   --setup, à chaque run, révoque les certificats dont plus aucun binaire ne
+ *     dépend : marqueur à l'appui quand il existe, déduction par les dates
+ *     sinon. Qui peut partir se décide dans scripts/lib/certificate-quota.mjs,
+ *     testé sans réseau ni macOS ; si rien n'est libérable et que le quota est
+ *     plein, le run échoue avec la liste des certificats et la raison qui
+ *     retient chacun.
  *
  * Rien n'est stocké dans le repo : ni .p12, ni profil, ni mot de passe.
  *
  * Usage :
  *   ASC_KEY_ID=… ASC_ISSUER_ID=… ASC_PRIVATE_KEY=… IOS_DEVELOPMENT_TEAM=… \
- *     node scripts/ios-signing.mjs --setup
+ *     IOS_BUILD_NUMBER=3070800 node scripts/ios-signing.mjs --setup
  *   … node scripts/ios-signing.mjs --cleanup     (idempotent, ne casse jamais le run)
  *
  * --setup écrit dans $GITHUB_ENV (lues ensuite par scripts/setup-ios.mjs et
@@ -55,7 +60,8 @@
  *   IOS_CODE_SIGN_IDENTITY       nom complet de l'identité de signature
  *   IOS_SIGNING_CERTIFICATE_ID   id ASC du certificat (--cleanup ne le révoque
  *                                que si le run n'a rien envoyé, cf. plus haut)
- *   IOS_SIGNING_PROFILE_ID       id ASC du profil, pour --cleanup
+ *   IOS_SIGNING_PROFILE_ID       id ASC du profil, pour --cleanup (qui ne le
+ *                                supprime que si le run n'a rien envoyé)
  *   IOS_SIGNING_KEYCHAIN         trousseau temporaire, pour --cleanup
  */
 import { execFileSync } from "node:child_process";
@@ -74,6 +80,13 @@ const BUNDLE_ID = "fr.petitejerusalem.app";
 // Préfixe reconnaissable : --setup fait le ménage des profils laissés par un
 // run interrompu avant son étape de nettoyage.
 const PROFILE_PREFIX = "PetiteJerusalem CI";
+// Le profil d'un run qui a envoyé son binaire n'est PAS supprimé : son nom
+// porte le numéro de build et il référence le certificat signataire, ce que
+// l'API ne dit nulle part ailleurs. C'est ce marqueur qui permet, aux runs
+// suivants, de révoquer un certificat en sachant exactement ce qu'il a signé.
+const markerName = (buildNumber) => `${PROFILE_PREFIX} build ${buildNumber}`;
+const MARKER_PATTERN = new RegExp(`^${PROFILE_PREFIX} build (\\d+)$`);
+const buildNumber = process.env.IOS_BUILD_NUMBER?.trim();
 // Capacités que le profil doit couvrir, sous peine d'échec de signature
 // (« doesn't match the entitlements file »). En signature automatique, Xcode
 // les activait lui-même sur l'App ID ; en manuel, c'est à nous.
@@ -165,15 +178,19 @@ const keychainPath = join(workDir, "petitejerusalem-signing.keychain-db");
 // IOS_BUILD_UPLOADED qui tranche, l'en-tête du fichier détaille le cas.
 if (isCleanup) {
   const profileId = process.env.IOS_SIGNING_PROFILE_ID;
-  for (const [label, path] of [["profil", profileId && `/v1/profiles/${profileId}`]]) {
-    if (!path) continue;
+  if (profileId && process.env.IOS_BUILD_UPLOADED) {
+    // Le profil devient le marqueur du binaire envoyé : il dit au prochain run
+    // quel certificat a signé quel build. Il sera supprimé, avec le
+    // certificat, quand ce build n'attendra plus rien d'Apple.
+    console.log(`ios-signing: profil « ${process.env.IOS_PROVISIONING_PROFILE} » conservé, il marque le binaire envoyé`);
+  } else if (profileId) {
     try {
-      await api("DELETE", path);
-      console.log(`ios-signing: ${label} supprimé côté Apple`);
+      await api("DELETE", `/v1/profiles/${profileId}`);
+      console.log("ios-signing: profil supprimé côté Apple");
     } catch (error) {
       // Un nettoyage raté ne doit pas masquer le résultat du run : le pire cas
-      // est un profil de trop, supprimable à la main sur developer.apple.com.
-      console.warn(`ios-signing: ⚠️ ${label} non supprimé, ${error.message}`);
+      // est un profil de trop, que le run suivant supprimera de toute façon.
+      console.warn(`ios-signing: ⚠️ profil non supprimé, ${error.message}`);
     }
   }
   const runCertificateId = process.env.IOS_SIGNING_CERTIFICATE_ID;
@@ -240,16 +257,14 @@ for (const capabilityType of CAPABILITIES) {
 }
 
 /**
- * Fait de la place sous le quota, juste avant la création du certificat du
- * run : révoque, du plus ancien au plus récent, ceux dont plus aucun binaire
- * ne dépend, et juste assez pour que la création qui suit passe. La décision
- * elle-même est dans scripts/lib/certificate-quota.mjs ; ici, les appels à
- * Apple. Un inventaire impossible ne révoque rien du tout : mieux vaut un run
- * rouge qu'une signature invalidée sous un binaire en examen.
+ * Le ménage des certificats, à chaque run et pas seulement quand le quota est
+ * atteint : tout certificat dont plus aucun binaire ne dépend part, ce qui
+ * laisse toujours une place d'avance. La décision est dans
+ * scripts/lib/certificate-quota.mjs ; ici, les appels à Apple. Un inventaire
+ * impossible ne révoque rien du tout : mieux vaut un run rouge qu'une
+ * signature invalidée sous un binaire en examen.
  */
-async function freeCertificateSlot(certificates) {
-  let needed = certificates.length - (CERTIFICATE_QUOTA - 1);
-  if (needed <= 0) return;
+async function pruneCertificates(certificates, signedBuilds) {
   let revocable;
   try {
     const apps = await api("GET", `/v1/apps?filter[bundleId]=${BUNDLE_ID}`);
@@ -259,19 +274,17 @@ async function freeCertificateSlot(certificates) {
       api("GET", `/v1/apps/${app.id}/appStoreVersions?limit=20&include=build`),
       api("GET", `/v1/builds?filter[app]=${app.id}&sort=-uploadedDate&limit=5`),
     ]);
-    revocable = revocableCertificates(certificates, protectedUploads(versions, builds));
+    revocable = revocableCertificates(certificates, protectedUploads(versions, builds), signedBuilds);
   } catch (error) {
     console.warn(`ios-signing: ⚠️ inventaire des binaires impossible, aucun certificat révoqué, ${error.message}`);
     return;
   }
   for (const certificate of revocable) {
-    if (needed <= 0) break;
     try {
       await api("DELETE", `/v1/certificates/${certificate.id}`);
       certificate.revoked = true;
-      needed -= 1;
       console.log(
-        `ios-signing: certificat ${certificate.id} révoqué, plus aucun binaire en examen, en vente ou en attente de soumission n'en dépend`,
+        `ios-signing: certificat ${certificate.id} révoqué, plus aucun binaire qu'Apple regarde encore n'en dépend`,
       );
     } catch (error) {
       console.warn(`ios-signing: ⚠️ certificat ${certificate.id} non révoqué, ${error.message}`);
@@ -310,10 +323,26 @@ run(OPENSSL, [
 // run lui survit (cf. l'en-tête) : sans ce ménage, un tag finit par échouer
 // sur « You already have a current Distribution certificate », ce qui est
 // arrivé au tag v3.7.8.
+//
+// Les profils marqueurs sont lus d'abord : ils disent quel certificat a signé
+// quel build, et ce sont eux qui rendent la révocation sûre. `include` peuple
+// la relation, sans quoi l'API ne rend que des liens.
+const profiles = await api("GET", "/v1/profiles?limit=200&include=certificates").catch((error) => {
+  console.warn(`ios-signing: ⚠️ profils illisibles, provenance des certificats inconnue, ${error.message}`);
+  return { data: [] };
+});
+/** @type {Map<string, string>} id de certificat vers numéro de build signé */
+const signedBuilds = new Map();
+for (const profile of profiles.data) {
+  const signed = MARKER_PATTERN.exec(profile.attributes?.name ?? "")?.[1];
+  if (!signed) continue;
+  for (const linked of profile.relationships?.certificates?.data ?? []) signedBuilds.set(linked.id, signed);
+}
+
 const certificates = distributionCertificates(
   (await api("GET", "/v1/certificates?filter[certificateType]=DISTRIBUTION&limit=200")).data,
 );
-await freeCertificateSlot(certificates);
+await pruneCertificates(certificates, signedBuilds);
 
 let certificate;
 try {
@@ -418,17 +447,30 @@ console.log(`ios-signing: identité installée, ${identity}`);
 // ---------------------------------------------------------------------------
 // 4. Profil de provisionnement App Store
 // ---------------------------------------------------------------------------
-// Les profils d'un run précédent tué avant son nettoyage encombrent le compte
-// et bloquent la réutilisation du nom : on les supprime.
-const staleProfiles = await api("GET", "/v1/profiles?limit=200")
-  .then((r) => r.data.filter((p) => p.attributes.name?.startsWith(PROFILE_PREFIX)))
-  .catch(() => []);
-for (const stale of staleProfiles) {
+// Le nom porte le numéro de build : le profil restera en place si le binaire
+// part chez Apple, et dira alors quel certificat l'a signé. Sans numéro de
+// build (lancement hors CI), le profil est nommé sans marqueur, donc traité
+// comme jetable.
+const profileName = buildNumber ? markerName(buildNumber) : `${PROFILE_PREFIX} ${process.env.GITHUB_RUN_ID ?? Date.now()}`;
+
+// Ne survivent que les marqueurs d'un certificat encore vivant. Partent : les
+// profils d'un run tué avant son nettoyage, ceux dont le certificat vient
+// d'être révoqué ou l'a été à la main, et l'homonyme de celui qu'on crée
+// (re-run d'un même tag), Apple refusant deux profils de même nom.
+const liveCertificateIds = new Set([
+  certificateId,
+  ...certificates.filter((c) => !c.revoked).map((c) => c.id),
+]);
+for (const stale of profiles.data) {
+  const name = stale.attributes?.name ?? "";
+  if (!name.startsWith(PROFILE_PREFIX)) continue;
+  const marks = MARKER_PATTERN.test(name) && name !== profileName;
+  const linked = stale.relationships?.certificates?.data ?? [];
+  if (marks && linked.some((certificate) => liveCertificateIds.has(certificate.id))) continue;
   await api("DELETE", `/v1/profiles/${stale.id}`).catch(() => {});
-  console.log(`ios-signing: ancien profil « ${stale.attributes.name} » supprimé`);
+  console.log(`ios-signing: ancien profil « ${name} » supprimé`);
 }
 
-const profileName = `${PROFILE_PREFIX} ${process.env.GITHUB_RUN_ID ?? Date.now()}`;
 const profile = await api("POST", "/v1/profiles", {
   data: {
     type: "profiles",

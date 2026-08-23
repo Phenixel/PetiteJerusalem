@@ -150,6 +150,55 @@ describe("quota de certificats de distribution", () => {
     ).toEqual(["R33A4CCD5R", "T7X6S8JPNR"]);
   });
 
+  it("suit le marqueur du profil plutôt que les dates, quand il existe", () => {
+    // Provenance exacte : chaque certificat a laissé derrière lui le profil du
+    // build qu'il a signé. 3.7.6 est la version la plus récente, son
+    // certificat reste ; celui de 3.7.5 part, sans que la marge des dates
+    // vienne le sauver comme pour un certificat de provenance inconnue.
+    const signedBuilds = new Map([
+      ["R33A4CCD5R", "3070400"],
+      ["T7X6S8JPNR", "3070500"],
+      ["SA7386DCQJ", "3070600"],
+    ]);
+    const versions = {
+      data: [
+        version("3.7.6", "READY_FOR_DISTRIBUTION", "b6", "2026-08-21T12:46:50.000+00:00"),
+        version("3.7.5", "READY_FOR_DISTRIBUTION", "b5", "2026-08-19T15:47:20.000+00:00"),
+      ],
+      included: Object.values(BUILDS),
+    };
+    const builds = { data: [BUILDS["3070600"]] };
+
+    const list = certificates();
+    const revocable = revocableCertificates(list, protectedUploads(versions, builds), signedBuilds);
+
+    expect(revocable.map((c) => c.id)).toEqual(["R33A4CCD5R", "T7X6S8JPNR"]);
+  });
+
+  it("garde le certificat du build en examen, même ancien, grâce à son marqueur", () => {
+    // Le plus ancien a signé le binaire aujourd'hui en examen : deux releases
+    // plus tard, les dates seules l'auraient cru dépassé.
+    const signedBuilds = new Map([
+      ["R33A4CCD5R", "3070400"],
+      ["T7X6S8JPNR", "3070500"],
+      ["SA7386DCQJ", "3070600"],
+    ]);
+    const versions = {
+      data: [
+        version("3.7.6", "PREPARE_FOR_SUBMISSION", "b6", "2026-08-21T12:46:50.000+00:00"),
+        version("3.7.4", "IN_REVIEW", "b4", "2026-08-19T00:12:40.000+00:00"),
+      ],
+      included: Object.values(BUILDS),
+    };
+    const builds = { data: [BUILDS["3070600"]] };
+
+    const list = certificates();
+    const revocable = revocableCertificates(list, protectedUploads(versions, builds), signedBuilds);
+
+    expect(revocable.map((c) => c.id)).toEqual(["T7X6S8JPNR"]);
+    expect(list.find((c) => c.id === "R33A4CCD5R")?.keptFor).toContain("3070400");
+  });
+
   it("ne révoque jamais le certificat le plus récent, même sans aucun envoi", () => {
     const list = certificates();
     const revocable = revocableCertificates(list, protectedUploads({ data: [] }, { data: [] }));

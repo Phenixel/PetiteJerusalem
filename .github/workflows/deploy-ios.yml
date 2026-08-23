@@ -178,13 +178,18 @@ jobs:
           GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
         run: printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" > GoogleService-Info.plist
 
-      # Certificat de distribution + profil « App Store » éphémères, créés via
-      # l'API et installés dans un trousseau temporaire. Expose
-      # IOS_PROVISIONING_PROFILE et IOS_CODE_SIGN_IDENTITY au reste du job
-      # que l'étape suivante inscrit dans la cible App du projet Xcode.
+      # Certificat de distribution + profil « App Store », créés via l'API et
+      # installés dans un trousseau temporaire. Expose IOS_PROVISIONING_PROFILE
+      # et IOS_CODE_SIGN_IDENTITY au reste du job, que l'étape suivante inscrit
+      # dans la cible App du projet Xcode. C'est aussi ici que les certificats
+      # devenus inutiles sont révoqués, avant d'en créer un de plus.
       - name: Créer le certificat et le profil de distribution
         env:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          # Le numéro de build nomme le profil : celui-ci reste en place si le
+          # binaire part chez Apple et dit alors, aux runs suivants, quel
+          # certificat a signé quel build.
+          IOS_BUILD_NUMBER: ${{ steps.version.outputs.build }}
         run: node scripts/ios-signing.mjs --setup
 
       # Info.plist, entitlements, PrivacyInfo.xcprivacy, AppDelegate, icônes,
@@ -363,17 +368,17 @@ jobs:
             echo "::warning::Fiche App Store non synchronisée (voir le journal), le binaire, lui, est bien parti ; les textes se corrigent à la main dans App Store Connect."
           fi
 
-      # Le profil de ce run est supprimé, même si le build a échoué. Le
-      # CERTIFICAT ne l'est que si rien n'est parti chez Apple, c'est-à-dire
-      # si IOS_BUILD_UPLOADED n'a pas été posée par l'étape d'envoi : un
-      # certificat qui signe un binaire envoyé doit vivre aussi longtemps que
-      # celui-ci est en examen ou en vente, Apple re-validant la signature
-      # d'origine à la mise en file d'examen. Le build 3.7.3 (3070300) est
-      # passé par TestFlight le 17 août 2026 puis a été rejeté là, « ITMS-90035:
-      # Invalid Signature », son certificat ayant été révoqué juste après
-      # l'envoi. Le quota de trois certificats de distribution est tenu à
-      # l'autre bout, par --setup, qui révoque au besoin les certificats
-      # devenus inutiles avant de créer celui du run.
+      # Le profil et le certificat de ce run ne partent que si rien n'est allé
+      # chez Apple, c'est-à-dire si IOS_BUILD_UPLOADED n'a pas été posée par
+      # l'étape d'envoi. Sinon les deux restent : le profil porte le numéro de
+      # build dans son nom et référence le certificat signataire, ce qui dira
+      # aux runs suivants ce qu'ils ont le droit de révoquer : un certificat
+      # doit vivre tant qu'Apple regarde encore un binaire signé avec lui, la
+      # signature d'origine étant re-validée à la mise en file d'examen. Le
+      # build 3.7.3 (3070300) est passé par TestFlight le 17 août 2026 puis a
+      # été rejeté là, « ITMS-90035: Invalid Signature », son certificat ayant
+      # été révoqué juste après l'envoi. Le quota de trois certificats est
+      # tenu à l'autre bout, par --setup.
       - name: Nettoyer la signature du run
         if: always()
         continue-on-error: true

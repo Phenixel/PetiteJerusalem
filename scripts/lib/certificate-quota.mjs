@@ -7,11 +7,17 @@
  * file d'examen (ITMS-90035, cf. l'en-tête de scripts/ios-signing.mjs). Il
  * faut donc désigner, sans se tromper, ceux dont plus aucun binaire ne dépend.
  *
- * L'API App Store Connect ne dit pas quel certificat a signé quel build, mais
- * elle date les deux : un binaire est signé par le dernier certificat créé
- * avant son envoi. La fenêtre d'un certificat va donc de sa création à celle
- * du suivant, et un certificat dont la fenêtre ne contient aucun envoi
- * protégé peut être révoqué.
+ * L'API App Store Connect ne dit pas quel certificat a signé quel build. La CI
+ * laisse donc la trace elle-même : le profil du run qui a envoyé son binaire
+ * survit au run, porte le numéro de build dans son nom et référence le
+ * certificat signataire. Chaque certificat suit alors le sort du build qu'il
+ * a signé, exactement.
+ *
+ * Pour ceux qui n'ont pas cette trace (antérieurs aux marqueurs, ou laissés
+ * par un run tué avant son nettoyage), il reste la déduction par les dates :
+ * l'API date les certificats et les envois, et un binaire est signé par le
+ * dernier certificat créé avant son envoi ; la fenêtre d'un certificat va de
+ * sa création à celle du suivant, marge comprise.
  *
  * Ce fichier ne parle ni à Apple ni au trousseau : la décision se teste sans
  * réseau ni macOS (src/__tests__/certificateQuota.test.ts), le reste vit dans
@@ -20,7 +26,7 @@
 
 /**
  * @typedef {{ id: string, displayName: string, expiration: string, created: number, keptFor?: string, revoked?: boolean }} Certificate
- * @typedef {{ label: string, uploadedAt: number }} Upload
+ * @typedef {{ label: string, buildNumber: string | undefined, uploadedAt: number }} Upload
  */
 
 /** Le plafond Apple, par compte développeur. */
@@ -120,10 +126,12 @@ export function protectedUploads(versionsResponse, buildsResponse) {
     .forEach((version, index) => {
       const state = version.attributes?.appVersionState ?? version.attributes?.appStoreState;
       if (index > 0 && !VERSION_STATES_IN_FLIGHT.has(state)) return;
-      const uploadedDate = builds.get(version.relationships?.build?.data?.id)?.attributes?.uploadedDate;
+      const build = builds.get(version.relationships?.build?.data?.id);
+      const uploadedDate = build?.attributes?.uploadedDate;
       if (!uploadedDate) return;
       uploads.push({
         label: `version ${version.attributes?.versionString} en ${state}`,
+        buildNumber: build?.attributes?.version,
         uploadedAt: Date.parse(uploadedDate),
       });
     });
@@ -132,6 +140,7 @@ export function protectedUploads(versionsResponse, buildsResponse) {
     if (!build.attributes?.uploadedDate) return;
     uploads.push({
       label: `build ${build.attributes.version} (${build.attributes.processingState})`,
+      buildNumber: build.attributes.version,
       uploadedAt: Date.parse(build.attributes.uploadedDate),
     });
   });
@@ -144,20 +153,35 @@ export function protectedUploads(versionsResponse, buildsResponse) {
  * de la partie : c'est celui du run précédent, dont le binaire vient peut-être
  * d'arriver chez Apple.
  *
+ * `signedBuilds` donne, quand on la connaît, la provenance exacte : le profil
+ * laissé en place par un run qui a envoyé son binaire porte le numéro de
+ * build et référence le certificat qui l'a signé. Le certificat suit alors le
+ * sort de CE build, sans marge ni déduction. Les certificats sans marqueur
+ * retombent sur la fenêtre des dates, prudente : ceux d'avant l'arrivée des
+ * marqueurs, et ceux d'un run tué avant son nettoyage.
+ *
  * @param {Certificate[]} certificates
  * @param {Upload[]} uploads
+ * @param {Map<string, string>} [signedBuilds] id de certificat vers numéro de build
  * @returns {Certificate[]}
  */
-export function revocableCertificates(certificates, uploads) {
+export function revocableCertificates(certificates, uploads, signedBuilds = new Map()) {
   certificates.forEach((certificate, index) => {
     const next = certificates[index + 1];
     if (!next) {
       certificate.keptFor = "certificat du run précédent";
       return;
     }
+    const signed = signedBuilds.get(certificate.id);
+    if (signed) {
+      const upload = uploads.find((candidate) => candidate.buildNumber === signed);
+      certificate.keptFor = upload && `il a signé le build ${signed}, ${upload.label}`;
+      return;
+    }
     const from = certificate.created - ATTRIBUTION_MARGIN_MS;
     const to = next.created + ATTRIBUTION_MARGIN_MS;
-    certificate.keptFor = uploads.find((upload) => upload.uploadedAt >= from && upload.uploadedAt < to)?.label;
+    const upload = uploads.find((candidate) => candidate.uploadedAt >= from && candidate.uploadedAt < to);
+    certificate.keptFor = upload && `provenance inconnue, et sa fenêtre contient ${upload.label}`;
   });
   return certificates.filter((certificate) => !certificate.keptFor);
 }

@@ -112,13 +112,25 @@ qu'aucun geste manuel ne soit nécessaire :
   Apple** : un run qui échoue avant l'envoi, ou un run de debug, ne laisse
   donc rien derrière lui. La variable `IOS_BUILD_UPLOADED`, posée par le
   workflow juste après l'envoi sur TestFlight, distingue les deux cas ;
-- au run suivant, `--setup` révoque, avant de créer le sien, les certificats
-  dont plus aucun binaire ne dépend. L'API ne dit pas quel certificat a signé
-  quel build, mais elle date les deux : un binaire est signé par le dernier
-  certificat créé avant son envoi. Sont protégés les binaires attachés à une
-  version qu'Apple a encore en main (examen, traitement, publication en
-  attente), celui de la version la plus récente de la fiche quel qu'en soit
-  l'état, le dernier binaire envoyé et ceux qu'Apple traite encore.
+- si le binaire est parti, `--cleanup` **conserve le profil** au lieu de le
+  supprimer. Son nom porte le numéro de build (`PetiteJerusalem CI build
+  3070800`) et il référence le certificat signataire : c'est le seul endroit
+  où le lien entre un certificat et ce qu'il a signé existe, l'API App Store
+  Connect ne le donnant nulle part ;
+- à chaque run, `--setup` révoque, avant de créer le sien, les certificats
+  dont plus aucun binaire ne dépend, marqueur à l'appui. Sont protégés les
+  binaires attachés à une version qu'Apple a encore en main (examen,
+  traitement, publication en attente), celui de la version la plus récente de
+  la fiche quel qu'en soit l'état, le dernier binaire envoyé et ceux qu'Apple
+  traite encore. Le certificat du run précédent est gardé d'office.
+
+Un certificat **sans marqueur** (antérieur au mécanisme, ou laissé par un run
+tué avant son nettoyage) est jugé sur les dates : l'API date les certificats
+et les envois, un binaire est signé par le dernier certificat créé avant son
+envoi, et la fenêtre est élargie de deux heures pour absorber l'imprécision.
+C'est prudent, donc parfois trop : c'est ainsi que trois certificats se sont
+retrouvés protégés en même temps le 23 août 2026, et qu'il a fallu les
+révoquer à la main.
 
 Une version **déjà distribuée** ne retient rien, et c'est voulu : Apple le dit
 au moment de révoquer un certificat, sont invalidées les apps *soumises à
