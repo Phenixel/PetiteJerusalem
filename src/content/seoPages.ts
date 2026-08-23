@@ -100,6 +100,7 @@ export const staticFooterHtml = `
       <a href="/finir-le-chass">Finir le Chass</a>
       <a href="/partage-tehilim">Partage de Tehilim</a>
       <a href="/tehilim">Tehilim par intention</a>
+      <a href="/paracha">Paracha de la semaine</a>
       <a href="/horaires">Horaires de Chabbat</a>
       <a href="/calendrier">Calendrier des fêtes</a>
       <a href="/zmanim">Les zmanim expliqués</a>

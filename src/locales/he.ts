@@ -277,6 +277,17 @@ const he: LocaleMessages = {
     start: "הדלקה",
     end: "צאת החג",
   },
+  paracha: {
+    title: "פרשת השבוע",
+    description:
+      "הפרשה הנקראת בשבת זו, ולאחריה לוח השבתות הבאות. הכול מחושב במכשיר שלך, גם ללא חיבור לאינטרנט.",
+    thisWeek: "השבוע",
+    readOn: "נקראת בשבת {date}",
+    read: "קריאת {name}",
+    chneiMikra: "שניים מקרא",
+    cycle: "לוח הפרשות",
+    shabbatNote: "זמני הכניסה והיציאה של שבת זו, בעיר שלך:",
+  },
   zmanim: {
     title: "זמני היום",
     navTitle: "זמנים",
@@ -617,6 +628,9 @@ const he: LocaleMessages = {
     zmanimCityTitle: "זמני שבת ב{city}: הדלקת נרות וצאת שבת | Petite Jérusalem",
     zmanimCityDescription:
       "זמני הדלקת נרות וצאת השבת ב{city}, שבוע אחר שבוע, וכל זמני היום ההלכתיים. חינם וללא חיבור לאינטרנט.",
+    parashaTitle: "פרשת השבוע: לוח הפרשות והטקסטים שלהן | פטיט ירושלים",
+    parashaDescription:
+      "הפרשה הנקראת בשבת זו, לוח מתוארך של 54 הפרשות, והטקסט של כל אחת בעברית ובתעתיק.",
     festivalTitle: "{festival}: תאריכים, זמני כניסה ויציאה | פטיט ירושלים",
     festivalDescription:
       "מתי חל {festival}? התאריכים של {festival} לשנים הקרובות, עם זמני הכניסה והיציאה, מחושבים למיקום שלך.",

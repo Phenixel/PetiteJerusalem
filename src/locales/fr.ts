@@ -288,6 +288,17 @@ const fr = {
     start: "Allumage",
     end: "Sortie",
   },
+  paracha: {
+    title: "Paracha de la semaine",
+    description:
+      "La paracha lue ce Chabbat, puis le calendrier des Chabbats qui suivent. Tout est calculé sur votre appareil, même hors connexion.",
+    thisWeek: "Cette semaine",
+    readOn: "Lue le Chabbat {date}",
+    read: "Lire {name}",
+    chneiMikra: "Chnei mikra",
+    cycle: "Le calendrier des parachiot",
+    shabbatNote: "L\u2019heure d\u2019entrée et de sortie de ce Chabbat, pour votre ville\u00a0:",
+  },
   zmanim: {
     title: "Horaires du jour",
     navTitle: "Horaires",
@@ -638,6 +649,10 @@ const fr = {
     zmanimCityTitle: "Horaires de Chabbat à {city} : allumage et sortie | Petite Jérusalem",
     zmanimCityDescription:
       "L\u2019heure d\u2019allumage des bougies (entrée de Chabbat) et l\u2019heure de sortie de Chabbat à {city}, semaine par semaine, et tous les zmanim du jour. Gratuit, hors ligne.",
+    parashaTitle:
+      "Paracha de la semaine : le calendrier des parachiot et leurs textes | Petite Jérusalem",
+    parashaDescription:
+      "La paracha lue ce Chabbat, le calendrier daté des 54 parachiot, et le texte de chacune en hébreu et en phonétique.",
     festivalTitle: "{festival} : dates, heure d\u2019entrée et de sortie | Petite Jérusalem",
     festivalDescription:
       "Quand tombe {festival} ? Les dates de {festival} sur plusieurs années, avec l\u2019heure d\u2019entrée et de sortie, calculées pour votre position.",

@@ -284,6 +284,17 @@ const en: LocaleMessages = {
     start: "Lighting",
     end: "Ends",
   },
+  paracha: {
+    title: "Parashat hashavua",
+    description:
+      "The parasha read this Shabbat, then the calendar of the Shabbatot that follow. Everything is computed on your device, even offline.",
+    thisWeek: "This week",
+    readOn: "Read on Shabbat {date}",
+    read: "Read {name}",
+    chneiMikra: "Shnayim mikra",
+    cycle: "The calendar of parashiot",
+    shabbatNote: "Candle lighting and havdalah times for this Shabbat, in your city:",
+  },
   zmanim: {
     title: "Today's times",
     navTitle: "Zmanim",
@@ -628,6 +639,9 @@ const en: LocaleMessages = {
     zmanimCityTitle: "Shabbat times in {city}: candle lighting and havdalah | Petite Jérusalem",
     zmanimCityDescription:
       "Candle lighting and Shabbat end times in {city}, week by week, plus all the halachic times of the day. Free, works offline.",
+    parashaTitle: "Parashat hashavua: the calendar of parashiot and their texts | Petite Jérusalem",
+    parashaDescription:
+      "The parasha read this Shabbat, the dated calendar of all 54 parashiot, and the text of each one in Hebrew and transliteration.",
     festivalTitle: "{festival}: dates, start and end times | Petite Jérusalem",
     festivalDescription:
       "When is {festival}? The dates of {festival} over several years, with the start and end times of the festival, computed for your location.",

@@ -481,7 +481,8 @@ function buildHorairesPage(now: Date): SeoPage {
     <section class="seo-section">
       <h2>Paracha de la semaine, Chabbat par Chabbat</h2>
       <p>La paracha lue à chacun des prochains Chabbats, avec l'heure d'allumage à Paris. Chaque
-      nom mène au texte complet dans la bibliothèque.</p>
+      nom mène au texte complet dans la bibliothèque, et le calendrier complet des 54 parachiot
+      est sur la page <a href="/paracha">paracha de la semaine</a>.</p>
       <table class="seo-table">
         <thead>
           <tr><th>Paracha</th><th>Chabbat</th><th>Allumage à Paris</th></tr>

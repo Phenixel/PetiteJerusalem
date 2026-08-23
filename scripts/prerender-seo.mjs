@@ -37,6 +37,9 @@ const { allPages, renderPage, buildSitemap, buildAppShell, SITE_URL } = await ji
   "../src/content/seoPages.ts",
 );
 const { buildZmanimSeoPages } = await jiti.import("../src/content/zmanimSeoPages.ts");
+const { buildParashaSeoPages, parashaNotes } = await jiti.import(
+  "../src/content/parashaSeoPages.ts",
+);
 const {
   studyEntries,
   isMultiSection,
@@ -82,6 +85,9 @@ function generateEtudePages(dist, template) {
   const talmudChapters = JSON.parse(readFileSync(join(dist, "texts", "talmud-chapters.json"), "utf-8"));
   const loadEntry = makeTextLoader(dist, talmudChapters);
   const sitemap = [];
+  // Quand chaque paracha se lit : une phrase datée sur sa page de texte, sans
+  // quoi « quand lit-on Ki Tétsé » ne trouve rien alors que la page existe.
+  const notes = parashaNotes();
 
   for (const entry of studyEntries) {
     let content;
@@ -124,7 +130,7 @@ function generateEtudePages(dist, template) {
         path,
         title: sectionTitle(entry, section),
         description: sectionDescription(entry, section),
-        bodyHtml: buildSectionBody(entry, content, section),
+        bodyHtml: buildSectionBody(entry, content, section, notes.get(String(entry.id)) ?? ""),
         jsonLd: sectionJsonLd(entry, section),
       });
       sitemap.push({ path, priority: 0.6, changefreq: "yearly" });
@@ -171,12 +177,21 @@ function main() {
     console.log(`[prerender-seo] ${page.path} -> dist/${page.file}`);
   }
 
+  // 2d. Paracha de la semaine (/paracha) : le calendrier daté des parachiot,
+  //     bâti du même cycle que les dates posées sur les pages de textes.
+  const { pages: parashaPages, sitemapEntries: parashaEntries } = buildParashaSeoPages();
+  for (const page of parashaPages) {
+    writePage(dist, template, page);
+    console.log(`[prerender-seo] ${page.path} -> dist/${page.file}`);
+  }
+
   // 3. Sitemap, regenerated from the same lists so it can never drift.
   const lastmod = new Date().toISOString().slice(0, 10);
-  const extraEntries = [...readingEntries, ...zmanimEntries];
+  const extraEntries = [...readingEntries, ...zmanimEntries, ...parashaEntries];
   writeFileSync(join(dist, "sitemap.xml"), buildSitemap(lastmod, extraEntries), "utf-8");
 
-  const total = allPages.length + zmanimPages.length + readingEntries.length;
+  const total =
+    allPages.length + zmanimPages.length + parashaPages.length + readingEntries.length;
   console.log(`[prerender-seo] Generated ${total} page(s) + app.html + sitemap.xml.`);
   console.log(`[prerender-seo] Canonical host: ${SITE_URL}`);
 }

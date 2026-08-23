@@ -72,6 +72,16 @@ touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
     weeks** to keep the upcoming-times tables ahead of the calendar.
     `/horaires/:ville` is real app behavior as well: ZmanimPage resolves the
     slug against the city catalogue and computes live times for it.
+- `src/content/parashaSeoPages.ts`: the **`/paracha`** hub (this week's
+  parasha, then the dated calendar of the whole cycle, each parasha linked to
+  its Bibliothèque text) and the dated sentence injected into each of the 54
+  parasha reading pages ("Cette paracha se lit le Chabbat 31 octobre 2026,
+  puis le Chabbat 20 novembre 2027"), which is what makes "quand lit-on Ki
+  Tétsé" resolve to a page that already existed. Vezot Haberakha is never read
+  on an ordinary Shabbat, so it is dated from Simhat Torah instead. The
+  calendar itself lives in `src/content/parashaCalendar.ts` (dailyCycles only,
+  no `seoPages`), shared with `src/views/Library/ParashaPage.vue`, which
+  recomputes it live for visitors.
 - `guidePages` in `src/content/seoPages.ts` holds the evergreen explainers
   that need no computation, today **`/zmanim`** (what each zman marks, the two
   opinions, how it is computed), rendered for humans by
@@ -96,7 +106,7 @@ touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
 Prerendered/indexable pages (~1465 in total, all listed in the generated
 `sitemap.xml`): the static pages declared in `seoPages.ts`, `/`,
 `/share-reading`, `/bibliotheque`, `/chiourim`, the landing/legal pages above,
-`/zmanim`, the Tehilim-by-intention hub + its intention pages, `/horaires` +
+`/zmanim`, `/paracha`, the Tehilim-by-intention hub + its intention pages, `/horaires` +
 its 242 city pages and `/calendrier` + its 15 festival pages (from
 `zmanimSeoPages.ts`), plus the Bibliothèque reading pages generated per
 corpus/book/chapter by `prerender-seo.mjs`.

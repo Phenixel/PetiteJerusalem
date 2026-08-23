@@ -23,6 +23,7 @@ const ZmanimPage = () => import("../views/Zmanim/ZmanimPage.vue");
 const CalendarPage = () => import("../views/Zmanim/CalendarPage.vue");
 const TehilimPage = () => import("../views/TehilimPage.vue");
 const SeoGuidePage = () => import("../views/SeoGuidePage.vue");
+const ParashaPage = () => import("../views/Library/ParashaPage.vue");
 const StudioPage = () => import("../views/Studio/StudioPage.vue");
 const AdminLayout = () => import("../views/Admin/AdminLayout.vue");
 const AdminChiourimPage = () => import("../views/Admin/AdminChiourimPage.vue");
@@ -283,6 +284,14 @@ export default [
     name: "tehilim-intention",
     meta: { offlineOk: true },
     component: TehilimPage,
+  },
+  // Paracha de la semaine : celle de ce Chabbat, puis le calendrier des
+  // suivants. Tout se calcule sur l'appareil, la page tient hors connexion.
+  {
+    path: "/paracha",
+    name: "paracha",
+    meta: { offlineOk: true },
+    component: ParashaPage,
   },
   // Les zmanim expliqués : page de fond, rendue du même contenu que le
   // prérendu (src/content/seoPages.ts, `guidePages`).
