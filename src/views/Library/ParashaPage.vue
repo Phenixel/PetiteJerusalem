@@ -8,10 +8,12 @@
  * calculé sur l'appareil (parashaCalendar, qui ne fait qu'appeler
  * dailyCycles) : la page tient hors connexion, comme les horaires.
  */
-import { computed, onMounted } from "vue";
+import { computed, onMounted, watch } from "vue";
+import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { hubPath } from "../../content/etudeTexts";
-import { PARASHA_PATH, parashaLabel, parashaWeeks } from "../../content/parashaCalendar";
+import { parashaLabel, parashaWeeks } from "../../content/parashaCalendar";
+import { localeOfPath, sectionPath } from "../../content/seoLocales";
 import { SITE_URL } from "../../config/site";
 import { analyticsService } from "../../services/analyticsService";
 import { seoService } from "../../services/seoService";
@@ -21,6 +23,7 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 const CYCLE_WEEKS = 56;
 
 const { t, locale } = useI18n();
+const route = useRoute();
 
 const weeks = computed(() => parashaWeeks(new Date(), CYCLE_WEEKS));
 const current = computed(() => weeks.value[0] ?? null);
@@ -45,16 +48,28 @@ const dayShort = (date: Date): string =>
     month: "short",
   }).format(date);
 
-onMounted(() => {
-  const url = `${SITE_URL}${PARASHA_PATH}`;
+/**
+ * La page a une adresse par langue (/paracha, /en/parasha, /he/parasha) : le
+ * canonique est celui de l'adresse ouverte. Rejoué au changement de langue,
+ * les messages en et he arrivant par import dynamique, parfois après le
+ * montage.
+ */
+function applyMeta(): void {
+  const url = `${SITE_URL}${sectionPath("paracha", localeOfPath(route.path))}`;
   seoService.setMeta({
     title: t("seo.parashaTitle"),
     description: t("seo.parashaDescription"),
     canonical: url,
     og: { url },
   });
+}
+
+onMounted(() => {
+  applyMeta();
   analyticsService.capture("parasha_viewed");
 });
+
+watch([locale, () => route.path], applyMeta);
 </script>
 
 <template>

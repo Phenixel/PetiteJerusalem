@@ -24,6 +24,7 @@
 // pas ce fichier de contenu (~94 kB) dans leur chunk. Ré-exportées ici pour
 // le prerender et les consommateurs historiques.
 import { SITE_URL, SITE_NAME, OG_IMAGE, LOGO_IMAGE } from "../config/site";
+import { ZMANIM_GUIDE } from "./zmanimGuideStrings";
 import {
   DEFAULT_SEO_LOCALE,
   HREFLANG,
@@ -111,31 +112,246 @@ export const faqHtml = (faq: { q: string; a: string }[], heading: string): strin
     </dl>
   </section>`;
 
-/** Internal-link footer injected into every static page for crawlable site links. */
-export const staticFooterHtml = `
+/**
+ * Le pied de page interne, injecté dans chaque page statique : c'est lui qui
+ * donne aux crawlers les liens du site depuis n'importe quelle page.
+ *
+ * Une version par langue : sur une page anglaise, un pied de page français
+ * enverrait le visiteur (et le moteur) vers des adresses qu'il ne comprend
+ * pas. Les sections non traduites (bibliothèque, chiourim) gardent leur unique
+ * adresse, avec un libellé traduit.
+ */
+const FOOTER_STRINGS: Record<Locale, { links: [SeoSection | string, string][]; tagline: string }> =
+  {
+    fr: {
+      links: [
+        ["home", "Accueil"],
+        ["/share-reading", "Partage de lectures"],
+        ["/bibliotheque", "Bibliothèque"],
+        ["/chiourim", "Chiourim"],
+        ["finirLeChass", "Finir le Chass"],
+        ["partageTehilim", "Partage de Tehilim"],
+        ["/tehilim", "Tehilim par intention"],
+        ["paracha", "Paracha de la semaine"],
+        ["horaires", "Horaires de Chabbat"],
+        ["calendrier", "Calendrier des fêtes"],
+        ["zmanim", "Les zmanim expliqués"],
+      ],
+      tagline:
+        "Petite Jérusalem : étudier et partager la Torah, ensemble. Gratuit, en français, en anglais et en hébreu.",
+    },
+    en: {
+      links: [
+        ["home", "Home"],
+        ["/share-reading", "Shared readings"],
+        ["/bibliotheque", "Library"],
+        ["/chiourim", "Shiurim"],
+        ["finirLeChass", "Finish the Shas"],
+        ["partageTehilim", "Share Tehillim"],
+        ["/tehilim", "Tehillim by intention"],
+        ["paracha", "Parashat hashavua"],
+        ["horaires", "Shabbat times"],
+        ["calendrier", "Holiday calendar"],
+        ["zmanim", "Zmanim explained"],
+      ],
+      tagline:
+        "Petite Jérusalem: learning and sharing Torah, together. Free, in French, English and Hebrew.",
+    },
+    he: {
+      links: [
+        ["home", "דף הבית"],
+        ["/share-reading", "קריאה משותפת"],
+        ["/bibliotheque", "ספרייה"],
+        ["/chiourim", "שיעורים"],
+        ["finirLeChass", "לסיים את הש״ס"],
+        ["partageTehilim", "חלוקת תהילים"],
+        ["/tehilim", "תהילים לפי כוונה"],
+        ["paracha", "פרשת השבוע"],
+        ["horaires", "זמני שבת"],
+        ["calendrier", "לוח החגים"],
+        ["zmanim", "זמני היום ההלכתיים"],
+      ],
+      tagline: "פטיט ירושלים: ללמוד ולחלוק תורה, יחד. בחינם, בצרפתית, באנגלית ובעברית.",
+    },
+  };
+
+/** Le pied de page d'une langue. */
+export function footerHtml(locale: Locale = "fr"): string {
+  const { links, tagline } = FOOTER_STRINGS[locale];
+  const nav = links
+    .map(([target, label]) => {
+      const href = target.startsWith("/") ? target : sectionPath(target as SeoSection, locale);
+      return `<a href="${href}">${label}</a>`;
+    })
+    .join("\n      ");
+  return `
   <footer class="seo-footer" role="contentinfo">
-    <nav aria-label="Navigation du site">
-      <a href="/">Accueil</a>
-      <a href="/share-reading">Partage de lectures</a>
-      <a href="/bibliotheque">Bibliothèque</a>
-      <a href="/chiourim">Chiourim</a>
-      <a href="/finir-le-chass">Finir le Chass</a>
-      <a href="/partage-tehilim">Partage de Tehilim</a>
-      <a href="/tehilim">Tehilim par intention</a>
-      <a href="/paracha">Paracha de la semaine</a>
-      <a href="/horaires">Horaires de Chabbat</a>
-      <a href="/calendrier">Calendrier des fêtes</a>
-      <a href="/zmanim">Les zmanim expliqués</a>
+    <nav aria-label="${locale === "he" ? "ניווט באתר" : locale === "en" ? "Site navigation" : "Navigation du site"}">
+      ${nav}
     </nav>
-    <p>Petite Jérusalem : étudier et partager la Torah, ensemble. Gratuit, en français, en anglais et en hébreu.</p>
+    <p>${tagline}</p>
   </footer>`;
+}
+
+/** Le pied de page français, pour les consommateurs historiques et les tests. */
+export const staticFooterHtml = footerHtml("fr");
 
 // ---- Pages backed by an existing Vue view (static body = pre-paint) -----
+
+/**
+ * L'accueil anglais et hébreu (/en, /he).
+ *
+ * L'accueil français reste dans `appPages`, à la racine : c'est l'historique,
+ * et le x-default. Les deux autres sont écrits ici, avec les liens de leur
+ * langue quand la section est traduite, et les adresses uniques sinon
+ * (bibliothèque, chiourim, partage de lectures).
+ */
+const HOME_STRINGS: Record<
+  "en" | "he",
+  { title: string; description: string; body: (l: Record<string, string>) => string }
+> = {
+  en: {
+    title: "Petite Jérusalem | Learn and share Torah together, and finish the Shas",
+    description:
+      "A free platform to learn and share Torah together: split the Talmud to finish the Shas, read Tehillim together for a refuah shelemah or in someone's memory, and follow the progress through to the siyum.",
+    body: (l) => `
+  <main class="seo-article">
+    <h1>Learning and sharing Torah, together</h1>
+    <p class="seo-lead">
+      Petite Jérusalem is a <strong>free</strong> platform for organising collective learning of
+      Jewish texts. Split a text between several people, reserve your own portions and follow
+      everyone's progress through to the siyum, wherever you are.
+    </p>
+
+    <section class="seo-section">
+      <h2>What can you do here?</h2>
+      <ul class="seo-cards">
+        <li>
+          <h3><a href="/share-reading">Shared readings</a></h3>
+          <p>Create a session, pick a text (Talmud / Gemara, Tehillim, Mishnah, Tanakh) and split
+          the portions between the participants.</p>
+        </li>
+        <li>
+          <h3><a href="/bibliotheque">Library</a></h3>
+          <p>Read Tehillim, Mishnah, Talmud and Tanakh online, in Hebrew with transliteration.</p>
+        </li>
+        <li>
+          <h3><a href="/chiourim">Shiurim</a></h3>
+          <p>Listen to Torah classes shared by the community, by rav or by topic.</p>
+        </li>
+        <li>
+          <h3><a href="${l.horaires}">Shabbat times</a></h3>
+          <p>Candle lighting and havdalah times for your city, all the
+          <a href="${l.zmanim}">zmanim of the day</a> and the
+          <a href="${l.calendrier}">Jewish holiday calendar</a> with its dates.</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="seo-section">
+      <h2>Built for learning together</h2>
+      <ul>
+        <li><a href="${l.finirLeChass}">Finish the Shas together</a>: split the masechtot and dapim of the Talmud Bavli through to the siyum haShas.</li>
+        <li><a href="${l.partageTehilim}">Share Tehillim</a>: split the 150 Psalms for a refuah shelemah, an iluy neshamah or for someone's success.</li>
+        <li>Organise learning in someone's memory, for a hilula or for the success of an event.</li>
+        <li><a href="${l.paracha}">The weekly parasha</a>, with its text and the times of that Shabbat.</li>
+      </ul>
+      <p><a class="seo-cta" href="/share-reading">Create a shared reading</a></p>
+    </section>
+  </main>`,
+  },
+  he: {
+    title: "פטיט ירושלים | ללמוד ולחלוק תורה יחד, ולסיים את הש״ס",
+    description:
+      "פלטפורמה חינמית ללימוד ולחלוקת תורה יחד: חלוקת הש״ס לסיום משותף, קריאת תהילים לרפואה שלמה או לעילוי נשמה, ומעקב אחר ההתקדמות עד הסיום.",
+    body: (l) => `
+  <main class="seo-article">
+    <h1>ללמוד ולחלוק תורה, יחד</h1>
+    <p class="seo-lead">
+      פטיט ירושלים היא פלטפורמה <strong>חינמית</strong> לארגון לימוד משותף של מקורות יהודיים.
+      חלקו טקסט בין כמה אנשים, הזמינו את החלקים שלכם ועקבו אחר ההתקדמות של כולם עד הסיום, מכל
+      מקום.
+    </p>
+
+    <section class="seo-section">
+      <h2>מה אפשר לעשות כאן?</h2>
+      <ul class="seo-cards">
+        <li>
+          <h3><a href="/share-reading">קריאה משותפת</a></h3>
+          <p>פתחו מפגש, בחרו טקסט (תלמוד, תהילים, משנה, תנ״ך) וחלקו את החלקים בין המשתתפים.</p>
+        </li>
+        <li>
+          <h3><a href="/bibliotheque">ספרייה</a></h3>
+          <p>קראו תהילים, משנה, תלמוד ותנ״ך אונליין, בעברית ובתעתיק.</p>
+        </li>
+        <li>
+          <h3><a href="/chiourim">שיעורים</a></h3>
+          <p>האזינו לשיעורי תורה שהקהילה שיתפה, לפי רב או לפי נושא.</p>
+        </li>
+        <li>
+          <h3><a href="${l.horaires}">זמני שבת</a></h3>
+          <p>זמני הדלקת נרות וצאת השבת בעיר שלכם, כל <a href="${l.zmanim}">זמני היום</a>
+          ו<a href="${l.calendrier}">לוח החגים</a> עם התאריכים.</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="seo-section">
+      <h2>בנוי ללימוד משותף</h2>
+      <ul>
+        <li><a href="${l.finirLeChass}">לסיים את הש״ס יחד</a>: חלוקת המסכתות והדפים של התלמוד הבבלי עד סיום הש״ס.</li>
+        <li><a href="${l.partageTehilim}">חלוקת תהילים</a>: חלוקת 150 הפרקים לרפואה שלמה, לעילוי נשמה או להצלחה.</li>
+        <li>ארגון לימוד לעילוי נשמה, להילולא או להצלחת אירוע.</li>
+        <li><a href="${l.paracha}">פרשת השבוע</a>, עם הטקסט שלה וזמני אותה שבת.</li>
+      </ul>
+      <p><a class="seo-cta" href="/share-reading">פתיחת מפגש קריאה משותפת</a></p>
+    </section>
+  </main>`,
+  },
+};
+
+/** L'accueil anglais et hébreu, à leur adresse préfixée. */
+const localizedHomePages: SeoPage[] = (["en", "he"] as const).map((locale) => {
+  const s = HOME_STRINGS[locale];
+  const path = sectionPath("home", locale);
+  const links = Object.fromEntries(
+    (
+      ["horaires", "calendrier", "zmanim", "paracha", "finirLeChass", "partageTehilim"] as const
+    ).map((section) => [section, sectionPath(section, locale)]),
+  );
+  return {
+    file: fileForPath(path),
+    path,
+    locale,
+    alternates: alternatesOf("home"),
+    title: s.title,
+    description: s.description,
+    sitemap: { priority: 0.9, changefreq: "weekly" },
+    bodyHtml: s.body(links),
+    jsonLd: [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        name: SITE_NAME,
+        url: `${SITE_URL}${path}`,
+        applicationCategory: "LifestyleApplication",
+        operatingSystem: "Web",
+        inLanguage: locale,
+        offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+        description: s.description,
+      },
+    ],
+  };
+});
 
 export const appPages: SeoPage[] = [
   {
     file: "index.html",
     path: "/",
+    locale: "fr",
+    // L'accueil existe dans les trois langues : il doit déclarer ses sœurs,
+    // sinon /en et /he restent invisibles depuis la page la plus visitée.
+    alternates: alternatesOf("home"),
     title: "Petite Jérusalem | Partager l'étude de la Torah et finir le Chass à plusieurs",
     description:
       "Plateforme gratuite pour étudier et partager la Torah à plusieurs : répartissez le Talmud pour finir le Chass, lisez les Tehilim à plusieurs pour une refoua chelema ou à la mémoire d'un proche, suivez la progression jusqu'au siyoum.",
@@ -1929,173 +2145,67 @@ function buildTehilimHub(): SeoPage {
 //
 // Pages explicatives, sans heure calculée : elles répondent aux recherches
 // « c'est quoi alot hachahar », « à quelle heure finit le Chéma », « plag
-// hamin'ha » que les pages d'horaires ne peuvent pas porter (elles portent
-// des heures, pas des définitions). Le contenu vit ici, dans seoPages.ts, et
-// non dans zmanimSeoPages.ts : rien à calculer, donc rien qui demande hebcal.
-// Français seulement pour l'instant, comme les pages Tehilim par intention.
+// hamin'ha » que les pages d'horaires ne peuvent pas porter (elles portent des
+// heures, pas des définitions). Le contenu vit ici, dans seoPages.ts, et non
+// dans zmanimSeoPages.ts : rien à calculer, donc rien qui demande hebcal.
+//
+// Les trois langues, chacune à son adresse (/zmanim, /en/zmanim, /he/zmanim) :
+// le texte est écrit dans chaque langue, pas transposé du français, parce
+// qu'on ne cherche pas « fin du Chéma » en anglais mais « sof zman shema ».
 
-const ZMANIM_GUIDE_PATH = "/zmanim";
-
-const ZMANIM_FAQ: { q: string; a: string }[] = [
-  {
-    q: "Qu'est-ce que les zmanim ?",
-    a: "Les zmanim sont les heures de la journée qui commandent la pratique : l'aube, le lever du soleil, la limite pour dire le Chéma et la Amida, le milieu du jour, les moments de Min'ha, le coucher du soleil et la sortie des étoiles. Ils suivent le soleil, pas l'horloge : ils changent chaque jour et d'un lieu à l'autre.",
-  },
-  {
-    q: "Qu'est-ce qu'une heure zmanit (cha'a zmanit) ?",
-    a: "Le jour halakhique est divisé en douze parts égales, quelle que soit sa longueur : ces douzièmes sont les heures zmaniot. En été une heure zmanit dépasse soixante minutes, en hiver elle est plus courte. C'est pourquoi « la troisième heure du jour » ne tombe jamais à la même heure de la montre.",
-  },
-  {
-    q: "A quelle heure faut-il dire le Chéma du matin ?",
-    a: "Le Chéma se dit jusqu'à la fin de la troisième heure zmanit de la journée. Deux opinions donnent deux limites : le Maguen Avraham, qui compte le jour de l'aube à la nuit, et le Gaon de Vilna, qui le compte du lever au coucher du soleil. L'écart atteint facilement une demi-heure ; les deux heures sont affichées côte à côte.",
-  },
-  {
-    q: "Quelle différence entre le Maguen Avraham et le Gaon de Vilna ?",
-    a: "Les deux découpent le jour en douze heures égales, mais pas le même jour : le Maguen Avraham le fait courir de l'aube (72 minutes avant le lever du soleil) à la tombée de la nuit, le Gaon de Vilna du lever au coucher du soleil. Le jour du Maguen Avraham est donc plus long, et ses limites du matin tombent plus tôt.",
-  },
-  {
-    q: "Qu'est-ce que le plag hamin'ha ?",
-    a: "Le plag hamin'ha est le milieu de la dernière portion de l'après-midi, une heure et quart zmanit avant la fin du jour. C'est la limite à partir de laquelle on peut, selon l'opinion qui le permet, dire Arvit et accueillir Chabbat par anticipation.",
-  },
-  {
-    q: "A partir de quand peut-on dire Min'ha ?",
-    a: "Min'ha guedola ouvre le temps de Min'ha, une demi-heure zmanit après le milieu du jour ('hatsot). Min'ha ketana, deux heures et demie zmaniot avant la nuit, est le moment privilégié pour la dire.",
-  },
-  {
-    q: "Quelle différence entre la chkia et le tsét haKokhavim ?",
-    a: "La chkia est le coucher du soleil, le tsét haKokhavim la sortie des étoiles, quand la nuit est faite. Entre les deux se place le bein hachmachot, un intervalle de statut douteux : c'est pourquoi Chabbat commence avant la chkia et ne se termine qu'au tsét.",
-  },
-  {
-    q: "Qu'est-ce qu'alot haCha'har et misheyakir ?",
-    a: "Alot haCha'har est l'aube, le premier jour dans le ciel : le jour halakhique commence là. Misheyakir vient ensuite, quand la lumière suffit à reconnaître un visage familier : c'est l'heure à partir de laquelle on met le talit et les téfilines.",
-  },
-  {
-    q: "A quelle heure allume-t-on les bougies de Chabbat ?",
-    a: "Dix-huit minutes avant le coucher du soleil dans la plupart des communautés, quarante minutes à Jérusalem. Chabbat se termine à la sortie des étoiles, le moment de la havdala. Les heures de votre ville sont sur la page des horaires.",
-  },
-  {
-    q: "Comment ces horaires sont-ils calculés ?",
-    a: "Par la position du soleil à vos coordonnées, au niveau de la mer : l'aube et la sortie des étoiles par la hauteur du soleil sous l'horizon (16,1° pour alot, 11,5° pour misheyakir, 8,5° pour le tsét), les limites du matin et de l'après-midi en heures zmaniot. Tout le calcul se fait sur votre appareil, sans connexion, et votre position ne part nulle part. Pour la pratique, suivez les horaires de votre communauté.",
-  },
-];
-
-const ZMANIM_GUIDE_BODY = `
-  <main class="seo-article">
-    <h1>Les zmanim expliqués : tous les horaires halakhiques de la journée</h1>
-    <p class="seo-lead">
-      Alot haCha'har, misheyakir, le netz, la fin du Chéma et de la Amida, 'hatsot, min'ha
-      guedola et ketana, le plag hamin'ha, la chkia, le tsét haKokhavim : ce que chacun de ces
-      horaires marque, comment il se calcule, et où le trouver pour votre ville. Les heures du
-      jour, elles, sont sur la page des <a href="/horaires">horaires</a>.
-    </p>
-
+/** Une page de fond, dans une langue, à son adresse. */
+function buildGuidePage(locale: Locale): SeoPage {
+  const path = sectionPath("zmanim", locale);
+  const s = ZMANIM_GUIDE[locale]({
+    horaires: sectionPath("horaires", locale),
+    calendrier: sectionPath("calendrier", locale),
+  });
+  const sections = s.sections
+    .map(
+      (section) => `
     <section class="seo-section">
-      <h2>Le jour halakhique et les heures zmaniot</h2>
-      <p>Les zmanim ne suivent pas l'horloge mais le soleil. Le jour halakhique est divisé en
-      douze parts égales, les <strong>heures zmaniot</strong> (cha'ot zmaniot) : longues l'été,
-      courtes l'hiver. « La troisième heure du jour » ne tombe donc jamais à la même heure de la
-      montre, et change d'une ville à l'autre.</p>
-      <p>Deux écoles découpent ce jour différemment. Le <strong>Maguen Avraham</strong> le fait
-      courir de l'aube à la tombée de la nuit ; le <strong>Gaon de Vilna</strong> du lever au
-      coucher du soleil. Là où la pratique les distingue vraiment, la fin du Chéma et la fin de
-      la Amida, les deux heures sont données côte à côte.</p>
-    </section>
+      <h2>${section.h2}</h2>
+      ${section.html}
+    </section>`,
+    )
+    .join("\n");
 
-    <section class="seo-section">
-      <h2>L'aube et le lever</h2>
-      <p><strong>Alot haCha'har</strong> : l'aube, quand le soleil est à 16,1° sous l'horizon.
-      Le jour halakhique commence là ; c'est aussi le début des jeûnes qui ne commencent pas la
-      veille au soir.</p>
-      <p><strong>Misheyakir</strong> : le soleil à 11,5° sous l'horizon, quand la lumière suffit
-      à reconnaître un visage familier. C'est l'heure à partir de laquelle on met le talit et les
-      téfilines.</p>
-      <p><strong>Netz haHama</strong> : le lever du soleil. Dire la Amida de Cha'harit juste à
-      cet instant est le meilleur usage (la prière des vatikin).</p>
-    </section>
-
-    <section class="seo-section">
-      <h2>Les limites du matin</h2>
-      <p><strong>Fin du Chéma</strong> : la fin de la troisième heure zmanit. Passé ce moment, on
-      lit encore le Chéma, mais on n'accomplit plus l'obligation de sa lecture au temps voulu.</p>
-      <p><strong>Fin de la Amida</strong> : la fin de la quatrième heure zmanit, dernière limite
-      pour la prière du matin.</p>
-      <p>Chacune de ces deux limites est donnée selon le Maguen Avraham (plus tôt) et selon le
-      Gaon de Vilna.</p>
-    </section>
-
-    <section class="seo-section">
-      <h2>L'après-midi</h2>
-      <p><strong>'Hatsot</strong> : le milieu du jour, à mi-chemin exact du lever et du coucher
-      du soleil.</p>
-      <p><strong>Min'ha guedola</strong> : une demi-heure zmanit après 'hatsot, l'ouverture du
-      temps de Min'ha.</p>
-      <p><strong>Min'ha ketana</strong> : deux heures et demie zmaniot avant la fin du jour, le
-      moment privilégié pour dire Min'ha.</p>
-      <p><strong>Plag hamin'ha</strong> : une heure et quart zmanit avant la fin du jour. C'est
-      la limite à partir de laquelle on peut, selon l'opinion qui le permet, dire Arvit et
-      accueillir Chabbat par anticipation.</p>
-    </section>
-
-    <section class="seo-section">
-      <h2>Le soir et la nuit</h2>
-      <p><strong>Chkia</strong> : le coucher du soleil, la fin du jour.</p>
-      <p><strong>Bein hachmachot</strong> : l'intervalle entre la chkia et la nuit, de statut
-      douteux. C'est pour l'enjamber que Chabbat commence avant la chkia et ne se termine qu'à
-      la nuit faite.</p>
-      <p><strong>Tsét haKokhavim</strong> : la sortie des étoiles, le soleil à 8,5° sous
-      l'horizon. C'est l'heure d'Arvit, la fin de Chabbat et des fêtes, la fin des jeûnes.</p>
-      <p><strong>'Hatsot de la nuit</strong> : le milieu de la nuit, le moment des Sli'hot et du
-      Tikoun 'Hatsot.</p>
-    </section>
-
-    <section class="seo-section">
-      <h2>Chabbat et les fêtes</h2>
-      <p>L'entrée de Chabbat est fixée <strong>18 minutes avant la chkia</strong> dans la plupart
-      des communautés, et <strong>40 minutes à Jérusalem</strong>, où l'usage local est plus
-      large. La sortie est au tsét haKokhavim, le moment de la havdala.</p>
-      <p>Les heures de votre ville sont sur la page des <a href="/horaires">horaires de
-      Chabbat</a>, semaine par semaine et ville par ville, et les dates des fêtes sur le
-      <a href="/calendrier">calendrier des fêtes juives</a>.</p>
-    </section>
-
-    <section class="seo-section">
-      <h2>Comment nous les calculons</h2>
-      <p>Par la position du soleil à vos coordonnées, au niveau de la mer. Le calcul se fait
-      entièrement <strong>sur votre appareil</strong> : il fonctionne sans connexion, et votre
-      position ne part nulle part. Pour la pratique, suivez les horaires de votre communauté :
-      les usages locaux priment sur un calcul astronomique.</p>
-    </section>
-
-    ${faqHtml(ZMANIM_FAQ, "Questions fréquentes sur les zmanim")}
-  </main>`;
-
-/** Pages de fond, rendues à l'identique par le prérendu et par SeoGuidePage.vue. */
-export const guidePages: SeoPage[] = [
-  {
-    file: "zmanim.html",
-    path: ZMANIM_GUIDE_PATH,
-    title: "Les zmanim expliqués : alot, netz, fin du Chéma, chkia, tsét | Petite Jérusalem",
-    description:
-      "Ce que marque chaque zman : alot haCha'har, misheyakir, le netz, la fin du Chéma et de la Amida (Maguen Avraham et Gaon de Vilna), 'hatsot, min'ha, le plag, la chkia et le tsét haKokhavim.",
+  return {
+    file: fileForPath(path),
+    path,
+    locale,
+    alternates: alternatesOf("zmanim"),
+    title: s.title,
+    description: s.description,
     sitemap: { priority: 0.7, changefreq: "monthly" },
-    bodyHtml: ZMANIM_GUIDE_BODY,
+    bodyHtml: `
+  <main class="seo-article">
+    <h1>${s.h1}</h1>
+    <p class="seo-lead">${s.lead}</p>
+${sections}
+
+    ${faqHtml(s.faq, s.faqHeading)}
+  </main>`,
     jsonLd: [
       breadcrumb([
-        { name: "Accueil", path: "/" },
-        { name: "Les zmanim expliqués", path: ZMANIM_GUIDE_PATH },
+        { name: s.breadcrumbHome, path: sectionPath("home", locale) },
+        { name: s.breadcrumbName, path },
       ]),
-      faqJsonLd(ZMANIM_FAQ),
+      faqJsonLd(s.faq),
       {
         "@context": "https://schema.org",
         "@type": "Article",
-        headline: "Les zmanim expliqués : tous les horaires halakhiques de la journée",
-        inLanguage: "fr",
-        mainEntityOfPage: `${SITE_URL}${ZMANIM_GUIDE_PATH}`,
+        headline: s.headline,
+        inLanguage: s.lang,
+        mainEntityOfPage: `${SITE_URL}${path}`,
         publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
       },
     ],
-  },
-];
+  };
+}
+
+/** Pages de fond, rendues à l'identique par le prérendu et par SeoGuidePage.vue. */
+export const guidePages: SeoPage[] = SEO_LOCALES.map(buildGuidePage);
 
 export const tehilimHub: SeoPage = buildTehilimHub();
 export const tehilimIntentionPages: SeoPage[] = INTENTIONS.map(buildIntention);
@@ -2105,6 +2215,7 @@ export const tehilimPages: SeoPage[] = [tehilimHub, ...tehilimIntentionPages];
 /** All pages that the prerender script turns into static HTML files. */
 export const allPages: SeoPage[] = [
   ...appPages,
+  ...localizedHomePages,
   ...landingAsSeoPages,
   ...tehilimPages,
   ...guidePages,
@@ -2217,7 +2328,7 @@ function injectAlternates(html: string, alternates?: Alternates): string {
 export function injectBody(template: string, page: SeoPage): string {
   let html = template;
 
-  const body = `${page.bodyHtml}\n${staticFooterHtml}`;
+  const body = `${page.bodyHtml}\n${footerHtml(page.locale ?? DEFAULT_SEO_LOCALE)}`;
   // The built shell ships an empty `<div id="app"></div>`; fill it so non-JS
   // crawlers see the content. Vue clears and re-renders #app on mount.
   html = html.replace(/(<div id="app">)(<\/div>)/, (_m, open, close) => `${open}${body}${close}`);

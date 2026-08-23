@@ -18,6 +18,15 @@ Mots-clés : partage de lecture, partage d'étude, finir le Chass, terminer le T
 - [Paracha de la semaine](https://petite-jerusalem.fr/paracha) : la paracha lue ce Chabbat, le calendrier daté des 54 parachiot, et le texte de chacune en hébreu et en phonétique.
 - [Les zmanim expliqués](https://petite-jerusalem.fr/zmanim) : ce que marque chaque horaire halakhique (alot haCha'har, misheyakir, netz, fin du Chéma et de la Amida selon le Maguen Avraham et le Gaon de Vilna, 'hatsot, min'ha guedola et ketana, plag hamin'ha, chkia, tsét haKokhavim) et comment il se calcule.
 
+## Langues
+
+Le site existe en français, en anglais et en hébreu, avec une adresse par langue :
+le français à la racine, l'anglais sous /en et l'hébreu sous /he, segments traduits
+(https://petite-jerusalem.fr/en/shabbat-times/lyon, https://petite-jerusalem.fr/he/zmanei-shabbat/lyon,
+https://petite-jerusalem.fr/en/holidays/passover, https://petite-jerusalem.fr/he/chagim/pesach).
+Les pages d'horaires, le calendrier des fêtes, les pages par fête, les zmanim expliqués,
+la paracha de la semaine et les pages d'atterrissage existent dans les trois langues.
+
 ## En bref
 
 - Gratuit, sans publicité.

@@ -621,45 +621,45 @@ const en: LocaleMessages = {
     remaining: "Remaining",
   },
   seo: {
-    homeTitle: "Petite Jérusalem | Shared Torah reading and study",
+    homeTitle: "Petite Jérusalem {'|'} Shared Torah reading and study",
     homeDescription:
       "Create and join shared Torah reading and study sessions. Reserve texts, study together and track your progress, free and online.",
-    loginTitle: "Login | Petite Jérusalem",
+    loginTitle: "Login {'|'} Petite Jérusalem",
     loginDescription:
       "Sign in to create shared reading sessions, reserve texts and track your studies.",
-    profileTitle: "My Profile | Petite Jérusalem",
+    profileTitle: "My Profile {'|'} Petite Jérusalem",
     profileDescription:
       "Manage your information, view your participated and created study sessions.",
-    zmanimTitle: "Zmanim: Shema, sunset and Shabbat times | Petite Jérusalem",
-    calendarTitle: "Jewish holiday calendar: dates and times | Petite Jérusalem",
+    zmanimTitle: "Zmanim: Shema, sunset and Shabbat times {'|'} Petite Jérusalem",
+    calendarTitle: "Jewish holiday calendar: dates and times {'|'} Petite Jérusalem",
     calendarDescription:
       "The festivals and fasts of the Hebrew year, with their dates and, for each festival, candle lighting and end times computed for your location.",
     zmanimDescription:
       "The halachic times of the day computed for your location: alot hashachar, sunrise, latest Shema, chatzot, mincha, sunset, nightfall, candle lighting and Shabbat end.",
-    zmanimCityTitle: "Shabbat times in {city}: candle lighting and havdalah | Petite Jérusalem",
+    zmanimCityTitle: "Shabbat times in {city}: candle lighting and havdalah {'|'} Petite Jérusalem",
     zmanimCityDescription:
       "Candle lighting and Shabbat end times in {city}, week by week, plus all the halachic times of the day. Free, works offline.",
-    parashaTitle: "Parashat hashavua: the calendar of parashiot and their texts | Petite Jérusalem",
+    parashaTitle: "Parashat hashavua: the calendar of parashiot and their texts {'|'} Petite Jérusalem",
     parashaDescription:
       "The parasha read this Shabbat, the dated calendar of all 54 parashiot, and the text of each one in Hebrew and transliteration.",
-    festivalTitle: "{festival}: dates, start and end times | Petite Jérusalem",
+    festivalTitle: "{festival}: dates, start and end times {'|'} Petite Jérusalem",
     festivalDescription:
       "When is {festival}? The dates of {festival} over several years, with the start and end times of the festival, computed for your location.",
-    dailyReadingTitle: "My daily reading | Petite Jérusalem",
+    dailyReadingTitle: "My daily reading {'|'} Petite Jérusalem",
     dailyReadingDescription:
       "Find your daily reading texts every day: Tehilim, the weekly parasha and your chosen texts, with progress tracking.",
-    notFoundTitle: "Page not found | Petite Jérusalem",
+    notFoundTitle: "Page not found {'|'} Petite Jérusalem",
     notFoundDescription: "The requested page does not exist.",
-    shareReadingTitle: "Shared Torah reading and study | Petite Jérusalem",
+    shareReadingTitle: "Shared Torah reading and study {'|'} Petite Jérusalem",
     shareReadingDescription:
       "Discover and create shared Torah reading and study sessions. Reserve texts, study together and move forward with the community.",
-    newSessionTitle: "Create a shared reading session | Petite Jérusalem",
+    newSessionTitle: "Create a shared reading session {'|'} Petite Jérusalem",
     newSessionDescription:
       "Create a shared reading or Torah study session and invite the community to study with you.",
-    sessionTitle: "Shared reading session | Petite Jérusalem",
+    sessionTitle: "Shared reading session {'|'} Petite Jérusalem",
     sessionDefaultDescription:
       "Join this shared Torah reading and study session on Petite Jérusalem.",
-    chiourimTitle: "Shiurim | Torah courses and lessons | Petite Jérusalem",
+    chiourimTitle: "Shiurim {'|'} Torah courses and lessons {'|'} Petite Jérusalem",
     chiourimDescription:
       "Listen to shiurim: Torah courses and lessons shared by the community on Petite Jérusalem.",
   },

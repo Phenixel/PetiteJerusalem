@@ -23,6 +23,7 @@ import {
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
 import { findFestivalBySlug, type SeoFestival } from "../../content/zmanimFestivals";
+import { isSectionPath, localeOfPath, sectionPath, type SeoLocale } from "../../content/seoLocales";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const { t, locale } = useI18n();
@@ -130,19 +131,39 @@ const festivalKey = computed(() => {
   const wanted = festival.value;
   if (!wanted) return null;
   const found = entries.value.find(
-    (entry) => cleanName(entry.name) === wanted.name && entry.last.abs() >= today.value,
+    (entry) =>
+      cleanName(entry.name) === wanted.names[calendarLocale.value] &&
+      entry.last.abs() >= today.value,
   );
   return found?.key ?? null;
+});
+
+/**
+ * La langue dans laquelle le calendrier est calculé : celle de l'interface,
+ * ramenée aux trois langues du site. C'est elle qui nomme les fêtes, donc elle
+ * qui sert à reconnaître celle de l'URL.
+ */
+const calendarLocale = computed<SeoLocale>(() => {
+  const code = locale.value as string;
+  return code === "en" || code === "he" ? code : "fr";
 });
 
 /** Le titre et le canonique : /calendrier, ou /calendrier/<fete>. */
 function applyMeta(): void {
   const wanted = festival.value;
-  const url = wanted ? `${SITE_URL}/calendrier/${wanted.slug}` : `${SITE_URL}/calendrier`;
+  // Chaque fête a une adresse par langue : le canonique suit celle de la page
+  // ouverte, et le nom affiché suit la langue de l'interface.
+  const pathLocale = localeOfPath(route.path);
+  const url = `${SITE_URL}${
+    wanted
+      ? sectionPath("calendrier", pathLocale, wanted.slugs[pathLocale])
+      : sectionPath("calendrier", pathLocale)
+  }`;
+  const label = wanted?.labels[calendarLocale.value] ?? "";
   seoService.setMeta({
-    title: wanted ? t("seo.festivalTitle", { festival: wanted.label }) : t("seo.calendarTitle"),
+    title: wanted ? t("seo.festivalTitle", { festival: label }) : t("seo.calendarTitle"),
     description: wanted
-      ? t("seo.festivalDescription", { festival: wanted.label })
+      ? t("seo.festivalDescription", { festival: label })
       : t("seo.calendarDescription"),
     canonical: url,
     og: { url },
@@ -165,7 +186,7 @@ async function applyRouteFestival(): Promise<void> {
   }
   const found = findFestivalBySlug(slug);
   if (!found) {
-    void router.replace("/calendrier");
+    void router.replace(sectionPath("calendrier", localeOfPath(route.path)));
     return;
   }
   festival.value = found;
@@ -183,16 +204,18 @@ async function applyRouteFestival(): Promise<void> {
 watch(
   () => route.params.fete,
   () => {
-    if (route.name === "calendar" || route.name === "calendar-festival") {
-      void applyRouteFestival();
-    }
+    if (isSectionPath(route.path, "calendrier")) void applyRouteFestival();
   },
 );
+
+// Les messages en et he arrivent par import dynamique : le titre se repose
+// quand ils sont là.
+watch(locale, applyMeta);
 
 onMounted(() => {
   revealFromOrigin(root.value);
   void applyRouteFestival();
-  analyticsService.capture("calendar_viewed", { festival: festival.value?.slug ?? null });
+  analyticsService.capture("calendar_viewed", { festival: festival.value?.slugs.fr ?? null });
 });
 </script>
 

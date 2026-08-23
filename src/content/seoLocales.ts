@@ -141,3 +141,14 @@ export function translatePath(path: string, target: SeoLocale): string | null {
   if (!section) return null;
   return sectionPath(section, target, ...segments.slice(1));
 }
+
+/**
+ * Le chemin appartient-il à cette section, dans n'importe quelle langue ?
+ * Sert aux vues, qui servent la même page à trois adresses, et au routeur.
+ */
+export function isSectionPath(path: string, section: SeoSection): boolean {
+  return SEO_LOCALES.some((locale) => {
+    const root = sectionPath(section, locale);
+    return path === root || path.startsWith(`${root}/`);
+  });
+}

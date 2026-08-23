@@ -630,48 +630,48 @@ const fr = {
     remaining: "Restants",
   },
   seo: {
-    homeTitle: "Petite Jérusalem | Partager l'étude de la Torah et finir le Chass à plusieurs",
+    homeTitle: "Petite Jérusalem {'|'} Partager l'étude de la Torah et finir le Chass à plusieurs",
     homeDescription:
       "Plateforme gratuite pour étudier et partager la Torah à plusieurs : répartissez le Talmud pour finir le Chass, lisez les Tehilim à plusieurs pour une refoua chelema ou à la mémoire d'un proche, suivez la progression jusqu'au siyoum.",
-    loginTitle: "Connexion | Petite Jérusalem",
+    loginTitle: "Connexion {'|'} Petite Jérusalem",
     loginDescription:
       "Connectez-vous pour créer des sessions de partage de lectures, réserver des textes et suivre vos études.",
-    profileTitle: "Mon profil | Petite Jérusalem",
+    profileTitle: "Mon profil {'|'} Petite Jérusalem",
     profileDescription:
       "Gérez vos informations, consultez vos sessions d'étude participées et créées.",
-    zmanimTitle: "Horaires de Chabbat : allumage, sortie et zmanim du jour | Petite Jérusalem",
+    zmanimTitle: "Horaires de Chabbat : allumage, sortie et zmanim du jour {'|'} Petite Jérusalem",
     calendarTitle:
-      "Calendrier des fêtes juives : dates, entrée et sortie de chaque fête | Petite Jérusalem",
+      "Calendrier des fêtes juives : dates, entrée et sortie de chaque fête {'|'} Petite Jérusalem",
     calendarDescription:
       "Les dates des fêtes juives (Roch Hachana, Kippour, Souccot, Hanouka, Pourim, Pessah, Chavouot) et des jeûnes, avec l\u2019heure d\u2019entrée et de sortie de chaque fête, calculées pour votre position.",
     zmanimDescription:
       "L\u2019heure d\u2019allumage des bougies et de sortie de Chabbat, et tous les zmanim du jour calculés pour votre position : alot haCha'har, netz, fin du Chéma, 'hatsot, min'ha, chkia, tsét haKokhavim.",
-    zmanimCityTitle: "Horaires de Chabbat à {city} : allumage et sortie | Petite Jérusalem",
+    zmanimCityTitle: "Horaires de Chabbat à {city} : allumage et sortie {'|'} Petite Jérusalem",
     zmanimCityDescription:
       "L\u2019heure d\u2019allumage des bougies (entrée de Chabbat) et l\u2019heure de sortie de Chabbat à {city}, semaine par semaine, et tous les zmanim du jour. Gratuit, hors ligne.",
     parashaTitle:
-      "Paracha de la semaine : le calendrier des parachiot et leurs textes | Petite Jérusalem",
+      "Paracha de la semaine : le calendrier des parachiot et leurs textes {'|'} Petite Jérusalem",
     parashaDescription:
       "La paracha lue ce Chabbat, le calendrier daté des 54 parachiot, et le texte de chacune en hébreu et en phonétique.",
-    festivalTitle: "{festival} : dates, heure d\u2019entrée et de sortie | Petite Jérusalem",
+    festivalTitle: "{festival} : dates, heure d\u2019entrée et de sortie {'|'} Petite Jérusalem",
     festivalDescription:
       "Quand tombe {festival} ? Les dates de {festival} sur plusieurs années, avec l\u2019heure d\u2019entrée et de sortie, calculées pour votre position.",
-    dailyReadingTitle: "Ma lecture du jour | Petite Jérusalem",
+    dailyReadingTitle: "Ma lecture du jour {'|'} Petite Jérusalem",
     dailyReadingDescription:
       "Retrouvez chaque jour les textes de votre lecture quotidienne : Tehilim, paracha de la semaine et vos textes choisis, avec suivi de progression.",
-    notFoundTitle: "Page non trouvée | Petite Jérusalem",
+    notFoundTitle: "Page non trouvée {'|'} Petite Jérusalem",
     notFoundDescription: "La page demandée n'existe pas.",
     shareReadingTitle:
-      "Partage de lectures : organiser une étude de Torah à plusieurs | Petite Jérusalem",
+      "Partage de lectures : organiser une étude de Torah à plusieurs {'|'} Petite Jérusalem",
     shareReadingDescription:
       "Créez une session de partage : choisissez un texte (Talmud, Tehilim, Michna, Tanakh), répartissez les passages entre les participants, partagez le lien et suivez la progression du limoud jusqu'au siyoum.",
-    newSessionTitle: "Créer une session de partage de lecture | Petite Jérusalem",
+    newSessionTitle: "Créer une session de partage de lecture {'|'} Petite Jérusalem",
     newSessionDescription:
       "Créez une session de partage de lecture ou d'étude de Torah et invitez la communauté à étudier avec vous.",
-    sessionTitle: "Session de partage de lecture | Petite Jérusalem",
+    sessionTitle: "Session de partage de lecture {'|'} Petite Jérusalem",
     sessionDefaultDescription:
       "Rejoignez cette session de partage de lecture et d'étude de Torah sur Petite Jérusalem.",
-    chiourimTitle: "Chiourim | Cours et leçons de Torah | Petite Jérusalem",
+    chiourimTitle: "Chiourim {'|'} Cours et leçons de Torah {'|'} Petite Jérusalem",
     chiourimDescription:
       "Écoutez des chiourim : cours et leçons de Torah partagés par la communauté sur Petite Jérusalem.",
   },

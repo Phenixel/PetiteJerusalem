@@ -18,6 +18,63 @@ How the site is made findable by search engines **and** AI assistants
    search "finir le Chass", "répartir les Tehilim", "refoua chelema". → Copy and
    landing pages rewritten around those real terms.
 
+## One URL per language
+
+The site is written in French, English and Hebrew, but for a long time it had
+**one URL per page**, with the language picked in the browser (localStorage,
+then `navigator.language`). Googlebot got the French version and had no way to
+discover the other two: no address carried them. The English and Hebrew
+translations of the landing pages already existed in `seoPages.ts` and were
+served to nobody.
+
+The standard scheme now applies, driven by `src/content/seoLocales.ts`:
+
+- French stays at the root (it is the historical set of URLs, and the
+  `x-default`); English and Hebrew take a prefix, and the segments are
+  translated, because an English speaker searches "shabbat times", not
+  "horaires":
+
+  | fr                   | en                       | he                        |
+  | -------------------- | ------------------------ | ------------------------- |
+  | `/horaires/lyon`     | `/en/shabbat-times/lyon` | `/he/zmanei-shabbat/lyon` |
+  | `/calendrier/pessah` | `/en/holidays/passover`  | `/he/chagim/pesach`       |
+  | `/paracha`           | `/en/parasha`            | `/he/parasha`             |
+  | `/finir-le-chass`    | `/en/finish-the-shas`    | `/he/siyum-hashas`        |
+
+  City slugs are **not** translated: proper nouns, and one slug per city means
+  one catalogue instead of three that would drift.
+
+- The prerender writes `lang` and `dir` on the document (`dir="rtl"` for
+  Hebrew), the page's own `og:locale`, and the crossed `hreflang` links in the
+  `<head>` and in `sitemap.xml` (`xhtml:link`). A page that does not exist in a
+  language simply is not declared in it, rather than promising a translation
+  that isn't there.
+- The router's localized routes are generated from the very same table, so a
+  segment can never drift between the router and the generated files. A
+  prefixed URL forces its language (`router.beforeEach`, awaiting the locale
+  chunk so the title isn't French for a moment); unprefixed URLs touch nothing,
+  so the historical behavior is unchanged.
+- The language picker follows the address: on a translated page it navigates to
+  the sibling URL, elsewhere it just swaps the text.
+
+Translated today: the home page, the landing + legal pages (their `en`/`he`
+content already existed), `/horaires` and its 242 city pages, `/calendrier` and
+its 15 festival pages, `/zmanim` and `/paracha`. The Tehilim-by-intention pages
+and the ~1200 Bibliotheque reading pages stay French-only for now, and declare
+no `hreflang` at all rather than a false one.
+
+The generated families keep their sentences in `zmanimSeoStrings.ts`,
+`zmanimGuideStrings.ts` and `parashaStrings.ts`, one written set per language
+(not a literal transposition: "sof zman shema" is what is searched in English).
+City and country names live in `zmanimCities.ts`, festival names and slugs in
+`zmanimFestivals.ts`.
+
+**Page titles and the pipe.** Runtime titles go through `t()`, and vue-i18n
+reads `|` as a plural separator: every `seo.*Title` was being truncated at the
+first pipe, so "Petite Jerusalem | Partager…" shipped as "Petite Jerusalem".
+The messages in the `seo` block therefore escape it (`{'|'}`), and
+`src/__tests__/seoTitles.test.ts` holds the line.
+
 ## How prerendering works
 
 The app is a Vue SPA on Firebase Hosting. We do **not** run runtime SSR (the app

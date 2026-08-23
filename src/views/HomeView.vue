@@ -1,8 +1,19 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
-import { onMounted, onUnmounted, ref, computed, defineAsyncComponent, type Component } from "vue";
+import {
+  onMounted,
+  onUnmounted,
+  ref,
+  computed,
+  defineAsyncComponent,
+  watch,
+  type Component,
+} from "vue";
+import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { seoService } from "../services/seoService";
+import { SITE_URL } from "../config/site";
+import { localeOfPath, sectionPath } from "../content/seoLocales";
 import { localDayKey } from "../services/dateService";
 import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
@@ -29,7 +40,26 @@ const BirkatHalevanaBanner = defineAsyncComponent(
 );
 
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const route = useRoute();
+
+/**
+ * Le titre et le canonique de l'accueil.
+ *
+ * L'accueil existe à trois adresses (/, /en, /he) : le canonique est celui de
+ * celle qui est ouverte, sur le domaine du site et non sur l'origine courante
+ * (qui vaut localhost en préversion). Rejoué quand la langue change : les
+ * messages en et he arrivent par import dynamique, parfois après le montage.
+ */
+function applyHomeMeta(): void {
+  const url = `${SITE_URL}${sectionPath("home", localeOfPath(route.path))}`;
+  seoService.setMeta({
+    title: t("seo.homeTitle"),
+    description: t("seo.homeDescription"),
+    canonical: url,
+    og: { url },
+  });
+}
 
 const user = ref<User | null>(null);
 let unsubscribeAuth: (() => void) | null = null;
@@ -158,14 +188,10 @@ onMounted(() => {
       readingDone.value = 0;
     }
   });
-  const url = window.location.origin + "/";
-  seoService.setMeta({
-    title: t("seo.homeTitle"),
-    description: t("seo.homeDescription"),
-    canonical: url,
-    og: { url },
-  });
+  applyHomeMeta();
 });
+
+watch([locale, () => route.path], applyHomeMeta);
 
 onUnmounted(() => {
   unsubscribeAuth?.();

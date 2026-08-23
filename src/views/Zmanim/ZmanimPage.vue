@@ -37,7 +37,8 @@ import {
   type ZmanTime,
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
-import { citySlug, findCityBySlug } from "../../content/zmanimCities";
+import { cityName, citySlug, findCityBySlug } from "../../content/zmanimCities";
+import { isSectionPath, localeOfPath, sectionPath } from "../../content/seoLocales";
 import RestTimes from "./RestTimes.vue";
 
 // Chargé à la demande : le sélecteur embarque la liste des villes, inutile
@@ -115,9 +116,7 @@ const isNext = (zman: ZmanTime) => upcoming.value?.key === zman.key;
 // « dans 2 h 15 » sous le prochain horaire, comme sur la carte de l'accueil :
 // l'heure dit quand, le décompte dit s'il faut se presser.
 const countdown = useZmanCountdown();
-const timeLeft = computed(() =>
-  upcoming.value ? countdown(upcoming.value.date, now.value) : "",
-);
+const timeLeft = computed(() => (upcoming.value ? countdown(upcoming.value.date, now.value) : ""));
 
 const civilDate = computed(() =>
   new Intl.DateTimeFormat(locale.value, {
@@ -177,14 +176,26 @@ const root = ref<HTMLElement | null>(null);
 const route = useRoute();
 const router = useRouter();
 
+/** La ville de l'URL, gardée pour reposer le titre quand la langue change. */
+const routeCity = ref<City | null>(null);
+
 /** Le titre et le canonique de la page : /horaires, ou /horaires/<ville>. */
 function setMeta(city: City | null): void {
-  const url = city ? `${SITE_URL}/horaires/${citySlug(city.name)}` : `${SITE_URL}/horaires`;
+  // La page a une adresse par langue (/horaires, /en/shabbat-times,
+  // /he/zmanei-shabbat) : le canonique suit celle qui est ouverte.
+  const pathLocale = localeOfPath(route.path);
+  const url = `${SITE_URL}${
+    city
+      ? sectionPath("horaires", pathLocale, citySlug(city.name))
+      : sectionPath("horaires", pathLocale)
+  }`;
+  // Le catalogue est en français : « Genève », « Jérusalem ». Le titre d'une
+  // page anglaise doit écrire Geneva, celui d'une page hébraïque ירושלים.
+  const uiLocale = locale.value === "en" || locale.value === "he" ? locale.value : "fr";
+  const name = city ? cityName(city.name, uiLocale) : "";
   seoService.setMeta({
-    title: city ? t("seo.zmanimCityTitle", { city: city.name }) : t("seo.zmanimTitle"),
-    description: city
-      ? t("seo.zmanimCityDescription", { city: city.name })
-      : t("seo.zmanimDescription"),
+    title: city ? t("seo.zmanimCityTitle", { city: name }) : t("seo.zmanimTitle"),
+    description: city ? t("seo.zmanimCityDescription", { city: name }) : t("seo.zmanimDescription"),
     canonical: url,
     og: { url },
   });
@@ -200,15 +211,17 @@ async function applyRouteCity(): Promise<void> {
   const raw = route.params.ville;
   const slug = typeof raw === "string" ? raw.toLowerCase() : "";
   if (!slug) {
+    routeCity.value = null;
     setMeta(null);
     return;
   }
   const { default: cities } = await import("../../datas/cities.json");
   const city = findCityBySlug(cities as City[], slug);
   if (!city) {
-    void router.replace("/horaires");
+    void router.replace(sectionPath("horaires", localeOfPath(route.path)));
     return;
   }
+  routeCity.value = city;
   useCity(city);
   setMeta(city);
 }
@@ -218,9 +231,15 @@ async function applyRouteCity(): Promise<void> {
 watch(
   () => route.params.ville,
   () => {
-    if (route.name === "zmanim" || route.name === "zmanim-city") void applyRouteCity();
+    // La même page sert six adresses (trois langues, avec et sans ville) :
+    // c'est le chemin qui dit si l'on est encore chez elle, pas le nom.
+    if (isSectionPath(route.path, "horaires")) void applyRouteCity();
   },
 );
+
+// Les messages en et he arrivent par import dynamique : le titre se repose
+// quand ils sont là, avec le nom de la ville dans la bonne langue.
+watch(locale, () => setMeta(routeCity.value));
 
 onMounted(() => {
   revealFromOrigin(root.value);

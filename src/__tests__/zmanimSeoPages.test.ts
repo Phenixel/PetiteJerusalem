@@ -1,12 +1,9 @@
 import { describe, expect, it } from "vitest";
-import {
-  FESTIVALS,
-  buildZmanimSeoPages,
-  seoCities,
-  upcomingRestPeriods,
-} from "../content/zmanimSeoPages";
+import { buildZmanimSeoPages, seoCities, upcomingRestPeriods } from "../content/zmanimSeoPages";
 import { COUNTRIES, FEATURED_CITY_NAMES, citySlug, findCityBySlug } from "../content/zmanimCities";
 import { SEO_FESTIVALS, findFestivalBySlug } from "../content/zmanimFestivals";
+import { SEO_LOCALES } from "../content/seoLocales";
+import { ZMANIM_STRINGS } from "../content/zmanimSeoStrings";
 import { buildAppShell, guidePages, staticFooterHtml } from "../content/seoPages";
 import {
   DEFAULT_PLACE,
@@ -147,7 +144,9 @@ describe("zmanimSeoPages pages par ville", () => {
     for (const city of citiesJson as City[]) {
       const country = COUNTRIES[city.country];
       expect(country).toBeDefined();
-      expect(country.where).toMatch(/^(en|au|aux|à) /);
+      expect(country.fr.where).toMatch(/^(en|au|aux|à) /);
+      expect(country.en.where).toMatch(/^in /);
+      expect(country.he.where.startsWith("ב")).toBe(true);
     }
     // L'annuaire du hub titre avec la locution, pas avec un « en » plaqué.
     expect(horaires.bodyHtml).toContain("Horaires de Chabbat au Maroc");
@@ -240,22 +239,27 @@ describe("zmanimSeoPages pages par fête", () => {
 
   it("génère une page par fête déclarée, au bon chemin", () => {
     for (const festival of SEO_FESTIVALS) {
-      const page = pages.find((p) => p.path === `/calendrier/${festival.slug}`);
+      const page = pages.find((p) => p.path === `/calendrier/${festival.slugs.fr}`);
       expect(page).toBeDefined();
-      expect(page!.file).toBe(`calendrier/${festival.slug}.html`);
-      expect(page!.title).toContain(festival.label);
+      expect(page!.file).toBe(`calendrier/${festival.slugs.fr}.html`);
+      expect(page!.title).toContain(festival.labels.fr);
     }
   });
 
-  it("chaque fête a son texte de présentation", () => {
-    for (const festival of FESTIVALS) {
-      expect(festival.intro.length).toBeGreaterThan(80);
+  it("chaque fête a son texte de présentation, dans les trois langues", () => {
+    for (const locale of SEO_LOCALES) {
+      const intros = ZMANIM_STRINGS[locale].festivalIntro;
+      for (const festival of SEO_FESTIVALS) {
+        expect(intros[festival.slugs.fr]?.length ?? 0).toBeGreaterThan(80);
+      }
     }
   });
 
   it("le routeur et le prérendu partagent les mêmes slugs", () => {
     for (const festival of SEO_FESTIVALS) {
-      expect(findFestivalBySlug(festival.slug)).toEqual(festival);
+      for (const locale of SEO_LOCALES) {
+        expect(findFestivalBySlug(festival.slugs[locale])).toEqual(festival);
+      }
     }
     expect(findFestivalBySlug("fete-inconnue")).toBeNull();
   });
@@ -295,7 +299,7 @@ describe("zmanimSeoPages pages par fête", () => {
 
   it("le calendrier lie chaque page de fête", () => {
     for (const festival of SEO_FESTIVALS) {
-      expect(calendrier.bodyHtml).toContain(`href="/calendrier/${festival.slug}"`);
+      expect(calendrier.bodyHtml).toContain(`href="/calendrier/${festival.slugs.fr}"`);
     }
   });
 });

@@ -68,10 +68,12 @@ function makeTextLoader(dist, talmudChapters) {
   };
 }
 
-function writePage(dist, template, { file, path, title, description, bodyHtml, jsonLd }) {
-  const target = join(dist, file);
+// La page est passée entière : `locale` et `alternates` décident du lang, du
+// dir et des hreflang du document, et se perdraient dans une destructuration.
+function writePage(dist, template, page) {
+  const target = join(dist, page.file);
   mkdirSync(dirname(target), { recursive: true });
-  writeFileSync(target, renderPage(template, { file, path, title, description, bodyHtml, jsonLd }), "utf-8");
+  writeFileSync(target, renderPage(template, page), "utf-8");
 }
 
 const fileFor = (path) => `${path.replace(/^\//, "")}.html`;

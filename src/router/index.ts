@@ -3,11 +3,16 @@ import routes from "./routes";
 import { authService } from "../services/authService";
 import { isAdminEmail } from "../config/admin";
 import { isNativeApp } from "../composables/useNativeApp";
-import { DEFAULT_SEO_LOCALE, localeOfPath } from "../content/seoLocales";
+import { DEFAULT_SEO_LOCALE, isSectionPath, localeOfPath } from "../content/seoLocales";
 import { applyLocale, type SupportedLocale } from "../i18n";
 
-/** App native : pages posées en surcouche au-dessus de la page en cours (App.vue). */
-const isOverlayPath = (path: string) => /^\/(horaires|calendrier)/.test(path);
+/**
+ * App native : pages posées en surcouche au-dessus de la page en cours
+ * (App.vue). Les horaires et le calendrier ont une adresse par langue : la
+ * reconnaissance passe par la table des sections, pas par le chemin français.
+ */
+const isOverlayPath = (path: string) =>
+  isSectionPath(path, "horaires") || isSectionPath(path, "calendrier");
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -31,9 +36,12 @@ const router = createRouter({
 // indexée, et un visiteur venu d'un moteur doit voir la page dans la langue
 // qu'il a cliquée. Les adresses sans préfixe, elles, ne touchent à rien : la
 // langue y reste celle choisie par le visiteur ou son navigateur.
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const locale = localeOfPath(to.path);
-  if (locale !== DEFAULT_SEO_LOCALE) applyLocale(locale as SupportedLocale);
+  // Attendu, et pas seulement lancé : les messages en et he arrivent par
+  // import dynamique, et la vue pose son titre au montage. Sans l'attente,
+  // une page anglaise s'ouvrirait avec un titre français.
+  if (locale !== DEFAULT_SEO_LOCALE) await applyLocale(locale as SupportedLocale);
   return true;
 });
 

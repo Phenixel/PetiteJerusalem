@@ -114,8 +114,8 @@ if (initialLocale !== "fr") {
  * impose sa langue, sans quoi une page anglaise s'afficherait en français à
  * qui arrive d'un moteur de recherche.
  */
-export function applyLocale(locale: SupportedLocale): void {
-  void loadLocaleMessages(locale);
+export function applyLocale(locale: SupportedLocale): Promise<void> {
+  const loaded = loadLocaleMessages(locale);
   // `createI18n` ne reçoit que les messages français : vue-i18n en déduit que
   // la locale ne peut valoir que « fr ». Les autres arrivent bien plus tard,
   // par import dynamique ; le typage large rétablit ce que le code fait.
@@ -125,6 +125,10 @@ export function applyLocale(locale: SupportedLocale): void {
     document.documentElement.setAttribute("lang", locale);
     document.documentElement.setAttribute("dir", locale === "he" ? "rtl" : "ltr");
   }
+  // La locale est posée tout de suite (le français sert de repli le temps du
+  // chunk) ; la promesse permet à qui en a besoin d'attendre les messages,
+  // comme le routeur avant d'ouvrir une page traduite dont le titre en dépend.
+  return loaded;
 }
 
 export default i18n;
