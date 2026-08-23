@@ -20,8 +20,14 @@ archivé en artifact du run (90 jours).
 l'attache à la version du tag et la soumet via l'API
 (`scripts/asc-submit.mjs`). Il s'arrête proprement si une soumission
 précédente est encore en examen, et se débraye avec la variable de repo
-`IOS_AUTO_SUBMIT=false`. **Seule la mise en vente reste manuelle**
-(publication en mode manuel, voir
+`IOS_AUTO_SUBMIT=false`.
+
+**La mise en vente est automatique elle aussi** : `scripts/appstore-listing.mjs`
+pose la version en `releaseType AFTER_APPROVAL` (à chaque run, pas seulement à
+sa création), Apple la publie donc d'elle-même à l'issue de l'examen. Un tag
+suffit ainsi à publier, sans clic dans App Store Connect, comme pour le Play
+Store. Variable de repo `IOS_AUTO_RELEASE=false` pour revenir à la mise en
+vente au clic (voir
 [ios-release-plan.md](ios-release-plan.md#étape-8--soumission)).
 
 ## ⚠️ Limite connue : les widgets ne passent pas par cette CI

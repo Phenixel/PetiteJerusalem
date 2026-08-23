@@ -259,9 +259,17 @@ traitement du build, l'attache à la version du tag et la soumet à l'examen
 `IOS_AUTO_SUBMIT=false`). À la main si besoin : dans App Store Connect, sur la
 version, sélectionner le build TestFlight puis **Ajouter pour examen**.
 
+La **mise en vente** ne demande rien non plus : `scripts/appstore-listing.mjs`
+pose la version en `releaseType AFTER_APPROVAL` à chaque run, Apple la publie
+donc dès l'examen passé. Le mode est réappliqué même sur une version qui
+existait déjà, un choix fait à la main dans App Store Connect ne tient donc pas
+d'un tag à l'autre : c'est le repo qui décide. Pour reprendre la main, variable
+de repo `IOS_AUTO_RELEASE=false`, et la version repasse en publication au
+clic.
+
 **État (14/08/2026)** : les notes ci-dessous sont collées dans la version
 3.7.0, le compte de démonstration est renseigné, le mode de publication est
-**manuel**, les captures (6 × iPhone 6,9", 1 × iPad 13") sont déposées et les
+posé par la CI (**automatique dès l'accord d'Apple**), les captures (6 × iPhone 6,9", 1 × iPad 13") sont déposées et les
 droits relatifs au contenu déclarés. Il ne manque que le build (posé par le
 tag) et le clic « Ajouter pour examen ».
 
@@ -326,7 +334,8 @@ un nouveau tag (patch +1) et resoumettre, pas besoin de recommencer la fiche.
 - [x] App créée dans App Store Connect (version 3.7.0), confidentialité,
       classification 4+, droits du contenu, fiche fr-FR et captures remplis
 - [x] Secrets GitHub créés
-- [x] Compte de démo + notes d'examen renseignés, publication manuelle
+- [x] Compte de démo + notes d'examen renseignés, publication automatique
+      dès l'accord d'Apple (posée par la CI)
 - [ ] Tag `v3.7.0` posé → workflow « Deploy iOS » vert (premier run réel)
 - [ ] Vérification du build TestFlight sur un iPhone réel (connexion Apple,
       push, position, invérifiables en simulateur)

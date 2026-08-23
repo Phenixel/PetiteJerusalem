@@ -24,8 +24,10 @@ name: Deploy iOS
 # Le binaire part sur TestFlight, puis le job `submit` (Linux) attend la fin
 # du traitement Apple et soumet la version à l'examen via l'API
 # (scripts/asc-submit.mjs), débrayable avec la variable de repo
-# IOS_AUTO_SUBMIT=false. La mise en vente, elle, reste un geste manuel dans
-# App Store Connect (releaseType MANUAL), voir docs/ios-release-plan.md.
+# IOS_AUTO_SUBMIT=false. La mise en vente se fait ensuite d'elle-même dès
+# l'accord d'Apple : scripts/appstore-listing.mjs pose la version en
+# releaseType AFTER_APPROVAL, débrayable avec IOS_AUTO_RELEASE=false qui rend
+# le clic « Publier » dans App Store Connect. Voir docs/ios-release-plan.md.
 #
 # Secrets requis (voir docs/ios-ci-cd.md pour les créer) :
 #   ASC_KEY_ID                identifiant de la clé d'API App Store Connect
@@ -360,6 +362,9 @@ jobs:
         env:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
           GH_TOKEN: ${{ github.token }}
+          # Mise en vente automatique dès l'accord d'Apple, sauf si la variable
+          # de repo IOS_AUTO_RELEASE vaut « false ».
+          IOS_AUTO_RELEASE: ${{ vars.IOS_AUTO_RELEASE }}
         run: |
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/v${{ steps.version.outputs.name }}" \
             --jq '.body // ""' > release-body.md || rm -f release-body.md
@@ -391,7 +396,8 @@ jobs:
   # minutes facturées 10× plus cher, donc ce job Linux prend le relais. Il
   # attend le build, l'attache à la version du tag (créée par l'étape « fiche »
   # du job macOS) et la soumet (scripts/asc-submit.mjs, node pur, aucun npm ci).
-  # La mise en vente reste un geste manuel dans App Store Connect.
+  # La mise en vente, elle, n'attend aucun clic : la version est en
+  # AFTER_APPROVAL, Apple la publie à l'issue de l'examen.
   # Débrayable sans toucher au code : variable de repo IOS_AUTO_SUBMIT=false.
   submit:
     needs: ios
