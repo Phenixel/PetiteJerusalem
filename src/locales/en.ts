@@ -800,7 +800,6 @@ const en: LocaleMessages = {
       teshuva: "Addition for the Ten Days of Repentance",
       zimoun: "Zimun",
     },
-    repeatTimes: "(\u00d7 {n})",
     slihotHours: "Selichot times",
     slihotRange: "From {start} to {end}",
     slihotHoursInfo: "About these times",

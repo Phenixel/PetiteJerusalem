@@ -85,17 +85,12 @@ function toggleFold(block: TextBlock) {
 }
 
 /**
- * Répétitions : jusqu'à trois fois, le passage est réellement réécrit (la
- * reprise en plus clair), comme dans un siddour. Au-delà (« sept fois »),
- * le réécrire noierait le fil : on annonce le compte.
+ * Répétitions : le passage est réellement réécrit autant de fois qu'il se
+ * dit (les reprises en plus clair), comme dans un siddour. Le lecteur lit
+ * chaque fois, il ne compte pas : le « Lev tahor » de Birkat halevana
+ * s'écrit donc sept fois.
  */
-const MAX_WRITTEN_REPEATS = 3;
-const copiesOf = (paragraph: TextParagraph): number =>
-  Math.min(paragraph.repeat ?? 1, MAX_WRITTEN_REPEATS);
-const repeatBadge = (paragraph: TextParagraph): string =>
-  (paragraph.repeat ?? 1) > MAX_WRITTEN_REPEATS
-    ? t("textReading.repeatTimes", { n: paragraph.repeat })
-    : "";
+const copiesOf = (paragraph: TextParagraph): number => paragraph.repeat ?? 1;
 
 /**
  * L'espace entre deux fragments d'un même paragraphe est porté par le texte,
@@ -309,9 +304,6 @@ const sections = computed(() =>
                         }}</span>
                         <span v-else :class="runClass(run)">{{ runText(run.text, r) }}</span>
                       </template>
-                      <span v-if="repeatBadge(paragraph)" class="reading-rubric-inline">{{
-                        repeatBadge(paragraph)
-                      }}</span>
                     </p>
                     <p v-else dir="ltr" class="reading-tl min-w-0 flex-1">
                       {{ phoneticLines[line] }}

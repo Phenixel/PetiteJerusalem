@@ -812,7 +812,6 @@ const fr = {
       teshuva: "Ajout des dix jours de pénitence",
       zimoun: "Zimoun",
     },
-    repeatTimes: "(\u00d7 {n})",
     slihotHours: "Horaire des Sli'hot",
     slihotRange: "De {start} à {end}",
     slihotHoursInfo: "À propos de cet horaire",

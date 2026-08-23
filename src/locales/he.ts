@@ -781,7 +781,6 @@ const he: LocaleMessages = {
       teshuva: "תוספת לעשרת ימי תשובה",
       zimoun: "זימון",
     },
-    repeatTimes: "(\u00d7 {n})",
     slihotHours: "זמן הסליחות",
     slihotRange: "מ־{start} עד {end}",
     slihotHoursInfo: "על אודות הזמן הזה",
