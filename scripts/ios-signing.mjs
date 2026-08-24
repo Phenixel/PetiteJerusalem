@@ -342,8 +342,12 @@ for (const profile of profiles.data) {
   for (const linked of profile.relationships?.certificates?.data ?? []) signedBuilds.set(linked.id, signed);
 }
 
-const certificates = distributionCertificates(
-  (await api("GET", "/v1/certificates?filter[certificateType]=DISTRIBUTION&limit=200")).data,
+// Sans filtre de type : un certificat « iOS Distribution » créé à la main
+// occupe le quota sans apparaître dans les DISTRIBUTION, et le refus d'Apple
+// devient incompréhensible (deux certificats à l'écran, quota plein).
+const certificates = distributionCertificates((await api("GET", "/v1/certificates?limit=200")).data);
+console.log(
+  `ios-signing: ${certificates.length} certificat(s) occupent le quota de distribution (${CERTIFICATE_QUOTA})`,
 );
 await pruneCertificates(certificates, signedBuilds);
 
@@ -360,16 +364,21 @@ try {
     const remaining = certificates.filter((c) => !c.revoked);
     console.error(
       `ios-signing: Apple refuse de créer un certificat de distribution, ${error.message}\n` +
-        `  ${remaining.length} certificat(s) de distribution occupent le quota (${CERTIFICATE_QUOTA}) :\n` +
+        `  ${remaining.length} certificat(s) occupent le quota (${CERTIFICATE_QUOTA}) :\n` +
         remaining
           .map(
             (c) =>
-              `    ${c.id}  ${c.displayName}  expire le ${c.expiration}` +
+              `    ${c.id}  ${c.type}  ${c.displayName}  expire le ${c.expiration}` +
               (c.keptFor ? `  (conservé, ${c.keptFor})` : ""),
           )
           .join("\n") +
-        "\n  En révoquer un sur developer.apple.com → Certificates, une fois certain qu'aucun binaire" +
-        "\n  signé avec lui n'est en examen ni en vente, puis relancer.",
+        (remaining.length < CERTIFICATE_QUOTA
+          ? "\n  Moins de certificats que le quota, et Apple refuse quand même : il reste donc une" +
+            "\n  DEMANDE DE CERTIFICAT EN ATTENTE sur le compte (« or a pending certificate request »)," +
+            "\n  d'un « + » laissé en plan sur developer.apple.com → Certificates, ou d'un Xcode. La" +
+            "\n  révoquer là-bas, puis relancer."
+          : "\n  En révoquer un sur developer.apple.com → Certificates, une fois certain qu'aucun binaire" +
+            "\n  signé avec lui n'est en examen ni en vente, puis relancer."),
     );
     process.exit(1);
   }

@@ -25,12 +25,25 @@
  */
 
 /**
- * @typedef {{ id: string, displayName: string, expiration: string, created: number, keptFor?: string, revoked?: boolean }} Certificate
+ * @typedef {{ id: string, type: string, displayName: string, expiration: string, created: number, keptFor?: string, revoked?: boolean }} Certificate
  * @typedef {{ label: string, buildNumber: string | undefined, uploadedAt: number }} Upload
  */
 
 /** Le plafond Apple, par compte développeur. */
 export const CERTIFICATE_QUOTA = 3;
+
+/**
+ * Les types de certificat qui occupent ce plafond. La CI ne crée que des
+ * DISTRIBUTION (« Apple Distribution ») ; un IOS_DISTRIBUTION (l'ancien « iOS
+ * Distribution »), créé à la main ou par Xcode, prend pourtant une place, et
+ * un compte qui en porte un se voit refuser une création avec deux
+ * certificats seulement à l'écran. D'où l'inventaire sans filtre de type :
+ * mieux vaut voir ce qui occupe le quota que compter à côté.
+ */
+export const DISTRIBUTION_TYPES = new Set(["DISTRIBUTION", "IOS_DISTRIBUTION"]);
+
+/** Le seul type que la CI fabrique, donc le seul qu'elle s'autorise à révoquer. */
+export const CI_CERTIFICATE_TYPE = "DISTRIBUTION";
 
 /**
  * Les fenêtres se recouvrent de deux heures : la date de création est déduite
@@ -80,16 +93,20 @@ export const VERSION_STATES_IN_FLIGHT = new Set([
 ]);
 
 /**
- * Les certificats de /v1/certificates, normalisés et ordonnés du plus ancien
- * au plus récent.
+ * Les certificats de /v1/certificates qui occupent le quota de distribution,
+ * normalisés et ordonnés du plus ancien au plus récent. L'appelant interroge
+ * l'API SANS filtre de type : ce qui occupe le quota se voit ici, pas
+ * seulement ce que la CI a créé.
  *
  * @param {any[]} data
  * @returns {Certificate[]}
  */
 export function distributionCertificates(data) {
   return data
+    .filter((entry) => DISTRIBUTION_TYPES.has(entry.attributes?.certificateType))
     .map((entry) => ({
       id: entry.id,
+      type: entry.attributes?.certificateType,
       displayName: entry.attributes?.displayName ?? "?",
       expiration: entry.attributes?.expirationDate ?? "?",
       created: creationDate(entry.attributes?.expirationDate),
@@ -166,8 +183,20 @@ export function protectedUploads(versionsResponse, buildsResponse) {
  * @returns {Certificate[]}
  */
 export function revocableCertificates(certificates, uploads, signedBuilds = new Map()) {
+  // Un envoi déjà revendiqué par un marqueur ne protège personne d'autre :
+  // son signataire est connu, la déduction par les dates n'a plus à couvrir
+  // les voisins pour lui.
+  const claimed = new Set(
+    [...signedBuilds.values()].filter((build) => uploads.some((upload) => upload.buildNumber === build)),
+  );
   certificates.forEach((certificate, index) => {
     const next = certificates[index + 1];
+    if (certificate.type !== CI_CERTIFICATE_TYPE) {
+      // Un certificat que la CI n'a pas fabriqué sert peut-être à quelqu'un,
+      // sur un Mac : il occupe une place, on le dit, on n'y touche pas.
+      certificate.keptFor = `type ${certificate.type}, créé hors CI`;
+      return;
+    }
     if (!next) {
       certificate.keptFor = "certificat du run précédent";
       return;
@@ -180,7 +209,10 @@ export function revocableCertificates(certificates, uploads, signedBuilds = new 
     }
     const from = certificate.created - ATTRIBUTION_MARGIN_MS;
     const to = next.created + ATTRIBUTION_MARGIN_MS;
-    const upload = uploads.find((candidate) => candidate.uploadedAt >= from && candidate.uploadedAt < to);
+    const upload = uploads.find(
+      (candidate) =>
+        !claimed.has(candidate.buildNumber) && candidate.uploadedAt >= from && candidate.uploadedAt < to,
+    );
     certificate.keptFor = upload && `provenance inconnue, et sa fenêtre contient ${upload.label}`;
   });
   return certificates.filter((certificate) => !certificate.keptFor);

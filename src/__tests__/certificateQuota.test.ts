@@ -17,10 +17,15 @@ import {
  */
 
 /** Les trois certificats qui occupaient le quota le 23 août 2026. */
+const certificate = (id: string, expirationDate: string, certificateType = "DISTRIBUTION") => ({
+  id,
+  attributes: { certificateType, displayName: "CI", expirationDate },
+});
+
 const CERTIFICATES = [
-  { id: "R33A4CCD5R", attributes: { displayName: "CI", expirationDate: "2027-08-18T23:56:32.000+00:00" } },
-  { id: "SA7386DCQJ", attributes: { displayName: "CI", expirationDate: "2027-08-21T12:31:10.000+00:00" } },
-  { id: "T7X6S8JPNR", attributes: { displayName: "CI", expirationDate: "2027-08-19T15:30:39.000+00:00" } },
+  certificate("R33A4CCD5R", "2027-08-18T23:56:32.000+00:00"),
+  certificate("SA7386DCQJ", "2027-08-21T12:31:10.000+00:00"),
+  certificate("T7X6S8JPNR", "2027-08-19T15:30:39.000+00:00"),
 ];
 
 /** Un build tel que l'API le rend, dans la charge `included` des versions. */
@@ -197,6 +202,48 @@ describe("quota de certificats de distribution", () => {
 
     expect(revocable.map((c) => c.id)).toEqual(["T7X6S8JPNR"]);
     expect(list.find((c) => c.id === "R33A4CCD5R")?.keptFor).toContain("3070400");
+  });
+
+  it("compte un certificat créé hors CI, sans jamais y toucher", () => {
+    // Un « iOS Distribution » fabriqué à la main occupe une place du quota :
+    // l'ignorer, c'est compter à côté et ne pas comprendre le refus d'Apple.
+    // Le révoquer casserait la signature de quelqu'un, sur son Mac.
+    const list = distributionCertificates([
+      ...structuredClone(CERTIFICATES).slice(0, 1),
+      certificate("XY12345678", "2027-09-01T10:00:00.000+00:00", "IOS_DISTRIBUTION"),
+    ]);
+    const revocable = revocableCertificates(list, protectedUploads({ data: [] }, { data: [] }));
+
+    expect(list.map((c) => c.id)).toEqual(["R33A4CCD5R", "XY12345678"]);
+    expect(revocable.map((c) => c.id)).toEqual(["R33A4CCD5R"]);
+    expect(list.find((c) => c.id === "XY12345678")?.keptFor).toContain("hors CI");
+  });
+
+  it("laisse tomber les types qui n'occupent pas le quota de distribution", () => {
+    const list = distributionCertificates([
+      ...structuredClone(CERTIFICATES).slice(0, 1),
+      certificate("DEV1234567", "2027-09-01T10:00:00.000+00:00", "DEVELOPMENT"),
+    ]);
+
+    expect(list.map((c) => c.id)).toEqual(["R33A4CCD5R"]);
+  });
+
+  it("un envoi revendiqué par un marqueur ne protège plus le certificat voisin", () => {
+    // Le binaire de 3.7.6 appartient à SA7386DCQJ, son marqueur le dit. Sans
+    // cela, la marge des dates le faisait aussi protéger T7X6S8JPNR, de
+    // provenance inconnue, qui restait à vie.
+    const signedBuilds = new Map([["SA7386DCQJ", "3070600"]]);
+    const versions = {
+      data: [version("3.7.6", "IN_REVIEW", "b6", "2026-08-21T12:46:50.000+00:00")],
+      included: Object.values(BUILDS),
+    };
+    const builds = { data: [BUILDS["3070600"]] };
+
+    const list = certificates();
+    const revocable = revocableCertificates(list, protectedUploads(versions, builds), signedBuilds);
+
+    expect(revocable.map((c) => c.id)).toEqual(["R33A4CCD5R", "T7X6S8JPNR"]);
+    expect(list.find((c) => c.id === "SA7386DCQJ")?.keptFor).toBe("certificat du run précédent");
   });
 
   it("ne révoque jamais le certificat le plus récent, même sans aucun envoi", () => {

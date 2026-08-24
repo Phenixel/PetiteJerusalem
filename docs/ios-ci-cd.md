@@ -149,6 +149,20 @@ Si plus rien n'est libérable, le run échoue en affichant la liste des
 certificats et ce qui retient chacun ; la décision revient alors à un humain,
 sur developer.apple.com.
 
+### Ce qui occupe le quota sans se voir
+
+L'inventaire se fait **sans filtre de type**, et pour cause : un certificat
+« iOS Distribution » créé à la main ou par Xcode prend une place sans figurer
+parmi les « Apple Distribution » que la CI fabrique. Le compte semble alors
+tenir deux certificats et Apple refuse quand même. Ceux-là sont comptés et
+affichés, jamais révoqués : ils servent sans doute à quelqu'un, sur un Mac.
+
+Et si Apple refuse alors que le quota n'est **pas** atteint, c'est qu'une
+**demande de certificat est restée en attente** sur le compte, un `+` laissé
+en plan sur developer.apple.com ou un Xcode interrompu : le message d'Apple le
+dit d'ailleurs, « or a pending certificate request ». Le run l'annonce en
+clair dans ce cas ; la demande se révoque au même endroit que les certificats.
+
 Conséquence : la clé d'API doit avoir le rôle **Admin**. C'est contre-intuitif
 pour une clé de CI, mais Apple réserve la création des certificats de
 **distribution** à ce rôle, une clé « App Manager » suffit pour TestFlight et
