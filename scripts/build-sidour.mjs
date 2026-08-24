@@ -668,6 +668,65 @@ function kaddishTitkabal(src) {
   };
 }
 
+/**
+ * Le Kaddich « yehé chelama », dit après le psaume du jour : yitgadal, puis
+ * yehé chelama et 'ossé chalom. Comme les autres kaddichim, il est replié :
+ * il demande un minyan, celui qui prie seul ne le dit pas.
+ */
+function kaddishYeheChelama(src) {
+  return {
+    src,
+    fold: "hazan",
+    labelText: R("Kaddich yehé chelama", "Kaddish Yehe Shelama", "קדיש יהא שלמא"),
+    lines: [
+      {
+        seg: 28,
+        rubric: R(
+          "On dit le Kaddich « yehé chelama » :",
+          "The Kaddish “Yehe Shelama” is said:",
+          "ואומרים קדיש יהא שלמא:",
+        ),
+        splitAmen: true,
+      },
+      { seg: 29, tight: true, splitAmen: true },
+    ],
+  };
+}
+
+/**
+ * Le Kaddich « 'al Israël » (dérabanan), dit après l'étude qui ferme Kavé
+ * (Tana debé Eliyahou, Rabbi Hanina), avant 'Alénou.
+ */
+function kaddishAlIsrael(src) {
+  return {
+    src,
+    fold: "hazan",
+    labelText: R("Kaddich 'al Israël", "Kaddish al Yisrael", "קדיש על ישראל"),
+    lines: [
+      {
+        seg: 13,
+        rubric: R(
+          "On dit le Kaddich « 'al Israël » :",
+          "The Kaddish “al Yisrael” is said:",
+          "ואומרים קדיש על ישראל:",
+        ),
+        splitAmen: true,
+      },
+      { seg: 14, tight: true, splitAmen: true },
+      { seg: 15, tight: true, splitAmen: true },
+    ],
+  };
+}
+
+/**
+ * Hochiénou : les cinq versets qui suivent le psaume du jour (Tehilim 106:47
+ * et 48, 135:21, 72:18 et 19). L'export Sefaria du siddour ne les porte pas ;
+ * ils sont donc écrits ici, dans la vocalisation du texte massorétique que
+ * l'application sert déjà (public/texts/tehilim.json).
+ */
+const HOSHIENU =
+  "הֽוֹשִׁיעֵ֨נוּ ׀ יְ֘הֹוָ֤ה אֱלֹהֵ֗ינוּ וְקַבְּצֵנוּ֮ מִֽן־הַגּ֫וֹיִ֥ם לְ֭הֹדוֹת לְשֵׁ֣ם קׇדְשֶׁ֑ךָ לְ֝הִשְׁתַּבֵּ֗חַ בִּתְהִלָּתֶֽךָ׃ בָּ֤רֽוּךְ־יְהֹוָ֨ה אֱלֹהֵ֪י יִשְׂרָאֵ֡ל מִן־הָ֤עוֹלָ֨ם ׀ וְעַ֬ד הָעוֹלָ֗ם וְאָמַ֖ר כׇּל־הָעָ֥ם אָמֵ֗ן הַֽלְלוּ־יָֽהּ׃ בָּ֘ר֤וּךְ יְהֹוָ֨ה ׀ מִצִּיּ֗וֹן שֹׁ֘כֵ֤ן יְֽרוּשָׁלָ֗͏ִם הַֽלְלוּ־יָֽהּ׃ בָּר֤וּךְ ׀ יְהֹוָ֣ה אֱ֭לֹהִים אֱלֹהֵ֣י יִשְׂרָאֵ֑ל עֹשֵׂ֖ה נִפְלָא֣וֹת לְבַדּֽוֹ׃ וּבָר֤וּךְ ׀ שֵׁ֥ם כְּבוֹד֗וֹ לְע֫וֹלָ֥ם וְיִמָּלֵ֣א כְ֭בוֹדוֹ אֶת־כֹּ֥ל הָאָ֗רֶץ אָ֘מֵ֥ן ׀ וְאָמֵֽן׃";
+
 /** Avinou Malkénou (dix jours de techouva), après la 'Amida. */
 function avinouMalkenou(src, from, to) {
   const lines = [];
@@ -1284,16 +1343,10 @@ function chaharitRecipe() {
       },
       ...chirJours,
       {
-        src: "Alenu",
-        when: "ledavid",
-        plain: true,
-        labelText: R(
-          "Lédavid (d'Eloul à Hochana Rabba)",
-          "LeDavid (from Elul to Hoshana Rabbah)",
-          "לדוד ה' אורי",
-        ),
-        lines: [{ seg: 5 }],
+        labelText: R("Hochiénou", "Hoshienu", "הושיענו"),
+        lines: [{ he: HOSHIENU }],
       },
+      kaddishYeheChelama("Song of the Day"),
       {
         src: "RH.Mussaf",
         when: "rosh-chodesh",
@@ -1373,6 +1426,7 @@ function chaharitRecipe() {
           { seg: 11 },
         ],
       },
+      kaddishAlIsrael("Kaveh"),
       {
         src: "Alenu",
         labelText: R("'Alénou léchabéa'h", "Aleinu", "עלינו לשבח"),
@@ -1382,6 +1436,17 @@ function chaharitRecipe() {
           { seg: 3, mode: "small", tight: true },
           { seg: 4, tight: true },
         ],
+      },
+      {
+        src: "Alenu",
+        when: "ledavid",
+        plain: true,
+        labelText: R(
+          "Lédavid (d'Eloul à Hochana Rabba)",
+          "LeDavid (from Elul to Hoshana Rabbah)",
+          "לדוד ה' אורי",
+        ),
+        lines: [{ seg: 5 }],
       },
     ],
   };

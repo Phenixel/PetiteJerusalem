@@ -348,8 +348,9 @@ async function loadContent() {
   try {
     content.value = await loadText(textEntry.value);
     // Sidour : le lundi et le jeudi, la lecture de la Torah de la semaine
-    // (la 1re montée de la paracha) prend la place de son marqueur dans
-    // Cha'harit. Elle change chaque semaine : c'est le lecteur qui la charge.
+    // (le début de la paracha, en trois montées) prend la place de son
+    // marqueur dans Cha'harit. Elle change chaque semaine : c'est le lecteur
+    // qui la charge.
     if (tefilaOf(textEntry.value) === "chaharit" && occasions.value.has("torah-semaine")) {
       try {
         const parasha = getWeeklyParasha(now.value);

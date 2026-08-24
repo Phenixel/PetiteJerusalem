@@ -7,6 +7,8 @@ import { parseContent, resolveFilePath } from "../services/textService";
 import type { TextContent } from "../services/textService";
 import { injectWeeklyTorah } from "../services/sidourService";
 import type { WeeklyParasha } from "../services/dailyCycles";
+import { getParashaForShabbat } from "../services/dailyCycles";
+import torahWeekdayJson from "../datas/torahWeekday.json";
 
 /**
  * Les fichiers du sidour (public/texts/tefila/{chaharit,minha,arvit}.json,
@@ -51,6 +53,9 @@ function loadRaw(entry: TextStudyJsonEntry): unknown {
   const rel = resolveFilePath(entry).replace(/^\//, "");
   return JSON.parse(readFileSync(resolve(__dirname, "../../public", rel), "utf8"));
 }
+
+/** Le découpage de la lecture du lundi et du jeudi, paracha par paracha. */
+const TORAH_WEEKDAY = torahWeekdayJson as Record<string, { n: number }[]>;
 
 function isFullRubric(value: unknown): boolean {
   if (typeof value !== "object" || value === null) return false;
@@ -164,46 +169,48 @@ describe("Cha'harit : la Torah de la semaine", () => {
     expect(marker!.lines).toHaveLength(0);
   });
 
-  it("s'injecte à la place du marqueur, offsets recalculés", () => {
-    const parashaEntry: TextStudyJsonEntry = {
-      id: 999,
-      name: "יתרו (Yitro)",
-      livre: "Chemot",
-      link: "https://www.sefaria.org/Parashat_Yitro",
-      totalSections: 1,
-      type: "Tanakh",
-    };
-    const parasha: WeeklyParasha = {
-      names: ["Yitro"],
-      entries: [parashaEntry],
-      weekKey: "2026-08-29",
-    };
-    const parashaContent: TextContent = {
-      title: "Yitro",
-      type: "Tanakh",
-      sections: [
-        {
-          index: 1,
-          label: "Yitro",
-          he: ["פסוק א", "פסוק ב", "פסוק ג", "פסוק ד"],
-          blocks: [
-            { label: "1re montée", lines: ["פסוק א", "פסוק ב", "פסוק ג"], offset: 0 },
-            { label: "2e montée", lines: ["פסוק ד"], offset: 3 },
-          ],
-        },
-      ],
-    };
+  // Yitro : la lecture de la semaine va de 18:1 à 18:12, quatre versets par
+  // montée (voir src/datas/torahWeekday.json), là où la 1re montée du Chabbat
+  // en compte bien davantage.
+  const parashaEntry: TextStudyJsonEntry = {
+    id: 999,
+    name: "יתרו (Yitro)",
+    livre: "Chemot",
+    link: "https://www.sefaria.org/Parashat_Yitro",
+    totalSections: 1,
+    type: "Tanakh",
+  };
+  const parasha: WeeklyParasha = {
+    names: ["Yitro"],
+    entries: [parashaEntry],
+    weekKey: "2026-08-29",
+  };
+  const versets = Array.from({ length: 20 }, (_, i) => `פסוק ${i + 1}`);
+  const parashaContent: TextContent = {
+    title: "Yitro",
+    type: "Tanakh",
+    sections: [
+      {
+        index: 1,
+        label: "Yitro",
+        he: versets,
+        blocks: [
+          { label: "1re montée", lines: versets.slice(0, 15), offset: 0 },
+          { label: "2e montée", lines: versets.slice(15), offset: 15 },
+        ],
+      },
+    ],
+  };
 
+  it("s'injecte à la place du marqueur, offsets recalculés", () => {
     const before = content.sections[0];
     const injected = injectWeeklyTorah(content, parasha, parashaContent);
     const section = injected.sections[0];
-    const torahBlock = section.blocks!.find((b) => b.labelText?.fr.includes("Yitro"));
+    const torahBlocks = section.blocks!.filter((b) => b.labelText?.fr.includes("Yitro"));
 
-    expect(torahBlock).toBeDefined();
-    // Seule la 1re montée est lue.
-    expect(torahBlock!.lines).toEqual(["פסוק א", "פסוק ב", "פסוק ג"]);
-    expect(torahBlock!.when).toBe("torah-semaine");
-    expect(section.he.length).toBe(before.he.length + 3);
+    expect(torahBlocks).toHaveLength(3);
+    for (const block of torahBlocks) expect(block.when).toBe("torah-semaine");
+    expect(section.he.length).toBe(before.he.length + 12);
     // Les offsets se suivent exactement (marque-pages et translittération).
     let expected = 0;
     for (const block of section.blocks!) {
@@ -212,6 +219,55 @@ describe("Cha'harit : la Torah de la semaine", () => {
     }
     // Le contenu d'origine n'est pas modifié (fonction pure).
     expect(before.blocks!.some((b) => b.torahWeekly)).toBe(true);
+  });
+
+  it("lit le début de la paracha en trois montées, pas la 1re du Chabbat", () => {
+    const section = injectWeeklyTorah(content, parasha, parashaContent).sections[0];
+    const torahBlocks = section.blocks!.filter((b) => b.labelText?.fr.includes("Yitro"));
+
+    expect(torahBlocks.map((b) => b.labelText!.fr)).toEqual([
+      "Parachat Yitro · Cohen",
+      "Parachat Yitro · Lévi",
+      "Parachat Yitro · Israël",
+    ]);
+    // Les trois montées se suivent d'un trait depuis le premier verset, et
+    // s'arrêtent avant la fin de la 1re montée du Chabbat.
+    expect(torahBlocks.flatMap((b) => b.lines)).toEqual(versets.slice(0, 12));
+    expect(torahBlocks.map((b) => b.lines.length)).toEqual([4, 4, 4]);
+  });
+
+  it("chaque paracha de l'année a son découpage, et il tient dans son fichier", () => {
+    // Un an de Chabbats : toutes les parachiot y passent. Chacune doit avoir
+    // ses trois montées de semaine, et le fichier de la paracha doit porter
+    // assez de versets pour les servir (les versets s'y suivent depuis le
+    // premier, c'est ce qui permet de découper par nombres).
+    const vues = new Set<string>();
+    const samedi = new Date(2026, 0, 3, 12);
+    for (let semaine = 0; semaine < 54; semaine++) {
+      const parasha = getParashaForShabbat(samedi);
+      samedi.setDate(samedi.getDate() + 7);
+      if (!parasha) continue;
+      const nom = parasha.names[0];
+      if (vues.has(nom)) continue;
+      vues.add(nom);
+      const decoupage = TORAH_WEEKDAY[nom];
+      expect(decoupage).toBeDefined();
+      expect(decoupage).toHaveLength(3);
+      const lus = decoupage.reduce((somme, aliyah) => somme + aliyah.n, 0);
+      const versets = parseContent(parasha.entries[0], loadRaw(parasha.entries[0])).sections[0].he;
+      expect(versets.length).toBeGreaterThanOrEqual(lus);
+    }
+    expect(vues.size).toBeGreaterThan(45);
+  });
+
+  it("sans découpage connu, s'en tient à la 1re montée du Chabbat", () => {
+    const inconnue: WeeklyParasha = { ...parasha, names: ["Parasha inconnue"] };
+    const section = injectWeeklyTorah(content, inconnue, parashaContent).sections[0];
+    const torahBlocks = section.blocks!.filter((b) => b.labelText?.fr.includes("Yitro"));
+
+    expect(torahBlocks).toHaveLength(1);
+    expect(torahBlocks[0].labelText!.fr).toBe("Parachat Yitro · 1re montée");
+    expect(torahBlocks[0].lines).toEqual(versets.slice(0, 15));
   });
 
   it("revient inchangé sans montée à lire", () => {
