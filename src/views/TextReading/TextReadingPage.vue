@@ -61,6 +61,14 @@ import { useReadingSize } from "../../composables/useReadingSize";
 import { readingProgressService, bookmarkId } from "../../services/readingProgressService";
 import type { Bookmark, ReadingPosition } from "../../services/readingProgressService";
 import { isNativeApp } from "../../composables/useNativeApp";
+import {
+  bookForEntry,
+  downloadBook,
+  downloadingPaths,
+  isBookDownloaded,
+  removeBook,
+} from "../../services/offlineLibraryService";
+import { ensureManifestLoaded } from "../../services/offlineTextStore";
 import { setTefilaNavSections } from "../../composables/useTefilaNav";
 import type { TefilaNavSection } from "../../composables/useTefilaNav";
 import type { SupportedLocale } from "../../i18n";
@@ -173,6 +181,36 @@ const recentChanges = computed(() =>
 /** Tefila (Sli'hot, Brahot, Sidour) : un rendu à part, voir LiturgyText. */
 const isLiturgyText = computed(() => !!textEntry.value && isLiturgy(textEntry.value));
 const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
+
+// App native : les Sli'hot n'ont pas de liste dans la bibliothèque (le livre
+// s'ouvre directement sur son texte, voir le router), donc pas de carte d'où
+// les télécharger. Le bouton de téléchargement vient ici, en tête du texte.
+type BookState = "none" | "downloading" | "downloaded" | "idle";
+const bookState = computed<BookState>(() => {
+  if (!isNativeApp || !isSlihot.value || !textEntry.value) return "none";
+  const book = bookForEntry(textEntry.value);
+  if (!book) return "none";
+  if (downloadingPaths.has(book.path)) return "downloading";
+  return isBookDownloaded(book) ? "downloaded" : "idle";
+});
+
+async function toggleDownload() {
+  const entry = textEntry.value;
+  if (!entry) return;
+  const book = bookForEntry(entry);
+  if (!book) return;
+  try {
+    if (isBookDownloaded(book)) {
+      await removeBook(book);
+      analyticsService.capture("offline_download_deleted", { scope: "book", book: book.path });
+    } else {
+      await downloadBook(book);
+      analyticsService.capture("offline_download_completed", { scope: "book", book: book.path });
+    }
+  } catch {
+    toast.error(t("downloads.error"));
+  }
+}
 
 // Sidour : à la fin de Min'ha, Arvit est à un geste (la sortie des étoiles
 // les enchaîne). Pas de lien entre Cha'harit et le reste : la journée les
@@ -970,6 +1008,9 @@ onMounted(async () => {
     bookmarks.value = readingProgressService.getBookmarks(textId.value);
   });
   window.addEventListener("scroll", onScroll, { passive: true });
+  // App native : l'état des téléchargements sert au bouton de la tête de page
+  // (Sli'hot), qui s'ouvre sans passer par la bibliothèque.
+  if (isNativeApp) void ensureManifestLoaded();
 
   await loadContent();
   if (sessionSlug.value) {
@@ -1045,16 +1086,37 @@ watch(textId, () => {
     </div>
 
     <template v-else-if="content">
-      <header class="mb-8">
-        <p class="text-sm font-semibold text-primary uppercase tracking-wide mb-1">
-          {{ textEntry.livre }}
-        </p>
-        <h1 class="text-3xl md:text-4xl font-bold text-text-primary">
-          {{ appendHebrewNumeral(textEntry.name) }}
-        </h1>
-        <p v-if="currentSection && !isSingleSection" class="mt-2 text-text-secondary">
-          {{ currentSection.label }}
-        </p>
+      <header class="mb-8 flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-primary uppercase tracking-wide mb-1">
+            {{ textEntry.livre }}
+          </p>
+          <h1 class="text-3xl md:text-4xl font-bold text-text-primary">
+            {{ appendHebrewNumeral(textEntry.name) }}
+          </h1>
+          <p v-if="currentSection && !isSingleSection" class="mt-2 text-text-secondary">
+            {{ currentSection.label }}
+          </p>
+        </div>
+        <!-- App native : télécharger le texte pour le lire sans connexion,
+             faute de carte dans la bibliothèque d'où le faire (Sli'hot). -->
+        <button
+          v-if="bookState !== 'none'"
+          @click="toggleDownload()"
+          class="icon-btn flex-shrink-0"
+          :class="bookState === 'downloaded' ? 'text-primary' : 'text-text-secondary'"
+          :aria-label="bookState === 'downloaded' ? t('downloads.delete') : t('downloads.download')"
+          :title="bookState === 'downloaded' ? t('downloads.delete') : t('downloads.download')"
+        >
+          <AppIcon
+            v-if="bookState === 'downloading'"
+            name="spinner"
+            :size="20"
+            class="animate-spin text-primary"
+          />
+          <AppIcon v-else-if="bookState === 'downloaded'" name="circle-check" :size="20" />
+          <AppIcon v-else name="download" :size="20" />
+        </button>
       </header>
 
       <!-- SEO intro (public /bibliotheque reading pages only ; masquée dans
