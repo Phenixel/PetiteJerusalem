@@ -51,8 +51,9 @@ import {
 } from "../../content/etudeTexts";
 import LiturgyText from "./LiturgyText.vue";
 import SlihotHours from "./SlihotHours.vue";
-import TefilaSectionNav from "./TefilaSectionNav.vue";
-import ReadingProgressBar from "./ReadingProgressBar.vue";
+import ReadingMenu from "../../components/ReadingMenu.vue";
+import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
+import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
 import GuestForm from "../../components/GuestForm.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
@@ -69,8 +70,8 @@ import {
   removeBook,
 } from "../../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../../services/offlineTextStore";
-import { setTefilaNavSections } from "../../composables/useTefilaNav";
-import type { TefilaNavSection } from "../../composables/useTefilaNav";
+import { setReadingNavSections } from "../../composables/useReadingNav";
+import type { ReadingNavSection } from "../../composables/useReadingNav";
 import type { SupportedLocale } from "../../i18n";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { analyticsService } from "../../services/analyticsService";
@@ -281,23 +282,40 @@ const currentSection = computed<TextSection | null>(() => {
 const canTransliterate = computed(
   () => currentSection.value?.he.some((line) => hasNiqqud(line)) ?? false,
 );
-// Sidour et Sli'hot : un office se cherche par sections ('Amida, Chéma,
-// ta'hanoun…). La page publie les blocs titrés du jour au menu flottant
-// (TefilaSectionNav), qui remplace le bouton « remonter en haut ». Les brahot
-// restent hors jeu : trop courtes pour qu'on s'y perde.
-const isTefilaNavText = computed(() =>
-  ["Sidour", "Slihot"].includes(String(textEntry.value?.type)),
-);
-const tefilaNavSections = computed<TefilaNavSection[]>(() => {
-  if (!isTefilaNavText.value || !currentSection.value) return [];
-  return visibleBlocks.value
-    .filter((b) => !b.zman && !b.fold && (b.labelText || b.label))
-    .map((b) => ({
-      offset: b.offset,
-      label: b.labelText ? b.labelText[locale.value as SupportedLocale] || b.labelText.fr : b.label,
-    }));
+// Un texte long se cherche par ses divisions : les sections d'un office
+// ('Amida, Chéma, ta'hanoun…), les montées d'une paracha, les dafim d'une
+// guemara. La page les publie au menu de lecture (ReadingMenu), qui remplace
+// le bouton « remonter en haut ». Un texte d'un seul tenant n'en publie
+// aucune : son menu se limite alors à la taille et au haut de page.
+const dafOffsets = computed<{ daf: string; offset: number }[]>(() => {
+  const out: { daf: string; offset: number }[] = [];
+  let offset = 0;
+  for (const block of currentSection.value?.dafBlocks ?? []) {
+    out.push({ daf: block.daf, offset });
+    offset += block.lines.length;
+  }
+  return out;
 });
-watch(tefilaNavSections, (list) => setTefilaNavSections(list), { immediate: true });
+const navSections = computed<ReadingNavSection[]>(() => {
+  if (!currentSection.value) return [];
+  if (isLiturgyText.value) {
+    return visibleBlocks.value
+      .filter((b) => !b.zman && !b.fold && (b.labelText || b.label))
+      .map((b) => ({
+        offset: b.offset,
+        label: b.labelText
+          ? b.labelText[locale.value as SupportedLocale] || b.labelText.fr
+          : b.label,
+      }));
+  }
+  if (content.value?.type === "Talmud Bavli") {
+    return dafOffsets.value.map(({ daf, offset }) => ({ offset, label: `Daf ${daf}` }));
+  }
+  return verseBlocks.value
+    .filter((b) => b.label)
+    .map((b) => ({ offset: b.offset, label: b.label }));
+});
+watch(navSections, (list) => setReadingNavSections(list), { immediate: true });
 
 // Translittération mémoïsée : appelée depuis le template, elle était recalculée
 // pour toute la section (des dizaines de lignes × plusieurs passes regex) à
@@ -1023,7 +1041,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener("scroll", onScroll);
   stopOccasionsTicker();
-  setTefilaNavSections([]);
+  setReadingNavSections([]);
   if (scrollSaveTimer !== null) {
     clearScrollSaveTimer();
     // Une capture était en attente : on fige la position avant de partir.
@@ -1355,30 +1373,7 @@ watch(textId, () => {
             <AppIcon name="bookmark" :size="14" />
             {{ bookmarks.length }}
           </button>
-          <div
-            class="inline-flex items-center rounded-lg bg-black/5 dark:bg-white/10"
-            role="group"
-            :aria-label="t('textReading.textSize')"
-          >
-            <button
-              @click="readingSize.decrease()"
-              :disabled="!readingSize.canDecrease.value"
-              class="px-3 py-1.5 text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors disabled:opacity-35"
-              :aria-label="t('textReading.textSizeDecrease')"
-              :title="t('textReading.textSizeDecrease')"
-            >
-              A−
-            </button>
-            <button
-              @click="readingSize.increase()"
-              :disabled="!readingSize.canIncrease.value"
-              class="px-3 py-1.5 text-base font-semibold text-text-secondary hover:text-text-primary transition-colors disabled:opacity-35"
-              :aria-label="t('textReading.textSizeIncrease')"
-              :title="t('textReading.textSizeIncrease')"
-            >
-              A+
-            </button>
-          </div>
+          <ReadingSizeControl />
 
           <div
             v-if="canTransliterate"
@@ -1429,8 +1424,13 @@ watch(textId, () => {
           v-if="content.type === 'Talmud Bavli'"
           :style="{ '--reading-scale': readingSize.scale.value }"
         >
-          <template v-for="block in currentSection.dafBlocks ?? []" :key="block.daf">
-            <p class="mt-6 mb-2 text-sm font-semibold text-primary">Daf {{ block.daf }}</p>
+          <template v-for="(block, dafIndex) in currentSection.dafBlocks ?? []" :key="block.daf">
+            <p
+              :data-block-anchor="dafOffsets[dafIndex]?.offset"
+              class="mt-6 mb-2 text-sm font-semibold text-primary"
+            >
+              Daf {{ block.daf }}
+            </p>
             <p v-if="!showPhonetic" dir="rtl" class="font-hebrew text-text-primary reading-he">
               {{ block.lines.join(" ") }}
             </p>
@@ -1461,7 +1461,11 @@ watch(textId, () => {
              chapter / montée with a marker at each block start -->
         <div v-else :style="{ '--reading-scale': readingSize.scale.value }">
           <template v-for="(block, blockIndex) in verseBlocks" :key="block.offset">
-            <p v-if="block.label" :class="blockLabelClass(blockIndex)">
+            <p
+              v-if="block.label"
+              :data-block-anchor="block.offset"
+              :class="blockLabelClass(blockIndex)"
+            >
               {{ block.label }}
             </p>
             <div class="space-y-6 mb-6">
@@ -1592,10 +1596,12 @@ watch(textId, () => {
       </section>
     </template>
 
-    <!-- Tefilot (Sidour, Sli'hot) : le menu de sections remplace le bouton de
-         remontée, et la progression de lecture court au bas de l'écran. -->
-    <TefilaSectionNav v-if="tefilaNavSections.length" :sections="tefilaNavSections" />
-    <ReadingProgressBar v-if="isTefilaNavText && currentSection" />
+    <!-- Tous les textes de la bibliothèque : le menu de lecture remplace le
+         bouton de remontée, et la progression court au bas de l'écran. -->
+    <template v-if="content && currentSection">
+      <ReadingMenu :sections="navSections" />
+      <ReadingProgressBar />
+    </template>
   </main>
 </template>
 

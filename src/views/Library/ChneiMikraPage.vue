@@ -12,11 +12,13 @@ import {
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { seoService } from "../../services/seoService";
 import { analyticsService } from "../../services/analyticsService";
-import { useReadingSize } from "../../composables/useReadingSize";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useChneiMikraOptions } from "../../composables/useChneiMikraOptions";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import ChneiMikraOptions from "../../components/ChneiMikraOptions.vue";
+import ReadingMenu from "../../components/ReadingMenu.vue";
+import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
+import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
 import DailyReadingItem from "./DailyReadingItem.vue";
 
 /**
@@ -35,8 +37,6 @@ import DailyReadingItem from "./DailyReadingItem.vue";
 const { t, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
-// Même réglage de taille que le reste de la bibliothèque (A− / A+).
-const readingSize = useReadingSize();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
 // Verset écrit deux fois, Rachi : réglage partagé avec la lecture quotidienne.
@@ -162,30 +162,7 @@ watch(title, applySeoMeta, { immediate: true });
           <span v-else></span>
 
           <!-- Taille du texte (même réglage que le lecteur de la bibliothèque) -->
-          <div
-            class="inline-flex items-center rounded-lg bg-black/5 dark:bg-white/10"
-            role="group"
-            :aria-label="t('textReading.textSize')"
-          >
-            <button
-              @click="readingSize.decrease()"
-              :disabled="!readingSize.canDecrease.value"
-              class="px-3 py-1.5 text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors disabled:opacity-35"
-              :aria-label="t('textReading.textSizeDecrease')"
-              :title="t('textReading.textSizeDecrease')"
-            >
-              A−
-            </button>
-            <button
-              @click="readingSize.increase()"
-              :disabled="!readingSize.canIncrease.value"
-              class="px-3 py-1.5 text-base font-semibold text-text-secondary hover:text-text-primary transition-colors disabled:opacity-35"
-              :aria-label="t('textReading.textSizeIncrease')"
-              :title="t('textReading.textSizeIncrease')"
-            >
-              A+
-            </button>
-          </div>
+          <ReadingSizeControl />
         </div>
 
         <!-- Options de lecture : verset écrit deux fois, commentaire de Rachi -->
@@ -208,5 +185,10 @@ watch(title, applySeoMeta, { immediate: true });
 
       <p v-else class="mt-10 text-text-secondary">{{ t("chneiMikra.unavailable") }}</p>
     </div>
+
+    <!-- Comme les autres textes de la bibliothèque : le menu de lecture et la
+         progression au bas de l'écran. -->
+    <ReadingMenu />
+    <ReadingProgressBar />
   </main>
 </template>

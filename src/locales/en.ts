@@ -799,6 +799,7 @@ const en: LocaleMessages = {
     bookmarkAdd: "Add a bookmark",
     bookmarkRemove: "Remove bookmark",
     // Tefilot (Siddur, Selichot): section navigation menu.
+    navMenu: "Reading menu",
     navSections: "Sections",
     navTop: "Top of page",
     // Tefila (Selichot, Berakhot): liturgical text layout.

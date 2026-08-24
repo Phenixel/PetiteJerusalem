@@ -1,25 +1,32 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import AppIcon from "../../components/icons/AppIcon.vue";
-import { useMiniPlayerVisible } from "../../composables/useAudioPlayer";
-import { isNativeApp } from "../../composables/useNativeApp";
-import type { TefilaNavSection } from "../../composables/useTefilaNav";
-import { analyticsService } from "../../services/analyticsService";
+import AppIcon from "./icons/AppIcon.vue";
+import ReadingSizeControl from "./ReadingSizeControl.vue";
+import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
+import { isNativeApp } from "../composables/useNativeApp";
+import { addReadingMenu, removeReadingMenu } from "../composables/useReadingNav";
+import type { ReadingNavSection } from "../composables/useReadingNav";
+import { analyticsService } from "../services/analyticsService";
 
 /**
- * Le menu de navigation d'une tefila (Sidour, Sli'hot) : à la place du bouton
- * « remonter en haut », un bouton flottant d'où surgit un petit panneau
- * listant les sections de l'office. Un office se dit d'un trait mais se
- * cherche par sections : Chéma, 'Amida, ta'hanoun… le panneau y mène sans
- * faire défiler trois écrans.
+ * Le menu de lecture, le même sur tous les textes de la bibliothèque : à la
+ * place du bouton « remonter en haut », un bouton flottant d'où surgit un
+ * petit panneau. Il porte toujours la taille du texte et le retour en haut de
+ * page, sans faire remonter jusqu'à la barre d'outils ; les textes qui se
+ * divisent y listent leurs repères (sections d'un office, montées d'une
+ * paracha, dafim d'une guemara), qui mènent au passage cherché sans faire
+ * défiler trois écrans.
  *
  * Contrairement au bouton de remontée, le menu reste affiché tout au long de
  * la lecture : c'est un repère permanent, pas un raccourci de passage. Il ne
- * s'efface qu'une fois tout en bas de la page, où la fin de l'office porte
- * ses propres boutons.
+ * s'efface qu'une fois tout en bas de la page, où la fin du texte porte ses
+ * propres boutons ; une page trop courte pour défiler ne le montre donc pas,
+ * sa barre d'outils étant restée sous les yeux.
  */
-const props = defineProps<{ sections: TefilaNavSection[] }>();
+const props = withDefaults(defineProps<{ sections?: ReadingNavSection[] }>(), {
+  sections: () => [],
+});
 
 const { t } = useI18n();
 
@@ -57,10 +64,12 @@ function goTop() {
 }
 
 /**
- * Le menu de sections d'un office (Chéma, 'Amida, ta'hanoun...) n'avait aucun
- * suivi : on ne savait pas s'il est trouvé, ni s'il sert vraiment à sauter les
- * trois écrans qu'il est censé épargner. `rank` dit vers quoi on saute : le
- * début de l'office, ou une section que l'on ne trouvait pas en défilant.
+ * Les repères d'un texte (sections d'un office, montées d'une paracha, dafim
+ * d'une guemara) n'avaient aucun suivi : on ne savait pas si le menu est
+ * trouvé, ni s'il sert vraiment à sauter les trois écrans qu'il est censé
+ * épargner. `rank` dit vers quoi on saute : le début du texte, ou un passage
+ * que l'on ne trouvait pas en défilant. Les évènements gardent leur nom
+ * d'origine (tefila_*), pour ne pas couper la série déjà mesurée.
  */
 function trackJump(offset: number) {
   const rank = props.sections.findIndex((section) => section.offset === offset);
@@ -87,6 +96,7 @@ const onKeydown = (e: KeyboardEvent) => {
 };
 
 onMounted(() => {
+  addReadingMenu();
   checkScroll();
   window.addEventListener("scroll", checkScroll, { passive: true });
   window.addEventListener("resize", checkScroll, { passive: true });
@@ -94,6 +104,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  removeReadingMenu();
   window.removeEventListener("scroll", checkScroll);
   window.removeEventListener("resize", checkScroll);
   window.removeEventListener("keydown", onKeydown);
@@ -111,11 +122,7 @@ onUnmounted(() => {
     leave-from-class="transform translate-y-0 opacity-100"
     leave-to-class="transform translate-y-10 opacity-0"
   >
-    <div
-      v-show="!atBottom || open"
-      class="fixed right-6 z-50 h-11 w-11"
-      :class="bottomClass"
-    >
+    <div v-show="!atBottom || open" class="fixed right-6 z-50 h-11 w-11" :class="bottomClass">
       <!-- Le panneau surgit du coin du bouton, ancré à sa place : il grandit
            sur place plutôt que d'ouvrir un modal ailleurs. -->
       <transition name="nav-panel">
@@ -123,10 +130,8 @@ onUnmounted(() => {
           v-if="open"
           class="nav-panel absolute bottom-0 right-0 flex w-64 max-h-[min(24rem,65vh)] flex-col overflow-hidden rounded-2xl bg-surface shadow-pop"
         >
-          <div class="flex items-center justify-between ps-4 pe-2 pt-2.5 pb-1 flex-shrink-0">
-            <p class="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-              {{ t("textReading.navSections") }}
-            </p>
+          <div class="flex items-center justify-between gap-2 ps-3 pe-2 pt-2.5 pb-1 flex-shrink-0">
+            <ReadingSizeControl />
             <button @click="close" class="icon-btn" :aria-label="t('common.close')">
               <AppIcon name="x" :size="15" />
             </button>
@@ -136,6 +141,9 @@ onUnmounted(() => {
               <AppIcon name="arrow-up" :size="13" class="flex-shrink-0 text-text-secondary" />
               {{ t("textReading.navTop") }}
             </button>
+            <p v-if="props.sections.length" class="section-heading">
+              {{ t("textReading.navSections") }}
+            </p>
             <button
               v-for="section in props.sections"
               :key="section.offset"
@@ -155,7 +163,7 @@ onUnmounted(() => {
             trackNavOpened();
           "
           class="absolute inset-0 flex items-center justify-center rounded-full bg-surface shadow-pop text-text-primary hover:text-primary transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          :aria-label="t('textReading.navSections')"
+          :aria-label="t('textReading.navMenu')"
           aria-haspopup="menu"
           :aria-expanded="false"
         >
@@ -177,7 +185,18 @@ onUnmounted(() => {
   border-radius: var(--radius-sm, 0.5rem);
   font-size: 0.875rem;
   color: var(--color-text-primary);
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.section-heading {
+  padding: 0.5rem 0.5rem 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
 }
 
 .section-item:hover {
@@ -192,11 +211,15 @@ onUnmounted(() => {
 }
 
 .nav-panel-enter-active {
-  transition: opacity 0.15s ease-out, transform 0.3s cubic-bezier(0.3, 1.3, 0.55, 1);
+  transition:
+    opacity 0.15s ease-out,
+    transform 0.3s cubic-bezier(0.3, 1.3, 0.55, 1);
 }
 
 .nav-panel-leave-active {
-  transition: opacity 0.12s ease-in, transform 0.12s ease-in;
+  transition:
+    opacity 0.12s ease-in,
+    transform 0.12s ease-in;
 }
 
 .nav-panel-enter-from,
@@ -217,11 +240,15 @@ onUnmounted(() => {
 /* Le bouton s'efface pendant que le panneau le remplace, et revient d'un
    petit rebond quand celui-ci se referme. */
 .nav-fab-enter-active {
-  transition: opacity 0.15s ease-out 0.08s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s;
+  transition:
+    opacity 0.15s ease-out 0.08s,
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s;
 }
 
 .nav-fab-leave-active {
-  transition: opacity 0.1s ease-in, transform 0.1s ease-in;
+  transition:
+    opacity 0.1s ease-in,
+    transform 0.1s ease-in;
 }
 
 .nav-fab-enter-from,

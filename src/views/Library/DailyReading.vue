@@ -22,7 +22,6 @@ import { widgetService } from "../../services/widgetService";
 import { localDayKey } from "../../services/dateService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { isNativeApp } from "../../composables/useNativeApp";
-import { useReadingSize } from "../../composables/useReadingSize";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
@@ -49,6 +48,9 @@ import {
   type DailyOptionKey,
 } from "../../services/dailyCycles";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import ReadingMenu from "../../components/ReadingMenu.vue";
+import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
+import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
 import { liveValue } from "../../composables/liveInput";
 import { useSearchMode } from "../../composables/useSearchMode";
 
@@ -60,8 +62,6 @@ const { confirm } = useConfirm();
 // préférences) et les lectures se cochent encore ; seule la composition de la
 // liste attend le retour du réseau. Voir requireOnline et persistProgress.
 const online = useOnline();
-// Même préférence de taille que le lecteur de la bibliothèque (A− / A+).
-const readingSize = useReadingSize();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
 // Paracha (chnei mikra) : mêmes options d'affichage que sa page de la
@@ -1201,30 +1201,7 @@ function formatBookName(livre: string): string {
           </div>
 
           <!-- Taille du texte (même réglage que le lecteur de la bibliothèque) -->
-          <div
-            class="ml-auto inline-flex items-center rounded-lg bg-black/5 dark:bg-white/10"
-            role="group"
-            :aria-label="t('textReading.textSize')"
-          >
-            <button
-              @click="readingSize.decrease()"
-              :disabled="!readingSize.canDecrease.value"
-              class="px-3 py-1.5 text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors disabled:opacity-35"
-              :aria-label="t('textReading.textSizeDecrease')"
-              :title="t('textReading.textSizeDecrease')"
-            >
-              A−
-            </button>
-            <button
-              @click="readingSize.increase()"
-              :disabled="!readingSize.canIncrease.value"
-              class="px-3 py-1.5 text-base font-semibold text-text-secondary hover:text-text-primary transition-colors disabled:opacity-35"
-              :aria-label="t('textReading.textSizeIncrease')"
-              :title="t('textReading.textSizeIncrease')"
-            >
-              A+
-            </button>
-          </div>
+          <ReadingSizeControl class="ml-auto" />
         </div>
 
         <!-- Onglet « Cette semaine » : le chnei mikra, à part de la liste du
@@ -1538,5 +1515,10 @@ function formatBookName(livre: string): string {
         </template>
       </template>
     </template>
+
+    <!-- Comme les autres textes de la bibliothèque : le menu de lecture et la
+         progression au bas de l'écran. -->
+    <ReadingMenu />
+    <ReadingProgressBar />
   </div>
 </template>
