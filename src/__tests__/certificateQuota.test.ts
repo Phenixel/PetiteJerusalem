@@ -77,7 +77,7 @@ describe("quota de certificats de distribution", () => {
     expect(revocable.map((c) => c.id)).toEqual(["R33A4CCD5R"]);
     // La version la plus récente de la fiche retient le sien, et son voisin
     // par la marge : l'envoi tombe dans les deux fenêtres.
-    expect(list.find((c) => c.id === "SA7386DCQJ")?.keptFor).toBe("certificat du run précédent");
+    expect(list.find((c) => c.id === "SA7386DCQJ")?.keptFor).toBe("certificat du run précédent, provenance inconnue");
     expect(list.find((c) => c.id === "T7X6S8JPNR")?.keptFor).toContain("3.7.6");
   });
 
@@ -243,7 +243,30 @@ describe("quota de certificats de distribution", () => {
     const revocable = revocableCertificates(list, protectedUploads(versions, builds), signedBuilds);
 
     expect(revocable.map((c) => c.id)).toEqual(["R33A4CCD5R", "T7X6S8JPNR"]);
-    expect(list.find((c) => c.id === "SA7386DCQJ")?.keptFor).toBe("certificat du run précédent");
+    expect(list.find((c) => c.id === "SA7386DCQJ")?.keptFor).toContain("il a signé le build 3070600");
+  });
+
+  it("libère même le plus récent quand son marqueur dit que son binaire est dépassé", () => {
+    // Un compte au quota serré (deux certificats) ne tiendrait pas si le
+    // dernier était intouchable par principe : son marqueur suffit à savoir
+    // qu'il ne signe plus rien que quiconque regarde.
+    const signedBuilds = new Map([
+      ["T7X6S8JPNR", "3070500"],
+      ["SA7386DCQJ", "3070600"],
+    ]);
+    const versions = {
+      data: [
+        version("3.7.8", "IN_REVIEW", "b8", "2026-08-23T09:16:40.000+00:00"),
+        version("3.7.6", "READY_FOR_DISTRIBUTION", "b6", "2026-08-21T12:46:50.000+00:00"),
+      ],
+      included: [...Object.values(BUILDS), build("b8", "3070800", "2026-08-23T09:16:25.000+00:00")],
+    };
+    const builds = { data: [build("b8", "3070800", "2026-08-23T09:16:25.000+00:00")] };
+
+    const list = certificates().filter((c) => c.id !== "R33A4CCD5R");
+    const revocable = revocableCertificates(list, protectedUploads(versions, builds), signedBuilds);
+
+    expect(revocable.map((c) => c.id)).toEqual(["T7X6S8JPNR", "SA7386DCQJ"]);
   });
 
   it("ne révoque jamais le certificat le plus récent, même sans aucun envoi", () => {
@@ -251,6 +274,6 @@ describe("quota de certificats de distribution", () => {
     const revocable = revocableCertificates(list, protectedUploads({ data: [] }, { data: [] }));
 
     expect(revocable.map((c) => c.id)).toEqual(["R33A4CCD5R", "T7X6S8JPNR"]);
-    expect(list.at(-1)?.keptFor).toBe("certificat du run précédent");
+    expect(list.at(-1)?.keptFor).toBe("certificat du run précédent, provenance inconnue");
   });
 });

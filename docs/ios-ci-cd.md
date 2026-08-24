@@ -128,7 +128,9 @@ qu'aucun geste manuel ne soit nécessaire :
   binaires attachés à une version qu'Apple a encore en main (examen,
   traitement, publication en attente), celui de la version la plus récente de
   la fiche quel qu'en soit l'état, le dernier binaire envoyé et ceux qu'Apple
-  traite encore. Le certificat du run précédent est gardé d'office.
+  traite encore. Le certificat du run précédent est gardé d'office tant qu'on
+  ignore ce qu'il a signé ; avec son marqueur, il est jugé comme les autres,
+  ce qui permet de tenir même un quota plus serré que trois.
 
 Un certificat **sans marqueur** (antérieur au mécanisme, ou laissé par un run
 tué avant son nettoyage) est jugé sur les dates : l'API date les certificats

@@ -166,9 +166,10 @@ export function protectedUploads(versionsResponse, buildsResponse) {
 
 /**
  * Annote chaque certificat de ce qui le retient (`keptFor`) et rend ceux qui
- * peuvent partir, du plus ancien au plus récent. Le plus récent n'est jamais
- * de la partie : c'est celui du run précédent, dont le binaire vient peut-être
- * d'arriver chez Apple.
+ * peuvent partir, du plus ancien au plus récent. Le plus récent est épargné
+ * d'office tant qu'on ignore ce qu'il a signé : c'est celui du run précédent,
+ * dont le binaire vient peut-être d'arriver chez Apple. Avec un marqueur, il
+ * est jugé comme les autres, sur le sort de SON binaire.
  *
  * `signedBuilds` donne, quand on la connaît, la provenance exacte : le profil
  * laissé en place par un run qui a envoyé son binaire porte le numéro de
@@ -197,14 +198,20 @@ export function revocableCertificates(certificates, uploads, signedBuilds = new 
       certificate.keptFor = `type ${certificate.type}, créé hors CI`;
       return;
     }
-    if (!next) {
-      certificate.keptFor = "certificat du run précédent";
-      return;
-    }
     const signed = signedBuilds.get(certificate.id);
     if (signed) {
+      // Provenance connue, y compris pour le plus récent : son marqueur dit
+      // ce qu'il a signé, et si ce binaire est distribué et dépassé, il n'a
+      // plus de raison d'occuper une place. C'est ce qui permet de tenir même
+      // un quota de deux.
       const upload = uploads.find((candidate) => candidate.buildNumber === signed);
       certificate.keptFor = upload && `il a signé le build ${signed}, ${upload.label}`;
+      return;
+    }
+    if (!next) {
+      // Provenance inconnue et pas de suivant : c'est le certificat du run
+      // précédent, dont le binaire vient peut-être d'arriver chez Apple.
+      certificate.keptFor = "certificat du run précédent, provenance inconnue";
       return;
     }
     const from = certificate.created - ATTRIBUTION_MARGIN_MS;
