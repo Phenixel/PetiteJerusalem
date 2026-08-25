@@ -196,6 +196,7 @@ const { searching } = useSearchMode(searchTerm);
 const debouncedTerm = ref("");
 let searchDebounce: ReturnType<typeof setTimeout> | undefined;
 watch(searchTerm, (value) => {
+  if (value.trim()) trackLibrarySearchUsed();
   clearTimeout(searchDebounce);
   searchDebounce = setTimeout(() => {
     debouncedTerm.value = value;
@@ -207,6 +208,8 @@ watch(searchTerm, (value) => {
 watch(currentCorpus, () => {
   searchTerm.value = "";
   debouncedTerm.value = "";
+  hasTrackedSearch = false;
+  trackLibraryViewed();
   applySeoMeta();
 });
 
@@ -315,6 +318,34 @@ async function loadDailySummary(u: User) {
 
 function trackCorpusOpened(corpus: string) {
   analyticsService.capture("library_corpus_opened", { corpus });
+}
+
+/**
+ * Arrivée sur la bibliothèque, accueil comme page de corpus. Attendu par le
+ * dashboard « Bibliothèque (tableau de bord) » depuis le 11 août, jamais posé :
+ * la tuile d'arrivées y est vide, et l'entrée par un corpus
+ * (`library_corpus_opened`) n'a donc aucun dénominateur.
+ */
+function trackLibraryViewed() {
+  analyticsService.capture("library_viewed", {
+    // null sur l'étagère d'accueil, le corpus sur sa propre page : les deux
+    // écrans sont la même vue mais pas la même intention.
+    corpus: currentCorpus.value?.corpus ?? null,
+  });
+}
+
+// Une seule fois par page de bibliothèque, comme session_search_used : chaque
+// frappe noierait les stats. Remis à zéro en changeant de corpus, la recherche
+// de l'accueil et celle d'un corpus n'ayant pas la même portée.
+let hasTrackedSearch = false;
+
+function trackLibrarySearchUsed() {
+  if (hasTrackedSearch) return;
+  hasTrackedSearch = true;
+  analyticsService.capture("library_search_used", {
+    corpus: currentCorpus.value?.corpus ?? null,
+    scope: currentCorpus.value ? "corpus" : "all",
+  });
 }
 
 // App native : « Tout télécharger » (toute la bibliothèque sur l'accueil, le
@@ -451,6 +482,7 @@ function applySeoMeta() {
 }
 
 onMounted(() => {
+  trackLibraryViewed();
   bookmarkCounts.value = readingProgressService.getBookmarkCounts();
   // Position locale tout de suite, affinée quand la synchro du compte aboutit.
   lastReading.value = readingProgressService.getLastPosition();

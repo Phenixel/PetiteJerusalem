@@ -274,10 +274,25 @@ const clearFilters = () => {
   selectedType.value = "";
 };
 
+// Arrivée sur le tableau de bord du partage. L'événement est attendu par le
+// dashboard « Funnel chaîne partagée » depuis le 11 août mais n'a jamais été
+// posé : la tuile « découverte vs tableau de bord » est vide depuis. Il part
+// à la première résolution de l'auth, pas au montage : `variant` n'a de sens
+// qu'une fois qu'on sait si le visiteur a un compte, et Firebase répond après
+// le premier rendu.
+let hasTrackedHomeView = false;
+
 onMounted(() => {
   loadSessions();
   unsubscribeAuth = authService.onAuthChanged((user) => {
     currentUser.value = user;
+    if (hasTrackedHomeView) return;
+    hasTrackedHomeView = true;
+    analyticsService.capture("share_home_viewed", {
+      // Les deux visages de la page depuis la refonte du 4 août : la liste
+      // publique pour un visiteur, « Mes sessions » en tête pour un compte.
+      variant: user ? "dashboard" : "discovery",
+    });
   });
   const url = window.location.origin + "/share-reading";
   seoService.setMeta({
