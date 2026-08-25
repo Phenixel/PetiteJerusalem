@@ -97,8 +97,30 @@ onMounted(async () => {
   });
 });
 
+/**
+ * Sortie négative du funnel de création, jusqu'ici totalement muette :
+ * `session_created` n'avait aucune contrepartie. Un formulaire abandonné sur
+ * une validation, un terme refusé par la modération ou une écriture Firestore
+ * en échec se lisaient tous de la même façon dans les stats : un
+ * `session_create_started` sans suite.
+ */
+const trackCreateFailed = (reason: "validation" | "moderation" | "error", detail?: string) => {
+  analyticsService.capture("session_create_failed", {
+    reason,
+    // Pas l'intitulé de la chaîne (noms de personnes) : seulement de quoi
+    // trier. Le terme refusé par la modération est porté par le message.
+    detail: detail ?? null,
+    text_type: sessionData.type || null,
+    books_count: selectedBooks.value.length,
+    is_authenticated: currentUser.value != null,
+  });
+};
+
 const createSession = async () => {
   if (!currentUser.value) {
+    // Le visiteur a rempli le formulaire puis découvre qu'il faut un compte :
+    // c'est une friction, pas une simple validation.
+    trackCreateFailed("validation", "not_authenticated");
     showAuthPrompt.value = true;
     return;
   }
@@ -109,12 +131,14 @@ const createSession = async () => {
     !sessionData.type ||
     !sessionData.dateLimit
   ) {
+    trackCreateFailed("validation", "missing_fields");
     message.value = t("newSession.fillAllFields");
     messageType.value = "error";
     return;
   }
 
   if (isBookSelectionEnabled.value && selectedBooks.value.length === 0) {
+    trackCreateFailed("validation", "no_book_selected");
     message.value = t("newSession.selectAtLeastOne");
     messageType.value = "error";
     return;
@@ -139,6 +163,10 @@ const createSession = async () => {
       session_id: sessionId,
       text_type: sessionData.type,
       books_count: selectedBooks.value.length,
+      // Toujours vrai (la création exige un compte), mais posé comme sur
+      // `session_create_started` : les deux bouts du funnel se comparent
+      // alors sur la même propriété, sans traitement particulier.
+      is_authenticated: true,
       guest_email_required: sessionData.guestEmailRequired,
       deadline_days: Math.ceil(
         (new Date(sessionData.dateLimit).getTime() - Date.now()) / (24 * 3600 * 1000),
@@ -153,8 +181,10 @@ const createSession = async () => {
     console.error("Erreur lors de la création de la session:", error);
     if (error instanceof ModerationError) {
       // Terme interdit : erreur utilisateur (pas un bug), avec le terme en cause.
+      trackCreateFailed("moderation", error.message);
       message.value = error.message;
     } else {
+      trackCreateFailed("error", error instanceof Error ? error.message : String(error));
       analyticsService.captureException(error, { flow: "session_create" });
       message.value = t("newSession.createError");
     }

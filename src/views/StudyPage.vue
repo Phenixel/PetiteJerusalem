@@ -66,12 +66,25 @@ async function toggleDownload(text: TextStudyJsonEntry) {
       await removeBook(book);
       analyticsService.capture("offline_download_deleted", { scope: "book", book: book.path });
     } else {
+      // Le couple début/fin manquait sur le téléchargement d'un livre seul :
+      // seule la réussite s'écrivait. Un téléchargement lancé sur un réseau
+      // qui lâche ne laissait aucune trace, et le taux de réussite hors ligne
+      // était donc mécaniquement de 100 %.
+      analyticsService.capture("offline_download_started", { scope: "book", book: book.path });
       await downloadBook(book);
       // Téléchargements déclenchés par l'utilisateur uniquement (la synchro en
       // arrière-plan de la lecture du jour n'est pas trackée).
       analyticsService.capture("offline_download_completed", { scope: "book", book: book.path });
     }
-  } catch {
+  } catch (e) {
+    analyticsService.capture("offline_download_failed", {
+      scope: "book",
+      book: book.path,
+      // Le premier suspect d'un téléchargement en échec, et il se lit sans
+      // rien demander à l'appareil.
+      is_online: navigator.onLine,
+      error_message: e instanceof Error ? e.message : String(e),
+    });
     toast.error(t("downloads.error"));
   }
 }
@@ -323,11 +336,27 @@ async function downloadAllInTab() {
     tab: currentCorpus.value?.typeKey ?? "Tout",
     books_count: tabBooks.value.filter((b) => !isBookDownloaded(b)).length,
   });
+  let downloaded = 0;
   for (const book of tabBooks.value) {
     if (isBookDownloaded(book)) continue;
     try {
       await downloadBook(book);
-    } catch {
+      downloaded++;
+    } catch (e) {
+      // Sortie de boucle silencieuse : `offline_download_started` restait sans
+      // suite, exactement comme un utilisateur qui quitte la page. Ces deux
+      // cas ne se distinguaient pas, alors qu'un « Tout télécharger » coupé
+      // en route est le pire moment pour perdre quelqu'un.
+      analyticsService.capture("offline_download_failed", {
+        scope: "all",
+        tab: currentCorpus.value?.typeKey ?? "Tout",
+        book: book.path,
+        // Le rang dit si le lot a échoué d'emblée ou s'est interrompu près du
+        // but : les deux n'appellent pas la même correction.
+        books_done: downloaded,
+        is_online: navigator.onLine,
+        error_message: e instanceof Error ? e.message : String(e),
+      });
       toast.error(t("downloads.error"));
       return; // Probablement hors connexion : inutile d'enchaîner les échecs.
     }
@@ -335,6 +364,7 @@ async function downloadAllInTab() {
   analyticsService.capture("offline_download_completed", {
     scope: "all",
     tab: currentCorpus.value?.typeKey ?? "Tout",
+    books_count: downloaded,
   });
 }
 
@@ -375,7 +405,13 @@ async function removeAllInTab() {
       books_count: books.length,
     });
     toast.success(t("downloads.deleteAllDone"));
-  } catch {
+  } catch (e) {
+    analyticsService.capture("offline_download_delete_failed", {
+      scope: "all",
+      tab: corpus?.typeKey ?? "Tout",
+      books_count: books.length,
+      error_message: e instanceof Error ? e.message : String(e),
+    });
     toast.error(t("downloads.deleteError"));
   } finally {
     removingAll.value = false;

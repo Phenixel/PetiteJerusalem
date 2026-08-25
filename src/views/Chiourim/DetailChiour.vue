@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch, watchEffect } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { chiourService } from "../../services/chiourService";
+import { analyticsService } from "../../services/analyticsService";
 import { serieService, type Serie } from "../../services/serieService";
 import { useViewedChiourim } from "../../composables/useViewedChiourim";
 import type { Chiour } from "../../models/models";
@@ -82,8 +83,35 @@ function applyChiour(all: Chiour[], slug: string): boolean {
   return true;
 }
 
+/**
+ * Ouverture d'une page de chiour. `chiour_played` ne compte que les écoutes
+ * lancées : sans dénominateur, impossible de dire si un chiour est peu écouté
+ * parce qu'il est peu ouvert, ou parce que sa page ne donne pas envie.
+ * Mêmes clés que le lecteur audio (`chiour_slug`, `chiour_title`) pour que les
+ * deux événements se recollent.
+ */
+function trackChiourOpened(found: Chiour): void {
+  if (trackedSlug === found.slug) return;
+  trackedSlug = found.slug;
+  analyticsService.capture("chiour_opened", {
+    chiour_slug: found.slug,
+    chiour_title: found.name,
+    auteur: found.auteur ?? null,
+    serie_id: found.serieId ?? null,
+    // Réécoute ou découverte : `useViewedChiourim` garde la trace des chiourim
+    // déjà lancés sur cet appareil.
+    already_viewed: isViewed(found.slug),
+  });
+}
+
+// La page se réutilise d'un chiour à l'autre (épisode suivant, recommandation)
+// et `applyFound` passe deux fois sur le même chiour (cache puis catalogue
+// frais) : un seul événement par chiour réellement ouvert.
+let trackedSlug: string | null = null;
+
 function applyFound(found: Chiour): void {
   chiour.value = found;
+  trackChiourOpened(found);
   serie.value = null;
   if (found.serieId) {
     serieService
@@ -343,6 +371,7 @@ watch(() => route.params.slug, loadChiour);
       title-key="shareModal.titleChiour"
       message-key="shareModal.inviteChiour"
       content-type="chiour"
+      :content-id="chiour.slug"
     />
   </main>
 </template>

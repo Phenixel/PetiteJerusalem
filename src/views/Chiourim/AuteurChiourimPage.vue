@@ -8,6 +8,7 @@ import type { Chiour } from "../../models/models";
 import ChiourCard from "../../components/ChiourCard.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
+import { analyticsService } from "../../services/analyticsService";
 import { liveValue } from "../../composables/liveInput";
 
 const route = useRoute();
@@ -51,11 +52,23 @@ const categories = computed(() => {
   return Array.from(cats).sort();
 });
 
+// `applyAuteur` passe deux fois sur le même auteur (cache puis catalogue
+// frais) : un seul événement par auteur réellement ouvert.
+let trackedAuteurSlug: string | null = null;
+
 function applyAuteur(all: Chiour[], slug: string): boolean {
   const name = chiourService.findAuteurBySlug(all, slug);
   if (!name) return false;
   auteurName.value = name;
   chiourim.value = chiourService.filterByAuteur(all, name);
+  if (trackedAuteurSlug !== slug) {
+    trackedAuteurSlug = slug;
+    analyticsService.capture("chiour_auteur_opened", {
+      auteur: name,
+      auteur_slug: slug,
+      chiourim_count: chiourim.value.length,
+    });
+  }
   serieService
     .getAllSeries()
     .then((series) => {

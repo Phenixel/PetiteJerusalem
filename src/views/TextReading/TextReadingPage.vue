@@ -292,6 +292,11 @@ async function loadContent() {
     corpus: textEntry.value.type,
     book: textEntry.value.livre,
     source: sessionSlug.value ? "session" : "library",
+    // La chaîne d'où vient le lecteur. Le slug, pas l'id : la session n'est
+    // résolue qu'après ce chargement (voir onMounted), et c'est le slug que
+    // porte l'URL, donc la seule clé disponible ici. C'est aussi celle que
+    // `session_text_read_clicked` emporte, pour recoller les deux.
+    session_slug: sessionSlug.value,
   });
   loading.value = true;
   error.value = false;
@@ -857,6 +862,15 @@ async function cancelReservation() {
       source: "reading_page",
     });
   } catch (e) {
+    // Contrepartie manquante de `reservation_cancelled` : une annulation qui
+    // échoue laisse la section affichée comme réservée, et le lecteur croit
+    // l'avoir rendue.
+    analyticsService.capture("reservation_cancel_failed", {
+      session_id: session.value.id,
+      is_guest: currentUser.value == null,
+      error_message: e instanceof Error ? e.message : String(e),
+      source: "reading_page",
+    });
     toast.errorFromException(e, t("textReading.cancelError"));
   } finally {
     isReserving.value = false;
@@ -879,6 +893,13 @@ async function toggleRead() {
       source: "reading_page",
     });
   } catch (e) {
+    analyticsService.capture("section_mark_read_failed", {
+      session_id: session.value.id,
+      marked: next,
+      is_guest: currentUser.value == null,
+      error_message: e instanceof Error ? e.message : String(e),
+      source: "reading_page",
+    });
     toast.errorFromException(e, t("textReading.updateError"));
   } finally {
     isReserving.value = false;

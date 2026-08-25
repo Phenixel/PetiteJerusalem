@@ -24,6 +24,11 @@ const emit = defineEmits<{
   // Dépliage d'un texte pour voir ses chapitres : passage obligé avant de
   // cocher une section. La page parente en fait une étape de funnel.
   (e: "text-expanded", textId: string): void;
+  // Départ vers le lecteur depuis la chaîne (bouton « Lire » d'un texte, icône
+  // de lecture d'un chapitre). La page parente en fait une étape de funnel :
+  // le lecteur porte sa propre barre de réservation, une partie des
+  // réservations part donc d'ici et pas de la case à cocher.
+  (e: "read-clicked", textId: string, section?: number): void;
 }>();
 
 const expandedTexts = ref<Set<string>>(new Set());
@@ -302,7 +307,7 @@ const handleCardClick = (text: TextStudy) => {
                   }"
                   class="btn btn-soft !px-3.5 !py-2 text-sm hover:!text-primary"
                   :title="t('detailSession.textList.readThisText')"
-                  @click.stop
+                  @click.stop="emit('read-clicked', text.id)"
                 >
                   <AppIcon name="book-open" :size="15" />
                   {{ t("detailSession.textList.read") }}
@@ -553,7 +558,7 @@ const handleCardClick = (text: TextStudy) => {
                     }"
                     class="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex-shrink-0"
                     :title="t('detailSession.textList.readThisChapter')"
-                    @click.stop
+                    @click.stop="emit('read-clicked', text.id, chapter)"
                   >
                     <AppIcon name="book-reader" :size="16" />
                   </router-link>

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { applyLocale, type SupportedLocale, SUPPORTED_LOCALES } from "../i18n";
 import { translatePath } from "../content/seoLocales";
 import { setLocaleSpace } from "./useLocalePath";
+import { analyticsService } from "../services/analyticsService";
 
 export interface LocaleOption {
   code: SupportedLocale;
@@ -31,6 +32,20 @@ export function useLocale() {
   const isRtl = computed(() => currentLocaleOption.value.dir === "rtl");
 
   function setLocale(newLocale: SupportedLocale) {
+    // Chaque événement porte déjà `locale` (voir stampPlatform), mais rien ne
+    // disait qui CHANGE de langue : la bascule volontaire ne se lisait nulle
+    // part, alors qu'elle décide à elle seule de la valeur des pages traduites.
+    const previousLocale = currentLocale.value;
+    if (newLocale !== previousLocale) {
+      analyticsService.capture("locale_changed", {
+        locale: newLocale,
+        previous_locale: previousLocale,
+        // Une page traduite change aussi d'adresse : le reste du site n'en a
+        // qu'une. Savoir d'où part la bascule dit si elle suit une page
+        // indexée dans une autre langue, ou un simple choix de préférence.
+        is_localized_page: translatePath(route.path, newLocale) !== null,
+      });
+    }
     // Locale non embarquée (en/he) : chargée à la volée ; le français sert de
     // repli pendant le court chargement du chunk.
     applyLocale(newLocale);

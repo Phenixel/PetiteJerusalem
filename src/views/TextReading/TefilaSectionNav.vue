@@ -5,6 +5,7 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 import { useMiniPlayerVisible } from "../../composables/useAudioPlayer";
 import { isNativeApp } from "../../composables/useNativeApp";
 import type { TefilaNavSection } from "../../composables/useTefilaNav";
+import { analyticsService } from "../../services/analyticsService";
 
 /**
  * Le menu de navigation d'une tefila (Sidour, Sli'hot) : à la place du bouton
@@ -45,12 +46,32 @@ function close() {
   open.value = false;
 }
 
+/** Dénominateur des sauts : ouvertures du panneau, saut ou non derrière. */
+function trackNavOpened() {
+  analyticsService.capture("tefila_nav_opened", { sections_count: props.sections.length });
+}
+
 function goTop() {
   close();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+/**
+ * Le menu de sections d'un office (Chéma, 'Amida, ta'hanoun...) n'avait aucun
+ * suivi : on ne savait pas s'il est trouvé, ni s'il sert vraiment à sauter les
+ * trois écrans qu'il est censé épargner. `rank` dit vers quoi on saute : le
+ * début de l'office, ou une section que l'on ne trouvait pas en défilant.
+ */
+function trackJump(offset: number) {
+  const rank = props.sections.findIndex((section) => section.offset === offset);
+  analyticsService.capture("tefila_section_jumped", {
+    sections_count: props.sections.length,
+    rank: rank >= 0 ? rank + 1 : null,
+  });
+}
+
 function goTo(offset: number) {
+  trackJump(offset);
   close();
   const el = document.querySelector(`[data-block-anchor="${offset}"]`);
   if (!(el instanceof HTMLElement)) return;
@@ -129,7 +150,10 @@ onUnmounted(() => {
       <transition name="nav-fab">
         <button
           v-if="!open"
-          @click="open = true"
+          @click="
+            open = true;
+            trackNavOpened();
+          "
           class="absolute inset-0 flex items-center justify-center rounded-full bg-surface shadow-pop text-text-primary hover:text-primary transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           :aria-label="t('textReading.navSections')"
           aria-haspopup="menu"

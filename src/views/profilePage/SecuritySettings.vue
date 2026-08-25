@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { authService } from "../../services/authService";
 import { useRouter } from "vue-router";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import { analyticsService } from "../../services/analyticsService";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -49,15 +50,27 @@ const clearMessages = () => {
   errorMessage.value = "";
 };
 
+/**
+ * `reason` reste une étiquette fermée : le mot de passe, l'ancien comme le
+ * nouveau, ne doit jamais approcher les propriétés d'un événement.
+ */
+const trackPasswordFailed = (
+  reason: "mismatch" | "too_short" | "wrong_password" | "requires_recent_login" | "error",
+) => {
+  analyticsService.capture("password_update_failed", { reason });
+};
+
 const changePassword = async () => {
   clearMessages();
 
   if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+    trackPasswordFailed("mismatch");
     errorMessage.value = t("security.passwordsDoNotMatch");
     return;
   }
 
   if (passwordForm.value.newPassword.length < 6) {
+    trackPasswordFailed("too_short");
     errorMessage.value = t("security.passwordMinError");
     return;
   }
@@ -68,6 +81,10 @@ const changePassword = async () => {
       passwordForm.value.currentPassword,
       passwordForm.value.newPassword,
     );
+    // Pendant du `profile_name_updated` de la fiche : le changement de mot de
+    // passe est l'autre écriture du compte, et il n'était pas suivi. Aucune
+    // propriété : rien de ce formulaire n'a à quitter l'appareil.
+    analyticsService.capture("password_updated");
     successMessage.value = t("security.passwordChangedSuccess");
     passwordForm.value = { currentPassword: "", newPassword: "", confirmPassword: "" };
   } catch (error) {
@@ -77,12 +94,17 @@ const changePassword = async () => {
         error.message.includes("auth/wrong-password") ||
         error.message.includes("auth/invalid-credential")
       ) {
+        trackPasswordFailed("wrong_password");
         errorMessage.value = t("security.wrongPassword");
       } else if (error.message.includes("auth/requires-recent-login")) {
+        trackPasswordFailed("requires_recent_login");
         errorMessage.value = t("security.requiresRecentLogin");
       } else {
+        trackPasswordFailed("error");
         errorMessage.value = t("security.passwordChangeError");
       }
+    } else {
+      trackPasswordFailed("error");
     }
   } finally {
     isChangingPassword.value = false;
@@ -91,11 +113,20 @@ const changePassword = async () => {
 
 const confirmDeleteAccount = () => {
   clearMessages();
+  // Dénominateur de `account_deleted` : combien reculent devant la
+  // confirmation, et combien butent sur la ré-authentification exigée.
+  analyticsService.capture("account_delete_started", {
+    needs_reauth: needsGoogleReauth.value || needsAppleReauth.value,
+  });
   showDeleteConfirmation.value = true;
 };
 
 const cancelDelete = () => {
   showDeleteConfirmation.value = false;
+};
+
+const trackDeleteFailed = (reason: "requires_recent_login" | "reauth_cancelled" | "error") => {
+  analyticsService.capture("account_delete_failed", { reason });
 };
 
 const deleteAccount = async () => {
@@ -116,12 +147,17 @@ const deleteAccount = async () => {
     console.error("Erreur lors de la suppression du compte:", error);
     if (error instanceof Error) {
       if (error.message.includes("auth/requires-recent-login")) {
+        trackDeleteFailed("requires_recent_login");
         errorMessage.value = t("security.deleteRecentLogin");
       } else if (error.message.includes("auth/popup-closed-by-user")) {
+        trackDeleteFailed("reauth_cancelled");
         errorMessage.value = t("security.authCancelled");
       } else {
+        trackDeleteFailed("error");
         errorMessage.value = t("security.deleteError");
       }
+    } else {
+      trackDeleteFailed("error");
     }
   } finally {
     isDeletingAccount.value = false;
