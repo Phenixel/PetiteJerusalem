@@ -327,10 +327,14 @@ function trackCorpusOpened(corpus: string) {
  * (`library_corpus_opened`) n'a donc aucun dénominateur.
  */
 function trackLibraryViewed() {
+  const corpus = currentCorpus.value?.corpus ?? null;
   analyticsService.capture("library_viewed", {
-    // null sur l'étagère d'accueil, le corpus sur sa propre page : les deux
-    // écrans sont la même vue mais pas la même intention.
-    corpus: currentCorpus.value?.corpus ?? null,
+    // `variant` est la propriété que les tuiles ventilent déjà : dashboard
+    // pour l'étagère (/bibliotheque), corpus pour la liste détaillée d'une
+    // grande section. Elle sépare « j'arrive » de « je descends dans un
+    // corpus », que le seul $pageview mélangeait.
+    variant: corpus ? "corpus" : "dashboard",
+    corpus,
   });
 }
 
@@ -343,8 +347,10 @@ function trackLibrarySearchUsed() {
   if (hasTrackedSearch) return;
   hasTrackedSearch = true;
   analyticsService.capture("library_search_used", {
-    corpus: currentCorpus.value?.corpus ?? null,
-    scope: currentCorpus.value ? "corpus" : "all",
+    // `scope` porte directement la portée de la recherche, telle que la tuile
+    // l'attend : « all » depuis l'étagère (toute la bibliothèque), le corpus
+    // courant sur sa page (la recherche y reste dans le corpus).
+    scope: currentCorpus.value?.corpus ?? "all",
   });
 }
 
