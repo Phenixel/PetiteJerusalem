@@ -11,6 +11,7 @@ import { tehilimPages, SITE_URL } from "../content/seoPages";
 import { seoService } from "../services/seoService";
 import { useSeoContentNav } from "../composables/useSeoContentNav";
 import SignupPromptModal from "../components/SignupPromptModal.vue";
+import { analyticsService } from "../services/analyticsService";
 
 const route = useRoute();
 const { showAuthPrompt, onContentClick } = useSeoContentNav();
@@ -20,6 +21,15 @@ const page = computed(() => tehilimPages.find((p) => p.path === route.path) ?? n
 function applyMeta() {
   const p = page.value;
   if (!p) return;
+  // Les autres pages de fond ont toutes leur événement de vue nommé
+  // (home_viewed, zmanim_viewed, calendar_viewed, parasha_viewed) ; le hub des
+  // Tehilim par intention n'avait que son $pageview. C'est pourtant la famille
+  // de pages où l'intention d'arrivée compte le plus : `tehilim_day_opened`
+  // ne dit rien de celle qui amène le visiteur.
+  analyticsService.capture("tehilim_page_viewed", {
+    // Le hub lui-même n'a pas d'intention : `null` le distingue de ses pages.
+    intention: route.path === "/tehilim" ? null : route.path.replace("/tehilim/", ""),
+  });
   const url = `${SITE_URL}${p.path}`;
   seoService.setMeta({
     title: p.title,

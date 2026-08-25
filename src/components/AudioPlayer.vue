@@ -3,6 +3,7 @@ import { ref, computed, watch, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import { useAudioPlayer, formatTime } from "../composables/useAudioPlayer";
+import { analyticsService } from "../services/analyticsService";
 
 const { t } = useI18n();
 
@@ -101,6 +102,14 @@ function setVolume(event: MouseEvent) {
 }
 
 function setSpeed(speed: number) {
+  // Le seul réglage d'écoute qui dise quelque chose du public : accélérer, ce
+  // sont des habitués qui suivent une série ; ralentir, c'est de l'étude ligne
+  // à ligne. Mêmes clés que `chiour_played`, pour recoller les deux.
+  analyticsService.capture("chiour_speed_changed", {
+    chiour_slug: props.slug ?? null,
+    chiour_title: props.title ?? null,
+    speed,
+  });
   player.setSpeed(speed);
   showSpeedMenu.value = false;
 }
