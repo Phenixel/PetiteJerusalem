@@ -265,14 +265,14 @@ const STRIP = {
 // écrite une fois, avec la table des index propres à chaque office.
 const HALAKHA = {
   amida: R(
-    "La 'Amida se dit debout, pieds joints, face à Jérusalem, à voix basse et sans interruption. Les ajouts qui dépendent du jour ou de la saison apparaissent à leur place. Les trois premières semaines après un changement de saison, ils sont à la couleur du thème.",
-    "The Amidah is said standing, feet together, facing Jerusalem, in an undertone and without interruption. Additions that depend on the day or the season appear in their place. For the first three weeks after a seasonal switch, they show in the theme color.",
-    "העמידה נאמרת בעמידה, ברגליים צמודות, לכיוון ירושלים, בלחש וללא הפסקה. התוספות התלויות ביום או בעונה מופיעות במקומן. בשלושת השבועות הראשונים אחרי חילוף עונה הן מוצגות בצבע הערכה.",
+    "La 'Amida se dit debout, pieds joints, face à Jérusalem, à voix basse et sans interruption.",
+    "The Amidah is said standing, feet together, facing Jerusalem, in an undertone and without interruption.",
+    "העמידה נאמרת בעמידה, ברגליים צמודות, לכיוון ירושלים, בלחש וללא הפסקה.",
   ),
   eteMention: R(
-    "Si l'on a dit machiv haroua'h oumorid haguéchem en été, on reprend au début de la bénédiction ; si la 'Amida est achevée, on la recommence.",
-    "If mashiv haruach umorid hageshem was said in summer, go back to the start of the blessing; if the Amidah was finished, repeat it.",
-    "אמר משיב הרוח ומוריד הגשם בקיץ, חוזר לראש הברכה؛ סיים את העמידה, חוזר לראשה.",
+    "Si l'on a dit machiv haroua'h oumorid haguéchem, on reprend au début de la bénédiction ; si la 'Amida est achevée, on la recommence.",
+    "If mashiv haruach umorid hageshem was said, go back to the start of the blessing; if the Amidah was finished, repeat it.",
+    "אמר משיב הרוח ומוריד הגשם, חוזר לראש הברכה؛ סיים את העמידה, חוזר לראשה.",
   ),
   hiverMention: R(
     "Si l'on a oublié machiv haroua'h mais dit morid hatal, on ne recommence pas.",
@@ -280,9 +280,9 @@ const HALAKHA = {
     "שכח משיב הרוח ואמר מוריד הטל, אינו חוזר.",
   ),
   eteDemande: R(
-    "Si l'on a demandé la pluie (barekh 'alénou) en été, on reprend au début de la bénédiction ; si la 'Amida est achevée, on la recommence.",
-    "If rain was requested (barech aleinu) in summer, go back to the start of the blessing; if the Amidah was finished, repeat it.",
-    "שאל גשם (ברך עלינו) בקיץ, חוזר לראש הברכה؛ סיים את העמידה, חוזר לראשה.",
+    "Si l'on a demandé la pluie (barekh 'alénou), on reprend au début de la bénédiction ; si la 'Amida est achevée, on la recommence.",
+    "If rain was requested (barech aleinu), go back to the start of the blessing; if the Amidah was finished, repeat it.",
+    "שאל גשם (ברך עלינו), חוזר לראש הברכה؛ סיים את העמידה, חוזר לראשה.",
   ),
   hiverDemande: R(
     "Si l'on a oublié la demande de pluie, on la rattrape dans Choméa' tefila. Passé cela, on reprend à Barekh 'alénou, et si la 'Amida est achevée, on la recommence.",
@@ -290,14 +290,19 @@ const HALAKHA = {
     "שכח שאלת גשם, אומרה בשומע תפילה؛ עבר, חוזר לברך עלינו, ואם סיים את העמידה חוזר לראשה.",
   ),
   melekhKadosh: R(
-    "Si l'on a conclu haEl hakadoch pendant les dix jours de techouva, on recommence la 'Amida.",
-    "If haEl hakadosh was said during the Ten Days of Repentance, repeat the Amidah.",
-    "חתם האל הקדוש בעשרת ימי תשובה, חוזר לראש העמידה.",
+    "Si l'on a conclu haEl hakadoch, on recommence la 'Amida.",
+    "If haEl hakadosh was said, repeat the Amidah.",
+    "חתם האל הקדוש, חוזר לראש העמידה.",
   ),
-  yaaleVeyavo: R(
-    "À Cha'harit et à Min'ha, si l'on a oublié Ya'alé véyavo, on recommence (depuis Retsé). Le soir de Roch Hodech, on ne recommence pas.",
-    "At Shacharit and Mincha, if Yaale veyavo was omitted, go back (to Retseh). On the night of Rosh Hodesh, do not repeat.",
-    "בשחרית ובמנחה, שכח יעלה ויבוא חוזר לרצה. בליל ראש חודש אינו חוזר.",
+  yaaleVeyavoJour: R(
+    "Si l'on a oublié Ya'alé véyavo, on recommence depuis Retsé.",
+    "If Yaale veyavo was omitted, go back to Retseh.",
+    "שכח יעלה ויבוא, חוזר לרצה.",
+  ),
+  yaaleVeyavoSoir: R(
+    "Si l'on a oublié Ya'alé véyavo, on ne recommence pas.",
+    "If Yaale veyavo was omitted, do not repeat.",
+    "שכח יעלה ויבוא, אינו חוזר.",
   ),
   alHanissim: R(
     "Si l'on a oublié 'Al hanissim, on ne recommence pas.",
@@ -324,20 +329,15 @@ const HALAKHA = {
     "These blessings are said every morning, even past their moment; they may be made up all morning.",
     "ברכות אלו נאמרות בכל בוקר, ואפשר להשלימן כל שעות הבוקר.",
   ),
-  tahanoun: R(
-    "Le ta'hanoun ne se dit pas à Roch Hodech, à 'Hanouka, à Pourim, tout le mois de Nissan et les jours de fête : ces jours-là, cette section n'apparaît pas.",
-    "Tachanun is not said on Rosh Hodesh, Hanukkah, Purim, all of Nissan and festive days: on those days this section does not appear.",
-    "אין אומרים תחנון בראש חודש, בחנוכה, בפורים, בכל חודש ניסן ובימים טובים؛ בימים אלו הקטע אינו מופיע.",
-  ),
   torahSemaine: R(
-    "Le lundi et le jeudi matin, on lit dans la Torah le début de la paracha de la semaine, en trois montées.",
-    "On Monday and Thursday mornings, the beginning of the week's parasha is read from the Torah, in three aliyot.",
-    "בימי שני וחמישי קוראים בתורה את תחילת פרשת השבוע, בשלושה עולים.",
+    "On lit dans la Torah le début de la paracha de la semaine, en trois montées.",
+    "The beginning of the week's parasha is read from the Torah, in three aliyot.",
+    "קוראים בתורה את תחילת פרשת השבוע, בשלושה עולים.",
   ),
   hallel: R(
-    "À Roch Hodech, le Hallel se dit debout, en sautant les passages indiqués (Hallel « abrégé ») ; selon l'usage séfarade, l'individuel le dit alors sans bénédiction.",
-    "On Rosh Hodesh, Hallel is said standing, skipping the indicated passages (“half” Hallel); by Sephardic custom, an individual then says it without a blessing.",
-    "בראש חודש אומרים הלל בדילוג, מעומד؛ למנהג הספרדים היחיד אומרו בלא ברכה.",
+    "Le Hallel se dit debout. Selon l'usage séfarade, l'individuel le dit sans bénédiction.",
+    "Hallel is said standing. By Sephardic custom, an individual says it without a blessing.",
+    "אומרים הלל מעומד. למנהג הספרדים היחיד אומרו בלא ברכה.",
   ),
 };
 
@@ -348,7 +348,7 @@ const HALAKHA = {
  * source de cet office ; `opts` : ce qui n'existe pas partout (kedoucha,
  * modim derabanan, Ata 'honantanou à la sortie de Chabbat…).
  */
-function amidaBlocks(src, ix) {
+function amidaBlocks(src, ix, opts = {}) {
   const blocks = [];
   blocks.push({
     src,
@@ -504,7 +504,7 @@ function amidaBlocks(src, ix) {
   blocks.push({
     src,
     when: "moed",
-    halakha: HALAKHA.yaaleVeyavo,
+    halakha: opts.soir ? HALAKHA.yaaleVeyavoSoir : HALAKHA.yaaleVeyavoJour,
     lines: [
       {
         seg: ix.yv,
@@ -1051,8 +1051,7 @@ function chaharitRecipe() {
         src: "Vidui",
         when: "tahanoun",
         plain: true,
-        labelText: R("Ta'hanoun", "Tachanun", "תחנון"),
-        halakha: HALAKHA.tahanoun,
+        labelText: R("Ta'hanoun (supplications)", "Tachanun (supplications)", "תחנון"),
         lines: [
           { seg: 1 },
           { seg: 2 },
@@ -1167,12 +1166,12 @@ function chaharitRecipe() {
         labelText: R("Sortie du séfer Torah", "Taking out the Torah", "הוצאת ספר תורה"),
         halakha: HALAKHA.torahSemaine,
         lines: [
-          { seg: 2, rubric: R(
-            "Avant la sortie du séfer, les jours où le ta'hanoun se dit :",
-            "Before taking out the scroll, on days when tachanun is said:",
-            "לפני הוצאת ספר תורה ביום שיש בו תחנון:",
+          { seg: 2, when: "tahanoun", rubric: R(
+            "Avant la sortie du séfer :",
+            "Before taking out the scroll:",
+            "לפני הוצאת ספר תורה:",
           ) },
-          { seg: 3, tight: true },
+          { seg: 3, when: "tahanoun", tight: true },
           { seg: 6, rubric: R(
             "Quand on sort le séfer Torah :",
             "As the Torah scroll is taken out:",
@@ -1227,16 +1226,7 @@ function chaharitRecipe() {
         src: "Ashrei",
         when: "tahanoun",
         plain: true,
-        lines: [
-          {
-            seg: 5,
-            rubric: R(
-              "Les jours sans ta'hanoun, on ne dit pas Lamnatséa'h :",
-              "On days without tachanun, Lamnatseach is not said:",
-              "ביום שאין אומרים בו תחנון מדלגים למנצח:",
-            ),
-          },
-        ],
+        lines: [{ seg: 5 }],
       },
       {
         src: "Uva LeSion",
@@ -1279,16 +1269,7 @@ function chaharitRecipe() {
         src: "Beit Yaakov",
         when: "tahanoun",
         plain: true,
-        lines: [
-          {
-            seg: 2,
-            rubric: R(
-              "Les jours sans ta'hanoun, on ne dit pas Tefila leDavid :",
-              "On days without tachanun, Tefillah leDavid is not said:",
-              "בימים שאין אומרים תחנון אין אומרים תפלה לדוד:",
-            ),
-          },
-        ],
+        lines: [{ seg: 2 }],
       },
       {
         src: "Beit Yaakov",
@@ -1313,9 +1294,9 @@ function chaharitRecipe() {
         plain: true,
         labelText: R("Moussaf de Roch Hodech", "Musaf for Rosh Hodesh", "מוסף לראש חודש"),
         halakha: R(
-          "Moussaf se dit après le Hallel et la lecture de la Torah. On y garde la mention de la saison (morid hatal en été, machiv haroua'h oumorid haguéchem en hiver).",
-          "Musaf is said after Hallel and the Torah reading. The seasonal mention is kept in it (morid hatal in summer, mashiv haruach umorid hageshem in winter).",
-          "מוסף נאמר אחר ההלל וקריאת התורה, ומזכירים בו את העונה (מוריד הטל בקיץ, משיב הרוח ומוריד הגשם בחורף).",
+          "On garde dans Moussaf la mention de la saison (morid hatal en été, machiv haroua'h oumorid haguéchem en hiver).",
+          "The seasonal mention is kept in Musaf (morid hatal in summer, mashiv haruach umorid hageshem in winter).",
+          "מזכירים במוסף את העונה (מוריד הטל בקיץ, משיב הרוח ומוריד הגשם בחורף).",
         ),
         lines: [
           { seg: 2 },
@@ -1474,8 +1455,7 @@ function minhaRecipe() {
         src: "Vidui",
         when: "tahanoun-minha",
         plain: true,
-        labelText: R("Ta'hanoun", "Tachanun", "תחנון"),
-        halakha: HALAKHA.tahanoun,
+        labelText: R("Ta'hanoun (supplications)", "Tachanun (supplications)", "תחנון"),
         lines: [
           { seg: 1 },
           { seg: 2 },
@@ -1560,7 +1540,7 @@ function arvitRecipe() {
     yihyu2: 48,
     osse: 49,
     yehiRatson: 50,
-  });
+  }, { soir: true });
 
   return {
     title: "ערבית של חול (Arvit)",

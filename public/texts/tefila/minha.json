@@ -95,9 +95,9 @@
         "he": "עמידה"
       },
       "halakha": {
-        "fr": "La 'Amida se dit debout, pieds joints, face à Jérusalem, à voix basse et sans interruption. Les ajouts qui dépendent du jour ou de la saison apparaissent à leur place. Les trois premières semaines après un changement de saison, ils sont à la couleur du thème.",
-        "en": "The Amidah is said standing, feet together, facing Jerusalem, in an undertone and without interruption. Additions that depend on the day or the season appear in their place. For the first three weeks after a seasonal switch, they show in the theme color.",
-        "he": "העמידה נאמרת בעמידה, ברגליים צמודות, לכיוון ירושלים, בלחש וללא הפסקה. התוספות התלויות ביום או בעונה מופיעות במקומן. בשלושת השבועות הראשונים אחרי חילוף עונה הן מוצגות בצבע הערכה."
+        "fr": "La 'Amida se dit debout, pieds joints, face à Jérusalem, à voix basse et sans interruption.",
+        "en": "The Amidah is said standing, feet together, facing Jerusalem, in an undertone and without interruption.",
+        "he": "העמידה נאמרת בעמידה, ברגליים צמודות, לכיוון ירושלים, בלחש וללא הפסקה."
       },
       "lines": [
         "אֲ֭דֹנָי שְׂפָתַ֣י תִּפְתָּ֑ח וּ֝פִ֗י יַגִּ֥יד תְּהִלָּתֶֽךָ׃",
@@ -125,9 +125,9 @@
     {
       "when": "ete",
       "halakha": {
-        "fr": "Si l'on a dit machiv haroua'h oumorid haguéchem en été, on reprend au début de la bénédiction ; si la 'Amida est achevée, on la recommence.",
-        "en": "If mashiv haruach umorid hageshem was said in summer, go back to the start of the blessing; if the Amidah was finished, repeat it.",
-        "he": "אמר משיב הרוח ומוריד הגשם בקיץ, חוזר לראש הברכה؛ סיים את העמידה, חוזר לראשה."
+        "fr": "Si l'on a dit machiv haroua'h oumorid haguéchem, on reprend au début de la bénédiction ; si la 'Amida est achevée, on la recommence.",
+        "en": "If mashiv haruach umorid hageshem was said, go back to the start of the blessing; if the Amidah was finished, repeat it.",
+        "he": "אמר משיב הרוח ומוריד הגשם, חוזר לראש הברכה؛ סיים את העמידה, חוזר לראשה."
       },
       "lines": [
         {
@@ -203,9 +203,9 @@
     {
       "when": "teshuva",
       "halakha": {
-        "fr": "Si l'on a conclu haEl hakadoch pendant les dix jours de techouva, on recommence la 'Amida.",
-        "en": "If haEl hakadosh was said during the Ten Days of Repentance, repeat the Amidah.",
-        "he": "חתם האל הקדוש בעשרת ימי תשובה, חוזר לראש העמידה."
+        "fr": "Si l'on a conclu haEl hakadoch, on recommence la 'Amida.",
+        "en": "If haEl hakadosh was said, repeat the Amidah.",
+        "he": "חתם האל הקדוש, חוזר לראש העמידה."
       },
       "lines": [
         {
@@ -234,9 +234,9 @@
     {
       "when": "barkhenou",
       "halakha": {
-        "fr": "Si l'on a demandé la pluie (barekh 'alénou) en été, on reprend au début de la bénédiction ; si la 'Amida est achevée, on la recommence.",
-        "en": "If rain was requested (barech aleinu) in summer, go back to the start of the blessing; if the Amidah was finished, repeat it.",
-        "he": "שאל גשם (ברך עלינו) בקיץ, חוזר לראש הברכה؛ סיים את העמידה, חוזר לראשה."
+        "fr": "Si l'on a demandé la pluie (barekh 'alénou), on reprend au début de la bénédiction ; si la 'Amida est achevée, on la recommence.",
+        "en": "If rain was requested (barech aleinu), go back to the start of the blessing; if the Amidah was finished, repeat it.",
+        "he": "שאל גשם (ברך עלינו), חוזר לראש הברכה؛ סיים את העמידה, חוזר לראשה."
       },
       "lines": [
         {
@@ -307,9 +307,9 @@
     {
       "when": "moed",
       "halakha": {
-        "fr": "À Cha'harit et à Min'ha, si l'on a oublié Ya'alé véyavo, on recommence (depuis Retsé). Le soir de Roch Hodech, on ne recommence pas.",
-        "en": "At Shacharit and Mincha, if Yaale veyavo was omitted, go back (to Retseh). On the night of Rosh Hodesh, do not repeat.",
-        "he": "בשחרית ובמנחה, שכח יעלה ויבוא חוזר לרצה. בליל ראש חודש אינו חוזר."
+        "fr": "Si l'on a oublié Ya'alé véyavo, on recommence depuis Retsé.",
+        "en": "If Yaale veyavo was omitted, go back to Retseh.",
+        "he": "שכח יעלה ויבוא, חוזר לרצה."
       },
       "lines": [
         {
@@ -624,19 +624,14 @@
       ]
     },
     {
-      "label": "Ta'hanoun",
+      "label": "Ta'hanoun (supplications)",
       "labelText": {
-        "fr": "Ta'hanoun",
-        "en": "Tachanun",
+        "fr": "Ta'hanoun (supplications)",
+        "en": "Tachanun (supplications)",
         "he": "תחנון"
       },
       "when": "tahanoun-minha",
       "plain": true,
-      "halakha": {
-        "fr": "Le ta'hanoun ne se dit pas à Roch Hodech, à 'Hanouka, à Pourim, tout le mois de Nissan et les jours de fête : ces jours-là, cette section n'apparaît pas.",
-        "en": "Tachanun is not said on Rosh Hodesh, Hanukkah, Purim, all of Nissan and festive days: on those days this section does not appear.",
-        "he": "אין אומרים תחנון בראש חודש, בחנוכה, בפורים, בכל חודש ניסן ובימים טובים؛ בימים אלו הקטע אינו מופיע."
-      },
       "lines": [
         "אָנָּא יְהֹוָה אֱלֹהֵינוּ וֵאלֹהֵי אֲבוֹתֵינוּ. תָּבֹא לְפָנֶיךָ תְּפִלָּתֵנוּ. וְאַל־תִּתְעַלַּם מַלְכֵּנוּ מִתְּחִנָּתֵנוּ. שֶׁאֵין אֲנַחְנוּ עַזֵּי פָנִים וּקְשֵׁי עֹרֶף לוֹמַר לְפָנֶיךָ יְהֹוָה אֱלֹהֵינוּ וֵאלֹהֵי אֲבוֹתֵינוּ צַדִּיקִים אֲנַחְנוּ וְלֹא חָטָאנוּ. אֲבָל חָטָאנוּ. עָוִינוּ. פָּשַׁעְנוּ. אֲנַחְנוּ וַאֲבוֹתֵינוּ וְאַנְשֵׁי בֵיתֵנוּ: אָשַׁמְנוּ. בָּגַדְנוּ. גָּזַלְנוּ. דִּבַּרְנוּ דֹפִי וְלָשׁוֹן הָרָע. הֶעֱוִינוּ. וְהִרְשַׁעְנוּ. זַדְנוּ. חָמַסְנוּ. טָפַלְנוּ שֶׁקֶר וּמִרְמָה. יָעַצְנוּ עֵצוֹת רָעוֹת. כִּזַּבְנוּ. כָּעַסְנוּ. לַצְנוּ. מָרַדְנוּ. מָרִינוּ דְבָרֶיךָ. נִאַצְנוּ. נִאַפְנוּ. סָרַרְנוּ. עָוִינוּ. פָּשַׁעְנוּ. פָּגַמְנוּ. צָרַרְנוּ. צִעַרְנוּ אָב וָאֵם. קִשִּׁינוּ עֹרֶף. רָשַׁעְנוּ. שִׁחַתְנוּ. תִּעַבְנוּ. תָּעִינוּ וְתִעֲתַעְנוּ. וְסַרְנוּ מִמִּצְוֹתֶיךָ וּמִמִּשְׁפָּטֶיךָ הַטּוֹבִים וְלֹא שָׁוָה לָנוּ. וְאַתָּה צַדִּיק עַל־כָּל־הַבָּא עָלֵינוּ. כִּי אֱמֶת עָשִׂיתָ. וַאֲנַחְנוּ הִרְשָׁעְנוּ:",
         "אֵל אֶרֶךְ אַפַּיִם אַתָּה וּבַעַל הָרַחֲמִים. גְּדֻלַּת רַחֲמֶיךָ וַחֲסָדֶיךָ הוֹדַעְתָּ לֶעָנָו מִקֶּדֶם. וְכֵן כָּתוּב בְּתוֹרָתָךְ. וַיֵּ֤רֶד יְהֹוָה֙ בֶּֽעָנָ֔ן וַיִּתְיַצֵּ֥ב עִמּ֖וֹ שָׁ֑ם וַיִּקְרָ֥א בְשֵׁ֖ם יְהֹוָֽה: וְשָׁם נֶאֱמַר:",
