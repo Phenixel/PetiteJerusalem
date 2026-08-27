@@ -27,7 +27,7 @@ import {
   festivalsOn,
   formatHebrewDate,
   formatZmanTime,
-  hebrewDateFor,
+  hebrewDayOf,
   restPeriodsNear,
   sameCivilDay,
   tachanunStatus,
@@ -132,8 +132,37 @@ const civilDate = computed(() =>
     year: "numeric",
   }).format(day.value),
 );
-const hebrewDay = computed(() => hebrewDateFor(place.value, day.value, now.value));
+/**
+ * La date hébraïque de l'en-tête : celle de la JOURNÉE civile affichée, sans
+ * bascule à la chkia. Les deux dates de l'en-tête décrivent ainsi toujours le
+ * même jour, du matin jusqu'à minuit ; le soir, la bascule est annoncée par
+ * une ligne dédiée (nightNote) au lieu de changer la date en silence, ce qui
+ * faisait cohabiter deux jours sous la même date civile.
+ */
+const hebrewDay = computed(() => hebrewDayOf(place.value, day.value));
 const hebrewDate = computed(() => formatHebrewDate(hebrewDay.value, locale.value));
+
+/**
+ * La nuit tombée, le jour hébraïque suivant a commencé : la ligne du soir le
+ * dit explicitement, avec ce que cette nuit ouvre (Roch Hodech, une fête, un
+ * jeûne…), pour ne perdre aucune information en ancrant l'en-tête sur la
+ * journée civile. Seulement pour aujourd'hui : un jour parcouru avec les
+ * flèches se lit comme une journée, pas comme un instant.
+ */
+const nightNote = computed(() => {
+  if (!isToday.value) return null;
+  const sunset = times.value.find((zman) => zman.key === "sunset");
+  if (!sunset || now.value.getTime() < sunset.date.getTime()) return null;
+  const tonight = hebrewDay.value.next();
+  const date = formatHebrewDate(tonight, locale.value);
+  const names = [
+    ...festivalsOn(place.value, tonight, locale.value),
+    ...dayHighlights(place.value, tonight, locale.value),
+  ];
+  return names.length > 0
+    ? t("zmanim.nightNoteWith", { date, names: names.join(" · ") })
+    : t("zmanim.nightNote", { date });
+});
 
 /**
  * Ce que le jour a de particulier : Roch Hodech, 'Hanouka, un jeûne,
@@ -340,6 +369,14 @@ onUnmounted(() => {
       <div class="text-center min-w-0">
         <p class="font-semibold text-text-primary truncate">{{ civilDate }}</p>
         <p class="text-sm text-text-secondary truncate">{{ hebrewDate }}</p>
+        <!-- La bascule du soir, dite au lieu d'être appliquée en silence -->
+        <p
+          v-if="nightNote"
+          class="mt-0.5 flex items-center justify-center gap-1 text-xs text-primary"
+        >
+          <AppIcon name="moon" :size="12" class="shrink-0" />
+          {{ nightNote }}
+        </p>
       </div>
       <button type="button" class="icon-btn" :aria-label="t('zmanim.nextDay')" @click="dayOffset++">
         <AppIcon name="chevron-right" :size="18" class="rtl:rotate-180" />
