@@ -66,12 +66,25 @@ async function toggleDownload(text: TextStudyJsonEntry) {
       await removeBook(book);
       analyticsService.capture("offline_download_deleted", { scope: "book", book: book.path });
     } else {
+      // Le couple début/fin manquait sur le téléchargement d'un livre seul :
+      // seule la réussite s'écrivait. Un téléchargement lancé sur un réseau
+      // qui lâche ne laissait aucune trace, et le taux de réussite hors ligne
+      // était donc mécaniquement de 100 %.
+      analyticsService.capture("offline_download_started", { scope: "book", book: book.path });
       await downloadBook(book);
       // Téléchargements déclenchés par l'utilisateur uniquement (la synchro en
       // arrière-plan de la lecture du jour n'est pas trackée).
       analyticsService.capture("offline_download_completed", { scope: "book", book: book.path });
     }
-  } catch {
+  } catch (e) {
+    analyticsService.capture("offline_download_failed", {
+      scope: "book",
+      book: book.path,
+      // Le premier suspect d'un téléchargement en échec, et il se lit sans
+      // rien demander à l'appareil.
+      is_online: navigator.onLine,
+      error_message: e instanceof Error ? e.message : String(e),
+    });
     toast.error(t("downloads.error"));
   }
 }
@@ -183,6 +196,7 @@ const { searching } = useSearchMode(searchTerm);
 const debouncedTerm = ref("");
 let searchDebounce: ReturnType<typeof setTimeout> | undefined;
 watch(searchTerm, (value) => {
+  if (value.trim()) trackLibrarySearchUsed();
   clearTimeout(searchDebounce);
   searchDebounce = setTimeout(() => {
     debouncedTerm.value = value;
@@ -194,6 +208,8 @@ watch(searchTerm, (value) => {
 watch(currentCorpus, () => {
   searchTerm.value = "";
   debouncedTerm.value = "";
+  hasTrackedSearch = false;
+  trackLibraryViewed();
   applySeoMeta();
 });
 
@@ -304,6 +320,40 @@ function trackCorpusOpened(corpus: string) {
   analyticsService.capture("library_corpus_opened", { corpus });
 }
 
+/**
+ * Arrivée sur la bibliothèque, accueil comme page de corpus. Attendu par le
+ * dashboard « Bibliothèque (tableau de bord) » depuis le 11 août, jamais posé :
+ * la tuile d'arrivées y est vide, et l'entrée par un corpus
+ * (`library_corpus_opened`) n'a donc aucun dénominateur.
+ */
+function trackLibraryViewed() {
+  const corpus = currentCorpus.value?.corpus ?? null;
+  analyticsService.capture("library_viewed", {
+    // `variant` est la propriété que les tuiles ventilent déjà : dashboard
+    // pour l'étagère (/bibliotheque), corpus pour la liste détaillée d'une
+    // grande section. Elle sépare « j'arrive » de « je descends dans un
+    // corpus », que le seul $pageview mélangeait.
+    variant: corpus ? "corpus" : "dashboard",
+    corpus,
+  });
+}
+
+// Une seule fois par page de bibliothèque, comme session_search_used : chaque
+// frappe noierait les stats. Remis à zéro en changeant de corpus, la recherche
+// de l'accueil et celle d'un corpus n'ayant pas la même portée.
+let hasTrackedSearch = false;
+
+function trackLibrarySearchUsed() {
+  if (hasTrackedSearch) return;
+  hasTrackedSearch = true;
+  analyticsService.capture("library_search_used", {
+    // `scope` porte directement la portée de la recherche, telle que la tuile
+    // l'attend : « all » depuis l'étagère (toute la bibliothèque), le corpus
+    // courant sur sa page (la recherche y reste dans le corpus).
+    scope: currentCorpus.value?.corpus ?? "all",
+  });
+}
+
 // App native : « Tout télécharger » (toute la bibliothèque sur l'accueil, le
 // corpus courant sur sa page) + espace utilisé.
 const tabBooks = computed<OfflineBook[]>(() => {
@@ -323,11 +373,27 @@ async function downloadAllInTab() {
     tab: currentCorpus.value?.typeKey ?? "Tout",
     books_count: tabBooks.value.filter((b) => !isBookDownloaded(b)).length,
   });
+  let downloaded = 0;
   for (const book of tabBooks.value) {
     if (isBookDownloaded(book)) continue;
     try {
       await downloadBook(book);
-    } catch {
+      downloaded++;
+    } catch (e) {
+      // Sortie de boucle silencieuse : `offline_download_started` restait sans
+      // suite, exactement comme un utilisateur qui quitte la page. Ces deux
+      // cas ne se distinguaient pas, alors qu'un « Tout télécharger » coupé
+      // en route est le pire moment pour perdre quelqu'un.
+      analyticsService.capture("offline_download_failed", {
+        scope: "all",
+        tab: currentCorpus.value?.typeKey ?? "Tout",
+        book: book.path,
+        // Le rang dit si le lot a échoué d'emblée ou s'est interrompu près du
+        // but : les deux n'appellent pas la même correction.
+        books_done: downloaded,
+        is_online: navigator.onLine,
+        error_message: e instanceof Error ? e.message : String(e),
+      });
       toast.error(t("downloads.error"));
       return; // Probablement hors connexion : inutile d'enchaîner les échecs.
     }
@@ -335,6 +401,7 @@ async function downloadAllInTab() {
   analyticsService.capture("offline_download_completed", {
     scope: "all",
     tab: currentCorpus.value?.typeKey ?? "Tout",
+    books_count: downloaded,
   });
 }
 
@@ -375,7 +442,13 @@ async function removeAllInTab() {
       books_count: books.length,
     });
     toast.success(t("downloads.deleteAllDone"));
-  } catch {
+  } catch (e) {
+    analyticsService.capture("offline_download_delete_failed", {
+      scope: "all",
+      tab: corpus?.typeKey ?? "Tout",
+      books_count: books.length,
+      error_message: e instanceof Error ? e.message : String(e),
+    });
     toast.error(t("downloads.deleteError"));
   } finally {
     removingAll.value = false;
@@ -415,6 +488,7 @@ function applySeoMeta() {
 }
 
 onMounted(() => {
+  trackLibraryViewed();
   bookmarkCounts.value = readingProgressService.getBookmarkCounts();
   // Position locale tout de suite, affinée quand la synchro du compte aboutit.
   lastReading.value = readingProgressService.getLastPosition();

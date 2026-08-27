@@ -137,6 +137,11 @@ const openShareModal = (session: Session) => {
 
 const openEditModal = (session: Session) => {
   selectedSession.value = session;
+  analyticsService.capture("session_edit_started", {
+    session_id: session.id,
+    text_type: session.type,
+    source: "share_home",
+  });
   showEditModal.value = true;
 };
 
@@ -148,10 +153,21 @@ const saveSessionChanges = async (sessionData: {
 }) => {
   if (!selectedSession.value) return;
 
+  const edited = selectedSession.value;
   try {
-    await sessionService.updateSession(selectedSession.value.id, {
+    await sessionService.updateSession(edited.id, {
       ...sessionData,
-      slug: selectedSession.value.slug,
+      slug: edited.slug,
+    });
+    analyticsService.capture("session_updated", {
+      session_id: edited.id,
+      text_type: edited.type,
+      guest_email_required: sessionData.guestEmailRequired,
+      deadline_changed:
+        edited.dateLimit instanceof Date
+          ? new Date(sessionData.dateLimit).getTime() !== edited.dateLimit.getTime()
+          : null,
+      source: "share_home",
     });
 
     const sessionIndex = sessions.value.findIndex((s) => s.id === selectedSession.value!.id);
@@ -169,6 +185,11 @@ const saveSessionChanges = async (sessionData: {
     toast.success(t("profile.sessionUpdatedSuccess"));
   } catch (error) {
     console.error("Erreur lors de la mise à jour:", error);
+    analyticsService.capture("session_update_failed", {
+      session_id: edited.id,
+      error_message: error instanceof Error ? error.message : String(error),
+      source: "share_home",
+    });
     toast.errorFromException(error, t("profile.sessionUpdateError"));
   }
 };
@@ -180,6 +201,24 @@ const endSession = async (session: Session) => {
 
   try {
     await sessionService.endSession(session.id);
+    // Même lecture que sur la page de gestion : une chaîne close au bout de
+    // son texte et une chaîne close faute de participants comptent toutes deux
+    // pour un `session_ended`, seuls ces taux les distinguent.
+    const stats = sessionService.getSessionReservationStats(session);
+    const reservations = session.reservations ?? [];
+    analyticsService.capture("session_ended", {
+      session_id: session.id,
+      text_type: session.type,
+      reservations_count: stats.reserved,
+      completion_rate:
+        reservations.length > 0
+          ? Math.round(
+              (reservations.filter((r) => r.isCompleted).length / reservations.length) * 100,
+            )
+          : 0,
+      reservation_rate: stats.percentage,
+      source: "share_home",
+    });
 
     const sessionIndex = sessions.value.findIndex((s) => s.id === session.id);
     if (sessionIndex > -1) {
@@ -194,6 +233,11 @@ const endSession = async (session: Session) => {
     toast.success(t("profile.sessionEndedSuccess"));
   } catch (error) {
     console.error("Erreur lors de la fin de session:", error);
+    analyticsService.capture("session_end_failed", {
+      session_id: session.id,
+      error_message: error instanceof Error ? error.message : String(error),
+      source: "share_home",
+    });
     toast.errorFromException(error, t("profile.sessionEndError"));
   }
 };
@@ -230,10 +274,25 @@ const clearFilters = () => {
   selectedType.value = "";
 };
 
+// Arrivée sur le tableau de bord du partage. L'événement est attendu par le
+// dashboard « Funnel chaîne partagée » depuis le 11 août mais n'a jamais été
+// posé : la tuile « découverte vs tableau de bord » est vide depuis. Il part
+// à la première résolution de l'auth, pas au montage : `variant` n'a de sens
+// qu'une fois qu'on sait si le visiteur a un compte, et Firebase répond après
+// le premier rendu.
+let hasTrackedHomeView = false;
+
 onMounted(() => {
   loadSessions();
   unsubscribeAuth = authService.onAuthChanged((user) => {
     currentUser.value = user;
+    if (hasTrackedHomeView) return;
+    hasTrackedHomeView = true;
+    analyticsService.capture("share_home_viewed", {
+      // Les deux visages de la page depuis la refonte du 4 août : la liste
+      // publique pour un visiteur, « Mes sessions » en tête pour un compte.
+      variant: user ? "dashboard" : "discovery",
+    });
   });
   const url = window.location.origin + "/share-reading";
   seoService.setMeta({
@@ -513,6 +572,8 @@ const handleCreateClick = () => {
       :session-name="selectedSession?.name || ''"
       :share-url="shareUrl"
       :session-type="selectedSession?.type"
+      content-type="session"
+      :content-id="selectedSession?.id ?? null"
     />
 
     <EditSessionModal

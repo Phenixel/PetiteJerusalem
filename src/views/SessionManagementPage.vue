@@ -10,6 +10,7 @@ import { appendHebrewNumeral, formatNumberWithHebrew } from "../services/hebrewN
 import type { Session, TextStudy, TextStudyReservation } from "../models/models";
 import type { User } from "../services/authService";
 import { seoService } from "../services/seoService";
+import { analyticsService } from "../services/analyticsService";
 
 import BatchSelectionBar from "../components/BatchSelectionBar.vue";
 import EditSessionModal from "../components/EditSessionModal.vue";
@@ -81,6 +82,17 @@ const loadData = async () => {
     }
 
     textStudies.value = await sessionService.getTextStudiesByType(session.value.type);
+
+    // Toute cette page était hors du suivi : les actions de tenue d'une chaîne
+    // (attribuer des sections à un invité, en supprimer, renommer quelqu'un,
+    // clore la chaîne) ne se lisaient nulle part. `session_management_opened`
+    // en est le dénominateur commun.
+    analyticsService.capture("session_management_opened", {
+      session_id: session.value.id,
+      text_type: session.value.type,
+      reservations_count: session.value.reservations?.length ?? 0,
+      is_ended: session.value.isEnded === true,
+    });
 
     const url = window.location.origin + `/session-management/${sessionId}`;
     seoService.setMeta({
@@ -260,10 +272,29 @@ const createGuestReservation = async () => {
     await reloadSession();
     showGuestForm.value = false;
     if (unreservedItems.length > 0) {
+      // Le créateur inscrit lui-même quelqu'un qui a réservé hors ligne (au
+      // téléphone, à la synagogue). Ces réservations n'ont jamais de
+      // `reservation_completed` : sans cet événement, elles gonflaient les
+      // compteurs de la chaîne sans que rien n'explique d'où elles venaient.
+      analyticsService.capture("guest_reservation_created", {
+        session_id: session.value.id,
+        text_type: session.value.type,
+        sections_count: unreservedItems.length,
+        // Invité déjà connu de la chaîne, ou nouveau nom saisi de zéro.
+        is_existing_guest: selectedGuestId.value != null,
+        guest_has_email: guestForm.value.email.trim() !== "",
+        source: "session_management",
+      });
       toast.success(t("sessionManagement.reservationCreatedSuccess", unreservedItems.length));
     }
   } catch (error) {
     console.error("Erreur lors de la création de la réservation:", error);
+    analyticsService.capture("guest_reservation_failed", {
+      session_id: session.value?.id,
+      sections_count: selectedItems.value.size,
+      error_message: error instanceof Error ? error.message : String(error),
+      source: "session_management",
+    });
     toast.errorFromException(error, t("sessionManagement.reservationCreateError"));
   } finally {
     isLoading.value = false;
@@ -343,9 +374,24 @@ const deleteSelectedReservations = async () => {
     );
     selectedReservations.value.clear();
     await reloadSession();
+    // Distinct de `reservation_cancelled` : ici c'est le créateur qui libère
+    // les sections de quelqu'un d'autre (participant injoignable, doublon),
+    // pas le participant qui rend les siennes.
+    analyticsService.capture("session_reservations_deleted", {
+      session_id: session.value.id,
+      text_type: session.value.type,
+      reservations_count: count,
+      source: "session_management",
+    });
     toast.success(t("sessionManagement.reservationsDeletedSuccess", count));
   } catch (error) {
     console.error("Erreur lors de la suppression des réservations:", error);
+    analyticsService.capture("session_reservations_delete_failed", {
+      session_id: session.value?.id,
+      reservations_count: count,
+      error_message: error instanceof Error ? error.message : String(error),
+      source: "session_management",
+    });
     toast.errorFromException(error, t("sessionManagement.reservationDeleteError"));
   } finally {
     isDeletingBatch.value = false;
@@ -378,9 +424,20 @@ const submitRename = async () => {
     await sessionService.renameGuest(session.value.id, target.id, renameName.value);
     await reloadSession();
     renameTarget.value = null;
+    // Pas de nom dans les propriétés : ce sont des noms de personnes. Le
+    // volume suffit à dire si la correction de coquille sert vraiment.
+    analyticsService.capture("session_guest_renamed", {
+      session_id: session.value.id,
+      source: "session_management",
+    });
     toast.success(t("sessionManagement.guestRenamedSuccess"));
   } catch (error) {
     console.error("Erreur lors du renommage de l'invité:", error);
+    analyticsService.capture("session_guest_rename_failed", {
+      session_id: session.value?.id,
+      error_message: error instanceof Error ? error.message : String(error),
+      source: "session_management",
+    });
     toast.errorFromException(error, t("sessionManagement.guestRenameError"));
   } finally {
     isRenaming.value = false;
@@ -396,14 +453,30 @@ const saveSessionChanges = async (sessionData: {
   if (!session.value) return;
 
   try {
-    await sessionService.updateSession(session.value.id, {
+    const current = session.value;
+    await sessionService.updateSession(current.id, {
       ...sessionData,
-      slug: session.value.slug,
+      slug: current.slug,
+    });
+    analyticsService.capture("session_updated", {
+      session_id: current.id,
+      text_type: current.type,
+      guest_email_required: sessionData.guestEmailRequired,
+      deadline_changed:
+        current.dateLimit instanceof Date
+          ? new Date(sessionData.dateLimit).getTime() !== current.dateLimit.getTime()
+          : null,
+      source: "session_management",
     });
     await reloadSession();
     toast.success(t("profile.sessionUpdatedSuccess"));
   } catch (error) {
     console.error("Erreur lors de la mise à jour:", error);
+    analyticsService.capture("session_update_failed", {
+      session_id: session.value?.id,
+      error_message: error instanceof Error ? error.message : String(error),
+      source: "session_management",
+    });
     toast.errorFromException(error, t("profile.sessionUpdateError"));
   }
 };
@@ -412,11 +485,29 @@ const endCurrentSession = async () => {
   if (!session.value || !confirm(t("profile.endSessionConfirm"))) return;
 
   try {
-    await sessionService.endSession(session.value.id);
+    const current = session.value;
+    await sessionService.endSession(current.id);
+    // Sortie de cycle de vie d'une chaîne, jamais mesurée : `session_created`
+    // n'avait aucune fin, ni aboutie ni abandonnée. Le taux de complétion au
+    // moment de la clôture dit si la chaîne est allée au bout ou a été close
+    // faute de participants.
+    analyticsService.capture("session_ended", {
+      session_id: current.id,
+      text_type: current.type,
+      reservations_count: sessionStats.value.totalReservations,
+      completion_rate: Math.round(sessionStats.value.completionRate),
+      reservation_rate: Math.round(sessionStats.value.reservationRate),
+      source: "session_management",
+    });
     await reloadSession();
     toast.success(t("profile.sessionEndedSuccess"));
   } catch (error) {
     console.error("Erreur lors de la fin de session:", error);
+    analyticsService.capture("session_end_failed", {
+      session_id: session.value?.id,
+      error_message: error instanceof Error ? error.message : String(error),
+      source: "session_management",
+    });
     toast.errorFromException(error, t("profile.sessionEndError"));
   }
 };
@@ -426,9 +517,23 @@ const toggleReservationCompletion = async (reservationId: string, isCompleted: b
 
   try {
     await sessionService.markReservationAsCompleted(session.value.id, reservationId, isCompleted);
+    analyticsService.capture("section_marked_read", {
+      session_id: session.value.id,
+      marked: isCompleted,
+      // Le créateur coche pour quelqu'un d'autre : jamais un invité ici.
+      is_guest: false,
+      source: "session_management",
+    });
     await reloadSession();
   } catch (error) {
     console.error("Erreur lors de la mise à jour:", error);
+    analyticsService.capture("section_mark_read_failed", {
+      session_id: session.value?.id,
+      marked: isCompleted,
+      is_guest: false,
+      error_message: error instanceof Error ? error.message : String(error),
+      source: "session_management",
+    });
     toast.errorFromException(error, t("sessionManagement.reservationUpdateError"));
   }
 };

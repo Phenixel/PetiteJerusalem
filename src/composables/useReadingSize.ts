@@ -4,6 +4,8 @@ import { ref, computed } from "vue";
  * Reader text-size preference (A− / A+ on the reading pages).
  * Stored locally so it also works for visitors without an account.
  */
+import { analyticsService } from "../services/analyticsService";
+
 const STORAGE_KEY = "pj-reading-size";
 const SCALES = [0.85, 1, 1.15, 1.35, 1.6];
 const DEFAULT_LEVEL = 1;
@@ -27,10 +29,25 @@ export function useReadingSize() {
     }
   }
 
+  /**
+   * A− / A+ et le pincement dans l'app : le confort de lecture est le réglage
+   * le plus utilisé des pages de texte, et le seul qui n'était pas mesuré.
+   * Le niveau atteint dit s'il s'agit d'un ajustement ou d'un besoin
+   * d'accessibilité (niveau maximal tenu d'une lecture à l'autre).
+   */
+  function trackSizeChanged(direction: "increase" | "decrease") {
+    analyticsService.capture("reading_size_changed", {
+      direction,
+      level: level.value,
+      scale: SCALES[level.value],
+    });
+  }
+
   function increase() {
     if (canIncrease.value) {
       level.value++;
       persist();
+      trackSizeChanged("increase");
     }
   }
 
@@ -38,6 +55,7 @@ export function useReadingSize() {
     if (canDecrease.value) {
       level.value--;
       persist();
+      trackSizeChanged("decrease");
     }
   }
 

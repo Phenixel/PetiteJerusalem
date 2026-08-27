@@ -1,5 +1,6 @@
 import { ref, computed } from "vue";
 import { userPreferencesService } from "../services/userPreferencesService";
+import { analyticsService } from "../services/analyticsService";
 
 export interface FontOption {
   id: string;
@@ -105,6 +106,26 @@ function applyFonts(latin: FontOption, hebrew: FontOption) {
   document.documentElement.style.setProperty("--font-hebrew", hebrew.stack);
 }
 
+/**
+ * Même mesure que pour le thème (voir useTheme) : `script` sépare la police de
+ * l'interface de celle de la lecture hébraïque, dont les enjeux ne sont pas
+ * les mêmes (confort de lecture des textes contre goût général).
+ */
+function trackFontChanged(
+  script: "latin" | "hebrew",
+  fontId: string,
+  previousFontId: string,
+  scope: "account" | "device",
+) {
+  if (fontId === previousFontId) return;
+  analyticsService.capture("font_changed", {
+    script,
+    font: fontId,
+    previous_font: previousFontId,
+    scope,
+  });
+}
+
 export function useFonts() {
   const currentLatin = computed(
     () => LATIN_FONT_OPTIONS.find((f) => f.id === currentLatinId.value) || DEFAULT_LATIN,
@@ -158,24 +179,32 @@ export function useFonts() {
   async function setLatinFont(userId: string | null, fontId: string) {
     if (!LATIN_FONT_OPTIONS.some((f) => f.id === fontId)) return;
     ensureFontLoaded(fontId);
+    const previous = currentLatinId.value;
     if (!userId) {
       fontsVersion++;
       loadedForUserId = null;
       currentLatinId.value = fontId;
       applyFonts(currentLatin.value, currentHebrew.value);
       userPreferencesService.saveGuestPreferences({ fontLatin: fontId });
+      trackFontChanged("latin", fontId, previous, "device");
       return;
     }
-    const previous = currentLatinId.value;
     fontsVersion++;
     loadedForUserId = userId;
     currentLatinId.value = fontId;
     applyFonts(currentLatin.value, currentHebrew.value);
     try {
       await userPreferencesService.savePreferences(userId, { fontLatin: fontId });
+      trackFontChanged("latin", fontId, previous, "account");
     } catch {
       currentLatinId.value = previous;
       applyFonts(currentLatin.value, currentHebrew.value);
+      analyticsService.capture("font_change_failed", {
+        script: "latin",
+        font: fontId,
+        previous_font: previous,
+        scope: "account",
+      });
       throw new Error("Failed to save font preference");
     }
   }
@@ -184,24 +213,32 @@ export function useFonts() {
   async function setHebrewFont(userId: string | null, fontId: string) {
     if (!HEBREW_FONT_OPTIONS.some((f) => f.id === fontId)) return;
     ensureFontLoaded(fontId);
+    const previous = currentHebrewId.value;
     if (!userId) {
       fontsVersion++;
       loadedForUserId = null;
       currentHebrewId.value = fontId;
       applyFonts(currentLatin.value, currentHebrew.value);
       userPreferencesService.saveGuestPreferences({ fontHebrew: fontId });
+      trackFontChanged("hebrew", fontId, previous, "device");
       return;
     }
-    const previous = currentHebrewId.value;
     fontsVersion++;
     loadedForUserId = userId;
     currentHebrewId.value = fontId;
     applyFonts(currentLatin.value, currentHebrew.value);
     try {
       await userPreferencesService.savePreferences(userId, { fontHebrew: fontId });
+      trackFontChanged("hebrew", fontId, previous, "account");
     } catch {
       currentHebrewId.value = previous;
       applyFonts(currentLatin.value, currentHebrew.value);
+      analyticsService.capture("font_change_failed", {
+        script: "hebrew",
+        font: fontId,
+        previous_font: previous,
+        scope: "account",
+      });
       throw new Error("Failed to save font preference");
     }
   }

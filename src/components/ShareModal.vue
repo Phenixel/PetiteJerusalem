@@ -20,6 +20,17 @@ interface Props {
   messageKey?: string;
   /** Nature du contenu partagé, pour les stats de viralité par type. */
   contentType?: "session" | "chiour";
+  /**
+   * Identifiant du contenu partagé, pour les stats de viralité par contenu.
+   *
+   * Les deux événements de partage ne portaient que le TYPE : on savait que
+   * WhatsApp domine, jamais ce qui s'y partage, ni si un partage a ramené des
+   * réservations. Chaque appelant passe la clé que le reste du suivi emploie
+   * déjà pour ce contenu, pour que les événements se recollent : l'id Firestore
+   * de la chaîne (comme `session_id` partout ailleurs), le slug du chiour
+   * (comme `chiour_slug` du lecteur audio).
+   */
+  contentId?: string | null;
 }
 
 interface Emits {
@@ -112,6 +123,7 @@ const trackChannel = (channel: "whatsapp" | "sms" | "facebook" | "copy") => {
   analyticsService.capture("share_channel_selected", {
     channel,
     content_type: props.contentType ?? "session",
+    content_id: props.contentId ?? null,
   });
 };
 
@@ -158,6 +170,7 @@ watch(
       // Dénominateur du funnel de partage (ouvertures → canal choisi).
       analyticsService.capture("share_modal_opened", {
         content_type: props.contentType ?? "session",
+        content_id: props.contentId ?? null,
       });
       nextTick(() => {
         generateQRCode();

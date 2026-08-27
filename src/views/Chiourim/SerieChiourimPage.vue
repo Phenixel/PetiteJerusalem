@@ -8,6 +8,7 @@ import type { Chiour } from "../../models/models";
 import ChiourCard from "../../components/ChiourCard.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
+import { analyticsService } from "../../services/analyticsService";
 
 const route = useRoute();
 const router = useRouter();
@@ -35,6 +36,15 @@ const loadSerie = async () => {
     serie.value = found;
     episodes.value = serieService.episodesOf(serieId, all);
     auteurName.value = episodes.value.find((c) => c.auteur)?.auteur ?? null;
+    // Les deux portes d'entrée du catalogue (une série, un auteur) n'étaient
+    // pas mesurées : on ne savait pas si les visiteurs suivent un cours de
+    // bout en bout ou picorent depuis la liste générale.
+    analyticsService.capture("chiour_serie_opened", {
+      serie_id: serieId,
+      serie_name: found.name,
+      auteur: auteurName.value,
+      episodes_count: episodes.value.length,
+    });
     seoService.setMeta({
       title: `${found.name} | ${t("chiourim.title")} | Petite Jerusalem`,
       description: found.description || t("serie.seoDescription", { serie: found.name }),

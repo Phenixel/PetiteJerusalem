@@ -1,5 +1,6 @@
 import { ref, computed } from "vue";
 import { userPreferencesService } from "../services/userPreferencesService";
+import { analyticsService } from "../services/analyticsService";
 
 export interface ThemeOption {
   id: string;
@@ -33,6 +34,21 @@ function applyThemeColors(theme: ThemeOption) {
   if (typeof document === "undefined") return;
   document.documentElement.style.setProperty("--color-primary", theme.primary);
   document.documentElement.style.setProperty("--color-secondary", theme.secondary);
+}
+
+/**
+ * Changement d'apparence : le thème est le premier réglage que l'on touche,
+ * et il n'était pas mesuré du tout. `scope` distingue le choix gardé sur
+ * l'appareil (réglages sans compte de l'app native) de celui qui part chez
+ * Firestore et suit l'utilisateur.
+ */
+function trackThemeChanged(themeId: string, previousThemeId: string, scope: "account" | "device") {
+  if (themeId === previousThemeId) return;
+  analyticsService.capture("theme_changed", {
+    theme: themeId,
+    previous_theme: previousThemeId,
+    scope,
+  });
 }
 
 export function useTheme() {
@@ -76,16 +92,18 @@ export function useTheme() {
     const theme = THEME_OPTIONS.find((t) => t.id === themeId);
     if (!theme) return;
 
+    const previousThemeId = currentThemeId.value;
+
     if (!userId) {
       themeVersion++;
       loadedForUserId = null;
       currentThemeId.value = themeId;
       applyThemeColors(theme);
       userPreferencesService.saveGuestPreferences({ theme: themeId });
+      trackThemeChanged(themeId, previousThemeId, "device");
       return;
     }
 
-    const previousThemeId = currentThemeId.value;
     themeVersion++;
     loadedForUserId = userId;
     currentThemeId.value = themeId;
@@ -93,9 +111,18 @@ export function useTheme() {
 
     try {
       await userPreferencesService.savePreferences(userId, { theme: themeId });
+      trackThemeChanged(themeId, previousThemeId, "account");
     } catch {
       currentThemeId.value = previousThemeId;
       applyThemeColors(currentTheme.value);
+      // Le thème revient à sa valeur d'avant sous les yeux de l'utilisateur :
+      // sans cet événement, l'écart entre « thème choisi » et « thème
+      // réellement porté par le compte » resterait invisible.
+      analyticsService.capture("theme_change_failed", {
+        theme: themeId,
+        previous_theme: previousThemeId,
+        scope: "account",
+      });
       throw new Error("Failed to save theme preference");
     }
   }

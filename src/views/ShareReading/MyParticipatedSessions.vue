@@ -11,6 +11,7 @@ import { appendHebrewNumeral, formatNumberWithHebrew } from "../../services/hebr
 import type { Session, TextStudy, TextStudyReservation } from "../../models/models";
 import type { User } from "../../services/authService";
 import { useToast } from "../../composables/useToast";
+import { analyticsService } from "../../services/analyticsService";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
@@ -73,6 +74,20 @@ const toggleReservationCompletion = async (
   try {
     await sessionService.markReservationAsCompleted(sessionId, reservationId, isCompleted);
 
+    const marked = props.sessions.find((s) => s.id === sessionId);
+    // Troisième endroit d'où l'on coche « lu » (après la page de chaîne et le
+    // lecteur), et le seul qui ne le disait pas : la liste de MES chaînes.
+    // Sans lui, `section_marked_read` sous-comptait la lecture des habitués,
+    // qui cochent d'ici sans rouvrir la chaîne.
+    analyticsService.capture("section_marked_read", {
+      session_id: sessionId,
+      text_type: marked?.type,
+      marked: isCompleted,
+      // La liste ne s'affiche qu'à un compte : jamais un invité.
+      is_guest: false,
+      source: "my_sessions",
+    });
+
     const session = props.sessions.find((s) => s.id === sessionId);
     if (session) {
       const reservation = session.reservations?.find((r) => r.id === reservationId);
@@ -82,6 +97,13 @@ const toggleReservationCompletion = async (
     }
   } catch (error) {
     console.error("Erreur lors de la mise à jour de la réservation:", error);
+    analyticsService.capture("section_mark_read_failed", {
+      session_id: sessionId,
+      marked: isCompleted,
+      is_guest: false,
+      error_message: error instanceof Error ? error.message : String(error),
+      source: "my_sessions",
+    });
     toast.errorFromException(error, t("profile.reservationUpdateError"));
   }
 };

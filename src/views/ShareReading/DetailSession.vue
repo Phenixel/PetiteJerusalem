@@ -112,6 +112,33 @@ const trackGuestFormFilled = (field: "name" | "email") => {
   });
 };
 
+/**
+ * Départ vers le lecteur depuis la chaîne (« Lire » d'un texte, icône de
+ * lecture d'un chapitre). Ces liens n'étaient pas mesurés : le funnel
+ * s'arrêtait à `session_text_expanded`, et les réservations faites depuis le
+ * lecteur (`source: "reading_page"`) semblaient venir de nulle part.
+ *
+ * `session_slug` accompagne `session_id` parce que c'est le slug qui voyage
+ * dans l'URL du lecteur (`?session=…`) : c'est la clé qui permet de recoller
+ * ce clic au `text_opened` qui suit.
+ */
+const trackReadClicked = (textStudyId: string, section?: number) => {
+  const currentSession = session.value;
+  if (!currentSession) return;
+  analyticsService.capture("session_text_read_clicked", {
+    session_id: currentSession.id,
+    session_slug: currentSession.slug ?? null,
+    text_type: currentSession.type,
+    text_id: textStudyId,
+    section: section ?? null,
+    // Le bouton du texte entier et l'icône d'un chapitre ne mènent pas au même
+    // écran : l'un ouvre le texte, l'autre une section précise déjà cadrée.
+    scope: section === undefined ? "text" : "section",
+    is_reserved: isReserved(textStudyId, section).isReserved,
+    is_authenticated: currentUser.value != null,
+  });
+};
+
 const trackFirstSelection = () => {
   if (hasTrackedSelection) return;
   hasTrackedSelection = true;
@@ -400,6 +427,17 @@ const submitReservations = async () => {
     );
 
     if (unreservedItems.length === 0) {
+      // Sortie silencieuse : entre la sélection et la confirmation, quelqu'un
+      // d'autre a tout pris. La sélection se vide sans un mot, et rien ne le
+      // disait dans les stats : ces visites comptaient comme des
+      // `reservation_confirm_clicked` sans suite, indistinguables d'un bug.
+      analyticsService.capture("reservation_failed", {
+        session_id: session.value.id,
+        reason: "already_reserved",
+        sections_count: itemsToReserve.length,
+        is_guest: currentUser.value == null,
+        source: "session_page",
+      });
       selectedItems.value.clear();
       return;
     }
@@ -496,6 +534,12 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
     }
   } catch (err) {
     console.error("Erreur lors de l'annulation:", err);
+    analyticsService.capture("reservation_cancel_failed", {
+      session_id: session.value?.id,
+      is_guest: currentUser.value == null,
+      error_message: err instanceof Error ? err.message : String(err),
+      source: "session_page",
+    });
     toast.errorFromException(err, t("detailSession.cancelError"));
   }
 };
@@ -527,6 +571,12 @@ const toggleReservationCompletion = async (textStudyId: string, section: number)
     });
   } catch (error) {
     console.error("Erreur lors de la mise à jour de la réservation:", error);
+    analyticsService.capture("section_mark_read_failed", {
+      session_id: session.value?.id,
+      is_guest: currentUser.value == null,
+      error_message: error instanceof Error ? error.message : String(error),
+      source: "session",
+    });
     toast.errorFromException(error, t("detailSession.updateError"));
   }
 };
@@ -542,6 +592,27 @@ const openShareModal = () => {
   const s = session.value;
   shareUrl.value = s ? `${SITE_URL}/share-reading/session/${s.slug || s.id}` : SITE_URL;
   showShareModal.value = true;
+};
+
+/**
+ * Ouverture de la modale de signalement. `session_reported` ne compte que les
+ * signalements aboutis : sans ce dénominateur, impossible de distinguer un
+ * bouton peu trouvé d'une modale abandonnée en cours de route.
+ */
+const trackReportStarted = () => {
+  analyticsService.capture("session_report_started", {
+    session_id: session.value?.id,
+    is_authenticated: currentUser.value != null,
+  });
+};
+
+/** Ouverture de la modale d'édition, dénominateur de `session_updated`. */
+const trackEditStarted = () => {
+  analyticsService.capture("session_edit_started", {
+    session_id: session.value?.id,
+    text_type: session.value?.type,
+    source: "session_detail",
+  });
 };
 
 const isOwner = computed(() => {
@@ -561,6 +632,13 @@ const unblockCreator = () => {
 
 const goToManagement = () => {
   if (session.value) {
+    // Passage du créateur à sa page de gestion : dénominateur des actions de
+    // tenue de chaîne (attribution à un invité, suppression, renommage).
+    analyticsService.capture("session_manage_clicked", {
+      session_id: session.value.id,
+      text_type: session.value.type,
+      source: "session_detail",
+    });
     router.push(`/session-management/${session.value.id}`);
   }
 };
@@ -578,6 +656,20 @@ const saveSessionChanges = async (sessionData: {
 
   try {
     await sessionService.updateSession(current.id, { ...sessionData, slug: current.slug });
+    // La modification d'une chaîne existante n'était mesurée nulle part, alors
+    // qu'elle se fait depuis trois écrans (ici, l'accueil du partage, la page
+    // de gestion) : `source` les sépare. Pas d'intitulé ni de description dans
+    // les propriétés, ils portent des noms de personnes.
+    analyticsService.capture("session_updated", {
+      session_id: current.id,
+      text_type: current.type,
+      guest_email_required: sessionData.guestEmailRequired,
+      deadline_changed:
+        current.dateLimit instanceof Date
+          ? new Date(sessionData.dateLimit).getTime() !== current.dateLimit.getTime()
+          : null,
+      source: "session_detail",
+    });
     session.value = {
       ...current,
       name: sessionData.name,
@@ -589,6 +681,11 @@ const saveSessionChanges = async (sessionData: {
     toast.success(t("profile.sessionUpdatedSuccess"));
   } catch (err) {
     console.error("Erreur lors de la mise à jour:", err);
+    analyticsService.capture("session_update_failed", {
+      session_id: current.id,
+      error_message: err instanceof Error ? err.message : String(err),
+      source: "session_detail",
+    });
     toast.errorFromException(err, t("profile.sessionUpdateError"));
   }
 };
@@ -737,8 +834,14 @@ watch(session, (s) => applySessionSeo(s));
         :has-reported="hasReported"
         @share="openShareModal"
         @manage="goToManagement"
-        @edit="showEditModal = true"
-        @report="showReportModal = true"
+        @edit="
+          trackEditStarted();
+          showEditModal = true;
+        "
+        @report="
+          trackReportStarted();
+          showReportModal = true;
+        "
       />
 
       <!-- Barre de progression -->
@@ -834,6 +937,7 @@ watch(session, (s) => applySessionSeo(s));
         @toggle-completion="toggleReservationCompletion"
         @toggle-select-all="handleToggleSelectAll"
         @text-expanded="trackTextExpanded"
+        @read-clicked="trackReadClicked"
       />
 
       <!-- CTA : inviter le visiteur à créer sa propre session -->
@@ -885,6 +989,8 @@ watch(session, (s) => applySessionSeo(s));
       :session-name="session?.name || ''"
       :share-url="shareUrl"
       :session-type="session?.type"
+      content-type="session"
+      :content-id="session?.id ?? null"
     />
 
     <!-- Modification de la session, réservée à son créateur -->

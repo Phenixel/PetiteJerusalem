@@ -520,15 +520,31 @@ async function downloadForOffline(books: OfflineBook[]): Promise<void> {
   if (books.length === 0 || downloading.value) return;
   if (!requireOnline()) return;
   downloading.value = true;
+  // Le couple début/fin manquait ici aussi : seule l'issue s'écrivait, jamais
+  // la tentative. Un téléchargement lancé puis abandonné (app quittée, réseau
+  // coupé avant la fin) ne laissait donc aucune trace.
+  analyticsService.capture("offline_download_started", {
+    scope: "daily_reading",
+    books_count: books.length,
+  });
   try {
     const failed = await downloadBooks(books);
     if (failed.length > 0) toast.error(t("downloads.error"));
     else toast.success(t("dailyReading.offline.downloadDone"));
-    analyticsService.capture("offline_download_completed", {
-      scope: "daily_reading",
-      books_count: books.length - failed.length,
-      failed_count: failed.length,
-    });
+    const succeeded = books.length - failed.length;
+    // Échec total : la lecture du jour reste illisible hors connexion, ce que
+    // l'ancien `offline_download_completed { books_count: 0 }` disait sans le
+    // dire. Un échec partiel garde `completed` (avec son `failed_count`), pour
+    // ne pas déplacer le sens de l'événement là où il servait déjà.
+    analyticsService.capture(
+      succeeded > 0 ? "offline_download_completed" : "offline_download_failed",
+      {
+        scope: "daily_reading",
+        books_count: succeeded,
+        failed_count: failed.length,
+        is_online: navigator.onLine,
+      },
+    );
   } finally {
     downloading.value = false;
   }
@@ -692,6 +708,15 @@ function onBellClick() {
   if (reminderBusy.value) return;
   // Les rappels s'enregistrent dans le compte : sans connexion, rien à régler.
   if (!requireOnline()) return;
+  // Dénominateur des rappels : `reminder_enabled` et `reminder_disabled` ne
+  // comptaient que les réglages menés à leur terme. Les ouvertures abandonnées
+  // (l'écran est le seul endroit où l'on découvre les options) ne se voyaient
+  // pas, alors que c'est là que se joue l'activation des notifications.
+  analyticsService.capture("reminder_settings_opened", {
+    enabled: reminderEnabled.value,
+    daily: reminderDaily.value,
+    sunset: reminderSunset.value,
+  });
   showReminderModal.value = true;
 }
 
@@ -750,6 +775,13 @@ async function enableReminder(choice: ReminderChoice) {
       analyticsService.capture("reminder_enable_failed", { reason: "permission_denied" });
       toast.error(t("notifications.permissionDenied"));
     } else {
+      // La branche générique n'avait pas d'événement : un échec d'écriture ou
+      // de jeton FCM se lisait comme une absence de rappel, indistinguable
+      // d'un utilisateur qui n'en veut pas.
+      analyticsService.capture("reminder_enable_failed", {
+        reason: "error",
+        error_message: e instanceof Error ? e.message : String(e),
+      });
       console.error("Activation du rappel échouée:", e);
       toast.error(t("notifications.error"));
     }
@@ -766,6 +798,11 @@ async function disableReminder() {
     analyticsService.capture("reminder_disabled");
     toast.success(t("notifications.disabledToast"));
   } catch (e: unknown) {
+    // Contrepartie manquante de `reminder_disabled` : l'utilisateur croit
+    // avoir coupé ses rappels et continue de les recevoir.
+    analyticsService.capture("reminder_disable_failed", {
+      error_message: e instanceof Error ? e.message : String(e),
+    });
     console.error("Désactivation du rappel échouée:", e);
     toast.error(t("notifications.error"));
   } finally {

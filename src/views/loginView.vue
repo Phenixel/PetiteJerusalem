@@ -48,6 +48,11 @@ const buttonText = computed(() => {
 async function submitForm() {
   errorMessage.value = null;
   errorDetail.value = null;
+  // Troisième chemin de connexion, et le seul dont les échecs étaient muets :
+  // `signed_in`/`signed_up {method: email}` n'avaient pas de contrepartie. Un
+  // mot de passe oublié, une adresse déjà prise ou un mot de passe trop court
+  // ressortaient tous comme une visite de /login sans suite.
+  analyticsService.capture("email_auth_submitted", { mode: mode.value });
   loading.value = true;
   try {
     if (mode.value === "signup") {
@@ -79,7 +84,14 @@ async function submitForm() {
     router.push(redirectPath);
   } catch (e: unknown) {
     // Pas de captureException ici : les échecs email sont presque toujours des
-    // erreurs utilisateur (mauvais mot de passe), pas des bugs.
+    // erreurs utilisateur (mauvais mot de passe), pas des bugs. L'événement
+    // funnel, lui, a sa place : c'est le décrochage qu'il mesure, pas le bug.
+    // Un code Firebase (`auth/...`) plutôt que le message, qui est traduit.
+    const code = (e as { code?: unknown } | null)?.code;
+    analyticsService.capture("email_auth_failed", {
+      mode: mode.value,
+      reason: typeof code === "string" ? code : "error",
+    });
     const msg = e instanceof Error ? e.message : t("login.loginError");
     errorMessage.value = msg;
   } finally {
@@ -135,6 +147,11 @@ const isApplePlatform = computed(() => Capacitor.getPlatform() === "ios");
 async function loginWithApple() {
   errorMessage.value = null;
   errorDetail.value = null;
+  // Le flux Apple n'avait que son `signed_in {method: apple}` : un bouton
+  // resté sans effet (feuille refusée, code 1000 sur un appareil sans compte
+  // Apple) ne se voyait nulle part, alors que c'est le SEUL login proposé sur
+  // iOS à côté de Google. Même funnel que Google, mêmes noms d'événements.
+  analyticsService.capture("apple_signin_clicked");
   try {
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
 
@@ -147,9 +164,18 @@ async function loginWithApple() {
     router.push(redirectPath);
   } catch (e: unknown) {
     // Feuille Apple refusée par l'utilisateur : un renoncement, pas une panne.
-    if (isAuthCancellation(e)) return;
+    if (isAuthCancellation(e)) {
+      analyticsService.capture("apple_signin_cancelled");
+      return;
+    }
     console.error("Connexion Apple échouée:", e);
     analyticsService.captureException(e, { auth_flow: "apple" });
+    analyticsService.capture("apple_signin_failed", {
+      // Le 1000 se corrige côté appareil (aucun compte Apple connecté), pas
+      // côté app : il ne doit pas se confondre avec une vraie panne.
+      reason: isAppleSignInUnavailable(e) ? "unavailable" : "error",
+      error_message: e instanceof Error ? e.message : String(e),
+    });
     // Code 1000 : la feuille Apple ne peut pas s'ouvrir sur cet appareil
     // (le plus souvent, aucun compte Apple connecté). Réessayer ne change
     // rien : on dit quoi vérifier, et vers quoi se replier.

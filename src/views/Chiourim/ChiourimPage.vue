@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { chiourService } from "../../services/chiourService";
 import type { Chiour } from "../../models/models";
@@ -11,6 +11,7 @@ import { seoService } from "../../services/seoService";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { liveValue } from "../../composables/liveInput";
 import { useSearchMode } from "../../composables/useSearchMode";
+import { analyticsService } from "../../services/analyticsService";
 
 const { t } = useI18n();
 
@@ -71,8 +72,31 @@ const filteredChiourim = computed(() => {
 
 const chiourimCount = computed(() => filteredChiourim.value.length);
 
+/**
+ * Le catalogue des chiourim n'avait aucun événement à lui : le suivi ne
+ * commençait qu'au lancement d'un audio (`chiour_played`), sans jamais dire
+ * combien de visiteurs parcourent la liste sans rien écouter. Même trio que
+ * la page de chaîne : la vue, le filtre, la recherche.
+ */
+watch(selectedCategory, (category) => {
+  analyticsService.capture("chiourim_category_filtered", {
+    category,
+    results_count: chiourimCount.value,
+  });
+});
+
+// Une seule fois par visite, comme `session_search_used` : chaque frappe
+// noierait les stats.
+let hasTrackedSearch = false;
+watch(searchTerm, (value) => {
+  if (!value.trim() || hasTrackedSearch) return;
+  hasTrackedSearch = true;
+  analyticsService.capture("chiourim_search_used", { category: selectedCategory.value });
+});
+
 onMounted(() => {
   loadChiourim();
+  analyticsService.capture("chiourim_viewed");
   const url = window.location.origin + "/chiourim";
   seoService.setMeta({
     title: t("seo.chiourimTitle"),
