@@ -95,12 +95,7 @@ export const ZMANIM_WIDGET_DAYS = 7;
  * de la veille et la sienne. Un jour polaire sans chkia ne borne rien, la
  * journée civile sert alors de repli, plutôt que de perdre l'entrée.
  */
-function widgetDay(
-  place: ZmanimPlace,
-  civil: Date,
-  t: Translate,
-  locale: string,
-): ZmanimWidgetDay {
+function widgetDay(place: ZmanimPlace, civil: Date, t: Translate, locale: string): ZmanimWidgetDay {
   const previous = new Date(civil);
   previous.setDate(previous.getDate() - 1);
   // Le jour du LIEU, pas celui de l'appareil : à 1 h du matin à Paris, un lieu
@@ -155,6 +150,9 @@ export function buildZmanimWidgetPayload(
     days.push(widgetDay(place, day, t, locale));
   }
   times.sort((a, b) => a.epoch - b.epoch);
+  // Le milieu de la nuit apparaît sur deux jours civils (en soirée de l'un,
+  // au petit matin du suivant) : un seul des deux suffit au widget.
+  const deduped = times.filter((time, i) => i === 0 || time.epoch !== times[i - 1].epoch);
   return {
     v: 2,
     title: t("zmanim.widget.title"),
@@ -163,7 +161,7 @@ export function buildZmanimWidgetPayload(
     // paramètres-sentinelles plutôt que de laisser vue-i18n les interpoler.
     then: t("zmanim.widget.then", { label: "{label}", time: "{time}" }),
     stale: t("zmanim.widget.stale"),
-    times,
+    times: deduped,
     days,
   };
 }

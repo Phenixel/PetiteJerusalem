@@ -24,6 +24,8 @@ const { place } = useZmanimLocation();
 // Le jour hébraïque change à la chkia, et la bénédiction se dit la nuit :
 // c'est donc toujours du bon côté de la bascule qu'il faut la poser. D'où
 // hebrewDateFor, qui tient compte de l'heure, et le minuteur qui la suit.
+// Le bandeau paraît ainsi à la chkia de la première nuit où elle se dit
+// (celle qui ouvre le 8 du mois, voir saysBirkatHalevana), jamais la veille.
 const now = ref(new Date());
 let ticker: ReturnType<typeof setInterval> | null = null;
 onMounted(() => {

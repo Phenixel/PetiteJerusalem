@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentTefilaWindow, tefilaPath } from "../services/sidourService";
+import { currentTefilaWindow, tefilaHebrewDay, tefilaPath } from "../services/sidourService";
 import { DEFAULT_PLACE } from "../services/zmanimService";
 
 /**
@@ -36,6 +36,31 @@ describe("plage horaire de l'office en cours", () => {
   it("entre la chkia et la sortie des étoiles : aucun office", () => {
     const window = currentTefilaWindow(DEFAULT_PLACE, paris(20, 10)); // 22 h 10
     expect(window).toBeNull();
+  });
+});
+
+describe("le jour hébraïque des occasions, par office", () => {
+  // Jeudi 6 août 2026 à Paris : chkia vers 21 h 22. À 22 h, la nuit est
+  // tombée ; en jours hébraïques, vendredi a commencé (HDate.getDay() :
+  // 4 = jeudi, 5 = vendredi).
+  const thursdayNight = new Date(Date.UTC(2026, 7, 6, 20));
+
+  it("Min'ha du jeudi soir reste celle du jeudi", () => {
+    expect(tefilaHebrewDay(DEFAULT_PLACE, "minha", thursdayNight).getDay()).toBe(4);
+    expect(tefilaHebrewDay(DEFAULT_PLACE, "chaharit", thursdayNight).getDay()).toBe(4);
+  });
+
+  it("Arvit et les brahot basculent à la chkia", () => {
+    expect(tefilaHebrewDay(DEFAULT_PLACE, "arvit", thursdayNight).getDay()).toBe(5);
+    // Un texte hors sidour (birkat hamazon, Sli'hot) suit la même bascule :
+    // Retsé se bénit dès le vendredi soir.
+    expect(tefilaHebrewDay(DEFAULT_PLACE, null, thursdayNight).getDay()).toBe(5);
+  });
+
+  it("après minuit, la journée civile a changé pour tous les offices", () => {
+    const fridaySmallHours = new Date(Date.UTC(2026, 7, 6, 23)); // 1 h le vendredi
+    expect(tefilaHebrewDay(DEFAULT_PLACE, "minha", fridaySmallHours).getDay()).toBe(5);
+    expect(tefilaHebrewDay(DEFAULT_PLACE, "arvit", fridaySmallHours).getDay()).toBe(5);
   });
 });
 

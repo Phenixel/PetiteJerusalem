@@ -1,9 +1,16 @@
+import type { HDate } from "@hebcal/core";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { corpusOf, slugOf, latinName, hubPath } from "../content/etudeTexts";
 import type { WeeklyParasha } from "./dailyCycles";
 import type { Rubric, TextBlock, TextContent, TextParagraph } from "./textService";
-import { computeZmanim, type ZmanKey, type ZmanimPlace } from "./zmanimService";
+import {
+  computeZmanim,
+  hebrewDateFor,
+  hebrewDayOf,
+  type ZmanKey,
+  type ZmanimPlace,
+} from "./zmanimService";
 
 /**
  * Le sidour de semaine : ce qui relie ses trois offices entre eux et au reste
@@ -37,9 +44,32 @@ export function nextTefilaEntry(entry: TextStudyJsonEntry | null): TextStudyJson
   const tefila = tefilaOf(entry);
   const next = tefila ? NEXT_TEFILA[tefila] : undefined;
   if (!next) return null;
-  return (
-    allTexts.find((e) => corpusOf(e) === "sidour" && slugOf(e) === next) ?? null
-  );
+  return allTexts.find((e) => corpusOf(e) === "sidour" && slugOf(e) === next) ?? null;
+}
+
+/**
+ * Le jour hébraïque dont un texte de tefila affiche les occasions (tahanoun,
+ * psaume du jour, Yaalé véyavo…), LA règle qui départage date civile et date
+ * hébraïque dans le lecteur.
+ *
+ * Cha'harit et Min'ha sont des offices de la journée : leurs occasions sont
+ * celles de la journée civile, sans bascule à la chkia. Le jeudi soir, Min'ha
+ * reste celle du jeudi (avec ses supplications et son psaume) ; celle du
+ * vendredi ne s'affiche qu'à partir de minuit.
+ *
+ * Arvit, et tout ce qui n'est pas un office du sidour (brahot, Sli'hot…), se
+ * disent une fois la nuit tombée et appartiennent au jour hébraïque qui
+ * commence à la chkia : Yaalé véyavo dès la nuit qui ouvre Roch Hodech, Retsé
+ * au birkat hamazon du vendredi soir.
+ */
+export function tefilaHebrewDay(
+  place: ZmanimPlace,
+  tefila: TefilaKey | null,
+  now: Date = new Date(),
+): HDate {
+  return tefila === "chaharit" || tefila === "minha"
+    ? hebrewDayOf(place, now)
+    : hebrewDateFor(place, now, now);
 }
 
 // ---- Lecture de la Torah de la semaine (lundi et jeudi) -------------------
@@ -141,7 +171,10 @@ function windowsOfDay(place: ZmanimPlace, day: Date): TefilaWindow[] {
  * l'Arvit de la nuit en cours se lit sur les horaires de la veille (son
  * 'hatsot halayla appartient au jour civil précédent).
  */
-export function currentTefilaWindow(place: ZmanimPlace, now: Date = new Date()): TefilaWindow | null {
+export function currentTefilaWindow(
+  place: ZmanimPlace,
+  now: Date = new Date(),
+): TefilaWindow | null {
   const t = now.getTime();
   const inWindow = (w: TefilaWindow) => t >= w.start.getTime() && t < w.end.getTime();
   const today = windowsOfDay(place, now).find(inWindow);

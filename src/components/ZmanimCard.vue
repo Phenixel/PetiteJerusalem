@@ -51,7 +51,9 @@ const upcoming = computed(() => {
   if (today) return today;
   const tomorrow = new Date(now.value);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  return computeZmanim(place.value, tomorrow)[0] ?? null;
+  // nextZman plutôt que le premier de la liste : le milieu de la nuit qui
+  // l'ouvre peut être déjà passé (avant minuit, à l'est du fuseau).
+  return nextZman(computeZmanim(place.value, tomorrow), now.value);
 });
 
 /** Le repos en cours, ou celui qui entre aujourd'hui, sinon rien à annoncer. */

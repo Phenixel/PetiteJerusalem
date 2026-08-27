@@ -318,6 +318,8 @@ const he: LocaleMessages = {
     previousDay: "יום קודם",
     nextDay: "יום הבא",
     backToToday: "חזרה להיום",
+    nightNote: "מהשקיעה אנחנו כבר ב{date}.",
+    nightNoteWith: "מהשקיעה אנחנו כבר ב{date} ({names}).",
     seeAll: "לכל הזמנים",
     unavailable: "לא ניתן לחשב זמנים ליום זה במיקום זה.",
     disclaimer:
@@ -359,6 +361,7 @@ const he: LocaleMessages = {
       note: "הדלקת נרות {minutes} דקות לפני השקיעה, צאת שבת בצאת הכוכבים.",
     },
     names: {
+      chatzotNightDawn: "חצות הלילה",
       alotHaShachar: "עלות השחר",
       misheyakir: "משיכיר",
       sunrise: "נץ החמה",
@@ -375,6 +378,7 @@ const he: LocaleMessages = {
       chatzotNight: "חצות הלילה",
     },
     hints: {
+      chatzotNightDawn: "אמצע הלילה, לפני עלות השחר",
       alotHaShachar: "תחילת היום ההלכתי",
       misheyakir: "טלית ותפילין",
       sunrise: "זריחה",
@@ -388,7 +392,7 @@ const he: LocaleMessages = {
       plagHaMincha: "הגבול להקדמת ערבית",
       sunset: "סוף היום",
       tzeit: "לילה: ערבית, מוצאי שבת וסיום צומות",
-      chatzotNight: "אמצע הלילה",
+      chatzotNight: "אמצע הלילה הבא",
     },
   },
   security: {
