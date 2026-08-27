@@ -326,6 +326,8 @@ const en: LocaleMessages = {
     previousDay: "Previous day",
     nextDay: "Next day",
     backToToday: "Back to today",
+    nightNote: "Since sunset, it is already {date}.",
+    nightNoteWith: "Since sunset, it is already {date} ({names}).",
     seeAll: "See all times",
     unavailable: "No times can be computed for this day at this location.",
     disclaimer:
@@ -357,6 +359,8 @@ const en: LocaleMessages = {
     },
     rest: {
       end: "Ends",
+      rabbenouTam: "Ends (Rabbeinu Tam)",
+      rabbenouTamNote: "The Rabbeinu Tam end time is 72 minutes after sunset.",
       note: "Candle lighting {minutes} minutes before sunset, ends at nightfall. When a festival follows Shabbat, light after nightfall from an existing flame.",
     },
     shabbat: {
@@ -367,6 +371,7 @@ const en: LocaleMessages = {
       note: "Candle lighting {minutes} minutes before sunset, Shabbat ends at nightfall.",
     },
     names: {
+      chatzotNightDawn: "Midnight (Chatzot)",
       alotHaShachar: "Alot HaShachar",
       misheyakir: "Misheyakir",
       sunrise: "Sunrise (Netz)",
@@ -383,6 +388,7 @@ const en: LocaleMessages = {
       chatzotNight: "Midnight (Chatzot)",
     },
     hints: {
+      chatzotNightDawn: "Middle of the night, before dawn",
       alotHaShachar: "Dawn: the halachic day begins",
       misheyakir: "Tallit and tefillin",
       sunrise: "Sunrise",
@@ -396,7 +402,7 @@ const en: LocaleMessages = {
       plagHaMincha: "Cutoff for an early Arvit",
       sunset: "Sunset: the day ends",
       tzeit: "Nightfall: Arvit, end of Shabbat and fasts",
-      chatzotNight: "Middle of the night",
+      chatzotNight: "Middle of the coming night",
     },
   },
   security: {

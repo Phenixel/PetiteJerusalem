@@ -330,6 +330,8 @@ const fr = {
     previousDay: "Jour précédent",
     nextDay: "Jour suivant",
     backToToday: "Revenir à aujourd'hui",
+    nightNote: "Depuis la chkia, on est déjà le {date}.",
+    nightNoteWith: "Depuis la chkia, on est déjà le {date} ({names}).",
     seeAll: "Voir tous les horaires",
     unavailable: "Aucun horaire calculable pour ce jour à cet endroit.",
     disclaimer:
@@ -361,6 +363,9 @@ const fr = {
     },
     rest: {
       end: "Sortie",
+      rabbenouTam: "Sortie Rabbénou Tam",
+      rabbenouTamNote:
+        "La sortie selon Rabbénou Tam est comptée 72 minutes après le coucher du soleil.",
       note: "Allumage {minutes} minutes avant le coucher du soleil, sortie à la sortie des étoiles. Un jour de fête qui suit le Chabbat, on allume après la sortie, à partir d'une flamme déjà allumée.",
     },
     shabbat: {
@@ -371,6 +376,7 @@ const fr = {
       note: "Allumage {minutes} minutes avant le coucher du soleil, sortie à la sortie des étoiles.",
     },
     names: {
+      chatzotNightDawn: "'Hatsot de la nuit",
       alotHaShachar: "Alot haCha'har",
       misheyakir: "Michéyakir",
       sunrise: "Netz haHama",
@@ -387,6 +393,7 @@ const fr = {
       chatzotNight: "'Hatsot de la nuit",
     },
     hints: {
+      chatzotNightDawn: "Milieu de la nuit, avant l'aube",
       alotHaShachar: "Aube : début du jour halakhique",
       misheyakir: "Talit et téfilines",
       sunrise: "Lever du soleil",
@@ -400,7 +407,7 @@ const fr = {
       plagHaMincha: "Limite pour anticiper Arvit",
       sunset: "Coucher du soleil : fin du jour",
       tzeit: "Nuit : Arvit, fin de Chabbat et des jeûnes",
-      chatzotNight: "Milieu de la nuit",
+      chatzotNight: "Milieu de la nuit qui vient",
     },
   },
   security: {

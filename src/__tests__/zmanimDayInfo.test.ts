@@ -202,15 +202,16 @@ describe("yearCalendar", () => {
 
 describe("saysBirkatHalevana", () => {
   it("de sept jours révolus à la moitié de la lunaison", () => {
-    expect(saysBirkatHalevana(hd(2026, 8, 19))).toBe(false); // 6 Eloul, trop tôt
-    expect(saysBirkatHalevana(hd(2026, 8, 20))).toBe(true); // 7 Eloul
+    expect(saysBirkatHalevana(hd(2026, 8, 20))).toBe(false); // nuit du 7 Eloul, six jours seulement
+    expect(saysBirkatHalevana(hd(2026, 8, 21))).toBe(true); // nuit qui ouvre le 8 Eloul
     expect(saysBirkatHalevana(hd(2026, 8, 27))).toBe(true); // 14 Eloul
     expect(saysBirkatHalevana(hd(2026, 8, 28))).toBe(false); // 15 Eloul, trop tard
   });
 
   it("attend la sortie de Tich'a beAv, et celle de Kippour", () => {
-    expect(saysBirkatHalevana(hd(2026, 7, 20))).toBe(false); // 6 Av, avant le jeûne
+    expect(saysBirkatHalevana(hd(2026, 7, 23))).toBe(false); // 9 Av, le jeûne
+    expect(saysBirkatHalevana(hd(2026, 7, 24))).toBe(true); // nuit de la sortie du jeûne
     expect(saysBirkatHalevana(hd(2026, 9, 20))).toBe(false); // 9 Tichri, avant Kippour
-    expect(saysBirkatHalevana(hd(2026, 9, 22))).toBe(true); // 11 Tichri
+    expect(saysBirkatHalevana(hd(2026, 9, 22))).toBe(true); // 11 Tichri, sortie de Kippour
   });
 });

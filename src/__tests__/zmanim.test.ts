@@ -44,11 +44,49 @@ describe("computeZmanim", () => {
       new Date(Date.UTC(2026, 11, 21, 12)),
     ]) {
       const times = computeZmanim(DEFAULT_PLACE, day);
-      expect(times.length).toBe(14);
+      expect(times.length).toBe(15);
       for (let i = 1; i < times.length; i++) {
         expect(times[i].date.getTime()).toBeGreaterThan(times[i - 1].date.getTime());
       }
     }
+  });
+
+  it("ouvre le jour sur le milieu de la nuit en cours", () => {
+    // Après minuit, le jour civil a changé mais le milieu de sa nuit n'est pas
+    // forcément passé : il ouvre la liste du jour, et c'est le même instant
+    // que le « milieu de la nuit qui vient » de la veille.
+    const wednesday = new Date(Date.UTC(2026, 7, 5, 12));
+    const dawn = computeZmanim(DEFAULT_PLACE, wednesday)[0];
+    expect(dawn.key).toBe("chatzotNightDawn");
+    expect(dawn.period).toBe("dawn");
+    const eveOfTuesday = computeZmanim(DEFAULT_PLACE, PARIS_DAY).find(
+      (zman) => zman.key === "chatzotNight",
+    )!;
+    expect(dawn.date.getTime()).toBe(eveOfTuesday.date.getTime());
+    // Vers 2 h du matin à Paris : le prochain horaire est bien celui-là.
+    const afterMidnight = new Date(Date.UTC(2026, 7, 4, 23, 30));
+    expect(nextZman(computeZmanim(DEFAULT_PLACE, wednesday), afterMidnight)?.key).toBe(
+      "chatzotNightDawn",
+    );
+  });
+
+  it("ne rattache pas au jour un milieu de nuit tombé la veille", () => {
+    // À l'est du méridien de son fuseau, le milieu de la nuit tombe avant
+    // minuit : à Jérusalem le 15 janvier 2026, celui de la nuit en cours est
+    // le 14 à 23 h 48. C'est la soirée du 14 qui le porte, pas le 15.
+    const jerusalem: ZmanimPlace = {
+      source: "device",
+      latitude: 31.7683,
+      longitude: 35.2137,
+      tzid: "Asia/Jerusalem",
+      city: null,
+    };
+    const winterDay = new Date(Date.UTC(2026, 0, 15, 12));
+    const winter = computeZmanim(jerusalem, winterDay);
+    expect(winter[0].key).not.toBe("chatzotNightDawn");
+    // L'été (heure d'été), il repasse après minuit et revient dans le jour.
+    const summer = computeZmanim(jerusalem, PARIS_DAY);
+    expect(summer[0].key).toBe("chatzotNightDawn");
   });
 
   it("suit le lieu : plus à l'ouest, le soleil se couche plus tard", () => {
@@ -103,6 +141,10 @@ describe("restPeriodsNear : le Chabbat d'une semaine ordinaire", () => {
     expect(on(DEFAULT_PLACE, shabbat.end)).toBe("samedi 8 août");
     expect(at(DEFAULT_PLACE, shabbat.start)).toBe("21:01");
     expect(at(DEFAULT_PLACE, shabbat.end)).toBe("22:12");
+    // Sortie selon Rabbénou Tam : 72 minutes après la chkia (21 h 18 ce
+    // samedi-là), après la sortie ordinaire.
+    expect(at(DEFAULT_PLACE, shabbat.endRabbenouTam!)).toBe("22:30");
+    expect(shabbat.endRabbenouTam!.getTime()).toBeGreaterThan(shabbat.end.getTime());
   });
 
   it("garde le Chabbat en cours tant qu'il n'est pas sorti", () => {

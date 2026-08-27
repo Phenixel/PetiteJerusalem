@@ -17,9 +17,17 @@ import {
   placeLabel as describePlace,
 } from "../../services/textService";
 import type { TextBlock, TextContent, TextSection } from "../../services/textService";
-import { activeOccasions, getWeeklyParasha, recentSeasonalChanges } from "../../services/dailyCycles";
-import { injectWeeklyTorah, nextTefilaEntry, tefilaOf } from "../../services/sidourService";
-import { hebrewDateFor } from "../../services/zmanimService";
+import {
+  activeOccasions,
+  getWeeklyParasha,
+  recentSeasonalChanges,
+} from "../../services/dailyCycles";
+import {
+  injectWeeklyTorah,
+  nextTefilaEntry,
+  tefilaHebrewDay,
+  tefilaOf,
+} from "../../services/sidourService";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { scrollToVerse } from "../../composables/scrollAnchor";
 import { resolveBackNavigation, stripQuery } from "../../composables/readingBack";
@@ -136,18 +144,20 @@ const verseBlocks = computed<TextBlock[]>(() => {
 
 // Tefila : les ajouts liés au calendrier (Retsé le Chabbat, Yaalé véyavo à
 // Roch Hodech, Al hanissim à Hanouka…) ne s'affichent que le jour où ils se
-// disent, fondus dans le fil du texte. Le jour hébraïque suit le lieu des
-// horaires (après la chkia, on est déjà demain).
+// disent, fondus dans le fil du texte. Le jour suivi dépend de l'office
+// (voir tefilaHebrewDay) : Cha'harit et Min'ha vivent la journée civile,
+// Min'ha du jeudi soir reste celle du jeudi ; Arvit et les brahot basculent
+// à la chkia, Retsé se bénit dès le vendredi soir.
 //
 // L'heure est donc une donnée du rendu, pas une valeur figée à l'ouverture :
 // on bénit après la chkia du vendredi une page ouverte avant elle, et Retsé
 // doit apparaître sans qu'on ait à la recharger (minuteur plus bas).
 const now = ref(new Date());
+const occasionsDay = computed(() =>
+  tefilaHebrewDay(zmanimPlace.value, tefilaOf(textEntry.value), now.value),
+);
 const occasions = computed(() =>
-  activeOccasions(
-    hebrewDateFor(zmanimPlace.value, now.value, now.value),
-    zmanimPlace.value.tzid === "Asia/Jerusalem",
-  ),
+  activeOccasions(occasionsDay.value, zmanimPlace.value.tzid === "Asia/Jerusalem"),
 );
 const visibleBlocks = computed(() =>
   verseBlocks.value.filter((b) => !b.when || occasions.value.has(b.when)),
@@ -157,10 +167,7 @@ const visibleBlocks = computed(() =>
 // leurs ajouts s'affichent à la couleur du thème les trois premières
 // semaines ; le reste du temps ils se fondent dans le fil.
 const recentChanges = computed(() =>
-  recentSeasonalChanges(
-    hebrewDateFor(zmanimPlace.value, now.value, now.value),
-    zmanimPlace.value.tzid === "Asia/Jerusalem",
-  ),
+  recentSeasonalChanges(occasionsDay.value, zmanimPlace.value.tzid === "Asia/Jerusalem"),
 );
 
 /** Tefila (Sli'hot, Brahot, Sidour) : un rendu à part, voir LiturgyText. */
@@ -171,7 +178,6 @@ const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
 // les enchaîne). Pas de lien entre Cha'harit et le reste : la journée les
 // sépare.
 const sidourNextEntry = computed(() => nextTefilaEntry(textEntry.value));
-
 
 // Le minuteur des occasions : seuls les textes de tefila regardent l'heure,
 // il ne tourne donc que pour eux, et s'arrête dès qu'on ouvre autre chose.
@@ -241,20 +247,19 @@ const canTransliterate = computed(
 // ta'hanoun…). La page publie les blocs titrés du jour au menu flottant
 // (TefilaSectionNav), qui remplace le bouton « remonter en haut ». Les brahot
 // restent hors jeu : trop courtes pour qu'on s'y perde.
-const isTefilaNavText = computed(() => ["Sidour", "Slihot"].includes(String(textEntry.value?.type)));
+const isTefilaNavText = computed(() =>
+  ["Sidour", "Slihot"].includes(String(textEntry.value?.type)),
+);
 const tefilaNavSections = computed<TefilaNavSection[]>(() => {
   if (!isTefilaNavText.value || !currentSection.value) return [];
   return visibleBlocks.value
     .filter((b) => !b.zman && !b.fold && (b.labelText || b.label))
     .map((b) => ({
       offset: b.offset,
-      label: b.labelText
-        ? b.labelText[locale.value as SupportedLocale] || b.labelText.fr
-        : b.label,
+      label: b.labelText ? b.labelText[locale.value as SupportedLocale] || b.labelText.fr : b.label,
     }));
 });
 watch(tefilaNavSections, (list) => setTefilaNavSections(list), { immediate: true });
-
 
 // Translittération mémoïsée : appelée depuis le template, elle était recalculée
 // pour toute la section (des dizaines de lignes × plusieurs passes regex) à

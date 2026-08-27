@@ -161,6 +161,11 @@ export const ZMAN_PERIODS: ZmanPeriod[] = ["dawn", "morning", "afternoon", "even
  * atteint facilement une demi-heure.
  */
 const ZMAN_DEFS = [
+  // Milieu de la nuit en cours au petit matin : `chatzotNight` d'un jour donné
+  // est celui de la nuit qui l'a précédé. Il ouvre la liste : après minuit, le
+  // jour civil a changé, mais le milieu de sa nuit, souvent vers 1 h, n'est
+  // pas forcément passé, et c'est lui qu'on vient vérifier à cette heure-là.
+  { key: "chatzotNightDawn", period: "dawn", at: (z: Zmanim) => z.chatzotNight() },
   { key: "alotHaShachar", period: "dawn", at: (z: Zmanim) => z.alotHaShachar() },
   { key: "misheyakir", period: "dawn", at: (z: Zmanim) => z.misheyakir() },
   { key: "sunrise", period: "dawn", at: (z: Zmanim) => z.sunrise() },
@@ -174,8 +179,8 @@ const ZMAN_DEFS = [
   { key: "plagHaMincha", period: "afternoon", at: (z: Zmanim) => z.plagHaMincha() },
   { key: "sunset", period: "evening", at: (z: Zmanim) => z.sunset() },
   { key: "tzeit", period: "evening", at: (z: Zmanim) => z.tzeit() },
-  // Milieu de la nuit qui suit : `chatzotNight` d'un jour donné est celui de
-  // la nuit qui l'a précédé, pas celui de sa propre nuit.
+  // Milieu de la nuit qui suit le jour affiché : lu sur le lendemain, dont la
+  // nuit précédente est justement celle-là.
   { key: "chatzotNight", period: "evening", at: (_z: Zmanim, next: Zmanim) => next.chatzotNight() },
 ] as const satisfies readonly {
   key: string;
@@ -206,7 +211,7 @@ const CANDLE_LIGHTING_MINUTES = 18;
  * règle générale.
  */
 const CANDLE_LIGHTING_BY_CITY: Record<string, number> = {
-  "Jérusalem": 40,
+  Jérusalem: 40,
 };
 
 /** Les minutes d'avance de l'allumage à ce lieu : 18, sauf usage local. */
@@ -266,7 +271,13 @@ export function computeZmanim(place: ZmanimPlace, day: Date = new Date()): ZmanT
   for (const def of ZMAN_DEFS) {
     const date = def.at(zmanim, nextZmanim);
     // Nuit ou jour polaire : l'horaire n'existe pas, on ne l'affiche pas.
-    if (isUsable(date)) times.push({ key: def.key, period: def.period, date });
+    if (!isUsable(date)) continue;
+    // Le milieu de la nuit en cours n'appartient au jour que s'il tombe après
+    // minuit. À l'est du méridien de son fuseau (Israël l'hiver), il tombe
+    // avant : c'est alors la soirée de la veille qui le porte, pas ce jour-ci.
+    if (def.key === "chatzotNightDawn" && dayInPlace(place, date).getTime() !== localDay.getTime())
+      continue;
+    times.push({ key: def.key, period: def.period, date });
   }
   return times;
 }
@@ -467,6 +478,11 @@ export interface RestPeriod {
   start: Date;
   /** Sortie des étoiles du dernier jour. */
   end: Date;
+  /**
+   * Sortie selon Rabbénou Tam : 72 minutes après la chkia du dernier jour,
+   * pour qui suit cet avis. Null quand la chkia ne se calcule pas.
+   */
+  endRabbenouTam: Date | null;
   first: HDate;
   last: HDate;
   /** Le bloc couvre un Chabbat, son jour civil, pour retrouver la paracha. */
@@ -477,6 +493,9 @@ export interface RestPeriod {
 
 /** Trois jours de repos d'affilée au maximum (Yom Tov de deux jours + Chabbat). */
 const MAX_REST_DAYS = 3;
+
+/** Minutes après la chkia de la sortie selon Rabbénou Tam. */
+const RABBENOU_TAM_MINUTES = 72;
 
 /**
  * Le temps de repos auquel appartient ce jour hébraïque, ou null si c'en est
@@ -497,8 +516,15 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
   const eve = civilNoon(first);
   eve.setDate(eve.getDate() - 1);
   const start = new Zmanim(gloc, eve, false).sunsetOffset(-candleLightingMinutes(place), true);
-  const end = new Zmanim(gloc, civilNoon(last), false).tzeit();
+  const lastDay = new Zmanim(gloc, civilNoon(last), false);
+  const end = lastDay.tzeit();
   if (!isUsable(start) || !isUsable(end)) return null;
+  // Aux hautes latitudes en été, la sortie des étoiles peut dépasser les
+  // 72 minutes : une sortie Rabbénou Tam plus tôt que la sortie ordinaire
+  // n'apprend rien, on ne la donne pas.
+  const rabbenouTam = lastDay.sunsetOffset(RABBENOU_TAM_MINUTES, true);
+  const endRabbenouTam =
+    isUsable(rabbenouTam) && rabbenouTam.getTime() > end.getTime() ? rabbenouTam : null;
 
   const festivals: string[] = [];
   let shabbat: Date | null = null;
@@ -508,7 +534,7 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
       if (!festivals.includes(name)) festivals.push(name);
     }
   }
-  return { start, end, first, last, shabbat, festivals };
+  return { start, end, endRabbenouTam, first, last, shabbat, festivals };
 }
 
 /** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */
@@ -518,19 +544,21 @@ export function nightfallOf(place: ZmanimPlace, hd: HDate): Date | null {
 }
 
 /**
- * Dit-on la bénédiction de la lune (Birkat Halevana) cette nuit-là ?
+ * Dit-on la bénédiction de la lune (Birkat Halevana) la nuit qui ouvre ce
+ * jour hébraïque-là ?
  *
  * Usage séfarade (Ben Ich 'Haï) : on attend sept jours complets depuis le
- * molad, et on ne la dit plus passé la moitié de la lunaison. Deux reports
- * d'usage, pour la dire dans la joie : en Av on attend la sortie de Tich'a
- * beAv, en Tichri celle de Kippour.
+ * molad, donc la première nuit est celle qui ouvre le 8 du mois (la nuit du 7
+ * n'en compte que six), et on ne la dit plus passé la moitié de la lunaison.
+ * Deux reports d'usage, pour la dire dans la joie : en Av on attend la sortie
+ * de Tich'a beAv, en Tichri celle de Kippour.
  */
 export function saysBirkatHalevana(hd: HDate): boolean {
   const day = hd.getDate();
   if (day > BIRKAT_HALEVANA_LAST_DAY) return false;
   if (hd.getMonth() === months.AV) return day >= 10;
   if (hd.getMonth() === months.TISHREI) return day >= 11;
-  return day >= 7;
+  return day >= 8;
 }
 
 /** La moitié de la lunaison : passé ce jour, la bénédiction ne se dit plus. */
