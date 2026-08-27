@@ -15,8 +15,8 @@
       "lines": [
         {
           "rubric": {
-            "fr": "Au réveil, avant toute chose :",
-            "en": "Upon waking, before anything else:",
+            "fr": "Avant toute chose :",
+            "en": "Before anything else:",
             "he": "כשיעור משנתו יאמר:"
           },
           "he": "מוֹדֶה אֲנִי לְפָנֶיךָ מֶלֶךְ חַי וְקַיָּם שֶהֶחֱזַרְתָּ בִּי נִשְׁמָתִי בְחֶמְלָה, רַבָּה אֱמוּנָתֶךָ:"
@@ -31,9 +31,9 @@
         "he": "ברכות השחר"
       },
       "halakha": {
-        "fr": "Ces bénédictions se disent chaque matin, même si l'on n'en a pas eu l'occasion sur le moment ; on peut les rattraper toute la matinée.",
-        "en": "These blessings are said every morning, even past their moment; they may be made up all morning.",
-        "he": "ברכות אלו נאמרות בכל בוקר, ואפשר להשלימן כל שעות הבוקר."
+        "fr": "Même si l'on n'en a pas eu l'occasion sur le moment, on peut les rattraper toute la matinée.",
+        "en": "Even past their moment, they may be made up all morning.",
+        "he": "אפשר להשלימן כל שעות הבוקר."
       },
       "lines": [
         {
@@ -1214,9 +1214,9 @@
       "lines": [
         {
           "rubric": {
-            "fr": "Avant la sortie du séfer Torah :",
-            "en": "Before taking out the Torah scroll:",
-            "he": "קודם הוצאת ספר תורה אומרים:"
+            "fr": "On dit d'abord :",
+            "en": "First, say:",
+            "he": "תחילה אומרים:"
           },
           "he": "יְהִ֨י יְהֹוָ֤ה אֱלֹהֵ֙ינוּ֙ עִמָּ֔נוּ כַּאֲשֶׁ֥ר הָיָ֖ה עִם־אֲבֹתֵ֑ינוּ אַל־יַעַזְבֵ֖נוּ וְאַֽל־יִטְּשֵֽׁנוּ׃ הוֹשִׁ֤יעָה ׀ אֶת־עַמֶּ֗ךָ וּבָרֵ֥ךְ אֶת־נַחֲלָתֶ֑ךָ וּֽרְעֵ֥ם וְ֝נַשְּׂאֵ֗ם עַד־הָעוֹלָֽם׃ בַּֽ֭עֲבוּר דָּוִ֣ד עַבְדֶּ֑ךָ אַל־תָּ֝שֵׁ֗ב פְּנֵ֣י מְשִׁיחֶֽךָ׃"
         },
@@ -1255,9 +1255,9 @@
       "lines": [
         {
           "rubric": {
-            "fr": "Avant la sortie du séfer :",
-            "en": "Before taking out the scroll:",
-            "he": "לפני הוצאת ספר תורה:"
+            "fr": "On dit d'abord :",
+            "en": "First, say:",
+            "he": "תחילה אומרים:"
           },
           "he": "אֶל אֶרֶךְ אַפַּיִם וְרַב חֶסֶד וֶאֱמֶת, אֶל בְּאַפְּךָ תוֹכִיחֵנוּ, חוּסָה יְהֹוָה עַל יִשְׂרָאֵל עַמֶּךָ, וְהוֹשִׁיעֵנוּ מִכָּל רָע, חָטָאנוּ לְךָ, אָדוֹן סְלַח נָא, כְּרֹב רַחֲמֶיךָ אֶל:",
           "when": "tahanoun"
@@ -1725,9 +1725,9 @@
       "lines": [
         {
           "rubric": {
-            "fr": "Pendant la répétition, la kedoucha « Keter » :",
-            "en": "During the repetition, the “Keter” Kedushah:",
-            "he": "בחזרה אומרים כתר:"
+            "fr": "Pendant la répétition :",
+            "en": "During the repetition:",
+            "he": "בחזרה:"
           },
           "he": "כֶּתֶר יִתְּנוּ לְךָ, יְהֹוָה אֱלֹהֵינוּ, מַלְאָכִים הֲמוֹנֵי מַעְלָה, וְעַמְּךָ יִשְׂרָאֵל קְבוּצֵי מַטָּה. יַחַד כֻּלָּם קְדֻשָּׁה לְךָ יְשַׁלֵּשׁוּ, כַּדָּבָר הָאָמוּר עַל יַד נְבִיאָךְ וְקָרָ֨א זֶ֤ה אֶל־זֶה֙ וְאָמַ֔ר קָד֧וֹשׁ ׀ קָד֛וֹשׁ קָד֖וֹשׁ יְהֹוָ֣ה צְבָא֑וֹת מְלֹ֥א כָל־הָאָ֖רֶץ כְּבוֹדֽוֹ׃ לְעֻמָּתָם מְשַׁבְּחִים וְאוֹמְרִים בָּר֥וּךְ כְּבוֹד־יְהֹוָ֖ה מִמְּקוֹמֽוֹ׃ וּבְדִבְרֵי קָדְשְׁךָ כָּתוּב לֵאמֹר יִמְלֹ֤ךְ יְהֹוָ֨ה ׀ לְעוֹלָ֗ם אֱלֹהַ֣יִךְ צִ֭יּוֹן לְדֹ֥ר וָדֹ֗ר הַֽלְלוּיָֽהּ:"
         }

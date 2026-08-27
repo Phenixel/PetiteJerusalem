@@ -325,9 +325,9 @@ const HALAKHA = {
     "מברוך שאמר עד ישתבח אין מפסיקים בדיבור.",
   ),
   birkotHashahar: R(
-    "Ces bénédictions se disent chaque matin, même si l'on n'en a pas eu l'occasion sur le moment ; on peut les rattraper toute la matinée.",
-    "These blessings are said every morning, even past their moment; they may be made up all morning.",
-    "ברכות אלו נאמרות בכל בוקר, ואפשר להשלימן כל שעות הבוקר.",
+    "Même si l'on n'en a pas eu l'occasion sur le moment, on peut les rattraper toute la matinée.",
+    "Even past their moment, they may be made up all morning.",
+    "אפשר להשלימן כל שעות הבוקר.",
   ),
   tahanoun: R(
     "On ne le dit pas dans une maison de deuil, un jour de brit-mila, en présence d'un marié, ni les jours où l'usage de la communauté s'en dispense.",
@@ -759,8 +759,8 @@ function chaharitRecipe() {
           {
             seg: 3,
             rubric: R(
-              "Au réveil, avant toute chose :",
-              "Upon waking, before anything else:",
+              "Avant toute chose :",
+              "Before anything else:",
               "כשיעור משנתו יאמר:",
             ),
           },
@@ -1149,9 +1149,9 @@ function chaharitRecipe() {
         ),
         lines: [
           { seg: 35, rubric: R(
-            "Avant la sortie du séfer Torah :",
-            "Before taking out the Torah scroll:",
-            "קודם הוצאת ספר תורה אומרים:",
+            "On dit d'abord :",
+            "First, say:",
+            "תחילה אומרים:",
           ) },
           { seg: 37, rubric: R(
             "On ouvre le hékhal et l'on dit :",
@@ -1173,9 +1173,9 @@ function chaharitRecipe() {
         halakha: HALAKHA.torahSemaine,
         lines: [
           { seg: 2, when: "tahanoun", rubric: R(
-            "Avant la sortie du séfer :",
-            "Before taking out the scroll:",
-            "לפני הוצאת ספר תורה:",
+            "On dit d'abord :",
+            "First, say:",
+            "תחילה אומרים:",
           ) },
           { seg: 3, when: "tahanoun", tight: true },
           { seg: 6, rubric: R(
@@ -1323,9 +1323,9 @@ function chaharitRecipe() {
             seg: 7,
             mode: "small",
             rubric: R(
-              "Pendant la répétition, la kedoucha « Keter » :",
-              "During the repetition, the “Keter” Kedushah:",
-              "בחזרה אומרים כתר:",
+              "Pendant la répétition :",
+              "During the repetition:",
+              "בחזרה:",
             ),
           },
         ],
@@ -1567,8 +1567,8 @@ function arvitRecipe() {
             seg: 2,
             mode: "small",
             rubric: R(
-              "Le soir de Roch Hodech, certains disent :",
-              "On Rosh Hodesh night, some say:",
+              "Certains disent :",
+              "Some say:",
               "בליל ראש חודש יש הנוהגים לומר:",
             ),
           },
