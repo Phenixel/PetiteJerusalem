@@ -76,9 +76,45 @@ describe("didascalies des textes de tefila", () => {
     ).toEqual([]);
   });
 
-  it("ne rappellent pas les jours où le bloc est de toute façon retiré", () => {
-    // Un bloc `when` absent ce jour-là n'est pas affiché : énumérer ses jours
-    // d'absence dans sa propre didascalie ne s'adresse à personne.
+  it("ne redisent pas une condition que le calendrier tranche déjà", () => {
+    // Un bloc `when` est retiré du fil les jours où son occasion n'est pas
+    // active. Y écrire que le passage ne se dit pas tel ou tel jour, c'est
+    // une phrase que personne ne lira au moment où elle compte.
+    //
+    // Nommer l'occasion reste bon : « En été\u00a0: », « À Roch Hodech\u00a0: »
+    // disent au lecteur pourquoi cet ajout est là, comme dans un sidour
+    // imprimé. Ce que la règle vise, c'est l'annonce d'une absence.
+    //
+    // Reste licite, et utile, la dispense que le calendrier ne peut pas
+    // connaître : une maison de deuil, une brit-mila, l'usage d'une
+    // communauté. Ces jours-là le texte s'affiche, et c'est précisément
+    // pourquoi il faut le dire.
+    const OCCASIONS = [
+      "Roch Hodech",
+      "Roch 'Hodech",
+      "'Hanouka",
+      "Pourim",
+      "Nissan",
+      "Chabbat",
+      "'Hol haMoed",
+      "techouva",
+      "jours de fête",
+      "ta'hanoun",
+      "lundi",
+      "jeudi",
+      "Rosh Hodesh",
+      "Hanukkah",
+      "Purim",
+      "Shabbat",
+      "tachanun",
+      "Monday",
+      "Thursday",
+    ];
+    // Le verbe compte : « on ne recommence pas » (un oubli à rattraper) est
+    // une vraie consigne ; « on ne dit pas » (un passage sauté) désigne un
+    // jour où le bloc ne serait pas là.
+    const OMISSION = /ne (se |le |les )?(dit|disent) pas|is not said|are not said/i;
+
     const offenders: string[] = [];
     for (const name of fichiers) {
       const contenu = JSON.parse(readFileSync(resolve(DIR, name), "utf-8"));
@@ -91,7 +127,8 @@ describe("didascalies des textes de tefila", () => {
         const bloc = node as Node;
         if (typeof bloc.when === "string") {
           for (const texte of consignes({ ...bloc, blocks: undefined })) {
-            if (/ne se di[st] pas|ne se disent pas|ne dit pas|is not said|are not said/i.test(texte)) {
+            const vise = OCCASIONS.some((jour) => texte.includes(jour));
+            if (vise && OMISSION.test(texte)) {
               offenders.push(`${name} (when: ${bloc.when}) → ${texte}`);
             }
           }

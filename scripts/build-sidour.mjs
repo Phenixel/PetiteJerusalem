@@ -329,6 +329,11 @@ const HALAKHA = {
     "These blessings are said every morning, even past their moment; they may be made up all morning.",
     "ברכות אלו נאמרות בכל בוקר, ואפשר להשלימן כל שעות הבוקר.",
   ),
+  tahanoun: R(
+    "On ne le dit pas dans une maison de deuil, un jour de brit-mila, en présence d'un marié, ni les jours où l'usage de la communauté s'en dispense.",
+    "It is not said in a house of mourning, on the day of a brit mila, in the presence of a groom, or on days when the community's custom omits it.",
+    "אין אומרים אותו בבית אבל, ביום ברית מילה, במעמד חתן, ובימים שמנהג הקהילה לדלגו.",
+  ),
   torahSemaine: R(
     "On lit dans la Torah le début de la paracha de la semaine, en trois montées.",
     "The beginning of the week's parasha is read from the Torah, in three aliyot.",
@@ -1052,6 +1057,7 @@ function chaharitRecipe() {
         when: "tahanoun",
         plain: true,
         labelText: R("Ta'hanoun (supplications)", "Tachanun (supplications)", "תחנון"),
+        halakha: HALAKHA.tahanoun,
         lines: [
           { seg: 1 },
           { seg: 2 },
@@ -1076,9 +1082,9 @@ function chaharitRecipe() {
           {
             seg: 14,
             rubric: R(
-              "Le lundi et le jeudi, on ajoute :",
-              "On Monday and Thursday, add:",
-              "בימי שני וחמישי מוסיפים:",
+              "On ajoute :",
+              "Add:",
+              "מוסיפים:",
             ),
           },
           { seg: 15 },
@@ -1456,6 +1462,7 @@ function minhaRecipe() {
         when: "tahanoun-minha",
         plain: true,
         labelText: R("Ta'hanoun (supplications)", "Tachanun (supplications)", "תחנון"),
+        halakha: HALAKHA.tahanoun,
         lines: [
           { seg: 1 },
           { seg: 2 },
