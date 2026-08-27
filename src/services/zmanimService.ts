@@ -478,6 +478,11 @@ export interface RestPeriod {
   start: Date;
   /** Sortie des étoiles du dernier jour. */
   end: Date;
+  /**
+   * Sortie selon Rabbénou Tam : 72 minutes après la chkia du dernier jour,
+   * pour qui suit cet avis. Null quand la chkia ne se calcule pas.
+   */
+  endRabbenouTam: Date | null;
   first: HDate;
   last: HDate;
   /** Le bloc couvre un Chabbat, son jour civil, pour retrouver la paracha. */
@@ -488,6 +493,9 @@ export interface RestPeriod {
 
 /** Trois jours de repos d'affilée au maximum (Yom Tov de deux jours + Chabbat). */
 const MAX_REST_DAYS = 3;
+
+/** Minutes après la chkia de la sortie selon Rabbénou Tam. */
+const RABBENOU_TAM_MINUTES = 72;
 
 /**
  * Le temps de repos auquel appartient ce jour hébraïque, ou null si c'en est
@@ -508,8 +516,15 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
   const eve = civilNoon(first);
   eve.setDate(eve.getDate() - 1);
   const start = new Zmanim(gloc, eve, false).sunsetOffset(-candleLightingMinutes(place), true);
-  const end = new Zmanim(gloc, civilNoon(last), false).tzeit();
+  const lastDay = new Zmanim(gloc, civilNoon(last), false);
+  const end = lastDay.tzeit();
   if (!isUsable(start) || !isUsable(end)) return null;
+  // Aux hautes latitudes en été, la sortie des étoiles peut dépasser les
+  // 72 minutes : une sortie Rabbénou Tam plus tôt que la sortie ordinaire
+  // n'apprend rien, on ne la donne pas.
+  const rabbenouTam = lastDay.sunsetOffset(RABBENOU_TAM_MINUTES, true);
+  const endRabbenouTam =
+    isUsable(rabbenouTam) && rabbenouTam.getTime() > end.getTime() ? rabbenouTam : null;
 
   const festivals: string[] = [];
   let shabbat: Date | null = null;
@@ -519,7 +534,7 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
       if (!festivals.includes(name)) festivals.push(name);
     }
   }
-  return { start, end, first, last, shabbat, festivals };
+  return { start, end, endRabbenouTam, first, last, shabbat, festivals };
 }
 
 /** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */

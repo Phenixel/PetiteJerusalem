@@ -141,6 +141,10 @@ describe("restPeriodsNear : le Chabbat d'une semaine ordinaire", () => {
     expect(on(DEFAULT_PLACE, shabbat.end)).toBe("samedi 8 août");
     expect(at(DEFAULT_PLACE, shabbat.start)).toBe("21:01");
     expect(at(DEFAULT_PLACE, shabbat.end)).toBe("22:12");
+    // Sortie selon Rabbénou Tam : 72 minutes après la chkia (21 h 18 ce
+    // samedi-là), après la sortie ordinaire.
+    expect(at(DEFAULT_PLACE, shabbat.endRabbenouTam!)).toBe("22:30");
+    expect(shabbat.endRabbenouTam!.getTime()).toBeGreaterThan(shabbat.end.getTime());
   });
 
   it("garde le Chabbat en cours tant qu'il n'est pas sorti", () => {

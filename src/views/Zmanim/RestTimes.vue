@@ -85,6 +85,21 @@ const isFestival = computed(() => props.period.festivals.length > 0);
           {{ clock(period.end) }}
         </span>
       </li>
+      <!-- La sortie selon Rabbénou Tam, pour qui suit cet avis : plus tard,
+           72 minutes après la chkia (l'explication est dans la note). -->
+      <li v-if="period.endRabbenouTam" class="flex items-center justify-between gap-4 py-2">
+        <span class="min-w-0">
+          <span class="block font-medium leading-snug text-text-primary">
+            {{ t("zmanim.rest.rabbenouTam") }}
+          </span>
+          <span class="block text-xs text-text-secondary">
+            {{ dayOf(period.endRabbenouTam) }}
+          </span>
+        </span>
+        <span class="shrink-0 font-semibold tabular-nums text-text-primary">
+          {{ clock(period.endRabbenouTam) }}
+        </span>
+      </li>
     </ul>
 
     <p class="mt-2.5 text-xs text-text-secondary">
@@ -92,7 +107,7 @@ const isFestival = computed(() => props.period.festivals.length > 0);
         isFestival
           ? t("zmanim.rest.note", { minutes: candleMinutes })
           : t("zmanim.shabbat.note", { minutes: candleMinutes })
-      }}
+      }}<template v-if="period.endRabbenouTam"> {{ t("zmanim.rest.rabbenouTamNote") }}</template>
     </p>
   </section>
 </template>

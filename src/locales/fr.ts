@@ -363,6 +363,9 @@ const fr = {
     },
     rest: {
       end: "Sortie",
+      rabbenouTam: "Sortie Rabbénou Tam",
+      rabbenouTamNote:
+        "La sortie selon Rabbénou Tam est comptée 72 minutes après le coucher du soleil.",
       note: "Allumage {minutes} minutes avant le coucher du soleil, sortie à la sortie des étoiles. Un jour de fête qui suit le Chabbat, on allume après la sortie, à partir d'une flamme déjà allumée.",
     },
     shabbat: {
