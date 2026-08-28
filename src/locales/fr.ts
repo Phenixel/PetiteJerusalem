@@ -909,7 +909,7 @@ const fr = {
   },
   appUpdate: {
     title: "Mise à jour disponible",
-    message: "La version {version} de l'application est disponible sur le store.",
+    message: "Une nouvelle version de l'application est disponible sur le store.",
     action: "Mettre à jour",
     dismiss: "Masquer ce message",
   },

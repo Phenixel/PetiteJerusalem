@@ -12,32 +12,32 @@ import { analyticsService } from "./analyticsService";
  * ne l'atteignent jamais et les bugs remontés portent sur du code enterré.
  * D'où ce bandeau, informatif et refusable, il ne bloque rien.
  *
- * Version installée : `App.getInfo()` (versionName Android /
- * CFBundleShortVersionString iOS), et pas `__APP_VERSION__`, qui décrit le
- * bundle web servi et vaudrait la version du serveur de dev en itération
- * rapide (capacitor.config.ts, `server.url`).
+ * La règle, sur les deux plateformes : ne se fier qu'au store lui-même,
+ * jamais au tag de release. Une release peut attendre des jours la revue
+ * d'Apple ou de Google ; annoncer la mise à jour pendant cette fenêtre
+ * enverrait vers une fiche qui ne la propose pas encore.
  *
- * Version publiée, par plateforme, deux sources, parce qu'aucune ne couvre
- * les deux stores :
+ * - Android : l'API In-App Updates du Play Store, via
+ *   @capawesome/capacitor-app-update. C'est la réponse du store pour cet
+ *   appareil précis : revue Google passée, propagation faite, rollout
+ *   progressif compris. L'ancienne source, `/app-version.json` émis par le
+ *   build du site, annonçait la version dès la mise en ligne du site, donc
+ *   pendant toute la revue Google ; vite.config.ts le publie toujours, pour
+ *   les versions déjà installées qui le consultent encore.
  * - iOS : l'API publique de lookup de l'App Store, qui fait autorité (la
- *   publication iOS est manuelle et passe par une revue de plusieurs jours :
- *   se fier au tag de release annoncerait une mise à jour introuvable). Tant
- *   que l'app n'y est pas publiée, le lookup ne renvoie rien et le bandeau
+ *   publication iOS est manuelle et passe par une revue de plusieurs jours).
+ *   Pas le plugin ici : son contrôle refait ce même lookup, et son
+ *   `openAppStore` exige l'identifiant numérique Apple de la fiche, que le
+ *   lookup fournit justement (trackViewUrl). Tant que l'app n'est pas
+ *   publiée sur l'App Store, le lookup ne renvoie rien et le bandeau
  *   n'apparaît jamais.
- * - Android : `/app-version.json`, publié par le build du site (voir
- *   vite.config.ts). Le Play Store n'expose aucune API publique de version, et
- *   le tag qui déploie le site déclenche aussi la publication Play
- *   (deploy-android.yml) : les deux versions ne divergent que le temps de la
- *   revue Google, quelques heures.
  *
- * Silencieux en cas d'échec (hors ligne, store injoignable, réponse
- * inattendue) : pas de bandeau plutôt qu'un faux positif.
+ * Silencieux en cas d'échec (hors ligne, store injoignable, build qui ne
+ * vient pas du store) : pas de bandeau plutôt qu'un faux positif.
  */
 
 const APP_ID = "fr.petitejerusalem.app";
-const VERSION_MANIFEST_URL = "https://petite-jerusalem.fr/app-version.json";
 const ITUNES_LOOKUP_URL = `https://itunes.apple.com/lookup?bundleId=${APP_ID}`;
-const PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${APP_ID}`;
 
 /** Version dont le bandeau a été refusé : la suivante le fera réapparaître. */
 const DISMISSED_KEY = "pj_update_dismissed";
@@ -45,15 +45,22 @@ const DISMISSED_KEY = "pj_update_dismissed";
 /** Un contrôle par lancement, puis au retour au premier plan passé ce délai. */
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
-/** Release disponible sur le store de la plateforme courante. */
-interface StoreRelease {
-  version: string;
-  /** Fiche du store, ouverte par le bouton « Mettre à jour ». */
-  url: string;
+/** Résultat d'un contrôle auprès du store de la plateforme courante. */
+export interface StoreCheck {
+  /** Le store distribue une version plus récente que celle installée. */
+  outdated: boolean;
+  /**
+   * Identifiant de la version du store, pour l'analytics et la mémoire du
+   * refus : versionName sur iOS, versionCode sur Android (l'API In-App
+   * Updates n'expose pas de nom de version).
+   */
+  version: string | null;
+  /** Version installée, pour l'analytics. */
+  installed: string;
 }
 
 /**
- * Nombres de version d'un `versionName` / `CFBundleShortVersionString`.
+ * Nombres de version d'un `CFBundleShortVersionString`.
  *
  * Tolérant sur ce qui suit : un build local est décrit par `git describe`
  * (`v3.4.0-7-gabc1234`, soit « 7 commits après v3.4.0 ») et vaut donc 3.4.0
@@ -77,9 +84,18 @@ export function isOutdated(installed: string, latest: string): boolean {
 }
 
 /**
+ * Le bandeau s'affiche pour une mise à jour réellement disponible et non
+ * refusée. Sans identifiant de version, le refus ne serait pas mémorisable
+ * (le bandeau reviendrait à chaque lancement) : on s'abstient.
+ */
+export function shouldOfferUpdate(check: StoreCheck, dismissed: string | null): boolean {
+  return check.outdated && check.version !== null && check.version !== dismissed;
+}
+
+/**
  * GET JSON par la couche HTTP native : la webview sert le bundle depuis
- * `https://localhost`, un `fetch` vers le site ou l'App Store serait soumis au
- * CORS. Rend `null` sur tout échec, l'appelant n'affiche alors rien.
+ * `https://localhost`, un `fetch` vers l'App Store serait soumis au CORS.
+ * Rend `null` sur tout échec, l'appelant n'affiche alors rien.
  */
 async function getJson(url: string): Promise<unknown | null> {
   try {
@@ -91,19 +107,56 @@ async function getJson(url: string): Promise<unknown | null> {
   }
 }
 
-async function fetchStoreRelease(): Promise<StoreRelease | null> {
-  if (appPlatform === "ios") {
-    const payload = (await getJson(ITUNES_LOOKUP_URL)) as {
-      results?: { version?: string; trackViewUrl?: string }[];
-    } | null;
-    // Aucun résultat : app pas (encore) publiée sur l'App Store.
-    const entry = payload?.results?.[0];
-    if (!entry?.version || !entry.trackViewUrl) return null;
-    return { version: entry.version, url: entry.trackViewUrl };
+/**
+ * Version installée : `App.getInfo()` (CFBundleShortVersionString), et pas
+ * `__APP_VERSION__`, qui décrit le bundle web servi et vaudrait la version du
+ * serveur de dev en itération rapide (capacitor.config.ts, `server.url`).
+ */
+async function installedVersion(): Promise<string | null> {
+  try {
+    const { App } = await import("@capacitor/app");
+    return (await App.getInfo()).version;
+  } catch {
+    return null;
   }
-  const payload = (await getJson(VERSION_MANIFEST_URL)) as { version?: string } | null;
-  if (!payload?.version) return null;
-  return { version: payload.version, url: PLAY_STORE_URL };
+}
+
+/**
+ * iOS : lookup de l'App Store, comparaison de versions à notre charge. Le
+ * lookup donne aussi l'URL de la fiche, que « Mettre à jour » ouvre.
+ */
+async function checkAppStore(): Promise<StoreCheck | null> {
+  const [installed, payload] = await Promise.all([
+    installedVersion(),
+    getJson(ITUNES_LOOKUP_URL) as Promise<{
+      results?: { version?: string; trackViewUrl?: string }[];
+    } | null>,
+  ]);
+  // Aucun résultat : app pas (encore) publiée sur l'App Store.
+  const entry = payload?.results?.[0];
+  if (!installed || !entry?.version || !entry.trackViewUrl) return null;
+  storeUrl = entry.trackViewUrl;
+  return { outdated: isOutdated(installed, entry.version), version: entry.version, installed };
+}
+
+/**
+ * Android : l'API In-App Updates répond pour l'appareil lui-même, la
+ * comparaison de versions est faite côté Play Store. L'appel échoue quand
+ * l'app ne vient pas du Play Store (build de dev installé à la main,
+ * services Play absents) : silence, comme tout échec.
+ */
+async function checkPlayStore(): Promise<StoreCheck | null> {
+  try {
+    const { AppUpdate, AppUpdateAvailability } = await import("@capawesome/capacitor-app-update");
+    const info = await AppUpdate.getAppUpdateInfo();
+    return {
+      outdated: info.updateAvailability === AppUpdateAvailability.UPDATE_AVAILABLE,
+      version: info.availableVersionCode ?? null,
+      installed: info.currentVersionName,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function readDismissed(): string | null {
@@ -117,42 +170,33 @@ function readDismissed(): string | null {
 /** Une mise à jour est disponible et n'a pas été refusée : bandeau affiché. */
 export const updateAvailable = ref(false);
 
-/** Version publiée sur le store, une fois le contrôle passé. */
-export const latestVersion = ref<string | null>(null);
+/** Identifiant de la version du store, une fois le contrôle passé. */
+let latestVersion: string | null = null;
 
+/** Fiche App Store (trackViewUrl du lookup), rempli sur iOS seulement. */
 let storeUrl: string | null = null;
+
 let lastCheckAt = 0;
 let announced = false;
-
-async function installedVersion(): Promise<string | null> {
-  try {
-    const { App } = await import("@capacitor/app");
-    return (await App.getInfo()).version;
-  } catch {
-    return null;
-  }
-}
 
 async function check(): Promise<void> {
   if (!isNativeApp) return;
   if (lastCheckAt && Date.now() - lastCheckAt < CHECK_INTERVAL_MS) return;
 
-  const [installed, release] = await Promise.all([installedVersion(), fetchStoreRelease()]);
+  const result = appPlatform === "ios" ? await checkAppStore() : await checkPlayStore();
   // Échec (hors ligne, store injoignable) : on ne marque pas le contrôle comme
   // fait, le prochain retour au premier plan réessaiera.
-  if (!installed || !release) return;
+  if (!result) return;
   lastCheckAt = Date.now();
 
-  latestVersion.value = release.version;
-  storeUrl = release.url;
-  updateAvailable.value =
-    isOutdated(installed, release.version) && readDismissed() !== release.version;
+  latestVersion = result.version;
+  updateAvailable.value = shouldOfferUpdate(result, readDismissed());
 
   if (updateAvailable.value && !announced) {
     announced = true;
     analyticsService.capture("app_update_available", {
-      installed_version: installed,
-      store_version: release.version,
+      installed_version: result.installed,
+      store_version: result.version,
     });
   }
 }
@@ -171,17 +215,23 @@ export const appUpdateService = {
 
   /** Ouvre la fiche du store (Play Store / App Store) dans l'app dédiée. */
   openStore(): void {
-    if (!storeUrl) return;
-    analyticsService.capture("app_update_store_opened", { store_version: latestVersion.value });
-    window.open(storeUrl, "_blank");
+    analyticsService.capture("app_update_store_opened", { store_version: latestVersion });
+    if (appPlatform === "ios") {
+      if (storeUrl) window.open(storeUrl, "_blank");
+      return;
+    }
+    // Android : le plugin ouvre la fiche Play de l'app courante.
+    import("@capawesome/capacitor-app-update")
+      .then(({ AppUpdate }) => AppUpdate.openAppStore())
+      .catch(() => {});
   },
 
   /** Refus : le bandeau ne revient qu'à la prochaine version publiée. */
   dismiss(): void {
     updateAvailable.value = false;
-    analyticsService.capture("app_update_dismissed", { store_version: latestVersion.value });
+    analyticsService.capture("app_update_dismissed", { store_version: latestVersion });
     try {
-      if (latestVersion.value) localStorage.setItem(DISMISSED_KEY, latestVersion.value);
+      if (latestVersion) localStorage.setItem(DISMISSED_KEY, latestVersion);
     } catch {
       // Stockage indisponible : le refus ne vaut que pour la session en cours.
     }

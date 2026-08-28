@@ -870,7 +870,7 @@ const he: LocaleMessages = {
   },
   appUpdate: {
     title: "עדכון זמין",
-    message: "גרסה {version} של האפליקציה זמינה בחנות.",
+    message: "גרסה חדשה של האפליקציה זמינה בחנות.",
     action: "לעדכן",
     dismiss: "להסתיר הודעה זו",
   },

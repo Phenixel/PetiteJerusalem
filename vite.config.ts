@@ -41,12 +41,14 @@ function resolveAppVersion(): string {
 /**
  * Publie la version de la release sur le site : `dist/app-version.json`.
  *
- * L'app Android y lit la dernière version publiée pour se savoir périmée et
- * proposer la mise à jour (src/services/appUpdateService.ts), le Play Store
- * n'expose aucune API publique de version. Émis par le build plutôt que
- * maintenu à la main dans `public/` : le même tag déploie le site et publie
- * l'app (deploy.yml / deploy-android.yml), le fichier ne peut donc pas mentir
- * sur la release en cours.
+ * Ancienne source du bandeau de mise à jour Android : les apps y lisaient la
+ * dernière version publiée pour se savoir périmées. Comme le fichier est en
+ * ligne dès le déploiement du site, il annonçait la mise à jour pendant toute
+ * la revue Google, alors que le Play Store ne la proposait pas encore ;
+ * src/services/appUpdateService.ts interroge désormais l'API In-App Updates
+ * du Play Store, qui répond pour l'appareil lui-même. Le fichier reste publié
+ * pour les versions déjà installées qui le consultent encore ; à retirer
+ * quand elles auront à peu près disparu (analytics `app_version`).
  */
 function appVersionManifest(version: string): Plugin {
   return {
