@@ -9,6 +9,10 @@ l'app :
 git tag v3.0.2 && git push origin v3.0.2
 ```
 
+Pour mettre en prod le **site seul** (correctif front, contenu, SEO), poser
+un tag `web-vX.Y.Z` : seul deploy.yml se déclenche, aucune release mobile ne
+part.
+
 Le dossier `android/` étant git-ignoré, la CI le régénère de zéro
 (`npx cap add android` + `scripts/setup-android.mjs`), aligne
 `versionName`/`versionCode` sur le tag (v3.0.1 → versionCode 3000100),
