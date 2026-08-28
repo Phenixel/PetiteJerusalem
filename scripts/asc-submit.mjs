@@ -26,7 +26,7 @@
  *     node scripts/asc-submit.mjs --version 3.7.3 --build-number 3070300 \
  *       [--timeout-minutes 45]
  */
-import { createPrivateKey, sign as cryptoSign } from "node:crypto";
+import { createAscClient, EDITABLE_STATES, versionState } from "./lib/asc-api.mjs";
 
 const BUNDLE_ID = "fr.petitejerusalem.app";
 
@@ -53,49 +53,10 @@ if (!keyId || !issuerId || !privateKeyPem) {
   process.exit(1);
 }
 
-const base64url = (input) =>
-  Buffer.from(input).toString("base64").replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-
 // Le jeton Apple vit 20 minutes au maximum, mais ce script peut poller plus de
-// 40 : contrairement aux autres scripts ASC (une exécution courte, un seul
-// jeton), celui-ci re-signe un jeton frais toutes les 10 minutes.
-let cachedToken = null;
-let cachedAt = 0;
-function appStoreConnectToken() {
-  if (cachedToken && Date.now() - cachedAt < 10 * 60 * 1000) return cachedToken;
-  const now = Math.floor(Date.now() / 1000);
-  const header = { alg: "ES256", kid: keyId, typ: "JWT" };
-  const payload = { iss: issuerId, iat: now, exp: now + 20 * 60, aud: "appstoreconnect-v1" };
-  const signingInput = `${base64url(JSON.stringify(header))}.${base64url(JSON.stringify(payload))}`;
-  const signature = cryptoSign("sha256", Buffer.from(signingInput), {
-    key: createPrivateKey(privateKeyPem.replaceAll("\\n", "\n")),
-    dsaEncoding: "ieee-p1363",
-  });
-  cachedToken = `${signingInput}.${base64url(signature)}`;
-  cachedAt = Date.now();
-  return cachedToken;
-}
-
-async function api(method, path, body) {
-  const response = await fetch(`https://api.appstoreconnect.apple.com${path}`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${appStoreConnectToken()}`,
-      ...(body ? { "Content-Type": "application/json" } : {}),
-    },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  const text = await response.text();
-  const json = text ? JSON.parse(text) : null;
-  if (!response.ok) {
-    const detail = json?.errors?.map((e) => `${e.title} : ${e.detail}`).join("\n  ") ?? text;
-    const error = new Error(`${method} ${path} → ${response.status}\n  ${detail}`);
-    error.status = response.status;
-    error.body = json;
-    throw error;
-  }
-  return json;
-}
+// 40 : le client (scripts/lib/asc-api.mjs) re-signe un jeton frais toutes les
+// 10 minutes.
+const { api } = createAscClient({ keyId, issuerId, privateKeyPem });
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -147,15 +108,9 @@ if (build.attributes.usesNonExemptEncryption == null) {
 }
 
 // --- 3. Attacher le build à la version du tag --------------------------------
-// Mêmes états « modifiables » que scripts/appstore-listing.mjs, qui vient de
-// créer ou renommer cette version dans le job macOS.
-const EDITABLE_STATES = [
-  "PREPARE_FOR_SUBMISSION",
-  "DEVELOPER_REJECTED",
-  "REJECTED",
-  "METADATA_REJECTED",
-  "INVALID_BINARY",
-];
+// EDITABLE_STATES (scripts/lib/asc-api.mjs) : mêmes états « modifiables » que
+// scripts/appstore-listing.mjs, qui vient de créer ou renommer cette version
+// dans le job macOS.
 const versions = await api(
   "GET",
   `/v1/apps/${app.id}/appStoreVersions?filter[versionString]=${versionString}&limit=5`,
@@ -168,10 +123,10 @@ if (!version) {
   );
   process.exit(1);
 }
-const versionState = version.attributes.appVersionState ?? version.attributes.appStoreState;
-if (!EDITABLE_STATES.includes(versionState)) {
+const state = versionState(version);
+if (!EDITABLE_STATES.includes(state)) {
   // Re-run d'un tag déjà soumis, ou version déjà publiée : rien à faire.
-  console.log(`asc-submit: version ${versionString} déjà soumise ou publiée (${versionState}), rien à faire.`);
+  console.log(`asc-submit: version ${versionString} déjà soumise ou publiée (${state}), rien à faire.`);
   process.exit(0);
 }
 await api("PATCH", `/v1/appStoreVersions/${version.id}/relationships/build`, {

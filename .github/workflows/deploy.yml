@@ -85,6 +85,15 @@ jobs:
           echo "::error::Hosting release never became active (served=${served:-<none>}, expected=$expected)."
           exit 1
 
+      # Le site vient d'être vérifié en prod : on prévient IndexNow (Bing,
+      # Yandex…) que les URLs ont changé, au lieu d'attendre leur prochain
+      # crawl. Google ne l'utilise pas (sitemap dans la Search Console). Non
+      # bloquant : un refus IndexNow ne doit pas faire échouer un déploiement
+      # dont le site est déjà en ligne.
+      - name: Ping IndexNow
+        continue-on-error: true
+        run: node scripts/indexnow.mjs
+
       # Security rules were the one thing this workflow never shipped: every
       # rules change (moderation, #142) had to be pushed by hand, and a rule
       # left behind silently breaks reads and writes the new front-end expects.

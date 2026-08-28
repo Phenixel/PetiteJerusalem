@@ -40,9 +40,9 @@
  * Sans --version, le script prend la version App Store à l'état
  * « modifiable » (PREPARE_FOR_SUBMISSION et assimilés).
  */
-import { createPrivateKey, sign as cryptoSign } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { createAscClient, EDITABLE_STATES, versionState } from "./lib/asc-api.mjs";
 import { defaultReleaseNotes, markdownToPlain, releaseBodyApplies } from "./release-notes.mjs";
 
 const BUNDLE_ID = "fr.petitejerusalem.app";
@@ -129,7 +129,7 @@ if (process.argv.includes("--check")) {
   process.exit(0);
 }
 
-// --- Authentification App Store Connect (JWT ES256) -------------------------
+// --- Authentification App Store Connect (JWT ES256, scripts/lib/asc-api.mjs) --
 const keyId = process.env.ASC_KEY_ID;
 const issuerId = process.env.ASC_ISSUER_ID;
 const privateKeyPem = process.env.ASC_PRIVATE_KEY;
@@ -139,46 +139,7 @@ if (!keyId || !issuerId || !privateKeyPem) {
   );
   process.exit(1);
 }
-
-const base64url = (input) =>
-  Buffer.from(input).toString("base64").replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-
-function appStoreConnectToken() {
-  const now = Math.floor(Date.now() / 1000);
-  const header = { alg: "ES256", kid: keyId, typ: "JWT" };
-  // 20 minutes : la durée maximale acceptée par Apple.
-  const payload = { iss: issuerId, iat: now, exp: now + 20 * 60, aud: "appstoreconnect-v1" };
-  const signingInput = `${base64url(JSON.stringify(header))}.${base64url(JSON.stringify(payload))}`;
-  // JOSE attend la signature ECDSA au format brut R||S, pas le DER d'OpenSSL.
-  const signature = cryptoSign("sha256", Buffer.from(signingInput), {
-    key: createPrivateKey(privateKeyPem.replaceAll("\\n", "\n")),
-    dsaEncoding: "ieee-p1363",
-  });
-  return `${signingInput}.${base64url(signature)}`;
-}
-
-const token = appStoreConnectToken();
-
-async function api(method, path, body) {
-  const response = await fetch(`https://api.appstoreconnect.apple.com${path}`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(body ? { "Content-Type": "application/json" } : {}),
-    },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  const text = await response.text();
-  const json = text ? JSON.parse(text) : null;
-  if (!response.ok) {
-    const detail = json?.errors?.map((e) => `${e.title} : ${e.detail}`).join("\n  ") ?? text;
-    const error = new Error(`${method} ${path} → ${response.status}\n  ${detail}`);
-    error.status = response.status;
-    error.body = json;
-    throw error;
-  }
-  return json;
-}
+const { api } = createAscClient({ keyId, issuerId, privateKeyPem });
 
 // --- Résolution de l'app et de la version ------------------------------------
 const apps = await api("GET", `/v1/apps?filter[bundleId]=${BUNDLE_ID}`);
@@ -224,17 +185,8 @@ const releaseType = process.env.IOS_AUTO_RELEASE?.trim() === "false" ? "MANUAL" 
 const releaseTypeLabel =
   releaseType === "MANUAL" ? "manuelle" : "automatique dès l'accord d'Apple";
 
-// États dans lesquels les textes d'une version sont encore modifiables.
-// (WAITING_FOR_REVIEW n'en fait pas partie : l'API répond 409 STATE_ERROR.)
-const EDITABLE_STATES = [
-  "PREPARE_FOR_SUBMISSION",
-  "DEVELOPER_REJECTED",
-  "REJECTED",
-  "METADATA_REJECTED",
-  "INVALID_BINARY",
-];
-// `appStoreState` est déprécié depuis l'API 3.3 au profit d'`appVersionState`.
-const versionState = (v) => v.attributes.appVersionState ?? v.attributes.appStoreState;
+// EDITABLE_STATES et versionState viennent de scripts/lib/asc-api.mjs :
+// états dans lesquels les textes d'une version sont encore modifiables.
 const versions = await api("GET", `/v1/apps/${app.id}/appStoreVersions?limit=20`);
 // Tri côté client (plus récente d'abord) : plusieurs versions peuvent être
 // modifiables, dont d'anciennes rejetées.
