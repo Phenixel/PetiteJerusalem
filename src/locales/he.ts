@@ -62,6 +62,13 @@ const he: LocaleMessages = {
     tehilimIntentions: "תהילים לפי כוונה",
     manageCookies: "ניהול עוגיות",
   },
+  appDownload: {
+    title: "הורדת האפליקציה",
+    apple: "App Store",
+    android: "Google Play",
+    appleAria: "להורדת פטיט ירושלים ב-App Store",
+    androidAria: "להורדת פטיט ירושלים ב-Google Play",
+  },
   consent: {
     title: "מדידת שימוש",
     message:

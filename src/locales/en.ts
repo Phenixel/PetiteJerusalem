@@ -62,6 +62,13 @@ const en: LocaleMessages = {
     tehilimIntentions: "Tehilim by intention",
     manageCookies: "Manage cookies",
   },
+  appDownload: {
+    title: "Get the app",
+    apple: "App Store",
+    android: "Google Play",
+    appleAria: "Download Petite Jérusalem on the App Store",
+    androidAria: "Download Petite Jérusalem on Google Play",
+  },
   consent: {
     title: "Analytics",
     message:

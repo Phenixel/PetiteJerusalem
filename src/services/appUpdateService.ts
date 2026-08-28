@@ -1,6 +1,7 @@
 import { CapacitorHttp } from "@capacitor/core";
 import { ref } from "vue";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
+import { APP_BUNDLE_ID } from "../config/stores";
 import { analyticsService } from "./analyticsService";
 
 /**
@@ -36,8 +37,7 @@ import { analyticsService } from "./analyticsService";
  * vient pas du store) : pas de bandeau plutôt qu'un faux positif.
  */
 
-const APP_ID = "fr.petitejerusalem.app";
-const ITUNES_LOOKUP_URL = `https://itunes.apple.com/lookup?bundleId=${APP_ID}`;
+const ITUNES_LOOKUP_URL = `https://itunes.apple.com/lookup?bundleId=${APP_BUNDLE_ID}`;
 
 /** Version dont le bandeau a été refusé : la suivante le fera réapparaître. */
 const DISMISSED_KEY = "pj_update_dismissed";
