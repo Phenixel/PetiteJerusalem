@@ -60,6 +60,13 @@ const fr = {
     tehilimIntentions: "Tehilim par intention",
     manageCookies: "Gérer les cookies",
   },
+  appDownload: {
+    title: "Télécharger l'app",
+    apple: "App Store",
+    android: "Google Play",
+    appleAria: "Télécharger Petite Jérusalem sur l'App Store",
+    androidAria: "Télécharger Petite Jérusalem sur Google Play",
+  },
   consent: {
     title: "Mesure d'audience",
     message:

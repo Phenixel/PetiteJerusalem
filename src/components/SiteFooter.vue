@@ -27,6 +27,9 @@
       }}</RouterLink>
     </nav>
 
+    <!-- Le téléchargement de l'app : proposé sur le site web seulement. -->
+    <AppDownloadButton class="mb-8" />
+
     <div
       class="mx-auto grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center text-center md:text-left"
     >
@@ -110,6 +113,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { useLocalePath } from "../composables/useLocalePath";
+import AppDownloadButton from "./AppDownloadButton.vue";
 import LanguageSelector from "./LanguageSelector.vue";
 import AppIcon from "./icons/AppIcon.vue";
 import { useConsent } from "../composables/useConsent";
