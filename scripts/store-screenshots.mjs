@@ -18,7 +18,7 @@
  *             scripts/asc-screenshots.mjs.
  *
  * Pages capturées (dans l'ordre des fiches) :
- *   01 accueil connecté (tableau de bord)   05 profil : lecture quotidienne
+ *   01 accueil connecté (tableau de bord)   05 lecture quotidienne
  *   02 session de partage de lecture        06 détail d'un chiour
  *   03 bibliothèque                         07 accueil visiteur
  *   04 lecteur de texte (Tehilim 1)
@@ -438,11 +438,12 @@ async function runScenario(page, shoot) {
   await capture("/bibliotheque", "03-bibliotheque", { readyText: "Bibliothèque" });
   // URL canonique de Tehilim 1 (/lire/103 hors session redirige vers elle).
   await capture("/bibliotheque/tehilim/1", "04-lecture-tehilim", { readyText: "Phonétique" });
-  await capture("/profile", "05-lecture-quotidienne", {
+  // La lecture quotidienne a quitté le profil pour sa page de la
+  // bibliothèque : c'est elle que montre l'écran 05.
+  await capture("/bibliotheque/lecture-du-jour", "05-lecture-quotidienne", {
     readyText: "Tehilim 1",
-    // L'onglet Lecture quotidienne est actif par défaut : on cale le titre de
-    // la section en haut de l'écran pour montrer le suivi du jour (et laisser
-    // le bouton Déconnexion de l'en-tête hors champ).
+    // On cale le titre de la section en haut de l'écran pour montrer le
+    // suivi du jour (et laisser le lien de retour hors champ).
     beforeShot: async () => {
       await page
         .locator("text=Ma lecture quotidienne >> visible=true")
