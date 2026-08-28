@@ -1,6 +1,6 @@
 # Communication de lancement
 
-Les textes de diffusion de l'application, à copier tels quels. Trois longueurs
+Les textes de diffusion de l'application, à copier tels quels. Quatre longueurs
 pour le même fond, plus les arguments à ressortir selon l'interlocuteur.
 
 Source des fonctionnalités : la page Notion « Les features » (version 3.8.0).
@@ -12,7 +12,31 @@ ci-dessous. Un copier-coller les emporte avec lui.
 
 ## Version diffusion (WhatsApp, groupes, Telegram)
 
-Le format principal : tout y est, sans que ce soit long à lire.
+Le format principal : tout y est, en deux fois moins de lignes.
+
+> 📱 *Petite Jérusalem : lire, étudier, partager*
+>
+> Une application gratuite qui réunit ce dont on a besoin chaque jour :
+>
+> 📚 *Les textes* : Tehilim, Michna, Talmud, Tanakh en hébreu, avec la reprise de lecture là où vous vous étiez arrêté
+> 🕍 *Le sidour* : Cha'harit, Min'ha, Arvit, brahot et sli'hot, avec les ajouts du jour déjà à leur place
+> 🕯️ *Les horaires* : les zmanim de votre ville, Chabbat, les fêtes et le calendrier
+> 🗓️ *Votre lecture du jour* : votre liste de textes, le chnei mikra de la semaine, un rappel à l'heure que vous voulez
+> 🤝 *Le partage de lectures* : répartissez un texte entre plusieurs personnes et allez jusqu'au siyoum. Finir le Chass, les 150 Tehilim pour une refoua chelema ou à la mémoire d'un proche. Sans compte, un prénom suffit.
+> 🎧 *Les chiourim* : des cours audio à écouter partout
+>
+> Sur le téléphone en plus : les widgets d'écran d'accueil, les rappels avant la chkia, et tous vos livres lisibles hors connexion.
+>
+> Gratuit, sans publicité, sans compte pour lire.
+>
+> 👉 *Téléchargez-la maintenant* : App Store, Google Play, ou www.petite-jerusalem.fr
+>
+> Faites passer : chaque personne qui rejoint, c'est un texte de plus qui se termine.
+
+## Version détaillée (groupe qui aime le détail, message à un rav, présentation)
+
+Quand il faut convaincre plutôt qu'annoncer : chaque fonctionnalité y est
+nommée par ce qu'elle fait.
 
 > 📱 *Petite Jérusalem : lire, étudier, partager*
 >
@@ -34,7 +58,7 @@ Le format principal : tout y est, sans que ce soit long à lire.
 >
 > Faites passer autour de vous : chaque personne qui rejoint, c'est un texte de plus qui se termine.
 
-## Version courte (story, bio, SMS, bouche-à-oreille)
+## Version très courte (story, bio, SMS, bouche-à-oreille)
 
 > *Petite Jérusalem*, l'application gratuite pour lire, étudier et partager :
 > Tehilim, Michna, Talmud, Tanakh, le sidour, les horaires du jour, votre
