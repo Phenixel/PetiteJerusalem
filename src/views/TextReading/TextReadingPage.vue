@@ -183,12 +183,13 @@ const recentChanges = computed(() =>
 const isLiturgyText = computed(() => !!textEntry.value && isLiturgy(textEntry.value));
 const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
 
-// App native : les Sli'hot n'ont pas de liste dans la bibliothèque (le livre
-// s'ouvre directement sur son texte, voir le router), donc pas de carte d'où
-// les télécharger. Le bouton de téléchargement vient ici, en tête du texte.
+// App native : le texte lu se télécharge sans quitter la page, par l'icône
+// du menu de lecture. Les Sli'hot gardent en plus leur bouton en tête du
+// texte : leur livre s'ouvre directement (voir le router), sans carte dans
+// la bibliothèque d'où le télécharger, le menu seul serait trop discret.
 type BookState = "none" | "downloading" | "downloaded" | "idle";
 const bookState = computed<BookState>(() => {
-  if (!isNativeApp || !isSlihot.value || !textEntry.value) return "none";
+  if (!isNativeApp || !textEntry.value) return "none";
   const book = bookForEntry(textEntry.value);
   if (!book) return "none";
   if (downloadingPaths.has(book.path)) return "downloading";
@@ -1126,7 +1127,7 @@ watch(textId, () => {
         <!-- App native : télécharger le texte pour le lire sans connexion,
              faute de carte dans la bibliothèque d'où le faire (Sli'hot). -->
         <button
-          v-if="bookState !== 'none'"
+          v-if="isSlihot && bookState !== 'none'"
           @click="toggleDownload()"
           class="icon-btn flex-shrink-0"
           :class="bookState === 'downloaded' ? 'text-primary' : 'text-text-secondary'"
@@ -1539,9 +1540,17 @@ watch(textId, () => {
     </template>
 
     <!-- Tous les textes de la bibliothèque : le menu de lecture remplace le
-         bouton de remontée, et la progression court au bas de l'écran. -->
+         bouton de remontée, et la progression court au bas de l'écran. Le
+         menu reprend la bascule hébreu / phonétique de la barre d'outils et,
+         dans l'app native, le téléchargement du texte. -->
     <template v-if="content && currentSection">
-      <ReadingMenu :sections="navSections" />
+      <ReadingMenu
+        :sections="navSections"
+        :phonetic="canTransliterate ? showPhonetic : null"
+        :download-state="bookState"
+        @update:phonetic="showPhonetic = $event"
+        @download="toggleDownload()"
+      />
       <ReadingProgressBar />
     </template>
   </main>
