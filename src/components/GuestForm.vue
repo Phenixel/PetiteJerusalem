@@ -15,6 +15,9 @@ interface Props {
   // Défini par le créateur de la session : lorsque false, l'invité peut
   // réserver avec son nom seul.
   emailRequired?: boolean;
+  // Préfixe des `id` des champs : à distinguer quand le formulaire apparaît
+  // plusieurs fois dans la même page (l'encadré de réservation, haut et bas).
+  idPrefix?: string;
 }
 
 interface Emits {
@@ -28,6 +31,7 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   emailRequired: false,
+  idPrefix: "guest",
 });
 const emit = defineEmits<Emits>();
 
@@ -55,12 +59,14 @@ const updateField = (field: "name" | "email", value: string) => {
   <div class="w-full">
     <div class="grid grid-cols-1 gap-4" :class="{ 'md:grid-cols-2': showEmailField }">
       <div>
-        <label for="guest-name" class="block text-sm font-semibold text-text-primary mb-2">{{
-          t("common.name")
-        }}</label>
+        <label
+          :for="`${idPrefix}-name`"
+          class="block text-sm font-semibold text-text-primary mb-2"
+          >{{ t("common.name") }}</label
+        >
         <input
           type="text"
-          id="guest-name"
+          :id="`${idPrefix}-name`"
           :value="reservationForm.name"
           @input="updateField('name', ($event.target as HTMLInputElement).value)"
           :placeholder="t('common.yourName')"
@@ -68,7 +74,10 @@ const updateField = (field: "name" | "email", value: string) => {
         />
       </div>
       <div v-if="showEmailField">
-        <label for="guest-email" class="block text-sm font-semibold text-text-primary mb-2">
+        <label
+          :for="`${idPrefix}-email`"
+          class="block text-sm font-semibold text-text-primary mb-2"
+        >
           {{ t("common.email") }}
           <span v-if="!emailRequired" class="font-normal text-text-secondary/70">
             ({{ t("guestForm.optional") }})
@@ -76,7 +85,7 @@ const updateField = (field: "name" | "email", value: string) => {
         </label>
         <input
           type="email"
-          id="guest-email"
+          :id="`${idPrefix}-email`"
           :value="reservationForm.email"
           @input="updateField('email', ($event.target as HTMLInputElement).value)"
           placeholder="email@example.com"

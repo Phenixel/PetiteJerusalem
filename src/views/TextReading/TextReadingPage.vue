@@ -54,7 +54,7 @@ import SlihotHours from "./SlihotHours.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
-import GuestForm from "../../components/GuestForm.vue";
+import SessionReservationCard from "./SessionReservationCard.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
@@ -796,6 +796,11 @@ const reservedStatus = computed(() => {
   return sessionService.isTextOrSectionReserved(textId.value, reservationUnit.value, session.value);
 });
 
+/** Le nom du réservataire, quand la section est prise par quelqu'un d'autre. */
+const reservedByName = computed(() =>
+  "reservedBy" in reservedStatus.value ? (reservedStatus.value.reservedBy ?? null) : null,
+);
+
 const isMine = computed(() => {
   const r = currentReservation.value;
   return (
@@ -1233,112 +1238,25 @@ watch(textId, () => {
         <!-- Sli'hot : la plage horaire où elles se disent, avant le texte. -->
         <SlihotHours v-if="isSlihot" />
         <!-- Reservation bar (session mode) -->
-        <div v-if="showReservationBar" class="mb-8 p-4 card">
-          <!-- Current session -->
-          <router-link
-            :to="`/share-reading/session/${sessionSlug}`"
-            class="flex items-center gap-2 mb-3 text-sm font-semibold text-text-primary hover:text-primary transition-colors"
-          >
-            <AppIcon name="users" :size="16" class="text-primary flex-shrink-0" />
-            <span class="truncate">{{ session?.name }}</span>
-          </router-link>
-
-          <!-- Reserved by me -->
-          <div
-            v-if="isMine"
-            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-          >
-            <span
-              class="chip !text-sm w-fit"
-              :class="
-                currentReservation?.isCompleted
-                  ? 'bg-green-600/10 text-green-700 dark:text-green-300'
-                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-200'
-              "
-            >
-              <AppIcon
-                :name="currentReservation?.isCompleted ? 'circle-check' : 'user-clock'"
-                :size="14"
-              />
-              {{
-                currentReservation?.isCompleted
-                  ? t("textReading.readByYou")
-                  : t("textReading.reservedByYou")
-              }}
-            </span>
-            <div class="flex items-center gap-2 flex-shrink-0">
-              <button
-                @click="toggleRead"
-                :disabled="isReserving"
-                class="btn !px-3 !py-1.5 text-sm"
-                :class="
-                  currentReservation?.isCompleted
-                    ? 'btn-soft'
-                    : 'bg-green-600/10 text-green-700 hover:bg-green-600/20 dark:text-green-300'
-                "
-              >
-                <AppIcon name="check" :size="13" />
-                {{
-                  currentReservation?.isCompleted
-                    ? t("textReading.unmarkRead")
-                    : t("textReading.markRead")
-                }}
-              </button>
-              <button
-                @click="cancelReservation"
-                :disabled="isReserving"
-                class="icon-btn hover:!text-red-600 disabled:opacity-50"
-                :title="t('textReading.cancel')"
-              >
-                <AppIcon name="x" :size="16" />
-              </button>
-            </div>
-          </div>
-
-          <!-- Reserved by someone else -->
-          <div v-else-if="reservedStatus.isReserved" class="flex items-center gap-2">
-            <span
-              class="chip !text-sm w-fit"
-              :class="
-                currentReservation?.isCompleted
-                  ? 'bg-green-600/10 text-green-700 dark:text-green-300'
-                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-200'
-              "
-            >
-              <AppIcon
-                :name="currentReservation?.isCompleted ? 'circle-check' : 'user'"
-                :size="14"
-              />
-              {{
-                currentReservation?.isCompleted
-                  ? t("textReading.readBy", {
-                      name: reservedStatus.reservedBy || t("textReading.someone"),
-                    })
-                  : t("textReading.reservedBy", {
-                      name: reservedStatus.reservedBy || t("textReading.someone"),
-                    })
-              }}
-            </span>
-          </div>
-
-          <!-- Available -->
-          <div v-else>
-            <div v-if="!currentUser" class="mb-4">
-              <p class="text-sm text-text-secondary mb-3">
-                {{ guestIntroText }}
-              </p>
-              <GuestForm
-                v-model:reservation-form="reservationForm"
-                :email-required="guestEmailRequired"
-                @first-input="trackGuestFormFilled"
-              />
-            </div>
-            <button @click="reserve" :disabled="isReserving" class="btn btn-primary text-sm">
-              <AppIcon name="bookmark" :size="13" />
-              {{ t("textReading.reserve") }}
-            </button>
-          </div>
-        </div>
+        <SessionReservationCard
+          v-if="showReservationBar"
+          class="mb-8"
+          :session-slug="sessionSlug ?? ''"
+          :session-name="session?.name ?? ''"
+          :is-mine="isMine"
+          :is-completed="currentReservation?.isCompleted ?? false"
+          :is-reserved="reservedStatus.isReserved"
+          :reserved-by="reservedByName"
+          :is-reserving="isReserving"
+          :is-guest="!currentUser"
+          :guest-intro-text="guestIntroText"
+          :guest-email-required="guestEmailRequired"
+          v-model:reservation-form="reservationForm"
+          @toggle-read="toggleRead"
+          @cancel="cancelReservation"
+          @reserve="reserve"
+          @guest-first-input="trackGuestFormFilled"
+        />
 
         <!-- Top navigation -->
         <ReadingNav
@@ -1526,6 +1444,29 @@ watch(textId, () => {
             </div>
           </template>
         </div>
+
+        <!-- Le même encadré qu'en tête, au bas de la lecture : on marque
+             « lu » là où on finit, sans remonter toute la page. -->
+        <SessionReservationCard
+          v-if="showReservationBar"
+          class="mt-12"
+          :session-slug="sessionSlug ?? ''"
+          :session-name="session?.name ?? ''"
+          :is-mine="isMine"
+          :is-completed="currentReservation?.isCompleted ?? false"
+          :is-reserved="reservedStatus.isReserved"
+          :reserved-by="reservedByName"
+          :is-reserving="isReserving"
+          :is-guest="!currentUser"
+          :guest-intro-text="guestIntroText"
+          :guest-email-required="guestEmailRequired"
+          guest-form-id-prefix="guest-bottom"
+          v-model:reservation-form="reservationForm"
+          @toggle-read="toggleRead"
+          @cancel="cancelReservation"
+          @reserve="reserve"
+          @guest-first-input="trackGuestFormFilled"
+        />
 
         <!-- Sidour : à la fin de Min'ha, un geste suffit pour enchaîner
              avec Arvit. -->
