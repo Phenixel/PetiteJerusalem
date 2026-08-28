@@ -1,9 +1,17 @@
 name: Deploy Release
 
+# Déploie le site (hosting), les règles Firestore/Storage, les index et les
+# functions. Deux façons de le déclencher :
+#   vX.Y.Z      la release complète : ce workflow ET les apps mobiles
+#               (deploy-android.yml, deploy-ios.yml partagent le motif v*) ;
+#   web-vX.Y.Z  le site seul : correctif front, contenu, SEO… sans release
+#               mobile ni release GitHub. Le motif v* ne matche pas web-v*,
+#               les workflows mobiles ne se lancent donc pas.
 on:
   push:
     tags:
       - "v*"
+      - "web-v*"
 
 jobs:
   deploy:
@@ -84,6 +92,15 @@ jobs:
           done
           echo "::error::Hosting release never became active (served=${served:-<none>}, expected=$expected)."
           exit 1
+
+      # Le site vient d'être vérifié en prod : on prévient IndexNow (Bing,
+      # Yandex…) que les URLs ont changé, au lieu d'attendre leur prochain
+      # crawl. Google ne l'utilise pas (sitemap dans la Search Console). Non
+      # bloquant : un refus IndexNow ne doit pas faire échouer un déploiement
+      # dont le site est déjà en ligne.
+      - name: Ping IndexNow
+        continue-on-error: true
+        run: node scripts/indexnow.mjs
 
       # Security rules were the one thing this workflow never shipped: every
       # rules change (moderation, #142) had to be pushed by hand, and a rule

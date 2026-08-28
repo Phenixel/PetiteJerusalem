@@ -72,7 +72,7 @@ serveur de dev :
 | `npm run cap:sync` | synchronise web + plugins vers les projets natifs |
 | `npm run cap:android` | build + ouvre Android Studio |
 | `npm run cap:ios` | build + ouvre Xcode |
-| `npm run store:screenshots` | régénère les captures de la fiche Play Store (voir `docs/android-ci-cd.md`) |
+| `npm run store:screenshots` | régénère les captures de la fiche Play Store (voir `docs/android-ci-cd.md`) ; `-- --ios` produit celles de l'App Store (voir `docs/ios-ci-cd.md`) |
 
 ## Lecture hors-ligne : téléchargement à la demande
 

@@ -229,25 +229,35 @@ store-assets/metadata/ios/<locale>/   # fr-FR, en-US, he
 
 ### Captures d'écran
 
-Elles ne sont **pas** envoyées par le script : l'API App Store Connect impose
-un envoi en plusieurs morceaux avec somme de contrôle, pour un geste qui se
-fait une fois. Les déposer à la main dans App Store Connect.
+Automatiques : à chaque tag, le job `screenshots` de deploy-ios.yml (Linux)
+régénère les captures avec `npm run store:screenshots -- --ios` (émulateurs
+Firebase + données de démo fixes, rendu Chrome aux dimensions exactes
+d'Apple) puis les envoie dans App Store Connect via
+`scripts/asc-screenshots.mjs`, qui joue le cérémonial d'envoi de l'API
+(réservation, morceaux, somme MD5) et remplace le jeu entier de chaque
+famille sur la version du tag. Non bloquant : si le job échoue, les captures
+déjà en place dans App Store Connect restent telles quelles et la soumission
+part quand même.
 
-L'app est universelle (iPhone + iPad), donc **deux séries** sont exigées :
+L'app est universelle (iPhone + iPad), donc **deux séries** par langue,
+rangées dans `store-assets/metadata/ios/screenshots/<locale>/` :
 
-| Famille | Dimensions acceptées | Simulateur |
-|---|---|---|
-| iPhone 6,9" | 1320 × 2868, 1290 × 2796 ou 1260 × 2736 | iPhone 17 Pro Max |
-| iPad 13" | 2064 × 2752 ou 2048 × 2732 | iPad Pro 13" |
+| Famille | Fichiers | Dimensions | displayType |
+|---|---|---|---|
+| iPhone 6,9" | `iphone-*.jpg` | 1320 × 2868 (440 × 956 CSS @3x) | APP_IPHONE_67 |
+| iPad 13" | `ipad-*.jpg` | 2064 × 2752 (1032 × 1376 CSS @2x) | APP_IPAD_PRO_3GEN_129 |
 
-PNG ou JPEG sRGB **sans canal alpha**. Apple redimensionne lui-même pour les
-appareils plus petits de chaque famille.
+JPEG sRGB **sans canal alpha** (Apple refuse l'alpha, d'où le JPEG), envoyés
+triés par nom. Apple redimensionne lui-même pour les appareils plus petits
+de chaque famille ; une locale sans dossier laisse sa fiche intacte (elle
+retombe sur la langue principale).
 
-Les captures Android du repo
-(`store-assets/metadata/android/fr-FR/images/phoneScreenshots/`, 1080 × 1920)
-montrent les mêmes écrans mais n'ont ni le bon ratio ni la bonne barre
-système : les refaire avec le simulateur iOS (iPhone 17 Pro Max, `⌘S`) et les
-ranger dans `store-assets/metadata/ios/screenshots/<locale>/`.
+Contrairement aux captures Android (app native sur émulateur, barre de
+statut et barre d'onglets incluses), les captures iOS sont un rendu du site
+mobile, sans barre système. Pour reprendre la main avec un jeu fait au
+simulateur iOS (`⌘S`), déposer les fichiers dans le dossier ci-dessus en
+respectant les préfixes, puis
+`node scripts/asc-screenshots.mjs --version X.Y.Z`.
 
 ## Notes
 

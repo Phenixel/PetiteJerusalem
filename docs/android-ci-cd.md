@@ -9,6 +9,10 @@ l'app :
 git tag v3.0.2 && git push origin v3.0.2
 ```
 
+Pour mettre en prod le **site seul** (correctif front, contenu, SEO), poser
+un tag `web-vX.Y.Z` : seul deploy.yml se déclenche, aucune release mobile ne
+part.
+
 Le dossier `android/` étant git-ignoré, la CI le régénère de zéro
 (`npx cap add android` + `scripts/setup-android.mjs`), aligne
 `versionName`/`versionCode` sur le tag (v3.0.1 → versionCode 3000100),
@@ -103,14 +107,24 @@ store-assets/metadata/android/<locale>/   # fr-FR, en-US, iw-IL (hébreu)
   exécution, il suffit de committer les PNG produits. Variante rapide sans
   émulateur Android : `npm run store:screenshots -- --web` (rendu site
   mobile, sans la barre d'onglets).
+- La CI n'attend pas ces commits : à chaque tag, le job `screenshots` de
+  deploy-android.yml rejoue ce script sur un émulateur Android du runner
+  (accéléré par KVM, sans fenêtre) et le job `listing` envoie les captures
+  fraîches avec la fiche. Si l'émulateur flanche, la fiche part avec les
+  captures committées dans le repo ; dans tous les cas la release, elle,
+  n'attend pas les captures. Les PNG régénérés restent téléchargeables 90
+  jours en artifact du run, pour contrôle visuel ou pour les committer.
 
 ## Piste de publication
 
-Par défaut le workflow publie sur la piste **production**. Tant que l'app n'a
-pas eu une première release production validée à la main dans le Play Console
-(elle est encore en test interne), l'API refuse cette piste : définir la
-variable de repo `ANDROID_PLAY_TRACK=internal` (Settings → Secrets and
-variables → Actions → Variables), puis la supprimer une fois l'app publiée.
+Le workflow publie sur la piste **production**, en statut « completed » :
+dès que la review Google est passée, la version part chez tout le monde,
+sans aucun geste dans la Play Console. La piste est codée en dur depuis que
+l'app a sa première release production ; l'ancienne variable de repo
+`ANDROID_PLAY_TRACK` (qui permettait de viser `internal` tant que l'app
+était en test fermé et que l'API refusait la piste production) n'est plus
+lue, la supprimer si elle traîne encore (Settings → Secrets and variables →
+Actions → Variables).
 
 ## Notes
 
