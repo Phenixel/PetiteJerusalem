@@ -5,6 +5,7 @@ import { isAdminEmail } from "../config/admin";
 import { isNativeApp } from "../composables/useNativeApp";
 import { DEFAULT_SEO_LOCALE, isSectionPath, localeOfPath } from "../content/seoLocales";
 import { applyLocale, type SupportedLocale } from "../i18n";
+import { waitUntilPositionReachable } from "./scrollRestoration";
 
 /**
  * App native : pages posées en surcouche au-dessus de la page en cours
@@ -14,20 +15,37 @@ import { applyLocale, type SupportedLocale } from "../i18n";
 const isOverlayPath = (path: string) =>
   isSectionPath(path, "horaires") || isSectionPath(path, "calendrier");
 
+// Numéro de la dernière navigation : les deux branches différées du
+// scrollBehavior ne posent leur défilement que si aucune navigation n'est
+// partie entre-temps (double appui rapide sur le bouton rond des horaires),
+// sinon elles écraseraient la position que la plus récente vient de rendre.
+let lastNavigation = 0;
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
   // Reset scroll to top on navigation; restore the saved position on back/forward.
   scrollBehavior(to, from, savedPosition) {
+    const navigation = ++lastNavigation;
+    const stale = () => navigation !== lastNavigation;
+
     // App native : les horaires s'ouvrent au-dessus de la page en cours
     // (transition d'App.vue) ; la remise à zéro du défilement attend la fin
     // du cercle, sinon la page d'en dessous remonterait en haut en pleine
     // animation. La surcouche est épinglée pendant ce temps, elle ne voit
     // rien du report.
     if (isNativeApp && isOverlayPath(to.path) && !isOverlayPath(from.path) && !savedPosition) {
-      return new Promise((resolve) => setTimeout(() => resolve({ top: 0 }), 430));
+      return new Promise((resolve) => setTimeout(() => resolve(stale() ? false : { top: 0 }), 430));
     }
-    if (savedPosition) return savedPosition;
+    // Retour arrière : la page se remonte et son contenu arrive en asynchrone,
+    // reposer la position tout de suite serait écrêté par un document encore
+    // trop court (fermeture de la surcouche des horaires, notamment). On
+    // attend que la page ait retrouvé sa hauteur.
+    if (savedPosition) {
+      return waitUntilPositionReachable(savedPosition.top).then(() =>
+        stale() ? false : savedPosition,
+      );
+    }
     return { top: 0 };
   },
 });
