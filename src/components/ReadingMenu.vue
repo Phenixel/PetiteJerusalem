@@ -23,10 +23,32 @@ import { analyticsService } from "../services/analyticsService";
  * s'efface qu'une fois tout en bas de la page, où la fin du texte porte ses
  * propres boutons ; une page trop courte pour défiler ne le montre donc pas,
  * sa barre d'outils étant restée sous les yeux.
+ *
+ * La page peut aussi lui confier deux commandes de sa barre d'outils, pour
+ * qu'elles restent à portée en pleine lecture : la bascule hébreu /
+ * phonétique (`phonetic`, null quand le texte ne se translittère pas) et,
+ * dans l'app native, le téléchargement du texte (`downloadState`, "none"
+ * quand il n'y a rien à télécharger).
  */
-const props = withDefaults(defineProps<{ sections?: ReadingNavSection[] }>(), {
-  sections: () => [],
-});
+type ReadingDownloadState = "none" | "downloading" | "downloaded" | "idle";
+
+const props = withDefaults(
+  defineProps<{
+    sections?: ReadingNavSection[];
+    phonetic?: boolean | null;
+    downloadState?: ReadingDownloadState;
+  }>(),
+  {
+    sections: () => [],
+    phonetic: null,
+    downloadState: "none",
+  },
+);
+
+const emit = defineEmits<{
+  (e: "update:phonetic", value: boolean): void;
+  (e: "download"): void;
+}>();
 
 const { t } = useI18n();
 
@@ -131,10 +153,68 @@ onUnmounted(() => {
           class="nav-panel absolute bottom-0 right-0 flex w-64 max-h-[min(24rem,65vh)] flex-col overflow-hidden rounded-2xl bg-surface shadow-pop"
         >
           <div class="flex items-center justify-between gap-2 ps-3 pe-2 pt-2.5 pb-1 flex-shrink-0">
-            <ReadingSizeControl />
-            <button @click="close" class="icon-btn" :aria-label="t('common.close')">
-              <AppIcon name="x" :size="15" />
-            </button>
+            <div class="flex items-center gap-2 min-w-0">
+              <ReadingSizeControl />
+              <!-- Hébreu / phonétique, en abrégé : la place manque pour les mots. -->
+              <div
+                v-if="phonetic !== null"
+                class="inline-flex p-0.5 rounded-lg bg-black/5 dark:bg-white/10"
+                role="group"
+                :aria-label="`${t('textReading.hebrew')} / ${t('textReading.phonetic')}`"
+              >
+                <button
+                  @click="emit('update:phonetic', false)"
+                  class="px-2.5 py-1 rounded-md text-sm font-medium transition-colors"
+                  :class="!phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
+                  :aria-pressed="!phonetic"
+                  :aria-label="t('textReading.hebrew')"
+                  :title="t('textReading.hebrew')"
+                >
+                  א
+                </button>
+                <button
+                  @click="emit('update:phonetic', true)"
+                  class="px-2.5 py-1 rounded-md text-sm font-medium transition-colors"
+                  :class="phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
+                  :aria-pressed="phonetic"
+                  :aria-label="t('textReading.phonetic')"
+                  :title="t('textReading.phonetic')"
+                >
+                  Aa
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center flex-shrink-0">
+              <!-- App native : le texte se télécharge sans quitter la lecture. -->
+              <button
+                v-if="downloadState !== 'none'"
+                @click="emit('download')"
+                class="icon-btn"
+                :class="downloadState === 'downloaded' ? 'text-primary' : ''"
+                :aria-label="
+                  downloadState === 'downloaded' ? t('downloads.delete') : t('downloads.download')
+                "
+                :title="
+                  downloadState === 'downloaded' ? t('downloads.delete') : t('downloads.download')
+                "
+              >
+                <AppIcon
+                  v-if="downloadState === 'downloading'"
+                  name="spinner"
+                  :size="16"
+                  class="animate-spin text-primary"
+                />
+                <AppIcon
+                  v-else-if="downloadState === 'downloaded'"
+                  name="circle-check"
+                  :size="16"
+                />
+                <AppIcon v-else name="download" :size="16" />
+              </button>
+              <button @click="close" class="icon-btn" :aria-label="t('common.close')">
+                <AppIcon name="x" :size="15" />
+              </button>
+            </div>
           </div>
           <nav class="overflow-y-auto px-2 pb-2 min-h-0">
             <button @click="goTop" class="section-item">

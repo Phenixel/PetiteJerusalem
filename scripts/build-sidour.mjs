@@ -631,13 +631,16 @@ function amidaBlocks(src, ix, opts = {}) {
  * « Uva LeSion » de Cha'harit (yitgadal, titkabal, yehé chelama, 'ossé
  * chalom) ; Min'ha et Arvit le reçoivent sous la clé source `src`.
  */
-function kaddishHalf(src) {
-  return {
+function kaddishHalf(src, { when, rubric = RUBRIC.hazan, labelText } = {}) {
+  const spec = {
     src,
     fold: "hazan",
-    labelText: R("Demi-Kaddich (le 'hazan)", "Half Kaddish (the chazan)", "חצי קדיש (החזן)"),
-    lines: [{ seg: 4, rubric: RUBRIC.hazan, splitAmen: true }],
+    labelText:
+      labelText ?? R("Demi-Kaddich (le 'hazan)", "Half Kaddish (the chazan)", "חצי קדיש (החזן)"),
+    lines: [{ seg: 4, rubric, splitAmen: true }],
   };
+  if (when) spec.when = when;
+  return spec;
 }
 
 function kaddishTitkabal(src) {
@@ -669,51 +672,56 @@ function kaddishTitkabal(src) {
 }
 
 /**
- * Le Kaddich « yehé chelama », dit après le psaume du jour : yitgadal, puis
- * yehé chelama et 'ossé chalom. Comme les autres kaddichim, il est replié :
- * il demande un minyan, celui qui prie seul ne le dit pas.
+ * Le Kaddich « yehé chelama » (le kaddich des endeuillés), dit après des
+ * psaumes : yitgadal, puis yehé chelama et 'ossé chalom, sans titkabal.
+ * Comme les autres kaddichim, il est replié : il demande un minyan, celui
+ * qui prie seul ne le dit pas. La source le porte en entier là où il se
+ * dit ; `seg` pointe son premier segment, le suivant le continue.
  */
-function kaddishYeheChelama(src) {
+function kaddishYeheChelama(src, seg) {
   return {
     src,
     fold: "hazan",
     labelText: R("Kaddich yehé chelama", "Kaddish Yehe Shelama", "קדיש יהא שלמא"),
     lines: [
       {
-        seg: 28,
+        seg,
         rubric: R(
-          "On dit le Kaddich « yehé chelama » :",
+          "On dit le Kaddich « yehé chelama » :",
           "The Kaddish “Yehe Shelama” is said:",
           "ואומרים קדיש יהא שלמא:",
         ),
         splitAmen: true,
       },
-      { seg: 29, tight: true, splitAmen: true },
+      { seg: seg + 1, tight: true, splitAmen: true },
     ],
   };
 }
 
 /**
- * Le Kaddich « 'al Israël » (dérabanan), dit après l'étude qui ferme Kavé
- * (Tana debé Eliyahou, Rabbi Hanina), avant 'Alénou.
+ * Le Kaddich « 'al Israël » (dérabanan), dit après un passage d'étude (les
+ * korbanot du matin, l'étude qui ferme Kavé : Tana debé Eliyahou, Rabbi
+ * Hanina) : yitgadal, le paragraphe 'Al Israël, puis yehé chelama et 'ossé
+ * chalom. La source le porte en entier là où il se dit ; `seg` pointe son
+ * premier segment, les deux suivants le continuent.
  */
-function kaddishAlIsrael(src) {
+function kaddishAlIsrael(src, seg) {
   return {
     src,
     fold: "hazan",
     labelText: R("Kaddich 'al Israël", "Kaddish al Yisrael", "קדיש על ישראל"),
     lines: [
       {
-        seg: 13,
+        seg,
         rubric: R(
-          "On dit le Kaddich « 'al Israël » :",
+          "On dit le Kaddich « 'al Israël » :",
           "The Kaddish “al Yisrael” is said:",
           "ואומרים קדיש על ישראל:",
         ),
         splitAmen: true,
       },
-      { seg: 14, tight: true, splitAmen: true },
-      { seg: 15, tight: true, splitAmen: true },
+      { seg: seg + 1, tight: true, splitAmen: true },
+      { seg: seg + 2, tight: true, splitAmen: true },
     ],
   };
 }
@@ -725,7 +733,7 @@ function kaddishAlIsrael(src) {
  * l'application sert déjà (public/texts/tehilim.json).
  */
 const HOSHIENU =
-  "הֽוֹשִׁיעֵ֨נוּ ׀ יְ֘הֹוָ֤ה אֱלֹהֵ֗ינוּ וְקַבְּצֵנוּ֮ מִֽן־הַגּ֫וֹיִ֥ם לְ֭הֹדוֹת לְשֵׁ֣ם קׇדְשֶׁ֑ךָ לְ֝הִשְׁתַּבֵּ֗חַ בִּתְהִלָּתֶֽךָ׃ בָּ֤רֽוּךְ־יְהֹוָ֨ה אֱלֹהֵ֪י יִשְׂרָאֵ֡ל מִן־הָ֤עוֹלָ֨ם ׀ וְעַ֬ד הָעוֹלָ֗ם וְאָמַ֖ר כׇּל־הָעָ֥ם אָמֵ֗ן הַֽלְלוּ־יָֽהּ׃ בָּ֘ר֤וּךְ יְהֹוָ֨ה ׀ מִצִּיּ֗וֹן שֹׁ֘כֵ֤ן יְֽרוּשָׁלָ֗͏ִם הַֽלְלוּ־יָֽהּ׃ בָּר֤וּךְ ׀ יְהֹוָ֣ה אֱ֭לֹהִים אֱלֹהֵ֣י יִשְׂרָאֵ֑ל עֹשֵׂ֖ה נִפְלָא֣וֹת לְבַדּֽוֹ׃ וּבָר֤וּךְ ׀ שֵׁ֥ם כְּבוֹד֗וֹ לְע֫וֹלָ֥ם וְיִמָּלֵ֣א כְ֭בוֹדוֹ אֶת־כֹּ֥ל הָאָ֗רֶץ אָ֘מֵ֥ן ׀ וְאָמֵֽן׃";
+  "הֽוֹשִׁיעֵ֨נוּ ׀ יְ֘הֹוָ֤ה אֱלֹהֵ֗ינוּ וְקַבְּצֵנוּ֮ מִֽן־הַגּ֫וֹיִ֥ם לְ֭הֹדוֹת לְשֵׁ֣ם קׇדְשֶׁ֑ךָ לְ֝הִשְׁתַּבֵּ֗חַ בִּתְהִלָּתֶֽךָ׃ בָּ֤רֽוּךְ־יְהֹוָ֨ה אֱלֹהֵ֪י יִשְׂרָאֵ֡ל מִן־הָ֤עוֹלָ֨ם ׀ וְעַ֬ד הָעוֹלָ֗ם וְאָמַ֖ר כׇּל־הָעָ֥ם אָמֵ֗ן הַֽלְלוּ־יָֽהּ׃ בָּ֘ר֤וּךְ יְהֹוָ֨ה ׀ מִצִּיּ֗וֹן שֹׁ֘כֵ֤ן יְֽרוּשָׁלָ֗͏ִם הַֽלְלוּ־יָֽהּ׃ בָּר֤וּךְ ׀ יְהֹוָ֣ה אֱ֭לֹהִים אֱלֹהֵ֣י יִשְׂרָאֵ֑ל עֹשֵׂ֖ה נִפְלָא֣וֹת לְבַדּֽוֹ׃ וּבָר֤וּךְ ׀ שֵׁ֥ם כְּבוֹד֗וֹ לְע֫וֹלָ֥ם וְיִמָּלֵ֣א כְ֭בוֹדוֹ אֶת־כֹּ֥ל הָאָ֗רֶץ אָ֘מֵ֥ן ׀ וְאָמֵֽן׃";
 
 /** Avinou Malkénou (dix jours de techouva), après la 'Amida. */
 function avinouMalkenou(src, from, to) {
@@ -966,18 +974,12 @@ function chaharitRecipe() {
           { seg: 30 },
         ],
       },
+      kaddishAlIsrael("Incense Offering", 32),
       {
         src: "Hodu",
         labelText: R("Hodou", "Hodu", "הודו"),
         lines: [
-          {
-            seg: 1,
-            rubric: R(
-              "Le 'hazan dit ici le Kaddich 'al Israël, puis :",
-              "The chazan says here the Kaddish al Israel, then:",
-              "ואומרים קדיש « על ישראל », ואחר כך:",
-            ),
-          },
+          { seg: 1 },
           { seg: 2 },
           { seg: 3 },
           { seg: 4 },
@@ -1282,6 +1284,15 @@ function chaharitRecipe() {
           ) },
         ],
       },
+      kaddishHalf("Uva LeSion", {
+        when: "torah-semaine",
+        labelText: R(
+          "Demi-Kaddich (le dernier appelé)",
+          "Half Kaddish (the last one called up)",
+          "חצי קדיש (העולה האחרון)",
+        ),
+        rubric: R("Le dernier appelé dit :", "The last one called up says:", "העולה האחרון אומר:"),
+      }),
       {
         src: "Ashrei",
         labelText: R("Achré", "Ashrei", "אשרי"),
@@ -1346,7 +1357,7 @@ function chaharitRecipe() {
         labelText: R("Hochiénou", "Hoshienu", "הושיענו"),
         lines: [{ he: HOSHIENU }],
       },
-      kaddishYeheChelama("Song of the Day"),
+      kaddishYeheChelama("Song of the Day", 28),
       {
         src: "RH.Mussaf",
         when: "rosh-chodesh",
@@ -1426,7 +1437,7 @@ function chaharitRecipe() {
           { seg: 11 },
         ],
       },
-      kaddishAlIsrael("Kaveh"),
+      kaddishAlIsrael("Kaveh", 13),
       {
         src: "Alenu",
         labelText: R("'Alénou léchabéa'h", "Aleinu", "עלינו לשבח"),
@@ -1561,6 +1572,7 @@ function minhaRecipe() {
         ),
         lines: [{ seg: 18, mode: "small" }],
       },
+      kaddishYeheChelama("Vidui", 22),
       {
         src: "Alenu",
         labelText: R("'Alénou léchabéa'h", "Aleinu", "עלינו לשבח"),
@@ -1674,6 +1686,7 @@ function arvitRecipe() {
           { seg: 10 },
         ],
       },
+      kaddishHalf("Kaddish"),
       ...amida,
       {
         src: "Amidah",
@@ -1693,6 +1706,18 @@ function arvitRecipe() {
         src: "Amidah",
         labelText: R("Fin de l'office", "Closing", "סיום"),
         lines: [{ seg: 51 }, { seg: 66 }],
+      },
+      kaddishYeheChelama("Amidah", 68),
+      // Le Barkhou de clôture, pour qui a manqué celui de l'ouverture.
+      {
+        src: "Amidah",
+        fold: "hazan",
+        labelText: R("Barkhou (le 'hazan)", "Barechu (the chazan)", "ברכו (החזן)"),
+        lines: [
+          { seg: 70, rubric: RUBRIC.hazan },
+          { seg: 71, rubric: RUBRIC.kahal, tight: true },
+          { seg: 72, rubric: RUBRIC.hazanReprend, tight: true },
+        ],
       },
       {
         src: "Alenu",

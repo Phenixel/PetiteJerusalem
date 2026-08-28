@@ -54,7 +54,7 @@ import SlihotHours from "./SlihotHours.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
-import GuestForm from "../../components/GuestForm.vue";
+import SessionReservationCard from "./SessionReservationCard.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
@@ -89,7 +89,7 @@ const readingSize = useReadingSize();
 useReadingPinch();
 // Lieu des horaires : donne le jour hébraïque (sensible à la chkia) qui
 // conditionne les ajouts de calendrier des textes de tefila.
-const { place: zmanimPlace, useDevicePlace } = useZmanimLocation();
+const { place: zmanimPlace, deniedBefore, useDevicePlace } = useZmanimLocation();
 
 // This view serves two URL shapes with the SAME UI: the in-session reader
 // (/lire/:textId, numeric id) and the public, indexable reading pages
@@ -183,12 +183,13 @@ const recentChanges = computed(() =>
 const isLiturgyText = computed(() => !!textEntry.value && isLiturgy(textEntry.value));
 const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
 
-// App native : les Sli'hot n'ont pas de liste dans la bibliothèque (le livre
-// s'ouvre directement sur son texte, voir le router), donc pas de carte d'où
-// les télécharger. Le bouton de téléchargement vient ici, en tête du texte.
+// App native : le texte lu se télécharge sans quitter la page, par l'icône
+// du menu de lecture. Les Sli'hot gardent en plus leur bouton en tête du
+// texte : leur livre s'ouvre directement (voir le router), sans carte dans
+// la bibliothèque d'où le télécharger, le menu seul serait trop discret.
 type BookState = "none" | "downloading" | "downloaded" | "idle";
 const bookState = computed<BookState>(() => {
-  if (!isNativeApp || !isSlihot.value || !textEntry.value) return "none";
+  if (!isNativeApp || !textEntry.value) return "none";
   const book = bookForEntry(textEntry.value);
   if (!book) return "none";
   if (downloadingPaths.has(book.path)) return "downloading";
@@ -240,12 +241,13 @@ watch(
 // lieu : à l'arrivée sur un office du sidour, on redemande la position de
 // l'appareil, comme le bouton de la page des horaires, pour que les heures
 // suivent l'endroit où l'on est et non celui du dernier passage. Une ville
-// choisie explicitement reste respectée, et un refus laisse le lieu courant
-// (voir useDevicePlace).
+// choisie explicitement reste respectée, un refus laisse le lieu courant
+// (voir useDevicePlace) et se retient : on ne redemande pas à chaque visite,
+// le bouton de la page des horaires reste le moyen de changer d'avis.
 watch(
   () => (String(textEntry.value?.type) === "Sidour" ? textId.value : null),
   (id) => {
-    if (!id || zmanimPlace.value.source === "city") return;
+    if (!id || zmanimPlace.value.source === "city" || deniedBefore.value) return;
     void useDevicePlace().then((granted) => {
       analyticsService.capture("zmanim_location_requested", { granted, source: "sidour" });
     });
@@ -795,6 +797,11 @@ const reservedStatus = computed(() => {
   return sessionService.isTextOrSectionReserved(textId.value, reservationUnit.value, session.value);
 });
 
+/** Le nom du réservataire, quand la section est prise par quelqu'un d'autre. */
+const reservedByName = computed(() =>
+  "reservedBy" in reservedStatus.value ? (reservedStatus.value.reservedBy ?? null) : null,
+);
+
 const isMine = computed(() => {
   const r = currentReservation.value;
   return (
@@ -1120,7 +1127,7 @@ watch(textId, () => {
         <!-- App native : télécharger le texte pour le lire sans connexion,
              faute de carte dans la bibliothèque d'où le faire (Sli'hot). -->
         <button
-          v-if="bookState !== 'none'"
+          v-if="isSlihot && bookState !== 'none'"
           @click="toggleDownload()"
           class="icon-btn flex-shrink-0"
           :class="bookState === 'downloaded' ? 'text-primary' : 'text-text-secondary'"
@@ -1232,112 +1239,25 @@ watch(textId, () => {
         <!-- Sli'hot : la plage horaire où elles se disent, avant le texte. -->
         <SlihotHours v-if="isSlihot" />
         <!-- Reservation bar (session mode) -->
-        <div v-if="showReservationBar" class="mb-8 p-4 card">
-          <!-- Current session -->
-          <router-link
-            :to="`/share-reading/session/${sessionSlug}`"
-            class="flex items-center gap-2 mb-3 text-sm font-semibold text-text-primary hover:text-primary transition-colors"
-          >
-            <AppIcon name="users" :size="16" class="text-primary flex-shrink-0" />
-            <span class="truncate">{{ session?.name }}</span>
-          </router-link>
-
-          <!-- Reserved by me -->
-          <div
-            v-if="isMine"
-            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-          >
-            <span
-              class="chip !text-sm w-fit"
-              :class="
-                currentReservation?.isCompleted
-                  ? 'bg-green-600/10 text-green-700 dark:text-green-300'
-                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-200'
-              "
-            >
-              <AppIcon
-                :name="currentReservation?.isCompleted ? 'circle-check' : 'user-clock'"
-                :size="14"
-              />
-              {{
-                currentReservation?.isCompleted
-                  ? t("textReading.readByYou")
-                  : t("textReading.reservedByYou")
-              }}
-            </span>
-            <div class="flex items-center gap-2 flex-shrink-0">
-              <button
-                @click="toggleRead"
-                :disabled="isReserving"
-                class="btn !px-3 !py-1.5 text-sm"
-                :class="
-                  currentReservation?.isCompleted
-                    ? 'btn-soft'
-                    : 'bg-green-600/10 text-green-700 hover:bg-green-600/20 dark:text-green-300'
-                "
-              >
-                <AppIcon name="check" :size="13" />
-                {{
-                  currentReservation?.isCompleted
-                    ? t("textReading.unmarkRead")
-                    : t("textReading.markRead")
-                }}
-              </button>
-              <button
-                @click="cancelReservation"
-                :disabled="isReserving"
-                class="icon-btn hover:!text-red-600 disabled:opacity-50"
-                :title="t('textReading.cancel')"
-              >
-                <AppIcon name="x" :size="16" />
-              </button>
-            </div>
-          </div>
-
-          <!-- Reserved by someone else -->
-          <div v-else-if="reservedStatus.isReserved" class="flex items-center gap-2">
-            <span
-              class="chip !text-sm w-fit"
-              :class="
-                currentReservation?.isCompleted
-                  ? 'bg-green-600/10 text-green-700 dark:text-green-300'
-                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-200'
-              "
-            >
-              <AppIcon
-                :name="currentReservation?.isCompleted ? 'circle-check' : 'user'"
-                :size="14"
-              />
-              {{
-                currentReservation?.isCompleted
-                  ? t("textReading.readBy", {
-                      name: reservedStatus.reservedBy || t("textReading.someone"),
-                    })
-                  : t("textReading.reservedBy", {
-                      name: reservedStatus.reservedBy || t("textReading.someone"),
-                    })
-              }}
-            </span>
-          </div>
-
-          <!-- Available -->
-          <div v-else>
-            <div v-if="!currentUser" class="mb-4">
-              <p class="text-sm text-text-secondary mb-3">
-                {{ guestIntroText }}
-              </p>
-              <GuestForm
-                v-model:reservation-form="reservationForm"
-                :email-required="guestEmailRequired"
-                @first-input="trackGuestFormFilled"
-              />
-            </div>
-            <button @click="reserve" :disabled="isReserving" class="btn btn-primary text-sm">
-              <AppIcon name="bookmark" :size="13" />
-              {{ t("textReading.reserve") }}
-            </button>
-          </div>
-        </div>
+        <SessionReservationCard
+          v-if="showReservationBar"
+          class="mb-8"
+          :session-slug="sessionSlug ?? ''"
+          :session-name="session?.name ?? ''"
+          :is-mine="isMine"
+          :is-completed="currentReservation?.isCompleted ?? false"
+          :is-reserved="reservedStatus.isReserved"
+          :reserved-by="reservedByName"
+          :is-reserving="isReserving"
+          :is-guest="!currentUser"
+          :guest-intro-text="guestIntroText"
+          :guest-email-required="guestEmailRequired"
+          v-model:reservation-form="reservationForm"
+          @toggle-read="toggleRead"
+          @cancel="cancelReservation"
+          @reserve="reserve"
+          @guest-first-input="trackGuestFormFilled"
+        />
 
         <!-- Top navigation -->
         <ReadingNav
@@ -1526,6 +1446,29 @@ watch(textId, () => {
           </template>
         </div>
 
+        <!-- Le même encadré qu'en tête, au bas de la lecture : on marque
+             « lu » là où on finit, sans remonter toute la page. -->
+        <SessionReservationCard
+          v-if="showReservationBar"
+          class="mt-12"
+          :session-slug="sessionSlug ?? ''"
+          :session-name="session?.name ?? ''"
+          :is-mine="isMine"
+          :is-completed="currentReservation?.isCompleted ?? false"
+          :is-reserved="reservedStatus.isReserved"
+          :reserved-by="reservedByName"
+          :is-reserving="isReserving"
+          :is-guest="!currentUser"
+          :guest-intro-text="guestIntroText"
+          :guest-email-required="guestEmailRequired"
+          guest-form-id-prefix="guest-bottom"
+          v-model:reservation-form="reservationForm"
+          @toggle-read="toggleRead"
+          @cancel="cancelReservation"
+          @reserve="reserve"
+          @guest-first-input="trackGuestFormFilled"
+        />
+
         <!-- Sidour : à la fin de Min'ha, un geste suffit pour enchaîner
              avec Arvit. -->
         <RouterLink
@@ -1597,9 +1540,17 @@ watch(textId, () => {
     </template>
 
     <!-- Tous les textes de la bibliothèque : le menu de lecture remplace le
-         bouton de remontée, et la progression court au bas de l'écran. -->
+         bouton de remontée, et la progression court au bas de l'écran. Le
+         menu reprend la bascule hébreu / phonétique de la barre d'outils et,
+         dans l'app native, le téléchargement du texte. -->
     <template v-if="content && currentSection">
-      <ReadingMenu :sections="navSections" />
+      <ReadingMenu
+        :sections="navSections"
+        :phonetic="canTransliterate ? showPhonetic : null"
+        :download-state="bookState"
+        @update:phonetic="showPhonetic = $event"
+        @download="toggleDownload()"
+      />
       <ReadingProgressBar />
     </template>
   </main>

@@ -25,9 +25,36 @@ import { isNativeApp } from "./useNativeApp";
  */
 
 const STORAGE_KEY = "pj_zmanim_place";
+const DENIED_KEY = "pj_zmanim_geo_denied";
 
 /** État de la dernière demande de position. */
 export type GeoStatus = "idle" | "loading" | "denied" | "unavailable";
+
+/**
+ * Refus mémorisé : qui a dit non une fois ne doit pas se voir redemander la
+ * position à chaque page de tefila. Les demandes automatiques s'en tiennent
+ * là ; le bouton de la page des horaires, geste explicite, redemande
+ * toujours, et son issue met la mémoire à jour dans les deux sens.
+ */
+function readDeniedBefore(): boolean {
+  try {
+    return localStorage.getItem(DENIED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+const deniedBefore: Ref<boolean> = ref(readDeniedBefore());
+
+function persistDenied(value: boolean): void {
+  deniedBefore.value = value;
+  try {
+    if (value) localStorage.setItem(DENIED_KEY, "1");
+    else localStorage.removeItem(DENIED_KEY);
+  } catch {
+    // Stockage indisponible : le refus vaut pour la session en cours.
+  }
+}
 
 /** Ville proche mémorisée : `undefined` tant qu'aucune recherche n'a eu lieu. */
 function readStoredNearby(value: unknown): NearbyPlace | null | undefined {
@@ -189,6 +216,7 @@ export function useZmanimLocation() {
       };
       place.value = devicePlace;
       persist(devicePlace);
+      persistDenied(false);
       status.value = "idle";
       // Les horaires du nouveau lieu s'affichent tout de suite ; son nom suit,
       // le temps de charger le catalogue de villes.
@@ -204,6 +232,7 @@ export function useZmanimLocation() {
           error !== null &&
           "code" in error &&
           (error as GeolocationPositionError).code === 1);
+      if (denied) persistDenied(true);
       status.value = denied ? "denied" : "unavailable";
       return false;
     }
@@ -241,5 +270,5 @@ export function useZmanimLocation() {
     persist(named);
   }
 
-  return { place, status, useDevicePlace, useCity, useDefaultPlace, ensureNearby };
+  return { place, status, deniedBefore, useDevicePlace, useCity, useDefaultPlace, ensureNearby };
 }
