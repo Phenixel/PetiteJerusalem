@@ -262,9 +262,12 @@ const sections = computed(() =>
                 {{ i + 1 }}
               </span>
               <div class="min-w-0 flex-1">
-                <!-- Dans un bloc de variantes, le cas se lit en regard du texte,
-                     pas au-dessus : c'est ainsi qu'on voit qu'on en choisit une. -->
-                <p v-if="paragraph.rubric && !block.variants" class="reading-rubric">
+                <!-- La didascalie du paragraphe, y compris le cas d'une variante
+                     (« après des mezonot », « l'invité ajoute ») : toujours
+                     au-dessus du texte, jamais en regard, qui rétrécirait la
+                     colonne d'hébreu. L'encadré du bloc dit déjà qu'on choisit
+                     l'une de ses variantes. -->
+                <p v-if="paragraph.rubric" class="reading-rubric">
                   {{ say(paragraph.rubric) }}
                 </p>
                 <div
@@ -282,33 +285,28 @@ const sections = computed(() =>
                   }"
                   @click="emit('select', line)"
                 >
-                  <div :class="block.variants ? 'flex items-baseline gap-3' : ''">
-                    <span v-if="block.variants && paragraph.rubric" class="reading-variant-label">{{
-                      say(paragraph.rubric)
-                    }}</span>
-                    <p
-                      v-if="!showPhonetic"
-                      dir="rtl"
-                      class="reading-he min-w-0 flex-1"
-                      :class="paragraphTone(block, paragraph)"
-                    >
-                      <AppIcon
-                        v-if="copy === 1 && isBookmarked(line)"
-                        name="bookmark"
-                        :size="13"
-                        class="text-primary me-1"
-                      />
-                      <template v-for="(run, r) in visibleRuns(paragraph)" :key="r">
-                        <span v-if="run.kind === 'rubric'" class="reading-rubric-inline">{{
-                          say(run.rubric)
-                        }}</span>
-                        <span v-else :class="runClass(run)">{{ runText(run.text, r) }}</span>
-                      </template>
-                    </p>
-                    <p v-else dir="ltr" class="reading-tl min-w-0 flex-1">
-                      {{ phoneticLines[line] }}
-                    </p>
-                  </div>
+                  <p
+                    v-if="!showPhonetic"
+                    dir="rtl"
+                    class="reading-he"
+                    :class="paragraphTone(block, paragraph)"
+                  >
+                    <AppIcon
+                      v-if="copy === 1 && isBookmarked(line)"
+                      name="bookmark"
+                      :size="13"
+                      class="text-primary me-1"
+                    />
+                    <template v-for="(run, r) in visibleRuns(paragraph)" :key="r">
+                      <span v-if="run.kind === 'rubric'" class="reading-rubric-inline">{{
+                        say(run.rubric)
+                      }}</span>
+                      <span v-else :class="runClass(run)">{{ runText(run.text, r) }}</span>
+                    </template>
+                  </p>
+                  <p v-else dir="ltr" class="reading-tl">
+                    {{ phoneticLines[line] }}
+                  </p>
                 </div>
                 <div v-if="selectedLine === line" class="flex justify-end mt-2">
                   <button
@@ -408,14 +406,10 @@ const sections = computed(() =>
   opacity: 0.5;
 }
 
-/* Le cas d'une variante, en regard du texte : « après des mezonot », etc. */
-.reading-variant-label {
-  flex: 0 0 auto;
-  max-width: 45%;
-  font-size: calc(0.8rem * var(--reading-scale, 1));
-  font-style: italic;
-  line-height: 1.4;
-  color: var(--color-text-secondary);
+/* Une didascalie annonce le texte qui la suit : il se lit juste dessous, le
+   blanc se tient au-dessus d'elle. */
+.reading-rubric + .reading-para {
+  margin-top: 0.25rem;
 }
 
 /* Bénédictions numérotées : le numéro tient la marge, pas de blanc en plus. */

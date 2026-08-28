@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
-import { isNativeApp } from "../../composables/useNativeApp";
+import { isNativeApp } from "../composables/useNativeApp";
 
 /**
- * La progression de lecture d'une tefila : un filet au bas de l'écran qui se
- * remplit à mesure qu'on descend. Un office est long et sans numérotation ;
- * la barre dit où l'on en est sans rien réclamer.
+ * La progression de lecture : un filet au bas de l'écran qui se remplit à
+ * mesure qu'on descend, le même sur tous les textes de la bibliothèque. Un
+ * office, une paracha, un chapitre de guemara sont longs et se lisent d'un
+ * trait ; la barre dit où l'on en est sans rien réclamer.
  */
 const progress = ref(0);
 let raf = 0;
