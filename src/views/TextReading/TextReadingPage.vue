@@ -89,7 +89,7 @@ const readingSize = useReadingSize();
 useReadingPinch();
 // Lieu des horaires : donne le jour hébraïque (sensible à la chkia) qui
 // conditionne les ajouts de calendrier des textes de tefila.
-const { place: zmanimPlace, useDevicePlace } = useZmanimLocation();
+const { place: zmanimPlace, deniedBefore, useDevicePlace } = useZmanimLocation();
 
 // This view serves two URL shapes with the SAME UI: the in-session reader
 // (/lire/:textId, numeric id) and the public, indexable reading pages
@@ -240,12 +240,13 @@ watch(
 // lieu : à l'arrivée sur un office du sidour, on redemande la position de
 // l'appareil, comme le bouton de la page des horaires, pour que les heures
 // suivent l'endroit où l'on est et non celui du dernier passage. Une ville
-// choisie explicitement reste respectée, et un refus laisse le lieu courant
-// (voir useDevicePlace).
+// choisie explicitement reste respectée, un refus laisse le lieu courant
+// (voir useDevicePlace) et se retient : on ne redemande pas à chaque visite,
+// le bouton de la page des horaires reste le moyen de changer d'avis.
 watch(
   () => (String(textEntry.value?.type) === "Sidour" ? textId.value : null),
   (id) => {
-    if (!id || zmanimPlace.value.source === "city") return;
+    if (!id || zmanimPlace.value.source === "city" || deniedBefore.value) return;
     void useDevicePlace().then((granted) => {
       analyticsService.capture("zmanim_location_requested", { granted, source: "sidour" });
     });
