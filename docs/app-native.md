@@ -239,29 +239,32 @@ Voir `docs/app-links.md`, notamment les deux valeurs de signature à fournir.
 Une app installée peut rester des mois en arrière (mises à jour automatiques
 désactivées) : les correctifs ne l'atteignent jamais. Au lancement, puis à
 chaque retour au premier plan, au plus une fois toutes les 6 h
-`src/services/appUpdateService.ts` compare la version installée
-(`App.getInfo()`) à la version publiée, et affiche un bandeau refusable en
-tête de l'app, avec un lien vers la fiche du store
-(`components/AppUpdateBanner.vue`). Un refus vaut jusqu'à la version suivante.
+`src/services/appUpdateService.ts` demande au store de la plateforme si une
+mise à jour est disponible, et affiche un bandeau refusable en tête de l'app,
+avec un lien vers la fiche du store (`components/AppUpdateBanner.vue`). Un
+refus vaut jusqu'à la version suivante.
 
-La version publiée vient d'une source différente par plateforme, faute d'API
-commune :
+La source, sur les deux plateformes, est le store lui-même, jamais le tag de
+release : une release peut attendre des jours la revue d'Apple ou de Google,
+et annoncer la mise à jour pendant cette fenêtre enverrait vers une fiche qui
+ne la propose pas encore.
 
+- **Android** : l'API In-App Updates du Play Store
+  (`@capawesome/capacitor-app-update`), la réponse du store pour l'appareil
+  lui-même : revue Google passée, propagation faite, rollout progressif
+  compris.
 - **iOS** : `itunes.apple.com/lookup?bundleId=…`, l'API publique de l'App
-  Store, qui fait autorité : la publication iOS est manuelle et passe par une
-  revue de plusieurs jours, se fier au tag de release annoncerait une mise à
-  jour encore introuvable.
-- **Android** : `https://petite-jerusalem.fr/app-version.json`. Le Play Store
-  n'expose aucune API publique de version, et le tag qui déploie le site
-  déclenche aussi la publication Play, les deux ne divergent donc que le temps
-  de la revue Google.
+  Store, qui fait autorité. Tant que l'app n'y est pas publiée, le lookup ne
+  renvoie aucun résultat et le bandeau n'apparaît jamais sur iOS.
 
-`app-version.json` est émis par le build du site (plugin `appVersionManifest`
-dans `vite.config.ts`) à partir de la même version que `__APP_VERSION__` : rien
-à maintenir à la main. Tant que l'app n'est pas publiée sur l'App Store, le
-lookup ne renvoie aucun résultat et le bandeau n'apparaît jamais sur iOS. Tout
-échec (hors ligne, store injoignable, version illisible) laisse simplement le
-bandeau masqué, jamais de faux positif.
+`app-version.json`, l'ancienne source Android (plugin `appVersionManifest`
+dans `vite.config.ts`), annonçait la version dès la mise en ligne du site,
+donc pendant toute la revue Google : le bandeau redirigeait vers une fiche
+Play qui ne proposait pas encore la mise à jour. Le site continue de publier
+le fichier pour les versions déjà installées qui le consultent encore.
+
+Tout échec (hors ligne, store injoignable, build qui ne vient pas du store)
+laisse simplement le bandeau masqué, jamais de faux positif.
 
 ## Publication
 

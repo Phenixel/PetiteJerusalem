@@ -895,7 +895,7 @@ const en: LocaleMessages = {
   },
   appUpdate: {
     title: "Update available",
-    message: "Version {version} of the app is available on the store.",
+    message: "A new version of the app is available on the store.",
     action: "Update",
     dismiss: "Hide this message",
   },

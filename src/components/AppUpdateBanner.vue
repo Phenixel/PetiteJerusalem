@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import { appUpdateService, latestVersion, updateAvailable } from "../services/appUpdateService";
+import { appUpdateService, updateAvailable } from "../services/appUpdateService";
 import AppIcon from "./icons/AppIcon.vue";
 
 /**
@@ -22,9 +22,9 @@ const { t } = useI18n();
           <AppIcon name="download" :size="18" class="mt-0.5 shrink-0 text-primary" />
           <div class="min-w-0 flex-1">
             <p class="font-semibold text-text-primary">{{ t("appUpdate.title") }}</p>
-            <p class="text-sm text-text-secondary">
-              {{ t("appUpdate.message", { version: latestVersion }) }}
-            </p>
+            <!-- Sans numéro de version : sur Android, l'API In-App Updates ne
+                 donne qu'un code de version interne, pas un numéro affichable. -->
+            <p class="text-sm text-text-secondary">{{ t("appUpdate.message") }}</p>
           </div>
           <!-- Le bouton d'action passe sous le texte : sur un écran étroit,
                une seule ligne écraserait le message à deux mots par ligne. -->

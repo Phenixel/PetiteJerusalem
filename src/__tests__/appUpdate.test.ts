@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { isOutdated } from "../services/appUpdateService";
+import { isOutdated, shouldOfferUpdate } from "../services/appUpdateService";
 
+// Comparaison de versions du chemin iOS (sur Android, l'API In-App Updates
+// du Play Store compare elle-même).
 describe("isOutdated", () => {
   it("compare les segments numériquement, pas alphabétiquement", () => {
     expect(isOutdated("3.9.0", "3.10.0")).toBe(true);
@@ -32,5 +34,27 @@ describe("isOutdated", () => {
     expect(isOutdated("", "3.4.0")).toBe(false);
     expect(isOutdated("3.4.0", "")).toBe(false);
     expect(isOutdated("3.4.0", "latest")).toBe(false);
+  });
+});
+
+describe("shouldOfferUpdate", () => {
+  const check = { outdated: true, version: "42", installed: "3.4.0" };
+
+  it("propose une mise à jour disponible et jamais refusée", () => {
+    expect(shouldOfferUpdate(check, null)).toBe(true);
+  });
+
+  it("respecte le refus de la version proposée, pas celui d'une ancienne", () => {
+    expect(shouldOfferUpdate(check, "42")).toBe(false);
+    expect(shouldOfferUpdate(check, "41")).toBe(true);
+  });
+
+  it("ne propose rien quand le store dit l'app à jour", () => {
+    expect(shouldOfferUpdate({ ...check, outdated: false }, null)).toBe(false);
+  });
+
+  it("s'abstient sans identifiant de version : le refus ne serait pas mémorisable", () => {
+    expect(shouldOfferUpdate({ ...check, version: null }, null)).toBe(false);
+    expect(shouldOfferUpdate({ ...check, version: null }, "42")).toBe(false);
   });
 });
