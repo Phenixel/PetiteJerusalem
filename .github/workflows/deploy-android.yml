@@ -125,13 +125,16 @@ jobs:
       # ligne de commande (paquets SDK, AVD, attente du boot, reprise après un
       # démarrage manqué), et le lancement maison du script y mourait sans un
       # mot (v3.8.1 : « device emulator-5584 not found » au bout de huit
-      # minutes). L'action pose l'émulateur sur le port par défaut, ANDROID_SERIAL
-      # dit au script de s'y brancher plutôt que d'en lancer un second.
-      # Ses options par défaut sont celles qui valent en CI : -no-window,
-      # -gpu swiftshader_indirect, -noaudio, -no-boot-anim, -camera-back none.
+      # minutes). Ses options par défaut sont celles qui valent ici (-no-window,
+      # -gpu swiftshader_indirect, -no-snapshot, -noaudio, -no-boot-anim), et
+      # elle retombe d'elle-même sur l'émulation logicielle si le runner ne
+      # donne pas KVM, là où un émulateur x86_64 lancé à la main refuse de
+      # démarrer. ANDROID_SERIAL dit au script de se brancher sur cet
+      # émulateur-là plutôt que d'en lancer un second.
       - name: Générer les captures d'écran
         uses: reactivecircus/android-emulator-runner@v2
         env:
+          # Le port ci-dessous, sous la forme qu'attend adb.
           ANDROID_SERIAL: emulator-5554
         with:
           # Mêmes API, cible et profil que l'AVD du dev local (1080×1920), voir
@@ -141,6 +144,8 @@ jobs:
           arch: x86_64
           profile: pixel_2
           avd-name: pj-store
+          # Le défaut de l'action, écrit ici parce qu'ANDROID_SERIAL en dépend.
+          emulator-port: 5554
           disable-animations: true
           script: node scripts/store-screenshots.mjs
 
