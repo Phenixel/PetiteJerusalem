@@ -108,12 +108,25 @@ store-assets/metadata/android/<locale>/   # fr-FR, en-US, iw-IL (hébreu)
   émulateur Android : `npm run store:screenshots -- --web` (rendu site
   mobile, sans la barre d'onglets).
 - La CI n'attend pas ces commits : à chaque tag, le job `screenshots` de
-  deploy-android.yml rejoue ce script sur un émulateur Android du runner
-  (accéléré par KVM, sans fenêtre) et le job `listing` envoie les captures
-  fraîches avec la fiche. Si l'émulateur flanche, la fiche part avec les
-  captures committées dans le repo ; dans tous les cas la release, elle,
-  n'attend pas les captures. Les PNG régénérés restent téléchargeables 90
-  jours en artifact du run, pour contrôle visuel ou pour les committer.
+  deploy-android.yml rejoue ce script sur un émulateur Android du runner et le
+  job `listing` envoie les captures fraîches avec la fiche. Si l'émulateur
+  flanche, la fiche part avec les captures committées dans le repo ; dans tous
+  les cas la release, elle, n'attend pas les captures. Les PNG régénérés
+  restent téléchargeables 90 jours en artifact du run, pour contrôle visuel ou
+  pour les committer.
+- **L'émulateur de la CI n'est pas ouvert par le script** mais par l'action
+  [android-emulator-runner](https://github.com/ReactiveCircus/android-emulator-runner) :
+  démarrer un émulateur sur un runner sans écran demande plus que trois
+  options de ligne de commande (paquets SDK, AVD, attente du boot, reprise
+  après un démarrage manqué), et le lancement maison y mourait sans un mot au
+  tag v3.8.1. L'action pose l'émulateur, la variable `ANDROID_SERIAL` dit au
+  script de s'y brancher au lieu d'en lancer un second. En local, rien ne
+  change : sans `ANDROID_SERIAL`, le script ouvre son AVD `pj-store` comme
+  avant, et affiche désormais le journal de l'émulateur si le démarrage
+  échoue.
+- Pour vérifier les captures sans rien publier : onglet Actions → Deploy
+  Android → Run workflow, en cochant **screenshots_only**. Seul le job
+  `screenshots` tourne, son artifact contient les PNG.
 
 ## Piste de publication
 

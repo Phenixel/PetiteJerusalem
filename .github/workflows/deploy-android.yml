@@ -23,6 +23,9 @@ name: Deploy Android
 #                captures) avec les captures régénérées, ou celles du repo si
 #                l'émulateur a flanché.
 #
+# Le lancement manuel accepte « screenshots_only » : le premier job seul, pour
+# vérifier les captures (artifact du run) sans rien publier.
+#
 # Les notes de version (« Nouveautés ») reprennent le texte de la release
 # GitHub du tag si elle existe (créer la release depuis l'interface GitHub
 # avec son texte publie donc ces notes sur le Play Store), sinon la phrase
@@ -43,6 +46,13 @@ on:
   # Lancement manuel (test du workflow, re-publication) : reprend le dernier
   # tag vX.Y.Z atteignable depuis la branche choisie.
   workflow_dispatch:
+    inputs:
+      screenshots_only:
+        description: >-
+          Régénérer seulement les captures d'écran (artifact du run) : ni AAB,
+          ni release, ni fiche Play Store touchée.
+        type: boolean
+        default: false
 
 jobs:
   # Captures d'écran de la fiche : mêmes écrans, mêmes données de démo et même
@@ -90,15 +100,6 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      # L'image que le script choisit hors arm64 (voir AVD_IMAGE dans
-      # scripts/store-screenshots.mjs) : google_apis en x86_64, même WebView
-      # que la variante playstore du dev local.
-      - name: Installer l'émulateur et l'image système Android
-        run: |
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
-            "platform-tools" "emulator" "system-images;android-36;google_apis;x86_64"
-
       - name: Restaurer google-services.json
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
@@ -119,8 +120,29 @@ jobs:
       - name: Build web (vite)
         run: npm run build-only
 
+      # L'émulateur est ouvert par l'action, pas par le script : démarrer un
+      # émulateur sur un runner sans écran demande plus que trois options de
+      # ligne de commande (paquets SDK, AVD, attente du boot, reprise après un
+      # démarrage manqué), et le lancement maison du script y mourait sans un
+      # mot (v3.8.1 : « device emulator-5584 not found » au bout de huit
+      # minutes). L'action pose l'émulateur sur le port par défaut, ANDROID_SERIAL
+      # dit au script de s'y brancher plutôt que d'en lancer un second.
+      # Ses options par défaut sont celles qui valent en CI : -no-window,
+      # -gpu swiftshader_indirect, -noaudio, -no-boot-anim, -camera-back none.
       - name: Générer les captures d'écran
-        run: node scripts/store-screenshots.mjs
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          ANDROID_SERIAL: emulator-5554
+        with:
+          # Mêmes API, cible et profil que l'AVD du dev local (1080×1920), voir
+          # l'en-tête de scripts/store-screenshots.mjs.
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          avd-name: pj-store
+          disable-animations: true
+          script: node scripts/store-screenshots.mjs
 
       # Récupérées par le job `listing`, et téléchargeables 90 jours depuis
       # l'onglet Actions pour contrôle visuel (ou pour les committer).
@@ -132,6 +154,10 @@ jobs:
           if-no-files-found: error
 
   android:
+    # Le lancement manuel « captures seules » s'arrête au job ci-dessus : rien
+    # n'est publié, et `listing` ne suit pas non plus (il exige que ce job ait
+    # réussi, or il est sauté).
+    if: ${{ !inputs.screenshots_only }}
     runs-on: ubuntu-latest
     permissions:
       # write : création de la release GitHub (AAB + notes de version) sur tag.
