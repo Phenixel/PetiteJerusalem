@@ -35,18 +35,19 @@
  * démarre les siens, vides, sur les mêmes ports, et n'écrit jamais dans
  * .emulator-data.
  *
- * En CI (variable CI, posée par GitHub Actions), l'émulateur Android tourne
- * sans fenêtre (rendu swiftshader) : les jobs « screenshots » de
- * deploy-android.yml et deploy-ios.yml régénèrent ainsi les captures à
- * chaque tag, avant la mise à jour des fiches.
+ * En CI, l'émulateur n'est pas ouvert par ce script : le job « screenshots »
+ * de deploy-android.yml le confie à l'action android-emulator-runner, qui
+ * sait le démarrer et l'attendre sur un runner sans écran, et pose
+ * ANDROID_SERIAL pour que le script s'y branche. Les captures de la fiche
+ * App Store, elles, ne demandent aucun émulateur (mode --ios, Chrome).
  *
  * Sorties :
  *   store-assets/metadata/android/fr-FR/images/phoneScreenshots/*.png
  *   store-assets/metadata/ios/screenshots/fr-FR/{iphone,ipad}-*.jpg
  */
 import { execFileSync, spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
-import { homedir } from "node:os";
+import { existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
 const root = join(import.meta.dirname, "..");
@@ -61,7 +62,8 @@ const PROJECT_ID = "petite-jerusalem-dev";
 const WEB_MODE = process.argv.includes("--web");
 const IOS_MODE = process.argv.includes("--ios");
 const BROWSER_MODE = WEB_MODE || IOS_MODE; // rendu Chrome, pas d'émulateur Android
-// En CI (GitHub Actions pose CI=true), l'émulateur Android tourne sans fenêtre.
+// Machine sans écran (GitHub Actions pose CI=true) : l'émulateur que LE SCRIPT
+// lance tourne alors hors fenêtre. Sans effet sur un émulateur fourni.
 const HEADLESS = Boolean(process.env.CI);
 
 // Émulateur Android dédié : profil pixel_2 = 1080×1920 @ 420 dpi, le 9:16
@@ -77,7 +79,14 @@ const AVD_ABI = process.arch === "arm64" ? "arm64-v8a" : "x86_64";
 const AVD_FLAVOR = process.arch === "arm64" ? "google_apis_playstore" : "google_apis";
 const AVD_IMAGE = `system-images;android-36;${AVD_FLAVOR};${AVD_ABI}`;
 const EMULATOR_PORT = 5584; // pair, hors du 5554 par défaut d'un émulateur déjà ouvert
-const SERIAL = `emulator-${EMULATOR_PORT}`;
+// ANDROID_SERIAL (la variable que reconnaît adb lui-même) désigne un émulateur
+// DÉJÀ démarré, auquel se brancher au lieu d'en lancer un : c'est ce que fait
+// la CI, où l'émulateur est ouvert par l'action android-emulator-runner (elle
+// sait le démarrer et l'attendre sur un runner sans écran, ce qui demande plus
+// que trois options de ligne de commande). Sans elle, le script lance le sien,
+// sur son port dédié, et le referme en partant.
+const PROVIDED_SERIAL = process.env.ANDROID_SERIAL?.trim() || null;
+const SERIAL = PROVIDED_SERIAL ?? `emulator-${EMULATOR_PORT}`;
 const APP_ID = "fr.petitejerusalem.app";
 
 const sdkDir = process.env.ANDROID_HOME ?? join(homedir(), "Library/Android/sdk");
@@ -153,7 +162,9 @@ function adb(...args) {
 
 const children = [];
 function cleanup() {
-  if (!BROWSER_MODE) {
+  // Un émulateur fourni (CI) ne nous appartient pas : c'est l'action qui l'a
+  // ouvert et qui le refermera.
+  if (!BROWSER_MODE && !PROVIDED_SERIAL) {
     try {
       spawnSync(adbBin, ["-s", SERIAL, "emu", "kill"], { timeout: 10000 });
     } catch {
@@ -541,59 +552,103 @@ if (WEB_MODE) {
   process.exit(0);
 }
 
-// --- Mode natif : app Capacitor sur l'émulateur Android dédié ----------------
+// --- Mode natif : app Capacitor sur l'émulateur Android ----------------------
 
-// L'AVD dédié (1080×1920) est créé au premier lancement.
-const avdList = spawnSync(emulatorBin, ["-list-avds"], { encoding: "utf8" });
-if (!avdList.stdout?.split("\n").includes(AVD_NAME)) {
-  console.log(`store-screenshots: création de l'AVD ${AVD_NAME} (1080×1920)…`);
-  const created = spawnSync(
-    avdmanagerBin,
-    ["create", "avd", "-n", AVD_NAME, "-k", AVD_IMAGE, "-d", "pixel_2"],
-    { input: "no\n", encoding: "utf8" },
-  );
-  if (created.status !== 0) {
-    throw new Error(`Création de l'AVD impossible : ${created.stderr}`);
-  }
-}
-
-console.log("store-screenshots: démarrage de l'émulateur Android…");
-const emulator = spawn(
-  emulatorBin,
-  [
-    "-avd",
-    AVD_NAME,
-    "-port",
-    String(EMULATOR_PORT),
-    "-no-boot-anim",
-    "-no-audio",
-    // Sans émulation Bluetooth : son crash en boucle affiche une boîte
-    // « Bluetooth keeps stopping » par-dessus les captures.
-    "-feature",
-    "-BluetoothEmulation",
-    // En CI, pas d'affichage : rendu logiciel hors écran (le screencap, lui,
-    // capture le framebuffer, fenêtre ou pas), et pas de snapshot à charger
-    // ni à écrire sur un runner jetable.
-    ...(HEADLESS ? ["-no-window", "-gpu", "swiftshader_indirect", "-no-snapshot"] : []),
-  ],
-  { stdio: ["ignore", "ignore", "inherit"] },
-);
-children.push(emulator);
-spawnSync(adbBin, ["-s", SERIAL, "wait-for-device"], { timeout: 120000 });
-// 6 minutes : un premier boot x86_64 sous KVM sur un runner CI peut dépasser
-// les 4 minutes qui suffisent en local.
+// 6 minutes : un premier boot x86_64 sur un runner CI peut dépasser les 4
+// minutes qui suffisent en local.
 const BOOT_TIMEOUT = 360000;
-const bootStart = Date.now();
-while (Date.now() - bootStart < BOOT_TIMEOUT) {
+
+/** Vrai quand le device répond « 1 » ; faux tant qu'adb ne le voit pas. */
+function bootCompleted() {
   try {
-    if (adb("shell", "getprop", "sys.boot_completed") === "1") break;
+    return adb("shell", "getprop", "sys.boot_completed") === "1";
   } catch {
-    /* adb pas encore prêt */
+    return false;
   }
-  await new Promise((r) => setTimeout(r, 2000));
 }
-if (adb("shell", "getprop", "sys.boot_completed") !== "1") {
-  throw new Error(`L'émulateur Android n'a pas fini de démarrer après ${BOOT_TIMEOUT / 60000} minutes`);
+
+if (PROVIDED_SERIAL) {
+  console.log(`store-screenshots: émulateur ${SERIAL} fourni par l'environnement.`);
+  const start = Date.now();
+  let ready = bootCompleted();
+  while (!ready && Date.now() - start < BOOT_TIMEOUT) {
+    await new Promise((r) => setTimeout(r, 2000));
+    ready = bootCompleted();
+  }
+  if (!ready) {
+    throw new Error(
+      `ANDROID_SERIAL désigne ${SERIAL}, qu'adb ne voit pas démarré : vérifier que l'émulateur est bien ouvert avant d'appeler ce script (adb devices).`,
+    );
+  }
+} else {
+  // L'AVD dédié (1080×1920) est créé au premier lancement.
+  const avdList = spawnSync(emulatorBin, ["-list-avds"], { encoding: "utf8" });
+  if (!avdList.stdout?.split("\n").includes(AVD_NAME)) {
+    console.log(`store-screenshots: création de l'AVD ${AVD_NAME} (1080×1920)…`);
+    const created = spawnSync(
+      avdmanagerBin,
+      ["create", "avd", "-n", AVD_NAME, "-k", AVD_IMAGE, "-d", "pixel_2"],
+      { input: "no\n", encoding: "utf8" },
+    );
+    if (created.status !== 0) {
+      throw new Error(`Création de l'AVD impossible : ${created.stderr}`);
+    }
+  }
+
+  console.log("store-screenshots: démarrage de l'émulateur Android…");
+  // L'émulateur dit ses refus (accélération matérielle absente, image
+  // introuvable, mémoire…) sur sa SORTIE STANDARD, pas sur l'erreur standard :
+  // la jeter, c'était ne plus rien savoir d'un démarrage manqué. Elle part
+  // donc dans un journal, relu et affiché si le boot n'aboutit pas.
+  const emulatorLog = join(tmpdir(), `${AVD_NAME}-emulator.log`);
+  const emulatorLogFd = openSync(emulatorLog, "w");
+  const emulator = spawn(
+    emulatorBin,
+    [
+      "-avd",
+      AVD_NAME,
+      "-port",
+      String(EMULATOR_PORT),
+      "-no-boot-anim",
+      "-no-audio",
+      // Sans émulation Bluetooth : son crash en boucle affiche une boîte
+      // « Bluetooth keeps stopping » par-dessus les captures.
+      "-feature",
+      "-BluetoothEmulation",
+      // Sans affichage : rendu logiciel hors écran (le screencap, lui, capture
+      // le framebuffer, fenêtre ou pas), et pas de snapshot à charger ni à
+      // écrire sur une machine jetable.
+      ...(HEADLESS ? ["-no-window", "-gpu", "swiftshader_indirect", "-no-snapshot"] : []),
+    ],
+    { stdio: ["ignore", emulatorLogFd, emulatorLogFd] },
+  );
+  children.push(emulator);
+
+  // Un émulateur qui refuse de démarrer rend la main tout de suite : le
+  // guetter évite d'attendre six minutes un device déjà mort.
+  let emulatorExit = null;
+  emulator.on("exit", (code, signal) => {
+    emulatorExit = signal ?? `code ${code}`;
+  });
+  const journal = () => {
+    const log = existsSync(emulatorLog) ? readFileSync(emulatorLog, "utf8").trim() : "";
+    return log ? `Journal de l'émulateur :\n${log.split("\n").slice(-40).join("\n")}` : "";
+  };
+
+  const start = Date.now();
+  let ready = false;
+  while (!ready && Date.now() - start < BOOT_TIMEOUT) {
+    if (emulatorExit !== null) {
+      throw new Error(`L'émulateur s'est arrêté (${emulatorExit}) avant d'avoir démarré.\n${journal()}`);
+    }
+    ready = bootCompleted();
+    if (!ready) await new Promise((r) => setTimeout(r, 2000));
+  }
+  if (!ready) {
+    throw new Error(
+      `L'émulateur Android n'a pas fini de démarrer après ${BOOT_TIMEOUT / 60000} minutes.\n${journal()}`,
+    );
+  }
 }
 
 // Le localhost du device = la machine : Vite et les émulateurs Firebase
