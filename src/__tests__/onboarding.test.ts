@@ -161,4 +161,18 @@ describe("introduction de première ouverture", () => {
     const { host } = await mountComponent(() => import("../components/ConsentBanner.vue"));
     expect(host.querySelector('[role="dialog"]')).not.toBeNull();
   });
+
+  it("s'ouvre partout à qui la demande par l'adresse, site compris", async () => {
+    vi.doMock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+    window.history.replaceState({}, "", "/?intro");
+    try {
+      const { isOnboardingOpen, useOnboarding } = await import("../composables/useOnboarding");
+      expect(isOnboardingOpen.value).toBe(true);
+      // Une fois parcourue, elle se referme comme dans l'application.
+      useOnboarding().completeOnboarding();
+      expect(isOnboardingOpen.value).toBe(false);
+    } finally {
+      window.history.replaceState({}, "", "/");
+    }
+  });
 });

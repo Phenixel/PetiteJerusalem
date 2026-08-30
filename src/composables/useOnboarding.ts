@@ -21,6 +21,11 @@ import { isNativeApp } from "./useNativeApp";
  * tout ce qu'elle propose reste modifiable depuis les écrans concernés
  * (préférences du profil, lecture du jour, bibliothèque).
  *
+ * Une porte d'entrée par lien (`?intro`) l'ouvre partout, app comme site :
+ * elle sert à la montrer à quelqu'un, et à l'essayer sur les canaux de
+ * preview, qui sont des sites web où elle ne s'afficherait jamais d'elle-même.
+ * Il faut l'écrire pour l'obtenir, aucune visite ordinaire ne tombe dessus.
+ *
  * La version vue est notée avec le passage. Les utilisateurs d'avant
  * l'introduction n'ont rien de noté : ils l'auront donc tous une fois, et une
  * seule. Changer ce numéro la reproposerait à tout le monde, ce qui n'est à
@@ -47,15 +52,28 @@ const seenVersion = ref<string | null>(readSeenVersion());
 /** « Revoir l'introduction » (onglet À propos) : la rouvre sans rien effacer. */
 const replaying = ref(false);
 
+/** Paramètre d'adresse qui ouvre l'introduction, où qu'on soit. */
+const URL_PARAM = "intro";
+
+function askedByUrl(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).has(URL_PARAM);
+}
+
+const forcedByUrl = ref(askedByUrl());
+
 /** L'introduction occupe-t-elle l'écran ? Lu aussi par la bannière de consentement. */
 export const isOnboardingOpen = computed(
-  () => isNativeApp && (replaying.value || seenVersion.value !== ONBOARDING_VERSION),
+  () =>
+    forcedByUrl.value ||
+    (isNativeApp && (replaying.value || seenVersion.value !== ONBOARDING_VERSION)),
 );
 
 export function useOnboarding() {
   /** Fin de l'introduction, quelle qu'en soit la porte de sortie. */
   function completeOnboarding(): void {
     replaying.value = false;
+    forcedByUrl.value = false;
     seenVersion.value = ONBOARDING_VERSION;
     try {
       localStorage.setItem(STORAGE_KEY, ONBOARDING_VERSION);
