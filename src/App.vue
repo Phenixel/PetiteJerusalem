@@ -22,6 +22,7 @@ import { RouterView } from "vue-router";
 import { authService } from "./services/authService";
 import { useTheme } from "./composables/useTheme";
 import { useFonts } from "./composables/useFonts";
+import { loadColorScheme, loadGuestColorScheme } from "./composables/useColorScheme";
 
 const route = useRoute();
 const router = useRouter();
@@ -89,11 +90,12 @@ const chromePadClass = computed(() => {
 });
 
 // Réglages d'appareil appliqués d'entrée, en synchrone : un visiteur sans
-// compte retrouve son thème et ses polices (réglages de l'app native) avant
-// le premier rendu. Pour un compte, l'abonnement juste en dessous repasse aux
+// compte retrouve son apparence, son thème et ses polices (réglages de l'app
+// native) avant le premier rendu. Pour un compte, l'abonnement juste en dessous repasse aux
 // valeurs du compte dans le même tick, avant tout affichage.
 loadGuestTheme();
 loadGuestFonts();
+loadGuestColorScheme();
 
 // authService, et non onAuthStateChanged directement : avant le premier
 // verdict de Firebase, il rejoue le dernier compte connu, si bien que le
@@ -103,10 +105,12 @@ authService.onAuthChanged((user) => {
   if (user) {
     loadTheme(user.id);
     loadFonts(user.id);
+    void loadColorScheme(user.id);
   } else {
     // Sans compte (ou déconnecté) : les réglages de l'appareil.
     loadGuestTheme();
     loadGuestFonts();
+    loadGuestColorScheme();
   }
 });
 </script>

@@ -107,10 +107,6 @@ const fr = {
       title: "Réglez l'application à votre main",
       intro:
         "La langue, les couleurs et les polices. Chaque choix s'applique aussitôt, partout dans l'application.",
-      languageTitle: "Langue de l'interface",
-      themeTitle: "Thème",
-      fontLatinTitle: "Police de l'interface",
-      fontHebrewTitle: "Police des textes en hébreu",
       hint: "Ces réglages vous attendent dans votre profil, onglet Préférences.",
     },
     daily: {
@@ -287,6 +283,14 @@ const fr = {
     userId: "ID utilisateur",
     languageTitle: "Langue",
     languageDescription: "Choisissez la langue de l'interface.",
+    appearanceTitle: "Apparence",
+    appearanceDescription:
+      "Fond clair, fond sombre, ou celui de votre téléphone. Les téléphones basculent souvent en sombre le soir : à vous de dire si l'application doit suivre.",
+    appearances: {
+      light: "Clair",
+      dark: "Sombre",
+      system: "Système",
+    },
     themeTitle: "Thème du site",
     themeDescription:
       "Choisissez les couleurs qui vous correspondent. Le thème s'applique à l'ensemble du site.",

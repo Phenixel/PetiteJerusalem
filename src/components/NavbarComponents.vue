@@ -4,7 +4,6 @@ import { useRouter } from "vue-router";
 import { authService } from "../services/authService";
 import { analyticsService } from "../services/analyticsService";
 import { isAdminEmail } from "../config/admin";
-import { useDarkMode } from "../composables/useDarkMode";
 import { isNativeApp } from "../composables/useNativeApp";
 import { useLocalePath } from "../composables/useLocalePath";
 import LanguageSelector from "./LanguageSelector.vue";
@@ -28,8 +27,6 @@ let headerObserver: ResizeObserver | null = null;
 function publishHeaderHeight(height: number) {
   document.documentElement.style.setProperty("--navbar-height", `${Math.round(height)}px`);
 }
-
-useDarkMode();
 
 // L'accueil et les horaires ont une adresse par langue : les liens suivent
 // l'espace où l'on est, sinon un visiteur venu d'un résultat anglais en sort

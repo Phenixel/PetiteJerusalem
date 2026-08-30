@@ -104,10 +104,6 @@ const he: LocaleMessages = {
     settings: {
       title: "התאימו את האפליקציה לעצמכם",
       intro: "השפה, הצבעים והגופנים. כל בחירה חלה מיד, בכל האפליקציה.",
-      languageTitle: "שפת הממשק",
-      themeTitle: "ערכת נושא",
-      fontLatinTitle: "גופן הממשק",
-      fontHebrewTitle: "גופן הטקסטים בעברית",
       hint: "ההגדרות האלה מחכות לכם בפרופיל, בלשונית העדפות.",
     },
     daily: {
@@ -270,6 +266,14 @@ const he: LocaleMessages = {
     userId: "מזהה משתמש",
     languageTitle: "שפה",
     languageDescription: "בחרו את שפת הממשק.",
+    appearanceTitle: "מראה",
+    appearanceDescription:
+      "רקע בהיר, רקע כהה, או זה של הטלפון שלכם. טלפונים עוברים למצב כהה בערב: אתם מחליטים אם האפליקציה עוקבת.",
+    appearances: {
+      light: "בהיר",
+      dark: "כהה",
+      system: "מערכת",
+    },
     themeTitle: "ערכת נושא",
     themeDescription: "בחרו את הצבעים שמתאימים לכם. ערכת הנושא חלה על כל האתר.",
     themeActive: "פעיל",

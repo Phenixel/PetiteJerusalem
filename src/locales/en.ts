@@ -107,10 +107,6 @@ const en: LocaleMessages = {
     settings: {
       title: "Set the app up your way",
       intro: "Language, colours and fonts. Every choice applies right away, everywhere in the app.",
-      languageTitle: "Interface language",
-      themeTitle: "Theme",
-      fontLatinTitle: "Interface font",
-      fontHebrewTitle: "Hebrew text font",
       hint: "These settings live in your profile, under Preferences.",
     },
     daily: {
@@ -283,6 +279,14 @@ const en: LocaleMessages = {
     userId: "User ID",
     languageTitle: "Language",
     languageDescription: "Choose the interface language.",
+    appearanceTitle: "Appearance",
+    appearanceDescription:
+      "Light background, dark background, or your phone's. Phones often switch to dark in the evening: it is up to you whether the app follows.",
+    appearances: {
+      light: "Light",
+      dark: "Dark",
+      system: "System",
+    },
     themeTitle: "Site theme",
     themeDescription: "Choose the colors that suit you. The theme applies across the entire site.",
     themeActive: "Active",
