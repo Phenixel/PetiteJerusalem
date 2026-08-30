@@ -120,6 +120,14 @@ export function useColorScheme() {
       trackSchemeChanged(isDark.value ? "dark" : "light", "user", schemeId, "account");
     } catch {
       currentSchemeId.value = previous;
+      // L'écran redevient ce qu'il était sous les yeux de l'utilisateur :
+      // sans cet événement, l'écart entre l'apparence choisie et celle que
+      // porte le compte resterait invisible (même mesure que le thème).
+      analyticsService.capture("color_scheme_change_failed", {
+        preference: schemeId,
+        previous_preference: previous,
+        scope: "account",
+      });
       throw new Error("Failed to save color scheme preference");
     }
   }

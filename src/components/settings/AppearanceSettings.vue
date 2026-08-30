@@ -33,6 +33,8 @@ const props = withDefaults(
 const { t } = useI18n();
 const { currentLocale, availableLocales, setLocale } = useLocale();
 const { currentSchemeId, schemes, setColorScheme } = useColorScheme();
+/** Les couleurs du miroir sombre, dont « Système » montre la moitié. */
+const darkScheme = schemes.find((option) => option.id === "dark") ?? schemes[0];
 const { currentThemeId, themes, setTheme, previewTheme, cancelPreview } = useTheme();
 const { currentLatinId, currentHebrewId, latinFonts, hebrewFonts, setLatinFont, setHebrewFont } =
   useFonts();
@@ -174,20 +176,20 @@ onUnmounted(() => {
           <span
             v-if="option.id === 'system'"
             class="scheme-half absolute inset-0"
-            :style="{ backgroundColor: schemes[1].background }"
+            :style="{ backgroundColor: darkScheme.background }"
           >
             <span class="absolute inset-0 flex flex-col justify-center gap-1.5 p-3">
               <span
                 class="block h-1.5 w-3/5 rounded-full"
-                :style="{ backgroundColor: schemes[1].ink, opacity: 0.85 }"
+                :style="{ backgroundColor: darkScheme.ink, opacity: 0.85 }"
               ></span>
               <span
                 class="block h-1 w-full rounded-full"
-                :style="{ backgroundColor: schemes[1].ink, opacity: 0.35 }"
+                :style="{ backgroundColor: darkScheme.ink, opacity: 0.35 }"
               ></span>
               <span
                 class="block h-1 w-4/5 rounded-full"
-                :style="{ backgroundColor: schemes[1].ink, opacity: 0.35 }"
+                :style="{ backgroundColor: darkScheme.ink, opacity: 0.35 }"
               ></span>
             </span>
           </span>
