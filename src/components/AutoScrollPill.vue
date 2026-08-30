@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onUnmounted, ref, watch } from "vue";
+import { onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import { useBottomChromeHeight } from "../composables/useBottomChrome";
@@ -50,7 +50,7 @@ const onKeydown = (event: KeyboardEvent) => {
   if (event.key === "Escape" && open.value) open.value = false;
 };
 
-window.addEventListener("keydown", onKeydown);
+onMounted(() => window.addEventListener("keydown", onKeydown));
 onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 </script>
 
