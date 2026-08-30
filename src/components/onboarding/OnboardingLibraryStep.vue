@@ -31,6 +31,30 @@ const points = [
     textKey: "onboarding.library.resumeText",
   },
 ] as const;
+
+/**
+ * Les trois gestes de la lecture. Aucun ne se devine : le pincement change la
+ * taille du texte au lieu de zoomer la page, le menu se cache derrière un
+ * rond posé sur le texte, et le double appui fait descendre la page tout
+ * seul. Chaque icône est celle que le lecteur verra à l'écran.
+ */
+const gestures = [
+  {
+    icon: "text-size",
+    titleKey: "onboarding.library.pinchTitle",
+    textKey: "onboarding.library.pinchText",
+  },
+  {
+    icon: "list",
+    titleKey: "onboarding.library.menuTitle",
+    textKey: "onboarding.library.menuText",
+  },
+  {
+    icon: "chevron-down",
+    titleKey: "onboarding.library.scrollTitle",
+    textKey: "onboarding.library.scrollText",
+  },
+] as const;
 </script>
 
 <template>
@@ -52,6 +76,27 @@ const points = [
         <span>
           <span class="block font-semibold text-text-primary">{{ t(point.titleKey) }}</span>
           <span class="block text-sm text-text-secondary mt-1">{{ t(point.textKey) }}</span>
+        </span>
+      </li>
+    </ul>
+
+    <!-- Les gestes de la lecture : ils valent pour tous les textes. -->
+    <h2 class="mb-2 text-xl font-bold text-text-primary">
+      {{ t("onboarding.library.readingTitle") }}
+    </h2>
+    <p class="mb-4 text-text-secondary">
+      {{ t("onboarding.library.readingIntro") }}
+    </p>
+    <ul class="mb-10 space-y-4">
+      <li v-for="gesture in gestures" :key="gesture.titleKey" class="flex items-start gap-3">
+        <span
+          class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+        >
+          <AppIcon :name="gesture.icon" :size="16" />
+        </span>
+        <span>
+          <span class="block font-semibold text-text-primary">{{ t(gesture.titleKey) }}</span>
+          <span class="block text-sm text-text-secondary">{{ t(gesture.textKey) }}</span>
         </span>
       </li>
     </ul>

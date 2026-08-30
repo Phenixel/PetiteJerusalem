@@ -141,6 +141,17 @@ const fr = {
       resumeTitle: "Reprendre où vous en étiez",
       resumeText:
         "Les marque-pages et la reprise de lecture vous ramènent au bon verset, sur n'importe lequel de vos appareils.",
+      readingTitle: "Pendant la lecture",
+      readingIntro: "Trois gestes à connaître, les mêmes sur tous les textes.",
+      pinchTitle: "Pincer pour agrandir",
+      pinchText:
+        "Deux doigts sur le texte en changent la taille, sans déformer la page. Les boutons A− et A+ du menu font la même chose.",
+      menuTitle: "Le menu, en bas à droite",
+      menuText:
+        "Le rond posé sur le texte ouvre la taille, l'hébreu ou la phonétique, et les repères du texte : sections d'un office, montées d'une paracha, dafim d'une guemara.",
+      scrollTitle: "Double appui pour le défilement",
+      scrollText:
+        "Un double appui sur le texte le fait descendre tout seul ; la pastille du bas règle l'allure, et l'arrête.",
       offlineTitle: "Que garder sur cet appareil ?",
       offlineIntro:
         "Un texte téléchargé se lit sans connexion, dans le métro comme en voyage ; les autres ont besoin d'Internet. Cochez ce que vous voulez emporter, le reste se téléchargera plus tard, en un geste.",
@@ -153,6 +164,21 @@ const fr = {
       downloadDone: "C'est fait : ces textes se lisent maintenant sans connexion.",
       changeHint:
         "Rien n'est figé : chaque texte se télécharge ou se retire depuis la bibliothèque, quand vous voulez.",
+    },
+    zmanim: {
+      title: "Les horaires, calculés chez vous",
+      intro:
+        "L'aube, le chéma, min'ha, la chkia, l'allumage et la sortie du Chabbat, pour l'endroit où vous vous trouvez.",
+      deviceTitle: "Calculés sur votre appareil",
+      deviceText:
+        "Rien n'est demandé au réseau, votre position n'est envoyée nulle part, et les horaires restent lisibles sans connexion.",
+      placeTitle: "Votre position, ou la ville de votre choix",
+      placeText:
+        "Paris par défaut ; votre position si vous l'autorisez, ou une ville prise dans la liste.",
+      shabbatTitle: "Chabbat et fêtes",
+      shabbatText:
+        "L'allumage et la sortie, la paracha de la semaine, et le calendrier des fêtes de l'année.",
+      hint: "Le bouton rond, au centre de la barre du bas, ouvre les horaires par-dessus la page en cours ; un second appui les referme.",
     },
   },
   home: {

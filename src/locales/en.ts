@@ -139,6 +139,17 @@ const en: LocaleMessages = {
       resumeTitle: "Pick up where you stopped",
       resumeText:
         "Bookmarks and reading positions bring you back to the right verse, on any of your devices.",
+      readingTitle: "While reading",
+      readingIntro: "Three gestures worth knowing, the same on every text.",
+      pinchTitle: "Pinch to enlarge",
+      pinchText:
+        "Two fingers on the text change its size without distorting the page. The A− and A+ buttons in the menu do the same.",
+      menuTitle: "The menu, bottom right",
+      menuText:
+        "The round button on the text opens the size, Hebrew or transliteration, and the text's landmarks: sections of a service, aliyot of a parasha, dafim of a tractate.",
+      scrollTitle: "Double tap to scroll",
+      scrollText:
+        "A double tap on the text sends it down on its own; the badge at the bottom sets the pace, and stops it.",
       offlineTitle: "What should stay on this device?",
       offlineIntro:
         "A downloaded text reads without a connection, on the underground as much as on a trip; the others need the internet. Tick what you want to take along, the rest can be downloaded later in one gesture.",
@@ -151,6 +162,20 @@ const en: LocaleMessages = {
       downloadDone: "Done: these texts now read without a connection.",
       changeHint:
         "Nothing is set in stone: every text can be downloaded or removed from the library, whenever you want.",
+    },
+    zmanim: {
+      title: "Times, worked out where you are",
+      intro:
+        "Dawn, shema, minha, shkia, candle lighting and the end of Shabbat, for wherever you happen to be.",
+      deviceTitle: "Worked out on your device",
+      deviceText:
+        "Nothing is asked of the network, your location is sent nowhere, and the times stay readable without a connection.",
+      placeTitle: "Your location, or the town you choose",
+      placeText: "Paris by default; your location if you allow it, or a town from the list.",
+      shabbatTitle: "Shabbat and festivals",
+      shabbatText:
+        "Candle lighting and the end of Shabbat, the weekly parasha, and the year's festival calendar.",
+      hint: "The round button in the middle of the bottom bar opens the times over the current page; a second tap closes them.",
     },
   },
   home: {

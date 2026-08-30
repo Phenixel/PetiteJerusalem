@@ -11,6 +11,7 @@ import OnboardingConsentStep from "./OnboardingConsentStep.vue";
 import OnboardingSettingsStep from "./OnboardingSettingsStep.vue";
 import OnboardingDailyStep from "./OnboardingDailyStep.vue";
 import OnboardingLibraryStep from "./OnboardingLibraryStep.vue";
+import OnboardingZmanimStep from "./OnboardingZmanimStep.vue";
 
 /**
  * L'introduction de première ouverture : des pages pleines, une idée par page.
@@ -37,7 +38,7 @@ const { choice, setChoice } = useConsent();
  * leur décision tient, on ne la remet pas en jeu. Figée à l'ouverture, pour
  * que répondre ne fasse pas disparaître la page en cours de lecture.
  */
-const steps = ["consent", "settings", "daily", "library"].filter(
+const steps = ["consent", "settings", "daily", "library", "zmanim"].filter(
   (step) => step !== "consent" || choice.value === null,
 );
 
@@ -155,7 +156,8 @@ watch(
           :logged-in="userId !== null"
           @create="goToDailyReading"
         />
-        <OnboardingLibraryStep v-else />
+        <OnboardingLibraryStep v-else-if="current === 'library'" />
+        <OnboardingZmanimStep v-else />
       </main>
 
       <!-- Le consentement porte ses propres boutons (accepter, refuser) :
