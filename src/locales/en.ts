@@ -155,9 +155,6 @@ const en: LocaleMessages = {
       downloadDone: "Done: these texts now read without a connection.",
       changeHint:
         "Nothing is set in stone: every text can be downloaded or removed from the library, whenever you want.",
-      open: "Open the library",
-      webOfflineNote:
-        "In the mobile app, these texts can be downloaded and read without a connection.",
     },
   },
   home: {

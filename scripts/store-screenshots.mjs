@@ -525,13 +525,10 @@ async function newDeviceContext(browser, device) {
   // le sélecteur de langue (localStorage), avant tout script de page. Le
   // consentement analytics est posé sur « denied » : la bannière (PostHog)
   // recouvrirait sinon le bas de chaque capture, et une session de captures
-  // n'a rien à mesurer. L'introduction de première ouverture est marquée comme
-  // vue (voir useOnboarding) : elle prend l'écran entier, aucune capture ne
-  // montrerait autre chose.
+  // n'a rien à mesurer.
   await context.addInitScript(() => {
     localStorage.setItem("petite-jerusalem-locale", "fr");
     localStorage.setItem("pj_analytics_consent", "denied");
-    localStorage.setItem("pj_onboarding_seen", "1");
   });
   return context;
 }
@@ -735,7 +732,7 @@ const page = await webview.page();
 // le sélecteur de langue (localStorage), avant la première navigation. Même
 // geste pour le consentement analytics : la bannière (PostHog) recouvrirait
 // sinon le bas de chaque capture, et pour l'introduction de première
-// ouverture, qui prendrait l'écran entier (voir useOnboarding).
+// ouverture, qui prendrait tout l'écran de l'app (voir useOnboarding).
 await page.evaluate(() => {
   localStorage.setItem("petite-jerusalem-locale", "fr");
   localStorage.setItem("pj_analytics_consent", "denied");

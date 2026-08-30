@@ -157,9 +157,6 @@ const fr = {
       downloadDone: "C'est fait : ces textes se lisent maintenant sans connexion.",
       changeHint:
         "Rien n'est figé : chaque texte se télécharge ou se retire depuis la bibliothèque, quand vous voulez.",
-      open: "Ouvrir la bibliothèque",
-      webOfflineNote:
-        "Dans l'application mobile, ces textes se téléchargent pour être lus sans connexion.",
     },
   },
   home: {

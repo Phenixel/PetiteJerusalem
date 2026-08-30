@@ -21,8 +21,9 @@ import OnboardingLibraryStep from "./OnboardingLibraryStep.vue";
  * page ne les faisait pas lire. Chaque page reste courte, et rien n'y est
  * définitif : tout se retrouve ensuite dans les écrans concernés.
  *
- * Le composant n'est monté que lorsqu'elle doit s'afficher (App.vue) : son
- * chunk ne pèse rien pour qui l'a déjà vue.
+ * App native seulement (voir useOnboarding), et le composant n'est monté que
+ * lorsqu'elle doit s'afficher (App.vue) : son chunk ne pèse rien pour qui l'a
+ * déjà vue, ni pour les visiteurs du site.
  */
 
 const { t } = useI18n();
@@ -71,11 +72,6 @@ function goToDailyReading(): void {
   void router.push("/bibliotheque/lecture-du-jour");
 }
 
-function goToLibrary(): void {
-  finish("library");
-  void router.push("/bibliotheque");
-}
-
 // Le consentement n'a pas de porte de sortie (un choix explicite est attendu) ;
 // partout ailleurs, la touche Échap vaut « passer ».
 function onKeydown(event: KeyboardEvent): void {
@@ -96,17 +92,26 @@ onBeforeUnmount(() => {
   stopAuth();
 });
 
+/** La surface défilante de l'introduction, remise en haut à chaque page. */
+const scroller = ref<HTMLElement | null>(null);
+
 // Quelle page a été vue, et jusqu'où l'introduction est suivie : c'est ce qui
-// dira si les explications sont lues ou si on part avant la fin.
+// dira si les explications sont lues ou si on part avant la fin. On en profite
+// pour remonter en haut : le bouton « continuer » est en bas de page, sans
+// cela la page suivante s'ouvrirait à sa moitié.
 watch(
   current,
-  (step) => analyticsService.capture("onboarding_step_viewed", { step, index: index.value }),
+  (step) => {
+    if (scroller.value) scroller.value.scrollTop = 0;
+    analyticsService.capture("onboarding_step_viewed", { step, index: index.value });
+  },
   { immediate: true },
 );
 </script>
 
 <template>
   <div
+    ref="scroller"
     class="fixed inset-0 z-[90] overflow-y-auto bg-bg-beige dark:bg-gray-900"
     role="dialog"
     aria-modal="true"
@@ -150,7 +155,7 @@ watch(
           :logged-in="userId !== null"
           @create="goToDailyReading"
         />
-        <OnboardingLibraryStep v-else @open-library="goToLibrary" />
+        <OnboardingLibraryStep v-else />
       </main>
 
       <!-- Le consentement porte ses propres boutons (accepter, refuser) :

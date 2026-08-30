@@ -12,6 +12,10 @@ import fr from "../locales/fr";
  * pas une question déjà tranchée, et elle ne s'affiche qu'une fois.
  */
 
+// L'introduction ne s'ouvre que dans l'app native : c'est la plateforme que
+// ces tests jouent, sauf celui qui vérifie justement le silence sur le web.
+vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "ios" }));
+
 // Le compte n'est là que pour savoir où enregistrer les réglages : pas de
 // Firebase à réveiller ici.
 vi.mock("../services/authService", () => ({
@@ -107,7 +111,7 @@ describe("introduction de première ouverture", () => {
     await click(button(host, fr.onboarding.next));
     expect(button(host, fr.onboarding.daily.cta)).not.toBeNull();
     await click(button(host, fr.onboarding.next));
-    expect(button(host, fr.onboarding.library.open)).not.toBeNull();
+    expect(button(host, fr.onboarding.library.download)).not.toBeNull();
 
     await click(button(host, fr.onboarding.finish));
     expect(localStorage.getItem(SEEN_KEY)).toBe("1");
@@ -136,6 +140,21 @@ describe("introduction de première ouverture", () => {
     // indisponible, par exemple) : la bannière reprend son rôle.
     useOnboarding().completeOnboarding();
     await nextTick();
+    expect(host.querySelector('[role="dialog"]')).not.toBeNull();
+  });
+
+  // En dernier : la plateforme rejouée ici vaut pour tous les imports qui
+  // suivent, elle ne doit pas déteindre sur les tests de l'app native.
+  it("ne s'ouvre jamais sur le web, où la bannière de consentement suffit", async () => {
+    vi.doMock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+    const { isOnboardingOpen, useOnboarding } = await import("../composables/useOnboarding");
+    expect(isOnboardingOpen.value).toBe(false);
+    // « Revoir l'introduction » n'y ouvrirait rien non plus (le lien n'y est pas).
+    useOnboarding().replayOnboarding();
+    expect(isOnboardingOpen.value).toBe(false);
+
+    // La bannière de consentement, elle, garde son rôle entier sur le site.
+    const { host } = await mountComponent(() => import("../components/ConsentBanner.vue"));
     expect(host.querySelector('[role="dialog"]')).not.toBeNull();
   });
 });

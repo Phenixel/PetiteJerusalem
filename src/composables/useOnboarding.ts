@@ -1,4 +1,5 @@
 import { computed, ref } from "vue";
+import { isNativeApp } from "./useNativeApp";
 
 /**
  * Introduction de première ouverture (onboarding).
@@ -8,6 +9,13 @@ import { computed, ref } from "vue";
  * téléchargements. Plusieurs utilisateurs ne devinaient pas à quoi servaient
  * ces écrans ; l'introduction les explique une fois, au bon moment, plutôt
  * que de compter sur la découverte.
+ *
+ * App native seulement. C'est là qu'on installe l'application et qu'on
+ * l'ouvre pour la première fois, écran entier, sans rien d'autre autour ;
+ * le site, lui, se visite le plus souvent par une page précise venue d'un
+ * moteur de recherche, et quatre pages d'introduction en travers de cette
+ * page-là seraient une porte fermée. Le web garde donc la bannière de
+ * consentement, et ses écrans expliquent ce qu'ils font là où ils sont.
  *
  * Elle ne se montre qu'une fois : le passage est retenu sur l'appareil, et
  * tout ce qu'elle propose reste modifiable depuis les écrans concernés
@@ -41,7 +49,7 @@ const replaying = ref(false);
 
 /** L'introduction occupe-t-elle l'écran ? Lu aussi par la bannière de consentement. */
 export const isOnboardingOpen = computed(
-  () => replaying.value || seenVersion.value !== ONBOARDING_VERSION,
+  () => isNativeApp && (replaying.value || seenVersion.value !== ONBOARDING_VERSION),
 );
 
 export function useOnboarding() {

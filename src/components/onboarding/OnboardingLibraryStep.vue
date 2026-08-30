@@ -1,25 +1,16 @@
 <script setup lang="ts">
-import { defineAsyncComponent } from "vue";
 import { useI18n } from "vue-i18n";
-import { isNativeApp } from "../../composables/useNativeApp";
 import AppIcon from "../icons/AppIcon.vue";
+import OnboardingOfflinePicker from "./OnboardingOfflinePicker.vue";
 
 /**
  * Dernière page : la bibliothèque, et ce que « télécharger » veut dire.
  *
- * Dans l'app native, les corpus volumineux ne voyagent pas dans le binaire
+ * Les corpus volumineux ne voyagent pas dans le binaire natif
  * (scripts/prune-native-bundle.mjs) : un texte n'est lisible sans connexion
  * que s'il a été téléchargé. Personne ne le devinait avant d'être dans le
  * métro. D'où la page de téléchargement simplifiée qui suit les explications.
- *
- * Sur le web il n'y a rien à télécharger (le site sert les textes) : la page
- * se réduit à la présentation de la bibliothèque, et le sélecteur, chargé à la
- * demande, n'y arrive même pas.
  */
-
-const OnboardingOfflinePicker = defineAsyncComponent(() => import("./OnboardingOfflinePicker.vue"));
-
-const emit = defineEmits<{ (e: "open-library"): void }>();
 
 const { t } = useI18n();
 
@@ -65,19 +56,6 @@ const points = [
       </li>
     </ul>
 
-    <!-- App native : la page de téléchargement simplifiée. -->
-    <OnboardingOfflinePicker v-if="isNativeApp" />
-
-    <!-- Web : rien à télécharger, le site sert les textes. -->
-    <template v-else>
-      <button type="button" class="btn btn-primary w-full sm:w-auto" @click="emit('open-library')">
-        <AppIcon name="book-open" :size="16" />
-        {{ t("onboarding.library.open") }}
-      </button>
-      <p class="text-sm text-text-secondary mt-4 flex items-start gap-1.5">
-        <AppIcon name="info" :size="14" class="mt-0.5" />
-        {{ t("onboarding.library.webOfflineNote") }}
-      </p>
-    </template>
+    <OnboardingOfflinePicker />
   </div>
 </template>
