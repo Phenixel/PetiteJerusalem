@@ -82,6 +82,7 @@ const fr = {
     back: "Retour",
     next: "Continuer",
     finish: "Terminer",
+    finishToDaily: "Terminer et composer ma liste",
     replay: "Revoir l'introduction",
     consent: {
       welcome: "Bienvenue",
@@ -123,6 +124,9 @@ const fr = {
       remindText:
         "Une notification à l'heure de votre choix, et un dernier appel avant la chkia tant que la lecture n'est pas faite.",
       cta: "Composer ma lecture du jour",
+      ctaChosen: "On y va à la fin de l'introduction",
+      ctaChosenHint:
+        "Le dernier bouton du parcours vous y conduira. Appuyez de nouveau pour renoncer.",
       accountHint:
         "Un compte gratuit suffit : c'est lui qui garde votre liste et votre progression.",
       laterHint:

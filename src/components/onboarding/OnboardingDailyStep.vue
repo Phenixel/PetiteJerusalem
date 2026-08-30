@@ -9,13 +9,14 @@ import MockDailyReading from "./mock/MockDailyReading.vue";
  * d'où la capture qui la montre en train de se cocher, avant la proposition
  * d'en composer une.
  *
- * Le bouton mène à la page de la lecture du jour, qui demande un compte : le
- * routeur s'en charge (requiresAuth), et la note le dit d'avance aux visiteurs
- * qui n'en ont pas encore.
+ * Le bouton ne quitte pas l'introduction : il retient le souhait, et c'est le
+ * dernier bouton du parcours qui y conduit (voir OnboardingFlow). La page
+ * demandant un compte, y aller d'ici emmenait vers la connexion et laissait
+ * l'introduction derrière soi, vue à moitié et notée comme faite.
  */
 
-const props = defineProps<{ loggedIn: boolean }>();
-const emit = defineEmits<{ (e: "create"): void }>();
+const props = defineProps<{ loggedIn: boolean; chosen: boolean }>();
+const emit = defineEmits<{ (e: "toggle"): void }>();
 
 const { t } = useI18n();
 
@@ -44,16 +45,27 @@ const points = [
       </div>
     </dl>
 
-    <button type="button" class="btn btn-primary w-full sm:w-auto" @click="emit('create')">
-      <AppIcon name="circle-plus" :size="16" />
-      {{ t("onboarding.daily.cta") }}
+    <button
+      type="button"
+      class="btn w-full sm:w-auto"
+      :class="props.chosen ? 'btn-soft' : 'btn-primary'"
+      :aria-pressed="props.chosen"
+      @click="emit('toggle')"
+    >
+      <AppIcon :name="props.chosen ? 'check' : 'circle-plus'" :size="16" />
+      {{ props.chosen ? t("onboarding.daily.ctaChosen") : t("onboarding.daily.cta") }}
     </button>
 
-    <p v-if="!props.loggedIn" class="mt-4 text-sm text-text-secondary">
-      {{ t("onboarding.daily.accountHint") }}
+    <p v-if="props.chosen" class="mt-4 text-sm text-text-secondary">
+      {{ t("onboarding.daily.ctaChosenHint") }}
     </p>
-    <p class="mt-4 text-sm text-text-secondary">
-      {{ t("onboarding.daily.laterHint") }}
-    </p>
+    <template v-else>
+      <p v-if="!props.loggedIn" class="mt-4 text-sm text-text-secondary">
+        {{ t("onboarding.daily.accountHint") }}
+      </p>
+      <p class="mt-4 text-sm text-text-secondary">
+        {{ t("onboarding.daily.laterHint") }}
+      </p>
+    </template>
   </div>
 </template>

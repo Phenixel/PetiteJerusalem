@@ -57,21 +57,31 @@ function goTo(next: number): void {
   index.value = Math.min(Math.max(next, 0), steps.length - 1);
 }
 
+/**
+ * « Composer ma lecture du jour » : une intention, pas un départ.
+ *
+ * Y aller tout de suite coupait l'introduction en deux : la page demande un
+ * compte, le routeur emmenait donc vers la connexion, et l'introduction,
+ * marquée comme vue au passage, ne revenait jamais. Personne n'en voyait la
+ * fin. Le souhait est retenu, l'introduction se déroule jusqu'au bout, et
+ * c'est le dernier bouton qui conduit à la lecture du jour.
+ */
+const wantsDailyReading = ref(false);
+
 /** Fin de l'introduction, par la dernière page ou par un raccourci. */
 function finish(via: string): void {
-  analyticsService.capture("onboarding_finished", { via, step: current.value });
+  analyticsService.capture("onboarding_finished", {
+    via,
+    step: current.value,
+    wants_daily_reading: wantsDailyReading.value,
+  });
   completeOnboarding();
+  if (wantsDailyReading.value) void router.push("/bibliotheque/lecture-du-jour");
 }
 
 function onConsent(newChoice: ConsentChoice): void {
   setChoice(newChoice);
   goTo(index.value + 1);
-}
-
-/** « Composer ma lecture du jour » : la page demande un compte, le routeur s'en charge. */
-function goToDailyReading(): void {
-  finish("daily_reading");
-  void router.push("/bibliotheque/lecture-du-jour");
 }
 
 // Le consentement n'a pas de porte de sortie (un choix explicite est attendu) ;
@@ -155,7 +165,8 @@ watch(
         <OnboardingDailyStep
           v-else-if="current === 'daily'"
           :logged-in="userId !== null"
-          @create="goToDailyReading"
+          :chosen="wantsDailyReading"
+          @toggle="wantsDailyReading = !wantsDailyReading"
         />
         <OnboardingLibraryStep v-else-if="current === 'library'" />
         <OnboardingOfflineStep v-else-if="current === 'offline'" />
@@ -175,7 +186,13 @@ watch(
           class="btn btn-primary"
           @click="isLast ? finish('finish') : goTo(index + 1)"
         >
-          {{ isLast ? t("onboarding.finish") : t("onboarding.next") }}
+          {{
+            !isLast
+              ? t("onboarding.next")
+              : wantsDailyReading
+                ? t("onboarding.finishToDaily")
+                : t("onboarding.finish")
+          }}
         </button>
       </footer>
     </div>

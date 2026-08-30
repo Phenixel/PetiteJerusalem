@@ -67,6 +67,8 @@ function button(host: HTMLElement, label: string): HTMLButtonElement | null {
 async function click(el: Element | null) {
   expect(el).not.toBeNull();
   el?.dispatchEvent(new MouseEvent("click"));
+  // Le tour de boucle laisse aussi passer une navigation du routeur.
+  await new Promise((resolve) => setTimeout(resolve, 0));
   await nextTick();
   await nextTick();
 }
@@ -120,6 +122,39 @@ describe("introduction de première ouverture", () => {
     await click(button(host, fr.onboarding.finish));
     expect(localStorage.getItem(SEEN_KEY)).toBe("1");
     expect(isOnboardingOpen.value).toBe(false);
+  });
+
+  /**
+   * Le bouton de la lecture du jour emmenait vers la page de composition, qui
+   * demande un compte : le visiteur partait vers la connexion, l'introduction
+   * était notée comme vue au passage, et sa fin ne revenait jamais.
+   */
+  it("garde pour la fin le souhait de composer sa lecture du jour", async () => {
+    const { host, router } = await mountComponent(
+      () => import("../components/onboarding/OnboardingFlow.vue"),
+    );
+    const { isOnboardingOpen } = await import("../composables/useOnboarding");
+
+    await click(button(host, fr.onboarding.consent.accept));
+    await click(button(host, fr.onboarding.next));
+
+    // Le souhait est pris, mais l'introduction reste à l'écran.
+    await click(button(host, fr.onboarding.daily.cta));
+    expect(button(host, fr.onboarding.daily.ctaChosen)).not.toBeNull();
+    expect(isOnboardingOpen.value).toBe(true);
+    expect(router.currentRoute.value.path).toBe("/");
+
+    // Bibliothèque, hors ligne, horaires : le parcours va jusqu'au bout, et le
+    // dernier bouton annonce la destination.
+    await click(button(host, fr.onboarding.next));
+    await click(button(host, fr.onboarding.next));
+    await click(button(host, fr.onboarding.next));
+    const last = button(host, fr.onboarding.finishToDaily);
+    expect(last).not.toBeNull();
+
+    await click(last);
+    expect(isOnboardingOpen.value).toBe(false);
+    expect(router.currentRoute.value.path).toBe("/bibliotheque/lecture-du-jour");
   });
 
   it("ne repose pas la question du consentement à qui y a déjà répondu", async () => {

@@ -84,6 +84,7 @@ const en: LocaleMessages = {
     back: "Back",
     next: "Continue",
     finish: "Finish",
+    finishToDaily: "Finish and build my list",
     replay: "Replay the introduction",
     consent: {
       welcome: "Welcome",
@@ -123,6 +124,9 @@ const en: LocaleMessages = {
       remindText:
         "A notification at the time you choose, and a last call before shkia as long as the reading is not done.",
       cta: "Build my daily reading",
+      ctaChosen: "We will head there at the end",
+      ctaChosenHint:
+        "The last button of the tour will take you there. Tap again to change your mind.",
       accountHint: "A free account is all it takes: it keeps your list and your progress.",
       laterHint:
         "No rush: the reading of the day waits for you in the library, whenever you feel like building it.",
