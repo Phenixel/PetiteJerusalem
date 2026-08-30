@@ -14,6 +14,7 @@ import {
   bookForEntry,
   downloadBook,
   downloadingPaths,
+  formatDownloadSize,
   isBookDownloaded,
   offlineBooks,
   removeBook,
@@ -455,11 +456,6 @@ async function removeAllInTab() {
   }
 }
 
-function formatSize(bytes: number): string {
-  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
-  return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
-}
-
 function formatBookName(livre: string): string {
   return sessionService.formatBookName(livre);
 }
@@ -630,7 +626,7 @@ onUnmounted(() => {
         </button>
       </span>
       <p v-if="totalDownloadedSize > 0" class="text-sm text-text-secondary">
-        {{ t("downloads.total", { size: formatSize(totalDownloadedSize) }) }}
+        {{ t("downloads.total", { size: formatDownloadSize(totalDownloadedSize) }) }}
       </p>
     </div>
 

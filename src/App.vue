@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, defineAsyncComponent, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Navbar from "./components/NavbarComponents.vue";
 import StoneWallBackground from "./components/StoneWallBackground.vue";
@@ -15,6 +15,7 @@ import AppUpdateBanner from "./components/AppUpdateBanner.vue";
 import { useMiniPlayerVisible } from "./composables/useAudioPlayer";
 import { useOnline } from "./composables/useOnline";
 import { isNativeApp } from "./composables/useNativeApp";
+import { isOnboardingOpen } from "./composables/useOnboarding";
 import { useNativeStatusBar } from "./composables/useNativeStatusBar";
 import { useLocale } from "./composables/useLocale";
 import { RouterView } from "vue-router";
@@ -26,6 +27,14 @@ const route = useRoute();
 const router = useRouter();
 const { loadTheme, loadGuestTheme } = useTheme();
 const { loadFonts, loadGuestFonts } = useFonts();
+
+// Introduction de première ouverture : chargée seulement pour qui ne l'a pas
+// encore vue (son chunk ne pèse rien pour les autres). Elle prend l'écran
+// entier et pose elle-même le choix de consentement, d'où la bannière du bas
+// mise en sourdine tant qu'elle est ouverte (voir ConsentBanner).
+const OnboardingFlow = defineAsyncComponent(
+  () => import("./components/onboarding/OnboardingFlow.vue"),
+);
 
 // App native : les horaires (et leur calendrier) se posent au-dessus de la
 // page en cours, comme un modal plein écran ; le bouton rond de la barre
@@ -131,6 +140,7 @@ authService.onAuthChanged((user) => {
     <ToastContainer />
     <ConfirmDialog />
     <ConsentBanner />
+    <OnboardingFlow v-if="isOnboardingOpen" />
     <GlobalAudioPlayer />
     <BottomTabBar v-if="isNativeApp" />
   </div>

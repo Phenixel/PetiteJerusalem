@@ -75,6 +75,93 @@ const fr = {
     accept: "Accepter",
     decline: "Refuser",
   },
+  onboarding: {
+    ariaLabel: "Introduction à Petite Jérusalem",
+    ariaProgress: "Avancement de l'introduction",
+    skip: "Passer",
+    back: "Retour",
+    next: "Continuer",
+    finish: "Terminer",
+    replay: "Revoir l'introduction",
+    consent: {
+      welcome: "Bienvenue",
+      title: "Petite Jérusalem, et vos données",
+      intro:
+        "Avant tout, une question de confidentialité. Elle ne se pose qu'une fois, et votre réponse vaut pour toute l'application.",
+      whatTitle: "Ce que nous mesurons",
+      whatText:
+        "Les pages ouvertes, les chemins suivis dans l'application et les erreurs techniques rencontrées. Rien de ce que vous lisez, rien de ce que vous écrivez.",
+      whyTitle: "À quoi cela sert",
+      whyText:
+        "Voir ce qui bloque, réparer les pannes et savoir ce qui sert vraiment, pour améliorer l'application là où c'est utile.",
+      neverTitle: "Ce que nous ne ferons jamais",
+      neverText:
+        "Aucune publicité, aucune revente de données, aucun profil cédé à qui que ce soit.",
+      accept: "Accepter",
+      decline: "Refuser",
+      changeHint:
+        "Refuser ne retire rien : toute l'application reste accessible. Vous pourrez changer d'avis quand vous voudrez.",
+      learnMore: "En savoir plus",
+    },
+    settings: {
+      title: "Réglez l'application à votre main",
+      intro:
+        "La langue, les couleurs et les polices. Chaque choix s'applique aussitôt, partout dans l'application.",
+      languageTitle: "Langue de l'interface",
+      themeTitle: "Thème",
+      fontLatinTitle: "Police de l'interface",
+      fontHebrewTitle: "Police des textes en hébreu",
+      hint: "Ces réglages vous attendent dans votre profil, onglet Préférences.",
+    },
+    daily: {
+      title: "Votre lecture du jour",
+      intro:
+        "Choisissez une fois les textes que vous lisez chaque jour : l'application vous les remet ensemble, tous les matins, et retient où vous en êtes.",
+      composeTitle: "Une liste qui est la vôtre",
+      composeText:
+        "Des Tehilim, une michna, un daf, la paracha de la semaine : composez la liste qui ressemble à vos journées.",
+      trackTitle: "Le suivi se fait tout seul",
+      trackText:
+        "Chaque texte se coche à la lecture, la liste se remet à zéro le lendemain, et votre progression vous suit d'un appareil à l'autre.",
+      remindTitle: "Un rappel, si vous le voulez",
+      remindText:
+        "Une notification à l'heure de votre choix, et un dernier appel avant la chkia tant que la lecture n'est pas faite.",
+      cta: "Composer ma lecture du jour",
+      accountHint:
+        "Un compte gratuit suffit : c'est lui qui garde votre liste et votre progression.",
+      laterHint:
+        "Rien ne presse : la lecture du jour vous attend dans la bibliothèque, quand vous voudrez la composer.",
+    },
+    library: {
+      title: "La bibliothèque, avec ou sans connexion",
+      intro:
+        "Tous les textes vivent au même endroit : Tehilim, Michna, Talmud, Tanakh, Sidour, Sli'hot et bénédictions.",
+      corpusTitle: "Sept corpus, un seul lecteur",
+      corpusText:
+        "L'hébreu et sa phonétique, la taille du texte réglée une fois pour toutes, la même lecture d'un bout à l'autre.",
+      searchTitle: "Trouver sans chercher",
+      searchText:
+        "Une seule recherche pour toute la bibliothèque : un traité, une paracha, une brakha.",
+      resumeTitle: "Reprendre où vous en étiez",
+      resumeText:
+        "Les marque-pages et la reprise de lecture vous ramènent au bon verset, sur n'importe lequel de vos appareils.",
+      offlineTitle: "Que garder sur cet appareil ?",
+      offlineIntro:
+        "Un texte téléchargé se lit sans connexion, dans le métro comme en voyage ; les autres ont besoin d'Internet. Cochez ce que vous voulez emporter, le reste se téléchargera plus tard, en un geste.",
+      bundled: "Déjà dans l'application",
+      alreadyDownloaded: "Déjà sur cet appareil",
+      booksCount: "{count} livre à télécharger | {count} livres à télécharger",
+      selection: "Environ {size} à télécharger",
+      download: "Télécharger ma sélection",
+      downloading: "Téléchargement… {done} sur {total}",
+      downloadDone: "C'est fait : ces textes se lisent maintenant sans connexion.",
+      changeHint:
+        "Rien n'est figé : chaque texte se télécharge ou se retire depuis la bibliothèque, quand vous voulez.",
+      open: "Ouvrir la bibliothèque",
+      webOfflineNote:
+        "Dans l'application mobile, ces textes se téléchargent pour être lus sans connexion.",
+    },
+  },
   home: {
     birkatHalevana: {
       title: "Bénédiction de la lune",

@@ -78,6 +78,13 @@
         <button class="hover:text-primary transition-colors" type="button" @click="reopen">
           {{ t("footer.manageCookies") }}
         </button>
+        <button
+          class="hover:text-primary transition-colors"
+          type="button"
+          @click="replayOnboarding"
+        >
+          {{ t("onboarding.replay") }}
+        </button>
       </nav>
 
       <div
@@ -117,10 +124,13 @@ import AppDownloadButton from "./AppDownloadButton.vue";
 import LanguageSelector from "./LanguageSelector.vue";
 import AppIcon from "./icons/AppIcon.vue";
 import { useConsent } from "../composables/useConsent";
+import { useOnboarding } from "../composables/useOnboarding";
 
 const { t } = useI18n();
 // Les pages traduites suivent l'espace de langue de l'URL ouverte.
 const { localePath } = useLocalePath();
 // Réouvre la bannière de consentement (retrait du consentement possible à tout moment).
 const { reopen } = useConsent();
+// L'introduction ne s'affiche qu'une fois : c'est d'ici qu'on la revoit.
+const { replayOnboarding } = useOnboarding();
 </script>

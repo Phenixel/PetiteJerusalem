@@ -77,6 +77,89 @@ const en: LocaleMessages = {
     accept: "Accept",
     decline: "Decline",
   },
+  onboarding: {
+    ariaLabel: "Introduction to Petite Jérusalem",
+    ariaProgress: "Introduction progress",
+    skip: "Skip",
+    back: "Back",
+    next: "Continue",
+    finish: "Finish",
+    replay: "Replay the introduction",
+    consent: {
+      welcome: "Welcome",
+      title: "Petite Jérusalem and your data",
+      intro:
+        "First, a question about privacy. It is asked once, and your answer applies to the whole app.",
+      whatTitle: "What we measure",
+      whatText:
+        "Pages opened, the paths followed through the app and the technical errors encountered. Nothing of what you read, nothing of what you write.",
+      whyTitle: "What it is for",
+      whyText:
+        "Seeing what gets in the way, fixing breakages and knowing what is really used, so the app improves where it matters.",
+      neverTitle: "What we will never do",
+      neverText: "No advertising, no data resale, no profile handed to anyone.",
+      accept: "Accept",
+      decline: "Decline",
+      changeHint:
+        "Declining takes nothing away: the whole app stays available. You can change your mind whenever you like.",
+      learnMore: "Learn more",
+    },
+    settings: {
+      title: "Set the app up your way",
+      intro: "Language, colours and fonts. Every choice applies right away, everywhere in the app.",
+      languageTitle: "Interface language",
+      themeTitle: "Theme",
+      fontLatinTitle: "Interface font",
+      fontHebrewTitle: "Hebrew text font",
+      hint: "These settings live in your profile, under Preferences.",
+    },
+    daily: {
+      title: "Your reading of the day",
+      intro:
+        "Pick once the texts you read every day: the app gathers them for you each morning and remembers where you left off.",
+      composeTitle: "A list of your own",
+      composeText:
+        "Some Tehilim, a mishna, a daf, the weekly parasha: build the list that matches your days.",
+      trackTitle: "Tracking takes care of itself",
+      trackText:
+        "Each text is ticked as you read it, the list resets the next day, and your progress follows you across devices.",
+      remindTitle: "A reminder, if you want one",
+      remindText:
+        "A notification at the time you choose, and a last call before shkia as long as the reading is not done.",
+      cta: "Build my daily reading",
+      accountHint: "A free account is all it takes: it keeps your list and your progress.",
+      laterHint:
+        "No rush: the reading of the day waits for you in the library, whenever you feel like building it.",
+    },
+    library: {
+      title: "The library, online or off",
+      intro:
+        "Every text lives in one place: Tehilim, Mishna, Talmud, Tanakh, Siddur, Selihot and blessings.",
+      corpusTitle: "Seven corpora, one reader",
+      corpusText:
+        "Hebrew and its transliteration, the text size set once and for all, the same reading from end to end.",
+      searchTitle: "Finding without hunting",
+      searchText: "One search for the whole library: a tractate, a parasha, a berakha.",
+      resumeTitle: "Pick up where you stopped",
+      resumeText:
+        "Bookmarks and reading positions bring you back to the right verse, on any of your devices.",
+      offlineTitle: "What should stay on this device?",
+      offlineIntro:
+        "A downloaded text reads without a connection, on the underground as much as on a trip; the others need the internet. Tick what you want to take along, the rest can be downloaded later in one gesture.",
+      bundled: "Already in the app",
+      alreadyDownloaded: "Already on this device",
+      booksCount: "{count} book to download | {count} books to download",
+      selection: "About {size} to download",
+      download: "Download my selection",
+      downloading: "Downloading… {done} of {total}",
+      downloadDone: "Done: these texts now read without a connection.",
+      changeHint:
+        "Nothing is set in stone: every text can be downloaded or removed from the library, whenever you want.",
+      open: "Open the library",
+      webOfflineNote:
+        "In the mobile app, these texts can be downloaded and read without a connection.",
+    },
+  },
   home: {
     birkatHalevana: {
       title: "Blessing of the moon",

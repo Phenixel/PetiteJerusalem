@@ -2,6 +2,7 @@
 import { useI18n } from "vue-i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useConsent } from "../../composables/useConsent";
+import { useOnboarding } from "../../composables/useOnboarding";
 
 /**
  * App native uniquement : reprend l'essentiel du footer du site (retiré de
@@ -11,6 +12,8 @@ import { useConsent } from "../../composables/useConsent";
 const { t } = useI18n();
 // Réouvre la bannière de consentement (retrait du consentement possible à tout moment).
 const { reopen } = useConsent();
+// L'introduction ne s'affiche qu'une fois : c'est d'ici qu'on la revoit.
+const { replayOnboarding } = useOnboarding();
 
 const pages = [
   { to: "/a-propos", labelKey: "footer.about", icon: "info" },
@@ -61,6 +64,19 @@ const pages = [
           <span class="flex items-center gap-3">
             <AppIcon name="eye" :size="17" class="text-text-secondary/70" />
             {{ t("footer.manageCookies") }}
+          </span>
+          <AppIcon name="chevron-right" :size="15" class="text-text-secondary/50 rtl:rotate-180" />
+        </button>
+      </li>
+      <li>
+        <button
+          type="button"
+          class="w-full flex items-center justify-between gap-3 py-3.5 text-text-primary hover:text-primary transition-colors"
+          @click="replayOnboarding"
+        >
+          <span class="flex items-center gap-3">
+            <AppIcon name="rocket" :size="17" class="text-text-secondary/70" />
+            {{ t("onboarding.replay") }}
           </span>
           <AppIcon name="chevron-right" :size="15" class="text-text-secondary/50 rtl:rotate-180" />
         </button>

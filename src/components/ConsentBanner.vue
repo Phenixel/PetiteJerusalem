@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { useConsent } from "../composables/useConsent";
+import { isOnboardingOpen } from "../composables/useOnboarding";
 import { isNativeApp } from "../composables/useNativeApp";
 import { useLocalePath } from "../composables/useLocalePath";
 
@@ -11,6 +12,10 @@ const { localePath } = useLocalePath();
  * Bannière de consentement à la mesure d'audience (PostHog). Affichée tant
  * qu'aucun choix n'a été fait ; réouvrable via « Gérer les cookies » (footer,
  * onglet À propos). Le suivi ne démarre qu'après « Accepter » (analyticsService).
+ *
+ * À la toute première ouverture, c'est l'introduction qui pose la question, sur
+ * une page entière et avec les explications qui vont avec : la bannière se tait
+ * tant qu'elle est à l'écran, pour ne pas demander deux fois la même chose.
  */
 
 const { t } = useI18n();
@@ -20,7 +25,7 @@ const { choice, setChoice } = useConsent();
 <template>
   <Transition name="consent-slide">
     <div
-      v-if="choice === null"
+      v-if="choice === null && !isOnboardingOpen"
       class="fixed inset-x-0 z-50 p-4"
       :class="isNativeApp ? 'bottom-[calc(3.5rem+var(--safe-bottom))]' : 'bottom-0'"
       role="dialog"
