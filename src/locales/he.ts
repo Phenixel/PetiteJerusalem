@@ -864,6 +864,17 @@ const he: LocaleMessages = {
     navMenu: "תפריט קריאה",
     navSections: "קטעים",
     navTop: "לראש הדף",
+    autoScroll: {
+      pill: "גלילה",
+      speed: "מהירות",
+      speeds: {
+        slow: "איטית",
+        medium: "בינונית",
+        fast: "מהירה",
+      },
+      stop: "עצירת הגלילה",
+      openMenu: "כוונון הגלילה האוטומטית",
+    },
     // תפילה (סליחות, ברכות) : עיצוב הטקסט הליטורגי.
     fold: {
       teshuva: "תוספת לעשרת ימי תשובה",

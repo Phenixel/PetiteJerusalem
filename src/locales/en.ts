@@ -893,6 +893,17 @@ const en: LocaleMessages = {
     navMenu: "Reading menu",
     navSections: "Sections",
     navTop: "Top of page",
+    autoScroll: {
+      pill: "Scrolling",
+      speed: "Speed",
+      speeds: {
+        slow: "Slow",
+        medium: "Medium",
+        fast: "Fast",
+      },
+      stop: "Stop scrolling",
+      openMenu: "Adjust automatic scrolling",
+    },
     // Tefila (Selichot, Berakhot): liturgical text layout.
     fold: {
       teshuva: "Addition for the Ten Days of Repentance",

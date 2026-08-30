@@ -13,6 +13,7 @@ import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { seoService } from "../../services/seoService";
 import { analyticsService } from "../../services/analyticsService";
 import { useReadingPinch } from "../../composables/useReadingPinch";
+import { useAutoScroll } from "../../composables/useAutoScroll";
 import { useChneiMikraOptions } from "../../composables/useChneiMikraOptions";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import ChneiMikraOptions from "../../components/ChneiMikraOptions.vue";
@@ -39,6 +40,9 @@ const route = useRoute();
 const router = useRouter();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
+// Double appui sur le texte : la page descend toute seule, à l'allure
+// choisie dans la pastille du bas (AutoScrollPill).
+useAutoScroll();
 // Verset écrit deux fois, Rachi : réglage partagé avec la lecture quotidienne.
 const { doubleVerses, withRashi } = useChneiMikraOptions();
 

@@ -5,6 +5,7 @@ import Navbar from "./components/NavbarComponents.vue";
 import StoneWallBackground from "./components/StoneWallBackground.vue";
 import SiteFooter from "./components/SiteFooter.vue";
 import ScrollToTop from "./components/ScrollToTop.vue";
+import AutoScrollPill from "./components/AutoScrollPill.vue";
 import ToastContainer from "./components/ToastContainer.vue";
 import ConfirmDialog from "./components/ConfirmDialog.vue";
 import ConsentBanner from "./components/ConsentBanner.vue";
@@ -141,6 +142,7 @@ authService.onAuthChanged((user) => {
          légales…) vit dans l'onglet À propos du profil. -->
     <SiteFooter v-if="!isHome && !isNativeApp" />
     <ScrollToTop />
+    <AutoScrollPill />
     <ToastContainer />
     <ConfirmDialog />
     <ConsentBanner />

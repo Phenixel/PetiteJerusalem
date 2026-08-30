@@ -910,6 +910,17 @@ const fr = {
     navMenu: "Menu de lecture",
     navSections: "Sections",
     navTop: "Haut de page",
+    autoScroll: {
+      pill: "Défilement",
+      speed: "Vitesse",
+      speeds: {
+        slow: "Lent",
+        medium: "Moyen",
+        fast: "Rapide",
+      },
+      stop: "Arrêter le défilement",
+      openMenu: "Régler le défilement automatique",
+    },
     // Tefila (Sli'hot, Brahot) : mise en forme du texte liturgique.
     fold: {
       teshuva: "Ajout des dix jours de pénitence",

@@ -23,6 +23,7 @@ import { localDayKey } from "../../services/dateService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useReadingPinch } from "../../composables/useReadingPinch";
+import { useAutoScroll } from "../../composables/useAutoScroll";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
 import {
@@ -64,6 +65,9 @@ const { confirm } = useConfirm();
 const online = useOnline();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
+// Double appui sur le texte : la page descend toute seule, à l'allure
+// choisie dans la pastille du bas (AutoScrollPill).
+useAutoScroll();
 // Paracha (chnei mikra) : mêmes options d'affichage que sa page de la
 // bibliothèque, verset écrit deux fois et commentaire de Rachi.
 const { doubleVerses: chneiMikraDouble, withRashi: chneiMikraRashi } = useChneiMikraOptions();
