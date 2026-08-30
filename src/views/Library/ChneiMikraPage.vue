@@ -40,9 +40,6 @@ const route = useRoute();
 const router = useRouter();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
-// Double appui sur le texte : la page descend toute seule, à l'allure
-// choisie dans la pastille du bas (AutoScrollPill).
-useAutoScroll();
 // Verset écrit deux fois, Rachi : réglage partagé avec la lecture quotidienne.
 const { doubleVerses, withRashi } = useChneiMikraOptions();
 
@@ -61,6 +58,11 @@ const parasha = computed<WeeklyParasha | null>(() => {
   if (typeof asked !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(asked)) return currentWeek.value;
   return getParashaForShabbat(shabbatOfWeek(asked)) ?? currentWeek.value;
 });
+
+// Double appui sur le texte : la page descend toute seule, à l'allure choisie
+// dans la pastille du bas (AutoScrollPill). Sans paracha, il n'y a rien à
+// faire descendre.
+useAutoScroll(() => parasha.value !== null);
 
 const isCurrentWeek = computed(() => parasha.value?.weekKey === currentWeek.value?.weekKey);
 

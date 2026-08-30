@@ -1,4 +1,13 @@
-import { computed, onBeforeUnmount, onMounted, readonly, ref } from "vue";
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  readonly,
+  ref,
+  toValue,
+  watch,
+  type MaybeRefOrGetter,
+} from "vue";
 import { analyticsService } from "../services/analyticsService";
 
 /**
@@ -9,10 +18,14 @@ import { analyticsService } from "../services/analyticsService";
  * fait avancer tout seul, à une allure de lecture ; un second double appui
  * l'arrête, comme la pastille du bas (AutoScrollPill).
  *
+ * Le geste n'existe que devant un texte ouvert : pas sur la liste des
+ * chapitres d'un traité, pas pendant qu'on compose sa lecture du jour. Ces
+ * écrans-là se parcourent, ils ne se lisent pas, et un double appui y
+ * lancerait une descente que personne n'a demandée.
+ *
  * L'état vit dans le module, pas dans la page : la pastille est posée une
  * fois pour toutes dans App.vue et ne se montre que pendant le défilement,
- * qui ne peut lui-même démarrer que sur les pages ayant appelé
- * `useAutoScroll` (bibliothèque, lecture du jour, chnei mikra).
+ * qui ne peut lui-même démarrer que là où `useAutoScroll` est actif.
  */
 
 export type AutoScrollSpeedId = "slow" | "medium" | "fast";
@@ -159,12 +172,15 @@ const DOUBLE_TAP_MS = 320;
 const DOUBLE_TAP_RADIUS = 40;
 
 /**
- * À appeler dans les vues de lecture : le geste n'existe que le temps où
- * elles sont montées, et le défilement s'arrête en les quittant.
+ * À appeler dans les vues de lecture. `reading` dit quand un texte est
+ * réellement ouvert : le geste ne vaut que là, et le défilement s'arrête dès
+ * que la vue passe à autre chose (retour à la liste des chapitres, passage en
+ * mode « gérer ma liste ») comme quand elle est quittée.
  */
-export function useAutoScroll(): void {
+export function useAutoScroll(reading: MaybeRefOrGetter<boolean> = true): void {
   let lastGestureAt = 0;
   let lastTap = { time: 0, x: 0, y: 0 };
+  let listening = false;
 
   function accept(): void {
     const now = Date.now();
@@ -199,14 +215,31 @@ export function useAutoScroll(): void {
     }
   }
 
-  onMounted(() => {
+  function listen(): void {
+    if (listening) return;
+    listening = true;
     document.addEventListener("dblclick", onDoubleClick);
     document.addEventListener("touchend", onTouchEnd, { passive: true });
-  });
+  }
 
-  onBeforeUnmount(() => {
+  function unlisten(): void {
+    if (!listening) return;
+    listening = false;
     document.removeEventListener("dblclick", onDoubleClick);
     document.removeEventListener("touchend", onTouchEnd);
+    // Le texte n'est plus à l'écran : ce qui descendait n'a plus de raison de
+    // descendre, et la pastille s'en va avec.
     stopAutoScroll("leave");
+  }
+
+  onMounted(() => {
+    if (toValue(reading)) listen();
   });
+
+  watch(
+    () => toValue(reading),
+    (open) => (open ? listen() : unlisten()),
+  );
+
+  onBeforeUnmount(unlisten);
 }

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createApp, h } from "vue";
+import { createApp, h, nextTick, ref } from "vue";
 
 /**
  * Défilement automatique des pages de texte.
@@ -7,7 +7,8 @@ import { createApp, h } from "vue";
  * Ce qui doit tenir : un double appui sur le texte lance la descente et un
  * second l'arrête ; les boutons et les liens gardent leur double clic ; la
  * page descend bien à l'allure choisie et s'arrête d'elle-même à la fin du
- * texte ; et quitter la page de lecture arrête tout.
+ * texte ; le geste n'existe pas hors d'un texte ouvert (liste des chapitres,
+ * composition de la lecture du jour) ; et quitter la page arrête tout.
  */
 
 /** Géométrie de page simulée : jsdom ne fait rien défiler tout seul. */
@@ -46,19 +47,23 @@ function frame(ms: number) {
   callback?.(now);
 }
 
-/** Une page de lecture : elle branche le geste le temps où elle est montée. */
-async function mountReadingPage() {
+/**
+ * Une page de lecture. `reading` dit si un texte est ouvert : c'est ce que la
+ * vraie page passe (section ouverte, mode lecture), et il peut changer sous
+ * les pieds du lecteur.
+ */
+async function mountReadingPage(reading = ref(true)) {
   const { useAutoScroll } = await import("../composables/useAutoScroll");
   const host = document.createElement("div");
   document.body.appendChild(host);
   const app = createApp({
     setup() {
-      useAutoScroll();
+      useAutoScroll(reading);
       return () => h("main", [h("p", "un verset"), h("button", "un bouton")]);
     },
   });
   app.mount(host);
-  return { app, host };
+  return { app, host, reading };
 }
 
 function doubleClick(target: Element | Document = document) {
@@ -143,6 +148,27 @@ describe("défilement automatique", () => {
     vi.resetModules();
     const relaunched = await import("../composables/useAutoScroll");
     expect(relaunched.autoScrollSpeedId.value).toBe("fast");
+  });
+
+  it("ne s'offre pas hors d'un texte ouvert, et s'arrête si on en sort", async () => {
+    const { isAutoScrolling } = await import("../composables/useAutoScroll");
+    const reading = ref(false);
+    const { host } = await mountReadingPage(reading);
+
+    // Liste des chapitres, composition de la lecture du jour : rien ne part.
+    doubleClick(host.querySelector("p")!);
+    expect(isAutoScrolling.value).toBe(false);
+
+    // Le texte s'ouvre : le geste vaut de nouveau.
+    reading.value = true;
+    await nextTick();
+    doubleClick(host.querySelector("p")!);
+    expect(isAutoScrolling.value).toBe(true);
+
+    // Retour à la liste : la descente s'arrête d'elle-même.
+    reading.value = false;
+    await nextTick();
+    expect(isAutoScrolling.value).toBe(false);
   });
 
   it("s'arrête quand on quitte la page de lecture", async () => {
