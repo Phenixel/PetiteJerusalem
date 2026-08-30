@@ -161,6 +161,35 @@ function adb(...args) {
 }
 
 const children = [];
+
+/**
+ * Lance un serveur de longue durée (émulateurs Firebase, Vite, émulateur
+ * Android) en le rendant tuable pour de bon.
+ *
+ * Deux précautions, apprises du tag v3.8.1 : le job de captures y est resté
+ * suspendu 42 minutes après la mort du script, jusqu'à l'annulation à la main.
+ *
+ * 1. `detached` fait de l'enfant le chef de son groupe, et cleanup() tue le
+ *    groupe : sans cela, un SIGTERM au seul chef laisse vivre ses propres
+ *    enfants, le vite lancé par npx et son esbuild, les JVM des émulateurs.
+ * 2. Aucun flux n'est « inherit » : un enfant qui survivrait garderait sinon
+ *    ouverte la sortie du step, que l'action qui l'attend ne verrait jamais se
+ *    fermer. Les flux sont relayés par ce processus-ci, qui les referme en
+ *    mourant, si bien que le journal du run montre la même chose qu'avant.
+ */
+function spawnChild(command, args, options = {}) {
+  const child = spawn(command, args, {
+    detached: true,
+    stdio: ["ignore", "pipe", "pipe"],
+    ...options,
+  });
+  // Un flux jamais lu finit par remplir son tampon et bloquer l'écrivain.
+  child.stdout?.resume();
+  child.stderr?.on("data", (chunk) => process.stderr.write(chunk));
+  children.push(child);
+  return child;
+}
+
 function cleanup() {
   // Un émulateur fourni (CI) ne nous appartient pas : c'est l'action qui l'a
   // ouvert et qui le refermera.
@@ -172,9 +201,15 @@ function cleanup() {
     }
   }
   for (const child of children) {
-    if (!child.killed) {
+    if (child.exitCode !== null || child.signalCode !== null) continue;
+    try {
+      // Le groupe entier (pid négatif), pas seulement le chef. SIGKILL parce
+      // qu'un gestionnaire « exit » est synchrone : on ne peut pas attendre
+      // ici qu'un arrêt gracieux aboutisse.
+      process.kill(-child.pid, "SIGKILL");
+    } catch {
       try {
-        child.kill("SIGTERM");
+        child.kill("SIGKILL");
       } catch {
         /* déjà parti */
       }
@@ -201,12 +236,7 @@ async function waitFor(url, label, timeoutMs = 60000) {
 // --- Émulateurs Firebase éphémères (vides : ni --import ni --export-on-exit) --
 
 console.log("store-screenshots: démarrage des émulateurs Firebase (vides)…");
-const emulators = spawn("firebase", ["emulators:start", "--only", "auth,firestore"], {
-  cwd: root,
-  stdio: ["ignore", "pipe", "inherit"],
-});
-emulators.stdout.resume(); // on n'affiche pas leur log, mais il ne doit pas bloquer
-children.push(emulators);
+spawnChild("firebase", ["emulators:start", "--only", "auth,firestore"], { cwd: root });
 await waitFor(`http://localhost:${AUTH_PORT}/`, "l'émulateur Auth", 90000);
 await waitFor(`http://localhost:${FIRESTORE_PORT}/`, "l'émulateur Firestore", 90000);
 
@@ -391,14 +421,11 @@ for (const chiour of chiourim) {
 // --- Serveur de dev (mode DEV → branché sur les émulateurs) ------------------
 
 console.log("store-screenshots: démarrage du serveur Vite…");
-const vite = spawn("npx", ["vite", "--port", String(VITE_PORT), "--strictPort"], {
+spawnChild("npx", ["vite", "--port", String(VITE_PORT), "--strictPort"], {
   cwd: root,
-  stdio: ["ignore", "pipe", "inherit"],
   // Sans le badge flottant Vue DevTools (cf. vite.config.ts).
   env: { ...process.env, STORE_SCREENSHOTS: "1" },
 });
-vite.stdout.resume();
-children.push(vite);
 const baseUrl = `http://localhost:${VITE_PORT}`;
 await waitFor(baseUrl, "le serveur Vite");
 
@@ -602,7 +629,7 @@ if (PROVIDED_SERIAL) {
   // donc dans un journal, relu et affiché si le boot n'aboutit pas.
   const emulatorLog = join(tmpdir(), `${AVD_NAME}-emulator.log`);
   const emulatorLogFd = openSync(emulatorLog, "w");
-  const emulator = spawn(
+  const emulator = spawnChild(
     emulatorBin,
     [
       "-avd",
@@ -622,7 +649,6 @@ if (PROVIDED_SERIAL) {
     ],
     { stdio: ["ignore", emulatorLogFd, emulatorLogFd] },
   );
-  children.push(emulator);
 
   // Un émulateur qui refuse de démarrer rend la main tout de suite : le
   // guetter évite d'attendre six minutes un device déjà mort.

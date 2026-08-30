@@ -128,10 +128,10 @@ jobs:
           npm run build-only
           npx cap sync android
 
-      # Sans ce cache, Gradle retélécharge AGP et ses dépendances à chaque run,
-      # plusieurs minutes sur les vingt-cinq du job. android/ est régénéré à
-      # chaque fois, mais ce dépôt-là ne dépend que des versions de Capacitor,
-      # figées par le lockfile.
+      # Le build debug de l'app télécharge AGP et ses dépendances : sans ce
+      # cache, à chaque run. android/ est régénéré à chaque fois, mais ce
+      # dépôt-là ne dépend que des versions de Capacitor, figées par le
+      # lockfile.
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
@@ -152,7 +152,11 @@ jobs:
       # donne pas KVM, là où un émulateur x86_64 lancé à la main refuse de
       # démarrer. ANDROID_SERIAL dit au script de se brancher sur cet
       # émulateur-là plutôt que d'en lancer un second.
+      # Le travail utile tient en une dizaine de minutes (l'émulateur démarre
+      # en 40 secondes) : au-delà de vingt, quelque chose est bloqué, et il
+      # vaut mieux le voir tout de suite que d'attendre le plafond du job.
       - name: Générer les captures d'écran
+        timeout-minutes: 20
         uses: reactivecircus/android-emulator-runner@v2
         env:
           # Le port ci-dessous, sous la forme qu'attend adb.
