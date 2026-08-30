@@ -92,8 +92,9 @@ const chromePadClass = computed(() => {
 
 // Réglages d'appareil appliqués d'entrée, en synchrone : un visiteur sans
 // compte retrouve son apparence, son thème et ses polices (réglages de l'app
-// native) avant le premier rendu. Pour un compte, l'abonnement juste en dessous repasse aux
-// valeurs du compte dans le même tick, avant tout affichage.
+// native) avant le premier rendu. Pour un compte, l'abonnement juste en
+// dessous repasse aux valeurs du compte dans le même tick, avant tout
+// affichage.
 loadGuestTheme();
 loadGuestFonts();
 loadGuestColorScheme();

@@ -7,10 +7,7 @@
     <link rel="alternate icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>
-      Petite Jérusalem | Partager l'étude de la Torah et finir le Chass à
-      plusieurs
-    </title>
+    <title>Petite Jérusalem | Partager l'étude de la Torah et finir le Chass à plusieurs</title>
     <meta
       name="description"
       content="Plateforme gratuite pour étudier et partager la Torah à plusieurs : répartissez le Talmud pour finir le Chass, lisez les Tehilim à plusieurs pour une refoua chelema ou à la mémoire d'un proche, suivez la progression jusqu'au siyoum."
@@ -29,40 +26,25 @@
     <meta property="og:locale" content="fr_FR" />
     <meta property="og:locale:alternate" content="en_US" />
     <meta property="og:locale:alternate" content="he_IL" />
-    <meta
-      property="og:title"
-      content="Petite Jérusalem | Partager l'étude de la Torah et finir le Chass à plusieurs"
-    />
+    <meta property="og:title" content="Petite Jérusalem | Partager l'étude de la Torah et finir le Chass à plusieurs" />
     <meta
       property="og:description"
       content="Répartissez un texte entre plusieurs personnes pour le terminer ensemble : finir le Chass, lire les Tehilim à plusieurs, suivre la progression de votre limoud. Gratuit, en français, en anglais et en hébreu."
     />
     <meta property="og:url" content="https://petite-jerusalem.fr/" />
-    <meta
-      property="og:image"
-      content="https://petite-jerusalem.fr/og-image.jpg"
-    />
+    <meta property="og:image" content="https://petite-jerusalem.fr/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta
-      property="og:image:alt"
-      content="Petite Jérusalem : partage de lectures et d'études de Torah"
-    />
+    <meta property="og:image:alt" content="Petite Jérusalem : partage de lectures et d'études de Torah" />
 
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta
-      name="twitter:title"
-      content="Petite Jérusalem | Partager l'étude de la Torah et finir le Chass à plusieurs"
-    />
+    <meta name="twitter:title" content="Petite Jérusalem | Partager l'étude de la Torah et finir le Chass à plusieurs" />
     <meta
       name="twitter:description"
       content="Répartissez un texte entre plusieurs personnes pour le terminer ensemble : finir le Chass, lire les Tehilim à plusieurs, suivre votre limoud. Gratuit, en français, en anglais et en hébreu."
     />
-    <meta
-      name="twitter:image"
-      content="https://petite-jerusalem.fr/og-image.jpg"
-    />
+    <meta name="twitter:image" content="https://petite-jerusalem.fr/og-image.jpg" />
 
     <meta name="theme-color" content="#f4f1ea" />
 
@@ -108,13 +90,10 @@
          comme il le fait déjà pour le thème et les polices. -->
     <script>
       try {
-        var pref = JSON.parse(
-          localStorage.getItem("pj-preferences:guest") || "{}",
-        ).colorScheme;
+        var pref = JSON.parse(localStorage.getItem("pj-preferences:guest") || "{}").colorScheme;
         var dark =
           pref === "dark" ||
-          (pref !== "light" &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches);
+          (pref !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
         if (dark) document.documentElement.classList.add("dark");
       } catch (e) {
         /* Stockage indisponible : le bundle s'en chargera. */

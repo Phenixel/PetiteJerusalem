@@ -172,14 +172,21 @@ const DOUBLE_TAP_MS = 320;
 const DOUBLE_TAP_RADIUS = 40;
 
 /**
+ * Le suivi du geste vit dans le module, pas dans la vue : le temps d'une
+ * transition de page, deux vues de lecture sont montées ensemble, et un double
+ * appui compté par chacune se serait annulé lui-même (lancé, puis arrêté).
+ * C'est le même doigt, il ne compte qu'une fois.
+ */
+let lastGestureAt = 0;
+let lastTap = { time: 0, x: 0, y: 0 };
+
+/**
  * À appeler dans les vues de lecture. `reading` dit quand un texte est
  * réellement ouvert : le geste ne vaut que là, et le défilement s'arrête dès
  * que la vue passe à autre chose (retour à la liste des chapitres, passage en
  * mode « gérer ma liste ») comme quand elle est quittée.
  */
 export function useAutoScroll(reading: MaybeRefOrGetter<boolean> = true): void {
-  let lastGestureAt = 0;
-  let lastTap = { time: 0, x: 0, y: 0 };
   let listening = false;
 
   function accept(): void {

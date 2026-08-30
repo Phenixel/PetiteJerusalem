@@ -98,13 +98,14 @@ function sortByCatalog(ids: string[]): string[] {
 const loading = ref(true);
 const saving = ref(false);
 const mode = ref<"reading" | "manage">("reading");
+// Deux onglets en mode lecture : le quotidien d'abord, le chnei mikra
+// (hebdomadaire) dans « Cette semaine » pour ne pas allonger la page du jour.
+const activeTab = ref<"today" | "week">("today");
+
 // Double appui sur le texte : la page descend toute seule, à l'allure choisie
 // dans la pastille du bas (AutoScrollPill). Pas en mode « gérer ma liste »,
 // où l'on choisit des textes au lieu d'en lire un.
 useAutoScroll(() => mode.value === "reading");
-// Deux onglets en mode lecture : le quotidien d'abord, le chnei mikra
-// (hebdomadaire) dans « Cette semaine » pour ne pas allonger la page du jour.
-const activeTab = ref<"today" | "week">("today");
 
 // Ids kept as strings for reliable Map lookups; converted back to numbers on save.
 const selectedIds = ref<string[]>([]);
