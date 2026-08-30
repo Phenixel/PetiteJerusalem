@@ -98,18 +98,20 @@ describe("introduction de première ouverture", () => {
     );
     const { isOnboardingOpen } = await import("../composables/useOnboarding");
 
-    // Cinq pages, et aucune porte de sortie tant que le choix n'est pas fait.
-    expect(host.querySelectorAll("header span").length).toBe(5);
+    // Six pages, et aucune porte de sortie tant que le choix n'est pas fait.
+    expect(host.querySelectorAll("header span").length).toBe(6);
     expect(button(host, fr.onboarding.skip)).toBeNull();
     expect(button(host, fr.onboarding.consent.decline)).not.toBeNull();
 
     await click(button(host, fr.onboarding.consent.accept));
     expect(localStorage.getItem(CONSENT_KEY)).toBe("granted");
 
-    // Réglages, lecture du jour, bibliothèque, puis horaires.
+    // Réglages, lecture du jour, bibliothèque, hors ligne, puis horaires.
     expect(button(host, fr.onboarding.skip)).not.toBeNull();
     await click(button(host, fr.onboarding.next));
     expect(button(host, fr.onboarding.daily.cta)).not.toBeNull();
+    await click(button(host, fr.onboarding.next));
+    expect(host.textContent).toContain(fr.onboarding.library.readingTitle);
     await click(button(host, fr.onboarding.next));
     expect(button(host, fr.onboarding.library.download)).not.toBeNull();
     await click(button(host, fr.onboarding.next));
@@ -126,7 +128,7 @@ describe("introduction de première ouverture", () => {
       () => import("../components/onboarding/OnboardingFlow.vue"),
     );
 
-    expect(host.querySelectorAll("header span").length).toBe(4);
+    expect(host.querySelectorAll("header span").length).toBe(5);
     expect(button(host, fr.onboarding.consent.accept)).toBeNull();
     expect(button(host, fr.onboarding.next)).not.toBeNull();
     // Le choix d'avant tient, l'introduction n'y touche pas.

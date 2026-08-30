@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 /**
  * Apparence claire ou sombre.
@@ -97,6 +100,26 @@ describe("apparence claire ou sombre", () => {
     const relaunched = await launch();
     expect(relaunched.useColorScheme().currentSchemeId.value).toBe("dark");
     expect(isDarkApplied()).toBe(true);
+  });
+
+  /**
+   * La classe `dark` doit commander tout ce qui est sombre, sans exception.
+   * Les utilitaires `dark:` de Tailwind compilent sinon en
+   * `@media (prefers-color-scheme: dark)` : ils suivraient le téléphone
+   * pendant que les couleurs du thème suivent le choix de l'utilisateur, et
+   * une apparence choisie à contre-courant du système donnerait une page
+   * moitié claire, moitié sombre, par endroits illisible.
+   */
+  it("fait suivre la classe aux utilitaires sombres de Tailwind", () => {
+    const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+    const css = readFileSync(join(root, "src/assets/main.css"), "utf-8");
+    expect(css).toMatch(/@custom-variant\s+dark\s*\(&:where\(\.dark, \.dark \*\)\);/);
+
+    // Et la classe est posée avant le premier pixel, sinon un téléphone en
+    // sombre ouvre l'application sur un éclair blanc.
+    const html = readFileSync(join(root, "index.html"), "utf-8");
+    expect(html).toContain("pj-preferences:guest");
+    expect(html).toContain('classList.add("dark")');
   });
 
   it("ignore une valeur inconnue et revient au suivi du système", async () => {

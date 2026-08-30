@@ -2,7 +2,6 @@
 import { useI18n } from "vue-i18n";
 import { useLocalePath } from "../../composables/useLocalePath";
 import type { ConsentChoice } from "../../composables/useConsent";
-import AppIcon from "../icons/AppIcon.vue";
 
 /**
  * Première page de l'introduction : la mesure d'audience, expliquée avant
@@ -20,21 +19,9 @@ const { localePath } = useLocalePath();
 const emit = defineEmits<{ (e: "choose", choice: ConsentChoice): void }>();
 
 const points = [
-  {
-    icon: "chart",
-    titleKey: "onboarding.consent.whatTitle",
-    textKey: "onboarding.consent.whatText",
-  },
-  {
-    icon: "lightbulb",
-    titleKey: "onboarding.consent.whyTitle",
-    textKey: "onboarding.consent.whyText",
-  },
-  {
-    icon: "eye",
-    titleKey: "onboarding.consent.neverTitle",
-    textKey: "onboarding.consent.neverText",
-  },
+  { titleKey: "onboarding.consent.whatTitle", textKey: "onboarding.consent.whatText" },
+  { titleKey: "onboarding.consent.whyTitle", textKey: "onboarding.consent.whyText" },
+  { titleKey: "onboarding.consent.neverTitle", textKey: "onboarding.consent.neverText" },
 ] as const;
 </script>
 
@@ -50,19 +37,12 @@ const points = [
       {{ t("onboarding.consent.intro") }}
     </p>
 
-    <ul class="space-y-4 mb-8">
-      <li v-for="point in points" :key="point.titleKey" class="card p-4 flex items-start gap-4">
-        <span
-          class="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center"
-        >
-          <AppIcon :name="point.icon" :size="19" />
-        </span>
-        <span>
-          <span class="block font-semibold text-text-primary">{{ t(point.titleKey) }}</span>
-          <span class="block text-sm text-text-secondary mt-1">{{ t(point.textKey) }}</span>
-        </span>
-      </li>
-    </ul>
+    <dl class="mb-8 space-y-4">
+      <div v-for="point in points" :key="point.titleKey">
+        <dt class="font-semibold text-text-primary">{{ t(point.titleKey) }}</dt>
+        <dd class="mt-0.5 text-sm text-text-secondary">{{ t(point.textKey) }}</dd>
+      </div>
+    </dl>
 
     <div class="flex flex-col sm:flex-row gap-3">
       <button type="button" class="btn btn-soft flex-1" @click="emit('choose', 'denied')">

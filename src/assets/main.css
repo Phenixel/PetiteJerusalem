@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Le mode sombre suit la classe `dark` de la racine, pas la préférence du
+   système. Sans cette ligne, les utilitaires `dark:` de Tailwind compilent
+   en `@media (prefers-color-scheme: dark)` : ils suivraient le téléphone
+   pendant que les couleurs du thème (`:root.dark`, plus bas) suivraient le
+   choix de l'utilisateur, et une apparence choisie à contre-courant du
+   système donnerait une page moitié claire, moitié sombre. C'est
+   useColorScheme qui pose la classe, système compris. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ---- Repli des teamim -----------------------------------------------------
    Aucune des polices hébraïques proposées (Frank Ruhl Libre, David Libre,
    Heebo) ne dessine les teamim : chaque mot cantilé bascule alors entier vers

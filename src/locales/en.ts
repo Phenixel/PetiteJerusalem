@@ -128,17 +128,12 @@ const en: LocaleMessages = {
         "No rush: the reading of the day waits for you in the library, whenever you feel like building it.",
     },
     library: {
-      title: "The library, online or off",
+      title: "The library",
       intro:
-        "Every text lives in one place: Tehilim, Mishna, Talmud, Tanakh, Siddur, Selihot and blessings.",
+        "Every text lives in one place: Tehilim, Mishna, Talmud, Tanakh, Siddur, Selihot and blessings. One search runs through them all, and your bookmarks bring you back to the right verse.",
       corpusTitle: "Seven corpora, one reader",
       corpusText:
-        "Hebrew and its transliteration, the text size set once and for all, the same reading from end to end.",
-      searchTitle: "Finding without hunting",
-      searchText: "One search for the whole library: a tractate, a parasha, a berakha.",
-      resumeTitle: "Pick up where you stopped",
-      resumeText:
-        "Bookmarks and reading positions bring you back to the right verse, on any of your devices.",
+        "Tap a volume to open it. The search at the top runs through the whole library: a tractate, a parasha, a berakha.",
       readingTitle: "While reading",
       readingIntro: "Three gestures worth knowing, the same on every text.",
       pinchTitle: "Pinch to enlarge",

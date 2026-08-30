@@ -14,7 +14,8 @@ import { analyticsService } from "../../services/analyticsService";
 import AppIcon from "../icons/AppIcon.vue";
 
 /**
- * La page de téléchargement simplifiée de l'introduction (app native).
+ * Le sélecteur de téléchargement de l'introduction (app native). Le titre et
+ * l'explication vivent dans la page qui l'accueille (OnboardingOfflineStep).
  *
  * Un corpus par ligne, son poids, une case : de quoi emporter l'essentiel en
  * un geste sans passer par la bibliothèque, qui garde le réglage fin, texte
@@ -123,13 +124,6 @@ async function downloadSelection(): Promise<void> {
 
 <template>
   <div>
-    <h2 class="text-xl font-bold text-text-primary mb-2">
-      {{ t("onboarding.library.offlineTitle") }}
-    </h2>
-    <p class="text-text-secondary mb-5">
-      {{ t("onboarding.library.offlineIntro") }}
-    </p>
-
     <ul v-if="manifestReady" class="space-y-2 mb-5">
       <li v-for="row in rows" :key="row.corpus.key">
         <button

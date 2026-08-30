@@ -129,18 +129,12 @@ const fr = {
         "Rien ne presse : la lecture du jour vous attend dans la bibliothèque, quand vous voudrez la composer.",
     },
     library: {
-      title: "La bibliothèque, avec ou sans connexion",
+      title: "La bibliothèque",
       intro:
-        "Tous les textes vivent au même endroit : Tehilim, Michna, Talmud, Tanakh, Sidour, Sli'hot et bénédictions.",
+        "Tous les textes vivent au même endroit : Tehilim, Michna, Talmud, Tanakh, Sidour, Sli'hot et bénédictions. Une seule recherche les traverse, et vos marque-pages vous ramènent au bon verset.",
       corpusTitle: "Sept corpus, un seul lecteur",
       corpusText:
-        "L'hébreu et sa phonétique, la taille du texte réglée une fois pour toutes, la même lecture d'un bout à l'autre.",
-      searchTitle: "Trouver sans chercher",
-      searchText:
-        "Une seule recherche pour toute la bibliothèque : un traité, une paracha, une brakha.",
-      resumeTitle: "Reprendre où vous en étiez",
-      resumeText:
-        "Les marque-pages et la reprise de lecture vous ramènent au bon verset, sur n'importe lequel de vos appareils.",
+        "Touchez un volume pour l'ouvrir. La recherche, en haut, traverse toute la bibliothèque : un traité, une paracha, une brakha.",
       readingTitle: "Pendant la lecture",
       readingIntro: "Trois gestes à connaître, les mêmes sur tous les textes.",
       pinchTitle: "Pincer pour agrandir",

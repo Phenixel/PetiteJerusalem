@@ -11,6 +11,7 @@ import OnboardingConsentStep from "./OnboardingConsentStep.vue";
 import OnboardingSettingsStep from "./OnboardingSettingsStep.vue";
 import OnboardingDailyStep from "./OnboardingDailyStep.vue";
 import OnboardingLibraryStep from "./OnboardingLibraryStep.vue";
+import OnboardingOfflineStep from "./OnboardingOfflineStep.vue";
 import OnboardingZmanimStep from "./OnboardingZmanimStep.vue";
 
 /**
@@ -38,7 +39,7 @@ const { choice, setChoice } = useConsent();
  * leur décision tient, on ne la remet pas en jeu. Figée à l'ouverture, pour
  * que répondre ne fasse pas disparaître la page en cours de lecture.
  */
-const steps = ["consent", "settings", "daily", "library", "zmanim"].filter(
+const steps = ["consent", "settings", "daily", "library", "offline", "zmanim"].filter(
   (step) => step !== "consent" || choice.value === null,
 );
 
@@ -157,6 +158,7 @@ watch(
           @create="goToDailyReading"
         />
         <OnboardingLibraryStep v-else-if="current === 'library'" />
+        <OnboardingOfflineStep v-else-if="current === 'offline'" />
         <OnboardingZmanimStep v-else />
       </main>
 
