@@ -124,6 +124,12 @@ store-assets/metadata/android/<locale>/   # fr-FR, en-US, iw-IL (hébreu)
   change : sans `ANDROID_SERIAL`, le script ouvre son AVD `pj-store` comme
   avant, et affiche désormais le journal de l'émulateur si le démarrage
   échoue.
+- Le job régénère `android/` de zéro, donc il rejoue `npm run build-only`
+  **puis** `npx cap sync android` : c'est le sync qui écrit
+  `android/capacitor.settings.gradle` (la liste des plugins que lit Gradle),
+  et `npx cap add android`, lancé avant que `dist/` existe, ne peut pas le
+  produire. Sans lui, `gradlew installDebug` s'arrête sur « Could not read
+  script … as it does not exist ».
 - Pour vérifier les captures sans rien publier : onglet Actions → Deploy
   Android → Run workflow, en cochant **screenshots_only**. Seul le job
   `screenshots` tourne, son artifact contient les PNG.

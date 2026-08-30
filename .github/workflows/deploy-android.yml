@@ -114,11 +114,32 @@ jobs:
       - name: Appliquer les ajustements natifs
         run: node scripts/setup-android.mjs
 
-      # `cap copy` (dans le script de captures) exige que dist/ existe, même
-      # si l'app chargera en fait le serveur Vite du script (CAP_SERVER_URL).
-      # Le build suffit : ni type-check ni prerender SEO ici.
-      - name: Build web (vite)
-        run: npm run build-only
+      # Le build d'abord, le sync ensuite, et les deux sont nécessaires :
+      # `cap add` plus haut n'a pas pu terminer le sien, faute de dist/ à ce
+      # moment-là (« sync could not run--missing dist directory »), or c'est ce
+      # sync qui écrit android/capacitor.settings.gradle, le fichier où Gradle
+      # lit la liste des plugins. Sans lui, `gradlew installDebug` s'arrête sur
+      # « Could not read script … as it does not exist ». Le job de release ne
+      # connaît pas ce défaut : son `npm run app:build` fait le sync.
+      # Ni type-check ni prerender SEO ici : l'app capturée vient du serveur
+      # Vite du script (CAP_SERVER_URL), pas de ce bundle.
+      - name: Build web + sync Capacitor
+        run: |
+          npm run build-only
+          npx cap sync android
+
+      # Sans ce cache, Gradle retélécharge AGP et ses dépendances à chaque run,
+      # plusieurs minutes sur les vingt-cinq du job. android/ est régénéré à
+      # chaque fois, mais ce dépôt-là ne dépend que des versions de Capacitor,
+      # figées par le lockfile.
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-screenshots-${{ hashFiles('package-lock.json') }}
+          restore-keys: gradle-screenshots-
 
       # L'émulateur est ouvert par l'action, pas par le script : démarrer un
       # émulateur sur un runner sans écran demande plus que trois options de
