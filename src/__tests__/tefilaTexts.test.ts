@@ -221,11 +221,43 @@ describe("fichiers de tefila", () => {
 
   it("Sli'hot : les ajouts des dix jours de pénitence sont repliables", () => {
     const content = load("slihot", "slihot");
-    const folded = (content.sections[0].blocks ?? []).filter((b) => b.fold);
+    const folded = (content.sections[0].blocks ?? []).filter(
+      (b) => b.fold && !b.fold.startsWith("jour-"),
+    );
     expect(folded.length).toBeGreaterThan(2);
     for (const block of folded) expect(block.fold).toBe("teshuva");
     // L'occasion qui les déplie existe bien au calendrier.
     expect(activeOccasions(hd(2026, 9, 15), false).has("teshuva")).toBe(true);
+  });
+
+  it("Sli'hot : la té'hina du jour se déplie d'elle-même, les six restent lisibles", () => {
+    const content = load("slihot", "slihot");
+    const blocks = content.sections[0].blocks ?? [];
+    const tehinot = blocks.filter((b) => b.fold?.startsWith("jour-"));
+    // Du dimanche au vendredi : le Chabbat ne dit pas de Sli'hot.
+    expect(tehinot.map((b) => b.fold)).toEqual([
+      "jour-0",
+      "jour-1",
+      "jour-2",
+      "jour-3",
+      "jour-4",
+      "jour-5",
+    ]);
+    // Chacune porte son titre dans les trois langues, faute de quoi l'encadré
+    // n'aurait rien à afficher : aucune occasion « jour-N » n'a de libellé.
+    for (const block of tehinot)
+      expect(block.labelText).toMatchObject({
+        fr: expect.any(String),
+        en: expect.any(String),
+        he: expect.any(String),
+      });
+    // Elles se placent entre le psaume 25 et Atanou, comme dans le sidour.
+    const index = (label: string) => blocks.findIndex((b) => b.label === label);
+    expect(index("LeDavid élékha (Tehilim 25)")).toBeLessThan(blocks.indexOf(tehinot[0]));
+    expect(blocks.indexOf(tehinot[5])).toBeLessThan(index("Ataanou"));
+    // Un seul jour à la fois : le mercredi 26 août 2026 n'ouvre que la sienne.
+    const occ = activeOccasions(hd(2026, 8, 26), false);
+    expect(tehinot.filter((b) => occ.has(b.fold!))).toHaveLength(1);
   });
 
   it("Sli'hot : les reprises de l'assemblée et les répétitions sont marquées", () => {
