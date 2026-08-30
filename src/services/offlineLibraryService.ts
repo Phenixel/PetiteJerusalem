@@ -63,6 +63,61 @@ function buildBooks(): OfflineBook[] {
 
 export const offlineBooks: OfflineBook[] = buildBooks();
 
+/**
+ * Les corpus de la bibliothèque, dans l'ordre où elle les présente, avec de
+ * quoi proposer un téléchargement d'un seul geste (introduction de première
+ * ouverture) : les livres du corpus et le poids approximatif de l'ensemble.
+ *
+ * Les tailles sont des ordres de grandeur, mesurés sur `public/texts` : elles
+ * servent à prévenir avant de lancer un gros téléchargement, pas à afficher un
+ * compteur exact. Un test les tient à jour (`offlineCorpora.test.ts`), elles ne
+ * peuvent donc pas dériver en silence quand les corpus grossissent.
+ */
+export interface OfflineCorpus {
+  /** Type du catalogue, tel qu'il vit dans OfflineBook.corpus. */
+  key: string;
+  /** Clé de traduction du nom affiché (study.types.*). */
+  labelKey: string;
+  /** Livres du corpus, dans l'ordre du catalogue. */
+  books: OfflineBook[];
+  /** Poids approximatif du corpus entier, en octets. */
+  approxBytes: number;
+  /** Déjà dans le binaire natif : lisible hors ligne sans rien télécharger. */
+  bundled: boolean;
+}
+
+const CORPUS_META: { key: string; labelKey: string; approxBytes: number }[] = [
+  { key: "Tehilim", labelKey: "study.types.tehilim", approxBytes: 372_000 },
+  { key: "Mishna", labelKey: "study.types.mishna", approxBytes: 3_000_000 },
+  { key: "Talmud Bavli", labelKey: "study.types.talmud", approxBytes: 29_900_000 },
+  { key: "Tanakh", labelKey: "study.types.tanakh", approxBytes: 6_800_000 },
+  { key: "Sidour", labelKey: "study.types.sidour", approxBytes: 450_000 },
+  { key: "Slihot", labelKey: "study.types.slihot", approxBytes: 145_000 },
+  { key: "Brahot", labelKey: "study.types.brahot", approxBytes: 62_000 },
+];
+
+export const offlineCorpora: OfflineCorpus[] = CORPUS_META.map((meta) => {
+  const books = offlineBooks.filter((book) => book.corpus === meta.key);
+  return {
+    ...meta,
+    books,
+    // Un corpus est embarqué quand aucun de ses livres n'est à télécharger
+    // (les Tehilim, dont l'unique fichier voyage avec l'app).
+    bundled: books.length > 0 && books.every((book) => BUNDLED_PATHS.has(book.path)),
+  };
+}).filter((corpus) => corpus.books.length > 0);
+
+/** Livres d'un corpus qui manquent encore sur l'appareil. */
+export function missingBooksOfCorpus(corpus: OfflineCorpus): OfflineBook[] {
+  return corpus.books.filter((book) => !BUNDLED_PATHS.has(book.path) && !isDownloaded(book.path));
+}
+
+/** « 2.9 Mo », « 145 Ko » : le poids d'un téléchargement, lisible d'un coup d'œil. */
+export function formatDownloadSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+  return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
+}
+
 const bookByEntryId = new Map<number | string, OfflineBook | null>();
 
 /** Livre téléchargeable correspondant à une entrée du catalogue (memoïsé). */

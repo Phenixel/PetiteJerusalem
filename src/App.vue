@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, defineAsyncComponent, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Navbar from "./components/NavbarComponents.vue";
 import StoneWallBackground from "./components/StoneWallBackground.vue";
 import SiteFooter from "./components/SiteFooter.vue";
 import ScrollToTop from "./components/ScrollToTop.vue";
+import AutoScrollPill from "./components/AutoScrollPill.vue";
 import ToastContainer from "./components/ToastContainer.vue";
 import ConfirmDialog from "./components/ConfirmDialog.vue";
 import ConsentBanner from "./components/ConsentBanner.vue";
@@ -15,17 +16,27 @@ import AppUpdateBanner from "./components/AppUpdateBanner.vue";
 import { useMiniPlayerVisible } from "./composables/useAudioPlayer";
 import { useOnline } from "./composables/useOnline";
 import { isNativeApp } from "./composables/useNativeApp";
+import { isOnboardingOpen } from "./composables/useOnboarding";
 import { useNativeStatusBar } from "./composables/useNativeStatusBar";
 import { useLocale } from "./composables/useLocale";
 import { RouterView } from "vue-router";
 import { authService } from "./services/authService";
 import { useTheme } from "./composables/useTheme";
 import { useFonts } from "./composables/useFonts";
+import { loadColorScheme, loadGuestColorScheme } from "./composables/useColorScheme";
 
 const route = useRoute();
 const router = useRouter();
 const { loadTheme, loadGuestTheme } = useTheme();
 const { loadFonts, loadGuestFonts } = useFonts();
+
+// Introduction de première ouverture : chargée seulement pour qui ne l'a pas
+// encore vue (son chunk ne pèse rien pour les autres). Elle prend l'écran
+// entier et pose elle-même le choix de consentement, d'où la bannière du bas
+// mise en sourdine tant qu'elle est ouverte (voir ConsentBanner).
+const OnboardingFlow = defineAsyncComponent(
+  () => import("./components/onboarding/OnboardingFlow.vue"),
+);
 
 // App native : les horaires (et leur calendrier) se posent au-dessus de la
 // page en cours, comme un modal plein écran ; le bouton rond de la barre
@@ -80,11 +91,13 @@ const chromePadClass = computed(() => {
 });
 
 // Réglages d'appareil appliqués d'entrée, en synchrone : un visiteur sans
-// compte retrouve son thème et ses polices (réglages de l'app native) avant
-// le premier rendu. Pour un compte, l'abonnement juste en dessous repasse aux
-// valeurs du compte dans le même tick, avant tout affichage.
+// compte retrouve son apparence, son thème et ses polices (réglages de l'app
+// native) avant le premier rendu. Pour un compte, l'abonnement juste en
+// dessous repasse aux valeurs du compte dans le même tick, avant tout
+// affichage.
 loadGuestTheme();
 loadGuestFonts();
+loadGuestColorScheme();
 
 // authService, et non onAuthStateChanged directement : avant le premier
 // verdict de Firebase, il rejoue le dernier compte connu, si bien que le
@@ -94,10 +107,12 @@ authService.onAuthChanged((user) => {
   if (user) {
     loadTheme(user.id);
     loadFonts(user.id);
+    void loadColorScheme(user.id);
   } else {
     // Sans compte (ou déconnecté) : les réglages de l'appareil.
     loadGuestTheme();
     loadGuestFonts();
+    loadGuestColorScheme();
   }
 });
 </script>
@@ -128,9 +143,11 @@ authService.onAuthChanged((user) => {
          légales…) vit dans l'onglet À propos du profil. -->
     <SiteFooter v-if="!isHome && !isNativeApp" />
     <ScrollToTop />
+    <AutoScrollPill />
     <ToastContainer />
     <ConfirmDialog />
     <ConsentBanner />
+    <OnboardingFlow v-if="isOnboardingOpen" />
     <GlobalAudioPlayer />
     <BottomTabBar v-if="isNativeApp" />
   </div>

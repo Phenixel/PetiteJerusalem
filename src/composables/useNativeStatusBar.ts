@@ -1,7 +1,7 @@
 import { watchEffect } from "vue";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { isNativeApp } from "./useNativeApp";
-import { useDarkMode } from "./useDarkMode";
+import { useDarkMode } from "./useColorScheme";
 
 // Doit rester synchronisé avec les fonds de src/assets/main.css :
 // --color-bg-beige (body clair) et le gray-900 du body sombre.

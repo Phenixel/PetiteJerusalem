@@ -75,6 +75,110 @@ const fr = {
     accept: "Accepter",
     decline: "Refuser",
   },
+  onboarding: {
+    ariaLabel: "Introduction à Petite Jérusalem",
+    ariaProgress: "Avancement de l'introduction",
+    skip: "Passer",
+    back: "Retour",
+    next: "Continuer",
+    finish: "Terminer",
+    finishToDaily: "Terminer et composer ma liste",
+    replay: "Revoir l'introduction",
+    consent: {
+      welcome: "Bienvenue",
+      title: "Petite Jérusalem, et vos données",
+      intro:
+        "Avant tout, une question de confidentialité. Elle ne se pose qu'une fois, et votre réponse vaut pour toute l'application.",
+      whatTitle: "Ce que nous mesurons",
+      whatText:
+        "Les pages ouvertes, les chemins suivis dans l'application et les erreurs techniques rencontrées. Rien de ce que vous lisez, rien de ce que vous écrivez.",
+      whyTitle: "À quoi cela sert",
+      whyText:
+        "Voir ce qui bloque, réparer les pannes et savoir ce qui sert vraiment, pour améliorer l'application là où c'est utile.",
+      neverTitle: "Ce que nous ne ferons jamais",
+      neverText:
+        "Aucune publicité, aucune revente de données, aucun profil cédé à qui que ce soit.",
+      accept: "Accepter",
+      decline: "Refuser",
+      changeHint:
+        "Refuser ne retire rien : toute l'application reste accessible. Vous pourrez changer d'avis quand vous voudrez.",
+      learnMore: "En savoir plus",
+    },
+    settings: {
+      title: "Réglez l'application à votre main",
+      intro:
+        "La langue, les couleurs et les polices. Chaque choix s'applique aussitôt, partout dans l'application.",
+      hint: "Ces réglages vous attendent dans votre profil, onglet Préférences.",
+    },
+    daily: {
+      title: "Votre lecture du jour",
+      intro:
+        "Choisissez une fois les textes que vous lisez chaque jour : l'application vous les remet ensemble, tous les matins, et retient où vous en êtes.",
+      composeTitle: "Une liste qui est la vôtre",
+      composeText:
+        "Des Tehilim, une michna, un daf, la paracha de la semaine : composez la liste qui ressemble à vos journées.",
+      trackTitle: "Le suivi se fait tout seul",
+      trackText:
+        "Chaque texte se coche à la lecture, la liste se remet à zéro le lendemain, et votre progression vous suit d'un appareil à l'autre.",
+      remindTitle: "Un rappel, si vous le voulez",
+      remindText:
+        "Une notification à l'heure de votre choix, et un dernier appel avant la chkia tant que la lecture n'est pas faite.",
+      cta: "Composer ma lecture du jour",
+      ctaChosen: "On y va à la fin de l'introduction",
+      ctaChosenHint:
+        "Le dernier bouton du parcours vous y conduira. Appuyez de nouveau pour renoncer.",
+      accountHint:
+        "Un compte gratuit suffit : c'est lui qui garde votre liste et votre progression.",
+      laterHint:
+        "Rien ne presse : la lecture du jour vous attend dans la bibliothèque, quand vous voudrez la composer.",
+    },
+    library: {
+      title: "La bibliothèque",
+      intro:
+        "Tous les textes vivent au même endroit : Tehilim, Michna, Talmud, Tanakh, Sidour, Sli'hot et bénédictions. Une seule recherche les traverse, et vos marque-pages vous ramènent au bon verset.",
+      corpusTitle: "Sept corpus, un seul lecteur",
+      corpusText:
+        "Touchez un volume pour l'ouvrir. La recherche, en haut, traverse toute la bibliothèque : un traité, une paracha, une brakha.",
+      readingTitle: "Pendant la lecture",
+      readingIntro: "Trois gestes à connaître, les mêmes sur tous les textes.",
+      pinchTitle: "Pincer pour agrandir",
+      pinchText:
+        "Deux doigts sur le texte en changent la taille, sans déformer la page. Les boutons A− et A+ du menu font la même chose.",
+      menuTitle: "Le menu, en bas à droite",
+      menuText:
+        "Le rond posé sur le texte ouvre la taille, l'hébreu ou la phonétique, et les repères du texte : sections d'un office, montées d'une paracha, dafim d'une guemara.",
+      scrollTitle: "Double appui pour le défilement",
+      scrollText:
+        "Un double appui sur le texte le fait descendre tout seul ; la pastille du bas règle l'allure, et l'arrête.",
+      offlineTitle: "Que garder sur cet appareil ?",
+      offlineIntro:
+        "Un texte téléchargé se lit sans connexion, dans le métro comme en voyage ; les autres ont besoin d'Internet. Cochez ce que vous voulez emporter, le reste se téléchargera plus tard, en un geste.",
+      bundled: "Déjà dans l'application",
+      alreadyDownloaded: "Déjà sur cet appareil",
+      booksCount: "{count} livre à télécharger | {count} livres à télécharger",
+      selection: "Environ {size} à télécharger",
+      download: "Télécharger ma sélection",
+      downloading: "Téléchargement… {done} sur {total}",
+      downloadDone: "C'est fait : ces textes se lisent maintenant sans connexion.",
+      changeHint:
+        "Rien n'est figé : chaque texte se télécharge ou se retire depuis la bibliothèque, quand vous voulez.",
+    },
+    zmanim: {
+      title: "Les horaires, calculés chez vous",
+      intro:
+        "L'aube, le chéma, min'ha, la chkia, l'allumage et la sortie du Chabbat, pour l'endroit où vous vous trouvez.",
+      deviceTitle: "Calculés sur votre appareil",
+      deviceText:
+        "Rien n'est demandé au réseau, votre position n'est envoyée nulle part, et les horaires restent lisibles sans connexion.",
+      placeTitle: "Votre position, ou la ville de votre choix",
+      placeText:
+        "Paris par défaut ; votre position si vous l'autorisez, ou une ville prise dans la liste.",
+      shabbatTitle: "Chabbat et fêtes",
+      shabbatText:
+        "L'allumage et la sortie, la paracha de la semaine, et le calendrier des fêtes de l'année.",
+      hint: "Le bouton rond, au centre de la barre du bas, ouvre les horaires par-dessus la page en cours ; un second appui les referme.",
+    },
+  },
   home: {
     birkatHalevana: {
       title: "Bénédiction de la lune",
@@ -203,6 +307,14 @@ const fr = {
     userId: "ID utilisateur",
     languageTitle: "Langue",
     languageDescription: "Choisissez la langue de l'interface.",
+    appearanceTitle: "Apparence",
+    appearanceDescription:
+      "Fond clair, fond sombre, ou celui de votre téléphone. Les téléphones basculent souvent en sombre le soir : à vous de dire si l'application doit suivre.",
+    appearances: {
+      light: "Clair",
+      dark: "Sombre",
+      system: "Système",
+    },
     themeTitle: "Thème du site",
     themeDescription:
       "Choisissez les couleurs qui vous correspondent. Le thème s'applique à l'ensemble du site.",
@@ -822,6 +934,17 @@ const fr = {
     navMenu: "Menu de lecture",
     navSections: "Sections",
     navTop: "Haut de page",
+    autoScroll: {
+      pill: "Défilement",
+      speed: "Vitesse",
+      speeds: {
+        slow: "Lent",
+        medium: "Moyen",
+        fast: "Rapide",
+      },
+      stop: "Arrêter le défilement",
+      openMenu: "Régler le défilement automatique",
+    },
     // Tefila (Sli'hot, Brahot) : mise en forme du texte liturgique.
     fold: {
       teshuva: "Ajout des dix jours de pénitence",

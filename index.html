@@ -82,6 +82,23 @@
         "logo": "https://petite-jerusalem.fr/favicon.png"
       }
     </script>
+    <!-- L'apparence, posée avant le premier pixel : le bundle l'appliquerait
+         quelques dizaines de millisecondes plus tard, le temps d'un éclair
+         blanc sur un téléphone en sombre. Même règle que useColorScheme, dont
+         la clé de stockage est reprise ici : le choix gardé sur l'appareil,
+         sinon le réglage du système. Un compte connecté peut ensuite corriger,
+         comme il le fait déjà pour le thème et les polices. -->
+    <script>
+      try {
+        var pref = JSON.parse(localStorage.getItem("pj-preferences:guest") || "{}").colorScheme;
+        var dark =
+          pref === "dark" ||
+          (pref !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark");
+      } catch (e) {
+        /* Stockage indisponible : le bundle s'en chargera. */
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>

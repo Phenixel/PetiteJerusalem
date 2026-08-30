@@ -37,6 +37,8 @@ export interface DailyReadingProgress {
 
 export interface UserPreferences {
   theme: string;
+  /** Apparence claire, sombre, ou celle du système, voir useColorScheme. */
+  colorScheme: string;
   /** Latin (UI) font choice, see LATIN_FONT_OPTIONS in useFonts. */
   fontLatin: string;
   /** Hebrew (reading) font choice, see HEBREW_FONT_OPTIONS in useFonts. */
@@ -87,6 +89,7 @@ export interface UserPreferences {
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   theme: "ocean",
+  colorScheme: "system",
   fontLatin: "inter",
   fontHebrew: "frank",
   dailyReadingIds: [],
@@ -176,7 +179,9 @@ export function clearPreferencesCache(userId: string): void {
 const GUEST_PREFS_KEY = "pj-preferences:guest";
 
 /** Champs réglables sans compte. */
-export type GuestPreferences = Partial<Pick<UserPreferences, "theme" | "fontLatin" | "fontHebrew">>;
+export type GuestPreferences = Partial<
+  Pick<UserPreferences, "theme" | "colorScheme" | "fontLatin" | "fontHebrew">
+>;
 
 function readGuestPreferences(): GuestPreferences | null {
   if (typeof localStorage === "undefined") return null;
@@ -403,6 +408,9 @@ class UserPreferencesService {
     if (!guest) return null;
     const adopted: GuestPreferences = {};
     if (data.theme === undefined && guest.theme !== undefined) adopted.theme = guest.theme;
+    if (data.colorScheme === undefined && guest.colorScheme !== undefined) {
+      adopted.colorScheme = guest.colorScheme;
+    }
     if (data.fontLatin === undefined && guest.fontLatin !== undefined) {
       adopted.fontLatin = guest.fontLatin;
     }

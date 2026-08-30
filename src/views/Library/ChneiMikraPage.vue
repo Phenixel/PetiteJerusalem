@@ -13,6 +13,7 @@ import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { seoService } from "../../services/seoService";
 import { analyticsService } from "../../services/analyticsService";
 import { useReadingPinch } from "../../composables/useReadingPinch";
+import { useAutoScroll } from "../../composables/useAutoScroll";
 import { useChneiMikraOptions } from "../../composables/useChneiMikraOptions";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import ChneiMikraOptions from "../../components/ChneiMikraOptions.vue";
@@ -57,6 +58,11 @@ const parasha = computed<WeeklyParasha | null>(() => {
   if (typeof asked !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(asked)) return currentWeek.value;
   return getParashaForShabbat(shabbatOfWeek(asked)) ?? currentWeek.value;
 });
+
+// Double appui sur le texte : la page descend toute seule, à l'allure choisie
+// dans la pastille du bas (AutoScrollPill). Sans paracha, il n'y a rien à
+// faire descendre.
+useAutoScroll(() => parasha.value !== null);
 
 const isCurrentWeek = computed(() => parasha.value?.weekKey === currentWeek.value?.weekKey);
 

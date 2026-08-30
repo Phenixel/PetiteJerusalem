@@ -731,10 +731,12 @@ const page = await webview.page();
 // L'app suit la locale de l'appareil : on force le français comme le ferait
 // le sélecteur de langue (localStorage), avant la première navigation. Même
 // geste pour le consentement analytics : la bannière (PostHog) recouvrirait
-// sinon le bas de chaque capture.
+// sinon le bas de chaque capture, et pour l'introduction de première
+// ouverture, qui prendrait tout l'écran de l'app (voir useOnboarding).
 await page.evaluate(() => {
   localStorage.setItem("petite-jerusalem-locale", "fr");
   localStorage.setItem("pj_analytics_consent", "denied");
+  localStorage.setItem("pj_onboarding_seen", "1");
 });
 
 let count = 0;

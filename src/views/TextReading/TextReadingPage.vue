@@ -74,6 +74,7 @@ import { setReadingNavSections } from "../../composables/useReadingNav";
 import type { ReadingNavSection } from "../../composables/useReadingNav";
 import type { SupportedLocale } from "../../i18n";
 import { useReadingPinch } from "../../composables/useReadingPinch";
+import { useAutoScroll } from "../../composables/useAutoScroll";
 import { analyticsService } from "../../services/analyticsService";
 import { useLocalePath } from "../../composables/useLocalePath";
 
@@ -284,6 +285,11 @@ const currentSection = computed<TextSection | null>(() => {
 const canTransliterate = computed(
   () => currentSection.value?.he.some((line) => hasNiqqud(line)) ?? false,
 );
+
+// Double appui sur le texte : la page descend toute seule, à l'allure choisie
+// dans la pastille du bas (AutoScrollPill). Seulement dans le texte ouvert :
+// la liste des chapitres d'un traité se parcourt, elle ne se lit pas.
+useAutoScroll(() => currentSection.value !== null);
 // Un texte long se cherche par ses divisions : les sections d'un office
 // ('Amida, Chéma, ta'hanoun…), les montées d'une paracha, les dafim d'une
 // guemara. La page les publie au menu de lecture (ReadingMenu), qui remplace

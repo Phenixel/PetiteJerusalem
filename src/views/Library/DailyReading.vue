@@ -23,6 +23,7 @@ import { localDayKey } from "../../services/dateService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useReadingPinch } from "../../composables/useReadingPinch";
+import { useAutoScroll } from "../../composables/useAutoScroll";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
 import {
@@ -100,6 +101,11 @@ const mode = ref<"reading" | "manage">("reading");
 // Deux onglets en mode lecture : le quotidien d'abord, le chnei mikra
 // (hebdomadaire) dans « Cette semaine » pour ne pas allonger la page du jour.
 const activeTab = ref<"today" | "week">("today");
+
+// Double appui sur le texte : la page descend toute seule, à l'allure choisie
+// dans la pastille du bas (AutoScrollPill). Pas en mode « gérer ma liste »,
+// où l'on choisit des textes au lieu d'en lire un.
+useAutoScroll(() => mode.value === "reading");
 
 // Ids kept as strings for reliable Map lookups; converted back to numbers on save.
 const selectedIds = ref<string[]>([]);

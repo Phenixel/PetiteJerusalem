@@ -77,6 +77,106 @@ const en: LocaleMessages = {
     accept: "Accept",
     decline: "Decline",
   },
+  onboarding: {
+    ariaLabel: "Introduction to Petite Jérusalem",
+    ariaProgress: "Introduction progress",
+    skip: "Skip",
+    back: "Back",
+    next: "Continue",
+    finish: "Finish",
+    finishToDaily: "Finish and build my list",
+    replay: "Replay the introduction",
+    consent: {
+      welcome: "Welcome",
+      title: "Petite Jérusalem and your data",
+      intro:
+        "First, a question about privacy. It is asked once, and your answer applies to the whole app.",
+      whatTitle: "What we measure",
+      whatText:
+        "Pages opened, the paths followed through the app and the technical errors encountered. Nothing of what you read, nothing of what you write.",
+      whyTitle: "What it is for",
+      whyText:
+        "Seeing what gets in the way, fixing breakages and knowing what is really used, so the app improves where it matters.",
+      neverTitle: "What we will never do",
+      neverText: "No advertising, no data resale, no profile handed to anyone.",
+      accept: "Accept",
+      decline: "Decline",
+      changeHint:
+        "Declining takes nothing away: the whole app stays available. You can change your mind whenever you like.",
+      learnMore: "Learn more",
+    },
+    settings: {
+      title: "Set the app up your way",
+      intro: "Language, colours and fonts. Every choice applies right away, everywhere in the app.",
+      hint: "These settings live in your profile, under Preferences.",
+    },
+    daily: {
+      title: "Your reading of the day",
+      intro:
+        "Pick once the texts you read every day: the app gathers them for you each morning and remembers where you left off.",
+      composeTitle: "A list of your own",
+      composeText:
+        "Some Tehilim, a mishna, a daf, the weekly parasha: build the list that matches your days.",
+      trackTitle: "Tracking takes care of itself",
+      trackText:
+        "Each text is ticked as you read it, the list resets the next day, and your progress follows you across devices.",
+      remindTitle: "A reminder, if you want one",
+      remindText:
+        "A notification at the time you choose, and a last call before shkia as long as the reading is not done.",
+      cta: "Build my daily reading",
+      ctaChosen: "We will head there at the end",
+      ctaChosenHint:
+        "The last button of the tour will take you there. Tap again to change your mind.",
+      accountHint: "A free account is all it takes: it keeps your list and your progress.",
+      laterHint:
+        "No rush: the reading of the day waits for you in the library, whenever you feel like building it.",
+    },
+    library: {
+      title: "The library",
+      intro:
+        "Every text lives in one place: Tehilim, Mishna, Talmud, Tanakh, Siddur, Selihot and blessings. One search runs through them all, and your bookmarks bring you back to the right verse.",
+      corpusTitle: "Seven corpora, one reader",
+      corpusText:
+        "Tap a volume to open it. The search at the top runs through the whole library: a tractate, a parasha, a berakha.",
+      readingTitle: "While reading",
+      readingIntro: "Three gestures worth knowing, the same on every text.",
+      pinchTitle: "Pinch to enlarge",
+      pinchText:
+        "Two fingers on the text change its size without distorting the page. The A− and A+ buttons in the menu do the same.",
+      menuTitle: "The menu, bottom right",
+      menuText:
+        "The round button on the text opens the size, Hebrew or transliteration, and the text's landmarks: sections of a service, aliyot of a parasha, dafim of a tractate.",
+      scrollTitle: "Double tap to scroll",
+      scrollText:
+        "A double tap on the text sends it down on its own; the badge at the bottom sets the pace, and stops it.",
+      offlineTitle: "What should stay on this device?",
+      offlineIntro:
+        "A downloaded text reads without a connection, on the underground as much as on a trip; the others need the internet. Tick what you want to take along, the rest can be downloaded later in one gesture.",
+      bundled: "Already in the app",
+      alreadyDownloaded: "Already on this device",
+      booksCount: "{count} book to download | {count} books to download",
+      selection: "About {size} to download",
+      download: "Download my selection",
+      downloading: "Downloading… {done} of {total}",
+      downloadDone: "Done: these texts now read without a connection.",
+      changeHint:
+        "Nothing is set in stone: every text can be downloaded or removed from the library, whenever you want.",
+    },
+    zmanim: {
+      title: "Times, worked out where you are",
+      intro:
+        "Dawn, shema, minha, shkia, candle lighting and the end of Shabbat, for wherever you happen to be.",
+      deviceTitle: "Worked out on your device",
+      deviceText:
+        "Nothing is asked of the network, your location is sent nowhere, and the times stay readable without a connection.",
+      placeTitle: "Your location, or the town you choose",
+      placeText: "Paris by default; your location if you allow it, or a town from the list.",
+      shabbatTitle: "Shabbat and festivals",
+      shabbatText:
+        "Candle lighting and the end of Shabbat, the weekly parasha, and the year's festival calendar.",
+      hint: "The round button in the middle of the bottom bar opens the times over the current page; a second tap closes them.",
+    },
+  },
   home: {
     birkatHalevana: {
       title: "Blessing of the moon",
@@ -203,6 +303,14 @@ const en: LocaleMessages = {
     userId: "User ID",
     languageTitle: "Language",
     languageDescription: "Choose the interface language.",
+    appearanceTitle: "Appearance",
+    appearanceDescription:
+      "Light background, dark background, or your phone's. Phones often switch to dark in the evening: it is up to you whether the app follows.",
+    appearances: {
+      light: "Light",
+      dark: "Dark",
+      system: "System",
+    },
     themeTitle: "Site theme",
     themeDescription: "Choose the colors that suit you. The theme applies across the entire site.",
     themeActive: "Active",
@@ -809,6 +917,17 @@ const en: LocaleMessages = {
     navMenu: "Reading menu",
     navSections: "Sections",
     navTop: "Top of page",
+    autoScroll: {
+      pill: "Scrolling",
+      speed: "Speed",
+      speeds: {
+        slow: "Slow",
+        medium: "Medium",
+        fast: "Fast",
+      },
+      stop: "Stop scrolling",
+      openMenu: "Adjust automatic scrolling",
+    },
     // Tefila (Selichot, Berakhot): liturgical text layout.
     fold: {
       teshuva: "Addition for the Ten Days of Repentance",
