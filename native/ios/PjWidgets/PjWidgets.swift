@@ -16,8 +16,8 @@ import WidgetKit
  * - Horaires : une entrée de timeline par zman à venir (fenêtre bornée, les
  *   entrées ne portent que leurs chaînes, pas le payload entier) ; fenêtre
  *   épuisée → une entrée « rouvrez l'app » en .never, l'app relancera tout au
- *   prochain push. Chaque entrée porte aussi les horaires suivants, qui
- *   remplissent la hauteur du widget au lieu de la laisser vide.
+ *   prochain push. Chaque entrée porte aussi les horaires suivants : ils
+ *   occupent la largeur du format moyen, qui a la hauteur du petit.
  * - Lecture : une ligne, le même dessin que la carte du tableau de bord
  *   (src/components/DailyReadingCard.vue) : titre, progression, pourcentage,
  *   barre. Une entrée maintenant, redessin à l'échéance du payload
@@ -159,7 +159,8 @@ struct ZmanimProvider: TimelineProvider {
     /// Nombre maximal d'entrées par timeline (~3 jours de zmanim) : WidgetKit
     /// redemande la suite en fin de timeline (.atEnd), inutile d'archiver plus.
     static let maxEntries = 45
-    /// Horaires affichés sous le prochain : de quoi remplir un widget moyen.
+    /// Horaires embarqués en plus du prochain : de quoi remplir la colonne
+    /// du format moyen ; le petit n'affiche que le premier.
     static let maxFollowing = 3
 
     func placeholder(in context: Context) -> ZmanimEntry {
@@ -228,8 +229,6 @@ struct ZmanRow: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text(line.label)
-                .lineLimit(1)
-                .truncationMode(.tail)
                 .foregroundStyle(PjColors.textSecondary)
             Spacer(minLength: 4)
             Text(line.time)
@@ -238,6 +237,10 @@ struct ZmanRow: View {
                 .foregroundStyle(PjColors.text)
         }
         .font(.caption)
+        .lineLimit(1)
+        // Un libellé trop long se resserre plutôt que de se couper : « Plag
+        // haMin'ha » réduit à « Plag haMin'… » ne nomme plus rien.
+        .minimumScaleFactor(0.7)
     }
 }
 
@@ -245,8 +248,15 @@ struct HorairesWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: ZmanimEntry
 
-    /// Le petit widget n'a la place que d'un horaire de plus, le moyen de trois.
-    private var followingShown: Int { family == .systemSmall ? 1 : 3 }
+    /**
+     * Le format moyen est exactement aussi HAUT que le petit, seulement deux
+     * fois plus large. Empiler chez lui trois horaires de plus sous l'heure
+     * mise en avant faisait déborder le bloc : la date se collait au bord du
+     * haut, le ta'hanoun se coupait en bas. Ce qu'il a en trop est de la
+     * largeur : les horaires suivants vont donc à côté de l'heure, pas
+     * dessous. Le petit, lui, garde sa colonne et un seul horaire de plus.
+     */
+    private var isMedium: Bool { family != .systemSmall }
 
     var body: some View {
         let accent = PjColors.accent(entry.accent)
@@ -254,20 +264,17 @@ struct HorairesWidgetView: View {
             header
             if let next = entry.next {
                 Spacer(minLength: 6)
-                Text(next.label)
-                    .font(.footnote)
-                    .lineLimit(1)
-                    .foregroundStyle(PjColors.text)
-                Text(next.time)
-                    .font(.system(size: family == .systemSmall ? 30 : 34, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(accent)
-                if !entry.following.isEmpty {
-                    Spacer(minLength: 8)
-                    VStack(spacing: 3) {
-                        ForEach(Array(entry.following.prefix(followingShown)), id: \.self) { line in
-                            ZmanRow(line: line)
-                        }
+                if isMedium {
+                    HStack(alignment: .top, spacing: 12) {
+                        nextZman(next, accent: accent)
+                        Spacer(minLength: 8)
+                        following
+                    }
+                } else {
+                    nextZman(next, accent: accent)
+                    if let first = entry.following.first {
+                        Spacer(minLength: 6)
+                        ZmanRow(line: first)
                     }
                 }
                 Spacer(minLength: 6)
@@ -282,6 +289,34 @@ struct HorairesWidgetView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr/horaires"))
+    }
+
+    /// L'horaire mis en avant : son nom, puis l'heure à l'accent du thème.
+    private func nextZman(_ next: ZmanLine, accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(next.label)
+                .font(.footnote)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .foregroundStyle(PjColors.text)
+            Text(next.time)
+                .font(.system(size: isMedium ? 34 : 30, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(accent)
+        }
+    }
+
+    /// Les horaires d'après, en colonne à droite de l'heure mise en avant :
+    /// ils occupent la largeur que le format moyen a en trop. La colonne se
+    /// dimensionne sur sa ligne la plus large, ce qui aligne les heures.
+    @ViewBuilder private var following: some View {
+        if !entry.following.isEmpty {
+            VStack(spacing: 4) {
+                ForEach(Array(entry.following.prefix(3)), id: \.self) { line in
+                    ZmanRow(line: line)
+                }
+            }
+        }
     }
 
     /// La date hébraïque et le lieu : les deux repères du widget.
@@ -306,17 +341,20 @@ struct HorairesWidgetView: View {
                 if let parasha = entry.parasha {
                     Text(parasha)
                         .font(.caption2)
-                        .lineLimit(1)
                         .foregroundStyle(PjColors.textSecondary)
                 }
                 if let tachanun = entry.tachanun {
                     // Les jours sans tahanoun se repèrent d'un coup d'œil.
                     Text(tachanun)
                         .font(entry.tachanunStrong ? .caption2.weight(.bold) : .caption2)
-                        .lineLimit(1)
                         .foregroundStyle(entry.tachanunStrong ? PjColors.text : PjColors.textSecondary)
                 }
             }
+            .lineLimit(1)
+            // « Parachat Nitzavim · Vayelech » ne tient pas en largeur dans un
+            // petit widget : il se resserre, plutôt que de perdre sa seconde
+            // paracha dans des points de suspension.
+            .minimumScaleFactor(0.7)
         }
     }
 }
@@ -406,11 +444,11 @@ struct DailyProgressBar: View {
                 Capsule().fill(accent.opacity(0.15))
                 if ratio > 0 {
                     // Jamais plus fine que haute : une pastille, pas un trait.
-                    Capsule().fill(accent).frame(width: max(8, geometry.size.width * ratio))
+                    Capsule().fill(accent).frame(width: max(10, geometry.size.width * ratio))
                 }
             }
         }
-        .frame(height: 8)
+        .frame(height: 10)
     }
 }
 
@@ -470,39 +508,46 @@ struct LectureWidgetView: View {
         let accent = PjColors.accent(payload?.accent)
 
         // Une ligne, le dessin de la carte du tableau de bord : titre et
-        // chevron, progression et pourcentage, barre. Centrée dans la hauteur
-        // du widget plutôt que collée en haut.
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
+        // chevron, progression et pourcentage, barre. Les écarts sont ceux de
+        // la carte (16 pt sous le titre, 8 pt au-dessus de la barre) ; les
+        // corps, eux, sont ceux d'un widget, plus grands que sur la carte :
+        // à trois lignes fines, un format moyen sonnait vide.
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 10) {
                 Image(systemName: "book")
-                    .font(.footnote.weight(.semibold))
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(accent)
                 Text(payload?.title ?? "Lecture du jour")
-                    .font(.subheadline.weight(.bold))
+                    .font(.title3.weight(.bold))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                     .foregroundStyle(PjColors.text)
                 Spacer(minLength: 4)
                 Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(PjColors.textSecondary.opacity(0.6))
             }
 
             if state.measurable {
+                Spacer().frame(height: 16)
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(state.line)
-                        .font(.footnote.weight(.medium))
+                        .font(.subheadline.weight(.medium))
                         .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                         .foregroundStyle(state.allDone ? PjColors.success : PjColors.text)
                     Spacer(minLength: 4)
                     Text("\(Int((state.ratio * 100).rounded()))%")
-                        .font(.footnote.weight(.semibold))
+                        .font(.subheadline.weight(.semibold))
                         .monospacedDigit()
                         .foregroundStyle(accent)
                 }
+                Spacer().frame(height: 8)
                 DailyProgressBar(ratio: state.ratio, accent: accent)
             } else {
+                Spacer().frame(height: 12)
                 Text(state.line)
-                    .font(.footnote)
+                    .font(.subheadline)
                     .lineLimit(3)
                     .foregroundStyle(PjColors.textSecondary)
             }
