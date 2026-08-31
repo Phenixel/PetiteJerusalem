@@ -5,6 +5,7 @@ import AppIcon from "./icons/AppIcon.vue";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../composables/useZmanimPlaceLabel";
 import { compassNeedsPermission, useCompassHeading } from "../composables/useCompassHeading";
+import { closeKotelCompass, kotelCompassOpen } from "../composables/useKotelCompass";
 import {
   arrowAngle,
   bearingToKotel,
@@ -23,9 +24,6 @@ import {
  * tourne avec lui et il suffit de suivre la flèche ; sinon le nord reste en
  * haut, la flèche garde son sens et c'est au lecteur de placer le nord.
  */
-const props = defineProps<{ show: boolean }>();
-const emit = defineEmits<{ (e: "update:show", value: boolean): void }>();
-
 const { t, locale } = useI18n();
 const { place, status: geoStatus, useDevicePlace } = useZmanimLocation();
 const placeLabel = useZmanimPlaceLabel(place);
@@ -98,29 +96,32 @@ const hint = computed(() => {
   return t("textReading.kotel.fixed");
 });
 
-function close(): void {
-  emit("update:show", false);
-}
+/**
+ * La consigne de tenir l'appareil à plat, tant que la boussole a une chance
+ * de servir : le magnétomètre donne son cap dans le plan de l'écran, un
+ * téléphone tenu debout fait tourner la flèche avec l'inclinaison de la main.
+ * Elle n'a plus lieu d'être quand il n'y a pas de boussole du tout.
+ */
+const showFlat = computed(() => compassStatus.value === "live" || askable.value);
+
+const close = closeKotelCompass;
 
 // La boussole n'écoute que la fenêtre ouverte : les événements d'orientation
 // arrivent plusieurs fois par seconde, ils n'ont rien à faire derrière une
 // page de texte fermée.
-watch(
-  () => props.show,
-  (open) => {
-    if (!open) {
-      stop();
-      return;
-    }
-    // Là où la permission se demande (iOS), l'appel doit partir d'un geste :
-    // c'est le bouton qui l'ouvrira.
-    if (!compassNeedsPermission()) void start();
-  },
-);
+watch(kotelCompassOpen, (open) => {
+  if (!open) {
+    stop();
+    return;
+  }
+  // Là où la permission se demande (iOS), l'appel doit partir d'un geste :
+  // c'est le bouton qui l'ouvrira.
+  if (!compassNeedsPermission()) void start();
+});
 </script>
 
 <template>
-  <div v-if="show" class="modal-overlay animate-[fadeIn_0.3s_ease]" @click="close">
+  <div v-if="kotelCompassOpen" class="modal-overlay animate-[fadeIn_0.3s_ease]" @click="close">
     <div class="modal-panel animate-[scaleIn_0.3s_ease]" @click.stop>
       <div class="flex items-center justify-between gap-3 mb-4">
         <h3 class="text-lg font-bold text-text-primary flex items-center gap-2">
@@ -174,10 +175,11 @@ watch(
           <!-- La flèche du Kotel : le seul élément qui compte, tout le reste
                du cadran n'est là que pour la situer. -->
           <g class="kotel-rose" :style="spin(needleAngle)">
-            <path d="M100 18 L113 60 L100 52 L87 60 Z" class="kotel-needle" />
-            <line x1="100" y1="52" x2="100" y2="148" class="kotel-shaft" />
+            <path
+              d="M100 40 L124 78 L107 78 L107 148 L93 148 L93 78 L76 78 Z"
+              class="kotel-needle"
+            />
           </g>
-          <circle cx="100" cy="100" r="5" class="kotel-hub" />
         </svg>
       </div>
 
@@ -188,6 +190,9 @@ watch(
         {{ t("textReading.kotel.distance", { km: distance }) }}
       </p>
       <p class="mt-3 text-center text-xs text-text-secondary leading-relaxed">{{ hint }}</p>
+      <p v-if="showFlat" class="mt-1 text-center text-xs text-text-secondary leading-relaxed">
+        {{ t("textReading.kotel.flat") }}
+      </p>
 
       <button v-if="askable" type="button" class="btn btn-soft w-full mt-4" @click="start">
         <AppIcon name="compass" :size="16" />
@@ -264,15 +269,14 @@ watch(
 .kotel-north {
   fill: var(--color-text-primary);
 }
+/* La flèche est dessinée anguleuse, puis arrondie par un trait épais aux
+   jointures rondes : des angles vifs feraient un instrument de mesure, là où
+   l'on veut un objet qu'on a envie de prendre en main. */
 .kotel-needle {
   fill: var(--color-primary);
-}
-.kotel-shaft {
-  stroke: color-mix(in srgb, var(--color-primary) 35%, transparent);
-  stroke-width: 3;
-  stroke-linecap: round;
-}
-.kotel-hub {
-  fill: var(--color-primary);
+  stroke: var(--color-primary);
+  stroke-width: 8;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 2px color-mix(in srgb, var(--color-primary) 30%, transparent));
 }
 </style>

@@ -971,7 +971,8 @@ const fr = {
         "La 'Amida se dit face à Jérusalem : la flèche pointe vers le Kotel, le mur Occidental.",
       bearing: "{point}, à {deg}° du nord",
       distance: "Le Kotel est à {km} km d'ici.",
-      live: "La flèche suit votre appareil : tenez-le à plat et tournez-vous jusqu'à ce qu'elle pointe devant vous.",
+      live: "La flèche suit votre appareil : tournez-vous jusqu'à ce qu'elle pointe droit devant vous.",
+      flat: "Tenez le téléphone à plat, l'écran vers le ciel : c'est à plat que la boussole s'oriente juste.",
       fixed:
         "Votre appareil ne donne pas le nord : le cadran garde le nord en haut, à vous de l'orienter.",
       compassDenied: "L'accès à la boussole a été refusé : le cadran garde le nord en haut.",

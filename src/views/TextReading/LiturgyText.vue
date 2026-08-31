@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Rubric, TextBlock, TextParagraph, TextRun } from "../../services/textService";
 import type { SupportedLocale } from "../../i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import KotelCompass from "../../components/KotelCompass.vue";
+import {
+  addKotelOffer,
+  openKotelCompass,
+  removeKotelOffer,
+} from "../../composables/useKotelCompass";
 import TefilaZman from "./TefilaZman.vue";
 
 /**
@@ -192,8 +197,20 @@ const runClass = (run: TextRun & { kind: "he" }) => ({
  * La boussole du Kotel, ouverte depuis le titre d'un passage qui se dit face
  * à Jérusalem (la 'Amida, Moussaf). Une seule fenêtre pour toute la page : le
  * cap ne dépend pas du passage d'où on l'ouvre.
+ *
+ * Le texte qui en porte un le signale au menu de lecture, qui offre alors la
+ * même boussole sous le pouce, sans remonter au titre.
  */
-const showKotel = ref(false);
+const offersKotel = computed(() => props.blocks.some((block) => block.kotel));
+let offering = false;
+function syncKotelOffer(offered: boolean): void {
+  if (offered === offering) return;
+  offering = offered;
+  if (offered) addKotelOffer();
+  else removeKotelOffer();
+}
+watch(offersKotel, syncKotelOffer, { immediate: true });
+onUnmounted(() => syncKotelOffer(false));
 
 const sections = computed(() =>
   props.blocks
@@ -256,7 +273,7 @@ const sections = computed(() =>
           class="ms-1.5 inline-flex items-center align-middle rounded-full p-1 text-primary hover:bg-primary/10"
           :aria-label="t('textReading.kotel.open')"
           :title="t('textReading.kotel.open')"
-          @click="showKotel = true"
+          @click="openKotelCompass('title')"
         >
           <AppIcon name="compass" :size="15" />
         </button>
@@ -349,7 +366,7 @@ const sections = computed(() =>
       </CollapseTransition>
     </section>
 
-    <KotelCompass v-model:show="showKotel" />
+    <KotelCompass />
   </div>
 </template>
 

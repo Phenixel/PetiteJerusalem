@@ -6,6 +6,7 @@ import ReadingSizeControl from "./ReadingSizeControl.vue";
 import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
 import { isNativeApp } from "../composables/useNativeApp";
 import { addReadingMenu, removeReadingMenu } from "../composables/useReadingNav";
+import { kotelCompassOffered, openKotelCompass } from "../composables/useKotelCompass";
 import type { ReadingNavSection } from "../composables/useReadingNav";
 import { analyticsService } from "../services/analyticsService";
 
@@ -99,6 +100,16 @@ function trackJump(offset: number) {
     sections_count: props.sections.length,
     rank: rank >= 0 ? rank + 1 : null,
   });
+}
+
+/**
+ * La boussole du Kotel, quand le texte lu se dit face à Jérusalem : le titre
+ * de la 'Amida la porte déjà, mais il est loin dès qu'on a commencé à lire,
+ * et c'est en priant qu'on se demande de quel côté se tourner.
+ */
+function openKotel() {
+  close();
+  openKotelCompass("menu");
 }
 
 function goTo(offset: number) {
@@ -220,6 +231,10 @@ onUnmounted(() => {
             <button @click="goTop" class="section-item">
               <AppIcon name="arrow-up" :size="13" class="flex-shrink-0 text-text-secondary" />
               {{ t("textReading.navTop") }}
+            </button>
+            <button v-if="kotelCompassOffered" @click="openKotel" class="section-item">
+              <AppIcon name="compass" :size="13" class="flex-shrink-0 text-text-secondary" />
+              {{ t("textReading.kotel.title") }}
             </button>
             <p v-if="props.sections.length" class="section-heading">
               {{ t("textReading.navSections") }}
