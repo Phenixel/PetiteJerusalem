@@ -27,7 +27,8 @@
     "cap:sync": "cap sync",
     "cap:android": "run-s app:build && cap open android",
     "cap:ios": "run-s app:build && cap open ios",
-    "store:screenshots": "node scripts/store-screenshots.mjs"
+    "store:screenshots": "node scripts/store-screenshots.mjs",
+    "icons": "node scripts/generate-app-icons.mjs"
   },
   "dependencies": {
     "@capacitor-firebase/authentication": "^8.3.0",

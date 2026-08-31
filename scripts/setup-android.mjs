@@ -19,12 +19,14 @@
  *
  * Usage : node scripts/setup-android.mjs
  * Icônes/splash : npx @capacitor/assets generate --android (logo dans assets/logo.png)
+ * Icône thématique Android 13+ : couche monochrome copiée depuis assets/themed/
  */
 import { execSync } from "node:child_process";
-import { copyFileSync, cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { buildAndroidIntentFilter, APP_LINK_DOMAIN } from "./lib/app-links.mjs";
+import { ANDROID_DENSITIES, ANDROID_MONOCHROME, withMonochromeLayer } from "./lib/app-icon.mjs";
 
 const root = join(import.meta.dirname, "..");
 const androidDir = join(root, "android");
@@ -162,6 +164,16 @@ if (!existsSync(generatedMarker)) {
 //    inset de 16.7 %, ce qui laisse un anneau autour de l'icône sur le
 //    launcher. On remplace le fond par une couleur pleine (le beige du logo),
 //    seule la couche avant garde son inset.
+//
+//    On pose aussi la couche monochrome, celle des « icônes thématiques »
+//    d'Android 13+ : quand l'option est activée dans les réglages du
+//    téléphone, le lanceur ne montre plus l'icône en couleurs mais cette
+//    silhouette, teinte aux couleurs du fond d'écran et du mode clair/sombre.
+//    Sans elle, Android n'a rien à teindre et laisse l'app en couleurs au
+//    milieu d'un écran d'accueil accordé : c'est le seul moyen, sur Android,
+//    d'avoir une icône qui suive le thème de l'appareil.
+//    Les PNG sont versionnés dans assets/themed/, produits par
+//    scripts/generate-app-icons.mjs depuis la source vectorielle.
 const launcherBgColor = join(androidDir, "app/src/main/res/values/ic_launcher_background.xml");
 const anydpiDir = join(androidDir, "app/src/main/res/mipmap-anydpi-v26");
 if (existsSync(anydpiDir)) {
@@ -169,17 +181,37 @@ if (existsSync(anydpiDir)) {
     launcherBgColor,
     `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#F5EEDC</color>\n</resources>`,
   );
+
+  let monochromeCopied = 0;
+  for (const { name } of ANDROID_DENSITIES) {
+    const source = join(root, `assets/themed/monochrome-${name}.png`);
+    if (!existsSync(source)) continue;
+    const densityDir = join(androidDir, `app/src/main/res/mipmap-${name}`);
+    mkdirSync(densityDir, { recursive: true });
+    copyFileSync(source, join(densityDir, `${ANDROID_MONOCHROME}.png`));
+    monochromeCopied++;
+  }
+  if (monochromeCopied) {
+    console.log(`setup-android: couche monochrome copiée (${monochromeCopied} densités)`);
+  } else {
+    console.warn(
+      "setup-android: ⚠️ assets/themed/ est vide, pas d'icône thématique.\n" +
+        "  Lancer : node scripts/generate-app-icons.mjs",
+    );
+  }
+
   for (const name of ["ic_launcher.xml", "ic_launcher_round.xml"]) {
     const iconXmlPath = join(anydpiDir, name);
     if (!existsSync(iconXmlPath)) continue;
     const iconXml = readFileSync(iconXmlPath, "utf8");
-    const patched = iconXml.replace(
+    const solidBackground = iconXml.replace(
       /<background>[\s\S]*?<\/background>/,
       `<background android:drawable="@color/ic_launcher_background" />`,
     );
+    const patched = monochromeCopied ? withMonochromeLayer(solidBackground) : solidBackground;
     if (patched !== iconXml) {
       writeFileSync(iconXmlPath, patched);
-      console.log(`setup-android: fond plein appliqué à ${name}`);
+      console.log(`setup-android: fond plein et couche monochrome appliqués à ${name}`);
     }
   }
 }

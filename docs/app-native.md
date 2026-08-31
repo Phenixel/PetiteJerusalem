@@ -72,6 +72,7 @@ serveur de dev :
 | `npm run cap:sync` | synchronise web + plugins vers les projets natifs |
 | `npm run cap:android` | build + ouvre Android Studio |
 | `npm run cap:ios` | build + ouvre Xcode |
+| `npm run icons` | régénère les icônes depuis leur source vectorielle (à lancer seulement quand le dessin change) |
 | `npm run store:screenshots` | régénère les captures de la fiche Play Store (voir `docs/android-ci-cd.md`) ; `-- --ios` produit celles de l'App Store (voir `docs/ios-ci-cd.md`) |
 
 ## Lecture hors-ligne : téléchargement à la demande
@@ -225,6 +226,44 @@ plateformes sont scriptées, `native/android/` + `setup-android.mjs` d'un côté
 `native/ios/` + `setup-ios.mjs` de l'autre, qui écrit jusqu'à la cible
 d'extension dans le projet Xcode. Seul l'App Group demande trois clics dans le
 portail Apple, une fois pour toutes, voir `docs/app-widgets.md`.
+
+## Icônes qui suivent le thème de l'appareil
+
+Les deux systèmes savent adapter l'icône d'une app au thème du téléphone, à
+condition qu'on leur en donne les variantes ; sinon ils laissent l'icône en
+couleurs telle quelle.
+
+| Variante | Où elle sert |
+|---|---|
+| claire | l'icône d'origine, les boutiques, l'écran de lancement |
+| sombre | mode sombre d'iOS 18 |
+| teintée | iOS 18, teintée par la couleur choisie pour l'écran d'accueil |
+| monochrome | icônes thématiques d'Android 13+, teintées par le fond d'écran |
+
+C'est pour ça que le noir et blanc est nécessaire : les variantes teintée et
+monochrome sont lues comme des intensités, pas comme des images. Le système
+pose la couleur, l'app ne fournit que la forme.
+
+Tout part d'une seule source, `scripts/lib/app-icon.mjs`, où le dessin est écrit
+en vecteur : les variantes n'en changent que la palette et le cadrage. Le
+cadrage de la variante claire reproduit au pixel près l'icône déjà publiée sur
+les boutiques, et un test le tient.
+
+`npm run icons` rasterise le tout dans `assets/` avec le Chromium de Playwright.
+Les fichiers produits sont versionnés : la commande ne se lance qu'à la main,
+quand le dessin change. Les scripts `setup-android.mjs` et `setup-ios.mjs` se
+contentent de les recopier dans les projets natifs, un runner de CI n'a donc
+jamais besoin d'un navigateur pour fabriquer l'app.
+
+Deux contraintes valent d'être connues avant de retoucher le dessin :
+
+- Android masque l'icône. La toile fait 108 dp mais le lanceur peut manger tout
+  ce qui sort des 66 dp du centre, et son masque est rond aussi souvent que
+  carré. Le dessin y est donc inscrit par son cercle, pas par son rectangle.
+- Une silhouette a perdu ses couleurs, donc ses séparations. Le mur et le livre
+  se toucheraient et l'icône ne serait plus qu'une tache : ce sont les creux du
+  masque (joints des pierres, lignes des pages, bord haut du livre) qui la
+  gardent lisible.
 
 ## Liens du site qui ouvrent l'app
 
