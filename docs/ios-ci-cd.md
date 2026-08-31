@@ -64,6 +64,21 @@ Group y figure : sans lui, le run s'arrête en une phrase, dans ses deux
 premières minutes, au lieu d'échouer un quart d'heure plus tard sur un
 « doesn't match the entitlements file » d'`xcodebuild`.
 
+### Éprouver la signature sans poser de tag
+
+Actions → **Deploy iOS** → Run workflow → cocher **debug_signing**. Ce mode
+fabrique le certificat et les deux profils, synchronise le minimum de
+Capacitor, tente une archive avec les journaux de provisioning verbeux, puis
+s'arrête. Il ne consomme aucun numéro de build côté App Store Connect (rien
+n'est envoyé, et le nettoyage révoque le certificat du run), ce qui en fait la
+répétition générale à faire avant un tag quand la signature a changé.
+
+Il saute le build web, mais **pas** `cap sync` : celui-ci déclare les paquets
+SPM des plugins, et sans lui l'archive échouait à la compilation
+(« Unable to find module dependency: 'FirebaseAuth' ») avant même d'atteindre
+la signature, c'est-à-dire avant ce que ce mode existe pour montrer. Un `dist/`
+réduit à une coquille vide suffit à `cap sync`.
+
 ## Signature « dans le nuage »
 
 Aucun certificat ni profil de provisionnement n'est stocké dans le repo,

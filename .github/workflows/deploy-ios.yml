@@ -52,8 +52,9 @@ on:
     inputs:
       debug_signing:
         description: >-
-          Debug signature : saute le build web et s'arrête après une tentative
-          d'archive avec logs de provisioning verbeux (filtrés).
+          Debug signature : saute le build web, synchronise juste ce qu'il faut
+          de Capacitor, et s'arrête après une tentative d'archive avec logs de
+          provisioning verbeux (filtrés). Ne consomme aucun numéro de build.
         type: boolean
         default: false
 
@@ -215,10 +216,25 @@ jobs:
 
       # Build web (type-check + vite + prerender), prune du bundle natif,
       # puis cap sync copie dist/ et les plugins SPM dans le projet iOS.
-      # En debug signature, inutile : l'échec étudié précède les phases de build.
       - name: Build web + sync Capacitor
         if: ${{ !inputs.debug_signing }}
         run: npm run app:build
+
+      # En debug signature, le build web est sauté pour ne pas payer dix
+      # minutes de Vite ; mais `cap sync` l'accompagnait, et c'est lui qui
+      # déclare les paquets SPM des plugins dans ios/App/CapApp-SPM. Sans lui,
+      # l'archive échouait sur « Unable to find module dependency:
+      # 'FirebaseAuth' », c'est-à-dire À LA COMPILATION, avant d'atteindre la
+      # signature, la seule chose que ce mode cherche à observer.
+      # `cap sync` ne demande qu'un webDir existant : une coquille vide suffit,
+      # rien de ce qu'elle contient n'est compilé.
+      - name: Synchroniser Capacitor (debug signature)
+        if: ${{ inputs.debug_signing }}
+        run: |
+          mkdir -p dist
+          echo '<!doctype html><title>debug</title>' > dist/index.html
+          node scripts/prune-spm-providers.mjs
+          npx cap sync ios
 
       # xcodebuild et altool lisent la clé d'API dans ce dossier conventionnel.
       - name: Installer la clé d'API App Store Connect
