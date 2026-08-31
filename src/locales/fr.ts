@@ -962,6 +962,32 @@ const fr = {
     slihotWindowDay:
       "En journée, si la nuit n\u2019a pas été possible\u00a0: on peut encore les rattraper jusqu\u2019à la chkia, le coucher du soleil ({sunset}).",
     slihotWindowPlace: "Heures pour {city}.",
+    // Sidour : la direction du Kotel, ouverte depuis le titre des passages
+    // qui se disent face à Jérusalem (voir KotelCompass.vue).
+    kotel: {
+      open: "Direction du Kotel",
+      title: "Direction du Kotel",
+      intro:
+        "La 'Amida se dit face à Jérusalem : la flèche pointe vers le Kotel, le mur Occidental.",
+      bearing: "{point}, à {deg}° du nord",
+      distance: "Le Kotel est à {km} km d'ici.",
+      live: "La flèche suit votre appareil : tenez-le à plat et tournez-vous jusqu'à ce qu'elle pointe devant vous.",
+      fixed:
+        "Votre appareil ne donne pas le nord : le cadran garde le nord en haut, à vous de l'orienter.",
+      compassDenied: "L'accès à la boussole a été refusé : le cadran garde le nord en haut.",
+      enable: "Activer la boussole",
+      rose: { n: "N", e: "E", s: "S", o: "O" },
+      points: {
+        n: "Nord",
+        ne: "Nord-est",
+        e: "Est",
+        se: "Sud-est",
+        s: "Sud",
+        so: "Sud-ouest",
+        o: "Ouest",
+        no: "Nord-ouest",
+      },
+    },
     // Sidour : l'horaire d'un moment de la prière, posé avant ce qui se lit
     // (voir TefilaZman.vue ; les clés d1..dN sont les lignes du « i »).
     zman: {

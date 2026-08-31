@@ -621,6 +621,7 @@
     },
     {
       "label": "'Amida",
+      "kotel": true,
       "labelText": {
         "fr": "'Amida",
         "en": "The Amidah",
@@ -1893,6 +1894,7 @@
     },
     {
       "label": "Moussaf de Roch Hodech",
+      "kotel": true,
       "labelText": {
         "fr": "Moussaf de Roch Hodech",
         "en": "Musaf for Rosh Hodesh",

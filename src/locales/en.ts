@@ -947,6 +947,28 @@ const en: LocaleMessages = {
     slihotWindowPlace: "Times for {city}.",
     // Siddur: the time of a moment of prayer, placed right before what is read
     // (see TefilaZman.vue; keys d1..dN are the lines behind the "i").
+    kotel: {
+      open: "Direction of the Kotel",
+      title: "Direction of the Kotel",
+      intro: "The Amidah is said facing Jerusalem: the arrow points to the Western Wall.",
+      bearing: "{point}, {deg}° from north",
+      distance: "The Kotel is {km} km from here.",
+      live: "The arrow follows your device: hold it flat and turn until the arrow points ahead of you.",
+      fixed: "Your device does not give north: the dial keeps north up, so orient it yourself.",
+      compassDenied: "Access to the compass was refused: the dial keeps north up.",
+      enable: "Turn on the compass",
+      rose: { n: "N", e: "E", s: "S", o: "W" },
+      points: {
+        n: "North",
+        ne: "North-east",
+        e: "East",
+        se: "South-east",
+        s: "South",
+        so: "South-west",
+        o: "West",
+        no: "North-west",
+      },
+    },
     zman: {
       info: "About these times",
       place: "Times for {city}.",

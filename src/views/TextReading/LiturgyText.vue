@@ -5,6 +5,7 @@ import type { Rubric, TextBlock, TextParagraph, TextRun } from "../../services/t
 import type { SupportedLocale } from "../../i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
+import KotelCompass from "../../components/KotelCompass.vue";
 import TefilaZman from "./TefilaZman.vue";
 
 /**
@@ -187,6 +188,13 @@ const runClass = (run: TextRun & { kind: "he" }) => ({
   "reading-alt": run.accent && !run.when,
 });
 
+/**
+ * La boussole du Kotel, ouverte depuis le titre d'un passage qui se dit face
+ * à Jérusalem (la 'Amida, Moussaf). Une seule fenêtre pour toute la page : le
+ * cap ne dépend pas du passage d'où on l'ouvre.
+ */
+const showKotel = ref(false);
+
 const sections = computed(() =>
   props.blocks
     .map((block) => ({
@@ -239,6 +247,19 @@ const sections = computed(() =>
       </button>
       <p v-else-if="blockTitle(block)" :class="titleClass(block, index)">
         {{ blockTitle(block) }}
+        <!-- Face à Jérusalem : la boussole donne la direction du Kotel depuis
+             le lieu où l'on se trouve, là où la question se pose, au titre du
+             passage qui se dit tourné vers elle. -->
+        <button
+          v-if="block.kotel"
+          type="button"
+          class="ms-1.5 inline-flex items-center align-middle rounded-full p-1 text-primary hover:bg-primary/10"
+          :aria-label="t('textReading.kotel.open')"
+          :title="t('textReading.kotel.open')"
+          @click="showKotel = true"
+        >
+          <AppIcon name="compass" :size="15" />
+        </button>
       </p>
 
       <CollapseTransition v-if="!block.zman">
@@ -327,6 +348,8 @@ const sections = computed(() =>
         </div>
       </CollapseTransition>
     </section>
+
+    <KotelCompass v-model:show="showKotel" />
   </div>
 </template>
 

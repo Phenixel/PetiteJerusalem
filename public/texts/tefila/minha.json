@@ -89,6 +89,7 @@
     },
     {
       "label": "'Amida",
+      "kotel": true,
       "labelText": {
         "fr": "'Amida",
         "en": "The Amidah",
