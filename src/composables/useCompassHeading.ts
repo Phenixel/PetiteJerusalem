@@ -1,8 +1,13 @@
 import { onUnmounted, ref, type Ref } from "vue";
 
 /**
- * Le cap de l'appareil, en degrés depuis le nord géographique : ce vers quoi
- * pointe le haut du téléphone.
+ * Le cap de l'appareil, en degrés : ce vers quoi pointe le haut du téléphone.
+ *
+ * C'est le nord de la boussole, magnétique sur la plupart des appareils, là où
+ * le cap vers le Kotel se compte depuis le nord géographique. L'écart (la
+ * déclinaison) est de l'ordre du degré en Europe de l'Ouest et en Israël, mais
+ * d'une dizaine en Amérique du Nord : le cadran vivant approche, la valeur en
+ * degrés, elle, reste exacte.
  *
  * Il sert à faire vivre la flèche du Kotel. Sans lui, la flèche reste juste :
  * elle vaut alors pour un cadran nord en haut, et c'est au lecteur de savoir
@@ -126,11 +131,12 @@ export function useCompassHeading(): {
     window.addEventListener("deviceorientation", onOrientation);
     listening = true;
     status.value = "asking";
+    // L'écoute continue au-delà du délai : un magnétomètre lent (un capteur
+    // qui s'étalonne) doit encore pouvoir réveiller le cadran, la fenêtre
+    // disant en attendant qu'il n'y a pas de nord.
     silence = setTimeout(() => {
-      if (heading.value === null) {
-        status.value = "unavailable";
-        stop();
-      }
+      if (heading.value === null) status.value = "unavailable";
+      silence = null;
     }, SILENCE_MS);
   }
 

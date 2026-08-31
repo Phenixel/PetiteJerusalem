@@ -366,7 +366,7 @@ const sections = computed(() =>
       </CollapseTransition>
     </section>
 
-    <KotelCompass />
+    <KotelCompass v-if="offersKotel" />
   </div>
 </template>
 

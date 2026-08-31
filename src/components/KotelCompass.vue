@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
@@ -83,10 +83,15 @@ const CARDINALS = [
 /** Les graduations du cadran, tous les trente degrés. */
 const TICKS = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
 
-/** iOS ne donne l'orientation qu'après un geste : le bouton est pour lui. */
+/**
+ * iOS ne donne l'orientation qu'après un geste : le bouton est pour lui. Il
+ * s'efface dès que la boussole parle, qu'on la refuse, ou qu'elle s'avère
+ * muette : un bouton qui ne peut plus rien donner ne se propose pas.
+ */
 const askable = computed(
   () =>
-    compassNeedsPermission() && compassStatus.value !== "live" && compassStatus.value !== "denied",
+    compassNeedsPermission() &&
+    (compassStatus.value === "idle" || compassStatus.value === "asking"),
 );
 
 /** Ce que la fenêtre dit du cadran, sous les chiffres. */
@@ -106,6 +111,11 @@ const showFlat = computed(() => compassStatus.value === "live" || askable.value)
 
 const close = closeKotelCompass;
 
+// Quitter la page emporte la fenêtre : sans cela, l'état partagé resterait
+// « ouverte » (le retour arrière d'Android navigue sans rien fermer) et la
+// boussole surgirait d'elle-même à l'office suivant.
+onUnmounted(closeKotelCompass);
+
 // La boussole n'écoute que la fenêtre ouverte : les événements d'orientation
 // arrivent plusieurs fois par seconde, ils n'ont rien à faire derrière une
 // page de texte fermée.
@@ -122,7 +132,13 @@ watch(kotelCompassOpen, (open) => {
 
 <template>
   <div v-if="kotelCompassOpen" class="modal-overlay animate-[fadeIn_0.3s_ease]" @click="close">
-    <div class="modal-panel animate-[scaleIn_0.3s_ease]" @click.stop>
+    <div
+      class="modal-panel animate-[scaleIn_0.3s_ease]"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="t('textReading.kotel.title')"
+      @click.stop
+    >
       <div class="flex items-center justify-between gap-3 mb-4">
         <h3 class="text-lg font-bold text-text-primary flex items-center gap-2">
           <AppIcon name="compass" :size="20" class="text-primary" />
@@ -194,7 +210,13 @@ watch(kotelCompassOpen, (open) => {
         {{ t("textReading.kotel.flat") }}
       </p>
 
-      <button v-if="askable" type="button" class="btn btn-soft w-full mt-4" @click="start">
+      <button
+        v-if="askable"
+        type="button"
+        class="btn btn-soft w-full mt-4"
+        :disabled="compassStatus === 'asking'"
+        @click="start"
+      >
         <AppIcon name="compass" :size="16" />
         {{ t("textReading.kotel.enable") }}
       </button>
