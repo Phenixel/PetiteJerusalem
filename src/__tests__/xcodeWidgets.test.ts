@@ -6,6 +6,7 @@ import {
   addAppSource,
   addWidgetExtension,
   APP_GROUP,
+  registerViewController,
   widgetEntitlements,
   widgetInfoPlist,
   WIDGET_TARGET,
@@ -145,5 +146,34 @@ describe("fichiers de l'extension", () => {
     const widgets = readFileSync(join(root, `native/ios/${WIDGET_TARGET}/${WIDGET_TARGET}.swift`), "utf8");
     expect(plugin).toContain(`"${APP_GROUP}"`);
     expect(widgets).toContain(`"${APP_GROUP}"`);
+  });
+});
+
+describe("registerViewController", () => {
+  const template =
+    '<viewController id="BYZ-38-t0r" customClass="CAPBridgeViewController"' +
+    ' customModule="Capacitor" sceneMemberID="viewController"/>';
+
+  it("nomme le module de la classe, sans quoi l'app démarre sur un écran noir", () => {
+    const out = registerViewController(template);
+    expect(out).toContain('customClass="PjViewController"');
+    // Le point de tout ce test : une classe Swift n'a pas de nom nu dans le
+    // runtime Objective-C. Sans ces deux attributs, UIKit ne la trouve pas,
+    // instancie un UIViewController vide, et l'app se lance sans webview et
+    // sans plugin, donc sans le moindre payload pour les widgets.
+    expect(out).toContain('customModule="App"');
+    expect(out).toContain('customModuleProvider="target"');
+    expect(out).not.toContain("Capacitor");
+  });
+
+  it("ne repasse pas sur un storyboard déjà transformé", () => {
+    const once = registerViewController(template);
+    expect(registerViewController(once)).toBe(once);
+  });
+
+  it("refuse un storyboard où l'ancre a disparu", () => {
+    // Capacitor changerait son storyboard : mieux vaut un échec de scaffold
+    // qu'une app noire livrée sans que rien ne le signale.
+    expect(() => registerViewController("<viewController id=\"x\"/>")).toThrow();
   });
 });

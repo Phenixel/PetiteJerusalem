@@ -165,6 +165,16 @@ Group), l'App Group sur la cible App, la classe `PjViewController` dans
 côtés du `REVERSED_CLIENT_ID` de Google (dans le **même** tableau
 `CFBundleURLTypes`, la clé étant unique).
 
+> **Le `customModule` du storyboard n'est pas décoratif.** Une classe Swift n'a
+> pas de nom nu dans le runtime Objective-C : écrire
+> `customClass="PjViewController"` sans `customModule="App"` ni
+> `customModuleProvider="target"` fait chercher à UIKit une classe qu'il ne
+> trouve pas. Il instancie alors un `UIViewController` vide, et l'app se lance
+> sur un **écran noir**, sans webview, sans bridge, donc sans plugin et sans le
+> moindre payload pour les widgets. Rien n'échoue : ni le build, ni l'archive,
+> ni les logs. `registerViewController` (dans `scripts/lib/xcode-widgets.mjs`)
+> pose les trois attributs, et `src/__tests__/xcodeWidgets.test.ts` le vérifie.
+
 ```bash
 npx cap add ios              # si ios/ n'existe pas encore
 node scripts/setup-ios.mjs

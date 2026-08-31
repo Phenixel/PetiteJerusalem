@@ -363,3 +363,29 @@ export function addWidgetExtension(pbxproj, options) {
 
   return out;
 }
+
+/**
+ * Remplace CAPBridgeViewController par PjViewController dans Main.storyboard,
+ * pour que le plugin PjWidgets soit enregistré au chargement (obligatoire
+ * depuis Capacitor 5, voir native/ios/App/PjViewController.swift).
+ *
+ * `customModule` et `customModuleProvider` ne sont PAS facultatifs. Une classe
+ * Swift n'a pas de nom nu dans le runtime Objective-C : sans eux, UIKit
+ * cherche « PjViewController », ne trouve rien, et instancie silencieusement
+ * un UIViewController vide. L'app se lance alors sur un écran noir, sans
+ * webview et sans plugin, donc sans le moindre payload pour les widgets, et
+ * rien dans les logs ne le signale. Le module est celui de la cible App.
+ *
+ * Idempotent : un storyboard déjà transformé est rendu tel quel.
+ */
+export function registerViewController(storyboard) {
+  if (storyboard.includes('customClass="PjViewController"')) return storyboard;
+  const anchor = 'customClass="CAPBridgeViewController" customModule="Capacitor"';
+  if (!storyboard.includes(anchor)) {
+    throw new Error("Main.storyboard : CAPBridgeViewController introuvable");
+  }
+  return storyboard.replace(
+    anchor,
+    'customClass="PjViewController" customModule="App" customModuleProvider="target"',
+  );
+}

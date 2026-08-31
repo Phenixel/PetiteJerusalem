@@ -1137,7 +1137,10 @@ struct BookShortcutView: View {
     let entry: LibraryEntry
     let corpus: String
     let fallbackTitle: String
-    let path: String
+    /// L'URL entière, et non un bout de chemin à recoller : les destinations
+    /// des widgets se lisent ainsi en clair dans ce fichier, ce dont un test
+    /// se sert pour les confronter au routeur (widgetDeepLinks.test.ts).
+    let url: String
 
     var body: some View {
         VStack(spacing: 4) {
@@ -1150,7 +1153,7 @@ struct BookShortcutView: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr\(path)"))
+        .widgetURL(URL(string: url))
     }
 }
 
@@ -1159,7 +1162,7 @@ struct SidourWidget: Widget {
         StaticConfiguration(kind: "SidourWidget", provider: LibraryProvider()) { entry in
             BookShortcutView(
                 entry: entry, corpus: "sidour", fallbackTitle: ShortcutFallback.sidour,
-                path: "/bibliotheque/sidour")
+                url: "petitejerusalem://petite-jerusalem.fr/bibliotheque/sidour")
                 .modifier(PjWidgetBackground())
         }
         .configurationDisplayName("Sidour")
@@ -1173,7 +1176,7 @@ struct TehilimWidget: Widget {
         StaticConfiguration(kind: "TehilimWidget", provider: LibraryProvider()) { entry in
             BookShortcutView(
                 entry: entry, corpus: "tehilim", fallbackTitle: ShortcutFallback.tehilim,
-                path: "/bibliotheque/tehilim")
+                url: "petitejerusalem://petite-jerusalem.fr/bibliotheque/tehilim")
                 .modifier(PjWidgetBackground())
         }
         .configurationDisplayName("Tehilim")

@@ -46,6 +46,7 @@ import {
   addWidgetExtension,
   APP_GROUP,
   widgetEntitlements,
+  registerViewController,
   widgetInfoPlist,
   WIDGET_TARGET,
 } from "./lib/xcode-widgets.mjs";
@@ -503,22 +504,15 @@ writeFileSync(join(widgetDir, "Info.plist"), widgetInfoPlist(DISPLAY_NAME));
 writeFileSync(join(widgetDir, `${WIDGET_TARGET}.entitlements`), widgetEntitlements());
 console.log(`setup-ios: sources des widgets copiées depuis native/ios/ (App + ${WIDGET_TARGET})`);
 
-// Le plugin doit être enregistré à la main depuis Capacitor 5 : PjViewController
-// remplace CAPBridgeViewController comme classe du view controller du
-// storyboard. `customModule` disparaît, la classe vit dans la cible App et non
-// dans le module Capacitor.
+// Le plugin doit être enregistré à la main depuis Capacitor 5 :
+// PjViewController remplace CAPBridgeViewController comme classe du view
+// controller du storyboard (transformation et pourquoi du `customModule`
+// dans scripts/lib/xcode-widgets.mjs).
 const storyboardPath = join(appDir, "Base.lproj/Main.storyboard");
 const storyboard = readFileSync(storyboardPath, "utf8");
-if (storyboard.includes('customClass="CAPBridgeViewController"')) {
-  writeFileSync(
-    storyboardPath,
-    mustReplace(
-      storyboard,
-      'customClass="CAPBridgeViewController" customModule="Capacitor"',
-      'customClass="PjViewController"',
-      "Main.storyboard : classe du view controller",
-    ),
-  );
+const patched = registerViewController(storyboard);
+if (patched !== storyboard) {
+  writeFileSync(storyboardPath, patched);
   console.log("setup-ios: PjViewController posé dans Main.storyboard");
 }
 
