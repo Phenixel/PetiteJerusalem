@@ -139,6 +139,12 @@ export interface TextBlock {
    */
   halakha?: Rubric;
   /**
+   * Sidour : le passage se dit face à Jérusalem (la 'Amida, Moussaf). Le
+   * lecteur pose alors une boussole à côté du titre, qui montre la direction
+   * du Kotel depuis le lieu où l'on se trouve.
+   */
+  kotel?: boolean;
+  /**
    * Sidour : à cet endroit s'insère la lecture de la Torah de la semaine (la
    * 1re montée de la paracha), que le lecteur charge et injecte lui-même :
    * elle change chaque semaine, le fichier ne peut pas la porter.
@@ -481,6 +487,7 @@ interface TefilaFileBlock {
   plain?: boolean;
   zman?: string;
   halakha?: Rubric;
+  kotel?: boolean;
   torahWeekly?: boolean;
   lines?: (string | TefilaFileLine)[];
 }
@@ -562,6 +569,7 @@ function loadTefila(
     if (raw.plain) block.plain = true;
     if (raw.zman) block.zman = raw.zman;
     if (raw.halakha) block.halakha = raw.halakha;
+    if (raw.kotel) block.kotel = true;
     if (raw.torahWeekly) block.torahWeekly = true;
     blocks.push(block);
     offset += block.lines.length;
