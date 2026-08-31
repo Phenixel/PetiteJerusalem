@@ -434,6 +434,12 @@
       ]
     },
     {
+      "labelText": {
+        "fr": "Selon le repas : invité, jeunes mariés, brit-mila",
+        "en": "According to the meal: guest, newlyweds, brit milah",
+        "he": "לפי הסעודה: אורח, חתן וכלה, ברית מילה"
+      },
+      "fold": "repas",
       "variants": true,
       "lines": [
         {
