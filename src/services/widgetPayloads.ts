@@ -306,3 +306,52 @@ export function buildDailyReadingWidgetPayload(
     parashaDone,
   };
 }
+
+/** Un livre de l'étagère : son corpus, qui donne sa reliure, et son titre. */
+export interface LibraryWidgetBook {
+  /** "tehilim", "sidour"… ; le natif en tire la couleur de la reliure. */
+  corpus: string;
+  /** Titre écrit sur la couverture, déjà localisé. */
+  label: string;
+}
+
+/**
+ * Les libellés des widgets de raccourci vers la bibliothèque.
+ *
+ * Ils ne dépendent que de la langue : rien à recalculer d'un jour à l'autre,
+ * mais ils ne peuvent pas non plus être écrits en dur côté natif, « Sidour »
+ * se disant « Siddur » en anglais et « סידור » en hébreu.
+ */
+export interface LibraryWidgetPayload {
+  v: 1;
+  /** « Bibliothèque », déjà localisé. */
+  title: string;
+  /** Les livres, dans l'ordre de la première étagère, puis la liturgie. */
+  books: LibraryWidgetBook[];
+}
+
+/**
+ * Les livres que les widgets savent dessiner : les quatre volumes d'étude de
+ * la première étagère, puis le sidour. Même ordre et mêmes clés de titre que
+ * `CORPUS_META` dans `src/views/StudyPage.vue`, dont ils sont le reflet ; les
+ * couleurs de reliure, elles, restent du côté du dessin (LibraryShelf.vue et
+ * son pendant natif), qui les tient hors du thème de l'utilisateur.
+ */
+const LIBRARY_WIDGET_BOOKS: { corpus: string; labelKey: string }[] = [
+  { corpus: "tehilim", labelKey: "study.types.tehilim" },
+  { corpus: "michna", labelKey: "study.types.mishna" },
+  { corpus: "talmud", labelKey: "study.types.talmud" },
+  { corpus: "tanakh", labelKey: "study.types.tanakh" },
+  { corpus: "sidour", labelKey: "study.types.sidour" },
+];
+
+export function buildLibraryWidgetPayload(t: Translate): LibraryWidgetPayload {
+  return {
+    v: 1,
+    title: t("study.title"),
+    books: LIBRARY_WIDGET_BOOKS.map(({ corpus, labelKey }) => ({
+      corpus,
+      label: t(labelKey),
+    })),
+  };
+}

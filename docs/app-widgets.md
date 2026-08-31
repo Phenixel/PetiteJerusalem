@@ -19,8 +19,25 @@ Trois widgets accompagnent l'app native :
   pourcentage et barre de progression, remise à zéro à minuit. Toucher le
   widget ouvre `/bibliotheque/lecture-du-jour`.
 
-Tous portent l'accent du thème choisi par l'utilisateur : il voyage dans le
-payload, le natif ne connaît aucune couleur de thème.
+S'y ajoutent cinq **raccourcis** (iOS seulement), au plus petit format que
+l'écran d'accueil propose, qui n'ouvrent chacun qu'une page :
+
+| Raccourci | Ouvre | Ce qu'il montre |
+|---|---|---|
+| Bibliothèque | `/bibliotheque` | une étagère de volumes reliés ; en format moyen, les quatre livres portent leur titre |
+| Sidour | `/bibliotheque/sidour` | le livre du sidour, titre sur la couverture |
+| Tehilim | `/bibliotheque/tehilim` | le livre des Tehilim, idem |
+| Prochain horaire | `/horaires` | l'heure du prochain zman, en grand, et son nom en dessous |
+| Avancement de la lecture | `/bibliotheque/lecture-du-jour` | un anneau qui se remplit au fil des coches, et son pourcentage |
+
+Les livres reprennent le dessin de `src/components/LibraryShelf.vue`, trait
+pour trait : reliure chaude, pli du dos, tranche de pages ivoire, cadre
+estampé et titre en serif. Comme dans l'app, ils sont **hors du thème** de
+l'utilisateur et identiques en mode sombre : ce sont des objets, pas de
+l'interface.
+
+Tout le reste porte l'accent du thème choisi par l'utilisateur : il voyage
+dans le payload, le natif ne connaît aucune couleur de thème.
 
 ## Les formats, et ce qu'ils imposent
 
@@ -55,8 +72,16 @@ widgetService.refresh()
   └─ widgetPayloads.ts        ──►    plugin PjWidgets
      (7 j d'horaires,                 ├─ Android : SharedPreferences "pj_widgets"
       lecture du jour,                │  + broadcast vers les 2 providers
-      libellés localisés)             └─ iOS : App Group + reload WidgetKit
+      titres de la biblio,            └─ iOS : App Group + reload WidgetKit
+      libellés localisés)
 ```
+
+Trois clés voyagent : `zmanim`, `daily` et `library`. La dernière ne porte que
+des titres (« Bibliothèque », « Sidour », « Tehilim »…) : ils ne bougent
+qu'avec la langue, mais ils ne peuvent pas pour autant s'écrire en dur côté
+natif, « Sidour » se disant « Siddur » en anglais et « סידור » en hébreu.
+Android range cette clé sans encore la lire : aucun de ses widgets n'en a
+besoin, mais le contrat reste le même des deux côtés.
 
 - **Contrat** : `src/services/widgetPayloads.ts` (champ `v` pour les évolutions
   incompatibles). Tout ce qui s'affiche vient du payload, déjà localisé ET

@@ -7,7 +7,11 @@ import { i18n, loadLocaleMessages, type SupportedLocale } from "../i18n";
 import { localDayKey } from "./dateService";
 import { authService, type User } from "./authService";
 import { userPreferencesService, type UserPreferences } from "./userPreferencesService";
-import { buildDailyReadingWidgetPayload, buildZmanimWidgetPayload } from "./widgetPayloads";
+import {
+  buildDailyReadingWidgetPayload,
+  buildLibraryWidgetPayload,
+  buildZmanimWidgetPayload,
+} from "./widgetPayloads";
 
 /**
  * Alimente les widgets d'écran d'accueil (Android / iOS).
@@ -38,7 +42,7 @@ interface PjWidgetsBridge {
    * Payloads en JSON ; le natif stocke ceux qui sont fournis puis rafraîchit
    * les widgets correspondants. Un champ omis laisse le dernier état en place.
    */
-  setPayloads(options: { zmanim?: string; daily?: string }): Promise<void>;
+  setPayloads(options: { zmanim?: string; daily?: string; library?: string }): Promise<void>;
 }
 
 const PjWidgets = registerPlugin<PjWidgetsBridge>("PjWidgets");
@@ -73,6 +77,7 @@ class WidgetService {
   private lastZmanimKey: string | null = null;
   private lastZmanimJson: string | null = null;
   private lastDailyJson: string | null = null;
+  private lastLibraryJson: string | null = null;
 
   /** À appeler une fois au démarrage de l'app native (no-op sur le web). */
   init(): void {
@@ -165,17 +170,24 @@ class WidgetService {
       }
       if (daily === this.lastDailyJson) daily = undefined;
 
-      if (zmanim === undefined && daily === undefined) {
+      // Bibliothèque : rien que des libellés, ils ne bougent qu'avec la
+      // langue. Le calcul est immédiat, la comparaison suffit à ne pas
+      // recharger les raccourcis pour rien.
+      let library: string | undefined = JSON.stringify(buildLibraryWidgetPayload(t));
+      if (library === this.lastLibraryJson) library = undefined;
+
+      if (zmanim === undefined && daily === undefined && library === undefined) {
         // Rien de neuf à livrer : le calcul du jour peut quand même être acté.
         if (freshZmanimKey) this.lastZmanimKey = freshZmanimKey;
         return;
       }
-      await PjWidgets.setPayloads({ zmanim, daily });
+      await PjWidgets.setPayloads({ zmanim, daily, library });
       // Mémorisé seulement après un envoi réussi : un échec (vieux binaire
       // sans le plugin) laissera le prochain push tout retenter.
       if (freshZmanimKey) this.lastZmanimKey = freshZmanimKey;
       if (zmanim !== undefined) this.lastZmanimJson = zmanim;
       if (daily !== undefined) this.lastDailyJson = daily;
+      if (library !== undefined) this.lastLibraryJson = library;
     } catch {
       // Plugin absent (vieux binaire, plateforme web du bridge) : sans gravité,
       // il n'y a alors pas de widget à alimenter.

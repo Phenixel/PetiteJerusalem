@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   buildDailyReadingWidgetPayload,
+  buildLibraryWidgetPayload,
   buildZmanimWidgetPayload,
   ZMANIM_WIDGET_DAYS,
 } from "../services/widgetPayloads";
@@ -169,5 +170,29 @@ describe("buildDailyReadingWidgetPayload", () => {
     );
     expect(payload.items.every((i) => !i.done)).toBe(true);
     expect(payload.date).toBe(today);
+  });
+});
+
+describe("buildLibraryWidgetPayload", () => {
+  const payload = buildLibraryWidgetPayload(t);
+
+  it("porte les titres des raccourcis, tous traduits", () => {
+    expect(payload.v).toBe(1);
+    // Rien n'est écrit en dur côté natif : « Sidour » se dit « Siddur » en
+    // anglais et « סידור » en hébreu, le widget ne saurait pas le deviner.
+    expect(payload.title).toBe("study.title");
+    for (const book of payload.books) expect(book.label).toMatch(/^study\.types\./);
+  });
+
+  it("livre les quatre volumes d'étude, puis le sidour", () => {
+    // L'ordre compte : le widget Bibliothèque garnit sa planche des premiers,
+    // et les raccourcis Sidour et Tehilim cherchent le leur par son corpus.
+    expect(payload.books.map((b) => b.corpus)).toEqual([
+      "tehilim",
+      "michna",
+      "talmud",
+      "tanakh",
+      "sidour",
+    ]);
   });
 });

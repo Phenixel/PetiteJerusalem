@@ -110,6 +110,13 @@ enum PjColors {
         return Color(color)
     }
 
+    /// Une couleur fixe, la même en clair et en sombre : les reliures des
+    /// livres, par exemple, qui sont des objets et non de l'interface.
+    static func fixed(_ hex: String) -> Color {
+        guard let color = uiColor(hex) else { return .primary }
+        return Color(color)
+    }
+
     /// "#RRGGBB" ; toute autre forme rend nil, le widget ne devine pas.
     private static func uiColor(_ hex: String) -> UIColor? {
         var value = hex
@@ -860,6 +867,438 @@ struct LectureWidget: Widget {
     }
 }
 
+// MARK: - Raccourcis
+
+/**
+ * Cinq tuiles qui n'ouvrent qu'une page : la bibliothèque, le sidour, les
+ * horaires, les Tehilim, la lecture du jour. Le plus petit format que l'écran
+ * d'accueil propose (`.systemSmall`), sauf la bibliothèque, à qui son étagère
+ * vaut un format moyen.
+ *
+ * Trois d'entre elles ne montrent qu'un livre : c'est le dessin de l'étagère
+ * de `src/components/LibraryShelf.vue`, porté ici trait pour trait.
+ */
+
+/**
+ * Les couleurs de l'étagère, celles de LibraryShelf.vue. Elles sont
+ * volontairement hors du thème de l'utilisateur, et identiques en mode
+ * sombre : des teintes chaudes et mates, comme de vrais objets posés là.
+ */
+enum ShelfColors {
+    /// Une reliure par volume, toutes de la même famille.
+    static let bindings = [
+        "tehilim": "#96604A", "michna": "#7D6A4C", "talmud": "#6D5743",
+        "tanakh": "#84483F", "sidour": "#6E4551", "slihot": "#7A5C36",
+        "brahot": "#5F6249",
+    ]
+
+    static func binding(_ corpus: String) -> Color {
+        PjColors.fixed(bindings[corpus] ?? "#7D6A4C")
+    }
+
+    /// Le crème du cadre estampé, et le titre comme doré à chaud.
+    static let stamp = PjColors.fixed("#ECDFC4")
+    static let title = PjColors.fixed("#F3EAD6")
+    /// La tranche des pages, ivoire, et les filets qui la rayent.
+    static let pages = PjColors.fixed("#EFE5D0")
+    static let pageLines = PjColors.fixed("#D6C8AB")
+    /// La planche, en bois clair ; elle s'assombrit la nuit, comme dans l'app.
+    static let board = LinearGradient(
+        colors: [
+            PjColors.adaptive(light: "#C3A87F", dark: "#8A7354"),
+            PjColors.adaptive(light: "#A98C62", dark: "#6E5A40"),
+        ],
+        startPoint: .top, endPoint: .bottom)
+}
+
+/**
+ * Un livre relié de l'étagère : reliure chaude, pli du dos, tranche de pages
+ * ivoire qui dépasse à droite, cadre estampé à double filet, titre horizontal
+ * en serif et son ornement.
+ *
+ * Les coordonnées sont celles du SVG d'origine, dans son carton de 96 sur 140,
+ * ramenées à la largeur demandée : le dessin tient à toutes les tailles.
+ */
+struct ShelfBookView: View {
+    let title: String
+    let corpus: String
+    /// Largeur du livre ; la hauteur suit le rapport du carton d'origine.
+    let width: CGFloat
+    /// Sous quelques dizaines de points, le titre ne se lit plus : on le tait
+    /// plutôt que d'en faire une tache.
+    var showsTitle = true
+
+    /// Le rapport hauteur / largeur du dessin d'origine.
+    static let ratio: CGFloat = 140 / 96
+
+    /// Une unité du carton d'origine, à l'échelle demandée.
+    private var u: CGFloat { width / 96 }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            // Tranche des pages, ivoire, qui dépasse à droite, et ses filets.
+            plate(84, 6, 9, 128, 2, ShelfColors.pages)
+            plate(87, 10, 0.8, 120, 0, ShelfColors.pageLines)
+            plate(90, 10, 0.8, 120, 0, ShelfColors.pageLines)
+            // Couverture, pli de la reliure côté dos, et sa ligne de lumière.
+            plate(3, 3, 84, 134, 4, ShelfColors.binding(corpus))
+            plate(3, 3, 7, 134, 3.5, Color.black.opacity(0.16))
+            plate(12, 5, 1, 130, 0, Color.white.opacity(0.1))
+            plate(3, 3, 84, 134, 4, LinearGradient(
+                stops: [
+                    .init(color: .white.opacity(0.09), location: 0),
+                    .init(color: .white.opacity(0.02), location: 0.45),
+                    .init(color: .black.opacity(0.06), location: 1),
+                ],
+                startPoint: .top, endPoint: .bottom))
+            // Cadre estampé, double filet crème.
+            stroked(18, 14, 62, 112, 1.5, 1.4, 0.55)
+            stroked(22.5, 18.5, 53, 103, 1, 0.7, 0.3)
+            if showsTitle {
+                Text(title)
+                    .font(.system(size: 13.5 * u, weight: .semibold, design: .serif))
+                    .foregroundStyle(ShelfColors.title)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .frame(width: 62 * u, height: 26 * u)
+                    .offset(x: 18 * u, y: 49 * u)
+                ornament
+            }
+        }
+        // Le ZStack se dimensionne sur la couverture seule (un `offset` ne
+        // compte pas dans la mise en page) : sans `topLeading`, le cadre le
+        // recentrerait et tout le dessin glisserait de quelques points.
+        .frame(width: width, height: width * Self.ratio, alignment: .topLeading)
+    }
+
+    /// La fine ornementation sous le titre : deux filets et un losange.
+    /// Un `Group` et non un `ZStack` : ses trois éléments doivent être posés
+    /// par le ZStack du livre, à ses coordonnées à lui.
+    @ViewBuilder private var ornament: some View {
+        plate(35, 79.5, 11, 1, 0, ShelfColors.stamp.opacity(0.5))
+        plate(52, 79.5, 11, 1, 0, ShelfColors.stamp.opacity(0.5))
+        Rectangle()
+            .fill(ShelfColors.stamp.opacity(0.5))
+            .frame(width: 3.7 * u, height: 3.7 * u)
+            .rotationEffect(.degrees(45))
+            .offset(x: 47.15 * u, y: 78.15 * u)
+    }
+
+    /// Un rectangle plein, aux coordonnées du dessin d'origine.
+    private func plate<S: ShapeStyle>(
+        _ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat, _ radius: CGFloat, _ style: S
+    ) -> some View {
+        RoundedRectangle(cornerRadius: radius * u, style: .continuous)
+            .fill(style)
+            .frame(width: w * u, height: h * u)
+            .offset(x: x * u, y: y * u)
+    }
+
+    /// Un rectangle au trait, pour les filets du cadre estampé.
+    private func stroked(
+        _ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat, _ radius: CGFloat,
+        _ lineWidth: CGFloat, _ opacity: Double
+    ) -> some View {
+        RoundedRectangle(cornerRadius: radius * u, style: .continuous)
+            .stroke(ShelfColors.stamp.opacity(opacity), lineWidth: lineWidth * u)
+            .frame(width: w * u, height: h * u)
+            .offset(x: x * u, y: y * u)
+    }
+}
+
+/// La planche de l'étagère, en bois clair, sous les livres.
+struct ShelfBoardView: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 3, style: .continuous)
+            .fill(ShelfColors.board)
+            .frame(height: 6)
+    }
+}
+
+// MARK: - Raccourcis : les libellés
+
+struct LibraryBook: Decodable {
+    let corpus: String
+    let label: String
+}
+
+struct LibraryPayload: Decodable {
+    let v: Int
+    let title: String
+    let books: [LibraryBook]
+
+    func book(_ corpus: String) -> LibraryBook? { books.first { $0.corpus == corpus } }
+}
+
+/**
+ * Repli avant le premier lancement, quand l'app n'a encore rien poussé. Ces
+ * titres restent en français, comme les autres ressources natives (le
+ * sélecteur de widgets, « ouvrez l'app ») : dès le premier lancement, le
+ * payload les remplace par ceux de la langue choisie.
+ */
+enum ShortcutFallback {
+    static let library = "Bibliothèque"
+    static let sidour = "Sidour"
+    static let tehilim = "Tehilim"
+    static let daily = "Lecture du jour"
+    static let zmanim = "Horaires"
+}
+
+struct LibraryEntry: TimelineEntry {
+    let date: Date
+    let payload: LibraryPayload?
+}
+
+/// Rien à replanifier : des libellés qui ne changent qu'avec la langue de
+/// l'app, et c'est l'app qui recharge alors les timelines.
+struct LibraryProvider: TimelineProvider {
+    func placeholder(in context: Context) -> LibraryEntry {
+        LibraryEntry(date: Date(), payload: nil)
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (LibraryEntry) -> Void) {
+        completion(LibraryEntry(date: Date(), payload: loadPayload("library", as: LibraryPayload.self)))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<LibraryEntry>) -> Void) {
+        completion(Timeline(
+            entries: [LibraryEntry(date: Date(), payload: loadPayload("library", as: LibraryPayload.self))],
+            policy: .never))
+    }
+}
+
+// MARK: - Raccourci : la bibliothèque
+
+struct LibraryWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: LibraryEntry
+
+    /// L'étagère du widget : les quatre volumes d'étude, dans l'ordre de la
+    /// page. Le sidour et les Tehilim ont chacun leur propre raccourci.
+    private static let shelf = ["tehilim", "michna", "talmud", "tanakh"]
+
+    var body: some View {
+        let medium = family != .systemSmall
+        // Le petit format n'a pas la largeur de quatre titres lisibles : il
+        // montre trois volumes muets, l'étagère se reconnaît à sa silhouette.
+        let corpora = medium ? Self.shelf : Array(Self.shelf.prefix(3))
+        // Largeurs comptées pour tenir dans la hauteur, qui est la même aux
+        // deux formats : quatre livres de 62 pt font 90 pt de haut, plus le
+        // titre et la planche, il reste de la marge sur les 132 utiles.
+        let gap: CGFloat = medium ? 8 : 6
+        let width: CGFloat = medium ? 62 : 38
+
+        VStack(spacing: 0) {
+            Text(entry.payload?.title ?? ShortcutFallback.library)
+                .font(medium ? .subheadline.weight(.bold) : .caption.weight(.bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .foregroundStyle(PjColors.text)
+            Spacer(minLength: 8)
+            VStack(spacing: 3) {
+                HStack(alignment: .bottom, spacing: gap) {
+                    ForEach(corpora, id: \.self) { corpus in
+                        ShelfBookView(
+                            title: entry.payload?.book(corpus)?.label ?? "",
+                            corpus: corpus,
+                            width: width,
+                            showsTitle: medium)
+                    }
+                }
+                ShelfBoardView().frame(width: CGFloat(corpora.count) * width
+                    + CGFloat(corpora.count - 1) * gap + 10)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr/bibliotheque"))
+    }
+}
+
+struct LibraryWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "LibraryWidget", provider: LibraryProvider()) { entry in
+            LibraryWidgetView(entry: entry).modifier(PjWidgetBackground())
+        }
+        .configurationDisplayName("Bibliothèque")
+        .description("Ouvrir la bibliothèque.")
+        .supportedFamilies([.systemSmall, .systemMedium])
+    }
+}
+
+// MARK: - Raccourcis : un livre, un corpus
+
+/// Un raccourci qui n'est qu'un livre, posé sur sa planche : le titre est
+/// écrit sur la couverture, il n'a rien à ajouter dessous.
+struct BookShortcutView: View {
+    let entry: LibraryEntry
+    let corpus: String
+    let fallbackTitle: String
+    let path: String
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Spacer(minLength: 0)
+            ShelfBookView(
+                title: entry.payload?.book(corpus)?.label ?? fallbackTitle,
+                corpus: corpus,
+                width: 78)
+            ShelfBoardView().frame(width: 88)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr\(path)"))
+    }
+}
+
+struct SidourWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "SidourWidget", provider: LibraryProvider()) { entry in
+            BookShortcutView(
+                entry: entry, corpus: "sidour", fallbackTitle: ShortcutFallback.sidour,
+                path: "/bibliotheque/sidour")
+                .modifier(PjWidgetBackground())
+        }
+        .configurationDisplayName("Sidour")
+        .description("Ouvrir le sidour.")
+        .supportedFamilies([.systemSmall])
+    }
+}
+
+struct TehilimWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "TehilimWidget", provider: LibraryProvider()) { entry in
+            BookShortcutView(
+                entry: entry, corpus: "tehilim", fallbackTitle: ShortcutFallback.tehilim,
+                path: "/bibliotheque/tehilim")
+                .modifier(PjWidgetBackground())
+        }
+        .configurationDisplayName("Tehilim")
+        .description("Ouvrir les Tehilim.")
+        .supportedFamilies([.systemSmall])
+    }
+}
+
+// MARK: - Raccourci : les horaires
+
+/// L'heure du prochain zman, en grand, et rien d'autre : son nom en dessous
+/// dit seulement de quelle heure il s'agit. Il partage la timeline du widget
+/// Horaires, qui se replanifie déjà à chaque zman passé.
+struct ZmanimShortcutView: View {
+    let entry: ZmanimEntry
+
+    var body: some View {
+        let accent = PjColors.accent(entry.accent)
+        VStack(spacing: 2) {
+            Spacer(minLength: 0)
+            if let next = entry.next {
+                Text(next.time)
+                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.6)
+                    .foregroundStyle(accent)
+                Text(next.label)
+                    .font(.caption2)
+                    .foregroundStyle(PjColors.textSecondary)
+            } else {
+                Text(entry.message ?? openAppFallback)
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(4)
+                    .foregroundStyle(PjColors.text)
+            }
+            Spacer(minLength: 0)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
+        .padding(.horizontal, 2)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr/horaires"))
+    }
+}
+
+struct ZmanimShortcutWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "ZmanimShortcutWidget", provider: ZmanimProvider()) { entry in
+            ZmanimShortcutView(entry: entry).modifier(PjWidgetBackground())
+        }
+        .configurationDisplayName("Prochain horaire")
+        .description("L'heure du prochain zman, et rien d'autre.")
+        .supportedFamilies([.systemSmall])
+    }
+}
+
+// MARK: - Raccourci : la lecture du jour
+
+/// L'anneau de progression : le même rapport que la barre de la carte, mais
+/// refermé sur lui-même, pour tenir dans la plus petite tuile.
+struct DailyProgressRing: View {
+    let ratio: Double
+    let accent: Color
+    let lineWidth: CGFloat
+
+    var body: some View {
+        ZStack {
+            Circle().stroke(accent.opacity(0.15), lineWidth: lineWidth)
+            Circle()
+                .trim(from: 0, to: max(0, min(1, ratio)))
+                .stroke(accent, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                // L'anneau part du haut, pas de la droite.
+                .rotationEffect(.degrees(-90))
+        }
+    }
+}
+
+struct LectureShortcutView: View {
+    let entry: DailyEntry
+
+    var body: some View {
+        let state = DailyState.of(entry.payload, at: entry.date)
+        let accent = PjColors.accent(entry.payload?.accent)
+        VStack(spacing: 10) {
+            Spacer(minLength: 0)
+            ZStack {
+                DailyProgressRing(ratio: state.measurable ? state.ratio : 0,
+                                  accent: accent, lineWidth: 9)
+                if state.measurable {
+                    Text("\(Int((state.ratio * 100).rounded()))%")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .minimumScaleFactor(0.6)
+                        .foregroundStyle(state.allDone ? PjColors.success : PjColors.text)
+                } else {
+                    // Liste non composée : l'anneau reste vide, le livre dit
+                    // de quoi il s'agit, et le message est l'affaire du grand
+                    // widget, qui a la place de l'écrire.
+                    Image(systemName: "book")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(accent)
+                }
+            }
+            .frame(width: 78, height: 78)
+            Text(entry.payload?.title ?? ShortcutFallback.daily)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .foregroundStyle(PjColors.text)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr/bibliotheque/lecture-du-jour"))
+    }
+}
+
+struct LectureShortcutWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "LectureShortcutWidget", provider: DailyProvider()) { entry in
+            LectureShortcutView(entry: entry).modifier(PjWidgetBackground())
+        }
+        .configurationDisplayName("Avancement de la lecture")
+        .description("Un anneau qui se remplit au fil de votre lecture du jour.")
+        .supportedFamilies([.systemSmall])
+    }
+}
+
 // MARK: - Bundle
 
 @main
@@ -868,5 +1307,16 @@ struct PjWidgetsBundle: WidgetBundle {
         HorairesWidget()
         EssentialsWidget()
         LectureWidget()
+        shortcuts
+    }
+
+    /// Les raccourcis, groupés à part : @WidgetBundleBuilder ne prend qu'un
+    /// nombre limité de widgets à la file, et un sous-groupe lève la limite.
+    @WidgetBundleBuilder private var shortcuts: some Widget {
+        LibraryWidget()
+        SidourWidget()
+        TehilimWidget()
+        ZmanimShortcutWidget()
+        LectureShortcutWidget()
     }
 }
