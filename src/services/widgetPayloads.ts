@@ -32,6 +32,13 @@ import type { UserPreferences } from "./userPreferencesService";
 
 type Translate = (key: string, params?: Record<string, unknown>) => string;
 
+/**
+ * Couleur d'accent de repli : le thème « ocean » de useTheme. L'app pousse
+ * normalement celle du thème choisi par l'utilisateur (widgetService), pour
+ * que les widgets portent les mêmes couleurs que l'app.
+ */
+const DEFAULT_ACCENT = "#1D6FDB";
+
 /** Un horaire prêt à afficher : libellé et heure localisés + epoch ms. */
 export interface ZmanimWidgetTime {
   key: string;
@@ -75,6 +82,12 @@ export interface ZmanimWidgetPayload {
   place: string;
   /** Message quand tous les horaires embarqués sont passés (app pas rouverte). */
   stale: string;
+  /**
+   * Accent du thème de l'utilisateur ("#E05A2B"), pour l'heure mise en avant :
+   * la même couleur que la carte « prochain horaire » de la page Horaires.
+   * Absent des payloads d'avant, le natif retombe alors sur sa propre valeur.
+   */
+  accent: string;
   /** Horaires triés, d'aujourd'hui à J+6 : le widget choisit le prochain. */
   times: ZmanimWidgetTime[];
   /** Jours hébraïques couverts, dans l'ordre. */
@@ -133,6 +146,7 @@ export function buildZmanimWidgetPayload(
   t: Translate,
   locale: string,
   now: Date = new Date(),
+  accent: string = DEFAULT_ACCENT,
 ): ZmanimWidgetPayload {
   const times: ZmanimWidgetTime[] = [];
   const days: ZmanimWidgetDay[] = [];
@@ -161,6 +175,7 @@ export function buildZmanimWidgetPayload(
     // paramètres-sentinelles plutôt que de laisser vue-i18n les interpoler.
     then: t("zmanim.widget.then", { label: "{label}", time: "{time}" }),
     stale: t("zmanim.widget.stale"),
+    accent,
     times: deduped,
     days,
   };
@@ -191,6 +206,15 @@ export interface DailyReadingWidgetPayload {
   emptyLabel: string;
   /** Message quand tout est lu. */
   allDoneLabel: string;
+  /**
+   * Gabarit de la ligne de progression ("{done} sur {total} lus aujourd'hui").
+   * Les deux nombres se comptent côté natif, qui seul sait si les coches sont
+   * encore valables (expiresAt) : ils partent donc en sentinelles, comme le
+   * « puis… » des horaires, plutôt qu'interpolés ici.
+   */
+  progressTemplate: string;
+  /** Accent du thème de l'utilisateur, la couleur de la barre et du pourcentage. */
+  accent: string;
   /** Lectures du jour, dans l'ordre de la page (cycles en tête, puis la liste). */
   items: DailyWidgetItem[];
   /** Paracha de la semaine (chnei mikra), hors décompte quotidien. */
@@ -219,6 +243,7 @@ export function buildDailyReadingWidgetPayload(
   > | null,
   t: Translate,
   now: Date = new Date(),
+  accent: string = DEFAULT_ACCENT,
 ): DailyReadingWidgetPayload {
   const date = localDayKey(now);
   const base = {
@@ -228,6 +253,10 @@ export function buildDailyReadingWidgetPayload(
     expiresAt: nextLocalMidnight(now),
     emptyLabel: t("dailyReading.widget.empty"),
     allDoneLabel: t("dailyReading.allReadTitle"),
+    // Les {done}/{total} doivent survivre à la traduction : sentinelles
+    // passées en paramètres plutôt que laissées à l'interpolation de vue-i18n.
+    progressTemplate: t("dailyReading.progress", { done: "{done}", total: "{total}" }),
+    accent,
   };
   if (!prefs) {
     return { ...base, configured: false, items: [], parasha: null, parashaDone: false };

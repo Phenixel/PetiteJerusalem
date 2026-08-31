@@ -7,6 +7,7 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 
 /**
@@ -17,6 +18,9 @@ import android.net.Uri;
  * dans onUpdate.
  */
 public abstract class PjWidgetProvider extends AppWidgetProvider {
+
+    /** Accent des payloads d'avant la couleur de thème (le bleu d'origine). */
+    protected static final int FALLBACK_ACCENT = 0xFF1D6FDB;
 
     /** Un rendu : les vues, et l'instant du prochain redessin (0 = aucun). */
     protected static final class Rendered {
@@ -91,6 +95,20 @@ public abstract class PjWidgetProvider extends AppWidgetProvider {
         return PendingIntent.getBroadcast(
             context, alarmRequestCode(), intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    /**
+     * L'accent du payload ("#RRGGBB", le thème choisi par l'utilisateur) ;
+     * toute autre forme, y compris l'absence du champ dans un payload d'avant,
+     * retombe sur l'accent d'origine.
+     */
+    protected static int parseAccent(String hex) {
+        if (hex == null || hex.isEmpty()) return FALLBACK_ACCENT;
+        try {
+            return Color.parseColor(hex);
+        } catch (IllegalArgumentException e) {
+            return FALLBACK_ACCENT;
+        }
     }
 
     protected PendingIntent openAppIntent(Context context) {

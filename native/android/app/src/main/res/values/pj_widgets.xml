@@ -4,6 +4,9 @@
     <color name="pj_widget_bg">#F4F1EA</color>
     <color name="pj_widget_text">#1F2937</color>
     <color name="pj_widget_text_secondary">#6B7280</color>
+    <!-- « Tout est lu » : le vert de la carte du tableau de bord
+         (text-green-600 / dark:text-green-400). -->
+    <color name="pj_widget_success">#16A34A</color>
 
     <!-- Seuls libellés natifs : le sélecteur de widgets du launcher et l'état
          « aucun payload » (widget posé avant le premier lancement de l'app).

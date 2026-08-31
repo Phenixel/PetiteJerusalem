@@ -6,7 +6,7 @@
     android:description="@string/pj_widget_horaires_description"
     android:initialLayout="@layout/widget_horaires"
     android:minWidth="180dp"
-    android:minHeight="90dp"
+    android:minHeight="110dp"
     android:targetCellWidth="3"
     android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"

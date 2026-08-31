@@ -31,6 +31,8 @@ describe("buildZmanimWidgetPayload", () => {
     // Le gabarit « puis… » garde ses {placeholders} malgré la traduction.
     expect(payload.then).toContain("{label}");
     expect(payload.then).toContain("{time}");
+    // L'accent part avec le payload : les widgets portent le thème de l'app.
+    expect(payload.accent).toMatch(/^#[0-9A-Fa-f]{6}$/);
     // Le widget doit toujours trouver un « prochain » horaire aujourd'hui.
     expect(payload.times.some((z) => z.epoch > now.getTime())).toBe(true);
     // Et le dernier couvre bien la fin de la fenêtre de 7 jours.
@@ -75,6 +77,20 @@ describe("buildDailyReadingWidgetPayload", () => {
   const now = new Date(2026, 7, 6, 10, 0);
   const today = localDayKey(now);
   const firstText = (textStudiesJson as TextStudiesJson).textStudies[0];
+
+  it("porte l'accent du thème passé par l'app", () => {
+    const payload = buildDailyReadingWidgetPayload(null, t, now, "#E05A2B");
+    expect(payload.accent).toBe("#E05A2B");
+    expect(buildZmanimWidgetPayload(DEFAULT_PLACE, t, "fr", now, "#E05A2B").accent).toBe("#E05A2B");
+  });
+
+  it("laisse au natif les nombres de la ligne de progression", () => {
+    // Les coches ne valent que jusqu'à minuit : leur décompte se fait côté
+    // natif, le gabarit part donc avec ses sentinelles intactes.
+    const payload = buildDailyReadingWidgetPayload(null, t, now);
+    expect(payload.progressTemplate).toContain("{done}");
+    expect(payload.progressTemplate).toContain("{total}");
+  });
 
   it("sans utilisateur connecté : non configuré, message d'invite", () => {
     const payload = buildDailyReadingWidgetPayload(null, t, now);

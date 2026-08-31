@@ -19,6 +19,9 @@
  * - project.pbxproj : bundle id, équipe de signature, entitlements, versions,
  *   familles d'appareils (iPhone + iPad), et enregistrement des deux
  *   ressources ci-dessus
+ * - Widgets d'écran d'accueil : le plugin dans la cible App, et la cible
+ *   d'extension « PjWidgets » fabriquée de toutes pièces dans le pbxproj
+ *   (sources de native/ios/, voir docs/app-widgets.md)
  * - Icônes / splash générés depuis assets/logo.png
  *
  * Usage : node scripts/setup-ios.mjs
@@ -29,12 +32,23 @@
  *                          lui-même, en CI il doit être fourni.
  *   IOS_MARKETING_VERSION  CFBundleShortVersionString (ex. 3.6.4)
  *   IOS_BUILD_NUMBER       CFBundleVersion (entier strictement croissant)
+ *   IOS_WIDGET_PROVISIONING_PROFILE  profil de l'extension de widgets, en
+ *                          signature manuelle seulement (CI) : un appex a son
+ *                          propre App ID, donc son propre profil.
  */
 import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { APP_LINK_DOMAIN } from "./lib/app-links.mjs";
+import {
+  addAppSource,
+  addWidgetExtension,
+  APP_GROUP,
+  widgetEntitlements,
+  widgetInfoPlist,
+  WIDGET_TARGET,
+} from "./lib/xcode-widgets.mjs";
 
 const root = join(import.meta.dirname, "..");
 const iosDir = join(root, "ios");
@@ -48,6 +62,8 @@ if (!existsSync(pbxprojPath)) {
 
 const BUNDLE_ID = "fr.petitejerusalem.app";
 const DISPLAY_NAME = "Petite Jérusalem";
+/** Widgets d'écran d'accueil : l'App ID de la cible d'extension. */
+const WIDGET_BUNDLE_ID = `${BUNDLE_ID}.${WIDGET_TARGET}`;
 const TEAM_ID = process.env.IOS_DEVELOPMENT_TEAM?.trim();
 const MARKETING_VERSION = process.env.IOS_MARKETING_VERSION?.trim();
 const BUILD_NUMBER = process.env.IOS_BUILD_NUMBER?.trim();
@@ -55,8 +71,18 @@ const BUILD_NUMBER = process.env.IOS_BUILD_NUMBER?.trim();
 // profil « App Store » et son identité (cf. l'en-tête de ce script pour le
 // pourquoi). En local, Xcode continue de gérer la signature tout seul.
 const PROVISIONING_PROFILE = process.env.IOS_PROVISIONING_PROFILE?.trim();
+const WIDGET_PROVISIONING_PROFILE = process.env.IOS_WIDGET_PROVISIONING_PROFILE?.trim();
 const CODE_SIGN_IDENTITY = process.env.IOS_CODE_SIGN_IDENTITY?.trim();
 const MANUAL_SIGNING = Boolean(PROVISIONING_PROFILE && CODE_SIGN_IDENTITY);
+if (MANUAL_SIGNING && !WIDGET_PROVISIONING_PROFILE) {
+  // L'extension de widgets a son propre App ID, donc son propre profil : sans
+  // lui l'archive échouerait bien plus loin, sur un message de signature.
+  console.error(
+    "setup-ios: signature manuelle sans IOS_WIDGET_PROVISIONING_PROFILE.\n" +
+      "  scripts/ios-signing.mjs --setup l'expose ; le lancer avant ce script.",
+  );
+  process.exit(1);
+}
 
 /** Identifiant pbxproj (24 hexa majuscules) stable pour un même nom de fichier. */
 const stableId = (seed) => createHash("md5").update(seed).digest("hex").slice(0, 24).toUpperCase();
@@ -216,12 +242,16 @@ writeFileSync(infoPlistPath, infoPlist);
 // - En local (signature automatique), Xcode archive avec un profil de
 //   développement : aps-environment = development, et c'est
 //   `xcodebuild -exportArchive` qui bascule l'entitlement en production en
-//   re-signant. L'App Group des widgets, qu'Xcode sait créer tout seul, y a
-//   sa place (docs/app-widgets.md).
+//   re-signant.
 // - En CI (signature manuelle, scripts/ios-signing.mjs), l'archive est
 //   directement signée avec un profil « App Store » : aps-environment vaut
-//   production, et l'App Group disparaît, l'API App Store Connect ne sait pas
-//   créer de groupe, et les widgets ne font pas partie de la v1.
+//   production.
+//
+// L'App Group des widgets, lui, est là dans les deux cas : c'est le seul
+// espace que l'app et son extension partagent. L'API App Store Connect ne sait
+// ni créer un groupe ni l'attacher à un App ID, c'est donc une manipulation à
+// faire une fois dans le portail Apple (docs/app-widgets.md) ; en CI,
+// scripts/ios-signing.mjs vérifie que le profil le porte avant l'archive.
 //
 // Le domaine associé (`applinks:`) suit la même règle : la capacité Associated
 // Domains doit être active sur l'App ID, sinon l'archive est refusée. En CI,
@@ -230,7 +260,24 @@ writeFileSync(infoPlistPath, infoPlist);
 // fichier /.well-known/apple-app-site-association servi par le site (écrit par
 // scripts/well-known.mjs) : c'est lui qui dit quels chemins ouvrent l'app.
 const entitlementsPath = join(appDir, "App.entitlements");
-if (!existsSync(entitlementsPath)) {
+if (existsSync(entitlementsPath)) {
+  // Fichier d'un ios/ plus ancien, d'avant les widgets : sans l'App Group,
+  // l'extension ne lirait aucun payload. Ajout à part, la création ci-dessous
+  // ne repassant jamais sur un fichier existant.
+  const existing = readFileSync(entitlementsPath, "utf8");
+  if (!existing.includes(APP_GROUP)) {
+    writeFileSync(
+      entitlementsPath,
+      mustReplace(
+        existing,
+        /<\/dict>\s*<\/plist>\s*$/,
+        `\t<key>com.apple.security.application-groups</key>\n\t<array>\n\t\t<string>${APP_GROUP}</string>\n\t</array>\n</dict>\n</plist>\n`,
+        "App.entitlements : ajout de l'App Group",
+      ),
+    );
+    console.log("setup-ios: App Group ajouté à App.entitlements");
+  }
+} else {
   writeFileSync(
     entitlementsPath,
     `<?xml version="1.0" encoding="UTF-8"?>
@@ -247,20 +294,16 @@ if (!existsSync(entitlementsPath)) {
 \t<array>
 \t\t<string>applinks:${APP_LINK_DOMAIN}</string>
 \t</array>
-${
-  MANUAL_SIGNING
-    ? ""
-    : `\t<key>com.apple.security.application-groups</key>
+\t<key>com.apple.security.application-groups</key>
 \t<array>
-\t\t<string>group.fr.petitejerusalem.app</string>
+\t\t<string>${APP_GROUP}</string>
 \t</array>
-`
-}</dict>
+</dict>
 </plist>
 `,
   );
   console.log(
-    `setup-ios: App.entitlements créé (Sign in with Apple + push${MANUAL_SIGNING ? " production" : " + App Group"} + applinks:${APP_LINK_DOMAIN})`,
+    `setup-ios: App.entitlements créé (Sign in with Apple + push${MANUAL_SIGNING ? " production" : ""} + App Group + applinks:${APP_LINK_DOMAIN})`,
   );
 }
 
@@ -434,7 +477,53 @@ if (!appDelegate.includes("allowsBackForwardNavigationGestures")) {
 }
 
 // ---------------------------------------------------------------------------
-// 6. project.pbxproj
+// 6. Widgets d'écran d'accueil : sources du plugin et de l'extension
+// ---------------------------------------------------------------------------
+// Le code natif des widgets est versionné dans native/ios/ (comme celui
+// d'Android dans native/android/) et recopié ici, ios/ étant régénéré de zéro
+// à chaque run de CI. Deux destinations :
+//   - la cible App reçoit le plugin (PjWidgetsPlugin) et le contrôleur qui
+//     l'enregistre (PjViewController, obligatoire depuis Capacitor 5) ;
+//   - la cible d'extension reçoit les widgets SwiftUI eux-mêmes, avec son
+//     Info.plist (NSExtension) et ses entitlements (l'App Group).
+// L'enregistrement dans le projet Xcode se fait plus bas, dans le pbxproj.
+const nativeIosDir = join(root, "native/ios");
+const APP_PLUGIN_SOURCES = ["PjWidgetsPlugin.swift", "PjViewController.swift"];
+for (const name of APP_PLUGIN_SOURCES) {
+  copyFileSync(join(nativeIosDir, "App", name), join(appDir, name));
+}
+
+const widgetDir = join(iosDir, "App", WIDGET_TARGET);
+mkdirSync(widgetDir, { recursive: true });
+copyFileSync(
+  join(nativeIosDir, WIDGET_TARGET, `${WIDGET_TARGET}.swift`),
+  join(widgetDir, `${WIDGET_TARGET}.swift`),
+);
+writeFileSync(join(widgetDir, "Info.plist"), widgetInfoPlist(DISPLAY_NAME));
+writeFileSync(join(widgetDir, `${WIDGET_TARGET}.entitlements`), widgetEntitlements());
+console.log(`setup-ios: sources des widgets copiées depuis native/ios/ (App + ${WIDGET_TARGET})`);
+
+// Le plugin doit être enregistré à la main depuis Capacitor 5 : PjViewController
+// remplace CAPBridgeViewController comme classe du view controller du
+// storyboard. `customModule` disparaît, la classe vit dans la cible App et non
+// dans le module Capacitor.
+const storyboardPath = join(appDir, "Base.lproj/Main.storyboard");
+const storyboard = readFileSync(storyboardPath, "utf8");
+if (storyboard.includes('customClass="CAPBridgeViewController"')) {
+  writeFileSync(
+    storyboardPath,
+    mustReplace(
+      storyboard,
+      'customClass="CAPBridgeViewController" customModule="Capacitor"',
+      'customClass="PjViewController"',
+      "Main.storyboard : classe du view controller",
+    ),
+  );
+  console.log("setup-ios: PjViewController posé dans Main.storyboard");
+}
+
+// ---------------------------------------------------------------------------
+// 7. project.pbxproj
 // ---------------------------------------------------------------------------
 let pbxproj = readFileSync(pbxprojPath, "utf8");
 
@@ -486,15 +575,31 @@ function setSetting(block, key, value) {
   return block.replace(/(buildSettings = \{\n)/, (m) => `${m}\t\t\t\t${key} = ${value};\n`);
 }
 
+/**
+ * Les identifiants des deux configurations de build d'une cible, via sa
+ * XCConfigurationList. Repérer les configurations « qui portent un bundle id »
+ * suffisait tant que le projet n'avait qu'une cible ; l'extension de widgets a
+ * les siennes, et un deuxième passage du script en aurait alors trouvé quatre.
+ */
+function targetConfigurationIds(target) {
+  const listId = pbxproj.match(
+    new RegExp(
+      `buildConfigurationList = ([0-9A-F]{24}) \\/\\* Build configuration list for PBXNativeTarget "${target}" \\*\\/`,
+    ),
+  )?.[1];
+  if (!listId) return [];
+  const list = pbxproj.match(new RegExp(`${listId} \\/\\*[^*]*\\*\\/ = \\{[\\s\\S]*?\\n\\t\\t\\};`))?.[0];
+  return [...(list ?? "").matchAll(/([0-9A-F]{24}) \/\* (?:Debug|Release) \*\//g)].map((m) => m[1]);
+}
+
 let configsPatched = 0;
-pbxproj = pbxproj.replace(
-  /isa = XCBuildConfiguration;[\s\S]*?name = (?:Debug|Release);/g,
-  (block) => {
-    // Les deux configurations au niveau projet n'ont pas de bundle id : on ne
-    // touche qu'à celles de la cible App.
-    if (!block.includes("PRODUCT_BUNDLE_IDENTIFIER")) return block;
+for (const configId of targetConfigurationIds("App")) {
+  const block = new RegExp(
+    `\\t\\t${configId} \\/\\* (?:Debug|Release) \\*\\/ = \\{\\n\\t\\t\\tisa = XCBuildConfiguration;[\\s\\S]*?\\n\\t\\t\\};`,
+  );
+  pbxproj = pbxproj.replace(block, (found) => {
     configsPatched++;
-    let out = block;
+    let out = found;
     out = setSetting(out, "CODE_SIGN_ENTITLEMENTS", "App/App.entitlements");
     // Les réglages de signature vivent ici, dans la cible App, et jamais en
     // argument d'xcodebuild : passés en ligne de commande ils s'appliqueraient
@@ -516,12 +621,38 @@ pbxproj = pbxproj.replace(
     if (MARKETING_VERSION) out = setSetting(out, "MARKETING_VERSION", MARKETING_VERSION);
     if (BUILD_NUMBER) out = setSetting(out, "CURRENT_PROJECT_VERSION", BUILD_NUMBER);
     return out;
-  },
-);
+  });
+}
 
 if (configsPatched !== 2) {
   console.error(
     `setup-ios: ${configsPatched} configuration(s) de build trouvée(s) au lieu de 2, le template Xcode de Capacitor a changé.`,
+  );
+  process.exit(1);
+}
+
+// Widgets : le plugin dans la cible App, puis la cible d'extension elle-même.
+// Après le patch ci-dessus, dont les ancres (groupe App, phase Sources) sont
+// les premières du fichier : la cible d'extension a les mêmes, et les ajouter
+// avant la brouillerait.
+try {
+  for (const name of APP_PLUGIN_SOURCES) pbxproj = addAppSource(pbxproj, name);
+  pbxproj = addWidgetExtension(pbxproj, {
+    bundleId: WIDGET_BUNDLE_ID,
+    teamId: TEAM_ID,
+    marketingVersion: MARKETING_VERSION ?? "1.0",
+    buildNumber: BUILD_NUMBER ?? "1",
+    signing: MANUAL_SIGNING
+      ? { manual: true, identity: CODE_SIGN_IDENTITY, profile: WIDGET_PROVISIONING_PROFILE }
+      : { manual: false },
+  });
+  console.log(`setup-ios: cible d'extension ${WIDGET_TARGET} (${WIDGET_BUNDLE_ID}) enregistrée`);
+} catch (error) {
+  console.error(
+    `setup-ios: cible des widgets impossible à écrire, ${error.message}\n` +
+      "  Le template Xcode de Capacitor a changé : comparer avec\n" +
+      "  node_modules/@capacitor/cli/assets/ios-spm-template.tar.gz et mettre\n" +
+      "  scripts/lib/xcode-widgets.mjs à jour.",
   );
   process.exit(1);
 }
@@ -541,7 +672,7 @@ if (!TEAM_ID) {
 }
 
 // ---------------------------------------------------------------------------
-// 7. Schéma Xcode partagé
+// 8. Schéma Xcode partagé
 // ---------------------------------------------------------------------------
 // Le template Capacitor n'en contient aucun : Xcode en fabrique un dans
 // xcuserdata à la première ouverture, mais une machine de CI qui ne fait que
@@ -631,7 +762,7 @@ if (!existsSync(schemePath)) {
 }
 
 // ---------------------------------------------------------------------------
-// 8. Icônes et écran de lancement (assets/logo.png)
+// 9. Icônes et écran de lancement (assets/logo.png)
 // ---------------------------------------------------------------------------
 // @capacitor/assets produit les mêmes noms de fichiers que le scaffold nu
 // (AppIcon-512@2x.png, splash-2732x2732*.png) : aucun fichier ne peut servir

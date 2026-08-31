@@ -220,10 +220,11 @@ Un test tient les trois points (`src/__tests__/nativeBackNavigation.test.ts`).
 ## Widgets d'écran d'accueil
 
 Deux widgets (Horaires, Lecture du jour) accompagnent l'app : l'app pré-calcule
-leurs contenus et les pousse au natif via le plugin maison PjWidgets. Côté
-Android tout est scripté (`native/android/` + `setup-android.mjs`) ; côté iOS
-quelques étapes Xcode manuelles restent nécessaires, voir
-`docs/app-widgets.md`.
+leurs contenus et les pousse au natif via le plugin maison PjWidgets. Les deux
+plateformes sont scriptées, `native/android/` + `setup-android.mjs` d'un côté,
+`native/ios/` + `setup-ios.mjs` de l'autre, qui écrit jusqu'à la cible
+d'extension dans le projet Xcode. Seul l'App Group demande trois clics dans le
+portail Apple, une fois pour toutes, voir `docs/app-widgets.md`.
 
 ## Liens du site qui ouvrent l'app
 

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WidgetKit
 
 /**
@@ -10,17 +11,20 @@ import WidgetKit
  * Libellés ET heures y sont déjà localisés et formatés : aucun DateFormatter
  * ici, le réglage 12 h/24 h et le calendrier de l'appareil (hébraïque chez
  * une partie du public) réécriraient l'affichage. Les widgets comparent des
- * epochs, rien d'autre.
+ * epochs, comptent des coches, rien d'autre.
  *
  * - Horaires : une entrée de timeline par zman à venir (fenêtre bornée, les
  *   entrées ne portent que leurs chaînes, pas le payload entier) ; fenêtre
  *   épuisée → une entrée « rouvrez l'app » en .never, l'app relancera tout au
- *   prochain push.
- * - Lecture : une entrée maintenant, redessin à l'échéance du payload
+ *   prochain push. Chaque entrée porte aussi les horaires suivants, qui
+ *   remplissent la hauteur du widget au lieu de la laisser vide.
+ * - Lecture : une ligne, le même dessin que la carte du tableau de bord
+ *   (src/components/DailyReadingCard.vue) : titre, progression, pourcentage,
+ *   barre. Une entrée maintenant, redessin à l'échéance du payload
  *   (expiresAt, minuit local calculé côté app).
  *
- * Fichier à ajouter à la cible d'extension « PjWidgets » du projet Xcode
- * (généré, non versionné), voir docs/app-widgets.md.
+ * Fichier ajouté à la cible d'extension « PjWidgets » du projet Xcode par
+ * scripts/setup-ios.mjs, voir docs/app-widgets.md.
  */
 
 let appGroup = "group.fr.petitejerusalem.app"
@@ -34,6 +38,46 @@ func loadPayload<T: Decodable>(_ key: String, as type: T.Type) -> T? {
 
 /** Repli quand aucun payload n'existe (widget posé avant le premier lancement). */
 let openAppFallback = "Ouvrez Petite Jérusalem pour préparer le widget"
+
+// MARK: - Couleurs
+
+/**
+ * Les couleurs de l'app (src/assets/main.css). L'accent, lui, est celui du
+ * thème choisi par l'utilisateur et arrive dans le payload : ces constantes ne
+ * servent qu'aux payloads d'avant, qui ne le portaient pas.
+ */
+enum PjColors {
+    static let fallbackAccent = "#1D6FDB"
+    static let background = adaptive(light: "#F4F1EA", dark: "#1F2937")
+    static let text = adaptive(light: "#35312A", dark: "#F3F4F6")
+    static let textSecondary = adaptive(light: "#6D6759", dark: "#9CA3AF")
+    /// Le vert de « tout est lu » (text-green-600 / dark:text-green-400).
+    static let success = adaptive(light: "#16A34A", dark: "#4ADE80")
+
+    /// Une couleur qui suit le mode clair/sombre de l'appareil.
+    static func adaptive(light: String, dark: String) -> Color {
+        guard let lightColor = uiColor(light), let darkColor = uiColor(dark) else { return .primary }
+        return Color(UIColor { $0.userInterfaceStyle == .dark ? darkColor : lightColor })
+    }
+
+    /// L'accent du payload, ou celui d'origine si le payload est d'avant.
+    static func accent(_ hex: String?) -> Color {
+        guard let color = uiColor(hex ?? "") ?? uiColor(fallbackAccent) else { return .primary }
+        return Color(color)
+    }
+
+    /// "#RRGGBB" ; toute autre forme rend nil, le widget ne devine pas.
+    private static func uiColor(_ hex: String) -> UIColor? {
+        var value = hex
+        if value.hasPrefix("#") { value.removeFirst() }
+        guard value.count == 6, let rgb = UInt32(value, radix: 16) else { return nil }
+        return UIColor(
+            red: CGFloat((rgb >> 16) & 0xFF) / 255,
+            green: CGFloat((rgb >> 8) & 0xFF) / 255,
+            blue: CGFloat(rgb & 0xFF) / 255,
+            alpha: 1)
+    }
+}
 
 // MARK: - Horaires
 
@@ -72,6 +116,14 @@ struct ZmanimPayload: Decodable {
     let times: [ZmanTime]
     /// Absent des payloads d'avant la v2 : les lignes du jour restent vides.
     let days: [ZmanimDay]?
+    /// Absent des payloads d'avant l'accent de thème.
+    let accent: String?
+}
+
+/// Un horaire à afficher, réduit à ce qui se voit.
+struct ZmanLine: Hashable {
+    let label: String
+    let time: String
 }
 
 /// Une entrée ne porte que ce qu'elle affiche, surtout pas le payload entier,
@@ -84,18 +136,22 @@ struct ZmanimEntry: TimelineEntry {
     let tachanun: String?
     let tachanunStrong: Bool
     /// Prochain zman à l'instant `date`, nil quand `message` prend la place.
-    let nextLabel: String?
-    let nextTime: String?
+    let next: ZmanLine?
+    /// Ceux d'après : ils remplissent la place que le prochain laisse libre.
+    let following: [ZmanLine]
     /// Fenêtre épuisée ou payload absent : message à afficher seul.
     let message: String?
+    let accent: String?
 }
 
 extension ZmanimEntry {
     /// L'entrée vide : un message seul, sans jour ni horaire.
-    static func message(_ text: String, at date: Date, place: String = "") -> ZmanimEntry {
+    static func message(_ text: String, at date: Date, place: String = "", accent: String? = nil)
+        -> ZmanimEntry
+    {
         ZmanimEntry(
             date: date, place: place, hebrewDate: "", parasha: nil, tachanun: nil,
-            tachanunStrong: false, nextLabel: nil, nextTime: nil, message: text)
+            tachanunStrong: false, next: nil, following: [], message: text, accent: accent)
     }
 }
 
@@ -103,6 +159,8 @@ struct ZmanimProvider: TimelineProvider {
     /// Nombre maximal d'entrées par timeline (~3 jours de zmanim) : WidgetKit
     /// redemande la suite en fin de timeline (.atEnd), inutile d'archiver plus.
     static let maxEntries = 45
+    /// Horaires affichés sous le prochain : de quoi remplir un widget moyen.
+    static let maxFollowing = 3
 
     func placeholder(in context: Context) -> ZmanimEntry {
         .message(openAppFallback, at: Date())
@@ -129,7 +187,9 @@ struct ZmanimProvider: TimelineProvider {
             // Fenêtre épuisée : surtout pas .atEnd (une timeline déjà finie
             // serait redemandée en boucle et grillerait le budget de refresh).
             return Timeline(
-                entries: [.message(payload.stale, at: now, place: payload.place)],
+                entries: [
+                    .message(payload.stale, at: now, place: payload.place, accent: payload.accent)
+                ],
                 policy: .never)
         }
 
@@ -141,6 +201,10 @@ struct ZmanimProvider: TimelineProvider {
             // Le jour hébraïque de CET instant-là : la date, la paracha et le
             // tahanoun changent à la chkia, pas au zman.
             let day = payload.days?.first { $0.covers(at) }
+            let following = upcoming
+                .dropFirst(i + 1)
+                .prefix(Self.maxFollowing)
+                .map { ZmanLine(label: $0.label, time: $0.time) }
             entries.append(ZmanimEntry(
                 date: at,
                 place: payload.place,
@@ -148,58 +212,112 @@ struct ZmanimProvider: TimelineProvider {
                 parasha: day?.parasha,
                 tachanun: day?.tachanun,
                 tachanunStrong: day?.tachanunStrong ?? false,
-                nextLabel: next.label,
-                nextTime: next.time,
-                message: nil))
+                next: ZmanLine(label: next.label, time: next.time),
+                following: Array(following),
+                message: nil,
+                accent: payload.accent))
         }
         return Timeline(entries: entries, policy: .atEnd)
     }
 }
 
-struct HorairesWidgetView: View {
-    let entry: ZmanimEntry
+/// Un horaire secondaire : son libellé à gauche, son heure à droite.
+struct ZmanRow: View {
+    let line: ZmanLine
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(entry.hebrewDate)
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                Spacer()
-                Text(entry.place)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            if let label = entry.nextLabel, let time = entry.nextTime {
-                Text(label)
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(line.label)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .foregroundStyle(PjColors.textSecondary)
+            Spacer(minLength: 4)
+            Text(line.time)
+                .fontWeight(.semibold)
+                .monospacedDigit()
+                .foregroundStyle(PjColors.text)
+        }
+        .font(.caption)
+    }
+}
+
+struct HorairesWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: ZmanimEntry
+
+    /// Le petit widget n'a la place que d'un horaire de plus, le moyen de trois.
+    private var followingShown: Int { family == .systemSmall ? 1 : 3 }
+
+    var body: some View {
+        let accent = PjColors.accent(entry.accent)
+        VStack(alignment: .leading, spacing: 0) {
+            header
+            if let next = entry.next {
+                Spacer(minLength: 6)
+                Text(next.label)
                     .font(.footnote)
-                    .lineLimit(2)
-                Text(time)
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .lineLimit(1)
+                    .foregroundStyle(PjColors.text)
+                Text(next.time)
+                    .font(.system(size: family == .systemSmall ? 30 : 34, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(accent)
+                if !entry.following.isEmpty {
+                    Spacer(minLength: 8)
+                    VStack(spacing: 3) {
+                        ForEach(Array(entry.following.prefix(followingShown)), id: \.self) { line in
+                            ZmanRow(line: line)
+                        }
+                    }
+                }
+                Spacer(minLength: 6)
+                footer
+            } else {
+                Spacer(minLength: 8)
+                Text(entry.message ?? openAppFallback)
+                    .font(.footnote)
+                    .foregroundStyle(PjColors.text)
+                Spacer(minLength: 0)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr/horaires"))
+    }
+
+    /// La date hébraïque et le lieu : les deux repères du widget.
+    private var header: some View {
+        HStack(spacing: 6) {
+            Text(entry.hebrewDate)
+                .font(.caption.weight(.bold))
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            Text(entry.place)
+                .font(.caption)
+                .lineLimit(1)
+        }
+        .foregroundStyle(PjColors.textSecondary)
+    }
+
+    /// La paracha et le tahanoun, posés en bas : ce sont les repères du jour,
+    /// pas des horaires, et ils ferment le widget au lieu de flotter au milieu.
+    @ViewBuilder private var footer: some View {
+        if entry.parasha != nil || entry.tachanun != nil {
+            VStack(alignment: .leading, spacing: 1) {
                 if let parasha = entry.parasha {
                     Text(parasha)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.caption2)
                         .lineLimit(1)
+                        .foregroundStyle(PjColors.textSecondary)
                 }
                 if let tachanun = entry.tachanun {
                     // Les jours sans tahanoun se repèrent d'un coup d'œil.
                     Text(tachanun)
-                        .font(entry.tachanunStrong ? .caption.weight(.bold) : .caption)
-                        .foregroundStyle(entry.tachanunStrong ? .primary : .secondary)
+                        .font(entry.tachanunStrong ? .caption2.weight(.bold) : .caption2)
                         .lineLimit(1)
+                        .foregroundStyle(entry.tachanunStrong ? PjColors.text : PjColors.textSecondary)
                 }
-            } else {
-                Spacer()
-                Text(entry.message ?? openAppFallback)
-                    .font(.footnote)
             }
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr/horaires"))
     }
 }
 
@@ -207,9 +325,10 @@ struct HorairesWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "HorairesWidget", provider: ZmanimProvider()) { entry in
             if #available(iOS 17.0, *) {
-                HorairesWidgetView(entry: entry).containerBackground(.background, for: .widget)
+                HorairesWidgetView(entry: entry)
+                    .containerBackground(for: .widget) { PjColors.background }
             } else {
-                HorairesWidgetView(entry: entry).padding()
+                HorairesWidgetView(entry: entry).padding().background(PjColors.background)
             }
         }
         .configurationDisplayName("Horaires")
@@ -238,6 +357,9 @@ struct DailyPayload: Decodable {
     let items: [DailyItem]
     let parasha: String?
     let parashaDone: Bool
+    /// "{done} sur {total} lus aujourd'hui" ; absent des payloads d'avant.
+    let progressTemplate: String?
+    let accent: String?
 
     var expiryDate: Date { Date(timeIntervalSince1970: expiresAt / 1000) }
 }
@@ -272,56 +394,120 @@ struct DailyProvider: TimelineProvider {
     }
 }
 
+/// La barre de progression de la carte du tableau de bord : un rail à
+/// l'accent très pâli, une pastille pleine à la proportion lue.
+struct DailyProgressBar: View {
+    let ratio: Double
+    let accent: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule().fill(accent.opacity(0.15))
+                if ratio > 0 {
+                    // Jamais plus fine que haute : une pastille, pas un trait.
+                    Capsule().fill(accent).frame(width: max(8, geometry.size.width * ratio))
+                }
+            }
+        }
+        .frame(height: 8)
+    }
+}
+
+/// Ce que la ligne affiche, une fois les coches confrontées à l'échéance.
+struct DailyState {
+    let line: String
+    let ratio: Double
+    /// Vrai quand tout est lu : la ligne passe au vert, comme dans l'app.
+    let allDone: Bool
+    /// Faux quand il n'y a rien à mesurer (liste vide, payload absent).
+    let measurable: Bool
+}
+
+extension DailyState {
+    static func of(_ payload: DailyPayload?, at instant: Date) -> DailyState {
+        guard let payload else {
+            return DailyState(line: openAppFallback, ratio: 0, allDone: false, measurable: false)
+        }
+        if !payload.configured {
+            return DailyState(line: payload.emptyLabel, ratio: 0, allDone: false, measurable: false)
+        }
+        // Les coches ne valent que jusqu'au minuit local du payload, simple
+        // comparaison d'epochs, aucun calendrier en jeu.
+        let fresh = instant < payload.expiryDate
+        // Chnei mikra seul : la paracha EST la lecture, son avancement fait la
+        // progression, et il ne se remet pas à zéro chaque jour.
+        if payload.items.isEmpty, let parasha = payload.parasha {
+            return DailyState(
+                line: parasha, ratio: payload.parashaDone ? 1 : 0, allDone: payload.parashaDone,
+                measurable: true)
+        }
+        let total = payload.items.count
+        let done = fresh ? payload.items.filter(\.done).count : 0
+        if total == 0 {
+            return DailyState(line: payload.emptyLabel, ratio: 0, allDone: false, measurable: false)
+        }
+        if done >= total {
+            return DailyState(line: payload.allDoneLabel, ratio: 1, allDone: true, measurable: true)
+        }
+        // Le gabarit porte ses sentinelles : l'app ne peut pas interpoler des
+        // nombres qu'elle ne connaît qu'ici (les coches dépendent de l'heure).
+        let template = payload.progressTemplate ?? "{done}/{total}"
+        let line = template
+            .replacingOccurrences(of: "{done}", with: "\(done)")
+            .replacingOccurrences(of: "{total}", with: "\(total)")
+        return DailyState(
+            line: line, ratio: Double(done) / Double(total), allDone: false, measurable: true)
+    }
+}
+
 struct LectureWidgetView: View {
     let entry: DailyEntry
 
     var body: some View {
-        // Les coches ne valent que jusqu'au minuit local du payload, simple
-        // comparaison d'epochs, aucun calendrier en jeu.
         let payload = entry.payload
-        let isFresh = payload.map { entry.date < $0.expiryDate } ?? false
-        let doneCount = isFresh ? (payload?.items.filter { $0.done }.count ?? 0) : 0
-        let nextItem = payload?.items.first { !(isFresh && $0.done) }
-        let parashaLine = payload?.parasha.map { payload!.parashaDone ? "\($0) ✓" : $0 }
-        // Chnei mikra seul : la paracha EST la lecture, pas de décompte quotidien.
-        let parashaOnly = (payload?.configured ?? false) && payload?.items.isEmpty == true
+        let state = DailyState.of(payload, at: entry.date)
+        let accent = PjColors.accent(payload?.accent)
 
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
+        // Une ligne, le dessin de la carte du tableau de bord : titre et
+        // chevron, progression et pourcentage, barre. Centrée dans la hauteur
+        // du widget plutôt que collée en haut.
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "book")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(accent)
                 Text(payload?.title ?? "Lecture du jour")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                if let payload, payload.configured, !parashaOnly {
-                    Text("\(doneCount)/\(payload.items.count)")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.secondary)
-                }
+                    .font(.subheadline.weight(.bold))
+                    .lineLimit(1)
+                    .foregroundStyle(PjColors.text)
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(PjColors.textSecondary.opacity(0.6))
             }
-            if let payload {
-                if !payload.configured {
-                    Text(payload.emptyLabel).font(.footnote)
-                } else if parashaOnly {
-                    Text(parashaLine ?? payload.emptyLabel)
-                        .font(.subheadline.weight(.semibold))
-                        .lineLimit(2)
-                } else {
-                    Text(nextItem?.label ?? payload.allDoneLabel)
-                        .font(.subheadline.weight(.semibold))
-                        .lineLimit(2)
-                    if let parashaLine {
-                        Text(parashaLine)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
+
+            if state.measurable {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(state.line)
+                        .font(.footnote.weight(.medium))
+                        .lineLimit(1)
+                        .foregroundStyle(state.allDone ? PjColors.success : PjColors.text)
+                    Spacer(minLength: 4)
+                    Text("\(Int((state.ratio * 100).rounded()))%")
+                        .font(.footnote.weight(.semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(accent)
                 }
+                DailyProgressBar(ratio: state.ratio, accent: accent)
             } else {
-                Text(openAppFallback).font(.footnote)
+                Text(state.line)
+                    .font(.footnote)
+                    .lineLimit(3)
+                    .foregroundStyle(PjColors.textSecondary)
             }
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr/bibliotheque/lecture-du-jour"))
     }
 }
@@ -330,14 +516,17 @@ struct LectureWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "LectureWidget", provider: DailyProvider()) { entry in
             if #available(iOS 17.0, *) {
-                LectureWidgetView(entry: entry).containerBackground(.background, for: .widget)
+                LectureWidgetView(entry: entry)
+                    .containerBackground(for: .widget) { PjColors.background }
             } else {
-                LectureWidgetView(entry: entry).padding()
+                LectureWidgetView(entry: entry).padding().background(PjColors.background)
             }
         }
         .configurationDisplayName("Lecture du jour")
         .description("Votre lecture quotidienne et sa progression.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        // Une ligne : le carré n'a pas la largeur qu'il faut à la barre et à
+        // son pourcentage, seul le format moyen porte ce dessin.
+        .supportedFamilies([.systemMedium])
     }
 }
 

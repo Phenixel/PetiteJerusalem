@@ -11,8 +11,9 @@ import WidgetKit
  * espace lisible par l'extension de widgets, puis WidgetKit recharge les
  * timelines.
  *
- * Fichier à ajouter à la cible App du projet Xcode (généré, non versionné) et
- * à enregistrer via PjViewController, voir docs/app-widgets.md.
+ * Fichier copié dans la cible App du projet Xcode (généré, non versionné) par
+ * scripts/setup-ios.mjs, qui l'y enregistre aussi via PjViewController, voir
+ * docs/app-widgets.md.
  */
 @objc(PjWidgetsPlugin)
 public class PjWidgetsPlugin: CAPPlugin, CAPBridgedPlugin {

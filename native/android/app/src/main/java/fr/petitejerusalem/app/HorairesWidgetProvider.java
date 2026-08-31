@@ -11,7 +11,7 @@ import org.json.JSONObject;
 
 /**
  * Widget « Horaires » : le jour hébraïque et le prochain zman du lieu de
- * l'utilisateur, avec la paracha de la semaine et le tahanoun.
+ * l'utilisateur, celui d'après, la paracha de la semaine et le tahanoun.
  *
  * Tout vient du payload JSON poussé par l'app (une semaine d'horaires et de
  * jours hébraïques, libellés ET heures déjà localisés/formatés, voir
@@ -19,6 +19,10 @@ import org.json.JSONObject;
  * il choisit le premier horaire à venir et le jour qui couvre l'instant
  * courant, puis demande à se redessiner au prochain zman. Passé la fenêtre
  * embarquée, il invite à rouvrir l'app.
+ *
+ * L'heure mise en avant porte l'accent du thème de l'utilisateur, comme la
+ * carte « prochain horaire » de la page Horaires ; l'horaire d'après occupe la
+ * place que le prochain laisse libre, plutôt que de la laisser vide.
  */
 public class HorairesWidgetProvider extends PjWidgetProvider {
 
@@ -56,12 +60,14 @@ public class HorairesWidgetProvider extends PjWidgetProvider {
 
             JSONArray times = payload.getJSONArray("times");
             JSONObject next = null;
+            JSONObject after = null;
             for (int i = 0; i < times.length(); i++) {
                 JSONObject time = times.getJSONObject(i);
-                if (time.getLong("epoch") > now) {
-                    next = time;
-                    break;
-                }
+                if (time.getLong("epoch") <= now) continue;
+                next = time;
+                // Celui d'après, s'il existe : il remplit le bas du widget.
+                if (i + 1 < times.length()) after = times.getJSONObject(i + 1);
+                break;
             }
             if (next == null) {
                 // Fenêtre d'une semaine épuisée : l'app n'a pas été rouverte.
@@ -72,12 +78,25 @@ public class HorairesWidgetProvider extends PjWidgetProvider {
             views.setViewVisibility(R.id.pj_horaires_time, View.VISIBLE);
             views.setTextViewText(R.id.pj_horaires_label, next.getString("label"));
             views.setTextViewText(R.id.pj_horaires_time, next.getString("time"));
+            views.setTextColor(R.id.pj_horaires_time, parseAccent(payload.optString("accent", null)));
+            showAfter(views, after);
             return new Rendered(views, next.getLong("epoch") + 1000);
         } catch (Exception e) {
             // Payload absent (widget posé avant le premier lancement) ou illisible.
             showMessage(views, context.getString(R.string.pj_widget_open_app));
             return new Rendered(views, 0);
         }
+    }
+
+    /** L'horaire d'après le prochain, ou rien s'il n'y en a plus. */
+    private void showAfter(RemoteViews views, JSONObject after) {
+        if (after == null) {
+            views.setViewVisibility(R.id.pj_horaires_next, View.GONE);
+            return;
+        }
+        views.setViewVisibility(R.id.pj_horaires_next, View.VISIBLE);
+        views.setTextViewText(R.id.pj_horaires_next_label, after.optString("label", ""));
+        views.setTextViewText(R.id.pj_horaires_next_time, after.optString("time", ""));
     }
 
     /**
@@ -142,6 +161,7 @@ public class HorairesWidgetProvider extends PjWidgetProvider {
     private void showMessage(RemoteViews views, String message) {
         views.setTextViewText(R.id.pj_horaires_label, message);
         views.setViewVisibility(R.id.pj_horaires_time, View.GONE);
+        views.setViewVisibility(R.id.pj_horaires_next, View.GONE);
         views.setViewVisibility(R.id.pj_horaires_parasha, View.GONE);
         views.setViewVisibility(R.id.pj_horaires_tachanun, View.GONE);
     }

@@ -2,13 +2,18 @@
 
 Deux widgets accompagnent l'app native :
 
-- **Horaires** : la date hébraïque, le prochain zman du lieu de l'utilisateur,
-  la paracha de la semaine et le ta'hanoun (en gras les jours où l'on n'en dit
-  pas), aux couleurs de l'app, mis à jour à chaque horaire passé. Toucher le
-  widget ouvre la page `/horaires`.
-- **Lecture du jour** : la progression de la liste quotidienne (« 2/4 », la
-  prochaine lecture à faire, la paracha de la semaine), remise à zéro à minuit.
-  Toucher le widget ouvre `/bibliotheque/lecture-du-jour`.
+- **Horaires** : la date hébraïque, le prochain zman du lieu de l'utilisateur
+  (à l'accent de son thème, comme la carte « prochain horaire » de la page),
+  celui d'après, la paracha de la semaine et le ta'hanoun (en gras les jours où
+  l'on n'en dit pas), mis à jour à chaque horaire passé. Toucher le widget
+  ouvre la page `/horaires`.
+- **Lecture du jour** : une ligne, le dessin de la carte du tableau de bord
+  (`src/components/DailyReadingCard.vue`) : titre, « 2 sur 3 lus aujourd'hui »,
+  pourcentage et barre de progression, remise à zéro à minuit. Toucher le
+  widget ouvre `/bibliotheque/lecture-du-jour`.
+
+Les deux portent l'accent du thème choisi par l'utilisateur : il voyage dans le
+payload, le natif ne connaît aucune couleur de thème.
 
 ## Architecture : l'app calcule, le natif affiche
 
@@ -39,9 +44,14 @@ widgetService.refresh()
   (hébraïque chez une partie du public), qui fausseraient l'affichage. Seule
   exception : le sélecteur de widgets du launcher et l'état « aucun payload »
   (avant le premier lancement), portés par des ressources natives.
+  Deux valeurs échappent à la règle du « déjà formaté », faute de pouvoir être
+  calculées à l'avance : les nombres de la ligne de progression, qui dépendent
+  de l'heure qu'il sera (`progressTemplate` part avec ses `{done}`/`{total}`
+  intacts, comme le `then` des horaires), et l'accent du thème (`accent`), une
+  couleur et non un texte.
 - **Rafraîchi** au lancement, au retour au premier plan, à la
   connexion/déconnexion, au changement de lieu des horaires, au changement de
-  langue, et à chaque progression de la lecture du jour
+  langue, au changement de thème, et à chaque progression de la lecture du jour
   (`src/services/widgetService.ts`). Un payload inchangé n'est pas renvoyé, et
   le natif ne recharge que le widget dont le payload a changé (le budget de
   rafraîchissement WidgetKit n'est pas extensible) ; la page Lecture du jour
@@ -57,8 +67,8 @@ widgetService.refresh()
   pas naviguer) et attend `router.isReady()` pour survivre au démarrage à
   froid.
 - **Cas particulier** : un utilisateur dont la seule lecture est la paracha
-  (chnei mikra hebdomadaire) est bien « configuré », le widget affiche la
-  paracha comme lecture principale, sans décompte quotidien.
+  (chnei mikra hebdomadaire) est bien « configuré » ; la paracha devient alors
+  la lecture, et c'est son avancement, hebdomadaire, qui remplit la barre.
 
 ## Android : automatique
 
@@ -78,40 +88,50 @@ launcher, ouvrir l'app une fois (elle pousse les payloads), vérifier que le
 widget Horaires bascule au passage d'un zman et que « marquer comme lu » met à
 jour le widget Lecture.
 
-## iOS : étapes manuelles (une fois, sur macOS)
+## iOS : automatique aussi, sauf trois clics chez Apple
 
-Le projet `ios/` est généré (`npx cap add ios`) et non versionné ; Xcode ne se
-scripte pas comme Gradle, les cibles se créent à la main. Les sources sont
-prêtes dans `native/ios/` :
+Le projet `ios/` est généré (`npx cap add ios`) et non versionné. Longtemps la
+cible d'extension s'y créait **à la main dans Xcode** : elle ne survivait donc
+à aucun `cap add ios`, et les builds de la CI partaient sur l'App Store sans le
+moindre widget, sans rien signaler. C'est la raison, et la seule, pour laquelle
+les widgets n'existaient pas sur iPhone.
 
-| Fichier | Cible | Rôle |
+`scripts/setup-ios.mjs` écrit désormais la cible lui-même, via
+`scripts/lib/xcode-widgets.mjs` (transformation de texte pure, testée sans
+macOS dans `src/__tests__/xcodeWidgets.test.ts`) :
+
+| Fichier de `native/ios/` | Destination | Rôle |
 |---|---|---|
-| `native/ios/App/PjWidgetsPlugin.swift` | App | reçoit les payloads, écrit l'App Group, recharge WidgetKit |
-| `native/ios/App/PjViewController.swift` | App | enregistre le plugin (obligatoire depuis Capacitor 5) |
-| `native/ios/PjWidgets/PjWidgets.swift` | PjWidgets (extension) | les deux widgets SwiftUI + timelines |
+| `App/PjWidgetsPlugin.swift` | cible App | reçoit les payloads, écrit l'App Group, recharge WidgetKit |
+| `App/PjViewController.swift` | cible App | enregistre le plugin (obligatoire depuis Capacitor 5) |
+| `PjWidgets/PjWidgets.swift` | cible PjWidgets | les deux widgets SwiftUI et leurs timelines |
 
-1. **Extension** : File → New → Target… → *Widget Extension*, nom `PjWidgets`,
-   sans configuration intent. Supprimer les fichiers d'exemple générés et y
-   glisser `PjWidgets.swift`.
-2. **App Group** : Signing & Capabilities → *App Groups* →
-   `group.fr.petitejerusalem.app`, sur **les deux cibles** (App et PjWidgets).
-   (À créer aussi dans le portail Apple Developer pour les builds signés.)
-3. **Plugin** : glisser les deux fichiers de `native/ios/App/` dans la cible
-   App, puis dans `Main.storyboard` remplacer la classe du view controller
-   (`CAPBridgeViewController`) par `PjViewController` (Identity inspector →
-   Custom Class).
-4. **Deep-links** : dans `Info.plist` de l'App, déclarer le scheme utilisé par
-   les widgets :
+Le script pose aussi l'`Info.plist` de l'extension (point d'extension
+WidgetKit, versions alignées sur celles de l'app), ses entitlements (l'App
+Group), l'App Group sur la cible App, la classe `PjViewController` dans
+`Main.storyboard`, et le schéma d'URL `petitejerusalem` des deep-links, aux
+côtés du `REVERSED_CLIENT_ID` de Google (dans le **même** tableau
+`CFBundleURLTypes`, la clé étant unique).
 
-   ```xml
-   <key>CFBundleURLTypes</key>
-   <array>
-     <dict>
-       <key>CFBundleURLSchemes</key>
-       <array><string>petitejerusalem</string></array>
-     </dict>
-   </array>
-   ```
+```bash
+npx cap add ios              # si ios/ n'existe pas encore
+node scripts/setup-ios.mjs
+npm run cap:ios
+```
+
+**La seule chose qui reste à faire à la main**, une fois pour toutes :
+l'App Group côté Apple. L'API App Store Connect sait activer la capacité
+`APP_GROUPS`, mais ni créer un groupe ni l'attacher à un App ID. Sur
+developer.apple.com → Certificates, Identifiers & Profiles :
+
+1. Identifiers → **App Groups** → + → identifiant `group.fr.petitejerusalem.app` ;
+2. Identifiers → `fr.petitejerusalem.app` → App Groups → Configure → cocher le groupe ;
+3. Identifiers → `fr.petitejerusalem.app.PjWidgets` → App Groups → Configure → idem.
+
+L'App ID de l'extension est créé par `scripts/ios-signing.mjs` au premier run
+de la CI ; en local, Xcode s'en charge à la première signature. Le script relit
+ensuite les profils et refuse de continuer si l'App Group n'y est pas
+(`docs/ios-ci-cd.md`).
 
 Tester : lancer l'app sur un appareil (simulateur : les widgets y sont
 capricieux), poser les deux widgets, puis vérifier zman suivant et progression
