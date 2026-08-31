@@ -23,6 +23,13 @@ public class PjWidgetsPlugin extends Plugin {
     static final String STORE = "pj_widgets";
     static final String KEY_ZMANIM = "zmanim";
     static final String KEY_DAILY = "daily";
+    /**
+     * Libellés des raccourcis vers la bibliothèque. Aucun widget Android ne
+     * les lit encore (ils n'existent que sur iOS) : on les range quand même,
+     * pour qu'un widget ajouté plus tard les trouve sans attendre que l'app
+     * soit rouverte, et pour que le contrat reste le même des deux côtés.
+     */
+    static final String KEY_LIBRARY = "library";
 
     static SharedPreferences store(Context context) {
         return context.getSharedPreferences(STORE, Context.MODE_PRIVATE);
@@ -36,6 +43,8 @@ public class PjWidgetsPlugin extends Plugin {
         if (zmanim != null) editor.putString(KEY_ZMANIM, zmanim);
         String daily = call.getString("daily");
         if (daily != null) editor.putString(KEY_DAILY, daily);
+        String library = call.getString("library");
+        if (library != null) editor.putString(KEY_LIBRARY, library);
         editor.apply();
 
         // Seuls les widgets dont le payload a changé sont redessinés.

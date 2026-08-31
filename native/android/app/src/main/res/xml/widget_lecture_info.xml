@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- updatePeriodMillis = 30 min (minimum système) : filet de sécurité, les
      vraies mises à jour viennent de l'app (payload) et de l'alarme de minuit.
-     targetCell* ne vaut qu'à partir d'Android 12, ignoré avant. -->
+     targetCell* ne vaut qu'à partir d'Android 12, ignoré avant.
+     Une ligne (4 × 1), pas un bloc : le widget reprend le dessin de la carte
+     du tableau de bord, qui est large et basse. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/pj_widget_lecture_description"
     android:initialLayout="@layout/widget_lecture"
-    android:minWidth="180dp"
-    android:minHeight="90dp"
-    android:targetCellWidth="3"
-    android:targetCellHeight="2"
+    android:minWidth="250dp"
+    android:minHeight="60dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="1"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
     android:widgetCategory="home_screen" />

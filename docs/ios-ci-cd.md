@@ -30,42 +30,63 @@ Store. Variable de repo `IOS_AUTO_RELEASE=false` pour revenir à la mise en
 vente au clic (voir
 [ios-release-plan.md](ios-release-plan.md#étape-8--soumission)).
 
-## ⚠️ Limite connue : les widgets ne passent pas par cette CI
+## Les widgets, et l'unique manipulation manuelle
 
-`docs/app-widgets.md` le dit : la cible `PjWidgets` se crée **à la main dans
-Xcode**, une cible ne se scriptant pas comme un module Gradle. Or ce workflow
-régénère `ios/` de zéro à chaque tag, il produit donc un build **sans les
-widgets**, sans rien signaler.
+Ce workflow régénère `ios/` de zéro à chaque tag : une cible créée à la main
+dans Xcode n'y survivrait pas, et c'est exactement pour cela que les widgets
+iOS n'ont longtemps atteint aucun iPhone, alors que leur code SwiftUI est
+versionné dans `native/ios/` depuis le début.
 
-Ce que `scripts/setup-ios.mjs` sait faire malgré tout, parce que c'est du
-fichier et non de la structure de projet : l'entitlement App Group
-`group.fr.petitejerusalem.app` sur la cible App, et le schéma d'URL
-`petitejerusalem` des deep-links, aux côtés du `REVERSED_CLIENT_ID` de Google
-(**dans le même tableau `CFBundleURLTypes`**, la clé étant unique).
+La cible d'extension `PjWidgets` est donc écrite dans le `project.pbxproj` par
+`scripts/lib/xcode-widgets.mjs`, que `scripts/setup-ios.mjs` appelle : cible,
+phases de build, configurations, embarquement dans l'app et dépendance. Le
+module ne fait que transformer du texte, il se teste donc sans macOS
+(`src/__tests__/xcodeWidgets.test.ts`, contre le vrai template de Capacitor :
+une mise à jour qui déplacerait une ancre casse ces tests plutôt que le build
+de release).
 
-Restent hors de portée : la cible d'extension, son entitlement App Group, le
-glissement des sources de `native/ios/` et le changement de classe du view
-controller dans `Main.storyboard`.
+**Reste une manipulation manuelle, à faire une seule fois** : l'API App Store
+Connect ne sait ni créer un App Group ni l'attacher à un App ID (elle sait
+seulement activer la capacité `APP_GROUPS`). Sur
+[developer.apple.com](https://developer.apple.com/account/resources/identifiers/list)
+→ Certificates, Identifiers & Profiles :
 
-Trois issues possibles, à trancher avant de poser un tag :
+1. Identifiers → **App Groups** → + → identifiant `group.fr.petitejerusalem.app` ;
+2. Identifiers → `fr.petitejerusalem.app` → App Groups → Configure → cocher le groupe ;
+3. Identifiers → `fr.petitejerusalem.app.PjWidgets` → App Groups → Configure → idem.
 
-| Option | Effet |
-|---|---|
-| **Builder les releases depuis le Mac** | le plus simple ; la CI ne sert plus qu'à vérifier que le projet se génère |
-| **Versionner `ios/`** | la CI redevient fidèle, mais contredit le choix d'architecture de `docs/app-native.md` et alourdit le dépôt |
-| **Scripter la cible** (gem `xcodeproj`) | garde tout automatique, mais c'est du vrai travail et une dépendance Ruby de plus |
+L'App ID de l'extension, lui, est créé par `scripts/ios-signing.mjs` au premier
+run : il faut donc lancer le workflow une fois pour qu'il existe, faire les
+trois clics, puis relancer.
 
-Tant que ce n'est pas tranché, **ne pas utiliser ce workflow pour une release
-publique** : il conviendrait à un build de test sans widget, pas à l'App Store.
+Le script relit les deux profils qu'il vient de créer et vérifie que l'App
+Group y figure : sans lui, le run s'arrête en une phrase, dans ses deux
+premières minutes, au lieu d'échouer un quart d'heure plus tard sur un
+« doesn't match the entitlements file » d'`xcodebuild`.
+
+### Éprouver la signature sans poser de tag
+
+Actions → **Deploy iOS** → Run workflow → cocher **debug_signing**. Ce mode
+fabrique le certificat et les deux profils, synchronise le minimum de
+Capacitor, tente une archive avec les journaux de provisioning verbeux, puis
+s'arrête. Il ne consomme aucun numéro de build côté App Store Connect (rien
+n'est envoyé, et le nettoyage révoque le certificat du run), ce qui en fait la
+répétition générale à faire avant un tag quand la signature a changé.
+
+Il saute le build web, mais **pas** `cap sync` : celui-ci déclare les paquets
+SPM des plugins, et sans lui l'archive échouait à la compilation
+(« Unable to find module dependency: 'FirebaseAuth' ») avant même d'atteindre
+la signature, c'est-à-dire avant ce que ce mode existe pour montrer. Un `dist/`
+réduit à une coquille vide suffit à `cap sync`.
 
 ## Signature « dans le nuage »
 
 Aucun certificat ni profil de provisionnement n'est stocké dans le repo,
 contrairement au keystore Android. `scripts/ios-signing.mjs` en fabrique un jeu
 au début de chaque run à partir de la clé d'API App Store Connect : certificat
-de distribution, profil « App Store », trousseau temporaire. Le nettoyage de
-fin (`--cleanup`, exécuté même quand le build échoue) détruit le trousseau et
-le profil ; le certificat, lui, ne part que si le run n'a rien envoyé chez
+de distribution, profils « App Store » (l'app et son extension de widgets),
+trousseau temporaire. Le nettoyage de fin (`--cleanup`, exécuté même quand le
+build échoue) détruit le trousseau et les profils ; le certificat, lui, ne part que si le run n'a rien envoyé chez
 Apple, voir le quota plus bas. La même clé sert à l'envoi de l'IPA et à la
 synchronisation de la fiche : c'est le seul secret sensible du workflow.
 
@@ -89,14 +110,17 @@ deux conséquences visibles dans `scripts/setup-ios.mjs` :
 - les réglages de signature sont écrits dans la **cible App du pbxproj**, jamais
   passés en argument d'`xcodebuild` (un argument s'appliquerait aussi aux
   paquets SPM, qui le rejettent) ;
-- l'entitlement `aps-environment` vaut `production` (il doit correspondre au
-  profil qui signe), et l'App Group des widgets disparaît du build CI : l'API
-  App Store Connect ne sait pas créer de groupe, et les widgets ne sont pas
-  dans la v1 (`docs/app-widgets.md`).
+- l'entitlement `aps-environment` vaut `production` : il doit correspondre au
+  profil qui signe.
 
-Les capacités de l'App ID nécessaires au profil, notifications push et Sign in
-with Apple, sont activées par le script lui-même, ce qu'Xcode faisait
-auparavant tout seul en mode automatique.
+Deux profils sont fabriqués à chaque run, l'app et son extension de widgets
+ayant chacune leur App ID. Celui de l'app porte le numéro de build dans son nom
+et survit à l'envoi (c'est lui qui dit quel certificat a signé quel binaire) ;
+celui de l'extension est jetable.
+
+Les capacités de l'App ID nécessaires aux profils, notifications push, Sign in
+with Apple, domaines associés et App Groups, sont activées par le script
+lui-même, ce qu'Xcode faisait auparavant tout seul en mode automatique.
 
 ### Le quota de trois certificats de distribution
 

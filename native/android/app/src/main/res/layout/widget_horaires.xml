@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget « Horaires » : le jour hébraïque, le prochain zman, la paracha et
-     le tahanoun. Couleurs jour/nuit via values(-night). -->
+<!-- Widget « Horaires » : le jour hébraïque, le prochain zman (à l'accent du
+     thème de l'utilisateur, comme la carte « prochain horaire » de la page
+     Horaires), l'horaire d'après, la paracha et le tahanoun.
+     Couleurs jour/nuit via values(-night). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/pj_horaires_root"
     android:layout_width="match_parent"
@@ -29,6 +31,7 @@
             android:id="@+id/pj_horaires_place"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
             android:ellipsize="end"
             android:maxLines="1"
             android:textColor="@color/pj_widget_text_secondary"
@@ -54,11 +57,44 @@
         android:textSize="30sp"
         android:textStyle="bold" />
 
+    <!-- L'horaire d'après, posé dans la place que le prochain laisse libre
+         (poids 1, aligné en bas) : la hauteur du widget se remplit au lieu de
+         finir sur du vide. Widget trop court : la zone tombe à zéro et la
+         ligne disparaît d'elle-même. -->
+    <LinearLayout
+        android:id="@+id/pj_horaires_next"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="bottom"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/pj_horaires_next_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/pj_widget_text_secondary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/pj_horaires_next_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:maxLines="1"
+            android:textColor="@color/pj_widget_text"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
     <TextView
         android:id="@+id/pj_horaires_parasha"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="6dp"
         android:ellipsize="end"
         android:maxLines="1"
         android:textColor="@color/pj_widget_text_secondary"

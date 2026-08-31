@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /**
- * Signature iOS en CI : fabrique un certificat de distribution et un profil
- * « App Store » via l'API App Store Connect, les installe sur le runner. Le
- * profil est détruit en fin de run ; le certificat, NON, voir plus bas.
+ * Signature iOS en CI : fabrique un certificat de distribution et les profils
+ * « App Store » via l'API App Store Connect, les installe sur le runner. Deux
+ * profils : celui de l'app, et celui de l'extension de widgets, qui a son
+ * propre App ID (fr.petitejerusalem.app.PjWidgets). Les profils sont détruits
+ * en fin de run ; le certificat, NON, voir plus bas.
  *
  * Pourquoi ne pas laisser xcodebuild signer tout seul (-allowProvisioningUpdates) :
  * `xcodebuild archive` en signature AUTOMATIQUE réclame un profil de
@@ -56,12 +58,16 @@
  *
  * --setup écrit dans $GITHUB_ENV (lues ensuite par scripts/setup-ios.mjs et
  * par l'export de l'IPA) :
- *   IOS_PROVISIONING_PROFILE     nom du profil (PROVISIONING_PROFILE_SPECIFIER)
+ *   IOS_PROVISIONING_PROFILE     nom du profil de l'app (PROVISIONING_PROFILE_SPECIFIER)
+ *   IOS_WIDGET_PROVISIONING_PROFILE  celui de l'extension de widgets
  *   IOS_CODE_SIGN_IDENTITY       nom complet de l'identité de signature
  *   IOS_SIGNING_CERTIFICATE_ID   id ASC du certificat (--cleanup ne le révoque
  *                                que si le run n'a rien envoyé, cf. plus haut)
- *   IOS_SIGNING_PROFILE_ID       id ASC du profil, pour --cleanup (qui ne le
- *                                supprime que si le run n'a rien envoyé)
+ *   IOS_SIGNING_PROFILE_ID       id ASC du profil de l'app, pour --cleanup (qui
+ *                                ne le supprime que si le run n'a rien envoyé)
+ *   IOS_WIDGET_SIGNING_PROFILE_ID  id ASC du profil de l'extension, toujours
+ *                                supprimé au nettoyage : le marqueur du
+ *                                certificat, c'est celui de l'app
  *   IOS_SIGNING_KEYCHAIN         trousseau temporaire, pour --cleanup
  */
 import { execFileSync } from "node:child_process";
@@ -75,8 +81,12 @@ import {
   protectedUploads,
   revocableCertificates,
 } from "./lib/certificate-quota.mjs";
+import { APP_GROUP, WIDGET_TARGET } from "./lib/xcode-widgets.mjs";
 
 const BUNDLE_ID = "fr.petitejerusalem.app";
+// L'extension de widgets est un binaire à part, avec son App ID et son profil
+// (docs/app-widgets.md).
+const WIDGET_BUNDLE_ID = `${BUNDLE_ID}.${WIDGET_TARGET}`;
 // Préfixe reconnaissable : --setup fait le ménage des profils laissés par un
 // run interrompu avant son étape de nettoyage.
 const PROFILE_PREFIX = "PetiteJerusalem CI";
@@ -87,15 +97,19 @@ const PROFILE_PREFIX = "PetiteJerusalem CI";
 const markerName = (buildNumber) => `${PROFILE_PREFIX} build ${buildNumber}`;
 const MARKER_PATTERN = new RegExp(`^${PROFILE_PREFIX} build (\\d+)$`);
 const buildNumber = process.env.IOS_BUILD_NUMBER?.trim();
-// Capacités que le profil doit couvrir, sous peine d'échec de signature
+// Capacités que les profils doivent couvrir, sous peine d'échec de signature
 // (« doesn't match the entitlements file »). En signature automatique, Xcode
-// les activait lui-même sur l'App ID ; en manuel, c'est à nous.
-// L'App Group des widgets n'y est pas : l'API App Store Connect ne sait pas
-// créer de groupe, et les widgets ne sont pas dans la v1 (docs/app-widgets.md).
+// les activait lui-même sur l'App ID ; en manuel, c'est à nous. La capacité
+// doit être active sur l'App ID AVANT la création du profil.
 // ASSOCIATED_DOMAINS : les liens du site ouvrent l'app (docs/app-links.md).
-// La capacité doit être active sur l'App ID avant la création du profil,
-// sinon l'archive est refusée (« doesn't match the entitlements file »).
-const CAPABILITIES = ["PUSH_NOTIFICATIONS", "APPLE_ID_AUTH", "ASSOCIATED_DOMAINS"];
+// APP_GROUPS : l'app et son extension de widgets se parlent par là, et par là
+// seulement. Activer la capacité est tout ce que l'API sait faire : créer le
+// groupe et l'attacher aux deux App ID reste une manipulation manuelle, une
+// fois pour toutes, dans le portail Apple. C'est pourquoi les profils sont
+// relus plus bas : mieux vaut échouer ici, en une phrase, qu'un quart d'heure
+// plus tard sur un message de codesign.
+const CAPABILITIES = ["PUSH_NOTIFICATIONS", "APPLE_ID_AUTH", "ASSOCIATED_DOMAINS", "APP_GROUPS"];
+const WIDGET_CAPABILITIES = ["APP_GROUPS"];
 
 const mode = process.argv.includes("--cleanup") ? "cleanup" : "setup";
 const isCleanup = mode === "cleanup";
@@ -196,6 +210,18 @@ if (isCleanup) {
       console.warn(`ios-signing: ⚠️ profil non supprimé, ${error.message}`);
     }
   }
+  // Le profil de l'extension part dans tous les cas : c'est celui de l'app qui
+  // sert de marqueur (nom porteur du numéro de build, certificat référencé),
+  // et un profil supprimé côté Apple n'invalide pas un binaire déjà signé.
+  const widgetProfileId = process.env.IOS_WIDGET_SIGNING_PROFILE_ID;
+  if (widgetProfileId) {
+    try {
+      await api("DELETE", `/v1/profiles/${widgetProfileId}`);
+      console.log("ios-signing: profil de l'extension de widgets supprimé côté Apple");
+    } catch (error) {
+      console.warn(`ios-signing: ⚠️ profil de l'extension non supprimé, ${error.message}`);
+    }
+  }
   const runCertificateId = process.env.IOS_SIGNING_CERTIFICATE_ID;
   if (runCertificateId && process.env.IOS_BUILD_UPLOADED) {
     console.log(
@@ -224,12 +250,41 @@ if (isCleanup) {
 // ---------------------------------------------------------------------------
 // 1. App ID et capacités
 // ---------------------------------------------------------------------------
-const bundleIds = await api(
-  "GET",
-  `/v1/bundleIds?filter[identifier]=${encodeURIComponent(BUNDLE_ID)}&limit=200`,
-);
-// filter[identifier] est un « contains » côté Apple : on exige l'égalité.
-const bundleIdRecord = bundleIds.data.find((entry) => entry.attributes.identifier === BUNDLE_ID);
+/** L'App ID d'un bundle id, ou null s'il n'existe pas encore. */
+async function findBundleId(identifier) {
+  const found = await api(
+    "GET",
+    `/v1/bundleIds?filter[identifier]=${encodeURIComponent(identifier)}&limit=200`,
+  );
+  // filter[identifier] est un « contains » côté Apple : on exige l'égalité.
+  return found.data.find((entry) => entry.attributes.identifier === identifier) ?? null;
+}
+
+/** Active des capacités sur un App ID ; déjà actives, Apple le dit poliment. */
+async function enableCapabilities(record, capabilities) {
+  for (const capabilityType of capabilities) {
+    try {
+      await api("POST", "/v1/bundleIdCapabilities", {
+        data: {
+          type: "bundleIdCapabilities",
+          attributes: { capabilityType },
+          relationships: { bundleId: { data: { type: "bundleIds", id: record.id } } },
+        },
+      });
+      console.log(`ios-signing: capacité ${capabilityType} activée sur ${record.attributes.identifier}`);
+    } catch (error) {
+      // Capacité déjà active : c'est le cas nominal dès le deuxième run. Apple
+      // répond 409, ou 400 avec « already exists » selon les endpoints.
+      const alreadyThere =
+        error.status === 409 || (error.status === 400 && /already|exist/i.test(error.message));
+      if (alreadyThere) {
+        console.log(`ios-signing: capacité ${capabilityType} déjà active sur ${record.attributes.identifier}`);
+      } else throw error;
+    }
+  }
+}
+
+const bundleIdRecord = await findBundleId(BUNDLE_ID);
 if (!bundleIdRecord) {
   console.error(
     `ios-signing: aucun App ID « ${BUNDLE_ID} » dans le compte développeur.\n` +
@@ -238,26 +293,30 @@ if (!bundleIdRecord) {
   process.exit(1);
 }
 console.log(`ios-signing: App ID ${BUNDLE_ID} (${bundleIdRecord.id})`);
+await enableCapabilities(bundleIdRecord, CAPABILITIES);
 
-for (const capabilityType of CAPABILITIES) {
-  try {
-    await api("POST", "/v1/bundleIdCapabilities", {
-      data: {
-        type: "bundleIdCapabilities",
-        attributes: { capabilityType },
-        relationships: { bundleId: { data: { type: "bundleIds", id: bundleIdRecord.id } } },
+// L'App ID de l'extension de widgets. Celui-là, l'API sait le créer : c'est
+// un identifiant ordinaire. Seul l'App Group lui-même échappe à l'API, d'où
+// la relecture des profils, plus bas.
+let widgetBundleIdRecord = await findBundleId(WIDGET_BUNDLE_ID);
+if (!widgetBundleIdRecord) {
+  const created = await api("POST", "/v1/bundleIds", {
+    data: {
+      type: "bundleIds",
+      attributes: {
+        identifier: WIDGET_BUNDLE_ID,
+        // Apple n'accepte ici que des lettres, chiffres et espaces.
+        name: "Petite Jerusalem Widgets",
+        platform: "IOS",
       },
-    });
-    console.log(`ios-signing: capacité ${capabilityType} activée`);
-  } catch (error) {
-    // Capacité déjà active : c'est le cas nominal dès le deuxième run. Apple
-    // répond 409, ou 400 avec « already exists » selon les endpoints.
-    const alreadyThere =
-      error.status === 409 || (error.status === 400 && /already|exist/i.test(error.message));
-    if (alreadyThere) console.log(`ios-signing: capacité ${capabilityType} déjà active`);
-    else throw error;
-  }
+    },
+  });
+  widgetBundleIdRecord = created.data;
+  console.log(`ios-signing: App ID ${WIDGET_BUNDLE_ID} créé (${widgetBundleIdRecord.id})`);
+} else {
+  console.log(`ios-signing: App ID ${WIDGET_BUNDLE_ID} (${widgetBundleIdRecord.id})`);
 }
+await enableCapabilities(widgetBundleIdRecord, WIDGET_CAPABILITIES);
 
 /**
  * Le ménage des certificats, à chaque run et pas seulement quand le quota est
@@ -454,7 +513,11 @@ console.log(`ios-signing: identité installée, ${identity}`);
 // part chez Apple, et dira alors quel certificat l'a signé. Sans numéro de
 // build (lancement hors CI), le profil est nommé sans marqueur, donc traité
 // comme jetable.
-const profileName = buildNumber ? markerName(buildNumber) : `${PROFILE_PREFIX} ${process.env.GITHUB_RUN_ID ?? Date.now()}`;
+const runSuffix = buildNumber ? `build ${buildNumber}` : `${process.env.GITHUB_RUN_ID ?? Date.now()}`;
+const profileName = buildNumber ? markerName(buildNumber) : `${PROFILE_PREFIX} ${runSuffix}`;
+// Le profil de l'extension ne suit PAS le motif du marqueur : il est jetable,
+// le lien certificat/binaire étant déjà porté par celui de l'app.
+const widgetProfileName = `${PROFILE_PREFIX} widgets ${runSuffix}`;
 
 // Ne survivent que les marqueurs d'un certificat encore vivant. Partent : les
 // profils d'un run tué avant son nettoyage, ceux dont le certificat vient
@@ -467,6 +530,13 @@ const liveCertificateIds = new Set([
 for (const stale of profiles.data) {
   const name = stale.attributes?.name ?? "";
   if (!name.startsWith(PROFILE_PREFIX)) continue;
+  if (name === widgetProfileName) {
+    // Homonyme du profil d'extension qu'on s'apprête à créer (re-run d'un même
+    // tag) : Apple refuse deux profils de même nom.
+    await api("DELETE", `/v1/profiles/${stale.id}`).catch(() => {});
+    console.log(`ios-signing: ancien profil « ${name} » supprimé`);
+    continue;
+  }
   const marks = MARKER_PATTERN.test(name) && name !== profileName;
   const linked = stale.relationships?.certificates?.data ?? [];
   if (marks && linked.some((certificate) => liveCertificateIds.has(certificate.id))) continue;
@@ -474,28 +544,66 @@ for (const stale of profiles.data) {
   console.log(`ios-signing: ancien profil « ${name} » supprimé`);
 }
 
-const profile = await api("POST", "/v1/profiles", {
-  data: {
-    type: "profiles",
-    attributes: { name: profileName, profileType: "IOS_APP_STORE" },
-    relationships: {
-      bundleId: { data: { type: "bundleIds", id: bundleIdRecord.id } },
-      certificates: { data: [{ type: "certificates", id: certificateId }] },
+/**
+ * Crée un profil « App Store », l'installe sur le runner et rend son id.
+ *
+ * Xcode 16+ lit le second dossier ; les outils en ligne de commande plus
+ * anciens lisent le premier. Les deux coûtent un fichier.
+ */
+async function createProfile(name, bundleRecord) {
+  const created = await api("POST", "/v1/profiles", {
+    data: {
+      type: "profiles",
+      attributes: { name, profileType: "IOS_APP_STORE" },
+      relationships: {
+        bundleId: { data: { type: "bundleIds", id: bundleRecord.id } },
+        certificates: { data: [{ type: "certificates", id: certificateId }] },
+      },
     },
-  },
-});
-exportEnv("IOS_SIGNING_PROFILE_ID", profile.data.id);
-exportEnv("IOS_PROVISIONING_PROFILE", profileName);
-
-const profileContent = Buffer.from(profile.data.attributes.profileContent, "base64");
-const uuid = profile.data.attributes.uuid;
-// Xcode 16+ lit le second dossier ; les outils en ligne de commande plus
-// anciens lisent le premier. Les deux coûtent un fichier.
-for (const dir of [
-  join(homedir(), "Library/MobileDevice/Provisioning Profiles"),
-  join(homedir(), "Library/Developer/Xcode/UserData/Provisioning Profiles"),
-]) {
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, `${uuid}.mobileprovision`), profileContent);
+  });
+  const content = Buffer.from(created.data.attributes.profileContent, "base64");
+  const uuid = created.data.attributes.uuid;
+  for (const dir of [
+    join(homedir(), "Library/MobileDevice/Provisioning Profiles"),
+    join(homedir(), "Library/Developer/Xcode/UserData/Provisioning Profiles"),
+  ]) {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, `${uuid}.mobileprovision`), content);
+  }
+  console.log(`ios-signing: profil « ${name} » installé (${uuid})`);
+  return { id: created.data.id, content };
 }
-console.log(`ios-signing: profil « ${profileName} » installé (${uuid})`);
+
+/**
+ * Un profil ne porte l'App Group que si celui-ci est attaché à l'App ID dans
+ * le portail Apple, ce que l'API ne sait pas faire. Sans cette relecture,
+ * l'oubli ne se verrait qu'un quart d'heure plus tard, sur un « doesn't match
+ * the entitlements file » d'xcodebuild, et seulement pour qui sait le lire.
+ *
+ * Le .mobileprovision est un blob CMS signé qui contient son plist en clair :
+ * il suffit d'y chercher le groupe.
+ */
+function assertAppGroup(content, identifier) {
+  if (content.toString("latin1").includes(APP_GROUP)) return;
+  console.error(
+    `ios-signing: l'App Group ${APP_GROUP} n'est pas dans le profil de ${identifier}.\n` +
+      "  L'API App Store Connect ne sait ni créer un App Group ni l'attacher à un App ID :\n" +
+      "  c'est une manipulation à faire une fois, sur developer.apple.com →\n" +
+      "  Certificates, Identifiers & Profiles :\n" +
+      `    1. Identifiers → App Groups → + → identifiant « ${APP_GROUP} »\n` +
+      `    2. Identifiers → ${BUNDLE_ID} → App Groups → Configure → cocher le groupe\n` +
+      `    3. Identifiers → ${WIDGET_BUNDLE_ID} → App Groups → Configure → idem\n` +
+      "  Puis relancer ce run. Détails dans docs/app-widgets.md.",
+  );
+  process.exit(1);
+}
+
+const profile = await createProfile(profileName, bundleIdRecord);
+exportEnv("IOS_SIGNING_PROFILE_ID", profile.id);
+exportEnv("IOS_PROVISIONING_PROFILE", profileName);
+assertAppGroup(profile.content, BUNDLE_ID);
+
+const widgetProfile = await createProfile(widgetProfileName, widgetBundleIdRecord);
+exportEnv("IOS_WIDGET_SIGNING_PROFILE_ID", widgetProfile.id);
+exportEnv("IOS_WIDGET_PROVISIONING_PROFILE", widgetProfileName);
+assertAppGroup(widgetProfile.content, WIDGET_BUNDLE_ID);

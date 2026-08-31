@@ -1,12 +1,17 @@
 import { registerPlugin } from "@capacitor/core";
 import { watch } from "vue";
 import { isNativeApp } from "../composables/useNativeApp";
+import { useTheme } from "../composables/useTheme";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import { i18n, loadLocaleMessages, type SupportedLocale } from "../i18n";
 import { localDayKey } from "./dateService";
 import { authService, type User } from "./authService";
 import { userPreferencesService, type UserPreferences } from "./userPreferencesService";
-import { buildDailyReadingWidgetPayload, buildZmanimWidgetPayload } from "./widgetPayloads";
+import {
+  buildDailyReadingWidgetPayload,
+  buildLibraryWidgetPayload,
+  buildZmanimWidgetPayload,
+} from "./widgetPayloads";
 
 /**
  * Alimente les widgets d'écran d'accueil (Android / iOS).
@@ -20,9 +25,10 @@ import { buildDailyReadingWidgetPayload, buildZmanimWidgetPayload } from "./widg
  * l'app.
  *
  * Rafraîchi au lancement, au retour au premier plan, au changement de lieu
- * des horaires, au changement de langue, et à chaque progression de la
- * lecture du jour. Un payload inchangé n'est pas renvoyé : le natif ne
- * recharge pas ses widgets pour rien.
+ * des horaires, au changement de langue, au changement de thème (les widgets
+ * portent l'accent choisi) et à chaque progression de la lecture du jour. Un
+ * payload inchangé n'est pas renvoyé : le natif ne recharge pas ses widgets
+ * pour rien.
  */
 
 /** Le sous-ensemble des préférences dont dépend le widget de lecture. */
@@ -36,7 +42,7 @@ interface PjWidgetsBridge {
    * Payloads en JSON ; le natif stocke ceux qui sont fournis puis rafraîchit
    * les widgets correspondants. Un champ omis laisse le dernier état en place.
    */
-  setPayloads(options: { zmanim?: string; daily?: string }): Promise<void>;
+  setPayloads(options: { zmanim?: string; daily?: string; library?: string }): Promise<void>;
 }
 
 const PjWidgets = registerPlugin<PjWidgetsBridge>("PjWidgets");
@@ -66,11 +72,12 @@ class WidgetService {
 
   // Dernier état poussé, pour ne pas renvoyer un payload identique (chaque
   // envoi fait recharger les widgets natifs, budgété côté iOS). La clé des
-  // horaires porte leurs seules entrées (lieu, jour, langue) : tant qu'elle
-  // ne bouge pas, les ~100 calculs solaires ne sont même pas refaits.
+  // horaires porte leurs seules entrées (lieu, jour, langue, accent) : tant
+  // qu'elle ne bouge pas, les ~100 calculs solaires ne sont même pas refaits.
   private lastZmanimKey: string | null = null;
   private lastZmanimJson: string | null = null;
   private lastDailyJson: string | null = null;
+  private lastLibraryJson: string | null = null;
 
   /** À appeler une fois au démarrage de l'app native (no-op sur le web). */
   init(): void {
@@ -90,6 +97,10 @@ class WidgetService {
 
     // Changement de langue : les libellés des payloads doivent suivre.
     watch(i18n.global.locale, () => void this.refresh());
+
+    // Changement de thème : l'accent des widgets est celui de l'app.
+    const { currentThemeId } = useTheme();
+    watch(currentThemeId, () => void this.refresh());
 
     // Retour au premier plan : recharge la fenêtre d'horaires et la
     // progression éventuellement modifiée sur un autre appareil.
@@ -127,12 +138,15 @@ class WidgetService {
       // Horaires : recalculés seulement si une de leurs entrées a bougé
       // une coche de lecture, par exemple, ne les recalcule pas.
       const { place } = useZmanimLocation();
-      const zmanimKey = `${locale}|${localDayKey()}|${JSON.stringify(place.value)}`;
+      const accent = useTheme().currentTheme.value.primary;
+      const zmanimKey = `${locale}|${localDayKey()}|${accent}|${JSON.stringify(place.value)}`;
       let zmanim: string | undefined;
       let freshZmanimKey: string | null = null;
       if (zmanimKey !== this.lastZmanimKey) {
         await nextIdle();
-        const json = JSON.stringify(buildZmanimWidgetPayload(place.value, t, locale));
+        const json = JSON.stringify(
+          buildZmanimWidgetPayload(place.value, t, locale, new Date(), accent),
+        );
         freshZmanimKey = zmanimKey;
         zmanim = json === this.lastZmanimJson ? undefined : json;
       }
@@ -144,29 +158,36 @@ class WidgetService {
       const provided = this.pendingDaily;
       this.pendingDaily = null;
       if (!this.user) {
-        daily = JSON.stringify(buildDailyReadingWidgetPayload(null, t));
+        daily = JSON.stringify(buildDailyReadingWidgetPayload(null, t, new Date(), accent));
       } else {
         try {
           const prefs =
             provided ?? (await userPreferencesService.getPreferencesOrThrow(this.user.id));
-          daily = JSON.stringify(buildDailyReadingWidgetPayload(prefs, t));
+          daily = JSON.stringify(buildDailyReadingWidgetPayload(prefs, t, new Date(), accent));
         } catch {
           daily = undefined;
         }
       }
       if (daily === this.lastDailyJson) daily = undefined;
 
-      if (zmanim === undefined && daily === undefined) {
+      // Bibliothèque : rien que des libellés, ils ne bougent qu'avec la
+      // langue. Le calcul est immédiat, la comparaison suffit à ne pas
+      // recharger les raccourcis pour rien.
+      let library: string | undefined = JSON.stringify(buildLibraryWidgetPayload(t));
+      if (library === this.lastLibraryJson) library = undefined;
+
+      if (zmanim === undefined && daily === undefined && library === undefined) {
         // Rien de neuf à livrer : le calcul du jour peut quand même être acté.
         if (freshZmanimKey) this.lastZmanimKey = freshZmanimKey;
         return;
       }
-      await PjWidgets.setPayloads({ zmanim, daily });
+      await PjWidgets.setPayloads({ zmanim, daily, library });
       // Mémorisé seulement après un envoi réussi : un échec (vieux binaire
       // sans le plugin) laissera le prochain push tout retenter.
       if (freshZmanimKey) this.lastZmanimKey = freshZmanimKey;
       if (zmanim !== undefined) this.lastZmanimJson = zmanim;
       if (daily !== undefined) this.lastDailyJson = daily;
+      if (library !== undefined) this.lastLibraryJson = library;
     } catch {
       // Plugin absent (vieux binaire, plateforme web du bridge) : sans gravité,
       // il n'y a alors pas de widget à alimenter.

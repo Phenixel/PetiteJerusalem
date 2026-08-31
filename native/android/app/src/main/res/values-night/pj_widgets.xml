@@ -4,4 +4,5 @@
     <color name="pj_widget_bg">#1F2937</color>
     <color name="pj_widget_text">#F9FAFB</color>
     <color name="pj_widget_text_secondary">#9CA3AF</color>
+    <color name="pj_widget_success">#4ADE80</color>
 </resources>

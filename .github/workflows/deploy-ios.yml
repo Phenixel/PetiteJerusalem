@@ -52,8 +52,9 @@ on:
     inputs:
       debug_signing:
         description: >-
-          Debug signature : saute le build web et s'arrête après une tentative
-          d'archive avec logs de provisioning verbeux (filtrés).
+          Debug signature : saute le build web, synchronise juste ce qu'il faut
+          de Capacitor, et s'arrête après une tentative d'archive avec logs de
+          provisioning verbeux (filtrés). Ne consomme aucun numéro de build.
         type: boolean
         default: false
 
@@ -186,11 +187,14 @@ jobs:
           GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
         run: printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" > GoogleService-Info.plist
 
-      # Certificat de distribution + profil « App Store », créés via l'API et
-      # installés dans un trousseau temporaire. Expose IOS_PROVISIONING_PROFILE
-      # et IOS_CODE_SIGN_IDENTITY au reste du job, que l'étape suivante inscrit
-      # dans la cible App du projet Xcode. C'est aussi ici que les certificats
-      # devenus inutiles sont révoqués, avant d'en créer un de plus.
+      # Certificat de distribution + profils « App Store » (l'app et son
+      # extension de widgets, qui a son propre App ID), créés via l'API et
+      # installés dans un trousseau temporaire. Expose IOS_PROVISIONING_PROFILE,
+      # IOS_WIDGET_PROVISIONING_PROFILE et IOS_CODE_SIGN_IDENTITY au reste du
+      # job, que l'étape suivante inscrit dans les cibles du projet Xcode.
+      # C'est aussi ici que les certificats devenus inutiles sont révoqués,
+      # avant d'en créer un de plus, et que l'App Group des widgets est vérifié
+      # dans les profils (voir scripts/ios-signing.mjs).
       - name: Créer le certificat et le profil de distribution
         env:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
@@ -201,7 +205,8 @@ jobs:
         run: node scripts/ios-signing.mjs --setup
 
       # Info.plist, entitlements, PrivacyInfo.xcprivacy, AppDelegate, icônes,
-      # schéma Xcode, bundle id, équipe, versions et réglages de signature
+      # schéma Xcode, bundle id, équipe, versions, réglages de signature et
+      # cible d'extension des widgets
       # (le même script qu'en local, cf. l'en-tête de scripts/setup-ios.mjs).
       - name: Appliquer les ajustements natifs
         env:
@@ -211,10 +216,25 @@ jobs:
 
       # Build web (type-check + vite + prerender), prune du bundle natif,
       # puis cap sync copie dist/ et les plugins SPM dans le projet iOS.
-      # En debug signature, inutile : l'échec étudié précède les phases de build.
       - name: Build web + sync Capacitor
         if: ${{ !inputs.debug_signing }}
         run: npm run app:build
+
+      # En debug signature, le build web est sauté pour ne pas payer dix
+      # minutes de Vite ; mais `cap sync` l'accompagnait, et c'est lui qui
+      # déclare les paquets SPM des plugins dans ios/App/CapApp-SPM. Sans lui,
+      # l'archive échouait sur « Unable to find module dependency:
+      # 'FirebaseAuth' », c'est-à-dire À LA COMPILATION, avant d'atteindre la
+      # signature, la seule chose que ce mode cherche à observer.
+      # `cap sync` ne demande qu'un webDir existant : une coquille vide suffit,
+      # rien de ce qu'elle contient n'est compilé.
+      - name: Synchroniser Capacitor (debug signature)
+        if: ${{ inputs.debug_signing }}
+        run: |
+          mkdir -p dist
+          echo '<!doctype html><title>debug</title>' > dist/index.html
+          node scripts/prune-spm-providers.mjs
+          npx cap sync ios
 
       # xcodebuild et altool lisent la clé d'API dans ce dossier conventionnel.
       - name: Installer la clé d'API App Store Connect
@@ -301,10 +321,14 @@ jobs:
             <string>manual</string>
             <key>signingCertificate</key>
             <string>$IOS_CODE_SIGN_IDENTITY</string>
+            <!-- L'extension de widgets est un binaire à part, avec son App ID
+                 et donc son propre profil (docs/app-widgets.md). -->
             <key>provisioningProfiles</key>
             <dict>
               <key>fr.petitejerusalem.app</key>
               <string>$IOS_PROVISIONING_PROFILE</string>
+              <key>fr.petitejerusalem.app.PjWidgets</key>
+              <string>$IOS_WIDGET_PROVISIONING_PROFILE</string>
             </dict>
             <key>uploadSymbols</key>
             <true/>
