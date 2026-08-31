@@ -1105,8 +1105,11 @@ struct LibraryWidgetView: View {
                             showsTitle: medium)
                     }
                 }
+                // La planche dépasse un peu des livres, comme une vraie
+                // étagère, mais de 4 pt seulement : en petit format, trois
+                // volumes occupent déjà presque toute la largeur utile.
                 ShelfBoardView().frame(width: CGFloat(corpora.count) * width
-                    + CGFloat(corpora.count - 1) * gap + 10)
+                    + CGFloat(corpora.count - 1) * gap + 4)
             }
             Spacer(minLength: 0)
         }
