@@ -955,7 +955,8 @@ const en: LocaleMessages = {
       distance: "The Kotel is {km} km from here.",
       live: "The arrow follows your device: turn until the arrow points straight ahead of you.",
       flat: "Hold the phone flat, screen up: that is how the compass reads true.",
-      fixed: "Your device does not give north: the dial keeps north up, so orient it yourself.",
+      fixed:
+        "Your device or your browser does not allow the compass: the dial keeps north up, so orient it yourself.",
       compassDenied: "Access to the compass was refused: the dial keeps north up.",
       enable: "Turn on the compass",
       rose: { n: "N", e: "E", s: "S", o: "W" },
