@@ -1,19 +1,46 @@
 # Widgets d'écran d'accueil (Android / iOS)
 
-Deux widgets accompagnent l'app native :
+Trois widgets accompagnent l'app native :
 
 - **Horaires** : la date hébraïque, le prochain zman du lieu de l'utilisateur
   (à l'accent de son thème, comme la carte « prochain horaire » de la page),
-  celui d'après, la paracha de la semaine et le ta'hanoun (en gras les jours où
+  ceux d'après, la paracha de la semaine et le ta'hanoun (en gras les jours où
   l'on n'en dit pas), mis à jour à chaque horaire passé. Toucher le widget
   ouvre la page `/horaires`.
+- **Horaires essentiels** (iOS seulement) : les quatre horaires que l'on vient
+  vérifier le plus souvent, et rien d'autre : fin du Chéma et fin de la Amida
+  (au Gaon de Vilna, l'opinion la plus tardive, celle qui fait la limite), plag
+  haMin'ha, tsét haKokhavim. C'est un tableau du jour, pas une annonce : ses
+  quatre lignes ne tournent qu'à la chkia, et la limite du Chéma reste
+  affichée une fois passée, puisque c'est son heure d'aujourd'hui que l'on
+  vient lire.
 - **Lecture du jour** : une ligne, le dessin de la carte du tableau de bord
   (`src/components/DailyReadingCard.vue`) : titre, « 2 sur 3 lus aujourd'hui »,
   pourcentage et barre de progression, remise à zéro à minuit. Toucher le
   widget ouvre `/bibliotheque/lecture-du-jour`.
 
-Les deux portent l'accent du thème choisi par l'utilisateur : il voyage dans le
+Tous portent l'accent du thème choisi par l'utilisateur : il voyage dans le
 payload, le natif ne connaît aucune couleur de thème.
+
+## Les formats, et ce qu'ils imposent
+
+Sur iOS, un widget d'écran d'accueil n'a que les tailles du système, et le
+format moyen est exactement aussi **haut** que le petit, deux fois plus large
+seulement : il n'existe pas d'équivalent au 4×1 d'Android. Ce qu'un format
+moyen a en trop est de la largeur, jamais de la hauteur, et un dessin qui
+l'oublie déborde du cadre (les horaires suivants sont passés à côté de l'heure
+mise en avant pour cette raison).
+
+Les trois widgets acceptent aussi l'**écran verrouillé** (et StandBy), depuis
+iOS 16, en `accessoryRectangular`. Là, tout change : 72 pt de haut au lieu de
+164, aucun fond à nous (le système pose le sien), et le rendu « vibrant »
+délave les couleurs, l'accent du thème compris. Chaque widget y a donc un
+dessin à part, dépouillé, qui ne fait porter aucun sens à la couleur : la
+règle vaut aussi pour le vert de « tout est lu », qui n'y survit pas.
+
+Côté Android, ce sont les tailles du launcher qui décident, et les deux
+providers historiques suffisent : « Horaires essentiels » n'a pas encore de
+pendant Android.
 
 ## Architecture : l'app calcule, le natif affiche
 
@@ -133,9 +160,39 @@ de la CI ; en local, Xcode s'en charge à la première signature. Le script reli
 ensuite les profils et refuse de continuer si l'App Group n'y est pas
 (`docs/ios-ci-cd.md`).
 
-Tester : lancer l'app sur un appareil (simulateur : les widgets y sont
-capricieux), poser les deux widgets, puis vérifier zman suivant et progression
-comme sur Android.
+Tester : lancer l'app sur un appareil, poser les widgets, puis vérifier zman
+suivant et progression comme sur Android.
+
+### Revoir le rendu sur simulateur
+
+Le simulateur convient très bien à une passe visuelle, à deux conditions qui
+ne se devinent pas :
+
+1. **Les entitlements.** Un `xcodebuild -sdk iphonesimulator` en ligne de
+   commande n'embarque aucun entitlement : l'App Group n'existe donc pas, et
+   les widgets restent sur « ouvrez l'app » quoi qu'on pousse. Il faut
+   resigner l'app ET son `.appex` à la main avant d'installer :
+
+   ```bash
+   codesign --force --sign - --entitlements ios/App/PjWidgets/PjWidgets.entitlements \
+     Build/Products/Debug-iphonesimulator/App.app/PlugIns/PjWidgets.appex
+   codesign --force --sign - --entitlements ios/App/App/App.entitlements \
+     Build/Products/Debug-iphonesimulator/App.app
+   ```
+
+   `xcrun simctl get_app_container booted fr.petitejerusalem.app groups` doit
+   alors répondre un chemin ; tant qu'il répond le vide, rien ne marchera.
+
+2. **Le rechargement.** Écrire un payload dans le plist de l'App Group ne
+   suffit pas : l'entrée déjà archivée par WidgetKit porte sa copie du
+   payload, et tuer `chronod` ne fait que la redessiner. Seule une
+   réinstallation de l'app (`xcrun simctl install`) invalide les timelines.
+   Écrire le payload **puis** réinstaller, dans cet ordre.
+
+Le reste se pilote en ligne de commande : `xcrun simctl io booted screenshot`
+pour regarder, `xcrun simctl ui booted appearance dark|light` pour l'autre
+mode. Poser un widget, en revanche, ne s'automatise pas : c'est le seul geste
+qui reste à faire à la main.
 
 ## Évolutions
 

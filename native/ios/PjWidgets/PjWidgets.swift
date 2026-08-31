@@ -18,6 +18,9 @@ import WidgetKit
  *   épuisée → une entrée « rouvrez l'app » en .never, l'app relancera tout au
  *   prochain push. Chaque entrée porte aussi les horaires suivants : ils
  *   occupent la largeur du format moyen, qui a la hauteur du petit.
+ * - Horaires essentiels : les quatre horaires du jour qu'on vérifie le plus,
+ *   un tableau qui ne tourne qu'à la chkia, contrairement au précédent qui
+ *   annonce le prochain zman.
  * - Lecture : une ligne, le même dessin que la carte du tableau de bord
  *   (src/components/DailyReadingCard.vue) : titre, progression, pourcentage,
  *   barre. Une entrée maintenant, redessin à l'échéance du payload
@@ -38,6 +41,47 @@ func loadPayload<T: Decodable>(_ key: String, as type: T.Type) -> T? {
 
 /** Repli quand aucun payload n'existe (widget posé avant le premier lancement). */
 let openAppFallback = "Ouvrez Petite Jérusalem pour préparer le widget"
+
+/**
+ * Vrai pour les formats de l'écran d'accueil, faux pour les accessoires de
+ * l'écran verrouillé (et de StandBy). Les accessoires changent tout : 72 pt
+ * de haut au lieu de 164, aucun fond à nous, et le système délave les
+ * couleurs (rendu « vibrant »), l'accent du thème compris.
+ *
+ * Les familles accessoires datent d'iOS 16 et l'app descend à 15 : on les
+ * reconnaît par la négative, pour ne pas avoir à nommer un cas indisponible.
+ */
+func isHomeScreen(_ family: WidgetFamily) -> Bool {
+    family == .systemSmall || family == .systemMedium || family == .systemLarge
+}
+
+/** Les familles d'un widget : l'écran d'accueil, plus l'écran verrouillé. */
+func supportedFamilies(_ home: [WidgetFamily]) -> [WidgetFamily] {
+    guard #available(iOS 16.0, *) else { return home }
+    return home + [.accessoryRectangular]
+}
+
+/**
+ * Le fond de l'app derrière un widget d'écran d'accueil. Sur l'écran
+ * verrouillé, le système pose déjà le sien, translucide : y ajouter le nôtre
+ * y ferait une tache opaque.
+ */
+struct PjWidgetBackground: ViewModifier {
+    @Environment(\.widgetFamily) private var family
+
+    @ViewBuilder func body(content: Content) -> some View {
+        let home = isHomeScreen(family)
+        if #available(iOS 17.0, *) {
+            content.containerBackground(for: .widget) {
+                if home { PjColors.background } else { Color.clear }
+            }
+        } else if home {
+            content.padding().background(PjColors.background)
+        } else {
+            content
+        }
+    }
+}
 
 // MARK: - Couleurs
 
@@ -259,8 +303,47 @@ struct HorairesWidgetView: View {
     private var isMedium: Bool { family != .systemSmall }
 
     var body: some View {
-        let accent = PjColors.accent(entry.accent)
+        Group {
+            if isHomeScreen(family) { home } else { accessory }
+        }
+        .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr/horaires"))
+    }
+
+    /// Écran verrouillé : 72 pt de haut, sans fond ni couleur. Il n'y reste
+    /// que le prochain horaire et celui d'après ; la date hébraïque, la
+    /// paracha et le ta'hanoun sont du ressort de l'écran d'accueil.
+    private var accessory: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if let next = entry.next {
+                Text(next.label)
+                    .font(.caption2)
+                Text(next.time)
+                    .font(.title3.weight(.bold))
+                    .monospacedDigit()
+                if let after = entry.following.first {
+                    HStack(spacing: 4) {
+                        Text(after.label)
+                        Spacer(minLength: 2)
+                        Text(after.time)
+                            .fontWeight(.semibold)
+                            .monospacedDigit()
+                    }
+                    .font(.caption2)
+                }
+            } else {
+                Text(entry.message ?? openAppFallback)
+                    .font(.caption2)
+                    .lineLimit(3)
+            }
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    private var home: some View {
+        let accent = PjColors.accent(entry.accent)
+        return VStack(alignment: .leading, spacing: 0) {
             header
             if let next = entry.next {
                 Spacer(minLength: 6)
@@ -288,7 +371,6 @@ struct HorairesWidgetView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr/horaires"))
     }
 
     /// L'horaire mis en avant : son nom, puis l'heure à l'accent du thème.
@@ -362,16 +444,191 @@ struct HorairesWidgetView: View {
 struct HorairesWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "HorairesWidget", provider: ZmanimProvider()) { entry in
-            if #available(iOS 17.0, *) {
-                HorairesWidgetView(entry: entry)
-                    .containerBackground(for: .widget) { PjColors.background }
-            } else {
-                HorairesWidgetView(entry: entry).padding().background(PjColors.background)
-            }
+            HorairesWidgetView(entry: entry).modifier(PjWidgetBackground())
         }
         .configurationDisplayName("Horaires")
         .description("Le prochain horaire (zman) de votre journée.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies(supportedFamilies([.systemSmall, .systemMedium]))
+    }
+}
+
+// MARK: - Horaires essentiels
+
+/**
+ * Les quatre horaires du jour qu'on vérifie le plus souvent, et rien d'autre :
+ * les deux limites du matin, puis les deux repères du soir.
+ *
+ * À la différence du widget « Horaires », qui annonce le PROCHAIN zman et se
+ * replanifie à chacun, celui-ci est un tableau du jour : ses quatre lignes ne
+ * changent qu'à la chkia, quand le jour hébraïque tourne. Passée la limite du
+ * Chéma, elle reste affichée, c'est bien son heure d'aujourd'hui que l'on
+ * vient lire.
+ */
+struct EssentialsEntry: TimelineEntry {
+    let date: Date
+    let place: String
+    let hebrewDate: String
+    let lines: [ZmanLine]
+    /// Fenêtre épuisée ou payload absent : message à afficher seul.
+    let message: String?
+    let accent: String?
+
+    static func message(_ text: String, at date: Date, accent: String? = nil) -> EssentialsEntry {
+        EssentialsEntry(
+            date: date, place: "", hebrewDate: "", lines: [], message: text, accent: accent)
+    }
+}
+
+struct EssentialsProvider: TimelineProvider {
+    /**
+     * Les clés retenues, dans l'ordre de la journée. Pour le Chéma comme pour
+     * la Amida, l'opinion la plus tardive (Gaon de Vilna, `sofZmanShma` et
+     * `sofZmanTfilla`, contre les `…MGA` du Maguen Avraham) : c'est elle la
+     * limite au-delà de laquelle il est trop tard.
+     */
+    static let morningKeys = ["sofZmanShma", "sofZmanTfilla", "plagHaMincha"]
+
+    func placeholder(in context: Context) -> EssentialsEntry {
+        .message(openAppFallback, at: Date())
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (EssentialsEntry) -> Void) {
+        completion(buildTimeline(now: Date()).entries.first ?? placeholder(in: context))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<EssentialsEntry>) -> Void) {
+        completion(buildTimeline(now: Date()))
+    }
+
+    /**
+     * Les quatre horaires d'un jour hébraïque.
+     *
+     * La fenêtre du jour va d'une chkia à la suivante : les trois horaires de
+     * journée y tombent. Le tsét, lui, suit la chkia qui ferme la fenêtre,
+     * donc il appartient déjà à la suivante : on va le chercher là, sans quoi
+     * on afficherait celui de la veille, tombé au tout début de la fenêtre.
+     */
+    private func lines(_ payload: ZmanimPayload, day: ZmanimDay) -> [ZmanLine] {
+        let daytime = payload.times.filter { day.from <= $0.epoch && $0.epoch < day.until }
+        var times = Self.morningKeys.compactMap { key in daytime.first { $0.key == key } }
+        if let tzeit = payload.times.first(where: { $0.key == "tzeit" && $0.epoch >= day.until }) {
+            times.append(tzeit)
+        }
+        return times.map { ZmanLine(label: $0.label, time: $0.time) }
+    }
+
+    private func buildTimeline(now: Date) -> Timeline<EssentialsEntry> {
+        guard let payload = loadPayload("zmanim", as: ZmanimPayload.self) else {
+            return Timeline(entries: [.message(openAppFallback, at: now)], policy: .never)
+        }
+        // Les jours arrivent avec la v2 du payload ; sans eux, rien à border.
+        let ms = now.timeIntervalSince1970 * 1000
+        let upcoming = (payload.days ?? []).filter { $0.until > ms }
+
+        var entries: [EssentialsEntry] = []
+        for (i, day) in upcoming.enumerated() {
+            let lines = lines(payload, day: day)
+            if lines.isEmpty { continue }
+            entries.append(EssentialsEntry(
+                date: i == 0 ? now : Date(timeIntervalSince1970: day.from / 1000),
+                place: payload.place,
+                hebrewDate: day.hebrewDate,
+                lines: lines,
+                message: nil,
+                accent: payload.accent))
+        }
+        if entries.isEmpty {
+            // Surtout pas .atEnd : une timeline déjà finie serait redemandée
+            // en boucle et grillerait le budget de rafraîchissement.
+            return Timeline(
+                entries: [.message(payload.stale, at: now, accent: payload.accent)], policy: .never)
+        }
+        return Timeline(entries: entries, policy: .atEnd)
+    }
+}
+
+/// Une des quatre lignes : son libellé à gauche, son heure à droite, à
+/// l'accent du thème comme toutes les heures de ces widgets. Les couleurs
+/// viennent de l'appelant : les nôtres sur l'écran d'accueil, celles du
+/// système sur l'écran verrouillé, qui n'en accepte pas d'autres.
+struct EssentialRow: View {
+    let line: ZmanLine
+    let label: Color
+    let time: Color
+    let compact: Bool
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(line.label)
+                .foregroundStyle(label)
+            Spacer(minLength: 4)
+            Text(line.time)
+                .fontWeight(.semibold)
+                .monospacedDigit()
+                .foregroundStyle(time)
+        }
+        .font(compact ? .caption2 : .footnote)
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
+    }
+}
+
+struct EssentialsWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: EssentialsEntry
+
+    var body: some View {
+        let accent = PjColors.accent(entry.accent)
+        let home = isHomeScreen(family)
+        VStack(alignment: .leading, spacing: 0) {
+            // L'écran verrouillé n'a que 72 pt : les quatre lignes les
+            // remplissent déjà, l'en-tête y serait de trop.
+            if home {
+                HStack(spacing: 6) {
+                    Text(entry.hebrewDate)
+                        .font(.caption.weight(.bold))
+                    Spacer(minLength: 4)
+                    Text(entry.place)
+                        .font(.caption)
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .foregroundStyle(PjColors.textSecondary)
+            }
+            if entry.lines.isEmpty {
+                Spacer(minLength: 8)
+                Text(entry.message ?? openAppFallback)
+                    .font(home ? .footnote : .caption2)
+                    .lineLimit(3)
+                    .foregroundStyle(home ? PjColors.text : .primary)
+                Spacer(minLength: 0)
+            } else {
+                Spacer(minLength: home ? 8 : 0)
+                VStack(spacing: home ? 6 : 2) {
+                    ForEach(entry.lines, id: \.self) { line in
+                        EssentialRow(
+                            line: line,
+                            label: home ? PjColors.textSecondary : .secondary,
+                            time: home ? accent : .primary,
+                            compact: !home || family == .systemSmall)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr/horaires"))
+    }
+}
+
+struct EssentialsWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "EssentialsWidget", provider: EssentialsProvider()) { entry in
+            EssentialsWidgetView(entry: entry).modifier(PjWidgetBackground())
+        }
+        .configurationDisplayName("Horaires essentiels")
+        .description("Fin du Chéma et de la Amida, plag haMin'ha et tsét haKokhavim.")
+        .supportedFamilies(supportedFamilies([.systemSmall, .systemMedium]))
     }
 }
 
@@ -432,23 +689,28 @@ struct DailyProvider: TimelineProvider {
     }
 }
 
-/// La barre de progression de la carte du tableau de bord : un rail à
-/// l'accent très pâli, une pastille pleine à la proportion lue.
+/// La barre de progression de la carte du tableau de bord : un rail pâle,
+/// une pastille pleine à la proportion lue. Les deux couleurs sont données
+/// par l'appelant : l'accent du thème sur l'écran d'accueil, le blanc délavé
+/// du système sur l'écran verrouillé, qui n'accepte pas d'autre couleur.
 struct DailyProgressBar: View {
     let ratio: Double
-    let accent: Color
+    let fill: Color
+    let rail: Color
+    var height: CGFloat = 10
 
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
-                Capsule().fill(accent.opacity(0.15))
+                Capsule().fill(rail)
                 if ratio > 0 {
                     // Jamais plus fine que haute : une pastille, pas un trait.
-                    Capsule().fill(accent).frame(width: max(10, geometry.size.width * ratio))
+                    Capsule().fill(fill)
+                        .frame(width: max(height, geometry.size.width * ratio))
                 }
             }
         }
-        .frame(height: 10)
+        .frame(height: height)
     }
 }
 
@@ -500,11 +762,39 @@ extension DailyState {
 }
 
 struct LectureWidgetView: View {
+    @Environment(\.widgetFamily) private var family
     let entry: DailyEntry
 
     var body: some View {
+        let state = DailyState.of(entry.payload, at: entry.date)
+        Group {
+            if isHomeScreen(family) { home(state) } else { accessory(state) }
+        }
+        .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr/bibliotheque/lecture-du-jour"))
+    }
+
+    /// Écran verrouillé : le titre, la ligne de progression et sa barre, sans
+    /// pourcentage ni chevron, que 72 pt de haut ne portent pas. Le vert de
+    /// « tout est lu » disparaît aussi : le système y délave les couleurs.
+    private func accessory(_ state: DailyState) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(entry.payload?.title ?? "Lecture du jour")
+                .font(.caption2.weight(.semibold))
+                .lineLimit(1)
+            Text(state.line)
+                .font(.caption2)
+                .lineLimit(state.measurable ? 1 : 3)
+            if state.measurable {
+                DailyProgressBar(
+                    ratio: state.ratio, fill: .primary, rail: .primary.opacity(0.3), height: 5)
+            }
+        }
+        .minimumScaleFactor(0.7)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    private func home(_ state: DailyState) -> some View {
         let payload = entry.payload
-        let state = DailyState.of(payload, at: entry.date)
         let accent = PjColors.accent(payload?.accent)
 
         // Une ligne, le dessin de la carte du tableau de bord : titre et
@@ -512,7 +802,7 @@ struct LectureWidgetView: View {
         // la carte (16 pt sous le titre, 8 pt au-dessus de la barre) ; les
         // corps, eux, sont ceux d'un widget, plus grands que sur la carte :
         // à trois lignes fines, un format moyen sonnait vide.
-        VStack(alignment: .leading, spacing: 0) {
+        return VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 10) {
                 Image(systemName: "book")
                     .font(.body.weight(.semibold))
@@ -543,7 +833,7 @@ struct LectureWidgetView: View {
                         .foregroundStyle(accent)
                 }
                 Spacer().frame(height: 8)
-                DailyProgressBar(ratio: state.ratio, accent: accent)
+                DailyProgressBar(ratio: state.ratio, fill: accent, rail: accent.opacity(0.15))
             } else {
                 Spacer().frame(height: 12)
                 Text(state.line)
@@ -553,25 +843,20 @@ struct LectureWidgetView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr/bibliotheque/lecture-du-jour"))
     }
 }
 
 struct LectureWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "LectureWidget", provider: DailyProvider()) { entry in
-            if #available(iOS 17.0, *) {
-                LectureWidgetView(entry: entry)
-                    .containerBackground(for: .widget) { PjColors.background }
-            } else {
-                LectureWidgetView(entry: entry).padding().background(PjColors.background)
-            }
+            LectureWidgetView(entry: entry).modifier(PjWidgetBackground())
         }
         .configurationDisplayName("Lecture du jour")
         .description("Votre lecture quotidienne et sa progression.")
         // Une ligne : le carré n'a pas la largeur qu'il faut à la barre et à
-        // son pourcentage, seul le format moyen porte ce dessin.
-        .supportedFamilies([.systemMedium])
+        // son pourcentage, seul le format moyen porte ce dessin sur l'écran
+        // d'accueil ; l'écran verrouillé a le sien, plus dépouillé.
+        .supportedFamilies(supportedFamilies([.systemMedium]))
     }
 }
 
@@ -581,6 +866,7 @@ struct LectureWidget: Widget {
 struct PjWidgetsBundle: WidgetBundle {
     var body: some Widget {
         HorairesWidget()
+        EssentialsWidget()
         LectureWidget()
     }
 }
