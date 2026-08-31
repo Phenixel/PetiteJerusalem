@@ -974,7 +974,7 @@ const fr = {
       live: "La flèche suit votre appareil : tournez-vous jusqu'à ce qu'elle pointe droit devant vous.",
       flat: "Tenez le téléphone à plat, l'écran vers le ciel : c'est à plat que la boussole s'oriente juste.",
       fixed:
-        "Votre appareil ne donne pas le nord : le cadran garde le nord en haut, à vous de l'orienter.",
+        "Votre appareil ou votre navigateur ne permettent pas d'utiliser la boussole : le cadran garde le nord en haut, à vous de l'orienter.",
       compassDenied: "L'accès à la boussole a été refusé : le cadran garde le nord en haut.",
       enable: "Activer la boussole",
       rose: { n: "N", e: "E", s: "S", o: "O" },
