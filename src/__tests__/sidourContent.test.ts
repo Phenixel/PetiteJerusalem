@@ -136,6 +136,25 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       expect(whens).toContain("moed"); // Ya'alé véyavo
       expect(whens).toContain("nissim"); // 'Al hanissim
     });
+
+    it("dit Lédavid, et seulement en sa saison", () => {
+      // Le psaume 27 se dit aux trois offices d'Eloul à Hochana Rabba. Il
+      // n'existe que dans les sections de Cha'harit chez Sefaria : Min'ha et
+      // Arvit le lui empruntent (voir sourcesFor dans build-sidour.mjs).
+      const ledavid = blocks.filter((b) => b.when === "ledavid");
+      expect(ledavid).toHaveLength(1);
+      expect(ledavid[0].labelText?.fr).toContain("Lédavid");
+      expect(ledavid[0].lines).toHaveLength(1);
+    });
+
+    it("offre la boussole du Kotel au titre de la 'Amida", () => {
+      // La 'Amida se dit tourné vers Jérusalem : son titre porte la boussole.
+      // Le drapeau vient de la recette, pas d'une retouche du fichier, sans
+      // quoi la prochaine génération l'emporterait sans rien signaler.
+      const amida = blocks.filter((b) => b.label === "'Amida");
+      expect(amida).toHaveLength(1);
+      expect(amida[0].kotel).toBe(true);
+    });
   },
 );
 

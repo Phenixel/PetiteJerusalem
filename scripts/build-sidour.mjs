@@ -101,11 +101,11 @@ function segText(raw, mode = "body") {
 const HEBREW_MARKS = /[\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4-\u05C7]/;
 
 /**
- * Découpe `text` entre deux repères (`from` inclus, `until` exclu), cherchés
- * sans signes. Un repère absent fait échouer la construction : mieux vaut pas
- * de fichier qu'un passage amputé en silence.
+ * Le texte débarrassé de ses signes, et la table qui ramène chaque caractère
+ * restant à sa place dans l'original : c'est ainsi qu'on cherche un repère
+ * sans dépendre de la vocalisation de l'édition.
  */
-function sliceBetween(text, { from, until }) {
+function bareMap(text) {
   const map = [];
   let bare = "";
   for (let i = 0; i < text.length; i++) {
@@ -113,7 +113,31 @@ function sliceBetween(text, { from, until }) {
     map.push(i);
     bare += text[i];
   }
-  const stripMarks = (marker) => marker.replace(new RegExp(HEBREW_MARKS, "g"), "");
+  return { map, bare };
+}
+
+const stripMarks = (marker) => marker.replace(new RegExp(HEBREW_MARKS, "g"), "");
+
+/**
+ * Coupe `text` juste après `marker` : ce qui précède, ce qui suit. Les signes
+ * qui suivent la dernière lettre du repère (voyelle, ta'am) restent avec lui.
+ */
+function splitAfter(text, marker) {
+  const { map, bare } = bareMap(text);
+  const cible = stripMarks(marker);
+  const j = bare.indexOf(cible);
+  if (j < 0) throw new Error(`Repère introuvable : ${marker}`);
+  const fin = j + cible.length < map.length ? map[j + cible.length] : text.length;
+  return [text.slice(0, fin).trim(), text.slice(fin).trim()];
+}
+
+/**
+ * Découpe `text` entre deux repères (`from` inclus, `until` exclu), cherchés
+ * sans signes. Un repère absent fait échouer la construction : mieux vaut pas
+ * de fichier qu'un passage amputé en silence.
+ */
+function sliceBetween(text, { from, until }) {
+  const { map, bare } = bareMap(text);
   let start = 0;
   let bareStart = 0;
   if (from) {
@@ -139,8 +163,10 @@ function sliceBetween(text, { from, until }) {
  * `strip` retire des consignes restées dans le texte extrait ; `from`/`until`
  * découpent le segment entre deux repères (voir sliceBetween) ; `when` ne dit
  * la ligne qu'à cette occasion ; `alt` ajoute dans le fil une didascalie
- * suivie du texte qu'elle affecte ; `splitAmen` déplie un kaddich en une
- * phrase par ligne, chacune suivie de sa réponse (voir buildKaddishLines).
+ * suivie du texte qu'elle affecte, à la fin de la ligne ou, si `alt.after` le
+ * demande, juste après le mot qu'elle remplace ; `splitAmen` déplie un
+ * kaddich en une phrase par ligne, chacune suivie de sa réponse (voir
+ * buildKaddishLines).
  */
 function buildLine(spec, segs) {
   let text;
@@ -160,7 +186,9 @@ function buildLine(spec, segs) {
   if (spec.strong) line.he = [{ b: text }];
   else if (spec.alt) {
     const when = spec.alt.when ? { when: spec.alt.when } : {};
-    line.he = [text, { r: spec.alt.rubric, ...when }, { v: spec.alt.text, ...when }];
+    const [debut, suite] = spec.alt.after ? splitAfter(text, spec.alt.after) : [text, ""];
+    line.he = [debut, { r: spec.alt.rubric, ...when }, { v: spec.alt.text, ...when }];
+    if (suite) line.he.push(suite);
   }
   else line.he = text;
   if (spec.repeat) line.repeat = spec.repeat;
@@ -210,6 +238,7 @@ function buildBlock(spec, sections) {
   if (spec.halakha) block.halakha = spec.halakha;
   if (spec.zman) block.zman = spec.zman;
   if (spec.torahWeekly) block.torahWeekly = true;
+  if (spec.kotel) block.kotel = true;
   if (spec.numbered) block.numbered = true;
   const segs = spec.src ? sections[spec.src] : [];
   if (spec.src && !segs) throw new Error(`Section source inconnue : ${spec.src}`);
@@ -227,6 +256,13 @@ function buildBlock(spec, sections) {
 // ---------- Didascalies et halakhot partagées ----------
 
 const R = (fr, en, he) => ({ fr, en, he });
+
+/**
+ * Ce que disent les femmes, là où le texte se décline. La source le donne
+ * déjà, dans ses <small> : le mot au féminin, à la suite du masculin. On le
+ * reprend tel quel plutôt que de redonner la phrase entière.
+ */
+const FEMMES = R("(les femmes disent)", "(women say)", "(האשה אומרת)");
 
 const RUBRIC = {
   hazan: R("Le 'hazan dit :", "The chazan says:", "ואומר החזן:"),
@@ -358,6 +394,7 @@ function amidaBlocks(src, ix, opts = {}) {
   blocks.push({
     src,
     labelText: R("'Amida", "The Amidah", "עמידה"),
+    kotel: true,
     halakha: HALAKHA.amida,
     lines: [{ seg: 1 }, { seg: ix.avot, strip: [STRIP.teshuvaDisent] }],
   });
@@ -830,6 +867,7 @@ function chaharitRecipe() {
               "Before anything else:",
               "כשיעור משנתו יאמר:",
             ),
+            alt: { after: "מוֹדֶה", rubric: FEMMES, text: "מוֹדָה" },
           },
         ],
       },
@@ -847,7 +885,7 @@ function chaharitRecipe() {
             ),
           },
           { seg: 4 },
-          { seg: 6 },
+          { seg: 6, alt: { after: "מוֹדֶה", rubric: FEMMES, text: "מוֹדָה" } },
           { seg: 7 },
           { seg: 8 },
           { seg: 9 },
@@ -859,17 +897,21 @@ function chaharitRecipe() {
           { seg: 16 },
           { seg: 17 },
           { seg: 18 },
-          { seg: 19 },
-          { seg: 20 },
-          { seg: 22 },
+          { seg: 19, alt: { rubric: FEMMES, text: "גּוֹיָה:" } },
+          { seg: 20, alt: { rubric: FEMMES, text: "שִׁפְחָה:" } },
           {
-            seg: 24,
-            muted: true,
-            rubric: R(
-              "Les femmes disent :",
-              "Women say:",
-              "האשה אומרת:",
-            ),
+            seg: 22,
+            // Les femmes ne disent pas le même mot au féminin mais une autre
+            // phrase, courte : la source la donne sans nom divin ni royauté,
+            // et sa consigne dit pourquoi.
+            alt: {
+              rubric: R(
+                "(les femmes disent, sans nom divin ni royauté)",
+                "(women say, without the Name and Kingship)",
+                "(האשה מברכת בלי שם ומלכות)",
+              ),
+              text: "בָּרוּךְ שֶׁעָשַׂנִי כִּרְצוֹנוֹ:",
+            },
           },
           { seg: 25 },
           { seg: 26, tight: true },
@@ -1362,6 +1404,7 @@ function chaharitRecipe() {
         src: "RH.Mussaf",
         when: "rosh-chodesh",
         plain: true,
+        kotel: true,
         labelText: R("Moussaf de Roch Hodech", "Musaf for Rosh Hodesh", "מוסף לראש חודש"),
         halakha: R(
           "On garde dans Moussaf la mention de la saison (morid hatal en été, machiv haroua'h oumorid haguéchem en hiver).",
@@ -1578,6 +1621,17 @@ function minhaRecipe() {
         labelText: R("'Alénou léchabéa'h", "Aleinu", "עלינו לשבח"),
         lines: [{ seg: 1 }, { seg: 2 }, { seg: 3, mode: "small", tight: true }],
       },
+      {
+        src: "Ledavid",
+        when: "ledavid",
+        plain: true,
+        labelText: R(
+          "Lédavid (d'Eloul à Hochana Rabba)",
+          "LeDavid (from Elul to Hoshana Rabbah)",
+          "לדוד ה' אורי",
+        ),
+        lines: [{ seg: 5 }],
+      },
     ],
   };
 }
@@ -1630,6 +1684,17 @@ function arvitRecipe() {
     title: "ערבית של חול (Arvit)",
     blocks: [
       { zman: "arvit" },
+      {
+        src: "Ledavid",
+        when: "ledavid",
+        plain: true,
+        labelText: R(
+          "Lédavid (d'Eloul à Hochana Rabba)",
+          "LeDavid (from Elul to Hoshana Rabbah)",
+          "לדוד ה' אורי",
+        ),
+        lines: [{ seg: 5 }],
+      },
       {
         src: "Barchu",
         when: "rosh-chodesh",
@@ -1770,7 +1835,9 @@ function sourcesFor(office) {
     };
   }
   // Le Kaddich (segments 4 à 7 de « Uva LeSion ») est le même aux trois
-  // offices : Min'ha et Arvit le reçoivent de Cha'harit.
+  // offices, et Lédavid (segment 5 de « Alenu ») se dit aux trois, d'Eloul à
+  // Hochana Rabba : Min'ha et Arvit les reçoivent de Cha'harit, leurs propres
+  // sections ne les portant pas.
   if (office === "minha") {
     const wm = text["Weekday Mincha"];
     return {
@@ -1779,6 +1846,7 @@ function sourcesFor(office) {
       Vidui: wm["Vidui"],
       Alenu: wm["Alenu"],
       Kaddish: ws["Uva LeSion"],
+      Ledavid: ws["Alenu"],
     };
   }
   const wa = text["Weekday Arvit"];
@@ -1788,6 +1856,7 @@ function sourcesFor(office) {
     Amidah: wa["Amidah"],
     Alenu: wa["Alenu"],
     Kaddish: ws["Uva LeSion"],
+    Ledavid: ws["Alenu"],
   };
 }
 
