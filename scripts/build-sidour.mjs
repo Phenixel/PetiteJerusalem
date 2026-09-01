@@ -1684,10 +1684,12 @@ function arvitRecipe() {
     title: "ערבית של חול (Arvit)",
     blocks: [
       { zman: "arvit" },
+      // À Arvit, Lédavid ouvre l'office toute l'année, dans un encadré : il
+      // se déplie de lui-même en sa saison, et le reste du temps il reste là,
+      // replié, sans couper l'entrée dans la prière du soir.
       {
         src: "Ledavid",
-        when: "ledavid",
-        plain: true,
+        fold: "ledavid",
         labelText: R(
           "Lédavid (d'Eloul à Chemini 'Atséret)",
           "LeDavid (from Elul to Shemini Atzeret)",

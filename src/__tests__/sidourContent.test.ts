@@ -115,11 +115,12 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       // Le fil de qui prie seul reste net : la kedoucha, Modim dérabanan et
       // les Kaddich du 'hazan vivent dans des encadrés repliés (fold), jamais
       // masqués. La clé « hazan » n'est pas une occasion du calendrier : rien
-      // ne les déplie d'office.
+      // ne les déplie d'office. Celle de Lédavid en est une, et c'est tout
+      // l'intérêt : l'encadré s'ouvre de lui-même en sa saison.
       const folded = blocks.filter((b) => b.fold);
       expect(folded.length).toBeGreaterThanOrEqual(2);
       for (const block of folded) {
-        expect(block.fold).toBe("hazan");
+        expect(["hazan", "ledavid"]).toContain(block.fold);
         expect(block.labelText).toBeDefined();
         expect(block.lines.length).toBeGreaterThan(0);
       }
@@ -137,13 +138,18 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       expect(whens).toContain("nissim"); // 'Al hanissim
     });
 
-    it("dit Lédavid, et seulement en sa saison", () => {
-      // Le psaume 27 se dit aux trois offices d'Eloul à Hochana Rabba. Il
+    it("dit Lédavid, et la saison décide de ce qu'on en voit", () => {
+      // Le psaume 27 se dit aux trois offices, d'Eloul à Chemini 'Atséret. Il
       // n'existe que dans les sections de Cha'harit chez Sefaria : Min'ha et
       // Arvit le lui empruntent (voir sourcesFor dans build-sidour.mjs).
-      const ledavid = blocks.filter((b) => b.when === "ledavid");
+      //
+      // À Cha'harit et à Min'ha il n'est là qu'en saison (`when`). À Arvit il
+      // ouvre l'office toute l'année, dans un encadré (`fold`) que sa saison
+      // déplie : c'est le premier texte de la page, il ne peut pas y
+      // apparaître et disparaître sans laisser l'office sans entrée.
+      const ledavid = blocks.filter((b) => b.labelText?.fr.startsWith("Lédavid"));
       expect(ledavid).toHaveLength(1);
-      expect(ledavid[0].labelText?.fr).toContain("Lédavid");
+      expect(ledavid[0].when ?? ledavid[0].fold).toBe("ledavid");
       expect(ledavid[0].lines).toHaveLength(1);
     });
 
