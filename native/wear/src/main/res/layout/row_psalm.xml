@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Un psaume dans la liste. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pj_psalm_title"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="10dp"
+    android:layout_marginEnd="10dp"
+    android:layout_marginBottom="5dp"
+    android:background="@drawable/pj_wear_row"
+    android:clickable="true"
+    android:ellipsize="end"
+    android:focusable="true"
+    android:maxLines="1"
+    android:paddingStart="18dp"
+    android:paddingEnd="18dp"
+    android:paddingTop="11dp"
+    android:paddingBottom="11dp"
+    android:textColor="@color/pj_wear_text"
+    android:textSize="14sp" />

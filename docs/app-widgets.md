@@ -39,6 +39,10 @@ l'interface.
 Tout le reste porte l'accent du thème choisi par l'utilisateur : il voyage
 dans le payload, le natif ne connaît aucune couleur de thème.
 
+Les apps de montre (Wear OS et Apple Watch) reprennent l'architecture décrite
+plus bas et réutilisent les deux mêmes payloads, `zmanim` et `daily`, tels
+quels : voir `docs/app-watch.md`.
+
 ## Les formats, et ce qu'ils imposent
 
 Sur iOS, un widget d'écran d'accueil n'a que les tailles du système, et le

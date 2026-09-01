@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App Wear OS. Même applicationId que le téléphone (build.gradle) : c'est
+     `uses-feature android.hardware.type.watch` qui dit au Play Store lequel
+     des deux artefacts va sur quel appareil. Voir docs/app-watch.md. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-feature android:name="android.hardware.type.watch" />
+
+    <!-- L'app de montre ne va nulle part sur le réseau : tout lui vient du
+         téléphone par le Data Layer, et les Tehilim sont embarqués. -->
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/pj_wear_app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/PjWearTheme">
+
+        <!-- Autonome : l'app fonctionne sans app téléphone installée (elle
+             affiche alors son invitation à l'ouvrir sur le téléphone, et les
+             Tehilim restent lisibles). C'est ce que le Play Store exige d'une
+             app Wear OS distribuée à part. -->
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="true" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/pj_wear_app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".ZmanimActivity" android:exported="false" />
+        <activity android:name=".LectureActivity" android:exported="false" />
+        <activity android:name=".TehilimListActivity" android:exported="false" />
+        <activity android:name=".TehilimTextActivity" android:exported="false" />
+
+        <!-- Réception des payloads déposés par le téléphone. Le système
+             réveille ce service pour nous : l'app n'a pas à tourner. -->
+        <service
+            android:name=".PjWearListenerService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/pj/" />
+            </intent-filter>
+        </service>
+
+        <!-- L'horaire affiché vient de passer : les complications se
+             redessinent (alarme posée par Complications.scheduleTick). -->
+        <receiver
+            android:name=".ComplicationTickReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="fr.petitejerusalem.wear.COMPLICATION_TICK" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Complications de cadran : lire l'heure du prochain zman ou
+             l'avancement de la lecture sans même ouvrir l'app. -->
+        <service
+            android:name=".ZmanComplicationService"
+            android:exported="true"
+            android:label="@string/pj_wear_complication_zman"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <intent-filter>
+                <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
+            </intent-filter>
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="SHORT_TEXT,LONG_TEXT" />
+            <!-- 0 : jamais de rafraîchissement périodique. C'est l'app qui
+                 redemande une mise à jour quand un payload arrive ou quand
+                 l'horaire affiché est passé (voir Complications.java). -->
+            <meta-data
+                android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                android:value="0" />
+        </service>
+
+        <service
+            android:name=".LectureComplicationService"
+            android:exported="true"
+            android:label="@string/pj_wear_complication_lecture"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <intent-filter>
+                <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
+            </intent-filter>
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="RANGED_VALUE,SHORT_TEXT" />
+            <meta-data
+                android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                android:value="0" />
+        </service>
+    </application>
+</manifest>
