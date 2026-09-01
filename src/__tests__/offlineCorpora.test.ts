@@ -23,6 +23,7 @@ vi.mock("../services/offlineTextStore", () => ({
   isDownloadCurrent: () => false,
   downloadFile: vi.fn(),
   removeFile: vi.fn(),
+  outdatedDownloads: () => Promise.resolve([]),
 }));
 
 const publicDir = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "public");

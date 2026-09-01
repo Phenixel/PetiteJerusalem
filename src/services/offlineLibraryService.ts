@@ -7,7 +7,7 @@ import {
   downloadManifest,
   ensureManifestLoaded,
   isDownloaded,
-  isDownloadCurrent,
+  outdatedDownloads,
   removeFile,
 } from "./offlineTextStore";
 import { isNativeApp } from "../composables/useNativeApp";
@@ -232,22 +232,34 @@ export async function downloadBooks(books: OfflineBook[]): Promise<OfflineBook[]
 }
 
 /**
- * Remet au format courant les livres déjà téléchargés dans une version
- * antérieure des données (ex. paracha d'avant les montées et le targoum).
+ * Reprend du site les textes gardés sur l'appareil qui n'y sont plus les
+ * mêmes : un format qui a changé (la paracha d'avant les montées et le
+ * targoum), et surtout un texte corrigé depuis, que l'appareil servirait
+ * indéfiniment dans sa version d'alors.
+ *
  * Ne télécharge JAMAIS de nouveau livre : ce qui vit sur l'appareil reste ce
  * que l'utilisateur a accepté d'y mettre (voir la proposition de
- * téléchargement à l'ajout d'un texte, dans la lecture quotidienne).
+ * téléchargement à l'ajout d'un texte, dans la lecture quotidienne). Un échec
+ * ne coûte rien non plus : la copie en place reste lisible, et la
+ * synchronisation suivante réessaiera.
  */
 export async function refreshStaleDownloads(): Promise<void> {
-  if (!isNativeApp) return;
   await ensureManifestLoaded();
   // Hors connexion, chaque téléchargement échouerait : on attend le retour du
   // réseau, la page relance la synchro à ce moment-là.
   if (typeof navigator !== "undefined" && navigator.onLine === false) return;
 
-  const stale = Object.keys(downloadManifest.value.files)
-    .filter((path) => !isDownloadCurrent(path))
-    .map((path) => offlineBooks.find((b) => b.path === path))
-    .filter((book): book is OfflineBook => Boolean(book));
-  await downloadBooks(stale);
+  // Par chemin, et non par livre du catalogue : le découpage en chapitres du
+  // Talmud n'est le livre de personne, et se corrige comme les autres.
+  for (const path of await outdatedDownloads()) {
+    if (downloadingPaths.has(path)) continue;
+    downloadingPaths.add(path);
+    try {
+      await downloadFile(path);
+    } catch (error) {
+      console.warn(`Mise à jour de ${path} impossible:`, error);
+    } finally {
+      downloadingPaths.delete(path);
+    }
+  }
 }

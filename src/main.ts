@@ -136,6 +136,13 @@ app.mount("#app");
 // dynamique et best-effort : jamais bloquant pour le démarrage.
 import("./services/analyticsService").then(({ analyticsService }) => analyticsService.init());
 
+// Textes gardés sur l'appareil : si le site en sert une version plus récente
+// (un passage ajouté, une correction), on la reprend en tâche de fond. Sans
+// cela, un texte téléchargé une fois resterait celui de ce jour-là.
+import("./services/offlineLibraryService").then(({ refreshStaleDownloads }) =>
+  refreshStaleDownloads(),
+);
+
 // App native uniquement, imports dynamiques pour ne rien ajouter au bundle
 // initial du site web.
 import("./composables/useNativeApp").then(({ isNativeApp }) => {

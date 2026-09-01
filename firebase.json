@@ -65,6 +65,13 @@
         ]
       },
       {
+        "source": "/texts/manifest.json",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" },
+          { "key": "Access-Control-Allow-Origin", "value": "*" }
+        ]
+      },
+      {
         "source": "/.well-known/apple-app-site-association",
         "headers": [
           { "key": "Content-Type", "value": "application/json" },
