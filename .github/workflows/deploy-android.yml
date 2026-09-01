@@ -118,7 +118,7 @@ jobs:
       # `cap add` plus haut n'a pas pu terminer le sien, faute de dist/ à ce
       # moment-là (« sync could not run--missing dist directory »), or c'est ce
       # sync qui écrit android/capacitor.settings.gradle, le fichier où Gradle
-      # lit la liste des plugins. Sans lui, `gradlew installDebug` s'arrête sur
+      # lit la liste des plugins. Sans lui, `gradlew :app:installDebug` s'arrête sur
       # « Could not read script … as it does not exist ». Le job de release ne
       # connaît pas ce défaut : son `npm run app:build` fait le sync.
       # Ni type-check ni prerender SEO ici : l'app capturée vient du serveur
@@ -292,25 +292,37 @@ jobs:
 
       - name: Aligner versionName/versionCode sur le tag
         run: |
+          for module in app wear; do
+            sed -i -E "s/versionName \"[^\"]+\"/versionName \"${{ steps.version.outputs.name }}\"/" \
+              "android/$module/build.gradle"
+          done
           sed -i -E "s/versionCode [0-9]+/versionCode ${{ steps.version.outputs.code }}/" android/app/build.gradle
-          sed -i -E "s/versionName \"[^\"]+\"/versionName \"${{ steps.version.outputs.name }}\"/" android/app/build.gradle
-          grep -E "versionCode|versionName" android/app/build.gradle
+          # L'app de montre est un artefact distinct de la même fiche Play :
+          # son versionCode doit différer de celui du téléphone, et le pas de
+          # 100 du semver laisse toute la place voulue (docs/app-watch.md).
+          sed -i -E "s/versionCode [0-9]+/versionCode $(( ${{ steps.version.outputs.code }} + 1 ))/" android/wear/build.gradle
+          grep -E "versionCode|versionName" android/app/build.gradle android/wear/build.gradle
 
       # Build web (type-check + vite + prerender), prune du bundle natif,
       # puis cap sync copie dist/ dans le projet Android.
       - name: Build web + sync Capacitor
         run: npm run app:build
 
-      - name: Build AAB release
-        run: cd android && ./gradlew bundleRelease --no-daemon
+      # Les deux artefacts : celui du téléphone et celui de la montre. Ils
+      # partent dans la MÊME release Play Store, qui choisit lequel envoyer à
+      # quel appareil (docs/app-watch.md).
+      - name: Build AAB release (téléphone + montre)
+        run: cd android && ./gradlew :app:bundleRelease :wear:bundleRelease --no-daemon
 
       # L'AAB signé reste téléchargeable 90 jours depuis l'onglet Actions,
       # même si la publication Play échoue.
-      - name: Archiver l'AAB
+      - name: Archiver les AAB
         uses: actions/upload-artifact@v4
         with:
           name: app-release-${{ steps.version.outputs.name }}
-          path: android/app/build/outputs/bundle/release/app-release.aab
+          path: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            android/wear/build/outputs/bundle/release/wear-release.aab
           if-no-files-found: error
 
       # Notes de version (« Nouveautés ») : le texte de la release GitHub du
@@ -334,7 +346,9 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: fr.petitejerusalem.app
-          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          releaseFiles: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            android/wear/build/outputs/bundle/release/wear-release.aab
           track: production
           status: completed
           whatsNewDirectory: whatsnew
@@ -350,7 +364,9 @@ jobs:
         with:
           name: v${{ steps.version.outputs.name }}
           body_path: ${{ steps.notes.outputs.has_release_body != 'true' && 'whatsnew/whatsnew-fr-FR' || '' }}
-          files: android/app/build/outputs/bundle/release/app-release.aab
+          files: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            android/wear/build/outputs/bundle/release/wear-release.aab
 
   # Fiche Play Store (titre, descriptions, captures d'écran) synchronisée
   # depuis store-assets/metadata/android/, voir scripts/play-listing.mjs. Les

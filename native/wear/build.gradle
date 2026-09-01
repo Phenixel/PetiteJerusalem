@@ -1,0 +1,80 @@
+apply plugin: 'com.android.application'
+
+/**
+ * L'app Wear OS. Module à part, mais même applicationId que le téléphone :
+ * le Play Store les livre comme deux artefacts d'une seule fiche, et se sert
+ * du `uses-feature android.hardware.type.watch` du manifest pour savoir lequel
+ * envoyer à quel appareil. Les deux versionCode doivent différer, la CI donne
+ * à la montre celui du téléphone + 1 (voir .github/workflows/deploy-android.yml).
+ *
+ * Wear OS 3 (API 30) au minimum : c'est le plancher des montres qui reçoivent
+ * encore des mises à jour, et celui des apps autonomes, seule forme de
+ * distribution que le Play Store accepte aujourd'hui (l'APK embarqué dans
+ * celui du téléphone, `wearApp`, ne concerne plus que Wear OS 2).
+ *
+ * Fichier versionné dans native/wear/, recopié dans android/wear/ (git-ignoré)
+ * par scripts/setup-android.mjs, qui déclare aussi le module dans
+ * settings.gradle. Voir docs/app-watch.md.
+ */
+// Même clé de signature que le téléphone : deux artefacts d'une même fiche
+// Play doivent l'être. Le fichier reste git-ignoré et absent partout ailleurs
+// que sur la machine (ou la CI) qui publie, comme pour app/.
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    namespace = "fr.petitejerusalem.wear"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "fr.petitejerusalem.app"
+        minSdkVersion 30
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "3.0.0"
+    }
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                // app/build.gradle résout storeFile relativement à SON module :
+                // la CI y écrit « release.keystore » et pose le fichier dans
+                // android/app/. Un chemin relatif se lit donc là-bas, pas ici ;
+                // un chemin absolu (la machine qui publie) se prend tel quel.
+                def storePath = keystoreProperties['storeFile']
+                storeFile new File(storePath).isAbsolute()
+                    ? file(storePath)
+                    : rootProject.file("app/${storePath}")
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Clé absente (autre machine, CI de test) : on retombe sur la
+            // signature debug pour ne pas casser `./gradlew :wear:bundleRelease`.
+            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+dependencies {
+    implementation "androidx.core:core:$androidxCoreVersion"
+    implementation "androidx.recyclerview:recyclerview:1.4.0"
+    // BoxInsetLayout (les coins perdus d'un écran rond) et l'entrée rotative.
+    implementation "androidx.wear:wear:1.3.0"
+    // Les complications de cadran : le prochain horaire et l'avancement de la
+    // lecture, lisibles sans ouvrir l'app.
+    implementation "androidx.wear.watchface:watchface-complications-data-source:1.2.1"
+    // Data Layer : le téléphone y dépose les payloads (native/android/…/PjWatchPlugin.java).
+    implementation "com.google.android.gms:play-services-wearable:19.0.0"
+}

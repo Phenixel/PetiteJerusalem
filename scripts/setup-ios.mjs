@@ -22,6 +22,9 @@
  * - Widgets d'écran d'accueil : le plugin dans la cible App, et la cible
  *   d'extension « PjWidgets » fabriquée de toutes pièces dans le pbxproj
  *   (sources de native/ios/, voir docs/app-widgets.md)
+ * - Apple Watch : le plugin dans la cible App, et la cible d'application
+ *   « PjWatch » fabriquée de la même façon, avec son icône et les Tehilim
+ *   embarqués (sources de native/watchos/, voir docs/app-watch.md)
  * - Icônes / splash générés depuis assets/logo.png
  *
  * Usage : node scripts/setup-ios.mjs
@@ -35,6 +38,8 @@
  *   IOS_WIDGET_PROVISIONING_PROFILE  profil de l'extension de widgets, en
  *                          signature manuelle seulement (CI) : un appex a son
  *                          propre App ID, donc son propre profil.
+ *   IOS_WATCH_PROVISIONING_PROFILE   profil de l'app de montre, pour la même
+ *                          raison : elle a elle aussi son propre App ID.
  */
 import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -50,6 +55,15 @@ import {
   widgetInfoPlist,
   WIDGET_TARGET,
 } from "./lib/xcode-widgets.mjs";
+import {
+  addWatchApp,
+  watchAppIconContents,
+  watchInfoPlist,
+  WATCH_BUNDLE_SUFFIX,
+  WATCH_SOURCES,
+  WATCH_TARGET,
+} from "./lib/xcode-watch.mjs";
+import { buildTehilimAsset, TEHILIM_ASSET } from "./lib/watch-tehilim.mjs";
 
 const root = join(import.meta.dirname, "..");
 const iosDir = join(root, "ios");
@@ -65,6 +79,8 @@ const BUNDLE_ID = "fr.petitejerusalem.app";
 const DISPLAY_NAME = "Petite Jérusalem";
 /** Widgets d'écran d'accueil : l'App ID de la cible d'extension. */
 const WIDGET_BUNDLE_ID = `${BUNDLE_ID}.${WIDGET_TARGET}`;
+/** Apple Watch : l'App ID de l'app de montre (suffixe imposé par Apple). */
+const WATCH_BUNDLE_ID = `${BUNDLE_ID}.${WATCH_BUNDLE_SUFFIX}`;
 const TEAM_ID = process.env.IOS_DEVELOPMENT_TEAM?.trim();
 const MARKETING_VERSION = process.env.IOS_MARKETING_VERSION?.trim();
 const BUILD_NUMBER = process.env.IOS_BUILD_NUMBER?.trim();
@@ -73,13 +89,19 @@ const BUILD_NUMBER = process.env.IOS_BUILD_NUMBER?.trim();
 // pourquoi). En local, Xcode continue de gérer la signature tout seul.
 const PROVISIONING_PROFILE = process.env.IOS_PROVISIONING_PROFILE?.trim();
 const WIDGET_PROVISIONING_PROFILE = process.env.IOS_WIDGET_PROVISIONING_PROFILE?.trim();
+const WATCH_PROVISIONING_PROFILE = process.env.IOS_WATCH_PROVISIONING_PROFILE?.trim();
 const CODE_SIGN_IDENTITY = process.env.IOS_CODE_SIGN_IDENTITY?.trim();
 const MANUAL_SIGNING = Boolean(PROVISIONING_PROFILE && CODE_SIGN_IDENTITY);
-if (MANUAL_SIGNING && !WIDGET_PROVISIONING_PROFILE) {
-  // L'extension de widgets a son propre App ID, donc son propre profil : sans
-  // lui l'archive échouerait bien plus loin, sur un message de signature.
+for (const [name, value] of [
+  // Chacun des deux paquets embarqués a son propre App ID, donc son propre
+  // profil : sans lui l'archive échouerait bien plus loin, sur un message de
+  // signature.
+  ["IOS_WIDGET_PROVISIONING_PROFILE", WIDGET_PROVISIONING_PROFILE],
+  ["IOS_WATCH_PROVISIONING_PROFILE", WATCH_PROVISIONING_PROFILE],
+]) {
+  if (!MANUAL_SIGNING || value) continue;
   console.error(
-    "setup-ios: signature manuelle sans IOS_WIDGET_PROVISIONING_PROFILE.\n" +
+    `setup-ios: signature manuelle sans ${name}.\n` +
       "  scripts/ios-signing.mjs --setup l'expose ; le lancer avant ce script.",
   );
   process.exit(1);
@@ -489,7 +511,11 @@ if (!appDelegate.includes("allowsBackForwardNavigationGestures")) {
 //     Info.plist (NSExtension) et ses entitlements (l'App Group).
 // L'enregistrement dans le projet Xcode se fait plus bas, dans le pbxproj.
 const nativeIosDir = join(root, "native/ios");
-const APP_PLUGIN_SOURCES = ["PjWidgetsPlugin.swift", "PjViewController.swift"];
+const APP_PLUGIN_SOURCES = [
+  "PjWidgetsPlugin.swift",
+  "PjWatchPlugin.swift",
+  "PjViewController.swift",
+];
 for (const name of APP_PLUGIN_SOURCES) {
   copyFileSync(join(nativeIosDir, "App", name), join(appDir, name));
 }
@@ -503,6 +529,38 @@ copyFileSync(
 writeFileSync(join(widgetDir, "Info.plist"), widgetInfoPlist(DISPLAY_NAME));
 writeFileSync(join(widgetDir, `${WIDGET_TARGET}.entitlements`), widgetEntitlements());
 console.log(`setup-ios: sources des widgets copiées depuis native/ios/ (App + ${WIDGET_TARGET})`);
+
+// ---------------------------------------------------------------------------
+// 6 bis. Apple Watch : les sources de l'app de montre, son icône, ses Tehilim
+// ---------------------------------------------------------------------------
+// Même principe que les widgets : le code vit dans native/watchos/ (versionné)
+// et se recopie ici. Trois choses de plus qu'une extension :
+//   - un Info.plist qui dit « app de montre » (WKApplication) et la relie à
+//     l'app iPhone (WKCompanionAppBundleIdentifier) ;
+//   - un catalogue d'icônes : sans lui, l'App Store refuse l'archive, et rien
+//     avant ne le signale ;
+//   - les 150 Tehilim, embarqués plutôt qu'envoyés (docs/app-watch.md).
+const watchDir = join(iosDir, "App", WATCH_TARGET);
+mkdirSync(watchDir, { recursive: true });
+for (const name of WATCH_SOURCES) {
+  copyFileSync(join(root, "native/watchos", WATCH_TARGET, name), join(watchDir, name));
+}
+writeFileSync(join(watchDir, "Info.plist"), watchInfoPlist(DISPLAY_NAME, BUNDLE_ID));
+
+// L'icône : celle de l'app (assets/logo.png fait déjà 1024 points de côté,
+// la seule taille que watchOS demande depuis Xcode 14).
+const appIconDir = join(watchDir, "Assets.xcassets/AppIcon.appiconset");
+mkdirSync(appIconDir, { recursive: true });
+copyFileSync(join(root, "assets/logo.png"), join(appIconDir, "AppIcon.png"));
+writeFileSync(join(appIconDir, "Contents.json"), watchAppIconContents("AppIcon.png"));
+writeFileSync(
+  join(watchDir, "Assets.xcassets/Contents.json"),
+  `${JSON.stringify({ info: { author: "xcode", version: 1 } }, null, 2)}\n`,
+);
+
+const tehilim = JSON.parse(readFileSync(join(root, "public/texts/tehilim.json"), "utf8"));
+writeFileSync(join(watchDir, TEHILIM_ASSET), JSON.stringify(buildTehilimAsset(tehilim)));
+console.log(`setup-ios: sources de la montre copiées depuis native/watchos/ (${WATCH_TARGET})`);
 
 // Le plugin doit être enregistré à la main depuis Capacitor 5 :
 // PjViewController remplace CAPBridgeViewController comme classe du view
@@ -641,12 +699,22 @@ try {
       : { manual: false },
   });
   console.log(`setup-ios: cible d'extension ${WIDGET_TARGET} (${WIDGET_BUNDLE_ID}) enregistrée`);
+  pbxproj = addWatchApp(pbxproj, {
+    bundleId: WATCH_BUNDLE_ID,
+    teamId: TEAM_ID,
+    marketingVersion: MARKETING_VERSION ?? "1.0",
+    buildNumber: BUILD_NUMBER ?? "1",
+    signing: MANUAL_SIGNING
+      ? { manual: true, identity: CODE_SIGN_IDENTITY, profile: WATCH_PROVISIONING_PROFILE }
+      : { manual: false },
+  });
+  console.log(`setup-ios: cible de montre ${WATCH_TARGET} (${WATCH_BUNDLE_ID}) enregistrée`);
 } catch (error) {
   console.error(
-    `setup-ios: cible des widgets impossible à écrire, ${error.message}\n` +
+    `setup-ios: cible des widgets ou de la montre impossible à écrire, ${error.message}\n` +
       "  Le template Xcode de Capacitor a changé : comparer avec\n" +
       "  node_modules/@capacitor/cli/assets/ios-spm-template.tar.gz et mettre\n" +
-      "  scripts/lib/xcode-widgets.mjs à jour.",
+      "  scripts/lib/xcode-widgets.mjs et xcode-watch.mjs à jour.",
   );
   process.exit(1);
 }

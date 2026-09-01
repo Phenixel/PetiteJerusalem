@@ -1084,6 +1084,15 @@ const he: LocaleMessages = {
       brahotSearch: "חיפוש ברכה…",
     },
   },
+  watch: {
+    zmanim: "זמני היום",
+    daily: "הקריאה היומית",
+    texts: "טקסטים",
+    tehilim: "תהילים",
+    psalm: "תהילים {n}",
+    tehilimOfDay: "תהילים של היום",
+    pairing: "פתחו את האפליקציה בטלפון",
+  },
   studio: {
     title: "סטודיו למרצים",
     hello: "שלום {name}",

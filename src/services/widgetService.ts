@@ -7,6 +7,9 @@ import { i18n, loadLocaleMessages, type SupportedLocale } from "../i18n";
 import { localDayKey } from "./dateService";
 import { authService, type User } from "./authService";
 import { userPreferencesService, type UserPreferences } from "./userPreferencesService";
+import { PayloadSink } from "./payloadSink";
+import { watchService } from "./watchService";
+import { buildWatchPayload } from "./watchPayloads";
 import {
   buildDailyReadingWidgetPayload,
   buildLibraryWidgetPayload,
@@ -14,21 +17,31 @@ import {
 } from "./widgetPayloads";
 
 /**
- * Alimente les widgets d'écran d'accueil (Android / iOS).
+ * Alimente les surfaces natives qui affichent l'app sans l'exécuter : les
+ * widgets d'écran d'accueil (Android / iOS) et la montre (Wear OS / Apple
+ * Watch).
  *
- * Les widgets natifs ne peuvent pas exécuter le code de la webview : l'app
- * leur pousse des payloads JSON pré-calculés (voir widgetPayloads) via le
- * plugin natif PjWidgets, SharedPreferences côté Android, App Group côté iOS,
- * qui rafraîchit les widgets concernés dans la foulée. Le natif se débrouille
- * ensuite seul : une semaine d'horaires est embarquée, et la lecture du jour
- * porte son échéance (expiresAt) pour se remettre à zéro à minuit sans rouvrir
- * l'app.
+ * Aucune d'elles ne peut faire tourner le code de la webview : l'app leur
+ * pousse des payloads JSON pré-calculés (voir widgetPayloads et watchPayloads)
+ * via deux plugins natifs. PjWidgets range les siens en SharedPreferences côté
+ * Android, dans l'App Group côté iOS, et rafraîchit les widgets concernés ;
+ * PjWatch remet les siens à la montre par le Data Layer (Wear OS) ou
+ * WatchConnectivity (watchOS). Le natif se débrouille ensuite seul : une
+ * semaine d'horaires est embarquée, et la lecture du jour porte son échéance
+ * (expiresAt) pour se remettre à zéro à minuit sans rouvrir l'app.
+ *
+ * Un seul producteur, donc, et deux destinataires : les payloads ne sont
+ * calculés qu'une fois, et chaque destinataire ne se voit remettre que ce qui
+ * a changé pour lui (voir PayloadSink). Les horaires et la lecture du jour
+ * vont aux deux ; les libellés de la bibliothèque n'intéressent que les
+ * raccourcis d'écran d'accueil, ceux des écrans de la montre qu'elle seule.
  *
  * Rafraîchi au lancement, au retour au premier plan, au changement de lieu
  * des horaires, au changement de langue, au changement de thème (les widgets
- * portent l'accent choisi) et à chaque progression de la lecture du jour. Un
- * payload inchangé n'est pas renvoyé : le natif ne recharge pas ses widgets
- * pour rien.
+ * et la montre portent l'accent choisi), à chaque progression de la lecture du
+ * jour, et quand la montre réclame tout (app de montre ouverte pour la
+ * première fois). Un payload inchangé n'est pas renvoyé : le natif ne recharge
+ * pas ses widgets pour rien.
  */
 
 /** Le sous-ensemble des préférences dont dépend le widget de lecture. */
@@ -70,14 +83,20 @@ class WidgetService {
   // relire dans Firestore un document qu'elle vient d'écrire.
   private pendingDaily: DailyWidgetPrefs | null = null;
 
-  // Dernier état poussé, pour ne pas renvoyer un payload identique (chaque
-  // envoi fait recharger les widgets natifs, budgété côté iOS). La clé des
-  // horaires porte leurs seules entrées (lieu, jour, langue, accent) : tant
-  // qu'elle ne bouge pas, les ~100 calculs solaires ne sont même pas refaits.
-  private lastZmanimKey: string | null = null;
-  private lastZmanimJson: string | null = null;
-  private lastDailyJson: string | null = null;
-  private lastLibraryJson: string | null = null;
+  // Les destinataires. Chacun retient ce qu'il a déjà reçu : un payload
+  // identique ne repart pas (chaque envoi fait recharger les widgets natifs,
+  // budgété côté iOS, et réveille la montre).
+  private readonly widgets = new PayloadSink((changed) => PjWidgets.setPayloads(changed));
+
+  // Derniers payloads CALCULÉS (à ne pas confondre avec ce que chaque
+  // destinataire a reçu, qu'il tient lui-même). La clé des horaires porte
+  // leurs seules entrées (lieu, jour, langue, accent) : tant qu'elle ne bouge
+  // pas, les ~100 calculs solaires ne sont même pas refaits.
+  private zmanimKey: string | null = null;
+  private zmanimJson: string | null = null;
+  private dailyJson: string | null = null;
+  private libraryJson: string | null = null;
+  private watchJson: string | null = null;
 
   /** À appeler une fois au démarrage de l'app native (no-op sur le web). */
   init(): void {
@@ -107,6 +126,15 @@ class WidgetService {
     import("@capacitor/app")
       .then(({ App }) => App.addListener("resume", () => void this.refresh()))
       .catch(() => {});
+
+    // La montre réclame tout : son app vient d'être ouverte pour la première
+    // fois, ou elle vient d'être appairée. Elle n'a rien de ce que le
+    // téléphone croit lui avoir donné, on oublie donc ce qu'il en sait avant
+    // de republier.
+    watchService.onRequest(() => {
+      watchService.reset();
+      void this.refresh();
+    });
   }
 
   /**
@@ -140,60 +168,58 @@ class WidgetService {
       const { place } = useZmanimLocation();
       const accent = useTheme().currentTheme.value.primary;
       const zmanimKey = `${locale}|${localDayKey()}|${accent}|${JSON.stringify(place.value)}`;
-      let zmanim: string | undefined;
-      let freshZmanimKey: string | null = null;
-      if (zmanimKey !== this.lastZmanimKey) {
+      if (zmanimKey !== this.zmanimKey) {
         await nextIdle();
-        const json = JSON.stringify(
+        this.zmanimJson = JSON.stringify(
           buildZmanimWidgetPayload(place.value, t, locale, new Date(), accent),
         );
-        freshZmanimKey = zmanimKey;
-        zmanim = json === this.lastZmanimJson ? undefined : json;
+        this.zmanimKey = zmanimKey;
       }
 
       // Lecture du jour : prefs fournies par la page si possible, Firestore
-      // sinon. En cas d'échec de lecture (hors ligne), on n'écrase PAS le
-      // dernier état du widget avec des préférences vides.
-      let daily: string | undefined;
+      // sinon. En cas d'échec de lecture (hors ligne), on garde le dernier
+      // payload calculé plutôt que d'écraser les surfaces par du vide.
       const provided = this.pendingDaily;
       this.pendingDaily = null;
       if (!this.user) {
-        daily = JSON.stringify(buildDailyReadingWidgetPayload(null, t, new Date(), accent));
+        this.dailyJson = JSON.stringify(buildDailyReadingWidgetPayload(null, t, new Date(), accent));
       } else {
         try {
           const prefs =
             provided ?? (await userPreferencesService.getPreferencesOrThrow(this.user.id));
-          daily = JSON.stringify(buildDailyReadingWidgetPayload(prefs, t, new Date(), accent));
+          this.dailyJson = JSON.stringify(
+            buildDailyReadingWidgetPayload(prefs, t, new Date(), accent),
+          );
         } catch {
-          daily = undefined;
+          // Hors ligne : le dernier payload tient.
         }
       }
-      if (daily === this.lastDailyJson) daily = undefined;
 
-      // Bibliothèque : rien que des libellés, ils ne bougent qu'avec la
-      // langue. Le calcul est immédiat, la comparaison suffit à ne pas
-      // recharger les raccourcis pour rien.
-      let library: string | undefined = JSON.stringify(buildLibraryWidgetPayload(t));
-      if (library === this.lastLibraryJson) library = undefined;
+      // Bibliothèque (raccourcis d'écran d'accueil) et écrans de la montre :
+      // rien que des libellés et les psaumes du jour, le calcul est immédiat.
+      this.libraryJson = JSON.stringify(buildLibraryWidgetPayload(t));
+      this.watchJson = JSON.stringify(buildWatchPayload(t, locale, new Date(), accent));
 
-      if (zmanim === undefined && daily === undefined && library === undefined) {
-        // Rien de neuf à livrer : le calcul du jour peut quand même être acté.
-        if (freshZmanimKey) this.lastZmanimKey = freshZmanimKey;
-        return;
-      }
-      await PjWidgets.setPayloads({ zmanim, daily, library });
-      // Mémorisé seulement après un envoi réussi : un échec (vieux binaire
-      // sans le plugin) laissera le prochain push tout retenter.
-      if (freshZmanimKey) this.lastZmanimKey = freshZmanimKey;
-      if (zmanim !== undefined) this.lastZmanimJson = zmanim;
-      if (daily !== undefined) this.lastDailyJson = daily;
-      if (library !== undefined) this.lastLibraryJson = library;
+      // Chaque destinataire ne prend que ce qui a changé pour lui, et ne
+      // retient un payload qu'une fois reçu : un envoi échoué d'un côté (vieux
+      // binaire, montre injoignable) n'empêche pas l'autre et sera retenté.
+      await Promise.allSettled([
+        this.widgets.publish({
+          zmanim: this.zmanimJson,
+          daily: this.dailyJson,
+          library: this.libraryJson,
+        }),
+        watchService.publish({
+          zmanim: this.zmanimJson,
+          daily: this.dailyJson,
+          watch: this.watchJson,
+        }),
+      ]);
     } catch {
       // Plugin absent (vieux binaire, plateforme web du bridge) : sans gravité,
-      // il n'y a alors pas de widget à alimenter.
+      // il n'y a alors ni widget ni montre à alimenter.
     }
   }
-
 }
 
 export const widgetService = new WidgetService();

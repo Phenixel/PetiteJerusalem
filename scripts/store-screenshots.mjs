@@ -691,11 +691,16 @@ const capCopy = spawnSync("npx", ["cap", "copy", "android"], {
   env: { ...process.env, CAP_SERVER_URL: `http://localhost:${VITE_PORT}` },
 });
 if (capCopy.status !== 0) throw new Error("npx cap copy android a échoué");
-const gradle = spawnSync("./gradlew", ["installDebug", "--no-daemon"], {
+// `:app:` et non `installDebug` tout court : depuis l'app de montre
+// (docs/app-watch.md), le projet a deux modules d'application, et la tâche non
+// qualifiée les installerait tous les deux. Ils partagent l'applicationId :
+// l'APK Wear remplacerait purement et simplement celui du téléphone sur
+// l'émulateur, et les captures seraient prises d'une app de montre.
+const gradle = spawnSync("./gradlew", [":app:installDebug", "--no-daemon"], {
   cwd: join(root, "android"),
   stdio: "inherit",
 });
-if (gradle.status !== 0) throw new Error("gradlew installDebug a échoué");
+if (gradle.status !== 0) throw new Error("gradlew :app:installDebug a échoué");
 
 // Barre de statut « propre » (mode démo SystemUI) : 12:00, wifi plein,
 // batterie 100 %, pas d'icônes de notification.

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Écran « Horaires » : la journée du lieu de l'utilisateur, ce qu'il en
+     reste, puis la paracha et le ta'hanoun. -->
+<androidx.wear.widget.BoxInsetLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/pj_wear_bg">
+
+    <ScrollView
+        android:id="@+id/pj_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:focusable="true"
+        app:boxedEdges="all">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="10dp"
+            android:paddingBottom="18dp">
+
+            <TextView
+                android:id="@+id/pj_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/pj_wear_text"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/pj_subtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/pj_wear_text_secondary"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:id="@+id/pj_times"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/pj_parasha"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:textColor="@color/pj_wear_text_secondary"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/pj_tachanun"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:textColor="@color/pj_wear_text_secondary"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/pj_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:gravity="center"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:textColor="@color/pj_wear_text_secondary"
+                android:textSize="13sp"
+                android:visibility="gone" />
+        </LinearLayout>
+    </ScrollView>
+</androidx.wear.widget.BoxInsetLayout>

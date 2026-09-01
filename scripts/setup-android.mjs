@@ -16,15 +16,27 @@
  *   et déclare les receivers dans le manifest (voir docs/app-widgets.md)
  * - App Links : intent-filter vérifié sur le domaine, un lien du site ouvre
  *   l'app quand elle est installée (voir docs/app-links.md)
+ * - Montre Wear OS : le module android/wear/ recopié depuis native/wear/,
+ *   déclaré dans settings.gradle, ses icônes reprises de l'app et les Tehilim
+ *   embarqués dans ses assets (voir docs/app-watch.md)
  *
  * Usage : node scripts/setup-android.mjs
  * Icônes/splash : npx @capacitor/assets generate --android (logo dans assets/logo.png)
  */
 import { execSync } from "node:child_process";
-import { copyFileSync, cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { buildAndroidIntentFilter, APP_LINK_DOMAIN } from "./lib/app-links.mjs";
+import { buildTehilimAsset, TEHILIM_ASSET } from "./lib/watch-tehilim.mjs";
 
 const root = join(import.meta.dirname, "..");
 const androidDir = join(root, "android");
@@ -211,7 +223,6 @@ if (styles.includes(noActionBarMarker) && !styles.includes("android:windowBackgr
 const nightDir = join(androidDir, "app/src/main/res/values-night");
 const nightStyles = join(nightDir, "styles.xml");
 if (!existsSync(nightStyles)) {
-  const { mkdirSync } = await import("node:fs");
   mkdirSync(nightDir, { recursive: true });
   writeFileSync(
     nightStyles,
@@ -278,6 +289,15 @@ public class MainActivity extends BridgeActivity {
       `$1// Widgets d'écran d'accueil (voir native/android/ et docs/app-widgets.md).$1registerPlugin(PjWidgetsPlugin.class);$1$2`,
     );
     console.log("setup-android: plugin PjWidgets enregistré dans MainActivity");
+  }
+  if (!mainActivity.includes("PjWatchPlugin")) {
+    // Pont vers la montre (voir native/wear/ et docs/app-watch.md), même
+    // règle que ci-dessus : connu du bridge avant sa création.
+    mainActivity = mainActivity.replace(
+      /(\n\s*)(super\.onCreate\(savedInstanceState\);)/,
+      `$1// Montre Wear OS (voir native/wear/ et docs/app-watch.md).$1registerPlugin(PjWatchPlugin.class);$1$2`,
+    );
+    console.log("setup-android: plugin PjWatch enregistré dans MainActivity");
   }
   if (!mainActivity.includes("setOverScrollMode")) {
     mainActivity = mainActivity.replace(
@@ -389,5 +409,61 @@ if (linksManifest.includes("android:autoVerify")) {
   writeFileSync(manifestPath, patched);
   console.log(`setup-android: App Links déclarés pour ${APP_LINK_DOMAIN}`);
 }
+
+// 13. Montre Wear OS.
+//     Le pont vers la montre (PjWatchPlugin, copié plus haut avec le reste de
+//     native/android/) parle au Data Layer de Google Play services : la
+//     dépendance doit être déclarée côté téléphone comme côté montre.
+const appGradle = readFileSync(appBuildGradlePath, "utf8");
+if (!appGradle.includes("play-services-wearable")) {
+  writeFileSync(
+    appBuildGradlePath,
+    appGradle.replace(
+      /(\n\s*implementation project\(':capacitor-android'\))/,
+      `$1
+    // Data Layer : le pont vers la montre (PjWatchPlugin, docs/app-watch.md).
+    implementation "com.google.android.gms:play-services-wearable:19.0.0"`,
+    ),
+  );
+  console.log("setup-android: play-services-wearable ajouté aux dépendances de l'app");
+}
+
+//     Le module de la montre lui-même : code versionné dans native/wear/,
+//     recopié ici (android/ est régénéré de zéro par la CI) et déclaré dans
+//     settings.gradle. Voir docs/app-watch.md.
+const wearDir = join(androidDir, "wear");
+cpSync(join(root, "native/wear"), wearDir, { recursive: true });
+console.log("setup-android: module Wear OS copié depuis native/wear/");
+
+const settingsGradlePath = join(androidDir, "settings.gradle");
+const settingsGradle = readFileSync(settingsGradlePath, "utf8");
+if (!settingsGradle.includes("':wear'")) {
+  writeFileSync(settingsGradlePath, `${settingsGradle.trimEnd()}\n\n// App Wear OS (docs/app-watch.md)\ninclude ':wear'\n`);
+  console.log("setup-android: module :wear déclaré dans settings.gradle");
+}
+
+//     Les icônes : celles de l'app, générées plus haut depuis assets/logo.png.
+//     La montre n'a pas de jeu à elle, et n'en veut pas : c'est la même app.
+const appResDir = join(androidDir, "app/src/main/res");
+const wearResDir = join(wearDir, "src/main/res");
+for (const dir of readdirSync(appResDir)) {
+  if (!dir.startsWith("mipmap")) continue;
+  cpSync(join(appResDir, dir), join(wearResDir, dir), { recursive: true });
+}
+//     L'icône adaptative référence cette couleur (posée à l'étape 7) : sans
+//     elle, le module ne compilerait pas.
+const launcherBackground = join(appResDir, "values/ic_launcher_background.xml");
+if (existsSync(launcherBackground)) {
+  copyFileSync(launcherBackground, join(wearResDir, "values/ic_launcher_background.xml"));
+}
+
+//     Les Tehilim embarqués : les 150 psaumes, nettoyés une fois pour toutes
+//     (scripts/lib/watch-tehilim.mjs). Ils ne transitent pas par le Data
+//     Layer, la montre les lit chez elle, sans téléphone à portée.
+const wearAssets = join(wearDir, "src/main/assets");
+mkdirSync(wearAssets, { recursive: true });
+const tehilim = JSON.parse(readFileSync(join(root, "public/texts/tehilim.json"), "utf8"));
+writeFileSync(join(wearAssets, TEHILIM_ASSET), JSON.stringify(buildTehilimAsset(tehilim)));
+console.log("setup-android: Tehilim embarqués dans les assets de la montre");
 
 console.log("setup-android: terminé.");

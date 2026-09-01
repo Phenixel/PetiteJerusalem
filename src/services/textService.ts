@@ -258,7 +258,14 @@ export function resolveFilePath(textStudy: TextStudyJsonEntry): string {
   }
 }
 
-function cleanText(s: string): string {
+/**
+ * Retire la mise en forme de la source Sefaria (balises de note, entités,
+ * marqueurs de paracha). Exporté pour que le nettoyage des Tehilim embarqués
+ * dans les apps de montre (scripts/lib/watch-tehilim.mjs) puisse être tenu
+ * d'accord avec celui-ci, sur le corpus entier
+ * (src/__tests__/watchTehilim.test.ts).
+ */
+export function cleanText(s: string): string {
   return s
     .replace(/<[^>]*>/g, "") // HTML tags (footnotes, formatting)
     .replace(/\{[א-ת]\}/g, "") // parasha markers, e.g. {petucha}/{setuma}

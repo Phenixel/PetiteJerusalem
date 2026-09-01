@@ -226,6 +226,16 @@ plateformes sont scriptées, `native/android/` + `setup-android.mjs` d'un côté
 d'extension dans le projet Xcode. Seul l'App Group demande trois clics dans le
 portail Apple, une fois pour toutes, voir `docs/app-widgets.md`.
 
+## Montres connectées
+
+Une app de montre accompagne l'app sur les deux plateformes (Wear OS et Apple
+Watch) : les horaires, la lecture du jour, et les Tehilim, qu'elle embarque pour
+les lire sans téléphone à portée. Même architecture que les widgets, et les
+mêmes payloads : le téléphone calcule, la montre affiche. Le transport change
+seul (Data Layer d'un côté, WatchConnectivity de l'autre), derrière le plugin
+maison PjWatch. Les deux plateformes sont scriptées de bout en bout, signature
+et publication comprises, voir `docs/app-watch.md`.
+
 ## Liens du site qui ouvrent l'app
 
 Un lien vers `petite-jerusalem.fr` (une session partagée reçue par message,

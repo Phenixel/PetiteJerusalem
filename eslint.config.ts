@@ -29,6 +29,13 @@ export default defineConfigWithVueTs(
   {
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*'],
+    rules: {
+      ...pluginVitest.configs.recommended.rules,
+      // Un test peut confier ses assertions à un helper du fichier (la
+      // cohérence d'un pbxproj se vérifie de la même façon trois fois de
+      // suite) : la règle ne les voit pas, il faut les lui nommer.
+      'vitest/expect-expect': ['error', { assertFunctionNames: ['expect', 'expect*'] }],
+    },
   },
   skipFormatting,
 )

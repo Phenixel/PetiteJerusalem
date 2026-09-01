@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme.DeviceDefault : la montre impose ses propres réglages système
+         (police, marges de l'écran toujours allumé), on ne les redéfinit pas. -->
+    <style name="PjWearTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/pj_wear_bg</item>
+        <item name="android:colorBackground">@color/pj_wear_bg</item>
+    </style>
+</resources>

@@ -1127,6 +1127,15 @@ const en: LocaleMessages = {
       brahotSearch: "Search a blessing…",
     },
   },
+  watch: {
+    zmanim: "Zmanim",
+    daily: "Daily reading",
+    texts: "Texts",
+    tehilim: "Tehilim",
+    psalm: "Tehilim {n}",
+    tehilimOfDay: "Tehilim of the day",
+    pairing: "Open the app on your phone",
+  },
   studio: {
     title: "Authors studio",
     hello: "Hello {name}",

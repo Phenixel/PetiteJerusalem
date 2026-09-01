@@ -187,10 +187,11 @@ jobs:
           GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
         run: printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" > GoogleService-Info.plist
 
-      # Certificat de distribution + profils « App Store » (l'app et son
-      # extension de widgets, qui a son propre App ID), créés via l'API et
-      # installés dans un trousseau temporaire. Expose IOS_PROVISIONING_PROFILE,
-      # IOS_WIDGET_PROVISIONING_PROFILE et IOS_CODE_SIGN_IDENTITY au reste du
+      # Certificat de distribution + profils « App Store » (l'app, son
+      # extension de widgets et son app de montre, qui ont chacune leur propre
+      # App ID), créés via l'API et installés dans un trousseau temporaire.
+      # Expose IOS_PROVISIONING_PROFILE, IOS_WIDGET_PROVISIONING_PROFILE,
+      # IOS_WATCH_PROVISIONING_PROFILE et IOS_CODE_SIGN_IDENTITY au reste du
       # job, que l'étape suivante inscrit dans les cibles du projet Xcode.
       # C'est aussi ici que les certificats devenus inutiles sont révoqués,
       # avant d'en créer un de plus, et que l'App Group des widgets est vérifié
@@ -321,14 +322,17 @@ jobs:
             <string>manual</string>
             <key>signingCertificate</key>
             <string>$IOS_CODE_SIGN_IDENTITY</string>
-            <!-- L'extension de widgets est un binaire à part, avec son App ID
-                 et donc son propre profil (docs/app-widgets.md). -->
+            <!-- L'extension de widgets (docs/app-widgets.md) et l'app de
+                 montre (docs/app-watch.md) sont des binaires à part, avec
+                 chacun leur App ID et donc leur propre profil. -->
             <key>provisioningProfiles</key>
             <dict>
               <key>fr.petitejerusalem.app</key>
               <string>$IOS_PROVISIONING_PROFILE</string>
               <key>fr.petitejerusalem.app.PjWidgets</key>
               <string>$IOS_WIDGET_PROVISIONING_PROFILE</string>
+              <key>fr.petitejerusalem.app.watchkitapp</key>
+              <string>$IOS_WATCH_PROVISIONING_PROFILE</string>
             </dict>
             <key>uploadSymbols</key>
             <true/>

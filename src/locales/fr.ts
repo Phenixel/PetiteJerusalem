@@ -1148,6 +1148,15 @@ const fr = {
       brahotSearch: "Rechercher une brakha…",
     },
   },
+  watch: {
+    zmanim: "Horaires",
+    daily: "Lecture du jour",
+    texts: "Textes",
+    tehilim: "Tehilim",
+    psalm: "Tehilim {n}",
+    tehilimOfDay: "Tehilim du jour",
+    pairing: "Ouvrez l'app sur votre téléphone",
+  },
   studio: {
     title: "Studio auteurs",
     hello: "Bonjour {name}",
