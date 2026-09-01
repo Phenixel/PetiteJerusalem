@@ -128,6 +128,21 @@ describe("tahanoun et lecture de la Torah de la semaine", () => {
   });
 });
 
+describe("jeûnes publics", () => {
+  it("les jeûnes du calendrier, pas ceux de coutume", () => {
+    // Le 10 Tevet et Tsom Guedalia en sont. Le lendemain d'un jeûne n'en est
+    // pas, ni les jeûnes de coutume, que le calendrier de hebcal marque
+    // pourtant comme jeûnes : BeHaB (le lundi, le jeudi et le lundi qui
+    // suivent Pessah et Souccot) et Yom Kippour Katan (la veille de Roch
+    // Hodech). Ces jours-là, pas de birkat kohanim à Min'ha.
+    expect(activeOccasions(new HDate(10, months.TEVET, 5786), false).has("taanit")).toBe(true);
+    expect(activeOccasions(new HDate(11, months.TEVET, 5786), false).has("taanit")).toBe(false);
+    expect(activeOccasions(new HDate(3, months.TISHREI, 5787), false).has("taanit")).toBe(true);
+    expect(activeOccasions(new HDate(5, months.CHESHVAN, 5786), false).has("taanit")).toBe(false);
+    expect(activeOccasions(new HDate(29, months.CHESHVAN, 5786), false).has("taanit")).toBe(false);
+  });
+});
+
 describe("Lédavid (psaume 27)", () => {
   it("se dit du 1er Eloul à Chemini 'Atséret", () => {
     expect(activeOccasions(new HDate(1, months.ELUL, 5786), false).has("ledavid")).toBe(true);

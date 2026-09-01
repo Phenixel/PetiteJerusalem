@@ -40,6 +40,7 @@ const KNOWN_WHEN = new Set([
   "tahanoun",
   "tahanoun-minha",
   "tahanoun-lundi-jeudi",
+  "taanit",
   "torah-semaine",
   "sefer-torah",
   "ledavid",
@@ -160,6 +161,23 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       const amida = blocks.filter((b) => b.label === "'Amida");
       expect(amida).toHaveLength(1);
       expect(amida[0].kotel).toBe(true);
+    });
+
+    it("place birkat kohanim juste avant Sim chalom, quand l'office en a", () => {
+      // Les cohanim se tournent vers l'arche quand le 'hazan commence Sim
+      // chalom : la bénédiction est finie quand il l'entame, elle vient donc
+      // juste avant. Arvit n'en a pas ; à Min'ha, elle n'est là qu'un jour de
+      // jeûne, et l'office ordinaire enchaîne « Vé'al koulam » sur Sim chalom.
+      const i = blocks.findIndex((b) => b.label === "Birkat kohanim");
+      if (i < 0) {
+        expect(resolveFilePath(entry)).toContain("arvit");
+        return;
+      }
+      expect(blocks[i].fold).toBe("hazan");
+      // Sans les signes : les voyelles varient d'une édition à l'autre, pas
+      // les lettres.
+      const suite = blocks[i + 1].lines[0].replace(/[\u0591-\u05C7]/g, "");
+      expect(suite.startsWith("שים שלום")).toBe(true);
     });
   },
 );

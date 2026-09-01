@@ -348,6 +348,9 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
       (ev.getFlags() & (flags.MAJOR_FAST | flags.MINOR_FAST)) !== 0 &&
       !/^(Ta'anit BeHaB|Yom Kippur Katan)/.test(ev.getDesc()),
   );
+  // Un jeûne public : Birkat kohanim se dit alors aussi à Min'ha, ce qui
+  // n'arrive aucun autre jour de l'année.
+  if (publicFast) occ.add("taanit");
   const ownReading =
     occ.has("rosh-chodesh") || occ.has("nissim") || publicFast || has(flags.CHOL_HAMOED);
   if ((hd.getDay() === 1 || hd.getDay() === 4) && !ownReading) occ.add("torah-semaine");

@@ -160,7 +160,9 @@ function sliceBetween(text, { from, until }) {
  * Une ligne de recette :
  *   { seg, mode?, strip?: [..], from?, until?, he?: "littéral", rubric?,
  *     when?, muted?, tight?, lead?, repeat?, strong?, alt?: { rubric, text } }
- * `strip` retire des consignes restées dans le texte extrait ; `from`/`until`
+ * `answer` fait suivre la ligne de la réponse de l'assemblée, en gras (amen,
+ * ken yehi ratson) ; `strip` retire des consignes restées dans le texte
+ * extrait ; `from`/`until`
  * découpent le segment entre deux repères (voir sliceBetween) ; `when` ne dit
  * la ligne qu'à cette occasion ; `alt` ajoute dans le fil une didascalie
  * suivie du texte qu'elle affecte, à la fin de la ligne ou, si `alt.after` le
@@ -184,6 +186,7 @@ function buildLine(spec, segs) {
   const line = {};
   if (spec.rubric) line.rubric = spec.rubric;
   if (spec.strong) line.he = [{ b: text }];
+  else if (spec.answer) line.he = [text, { b: spec.answer }];
   else if (spec.alt) {
     const when = spec.alt.when ? { when: spec.alt.when } : {};
     const [debut, suite] = spec.alt.after ? splitAfter(text, spec.alt.after) : [text, ""];
@@ -383,6 +386,77 @@ const HALAKHA = {
 };
 
 // ---------- 'Amida commune ----------
+
+/**
+ * Birkat kohanim dans la répétition, juste avant Sim chalom : les cohanim
+ * montent bénir l'assemblée, verset après verset, et l'on répond amen. S'il
+ * n'y a pas de cohanim, le 'hazan dit à leur place « Élohénou vélohé
+ * avoténou », et l'on répond « ken yehi ratson ».
+ *
+ * `ix` : la bénédiction des cohanim (`bracha`), les trois versets qu'ils
+ * disent (`versets` : trois segments à Cha'harit, un seul à Min'ha, d'où le
+ * repère qui ouvre chacun), la formule du 'hazan (`hazan`) et ses trois
+ * versets (`versetsHazan`). `extra` porte ce qui distingue un office :
+ * Min'ha n'a de birkat kohanim qu'un jour de jeûne.
+ */
+function birkatKohanimBlock(src, ix, extra = {}) {
+  const OUVERTURES = ["יְבָרֶכְךָ", "יָאֵר", "יִשָּׂא"];
+  return {
+    src,
+    fold: "hazan",
+    labelText: R("Birkat kohanim", "Birkat kohanim", "ברכת כהנים"),
+    ...extra,
+    lines: [
+      {
+        seg: ix.bracha,
+        mode: "small",
+        strip: ["הקהל עונים"],
+        from: "בָּרוּךְ אַתָּה",
+        until: "אָמֵן",
+        answer: "(אָמֵן)",
+        rubric: R(
+          "S'il y a plus d'un cohen, le 'hazan les appelle : « Cohanim ». Les cohanim bénissent :",
+          "If there is more than one kohen, the chazan calls them: “Kohanim.” The kohanim bless:",
+          "אם יש יותר מכהן אחד קורא להם החזן: כהנים. והכהנים מברכים:",
+        ),
+      },
+      ...OUVERTURES.map((ouverture, i) => ({
+        seg: ix.versets[i],
+        mode: "small",
+        from: ouverture,
+        until: "אָמֵן",
+        answer: "(אָמֵן)",
+        tight: i > 0,
+        rubric:
+          i === 0
+            ? R(
+                "Le 'hazan dit, et les cohanim le reprennent mot à mot :",
+                "The chazan says it, and the kohanim repeat word for word:",
+                "ואומר החזן והכהנים אחריו מילה במילה:",
+              )
+            : undefined,
+      })),
+      {
+        seg: ix.hazan,
+        mode: "small",
+        rubric: R(
+          "S'il n'y a pas de cohanim, le 'hazan dit :",
+          "If there are no kohanim, the chazan says:",
+          "אם אין כהנים אומר החזן:",
+        ),
+      },
+      ...OUVERTURES.map((ouverture, i) => ({
+        seg: ix.versetsHazan[i],
+        mode: "small",
+        from: ouverture,
+        until: "כֵּן יְהִי רָצוֹן",
+        answer: "(כֵּן יְהִי רָצוֹן)",
+        tight: true,
+      })),
+      { seg: ix.versetsHazan[2], mode: "small", from: "וְשָׂמוּ", tight: true },
+    ],
+  };
+}
 
 /**
  * Les blocs de la 'Amida d'un office. `ix` : index des segments dans la
@@ -629,6 +703,10 @@ function amidaBlocks(src, ix, opts = {}) {
     when: "teshuva",
     lines: [{ seg: ix.vealKoulam, mode: "small", strip: [STRIP.teshuvaDisent], rubric: RUBRIC.teshuvaOn }],
   });
+  // Birkat kohanim se dit dans la répétition, entre « Vé'al koulam » et Sim
+  // chalom : les cohanim se tournent vers l'arche quand le 'hazan commence
+  // Sim chalom, la bénédiction est donc finie quand il l'entame.
+  if (opts.kohanim) blocks.push(opts.kohanim);
   blocks.push({ src, lines: [{ seg: ix.simShalom, strip: [STRIP.teshuvaDisent] }] });
   blocks.push({
     src,
@@ -835,6 +913,13 @@ function chaharitRecipe() {
     yihyu2: 69,
     osse: 70,
     yehiRatson: 71,
+  }, {
+    kohanim: birkatKohanimBlock("Amida", {
+      bracha: 53,
+      versets: [55, 56, 57],
+      hazan: 59,
+      versetsHazan: [60, 61, 62],
+    }),
   });
 
   const chirJours = [
@@ -1549,6 +1634,22 @@ function minhaRecipe() {
     yihyu2: 67,
     osse: 70,
     yehiRatson: 71,
+  }, {
+    // À Min'ha, les trois versets ne tiennent qu'en un segment de la source,
+    // d'où le même index trois fois : ce sont leurs repères qui les séparent.
+    kohanim: birkatKohanimBlock("Amida", {
+      bracha: 54,
+      versets: [56, 56, 56],
+      hazan: 59,
+      versetsHazan: [60, 61, 62],
+    }, {
+      when: "taanit",
+      halakha: R(
+        "Un jour de jeûne public, quand on prie Min'ha ketana dans la demi-heure qui précède le coucher du soleil.",
+        "On a public fast, when Mincha ketana is prayed within the half hour before sunset.",
+        "בתענית ציבור כשמתפללים מנחה קטנה תוך חצי שעה סמוך לשקיעה.",
+      ),
+    }),
   });
 
   return {
