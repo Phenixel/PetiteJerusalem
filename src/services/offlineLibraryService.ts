@@ -231,6 +231,9 @@ export async function downloadBooks(books: OfflineBook[]): Promise<OfflineBook[]
   return failed;
 }
 
+/** La synchronisation en cours, s'il y en a une (voir refreshStaleDownloads). */
+let syncing: Promise<void> | null = null;
+
 /**
  * Reprend du site les textes gardés sur l'appareil qui n'y sont plus les
  * mêmes : un format qui a changé (la paracha d'avant les montées et le
@@ -254,8 +257,6 @@ export function refreshStaleDownloads(): Promise<void> {
   }
   return syncing;
 }
-
-let syncing: Promise<void> | null = null;
 
 /**
  * Tâche de fond, et qui le reste : elle n'échoue pas au visage de qui prie.
