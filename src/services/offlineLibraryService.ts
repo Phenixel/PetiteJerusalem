@@ -243,23 +243,46 @@ export async function downloadBooks(books: OfflineBook[]): Promise<OfflineBook[]
  * ne coûte rien non plus : la copie en place reste lisible, et la
  * synchronisation suivante réessaiera.
  */
-export async function refreshStaleDownloads(): Promise<void> {
-  await ensureManifestLoaded();
-  // Hors connexion, chaque téléchargement échouerait : on attend le retour du
-  // réseau, la page relance la synchro à ce moment-là.
-  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+export function refreshStaleDownloads(): Promise<void> {
+  // Trois appelants la déclenchent (le lancement, la lecture du jour, le
+  // retour du réseau) et se recouvrent : deux passes hacheraient deux fois la
+  // bibliothèque pour télécharger les mêmes fichiers.
+  if (!syncing) {
+    syncing = syncDownloads().finally(() => {
+      syncing = null;
+    });
+  }
+  return syncing;
+}
 
-  // Par chemin, et non par livre du catalogue : le découpage en chapitres du
-  // Talmud n'est le livre de personne, et se corrige comme les autres.
-  for (const path of await outdatedDownloads()) {
-    if (downloadingPaths.has(path)) continue;
-    downloadingPaths.add(path);
-    try {
-      await downloadFile(path);
-    } catch (error) {
-      console.warn(`Mise à jour de ${path} impossible:`, error);
-    } finally {
-      downloadingPaths.delete(path);
+let syncing: Promise<void> | null = null;
+
+/**
+ * Tâche de fond, et qui le reste : elle n'échoue pas au visage de qui prie.
+ * Ce qui est sur l'appareil demeure lisible quoi qu'il arrive, et la
+ * synchronisation suivante reprendra ce qui a manqué.
+ */
+async function syncDownloads(): Promise<void> {
+  try {
+    await ensureManifestLoaded();
+    // Hors connexion, chaque téléchargement échouerait : on attend le retour du
+    // réseau, la page relance la synchro à ce moment-là.
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+
+    // Par chemin, et non par livre du catalogue : le découpage en chapitres du
+    // Talmud n'est le livre de personne, et se corrige comme les autres.
+    for (const path of await outdatedDownloads()) {
+      if (downloadingPaths.has(path)) continue;
+      downloadingPaths.add(path);
+      try {
+        await downloadFile(path);
+      } catch (error) {
+        console.warn(`Mise à jour de ${path} impossible:`, error);
+      } finally {
+        downloadingPaths.delete(path);
+      }
     }
+  } catch (error) {
+    console.warn("Mise à jour des textes impossible:", error);
   }
 }

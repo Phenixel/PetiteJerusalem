@@ -26,7 +26,11 @@ vi.mock("@capacitor/preferences", () => ({
 
 // Le web : les copies vivent dans le Cache Storage, pas sur un disque natif.
 vi.mock("@capacitor/core", () => ({
-  Capacitor: { isNativePlatform: () => false, convertFileSrc: (uri: string) => uri },
+  Capacitor: {
+    isNativePlatform: () => false,
+    getPlatform: () => "web",
+    convertFileSrc: (uri: string) => uri,
+  },
   CapacitorHttp: { get: vi.fn() },
 }));
 vi.mock("@capacitor/filesystem", () => ({ Directory: { Data: "DATA" }, Filesystem: {} }));
@@ -37,6 +41,8 @@ const TALMUD = "/texts/talmud/berakhot.json";
 
 /** Le contenu que sert le site, par chemin. */
 let servi: Record<string, string> = {};
+/** Ce que l'app est allée chercher, dans l'ordre. */
+let demandes: string[] = [];
 /** Les empreintes publiées, ou null quand le site est injoignable. */
 let manifesteDuSite: Record<string, string> | null = {};
 /** Les copies locales, telles que le Cache Storage les rendrait. */
@@ -86,8 +92,10 @@ beforeEach(() => {
   servi = {};
   manifesteDuSite = {};
   vi.stubGlobal("caches", { open: () => Promise.resolve(cache) });
+  demandes = [];
   vi.stubGlobal("fetch", (url: string) => {
     const path = String(url).split("?")[0];
+    demandes.push(path);
     if (path === "/texts/manifest.json") {
       if (!manifesteDuSite) return Promise.reject(new Error("hors ligne"));
       return Promise.resolve(new Response(JSON.stringify({ files: manifesteDuSite })));
@@ -153,6 +161,41 @@ describe("textes téléchargés et corrigés depuis", () => {
     expect(await outdatedDownloads()).toEqual([SIDOUR]);
   });
 
+  it("ne demande rien au site quand l'appareil n'a rien téléchargé", async () => {
+    // Le cas de tout visiteur du site : il n'a rien demandé, il ne doit pas
+    // payer une requête au lancement.
+    const { outdatedDownloads } = await store();
+
+    expect(await outdatedDownloads()).toEqual([]);
+    expect(demandes).toEqual([]);
+  });
+
+  it("redemande les empreintes à chaque vérification", async () => {
+    // Une app native vit des jours en arrière-plan : la vérification qui suit
+    // le retour du réseau doit voir ce que le site sert à cet instant.
+    manifesteDuSite = { [SIDOUR]: "aaaaaaaaaaaa" };
+    indexLocal({ [SIDOUR]: { version: "2", hash: "aaaaaaaaaaaa" } });
+    const { outdatedDownloads } = await store();
+    expect(await outdatedDownloads()).toEqual([]);
+
+    manifesteDuSite = { [SIDOUR]: "dddddddddddd" };
+    expect(await outdatedDownloads()).toEqual([SIDOUR]);
+  });
+
+  it("n'inscrit jamais une empreinte qu'elle n'a pas vérifiée", async () => {
+    // Un portail captif répond 200 avec sa page de connexion : l'empreinte
+    // espérée la figerait dans l'index, à jamais « à jour ».
+    servi[SIDOUR] = "<html>Connectez-vous au réseau</html>";
+    manifesteDuSite = { [SIDOUR]: await empreinte('{"title":"Chaharit"}') };
+    const { downloadFile, downloadManifest, outdatedDownloads } = await store();
+
+    await downloadFile(SIDOUR);
+
+    expect(downloadManifest.value.files[SIDOUR].hash).not.toBe(manifesteDuSite[SIDOUR]);
+    // Et la copie douteuse est reprise à la vérification suivante.
+    expect(await outdatedDownloads()).toEqual([SIDOUR]);
+  });
+
   it("retient l'empreinte de ce qu'elle télécharge", async () => {
     const texte = '{"title":"Chaharit"}';
     servi[SIDOUR] = texte;
@@ -167,5 +210,26 @@ describe("textes téléchargés et corrigés depuis", () => {
     manifesteDuSite = { [SIDOUR]: "cccccccccccc" };
     const { outdatedDownloads } = await store();
     expect(await outdatedDownloads()).toEqual([SIDOUR]);
+  });
+});
+
+describe("la synchronisation, de bout en bout", () => {
+  it("reprend le texte corrigé, une fois, même appelée deux fois", async () => {
+    // Trois appelants la déclenchent : le lancement de l'app, la lecture du
+    // jour, le retour du réseau. Deux passes qui se recouvrent hacheraient la
+    // bibliothèque deux fois pour télécharger les mêmes fichiers.
+    const corrige = '{"title":"Chaharit","blocks":[]}';
+    copies[SIDOUR] = '{"title":"Chaharit"}';
+    servi[SIDOUR] = corrige;
+    manifesteDuSite = { [SIDOUR]: await empreinte(corrige) };
+    indexLocal({ [SIDOUR]: { version: "2", hash: "000000000000" } });
+    vi.resetModules();
+    const { refreshStaleDownloads } = await import("../services/offlineLibraryService");
+
+    await Promise.all([refreshStaleDownloads(), refreshStaleDownloads()]);
+
+    expect(copies[SIDOUR]).toBe(corrige);
+    expect(demandes.filter((path) => path === SIDOUR)).toHaveLength(1);
+    expect(demandes.filter((path) => path === "/texts/manifest.json")).toHaveLength(1);
   });
 });

@@ -139,9 +139,12 @@ import("./services/analyticsService").then(({ analyticsService }) => analyticsSe
 // Textes gardés sur l'appareil : si le site en sert une version plus récente
 // (un passage ajouté, une correction), on la reprend en tâche de fond. Sans
 // cela, un texte téléchargé une fois resterait celui de ce jour-là.
-import("./services/offlineLibraryService").then(({ refreshStaleDownloads }) =>
-  refreshStaleDownloads(),
-);
+import("./services/offlineLibraryService")
+  .then(({ refreshStaleDownloads }) => refreshStaleDownloads())
+  .catch(() => {
+    // Module non chargé (hors ligne au lancement) : la lecture du jour et le
+    // retour du réseau relancent la même synchronisation.
+  });
 
 // App native uniquement, imports dynamiques pour ne rien ajouter au bundle
 // initial du site web.
