@@ -129,10 +129,10 @@ describe("tahanoun et lecture de la Torah de la semaine", () => {
 });
 
 describe("Lédavid (psaume 27)", () => {
-  it("se dit du 1er Eloul à Hochana Rabba", () => {
+  it("se dit du 1er Eloul à Chemini 'Atséret", () => {
     expect(activeOccasions(new HDate(1, months.ELUL, 5786), false).has("ledavid")).toBe(true);
-    expect(activeOccasions(new HDate(21, months.TISHREI, 5786), false).has("ledavid")).toBe(true);
-    expect(activeOccasions(new HDate(22, months.TISHREI, 5786), false).has("ledavid")).toBe(false);
+    expect(activeOccasions(new HDate(22, months.TISHREI, 5786), false).has("ledavid")).toBe(true);
+    expect(activeOccasions(new HDate(23, months.TISHREI, 5786), false).has("ledavid")).toBe(false);
     expect(activeOccasions(new HDate(1, months.AV, 5786), false).has("ledavid")).toBe(false);
   });
 });

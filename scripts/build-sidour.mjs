@@ -1496,8 +1496,8 @@ function chaharitRecipe() {
         when: "ledavid",
         plain: true,
         labelText: R(
-          "Lédavid (d'Eloul à Hochana Rabba)",
-          "LeDavid (from Elul to Hoshana Rabbah)",
+          "Lédavid (d'Eloul à Chemini 'Atséret)",
+          "LeDavid (from Elul to Shemini Atzeret)",
           "לדוד ה' אורי",
         ),
         lines: [{ seg: 5 }],
@@ -1626,8 +1626,8 @@ function minhaRecipe() {
         when: "ledavid",
         plain: true,
         labelText: R(
-          "Lédavid (d'Eloul à Hochana Rabba)",
-          "LeDavid (from Elul to Hoshana Rabbah)",
+          "Lédavid (d'Eloul à Chemini 'Atséret)",
+          "LeDavid (from Elul to Shemini Atzeret)",
           "לדוד ה' אורי",
         ),
         lines: [{ seg: 5 }],
@@ -1689,8 +1689,8 @@ function arvitRecipe() {
         when: "ledavid",
         plain: true,
         labelText: R(
-          "Lédavid (d'Eloul à Hochana Rabba)",
-          "LeDavid (from Elul to Hoshana Rabbah)",
+          "Lédavid (d'Eloul à Chemini 'Atséret)",
+          "LeDavid (from Elul to Shemini Atzeret)",
           "לדוד ה' אורי",
         ),
         lines: [{ seg: 5 }],
@@ -1836,8 +1836,8 @@ function sourcesFor(office) {
   }
   // Le Kaddich (segments 4 à 7 de « Uva LeSion ») est le même aux trois
   // offices, et Lédavid (segment 5 de « Alenu ») se dit aux trois, d'Eloul à
-  // Hochana Rabba : Min'ha et Arvit les reçoivent de Cha'harit, leurs propres
-  // sections ne les portant pas.
+  // Chemini 'Atséret : Min'ha et Arvit les reçoivent de Cha'harit, leurs
+  // propres sections ne les portant pas.
   if (office === "minha") {
     const wm = text["Weekday Mincha"];
     return {

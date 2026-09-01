@@ -368,10 +368,11 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // 'Alénou : tous les jours de semaine, sauf la veille de Chabbat où le
   // psaume 93 le remplace (bloc jour-5 du fichier).
   if (hd.getDay() !== 5 && hd.getDay() !== 6) occ.add("lamnatseah-minha");
-  // Lédavid (psaume 27) : du 1er Eloul à Hochana Rabba (21 Tichri).
+  // Lédavid (psaume 27) : du 1er Eloul à Chemini 'Atséret (22 Tichri), selon
+  // l'usage séfarade ; il se dit encore ce jour-là.
   if (
     hd.getMonth() === months.ELUL ||
-    (hd.getMonth() === months.TISHREI && hd.getDate() <= 21)
+    (hd.getMonth() === months.TISHREI && hd.getDate() <= 22)
   )
     occ.add("ledavid");
   return occ;
