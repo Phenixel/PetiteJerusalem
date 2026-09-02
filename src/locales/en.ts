@@ -178,6 +178,13 @@ const en: LocaleMessages = {
     },
   },
   home: {
+    omer: {
+      title: "Counting of the Omer",
+      day: "Day {n} of the Omer",
+      dayOne: "Day 1 of the Omer",
+      remaining: "{n} evenings left to count.",
+      last: "The last evening: Shavuot begins tomorrow.",
+    },
     birkatHalevana: {
       title: "Blessing of the moon",
       until: "To be said tonight, until {date}.",

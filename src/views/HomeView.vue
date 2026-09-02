@@ -39,6 +39,7 @@ const ZmanimCard = defineAsyncComponent(() => import("../components/ZmanimCard.v
 const BirkatHalevanaBanner = defineAsyncComponent(
   () => import("../components/BirkatHalevanaBanner.vue"),
 );
+const OmerBanner = defineAsyncComponent(() => import("../components/OmerBanner.vue"));
 // Le raccourci du sidour : pendant la plage horaire d'un office, l'accueil
 // mène au texte. Même moteur d'horaires, même chargement à la demande.
 const SidourNowCard = defineAsyncComponent(() => import("../components/SidourNowCard.vue"));
@@ -251,6 +252,7 @@ onUnmounted(() => {
       <!-- La bénédiction de la lune : une fenêtre de quelques nuits par mois,
            qui se rate faute de rappel. Absente le reste du temps. -->
       <BirkatHalevanaBanner class="w-full max-w-6xl mx-auto" />
+      <OmerBanner class="w-full max-w-6xl mx-auto" />
 
       <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mb-10">
         <!-- Squelettes pendant le chargement -->
@@ -316,6 +318,7 @@ onUnmounted(() => {
     <SidourNowCard v-if="!user" class="w-full max-w-6xl mx-auto mb-5" />
 
     <BirkatHalevanaBanner v-if="!user" class="w-full max-w-6xl mx-auto" />
+    <OmerBanner v-if="!user" class="w-full max-w-6xl mx-auto" />
 
     <div class="w-full max-w-6xl mx-auto">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mb-10 items-stretch">
