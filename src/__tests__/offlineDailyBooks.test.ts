@@ -24,6 +24,7 @@ vi.mock("../services/offlineTextStore", () => ({
   isDownloadCurrent: (path: string) => downloaded.has(path),
   downloadFile: vi.fn(),
   removeFile: vi.fn(),
+  outdatedDownloads: () => Promise.resolve([]),
 }));
 
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;

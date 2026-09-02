@@ -27,7 +27,7 @@
           { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
           { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
           { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-          { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(self)" },
+          { "key": "Permissions-Policy", "value": "camera=(self), microphone=(), geolocation=(self)" },
           { "key": "Cache-Control", "value": "no-cache" }
         ]
       },
@@ -59,6 +59,13 @@
       },
       {
         "source": "/texts/tefila/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" },
+          { "key": "Access-Control-Allow-Origin", "value": "*" }
+        ]
+      },
+      {
+        "source": "/texts/manifest.json",
         "headers": [
           { "key": "Cache-Control", "value": "no-cache" },
           { "key": "Access-Control-Allow-Origin", "value": "*" }

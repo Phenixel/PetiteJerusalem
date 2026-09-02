@@ -34,6 +34,7 @@ vi.mock("../services/offlineTextStore", () => ({
   isDownloadCurrent: () => false,
   downloadFile: vi.fn(),
   removeFile: vi.fn(),
+  outdatedDownloads: () => Promise.resolve([]),
 }));
 
 const CONSENT_KEY = "pj_analytics_consent";

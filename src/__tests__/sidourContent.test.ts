@@ -40,6 +40,16 @@ const KNOWN_WHEN = new Set([
   "tahanoun",
   "tahanoun-minha",
   "tahanoun-lundi-jeudi",
+  "sans-tahanoun",
+  "sans-tahanoun-minha",
+  "taanit",
+  "tisha-beav",
+  "sans-tisha-beav",
+  "chir-tsom-tichri",
+  "chir-tsom-tamouz",
+  "chir-lendemain-kippour",
+  "chir-hanouka",
+  "chir-pourim",
   "torah-semaine",
   "sefer-torah",
   "ledavid",
@@ -56,6 +66,10 @@ function loadRaw(entry: TextStudyJsonEntry): unknown {
 
 /** Le découpage de la lecture du lundi et du jeudi, paracha par paracha. */
 const TORAH_WEEKDAY = torahWeekdayJson as Record<string, { n: number }[]>;
+
+/** Un texte hébreu sans ses signes : les voyelles varient, les lettres non. */
+const sansSignes = (texte: string): string =>
+  texte.replace(/[\u0591-\u05C7]/g, "").replace(/\s+/g, " ");
 
 function isFullRubric(value: unknown): boolean {
   if (typeof value !== "object" || value === null) return false;
@@ -115,11 +129,12 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       // Le fil de qui prie seul reste net : la kedoucha, Modim dérabanan et
       // les Kaddich du 'hazan vivent dans des encadrés repliés (fold), jamais
       // masqués. La clé « hazan » n'est pas une occasion du calendrier : rien
-      // ne les déplie d'office.
+      // ne les déplie d'office. Celle de Lédavid en est une, et c'est tout
+      // l'intérêt : l'encadré s'ouvre de lui-même en sa saison.
       const folded = blocks.filter((b) => b.fold);
       expect(folded.length).toBeGreaterThanOrEqual(2);
       for (const block of folded) {
-        expect(block.fold).toBe("hazan");
+        expect(["hazan", "ledavid", "avel"]).toContain(block.fold);
         expect(block.labelText).toBeDefined();
         expect(block.lines.length).toBeGreaterThan(0);
       }
@@ -136,8 +151,146 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       expect(whens).toContain("moed"); // Ya'alé véyavo
       expect(whens).toContain("nissim"); // 'Al hanissim
     });
+
+    it("dit Lédavid, et la saison décide de ce qu'on en voit", () => {
+      // Le psaume 27 se dit aux trois offices, d'Eloul à Chemini 'Atséret. Il
+      // n'existe que dans les sections de Cha'harit chez Sefaria : Min'ha et
+      // Arvit le lui empruntent (voir sourcesFor dans build-sidour.mjs).
+      //
+      // À Cha'harit et à Min'ha il n'est là qu'en saison (`when`). À Arvit il
+      // ouvre l'office toute l'année, dans un encadré (`fold`) que sa saison
+      // déplie : c'est le premier texte de la page, il ne peut pas y
+      // apparaître et disparaître sans laisser l'office sans entrée.
+      const ledavid = blocks.filter((b) => b.labelText?.fr.startsWith("Lédavid"));
+      expect(ledavid).toHaveLength(1);
+      expect(ledavid[0].when ?? ledavid[0].fold).toBe("ledavid");
+      expect(ledavid[0].lines).toHaveLength(1);
+    });
+
+    it("offre la boussole du Kotel au titre de la 'Amida", () => {
+      // La 'Amida se dit tourné vers Jérusalem : son titre porte la boussole.
+      // Le drapeau vient de la recette, pas d'une retouche du fichier, sans
+      // quoi la prochaine génération l'emporterait sans rien signaler.
+      const amida = blocks.filter((b) => b.label === "'Amida");
+      expect(amida).toHaveLength(1);
+      expect(amida[0].kotel).toBe(true);
+    });
+
+    it("revêt le talit et les téfilines avant d'entrer dans la prière", () => {
+      // À Cha'harit seulement, et à leur place : après les bénédictions du
+      // matin, avant 'Akédat Its'hak. On ne prie pas d'abord pour s'en revêtir
+      // ensuite.
+      const talit = blocks.findIndex((b) => b.label === "Le talit");
+      if (!resolveFilePath(entry).includes("chaharit")) {
+        expect(talit).toBe(-1);
+        return;
+      }
+      expect(blocks[talit + 1].label).toBe("Les téfilines");
+      // Le passage suivant qui porte un titre : entre les deux, le léchem
+      // yi'houd se glisse sans titre à lui.
+      expect(blocks.slice(talit + 2).find((b) => b.label)?.label).toBe("'Akédat Its'hak");
+      // Les deux parachiot des téfilines se lisent dans le bloc des téfilines,
+      // sans titre à elles : le menu de lecture n'a pas à les distinguer.
+      const tefilines = blocks[talit + 1];
+      expect(tefilines.lines.length).toBeGreaterThanOrEqual(6);
+      expect(sansSignes(tefilines.lines.at(-1)!)).toContain("והיה כייבאך");
+      expect(blocks[talit].lines.length).toBeGreaterThan(0);
+    });
+
+    it("ferme le moment du tahanoun par un Kaddich, quel que soit le jour", () => {
+      // Après le tahanoun, après les supplications du lundi et du jeudi, ou
+      // après « Yehi chem » les jours sans tahanoun : le Kaddich vient dans
+      // les trois cas, et ne porte donc aucune condition.
+      const chaharit = resolveFilePath(entry).includes("chaharit");
+      const cle = chaharit ? "tahanoun" : "tahanoun-minha";
+      // Le premier bloc du tahanoun : la clé revient plus loin dans l'office
+      // (les psaumes qui suivent Achré), ce n'est plus le même moment.
+      const debut = blocks.map((b) => b.when).indexOf(cle);
+      if (debut < 0) return; // Arvit n'a pas de tahanoun.
+
+      const suite = blocks.slice(debut + 1);
+      const yehiChem = suite.find(
+        (b) => b.when === (chaharit ? "sans-tahanoun" : "sans-tahanoun-minha"),
+      );
+      expect(sansSignes(yehiChem?.lines.join(" ") ?? "")).toContain("יהי שם יהוה מברך");
+
+      const kaddich = suite.find((b) => b.fold === "hazan");
+      expect(kaddich).toBeDefined();
+      expect(kaddich!.when).toBeUndefined();
+      expect(sansSignes(kaddich!.lines.join(" "))).toContain("יתגדל ויתקדש");
+    });
+
+    it("place birkat kohanim juste avant Sim chalom, quand l'office en a", () => {
+      // Les cohanim se tournent vers l'arche quand le 'hazan commence Sim
+      // chalom : la bénédiction est finie quand il l'entame, elle vient donc
+      // juste avant. Arvit n'en a pas ; à Min'ha, elle n'est là qu'un jour de
+      // jeûne, et l'office ordinaire enchaîne « Vé'al koulam » sur Sim chalom.
+      const i = blocks.findIndex((b) => b.label === "Birkat kohanim");
+      if (i < 0) {
+        expect(resolveFilePath(entry)).toContain("arvit");
+        return;
+      }
+      expect(blocks[i].fold).toBe("hazan");
+      expect(sansSignes(blocks[i + 1].lines[0]).startsWith("שים שלום")).toBe(true);
+    });
+
+    it("donne son 'Anénou à chacun, et celui du 'hazan à sa place", () => {
+      // Deux 'Anénou, qui ne sont pas au même endroit : celui du 'hazan est
+      // une bénédiction à lui, entre Réé et Refaénou ; celui de chacun entre
+      // dans Chéma kolénou, sans conclusion. Arvit n'en a pas : on ne jeûne
+      // pas la nuit.
+      const hazan = blocks.findIndex((b) => b.label === "'Anénou (le 'hazan)");
+      if (hazan < 0) {
+        expect(resolveFilePath(entry)).toContain("arvit");
+        return;
+      }
+      expect(blocks[hazan].when).toBe("taanit");
+      expect(blocks[hazan].fold).toBe("hazan");
+      // Refaénou suit tout de suite : la bénédiction du 'hazan s'insère entre
+      // Réé et elle.
+      expect(sansSignes(blocks[hazan + 1].lines[0]).startsWith("רפאנו")).toBe(true);
+
+      // Celui de chacun : plus loin, après Chéma kolénou, et sans titre à lui.
+      const chacun = blocks.findIndex(
+        (b, i) => i > hazan && b.when === "taanit" && !b.label && !b.fold,
+      );
+      expect(chacun).toBeGreaterThan(hazan);
+      expect(sansSignes(blocks[chacun].lines[0])).toContain("עננו אבינו");
+      expect(sansSignes(blocks[chacun - 1].lines.at(-1)!)).toContain("שמע קולנו");
+    });
   },
 );
+
+describe("Cha'harit : ce qui s'ajoute au psaume du jour", () => {
+  const entry = sidourEntries.find((e) => resolveFilePath(e).includes("chaharit"))!;
+  const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
+
+  it("suit le psaume du jour, sans le remplacer", () => {
+    // Les six psaumes de la semaine d'abord, puis ceux des dates : on dit les
+    // deux, l'un après l'autre.
+    const dernierJour = blocks.map((b) => b.when).lastIndexOf("jour-5");
+    const dates = blocks
+      .map((b, i) => ({ when: b.when ?? "", i }))
+      .filter(({ when }) => when.startsWith("chir-"));
+    expect(dates.map(({ when }) => when)).toEqual([
+      "chir-tsom-tichri",
+      "chir-lendemain-kippour",
+      "chir-hanouka",
+      "chir-pourim",
+      "chir-tsom-tamouz",
+    ]);
+    for (const { i } of dates) expect(i).toBeGreaterThan(dernierJour);
+  });
+
+  it("garde à part le psaume de la maison endeuillée, replié", () => {
+    // Aucun calendrier ne sait où l'on prie : il est là tous les jours, mais
+    // fermé, et c'est le lecteur qui l'ouvre.
+    const avel = blocks.find((b) => b.fold === "avel")!;
+    expect(avel).toBeDefined();
+    expect(avel.when).toBeUndefined();
+    expect(sansSignes(avel.lines.join(" "))).toContain("שמעוזאת כלהעמים");
+  });
+});
 
 describe("Cha'harit : la Torah de la semaine", () => {
   const entry = sidourEntries.find((e) => resolveFilePath(e).includes("chaharit"))!;
@@ -154,7 +307,14 @@ describe("Cha'harit : la Torah de la semaine", () => {
 
   it("la kedoucha de Ouva letsion marque ses voix, haute et basse", () => {
     const blocks = content.sections[0].blocks ?? [];
-    const ouva = blocks.find((b) => b.label === "Ouva letsion")!;
+    // Le passage n'a plus de titre à lui (il se lit dans la suite d'Achré) :
+    // on le retrouve à son premier mot.
+    // À son premier mot, et à lui seul : le verset est cité ailleurs (la
+    // seconde version de 'Anénou), le chercher dans le corps du texte
+    // tomberait sur le mauvais bloc.
+    const ouva = blocks.find((b) =>
+      sansSignes(String(b.lines[0] ?? "")).startsWith("ובא לציון גואל"),
+    )!;
     const rubrics = (ouva.paragraphs ?? [])
       .map((paragraph) => paragraph.rubric?.he ?? "")
       .filter(Boolean);

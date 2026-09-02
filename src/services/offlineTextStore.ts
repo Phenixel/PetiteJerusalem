@@ -20,6 +20,10 @@ import { Preferences } from "@capacitor/preferences";
  *   service worker pour l'offline navigateur).
  *
  * L'index des téléchargements (manifest) vit dans Preferences.
+ *
+ * Ce qui est téléchargé doit rester ce que le site sert : voir les empreintes
+ * plus bas (`loadRemoteHashes`, `outdatedDownloads`), sans quoi une correction
+ * apportée à un texte n'atteindrait jamais qui l'a déjà sur son appareil.
  */
 
 /** Origine du site, seule source des textes quand l'app native ne les embarque pas. */
@@ -39,8 +43,14 @@ const WEB_CACHE_NAME = "pj-texts-v1";
  */
 const TEXTS_VERSION = "2";
 
-function versionedUrl(url: string): string {
-  return `${url}${url.includes("?") ? "&" : "?"}v=${TEXTS_VERSION}`;
+/**
+ * L'URL d'un fichier de textes. La version invalide le cache HTTP d'une
+ * semaine quand le format change ; l'empreinte, quand c'est le contenu du
+ * fichier qui change, ce qu'aucune version globale ne saurait dire.
+ */
+function versionedUrl(url: string, hash?: string): string {
+  const separateur = url.includes("?") ? "&" : "?";
+  return `${url}${separateur}v=${TEXTS_VERSION}${hash ? `&h=${hash}` : ""}`;
 }
 
 export interface DownloadedFile {
@@ -49,6 +59,12 @@ export interface DownloadedFile {
   downloadedAt: string;
   /** Version des données au téléchargement. Absente : fichier d'avant v2. */
   version?: string;
+  /**
+   * Empreinte du contenu au téléchargement, telle que la donne le manifeste du
+   * site (scripts/texts-manifest.mjs). Absente : copie d'avant les empreintes,
+   * que la première synchronisation hache pour savoir quoi en faire.
+   */
+  hash?: string;
 }
 
 export interface DownloadManifest {
@@ -94,9 +110,144 @@ export function isDownloaded(webPath: string): boolean {
   return webPath in downloadManifest.value.files;
 }
 
-/** Copie locale au format courant (un fichier d'une version antérieure est périmé). */
+/** Le manifeste du site : chemin d'un texte, empreinte de son contenu. */
+const HASHES_PATH = "/texts/manifest.json";
+let remoteHashes: Record<string, string> | null = null;
+let remoteHashesLoading: Promise<void> | null = null;
+
+async function fetchRemoteHashes(): Promise<Record<string, string>> {
+  const url = remoteUrl(HASHES_PATH);
+  if (isNative) {
+    // Même raison qu'ailleurs : l'origine de l'app n'est pas la nôtre, une
+    // fetch de la webview serait refusée par CORS.
+    const res = await CapacitorHttp.get({
+      url,
+      responseType: "text",
+      headers: { Accept: "application/json" },
+    });
+    if (res.status < 200 || res.status >= 300)
+      throw new Error(`Manifeste indisponible (${res.status})`);
+    const data = typeof res.data === "string" ? JSON.parse(res.data) : res.data;
+    return (data?.files ?? {}) as Record<string, string>;
+  }
+  // `no-cache` : le manifeste dit ce que le site sert maintenant, une réponse
+  // gardée en cache dirait ce qu'il servait.
+  const res = await fetch(HASHES_PATH, { cache: "no-cache" });
+  if (!res.ok) throw new Error(`Manifeste indisponible (${res.status})`);
+  return ((await res.json())?.files ?? {}) as Record<string, string>;
+}
+
+/**
+ * Charge les empreintes du site. Une fois suffit pour lire et télécharger,
+ * mais pas pour vérifier : une app native vit des jours en arrière-plan, et
+ * la resynchronisation au retour du réseau doit voir ce que le site sert à cet
+ * instant, pas ce qu'il servait au lancement. `force` la lui redemande.
+ *
+ * Silencieux en cas d'échec (hors ligne, site injoignable) : sans elles, les
+ * copies locales sont servies telles quelles, comme avant, plutôt qu'un texte
+ * refusé. Un échec n'efface pas non plus les empreintes déjà connues.
+ */
+export function loadRemoteHashes(force = false): Promise<void> {
+  if (force) remoteHashesLoading = null;
+  if (!remoteHashesLoading) {
+    remoteHashesLoading = fetchRemoteHashes()
+      .then((hashes) => {
+        remoteHashes = hashes;
+      })
+      .catch(() => {
+        remoteHashesLoading = null;
+      });
+  }
+  return remoteHashesLoading;
+}
+
+/**
+ * Copie locale encore bonne à servir : au format courant, et telle que le site
+ * la sert aujourd'hui quand on sait le dire. Une copie d'avant les empreintes
+ * (`hash` absent) passe pour bonne : c'est la synchronisation qui la vérifie,
+ * une lecture ne doit pas attendre le réseau pour ouvrir un texte.
+ */
 export function isDownloadCurrent(webPath: string): boolean {
-  return downloadManifest.value.files[webPath]?.version === TEXTS_VERSION;
+  const file = downloadManifest.value.files[webPath];
+  if (file?.version !== TEXTS_VERSION) return false;
+  const attendu = remoteHashes?.[webPath];
+  if (!attendu || !file.hash) return true;
+  return file.hash === attendu;
+}
+
+/**
+ * Empreinte d'un contenu, dans le format du manifeste du site (les fichiers
+ * sont en UTF-8 sans BOM : les octets encodés ici sont les siens). Null là où
+ * Web Crypto manque (contexte non sécurisé) : on ne conclut alors rien, ni
+ * « à jour » ni « périmé », plutôt que de trancher à pile ou face.
+ */
+async function hashOf(contenu: string): Promise<string | null> {
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle) return null;
+  const digest = await subtle.digest("SHA-256", new TextEncoder().encode(contenu));
+  return [...new Uint8Array(digest)]
+    .map((octet) => octet.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 12);
+}
+
+/**
+ * Les textes gardés sur l'appareil qui ne sont plus ceux du site, à
+ * retélécharger.
+ *
+ * Les copies d'avant les empreintes sont hachées une fois, ici, plutôt que
+ * retéléchargées d'office : la plupart n'ont pas changé, et le Talmud entier
+ * pèse une trentaine de mégaoctets qu'il serait malvenu de reprendre sur un
+ * forfait mobile pour rien. Celles qui se révèlent identiques adoptent
+ * l'empreinte du site, et la question ne se repose plus.
+ *
+ * Renvoie une liste vide quand le site est injoignable : on ne décide de rien
+ * sans savoir.
+ */
+export async function outdatedDownloads(): Promise<string[]> {
+  await ensureManifestLoaded();
+  // Rien sur l'appareil : rien à comparer, et surtout pas de manifeste à aller
+  // chercher. C'est le cas de tout visiteur du site, qui n'a rien demandé.
+  if (Object.keys(downloadManifest.value.files).length === 0) return [];
+  await loadRemoteHashes(true);
+  if (!remoteHashes) return [];
+
+  const perimes: string[] = [];
+  const adoptees: Record<string, string> = {};
+  for (const [webPath, file] of Object.entries(downloadManifest.value.files)) {
+    const attendu = remoteHashes[webPath];
+    if (!attendu) continue; // Fichier que le site ne sert plus, ou pas encore.
+    if (file.version !== TEXTS_VERSION) {
+      perimes.push(webPath);
+    } else if (file.hash) {
+      if (file.hash !== attendu) perimes.push(webPath);
+    } else {
+      const local = await readLocalCopy(webPath);
+      const contenu = local ? await local.text().catch(() => null) : null;
+      if (contenu === null) {
+        // L'index annonce une copie que l'appareil n'a plus, ou ne sait plus
+        // lire : elle est à reprendre, comme une copie périmée.
+        perimes.push(webPath);
+        continue;
+      }
+      const empreinte = await hashOf(contenu);
+      // Empreinte impossible à calculer : on laisse la copie telle quelle,
+      // sans rien inscrire. La question se reposera, elle ne se perdra pas.
+      if (empreinte === null) continue;
+      if (empreinte === attendu) adoptees[webPath] = attendu;
+      else perimes.push(webPath);
+    }
+  }
+
+  if (Object.keys(adoptees).length > 0) {
+    const files = { ...downloadManifest.value.files };
+    for (const [webPath, hash] of Object.entries(adoptees)) {
+      files[webPath] = { ...files[webPath], hash };
+    }
+    downloadManifest.value = { files };
+    await saveManifest();
+  }
+  return perimes;
 }
 
 async function webCache(): Promise<Cache | null> {
@@ -152,7 +303,7 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
       // (https://localhost) n'est pas autorisée par CORS sur le site, une
       // fetch JS serait bloquée alors que l'appareil est bien en ligne.
       const res = await CapacitorHttp.get({
-        url: versionedUrl(remoteUrl(webPath)),
+        url: versionedUrl(remoteUrl(webPath), remoteHashes?.[webPath]),
         responseType: "text",
         headers: { Accept: "application/json" },
       });
@@ -171,7 +322,7 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
       );
     }
 
-    const res = await fetch(versionedUrl(webPath));
+    const res = await fetch(versionedUrl(webPath, remoteHashes?.[webPath]));
     if (res.ok) return res;
     const stale = isDownloaded(webPath) ? await readLocalCopy(webPath) : null;
     return stale ?? res;
@@ -187,7 +338,14 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
 /** Télécharge un fichier et l'enregistre localement (natif : disque, web : Cache API). */
 export async function downloadFile(webPath: string): Promise<void> {
   await ensureManifestLoaded();
+  // L'empreinte sert deux fois : dans l'URL, pour qu'aucun cache HTTP ne
+  // rende l'ancien fichier, et dans l'index, pour reconnaître plus tard que
+  // le site en sert un autre.
+  await loadRemoteHashes();
+  const attendue = remoteHashes?.[webPath];
   let size = 0;
+  /** Ce qui a réellement été écrit, pour n'inscrire que l'empreinte du vrai. */
+  let ecrit: string | null = null;
 
   if (isNative) {
     const path = localPath(webPath);
@@ -200,22 +358,38 @@ export async function downloadFile(webPath: string): Promise<void> {
       );
     }
     const { uri } = await Filesystem.getUri({ directory: Directory.Data, path });
-    await FileTransfer.downloadFile({ url: versionedUrl(remoteUrl(webPath)), path: uri });
+    await FileTransfer.downloadFile({ url: versionedUrl(remoteUrl(webPath), attendue), path: uri });
     const stat = await Filesystem.stat({ directory: Directory.Data, path });
     size = stat.size;
+    const local = await readLocalCopy(webPath);
+    ecrit = local ? await local.text().catch(() => null) : null;
   } else {
     const cache = await webCache();
     if (!cache) throw new Error("Cache Storage indisponible dans ce navigateur");
-    const res = await fetch(versionedUrl(webPath));
+    const res = await fetch(versionedUrl(webPath, attendue));
     if (!res.ok) throw new Error(`Téléchargement échoué (${res.status})`);
-    size = (await res.clone().blob()).size;
+    ecrit = await res.clone().text();
+    size = new TextEncoder().encode(ecrit).length;
     await cache.put(webPath, res);
   }
+
+  // L'empreinte inscrite est celle de ce qui a été écrit, et non celle qu'on
+  // attendait : un portail captif répond 200 avec sa page de connexion, et
+  // inscrire l'empreinte espérée figerait cette page-là dans l'index, à jamais
+  // « à jour ». Une empreinte inattendue se corrige d'elle-même à la
+  // synchronisation suivante.
+  //
+  // Sans Web Crypto (contexte non sécurisé), rien ne peut être vérifié : on
+  // inscrit alors celle du site, faute de mieux. C'est le seul cas où l'on
+  // fait crédit au téléchargement, et c'est le moindre mal : sans empreinte,
+  // le fichier ne serait plus jamais comparé, et les corrections du site ne
+  // l'atteindraient pas.
+  const hash = ecrit === null ? undefined : ((await hashOf(ecrit)) ?? attendue);
 
   downloadManifest.value = {
     files: {
       ...downloadManifest.value.files,
-      [webPath]: { size, downloadedAt: new Date().toISOString(), version: TEXTS_VERSION },
+      [webPath]: { size, downloadedAt: new Date().toISOString(), version: TEXTS_VERSION, hash },
     },
   };
   await saveManifest();

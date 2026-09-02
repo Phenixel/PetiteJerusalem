@@ -195,6 +195,15 @@ addEntry(
   "NSLocationAlwaysAndWhenInUseUsageDescription",
 );
 
+// Le miroir des téfilines (caméra frontale, dans la page de Cha'harit). Même
+// règle que la position : sans chaîne d'usage, iOS ferme l'app à la première
+// demande.
+addEntry(
+  "NSCameraUsageDescription",
+  "\t<string>La caméra frontale sert de miroir pour placer les téfilines de la tête. L’image reste sur votre appareil, rien n’est enregistré ni envoyé.</string>",
+  "NSCameraUsageDescription",
+);
+
 // Réception des notifications push quand l'app est en arrière-plan.
 addEntry(
   "UIBackgroundModes",

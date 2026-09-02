@@ -309,12 +309,14 @@ const navSections = computed<ReadingNavSection[]>(() => {
   if (isLiturgyText.value) {
     return visibleBlocks.value
       .filter((b) => !b.zman && !b.fold && (b.labelText || b.label))
-      .map((b) => ({
-        offset: b.offset,
-        label: b.labelText
+      .map((b) => {
+        const label = b.labelText
           ? b.labelText[locale.value as SupportedLocale] || b.labelText.fr
-          : b.label,
-      }));
+          : b.label;
+        // Le titre hébreu accompagne le traduit, sauf à le répéter.
+        const hebrew = b.labelText?.he;
+        return { offset: b.offset, label, ...(hebrew && hebrew !== label ? { hebrew } : {}) };
+      });
   }
   if (content.value?.type === "Talmud Bavli") {
     return dafOffsets.value.map(({ daf, offset }) => ({ offset, label: `Daf ${daf}` }));

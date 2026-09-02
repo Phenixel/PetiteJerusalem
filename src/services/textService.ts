@@ -128,6 +128,12 @@ export interface TextBlock {
    */
   plain?: boolean;
   /**
+   * Sidour : le passage où l'on pose les téfilines. Son titre offre le miroir
+   * (la caméra frontale), le bayit de la tête se plaçant à l'endroit précis du
+   * corps qu'on ne voit pas.
+   */
+  mirror?: boolean;
+  /**
    * Sidour : l'horaire à afficher avant ce qui se lit (« fin du Chéma » avant
    * le Chéma…). Clé d'un horaire connu du lecteur (voir TefilaZman.vue) ;
    * le bloc n'a alors pas de texte.
@@ -488,6 +494,7 @@ interface TefilaFileBlock {
   zman?: string;
   halakha?: Rubric;
   kotel?: boolean;
+  mirror?: boolean;
   torahWeekly?: boolean;
   lines?: (string | TefilaFileLine)[];
 }
@@ -570,6 +577,7 @@ function loadTefila(
     if (raw.zman) block.zman = raw.zman;
     if (raw.halakha) block.halakha = raw.halakha;
     if (raw.kotel) block.kotel = true;
+    if (raw.mirror) block.mirror = true;
     if (raw.torahWeekly) block.torahWeekly = true;
     blocks.push(block);
     offset += block.lines.length;

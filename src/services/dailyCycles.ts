@@ -262,8 +262,7 @@ export function recentSeasonalChanges(hd: HDate, il: boolean): Set<string> {
     return abs >= nissan ? nissan : new HDate(15, months.NISAN, year - 1).abs();
   })();
   if (isWinterMention(hd)) {
-    if (abs - new HDate(22, months.TISHREI, year).abs() < RECENT_CHANGE_DAYS)
-      recent.add("hiver");
+    if (abs - new HDate(22, months.TISHREI, year).abs() < RECENT_CHANGE_DAYS) recent.add("hiver");
   } else if (abs - summerStart < RECENT_CHANGE_DAYS) {
     recent.add("ete");
   }
@@ -331,12 +330,15 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // Rien le Chabbat : le sidour de semaine ne s'y lit pas.
   if (hd.getDay() !== 6) {
     const said = tachanun(hd, il);
-    if (said.shacharit) occ.add("tahanoun");
-    if (said.mincha) occ.add("tahanoun-minha");
+    // Les jours sans tahanoun ne sautent pas le passage : à sa place se dit
+    // « Yehi chem », et le demi-Kaddich suit dans les deux cas. Deux clés
+    // exclusives, comme ete/hiver : le texte porte les deux, seule celle du
+    // jour s'affiche.
+    occ.add(said.shacharit ? "tahanoun" : "sans-tahanoun");
+    occ.add(said.mincha ? "tahanoun-minha" : "sans-tahanoun-minha");
     // Les supplications longues du lundi et du jeudi accompagnent le
     // tahanoun : elles tombent avec lui.
-    if (said.shacharit && (hd.getDay() === 1 || hd.getDay() === 4))
-      occ.add("tahanoun-lundi-jeudi");
+    if (said.shacharit && (hd.getDay() === 1 || hd.getDay() === 4)) occ.add("tahanoun-lundi-jeudi");
   }
   // La lecture de la Torah des lundis et jeudis ordinaires : le début de la
   // paracha de la semaine. Les jours à lecture propre (Roch Hodech, 'Hanouka,
@@ -348,6 +350,34 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
       (ev.getFlags() & (flags.MAJOR_FAST | flags.MINOR_FAST)) !== 0 &&
       !/^(Ta'anit BeHaB|Yom Kippur Katan)/.test(ev.getDesc()),
   );
+  // Un jeûne public : Birkat kohanim se dit alors aussi à Min'ha, ce qui
+  // n'arrive aucun autre jour de l'année ; 'Anénou entre dans la 'Amida, et le
+  // psaume 102 se dit à Min'ha.
+  if (publicFast) occ.add("taanit");
+  // Tich'a beAv : Na'hem entre dans la 'Amida de Min'ha, et sa conclusion
+  // prend la place de « boné Yerouchalayim ». Paire exclusive, comme
+  // tahanoun / sans-tahanoun : le fichier porte les deux conclusions, une
+  // seule s'affiche.
+  const tishaBeav = events.some((ev) => ev.basename() === "Tish'a B'Av");
+  occ.add(tishaBeav ? "tisha-beav" : "sans-tisha-beav");
+
+  // Les psaumes qui s'ajoutent au chir chel yom certains jours de l'année.
+  // Ils ne prennent pas la place de celui du jour : l'usage séfarade dit les
+  // deux, le psaume du jour d'abord, celui de la date ensuite (Yalkut Yossef).
+  // Le psaume du jour, lui, garde sa clé `jour-N`, posée plus bas.
+  // Les jeûnes se reportent au lendemain quand ils tombent un Chabbat : c'est
+  // le jeûne lui-même qui décide, pas la date, d'où `publicFast` plutôt qu'un
+  // quantième.
+  const mois = hd.getMonth();
+  const jeuneDe = (m: number) => publicFast && mois === m;
+  if (hanukkah) occ.add("chir-hanouka");
+  if (purim || jeuneDe(months.ADAR_I) || jeuneDe(months.ADAR_II)) occ.add("chir-pourim");
+  // Le jeûne de Guedalia et le 10 Tévet. Kippour est lui aussi un jeûne de
+  // Tichri, mais il a son propre office : il n'a rien à voir ici.
+  const kippour = events.some((ev) => ev.basename() === "Yom Kippur");
+  if ((jeuneDe(months.TISHREI) && !kippour) || jeuneDe(months.TEVET)) occ.add("chir-tsom-tichri");
+  if (jeuneDe(months.TAMUZ)) occ.add("chir-tsom-tamouz");
+  if (mois === months.TISHREI && hd.getDate() === 11) occ.add("chir-lendemain-kippour");
   const ownReading =
     occ.has("rosh-chodesh") || occ.has("nissim") || publicFast || has(flags.CHOL_HAMOED);
   if ((hd.getDay() === 1 || hd.getDay() === 4) && !ownReading) occ.add("torah-semaine");
@@ -361,18 +391,16 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // autres jours. Paire exclusive, comme ete/hiver : le texte porte les deux,
   // seule celle du jour s'affiche.
   occ.add(occ.has("shabbat-or-moed") || purim ? "migdol" : "magdil");
-  // Le jour de la semaine (0 = dimanche) : le chir chel yom n'affiche que le
-  // psaume du jour.
+  // Le jour de la semaine (0 = dimanche) : la sortie de Chabbat à Arvit, la
+  // veille de Chabbat à Min'ha.
   occ.add(`jour-${hd.getDay()}`);
   // Le Lamnatséa'h de Min'ha (psaume 67), entre le Kaddich Titkabal et
   // 'Alénou : tous les jours de semaine, sauf la veille de Chabbat où le
   // psaume 93 le remplace (bloc jour-5 du fichier).
   if (hd.getDay() !== 5 && hd.getDay() !== 6) occ.add("lamnatseah-minha");
-  // Lédavid (psaume 27) : du 1er Eloul à Hochana Rabba (21 Tichri).
-  if (
-    hd.getMonth() === months.ELUL ||
-    (hd.getMonth() === months.TISHREI && hd.getDate() <= 21)
-  )
+  // Lédavid (psaume 27) : du 1er Eloul à Chemini 'Atséret (22 Tichri), selon
+  // l'usage séfarade ; il se dit encore ce jour-là.
+  if (hd.getMonth() === months.ELUL || (hd.getMonth() === months.TISHREI && hd.getDate() <= 22))
     occ.add("ledavid");
   return occ;
 }

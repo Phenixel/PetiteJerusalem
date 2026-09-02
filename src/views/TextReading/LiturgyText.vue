@@ -6,11 +6,17 @@ import type { SupportedLocale } from "../../i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import KotelCompass from "../../components/KotelCompass.vue";
+import TefilinMirror from "../../components/TefilinMirror.vue";
 import {
   addKotelOffer,
   openKotelCompass,
   removeKotelOffer,
 } from "../../composables/useKotelCompass";
+import {
+  addMirrorOffer,
+  openTefilinMirror,
+  removeMirrorOffer,
+} from "../../composables/useTefilinMirror";
 import TefilaZman from "./TefilaZman.vue";
 
 /**
@@ -212,6 +218,22 @@ function syncKotelOffer(offered: boolean): void {
 watch(offersKotel, syncKotelOffer, { immediate: true });
 onUnmounted(() => syncKotelOffer(false));
 
+/**
+ * Le miroir des téfilines, sur le même modèle que la boussole : le passage qui
+ * les pose le porte à son titre, et le signale au menu de lecture, qui l'offre
+ * alors sous le pouce. Cha'harit est le seul office à le porter.
+ */
+const offersMirror = computed(() => props.blocks.some((block) => block.mirror));
+let offeringMirror = false;
+function syncMirrorOffer(offered: boolean): void {
+  if (offered === offeringMirror) return;
+  offeringMirror = offered;
+  if (offered) addMirrorOffer();
+  else removeMirrorOffer();
+}
+watch(offersMirror, syncMirrorOffer, { immediate: true });
+onUnmounted(() => syncMirrorOffer(false));
+
 const sections = computed(() =>
   props.blocks
     .map((block) => ({
@@ -276,6 +298,18 @@ const sections = computed(() =>
           @click="openKotelCompass('title')"
         >
           <AppIcon name="compass" :size="15" />
+        </button>
+        <!-- Le miroir, au titre du passage où l'on pose les téfilines : le
+             bayit de la tête se place là où l'on ne se voit pas. -->
+        <button
+          v-if="block.mirror"
+          type="button"
+          class="ms-1.5 inline-flex items-center align-middle rounded-full p-1 text-primary hover:bg-primary/10"
+          :aria-label="t('textReading.mirror.open')"
+          :title="t('textReading.mirror.open')"
+          @click="openTefilinMirror('title')"
+        >
+          <AppIcon name="mirror" :size="15" />
         </button>
       </p>
 
@@ -367,6 +401,7 @@ const sections = computed(() =>
     </section>
 
     <KotelCompass v-if="offersKotel" />
+    <TefilinMirror v-if="offersMirror" />
   </div>
 </template>
 

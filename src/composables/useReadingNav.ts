@@ -16,6 +16,13 @@ export interface ReadingNavSection {
   offset: number;
   /** Titre du bloc dans la langue du lecteur. */
   label: string;
+  /**
+   * Titre hébreu du bloc, quand il en a un et qu'il n'est pas déjà le `label`
+   * (lecteur en hébreu). Le menu le donne à côté du titre traduit : c'est sous
+   * ce nom-là qu'un passage se cherche, et qu'il est écrit dans le sidour de
+   * papier posé à côté.
+   */
+  hebrew?: string;
 }
 
 const sections = ref<ReadingNavSection[]>([]);
