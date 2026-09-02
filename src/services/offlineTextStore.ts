@@ -373,11 +373,17 @@ export async function downloadFile(webPath: string): Promise<void> {
     await cache.put(webPath, res);
   }
 
-  // L'empreinte inscrite est celle de ce qui a été écrit, jamais celle qu'on
+  // L'empreinte inscrite est celle de ce qui a été écrit, et non celle qu'on
   // attendait : un portail captif répond 200 avec sa page de connexion, et
   // inscrire l'empreinte espérée figerait cette page-là dans l'index, à jamais
   // « à jour ». Une empreinte inattendue se corrige d'elle-même à la
   // synchronisation suivante.
+  //
+  // Sans Web Crypto (contexte non sécurisé), rien ne peut être vérifié : on
+  // inscrit alors celle du site, faute de mieux. C'est le seul cas où l'on
+  // fait crédit au téléchargement, et c'est le moindre mal : sans empreinte,
+  // le fichier ne serait plus jamais comparé, et les corrections du site ne
+  // l'atteindraient pas.
   const hash = ecrit === null ? undefined : ((await hashOf(ecrit)) ?? attendue);
 
   downloadManifest.value = {
