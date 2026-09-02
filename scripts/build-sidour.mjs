@@ -1304,6 +1304,9 @@ function chaharitRecipe() {
       // 'Akédat Its'hak, comme dans la source : on s'en revêt avant d'entrer
       // dans la prière.
       {
+        // Le matin de Tich'a beAv, on ne les met pas : ils attendent Min'ha.
+        when: "sans-tisha-beav",
+        plain: true,
         src: "Talit",
         labelText: R("Le talit", "The talit", "מצות ציצית"),
         halakha: R(
@@ -1349,6 +1352,9 @@ function chaharitRecipe() {
         ],
       },
       {
+        // Le matin de Tich'a beAv, on ne les met pas : ils attendent Min'ha.
+        when: "sans-tisha-beav",
+        plain: true,
         src: "Tefillin",
         labelText: R("Les téfilines", "The tefillin", "מצות תפילין"),
         // Le bayit de la tête se pose à l'endroit du corps qu'on ne voit
@@ -1736,23 +1742,40 @@ function chaharitRecipe() {
       kaddishHalf("Uva LeSion"),
       {
         src: "RH.Hallel",
-        when: "rosh-chodesh",
+        when: "hallel",
         plain: true,
-        labelText: R("Hallel de Roch Hodech", "Hallel for Rosh Hodesh", "הלל לראש חודש"),
+        labelText: R("Hallel", "Hallel", "הלל"),
         halakha: HALAKHA.hallel,
         lines: [
           { seg: 5 },
           { seg: 6 },
+          // Lo lanou et Ahavti font la différence entre le Hallel entier et
+          // l'abrégé : entier à 'Hanouka et à 'Hol haMoed de Souccot, abrégé
+          // à Roch Hodech et à 'Hol haMoed de Pessah. Les deux formes sont
+          // dans le fichier, le jour choisit.
           {
-            seg: 9,
+            // Les deux passages vivent entiers dans un <small> : la source les
+            // met en retrait puisqu'on les saute la plupart du temps.
+            seg: 8,
+            mode: "small",
+            when: "hallel-complet",
             rubric: R(
-              "À Roch Hodech, on saute « לֹא לָנוּ » :",
-              "On Rosh Hodesh, skip “Lo lanu”:",
-              "בראש חודש מדלגים « לֹא לָנוּ »:",
+              "On dit le Hallel en entier :",
+              "The whole Hallel is said:",
+              "גומרים את ההלל:",
             ),
           },
+          { seg: 9, when: "hallel-complet", tight: true },
+          {
+            seg: 9,
+            when: "hallel-abrege",
+            rubric: R("On saute « לֹא לָנוּ » :", "Skip “Lo lanu”:", "מדלגים « לֹא לָנוּ »:"),
+          },
+          { seg: 11, mode: "small", when: "hallel-complet" },
+          { seg: 12, when: "hallel-complet", tight: true },
           {
             seg: 12,
+            when: "hallel-abrege",
             rubric: R("On saute « אָהַבְתִּי » :", "Skip “Ahavti”:", "מדלגים « אָהַבְתִּי »:"),
           },
           { seg: 13 },
@@ -1772,6 +1795,112 @@ function chaharitRecipe() {
       // « Yehalelou'ha » (le Hallel y est abrégé), mais le Kaddich, lui, se
       // dit entier.
       kaddishTitkabal("RH.Hallel", { seg: 26, when: "rosh-chodesh" }),
+      // À 'Hanouka la source ne veut qu'un demi-Kaddich : la lecture de la
+      // Torah vient juste après, et le Titkabal attendra Ouva letsion.
+      kaddishHalf("RH.Hallel", { seg: 26, when: "hanouka" }),
+      // La lecture de la Torah de 'Hanouka : trois montées dans la paracha
+      // Nasso, le passage du nassi du jour. Un bloc par jour, un seul
+      // s'affiche.
+      {
+        src: "Hanouka.Shaharit",
+        when: "hanouka",
+        plain: true,
+        labelText: R(
+          "Lecture de la Torah de 'Hanouka",
+          "Torah reading for Hanukkah",
+          "קריאת התורה לחנוכה",
+        ),
+        lines: [
+          {
+            seg: 2,
+            mode: "full",
+            rubric: R("L'ordre du jour :", "The order of the day:", "דיני שחרית לחנוכה:"),
+            muted: true,
+          },
+        ],
+      },
+      {
+        src: "Hanouka.Shaharit",
+        when: "hanouka-1",
+        plain: true,
+        lines: [{ seg: 5, mode: "full" }],
+      },
+      {
+        src: "Hanouka.Shaharit",
+        when: "hanouka-2",
+        plain: true,
+        lines: [{ seg: 8, mode: "full" }],
+      },
+      {
+        src: "Hanouka.Shaharit",
+        when: "hanouka-3",
+        plain: true,
+        lines: [{ seg: 10, mode: "full" }],
+      },
+      {
+        src: "Hanouka.Shaharit",
+        when: "hanouka-4",
+        plain: true,
+        lines: [{ seg: 12, mode: "full" }],
+      },
+      {
+        src: "Hanouka.Shaharit",
+        when: "hanouka-5",
+        plain: true,
+        lines: [{ seg: 14, mode: "full" }],
+      },
+      {
+        src: "Hanouka.Shaharit",
+        when: "hanouka-6",
+        plain: true,
+        lines: [{ seg: 16, mode: "full" }],
+      },
+      {
+        src: "Hanouka.Shaharit",
+        when: "hanouka-7",
+        plain: true,
+        lines: [{ seg: 18, mode: "full" }],
+      },
+      {
+        src: "Hanouka.Shaharit",
+        when: "hanouka-8",
+        plain: true,
+        lines: [{ seg: 21, mode: "full" }],
+      },
+      // Pourim : trois montées dans « Vayavo Amalek », après le demi-Kaddich
+      // qui suit la 'Amida.
+      {
+        src: "Pourim.Jour",
+        when: "pourim",
+        plain: true,
+        labelText: R(
+          "Lecture de la Torah de Pourim",
+          "Torah reading for Purim",
+          "קריאת התורה לפורים",
+        ),
+        lines: [
+          {
+            seg: 1,
+            mode: "full",
+            muted: true,
+            rubric: R("L'ordre du jour :", "The order of the day:", "סדר יום פורים:"),
+          },
+          { seg: 2, mode: "full" },
+        ],
+      },
+      // Les jeûnes publics : « Vaye'hal Moché », trois montées, le matin
+      // comme l'après-midi.
+      {
+        src: "Taanit.Torah",
+        when: "taanit",
+        plain: true,
+        labelText: R(
+          "Lecture de la Torah du jeûne",
+          "Torah reading for the fast",
+          "קריאת התורה לתענית ציבור",
+        ),
+        lines: [{ seg: 1, mode: "full" }],
+      },
       {
         src: "RH.Hallel",
         when: "rosh-chodesh",
@@ -2245,6 +2374,29 @@ function minhaRecipe() {
         ],
       },
       kaddishHalf("Kaddish"),
+      // Un jour de jeûne public, la Torah se lit aussi à Min'ha : le même
+      // « Vaye'hal Moché » que le matin, trois montées, avant la 'Amida.
+      {
+        src: "Taanit.Torah",
+        when: "taanit",
+        plain: true,
+        labelText: R(
+          "Lecture de la Torah du jeûne",
+          "Torah reading for the fast",
+          "קריאת התורה לתענית ציבור",
+        ),
+        lines: [
+          {
+            seg: 1,
+            mode: "full",
+            rubric: R(
+              "On sort le séfer Torah, et l'on lit avant la 'Amida :",
+              "The Torah scroll is taken out and read before the Amidah:",
+              "מוציאים ספר תורה וקוראים לפני העמידה:",
+            ),
+          },
+        ],
+      },
       ...amida,
       avinouMalkenou("Amida", 73, 104),
       {
@@ -2329,6 +2481,26 @@ function minhaRecipe() {
 }
 
 function arvitRecipe() {
+  // Le compte du 'Omer, quarante-neuf soirs de la deuxième nuit de Pessah au
+  // 5 Sivan. La source range chaque jour en trois segments qui se suivent :
+  // sa date hébraïque, le compte lui-même, puis la sefira du jour. La
+  // bénédiction est reprise dans chaque soir, parce qu'elle finit sur
+  // « hayom » et que le compte l'achève : les deux ne font qu'une phrase.
+  const omerJours = Array.from({ length: 49 }, (_, i) => ({
+    src: "Omer",
+    when: `omer-${i + 1}`,
+    plain: true,
+    lines: [
+      { seg: 3 },
+      { seg: 5 + 3 * i, tight: true },
+      {
+        seg: 6 + 3 * i,
+        muted: true,
+        rubric: R("La sefira du jour :", "The sefirah of the day:", "ספירת היום:"),
+      },
+    ],
+  }));
+
   const amida = amidaBlocks(
     "Amidah",
     {
@@ -2510,6 +2682,49 @@ function arvitRecipe() {
         labelText: R("'Alénou léchabéa'h", "Aleinu", "עלינו לשבח"),
         lines: [{ seg: 1 }, { seg: 2 }, { seg: 3, mode: "small", tight: true }],
       },
+      // Le 'Omer se compte l'office fini, debout, la nuit tombée.
+      {
+        src: "Omer",
+        when: "omer",
+        labelText: R("Sefirat ha'omer", "Counting of the Omer", "ספירת העומר"),
+        halakha: R(
+          "Le compte se dit debout, après la tombée de la nuit. Qui a oublié un soir compte le lendemain dans la journée, sans bénédiction, et reprend le soir suivant avec la bénédiction ; qui a sauté un jour entier compte les soirs suivants sans bénédiction.",
+          "The Omer is counted standing, after nightfall. Whoever forgets one evening counts during the following day without a blessing and resumes with the blessing that night; whoever misses a whole day counts the remaining evenings without a blessing.",
+          "סופרים מעומד אחר צאת הכוכבים. מי ששכח בלילה סופר ביום בלי ברכה וחוזר לברך בלילה שאחריו; מי שדילג יום שלם סופר בלי ברכה.",
+        ),
+        lines: [
+          {
+            seg: 1,
+            mode: "small",
+            muted: true,
+            rubric: R(
+              "Certains disent d'abord le léchem yi'houd :",
+              "Some first say the leshem yichud:",
+              "יש אומרים תחילה לשם יחוד:",
+            ),
+          },
+          { seg: 2, until: "שמים", rubric: RUBRIC.hazan },
+          { seg: 2, from: "שמים", rubric: RUBRIC.kahal, tight: true },
+        ],
+      },
+      ...omerJours,
+      {
+        src: "Omer",
+        when: "omer",
+        plain: true,
+        lines: [
+          { seg: 151 },
+          { seg: 152 },
+          { seg: 153 },
+          { seg: 154, tight: true },
+          { seg: 155, tight: true },
+          { seg: 156, tight: true },
+          { seg: 157, tight: true },
+          { seg: 158, tight: true },
+          { seg: 159, tight: true },
+          { seg: 160, mode: "full", strip: ["ואומר בלחש:"], rubric: RUBRIC.bassevoix },
+        ],
+      },
     ],
   };
 }
@@ -2553,6 +2768,9 @@ function sourcesFor(office) {
       Kaveh: ws["Kaveh"],
       Alenu: ws["Alenu"],
       "RH.Hallel": rh["Hallel"],
+      "Hanouka.Shaharit": text["Hanukkah"]["Shacharit"],
+      "Pourim.Jour": text["Purim"]["Purim Day"],
+      "Taanit.Torah": text["Fast Days and Mourning"]["Torah Reading for Fast Days"],
       "RH.Mussaf": rh["Mussaf"],
       "RH.Barchi Nafshi": rh["Barchi Nafshi"],
     };
@@ -2570,10 +2788,12 @@ function sourcesFor(office) {
       Alenu: wm["Alenu"],
       Kaddish: ws["Uva LeSion"],
       Ledavid: ws["Alenu"],
+      "Taanit.Torah": text["Fast Days and Mourning"]["Torah Reading for Fast Days"],
     };
   }
   const wa = text["Weekday Arvit"];
   return {
+    Omer: text["Counting of the Omer"],
     Barchu: wa["Barchu"],
     "The Shema": wa["The Shema"],
     Amidah: wa["Amidah"],

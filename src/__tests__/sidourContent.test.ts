@@ -43,6 +43,14 @@ const KNOWN_WHEN = new Set([
   "sans-tahanoun",
   "sans-tahanoun-minha",
   "taanit",
+  "hallel",
+  "hallel-complet",
+  "hallel-abrege",
+  "hanouka",
+  "pourim",
+  "omer",
+  ...Array.from({ length: 8 }, (_, i) => `hanouka-${i + 1}`),
+  ...Array.from({ length: 49 }, (_, i) => `omer-${i + 1}`),
   "tisha-beav",
   "sans-tisha-beav",
   "chir-tsom-tichri",
@@ -260,6 +268,88 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
     });
   },
 );
+
+describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", () => {
+  const entry = sidourEntries.find((e) => resolveFilePath(e).includes("chaharit"))!;
+  const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
+
+  it("porte les deux formes du Hallel, exclusives", () => {
+    // Sur le fichier brut : la condition vit sur la ligne, et le lecteur la
+    // consomme avant d'en faire un paragraphe.
+    const brut = (
+      loadRaw(entry) as { blocks: { label?: string; when?: string; lines: unknown[] }[] }
+    ).blocks;
+    const hallel = brut.find((b) => b.label === "Hallel")!;
+    expect(hallel.when).toBe("hallel");
+    const lignes = hallel.lines as { when?: string; he?: string }[];
+    const entier = lignes.filter((l) => l?.when === "hallel-complet");
+    const abrege = lignes.filter((l) => l?.when === "hallel-abrege");
+    // « Lo lanou » et « Ahavti » ne sont là qu'au Hallel entier, avec leur
+    // suite ; les deux consignes de saut ne sont là qu'à l'abrégé.
+    expect(entier).toHaveLength(4);
+    expect(abrege).toHaveLength(2);
+    expect(sansSignes(String(entier[0].he))).toContain("לא לנו");
+    expect(sansSignes(String(entier[2].he))).toContain("אהבתי");
+  });
+
+  it("lit un passage par jour à 'Hanouka, dans l'ordre des nessiim", () => {
+    const jours = blocks.filter((b) => /^hanouka-\d/.test(b.when ?? ""));
+    expect(jours.map((b) => b.when)).toEqual(
+      Array.from({ length: 8 }, (_, i) => `hanouka-${i + 1}`),
+    );
+    // Le deuxième jour lit le nassi de Yissakhar, le huitième celui de Menaché.
+    expect(sansSignes(jours[1].lines.join(" "))).toContain("נתנאל בןצוער");
+    expect(sansSignes(jours[7].lines.join(" "))).toContain("גמליאל בןפדהצור");
+  });
+
+  it("lit la Torah à Pourim et les jours de jeûne", () => {
+    const pourim = blocks.find((b) => b.when === "pourim")!;
+    expect(sansSignes(pourim.lines.join(" "))).toContain("עמלק");
+    const jeune = blocks.find((b) => b.label === "Lecture de la Torah du jeûne")!;
+    expect(jeune.when).toBe("taanit");
+    expect(sansSignes(jeune.lines.join(" "))).toContain("ויחל משה");
+  });
+
+  it("ne met ni talit ni téfilines le matin de Tich'a beAv", () => {
+    for (const label of ["Le talit", "Les téfilines"]) {
+      const bloc = blocks.find((b) => b.label === label)!;
+      expect(bloc.when).toBe("sans-tisha-beav");
+      // Dans le fil, non en encadré d'ajout : ils se disent presque tous les
+      // jours, ce n'est pas une addition du calendrier.
+      expect(bloc.plain).toBe(true);
+    }
+  });
+});
+
+describe("Arvit : le compte du 'Omer", () => {
+  const entry = sidourEntries.find((e) => resolveFilePath(e).includes("arvit"))!;
+  const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
+
+  it("donne les quarante-neuf soirs, chacun avec sa bénédiction", () => {
+    const soirs = blocks.filter((b) => /^omer-\d/.test(b.when ?? ""));
+    expect(soirs).toHaveLength(49);
+    expect(soirs.map((b) => b.when)).toEqual(Array.from({ length: 49 }, (_, i) => `omer-${i + 1}`));
+    for (const soir of soirs) {
+      // La bénédiction finit sur « hayom », le compte l'achève : les deux
+      // doivent être dans le même bloc, ou la phrase se coupe en deux.
+      expect(sansSignes(soir.lines.join(" "))).toContain("על ספירת העמר");
+      expect(sansSignes(soir.lines.join(" "))).toContain("לעמר");
+    }
+    expect(sansSignes(soirs[0].lines.join(" "))).toContain("יום אחד לעמר");
+    expect(sansSignes(soirs[48].lines.join(" "))).toContain("תשעה וארבעים יום");
+  });
+
+  it("l'encadre de son ouverture et de sa clôture, et le met à la fin", () => {
+    const saison = blocks.filter((b) => b.when === "omer");
+    expect(saison).toHaveLength(2);
+    expect(saison[0].label).toBe("Sefirat ha'omer");
+    expect(sansSignes(saison[1].lines.join(" "))).toContain("אנא בכח");
+    // Après 'Alénou : le compte se dit l'office fini.
+    const alenou = blocks.findIndex((b) => b.label === "'Alénou léchabéa'h");
+    const premierSoir = blocks.findIndex((b) => b.when === "omer-1");
+    expect(premierSoir).toBeGreaterThan(alenou);
+  });
+});
 
 describe("Cha'harit : ce qui s'ajoute au psaume du jour", () => {
   const entry = sidourEntries.find((e) => resolveFilePath(e).includes("chaharit"))!;
