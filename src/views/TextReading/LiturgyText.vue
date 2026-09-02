@@ -207,6 +207,17 @@ const runClass = (run: TextRun & { kind: "he" }) => ({
  * Le texte qui en porte un le signale au menu de lecture, qui offre alors la
  * même boussole sous le pouce, sans remonter au titre.
  */
+const offersKotel = computed(() => props.blocks.some((block) => block.kotel));
+let offering = false;
+function syncKotelOffer(offered: boolean): void {
+  if (offered === offering) return;
+  offering = offered;
+  if (offered) addKotelOffer();
+  else removeKotelOffer();
+}
+watch(offersKotel, syncKotelOffer, { immediate: true });
+onUnmounted(() => syncKotelOffer(false));
+
 /**
  * Le miroir des téfilines, sur le même modèle que la boussole : le passage qui
  * les pose le porte à son titre, et le signale au menu de lecture, qui l'offre
@@ -222,17 +233,6 @@ function syncMirrorOffer(offered: boolean): void {
 }
 watch(offersMirror, syncMirrorOffer, { immediate: true });
 onUnmounted(() => syncMirrorOffer(false));
-
-const offersKotel = computed(() => props.blocks.some((block) => block.kotel));
-let offering = false;
-function syncKotelOffer(offered: boolean): void {
-  if (offered === offering) return;
-  offering = offered;
-  if (offered) addKotelOffer();
-  else removeKotelOffer();
-}
-watch(offersKotel, syncKotelOffer, { immediate: true });
-onUnmounted(() => syncKotelOffer(false));
 
 const sections = computed(() =>
   props.blocks
