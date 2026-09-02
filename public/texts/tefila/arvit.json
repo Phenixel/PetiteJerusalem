@@ -18,9 +18,9 @@
       ]
     },
     {
-      "label": "Veille de Roch Hodech : Barkhi nafchi",
+      "label": "Veille de Roch Hodech : Barkhi nafchi",
       "labelText": {
-        "fr": "Veille de Roch Hodech : Barkhi nafchi",
+        "fr": "Veille de Roch Hodech : Barkhi nafchi",
         "en": "Rosh Hodesh eve: Barchi nafshi",
         "he": "ליל ראש חודש : ברכי נפשי"
       },
@@ -319,7 +319,7 @@
       "lines": [
         {
           "rubric": {
-            "fr": "Dix jours de techouva, avant « וְנֶאֱמָן » :",
+            "fr": "Dix jours de techouva, avant « וְנֶאֱמָן » :",
             "en": "Ten Days of Repentance, before “vene'eman”:",
             "he": "בעשרת ימי תשובה, לפני « וְנֶאֱמָן »:"
           },
@@ -521,7 +521,7 @@
         "וְאַתָּה בְּרַֽחֲמֶֽיךָ הָרַבִּים, תַּחְפֹּץ בָּֽנוּ וְתִרְצֵֽנוּ, וְתֶֽחֱזֶֽינָה עֵינֵֽינוּ בְּשֽׁוּבְךָ לְצִיּוֹן בְּרַֽחֲמִים: בָּרוּךְ אַתָּה יִהִוִהִ, הַמַּֽחֲזִיר שְׁכִֽינָתוֹ לְצִיּוֹן:",
         {
           "rubric": {
-            "fr": "On s'incline à « Modim » et on se redresse au Nom :",
+            "fr": "On s'incline à « Modim » et on se redresse au Nom :",
             "en": "Bow at “Modim” and straighten at God's name:",
             "he": "יכרע ב« מודים » ויזקוף בשם:"
           },
@@ -776,7 +776,7 @@
             }
           ],
           "rubric": {
-            "fr": "On dit le Kaddich « yehé chelama » :",
+            "fr": "On dit le Kaddich « yehé chelama » :",
             "en": "The Kaddish “Yehe Shelama” is said:",
             "he": "ואומרים קדיש יהא שלמא:"
           }

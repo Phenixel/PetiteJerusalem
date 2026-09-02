@@ -169,7 +169,7 @@
       "lines": [
         {
           "rubric": {
-            "fr": "Dix jours de techouva, avant « וְנֶאֱמָן » :",
+            "fr": "Dix jours de techouva, avant « וְנֶאֱמָן » :",
             "en": "Ten Days of Repentance, before “vene'eman”:",
             "he": "בעשרת ימי תשובה, לפני « וְנֶאֱמָן »:"
           },
@@ -243,7 +243,7 @@
       "lines": [
         {
           "rubric": {
-            "fr": "Un jour de jeûne public, le 'hazan dit à la répétition :",
+            "fr": "Un jour de jeûne public, le 'hazan dit à la répétition :",
             "en": "On a public fast, the chazan says in the repetition:",
             "he": "בתענית ציבור השליח ציבור אומר בחזרה:"
           },
@@ -327,7 +327,7 @@
       "lines": [
         {
           "rubric": {
-            "fr": "À Min'ha de Tich'a beAv, on dit ici :",
+            "fr": "À Min'ha de Tich'a beAv, on dit ici :",
             "en": "At Mincha on Tisha b'Av, say here:",
             "he": "במנחה של תשעה באב אומרים כאן:"
           },
@@ -356,7 +356,7 @@
       "lines": [
         {
           "rubric": {
-            "fr": "Qui jeûne dit ici, sans conclusion :",
+            "fr": "Qui jeûne dit ici, sans conclusion :",
             "en": "Whoever is fasting says here, without a closing blessing:",
             "he": "המתענה אומר כאן, בלי חתימה:"
           },
@@ -364,7 +364,7 @@
         },
         {
           "rubric": {
-            "fr": "Autre version, pour les trois jeûnes :",
+            "fr": "Autre version, pour les trois jeûnes :",
             "en": "Another version, for the three fasts:",
             "he": "נוסח אחר, לשלושת הצומות:"
           },
@@ -433,7 +433,7 @@
         "וְאַתָּה בְּרַֽחֲמֶֽיךָ הָרַבִּים, תַּחְפֹּץ בָּֽנוּ וְתִרְצֵֽנוּ, וְתֶֽחֱזֶֽינָה עֵינֵֽינוּ בְּשֽׁוּבְךָ לְצִיּוֹן בְּרַֽחֲמִים: בָּרוּךְ אַתָּה יִהִוִהִ, הַמַּֽחֲזִיר שְׁכִֽינָתוֹ לְצִיּוֹן:",
         {
           "rubric": {
-            "fr": "On s'incline à « Modim » et on se redresse au Nom :",
+            "fr": "On s'incline à « Modim » et on se redresse au Nom :",
             "en": "Bow at “Modim” and straighten at God's name:",
             "he": "יכרע ב« מודים » ויזקוף בשם:"
           },
@@ -531,7 +531,7 @@
       "lines": [
         {
           "rubric": {
-            "fr": "S'il y a plus d'un cohen, le 'hazan les appelle : « Cohanim ». Les cohanim bénissent :",
+            "fr": "S'il y a plus d'un cohen, le 'hazan les appelle : « Cohanim ». Les cohanim bénissent :",
             "en": "If there is more than one kohen, the chazan calls them: “Kohanim.” The kohanim bless:",
             "he": "אם יש יותר מכהן אחד קורא להם החזן: כהנים. והכהנים מברכים:"
           },
@@ -544,7 +544,7 @@
         },
         {
           "rubric": {
-            "fr": "Le 'hazan dit, et les cohanim le reprennent mot à mot :",
+            "fr": "Le 'hazan dit, et les cohanim le reprennent mot à mot :",
             "en": "The chazan says it, and the kohanim repeat word for word:",
             "he": "ואומר החזן והכהנים אחריו מילה במילה:"
           },
@@ -575,7 +575,7 @@
         },
         {
           "rubric": {
-            "fr": "S'il n'y a pas de cohanim, le 'hazan dit :",
+            "fr": "S'il n'y a pas de cohanim, le 'hazan dit :",
             "en": "If there are no kohanim, the chazan says:",
             "he": "אם אין כהנים אומר החזן:"
           },
@@ -975,9 +975,9 @@
       ]
     },
     {
-      "label": "Jour de jeûne : Tefila le'ani (psaume 102)",
+      "label": "Jour de jeûne : Tefila le'ani (psaume 102)",
       "labelText": {
-        "fr": "Jour de jeûne : Tefila le'ani (psaume 102)",
+        "fr": "Jour de jeûne : Tefila le'ani (psaume 102)",
         "en": "Fast day: Tefilah le'ani (Psalm 102)",
         "he": "בתענית ציבור: תפלה לעני (תהלים קב)"
       },
@@ -1004,7 +1004,7 @@
             }
           ],
           "rubric": {
-            "fr": "On dit le Kaddich « yehé chelama » :",
+            "fr": "On dit le Kaddich « yehé chelama » :",
             "en": "The Kaddish “Yehe Shelama” is said:",
             "he": "ואומרים קדיש יהא שלמא:"
           }

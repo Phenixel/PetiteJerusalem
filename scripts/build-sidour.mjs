@@ -415,7 +415,7 @@ function birkatKohanimBlock(src, ix, extra = {}) {
         until: "אָמֵן",
         answer: "(אָמֵן)",
         rubric: R(
-          "S'il y a plus d'un cohen, le 'hazan les appelle : « Cohanim ». Les cohanim bénissent :",
+          "S'il y a plus d'un cohen, le 'hazan les appelle : « Cohanim ». Les cohanim bénissent :",
           "If there is more than one kohen, the chazan calls them: “Kohanim.” The kohanim bless:",
           "אם יש יותר מכהן אחד קורא להם החזן: כהנים. והכהנים מברכים:",
         ),
@@ -430,7 +430,7 @@ function birkatKohanimBlock(src, ix, extra = {}) {
         rubric:
           i === 0
             ? R(
-                "Le 'hazan dit, et les cohanim le reprennent mot à mot :",
+                "Le 'hazan dit, et les cohanim le reprennent mot à mot :",
                 "The chazan says it, and the kohanim repeat word for word:",
                 "ואומר החזן והכהנים אחריו מילה במילה:",
               )
@@ -440,7 +440,7 @@ function birkatKohanimBlock(src, ix, extra = {}) {
         seg: ix.hazan,
         mode: "small",
         rubric: R(
-          "S'il n'y a pas de cohanim, le 'hazan dit :",
+          "S'il n'y a pas de cohanim, le 'hazan dit :",
           "If there are no kohanim, the chazan says:",
           "אם אין כהנים אומר החזן:",
         ),
@@ -516,7 +516,7 @@ function amidaBlocks(src, ix, opts = {}) {
         mode: "small",
         strip: [STRIP.teshuvaDisent],
         rubric: R(
-          "Dix jours de techouva, avant « וְנֶאֱמָן » :",
+          "Dix jours de techouva, avant « וְנֶאֱמָן » :",
           "Ten Days of Repentance, before “vene'eman”:",
           "בעשרת ימי תשובה, לפני « וְנֶאֱמָן »:",
         ),
@@ -600,7 +600,7 @@ function amidaBlocks(src, ix, opts = {}) {
           seg: ix.anenouHazan,
           mode: "small",
           rubric: R(
-            "Un jour de jeûne public, le 'hazan dit à la répétition :",
+            "Un jour de jeûne public, le 'hazan dit à la répétition :",
             "On a public fast, the chazan says in the repetition:",
             "בתענית ציבור השליח ציבור אומר בחזרה:",
           ),
@@ -670,7 +670,7 @@ function amidaBlocks(src, ix, opts = {}) {
           mode: "small",
           from: "נַחֵם יְהֹוָה",
           rubric: R(
-            "À Min'ha de Tich'a beAv, on dit ici :",
+            "À Min'ha de Tich'a beAv, on dit ici :",
             "At Mincha on Tisha b'Av, say here:",
             "במנחה של תשעה באב אומרים כאן:",
           ),
@@ -707,7 +707,7 @@ function amidaBlocks(src, ix, opts = {}) {
           mode: "smallAll",
           from: "עֲנֵנוּ אָבִינוּ",
           rubric: R(
-            "Qui jeûne dit ici, sans conclusion :",
+            "Qui jeûne dit ici, sans conclusion :",
             "Whoever is fasting says here, without a closing blessing:",
             "המתענה אומר כאן, בלי חתימה:",
           ),
@@ -717,7 +717,7 @@ function amidaBlocks(src, ix, opts = {}) {
           mode: "small",
           muted: true,
           rubric: R(
-            "Autre version, pour les trois jeûnes :",
+            "Autre version, pour les trois jeûnes :",
             "Another version, for the three fasts:",
             "נוסח אחר, לשלושת הצומות:",
           ),
@@ -775,7 +775,7 @@ function amidaBlocks(src, ix, opts = {}) {
       {
         seg: ix.modim,
         rubric: R(
-          "On s'incline à « Modim » et on se redresse au Nom :",
+          "On s'incline à « Modim » et on se redresse au Nom :",
           "Bow at “Modim” and straighten at God's name:",
           "יכרע ב« מודים » ויזקוף בשם:",
         ),
@@ -995,7 +995,7 @@ function kaddishYeheChelama(src, seg) {
       {
         seg,
         rubric: R(
-          "On dit le Kaddich « yehé chelama » :",
+          "On dit le Kaddich « yehé chelama » :",
           "The Kaddish “Yehe Shelama” is said:",
           "ואומרים קדיש יהא שלמא:",
         ),
@@ -1022,7 +1022,7 @@ function kaddishAlIsrael(src, seg) {
       {
         seg,
         rubric: R(
-          "On dit le Kaddich « 'al Israël » :",
+          "On dit le Kaddich « 'al Israël » :",
           "The Kaddish “al Yisrael” is said:",
           "ואומרים קדיש על ישראל:",
         ),
@@ -1148,7 +1148,7 @@ function chaharitRecipe() {
       15,
       "(תהילים פ״ג:א׳-ג׳)",
       R(
-        "Au jeûne de Guedalia et le 10 Tévet, on ajoute :",
+        "Au jeûne de Guedalia et le 10 Tévet, on ajoute :",
         "On the Fast of Gedaliah and the Tenth of Tevet, add:",
         "בצום גדליה ובעשרה בטבת אומרים:",
       ),
@@ -1158,7 +1158,7 @@ function chaharitRecipe() {
       17,
       "(תהילים פ״ה:א׳-ג׳)",
       R(
-        "Au lendemain de Kippour, on ajoute :",
+        "Au lendemain de Kippour, on ajoute :",
         "On the day after Yom Kippur, add:",
         "למחרת יום הכיפורים אומרים:",
       ),
@@ -1167,14 +1167,14 @@ function chaharitRecipe() {
       "chir-hanouka",
       19,
       "(תהילים ל׳:א׳-ב׳)",
-      R("À 'Hanouka, on ajoute :", "On Hanukkah, add:", "בחנוכה אומרים:"),
+      R("À 'Hanouka, on ajoute :", "On Hanukkah, add:", "בחנוכה אומרים:"),
     ],
     [
       "chir-pourim",
       21,
       "(תהילים כ״ב:א׳-ב׳)",
       R(
-        "Au jeûne d'Esther et à Pourim, on ajoute :",
+        "Au jeûne d'Esther et à Pourim, on ajoute :",
         "On the Fast of Esther and on Purim, add:",
         "בתענית אסתר ובפורים אומרים:",
       ),
@@ -1184,7 +1184,7 @@ function chaharitRecipe() {
       23,
       "(תהילים ע״ט:א׳)",
       R(
-        "Le 17 Tamouz, on ajoute :",
+        "Le 17 Tamouz, on ajoute :",
         "On the Seventeenth of Tammuz, add:",
         "בשבעה עשר בתמוז אומרים:",
       ),
@@ -1211,7 +1211,7 @@ function chaharitRecipe() {
         mode: "small",
         strip: ["(תהילים מ״ט:א׳-ג׳)"],
         rubric: R(
-          "On dit celui-ci à la place du psaume du jour :",
+          "On dit celui-ci à la place du psaume du jour :",
           "This one is said in place of the psalm of the day:",
           "אומרים זה במקום שיר של יום:",
         ),
@@ -1220,7 +1220,7 @@ function chaharitRecipe() {
         seg: 26,
         mode: "small",
         tight: true,
-        rubric: R("Certains ajoutent :", "Some add:", "ויש שמוסיפים:"),
+        rubric: R("Certains ajoutent :", "Some add:", "ויש שמוסיפים:"),
       },
     ],
   };
@@ -1413,7 +1413,7 @@ function chaharitRecipe() {
             mode: "small",
             muted: true,
             rubric: R(
-              "Certains disent ici, avant la prière :",
+              "Certains disent ici, avant la prière :",
               "Some say here, before the prayer:",
               "יש אומרים כאן קודם התפילה:",
             ),
@@ -1661,7 +1661,7 @@ function chaharitRecipe() {
           {
             seg: 20,
             rubric: R(
-              "On se lève à « Tehilot » :",
+              "On se lève à « Tehilot » :",
               "Rise at “Tehilot”:",
               "בתחילת מלת תהלות יקום לעמוד:",
             ),
@@ -1746,14 +1746,14 @@ function chaharitRecipe() {
           {
             seg: 9,
             rubric: R(
-              "À Roch Hodech, on saute « לֹא לָנוּ » :",
+              "À Roch Hodech, on saute « לֹא לָנוּ » :",
               "On Rosh Hodesh, skip “Lo lanu”:",
               "בראש חודש מדלגים « לֹא לָנוּ »:",
             ),
           },
           {
             seg: 12,
-            rubric: R("On saute « אָהַבְתִּי » :", "Skip “Ahavti”:", "מדלגים « אָהַבְתִּי »:"),
+            rubric: R("On saute « אָהַבְתִּי » :", "Skip “Ahavti”:", "מדלגים « אָהַבְתִּי »:"),
           },
           { seg: 13 },
           { seg: 14 },
@@ -1814,7 +1814,7 @@ function chaharitRecipe() {
           "Half Kaddish (the last one called up)",
           "חצי קדיש (העולה האחרון)",
         ),
-        rubric: R("Le dernier appelé dit :", "The last one called up says:", "העולה האחרון אומר:"),
+        rubric: R("Le dernier appelé dit :", "The last one called up says:", "העולה האחרון אומר:"),
       }),
       {
         src: "Torah Reading",
@@ -1834,7 +1834,7 @@ function chaharitRecipe() {
           {
             seg: 5,
             when: "sans-tahanoun",
-            rubric: R("On dit d'abord :", "First, say:", "תחילה אומרים:"),
+            rubric: R("On dit d'abord :", "First, say:", "תחילה אומרים:"),
           },
           {
             seg: 6,
@@ -1858,7 +1858,7 @@ function chaharitRecipe() {
             seg: 9,
             mode: "full",
             strip: ["ואומר העולה:"],
-            rubric: R("L'appelé dit :", "The one called up says:", "ואומר העולה:"),
+            rubric: R("L'appelé dit :", "The one called up says:", "ואומר העולה:"),
           },
           {
             seg: 10,
@@ -2113,11 +2113,11 @@ function chaharitRecipe() {
       kaddishAlIsrael("Kaveh", 13),
       // Le Barkhou de la fin de l'office : le 'hazan appelle, l'assemblée
       // répond, il reprend. Replié comme les autres passages du 'hazan, pour
-      // qui prie seul.
+      // qui prie seul. Même titre qu'à Arvit, où le même passage se dit.
       {
         src: "Kaveh",
         fold: "hazan",
-        labelText: R("Barekhou (le 'hazan)", "Barchu (the chazan)", "ברכו (החזן)"),
+        labelText: R("Barkhou (le 'hazan)", "Barechu (the chazan)", "ברכו (החזן)"),
         lines: [
           { seg: 16, rubric: RUBRIC.hazan },
           { seg: 17, rubric: RUBRIC.kahal, tight: true },
@@ -2301,7 +2301,7 @@ function minhaRecipe() {
         when: "taanit",
         plain: true,
         labelText: R(
-          "Jour de jeûne : Tefila le'ani (psaume 102)",
+          "Jour de jeûne : Tefila le'ani (psaume 102)",
           "Fast day: Tefilah le'ani (Psalm 102)",
           "בתענית ציבור: תפלה לעני (תהלים קב)",
         ),
@@ -2398,7 +2398,7 @@ function arvitRecipe() {
         when: "rosh-chodesh",
         plain: true,
         labelText: R(
-          "Veille de Roch Hodech : Barkhi nafchi",
+          "Veille de Roch Hodech : Barkhi nafchi",
           "Rosh Hodesh eve: Barchi nafshi",
           "ליל ראש חודש : ברכי נפשי",
         ),
