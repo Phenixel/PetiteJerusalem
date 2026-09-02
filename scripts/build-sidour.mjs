@@ -364,9 +364,9 @@ const HALAKHA = {
     "מברוך שאמר עד ישתבח אין מפסיקים בדיבור.",
   ),
   birkotHashahar: R(
-    "Même si l'on n'en a pas eu l'occasion sur le moment, on peut les rattraper toute la matinée.",
-    "Even past their moment, they may be made up all morning.",
-    "אפשר להשלימן כל שעות הבוקר.",
+    "Les bénédictions du matin, même si l'on n'en a pas eu l'occasion sur le moment, se rattrapent toute la matinée.",
+    "The morning blessings, even past their moment, may be made up all morning.",
+    "ברכות השחר, אפשר להשלימן כל שעות הבוקר.",
   ),
   tahanoun: R(
     "On ne le dit pas dans une maison de deuil, un jour de brit-mila, en présence d'un marié, ni les jours où l'usage de la communauté s'en dispense.",
@@ -933,7 +933,6 @@ function chaharitRecipe() {
     src: "Song of the Day",
     when,
     plain: true,
-    labelText: R("Chir chel yom", "Psalm of the day", "שיר של יום"),
     lines: [{ seg: intro }, { seg: psaume, tight: true }],
   }));
 
@@ -943,7 +942,11 @@ function chaharitRecipe() {
       { zman: "chaharit" },
       {
         src: "PP.Modeh Ani",
-        labelText: R("Au réveil", "Upon waking", "השכמת הבוקר"),
+        // Le réveil, les bénédictions du matin et celles de la Torah se
+        // suivent sans qu'on s'arrête entre elles : un seul titre pour les
+        // trois, porté par le premier bloc.
+        labelText: R("Bénédictions du matin", "Morning blessings", "ברכות השחר"),
+        halakha: HALAKHA.birkotHashahar,
         lines: [
           {
             seg: 3,
@@ -958,8 +961,6 @@ function chaharitRecipe() {
       },
       {
         src: "PP.Morning Blessings",
-        labelText: R("Bénédictions du matin", "Morning blessings", "ברכות השחר"),
-        halakha: HALAKHA.birkotHashahar,
         lines: [
           {
             seg: 2,
@@ -1004,7 +1005,6 @@ function chaharitRecipe() {
       },
       {
         src: "PP.Torah Blessings",
-        labelText: R("Bénédictions de la Torah", "Torah blessings", "ברכות התורה"),
         lines: [
           { seg: 1 },
           { seg: 2, tight: true },
@@ -1103,30 +1103,19 @@ function chaharitRecipe() {
               "אחר שהניח תפילין של ראש, גומר את הכריכות על האצבע האמצעית, כריכה אחת לפני כל \"וארשתיך\":",
             ),
           },
+          // Les deux parachiot des téfilines : dans le fil, sous le même titre.
+          // Ce qui les commande n'est plus une halakha de bloc mais la
+          // didascalie de la première, à l'endroit où on les dit.
+          {
+            seg: 4,
+            rubric: R(
+              "Les téfilines posés, on dit les deux parachiot. Qui n'en a pas le temps avant la prière les dit après, tant qu'il les porte encore :",
+              "Once the tefillin are on, say the two passages. Whoever lacks the time before the prayer says them after, while still wearing them:",
+              "אחר הנחת התפילין אומרים שתי פרשיות אלו. מי שלא הספיק קודם התפילה, אומרן אחריה בעוד התפילין עליו:",
+            ),
+          },
+          { seg: 5 },
         ],
-      },
-      {
-        src: "Tefillin",
-        labelText: R(
-          "Première paracha des téfilines",
-          "First passage in the tefillin",
-          "פרשה ראשונה שבתפילין",
-        ),
-        halakha: R(
-          "Les deux parachiot se disent une fois les téfilines posés. Qui n'en a pas le temps avant la prière les dit après, tant qu'il les porte encore.",
-          "The two passages are said once the tefillin are on. Whoever lacks the time before the prayer says them after, while still wearing them.",
-          "אומרים שתי פרשיות אלו אחר הנחת התפילין. מי שלא הספיק קודם התפילה, אומרן אחריה בעוד התפילין עליו.",
-        ),
-        lines: [{ seg: 4 }],
-      },
-      {
-        src: "Tefillin",
-        labelText: R(
-          "Deuxième paracha des téfilines",
-          "Second passage in the tefillin",
-          "פרשה שנייה שבתפילין",
-        ),
-        lines: [{ seg: 5 }],
       },
       {
         src: "Morning Prayer",
@@ -1164,12 +1153,13 @@ function chaharitRecipe() {
       },
       {
         src: "Morning Prayer",
-        labelText: R("Korban tamid", "The daily offering", "פרשת התמיד"),
+        // Le tamid et le pitoum haketoret sont les korbanot du matin : ils se
+        // suivent, un seul titre les porte.
+        labelText: R("Korbanot", "Korbanot", "סדר הקרבנות"),
         lines: [{ seg: 18 }],
       },
       {
         src: "Incense Offering",
-        labelText: R("Pitoum haketoret", "The incense offering", "פטום הקטורת"),
         lines: [
           { seg: 1 },
           { seg: 2 },
@@ -1542,7 +1532,6 @@ function chaharitRecipe() {
       },
       {
         src: "Uva LeSion",
-        labelText: R("Ouva letsion", "Uva letzion", "ובא לציון"),
         halakha: R(
           "Dans la kedoucha de Ouva letsion, les versets se disent à voix haute, leur targoum (araméen) à voix basse.",
           "In the Kedushah of Uva letzion, the verses are said aloud and their Aramaic Targum in an undertone.",
@@ -1585,12 +1574,10 @@ function chaharitRecipe() {
       },
       {
         src: "Beit Yaakov",
-        labelText: R("Beit Yaakov", "Beit Yaakov", "בית יעקב"),
         lines: [{ seg: 3 }, { seg: 4 }],
       },
       ...chirJours,
       {
-        labelText: R("Hochiénou", "Hoshienu", "הושיענו"),
         lines: [{ he: HOSHIENU }],
       },
       kaddishYeheChelama("Song of the Day", 28),

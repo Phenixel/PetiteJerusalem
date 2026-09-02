@@ -58,6 +58,10 @@ function loadRaw(entry: TextStudyJsonEntry): unknown {
 /** Le découpage de la lecture du lundi et du jeudi, paracha par paracha. */
 const TORAH_WEEKDAY = torahWeekdayJson as Record<string, { n: number }[]>;
 
+/** Un texte hébreu sans ses signes : les voyelles varient, les lettres non. */
+const sansSignes = (texte: string): string =>
+  texte.replace(/[\u0591-\u05C7]/g, "").replace(/\s+/g, " ");
+
 function isFullRubric(value: unknown): boolean {
   if (typeof value !== "object" || value === null) return false;
   const rubric = value as Record<string, unknown>;
@@ -164,26 +168,22 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
     });
 
     it("revêt le talit et les téfilines avant d'entrer dans la prière", () => {
-      // À Cha'harit seulement, et à leur place : après les bénédictions de la
-      // Torah, avant 'Akédat Its'hak. On ne prie pas d'abord pour s'en revêtir
+      // À Cha'harit seulement, et à leur place : après les bénédictions du
+      // matin, avant 'Akédat Its'hak. On ne prie pas d'abord pour s'en revêtir
       // ensuite.
       const talit = blocks.findIndex((b) => b.label === "Le talit");
       if (!resolveFilePath(entry).includes("chaharit")) {
         expect(talit).toBe(-1);
         return;
       }
-      const suite = [
-        "Les téfilines",
-        "Première paracha des téfilines",
-        "Deuxième paracha des téfilines",
-      ];
-      expect(blocks.slice(talit + 1, talit + 4).map((b) => b.label)).toEqual(suite);
-      expect(blocks[talit - 1].label).toBe("Bénédictions de la Torah");
-      expect(blocks[talit + 4].label).toBe("'Akédat Its'hak");
-      // Chaque bloc dit quelque chose : une bénédiction sans texte ne sert à rien.
-      for (const bloc of blocks.slice(talit, talit + 4)) {
-        expect(bloc.lines.length).toBeGreaterThan(0);
-      }
+      expect(blocks[talit + 1].label).toBe("Les téfilines");
+      expect(blocks[talit + 2].label).toBe("'Akédat Its'hak");
+      // Les deux parachiot des téfilines se lisent dans le bloc des téfilines,
+      // sans titre à elles : le menu de lecture n'a pas à les distinguer.
+      const tefilines = blocks[talit + 1];
+      expect(tefilines.lines.length).toBeGreaterThanOrEqual(6);
+      expect(sansSignes(tefilines.lines.at(-1)!)).toContain("והיה כייבאך");
+      expect(blocks[talit].lines.length).toBeGreaterThan(0);
     });
 
     it("place birkat kohanim juste avant Sim chalom, quand l'office en a", () => {
@@ -197,10 +197,7 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
         return;
       }
       expect(blocks[i].fold).toBe("hazan");
-      // Sans les signes : les voyelles varient d'une édition à l'autre, pas
-      // les lettres.
-      const suite = blocks[i + 1].lines[0].replace(/[\u0591-\u05C7]/g, "");
-      expect(suite.startsWith("שים שלום")).toBe(true);
+      expect(sansSignes(blocks[i + 1].lines[0]).startsWith("שים שלום")).toBe(true);
     });
   },
 );
@@ -220,7 +217,9 @@ describe("Cha'harit : la Torah de la semaine", () => {
 
   it("la kedoucha de Ouva letsion marque ses voix, haute et basse", () => {
     const blocks = content.sections[0].blocks ?? [];
-    const ouva = blocks.find((b) => b.label === "Ouva letsion")!;
+    // Le passage n'a plus de titre à lui (il se lit dans la suite d'Achré) :
+    // on le retrouve à son premier mot.
+    const ouva = blocks.find((b) => sansSignes(b.lines.join(" ")).includes("ובא לציון גואל"))!;
     const rubrics = (ouva.paragraphs ?? [])
       .map((paragraph) => paragraph.rubric?.he ?? "")
       .filter(Boolean);
