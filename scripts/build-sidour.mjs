@@ -503,7 +503,10 @@ function amidaBlocks(src, ix, opts = {}) {
     halakha: HALAKHA.hiverMention,
     lines: [{ he: "מַשִּׁיב הָרֽוּחַ וּמוֹרִיד הַגֶּֽשֶׁם.", rubric: RUBRIC.hiver }],
   });
-  blocks.push({ src, lines: [{ seg: ix.mekhalkel, strip: [STRIP.teshuvaDisent] }] });
+  blocks.push({
+    src,
+    lines: [{ seg: ix.mekhalkel, strip: [STRIP.teshuvaDisent] }],
+  });
   blocks.push({
     src,
     when: "teshuva",
@@ -534,7 +537,12 @@ function amidaBlocks(src, ix, opts = {}) {
 
   blocks.push({
     src,
-    lines: [{ seg: ix.ataKadosh, strip: [STRIP.teshuvaDisent, "הַמֶּלֶךְ הַקָּדוֹשׁ:"] }],
+    lines: [
+      {
+        seg: ix.ataKadosh,
+        strip: [STRIP.teshuvaDisent, "הַמֶּלֶךְ הַקָּדוֹשׁ:"],
+      },
+    ],
   });
   blocks.push({
     src,
@@ -575,8 +583,34 @@ function amidaBlocks(src, ix, opts = {}) {
   }
   blocks.push({
     src,
-    lines: [{ seg: ix.hashivenu }, { seg: ix.selah }, { seg: ix.reeh }, { seg: ix.refaenu }],
+    lines: [{ seg: ix.hashivenu }, { seg: ix.selah }, { seg: ix.reeh }],
   });
+
+  // 'Anénou du 'hazan : un jour de jeûne public, il en fait une bénédiction à
+  // part, entre Goël Israël et Rofé. Repliée comme le reste de ce qui ne se
+  // dit qu'à la répétition.
+  if (ix.anenouHazan !== undefined) {
+    blocks.push({
+      src,
+      when: "taanit",
+      fold: "hazan",
+      labelText: R("'Anénou (le 'hazan)", "Anenu (the chazan)", "עננו (החזן)"),
+      lines: [
+        {
+          seg: ix.anenouHazan,
+          mode: "small",
+          rubric: R(
+            "Un jour de jeûne public, le 'hazan dit à la répétition :",
+            "On a public fast, the chazan says in the repetition:",
+            "בתענית ציבור השליח ציבור אומר בחזרה:",
+          ),
+        },
+        { seg: ix.anenouHazan + 1, mode: "small", tight: true },
+      ],
+    });
+  }
+
+  blocks.push({ src, lines: [{ seg: ix.refaenu }] });
 
   blocks.push({
     src,
@@ -595,7 +629,10 @@ function amidaBlocks(src, ix, opts = {}) {
     src,
     lines: [
       { seg: ix.teka },
-      { seg: ix.hashiva, strip: [STRIP.teshuvaDisent, "הַמֶּלֶךְ הַמִּשְׁפָּט:"] },
+      {
+        seg: ix.hashiva,
+        strip: [STRIP.teshuvaDisent, "הַמֶּלֶךְ הַמִּשְׁפָּט:"],
+      },
     ],
   });
   blocks.push({
@@ -613,11 +650,83 @@ function amidaBlocks(src, ix, opts = {}) {
     ],
   });
 
-  const middle = [{ seg: ix.laminim }, { seg: ix.tsadikim }, { seg: ix.tishkon }];
-  if (ix.tishkonHatima !== undefined) middle.push({ seg: ix.tishkonHatima, tight: true });
-  middle.push({ seg: ix.tsemah }, { seg: ix.shemaKolenu }, { seg: ix.kiAta, tight: true });
-  middle.push({ seg: ix.retse });
-  blocks.push({ src, lines: middle });
+  blocks.push({
+    src,
+    lines: [{ seg: ix.laminim }, { seg: ix.tsadikim }, { seg: ix.tishkon }],
+  });
+
+  // Na'hem, la consolation de Sion : à Min'ha de Tich'a beAv, elle entre dans
+  // la bénédiction de Jérusalem, entre son corps et sa conclusion, qui change
+  // alors elle aussi (« ména'hem Tsion bevinyan Yerouchalayim »).
+  if (ix.nahem !== undefined) {
+    blocks.push({
+      src,
+      when: "tisha-beav",
+      lines: [
+        {
+          // Consigne et texte partagent le même <small> : on coupe au premier
+          // mot de la prière.
+          seg: ix.nahem,
+          mode: "small",
+          from: "נַחֵם יְהֹוָה",
+          rubric: R(
+            "À Min'ha de Tich'a beAv, on dit ici :",
+            "At Mincha on Tisha b'Av, say here:",
+            "במנחה של תשעה באב אומרים כאן:",
+          ),
+        },
+        { seg: ix.nahem + 1, mode: "small", tight: true },
+      ],
+    });
+  }
+
+  const finJerusalem = [];
+  if (ix.tishkonHatima !== undefined) {
+    // Là où Na'hem peut venir, la conclusion ordinaire lui cède la place :
+    // les deux sont dans le fichier, le jour choisit.
+    const hatima = { seg: ix.tishkonHatima, tight: true };
+    if (ix.nahem !== undefined) hatima.when = "sans-tisha-beav";
+    finJerusalem.push(hatima);
+  }
+  finJerusalem.push({ seg: ix.tsemah }, { seg: ix.shemaKolenu });
+  blocks.push({ src, lines: finJerusalem });
+
+  // 'Anénou de chacun : celui qui jeûne le dit dans Chéma kolénou, sans
+  // conclusion, avant « Ki Ata chomé'a ». La source en donne deux versions,
+  // la seconde pour les trois jeûnes.
+  if (ix.anenouYahid !== undefined) {
+    blocks.push({
+      src,
+      when: "taanit",
+      plain: true,
+      lines: [
+        {
+          // Consigne et texte vivent dans le même <small> : on coupe au
+          // premier mot de la prière plutôt que de tout perdre.
+          seg: ix.anenouYahid,
+          mode: "smallAll",
+          from: "עֲנֵנוּ אָבִינוּ",
+          rubric: R(
+            "Qui jeûne dit ici, sans conclusion :",
+            "Whoever is fasting says here, without a closing blessing:",
+            "המתענה אומר כאן, בלי חתימה:",
+          ),
+        },
+        {
+          seg: ix.anenouYahid + 1,
+          mode: "small",
+          muted: true,
+          rubric: R(
+            "Autre version, pour les trois jeûnes :",
+            "Another version, for the three fasts:",
+            "נוסח אחר, לשלושת הצומות:",
+          ),
+        },
+      ],
+    });
+  }
+
+  blocks.push({ src, lines: [{ seg: ix.kiAta }, { seg: ix.retse }] });
 
   // Ya'alé véyavo : Roch Hodech et 'Hol haMoed.
   blocks.push({
@@ -634,7 +743,13 @@ function amidaBlocks(src, ix, opts = {}) {
           "בראש חודש ובחול המועד אומרים:",
         ),
       },
-      { seg: ix.yvRH, mode: "small", strip: ["בראש חדש:"], rubric: RUBRIC.roshHodesh, tight: true },
+      {
+        seg: ix.yvRH,
+        mode: "small",
+        strip: ["בראש חדש:"],
+        rubric: RUBRIC.roshHodesh,
+        tight: true,
+      },
       {
         seg: ix.yvPessah,
         mode: "small",
@@ -724,49 +839,94 @@ function amidaBlocks(src, ix, opts = {}) {
     ],
   });
 
-  blocks.push({ src, lines: [{ seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent] }] });
+  blocks.push({
+    src,
+    lines: [{ seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent] }],
+  });
   blocks.push({
     src,
     when: "teshuva",
     lines: [
-      { seg: ix.vealKoulam, mode: "small", strip: [STRIP.teshuvaDisent], rubric: RUBRIC.teshuvaOn },
+      {
+        seg: ix.vealKoulam,
+        mode: "small",
+        strip: [STRIP.teshuvaDisent],
+        rubric: RUBRIC.teshuvaOn,
+      },
     ],
   });
   // Birkat kohanim se dit dans la répétition, entre « Vé'al koulam » et Sim
   // chalom : les cohanim se tournent vers l'arche quand le 'hazan commence
   // Sim chalom, la bénédiction est donc finie quand il l'entame.
   if (opts.kohanim) blocks.push(opts.kohanim);
-  blocks.push({ src, lines: [{ seg: ix.simShalom, strip: [STRIP.teshuvaDisent] }] });
+  blocks.push({
+    src,
+    lines: [{ seg: ix.simShalom, strip: [STRIP.teshuvaDisent] }],
+  });
   blocks.push({
     src,
     when: "teshuva",
     lines: [
-      { seg: ix.simShalom, mode: "small", strip: [STRIP.teshuvaDisent], rubric: RUBRIC.teshuvaOn },
+      {
+        seg: ix.simShalom,
+        mode: "small",
+        strip: [STRIP.teshuvaDisent],
+        rubric: RUBRIC.teshuvaOn,
+      },
     ],
   });
 
-  blocks.push({
-    src,
-    lines: [
-      { seg: ix.yihyu1 },
-      { seg: ix.elohaiNetsor },
-      { seg: ix.lemaan },
-      { seg: ix.yihyu2, tight: true },
-      {
-        seg: ix.osse,
-        alt: {
-          when: "teshuva",
-          rubric: R(
-            "Dix jours de techouva, on dit :",
-            "Ten Days of Repentance, say:",
-            "בעשרת ימי תשובה אומרים:",
-          ),
-          text: "עוֹשֶׂה הַשָּׁלוֹם",
-        },
+  const fin = [
+    { seg: ix.yihyu1 },
+    { seg: ix.elohaiNetsor },
+    { seg: ix.lemaan },
+    { seg: ix.yihyu2, tight: true },
+  ];
+
+  // Min'ha, avant de reculer de trois pas : c'est là qu'on prend sur soi un
+  // jeûne pour le lendemain, et là qu'on dit, le jour du jeûne, le « Ribbon
+  // haolamim » qui offre à la place du korban la graisse et le sang perdus.
+  if (ix.taanitYahid !== undefined) {
+    fin.push({
+      // Consigne et texte partagent le même <small> : on coupe au premier mot
+      // de la prière.
+      seg: ix.taanitYahid,
+      mode: "small",
+      from: "רִבּוֹן הָעוֹלָמִים",
+      muted: true,
+      rubric: R(
+        "Qui veut jeûner demain prend son jeûne sur lui ici :",
+        "Whoever wishes to fast tomorrow accepts the fast here:",
+        "הרוצה להתענות למחר מקבל עליו את התענית כאן:",
+      ),
+    });
+    fin.push({
+      seg: ix.taanitYahid + 1,
+      mode: "small",
+      from: "רִבּוֹן הָעוֹלָמִים",
+      when: "taanit",
+      tight: true,
+      rubric: R("Le jour du jeûne, on dit :", "On the fast day, say:", "ביום התענית אומרים:"),
+    });
+  }
+
+  fin.push(
+    {
+      seg: ix.osse,
+      alt: {
+        when: "teshuva",
+        rubric: R(
+          "Dix jours de techouva, on dit :",
+          "Ten Days of Repentance, say:",
+          "בעשרת ימי תשובה אומרים:",
+        ),
+        text: "עוֹשֶׂה הַשָּׁלוֹם",
       },
-      { seg: ix.yehiRatson, mode: "small" },
-    ],
-  });
+    },
+    { seg: ix.yehiRatson, mode: "small" },
+  );
+
+  blocks.push({ src, lines: fin });
 
   return blocks;
 }
@@ -777,20 +937,20 @@ function amidaBlocks(src, ix, opts = {}) {
  * « Uva LeSion » de Cha'harit (yitgadal, titkabal, yehé chelama, 'ossé
  * chalom) ; Min'ha et Arvit le reçoivent sous la clé source `src`.
  */
-function kaddishHalf(src, { when, rubric = RUBRIC.hazan, labelText } = {}) {
+function kaddishHalf(src, { when, rubric = RUBRIC.hazan, labelText, seg = 4 } = {}) {
   const spec = {
     src,
     fold: "hazan",
     labelText:
       labelText ?? R("Demi-Kaddich (le 'hazan)", "Half Kaddish (the chazan)", "חצי קדיש (החזן)"),
-    lines: [{ seg: 4, rubric, splitAmen: true }],
+    lines: [{ seg, rubric, splitAmen: true }],
   };
   if (when) spec.when = when;
   return spec;
 }
 
-function kaddishTitkabal(src) {
-  return {
+function kaddishTitkabal(src, { when, seg = 4 } = {}) {
+  const spec = {
     src,
     fold: "hazan",
     labelText: R(
@@ -799,11 +959,11 @@ function kaddishTitkabal(src) {
       "קדיש תתקבל (החזן)",
     ),
     lines: [
-      { seg: 4, rubric: RUBRIC.hazan, splitAmen: true },
-      { seg: 5, tight: true, splitAmen: true },
-      { seg: 6, tight: true, splitAmen: true },
+      { seg, rubric: RUBRIC.hazan, splitAmen: true },
+      { seg: seg + 1, tight: true, splitAmen: true },
+      { seg: seg + 2, tight: true, splitAmen: true },
       {
-        seg: 7,
+        seg: seg + 3,
         strip: ["יפסע שלש פסיעות לאחור"],
         rubric: R(
           "Il recule de trois pas et dit :",
@@ -815,6 +975,8 @@ function kaddishTitkabal(src) {
       },
     ],
   };
+  if (when) spec.when = when;
+  return spec;
 }
 
 /**
@@ -939,6 +1101,8 @@ function chaharitRecipe() {
       hanouka: 47,
       pourim: 48,
       vealKoulam: 49,
+      anenouHazan: 15,
+      anenouYahid: 29,
       simShalom: 65,
       yihyu1: 66,
       elohaiNetsor: 67,
@@ -970,6 +1134,96 @@ function chaharitRecipe() {
     plain: true,
     lines: [{ seg: intro }, { seg: psaume, tight: true }],
   }));
+
+  /**
+   * Les psaumes qui s'ajoutent au chir chel yom certains jours de l'année.
+   * Ils ne remplacent pas celui du jour : on dit le psaume du jour, puis
+   * celui-ci. Le dernier, celui de la maison endeuillée, fait exception et
+   * prend la place du psaume du jour ; mais aucun calendrier ne sait où l'on
+   * prie, il reste donc en retrait, sous sa consigne, à la main du lecteur.
+   */
+  const chirDates = [
+    [
+      "chir-tsom-tichri",
+      15,
+      "(תהילים פ״ג:א׳-ג׳)",
+      R(
+        "Au jeûne de Guedalia et le 10 Tévet, on ajoute :",
+        "On the Fast of Gedaliah and the Tenth of Tevet, add:",
+        "בצום גדליה ובעשרה בטבת אומרים:",
+      ),
+    ],
+    [
+      "chir-lendemain-kippour",
+      17,
+      "(תהילים פ״ה:א׳-ג׳)",
+      R(
+        "Au lendemain de Kippour, on ajoute :",
+        "On the day after Yom Kippur, add:",
+        "למחרת יום הכיפורים אומרים:",
+      ),
+    ],
+    [
+      "chir-hanouka",
+      19,
+      "(תהילים ל׳:א׳-ב׳)",
+      R("À 'Hanouka, on ajoute :", "On Hanukkah, add:", "בחנוכה אומרים:"),
+    ],
+    [
+      "chir-pourim",
+      21,
+      "(תהילים כ״ב:א׳-ב׳)",
+      R(
+        "Au jeûne d'Esther et à Pourim, on ajoute :",
+        "On the Fast of Esther and on Purim, add:",
+        "בתענית אסתר ובפורים אומרים:",
+      ),
+    ],
+    [
+      "chir-tsom-tamouz",
+      23,
+      "(תהילים ע״ט:א׳)",
+      R(
+        "Le 17 Tamouz, on ajoute :",
+        "On the Seventeenth of Tammuz, add:",
+        "בשבעה עשר בתמוז אומרים:",
+      ),
+    ],
+  ].map(([when, seg, cite, rubric]) => ({
+    src: "Song of the Day",
+    when,
+    plain: true,
+    // Le renvoi au psaume est glissé entre deux mots par la source : on le
+    // retire, comme il l'est déjà des psaumes du jour.
+    lines: [{ seg, mode: "small", strip: [cite], rubric }],
+  }));
+
+  // La maison endeuillée : le psaume 49 prend la place de celui du jour. Aucun
+  // calendrier ne sait où l'on prie ; le passage est donc là tous les jours,
+  // mais replié, et c'est le lecteur qui l'ouvre le jour où il s'y trouve.
+  const chirAvel = {
+    src: "Song of the Day",
+    fold: "avel",
+    labelText: R("Dans une maison endeuillée", "In a house of mourning", "בבית האבל"),
+    lines: [
+      {
+        seg: 25,
+        mode: "small",
+        strip: ["(תהילים מ״ט:א׳-ג׳)"],
+        rubric: R(
+          "On dit celui-ci à la place du psaume du jour :",
+          "This one is said in place of the psalm of the day:",
+          "אומרים זה במקום שיר של יום:",
+        ),
+      },
+      {
+        seg: 26,
+        mode: "small",
+        tight: true,
+        rubric: R("Certains ajoutent :", "Some add:", "ויש שמוסיפים:"),
+      },
+    ],
+  };
 
   return {
     title: "שחרית של חול (Chaharit)",
@@ -1148,6 +1402,24 @@ function chaharitRecipe() {
           { seg: 5 },
         ],
       },
+      // Le léchem yi'houd, que la source place avant la 'Akéda : une intention,
+      // pas un texte de l'office. Il reste en retrait, sans titre à lui, et
+      // ne coupe pas le fil pour qui ne le dit pas.
+      {
+        src: "Morning Prayer",
+        lines: [
+          {
+            seg: 2,
+            mode: "small",
+            muted: true,
+            rubric: R(
+              "Certains disent ici, avant la prière :",
+              "Some say here, before the prayer:",
+              "יש אומרים כאן קודם התפילה:",
+            ),
+          },
+        ],
+      },
       {
         src: "Morning Prayer",
         labelText: R("'Akédat Its'hak", "The Binding of Isaac", "עקידת יצחק"),
@@ -1176,7 +1448,13 @@ function chaharitRecipe() {
           { seg: 10 },
           { seg: 11 },
           { seg: 13, strong: true },
-          { seg: 14, mode: "small", strip: ["ואומר בלחש"], rubric: RUBRIC.bassevoix, tight: true },
+          {
+            seg: 14,
+            mode: "small",
+            strip: ["ואומר בלחש"],
+            rubric: RUBRIC.bassevoix,
+            tight: true,
+          },
           { seg: 15 },
           { seg: 16 },
           { seg: 17 },
@@ -1253,7 +1531,13 @@ function chaharitRecipe() {
       {
         src: "Hodu",
         lines: [
-          { seg: 9, mode: "full", strip: ["שתי פעמים"], repeat: 2, rubric: RUBRIC.debout },
+          {
+            seg: 9,
+            mode: "full",
+            strip: ["שתי פעמים"],
+            repeat: 2,
+            rubric: RUBRIC.debout,
+          },
           { seg: 10, tight: true },
           { seg: 11 },
           {
@@ -1313,8 +1597,19 @@ function chaharitRecipe() {
         src: "Pesukei D'Zimra",
         labelText: R("Barékhou", "Barechu", "ברכו"),
         lines: [
-          { seg: 23, mode: "full", strip: ["ואומר החזן:"], rubric: RUBRIC.hazan },
-          { seg: 24, mode: "full", strip: ["ועונים הקהל:"], rubric: RUBRIC.kahal, tight: true },
+          {
+            seg: 23,
+            mode: "full",
+            strip: ["ואומר החזן:"],
+            rubric: RUBRIC.hazan,
+          },
+          {
+            seg: 24,
+            mode: "full",
+            strip: ["ועונים הקהל:"],
+            rubric: RUBRIC.kahal,
+            tight: true,
+          },
           {
             seg: 25,
             mode: "full",
@@ -1472,6 +1767,11 @@ function chaharitRecipe() {
           { seg: 22, mode: "full" },
         ],
       },
+      // Le Hallel fini, le 'hazan dit le Kaddich Titkabal : « que soient
+      // reçues nos prières ». Roch Hodech ne dit pas la bénédiction finale
+      // « Yehalelou'ha » (le Hallel y est abrégé), mais le Kaddich, lui, se
+      // dit entier.
+      kaddishTitkabal("RH.Hallel", { seg: 26, when: "rosh-chodesh" }),
       {
         src: "RH.Hallel",
         when: "rosh-chodesh",
@@ -1482,7 +1782,10 @@ function chaharitRecipe() {
           "קריאת התורה לראש חודש",
         ),
         lines: [
-          { seg: 35, rubric: R("On dit d'abord :", "First, say:", "תחילה אומרים:") },
+          {
+            seg: 35,
+            rubric: R("On dit d'abord :", "First, say:", "תחילה אומרים:"),
+          },
           {
             seg: 37,
             rubric: R(
@@ -1501,6 +1804,18 @@ function chaharitRecipe() {
           },
         ],
       },
+      // La lecture close, le dernier appelé dit le demi-Kaddich, avant qu'on
+      // ne rapporte le séfer Torah.
+      kaddishHalf("RH.Hallel", {
+        seg: 41,
+        when: "rosh-chodesh",
+        labelText: R(
+          "Demi-Kaddich (le dernier appelé)",
+          "Half Kaddish (the last one called up)",
+          "חצי קדיש (העולה האחרון)",
+        ),
+        rubric: R("Le dernier appelé dit :", "The last one called up says:", "העולה האחרון אומר:"),
+      }),
       {
         src: "Torah Reading",
         when: "torah-semaine",
@@ -1514,6 +1829,13 @@ function chaharitRecipe() {
             rubric: R("On dit d'abord :", "First, say:", "תחילה אומרים:"),
           },
           { seg: 3, when: "tahanoun", tight: true },
+          // Les jours sans tahanoun, « Yehi Adonaï Elohénou 'imanou » tient
+          // la place des deux « El erekh apayim ».
+          {
+            seg: 5,
+            when: "sans-tahanoun",
+            rubric: R("On dit d'abord :", "First, say:", "תחילה אומרים:"),
+          },
           {
             seg: 6,
             rubric: R(
@@ -1530,13 +1852,34 @@ function chaharitRecipe() {
               "מגביה ומראה הכתב לקהל ואומרים:",
             ),
           },
+          // Sur la téba, avant Barekhou : l'appelé salue l'assemblée, qui lui
+          // répond.
+          {
+            seg: 9,
+            mode: "full",
+            strip: ["ואומר העולה:"],
+            rubric: R("L'appelé dit :", "The one called up says:", "ואומר העולה:"),
+          },
+          {
+            seg: 10,
+            mode: "full",
+            strip: ["ועונים הקהל:"],
+            rubric: RUBRIC.kahal,
+            tight: true,
+          },
           {
             seg: 11,
             mode: "full",
             strip: ["ואומר העולה:"],
             rubric: R("L'appelé dit :", "The one called up says:", "ואומר העולה:"),
           },
-          { seg: 12, mode: "full", strip: ["ועונים הקהל:"], rubric: RUBRIC.kahal, tight: true },
+          {
+            seg: 12,
+            mode: "full",
+            strip: ["ועונים הקהל:"],
+            rubric: RUBRIC.kahal,
+            tight: true,
+          },
           {
             seg: 13,
             mode: "full",
@@ -1677,6 +2020,8 @@ function chaharitRecipe() {
         lines: [{ seg: 3 }, { seg: 4 }],
       },
       ...chirJours,
+      ...chirDates,
+      chirAvel,
       {
         lines: [{ he: HOSHIENU }],
       },
@@ -1697,7 +2042,11 @@ function chaharitRecipe() {
           { seg: 3 },
           { seg: 4 },
           { he: "מוֹרִיד הַטָּל.", rubric: RUBRIC.ete, tight: true },
-          { he: "מַשִּׁיב הָרֽוּחַ וּמוֹרִיד הַגֶּֽשֶׁם.", rubric: RUBRIC.hiver, tight: true },
+          {
+            he: "מַשִּׁיב הָרֽוּחַ וּמוֹרִיד הַגֶּֽשֶׁם.",
+            rubric: RUBRIC.hiver,
+            tight: true,
+          },
           { seg: 6 },
         ],
       },
@@ -1762,6 +2111,19 @@ function chaharitRecipe() {
         ],
       },
       kaddishAlIsrael("Kaveh", 13),
+      // Le Barkhou de la fin de l'office : le 'hazan appelle, l'assemblée
+      // répond, il reprend. Replié comme les autres passages du 'hazan, pour
+      // qui prie seul.
+      {
+        src: "Kaveh",
+        fold: "hazan",
+        labelText: R("Barekhou (le 'hazan)", "Barchu (the chazan)", "ברכו (החזן)"),
+        lines: [
+          { seg: 16, rubric: RUBRIC.hazan },
+          { seg: 17, rubric: RUBRIC.kahal, tight: true },
+          { seg: 18, rubric: RUBRIC.hazanReprend, tight: true },
+        ],
+      },
       {
         src: "Alenu",
         labelText: R("'Alénou léchabéa'h", "Aleinu", "עלינו לשבח"),
@@ -1808,6 +2170,7 @@ function minhaRecipe() {
       laminim: 23,
       tsadikim: 24,
       tishkon: 25,
+      nahem: 26,
       tishkonHatima: 28,
       tsemah: 29,
       shemaKolenu: 30,
@@ -1825,11 +2188,14 @@ function minhaRecipe() {
       hanouka: 47,
       pourim: 48,
       vealKoulam: 49,
+      anenouHazan: 14,
+      anenouYahid: 31,
       simShalom: 63,
       yihyu1: 64,
       elohaiNetsor: 65,
       lemaan: 66,
       yihyu2: 67,
+      taanitYahid: 68,
       osse: 70,
       yehiRatson: 71,
     },
@@ -1927,6 +2293,19 @@ function minhaRecipe() {
           "ערב שבת: ה' מלך (תהלים צג)",
         ),
         lines: [{ seg: 18, mode: "small" }],
+      },
+      // Les jours de jeûne public, le psaume 102, « prière du pauvre quand il
+      // défaille », s'ajoute avant le Kaddich.
+      {
+        src: "Vidui",
+        when: "taanit",
+        plain: true,
+        labelText: R(
+          "Jour de jeûne : Tefila le'ani (psaume 102)",
+          "Fast day: Tefilah le'ani (Psalm 102)",
+          "בתענית ציבור: תפלה לעני (תהלים קב)",
+        ),
+        lines: [{ seg: 20, mode: "small" }],
       },
       kaddishYeheChelama("Vidui", 22),
       {
@@ -2041,8 +2420,19 @@ function arvitRecipe() {
         src: "Barchu",
         lines: [
           { seg: 7 },
-          { seg: 8, mode: "full", strip: ["ואומר החזן:"], rubric: RUBRIC.hazan },
-          { seg: 9, mode: "full", strip: ["ועונים הקהל:"], rubric: RUBRIC.kahal, tight: true },
+          {
+            seg: 8,
+            mode: "full",
+            strip: ["ואומר החזן:"],
+            rubric: RUBRIC.hazan,
+          },
+          {
+            seg: 9,
+            mode: "full",
+            strip: ["ועונים הקהל:"],
+            rubric: RUBRIC.kahal,
+            tight: true,
+          },
           {
             seg: 10,
             mode: "full",

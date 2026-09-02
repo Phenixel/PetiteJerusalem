@@ -162,6 +162,46 @@ describe("jeûnes publics", () => {
   });
 });
 
+describe("les psaumes du jour de certaines dates", () => {
+  const chir = (hd: HDate) =>
+    [...activeOccasions(hd, false)].filter((cle) => cle.startsWith("chir-"));
+
+  it("s'ajoutent au psaume du jour, un seul à la fois", () => {
+    // 'Hanouka, Pourim, le jeûne d'Esther, les jeûnes de Tichri et de Tévet,
+    // le 17 Tamouz, le lendemain de Kippour : chacun a le sien.
+    expect(chir(new HDate(25, months.KISLEV, 5786))).toEqual(["chir-hanouka"]);
+    expect(chir(new HDate(14, months.ADAR_II, 5786))).toEqual(["chir-pourim"]);
+    expect(chir(new HDate(3, months.TISHREI, 5787))).toEqual(["chir-tsom-tichri"]);
+    expect(chir(new HDate(10, months.TEVET, 5786))).toEqual(["chir-tsom-tichri"]);
+    expect(chir(new HDate(11, months.TISHREI, 5786))).toEqual(["chir-lendemain-kippour"]);
+  });
+
+  it("laissent les jours ordinaires au seul psaume du jour", () => {
+    const ordinaire = activeOccasions(new HDate(5, months.CHESHVAN, 5786), false);
+    expect([...ordinaire].filter((cle) => cle.startsWith("chir-"))).toEqual([]);
+    // Le psaume du jour, lui, est toujours là : les ajouts ne le remplacent
+    // pas, ils le suivent.
+    expect(ordinaire.has("jour-1")).toBe(true);
+  });
+
+  it("laissent Kippour hors du psaume des jeûnes de Tichri", () => {
+    // Kippour est un jeûne de Tichri, mais il a son propre office : le psaume
+    // de Tsom Guedalia n'a rien à y faire.
+    expect(chir(new HDate(10, months.TISHREI, 5786))).toEqual([]);
+  });
+});
+
+describe("Na'hem de Tich'a beAv", () => {
+  it("entre dans la 'Amida de Min'ha, et sa conclusion prend la place", () => {
+    const tishaBeav = activeOccasions(new HDate(9, months.AV, 5786), false);
+    expect(tishaBeav.has("tisha-beav")).toBe(true);
+    expect(tishaBeav.has("sans-tisha-beav")).toBe(false);
+    const ordinaire = activeOccasions(new HDate(10, months.AV, 5786), false);
+    expect(ordinaire.has("tisha-beav")).toBe(false);
+    expect(ordinaire.has("sans-tisha-beav")).toBe(true);
+  });
+});
+
 describe("Lédavid (psaume 27)", () => {
   it("se dit du 1er Eloul à Chemini 'Atséret", () => {
     expect(activeOccasions(new HDate(1, months.ELUL, 5786), false).has("ledavid")).toBe(true);
