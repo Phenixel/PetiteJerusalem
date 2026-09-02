@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import ReadingSizeControl from "./ReadingSizeControl.vue";
+import { useReadingSize } from "../composables/useReadingSize";
 import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
 import { isNativeApp } from "../composables/useNativeApp";
 import { addReadingMenu, removeReadingMenu } from "../composables/useReadingNav";
@@ -55,6 +56,17 @@ const { t } = useI18n();
 
 const open = ref(false);
 const isMiniPlayerVisible = useMiniPlayerVisible();
+
+/**
+ * Le menu suit la taille de lecture, à moitié. Qui agrandit le texte le fait
+ * parce qu'il le lit mal : lui laisser un sommaire en petits caractères, c'est
+ * lui rendre illisible le seul endroit d'où l'on rejoint un passage. À moitié,
+ * parce qu'un menu n'est pas un texte : le réglage le plus fort (×1,6) le
+ * rendrait plus grand que ce qu'il sert à atteindre, et le panneau ne tiendrait
+ * plus dans l'écran.
+ */
+const readingSize = useReadingSize();
+const menuScale = computed(() => 1 + (readingSize.scale.value - 1) * 0.5);
 
 // Mêmes règles de placement que ScrollToTop, qu'il remplace : au-dessus du
 // mini-lecteur et, dans l'app, de la bottom bar.
@@ -161,7 +173,8 @@ onUnmounted(() => {
       <transition name="nav-panel">
         <div
           v-if="open"
-          class="nav-panel absolute bottom-0 right-0 flex w-64 max-h-[min(24rem,65vh)] flex-col overflow-hidden rounded-2xl bg-surface shadow-pop"
+          class="nav-panel absolute bottom-0 right-0 flex flex-col overflow-hidden rounded-2xl bg-surface shadow-pop"
+          :style="{ '--menu-scale': menuScale }"
         >
           <div class="flex items-center justify-between gap-2 ps-3 pe-2 pt-2.5 pb-1 flex-shrink-0">
             <div class="flex items-center gap-2 min-w-0">
@@ -245,7 +258,10 @@ onUnmounted(() => {
               @click="goTo(section.offset)"
               class="section-item"
             >
-              {{ section.label }}
+              <span class="section-name">{{ section.label }}</span>
+              <!-- Le nom hébreu, celui du sidour de papier : c'est souvent lui
+                   que l'œil cherche. -->
+              <span v-if="section.hebrew" class="section-he" dir="rtl">{{ section.hebrew }}</span>
             </button>
           </nav>
         </div>
@@ -270,24 +286,51 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* Le panneau grandit avec le réglage de lecture, sans jamais déborder de
+   l'écran : c'est la largeur disponible qui a le dernier mot. */
+.nav-panel {
+  width: min(calc(20rem * var(--menu-scale, 1)), calc(100vw - 3rem));
+  max-height: min(calc(30rem * var(--menu-scale, 1)), 78vh);
+}
+
 .section-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   width: 100%;
   text-align: start;
-  padding: 0.45rem 0.5rem;
+  padding: calc(0.5rem * var(--menu-scale, 1)) 0.55rem;
   border-radius: var(--radius-sm, 0.5rem);
-  font-size: 0.875rem;
+  font-size: calc(0.9rem * var(--menu-scale, 1));
+  line-height: 1.35;
   color: var(--color-text-primary);
   transition:
     background-color 0.15s ease,
     color 0.15s ease;
 }
 
+/* Le titre traduit prend la place qu'il faut ; l'hébreu garde la sienne au
+   bout de la ligne, sans jamais se couper. */
+.section-name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.section-he {
+  flex: 0 0 auto;
+  font-family: var(--font-hebrew);
+  font-size: 0.95em;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.section-item:hover .section-he {
+  color: inherit;
+}
+
 .section-heading {
-  padding: 0.5rem 0.5rem 0.15rem;
-  font-size: 0.7rem;
+  padding: 0.5rem 0.55rem 0.15rem;
+  font-size: calc(0.72rem * var(--menu-scale, 1));
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;

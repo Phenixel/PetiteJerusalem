@@ -12,7 +12,13 @@ const DEFAULT_LEVEL = 1;
 
 function readStoredLevel(): number {
   if (typeof localStorage === "undefined") return DEFAULT_LEVEL;
-  const raw = Number(localStorage.getItem(STORAGE_KEY));
+  // `Number(null)` vaut 0, un niveau parfaitement valide : sans ce garde, qui
+  // n'a jamais touché à A− / A+ lisait tout le corpus un cran trop petit
+  // (×0,85), et le niveau par défaut ne servait qu'aux navigateurs sans
+  // stockage.
+  const stocke = localStorage.getItem(STORAGE_KEY);
+  if (stocke === null || stocke === "") return DEFAULT_LEVEL;
+  const raw = Number(stocke);
   return Number.isInteger(raw) && raw >= 0 && raw < SCALES.length ? raw : DEFAULT_LEVEL;
 }
 
