@@ -1019,6 +1019,115 @@ function chaharitRecipe() {
           },
         ],
       },
+      // Le talit et les téfilines, entre les bénédictions de la Torah et
+      // 'Akédat Its'hak, comme dans la source : on s'en revêt avant d'entrer
+      // dans la prière.
+      {
+        src: "Talit",
+        labelText: R("Le talit", "The talit", "מצות ציצית"),
+        halakha: R(
+          "Avant de bénir, on vérifie les fils du tsitsit et on les sépare. On s'enveloppe la tête, puis on rabat le talit sur le corps.",
+          "Before blessing, check the tzitzit threads and separate them. Wrap the head, then draw the talit down over the body.",
+          "לפני הברכה בודקים את חוטי הציצית ומפרידים אותם. מתעטפים בטלית על הראש, ואחר כך מורידים אותה על הגוף.",
+        ),
+        lines: [
+          {
+            seg: 1,
+            rubric: R(
+              "Avant la bénédiction, il est bon de dire le « léchem yihoud » :",
+              "Before the blessing, it is good to say the “leshem yichud”:",
+              "לפני שיברך על הציצית טוב לומר \"לשם יחוד\":",
+            ),
+          },
+          {
+            he: "בָּרְכִ֥י נַפְשִׁ֗י אֶת־יְ֫הֹוָ֥ה יְהֹוָ֣ה אֱ֭לֹהַי גָּדַ֣לְתָּ מְּאֹ֑ד ה֖וֹד וְהָדָ֣ר לָבָֽשְׁתָּ׃ עֹֽטֶה־א֭וֹר כַּשַּׂלְמָ֑ה נוֹטֶ֥ה שָׁ֝מַ֗יִם כַּיְרִיעָֽה׃",
+            rubric: R(
+              "On vérifie les fils du tsitsit, puis on dit :",
+              "Check the tzitzit threads, then say:",
+              "יבדוק את חוטי הציצית, ויאמר:",
+            ),
+          },
+          { seg: 2 },
+          {
+            he: "מַה־יָּקָ֥ר חַסְדְּךָ֗ אֱלֹ֫הִ֥ים וּבְנֵ֥י אָדָ֑ם בְּצֵ֥ל כְּ֝נָפֶ֗יךָ יֶחֱסָיֽוּן׃ יִ֭רְוְיֻן מִדֶּ֣שֶׁן בֵּיתֶ֑ךָ וְנַ֖חַל עֲדָנֶ֣יךָ תַשְׁקֵֽם׃ כִּֽי־עִ֭מְּךָ מְק֣וֹר חַיִּ֑ים בְּ֝אוֹרְךָ֗ נִרְאֶה־אֽוֹר׃ מְשֹׁ֣ךְ חַ֭סְדְּךָ לְיֹדְעֶ֑יךָ וְ֝צִדְקָתְךָ֗ לְיִשְׁרֵי־לֵֽב׃",
+            rubric: R(
+              "En rabattant le talit sur soi :",
+              "As the talit is drawn down over the body:",
+              "כשמוריד את הטלית על גופו, יאמר:",
+            ),
+          },
+          {
+            he: "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶֽלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו וְצִוָּנוּ עַל מִצְוַת צִיצִית:",
+            muted: true,
+            rubric: R(
+              "Sur le talit katan, quand la bénédiction du grand talit ne le couvre pas :",
+              "On the talit katan, when the large talit's blessing does not cover it:",
+              "על טלית קטן, כשאינו נפטר בברכת הטלית הגדול:",
+            ),
+          },
+        ],
+      },
+      {
+        src: "Tefillin",
+        labelText: R("Les téfilines", "The tefillin", "מצות תפילין"),
+        halakha: R(
+          "On pose d'abord les téfilines du bras, sur le biceps face au cœur, puis ceux de la tête. On ne parle pas entre les deux.",
+          "The arm tefillin goes on first, on the biceps facing the heart, then the head tefillin. Do not speak between the two.",
+          "מניחים תחילה תפילין של יד על הזרוע כנגד הלב, ואחר כך של ראש. ואין מפסיקים בדיבור ביניהם.",
+        ),
+        lines: [
+          {
+            seg: 1,
+            rubric: R(
+              "Avant la bénédiction, il est bon de dire le « léchem yihoud » :",
+              "Before the blessing, it is good to say the “leshem yichud”:",
+              "לפני שיברך על התפילין טוב לומר \"לשם יחוד\":",
+            ),
+          },
+          { seg: 2 },
+          {
+            seg: 2,
+            mode: "small",
+            muted: true,
+            rubric: R(
+              "Si l'on a parlé entre les téfilines du bras et ceux de la tête, on bénit sur ceux de la tête :",
+              "If one spoke between the arm tefillin and the head tefillin, bless over the head tefillin:",
+              "אם הפסיק בדיבור בין תפילין של יד לתפילין של ראש, מברך על תפילין של ראש:",
+            ),
+          },
+          {
+            seg: 3,
+            rubric: R(
+              "Les téfilines de la tête posés, on achève l'enroulement au doigt du milieu, une boucle avant chaque « vé'érastikh » :",
+              "Once the head tefillin is on, finish winding around the middle finger, one turn before each “ve'erastikh”:",
+              "אחר שהניח תפילין של ראש, גומר את הכריכות על האצבע האמצעית, כריכה אחת לפני כל \"וארשתיך\":",
+            ),
+          },
+        ],
+      },
+      {
+        src: "Tefillin",
+        labelText: R(
+          "Première paracha des téfilines",
+          "First passage in the tefillin",
+          "פרשה ראשונה שבתפילין",
+        ),
+        halakha: R(
+          "Les deux parachiot se disent une fois les téfilines posés. Qui n'en a pas le temps avant la prière les dit après, tant qu'il les porte encore.",
+          "The two passages are said once the tefillin are on. Whoever lacks the time before the prayer says them after, while still wearing them.",
+          "אומרים שתי פרשיות אלו אחר הנחת התפילין. מי שלא הספיק קודם התפילה, אומרן אחריה בעוד התפילין עליו.",
+        ),
+        lines: [{ seg: 4 }],
+      },
+      {
+        src: "Tefillin",
+        labelText: R(
+          "Deuxième paracha des téfilines",
+          "Second passage in the tefillin",
+          "פרשה שנייה שבתפילין",
+        ),
+        lines: [{ seg: 5 }],
+      },
       {
         src: "Morning Prayer",
         labelText: R("'Akédat Its'hak", "The Binding of Isaac", "עקידת יצחק"),
@@ -1918,6 +2027,8 @@ function sourcesFor(office) {
       "PP.Modeh Ani": pp["Modeh Ani"],
       "PP.Morning Blessings": pp["Morning Blessings"],
       "PP.Torah Blessings": pp["Torah Blessings"],
+      Talit: ws["Order of Talit"],
+      Tefillin: ws["Order of Tefillin"],
       "Morning Prayer": ws["Morning Prayer"],
       "Incense Offering": ws["Incense Offering"],
       Hodu: ws["Hodu"],

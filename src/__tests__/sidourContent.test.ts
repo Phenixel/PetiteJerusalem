@@ -163,6 +163,29 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       expect(amida[0].kotel).toBe(true);
     });
 
+    it("revêt le talit et les téfilines avant d'entrer dans la prière", () => {
+      // À Cha'harit seulement, et à leur place : après les bénédictions de la
+      // Torah, avant 'Akédat Its'hak. On ne prie pas d'abord pour s'en revêtir
+      // ensuite.
+      const talit = blocks.findIndex((b) => b.label === "Le talit");
+      if (!resolveFilePath(entry).includes("chaharit")) {
+        expect(talit).toBe(-1);
+        return;
+      }
+      const suite = [
+        "Les téfilines",
+        "Première paracha des téfilines",
+        "Deuxième paracha des téfilines",
+      ];
+      expect(blocks.slice(talit + 1, talit + 4).map((b) => b.label)).toEqual(suite);
+      expect(blocks[talit - 1].label).toBe("Bénédictions de la Torah");
+      expect(blocks[talit + 4].label).toBe("'Akédat Its'hak");
+      // Chaque bloc dit quelque chose : une bénédiction sans texte ne sert à rien.
+      for (const bloc of blocks.slice(talit, talit + 4)) {
+        expect(bloc.lines.length).toBeGreaterThan(0);
+      }
+    });
+
     it("place birkat kohanim juste avant Sim chalom, quand l'office en a", () => {
       // Les cohanim se tournent vers l'arche quand le 'hazan commence Sim
       // chalom : la bénédiction est finie quand il l'entame, elle vient donc
