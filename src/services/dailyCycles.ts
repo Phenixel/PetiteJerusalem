@@ -282,6 +282,19 @@ export function recentSeasonalChanges(hd: HDate, il: boolean): Set<string> {
  *
  * `il` : calendrier d'Israël (un seul jour de Yom Tov) ou de diaspora.
  */
+/**
+ * Le rang du jour dans le 'Omer (1 à 49), ou null hors de la période. Le
+ * premier jour est le 16 Nissan, le dernier le 5 Sivan, veille de Chavouot ;
+ * entre les deux le compte ne saute pas, quelle que soit la longueur des mois
+ * (Nissan a toujours 30 jours, Iyar 29), d'où le calcul par différence de
+ * jours absolus plutôt que par quantième.
+ */
+export function omerDay(hd: HDate): number | null {
+  const premier = new HDate(16, months.NISAN, hd.getFullYear()).abs();
+  const rang = hd.abs() - premier + 1;
+  return rang >= 1 && rang <= 49 ? rang : null;
+}
+
 export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   const events = getHolidaysOnDate(hd, il) ?? [];
   const has = (mask: number) => events.some((ev) => (ev.getFlags() & mask) !== 0);
@@ -304,6 +317,22 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   const hanukkah = events.some((ev) => /^Chanukah: (?:[2-8] Candles|8th Day)/.test(ev.getDesc()));
   const purim = events.some((ev) => ev.getDesc() === "Purim");
   if (hanukkah || purim) occ.add("nissim");
+  // Le quantième de 'Hanouka : la Torah s'y lit un passage par jour, celui du
+  // nassi correspondant. Les bougies comptent un cran de plus que le jour,
+  // sauf le huitième que hebcal nomme autrement.
+  if (hanukkah) {
+    const bougies = events
+      .map((ev) => /^Chanukah: ([2-8]) Candles/.exec(ev.getDesc()))
+      .find((m) => m !== null);
+    occ.add(bougies ? `hanouka-${Number(bougies[1]) - 1}` : "hanouka-8");
+    // 'Hanouka tout court : le Kaddich qui suit le Hallel n'y est qu'un demi,
+    // la lecture de la Torah venant juste après (à Roch Hodech, c'est le
+    // Titkabal entier).
+    occ.add("hanouka");
+  }
+  // Pourim nommé à part de `nissim` : le jeûne d'Esther partage le psaume du
+  // jour de Pourim, mais pas sa lecture de la Torah ni Al hanissim.
+  if (purim) occ.add("pourim");
   if (["Pesach", "Shavuot", "Sukkot", "Shmini Atzeret", "Simchat Torah"].some(festival))
     occ.add("moadim");
   // La fête nommée, pour les ajouts qui la citent (le Mé'ein chaloch dit
@@ -312,6 +341,17 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   if (festival("Shavuot")) occ.add("shavuot");
   if (festival("Shmini Atzeret") || festival("Simchat Torah")) occ.add("shemini-atzeret");
   if (occ.has("rosh-chodesh") || has(flags.CHAG) || has(flags.CHOL_HAMOED)) occ.add("moed");
+  // Le Hallel, et sa longueur. Il se dit à Roch Hodech, à 'Hanouka et à 'Hol
+  // haMoed ; entier à 'Hanouka et à Souccot, abrégé à Roch Hodech et à 'Hol
+  // haMoed de Pessah, où l'on saute « Lo lanou » et « Ahavti ». Roch Hodech
+  // Tévet tombe dans 'Hanouka : c'est 'Hanouka qui l'emporte, et le Hallel s'y
+  // dit entier.
+  const holHamoed = has(flags.CHOL_HAMOED);
+  if (occ.has("rosh-chodesh") || hanukkah || holHamoed) {
+    occ.add("hallel");
+    const entier = hanukkah || (holHamoed && festival("Sukkot"));
+    occ.add(entier ? "hallel-complet" : "hallel-abrege");
+  }
   if (occ.has("shabbat") || occ.has("moed")) occ.add("shabbat-or-moed");
   // Les dix jours de pénitence : de Roch Hachana à Yom Kippour, 1 au 10 Tichri.
   // Ils n'ouvrent aucun ajout à eux seuls, ils déplient les encadrés des
@@ -345,10 +385,19 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // Pourim, jeûnes publics, 'Hol haMoed) lisent leur passage, pas celui-là.
   // Les jeûnes de coutume (BeHaB, Yom Kippour Katan) gardent la lecture
   // ordinaire : hebcal les marque pourtant comme jeûnes, on les écarte.
+  // Un jeûne que dit toute l'assemblée. hebcal marque de la même façon des
+  // jours qui n'en sont pas :
+  // - les jeûnes de coutume, BeHaB et Yom Kippour Katan ;
+  // - Ta'anit Bekhorot, la veille de Pessah, qui n'oblige que les
+  //   premiers-nés (celui qui le tient trouve à Min'ha le passage
+  //   d'acceptation d'un jeûne privé, qui se dit tous les jours) ;
+  // - la veille de Tich'a beAv, où le jeûne ne commence qu'à la nuit ;
+  // - Kippour, dont l'office n'est pas celui de ce sidour.
   const publicFast = events.some(
     (ev) =>
       (ev.getFlags() & (flags.MAJOR_FAST | flags.MINOR_FAST)) !== 0 &&
-      !/^(Ta'anit BeHaB|Yom Kippur Katan)/.test(ev.getDesc()),
+      (ev.getFlags() & flags.EREV) === 0 &&
+      !/^(Ta'anit BeHaB|Yom Kippur Katan|Ta'anit Bechorot|Yom Kippur)/.test(ev.getDesc()),
   );
   // Un jeûne public : Birkat kohanim se dit alors aussi à Min'ha, ce qui
   // n'arrive aucun autre jour de l'année ; 'Anénou entre dans la 'Amida, et le
@@ -358,7 +407,11 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // prend la place de « boné Yerouchalayim ». Paire exclusive, comme
   // tahanoun / sans-tahanoun : le fichier porte les deux conclusions, une
   // seule s'affiche.
-  const tishaBeav = events.some((ev) => ev.basename() === "Tish'a B'Av");
+  // Le jour même, non sa veille : hebcal donne le même basename aux deux, et
+  // Na'hem ne se dit qu'à Min'ha du 9 Av.
+  const tishaBeav = events.some(
+    (ev) => ev.basename() === "Tish'a B'Av" && (ev.getFlags() & flags.EREV) === 0,
+  );
   occ.add(tishaBeav ? "tisha-beav" : "sans-tisha-beav");
 
   // Les psaumes qui s'ajoutent au chir chel yom certains jours de l'année.
@@ -372,10 +425,9 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   const jeuneDe = (m: number) => publicFast && mois === m;
   if (hanukkah) occ.add("chir-hanouka");
   if (purim || jeuneDe(months.ADAR_I) || jeuneDe(months.ADAR_II)) occ.add("chir-pourim");
-  // Le jeûne de Guedalia et le 10 Tévet. Kippour est lui aussi un jeûne de
-  // Tichri, mais il a son propre office : il n'a rien à voir ici.
-  const kippour = events.some((ev) => ev.basename() === "Yom Kippur");
-  if ((jeuneDe(months.TISHREI) && !kippour) || jeuneDe(months.TEVET)) occ.add("chir-tsom-tichri");
+  // Le jeûne de Guedalia et le 10 Tévet. Kippour, jeûne de Tichri lui aussi,
+  // est déjà hors de `publicFast` : il a son propre office.
+  if (jeuneDe(months.TISHREI) || jeuneDe(months.TEVET)) occ.add("chir-tsom-tichri");
   if (jeuneDe(months.TAMUZ)) occ.add("chir-tsom-tamouz");
   if (mois === months.TISHREI && hd.getDate() === 11) occ.add("chir-lendemain-kippour");
   const ownReading =
@@ -398,6 +450,17 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // 'Alénou : tous les jours de semaine, sauf la veille de Chabbat où le
   // psaume 93 le remplace (bloc jour-5 du fichier).
   if (hd.getDay() !== 5 && hd.getDay() !== 6) occ.add("lamnatseah-minha");
+  // Le compte du 'Omer, quarante-neuf soirs, de la deuxième nuit de Pessah au
+  // 5 Sivan. Il se compte le soir : c'est donc le jour hébraïque d'Arvit, déjà
+  // basculé à la chkia, qui donne le bon numéro (voir tefilaHebrewDay).
+  // hebcal compte lui aussi depuis le 16 Nissan, premier jour du 'Omer.
+  const omer = omerDay(hd);
+  if (omer !== null) {
+    // Deux clés : la saison, pour la bénédiction et ce qui l'entoure, et le
+    // rang du jour, pour le seul compte qui se dit ce soir-là.
+    occ.add("omer");
+    occ.add(`omer-${omer}`);
+  }
   // Lédavid (psaume 27) : du 1er Eloul à Chemini 'Atséret (22 Tichri), selon
   // l'usage séfarade ; il se dit encore ce jour-là.
   if (hd.getMonth() === months.ELUL || (hd.getMonth() === months.TISHREI && hd.getDate() <= 22))
