@@ -242,6 +242,7 @@ function buildBlock(spec, sections) {
   if (spec.zman) block.zman = spec.zman;
   if (spec.torahWeekly) block.torahWeekly = true;
   if (spec.kotel) block.kotel = true;
+  if (spec.mirror) block.mirror = true;
   if (spec.numbered) block.numbered = true;
   const segs = spec.src ? sections[spec.src] : [];
   if (spec.src && !segs) throw new Error(`Section source inconnue : ${spec.src}`);
@@ -1070,6 +1071,10 @@ function chaharitRecipe() {
       {
         src: "Tefillin",
         labelText: R("Les téfilines", "The tefillin", "מצות תפילין"),
+        // Le bayit de la tête se pose à l'endroit du corps qu'on ne voit
+        // pas : le titre offre le miroir, comme celui de la 'Amida offre la
+        // boussole.
+        mirror: true,
         halakha: R(
           "On pose d'abord les téfilines du bras, sur le biceps face au cœur, puis ceux de la tête. On ne parle pas entre les deux.",
           "The arm tefillin goes on first, on the biceps facing the heart, then the head tefillin. Do not speak between the two.",

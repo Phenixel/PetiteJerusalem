@@ -202,6 +202,11 @@ export const ICONS = {
     body: '<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36z"/>',
   },
 
+  /** Miroir à main : le bayit de la tête se pose là où l'on ne se voit pas. */
+  mirror: {
+    body: '<ellipse cx="12" cy="9" rx="6.5" ry="7.5"/><path d="M12 16.5V21"/><path d="M9 21h6"/>',
+  },
+
   // --- audio ---
   headphones: {
     body: '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',

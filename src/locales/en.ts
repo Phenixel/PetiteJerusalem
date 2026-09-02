@@ -947,6 +947,15 @@ const en: LocaleMessages = {
     slihotWindowPlace: "Times for {city}.",
     // Siddur: the time of a moment of prayer, placed right before what is read
     // (see TefilaZman.vue; keys d1..dN are the lines behind the "i").
+    mirror: {
+      open: "Mirror",
+      title: "Tefillin mirror",
+      starting: "Opening the camera…",
+      hint: "Place the line on your hairline: the bayit goes above it, centred on the vertical. Nothing is recorded.",
+      denied:
+        "Camera access was denied. You can allow it in your device settings, then open the mirror again.",
+      unavailable: "This device gives no access to its front camera.",
+    },
     kotel: {
       open: "Direction of the Kotel",
       title: "Direction of the Kotel",

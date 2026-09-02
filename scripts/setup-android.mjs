@@ -59,6 +59,10 @@ const PERMISSIONS = [
     comment: "Horaires (zmanim) calculés pour la position de l'appareil",
   },
   { name: "android.permission.ACCESS_FINE_LOCATION" },
+  {
+    name: "android.permission.CAMERA",
+    comment: "Miroir des téfilines (caméra frontale, rien n'est enregistré)",
+  },
 ];
 for (const { name, comment } of [...PERMISSIONS].reverse()) {
   if (manifest.includes(name)) continue;
@@ -69,6 +73,19 @@ for (const { name, comment } of [...PERMISSIONS].reverse()) {
   );
   console.log(`setup-android: permission ${name.split(".").pop()} ajoutée au manifest`);
 }
+// La caméra reste facultative : déclarer la permission suffirait à écarter du
+// Play Store les appareils qui n'en ont pas, alors que tout le reste de l'app
+// leur va.
+const CAMERA_FEATURE =
+  '<uses-feature android:name="android.hardware.camera" android:required="false" />';
+if (!manifest.includes('android:name="android.hardware.camera"')) {
+  manifest = manifest.replace(
+    /(<uses-permission android:name="android\.permission\.INTERNET"\s*\/>)/,
+    `$1\n\n    ${CAMERA_FEATURE}`,
+  );
+  console.log("setup-android: caméra déclarée facultative (uses-feature)");
+}
+
 writeFileSync(manifestPath, manifest);
 
 // 3. google-services.json (config Firebase, requis pour auth native + push)

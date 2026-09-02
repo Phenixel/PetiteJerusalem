@@ -6,11 +6,13 @@ import type { SupportedLocale } from "../../i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import KotelCompass from "../../components/KotelCompass.vue";
+import TefilinMirror from "../../components/TefilinMirror.vue";
 import {
   addKotelOffer,
   openKotelCompass,
   removeKotelOffer,
 } from "../../composables/useKotelCompass";
+import { openTefilinMirror } from "../../composables/useTefilinMirror";
 import TefilaZman from "./TefilaZman.vue";
 
 /**
@@ -201,6 +203,13 @@ const runClass = (run: TextRun & { kind: "he" }) => ({
  * Le texte qui en porte un le signale au menu de lecture, qui offre alors la
  * même boussole sous le pouce, sans remonter au titre.
  */
+/**
+ * Le miroir des téfilines : le passage qui les pose le porte à son titre.
+ * Rien à annoncer au menu de lecture, contrairement à la boussole : on met les
+ * téfilines à ce moment-là, le titre est sous les yeux.
+ */
+const offersMirror = computed(() => props.blocks.some((block) => block.mirror));
+
 const offersKotel = computed(() => props.blocks.some((block) => block.kotel));
 let offering = false;
 function syncKotelOffer(offered: boolean): void {
@@ -276,6 +285,18 @@ const sections = computed(() =>
           @click="openKotelCompass('title')"
         >
           <AppIcon name="compass" :size="15" />
+        </button>
+        <!-- Le miroir, au titre du passage où l'on pose les téfilines : le
+             bayit de la tête se place là où l'on ne se voit pas. -->
+        <button
+          v-if="block.mirror"
+          type="button"
+          class="ms-1.5 inline-flex items-center align-middle rounded-full p-1 text-primary hover:bg-primary/10"
+          :aria-label="t('textReading.mirror.open')"
+          :title="t('textReading.mirror.open')"
+          @click="openTefilinMirror('title')"
+        >
+          <AppIcon name="mirror" :size="15" />
         </button>
       </p>
 
@@ -367,6 +388,7 @@ const sections = computed(() =>
     </section>
 
     <KotelCompass v-if="offersKotel" />
+    <TefilinMirror v-if="offersMirror" />
   </div>
 </template>
 

@@ -964,6 +964,15 @@ const fr = {
     slihotWindowPlace: "Heures pour {city}.",
     // Sidour : la direction du Kotel, ouverte depuis le titre des passages
     // qui se disent face à Jérusalem (voir KotelCompass.vue).
+    mirror: {
+      open: "Miroir",
+      title: "Miroir des téfilines",
+      starting: "Ouverture de la caméra…",
+      hint: "Posez la ligne sur la naissance de vos cheveux : le bayit va au-dessus, centré sur la verticale. Rien n'est enregistré.",
+      denied:
+        "L'accès à la caméra a été refusé. Vous pouvez l'autoriser dans les réglages de votre appareil, puis rouvrir le miroir.",
+      unavailable: "Cet appareil ne donne pas accès à sa caméra frontale.",
+    },
     kotel: {
       open: "Direction du Kotel",
       title: "Direction du Kotel",

@@ -210,6 +210,7 @@
         "en": "The arm tefillin goes on first, on the biceps facing the heart, then the head tefillin. Do not speak between the two.",
         "he": "מניחים תחילה תפילין של יד על הזרוע כנגד הלב, ואחר כך של ראש. ואין מפסיקים בדיבור ביניהם."
       },
+      "mirror": true,
       "lines": [
         {
           "rubric": {
