@@ -124,6 +124,26 @@ describe("miroir des téfilines", () => {
     expect(track.stop).toHaveBeenCalled();
   });
 
+  it("se referme au toucher hors du miroir, mais pas sur l'image", async () => {
+    const track = piste();
+    vi.stubGlobal("navigator", {
+      mediaDevices: { getUserMedia: vi.fn().mockResolvedValue({ getTracks: () => [track] }) },
+    });
+    monte();
+    openTefilinMirror("title");
+    await attend();
+
+    // Sur l'image : rien ne bouge, on ajuste le bayit sans crainte.
+    document.querySelector<HTMLElement>(".mirror-card")!.click();
+    await attend();
+    expect(track.stop).not.toHaveBeenCalled();
+
+    // Autour : la fenêtre se ferme et la caméra s'éteint.
+    document.querySelector<HTMLElement>(".mirror-overlay")!.click();
+    await attend();
+    expect(track.stop).toHaveBeenCalled();
+  });
+
   it("dit ce qui manque quand la caméra est refusée", async () => {
     const refus = Object.assign(new Error("refus"), { name: "NotAllowedError" });
     vi.stubGlobal("navigator", {

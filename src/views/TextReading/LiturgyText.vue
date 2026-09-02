@@ -12,7 +12,11 @@ import {
   openKotelCompass,
   removeKotelOffer,
 } from "../../composables/useKotelCompass";
-import { openTefilinMirror } from "../../composables/useTefilinMirror";
+import {
+  addMirrorOffer,
+  openTefilinMirror,
+  removeMirrorOffer,
+} from "../../composables/useTefilinMirror";
 import TefilaZman from "./TefilaZman.vue";
 
 /**
@@ -204,11 +208,20 @@ const runClass = (run: TextRun & { kind: "he" }) => ({
  * même boussole sous le pouce, sans remonter au titre.
  */
 /**
- * Le miroir des téfilines : le passage qui les pose le porte à son titre.
- * Rien à annoncer au menu de lecture, contrairement à la boussole : on met les
- * téfilines à ce moment-là, le titre est sous les yeux.
+ * Le miroir des téfilines, sur le même modèle que la boussole : le passage qui
+ * les pose le porte à son titre, et le signale au menu de lecture, qui l'offre
+ * alors sous le pouce. Cha'harit est le seul office à le porter.
  */
 const offersMirror = computed(() => props.blocks.some((block) => block.mirror));
+let offeringMirror = false;
+function syncMirrorOffer(offered: boolean): void {
+  if (offered === offeringMirror) return;
+  offeringMirror = offered;
+  if (offered) addMirrorOffer();
+  else removeMirrorOffer();
+}
+watch(offersMirror, syncMirrorOffer, { immediate: true });
+onUnmounted(() => syncMirrorOffer(false));
 
 const offersKotel = computed(() => props.blocks.some((block) => block.kotel));
 let offering = false;

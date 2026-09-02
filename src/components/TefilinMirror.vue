@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { onUnmounted, ref, watch } from "vue";
+import { onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import { closeTefilinMirror, tefilinMirrorOpen } from "../composables/useTefilinMirror";
 
 /**
- * Le miroir des téfilines : la caméra frontale, en plein écran, avec deux
- * repères pour poser le bayit de la tête droit et centré.
+ * Le miroir des téfilines : la caméra frontale dans un carré posé au milieu de
+ * l'écran, avec trois repères pour placer le bayit de la tête droit et centré.
  *
  * Ce que les repères disent, et ce qu'ils ne disent pas. La ligne horizontale
  * se pose sur la naissance des cheveux : le bayit va au-dessus d'elle, jamais
@@ -71,12 +71,29 @@ async function start(): Promise<void> {
   });
 }
 
-watch(tefilinMirrorOpen, (ouvert) => {
-  if (ouvert) void start();
-  else stop();
-});
+/**
+ * `flush: "sync"` : la demande de caméra doit partir dans le geste qui ouvre
+ * la fenêtre. Safari ne montre sa demande d'autorisation que tant que le
+ * toucher est encore « actif » ; un tour de boucle plus tard, il refuse sans
+ * rien demander.
+ */
+watch(
+  tefilinMirrorOpen,
+  (ouvert) => {
+    if (ouvert) void start();
+    else stop();
+  },
+  { flush: "sync" },
+);
+
+const surEchap = (event: KeyboardEvent) => {
+  if (event.key === "Escape" && tefilinMirrorOpen.value) closeTefilinMirror();
+};
+
+onMounted(() => window.addEventListener("keydown", surEchap));
 
 onUnmounted(() => {
+  window.removeEventListener("keydown", surEchap);
   stop();
   closeTefilinMirror();
 });
@@ -90,63 +107,91 @@ onUnmounted(() => {
       leave-active-class="transition duration-150 ease-in"
       leave-to-class="opacity-0"
     >
+      <!-- Un voile, comme les autres fenêtres de l'app : le toucher hors du
+           miroir le referme. -->
       <div
         v-if="tefilinMirrorOpen"
-        class="mirror-screen"
+        class="mirror-overlay"
         role="dialog"
         aria-modal="true"
         :aria-label="t('textReading.mirror.title')"
+        @click="closeTefilinMirror"
       >
-        <video
-          v-if="status === 'live'"
-          ref="video"
-          class="mirror-video"
-          autoplay
-          playsinline
-          muted
-        ></video>
+        <div class="mirror-card" @click.stop>
+          <video
+            v-if="status === 'live'"
+            ref="video"
+            class="mirror-video"
+            autoplay
+            playsinline
+            muted
+          ></video>
 
-        <!-- Les repères, par-dessus l'image : deux traits et le carré du
-             bayit, posé sur la ligne des cheveux. -->
-        <div v-if="status === 'live'" class="mirror-guides" aria-hidden="true">
-          <div class="guide-v"></div>
-          <div class="guide-h"></div>
-          <div class="guide-box"></div>
+          <!-- Les repères, par-dessus l'image : deux traits et le carré du
+               bayit, posé sur la ligne des cheveux. -->
+          <div v-if="status === 'live'" class="mirror-guides" aria-hidden="true">
+            <div class="guide-v"></div>
+            <div class="guide-h"></div>
+            <div class="guide-box"></div>
+          </div>
+
+          <!-- Ce que la caméra ne peut pas donner : refus, absence, attente. -->
+          <p v-if="status !== 'live'" class="mirror-message">
+            <template v-if="status === 'starting'">{{ t("textReading.mirror.starting") }}</template>
+            <template v-else-if="status === 'denied'">{{
+              t("textReading.mirror.denied")
+            }}</template>
+            <template v-else>{{ t("textReading.mirror.unavailable") }}</template>
+          </p>
+
+          <!-- Une croix discrète, dans le coin : le reste du carré est
+               l'image. -->
+          <button
+            type="button"
+            class="mirror-close"
+            :aria-label="t('common.close')"
+            @click="closeTefilinMirror"
+          >
+            <AppIcon name="x" :size="16" />
+          </button>
         </div>
 
-        <!-- Ce que la caméra ne peut pas donner : refus, absence, attente. -->
-        <p v-if="status !== 'live'" class="mirror-message">
-          <template v-if="status === 'starting'">{{ t("textReading.mirror.starting") }}</template>
-          <template v-else-if="status === 'denied'">{{ t("textReading.mirror.denied") }}</template>
-          <template v-else>{{ t("textReading.mirror.unavailable") }}</template>
-        </p>
-
+        <!-- La consigne sous le carré, pour ne rien poser sur l'image. -->
         <p v-if="status === 'live'" class="mirror-hint">{{ t("textReading.mirror.hint") }}</p>
-
-        <button
-          type="button"
-          class="mirror-close"
-          :aria-label="t('common.close')"
-          @click="closeTefilinMirror"
-        >
-          <AppIcon name="x" :size="22" />
-        </button>
       </div>
     </transition>
   </Teleport>
 </template>
 
 <style scoped>
-/* Plein écran, sans cadre ni panneau : l'image, les repères, un bouton. Le
-   noir tient lieu de fond avant que la caméra ne réponde. */
-.mirror-screen {
+.mirror-overlay {
   position: fixed;
   inset: 0;
   /* Même étage que les fenêtres modales de l'app (voir .modal-overlay dans
      main.css) : au-dessus du mobilier flottant des pages, sous les toasts. */
   z-index: 60;
-  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: rgb(20 16 8 / 0.55);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+/* Un carré aux bords très arrondis, sans bordure : l'image occupe tout, il
+   n'y a pas de cadre autour d'elle. Le noir tient lieu de fond le temps que
+   la caméra réponde. */
+.mirror-card {
+  position: relative;
+  width: min(22rem, calc(100vw - 2.5rem), calc(100vh - 10rem));
+  aspect-ratio: 1 / 1;
+  border-radius: 2rem;
   overflow: hidden;
+  background: #000;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.45);
 }
 
 /* Le miroir renvoie l'image retournée, comme un vrai : la main qui se lève à
@@ -156,6 +201,7 @@ onUnmounted(() => {
   height: 100%;
   object-fit: cover;
   transform: scaleX(-1);
+  display: block;
 }
 
 .mirror-guides {
@@ -167,22 +213,20 @@ onUnmounted(() => {
 /* Un trait clair cerné d'ombre : il doit rester lisible sur des cheveux
    clairs comme sur un mur sombre. */
 .guide-v,
-.guide-h,
-.guide-box {
+.guide-h {
   position: absolute;
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
+  background: rgb(255 255 255 / 0.55);
 }
 
-/* La verticale s'arrête un peu sous la ligne des cheveux : elle sert à
-   centrer le bayit et à voir s'il penche, pas à barrer le visage ni la
-   consigne du bas. */
+/* La verticale s'arrête sous la ligne des cheveux : elle sert à centrer le
+   bayit et à voir s'il penche, pas à barrer le visage. */
 .guide-v {
   top: 0;
-  height: 58%;
+  height: 62%;
   left: 50%;
   width: 1px;
   margin-left: -0.5px;
-  background: rgb(255 255 255 / 0.55);
 }
 
 .guide-h {
@@ -190,74 +234,61 @@ onUnmounted(() => {
   right: 0;
   top: 42%;
   height: 1px;
-  background: rgb(255 255 255 / 0.55);
 }
 
 /* Le bayit : au-dessus de la ligne des cheveux, centré. En pointillés, parce
    que c'est un repère et non une mesure. */
 .guide-box {
-  width: 16vmin;
-  height: 16vmin;
+  position: absolute;
+  width: 22%;
+  height: 22%;
   left: 50%;
   top: 42%;
   transform: translate(-50%, -100%);
   border: 2px dashed rgb(255 255 255 / 0.75);
   border-radius: 4px;
-  background: transparent;
-  box-shadow: none;
-}
-
-.mirror-message,
-.mirror-hint {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: min(30rem, calc(100vw - 3rem));
-  text-align: center;
-  color: #fff;
-  line-height: 1.5;
 }
 
 .mirror-message {
-  top: 50%;
-  margin-top: -2rem;
-  font-size: 0.95rem;
-}
-
-.mirror-hint {
-  bottom: max(2rem, env(safe-area-inset-bottom, 0px));
-  font-size: 0.85rem;
-  color: rgb(255 255 255 / 0.85);
-  text-shadow: 0 1px 3px rgb(0 0 0 / 0.6);
-}
-
-/* Un voile sombre sous la consigne : elle doit rester lisible, quelle que
-   soit la pièce derrière. */
-.mirror-hint::before {
-  content: "";
   position: absolute;
-  inset: -1rem -1.5rem -2.5rem;
-  z-index: -1;
-  background: radial-gradient(ellipse at center, rgb(0 0 0 / 0.45), transparent 72%);
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  color: #fff;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
-/* Le seul bouton de l'écran, assez grand pour le pouce, posé sous l'encoche. */
+/* Discrète : une croix claire dans le coin, sans pastille ni cadre. L'ombre
+   portée la tient lisible sur une image claire, la zone tactile reste large
+   sous le doigt. */
 .mirror-close {
   position: absolute;
-  top: max(1rem, env(safe-area-inset-top, 0px));
-  inset-inline-end: 1rem;
+  top: 0.25rem;
+  inset-inline-end: 0.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 2.75rem;
   height: 2.75rem;
-  border-radius: 9999px;
-  color: #fff;
-  background: rgb(0 0 0 / 0.4);
-  backdrop-filter: blur(4px);
+  color: rgb(255 255 255 / 0.7);
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.55));
+  transition: color 0.15s ease;
 }
 
 .mirror-close:hover {
-  background: rgb(0 0 0 / 0.6);
+  color: #fff;
+}
+
+.mirror-hint {
+  max-width: min(22rem, calc(100vw - 2.5rem));
+  text-align: center;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.9);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
 }
 </style>

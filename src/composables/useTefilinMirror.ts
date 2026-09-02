@@ -20,8 +20,8 @@ const open = ref(false);
 /** La fenêtre est ouverte. */
 export const tefilinMirrorOpen = computed(() => open.value);
 
-/** D'où l'on ouvre le miroir : pour savoir si la porte se trouve. */
-export type TefilinMirrorSource = "title";
+/** D'où l'on ouvre le miroir : le titre du passage, ou le menu de lecture. */
+export type TefilinMirrorSource = "title" | "menu";
 
 export function openTefilinMirror(source: TefilinMirrorSource): void {
   open.value = true;
@@ -31,3 +31,24 @@ export function openTefilinMirror(source: TefilinMirrorSource): void {
 export function closeTefilinMirror(): void {
   open.value = false;
 }
+
+// Lecteurs à l'écran qui portent le passage des téfilines : un compteur
+// plutôt qu'un drapeau, le temps qu'une page de lecture remplace l'autre (la
+// suivante se monte avant que la précédente ne se démonte).
+const offering = ref(0);
+
+export function addMirrorOffer(): void {
+  offering.value += 1;
+}
+
+export function removeMirrorOffer(): void {
+  offering.value = Math.max(0, offering.value - 1);
+}
+
+/**
+ * Le texte lu contient la pose des téfilines : le menu de lecture propose
+ * alors le miroir. Le titre du passage le porte déjà, mais il est loin dès
+ * qu'on a commencé à lire, et c'est les mains prises qu'on cherche à se voir.
+ * Ailleurs (Min'ha, Arvit, une guemara), il n'aurait rien à y faire.
+ */
+export const tefilinMirrorOffered = computed(() => offering.value > 0);

@@ -8,6 +8,7 @@ import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
 import { isNativeApp } from "../composables/useNativeApp";
 import { addReadingMenu, removeReadingMenu } from "../composables/useReadingNav";
 import { kotelCompassOffered, openKotelCompass } from "../composables/useKotelCompass";
+import { openTefilinMirror, tefilinMirrorOffered } from "../composables/useTefilinMirror";
 import type { ReadingNavSection } from "../composables/useReadingNav";
 import { analyticsService } from "../services/analyticsService";
 
@@ -122,6 +123,16 @@ function trackJump(offset: number) {
 function openKotel() {
   close();
   openKotelCompass("menu");
+}
+
+/**
+ * Le miroir, quand le texte lu contient la pose des téfilines : le bayit de la
+ * tête se place à l'endroit du corps qu'on ne voit pas, et on a rarement une
+ * main libre pour remonter chercher le titre du passage.
+ */
+function openMirror() {
+  close();
+  openTefilinMirror("menu");
 }
 
 function goTo(offset: number) {
@@ -248,6 +259,10 @@ onUnmounted(() => {
             <button v-if="kotelCompassOffered" @click="openKotel" class="section-item">
               <AppIcon name="compass" :size="13" class="flex-shrink-0 text-text-secondary" />
               {{ t("textReading.kotel.title") }}
+            </button>
+            <button v-if="tefilinMirrorOffered" @click="openMirror" class="section-item">
+              <AppIcon name="mirror" :size="13" class="flex-shrink-0 text-text-secondary" />
+              {{ t("textReading.mirror.title") }}
             </button>
             <p v-if="props.sections.length" class="section-heading">
               {{ t("textReading.navSections") }}

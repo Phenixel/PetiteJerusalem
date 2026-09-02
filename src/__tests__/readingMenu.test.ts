@@ -22,6 +22,7 @@ vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform:
 import fr from "../locales/fr";
 import ReadingMenu from "../components/ReadingMenu.vue";
 import { useReadingSize } from "../composables/useReadingSize";
+import { addMirrorOffer, removeMirrorOffer } from "../composables/useTefilinMirror";
 
 const SECTIONS = [
   { offset: 0, label: "Bénédictions du matin", hebrew: "ברכות השחר" },
@@ -78,6 +79,18 @@ describe("menu de lecture", () => {
       el.textContent?.includes("Daf 2a"),
     )!;
     expect(daf.querySelector(".section-he")).toBeNull();
+  });
+
+  it("n'offre le miroir que là où l'on pose les téfilines", async () => {
+    // Cha'harit le porte, Min'ha et Arvit non : le menu ne doit pas proposer
+    // un miroir devant un texte qui n'en a que faire.
+    const sansMiroir = await ouvre();
+    expect(sansMiroir.host.textContent).not.toContain(fr.textReading.mirror.title);
+
+    addMirrorOffer();
+    const avecMiroir = await ouvre();
+    expect(avecMiroir.host.textContent).toContain(fr.textReading.mirror.title);
+    removeMirrorOffer();
   });
 
   it("grandit avec la taille de lecture, sans la suivre pas à pas", async () => {
