@@ -192,8 +192,7 @@ function buildLine(spec, segs) {
     const [debut, suite] = spec.alt.after ? splitAfter(text, spec.alt.after) : [text, ""];
     line.he = [debut, { r: spec.alt.rubric, ...when }, { v: spec.alt.text, ...when }];
     if (suite) line.he.push(suite);
-  }
-  else line.he = text;
+  } else line.he = text;
   if (spec.repeat) line.repeat = spec.repeat;
   if (spec.when) line.when = spec.when;
   if (spec.muted) line.muted = true;
@@ -594,7 +593,10 @@ function amidaBlocks(src, ix, opts = {}) {
 
   blocks.push({
     src,
-    lines: [{ seg: ix.teka }, { seg: ix.hashiva, strip: [STRIP.teshuvaDisent, "הַמֶּלֶךְ הַמִּשְׁפָּט:"] }],
+    lines: [
+      { seg: ix.teka },
+      { seg: ix.hashiva, strip: [STRIP.teshuvaDisent, "הַמֶּלֶךְ הַמִּשְׁפָּט:"] },
+    ],
   });
   blocks.push({
     src,
@@ -633,8 +635,20 @@ function amidaBlocks(src, ix, opts = {}) {
         ),
       },
       { seg: ix.yvRH, mode: "small", strip: ["בראש חדש:"], rubric: RUBRIC.roshHodesh, tight: true },
-      { seg: ix.yvPessah, mode: "small", strip: ["בחוה״מ פסח:"], rubric: RUBRIC.holPessah, tight: true },
-      { seg: ix.yvSouccot, mode: "small", strip: ["בחוה״מ סוכות:"], rubric: RUBRIC.holSouccot, tight: true },
+      {
+        seg: ix.yvPessah,
+        mode: "small",
+        strip: ["בחוה״מ פסח:"],
+        rubric: RUBRIC.holPessah,
+        tight: true,
+      },
+      {
+        seg: ix.yvSouccot,
+        mode: "small",
+        strip: ["בחוה״מ סוכות:"],
+        rubric: RUBRIC.holSouccot,
+        tight: true,
+      },
       { seg: ix.yvSuite, mode: "small", tight: true },
     ],
   });
@@ -693,8 +707,20 @@ function amidaBlocks(src, ix, opts = {}) {
           "בחנוכה ופורים אומרים:",
         ),
       },
-      { seg: ix.hanouka, mode: "small", strip: ["בחנוכה אומרים:"], rubric: RUBRIC.hanouka, tight: true },
-      { seg: ix.pourim, mode: "small", strip: ["בפורים אומרים"], rubric: RUBRIC.pourim, tight: true },
+      {
+        seg: ix.hanouka,
+        mode: "small",
+        strip: ["בחנוכה אומרים:"],
+        rubric: RUBRIC.hanouka,
+        tight: true,
+      },
+      {
+        seg: ix.pourim,
+        mode: "small",
+        strip: ["בפורים אומרים"],
+        rubric: RUBRIC.pourim,
+        tight: true,
+      },
     ],
   });
 
@@ -702,7 +728,9 @@ function amidaBlocks(src, ix, opts = {}) {
   blocks.push({
     src,
     when: "teshuva",
-    lines: [{ seg: ix.vealKoulam, mode: "small", strip: [STRIP.teshuvaDisent], rubric: RUBRIC.teshuvaOn }],
+    lines: [
+      { seg: ix.vealKoulam, mode: "small", strip: [STRIP.teshuvaDisent], rubric: RUBRIC.teshuvaOn },
+    ],
   });
   // Birkat kohanim se dit dans la répétition, entre « Vé'al koulam » et Sim
   // chalom : les cohanim se tournent vers l'arche quand le 'hazan commence
@@ -712,7 +740,9 @@ function amidaBlocks(src, ix, opts = {}) {
   blocks.push({
     src,
     when: "teshuva",
-    lines: [{ seg: ix.simShalom, mode: "small", strip: [STRIP.teshuvaDisent], rubric: RUBRIC.teshuvaOn }],
+    lines: [
+      { seg: ix.simShalom, mode: "small", strip: [STRIP.teshuvaDisent], rubric: RUBRIC.teshuvaOn },
+    ],
   });
 
   blocks.push({
@@ -873,55 +903,59 @@ function avinouMalkenou(src, from, to) {
 // ---------- Recettes des trois offices ----------
 
 function chaharitRecipe() {
-  const amida = amidaBlocks("Amida", {
-    avot: 2,
-    gevurot: 3,
-    mekhalkel: 5,
-    kedushaText: 8,
-    ataKadosh: 9,
-    honen: 10,
-    hashivenu: 11,
-    selah: 12,
-    reeh: 13,
-    refaenu: 17,
-    barkhenu: 19,
-    barekhAlenu: 21,
-    teka: 22,
-    hashiva: 23,
-    laminim: 24,
-    tsadikim: 25,
-    tishkon: 26,
-    tsemah: 27,
-    shemaKolenu: 28,
-    kiAta: 31,
-    retse: 32,
-    yv: 34,
-    yvRH: 35,
-    yvPessah: 36,
-    yvSouccot: 37,
-    yvSuite: 38,
-    veata: 39,
-    modim: 41,
-    modimDerabanan: 44,
-    alHanissim: 46,
-    hanouka: 47,
-    pourim: 48,
-    vealKoulam: 49,
-    simShalom: 65,
-    yihyu1: 66,
-    elohaiNetsor: 67,
-    lemaan: 68,
-    yihyu2: 69,
-    osse: 70,
-    yehiRatson: 71,
-  }, {
-    kohanim: birkatKohanimBlock("Amida", {
-      bracha: 53,
-      versets: [55, 56, 57],
-      hazan: 59,
-      versetsHazan: [60, 61, 62],
-    }),
-  });
+  const amida = amidaBlocks(
+    "Amida",
+    {
+      avot: 2,
+      gevurot: 3,
+      mekhalkel: 5,
+      kedushaText: 8,
+      ataKadosh: 9,
+      honen: 10,
+      hashivenu: 11,
+      selah: 12,
+      reeh: 13,
+      refaenu: 17,
+      barkhenu: 19,
+      barekhAlenu: 21,
+      teka: 22,
+      hashiva: 23,
+      laminim: 24,
+      tsadikim: 25,
+      tishkon: 26,
+      tsemah: 27,
+      shemaKolenu: 28,
+      kiAta: 31,
+      retse: 32,
+      yv: 34,
+      yvRH: 35,
+      yvPessah: 36,
+      yvSouccot: 37,
+      yvSuite: 38,
+      veata: 39,
+      modim: 41,
+      modimDerabanan: 44,
+      alHanissim: 46,
+      hanouka: 47,
+      pourim: 48,
+      vealKoulam: 49,
+      simShalom: 65,
+      yihyu1: 66,
+      elohaiNetsor: 67,
+      lemaan: 68,
+      yihyu2: 69,
+      osse: 70,
+      yehiRatson: 71,
+    },
+    {
+      kohanim: birkatKohanimBlock("Amida", {
+        bracha: 53,
+        versets: [55, 56, 57],
+        hazan: 59,
+        versetsHazan: [60, 61, 62],
+      }),
+    },
+  );
 
   const chirJours = [
     ["jour-0", 2, 3],
@@ -951,11 +985,7 @@ function chaharitRecipe() {
         lines: [
           {
             seg: 3,
-            rubric: R(
-              "Avant toute chose :",
-              "Before anything else:",
-              "כשיעור משנתו יאמר:",
-            ),
+            rubric: R("Avant toute chose :", "Before anything else:", "כשיעור משנתו יאמר:"),
             alt: { after: "מוֹדֶה", rubric: FEMMES, text: "מוֹדָה" },
           },
         ],
@@ -965,11 +995,7 @@ function chaharitRecipe() {
         lines: [
           {
             seg: 2,
-            rubric: R(
-              "Après la netilat yadayim :",
-              "After washing the hands:",
-              "אחר נטילת ידיים:",
-            ),
+            rubric: R("Après la netilat yadayim :", "After washing the hands:", "אחר נטילת ידיים:"),
           },
           { seg: 4 },
           { seg: 6, alt: { after: "מוֹדֶה", rubric: FEMMES, text: "מוֹדָה" } },
@@ -1037,7 +1063,7 @@ function chaharitRecipe() {
             rubric: R(
               "Avant la bénédiction, il est bon de dire le « léchem yihoud » :",
               "Before the blessing, it is good to say the “leshem yichud”:",
-              "לפני שיברך על הציצית טוב לומר \"לשם יחוד\":",
+              'לפני שיברך על הציצית טוב לומר "לשם יחוד":',
             ),
           },
           {
@@ -1086,7 +1112,7 @@ function chaharitRecipe() {
             rubric: R(
               "Avant la bénédiction, il est bon de dire le « léchem yihoud » :",
               "Before the blessing, it is good to say the “leshem yichud”:",
-              "לפני שיברך על התפילין טוב לומר \"לשם יחוד\":",
+              'לפני שיברך על התפילין טוב לומר "לשם יחוד":',
             ),
           },
           { seg: 2 },
@@ -1105,7 +1131,7 @@ function chaharitRecipe() {
             rubric: R(
               "Les téfilines de la tête posés, on achève l'enroulement au doigt du milieu, une boucle avant chaque « vé'érastikh » :",
               "Once the head tefillin is on, finish winding around the middle finger, one turn before each “ve'erastikh”:",
-              "אחר שהניח תפילין של ראש, גומר את הכריכות על האצבע האמצעית, כריכה אחת לפני כל \"וארשתיך\":",
+              'אחר שהניח תפילין של ראש, גומר את הכריכות על האצבע האמצעית, כריכה אחת לפני כל "וארשתיך":',
             ),
           },
           // Les deux parachiot des téfilines : dans le fil, sous le même titre.
@@ -1177,11 +1203,7 @@ function chaharitRecipe() {
           {
             seg: 9,
             lead: true,
-            rubric: R(
-              "Ana bekhoa'h, ligne à ligne :",
-              "Ana bechoach, line by line:",
-              "אנא בכח:",
-            ),
+            rubric: R("Ana bekhoa'h, ligne à ligne :", "Ana bechoach, line by line:", "אנא בכח:"),
           },
           { seg: 10, tight: true },
           { seg: 11, tight: true },
@@ -1209,13 +1231,7 @@ function chaharitRecipe() {
       {
         src: "Hodu",
         labelText: R("Hodou", "Hodu", "הודו"),
-        lines: [
-          { seg: 1 },
-          { seg: 2 },
-          { seg: 3 },
-          { seg: 4 },
-          { seg: 5 },
-        ],
+        lines: [{ seg: 1 }, { seg: 2 }, { seg: 3 }, { seg: 4 }, { seg: 5 }],
       },
       {
         src: "Hodu",
@@ -1299,13 +1315,23 @@ function chaharitRecipe() {
         lines: [
           { seg: 23, mode: "full", strip: ["ואומר החזן:"], rubric: RUBRIC.hazan },
           { seg: 24, mode: "full", strip: ["ועונים הקהל:"], rubric: RUBRIC.kahal, tight: true },
-          { seg: 25, mode: "full", strip: ["ואומר החזן:"], rubric: RUBRIC.hazanReprend, tight: true },
+          {
+            seg: 25,
+            mode: "full",
+            strip: ["ואומר החזן:"],
+            rubric: RUBRIC.hazanReprend,
+            tight: true,
+          },
         ],
       },
       { zman: "shema" },
       {
         src: "The Shema",
-        labelText: R("Chéma et ses bénédictions", "The Shema and its blessings", "קריאת שמע וברכותיה"),
+        labelText: R(
+          "Chéma et ses bénédictions",
+          "The Shema and its blessings",
+          "קריאת שמע וברכותיה",
+        ),
         halakha: HALAKHA.shemaMatin,
         lines: [
           { seg: 1 },
@@ -1323,7 +1349,13 @@ function chaharitRecipe() {
           { seg: 7, tight: true },
           { seg: 8, tight: true },
           { seg: 10, strong: true },
-          { seg: 11, mode: "small", strip: [STRIP.bassevoix], rubric: RUBRIC.bassevoix, tight: true },
+          {
+            seg: 11,
+            mode: "small",
+            strip: [STRIP.bassevoix],
+            rubric: RUBRIC.bassevoix,
+            tight: true,
+          },
           { seg: 12 },
           { seg: 13 },
           { seg: 14 },
@@ -1373,11 +1405,7 @@ function chaharitRecipe() {
         lines: [
           {
             seg: 14,
-            rubric: R(
-              "On ajoute :",
-              "Add:",
-              "מוסיפים:",
-            ),
+            rubric: R("On ajoute :", "Add:", "מוסיפים:"),
           },
           { seg: 15 },
           { seg: 16 },
@@ -1420,16 +1448,18 @@ function chaharitRecipe() {
         lines: [
           { seg: 5 },
           { seg: 6 },
-          { seg: 9, rubric: R(
-            "À Roch Hodech, on saute « לֹא לָנוּ » :",
-            "On Rosh Hodesh, skip “Lo lanu”:",
-            "בראש חודש מדלגים « לֹא לָנוּ »:",
-          ) },
-          { seg: 12, rubric: R(
-            "On saute « אָהַבְתִּי » :",
-            "Skip “Ahavti”:",
-            "מדלגים « אָהַבְתִּי »:",
-          ) },
+          {
+            seg: 9,
+            rubric: R(
+              "À Roch Hodech, on saute « לֹא לָנוּ » :",
+              "On Rosh Hodesh, skip “Lo lanu”:",
+              "בראש חודש מדלגים « לֹא לָנוּ »:",
+            ),
+          },
+          {
+            seg: 12,
+            rubric: R("On saute « אָהַבְתִּי » :", "Skip “Ahavti”:", "מדלגים « אָהַבְתִּי »:"),
+          },
           { seg: 13 },
           { seg: 14 },
           { seg: 15, tight: true },
@@ -1452,21 +1482,23 @@ function chaharitRecipe() {
           "קריאת התורה לראש חודש",
         ),
         lines: [
-          { seg: 35, rubric: R(
-            "On dit d'abord :",
-            "First, say:",
-            "תחילה אומרים:",
-          ) },
-          { seg: 37, rubric: R(
-            "On ouvre le hékhal et l'on dit :",
-            "The ark is opened and one says:",
-            "פותחים ההיכל ואומרים:",
-          ) },
-          { seg: 39, rubric: R(
-            "On lit quatre montées dans la paracha des moussafim (Bamidbar 28) :",
-            "Four aliyot are read from the portion of the musaf offerings (Numbers 28):",
-            "מוציאים ספר תורה וקוראים ארבעה עולים (במדבר כח):",
-          ) },
+          { seg: 35, rubric: R("On dit d'abord :", "First, say:", "תחילה אומרים:") },
+          {
+            seg: 37,
+            rubric: R(
+              "On ouvre le hékhal et l'on dit :",
+              "The ark is opened and one says:",
+              "פותחים ההיכל ואומרים:",
+            ),
+          },
+          {
+            seg: 39,
+            rubric: R(
+              "On lit quatre montées dans la paracha des moussafim (Bamidbar 28) :",
+              "Four aliyot are read from the portion of the musaf offerings (Numbers 28):",
+              "מוציאים ספר תורה וקוראים ארבעה עולים (במדבר כח):",
+            ),
+          },
         ],
       },
       {
@@ -1476,38 +1508,50 @@ function chaharitRecipe() {
         labelText: R("Sortie du séfer Torah", "Taking out the Torah", "הוצאת ספר תורה"),
         halakha: HALAKHA.torahSemaine,
         lines: [
-          { seg: 2, when: "tahanoun", rubric: R(
-            "On dit d'abord :",
-            "First, say:",
-            "תחילה אומרים:",
-          ) },
+          {
+            seg: 2,
+            when: "tahanoun",
+            rubric: R("On dit d'abord :", "First, say:", "תחילה אומרים:"),
+          },
           { seg: 3, when: "tahanoun", tight: true },
-          { seg: 6, rubric: R(
-            "Quand on sort le séfer Torah :",
-            "As the Torah scroll is taken out:",
-            "כשמוציאים ספר תורה אומרים:",
-          ) },
-          { seg: 8, rubric: R(
-            "On montre l'écriture à l'assemblée :",
-            "The script is shown to the congregation:",
-            "מגביה ומראה הכתב לקהל ואומרים:",
-          ) },
-          { seg: 11, mode: "full", strip: ["ואומר העולה:"], rubric: R(
-            "L'appelé dit :",
-            "The one called up says:",
-            "ואומר העולה:",
-          ) },
+          {
+            seg: 6,
+            rubric: R(
+              "Quand on sort le séfer Torah :",
+              "As the Torah scroll is taken out:",
+              "כשמוציאים ספר תורה אומרים:",
+            ),
+          },
+          {
+            seg: 8,
+            rubric: R(
+              "On montre l'écriture à l'assemblée :",
+              "The script is shown to the congregation:",
+              "מגביה ומראה הכתב לקהל ואומרים:",
+            ),
+          },
+          {
+            seg: 11,
+            mode: "full",
+            strip: ["ואומר העולה:"],
+            rubric: R("L'appelé dit :", "The one called up says:", "ואומר העולה:"),
+          },
           { seg: 12, mode: "full", strip: ["ועונים הקהל:"], rubric: RUBRIC.kahal, tight: true },
-          { seg: 13, mode: "full", strip: ["וחוזר העולה:"], rubric: R(
-            "L'appelé reprend :",
-            "The one called up repeats:",
-            "וחוזר העולה:",
-          ), tight: true },
-          { seg: 15, rubric: R(
-            "Avant la lecture, l'appelé bénit :",
-            "Before the reading, the one called up blesses:",
-            "ומברך העולה לפני הקריאה:",
-          ) },
+          {
+            seg: 13,
+            mode: "full",
+            strip: ["וחוזר העולה:"],
+            rubric: R("L'appelé reprend :", "The one called up repeats:", "וחוזר העולה:"),
+            tight: true,
+          },
+          {
+            seg: 15,
+            rubric: R(
+              "Avant la lecture, l'appelé bénit :",
+              "Before the reading, the one called up blesses:",
+              "ומברך העולה לפני הקריאה:",
+            ),
+          },
         ],
       },
       {
@@ -1520,11 +1564,14 @@ function chaharitRecipe() {
         when: "torah-semaine",
         plain: true,
         lines: [
-          { seg: 17, rubric: R(
-            "Après la lecture, l'appelé bénit :",
-            "After the reading, the one called up blesses:",
-            "אחר הקריאה מברך העולה:",
-          ) },
+          {
+            seg: 17,
+            rubric: R(
+              "Après la lecture, l'appelé bénit :",
+              "After the reading, the one called up blesses:",
+              "אחר הקריאה מברך העולה:",
+            ),
+          },
         ],
       },
       kaddishHalf("Uva LeSion", {
@@ -1556,12 +1603,48 @@ function chaharitRecipe() {
         ),
         lines: [
           { seg: 1, until: "וקרא זה אל־זה" },
-          { seg: 1, from: "וקרא זה אל־זה", until: "ומקבלין דין מן דין", rubric: RUBRIC.hautevoix, tight: true },
-          { seg: 1, from: "ומקבלין דין מן דין", until: "ותשאני רוח", rubric: RUBRIC.bassevoix, tight: true },
-          { seg: 1, from: "ותשאני רוח", until: "ונטלתני רוחא", rubric: RUBRIC.hautevoix, tight: true },
-          { seg: 1, from: "ונטלתני רוחא", until: "יהוה ׀ ימלך", rubric: RUBRIC.bassevoix, tight: true },
-          { seg: 1, from: "יהוה ׀ ימלך", until: "יהוה מלכותיה קאים", rubric: RUBRIC.hautevoix, tight: true },
-          { seg: 1, from: "יהוה מלכותיה קאים", until: "יהוה אלהי אברהם", rubric: RUBRIC.bassevoix, tight: true },
+          {
+            seg: 1,
+            from: "וקרא זה אל־זה",
+            until: "ומקבלין דין מן דין",
+            rubric: RUBRIC.hautevoix,
+            tight: true,
+          },
+          {
+            seg: 1,
+            from: "ומקבלין דין מן דין",
+            until: "ותשאני רוח",
+            rubric: RUBRIC.bassevoix,
+            tight: true,
+          },
+          {
+            seg: 1,
+            from: "ותשאני רוח",
+            until: "ונטלתני רוחא",
+            rubric: RUBRIC.hautevoix,
+            tight: true,
+          },
+          {
+            seg: 1,
+            from: "ונטלתני רוחא",
+            until: "יהוה ׀ ימלך",
+            rubric: RUBRIC.bassevoix,
+            tight: true,
+          },
+          {
+            seg: 1,
+            from: "יהוה ׀ ימלך",
+            until: "יהוה מלכותיה קאים",
+            rubric: RUBRIC.hautevoix,
+            tight: true,
+          },
+          {
+            seg: 1,
+            from: "יהוה מלכותיה קאים",
+            until: "יהוה אלהי אברהם",
+            rubric: RUBRIC.bassevoix,
+            tight: true,
+          },
           { seg: 1, from: "יהוה אלהי אברהם", tight: true },
           { seg: 2 },
         ],
@@ -1622,16 +1705,16 @@ function chaharitRecipe() {
         src: "RH.Mussaf",
         when: "rosh-chodesh",
         fold: "hazan",
-        labelText: R("Kedoucha de Moussaf (Keter)", "Kedushah of Musaf (Keter)", "כתר (קדושת מוסף)"),
+        labelText: R(
+          "Kedoucha de Moussaf (Keter)",
+          "Kedushah of Musaf (Keter)",
+          "כתר (קדושת מוסף)",
+        ),
         lines: [
           {
             seg: 7,
             mode: "small",
-            rubric: R(
-              "Pendant la répétition :",
-              "During the repetition:",
-              "בחזרה:",
-            ),
+            rubric: R("Pendant la répétition :", "During the repetition:", "בחזרה:"),
           },
         ],
       },
@@ -1705,65 +1788,73 @@ function chaharitRecipe() {
 }
 
 function minhaRecipe() {
-  const amida = amidaBlocks("Amida", {
-    avot: 2,
-    gevurot: 3,
-    mekhalkel: 5,
-    kedushaText: 7,
-    ataKadosh: 8,
-    honen: 9,
-    hashivenu: 10,
-    selah: 11,
-    reeh: 12,
-    refaenu: 16,
-    barkhenu: 18,
-    barekhAlenu: 20,
-    teka: 21,
-    hashiva: 22,
-    laminim: 23,
-    tsadikim: 24,
-    tishkon: 25,
-    tishkonHatima: 28,
-    tsemah: 29,
-    shemaKolenu: 30,
-    kiAta: 33,
-    retse: 34,
-    yv: 36,
-    yvRH: 37,
-    yvPessah: 38,
-    yvSouccot: 39,
-    yvSuite: 40,
-    veata: 41,
-    modim: 43,
-    modimDerabanan: 44,
-    alHanissim: 46,
-    hanouka: 47,
-    pourim: 48,
-    vealKoulam: 49,
-    simShalom: 63,
-    yihyu1: 64,
-    elohaiNetsor: 65,
-    lemaan: 66,
-    yihyu2: 67,
-    osse: 70,
-    yehiRatson: 71,
-  }, {
-    // À Min'ha, les trois versets ne tiennent qu'en un segment de la source,
-    // d'où le même index trois fois : ce sont leurs repères qui les séparent.
-    kohanim: birkatKohanimBlock("Amida", {
-      bracha: 54,
-      versets: [56, 56, 56],
-      hazan: 59,
-      versetsHazan: [60, 61, 62],
-    }, {
-      when: "taanit",
-      halakha: R(
-        "Un jour de jeûne public, quand on prie Min'ha ketana dans la demi-heure qui précède le coucher du soleil.",
-        "On a public fast, when Mincha ketana is prayed within the half hour before sunset.",
-        "בתענית ציבור כשמתפללים מנחה קטנה תוך חצי שעה סמוך לשקיעה.",
+  const amida = amidaBlocks(
+    "Amida",
+    {
+      avot: 2,
+      gevurot: 3,
+      mekhalkel: 5,
+      kedushaText: 7,
+      ataKadosh: 8,
+      honen: 9,
+      hashivenu: 10,
+      selah: 11,
+      reeh: 12,
+      refaenu: 16,
+      barkhenu: 18,
+      barekhAlenu: 20,
+      teka: 21,
+      hashiva: 22,
+      laminim: 23,
+      tsadikim: 24,
+      tishkon: 25,
+      tishkonHatima: 28,
+      tsemah: 29,
+      shemaKolenu: 30,
+      kiAta: 33,
+      retse: 34,
+      yv: 36,
+      yvRH: 37,
+      yvPessah: 38,
+      yvSouccot: 39,
+      yvSuite: 40,
+      veata: 41,
+      modim: 43,
+      modimDerabanan: 44,
+      alHanissim: 46,
+      hanouka: 47,
+      pourim: 48,
+      vealKoulam: 49,
+      simShalom: 63,
+      yihyu1: 64,
+      elohaiNetsor: 65,
+      lemaan: 66,
+      yihyu2: 67,
+      osse: 70,
+      yehiRatson: 71,
+    },
+    {
+      // À Min'ha, les trois versets ne tiennent qu'en un segment de la source,
+      // d'où le même index trois fois : ce sont leurs repères qui les séparent.
+      kohanim: birkatKohanimBlock(
+        "Amida",
+        {
+          bracha: 54,
+          versets: [56, 56, 56],
+          hazan: 59,
+          versetsHazan: [60, 61, 62],
+        },
+        {
+          when: "taanit",
+          halakha: R(
+            "Un jour de jeûne public, quand on prie Min'ha ketana dans la demi-heure qui précède le coucher du soleil.",
+            "On a public fast, when Mincha ketana is prayed within the half hour before sunset.",
+            "בתענית ציבור כשמתפללים מנחה קטנה תוך חצי שעה סמוך לשקיעה.",
+          ),
+        },
       ),
-    }),
-  });
+    },
+  );
 
   return {
     title: "מנחה של חול (Min'ha)",
@@ -1859,48 +1950,52 @@ function minhaRecipe() {
 }
 
 function arvitRecipe() {
-  const amida = amidaBlocks("Amidah", {
-    avot: 2,
-    gevurot: 3,
-    mekhalkel: 5,
-    ataKadosh: 6,
-    honen: 7,
-    ataHonantanu: 9,
-    vehonenu: 10,
-    hashivenu: 11,
-    selah: 12,
-    reeh: 13,
-    refaenu: 14,
-    barkhenu: 16,
-    barekhAlenu: 18,
-    teka: 19,
-    hashiva: 20,
-    laminim: 21,
-    tsadikim: 22,
-    tishkon: 23,
-    tsemah: 24,
-    shemaKolenu: 25,
-    kiAta: 28,
-    retse: 29,
-    yv: 31,
-    yvRH: 32,
-    yvPessah: 33,
-    yvSouccot: 34,
-    yvSuite: 35,
-    veata: 36,
-    modim: 38,
-    alHanissim: 40,
-    hanouka: 41,
-    pourim: 42,
-    vealKoulam: 43,
-    simShalom: 44,
-    yihyu1: 45,
-    elohaiNetsor: 46,
-    lemaan: 47,
-    yihyu2: 48,
-    osse: 49,
-    yehiRatson: 50,
-  }, { soir: true });
+  const amida = amidaBlocks(
+    "Amidah",
+    {
+      avot: 2,
+      gevurot: 3,
+      mekhalkel: 5,
+      ataKadosh: 6,
+      honen: 7,
+      ataHonantanu: 9,
+      vehonenu: 10,
+      hashivenu: 11,
+      selah: 12,
+      reeh: 13,
+      refaenu: 14,
+      barkhenu: 16,
+      barekhAlenu: 18,
+      teka: 19,
+      hashiva: 20,
+      laminim: 21,
+      tsadikim: 22,
+      tishkon: 23,
+      tsemah: 24,
+      shemaKolenu: 25,
+      kiAta: 28,
+      retse: 29,
+      yv: 31,
+      yvRH: 32,
+      yvPessah: 33,
+      yvSouccot: 34,
+      yvSuite: 35,
+      veata: 36,
+      modim: 38,
+      alHanissim: 40,
+      hanouka: 41,
+      pourim: 42,
+      vealKoulam: 43,
+      simShalom: 44,
+      yihyu1: 45,
+      elohaiNetsor: 46,
+      lemaan: 47,
+      yihyu2: 48,
+      osse: 49,
+      yehiRatson: 50,
+    },
+    { soir: true },
+  );
 
   return {
     title: "ערבית של חול (Arvit)",
@@ -1932,11 +2027,7 @@ function arvitRecipe() {
           {
             seg: 2,
             mode: "small",
-            rubric: R(
-              "Certains disent :",
-              "Some say:",
-              "בליל ראש חודש יש הנוהגים לומר:",
-            ),
+            rubric: R("Certains disent :", "Some say:", "בליל ראש חודש יש הנוהגים לומר:"),
           },
         ],
       },
@@ -1952,12 +2043,22 @@ function arvitRecipe() {
           { seg: 7 },
           { seg: 8, mode: "full", strip: ["ואומר החזן:"], rubric: RUBRIC.hazan },
           { seg: 9, mode: "full", strip: ["ועונים הקהל:"], rubric: RUBRIC.kahal, tight: true },
-          { seg: 10, mode: "full", strip: ["ואומר החזן:"], rubric: RUBRIC.hazanReprend, tight: true },
+          {
+            seg: 10,
+            mode: "full",
+            strip: ["ואומר החזן:"],
+            rubric: RUBRIC.hazanReprend,
+            tight: true,
+          },
         ],
       },
       {
         src: "The Shema",
-        labelText: R("Chéma et ses bénédictions", "The Shema and its blessings", "קריאת שמע וברכותיה"),
+        labelText: R(
+          "Chéma et ses bénédictions",
+          "The Shema and its blessings",
+          "קריאת שמע וברכותיה",
+        ),
         halakha: R(
           "Le Chéma du soir se dit après la sortie des étoiles. On couvre les yeux de la main droite pour le premier verset, dit avec concentration.",
           "The evening Shema is said after nightfall. Cover your eyes with the right hand for the first verse, said with full concentration.",
@@ -1967,7 +2068,13 @@ function arvitRecipe() {
           { seg: 1 },
           { seg: 2 },
           { seg: 4, strong: true },
-          { seg: 5, mode: "small", strip: [STRIP.bassevoix], rubric: RUBRIC.bassevoix, tight: true },
+          {
+            seg: 5,
+            mode: "small",
+            strip: [STRIP.bassevoix],
+            rubric: RUBRIC.bassevoix,
+            tight: true,
+          },
           { seg: 6 },
           { seg: 7 },
           { seg: 8 },
