@@ -331,8 +331,12 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // Rien le Chabbat : le sidour de semaine ne s'y lit pas.
   if (hd.getDay() !== 6) {
     const said = tachanun(hd, il);
-    if (said.shacharit) occ.add("tahanoun");
-    if (said.mincha) occ.add("tahanoun-minha");
+    // Les jours sans tahanoun ne sautent pas le passage : à sa place se dit
+    // « Yehi chem », et le demi-Kaddich suit dans les deux cas. Deux clés
+    // exclusives, comme ete/hiver : le texte porte les deux, seule celle du
+    // jour s'affiche.
+    occ.add(said.shacharit ? "tahanoun" : "sans-tahanoun");
+    occ.add(said.mincha ? "tahanoun-minha" : "sans-tahanoun-minha");
     // Les supplications longues du lundi et du jeudi accompagnent le
     // tahanoun : elles tombent avec lui.
     if (said.shacharit && (hd.getDay() === 1 || hd.getDay() === 4))

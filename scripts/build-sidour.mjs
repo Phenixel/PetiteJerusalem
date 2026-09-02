@@ -1399,6 +1399,18 @@ function chaharitRecipe() {
           { seg: 32 },
         ],
       },
+      // Les jours sans tahanoun, « Yehi chem » tient sa place : le passage
+      // n'est pas sauté, il change de texte.
+      {
+        src: "Amida",
+        when: "sans-tahanoun",
+        plain: true,
+        lines: [{ seg: 107 }],
+      },
+      // Et le demi-Kaddich vient après, quel que soit le jour : après le
+      // tahanoun, après les supplications du lundi et du jeudi, ou après
+      // « Yehi chem ». Un seul bloc suffit donc, sans condition.
+      kaddishHalf("Uva LeSion"),
       {
         src: "RH.Hallel",
         when: "rosh-chodesh",
@@ -1794,6 +1806,14 @@ function minhaRecipe() {
           { seg: 8 },
           { seg: 9 },
         ],
+      },
+      // Comme à Cha'harit : les jours sans tahanoun, « Yehi chem » tient sa
+      // place, et le Kaddich Titkabal suit dans les deux cas.
+      {
+        src: "Amida",
+        when: "sans-tahanoun-minha",
+        plain: true,
+        lines: [{ seg: 106 }],
       },
       kaddishTitkabal("Kaddish"),
       // Entre le Kaddich Titkabal et 'Alénou : le psaume 67 (Lamnatséa'h

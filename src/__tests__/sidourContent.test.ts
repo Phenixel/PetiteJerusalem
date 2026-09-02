@@ -40,6 +40,8 @@ const KNOWN_WHEN = new Set([
   "tahanoun",
   "tahanoun-minha",
   "tahanoun-lundi-jeudi",
+  "sans-tahanoun",
+  "sans-tahanoun-minha",
   "taanit",
   "torah-semaine",
   "sefer-torah",
@@ -184,6 +186,29 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       expect(tefilines.lines.length).toBeGreaterThanOrEqual(6);
       expect(sansSignes(tefilines.lines.at(-1)!)).toContain("והיה כייבאך");
       expect(blocks[talit].lines.length).toBeGreaterThan(0);
+    });
+
+    it("ferme le moment du tahanoun par un Kaddich, quel que soit le jour", () => {
+      // Après le tahanoun, après les supplications du lundi et du jeudi, ou
+      // après « Yehi chem » les jours sans tahanoun : le Kaddich vient dans
+      // les trois cas, et ne porte donc aucune condition.
+      const chaharit = resolveFilePath(entry).includes("chaharit");
+      const cle = chaharit ? "tahanoun" : "tahanoun-minha";
+      // Le premier bloc du tahanoun : la clé revient plus loin dans l'office
+      // (les psaumes qui suivent Achré), ce n'est plus le même moment.
+      const debut = blocks.map((b) => b.when).indexOf(cle);
+      if (debut < 0) return; // Arvit n'a pas de tahanoun.
+
+      const suite = blocks.slice(debut + 1);
+      const yehiChem = suite.find(
+        (b) => b.when === (chaharit ? "sans-tahanoun" : "sans-tahanoun-minha"),
+      );
+      expect(sansSignes(yehiChem?.lines.join(" ") ?? "")).toContain("יהי שם יהוה מברך");
+
+      const kaddich = suite.find((b) => b.fold === "hazan");
+      expect(kaddich).toBeDefined();
+      expect(kaddich!.when).toBeUndefined();
+      expect(sansSignes(kaddich!.lines.join(" "))).toContain("יתגדל ויתקדש");
     });
 
     it("place birkat kohanim juste avant Sim chalom, quand l'office en a", () => {

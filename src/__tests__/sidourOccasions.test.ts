@@ -128,6 +128,25 @@ describe("tahanoun et lecture de la Torah de la semaine", () => {
   });
 });
 
+describe("tahanoun, et son absence", () => {
+  it("pose toujours l'une des deux clés, jamais les deux", () => {
+    // Le passage n'est jamais sauté : ou bien le tahanoun s'y dit, ou bien
+    // « Yehi chem » tient sa place. Le texte porte les deux, le jour tranche.
+    for (const jour of [
+      new HDate(3, months.KISLEV, 5786),
+      new HDate(1, months.KISLEV, 5786), // Roch Hodech : pas de tahanoun
+      new HDate(25, months.KISLEV, 5786), // 'Hanouka
+    ]) {
+      const occ = activeOccasions(jour, false);
+      expect(occ.has("tahanoun")).toBe(!occ.has("sans-tahanoun"));
+      expect(occ.has("tahanoun-minha")).toBe(!occ.has("sans-tahanoun-minha"));
+    }
+    expect(activeOccasions(new HDate(1, months.KISLEV, 5786), false).has("sans-tahanoun")).toBe(
+      true,
+    );
+  });
+});
+
 describe("jeûnes publics", () => {
   it("les jeûnes du calendrier, pas ceux de coutume", () => {
     // Le 10 Tevet et Tsom Guedalia en sont. Le lendemain d'un jeûne n'en est
@@ -228,9 +247,9 @@ describe("les fêtes nommées du Mé'ein chaloch", () => {
     expect(activeOccasions(new HDate(15, months.NISAN, 5786), false).has("pesach")).toBe(true);
     expect(activeOccasions(new HDate(17, months.NISAN, 5786), false).has("pesach")).toBe(true);
     expect(activeOccasions(new HDate(6, months.SIVAN, 5786), false).has("shavuot")).toBe(true);
-    expect(
-      activeOccasions(new HDate(22, months.TISHREI, 5786), false).has("shemini-atzeret"),
-    ).toBe(true);
+    expect(activeOccasions(new HDate(22, months.TISHREI, 5786), false).has("shemini-atzeret")).toBe(
+      true,
+    );
     // Un jour ordinaire ne porte aucune fête.
     const ordinaire = activeOccasions(new HDate(10, months.CHESHVAN, 5786), false);
     for (const key of ["pesach", "shavuot", "sukkot", "shemini-atzeret"])
