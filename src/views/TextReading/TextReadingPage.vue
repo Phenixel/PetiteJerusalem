@@ -1027,10 +1027,11 @@ async function toggleRead() {
 }
 
 // --- Tirage aléatoire ---
-// Arrivée via le bouton « Tirer un Téhilim » (?tirage=1) : la page porte la
-// suite du flux. Le texte tiré est déjà réservé ; s'il ne convient pas, on en
-// repioche un autre, et si le lecteur repart sans avoir marqué sa lecture, la
-// réservation est libérée pour ne pas bloquer un texte que personne ne lira.
+// Arrivée via le bouton « Tirer un Téhilim » (?tirage=1) : la page porte tout
+// le flux. Le texte est déjà à l'écran, sa réservation se pose ici ; s'il ne
+// convient pas, on en repioche un autre, et si le lecteur repart sans avoir
+// marqué sa lecture, la réservation est libérée pour ne pas bloquer un texte
+// que personne ne lira.
 
 const isRandomDraw = computed(() => isSessionMode.value && route.query.tirage !== undefined);
 const isDrawingAnother = ref(false);
@@ -1045,6 +1046,15 @@ const isDrawingAnother = ref(false);
 let pendingClaim: Promise<void> | null = null;
 
 /**
+ * Le lecteur est-il toujours devant le texte d'où l'action est partie ? Une
+ * réservation part sans retenir la navigation : quand elle revient, la page a
+ * pu être quittée, et remplacer la route ramènerait le lecteur de force.
+ */
+function stillReading(startedOnTextId: string): boolean {
+  return isRandomDraw.value && textId.value === startedOnTextId;
+}
+
+/**
  * Pose la réservation du texte tiré, à l'arrivée sur la page. Le texte a déjà
  * été annoncé au lecteur : il passe en tête, et on ne le déplace que si
  * quelqu'un l'a pris entre-temps.
@@ -1054,6 +1064,8 @@ async function claimDrawnText() {
   if (!s || reservationUnit.value === undefined) return;
   // Déjà à moi (retour sur une lecture en cours, lien rouvert) : rien à poser.
   if (isMine.value) return;
+
+  const from = textId.value;
 
   const textStudies = sessionService.getSessionTextStudies(s);
   // Le texte annoncé passe en tête, sauf s'il a été pris pendant le trajet :
@@ -1089,8 +1101,8 @@ async function claimDrawnText() {
     });
 
     // Le texte annoncé a été pris pendant le trajet : on bascule sur celui qui
-    // a effectivement été retenu.
-    if (result.text.id !== textId.value) {
+    // a effectivement été retenu, sauf si le lecteur est déjà reparti.
+    if (result.text.id !== from && stillReading(from)) {
       router.replace({
         name: "text-reading",
         params: { textId: result.text.id },
@@ -1193,6 +1205,7 @@ onBeforeUnmount(() => {
 async function drawAnother() {
   const s = session.value;
   if (!s || isDrawingAnother.value) return;
+  const from = textId.value;
   // La réservation d'arrivée peut être encore en vol : sans cette attente, on
   // libérerait un texte qui n'est pas encore réservé, et il resterait pris.
   await pendingClaim;
@@ -1243,12 +1256,14 @@ async function drawAnother() {
     });
 
     noteReadingActivity();
-    router.replace({
-      name: "text-reading",
-      params: { textId: result.text.id },
-      query: route.query,
-    });
-    scrollTopProgrammatic();
+    if (stillReading(from)) {
+      router.replace({
+        name: "text-reading",
+        params: { textId: result.text.id },
+        query: route.query,
+      });
+      scrollTopProgrammatic();
+    }
   } catch (e) {
     analyticsService.capture("reservation_failed", {
       session_id: s.id,
