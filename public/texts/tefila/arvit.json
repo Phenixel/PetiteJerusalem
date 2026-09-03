@@ -6,10 +6,10 @@
       "lines": []
     },
     {
-      "label": "Lédavid (d'Eloul à Chemini 'Atséret)",
+      "label": "Lédavid",
       "labelText": {
-        "fr": "Lédavid (d'Eloul à Chemini 'Atséret)",
-        "en": "LeDavid (from Elul to Shemini Atzeret)",
+        "fr": "Lédavid",
+        "en": "LeDavid",
         "he": "לדוד ה' אורי"
       },
       "fold": "ledavid",
@@ -18,11 +18,11 @@
       ]
     },
     {
-      "label": "Veille de Roch Hodech : Barkhi nafchi",
+      "label": "Barkhi nafchi",
       "labelText": {
-        "fr": "Veille de Roch Hodech : Barkhi nafchi",
-        "en": "Rosh Hodesh eve: Barchi nafshi",
-        "he": "ליל ראש חודש : ברכי נפשי"
+        "fr": "Barkhi nafchi",
+        "en": "Barchi nafshi",
+        "he": "ברכי נפשי"
       },
       "when": "rosh-chodesh",
       "plain": true,

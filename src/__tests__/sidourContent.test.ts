@@ -188,15 +188,16 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       // À Cha'harit seulement, et à leur place : après les bénédictions du
       // matin, avant 'Akédat Its'hak. On ne prie pas d'abord pour s'en revêtir
       // ensuite.
-      const talit = blocks.findIndex((b) => b.label === "Le talit");
+      const talit = blocks.findIndex((b) => b.label === "Le talit et les téfilines");
       if (!resolveFilePath(entry).includes("chaharit")) {
         expect(talit).toBe(-1);
         return;
       }
-      expect(blocks[talit + 1].label).toBe("Les téfilines");
-      // Le passage suivant qui porte un titre : entre les deux, le léchem
-      // yi'houd se glisse sans titre à lui.
-      expect(blocks.slice(talit + 2).find((b) => b.label)?.label).toBe("'Akédat Its'hak");
+      // Les téfilines suivent le talit sans titre à eux, et le passage titré
+      // suivant est celui des korbanot : entre les deux, le léchem yi'houd se
+      // glisse sans titre non plus.
+      expect(blocks[talit + 1].label).toBeFalsy();
+      expect(blocks.slice(talit + 1).find((b) => b.label)?.label).toBe("Korbanot");
       // Les deux parachiot des téfilines se lisent dans le bloc des téfilines,
       // sans titre à elles : le menu de lecture n'a pas à les distinguer.
       const tefilines = blocks[talit + 1];
@@ -303,16 +304,20 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
   });
 
   it("lit la Torah à Pourim et les jours de jeûne", () => {
+    // Les cinq entrées de lecture portent le même titre : c'est la clé du jour
+    // qui les distingue, elles ne se croisent pas.
     const pourim = blocks.find((b) => b.when === "pourim")!;
+    expect(pourim.label).toBe("Lecture de la Torah");
     expect(sansSignes(pourim.lines.join(" "))).toContain("עמלק");
-    const jeune = blocks.find((b) => b.label === "Lecture de la Torah du jeûne")!;
-    expect(jeune.when).toBe("taanit");
+    const jeune = blocks.find((b) => b.label === "Lecture de la Torah" && b.when === "taanit")!;
     expect(sansSignes(jeune.lines.join(" "))).toContain("ויחל משה");
   });
 
   it("ne met ni talit ni téfilines le matin de Tich'a beAv", () => {
-    for (const label of ["Le talit", "Les téfilines"]) {
-      const bloc = blocks.find((b) => b.label === label)!;
+    const talit = blocks.findIndex((b) => b.label === "Le talit et les téfilines");
+    // Les deux blocs, celui qui porte le titre et celui des téfilines qui le
+    // suit sans titre.
+    for (const bloc of [blocks[talit], blocks[talit + 1]]) {
       expect(bloc.when).toBe("sans-tisha-beav");
       // Dans le fil, non en encadré d'ajout : ils se disent presque tous les
       // jours, ce n'est pas une addition du calendrier.

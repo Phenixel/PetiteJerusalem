@@ -1053,11 +1053,7 @@ function avinouMalkenou(src, from, to) {
     src,
     when: "teshuva",
     plain: true,
-    labelText: R(
-      "Avinou Malkénou (dix jours de techouva)",
-      "Avinu Malkenu (Ten Days of Repentance)",
-      "אבינו מלכנו (עשרת ימי תשובה)",
-    ),
+    labelText: R("Avinou Malkénou", "Avinu Malkenu", "אבינו מלכנו"),
     lines,
   };
 }
@@ -1308,7 +1304,10 @@ function chaharitRecipe() {
         when: "sans-tisha-beav",
         plain: true,
         src: "Talit",
-        labelText: R("Le talit", "The talit", "מצות ציצית"),
+        // Le talit et les téfilines se posent l'un après l'autre : un seul
+        // titre, qui porte aussi le miroir du bayit de la tête.
+        labelText: R("Le talit et les téfilines", "Talit and tefillin", "טלית ותפילין"),
+        mirror: true,
         halakha: R(
           "Avant de bénir, on vérifie les fils du tsitsit et on les sépare. On s'enveloppe la tête, puis on rabat le talit sur le corps.",
           "Before blessing, check the tzitzit threads and separate them. Wrap the head, then draw the talit down over the body.",
@@ -1356,11 +1355,6 @@ function chaharitRecipe() {
         when: "sans-tisha-beav",
         plain: true,
         src: "Tefillin",
-        labelText: R("Les téfilines", "The tefillin", "מצות תפילין"),
-        // Le bayit de la tête se pose à l'endroit du corps qu'on ne voit
-        // pas : le titre offre le miroir, comme celui de la 'Amida offre la
-        // boussole.
-        mirror: true,
         halakha: R(
           "On pose d'abord les téfilines du bras, sur le biceps face au cœur, puis ceux de la tête. On ne parle pas entre les deux.",
           "The arm tefillin goes on first, on the biceps facing the heart, then the head tefillin. Do not speak between the two.",
@@ -1428,7 +1422,9 @@ function chaharitRecipe() {
       },
       {
         src: "Morning Prayer",
-        labelText: R("'Akédat Its'hak", "The Binding of Isaac", "עקידת יצחק"),
+        // La 'Akéda, l'acceptation du joug et les korbanot se lisent d'un
+        // trait jusqu'à Hodou : un seul titre les porte, celui du premier.
+        labelText: R("Korbanot", "Korbanot", "סדר הקרבנות"),
         lines: [
           { seg: 3 },
           { seg: 4 },
@@ -1439,11 +1435,6 @@ function chaharitRecipe() {
       },
       {
         src: "Morning Prayer",
-        labelText: R(
-          "Acceptation du joug divin",
-          "Accepting the yoke of Heaven",
-          "קבלת עול מלכות שמים",
-        ),
         halakha: R(
           "Si l'on craint de dépasser l'heure du Chéma, on lit dès ici les trois paragraphes du Chéma, avec l'intention d'accomplir la mitsva.",
           "If the time of the Shema may pass, read all three paragraphs of the Shema here, intending to fulfill the mitzvah.",
@@ -1468,9 +1459,6 @@ function chaharitRecipe() {
       },
       {
         src: "Morning Prayer",
-        // Le tamid et le pitoum haketoret sont les korbanot du matin : ils se
-        // suivent, un seul titre les porte.
-        labelText: R("Korbanot", "Korbanot", "סדר הקרבנות"),
         lines: [{ seg: 18 }],
       },
       {
@@ -1601,7 +1589,7 @@ function chaharitRecipe() {
       kaddishHalf("Uva LeSion"),
       {
         src: "Pesukei D'Zimra",
-        labelText: R("Barékhou", "Barechu", "ברכו"),
+        labelText: R("Barékhou et le Chéma", "Barechu and the Shema", "ברכו וקריאת שמע"),
         lines: [
           {
             seg: 23,
@@ -1628,11 +1616,7 @@ function chaharitRecipe() {
       { zman: "shema" },
       {
         src: "The Shema",
-        labelText: R(
-          "Chéma et ses bénédictions",
-          "The Shema and its blessings",
-          "קריאת שמע וברכותיה",
-        ),
+        // Le titre est porté par Barékhou, qui l'ouvre trois lignes plus haut.
         halakha: HALAKHA.shemaMatin,
         lines: [
           { seg: 1 },
@@ -1805,11 +1789,7 @@ function chaharitRecipe() {
         src: "Hanouka.Shaharit",
         when: "hanouka",
         plain: true,
-        labelText: R(
-          "Lecture de la Torah de 'Hanouka",
-          "Torah reading for Hanukkah",
-          "קריאת התורה לחנוכה",
-        ),
+        labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
         lines: [
           {
             seg: 2,
@@ -1873,11 +1853,7 @@ function chaharitRecipe() {
         src: "Pourim.Jour",
         when: "pourim",
         plain: true,
-        labelText: R(
-          "Lecture de la Torah de Pourim",
-          "Torah reading for Purim",
-          "קריאת התורה לפורים",
-        ),
+        labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
         lines: [
           {
             seg: 1,
@@ -1894,22 +1870,14 @@ function chaharitRecipe() {
         src: "Taanit.Torah",
         when: "taanit",
         plain: true,
-        labelText: R(
-          "Lecture de la Torah du jeûne",
-          "Torah reading for the fast",
-          "קריאת התורה לתענית ציבור",
-        ),
+        labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
         lines: [{ seg: 1, mode: "full" }],
       },
       {
         src: "RH.Hallel",
         when: "rosh-chodesh",
         plain: true,
-        labelText: R(
-          "Lecture de la Torah de Roch Hodech",
-          "Torah reading for Rosh Hodesh",
-          "קריאת התורה לראש חודש",
-        ),
+        labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
         lines: [
           {
             seg: 35,
@@ -1949,7 +1917,7 @@ function chaharitRecipe() {
         src: "Torah Reading",
         when: "torah-semaine",
         plain: true,
-        labelText: R("Sortie du séfer Torah", "Taking out the Torah", "הוצאת ספר תורה"),
+        labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
         halakha: HALAKHA.torahSemaine,
         lines: [
           {
@@ -2160,7 +2128,7 @@ function chaharitRecipe() {
         when: "rosh-chodesh",
         plain: true,
         kotel: true,
-        labelText: R("Moussaf de Roch Hodech", "Musaf for Rosh Hodesh", "מוסף לראש חודש"),
+        labelText: R("Moussaf", "Musaf", "מוסף"),
         halakha: R(
           "On garde dans Moussaf la mention de la saison (morid hatal en été, machiv haroua'h oumorid haguéchem en hiver).",
           "The seasonal mention is kept in Musaf (morid hatal in summer, mashiv haruach umorid hageshem in winter).",
@@ -2267,11 +2235,7 @@ function chaharitRecipe() {
         src: "Alenu",
         when: "ledavid",
         plain: true,
-        labelText: R(
-          "Lédavid (d'Eloul à Chemini 'Atséret)",
-          "LeDavid (from Elul to Shemini Atzeret)",
-          "לדוד ה' אורי",
-        ),
+        labelText: R("Lédavid", "LeDavid", "לדוד ה' אורי"),
         lines: [{ seg: 5 }],
       },
     ],
@@ -2380,11 +2344,7 @@ function minhaRecipe() {
         src: "Taanit.Torah",
         when: "taanit",
         plain: true,
-        labelText: R(
-          "Lecture de la Torah du jeûne",
-          "Torah reading for the fast",
-          "קריאת התורה לתענית ציבור",
-        ),
+        labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
         lines: [
           {
             seg: 1,
@@ -2439,11 +2399,7 @@ function minhaRecipe() {
         src: "Vidui",
         when: "jour-5",
         plain: true,
-        labelText: R(
-          "Veille de Chabbat : Adonaï malakh (psaume 93)",
-          "Shabbat eve: Adonai malach (Psalm 93)",
-          "ערב שבת: ה' מלך (תהלים צג)",
-        ),
+        labelText: R("Adonaï malakh", "Adonai malach", "ה' מלך"),
         lines: [{ seg: 18, mode: "small" }],
       },
       // Les jours de jeûne public, le psaume 102, « prière du pauvre quand il
@@ -2452,11 +2408,7 @@ function minhaRecipe() {
         src: "Vidui",
         when: "taanit",
         plain: true,
-        labelText: R(
-          "Jour de jeûne : Tefila le'ani (psaume 102)",
-          "Fast day: Tefilah le'ani (Psalm 102)",
-          "בתענית ציבור: תפלה לעני (תהלים קב)",
-        ),
+        labelText: R("Tefila le'ani", "Tefilah le'ani", "תפלה לעני"),
         lines: [{ seg: 20, mode: "small" }],
       },
       kaddishYeheChelama("Vidui", 22),
@@ -2469,11 +2421,7 @@ function minhaRecipe() {
         src: "Ledavid",
         when: "ledavid",
         plain: true,
-        labelText: R(
-          "Lédavid (d'Eloul à Chemini 'Atséret)",
-          "LeDavid (from Elul to Shemini Atzeret)",
-          "לדוד ה' אורי",
-        ),
+        labelText: R("Lédavid", "LeDavid", "לדוד ה' אורי"),
         lines: [{ seg: 5 }],
       },
     ],
@@ -2558,22 +2506,14 @@ function arvitRecipe() {
       {
         src: "Ledavid",
         fold: "ledavid",
-        labelText: R(
-          "Lédavid (d'Eloul à Chemini 'Atséret)",
-          "LeDavid (from Elul to Shemini Atzeret)",
-          "לדוד ה' אורי",
-        ),
+        labelText: R("Lédavid", "LeDavid", "לדוד ה' אורי"),
         lines: [{ seg: 5 }],
       },
       {
         src: "Barchu",
         when: "rosh-chodesh",
         plain: true,
-        labelText: R(
-          "Veille de Roch Hodech : Barkhi nafchi",
-          "Rosh Hodesh eve: Barchi nafshi",
-          "ליל ראש חודש : ברכי נפשי",
-        ),
+        labelText: R("Barkhi nafchi", "Barchi nafshi", "ברכי נפשי"),
         lines: [
           {
             seg: 2,

@@ -88,11 +88,11 @@
       ]
     },
     {
-      "label": "Lecture de la Torah du jeûne",
+      "label": "Lecture de la Torah",
       "labelText": {
-        "fr": "Lecture de la Torah du jeûne",
-        "en": "Torah reading for the fast",
-        "he": "קריאת התורה לתענית ציבור"
+        "fr": "Lecture de la Torah",
+        "en": "Torah reading",
+        "he": "קריאת התורה"
       },
       "when": "taanit",
       "plain": true,
@@ -701,11 +701,11 @@
       ]
     },
     {
-      "label": "Avinou Malkénou (dix jours de techouva)",
+      "label": "Avinou Malkénou",
       "labelText": {
-        "fr": "Avinou Malkénou (dix jours de techouva)",
-        "en": "Avinu Malkenu (Ten Days of Repentance)",
-        "he": "אבינו מלכנו (עשרת ימי תשובה)"
+        "fr": "Avinou Malkénou",
+        "en": "Avinu Malkenu",
+        "he": "אבינו מלכנו"
       },
       "when": "teshuva",
       "plain": true,
@@ -982,11 +982,11 @@
       ]
     },
     {
-      "label": "Veille de Chabbat : Adonaï malakh (psaume 93)",
+      "label": "Adonaï malakh",
       "labelText": {
-        "fr": "Veille de Chabbat : Adonaï malakh (psaume 93)",
-        "en": "Shabbat eve: Adonai malach (Psalm 93)",
-        "he": "ערב שבת: ה' מלך (תהלים צג)"
+        "fr": "Adonaï malakh",
+        "en": "Adonai malach",
+        "he": "ה' מלך"
       },
       "when": "jour-5",
       "plain": true,
@@ -995,11 +995,11 @@
       ]
     },
     {
-      "label": "Jour de jeûne : Tefila le'ani (psaume 102)",
+      "label": "Tefila le'ani",
       "labelText": {
-        "fr": "Jour de jeûne : Tefila le'ani (psaume 102)",
-        "en": "Fast day: Tefilah le'ani (Psalm 102)",
-        "he": "בתענית ציבור: תפלה לעני (תהלים קב)"
+        "fr": "Tefila le'ani",
+        "en": "Tefilah le'ani",
+        "he": "תפלה לעני"
       },
       "when": "taanit",
       "plain": true,
@@ -1102,10 +1102,10 @@
       ]
     },
     {
-      "label": "Lédavid (d'Eloul à Chemini 'Atséret)",
+      "label": "Lédavid",
       "labelText": {
-        "fr": "Lédavid (d'Eloul à Chemini 'Atséret)",
-        "en": "LeDavid (from Elul to Shemini Atzeret)",
+        "fr": "Lédavid",
+        "en": "LeDavid",
         "he": "לדוד ה' אורי"
       },
       "when": "ledavid",
