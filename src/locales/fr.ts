@@ -180,6 +180,13 @@ const fr = {
     },
   },
   home: {
+    omer: {
+      title: "Compte du 'Omer",
+      day: "{n}e jour du 'Omer",
+      dayOne: "1er jour du 'Omer",
+      remaining: "Plus que {n} soirs à compter.",
+      last: "Le dernier soir : demain, Chavouot.",
+    },
     birkatHalevana: {
       title: "Bénédiction de la lune",
       until: "À dire cette nuit, jusqu\u2019au {date}.",

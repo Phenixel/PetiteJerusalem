@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { HDate, months } from "@hebcal/core";
 import {
   activeOccasions,
+  omerDay,
   isRainRequest,
   isWinterMention,
   recentSeasonalChanges,
@@ -188,6 +189,85 @@ describe("les psaumes du jour de certaines dates", () => {
     // Kippour est un jeûne de Tichri, mais il a son propre office : le psaume
     // de Tsom Guedalia n'a rien à y faire.
     expect(chir(new HDate(10, months.TISHREI, 5786))).toEqual([]);
+  });
+});
+
+describe("les jours que hebcal appelle jeûnes sans qu'ils en soient", () => {
+  it("écarte la veille de Pessah, la veille de Tich'a beAv et Kippour", () => {
+    // Ta'anit Bekhorot n'oblige que les premiers-nés ; la veille de Tich'a
+    // beAv, le jeûne ne commence qu'à la nuit ; Kippour a son propre office.
+    // Les trois portent pourtant un drapeau de jeûne chez hebcal.
+    expect(activeOccasions(new HDate(14, months.NISAN, 5787), false).has("taanit")).toBe(false);
+    expect(activeOccasions(new HDate(8, months.AV, 5787), false).has("taanit")).toBe(false);
+    expect(activeOccasions(new HDate(10, months.TISHREI, 5787), false).has("taanit")).toBe(false);
+    // Le jour même de Tich'a beAv reste un jeûne, et lui seul porte Na'hem.
+    const neufAv = activeOccasions(new HDate(9, months.AV, 5787), false);
+    expect(neufAv.has("taanit")).toBe(true);
+    expect(neufAv.has("tisha-beav")).toBe(true);
+    expect(activeOccasions(new HDate(8, months.AV, 5787), false).has("tisha-beav")).toBe(false);
+  });
+});
+
+describe("le Hallel, et sa longueur", () => {
+  const hallel = (hd: HDate) =>
+    [...activeOccasions(hd, false)].filter((cle) => cle.startsWith("hallel")).sort();
+
+  it("se dit à Roch Hodech, à 'Hanouka et à 'Hol haMoed, et pas ailleurs", () => {
+    expect(hallel(new HDate(1, months.KISLEV, 5787))).toContain("hallel");
+    expect(hallel(new HDate(25, months.KISLEV, 5787))).toContain("hallel");
+    expect(hallel(new HDate(17, months.NISAN, 5787))).toContain("hallel");
+    expect(hallel(new HDate(5, months.CHESHVAN, 5787))).toEqual([]);
+  });
+
+  it("est entier à 'Hanouka et à Souccot, abrégé à Roch Hodech et à Pessah", () => {
+    expect(hallel(new HDate(25, months.KISLEV, 5787))).toContain("hallel-complet");
+    expect(hallel(new HDate(17, months.TISHREI, 5788))).toContain("hallel-complet");
+    expect(hallel(new HDate(1, months.KISLEV, 5787))).toContain("hallel-abrege");
+    expect(hallel(new HDate(17, months.NISAN, 5787))).toContain("hallel-abrege");
+    // Roch Hodech Tévet tombe dans 'Hanouka : c'est 'Hanouka qui l'emporte.
+    const rhTevet = activeOccasions(new HDate(1, months.TEVET, 5787), false);
+    expect(rhTevet.has("rosh-chodesh")).toBe(true);
+    expect(rhTevet.has("hallel-complet")).toBe(true);
+    expect(rhTevet.has("hallel-abrege")).toBe(false);
+  });
+});
+
+describe("les huit jours de 'Hanouka", () => {
+  it("se numérotent de 1 à 8, une clé par jour", () => {
+    // hebcal pose « 1 Candle » sur la veille : le premier jour porte
+    // « 2 Candles », et le dernier a son nom à lui.
+    const jours: string[] = [];
+    for (let i = 0; i < 8; i++) {
+      const hd = new HDate(new HDate(25, months.KISLEV, 5787).abs() + i);
+      const cle = [...activeOccasions(hd, false)].find((k) => /^hanouka-\d/.test(k));
+      jours.push(cle ?? "(rien)");
+    }
+    expect(jours).toEqual([
+      "hanouka-1",
+      "hanouka-2",
+      "hanouka-3",
+      "hanouka-4",
+      "hanouka-5",
+      "hanouka-6",
+      "hanouka-7",
+      "hanouka-8",
+    ]);
+    // La veille n'en est pas.
+    expect(activeOccasions(new HDate(24, months.KISLEV, 5787), false).has("hanouka")).toBe(false);
+  });
+});
+
+describe("le compte du 'Omer", () => {
+  it("court du 16 Nissan au 5 Sivan, quarante-neuf jours pleins", () => {
+    expect(omerDay(new HDate(15, months.NISAN, 5787))).toBeNull();
+    expect(omerDay(new HDate(16, months.NISAN, 5787))).toBe(1);
+    expect(omerDay(new HDate(5, months.SIVAN, 5787))).toBe(49);
+    expect(omerDay(new HDate(6, months.SIVAN, 5787))).toBeNull();
+    // Le compte ne saute pas d'un mois à l'autre.
+    expect(omerDay(new HDate(1, months.IYYAR, 5787))).toBe(16);
+    const occ = activeOccasions(new HDate(16, months.NISAN, 5787), false);
+    expect(occ.has("omer")).toBe(true);
+    expect(occ.has("omer-1")).toBe(true);
   });
 });
 

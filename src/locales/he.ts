@@ -167,6 +167,13 @@ const he: LocaleMessages = {
     },
   },
   home: {
+    omer: {
+      title: "ספירת העומר",
+      day: "היום {n} לעומר",
+      dayOne: "היום יום אחד לעומר",
+      remaining: "נותרו {n} ערבים לספירה.",
+      last: "הערב האחרון: מחר שבועות.",
+    },
     birkatHalevana: {
       title: "ברכת הלבנה",
       until: "לאומרה הלילה, עד {date}.",

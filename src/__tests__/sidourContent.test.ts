@@ -43,6 +43,14 @@ const KNOWN_WHEN = new Set([
   "sans-tahanoun",
   "sans-tahanoun-minha",
   "taanit",
+  "hallel",
+  "hallel-complet",
+  "hallel-abrege",
+  "hanouka",
+  "pourim",
+  "omer",
+  ...Array.from({ length: 8 }, (_, i) => `hanouka-${i + 1}`),
+  ...Array.from({ length: 49 }, (_, i) => `omer-${i + 1}`),
   "tisha-beav",
   "sans-tisha-beav",
   "chir-tsom-tichri",
@@ -161,10 +169,14 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       // ouvre l'office toute l'année, dans un encadré (`fold`) que sa saison
       // déplie : c'est le premier texte de la page, il ne peut pas y
       // apparaître et disparaître sans laisser l'office sans entrée.
-      const ledavid = blocks.filter((b) => b.labelText?.fr.startsWith("Lédavid"));
+      // On le cherche à sa saison, non à son titre : dans le fil de Cha'harit
+      // et de Min'ha il n'en a plus, une ligne ne vaut pas un repère de menu.
+      const ledavid = blocks.filter((b) => b.when === "ledavid" || b.fold === "ledavid");
       expect(ledavid).toHaveLength(1);
-      expect(ledavid[0].when ?? ledavid[0].fold).toBe("ledavid");
       expect(ledavid[0].lines).toHaveLength(1);
+      expect(sansSignes(ledavid[0].lines[0])).toContain("לדוד יהוה אורי");
+      // L'encadré d'Arvit garde son titre : c'est par lui qu'on le déplie.
+      if (ledavid[0].fold) expect(ledavid[0].labelText).toBeDefined();
     });
 
     it("offre la boussole du Kotel au titre de la 'Amida", () => {
@@ -180,15 +192,16 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       // À Cha'harit seulement, et à leur place : après les bénédictions du
       // matin, avant 'Akédat Its'hak. On ne prie pas d'abord pour s'en revêtir
       // ensuite.
-      const talit = blocks.findIndex((b) => b.label === "Le talit");
+      const talit = blocks.findIndex((b) => b.label === "Le talit et les téfilines");
       if (!resolveFilePath(entry).includes("chaharit")) {
         expect(talit).toBe(-1);
         return;
       }
-      expect(blocks[talit + 1].label).toBe("Les téfilines");
-      // Le passage suivant qui porte un titre : entre les deux, le léchem
-      // yi'houd se glisse sans titre à lui.
-      expect(blocks.slice(talit + 2).find((b) => b.label)?.label).toBe("'Akédat Its'hak");
+      // Les téfilines suivent le talit sans titre à eux, et le passage titré
+      // suivant est celui des korbanot : entre les deux, le léchem yi'houd se
+      // glisse sans titre non plus.
+      expect(blocks[talit + 1].label).toBeFalsy();
+      expect(blocks.slice(talit + 1).find((b) => b.label)?.label).toBe("Korbanot");
       // Les deux parachiot des téfilines se lisent dans le bloc des téfilines,
       // sans titre à elles : le menu de lecture n'a pas à les distinguer.
       const tefilines = blocks[talit + 1];
@@ -260,6 +273,92 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
     });
   },
 );
+
+describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", () => {
+  const entry = sidourEntries.find((e) => resolveFilePath(e).includes("chaharit"))!;
+  const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
+
+  it("porte les deux formes du Hallel, exclusives", () => {
+    // Sur le fichier brut : la condition vit sur la ligne, et le lecteur la
+    // consomme avant d'en faire un paragraphe.
+    const brut = (
+      loadRaw(entry) as { blocks: { label?: string; when?: string; lines: unknown[] }[] }
+    ).blocks;
+    const hallel = brut.find((b) => b.label === "Hallel")!;
+    expect(hallel.when).toBe("hallel");
+    const lignes = hallel.lines as { when?: string; he?: string }[];
+    const entier = lignes.filter((l) => l?.when === "hallel-complet");
+    const abrege = lignes.filter((l) => l?.when === "hallel-abrege");
+    // « Lo lanou » et « Ahavti » ne sont là qu'au Hallel entier, avec leur
+    // suite ; les deux consignes de saut ne sont là qu'à l'abrégé.
+    expect(entier).toHaveLength(4);
+    expect(abrege).toHaveLength(2);
+    expect(sansSignes(String(entier[0].he))).toContain("לא לנו");
+    expect(sansSignes(String(entier[2].he))).toContain("אהבתי");
+  });
+
+  it("lit un passage par jour à 'Hanouka, dans l'ordre des nessiim", () => {
+    const jours = blocks.filter((b) => /^hanouka-\d/.test(b.when ?? ""));
+    expect(jours.map((b) => b.when)).toEqual(
+      Array.from({ length: 8 }, (_, i) => `hanouka-${i + 1}`),
+    );
+    // Le deuxième jour lit le nassi de Yissakhar, le huitième celui de Menaché.
+    expect(sansSignes(jours[1].lines.join(" "))).toContain("נתנאל בןצוער");
+    expect(sansSignes(jours[7].lines.join(" "))).toContain("גמליאל בןפדהצור");
+  });
+
+  it("lit la Torah à Pourim et les jours de jeûne", () => {
+    // Les cinq entrées de lecture portent le même titre : c'est la clé du jour
+    // qui les distingue, elles ne se croisent pas.
+    const pourim = blocks.find((b) => b.when === "pourim")!;
+    expect(pourim.label).toBe("Lecture de la Torah");
+    expect(sansSignes(pourim.lines.join(" "))).toContain("עמלק");
+    const jeune = blocks.find((b) => b.label === "Lecture de la Torah" && b.when === "taanit")!;
+    expect(sansSignes(jeune.lines.join(" "))).toContain("ויחל משה");
+  });
+
+  it("ne met ni talit ni téfilines le matin de Tich'a beAv", () => {
+    const talit = blocks.findIndex((b) => b.label === "Le talit et les téfilines");
+    // Les deux blocs, celui qui porte le titre et celui des téfilines qui le
+    // suit sans titre.
+    for (const bloc of [blocks[talit], blocks[talit + 1]]) {
+      expect(bloc.when).toBe("sans-tisha-beav");
+      // Dans le fil, non en encadré d'ajout : ils se disent presque tous les
+      // jours, ce n'est pas une addition du calendrier.
+      expect(bloc.plain).toBe(true);
+    }
+  });
+});
+
+describe("Arvit : le compte du 'Omer", () => {
+  const entry = sidourEntries.find((e) => resolveFilePath(e).includes("arvit"))!;
+  const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
+
+  it("donne les quarante-neuf soirs, chacun avec sa bénédiction", () => {
+    const soirs = blocks.filter((b) => /^omer-\d/.test(b.when ?? ""));
+    expect(soirs).toHaveLength(49);
+    expect(soirs.map((b) => b.when)).toEqual(Array.from({ length: 49 }, (_, i) => `omer-${i + 1}`));
+    for (const soir of soirs) {
+      // La bénédiction finit sur « hayom », le compte l'achève : les deux
+      // doivent être dans le même bloc, ou la phrase se coupe en deux.
+      expect(sansSignes(soir.lines.join(" "))).toContain("על ספירת העמר");
+      expect(sansSignes(soir.lines.join(" "))).toContain("לעמר");
+    }
+    expect(sansSignes(soirs[0].lines.join(" "))).toContain("יום אחד לעמר");
+    expect(sansSignes(soirs[48].lines.join(" "))).toContain("תשעה וארבעים יום");
+  });
+
+  it("l'encadre de son ouverture et de sa clôture, et le met à la fin", () => {
+    const saison = blocks.filter((b) => b.when === "omer");
+    expect(saison).toHaveLength(2);
+    expect(saison[0].label).toBe("Sefirat ha'omer");
+    expect(sansSignes(saison[1].lines.join(" "))).toContain("אנא בכח");
+    // Après 'Alénou : le compte se dit l'office fini.
+    const alenou = blocks.findIndex((b) => b.label === "'Alénou léchabéa'h");
+    const premierSoir = blocks.findIndex((b) => b.when === "omer-1");
+    expect(premierSoir).toBeGreaterThan(alenou);
+  });
+});
 
 describe("Cha'harit : ce qui s'ajoute au psaume du jour", () => {
   const entry = sidourEntries.find((e) => resolveFilePath(e).includes("chaharit"))!;
