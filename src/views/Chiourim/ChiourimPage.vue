@@ -250,7 +250,7 @@ onMounted(() => {
           >
             <ChiourCard
               v-for="chiour in filteredChiourim"
-              :key="chiour.name"
+              :key="chiour.slug"
               :chiour="chiour"
               class="h-full"
             />

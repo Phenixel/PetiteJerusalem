@@ -20,7 +20,6 @@ const toast = useToast();
 
 const isLoading = ref(false);
 const message = ref("");
-const messageType = ref<"success" | "error">("success");
 const currentUser = ref<User | null>(null);
 // Visitors who aren't signed in get the sign-in prompt (like the share home
 // page) instead of being redirected away.
@@ -133,14 +132,12 @@ const createSession = async () => {
   ) {
     trackCreateFailed("validation", "missing_fields");
     message.value = t("newSession.fillAllFields");
-    messageType.value = "error";
     return;
   }
 
   if (isBookSelectionEnabled.value && selectedBooks.value.length === 0) {
     trackCreateFailed("validation", "no_book_selected");
     message.value = t("newSession.selectAtLeastOne");
-    messageType.value = "error";
     return;
   }
 
@@ -188,12 +185,9 @@ const createSession = async () => {
       analyticsService.captureException(error, { flow: "session_create" });
       message.value = t("newSession.createError");
     }
-    messageType.value = "error";
+    // Pas de finally : en cas de succès, la page est quittée et le bouton
+    // reste inactif jusque-là (sinon un second clic créerait un doublon).
     isLoading.value = false;
-  } finally {
-    if (messageType.value === "error") {
-      isLoading.value = false;
-    }
   }
 };
 
@@ -366,17 +360,14 @@ const goBack = () => {
       </form>
     </div>
 
+    <!-- Seules les erreurs s'affichent ici : la réussite passe par un toast
+         puis la redirection vers la session créée. -->
     <div
       v-if="message"
-      class="mt-6 flex items-center justify-center gap-2 text-center font-medium animate-[fadeIn_0.3s_ease]"
-      :class="
-        messageType === 'success'
-          ? 'text-green-700 dark:text-green-300'
-          : 'text-red-600 dark:text-red-400'
-      "
+      class="mt-6 flex items-center justify-center gap-2 text-center font-medium text-red-600 animate-[fadeIn_0.3s_ease] dark:text-red-400"
+      role="alert"
     >
-      <AppIcon v-if="messageType === 'success'" name="circle-check" :size="15" />
-      <AppIcon v-if="messageType === 'error'" name="alert-circle" :size="15" />
+      <AppIcon name="alert-circle" :size="15" />
       {{ message }}
     </div>
 

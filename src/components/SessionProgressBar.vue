@@ -22,7 +22,7 @@ const stats = computed(() => {
 </script>
 
 <template>
-  <div class="mb-12 max-w-3xl mx-auto animate-[fadeIn_0.5s_ease_0.2s] fill-mode-backwards">
+  <div class="mb-12 max-w-3xl mx-auto animate-[fadeIn_0.5s_ease_0.2s_backwards]">
     <div class="flex items-end justify-between mb-2">
       <div class="flex items-center gap-2">
         <span class="text-3xl font-bold text-green-500 dark:text-green-400">

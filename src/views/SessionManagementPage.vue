@@ -239,7 +239,9 @@ const createGuestReservation = async () => {
     selectedGuestId.value || guestForm.value.email.trim() || `guest-${crypto.randomUUID()}`;
 
   try {
-    isLoading.value = true;
+    // Pas de isLoading ici : il remplace toute la page par un spinner, ce qui
+    // démonte la liste, perd le défilement et la carte en cours. Le bouton de
+    // la modale a son propre état (isSubmittingBatch).
     isSubmittingBatch.value = true;
 
     const itemsToReserve = Array.from(selectedItems.value).map((key) => {
@@ -297,7 +299,6 @@ const createGuestReservation = async () => {
     });
     toast.errorFromException(error, t("sessionManagement.reservationCreateError"));
   } finally {
-    isLoading.value = false;
     isSubmittingBatch.value = false;
   }
 };
@@ -928,10 +929,7 @@ onMounted(() => {
 
     <!-- Sticky Bottom Bar pour Batch : réserver et supprimer partagent la même
          barre, chaque action n'apparaissant que si elle a une sélection. -->
-    <BatchSelectionBar
-      :count="selectedItems.size + selectedReservations.size"
-      :label="batchLabel"
-    >
+    <BatchSelectionBar :count="selectedItems.size + selectedReservations.size" :label="batchLabel">
       <template #actions>
         <button
           v-if="selectedItems.size > 0"
@@ -982,11 +980,9 @@ onMounted(() => {
 
         <form @submit.prevent="createGuestReservation" class="space-y-4">
           <div>
-            <label
-              for="guest-name"
-              class="block text-sm font-semibold text-text-secondary mb-2"
-              >{{ t("sessionManagement.guestName") }}</label
-            >
+            <label for="guest-name" class="block text-sm font-semibold text-text-secondary mb-2">{{
+              t("sessionManagement.guestName")
+            }}</label>
             <div class="relative">
               <input
                 id="guest-name"
@@ -1081,10 +1077,12 @@ onMounted(() => {
             <button
               type="submit"
               class="btn btn-primary flex-1"
-              :disabled="!guestForm.name || isLoading"
+              :disabled="!guestForm.name || isSubmittingBatch"
             >
-              <AppIcon v-if="isLoading" name="spinner" :size="15" class="animate-spin" />
-              {{ isLoading ? t("sessionManagement.creating") : t("sessionManagement.create") }}
+              <AppIcon v-if="isSubmittingBatch" name="spinner" :size="15" class="animate-spin" />
+              {{
+                isSubmittingBatch ? t("sessionManagement.creating") : t("sessionManagement.create")
+              }}
             </button>
           </div>
         </form>

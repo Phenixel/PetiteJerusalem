@@ -41,8 +41,6 @@ const reservationForm = ref({
   email: "",
 });
 
-const isReserving = ref<string | null>(null);
-
 const searchTerm = ref("");
 // Filtre : ne montrer que les textes ayant encore des sections disponibles.
 const showOnlyAvailable = ref(false);
@@ -724,7 +722,6 @@ const applySessionSeo = (s: typeof session.value) => {
 onMounted(async () => {
   currentUser.value = await sessionService.getCurrentUser();
   await loadSessionData();
-  applySessionSeo(session.value);
 
   // Point d'entrée du funnel de réservation. Pas de nom de session dans les
   // propriétés : les intitulés portent souvent des noms de personnes.
@@ -932,7 +929,6 @@ watch(session, (s) => applySessionSeo(s));
         :current-user="currentUser"
         :guest-email="reservationForm.email"
         :selected-items="selectedItems"
-        :is-reserving="isReserving"
         @item-click="handleItemClick"
         @toggle-completion="toggleReservationCompletion"
         @toggle-select-all="handleToggleSelectAll"

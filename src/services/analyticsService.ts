@@ -206,7 +206,9 @@ class AnalyticsService {
         // On l'épargne aux machines en rendu dégradé (peu de cœurs/RAM, rendu
         // logiciel, FPS mesuré mauvais, verdict persisté en localStorage) ;
         // leurs événements produit, Error tracking et Web Vitals restent actifs.
-        disable_session_recording: isDegradedRendering.value,
+        // Pas de replay dans l'app : rrweb sérialise le DOM en continu (CPU,
+        // batterie, données mobiles). Événements, erreurs et Web Vitals restent.
+        disable_session_recording: isNativeApp || isDegradedRendering.value,
         // Dans la webview Capacitor, les cookies sur https://localhost sont
         // fragiles : localStorage est le stockage fiable.
         persistence: isNativeApp ? "localStorage" : "localStorage+cookie",

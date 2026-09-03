@@ -13,7 +13,7 @@ import type {
 } from "../models/models";
 import { EnumTypeTextStudy } from "../models/typeTextStudy";
 import { TextTypeService } from "./textTypeService";
-import { DateService } from "./dateService";
+import { DateService, endOfLocalDay } from "./dateService";
 import textStudiesJson from "../datas/textStudies.json";
 
 export class SessionService {
@@ -298,7 +298,8 @@ export class SessionService {
       name,
       description,
       type,
-      dateLimit: new Date(dateLimit),
+      // Champ `date` (YYYY-MM-DD) : la chaîne court jusqu'à la fin de ce jour-là.
+      dateLimit: endOfLocalDay(dateLimit),
       personId,
       creatorName,
       slug,
@@ -450,6 +451,18 @@ export class SessionService {
 
   canEditSession(session: Session): boolean {
     return !session.isEnded;
+  }
+
+  /**
+   * Terminée : close par son créateur, ou date limite dépassée. La journée de
+   * la date limite compte entière, quel que soit l'horaire enregistré (les
+   * anciennes chaînes portent minuit, les nouvelles la fin de journée).
+   */
+  isSessionFinished(session: Session): boolean {
+    if (session.isEnded) return true;
+    const limit = new Date(session.dateLimit);
+    limit.setHours(23, 59, 59, 999);
+    return Date.now() > limit.getTime();
   }
 
   canEndSession(session: Session): boolean {

@@ -41,7 +41,9 @@ const serieGroups = computed(() => {
 });
 
 const horsSerie = computed(() =>
-  filteredChiourim.value.filter((c) => !c.serieId || !allSeries.value.some((s) => s.id === c.serieId)),
+  filteredChiourim.value.filter(
+    (c) => !c.serieId || !allSeries.value.some((s) => s.id === c.serieId),
+  ),
 );
 
 const categories = computed(() => {
@@ -92,7 +94,12 @@ const loadAuteur = async () => {
   if (cached && applyAuteur(cached, slug)) {
     isLoading.value = false;
     if (chiourService.isCacheStale()) {
-      chiourService.getAllChiourim().then((fresh) => applyAuteur(fresh, slug)).catch(() => {});
+      chiourService
+        .getAllChiourim()
+        .then((fresh) => {
+          if (route.params.auteur === slug) applyAuteur(fresh, slug);
+        })
+        .catch(() => {});
     }
     return;
   }
@@ -157,9 +164,7 @@ watch(() => route.params.auteur, loadAuteur);
     <!-- Content -->
     <div v-else-if="auteurName" class="animate-[fadeIn_0.3s_ease]">
       <!-- Author header -->
-      <div
-        class="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6"
-      >
+      <div class="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
         <div>
           <h1 class="text-3xl md:text-4xl font-bold text-text-primary mb-2">
             {{ auteurName }}
@@ -227,10 +232,7 @@ watch(() => route.params.auteur, loadAuteur);
         </section>
 
         <section v-if="horsSerie.length > 0">
-          <h2
-            v-if="serieGroups.length > 0"
-            class="text-xl font-bold text-text-primary mb-4"
-          >
+          <h2 v-if="serieGroups.length > 0" class="text-xl font-bold text-text-primary mb-4">
             {{ t("serie.outOfSerie") }}
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

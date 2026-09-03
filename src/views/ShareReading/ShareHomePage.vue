@@ -55,12 +55,7 @@ const loadSessions = async () => {
   }
 };
 
-const isSessionFinished = (session: Session): boolean => {
-  if (session.isEnded) return true;
-  const limit = new Date(session.dateLimit);
-  limit.setHours(23, 59, 59, 999);
-  return new Date() > limit;
-};
+const isSessionFinished = (session: Session) => sessionService.isSessionFinished(session);
 
 // --- « Mes sessions » : celles que je suis (participation ou création),
 // affichées avant le reste, c'est ce qu'on vient chercher en revenant.

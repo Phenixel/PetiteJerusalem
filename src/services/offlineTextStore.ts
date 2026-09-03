@@ -322,6 +322,10 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
       );
     }
 
+    // Le site sert /texts/** avec sept jours de cache : sans l'empreinte dans
+    // l'URL, un texte corrigé restait faux une semaine chez tout lecteur web.
+    // Le manifeste (no-cache, 12 Ko) se charge une fois par session.
+    if (!remoteHashes) await loadRemoteHashes();
     const res = await fetch(versionedUrl(webPath, remoteHashes?.[webPath]));
     if (res.ok) return res;
     const stale = isDownloaded(webPath) ? await readLocalCopy(webPath) : null;

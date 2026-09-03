@@ -10,9 +10,6 @@ import ToastContainer from "./components/ToastContainer.vue";
 import ConfirmDialog from "./components/ConfirmDialog.vue";
 import ConsentBanner from "./components/ConsentBanner.vue";
 import GlobalAudioPlayer from "./components/GlobalAudioPlayer.vue";
-import OfflineNotice from "./components/OfflineNotice.vue";
-import BottomTabBar from "./components/BottomTabBar.vue";
-import AppUpdateBanner from "./components/AppUpdateBanner.vue";
 import { useMiniPlayerVisible } from "./composables/useAudioPlayer";
 import { useOnline } from "./composables/useOnline";
 import { isNativeApp } from "./composables/useNativeApp";
@@ -37,6 +34,13 @@ const { loadFonts, loadGuestFonts } = useFonts();
 const OnboardingFlow = defineAsyncComponent(
   () => import("./components/onboarding/OnboardingFlow.vue"),
 );
+
+// App native seulement (barre du bas, bandeau de mise à jour et son service
+// Capacitor) ou rarement affiché (avis hors ligne) : chargés à la demande, le
+// site web n'en embarque pas une ligne dans son chargement initial.
+const BottomTabBar = defineAsyncComponent(() => import("./components/BottomTabBar.vue"));
+const AppUpdateBanner = defineAsyncComponent(() => import("./components/AppUpdateBanner.vue"));
+const OfflineNotice = defineAsyncComponent(() => import("./components/OfflineNotice.vue"));
 
 // App native : les horaires (et leur calendrier) se posent au-dessus de la
 // page en cours, comme un modal plein écran ; le bouton rond de la barre
@@ -71,7 +75,7 @@ const showStoneWall = computed(() => !route.meta.plainBackground);
 const online = useOnline();
 const showOfflineNotice = computed(() => !online.value && !route.meta.offlineOk);
 
-// La barre système Android prend la couleur du fond de l'app (no-op sur web/iOS).
+// La barre système prend la couleur et le style du fond de l'app (no-op sur le web).
 useNativeStatusBar();
 
 // Applique dir/lang au document dès la racine : dans l'app native, le
@@ -128,7 +132,7 @@ authService.onAuthChanged((user) => {
     <Navbar />
     <!-- App native seulement : ne s'affiche que si le binaire installé est
          antérieur à la version publiée sur le store (appUpdateService). -->
-    <AppUpdateBanner />
+    <AppUpdateBanner v-if="isNativeApp" />
     <OfflineNotice v-if="showOfflineNotice" />
     <!-- App native seulement : la Transition porte la surcouche des horaires.
          Le web garde le RouterView nu (des vues multi-racines s'accommodent

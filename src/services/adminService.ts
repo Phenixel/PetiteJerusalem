@@ -11,11 +11,24 @@ import {
   writeBatch,
   serverTimestamp,
 } from "firebase/firestore";
-import { ref as storageRef, uploadBytesResumable, deleteObject, getDownloadURL } from "firebase/storage";
+import {
+  ref as storageRef,
+  uploadBytesResumable,
+  deleteObject,
+  getDownloadURL,
+} from "firebase/storage";
 import { db } from "../firebase/firestore";
 import { storage } from "../firebase/storage";
-import type { AuteurDoc, ChiourDoc, ReportDoc, SerieDoc, Session, StudioTokenDoc } from "../models/models";
+import type {
+  AuteurDoc,
+  ChiourDoc,
+  ReportDoc,
+  SerieDoc,
+  Session,
+  StudioTokenDoc,
+} from "../models/models";
 import { chiourService } from "./chiourService";
+import { serieService } from "./serieService";
 import { firestoreService } from "./firestoreService";
 import { studioService } from "./studioService";
 
@@ -109,7 +122,11 @@ export class AdminService {
    * Résout un signalement sans démasquer la session, et réaligne le compteur
    * dénormalisé (la Cloud Function ne recompte qu'à la création).
    */
-  async resolveReport(reportId: string, sessionId: string, remainingOpenCount: number): Promise<void> {
+  async resolveReport(
+    reportId: string,
+    sessionId: string,
+    remainingOpenCount: number,
+  ): Promise<void> {
     const batch = writeBatch(db);
     batch.update(doc(db, "reports", reportId), { status: "resolved" });
     batch.update(doc(db, "sessions", sessionId), { reportsCount: remainingOpenCount });
@@ -263,11 +280,14 @@ export class AdminService {
       getDocs(query(collection(db, "chiourim"), where("auteurId", "==", auteurId))),
       getDocs(query(collection(db, "studioTokens"), where("auteurId", "==", auteurId))),
     ]);
-    chiourim.docs.forEach((d) => batch.update(d.ref, { auteur: trimmed, updatedAt: serverTimestamp() }));
+    chiourim.docs.forEach((d) =>
+      batch.update(d.ref, { auteur: trimmed, updatedAt: serverTimestamp() }),
+    );
     tokens.docs.forEach((d) => batch.update(d.ref, { auteurName: trimmed }));
 
     await batch.commit();
     chiourService.invalidateCache();
+    serieService.invalidateCache();
   }
 
   /** Supprime un auteur sans chiourim (sinon refuse), tokens compris. */
@@ -348,11 +368,8 @@ export class AdminService {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    serieService.invalidateCache();
     return serieId;
-  }
-
-  async updateSerie(serieId: string, fields: Partial<Pick<SerieDoc, "name" | "description">>): Promise<void> {
-    await updateDoc(doc(db, "series", serieId), { ...fields, updatedAt: serverTimestamp() });
   }
 
   /** Supprime la série et détache ses chiourim (serieId/episode remis à null). */
@@ -367,6 +384,7 @@ export class AdminService {
     batch.delete(doc(db, "series", serieId));
     await batch.commit();
     chiourService.invalidateCache();
+    serieService.invalidateCache();
   }
 }
 

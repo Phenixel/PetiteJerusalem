@@ -45,13 +45,23 @@ const LEET_MAP: Record<string, string> = {
   "!": "i",
 };
 
-/** Minuscules, sans accents ni niqqoud, chiffres « leet » convertis. */
+/**
+ * Minuscules, sans accents ni niqqoud, chiffres « leet » convertis.
+ *
+ * La substitution ne vaut qu'au contact d'une lettre : un chiffre collé à un
+ * mot (« m3rde », « m3rd3 ») en fait partie, un symbole entre deux lettres
+ * (« p@te ») aussi. Un « ! » qui ferme la phrase, lui, reste une ponctuation :
+ * converti en « i », « pute! » devenait « putei » et passait le filtre.
+ */
 function normalize(text: string): string {
   return text
     .toLowerCase()
     .normalize("NFD")
     .replace(/\p{M}+/gu, "")
-    .replace(/[0134578@$!]/g, (c) => LEET_MAP[c] ?? c);
+    .replace(
+      /(?<=\p{L})[0134578@$!](?=\p{L})|(?<=\p{L})[0134578]|[0134578](?=\p{L})/gu,
+      (c) => LEET_MAP[c] ?? c,
+    );
 }
 
 const BANNED_WORD_SET = new Set(BANNED_WORDS.map(normalize));
@@ -133,7 +143,9 @@ export class ModerationService {
     ]);
     await addDoc(collection(db, "reports"), {
       sessionId: session.id,
-      sessionName: session.name,
+      // Les règles Firestore plafonnent le nom à 300 caractères : un titre
+      // plus long rendrait la session impossible à signaler.
+      sessionName: session.name.slice(0, 300),
       reason,
       details: details.trim().slice(0, 1000),
       reporterId: uid,

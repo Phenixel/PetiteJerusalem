@@ -40,9 +40,7 @@ const showShareModal = ref(false);
 // Toujours le domaine canonique : window.location.origin vaut "localhost"
 // (ou capacitor://localhost) en dev et dans l'app native, ce qui produirait
 // un lien de partage inutilisable.
-const shareUrl = computed(() =>
-  chiour.value ? `${SITE_URL}/chiourim/${chiour.value.slug}` : "",
-);
+const shareUrl = computed(() => (chiour.value ? `${SITE_URL}/chiourim/${chiour.value.slug}` : ""));
 
 watchEffect(() => {
   const current = chiour.value;
@@ -140,7 +138,14 @@ const loadChiour = async () => {
     isLoading.value = false;
     // If media URLs may be expired, refresh in background
     if (chiourService.isCacheStale()) {
-      chiourService.getAllChiourim().then((fresh) => applyChiour(fresh, slug)).catch(() => {});
+      chiourService
+        .getAllChiourim()
+        .then((fresh) => {
+          // On a pu changer de chiour entre-temps (épisode suivant) : le
+          // rafraîchissement ne doit pas reposer l'ancien.
+          if (route.params.slug === slug) applyChiour(fresh, slug);
+        })
+        .catch(() => {});
     }
     return;
   }
@@ -159,7 +164,9 @@ const loadChiour = async () => {
       chiourService.registerView(slug);
       chiourService
         .getAllChiourim()
-        .then((all) => applyChiour(all, slug))
+        .then((all) => {
+          if (route.params.slug === slug) applyChiour(all, slug);
+        })
         .catch(() => {});
     }
   } catch (err) {
@@ -224,9 +231,7 @@ watch(() => route.params.slug, loadChiour);
     <div v-else-if="chiour" class="animate-[fadeIn_0.3s_ease]">
       <!-- Header -->
       <div class="mb-8">
-        <h1
-          class="text-3xl md:text-4xl font-bold text-text-primary mb-4 dark:text-gray-100"
-        >
+        <h1 class="text-3xl md:text-4xl font-bold text-text-primary mb-4 dark:text-gray-100">
           {{ chiour.name }}
         </h1>
 
@@ -253,7 +258,8 @@ watch(() => route.params.slug, loadChiour);
           >
             <AppIcon name="book-open" :size="13" />
             <span class="font-semibold">
-              <template v-if="chiour.episode != null">#{{ chiour.episode }} · </template>{{ serie.name }}
+              <template v-if="chiour.episode != null">#{{ chiour.episode }} · </template
+              >{{ serie.name }}
             </span>
             <AppIcon name="chevron-right" :size="12" />
           </router-link>
@@ -318,9 +324,15 @@ watch(() => route.params.slug, loadChiour);
             class="text-text-secondary shrink-0 transition-transform group-hover:-translate-x-0.5 group-hover:text-primary"
           />
           <span class="min-w-0">
-            <span class="block text-xs uppercase tracking-wide text-text-secondary">{{ t("serie.previous") }}</span>
-            <span class="block font-semibold text-text-primary group-hover:text-primary transition-colors truncate">
-              <template v-if="previousEpisode.episode != null">{{ previousEpisode.episode }}. </template>{{ previousEpisode.name }}
+            <span class="block text-xs uppercase tracking-wide text-text-secondary">{{
+              t("serie.previous")
+            }}</span>
+            <span
+              class="block font-semibold text-text-primary group-hover:text-primary transition-colors truncate"
+            >
+              <template v-if="previousEpisode.episode != null"
+                >{{ previousEpisode.episode }}. </template
+              >{{ previousEpisode.name }}
             </span>
           </span>
         </router-link>
@@ -332,9 +344,14 @@ watch(() => route.params.slug, loadChiour);
           :class="previousEpisode ? 'col-start-2' : 'col-span-2'"
         >
           <span class="min-w-0">
-            <span class="block text-xs uppercase tracking-wide text-text-secondary">{{ t("serie.next") }}</span>
-            <span class="block font-semibold text-text-primary group-hover:text-primary transition-colors truncate">
-              <template v-if="nextEpisode.episode != null">{{ nextEpisode.episode }}. </template>{{ nextEpisode.name }}
+            <span class="block text-xs uppercase tracking-wide text-text-secondary">{{
+              t("serie.next")
+            }}</span>
+            <span
+              class="block font-semibold text-text-primary group-hover:text-primary transition-colors truncate"
+            >
+              <template v-if="nextEpisode.episode != null">{{ nextEpisode.episode }}. </template
+              >{{ nextEpisode.name }}
             </span>
           </span>
           <AppIcon

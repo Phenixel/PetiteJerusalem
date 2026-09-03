@@ -3,6 +3,7 @@ import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Session } from "../models/models";
 import { useToast } from "../composables/useToast";
+import { toDateTimeLocal } from "../services/dateService";
 import AppIcon from "./icons/AppIcon.vue";
 
 const { t } = useI18n();
@@ -79,7 +80,7 @@ watch(
         description: newSession.description || "",
         dateLimit:
           newSession.dateLimit instanceof Date
-            ? newSession.dateLimit.toISOString().slice(0, 16)
+            ? toDateTimeLocal(newSession.dateLimit)
             : newSession.dateLimit,
         guestEmailRequired: newSession.guestEmailRequired === true,
       };

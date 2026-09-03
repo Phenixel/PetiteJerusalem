@@ -18,6 +18,9 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            functions/package-lock.json
 
       # `npm ci` comme dans les quatre autres workflows : la PR est validée
       # avec exactement l'arbre de dépendances du lockfile qui partira en prod
@@ -32,3 +35,9 @@ jobs:
       # d'exécuter. On ne garde que la compilation et le prerender SEO.
       - name: Build project
         run: npm run build-only && npm run prerender
+
+      # Les Cloud Functions n'étaient compilées qu'au déploiement (predeploy de
+      # firebase.json), après la mise en ligne du site : une erreur TypeScript
+      # dans functions/src n'apparaissait qu'au moment de la release.
+      - name: Build Cloud Functions
+        run: npm ci --prefix functions && npm run build --prefix functions

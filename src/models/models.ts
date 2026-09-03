@@ -7,13 +7,6 @@ export interface User {
   createdAt?: Date; // Optional: Firebase auth users don't have createdAt
 }
 
-export interface Guest {
-  id: string;
-  name: string;
-  email: string;
-  createdAt: Date;
-}
-
 export interface TextStudy {
   id: string;
   name: string;

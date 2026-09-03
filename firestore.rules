@@ -117,10 +117,11 @@ service cloud.firestore {
         && request.resource.data.details.size() <= 1000
         && request.resource.data.status == 'open'
         && (isAuthenticated()
-              ? request.resource.data.reporterId == request.auth.uid
-              : request.resource.data.reporterId == null)
-        && (request.resource.data.reporterGuestId == null
-              || (request.resource.data.reporterGuestId is string
+              ? (request.resource.data.reporterId == request.auth.uid
+                  && request.resource.data.reporterGuestId == null)
+              : (request.resource.data.reporterId == null
+                  && request.resource.data.reporterGuestId is string
+                  && request.resource.data.reporterGuestId.size() > 0
                   && request.resource.data.reporterGuestId.size() <= 100));
       allow update, delete: if isAdmin();
     }

@@ -17,7 +17,7 @@ import { onRequest } from "firebase-functions/v2/https";
 import { setGlobalOptions } from "firebase-functions/v2";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
-import { renderOgPng, type OgCardOptions } from "./ogCard";
+import type { OgCardOptions } from "./ogCard";
 
 initializeApp();
 const db = getFirestore();
@@ -73,7 +73,10 @@ function clamp(text: string, max = 200): string {
 }
 
 function setTitle(html: string, title: string): string {
-  return html.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeAttr(title)}</title>`);
+  // Fonction de remplacement, pas une chaîne : `$'`, `$&` ou `$1` dans un nom
+  // de session seraient interprétés par String.replace (un titre « $' »
+  // recopiait tout le HTML qui suit dans la balise).
+  return html.replace(/<title>[\s\S]*?<\/title>/, () => `<title>${escapeAttr(title)}</title>`);
 }
 
 function setMeta(html: string, attr: "name" | "property", value: string, content: string): string {
@@ -123,7 +126,10 @@ function injectMeta(shell: string, meta: Meta): string {
   html = setCanonical(html, meta.url);
   // The shell ships an empty `<div id="app"></div>`; fill it. Vue clears and
   // re-renders #app on mount, so human visitors are unaffected.
-  html = html.replace(/(<div id="app">)(<\/div>)/, (_m, open, close) => `${open}${bodyFor(meta)}${close}`);
+  html = html.replace(
+    /(<div id="app">)(<\/div>)/,
+    (_m, open, close) => `${open}${bodyFor(meta)}${close}`,
+  );
   return html;
 }
 
@@ -141,8 +147,11 @@ async function getShell(): Promise<string | null> {
   // would otherwise leak into every dynamic preview. app.html carries the
   // up-to-date asset hashes and is served statically (not routed to this function).
   try {
+    // Délai borné : sans lui, un visiteur humain attendrait le timeout de la
+    // fonction entière avant la redirection de secours vers le shell.
     const res = await fetch(`${SITE_URL}/app`, {
       headers: { "User-Agent": "PetiteJerusalem-SocialPreview" },
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) throw new Error(`shell fetch: HTTP ${res.status}`);
     const html = await res.text();
@@ -332,11 +341,14 @@ export const socialPreview = onRequest({ maxInstances: 10 }, async (req, res) =>
     console.error("[socialPreview] resolveMeta failed:", err);
   }
 
-  const html = injectMeta(shell, meta ?? {
-    title: DEFAULT_TITLE,
-    description: DEFAULT_DESCRIPTION,
-    url: `${SITE_URL}${req.path}`,
-  });
+  const html = injectMeta(
+    shell,
+    meta ?? {
+      title: DEFAULT_TITLE,
+      description: DEFAULT_DESCRIPTION,
+      url: `${SITE_URL}${req.path}`,
+    },
+  );
 
   // Le CDN absorbe le trafic (la réponse ne dépend que de l'URL) mais le
   // navigateur revalide à chaque visite : ce HTML référence des chunks hashés,
@@ -364,6 +376,10 @@ export const ogImage = onRequest({ maxInstances: 5 }, async (req, res) => {
       return;
     }
 
+    // Import différé : le binaire natif resvg (et 1,3 Mo de polices) ne se
+    // charge qu'ici, pas au démarrage à froid des callables, du trigger de
+    // modération et du rappel planifié, qui partagent ce codebase.
+    const { renderOgPng } = await import("./ogCard");
     const png = renderOgPng(card);
     // Depends only on the session content; cache hard on the CDN.
     res.set("Cache-Control", "public, max-age=600, s-maxage=86400");

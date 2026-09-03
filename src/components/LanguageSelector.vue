@@ -64,11 +64,8 @@ function handleKeydown(event: KeyboardEvent) {
     <Transition :name="dropup ? 'dropup' : 'dropdown'">
       <div
         v-if="isOpen"
-        class="absolute min-w-[140px] bg-surface rounded-lg shadow-pop overflow-hidden z-50"
-        :class="[
-          dropup ? 'bottom-full mb-2' : 'top-full mt-2',
-          { 'right-0': true, 'left-0 right-auto': $attrs.class?.toString().includes('rtl') },
-        ]"
+        class="absolute right-0 min-w-[140px] bg-surface rounded-lg shadow-pop overflow-hidden z-50"
+        :class="dropup ? 'bottom-full mb-2' : 'top-full mt-2'"
       >
         <button
           v-for="locale in availableLocales"

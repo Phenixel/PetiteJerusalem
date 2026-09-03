@@ -14,7 +14,6 @@ const props = defineProps<{
   currentUser: User | null;
   guestEmail: string;
   selectedItems: Set<string>;
-  isReserving: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -210,9 +209,7 @@ const isTextFullyRead = (text: TextStudy) => {
 const handleCardClick = (text: TextStudy) => {
   if (text.totalSections === 1) {
     // Pour les textes à un seul chapitre, toggle la réservation
-    const isDisabled =
-      props.isReserving === `${text.id}-1` ||
-      (isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1));
+    const isDisabled = isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1);
     if (!isDisabled) {
       emit("item-click", text.id, 1);
     }
@@ -284,8 +281,7 @@ const handleCardClick = (text: TextStudy) => {
                     :checked="isReserved(text.id, 1).isReserved || isSelected(text.id, 1)"
                     @change="emit('item-click', text.id, 1)"
                     :disabled="
-                      isReserving === `${text.id}-1` ||
-                      (isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1))
+                      isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1)
                     "
                   />
                   <span class="text-sm font-medium text-text-secondary">
@@ -460,9 +456,8 @@ const handleCardClick = (text: TextStudy) => {
                 }"
                 @click="
                   !(
-                    isReserving === `${text.id}-${chapter}` ||
-                    (isReserved(text.id, chapter).isReserved &&
-                      !canCancelReservation(text.id, chapter))
+                    isReserved(text.id, chapter).isReserved &&
+                    !canCancelReservation(text.id, chapter)
                   ) && emit('item-click', text.id, chapter)
                 "
               >
@@ -475,9 +470,8 @@ const handleCardClick = (text: TextStudy) => {
                       isReserved(text.id, chapter).isReserved || isSelected(text.id, chapter)
                     "
                     :disabled="
-                      isReserving === `${text.id}-${chapter}` ||
-                      (isReserved(text.id, chapter).isReserved &&
-                        !canCancelReservation(text.id, chapter))
+                      isReserved(text.id, chapter).isReserved &&
+                      !canCancelReservation(text.id, chapter)
                     "
                   />
                   <span class="font-medium text-sm text-text-primary"

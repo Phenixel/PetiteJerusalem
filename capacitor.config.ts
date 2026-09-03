@@ -1,15 +1,14 @@
 import type { CapacitorConfig } from '@capacitor/cli'
 
 /**
- * Capacitor POC, emballe l'app Vue existante dans un shell natif iOS/Android.
+ * Capacitor emballe l'app Vue existante dans un shell natif iOS/Android.
  *
- * `webDir` pointe sur la sortie du build Vite (`npm run build`).
- * Aucune réécriture : on sert le même bundle web que le site.
+ * `webDir` pointe sur la sortie du build Vite (`npm run app:build`, qui élague
+ * ce que seul le site sert). Aucune réécriture : le même bundle que le site.
  *
- * Astuce d'itération rapide : décommente le bloc `server` ci-dessous pour
- * charger l'app depuis le serveur de dev (`npm run dev`) sur ton réseau local,
- * au lieu de rebuilder + `cap copy` à chaque changement.
- *   server: { url: 'http://192.168.x.x:5173', cleartext: true },
+ * Itération rapide : CAP_SERVER_URL (voir plus bas) charge l'app depuis le
+ * serveur de dev (`npm run dev`, port 5473) au lieu de rebuilder à chaque
+ * changement.
  */
 const config: CapacitorConfig = {
   appId: 'fr.petitejerusalem.app',

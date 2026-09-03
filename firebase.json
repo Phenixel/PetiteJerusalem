@@ -18,6 +18,7 @@
   "hosting": {
     "public": "dist",
     "cleanUrls": true,
+    "trailingSlash": false,
     "ignore": ["firebase.json", "**/.DS_Store", "**/node_modules/**"],
     "headers": [
       {

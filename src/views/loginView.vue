@@ -187,16 +187,6 @@ async function loginWithApple() {
 }
 
 onMounted(async () => {
-  try {
-    const user = await authService.getGoogleRedirectResult();
-    if (user) {
-      const redirectPath = authService.getAndClearRedirectPath() || "/profile";
-      router.push(redirectPath);
-    }
-  } catch (error) {
-    console.error("Erreur lors de la vérification de la redirection Google:", error);
-  }
-
   const currentUser = await authService.getCurrentUser();
   if (currentUser) {
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
