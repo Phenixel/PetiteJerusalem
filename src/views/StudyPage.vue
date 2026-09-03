@@ -36,6 +36,7 @@ import DailyReadingCard from "../components/DailyReadingCard.vue";
 import LibraryShelf, { type ShelfBook } from "../components/LibraryShelf.vue";
 import CollapseTransition from "../components/CollapseTransition.vue";
 import { liveValue } from "../composables/liveInput";
+import { SITE_URL } from "../config/site";
 
 // L'encart du chnei mikra n'existe que sur le Tanakh, et il tire le calendrier
 // hébraïque (hebcal) avec lui : chargé à la demande, la bibliothèque et ses
@@ -467,14 +468,14 @@ const bookmarkCounts = ref<Record<string, number>>({});
 function applySeoMeta() {
   const corpus = currentCorpus.value;
   if (corpus) {
-    const url = window.location.origin + `/bibliotheque/${corpus.corpus}`;
+    const url = SITE_URL + `/bibliotheque/${corpus.corpus}`;
     seoService.setMeta({
       title: `${t(corpus.labelKey)} | ${t("study.title")} | Petite Jérusalem`,
       description: t(corpus.descKey),
       canonical: url,
     });
   } else {
-    const url = window.location.origin + "/bibliotheque";
+    const url = SITE_URL + "/bibliotheque";
     seoService.setMeta({
       title: `${t("study.title")} | Petite Jérusalem`,
       description: t("study.subtitle"),

@@ -52,7 +52,7 @@ import { useLocalePath } from "../../composables/useLocalePath";
 const { localePath } = useLocalePath();
 
 const { t, locale } = useI18n();
-const { place, status, useDevicePlace, useCity, ensureNearby } = useZmanimLocation();
+const { place, status, locateDevice, selectCity, ensureNearby } = useZmanimLocation();
 
 const now = ref(new Date());
 let ticker: ReturnType<typeof setInterval> | null = null;
@@ -193,14 +193,14 @@ const coordinates = computed(() =>
 );
 
 async function locateMe() {
-  const granted = await useDevicePlace();
+  const granted = await locateDevice();
   analyticsService.capture("zmanim_location_requested", { granted });
 }
 
 const pickerOpen = ref(false);
 
 function chooseCity(city: City) {
-  useCity(city);
+  selectCity(city);
   analyticsService.capture("zmanim_city_chosen", { city: city.name, country: city.country });
 }
 
@@ -258,7 +258,7 @@ async function applyRouteCity(): Promise<void> {
     return;
   }
   routeCity.value = city;
-  useCity(city);
+  chooseCity(city);
   setMeta(city);
 }
 

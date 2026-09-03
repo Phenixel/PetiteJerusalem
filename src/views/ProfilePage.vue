@@ -14,6 +14,7 @@ import SecuritySettings from "./profilePage/SecuritySettings.vue";
 import PreferencesTab from "./profilePage/PreferencesTab.vue";
 import AboutTab from "./profilePage/AboutTab.vue";
 import { isNativeApp } from "../composables/useNativeApp";
+import { SITE_URL } from "../config/site";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -109,7 +110,7 @@ onMounted(() => {
     }
   });
 
-  const url = window.location.origin + "/profile";
+  const url = SITE_URL + "/profile";
   seoService.setMeta({
     title: t("seo.profileTitle"),
     description: t("seo.profileDescription"),

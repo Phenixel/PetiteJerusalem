@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, watch } from "vue";
+import { nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useToast } from "../composables/useToast";
 import { analyticsService } from "../services/analyticsService";
@@ -39,57 +39,29 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
-
-interface QrCode {
-  addData(data: string): void;
-  make(): void;
-  createSvgTag(options: { cellSize?: number; margin?: number; scalable?: boolean }): string;
-}
-
-declare global {
-  interface Window {
-    // qrcode-generator : factory qrcode(typeNumber, errorCorrectionLevel).
-    // typeNumber 0 = auto-détection de la version → gère les URLs longues.
-    qrcode?: (typeNumber: number, errorCorrectionLevel: string) => QrCode;
-  }
-}
+const qrContainerRef = ref<HTMLElement | null>(null);
 
 const closeModal = () => {
   emit("update:show", false);
 };
 
-/** Charge la librairie QR (vendorisée, même origine) une seule fois. */
-const loadQrLibrary = () =>
-  new Promise<void>((resolve, reject) => {
-    if (window.qrcode) {
-      resolve();
-      return;
-    }
-    const script = document.createElement("script");
-    // Servie depuis notre propre origine (public/vendor) et non depuis un CDN
-    // externe : les scripts tiers sont souvent bloqués (Brave Shields,
-    // bloqueurs de pub, CSP).
-    script.src = "/vendor/qrcode-generator.js";
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Erreur lors du chargement de la librairie QR"));
-    document.head.appendChild(script);
-  });
-
 const generateQRCode = async () => {
-  const qrContainer = document.getElementById("qr-code");
+  const qrContainer = qrContainerRef.value;
   if (!qrContainer || !props.shareUrl) return;
 
   qrContainer.innerHTML = "";
 
   try {
-    await loadQrLibrary();
-    if (!window.qrcode) throw new Error("Librairie QR indisponible");
+    // Module npm en import dynamique : un chunk hashé, immuable et typé,
+    // à la place d'un script vendorisé de 57 kB servi sans cache ni hash et
+    // posé sur `window`. Chargé au premier partage seulement.
+    const { default: qrcode } = await import("qrcode-generator");
 
     // typeNumber 0 = auto-détection de la version. qrcodejs (l'ancienne
     // librairie) sous-estimait la taille et jetait « code length overflow »
     // sur les chiourim aux titres longs ; qrcode-generator dimensionne
     // correctement, quelle que soit la longueur de l'URL.
-    const qr = window.qrcode(0, "M");
+    const qr = qrcode(0, "M");
     qr.addData(props.shareUrl);
     qr.make();
 
@@ -231,7 +203,7 @@ watch(
           {{ t("shareModal.scanQR") }}
         </h4>
         <div
-          id="qr-code"
+          ref="qrContainerRef"
           class="flex justify-center mb-2 p-2 bg-white rounded-lg inline-block"
         ></div>
         <p class="text-sm text-text-secondary">

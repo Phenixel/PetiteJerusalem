@@ -23,10 +23,12 @@ import { useToast } from "../../composables/useToast";
 import { liveValue } from "../../composables/liveInput";
 import { analyticsService } from "../../services/analyticsService";
 import { moderationService } from "../../services/moderationService";
+import { useConfirm } from "../../composables/useConfirm";
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const { confirm } = useConfirm();
 const toast = useToast();
 
 const session = ref<Session | null>(null);
@@ -340,9 +342,11 @@ const handleItemClick = (textStudyId: string, section?: number) => {
       selectedItems.value.delete(key);
     }
 
-    if (confirm(t("detailSession.cancelReservationConfirm"))) {
-      cancelReservation(textStudyId, section);
-    }
+    void confirm({ title: t("detailSession.cancelReservationConfirm"), danger: true }).then(
+      (accepted) => {
+        if (accepted) cancelReservation(textStudyId, section);
+      },
+    );
     return;
   }
 
@@ -696,7 +700,7 @@ const goToCreateChain = () => {
 const applySessionSeo = (s: typeof session.value) => {
   if (!s) return;
   const slug = s.slug || s.id;
-  const url = `${window.location.origin}/share-reading/session/${slug}`;
+  const url = `${SITE_URL}/share-reading/session/${slug}`;
   const description = s.description || t("seo.sessionDefaultDescription");
   seoService.setMeta({
     title: `${s.name} | ${t("seo.sessionTitle")}`,
@@ -707,14 +711,14 @@ const applySessionSeo = (s: typeof session.value) => {
       url,
       title: s.name,
       description,
-      image: `${window.location.origin}/og-image.jpg`,
+      image: `${SITE_URL}/og-image.jpg`,
       site_name: "Petite Jérusalem",
     },
     twitter: {
       card: "summary_large_image",
       title: s.name,
       description,
-      image: `${window.location.origin}/og-image.jpg`,
+      image: `${SITE_URL}/og-image.jpg`,
     },
   });
 };

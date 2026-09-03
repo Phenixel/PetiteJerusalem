@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import {
   distributionCertificates,
@@ -18,9 +19,18 @@ import {
 
 /** Les trois certificats qui occupaient le quota le 23 août 2026. */
 const CERTIFICATES = [
-  { id: "R33A4CCD5R", attributes: { displayName: "CI", expirationDate: "2027-08-18T23:56:32.000+00:00" } },
-  { id: "SA7386DCQJ", attributes: { displayName: "CI", expirationDate: "2027-08-21T12:31:10.000+00:00" } },
-  { id: "T7X6S8JPNR", attributes: { displayName: "CI", expirationDate: "2027-08-19T15:30:39.000+00:00" } },
+  {
+    id: "R33A4CCD5R",
+    attributes: { displayName: "CI", expirationDate: "2027-08-18T23:56:32.000+00:00" },
+  },
+  {
+    id: "SA7386DCQJ",
+    attributes: { displayName: "CI", expirationDate: "2027-08-21T12:31:10.000+00:00" },
+  },
+  {
+    id: "T7X6S8JPNR",
+    attributes: { displayName: "CI", expirationDate: "2027-08-19T15:30:39.000+00:00" },
+  },
 ];
 
 /** Un build tel que l'API le rend, dans la charge `included` des versions. */
@@ -30,7 +40,12 @@ const build = (id: string, version: string, uploadedDate: string, processingStat
   attributes: { version, uploadedDate, processingState },
 });
 
-const version = (versionString: string, appStoreState: string, buildId: string, createdDate: string) => ({
+const version = (
+  versionString: string,
+  appStoreState: string,
+  buildId: string,
+  createdDate: string,
+) => ({
   id: `v-${versionString}`,
   attributes: { versionString, appStoreState, createdDate },
   relationships: { build: { data: { type: "builds", id: buildId } } },
@@ -134,19 +149,26 @@ describe("quota de certificats de distribution", () => {
     const versions = { data: [], included: [] };
     const dernier = build("b8", "3070800", "2026-08-23T07:50:00.000+00:00");
     const enTraitement = build("b5b", "3070500", "2026-08-19T15:35:00.000+00:00", "PROCESSING");
-    const dépassé = { ...enTraitement, attributes: { ...enTraitement.attributes, processingState: "VALID" } };
+    const dépassé = {
+      ...enTraitement,
+      attributes: { ...enTraitement.attributes, processingState: "VALID" },
+    };
 
     // Le binaire en traitement retient son certificat, et son voisin par la
     // marge : plus rien à libérer.
     expect(
-      revocableCertificates(certificates(), protectedUploads(versions, { data: [dernier, enTraitement] })),
+      revocableCertificates(
+        certificates(),
+        protectedUploads(versions, { data: [dernier, enTraitement] }),
+      ),
     ).toEqual([]);
 
     // Le même binaire une fois traité et dépassé ne retient plus rien.
     expect(
-      revocableCertificates(certificates(), protectedUploads(versions, { data: [dernier, dépassé] })).map(
-        (c) => c.id,
-      ),
+      revocableCertificates(
+        certificates(),
+        protectedUploads(versions, { data: [dernier, dépassé] }),
+      ).map((c) => c.id),
     ).toEqual(["R33A4CCD5R", "T7X6S8JPNR"]);
   });
 

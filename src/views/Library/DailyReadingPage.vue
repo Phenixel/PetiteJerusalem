@@ -9,13 +9,14 @@ import { authService, type User } from "../../services/authService";
 import { seoService } from "../../services/seoService";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import DailyReading from "./DailyReading.vue";
+import { SITE_URL } from "../../config/site";
 
 const { t } = useI18n();
 const currentUser = ref<User | null>(null);
 
 onMounted(async () => {
   currentUser.value = await authService.getCurrentUser();
-  const url = window.location.origin + "/bibliotheque/lecture-du-jour";
+  const url = SITE_URL + "/bibliotheque/lecture-du-jour";
   seoService.setMeta({
     title: t("seo.dailyReadingTitle"),
     description: t("seo.dailyReadingDescription"),

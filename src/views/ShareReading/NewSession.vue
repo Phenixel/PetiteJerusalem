@@ -13,6 +13,7 @@ import { analyticsService } from "../../services/analyticsService";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
+import { SITE_URL } from "../../config/site";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -87,7 +88,7 @@ onMounted(async () => {
   if (!currentUser.value) {
     showAuthPrompt.value = true;
   }
-  const url = window.location.origin + "/share-reading/new-session";
+  const url = SITE_URL + "/share-reading/new-session";
   seoService.setMeta({
     title: t("seo.newSessionTitle"),
     description: t("seo.newSessionDescription"),

@@ -9,9 +9,10 @@
 //
 // Tout est calculé sur l'appareil (voir zmanimService) : la carte n'attend
 // rien du réseau et reste juste même connexion coupée.
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
+import { useNow } from "../composables/useNow";
 import { useZmanimPlaceLabel } from "../composables/useZmanimPlaceLabel";
 import { useZmanCountdown } from "../composables/useZmanCountdown";
 import {
@@ -33,15 +34,8 @@ const countdown = useZmanCountdown();
 
 // L'horaire mis en avant change au fil de la journée : on suit l'heure à la
 // minute plutôt que de figer l'état au montage.
-const now = ref(new Date());
-let ticker: ReturnType<typeof setInterval> | null = null;
-
-onMounted(() => {
-  ticker = setInterval(() => (now.value = new Date()), 30_000);
-});
-onUnmounted(() => {
-  if (ticker) clearInterval(ticker);
-});
+// Horloge partagée entre les cartes de l'accueil (un seul setInterval).
+const now = useNow();
 
 const clock = (date: Date) => formatZmanTime(date, place.value.tzid, locale.value);
 

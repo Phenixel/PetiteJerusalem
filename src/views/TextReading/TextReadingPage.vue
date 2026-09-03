@@ -76,6 +76,7 @@ import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { analyticsService } from "../../services/analyticsService";
 import { useLocalePath } from "../../composables/useLocalePath";
+import { useConfirm } from "../../composables/useConfirm";
 
 /** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
 const { localePath } = useLocalePath();
@@ -83,13 +84,14 @@ const { localePath } = useLocalePath();
 const route = useRoute();
 const router = useRouter();
 const { t, locale } = useI18n();
+const { confirm } = useConfirm();
 const toast = useToast();
 const readingSize = useReadingSize();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
 // Lieu des horaires : donne le jour hébraïque (sensible à la chkia) qui
 // conditionne les ajouts de calendrier des textes de tefila.
-const { place: zmanimPlace, deniedBefore, useDevicePlace } = useZmanimLocation();
+const { place: zmanimPlace, deniedBefore, locateDevice } = useZmanimLocation();
 
 // This view serves two URL shapes with the SAME UI: the in-session reader
 // (/lire/:textId, numeric id) and the public, indexable reading pages
@@ -242,13 +244,13 @@ watch(
 // l'appareil, comme le bouton de la page des horaires, pour que les heures
 // suivent l'endroit où l'on est et non celui du dernier passage. Une ville
 // choisie explicitement reste respectée, un refus laisse le lieu courant
-// (voir useDevicePlace) et se retient : on ne redemande pas à chaque visite,
+// (voir locateDevice) et se retient : on ne redemande pas à chaque visite,
 // le bouton de la page des horaires reste le moyen de changer d'avis.
 watch(
   () => (String(textEntry.value?.type) === "Sidour" ? textId.value : null),
   (id) => {
     if (!id || zmanimPlace.value.source === "city" || deniedBefore.value) return;
-    void useDevicePlace().then((granted) => {
+    void locateDevice().then((granted) => {
       analyticsService.capture("zmanim_location_requested", { granted, source: "sidour" });
     });
   },
@@ -938,7 +940,7 @@ async function reserve() {
 async function cancelReservation() {
   const r = currentReservation.value;
   if (!session.value || !r || !isMine.value) return;
-  if (!confirm(t("textReading.cancelConfirm"))) return;
+  if (!(await confirm({ title: t("textReading.cancelConfirm"), danger: true }))) return;
   isReserving.value = true;
   try {
     await sessionService.deleteReservation(session.value.id, r.id);

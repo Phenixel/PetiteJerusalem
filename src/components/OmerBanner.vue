@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
+import { useNow } from "../composables/useNow";
 import { hebrewDateFor } from "../services/zmanimService";
 import { omerDay } from "../services/dailyCycles";
 import { analyticsService } from "../services/analyticsService";
@@ -23,14 +24,8 @@ import AppIcon from "./icons/AppIcon.vue";
 const { t, locale } = useI18n();
 const { place } = useZmanimLocation();
 
-const now = ref(new Date());
-let ticker: ReturnType<typeof setInterval> | null = null;
-onMounted(() => {
-  ticker = setInterval(() => (now.value = new Date()), 60_000);
-});
-onUnmounted(() => {
-  if (ticker) clearInterval(ticker);
-});
+// Horloge partagée entre les cartes de l'accueil (un seul setInterval).
+const now = useNow();
 
 const jour = computed(() => omerDay(hebrewDateFor(place.value, now.value, now.value)));
 

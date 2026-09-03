@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeAll, describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
 import { copyFileSync, mkdtempSync, readFileSync } from "node:fs";
@@ -18,7 +19,13 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const SCRIPT = join(ROOT, "scripts", "prune-spm-providers.mjs");
-const INSTALLED = join(ROOT, "node_modules", "@capacitor-firebase", "authentication", "Package.swift");
+const INSTALLED = join(
+  ROOT,
+  "node_modules",
+  "@capacitor-firebase",
+  "authentication",
+  "Package.swift",
+);
 
 describe("prune-spm-providers", () => {
   let path: string;

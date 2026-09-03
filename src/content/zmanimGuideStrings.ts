@@ -33,7 +33,7 @@ export type GuideStrings = {
   headline: string;
 };
 
-export const ZMANIM_GUIDE_FR = (links: GuideLinks): GuideStrings => ({
+const ZMANIM_GUIDE_FR = (links: GuideLinks): GuideStrings => ({
   lang: "fr",
   title: "Les zmanim expliqués : alot, netz, fin du Chéma, chkia, tsét | Petite Jérusalem",
   description:
@@ -163,7 +163,7 @@ export const ZMANIM_GUIDE_FR = (links: GuideLinks): GuideStrings => ({
   headline: "Les zmanim expliqués : tous les horaires halakhiques de la journée",
 });
 
-export const ZMANIM_GUIDE_EN = (links: GuideLinks): GuideStrings => ({
+const ZMANIM_GUIDE_EN = (links: GuideLinks): GuideStrings => ({
   lang: "en",
   title: "Zmanim explained: alot, sunrise, sof zman Shema, shkia, tzeit | Petite Jérusalem",
   description:
@@ -290,7 +290,7 @@ export const ZMANIM_GUIDE_EN = (links: GuideLinks): GuideStrings => ({
   headline: "Zmanim explained: every halachic time of the day",
 });
 
-export const ZMANIM_GUIDE_HE = (links: GuideLinks): GuideStrings => ({
+const ZMANIM_GUIDE_HE = (links: GuideLinks): GuideStrings => ({
   lang: "he",
   title: "זמני היום ההלכתיים: עלות, נץ, סוף זמן שמע, שקיעה, צאת הכוכבים | פטיט ירושלים",
   description:

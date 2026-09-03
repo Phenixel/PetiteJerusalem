@@ -3,11 +3,12 @@ import { onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { seoService } from "../services/seoService";
 import AppIcon from "../components/icons/AppIcon.vue";
+import { SITE_URL } from "../config/site";
 
 const { t } = useI18n();
 
 onMounted(() => {
-  const url = window.location.origin + window.location.pathname;
+  const url = SITE_URL + window.location.pathname;
   seoService.setMeta({
     title: t("seo.notFoundTitle"),
     description: t("seo.notFoundDescription"),

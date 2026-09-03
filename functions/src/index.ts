@@ -281,6 +281,23 @@ async function resolveChiourMeta(slug: string): Promise<Meta | null> {
   };
 }
 
+/** /chiourim/serie/:id : un seul document, pas le catalogue entier. */
+async function resolveSerieMeta(serieId: string): Promise<Meta | null> {
+  const snap = await db.collection("series").doc(serieId).get();
+  const data = snap.exists ? snap.data() : undefined;
+  if (!data?.name) return null;
+  const name = data.name as string;
+  const description = data.description
+    ? clamp(data.description as string)
+    : `Tous les épisodes de la série « ${name} » : cours et leçons de Torah à écouter sur Petite Jérusalem.`;
+  return {
+    title: `${name} | Série de chiourim | Petite Jérusalem`,
+    description,
+    url: `${SITE_URL}/chiourim/serie/${serieId}`,
+    type: "website",
+  };
+}
+
 async function resolveAuteurMeta(slug: string): Promise<Meta | null> {
   const chiourim = await getChiourim();
   const author = chiourim
@@ -309,6 +326,11 @@ async function resolveMeta(pathname: string): Promise<Meta | null> {
   // /chiourim/auteur/:slug
   if (segments[0] === "chiourim" && segments[1] === "auteur" && segments[2]) {
     return resolveAuteurMeta(segments[2]);
+  }
+
+  // /chiourim/serie/:id (avant /chiourim/:slug, qui aurait cherché un chiour « serie »)
+  if (segments[0] === "chiourim" && segments[1] === "serie" && segments[2]) {
+    return resolveSerieMeta(segments[2]);
   }
 
   // /chiourim/:slug

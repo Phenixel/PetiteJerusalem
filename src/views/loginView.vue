@@ -15,6 +15,7 @@ import { seoService } from "../services/seoService";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
 import { useLocalePath } from "../composables/useLocalePath";
+import { SITE_URL } from "../config/site";
 
 /** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
 const { localePath } = useLocalePath();
@@ -203,7 +204,7 @@ onMounted(async () => {
     mode.value = "signup";
   }
 
-  const url = window.location.origin + "/login";
+  const url = SITE_URL + "/login";
   seoService.setMeta({
     title: t("seo.loginTitle"),
     description: t("seo.loginDescription"),

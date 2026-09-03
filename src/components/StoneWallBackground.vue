@@ -448,15 +448,4 @@ onUnmounted(() => {
   animation: none;
   opacity: 0.4;
 }
-
-/* Écran tactile (téléphone, tablette) : deux couches plein écran composées à
-   chaque frame pendant toute la visite, pour une dérive de 85 s que personne
-   ne regarde ; on fige les halos, la batterie et le défilement y gagnent. */
-@media (pointer: coarse) {
-  .sw-blob--a,
-  .sw-blob--b {
-    animation: none;
-    opacity: 0.4;
-  }
-}
 </style>

@@ -25,7 +25,7 @@ import {
  * haut, la flèche garde son sens et c'est au lecteur de placer le nord.
  */
 const { t, locale } = useI18n();
-const { place, status: geoStatus, useDevicePlace } = useZmanimLocation();
+const { place, status: geoStatus, locateDevice } = useZmanimLocation();
 const placeLabel = useZmanimPlaceLabel(place);
 const { heading, status: compassStatus, start, stop } = useCompassHeading();
 
@@ -234,7 +234,7 @@ watch(kotelCompassOpen, (open) => {
           type="button"
           class="flex items-center gap-1.5 font-medium text-primary hover:underline disabled:opacity-60"
           :disabled="geoStatus === 'loading'"
-          @click="useDevicePlace()"
+          @click="locateDevice()"
         >
           <AppIcon
             :name="geoStatus === 'loading' ? 'spinner' : 'locate'"

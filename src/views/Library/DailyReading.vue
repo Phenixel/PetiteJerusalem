@@ -578,8 +578,10 @@ async function proposeOfflineDownload(entries: TextStudyJsonEntry[], name: strin
   if (accepted) await downloadForOffline(books);
 }
 
+// Un Set : `isSelected` est appelé quatre fois par carte du catalogue à chaque rendu.
+const selectedIdSet = computed(() => new Set(selectedIds.value));
 function isSelected(id: string | number): boolean {
-  return selectedIds.value.includes(String(id));
+  return selectedIdSet.value.has(String(id));
 }
 
 async function toggleSelect(entry: TextStudyJsonEntry) {
@@ -827,8 +829,19 @@ const showSelectedPanel = ref(false);
 // "Tout" shows every corpus at once; any other tab stays scoped to itself.
 const isAllSelected = computed(() => selectedType.value === ALL_TYPE);
 
+// Comme dans la bibliothèque (StudyPage) : chaque frappe re-filtrait et
+// regroupait les 336 entrées du catalogue ; on attend 150 ms de silence.
+const debouncedTerm = ref("");
+let searchDebounce: ReturnType<typeof setTimeout> | undefined;
+watch(searchTerm, (value) => {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => {
+    debouncedTerm.value = value;
+  }, 150);
+});
+
 const filtered = computed(() => {
-  const term = searchTerm.value.trim().toLowerCase();
+  const term = debouncedTerm.value.trim().toLowerCase();
   return allTexts.filter((txt) => {
     const matchesTerm = term === "" || txt.name.toLowerCase().includes(term);
     const matchesType = isAllSelected.value || String(txt.type) === selectedType.value;

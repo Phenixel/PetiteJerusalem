@@ -56,8 +56,7 @@ export const isShareable = (entry: TextStudyJsonEntry): boolean => !isLiturgy(en
 
 const allEntries = (textStudiesJson as TextStudiesJson).textStudies;
 
-export const corpusOf = (entry: TextStudyJsonEntry): Corpus =>
-  TYPE_TO_CORPUS[String(entry.type)];
+export const corpusOf = (entry: TextStudyJsonEntry): Corpus => TYPE_TO_CORPUS[String(entry.type)];
 
 /** Latin display name without the Hebrew prefix: "ברכות (Berakhot)" → "Berakhot". */
 export function latinName(entry: TextStudyJsonEntry): string {
@@ -197,7 +196,7 @@ export const READING_LEAD =
   "Texte intégral en hébreu, accompagné de la phonétique pour le lire même sans maîtriser l'hébreu. Lisez-le seul ou partagez-en la lecture à plusieurs.";
 
 /** Même intro sans la promesse de partage, pour les corpus liturgiques. */
-export const READING_LEAD_SOLO =
+const READING_LEAD_SOLO =
   "Texte intégral en hébreu, accompagné de la phonétique pour le lire même sans maîtriser l'hébreu.";
 
 export const readingLead = (entry: TextStudyJsonEntry): string =>
@@ -217,7 +216,7 @@ export function sectionHeading(entry: TextStudyJsonEntry, section: TextSection):
   return `${CORPUS_LABEL[corpus]} ${latinName(entry)}, ${section.label}`;
 }
 
-export function hubHeading(entry: TextStudyJsonEntry): string {
+function hubHeading(entry: TextStudyJsonEntry): string {
   return `${CORPUS_LABEL[corpusOf(entry)]} ${latinName(entry)}`;
 }
 
@@ -273,10 +272,11 @@ function relatedLinksHtml(entry: TextStudyJsonEntry): string {
   const corpus = corpusOf(entry);
   const items: string[] = [];
   if (isMultiSection(entry))
-    items.push(`<li><a href="${hubPath(entry)}">Tous les chapitres de ${latinName(entry)}</a></li>`);
+    items.push(
+      `<li><a href="${hubPath(entry)}">Tous les chapitres de ${latinName(entry)}</a></li>`,
+    );
   items.push(`<li><a href="/bibliotheque">Bibliothèque (Tehilim, Michna, Talmud, Tanakh)</a></li>`);
-  if (corpus === "tehilim")
-    items.push(`<li><a href="/tehilim">Tehilim par intention</a></li>`);
+  if (corpus === "tehilim") items.push(`<li><a href="/tehilim">Tehilim par intention</a></li>`);
   return items.join("\n        ");
 }
 
@@ -349,10 +349,7 @@ export function buildSectionBody(
 /** Build the hub body of a multi-section text (chapter list). */
 export function buildHubBody(entry: TextStudyJsonEntry, content: TextContent): string {
   const rows = content.sections
-    .map(
-      (s) =>
-        `<li><a href="${sectionPath(entry, s.index)}">${esc(s.label)}</a></li>`,
-    )
+    .map((s) => `<li><a href="${sectionPath(entry, s.index)}">${esc(s.label)}</a></li>`)
     .join("\n        ");
   return `
   <main class="seo-article reading-page">

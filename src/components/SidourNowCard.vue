@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import {
-  currentTefilaWindow,
-  tefilaPath,
-  type TefilaKey,
-} from "../services/sidourService";
+import { currentTefilaWindow, tefilaPath, type TefilaKey } from "../services/sidourService";
 import { formatZmanTime } from "../services/zmanimService";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
+import { useNow } from "../composables/useNow";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "./icons/AppIcon.vue";
 import type { IconName } from "./icons/registry";
@@ -24,14 +21,8 @@ const { t, locale } = useI18n();
 const { place } = useZmanimLocation();
 
 // La plage change avec l'heure (elle s'ouvre et se referme sous la page).
-const now = ref(new Date());
-let ticker: ReturnType<typeof setInterval> | null = null;
-onMounted(() => {
-  ticker = setInterval(() => (now.value = new Date()), 60_000);
-});
-onUnmounted(() => {
-  if (ticker) clearInterval(ticker);
-});
+// Horloge partagée entre les cartes de l'accueil (un seul setInterval).
+const now = useNow();
 
 const window_ = computed(() => currentTefilaWindow(place.value, now.value));
 

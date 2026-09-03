@@ -75,10 +75,37 @@ function isTrackedSurface(): boolean {
 const APP_ENV = isProductionSurface() ? "production" : "preview";
 const APP_VERSION = __APP_VERSION__;
 
+/**
+ * Coût réel du session replay dans l'app : plutôt que de le couper sur une
+ * intuition, on mesure. Chaque appareil natif tire une fois pour toutes sa
+ * cohorte (replay actif ou non, tirage gardé sur l'appareil), et tous ses
+ * événements la portent (`replay_cohort`) : les Web Vitals (INP surtout) se
+ * comparent alors entre les deux moitiés dans PostHog. Sur le web, pas de
+ * tirage (`web`) : le replay y reste soumis au seul rendu dégradé. Une fois
+ * le verdict rendu, ce tirage disparaît : replay partout, ou nulle part.
+ */
+const REPLAY_COHORT_KEY = "pj_replay_cohort";
+
+function replayCohort(): "web" | "on" | "off" {
+  if (!isNativeApp) return "web";
+  try {
+    const stored = localStorage.getItem(REPLAY_COHORT_KEY);
+    if (stored === "on" || stored === "off") return stored;
+    const drawn = Math.random() < 0.5 ? "on" : "off";
+    localStorage.setItem(REPLAY_COHORT_KEY, drawn);
+    return drawn;
+  } catch {
+    return "on";
+  }
+}
+
+const REPLAY_COHORT = replayCohort();
+
 const SUPER_PROPERTIES = {
   env: APP_ENV,
   app_platform: appPlatform,
   app_version: APP_VERSION,
+  replay_cohort: REPLAY_COHORT,
 } as const;
 
 /**
@@ -206,9 +233,8 @@ class AnalyticsService {
         // On l'épargne aux machines en rendu dégradé (peu de cœurs/RAM, rendu
         // logiciel, FPS mesuré mauvais, verdict persisté en localStorage) ;
         // leurs événements produit, Error tracking et Web Vitals restent actifs.
-        // Pas de replay dans l'app : rrweb sérialise le DOM en continu (CPU,
-        // batterie, données mobiles). Événements, erreurs et Web Vitals restent.
-        disable_session_recording: isNativeApp || isDegradedRendering.value,
+        // Dans l'app, la moitié des appareils enregistre (voir replayCohort).
+        disable_session_recording: REPLAY_COHORT === "off" || isDegradedRendering.value,
         // Dans la webview Capacitor, les cookies sur https://localhost sont
         // fragiles : localStorage est le stockage fiable.
         persistence: isNativeApp ? "localStorage" : "localStorage+cookie",

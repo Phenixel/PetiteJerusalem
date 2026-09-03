@@ -9,9 +9,11 @@ import { seoService } from "../../services/seoService";
 import { useToast } from "../../composables/useToast";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import StudioChiourForm from "./StudioChiourForm.vue";
+import { useConfirm } from "../../composables/useConfirm";
 
 const route = useRoute();
 const { t } = useI18n();
+const { confirm } = useConfirm();
 const toast = useToast();
 
 const token = computed(() => String(route.params.token ?? ""));
@@ -165,7 +167,12 @@ async function moveEpisode(index: number, delta: number) {
 }
 
 async function removeChiour(chiour: ChiourDoc) {
-  if (!window.confirm(t("studio.deleteConfirm"))) return;
+  const accepted = await confirm({
+    title: t("studio.deleteConfirm"),
+    confirmLabel: t("common.delete"),
+    danger: true,
+  });
+  if (!accepted) return;
   deletingSlug.value = chiour.slug;
   try {
     await studioService.deleteChiour(token.value, chiour.slug);

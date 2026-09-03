@@ -7,11 +7,6 @@ import { i18n, loadLocaleMessages, type SupportedLocale } from "../i18n";
 import { localDayKey } from "./dateService";
 import { authService, type User } from "./authService";
 import { userPreferencesService, type UserPreferences } from "./userPreferencesService";
-import {
-  buildDailyReadingWidgetPayload,
-  buildLibraryWidgetPayload,
-  buildZmanimWidgetPayload,
-} from "./widgetPayloads";
 
 /**
  * Alimente les widgets d'écran d'accueil (Android / iOS).
@@ -128,6 +123,14 @@ class WidgetService {
 
   private async push(): Promise<void> {
     try {
+      // Import différé : les payloads tirent le moteur d'horaires (hebcal) et
+      // le catalogue des textes, qui n'ont rien à faire dans le chargement de
+      // l'app avant son premier rendu.
+      const {
+        buildDailyReadingWidgetPayload,
+        buildLibraryWidgetPayload,
+        buildZmanimWidgetPayload,
+      } = await import("./widgetPayloads");
       // Les libellés partent dans la langue de l'interface : attendre que son
       // chunk soit chargé (en/he arrivent par import dynamique), sans quoi le
       // premier payload d'un utilisateur en/he partirait en français.
@@ -193,7 +196,6 @@ class WidgetService {
       // il n'y a alors pas de widget à alimenter.
     }
   }
-
 }
 
 export const widgetService = new WidgetService();

@@ -16,9 +16,12 @@ import BatchSelectionBar from "../components/BatchSelectionBar.vue";
 import EditSessionModal from "../components/EditSessionModal.vue";
 import AppIcon from "../components/icons/AppIcon.vue";
 import { liveValue } from "../composables/liveInput";
+import { useConfirm } from "../composables/useConfirm";
+import { SITE_URL } from "../config/site";
 
 const router = useRouter();
 const { t } = useI18n();
+const { confirm } = useConfirm();
 const toast = useToast();
 
 const isLoading = ref(true);
@@ -94,7 +97,7 @@ const loadData = async () => {
       is_ended: session.value.isEnded === true,
     });
 
-    const url = window.location.origin + `/session-management/${sessionId}`;
+    const url = SITE_URL + `/session-management/${sessionId}`;
     seoService.setMeta({
       title: `Gestion de session - ${session.value.name} | Petite Jerusalem`,
       description: `Gérez les réservations et le suivi de la session "${session.value.name}".`,
@@ -132,8 +135,43 @@ const availableBooks = computed(() => {
   return Array.from(books).sort();
 });
 
+/*
+ * Les fonctions ci-dessous sont appelées depuis le template, jusqu'à dix fois
+ * par ligne de chapitre et cinq fois par carte : chacune parcourait toutes les
+ * réservations de la chaîne, ce qui rendait la recherche quadratique sur une
+ * chaîne du Talmud. Les index ne se reconstruisent qu'au changement des
+ * réservations (même schéma que TextStudiesList).
+ */
+const slotKey = (textStudyId: string, section?: number) =>
+  section === undefined ? `${textStudyId}#full` : `${textStudyId}#${section}`;
+
+const reservationSlotIndex = computed(() => {
+  const bySlot = new Map<string, TextStudyReservation>();
+  for (const r of session.value?.reservations ?? []) {
+    const key = slotKey(r.textStudyId, r.section);
+    if (!bySlot.has(key)) bySlot.set(key, r);
+  }
+  return bySlot;
+});
+
+const textStatusIndex = computed(() => {
+  const byText = new Map<string, ReturnType<typeof reservationService.getTextDisplayStatus>>();
+  const current = session.value;
+  if (!current) return byText;
+  for (const textStudy of textStudies.value) {
+    byText.set(
+      textStudy.id,
+      reservationService.getTextDisplayStatus(textStudy.id, textStudy, current),
+    );
+  }
+  return byText;
+});
+
 const getTextStatus = (textStudy: TextStudy) => {
-  return reservationService.getTextDisplayStatus(textStudy.id, textStudy, session.value!);
+  return (
+    textStatusIndex.value.get(textStudy.id) ??
+    reservationService.getTextDisplayStatus(textStudy.id, textStudy, session.value!)
+  );
 };
 
 const getTextReservations = (textStudyId: string) => {
@@ -141,17 +179,22 @@ const getTextReservations = (textStudyId: string) => {
 };
 
 const isSectionReserved = (textStudyId: string, section: number) => {
-  return (
-    session.value?.reservations?.some(
-      (r) => r.textStudyId === textStudyId && r.section === section,
-    ) || false
-  );
+  return reservationSlotIndex.value.has(slotKey(textStudyId, section));
 };
 
 const getSectionReservation = (textStudyId: string, section: number) => {
-  return session.value?.reservations?.find(
-    (r) => r.textStudyId === textStudyId && r.section === section,
-  );
+  return reservationSlotIndex.value.get(slotKey(textStudyId, section));
+};
+
+// generateChapters allouait un tableau [1..n] par carte et par rendu.
+const chaptersCache = new Map<number, number[]>();
+const chaptersOf = (totalSections: number) => {
+  let chapters = chaptersCache.get(totalSections);
+  if (!chapters) {
+    chapters = sessionService.generateChapters(totalSections);
+    chaptersCache.set(totalSections, chapters);
+  }
+  return chapters;
 };
 
 // Invités déjà présents dans la session, dédoublonnés par identifiant. Sans
@@ -363,7 +406,12 @@ const deleteSelectedReservations = async () => {
   if (!session.value || selectedReservations.value.size === 0) return;
 
   const count = selectedReservations.value.size;
-  if (!confirm(t("sessionManagement.deleteReservationsConfirm", count))) {
+  const accepted = await confirm({
+    title: t("sessionManagement.deleteReservationsConfirm", count),
+    confirmLabel: t("common.delete"),
+    danger: true,
+  });
+  if (!accepted) {
     return;
   }
 
@@ -483,7 +531,8 @@ const saveSessionChanges = async (sessionData: {
 };
 
 const endCurrentSession = async () => {
-  if (!session.value || !confirm(t("profile.endSessionConfirm"))) return;
+  if (!session.value) return;
+  if (!(await confirm({ title: t("profile.endSessionConfirm"), danger: true }))) return;
 
   try {
     const current = session.value;
@@ -821,7 +870,7 @@ onMounted(() => {
                      du scroll de la page, faisait perdre les chapitres du bas. -->
                 <div class="space-y-1">
                   <div
-                    v-for="section in sessionService.generateChapters(textStudy.totalSections)"
+                    v-for="section in chaptersOf(textStudy.totalSections)"
                     :key="section"
                     class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm"
                     :class="{

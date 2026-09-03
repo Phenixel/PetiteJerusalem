@@ -37,7 +37,7 @@ const viewMarkedFor = ref<string | null>(null);
 
 // Partage (même modal que les sessions de lecture : WhatsApp, SMS, QR, copie)
 const showShareModal = ref(false);
-// Toujours le domaine canonique : window.location.origin vaut "localhost"
+// Toujours le domaine canonique : SITE_URL vaut "localhost"
 // (ou capacitor://localhost) en dev et dans l'app native, ce qui produirait
 // un lien de partage inutilisable.
 const shareUrl = computed(() => (chiour.value ? `${SITE_URL}/chiourim/${chiour.value.slug}` : ""));
@@ -123,7 +123,7 @@ function applyFound(found: Chiour): void {
   seoService.setMeta({
     title: `${found.name} | Petite Jerusalem`,
     description: found.description || t("seo.chiourimDescription"),
-    canonical: window.location.origin + `/chiourim/${found.slug}`,
+    canonical: SITE_URL + `/chiourim/${found.slug}`,
   });
 }
 

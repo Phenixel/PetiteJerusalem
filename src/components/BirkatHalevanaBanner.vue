@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
+import { useNow } from "../composables/useNow";
 import {
   birkatHalevanaLastDay,
   formatHebrewDate,
@@ -26,14 +27,8 @@ const { place } = useZmanimLocation();
 // hebrewDateFor, qui tient compte de l'heure, et le minuteur qui la suit.
 // Le bandeau paraît ainsi à la chkia de la première nuit où elle se dit
 // (celle qui ouvre le 8 du mois, voir saysBirkatHalevana), jamais la veille.
-const now = ref(new Date());
-let ticker: ReturnType<typeof setInterval> | null = null;
-onMounted(() => {
-  ticker = setInterval(() => (now.value = new Date()), 60_000);
-});
-onUnmounted(() => {
-  if (ticker) clearInterval(ticker);
-});
+// Horloge partagée entre les cartes de l'accueil (un seul setInterval).
+const now = useNow();
 
 const hebrewDay = computed(() => hebrewDateFor(place.value, now.value, now.value));
 const visible = computed(() => saysBirkatHalevana(hebrewDay.value));

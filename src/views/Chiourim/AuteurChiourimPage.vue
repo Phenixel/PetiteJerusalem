@@ -10,6 +10,7 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import { analyticsService } from "../../services/analyticsService";
 import { liveValue } from "../../composables/liveInput";
+import { SITE_URL } from "../../config/site";
 
 const route = useRoute();
 const router = useRouter();
@@ -80,7 +81,7 @@ function applyAuteur(all: Chiour[], slug: string): boolean {
   seoService.setMeta({
     title: `${name} | ${t("chiourim.title")} | Petite Jerusalem`,
     description: t("auteurPage.seoDescription", { auteur: name }),
-    canonical: window.location.origin + `/chiourim/auteur/${slug}`,
+    canonical: SITE_URL + `/chiourim/auteur/${slug}`,
   });
   return true;
 }

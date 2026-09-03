@@ -11,10 +11,12 @@ import {
 } from "../../services/adminService";
 import { useToast } from "../../composables/useToast";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import { useConfirm } from "../../composables/useConfirm";
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const { confirm } = useConfirm();
 const toast = useToast();
 
 const auteurId = computed(() => String(route.params.auteurId ?? ""));
@@ -77,7 +79,7 @@ async function rename() {
 
 async function regenerate() {
   if (!auteur.value) return;
-  if (!window.confirm(t("admin.auteurDetail.regenerateConfirm"))) return;
+  if (!(await confirm({ title: t("admin.auteurDetail.regenerateConfirm"), danger: true }))) return;
   isWorkingToken.value = true;
   try {
     const token = await adminService.regenerateToken(auteur.value.id, auteur.value.name);
@@ -94,7 +96,7 @@ async function regenerate() {
 
 async function revoke() {
   if (!activeToken.value) return;
-  if (!window.confirm(t("admin.auteurDetail.revokeConfirm"))) return;
+  if (!(await confirm({ title: t("admin.auteurDetail.revokeConfirm"), danger: true }))) return;
   isWorkingToken.value = true;
   try {
     await adminService.revokeToken(activeToken.value.id);
@@ -140,7 +142,12 @@ async function createSerie() {
 }
 
 async function removeSerie(serie: SerieWithId) {
-  if (!window.confirm(t("admin.auteurDetail.serieDeleteConfirm", { name: serie.name }))) return;
+  const accepted = await confirm({
+    title: t("admin.auteurDetail.serieDeleteConfirm", { name: serie.name }),
+    confirmLabel: t("common.delete"),
+    danger: true,
+  });
+  if (!accepted) return;
   try {
     await adminService.deleteSerie(serie.id);
     toast.success(t("admin.auteurDetail.serieDeleted"));
@@ -153,7 +160,12 @@ async function removeSerie(serie: SerieWithId) {
 
 async function removeAuteur() {
   if (!auteur.value) return;
-  if (!window.confirm(t("admin.auteurDetail.deleteConfirm"))) return;
+  const accepted = await confirm({
+    title: t("admin.auteurDetail.deleteConfirm"),
+    confirmLabel: t("common.delete"),
+    danger: true,
+  });
+  if (!accepted) return;
   isDeleting.value = true;
   try {
     await adminService.deleteAuteur(auteur.value.id);
@@ -182,7 +194,10 @@ async function removeAuteur() {
   </p>
 
   <div v-else class="space-y-6 animate-[fadeIn_0.3s_ease]">
-    <router-link to="/admin/auteurs" class="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary">
+    <router-link
+      to="/admin/auteurs"
+      class="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary"
+    >
       <AppIcon name="arrow-left" :size="14" />
       {{ t("admin.auteurDetail.back") }}
     </router-link>
@@ -216,14 +231,18 @@ async function removeAuteur() {
               : 'bg-red-500/10 text-red-700 dark:text-red-300'
           "
         >
-          {{ activeToken ? t("admin.auteurDetail.linkActive") : t("admin.auteurDetail.linkInactive") }}
+          {{
+            activeToken ? t("admin.auteurDetail.linkActive") : t("admin.auteurDetail.linkInactive")
+          }}
         </span>
       </div>
 
       <div v-if="freshLink" class="rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-2">
         <p class="text-xs text-text-secondary">{{ t("admin.auteurs.linkOnce") }}</p>
         <div class="flex flex-wrap items-center gap-2">
-          <code class="text-xs bg-black/[0.05] rounded px-2 py-1.5 break-all flex-1 min-w-0 dark:bg-white/10">
+          <code
+            class="text-xs bg-black/[0.05] rounded px-2 py-1.5 break-all flex-1 min-w-0 dark:bg-white/10"
+          >
             {{ freshLink }}
           </code>
           <button class="btn btn-soft shrink-0" @click="copyFreshLink">
@@ -312,8 +331,12 @@ async function removeAuteur() {
             {{ chiour.name }}
           </router-link>
           <div class="flex flex-wrap items-center gap-2 mt-1">
-            <span v-if="chiour.serieId && serieNameById.get(chiour.serieId)" class="text-xs text-text-secondary">
-              {{ serieNameById.get(chiour.serieId) }}<template v-if="chiour.episode"> ({{ chiour.episode }})</template>
+            <span
+              v-if="chiour.serieId && serieNameById.get(chiour.serieId)"
+              class="text-xs text-text-secondary"
+            >
+              {{ serieNameById.get(chiour.serieId)
+              }}<template v-if="chiour.episode"> ({{ chiour.episode }})</template>
             </span>
             <span
               class="chip"
@@ -323,7 +346,11 @@ async function removeAuteur() {
                   : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
               "
             >
-              {{ chiour.published ? t("admin.chiourim.statusPublished") : t("admin.chiourim.statusDraft") }}
+              {{
+                chiour.published
+                  ? t("admin.chiourim.statusPublished")
+                  : t("admin.chiourim.statusDraft")
+              }}
             </span>
             <span
               v-if="chiour.published"

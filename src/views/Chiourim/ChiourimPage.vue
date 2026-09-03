@@ -12,6 +12,7 @@ import { isNativeApp } from "../../composables/useNativeApp";
 import { liveValue } from "../../composables/liveInput";
 import { useSearchMode } from "../../composables/useSearchMode";
 import { analyticsService } from "../../services/analyticsService";
+import { SITE_URL } from "../../config/site";
 
 const { t } = useI18n();
 
@@ -97,7 +98,7 @@ watch(searchTerm, (value) => {
 onMounted(() => {
   loadChiourim();
   analyticsService.capture("chiourim_viewed");
-  const url = window.location.origin + "/chiourim";
+  const url = SITE_URL + "/chiourim";
   seoService.setMeta({
     title: t("seo.chiourimTitle"),
     description: t("seo.chiourimDescription"),

@@ -68,7 +68,7 @@ class PushService {
     if (permission.receive !== "granted") {
       throw new Error("PERMISSION_DENIED");
     }
-    const { token } = await FirebaseMessaging.getToken();
+    const token = await this.obtainToken();
     rememberToken(token);
     await setDoc(
       doc(db, "userPreferences", userId),
@@ -108,6 +108,29 @@ class PushService {
       await setDoc(doc(db, "userPreferences", userId), off, { merge: true });
     }
     await FirebaseMessaging.deleteToken().catch(() => {});
+  }
+
+  /**
+   * Jeton FCM de l'appareil. Sur iOS, il n'existe qu'une fois le jeton APNs
+   * arrivé, parfois quelques secondes après la permission : un premier échec
+   * (« No APNS token ») attend l'événement du plugin avant de conclure à un
+   * refus, que l'écran affichait à tort comme une erreur.
+   */
+  private async obtainToken(): Promise<string> {
+    try {
+      return (await FirebaseMessaging.getToken()).token;
+    } catch (error) {
+      if (Capacitor.getPlatform() !== "ios") throw error;
+      const received = await new Promise<string | null>((resolve) => {
+        const timer = setTimeout(() => resolve(null), 8000);
+        void FirebaseMessaging.addListener("tokenReceived", ({ token }) => {
+          clearTimeout(timer);
+          resolve(token);
+        }).then((handle) => setTimeout(() => void handle.remove(), 8500));
+      });
+      if (received) return received;
+      return (await FirebaseMessaging.getToken()).token;
+    }
   }
 
   /**

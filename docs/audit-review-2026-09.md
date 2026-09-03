@@ -10,6 +10,10 @@ chantier, avec pour chaque chantier le fichier où commencer.
 Complète l'audit de performance de juillet (`audit-performance-2026-07.md`),
 dont il vérifie aussi les acquis : l'un d'eux avait sauté (section 1).
 
+Les chantiers de la section 2 sont suivis dans la base « Tâches » du Notion
+du projet (une tâche par chantier, étiquetée) ; cette section en garde la
+synthèse et le point d'entrée dans le code.
+
 ## 1. Corrigé dans cette PR
 
 ### Poids du site et de l'app
@@ -51,16 +55,34 @@ dont il vérifie aussi les acquis : l'un d'eux avait sauté (section 1).
 - **Liens** : `a { transition: all }` transitionnait aussi les propriétés de
   mise en page de tous les liens du site ; restreint aux couleurs, opacité,
   transformation et ombre.
-- **Mur de pierre** : les deux halos plein écran ne s'animent plus sur écran
-  tactile (deux couches composées à chaque frame pour une dérive de 85 s).
-- **Session replay PostHog coupé dans l'app** : rrweb sérialisait le DOM en
-  continu (CPU, batterie, données). Événements, erreurs et Web Vitals
-  restent. À reconsidérer si les replays de l'app manquent au diagnostic.
+- **Mur de pierre** : inchangé. Les halos restent animés partout ; ils ne
+  sont figés que sur les appareils déjà détectés comme faibles
+  (`useDevicePerf`, verdict persisté), mécanisme existant. Si les Web Vitals
+  mobiles le justifient un jour, `stone-wall--static` sur `pointer: coarse`
+  est la piste (voir la tâche Notion « Fluidité »).
+- **Session replay PostHog dans l'app : mesuré plutôt que coupé.** Chaque
+  appareil natif tire une fois sa cohorte (replay actif ou non, gardée sur
+  l'appareil) et tous ses événements portent `replay_cohort` : les Web
+  Vitals (INP surtout) se comparent entre les deux moitiés dans PostHog. Le
+  web n'est pas concerné (`web`). À trancher après quelques semaines : replay
+  partout ou nulle part, et le tirage disparaît.
 - **Page de gestion d'une chaîne** : inscrire un invité ne remplace plus
   toute la page par un spinner (liste démontée, défilement perdu).
 - **Lecteur audio** : la sonde de durée ne repart plus quand le morceau est
   déjà dans le lecteur global, et elle relâche son téléchargement (`load()`)
   à la navigation.
+- **Page de gestion d'une chaîne** : index de réservations en `computed`
+  (les fonctions du template refaisaient un parcours des réservations dix
+  fois par ligne, quadratique sur une chaîne du Talmud), chapitres mis en
+  cache.
+- **Lecture du jour, mode « gérer »** : filtrage du catalogue attendu 150 ms
+  après la dernière frappe (comme la bibliothèque), sélection en `Set`.
+- **Accueil** : une seule horloge partagée (`useNow`) pour les cartes
+  horaires, 'Omer, lune et sidour, au lieu de quatre `setInterval`.
+- **Widgets** : les payloads (hebcal, catalogue) sont importés à la demande
+  au premier calcul, plus au chargement de l'app.
+- **QR de partage** : module npm en `import()` (chunk hashé, immuable, typé)
+  à la place d'un script vendorisé de 57 kB servi sans cache ni hash.
 
 ### Bugs
 
@@ -138,6 +160,15 @@ dont il vérifie aussi les acquis : l'un d'eux avait sauté (section 1).
   site).
 - `firebase.json` : `trailingSlash: false` (`/horaires/` répondait 200 avec
   le shell sans canonique) ; JSON-LD prérendu avec `<` échappé.
+- **Règles des sessions** : titre, description, slug, nom du créateur et
+  tableau de réservations typés et bornés à la création et à la mise à jour
+  par le propriétaire (rien ne les bornait, jusqu'au mégaoctet du document) ;
+  `personId` figé (plus de transfert de session par son propriétaire).
+- **Migration des réservations invité** : sessions candidates prises dans le
+  cache partagé au lieu d'une lecture complète de la collection à chaque
+  connexion (trois fois par page de connexion).
+- **Aperçu social** : `/chiourim/serie/:id` résolu par un seul document,
+  au lieu de tomber sur le scan du catalogue.
 
 ### App native
 
@@ -146,10 +177,23 @@ dont il vérifie aussi les acquis : l'un d'eux avait sauté (section 1).
   silence jusqu'à une réactivation à la main.
 - **Réglages hors ligne** : la page de profil (réglages sans compte dans
   l'app) affichait « connexion impossible » pour changer un thème local.
+- **iOS** : `getToken()` juste après la permission peut échouer tant que le
+  jeton APNs n'est pas arrivé ; on attend l'événement du plugin avant de
+  conclure à un refus.
+- **Avis hors ligne** : « réessayer » rejoue la navigation au lieu de
+  redémarrer toute l'app.
+- **Bundle natif** : image de partage, preuve de propriété, manifeste des
+  textes et version publiée quittent le bundle (reliquats du site).
 - Commentaires périmés de `capacitor.config.ts` et d'App.vue remis d'accord
   avec le code.
 
 ### Code mort retiré
+
+Onze `window.confirm` remplacés par la modale de l'app (`useConfirm`), les
+actions de `useZmanimLocation` renommées (`locateDevice`, `selectCity`,
+`resetPlace` : ce ne sont pas des composables), les canoniques et liens de
+partage sur `SITE_URL` dans quatorze vues (donnaient `capacitor://localhost`
+dans l'app), cinq tests sans DOM passés en environnement node.
 
 Flux de connexion Google par redirection (six méthodes et l'aller-retour
 inutile de `getRedirectResult` au montage de la page de connexion),
@@ -163,7 +207,8 @@ toujours fausse dans le sélecteur de langue, un double `applySessionSeo`.
 
 ## 2. Chantiers recommandés (non faits ici)
 
-Par ordre de valeur. Chaque ligne donne le point d'entrée.
+Par ordre de valeur. Chaque ligne donne le point d'entrée ; chacun a sa
+tâche dans la base Notion du projet.
 
 ### Sécurité et données
 
@@ -178,9 +223,6 @@ Par ordre de valeur. Chaque ligne donne le point d'entrée.
    `sessions/{id}/reservations/{rid}` avec propriété par uid ou identifiant
    invité vérifiée par les règles, ou un callable pour les mutations.
    Migration de données à prévoir.
-2. **Validation des champs de session** (`firestore.rules`) : `name`,
-   `description`, `slug`, `reservations` sans type ni taille ; `personId`
-   modifiable par le propriétaire (transfert). Une dizaine de lignes.
 3. **Chaînes masquées toujours lisibles** (`allow read: if true`) : le
    masquage n'existe que côté client. `allow get` conditionné à `hidden`
    après backfill du champ.
@@ -211,9 +253,9 @@ Par ordre de valeur. Chaque ligne donne le point d'entrée.
    l'en-tête `Cache-Control: no-cache` du bloc `**` de `firebase.json` ne
    l'emporte pas sur celui des fonctions (`curl -sI` sur une page chiour) ;
    le cas échéant, blocs `headers` dédiés aux routes réécrites.
-4. `getChiourim()` (catalogue entier) dans la fonction pour les routes
-   `/chiourim/serie/:id` et auteur ; le filet pour documents hérités n'a plus
-   d'objet depuis la migration.
+4. `getChiourim()` (catalogue entier) dans la fonction pour les pages
+   auteur ; le filet pour documents hérités n'a plus d'objet depuis la
+   migration.
 
 ### Poids et démarrage
 
@@ -231,32 +273,22 @@ Par ordre de valeur. Chaque ligne donne le point d'entrée.
 4. **`TextZoom` natif** : régler `setTextZoom(100)` dans `MainActivity`
    plutôt qu'après le montage (reflow visible sur Android à police système
    agrandie), et retirer le plugin.
-5. **`widgetService`** importe hebcal et le catalogue en statique juste après
-   le montage : `import()` dans `push()`, lancement après `router.isReady()`.
-6. Reliquats web dans le bundle natif (manifest, og-image, favicons,
-   ~150 kB) à ajouter à `prune-native-bundle`.
-7. Un seul build par PR (`ci.yml` et `preview.yml` en font deux) ;
+5. `widgetService.init()` à lancer après `router.isReady()` et
+   `requestIdleCallback` (les payloads sont déjà importés à la demande).
+6. Un seul build par PR (`ci.yml` et `preview.yml` en font deux) ;
    `firebase-tools` épinglé ; `lastmod` réel dans le sitemap (aujourd'hui la
    date du build sur 1 465 URLs).
 
 ### Fluidité
 
-1. **Page de gestion d'une chaîne** (`SessionManagementPage.vue`) : les
-   fonctions du template (`getTextStatus`, `isSectionReserved`…) refont un
-   `find` sur les réservations dix fois par ligne, et `generateChapters`
-   réalloue à chaque rendu ; quadratique sur une chaîne du Talmud.
-   `TextStudiesList.vue` a déjà les index `computed` qu'il faut : les
-   extraire dans un composable `useReservationIndex(session)` partagé.
-2. **Lecture du jour, mode « gérer »** : filtrage du catalogue sans debounce
-   et `includes` sur tableau quatre fois par carte ; réutiliser le filtrage
-   de `StudyPage` (150 ms) et un `Set`.
-3. **Trois écouteurs de défilement** sur une page de lecture (ScrollToTop,
+1. **Index de réservations** : `TextStudiesList` et `SessionManagementPage`
+   ont maintenant chacun les leurs ; les réunir dans un composable
+   `useReservationIndex(session)`.
+2. **Trois écouteurs de défilement** sur une page de lecture (ScrollToTop,
    ReadingMenu, ReadingProgressBar) : un `useScrollFrame()` partagé.
-4. **Quatre `setInterval`** sur l'accueil pour la même horloge (cartes
-   horaires, 'Omer, lune, sidour) : un `useNow()` partagé.
-5. **Flou de la navbar** (`backdrop-blur-md`) re-rasterisé à chaque frame de
+3. **Flou de la navbar** (`backdrop-blur-md`) re-rasterisé à chaque frame de
    défilement sur mobile ; ne le garder qu'au pointeur fin.
-6. Bandes de progression restantes en `width` animée (cartes de session,
+4. Bandes de progression restantes en `width` animée (cartes de session,
    lecture du jour, lecteur audio) : même passage à `scaleX`.
 
 ### App native
@@ -269,15 +301,10 @@ Par ordre de valeur. Chaque ligne donne le point d'entrée.
    Documents sur iOS, ~40 Mo retéléchargeables) : motif de rejet possible
    (guideline 2.23). Poser `NSURLIsExcludedFromBackupKey` sur
    `Documents/texts` depuis le plugin Swift.
-3. **iOS : `getToken()` juste après la permission** peut échouer tant que le
-   jeton APNs n'est pas arrivé (« No APNS token ») ; attendre `tokenReceived`
-   avec un délai avant de conclure à un refus.
-4. **Rachi de la paracha jamais téléchargeable** : élagué du bundle mais
+3. **Rachi de la paracha jamais téléchargeable** : élagué du bundle mais
    absent des livres hors ligne ; l'option Rachi du chnei mikra échoue sans
    réseau.
-5. `OfflineNotice` : « réessayer » recharge toute la SPA dans l'app ; un
-   `router.replace` suffit, la bannière est déjà réactive.
-6. Éclair blanc au lancement Android : `setBackgroundColor(TRANSPARENT)` sur
+4. Éclair blanc au lancement Android : `setBackgroundColor(TRANSPARENT)` sur
    la WebView dans `setup-android.mjs`, le fond jour/nuit de la fenêtre
    transparaît.
 
@@ -289,24 +316,16 @@ Par ordre de valeur. Chaque ligne donne le point d'entrée.
   (quatre copies), réservation depuis le lecteur (copie de `DetailSession`),
   filtrage du catalogue, le triptyque thème / polices / apparence des
   composables de préférences (~150 lignes identiques).
-- **Onze `window.confirm`** alors que `useConfirm` existe et explique
-  pourquoi la boîte système est à proscrire dans l'app.
 - **`sessionService`** : façade de délégation vers `reservationService`,
   `SearchService`, `TextTypeService`, `DateService` (plus de vingt méthodes
   d'une ligne), alors que les vues appellent aussi `reservationService`
   directement.
 - **Chaînes françaises en dur** dans des vues traduites (« Session
-  introuvable », « Utilisateur », titres SEO de pages internes) et
-  `window.location.origin` dans quatorze vues pour le canonique (donne
-  `capacitor://localhost` dans l'app) : `SITE_URL` partout, via `seoService`.
-- `useDevicePlace`, `useCity`, `useDefaultPlace` sont des actions, pas des
-  composables (préfixe `use` trompeur).
+  introuvable », « Utilisateur », titres SEO de pages internes).
 - Outillage : `scripts/*.mjs` ni lintés ni typés ; `noUnusedLocals` absent ;
   tous les tests en jsdom, y compris ceux qui n'en ont pas besoin ; `knip` en
   CI trouverait les exports morts restants (`READING_LEAD_SOLO`, `hubHeading`,
   `localePrefix`, `CITY_NAMES`, `PARASHA_*`, `ZMANIM_GUIDE_*`).
-- `public/vendor/qrcode-generator.js` (57 kB non minifié, servi sans cache
-  ni hash) : `npm i qrcode-generator` et `import()`.
 
 ## 3. Pistes produit
 

@@ -1,12 +1,22 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import { useRoute, useRouter } from "vue-router";
 import { isNativeApp } from "../composables/useNativeApp";
 import AppIcon from "./icons/AppIcon.vue";
 
 const { t } = useI18n();
+const route = useRoute();
+const router = useRouter();
 
+// Sur le web, un rechargement suffit. Dans l'app, il redémarrerait toute la
+// SPA (Firebase, analytics, widgets, resynchronisation) : on rejoue seulement
+// la navigation, la bannière étant déjà réactive au retour du réseau.
 function retry() {
-  window.location.reload();
+  if (!isNativeApp) {
+    window.location.reload();
+    return;
+  }
+  if (navigator.onLine) void router.replace({ path: route.fullPath, force: true });
 }
 </script>
 
