@@ -19,6 +19,9 @@ import { SITE_URL } from "../../config/site";
 import SessionHeader from "./detailSession/SessionHeader.vue";
 import SessionInstructions from "./detailSession/SessionInstructions.vue";
 import TextStudiesList from "./detailSession/TextStudiesList.vue";
+import RandomTehilimCard from "./detailSession/RandomTehilimCard.vue";
+import { EnumTypeTextStudy } from "../../models/typeTextStudy";
+import { isOffline } from "../../services/userPreferencesService";
 import { useToast } from "../../composables/useToast";
 import { liveValue } from "../../composables/liveInput";
 import { analyticsService } from "../../services/analyticsService";
@@ -220,12 +223,18 @@ const progressStats = computed(() => {
 
   const total = textStudies.value.reduce((acc, textStudy) => acc + textStudy.totalSections, 0);
 
-  const reserved = reservations.value.length;
+  // Les tirages abandonnés (expirés sans lecture) ne comptent plus : leurs
+  // emplacements sont redevenus disponibles.
+  const activeReservations = reservations.value.filter(
+    (r) => !sessionService.isReservationExpired(r),
+  );
 
-  const read = reservations.value.filter((r) => r.isCompleted).length;
+  const reserved = activeReservations.length;
+
+  const read = activeReservations.filter((r) => r.isCompleted).length;
 
   const uniqueParticipants = new Set<string>();
-  reservations.value.forEach((r) => {
+  activeReservations.forEach((r) => {
     if (r.chosenById) {
       uniqueParticipants.add(`user:${r.chosenById}`);
     } else if (r.chosenByGuestId) {
@@ -587,6 +596,56 @@ const clearSearch = () => {
   searchTerm.value = "";
 };
 
+// --- Tirage aléatoire (sessions Tehilim uniquement) ---
+
+const isTehilimSession = computed(() => session.value?.type === EnumTypeTextStudy.Tehilim);
+
+const randomAvailableCount = computed(
+  () => textStudies.value.filter((text) => !isReserved(text.id, 1).isReserved).length,
+);
+
+/**
+ * Ouvre un Téhilim libre, tiré au sort, sans aucun prérequis : même un
+ * visiteur qui n'a rien rempli repart avec un texte.
+ *
+ * Le tirage lui-même est local et instantané ; c'est la réservation qui coûte
+ * un aller-retour Firestore (une transaction, qui lit le document sur le
+ * serveur avant d'écrire). L'attendre ici laissait le lecteur devant un bouton
+ * qui tourne pour un texte déjà choisi : on navigue tout de suite, et c'est la
+ * page de lecture qui pose la réservation pendant que le texte s'affiche.
+ */
+const drawRandomTehilim = () => {
+  const current = session.value;
+  if (!current) return;
+
+  analyticsService.capture("random_tehilim_clicked", {
+    session_id: current.id,
+    available_count: randomAvailableCount.value,
+    is_guest: currentUser.value == null,
+    source: "session_page",
+  });
+
+  // Une réservation passe par une transaction Firestore, qui ne se joue pas
+  // hors ligne : le dire ici plutôt que d'ouvrir une lecture qu'on ne pourra
+  // pas retenir.
+  if (isOffline()) {
+    toast.error(t("detailSession.randomDraw.offline"));
+    return;
+  }
+
+  const text = sessionService.pickRandomAvailableText(current, textStudies.value);
+  if (!text) {
+    toast.error(t("detailSession.randomDraw.noneAvailable"));
+    return;
+  }
+
+  router.push({
+    name: "text-reading",
+    params: { textId: text.id },
+    query: { session: current.slug ?? current.id, tirage: "1" },
+  });
+};
+
 const openShareModal = () => {
   // Domaine canonique plutôt que window.location.href : ce dernier vaut
   // localhost (ou capacitor://localhost) en dev et dans l'app native, ce qui
@@ -843,6 +902,14 @@ watch(session, (s) => applySessionSeo(s));
           trackReportStarted();
           showReportModal = true;
         "
+      />
+
+      <!-- Tirage aléatoire : recevoir un Tehilim disponible en un clic,
+           avec ou sans compte -->
+      <RandomTehilimCard
+        v-if="isTehilimSession"
+        :available-count="randomAvailableCount"
+        @draw="drawRandomTehilim"
       />
 
       <!-- Barre de progression -->

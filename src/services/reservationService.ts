@@ -11,10 +11,67 @@ export interface ReservationForm {
   email: string;
 }
 
+/**
+ * Durée de vie d'une réservation issue du tirage aléatoire : non lue au bout
+ * d'une heure, elle est considérée comme abandonnée et redevient prenable.
+ * Le filet ne sert qu'aux départs qu'on ne voit pas venir (onglet fermé,
+ * application tuée) : quitter la page libère le texte tout de suite, et rester
+ * dessus repousse l'échéance (voir renewReservationExpiry).
+ */
+export const RANDOM_RESERVATION_TTL_MS = 60 * 60 * 1000;
+
+/**
+ * La réservation visée n'existe plus dans le document : quelqu'un d'autre a
+ * repris l'emplacement après l'expiration du tirage, ou le créateur de la
+ * chaîne a fait le ménage. L'appelant doit le dire au lecteur plutôt que
+ * d'afficher une erreur technique.
+ */
+export class ReservationGoneError extends Error {
+  constructor() {
+    super("Réservation introuvable");
+    this.name = "ReservationGoneError";
+  }
+}
+
 export class ReservationService {
   /**
+   * Une réservation à durée limitée (tirage aléatoire) qui n'a pas été lue à
+   * temps : elle est ignorée par tous les affichages et remplacée à la
+   * prochaine réservation du même emplacement.
+   */
+  isReservationExpired(reservation: { expiresAt?: string; isCompleted: boolean }): boolean {
+    return (
+      reservation.expiresAt !== undefined &&
+      !reservation.isCompleted &&
+      new Date(reservation.expiresAt).getTime() < Date.now()
+    );
+  }
+
+  /** Les réservations qui tiennent encore leur emplacement. */
+  activeReservations<T extends { expiresAt?: string; isCompleted: boolean }>(
+    reservations: readonly T[],
+  ): T[] {
+    return reservations.filter((r) => !this.isReservationExpired(r));
+  }
+
+  private conflictsWithSlot(
+    reservation: ReservationRecord,
+    textStudyId: string,
+    section: number | undefined,
+  ): boolean {
+    return (
+      reservation.textStudyId === textStudyId &&
+      (reservation.section === section ||
+        reservation.section === undefined ||
+        section === undefined)
+    );
+  }
+
+  /**
    * Une réservation « texte entier » (section undefined) et des réservations
-   * « par section » sont mutuellement exclusives pour un même texte.
+   * « par section » sont mutuellement exclusives pour un même texte. Les
+   * réservations expirées ne comptent pas : l'appelant doit les retirer du
+   * tableau qu'il écrit (voir dropExpiredForSlots).
    */
   private findConflictingReservation(
     reservations: ReservationRecord[],
@@ -22,10 +79,33 @@ export class ReservationService {
     section: number | undefined,
   ): ReservationRecord | undefined {
     return reservations.find(
-      (r) =>
-        r.textStudyId === textStudyId &&
-        (r.section === section || r.section === undefined || section === undefined),
+      (r) => this.conflictsWithSlot(r, textStudyId, section) && !this.isReservationExpired(r),
     );
+  }
+
+  /**
+   * Retire les réservations expirées des emplacements qu'on s'apprête à
+   * réserver. Uniquement ceux-là, et jamais plus de `added + 1` : les règles
+   * Firestore n'acceptent une écriture du tableau que s'il grandit, garde sa
+   * taille, ou perd exactement un élément. Un ménage plus large ferait
+   * refuser la réservation elle-même ; ce qui reste en trop est de toute
+   * façon ignoré par tous les affichages, et partira à la prochaine
+   * réservation de son emplacement.
+   */
+  private dropExpiredForSlots(
+    reservations: ReservationRecord[],
+    slots: Array<{ textStudyId: string; section?: number }>,
+    added: number,
+  ): ReservationRecord[] {
+    let budget = added + 1;
+    return reservations.filter((r) => {
+      const droppable =
+        budget > 0 &&
+        this.isReservationExpired(r) &&
+        slots.some((slot) => this.conflictsWithSlot(r, slot.textStudyId, slot.section));
+      if (droppable) budget--;
+      return !droppable;
+    });
   }
 
   async createReservation(
@@ -36,6 +116,7 @@ export class ReservationService {
     guestId: string | undefined,
     userName: string | undefined,
     guestName: string | undefined,
+    options?: { expiresAt?: string },
   ): Promise<string> {
     if (!userId && !guestId) {
       throw new Error("Une réservation doit être associée à un utilisateur ou un invité");
@@ -54,13 +135,16 @@ export class ReservationService {
         }
 
         const data = sfDoc.data() as { reservations?: ReservationRecord[] };
-        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
+        const existing: ReservationRecord[] = Array.isArray(data.reservations)
           ? data.reservations
           : [];
 
-        if (this.findConflictingReservation(reservations, textStudyId, section) !== undefined) {
+        if (this.findConflictingReservation(existing, textStudyId, section) !== undefined) {
           throw new Error("Cette section est déjà réservée");
         }
+
+        // Un tirage aléatoire abandonné sur cet emplacement cède sa place.
+        const reservations = this.dropExpiredForSlots(existing, [{ textStudyId, section }], 1);
 
         const newReservation: ReservationRecord = {
           id: reservationId,
@@ -81,6 +165,10 @@ export class ReservationService {
 
         if (guestId) {
           newReservation.chosenByGuestId = guestId;
+        }
+
+        if (options?.expiresAt !== undefined) {
+          newReservation.expiresAt = options.expiresAt;
         }
 
         reservations.push(newReservation);
@@ -119,9 +207,12 @@ export class ReservationService {
         }
 
         const data = sfDoc.data() as { reservations?: ReservationRecord[] };
-        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
+        const existing: ReservationRecord[] = Array.isArray(data.reservations)
           ? data.reservations
           : [];
+
+        // Les emplacements demandés dont le tirage a expiré sont libérés.
+        const reservations = this.dropExpiredForSlots(existing, items, items.length);
 
         const newReservations: ReservationRecord[] = items.map((item, index) => {
           if (
@@ -178,6 +269,10 @@ export class ReservationService {
           ? data.reservations
           : [];
         const filtered = reservations.filter((r: ReservationRecord) => r.id !== reservationId);
+        // Déjà partie (emplacement repris après expiration, ménage du
+        // créateur) : les règles n'acceptent qu'une suppression qui retire
+        // vraiment un élément, écrire ici ne ferait qu'une erreur de plus.
+        if (filtered.length === reservations.length) return;
         transaction.update(sfDocRef, { reservations: filtered });
       });
     });
@@ -314,8 +409,12 @@ export class ReservationService {
     const reservations = this.getReservationsBySession(session);
     // Une réservation « texte entier » (section absente) couvre chacune de
     // ses sections : demander « le chapitre 3 est-il pris ? » doit dire oui.
+    // Les réservations expirées (tirage abandonné) ne comptent pas.
     const reservation = reservations.find(
-      (r) => r.textStudyId === textStudyId && (r.section === section || r.section === undefined),
+      (r) =>
+        r.textStudyId === textStudyId &&
+        (r.section === section || r.section === undefined) &&
+        !this.isReservationExpired(r),
     );
 
     if (reservation) {
@@ -339,7 +438,9 @@ export class ReservationService {
     session: Session,
   ): { status: "available" | "fully_reserved" | "partially_reserved"; reservedBy: string | null } {
     const reservations = this.getReservationsBySession(session);
-    const textReservations = reservations.filter((r) => r.textStudyId === textStudyId);
+    const textReservations = reservations.filter(
+      (r) => r.textStudyId === textStudyId && !this.isReservationExpired(r),
+    );
 
     // Réservation du texte entier (section undefined) : le texte est pris.
     const fullReservation = textReservations.find((r) => r.section === undefined);
@@ -468,10 +569,55 @@ export class ReservationService {
 
         const reservationIndex = reservations.findIndex((r) => r.id === reservationId);
         if (reservationIndex === -1) {
-          throw new Error("Réservation introuvable");
+          throw new ReservationGoneError();
         }
 
-        reservations[reservationIndex].isCompleted = isCompleted;
+        const target = { ...reservations[reservationIndex], isCompleted };
+        // Lue, la réservation devient définitive : son échéance n'a plus lieu
+        // d'être. La garder rendrait le texte immédiatement prenable si le
+        // lecteur se ravisait plus tard (« remettre en non lu » après l'heure).
+        if (isCompleted) delete target.expiresAt;
+        reservations[reservationIndex] = target;
+        transaction.update(sfDocRef, { reservations });
+      });
+    });
+    firestoreService.invalidateSessionsCache();
+  }
+
+  /**
+   * Repousse l'échéance d'un tirage tant que son lecteur est là. Sans cela,
+   * une lecture qui dure (un long Téhilim, une pause, un retour) verrait son
+   * texte redevenir prenable sous ses yeux. La taille du tableau ne bouge pas :
+   * les règles Firestore acceptent l'écriture comme un simple changement de
+   * statut.
+   *
+   * @throws ReservationGoneError si l'emplacement a déjà été repris.
+   */
+  async renewReservationExpiry(
+    sessionId: string,
+    reservationId: string,
+    expiresAt: string,
+  ): Promise<void> {
+    const sfDocRef = doc(db, "sessions", sessionId);
+    await runTransaction(db, (transaction) => {
+      return transaction.get(sfDocRef).then((sfDoc) => {
+        if (!sfDoc.exists()) {
+          throw new Error("Document de session introuvable");
+        }
+
+        const data = sfDoc.data() as { reservations?: ReservationRecord[] };
+        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
+          ? data.reservations
+          : [];
+
+        const index = reservations.findIndex((r) => r.id === reservationId);
+        if (index === -1) {
+          throw new ReservationGoneError();
+        }
+        // Une réservation déjà lue n'a plus d'échéance : rien à repousser.
+        if (reservations[index].isCompleted || reservations[index].expiresAt === undefined) return;
+
+        reservations[index] = { ...reservations[index], expiresAt };
         transaction.update(sfDocRef, { reservations });
       });
     });
@@ -529,6 +675,11 @@ export class ReservationService {
               };
               if (r.section !== undefined) {
                 updated.section = r.section;
+              }
+              // Un tirage en cours garde son échéance : le compte reprend la
+              // réservation telle quelle, sans la rendre définitive.
+              if (r.expiresAt !== undefined) {
+                updated.expiresAt = r.expiresAt;
               }
               return updated;
             }

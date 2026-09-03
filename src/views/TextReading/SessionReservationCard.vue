@@ -30,6 +30,9 @@ defineProps<{
   reservationForm: { name: string; email: string };
   /** Distingue les `id` des champs quand l'encadré apparaît deux fois. */
   guestFormIdPrefix?: string;
+  /** Lecture arrivée par tirage : on peut en repiocher un autre. */
+  canDrawAnother?: boolean;
+  isDrawing?: boolean;
 }>();
 
 defineEmits<{
@@ -37,6 +40,7 @@ defineEmits<{
   (e: "toggleRead"): void;
   (e: "cancel"): void;
   (e: "reserve"): void;
+  (e: "drawAnother"): void;
   (e: "guestFirstInput", field: "name" | "email"): void;
 }>();
 </script>
@@ -65,7 +69,7 @@ defineEmits<{
         <AppIcon :name="isCompleted ? 'circle-check' : 'user-clock'" :size="14" />
         {{ isCompleted ? t("textReading.readByYou") : t("textReading.reservedByYou") }}
       </span>
-      <div class="flex items-center gap-2 flex-shrink-0">
+      <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
         <button
           @click="$emit('toggleRead')"
           :disabled="isReserving"
@@ -76,8 +80,24 @@ defineEmits<{
               : 'bg-green-600/10 text-green-700 hover:bg-green-600/20 dark:text-green-300'
           "
         >
-          <AppIcon name="check" :size="13" />
+          <!-- Une coche pour « marquer lu », une flèche de retour pour défaire :
+               la même icône dans les deux sens prêtait à confusion. -->
+          <AppIcon :name="isCompleted ? 'rotate' : 'check'" :size="13" />
           {{ isCompleted ? t("textReading.unmarkRead") : t("textReading.markRead") }}
+        </button>
+        <button
+          v-if="canDrawAnother"
+          @click="$emit('drawAnother')"
+          :disabled="isReserving || isDrawing"
+          :aria-busy="isDrawing"
+          class="btn btn-soft !px-3 !py-1.5 text-sm"
+        >
+          <AppIcon
+            :name="isDrawing ? 'spinner' : 'shuffle'"
+            :size="13"
+            :class="{ 'animate-spin': isDrawing }"
+          />
+          {{ t("textReading.drawAnother") }}
         </button>
         <button
           @click="$emit('cancel')"

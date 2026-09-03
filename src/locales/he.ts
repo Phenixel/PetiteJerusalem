@@ -632,6 +632,14 @@ const he: LocaleMessages = {
     createYourOwnText:
       "הסשן הזה נתן לכם השראה? צרו אחד משלכם בכמה קליקים: בחרו טקסט (תלמוד, תהילים, משנה, תנ״ך), חלקו אותו והזמינו את הקהילה שלכם לסיים אותו יחד אתכם.",
     createYourOwnButton: "צרו את הסשן שלי",
+    randomDraw: {
+      title: "פרק תהילים אקראי",
+      subtitle: "תנו לגורל לבחור עבורכם: הפרק נפתח מיד, שמור על שמכם, גם בלי חשבון.",
+      button: "הגרלת פרק תהילים",
+      noneAvailable: "כל פרקי התהילים בסשן הזה כבר שמורים.",
+      anonymous: "אנונימי",
+      offline: "להגרלה נדרש חיבור לאינטרנט; נסו שוב כשתחזרו לרשת.",
+    },
     instructions: {
       title: "הוראות",
       step1: "סמן את התיבות כדי להזמין קטע או טקסט",
@@ -867,7 +875,7 @@ const he: LocaleMessages = {
     cancel: "ביטול ההזמנה",
     cancelConfirm: "לבטל את ההזמנה?",
     markRead: "סמן כנקרא",
-    unmarkRead: "סמן כלא נקרא",
+    unmarkRead: "החזרה למצב לא נקרא",
     read: "נקרא",
     reservedByYou: "שמרת קטע זה.",
     readByYou: "קראת קטע זה.",
@@ -880,6 +888,8 @@ const he: LocaleMessages = {
     updateError: "העדכון נכשל.",
     guestIntro: "הזן את שמך והאימייל שלך כדי לשמור קטע זה.",
     guestIntroNameOnly: "הזן את שמך כדי לשמור קטע זה.",
+    drawAnother: "פרק תהילים נוסף",
+    drawLost: "הפרק הזה נלקח: ההזמנה פגה. הגרילו פרק אחר כדי להמשיך.",
     textSize: "גודל הטקסט",
     textSizeIncrease: "הגדלת הטקסט",
     textSizeDecrease: "הקטנת הטקסט",

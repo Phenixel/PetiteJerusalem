@@ -86,10 +86,12 @@ const generateChapters = (totalSections: number) => {
 // Index emplacement → réservation, sur les deux sources que recevait le
 // composant (session.reservations pour le statut, la prop reservations pour
 // la complétion) ; `has` avant `set` pour garder la sémantique « premier
-// trouvé » de l'ancien .find() en cas de doublon.
+// trouvé » de l'ancien .find() en cas de doublon. Les réservations expirées
+// (tirage aléatoire abandonné) sont ignorées : l'emplacement est disponible.
 const sessionSlotIndex = computed(() => {
   const bySlot = new Map<string, TextStudyReservation>();
   for (const r of props.session.reservations ?? []) {
+    if (sessionService.isReservationExpired(r)) continue;
     const key = slotKey(r.textStudyId, r.section);
     if (!bySlot.has(key)) bySlot.set(key, r);
   }
@@ -99,6 +101,7 @@ const sessionSlotIndex = computed(() => {
 const reservationSlotIndex = computed(() => {
   const bySlot = new Map<string, TextStudyReservation>();
   for (const r of props.reservations) {
+    if (sessionService.isReservationExpired(r)) continue;
     const key = slotKey(r.textStudyId, r.section);
     if (!bySlot.has(key)) bySlot.set(key, r);
   }
@@ -404,11 +407,16 @@ const handleCardClick = (text: TextStudy) => {
               >
                 {{ t("detailSession.textList.partiallyReserved") }}
               </span>
-              <span v-else class="chip bg-green-600/10 text-green-700 dark:text-green-300">
+              <!-- « Disponible » reste sans couleur : le vert dit « lu » partout
+                   ailleurs (interrupteur, bouton du lecteur), et deux sens pour
+                   une même teinte rendaient la liste illisible. Rien = libre,
+                   une couleur = quelqu'un s'en occupe. Même puce qu'au niveau
+                   chapitre, plus bas. -->
+              <span v-else class="chip bg-black/5 text-text-secondary dark:bg-white/10">
                 {{ t("detailSession.textList.available") }}
               </span>
             </div>
-            <span v-else class="chip bg-green-600/10 text-green-700 dark:text-green-300">
+            <span v-else class="chip bg-black/5 text-text-secondary dark:bg-white/10">
               {{ t("detailSession.textList.available") }}
             </span>
           </div>
