@@ -8,10 +8,12 @@ import { chiourService } from "../../services/chiourService";
 import { studioService } from "../../services/studioService";
 import { useToast } from "../../composables/useToast";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import { useConfirm } from "../../composables/useConfirm";
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const { confirm } = useConfirm();
 const toast = useToast();
 
 const slug = computed(() => String(route.params.slug ?? ""));
@@ -148,7 +150,12 @@ async function save() {
 
 async function remove() {
   if (!chiour.value) return;
-  if (!window.confirm(t("admin.chiourEdit.deleteConfirm"))) return;
+  const accepted = await confirm({
+    title: t("admin.chiourEdit.deleteConfirm"),
+    confirmLabel: t("common.delete"),
+    danger: true,
+  });
+  if (!accepted) return;
   isDeleting.value = true;
   try {
     await adminService.deleteChiour(chiour.value);
@@ -302,11 +309,18 @@ async function remove() {
       </div>
 
       <label class="inline-flex items-center gap-2 cursor-pointer">
-        <input v-model="published" type="checkbox" class="w-5 h-5 rounded accent-primary cursor-pointer" />
+        <input
+          v-model="published"
+          type="checkbox"
+          class="w-5 h-5 rounded accent-primary cursor-pointer"
+        />
         <span class="font-semibold text-text-primary">{{ t("admin.chiourEdit.published") }}</span>
       </label>
 
-      <p v-if="errorMessage" class="text-sm text-red-600 flex items-center gap-1.5 dark:text-red-400">
+      <p
+        v-if="errorMessage"
+        class="text-sm text-red-600 flex items-center gap-1.5 dark:text-red-400"
+      >
         <AppIcon name="alert-circle" :size="14" />
         {{ errorMessage }}
       </p>

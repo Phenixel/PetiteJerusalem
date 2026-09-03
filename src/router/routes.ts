@@ -106,9 +106,10 @@ export default [
     name: "profile",
     component: ProfilePage,
     // App native : la page sert aussi de page de réglages, accessible sans
-    // compte (langue, thème, polices, à propos). Le web garde la garde de
-    // connexion : les réglages n'y sont proposés qu'aux comptes.
-    meta: { requiresAuth: !isNativeApp },
+    // compte (langue, thème, polices, à propos), et ces réglages sont locaux :
+    // elle se rend hors ligne aussi. Le web garde la garde de connexion : les
+    // réglages n'y sont proposés qu'aux comptes.
+    meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp },
   },
   {
     path: "/session-management/:id",

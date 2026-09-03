@@ -3,11 +3,9 @@ import {
   type User as FirebaseUser,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithRedirect,
   signInWithPopup,
   signInWithCredential,
   reauthenticateWithPopup,
-  getRedirectResult,
   signOut,
   updateProfile,
   updatePassword,
@@ -27,6 +25,9 @@ import { analyticsService } from "./analyticsService";
 import { moderationService } from "./moderationService";
 
 export type { User };
+
+/** Fenêtre pendant laquelle Firebase accepte une opération sensible sans reconnexion. */
+const RECENT_LOGIN_MS = 5 * 60 * 1000;
 
 function toUser(firebaseUser: FirebaseUser): User {
   return {
@@ -143,23 +144,6 @@ export class AuthService {
     });
   }
 
-  async isUserAuthenticated(): Promise<boolean> {
-    const user = await this.getCurrentUser();
-    return user !== null;
-  }
-
-  async requireAuthentication(
-    router: { push: (path: string) => void },
-    redirectPath: string = "/",
-  ): Promise<User | null> {
-    const user = await this.getCurrentUser();
-    if (!user) {
-      router.push(redirectPath);
-      return null;
-    }
-    return user;
-  }
-
   // ===== MÉTHODES D'AUTHENTIFICATION =====
 
   async signUpWithEmail(email: string, password: string, displayName?: string): Promise<User> {
@@ -171,9 +155,10 @@ export class AuthService {
 
     if (displayName) {
       await updateProfile(cred.user, { displayName });
+      // onAuthStateChanged a déjà servi le compte, avec l'email pour nom :
+      // les abonnés (navbar, accueil) reçoivent le pseudo maintenant.
+      this.notifyProfileChanged();
     }
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
 
     analyticsService.capture("signed_up", { method: "email" });
     return {
@@ -191,15 +176,6 @@ export class AuthService {
       name: cred.user.displayName || cred.user.email || "Utilisateur",
       email: cred.user.email || email,
     };
-  }
-
-  async signInWithGoogleRedirect(): Promise<void> {
-    if (isNativeApp) {
-      // Pas de redirect possible en webview : on passe par le flux natif.
-      await this.signInWithGoogleNative();
-      return;
-    }
-    await signInWithRedirect(auth, googleAuthProvider);
   }
 
   async signInWithGooglePopup(): Promise<User> {
@@ -281,32 +257,6 @@ export class AuthService {
     return toUser(result.user);
   }
 
-  async getGoogleRedirectResult(): Promise<User | null> {
-    try {
-      const result = await getRedirectResult(auth);
-      if (result && result.user) {
-        return toUser(result.user);
-      }
-      return null;
-    } catch (error) {
-      console.error("Erreur lors de la récupération du résultat de redirection:", error);
-      return null;
-    }
-  }
-
-  saveRedirectPath(path: string): void {
-    localStorage.setItem("auth_redirect_path", path);
-  }
-
-  getAndClearRedirectPath(): string | null {
-    const path = localStorage.getItem("auth_redirect_path");
-    if (path) {
-      localStorage.removeItem("auth_redirect_path");
-      return path;
-    }
-    return null;
-  }
-
   /**
    * Change le nom d'affichage du compte connecté. Ce nom est public (créateur
    * de session, participant) : il passe donc par la modération, comme à
@@ -354,6 +304,15 @@ export class AuthService {
     if (password && user.email) {
       const credential = EmailAuthProvider.credential(user.email, password);
       await reauthenticateWithCredential(user, credential);
+    }
+
+    // Firebase refuse deleteUser sans connexion récente (cinq minutes). On le
+    // vérifie AVANT la purge : sinon les préférences, la progression et les
+    // marque-pages partaient, puis le compte restait, vidé. Le même code
+    // d'erreur que Firebase, pour que l'écran propose de se reconnecter.
+    const { authTime } = await user.getIdTokenResult(true);
+    if (Date.now() - new Date(authTime).getTime() > RECENT_LOGIN_MS) {
+      throw new Error("auth/requires-recent-login");
     }
 
     // Purge des données Firestore associées (préférences, progression de

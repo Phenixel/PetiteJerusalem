@@ -21,6 +21,7 @@ import ReadingMenu from "../../components/ReadingMenu.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
 import DailyReadingItem from "./DailyReadingItem.vue";
+import { SITE_URL } from "../../config/site";
 
 /**
  * Le chnei mikra : la paracha de la semaine, chaque verset suivi de son
@@ -103,7 +104,7 @@ function applySeoMeta() {
   seoService.setMeta({
     title: `${t("chneiMikra.title")} · ${title.value} | Petite Jérusalem`,
     description: t("chneiMikra.pageDescription"),
-    canonical: window.location.origin + "/bibliotheque/chnei-mikra",
+    canonical: SITE_URL + "/bibliotheque/chnei-mikra",
   });
 }
 

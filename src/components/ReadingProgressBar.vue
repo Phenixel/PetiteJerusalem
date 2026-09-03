@@ -47,9 +47,12 @@ const bottomClass = isNativeApp ? "bottom-[calc(3.5rem+var(--safe-bottom))]" : "
     aria-valuemin="0"
     aria-valuemax="100"
   >
+    <!-- scaleX plutôt que width : le remplissage suit chaque frame de
+         défilement, une largeur animée relancerait mise en page et peinture
+         à chacune ; la transformation reste sur le compositeur. -->
     <div
-      class="h-full bg-primary/80 transition-[width] duration-150 ease-linear"
-      :style="{ width: `${progress * 100}%` }"
+      class="h-full w-full origin-left bg-primary/80 rtl:origin-right"
+      :style="{ transform: `scaleX(${progress})` }"
     ></div>
   </div>
 </template>

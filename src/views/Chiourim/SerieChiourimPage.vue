@@ -9,6 +9,7 @@ import ChiourCard from "../../components/ChiourCard.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import { analyticsService } from "../../services/analyticsService";
+import { SITE_URL } from "../../config/site";
 
 const route = useRoute();
 const router = useRouter();
@@ -48,7 +49,7 @@ const loadSerie = async () => {
     seoService.setMeta({
       title: `${found.name} | ${t("chiourim.title")} | Petite Jerusalem`,
       description: found.description || t("serie.seoDescription", { serie: found.name }),
-      canonical: window.location.origin + `/chiourim/serie/${serieId}`,
+      canonical: SITE_URL + `/chiourim/serie/${serieId}`,
     });
   } catch (err) {
     console.error("Erreur lors du chargement de la série:", err);

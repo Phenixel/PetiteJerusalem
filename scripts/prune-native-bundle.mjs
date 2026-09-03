@@ -32,7 +32,18 @@ const PRUNED_DIRS = [
   "texts/rashi",
   "texts/tefila",
 ].map((d) => join(root, d));
-const PRUNED_FILES = ["sitemap.xml", "robots.txt", "llms.txt"].map((f) => join(root, f));
+// Ce que seul le site sert : plan du site, fichiers pour les robots, image
+// de partage, preuve de propriété pour un moteur, manifeste des textes (l'app
+// va le chercher en ligne, jamais dans son bundle), version publiée.
+const PRUNED_FILES = [
+  "sitemap.xml",
+  "robots.txt",
+  "llms.txt",
+  "og-image.jpg",
+  "7928be0e14242cf92e167550affa3215.txt",
+  "texts/manifest.json",
+  "app-version.json",
+].map((f) => join(root, f));
 /** Ce que seul le site sert : les preuves des liens d'application. */
 const WEB_ONLY_DIRS = [".well-known"].map((d) => join(root, d));
 
@@ -69,7 +80,9 @@ for (const path of htmlFiles(root)) {
   rmSync(path);
   removed++;
 }
-console.log(`prune-native-bundle: ${removed} page(s) HTML prérendue(s) retirée(s) (web uniquement)`);
+console.log(
+  `prune-native-bundle: ${removed} page(s) HTML prérendue(s) retirée(s) (web uniquement)`,
+);
 
 for (const file of PRUNED_FILES) {
   if (!existsSync(file)) continue;

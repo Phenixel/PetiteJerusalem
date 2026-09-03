@@ -177,7 +177,7 @@ export const inCountry = (code: string, locale: SeoLocale = "fr"): string =>
  * d'Israël et les grandes communautés de diaspora sont nommées en hébreu, les
  * autres gardent leur graphie latine, comme le font les listes hébraïques.
  */
-export const CITY_NAMES: Record<string, { en?: string; he?: string }> = {
+const CITY_NAMES: Record<string, { en?: string; he?: string }> = {
   // France
   Paris: { he: "פריז" },
   Marseille: { he: "מרסיי" },

@@ -43,17 +43,10 @@ const navLinks = computed(() => [
 
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value;
-
-  if (isMobileMenuOpen.value) {
-    document.body.classList.add("menu-open");
-  } else {
-    document.body.classList.remove("menu-open");
-  }
 }
 
 function closeMobileMenu() {
   isMobileMenuOpen.value = false;
-  document.body.classList.remove("menu-open");
 }
 
 // D'où les utilisateurs ouvrent leur profil (navbar desktop / menu mobile /
@@ -110,12 +103,15 @@ function goToLogin() {
     ref="header"
     class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-beige/90 backdrop-blur-md dark:bg-gray-900/90 transition-colors duration-300"
   >
+    <!-- Pas un h1 : chaque page a le sien, le bandeau en doublait le titre
+         sur tout le site (deux h1 par page pour les lecteurs d'écran et le
+         référencement). -->
     <RouterLink :to="localePath('home')" class="group">
-      <h1
+      <p
         class="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
       >
         {{ $t("navbar.title") }}
-      </h1>
+      </p>
       <p class="text-sm text-text-secondary mt-1 group-hover:text-primary transition-colors">
         {{ $t("navbar.subtitle") }}
       </p>

@@ -36,12 +36,24 @@ export const onSessionReported = onDocumentCreated("reports/{reportId}", async (
     .where("status", "==", "open")
     .get();
 
-  const reporters = new Set(
-    openReports.docs.map((doc) => {
-      const data = doc.data();
-      return (data.reporterId as string | null) ?? (data.reporterGuestId as string | null) ?? doc.id;
-    }),
-  );
+  // Toutes les personnes distinctes, comptes et invités (pour le backoffice) ;
+  // seuls les comptes pèsent dans le masquage automatique : un identifiant
+  // invité se forge en une requête, trois signalements anonymes du même
+  // appareil suffisaient à masquer n'importe quelle session. Un signalement
+  // sans aucune identité ne compte pour personne.
+  const reporters = new Set<string>();
+  const accountReporters = new Set<string>();
+  for (const doc of openReports.docs) {
+    const data = doc.data();
+    const uid = data.reporterId as string | null;
+    const guestId = data.reporterGuestId as string | null;
+    if (uid) {
+      reporters.add(uid);
+      accountReporters.add(uid);
+    } else if (guestId) {
+      reporters.add(guestId);
+    }
+  }
 
   const sessionRef = db.collection("sessions").doc(sessionId);
   const sessionSnap = await sessionRef.get();
@@ -51,13 +63,13 @@ export const onSessionReported = onDocumentCreated("reports/{reportId}", async (
   }
 
   const updates: Record<string, unknown> = { reportsCount: reporters.size };
-  if (reporters.size >= AUTO_HIDE_THRESHOLD && sessionSnap.data()?.hidden !== true) {
+  if (accountReporters.size >= AUTO_HIDE_THRESHOLD && sessionSnap.data()?.hidden !== true) {
     updates.hidden = true;
     updates.hiddenAt = FieldValue.serverTimestamp();
     updates.hiddenReason = "reports";
     console.log(
       `[moderation] session ${sessionId} masquée automatiquement ` +
-        `(${reporters.size} signaleurs distincts)`,
+        `(${accountReporters.size} comptes distincts)`,
     );
   }
 

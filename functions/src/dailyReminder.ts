@@ -64,8 +64,7 @@ const COPY: Record<string, { daily: ReminderCopy; sunset: ReminderCopy }> = {
   he: {
     daily: {
       title: "הקריאה היומית שלך מחכה 📖",
-      body: (n) =>
-        n === 1 ? "נשאר לך טקסט אחד לקרוא היום." : `נשארו לך ${n} טקסטים לקרוא היום.`,
+      body: (n) => (n === 1 ? "נשאר לך טקסט אחד לקרוא היום." : `נשארו לך ${n} טקסטים לקרוא היום.`),
     },
     sunset: {
       title: "השקיעה מתקרבת 🌅",
@@ -83,19 +82,27 @@ export const INVALID_TOKEN_CODES = new Set([
   "messaging/invalid-argument",
 ]);
 
-/** Jour calendaire YYYY-MM-DD à Paris, même convention que todayKey() côté client. */
-function todayKey(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
+/**
+ * Jour civil YYYY-MM-DD dans le fuseau du lieu de l'utilisateur : la même
+ * convention que localDayKey() côté client, qui écrit la progression du jour
+ * avec le jour LOCAL de l'appareil. Compter en heure de Paris jugeait périmée
+ * la progression d'un lecteur en Israël ou en Amérique passé minuit à Paris,
+ * et le rappel partait avec « il te reste N textes » alors que tout était lu.
+ */
+function todayKey(timeZone: string, now: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone }).format(now);
 }
 
-/** Heure courante à Paris ({ hour, minute }), pour respecter le moment choisi par chacun. */
-function currentParisTime(): { hour: number; minute: number } {
+/** Heure courante ({ hour, minute }) dans le fuseau du lieu de l'utilisateur. */
+function currentTime(timeZone: string, now: Date): { hour: number; minute: number } {
   const parts = new Intl.DateTimeFormat("fr-FR", {
-    timeZone: "Europe/Paris",
+    timeZone,
     hour: "numeric",
     minute: "numeric",
-    hour12: false,
-  }).formatToParts(new Date());
+    // h23, pas hour12: false : selon la version ICU, ce dernier peut donner
+    // « 24 » à minuit, et un rappel réglé entre 00:00 et 00:55 ne partait jamais.
+    hourCycle: "h23",
+  }).formatToParts(now);
   const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
   return { hour: get("hour"), minute: get("minute") };
 }
@@ -109,7 +116,10 @@ function toSlot(minute: number): number {
 }
 
 export const dailyReadingReminder = onSchedule(
-  { schedule: "*/5 * * * *", timeZone: "Europe/Paris" },
+  // Cinq minutes de marge : au créneau de 18 h, le plus choisi, quelques
+  // centaines de profils dépassaient les 60 s par défaut, et les suivants
+  // n'étaient jamais servis.
+  { schedule: "*/5 * * * *", timeZone: "Europe/Paris", timeoutSeconds: 300 },
   async () => {
     const db = getFirestore();
     const snap = await db
@@ -119,92 +129,108 @@ export const dailyReadingReminder = onSchedule(
     if (snap.empty) return;
 
     const messaging = getMessaging();
-    const today = todayKey();
     const nowDate = new Date();
-    const now = currentParisTime();
-    const currentSlot = toSlot(now.minute);
     let sent = 0;
 
     for (const docSnap of snap.docs) {
-      const prefs = docSnap.data();
-
-      // Rappel à heure fixe. Absent des profils antérieurs au rappel
-      // d'avant-chkia, où il était le seul : son absence vaut « activé ».
-      const wantedHour =
-        typeof prefs.pushReminderHour === "number" ? prefs.pushReminderHour : DEFAULT_REMINDER_HOUR;
-      const wantedMinute =
-        typeof prefs.pushReminderMinute === "number"
-          ? toSlot(prefs.pushReminderMinute)
-          : DEFAULT_REMINDER_MINUTE;
-      const dailyDue =
-        prefs.pushReminderDailyEnabled !== false &&
-        wantedHour === now.hour &&
-        wantedMinute === currentSlot;
-
-      // Dernier appel avant la chkia du lieu de l'utilisateur.
-      let sunsetDue = false;
-      if (prefs.pushSunsetReminderEnabled === true) {
-        const target = sunsetReminderAt(readPlace(prefs.pushReminderPlace), nowDate);
-        sunsetDue = target !== null && isInCurrentSlot(target, nowDate);
-      }
-
-      if (!dailyDue && !sunsetDue) continue;
-
-      const tokens: string[] = Array.isArray(prefs.fcmTokens)
-        ? prefs.fcmTokens.filter((t: unknown): t is string => typeof t === "string" && t.length > 0)
-        : [];
-      const readingIds = (Array.isArray(prefs.dailyReadingIds) ? prefs.dailyReadingIds : []).map(
-        String,
-      );
-      // Lectures du moment quotidiennes : comptent comme les textes. La paracha
-      // (chnei mikra) est un suivi hebdomadaire, hors du décompte du jour.
-      const readingOptions: unknown[] = (
-        Array.isArray(prefs.dailyReadingOptions) ? prefs.dailyReadingOptions : []
-      ).filter((k: unknown) => k !== "parasha");
-      const totalReadings = readingIds.length + readingOptions.length;
-      if (tokens.length === 0 || totalReadings === 0) continue;
-
-      const progress = prefs.dailyReadingProgress as
-        | { date?: string; completedIds?: unknown[]; completedOptions?: unknown[] }
-        | undefined;
-      const isToday = progress?.date === today;
-      // Même règle que countDailyProgress (src/services/userPreferencesService.ts) :
-      // on intersecte les complétions avec les listes actives, une entrée
-      // obsolète (texte retiré, option désactivée) ne doit pas annuler le rappel.
-      const completedIds = new Set(
-        (isToday && Array.isArray(progress.completedIds) ? progress.completedIds : []).map(String),
-      );
-      const completedOptions = new Set(
-        isToday && Array.isArray(progress.completedOptions) ? progress.completedOptions : [],
-      );
-      const completedToday =
-        readingIds.filter((id) => completedIds.has(id)).length +
-        readingOptions.filter((k) => completedOptions.has(k)).length;
-      const remaining = totalReadings - completedToday;
-      if (remaining <= 0) continue;
-
-      const locale = COPY[typeof prefs.pushLocale === "string" ? prefs.pushLocale : "fr"] ?? COPY.fr;
-      // Les deux rappels dans le même créneau : c'est l'échéance de la chkia
-      // qui a quelque chose de plus à dire, et une seule notification part.
-      const copy = sunsetDue ? locale.sunset : locale.daily;
-
-      const result = await messaging.sendEachForMulticast({
-        tokens,
-        notification: { title: copy.title, body: copy.body(remaining) },
-        // Deep-link géré par pushService.initDeepLinks côté app.
-        data: { url: "/bibliotheque/lecture-du-jour" },
-        apns: { payload: { aps: { sound: "default" } } },
-      });
-      sent += result.successCount;
-
-      const invalidTokens = result.responses
-        .map((r, i) => (r.error && INVALID_TOKEN_CODES.has(r.error.code) ? tokens[i] : null))
-        .filter((t): t is string => t !== null);
-      if (invalidTokens.length > 0) {
-        await docSnap.ref.update({ fcmTokens: FieldValue.arrayRemove(...invalidTokens) });
+      // Un profil en échec (FCM, réseau) ne doit pas priver tous les suivants.
+      try {
+        sent += await remindProfile(docSnap, messaging, nowDate);
+      } catch (error) {
+        logger.error(`dailyReadingReminder: profil ${docSnap.id} en échec`, error);
       }
     }
 
-    logger.info(`dailyReadingReminder: ${sent} notification(s) envoyée(s) sur ${snap.size} profil(s).`);
+    logger.info(
+      `dailyReadingReminder: ${sent} notification(s) envoyée(s) sur ${snap.size} profil(s).`,
+    );
   },
 );
+
+/** Envoie le rappel dû à un profil, s'il y en a un ; renvoie le nombre d'envois réussis. */
+async function remindProfile(
+  docSnap: FirebaseFirestore.QueryDocumentSnapshot,
+  messaging: ReturnType<typeof getMessaging>,
+  nowDate: Date,
+): Promise<number> {
+  const prefs = docSnap.data();
+  const place = readPlace(prefs.pushReminderPlace);
+  const today = todayKey(place.tzid, nowDate);
+  const now = currentTime(place.tzid, nowDate);
+  const currentSlot = toSlot(now.minute);
+
+  // Rappel à heure fixe. Absent des profils antérieurs au rappel
+  // d'avant-chkia, où il était le seul : son absence vaut « activé ».
+  const wantedHour =
+    typeof prefs.pushReminderHour === "number" ? prefs.pushReminderHour : DEFAULT_REMINDER_HOUR;
+  const wantedMinute =
+    typeof prefs.pushReminderMinute === "number"
+      ? toSlot(prefs.pushReminderMinute)
+      : DEFAULT_REMINDER_MINUTE;
+  const dailyDue =
+    prefs.pushReminderDailyEnabled !== false &&
+    wantedHour === now.hour &&
+    wantedMinute === currentSlot;
+
+  // Dernier appel avant la chkia du lieu de l'utilisateur.
+  let sunsetDue = false;
+  if (prefs.pushSunsetReminderEnabled === true) {
+    const target = sunsetReminderAt(place, nowDate);
+    sunsetDue = target !== null && isInCurrentSlot(target, nowDate);
+  }
+
+  if (!dailyDue && !sunsetDue) return 0;
+
+  const tokens: string[] = Array.isArray(prefs.fcmTokens)
+    ? prefs.fcmTokens.filter((t: unknown): t is string => typeof t === "string" && t.length > 0)
+    : [];
+  const readingIds = (Array.isArray(prefs.dailyReadingIds) ? prefs.dailyReadingIds : []).map(
+    String,
+  );
+  // Lectures du moment quotidiennes : comptent comme les textes. La paracha
+  // (chnei mikra) est un suivi hebdomadaire, hors du décompte du jour.
+  const readingOptions: unknown[] = (
+    Array.isArray(prefs.dailyReadingOptions) ? prefs.dailyReadingOptions : []
+  ).filter((k: unknown) => k !== "parasha");
+  const totalReadings = readingIds.length + readingOptions.length;
+  if (tokens.length === 0 || totalReadings === 0) return 0;
+
+  const progress = prefs.dailyReadingProgress as
+    | { date?: string; completedIds?: unknown[]; completedOptions?: unknown[] }
+    | undefined;
+  const isToday = progress?.date === today;
+  // Même règle que countDailyProgress (src/services/userPreferencesService.ts) :
+  // on intersecte les complétions avec les listes actives, une entrée
+  // obsolète (texte retiré, option désactivée) ne doit pas annuler le rappel.
+  const completedIds = new Set(
+    (isToday && Array.isArray(progress.completedIds) ? progress.completedIds : []).map(String),
+  );
+  const completedOptions = new Set(
+    isToday && Array.isArray(progress.completedOptions) ? progress.completedOptions : [],
+  );
+  const completedToday =
+    readingIds.filter((id) => completedIds.has(id)).length +
+    readingOptions.filter((k) => completedOptions.has(k)).length;
+  const remaining = totalReadings - completedToday;
+  if (remaining <= 0) return 0;
+
+  const locale = COPY[typeof prefs.pushLocale === "string" ? prefs.pushLocale : "fr"] ?? COPY.fr;
+  // Les deux rappels dans le même créneau : c'est l'échéance de la chkia
+  // qui a quelque chose de plus à dire, et une seule notification part.
+  const copy = sunsetDue ? locale.sunset : locale.daily;
+
+  const result = await messaging.sendEachForMulticast({
+    tokens,
+    notification: { title: copy.title, body: copy.body(remaining) },
+    // Deep-link géré par pushService.initDeepLinks côté app.
+    data: { url: "/bibliotheque/lecture-du-jour" },
+    apns: { payload: { aps: { sound: "default" } } },
+  });
+  const invalidTokens = result.responses
+    .map((r, i) => (r.error && INVALID_TOKEN_CODES.has(r.error.code) ? tokens[i] : null))
+    .filter((t): t is string => t !== null);
+  if (invalidTokens.length > 0) {
+    await docSnap.ref.update({ fcmTokens: FieldValue.arrayRemove(...invalidTokens) });
+  }
+  return result.successCount;
+}

@@ -22,9 +22,11 @@ import { isNativeApp } from "../../composables/useNativeApp";
 import { useToast } from "../../composables/useToast";
 import { liveValue } from "../../composables/liveInput";
 import { SITE_URL } from "../../config/site";
+import { useConfirm } from "../../composables/useConfirm";
 
 const router = useRouter();
 const { t } = useI18n();
+const { confirm } = useConfirm();
 const toast = useToast();
 
 const sessions = ref<Session[]>([]);
@@ -55,12 +57,7 @@ const loadSessions = async () => {
   }
 };
 
-const isSessionFinished = (session: Session): boolean => {
-  if (session.isEnded) return true;
-  const limit = new Date(session.dateLimit);
-  limit.setHours(23, 59, 59, 999);
-  return new Date() > limit;
-};
+const isSessionFinished = (session: Session) => sessionService.isSessionFinished(session);
 
 // --- « Mes sessions » : celles que je suis (participation ou création),
 // affichées avant le reste, c'est ce qu'on vient chercher en revenant.
@@ -129,7 +126,7 @@ const shareUrl = ref("");
 
 const openShareModal = (session: Session) => {
   selectedSession.value = session;
-  // Domaine canonique : window.location.origin vaut localhost (ou
+  // Domaine canonique : SITE_URL vaut localhost (ou
   // capacitor://localhost) en dev et dans l'app native → lien inutilisable.
   shareUrl.value = `${SITE_URL}/share-reading/session/${session.slug || session.id}`;
   showShareModal.value = true;
@@ -195,7 +192,7 @@ const saveSessionChanges = async (sessionData: {
 };
 
 const endSession = async (session: Session) => {
-  if (!confirm(t("profile.endSessionConfirm"))) {
+  if (!(await confirm({ title: t("profile.endSessionConfirm"), danger: true }))) {
     return;
   }
 
@@ -294,7 +291,7 @@ onMounted(() => {
       variant: user ? "dashboard" : "discovery",
     });
   });
-  const url = window.location.origin + "/share-reading";
+  const url = SITE_URL + "/share-reading";
   seoService.setMeta({
     title: t("seo.shareReadingTitle"),
     description: t("seo.shareReadingDescription"),
@@ -493,10 +490,7 @@ const handleCreateClick = () => {
       </div>
 
       <!-- État de chargement -->
-      <div
-        v-if="isLoading"
-        class="absolute inset-0 flex flex-col items-center justify-center z-10"
-      >
+      <div v-if="isLoading" class="absolute inset-0 flex flex-col items-center justify-center z-10">
         <div
           class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
         ></div>
@@ -550,7 +544,6 @@ const handleCreateClick = () => {
             </button>
           </div>
         </div>
-
       </div>
 
       <!-- Aucune session -->

@@ -27,12 +27,7 @@ const emit = defineEmits<{
   (e: "end", session: Session): void;
 }>();
 
-const isSessionFinished = (session: Session): boolean => {
-  if (session.isEnded) return true;
-  const limit = new Date(session.dateLimit);
-  limit.setHours(23, 59, 59, 999);
-  return new Date() > limit;
-};
+const isSessionFinished = (session: Session) => sessionService.isSessionFinished(session);
 
 const ongoingSessions = computed(() => props.sessions.filter((s) => !isSessionFinished(s)));
 const finishedSessions = computed(() => props.sessions.filter((s) => isSessionFinished(s)));

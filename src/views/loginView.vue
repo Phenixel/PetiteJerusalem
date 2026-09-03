@@ -15,6 +15,7 @@ import { seoService } from "../services/seoService";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
 import { useLocalePath } from "../composables/useLocalePath";
+import { SITE_URL } from "../config/site";
 
 /** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
 const { localePath } = useLocalePath();
@@ -187,16 +188,6 @@ async function loginWithApple() {
 }
 
 onMounted(async () => {
-  try {
-    const user = await authService.getGoogleRedirectResult();
-    if (user) {
-      const redirectPath = authService.getAndClearRedirectPath() || "/profile";
-      router.push(redirectPath);
-    }
-  } catch (error) {
-    console.error("Erreur lors de la vérification de la redirection Google:", error);
-  }
-
   const currentUser = await authService.getCurrentUser();
   if (currentUser) {
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
@@ -213,7 +204,7 @@ onMounted(async () => {
     mode.value = "signup";
   }
 
-  const url = window.location.origin + "/login";
+  const url = SITE_URL + "/login";
   seoService.setMeta({
     title: t("seo.loginTitle"),
     description: t("seo.loginDescription"),

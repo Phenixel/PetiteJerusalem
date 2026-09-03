@@ -281,11 +281,7 @@ onUnmounted(() => {
          (--static) si le raster a échoué sur une machine dégradée. -->
   <div ref="rootEl" class="stone-wall" aria-hidden="true">
     <canvas v-if="useRaster && !rasterFailed" ref="rasterCanvas" class="sw-raster"></canvas>
-    <div
-      v-else
-      class="stone-wall__wall"
-      :class="{ 'stone-wall--static': isDegradedRendering }"
-    >
+    <div v-else class="stone-wall__wall" :class="{ 'stone-wall--static': isDegradedRendering }">
       <div class="sw-grain" :style="{ backgroundImage: grain }" />
       <!-- The light behind the wall, seen through the mortar joints (full)
            and on the stone faces (faint, baked into the mask's alpha). -->

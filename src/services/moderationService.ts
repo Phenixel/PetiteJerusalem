@@ -1,5 +1,3 @@
-import { addDoc, collection, Timestamp } from "firebase/firestore";
-import { db } from "../firebase/firestore";
 import { auth } from "../firebase/core";
 import { i18n } from "../i18n";
 import { guestService } from "./guestService";
@@ -15,6 +13,11 @@ import type { ReportReason, Session } from "../models/models";
  *   backoffice ; au 3e signalement une Cloud Function masque la session) ;
  * - blocage local de créateurs (leurs sessions disparaissent des listes de
  *   l'appareil).
+ *
+ * Ce module fait partie du bundle initial (authService l'importe pour le
+ * filtre, useToast pour ModerationError) : Firestore n'y est chargé qu'au
+ * moment du signalement, par import dynamique. Un import statique ramènerait
+ * tout le SDK Firestore (~170 kB gzip) dans le chargement de la première page.
  */
 
 /** Texte refusé par le filtre : `word` est le terme en cause, le message est localisé. */
@@ -42,13 +45,23 @@ const LEET_MAP: Record<string, string> = {
   "!": "i",
 };
 
-/** Minuscules, sans accents ni niqqoud, chiffres « leet » convertis. */
+/**
+ * Minuscules, sans accents ni niqqoud, chiffres « leet » convertis.
+ *
+ * La substitution ne vaut qu'au contact d'une lettre : un chiffre collé à un
+ * mot (« m3rde », « m3rd3 ») en fait partie, un symbole entre deux lettres
+ * (« p@te ») aussi. Un « ! » qui ferme la phrase, lui, reste une ponctuation :
+ * converti en « i », « pute! » devenait « putei » et passait le filtre.
+ */
 function normalize(text: string): string {
   return text
     .toLowerCase()
     .normalize("NFD")
     .replace(/\p{M}+/gu, "")
-    .replace(/[0134578@$!]/g, (c) => LEET_MAP[c] ?? c);
+    .replace(
+      /(?<=\p{L})[0134578@$!](?=\p{L})|(?<=\p{L})[0134578]|[0134578](?=\p{L})/gu,
+      (c) => LEET_MAP[c] ?? c,
+    );
 }
 
 const BANNED_WORD_SET = new Set(BANNED_WORDS.map(normalize));
@@ -124,9 +137,15 @@ export class ModerationService {
    */
   async reportSession(session: Session, reason: ReportReason, details: string): Promise<void> {
     const uid = auth.currentUser?.uid ?? null;
+    const [{ addDoc, collection, Timestamp }, { db }] = await Promise.all([
+      import("firebase/firestore"),
+      import("../firebase/firestore"),
+    ]);
     await addDoc(collection(db, "reports"), {
       sessionId: session.id,
-      sessionName: session.name,
+      // Les règles Firestore plafonnent le nom à 300 caractères : un titre
+      // plus long rendrait la session impossible à signaler.
+      sessionName: session.name.slice(0, 300),
       reason,
       details: details.trim().slice(0, 1000),
       reporterId: uid,

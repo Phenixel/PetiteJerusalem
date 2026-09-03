@@ -84,7 +84,7 @@ onUnmounted(() => {
       @pointerleave="onPointerLeave"
       class="fixed right-6 w-11 h-11 flex items-center justify-center rounded-full bg-surface text-text-primary shadow-pop hover:text-primary transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary z-50"
       :class="bottomClass"
-      aria-label="Retour en haut"
+      :aria-label="$t('textReading.navTop')"
     >
       <AppIcon name="arrow-up" :size="18" />
     </button>

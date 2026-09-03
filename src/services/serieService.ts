@@ -36,11 +36,6 @@ export class SerieService {
     return series.find((s) => s.id === serieId) ?? null;
   }
 
-  async getSeriesForAuteur(auteurId: string): Promise<Serie[]> {
-    const series = await this.getAllSeries();
-    return series.filter((s) => s.auteurId === auteurId);
-  }
-
   invalidateCache(): void {
     this.cache = null;
   }

@@ -1,6 +1,6 @@
 import type { Session, TextStudy, TextStudyReservation, ReservationRecord } from "../models/models";
 import { db } from "../firebase/firestore";
-import { doc, runTransaction, collection, getDocs } from "firebase/firestore";
+import { doc, runTransaction } from "firebase/firestore";
 import { firestoreService } from "./firestoreService";
 import { guestService } from "./guestService";
 import { analyticsService } from "./analyticsService";
@@ -488,21 +488,20 @@ export class ReservationService {
 
     // Réservations faites avec l'email OU avec l'identité locale du
     // navigateur (invités sans email) : les deux sont rattachées au compte.
-    const guestIds = new Set([userEmail, ...(localGuestId ? [localGuestId] : [])]);
-    const isOwnGuestReservation = (r: ReservationRecord) =>
+    const guestIds = new Set([userEmail, ...(localGuestId ? [localGuestId] : [])].filter(Boolean));
+    if (guestIds.size === 0) return 0;
+    const isOwnGuestReservation = (r: { chosenByGuestId?: string }) =>
       r.chosenByGuestId !== undefined && guestIds.has(r.chosenByGuestId);
 
-    const sessionsSnapshot = await getDocs(collection(db, "sessions"));
+    // Les sessions candidates viennent du cache partagé (celui de l'accueil et
+    // du partage de lectures), pas d'une lecture complète de la collection à
+    // chaque connexion, trois fois par page de connexion. La transaction relit
+    // chaque candidate à jour avant d'écrire.
+    const sessions = await firestoreService.getSessions();
+    const candidates = sessions.filter((s) => (s.reservations ?? []).some(isOwnGuestReservation));
 
-    for (const sessionDoc of sessionsSnapshot.docs) {
-      const data = sessionDoc.data() as { reservations?: ReservationRecord[] };
-      const reservations = Array.isArray(data.reservations) ? data.reservations : [];
-
-      const hasGuestReservations = reservations.some(isOwnGuestReservation);
-
-      if (!hasGuestReservations) continue;
-
-      const sfDocRef = doc(db, "sessions", sessionDoc.id);
+    for (const candidate of candidates) {
+      const sfDocRef = doc(db, "sessions", candidate.id);
 
       // Le compteur est retourné par la transaction (le callback peut être
       // rejoué en cas de contention : ne jamais accumuler à l'intérieur).

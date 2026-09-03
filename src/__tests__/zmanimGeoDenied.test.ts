@@ -34,7 +34,7 @@ describe("mémoire du refus de géolocalisation", () => {
     const first = await freshComposable();
     expect(first.deniedBefore.value).toBe(false);
 
-    expect(await first.useDevicePlace()).toBe(false);
+    expect(await first.locateDevice()).toBe(false);
     expect(first.status.value).toBe("denied");
     expect(first.deniedBefore.value).toBe(true);
 
@@ -47,7 +47,7 @@ describe("mémoire du refus de géolocalisation", () => {
     mockGeolocation((_success, error) => error({ code: 2 }));
     const composable = await freshComposable();
 
-    expect(await composable.useDevicePlace()).toBe(false);
+    expect(await composable.locateDevice()).toBe(false);
     expect(composable.status.value).toBe("unavailable");
     expect(composable.deniedBefore.value).toBe(false);
   });
@@ -58,7 +58,7 @@ describe("mémoire du refus de géolocalisation", () => {
     const composable = await freshComposable();
     expect(composable.deniedBefore.value).toBe(true);
 
-    expect(await composable.useDevicePlace()).toBe(true);
+    expect(await composable.locateDevice()).toBe(true);
     expect(composable.deniedBefore.value).toBe(false);
     expect(localStorage.getItem("pj_zmanim_geo_denied")).toBeNull();
   });

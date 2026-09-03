@@ -296,7 +296,10 @@ let talmudChaptersCache: Record<string, TalmudChapter[]> | null = null;
 async function getTalmudChapters(): Promise<Record<string, TalmudChapter[]>> {
   if (talmudChaptersCache) return talmudChaptersCache;
   const res = await fetchTextResponse("/texts/talmud-chapters.json");
-  talmudChaptersCache = res.ok ? await res.json() : {};
+  // Un échec (réseau) ne se mémorise pas : le Talmud retomberait daf par daf
+  // pour toute la session au lieu de retrouver ses chapitres à l'essai suivant.
+  if (!res.ok) return {};
+  talmudChaptersCache = await res.json();
   return talmudChaptersCache!;
 }
 

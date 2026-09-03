@@ -2335,7 +2335,11 @@ export function injectBody(template: string, page: SeoPage): string {
 
   if (page.jsonLd?.length) {
     const blocks = page.jsonLd
-      .map((obj) => `<script type="application/ld+json">\n${JSON.stringify(obj)}\n</script>`)
+      // `<` échappé : un « </script> » dans un contenu fermerait la balise.
+      .map(
+        (obj) =>
+          `<script type="application/ld+json">\n${JSON.stringify(obj).replace(/</g, "\\u003c")}\n</script>`,
+      )
       .join("\n    ");
     html = html.replace("</head>", `    ${blocks}\n  </head>`);
   }

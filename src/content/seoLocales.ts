@@ -32,7 +32,7 @@ export const SEO_LOCALES: SeoLocale[] = ["fr", "en", "he"];
 export const DEFAULT_SEO_LOCALE: SeoLocale = "fr";
 
 /** Le préfixe d'URL d'une langue : rien pour le français, « /en », « /he ». */
-export const localePrefix = (locale: SeoLocale): string =>
+const localePrefix = (locale: SeoLocale): string =>
   locale === DEFAULT_SEO_LOCALE ? "" : `/${locale}`;
 
 /** L'attribut `lang` du document. */

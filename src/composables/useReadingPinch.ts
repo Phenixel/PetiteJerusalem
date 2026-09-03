@@ -28,11 +28,27 @@ export function useReadingPinch(): void {
   // Écart de départ du geste en cours ; 0 quand aucun pincement n'est actif.
   let baseline = 0;
 
+  // L'écouteur de mouvement n'est posé QUE pendant un geste à deux doigts.
+  // Non passif (il doit pouvoir empêcher le défilement), il obligerait sinon
+  // le navigateur à attendre le script avant chaque défilement à un doigt,
+  // pendant toute la lecture : le texte « accroche » sous le doigt sur les
+  // petits téléphones. Hors pincement, rien n'est enregistré.
+  let listening = false;
+
+  function listen(active: boolean) {
+    if (active === listening) return;
+    listening = active;
+    if (active) document.addEventListener("touchmove", onMove, { passive: false });
+    else document.removeEventListener("touchmove", onMove);
+  }
+
   // Le repère se reprend à chaque changement de main : sans cela, lever un
   // doigt sur trois laisserait le repère d'une géométrie qui n'existe plus, et
   // le premier mouvement à deux doigts sauterait aussitôt d'un cran.
   function reframe(event: TouchEvent) {
-    baseline = event.touches.length === 2 ? distance(event.touches) : 0;
+    const pinching = event.touches.length === 2;
+    baseline = pinching ? distance(event.touches) : 0;
+    listen(pinching);
   }
 
   function onMove(event: TouchEvent) {
@@ -50,15 +66,14 @@ export function useReadingPinch(): void {
 
   onMounted(() => {
     document.addEventListener("touchstart", reframe, { passive: true });
-    document.addEventListener("touchmove", onMove, { passive: false });
     document.addEventListener("touchend", reframe, { passive: true });
     document.addEventListener("touchcancel", reframe, { passive: true });
   });
 
   onBeforeUnmount(() => {
     document.removeEventListener("touchstart", reframe);
-    document.removeEventListener("touchmove", onMove);
     document.removeEventListener("touchend", reframe);
     document.removeEventListener("touchcancel", reframe);
+    listen(false);
   });
 }

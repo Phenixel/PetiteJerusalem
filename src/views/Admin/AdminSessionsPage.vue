@@ -13,8 +13,10 @@ import { useToast } from "../../composables/useToast";
 import EditSessionModal from "../../components/EditSessionModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { liveValue } from "../../composables/liveInput";
+import { useConfirm } from "../../composables/useConfirm";
 
 const { t } = useI18n();
+const { confirm } = useConfirm();
 const toast = useToast();
 
 const isLoading = ref(true);
@@ -152,7 +154,12 @@ async function saveSessionChanges(sessionData: {
 }
 
 async function deleteSession(session: Session) {
-  if (!confirm(t("admin.sessions.deleteConfirm", { name: session.name }))) return;
+  const accepted = await confirm({
+    title: t("admin.sessions.deleteConfirm", { name: session.name }),
+    confirmLabel: t("common.delete"),
+    danger: true,
+  });
+  if (!accepted) return;
 
   busySessionId.value = session.id;
   try {
@@ -170,8 +177,7 @@ async function deleteSession(session: Session) {
   }
 }
 
-const formatDate = (date: Date | undefined) =>
-  date ? sessionService.formatDate(date) : "";
+const formatDate = (date: Date | undefined) => (date ? sessionService.formatDate(date) : "");
 </script>
 
 <template>
@@ -187,7 +193,9 @@ const formatDate = (date: Date | undefined) =>
         v-for="f in filters"
         :key="f"
         class="chip cursor-pointer transition-colors"
-        :class="filter === f ? 'bg-primary/15 text-primary font-semibold' : 'opacity-70 hover:opacity-100'"
+        :class="
+          filter === f ? 'bg-primary/15 text-primary font-semibold' : 'opacity-70 hover:opacity-100'
+        "
         @click="filter = f"
       >
         {{ t(`admin.sessions.filters.${f}`) }}
@@ -231,10 +239,7 @@ const formatDate = (date: Date | undefined) =>
               <span class="chip bg-primary/10 text-primary">
                 {{ sessionService.formatTextType(session.type) }}
               </span>
-              <span
-                v-if="session.hidden"
-                class="chip bg-red-600/10 text-red-700 dark:text-red-300"
-              >
+              <span v-if="session.hidden" class="chip bg-red-600/10 text-red-700 dark:text-red-300">
                 {{
                   session.hiddenReason === "reports"
                     ? t("admin.sessions.hiddenAuto")
@@ -327,6 +332,10 @@ const formatDate = (date: Date | undefined) =>
       </li>
     </ul>
 
-    <EditSessionModal v-model:show="showEditModal" :session="editTarget" @save="saveSessionChanges" />
+    <EditSessionModal
+      v-model:show="showEditModal"
+      :session="editTarget"
+      @save="saveSessionChanges"
+    />
   </div>
 </template>

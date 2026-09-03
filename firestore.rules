@@ -73,6 +73,28 @@ service cloud.firestore {
       return resource.data.get('hidden', false) != true;
     }
 
+    // Champs d'une session écrits par son propriétaire : types et tailles
+    // bornés (un document Firestore accepte jusqu'à 1 Mio, rien ne bornait le
+    // titre ni la description). Les champs optionnels ne sont vérifiés que
+    // s'ils sont présents : les anciennes sessions n'ont pas toutes un slug.
+    function validSessionFields() {
+      return request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 300
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 5000
+        && (!request.resource.data.keys().hasAny(['slug'])
+              || (request.resource.data.slug is string
+                  && request.resource.data.slug.size() > 0
+                  && request.resource.data.slug.size() <= 200))
+        && (!request.resource.data.keys().hasAny(['creatorName'])
+              || (request.resource.data.creatorName is string
+                  && request.resource.data.creatorName.size() <= 100))
+        && (!request.resource.data.keys().hasAny(['reservations'])
+              || (request.resource.data.reservations is list
+                  && request.resource.data.reservations.size() <= 5000));
+    }
+
     // Sessions : lecture publique (le partage de lecture est ouvert à tous)
     match /sessions/{sessionId} {
       allow read: if true;
@@ -80,13 +102,18 @@ service cloud.firestore {
       // sans champs de modération pré-remplis.
       allow create: if isAuthenticated()
         && request.resource.data.personId == request.auth.uid
+        && validSessionFields()
         && !request.resource.data.keys().hasAny(['hidden', 'hiddenAt', 'hiddenReason', 'reportsCount']);
 
       // Mise à jour : propriétaire (hors champs de modération)/admin, ou
       // opérations bornées sur le seul champ 'reservations' (réservation,
       // annulation, statut de lecture, ouvertes aux invités non connectés,
       // voir plus haut), refusées sur une session masquée
-      allow update: if (isSessionOwner() && moderationFieldsUntouched())
+      // Le propriétaire ne transfère pas sa session (personId figé).
+      allow update: if (isSessionOwner()
+            && moderationFieldsUntouched()
+            && validSessionFields()
+            && request.resource.data.personId == resource.data.personId)
         || isAdmin()
         || ((isAppendReservationsOnly() || isRemoveOneReservationOnly() || isUpdateReservationOnly()) && sessionNotHidden());
 
@@ -117,10 +144,11 @@ service cloud.firestore {
         && request.resource.data.details.size() <= 1000
         && request.resource.data.status == 'open'
         && (isAuthenticated()
-              ? request.resource.data.reporterId == request.auth.uid
-              : request.resource.data.reporterId == null)
-        && (request.resource.data.reporterGuestId == null
-              || (request.resource.data.reporterGuestId is string
+              ? (request.resource.data.reporterId == request.auth.uid
+                  && request.resource.data.reporterGuestId == null)
+              : (request.resource.data.reporterId == null
+                  && request.resource.data.reporterGuestId is string
+                  && request.resource.data.reporterGuestId.size() > 0
                   && request.resource.data.reporterGuestId.size() <= 100));
       allow update, delete: if isAdmin();
     }

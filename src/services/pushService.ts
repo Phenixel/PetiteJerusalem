@@ -3,10 +3,11 @@ import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { arrayRemove, arrayUnion, doc, setDoc } from "firebase/firestore";
 import type { Router } from "vue-router";
-import { app } from "../firebase/core";
 import { db } from "../firebase/firestore";
+import { auth } from "../firebase/core";
 import { isNativeApp } from "../composables/useNativeApp";
 import { analyticsService } from "./analyticsService";
+import { userPreferencesService } from "./userPreferencesService";
 import type { ReminderPlace } from "./zmanimService";
 
 /**
@@ -22,8 +23,6 @@ import type { ReminderPlace } from "./zmanimService";
  * clé APNs dans la console Firebase + capability Push dans Xcode (iOS),
  * google-services.json (Android), voir docs/app-native.md.
  */
-
-export type PushPermission = "granted" | "denied" | "prompt";
 
 /** Les rappels choisis par l'utilisateur, tels que la modale les remonte. */
 export interface ReminderSettings {
@@ -42,25 +41,20 @@ export interface ReminderSettings {
   place: ReminderPlace | null;
 }
 
-/** Résultat de la Cloud Function `sendTestNotification` (functions/src/testNotification.ts). */
-export interface TestNotificationResult {
-  tokenCount: number;
-  successCount: number;
-  failureCount: number;
-  errorCodes: string[];
+/** Dernier jeton FCM connu de cet appareil, pour le retirer à la rotation. */
+const LAST_TOKEN_KEY = "pj_fcm_token";
+
+function rememberToken(token: string): void {
+  try {
+    localStorage.setItem(LAST_TOKEN_KEY, token);
+  } catch {
+    // Stockage indisponible : l'ancien jeton sera purgé par la Cloud Function.
+  }
 }
 
 class PushService {
   /** Les push ne sont proposés que dans l'app native. */
   readonly isAvailable = isNativeApp;
-
-  async getPermissionStatus(): Promise<PushPermission> {
-    if (!this.isAvailable) return "denied";
-    const { receive } = await FirebaseMessaging.checkPermissions();
-    if (receive === "granted") return "granted";
-    if (receive === "denied") return "denied";
-    return "prompt";
-  }
 
   /**
    * Active les rappels : permission système (Android 13+ et iOS affichent le
@@ -74,7 +68,8 @@ class PushService {
     if (permission.receive !== "granted") {
       throw new Error("PERMISSION_DENIED");
     }
-    const { token } = await FirebaseMessaging.getToken();
+    const token = await this.obtainToken();
+    rememberToken(token);
     await setDoc(
       doc(db, "userPreferences", userId),
       {
@@ -116,18 +111,62 @@ class PushService {
   }
 
   /**
-   * Envoie immédiatement une notification de test sur tous les appareils du
-   * compte, via la Cloud Function `sendTestNotification`. Import dynamique :
-   * `firebase/functions` ne rentre pas dans le bundle web, qui n'en a pas besoin.
+   * Jeton FCM de l'appareil. Sur iOS, il n'existe qu'une fois le jeton APNs
+   * arrivé, parfois quelques secondes après la permission : un premier échec
+   * (« No APNS token ») attend l'événement du plugin avant de conclure à un
+   * refus, que l'écran affichait à tort comme une erreur.
    */
-  async sendTest(): Promise<TestNotificationResult> {
-    const { getFunctions, httpsCallable } = await import("firebase/functions");
-    const call = httpsCallable<void, TestNotificationResult>(
-      getFunctions(app),
-      "sendTestNotification",
-    );
-    const { data } = await call();
-    return data;
+  private async obtainToken(): Promise<string> {
+    try {
+      return (await FirebaseMessaging.getToken()).token;
+    } catch (error) {
+      if (Capacitor.getPlatform() !== "ios") throw error;
+      const received = await new Promise<string | null>((resolve) => {
+        const timer = setTimeout(() => resolve(null), 8000);
+        void FirebaseMessaging.addListener("tokenReceived", ({ token }) => {
+          clearTimeout(timer);
+          resolve(token);
+        }).then((handle) => setTimeout(() => void handle.remove(), 8500));
+      });
+      if (received) return received;
+      return (await FirebaseMessaging.getToken()).token;
+    }
+  }
+
+  /**
+   * Nouveau jeton FCM pour cet appareil : écrit dans le profil du compte
+   * connecté si ses rappels sont actifs, l'ancien jeton retiré. Le dernier
+   * jeton connu est gardé sur l'appareil pour cela.
+   */
+  private async onTokenRotated(token: string): Promise<void> {
+    let previous: string | null = null;
+    try {
+      previous = localStorage.getItem(LAST_TOKEN_KEY);
+    } catch {
+      // Stockage indisponible : voir rememberToken.
+    }
+    rememberToken(token);
+    if (previous === token) return;
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+      const prefs = await userPreferencesService.getPreferences(user.uid);
+      if (!prefs.pushReminderEnabled) return;
+      await setDoc(
+        doc(db, "userPreferences", user.uid),
+        { fcmTokens: previous ? arrayRemove(previous) : arrayUnion(token) },
+        { merge: true },
+      );
+      if (previous) {
+        await setDoc(
+          doc(db, "userPreferences", user.uid),
+          { fcmTokens: arrayUnion(token) },
+          { merge: true },
+        );
+      }
+    } catch (e) {
+      console.error("Mise à jour du jeton de notification échouée:", e);
+    }
   }
 
   /**
@@ -142,6 +181,13 @@ class PushService {
    */
   init(router: Router): void {
     if (!this.isAvailable) return;
+
+    // Rotation du jeton FCM (réinstallation, restauration, renouvellement
+    // périodique) : le nouveau jeton remplace l'ancien dans le profil, sinon
+    // les rappels s'éteignaient en silence jusqu'à une réactivation à la main.
+    FirebaseMessaging.addListener("tokenReceived", ({ token }) => {
+      void this.onTokenRotated(token);
+    });
 
     // Deep-link quand l'utilisateur touche une notification push (`data.url`).
     FirebaseMessaging.addListener("notificationActionPerformed", (event) => {

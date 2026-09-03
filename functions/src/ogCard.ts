@@ -62,7 +62,9 @@ function wrapText(text: string, maxChars: number, maxLines: number): string[] {
     }
     if (current) lines.push(current);
     current = word;
-    if (lines.length === maxLines - 1) break;
+    // Toutes les lignes sont posées : le reste est tronqué plus bas. Sortir
+    // une ligne plus tôt laissait la dernière avec un seul mot avant l'ellipse.
+    if (lines.length === maxLines) break;
   }
   if (current && lines.length < maxLines) lines.push(current);
 

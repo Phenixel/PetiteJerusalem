@@ -47,7 +47,7 @@ export type ParashaStrings = {
   breadcrumbName: string;
 };
 
-export const PARASHA_FR = (links: ParashaLinks): ParashaStrings => ({
+const PARASHA_FR = (links: ParashaLinks): ParashaStrings => ({
   lang: "fr",
   title: () =>
     "Paracha de la semaine : le calendrier des parachiot et leurs textes | Petite Jérusalem",
@@ -98,7 +98,7 @@ export const PARASHA_FR = (links: ParashaLinks): ParashaStrings => ({
   breadcrumbName: "Paracha de la semaine",
 });
 
-export const PARASHA_EN = (links: ParashaLinks): ParashaStrings => ({
+const PARASHA_EN = (links: ParashaLinks): ParashaStrings => ({
   lang: "en",
   title: () => "Parashat hashavua: the calendar of parashiot and their texts | Petite Jérusalem",
   description: (parasha, date) =>
@@ -148,7 +148,7 @@ export const PARASHA_EN = (links: ParashaLinks): ParashaStrings => ({
   breadcrumbName: "Parashat hashavua",
 });
 
-export const PARASHA_HE = (links: ParashaLinks): ParashaStrings => ({
+const PARASHA_HE = (links: ParashaLinks): ParashaStrings => ({
   lang: "he",
   title: () => "פרשת השבוע: לוח הפרשות והטקסטים שלהן | פטיט ירושלים",
   description: (parasha, date) =>

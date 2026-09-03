@@ -14,6 +14,13 @@ describe("moderationService.findBannedWord", () => {
     expect(moderationService.findBannedWord("m3rde alors")).toBe("merde");
   });
 
+  it("détecte un mot interdit suivi d'une ponctuation", () => {
+    // Le « ! » vaut « i » en leet : sans garde, « pute! » devenait « putei ».
+    expect(moderationService.findBannedWord("pute!")).toBe("pute");
+    expect(moderationService.findBannedWord("connard!")).toBe("connard");
+    expect(moderationService.findBannedWord("m3rd3 !")).toBe("merde");
+  });
+
   it("détecte une expression de plusieurs mots", () => {
     // « sale » et « race » sont anodins seuls : seule l'expression est interdite.
     expect(moderationService.findBannedWord("bande de sale race")).toBe("sale race");
@@ -34,9 +41,7 @@ describe("moderationService.findBannedWord", () => {
   it("laisse passer les termes historiques et mémoriels", () => {
     // Des sessions de Tehilim à la mémoire de victimes emploient ces mots :
     // ils ne doivent jamais être bloqués.
-    expect(
-      moderationService.findBannedWord("À la mémoire des victimes de la Shoah"),
-    ).toBeNull();
+    expect(moderationService.findBannedWord("À la mémoire des victimes de la Shoah")).toBeNull();
     expect(
       moderationService.findBannedWord("Tehilim pour les rescapés de l'Holocauste"),
     ).toBeNull();

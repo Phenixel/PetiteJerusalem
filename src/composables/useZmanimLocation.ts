@@ -203,7 +203,7 @@ export function useZmanimLocation() {
    * Demande la position de l'appareil. En cas de refus ou d'échec, le lieu
    * courant est conservé (Paris au premier lancement) : la page reste utile.
    */
-  async function useDevicePlace(): Promise<boolean> {
+  async function locateDevice(): Promise<boolean> {
     status.value = "loading";
     try {
       const coords = await devicePosition();
@@ -239,7 +239,7 @@ export function useZmanimLocation() {
   }
 
   /** Une ville choisie dans la liste remplace le lieu courant. */
-  function useCity(city: City): void {
+  function selectCity(city: City): void {
     const chosen = placeFromCity(city);
     place.value = chosen;
     status.value = "idle";
@@ -249,7 +249,7 @@ export function useZmanimLocation() {
   }
 
   /** Retour au repli parisien : le lieu mémorisé est effacé. */
-  function useDefaultPlace(): void {
+  function resetPlace(): void {
     place.value = DEFAULT_PLACE;
     status.value = "idle";
     persist(null);
@@ -270,5 +270,5 @@ export function useZmanimLocation() {
     persist(named);
   }
 
-  return { place, status, deniedBefore, useDevicePlace, useCity, useDefaultPlace, ensureNearby };
+  return { place, status, deniedBefore, locateDevice, selectCity, resetPlace, ensureNearby };
 }

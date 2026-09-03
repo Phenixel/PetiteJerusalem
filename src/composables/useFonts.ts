@@ -65,7 +65,7 @@ const DEFAULT_HEBREW = HEBREW_FONT_OPTIONS[0];
 /**
  * Chargement à la demande des familles NON par défaut.
  *
- * index.html n'embarque en bloquant que Inter + Frank Ruhl Libre (+ Noto Serif
+ * index.html n'embarque en bloquant que Inter + Frank Ruhl Libre (+ le sous-ensemble Noto
  * Hebrew, repli des teamim) : télécharger les 7 familles pour tous les
  * visiteurs retardait le premier rendu de chaque page. Les alternatives ne
  * concernent que les utilisateurs qui les ont choisies (et l'écran de

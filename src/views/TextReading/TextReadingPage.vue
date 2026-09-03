@@ -70,13 +70,13 @@ import {
   removeBook,
 } from "../../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../../services/offlineTextStore";
-import { setReadingNavSections } from "../../composables/useReadingNav";
 import type { ReadingNavSection } from "../../composables/useReadingNav";
 import type { SupportedLocale } from "../../i18n";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { analyticsService } from "../../services/analyticsService";
 import { useLocalePath } from "../../composables/useLocalePath";
+import { useConfirm } from "../../composables/useConfirm";
 
 /** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
 const { localePath } = useLocalePath();
@@ -84,13 +84,14 @@ const { localePath } = useLocalePath();
 const route = useRoute();
 const router = useRouter();
 const { t, locale } = useI18n();
+const { confirm } = useConfirm();
 const toast = useToast();
 const readingSize = useReadingSize();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
 // Lieu des horaires : donne le jour hébraïque (sensible à la chkia) qui
 // conditionne les ajouts de calendrier des textes de tefila.
-const { place: zmanimPlace, deniedBefore, useDevicePlace } = useZmanimLocation();
+const { place: zmanimPlace, deniedBefore, locateDevice } = useZmanimLocation();
 
 // This view serves two URL shapes with the SAME UI: the in-session reader
 // (/lire/:textId, numeric id) and the public, indexable reading pages
@@ -243,13 +244,13 @@ watch(
 // l'appareil, comme le bouton de la page des horaires, pour que les heures
 // suivent l'endroit où l'on est et non celui du dernier passage. Une ville
 // choisie explicitement reste respectée, un refus laisse le lieu courant
-// (voir useDevicePlace) et se retient : on ne redemande pas à chaque visite,
+// (voir locateDevice) et se retient : on ne redemande pas à chaque visite,
 // le bouton de la page des horaires reste le moyen de changer d'avis.
 watch(
   () => (String(textEntry.value?.type) === "Sidour" ? textId.value : null),
   (id) => {
     if (!id || zmanimPlace.value.source === "city" || deniedBefore.value) return;
-    void useDevicePlace().then((granted) => {
+    void locateDevice().then((granted) => {
       analyticsService.capture("zmanim_location_requested", { granted, source: "sidour" });
     });
   },
@@ -325,7 +326,6 @@ const navSections = computed<ReadingNavSection[]>(() => {
     .filter((b) => b.label)
     .map((b) => ({ offset: b.offset, label: b.label }));
 });
-watch(navSections, (list) => setReadingNavSections(list), { immediate: true });
 
 // Translittération mémoïsée : appelée depuis le template, elle était recalculée
 // pour toute la section (des dizaines de lignes × plusieurs passes regex) à
@@ -355,8 +355,16 @@ const hasNext = computed(
   () => content.value !== null && sectionIndexInList.value < content.value.sections.length - 1,
 );
 
+// Numéro du dernier chargement demandé : deux textes enchaînés vite (« texte
+// suivant » deux fois, un traité du Talmud pèse jusqu'à 1,8 Mo) font partir
+// deux requêtes, et la première revenue écrirait le contenu de l'ancien texte
+// sous l'adresse du nouveau. Un résultat périmé est simplement ignoré.
+let loadSequence = 0;
+
 async function loadContent() {
   if (!textEntry.value) return;
+  const sequence = ++loadSequence;
+  const stale = () => sequence !== loadSequence;
   // Usage de la bibliothèque vs lecture dans le cadre d'une chaîne.
   analyticsService.capture("text_opened", {
     text_id: textEntry.value.id,
@@ -374,7 +382,9 @@ async function loadContent() {
   missingFile.value = false;
   content.value = null;
   try {
-    content.value = await loadText(textEntry.value);
+    const loaded = await loadText(textEntry.value);
+    if (stale()) return;
+    content.value = loaded;
     // Sidour : le lundi et le jeudi, la lecture de la Torah de la semaine
     // (le début de la paracha, en trois montées) prend la place de son
     // marqueur dans Cha'harit. Elle change chaque semaine : c'est le lecteur
@@ -384,6 +394,7 @@ async function loadContent() {
         const parasha = getWeeklyParasha(now.value);
         if (parasha?.entries[0]) {
           const parashaContent = await loadText(parasha.entries[0]);
+          if (stale()) return;
           content.value = injectWeeklyTorah(content.value, parasha, parashaContent);
         }
       } catch {
@@ -392,10 +403,11 @@ async function loadContent() {
       }
     }
   } catch (e) {
+    if (stale()) return;
     if (e instanceof MissingTextFileError) missingFile.value = true;
     else error.value = true;
   } finally {
-    loading.value = false;
+    if (!stale()) loading.value = false;
   }
 }
 
@@ -928,7 +940,7 @@ async function reserve() {
 async function cancelReservation() {
   const r = currentReservation.value;
   if (!session.value || !r || !isMine.value) return;
-  if (!confirm(t("textReading.cancelConfirm"))) return;
+  if (!(await confirm({ title: t("textReading.cancelConfirm"), danger: true }))) return;
   isReserving.value = true;
   try {
     await sessionService.deleteReservation(session.value.id, r.id);
@@ -1048,15 +1060,21 @@ onMounted(async () => {
 
   await loadContent();
   if (sessionSlug.value) {
-    currentUser.value = await sessionService.getCurrentUser();
-    session.value = await sessionService.resolveSession(sessionSlug.value);
+    // La chaîne peut manquer (supprimée, hors ligne) sans que le texte, lui,
+    // manque : le lecteur reste utilisable, seule la barre de réservation
+    // n'apparaît pas. Sans ce garde-fou, le montage rejetait en silence.
+    try {
+      currentUser.value = await sessionService.getCurrentUser();
+      session.value = await sessionService.resolveSession(sessionSlug.value);
+    } catch (e) {
+      console.error("Chaîne de lecture indisponible:", e);
+    }
   }
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("scroll", onScroll);
   stopOccasionsTicker();
-  setReadingNavSections([]);
   if (scrollSaveTimer !== null) {
     clearScrollSaveTimer();
     // Une capture était en attente : on fige la position avant de partir.

@@ -30,13 +30,22 @@ const isPlaying = computed(() => isCurrent.value && player.isPlaying.value);
 const probedDuration = ref(0);
 let probe: HTMLAudioElement | null = null;
 
+function releaseProbe() {
+  if (!probe) return;
+  // Retirer `src` ne suffit pas : sans `load()`, le téléchargement en cours
+  // continue (HTMLMediaElement), une sonde orpheline par navigation.
+  probe.removeAttribute("src");
+  probe.load();
+  probe = null;
+}
+
 function probeDuration(src: string) {
   probedDuration.value = 0;
-  if (probe) {
-    probe.removeAttribute("src");
-    probe = null;
-  }
+  releaseProbe();
   if (!src) return;
+  // Morceau déjà dans le lecteur global : sa durée est connue, inutile de
+  // relancer une requête (une demande Range en double à chaque ouverture).
+  if (player.track.value?.src === src && player.duration.value) return;
   probe = new Audio();
   probe.preload = "metadata";
   probe.addEventListener("loadedmetadata", function (this: HTMLAudioElement) {
@@ -47,12 +56,7 @@ function probeDuration(src: string) {
 
 watch(() => props.src, probeDuration, { immediate: true });
 
-onUnmounted(() => {
-  if (probe) {
-    probe.removeAttribute("src");
-    probe = null;
-  }
-});
+onUnmounted(releaseProbe);
 
 const currentTime = computed(() => (isCurrent.value ? player.currentTime.value : 0));
 const duration = computed(() =>

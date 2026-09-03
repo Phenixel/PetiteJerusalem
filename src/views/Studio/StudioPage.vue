@@ -9,9 +9,11 @@ import { seoService } from "../../services/seoService";
 import { useToast } from "../../composables/useToast";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import StudioChiourForm from "./StudioChiourForm.vue";
+import { useConfirm } from "../../composables/useConfirm";
 
 const route = useRoute();
 const { t } = useI18n();
+const { confirm } = useConfirm();
 const toast = useToast();
 
 const token = computed(() => String(route.params.token ?? ""));
@@ -44,9 +46,7 @@ const episodeCountBySerie = computed(() => {
   return map;
 });
 
-const openSerie = computed(
-  () => series.value.find((s) => s.id === openSerieId.value) ?? null,
-);
+const openSerie = computed(() => series.value.find((s) => s.id === openSerieId.value) ?? null);
 
 // Épisodes de la série ouverte, triés par numéro (les sans-numéro en fin).
 const serieEpisodes = computed(() => {
@@ -80,9 +80,14 @@ onMounted(async () => {
     if (author.value) {
       await refresh();
       // Suggestions de catégories : celles déjà utilisées dans le catalogue.
-      chiourService.getCategories().then((cats) => {
-        categorySuggestions.value = cats;
-      });
+      chiourService
+        .getCategories()
+        .then((cats) => {
+          categorySuggestions.value = cats;
+        })
+        .catch(() => {
+          // Suggestions seulement : sans elles, le champ reste libre.
+        });
     }
   } catch (error) {
     // Erreur de chargement : on retombe sur l'écran « lien invalide » plutôt
@@ -162,7 +167,12 @@ async function moveEpisode(index: number, delta: number) {
 }
 
 async function removeChiour(chiour: ChiourDoc) {
-  if (!window.confirm(t("studio.deleteConfirm"))) return;
+  const accepted = await confirm({
+    title: t("studio.deleteConfirm"),
+    confirmLabel: t("common.delete"),
+    danger: true,
+  });
+  if (!accepted) return;
   deletingSlug.value = chiour.slug;
   try {
     await studioService.deleteChiour(token.value, chiour.slug);
@@ -242,7 +252,9 @@ async function removeChiour(chiour: ChiourDoc) {
         </div>
         <p class="text-sm text-text-secondary mb-6">
           {{ t("serie.episodesCount", { count: serieEpisodes.length }) }}
-          <template v-if="serieEpisodes.length > 1"> · {{ t("studio.serieView.reorderHint") }}</template>
+          <template v-if="serieEpisodes.length > 1">
+            · {{ t("studio.serieView.reorderHint") }}</template
+          >
         </p>
 
         <p v-if="serieEpisodes.length === 0" class="card p-8 text-center text-text-secondary">
@@ -382,7 +394,9 @@ async function removeChiour(chiour: ChiourDoc) {
                 <div class="min-w-0 flex-1">
                   <p class="font-semibold text-text-primary truncate">{{ serie.name }}</p>
                   <p class="text-sm text-text-secondary">
-                    {{ t("serie.episodesCount", { count: episodeCountBySerie.get(serie.id) ?? 0 }) }}
+                    {{
+                      t("serie.episodesCount", { count: episodeCountBySerie.get(serie.id) ?? 0 })
+                    }}
                   </p>
                 </div>
                 <AppIcon name="chevron-right" :size="15" class="text-text-secondary shrink-0" />
@@ -405,11 +419,7 @@ async function removeChiour(chiour: ChiourDoc) {
           <ul v-else class="space-y-3">
             <!-- Même disposition que la page série : titre pleine largeur,
                  statut et actions en dessous (lisible sur mobile). -->
-            <li
-              v-for="chiour in horsSerie"
-              :key="chiour.slug"
-              class="card p-4 md:p-5"
-            >
+            <li v-for="chiour in horsSerie" :key="chiour.slug" class="card p-4 md:p-5">
               <p class="font-semibold text-text-primary break-words">{{ chiour.name }}</p>
               <p v-if="chiour.categories.length" class="text-sm text-text-secondary truncate">
                 {{ chiour.categories.join(", ") }}
