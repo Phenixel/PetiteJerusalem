@@ -2188,7 +2188,7 @@ function chaharitRecipe() {
         src: "RH.Barchi Nafshi",
         when: "rosh-chodesh",
         plain: true,
-        labelText: R("Barkhi nafchi", "Barchi nafshi", "ברכי נפשי"),
+        // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
         lines: [{ seg: 2 }],
       },
       {
@@ -2235,7 +2235,7 @@ function chaharitRecipe() {
         src: "Alenu",
         when: "ledavid",
         plain: true,
-        labelText: R("Lédavid", "LeDavid", "לדוד ה' אורי"),
+        // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
         lines: [{ seg: 5 }],
       },
     ],
@@ -2392,14 +2392,14 @@ function minhaRecipe() {
         src: "Vidui",
         when: "lamnatseah-minha",
         plain: true,
-        labelText: R("Lamnatséa'h (psaume 67)", "Lamnatseach (Psalm 67)", "למנצח (תהלים סז)"),
+        // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
         lines: [{ seg: 16, strip: ["(תהלים סז)"] }],
       },
       {
         src: "Vidui",
         when: "jour-5",
         plain: true,
-        labelText: R("Adonaï malakh", "Adonai malach", "ה' מלך"),
+        // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
         lines: [{ seg: 18, mode: "small" }],
       },
       // Les jours de jeûne public, le psaume 102, « prière du pauvre quand il
@@ -2408,7 +2408,7 @@ function minhaRecipe() {
         src: "Vidui",
         when: "taanit",
         plain: true,
-        labelText: R("Tefila le'ani", "Tefilah le'ani", "תפלה לעני"),
+        // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
         lines: [{ seg: 20, mode: "small" }],
       },
       kaddishYeheChelama("Vidui", 22),
@@ -2421,7 +2421,7 @@ function minhaRecipe() {
         src: "Ledavid",
         when: "ledavid",
         plain: true,
-        labelText: R("Lédavid", "LeDavid", "לדוד ה' אורי"),
+        // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
         lines: [{ seg: 5 }],
       },
     ],
@@ -2513,7 +2513,7 @@ function arvitRecipe() {
         src: "Barchu",
         when: "rosh-chodesh",
         plain: true,
-        labelText: R("Barkhi nafchi", "Barchi nafshi", "ברכי נפשי"),
+        // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
         lines: [
           {
             seg: 2,
@@ -2524,7 +2524,7 @@ function arvitRecipe() {
       },
       {
         src: "Barchu",
-        labelText: R("Ouverture", "Opening", "פתיחה"),
+        // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
         lines: [{ seg: 4 }],
       },
       kaddishHalf("Kaddish"),
@@ -2602,7 +2602,7 @@ function arvitRecipe() {
       kaddishTitkabal("Kaddish"),
       {
         src: "Amidah",
-        labelText: R("Fin de l'office", "Closing", "סיום"),
+        // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
         lines: [{ seg: 51 }, { seg: 66 }],
       },
       kaddishYeheChelama("Amidah", 68),

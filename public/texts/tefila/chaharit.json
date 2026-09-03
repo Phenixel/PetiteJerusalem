@@ -2750,12 +2750,6 @@
       ]
     },
     {
-      "label": "Barkhi nafchi",
-      "labelText": {
-        "fr": "Barkhi nafchi",
-        "en": "Barchi nafshi",
-        "he": "ברכי נפשי"
-      },
       "when": "rosh-chodesh",
       "plain": true,
       "lines": [
@@ -2927,12 +2921,6 @@
       ]
     },
     {
-      "label": "Lédavid",
-      "labelText": {
-        "fr": "Lédavid",
-        "en": "LeDavid",
-        "he": "לדוד ה' אורי"
-      },
       "when": "ledavid",
       "plain": true,
       "lines": [

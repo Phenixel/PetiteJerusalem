@@ -169,10 +169,14 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       // ouvre l'office toute l'année, dans un encadré (`fold`) que sa saison
       // déplie : c'est le premier texte de la page, il ne peut pas y
       // apparaître et disparaître sans laisser l'office sans entrée.
-      const ledavid = blocks.filter((b) => b.labelText?.fr.startsWith("Lédavid"));
+      // On le cherche à sa saison, non à son titre : dans le fil de Cha'harit
+      // et de Min'ha il n'en a plus, une ligne ne vaut pas un repère de menu.
+      const ledavid = blocks.filter((b) => b.when === "ledavid" || b.fold === "ledavid");
       expect(ledavid).toHaveLength(1);
-      expect(ledavid[0].when ?? ledavid[0].fold).toBe("ledavid");
       expect(ledavid[0].lines).toHaveLength(1);
+      expect(sansSignes(ledavid[0].lines[0])).toContain("לדוד יהוה אורי");
+      // L'encadré d'Arvit garde son titre : c'est par lui qu'on le déplie.
+      if (ledavid[0].fold) expect(ledavid[0].labelText).toBeDefined();
     });
 
     it("offre la boussole du Kotel au titre de la 'Amida", () => {

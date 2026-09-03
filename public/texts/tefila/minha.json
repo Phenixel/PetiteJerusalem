@@ -969,12 +969,6 @@
       ]
     },
     {
-      "label": "Lamnatséa'h (psaume 67)",
-      "labelText": {
-        "fr": "Lamnatséa'h (psaume 67)",
-        "en": "Lamnatseach (Psalm 67)",
-        "he": "למנצח (תהלים סז)"
-      },
       "when": "lamnatseah-minha",
       "plain": true,
       "lines": [
@@ -982,12 +976,6 @@
       ]
     },
     {
-      "label": "Adonaï malakh",
-      "labelText": {
-        "fr": "Adonaï malakh",
-        "en": "Adonai malach",
-        "he": "ה' מלך"
-      },
       "when": "jour-5",
       "plain": true,
       "lines": [
@@ -995,12 +983,6 @@
       ]
     },
     {
-      "label": "Tefila le'ani",
-      "labelText": {
-        "fr": "Tefila le'ani",
-        "en": "Tefilah le'ani",
-        "he": "תפלה לעני"
-      },
       "when": "taanit",
       "plain": true,
       "lines": [
@@ -1102,12 +1084,6 @@
       ]
     },
     {
-      "label": "Lédavid",
-      "labelText": {
-        "fr": "Lédavid",
-        "en": "LeDavid",
-        "he": "לדוד ה' אורי"
-      },
       "when": "ledavid",
       "plain": true,
       "lines": [
