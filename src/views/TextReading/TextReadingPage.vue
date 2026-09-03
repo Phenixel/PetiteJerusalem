@@ -1052,18 +1052,22 @@ let pendingClaim: Promise<void> | null = null;
 async function claimDrawnText() {
   const s = session.value;
   if (!s || reservationUnit.value === undefined) return;
-  // Déjà réservé (retour sur une lecture en cours, lien partagé, section prise
-  // par quelqu'un d'autre) : rien à poser.
-  if (reservedStatus.value.isReserved) return;
+  // Déjà à moi (retour sur une lecture en cours, lien rouvert) : rien à poser.
+  if (isMine.value) return;
 
-  const announced =
-    sessionService.getSessionTextStudies(s).find((text) => text.id === textId.value) ?? null;
+  const textStudies = sessionService.getSessionTextStudies(s);
+  // Le texte annoncé passe en tête, sauf s'il a été pris pendant le trajet :
+  // inutile de dépenser une transaction pour se le faire refuser, on en
+  // retient un autre et on y bascule.
+  const announced = reservedStatus.value.isReserved
+    ? null
+    : (textStudies.find((text) => text.id === textId.value) ?? null);
 
   isClaimingDraw.value = true;
   try {
     const result = await sessionService.reserveRandomAvailableText(
       s,
-      sessionService.getSessionTextStudies(s),
+      textStudies,
       currentUser.value,
       reservationForm.value,
       t("detailSession.randomDraw.anonymous"),
@@ -1264,9 +1268,18 @@ async function drawAnother() {
  * réservation choisie à la main n'est jamais touchée.
  */
 async function releaseUnreadRandomDraw(forTextId: string = textId.value) {
-  await pendingClaim;
+  // Ces deux lectures doivent rester AVANT le moindre `await` : la fonction est
+  // appelée depuis un garde de navigation, et elle reprendrait après le
+  // changement de route, quand `?tirage=1` a déjà disparu de l'URL. Attendre
+  // d'abord, c'est ne plus jamais rien libérer en quittant la page.
+  const isDraw = isRandomDraw.value;
   const s = session.value;
-  if (!isRandomDraw.value || !s) return;
+  if (!isDraw || !s) return;
+
+  // La réservation d'arrivée peut être encore en vol : on ne peut pas rendre
+  // ce qui n'est pas encore posé.
+  await pendingClaim;
+
   const r = s.reservations.find(
     (x) =>
       x.textStudyId === forTextId &&
