@@ -1,5 +1,3 @@
-import { addDoc, collection, Timestamp } from "firebase/firestore";
-import { db } from "../firebase/firestore";
 import { auth } from "../firebase/core";
 import { i18n } from "../i18n";
 import { guestService } from "./guestService";
@@ -15,6 +13,11 @@ import type { ReportReason, Session } from "../models/models";
  *   backoffice ; au 3e signalement une Cloud Function masque la session) ;
  * - blocage local de créateurs (leurs sessions disparaissent des listes de
  *   l'appareil).
+ *
+ * Ce module fait partie du bundle initial (authService l'importe pour le
+ * filtre, useToast pour ModerationError) : Firestore n'y est chargé qu'au
+ * moment du signalement, par import dynamique. Un import statique ramènerait
+ * tout le SDK Firestore (~170 kB gzip) dans le chargement de la première page.
  */
 
 /** Texte refusé par le filtre : `word` est le terme en cause, le message est localisé. */
@@ -124,6 +127,10 @@ export class ModerationService {
    */
   async reportSession(session: Session, reason: ReportReason, details: string): Promise<void> {
     const uid = auth.currentUser?.uid ?? null;
+    const [{ addDoc, collection, Timestamp }, { db }] = await Promise.all([
+      import("firebase/firestore"),
+      import("../firebase/firestore"),
+    ]);
     await addDoc(collection(db, "reports"), {
       sessionId: session.id,
       sessionName: session.name,
