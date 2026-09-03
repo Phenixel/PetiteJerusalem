@@ -269,6 +269,113 @@ describe("sessionService - tirage aléatoire", () => {
     ).toBe(false);
   });
 
+  it("désigne un texte libre sans rien réserver ni rien attendre", () => {
+    const spy = vi.spyOn(reservationService, "createReservation");
+    const session = makeSession([
+      {
+        id: "r1",
+        textStudyId: "103",
+        section: 1,
+        available: false,
+        isCompleted: false,
+        createdAt: new Date(),
+      },
+    ]);
+
+    const text = sessionService.pickRandomAvailableText(session, [
+      makeText("103"),
+      makeText("104"),
+    ]);
+
+    expect(text?.id).toBe("104");
+    // Rien n'est écrit : c'est ce qui rend le clic instantané, la réservation
+    // part ensuite depuis la page de lecture.
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("ne désigne rien quand tout est pris", () => {
+    const session = makeSession([
+      {
+        id: "r1",
+        textStudyId: "103",
+        section: 1,
+        available: false,
+        isCompleted: false,
+        createdAt: new Date(),
+      },
+    ]);
+
+    expect(sessionService.pickRandomAvailableText(session, [makeText("103")])).toBeNull();
+  });
+
+  it("réserve d'abord le texte déjà annoncé au lecteur", async () => {
+    const spy = vi.spyOn(reservationService, "createReservation").mockResolvedValue("rid-7");
+    const pool = Array.from({ length: 20 }, (_, i) => makeText(String(100 + i)));
+    const announced = pool[13];
+
+    const result = await sessionService.reserveRandomAvailableText(
+      makeSession(),
+      pool,
+      null,
+      emptyForm,
+      "Anonyme",
+      announced,
+    );
+
+    expect(result!.text.id).toBe(announced.id);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0][1]).toBe(announced.id);
+  });
+
+  it("bascule sur un autre texte quand l'annoncé a été pris pendant le trajet", async () => {
+    const spy = vi
+      .spyOn(reservationService, "createReservation")
+      .mockRejectedValueOnce(new Error("Cette section est déjà réservée"))
+      .mockResolvedValueOnce("rid-8");
+    const announced = makeText("103");
+
+    const result = await sessionService.reserveRandomAvailableText(
+      makeSession(),
+      [announced, makeText("104")],
+      null,
+      emptyForm,
+      "Anonyme",
+      announced,
+    );
+
+    expect(spy.mock.calls[0][1]).toBe("103");
+    expect(result!.text.id).toBe("104");
+  });
+
+  it("tente l'annoncé même si le cache le croyait déjà pris", async () => {
+    const spy = vi.spyOn(reservationService, "createReservation").mockResolvedValue("rid-9");
+    const announced = makeText("103");
+    // Le cache des sessions peut avoir 60 s de retard : c'est la transaction
+    // qui tranche, pas la vue locale.
+    const session = makeSession([
+      {
+        id: "r1",
+        textStudyId: "103",
+        section: 1,
+        available: false,
+        isCompleted: false,
+        createdAt: new Date(),
+      },
+    ]);
+
+    const result = await sessionService.reserveRandomAvailableText(
+      session,
+      [announced, makeText("104")],
+      null,
+      emptyForm,
+      "Anonyme",
+      announced,
+    );
+
+    expect(spy.mock.calls[0][1]).toBe("103");
+    expect(result!.text.id).toBe("103");
+  });
+
   it("renewRandomReservation repousse l'échéance et rend la nouvelle", async () => {
     const spy = vi.spyOn(reservationService, "renewReservationExpiry").mockResolvedValue();
 

@@ -817,10 +817,12 @@ onMounted(() => {
                   <h4 class="font-bold text-lg text-text-primary leading-tight">
                     {{ appendHebrewNumeral(textStudy.name) }}
                   </h4>
+                  <!-- « Disponible » sans couleur, comme sur la page publique :
+                       le vert est réservé à ce qui est lu. -->
                   <span
                     class="chip"
                     :class="{
-                      'bg-green-600/10 text-green-700 dark:text-green-300':
+                      'bg-black/5 text-text-secondary dark:bg-white/10':
                         getTextStatus(textStudy).status === 'available',
                       'bg-red-600/10 text-red-700 dark:text-red-300':
                         getTextStatus(textStudy).status === 'fully_reserved',

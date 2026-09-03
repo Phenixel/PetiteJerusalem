@@ -235,15 +235,40 @@ export class SessionService {
   }
 
   /**
-   * Tire au sort un texte encore entièrement disponible et le réserve
-   * immédiatement, y compris pour un visiteur sans compte ni nom : la
-   * réservation part alors avec l'identité invitée locale, au nom
+   * Les textes d'une chaîne dont l'emplacement est encore libre. Purement
+   * local : aucun aller-retour réseau, c'est ce qui permet d'annoncer un
+   * tirage sans faire attendre.
+   */
+  private availableTextPool(session: Session, textStudies: TextStudy[]): TextStudy[] {
+    return textStudies.filter(
+      (text) => !reservationService.isTextOrSectionReserved(text.id, 1, session).isReserved,
+    );
+  }
+
+  /**
+   * Désigne un texte libre au hasard, sans rien réserver ni rien attendre. La
+   * page de la chaîne s'en sert pour ouvrir la lecture tout de suite ; la
+   * réservation part ensuite, depuis la page de lecture, pendant que le texte
+   * s'affiche. Renvoie null quand plus rien n'est disponible.
+   */
+  pickRandomAvailableText(session: Session, textStudies: TextStudy[]): TextStudy | null {
+    const pool = this.availableTextPool(session, textStudies);
+    if (pool.length === 0) return null;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  /**
+   * Réserve un texte tiré au sort, y compris pour un visiteur sans compte ni
+   * nom : la réservation part alors avec l'identité invitée locale, au nom
    * `anonymousName`. Elle porte une date d'expiration : non lue au bout d'une
    * heure sans signe de vie, elle redevient prenable (contrairement aux
-   * réservations choisies à la main, qui n'expirent jamais). En cas de course
-   * (texte pris entre-temps, le cache des sessions peut avoir 60 s de retard),
-   * on repioche parmi les restants. Renvoie null quand plus aucun texte n'est
-   * disponible.
+   * réservations choisies à la main, qui n'expirent jamais).
+   *
+   * `preferred` est le texte déjà annoncé au lecteur, celui qu'il a sous les
+   * yeux : il passe en tête pour que la réservation confirme ce qu'il voit
+   * plutôt que de le déplacer. En cas de course (texte pris entre-temps, le
+   * cache des sessions peut avoir 60 s de retard), on repioche parmi les
+   * restants. Renvoie null quand plus aucun texte n'est disponible.
    */
   async reserveRandomAvailableText(
     session: Session,
@@ -251,17 +276,25 @@ export class SessionService {
     currentUser: User | null,
     reservationForm: ReservationForm,
     anonymousName: string,
+    preferred?: TextStudy | null,
   ): Promise<{ text: TextStudy; reservation: TextStudyReservation } | null> {
-    const pool = textStudies.filter(
-      (text) => !reservationService.isTextOrSectionReserved(text.id, 1, session).isReserved,
-    );
+    const pool = this.availableTextPool(session, textStudies);
+    // Le texte annoncé peut manquer au vivier (déjà pris selon le cache) : on
+    // le tente quand même, la transaction tranchera.
+    const preferredIndex = preferred ? pool.findIndex((text) => text.id === preferred.id) : -1;
+    if (preferredIndex >= 0) pool.splice(preferredIndex, 1);
+    if (preferred) pool.unshift(preferred);
     if (pool.length === 0) return null;
 
     const guestName = currentUser ? undefined : reservationForm.name.trim() || anonymousName;
     const guestId = currentUser ? undefined : reservationService.resolveGuestId(reservationForm);
 
+    // Le texte annoncé d'abord, puis les autres au hasard.
+    let first = preferred != null;
     while (pool.length > 0) {
-      const [text] = pool.splice(Math.floor(Math.random() * pool.length), 1);
+      const index = first ? 0 : Math.floor(Math.random() * pool.length);
+      first = false;
+      const [text] = pool.splice(index, 1);
       const expiresAt = new Date(Date.now() + RANDOM_RESERVATION_TTL_MS).toISOString();
       try {
         const reservationId = await reservationService.createReservation(

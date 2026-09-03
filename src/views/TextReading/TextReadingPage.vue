@@ -798,13 +798,21 @@ const guestIntroText = computed(() =>
 );
 const isReserving = ref(false);
 
+/**
+ * La réservation du tirage est en route, le texte est déjà à l'écran. On
+ * masque l'encadré le temps qu'elle atterrisse : montrer « Réserver » pendant
+ * une demi-seconde, puis basculer sur « Vous avez réservé ce passage »,
+ * donnerait à croire qu'il faut agir alors que tout est déjà en cours.
+ */
+const isClaimingDraw = ref(false);
+
 const isSessionMode = computed(() => sessionSlug.value !== null && session.value !== null);
 
 // Reservation unit: the current chapter, or 1 for a single-section text.
 const reservationUnit = computed(() => (isSingleSection.value ? 1 : sectionParam.value));
 
 const showReservationBar = computed(
-  () => isSessionMode.value && reservationUnit.value !== undefined,
+  () => isSessionMode.value && reservationUnit.value !== undefined && !isClaimingDraw.value,
 );
 
 function findReservation(unit: number | undefined): TextStudyReservation | null {
@@ -1027,6 +1035,78 @@ async function toggleRead() {
 const isRandomDraw = computed(() => isSessionMode.value && route.query.tirage !== undefined);
 const isDrawingAnother = ref(false);
 
+/**
+ * La réservation posée à l'arrivée, tant qu'elle est en vol. La page de la
+ * chaîne navigue sans attendre la transaction Firestore : le texte s'affiche
+ * pendant que la réservation part. Tout ce qui décide du sort de cette
+ * réservation (repartir, repiocher) doit donc l'attendre d'abord, sinon il
+ * statuerait sur une réservation qui n'existe pas encore.
+ */
+let pendingClaim: Promise<void> | null = null;
+
+/**
+ * Pose la réservation du texte tiré, à l'arrivée sur la page. Le texte a déjà
+ * été annoncé au lecteur : il passe en tête, et on ne le déplace que si
+ * quelqu'un l'a pris entre-temps.
+ */
+async function claimDrawnText() {
+  const s = session.value;
+  if (!s || reservationUnit.value === undefined) return;
+  // Déjà réservé (retour sur une lecture en cours, lien partagé, section prise
+  // par quelqu'un d'autre) : rien à poser.
+  if (reservedStatus.value.isReserved) return;
+
+  const announced =
+    sessionService.getSessionTextStudies(s).find((text) => text.id === textId.value) ?? null;
+
+  isClaimingDraw.value = true;
+  try {
+    const result = await sessionService.reserveRandomAvailableText(
+      s,
+      sessionService.getSessionTextStudies(s),
+      currentUser.value,
+      reservationForm.value,
+      t("detailSession.randomDraw.anonymous"),
+      announced,
+    );
+    if (!result) {
+      toast.info(t("detailSession.randomDraw.noneAvailable"));
+      return;
+    }
+
+    s.reservations = [...s.reservations, result.reservation];
+    analyticsService.capture("reservation_completed", {
+      session_id: s.id,
+      text_type: s.type,
+      sections_count: 1,
+      is_guest: currentUser.value == null,
+      guest_has_email: currentUser.value == null && reservationForm.value.email.trim() !== "",
+      source: "random_button",
+    });
+
+    // Le texte annoncé a été pris pendant le trajet : on bascule sur celui qui
+    // a effectivement été retenu.
+    if (result.text.id !== textId.value) {
+      router.replace({
+        name: "text-reading",
+        params: { textId: result.text.id },
+        query: route.query,
+      });
+      scrollTopProgrammatic();
+    }
+  } catch (e) {
+    analyticsService.capture("reservation_failed", {
+      session_id: s.id,
+      reason: "error",
+      error_message: e instanceof Error ? e.message : String(e),
+      source: "random_button",
+    });
+    toast.errorFromException(e, t("textReading.reserveError"));
+  } finally {
+    isClaimingDraw.value = false;
+  }
+}
+
 /** Vérification du délai restant, assez espacée pour ne rien coûter. */
 const RENEW_CHECK_MS = 5 * 60 * 1000;
 /** En dessous de ce reste, on repousse l'échéance. */
@@ -1109,6 +1189,9 @@ onBeforeUnmount(() => {
 async function drawAnother() {
   const s = session.value;
   if (!s || isDrawingAnother.value) return;
+  // La réservation d'arrivée peut être encore en vol : sans cette attente, on
+  // libérerait un texte qui n'est pas encore réservé, et il resterait pris.
+  await pendingClaim;
   analyticsService.capture("random_tehilim_clicked", {
     session_id: s.id,
     is_guest: currentUser.value == null,
@@ -1181,6 +1264,7 @@ async function drawAnother() {
  * réservation choisie à la main n'est jamais touchée.
  */
 async function releaseUnreadRandomDraw(forTextId: string = textId.value) {
+  await pendingClaim;
   const s = session.value;
   if (!isRandomDraw.value || !s) return;
   const r = s.reservations.find(
@@ -1289,6 +1373,11 @@ onMounted(async () => {
     } catch (e) {
       console.error("Chaîne de lecture indisponible:", e);
     }
+    // Arrivée par le tirage : la réservation se pose ici, maintenant que le
+    // texte est à l'écran. Uniquement au montage : la navigation latérale
+    // (texte suivant, précédent) ne réserve rien, et « Un autre Téhilim » pose
+    // la sienne lui-même.
+    if (isRandomDraw.value) pendingClaim = claimDrawnText();
   }
 });
 

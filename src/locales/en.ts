@@ -656,7 +656,6 @@ const en: LocaleMessages = {
       subtitle:
         "Let chance choose for you: the Tehilim opens right away, reserved under your name, even without an account.",
       button: "Draw a Tehilim",
-      drawing: "Drawing...",
       noneAvailable: "All the Tehilim of this session are already reserved.",
       anonymous: "Anonymous",
       offline: "Drawing needs a connection; try again once you are back online.",

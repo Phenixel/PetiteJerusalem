@@ -407,11 +407,16 @@ const handleCardClick = (text: TextStudy) => {
               >
                 {{ t("detailSession.textList.partiallyReserved") }}
               </span>
-              <span v-else class="chip bg-green-600/10 text-green-700 dark:text-green-300">
+              <!-- « Disponible » reste sans couleur : le vert dit « lu » partout
+                   ailleurs (interrupteur, bouton du lecteur), et deux sens pour
+                   une même teinte rendaient la liste illisible. Rien = libre,
+                   une couleur = quelqu'un s'en occupe. Même puce qu'au niveau
+                   chapitre, plus bas. -->
+              <span v-else class="chip bg-black/5 text-text-secondary dark:bg-white/10">
                 {{ t("detailSession.textList.available") }}
               </span>
             </div>
-            <span v-else class="chip bg-green-600/10 text-green-700 dark:text-green-300">
+            <span v-else class="chip bg-black/5 text-text-secondary dark:bg-white/10">
               {{ t("detailSession.textList.available") }}
             </span>
           </div>

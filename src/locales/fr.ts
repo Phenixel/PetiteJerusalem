@@ -669,7 +669,6 @@ const fr = {
       subtitle:
         "Laissez le hasard choisir pour vous : le Téhilim s'ouvre aussitôt, réservé à votre nom, même sans compte.",
       button: "Tirer un Téhilim",
-      drawing: "Tirage en cours...",
       noneAvailable: "Tous les Téhilim de cette session sont déjà réservés.",
       anonymous: "Anonyme",
       offline: "Le tirage a besoin d'une connexion ; réessayez une fois de retour en ligne.",

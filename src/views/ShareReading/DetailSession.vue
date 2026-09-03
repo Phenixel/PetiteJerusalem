@@ -598,8 +598,6 @@ const clearSearch = () => {
 
 // --- Tirage aléatoire (sessions Tehilim uniquement) ---
 
-const isDrawingRandom = ref(false);
-
 const isTehilimSession = computed(() => session.value?.type === EnumTypeTextStudy.Tehilim);
 
 const randomAvailableCount = computed(
@@ -607,73 +605,45 @@ const randomAvailableCount = computed(
 );
 
 /**
- * Réserve un Tehilim au hasard, sans aucun prérequis : même un visiteur qui
- * n'a rien rempli repart avec un texte, réservé au nom « Anonyme » pour que
- * personne d'autre ne le prenne en attendant. On ouvre aussitôt la page de
- * lecture ; c'est elle qui porte la suite (marquer lu, repiocher, ou libérer
- * le texte si le lecteur repart sans l'avoir lu).
+ * Ouvre un Téhilim libre, tiré au sort, sans aucun prérequis : même un
+ * visiteur qui n'a rien rempli repart avec un texte.
+ *
+ * Le tirage lui-même est local et instantané ; c'est la réservation qui coûte
+ * un aller-retour Firestore (une transaction, qui lit le document sur le
+ * serveur avant d'écrire). L'attendre ici laissait le lecteur devant un bouton
+ * qui tourne pour un texte déjà choisi : on navigue tout de suite, et c'est la
+ * page de lecture qui pose la réservation pendant que le texte s'affiche.
  */
-const drawRandomTehilim = async () => {
-  if (!session.value || isDrawingRandom.value) return;
+const drawRandomTehilim = () => {
+  const current = session.value;
+  if (!current) return;
 
   analyticsService.capture("random_tehilim_clicked", {
-    session_id: session.value.id,
+    session_id: current.id,
     available_count: randomAvailableCount.value,
     is_guest: currentUser.value == null,
     source: "session_page",
   });
 
   // Une réservation passe par une transaction Firestore, qui ne se joue pas
-  // hors ligne : le dire tout de suite vaut mieux qu'une attente muette suivie
-  // d'une erreur technique.
+  // hors ligne : le dire ici plutôt que d'ouvrir une lecture qu'on ne pourra
+  // pas retenir.
   if (isOffline()) {
     toast.error(t("detailSession.randomDraw.offline"));
     return;
   }
 
-  try {
-    isDrawingRandom.value = true;
-    const result = await sessionService.reserveRandomAvailableText(
-      session.value,
-      textStudies.value,
-      currentUser.value,
-      reservationForm.value,
-      t("detailSession.randomDraw.anonymous"),
-    );
-
-    if (!result) {
-      toast.error(t("detailSession.randomDraw.noneAvailable"));
-      return;
-    }
-
-    reservations.value.push(result.reservation);
-
-    analyticsService.capture("reservation_completed", {
-      session_id: session.value.id,
-      text_type: session.value.type,
-      sections_count: 1,
-      is_guest: currentUser.value == null,
-      guest_has_email: currentUser.value == null && reservationForm.value.email.trim() !== "",
-      source: "random_button",
-    });
-
-    router.push({
-      name: "text-reading",
-      params: { textId: result.text.id },
-      query: { session: session.value.slug ?? session.value.id, tirage: "1" },
-    });
-  } catch (err) {
-    console.error("Erreur lors du tirage aléatoire:", err);
-    analyticsService.capture("reservation_failed", {
-      session_id: session.value.id,
-      reason: "error",
-      error_message: err instanceof Error ? err.message : String(err),
-      source: "random_button",
-    });
-    toast.errorFromException(err, t("detailSession.reservationError"));
-  } finally {
-    isDrawingRandom.value = false;
+  const text = sessionService.pickRandomAvailableText(current, textStudies.value);
+  if (!text) {
+    toast.error(t("detailSession.randomDraw.noneAvailable"));
+    return;
   }
+
+  router.push({
+    name: "text-reading",
+    params: { textId: text.id },
+    query: { session: current.slug ?? current.id, tirage: "1" },
+  });
 };
 
 const openShareModal = () => {
@@ -938,7 +908,6 @@ watch(session, (s) => applySessionSeo(s));
            avec ou sans compte -->
       <RandomTehilimCard
         v-if="isTehilimSession"
-        :loading="isDrawingRandom"
         :available-count="randomAvailableCount"
         @draw="drawRandomTehilim"
       />

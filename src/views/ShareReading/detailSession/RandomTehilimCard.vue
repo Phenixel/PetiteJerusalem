@@ -9,7 +9,6 @@ import AppIcon from "../../../components/icons/AppIcon.vue";
  */
 
 defineProps<{
-  loading: boolean;
   availableCount: number;
 }>();
 
@@ -28,18 +27,11 @@ const { t } = useI18n();
     <p class="text-sm text-text-secondary mt-0.5 mb-4">
       {{ t("detailSession.randomDraw.subtitle") }}
     </p>
-    <button
-      @click="emit('draw')"
-      class="btn btn-primary"
-      :disabled="loading || availableCount === 0"
-      :aria-busy="loading"
-    >
-      <AppIcon
-        :name="loading ? 'spinner' : 'shuffle'"
-        :size="16"
-        :class="{ 'animate-spin': loading }"
-      />
-      {{ loading ? t("detailSession.randomDraw.drawing") : t("detailSession.randomDraw.button") }}
+    <!-- Aucun état de chargement : le clic ouvre la lecture sans attendre, la
+         réservation se pose là-bas. -->
+    <button @click="emit('draw')" class="btn btn-primary" :disabled="availableCount === 0">
+      <AppIcon name="shuffle" :size="16" />
+      {{ t("detailSession.randomDraw.button") }}
     </button>
     <p v-if="availableCount === 0" class="text-sm text-text-secondary mt-3">
       {{ t("detailSession.randomDraw.noneAvailable") }}
