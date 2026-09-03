@@ -86,10 +86,12 @@ const generateChapters = (totalSections: number) => {
 // Index emplacement → réservation, sur les deux sources que recevait le
 // composant (session.reservations pour le statut, la prop reservations pour
 // la complétion) ; `has` avant `set` pour garder la sémantique « premier
-// trouvé » de l'ancien .find() en cas de doublon.
+// trouvé » de l'ancien .find() en cas de doublon. Les réservations expirées
+// (tirage aléatoire abandonné) sont ignorées : l'emplacement est disponible.
 const sessionSlotIndex = computed(() => {
   const bySlot = new Map<string, TextStudyReservation>();
   for (const r of props.session.reservations ?? []) {
+    if (sessionService.isReservationExpired(r)) continue;
     const key = slotKey(r.textStudyId, r.section);
     if (!bySlot.has(key)) bySlot.set(key, r);
   }
@@ -99,6 +101,7 @@ const sessionSlotIndex = computed(() => {
 const reservationSlotIndex = computed(() => {
   const bySlot = new Map<string, TextStudyReservation>();
   for (const r of props.reservations) {
+    if (sessionService.isReservationExpired(r)) continue;
     const key = slotKey(r.textStudyId, r.section);
     if (!bySlot.has(key)) bySlot.set(key, r);
   }

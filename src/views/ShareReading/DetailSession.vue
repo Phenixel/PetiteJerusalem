@@ -19,6 +19,9 @@ import { SITE_URL } from "../../config/site";
 import SessionHeader from "./detailSession/SessionHeader.vue";
 import SessionInstructions from "./detailSession/SessionInstructions.vue";
 import TextStudiesList from "./detailSession/TextStudiesList.vue";
+import RandomTehilimCard from "./detailSession/RandomTehilimCard.vue";
+import { EnumTypeTextStudy } from "../../models/typeTextStudy";
+import { isOffline } from "../../services/userPreferencesService";
 import { useToast } from "../../composables/useToast";
 import { liveValue } from "../../composables/liveInput";
 import { analyticsService } from "../../services/analyticsService";
@@ -220,12 +223,18 @@ const progressStats = computed(() => {
 
   const total = textStudies.value.reduce((acc, textStudy) => acc + textStudy.totalSections, 0);
 
-  const reserved = reservations.value.length;
+  // Les tirages abandonnés (expirés sans lecture) ne comptent plus : leurs
+  // emplacements sont redevenus disponibles.
+  const activeReservations = reservations.value.filter(
+    (r) => !sessionService.isReservationExpired(r),
+  );
 
-  const read = reservations.value.filter((r) => r.isCompleted).length;
+  const reserved = activeReservations.length;
+
+  const read = activeReservations.filter((r) => r.isCompleted).length;
 
   const uniqueParticipants = new Set<string>();
-  reservations.value.forEach((r) => {
+  activeReservations.forEach((r) => {
     if (r.chosenById) {
       uniqueParticipants.add(`user:${r.chosenById}`);
     } else if (r.chosenByGuestId) {
@@ -587,6 +596,86 @@ const clearSearch = () => {
   searchTerm.value = "";
 };
 
+// --- Tirage aléatoire (sessions Tehilim uniquement) ---
+
+const isDrawingRandom = ref(false);
+
+const isTehilimSession = computed(() => session.value?.type === EnumTypeTextStudy.Tehilim);
+
+const randomAvailableCount = computed(
+  () => textStudies.value.filter((text) => !isReserved(text.id, 1).isReserved).length,
+);
+
+/**
+ * Réserve un Tehilim au hasard, sans aucun prérequis : même un visiteur qui
+ * n'a rien rempli repart avec un texte, réservé au nom « Anonyme » pour que
+ * personne d'autre ne le prenne en attendant. On ouvre aussitôt la page de
+ * lecture ; c'est elle qui porte la suite (marquer lu, repiocher, ou libérer
+ * le texte si le lecteur repart sans l'avoir lu).
+ */
+const drawRandomTehilim = async () => {
+  if (!session.value || isDrawingRandom.value) return;
+
+  analyticsService.capture("random_tehilim_clicked", {
+    session_id: session.value.id,
+    available_count: randomAvailableCount.value,
+    is_guest: currentUser.value == null,
+    source: "session_page",
+  });
+
+  // Une réservation passe par une transaction Firestore, qui ne se joue pas
+  // hors ligne : le dire tout de suite vaut mieux qu'une attente muette suivie
+  // d'une erreur technique.
+  if (isOffline()) {
+    toast.error(t("detailSession.randomDraw.offline"));
+    return;
+  }
+
+  try {
+    isDrawingRandom.value = true;
+    const result = await sessionService.reserveRandomAvailableText(
+      session.value,
+      textStudies.value,
+      currentUser.value,
+      reservationForm.value,
+      t("detailSession.randomDraw.anonymous"),
+    );
+
+    if (!result) {
+      toast.error(t("detailSession.randomDraw.noneAvailable"));
+      return;
+    }
+
+    reservations.value.push(result.reservation);
+
+    analyticsService.capture("reservation_completed", {
+      session_id: session.value.id,
+      text_type: session.value.type,
+      sections_count: 1,
+      is_guest: currentUser.value == null,
+      guest_has_email: currentUser.value == null && reservationForm.value.email.trim() !== "",
+      source: "random_button",
+    });
+
+    router.push({
+      name: "text-reading",
+      params: { textId: result.text.id },
+      query: { session: session.value.slug ?? session.value.id, tirage: "1" },
+    });
+  } catch (err) {
+    console.error("Erreur lors du tirage aléatoire:", err);
+    analyticsService.capture("reservation_failed", {
+      session_id: session.value.id,
+      reason: "error",
+      error_message: err instanceof Error ? err.message : String(err),
+      source: "random_button",
+    });
+    toast.errorFromException(err, t("detailSession.reservationError"));
+  } finally {
+    isDrawingRandom.value = false;
+  }
+};
+
 const openShareModal = () => {
   // Domaine canonique plutôt que window.location.href : ce dernier vaut
   // localhost (ou capacitor://localhost) en dev et dans l'app native, ce qui
@@ -843,6 +932,15 @@ watch(session, (s) => applySessionSeo(s));
           trackReportStarted();
           showReportModal = true;
         "
+      />
+
+      <!-- Tirage aléatoire : recevoir un Tehilim disponible en un clic,
+           avec ou sans compte -->
+      <RandomTehilimCard
+        v-if="isTehilimSession"
+        :loading="isDrawingRandom"
+        :available-count="randomAvailableCount"
+        @draw="drawRandomTehilim"
       />
 
       <!-- Barre de progression -->

@@ -1,5 +1,9 @@
 import { firestoreService } from "./firestoreService";
-import { reservationService, type ReservationForm } from "./reservationService";
+import {
+  reservationService,
+  RANDOM_RESERVATION_TTL_MS,
+  type ReservationForm,
+} from "./reservationService";
 import { SearchService } from "./searchService";
 import { authService, type User } from "./authService";
 import { moderationService } from "./moderationService";
@@ -62,9 +66,9 @@ export class SessionService {
   /**
    * Renvoie les textes d'une session après application de son filtre
    * `selectedBooks` (les livres retenus à la création). Sert d'assise aux
-   * statistiques d'aperçu et au filtre de disponibilité.
+   * statistiques d'aperçu, au filtre de disponibilité et au tirage aléatoire.
    */
-  private getSessionTextStudies(session: Session): TextStudy[] {
+  getSessionTextStudies(session: Session): TextStudy[] {
     const texts = this.getTextStudiesByTypeSync(session.type);
     if (session.selectedBooks && session.selectedBooks.length > 0) {
       return texts.filter((text) => session.selectedBooks!.includes(text.livre));
@@ -86,7 +90,9 @@ export class SessionService {
       (acc, text) => acc + text.totalSections,
       0,
     );
-    const reserved = (session.reservations || []).length;
+    // Les tirages abandonnés (expirés sans lecture) ne comptent plus : leur
+    // emplacement est redevenu disponible, l'aperçu doit le dire.
+    const reserved = reservationService.activeReservations(session.reservations || []).length;
     const percentage = total > 0 ? Math.round((reserved / total) * 100) : 0;
 
     return { total, reserved, percentage };
@@ -226,6 +232,83 @@ export class SessionService {
         reservationForm.name,
       );
     }
+  }
+
+  /**
+   * Tire au sort un texte encore entièrement disponible et le réserve
+   * immédiatement, y compris pour un visiteur sans compte ni nom : la
+   * réservation part alors avec l'identité invitée locale, au nom
+   * `anonymousName`. Elle porte une date d'expiration : non lue au bout d'une
+   * heure sans signe de vie, elle redevient prenable (contrairement aux
+   * réservations choisies à la main, qui n'expirent jamais). En cas de course
+   * (texte pris entre-temps, le cache des sessions peut avoir 60 s de retard),
+   * on repioche parmi les restants. Renvoie null quand plus aucun texte n'est
+   * disponible.
+   */
+  async reserveRandomAvailableText(
+    session: Session,
+    textStudies: TextStudy[],
+    currentUser: User | null,
+    reservationForm: ReservationForm,
+    anonymousName: string,
+  ): Promise<{ text: TextStudy; reservation: TextStudyReservation } | null> {
+    const pool = textStudies.filter(
+      (text) => !reservationService.isTextOrSectionReserved(text.id, 1, session).isReserved,
+    );
+    if (pool.length === 0) return null;
+
+    const guestName = currentUser ? undefined : reservationForm.name.trim() || anonymousName;
+    const guestId = currentUser ? undefined : reservationService.resolveGuestId(reservationForm);
+
+    while (pool.length > 0) {
+      const [text] = pool.splice(Math.floor(Math.random() * pool.length), 1);
+      const expiresAt = new Date(Date.now() + RANDOM_RESERVATION_TTL_MS).toISOString();
+      try {
+        const reservationId = await reservationService.createReservation(
+          session.id,
+          text.id,
+          1,
+          currentUser?.id,
+          guestId,
+          currentUser?.name,
+          guestName,
+          { expiresAt },
+        );
+
+        const reservation: TextStudyReservation = {
+          id: reservationId,
+          textStudyId: text.id,
+          section: 1,
+          chosenByName: currentUser?.name || guestName,
+          available: false,
+          isCompleted: false,
+          createdAt: new Date(),
+          expiresAt,
+          ...(currentUser ? { chosenById: currentUser.id } : { chosenByGuestId: guestId }),
+        };
+        return { text, reservation };
+      } catch (error) {
+        if (error instanceof Error && error.message.includes("déjà réservée")) continue;
+        throw error;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Repousse l'échéance d'un tirage d'une heure de plus. Renvoie la nouvelle
+   * échéance pour que l'appelant la reporte sur son état local.
+   */
+  async renewRandomReservation(sessionId: string, reservationId: string): Promise<string> {
+    const expiresAt = new Date(Date.now() + RANDOM_RESERVATION_TTL_MS).toISOString();
+    await reservationService.renewReservationExpiry(sessionId, reservationId, expiresAt);
+    return expiresAt;
+  }
+
+  /** Voir reservationService.isReservationExpired. */
+  isReservationExpired(reservation: { expiresAt?: string; isCompleted: boolean }): boolean {
+    return reservationService.isReservationExpired(reservation);
   }
 
   createLocalReservations(

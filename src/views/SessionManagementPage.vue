@@ -145,9 +145,18 @@ const availableBooks = computed(() => {
 const slotKey = (textStudyId: string, section?: number) =>
   section === undefined ? `${textStudyId}#full` : `${textStudyId}#${section}`;
 
+/**
+ * Les réservations qui tiennent encore leur emplacement : un tirage aléatoire
+ * expiré sans lecture s'affiche « disponible » partout ailleurs, la gestion de
+ * la chaîne doit dire la même chose que la page publique.
+ */
+const activeReservations = computed(() =>
+  reservationService.activeReservations(session.value?.reservations ?? []),
+);
+
 const reservationSlotIndex = computed(() => {
   const bySlot = new Map<string, TextStudyReservation>();
-  for (const r of session.value?.reservations ?? []) {
+  for (const r of activeReservations.value) {
     const key = slotKey(r.textStudyId, r.section);
     if (!bySlot.has(key)) bySlot.set(key, r);
   }
@@ -175,7 +184,7 @@ const getTextStatus = (textStudy: TextStudy) => {
 };
 
 const getTextReservations = (textStudyId: string) => {
-  return session.value?.reservations?.filter((r) => r.textStudyId === textStudyId) || [];
+  return activeReservations.value.filter((r) => r.textStudyId === textStudyId);
 };
 
 const isSectionReserved = (textStudyId: string, section: number) => {
@@ -203,7 +212,7 @@ const chaptersOf = (totalSections: number) => {
 const sessionGuests = computed(() => {
   const byGuestId = new Map<string, { guestId: string; name: string; count: number }>();
 
-  for (const reservation of session.value?.reservations ?? []) {
+  for (const reservation of activeReservations.value) {
     if (reservation.chosenById || !reservation.chosenByGuestId) continue;
     const existing = byGuestId.get(reservation.chosenByGuestId);
     if (existing) {
@@ -612,7 +621,7 @@ const sessionStats = computed(() => {
       reservationRate: 0,
     };
 
-  const reservations = session.value.reservations || [];
+  const reservations = activeReservations.value;
   const totalReservations = reservations.length;
   const completedReservations = reservations.filter((r) => r.isCompleted).length;
   const completionRate =

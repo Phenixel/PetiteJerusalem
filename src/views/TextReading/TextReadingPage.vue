@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
 import type { RouteLocationRaw } from "vue-router";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../datas/textStudies.json";
@@ -34,6 +34,8 @@ import { resolveBackNavigation, stripQuery } from "../../composables/readingBack
 import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { sessionService } from "../../services/sessionService";
+import { ReservationGoneError } from "../../services/reservationService";
+import { isOffline } from "../../services/userPreferencesService";
 import { seoService } from "../../services/seoService";
 import {
   hubPath,
@@ -695,6 +697,9 @@ function capturePosition() {
 }
 
 function onScroll() {
+  // Un scroll est un signe de présence : il sert au renouvellement du tirage
+  // (voir renewDrawIfNeeded), même quand la capture de position s'abstient.
+  noteReadingActivity();
   if (Date.now() - programmaticScrollAt < 300) return;
   if (scrollSaveTimer !== null || !currentSection.value || showSectionList.value) return;
   scrollSaveTimer = window.setTimeout(() => {
@@ -805,8 +810,13 @@ const showReservationBar = computed(
 function findReservation(unit: number | undefined): TextStudyReservation | null {
   if (!session.value || unit === undefined) return null;
   return (
-    session.value.reservations.find((r) => r.textStudyId === textId.value && r.section === unit) ??
-    null
+    session.value.reservations.find(
+      (r) =>
+        r.textStudyId === textId.value &&
+        r.section === unit &&
+        // Un tirage expiré sans lecture ne tient plus l'emplacement.
+        !sessionService.isReservationExpired(r),
+    ) ?? null
   );
 }
 
@@ -950,6 +960,9 @@ async function cancelReservation() {
       is_guest: currentUser.value == null,
       source: "reading_page",
     });
+    // En mode tirage, annuler signifie renoncer à ce texte : on ramène le
+    // lecteur à la chaîne, où il peut en retirer un autre.
+    if (isRandomDraw.value) exitReading();
   } catch (e) {
     // Contrepartie manquante de `reservation_cancelled` : une annulation qui
     // échoue laisse la section affichée comme réservée, et le lecteur croit
@@ -974,6 +987,10 @@ async function toggleRead() {
   try {
     await sessionService.markReservationAsCompleted(session.value.id, r.id, next);
     r.isCompleted = next;
+    // La transaction a effacé l'échéance du tirage : l'état local doit suivre,
+    // sinon « remettre en non lu » ferait réapparaître une réservation périmée
+    // ici alors qu'elle est devenue définitive en base.
+    if (next) delete r.expiresAt;
     session.value.reservations = [...session.value.reservations];
     analyticsService.capture("section_marked_read", {
       session_id: session.value.id,
@@ -989,11 +1006,214 @@ async function toggleRead() {
       error_message: e instanceof Error ? e.message : String(e),
       source: "reading_page",
     });
-    toast.errorFromException(e, t("textReading.updateError"));
+    // Le tirage avait expiré et quelqu'un a repris l'emplacement : ce n'est
+    // pas une panne, c'est une place perdue, et ça se dit autrement.
+    if (e instanceof ReservationGoneError) {
+      forgetLostReservation(r.id);
+    } else {
+      toast.errorFromException(e, t("textReading.updateError"));
+    }
   } finally {
     isReserving.value = false;
   }
 }
+
+// --- Tirage aléatoire ---
+// Arrivée via le bouton « Tirer un Téhilim » (?tirage=1) : la page porte la
+// suite du flux. Le texte tiré est déjà réservé ; s'il ne convient pas, on en
+// repioche un autre, et si le lecteur repart sans avoir marqué sa lecture, la
+// réservation est libérée pour ne pas bloquer un texte que personne ne lira.
+
+const isRandomDraw = computed(() => isSessionMode.value && route.query.tirage !== undefined);
+const isDrawingAnother = ref(false);
+
+/** Vérification du délai restant, assez espacée pour ne rien coûter. */
+const RENEW_CHECK_MS = 5 * 60 * 1000;
+/** En dessous de ce reste, on repousse l'échéance. */
+const RENEW_WHEN_REMAINING_MS = 20 * 60 * 1000;
+/**
+ * Au-delà de ce silence (aucun scroll, aucune touche, onglet jamais revenu au
+ * premier plan), la page est réputée abandonnée : plus de renouvellement, et
+ * le texte redevient prenable à l'échéance. C'est ce qui distingue « je lis
+ * depuis deux heures » de « j'ai laissé l'onglet ouvert avant de partir ».
+ */
+const PRESENCE_WINDOW_MS = 30 * 60 * 1000;
+
+let lastActivityAt = Date.now();
+let renewTimer: ReturnType<typeof setInterval> | null = null;
+
+function noteReadingActivity() {
+  lastActivityAt = Date.now();
+}
+
+function onVisibilityChange() {
+  if (document.visibilityState === "visible") noteReadingActivity();
+}
+
+/**
+ * L'emplacement a été repris par quelqu'un d'autre : on retire la réservation
+ * de l'état local (la barre repasse à « Réserver ») et on le dit au lecteur
+ * plutôt que d'afficher une erreur technique.
+ */
+function forgetLostReservation(reservationId: string) {
+  const s = session.value;
+  if (!s) return;
+  s.reservations = s.reservations.filter((x) => x.id !== reservationId);
+  toast.info(t("textReading.drawLost"));
+}
+
+/**
+ * Repousse l'échéance du tirage tant que le lecteur est là. Sans ce filet, une
+ * lecture qui dure plus d'une heure verrait son texte repris sous ses yeux ;
+ * avec lui, seule une page vraiment abandonnée laisse l'échéance tomber.
+ */
+async function renewDrawIfNeeded() {
+  const s = session.value;
+  const r = currentReservation.value;
+  if (!s || !r || r.expiresAt === undefined || r.isCompleted || !isMine.value) return;
+  if (Date.now() - lastActivityAt > PRESENCE_WINDOW_MS) return;
+  if (new Date(r.expiresAt).getTime() - Date.now() > RENEW_WHEN_REMAINING_MS) return;
+
+  try {
+    const expiresAt = await sessionService.renewRandomReservation(s.id, r.id);
+    r.expiresAt = expiresAt;
+    s.reservations = [...s.reservations];
+  } catch (e) {
+    if (e instanceof ReservationGoneError) {
+      forgetLostReservation(r.id);
+      return;
+    }
+    // Réseau coupé, écriture refusée : sans bruit. Au pire l'échéance tombe et
+    // le texte est rendu, ce qui est exactement ce qu'elle sert à faire.
+    console.error("Renouvellement du tirage impossible :", e);
+  }
+}
+
+onMounted(() => {
+  window.addEventListener("pointerdown", noteReadingActivity, { passive: true });
+  window.addEventListener("keydown", noteReadingActivity, { passive: true });
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  renewTimer = setInterval(() => void renewDrawIfNeeded(), RENEW_CHECK_MS);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("pointerdown", noteReadingActivity);
+  window.removeEventListener("keydown", noteReadingActivity);
+  document.removeEventListener("visibilitychange", onVisibilityChange);
+  if (renewTimer !== null) {
+    clearInterval(renewTimer);
+    renewTimer = null;
+  }
+});
+
+async function drawAnother() {
+  const s = session.value;
+  if (!s || isDrawingAnother.value) return;
+  analyticsService.capture("random_tehilim_clicked", {
+    session_id: s.id,
+    is_guest: currentUser.value == null,
+    source: "reading_page",
+  });
+  if (isOffline()) {
+    toast.error(t("detailSession.randomDraw.offline"));
+    return;
+  }
+  isDrawingAnother.value = true;
+  try {
+    const result = await sessionService.reserveRandomAvailableText(
+      s,
+      sessionService.getSessionTextStudies(s),
+      currentUser.value,
+      reservationForm.value,
+      t("detailSession.randomDraw.anonymous"),
+    );
+    if (!result) {
+      toast.info(t("detailSession.randomDraw.noneAvailable"));
+      return;
+    }
+
+    // Le nouveau tirage d'abord, la libération ensuite : si plus rien n'était
+    // disponible, le lecteur garde au moins son texte actuel.
+    const previous = currentReservation.value;
+    if (previous && !previous.isCompleted && isMine.value) {
+      await sessionService.deleteReservation(s.id, previous.id);
+      s.reservations = s.reservations.filter((x) => x.id !== previous.id);
+      analyticsService.capture("reservation_cancelled", {
+        session_id: s.id,
+        is_guest: currentUser.value == null,
+        source: "random_redraw",
+      });
+    }
+
+    s.reservations = [...s.reservations, result.reservation];
+    analyticsService.capture("reservation_completed", {
+      session_id: s.id,
+      text_type: s.type,
+      sections_count: 1,
+      is_guest: currentUser.value == null,
+      guest_has_email: currentUser.value == null && reservationForm.value.email.trim() !== "",
+      source: "random_button",
+    });
+
+    noteReadingActivity();
+    router.replace({
+      name: "text-reading",
+      params: { textId: result.text.id },
+      query: route.query,
+    });
+    scrollTopProgrammatic();
+  } catch (e) {
+    analyticsService.capture("reservation_failed", {
+      session_id: s.id,
+      reason: "error",
+      error_message: e instanceof Error ? e.message : String(e),
+      source: "random_button",
+    });
+    toast.errorFromException(e, t("textReading.reserveError"));
+  } finally {
+    isDrawingAnother.value = false;
+  }
+}
+
+/**
+ * Libère le tirage resté sans lecture sur `forTextId`. Seules les réservations
+ * issues du tirage (elles seules portent expiresAt) sont concernées : une
+ * réservation choisie à la main n'est jamais touchée.
+ */
+async function releaseUnreadRandomDraw(forTextId: string = textId.value) {
+  const s = session.value;
+  if (!isRandomDraw.value || !s) return;
+  const r = s.reservations.find(
+    (x) =>
+      x.textStudyId === forTextId &&
+      x.expiresAt !== undefined &&
+      !x.isCompleted &&
+      sessionService.canUserDeleteReservation(x, currentUser.value, reservationForm.value.email),
+  );
+  if (!r) return;
+  // L'état local d'abord : la libération part sans retenir la navigation, et
+  // la chaîne qu'on rejoint ne doit pas réafficher le texte comme pris.
+  s.reservations = s.reservations.filter((x) => x.id !== r.id);
+  try {
+    await sessionService.deleteReservation(s.id, r.id);
+    analyticsService.capture("reservation_cancelled", {
+      session_id: s.id,
+      is_guest: currentUser.value == null,
+      source: "random_leave",
+    });
+  } catch (e) {
+    // On ne bloque jamais le départ du lecteur pour ça : au pire,
+    // l'expiration libérera le texte d'elle-même au bout d'une heure.
+    console.error("Erreur lors de la libération du tirage :", e);
+  }
+}
+
+// Quitter la page (retour à la chaîne, navigation ailleurs) sans avoir lu : le
+// texte tiré est libéré pour que quelqu'un d'autre puisse le prendre. La
+// suppression n'est pas attendue, elle ne doit pas retarder la navigation.
+onBeforeRouteLeave(() => {
+  void releaseUnreadRandomDraw();
+});
 
 // --- SEO ---
 // On /bibliotheque (the public, indexable pages) use the keyword title/description and
@@ -1082,7 +1302,7 @@ onBeforeUnmount(() => {
   }
 });
 
-watch(textId, () => {
+watch(textId, (_, previousTextId) => {
   // Une capture armée par un scroll dans l'ANCIEN texte ne doit pas
   // s'exécuter sur le nouveau (elle écraserait sa position par la ligne 0).
   clearScrollSaveTimer();
@@ -1090,6 +1310,10 @@ watch(textId, () => {
   userNavigated = false;
   refreshProgressState();
   void loadContent();
+  // Navigation latérale (texte suivant/précédent) : même règle qu'en quittant
+  // la page, le tirage laissé sans lecture est libéré. Après « Un autre
+  // Téhilim », l'ancien tirage a déjà été retiré : sans objet.
+  if (previousTextId) void releaseUnreadRandomDraw(previousTextId);
 });
 </script>
 
@@ -1278,10 +1502,13 @@ watch(textId, () => {
           :is-guest="!currentUser"
           :guest-intro-text="guestIntroText"
           :guest-email-required="guestEmailRequired"
+          :can-draw-another="isRandomDraw"
+          :is-drawing="isDrawingAnother"
           v-model:reservation-form="reservationForm"
           @toggle-read="toggleRead"
           @cancel="cancelReservation"
           @reserve="reserve"
+          @draw-another="drawAnother"
           @guest-first-input="trackGuestFormFilled"
         />
 
@@ -1488,10 +1715,13 @@ watch(textId, () => {
           :guest-intro-text="guestIntroText"
           :guest-email-required="guestEmailRequired"
           guest-form-id-prefix="guest-bottom"
+          :can-draw-another="isRandomDraw"
+          :is-drawing="isDrawingAnother"
           v-model:reservation-form="reservationForm"
           @toggle-read="toggleRead"
           @cancel="cancelReservation"
           @reserve="reserve"
+          @draw-another="drawAnother"
           @guest-first-input="trackGuestFormFilled"
         />
 

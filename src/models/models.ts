@@ -80,6 +80,13 @@ export interface TextStudyReservation {
   section?: number;
   isCompleted: boolean;
   createdAt: Date;
+  /**
+   * Date limite (ISO) au-delà de laquelle une réservation non lue est ignorée
+   * et redevient prenable. Posée uniquement par le tirage aléatoire, repoussée
+   * tant que le lecteur est sur la page, effacée dès qu'il marque sa lecture :
+   * les réservations choisies à la main n'en portent jamais.
+   */
+  expiresAt?: string;
 }
 
 // Types dédiés aux adaptateurs / stockage (DTO)
@@ -93,6 +100,8 @@ export interface ReservationRecord {
   available: boolean;
   isCompleted: boolean;
   createdAt: string;
+  /** Voir TextStudyReservation.expiresAt. */
+  expiresAt?: string;
 }
 
 export interface TextStudyJsonEntry {
