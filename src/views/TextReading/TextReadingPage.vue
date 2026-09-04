@@ -262,7 +262,11 @@ watch(
 // (voir locateDevice) et se retient : on ne redemande pas à chaque visite,
 // le bouton de la page des horaires reste le moyen de changer d'avis.
 watch(
-  () => (String(textEntry.value?.type) === "Sidour" ? textId.value : null),
+  // Les trois offices, et eux seuls : le sidour porte aussi des textes sans
+  // horaires (le Chema du coucher, la havdala, le tikoun hatsot), et demander
+  // sa position à quelqu'un qui ouvre le Chema du coucher n'aurait servi à
+  // rien de ce qu'il voit.
+  () => (tefilaOf(textEntry.value ?? null) ? textId.value : null),
   (id) => {
     if (!id || zmanimPlace.value.source === "city" || deniedBefore.value) return;
     void locateDevice().then((granted) => {

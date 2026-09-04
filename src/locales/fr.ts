@@ -1075,6 +1075,7 @@ const fr = {
       "Partagez des lectures à plusieurs, suivez votre lecture quotidienne et recevez un rappel chaque jour.",
     signup: "Créer un compte",
     login: "Se connecter",
+    dismiss: "Ignorer",
   },
   downloads: {
     total: "Espace utilisé : {size}",
@@ -1144,6 +1145,14 @@ const fr = {
     withRashi: "Commentaire de Rachi",
     rashiUnavailable: "Le commentaire de Rachi n'a pas pu être chargé.",
   },
+  tehilimDay: {
+    title: "Tehilim du jour",
+    hint: "Les psaumes du cycle mensuel, à lire les uns à la suite des autres.",
+    pageDescription:
+      "Les Tehilim du jour du mois hébraïque, les uns sous les autres, à lire d'une traite.",
+    dayOfMonth: "{day} du mois",
+    unavailable: "Les psaumes du jour n'ont pas pu être déterminés.",
+  },
   study: {
     title: "Bibliothèque",
     subtitle:
@@ -1152,6 +1161,8 @@ const fr = {
     searchAllPlaceholder: "Rechercher dans tous les textes…",
     noResults: "Aucun texte ne correspond à votre recherche.",
     sections: "{count} sections",
+    textsCount: "{count} texte | {count} textes",
+    range: "{from} à {to}",
     types: {
       all: "Tout",
       tehilim: "Tehilim",
@@ -1168,11 +1179,11 @@ const fr = {
       talmudDesc: "La Guemara : les traités du Talmud Bavli, pour avancer daf après daf.",
       tanakhDesc: "La Torah paracha par paracha, les Neviim et les Ketouvim.",
       sidourDesc:
-        "Cha'harit, Min'ha et Arvit de la semaine, avec les horaires au lieu où l'on se trouve et les ajouts du calendrier au jour le jour.",
+        "Cha'harit, Min'ha et Arvit de la semaine, avec les horaires au lieu où l'on se trouve et les ajouts du calendrier au jour le jour ; le Chema du coucher, le tikoun hatsot et la havdala.",
       slihotDesc:
         "Les Sli'hot du rite séfarade, en hébreu et en phonétique, pour Eloul et les dix jours de techouva.",
       brahotDesc:
-        "Birkat Hamazon, brakha a'harona, Cheva Brahot, Birkat Halevana : les bénédictions à portée de main.",
+        "Birkat Hamazon, bénédictions sur ce qu'on mange et ce qu'on sent, prière du voyageur, allumage de Hanouka, brit mila : les bénédictions à portée de main.",
       tehilimSearch: "Rechercher un tehilim…",
       michnaSearch: "Rechercher une michna…",
       talmudSearch: "Rechercher un traité du Talmud…",

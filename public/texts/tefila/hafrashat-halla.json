@@ -1,0 +1,39 @@
+{
+  "title": "הפרשת חלה (Hafrashat Halla)",
+  "blocks": [
+    {
+      "halakha": {
+        "fr": "On prélève avec bénédiction à partir de 1 566,5 g de farine.",
+        "en": "Separate with a blessing from 1,566.5 g of flour.",
+        "he": "שעור הפרשת חלה בברכה הוא כשיש בקמח שיעור של 1566.5 גר'"
+      },
+      "lines": [
+        {
+          "rubric": {
+            "fr": "Avant de prélever, on dit :",
+            "en": "Before separating, say:",
+            "he": "קודם ההפרשה מברכת"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו, וְצִוָּנוּ לְהַפְרִישׁ חַלָּה תְּרוּמָה:"
+        }
+      ]
+    },
+    {
+      "halakha": {
+        "fr": "La part prélevée se brûle ; on ne la jette pas avant de l'avoir brûlée.",
+        "en": "What is separated is burned; it is not thrown away before being burned.",
+        "he": "את החלה שמפרישים צריך לשרוף, ואסור לזורקה לאשפה ולזלזל בקדושתה. ורק לאחר ששרפה אותה מותר לזורקה לאשפה"
+      },
+      "lines": [
+        {
+          "rubric": {
+            "fr": "Puis on prend un morceau de pâte, si petit soit-il :",
+            "en": "Then take a piece of dough, however small:",
+            "he": "ואחר כך לוקחת חתיכה כל שהיא ואומרת"
+          },
+          "he": "הֲרֵי זוֹ חַלָּה:"
+        }
+      ]
+    }
+  ]
+}

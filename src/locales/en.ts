@@ -1055,6 +1055,7 @@ const en: LocaleMessages = {
       "Share readings with others, follow your daily reading and get a reminder every day.",
     signup: "Sign up",
     login: "Sign in",
+    dismiss: "Not now",
   },
   downloads: {
     total: "Storage used: {size}",
@@ -1123,6 +1124,14 @@ const en: LocaleMessages = {
     withRashi: "Rashi's commentary",
     rashiUnavailable: "Rashi's commentary could not be loaded.",
   },
+  tehilimDay: {
+    title: "Daily Tehilim",
+    hint: "The psalms of the monthly cycle, to be read one after the other.",
+    pageDescription:
+      "The Tehilim of the Hebrew day of the month, one below the other, read in one go.",
+    dayOfMonth: "Day {day} of the month",
+    unavailable: "Today's psalms could not be determined.",
+  },
   study: {
     title: "Library",
     subtitle:
@@ -1131,6 +1140,8 @@ const en: LocaleMessages = {
     searchAllPlaceholder: "Search all texts…",
     noResults: "No text matches your search.",
     sections: "{count} sections",
+    textsCount: "{count} text | {count} texts",
+    range: "{from} to {to}",
     types: {
       all: "All",
       tehilim: "Tehilim",
@@ -1147,11 +1158,11 @@ const en: LocaleMessages = {
       talmudDesc: "The Gemara: the tractates of the Babylonian Talmud, daf after daf.",
       tanakhDesc: "The Torah parasha by parasha, the Neviim and the Ketuvim.",
       sidourDesc:
-        "Weekday Shacharit, Mincha and Arvit, with prayer times for where you are and the day's calendar additions.",
+        "Weekday Shacharit, Mincha and Arvit, with prayer times for where you are and the day's calendar additions; the bedtime Shema, Tikkun Hatzot and Havdalah.",
       slihotDesc:
         "The Sephardic Selichot, in Hebrew and phonetics, for Elul and the ten days of teshuva.",
       brahotDesc:
-        "Birkat Hamazon, bracha acharona, Sheva Berakhot, Birkat Halevana: the blessings at hand.",
+        "Birkat Hamazon, blessings on what you eat and smell, the traveler's prayer, Hanukkah lighting, brit mila: the blessings at hand.",
       tehilimSearch: "Search a tehilim…",
       michnaSearch: "Search a mishnah…",
       talmudSearch: "Search a Talmud tractate…",

@@ -18,6 +18,7 @@ const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue")
 const StudyPage = () => import("../views/StudyPage.vue");
 const DailyReadingPage = () => import("../views/Library/DailyReadingPage.vue");
 const ChneiMikraPage = () => import("../views/Library/ChneiMikraPage.vue");
+const TehilimDayPage = () => import("../views/Library/TehilimDayPage.vue");
 const ContentPage = () => import("../views/ContentPage.vue");
 const ZmanimPage = () => import("../views/Zmanim/ZmanimPage.vue");
 const CalendarPage = () => import("../views/Zmanim/CalendarPage.vue");
@@ -161,6 +162,16 @@ export default [
     name: "chnei-mikra",
     meta: { offlineOk: true, plainBackground: true },
     component: ChneiMikraPage,
+  },
+  // Tehilim du jour : les psaumes du cycle mensuel, les uns sous les autres,
+  // plutôt qu'une rangée de numéros à ouvrir un par un. Le jour se calcule sur
+  // l'appareil et les psaumes sont embarqués dans l'app native : la page a sa
+  // place parmi les `offlineOk`.
+  {
+    path: "/bibliotheque/tehilim-du-jour",
+    name: "tehilim-day",
+    meta: { offlineOk: true, plainBackground: true },
+    component: TehilimDayPage,
   },
   // Détail d'un corpus de la bibliothèque (liste des textes) : la page
   // d'accueil de la bibliothèque ne montre que les grandes sections.

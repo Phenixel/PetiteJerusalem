@@ -23,10 +23,9 @@ import {
   userPreferencesService,
   type UserPreferences,
 } from "../services/userPreferencesService";
-import { readingProgressService, type ReadingPosition } from "../services/readingProgressService";
 import { isNativeApp } from "../composables/useNativeApp";
+import { useHomeAccountCta } from "../composables/useHomeAccountCta";
 import SiteFooter from "../components/SiteFooter.vue";
-import AppIcon from "../components/icons/AppIcon.vue";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
 import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
@@ -69,6 +68,15 @@ function applyHomeMeta(): void {
 const user = ref<User | null>(null);
 let unsubscribeAuth: (() => void) | null = null;
 
+// L'invitation à créer un compte : l'accueil la propose une fois, puis plus du
+// tout (voir useHomeAccountCta). Elle reste entière ailleurs.
+const { dismissed: accountCtaDismissed, dismissHomeAccountCta } = useHomeAccountCta();
+
+function dismissAccountCta() {
+  dismissHomeAccountCta();
+  analyticsService.capture("home_signup_cta_dismissed");
+}
+
 // --- Tableau de bord (connecté) : lecture du jour et horaires du jour. ---
 const dashLoading = ref(false);
 const readingTotal = ref(0);
@@ -79,35 +87,6 @@ const greeting = computed(() => {
   const hour = new Date().getHours();
   return hour >= 18 || hour < 5 ? t("home.dashboard.helloEvening") : t("home.dashboard.hello");
 });
-
-// Dernière position de lecture (bibliothèque) : le vrai « Reprendre ma lecture ».
-const lastReading = ref<ReadingPosition | null>(null);
-const resumeLink = computed(() =>
-  lastReading.value
-    ? { path: lastReading.value.path, query: { verset: String(lastReading.value.line) } }
-    : null,
-);
-
-function trackResume() {
-  if (!lastReading.value) return;
-  analyticsService.capture("reading_resumed", {
-    text_id: lastReading.value.textId,
-    source: "home",
-  });
-}
-
-// Lecture terminée (ou abandonnée) : la croix retire la position pour ne plus
-// la proposer. S'il reste une lecture récente, elle prend le relais.
-function dismissResume() {
-  const current = lastReading.value;
-  if (!current) return;
-  readingProgressService.clearPosition(current.textId);
-  lastReading.value = readingProgressService.getLastPosition();
-  analyticsService.capture("reading_resume_dismissed", {
-    text_id: current.textId,
-    source: "home",
-  });
-}
 
 // Même règle de comptage que la page Lecture quotidienne (chnei mikra
 // hebdomadaire exclu, complétions intersectées avec les listes actives).
@@ -175,11 +154,6 @@ const trackCard = (card: string) => {
 };
 
 onMounted(() => {
-  // Position locale tout de suite, affinée quand la synchro du compte aboutit.
-  lastReading.value = readingProgressService.getLastPosition();
-  void readingProgressService.ensureSynced().then(() => {
-    lastReading.value = readingProgressService.getLastPosition();
-  });
   unsubscribeAuth = authService.onAuthChanged((u) => {
     user.value = u;
     if (!hasTrackedHomeView) {
@@ -216,34 +190,6 @@ onUnmounted(() => {
         </h2>
         <p class="text-text-secondary mt-1.5">{{ t("home.dashboard.subtitle") }}</p>
       </div>
-
-      <!-- Reprendre la dernière lecture de la bibliothèque, au verset près -->
-      <RouterLink
-        v-if="lastReading && resumeLink"
-        :to="resumeLink"
-        class="dash-card card card-hover w-full max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-3 mb-5 group"
-        @click="trackResume()"
-      >
-        <span class="flex items-center gap-2.5 min-w-0">
-          <AppIcon name="book-open" :size="17" class="text-primary flex-shrink-0" />
-          <span
-            class="font-medium text-text-primary truncate group-hover:text-primary transition-colors"
-          >
-            {{ t("home.dashboard.resumeCta", { label: lastReading.label }) }}
-          </span>
-        </span>
-        <span class="flex items-center gap-1 flex-shrink-0">
-          <AppIcon name="chevron-right" :size="15" class="text-text-secondary/50 rtl:rotate-180" />
-          <button
-            @click.prevent.stop="dismissResume"
-            class="p-1.5 -m-0.5 rounded-full text-text-secondary/60 hover:text-red-600 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-            :title="t('home.dashboard.resumeDismiss')"
-            :aria-label="t('home.dashboard.resumeDismiss')"
-          >
-            <AppIcon name="x" :size="14" />
-          </button>
-        </span>
-      </RouterLink>
 
       <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
            limite. Absent entre deux offices. -->
@@ -295,7 +241,11 @@ onUnmounted(() => {
         >
           {{ t("home.heroDescription") }}
         </p>
+        <!-- Créer un compte : proposé jusqu'à ce qu'« Ignorer » le retire de
+             l'accueil. Le reste du site continue de le proposer, au moment où
+             le compte sert à quelque chose. -->
         <div
+          v-if="!accountCtaDismissed"
           class="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2 enter-rise"
           style="--enter-delay: 0.2s"
         >
@@ -309,6 +259,13 @@ onUnmounted(() => {
           <RouterLink to="/login" class="btn btn-soft !px-7 !py-3" @click="trackCard('login_cta')">
             {{ t("accountCta.login") }}
           </RouterLink>
+          <button
+            type="button"
+            class="px-2 py-3 text-sm font-medium text-text-secondary transition-colors hover:text-primary"
+            @click="dismissAccountCta"
+          >
+            {{ t("accountCta.dismiss") }}
+          </button>
         </div>
       </div>
 

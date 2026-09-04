@@ -6,7 +6,11 @@
 // fond beige du site, comme de vrais objets, identiques en mode sombre.
 // Titre horizontal en serif dans un cadre estampé crème, tranche de pages
 // ivoire sur la droite. Au survol (ou au toucher), le livre se soulève
-// doucement de l'étagère ; à l'arrivée, les livres se posent un à un.
+// doucement de l'étagère ; à l'arrivée, les livres se posent un à un, mais
+// seulement de loin en loin (voir useShelfIntro) : au quotidien, on vient
+// ouvrir un livre, pas regarder les livres arriver.
+
+import { shouldPlayShelfIntro } from "../composables/useShelfIntro";
 
 export interface ShelfBook {
   /** Identifiant de corpus (tehilim, michna, talmud, tanakh). */
@@ -43,10 +47,14 @@ const BINDINGS: Record<string, string> = {
 function bindingOf(corpus: string): string {
   return BINDINGS[corpus] ?? "#7d6a4c";
 }
+
+// Tranché une fois pour toute la page : les deux étagères se garnissent
+// ensemble, ou pas du tout.
+const playIntro = shouldPlayShelfIntro();
 </script>
 
 <template>
-  <div class="shelf-wrap">
+  <div class="shelf-wrap" :class="{ 'shelf-intro': playIntro }">
     <div class="shelf-books" role="list">
       <RouterLink
         v-for="(book, index) in books"
@@ -167,6 +175,11 @@ function bindingOf(corpus: string): string {
 .book-rise {
   display: block;
   width: 100%;
+}
+
+/* Le mois où les livres se posent un à un : sans cette classe, ils sont
+   simplement là, et le premier geste ne se heurte à rien. */
+.shelf-intro .book-rise {
   opacity: 0;
   transform: translateY(12px);
   animation: book-rise 0.55s ease-out forwards;
@@ -265,7 +278,7 @@ function bindingOf(corpus: string): string {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .book-rise {
+  .shelf-intro .book-rise {
     animation: none;
     opacity: 1;
     transform: none;
