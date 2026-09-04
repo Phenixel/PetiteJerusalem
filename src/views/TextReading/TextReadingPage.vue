@@ -51,7 +51,9 @@ import {
   readingLead as readingLeadOf,
   SITE_URL,
 } from "../../content/etudeTexts";
+import { encadrementOf } from "../../services/encadrementService";
 import LiturgyText from "./LiturgyText.vue";
+import ReadingEncadrement from "../../components/ReadingEncadrement.vue";
 import SlihotHours from "./SlihotHours.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
@@ -185,6 +187,12 @@ const recentChanges = computed(() =>
 
 /** Tefila (Sli'hot, Brahot, Sidour) : un rendu à part, voir LiturgyText. */
 const isLiturgyText = computed(() => !!textEntry.value && isLiturgy(textEntry.value));
+
+/**
+ * Les passages qui encadrent la lecture (Yehi ratson des Tehilim, Léchem
+ * yihoud du Cantique des cantiques), repliés au-dessus et au-dessous du texte.
+ */
+const encadrement = computed(() => encadrementOf(textEntry.value ?? undefined));
 const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
 
 // App native : le texte lu se télécharge sans quitter la page, par l'icône
@@ -356,6 +364,12 @@ const hasPrev = computed(() => sectionIndexInList.value > 0);
 const hasNext = computed(
   () => content.value !== null && sectionIndexInList.value < content.value.sections.length - 1,
 );
+
+// Un texte en chapitres (les huit du Cantique des cantiques) ne répète pas
+// ses encadrements à chaque page : le « avant » ouvre le premier chapitre, le
+// « après » ferme le dernier, comme la prière encadre la lecture entière.
+const showEncadrementBefore = computed(() => encadrement.value !== null && !hasPrev.value);
+const showEncadrementAfter = computed(() => encadrement.value !== null && !hasNext.value);
 
 // Numéro du dernier chargement demandé : deux textes enchaînés vite (« texte
 // suivant » deux fois, un traité du Talmud pèse jusqu'à 1,8 Mo) font partir
@@ -1597,7 +1611,6 @@ watch(textId, (_, previousTextId) => {
           :next-label="nextText ? appendHebrewNumeral(nextText.name) : null"
           @prev="prevText && goToText(prevText)"
           @next="nextText && goToText(nextText)"
-          class="mt-10"
         />
       </div>
 
@@ -1709,6 +1722,15 @@ watch(textId, (_, previousTextId) => {
           </div>
         </div>
 
+        <!-- Ce qui se dit avant la lecture (Tehilim, Cantique des cantiques) :
+             replié, au-dessus du texte, là où on le dirait. -->
+        <ReadingEncadrement
+          v-if="encadrement && showEncadrementBefore"
+          :blocks="encadrement.before"
+          :title="t('encadrement.before')"
+          :show-phonetic="showPhonetic"
+        />
+
         <!-- Talmud: continuous text with a marker at each daf change -->
         <div
           v-if="content.type === 'Talmud Bavli'"
@@ -1815,6 +1837,14 @@ watch(textId, (_, previousTextId) => {
             </div>
           </template>
         </div>
+
+        <!-- Ce qui se dit après la lecture, au bas du texte. -->
+        <ReadingEncadrement
+          v-if="encadrement && showEncadrementAfter"
+          :blocks="encadrement.after"
+          :title="t('encadrement.after')"
+          :show-phonetic="showPhonetic"
+        />
 
         <!-- Le même encadré qu'en tête, au bas de la lecture : on marque
              « lu » là où on finit, sans remonter toute la page. -->

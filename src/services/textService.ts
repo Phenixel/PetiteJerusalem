@@ -486,7 +486,7 @@ interface TefilaFileLine {
   when?: string;
 }
 
-interface TefilaFileBlock {
+export interface TefilaFileBlock {
   label?: string;
   labelText?: Rubric;
   when?: string;
@@ -549,16 +549,19 @@ function paragraphText(paragraph: TextParagraph): string {
     .join(" ");
 }
 
-function loadTefila(
-  textStudy: TextStudyJsonEntry,
-  data: { title?: string; blocks?: TefilaFileBlock[] },
-): TextContent {
+/**
+ * Les blocs bruts d'un fichier de tefila → les blocs prêts à rendre du
+ * lecteur. Partagé par les textes de tefila de la bibliothèque et par les
+ * passages qui encadrent une lecture (voir encadrementService) : les deux
+ * s'écrivent dans le même format et se rendent par le même LiturgyText.
+ */
+export function parseTefilaBlocks(rawBlocks: unknown): TextBlock[] {
   const blocks: TextBlock[] = [];
   let offset = 0;
   // Le type d'un fichier n'est qu'une promesse de compilation : un fichier
   // abîmé, ou une copie hors ligne d'une version antérieure, doit donner un
   // bloc vide plutôt que faire échouer le chargement du texte entier.
-  for (const raw of Array.isArray(data.blocks) ? data.blocks : []) {
+  for (const raw of (Array.isArray(rawBlocks) ? rawBlocks : []) as TefilaFileBlock[]) {
     const paragraphs = (Array.isArray(raw?.lines) ? raw.lines : [])
       .map(parseTefilaLine)
       .filter((p): p is TextParagraph => p !== null);
@@ -585,6 +588,14 @@ function loadTefila(
     blocks.push(block);
     offset += block.lines.length;
   }
+  return blocks;
+}
+
+function loadTefila(
+  textStudy: TextStudyJsonEntry,
+  data: { title?: string; blocks?: TefilaFileBlock[] },
+): TextContent {
+  const blocks = parseTefilaBlocks(data.blocks);
   const section = buildSection(
     1,
     textStudy.name,

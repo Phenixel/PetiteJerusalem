@@ -36,7 +36,13 @@ import { useToast } from "../../composables/useToast";
 import { useConfirm } from "../../composables/useConfirm";
 import { useOnline } from "../../composables/useOnline";
 import { analyticsService } from "../../services/analyticsService";
+import {
+  encadrementBounds,
+  encadrementOf,
+  type Encadrement,
+} from "../../services/encadrementService";
 import DailyReadingItem from "./DailyReadingItem.vue";
+import ReadingEncadrement from "../../components/ReadingEncadrement.vue";
 import ReminderSettingsModal from "./ReminderSettingsModal.vue";
 import ChneiMikraOptions from "../../components/ChneiMikraOptions.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
@@ -150,6 +156,12 @@ const selectedEntries = computed(
   () => selectedIds.value.map((id) => byId.get(id)).filter(Boolean) as TextStudyJsonEntry[],
 );
 
+// Les passages qui encadrent une lecture (Yehi ratson des Tehilim, Léchem
+// yihoud du Cantique des cantiques) : posés une fois pour tout ce qu'on lit
+// du même corpus, la liste étant rangée dans l'ordre du catalogue, qui les
+// tient groupés.
+const encadrements = computed(() => encadrementBounds(selectedEntries.value));
+
 // --- Lectures du moment (paracha de la semaine, cycles Tehilim) ---
 const selectedOptions = ref<string[]>([]);
 const completedOptions = ref<Set<string>>(new Set());
@@ -172,6 +184,8 @@ interface DynamicReading {
   title: string;
   subtitle: string;
   entries: TextStudyJsonEntry[];
+  /** Ce qui se dit avant et après cette lecture, quand elle en a. */
+  encadrement: Encadrement | null;
 }
 
 function psalmsLabel(psalms: number[]): string {
@@ -194,6 +208,7 @@ const dynamicReadings = computed<DynamicReading[]>(() => {
       title: t("dailyReading.options.tehilimDayReading", { day: cycle.day }),
       subtitle: psalmsLabel(cycle.psalms),
       entries: cycle.entries,
+      encadrement: encadrementOf(cycle.entries[0]),
     });
   }
   return out;
@@ -1403,6 +1418,13 @@ function formatBookName(livre: string): string {
 
                 <CollapseTransition>
                   <div v-show="!collapsedIds.has(reading.key)">
+                    <!-- Ce qui se dit avant la lecture, là où on le dirait -->
+                    <ReadingEncadrement
+                      v-if="reading.encadrement"
+                      :blocks="reading.encadrement.before"
+                      :title="t('encadrement.before')"
+                    />
+
                     <div class="space-y-8">
                       <DailyReadingItem
                         v-for="entry in reading.entries"
@@ -1410,6 +1432,13 @@ function formatBookName(livre: string): string {
                         :entry="entry"
                       />
                     </div>
+
+                    <!-- Ce qui se dit une fois la lecture finie -->
+                    <ReadingEncadrement
+                      v-if="reading.encadrement"
+                      :blocks="reading.encadrement.after"
+                      :title="t('encadrement.after')"
+                    />
 
                     <div class="mt-4">
                       <button
@@ -1441,94 +1470,111 @@ function formatBookName(livre: string): string {
                 </CollapseTransition>
               </article>
 
-              <article
-                v-for="entry in selectedEntries"
-                :key="entry.id"
-                :ref="(el) => setArticleEl(String(entry.id), el)"
-                :class="completedIds.has(String(entry.id)) ? 'opacity-60' : ''"
-              >
-                <!-- Discreet heading: click to fold/unfold the text -->
-                <header class="mb-4">
-                  <button
-                    type="button"
-                    @click="toggleCollapse(String(entry.id))"
-                    class="group flex w-full items-start gap-3 text-left"
-                  >
-                    <AppIcon
-                      name="chevron-down"
-                      :size="13"
-                      class="mt-1.5 text-text-secondary/60 transition-transform duration-200"
-                      :class="collapsedIds.has(String(entry.id)) ? '-rotate-90' : ''"
-                    />
-                    <span class="min-w-0">
-                      <span class="block text-xs font-semibold text-primary">
-                        {{ formatBookName(entry.livre) }}
-                      </span>
-                      <span
-                        class="flex items-center gap-2 text-lg font-bold text-text-primary transition-colors group-hover:text-primary"
-                      >
-                        {{ appendHebrewNumeral(entry.name) }}
-                        <AppIcon
-                          v-if="completedIds.has(String(entry.id))"
-                          name="circle-check"
-                          :size="15"
-                          class="text-green-500"
-                        />
-                        <!-- Lecture par chapitres entamée : où on en est -->
+              <template v-for="entry in selectedEntries" :key="entry.id">
+                <!-- Ce qui se dit avant la lecture : une seule fois, au premier
+                     texte du corpus concerné (voir encadrementBounds) -->
+                <ReadingEncadrement
+                  v-if="encadrements.get(String(entry.id))?.before"
+                  :blocks="encadrements.get(String(entry.id))!.before!"
+                  :title="t('encadrement.before')"
+                />
+
+                <article
+                  :ref="(el) => setArticleEl(String(entry.id), el)"
+                  :class="completedIds.has(String(entry.id)) ? 'opacity-60' : ''"
+                >
+                  <!-- Discreet heading: click to fold/unfold the text -->
+                  <header class="mb-4">
+                    <button
+                      type="button"
+                      @click="toggleCollapse(String(entry.id))"
+                      class="group flex w-full items-start gap-3 text-left"
+                    >
+                      <AppIcon
+                        name="chevron-down"
+                        :size="13"
+                        class="mt-1.5 text-text-secondary/60 transition-transform duration-200"
+                        :class="collapsedIds.has(String(entry.id)) ? '-rotate-90' : ''"
+                      />
+                      <span class="min-w-0">
+                        <span class="block text-xs font-semibold text-primary">
+                          {{ formatBookName(entry.livre) }}
+                        </span>
                         <span
-                          v-else-if="
-                            entry.totalSections > 1 && sectionsReadCount(String(entry.id)) > 0
-                          "
-                          class="text-xs font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5"
+                          class="flex items-center gap-2 text-lg font-bold text-text-primary transition-colors group-hover:text-primary"
                         >
-                          {{ sectionsReadCount(String(entry.id)) }}/{{ entry.totalSections }}
+                          {{ appendHebrewNumeral(entry.name) }}
+                          <AppIcon
+                            v-if="completedIds.has(String(entry.id))"
+                            name="circle-check"
+                            :size="15"
+                            class="text-green-500"
+                          />
+                          <!-- Lecture par chapitres entamée : où on en est -->
+                          <span
+                            v-else-if="
+                              entry.totalSections > 1 && sectionsReadCount(String(entry.id)) > 0
+                            "
+                            class="text-xs font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5"
+                          >
+                            {{ sectionsReadCount(String(entry.id)) }}/{{ entry.totalSections }}
+                          </span>
                         </span>
                       </span>
-                    </span>
-                  </button>
-                </header>
+                    </button>
+                  </header>
 
-                <!-- Text content + "mark as read", hidden (but kept loaded) when
-                 folded ; le repli est animé pour ne pas faire sauter le scroll -->
-                <CollapseTransition>
-                  <div v-show="!collapsedIds.has(String(entry.id))">
-                    <DailyReadingItem
-                      :entry="entry"
-                      :read-sections="completedSections[String(entry.id)] ?? []"
-                      @toggle-section="(index) => toggleSection(String(entry.id), index)"
-                      @sections-loaded="(indexes) => sectionIndexes.set(String(entry.id), indexes)"
-                    />
+                  <!-- Text content + "mark as read", hidden (but kept loaded) when
+                   folded ; le repli est animé pour ne pas faire sauter le scroll -->
+                  <CollapseTransition>
+                    <div v-show="!collapsedIds.has(String(entry.id))">
+                      <DailyReadingItem
+                        :entry="entry"
+                        :read-sections="completedSections[String(entry.id)] ?? []"
+                        @toggle-section="(index) => toggleSection(String(entry.id), index)"
+                        @sections-loaded="
+                          (indexes) => sectionIndexes.set(String(entry.id), indexes)
+                        "
+                      />
 
-                    <!-- Discreet "mark as read" button -->
-                    <div class="mt-4">
-                      <button
-                        @click="toggleCompleted(String(entry.id))"
-                        :class="[
-                          'inline-flex items-center gap-2 text-sm font-medium transition-colors',
-                          completedIds.has(String(entry.id))
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-text-secondary hover:text-primary',
-                        ]"
-                      >
-                        <AppIcon
-                          v-if="completedIds.has(String(entry.id))"
-                          name="circle-check"
-                          :size="15"
-                        />
-                        <span
-                          v-else
-                          class="w-3.5 h-3.5 rounded-full border-2 border-current shrink-0"
-                        ></span>
-                        {{
-                          completedIds.has(String(entry.id))
-                            ? t("dailyReading.readToday")
-                            : t("dailyReading.markRead")
-                        }}
-                      </button>
+                      <!-- Discreet "mark as read" button -->
+                      <div class="mt-4">
+                        <button
+                          @click="toggleCompleted(String(entry.id))"
+                          :class="[
+                            'inline-flex items-center gap-2 text-sm font-medium transition-colors',
+                            completedIds.has(String(entry.id))
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-text-secondary hover:text-primary',
+                          ]"
+                        >
+                          <AppIcon
+                            v-if="completedIds.has(String(entry.id))"
+                            name="circle-check"
+                            :size="15"
+                          />
+                          <span
+                            v-else
+                            class="w-3.5 h-3.5 rounded-full border-2 border-current shrink-0"
+                          ></span>
+                          {{
+                            completedIds.has(String(entry.id))
+                              ? t("dailyReading.readToday")
+                              : t("dailyReading.markRead")
+                          }}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </CollapseTransition>
-              </article>
+                  </CollapseTransition>
+                </article>
+
+                <!-- Ce qui se dit une fois le dernier texte du corpus lu -->
+                <ReadingEncadrement
+                  v-if="encadrements.get(String(entry.id))?.after"
+                  :blocks="encadrements.get(String(entry.id))!.after!"
+                  :title="t('encadrement.after')"
+                />
+              </template>
             </div>
           </template>
         </template>
