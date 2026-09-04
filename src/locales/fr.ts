@@ -1179,11 +1179,11 @@ const fr = {
       talmudDesc: "La Guemara : les traités du Talmud Bavli, pour avancer daf après daf.",
       tanakhDesc: "La Torah paracha par paracha, les Neviim et les Ketouvim.",
       sidourDesc:
-        "Cha'harit, Min'ha et Arvit de la semaine, avec les horaires au lieu où l'on se trouve et les ajouts du calendrier au jour le jour.",
+        "Cha'harit, Min'ha et Arvit de la semaine, avec les horaires au lieu où l'on se trouve et les ajouts du calendrier au jour le jour ; le Chema du coucher, le tikoun hatsot et la havdala.",
       slihotDesc:
         "Les Sli'hot du rite séfarade, en hébreu et en phonétique, pour Eloul et les dix jours de techouva.",
       brahotDesc:
-        "Birkat Hamazon, brakha a'harona, Cheva Brahot, Birkat Halevana : les bénédictions à portée de main.",
+        "Birkat Hamazon, bénédictions sur ce qu'on mange et ce qu'on sent, prière du voyageur, allumage de Hanouka, brit mila : les bénédictions à portée de main.",
       tehilimSearch: "Rechercher un tehilim…",
       michnaSearch: "Rechercher une michna…",
       talmudSearch: "Rechercher un traité du Talmud…",

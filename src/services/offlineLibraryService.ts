@@ -91,9 +91,9 @@ const CORPUS_META: { key: string; labelKey: string; approxBytes: number }[] = [
   { key: "Mishna", labelKey: "study.types.mishna", approxBytes: 3_000_000 },
   { key: "Talmud Bavli", labelKey: "study.types.talmud", approxBytes: 29_900_000 },
   { key: "Tanakh", labelKey: "study.types.tanakh", approxBytes: 6_800_000 },
-  { key: "Sidour", labelKey: "study.types.sidour", approxBytes: 626_000 },
+  { key: "Sidour", labelKey: "study.types.sidour", approxBytes: 682_000 },
   { key: "Slihot", labelKey: "study.types.slihot", approxBytes: 145_000 },
-  { key: "Brahot", labelKey: "study.types.brahot", approxBytes: 62_000 },
+  { key: "Brahot", labelKey: "study.types.brahot", approxBytes: 144_000 },
 ];
 
 export const offlineCorpora: OfflineCorpus[] = CORPUS_META.map((meta) => {

@@ -1,0 +1,105 @@
+{
+  "title": "תרומות ומעשרות (Teroumot ouMaasrot)",
+  "blocks": [
+    {
+      "label": "Tevel douteux",
+      "halakha": {
+        "fr": "Tout ce qui pousse en terre d'Israël chez un juif est soumis aux teroumot et maasrot ; ce dont on ignore s'il a été prélevé se prélève sans bénédiction. Quand le prélèvement porte sur plusieurs espèces à la fois, chaque formule reçoit כָּל־מִין עַל מִינוֹ.",
+        "en": "Whatever grows in the Land of Israel on Jewish-owned land is subject to terumot and maasrot; produce of unknown status is separated without a blessing. When several species are separated at once, each formula takes כָּל־מִין עַל מִינוֹ.",
+        "he": "כל גידולי קרקע הגדלים בארץ ישראל בבעלות יהודי חייבים בתרומות ומעשרות, וספק טבל מפרישים בלי ברכה. ביותר ממין אחד יאמר בכל נוסח: כָּל־מִין עַל מִינוֹ"
+      },
+      "lines": [
+        {
+          "rubric": {
+            "fr": "On sépare un peu plus d'un centième des fruits et l'on dit :",
+            "en": "Set aside slightly more than one hundredth of the produce and say:",
+            "he": "לוקח מן הפרות מעט יותר מאחוז ומבדילו מן הפרות ואומר:"
+          },
+          "he": "אֶחָד מִמֵּאָה שֶׁיֵּשׁ כָּאן יִשָּׁאֵר טֶבֶל. וְהַיוֹתֵר מֵאֶחָד מִמֵּאָה שֶׁיֵּשׁ כָּאן בְּצַד צָפוֹן הֲרֵי הוּא תְּרוּמָה גְּדוֹלָה. וְאוֹתוֹ אֶחָד מִמֵּאָה שֶׁיֵּשׁ כָּאן, וְעוֹד תִּשְׁעָה חֲלָקִים כְּמוֹתוֹ בְּצַד צָפוֹן שֶׁל הַפֵּרוֹת (כָּל־מִין עַל מִינוֹ), הֲרֵי הֵם מַעֲשֵׂר רִאשׁוֹן. וְאוֹתוֹ אֶחָד מִמֵּאָה שֶׁעֲשִׂיתִיו מַעֲשֵׂר רִאשׁוֹן, עָשׂוּי תְּרוּמַת מַעֲשֵׂר:"
+        },
+        {
+          "he": "אִם צָרִיךְ מַעֲשֵׂר שֵׁנִי, יִהְיֶה מַעֲשֵׂר שֵׁנִי בְּצָּד דָּרוֹם שֶׁל הַפֵּרוֹת, וְיִהְיֶה מְחֻלָּל, הוּא וְחֻמשׁוֹ, עַל פְּרוּטָה בַּמַּטְבֵּעַ שֶׁיִּחַדְתִּי לְחַלֵּל עָלָיו. וְאִם צָרִיךְ מַעֲשֵׂר עָנִי, יְהֵא מַעֲשֵׂר עָנִי בְּצָד דָּרוֹם שֶׁל הַפֵּרוֹת (כָּל־מִין עַל מִינוֹ). וְאִם יֶשׁ כָּאן רְבָעִי, יְהֵא מְחֻלָּל, הוּא וְחֻמשׁוֹ, עַל פְּרוּטָה בַּמַּטְבֵּעַ שֶׁיִּחַדְתִּי לְחַלֵּל עָלָיו:"
+        }
+      ]
+    },
+    {
+      "label": "Tevel certain",
+      "halakha": {
+        "fr": "Quand on est le producteur et que l'on sait quand chaque fruit a poussé et a été cueilli, on prélève avec la bénédiction.",
+        "en": "When you are the grower and know when each fruit formed and was picked, separate with the blessing.",
+        "he": "אם הוא בעל הגידולים וברור לו מתי חנט כל פרי ומתי נקטף, יאמר הנוסח עם הברכה כך:"
+      },
+      "lines": [
+        {
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו וְצִוָּנוּ לְהַפְרִישׁ תְּרוּמוֹת וּמַעַשְׂרוֹת:"
+        },
+        {
+          "he": "אֶחָד מִמֵּאָה שֶׁיֵּשׁ כָּאן יִשָּׁאֵר טֶבֶל. וְהַיוֹתֵר מֵאֶחָד מִמֵּאָה שֶׁיֵּשׁ כָּאן בְּצַד צָפוֹן הֲרֵי הוּא תְּרוּמָה גְּדוֹלָה. וְאוֹתוֹ אֶחָד מִמֵּאָה שֶׁיֵּשׁ כָּאן, וְעוֹד תִּשְׁעָה חֲלָקִים כְּמוֹתוֹ בְּצַד צָפוֹן שֶׁל הַפֵּרוֹת, הֲרֵי הֵם מַעֲשֵׂר רִאשׁוֹן. וְאוֹתוֹ אֶחָד מִמֵּאָה שֶׁעֲשִׂיתִיו מַעֲשֵׂר רִאשׁוֹן, עָשׂוּי תְּרוּמַת מַעֲשֵׂר:"
+        }
+      ]
+    },
+    {
+      "label": "Maaser cheni",
+      "lines": [
+        {
+          "rubric": {
+            "fr": "Les fruits des années 1, 2, 4 et 5 du cycle chemita sont soumis au maaser cheni :",
+            "en": "Produce of years 1, 2, 4 and 5 of the shemita cycle is subject to maaser sheni:",
+            "he": "פרות משנים א, ב, ד, ה, לשמיטה - חייבים במעשר שני, ולכן יוסיף נוסח זה:"
+          },
+          "he": "מַעֲשֵׂר שֵׁנִי יִהְיֶה בְּצּד דָּרוֹם שֶׁל הַפֵּרוֹת:"
+        },
+        {
+          "rubric": {
+            "fr": "On le rachète sur une perouta, et avant le rachat on dit :",
+            "en": "It is redeemed on a perutah; before redeeming, say:",
+            "he": "ואחר שהפריש את המעשר שני, יחלל אותו על פרוטה, וקודם החילול יברך:"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו וְצִוָּנוּ עַל פִּדְיוֹן מַעֲשֵׂר שֵׁנִי:"
+        },
+        {
+          "rubric": {
+            "fr": "Puis la formule du rachat :",
+            "en": "Then the wording of the redemption:",
+            "he": "ואומר נוסח החילול:"
+          },
+          "he": "הַמַּעֲשֵׂר שֵׁנִי שֶׁיֵּשׁ כָּאן יִהְיֶה מְחֻלָּל, הוּא וְחֻמשׁוֹ, עַל פְּרוּטָה בַּמַּטְבֵּעַ שֶׁיִּחַדְתִּי לְחַלֵּל עָלָיו:"
+        }
+      ]
+    },
+    {
+      "label": "Maaser ani",
+      "lines": [
+        {
+          "rubric": {
+            "fr": "Les fruits des années 3 et 6 sont soumis au maaser ani, qui ne se rachète pas :",
+            "en": "Produce of years 3 and 6 is subject to maaser ani, which is not redeemed:",
+            "he": "פרות משנים ג, ו, לשמיטה - פטורים ממעשר שני וחייבים במעשר עני, ואינם צריכים חילול, ולכן במקום הפרשת וחילול מעשר שני, יאמר נוסח זה:"
+          },
+          "he": "מַעֲשֵׂר עָנִי יִהְיֶה בְּצָד דָּרוֹם שֶׁל הַפֵּרוֹת:"
+        }
+      ]
+    },
+    {
+      "label": "Neta revaï",
+      "lines": [
+        {
+          "rubric": {
+            "fr": "Pour des fruits de quatrième année encore non rachetés :",
+            "en": "For fourth-year produce not yet redeemed:",
+            "he": "אם הפרות הינם ודאי 'נטע רבעי' ויודע בבירור שעדיין לא חוללו יברך:"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו וְצִוָּנוּ עַל חִלּוּל רְבָעִי:"
+        },
+        {
+          "rubric": {
+            "fr": "Puis la formule du rachat :",
+            "en": "Then the wording of the redemption:",
+            "he": "ואומר נוסח החילול:"
+          },
+          "he": "נֶטַע רְבָעִי שֶׁיֵּשׁ כָּאן יְהֵא מְחֻלָּל, הוּא וְחֻמשׁוֹ, עַל פְּרוּטָה בַּמַּטְבֵּעַ שֶׁיִּחַדְתִּי לְחַלֵּל עָלָיו:"
+        }
+      ]
+    }
+  ]
+}

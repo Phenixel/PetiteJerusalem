@@ -15,10 +15,28 @@ import torahWeekdayJson from "../datas/torahWeekday.json";
  * générés par scripts/build-sidour.mjs) : leur structure doit rester en
  * accord avec le lecteur, les clés `when` avec les occasions du calendrier
  * (dailyCycles.activeOccasions), les clés `zman` avec TefilaZman.
+ *
+ * Le corpus du sidour porte aussi des textes qui ne sont pas des offices (le
+ * Chema du coucher, le tikoun hatsot, la havdala, générés par
+ * scripts/build-brahot.mjs) : ce qui tient à la 'Amida et aux horaires ne les
+ * regarde pas, et ils sont vérifiés plus bas avec les autres textes de
+ * liturgie.
  */
 
-const sidourEntries = (textStudiesJson as TextStudiesJson).textStudies.filter(
-  (entry) => String(entry.type) === "Sidour",
+const OFFICES = ["chaharit", "minha", "arvit"];
+
+const allEntries = (textStudiesJson as TextStudiesJson).textStudies;
+
+const sidourEntries = allEntries.filter(
+  (entry) =>
+    String(entry.type) === "Sidour" &&
+    OFFICES.some((office) => resolveFilePath(entry).endsWith(`/${office}.json`)),
+);
+
+/** Les textes de liturgie qui ne sont pas des offices. */
+const autresLiturgies = allEntries.filter(
+  (entry) =>
+    ["Sidour", "Brahot", "Slihot"].includes(String(entry.type)) && !sidourEntries.includes(entry),
 );
 
 /** Les clés `when` que le calendrier sait poser (voir activeOccasions). */
@@ -535,3 +553,59 @@ describe("Cha'harit : la Torah de la semaine", () => {
     expect(injectWeeklyTorah(content, parasha, empty)).toBe(content);
   });
 });
+
+/**
+ * Les autres textes de liturgie (bénédictions, rites, Sli'hot) : ils n'ont ni
+ * 'Amida ni horaires, mais ils passent par le même lecteur, et ce qui vaut
+ * pour lui vaut pour eux.
+ *
+ * Le point qui compte vraiment : la source du siddour alterne des consignes en
+ * hébreu et le texte qui se dit, et les scripts les séparent au petit corps et
+ * à la vocalisation (voir dropInstructionSmalls). Une consigne restée dans le
+ * fil se lirait comme une prière ; ce test la rattrape.
+ */
+describe.each(autresLiturgies.map((entry) => [resolveFilePath(entry), entry] as const))(
+  "texte de liturgie %s",
+  (_path, entry) => {
+    const content: TextContent = parseContent(entry, loadRaw(entry));
+    const blocks = content.sections[0]?.blocks ?? [];
+
+    it("se parse en une section avec des blocs", () => {
+      expect(content.sections).toHaveLength(1);
+      expect(blocks.length).toBeGreaterThan(0);
+      expect(content.sections[0].he.length).toBeGreaterThan(0);
+    });
+
+    it("donne ses didascalies et halakhot dans les trois langues", () => {
+      for (const block of blocks) {
+        if (block.labelText) expect(isFullRubric(block.labelText)).toBe(true);
+        if (block.halakha) expect(isFullRubric(block.halakha)).toBe(true);
+        for (const paragraph of block.paragraphs ?? []) {
+          if (paragraph.rubric) expect(isFullRubric(paragraph.rubric)).toBe(true);
+        }
+      }
+    });
+
+    it("ne garde aucune consigne dans le texte qui se dit", () => {
+      // Ce qui se lit est vocalisé, les consignes de la source ne le sont pas :
+      // dix caractères hébreux d'affilée sans une seule voyelle, c'est une
+      // consigne qui a échappé au tri.
+      const signes = /[֑-ֽֿׁׂׄ-ׇ]/;
+      // Le Nom s'écrit parfois sans voyelles au milieu d'un texte vocalisé
+      // (le vidouy des Sli'hot) : ce n'est pas une consigne.
+      const NOMS = /יהוה|אלהינו|אלהים|אלהי|אדני/g;
+      const suites = content.sections[0].he
+        .map((ligne) => ligne.replace(NOMS, " "))
+        .flatMap((ligne) => ligne.match(/[א-ת"'׳״\s]{10,}/g) ?? [])
+        .filter((suite) => !signes.test(suite) && suite.trim().length >= 10);
+      expect(suites).toEqual([]);
+    });
+
+    it("n'utilise que des clés when connues du calendrier", () => {
+      const unknown = blocks
+        .map((b) => b.when)
+        .filter((when): when is string => Boolean(when) && !KNOWN_WHEN.has(when!));
+      expect(unknown).toEqual([]);
+    });
+  },
+);

@@ -2651,7 +2651,7 @@
     {
       "id": 343,
       "name": "שבע ברכות (Cheva Brahot)",
-      "livre": "ברכות (Brahot)",
+      "livre": "מעגל החיים (Maagal Hahayim)",
       "link": "https://www.sefaria.org/Birkat_Hamazon,_Sheva_Brachot",
       "totalSections": 1,
       "type": "Brahot"
@@ -2687,6 +2687,110 @@
       "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Weekday_Arvit",
       "totalSections": 1,
       "type": "Sidour"
+    },
+    {
+      "id": 348,
+      "name": "קריאת שמע שעל המיטה (Chema al Hamita)",
+      "livre": "סידור (Sidour)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Bedtime_Shema",
+      "totalSections": 1,
+      "type": "Sidour"
+    },
+    {
+      "id": 349,
+      "name": "תיקון חצות (Tikoun Hatsot)",
+      "livre": "סידור (Sidour)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_The_Midnight_Rite",
+      "totalSections": 1,
+      "type": "Sidour"
+    },
+    {
+      "id": 350,
+      "name": "הבדלה (Havdala)",
+      "livre": "סידור (Sidour)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Havdalah",
+      "totalSections": 1,
+      "type": "Sidour"
+    },
+    {
+      "id": 351,
+      "name": "אשר יצר (Acher Yatsar)",
+      "livre": "ברכות (Brahot)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Preparatory_Prayers,_Morning_Blessings",
+      "totalSections": 1,
+      "type": "Brahot"
+    },
+    {
+      "id": 352,
+      "name": "ברכות הנהנין (Birkot Hanehenin)",
+      "livre": "ברכות (Brahot)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Blessings_on_Enjoyments",
+      "totalSections": 1,
+      "type": "Brahot"
+    },
+    {
+      "id": 353,
+      "name": "ברכות שונות (Brahot Chonot)",
+      "livre": "ברכות (Brahot)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Assorted_Blessings_and_Prayers",
+      "totalSections": 1,
+      "type": "Brahot"
+    },
+    {
+      "id": 354,
+      "name": "ברכת האילנות (Birkat Hailanot)",
+      "livre": "ברכות (Brahot)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Nissan,_Blessing_of_the_Trees",
+      "totalSections": 1,
+      "type": "Brahot"
+    },
+    {
+      "id": 355,
+      "name": "תפלת הדרך (Tefilat Haderekh)",
+      "livre": "ברכות (Brahot)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Assorted_Blessings_and_Prayers,_Traveler's_Prayer",
+      "totalSections": 1,
+      "type": "Brahot"
+    },
+    {
+      "id": 356,
+      "name": "הפרשת חלה (Hafrashat Halla)",
+      "livre": "מצוות (Mitsvot)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Assorted_Blessings_and_Prayers,_Separating_Hallah",
+      "totalSections": 1,
+      "type": "Brahot"
+    },
+    {
+      "id": 357,
+      "name": "תרומות ומעשרות (Teroumot ouMaasrot)",
+      "livre": "מצוות (Mitsvot)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Assorted_Blessings_and_Prayers,_Separating_Tithes",
+      "totalSections": 1,
+      "type": "Brahot"
+    },
+    {
+      "id": 358,
+      "name": "נרות חנוכה (Nerot Hanouka)",
+      "livre": "מועדים (Moadim)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Hanukkah,_Menorah_Lighting",
+      "totalSections": 1,
+      "type": "Brahot"
+    },
+    {
+      "id": 359,
+      "name": "ברית מילה (Brit Mila)",
+      "livre": "מעגל החיים (Maagal Hahayim)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Assorted_Blessings_and_Prayers,_Brit_Mila",
+      "totalSections": 1,
+      "type": "Brahot"
+    },
+    {
+      "id": 360,
+      "name": "השכבה (Hachkava)",
+      "livre": "מעגל החיים (Maagal Hahayim)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Fast_Days_and_Mourning,_Mourning",
+      "totalSections": 1,
+      "type": "Brahot"
     }
   ],
   "types": [

@@ -1158,11 +1158,11 @@ const en: LocaleMessages = {
       talmudDesc: "The Gemara: the tractates of the Babylonian Talmud, daf after daf.",
       tanakhDesc: "The Torah parasha by parasha, the Neviim and the Ketuvim.",
       sidourDesc:
-        "Weekday Shacharit, Mincha and Arvit, with prayer times for where you are and the day's calendar additions.",
+        "Weekday Shacharit, Mincha and Arvit, with prayer times for where you are and the day's calendar additions; the bedtime Shema, Tikkun Hatzot and Havdalah.",
       slihotDesc:
         "The Sephardic Selichot, in Hebrew and phonetics, for Elul and the ten days of teshuva.",
       brahotDesc:
-        "Birkat Hamazon, bracha acharona, Sheva Berakhot, Birkat Halevana: the blessings at hand.",
+        "Birkat Hamazon, blessings on what you eat and smell, the traveler's prayer, Hanukkah lighting, brit mila: the blessings at hand.",
       tehilimSearch: "Search a tehilim…",
       michnaSearch: "Search a mishnah…",
       talmudSearch: "Search a Talmud tractate…",

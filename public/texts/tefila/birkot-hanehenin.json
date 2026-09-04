@@ -1,0 +1,107 @@
+{
+  "title": "ברכות הנהנין (Birkot Hanehenin)",
+  "blocks": [
+    {
+      "label": "Avant de manger",
+      "variants": true,
+      "lines": [
+        {
+          "rubric": {
+            "fr": "Sur un plat ou une pâtisserie des cinq céréales (le pain excepté), et sur le riz :",
+            "en": "On a dish or pastry of the five grains (bread excepted), and on rice:",
+            "he": "על תבשיל מחמשת מיני דגן ועל מאפה ממינים אלה (חוץ מן הלחם), ועל האורז מברך"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶֽלֶךְ הָעוֹלָם, בּוֹרֵא מִינֵי מְזוֹנוֹת:"
+        },
+        {
+          "rubric": {
+            "fr": "Sur le vin :",
+            "en": "On wine:",
+            "he": "על היין מברך"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶֽלֶךְ הָעוֹלָם, בּוֹרֵא פְּרִי הַגֶּֽפֶן:"
+        },
+        {
+          "rubric": {
+            "fr": "Sur les fruits de l'arbre :",
+            "en": "On fruit of the tree:",
+            "he": "על פירות העץ מברך"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶֽלֶךְ הָעוֹלָם, בּוֹרֵא פְּרִי הָעֵץ:"
+        },
+        {
+          "rubric": {
+            "fr": "Sur les fruits de la terre :",
+            "en": "On fruit of the ground:",
+            "he": "על פירות האדמה מברך"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶֽלֶךְ הָעוֹלָם, בּוֹרֵא פְּרִי הָאֲדָמָה:"
+        },
+        {
+          "rubric": {
+            "fr": "Sur ce qui ne pousse pas de la terre (viande, poisson, laitage) et sur les boissons autres que le vin :",
+            "en": "On what does not grow from the ground (meat, fish, dairy) and on drinks other than wine:",
+            "he": "על דבר שאין גדולו מן הארץ כגון בשר, דגים, חלב, גבינה, וכדומה. וכן על משקים (חוץ מן היין) מברך"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶֽלֶךְ הָעוֹלָם, שֶׁהַכֹּל נִהְיָה בִּדְבָרוֹ:"
+        }
+      ]
+    },
+    {
+      "label": "Après avoir mangé",
+      "halakha": {
+        "fr": "Après un kazayit de fruits de l'arbre (hors des sept espèces), de fruits de la terre ou de ce qui ne pousse pas de la terre, ou un révi'it bu d'un trait.",
+        "en": "After a kazayit of fruit of the tree (outside the seven species), fruit of the ground, or what does not grow from the ground, or a revi'it drunk at once.",
+        "he": "לאחר האכילה אם אכל כזית בכדי אכילת פרס (4 דקות, וי\"א 8 דקות), או שתה רביעית בבת אחת על פרות האילן (חוץ מן הז' מינים), פרות האדמה, ודבר שאין גידולו מן הארץ, מברך"
+      },
+      "lines": [
+        {
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶֽלֶךְ הָעוֹלָם, בּוֹרֵא נְפָשׁוֹת רַבּוֹת וְחֶסְרוֹנָן עַל כָּל־מַה־שֶּׁבָּרָֽאתָ לְהַחֲיוֹת בָּהֶם נֶֽפֶשׁ כָּל־חָי, בָּרוּךְ חַי הָעוֹלָמִים."
+        }
+      ]
+    },
+    {
+      "label": "Sur les parfums",
+      "variants": true,
+      "lines": [
+        {
+          "rubric": {
+            "fr": "Sur le parfum d'un arbre :",
+            "en": "On the fragrance of a tree:",
+            "he": "על ריח טוב שבעצים מברך"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶֽלֶךְ הָעוֹלָם, בּוֹרֵא עֲצֵי בְשָׂמִים:"
+        },
+        {
+          "rubric": {
+            "fr": "Sur le parfum d'une herbe :",
+            "en": "On the fragrance of a herb:",
+            "he": "על ריח טוב שבעשבים מברך"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶֽלֶךְ הָעוֹלָם, בּוֹרֵא עִשְׂבֵּי בְשָׂמִים:"
+        },
+        {
+          "rubric": {
+            "fr": "Sur un parfum qui n'est ni arbre ni herbe, ou dont on doute :",
+            "en": "On a fragrance that is neither tree nor herb, or when in doubt:",
+            "he": "על ריח טוב שאינו עץ ולא עשב, או שהוא מסופק בו בין עץ לעשב, מברך"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶֽלֶךְ הָעוֹלָם, בּוֹרֵא מִינֵי בְשָׂמִים:"
+        }
+      ]
+    },
+    {
+      "label": "Chéhéhéyanou",
+      "halakha": {
+        "fr": "Sur un vêtement qui réjouit, et sur un fruit nouveau de l'année qui se distingue de l'ancien.",
+        "en": "On a garment that gladdens, and on a new fruit of the year that is distinguishable from last year's.",
+        "he": "כל בגד שהוא שמח בו, אפילו שלאחרים אין שמחה בבגד זה הרי זה מברך שהחיינו, וכן להיפך. וכן מברכים שהחיינו על פרי המתחדש משנה לשנה, ויש זמן קבוע לגידולו. אבל פירות שאין בהם היכר בין ישנים לחדשים, כגון אגוזים, שקדים, ותפוחים שנמצאים בשוק כל השנה וכדומה, אף על פי שהם מתחדשים משנה לשנה, ויודע באלו שהם חדשים, אפילו הכי לא יברך עליהם שהחיינו, מאחר שאין היכר בין חדשים לישנים. המנהג הוא לברך באכילת פרי חדש ברכת הפרי ואחר כך שהחיינו"
+      },
+      "lines": [
+        {
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶֽלֶךְ הָעוֹלָם, שֶׁהֶחֱיָֽנוּ וְקִיְּמָֽנוּ וְהִגִּיעָֽנוּ לַזְּמַן הַזֶּה:"
+        }
+      ]
+    }
+  ]
+}

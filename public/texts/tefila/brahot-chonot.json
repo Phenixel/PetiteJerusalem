@@ -1,0 +1,109 @@
+{
+  "title": "ברכות שונות (Brahot Chonot)",
+  "blocks": [
+    {
+      "label": "Mezouza",
+      "halakha": {
+        "fr": "La mezouza se fixe au montant droit en entrant, dans le tiers supérieur du chambranle.",
+        "en": "The mezuzah is affixed to the right doorpost as one enters, in the upper third of the frame.",
+        "he": "קובע אותה במזוזת ימין הנכנס, בתחילת שליש העליון של גובה השער"
+      },
+      "lines": [
+        {
+          "he": "לְשֵׁם יִחוּד קֻדְשָׁא בְּרִיךְ הוּא וּשְׁכִינְתֵּיהּ, בִּדְחִֽילוּ וּרְחִֽימוּ, וּרְחִֽימוּ וּדְחִֽילוּ, לְיַחֲדָא שֵׁם יוֹ\"ד קֵ\"א בְּוָא\"ו קֵ\"א בְּיִחוּדָא שְׁלִים, בְּשֵׁם כָּל־יִשְׂרָאֵל, הֲרֵֽינִי בָּא לְקַיֵּם מִצְוַת עֲשֵׂה דְּאוֹרַיְתָא לִקְבֹּעַ מְזוּזָה כַּכָּתוּב וּכְתַבְתָּ֛ם עַל־מְזֻז֥וֹת בֵּיתֶ֖ךָ וּבִשְׁעָרֶֽיךָ׃ וִיהִ֤י ׀ נֹ֤עַם אֲדֹנָ֥י אֱלֹהֵ֗ינוּ עָ֫לֵ֥ינוּ וּמַעֲשֵׂ֣ה יָ֭דֵינוּ כּוֹנְנָ֥ה עָלֵ֑ינוּ וּֽמַעֲשֵׂ֥ה יָ֝דֵ֗ינוּ כּוֹנְנֵֽהוּ: בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו וְצִוָּנוּ לִקְבֹּעַ מְזוּזָה:"
+        },
+        {
+          "rubric": {
+            "fr": "Une fois fixée, on l'embrasse et l'on dit :",
+            "en": "Once affixed, kiss it and say:",
+            "he": "ואחר שיקבענה ינשקנה ויאמר"
+          },
+          "he": "זֶה־הַשַּׁ֥עַר לַיהֹוָ֑ה צַ֝דִּיקִ֗ים יָבֹ֥אוּ בֽוֹ׃"
+        }
+      ]
+    },
+    {
+      "label": "Maaké",
+      "halakha": {
+        "fr": "On pose une balustrade au toit d'une maison habitée, non à celui d'un simple débarras.",
+        "en": "A parapet is placed on the roof of a dwelling, not on that of a mere storeroom.",
+        "he": "מצות עשה לעשות מעקה לגגו אם הבית שתחת הגג הוא בית דירה"
+      },
+      "lines": [
+        {
+          "he": "לְשֵׁם יִחוּד קֻדְשָׁא בְּרִיךְ הוּא וּשְׁכִינְתֵּיהּ, בִּדְחִֽילוּ וּרְחִֽימוּ, וּרְחִֽימוּ וּדְחִֽילוּ, לְיַחֲדָא שֵׁם יוֹ\"ד קֵ\"א בְּוָא\"ו קֵ\"א בְּיִחוּדָא שְׁלִים, בְּשֵׁם כָּל־יִשְׂרָאֵל, הֲרֵֽינִי בָּא לְקַיֵּם מִצְוַת עֲשֵׂה דְּאוֹרַיְתָא לַעֲשׂוֹת מַעֲקֶה כַּכָּתוּב כִּ֤י תִבְנֶה֙ בַּ֣יִת חָדָ֔שׁ וְעָשִׂ֥יתָ מַעֲקֶ֖ה לְגַגֶּ֑ךָ׃ וִיהִ֤י ׀ נֹ֤עַם אֲדֹנָ֥י אֱלֹהֵ֗ינוּ עָ֫לֵ֥ינוּ וּמַעֲשֵׂ֣ה יָ֭דֵינוּ כּוֹנְנָ֥ה עָלֵ֑ינוּ וּֽמַעֲשֵׂ֥ה יָ֝דֵ֗ינוּ כּוֹנְנֵֽהוּ: בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו וְצִוָּנוּ לַעֲשׂוֹת מַעֲקֶה:"
+        }
+      ]
+    },
+    {
+      "label": "Tevilat kelim",
+      "halakha": {
+        "fr": "Pour un seul ustensile, on dit כְּלִי au lieu de כֵּלִים.",
+        "en": "For a single vessel, say כְּלִי instead of כֵּלִים.",
+        "he": "על כלי אחד אומר כְּלִי"
+      },
+      "lines": [
+        {
+          "rubric": {
+            "fr": "Avant de tremper une vaisselle de métal ou de verre achetée à un non-juif :",
+            "en": "Before immersing metal or glass tableware bought from a non-Jew:",
+            "he": "לפני הטבילה יברך"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו וְצִוָּנוּ עַל טְבִילַת כֵּלִים:"
+        }
+      ]
+    },
+    {
+      "label": "Sur l'arc-en-ciel",
+      "halakha": {
+        "fr": "On regarde brièvement, le temps de la bénédiction, sans s'attarder.",
+        "en": "Look only briefly, for the blessing, without lingering.",
+        "he": "הרואה קשת צריך לברך, ואסור להסתכל בה אלא בראיה קצרה לצורך הברכה"
+      },
+      "lines": [
+        {
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶלֶךְ הָעוֹלָם, זוֹכֵר הַבְּרִית נֶאֱמָן בִּבְרִיתוֹ וְקַיָּם בְּמַאֲמָרוֹ:"
+        }
+      ]
+    },
+    {
+      "label": "Éclairs et tonnerre",
+      "halakha": {
+        "fr": "L'usage est de bénir sans le Nom ni la royauté.",
+        "en": "The custom is to bless without the Name and kingship.",
+        "he": "המנהג לברך בלי שם ומלכות"
+      },
+      "lines": [
+        {
+          "rubric": {
+            "fr": "Sur les éclairs :",
+            "en": "On lightning:",
+            "he": "על הברקים מברך"
+          },
+          "he": "בָּרוּךְ (אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶלֶךְ הָעוֹלָם) עוֹשֶׂה מַעֲשֶׂה בְרֵאשִׁית:"
+        },
+        {
+          "rubric": {
+            "fr": "Sur le tonnerre :",
+            "en": "On thunder:",
+            "he": "על הרעמים מברך"
+          },
+          "he": "בָּרוּךְ (אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶלֶךְ הָעוֹלָם) שֶׁכֹּחוֹ וּגְבוּרָתוֹ מָלֵא עוֹלָם:"
+        }
+      ]
+    },
+    {
+      "label": "Avant de prendre un remède",
+      "lines": [
+        {
+          "rubric": {
+            "fr": "Avant de prendre un remède, on dit :",
+            "en": "Before taking a medicine, say:",
+            "he": "הלוקח תרופה יאמר לפני שנוטלה בקשה זו"
+          },
+          "he": "יְהִי רָצוֹן מִלְּפָנֶיךָ יְהֹוָה אֱלֹהַי וֵאלֹהֵי אֲבוֹתַי שֶׁיְּהֵא עֵסֶק זֶה לִי לִרְפוּאָה כִּי רוֹפֵא חִנָּם אָתָּה:"
+        }
+      ]
+    }
+  ]
+}
