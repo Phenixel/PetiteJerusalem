@@ -1088,6 +1088,8 @@ const he: LocaleMessages = {
     searchAllPlaceholder: "חיפוש בכל הטקסטים…",
     noResults: "לא נמצא טקסט תואם.",
     sections: "{count} פרקים",
+    textsCount: "טקסט אחד | {count} טקסטים",
+    range: "{from} עד {to}",
     types: {
       all: "הכול",
       tehilim: "תהילים",

@@ -1132,6 +1132,8 @@ const en: LocaleMessages = {
     searchAllPlaceholder: "Search all texts…",
     noResults: "No text matches your search.",
     sections: "{count} sections",
+    textsCount: "{count} text | {count} texts",
+    range: "{from} to {to}",
     types: {
       all: "All",
       tehilim: "Tehilim",

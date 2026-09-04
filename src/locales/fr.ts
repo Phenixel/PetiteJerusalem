@@ -1153,6 +1153,8 @@ const fr = {
     searchAllPlaceholder: "Rechercher dans tous les textes…",
     noResults: "Aucun texte ne correspond à votre recherche.",
     sections: "{count} sections",
+    textsCount: "{count} texte | {count} textes",
+    range: "{from} à {to}",
     types: {
       all: "Tout",
       tehilim: "Tehilim",

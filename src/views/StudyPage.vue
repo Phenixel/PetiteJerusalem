@@ -29,6 +29,7 @@ import { countDailyProgress, userPreferencesService } from "../services/userPref
 import { useToast } from "../composables/useToast";
 import { useConfirm } from "../composables/useConfirm";
 import { useSearchMode } from "../composables/useSearchMode";
+import { useFoldedBooks } from "../composables/useFoldedBooks";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
 import AccountCta from "../components/AccountCta.vue";
@@ -245,6 +246,50 @@ const groupedByType = computed(() => {
 });
 
 const hasResults = computed(() => filtered.value.length > 0);
+
+// --- Les sefarim des Tehilim, repliés ---
+// Les cent cinquante psaumes déroulés d'un bloc font une page qu'on parcourt au
+// pouce. Repliés par sefer, les cinq titres tiennent dans l'écran, chacun avec
+// sa plage de psaumes, et l'on ouvre celui qu'on cherche. Les autres corpus
+// gardent leurs listes ouvertes : leurs livres sont courts, ou déjà une page à
+// eux (un traité, une paracha).
+// Une recherche, elle, montre ce qu'elle a trouvé : rien ne s'y replie.
+const { isBookOpen, toggleBook } = useFoldedBooks();
+
+const foldableBooks = computed(() => currentCorpus.value?.corpus === "tehilim" && !hasSearch.value);
+
+function isGroupOpen(livre: string): boolean {
+  if (!foldableBooks.value) return true;
+  return isBookOpen(currentCorpus.value?.corpus ?? "", livre);
+}
+
+function toggleGroup(livre: string) {
+  const corpus = currentCorpus.value?.corpus;
+  if (!corpus) return;
+  toggleBook(corpus, livre);
+  analyticsService.capture("library_book_toggled", {
+    corpus,
+    open: isBookOpen(corpus, livre),
+  });
+}
+
+/** Le numéro écrit à la fin d'un nom (« Tehilim 41 » : 41), s'il y en a un. */
+function trailingNumber(name: string): number | null {
+  const match = /(\d+)\s*$/.exec(name);
+  return match ? Number(match[1]) : null;
+}
+
+/**
+ * Ce qu'un sefer replié annonce de son contenu : la plage de psaumes qu'il
+ * couvre (« 1 à 41 »), pour savoir lequel ouvrir sans les ouvrir tous. Les
+ * textes qui ne portent pas de numéro se contentent de leur nombre.
+ */
+function groupHint(texts: TextStudyJsonEntry[]): string {
+  const from = trailingNumber(texts[0]?.name ?? "");
+  const to = trailingNumber(texts[texts.length - 1]?.name ?? "");
+  if (from !== null && to !== null && from !== to) return t("study.range", { from, to });
+  return t("study.textsCount", { count: texts.length }, texts.length);
+}
 
 // Un livre consulté en entier : c'est là que se posent ses encarts. Ils
 // s'effacent pendant une recherche, qui vise un texte, pas le livre.
@@ -708,70 +753,97 @@ onUnmounted(() => {
             {{ t(typeGroup.labelKey) }}
           </h2>
           <section v-for="(texts, livre) in typeGroup.groups" :key="livre">
-            <h3 class="text-xl font-bold text-text-primary mb-4">
+            <!-- Les Tehilim : le titre du sefer ouvre et referme sa liste. -->
+            <button
+              v-if="foldableBooks"
+              type="button"
+              class="w-full flex items-center justify-between gap-3 mb-4 text-left"
+              :aria-expanded="isGroupOpen(String(livre))"
+              @click="toggleGroup(String(livre))"
+            >
+              <span class="min-w-0">
+                <span class="block text-xl font-bold text-text-primary">
+                  {{ formatBookName(String(livre)) }}
+                </span>
+                <span class="block text-sm text-text-secondary">{{ groupHint(texts) }}</span>
+              </span>
+              <AppIcon
+                :name="isGroupOpen(String(livre)) ? 'chevron-up' : 'chevron-down'"
+                :size="18"
+                class="shrink-0 text-text-secondary"
+              />
+            </button>
+            <h3 v-else class="text-xl font-bold text-text-primary mb-4">
               {{ formatBookName(String(livre)) }}
             </h3>
-            <!-- Une seule colonne sur téléphone : les noms restent lisibles en entier. -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              <router-link
-                v-for="text in texts"
-                :key="text.id"
-                :to="hubPath(text)"
-                class="card card-hover p-4 flex items-center justify-between gap-2 group"
+            <!-- Une seule colonne sur téléphone : les noms restent lisibles en entier.
+                 Un sefer replié ne pose pas ses cartes du tout (`v-if`) : c'est
+                 cent cinquante liens en moins à tenir sur la page des Tehilim. -->
+            <CollapseTransition>
+              <div
+                v-if="isGroupOpen(String(livre))"
+                class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3"
               >
-                <span class="min-w-0">
-                  <span class="block font-medium text-text-primary truncate">
-                    {{ appendHebrewNumeral(text.name) }}
-                  </span>
-                  <span v-if="text.totalSections > 1" class="text-xs text-text-secondary">
-                    {{ t("study.sections", { count: text.totalSections }) }}
-                  </span>
-                </span>
-                <!-- Un marque-page attend dans ce texte -->
-                <span
-                  v-if="bookmarkCounts[String(text.id)]"
-                  class="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-primary"
-                  :title="t('textReading.bookmarks')"
+                <router-link
+                  v-for="text in texts"
+                  :key="text.id"
+                  :to="hubPath(text)"
+                  class="card card-hover p-4 flex items-center justify-between gap-2 group"
                 >
-                  <AppIcon name="bookmark" :size="13" />
-                  {{ bookmarkCounts[String(text.id)] }}
-                </span>
-                <!-- App native : télécharger/supprimer le livre sans quitter la bibliothèque. -->
-                <button
-                  v-if="bookState(text) !== 'none'"
-                  @click.prevent.stop="toggleDownload(text)"
-                  class="shrink-0 p-1.5 -m-1.5 transition-colors"
-                  :class="
-                    bookState(text) === 'downloaded'
-                      ? 'text-primary'
-                      : 'text-text-secondary/50 hover:text-primary'
-                  "
-                  :aria-label="
-                    bookState(text) === 'downloaded'
-                      ? t('downloads.delete')
-                      : t('downloads.download')
-                  "
-                  :title="
-                    bookState(text) === 'downloaded'
-                      ? t('downloads.delete')
-                      : t('downloads.download')
-                  "
-                >
-                  <AppIcon
-                    v-if="bookState(text) === 'downloading'"
-                    name="spinner"
-                    :size="19"
-                    class="animate-spin text-primary"
-                  />
-                  <AppIcon
-                    v-else-if="bookState(text) === 'downloaded'"
-                    name="circle-check"
-                    :size="19"
-                  />
-                  <AppIcon v-else name="download" :size="19" />
-                </button>
-              </router-link>
-            </div>
+                  <span class="min-w-0">
+                    <span class="block font-medium text-text-primary truncate">
+                      {{ appendHebrewNumeral(text.name) }}
+                    </span>
+                    <span v-if="text.totalSections > 1" class="text-xs text-text-secondary">
+                      {{ t("study.sections", { count: text.totalSections }) }}
+                    </span>
+                  </span>
+                  <!-- Un marque-page attend dans ce texte -->
+                  <span
+                    v-if="bookmarkCounts[String(text.id)]"
+                    class="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-primary"
+                    :title="t('textReading.bookmarks')"
+                  >
+                    <AppIcon name="bookmark" :size="13" />
+                    {{ bookmarkCounts[String(text.id)] }}
+                  </span>
+                  <!-- App native : télécharger/supprimer le livre sans quitter la bibliothèque. -->
+                  <button
+                    v-if="bookState(text) !== 'none'"
+                    @click.prevent.stop="toggleDownload(text)"
+                    class="shrink-0 p-1.5 -m-1.5 transition-colors"
+                    :class="
+                      bookState(text) === 'downloaded'
+                        ? 'text-primary'
+                        : 'text-text-secondary/50 hover:text-primary'
+                    "
+                    :aria-label="
+                      bookState(text) === 'downloaded'
+                        ? t('downloads.delete')
+                        : t('downloads.download')
+                    "
+                    :title="
+                      bookState(text) === 'downloaded'
+                        ? t('downloads.delete')
+                        : t('downloads.download')
+                    "
+                  >
+                    <AppIcon
+                      v-if="bookState(text) === 'downloading'"
+                      name="spinner"
+                      :size="19"
+                      class="animate-spin text-primary"
+                    />
+                    <AppIcon
+                      v-else-if="bookState(text) === 'downloaded'"
+                      name="circle-check"
+                      :size="19"
+                    />
+                    <AppIcon v-else name="download" :size="19" />
+                  </button>
+                </router-link>
+              </div>
+            </CollapseTransition>
           </section>
         </div>
       </div>
