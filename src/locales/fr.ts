@@ -905,6 +905,12 @@ const fr = {
     noEmailHint:
       "Sans email, vos réservations ne pourront être retrouvées que depuis ce navigateur.",
   },
+  // Ce qui se dit avant et après une lecture : le Yehi ratson des Tehilim, le
+  // Léchem yihoud du Cantique des cantiques (voir encadrementService).
+  encadrement: {
+    before: "Avant la lecture",
+    after: "Après la lecture",
+  },
   textReading: {
     back: "Retour",
     backToSession: "Retour à la session",

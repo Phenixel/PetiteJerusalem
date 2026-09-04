@@ -888,6 +888,12 @@ const en: LocaleMessages = {
     addEmail: "Add my email",
     noEmailHint: "Without an email, your reservations can only be found from this browser.",
   },
+  // What is said before and after a reading: the Yehi ratzon of the Tehilim,
+  // the Leshem yichud of the Song of Songs (see encadrementService).
+  encadrement: {
+    before: "Before the reading",
+    after: "After the reading",
+  },
   textReading: {
     back: "Back",
     backToSession: "Back to session",
