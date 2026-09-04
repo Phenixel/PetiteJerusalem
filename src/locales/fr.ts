@@ -1145,6 +1145,14 @@ const fr = {
     withRashi: "Commentaire de Rachi",
     rashiUnavailable: "Le commentaire de Rachi n'a pas pu être chargé.",
   },
+  tehilimDay: {
+    title: "Tehilim du jour",
+    hint: "Les psaumes du cycle mensuel, à lire les uns à la suite des autres.",
+    pageDescription:
+      "Les Tehilim du jour du mois hébraïque, les uns sous les autres, à lire d'une traite.",
+    dayOfMonth: "{day} du mois",
+    unavailable: "Les psaumes du jour n'ont pas pu être déterminés.",
+  },
   study: {
     title: "Bibliothèque",
     subtitle:

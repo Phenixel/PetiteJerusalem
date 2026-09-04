@@ -1124,6 +1124,14 @@ const en: LocaleMessages = {
     withRashi: "Rashi's commentary",
     rashiUnavailable: "Rashi's commentary could not be loaded.",
   },
+  tehilimDay: {
+    title: "Daily Tehilim",
+    hint: "The psalms of the monthly cycle, to be read one after the other.",
+    pageDescription:
+      "The Tehilim of the Hebrew day of the month, one below the other, read in one go.",
+    dayOfMonth: "Day {day} of the month",
+    unavailable: "Today's psalms could not be determined.",
+  },
   study: {
     title: "Library",
     subtitle:
