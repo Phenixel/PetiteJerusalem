@@ -1075,6 +1075,7 @@ const fr = {
       "Partagez des lectures à plusieurs, suivez votre lecture quotidienne et recevez un rappel chaque jour.",
     signup: "Créer un compte",
     login: "Se connecter",
+    dismiss: "Ignorer",
   },
   downloads: {
     total: "Espace utilisé : {size}",

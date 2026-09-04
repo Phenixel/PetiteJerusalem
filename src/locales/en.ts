@@ -1055,6 +1055,7 @@ const en: LocaleMessages = {
       "Share readings with others, follow your daily reading and get a reminder every day.",
     signup: "Sign up",
     login: "Sign in",
+    dismiss: "Not now",
   },
   downloads: {
     total: "Storage used: {size}",

@@ -1014,6 +1014,7 @@ const he: LocaleMessages = {
     description: "שתפו קריאות עם אחרים, עקבו אחרי הקריאה היומית וקבלו תזכורת בכל יום.",
     signup: "הרשמה",
     login: "התחברות",
+    dismiss: "לא עכשיו",
   },
   downloads: {
     total: "שטח בשימוש: {size}",
