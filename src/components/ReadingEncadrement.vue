@@ -72,6 +72,7 @@ const phoneticLines = computed(() =>
           :highlighted-line="null"
           :selected-line="null"
           :is-bookmarked="notBookmarked"
+          :anchored="false"
         />
       </div>
     </CollapseTransition>

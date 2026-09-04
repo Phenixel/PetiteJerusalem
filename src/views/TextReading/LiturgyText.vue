@@ -46,7 +46,20 @@ const props = defineProps<{
   highlightedLine: number | null;
   selectedLine: number | null;
   isBookmarked: (line: number) => boolean;
+  /**
+   * Le texte que la page fait lire : ses paragraphes portent les ancres par
+   * lesquelles on le retrouve (`data-line` pour un marque-page ou la reprise
+   * de lecture, `data-block-anchor` pour le menu de lecture). Les passages qui
+   * accompagnent une lecture sans en faire partie, ce qu'on dit avant les
+   * Tehilim et après, les posent à `false` : sans quoi leur première ligne
+   * répondrait à la place du premier verset, ces ancres étant cherchées dans
+   * toute la page.
+   */
+  anchored?: boolean;
 }>();
+
+/** Par défaut le texte est celui de la page : il porte ses ancres. */
+const anchored = computed(() => props.anchored !== false);
 
 const emit = defineEmits<{
   (e: "select", line: number): void;
@@ -258,7 +271,7 @@ const sections = computed(() =>
       :data-when="block.when"
       :data-fold="block.fold"
       :data-zman="block.zman"
-      :data-block-anchor="block.zman ? undefined : block.offset"
+      :data-block-anchor="block.zman || !anchored ? undefined : block.offset"
       :class="block.zman ? '' : sectionClass(block)"
     >
       <!-- Horaire du moment (fin du Chéma, plage de Min'ha…), avant ce qui se lit. -->
@@ -345,7 +358,7 @@ const sections = computed(() =>
                 <div
                   v-for="copy in copiesOf(paragraph)"
                   :key="copy"
-                  :data-line="copy === 1 ? line : undefined"
+                  :data-line="copy === 1 && anchored ? line : undefined"
                   class="reading-para"
                   :class="{
                     'reading-lead': paragraph.lead,

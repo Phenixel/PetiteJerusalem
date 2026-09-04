@@ -16,6 +16,13 @@ import type { TextStudiesJson } from "../models/models";
  * jour où le repli se perdrait (un `v-show` retourné, une transition retirée),
  * la lecture du jour s'ouvrirait sur deux écrans de prière avant le premier
  * psaume, sans qu'aucun autre test ne le voie.
+ *
+ * Il ne porte pas non plus les ancres du texte de la page : `data-line` et
+ * `data-block-anchor` sont cherchés dans tout le document (voir scrollToLine,
+ * capturePosition, ReadingMenu), et l'encadré se rendant AVANT le texte, sa
+ * première ligne répondrait à la place du premier verset. Un marque-page sur
+ * le verset 1, une reprise de lecture, un lien `?verset=0` viseraient alors un
+ * paragraphe replié, donc invisible : le défilement ne ferait rien du tout.
  */
 
 const catalogue = (textStudiesJson as TextStudiesJson).textStudies;
@@ -45,6 +52,12 @@ describe("encadré d'un passage qui accompagne une lecture", () => {
     // Le texte est bien monté (il n'attend aucun chargement), mais masqué.
     expect(host.textContent).toContain("יְהִי רָצוֹן");
     expect(contenu().style.display).toBe("none");
+  });
+
+  it("ne porte pas les ancres du texte de la page", () => {
+    const { host } = mount();
+    expect(host.querySelectorAll("[data-line]")).toHaveLength(0);
+    expect(host.querySelectorAll("[data-block-anchor]")).toHaveLength(0);
   });
 
   it("s'ouvre sur le titre, et se referme dessus", async () => {

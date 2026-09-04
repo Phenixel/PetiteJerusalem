@@ -1616,6 +1616,7 @@ watch(textId, (_, previousTextId) => {
           :next-label="nextText ? appendHebrewNumeral(nextText.name) : null"
           @prev="prevText && goToText(prevText)"
           @next="nextText && goToText(nextText)"
+          class="mt-10"
         />
       </div>
 
