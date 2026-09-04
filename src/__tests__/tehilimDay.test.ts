@@ -81,6 +81,25 @@ describe("TehilimDayPage", () => {
     expect(titles[4]).toContain("Tehilim 87");
   });
 
+  it("dit le Yehi ratson avant les psaumes, et le reste après", async () => {
+    const page = mount(TehilimDayPage);
+    await page.router.push("/bibliotheque/tehilim-du-jour");
+    await page.router.isReady();
+    await nextTick();
+
+    // Ce qui se dit après la lecture se dit après : sa place est en bas de
+    // page, une fois le dernier psaume lu, et non en tête avec le Yehi ratson.
+    const order = [...page.host.querySelectorAll("h2, button span")]
+      .map((el) => (el.textContent ?? "").replace(/\s+/g, " ").trim())
+      .filter(
+        (label) =>
+          label === "Avant la lecture" || label === "Après la lecture" || /^Tehilim \d/.test(label),
+      );
+    expect(order[0]).toBe("Avant la lecture");
+    expect(order.at(-1)).toBe("Après la lecture");
+    expect(order.filter((label) => label.startsWith("Tehilim")).length).toBe(5);
+  });
+
   it("revient au livre des Tehilim", async () => {
     const page = mount(TehilimDayPage);
     await page.router.push("/bibliotheque/tehilim-du-jour");

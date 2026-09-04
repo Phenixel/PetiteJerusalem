@@ -90,10 +90,10 @@ onMounted(() => {
           <ReadingSizeControl />
         </div>
 
-        <!-- Ce qu'on dit avant de lire des Tehilim, et ce qu'on dit après : ici
-             comme à l'ouverture du livre, une fois pour tous les psaumes du
-             jour (voir EncadrementPlace). -->
-        <BookEncadrement corpus="tehilim" class="mt-6" />
+        <!-- Ce qu'on dit avant de lire des Tehilim : une fois, en tête des
+             psaumes du jour (voir EncadrementPlace). Ce qui se dit après les
+             attend en bas de page, là où la lecture se termine. -->
+        <BookEncadrement corpus="tehilim" part="before" class="mt-6" />
 
         <!-- Le jour change : on remonte des composants neufs plutôt que de
              recycler ceux de la veille, marque-pages compris. -->
@@ -105,6 +105,9 @@ onMounted(() => {
             <DailyReadingItem :entry="entry" source="library_tehilim_day" />
           </section>
         </div>
+
+        <!-- Le dernier psaume dit, ce qui se dit après la lecture. -->
+        <BookEncadrement corpus="tehilim" part="after" class="mt-10" />
       </template>
 
       <p v-else class="mt-10 text-text-secondary">{{ t("tehilimDay.unavailable") }}</p>
