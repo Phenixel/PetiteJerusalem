@@ -689,7 +689,8 @@ onUnmounted(() => {
     <!-- Tanakh : l'entrée du chnei mikra, qui se lit sur sa propre page. -->
     <ChneiMikraBanner v-if="showChneiMikra" class="max-w-5xl mx-auto mb-10" />
 
-    <!-- Tehilim : les psaumes du jour du mois hébraïque, chacun vers sa page. -->
+    <!-- Tehilim : les psaumes du jour du mois hébraïque, qui se lisent d'une
+         traite sur leur page. -->
     <TehilimDayBanner v-if="showTehilimDay" class="max-w-5xl mx-auto mb-10" />
 
     <!-- Tehilim : ce qu'on dit avant d'en lire, et ce qu'on dit après. -->

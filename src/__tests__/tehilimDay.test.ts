@@ -100,6 +100,23 @@ describe("TehilimDayPage", () => {
     expect(order.filter((label) => label.startsWith("Tehilim")).length).toBe(5);
   });
 
+  it("relit le jour quand la page revient à l'écran", async () => {
+    const page = mount(TehilimDayPage);
+    await page.router.push("/bibliotheque/tehilim-du-jour");
+    await page.router.isReady();
+    await nextTick();
+    expect(page.text()).toContain("Tehilim 83 à 87");
+
+    // L'app laissée ouverte et rouverte le lendemain : 18 Chevat, ce sont les
+    // psaumes 88 et 89, et non plus ceux de la veille.
+    vi.setSystemTime(new Date(2026, 1, 5, 12));
+    document.dispatchEvent(new Event("visibilitychange"));
+    await nextTick();
+
+    expect(page.text()).toContain("Tehilim 88 à 89");
+    expect(page.text()).toContain("18 du mois");
+  });
+
   it("revient au livre des Tehilim", async () => {
     const page = mount(TehilimDayPage);
     await page.router.push("/bibliotheque/tehilim-du-jour");

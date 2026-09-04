@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { getTehilimOfDay } from "../../services/dailyCycles";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
@@ -31,7 +31,19 @@ const { t } = useI18n();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
 
-const cycle = computed(() => getTehilimOfDay());
+/**
+ * Le jour, relu quand la page revient à l'écran : une app qu'on laisse ouverte
+ * et qu'on rouvre le lendemain proposerait sinon les psaumes de la veille.
+ * Pendant la lecture, en revanche, rien ne change sous les yeux : le jour ne
+ * bascule qu'entre deux passages.
+ */
+const day = ref(new Date());
+
+function refreshDay() {
+  if (document.visibilityState === "visible") day.value = new Date();
+}
+
+const cycle = computed(() => getTehilimOfDay(day.value));
 
 // Double appui sur le texte : la page descend toute seule, à l'allure choisie
 // dans la pastille du bas (AutoScrollPill).
@@ -57,11 +69,14 @@ function applySeoMeta() {
 watch(rangeLabel, applySeoMeta, { immediate: true });
 
 onMounted(() => {
+  document.addEventListener("visibilitychange", refreshDay);
   analyticsService.capture("tehilim_day_page_viewed", {
     day: cycle.value.day,
     psalms_count: cycle.value.psalms.length,
   });
 });
+
+onUnmounted(() => document.removeEventListener("visibilitychange", refreshDay));
 </script>
 
 <template>
@@ -95,8 +110,9 @@ onMounted(() => {
              attend en bas de page, là où la lecture se termine. -->
         <BookEncadrement corpus="tehilim" part="before" class="mt-6" />
 
-        <!-- Le jour change : on remonte des composants neufs plutôt que de
-             recycler ceux de la veille, marque-pages compris. -->
+        <!-- Le jour a basculé pendant que la page était de côté : on remonte
+             des composants neufs plutôt que de recycler ceux de la veille,
+             marque-pages compris. -->
         <div :key="cycle.day" class="mt-8 space-y-10">
           <section v-for="entry in cycle.entries" :key="entry.id">
             <h2 class="mb-4 text-lg font-bold text-text-primary">
