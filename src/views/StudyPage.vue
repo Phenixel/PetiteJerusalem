@@ -247,13 +247,14 @@ const groupedByType = computed(() => {
 
 const hasResults = computed(() => filtered.value.length > 0);
 
-// --- Les sefarim des Tehilim, repliés ---
-// Les cent cinquante psaumes déroulés d'un bloc font une page qu'on parcourt au
-// pouce. Repliés par sefer, les cinq titres tiennent dans l'écran, chacun avec
-// sa plage de psaumes, et l'on ouvre celui qu'on cherche. Les autres corpus
-// gardent leurs listes ouvertes : leurs livres sont courts, ou déjà une page à
-// eux (un traité, une paracha).
-// Une recherche, elle, montre ce qu'elle a trouvé : rien ne s'y replie.
+// --- Les sefarim des Tehilim, repliables ---
+// Les cent cinquante psaumes font une longue page : le titre d'un sefer la
+// replie d'un appui, avec la plage de psaumes qu'il couvre pour savoir ce qu'on
+// vient de ranger. Tout reste déplié au départ : on vient chercher un psaume,
+// il doit être là sans un geste de plus.
+// Les autres corpus n'ont pas de titre à replier : leurs livres sont courts, ou
+// déjà une page à eux (un traité, une paracha). Une recherche, elle, montre ce
+// qu'elle a trouvé : rien ne s'y replie.
 const { isBookOpen, toggleBook } = useFoldedBooks();
 
 const foldableBooks = computed(() => currentCorpus.value?.corpus === "tehilim" && !hasSearch.value);
@@ -280,9 +281,9 @@ function trailingNumber(name: string): number | null {
 }
 
 /**
- * Ce qu'un sefer replié annonce de son contenu : la plage de psaumes qu'il
- * couvre (« 1 à 41 »), pour savoir lequel ouvrir sans les ouvrir tous. Les
- * textes qui ne portent pas de numéro se contentent de leur nombre.
+ * Ce qu'un sefer annonce de son contenu : la plage de psaumes qu'il couvre
+ * (« 1 à 41 »), qui dit ce qu'on replie, et ce qu'on retrouve en le rouvrant.
+ * Les textes qui ne portent pas de numéro se contentent de leur nombre.
  */
 function groupHint(texts: TextStudyJsonEntry[]): string {
   const from = trailingNumber(texts[0]?.name ?? "");
@@ -753,7 +754,7 @@ onUnmounted(() => {
             {{ t(typeGroup.labelKey) }}
           </h2>
           <section v-for="(texts, livre) in typeGroup.groups" :key="livre">
-            <!-- Les Tehilim : le titre du sefer ouvre et referme sa liste. -->
+            <!-- Les Tehilim : le titre du sefer replie et rouvre sa liste. -->
             <button
               v-if="foldableBooks"
               type="button"
@@ -778,7 +779,7 @@ onUnmounted(() => {
             </h3>
             <!-- Une seule colonne sur téléphone : les noms restent lisibles en entier.
                  Un sefer replié ne pose pas ses cartes du tout (`v-if`) : c'est
-                 cent cinquante liens en moins à tenir sur la page des Tehilim. -->
+                 autant de liens en moins à tenir sur la page des Tehilim. -->
             <CollapseTransition>
               <div
                 v-if="isGroupOpen(String(livre))"

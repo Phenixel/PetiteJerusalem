@@ -6,10 +6,10 @@ import fr from "../locales/fr";
 import StudyPage from "../views/StudyPage.vue";
 
 /**
- * Les cinq sefarim des Tehilim se replient : cent cinquante psaumes déroulés
- * d'un bloc font une page qu'on parcourt au pouce, alors qu'on vient en
- * chercher un.
+ * Les cinq sefarim des Tehilim se replient : cent cinquante psaumes font une
+ * longue page, et le titre d'un sefer range d'un appui ce qu'on ne lit pas.
  *
+ * Tout est déplié au départ : on vient chercher un psaume, il doit être là.
  * Le repli ne vaut que pour ce livre-là, et jamais pendant une recherche : ce
  * qu'elle trouve doit être visible.
  */
@@ -37,9 +37,13 @@ function mount() {
   app.use(router);
   app.mount(host);
 
-  /** Les en-têtes de sefer, devenus des boutons quand ils se replient. */
+  // Les en-têtes de sefer, devenus des boutons repliables. Les encadrés du
+  // livre (« Avant la lecture ») se replient aussi, et arrivent en cours de
+  // route (composant chargé à la demande) : on ne garde que les sefarim.
   const bookButtons = () =>
-    [...host.querySelectorAll("button[aria-expanded]")] as HTMLButtonElement[];
+    ([...host.querySelectorAll("button[aria-expanded]")] as HTMLButtonElement[]).filter((b) =>
+      /Sefer/.test(b.textContent ?? ""),
+    );
   const psalmLinks = () =>
     [...host.querySelectorAll("a")].filter((a) =>
       (a.getAttribute("href") ?? "").startsWith("/bibliotheque/tehilim/"),
@@ -50,6 +54,9 @@ function mount() {
 
 /** Les pages montées d'un test : démontées avant le suivant. */
 const mounted: { unmount: () => void }[] = [];
+
+/** Le temps que le repli se referme (voir CollapseTransition). */
+const folded = () => new Promise((resolve) => setTimeout(resolve, 400));
 
 beforeEach(() => {
   document.body.innerHTML = "";
@@ -63,31 +70,35 @@ afterEach(() => {
 });
 
 describe("Les sefarim des Tehilim", () => {
-  it("s'ouvrent et se referment un par un", async () => {
+  it("s'ouvrent déroulés, et se replient un par un", async () => {
     const page = mount();
     await page.router.push("/bibliotheque/tehilim");
     await page.router.isReady();
     await nextTick();
 
-    // Les cinq sefarim, repliés : la page tient dans l'écran.
+    // Les cinq sefarim, déroulés : les cent cinquante psaumes sont là.
     const books = page.bookButtons();
     expect(books.length).toBe(5);
     expect(books[0].textContent).toContain("Sefer 1");
-    // La plage de psaumes dit lequel ouvrir sans avoir à les ouvrir tous.
+    // La plage de psaumes dit ce qu'un titre couvre, donc ce qu'il range.
     expect(books[0].textContent).toContain("1 à 41");
-    expect(books[0].getAttribute("aria-expanded")).toBe("false");
-    // Replié, un sefer ne pose aucune de ses cartes.
-    expect(page.psalmLinks().length).toBe(0);
+    expect(books[0].getAttribute("aria-expanded")).toBe("true");
+    expect(page.psalmLinks().length).toBe(150);
 
+    // Replié, un sefer ne pose aucune de ses cartes : le premier va du
+    // psaume 1 au psaume 41. Le repli est animé (CollapseTransition), ses
+    // cartes ne quittent la page qu'une fois la hauteur refermée.
     books[0].click();
     await nextTick();
-    expect(page.bookButtons()[0].getAttribute("aria-expanded")).toBe("true");
-    // Le premier sefer va du psaume 1 au psaume 41.
-    expect(page.psalmLinks().length).toBe(41);
+    expect(page.bookButtons()[0].getAttribute("aria-expanded")).toBe("false");
+    await folded();
+    expect(page.psalmLinks().length).toBe(150 - 41);
 
     page.bookButtons()[0].click();
     await nextTick();
-    expect(page.bookButtons()[0].getAttribute("aria-expanded")).toBe("false");
+    expect(page.bookButtons()[0].getAttribute("aria-expanded")).toBe("true");
+    await folded();
+    expect(page.psalmLinks().length).toBe(150);
   });
 
   it("laissent les autres corpus déroulés", async () => {
