@@ -44,6 +44,9 @@ import { SITE_URL } from "../config/site";
 // jour, qui coiffent les Tehilim.
 const ChneiMikraBanner = defineAsyncComponent(() => import("../components/ChneiMikraBanner.vue"));
 const TehilimDayBanner = defineAsyncComponent(() => import("../components/TehilimDayBanner.vue"));
+// Ce qu'on dit avant de lire des Tehilim et après : les textes et leur rendu
+// liturgique pèsent, et ne servent qu'à ce livre.
+const BookEncadrement = defineAsyncComponent(() => import("../components/BookEncadrement.vue"));
 
 const { t } = useI18n();
 const toast = useToast();
@@ -243,16 +246,22 @@ const groupedByType = computed(() => {
 
 const hasResults = computed(() => filtered.value.length > 0);
 
+// Un livre consulté en entier : c'est là que se posent ses encarts. Ils
+// s'effacent pendant une recherche, qui vise un texte, pas le livre.
+const browsingBook = (corpus: string) =>
+  currentCorpus.value?.corpus === corpus && !hasSearch.value && !searching.value;
+
 // Le chnei mikra coiffe le Tanakh : c'est là qu'on vient chercher la paracha
-// de la semaine. L'encart s'efface pendant une recherche, qui vise autre chose.
-const showChneiMikra = computed(
-  () => currentCorpus.value?.corpus === "tanakh" && !hasSearch.value && !searching.value,
-);
+// de la semaine.
+const showChneiMikra = computed(() => browsingBook("tanakh"));
 
 // Les psaumes du jour (cycle mensuel) coiffent les Tehilim, de la même façon.
-const showTehilimDay = computed(
-  () => currentCorpus.value?.corpus === "tehilim" && !hasSearch.value && !searching.value,
-);
+const showTehilimDay = computed(() => browsingBook("tehilim"));
+
+// Le Yehi ratson des Tehilim se dit à l'ouverture du livre, une fois pour les
+// psaumes qu'on va y lire : sa place est ici, pas sur chacun des cent
+// cinquante (voir EncadrementPlace).
+const showBookEncadrement = computed(() => browsingBook("tehilim"));
 
 // La liste détaillée s'affiche sur une page corpus, ou dès qu'on cherche
 // depuis l'accueil (la recherche reste la porte d'entrée la plus rapide).
@@ -636,6 +645,9 @@ onUnmounted(() => {
 
     <!-- Tehilim : les psaumes du jour du mois hébraïque, chacun vers sa page. -->
     <TehilimDayBanner v-if="showTehilimDay" class="max-w-5xl mx-auto mb-10" />
+
+    <!-- Tehilim : ce qu'on dit avant d'en lire, et ce qu'on dit après. -->
+    <BookEncadrement v-if="showBookEncadrement" corpus="tehilim" class="max-w-5xl mx-auto mb-10" />
 
     <!-- ===== Accueil sans recherche : le tableau de bord ===== -->
     <template v-if="!showList">

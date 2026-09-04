@@ -1,7 +1,12 @@
 import { describe, it, expect } from "vitest";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
-import { encadrementBounds, encadrementKeyOf, encadrementOf } from "../services/encadrementService";
+import {
+  encadrementBounds,
+  encadrementKeyOf,
+  encadrementOf,
+  encadrementOfBook,
+} from "../services/encadrementService";
 
 /**
  * Les passages qui encadrent une lecture : ce qu'on dit avant les Tehilim et
@@ -43,6 +48,18 @@ describe("encadrements des lectures", () => {
     expect(passages.after[0].lines[0]).toContain("מִי יִתֵּן מִצִּיּוֹן");
     expect(passages.after[1].labelText?.fr).toContain("semaine");
     expect(passages.after[2].labelText?.fr).toContain("Chabbat");
+  });
+
+  it("pose le Yehi ratson au livre des Tehilim, pas sur chacun des psaumes", () => {
+    // Le livre : sa page de liste porte les passages, une fois pour les
+    // psaumes qu'on va y lire.
+    expect(encadrementOfBook("tehilim")?.key).toBe("tehilim");
+    expect(encadrementOf(TEHILIM_1)?.place).toBe("book");
+    // Les autres livres n'en ont pas, et le Cantique des cantiques porte les
+    // siens sur le texte lui-même.
+    expect(encadrementOfBook("talmud")).toBeNull();
+    expect(encadrementOfBook("tanakh")).toBeNull();
+    expect(encadrementOf(CHIR_HACHIRIM)?.place).toBe("text");
   });
 
   it("porte le Léchem yihoud du Cantique des cantiques, avant et après", () => {

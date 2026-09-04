@@ -17,8 +17,22 @@ import { parseTefilaBlocks, type TextBlock } from "./textService";
 /** Lecture qui a des passages dédiés. Clé du fichier de données. */
 export type EncadrementKey = "tehilim" | "chir-hachirim";
 
+/**
+ * Où les passages se disent dans la bibliothèque.
+ *
+ * `book` : à l'ouverture du livre, sur la page qui en liste les textes. Les
+ * cent cinquante Tehilim sont un livre qu'on ouvre pour y lire un psaume ou
+ * dix ; le Yehi ratson s'y dit une fois, il n'a rien à faire au-dessus de
+ * chacun des cent cinquante.
+ *
+ * `text` : avec le texte lui-même. Le Cantique des cantiques se lit d'un bout
+ * à l'autre, ses prières l'encadrent là où il se lit.
+ */
+export type EncadrementPlace = "book" | "text";
+
 export interface Encadrement {
   key: EncadrementKey;
+  place: EncadrementPlace;
   /** Ce qui se dit avant la lecture. */
   before: TextBlock[];
   /** Ce qui se dit après la lecture. */
@@ -32,6 +46,11 @@ interface EncadrementJsonEntry {
 
 const raw = encadrementsJson as Record<string, EncadrementJsonEntry>;
 
+const PLACE: Record<EncadrementKey, EncadrementPlace> = {
+  tehilim: "book",
+  "chir-hachirim": "text",
+};
+
 /** Les blocs sont les mêmes à chaque affichage : on ne les reparse qu'une fois. */
 const cache = new Map<EncadrementKey, Encadrement>();
 
@@ -42,6 +61,7 @@ function encadrement(key: EncadrementKey): Encadrement | null {
   if (!entry) return null;
   const built: Encadrement = {
     key,
+    place: PLACE[key],
     before: parseTefilaBlocks(entry.before),
     after: parseTefilaBlocks(entry.after),
   };
@@ -63,6 +83,18 @@ export function encadrementKeyOf(entry: TextStudyJsonEntry | undefined): Encadre
 /** Les passages qui encadrent la lecture d'une entrée du catalogue. */
 export function encadrementOf(entry: TextStudyJsonEntry | undefined): Encadrement | null {
   const key = encadrementKeyOf(entry);
+  return key ? encadrement(key) : null;
+}
+
+/**
+ * Le corpus de la bibliothèque dont la page de liste porte les passages : les
+ * Tehilim, dont le livre s'ouvre avant qu'on choisisse un psaume.
+ */
+const BOOK_CORPUS: Record<string, EncadrementKey> = { tehilim: "tehilim" };
+
+/** Les passages qui se disent à l'ouverture d'un livre de la bibliothèque. */
+export function encadrementOfBook(corpus: string): Encadrement | null {
+  const key = BOOK_CORPUS[corpus];
   return key ? encadrement(key) : null;
 }
 

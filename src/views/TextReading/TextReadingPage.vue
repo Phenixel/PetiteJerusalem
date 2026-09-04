@@ -189,10 +189,15 @@ const recentChanges = computed(() =>
 const isLiturgyText = computed(() => !!textEntry.value && isLiturgy(textEntry.value));
 
 /**
- * Les passages qui encadrent la lecture (Yehi ratson des Tehilim, Léchem
- * yihoud du Cantique des cantiques), repliés au-dessus et au-dessous du texte.
+ * Les passages qui encadrent la lecture (le Léchem yihoud du Cantique des
+ * cantiques), repliés au-dessus et au-dessous du texte. Ceux qui se disent à
+ * l'ouverture d'un livre entier, le Yehi ratson des Tehilim, se posent sur la
+ * page du livre et non sur chacun de ses psaumes (voir EncadrementPlace).
  */
-const encadrement = computed(() => encadrementOf(textEntry.value ?? undefined));
+const encadrement = computed(() => {
+  const passages = encadrementOf(textEntry.value ?? undefined);
+  return passages?.place === "text" ? passages : null;
+});
 const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
 
 // App native : le texte lu se télécharge sans quitter la page, par l'icône
