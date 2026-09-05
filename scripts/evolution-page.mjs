@@ -63,7 +63,13 @@ const donnees = versions.map((v) => ({
 const premiere = enFrancais(versions[0].date);
 const derniere = enFrancais(versions.at(-1).date);
 
-const page = `<title>Évolution de Petite Jérusalem</title>
+// Les polices du site : le squelette les charge pour la page du dépôt, la
+// version en ligne les porte elle-même.
+const polices = `<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" />`;
+
+const page = `${inline ? polices : ""}<title>Évolution de Petite Jérusalem</title>
 <meta name="description" content="Diaporama des pages d'accueil de Petite Jérusalem, version après version." />
 <style>
   :root {
@@ -404,9 +410,7 @@ const squelette = `<!doctype html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" />
+${polices}
 ${page}
 </html>
 `;
