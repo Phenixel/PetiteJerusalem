@@ -108,6 +108,15 @@ restarts. You can also start only the emulators with `npm run emulators`.
    npm run format
    ```
 
+## 🕰️ Evolution of the site
+
+The home page of every released version since v1.0, replayed and captured one
+by one: open [`docs/evolution/index.html`](docs/evolution/index.html) for the
+slideshow, or look at
+[`petite-jerusalem-evolution.gif`](docs/evolution/petite-jerusalem-evolution.gif)
+for the short version. How it is produced:
+[`docs/evolution/README.md`](docs/evolution/README.md).
+
 ## 🤝 Contribution
 
 Contributions are welcome! Please check the [CONTRIBUTING.md](CONTRIBUTING.md) file for more details on how to contribute to the project.

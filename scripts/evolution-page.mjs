@@ -1,0 +1,415 @@
+#!/usr/bin/env node
+/**
+ * Assemble le diaporama de l'évolution du site à partir des captures rangées
+ * dans docs/evolution/frames et du manifeste docs/evolution/versions.json.
+ *
+ * Usage :
+ *   node scripts/evolution-page.mjs              écrit docs/evolution/index.html
+ *   node scripts/evolution-page.mjs --inline     images en data: URI, page
+ *                                                autonome (utile pour publier
+ *                                                la page ailleurs que dans le
+ *                                                dépôt)
+ *   node scripts/evolution-page.mjs --sortie x   choisit le fichier de sortie
+ *
+ * Les captures elles-mêmes viennent de scripts/evolution-frames.mjs.
+ */
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+const racine = join(import.meta.dirname, "..");
+const dossier = join(racine, "docs/evolution");
+const versions = JSON.parse(readFileSync(join(dossier, "versions.json"), "utf8"));
+
+const args = process.argv.slice(2);
+const inline = args.includes("--inline");
+const iSortie = args.indexOf("--sortie");
+const sortie = iSortie === -1 ? join(dossier, "index.html") : args[iSortie + 1];
+
+const source = (slug, vue) => {
+  const chemin = `frames/${slug}-${vue}.webp`;
+  if (!inline) return chemin;
+  const donnees = readFileSync(join(dossier, chemin)).toString("base64");
+  return `data:image/webp;base64,${donnees}`;
+};
+
+const mois = [
+  "janvier",
+  "février",
+  "mars",
+  "avril",
+  "mai",
+  "juin",
+  "juillet",
+  "août",
+  "septembre",
+  "octobre",
+  "novembre",
+  "décembre",
+];
+const enFrancais = (iso) => {
+  const d = new Date(iso);
+  return `${d.getUTCDate()} ${mois[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+};
+
+const donnees = versions.map((v) => ({
+  version: v.version,
+  date: enFrancais(v.date),
+  titre: v.titre,
+  note: v.note,
+  desktop: source(v.slug, "desktop"),
+  mobile: source(v.slug, "mobile"),
+}));
+
+const premiere = enFrancais(versions[0].date);
+const derniere = enFrancais(versions.at(-1).date);
+
+const page = `<title>Évolution de Petite Jérusalem</title>
+<meta name="description" content="Diaporama des pages d'accueil de Petite Jérusalem, version après version." />
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f1ea;
+    --bg-motif: #ece7dc;
+    --surface: #ffffff;
+    --surface-doux: #f8f5ef;
+    --texte: #35312a;
+    --texte-doux: #6d6759;
+    --ligne: rgb(53 49 42 / 0.12);
+    --primaire: #1d6fdb;
+    --accent: #ff6b6b;
+    --ombre: 0 2px 4px rgb(58 50 30 / 0.06), 0 18px 44px rgb(58 50 30 / 0.14);
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --serif: "Lora", Georgia, serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14161c;
+      --bg-motif: #1b1f28;
+      --surface: #1f2937;
+      --surface-doux: #273244;
+      --texte: #f3f4f6;
+      --texte-doux: #9ca3af;
+      --ligne: rgb(255 255 255 / 0.12);
+      --primaire: #5b9dff;
+      --ombre: 0 2px 4px rgb(0 0 0 / 0.35), 0 18px 44px rgb(0 0 0 / 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161c;
+    --bg-motif: #1b1f28;
+    --surface: #1f2937;
+    --surface-doux: #273244;
+    --texte: #f3f4f6;
+    --texte-doux: #9ca3af;
+    --ligne: rgb(255 255 255 / 0.12);
+    --primaire: #5b9dff;
+    --ombre: 0 2px 4px rgb(0 0 0 / 0.35), 0 18px 44px rgb(0 0 0 / 0.5);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 28px 20px 56px;
+    background: var(--bg);
+    color: var(--texte);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .page { max-width: 1120px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 26px; }
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(28px, 4.4vw, 44px);
+    line-height: 1.15;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+  .chapeau { margin: 0 auto; max-width: 60ch; color: var(--texte-doux); }
+
+  .scene {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .scene { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .cadre {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--ligne);
+    border-radius: 16px;
+    box-shadow: var(--ombre);
+    overflow: hidden;
+  }
+  .barre-navigateur {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 14px;
+    background: var(--surface-doux);
+    border-bottom: 1px solid var(--ligne);
+  }
+  .pastille { width: 10px; height: 10px; border-radius: 50%; background: var(--ligne); }
+  .url {
+    flex: 1;
+    margin-left: 8px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--texte-doux);
+    font-size: 12px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .visuel {
+    position: relative;
+    aspect-ratio: 1280 / 800;
+    background: var(--bg-motif);
+  }
+  /* En mobile, c'est la hauteur qui commande : la capture tient en entier. */
+  body[data-vue="mobile"] .visuel { aspect-ratio: 390 / 844; height: min(72vh, 760px); width: auto; }
+  body[data-vue="mobile"] .cadre { width: max-content; max-width: 100%; margin: 0 auto; }
+  .visuel img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    opacity: 0;
+    transition: opacity 620ms ease;
+  }
+  .visuel img.active { opacity: 1; }
+
+  .fiche {
+    background: var(--surface);
+    border: 1px solid var(--ligne);
+    border-radius: 16px;
+    box-shadow: var(--ombre);
+    padding: 20px;
+    position: sticky;
+    top: 20px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primaire) 14%, transparent);
+    color: var(--primaire);
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .date { margin: 10px 0 0; color: var(--texte-doux); font-size: 13px; }
+  .fiche h2 { font-family: var(--serif); font-size: 21px; line-height: 1.25; margin: 8px 0 8px; }
+  .fiche p.note { margin: 0; color: var(--texte-doux); }
+
+  .commandes { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+  button {
+    font: inherit;
+    font-size: 14px;
+    color: var(--texte);
+    background: var(--surface-doux);
+    border: 1px solid var(--ligne);
+    border-radius: 999px;
+    padding: 7px 14px;
+    cursor: pointer;
+  }
+  button:hover { border-color: color-mix(in srgb, var(--primaire) 45%, var(--ligne)); }
+  .bascule { display: inline-flex; gap: 4px; padding: 3px; border-radius: 999px; background: var(--surface-doux); border: 1px solid var(--ligne); }
+  .bascule button { border: 0; background: transparent; padding: 5px 12px; }
+  button[aria-pressed="true"] { background: var(--primaire); border-color: var(--primaire); color: #fff; }
+
+  .frise { margin: 22px 0 0; }
+  .progression { height: 3px; border-radius: 3px; background: var(--ligne); overflow: hidden; }
+  .progression span { display: block; height: 100%; width: 0; background: var(--primaire); }
+  .jalons {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 12px 2px 4px;
+    scrollbar-width: thin;
+  }
+  .jalons button {
+    flex: 0 0 auto;
+    padding: 5px 11px;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--texte-doux);
+    background: transparent;
+  }
+  .jalons button[aria-current="true"] {
+    background: var(--primaire);
+    border-color: var(--primaire);
+    color: #fff;
+  }
+
+  footer { margin: 34px auto 0; max-width: 70ch; text-align: center; color: var(--texte-doux); font-size: 13px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .visuel img { transition: none; }
+  }
+</style>
+
+<div class="page">
+  <header>
+    <h1>Petite Jérusalem, version après version</h1>
+    <p class="chapeau">
+      La page d'accueil du site, rejouée depuis chaque version publiée, du ${premiere} au ${derniere}.
+      Chaque image est une capture de la version buildée telle quelle, pas une maquette.
+    </p>
+  </header>
+
+  <div class="scene">
+    <div class="cadre">
+      <div class="barre-navigateur">
+        <span class="pastille"></span><span class="pastille"></span><span class="pastille"></span>
+        <span class="url">petite-jerusalem.fr</span>
+      </div>
+      <div class="visuel" id="visuel"></div>
+    </div>
+
+    <aside class="fiche">
+      <span class="badge" id="badge"></span>
+      <p class="date" id="date"></p>
+      <h2 id="titre"></h2>
+      <p class="note" id="note"></p>
+
+      <div class="commandes">
+        <button id="lecture" aria-pressed="true">Pause</button>
+        <button id="precedent" aria-label="Version précédente">←</button>
+        <button id="suivant" aria-label="Version suivante">→</button>
+      </div>
+      <div class="commandes">
+        <span class="bascule" role="group" aria-label="Affichage">
+          <button id="vue-desktop" aria-pressed="true">Ordinateur</button>
+          <button id="vue-mobile" aria-pressed="false">Mobile</button>
+        </span>
+      </div>
+    </aside>
+  </div>
+
+  <div class="frise">
+    <div class="progression"><span id="progression"></span></div>
+    <div class="jalons" id="jalons"></div>
+  </div>
+
+  <footer>
+    Captures produites en rejouant chaque tag du dépôt : build de la version, page d'accueil ouverte
+    en visiteur, capture à 1280×800 et 390×844.
+  </footer>
+</div>
+
+<script>
+  const versions = ${JSON.stringify(donnees)};
+  const DUREE = 2600;
+
+  const visuel = document.getElementById("visuel");
+  const jalons = document.getElementById("jalons");
+  const progression = document.getElementById("progression");
+  const boutonLecture = document.getElementById("lecture");
+  const lentement = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  let index = 0;
+  let vue = "desktop";
+  let enLecture = !lentement;
+  let debut = performance.now();
+
+  const images = versions.map((v, i) => {
+    const img = new Image();
+    img.src = v[vue];
+    img.alt = "Page d'accueil en " + v.version;
+    img.decoding = "async";
+    img.loading = i < 3 ? "eager" : "lazy";
+    visuel.append(img);
+    return img;
+  });
+
+  const boutons = versions.map((v, i) => {
+    const b = document.createElement("button");
+    b.textContent = v.version;
+    b.addEventListener("click", () => aller(i, true));
+    jalons.append(b);
+    return b;
+  });
+
+  function aller(i, manuel) {
+    index = (i + versions.length) % versions.length;
+    const v = versions[index];
+    images.forEach((img, j) => img.classList.toggle("active", j === index));
+    boutons.forEach((b, j) => b.setAttribute("aria-current", String(j === index)));
+    document.getElementById("badge").textContent = v.version;
+    document.getElementById("date").textContent = v.date;
+    document.getElementById("titre").textContent = v.titre;
+    document.getElementById("note").textContent = v.note;
+    boutons[index].scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    debut = performance.now();
+    if (manuel && enLecture) basculerLecture();
+  }
+
+  function basculerLecture() {
+    enLecture = !enLecture;
+    boutonLecture.textContent = enLecture ? "Pause" : "Lecture";
+    boutonLecture.setAttribute("aria-pressed", String(enLecture));
+    debut = performance.now();
+  }
+
+  function changerVue(nouvelle) {
+    vue = nouvelle;
+    document.body.dataset.vue = vue;
+    images.forEach((img, i) => (img.src = versions[i][vue]));
+    document.getElementById("vue-desktop").setAttribute("aria-pressed", String(vue === "desktop"));
+    document.getElementById("vue-mobile").setAttribute("aria-pressed", String(vue === "mobile"));
+  }
+
+  boutonLecture.addEventListener("click", () => basculerLecture());
+  document.getElementById("precedent").addEventListener("click", () => aller(index - 1, true));
+  document.getElementById("suivant").addEventListener("click", () => aller(index + 1, true));
+  document.getElementById("vue-desktop").addEventListener("click", () => changerVue("desktop"));
+  document.getElementById("vue-mobile").addEventListener("click", () => changerVue("mobile"));
+  addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") aller(index - 1, true);
+    if (e.key === "ArrowRight") aller(index + 1, true);
+    if (e.key === " ") { e.preventDefault(); basculerLecture(); }
+  });
+
+  function boucle(t) {
+    if (enLecture) {
+      const part = (t - debut) / DUREE;
+      progression.style.width = Math.min(part, 1) * 100 + "%";
+      if (part >= 1) aller(index + 1);
+    } else {
+      progression.style.width = "0%";
+    }
+    requestAnimationFrame(boucle);
+  }
+
+  document.body.dataset.vue = vue;
+  aller(0);
+  boutonLecture.textContent = enLecture ? "Pause" : "Lecture";
+  boutonLecture.setAttribute("aria-pressed", String(enLecture));
+  requestAnimationFrame(boucle);
+</script>
+`;
+
+const squelette = `<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600&display=swap" />
+${page}
+</html>
+`;
+
+writeFileSync(sortie, inline ? page : squelette);
+console.log(`page écrite : ${sortie} (${versions.length} versions)`);

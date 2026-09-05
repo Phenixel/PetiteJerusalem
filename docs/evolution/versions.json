@@ -1,0 +1,186 @@
+[
+  {
+    "version": "v1.0",
+    "slug": "v1.0",
+    "tag": null,
+    "date": "2025-12-07",
+    "titre": "GemaraChain, la première chaîne de lecture",
+    "note": "Le site d'origine, en Django et Bootstrap : on ouvre une chaîne, chacun réserve son texte, l'accueil compte les sessions et les participants."
+  },
+  {
+    "version": "v2.1.1",
+    "slug": "v2.1.1",
+    "tag": "v2.1.1",
+    "date": "2025-12-08",
+    "titre": "Réécriture en Vue 3",
+    "note": "Le site repart de zéro en Vue 3, Tailwind et Firebase. L'accueil devient une page de présentation : le partage de lectures d'abord, le reste annoncé comme « bientôt »."
+  },
+  {
+    "version": "v2.2",
+    "slug": "v2.2",
+    "tag": "v2.2",
+    "date": "2025-12-08",
+    "titre": "Le choix des livres à la création",
+    "note": "On choisit livre par livre ce qui entre dans une session, et un bouton ramène en haut de page."
+  },
+  {
+    "version": "v2.3.2",
+    "slug": "v2.3.2",
+    "tag": "v2.3.2",
+    "date": "2025-12-29",
+    "titre": "Compte, thème sombre et gestion",
+    "note": "Connexion Google en fenêtre, thème sombre, profil découpé en sections, et un bouton de gestion pour le créateur d'une session."
+  },
+  {
+    "version": "v2.4.5",
+    "slug": "v2.4.5",
+    "tag": "v2.4.5",
+    "date": "2026-03-02",
+    "titre": "Le site parle trois langues",
+    "note": "Français, anglais et hébreu, avec des tests qui vérifient qu'aucune traduction ne manque."
+  },
+  {
+    "version": "v2.5",
+    "slug": "v2.5",
+    "tag": "v2.5",
+    "date": "2026-03-02",
+    "titre": "Les invités réservent sans compte",
+    "note": "Un invité réserve avec son adresse, et le site lui propose ensuite de créer un compte pour retrouver ses lectures."
+  },
+  {
+    "version": "v2.6",
+    "slug": "v2.6",
+    "tag": "v2.6",
+    "date": "2026-03-25",
+    "titre": "Des liens de partage lisibles",
+    "note": "Chaque session a son adresse en clair et son aperçu quand on la partage."
+  },
+  {
+    "version": "v2.7.6",
+    "slug": "v2.7.6",
+    "tag": "v2.7.6",
+    "date": "2026-06-14",
+    "titre": "Les chiourim entrent au menu",
+    "note": "Une page de cours en vidéo, des aperçus sociaux fabriqués côté serveur, et petite-jerusalem.fr comme adresse partout."
+  },
+  {
+    "version": "v2.8.7",
+    "slug": "v2.8.7",
+    "tag": "v2.8.7",
+    "date": "2026-06-22",
+    "titre": "Les textes se lisent sur le site",
+    "note": "Tehilim, Michna, Talmud et Tanakh se lisent sans quitter Petite Jérusalem, et une page Étude les rassemble."
+  },
+  {
+    "version": "v2.9.5",
+    "slug": "v2.9.5",
+    "tag": "v2.9.5",
+    "date": "2026-06-28",
+    "titre": "La bibliothèque et la lecture du jour",
+    "note": "L'Étude devient la Bibliothèque, la recherche couvre tous les onglets, et le profil accueille une liste de lecture quotidienne."
+  },
+  {
+    "version": "v2.10.4",
+    "slug": "v2.10.4",
+    "tag": "v2.10.4",
+    "date": "2026-07-02",
+    "titre": "Suivre où en est une lecture",
+    "note": "Part réservée, filtre de disponibilité, mention des lecteurs, et des messages de confirmation à chaque réservation."
+  },
+  {
+    "version": "v2.20.0",
+    "slug": "v2.20.0",
+    "tag": "v2.20.0",
+    "date": "2026-07-02",
+    "titre": "Refonte de l'interface",
+    "note": "Composants partagés, pages de session et profil redessinées, et trois cartes côte à côte sur l'accueil."
+  },
+  {
+    "version": "v2.21.3",
+    "slug": "v2.21.3",
+    "tag": "v2.21.3",
+    "date": "2026-07-16",
+    "titre": "Le mur de Jérusalem en fond",
+    "note": "Un mur de pierre rétroéclairé passe derrière tout le site, et le lecteur audio reste accroché en bas de l'écran."
+  },
+  {
+    "version": "v3.0.5",
+    "slug": "v3.0.5",
+    "tag": "v3.0.5",
+    "date": "2026-07-20",
+    "titre": "L'application native arrive",
+    "note": "Bêta Android et iOS avec Capacitor : barre du bas animée, marges sûres respectées, notifications, langue détectée au premier lancement."
+  },
+  {
+    "version": "v3.1.3",
+    "slug": "v3.1.3",
+    "tag": "v3.1.3",
+    "date": "2026-07-21",
+    "titre": "Un accueil qui accueille",
+    "note": "Tableau de bord personnalisé, hero épuré, et des apparitions animées sur l'accueil, la bibliothèque et la page À propos."
+  },
+  {
+    "version": "v3.2.2",
+    "slug": "v3.2.2",
+    "tag": "v3.2.2",
+    "date": "2026-07-22",
+    "titre": "Réserver sans laisser son adresse",
+    "note": "Les invités réservent sans donner leur e-mail, et les cours se regroupent en séries."
+  },
+  {
+    "version": "v3.3.7",
+    "slug": "v3.3.7",
+    "tag": "v3.3.7",
+    "date": "2026-07-30",
+    "titre": "Rappel de lecture quotidien",
+    "note": "L'heure de la notification se choisit depuis le profil, un onglet À propos apparaît, et les bugs remontent tout seuls."
+  },
+  {
+    "version": "v3.4.0",
+    "slug": "v3.4.0",
+    "tag": "v3.4.0",
+    "date": "2026-07-31",
+    "titre": "Marque-page et chnei mikra",
+    "note": "Un marque-page sur la lecture en cours, le chnei mikra dans la lecture de la semaine, le Tehilim du jour dans celle du jour."
+  },
+  {
+    "version": "v3.5.2",
+    "slug": "v3.5.2",
+    "tag": "v3.5.2",
+    "date": "2026-08-04",
+    "titre": "Chaque partie a son tableau de bord",
+    "note": "Les pages se réorganisent, le profil ne sert plus qu'au compte et aux préférences, la bibliothèque change de dessin."
+  },
+  {
+    "version": "v3.6.4",
+    "slug": "v3.6.4",
+    "tag": "v3.6.4",
+    "date": "2026-08-07",
+    "titre": "Widgets et lecture hors ligne",
+    "note": "Widgets Android et iOS, rappel avant la chkia, page Chnei Mikra, et la lecture quotidienne consultable sans réseau."
+  },
+  {
+    "version": "v3.7.8",
+    "slug": "v3.7.8",
+    "tag": "v3.7.8",
+    "date": "2026-08-23",
+    "titre": "Sli'hot, brahot et horaires",
+    "note": "Une étagère de plus dans la bibliothèque, le Birkat Hamazon qui suit le calendrier, et des horaires avec fêtes, jeûnes et ta'hanoun."
+  },
+  {
+    "version": "v3.8.2",
+    "slug": "v3.8.2",
+    "tag": "v3.8.2",
+    "date": "2026-08-31",
+    "titre": "Le sidour de semaine",
+    "note": "Les offices suivent le calendrier, la boussole du Kotel s'ouvre depuis la lecture, et l'apparence se règle en clair, sombre ou système."
+  },
+  {
+    "version": "v3.9.0",
+    "slug": "v3.9.0",
+    "tag": "v3.9.0",
+    "date": "2026-09-04",
+    "titre": "Un sidour complet",
+    "note": "Talit et téfilines à Cha'harit, le Hallel entier, le compte du 'Omer, les Tehilim du jour sur leur page, et les widgets iOS sur l'appareil."
+  }
+]
