@@ -101,19 +101,23 @@ function goToLogin() {
   <header
     v-if="!isNativeApp"
     ref="header"
-    class="sticky top-0 z-50 flex items-center justify-between gap-6 px-6 py-4 bg-bg-beige/92 backdrop-blur-md border-b border-line dark:bg-bg-dark/92 transition-colors duration-300"
+    class="sticky top-0 z-50 flex items-center justify-between gap-6 px-6 py-3 bg-bg-beige/90 backdrop-blur-md dark:bg-bg-dark/90 transition-colors duration-300"
   >
     <!-- Pas un h1 : chaque page a le sien, le bandeau en doublait le titre
          sur tout le site (deux h1 par page pour les lecteurs d'écran et le
          référencement). Le nom du site est écrit à l'encre, dans la police
          de titrage : une marque, pas un dégradé. -->
-    <RouterLink :to="localePath('home')" class="group min-w-0">
-      <p class="wordmark text-text-primary group-hover:text-primary transition-colors">
-        {{ $t("navbar.title") }}
-      </p>
-      <p class="text-sm text-text-secondary mt-0.5 truncate">
-        {{ $t("navbar.subtitle") }}
-      </p>
+    <RouterLink :to="localePath('home')" class="group min-w-0 flex items-center gap-3">
+      <!-- La marque : une arche au soleil, et le nom en titrage. -->
+      <span class="arch-mark" aria-hidden="true"></span>
+      <span class="min-w-0">
+        <p class="wordmark text-text-primary group-hover:text-primary transition-colors">
+          {{ $t("navbar.title") }}
+        </p>
+        <p class="hidden sm:block text-xs text-text-secondary truncate">
+          {{ $t("navbar.subtitle") }}
+        </p>
+      </span>
     </RouterLink>
 
     <!-- Bouton hamburger pour mobile -->
@@ -150,7 +154,7 @@ function goToLogin() {
         >
       </div>
       <div class="flex items-center gap-3">
-        <button v-if="!username" @click="goToLogin" class="btn btn-soft">
+        <button v-if="!username" @click="goToLogin" class="btn btn-ink">
           {{ $t("common.login") }}
         </button>
         <div v-else class="flex items-center gap-2 font-medium text-text-primary">
@@ -160,7 +164,7 @@ function goToLogin() {
           </RouterLink>
           <RouterLink
             to="/profile"
-            class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-black/5 transition-colors dark:hover:bg-white/10"
+            class="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-black/5 transition-colors dark:hover:bg-white/10"
             @click="trackProfileOpened('navbar')"
           >
             <AppIcon name="user" :size="16" />
@@ -201,7 +205,8 @@ function goToLogin() {
           class="relative flex flex-col min-h-full p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
         >
           <div class="mb-8 pt-2">
-            <h2 class="wordmark text-xl text-text-primary">
+            <h2 class="wordmark flex items-center gap-2.5 text-xl text-text-primary">
+              <span class="arch-mark" aria-hidden="true"></span>
               {{ $t("navbar.title") }}
             </h2>
           </div>
@@ -269,53 +274,54 @@ function goToLogin() {
 </template>
 
 <style scoped>
-/* Le nom du site : la police de titrage, serrée d'un rien, sans autre
-   ornement. */
+/* Le nom du site : la police de titrage, serrée, sans autre ornement. */
 .wordmark {
   font-family: var(--font-display);
-  font-size: 1.75rem;
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
 }
 
-/* Desktop links: quiet text, the active page gets a short underline bar
-   instead of a pill background. */
+/* La petite arche au soleil, posée devant le nom : le signe de la maison. */
+.arch-mark {
+  display: inline-block;
+  width: 1.1rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  border-radius: 999px 999px 3px 3px;
+  background-color: var(--color-sun);
+  transition: background-color 0.2s ease;
+}
+.group:hover .arch-mark {
+  background-color: var(--color-primary);
+}
+
+/* Liens du bandeau : du texte, et une pilule d'encre légère sous la page
+   où l'on est. */
 .nav-link {
-  position: relative;
-  padding: 0.5rem 0.75rem;
-  font-weight: 500;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  font-weight: 600;
   color: var(--color-text-secondary);
-  transition: color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
 }
 .nav-link:hover {
   color: var(--color-text-primary);
-}
-.nav-link::after {
-  content: "";
-  position: absolute;
-  left: 0.75rem;
-  right: 0.75rem;
-  bottom: 0.1rem;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--color-primary);
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 0.25s ease;
+  background-color: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
 }
 .nav-link-active {
   color: var(--color-text-primary);
-}
-.nav-link-active::after {
-  transform: scaleX(1);
+  background-color: color-mix(in srgb, var(--color-text-primary) 9%, transparent);
 }
 
-/* Mobile links: flat rows, active = primary tint. */
+/* Menu mobile : des lignes pleines, la page courante en pilule d'encre. */
 .mobile-link {
   padding: 0.85rem 1rem;
-  border-radius: var(--radius-sm);
-  font-weight: 500;
+  border-radius: 999px;
+  font-weight: 600;
   color: var(--color-text-primary);
   transition:
     background-color 0.2s ease,
@@ -325,9 +331,8 @@ function goToLogin() {
   background-color: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
 }
 .mobile-link-active {
-  color: var(--color-primary);
-  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
-  font-weight: 600;
+  color: var(--color-on-ink);
+  background-color: var(--color-text-primary);
 }
 
 .fade-enter-active,

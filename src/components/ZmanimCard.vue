@@ -17,7 +17,9 @@ import { useZmanimPlaceLabel } from "../composables/useZmanimPlaceLabel";
 import { useZmanCountdown } from "../composables/useZmanCountdown";
 import {
   computeZmanim,
+  formatHebrewDate,
   formatZmanTime,
+  hebrewDateFor,
   nextZman,
   restPeriodsNear,
   sameCivilDay,
@@ -85,35 +87,48 @@ const headline = computed(() => {
 });
 
 const placeLabel = useZmanimPlaceLabel(place);
+
+/** La date hébraïque du moment, sortie du soleil comprise. */
+const hebrewDate = computed(() =>
+  formatHebrewDate(hebrewDateFor(place.value, now.value, now.value), locale.value),
+);
 </script>
 
 <template>
+  <!-- La tuile d'encre : la seule surface sombre de l'accueil, c'est elle
+       qu'on lit d'abord. L'heure en grand, dans la couleur du soleil ; la
+       date hébraïque et le lieu en dessous. -->
   <RouterLink
     :to="localePath('horaires')"
-    class="card card-hover p-5 flex items-center justify-between gap-3 group"
+    class="tile tile-ink card-hover p-5 sm:p-6 flex flex-col gap-4 group"
   >
+    <span class="flex items-center justify-between gap-3 text-sm">
+      <span class="font-display font-bold text-base">{{ t("home.todayTitle") }}</span>
+      <span class="opacity-70">{{ hebrewDate }}</span>
+    </span>
+
     <template v-if="headline">
-      <span class="flex items-center gap-3 min-w-0">
-        <AppIcon :name="headline.icon" :size="20" class="text-primary shrink-0" />
+      <span class="flex items-end justify-between gap-4">
         <span class="min-w-0">
-          <!-- Pas de troncature sur le nom : « Fin du Chéma (Maguen Avraham) »
-               réduit à « Fin du Chéma… » ferait passer une heure pour l'autre,
-               et les deux opinions sont séparées d'une bonne demi-heure. -->
-          <span
-            class="block font-medium text-text-primary leading-snug group-hover:text-primary transition-colors"
-          >
-            {{ headline.label }}
+          <span class="flex items-center gap-2 text-sm opacity-80">
+            <AppIcon :name="headline.icon" :size="15" class="shrink-0 text-sun" />
+            <!-- Pas de troncature sur le nom : « Fin du Chéma (Maguen Avraham) »
+                 réduit à « Fin du Chéma… » ferait passer une heure pour l'autre,
+                 et les deux opinions sont séparées d'une bonne demi-heure. -->
+            <span class="leading-snug">{{ headline.label }}</span>
           </span>
-          <span class="block text-xs text-text-secondary truncate">
+          <span class="mt-1 block text-xs opacity-60 truncate">
             <template v-if="headline.note">{{ headline.note }} · </template>{{ placeLabel }}
           </span>
         </span>
-      </span>
-      <span class="shrink-0 text-2xl font-semibold text-primary tabular-nums">
-        {{ clock(headline.date) }}
+        <span
+          class="shrink-0 font-display text-4xl sm:text-5xl font-extrabold leading-none tabular-nums text-sun transition-transform group-hover:-translate-y-0.5"
+        >
+          {{ clock(headline.date) }}
+        </span>
       </span>
     </template>
 
-    <span v-else class="text-sm text-text-secondary">{{ t("zmanim.unavailable") }}</span>
+    <span v-else class="text-sm opacity-70">{{ t("zmanim.unavailable") }}</span>
   </RouterLink>
 </template>

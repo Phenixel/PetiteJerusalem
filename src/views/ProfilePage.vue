@@ -143,7 +143,7 @@ onUnmounted(() => {
            compacte : le titre de la page, une ligne qui dit où vivent les
            réglages, et les deux boutons de connexion. Les réglages gardent
            leur cadre dédié en dessous. -->
-      <div v-else class="py-8 px-6 md:px-12 mb-8 border-b border-line">
+      <div v-else class="py-8 px-6 md:px-12 mb-8">
         <div class="max-w-[1200px] mx-auto">
           <h1 class="text-2xl md:text-3xl text-text-primary">
             {{ t("profile.guestTitle") }}
@@ -176,7 +176,7 @@ onUnmounted(() => {
         <nav class="lg:sticky lg:top-24 h-fit card p-3">
           <template v-if="currentUser">
             <!-- Raccourcis vers les fonctionnalités déplacées dans leurs sections. -->
-            <p class="eyebrow px-4 pt-2 pb-1 text-sm">
+            <p class="mx-4 mt-2 mb-2 eyebrow">
               {{ t("profile.shortcuts.title") }}
             </p>
             <ul class="flex flex-col gap-1 mb-4">
@@ -212,7 +212,7 @@ onUnmounted(() => {
               </li>
             </ul>
 
-            <p class="eyebrow px-4 pt-1 pb-1 text-sm">
+            <p class="mx-4 mt-1 mb-2 eyebrow">
               {{ t("profile.shortcuts.accountTitle") }}
             </p>
           </template>

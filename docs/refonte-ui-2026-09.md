@@ -70,77 +70,106 @@ Ce qui, en revanche, cochait les cases du tableau ci-dessus :
 - Un emoji dans le pied de page, un halo coloré sous le bouton rond de la
   barre basse.
 
-## 3. La direction : du papier sur la pierre
+## 3. La direction : Midi à Jérusalem
 
-Une image pour tenir le tout : la page est une feuille de papier posée sur
-le mur de pierre. Le papier est légèrement crème, coupé presque droit,
-détaché du mur par son liseré plus que par son ombre. On y écrit à l'encre
-brune. Les titres ont la voix d'un livre ; le reste est composé dans un sans
-lisible, sans caractère ostentatoire.
+Une image pour tenir le tout : la vieille ville à midi. La pierre est
+blonde, la lumière est franche, et sur la pierre il y a des aplats de
+couleur qui claquent : le bleu du tekhelet, le rouge de la grenade, le vert
+de l'olivier, et le soleil, jaune, partout. Les portes sont en arche. On
+écrit gros, en gras, sans capitales.
 
-### Typographie
+### Les quatre signes de la maison
 
-- **Titres (`--font-display`) : Frank Ruhl Libre, en latin.** C'est la police
-  que le site utilise déjà pour les textes hébreux (elle vient du caractère
-  Frank-Rühl, celui des livres). Ses lettres latines donnent aux titres de
-  pages, au nom du site et aux étiquettes de tête une seule voix avec les
-  versets qu'elles annoncent, et elle ne coûte aucun chargement de plus. Elle
-  ne se choisit pas dans les réglages : c'est la marque.
-- **Interface (`--font-sans`) : Source Sans 3** remplace Inter comme police
-  d'origine. Humaniste, plus étroite, dessinée pour l'écran, et surtout pas
-  celle de tout le monde. Lora et Nunito restent proposées ; un compte qui
-  avait gardé « Inter » retombe sur l'origine, qui est le même choix (le sans
-  neutre).
-- Plus de `tracking-tight` sur les titres : le serrage était fait pour Inter.
+Ce qui fait qu'on reconnaît le site en une seconde, et que personne d'autre
+n'a :
 
-### Couleurs
+1. **L'arche.** Un plein cintre sur un bas droit (`.arch`). C'est la forme
+   des trois tuiles de l'accueil, du signe posé devant le nom du site, de
+   l'onglet courant dans la barre basse de l'app et du bouton rond des
+   horaires. Elle vient des portes de la vieille ville, pas d'un
+   catalogue de composants.
+2. **Le surligneur au soleil.** Un mot du titre pris dans un trait jaune,
+   comme au marqueur (`.hl`) : « à plusieurs » sur l'accueil, le prénom sur
+   le tableau de bord et en tête du profil. C'est le seul ornement des
+   titres ; il dit où regarder.
+3. **Les tuiles.** De grands aplats de couleur pleine avec du texte clair
+   dessus (`.tile`), plutôt que des cartes blanches jumelles : la
+   bibliothèque dans la couleur dominante, le partage à l'encre, les
+   chiourim dans la couleur qui répond. La tuile d'encre du jour, sur
+   l'accueil, porte l'heure en très grand dans la couleur du soleil.
+4. **Les titres en Bricolage Grotesque.** Une grotesque qui a du caractère
+   aux grands corps (l'axe optique se règle tout seul), en 800, serrée,
+   sans capitales. Elle n'est pas dans les listes de polices « de
+   réflexe », et elle ne ressemble pas à Inter.
 
-- **Une dominante et un accent, jamais un dégradé.** Chaque thème garde son
-  identifiant (Océan, Coucher de soleil, Émeraude) et ses préférences
-  enregistrées, mais ses deux couleurs ne sont plus deux voisines : Océan est
-  un bleu profond (`#2A5B9E`) et un ocre (`#B07A2E`, la lumière qui passe
-  entre les pierres du mur) ; Coucher de soleil, une terre cuite et un bleu
-  ardoise ; Émeraude, un vert olive et un cuivre.
-- **Chaque thème a sa version pour le sombre** : une encre qui tient sur le
-  papier s'éteint sur la nuit. `useTheme` choisit la bonne version et la
-  repose quand l'apparence bascule.
-- **Le sombre devient une nuit chaude** (`#17140f`, surfaces `#221d17`) : la
-  même pierre, la lumière en moins. Barre système de l'app, aperçus des
-  réglages et introduction de première ouverture suivent.
-- Les surfaces ne sont plus blanc pur mais crème (`#fffdf8`), l'encre est
-  brune (`#2b2620`).
+### Les choix, un par un
 
-### Surfaces, rayons, ombres
+**Typographie.** Trois voix, chacune à sa place :
 
-- `.card` : un liseré d'un pixel (`--color-line`) et une ombre à peine
-  visible. En sombre, le liseré fait ce que l'ombre ne peut plus faire.
-- Rayons resserrés : 6 px sur les boutons, champs et puces, 10 et 14 px sur
-  les surfaces. Rien au-delà.
-- Le bouton rond de la barre basse (app) porte une ombre d'objet, plus un
-  halo de sa couleur.
+- **Bricolage Grotesque** pour les titres (`--font-display`, h1 à h3) et le
+  nom du site. Fixe : c'est la marque, elle ne se choisit pas.
+- **Atkinson Hyperlegible Next** pour l'interface (`--font-sans`), à la
+  place d'Inter. Dessinée pour être lue vite et par tout le monde, avec des
+  lettres qu'on reconnaît (le zéro barré, le « l » à pied) ; elle est
+  chaleureuse sans être ronde. Elle reste au choix, avec Lora et Nunito.
+- **Frank Ruhl Libre** pour l'hébreu, inchangée.
 
-### Composition
+**Couleurs.** Chaque thème garde son identifiant (les comptes l'ont gardé)
+mais devient un trio franc : une dominante, une couleur qui lui répond, et
+le soleil, commun à tous.
 
-- **Le nom du site** est écrit à l'encre dans la police de titrage : une
-  marque, pas un dégradé. Le bandeau prend un filet en bas.
-- **L'accueil** : le titre reste à gauche sur téléphone (une page se lit,
-  elle ne se centre pas), le prénom est à l'encre comme le reste de la
-  phrase, et les trois rubriques ne sont plus trois cartes jumelles mais un
-  sommaire : une seule feuille, trois entrées séparées d'un filet, les
-  illustrations conservées. L'animation d'entrée décalée a disparu ; le
-  mouvement, ce sont les illustrations qui se dessinent et s'animent au
-  survol, et l'étagère qui se garnit, de loin en loin.
-- **Étiquettes de tête** (`.eyebrow`) : en police de titrage, en bas de
-  casse, dans la couleur secondaire ou la dominante. Elles remplacent les
-  capitales espacées de la page de lecture, de la paracha, des séries, du
-  studio, du profil, des horaires et de l'introduction.
-- **Filtres** (`.filter-tab`) : du texte et un trait sous le filtre retenu,
-  comme les liens du bandeau, à la place des pastilles pleines (catégories
-  des chiourim, onglets « mes sessions »).
-- **Bandeau du profil** : le nom seul, sur la pierre, avec un filet ; sans
-  compte, l'invitation garde ses boutons maison. L'aplat en dégradé qui
-  portait le nom ne disait rien de plus que lui.
-- Le pied de page prend un filet et perd son emoji.
+| Thème | Dominante (`--color-primary`) | Réponse (`--color-tertiary`) | Soleil (`--color-sun`) |
+| --- | --- | --- | --- |
+| Océan (tekhelet) | cobalt `#2A55C9` | grenade `#E4542F` | `#F4B63B` |
+| Coucher de soleil (grenade) | grenade `#E4542F` | cobalt `#2A55C9` | `#F4B63B` |
+| Émeraude (olivier) | vert `#1F8A5B` | grenade `#E4542F` | `#F4B63B` |
+
+Chaque thème a sa version pour le fond sombre, plus claire, que `useTheme`
+repose à chaque bascule d'apparence. `--color-secondary`, le nom
+historique de l'accent (illustrations, puces), vaut désormais le soleil.
+Pas de dégradé nulle part : une couleur en aplat, ou rien. Le beige de la
+pierre est un peu plus chaud qu'avant (`#f4efe4`), l'encre est un
+brun-noir profond (`#1c1814`) qui tient tête aux aplats.
+
+**Surfaces.** Sans aucun liseré. Une carte, c'est du papier crème
+(`#fffcf5`) posé sur la pierre par une ombre chaude et douce, qui se
+creuse au survol pendant que la carte se soulève de deux pixels. Rayon de
+24 px sur les cartes, pilules sur tout ce qui se touche (boutons, champs,
+puces, filtres, onglets du bandeau).
+
+**Mode sombre.** Une nuit chaude (`#17140f`), les tuiles de couleur en
+version claire avec du texte d'encre dessus, la tuile d'encre plus noire
+que la nuit. La barre système de l'app, les aperçus des réglages et
+l'introduction suivent.
+
+**Mouvement.** Deux moments, pas plus : les illustrations s'animent au
+survol de leur tuile (c'est le dessin qui bouge, jamais la boîte qui
+grossit), et les cartes se soulèvent au survol. L'entrée décalée de tous
+les éléments de l'accueil a disparu.
+
+### L'expérience, ce qui change
+
+- **L'accueil dit d'abord ce qu'on peut faire tout de suite.** Le premier
+  bouton ouvre la bibliothèque, qui ne demande pas de compte ; créer un
+  compte vient en second, et « Ignorer » le retire pour de bon. Avant, le
+  seul chemin proposé était de créer un compte.
+- **Le jour, en un regard.** La tuile d'encre donne la date hébraïque (le
+  jour suivant dès la sortie du soleil), le prochain horaire, le compte à
+  rebours et le lieu. Sur le tableau de bord d'un compte, elle est à côté
+  de la lecture du jour.
+- **Les trois rubriques sont reconnaissables de loin**, chacune à sa
+  couleur, la bibliothèque en premier : c'est ce qu'on vient faire le plus
+  souvent. Sur téléphone, elles s'empilent en bandeaux ; sur grand écran,
+  ce sont trois arches.
+- **Le bandeau du site** montre la page courante par une pilule, et
+  l'entrée « Se connecter » est un vrai bouton d'encre, pas un lien gris.
+- **La barre basse de l'app** pose l'icône de l'onglet courant dans une
+  petite arche au soleil : l'onglet actif se voit sans lire.
+- **Les filtres** (catégories de chiourim, mes sessions, types de textes)
+  sont des pilules, celle qui est retenue à l'encre ; les étiquettes de
+  tête (« Sefer 1 », « Cette semaine ») sont des pilules au soleil.
+- **Le profil** ouvre sur le nom, en grand, surligné : plus de bandeau
+  en dégradé qui ne disait rien.
 
 ## 4. Avant, après
 
@@ -157,43 +186,54 @@ jour, sur `main` puis sur cette branche.
 
 ## 5. Ce que cette branche change, fichier par fichier
 
-- `src/assets/main.css` : jetons (couleurs, polices, rayons, ombres, sombre
-  chaud), `.card` à liseré, `.eyebrow`, `.filter-tab`, titres h1/h2 en
-  police de titrage.
-- `index.html` : Source Sans 3 et Frank Ruhl Libre (latin et hébreu) en
-  polices bloquantes, Inter retirée.
-- `src/composables/useFonts.ts` : Source Sans 3 en police d'origine, Inter
-  retirée des choix ; libellés dans les trois langues.
-- `src/composables/useTheme.ts` : palettes retouchées, versions sombres,
-  suivi de l'apparence.
+- `src/assets/main.css` : les jetons (couleurs, trio de thème, polices,
+  rayons, ombres), le sombre chaud, les composants partagés (`.card` sans
+  liseré, `.btn` en pilule, `.btn-ink`, `.chip`, `.field`, `.eyebrow`,
+  `.filter-tab`, `.hl`) et les utilitaires `tile`, `tile-ink`, `arch`.
+- `index.html` : Atkinson Hyperlegible Next, Bricolage Grotesque et Frank
+  Ruhl Libre en polices par défaut, `theme-color` sur le nouveau beige.
+- `src/composables/useTheme.ts` : le trio de couleurs par thème, sa
+  version sombre, reposée quand l'apparence bascule.
+- `src/composables/useFonts.ts` et les trois fichiers de langue : Atkinson
+  remplace Inter dans les choix.
 - `src/composables/useColorScheme.ts`, `useNativeStatusBar.ts`, `App.vue`,
-  introduction et ses maquettes : le fond sombre chaud.
-- `NavbarComponents.vue`, `SiteFooter.vue`, `BottomTabBar.vue`,
-  `HomeView.vue`, `ProfileHeader.vue`, `ProfilePage.vue`,
-  `AppearanceSettings.vue` (aperçu des thèmes en aplat), et les pages qui
-  portaient des capitales espacées ou des filtres en pastilles.
+  l'introduction et ses maquettes : les fonds clair et sombre.
+- `src/views/HomeView.vue` : le titre surligné, le bouton vers la
+  bibliothèque, les tuiles en arche, plus d'animation d'entrée.
+- `src/components/ZmanimCard.vue` : la tuile d'encre du jour, avec la date
+  hébraïque.
+- `src/components/NavbarComponents.vue` : le signe en arche, le nom en
+  titrage, les liens en pilule, le bouton de connexion à l'encre.
+- `src/components/BottomTabBar.vue` : l'onglet courant dans une arche au
+  soleil, le bouton rond en arche.
+- `src/views/profilePage/ProfileHeader.vue`, `ProfilePage.vue` : plus de
+  dégradé, le nom surligné.
+- Les pages qui portaient des étiquettes en capitales (lecture, paracha,
+  série, studio, profil, horaires, introduction) : `.eyebrow`.
+- `ChiourimPage.vue`, `ShareHomePage.vue` : `.filter-tab`.
+- `SiteFooter.vue` : sans emoji.
+- Les titres h1 et h2 perdent `tracking-tight` : la police de titrage
+  porte déjà son propre serrage.
 
-Les tests passent (`npm run verify`), dont ceux qui figent la police
-d'origine et les couleurs des thèmes.
+Vérifié : `npm run verify` (type-check, lint, tests) passe, et les huit
+pages principales ont été relues en clair et en sombre, sur téléphone et
+sur grand écran.
 
 ## 6. Ce qui reste à faire, par ordre d'intérêt
 
-1. **Les listes de textes** (page d'un corpus, résultats de recherche) : sur
-   téléphone, chaque texte est encore une carte. Des lignes séparées d'un
-   filet, dans une seule feuille, se liraient mieux et pèseraient moins.
-2. **La frise « Comment ça marche »** du partage de lectures : quatre ronds
-   pleins avec une icône, c'est la vignette répétée du tableau. Des numéros
-   en police de titrage feraient l'affaire.
-3. **Les `animate-[fadeIn]`** posés sur les blocs de la plupart des pages
-   (une cinquantaine) : ils sont discrets et servent de transition de page,
-   mais un seul fondu au niveau de la vue suffirait.
-4. **Les puces de type de texte** (`bg-primary/10 text-primary`) : encore
-   le même motif partout ; une puce à liseré, sans fond, serait plus près
-   du papier.
-5. **Le lecteur audio** : le bouton rond bleu plein au milieu de la carte
-   peut prendre l'encre.
-6. **Les captures des fiches Play Store et App Store** sont à refaire
-   (`npm run store:screenshots`), elles montrent l'ancienne interface.
-7. **Embarquer les polices** (déjà noté dans l'audit de performance) :
-   Source Sans 3 et Frank Ruhl Libre en woff2 sous-ensemblés, pour ne plus
-   dépendre de Google Fonts au premier rendu.
+1. **Les listes de textes** (Tehilim, Michna…) : encore une carte par
+   texte, en colonne sur téléphone. Des lignes à filet dans une seule
+   carte, ou des pilules en grille, feraient tenir un sefer sur un écran.
+2. **La frise « Comment ça marche »** du partage : quatre ronds à icône
+   reliés par un trait, le motif le plus « catalogue » qui reste. Quatre
+   arches numérotées, dans les couleurs du thème, feraient l'affaire.
+3. **Les en-têtes de page** (partage, chiourim) sont encore centrés ; les
+   passer à gauche avec le surligneur, comme l'accueil, unifierait le site.
+4. **Les fondus de bloc** (`animate-[fadeIn…]`, une cinquantaine de blocs)
+   : à réserver au changement de page, ou à retirer.
+5. **Le lecteur audio et le bouton rond de lecture**, à reprendre dans le
+   même esprit (pilules, encre, soleil).
+6. **Les captures des fiches store**, à refaire une fois la direction
+   validée.
+7. **Un compte qui avait choisi Inter** retombe sur Atkinson : à dire dans
+   les notes de version, ou à ignorer.

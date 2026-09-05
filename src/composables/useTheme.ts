@@ -18,33 +18,47 @@ export interface ThemeColors {
   secondary: string;
 }
 
+export interface ThemeColors {
+  /** La dominante : boutons, liens, ce qui est actif. */
+  primary: string;
+  /** Le soleil : surligneur, étiquettes, accents des illustrations. */
+  secondary: string;
+  /** La couleur qui répond à la dominante : la deuxième tuile de l'accueil. */
+  tertiary: string;
+}
+
 export interface ThemeOption extends ThemeColors {
   id: string;
+  /** Les mêmes rôles, pour le fond sombre : plus clairs, pour rester lisibles. */
   dark: ThemeColors;
 }
 
+/**
+ * Trois thèmes, trois dominantes franches : le cobalt du tekhelet, le rouge
+ * de la grenade, le vert de l'olivier. Le soleil est le même pour tous. Les
+ * identifiants ne bougent pas, ce sont eux que les comptes ont gardés.
+ */
 export const THEME_OPTIONS: ThemeOption[] = [
   {
-    // Le bleu profond du tekhelet, et la lumière ocre qui passe entre les
-    // pierres du mur (celle de StoneWallBackground).
     id: "ocean",
-    primary: "#2A5B9E",
-    secondary: "#B07A2E",
-    dark: { primary: "#6F9BDE", secondary: "#D2A159" },
+    primary: "#2A55C9",
+    secondary: "#F4B63B",
+    tertiary: "#E4542F",
+    dark: { primary: "#7F9BFF", secondary: "#FFC94D", tertiary: "#FF8A66" },
   },
   {
-    // Terre cuite, et un bleu ardoise pour lui répondre.
     id: "sunset",
-    primary: "#B5502E",
-    secondary: "#3D6B7A",
-    dark: { primary: "#E0855F", secondary: "#7FB0C2" },
+    primary: "#E4542F",
+    secondary: "#F4B63B",
+    tertiary: "#2A55C9",
+    dark: { primary: "#FF8A66", secondary: "#FFC94D", tertiary: "#7F9BFF" },
   },
   {
-    // Vert olive, et un cuivre.
     id: "emerald",
-    primary: "#2E6B52",
-    secondary: "#A8632C",
-    dark: { primary: "#6DB894", secondary: "#CF9558" },
+    primary: "#1F8A5B",
+    secondary: "#F4B63B",
+    tertiary: "#E4542F",
+    dark: { primary: "#5CCB97", secondary: "#FFC94D", tertiary: "#FF8A66" },
   },
 ];
 
@@ -67,8 +81,11 @@ function applyThemeColors(theme: ThemeOption) {
   appliedTheme = theme;
   if (typeof document === "undefined") return;
   const colors = themeColorsFor(theme);
-  document.documentElement.style.setProperty("--color-primary", colors.primary);
-  document.documentElement.style.setProperty("--color-secondary", colors.secondary);
+  const root = document.documentElement.style;
+  root.setProperty("--color-primary", colors.primary);
+  root.setProperty("--color-secondary", colors.secondary);
+  root.setProperty("--color-tertiary", colors.tertiary);
+  root.setProperty("--color-sun", colors.secondary);
 }
 
 // Bascule clair/sombre (réglage, ou système qui suit le soleil) : les mêmes

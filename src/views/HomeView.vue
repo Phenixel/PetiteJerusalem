@@ -27,6 +27,7 @@ import { isNativeApp } from "../composables/useNativeApp";
 import { useHomeAccountCta } from "../composables/useHomeAccountCta";
 import SiteFooter from "../components/SiteFooter.vue";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
+import AppIcon from "../components/icons/AppIcon.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
 import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
 import IllustrationBibliotheque from "../components/illustrations/IllustrationBibliotheque.vue";
@@ -118,26 +119,32 @@ async function loadDashboard(u: User) {
   }
 }
 
+// Les trois rubriques, chacune sur sa tuile : la bibliothèque en premier,
+// c'est ce qu'on vient faire le plus souvent, dans la couleur dominante ;
+// le partage à l'encre ; les chiourim dans la couleur qui répond.
 const features = computed<
-  { illustration: Component; title: string; description: string; route: string }[]
+  { illustration: Component; title: string; description: string; route: string; tile: string }[]
 >(() => [
+  {
+    illustration: IllustrationBibliotheque,
+    title: t("home.features.study.title"),
+    description: t("home.features.study.description"),
+    route: "bibliotheque",
+    tile: "bg-primary",
+  },
   {
     illustration: IllustrationPartage,
     title: t("home.features.shareReading.title"),
     description: t("home.features.shareReading.description"),
     route: "share-reading",
+    tile: "tile-ink",
   },
   {
     illustration: IllustrationChiourim,
     title: t("home.features.chiourim.title"),
     description: t("home.features.chiourim.description"),
     route: "chiourim",
-  },
-  {
-    illustration: IllustrationBibliotheque,
-    title: t("home.features.study.title"),
-    description: t("home.features.study.description"),
-    route: "bibliotheque",
+    tile: "bg-tertiary",
   },
 ]);
 
@@ -178,14 +185,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main class="flex-1 container mx-auto px-4 py-6 flex flex-col justify-center">
+  <main class="flex-1 container mx-auto px-4 py-6 md:py-10 flex flex-col justify-center">
     <!-- ===== Connecté : accueil personnalisé, hors carte ===== -->
     <template v-if="user">
       <div class="w-full max-w-6xl mx-auto mb-8">
-        <!-- Le prénom, à l'encre comme le reste : pas de couleur qui le
-             sorte de la phrase. -->
-        <h2 class="text-3xl md:text-4xl text-text-primary">{{ greeting }}, {{ firstName }}</h2>
-        <p class="text-text-secondary mt-1.5">{{ t("home.dashboard.subtitle") }}</p>
+        <h2 class="text-4xl md:text-5xl text-text-primary">
+          {{ greeting }}, <span class="hl">{{ firstName }}</span>
+        </h2>
+        <p class="text-text-secondary mt-3 text-lg">{{ t("home.dashboard.subtitle") }}</p>
       </div>
 
       <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
@@ -214,45 +221,58 @@ onUnmounted(() => {
           />
 
           <!-- Horaires du jour : calculés sur l'appareil, rien à charger.
-               Le partage de lectures reste à un clic (navbar, footer, cartes
-               de découverte plus bas). -->
+               Le partage de lectures reste à un clic (navbar, footer, tuiles
+               plus bas). -->
           <ZmanimCard @click="trackCard('zmanim')" />
         </template>
       </div>
     </template>
 
-    <!-- ===== Non connecté : invitation à gauche, horaires du jour à droite,
-         à la place qu'occupent les cartes du tableau de bord. Le texte reste
-         à gauche sur téléphone aussi : une page se lit, elle ne se centre
-         pas. ===== -->
+    <!-- ===== Non connecté : le titre et l'action à gauche, la tuile du jour
+         à droite. Le texte reste à gauche sur téléphone aussi : une page se
+         lit, elle ne se centre pas. ===== -->
     <div
       v-else
-      class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 md:gap-10 items-center mb-10"
+      class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[7fr_5fr] gap-8 md:gap-12 items-center mb-10 md:mb-14"
     >
-      <div class="space-y-4">
-        <h2 class="text-[2rem] leading-[1.1] md:text-5xl text-text-primary max-w-xl">
-          {{ t("home.heroTitle") }}
-        </h2>
-        <p class="text-base md:text-lg text-text-secondary leading-relaxed max-w-xl">
+      <div class="space-y-5">
+        <i18n-t
+          keypath="home.heroTitleHl"
+          tag="h2"
+          class="text-[2.6rem] md:text-6xl text-text-primary max-w-2xl"
+        >
+          <template #hl>
+            <mark class="hl">{{ t("home.heroTitleHlWord") }}</mark>
+          </template>
+        </i18n-t>
+        <p class="text-lg md:text-xl text-text-secondary leading-relaxed max-w-xl">
           {{ t("home.heroDescription") }}
         </p>
-        <!-- Créer un compte : proposé jusqu'à ce qu'« Ignorer » le retire de
-             l'accueil. Le reste du site continue de le proposer, au moment où
-             le compte sert à quelque chose. -->
-        <div v-if="!accountCtaDismissed" class="flex flex-wrap items-center gap-3 pt-2">
+        <!-- L'action première est de lire : la bibliothèque s'ouvre sans
+             compte. Créer un compte vient en second, jusqu'à ce qu'« Ignorer »
+             le retire de l'accueil ; le reste du site continue de le proposer
+             au moment où le compte sert à quelque chose. -->
+        <div class="flex flex-wrap items-center gap-3 pt-1">
           <RouterLink
+            to="/bibliotheque"
+            class="btn btn-ink !px-6 !py-3 !text-base"
+            @click="trackCard('hero_library')"
+          >
+            <AppIcon name="book-open" :size="18" />
+            {{ t("home.heroCta") }}
+          </RouterLink>
+          <RouterLink
+            v-if="!accountCtaDismissed"
             to="/login?mode=signup"
-            class="btn btn-primary !px-6 !py-3"
+            class="btn btn-soft !px-6 !py-3 !text-base"
             @click="trackCard('signup_cta')"
           >
             {{ t("accountCta.signup") }}
           </RouterLink>
-          <RouterLink to="/login" class="btn btn-soft !px-6 !py-3" @click="trackCard('login_cta')">
-            {{ t("accountCta.login") }}
-          </RouterLink>
           <button
+            v-if="!accountCtaDismissed"
             type="button"
-            class="px-2 py-3 text-sm font-medium text-text-secondary transition-colors hover:text-primary"
+            class="px-2 py-3 text-sm font-semibold text-text-secondary transition-colors hover:text-primary"
             @click="dismissAccountCta"
           >
             {{ t("accountCta.dismiss") }}
@@ -269,43 +289,38 @@ onUnmounted(() => {
     <OmerBanner v-if="!user" class="w-full max-w-6xl mx-auto" />
 
     <div class="w-full max-w-6xl mx-auto">
-      <!-- Les trois rubriques du site, comme un sommaire : une seule feuille,
-           trois entrées séparées d'un filet, plutôt que trois cartes jumelles.
-           Au repos, seule la micro-animation interne du SVG vit ; au survol,
-           c'est le dessin lui-même qui s'anime (aucun zoom). -->
-      <div
-        class="card mb-10 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line"
-      >
+      <!-- Les trois rubriques, en tuiles de couleur : trois arches côte à
+           côte sur grand écran, trois bandeaux empilés sur téléphone.
+           L'illustration est dessinée en clair sur l'aplat, son accent au
+           soleil ; au survol, c'est le dessin lui-même qui s'anime. -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-12">
         <button
           v-for="feature in features"
           :key="feature.title"
-          class="feature-card group flex items-center gap-5 p-6 text-left cursor-pointer transition-colors hover:bg-surface-soft first:rounded-t-[var(--radius-lg)] last:rounded-b-[var(--radius-lg)] md:first:rounded-l-[var(--radius-lg)] md:first:rounded-tr-none md:last:rounded-r-[var(--radius-lg)] md:last:rounded-bl-none"
+          class="feature-card tile card-hover md:arch group flex md:flex-col items-center gap-5 md:gap-2 p-5 md:px-6 md:pt-10 md:pb-7 text-left md:text-center cursor-pointer"
+          :class="feature.tile"
           @click="
             trackCard(`feature_${feature.route}`);
             router.push(feature.route);
           "
         >
+          <div class="w-20 h-20 md:w-28 md:h-28 md:mb-4 shrink-0 order-last md:order-first">
+            <component :is="feature.illustration" />
+          </div>
           <div class="flex-1 min-w-0">
-            <h3
-              class="font-display text-xl font-bold mb-1.5 text-text-primary group-hover:text-primary transition-colors"
-            >
+            <h3 class="text-2xl md:text-3xl mb-1.5">
               {{ feature.title }}
             </h3>
-            <p class="text-text-secondary text-sm leading-relaxed">
+            <p class="text-sm md:text-base leading-relaxed opacity-80">
               {{ feature.description }}
             </p>
-          </div>
-          <div
-            class="w-20 h-20 sm:w-24 sm:h-24 md:w-20 md:h-20 lg:w-24 lg:h-24 shrink-0 text-primary"
-          >
-            <component :is="feature.illustration" />
           </div>
         </button>
       </div>
 
       <div class="max-w-2xl">
-        <p class="font-display text-text-secondary">{{ t("home.memorial.title") }}</p>
-        <p class="mt-1 font-display text-lg text-text-primary">
+        <p class="text-sm font-semibold text-text-secondary">{{ t("home.memorial.title") }}</p>
+        <p class="mt-1 text-text-primary">
           {{ t("home.memorial.dedication") }}
         </p>
       </div>

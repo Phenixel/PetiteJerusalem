@@ -192,6 +192,11 @@ const fr = {
       until: "À dire cette nuit, jusqu\u2019au {date}.",
     },
     heroTitle: "Étudier et partager la Torah, à plusieurs",
+    // Le titre en deux morceaux : {hl} reçoit le mot surligné au soleil.
+    heroTitleHl: "Étudier et partager la Torah, {hl}",
+    heroTitleHlWord: "à plusieurs",
+    heroCta: "Ouvrir la bibliothèque",
+    todayTitle: "Aujourd\u2019hui",
     heroDescription:
       "Répartissez un texte entre plusieurs personnes pour le terminer ensemble : finir le Chass, lire les Tehilim à plusieurs, suivre la progression de votre limoud. Gratuit, en français, en anglais et en hébreu.",
     features: {
@@ -338,7 +343,7 @@ const fr = {
     fontLatinLabel: "Police de l'interface",
     fontHebrewLabel: "Police des textes en hébreu",
     fontsLatin: {
-      "source-sans": "Moderne",
+      atkinson: "Moderne",
       lora: "Classique",
       nunito: "Douce",
     },

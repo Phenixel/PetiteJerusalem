@@ -190,6 +190,10 @@ const en: LocaleMessages = {
       until: "To be said tonight, until {date}.",
     },
     heroTitle: "Your digital spiritual center",
+    heroTitleHl: "Study and share Torah, {hl}",
+    heroTitleHlWord: "together",
+    heroCta: "Open the library",
+    todayTitle: "Today",
     heroDescription:
       "A modern platform dedicated to study, sharing and spiritual growth of the Jewish community.",
     features: {
@@ -333,7 +337,7 @@ const en: LocaleMessages = {
     fontLatinLabel: "Interface font",
     fontHebrewLabel: "Hebrew text font",
     fontsLatin: {
-      "source-sans": "Modern",
+      atkinson: "Modern",
       lora: "Classic",
       nunito: "Soft",
     },

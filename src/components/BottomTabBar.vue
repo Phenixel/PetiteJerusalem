@@ -150,16 +150,27 @@ function toggleZmanim(event: MouseEvent) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   color: var(--color-text-secondary);
   transition: color 0.2s ease;
 }
 .tab-item-active {
-  color: var(--color-primary);
+  color: var(--color-text-primary);
 }
+/* L'icône de l'onglet courant se pose dans une petite arche au soleil. */
 .tab-icon {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 1.7rem;
+  border-radius: 999px 999px 6px 6px;
   transform-origin: center;
+  transition: background-color 0.2s ease;
+}
+.tab-item-active .tab-icon {
+  background-color: var(--color-sun);
+  color: #1c1814;
 }
 
 /* Bouton rond central : posé au milieu de la barre, il déborde légèrement
@@ -175,9 +186,9 @@ function toggleZmanim(event: MouseEvent) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 9999px;
+  border-radius: 999px 999px 14px 14px;
   background-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-ink);
   box-shadow: 0 4px 12px rgb(20 16 8 / 0.22);
   transition:
     transform 0.2s ease,

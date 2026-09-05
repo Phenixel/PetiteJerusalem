@@ -1,6 +1,6 @@
 <template>
   <footer
-    class="mt-auto px-6 py-8 border-t border-line text-text-secondary transition-colors"
+    class="mt-auto px-6 py-8 text-text-secondary transition-colors"
     role="contentinfo"
   >
     <nav

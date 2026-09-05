@@ -179,6 +179,10 @@ const he: LocaleMessages = {
       until: "לאומרה הלילה, עד {date}.",
     },
     heroTitle: "המרכז הרוחני הדיגיטלי שלכם",
+    heroTitleHl: "ללמוד ולשתף תורה, {hl}",
+    heroTitleHlWord: "ביחד",
+    heroCta: "לפתוח את הספרייה",
+    todayTitle: "היום",
     heroDescription: "פלטפורמה מודרנית המוקדשת ללימוד, שיתוף וצמיחה רוחנית של הקהילה היהודית.",
     features: {
       shareReading: {
@@ -318,7 +322,7 @@ const he: LocaleMessages = {
     fontLatinLabel: "גופן הממשק",
     fontHebrewLabel: "גופן הטקסטים בעברית",
     fontsLatin: {
-      "source-sans": "מודרני",
+      atkinson: "מודרני",
       lora: "קלאסי",
       nunito: "רך",
     },
