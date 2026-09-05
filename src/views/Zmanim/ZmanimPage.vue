@@ -294,7 +294,7 @@ onUnmounted(() => {
 
 <template>
   <main ref="root" class="flex-1 mx-auto w-full max-w-3xl px-6 py-10">
-    <h1 class="text-2xl md:text-3xl font-bold text-text-primary tracking-tight">
+    <h1 class="text-2xl md:text-3xl font-bold text-text-primary">
       {{ t("zmanim.title") }}
     </h1>
 
@@ -446,7 +446,7 @@ onUnmounted(() => {
          beaucoup moins de défilement. -->
     <section v-for="group in byPeriod" :key="group.period">
       <h2
-        class="flex items-center gap-2 border-t border-line pt-4 pb-1 text-sm font-bold uppercase tracking-wide text-text-secondary"
+        class="flex items-center gap-2 border-t border-line pt-4 pb-1 text-lg font-medium text-text-secondary"
       >
         <AppIcon :name="PERIOD_ICONS[group.period]" :size="15" class="text-primary" />
         {{ t(`zmanim.periods.${group.period}`) }}

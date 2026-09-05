@@ -181,13 +181,10 @@ onUnmounted(() => {
   <main class="flex-1 container mx-auto px-4 py-6 flex flex-col justify-center">
     <!-- ===== Connecté : accueil personnalisé, hors carte ===== -->
     <template v-if="user">
-      <div class="w-full max-w-6xl mx-auto mb-8 enter-rise">
-        <h2 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight">
-          {{ greeting }},
-          <span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">{{
-            firstName
-          }}</span>
-        </h2>
+      <div class="w-full max-w-6xl mx-auto mb-8">
+        <!-- Le prénom, à l'encre comme le reste : pas de couleur qui le
+             sorte de la phrase. -->
+        <h2 class="text-3xl md:text-4xl text-text-primary">{{ greeting }}, {{ firstName }}</h2>
         <p class="text-text-secondary mt-1.5">{{ t("home.dashboard.subtitle") }}</p>
       </div>
 
@@ -213,50 +210,44 @@ onUnmounted(() => {
           <DailyReadingCard
             :done="readingDone"
             :total="readingTotal"
-            class="dash-card"
             @click="trackCard('daily_reading')"
           />
 
           <!-- Horaires du jour : calculés sur l'appareil, rien à charger.
                Le partage de lectures reste à un clic (navbar, footer, cartes
                de découverte plus bas). -->
-          <ZmanimCard class="dash-card" style="--enter-delay: 0.1s" @click="trackCard('zmanim')" />
+          <ZmanimCard @click="trackCard('zmanim')" />
         </template>
       </div>
     </template>
 
     <!-- ===== Non connecté : invitation à gauche, horaires du jour à droite,
-         à la place qu'occupent les cartes du tableau de bord ===== -->
+         à la place qu'occupent les cartes du tableau de bord. Le texte reste
+         à gauche sur téléphone aussi : une page se lit, elle ne se centre
+         pas. ===== -->
     <div
       v-else
-      class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 items-center mb-10"
+      class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 md:gap-10 items-center mb-10"
     >
-      <div class="space-y-4 text-center md:text-start">
-        <h2 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight enter-rise">
+      <div class="space-y-4">
+        <h2 class="text-[2rem] leading-[1.1] md:text-5xl text-text-primary max-w-xl">
           {{ t("home.heroTitle") }}
         </h2>
-        <p
-          class="text-base md:text-lg text-text-secondary leading-relaxed enter-rise"
-          style="--enter-delay: 0.1s"
-        >
+        <p class="text-base md:text-lg text-text-secondary leading-relaxed max-w-xl">
           {{ t("home.heroDescription") }}
         </p>
         <!-- Créer un compte : proposé jusqu'à ce qu'« Ignorer » le retire de
              l'accueil. Le reste du site continue de le proposer, au moment où
              le compte sert à quelque chose. -->
-        <div
-          v-if="!accountCtaDismissed"
-          class="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2 enter-rise"
-          style="--enter-delay: 0.2s"
-        >
+        <div v-if="!accountCtaDismissed" class="flex flex-wrap items-center gap-3 pt-2">
           <RouterLink
             to="/login?mode=signup"
-            class="btn btn-primary !px-7 !py-3"
+            class="btn btn-primary !px-6 !py-3"
             @click="trackCard('signup_cta')"
           >
             {{ t("accountCta.signup") }}
           </RouterLink>
-          <RouterLink to="/login" class="btn btn-soft !px-7 !py-3" @click="trackCard('login_cta')">
+          <RouterLink to="/login" class="btn btn-soft !px-6 !py-3" @click="trackCard('login_cta')">
             {{ t("accountCta.login") }}
           </RouterLink>
           <button
@@ -269,7 +260,7 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <ZmanimCard class="dash-card" style="--enter-delay: 0.3s" @click="trackCard('zmanim')" />
+      <ZmanimCard @click="trackCard('zmanim')" />
     </div>
 
     <SidourNowCard v-if="!user" class="w-full max-w-6xl mx-auto mb-5" />
@@ -278,24 +269,25 @@ onUnmounted(() => {
     <OmerBanner v-if="!user" class="w-full max-w-6xl mx-auto" />
 
     <div class="w-full max-w-6xl mx-auto">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mb-10 items-stretch">
+      <!-- Les trois rubriques du site, comme un sommaire : une seule feuille,
+           trois entrées séparées d'un filet, plutôt que trois cartes jumelles.
+           Au repos, seule la micro-animation interne du SVG vit ; au survol,
+           c'est le dessin lui-même qui s'anime (aucun zoom). -->
+      <div
+        class="card mb-10 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line"
+      >
         <button
-          v-for="(feature, index) in features"
+          v-for="feature in features"
           :key="feature.title"
-          class="feature-card card card-hover group flex items-center gap-5 p-6 text-left cursor-pointer"
-          :style="{ '--enter-delay': `${index * 0.12}s` }"
+          class="feature-card group flex items-center gap-5 p-6 text-left cursor-pointer transition-colors hover:bg-surface-soft first:rounded-t-[var(--radius-lg)] last:rounded-b-[var(--radius-lg)] md:first:rounded-l-[var(--radius-lg)] md:first:rounded-tr-none md:last:rounded-r-[var(--radius-lg)] md:last:rounded-bl-none"
           @click="
             trackCard(`feature_${feature.route}`);
             router.push(feature.route);
           "
         >
-          <!-- Texte à gauche, illustration à droite, tout reste dans la carte
-               (une ligne par carte sur mobile, trois cartes côte à côte sur
-               desktop). Au repos, seule la micro-animation interne du SVG vit ;
-               au survol, c'est le dessin lui-même qui s'anime (aucun zoom). -->
           <div class="flex-1 min-w-0">
             <h3
-              class="text-lg font-bold mb-1.5 text-text-primary group-hover:text-primary transition-colors"
+              class="font-display text-xl font-bold mb-1.5 text-text-primary group-hover:text-primary transition-colors"
             >
               {{ feature.title }}
             </h3>
@@ -304,16 +296,16 @@ onUnmounted(() => {
             </p>
           </div>
           <div
-            class="w-24 h-24 sm:w-28 sm:h-28 md:w-24 md:h-24 lg:w-28 lg:h-28 shrink-0 text-primary"
+            class="w-20 h-20 sm:w-24 sm:h-24 md:w-20 md:h-20 lg:w-24 lg:h-24 shrink-0 text-primary"
           >
             <component :is="feature.illustration" />
           </div>
         </button>
       </div>
 
-      <div class="text-center max-w-2xl mx-auto enter-rise" style="--enter-delay: 0.4s">
-        <p class="font-serif italic text-text-secondary">{{ t("home.memorial.title") }}</p>
-        <p class="mt-1 font-serif italic text-text-primary">
+      <div class="max-w-2xl">
+        <p class="font-display text-text-secondary">{{ t("home.memorial.title") }}</p>
+        <p class="mt-1 font-display text-lg text-text-primary">
           {{ t("home.memorial.dedication") }}
         </p>
       </div>
@@ -323,32 +315,3 @@ onUnmounted(() => {
   <!-- App native : pas de footer de site (l'essentiel vit dans le profil). -->
   <SiteFooter v-if="!isNativeApp" />
 </template>
-
-<style scoped>
-/* Staggered entrance: cards, greeting/hero and memorial all rise into place. */
-.feature-card,
-.dash-card,
-.enter-rise {
-  opacity: 0;
-  transform: translateY(14px);
-  animation: card-enter 0.55s ease-out forwards;
-  animation-delay: var(--enter-delay, 0s);
-}
-
-@keyframes card-enter {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .feature-card,
-  .dash-card,
-  .enter-rise {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-}
-</style>

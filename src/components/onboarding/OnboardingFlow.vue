@@ -124,7 +124,7 @@ watch(
 <template>
   <div
     ref="scroller"
-    class="fixed inset-0 z-[90] overflow-y-auto bg-bg-beige dark:bg-gray-900"
+    class="fixed inset-0 z-[90] overflow-y-auto bg-bg-beige dark:bg-bg-dark"
     role="dialog"
     aria-modal="true"
     :aria-label="t('onboarding.ariaLabel')"

@@ -143,32 +143,29 @@ onUnmounted(() => {
            compacte : le titre de la page, une ligne qui dit où vivent les
            réglages, et les deux boutons de connexion. Les réglages gardent
            leur cadre dédié en dessous. -->
-      <div v-else class="bg-gradient-to-br from-primary to-secondary py-8 px-6 md:px-12 mb-8">
+      <div v-else class="py-8 px-6 md:px-12 mb-8 border-b border-line">
         <div class="max-w-[1200px] mx-auto">
-          <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">
+          <h1 class="text-2xl md:text-3xl text-text-primary">
             {{ t("profile.guestTitle") }}
           </h1>
-          <p class="mt-1.5 text-sm leading-relaxed text-white/85 max-w-md">
+          <p class="mt-1.5 text-sm leading-relaxed text-text-secondary max-w-md">
             {{ t("profile.guestSettingsHint") }}
           </p>
-          <ul class="mt-3 space-y-1.5 text-sm leading-relaxed text-white/90 max-w-md">
+          <ul class="mt-3 space-y-1.5 text-sm leading-relaxed text-text-primary max-w-md">
             <li
               v-for="benefit in guestBenefits"
               :key="benefit.icon"
               class="flex items-start gap-2.5"
             >
-              <AppIcon :name="benefit.icon" :size="15" class="mt-1 shrink-0 text-white/80" />
+              <AppIcon :name="benefit.icon" :size="15" class="mt-1 shrink-0 text-primary" />
               <span>{{ benefit.label }}</span>
             </li>
           </ul>
           <div class="mt-5 flex flex-wrap gap-2.5">
-            <RouterLink
-              to="/login?mode=signup"
-              class="btn bg-white !text-primary font-semibold hover:bg-white/90"
-            >
+            <RouterLink to="/login?mode=signup" class="btn btn-primary">
               {{ t("accountCta.signup") }}
             </RouterLink>
-            <RouterLink to="/login" class="btn border border-white/50 text-white hover:bg-white/10">
+            <RouterLink to="/login" class="btn btn-soft">
               {{ t("accountCta.login") }}
             </RouterLink>
           </div>
@@ -179,9 +176,7 @@ onUnmounted(() => {
         <nav class="lg:sticky lg:top-24 h-fit card p-3">
           <template v-if="currentUser">
             <!-- Raccourcis vers les fonctionnalités déplacées dans leurs sections. -->
-            <p
-              class="px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary/70"
-            >
+            <p class="eyebrow px-4 pt-2 pb-1 text-sm">
               {{ t("profile.shortcuts.title") }}
             </p>
             <ul class="flex flex-col gap-1 mb-4">
@@ -217,9 +212,7 @@ onUnmounted(() => {
               </li>
             </ul>
 
-            <p
-              class="px-4 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary/70"
-            >
+            <p class="eyebrow px-4 pt-1 pb-1 text-sm">
               {{ t("profile.shortcuts.accountTitle") }}
             </p>
           </template>

@@ -159,7 +159,7 @@ const lines = [96, 88, 100, 71, 94, 90, 64, 98, 86, 93, 77, 96, 89, 68];
 }
 
 :root.dark .fade {
-  background: linear-gradient(to bottom, transparent, #111827);
+  background: linear-gradient(to bottom, transparent, var(--color-bg-dark));
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -87,7 +87,7 @@ onUnmounted(() => document.removeEventListener("visibilitychange", refreshDay));
         {{ t("study.types.tehilim") }}
       </RouterLink>
 
-      <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight pb-1">
+      <h1 class="text-3xl md:text-4xl font-bold text-text-primary pb-1">
         {{ t("tehilimDay.title") }}
       </h1>
       <p class="mt-2 text-text-secondary">{{ t("tehilimDay.hint") }}</p>

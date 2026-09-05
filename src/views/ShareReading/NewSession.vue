@@ -201,7 +201,7 @@ const goBack = () => {
   <!-- Largeur contenue : un formulaire pleine largeur est illisible sur grand écran. -->
   <main class="mx-auto max-w-3xl px-6 py-12 min-h-screen">
     <div class="text-center mb-12 animate-[fadeIn_0.5s_ease]">
-      <h2 class="text-3xl md:text-4xl font-bold text-text-primary mb-4 tracking-tight">
+      <h2 class="text-3xl md:text-4xl font-bold text-text-primary mb-4">
         {{ t("newSession.title") }}
       </h2>
       <p class="text-text-secondary text-lg">

@@ -1,28 +1,50 @@
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { userPreferencesService } from "../services/userPreferencesService";
 import { analyticsService } from "../services/analyticsService";
+import { useDarkMode } from "./useColorScheme";
 
-export interface ThemeOption {
-  id: string;
+/**
+ * Un thème, c'est une couleur dominante (boutons, liens, ce qui est actif)
+ * et un accent qui lui répond (séries, illustrations, quelques étiquettes).
+ * Deux couleurs qui se distinguent franchement, jamais deux voisines qu'on
+ * fondrait l'une dans l'autre : le site n'a plus de dégradé.
+ *
+ * Chaque couleur a sa version pour le fond sombre (`dark`) : une encre qui
+ * tient sur le papier clair s'éteint sur la nuit, il lui faut un cran de
+ * lumière en plus pour rester lisible.
+ */
+export interface ThemeColors {
   primary: string;
   secondary: string;
 }
 
+export interface ThemeOption extends ThemeColors {
+  id: string;
+  dark: ThemeColors;
+}
+
 export const THEME_OPTIONS: ThemeOption[] = [
   {
+    // Le bleu profond du tekhelet, et la lumière ocre qui passe entre les
+    // pierres du mur (celle de StoneWallBackground).
     id: "ocean",
-    primary: "#1D6FDB",
-    secondary: "#06B6D4",
+    primary: "#2A5B9E",
+    secondary: "#B07A2E",
+    dark: { primary: "#6F9BDE", secondary: "#D2A159" },
   },
   {
+    // Terre cuite, et un bleu ardoise pour lui répondre.
     id: "sunset",
-    primary: "#E05A2B",
-    secondary: "#F59E0B",
+    primary: "#B5502E",
+    secondary: "#3D6B7A",
+    dark: { primary: "#E0855F", secondary: "#7FB0C2" },
   },
   {
+    // Vert olive, et un cuivre.
     id: "emerald",
-    primary: "#059669",
-    secondary: "#14B8A6",
+    primary: "#2E6B52",
+    secondary: "#A8632C",
+    dark: { primary: "#6DB894", secondary: "#CF9558" },
   },
 ];
 
@@ -30,11 +52,28 @@ const currentThemeId = ref("ocean");
 let loadedForUserId: string | null = null;
 let themeVersion = 0;
 
-function applyThemeColors(theme: ThemeOption) {
-  if (typeof document === "undefined") return;
-  document.documentElement.style.setProperty("--color-primary", theme.primary);
-  document.documentElement.style.setProperty("--color-secondary", theme.secondary);
+const { isDark } = useDarkMode();
+
+/** Les couleurs d'un thème pour l'apparence en cours (clair ou sombre). */
+export function themeColorsFor(theme: ThemeOption, dark = isDark.value): ThemeColors {
+  return dark ? theme.dark : theme;
 }
+
+// Ce qui est posé sur la page en ce moment : le thème choisi, ou celui que
+// l'on survole dans les réglages. Reposé tel quel quand l'apparence bascule.
+let appliedTheme: ThemeOption = THEME_OPTIONS[0];
+
+function applyThemeColors(theme: ThemeOption) {
+  appliedTheme = theme;
+  if (typeof document === "undefined") return;
+  const colors = themeColorsFor(theme);
+  document.documentElement.style.setProperty("--color-primary", colors.primary);
+  document.documentElement.style.setProperty("--color-secondary", colors.secondary);
+}
+
+// Bascule clair/sombre (réglage, ou système qui suit le soleil) : les mêmes
+// couleurs, dans leur version pour ce fond.
+watch(isDark, () => applyThemeColors(appliedTheme));
 
 /**
  * Changement d'apparence : le thème est le premier réglage que l'on touche,

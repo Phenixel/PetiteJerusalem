@@ -324,9 +324,7 @@ watch(() => route.params.slug, loadChiour);
             class="text-text-secondary shrink-0 transition-transform group-hover:-translate-x-0.5 group-hover:text-primary"
           />
           <span class="min-w-0">
-            <span class="block text-xs uppercase tracking-wide text-text-secondary">{{
-              t("serie.previous")
-            }}</span>
+            <span class="eyebrow text-sm">{{ t("serie.previous") }}</span>
             <span
               class="block font-semibold text-text-primary group-hover:text-primary transition-colors truncate"
             >
@@ -344,9 +342,7 @@ watch(() => route.params.slug, loadChiour);
           :class="previousEpisode ? 'col-start-2' : 'col-span-2'"
         >
           <span class="min-w-0">
-            <span class="block text-xs uppercase tracking-wide text-text-secondary">{{
-              t("serie.next")
-            }}</span>
+            <span class="eyebrow text-sm">{{ t("serie.next") }}</span>
             <span
               class="block font-semibold text-text-primary group-hover:text-primary transition-colors truncate"
             >

@@ -333,7 +333,7 @@ const en: LocaleMessages = {
     fontLatinLabel: "Interface font",
     fontHebrewLabel: "Hebrew text font",
     fontsLatin: {
-      inter: "Modern",
+      "source-sans": "Modern",
       lora: "Classic",
       nunito: "Soft",
     },

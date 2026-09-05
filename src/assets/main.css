@@ -59,63 +59,82 @@ body {
 }
 
 @theme {
-  /* Colors, the beige background and the 3 selectable theme pairs are fixed;
-     --color-primary/--color-secondary are re-written at runtime by useTheme. */
-  --color-primary: #1d6fdb;
-  --color-secondary: #06b6d4;
-  --color-accent: #ff6b6b;
-  --color-accent-secondary: #ee5a24;
+  /* ---- Couleurs -----------------------------------------------------------
+     Une couleur dominante par thème (--color-primary), et un accent net qui
+     lui répond (--color-secondary) : les deux sont réécrites au chargement
+     par useTheme, en clair comme en sombre. Ici, les valeurs du thème
+     d'origine (« Océan »), qui tiennent tant que rien n'est chargé. Les
+     dégradés d'une couleur à l'autre ont disparu : chaque couleur a sa place,
+     pleine, ou pas de place du tout. */
+  --color-primary: #2a5b9e;
+  --color-secondary: #b07a2e;
+  --color-accent: #b5502e;
+  --color-accent-secondary: #8f3f22;
 
-  /* Backgrounds */
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f8f9fa;
-  --color-bg-dark: #181818;
+  /* Fonds. Le beige est la pierre de Jérusalem : c'est lui qu'on voit
+     derrière tout le site, et c'est de lui que découlent les autres tons. */
+  --color-bg-primary: #fffdf8;
+  --color-bg-secondary: #f7f2e8;
+  --color-bg-dark: #17140f;
   --color-bg-beige: #f4f1ea;
 
-  /* Surfaces (cards, panels, modals). Flipped in dark mode below. */
-  --color-surface: #ffffff;
-  --color-surface-soft: #f8f5ef;
+  /* Surfaces (cartes, panneaux, modales) : du papier posé sur la pierre.
+     Jamais un blanc pur, il ferait un trou dans la page. Retournées en
+     sombre plus bas. */
+  --color-surface: #fffdf8;
+  --color-surface-soft: #f7f2e8;
 
-  /* Text, warm-tinted neutrals to sit naturally on the beige background. */
-  --color-text-primary: #35312a;
-  --color-text-secondary: #6d6759;
+  /* Texte : une encre brune plutôt qu'un noir, qui s'accorde au beige. */
+  --color-text-primary: #2b2620;
+  --color-text-secondary: #6b6357;
   --color-text-light: #ffffff;
 
-  /* Hairlines for the few separators that remain. */
-  --color-line: rgb(53 49 42 / 0.08);
+  /* Filets : les rares séparateurs, et le liseré des surfaces. */
+  --color-line: rgb(43 38 32 / 0.1);
 
-  /* Fonts, --font-sans / --font-hebrew are re-written at runtime by useFonts. */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* ---- Polices ------------------------------------------------------------
+     --font-sans (interface) et --font-hebrew (lecture) sont réécrites au
+     chargement par useFonts, selon le choix de l'utilisateur.
+     --font-display, elle, ne se choisit pas : c'est la voix de la marque,
+     celle des titres et du nom du site. C'est la même famille que celle des
+     textes hébreux (Frank Ruhl Libre), dans sa version latine : le titre
+     d'une page et le verset qu'elle ouvre parlent d'une seule voix, et la
+     police est déjà chargée pour la lecture. */
+  --font-sans: "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-serif: "Lora", "Georgia", serif;
+  --font-display: "Frank Ruhl Libre", "Times New Roman", Georgia, serif;
   --font-hebrew:
     "Frank Ruhl Libre", "Noto Teamim Frank", "Noto Serif Hebrew", "David Libre", Georgia, serif;
 
-  /* Border radius scale: tight on small controls, larger on large surfaces. */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  /* Rayons : serrés. Une surface trop arrondie ressemble à n'importe quelle
+     application ; du papier, ça se coupe presque droit. */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
 
-  /* Soft, warm-tinted shadows, flat surfaces are separated from the beige
-     background by shadow alone (no borders). */
-  --shadow-card: 0 1px 2px rgb(58 50 30 / 0.05), 0 2px 8px rgb(58 50 30 / 0.05);
-  --shadow-card-hover: 0 2px 4px rgb(58 50 30 / 0.06), 0 8px 24px rgb(58 50 30 / 0.09);
-  --shadow-pop: 0 4px 12px rgb(30 26 18 / 0.08), 0 16px 40px rgb(30 26 18 / 0.14);
+  /* Ombres : à peine. Ce qui détache une surface de la pierre, c'est son
+     liseré (voir .card) ; l'ombre ne fait que la poser. */
+  --shadow-card: 0 1px 0 rgb(43 38 32 / 0.03), 0 1px 3px rgb(43 38 32 / 0.06);
+  --shadow-card-hover: 0 2px 6px rgb(43 38 32 / 0.06), 0 10px 24px rgb(43 38 32 / 0.08);
+  --shadow-pop: 0 4px 12px rgb(30 26 18 / 0.1), 0 16px 40px rgb(30 26 18 / 0.16);
 }
 
-/* Dark mode: flip the semantic tokens so most components adapt without
-   per-element dark: overrides. */
+/* Mode sombre : les jetons sémantiques se retournent, la plupart des
+   composants suivent sans surcharge dark:. Une nuit chaude, pas un gris
+   bleuté : c'est la même pierre, la lumière en moins. Les valeurs de fond
+   sont reprises par useNativeStatusBar et useColorScheme, à garder d'accord. */
 :root.dark {
-  --color-surface: #1f2937;
-  --color-surface-soft: #273244;
-  --color-text-primary: #f3f4f6;
-  --color-text-secondary: #9ca3af;
-  --color-line: rgb(255 255 255 / 0.1);
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px rgb(0 0 0 / 0.25);
-  --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.35), 0 8px 24px rgb(0 0 0 / 0.4);
+  --color-surface: #221d17;
+  --color-surface-soft: #2b251d;
+  --color-text-primary: #ece4d6;
+  --color-text-secondary: #a79d8e;
+  --color-line: rgb(236 228 214 / 0.11);
+  --shadow-card: 0 1px 0 rgb(0 0 0 / 0.2), 0 1px 3px rgb(0 0 0 / 0.3);
+  --shadow-card-hover: 0 2px 6px rgb(0 0 0 / 0.3), 0 10px 24px rgb(0 0 0 / 0.4);
   --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.5);
 }
 
-/* Global Styles */
+/* ---- Styles globaux ------------------------------------------------- */
 body {
   font-family: var(--font-sans);
   color: var(--color-text-primary);
@@ -129,8 +148,8 @@ body {
 }
 
 :root.dark body {
-  background-color: #111827; /* gray-900 */
-  color: #f3f4f6; /* gray-100 */
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-primary);
 }
 
 /* App native uniquement (classe posée par main.ts) : sans ça, l'étirement
@@ -184,6 +203,20 @@ h6 {
   line-height: 1.2;
 }
 
+/* Les grands titres parlent avec la voix de la marque (voir --font-display).
+   Le corps des cartes et des listes (h3 et en dessous) reste en sans : la
+   police de titrage est une ponctuation, pas un tapis. Le sans reste
+   toujours à sa taille ; le serif, lui, paraît plus petit à corps égal, il
+   est donc servi un peu plus grand. */
+h1,
+h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
 /* Dans @layer base pour que les classes (btn-primary, text-*…) gardent la
    main sur la couleur des liens, hors layer, cette règle écraserait tout. */
 @layer base {
@@ -212,23 +245,83 @@ button,
 
 /* ---- Shared component styles ------------------------------------------- */
 @layer components {
-  /* Flat surface: no border, separated from the beige background by a soft
-     warm shadow. The house card. */
+  /* La surface maison : une feuille de papier posée sur la pierre. Un
+     liseré d'un pixel la découpe, une ombre à peine visible la pose ; le
+     liseré passe par box-shadow pour ne rien changer aux dimensions. */
   .card {
     background-color: var(--color-surface);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-card);
+    box-shadow:
+      0 0 0 1px var(--color-line),
+      var(--shadow-card);
   }
 
-  /* Clickable card: shadow deepens on hover, content inside reacts
-     (title color, illustration…), the box itself stays put. */
+  /* Carte cliquable : l'ombre se creuse au survol, le contenu réagit (titre,
+     illustration), la boîte elle-même ne bouge pas. */
   .card-hover {
     transition:
       box-shadow 0.25s ease,
       background-color 0.25s ease;
   }
   .card-hover:hover {
-    box-shadow: var(--shadow-card-hover);
+    box-shadow:
+      0 0 0 1px var(--color-line),
+      var(--shadow-card-hover);
+  }
+
+  /* Étiquette de tête d'une page ou d'une carte (« Sefer 1 », « Série »,
+     « Cette semaine ») : en police de titrage, en bas de casse, dans la
+     couleur secondaire. Remplace les petites capitales espacées, qui
+     donnent à n'importe quelle page l'air d'une maquette de logiciel. */
+  .eyebrow {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--color-text-secondary);
+  }
+  .eyebrow-accent {
+    color: var(--color-primary);
+  }
+
+  /* Onglets de filtre (catégories, « mes sessions ») : du texte, et un trait
+     sous celui qui est retenu, comme les liens du bandeau. Pas de pastilles
+     pleines : un filtre n'est pas un bouton d'action. */
+  .filter-tab {
+    position: relative;
+    padding: 0.4rem 0.15rem;
+    margin-inline: 0.55rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    transition: color 0.2s ease;
+  }
+  .filter-tab:hover {
+    color: var(--color-text-primary);
+  }
+  .filter-tab::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--color-primary);
+    transform: scaleX(0);
+    transition: transform 0.2s ease;
+  }
+  .filter-tab-active {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+  .filter-tab-active::after {
+    transform: scaleX(1);
+  }
+  .filter-tab:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 
   /* Buttons */
@@ -237,7 +330,7 @@ button,
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     font-weight: 600;
     padding: 0.625rem 1.25rem;
     font-size: 0.9375rem;
@@ -260,7 +353,15 @@ button,
     color: #fff;
   }
   .btn-primary:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--color-primary) 85%, #1a1408);
+    background-color: color-mix(in srgb, var(--color-primary) 86%, #1a1408);
+  }
+  /* En sombre, la couleur dominante s'éclaircit (voir useTheme) : c'est
+     l'encre de la nuit qui écrit dessus, le blanc n'y tiendrait plus. */
+  :root.dark .btn-primary {
+    color: var(--color-bg-dark);
+  }
+  :root.dark .btn-primary:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--color-primary) 88%, #fff);
   }
 
   .btn-soft {
@@ -289,7 +390,7 @@ button,
     justify-content: center;
     width: 2.25rem;
     height: 2.25rem;
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     color: var(--color-text-secondary);
     transition:
       background-color 0.2s ease,
@@ -306,8 +407,8 @@ button,
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    padding: 0.2rem 0.6rem;
-    border-radius: 8px;
+    padding: 0.2rem 0.55rem;
+    border-radius: 5px;
     font-size: 0.75rem;
     font-weight: 600;
     white-space: nowrap;
@@ -317,7 +418,7 @@ button,
   .field {
     width: 100%;
     background-color: var(--color-surface);
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     padding: 0.7rem 1rem;
     color: var(--color-text-primary);
     box-shadow: inset 0 0 0 1px var(--color-line);
@@ -392,7 +493,9 @@ button,
   .modal-panel {
     background-color: var(--color-surface);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-pop);
+    box-shadow:
+      0 0 0 1px var(--color-line),
+      var(--shadow-pop);
     width: 100%;
     max-width: 28rem;
     padding: 1.5rem;
@@ -508,7 +611,7 @@ button,
   display: inline-block;
   margin-top: 0.5rem;
   padding: 0.75rem 1.5rem;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--color-primary);
   color: #fff;
   font-weight: 700;
@@ -541,7 +644,7 @@ button,
 .seo-article .tehilim-psalms a {
   display: inline-block;
   padding: 0.4rem 0.85rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   box-shadow: var(--shadow-card);
   text-decoration: none;

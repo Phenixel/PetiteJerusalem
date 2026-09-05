@@ -109,7 +109,7 @@ watch([locale, localeMessagesReady, () => route.path], applyMeta);
       {{ t("study.types.tanakh") }}
     </RouterLink>
 
-    <h1 class="text-2xl md:text-3xl font-bold text-text-primary tracking-tight">
+    <h1 class="text-2xl md:text-3xl font-bold text-text-primary">
       {{ t("paracha.title") }}
     </h1>
     <p class="mt-1.5 text-xs text-text-secondary leading-relaxed">
@@ -118,7 +118,7 @@ watch([locale, localeMessagesReady, () => route.path], applyMeta);
 
     <!-- Ce qu'on vient chercher : la paracha de ce Chabbat, et de quoi la lire. -->
     <section v-if="current" class="card mt-6 p-5">
-      <p class="text-xs font-semibold uppercase tracking-wide text-primary">
+      <p class="eyebrow eyebrow-accent">
         {{ isThisWeek ? t("paracha.thisWeek") : t("paracha.next") }}
       </p>
       <p class="mt-1 text-xl font-bold text-text-primary">{{ parashaLabel(current.parasha) }}</p>
@@ -140,7 +140,7 @@ watch([locale, localeMessagesReady, () => route.path], applyMeta);
       </div>
     </section>
 
-    <h2 class="mt-8 text-sm font-bold uppercase tracking-wide text-text-secondary">
+    <h2 class="mt-8 text-lg font-medium text-text-secondary">
       {{ t("paracha.cycle") }}
     </h2>
     <ul class="mt-3 flex flex-col divide-y divide-line">

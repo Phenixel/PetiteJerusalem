@@ -28,6 +28,6 @@ withDefaults(defineProps<{ height?: string }>(), { height: "10rem" });
 }
 
 :root.dark .capture {
-  background-color: #111827;
+  background-color: var(--color-bg-dark);
 }
 </style>

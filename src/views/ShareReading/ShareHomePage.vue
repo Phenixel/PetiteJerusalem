@@ -342,7 +342,7 @@ const handleCreateClick = () => {
 <template>
   <main class="mx-auto px-6 py-12">
     <div class="text-center mb-16 animate-[fadeIn_0.5s_ease]">
-      <h2 class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight">
+      <h2 class="text-4xl md:text-5xl font-bold text-text-primary mb-4">
         {{ t("shareReading.title") }}
       </h2>
       <!-- Le sous-titre explicatif ne sert que le site : SEO + découverte. -->
@@ -377,30 +377,22 @@ const handleCreateClick = () => {
           <AppIcon name="user" :size="20" class="text-primary" />
           {{ t("shareReading.mySessions") }}
         </h3>
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap">
           <button
-            class="chip !px-4 !py-2 transition-colors"
-            :class="
-              myTab === 'participated'
-                ? 'bg-primary text-white'
-                : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
-            "
+            class="filter-tab"
+            :class="{ 'filter-tab-active': myTab === 'participated' }"
             @click="switchMyTab('participated')"
           >
             {{ t("shareReading.myParticipated") }}
-            <span class="opacity-75">{{ participatedSessions.length }}</span>
+            <span class="text-text-secondary">{{ participatedSessions.length }}</span>
           </button>
           <button
-            class="chip !px-4 !py-2 transition-colors"
-            :class="
-              myTab === 'created'
-                ? 'bg-primary text-white'
-                : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
-            "
+            class="filter-tab"
+            :class="{ 'filter-tab-active': myTab === 'created' }"
             @click="switchMyTab('created')"
           >
             {{ t("shareReading.myCreated") }}
-            <span class="opacity-75">{{ createdOngoingCount }}</span>
+            <span class="text-text-secondary">{{ createdOngoingCount }}</span>
           </button>
         </div>
       </div>
@@ -461,14 +453,10 @@ const handleCreateClick = () => {
             <AppIcon name="x" :size="14" />
           </button>
         </div>
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap">
           <button
-            class="chip transition-colors"
-            :class="
-              selectedType === ''
-                ? 'bg-primary text-white'
-                : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
-            "
+            class="filter-tab"
+            :class="{ 'filter-tab-active': selectedType === '' }"
             @click="selectedType = ''"
           >
             {{ t("shareReading.allTypes") }}
@@ -476,12 +464,8 @@ const handleCreateClick = () => {
           <button
             v-for="type in availableTypes"
             :key="type"
-            class="chip transition-colors"
-            :class="
-              selectedType === type
-                ? 'bg-primary text-white'
-                : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
-            "
+            class="filter-tab"
+            :class="{ 'filter-tab-active': selectedType === type }"
             @click="selectedType = selectedType === type ? '' : type"
           >
             {{ sessionService.formatTextType(type) }}

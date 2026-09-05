@@ -119,7 +119,7 @@ onMounted(() => {
         class="text-center animate-[fadeIn_0.5s_ease]"
         :class="isNativeApp ? 'mb-6' : 'mb-12'"
       >
-        <h2 class="text-4xl md:text-5xl font-bold text-text-primary tracking-tight">
+        <h2 class="text-4xl md:text-5xl font-bold text-text-primary">
           {{ t("chiourim.title") }}
         </h2>
         <p
@@ -160,15 +160,11 @@ onMounted(() => {
     </div>
 
     <!-- Filtre par catégorie -->
-    <div class="mb-10 flex flex-wrap gap-2 justify-center animate-[fadeIn_0.5s_ease]">
+    <div class="mb-10 flex flex-wrap justify-center animate-[fadeIn_0.5s_ease]">
       <button
         @click="selectedCategory = 'all'"
-        class="chip transition-colors"
-        :class="
-          selectedCategory === 'all'
-            ? 'bg-primary text-white'
-            : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
-        "
+        class="filter-tab"
+        :class="{ 'filter-tab-active': selectedCategory === 'all' }"
       >
         {{ t("chiourim.allCategories") }}
       </button>
@@ -176,12 +172,8 @@ onMounted(() => {
         v-for="cat in dynamicCategories"
         :key="cat"
         @click="selectedCategory = cat"
-        class="chip transition-colors"
-        :class="
-          selectedCategory === cat
-            ? 'bg-primary text-white'
-            : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
-        "
+        class="filter-tab"
+        :class="{ 'filter-tab-active': selectedCategory === cat }"
       >
         {{ cat }}
       </button>

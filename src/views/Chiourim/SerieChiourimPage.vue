@@ -95,7 +95,7 @@ watch(() => route.params.serieId, loadSerie);
     <!-- Content -->
     <div v-else-if="serie" class="animate-[fadeIn_0.3s_ease]">
       <div class="mb-10">
-        <p class="text-sm font-semibold uppercase tracking-wider text-primary mb-2">
+        <p class="eyebrow eyebrow-accent mb-2">
           {{ t("serie.label") }}
         </p>
         <h1 class="text-3xl md:text-4xl font-bold text-text-primary mb-2">{{ serie.name }}</h1>

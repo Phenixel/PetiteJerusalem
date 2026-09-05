@@ -101,18 +101,17 @@ function goToLogin() {
   <header
     v-if="!isNativeApp"
     ref="header"
-    class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-beige/90 backdrop-blur-md dark:bg-gray-900/90 transition-colors duration-300"
+    class="sticky top-0 z-50 flex items-center justify-between gap-6 px-6 py-4 bg-bg-beige/92 backdrop-blur-md border-b border-line dark:bg-bg-dark/92 transition-colors duration-300"
   >
     <!-- Pas un h1 : chaque page a le sien, le bandeau en doublait le titre
          sur tout le site (deux h1 par page pour les lecteurs d'écran et le
-         référencement). -->
-    <RouterLink :to="localePath('home')" class="group">
-      <p
-        class="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
-      >
+         référencement). Le nom du site est écrit à l'encre, dans la police
+         de titrage : une marque, pas un dégradé. -->
+    <RouterLink :to="localePath('home')" class="group min-w-0">
+      <p class="wordmark text-text-primary group-hover:text-primary transition-colors">
         {{ $t("navbar.title") }}
       </p>
-      <p class="text-sm text-text-secondary mt-1 group-hover:text-primary transition-colors">
+      <p class="text-sm text-text-secondary mt-0.5 truncate">
         {{ $t("navbar.subtitle") }}
       </p>
     </RouterLink>
@@ -202,9 +201,7 @@ function goToLogin() {
           class="relative flex flex-col min-h-full p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
         >
           <div class="mb-8 pt-2">
-            <h2
-              class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
-            >
+            <h2 class="wordmark text-xl text-text-primary">
               {{ $t("navbar.title") }}
             </h2>
           </div>
@@ -272,6 +269,16 @@ function goToLogin() {
 </template>
 
 <style scoped>
+/* Le nom du site : la police de titrage, serrée d'un rien, sans autre
+   ornement. */
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
 /* Desktop links: quiet text, the active page gets a short underline bar
    instead of a pill background. */
 .nav-link {
@@ -307,7 +314,7 @@ function goToLogin() {
 /* Mobile links: flat rows, active = primary tint. */
 .mobile-link {
   padding: 0.85rem 1rem;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-weight: 500;
   color: var(--color-text-primary);
   transition:

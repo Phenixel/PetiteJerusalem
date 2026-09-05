@@ -119,7 +119,7 @@ watch(title, applySeoMeta, { immediate: true });
         {{ t("study.types.tanakh") }}
       </RouterLink>
 
-      <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight pb-1">
+      <h1 class="text-3xl md:text-4xl font-bold text-text-primary pb-1">
         {{ t("chneiMikra.title") }}
       </h1>
       <p class="mt-2 text-text-secondary">{{ t("chneiMikra.hint") }}</p>

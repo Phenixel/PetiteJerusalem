@@ -22,7 +22,7 @@ const emit = defineEmits<{
 
 <template>
   <div class="mb-12 text-center max-w-3xl mx-auto">
-    <h2 class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight">
+    <h2 class="text-4xl md:text-5xl font-bold text-text-primary mb-4">
       {{ session.name }}
     </h2>
     <p class="text-text-secondary text-lg mb-6">{{ session.description }}</p>

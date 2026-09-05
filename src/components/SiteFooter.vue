@@ -1,5 +1,8 @@
 <template>
-  <footer class="mt-auto px-6 py-8 text-text-secondary transition-colors" role="contentinfo">
+  <footer
+    class="mt-auto px-6 py-8 border-t border-line text-text-secondary transition-colors"
+    role="contentinfo"
+  >
     <nav
       class="mx-auto mb-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm"
       :aria-label="t('footer.discover')"
@@ -41,7 +44,7 @@
           rel="noopener noreferrer"
           :aria-label="t('footer.madeBy') + ' Phenixel (' + t('footer.about') + ')'"
         >
-          {{ t("footer.madeBy") }} <strong>Phenixel</strong> 🐦‍🔥
+          {{ t("footer.madeBy") }} <strong>Phenixel</strong>
         </a>
       </div>
 

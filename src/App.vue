@@ -175,7 +175,7 @@ authService.onAuthChanged((user) => {
 }
 :root.dark .zmanim-open-enter-active,
 :root.dark .zmanim-close-leave-active {
-  background-color: #111827; /* gray-900, le fond sombre du body */
+  background-color: var(--color-bg-dark); /* le fond sombre du body */
 }
 /* Ouverture : la page arrive entière, c'est useRevealOrigin qui la dévoile en
    cercle ; l'animation ne sert qu'à l'épingler le temps du cercle, pendant

@@ -2,7 +2,7 @@
 import { onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useLocale } from "../../composables/useLocale";
-import { useTheme, type ThemeOption } from "../../composables/useTheme";
+import { themeColorsFor, useTheme, type ThemeOption } from "../../composables/useTheme";
 import { useColorScheme, type ColorSchemeOption } from "../../composables/useColorScheme";
 import { ensureAllFontsLoaded, useFonts, type FontOption } from "../../composables/useFonts";
 import AppIcon from "../icons/AppIcon.vue";
@@ -235,17 +235,21 @@ onUnmounted(() => {
         @mouseleave="onThemeLeave"
       >
         <span class="block overflow-hidden rounded-xl">
-          <!-- En-tête coloré du thème -->
+          <!-- En-tête du thème : la couleur dominante en aplat, l'accent en
+               pastille. Deux couleurs franches, comme sur le site. -->
           <span
             class="relative block h-16 sm:h-24"
-            :style="{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})` }"
+            :style="{ backgroundColor: themeColorsFor(theme).primary }"
           >
             <span class="absolute inset-0 flex items-end p-2 sm:p-3">
               <span class="flex items-center gap-1.5 sm:gap-2">
-                <span class="block h-5 w-5 rounded-full bg-white/30 sm:h-8 sm:w-8"></span>
+                <span
+                  class="block h-5 w-5 rounded-full sm:h-8 sm:w-8"
+                  :style="{ backgroundColor: themeColorsFor(theme).secondary }"
+                ></span>
                 <span class="block">
-                  <span class="block h-2 w-10 rounded-full bg-white/60 sm:h-2.5 sm:w-20"></span>
-                  <span class="mt-1 block h-1.5 w-6 rounded-full bg-white/40 sm:h-2 sm:w-12"></span>
+                  <span class="block h-2 w-10 rounded-full bg-white/70 sm:h-2.5 sm:w-20"></span>
+                  <span class="mt-1 block h-1.5 w-6 rounded-full bg-white/45 sm:h-2 sm:w-12"></span>
                 </span>
               </span>
             </span>
@@ -256,7 +260,7 @@ onUnmounted(() => {
             <span class="flex gap-1.5 sm:gap-2">
               <span
                 class="block h-2 w-8 rounded-full sm:h-2.5 sm:w-16"
-                :style="{ backgroundColor: theme.primary }"
+                :style="{ backgroundColor: themeColorsFor(theme).primary }"
               ></span>
               <span
                 class="block h-2 w-5 rounded-full bg-black/10 sm:h-2.5 sm:w-10 dark:bg-white/20"
@@ -266,8 +270,8 @@ onUnmounted(() => {
             <span class="block h-1.5 w-3/4 rounded-full bg-black/5 sm:h-2 dark:bg-white/10"></span>
             <span class="block pt-1">
               <span
-                class="block h-4 w-12 rounded-lg sm:h-6 sm:w-20"
-                :style="{ backgroundColor: theme.primary }"
+                class="block h-4 w-12 rounded-md sm:h-6 sm:w-20"
+                :style="{ backgroundColor: themeColorsFor(theme).primary }"
               ></span>
             </span>
           </span>

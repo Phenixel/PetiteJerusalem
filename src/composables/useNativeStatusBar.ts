@@ -4,9 +4,9 @@ import { isNativeApp } from "./useNativeApp";
 import { useDarkMode } from "./useColorScheme";
 
 // Doit rester synchronisé avec les fonds de src/assets/main.css :
-// --color-bg-beige (body clair) et le gray-900 du body sombre.
+// --color-bg-beige (body clair) et --color-bg-dark (body sombre).
 const LIGHT_BG = "#f4f1ea";
-const DARK_BG = "#111827";
+const DARK_BG = "#17140f";
 
 /**
  * App native : la barre système Android prend la couleur de fond de l'app

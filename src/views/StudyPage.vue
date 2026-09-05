@@ -585,7 +585,7 @@ onUnmounted(() => {
             <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
             {{ t("study.title") }}
           </RouterLink>
-          <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight pb-1">
+          <h1 class="text-3xl md:text-4xl font-bold text-text-primary pb-1">
             {{ t(currentCorpus.labelKey) }}
           </h1>
           <p v-if="!isNativeApp" class="mt-2 text-lg text-text-secondary max-w-2xl leading-relaxed">
@@ -601,7 +601,7 @@ onUnmounted(() => {
           class="text-center animate-[fadeIn_0.5s_ease]"
           :class="isNativeApp ? 'mb-6' : 'mb-6 md:mb-10'"
         >
-          <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight pb-1">
+          <h1 class="text-3xl md:text-5xl font-bold text-text-primary pb-1">
             {{ t("study.title") }}
           </h1>
           <p

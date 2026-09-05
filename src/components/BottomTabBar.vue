@@ -97,7 +97,7 @@ function toggleZmanim(event: MouseEvent) {
      qu'on vient vérifier le plus souvent, et toujours en vitesse. -->
 <template>
   <nav
-    class="fixed bottom-0 inset-x-0 z-50 bg-surface border-t border-black/5 dark:border-white/10 pb-[var(--safe-bottom)]"
+    class="fixed bottom-0 inset-x-0 z-50 bg-surface border-t border-line pb-[var(--safe-bottom)]"
     :aria-label="t('navbar.mainMenu')"
   >
     <div class="relative flex items-stretch h-14">
@@ -163,7 +163,8 @@ function toggleZmanim(event: MouseEvent) {
 }
 
 /* Bouton rond central : posé au milieu de la barre, il déborde légèrement
-   au-dessus pour se détacher des onglets sans masquer la page. */
+   au-dessus pour se détacher des onglets sans masquer la page. Son ombre
+   est celle d'un objet, pas un halo de sa couleur. */
 .zmanim-fab {
   position: absolute;
   left: 50%;
@@ -177,7 +178,7 @@ function toggleZmanim(event: MouseEvent) {
   border-radius: 9999px;
   background-color: var(--color-primary);
   color: #fff;
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--color-primary) 45%, transparent);
+  box-shadow: 0 4px 12px rgb(20 16 8 / 0.22);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
@@ -187,7 +188,7 @@ function toggleZmanim(event: MouseEvent) {
 }
 .zmanim-fab-active {
   box-shadow:
-    0 6px 18px color-mix(in srgb, var(--color-primary) 45%, transparent),
+    0 4px 12px rgb(20 16 8 / 0.22),
     0 0 0 3px color-mix(in srgb, var(--color-primary) 28%, transparent);
 }
 

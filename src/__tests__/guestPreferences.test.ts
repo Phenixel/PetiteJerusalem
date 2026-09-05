@@ -73,7 +73,7 @@ describe("réglages sans compte", () => {
     expect(cssVar("--color-primary")).toBe(emerald.primary);
     expect(cssVar("--font-hebrew")).toContain("Heebo");
     // La police latine n'a jamais été choisie : celle d'origine.
-    expect(cssVar("--font-sans")).toContain("Inter");
+    expect(cssVar("--font-sans")).toContain("Source Sans");
   });
 
   it("repart des valeurs d'origine quand rien n'a été réglé", () => {

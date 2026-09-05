@@ -26,12 +26,12 @@ export interface ColorSchemeOption {
   ink: string;
 }
 
-/** Dans l'ordre où le sélecteur les présente. */
+/** Dans l'ordre où le sélecteur les présente. Mêmes valeurs que main.css. */
 export const COLOR_SCHEME_OPTIONS: ColorSchemeOption[] = [
-  { id: "light", background: "#f4f1ea", ink: "#35312a" },
-  { id: "dark", background: "#111827", ink: "#e5e7eb" },
+  { id: "light", background: "#f4f1ea", ink: "#2b2620" },
+  { id: "dark", background: "#17140f", ink: "#ece4d6" },
   // « Système » n'a pas de couleurs à lui : son miroir montre les deux.
-  { id: "system", background: "#f4f1ea", ink: "#35312a" },
+  { id: "system", background: "#f4f1ea", ink: "#2b2620" },
 ];
 
 const DEFAULT_SCHEME: ColorSchemeId = "system";

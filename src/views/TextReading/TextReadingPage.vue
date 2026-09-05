@@ -1504,7 +1504,7 @@ watch(textId, (_, previousTextId) => {
     <template v-else-if="content">
       <header class="mb-8 flex items-center justify-between gap-3">
         <div class="min-w-0">
-          <p class="text-sm font-semibold text-primary uppercase tracking-wide mb-1">
+          <p class="eyebrow eyebrow-accent mb-1">
             {{ textEntry.livre }}
           </p>
           <h1 class="text-3xl md:text-4xl font-bold text-text-primary">
@@ -1711,7 +1711,7 @@ watch(textId, (_, previousTextId) => {
 
         <!-- Marque-pages du texte (ouvert depuis l'icône de la barre d'outils) -->
         <div v-if="showBookmarksPanel && bookmarks.length" class="mb-5 card p-3">
-          <p class="text-xs font-semibold uppercase tracking-wide text-text-secondary px-1 mb-1.5">
+          <p class="eyebrow text-sm px-1 mb-1.5">
             {{ t("textReading.bookmarks") }}
           </p>
           <div v-for="b in bookmarks" :key="b.id" class="flex items-center gap-1">

@@ -10,12 +10,20 @@ export interface FontOption {
   stack: string;
 }
 
-/** Latin (UI) fonts, applied to --font-sans. */
+/**
+ * Polices latines (interface), appliquées à --font-sans.
+ *
+ * Source Sans 3 a remplacé Inter comme police d'origine : Inter est devenue
+ * la police de toutes les interfaces à la fois, et le site n'y avait plus de
+ * visage. Un compte qui avait gardé « inter » retombe sur l'origine, ce qui
+ * est le choix qu'il avait fait : le sans neutre. Les titres, eux, ne
+ * dépendent pas de ce réglage (voir --font-display dans main.css).
+ */
 export const LATIN_FONT_OPTIONS: FontOption[] = [
   {
-    id: "inter",
-    label: "Inter",
-    stack: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    id: "source-sans",
+    label: "Source Sans",
+    stack: '"Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   {
     id: "lora",
@@ -65,8 +73,8 @@ const DEFAULT_HEBREW = HEBREW_FONT_OPTIONS[0];
 /**
  * Chargement à la demande des familles NON par défaut.
  *
- * index.html n'embarque en bloquant que Inter + Frank Ruhl Libre (+ le sous-ensemble Noto
- * Hebrew, repli des teamim) : télécharger les 7 familles pour tous les
+ * index.html n'embarque en bloquant que Source Sans 3 + Frank Ruhl Libre (+ le
+ * sous-ensemble Noto Hebrew, repli des teamim) : télécharger les 7 familles pour tous les
  * visiteurs retardait le premier rendu de chaque page. Les alternatives ne
  * concernent que les utilisateurs qui les ont choisies (et l'écran de
  * préférences, qui affiche chaque option dans sa propre police).

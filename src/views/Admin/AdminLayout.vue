@@ -15,7 +15,7 @@ onMounted(() => {
 <template>
   <main class="mx-auto max-w-5xl px-6 py-10 min-h-screen">
     <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
-      <h1 class="text-2xl md:text-3xl font-bold text-text-primary tracking-tight">
+      <h1 class="text-2xl md:text-3xl font-bold text-text-primary">
         {{ t("admin.title") }}
       </h1>
       <nav class="flex gap-2">

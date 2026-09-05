@@ -318,7 +318,7 @@ const he: LocaleMessages = {
     fontLatinLabel: "גופן הממשק",
     fontHebrewLabel: "גופן הטקסטים בעברית",
     fontsLatin: {
-      inter: "מודרני",
+      "source-sans": "מודרני",
       lora: "קלאסי",
       nunito: "רך",
     },

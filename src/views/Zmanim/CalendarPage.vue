@@ -239,7 +239,7 @@ onMounted(() => {
       {{ t("zmanim.navTitle") }}
     </RouterLink>
 
-    <h1 class="text-2xl md:text-3xl font-bold text-text-primary tracking-tight">
+    <h1 class="text-2xl md:text-3xl font-bold text-text-primary">
       {{ t("calendar.title") }}
     </h1>
     <p class="mt-1.5 flex items-center gap-1.5 text-sm">

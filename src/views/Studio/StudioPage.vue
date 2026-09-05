@@ -203,10 +203,10 @@ async function removeChiour(chiour: ChiourDoc) {
 
     <template v-else>
       <div class="text-center mb-10 animate-[fadeIn_0.5s_ease]">
-        <p class="text-sm font-semibold uppercase tracking-wider text-primary mb-2">
+        <p class="eyebrow eyebrow-accent mb-2">
           {{ t("studio.title") }}
         </p>
-        <h1 class="text-3xl md:text-4xl font-bold text-text-primary mb-3 tracking-tight">
+        <h1 class="text-3xl md:text-4xl font-bold text-text-primary mb-3">
           {{ t("studio.hello", { name: author.auteurName }) }}
         </h1>
         <p class="text-text-secondary text-lg">{{ t("studio.intro") }}</p>

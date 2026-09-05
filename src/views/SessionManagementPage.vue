@@ -674,7 +674,7 @@ onMounted(() => {
 
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
-            <h1 class="text-3xl md:text-4xl font-bold text-text-primary mb-2 tracking-tight">
+            <h1 class="text-3xl md:text-4xl font-bold text-text-primary mb-2">
               {{ session.name }}
             </h1>
             <p class="text-text-secondary text-lg max-w-2xl">
