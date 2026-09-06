@@ -46,6 +46,7 @@ describe("prune-native-bundle", () => {
     write(root, "sitemap-bibliotheque.xml", "<urlset/>");
     write(root, "robots.txt", "User-agent: *");
     write(root, "llms.txt", "# Petite Jérusalem");
+    write(root, "llms-full.txt", "# Petite Jérusalem");
     write(root, "texts/talmud/berakhot.json", "{}");
     write(root, "texts/tehilim.json", "{}");
     write(root, "assets/app.js", "//");
@@ -69,6 +70,7 @@ describe("prune-native-bundle", () => {
       "sitemap-bibliotheque.xml",
       "robots.txt",
       "llms.txt",
+      "llms-full.txt",
     ]) {
       expect(existsSync(join(root, gone))).toBe(false);
     }

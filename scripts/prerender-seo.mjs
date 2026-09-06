@@ -97,6 +97,62 @@ function writePage(dist, template, page) {
 const fileFor = (path) => `${path.replace(/^\//, "")}.html`;
 
 /**
+ * Le texte d'une page, sans balises : titres en tête de ligne, listes à
+ * puces, entités décodées. Sert à llms-full.txt, la version texte des pages
+ * principales que les assistants d'IA lisent d'un trait.
+ */
+function htmlToText(html) {
+  return (
+    html
+      .replace(/<script[\s\S]*?<\/script>/g, "")
+      .replace(/<h1[^>]*>/g, "\n# ")
+      .replace(/<h2[^>]*>/g, "\n## ")
+      .replace(/<h3[^>]*>/g, "\n### ")
+      .replace(/<(li|dt)[^>]*>/g, "\n- ")
+      .replace(/<tr[^>]*>/g, "\n")
+      .replace(/<\/(td|th)>/g, " | ")
+      .replace(/<\/(p|li|dd|dt|h\d|tr|section|div|table|ul|ol|dl|main|nav|footer)>/g, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/[ \t]+/g, " ")
+      .replace(/ *\n */g, "\n")
+      // Une puce vide (un <li> qui ne contenait qu'un titre) n'apporte rien.
+      .replace(/\n-\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
+}
+
+/**
+ * llms-full.txt : les pages principales du site en un seul texte (accueil,
+ * pages d'atterrissage, guides, Tehilim par intention, horaires de Paris,
+ * calendrier et fêtes, paracha), en français, chacune sous son URL. C'est le
+ * pendant « intégral » de llms.txt : un assistant qui ne lit qu'un fichier y
+ * trouve les réponses (dates des fêtes, comment finir le Chass, quels
+ * Tehilim pour quelle intention) sans crawler le site. Les 1 200 pages de
+ * lecture n'y sont pas : elles pèseraient des dizaines de mégaoctets.
+ */
+function buildLlmsFull(pages, today) {
+  const head = [
+    "# Petite Jérusalem",
+    "",
+    `> Version texte des pages principales de ${SITE_URL}, générée le ${today}. ` +
+      "Le sommaire et les mots-clés sont dans /llms.txt ; toutes les URL dans /sitemap.xml.",
+    "",
+  ];
+  const body = pages.map((page) => {
+    const text = htmlToText(page.bodyHtml).replace(/^# [^\n]*\n/, "");
+    return `\n---\n\n# ${page.title}\n\nURL : ${SITE_URL}${page.path}\n\n${page.description}\n\n${text}`;
+  });
+  return `${head.join("\n")}${body.join("\n")}\n`;
+}
+
+/**
  * Generate the public reading pages for the whole library (Tehilim, Tanakh,
  * Michna, Talmud) under /etude/<corpus>/<slug>[/<section>]. Returns their
  * sitemap entries. The big text files are read from disk here, never bundled.
@@ -283,6 +339,17 @@ function main() {
     ),
     "utf-8",
   );
+
+  // 4. llms-full.txt : le texte des pages principales, en français (les pages
+  //    de villes sont exclues : le hub /horaires porte déjà Paris et l'annuaire).
+  const isFrench = (p) => (p.locale ?? "fr") === "fr" && p.sitemap !== false;
+  const llmsPages = [
+    ...allPages.filter(isFrench),
+    ...zmanimPages.filter((p) => isFrench(p) && !/^\/horaires\/./.test(p.path)),
+    ...parashaPages.filter(isFrench),
+  ];
+  writeFileSync(join(dist, "llms-full.txt"), buildLlmsFull(llmsPages, today), "utf-8");
+  console.log(`[prerender-seo] llms-full.txt: ${llmsPages.length} page(s)`);
 
   const total = allPages.length + zmanimPages.length + parashaPages.length + readingEntries.length;
   console.log(`[prerender-seo] Generated ${total} page(s) + app.html + sitemap.xml (index).`);

@@ -794,7 +794,7 @@ const en: LocaleMessages = {
       "Parashat hashavua: the calendar of parashiot and their texts {'|'} Petite Jérusalem",
     parashaDescription:
       "The parasha read this Shabbat, the dated calendar of all 54 parashiot, and the text of each one in Hebrew and transliteration.",
-    festivalTitle: "{festival}: dates, start and end times {'|'} Petite Jérusalem",
+    festivalTitle: "{festival} {year}: dates, start and end times {'|'} Petite Jérusalem",
     festivalDescription:
       "When is {festival}? The dates of {festival} over several years, with the start and end times of the festival, computed for your location.",
     dailyReadingTitle: "My daily reading {'|'} Petite Jérusalem",

@@ -49,6 +49,39 @@ Allow: /
 User-agent: DuckAssistBot
 Allow: /
 
+# Ceux qui vont chercher une page à la demande d'un utilisateur (recherche
+# dans l'assistant), et ceux qui alimentent les corpus d'entraînement
+# (Common Crawl nourrit la plupart des modèles ouverts).
+User-agent: Claude-User
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: MistralAI-User
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: Meta-ExternalFetcher
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: Google-CloudVertexBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
 # Index de sitemaps : un fichier par famille de pages (pages du site,
 # bibliothèque, horaires, calendrier), voir scripts/prerender-seo.mjs.
 Sitemap: https://petite-jerusalem.fr/sitemap.xml

@@ -2,13 +2,13 @@
 
 > Plateforme gratuite, en français, en anglais et en hébreu, pour étudier et partager la Torah à plusieurs. On y répartit un texte entre plusieurs personnes pour le terminer ensemble : se partager le Talmud (Guemara) pour finir le Chass, lire les Tehilim (Psaumes) à plusieurs pour une refoua chelema (guérison) ou à la mémoire d'un proche (ilouï nechama), étudier la Michna ou le Tanakh. Chaque participant réserve ses passages (même sans compte) et tout le monde suit la progression jusqu'au siyoum.
 
-Mots-clés : partage de lecture, partage d'étude, finir le Chass, terminer le Talmud à plusieurs, partage de Tehilim, répartir les Psaumes, limoud collectif, siyoum, refoua chelema, ilouï nechama, hiloula, communauté juive, horaires de Chabbat, allumage des bougies, sortie de Chabbat, havdala, zmanim, netz haHama, fin du Chéma, chkia, tsét haKokhavim, calendrier des fêtes juives, dates de Pessah, quand tombe Roch Hachana, paracha de la semaine, parachat hachavoua, chnei mikra.
+Mots-clés : partage de lecture, partage d'étude, finir le Chass, terminer le Talmud à plusieurs, partage de Tehilim, chaîne de Tehilim, répartir les Psaumes, limoud collectif, siyoum, refoua chelema, ilouï nechama, hiloula, communauté juive, horaires de Chabbat, allumage des bougies, sortie de Chabbat, havdala, zmanim, netz haHama, fin du Chéma, chkia, tsét haKokhavim, calendrier des fêtes juives, dates de Pessah, quand tombe Roch Hachana, paracha de la semaine, parachat hachavoua, chnei mikra.
 
 ## Pages principales
 
 - [Partage de lectures](https://petite-jerusalem.fr/share-reading) : créer une session, choisir un texte, répartir les passages entre participants et suivre la progression.
 - [Finir le Chass à plusieurs](https://petite-jerusalem.fr/finir-le-chass) : organiser l'étude collective du Talmud Bavli jusqu'au siyoum haShass.
-- [Partage de Tehilim](https://petite-jerusalem.fr/partage-tehilim) : répartir les 150 Psaumes entre plusieurs personnes.
+- [Chaîne de Tehilim](https://petite-jerusalem.fr/partage-tehilim) : créer une chaîne (partage) de Tehilim et répartir les 150 Psaumes entre plusieurs personnes.
 - [Tehilim par intention](https://petite-jerusalem.fr/tehilim) : quels psaumes lire selon l'intention (refoua chelema / guérison d'un malade, ilouï nechama, parnassa, chidoukh, grossesse, etc.) et comment les partager à plusieurs, à l'adresse https://petite-jerusalem.fr/tehilim/<intention> (refoua-chelema, par exemple).
 - [Bibliothèque](https://petite-jerusalem.fr/bibliotheque) : lire les Tehilim, la Michna, le Talmud et le Tanakh en ligne, en hébreu et en phonétique. Une page par corpus liste tous ses livres : https://petite-jerusalem.fr/bibliotheque/tehilim (les 150 psaumes), /bibliotheque/michna (les traités de la Michna), /bibliotheque/talmud (les traités du Talmud Bavli), /bibliotheque/tanakh (les parachiot de la Torah, les Neviim et les Ketouvim), /bibliotheque/sidour (les prières de la semaine), /bibliotheque/brahot (les bénédictions). Chaque texte a sa page : https://petite-jerusalem.fr/bibliotheque/tehilim/23 (Tehilim 23), /bibliotheque/talmud/berakhot (le traité Berakhot, puis /bibliotheque/talmud/berakhot/2 pour son chapitre 2), /bibliotheque/michna/avot/1 (Pirkei Avot, chapitre 1), /bibliotheque/tanakh/berechit (la parasha Berechit), /bibliotheque/brahot/birkat-hamazon.
 - [Chiourim](https://petite-jerusalem.fr/chiourim) : cours et leçons de Torah à écouter, par rav ou par thème.
@@ -29,6 +29,7 @@ la paracha de la semaine et les pages d'atterrissage existent dans les trois lan
 
 ## Pour les robots
 
+- Version texte intégrale des pages principales, pour les assistants : https://petite-jerusalem.fr/llms-full.txt
 - Plan du site : https://petite-jerusalem.fr/sitemap.xml (un index, avec un sitemap par famille : pages du site, bibliothèque, horaires, calendrier).
 - Toutes les pages ci-dessus sont servies en HTML complet, sans JavaScript ; les horaires, le calendrier et la paracha de la semaine sont recalculés à chaque déploiement, au moins une fois par semaine.
 - Application mobile : https://apps.apple.com/app/id6798778029 (iOS) et https://play.google.com/store/apps/details?id=fr.petitejerusalem.app (Android).

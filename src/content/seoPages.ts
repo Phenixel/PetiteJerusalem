@@ -407,7 +407,7 @@ export const appPages: SeoPage[] = [
       <h2>Pensé pour vos limoud collectifs</h2>
       <ul>
         <li><a href="/finir-le-chass">Finir le Chass à plusieurs</a> : se répartir les massekhtot et les dapim du Talmud Bavli jusqu'au siyoum haShass.</li>
-        <li><a href="/partage-tehilim">Partage de Tehilim</a> : répartir les 150 Psaumes pour une refoua chelema (guérison), un ilouï nechama (à la mémoire d'un défunt) ou une hatslakha.</li>
+        <li><a href="/partage-tehilim">Chaîne de Tehilim</a> : répartir les 150 Psaumes pour une refoua chelema (guérison), un ilouï nechama (à la mémoire d'un défunt) ou une hatslakha.</li>
         <li>Organiser un limoud à la mémoire d'un proche, pour une hiloula ou pour la réussite d'un événement.</li>
       </ul>
       <p><a class="seo-cta" href="/share-reading">Créer une session de partage</a></p>
@@ -629,8 +629,8 @@ const finirLeChassFaq = [
 
 const partageTehilimFaq = [
   {
-    q: "Comment répartir les Tehilim entre plusieurs personnes ?",
-    a: "Créez une session de type Tehilim sur Petite Jérusalem, sélectionnez les chapitres, puis partagez le lien. Chacun réserve les Tehilim qu'il lit ; le sefer complet (150 chapitres) se termine bien plus vite à plusieurs.",
+    q: "Comment créer une chaîne de Tehilim ?",
+    a: "Créez une session de type Tehilim sur Petite Jérusalem, sélectionnez les chapitres, puis partagez le lien (WhatsApp, courriel, QR code). Chacun réserve les Tehilim qu'il lit ; le sefer complet (150 chapitres) se termine bien plus vite à plusieurs, et la chaîne peut être relancée autant de fois qu'on veut.",
   },
   {
     q: "Peut-on lire les Tehilim pour un malade ?",
@@ -1608,11 +1608,11 @@ const FINIR_HE: LandingStrings = {
 
 const TEHILIM_FR: LandingStrings = {
   lang: "fr-FR",
-  title: "Partage de Tehilim : répartir les Psaumes à plusieurs | Petite Jérusalem",
+  title: "Chaîne de Tehilim : répartir les 150 Psaumes à plusieurs | Petite Jérusalem",
   description:
-    "Répartissez les 150 Tehilim entre plusieurs personnes pour les terminer ensemble : pour un malade (refoua chelema), à la mémoire d'un proche (ilouï nechama) ou pour une hatslakha. Gratuit, sans compte obligatoire.",
-  h1: "Partage de Tehilim à plusieurs",
-  lead: "Lire un sefer Tehilim entier (les 150 Psaumes) prend du temps. En se répartissant les chapitres entre plusieurs personnes, on peut le terminer en quelques minutes. Petite Jérusalem permet d'organiser ce partage gratuitement et de suivre les chapitres déjà lus.",
+    "Créez une chaîne de Tehilim gratuite : répartissez les 150 Psaumes entre plusieurs personnes pour les terminer ensemble, pour un malade (refoua chelema), à la mémoire d'un proche (ilouï nechama) ou pour une hatslakha. Sans compte obligatoire.",
+  h1: "Chaîne de Tehilim : partager les Psaumes à plusieurs",
+  lead: "Lire un sefer Tehilim entier (les 150 Psaumes) prend du temps. En se répartissant les chapitres entre plusieurs personnes, ce qu'on appelle une chaîne de Tehilim (ou partage de Tehilim), on peut le terminer en quelques minutes. Petite Jérusalem permet de créer cette chaîne gratuitement, de partager son lien et de suivre les chapitres déjà lus.",
   whyTitle: "Pour quelle intention ?",
   why: [
     "<strong>Refoua chelema</strong> : pour la guérison d'un malade.",
@@ -1632,7 +1632,7 @@ const TEHILIM_FR: LandingStrings = {
   faq: partageTehilimFaq,
   breadcrumbHome: "Accueil",
   breadcrumbName: "Partage de Tehilim",
-  articleHeadline: "Partage de Tehilim : répartir les Psaumes à plusieurs",
+  articleHeadline: "Chaîne de Tehilim : répartir les 150 Psaumes à plusieurs",
 };
 
 const TEHILIM_EN: LandingStrings = {

@@ -218,6 +218,169 @@ l'essentiel.
 8. **Suivre les Core Web Vitals** dans la Search Console (rapport Expérience)
    et PageSpeed Insights sur `/`, `/horaires/paris`, `/bibliotheque/tehilim/23`.
 
+## 5. Visibilité dans les assistants d'IA (ChatGPT, Claude, Gemini, Perplexity)
+
+Un assistant ne « connaît » pas un site : il le retrouve dans un index de
+recherche au moment de la question, puis va lire la page. Trois conditions,
+et l'état du site pour chacune.
+
+**1. Être dans l'index que l'assistant interroge.** Chacun a le sien :
+
+| Assistant | Index consulté | Ce qui le nourrit |
+| --- | --- | --- |
+| ChatGPT (search), Copilot | Bing | Bing Webmaster Tools, IndexNow, `OAI-SearchBot` |
+| Gemini, AI Overviews | Google | Search Console, `Googlebot` (`Google-Extended` pour l'entraînement) |
+| Claude | Brave Search | pas de console : crawl de Brave à partir des liens entrants |
+| Perplexity | le sien + Bing | `PerplexityBot`, `Perplexity-User` |
+| Mistral (Le Chat) | Brave | `MistralAI-User` |
+| Modèles ouverts (Llama, Mistral, DeepSeek…) | corpus d'entraînement | `CCBot` (Common Crawl) |
+
+Test fait pendant l'audit avec un outil de recherche adossé à un index tiers
+(Brave) : sur `site:petite-jerusalem.fr`, **une seule URL du site remonte,
+`/lire/158`**, une ancienne adresse (aujourd'hui `noindex`, canonique vers
+`/bibliotheque`). Ni l'accueil, ni `/horaires`, ni `/finir-le-chass`. Sur
+« petite-jerusalem.fr » entre guillemets, uniquement le film de 2005. En
+revanche, sur « finir le Chass à plusieurs partage talmud », cette même URL
+`/lire/158` sort en troisième position, derrière Torah-Box et Techouvot :
+la preuve que le texte porte, dès qu'une page est indexée.
+
+Conclusion : le site est **quasiment absent des index** que les assistants
+utilisent, non par un défaut technique du HTML (tout est servi en clair), mais
+parce que ces index ne l'ont pas encore parcouru. C'est la Search Console et
+Bing Webmaster (section 4) qui débloquent Google et Bing ; Brave suit les
+liens entrants, d'où l'importance des liens (section 4, point 6).
+
+**2. Être lisible sans JavaScript.** Acquis : les 2 025 pages sont servies en
+HTML complet, FAQ comprises, et `robots.txt` autorise chaque robot d'IA
+nommément (ajout dans cette PR de `Claude-User`, `Perplexity-User`,
+`MistralAI-User`, `Meta-ExternalAgent`, `Meta-ExternalFetcher`, `Amazonbot`,
+`Google-CloudVertexBot`, `cohere-ai`, `YouBot` et `CCBot`, en plus de
+`GPTBot`, `OAI-SearchBot`, `ClaudeBot`, `Claude-SearchBot`, `PerplexityBot`,
+`Google-Extended`, `Applebot`, `DuckAssistBot`).
+
+**3. Donner la réponse en texte.** Acquis pour les questions datées (« quand
+tombe Pessah 2027 », « à quelle heure sort Chabbat à Lyon ») et les
+questions d'usage (« comment finir le Chass à plusieurs »), grâce aux FAQ.
+Cette PR ajoute **`llms-full.txt`** (125 Ko, généré à chaque build) : le
+texte des 37 pages principales en français, chacune sous son URL, pour
+l'assistant qui ne lit qu'un fichier ; `llms.txt` y renvoie.
+
+**Comment vérifier soi-même** (protocole repris dans le prompt Cowork) :
+poser à chaque assistant, avec la recherche web activée, les mêmes six
+questions et noter si le site est cité et en quelle position :
+« Comment organiser une chaîne de Tehilim pour un malade ? », « Un site pour
+finir le Chass à plusieurs ? », « À quelle heure sort Chabbat à Marseille
+cette semaine ? », « Quand tombe Roch Hachana 2027 ? », « Où lire Tehilim 121
+en phonétique ? », « Quelle est la paracha de cette semaine ? ». À refaire
+un mois après la soumission des sitemaps.
+
+## 6. Les mots-clés : ce qui est visé, ce que cherchent les gens, et les horizons non exploités
+
+### Le vocabulaire visé confronté au marché
+
+Pour chaque famille de pages, la requête telle qu'elle est tapée, et qui la
+gagne aujourd'hui (résultats relevés pendant l'audit) :
+
+| Famille | Requête tapée | Qui gagne | Verdict pour Petite Jérusalem |
+| --- | --- | --- | --- |
+| Partage de Tehilim | « chaîne de Tehilim » | Torah-Box, Univers Torah, Amisrael, Tehilim Online, Joie 2 Vivre | Le site disait « partage de Tehilim », un mot que personne ne tape. **Corrigé dans cette PR** : titre, h1, chapeau et FAQ de `/partage-tehilim` disent « chaîne de Tehilim », et gardent « partage » en second. Concurrence forte : l'angle à tenir est « gratuit, sans compte, lien WhatsApp, suivi en temps réel de ce qui est lu ». |
+| Finir le Chass | « finir le Chass à plusieurs », « partage du Chass », « siyoum haShass » | Torah-Box (articles), Limoud Torah | Concurrence faible, vocabulaire juste. C'est la page qui sort déjà. À compléter par « chaîne de Michnayot » (voir horizons). |
+| Horaires | « horaires de Chabbat Lyon », « allumage des bougies Lyon » | Chabad, Hebcal, Torah-Box, Alloj, Amhazak, horaire-chabbat.fr | Requêtes de tête inaccessibles à court terme. La chance est la **longue traîne** : 83 villes françaises dont Sarcelles, Créteil, Saint-Mandé, Villeurbanne, Sarreguemines… où les gros sites n'ont pas de page dédiée en français. |
+| Fêtes | « quand tombe Roch Hachana 2026 », « date Kippour 2026 » | calendriergratuit.fr, icalendrier.fr, joursferies.fr, Loubavitch, Chabad | Les gagnants ont **l'année dans le titre**. Nos titres disaient « Roch Hachana : dates, heure d'entrée et de sortie », sans année. **Corrigé dans cette PR** : « Roch Hachana 2026 : dates, heure d'entrée et de sortie », l'année étant celle de la prochaine occurrence, recalculée par le rafraîchissement hebdomadaire. |
+| Paracha | « paracha de la semaine » | Chabad, Torah-Box, Wikipédia, Manitou | Requête de tête inaccessible ; la longue traîne « quand lit-on Ki Tétsé », « texte de la paracha en phonétique » est le bon angle, déjà en place. |
+| Bibliothèque | « Tehilim 121 phonétique », « Birkat Hamazon phonétique » | Torah-Box, Tehilim Online, Dayan Haemet, Chabad, bar-mitzvah.fr | Vocabulaire juste (« en hébreu et phonétique »). Les pages existent ; elles manquaient de liens entrants (corrigé : pages de corpus). |
+| Tehilim du jour | « Tehilim du jour », « Tehilim par jour du mois » | Chabad, Tehilim Online | La page `/bibliotheque/tehilim-du-jour` existe mais n'est **pas prérendue** (Vue seulement) : invisible pour les moteurs. À prérendre avec le tableau des 30 jours (voir horizons). |
+
+### Horizons non exploités, par intérêt décroissant
+
+Chaque ligne est une requête réelle, le contenu que le site pourrait y
+mettre avec ce qu'il a déjà, et pourquoi c'est jouable.
+
+1. **« Chaîne de Michnayot » / « Michnayot pour un défunt ».** Répartir les
+   Michnayot à la mémoire d'un défunt (l'année de deuil, la hiloula) est un
+   usage courant, peu servi en français, et le site sait déjà partager la
+   Michna. Une page `/partage-michnayot` sur le modèle de `/partage-tehilim`
+   (intention, comment faire, FAQ), et le mot « Michnayot » dans l'accueil.
+2. **« Daf Hayomi du jour » / « daf yomi aujourd'hui ».** Les résultats sont
+   des cours vidéo, pas le texte. Une page `/daf-hayomi` calculée
+   (`@hebcal/learning` fournit `DafYomi`, comme `MishnaYomi`) qui donne le daf
+   du jour, la semaine à venir et le lien vers le chapitre dans la
+   bibliothèque, rafraîchie par le workflow hebdomadaire. Même mécanique pour
+   « Michna yomit ». Orthographe française : « Daf Hayomi » avant « daf yomi ».
+3. **Tehilim du jour, prérendus.** Le tableau des psaumes par jour du mois
+   hébraïque (1 : 1 à 9, 2 : 10 à 17…) est stable et très cherché ; la page
+   existe, il manque son HTML statique, avec le jour courant calculé au build.
+4. **L'année juive comme page.** « Calendrier juif 5787 », « calendrier
+   hébraïque 2026-2027 », « fêtes juives 2027 » : une page par année civile
+   (`/calendrier/2027`) listant toutes les fêtes et jeûnes de l'année, ce que
+   font les sites de calendrier génériques qui gagnent aujourd'hui.
+5. **« Date hébraïque aujourd'hui » / convertisseur de dates.** Tout est déjà
+   calculé sur l'appareil (hebcal) : une page `/date-hebraique` avec la date
+   du jour et un convertisseur, plus une FAQ (« quelle est la date hébraïque
+   de ma naissance »), viserait une requête quotidienne.
+6. **Le Omer et la lune.** « Compteur du Omer », « quel jour du Omer
+   aujourd'hui », « Birkat Halevana jusqu'à quand » : les bandeaux existent
+   dans l'app ; une page `/omer` (le compte du jour et les 49 jours datés) et
+   une section « Birkat Halevana » dans le calendrier les rendraient
+   trouvables.
+7. **Les prières une par une.** « Kaddish phonétique », « Chema Israël
+   phonétique », « Modé ani phonétique », « Tefilat Haderekh phonétique »
+   (cette dernière existe déjà dans les brahot) : de fortes requêtes de
+   circonstance (deuil, voyage, enfants). Le sidour est découpé en offices ;
+   découper en plus les prières les plus cherchées en pages propres.
+8. **L'anglais sur les intentions.** « Tehillim for healing », « tehillim for
+   shidduch », « tehillim for parnassa » : le marché anglophone est grand et
+   les pages françaises existent déjà ; traduire les sept pages d'intention
+   sous `/en/tehillim/…`.
+9. **Villes manquantes.** La couverture française est bonne (83 villes),
+   mais quelques communautés cherchées manquent : Saint-Denis, Le
+   Kremlin-Bicêtre, Saint-Ouen, Pantin, Bagneux, Fontenay-sous-Bois, La
+   Garenne-Colombes, Levallois, Enghien-les-Bains, Deauville, Cagnes-sur-Mer,
+   Saint-Laurent-du-Var. Une ligne dans `cities.json` chacune.
+10. **Sarcelles.** Le film et le quartier de Sarcelles s'appellent « la
+    Petite Jérusalem » : une page « Horaires de Chabbat à Sarcelles » bien
+    faite est la seule façon de capter un peu de la requête de marque sans
+    la disputer au film.
+
+### Ce qu'il ne faut pas viser
+
+- « Petite Jérusalem » seul : le film (Wikipédia, AlloCiné, IMDb, Amazon)
+  occupe tout ; un site sans autorité n'y entrera pas, et ce n'est pas la
+  requête de quelqu'un qui cherche à étudier.
+- Les requêtes de tête « horaires de Chabbat Paris », « paracha de la
+  semaine » : Chabad et Hebcal ont vingt ans d'avance ; la longue traîne
+  rapporte plus vite.
+
+## 7. Au-delà du référencement
+
+Ce qui amène des visiteurs sans passer par un moteur, par rendement
+probable.
+
+1. **WhatsApp.** C'est là que circulent les chaînes de Tehilim et les
+   horaires. Les cartes Open Graph par session existent ; une carte par
+   ville et par fête (section 3, point 3) fait de chaque partage une
+   publicité. Proposer un « partager les horaires de cette semaine » sur la
+   page ville, texte prêt à coller.
+2. **Les stores.** La fiche App Store et Play Store est un canal de recherche
+   à part entière (« horaires chabbat », « tehilim ») : titre, sous-titre et
+   mots-clés ASO valent une page SEO. Le `sameAs` de cette PR relie site et
+   fiches.
+3. **Newsletters et sites de communautés.** Une page « intégrer les horaires
+   de votre ville dans votre site ou votre newsletter » (un lien profond, ou
+   un petit encart) donne aux synagogues une raison de lier le site chaque
+   semaine.
+4. **Podcast.** Le flux RSS des chiourim (section 3, point 4) ouvre Apple
+   Podcasts, Spotify et YouTube Music.
+5. **YouTube / Instagram.** Une image par semaine « Horaires de Chabbat,
+   paracha, allumage à Paris, Marseille, Lyon » générée automatiquement
+   (même mécanique que les cartes Open Graph) et publiée avec le lien.
+6. **Google Ad Grants** (10 000 $ de publicité par mois offerts) exige un
+   statut d'association reconnue ; le site est édité par Phenixel. Si une
+   association loi 1901 portait le projet, ce serait le levier payant le plus
+   rentable, et gratuit.
+7. **Wikipédia / Wikidata** (section 4, point 7) : la source la plus lue par
+   les assistants pour désambiguïser « Petite Jérusalem ».
+
 ### Prompt pour Claude Cowork
 
 À coller dans une session Claude Cowork avec le navigateur (et, si
@@ -267,7 +430,9 @@ chaque étape (ce qui est fait, ce qui bloque, ce que tu as dû décider) :
      médiocres) ;
    - dans Performance, exporte les 50 premières requêtes des 3 derniers mois
      (clics, impressions, position) et dis-moi quelles requêtes sont en
-     position 4 à 15 avec beaucoup d'impressions : ce sont celles à travailler.
+     position 4 à 15 avec beaucoup d'impressions : ce sont celles à travailler ;
+     compare-les à la liste des horizons de la section 6 de l'audit et dis-moi
+     lesquels apparaissent déjà.
 
 3. Bing Webmaster Tools (https://www.bing.com/webmasters). Vérifie que le site
    est ajouté (importe-le depuis la Search Console si possible), que le sitemap
@@ -298,14 +463,29 @@ chaque étape (ce qui est fait, ce qui bloque, ce que tu as dû décider) :
    existe un film homonyme). Si le connecteur Gmail est disponible, crée-les en
    brouillons ; sinon, donne-moi les textes.
 
-7. Wikidata. Vérifie s'il existe un élément Wikidata pour le site (recherche
+7. Assistants d'IA. Avec ChatGPT (recherche web activée), Claude (recherche web),
+   Gemini et Perplexity, pose à chacun les six questions suivantes, telles
+   quelles, et note pour chaque réponse si petite-jerusalem.fr est cité, à quelle
+   position, et quels sites le sont à la place :
+   - « Comment organiser une chaîne de Tehilim pour un malade ? »
+   - « Un site pour finir le Chass à plusieurs ? »
+   - « À quelle heure sort Chabbat à Marseille cette semaine ? »
+   - « Quand tombe Roch Hachana 2027 ? »
+   - « Où lire Tehilim 121 en phonétique ? »
+   - « Quelle est la paracha de cette semaine ? »
+   Vérifie aussi que https://petite-jerusalem.fr/llms.txt et
+   https://petite-jerusalem.fr/llms-full.txt s'ouvrent. Mets le tableau des
+   réponses dans le compte rendu : c'est la mesure de départ, à refaire dans un
+   mois.
+
+8. Wikidata. Vérifie s'il existe un élément Wikidata pour le site (recherche
    « Petite Jérusalem site web »). S'il n'existe pas, prépare-moi la liste des
    propriétés à renseigner (instance de : site web ; langue de l'œuvre : français,
    anglais, hébreu ; URL officielle ; identifiant App Store 6798778029 ;
    identifiant Play Store fr.petitejerusalem.app ; date de création) ; ne crée
    rien toi-même.
 
-8. Termine par un compte rendu en français, avec les chiffres relevés
+9. Termine par un compte rendu en français, avec les chiffres relevés
    (indexation, requêtes, Web Vitals), les actions faites, celles qui attendent
    une décision de ma part, et les trois prochaines choses à faire par ordre
    d'impact. Si le connecteur Notion est disponible, ajoute ce compte rendu en

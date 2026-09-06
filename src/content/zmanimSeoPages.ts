@@ -429,7 +429,8 @@ function parashaRows(periods: RestPeriod[], locale: SeoLocale, s: ZmanimStrings)
       if (!parasha) return [];
       const links = parasha.entries
         .map(
-          (entry, index) => `<a href="${hubPath(entry)}">${parashaLabel(parasha, index, locale)}</a>`,
+          (entry, index) =>
+            `<a href="${hubPath(entry)}">${parashaLabel(parasha, index, locale)}</a>`,
         )
         .join(" · ");
       return [
@@ -732,8 +733,7 @@ function festivalBlock(entry: CalendarEntry, def: SeoFestival, locale: SeoLocale
     first.abs() === entry.first.abs()
       ? entry.period.start
       : nightfallOf(DEFAULT_PLACE, first.prev());
-  const end =
-    last.abs() === entry.last.abs() ? entry.period.end : nightfallOf(DEFAULT_PLACE, last);
+  const end = last.abs() === entry.last.abs() ? entry.period.end : nightfallOf(DEFAULT_PLACE, last);
   return { first, last, start, end };
 }
 
@@ -1012,7 +1012,7 @@ function buildFestivalPage(
     alternates: Object.fromEntries(
       SEO_LOCALES.map((l) => [l, sectionPath("calendrier", l, def.slugs[l])]),
     ),
-    title: s.festivalTitle(label),
+    title: s.festivalTitle(label, fromYear),
     description: s.festivalDescription(label, perYear.length, fromYear, hasTimes),
     sitemap: { priority: 0.6, changefreq: "monthly" },
     bodyHtml: `

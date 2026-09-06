@@ -203,7 +203,17 @@ the Bibliothèque reading pages generated per corpus/book/chapter by
 Structured data emitted: `WebSite`, `Organization`, `WebApplication`, `HowTo`,
 `Article`, `FAQPage`, `BreadcrumbList`, `ItemList`.
 
-`public/llms.txt` describes the site for AI agents.
+`public/llms.txt` describes the site for AI agents, and the build writes
+**`dist/llms-full.txt`** next to it (`buildLlmsFull` in `prerender-seo.mjs`):
+the text of the ~37 main French pages (home, landing pages, guides, Tehilim by
+intention, `/horaires`, `/calendrier` and the festivals, `/paracha`), each
+under its URL, for an assistant that reads a single file. The reading pages
+are left out (tens of megabytes). `robots.txt` names every AI crawler
+explicitly (search-time fetchers such as `OAI-SearchBot`, `Claude-User`,
+`Perplexity-User`, `MistralAI-User`, and training crawlers such as `GPTBot`,
+`ClaudeBot`, `Google-Extended`, `CCBot`); which index each assistant actually
+queries, and how to check the site shows up there, is in
+`docs/audit-seo-2026-09.md`, section 5.
 
 The dynamic pages served by `socialPreview` carry JSON-LD too: a chiour is an
 `AudioObject` (author, ISO 8601 duration, `contentUrl`, free), sessions and
