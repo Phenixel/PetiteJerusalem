@@ -20,7 +20,7 @@ const SCRIPT = join(
   "prune-native-bundle.mjs",
 );
 
-const SEO_HOME = "<div id=\"app\"><main class=\"seo-article\"><h1>Accueil SEO</h1></main></div>";
+const SEO_HOME = '<div id="app"><main class="seo-article"><h1>Accueil SEO</h1></main></div>';
 const BARE_SHELL = '<div id="app"></div>';
 
 function write(root: string, relative: string, content: string): void {
@@ -41,7 +41,9 @@ describe("prune-native-bundle", () => {
     write(root, "horaires.html", "seo");
     write(root, "horaires/marseille.html", "seo");
     write(root, "bibliotheque/tehilim/1.html", "seo");
-    write(root, "sitemap.xml", "<urlset/>");
+    write(root, "sitemap.xml", "<sitemapindex/>");
+    write(root, "sitemap-pages.xml", "<urlset/>");
+    write(root, "sitemap-bibliotheque.xml", "<urlset/>");
     write(root, "robots.txt", "User-agent: *");
     write(root, "llms.txt", "# Petite Jérusalem");
     write(root, "texts/talmud/berakhot.json", "{}");
@@ -61,7 +63,13 @@ describe("prune-native-bundle", () => {
   });
 
   it("retire les fichiers destinés aux robots", () => {
-    for (const gone of ["sitemap.xml", "robots.txt", "llms.txt"]) {
+    for (const gone of [
+      "sitemap.xml",
+      "sitemap-pages.xml",
+      "sitemap-bibliotheque.xml",
+      "robots.txt",
+      "llms.txt",
+    ]) {
       expect(existsSync(join(root, gone))).toBe(false);
     }
   });

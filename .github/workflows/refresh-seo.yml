@@ -1,0 +1,118 @@
+name: Refresh SEO pages
+
+# Rafraîchit chaque semaine les pages prérendues qui portent des dates, sans
+# release : les horaires de Chabbat (douze semaines à venir par ville), le
+# calendrier des fêtes et surtout /paracha, dont le chapeau et la FAQ nomment
+# le Chabbat pour lequel ils ont été bâtis. Ces pages sont vraies au moment du
+# build et ne le restent que tant qu'il est récent : sans déploiement pendant
+# un mois, « la paracha de cette semaine » parle de la semaine passée, et les
+# tableaux d'horaires reculent d'autant.
+#
+# Le déploiement partait jusqu'ici d'un tag seulement (deploy.yml). Ici, on
+# rebâtit le DERNIER TAG DÉPLOYÉ, pas la branche main : le site reste à la
+# version publiée, seules les dates changent. Un tag `web-vX.Y.Z` ou `vX.Y.Z`
+# plus récent que le dernier rafraîchissement est repris tel quel.
+#
+# Hosting seulement : ni functions, ni règles, rien d'autre ne bouge. IndexNow
+# est prévenu ensuite, comme après une release (Bing, Yandex, ChatGPT search).
+# Google, lui, lit le `lastmod` du sitemap : les pages calculées portent la
+# date du build, les pages de contenu la date de leur dernier commit
+# (scripts/lib/lastmod.mjs), d'où le checkout avec tout l'historique.
+on:
+  schedule:
+    # Le dimanche à 03:00 UTC : après le Chabbat, avant la semaine, pour que
+    # /paracha annonce le Chabbat qui vient. Le mercredi à 03:00 UTC en
+    # doublon, pour qu'une panne du dimanche ne laisse pas la semaine passer.
+    - cron: "0 3 * * 0,3"
+  workflow_dispatch:
+
+concurrency:
+  group: hosting-deploy
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          # Tout l'historique : les tags, pour retrouver la version publiée,
+          # et les dates de dernier commit des contenus (lastmod du sitemap).
+          fetch-depth: 0
+
+      # Le dernier tag de déploiement web posé (vX.Y.Z ou web-vX.Y.Z) : le plus
+      # récent par date de création, c'est celui qui est en ligne.
+      - name: Resolve last deployed tag
+        id: tag
+        run: |
+          tag=$(git for-each-ref --sort=-creatordate --format='%(refname:short)' \
+            'refs/tags/v[0-9]*' 'refs/tags/web-v[0-9]*' | head -1)
+          if [ -z "$tag" ]; then
+            echo "::error::Aucun tag de déploiement (vX.Y.Z / web-vX.Y.Z) trouvé."
+            exit 1
+          fi
+          echo "Rebuilding $tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          git checkout --quiet "$tag"
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app (type-check, build, SEO prerender)
+        env:
+          # La version applicative reste celle du tag rebâti (analytics).
+          APP_VERSION: ${{ steps.tag.outputs.tag }}
+          IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
+          ANDROID_APP_LINK_SHA256: ${{ secrets.ANDROID_APP_LINK_SHA256 }}
+        run: npm run build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}"
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      # Même tolérance que deploy.yml : firebase-tools sort parfois en erreur
+      # « is the current active version » alors que le contenu est en ligne.
+      - name: Deploy hosting
+        run: |
+          set +e
+          out=$(firebase deploy --only hosting --project petite-jerusalem-dev --non-interactive 2>&1)
+          code=$?
+          echo "$out"
+          if [ "$code" -ne 0 ] && ! echo "$out" | grep -q "is the current active version"; then
+            exit "$code"
+          fi
+
+      # Le bundle JS ne change pas d'un rafraîchissement à l'autre (même tag) :
+      # c'est la date du sitemap qui prouve que la nouvelle version est servie.
+      - name: Verify refreshed sitemap is live
+        run: |
+          expected=$(grep -oE '<lastmod>[0-9-]+' dist/sitemap.xml | head -1 | sed 's/<lastmod>//')
+          echo "Expected sitemap date: $expected"
+          for i in $(seq 1 12); do
+            served=$(curl -fsS "https://petite-jerusalem.fr/sitemap.xml?cb=$(date +%s)" 2>/dev/null | grep -oE '<lastmod>[0-9-]+' | head -1 | sed 's/<lastmod>//')
+            echo "Attempt $i, served: ${served:-<none>}"
+            if [ "$served" = "$expected" ]; then
+              echo "✓ Refreshed pages are live."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Le sitemap servi ne porte pas la date du build (served=${served:-<none>}, expected=$expected)."
+          exit 1
+
+      - name: Ping IndexNow
+        continue-on-error: true
+        run: node scripts/indexnow.mjs

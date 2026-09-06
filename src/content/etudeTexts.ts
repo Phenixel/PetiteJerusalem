@@ -275,6 +275,8 @@ function relatedLinksHtml(entry: TextStudyJsonEntry): string {
     items.push(
       `<li><a href="${hubPath(entry)}">Tous les chapitres de ${latinName(entry)}</a></li>`,
     );
+  if (LISTED_CORPORA.includes(corpus))
+    items.push(`<li><a href="${corpusPath(corpus)}">${esc(CORPUS_SEO[corpus].listLabel)}</a></li>`);
   items.push(`<li><a href="/bibliotheque">Bibliothèque (Tehilim, Michna, Talmud, Tanakh)</a></li>`);
   if (corpus === "tehilim") items.push(`<li><a href="/tehilim">Tehilim par intention</a></li>`);
   return items.join("\n        ");
@@ -371,6 +373,7 @@ export function buildHubBody(entry: TextStudyJsonEntry, content: TextContent): s
     <section class="seo-section">
       <h2>Aller plus loin</h2>
       <ul>
+        <li><a href="${corpusPath(corpusOf(entry))}">${esc(CORPUS_SEO[corpusOf(entry)].listLabel)}</a></li>
         <li><a href="/bibliotheque">Bibliothèque (Tehilim, Michna, Talmud, Tanakh)</a></li>
       </ul>
     </section>
@@ -423,6 +426,196 @@ export function hubJsonLd(entry: TextStudyJsonEntry): Record<string, unknown>[] 
       { name: "Bibliothèque", path: "/bibliotheque" },
       { name: latinName(entry), path: hubPath(entry) },
     ]),
+  ];
+}
+
+// ---- Pages de corpus (/bibliotheque/<corpus>) ------------------------------
+//
+// La liste des livres d'un corpus n'existait que dans la vue (StudyPage) : un
+// robot sans JavaScript recevait la coquille vide, et les ~1 200 pages de
+// lecture n'étaient reliées entre elles que par le sitemap et leurs voisines.
+// Les brahot et le sidour, eux, n'avaient aucun lien entrant. Une page
+// statique par corpus, avec chaque livre en lien, donne aux moteurs le chemin
+// accueil → bibliothèque → corpus → livre → chapitre.
+
+export const corpusPath = (corpus: Corpus): string => `${ETUDE}/${corpus}`;
+
+/**
+ * Les corpus qui ont une page de liste. Les Sli'hot n'ont qu'un texte : leur
+ * adresse redirige dessus (voir router/routes.ts), pas de liste à rendre.
+ */
+export const LISTED_CORPORA: Corpus[] = [
+  "tehilim",
+  "michna",
+  "talmud",
+  "tanakh",
+  "sidour",
+  "brahot",
+];
+
+type CorpusSeo = {
+  title: string;
+  description: string;
+  h1: string;
+  lead: string;
+  /** Le libellé du lien vers la liste, depuis une page de lecture. */
+  listLabel: string;
+};
+
+export const CORPUS_SEO: Record<Corpus, CorpusSeo> = {
+  tehilim: {
+    title: "Les 150 Tehilim (Psaumes) en hébreu et phonétique | Petite Jérusalem",
+    description:
+      "Le livre des Tehilim en ligne : les 150 psaumes, chacun sur sa page, en hébreu avec la phonétique. À lire seul, selon le jour du mois, ou à partager à plusieurs pour une refoua chelema.",
+    h1: "Tehilim : les 150 Psaumes en ligne",
+    lead: "Le sefer Tehilim complet, psaume par psaume, en hébreu avec la phonétique pour le lire même sans maîtriser l'hébreu. Chaque psaume a sa page ; les cinq livres (sefarim) suivent l'ordre du texte.",
+    listLabel: "Tous les Tehilim (150 psaumes)",
+  },
+  michna: {
+    title: "La Michna en ligne, traité par traité | Petite Jérusalem",
+    description:
+      "Les six ordres (sedarim) de la Michna en ligne : chaque traité (massekhet) chapitre par chapitre, en hébreu avec la phonétique, à lire seul ou à répartir entre plusieurs personnes.",
+    h1: "La Michna en ligne : les six sedarim",
+    lead: "Zeraim, Moed, Nashim, Nezikin, Kodashim, Toharot : les traités de la Michna, chapitre par chapitre, en hébreu avec la phonétique.",
+    listLabel: "Tous les traités de la Michna",
+  },
+  talmud: {
+    title: "Le Talmud Bavli en ligne, traité par traité | Petite Jérusalem",
+    description:
+      "Les traités (massekhtot) du Talmud de Babylone en ligne, chapitre par chapitre, en hébreu avec la phonétique. Répartissez les dapim entre plusieurs personnes pour finir le Chass ensemble.",
+    h1: "Le Talmud Bavli en ligne : les traités",
+    lead: "La Guemara, traité par traité et chapitre par chapitre, en hébreu avec la phonétique. C'est aussi le point de départ pour se répartir le Chass à plusieurs jusqu'au siyoum.",
+    listLabel: "Tous les traités du Talmud",
+  },
+  tanakh: {
+    title: "Le Tanakh en ligne : Torah, Neviim et Ketouvim | Petite Jérusalem",
+    description:
+      "Le Tanakh en ligne : la Torah paracha par paracha, les Neviim (Prophètes) et les Ketouvim (Écrits), en hébreu avec la phonétique, texte intégral.",
+    h1: "Le Tanakh en ligne : Torah, Neviim, Ketouvim",
+    lead: "Les 54 parachiot de la Torah, puis les livres des Prophètes et des Écrits, en hébreu avec la phonétique.",
+    listLabel: "Tout le Tanakh (parachiot et livres)",
+  },
+  sidour: {
+    title: "Le Sidour en ligne : Cha'harit, Min'ha, Arvit | Petite Jérusalem",
+    description:
+      "Les prières de la semaine en ligne, en hébreu avec la phonétique : Cha'harit, Min'ha et Arvit, le Chema du coucher, le tikoun hatsot et la havdala.",
+    h1: "Le Sidour en ligne",
+    lead: "Les prières de la semaine, en hébreu avec la phonétique, chacune sur sa page.",
+    listLabel: "Tout le Sidour",
+  },
+  slihot: {
+    title: "Les Sli'hot en hébreu et phonétique | Petite Jérusalem",
+    description:
+      "Les Sli'hot du rite séfarade, en hébreu et en phonétique, pour Eloul et les dix jours de techouva.",
+    h1: "Les Sli'hot",
+    lead: "Les Sli'hot du rite séfarade, en hébreu avec la phonétique.",
+    listLabel: "Les Sli'hot",
+  },
+  brahot: {
+    title: "Les brahot (bénédictions) en hébreu et phonétique | Petite Jérusalem",
+    description:
+      "Les bénédictions en ligne, en hébreu avec la phonétique : Birkat Hamazon, brakha a'harona, bénédictions sur ce qu'on mange, prière du voyageur, allumage de Hanouka, brit mila, cheva brahot.",
+    h1: "Les brahot : les bénédictions en ligne",
+    lead: "Chaque bénédiction sur sa page, en hébreu avec la phonétique : les brahot de tous les jours, celles du cycle de la vie, des mitsvot et des fêtes.",
+    listLabel: "Toutes les brahot",
+  },
+};
+
+export const corpusTitle = (corpus: Corpus): string => CORPUS_SEO[corpus].title;
+export const corpusDescription = (corpus: Corpus): string => CORPUS_SEO[corpus].description;
+
+/** Le nom latin d'un livre ou d'un ordre : « זרעים (Zeraim) » → « Zeraim ». */
+function latinLivre(livre: string): string {
+  const m = livre.match(/\(([^)]+)\)\s*$/);
+  return (m ? m[1] : livre).trim();
+}
+
+/** Le libellé d'un livre dans la liste de son corpus. */
+function corpusItemLabel(entry: TextStudyJsonEntry): string {
+  return corpusOf(entry) === "tehilim" ? `Tehilim ${slugOf(entry)}` : latinName(entry);
+}
+
+/** Les livres d'un corpus, groupés par ordre ou par sefer, dans l'ordre du texte. */
+function corpusGroups(corpus: Corpus): { label: string; entries: TextStudyJsonEntry[] }[] {
+  const groups = new Map<string, TextStudyJsonEntry[]>();
+  for (const entry of corpusEntries(corpus)) {
+    const key = latinLivre(entry.livre);
+    groups.set(key, [...(groups.get(key) ?? []), entry]);
+  }
+  return [...groups].map(([label, entries]) => ({ label, entries }));
+}
+
+/** Le corps de la page d'un corpus : ses livres, chacun en lien. */
+export function buildCorpusBody(corpus: Corpus): string {
+  const seo = CORPUS_SEO[corpus];
+  const groups = corpusGroups(corpus);
+  const single = groups.length === 1;
+  const sections = groups
+    .map(({ label, entries }) => {
+      const rows = entries
+        .map((e) => `<li><a href="${hubPath(e)}">${esc(corpusItemLabel(e))}</a></li>`)
+        .join("\n        ");
+      return `<section class="seo-section">
+      ${single ? "" : `<h2>${esc(label)}</h2>`}
+      <ul class="chapter-list">
+        ${rows}
+      </ul>
+    </section>`;
+    })
+    .join("\n\n    ");
+
+  const others = LISTED_CORPORA.filter((c) => c !== corpus)
+    .map((c) => `<li><a href="${corpusPath(c)}">${esc(CORPUS_SEO[c].listLabel)}</a></li>`)
+    .join("\n        ");
+  const extra =
+    corpus === "tehilim"
+      ? `<li><a href="/tehilim">Quels Tehilim lire selon l'intention</a></li>
+        <li><a href="/partage-tehilim">Partager les Tehilim à plusieurs</a></li>`
+      : corpus === "talmud"
+        ? `<li><a href="/finir-le-chass">Finir le Chass à plusieurs</a></li>`
+        : corpus === "tanakh"
+          ? `<li><a href="/paracha">La paracha de la semaine</a></li>`
+          : "";
+  const shareable = !LITURGY_CORPORA.has(corpus);
+
+  return `
+  <main class="seo-article reading-page">
+    <h1>${esc(seo.h1)}</h1>
+    <p class="seo-lead">${esc(seo.lead)}</p>
+
+    ${shareable ? ctaHtml : ""}
+
+    ${sections}
+
+    <section class="seo-section">
+      <h2>Aller plus loin</h2>
+      <ul>
+        ${extra}
+        ${others}
+        <li><a href="/bibliotheque">Bibliothèque (Tehilim, Michna, Talmud, Tanakh)</a></li>
+      </ul>
+    </section>
+  </main>`;
+}
+
+export function corpusJsonLd(corpus: Corpus): Record<string, unknown>[] {
+  return [
+    breadcrumb([
+      { name: "Accueil", path: "/" },
+      { name: "Bibliothèque", path: "/bibliotheque" },
+      { name: CORPUS_LABEL[corpus], path: corpusPath(corpus) },
+    ]),
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: CORPUS_SEO[corpus].h1,
+      itemListElement: corpusEntries(corpus).map((e, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name: corpusItemLabel(e),
+        url: `${SITE_URL}${hubPath(e)}`,
+      })),
+    },
   ];
 }
 

@@ -136,6 +136,10 @@ const FOOTER_STRINGS: Record<Locale, { links: [SeoSection | string, string][]; t
         ["horaires", "Horaires de Chabbat"],
         ["calendrier", "Calendrier des fêtes"],
         ["zmanim", "Les zmanim expliqués"],
+        ["aPropos", "À propos"],
+        ["mentionsLegales", "Mentions légales"],
+        ["conditions", "Conditions d'utilisation"],
+        ["confidentialite", "Confidentialité"],
       ],
       tagline:
         "Petite Jérusalem : étudier et partager la Torah, ensemble. Gratuit, en français, en anglais et en hébreu.",
@@ -153,6 +157,10 @@ const FOOTER_STRINGS: Record<Locale, { links: [SeoSection | string, string][]; t
         ["horaires", "Shabbat times"],
         ["calendrier", "Holiday calendar"],
         ["zmanim", "Zmanim explained"],
+        ["aPropos", "About"],
+        ["mentionsLegales", "Legal notice"],
+        ["conditions", "Terms of use"],
+        ["confidentialite", "Privacy"],
       ],
       tagline:
         "Petite Jérusalem: learning and sharing Torah, together. Free, in French, English and Hebrew.",
@@ -170,6 +178,10 @@ const FOOTER_STRINGS: Record<Locale, { links: [SeoSection | string, string][]; t
         ["horaires", "זמני שבת"],
         ["calendrier", "לוח החגים"],
         ["zmanim", "זמני היום ההלכתיים"],
+        ["aPropos", "אודות"],
+        ["mentionsLegales", "מידע משפטי"],
+        ["conditions", "תנאי שימוש"],
+        ["confidentialite", "פרטיות"],
       ],
       tagline: "פטיט ירושלים: ללמוד ולחלוק תורה, יחד. בחינם, בצרפתית, באנגלית ובעברית.",
     },
@@ -512,11 +524,13 @@ export const appPages: SeoPage[] = [
     <section class="seo-section">
       <h2>Les textes disponibles</h2>
       <ul>
-        <li><strong>Tehilim</strong> (Psaumes) : les <a href="/bibliotheque/tehilim/1">150 chapitres</a> du livre de Tehilim, en hébreu et en phonétique.</li>
-        <li><strong>Michna</strong> : les six ordres (sedarim) de la Michna.</li>
-        <li><strong>Talmud Bavli</strong> : les traités (massekhtot) du Talmud de Babylone.</li>
-        <li><strong>Tanakh</strong> : la Torah, les Neviim (Prophètes) et les Ketouvim (Écrits).</li>
+        <li><strong><a href="/bibliotheque/tehilim">Tehilim</a></strong> (Psaumes) : les <a href="/bibliotheque/tehilim/1">150 chapitres</a> du livre de Tehilim, en hébreu et en phonétique.</li>
+        <li><strong><a href="/bibliotheque/michna">Michna</a></strong> : les six ordres (sedarim) de la Michna, traité par traité.</li>
+        <li><strong><a href="/bibliotheque/talmud">Talmud Bavli</a></strong> : les traités (massekhtot) du Talmud de Babylone.</li>
+        <li><strong><a href="/bibliotheque/tanakh">Tanakh</a></strong> : la Torah paracha par paracha, les Neviim (Prophètes) et les Ketouvim (Écrits).</li>
       </ul>
+      <p>Et la liturgie, à lire sur son écran : le <a href="/bibliotheque/sidour">Sidour</a> (les prières de la semaine),
+      les <a href="/bibliotheque/brahot">brahot</a> (bénédictions) et les <a href="/bibliotheque/slihot/slihot">Sli'hot</a>.</p>
       <p>Envie d'avancer en groupe ? Lancez un <a href="/share-reading">partage de lectures</a> ou
       organisez de quoi <a href="/finir-le-chass">finir le Chass</a> ensemble.</p>
     </section>
@@ -530,10 +544,20 @@ export const appPages: SeoPage[] = [
         "@context": "https://schema.org",
         "@type": "ItemList",
         name: "Textes disponibles à l'étude",
-        itemListElement: ["Tehilim", "Michna", "Talmud Bavli", "Tanakh"].map((n, i) => ({
+        itemListElement: (
+          [
+            ["Tehilim", "tehilim"],
+            ["Michna", "michna"],
+            ["Talmud Bavli", "talmud"],
+            ["Tanakh", "tanakh"],
+            ["Sidour", "sidour"],
+            ["Brahot", "brahot"],
+          ] as const
+        ).map(([n, corpus], i) => ({
           "@type": "ListItem",
           position: i + 1,
           name: n,
+          url: `${SITE_URL}/bibliotheque/${corpus}`,
         })),
       },
     ],
@@ -2388,15 +2412,17 @@ export type SitemapEntry = {
   changefreq: string;
   /** Les URL sœurs, quand la page existe dans plusieurs langues. */
   alternates?: Alternates;
+  /**
+   * La date de dernière modification (AAAA-MM-JJ) de cette page, quand on la
+   * connaît (dernier commit du fichier dont elle est faite, voir
+   * scripts/lib/lastmod.mjs). Absente, c'est la date passée au sitemap.
+   */
+  lastmod?: string;
 };
 
-/**
- * Build sitemap.xml from the indexable pages, plus any `extra` URLs (e.g. the
- * 150 Tehilim chapter pages, which are generated outside `allPages` to keep the
- * SPA bundle small). `lastmod` is an ISO date string.
- */
-export function buildSitemap(lastmod: string, extra: SitemapEntry[] = []): string {
-  const fromPages: SitemapEntry[] = allPages
+/** Les entrées de sitemap des pages déclarées ici (celles qui l'acceptent). */
+export function sitemapEntriesOfPages(): SitemapEntry[] {
+  return allPages
     .filter((p) => p.sitemap !== false)
     .map((p) => {
       const s = p.sitemap || { priority: 0.5, changefreq: "weekly" };
@@ -2407,14 +2433,20 @@ export function buildSitemap(lastmod: string, extra: SitemapEntry[] = []): strin
         alternates: p.alternates,
       };
     });
+}
 
-  const urls = [...fromPages, ...extra]
+/**
+ * Un fichier sitemap (urlset) à partir d'entrées. `lastmod` est la date par
+ * défaut (AAAA-MM-JJ) des entrées qui n'en portent pas.
+ */
+export function buildSitemapFile(lastmod: string, entries: SitemapEntry[]): string {
+  const urls = entries
     .map((s) =>
       [
         "  <url>",
         `    <loc>${SITE_URL}${s.path === "/" ? "/" : s.path}</loc>`,
         ...alternateLinks(s.alternates),
-        `    <lastmod>${lastmod}</lastmod>`,
+        `    <lastmod>${s.lastmod ?? lastmod}</lastmod>`,
         `    <changefreq>${s.changefreq}</changefreq>`,
         `    <priority>${s.priority.toFixed(1)}</priority>`,
         "  </url>",
@@ -2426,4 +2458,34 @@ export function buildSitemap(lastmod: string, extra: SitemapEntry[] = []): strin
   // noms inutilisé dans chaque sitemap n'apprendrait rien à personne.
   const xhtml = urls.includes("<xhtml:link") ? ' xmlns:xhtml="http://www.w3.org/1999/xhtml"' : "";
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"${xhtml}>\n${urls}\n</urlset>\n`;
+}
+
+/**
+ * Build sitemap.xml from the indexable pages, plus any `extra` URLs (e.g. the
+ * 150 Tehilim chapter pages, which are generated outside `allPages` to keep the
+ * SPA bundle small). `lastmod` is an ISO date string.
+ */
+export function buildSitemap(lastmod: string, extra: SitemapEntry[] = []): string {
+  return buildSitemapFile(lastmod, [...sitemapEntriesOfPages(), ...extra]);
+}
+
+/**
+ * L'index de sitemaps servi à /sitemap.xml : un fichier par famille de pages
+ * (pages du site, bibliothèque, horaires, calendrier). Un seul fichier de
+ * 2 000 URL marchait, mais la Search Console ne rend compte de l'indexation
+ * que sitemap par sitemap : avec un fichier par famille, on voit lequel
+ * décroche. `files` sont des noms de fichiers à la racine du site.
+ */
+export function buildSitemapIndex(lastmod: string, files: string[]): string {
+  const items = files
+    .map((file) =>
+      [
+        "  <sitemap>",
+        `    <loc>${SITE_URL}/${file}</loc>`,
+        `    <lastmod>${lastmod}</lastmod>`,
+        "  </sitemap>",
+      ].join("\n"),
+    )
+    .join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${items}\n</sitemapindex>\n`;
 }

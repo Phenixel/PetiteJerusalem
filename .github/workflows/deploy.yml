@@ -13,6 +13,12 @@ on:
       - "v*"
       - "web-v*"
 
+# Jamais en même temps que le rafraîchissement hebdomadaire (refresh-seo.yml) :
+# deux déploiements hosting entrelacés se disputeraient la version active.
+concurrency:
+  group: hosting-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -21,6 +27,11 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+        with:
+          # Tout l'historique : le sitemap date chaque page de contenu de son
+          # dernier commit (scripts/lib/lastmod.mjs) ; un clone superficiel
+          # ne connaît qu'une date, celle du build, et le prérendu s'y replie.
+          fetch-depth: 0
 
       - name: Use Node.js 22
         uses: actions/setup-node@v4

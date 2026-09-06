@@ -11,6 +11,12 @@ import {
   buildHubBody,
   sectionHeading,
   studyEntries,
+  LISTED_CORPORA,
+  corpusPath,
+  corpusTitle,
+  corpusDescription,
+  buildCorpusBody,
+  corpusJsonLd,
 } from "../content/etudeTexts";
 import { resolveFilePath } from "../services/textService";
 import type { TextContent } from "../services/textService";
@@ -114,5 +120,58 @@ describe("etudeTexts URLs", () => {
     const body = buildHubBody(e, content);
     expect(body).toContain('href="/bibliotheque/talmud/berakhot/1"');
     expect(body).toContain('href="/bibliotheque/talmud/berakhot/2"');
+  });
+});
+
+describe("etudeTexts pages de corpus (/bibliotheque/<corpus>)", () => {
+  it("liste chaque livre du corpus, en lien vers sa page", () => {
+    for (const corpus of LISTED_CORPORA) {
+      const body = buildCorpusBody(corpus);
+      const entries = studyEntries.filter((e) => corpusOf(e) === corpus);
+      expect(entries.length).toBeGreaterThan(0);
+      for (const e of entries) expect(body).toContain(`href="${hubPath(e)}"`);
+      expect(body).toMatch(/<h1>[^<]+<\/h1>/);
+      expect(body).toContain('href="/bibliotheque"');
+    }
+  });
+
+  it("a une adresse, un titre et une description par corpus", () => {
+    expect(corpusPath("talmud")).toBe("/bibliotheque/talmud");
+    for (const corpus of LISTED_CORPORA) {
+      expect(corpusTitle(corpus)).toContain("| Petite Jérusalem");
+      expect(corpusTitle(corpus).length).toBeLessThanOrEqual(70);
+      expect(corpusDescription(corpus).length).toBeGreaterThan(70);
+      expect(corpusDescription(corpus).length).toBeLessThanOrEqual(200);
+    }
+  });
+
+  it("les corpus liturgiques ne proposent pas le partage", () => {
+    expect(buildCorpusBody("talmud")).toContain('href="/share-reading/new-session"');
+    expect(buildCorpusBody("sidour")).not.toContain('href="/share-reading/new-session"');
+    expect(buildCorpusBody("brahot")).not.toContain('href="/share-reading/new-session"');
+  });
+
+  it("émet un fil d'Ariane et la liste des livres en JSON-LD", () => {
+    const ld = corpusJsonLd("michna");
+    expect(ld.map((o) => o["@type"])).toEqual(["BreadcrumbList", "ItemList"]);
+    const list = ld[1] as { itemListElement: { url: string }[] };
+    expect(list.itemListElement.length).toBe(
+      studyEntries.filter((e) => corpusOf(e) === "michna").length,
+    );
+    expect(list.itemListElement[0].url).toMatch(
+      /^https:\/\/petite-jerusalem\.fr\/bibliotheque\/michna\//,
+    );
+  });
+
+  it("une page de lecture renvoie vers la liste de son corpus", () => {
+    const e = entryByCorpusSlug("tehilim", "121")!;
+    const content: TextContent = {
+      title: "Tehilim 121",
+      type: "Tehilim",
+      sections: [{ index: 1, label: "Tehilim 121", he: ["שִׁיר לַמַּעֲלוֹת"] }],
+    };
+    expect(buildSectionBody(e, content, content.sections[0])).toContain(
+      'href="/bibliotheque/tehilim"',
+    );
   });
 });

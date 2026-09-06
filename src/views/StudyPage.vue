@@ -8,7 +8,13 @@ import { sessionService } from "../services/sessionService";
 import { seoService } from "../services/seoService";
 import { localDayKey } from "../services/dateService";
 import { appendHebrewNumeral } from "../services/hebrewNumerals";
-import { hubPath } from "../content/etudeTexts";
+import {
+  hubPath,
+  corpusTitle,
+  corpusDescription,
+  LISTED_CORPORA,
+  type Corpus,
+} from "../content/etudeTexts";
 import { isNativeApp } from "../composables/useNativeApp";
 import {
   bookForEntry,
@@ -49,7 +55,7 @@ const TehilimDayBanner = defineAsyncComponent(() => import("../components/Tehili
 // liturgique pèsent, et ne servent qu'à ce livre.
 const BookEncadrement = defineAsyncComponent(() => import("../components/BookEncadrement.vue"));
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const toast = useToast();
 const { confirm } = useConfirm();
 const route = useRoute();
@@ -524,9 +530,16 @@ function applySeoMeta() {
   const corpus = currentCorpus.value;
   if (corpus) {
     const url = SITE_URL + `/bibliotheque/${corpus.corpus}`;
+    // En français, le même titre et la même description que la page
+    // prérendue (etudeTexts) : Googlebot rend le JavaScript, et un titre
+    // différent de celui du HTML servi lui laisserait choisir. Les autres
+    // langues gardent leurs libellés traduits.
+    const fr = locale.value === "fr" && (LISTED_CORPORA as string[]).includes(corpus.corpus);
     seoService.setMeta({
-      title: `${t(corpus.labelKey)} | ${t("study.title")} | Petite Jérusalem`,
-      description: t(corpus.descKey),
+      title: fr
+        ? corpusTitle(corpus.corpus as Corpus)
+        : `${t(corpus.labelKey)} | ${t("study.title")} | Petite Jérusalem`,
+      description: fr ? corpusDescription(corpus.corpus as Corpus) : t(corpus.descKey),
       canonical: url,
     });
   } else {

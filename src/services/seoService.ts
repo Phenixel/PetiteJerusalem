@@ -48,7 +48,9 @@ export class SeoService {
     // carte d'une session, par exemple) restait sur la page suivante.
     this.setOrRemoveMeta("property", "og:image", meta.og?.image);
 
-    this.upsertMeta("name", "twitter:card", meta.twitter?.card || "summary");
+    // La même carte que le HTML servi (index.html) : une image large. Avec
+    // « summary », la page rendue contredisait la page servie.
+    this.upsertMeta("name", "twitter:card", meta.twitter?.card || "summary_large_image");
     this.setOrRemoveMeta("name", "twitter:image", meta.twitter?.image);
   }
 
