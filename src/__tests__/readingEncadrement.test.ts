@@ -3,6 +3,7 @@ import { createApp, h, nextTick } from "vue";
 import { createI18n } from "vue-i18n";
 import fr from "../locales/fr";
 import ReadingEncadrement from "../components/ReadingEncadrement.vue";
+import LiturgyText from "../views/TextReading/LiturgyText.vue";
 import { encadrementOf } from "../services/encadrementService";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson } from "../models/models";
@@ -71,5 +72,41 @@ describe("encadré d'un passage qui accompagne une lecture", () => {
     fold().dispatchEvent(new MouseEvent("click"));
     await nextTick();
     expect(fold().getAttribute("aria-expanded")).toBe("false");
+  });
+});
+
+/**
+ * Le pendant, sans quoi la règle se retourne : le texte de la page, lui, porte
+ * ses ancres, et personne ne les lui demande. Elles vont de soi, c'est
+ * justement ce qui les rend fragiles ; un booléen optionnel qu'on ne passe pas
+ * vaut `false` pour Vue, jamais `undefined`. Le jour où la valeur par défaut
+ * s'est perdue, plus une seule ancre ne se rendait dans la liturgie : le menu
+ * de lecture s'ouvrait sur tous ses repères, et aucun ne menait nulle part.
+ */
+describe("texte que la page fait lire", () => {
+  it("porte ses ancres sans qu'on ait à les demander", () => {
+    const i18n = createI18n({ legacy: false, locale: "fr", messages: { fr } });
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const blocks = encadrementOf(TEHILIM_1)!.before;
+    const app = createApp({
+      render: () =>
+        h(LiturgyText, {
+          blocks,
+          showPhonetic: false,
+          phoneticLines: [],
+          occasions: new Set<string>(),
+          recentChanges: new Set<string>(),
+          highlightedLine: null,
+          selectedLine: null,
+          isBookmarked: () => false,
+        }),
+    });
+    app.use(i18n);
+    app.mount(host);
+
+    // Le repère du menu de lecture, et celui des marque-pages.
+    expect(host.querySelectorAll("[data-block-anchor]").length).toBeGreaterThan(0);
+    expect(host.querySelectorAll("[data-line]").length).toBeGreaterThan(0);
   });
 });

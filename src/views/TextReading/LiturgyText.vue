@@ -29,37 +29,44 @@ import TefilaZman from "./TefilaZman.vue";
  * Le lecteur générique (versets numérotés, une ligne = un bloc espacé) ne sait
  * rendre aucune de ces nuances : elles n'ont de sens que pour la liturgie.
  */
-const props = defineProps<{
-  /** Blocs déjà filtrés par occasion (voir TextBlock.when). */
-  blocks: TextBlock[];
-  showPhonetic: boolean;
-  phoneticLines: string[];
-  /** Occasions du jour : ouvrent d'emblée les encadrés qui les concernent. */
-  occasions: Set<string>;
-  /**
-   * Occasions saisonnières qui viennent de basculer (machiv haroua'h en
-   * début d'hiver…) : leurs ajouts prennent la couleur du thème les trois
-   * premières semaines, le temps que le pli se prenne. Le reste du temps,
-   * les ajouts se fondent dans le fil, à la couleur du texte.
-   */
-  recentChanges: Set<string>;
-  highlightedLine: number | null;
-  selectedLine: number | null;
-  isBookmarked: (line: number) => boolean;
-  /**
-   * Le texte que la page fait lire : ses paragraphes portent les ancres par
-   * lesquelles on le retrouve (`data-line` pour un marque-page ou la reprise
-   * de lecture, `data-block-anchor` pour le menu de lecture). Les passages qui
-   * accompagnent une lecture sans en faire partie, ce qu'on dit avant les
-   * Tehilim et après, les posent à `false` : sans quoi leur première ligne
-   * répondrait à la place du premier verset, ces ancres étant cherchées dans
-   * toute la page.
-   */
-  anchored?: boolean;
-}>();
-
-/** Par défaut le texte est celui de la page : il porte ses ancres. */
-const anchored = computed(() => props.anchored !== false);
+const props = withDefaults(
+  defineProps<{
+    /** Blocs déjà filtrés par occasion (voir TextBlock.when). */
+    blocks: TextBlock[];
+    showPhonetic: boolean;
+    phoneticLines: string[];
+    /** Occasions du jour : ouvrent d'emblée les encadrés qui les concernent. */
+    occasions: Set<string>;
+    /**
+     * Occasions saisonnières qui viennent de basculer (machiv haroua'h en
+     * début d'hiver…) : leurs ajouts prennent la couleur du thème les trois
+     * premières semaines, le temps que le pli se prenne. Le reste du temps,
+     * les ajouts se fondent dans le fil, à la couleur du texte.
+     */
+    recentChanges: Set<string>;
+    highlightedLine: number | null;
+    selectedLine: number | null;
+    isBookmarked: (line: number) => boolean;
+    /**
+     * Le texte que la page fait lire : ses paragraphes portent les ancres par
+     * lesquelles on le retrouve (`data-line` pour un marque-page ou la reprise
+     * de lecture, `data-block-anchor` pour le menu de lecture). Les passages qui
+     * accompagnent une lecture sans en faire partie, ce qu'on dit avant les
+     * Tehilim et après, les posent à `false` : sans quoi leur première ligne
+     * répondrait à la place du premier verset, ces ancres étant cherchées dans
+     * toute la page.
+     */
+    anchored?: boolean;
+  }>(),
+  {
+    // Par défaut le texte est celui de la page : il porte ses ancres. La
+    // valeur compte, elle ne peut pas rester implicite : un booléen optionnel
+    // qu'on ne passe pas vaut `false` pour Vue, jamais `undefined`. Sans ce
+    // `true`, aucun texte de liturgie ne portait plus d'ancre : le menu de
+    // lecture ne menait nulle part, et la reprise de lecture non plus.
+    anchored: true,
+  },
+);
 
 const emit = defineEmits<{
   (e: "select", line: number): void;
