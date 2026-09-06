@@ -144,6 +144,17 @@ const festivalKey = computed(() => {
 });
 
 /**
+ * L'année civile de l'occurrence mise en avant, celle du titre (« Roch Hachana
+ * 2026 ») : la même que porte la page prérendue (zmanimSeoPages), qui date
+ * son titre de la première occurrence à venir.
+ */
+const festivalYear = computed(() => {
+  const key = festivalKey.value;
+  const entry = key ? entries.value.find((e) => e.key === key) : null;
+  return entry ? entry.first.greg().getFullYear() : new Date().getFullYear();
+});
+
+/**
  * La langue dans laquelle le calendrier est calculé : celle de l'interface,
  * ramenée aux trois langues du site. C'est elle qui nomme les fêtes, donc elle
  * qui sert à reconnaître celle de l'URL.
@@ -166,7 +177,9 @@ function applyMeta(): void {
   }`;
   const label = wanted?.labels[calendarLocale.value] ?? "";
   seoService.setMeta({
-    title: wanted ? t("seo.festivalTitle", { festival: label }) : t("seo.calendarTitle"),
+    title: wanted
+      ? t("seo.festivalTitle", { festival: label, year: festivalYear.value })
+      : t("seo.calendarTitle"),
     description: wanted
       ? t("seo.festivalDescription", { festival: label })
       : t("seo.calendarDescription"),

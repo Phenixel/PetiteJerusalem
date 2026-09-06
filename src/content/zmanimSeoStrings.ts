@@ -114,7 +114,12 @@ export type ZmanimStrings = {
   calendarFaqHeading: string;
 
   // ---- /calendrier/<fete> ----
-  festivalTitle: (label: string) => string;
+  /**
+   * Le titre porte l'année civile de la prochaine occurrence (« Roch Hachana
+   * 2026 ») : c'est ainsi que la question se tape, et ce sont les titres
+   * datés qui sortent sur « quand tombe Roch Hachana 2026 ».
+   */
+  festivalTitle: (label: string, year: number) => string;
   festivalDescription: (label: string, years: number, from: number, hasTimes: boolean) => string;
   festivalH1: (label: string) => string;
   festivalWhenTitle: (label: string) => string;
@@ -315,7 +320,8 @@ const FR: ZmanimStrings = {
       Chabbat</a>, ville par ville, et <a href="${links.zmanim}">les zmanim expliqués</a>.</p>`,
   calendarFaqHeading: "Dates des prochaines fêtes juives",
 
-  festivalTitle: (label) => `${label} : dates, heure d'entrée et de sortie | Petite Jérusalem`,
+  festivalTitle: (label, year) =>
+    `${label} ${year} : dates, heure d'entrée et de sortie | Petite Jérusalem`,
   festivalDescription: (label, years, from, hasTimes) =>
     hasTimes
       ? `Quand tombe ${label} ? Les dates de ${label} sur ${years} ans à partir de ${from}, avec l'heure d'entrée et de sortie de la fête, et ce qu'on y fait.`
@@ -574,7 +580,7 @@ const EN: ZmanimStrings = {
       <a href="${links.zmanim}">zmanim explained</a>.</p>`,
   calendarFaqHeading: "Dates of the coming Jewish festivals",
 
-  festivalTitle: (label) => `${label}: dates, start and end times | Petite Jérusalem`,
+  festivalTitle: (label, year) => `${label} ${year}: dates, start and end times | Petite Jérusalem`,
   festivalDescription: (label, years, from, hasTimes) =>
     hasTimes
       ? `When is ${label}? The dates of ${label} over ${years} years from ${from}, with the start and end time of the festival, and what is done on it.`
@@ -826,7 +832,7 @@ const HE: ZmanimStrings = {
       ההלכתיים</a>.</p>`,
   calendarFaqHeading: "תאריכי החגים הקרובים",
 
-  festivalTitle: (label) => `${label}: תאריכים, זמני כניסה ויציאה | פטיט ירושלים`,
+  festivalTitle: (label, year) => `${label} ${year}: תאריכים, זמני כניסה ויציאה | פטיט ירושלים`,
   festivalDescription: (label, years, from, hasTimes) =>
     hasTimes
       ? `מתי חל ${label}? התאריכים של ${label} ל־${years} שנים החל מ־${from}, עם זמני הכניסה והיציאה של החג, ומה נוהגים בו.`

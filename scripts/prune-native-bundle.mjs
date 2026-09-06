@@ -37,8 +37,13 @@ const PRUNED_DIRS = [
 // va le chercher en ligne, jamais dans son bundle), version publiée.
 const PRUNED_FILES = [
   "sitemap.xml",
+  "sitemap-pages.xml",
+  "sitemap-bibliotheque.xml",
+  "sitemap-horaires.xml",
+  "sitemap-calendrier.xml",
   "robots.txt",
   "llms.txt",
+  "llms-full.txt",
   "og-image.jpg",
   "7928be0e14242cf92e167550affa3215.txt",
   "texts/manifest.json",

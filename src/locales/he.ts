@@ -767,7 +767,7 @@ const he: LocaleMessages = {
     parashaTitle: "פרשת השבוע: לוח הפרשות והטקסטים שלהן {'|'} פטיט ירושלים",
     parashaDescription:
       "הפרשה הנקראת בשבת זו, לוח מתוארך של 54 הפרשות, והטקסט של כל אחת בעברית ובתעתיק.",
-    festivalTitle: "{festival}: תאריכים, זמני כניסה ויציאה {'|'} פטיט ירושלים",
+    festivalTitle: "{festival} {year}: תאריכים, זמני כניסה ויציאה {'|'} פטיט ירושלים",
     festivalDescription:
       "מתי חל {festival}? התאריכים של {festival} לשנים הקרובות, עם זמני הכניסה והיציאה, מחושבים למיקום שלך.",
     dailyReadingTitle: "הקריאה היומית שלי {'|'} פטיט ירושלים",

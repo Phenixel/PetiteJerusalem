@@ -808,7 +808,7 @@ const fr = {
       "Paracha de la semaine : le calendrier des parachiot et leurs textes {'|'} Petite Jérusalem",
     parashaDescription:
       "La paracha lue ce Chabbat, le calendrier daté des 54 parachiot, et le texte de chacune en hébreu et en phonétique.",
-    festivalTitle: "{festival} : dates, heure d\u2019entrée et de sortie {'|'} Petite Jérusalem",
+    festivalTitle: "{festival} {year} : dates, heure d\u2019entrée et de sortie {'|'} Petite Jérusalem",
     festivalDescription:
       "Quand tombe {festival} ? Les dates de {festival} sur plusieurs années, avec l\u2019heure d\u2019entrée et de sortie, calculées pour votre position.",
     dailyReadingTitle: "Ma lecture du jour {'|'} Petite Jérusalem",

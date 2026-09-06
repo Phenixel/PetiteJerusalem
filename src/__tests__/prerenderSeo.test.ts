@@ -5,6 +5,9 @@ import {
   renderPage,
   escapeAttr,
   buildSitemap,
+  buildSitemapFile,
+  buildSitemapIndex,
+  sitemapEntriesOfPages,
   allPages,
   appPages,
   landingPages,
@@ -200,5 +203,67 @@ describe("seoPages buildSitemap", () => {
     expect(xml).toContain("<lastmod>2026-06-21</lastmod>");
     expect(xml).toContain("<changefreq>");
     expect(xml).toContain("<priority>1.0</priority>");
+  });
+
+  it("une entrée qui connaît sa date de modification la garde", () => {
+    const file = buildSitemapFile("2026-06-21", [
+      {
+        path: "/bibliotheque/tehilim/23",
+        priority: 0.5,
+        changefreq: "yearly",
+        lastmod: "2025-11-02",
+      },
+      { path: "/horaires/lyon", priority: 0.7, changefreq: "weekly" },
+    ]);
+    expect(file).toContain(
+      "<loc>https://petite-jerusalem.fr/bibliotheque/tehilim/23</loc>\n    <lastmod>2025-11-02</lastmod>",
+    );
+    expect(file).toContain(
+      "<loc>https://petite-jerusalem.fr/horaires/lyon</loc>\n    <lastmod>2026-06-21</lastmod>",
+    );
+  });
+
+  it("les entrées des pages déclarées excluent sitemap:false", () => {
+    const paths = sitemapEntriesOfPages().map((e) => e.path);
+    expect(paths).toContain("/");
+    expect(paths).toContain("/finir-le-chass");
+    expect(paths).not.toContain("/login");
+  });
+
+  it("bâtit un index de sitemaps sur le domaine canonique", () => {
+    const index = buildSitemapIndex("2026-06-21", [
+      "sitemap-pages.xml",
+      "sitemap-bibliotheque.xml",
+    ]);
+    expect(index).toContain('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
+    expect(index).toContain("<loc>https://petite-jerusalem.fr/sitemap-pages.xml</loc>");
+    expect(index).toContain("<loc>https://petite-jerusalem.fr/sitemap-bibliotheque.xml</loc>");
+    expect(index).toContain("<lastmod>2026-06-21</lastmod>");
+    expect(index).not.toContain("<url>");
+  });
+});
+
+describe("seoPages maillage de la bibliothèque", () => {
+  it("/bibliotheque lie chaque page de corpus", () => {
+    const page = allPages.find((p) => p.path === "/bibliotheque")!;
+    for (const corpus of ["tehilim", "michna", "talmud", "tanakh", "sidour", "brahot"]) {
+      expect(page.bodyHtml).toContain(`href="/bibliotheque/${corpus}"`);
+    }
+    // Les Sli'hot n'ont qu'un texte : lien direct, la redirection de
+    // /bibliotheque/slihot n'existe que côté client.
+    expect(page.bodyHtml).toContain('href="/bibliotheque/slihot/slihot"');
+  });
+
+  it("le pied de page statique lie les pages légales dans chaque langue", () => {
+    const page = allPages.find((p) => p.path === "/bibliotheque")!;
+    const html = injectBody(template, page);
+    expect(html).toContain('href="/a-propos"');
+    expect(html).toContain('href="/mentions-legales"');
+    expect(html).toContain('href="/conditions-utilisation"');
+    expect(html).toContain('href="/confidentialite"');
+    const en = allPages.find((p) => p.path === "/en")!;
+    expect(injectBody(template, en)).toContain('href="/en/about"');
+    const he = allPages.find((p) => p.path === "/he")!;
+    expect(injectBody(template, he)).toContain('href="/he/privacy"');
   });
 });

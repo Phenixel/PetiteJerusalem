@@ -10,9 +10,7 @@ describe("SeoService.setMeta", () => {
   });
 
   const getMeta = (attr: "name" | "property", value: string) =>
-    document.head
-      .querySelector(`meta[${attr}="${value}"]`)
-      ?.getAttribute("content") ?? null;
+    document.head.querySelector(`meta[${attr}="${value}"]`)?.getAttribute("content") ?? null;
 
   const getCanonical = () =>
     document.head.querySelector('link[rel="canonical"]')?.getAttribute("href") ?? null;
@@ -95,9 +93,9 @@ describe("SeoService.setMeta", () => {
       expect(getMeta("property", "og:site_name")).toBe("Petite Jérusalem");
     });
 
-    it("twitter:card vaut 'summary' par défaut", () => {
+    it("twitter:card vaut 'summary_large_image' par défaut, comme le HTML servi", () => {
       seo.setMeta({});
-      expect(getMeta("name", "twitter:card")).toBe("summary");
+      expect(getMeta("name", "twitter:card")).toBe("summary_large_image");
     });
 
     it("twitter:card utilise la valeur fournie", () => {

@@ -14,7 +14,7 @@
     />
     <meta
       name="keywords"
-      content="partage de lecture, partage d'étude, finir le Chass, terminer le Talmud à plusieurs, partage de Tehilim, répartir les Psaumes, lecture de la guemara, limoud collectif, siyoum, refoua chelema, ilouï nechama, étude de la Torah, chiourim, communauté juive, Petite Jérusalem"
+      content="partage de lecture, partage d'étude, finir le Chass, terminer le Talmud à plusieurs, partage de Tehilim, chaîne de Tehilim, répartir les Psaumes, lecture de la guemara, limoud collectif, siyoum, refoua chelema, ilouï nechama, étude de la Torah, chiourim, communauté juive, Petite Jérusalem"
     />
     <meta name="author" content="Petite Jérusalem" />
     <meta name="robots" content="index, follow" />
@@ -81,7 +81,24 @@
         "@type": "Organization",
         "name": "Petite Jérusalem",
         "url": "https://petite-jerusalem.fr/",
-        "logo": "https://petite-jerusalem.fr/favicon.png"
+        "logo": "https://petite-jerusalem.fr/favicon.png",
+        "sameAs": [
+          "https://apps.apple.com/app/id6798778029",
+          "https://play.google.com/store/apps/details?id=fr.petitejerusalem.app",
+          "https://github.com/Phenixel/PetiteJerusalem",
+          "https://x.com/Real_Phenixel"
+        ]
+      }
+    </script>
+    <!-- Le même site répond aussi sur les domaines techniques de Firebase
+         (petite-jerusalem-dev.web.app, .firebaseapp.com) : un visiteur ou un
+         moteur qui y arrive est renvoyé sur le domaine canonique, sans quoi
+         les pages y feraient doublon. Les canaux de prévisualisation des PR
+         (petite-jerusalem-dev--pr123-xxx.web.app) ne sont pas concernés, ni
+         l'app native (origine localhost). -->
+    <script>
+      if (/^petite-jerusalem(-dev)?\.(web\.app|firebaseapp\.com)$/.test(location.hostname)) {
+        location.replace("https://petite-jerusalem.fr" + location.pathname + location.search + location.hash);
       }
     </script>
     <!-- L'apparence, posée avant le premier pixel : le bundle l'appliquerait

@@ -103,7 +103,18 @@ touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
     each of them claim to be a duplicate of `/` (Search Console "Duplicate
     page, Google chose a different canonical"). The Vue views set the right
     canonical on mount (`seoService`).
-  - Also regenerates **`dist/sitemap.xml`** from the same page list.
+  - Also regenerates the sitemaps from the same page lists: **`dist/sitemap.xml`**
+    is a sitemap _index_ pointing at one file per page family
+    (`sitemap-pages.xml`, `sitemap-bibliotheque.xml`, `sitemap-horaires.xml`,
+    `sitemap-calendrier.xml`), so Search Console reports indexing family by
+    family. Each URL carries a **real `lastmod`**: the date of the last commit
+    that touched the file the page is made of (the text file for a reading
+    page, `seoPages.ts` for a content page), read with a single `git log` by
+    `scripts/lib/lastmod.mjs`. The computed pages (horaires, calendrier,
+    paracha, dated parashiot) carry the build date, because they really do
+    change at every build. Without git history (shallow clone) everything
+    falls back to the build date; the deploy workflows therefore check out
+    with `fetch-depth: 0`.
 - `src/content/zmanimSeoPages.ts`: everything that needs computed dates or
   times, prerendered from `@hebcal/core` at build time:
   - **`/horaires`** (Paris): twelve weeks of candle lighting/havdala, the
@@ -162,6 +173,14 @@ touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
   never loads those files anyway; removing them also saves ~79 MB of HTML in
   the APK/IPA. A test locks this behavior
   (`src/__tests__/pruneNativeBundle.test.ts`).
+- **`/bibliotheque/<corpus>`** (`tehilim`, `michna`, `talmud`, `tanakh`,
+  `sidour`, `brahot`): one static page per corpus listing every book as a
+  link, grouped by seder/sefer/book (`buildCorpusBody` in
+  `src/content/etudeTexts.ts`), with an `ItemList` in JSON-LD. Before it, the
+  book list only existed in the Vue view, so a crawler had no path from the
+  library to the ~1200 reading pages (the brahot and sidour pages had no
+  inbound link at all). `StudyPage.vue` sets the same French title and
+  description at runtime so Googlebot's rendered page matches the served HTML.
 - `src/views/ContentPage.vue` renders the long-form landing and legal pages
   (`landingPages` in `seoPages.ts`: `/finir-le-chass`, `/partage-tehilim`,
   `/confidentialite`, `/a-propos`, `/mentions-legales`) from the same
@@ -170,20 +189,55 @@ touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
   `<body>` for **dynamic** routes (individual sessions, chiourim, authors) that
   can't be known at build time.
 
-Prerendered/indexable pages (~1465 in total, all listed in the generated
-`sitemap.xml`): the static pages declared in `seoPages.ts`, `/`,
+Prerendered/indexable pages (~2025 in total, all listed in the generated
+sitemaps): the static pages declared in `seoPages.ts`, `/`,
 `/share-reading`, `/bibliotheque`, `/chiourim`, the landing/legal pages above,
 `/zmanim`, `/paracha`, the Tehilim-by-intention hub + its intention pages, `/horaires` +
 its 242 city pages and `/calendrier` + its 15 festival pages (from
-`zmanimSeoPages.ts`), plus the Bibliothèque reading pages generated per
-corpus/book/chapter by `prerender-seo.mjs`.
+`zmanimSeoPages.ts`, each in three languages), plus the six corpus pages and
+the Bibliothèque reading pages generated per corpus/book/chapter by
+`prerender-seo.mjs`.
 (`/login` is `noindex`; the old `/etude` URLs 301-redirect to
 `/bibliotheque` in `firebase.json`.)
 
 Structured data emitted: `WebSite`, `Organization`, `WebApplication`, `HowTo`,
 `Article`, `FAQPage`, `BreadcrumbList`, `ItemList`.
 
-`public/llms.txt` describes the site for AI agents.
+`public/llms.txt` describes the site for AI agents, and the build writes
+**`dist/llms-full.txt`** next to it (`buildLlmsFull` in `prerender-seo.mjs`):
+the text of the ~37 main French pages (home, landing pages, guides, Tehilim by
+intention, `/horaires`, `/calendrier` and the festivals, `/paracha`), each
+under its URL, for an assistant that reads a single file. The reading pages
+are left out (tens of megabytes). `robots.txt` names every AI crawler
+explicitly (search-time fetchers such as `OAI-SearchBot`, `Claude-User`,
+`Perplexity-User`, `MistralAI-User`, and training crawlers such as `GPTBot`,
+`ClaudeBot`, `Google-Extended`, `CCBot`); which index each assistant actually
+queries, and how to check the site shows up there, is in
+`docs/audit-seo-2026-09.md`, section 5.
+
+The dynamic pages served by `socialPreview` carry JSON-LD too: a chiour is an
+`AudioObject` (author, ISO 8601 duration, `contentUrl`, free), sessions and
+chiourim have a `BreadcrumbList`.
+
+`index.html` also redirects the Firebase technical hosts
+(`petite-jerusalem-dev.web.app`, `.firebaseapp.com`) to the canonical domain
+with a tiny inline script: the same site answers there (it is what
+`deploy.yml` polls to verify a release) and would otherwise be a duplicate.
+Preview channels (`petite-jerusalem-dev--pr123-xxx.web.app`) and the native
+app (origin `localhost`) are not touched.
+
+## Keeping the dated pages fresh (weekly refresh)
+
+`/paracha` names "this week", the city pages cover twelve weeks from the
+build, the festival FAQs are dated. They are true when built and stay true
+only while the build is recent. Releases alone (`deploy.yml`, on a tag) did
+not guarantee that, so **`.github/workflows/refresh-seo.yml`** runs on Sunday
+and Wednesday at 03:00 UTC (and on demand): it rebuilds the **last deployed
+tag** (not `main`: the site stays at the published version, only the dates
+move), deploys hosting only, checks that the served `sitemap.xml` carries
+today's date, and pings IndexNow. A `concurrency` group keeps it from
+interleaving with a release. If the workflow is red for two weeks, the
+"this week" copy goes stale: check Actions after a Sunday.
 
 ## Deploy + post-deploy checklist (manual, only the owner can do these)
 
@@ -198,10 +252,12 @@ After `npm run build` and `firebase deploy`:
    ```
 2. **Google Search Console** (https://search.google.com/search-console):
    - Add the property `petite-jerusalem.fr` (Domain property → DNS TXT verify).
-   - Submit `https://petite-jerusalem.fr/sitemap.xml`.
+   - Submit `https://petite-jerusalem.fr/sitemap.xml` (a sitemap index: the
+     four child sitemaps show up under it, each with its own coverage).
    - Use **URL Inspection → Request indexing** for `/`, `/share-reading`,
-     `/finir-le-chass`, `/partage-tehilim`, `/bibliotheque`, `/horaires`,
-     `/calendrier`, `/zmanim`.
+     `/finir-le-chass`, `/partage-tehilim`, `/bibliotheque`,
+     `/bibliotheque/talmud`, `/bibliotheque/tehilim`, `/horaires`,
+     `/calendrier`, `/zmanim`, `/en`, `/he`.
 3. **Bing Webmaster Tools** (https://www.bing.com/webmasters): add the site,
    submit the sitemap. (Bing also feeds ChatGPT search.)
 4. Confirm the old `petite-jerusalem.web.app` either redirects to `.fr` or stays
@@ -229,8 +285,16 @@ new/updated URLs (Bing also feeds ChatGPT's web search). Google does not use it.
 
 - Ownership key is hosted at `public/<key>.txt` (served from the domain root).
 - Submit the indexable URLs after a deploy with **`npm run indexnow`**
-  (`scripts/indexnow.mjs`, URL list derived from the same page list as the
-  sitemap). Re-run it whenever content changes meaningfully.
+  (`scripts/indexnow.mjs`, URL list read from the sitemaps the build wrote
+  into `dist/`, reading pages included). `deploy.yml` and `refresh-seo.yml`
+  run it after every hosting release.
+
+## Audit
+
+`docs/audit-seo-2026-09.md` holds the September 2026 audit: what was found on
+the built pages, what the accompanying PR fixed, what is left to do in the
+code, and the manual actions (Search Console, Bing, inbound links) with a
+ready-to-paste prompt for Claude Cowork.
 
 ## Adding a new SEO page
 

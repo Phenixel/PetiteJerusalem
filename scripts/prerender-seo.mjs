@@ -16,7 +16,11 @@
  * It also writes:
  *  - `dist/app.html`: the bare SPA shell used as the catch-all rewrite target,
  *    so deep app routes (e.g. /profile) never flash the homepage content.
- *  - `dist/sitemap.xml`: regenerated from the same page list, always in sync.
+ *  - `dist/sitemap.xml`: an index of one sitemap per page family
+ *    (sitemap-pages.xml, sitemap-bibliotheque.xml, sitemap-horaires.xml,
+ *    sitemap-calendrier.xml), regenerated from the same page lists, always
+ *    in sync. Each URL carries the real date of its content (git), see
+ *    scripts/lib/lastmod.mjs; the computed pages carry the build date.
  *
  * Truly dynamic routes (individual sessions, chiourim, authors) are resolved at
  * runtime by the `socialPreview` Firebase Function (see functions/src/index.ts).
@@ -29,13 +33,21 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createJiti } from "jiti";
+import { makeLastmod } from "./lib/lastmod.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const jiti = createJiti(import.meta.url);
 
-const { allPages, renderPage, buildSitemap, buildAppShell, SITE_URL } = await jiti.import(
-  "../src/content/seoPages.ts",
-);
+const {
+  allPages,
+  renderPage,
+  sitemapEntriesOfPages,
+  buildSitemapFile,
+  buildSitemapIndex,
+  buildAppShell,
+  SITE_URL,
+} = await jiti.import("../src/content/seoPages.ts");
+const { isSectionPath } = await jiti.import("../src/content/seoLocales.ts");
 const { buildZmanimSeoPages } = await jiti.import("../src/content/zmanimSeoPages.ts");
 const { buildParashaSeoPages, parashaNotes } = await jiti.import(
   "../src/content/parashaSeoPages.ts",
@@ -53,6 +65,12 @@ const {
   sectionDescription,
   hubJsonLd,
   sectionJsonLd,
+  LISTED_CORPORA,
+  corpusPath,
+  corpusTitle,
+  corpusDescription,
+  buildCorpusBody,
+  corpusJsonLd,
 } = await jiti.import("../src/content/etudeTexts.ts");
 const { parseContent, resolveFilePath } = await jiti.import("../src/services/textService.ts");
 
@@ -79,12 +97,70 @@ function writePage(dist, template, page) {
 const fileFor = (path) => `${path.replace(/^\//, "")}.html`;
 
 /**
+ * Le texte d'une page, sans balises : titres en tête de ligne, listes à
+ * puces, entités décodées. Sert à llms-full.txt, la version texte des pages
+ * principales que les assistants d'IA lisent d'un trait.
+ */
+function htmlToText(html) {
+  return (
+    html
+      .replace(/<script[\s\S]*?<\/script>/g, "")
+      .replace(/<h1[^>]*>/g, "\n# ")
+      .replace(/<h2[^>]*>/g, "\n## ")
+      .replace(/<h3[^>]*>/g, "\n### ")
+      .replace(/<(li|dt)[^>]*>/g, "\n- ")
+      .replace(/<tr[^>]*>/g, "\n")
+      .replace(/<\/(td|th)>/g, " | ")
+      .replace(/<\/(p|li|dd|dt|h\d|tr|section|div|table|ul|ol|dl|main|nav|footer)>/g, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/[ \t]+/g, " ")
+      .replace(/ *\n */g, "\n")
+      // Une puce vide (un <li> qui ne contenait qu'un titre) n'apporte rien.
+      .replace(/\n-\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
+}
+
+/**
+ * llms-full.txt : les pages principales du site en un seul texte (accueil,
+ * pages d'atterrissage, guides, Tehilim par intention, horaires de Paris,
+ * calendrier et fêtes, paracha), en français, chacune sous son URL. C'est le
+ * pendant « intégral » de llms.txt : un assistant qui ne lit qu'un fichier y
+ * trouve les réponses (dates des fêtes, comment finir le Chass, quels
+ * Tehilim pour quelle intention) sans crawler le site. Les 1 200 pages de
+ * lecture n'y sont pas : elles pèseraient des dizaines de mégaoctets.
+ */
+function buildLlmsFull(pages, today) {
+  const head = [
+    "# Petite Jérusalem",
+    "",
+    `> Version texte des pages principales de ${SITE_URL}, générée le ${today}. ` +
+      "Le sommaire et les mots-clés sont dans /llms.txt ; toutes les URL dans /sitemap.xml.",
+    "",
+  ];
+  const body = pages.map((page) => {
+    const text = htmlToText(page.bodyHtml).replace(/^# [^\n]*\n/, "");
+    return `\n---\n\n# ${page.title}\n\nURL : ${SITE_URL}${page.path}\n\n${page.description}\n\n${text}`;
+  });
+  return `${head.join("\n")}${body.join("\n")}\n`;
+}
+
+/**
  * Generate the public reading pages for the whole library (Tehilim, Tanakh,
  * Michna, Talmud) under /etude/<corpus>/<slug>[/<section>]. Returns their
  * sitemap entries. The big text files are read from disk here, never bundled.
  */
-function generateEtudePages(dist, template) {
-  const talmudChapters = JSON.parse(readFileSync(join(dist, "texts", "talmud-chapters.json"), "utf-8"));
+function generateEtudePages(dist, template, lastmodOf) {
+  const talmudChapters = JSON.parse(
+    readFileSync(join(dist, "texts", "talmud-chapters.json"), "utf-8"),
+  );
   const loadEntry = makeTextLoader(dist, talmudChapters);
   const sitemap = [];
   // Quand chaque paracha se lit : une phrase datée sur sa page de texte, sans
@@ -100,6 +176,12 @@ function generateEtudePages(dist, template) {
       continue;
     }
     if (!content.sections.length) continue;
+    // La page change quand son texte ou son gabarit change, pas à chaque build.
+    const lastmod = lastmodOf([
+      `public${resolveFilePath(entry)}`,
+      "src/content/etudeTexts.ts",
+      "src/datas/textStudies.json",
+    ]);
 
     if (isMultiSection(entry)) {
       writePage(dist, template, {
@@ -110,7 +192,7 @@ function generateEtudePages(dist, template) {
         bodyHtml: buildHubBody(entry, content),
         jsonLd: hubJsonLd(entry),
       });
-      sitemap.push({ path: hubPath(entry), priority: 0.5, changefreq: "yearly" });
+      sitemap.push({ path: hubPath(entry), priority: 0.5, changefreq: "yearly", lastmod });
 
       for (const section of content.sections) {
         const path = sectionPath(entry, section.index);
@@ -122,7 +204,7 @@ function generateEtudePages(dist, template) {
           bodyHtml: buildSectionBody(entry, content, section),
           jsonLd: sectionJsonLd(entry, section),
         });
-        sitemap.push({ path, priority: 0.5, changefreq: "yearly" });
+        sitemap.push({ path, priority: 0.5, changefreq: "yearly", lastmod });
       }
     } else {
       const section = content.sections[0];
@@ -135,17 +217,63 @@ function generateEtudePages(dist, template) {
         bodyHtml: buildSectionBody(entry, content, section, notes.get(String(entry.id)) ?? ""),
         jsonLd: sectionJsonLd(entry, section),
       });
-      sitemap.push({ path, priority: 0.6, changefreq: "yearly" });
+      // Les parachiot portent une phrase datée (parashaNotes) qui suit le
+      // calendrier : leur page change réellement d'un build à l'autre.
+      sitemap.push({
+        path,
+        priority: 0.6,
+        changefreq: "yearly",
+        lastmod: notes.has(String(entry.id)) ? undefined : lastmod,
+      });
     }
   }
 
-  console.log(`[prerender-seo] Generated ${sitemap.length} Bibliothèque reading page(s).`);
+  // La page de chaque corpus (/bibliotheque/talmud…) : la liste de ses livres,
+  // chacun en lien. Sans elle, un robot n'avait aucun chemin de la
+  // bibliothèque vers les pages de lecture (la liste ne vivait que dans Vue).
+  const corpusDate = lastmodOf(["src/content/etudeTexts.ts", "src/datas/textStudies.json"]);
+  for (const corpus of LISTED_CORPORA) {
+    const path = corpusPath(corpus);
+    writePage(dist, template, {
+      file: fileFor(path),
+      path,
+      title: corpusTitle(corpus),
+      description: corpusDescription(corpus),
+      bodyHtml: buildCorpusBody(corpus),
+      jsonLd: corpusJsonLd(corpus),
+    });
+    sitemap.push({ path, priority: 0.7, changefreq: "monthly", lastmod: corpusDate });
+  }
+
+  console.log(
+    `[prerender-seo] Generated ${sitemap.length} Bibliothèque page(s) (${LISTED_CORPORA.length} corpus lists).`,
+  );
   return sitemap;
 }
 
 function main() {
   const dist = join(__dirname, "..", "dist");
   const template = readFileSync(join(dist, "index.html"), "utf-8");
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Les dates de dernière modification, lues de git : les pages de contenu
+  // datent de leur dernier commit, les pages calculées (horaires, calendrier,
+  // paracha) du jour du build. Sans historique, tout date du build.
+  const { lastmodOf, known } = makeLastmod(
+    ["public/texts", "src/content", "src/datas"],
+    today,
+    join(__dirname, ".."),
+  );
+  if (!known) {
+    console.warn(
+      "[prerender-seo] historique git indisponible (clone superficiel ?) : lastmod = date du build.",
+    );
+  }
+  const contentDate = lastmodOf([
+    "src/content/seoPages.ts",
+    "src/content/seoLocales.ts",
+    "src/content/zmanimGuideStrings.ts",
+  ]);
 
   // 1. Bare SPA shell for the catch-all rewrite (no page-specific body).
   //    Canonical + og:url are stripped: the shell serves every deep route
@@ -167,7 +295,7 @@ function main() {
 
   // 2b. Public reading pages for the whole library (Tehilim, Tanakh, Michna,
   //     Talmud), generated from the text files and added to the sitemap below.
-  const readingEntries = generateEtudePages(dist, template);
+  const readingEntries = generateEtudePages(dist, template, lastmodOf);
 
   // 2c. Horaires de Chabbat (/horaires) + calendrier des fêtes (/calendrier) :
   //     content computed at build time (hebcal), so it lives in its own module
@@ -187,14 +315,44 @@ function main() {
     console.log(`[prerender-seo] ${page.path} -> dist/${page.file}`);
   }
 
-  // 3. Sitemap, regenerated from the same lists so it can never drift.
-  const lastmod = new Date().toISOString().slice(0, 10);
-  const extraEntries = [...readingEntries, ...zmanimEntries, ...parashaEntries];
-  writeFileSync(join(dist, "sitemap.xml"), buildSitemap(lastmod, extraEntries), "utf-8");
+  // 3. Sitemaps, regenerated from the same lists so they can never drift : un
+  //    fichier par famille, et l'index à /sitemap.xml (l'adresse déclarée dans
+  //    robots.txt et dans les consoles des moteurs, inchangée).
+  const horairesEntries = zmanimEntries.filter((e) => isSectionPath(e.path, "horaires"));
+  const calendrierEntries = zmanimEntries.filter((e) => !isSectionPath(e.path, "horaires"));
+  const pageEntries = sitemapEntriesOfPages().map((e) => ({ ...e, lastmod: contentDate }));
+  const sitemaps = [
+    ["sitemap-pages.xml", [...pageEntries, ...parashaEntries]],
+    ["sitemap-bibliotheque.xml", readingEntries],
+    ["sitemap-horaires.xml", horairesEntries],
+    ["sitemap-calendrier.xml", calendrierEntries],
+  ];
+  for (const [file, entries] of sitemaps) {
+    writeFileSync(join(dist, file), buildSitemapFile(today, entries), "utf-8");
+    console.log(`[prerender-seo] ${file}: ${entries.length} URL(s)`);
+  }
+  writeFileSync(
+    join(dist, "sitemap.xml"),
+    buildSitemapIndex(
+      today,
+      sitemaps.map(([file]) => file),
+    ),
+    "utf-8",
+  );
 
-  const total =
-    allPages.length + zmanimPages.length + parashaPages.length + readingEntries.length;
-  console.log(`[prerender-seo] Generated ${total} page(s) + app.html + sitemap.xml.`);
+  // 4. llms-full.txt : le texte des pages principales, en français (les pages
+  //    de villes sont exclues : le hub /horaires porte déjà Paris et l'annuaire).
+  const isFrench = (p) => (p.locale ?? "fr") === "fr" && p.sitemap !== false;
+  const llmsPages = [
+    ...allPages.filter(isFrench),
+    ...zmanimPages.filter((p) => isFrench(p) && !/^\/horaires\/./.test(p.path)),
+    ...parashaPages.filter(isFrench),
+  ];
+  writeFileSync(join(dist, "llms-full.txt"), buildLlmsFull(llmsPages, today), "utf-8");
+  console.log(`[prerender-seo] llms-full.txt: ${llmsPages.length} page(s)`);
+
+  const total = allPages.length + zmanimPages.length + parashaPages.length + readingEntries.length;
+  console.log(`[prerender-seo] Generated ${total} page(s) + app.html + sitemap.xml (index).`);
   console.log(`[prerender-seo] Canonical host: ${SITE_URL}`);
 }
 

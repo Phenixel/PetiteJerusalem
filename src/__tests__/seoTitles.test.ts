@@ -56,7 +56,7 @@ describe("titres de page", () => {
     const i18n = createI18n({ legacy: false, locale: code, messages: { [code]: messages } });
     // Les paramètres de gabarit sont remplis : ce qu'on vérifie ici est la
     // barre, pas l'interpolation.
-    const params = { city: "Ville", festival: "Fête" };
+    const params = { city: "Ville", festival: "Fête", year: 2026 };
     const fill = (value: string) =>
       value
         .split("{'|'}")
@@ -64,7 +64,9 @@ describe("titres de page", () => {
         .split("{city}")
         .join(params.city)
         .split("{festival}")
-        .join(params.festival);
+        .join(params.festival)
+        .split("{year}")
+        .join(String(params.year));
 
     it(`rend la barre des titres en entier (${code})`, () => {
       const withPipe = Object.entries(messages.seo).filter(([, value]) => value.includes("{'|'}"));
