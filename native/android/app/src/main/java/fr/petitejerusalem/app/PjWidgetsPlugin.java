@@ -23,12 +23,7 @@ public class PjWidgetsPlugin extends Plugin {
     static final String STORE = "pj_widgets";
     static final String KEY_ZMANIM = "zmanim";
     static final String KEY_DAILY = "daily";
-    /**
-     * Libellés des raccourcis vers la bibliothèque. Aucun widget Android ne
-     * les lit encore (ils n'existent que sur iOS) : on les range quand même,
-     * pour qu'un widget ajouté plus tard les trouve sans attendre que l'app
-     * soit rouverte, et pour que le contrat reste le même des deux côtés.
-     */
+    /** Titres des raccourcis vers la bibliothèque (le sidour, les Tehilim). */
     static final String KEY_LIBRARY = "library";
 
     static SharedPreferences store(Context context) {
@@ -48,8 +43,20 @@ public class PjWidgetsPlugin extends Plugin {
         editor.apply();
 
         // Seuls les widgets dont le payload a changé sont redessinés.
-        if (zmanim != null) PjWidgetProvider.requestUpdate(context, HorairesWidgetProvider.class);
-        if (daily != null) PjWidgetProvider.requestUpdate(context, LectureWidgetProvider.class);
+        if (zmanim != null) {
+            PjWidgetProvider.requestUpdate(context, HorairesWidgetProvider.class);
+            PjWidgetProvider.requestUpdate(context, EssentialsWidgetProvider.class);
+            PjWidgetProvider.requestUpdate(context, ZmanimShortcutWidgetProvider.class);
+        }
+        if (daily != null) {
+            PjWidgetProvider.requestUpdate(context, LectureWidgetProvider.class);
+            PjWidgetProvider.requestUpdate(context, LectureShortcutWidgetProvider.class);
+        }
+        if (library != null) {
+            PjWidgetProvider.requestUpdate(context, LibraryWidgetProvider.class);
+            PjWidgetProvider.requestUpdate(context, SidourWidgetProvider.class);
+            PjWidgetProvider.requestUpdate(context, TehilimWidgetProvider.class);
+        }
         call.resolve();
     }
 }

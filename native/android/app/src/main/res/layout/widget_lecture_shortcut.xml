@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Raccourci « Avancement de la lecture » : l'anneau de progression, le même
+     rapport que la barre de la carte du tableau de bord mais refermé sur
+     lui-même, et le titre dessous. Pendant du LectureShortcutView d'iOS.
+     L'anneau est dessiné par le provider (WidgetGraphics), le pourcentage
+     reste du texte, posé par-dessus. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pj_lecture_shortcut_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/pj_widget_bg"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ImageView
+            android:id="@+id/pj_lecture_ring"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:adjustViewBounds="true"
+            android:contentDescription="@null"
+            android:scaleType="fitCenter" />
+
+        <TextView
+            android:id="@+id/pj_lecture_ring_percent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:maxLines="1"
+            android:textColor="@color/pj_widget_text"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <!-- Liste non composée : l'anneau reste vide, le livre dit de quoi il
+             s'agit, et le message est l'affaire du grand widget, qui a la
+             place de l'écrire. -->
+        <ImageView
+            android:id="@+id/pj_lecture_ring_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/pj_widget_book"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/pj_lecture_shortcut_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="@color/pj_widget_text"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+</LinearLayout>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Raccourci : rien à replanifier, des libellés qui ne changent qu'avec la
+     langue de l'app, et c'est l'app qui pousse alors le payload.
+     updatePeriodMillis = 0 : aucune mise à jour périodique. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/pj_widget_library_description"
+    android:initialLayout="@layout/widget_library"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Mode sombre : mêmes tons que la barre système (setup-android.mjs). -->
+    <!-- Mode sombre : mêmes tons que la barre système (setup-android.mjs) et
+         que PjColors côté iOS. -->
     <color name="pj_widget_bg">#1F2937</color>
-    <color name="pj_widget_text">#F9FAFB</color>
+    <color name="pj_widget_text">#F3F4F6</color>
     <color name="pj_widget_text_secondary">#9CA3AF</color>
     <color name="pj_widget_success">#4ADE80</color>
+
+    <!-- La planche de l'étagère s'assombrit, comme dans l'app. -->
+    <color name="pj_shelf_board_top">#8A7354</color>
+    <color name="pj_shelf_board_bottom">#6E5A40</color>
 </resources>

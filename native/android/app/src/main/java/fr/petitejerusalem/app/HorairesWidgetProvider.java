@@ -6,12 +6,11 @@ import android.text.SpannableString;
 import android.text.style.StyleSpan;
 import android.view.View;
 import android.widget.RemoteViews;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import java.util.List;
 
 /**
  * Widget « Horaires » : le jour hébraïque et le prochain zman du lieu de
- * l'utilisateur, celui d'après, la paracha de la semaine et le tahanoun.
+ * l'utilisateur, ceux d'après, la paracha de la semaine et le tahanoun.
  *
  * Tout vient du payload JSON poussé par l'app (une semaine d'horaires et de
  * jours hébraïques, libellés ET heures déjà localisés/formatés, voir
@@ -21,10 +20,23 @@ import org.json.JSONObject;
  * embarquée, il invite à rouvrir l'app.
  *
  * L'heure mise en avant porte l'accent du thème de l'utilisateur, comme la
- * carte « prochain horaire » de la page Horaires ; l'horaire d'après occupe la
- * place que le prochain laisse libre, plutôt que de la laisser vide.
+ * carte « prochain horaire » de la page Horaires ; les horaires d'après
+ * occupent la place que le prochain laisse libre, plutôt que de la laisser
+ * vide : dessous en petit format, à côté dès quatre colonnes, comme le
+ * .systemMedium d'iOS.
  */
 public class HorairesWidgetProvider extends PjWidgetProvider {
+
+    /** Les trois lignes d'horaires suivants, dans les deux gabarits. */
+    private static final int[] ROWS = {
+        R.id.pj_horaires_next, R.id.pj_horaires_next2, R.id.pj_horaires_next3,
+    };
+    private static final int[] ROW_LABELS = {
+        R.id.pj_horaires_next_label, R.id.pj_horaires_next2_label, R.id.pj_horaires_next3_label,
+    };
+    private static final int[] ROW_TIMES = {
+        R.id.pj_horaires_next_time, R.id.pj_horaires_next2_time, R.id.pj_horaires_next3_time,
+    };
 
     @Override
     protected String tickAction() {
@@ -47,56 +59,50 @@ public class HorairesWidgetProvider extends PjWidgetProvider {
     }
 
     @Override
-    protected Rendered render(Context context) {
-        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_horaires);
+    protected Rendered render(Context context, Size size) {
+        int layout = size.isWide() ? R.layout.widget_horaires_medium : R.layout.widget_horaires;
+        RemoteViews views = new RemoteViews(context.getPackageName(), layout);
         views.setOnClickPendingIntent(R.id.pj_horaires_root, openAppIntent(context));
 
-        String raw = PjWidgetsPlugin.store(context).getString(PjWidgetsPlugin.KEY_ZMANIM, null);
-        long now = System.currentTimeMillis();
-        try {
-            JSONObject payload = new JSONObject(raw);
-            views.setTextViewText(R.id.pj_horaires_place, payload.getString("place"));
-            showDay(views, payload.optJSONArray("days"), now);
-
-            JSONArray times = payload.getJSONArray("times");
-            JSONObject next = null;
-            JSONObject after = null;
-            for (int i = 0; i < times.length(); i++) {
-                JSONObject time = times.getJSONObject(i);
-                if (time.getLong("epoch") <= now) continue;
-                next = time;
-                // Celui d'après, s'il existe : il remplit le bas du widget.
-                if (i + 1 < times.length()) after = times.getJSONObject(i + 1);
-                break;
-            }
-            if (next == null) {
-                // Fenêtre d'une semaine épuisée : l'app n'a pas été rouverte.
-                showMessage(views, payload.getString("stale"));
-                return new Rendered(views, 0);
-            }
-
-            views.setViewVisibility(R.id.pj_horaires_time, View.VISIBLE);
-            views.setTextViewText(R.id.pj_horaires_label, next.getString("label"));
-            views.setTextViewText(R.id.pj_horaires_time, next.getString("time"));
-            views.setTextColor(R.id.pj_horaires_time, parseAccent(payload.optString("accent", null)));
-            showAfter(views, after);
-            return new Rendered(views, next.getLong("epoch") + 1000);
-        } catch (Exception e) {
+        ZmanimPayload payload = ZmanimPayload.load(context);
+        if (payload == null) {
             // Payload absent (widget posé avant le premier lancement) ou illisible.
             showMessage(views, context.getString(R.string.pj_widget_open_app));
             return new Rendered(views, 0);
         }
+
+        long now = System.currentTimeMillis();
+        views.setTextViewText(R.id.pj_horaires_place, payload.place);
+        showDay(views, payload.dayCovering(now));
+
+        ZmanimPayload.Line next = payload.next(now);
+        if (next == null) {
+            // Fenêtre d'une semaine épuisée : l'app n'a pas été rouverte.
+            showMessage(views, payload.stale);
+            return new Rendered(views, 0);
+        }
+
+        views.setViewVisibility(R.id.pj_horaires_time, View.VISIBLE);
+        views.setTextViewText(R.id.pj_horaires_label, next.label);
+        views.setTextViewText(R.id.pj_horaires_time, next.time);
+        views.setTextColor(R.id.pj_horaires_time, parseAccent(payload.accent));
+        // Le petit format n'a la hauteur que d'un horaire de plus ; le large a
+        // la largeur d'une colonne de trois.
+        showFollowing(views, payload.following(now, size.isWide() ? ROWS.length : 1));
+        return new Rendered(views, next.epoch + 1000);
     }
 
-    /** L'horaire d'après le prochain, ou rien s'il n'y en a plus. */
-    private void showAfter(RemoteViews views, JSONObject after) {
-        if (after == null) {
-            views.setViewVisibility(R.id.pj_horaires_next, View.GONE);
-            return;
+    /** Les horaires d'après le prochain ; les lignes en trop disparaissent. */
+    private void showFollowing(RemoteViews views, List<ZmanimPayload.Line> following) {
+        for (int i = 0; i < ROWS.length; i++) {
+            if (i >= following.size()) {
+                views.setViewVisibility(ROWS[i], View.GONE);
+                continue;
+            }
+            views.setViewVisibility(ROWS[i], View.VISIBLE);
+            views.setTextViewText(ROW_LABELS[i], following.get(i).label);
+            views.setTextViewText(ROW_TIMES[i], following.get(i).time);
         }
-        views.setViewVisibility(R.id.pj_horaires_next, View.VISIBLE);
-        views.setTextViewText(R.id.pj_horaires_next_label, after.optString("label", ""));
-        views.setTextViewText(R.id.pj_horaires_next_time, after.optString("time", ""));
     }
 
     /**
@@ -104,25 +110,15 @@ public class HorairesWidgetProvider extends PjWidgetProvider {
      * la semaine et le tahanoun. Absent d'un payload d'avant la v2, les
      * lignes restent alors simplement masquées.
      */
-    private void showDay(RemoteViews views, JSONArray days, long now) {
-        JSONObject day = null;
-        for (int i = 0; days != null && i < days.length(); i++) {
-            JSONObject candidate = days.optJSONObject(i);
-            if (candidate == null) continue;
-            if (candidate.optLong("from") <= now && now < candidate.optLong("until")) {
-                day = candidate;
-                break;
-            }
-        }
-        String hebrewDate = day == null ? null : optText(day, "hebrewDate");
-        views.setTextViewText(R.id.pj_horaires_hebrew_date, hebrewDate == null ? "" : hebrewDate);
-        setOptional(views, R.id.pj_horaires_parasha, day == null ? null : optText(day, "parasha"));
+    private void showDay(RemoteViews views, ZmanimPayload.Day day) {
+        views.setTextViewText(
+            R.id.pj_horaires_hebrew_date, day == null ? "" : day.hebrewDate);
+        setOptional(views, R.id.pj_horaires_parasha, day == null ? null : day.parasha);
 
-        String tachanun = day == null ? null : optText(day, "tachanun");
-        // Les jours sans tahanoun sont ceux qu'il faut repérer d'un coup d'œil.
-        boolean strong = day != null && day.optBoolean("tachanunStrong");
+        String tachanun = day == null ? null : day.tachanun;
         setOptional(views, R.id.pj_horaires_tachanun, tachanun);
-        if (tachanun != null && strong) {
+        // Les jours sans tahanoun sont ceux qu'il faut repérer d'un coup d'oeil.
+        if (tachanun != null && day.tachanunStrong) {
             views.setTextViewText(R.id.pj_horaires_tachanun, bold(tachanun));
         }
     }
@@ -131,14 +127,6 @@ public class HorairesWidgetProvider extends PjWidgetProvider {
         SpannableString spanned = new SpannableString(text);
         spanned.setSpan(new StyleSpan(Typeface.BOLD), 0, text.length(), 0);
         return spanned;
-    }
-
-    /**
-     * Une chaîne facultative du payload. `optString` rendrait le littéral
-     * "null" pour un champ JSON nul : on l'écarte explicitement.
-     */
-    private String optText(JSONObject json, String key) {
-        return json.isNull(key) ? null : json.optString(key, null);
     }
 
     /** Une ligne facultative : affichée si elle porte un texte, masquée sinon. */
@@ -161,7 +149,7 @@ public class HorairesWidgetProvider extends PjWidgetProvider {
     private void showMessage(RemoteViews views, String message) {
         views.setTextViewText(R.id.pj_horaires_label, message);
         views.setViewVisibility(R.id.pj_horaires_time, View.GONE);
-        views.setViewVisibility(R.id.pj_horaires_next, View.GONE);
+        for (int row : ROWS) views.setViewVisibility(row, View.GONE);
         views.setViewVisibility(R.id.pj_horaires_parasha, View.GONE);
         views.setViewVisibility(R.id.pj_horaires_tachanun, View.GONE);
     }
