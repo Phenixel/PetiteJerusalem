@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Le fond d'une ligne touchable : un galet sombre, la forme que Wear OS
+     donne à ses listes. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#161B22" />
+    <corners android:radius="24dp" />
+</shape>

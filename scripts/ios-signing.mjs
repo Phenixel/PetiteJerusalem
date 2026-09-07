@@ -60,6 +60,7 @@
  * par l'export de l'IPA) :
  *   IOS_PROVISIONING_PROFILE     nom du profil de l'app (PROVISIONING_PROFILE_SPECIFIER)
  *   IOS_WIDGET_PROVISIONING_PROFILE  celui de l'extension de widgets
+ *   IOS_WATCH_PROVISIONING_PROFILE   celui de l'app Apple Watch
  *   IOS_CODE_SIGN_IDENTITY       nom complet de l'identité de signature
  *   IOS_SIGNING_CERTIFICATE_ID   id ASC du certificat (--cleanup ne le révoque
  *                                que si le run n'a rien envoyé, cf. plus haut)
@@ -68,6 +69,7 @@
  *   IOS_WIDGET_SIGNING_PROFILE_ID  id ASC du profil de l'extension, toujours
  *                                supprimé au nettoyage : le marqueur du
  *                                certificat, c'est celui de l'app
+ *   IOS_WATCH_SIGNING_PROFILE_ID   id ASC du profil de l'app de montre, idem
  *   IOS_SIGNING_KEYCHAIN         trousseau temporaire, pour --cleanup
  */
 import { execFileSync } from "node:child_process";
@@ -82,11 +84,15 @@ import {
   revocableCertificates,
 } from "./lib/certificate-quota.mjs";
 import { APP_GROUP, WIDGET_TARGET } from "./lib/xcode-widgets.mjs";
+import { WATCH_BUNDLE_SUFFIX } from "./lib/xcode-watch.mjs";
 
 const BUNDLE_ID = "fr.petitejerusalem.app";
 // L'extension de widgets est un binaire à part, avec son App ID et son profil
 // (docs/app-widgets.md).
 const WIDGET_BUNDLE_ID = `${BUNDLE_ID}.${WIDGET_TARGET}`;
+// L'app de montre aussi : elle est embarquée dans l'IPA, mais c'est une
+// application à part entière, avec son App ID et son profil (docs/app-watch.md).
+const WATCH_BUNDLE_ID = `${BUNDLE_ID}.${WATCH_BUNDLE_SUFFIX}`;
 // Préfixe reconnaissable : --setup fait le ménage des profils laissés par un
 // run interrompu avant son étape de nettoyage.
 const PROFILE_PREFIX = "PetiteJerusalem CI";
@@ -213,13 +219,16 @@ if (isCleanup) {
   // Le profil de l'extension part dans tous les cas : c'est celui de l'app qui
   // sert de marqueur (nom porteur du numéro de build, certificat référencé),
   // et un profil supprimé côté Apple n'invalide pas un binaire déjà signé.
-  const widgetProfileId = process.env.IOS_WIDGET_SIGNING_PROFILE_ID;
-  if (widgetProfileId) {
+  for (const [label, id] of [
+    ["l'extension de widgets", process.env.IOS_WIDGET_SIGNING_PROFILE_ID],
+    ["l'app de montre", process.env.IOS_WATCH_SIGNING_PROFILE_ID],
+  ]) {
+    if (!id) continue;
     try {
-      await api("DELETE", `/v1/profiles/${widgetProfileId}`);
-      console.log("ios-signing: profil de l'extension de widgets supprimé côté Apple");
+      await api("DELETE", `/v1/profiles/${id}`);
+      console.log(`ios-signing: profil de ${label} supprimé côté Apple`);
     } catch (error) {
-      console.warn(`ios-signing: ⚠️ profil de l'extension non supprimé, ${error.message}`);
+      console.warn(`ios-signing: ⚠️ profil de ${label} non supprimé, ${error.message}`);
     }
   }
   const runCertificateId = process.env.IOS_SIGNING_CERTIFICATE_ID;
@@ -317,6 +326,28 @@ if (!widgetBundleIdRecord) {
   console.log(`ios-signing: App ID ${WIDGET_BUNDLE_ID} (${widgetBundleIdRecord.id})`);
 }
 await enableCapabilities(widgetBundleIdRecord, WIDGET_CAPABILITIES);
+
+// L'App ID de l'app de montre. Aucune capacité à activer : elle ne parle qu'au
+// téléphone, par WatchConnectivity, qui n'en demande aucune. Apple range les
+// App ID watchOS sous la plateforme iOS, comme ceux des extensions.
+let watchBundleIdRecord = await findBundleId(WATCH_BUNDLE_ID);
+if (!watchBundleIdRecord) {
+  const created = await api("POST", "/v1/bundleIds", {
+    data: {
+      type: "bundleIds",
+      attributes: {
+        identifier: WATCH_BUNDLE_ID,
+        // Apple n'accepte ici que des lettres, chiffres et espaces.
+        name: "Petite Jerusalem Watch",
+        platform: "IOS",
+      },
+    },
+  });
+  watchBundleIdRecord = created.data;
+  console.log(`ios-signing: App ID ${WATCH_BUNDLE_ID} créé (${watchBundleIdRecord.id})`);
+} else {
+  console.log(`ios-signing: App ID ${WATCH_BUNDLE_ID} (${watchBundleIdRecord.id})`);
+}
 
 /**
  * Le ménage des certificats, à chaque run et pas seulement quand le quota est
@@ -518,6 +549,9 @@ const profileName = buildNumber ? markerName(buildNumber) : `${PROFILE_PREFIX} $
 // Le profil de l'extension ne suit PAS le motif du marqueur : il est jetable,
 // le lien certificat/binaire étant déjà porté par celui de l'app.
 const widgetProfileName = `${PROFILE_PREFIX} widgets ${runSuffix}`;
+// Celui de la montre non plus : même raison.
+const watchProfileName = `${PROFILE_PREFIX} montre ${runSuffix}`;
+const disposableProfileNames = new Set([widgetProfileName, watchProfileName]);
 
 // Ne survivent que les marqueurs d'un certificat encore vivant. Partent : les
 // profils d'un run tué avant son nettoyage, ceux dont le certificat vient
@@ -530,8 +564,8 @@ const liveCertificateIds = new Set([
 for (const stale of profiles.data) {
   const name = stale.attributes?.name ?? "";
   if (!name.startsWith(PROFILE_PREFIX)) continue;
-  if (name === widgetProfileName) {
-    // Homonyme du profil d'extension qu'on s'apprête à créer (re-run d'un même
+  if (disposableProfileNames.has(name)) {
+    // Homonyme d'un profil jetable qu'on s'apprête à créer (re-run d'un même
     // tag) : Apple refuse deux profils de même nom.
     await api("DELETE", `/v1/profiles/${stale.id}`).catch(() => {});
     console.log(`ios-signing: ancien profil « ${name} » supprimé`);
@@ -607,3 +641,8 @@ const widgetProfile = await createProfile(widgetProfileName, widgetBundleIdRecor
 exportEnv("IOS_WIDGET_SIGNING_PROFILE_ID", widgetProfile.id);
 exportEnv("IOS_WIDGET_PROVISIONING_PROFILE", widgetProfileName);
 assertAppGroup(widgetProfile.content, WIDGET_BUNDLE_ID);
+
+// L'app de montre : pas d'App Group à relire, elle n'en a pas besoin.
+const watchProfile = await createProfile(watchProfileName, watchBundleIdRecord);
+exportEnv("IOS_WATCH_SIGNING_PROFILE_ID", watchProfile.id);
+exportEnv("IOS_WATCH_PROVISIONING_PROFILE", watchProfileName);

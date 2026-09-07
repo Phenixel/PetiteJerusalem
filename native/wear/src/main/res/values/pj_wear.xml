@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Une montre s'affiche sur fond noir, et pas seulement par habitude :
+         l'écran est OLED, un pixel noir ne consomme rien, et l'écran toujours
+         allumé y passe le plus clair de sa vie. Le thème du téléphone ne
+         voyage donc pas jusqu'ici ; seul son accent le fait, sur l'heure mise
+         en avant et la barre de progression, comme dans les widgets. -->
+    <color name="pj_wear_bg">#000000</color>
+    <color name="pj_wear_text">#F9FAFB</color>
+    <color name="pj_wear_text_secondary">#9CA3AF</color>
+    <color name="pj_wear_divider">#1F2937</color>
+    <!-- « Tout est lu » : le vert de la carte du tableau de bord. -->
+    <color name="pj_wear_success">#4ADE80</color>
+
+    <!-- Seuls libellés natifs : le nom de l'app dans le lanceur, les
+         complications dans leur sélecteur, et l'état « aucun payload » (montre
+         posée avant le premier lancement de l'app sur le téléphone). Tout le
+         reste vient des payloads, déjà localisé. -->
+    <string name="pj_wear_app_name">Petite Jérusalem</string>
+    <string name="pj_wear_open_phone">Ouvrez Petite Jérusalem sur votre téléphone</string>
+    <string name="pj_wear_zmanim">Horaires</string>
+    <string name="pj_wear_daily">Lecture du jour</string>
+    <string name="pj_wear_texts">Textes</string>
+    <string name="pj_wear_tehilim">Tehilim</string>
+    <string name="pj_wear_psalm">Tehilim %1$d</string>
+    <string name="pj_wear_complication_zman">Prochain horaire</string>
+    <string name="pj_wear_complication_lecture">Lecture du jour</string>
+</resources>
