@@ -1,19 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Couleurs synchronisées avec src/assets/main.css (beige de l'app). -->
+    <!-- Couleurs synchronisées avec src/assets/main.css (le beige de l'app et
+         ses neutres chauds), les mêmes que PjColors côté iOS. -->
     <color name="pj_widget_bg">#F4F1EA</color>
-    <color name="pj_widget_text">#1F2937</color>
-    <color name="pj_widget_text_secondary">#6B7280</color>
+    <color name="pj_widget_text">#35312A</color>
+    <color name="pj_widget_text_secondary">#6D6759</color>
     <!-- « Tout est lu » : le vert de la carte du tableau de bord
          (text-green-600 / dark:text-green-400). -->
     <color name="pj_widget_success">#16A34A</color>
 
-    <!-- Seuls libellés natifs : le sélecteur de widgets du launcher et l'état
-         « aucun payload » (widget posé avant le premier lancement de l'app).
+    <!-- La planche de l'étagère, en bois clair (LibraryShelf.vue) ; elle
+         s'assombrit la nuit, comme dans l'app. Les reliures, elles, restent
+         hors du thème ET du mode sombre : elles vivent dans WidgetGraphics. -->
+    <color name="pj_shelf_board_top">#C3A87F</color>
+    <color name="pj_shelf_board_bottom">#A98C62</color>
+
+    <!-- Seuls libellés natifs : le sélecteur de widgets du launcher, l'état
+         « aucun payload » (widget posé avant le premier lancement de l'app) et
+         les titres de repli des raccourcis, en attendant le premier payload.
          Tout le reste vient des payloads, déjà localisés et formatés. -->
     <string name="pj_widget_horaires_label">Horaires</string>
     <string name="pj_widget_horaires_description">Le prochain horaire (zman) de votre journée</string>
+    <string name="pj_widget_essentials_label">Horaires essentiels</string>
+    <string name="pj_widget_essentials_description">Fin du Chéma et de la Amida, plag haMin\'ha et tsét haKokhavim</string>
     <string name="pj_widget_lecture_label">Lecture du jour</string>
     <string name="pj_widget_lecture_description">Votre lecture quotidienne et sa progression</string>
+    <string name="pj_widget_library_label">Bibliothèque</string>
+    <string name="pj_widget_library_description">Ouvrir la bibliothèque</string>
+    <string name="pj_widget_sidour_label">Sidour</string>
+    <string name="pj_widget_sidour_description">Ouvrir le sidour</string>
+    <string name="pj_widget_tehilim_label">Tehilim</string>
+    <string name="pj_widget_tehilim_description">Ouvrir les Tehilim</string>
+    <string name="pj_widget_zmanim_shortcut_label">Prochain horaire</string>
+    <string name="pj_widget_zmanim_shortcut_description">L\'heure du prochain zman, et rien d\'autre</string>
+    <string name="pj_widget_lecture_shortcut_label">Avancement de la lecture</string>
+    <string name="pj_widget_lecture_shortcut_description">Un anneau qui se remplit au fil de votre lecture du jour</string>
     <string name="pj_widget_open_app">Ouvrez Petite Jérusalem pour préparer le widget</string>
 </resources>

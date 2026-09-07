@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isAppLinkPath } from "../../scripts/lib/app-links.mjs";
@@ -57,13 +57,19 @@ function routerMatchers(): RegExp[] {
     });
 }
 
-/** Les destinations des widgets Android, lues dans leurs providers Java. */
+/**
+ * Les destinations des widgets Android, lues dans leurs providers Java. Le
+ * dossier est parcouru plutôt qu'énuméré : un widget ajouté sans être vérifié
+ * ici passerait inaperçu, et c'est précisément ce qu'on veut éviter.
+ */
 function androidWidgetUrls(): string[] {
   const dir = root + "/native/android/app/src/main/java/fr/petitejerusalem/app";
-  return ["HorairesWidgetProvider", "LectureWidgetProvider"].flatMap((name) => {
-    const source = readFileSync(`${dir}/${name}.java`, "utf8");
-    return [...source.matchAll(/return "(https:\/\/[^"]+)"/g)].map(([, url]) => url);
-  });
+  return readdirSync(dir)
+    .filter((name) => name.endsWith(".java"))
+    .flatMap((name) => {
+      const source = readFileSync(`${dir}/${name}`, "utf8");
+      return [...source.matchAll(/return "(https:\/\/[^"]+)"/g)].map(([, url]) => url);
+    });
 }
 
 describe("destinations des widgets", () => {
@@ -120,7 +126,9 @@ describe("destinations des widgets Android", () => {
   const urls = androidWidgetUrls();
 
   it("ouvre l'app, et non le navigateur", () => {
-    expect(urls).toHaveLength(2);
+    // Huit widgets, huit destinations : les mêmes que sur iOS (la parité des
+    // deux plateformes a son propre test, widgetParity.test.ts).
+    expect(urls).toHaveLength(8);
     const matchers = routerMatchers();
     const unmatched: string[] = [];
     // Un chemin absent de la liste des liens d'application s'ouvrirait dans
@@ -137,5 +145,13 @@ describe("destinations des widgets Android", () => {
     }
     expect(unmatched, "chemins qu'aucune route ne reconnaît").toEqual([]);
     expect(browserBound, "chemins qui ouvriraient le navigateur").toEqual([]);
+  });
+
+  it("emmène là où les widgets iOS emmènent", () => {
+    // Un raccourci rebranché sur la mauvaise page d'un seul côté ouvrirait
+    // deux pages différentes selon le téléphone.
+    const paths = (list: string[]) =>
+      [...new Set(list.map((url) => new URL(url).pathname))].sort();
+    expect(paths(urls)).toEqual(paths(widgetUrls()));
   });
 });

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget « Horaires essentiels » : les quatre horaires du jour que l'on
+     vérifie le plus, et rien d'autre. À la différence du widget « Horaires »,
+     qui annonce le PROCHAIN zman et se replanifie à chacun, c'est un tableau
+     du jour : ses lignes ne changent qu'à la chkia. Pendant du widget iOS du
+     même nom. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pj_essentials_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/pj_widget_bg"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/pj_essentials_hebrew_date"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/pj_widget_text_secondary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/pj_essentials_place"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/pj_widget_text_secondary"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Une des quatre lignes : le libellé à gauche, l'heure à droite, à l'accent
+         du thème comme toutes les heures de ces widgets. -->
+    <LinearLayout
+        android:id="@+id/pj_essentials_row1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/pj_essentials_row1_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/pj_widget_text_secondary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/pj_essentials_row1_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:maxLines="1"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Ligne 2. -->
+    <LinearLayout
+        android:id="@+id/pj_essentials_row2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/pj_essentials_row2_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/pj_widget_text_secondary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/pj_essentials_row2_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:maxLines="1"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Ligne 3. -->
+    <LinearLayout
+        android:id="@+id/pj_essentials_row3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/pj_essentials_row3_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/pj_widget_text_secondary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/pj_essentials_row3_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:maxLines="1"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Ligne 4. -->
+    <LinearLayout
+        android:id="@+id/pj_essentials_row4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/pj_essentials_row4_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/pj_widget_text_secondary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/pj_essentials_row4_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:maxLines="1"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Fenêtre épuisée ou payload absent : un message à la place du tableau. -->
+    <TextView
+        android:id="@+id/pj_essentials_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:maxLines="3"
+        android:textColor="@color/pj_widget_text"
+        android:textSize="13sp"
+        android:visibility="gone" />
+</LinearLayout>

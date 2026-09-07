@@ -2,7 +2,11 @@
 <!-- Widget « Lecture du jour » : une ligne, le dessin de la carte du tableau
      de bord (src/components/DailyReadingCard.vue) : titre et chevron, ligne de
      progression et pourcentage, barre. Le pourcentage, la barre et l'icône
-     portent l'accent du thème de l'utilisateur, qui arrive dans le payload. -->
+     portent l'accent du thème de l'utilisateur, qui arrive dans le payload.
+     Les écarts sont ceux de la carte (16 dp sous le titre, 8 au-dessus de la
+     barre) ; les corps, eux, sont ceux d'un widget, plus grands que sur la
+     carte, et les mêmes que sur iOS : à trois lignes fines, la tuile sonnait
+     vide. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/pj_lecture_root"
     android:layout_width="match_parent"
@@ -20,8 +24,8 @@
 
         <ImageView
             android:id="@+id/pj_lecture_icon"
-            android:layout_width="15dp"
-            android:layout_height="15dp"
+            android:layout_width="17dp"
+            android:layout_height="17dp"
             android:contentDescription="@null"
             android:src="@drawable/pj_widget_book" />
 
@@ -29,19 +33,19 @@
             android:id="@+id/pj_lecture_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="10dp"
             android:layout_weight="1"
             android:ellipsize="end"
             android:maxLines="1"
             android:text="@string/pj_widget_lecture_label"
             android:textColor="@color/pj_widget_text"
-            android:textSize="13sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <ImageView
             android:id="@+id/pj_lecture_chevron"
-            android:layout_width="12dp"
-            android:layout_height="12dp"
+            android:layout_width="13dp"
+            android:layout_height="13dp"
             android:layout_marginStart="6dp"
             android:contentDescription="@null"
             android:src="@drawable/pj_widget_chevron" />
@@ -52,7 +56,7 @@
         android:id="@+id/pj_lecture_progress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         android:orientation="horizontal">
 
         <TextView
@@ -63,7 +67,7 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:textColor="@color/pj_widget_text"
-            android:textSize="12sp" />
+            android:textSize="15sp" />
 
         <TextView
             android:id="@+id/pj_lecture_percent"
@@ -71,7 +75,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:maxLines="1"
-            android:textSize="12sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -80,8 +84,8 @@
     <ImageView
         android:id="@+id/pj_lecture_bar"
         android:layout_width="match_parent"
-        android:layout_height="8dp"
-        android:layout_marginTop="6dp"
+        android:layout_height="10dp"
+        android:layout_marginTop="8dp"
         android:contentDescription="@null"
         android:scaleType="fitXY" />
 
@@ -90,10 +94,10 @@
         android:id="@+id/pj_lecture_message"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="12dp"
         android:ellipsize="end"
-        android:maxLines="2"
+        android:maxLines="3"
         android:textColor="@color/pj_widget_text_secondary"
-        android:textSize="12sp"
+        android:textSize="15sp"
         android:visibility="gone" />
 </LinearLayout>
