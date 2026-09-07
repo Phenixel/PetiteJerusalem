@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Raccourci « Prochain horaire » : l'heure en grand, et rien d'autre ; son
+     nom en dessous dit seulement de quelle heure il s'agit. Pendant du
+     ZmanimShortcutView d'iOS. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pj_zmanim_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/pj_widget_bg"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+    <TextView
+        android:id="@+id/pj_zmanim_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="@color/pj_widget_text"
+        android:textSize="42sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/pj_zmanim_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="@color/pj_widget_text_secondary"
+        android:textSize="11sp" />
+
+    <!-- Fenêtre épuisée ou payload absent : le message prend toute la tuile. -->
+    <TextView
+        android:id="@+id/pj_zmanim_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:maxLines="4"
+        android:textColor="@color/pj_widget_text"
+        android:textSize="12sp"
+        android:visibility="gone" />
+</LinearLayout>

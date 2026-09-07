@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Raccourci qui n'est qu'un livre, posé sur sa planche (sidour, Tehilim) :
+     le titre est écrit sur la couverture, il n'a rien à ajouter dessous. Le
+     dessin vient du provider (WidgetGraphics), comme sur iOS où il vient de
+     ShelfBookView. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pj_book_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/pj_widget_bg"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+    <ImageView
+        android:id="@+id/pj_book_image"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:adjustViewBounds="true"
+        android:contentDescription="@null"
+        android:scaleType="fitCenter" />
+</LinearLayout>

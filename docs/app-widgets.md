@@ -1,13 +1,14 @@
 # Widgets d'écran d'accueil (Android / iOS)
 
-Trois widgets accompagnent l'app native :
+Huit widgets accompagnent l'app native, les mêmes sur Android et sur iOS.
+Trois grands :
 
 - **Horaires** : la date hébraïque, le prochain zman du lieu de l'utilisateur
   (à l'accent de son thème, comme la carte « prochain horaire » de la page),
   ceux d'après, la paracha de la semaine et le ta'hanoun (en gras les jours où
   l'on n'en dit pas), mis à jour à chaque horaire passé. Toucher le widget
   ouvre la page `/horaires`.
-- **Horaires essentiels** (iOS seulement) : les quatre horaires que l'on vient
+- **Horaires essentiels** : les quatre horaires que l'on vient
   vérifier le plus souvent, et rien d'autre : fin du Chéma et fin de la Amida
   (au Gaon de Vilna, l'opinion la plus tardive, celle qui fait la limite), plag
   haMin'ha, tsét haKokhavim. C'est un tableau du jour, pas une annonce : ses
@@ -19,8 +20,8 @@ Trois widgets accompagnent l'app native :
   pourcentage et barre de progression, remise à zéro à minuit. Toucher le
   widget ouvre `/bibliotheque/lecture-du-jour`.
 
-S'y ajoutent cinq **raccourcis** (iOS seulement), au plus petit format que
-l'écran d'accueil propose, qui n'ouvrent chacun qu'une page :
+S'y ajoutent cinq **raccourcis**, au plus petit format que l'écran d'accueil
+propose, qui n'ouvrent chacun qu'une page :
 
 | Raccourci | Ouvre | Ce qu'il montre |
 |---|---|---|
@@ -59,9 +60,25 @@ délave les couleurs, l'accent du thème compris. Chaque widget y a donc un
 dessin à part, dépouillé, qui ne fait porter aucun sens à la couleur : la
 règle vaut aussi pour le vert de « tout est lu », qui n'y survit pas.
 
-Côté Android, ce sont les tailles du launcher qui décident, et les deux
-providers historiques suffisent : « Horaires essentiels » n'a pas encore de
-pendant Android.
+Côté Android, ce sont les tailles du launcher qui décident, et l'utilisateur
+peut les changer à tout moment. Le provider reçoit donc les dimensions de
+CHAQUE instance (`onUpdate`, puis `onAppWidgetOptionsChanged` au
+redimensionnement) et choisit son dessin comme iOS choisit sur la famille : à
+partir de quatre colonnes (220 dp), c'est le dessin du format moyen, avec la
+colonne d'horaires suivants ou le quatrième livre ; en deçà, celui du petit.
+Le widget « Horaires » a pour cela deux gabarits, `widget_horaires.xml` et
+`widget_horaires_medium.xml`, qui portent **les mêmes identifiants** : le
+provider les remplit du même code.
+
+L'écran verrouillé, lui, reste propre à iOS : Android ne l'ouvre pas aux
+applications tierces.
+
+Ce que RemoteViews ne sait pas composer est dessiné dans un bitmap par
+`WidgetGraphics` (la barre et l'anneau de progression, qu'il ne sait teindre à
+une couleur venue du payload, et l'étagère, avec ses dégradés, ses filets et
+son titre écrit sur la couverture), puis étiré par l'ImageView. Les livres y
+reprennent les coordonnées du SVG d'origine, dans son carton de 96 sur 140,
+comme le fait `ShelfBookView` en SwiftUI : un même dessin, trois fois.
 
 ## Architecture : l'app calcule, le natif affiche
 
@@ -75,7 +92,7 @@ webview (Vue)                        natif
 widgetService.refresh()
   └─ widgetPayloads.ts        ──►    plugin PjWidgets
      (7 j d'horaires,                 ├─ Android : SharedPreferences "pj_widgets"
-      lecture du jour,                │  + broadcast vers les 2 providers
+      lecture du jour,                │  + broadcast vers les providers
       titres de la biblio,            └─ iOS : App Group + reload WidgetKit
       libellés localisés)
 ```
@@ -84,8 +101,8 @@ Trois clés voyagent : `zmanim`, `daily` et `library`. La dernière ne porte que
 des titres (« Bibliothèque », « Sidour », « Tehilim »…) : ils ne bougent
 qu'avec la langue, mais ils ne peuvent pas pour autant s'écrire en dur côté
 natif, « Sidour » se disant « Siddur » en anglais et « סידור » en hébreu.
-Android range cette clé sans encore la lire : aucun de ses widgets n'en a
-besoin, mais le contrat reste le même des deux côtés.
+Les deux plateformes lisent les trois clés, et chacune ne redessine que les
+widgets dont le payload a changé.
 
 - **Contrat** : `src/services/widgetPayloads.ts` (champ `v` pour les évolutions
   incompatibles). Tout ce qui s'affiche vient du payload, déjà localisé ET
@@ -130,8 +147,9 @@ besoin, mais le contrat reste le même des deux côtés.
 
 Le code natif est versionné dans `native/android/` (providers Java, layouts,
 couleurs jour/nuit) et recopié dans `android/` (git-ignoré, régénéré par la CI)
-par `scripts/setup-android.mjs`, qui déclare aussi les receivers dans le
-manifest et enregistre le plugin dans MainActivity. Rien à faire de plus :
+par `scripts/setup-android.mjs`, qui déclare aussi un receiver par widget dans
+le manifest (liste `WIDGET_RECEIVERS`) et enregistre le plugin dans
+MainActivity. Rien à faire de plus :
 
 ```bash
 npx cap add android          # si android/ n'existe pas encore
@@ -142,7 +160,8 @@ npm run cap:android
 Tester : builder sur un appareil, poser les widgets depuis le sélecteur du
 launcher, ouvrir l'app une fois (elle pousse les payloads), vérifier que le
 widget Horaires bascule au passage d'un zman et que « marquer comme lu » met à
-jour le widget Lecture.
+jour le widget Lecture. Élargir un widget à quatre colonnes doit le faire
+passer au dessin du format moyen, sans le reposer.
 
 ## iOS : automatique aussi, sauf trois clics chez Apple
 
@@ -160,7 +179,7 @@ macOS dans `src/__tests__/xcodeWidgets.test.ts`) :
 |---|---|---|
 | `App/PjWidgetsPlugin.swift` | cible App | reçoit les payloads, écrit l'App Group, recharge WidgetKit |
 | `App/PjViewController.swift` | cible App | enregistre le plugin (obligatoire depuis Capacitor 5) |
-| `PjWidgets/PjWidgets.swift` | cible PjWidgets | les deux widgets SwiftUI et leurs timelines |
+| `PjWidgets/PjWidgets.swift` | cible PjWidgets | les huit widgets SwiftUI et leurs timelines |
 
 Le script pose aussi l'`Info.plist` de l'extension (point d'extension
 WidgetKit, versions alignées sur celles de l'app), ses entitlements (l'App
@@ -240,3 +259,11 @@ qui reste à faire à la main.
 - Champ retiré ou renommé : incrémenter `v` et faire lire les deux versions au
   natif le temps d'une release (les payloads persistent sur l'appareil).
 - Les tests du contrat vivent dans `src/__tests__/widgetPayloads.test.ts`.
+- Un widget ajouté d'un seul côté ne casse rien : il manque simplement chez la
+  moitié du public, et personne ne le voit avant d'installer l'app. Deux tests
+  tiennent la parité, `src/__tests__/widgetParity.test.ts` (les deux
+  plateformes proposent les mêmes widgets, sous les mêmes noms, câblés de bout
+  en bout) et `src/__tests__/widgetDeepLinks.test.ts` (ils emmènent aux mêmes
+  pages). Un widget de plus, c'est donc : le SwiftUI et son entrée au
+  `WidgetBundle`, le provider Java, son gabarit, son fichier
+  `appwidget-provider`, ses deux chaînes, et sa ligne dans `WIDGET_RECEIVERS`.

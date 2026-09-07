@@ -332,39 +332,60 @@ public class MainActivity extends BridgeActivity {
   writeFileSync(mainActivityPath, mainActivity);
 }
 
-// 10. Déclaration des deux widgets dans le manifest.
+// 10. Déclaration des widgets dans le manifest.
+//     Un receiver par widget, comme le WidgetBundle côté iOS : les deux
+//     plateformes en proposent les mêmes huit (un test le vérifie,
+//     src/__tests__/widgetParity.test.ts).
+const WIDGET_RECEIVERS = [
+  { provider: "HorairesWidgetProvider", label: "horaires", info: "widget_horaires_info" },
+  { provider: "EssentialsWidgetProvider", label: "essentials", info: "widget_essentials_info" },
+  { provider: "LectureWidgetProvider", label: "lecture", info: "widget_lecture_info" },
+  { provider: "LibraryWidgetProvider", label: "library", info: "widget_library_info" },
+  { provider: "SidourWidgetProvider", label: "sidour", info: "widget_sidour_info" },
+  { provider: "TehilimWidgetProvider", label: "tehilim", info: "widget_tehilim_info" },
+  {
+    provider: "ZmanimShortcutWidgetProvider",
+    label: "zmanim_shortcut",
+    info: "widget_zmanim_shortcut_info",
+  },
+  {
+    provider: "LectureShortcutWidgetProvider",
+    label: "lecture_shortcut",
+    info: "widget_lecture_shortcut_info",
+  },
+];
+
 let widgetManifest = readFileSync(manifestPath, "utf8");
-if (!widgetManifest.includes("HorairesWidgetProvider")) {
+const missingReceivers = WIDGET_RECEIVERS.filter(
+  ({ provider }) => !widgetManifest.includes(provider),
+);
+if (missingReceivers.length > 0) {
+  const receivers = missingReceivers
+    .map(
+      ({ provider, label, info }) => `        <receiver
+            android:name=".${provider}"
+            android:exported="false"
+            android:label="@string/pj_widget_${label}_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/${info}" />
+        </receiver>`,
+    )
+    .join("\n");
   widgetManifest = widgetManifest.replace(
     /(\n\s*<\/application>)/,
     `
 
         <!-- Widgets d'écran d'accueil (voir native/android/ et docs/app-widgets.md) -->
-        <receiver
-            android:name=".HorairesWidgetProvider"
-            android:exported="false"
-            android:label="@string/pj_widget_horaires_label">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_horaires_info" />
-        </receiver>
-        <receiver
-            android:name=".LectureWidgetProvider"
-            android:exported="false"
-            android:label="@string/pj_widget_lecture_label">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_lecture_info" />
-        </receiver>$1`,
+${receivers}$1`,
   );
   writeFileSync(manifestPath, widgetManifest);
-  console.log("setup-android: widgets Horaires et Lecture déclarés dans le manifest");
+  console.log(
+    `setup-android: ${missingReceivers.length} widgets déclarés dans le manifest`,
+  );
 }
 
 // 11. Connexion Google native : sans ces variables, le plugin

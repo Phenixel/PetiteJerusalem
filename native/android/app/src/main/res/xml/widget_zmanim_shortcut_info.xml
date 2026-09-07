@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Raccourci de l'heure du prochain zman : il partage le payload et l'alarme
+     du widget « Horaires », qui se replanifie à chaque zman passé.
+     updatePeriodMillis = 30 min, filet de sécurité comme les autres. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/pj_widget_zmanim_shortcut_description"
+    android:initialLayout="@layout/widget_zmanim_shortcut"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:resizeMode="none"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen" />
