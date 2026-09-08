@@ -49,15 +49,21 @@ import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
+import {
+  AUTH_PORT,
+  FIRESTORE_PORT,
+  createEmulatorUser,
+  seedDoc,
+  waitFor,
+} from "./lib/firebase-emulator.mjs";
 
 const root = join(import.meta.dirname, "..");
 const androidOutDir = join(root, "store-assets/metadata/android/fr-FR/images/phoneScreenshots");
 const iosOutDir = join(root, "store-assets/metadata/ios/screenshots/fr-FR");
 
-const FIRESTORE_PORT = 8470; // même plage que firebase.json / firebase.ts
-const AUTH_PORT = 8471;
+// Ports des émulateurs : scripts/lib/firebase-emulator.mjs (même plage que
+// firebase.json et src/firebase/*.ts).
 const VITE_PORT = 5273; // hors du 5173 par défaut pour ne pas gêner un dev en cours
-const PROJECT_ID = "petite-jerusalem-dev";
 
 const WEB_MODE = process.argv.includes("--web");
 const IOS_MODE = process.argv.includes("--ios");
@@ -220,18 +226,6 @@ process.on("exit", cleanup);
 process.on("SIGINT", () => process.exit(130));
 process.on("SIGTERM", () => process.exit(143));
 
-async function waitFor(url, label, timeoutMs = 60000) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    try {
-      await fetch(url);
-      return;
-    } catch {
-      await new Promise((r) => setTimeout(r, 500));
-    }
-  }
-  throw new Error(`${label} ne répond pas sur ${url} après ${timeoutMs / 1000}s`);
-}
 
 // --- Émulateurs Firebase éphémères (vides : ni --import ni --export-on-exit) --
 
@@ -242,58 +236,12 @@ await waitFor(`http://localhost:${FIRESTORE_PORT}/`, "l'émulateur Firestore", 9
 
 // --- Données de démo ---------------------------------------------------------
 
-/** Encode une valeur JS au format REST de Firestore. */
-function toFirestoreValue(value) {
-  if (value === null) return { nullValue: null };
-  if (value instanceof Date) return { timestampValue: value.toISOString() };
-  if (Array.isArray(value)) return { arrayValue: { values: value.map(toFirestoreValue) } };
-  switch (typeof value) {
-    case "string":
-      return { stringValue: value };
-    case "boolean":
-      return { booleanValue: value };
-    case "number":
-      return Number.isInteger(value) ? { integerValue: String(value) } : { doubleValue: value };
-    case "object":
-      return { mapValue: { fields: toFirestoreFields(value) } };
-    default:
-      throw new Error(`Type non géré : ${typeof value}`);
-  }
-}
-
-function toFirestoreFields(obj) {
-  return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, toFirestoreValue(v)]));
-}
-
-async function seedDoc(path, docId, data) {
-  const res = await fetch(
-    `http://localhost:${FIRESTORE_PORT}/v1/projects/${PROJECT_ID}/databases/(default)/documents/${path}?documentId=${docId}`,
-    {
-      method: "POST",
-      // "Bearer owner" : jeton spécial de l'émulateur qui court-circuite les règles.
-      headers: { Authorization: "Bearer owner", "Content-Type": "application/json" },
-      body: JSON.stringify({ fields: toFirestoreFields(data) }),
-    },
-  );
-  if (!res.ok) throw new Error(`Seed ${path}/${docId} : ${res.status} ${await res.text()}`);
-}
-
 console.log("store-screenshots: création du compte et des données de démo…");
-const signUp = await fetch(
-  `http://localhost:${AUTH_PORT}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=demo`,
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: DEMO_EMAIL,
-      password: DEMO_PASSWORD,
-      displayName: DEMO_NAME,
-      returnSecureToken: true,
-    }),
-  },
-);
-if (!signUp.ok) throw new Error(`Création du compte de démo : ${await signUp.text()}`);
-const { localId: uid } = await signUp.json();
+const uid = await createEmulatorUser({
+  email: DEMO_EMAIL,
+  password: DEMO_PASSWORD,
+  displayName: DEMO_NAME,
+});
 
 function todayKey() {
   const d = new Date();

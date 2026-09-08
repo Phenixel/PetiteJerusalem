@@ -13,6 +13,8 @@
     "build": "run-s type-check texts-manifest build-only prerender well-known",
     "preview": "vite preview",
     "test:unit": "vitest",
+    "test:e2e": "node scripts/e2e.mjs",
+    "test:e2e:public": "node scripts/e2e.mjs --project public",
     "build-only": "vite build",
     "texts-manifest": "node scripts/texts-manifest.mjs",
     "prerender": "node scripts/prerender-seo.mjs",

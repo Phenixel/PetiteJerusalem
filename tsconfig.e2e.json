@@ -1,0 +1,17 @@
+{
+  "extends": "@tsconfig/node22/tsconfig.json",
+  "include": ["e2e/**/*.ts", "scripts/lib/firebase-emulator.mjs"],
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.e2e.tsbuildinfo",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node"],
+    // Les fonctions passées à page.evaluate s'exécutent dans le navigateur.
+    "lib": ["ES2023", "DOM"],
+    // Les tests réutilisent les helpers d'émulateur des scripts (JS) : sans
+    // ceci, TypeScript refuse un module sans déclaration.
+    "allowJs": true
+  }
+}
