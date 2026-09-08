@@ -1,38 +1,44 @@
 # SEO Petite Jérusalem
 
-How the site is made findable by search engines **and** AI assistants
-(ChatGPT, Claude, Perplexity), and the manual steps to finish the job.
+Comment le site est rendu trouvable par les moteurs de recherche **et** par
+les assistants IA (ChatGPT, Claude, Perplexity), et les étapes manuelles qui
+restent pour finir le travail.
 
-## Why it was invisible (the diagnosis)
+## Pourquoi il était invisible (le diagnostic)
 
-1. **`sitemap.xml` + `robots.txt` pointed at a dead domain.** Every URL used
-   `petite-jerusalem.web.app`, which returns **404**. Google was handed a
-   sitemap full of dead links. → Fixed: both now use `petite-jerusalem.fr`.
-2. **The served HTML body was empty** (`<div id="app"></div>`). Bots that don't
-   run JS (Bing, GPTBot, ClaudeBot, PerplexityBot…) saw no content. → Fixed: the
-   build now prerenders real `<body>` content per page (see below).
-3. **Brand-name collision.** "Petite Jérusalem" is also a 2005 film with a
-   Wikipedia page, so a zero-authority new site can't win its own name yet. → We
-   keep the name and lean on descriptive, task-oriented copy + inbound links.
-4. **Vocabulary mismatch.** The copy said "centre spirituel numérique"; users
-   search "finir le Chass", "répartir les Tehilim", "refoua chelema". → Copy and
-   landing pages rewritten around those real terms.
+1. **`sitemap.xml` et `robots.txt` pointaient sur un domaine mort.** Toutes
+   les URL utilisaient `petite-jerusalem.web.app`, qui répond **404**. Google
+   recevait un sitemap plein de liens morts. Corrigé : les deux utilisent
+   désormais `petite-jerusalem.fr`.
+2. **Le corps du HTML servi était vide** (`<div id="app"></div>`). Les robots
+   qui n'exécutent pas JavaScript (Bing, GPTBot, ClaudeBot, PerplexityBot…) ne
+   voyaient aucun contenu. Corrigé : le build prérend maintenant un vrai
+   `<body>` par page (voir plus bas).
+3. **Collision de nom de marque.** « Petite Jérusalem » est aussi un film de
+   2005 qui a sa page Wikipédia : un site neuf sans autorité ne peut pas
+   encore gagner son propre nom. On garde le nom et on mise sur des textes
+   descriptifs, orientés tâche, et sur des liens entrants.
+4. **Décalage de vocabulaire.** Les textes disaient « centre spirituel
+   numérique » ; les gens cherchent « finir le Chass », « répartir les
+   Tehilim », « refoua chelema ». Textes et pages d'atterrissage réécrits
+   autour de ces termes réels.
 
-## One URL per language
+## Une URL par langue
 
-The site is written in French, English and Hebrew, but for a long time it had
-**one URL per page**, with the language picked in the browser (localStorage,
-then `navigator.language`). Googlebot got the French version and had no way to
-discover the other two: no address carried them. The English and Hebrew
-translations of the landing pages already existed in `seoPages.ts` and were
-served to nobody.
+Le site est écrit en français, en anglais et en hébreu, mais il a longtemps
+eu **une seule URL par page**, la langue étant choisie dans le navigateur
+(localStorage, puis `navigator.language`). Googlebot recevait la version
+française et n'avait aucun moyen de découvrir les deux autres : aucune adresse
+ne les portait. Les traductions anglaise et hébraïque des pages d'atterrissage
+existaient déjà dans `seoPages.ts` et n'étaient servies à personne.
 
-The standard scheme now applies, driven by `src/content/seoLocales.ts`:
+Le schéma standard s'applique désormais, piloté par
+`src/content/seoLocales.ts` :
 
-- French stays at the root (it is the historical set of URLs, and the
-  `x-default`); English and Hebrew take a prefix, and the segments are
-  translated, because an English speaker searches "shabbat times", not
-  "horaires":
+- Le français reste à la racine (c'est le jeu d'URL historique, et le
+  `x-default`) ; l'anglais et l'hébreu prennent un préfixe, et les segments
+  sont traduits, parce qu'un anglophone cherche « shabbat times », pas
+  « horaires » :
 
   | fr                   | en                       | he                        |
   | -------------------- | ------------------------ | ------------------------- |
@@ -41,264 +47,294 @@ The standard scheme now applies, driven by `src/content/seoLocales.ts`:
   | `/paracha`           | `/en/parasha`            | `/he/parasha`             |
   | `/finir-le-chass`    | `/en/finish-the-shas`    | `/he/siyum-hashas`        |
 
-  City slugs are **not** translated: proper nouns, and one slug per city means
-  one catalogue instead of three that would drift.
+  Les slugs de villes ne sont **pas** traduits : ce sont des noms propres, et
+  un slug par ville donne un seul catalogue au lieu de trois qui dériveraient.
 
-- The prerender writes `lang` and `dir` on the document (`dir="rtl"` for
-  Hebrew), the page's own `og:locale`, and the crossed `hreflang` links in the
-  `<head>` and in `sitemap.xml` (`xhtml:link`). A page that does not exist in a
-  language simply is not declared in it, rather than promising a translation
-  that isn't there.
-- The router's localized routes are generated from the very same table, so a
-  segment can never drift between the router and the generated files. A
-  prefixed URL forces its language (`router.beforeEach`, awaiting the locale
-  chunk so the title isn't French for a moment); unprefixed URLs touch nothing,
-  so the historical behavior is unchanged.
-- The language picker follows the address: on a translated page it navigates to
-  the sibling URL, elsewhere it just swaps the text.
-- In-app links to translated sections follow the **session's language space**
-  (`useLocalePath`): the last prefixed URL opened, or the last picker choice.
-  Crossing a single-address page (Bibliotheque, chiourim, profile) does not
-  drop the `/en` from subsequent links, so the URL a visitor shares stays in
-  their language. The space is session-only, never stored: a fresh launch is
-  decided by the address alone, and a session that never touched `/en` or
-  `/he` never gets prefixed.
+- Le prérendu écrit `lang` et `dir` sur le document (`dir="rtl"` pour
+  l'hébreu), le `og:locale` propre à la page, et les liens `hreflang` croisés
+  dans le `<head>` et dans `sitemap.xml` (`xhtml:link`). Une page qui n'existe
+  pas dans une langue n'y est simplement pas déclarée, plutôt que de promettre
+  une traduction qui n'existe pas.
+- Les routes localisées du routeur sont générées à partir de la même table :
+  un segment ne peut donc jamais diverger entre le routeur et les fichiers
+  générés. Une URL préfixée impose sa langue (`router.beforeEach`, en
+  attendant le chunk de la locale pour que le titre ne soit pas français un
+  instant) ; les URL sans préfixe ne touchent à rien, le comportement
+  historique est inchangé.
+- Le sélecteur de langue suit l'adresse : sur une page traduite il navigue
+  vers l'URL sœur, ailleurs il change seulement le texte.
+- Les liens internes vers les sections traduites suivent **l'espace de langue
+  de la session** (`useLocalePath`) : la dernière URL préfixée ouverte, ou le
+  dernier choix du sélecteur. Traverser une page à adresse unique
+  (Bibliothèque, chiourim, profil) ne fait pas perdre le `/en` des liens
+  suivants, l'URL que partage un visiteur reste donc dans sa langue. L'espace
+  vaut pour la session seulement, jamais stocké : un nouveau lancement est
+  décidé par l'adresse seule, et une session qui n'a jamais touché `/en` ni
+  `/he` n'est jamais préfixée.
 
-Translated today: the home page, the landing + legal pages (their `en`/`he`
-content already existed), `/horaires` and its 242 city pages, `/calendrier` and
-its 15 festival pages, `/zmanim` and `/paracha`. The Tehilim-by-intention pages
-and the ~1200 Bibliotheque reading pages stay French-only for now, and declare
-no `hreflang` at all rather than a false one.
+Traduits aujourd'hui : l'accueil, les pages d'atterrissage et légales (leur
+contenu `en`/`he` existait déjà), `/horaires` et ses 242 pages de villes,
+`/calendrier` et ses 15 pages de fêtes, `/zmanim` et `/paracha`. Les pages de
+Tehilim par intention et les ~1200 pages de lecture de la Bibliothèque restent
+en français seul pour l'instant, et ne déclarent aucun `hreflang` plutôt qu'un
+faux.
 
-The generated families keep their sentences in `zmanimSeoStrings.ts`,
-`zmanimGuideStrings.ts` and `parashaStrings.ts`, one written set per language
-(not a literal transposition: "sof zman shema" is what is searched in English).
-City and country names live in `zmanimCities.ts`, festival names and slugs in
-`zmanimFestivals.ts`.
+Les familles générées gardent leurs phrases dans `zmanimSeoStrings.ts`,
+`zmanimGuideStrings.ts` et `parashaStrings.ts`, un jeu rédigé par langue (pas
+une transposition littérale : « sof zman shema » est ce qui se cherche en
+anglais). Les noms de villes et de pays vivent dans `zmanimCities.ts`, les
+noms et slugs de fêtes dans `zmanimFestivals.ts`.
 
-**Page titles and the pipe.** Runtime titles go through `t()`, and vue-i18n
-reads `|` as a plural separator: every `seo.*Title` was being truncated at the
-first pipe, so "Petite Jerusalem | Partager…" shipped as "Petite Jerusalem".
-The messages in the `seo` block therefore escape it (`{'|'}`), and
-`src/__tests__/seoTitles.test.ts` holds the line.
+**Titres de page et barre verticale.** Les titres à l'exécution passent par
+`t()`, et vue-i18n lit `|` comme un séparateur de pluriel : chaque
+`seo.*Title` était tronqué à la première barre, « Petite Jerusalem |
+Partager… » partait en « Petite Jerusalem ». Les messages du bloc `seo`
+l'échappent donc (`{'|'}`), et `src/__tests__/seoTitles.test.ts` tient la
+ligne.
 
-## How prerendering works
+## Comment fonctionne le prérendu
 
-The app is a Vue SPA on Firebase Hosting. We do **not** run runtime SSR (the app
-touches `localStorage`/Firebase at import time, which breaks in Node). Instead:
+L'app est une SPA Vue sur Firebase Hosting. Nous ne faisons **pas** de SSR à
+l'exécution (l'app touche `localStorage` et Firebase à l'import, ce qui casse
+sous Node). À la place :
 
-- `src/content/seoPages.ts`: the **single source of truth** for title,
-  description, crawlable `bodyHtml` and JSON-LD for every indexable page.
-  Imported by both
-  the Vue app and the build step, so the markup never drifts.
-- `scripts/prerender-seo.mjs` (runs after `vite build`, loads the TS module via
-  `jiti`) writes one static HTML file per route into `dist/` with route-specific
-  `<head>` + JSON-LD + real `<body>`. With `cleanUrls: true`, `/share-reading`
-  is served straight from `dist/share-reading.html`.
-  - Also writes **`dist/app.html`**: a bare empty shell used as the catch-all
-    rewrite target, so deep app routes (`/profile`, …) never flash homepage
-    content. (`firebase.json`: `"**" → "/app.html"`.) Its canonical + `og:url`
-    tags are **stripped** (`buildAppShell` in `seoPages.ts`): the shell serves
-    every non-prerendered route, and keeping the homepage canonical there made
-    each of them claim to be a duplicate of `/` (Search Console "Duplicate
-    page, Google chose a different canonical"). The Vue views set the right
-    canonical on mount (`seoService`).
-  - Also regenerates the sitemaps from the same page lists: **`dist/sitemap.xml`**
-    is a sitemap _index_ pointing at one file per page family
-    (`sitemap-pages.xml`, `sitemap-bibliotheque.xml`, `sitemap-horaires.xml`,
-    `sitemap-calendrier.xml`), so Search Console reports indexing family by
-    family. Each URL carries a **real `lastmod`**: the date of the last commit
-    that touched the file the page is made of (the text file for a reading
-    page, `seoPages.ts` for a content page), read with a single `git log` by
-    `scripts/lib/lastmod.mjs`. The computed pages (horaires, calendrier,
-    paracha, dated parashiot) carry the build date, because they really do
-    change at every build. Without git history (shallow clone) everything
-    falls back to the build date; the deploy workflows therefore check out
-    with `fetch-depth: 0`.
-- `src/content/zmanimSeoPages.ts`: everything that needs computed dates or
-  times, prerendered from `@hebcal/core` at build time:
-  - **`/horaires`** (Paris): twelve weeks of candle lighting/havdala, the
-    day's full zmanim table (alot, misheyakir, netz, sof zman Shema/Tefilla in
-    both opinions, chatzot, mincha gedola/ketana, plag, shkia, tzeit, chatzot
-    halayla), the parasha of each upcoming Shabbat linked to its Bibliothèque
-    page, and the directory of every city page grouped by country.
-  - **`/horaires/<ville>`**, one per city in `src/datas/cities.json` (242,
-    every city except Paris, whose page _is_ `/horaires`): the same twelve
-    weeks and the same zmanim table computed at that city's coordinates, plus
-    its six nearest cities with distances. Jerusalem is included: candle
-    lighting there is 40 minutes before sunset, and `candleLightingMinutes`
-    in `zmanimService` carries that local usage (18 minutes everywhere else).
-    The list of highlighted communities lives in `src/content/zmanimCities.ts`
-    (`FEATURED_CITY_NAMES`), along with the slugs shared with the router.
-  - **`/calendrier`**: the festivals of the current + next Hebrew year with
-    entry/exit times, plus a "big festivals over seven Hebrew years" table.
-  - **`/calendrier/<fete>`**, one per festival in
-    `src/content/zmanimFestivals.ts` (15: roch-hachana, yom-kippour, souccot,
-    simhat-torah, hanouka, tou-bichvat, jeune-esther, pourim, pessah,
-    lag-baomer, chavouot, and the fasts): its dates over six upcoming years in
-    civil + Hebrew dates, entry/exit times when it is a Yom Tov, and a "Quand
-    tombe X <année> ?" FAQ per year. The route `/calendrier/:fete` is real app
-    behavior too: CalendarPage resolves the slug, opens the year that carries
-    the next occurrence and highlights it.
-    This lives in its own module, not `seoPages.ts`, so hebcal stays out of the
-    Vue chunks that import `seoPages` (ContentPage, TehilimPage); only the
-    prerender step, `indexnow.mjs` and the tests load it. Every row is dated, so
-    the content stays truthful between deploys, but **deploy at least every few
-    weeks** to keep the upcoming-times tables ahead of the calendar.
-    `/horaires/:ville` is real app behavior as well: ZmanimPage resolves the
-    slug against the city catalogue and computes live times for it.
-- `src/content/parashaSeoPages.ts`: the **`/paracha`** hub (this week's
-  parasha, then the dated calendar of the whole cycle, each parasha linked to
-  its Bibliothèque text) and the dated sentence injected into each of the 54
-  parasha reading pages ("Cette paracha se lit le Chabbat 31 octobre 2026,
-  puis le Chabbat 20 novembre 2027"), which is what makes "quand lit-on Ki
-  Tétsé" resolve to a page that already existed. Vezot Haberakha is never read
-  on an ordinary Shabbat, so it is dated from Simhat Torah instead. The
-  calendar itself lives in `src/content/parashaCalendar.ts` (dailyCycles only,
-  no `seoPages`), shared with `src/views/Library/ParashaPage.vue`, which
-  recomputes it live for visitors. This is the most deploy-sensitive page on
-  the site: its lead and its FAQ name the Shabbat they were built for, so they
-  never go false, but they do go stale. A weekly deploy keeps "this week"
-  actually meaning this week.
-- `guidePages` in `src/content/seoPages.ts` holds the evergreen explainers
-  that need no computation, today **`/zmanim`** (what each zman marks, the two
-  opinions, how it is computed), rendered for humans by
-  `src/views/SeoGuidePage.vue` from the very same `bodyHtml`.
-- **None of this ships in the native app.** All the prerendered SEO content is
-  web-only: `scripts/prune-native-bundle.mjs` (run by `npm run app:build`,
-  between `vite build` and `cap sync`) strips every prerendered `.html` page,
-  `sitemap.xml`, `robots.txt` and `llms.txt` from the Capacitor bundle, and
-  replaces its `index.html` entry with the bare shell (`app.html`), so the app
-  never flashes SEO text at launch. In-app navigation is fully client-side and
-  never loads those files anyway; removing them also saves ~79 MB of HTML in
-  the APK/IPA. A test locks this behavior
-  (`src/__tests__/pruneNativeBundle.test.ts`).
+- `src/content/seoPages.ts` : la **source unique de vérité** pour le titre,
+  la description, le `bodyHtml` explorable et le JSON-LD de chaque page
+  indexable. Importé à la fois par l'app Vue et par l'étape de build, pour que
+  le balisage ne dérive jamais.
+- `scripts/prerender-seo.mjs` (lancé après `vite build`, charge le module TS
+  via `jiti`) écrit un fichier HTML statique par route dans `dist/`, avec un
+  `<head>` propre à la route, le JSON-LD et un vrai `<body>`. Avec
+  `cleanUrls: true`, `/share-reading` est servi directement depuis
+  `dist/share-reading.html`.
+  - Il écrit aussi **`dist/app.html`** : une coquille vide, cible du rewrite
+    attrape-tout, pour que les routes profondes de l'app (`/profile`, …) ne
+    fassent jamais clignoter le contenu de l'accueil (`firebase.json` :
+    `"**"` vers `/app.html`). Ses balises canonical et `og:url` sont
+    **retirées** (`buildAppShell` dans `seoPages.ts`) : la coquille sert
+    toutes les routes non prérendues, et garder la canonique de l'accueil
+    faisait passer chacune d'elles pour un doublon de `/` (Search Console :
+    « Page en double, Google a choisi une URL canonique différente »). Les
+    vues Vue posent la bonne canonique au montage (`seoService`).
+  - Il régénère aussi les sitemaps à partir des mêmes listes de pages :
+    **`dist/sitemap.xml`** est un _index_ de sitemaps qui pointe sur un
+    fichier par famille de pages (`sitemap-pages.xml`,
+    `sitemap-bibliotheque.xml`, `sitemap-horaires.xml`,
+    `sitemap-calendrier.xml`), pour que la Search Console rapporte l'indexation
+    famille par famille. Chaque URL porte un **vrai `lastmod`** : la date du
+    dernier commit qui a touché le fichier dont la page est faite (le fichier
+    de texte pour une page de lecture, `seoPages.ts` pour une page de contenu),
+    lue en un seul `git log` par `scripts/lib/lastmod.mjs`. Les pages
+    calculées (horaires, calendrier, paracha, parachiot datées) portent la date
+    du build, parce qu'elles changent réellement à chaque build. Sans
+    historique git (clone superficiel), tout se replie sur la date du build ;
+    les workflows de déploiement font donc leur checkout avec
+    `fetch-depth: 0`.
+- `src/content/zmanimSeoPages.ts` : tout ce qui a besoin de dates ou d'heures
+  calculées, prérendu depuis `@hebcal/core` au moment du build :
+  - **`/horaires`** (Paris) : douze semaines d'allumage et de havdala, la
+    table complète des zmanim du jour (alot, michéyakir, netz, sof zman Chema
+    et Tefila selon les deux opinions, 'hatsot, min'ha guedola et ketana,
+    plag, chkia, tseit, 'hatsot halayla), la paracha de chaque Chabbat à
+    venir liée à sa page Bibliothèque, et l'annuaire de toutes les pages de
+    villes groupées par pays.
+  - **`/horaires/<ville>`**, une par ville de `src/datas/cities.json` (242,
+    toutes sauf Paris, dont la page _est_ `/horaires`) : les mêmes douze
+    semaines et la même table de zmanim calculées aux coordonnées de la ville,
+    plus ses six villes les plus proches avec leurs distances. Jérusalem en
+    fait partie : l'allumage y est 40 minutes avant le coucher du soleil, et
+    `candleLightingMinutes` dans `zmanimService` porte cet usage local (18
+    minutes partout ailleurs). La liste des communautés mises en avant vit
+    dans `src/content/zmanimCities.ts` (`FEATURED_CITY_NAMES`), avec les slugs
+    partagés avec le routeur.
+  - **`/calendrier`** : les fêtes de l'année hébraïque en cours et de la
+    suivante avec heures d'entrée et de sortie, plus une table « grandes fêtes
+    sur sept années hébraïques ».
+  - **`/calendrier/<fete>`**, une par fête de `src/content/zmanimFestivals.ts`
+    (15 : roch-hachana, yom-kippour, souccot, simhat-torah, hanouka,
+    tou-bichvat, jeune-esther, pourim, pessah, lag-baomer, chavouot, et les
+    jeûnes) : ses dates sur six années à venir, en dates civiles et
+    hébraïques, heures d'entrée et de sortie quand c'est un Yom Tov, et une
+    FAQ « Quand tombe X <année> ? » par année. La route `/calendrier/:fete`
+    est aussi un vrai comportement de l'app : CalendarPage résout le slug,
+    ouvre l'année qui porte la prochaine occurrence et la met en évidence.
+    Tout cela vit dans son propre module, pas dans `seoPages.ts`, pour que
+    hebcal reste hors des chunks Vue qui importent `seoPages` (ContentPage,
+    TehilimPage) ; seuls le prérendu, `indexnow.mjs` et les tests le
+    chargent. Chaque ligne est datée, le contenu reste donc vrai entre deux
+    déploiements, mais il faut **déployer au moins toutes les quelques
+    semaines** pour que les tables d'horaires à venir gardent de l'avance sur
+    le calendrier. `/horaires/:ville` est aussi un vrai comportement de
+    l'app : ZmanimPage résout le slug contre le catalogue de villes et calcule
+    les horaires en direct.
+- `src/content/parashaSeoPages.ts` : le hub **`/paracha`** (la paracha de la
+  semaine, puis le calendrier daté de tout le cycle, chaque paracha liée à son
+  texte dans la Bibliothèque) et la phrase datée injectée dans chacune des 54
+  pages de lecture de paracha (« Cette paracha se lit le Chabbat 31 octobre
+  2026, puis le Chabbat 20 novembre 2027 »), ce qui fait que « quand lit-on
+  Ki Tétsé » aboutit sur une page qui existait déjà. Vezot Haberakha n'est
+  jamais lue un Chabbat ordinaire, elle est donc datée depuis Sim'hat Torah.
+  Le calendrier lui-même vit dans `src/content/parashaCalendar.ts`
+  (dailyCycles seulement, pas de `seoPages`), partagé avec
+  `src/views/Library/ParashaPage.vue`, qui le recalcule en direct pour les
+  visiteurs. C'est la page la plus sensible au déploiement du site : son
+  chapeau et sa FAQ nomment le Chabbat pour lequel ils ont été construits, ils
+  ne deviennent donc jamais faux, mais ils vieillissent. Un déploiement
+  hebdomadaire fait que « cette semaine » veut vraiment dire cette semaine.
+- `guidePages` dans `src/content/seoPages.ts` tient les guides intemporels
+  qui n'ont besoin d'aucun calcul, aujourd'hui **`/zmanim`** (ce que marque
+  chaque zman, les deux opinions, comment il est calculé), rendus pour les
+  humains par `src/views/SeoGuidePage.vue` à partir du même `bodyHtml`.
+- **Rien de tout cela ne part dans l'app native.** Tout le contenu SEO
+  prérendu est réservé au web : `scripts/prune-native-bundle.mjs` (lancé par
+  `npm run app:build`, entre `vite build` et `cap sync`) retire du bundle
+  Capacitor toutes les pages `.html` prérendues, `sitemap.xml` et ses quatre
+  sitemaps enfants (`sitemap-pages.xml`, `sitemap-bibliotheque.xml`,
+  `sitemap-horaires.xml`, `sitemap-calendrier.xml`), `robots.txt`,
+  `llms.txt`, `llms-full.txt`, `og-image.jpg`, la clé IndexNow
+  (`7928be0e14242cf92e167550affa3215.txt`), `texts/manifest.json`,
+  `app-version.json` et le dossier `.well-known/`, et remplace son entrée
+  `index.html` par la coquille nue (`app.html`), pour que l'app ne fasse
+  jamais clignoter du texte SEO au lancement. La navigation dans l'app est
+  entièrement côté client et ne charge de toute façon jamais ces fichiers ;
+  les retirer économise aussi ~79 Mo de HTML dans l'APK et l'IPA. Un test
+  verrouille ce comportement (`src/__tests__/pruneNativeBundle.test.ts`).
 - **`/bibliotheque/<corpus>`** (`tehilim`, `michna`, `talmud`, `tanakh`,
-  `sidour`, `brahot`): one static page per corpus listing every book as a
-  link, grouped by seder/sefer/book (`buildCorpusBody` in
-  `src/content/etudeTexts.ts`), with an `ItemList` in JSON-LD. Before it, the
-  book list only existed in the Vue view, so a crawler had no path from the
-  library to the ~1200 reading pages (the brahot and sidour pages had no
-  inbound link at all). `StudyPage.vue` sets the same French title and
-  description at runtime so Googlebot's rendered page matches the served HTML.
-- `src/views/ContentPage.vue` renders the long-form landing and legal pages
-  (`landingPages` in `seoPages.ts`: `/finir-le-chass`, `/partage-tehilim`,
-  `/confidentialite`, `/a-propos`, `/mentions-legales`) from the same
-  `bodyHtml`, so a human and a crawler get identical content.
-- `functions/src/index.ts` (`socialPreview`) injects per-page `<head>` + a small
-  `<body>` for **dynamic** routes (individual sessions, chiourim, authors) that
-  can't be known at build time.
+  `sidour`, `brahot`) : une page statique par corpus qui liste chaque livre
+  en lien, groupés par seder, sefer ou livre (`buildCorpusBody` dans
+  `src/content/etudeTexts.ts`), avec un `ItemList` en JSON-LD. Avant, la liste
+  des livres n'existait que dans la vue Vue, un robot n'avait donc aucun chemin
+  de la bibliothèque vers les ~1200 pages de lecture (les pages brahot et
+  sidour n'avaient aucun lien entrant). `StudyPage.vue` pose le même titre et
+  la même description en français à l'exécution, pour que la page rendue par
+  Googlebot corresponde au HTML servi.
+- `src/views/ContentPage.vue` rend les pages d'atterrissage et légales
+  longues (`landingPages` dans `seoPages.ts` : `/finir-le-chass`,
+  `/partage-tehilim`, `/confidentialite`, `/a-propos`, `/mentions-legales`)
+  à partir du même `bodyHtml` : un humain et un robot reçoivent un contenu
+  identique.
+- `functions/src/index.ts` (`socialPreview`) injecte un `<head>` par page et
+  un petit `<body>` pour les routes **dynamiques** (sessions individuelles,
+  chiourim, auteurs) qui ne peuvent pas être connues au build.
 
-Prerendered/indexable pages (~2025 in total, all listed in the generated
-sitemaps): the static pages declared in `seoPages.ts`, `/`,
-`/share-reading`, `/bibliotheque`, `/chiourim`, the landing/legal pages above,
-`/zmanim`, `/paracha`, the Tehilim-by-intention hub + its intention pages, `/horaires` +
-its 242 city pages and `/calendrier` + its 15 festival pages (from
-`zmanimSeoPages.ts`, each in three languages), plus the six corpus pages and
-the Bibliothèque reading pages generated per corpus/book/chapter by
-`prerender-seo.mjs`.
-(`/login` is `noindex`; the old `/etude` URLs 301-redirect to
-`/bibliotheque` in `firebase.json`.)
+Pages prérendues et indexables (~2025 au total, toutes listées dans les
+sitemaps générés) : les pages statiques déclarées dans `seoPages.ts`, `/`,
+`/share-reading`, `/bibliotheque`, `/chiourim`, les pages d'atterrissage et
+légales ci-dessus, `/zmanim`, `/paracha`, le hub des Tehilim par intention et
+ses pages d'intention, `/horaires` et ses 242 pages de villes, `/calendrier`
+et ses 15 pages de fêtes (depuis `zmanimSeoPages.ts`, chacune en trois
+langues), plus les six pages de corpus et les pages de lecture de la
+Bibliothèque générées par corpus, livre et chapitre par `prerender-seo.mjs`.
+(`/login` est `noindex` ; les anciennes URL `/etude` redirigent en 301 vers
+`/bibliotheque` dans `firebase.json`.)
 
-Structured data emitted: `WebSite`, `Organization`, `WebApplication`, `HowTo`,
-`Article`, `FAQPage`, `BreadcrumbList`, `ItemList`.
+Données structurées émises : `WebSite`, `Organization`, `WebApplication`,
+`HowTo`, `Article`, `FAQPage`, `BreadcrumbList`, `ItemList`.
 
-`public/llms.txt` describes the site for AI agents, and the build writes
-**`dist/llms-full.txt`** next to it (`buildLlmsFull` in `prerender-seo.mjs`):
-the text of the ~37 main French pages (home, landing pages, guides, Tehilim by
-intention, `/horaires`, `/calendrier` and the festivals, `/paracha`), each
-under its URL, for an assistant that reads a single file. The reading pages
-are left out (tens of megabytes). `robots.txt` names every AI crawler
-explicitly (search-time fetchers such as `OAI-SearchBot`, `Claude-User`,
-`Perplexity-User`, `MistralAI-User`, and training crawlers such as `GPTBot`,
-`ClaudeBot`, `Google-Extended`, `CCBot`); which index each assistant actually
-queries, and how to check the site shows up there, is in
+`public/llms.txt` décrit le site pour les agents IA, et le build écrit
+**`dist/llms-full.txt`** à côté (`buildLlmsFull` dans `prerender-seo.mjs`) :
+le texte des ~37 pages françaises principales (accueil, pages d'atterrissage,
+guides, Tehilim par intention, `/horaires`, `/calendrier` et les fêtes,
+`/paracha`), chacune sous son URL, pour un assistant qui lit un seul fichier.
+Les pages de lecture en sont exclues (des dizaines de mégaoctets).
+`robots.txt` nomme explicitement chaque robot IA (les récupérateurs au moment
+de la recherche comme `OAI-SearchBot`, `Claude-User`, `Perplexity-User`,
+`MistralAI-User`, et les robots d'entraînement comme `GPTBot`, `ClaudeBot`,
+`Google-Extended`, `CCBot`) ; quel index chaque assistant interroge
+réellement, et comment vérifier que le site y apparaît, est dans
 `docs/audit-seo-2026-09.md`, section 5.
 
-The dynamic pages served by `socialPreview` carry JSON-LD too: a chiour is an
-`AudioObject` (author, ISO 8601 duration, `contentUrl`, free), sessions and
-chiourim have a `BreadcrumbList`.
+Les pages dynamiques servies par `socialPreview` portent aussi du JSON-LD :
+un chiour est un `AudioObject` (auteur, durée ISO 8601, `contentUrl`,
+gratuit), les sessions et les chiourim ont un `BreadcrumbList`.
 
-`index.html` also redirects the Firebase technical hosts
-(`petite-jerusalem-dev.web.app`, `.firebaseapp.com`) to the canonical domain
-with a tiny inline script: the same site answers there (it is what
-`deploy.yml` polls to verify a release) and would otherwise be a duplicate.
-Preview channels (`petite-jerusalem-dev--pr123-xxx.web.app`) and the native
-app (origin `localhost`) are not touched.
+`index.html` redirige aussi les hôtes techniques Firebase
+(`petite-jerusalem-dev.web.app`, `.firebaseapp.com`) vers le domaine canonique
+avec un minuscule script inline : le même site y répond (c'est ce que
+`deploy.yml` interroge pour vérifier une release) et serait sinon un doublon.
+Les canaux de preview (`petite-jerusalem-dev--pr123-xxx.web.app`) et l'app
+native (origine `localhost`) ne sont pas touchés.
 
-## Keeping the dated pages fresh (weekly refresh)
+## Garder les pages datées fraîches (rafraîchissement hebdomadaire)
 
-`/paracha` names "this week", the city pages cover twelve weeks from the
-build, the festival FAQs are dated. They are true when built and stay true
-only while the build is recent. Releases alone (`deploy.yml`, on a tag) did
-not guarantee that, so **`.github/workflows/refresh-seo.yml`** runs on Sunday
-and Wednesday at 03:00 UTC (and on demand): it rebuilds the **last deployed
-tag** (not `main`: the site stays at the published version, only the dates
-move), deploys hosting only, checks that the served `sitemap.xml` carries
-today's date, and pings IndexNow. A `concurrency` group keeps it from
-interleaving with a release. If the workflow is red for two weeks, the
-"this week" copy goes stale: check Actions after a Sunday.
+`/paracha` nomme « cette semaine », les pages de villes couvrent douze
+semaines à partir du build, les FAQ des fêtes sont datées. Elles sont vraies
+au moment du build et ne le restent que tant que le build est récent. Les
+releases seules (`deploy.yml`, sur un tag) ne le garantissaient pas, donc
+**`.github/workflows/refresh-seo.yml`** tourne le dimanche et le mercredi à
+03:00 UTC (et à la demande) : il rebuilde le **dernier tag déployé** (pas
+`main` : le site reste à la version publiée, seules les dates bougent),
+déploie le hosting seul, vérifie que le `sitemap.xml` servi porte la date du
+jour, et prévient IndexNow. Un groupe `concurrency` l'empêche de s'entrelacer
+avec une release. Si le workflow est rouge deux semaines de suite, le texte
+« cette semaine » vieillit : vérifier Actions après un dimanche.
 
-## Deploy + post-deploy checklist (manual, only the owner can do these)
+## Déploiement et liste de vérification après déploiement (manuel, réservé au propriétaire)
 
-After `npm run build` and `firebase deploy`:
+Après `npm run build` et `firebase deploy` :
 
-1. **Smoke-test the rewrites** (already verified locally via the hosting
-   emulator):
+1. **Tester les rewrites** (déjà vérifiés en local via l'émulateur hosting) :
    ```bash
    curl -s https://petite-jerusalem.fr/finir-le-chass | grep -o '<title>[^<]*</title>'
    curl -s https://petite-jerusalem.fr/sitemap.xml | head
    curl -s -o /dev/null -w "%{http_code}\n" https://petite-jerusalem.fr/profile   # 200 (app.html)
    ```
-2. **Google Search Console** (https://search.google.com/search-console):
-   - Add the property `petite-jerusalem.fr` (Domain property → DNS TXT verify).
-   - Submit `https://petite-jerusalem.fr/sitemap.xml` (a sitemap index: the
-     four child sitemaps show up under it, each with its own coverage).
-   - Use **URL Inspection → Request indexing** for `/`, `/share-reading`,
-     `/finir-le-chass`, `/partage-tehilim`, `/bibliotheque`,
-     `/bibliotheque/talmud`, `/bibliotheque/tehilim`, `/horaires`,
-     `/calendrier`, `/zmanim`, `/en`, `/he`.
-3. **Bing Webmaster Tools** (https://www.bing.com/webmasters): add the site,
-   submit the sitemap. (Bing also feeds ChatGPT search.)
-4. Confirm the old `petite-jerusalem.web.app` either redirects to `.fr` or stays
-   404 (it must not serve a duplicate of the site).
+2. **Google Search Console** (https://search.google.com/search-console) :
+   - Ajouter la propriété `petite-jerusalem.fr` (propriété de domaine,
+     vérification par enregistrement DNS TXT).
+   - Soumettre `https://petite-jerusalem.fr/sitemap.xml` (un index de
+     sitemaps : les quatre sitemaps enfants apparaissent dessous, chacun avec
+     sa propre couverture).
+   - Utiliser **Inspection de l'URL, puis Demander une indexation** pour `/`,
+     `/share-reading`, `/finir-le-chass`, `/partage-tehilim`,
+     `/bibliotheque`, `/bibliotheque/talmud`, `/bibliotheque/tehilim`,
+     `/horaires`, `/calendrier`, `/zmanim`, `/en`, `/he`.
+3. **Bing Webmaster Tools** (https://www.bing.com/webmasters) : ajouter le
+   site, soumettre le sitemap. (Bing alimente aussi la recherche de ChatGPT.)
+4. Vérifier que l'ancien `petite-jerusalem.web.app` redirige vers `.fr` ou
+   reste en 404 (il ne doit pas servir un doublon du site).
 
-## Getting found by AI assistants
+## Être trouvé par les assistants IA
 
-LLMs recommend a site when it is (a) crawlable as text (now true) and (b)
-present in their training/retrieval corpus, which mostly requires **being
-indexed and linked from elsewhere**. Concretely:
+Les LLM recommandent un site quand il est (a) explorable en texte (c'est
+maintenant le cas) et (b) présent dans leur corpus d'entraînement ou de
+récupération, ce qui demande surtout d'**être indexé et lié depuis
+ailleurs**. Concrètement :
 
-- Get inbound links from Jewish community sites, shul/kehila
-  newsletters, Torah-study directories, and association pages. A handful of real
-  links is the single biggest lever for a new domain.
-- Mention the exact use-cases in those links ("un site pour finir le Chass à
-  plusieurs", "répartir les Tehilim pour une refoua chelema"), and that anchor text
-  is what both Google and LLMs associate with the site.
-- Keep `llms.txt` and the FAQ answers up to date; they are the text an assistant
-  is most likely to quote.
+- Obtenir des liens entrants depuis des sites communautaires juifs, des
+  lettres d'information de synagogues et de kehilot, des annuaires d'étude de
+  la Torah et des pages d'associations. Une poignée de vrais liens est le
+  levier le plus fort pour un domaine neuf.
+- Nommer les cas d'usage exacts dans ces liens (« un site pour finir le Chass
+  à plusieurs », « répartir les Tehilim pour une refoua chelema ») : ce texte
+  d'ancre est ce que Google comme les LLM associent au site.
+- Garder `llms.txt` et les réponses des FAQ à jour ; c'est le texte qu'un
+  assistant a le plus de chances de citer.
 
-## IndexNow (Bing / Yandex / ChatGPT search)
+## IndexNow (Bing, Yandex, recherche ChatGPT)
 
-The site is set up for **IndexNow**, which instantly notifies Bing and Yandex of
-new/updated URLs (Bing also feeds ChatGPT's web search). Google does not use it.
+Le site est configuré pour **IndexNow**, qui prévient instantanément Bing et
+Yandex des URL nouvelles ou modifiées (Bing alimente aussi la recherche web de
+ChatGPT). Google ne l'utilise pas.
 
-- Ownership key is hosted at `public/<key>.txt` (served from the domain root).
-- Submit the indexable URLs after a deploy with **`npm run indexnow`**
-  (`scripts/indexnow.mjs`, URL list read from the sitemaps the build wrote
-  into `dist/`, reading pages included). `deploy.yml` and `refresh-seo.yml`
-  run it after every hosting release.
+- La clé de propriété est hébergée dans `public/<clé>.txt` (servie à la racine
+  du domaine).
+- Soumettre les URL indexables après un déploiement avec **`npm run
+  indexnow`** (`scripts/indexnow.mjs`, liste d'URL lue dans les sitemaps que le
+  build a écrits dans `dist/`, pages de lecture comprises). `deploy.yml` et
+  `refresh-seo.yml` le lancent après chaque mise en ligne du hosting.
 
 ## Audit
 
-`docs/audit-seo-2026-09.md` holds the September 2026 audit: what was found on
-the built pages, what the accompanying PR fixed, what is left to do in the
-code, and the manual actions (Search Console, Bing, inbound links) with a
-ready-to-paste prompt for Claude Cowork.
+`docs/audit-seo-2026-09.md` tient l'audit de septembre 2026 : ce qui a été
+trouvé sur les pages construites, ce que la PR qui l'accompagne a corrigé, ce
+qui reste à faire dans le code, et les actions manuelles (Search Console,
+Bing, liens entrants) avec un prompt prêt à coller pour Claude Cowork.
 
-## Adding a new SEO page
+## Ajouter une page SEO
 
-Add an entry to `appPages` (existing Vue view) or `landingPages` (new
-ContentPage route + a route in `src/router/routes.ts`) in
-`src/content/seoPages.ts`. The sitemap, the static file and the Vue render all
-follow automatically. Run `npm run build` and check `dist/<file>.html`.
+Ajouter une entrée à `appPages` (vue Vue existante) ou à `landingPages`
+(nouvelle route ContentPage, plus une route dans `src/router/routes.ts`) dans
+`src/content/seoPages.ts`. Le sitemap, le fichier statique et le rendu Vue
+suivent automatiquement. Lancer `npm run build` et vérifier
+`dist/<fichier>.html`.

@@ -1,44 +1,86 @@
-# Contributing Guide
+# Guide de contribution
 
-Thank you for your interest in **Petite Jérusalem**! We appreciate your help in improving this platform for the community.
+Merci de l'intérêt que vous portez à **Petite Jérusalem**. Toute aide pour
+améliorer cette plateforme au service de la communauté est la bienvenue.
 
-## 🚀 How to Contribute?
+## Comment contribuer ?
 
-### Report a Bug
+### Signaler un bug
 
-If you find a bug, please let us know! You have two options:
+Vous avez trouvé un bug ? Dites-le nous. Deux possibilités :
 
-1. **GitHub Issues**: Open an "Issue" describing what you did, what you expected, and what actually happened.
-2. **Notion Form**: You can also report bugs via our [Feedback Form](https://phenixel.notion.site/26b35db90d4d809aada8e077937652d4).
+1. **Issues GitHub** : ouvrez une issue en décrivant ce que vous avez fait, ce
+   que vous attendiez et ce qui s'est réellement passé.
+2. **Formulaire Notion** : vous pouvez aussi passer par notre
+   [formulaire de retour](https://phenixel.notion.site/26b35db90d4d809aada8e077937652d4).
 
-### Suggest an Improvement
+### Proposer une amélioration
 
-Have a feature idea?
+Une idée de fonctionnalité ?
 
-- Open an Issue on GitHub to discuss it before coding.
-- Or use our [Feedback Form](https://phenixel.notion.site/26b35db90d4d809aada8e077937652d4) to submit your ideas.
+- Ouvrez une issue sur GitHub pour en discuter avant de coder.
+- Ou utilisez notre
+  [formulaire de retour](https://phenixel.notion.site/26b35db90d4d809aada8e077937652d4)
+  pour soumettre vos idées.
 
-### Submit a Pull Request (PR)
+### Proposer une pull request (PR)
 
-1. **Fork** the project.
-2. Create a branch for your feature (`git checkout -b feature/my-new-feature`).
-3. Make your changes.
-4. Ensure the code is clean and tests pass:
+1. **Forkez** le projet.
+2. Créez une branche pour votre fonctionnalité
+   (`git checkout -b feature/ma-nouvelle-fonctionnalite`).
+3. Faites vos modifications.
+4. Vérifiez que le code est propre et que les tests passent :
    ```bash
    npm run verify
    ```
-5. Commit your changes (`git commit -m 'Add my new feature'`).
-6. Push to your branch (`git push origin feature/my-new-feature`).
-7. Open a Pull Request on the main repository.
+   `verify` enchaîne le type-check, `npm run lint` (ESLint, avec correction
+   automatique) et les tests unitaires Vitest. C'est exactement ce que la CI
+   rejoue sur chaque PR.
+5. Commitez vos changements (`git commit -m 'Ajoute ma nouvelle fonctionnalité'`).
+6. Poussez votre branche (`git push origin feature/ma-nouvelle-fonctionnalite`).
+7. Ouvrez une pull request sur le dépôt principal.
 
-## 📐 Code Standards
+## Conventions du dépôt
 
-- **TypeScript**: We use TypeScript for strong typing. Avoid `any` as much as possible.
-- **Vue 3**: Use the **Composition API** with `<script setup>`.
-- **Style**: The project uses `eslint` and `prettier`. Run `npm run format` before committing.
-- **CSS**: Use **TailwindCSS** utility classes whenever possible.
+Elles sont écrites dans [CLAUDE.md](CLAUDE.md) et valent pour tout ce qui
+s'écrit ici : code, commentaires, textes de l'interface, contenus,
+documentation, messages de commit et de pull request.
 
-## ⚠️ Important
+- **Jamais de tiret long** : ni cadratin (U+2014), ni demi-cadratin (U+2013),
+  nulle part. Selon le cas, on écrit deux-points, une virgule, des
+  parenthèses, un point-virgule, « du 12 au 14 » pour une plage, ou une vraie
+  liste. Le test `src/__tests__/typography.test.ts` parcourt tous les fichiers
+  versionnés et échoue s'il en reste un.
+- **Français** pour les commentaires et la documentation. Les identifiants
+  suivent le fichier où ils vivent : anglais pour les noms techniques,
+  français pour le domaine liturgique.
+- **Espaces insécables** dans le français de l'interface : U+202F avant `!`,
+  `?` et `;`, U+00A0 avant `:` et à l'intérieur des guillemets « ». Le test
+  `src/__tests__/frenchTypography.test.ts` le vérifie sur `src/locales/fr`.
 
-This project is intended for community use and is **non-commercial**.
-By contributing, you agree that your code will be part of this project under the **CC BY-NC 4.0** license.
+## Standards de code
+
+- **TypeScript** : typage fort, évitez `any` autant que possible.
+- **Vue 3** : Composition API avec `<script setup>`.
+- **Style** : le projet utilise `eslint` et `prettier`. Lancez `npm run lint`
+  et `npm run format` avant de commiter. Attention, `npm run format` ne
+  formate que `src/` (`prettier --write src/`) : les scripts, la
+  configuration et la documentation ne sont pas touchés.
+- **CSS** : classes utilitaires **TailwindCSS** autant que possible.
+
+## Tests garde-fous
+
+Au-delà des tests fonctionnels, plusieurs tests unitaires tiennent des règles
+du dépôt et font échouer la CI pour des raisons qui ne se voient pas dans le
+diff : un tiret long dans un commentaire, une clé i18n utilisée mais absente
+de `fr`, un import statique qui ramène Firestore dans le bundle initial, un
+widget ajouté sur une seule plateforme, un texte corrigé sans que
+`public/texts/manifest.json` suive… Ils sont listés, avec ce que chacun
+attend, dans [docs/tests.md](docs/tests.md). Lisez cette page avant de
+chercher longtemps pourquoi une PR est rouge.
+
+## Important
+
+Ce projet est destiné à un usage communautaire et **non commercial**. En
+contribuant, vous acceptez que votre code fasse partie du projet sous licence
+**CC BY-NC 4.0**.

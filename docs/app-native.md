@@ -52,17 +52,18 @@ puis **Run**. L'app démarre sur le bundle Vue (le même que le site).
 ## Itération rapide (sans rebuild à chaque fois)
 
 Plutôt que rebuilder + `cap copy` à chaque changement, pointe l'app sur le
-serveur de dev :
+serveur de dev. `capacitor.config.ts` construit son bloc `server` à partir de
+la variable d'environnement `CAP_SERVER_URL` : rien à éditer dans le fichier.
 
-1. `npm run dev -- --host` (expose Vite sur le réseau local)
-2. Dans `capacitor.config.ts`, décommente / ajoute :
-   ```ts
-   server: { url: 'http://<ton-ip-locale>:5473', cleartext: true }
-   ```
-   (le projet utilise le port **5473**, pas le 5173 par défaut de Vite)
-3. `npx cap sync` puis relance depuis l'IDE. Le hot-reload du web fonctionne.
+1. `npm run dev -- --host` (expose Vite sur le réseau local ; le projet
+   utilise le port **5473**, pas le 5173 par défaut de Vite)
+2. `CAP_SERVER_URL=http://<ton-ip-locale>:5473 npx cap sync`, puis relance
+   depuis l'IDE. Le hot-reload du web fonctionne.
 
-> ⚠️ Retire le bloc `server` avant tout build destiné à un store.
+Sans la variable, `cap sync` revient au bundle embarqué : il n'y a rien à
+retirer avant un build destiné à un store, `npm run app:build` sans
+`CAP_SERVER_URL` suffit. (`scripts/store-screenshots.mjs` utilise la même
+variable pour pointer l'app native sur son propre Vite.)
 
 ## Scripts
 
@@ -76,9 +77,11 @@ serveur de dev :
 
 ## Lecture hors-ligne : téléchargement à la demande
 
-- `npm run app:build` retire `dist/texts/{talmud,mishna,tanakh}` (~38 Mo) du
-  bundle natif via `scripts/prune-native-bundle.mjs`. Seuls `tehilim.json`
-  (~370 Ko) et `talmud-chapters.json` (~40 Ko) restent embarqués.
+- `npm run app:build` retire `dist/texts/{talmud,mishna,tanakh,rashi,tefila}`
+  (~38 Mo) et `dist/texts/manifest.json` (l'app va le chercher en ligne,
+  jamais dans son bundle) du bundle natif via
+  `scripts/prune-native-bundle.mjs`. Seuls `tehilim.json` (~370 Ko) et
+  `talmud-chapters.json` (~40 Ko) restent embarqués.
 - Les livres se téléchargent depuis la bibliothèque (bouton sur chaque carte,
   « Tout télécharger » par corpus) ou sur proposition de la lecture du jour
   (voir plus bas). Stockage : `Directory.Data` en natif
