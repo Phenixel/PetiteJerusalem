@@ -17,9 +17,10 @@ import type { User } from "../models/models";
  *   firebase.ts).
  * - La clé du projet est publique (elle part dans le bundle, comme la config
  *   Firebase) : ce n'est pas un secret.
- * - Tant que PostHog n'est pas chargé (dev, adblock, échec réseau), toutes les
- *   méthodes sont des no-ops silencieux : aucun appel ne doit jamais casser
- *   l'app.
+ * - Tant que PostHog n'est pas chargé (dev, adblock, échec réseau), aucun
+ *   appel ne doit jamais casser l'app : les événements métier attendent dans
+ *   une file bornée (voir QUEUE_LIMIT) et partent au chargement, ou ne
+ *   partent jamais.
  */
 
 // Clé publique du projet PostHog (project settings → Project API key).
@@ -181,8 +182,24 @@ const stampPlatform: BeforeSendFn = (event) => {
 // connecté peuvent donc partir en anonyme, c'est assumé).
 let isLoggedIn = false;
 
+/**
+ * Le chargement de PostHog est asynchrone (consentement, import du SDK) :
+ * les tout premiers événements (`home_viewed`, le début de l'introduction)
+ * partaient dans le vide. Ils attendent ici, avec leur heure, et sont rejoués
+ * une fois le SDK prêt. Bornée : sans consentement, la file ne grossit pas
+ * indéfiniment, les plus anciens cèdent la place.
+ */
+const QUEUE_LIMIT = 50;
+
+interface QueuedEvent {
+  event: string;
+  properties?: Record<string, unknown>;
+  timestamp: Date;
+}
+
 class AnalyticsService {
   private posthog: PostHog | null = null;
+  private queue: QueuedEvent[] = [];
 
   /**
    * ePrivacy/RGPD : rien ne se charge tant que l'utilisateur n'a pas accepté
@@ -201,8 +218,10 @@ class AnalyticsService {
         } else {
           void this.load();
         }
-      } else if (this.posthog) {
-        this.posthog.opt_out_capturing();
+      } else {
+        // Refus : ce qui attendait ne partira pas.
+        this.queue = [];
+        this.posthog?.opt_out_capturing();
       }
     });
   }
@@ -262,16 +281,34 @@ class AnalyticsService {
       const { authService } = await import("./authService");
       authService.onAuthChanged((user) => {
         isLoggedIn = user != null;
-        if (user) this.identify(user);
+        // Avant le premier verdict de Firebase, onAuthChanged rejoue le
+        // dernier compte connu : une session peut-être expirée, à ne pas
+        // rattacher. L'identification attend le verdict, qui rappelle ici.
+        if (user && authService.isAuthResolved()) this.identify(user);
       });
+      this.flushQueue();
     } catch {
       // PostHog bloqué (adblock...) : sans impact sur l'app.
     }
   }
 
+  /** Rejoue, dans l'ordre et à leur heure, les événements capturés avant le chargement. */
+  private flushQueue(): void {
+    const pending = this.queue;
+    this.queue = [];
+    for (const { event, properties, timestamp } of pending) {
+      this.posthog?.capture(event, properties, { timestamp });
+    }
+  }
+
   /** Événement métier nommé. Convention : snake_case, verbe au passé. */
   capture(event: string, properties?: Record<string, unknown>): void {
-    this.posthog?.capture(event, properties);
+    if (this.posthog) {
+      this.posthog.capture(event, properties);
+      return;
+    }
+    if (this.queue.length >= QUEUE_LIMIT) this.queue.shift();
+    this.queue.push({ event, properties, timestamp: new Date() });
   }
 
   /**

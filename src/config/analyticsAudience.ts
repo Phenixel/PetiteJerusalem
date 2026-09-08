@@ -20,13 +20,13 @@
 export type UserType = "internal" | "google_review" | "tester" | "real";
 
 /** L'équipe : comptes de développement et d'administration. */
-export const INTERNAL_EMAILS = ["admin@phenixel.fr", "contact.phenixel@gmail.com"];
+const INTERNAL_EMAILS = ["admin@phenixel.fr", "contact.phenixel@gmail.com"];
 
 /** Compte de démonstration remis à Google pour la review du Play Store. */
-export const GOOGLE_REVIEW_EMAILS = ["testeur@exemple.com"];
+const GOOGLE_REVIEW_EMAILS = ["testeur@exemple.com"];
 
 /** Testeurs externes du test fermé (liste à compléter au fil des invitations). */
-export const TESTER_EMAILS = ["milkshake.2734@gmail.com"];
+const TESTER_EMAILS = ["milkshake.2734@gmail.com"];
 
 function normalize(email: string): string {
   return email.trim().toLowerCase();

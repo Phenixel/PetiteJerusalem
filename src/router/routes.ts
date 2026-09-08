@@ -26,7 +26,7 @@ const TehilimPage = () => import("../views/TehilimPage.vue");
 const SeoGuidePage = () => import("../views/SeoGuidePage.vue");
 const ParashaPage = () => import("../views/Library/ParashaPage.vue");
 
-import type { RouteRecordSingleView } from "vue-router";
+import type { NavigationGuardWithThis, RouteRecordSingleView } from "vue-router";
 import {
   DEFAULT_SEO_LOCALE,
   SEO_LOCALES,
@@ -41,6 +41,23 @@ const AdminChiourEditPage = () => import("../views/Admin/AdminChiourEditPage.vue
 const AdminAuteursPage = () => import("../views/Admin/AdminAuteursPage.vue");
 const AdminAuteurDetailPage = () => import("../views/Admin/AdminAuteurDetailPage.vue");
 const AdminSessionsPage = () => import("../views/Admin/AdminSessionsPage.vue");
+
+/**
+ * /lire/:textId sans chaîne : vers la bibliothèque. Le catalogue et ses
+ * chemins sont chargés à la demande, ils n'ont rien à faire dans le bundle
+ * initial pour une adresse rarement ouverte.
+ */
+const redirectPublicLire: NavigationGuardWithThis<undefined> = async (to) => {
+  const { lireRedirect } = await import("./lireRedirect");
+  const section = to.params.section;
+  return (
+    lireRedirect(
+      String(to.params.textId),
+      section === undefined ? undefined : String(section),
+      to.query,
+    ) ?? true
+  );
+};
 
 /** Les sections traduites, et la vue qui les rend. */
 type LocalizedSection = {
@@ -287,16 +304,22 @@ export default [
       { path: "sessions", name: "admin-sessions", component: AdminSessionsPage },
     ],
   },
+  // Un lien public /lire (sans chaîne de lecture) est renvoyé vers la page
+  // canonique de la bibliothèque, avant que la vue n'existe : le routeur
+  // réutilise la même vue pour les deux adresses, une redirection au montage
+  // laissait la page blanche (voir lireRedirect).
   {
     path: "/lire/:textId",
     name: "text-reading",
     meta: { offlineOk: true, plainBackground: true },
+    beforeEnter: redirectPublicLire,
     component: TextReadingPage,
   },
   {
     path: "/lire/:textId/:section",
     name: "text-reading-section",
     meta: { offlineOk: true, plainBackground: true },
+    beforeEnter: redirectPublicLire,
     component: TextReadingPage,
   },
   // SEO landing pages, rendered from src/content/seoPages.ts (same markup the

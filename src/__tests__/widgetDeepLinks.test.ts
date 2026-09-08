@@ -43,18 +43,20 @@ function widgetUrls(): string[] {
  */
 function routerMatchers(): RegExp[] {
   const source = readFileSync(root + "/src/router/routes.ts", "utf8");
-  return [...source.matchAll(/^\s*path: "(\/[^"]*)"/gm)]
-    .map(([, path]) => path)
-    // Le fourre-tout des 404 accepterait tout, y compris une faute de frappe.
-    .filter((path) => !path.startsWith("/:pathMatch"))
-    .map((path) => {
-      const pattern = path
-        // `:corpus(tehilim|michna)` : la contrainte EST l'expression.
-        .replace(/:\w+\(([^)]*)\)/g, "($1)")
-        // `:slug` sans contrainte : un segment quelconque.
-        .replace(/:\w+/g, "[^/]+");
-      return new RegExp(`^${pattern}$`);
-    });
+  return (
+    [...source.matchAll(/^\s*path: "(\/[^"]*)"/gm)]
+      .map(([, path]) => path)
+      // Le fourre-tout des 404 accepterait tout, y compris une faute de frappe.
+      .filter((path) => !path.startsWith("/:pathMatch"))
+      .map((path) => {
+        const pattern = path
+          // `:corpus(tehilim|michna)` : la contrainte EST l'expression.
+          .replace(/:\w+\(([^)]*)\)/g, "($1)")
+          // `:slug` sans contrainte : un segment quelconque.
+          .replace(/:\w+/g, "[^/]+");
+        return new RegExp(`^${pattern}$`);
+      })
+  );
 }
 
 /**
@@ -150,8 +152,7 @@ describe("destinations des widgets Android", () => {
   it("emmène là où les widgets iOS emmènent", () => {
     // Un raccourci rebranché sur la mauvaise page d'un seul côté ouvrirait
     // deux pages différentes selon le téléphone.
-    const paths = (list: string[]) =>
-      [...new Set(list.map((url) => new URL(url).pathname))].sort();
+    const paths = (list: string[]) => [...new Set(list.map((url) => new URL(url).pathname))].sort();
     expect(paths(urls)).toEqual(paths(widgetUrls()));
   });
 });

@@ -110,7 +110,9 @@ async function copyLink() {
         </p>
         <p class="text-xs text-text-secondary">{{ t("admin.auteurs.linkOnce") }}</p>
         <div class="flex flex-wrap items-center gap-2">
-          <code class="text-xs bg-black/[0.05] rounded px-2 py-1.5 break-all flex-1 min-w-0 dark:bg-white/10">
+          <code
+            class="text-xs bg-black/[0.05] rounded px-2 py-1.5 break-all flex-1 min-w-0 dark:bg-white/10"
+          >
             {{ freshLink.url }}
           </code>
           <button class="btn btn-soft shrink-0" @click="copyLink">
@@ -131,7 +133,9 @@ async function copyLink() {
           :to="`/admin/auteurs/${auteur.id}`"
           class="card card-hover p-4 flex items-center gap-3"
         >
-          <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary shrink-0">
+          <div
+            class="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary shrink-0"
+          >
             <AppIcon name="teacher" :size="18" />
           </div>
           <div class="flex-1 min-w-0">

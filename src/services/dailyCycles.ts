@@ -2,6 +2,7 @@ import { HDate, Sedra, flags, getHolidaysOnDate, months, tachanun } from "@hebca
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { TORAH_LIVRES } from "../content/etudeTexts";
+import { appendHebrewNumeral } from "./hebrewNumerals";
 
 /**
  * Lectures « du moment » de la lecture quotidienne : des entrées qui suivent
@@ -468,12 +469,29 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   return occ;
 }
 
-/** Les psaumes du jour du mois hébraïque. */
-export function getTehilimOfDay(date: Date = new Date()): TehilimCycle {
-  const hd = new HDate(date);
+/**
+ * Les psaumes d'un jour hébraïque donné. C'est la forme que suit le lecteur
+ * (voir useTehilimDay), qui tient compte de la chkia : après le coucher du
+ * soleil, le jour hébraïque, et donc les psaumes, sont déjà ceux du lendemain.
+ */
+export function getTehilimOfHebrewDay(hd: HDate): TehilimCycle {
   const day = hd.getDate();
   const ranges: [number, number][] = [TEHILIM_MONTHLY[day - 1]];
   // Mois de 29 jours : le 29 couvre aussi la part du 30.
   if (day === 29 && hd.daysInMonth() === 29) ranges.push(TEHILIM_MONTHLY[29]);
   return toCycle(day, ranges);
+}
+
+/** Les psaumes du jour du mois hébraïque, au jour civil de `date`. */
+export function getTehilimOfDay(date: Date = new Date()): TehilimCycle {
+  return getTehilimOfHebrewDay(new HDate(date));
+}
+
+/**
+ * Le titre d'une paracha tel que l'affichent l'encart du Tanakh, la page du
+ * chnei mikra et la lecture du jour : les noms de ses entrées (deux pour une
+ * paracha double), séparés d'un point médian.
+ */
+export function parashaTitle(parasha: WeeklyParasha | null): string {
+  return (parasha?.entries ?? []).map((e) => appendHebrewNumeral(e.name)).join(" · ");
 }

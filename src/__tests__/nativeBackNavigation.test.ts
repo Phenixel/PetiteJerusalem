@@ -35,9 +35,7 @@ describe("retour arrière de l'app native", () => {
   });
 
   it("active le geste de glissement sur la WKWebView", () => {
-    expect(read("scripts/setup-ios.mjs")).toContain(
-      "allowsBackForwardNavigationGestures = true",
-    );
+    expect(read("scripts/setup-ios.mjs")).toContain("allowsBackForwardNavigationGestures = true");
   });
 
   it("garde le bouton retour d'Android branché sur le routeur", () => {

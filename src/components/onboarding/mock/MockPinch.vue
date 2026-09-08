@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import MockScreen from "./MockScreen.vue";
 import MockTouch from "./MockTouch.vue";
+
+const { t } = useI18n();
 
 /**
  * Le pincement : le texte grossit et rétrécit pendant que deux doigts
@@ -13,9 +16,9 @@ import MockTouch from "./MockTouch.vue";
   <MockScreen height="10.5rem">
     <div class="page">
       <p class="he">בְּרֵאשִׁית בָּרָא אֱלֹהִים</p>
-      <p class="ph">Berechit bara Elokim</p>
+      <p class="ph">{{ t("onboarding.library.pinchSample1") }}</p>
       <p class="he">אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ</p>
-      <p class="ph">ète hachamayim vé-ète haaretz</p>
+      <p class="ph">{{ t("onboarding.library.pinchSample2") }}</p>
     </div>
     <MockTouch class="finger finger-a" duration="5s" :taps="0" />
     <MockTouch class="finger finger-b" duration="5s" :taps="0" />

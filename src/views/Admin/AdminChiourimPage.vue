@@ -63,6 +63,11 @@ async function refresh() {
 onMounted(async () => {
   try {
     await refresh();
+  } catch (error) {
+    // Sans ce rattrapage, l'échec restait un rejet non géré et l'écran
+    // affichait « Aucun chiour » comme si le catalogue était vide.
+    console.error("Erreur lors du chargement des chiourim:", error);
+    toast.error(t("admin.error"));
   } finally {
     isLoading.value = false;
   }
@@ -112,7 +117,9 @@ async function togglePublished(chiour: ChiourDoc) {
   try {
     await adminService.setPublished(chiour.slug, !chiour.published);
     chiour.published = !chiour.published;
-    toast.success(chiour.published ? t("admin.chiourim.publishedOk") : t("admin.chiourim.unpublishedOk"));
+    toast.success(
+      chiour.published ? t("admin.chiourim.publishedOk") : t("admin.chiourim.unpublishedOk"),
+    );
   } catch (error) {
     console.error("Erreur lors du changement de publication:", error);
     toast.error(t("admin.error"));
@@ -135,7 +142,9 @@ async function togglePublished(chiour: ChiourDoc) {
         v-for="f in filters"
         :key="f"
         class="chip cursor-pointer transition-colors"
-        :class="filter === f ? 'bg-primary/15 text-primary font-semibold' : 'opacity-70 hover:opacity-100'"
+        :class="
+          filter === f ? 'bg-primary/15 text-primary font-semibold' : 'opacity-70 hover:opacity-100'
+        "
         @click="filter = f"
       >
         {{ t(`admin.chiourim.filters.${f}`) }}
@@ -244,7 +253,11 @@ async function togglePublished(chiour: ChiourDoc) {
                     : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
                 "
               >
-                {{ chiour.published ? t("admin.chiourim.statusPublished") : t("admin.chiourim.statusDraft") }}
+                {{
+                  chiour.published
+                    ? t("admin.chiourim.statusPublished")
+                    : t("admin.chiourim.statusDraft")
+                }}
               </span>
 
               <span

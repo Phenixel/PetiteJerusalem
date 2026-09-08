@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from "vue";
+import { nextTick, ref, toRef, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useToast } from "../composables/useToast";
+import { useOverlay } from "../composables/useOverlayStack";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "./icons/AppIcon.vue";
 
@@ -44,6 +45,9 @@ const qrContainerRef = ref<HTMLElement | null>(null);
 const closeModal = () => {
   emit("update:show", false);
 };
+
+// Le bouton retour d'Android ferme la modale avant de quitter la page.
+useOverlay(toRef(props, "show"), closeModal);
 
 const generateQRCode = async () => {
   const qrContainer = qrContainerRef.value;

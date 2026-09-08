@@ -12,6 +12,7 @@ import {
 // Noms des fêtes en français : hebcal ne les rend qu'en anglais ou en hébreu
 // sans ce catalogue (4 Ko), qui s'enregistre auprès de hebcal à l'import.
 import "@hebcal/locales/fr";
+import { dateTimeFormat, displayNames } from "./intlCache";
 
 /**
  * Horaires de la journée (zmanim), calculés en local.
@@ -102,8 +103,7 @@ export function formatPlaceLabel(
     case "country":
       try {
         return (
-          new Intl.DisplayNames([locale], { type: "region" }).of(naming.country) ??
-          t("zmanim.place.device")
+          displayNames(locale, { type: "region" }).of(naming.country) ?? t("zmanim.place.device")
         );
       } catch {
         return t("zmanim.place.device"); // API absente ou code inconnu
@@ -241,7 +241,7 @@ function geoLocationOf(place: ZmanimPlace): GeoLocation {
  * changement de jour.
  */
 export function dayInPlace(place: ZmanimPlace, date: Date): Date {
-  const [year, month, day] = new Intl.DateTimeFormat("en-CA", {
+  const [year, month, day] = dateTimeFormat("en-CA", {
     timeZone: place.tzid,
     year: "numeric",
     month: "2-digit",
@@ -258,10 +258,34 @@ function isUsable(date: Date): boolean {
   return date instanceof Date && !Number.isNaN(date.getTime());
 }
 
-/** Les horaires d'un jour civil, dans l'ordre chronologique. */
+/**
+ * Les horaires d'un jour civil, dans l'ordre chronologique.
+ *
+ * Mémoïsés par lieu et jour civil : les cartes de l'accueil (horaires, sidour
+ * du moment, bénédiction de la lune) les redemandent à chaque tic de
+ * l'horloge partagée, toutes les trente secondes, pour le même jour au même
+ * endroit. Le calcul hebcal ne se refait que si l'un des deux change ; le
+ * tableau rendu est partagé, les appelants ne le modifient pas.
+ */
 export function computeZmanim(place: ZmanimPlace, day: Date = new Date()): ZmanTime[] {
-  const gloc = geoLocationOf(place);
   const localDay = dayInPlace(place, day);
+  const key = `${place.latitude}|${place.longitude}|${place.tzid}|${localDay.getTime()}`;
+  const cached = zmanimCache.get(key);
+  if (cached) return cached;
+  const times = computeZmanimFor(place, localDay);
+  if (zmanimCache.size >= ZMANIM_CACHE_LIMIT) {
+    zmanimCache.delete(zmanimCache.keys().next().value as string);
+  }
+  zmanimCache.set(key, times);
+  return times;
+}
+
+/** Quelques jours autour d'aujourd'hui, à un ou deux lieux : au-delà, on recalcule. */
+const ZMANIM_CACHE_LIMIT = 8;
+const zmanimCache = new Map<string, ZmanTime[]>();
+
+function computeZmanimFor(place: ZmanimPlace, localDay: Date): ZmanTime[] {
+  const gloc = geoLocationOf(place);
   const zmanim = new Zmanim(gloc, localDay, false);
   const nextDay = new Date(localDay);
   nextDay.setDate(nextDay.getDate() + 1);
@@ -766,10 +790,7 @@ export function formatHebrewDate(hd: HDate, locale: string): string {
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function weekdayIn(place: ZmanimPlace, date: Date): number {
-  const short = new Intl.DateTimeFormat("en-US", {
-    timeZone: place.tzid,
-    weekday: "short",
-  }).format(date);
+  const short = dateTimeFormat("en-US", { timeZone: place.tzid, weekday: "short" }).format(date);
   return WEEKDAYS.indexOf(short);
 }
 
@@ -780,7 +801,7 @@ export function sameCivilDay(place: ZmanimPlace, a: Date, b: Date): boolean {
 
 /** "06:27" dans le fuseau du lieu, jamais celui du navigateur. */
 export function formatZmanTime(date: Date, tzid: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
+  return dateTimeFormat(locale, {
     timeZone: tzid,
     hour: "2-digit",
     minute: "2-digit",
@@ -790,7 +811,7 @@ export function formatZmanTime(date: Date, tzid: string, locale: string): string
 
 /** "vendredi 7 août", le jour d'un horaire, dans le fuseau du lieu. */
 export function formatZmanDay(date: Date, tzid: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
+  return dateTimeFormat(locale, {
     timeZone: tzid,
     weekday: "long",
     day: "numeric",

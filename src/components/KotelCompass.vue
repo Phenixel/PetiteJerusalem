@@ -2,6 +2,8 @@
 import { computed, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
+import AppModal from "./AppModal.vue";
+import { numberFormat } from "../services/intlCache";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../composables/useZmanimPlaceLabel";
 import { compassNeedsPermission, useCompassHeading } from "../composables/useCompassHeading";
@@ -32,7 +34,7 @@ const { heading, status: compassStatus, start, stop } = useCompassHeading();
 const bearing = computed(() => bearingToKotel(place.value.latitude, place.value.longitude));
 const point = computed(() => t(`textReading.kotel.points.${compassPoint(bearing.value)}`));
 const distance = computed(() =>
-  new Intl.NumberFormat(locale.value, { maximumFractionDigits: 0 }).format(
+  numberFormat(locale.value, { maximumFractionDigits: 0 }).format(
     distanceToKotelKm(place.value.latitude, place.value.longitude),
   ),
 );
@@ -131,14 +133,8 @@ watch(kotelCompassOpen, (open) => {
 </script>
 
 <template>
-  <div v-if="kotelCompassOpen" class="modal-overlay animate-[fadeIn_0.3s_ease]" @click="close">
-    <div
-      class="modal-panel animate-[scaleIn_0.3s_ease]"
-      role="dialog"
-      aria-modal="true"
-      :aria-label="t('textReading.kotel.title')"
-      @click.stop
-    >
+  <AppModal :open="kotelCompassOpen" :label="t('textReading.kotel.title')" @close="close">
+    <template v-if="kotelCompassOpen">
       <div class="flex items-center justify-between gap-3 mb-4">
         <h3 class="text-lg font-bold text-text-primary flex items-center gap-2">
           <AppIcon name="compass" :size="20" class="text-primary" />
@@ -250,8 +246,8 @@ watch(kotelCompassOpen, (open) => {
       >
         {{ geoStatus === "denied" ? t("zmanim.place.denied") : t("zmanim.place.unavailable") }}
       </p>
-    </div>
-  </div>
+    </template>
+  </AppModal>
 </template>
 
 <style scoped>

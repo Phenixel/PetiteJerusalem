@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { authService } from "../services/authService";
 import { analyticsService } from "../services/analyticsService";
 import { isAdminEmail } from "../config/admin";
 import { isNativeApp } from "../composables/useNativeApp";
 import { useLocalePath } from "../composables/useLocalePath";
+import { useOverlay } from "../composables/useOverlayStack";
 import LanguageSelector from "./LanguageSelector.vue";
 import AppIcon from "./icons/AppIcon.vue";
 
 const router = useRouter();
+const { t } = useI18n();
 const username = ref<string | null>(null);
 // Lien vers le backoffice, affiché uniquement pour le compte admin (garde
 // UX : la vraie protection reste la garde de route + les rules Firebase).
@@ -49,6 +52,9 @@ function closeMobileMenu() {
   isMobileMenuOpen.value = false;
 }
 
+// Le retour Android referme le menu avant de naviguer (voir useOverlayStack).
+useOverlay(isMobileMenuOpen, closeMobileMenu);
+
 // D'où les utilisateurs ouvrent leur profil (navbar desktop / menu mobile /
 // bottom bar native) : sert à comparer l'usage des points d'entrée.
 function trackProfileOpened(source: "navbar" | "navbar_mobile") {
@@ -58,7 +64,7 @@ function trackProfileOpened(source: "navbar" | "navbar_mobile") {
 
 onMounted(() => {
   unsubscribeAuth = authService.onAuthChanged((user) => {
-    username.value = user?.name ?? null;
+    username.value = user ? user.name || t("common.anonymousUser") : null;
     isAdmin.value = isAdminEmail(user?.email);
   });
 
@@ -101,7 +107,7 @@ function goToLogin() {
   <header
     v-if="!isNativeApp"
     ref="header"
-    class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-beige/90 backdrop-blur-md dark:bg-gray-900/90 transition-colors duration-300"
+    class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-beige md:bg-bg-beige/90 md:backdrop-blur-md dark:bg-gray-900 md:dark:bg-gray-900/90 transition-colors duration-300"
   >
     <!-- Pas un h1 : chaque page a le sien, le bandeau en doublait le titre
          sur tout le site (deux h1 par page pour les lecteurs d'écran et le

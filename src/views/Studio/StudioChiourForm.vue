@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import type { ChiourDoc, SerieDoc } from "../../models/models";
 import { studioService, type StudioChiourPayload } from "../../services/studioService";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import ProgressBar from "../../components/ProgressBar.vue";
 
 const props = defineProps<{
   token: string;
@@ -20,7 +21,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   saved: [];
   cancel: [];
-  serieCreated: [];
 }>();
 
 const { t } = useI18n();
@@ -124,7 +124,7 @@ async function save() {
     } else {
       await studioService.submitChiour(props.token, stagingPath!, payload);
     }
-    if (payload.newSerieName) emit("serieCreated");
+    // Une série créée au passage est relue par le parent avec le reste.
     emit("saved");
   } catch (error) {
     console.error("Erreur lors de l'envoi du chiour:", error);
@@ -290,24 +290,24 @@ async function save() {
       <p class="text-sm text-text-secondary">
         {{ t("studio.form.uploading", { percent: uploadPercent }) }}
       </p>
-      <div class="h-2 rounded-full bg-black/[0.06] overflow-hidden dark:bg-white/10">
-        <div
-          class="h-full rounded-full bg-primary transition-all duration-300"
-          :style="{ width: `${uploadPercent}%` }"
-        ></div>
-      </div>
+      <ProgressBar
+        :value="uploadPercent"
+        :label="t('studio.form.uploading', { percent: uploadPercent })"
+      />
     </div>
 
-    <p
-      v-if="errorMessage"
-      class="text-sm text-red-600 flex items-center gap-1.5 dark:text-red-400"
-    >
+    <p v-if="errorMessage" class="text-sm text-red-600 flex items-center gap-1.5 dark:text-red-400">
       <AppIcon name="alert-circle" :size="14" />
       {{ errorMessage }}
     </p>
 
     <div class="flex flex-col-reverse sm:flex-row gap-4 pt-2">
-      <button type="button" class="btn btn-soft w-full sm:w-auto" :disabled="isSaving" @click="emit('cancel')">
+      <button
+        type="button"
+        class="btn btn-soft w-full sm:w-auto"
+        :disabled="isSaving"
+        @click="emit('cancel')"
+      >
         {{ t("common.cancel") }}
       </button>
       <button type="submit" class="btn btn-primary w-full sm:flex-1" :disabled="isSaving">

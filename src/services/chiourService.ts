@@ -2,6 +2,7 @@ import { doc, updateDoc, increment } from "firebase/firestore";
 import { db } from "../firebase/firestore";
 import type { Chiour } from "../models/models";
 import { chiourFirestoreRepository } from "../repositories/chiourFirestoreRepository";
+import { cached } from "./cached";
 
 function generateChiourSlug(name: string): string {
   return name
@@ -14,38 +15,23 @@ function generateChiourSlug(name: string): string {
 // On rafraîchit surtout pour voir les nouveaux chiourim ajoutés via l'admin.
 const CACHE_TTL = 60 * 60 * 1000; // 1h
 
-interface Cache<T> {
-  data: T;
-  fetchedAt: number;
-}
+class ChiourService {
+  private readonly chiourim = cached(CACHE_TTL, () => chiourFirestoreRepository.fetchAll());
 
-export class ChiourService {
-  private chiourimCache: Cache<Chiour[]> | null = null;
-  private categoriesCache: Cache<string[]> | null = null;
-  private fetchPromise: Promise<Chiour[]> | null = null;
+  // Catégories dérivées des chiourim (plus de source séparée).
+  private readonly categories = cached(CACHE_TTL, async () => {
+    const chiourim = await this.getAllChiourim();
+    const set = new Set<string>();
+    chiourim.forEach((c) => c.categories.forEach((cat) => set.add(cat)));
+    return [...set].sort((a, b) => a.localeCompare(b, "fr"));
+  });
 
-  async getAllChiourim(): Promise<Chiour[]> {
-    if (this.chiourimCache && Date.now() - this.chiourimCache.fetchedAt < CACHE_TTL) {
-      return this.chiourimCache.data;
-    }
-
-    // Deduplicate concurrent requests
-    if (!this.fetchPromise) {
-      this.fetchPromise = chiourFirestoreRepository
-        .fetchAll()
-        .then((chiourim) => {
-          this.chiourimCache = { data: chiourim, fetchedAt: Date.now() };
-          return chiourim;
-        })
-        .finally(() => {
-          this.fetchPromise = null;
-        });
-    }
-    return this.fetchPromise;
+  getAllChiourim(): Promise<Chiour[]> {
+    return this.chiourim.get();
   }
 
   getCachedChiourim(): Chiour[] | null {
-    return this.chiourimCache?.data ?? null;
+    return this.chiourim.peek();
   }
 
   /**
@@ -55,16 +41,15 @@ export class ChiourService {
    * (les recommandations le chargeront en arrière-plan).
    */
   async getChiourBySlug(slug: string): Promise<Chiour | null> {
-    if (this.chiourimCache && Date.now() - this.chiourimCache.fetchedAt < CACHE_TTL) {
-      return this.chiourimCache.data.find((c) => c.slug === slug) ?? null;
-    }
+    const fresh = this.chiourim.isStale() ? null : this.chiourim.peek();
+    if (fresh) return fresh.find((c) => c.slug === slug) ?? null;
     return chiourFirestoreRepository.fetchBySlug(slug);
   }
 
   /** À appeler après toute mutation admin pour refléter le changement sans attendre le TTL. */
   invalidateCache(): void {
-    this.chiourimCache = null;
-    this.categoriesCache = null;
+    this.chiourim.invalidate();
+    this.categories.invalidate();
   }
 
   /**
@@ -88,21 +73,11 @@ export class ChiourService {
   }
 
   isCacheStale(): boolean {
-    if (!this.chiourimCache) return true;
-    return Date.now() - this.chiourimCache.fetchedAt >= CACHE_TTL;
+    return this.chiourim.isStale();
   }
 
-  async getCategories(): Promise<string[]> {
-    if (this.categoriesCache && Date.now() - this.categoriesCache.fetchedAt < CACHE_TTL) {
-      return this.categoriesCache.data;
-    }
-    // Catégories dérivées des chiourim (plus de source séparée).
-    const chiourim = await this.getAllChiourim();
-    const set = new Set<string>();
-    chiourim.forEach((c) => c.categories.forEach((cat) => set.add(cat)));
-    const cats = [...set].sort((a, b) => a.localeCompare(b, "fr"));
-    this.categoriesCache = { data: cats, fetchedAt: Date.now() };
-    return cats;
+  getCategories(): Promise<string[]> {
+    return this.categories.get();
   }
 
   getRecommendations(current: Chiour, allChiourim: Chiour[], max = 2): Chiour[] {

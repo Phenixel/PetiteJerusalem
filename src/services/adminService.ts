@@ -69,7 +69,7 @@ export function generateStudioToken(): string {
   return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export class AdminService {
+class AdminService {
   // --- Sessions (modération) ----------------------------------------------
 
   /** Toutes les sessions, masquées comprises, sans passer par le cache. */
@@ -315,7 +315,7 @@ export class AdminService {
     return snap.docs.map((d) => ({ ...(d.data() as StudioTokenDoc), id: d.id }));
   }
 
-  async createToken(auteurId: string, auteurName: string): Promise<string> {
+  private async createToken(auteurId: string, auteurName: string): Promise<string> {
     const token = generateStudioToken();
     await setDoc(doc(db, "studioTokens", token), {
       auteurId,

@@ -6,7 +6,8 @@ import { isIgnoredException } from "../config/ignoredExceptions";
  * réellement observés dans PostHog (WebKit et Firebase, pas notre rédaction).
  */
 
-const IDB_LOST = "UnknownError: Connection to Indexed Database server lost. Refresh the page to try again";
+const IDB_LOST =
+  "UnknownError: Connection to Indexed Database server lost. Refresh the page to try again";
 const IDB_CLOSING =
   "InvalidStateError: Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing.";
 

@@ -35,7 +35,7 @@ import { isNativeApp } from "./useNativeApp";
 const STORAGE_KEY = "pj_onboarding_seen";
 
 /** Version de l'introduction retenue par l'appareil qui l'a vue. */
-export const ONBOARDING_VERSION = "1";
+const ONBOARDING_VERSION = "1";
 
 function readSeenVersion(): string | null {
   try {

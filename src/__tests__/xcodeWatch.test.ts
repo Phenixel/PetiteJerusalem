@@ -112,7 +112,9 @@ describe("addWatchApp", () => {
   });
 
   it("embarque l'app de montre dans App.app/Watch/, et rien ailleurs", () => {
-    const appTarget = /\/\* App \*\/ = \{\n\t\t\tisa = PBXNativeTarget;[\s\S]*?\n\t\t\};/.exec(patched);
+    const appTarget = /\/\* App \*\/ = \{\n\t\t\tisa = PBXNativeTarget;[\s\S]*?\n\t\t\};/.exec(
+      patched,
+    );
     expect(appTarget?.[0]).toContain("Embed Watch Content");
     expect(appTarget?.[0]).toContain("PBXTargetDependency");
     // C'est là, et nulle part ailleurs, qu'iOS va chercher l'app à installer

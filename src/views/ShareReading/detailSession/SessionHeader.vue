@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { sessionService } from "../../../services/sessionService";
+import { TextTypeService } from "../../../services/textTypeService";
+import { DateService } from "../../../services/dateService";
 import type { Session } from "../../../models/models";
 import AppIcon from "../../../components/icons/AppIcon.vue";
 
@@ -22,20 +24,21 @@ const emit = defineEmits<{
 
 <template>
   <div class="mb-12 text-center max-w-3xl mx-auto">
-    <h2 class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight">
+    <!-- Le nom de la chaîne est le titre de la page : son seul h1. -->
+    <h1 class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight">
       {{ session.name }}
-    </h2>
+    </h1>
     <p class="text-text-secondary text-lg mb-6">{{ session.description }}</p>
     <div class="flex flex-wrap items-center justify-center gap-2">
       <span class="chip bg-primary/10 text-primary">{{
-        sessionService.formatTextType(session.type)
+        TextTypeService.formatType(session.type)
       }}</span>
-      <span class="chip bg-black/5 text-text-secondary dark:bg-white/10"
-        >{{ t("common.dateLimit") }} : {{ sessionService.formatDate(session.dateLimit) }}</span
-      >
-      <span class="chip bg-black/5 text-text-secondary dark:bg-white/10"
-        >{{ t("common.createdBy") }} : {{ session.creatorName }}</span
-      >
+      <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
+        t("common.dateLimitValue", { date: DateService.formatDate(session.dateLimit) })
+      }}</span>
+      <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
+        t("common.createdByValue", { name: session.creatorName })
+      }}</span>
       <button
         v-if="isOwner"
         @click="emit('manage')"

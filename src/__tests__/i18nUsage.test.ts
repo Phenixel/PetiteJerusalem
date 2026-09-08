@@ -90,4 +90,56 @@ describe("i18n usage", () => {
       ).toEqual([]);
     }
   });
+
+  /**
+   * Le miroir : aucune clé de fr.ts ne doit rester sans lecteur. Une clé
+   * morte se traduit trois fois pour rien, et masque celles qui manquent.
+   *
+   * Une clé compte comme lue dès que son nom apparaît, entre guillemets,
+   * quelque part dans les sources (src, scripts, functions) : `t("…")`,
+   * `te("…")`, un `labelKey: "…"` passé plus loin à `t`, un tableau de clés.
+   * Les familles atteintes par une clé construite (`t(\`zmanim.names.${key}\`)`)
+   * sont listées ici par leur préfixe.
+   */
+  it("n'a aucune clé de fr.ts sans lecteur dans les sources", () => {
+    const DYNAMIC_PREFIXES = [
+      "admin.chiourim.filters.",
+      "admin.sessions.filters.",
+      // Codes d'erreur des services (useToast.errorFromException).
+      "errors.",
+      "home.sidourNow.names.",
+      "moderation.reasons.",
+      "profile.appearances.",
+      "profile.fontsHebrew.",
+      "profile.fontsLatin.",
+      "profile.themes.",
+      "seo.",
+      "studio.form.",
+      "textReading.autoScroll.speeds.",
+      "textReading.fold.",
+      "textReading.kotel.points.",
+      "textReading.kotel.rose.",
+      "textReading.zman.",
+      "zmanim.hints.",
+      "zmanim.names.",
+      "zmanim.periods.",
+      "zmanim.tachanun.",
+    ];
+
+    const roots = ["src", "scripts", "functions/src"]
+      .map((dir) => path.resolve(srcDir, "..", dir))
+      .filter((dir) => fs.existsSync(dir));
+    const sources = roots
+      .flatMap((dir) => getSourceFiles(dir))
+      .filter((file) => !file.includes(`${path.sep}locales${path.sep}`))
+      .map((file) => fs.readFileSync(file, "utf-8"))
+      .join("\n");
+    const quoted = new Set<string>();
+    for (const match of sources.matchAll(/["'`]([A-Za-z0-9_.]+)["'`]/g)) quoted.add(match[1]);
+
+    const unused = [...definedKeys].filter(
+      (key) => !quoted.has(key) && !DYNAMIC_PREFIXES.some((prefix) => key.startsWith(prefix)),
+    );
+    expect(unused, `clés de fr.ts sans lecteur :\n${unused.join("\n")}`).toEqual([]);
+  });
 });

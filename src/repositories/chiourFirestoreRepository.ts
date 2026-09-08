@@ -27,7 +27,7 @@ function toChiour(docData: ChiourDoc): Chiour {
  * côté client (pas d'index composite à maintenir). Si le volume grossit, basculer
  * vers une requête `where('published','==',true)` + index.
  */
-export class ChiourFirestoreRepository {
+class ChiourFirestoreRepository {
   async fetchAll(): Promise<Chiour[]> {
     const snap = await getDocs(collection(db, "chiourim"));
 

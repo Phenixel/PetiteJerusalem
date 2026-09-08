@@ -70,10 +70,9 @@ describe("didascalies des textes de tefila", () => {
         }
       }
     }
-    expect(
-      offenders,
-      "Une didascalie décrit ce qui se dit, pas ce que l'écran affiche",
-    ).toEqual([]);
+    expect(offenders, "Une didascalie décrit ce qui se dit, pas ce que l'écran affiche").toEqual(
+      [],
+    );
   });
 
   it("ne redisent pas une condition que le calendrier tranche déjà", () => {

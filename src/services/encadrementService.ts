@@ -15,7 +15,7 @@ import { parseTefilaBlocks, type TextBlock } from "./textService";
  */
 
 /** Lecture qui a des passages dédiés. Clé du fichier de données. */
-export type EncadrementKey = "tehilim" | "chir-hachirim";
+type EncadrementKey = "tehilim" | "chir-hachirim";
 
 /**
  * Où les passages se disent dans la bibliothèque.

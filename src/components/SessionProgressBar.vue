@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import ProgressBar from "./ProgressBar.vue";
 
 const { t } = useI18n();
 
@@ -39,17 +40,24 @@ const stats = computed(() => {
       </div>
     </div>
 
-    <div class="relative h-3 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden mb-3">
-      <!-- Réservés : toujours bleu, indépendamment du thème (comme le vert des lus) -->
-      <div
-        class="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-1000 ease-out rounded-full"
-        :style="{ width: `${stats.reservedPercentage}%` }"
-      ></div>
-
-      <div
-        class="absolute top-0 left-0 h-full bg-green-500 transition-all duration-1000 ease-out rounded-full"
-        :style="{ width: `${stats.readPercentage}%` }"
-      ></div>
+    <!-- Deux bandes superposées : les places lues (vert) par-dessus les places
+         réservées (bleu). La bande du dessus perd son fond pour laisser voir
+         celle du dessous ; les couleurs sont fixes quel que soit le thème. -->
+    <div class="relative mb-3">
+      <ProgressBar
+        :value="stats.reservedPercentage"
+        tone="info"
+        size="md"
+        :label="t('progressBar.reserved')"
+      />
+      <div class="absolute inset-0 [&>div]:!bg-transparent">
+        <ProgressBar
+          :value="stats.readPercentage"
+          tone="success"
+          size="md"
+          :label="t('progressBar.read')"
+        />
+      </div>
     </div>
 
     <div class="flex items-center justify-start gap-6 text-xs font-medium">

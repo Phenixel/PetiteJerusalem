@@ -53,7 +53,7 @@ function versionedUrl(url: string, hash?: string): string {
   return `${url}${separateur}v=${TEXTS_VERSION}${hash ? `&h=${hash}` : ""}`;
 }
 
-export interface DownloadedFile {
+interface DownloadedFile {
   /** Taille en octets, mesurée après téléchargement. */
   size: number;
   downloadedAt: string;
@@ -67,7 +67,7 @@ export interface DownloadedFile {
   hash?: string;
 }
 
-export interface DownloadManifest {
+interface DownloadManifest {
   files: Record<string, DownloadedFile>;
 }
 
@@ -147,7 +147,7 @@ async function fetchRemoteHashes(): Promise<Record<string, string>> {
  * copies locales sont servies telles quelles, comme avant, plutôt qu'un texte
  * refusé. Un échec n'efface pas non plus les empreintes déjà connues.
  */
-export function loadRemoteHashes(force = false): Promise<void> {
+function loadRemoteHashes(force = false): Promise<void> {
   if (force) remoteHashesLoading = null;
   if (!remoteHashesLoading) {
     remoteHashesLoading = fetchRemoteHashes()

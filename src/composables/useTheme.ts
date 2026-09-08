@@ -1,6 +1,5 @@
-import { ref, computed } from "vue";
-import { userPreferencesService } from "../services/userPreferencesService";
-import { analyticsService } from "../services/analyticsService";
+import { computed } from "vue";
+import { createAccountPreference } from "./createAccountPreference";
 
 export interface ThemeOption {
   id: string;
@@ -26,9 +25,11 @@ export const THEME_OPTIONS: ThemeOption[] = [
   },
 ];
 
-const currentThemeId = ref("ocean");
-let loadedForUserId: string | null = null;
-let themeVersion = 0;
+const DEFAULT_THEME = THEME_OPTIONS[0];
+
+function themeById(id: string): ThemeOption {
+  return THEME_OPTIONS.find((t) => t.id === id) ?? DEFAULT_THEME;
+}
 
 function applyThemeColors(theme: ThemeOption) {
   if (typeof document === "undefined") return;
@@ -37,135 +38,46 @@ function applyThemeColors(theme: ThemeOption) {
 }
 
 /**
- * Changement d'apparence : le thème est le premier réglage que l'on touche,
- * et il n'était pas mesuré du tout. `scope` distingue le choix gardé sur
- * l'appareil (réglages sans compte de l'app native) de celui qui part chez
- * Firestore et suit l'utilisateur.
+ * Le thème est le premier réglage que l'on touche, et il n'était pas mesuré
+ * du tout. `scope` distingue le choix gardé sur l'appareil (réglages sans
+ * compte de l'app native) de celui qui part chez Firestore et suit
+ * l'utilisateur. La mécanique (copie locale, écriture optimiste et retour en
+ * arrière, réglage d'appareil) est celle de createAccountPreference.
  */
-function trackThemeChanged(themeId: string, previousThemeId: string, scope: "account" | "device") {
-  if (themeId === previousThemeId) return;
-  analyticsService.capture("theme_changed", {
-    theme: themeId,
-    previous_theme: previousThemeId,
-    scope,
-  });
-}
+const theme = createAccountPreference<string>({
+  field: "theme",
+  defaultValue: DEFAULT_THEME.id,
+  isValid: (value): value is string => THEME_OPTIONS.some((t) => t.id === value),
+  apply: (id) => applyThemeColors(themeById(id)),
+  eventName: "theme_changed",
+  eventProps: (id, previous, scope) => ({ theme: id, previous_theme: previous, scope }),
+  failedEventName: "theme_change_failed",
+  failedEventProps: (id, previous) => ({ theme: id, previous_theme: previous, scope: "account" }),
+});
+
+const currentThemeId = theme.current;
 
 export function useTheme() {
-  const currentTheme = computed(
-    () => THEME_OPTIONS.find((t) => t.id === currentThemeId.value) || THEME_OPTIONS[0],
-  );
-
-  async function loadTheme(userId: string) {
-    if (loadedForUserId === userId) return;
-    const versionAtStart = ++themeVersion;
-    // Copie locale d'abord, en synchrone : les couleurs du compte tiennent
-    // dès le premier rendu au lieu d'arriver quelques secondes plus tard
-    // (chargement de Firestore puis aller-retour réseau). La réponse du
-    // serveur, en dessous, confirme ou corrige.
-    const cached = userPreferencesService.getCachedPreferences(userId);
-    const cachedTheme = cached && THEME_OPTIONS.find((t) => t.id === cached.theme);
-    if (cachedTheme) {
-      currentThemeId.value = cachedTheme.id;
-      applyThemeColors(cachedTheme);
-    }
-    try {
-      const prefs = await userPreferencesService.getPreferences(userId);
-      if (themeVersion !== versionAtStart) return;
-      const validTheme = THEME_OPTIONS.find((t) => t.id === prefs.theme);
-      currentThemeId.value = validTheme ? prefs.theme : "ocean";
-      applyThemeColors(currentTheme.value);
-      loadedForUserId = userId;
-    } catch {
-      if (themeVersion !== versionAtStart) return;
-      currentThemeId.value = "ocean";
-      applyThemeColors(THEME_OPTIONS[0]);
-    }
-  }
-
-  /**
-   * Change le thème. Sans compte (userId null : réglages de l'app native), le
-   * choix est appliqué et gardé sur l'appareil seulement ; avec un compte, il
-   * part chez Firestore et suit l'utilisateur sur ses appareils.
-   */
-  async function setTheme(userId: string | null, themeId: string) {
-    const theme = THEME_OPTIONS.find((t) => t.id === themeId);
-    if (!theme) return;
-
-    const previousThemeId = currentThemeId.value;
-
-    if (!userId) {
-      themeVersion++;
-      loadedForUserId = null;
-      currentThemeId.value = themeId;
-      applyThemeColors(theme);
-      userPreferencesService.saveGuestPreferences({ theme: themeId });
-      trackThemeChanged(themeId, previousThemeId, "device");
-      return;
-    }
-
-    themeVersion++;
-    loadedForUserId = userId;
-    currentThemeId.value = themeId;
-    applyThemeColors(theme);
-
-    try {
-      await userPreferencesService.savePreferences(userId, { theme: themeId });
-      trackThemeChanged(themeId, previousThemeId, "account");
-    } catch {
-      currentThemeId.value = previousThemeId;
-      applyThemeColors(currentTheme.value);
-      // Le thème revient à sa valeur d'avant sous les yeux de l'utilisateur :
-      // sans cet événement, l'écart entre « thème choisi » et « thème
-      // réellement porté par le compte » resterait invisible.
-      analyticsService.capture("theme_change_failed", {
-        theme: themeId,
-        previous_theme: previousThemeId,
-        scope: "account",
-      });
-      throw new Error("Failed to save theme preference");
-    }
-  }
+  const currentTheme = computed(() => themeById(currentThemeId.value));
 
   function previewTheme(themeId: string) {
-    const theme = THEME_OPTIONS.find((t) => t.id === themeId);
-    if (theme) {
-      applyThemeColors(theme);
-    }
+    const option = THEME_OPTIONS.find((t) => t.id === themeId);
+    if (option) applyThemeColors(option);
   }
 
   function cancelPreview() {
     applyThemeColors(currentTheme.value);
   }
 
-  /**
-   * Sans compte : applique le thème gardé sur l'appareil (réglages de la page
-   * profil de l'app native), ou le thème d'origine s'il n'y en a pas.
-   */
-  function loadGuestTheme() {
-    themeVersion++;
-    loadedForUserId = null;
-    const guest = userPreferencesService.getGuestPreferences();
-    const theme = THEME_OPTIONS.find((t) => t.id === guest?.theme) ?? THEME_OPTIONS[0];
-    currentThemeId.value = theme.id;
-    applyThemeColors(theme);
-  }
-
-  function resetTheme() {
-    currentThemeId.value = "ocean";
-    loadedForUserId = null;
-    applyThemeColors(THEME_OPTIONS[0]);
-  }
-
   return {
     currentThemeId,
     currentTheme,
     themes: THEME_OPTIONS,
-    loadTheme,
-    loadGuestTheme,
-    setTheme,
+    loadTheme: theme.loadForUser,
+    loadGuestTheme: theme.loadForGuest,
+    setTheme: theme.set,
     previewTheme,
     cancelPreview,
-    resetTheme,
+    resetTheme: theme.reset,
   };
 }

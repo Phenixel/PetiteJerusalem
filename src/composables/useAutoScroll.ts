@@ -30,7 +30,7 @@ import { analyticsService } from "../services/analyticsService";
 
 export type AutoScrollSpeedId = "slow" | "medium" | "fast";
 
-export interface AutoScrollSpeed {
+interface AutoScrollSpeed {
   id: AutoScrollSpeedId;
   /** Pixels parcourus par seconde : l'allure d'une lecture posée. */
   pixelsPerSecond: number;
@@ -74,8 +74,36 @@ const currentSpeed = computed(
 export const isAutoScrolling = readonly(running);
 export const autoScrollSpeedId = readonly(speedId);
 
-function maxScroll(): number {
+function measureMaxScroll(): number {
   return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+}
+
+/**
+ * La limite du défilement, mesurée au départ puis quand la page change de
+ * taille : la lire à chaque image forçait une mise en page par image, pendant
+ * tout le défilement. Le ResizeObserver sur le corps suit le document qui
+ * grandit (un texte qui finit de se charger), `resize` la fenêtre.
+ */
+let limit = 0;
+let bodyObserver: ResizeObserver | null = null;
+
+function remeasure(): void {
+  limit = measureMaxScroll();
+}
+
+function watchPageSize(): void {
+  remeasure();
+  window.addEventListener("resize", remeasure, { passive: true });
+  if (typeof ResizeObserver !== "undefined") {
+    bodyObserver = new ResizeObserver(remeasure);
+    bodyObserver.observe(document.body);
+  }
+}
+
+function unwatchPageSize(): void {
+  window.removeEventListener("resize", remeasure);
+  bodyObserver?.disconnect();
+  bodyObserver = null;
 }
 
 function step(now: number): void {
@@ -87,7 +115,6 @@ function step(now: number): void {
   // a sauté ailleurs) : on repart d'où elle est, plutôt que de la ramener.
   if (Math.abs(window.scrollY - position) > 2) position = window.scrollY;
 
-  const limit = maxScroll();
   position = Math.min(position + (currentSpeed.value.pixelsPerSecond * elapsed) / 1000, limit);
   // La position visée reste flottante (l'allure lente avance de moins d'un
   // pixel par image), mais la page se pose sur un pixel entier : un décalage
@@ -104,11 +131,12 @@ function step(now: number): void {
 }
 
 /** Lance le défilement (le double appui sur le texte, seule porte d'entrée). */
-export function startAutoScroll(): void {
+function startAutoScroll(): void {
   if (running.value || typeof window === "undefined") return;
   // Rien à faire défiler (page courte, ou déjà tout en bas).
-  if (window.scrollY >= maxScroll() - 1) return;
+  if (window.scrollY >= measureMaxScroll() - 1) return;
   running.value = true;
+  watchPageSize();
   position = window.scrollY;
   lastFrameAt = 0;
   startedAt = Date.now();
@@ -124,6 +152,7 @@ export function startAutoScroll(): void {
 export function stopAutoScroll(reason: "user" | "bottom" | "leave"): void {
   if (!running.value) return;
   running.value = false;
+  unwatchPageSize();
   cancelAnimationFrame(frame);
   frame = 0;
   analyticsService.capture("auto_scroll_stopped", {

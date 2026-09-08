@@ -1,6 +1,5 @@
-import { ref, computed } from "vue";
-import { userPreferencesService } from "../services/userPreferencesService";
-import { analyticsService } from "../services/analyticsService";
+import { computed } from "vue";
+import { createAccountPreference } from "./createAccountPreference";
 
 export interface FontOption {
   id: string;
@@ -95,15 +94,11 @@ export function ensureAllFontsLoaded(): void {
   Object.keys(FONT_STYLESHEETS).forEach(ensureFontLoaded);
 }
 
-const currentLatinId = ref(DEFAULT_LATIN.id);
-const currentHebrewId = ref(DEFAULT_HEBREW.id);
-let loadedForUserId: string | null = null;
-let fontsVersion = 0;
-
-function applyFonts(latin: FontOption, hebrew: FontOption) {
+function applyFont(cssVar: "--font-sans" | "--font-hebrew", options: FontOption[], id: string) {
+  ensureFontLoaded(id);
   if (typeof document === "undefined") return;
-  document.documentElement.style.setProperty("--font-sans", latin.stack);
-  document.documentElement.style.setProperty("--font-hebrew", hebrew.stack);
+  const font = options.find((f) => f.id === id) ?? options[0];
+  document.documentElement.style.setProperty(cssVar, font.stack);
 }
 
 /**
@@ -111,20 +106,34 @@ function applyFonts(latin: FontOption, hebrew: FontOption) {
  * l'interface de celle de la lecture hébraïque, dont les enjeux ne sont pas
  * les mêmes (confort de lecture des textes contre goût général).
  */
-function trackFontChanged(
+function fontPreference(
   script: "latin" | "hebrew",
-  fontId: string,
-  previousFontId: string,
-  scope: "account" | "device",
+  field: "fontLatin" | "fontHebrew",
+  cssVar: "--font-sans" | "--font-hebrew",
+  options: FontOption[],
 ) {
-  if (fontId === previousFontId) return;
-  analyticsService.capture("font_changed", {
-    script,
-    font: fontId,
-    previous_font: previousFontId,
-    scope,
+  return createAccountPreference<string>({
+    field,
+    defaultValue: options[0].id,
+    isValid: (value): value is string => options.some((f) => f.id === value),
+    apply: (id) => applyFont(cssVar, options, id),
+    eventName: "font_changed",
+    eventProps: (id, previous, scope) => ({ script, font: id, previous_font: previous, scope }),
+    failedEventName: "font_change_failed",
+    failedEventProps: (id, previous) => ({
+      script,
+      font: id,
+      previous_font: previous,
+      scope: "account",
+    }),
   });
 }
+
+const latin = fontPreference("latin", "fontLatin", "--font-sans", LATIN_FONT_OPTIONS);
+const hebrew = fontPreference("hebrew", "fontHebrew", "--font-hebrew", HEBREW_FONT_OPTIONS);
+
+const currentLatinId = latin.current;
+const currentHebrewId = hebrew.current;
 
 export function useFonts() {
   const currentLatin = computed(
@@ -134,137 +143,20 @@ export function useFonts() {
     () => HEBREW_FONT_OPTIONS.find((f) => f.id === currentHebrewId.value) || DEFAULT_HEBREW,
   );
 
+  // Les deux polices lisent le même document : getPreferences partage la
+  // requête en vol, une seule lecture Firestore pour les deux.
   async function loadFonts(userId: string) {
-    if (loadedForUserId === userId) return;
-    const versionAtStart = ++fontsVersion;
-    // Copie locale d'abord, en synchrone : les polices du compte partent en
-    // téléchargement et s'appliquent dès le premier rendu, sans attendre
-    // Firestore. La réponse du serveur, en dessous, confirme ou corrige.
-    const cached = userPreferencesService.getCachedPreferences(userId);
-    if (cached) {
-      if (LATIN_FONT_OPTIONS.some((f) => f.id === cached.fontLatin)) {
-        currentLatinId.value = cached.fontLatin;
-      }
-      if (HEBREW_FONT_OPTIONS.some((f) => f.id === cached.fontHebrew)) {
-        currentHebrewId.value = cached.fontHebrew;
-      }
-      ensureFontLoaded(currentLatinId.value);
-      ensureFontLoaded(currentHebrewId.value);
-      applyFonts(currentLatin.value, currentHebrew.value);
-    }
-    try {
-      const prefs = await userPreferencesService.getPreferences(userId);
-      if (fontsVersion !== versionAtStart) return;
-      currentLatinId.value = LATIN_FONT_OPTIONS.some((f) => f.id === prefs.fontLatin)
-        ? prefs.fontLatin
-        : DEFAULT_LATIN.id;
-      currentHebrewId.value = HEBREW_FONT_OPTIONS.some((f) => f.id === prefs.fontHebrew)
-        ? prefs.fontHebrew
-        : DEFAULT_HEBREW.id;
-      ensureFontLoaded(currentLatinId.value);
-      ensureFontLoaded(currentHebrewId.value);
-      applyFonts(currentLatin.value, currentHebrew.value);
-      loadedForUserId = userId;
-    } catch {
-      if (fontsVersion !== versionAtStart) return;
-      resetFonts();
-    }
+    await Promise.all([latin.loadForUser(userId), hebrew.loadForUser(userId)]);
   }
 
-  /**
-   * Change la police latine. Sans compte (userId null : réglages de l'app
-   * native), le choix est appliqué et gardé sur l'appareil seulement ; avec
-   * un compte, il part chez Firestore.
-   */
-  async function setLatinFont(userId: string | null, fontId: string) {
-    if (!LATIN_FONT_OPTIONS.some((f) => f.id === fontId)) return;
-    ensureFontLoaded(fontId);
-    const previous = currentLatinId.value;
-    if (!userId) {
-      fontsVersion++;
-      loadedForUserId = null;
-      currentLatinId.value = fontId;
-      applyFonts(currentLatin.value, currentHebrew.value);
-      userPreferencesService.saveGuestPreferences({ fontLatin: fontId });
-      trackFontChanged("latin", fontId, previous, "device");
-      return;
-    }
-    fontsVersion++;
-    loadedForUserId = userId;
-    currentLatinId.value = fontId;
-    applyFonts(currentLatin.value, currentHebrew.value);
-    try {
-      await userPreferencesService.savePreferences(userId, { fontLatin: fontId });
-      trackFontChanged("latin", fontId, previous, "account");
-    } catch {
-      currentLatinId.value = previous;
-      applyFonts(currentLatin.value, currentHebrew.value);
-      analyticsService.capture("font_change_failed", {
-        script: "latin",
-        font: fontId,
-        previous_font: previous,
-        scope: "account",
-      });
-      throw new Error("Failed to save font preference");
-    }
-  }
-
-  /** Change la police hébraïque : même logique que setLatinFont. */
-  async function setHebrewFont(userId: string | null, fontId: string) {
-    if (!HEBREW_FONT_OPTIONS.some((f) => f.id === fontId)) return;
-    ensureFontLoaded(fontId);
-    const previous = currentHebrewId.value;
-    if (!userId) {
-      fontsVersion++;
-      loadedForUserId = null;
-      currentHebrewId.value = fontId;
-      applyFonts(currentLatin.value, currentHebrew.value);
-      userPreferencesService.saveGuestPreferences({ fontHebrew: fontId });
-      trackFontChanged("hebrew", fontId, previous, "device");
-      return;
-    }
-    fontsVersion++;
-    loadedForUserId = userId;
-    currentHebrewId.value = fontId;
-    applyFonts(currentLatin.value, currentHebrew.value);
-    try {
-      await userPreferencesService.savePreferences(userId, { fontHebrew: fontId });
-      trackFontChanged("hebrew", fontId, previous, "account");
-    } catch {
-      currentHebrewId.value = previous;
-      applyFonts(currentLatin.value, currentHebrew.value);
-      analyticsService.capture("font_change_failed", {
-        script: "hebrew",
-        font: fontId,
-        previous_font: previous,
-        scope: "account",
-      });
-      throw new Error("Failed to save font preference");
-    }
-  }
-
-  /**
-   * Sans compte : applique les polices gardées sur l'appareil (réglages de la
-   * page profil de l'app native), ou celles d'origine s'il n'y en a pas.
-   */
   function loadGuestFonts() {
-    fontsVersion++;
-    loadedForUserId = null;
-    const guest = userPreferencesService.getGuestPreferences();
-    const latin = LATIN_FONT_OPTIONS.find((f) => f.id === guest?.fontLatin) ?? DEFAULT_LATIN;
-    const hebrew = HEBREW_FONT_OPTIONS.find((f) => f.id === guest?.fontHebrew) ?? DEFAULT_HEBREW;
-    currentLatinId.value = latin.id;
-    currentHebrewId.value = hebrew.id;
-    ensureFontLoaded(latin.id);
-    ensureFontLoaded(hebrew.id);
-    applyFonts(latin, hebrew);
+    latin.loadForGuest();
+    hebrew.loadForGuest();
   }
 
   function resetFonts() {
-    currentLatinId.value = DEFAULT_LATIN.id;
-    currentHebrewId.value = DEFAULT_HEBREW.id;
-    loadedForUserId = null;
-    applyFonts(DEFAULT_LATIN, DEFAULT_HEBREW);
+    latin.reset();
+    hebrew.reset();
   }
 
   return {
@@ -276,8 +168,8 @@ export function useFonts() {
     hebrewFonts: HEBREW_FONT_OPTIONS,
     loadFonts,
     loadGuestFonts,
-    setLatinFont,
-    setHebrewFont,
+    setLatinFont: latin.set,
+    setHebrewFont: hebrew.set,
     resetFonts,
   };
 }

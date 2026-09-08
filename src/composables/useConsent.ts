@@ -51,7 +51,13 @@ export function getConsentChoice(): ConsentChoice | null {
   return choice.value;
 }
 
-/** Notifie chaque décision de l'utilisateur (accord initial ou changement d'avis). */
-export function onConsentChange(listener: (choice: ConsentChoice) => void): void {
+/**
+ * Notifie chaque décision de l'utilisateur (accord initial ou changement
+ * d'avis) ; renvoie de quoi se désabonner.
+ */
+export function onConsentChange(listener: (choice: ConsentChoice) => void): () => void {
   listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }

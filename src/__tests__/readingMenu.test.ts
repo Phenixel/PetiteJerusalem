@@ -25,10 +25,10 @@ import { useReadingSize } from "../composables/useReadingSize";
 import { addMirrorOffer, removeMirrorOffer } from "../composables/useTefilinMirror";
 
 const SECTIONS = [
-  { offset: 0, label: "Bénédictions du matin", hebrew: "ברכות השחר" },
-  { offset: 12, label: "Les téfilines", hebrew: "מצות תפילין" },
+  { anchor: "b0", offset: 0, label: "Bénédictions du matin", hebrew: "ברכות השחר" },
+  { anchor: "b1", offset: 12, label: "Les téfilines", hebrew: "מצות תפילין" },
   // Une guemara : ses dafim n'ont pas de nom hébreu, la ligne s'en passe.
-  { offset: 30, label: "Daf 2a" },
+  { anchor: "b2", offset: 30, label: "Daf 2a" },
 ];
 
 /** Monte le menu, panneau ouvert. */

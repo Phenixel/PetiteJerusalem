@@ -4,12 +4,19 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useToast } from "../composables/useToast";
 import { sessionService } from "../services/sessionService";
-import { reservationService, type ReservationForm } from "../services/reservationService";
+import {
+  reservationService,
+  ReservationGoneError,
+  type ReservationForm,
+} from "../services/reservationService";
+import { SearchService } from "../services/searchService";
+import { TextTypeService } from "../services/textTypeService";
+import { DateService } from "../services/dateService";
 import { authService } from "../services/authService";
 import { appendHebrewNumeral, formatNumberWithHebrew } from "../services/hebrewNumerals";
 import type { Session, TextStudy, TextStudyReservation } from "../models/models";
 import type { User } from "../services/authService";
-import { seoService } from "../services/seoService";
+import { seoService, pageTitle } from "../services/seoService";
 import { analyticsService } from "../services/analyticsService";
 
 import BatchSelectionBar from "../components/BatchSelectionBar.vue";
@@ -17,12 +24,22 @@ import EditSessionModal from "../components/EditSessionModal.vue";
 import AppIcon from "../components/icons/AppIcon.vue";
 import { liveValue } from "../composables/liveInput";
 import { useConfirm } from "../composables/useConfirm";
+import { useOverlay } from "../composables/useOverlayStack";
+import {
+  chaptersOf,
+  parseSlotKey,
+  slotKey,
+  useReservationIndex,
+  type TextDisplayStatus,
+} from "../composables/useReservationIndex";
+import { useSessionEditing, type SessionEditData } from "../composables/useSessionEditing";
 import { SITE_URL } from "../config/site";
 
 const router = useRouter();
 const { t } = useI18n();
 const { confirm } = useConfirm();
 const toast = useToast();
+const sessionEditing = useSessionEditing("session_management");
 
 const isLoading = ref(true);
 const currentUser = ref<User | null>(null);
@@ -48,6 +65,11 @@ const showEditModal = ref(false);
 const renameTarget = ref<TextStudyReservation | null>(null);
 const renameName = ref("");
 const isRenaming = ref(false);
+const showRenameModal = computed(() => renameTarget.value !== null);
+
+// Le bouton retour d'Android ferme ces modales avant de quitter la page.
+useOverlay(showGuestForm, () => (showGuestForm.value = false));
+useOverlay(showRenameModal, () => (renameTarget.value = null));
 
 const guestForm = ref<ReservationForm>({
   name: "",
@@ -84,7 +106,9 @@ const loadData = async () => {
       return;
     }
 
-    textStudies.value = await sessionService.getTextStudiesByType(session.value.type);
+    // Les textes de la chaîne (livres retenus à la création), comme sur la
+    // page publique : gérer un livre qui n'en fait pas partie n'a pas de sens.
+    textStudies.value = sessionService.getSessionTextStudies(session.value);
 
     // Toute cette page était hors du suivi : les actions de tenue d'une chaîne
     // (attribuer des sections à un invité, en supprimer, renommer quelqu'un,
@@ -99,8 +123,8 @@ const loadData = async () => {
 
     const url = SITE_URL + `/session-management/${sessionId}`;
     seoService.setMeta({
-      title: `Gestion de session - ${session.value.name} | Petite Jerusalem`,
-      description: `Gérez les réservations et le suivi de la session "${session.value.name}".`,
+      title: pageTitle(session.value.name, t("seo.sessionManagementTitle")),
+      description: t("seo.sessionManagementDescription", { name: session.value.name }),
       canonical: url,
       og: { url },
     });
@@ -116,7 +140,7 @@ const filteredTextStudies = computed(() => {
   let filtered = textStudies.value;
 
   if (searchTerm.value) {
-    filtered = sessionService.filterTextStudiesBySearch(filtered, searchTerm.value);
+    filtered = SearchService.filterTextStudiesBySearch(filtered, searchTerm.value);
   }
 
   if (selectedBook.value) {
@@ -135,76 +159,79 @@ const availableBooks = computed(() => {
   return Array.from(books).sort();
 });
 
-/*
- * Les fonctions ci-dessous sont appelées depuis le template, jusqu'à dix fois
- * par ligne de chapitre et cinq fois par carte : chacune parcourait toutes les
- * réservations de la chaîne, ce qui rendait la recherche quadratique sur une
- * chaîne du Talmud. Les index ne se reconstruisent qu'au changement des
- * réservations (même schéma que TextStudiesList).
- */
-const slotKey = (textStudyId: string, section?: number) =>
-  section === undefined ? `${textStudyId}#full` : `${textStudyId}#${section}`;
+// Les index partagés avec la page publique : réservations actives (les
+// tirages expirés s'affichent « disponible » partout, la gestion doit dire la
+// même chose), emplacement → réservation, texte → statut.
+const {
+  activeReservations,
+  reservationAt,
+  statusOf,
+  statusIndex,
+  availableSections,
+  selectAllAvailable,
+} = useReservationIndex(session, textStudies);
 
-/**
- * Les réservations qui tiennent encore leur emplacement : un tirage aléatoire
- * expiré sans lecture s'affiche « disponible » partout ailleurs, la gestion de
- * la chaîne doit dire la même chose que la page publique.
- */
-const activeReservations = computed(() =>
-  reservationService.activeReservations(session.value?.reservations ?? []),
-);
-
-const reservationSlotIndex = computed(() => {
-  const bySlot = new Map<string, TextStudyReservation>();
+// Nombre de réservations actives par texte, pour l'en-tête des cartes.
+const reservationsCountByText = computed(() => {
+  const counts = new Map<string, number>();
   for (const r of activeReservations.value) {
-    const key = slotKey(r.textStudyId, r.section);
-    if (!bySlot.has(key)) bySlot.set(key, r);
+    counts.set(r.textStudyId, (counts.get(r.textStudyId) ?? 0) + 1);
   }
-  return bySlot;
+  return counts;
 });
 
-const textStatusIndex = computed(() => {
-  const byText = new Map<string, ReturnType<typeof reservationService.getTextDisplayStatus>>();
-  const current = session.value;
-  if (!current) return byText;
-  for (const textStudy of textStudies.value) {
-    byText.set(
-      textStudy.id,
-      reservationService.getTextDisplayStatus(textStudy.id, textStudy, current),
-    );
+/*
+ * Tout ce que le gabarit affiche est préparé ici, une fois par changement de
+ * réservations ou de sélection : une carte par texte, une ligne par chapitre,
+ * avec sa réservation et son état coché. Avant, le gabarit appelait jusqu'à
+ * quinze fonctions par ligne, réévaluées à chaque rendu pour chaque carte.
+ */
+interface SectionRow {
+  section: number;
+  reservation: TextStudyReservation | undefined;
+  /** Case cochée : la réservation à supprimer, ou la section libre à réserver. */
+  checked: boolean;
+}
+
+interface TextCard {
+  text: TextStudy;
+  status: TextDisplayStatus;
+  reservationsCount: number;
+  availableCount: number;
+  allAvailableSelected: boolean;
+  rows: SectionRow[];
+}
+
+const cardOf = (text: TextStudy): TextCard => {
+  const available = availableSections(text);
+  const availableKeys = available.map((section) => slotKey(text.id, section));
+  return {
+    text,
+    status: statusOf(text),
+    reservationsCount: reservationsCountByText.value.get(text.id) ?? 0,
+    availableCount: available.length,
+    allAvailableSelected:
+      availableKeys.length > 0 && availableKeys.every((key) => selectedItems.value.has(key)),
+    rows: chaptersOf(text.totalSections).map((section) => {
+      const reservation = reservationAt(text.id, section);
+      return {
+        section,
+        reservation,
+        checked: reservation
+          ? selectedReservations.value.has(reservation.id)
+          : selectedItems.value.has(slotKey(text.id, section)),
+      };
+    }),
+  };
+};
+
+const groupedCards = computed(() => {
+  const groups: Record<string, TextCard[]> = {};
+  for (const [bookName, texts] of Object.entries(groupedTextStudies.value)) {
+    groups[bookName] = texts.map(cardOf);
   }
-  return byText;
+  return groups;
 });
-
-const getTextStatus = (textStudy: TextStudy) => {
-  return (
-    textStatusIndex.value.get(textStudy.id) ??
-    reservationService.getTextDisplayStatus(textStudy.id, textStudy, session.value!)
-  );
-};
-
-const getTextReservations = (textStudyId: string) => {
-  return activeReservations.value.filter((r) => r.textStudyId === textStudyId);
-};
-
-const isSectionReserved = (textStudyId: string, section: number) => {
-  return reservationSlotIndex.value.has(slotKey(textStudyId, section));
-};
-
-const getSectionReservation = (textStudyId: string, section: number) => {
-  return reservationSlotIndex.value.get(slotKey(textStudyId, section));
-};
-
-// generateChapters allouait un tableau [1..n] par carte et par rendu.
-const chaptersCache = new Map<number, number[]>();
-const chaptersOf = (totalSections: number) => {
-  let chapters = chaptersCache.get(totalSections);
-  if (!chapters) {
-    chapters = sessionService.generateChapters(totalSections);
-    chaptersCache.set(totalSections, chapters);
-  }
-  return chapters;
-};
 
 // Invités déjà présents dans la session, dédoublonnés par identifiant. Sans
 // cette liste, réattribuer un chapitre à quelqu'un qui a déjà réservé créait un
@@ -296,16 +323,10 @@ const createGuestReservation = async () => {
     // la modale a son propre état (isSubmittingBatch).
     isSubmittingBatch.value = true;
 
-    const itemsToReserve = Array.from(selectedItems.value).map((key) => {
-      const [textId, sectionStr] = key.split("#");
-      return {
-        textStudyId: textId,
-        section: sectionStr === "full" ? undefined : parseInt(sectionStr),
-      };
-    });
+    const itemsToReserve = Array.from(selectedItems.value).map(parseSlotKey);
 
     const unreservedItems = itemsToReserve.filter(
-      (item) => item.section === undefined || !isSectionReserved(item.textStudyId, item.section),
+      (item) => reservationAt(item.textStudyId, item.section) === undefined,
     );
 
     // Une seule transaction atomique : soit tout passe, soit rien
@@ -355,8 +376,8 @@ const createGuestReservation = async () => {
   }
 };
 
-const toggleSelection = (textId: string, section?: number) => {
-  const key = section ? `${textId}#${section}` : `${textId}#full`;
+const toggleSelection = (textId: string, section: number) => {
+  const key = slotKey(textId, section);
   if (selectedItems.value.has(key)) {
     selectedItems.value.delete(key);
   } else {
@@ -364,32 +385,10 @@ const toggleSelection = (textId: string, section?: number) => {
   }
 };
 
-const isSelected = (textId: string, section: number) => {
-  const key = `${textId}#${section}`;
-  return selectedItems.value.has(key);
-};
-
-// Sections encore libres d'un texte : cibles du « Tout sélectionner », qui
-// évite de cocher 150 chapitres un par un pour un même lecteur.
-const availableSections = (textStudy: TextStudy) =>
-  sessionService
-    .generateChapters(textStudy.totalSections)
-    .filter((section) => !isSectionReserved(textStudy.id, section));
-
-const areAllAvailableSelected = (textStudy: TextStudy) => {
-  const sections = availableSections(textStudy);
-  return sections.length > 0 && sections.every((section) => isSelected(textStudy.id, section));
-};
-
-const toggleSelectAll = (textStudy: TextStudy) => {
-  const keys = availableSections(textStudy).map((section) => `${textStudy.id}#${section}`);
-  if (keys.length === 0) return;
-
-  if (keys.every((key) => selectedItems.value.has(key))) {
-    keys.forEach((key) => selectedItems.value.delete(key));
-  } else {
-    keys.forEach((key) => selectedItems.value.add(key));
-  }
+// Cocher les 150 chapitres d'un livre un par un n'était pas tenable pour
+// attribuer un texte entier à un lecteur.
+const toggleSelectAll = (text: TextStudy) => {
+  selectAllAvailable(text, selectedItems.value);
 };
 
 const openBatchGuestForm = () => {
@@ -408,8 +407,11 @@ const toggleReservationSelection = (reservationId: string) => {
   }
 };
 
-const isReservationSelected = (reservationId: string) =>
-  selectedReservations.value.has(reservationId);
+/** La case d'une ligne : la réservation à supprimer, ou la section à réserver. */
+const toggleRow = (text: TextStudy, row: SectionRow) => {
+  if (row.reservation) toggleReservationSelection(row.reservation.id);
+  else toggleSelection(text.id, row.section);
+};
 
 const deleteSelectedReservations = async () => {
   if (!session.value || selectedReservations.value.size === 0) return;
@@ -426,7 +428,7 @@ const deleteSelectedReservations = async () => {
 
   try {
     isDeletingBatch.value = true;
-    await sessionService.deleteReservations(
+    await reservationService.deleteReservations(
       session.value.id,
       Array.from(selectedReservations.value),
     );
@@ -479,7 +481,7 @@ const submitRename = async () => {
 
   try {
     isRenaming.value = true;
-    await sessionService.renameGuest(session.value.id, target.id, renameName.value);
+    await reservationService.renameGuest(session.value.id, target.id, renameName.value);
     await reloadSession();
     renameTarget.value = null;
     // Pas de nom dans les propriétés : ce sont des noms de personnes. Le
@@ -502,80 +504,49 @@ const submitRename = async () => {
   }
 };
 
-const saveSessionChanges = async (sessionData: {
-  name: string;
-  description: string;
-  dateLimit: string;
-  guestEmailRequired: boolean;
-}) => {
-  if (!session.value) return;
+const saveSessionChanges = async (sessionData: SessionEditData): Promise<boolean> => {
+  const current = session.value;
+  if (!current) return false;
 
-  try {
-    const current = session.value;
-    await sessionService.updateSession(current.id, {
-      ...sessionData,
-      slug: current.slug,
-    });
-    analyticsService.capture("session_updated", {
-      session_id: current.id,
-      text_type: current.type,
-      guest_email_required: sessionData.guestEmailRequired,
-      deadline_changed:
-        current.dateLimit instanceof Date
-          ? new Date(sessionData.dateLimit).getTime() !== current.dateLimit.getTime()
-          : null,
-      source: "session_management",
-    });
-    await reloadSession();
-    toast.success(t("profile.sessionUpdatedSuccess"));
-  } catch (error) {
-    console.error("Erreur lors de la mise à jour:", error);
-    analyticsService.capture("session_update_failed", {
-      session_id: session.value?.id,
-      error_message: error instanceof Error ? error.message : String(error),
-      source: "session_management",
-    });
-    toast.errorFromException(error, t("profile.sessionUpdateError"));
-  }
+  const saved = await sessionEditing.saveSession(current, sessionData);
+  if (saved) session.value = sessionEditing.edited(current, sessionData);
+  return saved;
 };
 
 const endCurrentSession = async () => {
-  if (!session.value) return;
-  if (!(await confirm({ title: t("profile.endSessionConfirm"), danger: true }))) return;
-
-  try {
-    const current = session.value;
-    await sessionService.endSession(current.id);
-    // Sortie de cycle de vie d'une chaîne, jamais mesurée : `session_created`
-    // n'avait aucune fin, ni aboutie ni abandonnée. Le taux de complétion au
-    // moment de la clôture dit si la chaîne est allée au bout ou a été close
-    // faute de participants.
-    analyticsService.capture("session_ended", {
-      session_id: current.id,
-      text_type: current.type,
-      reservations_count: sessionStats.value.totalReservations,
-      completion_rate: Math.round(sessionStats.value.completionRate),
-      reservation_rate: Math.round(sessionStats.value.reservationRate),
-      source: "session_management",
-    });
-    await reloadSession();
-    toast.success(t("profile.sessionEndedSuccess"));
-  } catch (error) {
-    console.error("Erreur lors de la fin de session:", error);
-    analyticsService.capture("session_end_failed", {
-      session_id: session.value?.id,
-      error_message: error instanceof Error ? error.message : String(error),
-      source: "session_management",
-    });
-    toast.errorFromException(error, t("profile.sessionEndError"));
+  const current = session.value;
+  if (!current) return;
+  if (await sessionEditing.endSession(current, textStudies.value)) {
+    session.value = sessionEditing.ended(current);
   }
 };
 
-const toggleReservationCompletion = async (reservationId: string, isCompleted: boolean) => {
+const removeLocalReservation = (reservationId: string) => {
+  const current = session.value;
+  if (!current?.reservations) return;
+  const index = current.reservations.findIndex((r) => r.id === reservationId);
+  if (index > -1) current.reservations.splice(index, 1);
+  selectedReservations.value.delete(reservationId);
+};
+
+const toggleReservationCompletion = async (
+  reservation: TextStudyReservation,
+  isCompleted: boolean,
+) => {
   if (!session.value) return;
 
+  // Optimiste : l'interrupteur bascule tout de suite, et revient en arrière
+  // si l'écriture échoue. Relire toute la session pour une bascule
+  // redessinait la page entière.
+  const previous = reservation.isCompleted;
+  reservation.isCompleted = isCompleted;
+
   try {
-    await sessionService.markReservationAsCompleted(session.value.id, reservationId, isCompleted);
+    await reservationService.markReservationAsCompleted(
+      session.value.id,
+      reservation.id,
+      isCompleted,
+    );
     analyticsService.capture("section_marked_read", {
       session_id: session.value.id,
       marked: isCompleted,
@@ -583,9 +554,9 @@ const toggleReservationCompletion = async (reservationId: string, isCompleted: b
       is_guest: false,
       source: "session_management",
     });
-    await reloadSession();
   } catch (error) {
     console.error("Erreur lors de la mise à jour:", error);
+    reservation.isCompleted = previous;
     analyticsService.capture("section_mark_read_failed", {
       session_id: session.value?.id,
       marked: isCompleted,
@@ -593,6 +564,9 @@ const toggleReservationCompletion = async (reservationId: string, isCompleted: b
       error_message: error instanceof Error ? error.message : String(error),
       source: "session_management",
     });
+    // La place a été reprise entre-temps : elle disparaît de la liste, et le
+    // message le dit (errors.reservationGone).
+    if (error instanceof ReservationGoneError) removeLocalReservation(reservation.id);
     toast.errorFromException(error, t("sessionManagement.reservationUpdateError"));
   }
 };
@@ -604,6 +578,12 @@ const reloadSession = async () => {
     const updatedSession = await sessionService.getSessionById(session.value.id);
     if (updatedSession) {
       session.value = updatedSession;
+      // Une réservation cochée qui n'existe plus (supprimée, reprise) ne doit
+      // pas rester dans la sélection : la barre compterait un fantôme.
+      const ids = new Set((updatedSession.reservations ?? []).map((r) => r.id));
+      selectedReservations.value = new Set(
+        Array.from(selectedReservations.value).filter((id) => ids.has(id)),
+      );
     }
   } catch (error) {
     console.error("Erreur lors du rechargement de la session:", error);
@@ -611,7 +591,8 @@ const reloadSession = async () => {
 };
 
 const sessionStats = computed(() => {
-  if (!session.value)
+  const current = session.value;
+  if (!current) {
     return {
       totalReservations: 0,
       completedReservations: 0,
@@ -620,27 +601,23 @@ const sessionStats = computed(() => {
       reservedTexts: 0,
       reservationRate: 0,
     };
+  }
 
-  const reservations = activeReservations.value;
-  const totalReservations = reservations.length;
-  const completedReservations = reservations.filter((r) => r.isCompleted).length;
-  const completionRate =
-    totalReservations > 0 ? (completedReservations / totalReservations) * 100 : 0;
-
+  // Le même calcul que la page publique et la carte d'aperçu.
+  const stats = sessionService.getSessionReservationStats(current, textStudies.value);
   const totalTexts = textStudies.value.length;
-  const reservedTexts = textStudies.value.filter((textStudy) => {
-    const status = getTextStatus(textStudy);
-    return status.status === "fully_reserved" || status.status === "partially_reserved";
-  }).length;
-  const reservationRate = totalTexts > 0 ? (reservedTexts / totalTexts) * 100 : 0;
+  let reservedTexts = 0;
+  for (const status of statusIndex.value.values()) {
+    if (status.status !== "available") reservedTexts++;
+  }
 
   return {
-    totalReservations,
-    completedReservations,
-    completionRate: Math.round(completionRate),
+    totalReservations: stats.reserved,
+    completedReservations: stats.read,
+    completionRate: stats.reserved > 0 ? Math.round((stats.read / stats.reserved) * 100) : 0,
     totalTexts,
     reservedTexts,
-    reservationRate: Math.round(reservationRate),
+    reservationRate: totalTexts > 0 ? Math.round((reservedTexts / totalTexts) * 100) : 0,
   };
 });
 
@@ -684,12 +661,11 @@ onMounted(() => {
           <div class="flex flex-col items-start md:items-end gap-3">
             <div class="flex flex-wrap gap-2">
               <span class="chip bg-primary/10 text-primary">{{
-                sessionService.formatTextType(session.type)
+                TextTypeService.formatType(session.type)
               }}</span>
-              <span class="chip bg-black/5 text-text-secondary dark:bg-white/10"
-                >{{ t("common.dateLimit") }} :
-                {{ sessionService.formatDate(session.dateLimit) }}</span
-              >
+              <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
+                t("common.dateLimitValue", { date: DateService.formatDate(session.dateLimit) })
+              }}</span>
               <span
                 v-if="session.isEnded"
                 class="chip bg-black/5 text-text-secondary dark:bg-white/10"
@@ -797,25 +773,25 @@ onMounted(() => {
       <!-- Liste des textes groupés par livre -->
       <div class="space-y-12">
         <div
-          v-for="(texts, bookName) in groupedTextStudies"
+          v-for="(cards, bookName) in groupedCards"
           :key="bookName"
           class="animate-[fadeIn_0.5s_ease]"
         >
           <h3 class="text-2xl font-bold text-text-primary mb-6">
-            {{ sessionService.formatBookName(bookName) }}
+            {{ sessionService.formatBookName(String(bookName)) }}
           </h3>
 
           <!-- items-start : sans hauteur imposée, chaque carte s'arrête après
                son dernier chapitre au lieu de s'étirer sur la plus longue. -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
-            <div v-for="textStudy in texts" :key="textStudy.id" class="card p-5 flex flex-col">
+            <div v-for="card in cards" :key="card.text.id" class="card p-5 flex flex-col">
               <!-- En-tête du texte -->
               <div class="mb-4">
                 <div class="flex justify-between items-start gap-4 mb-1.5">
                   <!-- Nom complet, hébreu compris, comme partout ailleurs :
                        formatBookName ne gardait que la translittération. -->
                   <h4 class="font-bold text-lg text-text-primary leading-tight">
-                    {{ appendHebrewNumeral(textStudy.name) }}
+                    {{ appendHebrewNumeral(card.text.name) }}
                   </h4>
                   <!-- « Disponible » sans couleur, comme sur la page publique :
                        le vert est réservé à ce qui est lu. -->
@@ -823,17 +799,17 @@ onMounted(() => {
                     class="chip"
                     :class="{
                       'bg-black/5 text-text-secondary dark:bg-white/10':
-                        getTextStatus(textStudy).status === 'available',
+                        card.status.status === 'available',
                       'bg-red-600/10 text-red-700 dark:text-red-300':
-                        getTextStatus(textStudy).status === 'fully_reserved',
+                        card.status.status === 'fully_reserved',
                       'bg-amber-500/10 text-amber-700 dark:text-amber-200':
-                        getTextStatus(textStudy).status === 'partially_reserved',
+                        card.status.status === 'partially_reserved',
                     }"
                   >
                     {{
-                      getTextStatus(textStudy).status === "available"
+                      card.status.status === "available"
                         ? t("sessionManagement.status.available")
-                        : getTextStatus(textStudy).status === "fully_reserved"
+                        : card.status.status === "fully_reserved"
                           ? t("sessionManagement.status.fullyReserved")
                           : t("sessionManagement.status.partiallyReserved")
                     }}
@@ -842,35 +818,27 @@ onMounted(() => {
 
                 <div class="flex items-center justify-between text-xs text-text-secondary">
                   <span>{{
-                    t("sessionManagement.reservationsCount", {
-                      count: getTextReservations(textStudy.id).length,
-                    })
+                    t("sessionManagement.reservationsCount", { count: card.reservationsCount })
                   }}</span>
                   <span
-                    v-if="getTextStatus(textStudy).reservedBy"
+                    v-if="card.status.reservedBy"
                     class="truncate max-w-[120px]"
-                    :title="getTextStatus(textStudy).reservedBy || ''"
+                    :title="card.status.reservedBy"
                   >
-                    {{
-                      t("sessionManagement.reservedBy", {
-                        name: getTextStatus(textStudy).reservedBy,
-                      })
-                    }}
+                    {{ t("sessionManagement.reservedBy", { name: card.status.reservedBy }) }}
                   </span>
                 </div>
               </div>
 
               <!-- Gestion des réservations -->
               <div class="flex-1 flex flex-col">
-                <!-- Cocher les 150 chapitres d'un livre un par un n'était pas
-                     tenable pour attribuer un texte entier à un lecteur. -->
-                <div v-if="availableSections(textStudy).length > 1" class="flex justify-end mb-1">
+                <div v-if="card.availableCount > 1" class="flex justify-end mb-1">
                   <button
-                    @click="toggleSelectAll(textStudy)"
+                    @click="toggleSelectAll(card.text)"
                     class="text-xs font-semibold text-primary hover:underline"
                   >
                     {{
-                      areAllAvailableSelected(textStudy)
+                      card.allAvailableSelected
                         ? t("sessionManagement.deselectAll")
                         : t("sessionManagement.selectAll")
                     }}
@@ -881,21 +849,14 @@ onMounted(() => {
                      du scroll de la page, faisait perdre les chapitres du bas. -->
                 <div class="space-y-1">
                   <div
-                    v-for="section in chaptersOf(textStudy.totalSections)"
-                    :key="section"
+                    v-for="row in card.rows"
+                    :key="row.section"
                     class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm"
                     :class="{
                       'bg-primary/5 dark:bg-primary/10':
-                        isSectionReserved(textStudy.id, section) &&
-                        !getSectionReservation(textStudy.id, section)?.isCompleted,
-                      'bg-green-600/5 dark:bg-green-500/10': getSectionReservation(
-                        textStudy.id,
-                        section,
-                      )?.isCompleted,
-                      'hover:bg-black/[0.03] dark:hover:bg-white/5': !isSectionReserved(
-                        textStudy.id,
-                        section,
-                      ),
+                        row.reservation && !row.reservation.isCompleted,
+                      'bg-green-600/5 dark:bg-green-500/10': row.reservation?.isCompleted,
+                      'hover:bg-black/[0.03] dark:hover:bg-white/5': !row.reservation,
                     }"
                   >
                     <!-- Une seule case par ligne : elle réserve la section
@@ -903,50 +864,33 @@ onMounted(() => {
                     <input
                       type="checkbox"
                       class="w-4.5 h-4.5 rounded cursor-pointer shrink-0"
-                      :class="
-                        isSectionReserved(textStudy.id, section)
-                          ? 'accent-red-600'
-                          : 'accent-primary'
-                      "
-                      :checked="
-                        isSectionReserved(textStudy.id, section)
-                          ? isReservationSelected(getSectionReservation(textStudy.id, section)!.id)
-                          : isSelected(textStudy.id, section)
-                      "
+                      :class="row.reservation ? 'accent-red-600' : 'accent-primary'"
+                      :checked="row.checked"
                       :aria-label="
-                        isSectionReserved(textStudy.id, section)
+                        row.reservation
                           ? t('sessionManagement.selectReservation')
                           : t('sessionManagement.selectSection')
                       "
-                      @change="
-                        isSectionReserved(textStudy.id, section)
-                          ? toggleReservationSelection(
-                              getSectionReservation(textStudy.id, section)!.id,
-                            )
-                          : toggleSelection(textStudy.id, section)
-                      "
+                      @change="toggleRow(card.text, row)"
                     />
 
                     <div class="flex flex-col min-w-0 flex-1">
                       <span class="font-medium text-text-primary">
                         {{
-                          textStudy.totalSections > 1
-                            ? `${t("common.chapter")} ${formatNumberWithHebrew(section)}`
+                          card.text.totalSections > 1
+                            ? `${t("common.chapter")} ${formatNumberWithHebrew(row.section)}`
                             : t("sessionManagement.fullText")
                         }}
                       </span>
                       <span
-                        v-if="isSectionReserved(textStudy.id, section)"
+                        v-if="row.reservation"
                         class="text-xs text-text-secondary truncate mt-0.5"
                       >
-                        {{ getSectionReservation(textStudy.id, section)?.chosenByName }}
+                        {{ row.reservation.chosenByName || t("detailSession.textList.someone") }}
                       </span>
                     </div>
 
-                    <div
-                      v-if="isSectionReserved(textStudy.id, section)"
-                      class="flex items-center gap-1.5"
-                    >
+                    <div v-if="row.reservation" class="flex items-center gap-1.5">
                       <label
                         class="relative inline-flex items-center cursor-pointer"
                         :title="t('sessionManagement.markCompleted')"
@@ -954,10 +898,10 @@ onMounted(() => {
                         <input
                           type="checkbox"
                           class="sr-only peer"
-                          :checked="getSectionReservation(textStudy.id, section)?.isCompleted"
+                          :checked="row.reservation.isCompleted"
                           @change="
                             toggleReservationCompletion(
-                              getSectionReservation(textStudy.id, section)!.id,
+                              row.reservation,
                               ($event.target as HTMLInputElement).checked,
                             )
                           "
@@ -970,8 +914,8 @@ onMounted(() => {
                       <!-- Seuls les invités inscrits ici sont renommables :
                            le nom d'un compte vient de son profil. -->
                       <button
-                        v-if="!getSectionReservation(textStudy.id, section)?.chosenById"
-                        @click="openRenameModal(getSectionReservation(textStudy.id, section)!)"
+                        v-if="!row.reservation.chosenById"
+                        @click="openRenameModal(row.reservation)"
                         class="w-7 h-7 rounded-lg flex items-center justify-center text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors focus:outline-none dark:hover:bg-white/10"
                         :title="t('sessionManagement.renameGuest')"
                       >
@@ -1200,6 +1144,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <EditSessionModal v-model:show="showEditModal" :session="session" @save="saveSessionChanges" />
+    <EditSessionModal v-model:show="showEditModal" :session="session" :save="saveSessionChanges" />
   </main>
 </template>

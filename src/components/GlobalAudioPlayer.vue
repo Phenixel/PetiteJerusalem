@@ -2,11 +2,8 @@
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
-import {
-  useAudioPlayer,
-  useMiniPlayerVisible,
-  formatTime,
-} from "../composables/useAudioPlayer";
+import ProgressBar from "./ProgressBar.vue";
+import { useAudioPlayer, useMiniPlayerVisible, formatTime } from "../composables/useAudioPlayer";
 import { isNativeApp } from "../composables/useNativeApp";
 import { computed } from "vue";
 
@@ -47,11 +44,8 @@ function goToChiour() {
       :aria-label="t('audioPlayer.nowPlaying')"
     >
       <!-- Barre de progression cliquable, collée au bord haut -->
-      <div class="group relative h-1.5 bg-black/10 cursor-pointer dark:bg-white/10" @click="seek">
-        <div
-          class="absolute inset-y-0 left-0 bg-primary transition-[width] duration-100"
-          :style="{ width: `${player.progress.value}%` }"
-        ></div>
+      <div class="cursor-pointer" @click="seek">
+        <ProgressBar :value="player.progress.value" size="xs" :animated="false" />
       </div>
 
       <div class="mx-auto max-w-4xl px-4 py-2.5 flex items-center gap-3">

@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { Capacitor } from "@capacitor/core";
-import { authService } from "../services/authService";
+import { authService, type User } from "../services/authService";
 import {
   isAppleSignInUnavailable,
   isAuthBrowserUnavailable,
@@ -100,18 +100,20 @@ async function submitForm() {
   }
 }
 
-async function loginWithGoogle() {
+/**
+ * Connexion par un tiers (Google, Apple) : le même parcours pour les deux, le
+ * même funnel (`<provider>_signin_clicked` puis `signed_in`, ou en route
+ * `_cancelled` / `_failed`), suivi du bug « bouton inerte » sur Google et de
+ * la feuille Apple qui ne s'ouvre pas.
+ */
+async function socialSignIn(provider: "google" | "apple", signIn: () => Promise<User>) {
   errorMessage.value = null;
   errorDetail.value = null;
-  // Funnel de connexion Google (suivi du bug « bouton inerte ») :
-  // google_signin_clicked → signed_in {method: google}, avec en route
-  // google_signin_fallback_used, google_signin_cancelled et/ou
-  // google_signin_failed.
-  analyticsService.capture("google_signin_clicked");
+  analyticsService.capture(`${provider}_signin_clicked`);
   try {
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
 
-    const user = await authService.signInWithGooglePopup();
+    const user = await signIn();
 
     reservationService
       .migrateGuestReservations(user.email, user.id, user.name, guestService.getLocalGuestId())
@@ -119,73 +121,43 @@ async function loginWithGoogle() {
 
     router.push(redirectPath);
   } catch (e: unknown) {
-    // Sélecteur quitté, popup fermée : un renoncement, pas une panne. Ni
-    // Error tracking ni message à l'écran ; un événement funnel tout de même,
-    // pour que ces clics sans suite ne ressemblent pas au bug « bouton inerte ».
+    // Sélecteur quitté, popup fermée, feuille Apple refusée : un renoncement,
+    // pas une panne. Ni Error tracking ni message à l'écran ; un événement
+    // funnel tout de même, pour que ces clics sans suite ne ressemblent pas
+    // à un bouton inerte.
     if (isAuthCancellation(e)) {
-      analyticsService.capture("google_signin_cancelled");
+      analyticsService.capture(`${provider}_signin_cancelled`);
       return;
     }
-    console.error("Connexion Google échouée:", e);
-    analyticsService.captureException(e, { auth_flow: "google" });
-    analyticsService.capture("google_signin_failed", {
+    console.error(`Connexion ${provider} échouée:`, e);
+    analyticsService.captureException(e, { auth_flow: provider });
+    // Ce que l'appareil ne peut pas faire, et que réessayer ne changera pas :
+    // Safari indisponible pour Google (restrictions Temps d'écran), la feuille
+    // Apple sans compte Apple connecté (code 1000). On dit quoi vérifier, et
+    // vers quoi se replier, plutôt qu'une erreur générique observée en prod
+    // (trois tentatives puis abandon).
+    const unavailable =
+      provider === "google" ? isAuthBrowserUnavailable(e) : isAppleSignInUnavailable(e);
+    analyticsService.capture(`${provider}_signin_failed`, {
+      reason: unavailable ? "unavailable" : "error",
       error_message: e instanceof Error ? e.message : String(e),
     });
-    // Safari indisponible (restrictions) : un « Erreur Google » générique
-    // fait réessayer en vain, observé en prod (trois tentatives puis abandon).
-    // On oriente vers la connexion par email.
-    errorMessage.value = isAuthBrowserUnavailable(e)
-      ? t("login.authBrowserUnavailable")
-      : t("login.googleError");
+    if (provider === "google") {
+      errorMessage.value = unavailable ? t("login.authBrowserUnavailable") : t("login.googleError");
+    } else {
+      errorMessage.value = unavailable ? t("login.appleSignInUnavailable") : t("login.appleError");
+    }
     errorDetail.value = e instanceof Error ? e.message : String(e);
   }
 }
+
+const loginWithGoogle = () => socialSignIn("google", () => authService.signInWithGooglePopup());
 
 // Apple exige "Sign in with Apple" sur l'app iOS dès qu'un autre login tiers
 // est proposé. On n'affiche donc le bouton que sur la plateforme iOS.
 const isApplePlatform = computed(() => Capacitor.getPlatform() === "ios");
 
-async function loginWithApple() {
-  errorMessage.value = null;
-  errorDetail.value = null;
-  // Le flux Apple n'avait que son `signed_in {method: apple}` : un bouton
-  // resté sans effet (feuille refusée, code 1000 sur un appareil sans compte
-  // Apple) ne se voyait nulle part, alors que c'est le SEUL login proposé sur
-  // iOS à côté de Google. Même funnel que Google, mêmes noms d'événements.
-  analyticsService.capture("apple_signin_clicked");
-  try {
-    const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
-
-    const user = await authService.signInWithApple();
-
-    reservationService
-      .migrateGuestReservations(user.email, user.id, user.name, guestService.getLocalGuestId())
-      .catch((error) => console.error("Migration des réservations invité échouée:", error));
-
-    router.push(redirectPath);
-  } catch (e: unknown) {
-    // Feuille Apple refusée par l'utilisateur : un renoncement, pas une panne.
-    if (isAuthCancellation(e)) {
-      analyticsService.capture("apple_signin_cancelled");
-      return;
-    }
-    console.error("Connexion Apple échouée:", e);
-    analyticsService.captureException(e, { auth_flow: "apple" });
-    analyticsService.capture("apple_signin_failed", {
-      // Le 1000 se corrige côté appareil (aucun compte Apple connecté), pas
-      // côté app : il ne doit pas se confondre avec une vraie panne.
-      reason: isAppleSignInUnavailable(e) ? "unavailable" : "error",
-      error_message: e instanceof Error ? e.message : String(e),
-    });
-    // Code 1000 : la feuille Apple ne peut pas s'ouvrir sur cet appareil
-    // (le plus souvent, aucun compte Apple connecté). Réessayer ne change
-    // rien : on dit quoi vérifier, et vers quoi se replier.
-    errorMessage.value = isAppleSignInUnavailable(e)
-      ? t("login.appleSignInUnavailable")
-      : t("login.appleError");
-    errorDetail.value = e instanceof Error ? e.message : String(e);
-  }
-}
+const loginWithApple = () => socialSignIn("apple", () => authService.signInWithApple());
 
 onMounted(async () => {
   const currentUser = await authService.getCurrentUser();
@@ -235,7 +207,7 @@ onMounted(async () => {
           class="w-full mt-3 py-3 px-6 bg-black hover:bg-gray-900 rounded-xl font-semibold text-white shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3"
           @click="loginWithApple"
         >
-          <i class="fa-brands fa-apple text-lg"></i>
+          <AppIcon name="apple" :size="18" />
           {{ t("login.signInWithApple") }}
         </button>
       </div>

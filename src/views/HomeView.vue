@@ -82,7 +82,9 @@ const dashLoading = ref(false);
 const readingTotal = ref(0);
 const readingDone = ref(0);
 
-const firstName = computed(() => (user.value?.name ?? "").split(" ")[0] || user.value?.name || "");
+const firstName = computed(
+  () => (user.value?.name ?? "").split(" ")[0] || user.value?.name || t("common.anonymousUser"),
+);
 const greeting = computed(() => {
   const hour = new Date().getHours();
   return hour >= 18 || hour < 5 ? t("home.dashboard.helloEvening") : t("home.dashboard.hello");
@@ -182,12 +184,12 @@ onUnmounted(() => {
     <!-- ===== Connecté : accueil personnalisé, hors carte ===== -->
     <template v-if="user">
       <div class="w-full max-w-6xl mx-auto mb-8 enter-rise">
-        <h2 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight">
+        <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight">
           {{ greeting }},
           <span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">{{
             firstName
           }}</span>
-        </h2>
+        </h1>
         <p class="text-text-secondary mt-1.5">{{ t("home.dashboard.subtitle") }}</p>
       </div>
 
@@ -232,9 +234,9 @@ onUnmounted(() => {
       class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 items-center mb-10"
     >
       <div class="space-y-4 text-center md:text-start">
-        <h2 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight enter-rise">
+        <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight enter-rise">
           {{ t("home.heroTitle") }}
-        </h2>
+        </h1>
         <p
           class="text-base md:text-lg text-text-secondary leading-relaxed enter-rise"
           style="--enter-delay: 0.1s"

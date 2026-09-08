@@ -1,27 +1,18 @@
 import type { TextStudy } from "../models/models";
+import { bookName, filterBySearch } from "./catalogSearch";
 
+/**
+ * Relais vers la recherche du catalogue (services/catalogSearch) : le partage
+ * de lecture (sessionService) passe par ici, la bibliothèque et la lecture du
+ * jour lisent le même module ; il n'y a plus qu'une façon de chercher un
+ * texte.
+ */
 export class SearchService {
   static filterTextStudiesBySearch(textStudies: TextStudy[], searchTerm: string): TextStudy[] {
-    if (!searchTerm.trim()) return textStudies;
-
-    const searchLower = searchTerm.toLowerCase();
-    return textStudies.filter((text) => {
-      const hebrewName = text.name;
-      const frenchName = this.extractFrenchName(text.name);
-
-      return (
-        hebrewName.toLowerCase().includes(searchLower) ||
-        frenchName.toLowerCase().includes(searchLower)
-      );
-    });
+    return filterBySearch(textStudies, searchTerm);
   }
 
-  static extractFrenchName(textName: string): string {
-    const match = textName.match(/\((.*?)\)/);
-    return match ? match[1] : textName;
-  }
-
-  static formatBookName(bookName: string): string {
-    return this.extractFrenchName(bookName);
+  static formatBookName(livre: string): string {
+    return bookName(livre);
   }
 }

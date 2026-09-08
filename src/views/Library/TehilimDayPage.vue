@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { getTehilimOfDay } from "../../services/dailyCycles";
+import { localeMessagesReady } from "../../i18n";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
-import { seoService } from "../../services/seoService";
+import { pageTitle, seoService } from "../../services/seoService";
+import { psalmsLabel, useTehilimDay } from "../../composables/useTehilimDay";
 import { analyticsService } from "../../services/analyticsService";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
@@ -27,56 +28,43 @@ import { SITE_URL } from "../../config/site";
  * rien à charger pour savoir quoi montrer.
  */
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
 
 /**
- * Le jour, relu quand la page revient à l'écran : une app qu'on laisse ouverte
- * et qu'on rouvre le lendemain proposerait sinon les psaumes de la veille.
- * Pendant la lecture, en revanche, rien ne change sous les yeux : le jour ne
+ * Le jour hébraïque (il bascule à la chkia du lieu des horaires), relu quand
+ * la page revient à l'écran : une app qu'on laisse ouverte et qu'on rouvre le
+ * lendemain proposerait sinon les psaumes de la veille. Pendant la lecture,
+ * en revanche, rien ne change sous les yeux (`live: false`) : le jour ne
  * bascule qu'entre deux passages.
  */
-const day = ref(new Date());
-
-function refreshDay() {
-  if (document.visibilityState === "visible") day.value = new Date();
-}
-
-const cycle = computed(() => getTehilimOfDay(day.value));
+const { cycle } = useTehilimDay({ live: false });
 
 // Double appui sur le texte : la page descend toute seule, à l'allure choisie
 // dans la pastille du bas (AutoScrollPill).
 useAutoScroll(() => cycle.value.entries.length > 0);
 
-const rangeLabel = computed(() => {
-  const psalms = cycle.value.psalms;
-  if (psalms.length === 1) return t("dailyReading.options.psalmsOne", { n: psalms[0] });
-  return t("dailyReading.options.psalmsRange", {
-    from: psalms[0],
-    to: psalms[psalms.length - 1],
-  });
-});
+const rangeLabel = computed(() => psalmsLabel(cycle.value.psalms, t));
 
 function applySeoMeta() {
   seoService.setMeta({
-    title: `${t("tehilimDay.title")} · ${rangeLabel.value} | Petite Jérusalem`,
+    title: pageTitle(`${t("tehilimDay.title")} · ${rangeLabel.value}`),
     description: t("tehilimDay.pageDescription"),
     canonical: SITE_URL + "/bibliotheque/tehilim-du-jour",
   });
 }
 
-watch(rangeLabel, applySeoMeta, { immediate: true });
+// Rejoué au changement de langue : les messages en et he arrivent par import
+// dynamique, parfois après le montage.
+watch([rangeLabel, locale, localeMessagesReady], applySeoMeta, { immediate: true });
 
 onMounted(() => {
-  document.addEventListener("visibilitychange", refreshDay);
   analyticsService.capture("tehilim_day_page_viewed", {
     day: cycle.value.day,
     psalms_count: cycle.value.psalms.length,
   });
 });
-
-onUnmounted(() => document.removeEventListener("visibilitychange", refreshDay));
 </script>
 
 <template>

@@ -42,6 +42,7 @@ import localeMessages from "../locales/fr";
 import enMessages from "../locales/en";
 import heMessages from "../locales/he";
 import { getParashaForShabbat } from "../services/dailyCycles";
+import { haversineKm } from "../services/geo";
 import { hubPath } from "./etudeTexts";
 import {
   DEFAULT_PLACE,
@@ -332,16 +333,9 @@ export function seoCities(): City[] {
   return (citiesJson as City[]).filter((city) => city.name !== HUB_CITY_NAME);
 }
 
-/** Distance approximative entre deux villes, en kilomètres (formule de haversine). */
+/** Distance approximative entre deux villes, en kilomètres (voir geo.ts). */
 function distanceKm(a: City, b: City): number {
-  const R = 6371;
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLon = toRad(b.lon - a.lon);
-  const lat1 = toRad(a.lat);
-  const lat2 = toRad(b.lat);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  return haversineKm(a.lat, a.lon, b.lat, b.lon);
 }
 
 /** Les villes les plus proches, pour un maillage qui suit la géographie. */

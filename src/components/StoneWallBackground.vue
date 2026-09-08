@@ -99,8 +99,15 @@ function buildWall(): string[] {
 /* Wall mask: one big lit rectangle with every stone punched out
    (fill-rule evenodd) so the light pours through the joints, plus the same
    stones repainted at low alpha so a faint wash warms the stone faces too.
-   Softly blurred, baked once into a data-URI; never re-rasterized. */
-const wallMaskUri = (() => {
+   Softly blurred, baked once into a data-URI; never re-rasterized.
+
+   Bâti à la demande, et non à l'évaluation du module : tracer le mur et
+   encoder le SVG prenait quelques millisecondes dans le chemin critique du
+   premier rendu, y compris sur les pages de lecture où le mur est masqué.
+   Le premier montage le demande à l'heure creuse (voir onMounted). */
+let wallMaskUriCache: string | null = null;
+function wallMaskUri(): string {
+  if (wallMaskUriCache) return wallMaskUriCache;
   const stones = buildWall().join("");
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${VIEW_W}" height="${VIEW_H}" viewBox="0 0 ${VIEW_W} ${VIEW_H}">` +
@@ -109,20 +116,40 @@ const wallMaskUri = (() => {
     `<path fill="#fff" fill-rule="evenodd" d="M0 0H${VIEW_W}V${VIEW_H}H0Z${stones}"/>` +
     `<path fill="#fff" fill-opacity="0.18" d="${stones}"/>` +
     `</g></svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-})();
-const wallMask = `url("${wallMaskUri}")`;
+  wallMaskUriCache = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  return wallMaskUriCache;
+}
 
 /* Mineral grain, as a small repeating tile (static, painted once). */
-const grainUri = (() => {
+let grainUriCache: string | null = null;
+function grainUri(): string {
+  if (grainUriCache) return grainUriCache;
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320">` +
     `<filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/>` +
     `<feColorMatrix type="matrix" values="0 0 0 0 0.5  0 0 0 0 0.47  0 0 0 0 0.42  0.4 0.4 0.4 0 0"/></filter>` +
     `<rect width="320" height="320" filter="url(#g)"/></svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-})();
-const grain = `url("${grainUri}")`;
+  grainUriCache = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  return grainUriCache;
+}
+
+/* Les images du mur, une fois prêtes : rien n'est tracé tant qu'elles sont
+   vides, et la version DOM ne se monte qu'avec elles. */
+const wallMask = ref("");
+const grain = ref("");
+const ready = computed(() => wallMask.value !== "");
+
+function prepareWall(): void {
+  if (ready.value) return;
+  wallMask.value = `url("${wallMaskUri()}")`;
+  grain.value = `url("${grainUri()}")`;
+}
+
+/** Après le premier rendu, à l'heure creuse. */
+function whenIdle(task: () => void): void {
+  if (typeof requestIdleCallback === "function") requestIdleCallback(() => task());
+  else setTimeout(task, 200);
+}
 
 /* ------------------------------------------------------------------------
    Mode raster : le mur peint UNE FOIS dans un <canvas>, puis plus rien.
@@ -165,8 +192,8 @@ async function drawRasterWall(): Promise<void> {
   if (!canvas || !root) return;
   const generation = ++drawGeneration;
   try {
-    maskImagePromise ??= loadImage(wallMaskUri);
-    grainImagePromise ??= loadImage(grainUri);
+    maskImagePromise ??= loadImage(wallMaskUri());
+    grainImagePromise ??= loadImage(grainUri());
     const [maskImg, grainImg] = await Promise.all([maskImagePromise, grainImagePromise]);
     if (generation !== drawGeneration || !rasterCanvas.value) return;
 
@@ -244,6 +271,7 @@ function scheduleRedraw() {
 let themeObserver: MutationObserver | null = null;
 
 onMounted(() => {
+  whenIdle(prepareWall);
   if (!useRaster.value) return;
   void drawRasterWall();
   window.addEventListener("resize", scheduleRedraw);
@@ -281,7 +309,11 @@ onUnmounted(() => {
          (--static) si le raster a échoué sur une machine dégradée. -->
   <div ref="rootEl" class="stone-wall" aria-hidden="true">
     <canvas v-if="useRaster && !rasterFailed" ref="rasterCanvas" class="sw-raster"></canvas>
-    <div v-else class="stone-wall__wall" :class="{ 'stone-wall--static': isDegradedRendering }">
+    <div
+      v-else-if="ready"
+      class="stone-wall__wall"
+      :class="{ 'stone-wall--static': isDegradedRendering }"
+    >
       <div class="sw-grain" :style="{ backgroundImage: grain }" />
       <!-- The light behind the wall, seen through the mortar joints (full)
            and on the stone faces (faint, baked into the mask's alpha). -->

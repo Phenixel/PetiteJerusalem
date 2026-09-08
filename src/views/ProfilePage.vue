@@ -43,7 +43,7 @@ const visibleTabs = computed<{ id: TabId; label: string }[]>(() => {
   return tabs;
 });
 
-const userDisplayName = computed(() => currentUser.value?.name || "Utilisateur");
+const userDisplayName = computed(() => currentUser.value?.name || t("common.anonymousUser"));
 
 // Ce que le compte apporte, énuméré dans le bandeau d'invitation. Chaque
 // entrée correspond à une fonctionnalité réellement portée par le compte :
@@ -126,7 +126,13 @@ onUnmounted(() => {
 
 <template>
   <main class="min-h-screen pb-20">
-    <div v-if="isLoading" class="flex flex-col items-center justify-center text-text-secondary">
+    <!-- Le temps du verdict de session : le cadre de la page est déjà là,
+         l'attente n'occupe que la zone de contenu, sans saut de page. -->
+    <div
+      v-if="isLoading"
+      class="max-w-[1200px] mx-auto px-6 py-16 flex flex-col items-center justify-center text-text-secondary"
+      aria-busy="true"
+    >
       <div
         class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
       ></div>

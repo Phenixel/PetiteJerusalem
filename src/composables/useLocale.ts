@@ -29,8 +29,6 @@ export function useLocale() {
     () => availableLocales.find((l) => l.code === currentLocale.value) ?? availableLocales[0],
   );
 
-  const isRtl = computed(() => currentLocaleOption.value.dir === "rtl");
-
   function setLocale(newLocale: SupportedLocale) {
     // Chaque événement porte déjà `locale` (voir stampPlatform), mais rien ne
     // disait qui CHANGE de langue : la bascule volontaire ne se lisait nulle
@@ -83,7 +81,6 @@ export function useLocale() {
   return {
     currentLocale,
     currentLocaleOption,
-    isRtl,
     availableLocales,
     setLocale,
   };

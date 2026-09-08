@@ -6,14 +6,13 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
+import ProgressBar from "./ProgressBar.vue";
 
 const props = defineProps<{ done: number; total: number }>();
 
 const { t } = useI18n();
 
-const pct = computed(() =>
-  props.total === 0 ? 0 : Math.round((props.done / props.total) * 100),
-);
+const pct = computed(() => (props.total === 0 ? 0 : Math.round((props.done / props.total) * 100)));
 const allDone = computed(() => props.total > 0 && props.done >= props.total);
 </script>
 
@@ -49,12 +48,7 @@ const allDone = computed(() => props.total > 0 && props.done >= props.total);
         </span>
         <span class="text-sm font-semibold text-primary">{{ pct }}%</span>
       </div>
-      <div class="h-2 w-full rounded-full bg-black/5 overflow-hidden dark:bg-white/10">
-        <div
-          class="h-full rounded-full bg-primary transition-all duration-500"
-          :style="{ width: `${pct}%` }"
-        ></div>
-      </div>
+      <ProgressBar :value="pct" :label="t('dailyReading.title')" />
     </template>
 
     <!-- Liste déjà composée : pas de « voir ma lecture », la carte entière est

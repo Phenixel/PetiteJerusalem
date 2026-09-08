@@ -31,9 +31,7 @@ describe("typographie française", () => {
 
   it("n'a aucune espace sécable avant une ponctuation double", () => {
     // Le `|` des pluriels vue-i18n est un séparateur, pas de la ponctuation.
-    const offenders = entries.filter(([, value]) =>
-      value.replace(/ \| /g, "").match(/ [!?;:»]/),
-    );
+    const offenders = entries.filter(([, value]) => value.replace(/ \| /g, "").match(/ [!?;:»]/));
     expect(
       offenders.map(([path, value]) => `${path} → ${value}`),
       `Utilisez « ${NARROW_NBSP} » (U+202F) avant ! ? ; et « ${NBSP} » (U+00A0) avant : et dans « »`,

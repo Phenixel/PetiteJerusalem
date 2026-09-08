@@ -1,23 +1,31 @@
 <script setup lang="ts">
 import { sessionService } from "../../../services/sessionService";
+import { reservationService } from "../../../services/reservationService";
 import { appendHebrewNumeral, formatNumberWithHebrew } from "../../../services/hebrewNumerals";
-import { computed, ref } from "vue";
+import { computed, ref, toRef } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Session, TextStudy, TextStudyReservation } from "../../../models/models";
 import type { User } from "../../../services/authService";
+import {
+  chaptersOf,
+  slotKey,
+  useReservationIndex,
+  type TextDisplayStatus,
+} from "../../../composables/useReservationIndex";
 import AppIcon from "../../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
   groupedTextStudies: Record<string, TextStudy[]>;
   session: Session;
-  reservations: TextStudyReservation[];
   currentUser: User | null;
   guestEmail: string;
   selectedItems: Set<string>;
 }>();
 
 const emit = defineEmits<{
-  (e: "item-click", textId: string, section?: number): void;
+  // Toujours une section : les textes à un seul chapitre passent 1, jamais
+  // « le texte entier ».
+  (e: "item-click", textId: string, section: number): void;
   (e: "toggle-completion", textId: string, section: number): void;
   (e: "toggle-select-all", textId: string): void;
   // Dépliage d'un texte pour voir ses chapitres : passage obligé avant de
@@ -41,10 +49,6 @@ const toggleTextExpansion = (textId: string) => {
   }
 };
 
-const isTextExpanded = (textId: string) => {
-  return expandedTexts.value.has(textId);
-};
-
 const { t } = useI18n();
 
 const formatBookName = (bookName: string) => {
@@ -59,166 +63,133 @@ const reservedByName = (name: string | null | undefined) =>
   name || t("detailSession.textList.someone");
 
 /*
- * Les fonctions ci-dessous sont appelées depuis le template, donc réévaluées à
- * CHAQUE rendu, pour CHAQUE carte et CHAQUE section. Sur une chaîne de Tehilim
- * (150 cartes) avec des dizaines de réservations, les parcours linéaires de
- * `session.reservations` rendaient chaque frappe de la recherche quadratique.
- * On précalcule donc des index (Map/Set) en `computed`, reconstruits
- * uniquement quand les réservations ou la sélection changent, et les
- * fonctions du template deviennent de simples lookups O(1).
+ * Tout ce que le gabarit affiche est préparé ici, une fois par changement de
+ * réservations, de sélection ou de dépliage : une ligne par chapitre, avec sa
+ * réservation, son état coché et ce qu'on a le droit d'en faire. Avant, le
+ * gabarit appelait six à quinze fonctions par ligne (« est-ce réservé ? »,
+ * « par qui ? », « puis-je annuler ? »), réévaluées à chaque rendu pour
+ * chaque carte et chaque section.
  */
+const texts = computed(() => Object.values(props.groupedTextStudies).flat());
+const { activeReservations, reservationAt, statusOf, availableSections } = useReservationIndex(
+  toRef(props, "session"),
+  texts,
+);
 
-/** Clé d'un emplacement réservable : un chapitre précis ou le texte entier. */
-const slotKey = (textStudyId: string, section?: number) =>
-  section === undefined ? `${textStudyId}#full` : `${textStudyId}#${section}`;
-
-// generateChapters allouait un tableau [1..n] par carte et par rendu.
-const chaptersCache = new Map<number, number[]>();
-const generateChapters = (totalSections: number) => {
-  let chapters = chaptersCache.get(totalSections);
-  if (!chapters) {
-    chapters = sessionService.generateChapters(totalSections);
-    chaptersCache.set(totalSections, chapters);
-  }
-  return chapters;
-};
-
-// Index emplacement → réservation, sur les deux sources que recevait le
-// composant (session.reservations pour le statut, la prop reservations pour
-// la complétion) ; `has` avant `set` pour garder la sémantique « premier
-// trouvé » de l'ancien .find() en cas de doublon. Les réservations expirées
-// (tirage aléatoire abandonné) sont ignorées : l'emplacement est disponible.
-const sessionSlotIndex = computed(() => {
-  const bySlot = new Map<string, TextStudyReservation>();
-  for (const r of props.session.reservations ?? []) {
-    if (sessionService.isReservationExpired(r)) continue;
-    const key = slotKey(r.textStudyId, r.section);
-    if (!bySlot.has(key)) bySlot.set(key, r);
-  }
-  return bySlot;
-});
-
-const reservationSlotIndex = computed(() => {
-  const bySlot = new Map<string, TextStudyReservation>();
-  for (const r of props.reservations) {
-    if (sessionService.isReservationExpired(r)) continue;
-    const key = slotKey(r.textStudyId, r.section);
-    if (!bySlot.has(key)) bySlot.set(key, r);
-  }
-  return bySlot;
-});
-
-// Emplacements dont la réservation est annulable par le visiteur courant.
-// Évalué une fois par changement de réservations/identité : la version
-// précédente relisait le localStorage (identité invitée) à chaque appel.
-const cancellableSlots = computed(() => {
-  const slots = new Set<string>();
-  for (const [key, reservation] of reservationSlotIndex.value) {
-    if (sessionService.canUserDeleteReservation(reservation, props.currentUser, props.guestEmail)) {
-      slots.add(key);
-    }
-  }
-  return slots;
-});
-
-const isReserved = (textStudyId: string, section?: number) => {
-  const r = sessionSlotIndex.value.get(slotKey(textStudyId, section));
-  return r
-    ? { isReserved: true, reservedBy: r.chosenByName || r.chosenById || r.chosenByGuestId }
-    : { isReserved: false };
-};
-
-const isSelected = (textStudyId: string, section?: number) => {
-  const key = section ? `${textStudyId}#${section}` : `${textStudyId}#full`;
-  return props.selectedItems.has(key);
-};
-
-const getReservation = (textStudyId: string, section?: number) => {
-  return reservationSlotIndex.value.get(slotKey(textStudyId, section));
-};
-
-const canCancelReservation = (textStudyId: string, section?: number) => {
-  return cancellableSlots.value.has(slotKey(textStudyId, section));
-};
-
-// Textes ayant au moins une section sélectionnée (anneau de surbrillance de la
-// carte) : dérivé de la sélection elle-même, au lieu de tester chaque chapitre
-// de chaque carte à chaque rendu. Les clés `#full` sont ignorées comme avant
-// (l'ancien test ne regardait que les sections numérotées).
-const textsWithSelectedSection = computed(() => {
+// Réservations annulables par le visiteur courant. Évalué une fois par
+// changement de réservations ou d'identité : la version précédente relisait
+// le localStorage (identité invitée) à chaque appel.
+const cancellableIds = computed(() => {
   const ids = new Set<string>();
-  for (const key of props.selectedItems) {
-    const hashIndex = key.lastIndexOf("#");
-    if (hashIndex > 0 && key.slice(hashIndex + 1) !== "full") ids.add(key.slice(0, hashIndex));
+  for (const reservation of activeReservations.value) {
+    if (
+      reservationService.canUserDeleteReservation(reservation, props.currentUser, props.guestEmail)
+    ) {
+      ids.add(reservation.id);
+    }
   }
   return ids;
 });
 
-// Sections non réservées d'un texte : cibles du bouton « Tout sélectionner ».
-const availableChapters = (text: TextStudy) => {
-  return generateChapters(text.totalSections).filter(
-    (chapter) => !isReserved(text.id, chapter).isReserved,
-  );
-};
-
-const areAllAvailableSelected = (text: TextStudy) => {
-  const chapters = availableChapters(text);
-  return chapters.length > 0 && chapters.every((chapter) => isSelected(text.id, chapter));
-};
-
-// Statut d'affichage par texte, calculé une fois par changement de session au
-// lieu de re-parcourir toutes les réservations pour chaque carte à chaque rendu.
-const displayStatusByText = computed(() => {
-  const statuses = new Map<string, ReturnType<typeof sessionService.getTextDisplayStatus>>();
-  for (const texts of Object.values(props.groupedTextStudies)) {
-    for (const text of texts) {
-      if (!statuses.has(text.id)) {
-        statuses.set(text.id, sessionService.getTextDisplayStatus(text.id, text, props.session));
-      }
-    }
-  }
-  return statuses;
-});
-
-const getTextDisplayStatus = (textStudyId: string, text: TextStudy) => {
-  return (
-    displayStatusByText.value.get(textStudyId) ??
-    sessionService.getTextDisplayStatus(textStudyId, text, props.session)
-  );
-};
-
-// Réservations de chapitres par texte (sections définies uniquement).
-const chapterReservationsByText = computed(() => {
-  const byText = new Map<string, TextStudyReservation[]>();
-  for (const r of props.reservations) {
+// Textes dont toutes les sections sont réservées ET lues : « Lu par » plutôt
+// que « Réservé par ».
+const fullyReadTexts = computed(() => {
+  const readByText = new Map<string, { sections: Set<number>; allRead: boolean }>();
+  for (const r of activeReservations.value) {
     if (r.section === undefined) continue;
-    const list = byText.get(r.textStudyId);
-    if (list) list.push(r);
-    else byText.set(r.textStudyId, [r]);
+    const entry = readByText.get(r.textStudyId) ?? { sections: new Set(), allRead: true };
+    entry.sections.add(r.section);
+    if (!r.isCompleted) entry.allRead = false;
+    readByText.set(r.textStudyId, entry);
   }
-  return byText;
+  const ids = new Set<string>();
+  for (const text of texts.value) {
+    const entry = readByText.get(text.id);
+    if (entry && entry.allRead && entry.sections.size >= text.totalSections) ids.add(text.id);
+  }
+  return ids;
 });
 
-// Vrai lorsque toutes les sections d'un texte sont réservées ET marquées comme
-// lues : on affiche alors « Lu par » plutôt que « Réservé par ».
-const isTextFullyRead = (text: TextStudy) => {
-  const chapterReservations = chapterReservationsByText.value.get(text.id) ?? [];
-  return (
-    chapterReservations.length === text.totalSections &&
-    chapterReservations.every((r) => r.isCompleted)
-  );
+interface ChapterRow {
+  chapter: number;
+  reservation: TextStudyReservation | undefined;
+  reserved: boolean;
+  reservedBy: string | null;
+  completed: boolean;
+  selected: boolean;
+  /** Réservé par quelqu'un d'autre : la ligne ne réagit plus. */
+  locked: boolean;
+  canCancel: boolean;
+}
+
+interface TextCard {
+  text: TextStudy;
+  status: TextDisplayStatus;
+  fullyRead: boolean;
+  expanded: boolean;
+  /** La ligne unique des textes à un seul chapitre. */
+  single: ChapterRow | null;
+  availableCount: number;
+  allAvailableSelected: boolean;
+  hasSelection: boolean;
+  /** Les lignes de chapitres, seulement quand la carte est dépliée. */
+  rows: ChapterRow[];
+}
+
+const rowOf = (text: TextStudy, chapter: number): ChapterRow => {
+  const reservation = reservationAt(text.id, chapter);
+  const reserved = reservation !== undefined;
+  const canCancel = reserved && cancellableIds.value.has(reservation.id);
+  return {
+    chapter,
+    reservation,
+    reserved,
+    reservedBy: reservation?.chosenByName || null,
+    completed: reservation?.isCompleted === true,
+    selected: props.selectedItems.has(slotKey(text.id, chapter)),
+    locked: reserved && !canCancel,
+    canCancel,
+  };
 };
 
-const handleCardClick = (text: TextStudy) => {
-  if (text.totalSections === 1) {
-    // Pour les textes à un seul chapitre, toggle la réservation
-    const isDisabled = isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1);
-    if (!isDisabled) {
-      emit("item-click", text.id, 1);
-    }
-  } else if (!isTextExpanded(text.id)) {
-    // Pour les textes à plusieurs chapitres, ouvrir si fermé
-    toggleTextExpansion(text.id);
+const cardOf = (text: TextStudy): TextCard => {
+  const expanded = text.totalSections > 1 && expandedTexts.value.has(text.id);
+  const available = availableSections(text);
+  const availableKeys = available.map((section) => slotKey(text.id, section));
+  const rows = expanded
+    ? chaptersOf(text.totalSections).map((chapter) => rowOf(text, chapter))
+    : [];
+  return {
+    text,
+    status: statusOf(text),
+    fullyRead: fullyReadTexts.value.has(text.id),
+    expanded,
+    single: text.totalSections === 1 ? rowOf(text, 1) : null,
+    availableCount: available.length,
+    allAvailableSelected:
+      availableKeys.length > 0 && availableKeys.every((key) => props.selectedItems.has(key)),
+    // Anneau de surbrillance de la carte : au moins une section cochée.
+    hasSelection: chaptersOf(text.totalSections).some((chapter) =>
+      props.selectedItems.has(slotKey(text.id, chapter)),
+    ),
+    rows,
+  };
+};
+
+const groupedCards = computed(() => {
+  const groups: Record<string, TextCard[]> = {};
+  for (const [bookName, bookTexts] of Object.entries(props.groupedTextStudies)) {
+    groups[bookName] = bookTexts.map(cardOf);
+  }
+  return groups;
+});
+
+const handleCardClick = (card: TextCard) => {
+  if (card.single) {
+    // Texte à un seul chapitre : la carte bascule la réservation.
+    if (!card.single.locked) emit("item-click", card.text.id, 1);
+  } else if (!card.expanded) {
+    toggleTextExpansion(card.text.id);
   }
 };
 </script>
@@ -226,7 +197,7 @@ const handleCardClick = (text: TextStudy) => {
 <template>
   <div class="space-y-12">
     <div
-      v-for="(texts, bookName) in groupedTextStudies"
+      v-for="(cards, bookName) in groupedCards"
       :key="bookName"
       class="animate-[fadeIn_0.5s_ease]"
     >
@@ -238,58 +209,46 @@ const handleCardClick = (text: TextStudy) => {
            voisines repliées à la même hauteur. -->
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
         <div
-          v-for="text in texts"
-          :key="text.id"
+          v-for="card in cards"
+          :key="card.text.id"
           class="card flex flex-col"
-          :class="{
-            'ring-2 ring-primary/50': textsWithSelectedSection.has(text.id),
-          }"
+          :class="{ 'ring-2 ring-primary/50': card.hasSelection }"
         >
           <!-- En-tête du texte -->
           <div
             class="p-5 rounded-t-2xl transition-colors"
             :class="{
               'cursor-pointer hover:bg-black/[0.03] dark:hover:bg-white/5':
-                (text.totalSections > 1 && !isTextExpanded(text.id)) ||
-                (text.totalSections === 1 &&
-                  !(isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1))),
-              'cursor-not-allowed opacity-60':
-                text.totalSections === 1 &&
-                isReserved(text.id, 1).isReserved &&
-                !canCancelReservation(text.id, 1),
+                (!card.single && !card.expanded) || (card.single && !card.single.locked),
+              'cursor-not-allowed opacity-60': card.single?.locked,
             }"
-            @click="handleCardClick(text)"
+            @click="handleCardClick(card)"
           >
             <div class="flex justify-between items-start gap-3">
               <div class="flex-1 min-w-0">
                 <h4
                   class="font-bold text-lg text-text-primary leading-tight truncate mb-1"
-                  :title="appendHebrewNumeral(text.name)"
+                  :title="appendHebrewNumeral(card.text.name)"
                 >
-                  {{ appendHebrewNumeral(text.name) }}
+                  {{ appendHebrewNumeral(card.text.name) }}
                 </h4>
                 <!-- Case à cocher directe pour les textes à un seul chapitre -->
                 <label
-                  v-if="text.totalSections === 1"
+                  v-if="card.single"
                   class="inline-flex items-center gap-2 cursor-pointer mt-1"
                   @click.stop
-                  :class="{
-                    'opacity-60 cursor-not-allowed':
-                      isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1),
-                  }"
+                  :class="{ 'opacity-60 cursor-not-allowed': card.single.locked }"
                 >
                   <input
                     type="checkbox"
                     class="w-5 h-5 rounded accent-primary cursor-pointer"
-                    :checked="isReserved(text.id, 1).isReserved || isSelected(text.id, 1)"
-                    @change="emit('item-click', text.id, 1)"
-                    :disabled="
-                      isReserved(text.id, 1).isReserved && !canCancelReservation(text.id, 1)
-                    "
+                    :checked="card.single.reserved || card.single.selected"
+                    @change="emit('item-click', card.text.id, 1)"
+                    :disabled="card.single.locked"
                   />
                   <span class="text-sm font-medium text-text-secondary">
                     {{
-                      isSelected(text.id, 1)
+                      card.single.selected
                         ? t("detailSession.textList.selected")
                         : t("detailSession.textList.reserve")
                     }}
@@ -301,28 +260,23 @@ const handleCardClick = (text: TextStudy) => {
                 <router-link
                   :to="{
                     name: 'text-reading',
-                    params: { textId: text.id },
+                    params: { textId: card.text.id },
                     query: { session: session.slug || session.id },
                   }"
                   class="btn btn-soft !px-3.5 !py-2 text-sm hover:!text-primary"
                   :title="t('detailSession.textList.readThisText')"
-                  @click.stop="emit('read-clicked', text.id)"
+                  @click.stop="emit('read-clicked', card.text.id)"
                 >
                   <AppIcon name="book-open" :size="15" />
                   {{ t("detailSession.textList.read") }}
                 </router-link>
                 <button
-                  v-if="text.totalSections > 1"
-                  @click.stop="toggleTextExpansion(text.id)"
+                  v-if="!card.single"
+                  @click.stop="toggleTextExpansion(card.text.id)"
                   class="icon-btn"
-                  :class="{
-                    'bg-black/5 text-text-primary dark:bg-white/10': isTextExpanded(text.id),
-                  }"
+                  :class="{ 'bg-black/5 text-text-primary dark:bg-white/10': card.expanded }"
                 >
-                  <AppIcon
-                    :name="isTextExpanded(text.id) ? 'chevron-up' : 'chevron-down'"
-                    :size="15"
-                  />
+                  <AppIcon :name="card.expanded ? 'chevron-up' : 'chevron-down'" :size="15" />
                 </button>
               </div>
             </div>
@@ -330,42 +284,40 @@ const handleCardClick = (text: TextStudy) => {
 
           <!-- Statut global du texte -->
           <div class="px-5 pb-4">
-            <!-- Pour les textes à un seul chapitre, vérifier le statut de complétion -->
+            <!-- Texte à un seul chapitre réservé : réservé ou lu, par qui -->
             <div
-              v-if="text.totalSections === 1 && isReserved(text.id, 1).isReserved"
+              v-if="card.single?.reserved"
               class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
             >
               <span
                 class="chip"
                 :class="
-                  getReservation(text.id, 1)?.isCompleted
+                  card.single.completed
                     ? 'bg-green-600/10 text-green-700 dark:text-green-300'
                     : 'bg-amber-500/10 text-amber-700 dark:text-amber-200'
                 "
               >
-                <AppIcon
-                  :name="getReservation(text.id, 1)?.isCompleted ? 'circle-check' : 'user-clock'"
-                  :size="12"
-                />
+                <AppIcon :name="card.single.completed ? 'circle-check' : 'user-clock'" :size="12" />
                 {{
-                  getReservation(text.id, 1)?.isCompleted
+                  card.single.completed
                     ? t("detailSession.textList.readBy", {
-                        name: reservedByName(isReserved(text.id, 1).reservedBy),
+                        name: reservedByName(card.single.reservedBy),
                       })
                     : t("detailSession.textList.reservedBy", {
-                        name: reservedByName(isReserved(text.id, 1).reservedBy),
+                        name: reservedByName(card.single.reservedBy),
                       })
                 }}
               </span>
 
               <!-- Switch pour marquer comme lu (seulement si c'est notre réservation) -->
-              <div v-if="canCancelReservation(text.id, 1)" class="flex items-center gap-2">
+              <div v-if="card.single.canCancel" class="flex items-center gap-2">
                 <label class="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     class="sr-only peer"
-                    :checked="getReservation(text.id, 1)?.isCompleted || false"
-                    @change="emit('toggle-completion', text.id, 1)"
+                    :aria-label="t('detailSession.textList.completed')"
+                    :checked="card.single.completed"
+                    @change="emit('toggle-completion', card.text.id, 1)"
                   />
                   <span
                     class="block w-9 h-5 bg-black/15 rounded-full peer peer-checked:bg-green-500 transition-colors dark:bg-white/20 dark:peer-checked:bg-green-600 peer-focus-visible:outline-2 peer-focus-visible:outline-primary"
@@ -380,29 +332,29 @@ const handleCardClick = (text: TextStudy) => {
               </div>
             </div>
             <!-- Pour les textes à plusieurs chapitres -->
-            <div v-else-if="text.totalSections > 1">
+            <div v-else-if="!card.single">
               <span
-                v-if="getTextDisplayStatus(text.id, text).status === 'fully_reserved'"
+                v-if="card.status.status === 'fully_reserved'"
                 class="chip"
                 :class="
-                  isTextFullyRead(text)
+                  card.fullyRead
                     ? 'bg-green-600/10 text-green-700 dark:text-green-300'
                     : 'bg-red-600/10 text-red-700 dark:text-red-300'
                 "
               >
-                <AppIcon v-if="isTextFullyRead(text)" name="circle-check" :size="12" />
+                <AppIcon v-if="card.fullyRead" name="circle-check" :size="12" />
                 {{
-                  isTextFullyRead(text)
+                  card.fullyRead
                     ? t("detailSession.textList.readBy", {
-                        name: reservedByName(getTextDisplayStatus(text.id, text).reservedBy),
+                        name: reservedByName(card.status.reservedBy),
                       })
                     : t("detailSession.textList.reservedBy", {
-                        name: reservedByName(getTextDisplayStatus(text.id, text).reservedBy),
+                        name: reservedByName(card.status.reservedBy),
                       })
                 }}
               </span>
               <span
-                v-else-if="getTextDisplayStatus(text.id, text).status === 'partially_reserved'"
+                v-else-if="card.status.status === 'partially_reserved'"
                 class="chip bg-amber-500/10 text-amber-700 dark:text-amber-200"
               >
                 {{ t("detailSession.textList.partiallyReserved") }}
@@ -421,22 +373,21 @@ const handleCardClick = (text: TextStudy) => {
             </span>
           </div>
 
-          <!-- Sections du texte (expandable) - seulement si plus d'un chapitre -->
-          <div
-            v-if="text.totalSections > 1 && isTextExpanded(text.id)"
-            class="animate-[fadeIn_0.3s_ease]"
-          >
+          <!-- Sections du texte (dépliables), seulement si plus d'un chapitre -->
+          <div v-if="card.expanded" class="animate-[fadeIn_0.3s_ease]">
             <div class="px-5 pb-1 flex items-center justify-between gap-3">
               <h5 class="text-xs font-semibold text-text-secondary">
-                {{ t("detailSession.textList.availableSections", { count: text.totalSections }) }}
+                {{
+                  t("detailSession.textList.availableSections", { count: card.text.totalSections })
+                }}
               </h5>
               <button
-                v-if="availableChapters(text).length > 1"
-                @click.stop="emit('toggle-select-all', text.id)"
+                v-if="card.availableCount > 1"
+                @click.stop="emit('toggle-select-all', card.text.id)"
                 class="text-xs font-semibold text-primary hover:underline"
               >
                 {{
-                  areAllAvailableSelected(text)
+                  card.allAvailableSelected
                     ? t("detailSession.textList.deselectAll")
                     : t("detailSession.textList.selectAll")
                 }}
@@ -447,53 +398,39 @@ const handleCardClick = (text: TextStudy) => {
                  scroll de la page, faisait perdre les chapitres du bas. -->
             <div class="p-2">
               <div
-                v-for="chapter in generateChapters(text.totalSections)"
-                :key="chapter"
+                v-for="row in card.rows"
+                :key="row.chapter"
                 class="flex items-center justify-between py-2.5 px-3 rounded-lg transition-colors cursor-pointer select-none"
                 :class="{
                   'bg-green-600/5 hover:bg-green-600/10 dark:bg-green-500/10 dark:hover:bg-green-500/15':
-                    getReservation(text.id, chapter)?.isCompleted,
+                    row.completed,
                   'bg-amber-500/10 hover:bg-amber-500/15 dark:bg-amber-500/5 dark:hover:bg-amber-500/10':
-                    isReserved(text.id, chapter).isReserved &&
-                    !getReservation(text.id, chapter)?.isCompleted,
-                  'hover:bg-black/[0.03] dark:hover:bg-white/5': !isReserved(text.id, chapter)
-                    .isReserved,
-                  'opacity-60 cursor-not-allowed':
-                    isReserved(text.id, chapter).isReserved &&
-                    !canCancelReservation(text.id, chapter),
+                    row.reserved && !row.completed,
+                  'hover:bg-black/[0.03] dark:hover:bg-white/5': !row.reserved,
+                  'opacity-60 cursor-not-allowed': row.locked,
                 }"
-                @click="
-                  !(
-                    isReserved(text.id, chapter).isReserved &&
-                    !canCancelReservation(text.id, chapter)
-                  ) && emit('item-click', text.id, chapter)
-                "
+                @click="!row.locked && emit('item-click', card.text.id, row.chapter)"
               >
                 <!-- Checkbox + Chapitre -->
                 <div class="flex items-center gap-3 flex-shrink-0">
                   <input
                     type="checkbox"
                     class="w-4 h-4 rounded accent-primary pointer-events-none"
-                    :checked="
-                      isReserved(text.id, chapter).isReserved || isSelected(text.id, chapter)
-                    "
-                    :disabled="
-                      isReserved(text.id, chapter).isReserved &&
-                      !canCancelReservation(text.id, chapter)
-                    "
+                    :checked="row.reserved || row.selected"
+                    :disabled="row.locked"
                   />
                   <span class="font-medium text-sm text-text-primary"
-                    >{{ t("common.chapter") }} {{ formatNumberWithHebrew(chapter) }}</span
+                    >{{ t("common.chapter") }} {{ formatNumberWithHebrew(row.chapter) }}</span
                   >
                 </div>
 
                 <!-- Statut à droite -->
                 <div class="flex items-center gap-3">
                   <!-- Si réservé -->
-                  <template v-if="isReserved(text.id, chapter).isReserved">
-                    <!-- Switch "Lu" - seulement pour nos réservations -->
+                  <template v-if="row.reserved">
+                    <!-- Switch « Lu », seulement pour nos réservations -->
                     <label
-                      v-if="canCancelReservation(text.id, chapter)"
+                      v-if="row.canCancel"
                       class="flex items-center gap-2 cursor-pointer group"
                       @click.stop
                     >
@@ -505,8 +442,9 @@ const handleCardClick = (text: TextStudy) => {
                         <input
                           type="checkbox"
                           class="sr-only peer"
-                          :checked="getReservation(text.id, chapter)?.isCompleted || false"
-                          @change="emit('toggle-completion', text.id, chapter)"
+                          :aria-label="t('detailSession.textList.readToggle')"
+                          :checked="row.completed"
+                          @change="emit('toggle-completion', card.text.id, row.chapter)"
                         />
                         <div
                           class="w-8 h-4.5 bg-black/15 rounded-full peer peer-checked:bg-green-500 transition-colors dark:bg-white/20 dark:peer-checked:bg-green-600 peer-focus-visible:outline-2 peer-focus-visible:outline-primary"
@@ -521,27 +459,18 @@ const handleCardClick = (text: TextStudy) => {
                     <span
                       class="chip"
                       :class="
-                        getReservation(text.id, chapter)?.isCompleted
+                        row.completed
                           ? 'bg-green-600/10 text-green-700 dark:text-green-300'
                           : 'bg-amber-500/10 text-amber-700 dark:text-amber-200'
                       "
                     >
-                      <AppIcon
-                        :name="getReservation(text.id, chapter)?.isCompleted ? 'check' : 'user'"
-                        :size="11"
-                      />
-                      {{
-                        isReserved(text.id, chapter).reservedBy ||
-                        t("detailSession.textList.reserved")
-                      }}
+                      <AppIcon :name="row.completed ? 'check' : 'user'" :size="11" />
+                      {{ row.reservedBy || t("detailSession.textList.reserved") }}
                     </span>
                   </template>
 
                   <!-- Si sélectionné (en attente de confirmation) -->
-                  <span
-                    v-else-if="isSelected(text.id, chapter)"
-                    class="chip bg-primary/10 text-primary"
-                  >
+                  <span v-else-if="row.selected" class="chip bg-primary/10 text-primary">
                     <AppIcon name="plus" :size="11" />
                     {{ t("detailSession.textList.selected") }}
                   </span>
@@ -555,12 +484,12 @@ const handleCardClick = (text: TextStudy) => {
                   <router-link
                     :to="{
                       name: 'text-reading-section',
-                      params: { textId: text.id, section: chapter },
+                      params: { textId: card.text.id, section: row.chapter },
                       query: { session: session.slug || session.id },
                     }"
                     class="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex-shrink-0"
                     :title="t('detailSession.textList.readThisChapter')"
-                    @click.stop="emit('read-clicked', text.id, chapter)"
+                    @click.stop="emit('read-clicked', card.text.id, row.chapter)"
                   >
                     <AppIcon name="book-reader" :size="16" />
                   </router-link>

@@ -8,6 +8,7 @@ import { chiourService } from "../../services/chiourService";
 import { studioService } from "../../services/studioService";
 import { useToast } from "../../composables/useToast";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import ProgressBar from "../../components/ProgressBar.vue";
 import { useConfirm } from "../../composables/useConfirm";
 
 const route = useRoute();
@@ -300,12 +301,10 @@ async function remove() {
         <p class="text-sm text-text-secondary">
           {{ t("studio.form.uploading", { percent: uploadPercent }) }}
         </p>
-        <div class="h-2 rounded-full bg-black/[0.06] overflow-hidden dark:bg-white/10">
-          <div
-            class="h-full rounded-full bg-primary transition-all duration-300"
-            :style="{ width: `${uploadPercent}%` }"
-          ></div>
-        </div>
+        <ProgressBar
+          :value="uploadPercent"
+          :label="t('studio.form.uploading', { percent: uploadPercent })"
+        />
       </div>
 
       <label class="inline-flex items-center gap-2 cursor-pointer">

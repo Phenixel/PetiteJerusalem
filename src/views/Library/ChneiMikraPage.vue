@@ -5,12 +5,14 @@ import { useI18n } from "vue-i18n";
 import {
   adjacentParasha,
   getParashaForShabbat,
-  getWeeklyParasha,
+  parashaTitle,
   shabbatOfWeek,
   type WeeklyParasha,
 } from "../../services/dailyCycles";
-import { appendHebrewNumeral } from "../../services/hebrewNumerals";
-import { seoService } from "../../services/seoService";
+import { localeMessagesReady } from "../../i18n";
+import { dateTimeFormat } from "../../services/intlCache";
+import { pageTitle, seoService } from "../../services/seoService";
+import { useWeeklyParasha } from "../../composables/useTehilimDay";
 import { analyticsService } from "../../services/analyticsService";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
@@ -46,8 +48,9 @@ const { doubleVerses, withRashi } = useChneiMikraOptions();
 
 const WEEK_PARAM = "semaine";
 
-/** La paracha de la semaine en cours : le défaut, et le retour. */
-const currentWeek = computed(() => getWeeklyParasha());
+/** La paracha de la semaine en cours : le défaut, et le retour. Suit le jour
+ * hébraïque (samedi soir, la suivante) et le temps qui passe. */
+const { parasha: currentWeek } = useWeeklyParasha();
 
 /**
  * La paracha demandée par l'URL. Une semaine inconnue (lien trafiqué, Chabbat
@@ -67,17 +70,14 @@ useAutoScroll(() => parasha.value !== null);
 
 const isCurrentWeek = computed(() => parasha.value?.weekKey === currentWeek.value?.weekKey);
 
-const title = computed(() =>
-  (parasha.value?.entries ?? []).map((e) => appendHebrewNumeral(e.name)).join(" · "),
-);
+const title = computed(() => parashaTitle(parasha.value));
 
 /** « Chabbat 8 août », le Chabbat où la paracha affichée est lue. */
 const shabbatLabel = computed(() => {
   if (!parasha.value) return "";
-  const date = new Intl.DateTimeFormat(locale.value, {
-    day: "numeric",
-    month: "long",
-  }).format(shabbatOfWeek(parasha.value.weekKey));
+  const date = dateTimeFormat(locale.value, { day: "numeric", month: "long" }).format(
+    shabbatOfWeek(parasha.value.weekKey),
+  );
   return t("chneiMikra.shabbatOn", { date });
 });
 
@@ -102,13 +102,15 @@ function goTo(target: WeeklyParasha | null, direction: "previous" | "next" | "cu
 
 function applySeoMeta() {
   seoService.setMeta({
-    title: `${t("chneiMikra.title")} · ${title.value} | Petite Jérusalem`,
+    title: pageTitle(`${t("chneiMikra.title")} · ${title.value}`),
     description: t("chneiMikra.pageDescription"),
     canonical: SITE_URL + "/bibliotheque/chnei-mikra",
   });
 }
 
-watch(title, applySeoMeta, { immediate: true });
+// Rejoué au changement de langue : les messages en et he arrivent par import
+// dynamique, parfois après le montage.
+watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
 </script>
 
 <template>

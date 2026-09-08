@@ -30,7 +30,6 @@ import { firestoreService } from "../services/firestoreService";
 const makeReservation = (overrides: Partial<TextStudyReservation> = {}): TextStudyReservation => ({
   id: "r1",
   textStudyId: "t1",
-  available: false,
   isCompleted: false,
   createdAt: new Date(),
   ...overrides,
@@ -153,9 +152,7 @@ describe("sessionService - email invité optionnel", () => {
   });
 
   it("createBatchReservationsForUser accepte le nom seul quand l'email est optionnel", async () => {
-    const spy = vi
-      .spyOn(reservationService, "createBatchReservations")
-      .mockResolvedValue(["id1"]);
+    const spy = vi.spyOn(reservationService, "createBatchReservations").mockResolvedValue(["id1"]);
 
     const localId = guestService.getOrCreateLocalGuestId();
     await sessionService.createBatchReservationsForUser(
@@ -166,7 +163,14 @@ describe("sessionService - email invité optionnel", () => {
       false,
     );
 
-    expect(spy).toHaveBeenCalledWith("s1", [{ textStudyId: "t1" }], undefined, localId, undefined, "Sarah");
+    expect(spy).toHaveBeenCalledWith(
+      "s1",
+      [{ textStudyId: "t1" }],
+      undefined,
+      localId,
+      undefined,
+      "Sarah",
+    );
     spy.mockRestore();
   });
 

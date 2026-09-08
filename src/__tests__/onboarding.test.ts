@@ -116,7 +116,8 @@ describe("introduction de première ouverture", () => {
     await click(button(host, fr.onboarding.next));
     expect(host.textContent).toContain(fr.onboarding.library.readingTitle);
     await click(button(host, fr.onboarding.next));
-    expect(button(host, fr.onboarding.library.download)).not.toBeNull();
+    // Le sélecteur des textes à emporter est chargé à la demande.
+    await vi.waitFor(() => expect(button(host, fr.onboarding.library.download)).not.toBeNull());
     await click(button(host, fr.onboarding.next));
     expect(host.textContent).toContain(fr.onboarding.zmanim.title);
 

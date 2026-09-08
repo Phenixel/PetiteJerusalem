@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useOnboarding } from "../../composables/useOnboarding";
 import { useConsent, type ConsentChoice } from "../../composables/useConsent";
+import { pushOverlay } from "../../composables/useOverlayStack";
 import { authService } from "../../services/authService";
 import { analyticsService } from "../../services/analyticsService";
 import AppIcon from "../icons/AppIcon.vue";
@@ -57,6 +58,13 @@ function goTo(next: number): void {
   index.value = Math.min(Math.max(next, 0), steps.length - 1);
 }
 
+// Retour Android : la page précédente de l'introduction s'il y en a une,
+// sinon rien du tout. Sans cette inscription, le geste minimisait l'app à
+// sa toute première ouverture, en plein milieu des explications.
+const removeOverlay = pushOverlay(() => {
+  if (index.value > 0) goTo(index.value - 1);
+});
+
 /**
  * « Composer ma lecture du jour » : une intention, pas un départ.
  *
@@ -102,6 +110,7 @@ onBeforeUnmount(() => {
   document.documentElement.style.overflow = "";
   document.removeEventListener("keydown", onKeydown);
   stopAuth();
+  removeOverlay();
 });
 
 /** La surface défilante de l'introduction, remise en haut à chaque page. */

@@ -82,7 +82,7 @@
 
       <div
         class="justify-self-center md:justify-self-end flex gap-4 items-center"
-        aria-label="Social media"
+        :aria-label="t('footer.social')"
       >
         <LanguageSelector variant="compact" dropup />
         <a

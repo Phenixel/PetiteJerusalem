@@ -120,7 +120,10 @@ describe("défilement automatique", () => {
     expect(scrollTop).toBeCloseTo(perSecond, 5);
 
     // Fin du texte : la page s'arrête là, et la pastille disparaît avec elle.
+    // La limite n'est plus lue à chaque image mais quand la page change de
+    // taille (`resize`, et le ResizeObserver du corps dans un vrai navigateur).
     pageHeight = 800 + scrollTop + 10;
+    window.dispatchEvent(new Event("resize"));
     frame(1000);
     expect(scrollTop).toBe(pageHeight - 800);
     expect(isAutoScrolling.value).toBe(false);

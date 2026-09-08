@@ -17,7 +17,7 @@ import {
 } from "firebase/auth";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { auth, googleAuthProvider } from "../firebase/core";
-import { isAuthCancellation } from "./authErrors";
+import { AuthFlowError, RecentLoginRequiredError, isAuthCancellation } from "./authErrors";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import type { User } from "../models/models";
 import { clearPreferencesCache, userPreferencesService } from "./userPreferencesService";
@@ -29,10 +29,13 @@ export type { User };
 /** Fenêtre pendant laquelle Firebase accepte une opération sensible sans reconnexion. */
 const RECENT_LOGIN_MS = 5 * 60 * 1000;
 
+// Sans nom ni email, le nom reste vide : c'est à la vue de dire
+// « Utilisateur » dans sa langue (common.anonymousUser), pas au service de
+// figer un mot français dans le compte gardé sur l'appareil.
 function toUser(firebaseUser: FirebaseUser): User {
   return {
     id: firebaseUser.uid,
-    name: firebaseUser.displayName || firebaseUser.email || "Utilisateur",
+    name: firebaseUser.displayName || firebaseUser.email || "",
     email: firebaseUser.email || "",
   };
 }
@@ -83,7 +86,7 @@ function writeLastKnownUser(user: User | null): void {
   }
 }
 
-export class AuthService {
+class AuthService {
   // Firebase ne rejoue pas onAuthStateChanged après un updateProfile : le nom
   // affiché changerait dans le profil, et nulle part ailleurs (bandeau, menu
   // du compte...) jusqu'au prochain rechargement. On garde donc la liste des
@@ -102,6 +105,15 @@ export class AuthService {
       // lancement (et une déconnexion purge le cache).
       writeLastKnownUser(firebaseUser ? toUser(firebaseUser) : null);
     });
+  }
+
+  /**
+   * Firebase a-t-il rendu son premier verdict ? Avant, ce que sert
+   * onAuthChanged est le dernier compte connu, une avance d'affichage : ce
+   * qui engage (l'identification analytics, par exemple) doit attendre.
+   */
+  isAuthResolved(): boolean {
+    return this.authResolved;
   }
 
   onAuthChanged(callback: (user: User | null) => void): () => void {
@@ -163,7 +175,7 @@ export class AuthService {
     analyticsService.capture("signed_up", { method: "email" });
     return {
       id: cred.user.uid,
-      name: displayName || cred.user.displayName || cred.user.email || "Utilisateur",
+      name: displayName || cred.user.displayName || cred.user.email || "",
       email: cred.user.email || email,
     };
   }
@@ -173,7 +185,7 @@ export class AuthService {
     analyticsService.capture("signed_in", { method: "email" });
     return {
       id: cred.user.uid,
-      name: cred.user.displayName || cred.user.email || "Utilisateur",
+      name: cred.user.displayName || cred.user.email || "",
       email: cred.user.email || email,
     };
   }
@@ -195,7 +207,7 @@ export class AuthService {
     const result = await this.getGoogleCredentialNative();
     const idToken = result.credential?.idToken;
     if (!idToken) {
-      throw new Error("Connexion Google annulée ou incomplète");
+      throw new AuthFlowError("googleSignInIncomplete");
     }
     const credential = GoogleAuthProvider.credential(idToken, result.credential?.accessToken);
     const cred = await signInWithCredential(auth, credential);
@@ -239,7 +251,7 @@ export class AuthService {
       const result = await FirebaseAuthentication.signInWithApple();
       const idToken = result.credential?.idToken;
       if (!idToken) {
-        throw new Error("Connexion Apple annulée ou incomplète");
+        throw new AuthFlowError("appleSignInIncomplete");
       }
       const credential = provider.credential({
         idToken,
@@ -266,12 +278,12 @@ export class AuthService {
     const user = auth.currentUser;
 
     if (!user) {
-      throw new Error("Aucun utilisateur connecté");
+      throw new AuthFlowError("noCurrentUser");
     }
 
     const displayName = name.trim();
     if (!displayName) {
-      throw new Error("Le nom d'affichage ne peut pas être vide");
+      throw new AuthFlowError("emptyDisplayName");
     }
 
     moderationService.assertClean(displayName);
@@ -285,7 +297,7 @@ export class AuthService {
     const user = auth.currentUser;
 
     if (!user || !user.email) {
-      throw new Error("Aucun utilisateur connecté");
+      throw new AuthFlowError("noCurrentUser");
     }
 
     const credential = EmailAuthProvider.credential(user.email, currentPassword);
@@ -298,7 +310,7 @@ export class AuthService {
     const user = auth.currentUser;
 
     if (!user) {
-      throw new Error("Aucun utilisateur connecté");
+      throw new AuthFlowError("noCurrentUser");
     }
 
     if (password && user.email) {
@@ -312,7 +324,7 @@ export class AuthService {
     // d'erreur que Firebase, pour que l'écran propose de se reconnecter.
     const { authTime } = await user.getIdTokenResult(true);
     if (Date.now() - new Date(authTime).getTime() > RECENT_LOGIN_MS) {
-      throw new Error("auth/requires-recent-login");
+      throw new RecentLoginRequiredError();
     }
 
     // Purge des données Firestore associées (préférences, progression de
@@ -338,7 +350,7 @@ export class AuthService {
     const user = auth.currentUser;
 
     if (!user) {
-      throw new Error("Aucun utilisateur connecté");
+      throw new AuthFlowError("noCurrentUser");
     }
 
     // reauthenticateWithPopup (et non signInWithPopup) : échoue si le compte
@@ -354,7 +366,7 @@ export class AuthService {
     const user = auth.currentUser;
 
     if (!user) {
-      throw new Error("Aucun utilisateur connecté");
+      throw new AuthFlowError("noCurrentUser");
     }
 
     const provider = new OAuthProvider("apple.com");
@@ -363,7 +375,7 @@ export class AuthService {
       const result = await FirebaseAuthentication.signInWithApple();
       const idToken = result.credential?.idToken;
       if (!idToken) {
-        throw new Error("Ré-authentification Apple annulée ou incomplète");
+        throw new AuthFlowError("appleReauthIncomplete");
       }
       const credential = provider.credential({
         idToken,

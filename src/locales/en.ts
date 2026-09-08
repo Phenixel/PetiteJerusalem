@@ -33,16 +33,32 @@ const en: LocaleMessages = {
     chapter: "Chapter",
     dateLimit: "Deadline",
     createdBy: "Created by",
-    view: "View",
+    dateLimitValue: "Deadline: {date}",
+    createdByValue: "Created by: {name}",
     manage: "Manage",
     end: "End",
-    ongoing: "Ongoing",
     finished: "Finished",
+    anonymousUser: "User",
     read: "Read",
   },
   errors: {
     permissionDenied: "You don't have permission to perform this action.",
     unavailable: "Service temporarily unavailable. Check your connection and try again.",
+    slotTaken: "This section was just reserved by someone else.",
+    guestNameRequired: "Please enter your name.",
+    guestEmailRequired: "Please enter your name and email.",
+    sessionMissing: "This session no longer exists.",
+    reservationGone: "This reservation no longer exists: the slot has been taken over.",
+    reservationOwnerRequired: "A reservation must belong to an account or a guest.",
+    accountGuestRename:
+      "A registered participant's name comes from their profile and cannot be changed here.",
+    sessionFieldsRequired: "All fields are required.",
+    googleSignInIncomplete: "Google sign-in was cancelled or did not complete.",
+    appleSignInIncomplete: "Apple sign-in was cancelled or did not complete.",
+    appleReauthIncomplete: "Apple re-authentication was cancelled or did not complete.",
+    noCurrentUser: "No user is signed in.",
+    emptyDisplayName: "The display name cannot be empty.",
+    preferencesSaveFailed: "Your preferences could not be saved.",
   },
   navbar: {
     title: "Petite Jérusalem",
@@ -61,6 +77,7 @@ const en: LocaleMessages = {
     shareTehilim: "Share Tehilim",
     tehilimIntentions: "Tehilim by intention",
     manageCookies: "Manage cookies",
+    social: "Social media",
   },
   appDownload: {
     title: "Get the app",
@@ -143,6 +160,8 @@ const en: LocaleMessages = {
       pinchTitle: "Pinch to enlarge",
       pinchText:
         "Two fingers on the text change its size without distorting the page. The A− and A+ buttons in the menu do the same.",
+      pinchSample1: "Bereshit bara Elohim",
+      pinchSample2: "et hashamayim ve-et ha'aretz",
       menuTitle: "The menu, bottom right",
       menuText:
         "The round button on the text opens the size, Hebrew or transliteration, and the text's landmarks: sections of a service, aliyot of a parasha, dafim of a tractate.",
@@ -179,7 +198,6 @@ const en: LocaleMessages = {
   },
   home: {
     omer: {
-      title: "Counting of the Omer",
       day: "Day {n} of the Omer",
       dayOne: "Day 1 of the Omer",
       remaining: "{n} evenings left to count.",
@@ -206,7 +224,6 @@ const en: LocaleMessages = {
         description: "Discover Torah courses and lessons from the community",
       },
     },
-    comingSoon: "Coming Soon",
     dashboard: {
       hello: "Hello",
       helloEvening: "Good evening",
@@ -271,7 +288,6 @@ const en: LocaleMessages = {
       reminders: "a daily reading reminder at the time you choose",
       sync: "your settings, bookmarks and reading positions on all your devices",
     },
-    activeMember: "Active Member",
     tabs: {
       myInfo: "My Information",
       security: "Security",
@@ -289,12 +305,8 @@ const en: LocaleMessages = {
     noCreatedSessions: "No created sessions",
     noCreatedSessionsDesc: "Create your first shared study session.",
     createSession: "Create session",
-    participatedSessions: "Participated sessions",
-    createdSessions: "Created sessions",
     viewSession: "View session",
-    myReservations: "My reservations",
     noReservationFound: "No reservation found",
-    reservationsCount: "You had {count} reservations in this session.",
     sessionUpdatedSuccess: "Session updated successfully",
     sessionUpdateError: "Error updating session",
     endSessionConfirm: "Are you sure you want to end this session? This action is irreversible.",
@@ -444,13 +456,11 @@ const en: LocaleMessages = {
     nextIn: "in {duration}",
     durationHM: "{h}h {m}m",
     durationM: "{m} min",
-    today: "Today",
     previousDay: "Previous day",
     nextDay: "Next day",
     backToToday: "Back to today",
     nightNote: "Since sunset, it is already {date}.",
     nightNoteWith: "Since sunset, it is already {date} ({names}).",
-    seeAll: "See all times",
     unavailable: "No times can be computed for this day at this location.",
     disclaimer:
       "Times computed from the position of the sun (sea level). For practice, follow the times of your community.",
@@ -463,7 +473,6 @@ const en: LocaleMessages = {
       chooseCity: "Choose my city",
       searchCity: "Search for a city…",
       noCity: "No city matches “{query}”.",
-      reset: "Back to Paris",
       denied:
         "Location denied. Times are still computed for Paris; allow location in your settings to get yours.",
       unavailable: "Location unavailable. Times are still computed for Paris.",
@@ -572,8 +581,8 @@ const en: LocaleMessages = {
     subtitle: "Exchange and discover sacred texts with the community",
     createSession: "Create session",
     loadingSessions: "Loading sessions...",
+    loadError: "The sessions could not be loaded.",
     ongoingSessions: "Ongoing sessions",
-    archives: "Archives",
     noOngoingSessions: "No ongoing sessions at the moment.",
     noSessions: "No existing sessions",
     createFirstSession: "Create the first reading share session!",
@@ -634,7 +643,9 @@ const en: LocaleMessages = {
     guestSubtitleWithEmail: "Enter your name and email, then pick your texts.",
     searchPlaceholder: "Search for a text, book or chapter...",
     clearSearch: "Clear search",
-    searchFor: "Search",
+    searchForValue: 'Search: "{term}"',
+    notFound: "Session not found.",
+    loadError: "The session could not be loaded.",
     availableOnly: "Available only",
     myReservations: "My reservations",
     confirmReservation: "Confirm reservation",
@@ -760,7 +771,6 @@ const en: LocaleMessages = {
     sessionNameRequired: "Session name is required",
     dateLimitRequired: "Deadline is required",
     sessionName: "Session Name",
-    saveError: "Error saving session",
   },
   progressBar: {
     participants: "Participating",
@@ -811,6 +821,8 @@ const en: LocaleMessages = {
     sessionTitle: "Shared reading session {'|'} Petite Jérusalem",
     sessionDefaultDescription:
       "Join this shared Torah reading and study session on Petite Jérusalem.",
+    sessionManagementTitle: "Session management",
+    sessionManagementDescription: 'Manage the reservations and progress of the session "{name}".',
     chiourimTitle: "Shiurim {'|'} Torah courses and lessons {'|'} Petite Jérusalem",
     chiourimDescription:
       "Listen to shiurim: Torah courses and lessons shared by the community on Petite Jérusalem.",
@@ -831,7 +843,6 @@ const en: LocaleMessages = {
   detailChiour: {
     backToList: "Back to shiurim",
     notFound: "This shiur was not found.",
-    noAudio: "No audio available for this shiur.",
     recommendations: "Listen next",
   },
   auteurPage: {
@@ -869,7 +880,6 @@ const en: LocaleMessages = {
     signIn: "Sign in",
     guestHint: "Create a free account to access your reservations and track your readings.",
     guestHintLink: "Sign in",
-    tip: "Tip",
     alreadyHaveAccount:
       "Already have an account? Your guest reservations will be recovered automatically.",
   },
@@ -942,6 +952,18 @@ const en: LocaleMessages = {
     navMenu: "Reading menu",
     navSections: "Sections",
     navTop: "Top of page",
+    labels: {
+      chapter: "Chapter {n}",
+      daf: "Daf {daf}",
+      dafRange: "Daf {from} to {to}",
+      chapterDaf: "{chapter} · {daf}",
+    },
+    links: {
+      library: "Library",
+      tehilimIntentions: "Tehilim by intention",
+      shareTehilim: "Tehilim sharing",
+    },
+    pageTitle: "Reading",
     autoScroll: {
       pill: "Scrolling",
       speed: "Speed",
@@ -1132,6 +1154,11 @@ const en: LocaleMessages = {
     dayOfMonth: "Day {day} of the month",
     unavailable: "Today's psalms could not be determined.",
   },
+  tehilimIntentions: {
+    notFoundTitle: "Intention not found",
+    notFoundDescription: "This intention does not exist (yet).",
+    notFoundLink: "See all the “Tehilim by intention” pages",
+  },
   study: {
     title: "Library",
     subtitle:
@@ -1248,8 +1275,6 @@ const en: LocaleMessages = {
   serie: {
     label: "Series",
     episodeBadge: "Episode {n}",
-    nextEpisode: "Next episode",
-    previousEpisode: "Previous episode",
     previous: "Previous",
     next: "Next",
     episodesCount: "{count} episode(s)",

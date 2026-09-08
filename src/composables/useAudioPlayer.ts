@@ -162,10 +162,6 @@ function play(newTrack?: AudioTrack) {
     });
 }
 
-function pause() {
-  audio?.pause();
-}
-
 function toggle() {
   if (!audio || !track.value) return;
   if (isPlaying.value) audio.pause();
@@ -235,12 +231,9 @@ export function useAudioPlayer() {
     duration,
     volume,
     playbackRate,
-    isLoaded,
     progress,
     isMuted,
-    load,
     play,
-    pause,
     toggle,
     skip,
     seekRatio,

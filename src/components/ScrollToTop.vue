@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from "vue";
+import { computed, ref, onUnmounted, watch } from "vue";
 import AppIcon from "./icons/AppIcon.vue";
 import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
 import { isNativeApp } from "../composables/useNativeApp";
 import { readingNavActive } from "../composables/useReadingNav";
+import { useScrollFrame } from "../composables/useScrollFrame";
 
 const isVisible = ref(false);
 // Le pointeur survole le bouton : on ne le masque pas sous la main de
@@ -30,8 +31,12 @@ const armHideTimer = () => {
   }, IDLE_HIDE_MS);
 };
 
-const checkScroll = () => {
-  if (window.scrollY > 300) {
+// La position vient de l'image partagée (useScrollFrame) : un seul écouteur
+// de défilement pour toute l'app, et rien à mesurer ici.
+const scrollFrame = useScrollFrame();
+
+const checkScroll = (scrollY: number) => {
+  if (scrollY > 300) {
     isVisible.value = true;
     armHideTimer();
   } else {
@@ -57,12 +62,9 @@ const scrollToTop = () => {
   });
 };
 
-onMounted(() => {
-  window.addEventListener("scroll", checkScroll, { passive: true });
-});
+watch(() => scrollFrame.value.scrollY, checkScroll);
 
 onUnmounted(() => {
-  window.removeEventListener("scroll", checkScroll);
   if (hideTimer) clearTimeout(hideTimer);
 });
 </script>

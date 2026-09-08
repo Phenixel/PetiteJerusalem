@@ -17,6 +17,16 @@ export interface DafBlock {
 }
 
 /**
+ * Ce qu'un titre de section ou de bloc dit de sa place dans le texte, sous
+ * forme structurée : la vue l'écrit dans la langue du lecteur (voir
+ * textReading.labels), le prérendu SEO garde le libellé français (`label`).
+ */
+export type SectionHeading =
+  | { kind: "chapter"; n: number }
+  | { kind: "daf"; daf: string }
+  | { kind: "chapterDaf"; n: number; from: string; to: string };
+
+/**
  * Didascalie : la consigne de lecture qui accompagne un texte de tefila
  * (« le chalia'h tsibour dit », « à Roch Hodech on ajoute »…). Portée par le
  * fichier plutôt que par les locales : c'est du contenu, pas de l'interface,
@@ -93,11 +103,20 @@ export interface TextParagraph {
  */
 export interface TextBlock {
   label: string;
+  /** Le titre sous forme structurée (chapitre N), quand il en a une. */
+  heading?: SectionHeading;
   /** Tefila : le titre du bloc dans la langue du lecteur, quand il en a un. */
   labelText?: Rubric;
   lines: string[];
   /** Index of the block's first line within the section's flattened `he`. */
   offset: number;
+  /**
+   * Repère unique du bloc dans la section, pour le menu de lecture
+   * (`data-block-anchor`). L'offset ne suffit pas en tefila : un marqueur
+   * sans ligne (horaire, Torah de la semaine restée vide) partage le sien
+   * avec le bloc qui le suit. Absent, l'offset tient lieu de repère.
+   */
+  anchor?: string;
   /**
    * Tefila : occasion du calendrier qui conditionne l'affichage du bloc
    * (« shabbat », « moed », « nissim »…, voir dailyCycles.activeOccasions).
@@ -164,6 +183,8 @@ export interface TextSection {
   /** Section index (chapter / daf chapter). Doubles as the URL and reservation id. */
   index: number;
   label: string;
+  /** Le titre sous forme structurée, quand la section en a une (voir SectionHeading). */
+  heading?: SectionHeading;
   /** Cleaned Hebrew lines (verses / mishnayot). */
   he: string[];
   /** Talmud only: the section's lines grouped by daf. */
@@ -185,22 +206,26 @@ export interface TextContent {
  * marque-page). Unique implémentation, partagée par le lecteur de la
  * bibliothèque et la lecture quotidienne, les deux doivent décrire le même
  * verset de la même façon. `verseN` rend le libellé du numéro de verset
- * (i18n, ex. t("textReading.verseN", { n })).
+ * (i18n, ex. t("textReading.verseN", { n })) ; `headingOf` écrit un titre
+ * structuré (chapitre, daf) dans la langue du lecteur, à défaut le libellé
+ * français reste.
  */
 export function placeLabel(
   sections: TextSection[],
   sectionIndex: number | null,
   line: number,
   verseN: (n: number) => string,
+  headingOf: (heading: SectionHeading | undefined, fallback: string) => string = (_, label) =>
+    label,
 ): string {
   const section = sections.find((s) => s.index === (sectionIndex ?? 1)) ?? sections[0] ?? null;
   const parts: string[] = [];
-  if (section && sections.length > 1) parts.push(section.label);
+  if (section && sections.length > 1) parts.push(headingOf(section.heading, section.label));
   const block = section?.blocks?.length
     ? [...section.blocks].reverse().find((b) => b.offset <= line)
     : undefined;
   // Tefila : les blocs du fil principal n'ont pas de titre, rien à décrire.
-  if (block?.label) parts.push(block.label);
+  if (block?.label) parts.push(headingOf(block.heading, block.label));
   const verse = block ? line - block.offset + 1 : line + 1;
   parts.push(verseN(verse));
   return parts.join(" · ");
@@ -215,7 +240,7 @@ export class MissingTextFileError extends Error {
   }
 }
 
-export interface TalmudChapter {
+interface TalmudChapter {
   chapter: number;
   startDaf: string;
   endDaf: string;
@@ -314,12 +339,16 @@ function buildSection(index: number, label: string, he: string[]): TextSection {
   return { index, label, he };
 }
 
+/** « Chapitre 2 (ב) », le libellé français d'un chapitre (prérendu compris). */
+const chapterLabel = (n: number): string => `Chapitre ${formatNumberWithHebrew(n)}`;
+
 /** Splits a he[chapter][verse] array into one section per non-empty chapter. */
 function chaptersToSections(heChapters: unknown[]): TextSection[] {
   return heChapters
-    .map((chapter, i) =>
-      buildSection(i + 1, `Chapitre ${formatNumberWithHebrew(i + 1)}`, normalizeLines(chapter)),
-    )
+    .map((chapter, i) => ({
+      ...buildSection(i + 1, chapterLabel(i + 1), normalizeLines(chapter)),
+      heading: { kind: "chapter", n: i + 1 } as SectionHeading,
+    }))
     .filter((s) => s.he.length > 0);
 }
 
@@ -364,8 +393,14 @@ function parseTalmud(
         range.startDaf === range.endDaf
           ? `Daf ${range.startDaf}`
           : `Daf ${range.startDaf} à ${range.endDaf}`;
-      const label = `Chapitre ${formatNumberWithHebrew(range.chapter)} · ${dafRange}`;
-      return { index: range.chapter, label, he: lines, dafBlocks };
+      const label = `${chapterLabel(range.chapter)} · ${dafRange}`;
+      const heading: SectionHeading = {
+        kind: "chapterDaf",
+        n: range.chapter,
+        from: range.startDaf,
+        to: range.endDaf,
+      };
+      return { index: range.chapter, label, heading, he: lines, dafBlocks };
     });
     return { title, type: "Talmud Bavli", sections };
   }
@@ -375,9 +410,11 @@ function parseTalmud(
   for (let i = 0; i < heDaf.length; i++) {
     const he = normalizeLines(heDaf[i]);
     if (he.length === 0) continue;
-    const daf = Math.floor(i / 2) + 2;
-    const side = i % 2 === 0 ? "a" : "b";
-    sections.push(buildSection(sections.length + 1, `Daf ${daf}${side}`, he));
+    const daf = `${Math.floor(i / 2) + 2}${i % 2 === 0 ? "a" : "b"}`;
+    sections.push({
+      ...buildSection(sections.length + 1, `Daf ${daf}`, he),
+      heading: { kind: "daf", daf },
+    });
   }
   return { title, type: "Talmud Bavli", sections };
 }
@@ -428,8 +465,14 @@ function loadTanakh(
         for (let k = 0; k < lines.length; k++) targumAll.push("");
       }
       if (lines.length === 0) return;
-      const label = data.blockLabels?.[i] ?? `Chapitre ${formatNumberWithHebrew(startChapter + i)}`;
-      blocks.push({ label, lines, offset });
+      const named = data.blockLabels?.[i];
+      const block: TextBlock = {
+        label: named ?? chapterLabel(startChapter + i),
+        lines,
+        offset,
+      };
+      if (named === undefined) block.heading = { kind: "chapter", n: startChapter + i };
+      blocks.push(block);
       offset += lines.length;
     });
     const allLines = blocks.flatMap((b) => b.lines);
@@ -493,7 +536,7 @@ interface TefilaFileLine {
   when?: string;
 }
 
-export interface TefilaFileBlock {
+interface TefilaFileBlock {
   label?: string;
   labelText?: Rubric;
   when?: string;
@@ -568,17 +611,21 @@ export function parseTefilaBlocks(rawBlocks: unknown): TextBlock[] {
   // Le type d'un fichier n'est qu'une promesse de compilation : un fichier
   // abîmé, ou une copie hors ligne d'une version antérieure, doit donner un
   // bloc vide plutôt que faire échouer le chargement du texte entier.
-  for (const raw of (Array.isArray(rawBlocks) ? rawBlocks : []) as TefilaFileBlock[]) {
+  const rawList = (Array.isArray(rawBlocks) ? rawBlocks : []) as TefilaFileBlock[];
+  rawList.forEach((raw, index) => {
     const paragraphs = (Array.isArray(raw?.lines) ? raw.lines : [])
       .map(parseTefilaLine)
       .filter((p): p is TextParagraph => p !== null);
     // Les marqueurs (horaire, Torah de la semaine) n'ont pas de texte à eux :
     // ils passent quand même, c'est le lecteur qui les remplit.
-    if (paragraphs.length === 0 && !raw?.zman && !raw?.torahWeekly) continue;
+    if (paragraphs.length === 0 && !raw?.zman && !raw?.torahWeekly) return;
     const block: TextBlock = {
       label: raw.label ?? "",
       lines: paragraphs.map(paragraphText),
       offset,
+      // Le rang du bloc dans le fichier : unique, là où l'offset d'un
+      // marqueur vide est celui du bloc suivant.
+      anchor: `b${index}`,
       paragraphs,
     };
     if (raw.labelText) block.labelText = raw.labelText;
@@ -594,7 +641,7 @@ export function parseTefilaBlocks(rawBlocks: unknown): TextBlock[] {
     if (raw.torahWeekly) block.torahWeekly = true;
     blocks.push(block);
     offset += block.lines.length;
-  }
+  });
   return blocks;
 }
 

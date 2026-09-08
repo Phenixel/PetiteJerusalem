@@ -80,7 +80,9 @@ describe("addWidgetExtension", () => {
   it("déclare une cible d'extension, avec son App Group et ses versions", () => {
     expect(patched).toContain(`productType = "com.apple.product-type.app-extension"`);
     expect(patched).toContain(`PRODUCT_BUNDLE_IDENTIFIER = ${options.bundleId};`);
-    expect(patched).toContain(`CODE_SIGN_ENTITLEMENTS = ${WIDGET_TARGET}/${WIDGET_TARGET}.entitlements;`);
+    expect(patched).toContain(
+      `CODE_SIGN_ENTITLEMENTS = ${WIDGET_TARGET}/${WIDGET_TARGET}.entitlements;`,
+    );
     expect(patched).toContain(`INFOPLIST_FILE = ${WIDGET_TARGET}/Info.plist;`);
     // Un appex dont les numéros diffèrent de ceux de l'app est refusé à l'envoi.
     expect(patched.match(/MARKETING_VERSION = 3\.8\.0;/g)).toHaveLength(2);
@@ -91,7 +93,9 @@ describe("addWidgetExtension", () => {
   it("fait embarquer l'extension par l'app, et l'app en dépendre", () => {
     // Sans la phase de copie, l'appex ne monte pas dans l'IPA ; sans la
     // dépendance, il n'est même pas construit avant elle.
-    const appTarget = /\/\* App \*\/ = \{\n\t\t\tisa = PBXNativeTarget;[\s\S]*?\n\t\t\};/.exec(patched);
+    const appTarget = /\/\* App \*\/ = \{\n\t\t\tisa = PBXNativeTarget;[\s\S]*?\n\t\t\};/.exec(
+      patched,
+    );
     expect(appTarget?.[0]).toContain("Embed Foundation Extensions");
     expect(appTarget?.[0]).toContain("PBXTargetDependency");
     expect(patched).toContain("dstSubfolderSpec = 13;");
@@ -143,7 +147,10 @@ describe("fichiers de l'extension", () => {
     // lui, l'extension ne lit aucun payload.
     expect(widgetEntitlements()).toContain(APP_GROUP);
     const plugin = readFileSync(join(root, "native/ios/App/PjWidgetsPlugin.swift"), "utf8");
-    const widgets = readFileSync(join(root, `native/ios/${WIDGET_TARGET}/${WIDGET_TARGET}.swift`), "utf8");
+    const widgets = readFileSync(
+      join(root, `native/ios/${WIDGET_TARGET}/${WIDGET_TARGET}.swift`),
+      "utf8",
+    );
     expect(plugin).toContain(`"${APP_GROUP}"`);
     expect(widgets).toContain(`"${APP_GROUP}"`);
   });
@@ -174,6 +181,6 @@ describe("registerViewController", () => {
   it("refuse un storyboard où l'ancre a disparu", () => {
     // Capacitor changerait son storyboard : mieux vaut un échec de scaffold
     // qu'une app noire livrée sans que rien ne le signale.
-    expect(() => registerViewController("<viewController id=\"x\"/>")).toThrow();
+    expect(() => registerViewController('<viewController id="x"/>')).toThrow();
   });
 });

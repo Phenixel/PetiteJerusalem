@@ -3,7 +3,9 @@ import {
   reservationService,
   RANDOM_RESERVATION_TTL_MS,
   type ReservationForm,
+  type ReservationSlot,
 } from "./reservationService";
+import { SessionFieldsRequiredError, SlotTakenError } from "./appError";
 import { SearchService } from "./searchService";
 import { authService, type User } from "./authService";
 import { moderationService } from "./moderationService";
@@ -17,10 +19,26 @@ import type {
 } from "../models/models";
 import { EnumTypeTextStudy } from "../models/typeTextStudy";
 import { TextTypeService } from "./textTypeService";
-import { DateService, endOfLocalDay } from "./dateService";
+import { endOfLocalDay } from "./dateService";
 import textStudiesJson from "../datas/textStudies.json";
 
-export class SessionService {
+/**
+ * Avancement d'une chaîne, en places (sections). Une réservation « texte
+ * entier » compte pour toutes les sections du texte : c'est ce que le
+ * lecteur a pris, et ce qu'il reste à lire.
+ */
+export interface SessionReservationStats {
+  total: number;
+  reserved: number;
+  read: number;
+  participants: number;
+  /** Places réservées, en pourcentage arrondi du total. */
+  percentage: number;
+  /** Places lues, en pourcentage arrondi du total. */
+  readPercentage: number;
+}
+
+class SessionService {
   async getAllSessions(): Promise<Session[]> {
     return await firestoreService.getSessions();
   }
@@ -35,15 +53,9 @@ export class SessionService {
     return await firestoreService.getSessionById(slugOrId);
   }
 
-  getTextStudiesByTypeSync(type: EnumTypeTextStudy): TextStudy[] {
-    const enumToJsonLabel: Record<EnumTypeTextStudy, string> = {
-      [EnumTypeTextStudy.TalmudBavli]: "Talmud Bavli",
-      [EnumTypeTextStudy.Mishna]: "Mishna",
-      [EnumTypeTextStudy.Tehilim]: "Tehilim",
-      [EnumTypeTextStudy.Tanakh]: "Tanakh",
-    };
-
-    const label = enumToJsonLabel[type];
+  private getTextStudiesByTypeSync(type: EnumTypeTextStudy): TextStudy[] {
+    // Le JSON nomme les types comme l'interface les affiche.
+    const label = TextTypeService.formatType(type);
     const all = (textStudiesJson as TextStudiesJson).textStudies;
 
     return all
@@ -77,25 +89,42 @@ export class SessionService {
   }
 
   /**
-   * Statistiques de réservation d'une session pour l'aperçu (carte) :
-   * nombre total de sections, sections réservées et pourcentage arrondi,
-   * afin de signaler d'un coup d'œil s'il reste de la disponibilité.
+   * L'avancement d'une chaîne, le même pour la carte d'aperçu, la barre de
+   * progression de la page publique, la page de gestion et les événements de
+   * clôture (quatre calculs divergents auparavant). Les tirages abandonnés
+   * (expirés sans lecture) ne comptent plus : leur emplacement est redevenu
+   * disponible, l'aperçu doit le dire.
+   *
+   * `textStudies` évite de refiltrer le corpus quand l'appelant a déjà les
+   * textes de la chaîne sous la main.
    */
-  getSessionReservationStats(session: Session): {
-    total: number;
-    reserved: number;
-    percentage: number;
-  } {
-    const total = this.getSessionTextStudies(session).reduce(
-      (acc, text) => acc + text.totalSections,
-      0,
-    );
-    // Les tirages abandonnés (expirés sans lecture) ne comptent plus : leur
-    // emplacement est redevenu disponible, l'aperçu doit le dire.
-    const reserved = reservationService.activeReservations(session.reservations || []).length;
-    const percentage = total > 0 ? Math.round((reserved / total) * 100) : 0;
+  getSessionReservationStats(
+    session: Session,
+    textStudies: TextStudy[] = this.getSessionTextStudies(session),
+  ): SessionReservationStats {
+    const sectionsByText = new Map(textStudies.map((text) => [text.id, text.totalSections]));
+    const total = textStudies.reduce((acc, text) => acc + text.totalSections, 0);
 
-    return { total, reserved, percentage };
+    let reserved = 0;
+    let read = 0;
+    const participants = new Set<string>();
+    for (const r of reservationService.activeReservations(session.reservations ?? [])) {
+      const places = r.section === undefined ? (sectionsByText.get(r.textStudyId) ?? 1) : 1;
+      reserved += places;
+      if (r.isCompleted) read += places;
+      if (r.chosenById) participants.add(`user:${r.chosenById}`);
+      else if (r.chosenByGuestId) participants.add(`guest:${r.chosenByGuestId}`);
+    }
+
+    const percent = (count: number) => (total > 0 ? Math.round((count / total) * 100) : 0);
+    return {
+      total,
+      reserved,
+      read,
+      participants: participants.size,
+      percentage: percent(reserved),
+      readPercentage: percent(read),
+    };
   }
 
   /**
@@ -122,41 +151,12 @@ export class SessionService {
   }
 
   // === MÉTHODES DE RÉSERVATION ===
-
-  getReservationsBySession(session: Session): TextStudyReservation[] {
-    return reservationService.getReservationsBySession(session);
-  }
-
-  async createReservation(
-    sessionId: string,
-    textStudyId: string,
-    section?: number,
-    userId?: string,
-    guestId?: string,
-    userName?: string,
-    guestName?: string,
-  ): Promise<string> {
-    return await reservationService.createReservation(
-      sessionId,
-      textStudyId,
-      section,
-      userId,
-      guestId,
-      userName,
-      guestName,
-    );
-  }
+  // Les délégations qui restent ici ont des appelants hors du périmètre du
+  // partage de lectures (la page de lecture) ; les vues du partage passent
+  // directement par reservationService.
 
   async deleteReservation(sessionId: string, reservationId: string): Promise<void> {
     return await reservationService.deleteReservation(sessionId, reservationId);
-  }
-
-  async deleteReservations(sessionId: string, reservationIds: string[]): Promise<void> {
-    return await reservationService.deleteReservations(sessionId, reservationIds);
-  }
-
-  async renameGuest(sessionId: string, reservationId: string, newName: string): Promise<number> {
-    return await reservationService.renameGuest(sessionId, reservationId, newName);
   }
 
   canUserDeleteReservation(
@@ -203,7 +203,7 @@ export class SessionService {
 
   async createBatchReservationsForUser(
     sessionId: string,
-    items: Array<{ textStudyId: string; section?: number }>,
+    items: ReservationSlot[],
     currentUser: User | null,
     reservationForm: ReservationForm,
     guestEmailRequired: boolean = false,
@@ -217,21 +217,16 @@ export class SessionService {
         currentUser.name,
         undefined,
       );
-    } else {
-      if (!reservationForm.name || (guestEmailRequired && !reservationForm.email.trim())) {
-        throw new Error(
-          guestEmailRequired ? "Veuillez remplir votre nom et email" : "Veuillez remplir votre nom",
-        );
-      }
-      return await reservationService.createBatchReservations(
-        sessionId,
-        items,
-        undefined,
-        reservationService.resolveGuestId(reservationForm),
-        undefined,
-        reservationForm.name,
-      );
     }
+    reservationService.assertGuestFormValid(reservationForm, guestEmailRequired);
+    return await reservationService.createBatchReservations(
+      sessionId,
+      items,
+      undefined,
+      reservationService.resolveGuestId(reservationForm),
+      undefined,
+      reservationForm.name,
+    );
   }
 
   /**
@@ -313,7 +308,6 @@ export class SessionService {
           textStudyId: text.id,
           section: 1,
           chosenByName: currentUser?.name || guestName,
-          available: false,
           isCompleted: false,
           createdAt: new Date(),
           expiresAt,
@@ -321,7 +315,8 @@ export class SessionService {
         };
         return { text, reservation };
       } catch (error) {
-        if (error instanceof Error && error.message.includes("déjà réservée")) continue;
+        // Pris entre-temps : on repioche. Toute autre erreur remonte.
+        if (error instanceof SlotTakenError) continue;
         throw error;
       }
     }
@@ -345,7 +340,7 @@ export class SessionService {
   }
 
   createLocalReservations(
-    items: Array<{ textStudyId: string; section?: number }>,
+    items: ReservationSlot[],
     reservationIds: string[],
     currentUser: User | null,
     reservationForm: ReservationForm,
@@ -361,14 +356,10 @@ export class SessionService {
     );
   }
 
-  async createSession(
-    sessionData: Omit<Session, "id" | "createdAt" | "isCompleted" | "reservations">,
+  private async createSession(
+    sessionData: Omit<Session, "id" | "createdAt" | "reservations">,
   ): Promise<string> {
-    const sessionWithReservations: Omit<Session, "id" | "createdAt" | "isCompleted"> = {
-      ...sessionData,
-      reservations: [],
-    };
-    return await firestoreService.createSession(sessionWithReservations);
+    return await firestoreService.createSession({ ...sessionData, reservations: [] });
   }
 
   private async generateUniqueSlug(baseName: string, excludeSessionId?: string): Promise<string> {
@@ -402,7 +393,7 @@ export class SessionService {
     guestEmailRequired: boolean = false,
   ): Promise<string> {
     if (!name || !description || !type || !dateLimit || !personId || !creatorName) {
-      throw new Error("Tous les champs sont obligatoires");
+      throw new SessionFieldsRequiredError();
     }
 
     // Modération App Store : pas de terme interdit dans le titre ni la description.
@@ -410,7 +401,7 @@ export class SessionService {
 
     const slug = await this.generateUniqueSlug(name);
 
-    const sessionData: Omit<Session, "id" | "createdAt" | "isCompleted" | "reservations"> = {
+    return await this.createSession({
       name,
       description,
       type,
@@ -421,17 +412,7 @@ export class SessionService {
       slug,
       selectedBooks,
       guestEmailRequired,
-    };
-
-    return await this.createSession(sessionData);
-  }
-
-  formatTextType(type: EnumTypeTextStudy): string {
-    return TextTypeService.formatType(type);
-  }
-
-  formatDate(date: Date): string {
-    return DateService.formatDate(date);
+    });
   }
 
   sortSessionsByDate(sessions: Session[]): Session[] {
@@ -486,22 +467,6 @@ export class SessionService {
 
   formatBookName(bookName: string): string {
     return SearchService.formatBookName(bookName);
-  }
-
-  getTextDisplayStatus(
-    textStudyId: string,
-    textStudy: TextStudy,
-    session: Session,
-  ): { status: "available" | "fully_reserved" | "partially_reserved"; reservedBy: string | null } {
-    return reservationService.getTextDisplayStatus(textStudyId, textStudy, session);
-  }
-
-  filterTextStudiesBySearch(textStudies: TextStudy[], searchTerm: string): TextStudy[] {
-    return SearchService.filterTextStudiesBySearch(textStudies, searchTerm);
-  }
-
-  generateChapters(totalSections: number): number[] {
-    return Array.from({ length: totalSections }, (_, i) => i + 1);
   }
 
   async markReservationAsCompleted(
@@ -571,14 +536,11 @@ export class SessionService {
 
   /**
    * Terminée : close par son créateur, ou date limite dépassée. La journée de
-   * la date limite compte entière, quel que soit l'horaire enregistré (les
-   * anciennes chaînes portent minuit, les nouvelles la fin de journée).
+   * la date limite compte entière (voir endOfLocalDay).
    */
   isSessionFinished(session: Session): boolean {
     if (session.isEnded) return true;
-    const limit = new Date(session.dateLimit);
-    limit.setHours(23, 59, 59, 999);
-    return Date.now() > limit.getTime();
+    return Date.now() > endOfLocalDay(new Date(session.dateLimit)).getTime();
   }
 
   canEndSession(session: Session): boolean {

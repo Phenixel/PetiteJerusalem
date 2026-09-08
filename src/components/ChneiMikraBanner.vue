@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { getWeeklyParasha } from "../services/dailyCycles";
-import { appendHebrewNumeral } from "../services/hebrewNumerals";
+import { parashaTitle } from "../services/dailyCycles";
+import { useWeeklyParasha } from "../composables/useTehilimDay";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "./icons/AppIcon.vue";
 
@@ -16,11 +16,10 @@ import AppIcon from "./icons/AppIcon.vue";
 
 const { t } = useI18n();
 
-const parasha = computed(() => getWeeklyParasha());
+// La semaine suit le jour hébraïque : samedi soir, la paracha suivante.
+const { parasha } = useWeeklyParasha();
 
-const title = computed(() =>
-  (parasha.value?.entries ?? []).map((e) => appendHebrewNumeral(e.name)).join(" · "),
-);
+const title = computed(() => parashaTitle(parasha.value));
 
 function track() {
   analyticsService.capture("chnei_mikra_opened", {

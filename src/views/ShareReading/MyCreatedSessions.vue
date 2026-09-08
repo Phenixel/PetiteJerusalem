@@ -8,10 +8,12 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { sessionService } from "../../services/sessionService";
+import { TextTypeService } from "../../services/textTypeService";
 import type { Session } from "../../models/models";
 import type { User } from "../../services/authService";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import ProgressBar from "../../components/ProgressBar.vue";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -81,7 +83,7 @@ const goToNewSession = () => {
                 {{ session.name }}
               </button>
               <span class="chip bg-primary/10 text-primary shrink-0">
-                {{ sessionService.formatTextType(session.type) }}
+                {{ TextTypeService.formatType(session.type) }}
               </span>
               <!-- Session masquée par la modération : le créateur doit le voir. -->
               <span
@@ -94,15 +96,13 @@ const goToNewSession = () => {
             </div>
             <!-- Jauge de réservation : l'info clé du créateur -->
             <div v-if="stats(session).total > 0" class="flex items-center gap-2.5">
-              <div
-                class="h-1.5 flex-1 max-w-56 bg-black/5 rounded-full overflow-hidden dark:bg-white/10"
-              >
-                <div
-                  class="h-full rounded-full transition-all duration-500"
-                  :class="stats(session).percentage >= 100 ? 'bg-green-500' : 'bg-primary'"
-                  :style="{ width: `${Math.min(100, stats(session).percentage)}%` }"
-                ></div>
-              </div>
+              <ProgressBar
+                class="flex-1 max-w-56"
+                :value="stats(session).percentage"
+                :tone="stats(session).percentage >= 100 ? 'success' : 'primary'"
+                size="xs"
+                :label="t('shareReading.reservedPercent', { percent: stats(session).percentage })"
+              />
               <span class="text-xs font-medium text-text-secondary shrink-0">
                 {{ t("shareReading.reservedPercent", { percent: stats(session).percentage }) }}
               </span>
@@ -118,10 +118,7 @@ const goToNewSession = () => {
             >
               <AppIcon name="settings" :size="14" /> {{ t("common.manage") }}
             </button>
-            <button
-              @click="emit('share', session)"
-              class="btn btn-soft !px-3.5 !py-2 !text-sm"
-            >
+            <button @click="emit('share', session)" class="btn btn-soft !px-3.5 !py-2 !text-sm">
               <AppIcon name="share" :size="14" />
               <span class="hidden md:inline">{{ t("common.share") }}</span>
             </button>

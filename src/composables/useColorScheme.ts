@@ -1,6 +1,6 @@
-import { computed, ref, watchEffect } from "vue";
-import { userPreferencesService } from "../services/userPreferencesService";
+import { computed, ref, watchEffect, type ComputedRef } from "vue";
 import { analyticsService } from "../services/analyticsService";
+import { createAccountPreference, type AccountPreference } from "./createAccountPreference";
 
 /**
  * Apparence claire ou sombre.
@@ -12,7 +12,7 @@ import { analyticsService } from "../services/analyticsService";
  * toujours sur fond sombre, peut désormais le dire.
  *
  * Le choix voyage comme le thème de couleurs : sur l'appareil sans compte,
- * chez Firestore avec un compte (userPreferencesService), et c'est la classe
+ * chez Firestore avec un compte (createAccountPreference), et c'est la classe
  * `dark` de la racine du document qui l'applique (Tailwind).
  */
 
@@ -27,7 +27,7 @@ export interface ColorSchemeOption {
 }
 
 /** Dans l'ordre où le sélecteur les présente. */
-export const COLOR_SCHEME_OPTIONS: ColorSchemeOption[] = [
+const COLOR_SCHEME_OPTIONS: ColorSchemeOption[] = [
   { id: "light", background: "#f4f1ea", ink: "#35312a" },
   { id: "dark", background: "#111827", ink: "#e5e7eb" },
   // « Système » n'a pas de couleurs à lui : son miroir montre les deux.
@@ -40,13 +40,49 @@ function isColorSchemeId(value: unknown): value is ColorSchemeId {
   return COLOR_SCHEME_OPTIONS.some((option) => option.id === value);
 }
 
-const currentSchemeId = ref<ColorSchemeId>(DEFAULT_SCHEME);
 const systemPrefersDark = ref(false);
-let loadedForUserId: string | null = null;
-let schemeVersion = 0;
+
+/**
+ * Un seul événement pour les deux origines : `source` sépare la bascule du
+ * système du choix fait dans les réglages, et `preference` dit lequel des
+ * trois choix a été retenu (les enregistrements d'avant ce réglage n'ont ni
+ * l'un ni l'autre, ils viennent tous du système).
+ */
+function trackSchemeChanged(
+  scheme: "light" | "dark",
+  source: "system" | "user",
+  preference: ColorSchemeId,
+  scope?: "account" | "device",
+) {
+  analyticsService.capture("color_scheme_changed", { scheme, source, preference, scope });
+}
+
+// Typé explicitement : ses événements lisent `isDark`, qui lit sa valeur.
+const schemePreference: AccountPreference<ColorSchemeId> = createAccountPreference({
+  field: "colorScheme",
+  defaultValue: DEFAULT_SCHEME,
+  isValid: isColorSchemeId,
+  eventName: "color_scheme_changed",
+  // `isDark` est déjà à jour quand l'événement part : la valeur est appliquée
+  // avant l'écriture.
+  eventProps: (preference, _previous, scope) => ({
+    scheme: isDark.value ? "dark" : "light",
+    source: "user",
+    preference,
+    scope,
+  }),
+  failedEventName: "color_scheme_change_failed",
+  failedEventProps: (preference, previous) => ({
+    preference,
+    previous_preference: previous,
+    scope: "account",
+  }),
+});
+
+const currentSchemeId = schemePreference.current;
 
 /** Fond sombre en ce moment ? (le choix explicite, ou le système à défaut) */
-const isDark = computed(
+const isDark: ComputedRef<boolean> = computed(
   () =>
     currentSchemeId.value === "dark" ||
     (currentSchemeId.value === "system" && systemPrefersDark.value),
@@ -64,21 +100,6 @@ function initSystemPreference(): void {
       trackSchemeChanged(event.matches ? "dark" : "light", "system", "system");
     }
   });
-}
-
-/**
- * Un seul événement pour les deux origines : `source` sépare la bascule du
- * système du choix fait dans les réglages, et `preference` dit lequel des
- * trois choix a été retenu (les enregistrements d'avant ce réglage n'ont ni
- * l'un ni l'autre, ils viennent tous du système).
- */
-function trackSchemeChanged(
-  scheme: "light" | "dark",
-  source: "system" | "user",
-  preference: ColorSchemeId,
-  scope?: "account" | "device",
-) {
-  analyticsService.capture("color_scheme_changed", { scheme, source, preference, scope });
 }
 
 // La classe `dark` suit l'état courant, sans qu'aucun composant n'ait à le
@@ -102,62 +123,14 @@ export function useColorScheme() {
    */
   async function setColorScheme(userId: string | null, schemeId: string) {
     if (!isColorSchemeId(schemeId) || schemeId === currentSchemeId.value) return;
-    const previous = currentSchemeId.value;
-
-    schemeVersion++;
-    loadedForUserId = userId;
-    currentSchemeId.value = schemeId;
-
-    if (!userId) {
-      loadedForUserId = null;
-      userPreferencesService.saveGuestPreferences({ colorScheme: schemeId });
-      trackSchemeChanged(isDark.value ? "dark" : "light", "user", schemeId, "device");
-      return;
-    }
-
-    try {
-      await userPreferencesService.savePreferences(userId, { colorScheme: schemeId });
-      trackSchemeChanged(isDark.value ? "dark" : "light", "user", schemeId, "account");
-    } catch {
-      currentSchemeId.value = previous;
-      // L'écran redevient ce qu'il était sous les yeux de l'utilisateur :
-      // sans cet événement, l'écart entre l'apparence choisie et celle que
-      // porte le compte resterait invisible (même mesure que le thème).
-      analyticsService.capture("color_scheme_change_failed", {
-        preference: schemeId,
-        previous_preference: previous,
-        scope: "account",
-      });
-      throw new Error("Failed to save color scheme preference");
-    }
+    await schemePreference.set(userId, schemeId);
   }
 
   return { currentSchemeId, schemes: COLOR_SCHEME_OPTIONS, isDark, setColorScheme };
 }
 
 /** Apparence du compte : copie locale d'abord, réponse du serveur ensuite (voir useTheme). */
-export async function loadColorScheme(userId: string): Promise<void> {
-  if (loadedForUserId === userId) return;
-  const versionAtStart = ++schemeVersion;
-  const cached = userPreferencesService.getCachedPreferences(userId);
-  if (cached && isColorSchemeId(cached.colorScheme)) {
-    currentSchemeId.value = cached.colorScheme;
-  }
-  try {
-    const prefs = await userPreferencesService.getPreferences(userId);
-    if (schemeVersion !== versionAtStart) return;
-    currentSchemeId.value = isColorSchemeId(prefs.colorScheme) ? prefs.colorScheme : DEFAULT_SCHEME;
-    loadedForUserId = userId;
-  } catch {
-    if (schemeVersion !== versionAtStart) return;
-    currentSchemeId.value = DEFAULT_SCHEME;
-  }
-}
+export const loadColorScheme = schemePreference.loadForUser;
 
 /** Sans compte : l'apparence gardée sur l'appareil, ou le suivi du système. */
-export function loadGuestColorScheme(): void {
-  schemeVersion++;
-  loadedForUserId = null;
-  const guest = userPreferencesService.getGuestPreferences();
-  currentSchemeId.value = isColorSchemeId(guest?.colorScheme) ? guest.colorScheme : DEFAULT_SCHEME;
-}
+export const loadGuestColorScheme = schemePreference.loadForGuest;

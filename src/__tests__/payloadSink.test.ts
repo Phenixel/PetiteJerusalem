@@ -33,7 +33,10 @@ describe("PayloadSink", () => {
   });
 
   it("retente au passage suivant ce qu'un envoi échoué n'a pas livré", async () => {
-    const send = vi.fn().mockRejectedValueOnce(new Error("plugin absent")).mockResolvedValue(undefined);
+    const send = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("plugin absent"))
+      .mockResolvedValue(undefined);
     const sink = new PayloadSink(send);
     await expect(sink.publish({ zmanim: "A" })).rejects.toThrow();
     // La mémoire n'a pas été mise à jour : le même payload repart.

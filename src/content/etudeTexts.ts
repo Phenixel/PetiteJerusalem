@@ -462,7 +462,7 @@ type CorpusSeo = {
   listLabel: string;
 };
 
-export const CORPUS_SEO: Record<Corpus, CorpusSeo> = {
+const CORPUS_SEO: Record<Corpus, CorpusSeo> = {
   tehilim: {
     title: "Les 150 Tehilim (Psaumes) en hébreu et phonétique | Petite Jérusalem",
     description:

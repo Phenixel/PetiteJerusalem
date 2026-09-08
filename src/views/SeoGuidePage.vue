@@ -8,6 +8,7 @@
  */
 import { computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { guidePages, SITE_URL } from "../content/seoPages";
 import { seoService } from "../services/seoService";
 import { useSeoContentNav } from "../composables/useSeoContentNav";
@@ -15,6 +16,7 @@ import SignupPromptModal from "../components/SignupPromptModal.vue";
 import { useLocalePath } from "../composables/useLocalePath";
 
 const route = useRoute();
+const { t } = useI18n();
 const { showAuthPrompt, onContentClick } = useSeoContentNav();
 /** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
 const { localePath } = useLocalePath();
@@ -40,10 +42,10 @@ watch([() => route.path], applyMeta);
 <template>
   <div v-if="page" class="seo-page" v-html="page.bodyHtml" @click="onContentClick"></div>
   <main v-else class="seo-article" @click="onContentClick">
-    <h1>Page introuvable</h1>
+    <h1>{{ t("notFound.title") }}</h1>
     <p>
-      Cette page n'existe pas.
-      <RouterLink :to="localePath('horaires')">Voir les horaires de Chabbat</RouterLink>.
+      {{ t("notFound.message") }}
+      <RouterLink :to="localePath('horaires')">{{ t("zmanim.navTitle") }}</RouterLink>
     </p>
   </main>
   <SignupPromptModal v-model:show="showAuthPrompt" variant="auth" />

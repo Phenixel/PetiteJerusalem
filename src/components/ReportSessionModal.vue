@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, toRef, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { ReportReason, Session } from "../models/models";
 import { moderationService } from "../services/moderationService";
 import { useToast } from "../composables/useToast";
+import { useOverlay } from "../composables/useOverlayStack";
 import AppIcon from "./icons/AppIcon.vue";
 
 /**
@@ -46,6 +47,9 @@ watch(
 );
 
 const closeModal = () => emit("update:show", false);
+
+// Le bouton retour d'Android ferme la modale avant de quitter la page.
+useOverlay(toRef(props, "show"), closeModal);
 
 const submitReport = async () => {
   const session = props.session;

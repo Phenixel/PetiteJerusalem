@@ -7,6 +7,9 @@ import { useReadingSize } from "../composables/useReadingSize";
 import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
 import { isNativeApp } from "../composables/useNativeApp";
 import { addReadingMenu, removeReadingMenu } from "../composables/useReadingNav";
+import { useScrollFrame } from "../composables/useScrollFrame";
+import { useOverlay } from "../composables/useOverlayStack";
+import type { BookState } from "../composables/useBookDownload";
 import { kotelCompassOffered, openKotelCompass } from "../composables/useKotelCompass";
 import { openTefilinMirror, tefilinMirrorOffered } from "../composables/useTefilinMirror";
 import type { ReadingNavSection } from "../composables/useReadingNav";
@@ -33,13 +36,11 @@ import { analyticsService } from "../services/analyticsService";
  * dans l'app native, le téléchargement du texte (`downloadState`, "none"
  * quand il n'y a rien à télécharger).
  */
-type ReadingDownloadState = "none" | "downloading" | "downloaded" | "idle";
-
 const props = withDefaults(
   defineProps<{
     sections?: ReadingNavSection[];
     phonetic?: boolean | null;
-    downloadState?: ReadingDownloadState;
+    downloadState?: BookState;
   }>(),
   {
     sections: () => [],
@@ -76,18 +77,18 @@ const bottomClass = computed(() => {
   return isMiniPlayerVisible.value ? "bottom-36" : "bottom-20";
 });
 
-// Tout en bas de l'office : le menu s'efface (panneau ouvert excepté).
-const BOTTOM_GAP = 24;
-const atBottom = ref(false);
-
-const checkScroll = () => {
-  const doc = document.documentElement;
-  atBottom.value = window.innerHeight + window.scrollY >= doc.scrollHeight - BOTTOM_GAP;
-};
+// Tout en bas de l'office : le menu s'efface (panneau ouvert excepté). La
+// mesure vient de l'image partagée (useScrollFrame) : plus de lecture de
+// scrollHeight à chaque événement de défilement.
+const scrollFrame = useScrollFrame();
+const atBottom = computed(() => scrollFrame.value.atBottom);
 
 function close() {
   open.value = false;
 }
+
+// Le bouton retour d'Android ferme le panneau avant de quitter la page.
+useOverlay(open, close);
 
 /** Dénominateur des sauts : ouvertures du panneau, saut ou non derrière. */
 function trackNavOpened() {
@@ -107,8 +108,8 @@ function goTop() {
  * que l'on ne trouvait pas en défilant. Les évènements gardent leur nom
  * d'origine (tefila_*), pour ne pas couper la série déjà mesurée.
  */
-function trackJump(offset: number) {
-  const rank = props.sections.findIndex((section) => section.offset === offset);
+function trackJump(anchor: string) {
+  const rank = props.sections.findIndex((section) => section.anchor === anchor);
   analyticsService.capture("tefila_section_jumped", {
     sections_count: props.sections.length,
     rank: rank >= 0 ? rank + 1 : null,
@@ -135,10 +136,10 @@ function openMirror() {
   openTefilinMirror("menu");
 }
 
-function goTo(offset: number) {
-  trackJump(offset);
+function goTo(anchor: string) {
+  trackJump(anchor);
   close();
-  const el = document.querySelector(`[data-block-anchor="${offset}"]`);
+  const el = document.querySelector(`[data-block-anchor="${anchor}"]`);
   if (!(el instanceof HTMLElement)) return;
   // Le titre de la section vient se poser sous l'en-tête, la lecture dessous.
   window.scrollTo({
@@ -153,16 +154,11 @@ const onKeydown = (e: KeyboardEvent) => {
 
 onMounted(() => {
   addReadingMenu();
-  checkScroll();
-  window.addEventListener("scroll", checkScroll, { passive: true });
-  window.addEventListener("resize", checkScroll, { passive: true });
   window.addEventListener("keydown", onKeydown);
 });
 
 onUnmounted(() => {
   removeReadingMenu();
-  window.removeEventListener("scroll", checkScroll);
-  window.removeEventListener("resize", checkScroll);
   window.removeEventListener("keydown", onKeydown);
 });
 </script>
@@ -269,8 +265,8 @@ onUnmounted(() => {
             </p>
             <button
               v-for="section in props.sections"
-              :key="section.offset"
-              @click="goTo(section.offset)"
+              :key="section.anchor"
+              @click="goTo(section.anchor)"
               class="section-item"
             >
               <span class="section-name">{{ section.label }}</span>
