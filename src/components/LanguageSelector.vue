@@ -45,7 +45,7 @@ function handleKeydown(event: KeyboardEvent) {
   >
     <button
       @click="toggleDropdown"
-      class="flex items-center gap-2 px-3 py-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors cursor-pointer dark:bg-white/10 dark:hover:bg-white/15"
+      class="flex items-center gap-2 px-3 py-2 rounded-btn bg-black/5 hover:bg-black/10 transition-colors cursor-pointer dark:bg-white/10 dark:hover:bg-white/15"
       :aria-expanded="isOpen"
       :aria-label="t('common.language')"
     >

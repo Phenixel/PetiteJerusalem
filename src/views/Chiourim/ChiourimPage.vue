@@ -119,7 +119,9 @@ onMounted(() => {
         class="text-center animate-[fadeIn_0.5s_ease]"
         :class="isNativeApp ? 'mb-6' : 'mb-12'"
       >
-        <h2 class="text-4xl md:text-5xl font-bold text-text-primary tracking-tight">
+        <!-- Titre de la page (un h2 : le h1 est ailleurs) : il porte donc la
+             police d'apparat à la main. -->
+        <h2 class="font-display text-4xl md:text-5xl font-bold text-text-primary tracking-tight">
           {{ t("chiourim.title") }}
         </h2>
         <p

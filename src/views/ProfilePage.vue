@@ -149,7 +149,7 @@ onUnmounted(() => {
            compacte : le titre de la page, une ligne qui dit où vivent les
            réglages, et les deux boutons de connexion. Les réglages gardent
            leur cadre dédié en dessous. -->
-      <div v-else class="bg-gradient-to-br from-primary to-secondary py-8 px-6 md:px-12 mb-8">
+      <div v-else class="bg-primary py-8 px-6 md:px-12 mb-8">
         <div class="max-w-[1200px] mx-auto">
           <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">
             {{ t("profile.guestTitle") }}
@@ -194,7 +194,7 @@ onUnmounted(() => {
               <li>
                 <RouterLink
                   to="/bibliotheque/lecture-du-jour"
-                  class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors dark:hover:bg-white/10 group"
+                  class="flex items-center gap-3 px-4 py-3 rounded-btn font-medium text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors dark:hover:bg-white/10 group"
                   @click="trackShortcut('daily_reading')"
                 >
                   <AppIcon name="book" :size="15" class="text-primary shrink-0" />
@@ -209,7 +209,7 @@ onUnmounted(() => {
               <li>
                 <RouterLink
                   to="/share-reading"
-                  class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors dark:hover:bg-white/10 group"
+                  class="flex items-center gap-3 px-4 py-3 rounded-btn font-medium text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors dark:hover:bg-white/10 group"
                   @click="trackShortcut('my_sessions')"
                 >
                   <AppIcon name="users" :size="15" class="text-primary shrink-0" />
@@ -235,7 +235,7 @@ onUnmounted(() => {
               <button
                 @click="setActiveTab(tab.id)"
                 :class="[
-                  'w-full text-left px-4 py-3 rounded-lg font-medium transition-colors',
+                  'w-full text-left px-4 py-3 rounded-btn font-medium transition-colors',
                   activeTab === tab.id
                     ? 'bg-primary/10 text-primary font-semibold'
                     : 'text-text-secondary hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/10',

@@ -72,8 +72,11 @@ describe("réglages sans compte", () => {
 
     expect(cssVar("--color-primary")).toBe(emerald.primary);
     expect(cssVar("--font-hebrew")).toContain("Heebo");
-    // La police latine n'a jamais été choisie : celle d'origine.
-    expect(cssVar("--font-sans")).toContain("Inter");
+    // La police latine n'a jamais été choisie : celle d'origine. Elle ne vaut
+    // que pour le texte des lectures (--font-reading), l'interface garde la
+    // sienne (--font-sans, posée par la feuille de style, jamais réécrite).
+    expect(cssVar("--font-reading")).toContain("Manrope");
+    expect(cssVar("--font-sans")).toBe("");
   });
 
   it("repart des valeurs d'origine quand rien n'a été réglé", () => {

@@ -59,12 +59,12 @@ body {
 }
 
 @theme {
-  /* Colors, the beige background and the 3 selectable theme pairs are fixed;
-     --color-primary/--color-secondary are re-written at runtime by useTheme. */
-  --color-primary: #1d6fdb;
-  --color-secondary: #06b6d4;
-  --color-accent: #ff6b6b;
-  --color-accent-secondary: #ee5a24;
+  /* Couleurs : le fond beige est fixe, les trois duos de thème sont au choix
+     de l'utilisateur ; --color-primary/--color-secondary sont réécrits au
+     vol par useTheme. Le duo par défaut est « sunset », l'orange vermillon
+     de la pierre chauffée. Voir docs/design.md pour la charte. */
+  --color-primary: #de4f17;
+  --color-secondary: #c98a00;
 
   /* Backgrounds */
   --color-bg-primary: #ffffff;
@@ -84,16 +84,36 @@ body {
   /* Hairlines for the few separators that remain. */
   --color-line: rgb(53 49 42 / 0.08);
 
-  /* Fonts, --font-sans / --font-hebrew are re-written at runtime by useFonts. */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Polices. Deux familles portent toute l'interface :
+     Playfair Display (--font-display) pour les titres principaux et le peu
+     que l'on met en avant, Manrope (--font-sans) pour tout le reste.
+     Elles ne se changent pas : ce sont elles, l'identité du site.
+     Seules --font-reading (le texte français d'une lecture) et --font-hebrew
+     (le texte hébreu) suivent le choix de l'utilisateur, réécrites au vol par
+     useFonts. */
+  --font-display: "Playfair Display", "Lora", Georgia, serif;
+  --font-sans: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-serif: "Lora", "Georgia", serif;
+  --font-reading: var(--font-sans);
   --font-hebrew:
     "Frank Ruhl Libre", "Noto Teamim Frank", "Noto Serif Hebrew", "David Libre", Georgia, serif;
 
-  /* Border radius scale: tight on small controls, larger on large surfaces. */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  /* Rayons. Deux familles, et elles vont en sens contraire : les surfaces
+     (cartes, panneaux, fenêtres) sont presque franches, comme la pierre
+     taillée dont le site tient son nom ; les commandes (boutons, puces) sont
+     nettement rondes, pour se donner à toucher. Le contraste entre les deux
+     est ce qui fait lire un bouton comme un bouton. */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 14px;
+  --radius-3xl: 20px;
+  /* Alias parlants : la carte de la maison, le bouton, la pastille. */
+  --radius-card: 10px;
+  --radius-btn: 14px;
+  --radius-pill: 999px;
 
   /* Soft, warm-tinted shadows, flat surfaces are separated from the beige
      background by shadow alone (no borders). */
@@ -185,8 +205,22 @@ h6 {
 }
 
 /* Dans @layer base pour que les classes (btn-primary, text-*…) gardent la
-   main sur la couleur des liens, hors layer, cette règle écraserait tout. */
+   main sur la couleur des liens et sur l'interlettrage des titres : hors
+   layer, ces règles écraseraient tout. */
 @layer base {
+  /* Le titre d'une page est le seul à porter Playfair d'office : c'est « le
+     titre principal » de la page. Ailleurs, la police d'apparat se pose à la
+     main, avec l'utilitaire `font-display` que Tailwind tire de
+     --font-display, sur ce que l'on veut vraiment mettre en avant : le nom du
+     site, une accroche, un chiffre. Posée partout, elle ne met plus rien en
+     avant.
+     Playfair a un fort contraste de graisse et de grands jambages : à ces
+     corps-là, il lui faut un peu moins d'interlettrage que Manrope. */
+  h1 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
   a {
     color: inherit;
     text-decoration: none;
@@ -216,7 +250,7 @@ button,
      warm shadow. The house card. */
   .card {
     background-color: var(--color-surface);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
   }
 
@@ -237,7 +271,7 @@ button,
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 10px;
+    border-radius: var(--radius-btn);
     font-weight: 600;
     padding: 0.625rem 1.25rem;
     font-size: 0.9375rem;
@@ -289,7 +323,7 @@ button,
     justify-content: center;
     width: 2.25rem;
     height: 2.25rem;
-    border-radius: 10px;
+    border-radius: var(--radius-xl);
     color: var(--color-text-secondary);
     transition:
       background-color 0.2s ease,
@@ -306,8 +340,8 @@ button,
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    padding: 0.2rem 0.6rem;
-    border-radius: 8px;
+    padding: 0.2rem 0.65rem;
+    border-radius: var(--radius-pill);
     font-size: 0.75rem;
     font-weight: 600;
     white-space: nowrap;
@@ -317,7 +351,7 @@ button,
   .field {
     width: 100%;
     background-color: var(--color-surface);
-    border-radius: 10px;
+    border-radius: var(--radius-xl);
     padding: 0.7rem 1rem;
     color: var(--color-text-primary);
     box-shadow: inset 0 0 0 1px var(--color-line);
@@ -393,7 +427,7 @@ button,
   }
   .modal-panel {
     background-color: var(--color-surface);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     box-shadow: var(--shadow-pop);
     width: 100%;
     max-width: 28rem;
@@ -439,6 +473,14 @@ button,
   font-size: clamp(1.9rem, 4vw, 2.75rem);
   color: var(--color-text-primary);
   margin-bottom: 1rem;
+}
+
+/* Les intertitres d'un article portent aussi la police d'apparat : c'est le
+   seul endroit du site où le titre de niveau deux structure une vraie page de
+   lecture, il mérite le même traitement que le titre. */
+.seo-article h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
 }
 
 .seo-article h2 {
@@ -510,7 +552,7 @@ button,
   display: inline-block;
   margin-top: 0.5rem;
   padding: 0.75rem 1.5rem;
-  border-radius: 10px;
+  border-radius: var(--radius-btn);
   background: var(--color-primary);
   color: #fff;
   font-weight: 700;
@@ -543,7 +585,7 @@ button,
 .seo-article .tehilim-psalms a {
   display: inline-block;
   padding: 0.4rem 0.85rem;
-  border-radius: 8px;
+  border-radius: var(--radius-btn);
   background: var(--color-surface);
   box-shadow: var(--shadow-card);
   text-decoration: none;
@@ -644,6 +686,7 @@ button,
 }
 
 .reading-page .tl {
+  font-family: var(--font-reading);
   color: var(--color-text-secondary);
   font-style: italic;
   line-height: 1.6;

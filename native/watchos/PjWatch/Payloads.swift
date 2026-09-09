@@ -189,7 +189,7 @@ final class PayloadStore: ObservableObject {
  * lecture, exactement comme dans les widgets.
  */
 enum PjColors {
-    static let fallbackAccent = "#1D6FDB"
+    static let fallbackAccent = "#DE4F17"
     static let text = Color.white
     static let textSecondary = Color(white: 0.62)
     /// Le vert de « tout est lu » (text-green-400 du mode sombre).

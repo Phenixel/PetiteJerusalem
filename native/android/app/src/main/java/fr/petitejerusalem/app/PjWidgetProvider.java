@@ -25,7 +25,7 @@ import android.os.Bundle;
 public abstract class PjWidgetProvider extends AppWidgetProvider {
 
     /** Accent des payloads d'avant la couleur de thème (le bleu d'origine). */
-    protected static final int FALLBACK_ACCENT = 0xFF1D6FDB;
+    protected static final int FALLBACK_ACCENT = 0xFFDE4F17;
 
     /**
      * La taille d'une instance, en points, telle que le launcher l'annonce.

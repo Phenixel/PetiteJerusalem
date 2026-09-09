@@ -1091,7 +1091,7 @@ const formatBookName = bookName;
             :key="ty.key"
             @click="selectedType = ty.key"
             :class="[
-              'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+              'px-4 py-2 rounded-btn text-sm font-medium transition-colors',
               selectedType === ty.key
                 ? 'bg-primary text-white'
                 : 'bg-black/5 text-text-secondary hover:bg-black/10 hover:text-text-primary dark:bg-white/10 dark:hover:bg-white/15',
@@ -1191,7 +1191,7 @@ const formatBookName = bookName;
         <div class="flex items-center justify-between gap-3 mb-6 flex-wrap">
           <div
             v-if="weeklyParasha"
-            class="inline-flex items-center gap-1 rounded-lg bg-black/5 p-1 dark:bg-white/10"
+            class="inline-flex items-center gap-1 rounded-btn bg-black/5 p-1 dark:bg-white/10"
             role="tablist"
           >
             <button

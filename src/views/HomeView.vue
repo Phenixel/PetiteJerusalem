@@ -186,9 +186,7 @@ onUnmounted(() => {
       <div class="w-full max-w-6xl mx-auto mb-8 enter-rise">
         <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight">
           {{ greeting }},
-          <span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">{{
-            firstName
-          }}</span>
+          <span class="text-primary">{{ firstName }}</span>
         </h1>
         <p class="text-text-secondary mt-1.5">{{ t("home.dashboard.subtitle") }}</p>
       </div>

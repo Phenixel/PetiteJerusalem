@@ -189,13 +189,13 @@ onUnmounted(() => {
               <!-- Hébreu / phonétique, en abrégé : la place manque pour les mots. -->
               <div
                 v-if="phonetic !== null"
-                class="inline-flex p-0.5 rounded-lg bg-black/5 dark:bg-white/10"
+                class="inline-flex p-0.5 rounded-btn bg-black/5 dark:bg-white/10"
                 role="group"
                 :aria-label="`${t('textReading.hebrew')} / ${t('textReading.phonetic')}`"
               >
                 <button
                   @click="emit('update:phonetic', false)"
-                  class="px-2.5 py-1 rounded-md text-sm font-medium transition-colors"
+                  class="px-2.5 py-1 rounded-xl text-sm font-medium transition-colors"
                   :class="!phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
                   :aria-pressed="!phonetic"
                   :aria-label="t('textReading.hebrew')"
@@ -205,7 +205,7 @@ onUnmounted(() => {
                 </button>
                 <button
                   @click="emit('update:phonetic', true)"
-                  class="px-2.5 py-1 rounded-md text-sm font-medium transition-colors"
+                  class="px-2.5 py-1 rounded-xl text-sm font-medium transition-colors"
                   :class="phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
                   :aria-pressed="phonetic"
                   :aria-label="t('textReading.phonetic')"

@@ -438,6 +438,7 @@ const sections = computed(() =>
 }
 
 .reading-tl {
+  font-family: var(--font-reading);
   font-size: calc(1.05rem * var(--reading-scale, 1));
   line-height: 1.75;
   font-style: italic;
@@ -448,6 +449,7 @@ const sections = computed(() =>
 /* La halakha d'un passage : une consigne qui se lit, pas un texte qui se dit.
    Même registre discret que les didascalies, en ligne au-dessus du texte. */
 .reading-halakha {
+  font-family: var(--font-reading);
   margin-bottom: 0.75rem;
   font-size: calc(0.85rem * var(--reading-scale, 1));
   font-style: italic;
@@ -457,6 +459,7 @@ const sections = computed(() =>
 
 /* Didascalies : plus petites, en italique, distinctes du texte qui se dit. */
 .reading-rubric {
+  font-family: var(--font-reading);
   margin-top: 1.25rem;
   margin-bottom: 0.25rem;
   font-size: calc(0.85rem * var(--reading-scale, 1));
@@ -466,7 +469,7 @@ const sections = computed(() =>
 }
 
 .reading-rubric-inline {
-  font-family: var(--font-sans);
+  font-family: var(--font-reading);
   font-size: calc(0.8rem * var(--reading-scale, 1));
   font-style: italic;
   color: var(--color-text-secondary);

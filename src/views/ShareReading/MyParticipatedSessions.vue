@@ -144,12 +144,15 @@ const goToSession = (session: Session) => {
               <span class="chip bg-primary/10 text-primary shrink-0 hidden sm:inline-flex">
                 {{ TextTypeService.formatType(session.type) }}
               </span>
-              <!-- Échéance : discrète, orange quand la fin approche -->
+              <!-- Échéance : discrète, ambrée quand la fin approche. L'ambre
+                   ne vient pas du thème : une urgence ne change pas de couleur
+                   avec les goûts, et resterait indistincte de la puce voisine
+                   sous le thème orange. -->
               <span
                 class="chip shrink-0"
                 :class="
                   daysLeft(session) <= 3
-                    ? 'bg-accent-secondary/10 text-accent-secondary'
+                    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
                     : 'bg-black/5 text-text-secondary dark:bg-white/10'
                 "
               >

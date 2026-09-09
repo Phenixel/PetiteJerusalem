@@ -156,7 +156,7 @@ onUnmounted(() => {
         <!-- Miroir de l'apparence : une page en réduction. « Système » montre
              les deux, coupées en diagonale. -->
         <span
-          class="relative block h-16 overflow-hidden rounded-xl ring-1 ring-black/5 sm:h-20 dark:ring-white/10"
+          class="relative block h-16 overflow-hidden rounded-md ring-1 ring-black/5 sm:h-20 dark:ring-white/10"
           :style="{ backgroundColor: option.background }"
         >
           <span class="absolute inset-0 flex flex-col justify-center gap-1.5 p-3">
@@ -234,12 +234,15 @@ onUnmounted(() => {
         @mouseenter="onThemeEnter(theme.id)"
         @mouseleave="onThemeLeave"
       >
-        <span class="block overflow-hidden rounded-xl">
-          <!-- En-tête coloré du thème -->
-          <span
-            class="relative block h-16 sm:h-24"
-            :style="{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})` }"
-          >
+        <span class="block overflow-hidden rounded-md">
+          <!-- En-tête coloré du thème : les deux couleurs du duo posées à
+               plat, la seconde en bande sur le bord. Un dégradé les mélangeait
+               en une troisième couleur qui n'existe nulle part dans l'app. -->
+          <span class="relative block h-16 sm:h-24" :style="{ backgroundColor: theme.primary }">
+            <span
+              class="absolute inset-y-0 end-0 w-1/4"
+              :style="{ backgroundColor: theme.secondary }"
+            ></span>
             <span class="absolute inset-0 flex items-end p-2 sm:p-3">
               <span class="flex items-center gap-1.5 sm:gap-2">
                 <span class="block h-5 w-5 rounded-full bg-white/30 sm:h-8 sm:w-8"></span>
@@ -266,7 +269,7 @@ onUnmounted(() => {
             <span class="block h-1.5 w-3/4 rounded-full bg-black/5 sm:h-2 dark:bg-white/10"></span>
             <span class="block pt-1">
               <span
-                class="block h-4 w-12 rounded-lg sm:h-6 sm:w-20"
+                class="block h-4 w-12 rounded-btn sm:h-6 sm:w-20"
                 :style="{ backgroundColor: theme.primary }"
               ></span>
             </span>

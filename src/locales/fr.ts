@@ -351,7 +351,7 @@ const fr = {
     fontLatinLabel: "Police de l'interface",
     fontHebrewLabel: "Police des textes en hébreu",
     fontsLatin: {
-      inter: "Moderne",
+      manrope: "Moderne",
       lora: "Classique",
       nunito: "Douce",
     },

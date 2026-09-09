@@ -482,6 +482,7 @@ onUnmounted(() => observer?.disconnect());
   line-height: 1.7;
 }
 .daily-tl {
+  font-family: var(--font-reading);
   font-size: calc(1rem * var(--reading-scale, 1));
 }
 /* Rachi : sous le Targoum, plus petit et en retrait derrière un filet

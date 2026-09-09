@@ -1643,7 +1643,7 @@ watch(textId, (_, previousTextId) => {
           <button
             v-if="bookmarks.length"
             @click="showBookmarksPanel = !showBookmarksPanel"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-sm font-medium transition-colors"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn bg-black/5 dark:bg-white/10 text-sm font-medium transition-colors"
             :class="
               showBookmarksPanel ? 'text-primary' : 'text-text-secondary hover:text-text-primary'
             "
@@ -1656,18 +1656,18 @@ watch(textId, (_, previousTextId) => {
 
           <div
             v-if="canTransliterate"
-            class="inline-flex p-0.5 rounded-lg bg-black/5 dark:bg-white/10"
+            class="inline-flex p-0.5 rounded-btn bg-black/5 dark:bg-white/10"
           >
             <button
               @click="showPhonetic = false"
-              class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+              class="px-3 py-1 rounded-xl text-sm font-medium transition-colors"
               :class="!showPhonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
             >
               {{ t("textReading.hebrew") }}
             </button>
             <button
               @click="showPhonetic = true"
-              class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+              class="px-3 py-1 rounded-xl text-sm font-medium transition-colors"
               :class="showPhonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
             >
               {{ t("textReading.phonetic") }}
@@ -1905,6 +1905,9 @@ watch(textId, (_, previousTextId) => {
   line-height: 1.7;
 }
 .reading-tl {
+  /* La police latine choisie dans les réglages (useFonts) ne vaut que pour le
+     texte des lectures : le reste de l'app garde Manrope. */
+  font-family: var(--font-reading);
   font-size: calc(1.125rem * var(--reading-scale, 1));
 }
 </style>

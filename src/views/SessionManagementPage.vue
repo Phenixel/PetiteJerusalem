@@ -851,7 +851,7 @@ onMounted(() => {
                   <div
                     v-for="row in card.rows"
                     :key="row.section"
-                    class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm"
+                    class="flex items-center gap-2 px-3 py-2 rounded-btn transition-colors text-sm"
                     :class="{
                       'bg-primary/5 dark:bg-primary/10':
                         row.reservation && !row.reservation.isCompleted,
@@ -916,7 +916,7 @@ onMounted(() => {
                       <button
                         v-if="!row.reservation.chosenById"
                         @click="openRenameModal(row.reservation)"
-                        class="w-7 h-7 rounded-lg flex items-center justify-center text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors focus:outline-none dark:hover:bg-white/10"
+                        class="w-7 h-7 rounded-xl flex items-center justify-center text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors focus:outline-none dark:hover:bg-white/10"
                         :title="t('sessionManagement.renameGuest')"
                       >
                         <AppIcon name="pencil" :size="13" />

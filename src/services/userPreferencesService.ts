@@ -81,9 +81,9 @@ export interface UserPreferences {
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
-  theme: "ocean",
+  theme: "sunset",
   colorScheme: "system",
-  fontLatin: "inter",
+  fontLatin: "manrope",
   fontHebrew: "frank",
   dailyReadingIds: [],
   dailyReadingOptions: [],

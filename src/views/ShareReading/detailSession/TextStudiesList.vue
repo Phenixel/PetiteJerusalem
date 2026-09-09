@@ -487,7 +487,7 @@ const handleCardClick = (card: TextCard) => {
                       params: { textId: card.text.id, section: row.chapter },
                       query: { session: session.slug || session.id },
                     }"
-                    class="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex-shrink-0"
+                    class="w-8 h-8 flex items-center justify-center rounded-xl text-text-secondary hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex-shrink-0"
                     :title="t('detailSession.textList.readThisChapter')"
                     @click.stop="emit('read-clicked', card.text.id, row.chapter)"
                   >
