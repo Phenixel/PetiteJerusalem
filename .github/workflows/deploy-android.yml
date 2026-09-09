@@ -325,16 +325,41 @@ jobs:
             android/wear/build/outputs/bundle/release/wear-release.aab
           if-no-files-found: error
 
-      # Notes de version (« Nouveautés ») : le texte de la release GitHub du
-      # tag si elle existe (rédigé à la main en créant la release), sinon la
-      # phrase par défaut, voir scripts/prepare-whatsnew.mjs.
+      # Notes de version (« Nouveautés »), par ordre de priorité : le texte de
+      # la release GitHub du tag si elle existe déjà, sinon le message du tag
+      # annoté, sinon la phrase par défaut (scripts/prepare-whatsnew.mjs).
+      #
+      # Le message du tag est la source la plus commode : `git tag -a` écrit
+      # les notes au moment même où la release part, sans passer par
+      # l'interface GitHub ni attendre qu'une release existe.
       - name: Préparer les notes de version
         id: notes
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.version.outputs.name }}
         run: |
-          gh api "repos/$GITHUB_REPOSITORY/releases/tags/v${{ steps.version.outputs.name }}" \
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" \
             --jq '.body // ""' > release-body.md || rm -f release-body.md
+          if [ -s release-body.md ]; then
+            # Une release rédigée à la main existe : on n'y touche pas.
+            echo "release_has_body=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release_has_body=false" >> "$GITHUB_OUTPUT"
+            # Le message du tag, mais seulement s'il y en a un : sur un tag
+            # léger, `%(contents)` renvoie le message du COMMIT pointé, ce qui
+            # publierait un texte de fusion en guise de nouveautés.
+            if [ "$(git cat-file -t "$TAG" 2>/dev/null)" = "tag" ]; then
+              git tag -l --format='%(contents)' "$TAG" > release-body.md
+            fi
+            [ -s release-body.md ] || rm -f release-body.md
+          fi
+          # Le corps de la release GitHub : les notes complètes si on en a,
+          # sinon le texte du Play Store (tronqué à 500 caractères).
+          if [ -s release-body.md ]; then
+            echo "body_path=release-body.md" >> "$GITHUB_OUTPUT"
+          else
+            echo "body_path=whatsnew/whatsnew-fr-FR" >> "$GITHUB_OUTPUT"
+          fi
           node scripts/prepare-whatsnew.mjs release-body.md
           ls whatsnew
 
@@ -372,13 +397,16 @@ jobs:
       # retrouver chaque build publié sans passer par l'onglet Actions. Si la
       # release existe déjà (créée à la main avec son texte), l'AAB y est
       # simplement attaché : sans `body`, l'action conserve le texte d'origine.
-      # Sinon, le corps reprend whatsnew-fr-FR (la phrase par défaut).
+      # Sinon, le corps reprend les notes du tag annoté, ou à défaut
+      # whatsnew-fr-FR (la phrase par défaut).
       - name: Créer la release GitHub
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           name: v${{ steps.version.outputs.name }}
-          body_path: ${{ steps.notes.outputs.has_release_body != 'true' && 'whatsnew/whatsnew-fr-FR' || '' }}
+          # Release déjà rédigée à la main : sans `body`, l'action conserve son
+          # texte. Sinon, les notes du tag (ou la phrase par défaut).
+          body_path: ${{ steps.notes.outputs.release_has_body == 'true' && '' || steps.notes.outputs.body_path }}
           files: |
             android/app/build/outputs/bundle/release/app-release.aab
             android/wear/build/outputs/bundle/release/wear-release.aab
