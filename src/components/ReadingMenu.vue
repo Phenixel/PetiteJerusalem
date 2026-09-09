@@ -180,7 +180,7 @@ onUnmounted(() => {
       <transition name="nav-panel">
         <div
           v-if="open"
-          class="nav-panel absolute bottom-0 right-0 flex flex-col overflow-hidden rounded-2xl bg-surface shadow-pop"
+          class="nav-panel absolute bottom-0 right-0 flex flex-col overflow-hidden rounded-xl bg-surface shadow-pop"
           :style="{ '--menu-scale': menuScale }"
         >
           <div class="flex items-center justify-between gap-2 ps-3 pe-2 pt-2.5 pb-1 flex-shrink-0">
@@ -195,7 +195,7 @@ onUnmounted(() => {
               >
                 <button
                   @click="emit('update:phonetic', false)"
-                  class="px-2.5 py-1 rounded-xl text-sm font-medium transition-colors"
+                  class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
                   :class="!phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
                   :aria-pressed="!phonetic"
                   :aria-label="t('textReading.hebrew')"
@@ -205,7 +205,7 @@ onUnmounted(() => {
                 </button>
                 <button
                   @click="emit('update:phonetic', true)"
-                  class="px-2.5 py-1 rounded-xl text-sm font-medium transition-colors"
+                  class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
                   :class="phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
                   :aria-pressed="phonetic"
                   :aria-label="t('textReading.phonetic')"

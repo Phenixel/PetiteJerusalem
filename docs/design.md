@@ -67,23 +67,26 @@ d'éclaircir `primary`.
 
 ## 3. Les rayons
 
-Deux familles, et elles vont en sens contraire. Les **surfaces** sont presque
-franches, comme la pierre taillée ; les **commandes** sont nettement rondes,
-pour se donner à toucher. C'est le contraste entre les deux qui fait lire un
-bouton comme un bouton.
+Deux familles, et elles vont en sens contraire. Les **surfaces** sont taillées
+franc, comme la pierre, à peine adoucies aux angles ; les **commandes** sont
+nettement rondes, pour se donner à toucher. C'est le contraste entre les deux
+qui fait lire un bouton comme un bouton.
 
 | Jeton | Valeur | Pour |
 | --- | --- | --- |
-| `--radius-card` (`rounded-card`) | 10 px | cartes, panneaux, listes, tuiles |
-| `--radius-btn` (`rounded-btn`) | 14 px | boutons, groupes segmentés, lignes de menu |
+| `--radius-card` (`rounded-card`) | 6 px | cartes, panneaux, listes, tuiles, squelettes |
+| `--radius-control` (`rounded-control`) | 10 px | petites commandes : bouton d'icône, champ, bouton d'un groupe segmenté |
+| `--radius-btn` (`rounded-btn`) | 14 px | boutons, coques de groupes segmentés, lignes de menu |
 | `--radius-pill` (`rounded-pill`) | 999 px | puces, pastilles, curseurs |
-| `--radius-xs` … `--radius-3xl` | 4, 6, 8, 10, 12, 14, 20 px | l'échelle Tailwind, réglée sur cette famille |
+| `--radius-xs` … `--radius-3xl` | 2, 3, 4, 6, 8, 10, 14 px | l'échelle Tailwind, réglée sur la famille des surfaces |
 
-`rounded-lg` vaut donc 10 px, comme `.card` : c'est la valeur par défaut d'une
-surface. Une commande prend `rounded-btn`, un bouton carré d'icône
-`rounded-xl` (12 px), un élément posé dans un autre prend le rayon du parent
-moins son rembourrage (une coque à 14 px avec 2 px de marge intérieure tient
-un bouton à 12 px).
+L'échelle numérique ne sert qu'aux surfaces : `rounded-lg` vaut 6 px, comme
+`.card` (c'est la valeur par défaut d'une surface), `rounded-xl` 8 px pour les
+fenêtres et les panneaux flottants, `rounded-sm` 3 px pour un aperçu posé dans
+une carte. Les commandes ne suivent pas cette échelle : elles prennent leurs
+alias. Un élément posé dans un autre prend le rayon du parent moins son
+rembourrage (une coque à 14 px avec 2 px de marge intérieure tient un bouton à
+12 px, arrondi ici à `rounded-control`).
 
 ## 4. Les polices
 
@@ -96,6 +99,7 @@ elles, l'identité du site.
 | `--font-sans` (`font-sans`) | Manrope | tout le reste : textes, boutons, étiquettes, chiffres |
 | `--font-hebrew` | au choix | le texte hébreu d'une lecture |
 | `--font-reading` | au choix | le texte latin d'une lecture (traduction, phonétique, didascalies) |
+| `--font-serif` | Lora, Georgia en repli | les tranches des livres de la bibliothèque et la dédicace |
 
 Playfair est une police d'apparat : posée partout, elle ne met plus rien en
 avant. Elle est automatique sur les `h1` et se pose à la main (classe
@@ -143,4 +147,5 @@ Cette charte est en cours d'écriture, au fil des décisions.
 
 - Un jeton d'encre distinct de `--color-primary`, si l'on veut des couleurs
   plus vives sans perdre les liens et les numéros de verset.
-- L'icône de l'app et les captures des stores portent encore le bleu d'avant.
+- L'icône de l'app porte encore le bleu d'avant : elle se reprendra plus tard.
+  Les captures des fiches des stores se régénèrent à la prochaine CI.

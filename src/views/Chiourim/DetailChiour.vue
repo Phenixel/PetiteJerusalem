@@ -320,7 +320,7 @@ watch(() => route.params.slug, loadChiour);
         <router-link
           v-if="previousEpisode"
           :to="`/chiourim/${previousEpisode.slug}`"
-          class="group flex items-center gap-2.5 min-w-0 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5"
+          class="group flex items-center gap-2.5 min-w-0 rounded-control px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5"
           :class="nextEpisode ? 'col-start-1' : 'col-span-2'"
         >
           <AppIcon
@@ -345,7 +345,7 @@ watch(() => route.params.slug, loadChiour);
         <router-link
           v-if="nextEpisode"
           :to="`/chiourim/${nextEpisode.slug}`"
-          class="group flex items-center justify-end gap-2.5 min-w-0 text-right rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5"
+          class="group flex items-center justify-end gap-2.5 min-w-0 text-right rounded-control px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5"
           :class="previousEpisode ? 'col-start-2' : 'col-span-2'"
         >
           <span class="min-w-0">

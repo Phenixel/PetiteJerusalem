@@ -916,7 +916,7 @@ onMounted(() => {
                       <button
                         v-if="!row.reservation.chosenById"
                         @click="openRenameModal(row.reservation)"
-                        class="w-7 h-7 rounded-xl flex items-center justify-center text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors focus:outline-none dark:hover:bg-white/10"
+                        class="w-7 h-7 rounded-control flex items-center justify-center text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors focus:outline-none dark:hover:bg-white/10"
                         :title="t('sessionManagement.renameGuest')"
                       >
                         <AppIcon name="pencil" :size="13" />

@@ -258,7 +258,7 @@ function confirm() {
                 type="button"
                 @click="openClock"
                 :class="[
-                  'mt-2 inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-2xl font-bold tabular-nums transition-colors',
+                  'mt-2 inline-flex items-center gap-2 rounded-control px-3 py-1.5 text-2xl font-bold tabular-nums transition-colors',
                   daily
                     ? 'bg-primary/10 text-primary'
                     : 'text-text-secondary hover:bg-black/5 dark:hover:bg-white/10',
@@ -312,7 +312,7 @@ function confirm() {
             type="button"
             @click="mode = 'hour'"
             :class="[
-              'px-3 py-1 rounded-xl transition-colors tabular-nums',
+              'px-3 py-1 rounded-control transition-colors tabular-nums',
               mode === 'hour'
                 ? 'bg-primary/10 text-primary'
                 : 'text-text-primary hover:bg-black/5 dark:hover:bg-white/10',
@@ -326,7 +326,7 @@ function confirm() {
             type="button"
             @click="mode = 'minute'"
             :class="[
-              'px-3 py-1 rounded-xl transition-colors tabular-nums',
+              'px-3 py-1 rounded-control transition-colors tabular-nums',
               mode === 'minute'
                 ? 'bg-primary/10 text-primary'
                 : 'text-text-primary hover:bg-black/5 dark:hover:bg-white/10',

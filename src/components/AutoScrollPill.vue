@@ -69,7 +69,7 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
       <Transition name="pill-panel">
         <div
           v-if="open"
-          class="pill-panel absolute bottom-full left-1/2 mb-2 w-52 -translate-x-1/2 overflow-hidden rounded-2xl bg-surface p-2 shadow-pop"
+          class="pill-panel absolute bottom-full left-1/2 mb-2 w-52 -translate-x-1/2 overflow-hidden rounded-xl bg-surface p-2 shadow-pop"
         >
           <p class="speed-heading">{{ t("textReading.autoScroll.speed") }}</p>
           <button

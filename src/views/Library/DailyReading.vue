@@ -989,8 +989,8 @@ const formatBookName = bookName;
 
     <!-- Loading -->
     <div v-if="loading" class="animate-pulse space-y-4">
-      <div class="h-20 rounded-2xl bg-black/10 dark:bg-white/10"></div>
-      <div class="h-40 rounded-2xl bg-black/10 dark:bg-white/10"></div>
+      <div class="h-20 rounded-card bg-black/10 dark:bg-white/10"></div>
+      <div class="h-40 rounded-card bg-black/10 dark:bg-white/10"></div>
     </div>
 
     <!-- ===== Manage mode: pick texts from the library ===== -->

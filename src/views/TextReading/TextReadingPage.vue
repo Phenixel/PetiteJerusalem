@@ -1660,14 +1660,14 @@ watch(textId, (_, previousTextId) => {
           >
             <button
               @click="showPhonetic = false"
-              class="px-3 py-1 rounded-xl text-sm font-medium transition-colors"
+              class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
               :class="!showPhonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
             >
               {{ t("textReading.hebrew") }}
             </button>
             <button
               @click="showPhonetic = true"
-              class="px-3 py-1 rounded-xl text-sm font-medium transition-colors"
+              class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
               :class="showPhonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
             >
               {{ t("textReading.phonetic") }}

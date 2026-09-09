@@ -156,7 +156,7 @@ onUnmounted(() => {
         <!-- Miroir de l'apparence : une page en réduction. « Système » montre
              les deux, coupées en diagonale. -->
         <span
-          class="relative block h-16 overflow-hidden rounded-md ring-1 ring-black/5 sm:h-20 dark:ring-white/10"
+          class="relative block h-16 overflow-hidden rounded-sm ring-1 ring-black/5 sm:h-20 dark:ring-white/10"
           :style="{ backgroundColor: option.background }"
         >
           <span class="absolute inset-0 flex flex-col justify-center gap-1.5 p-3">
@@ -234,7 +234,7 @@ onUnmounted(() => {
         @mouseenter="onThemeEnter(theme.id)"
         @mouseleave="onThemeLeave"
       >
-        <span class="block overflow-hidden rounded-md">
+        <span class="block overflow-hidden rounded-sm">
           <!-- En-tête coloré du thème : les deux couleurs du duo posées à
                plat, la seconde en bande sur le bord. Un dégradé les mélangeait
                en une troisième couleur qui n'existe nulle part dans l'app. -->
@@ -269,7 +269,7 @@ onUnmounted(() => {
             <span class="block h-1.5 w-3/4 rounded-full bg-black/5 sm:h-2 dark:bg-white/10"></span>
             <span class="block pt-1">
               <span
-                class="block h-4 w-12 rounded-btn sm:h-6 sm:w-20"
+                class="block h-4 w-12 rounded-control sm:h-6 sm:w-20"
                 :style="{ backgroundColor: theme.primary }"
               ></span>
             </span>
