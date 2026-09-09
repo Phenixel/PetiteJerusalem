@@ -72,7 +72,6 @@ serveur de dev :
 | `npm run cap:sync` | synchronise web + plugins vers les projets natifs |
 | `npm run cap:android` | build + ouvre Android Studio |
 | `npm run cap:ios` | build + ouvre Xcode |
-| `npm run icons` | régénère les icônes depuis leur source vectorielle (à lancer seulement quand le dessin change) |
 | `npm run store:screenshots` | régénère les captures de la fiche Play Store (voir `docs/android-ci-cd.md`) ; `-- --ios` produit celles de l'App Store (voir `docs/ios-ci-cd.md`) |
 
 ## Lecture hors-ligne : téléchargement à la demande
@@ -259,11 +258,12 @@ en vecteur : les variantes n'en changent que la palette et le cadrage. Le
 cadrage de la variante claire reproduit au pixel près l'icône déjà publiée sur
 les boutiques, et un test le tient.
 
-`npm run icons` rasterise le tout dans `assets/` avec le Chromium de Playwright.
-Les fichiers produits sont versionnés : la commande ne se lance qu'à la main,
-quand le dessin change. Les scripts `setup-android.mjs` et `setup-ios.mjs` se
-contentent de les recopier dans les projets natifs, un runner de CI n'a donc
-jamais besoin d'un navigateur pour fabriquer l'app.
+Les PNG d'`assets/themed/` sont versionnés, et ce sont eux qui partent dans les
+projets natifs : `setup-android.mjs` et `setup-ios.mjs` se contentent de les
+recopier, un runner de CI n'a donc jamais besoin d'un navigateur pour fabriquer
+l'app. La rasterisation, elle, ne vit pas dans le dépôt : le jour où le dessin
+change, il faut produire les fichiers à part, aux noms et aux tailles
+qu'attendent les scripts d'installation, puis les remplacer dans `assets/`.
 
 Deux contraintes valent d'être connues avant de retoucher le dessin :
 

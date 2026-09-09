@@ -27,7 +27,7 @@
  *   embarqués (sources de native/watchos/, voir docs/app-watch.md)
  * - Icônes / splash générés depuis assets/logo.png
  * - Icône iOS 18 : variantes sombre et teintée déclarées dans le catalogue
- *   (fichiers d'assets/themed/, voir scripts/generate-app-icons.mjs)
+ *   (fichiers d'assets/themed/, rasterisés depuis lib/app-icon.mjs)
  *
  * Usage : node scripts/setup-ios.mjs
  *
@@ -884,7 +884,7 @@ if (existsSync(appIconSet)) {
   if (missing.length) {
     console.warn(
       "setup-ios: ⚠️ variantes d'icône absentes d'assets/themed/, l'icône ne suivra pas le thème.\n" +
-        "  Lancer : node scripts/generate-app-icons.mjs",
+        "  Y déposer icon-dark.png et icon-tinted.png, rasterisés depuis lib/app-icon.mjs.",
     );
   } else {
     for (const { variant, source } of variants) {

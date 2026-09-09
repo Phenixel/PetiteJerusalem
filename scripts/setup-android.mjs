@@ -201,8 +201,8 @@ if (!existsSync(generatedMarker)) {
 //    Sans elle, Android n'a rien à teindre et laisse l'app en couleurs au
 //    milieu d'un écran d'accueil accordé : c'est le seul moyen, sur Android,
 //    d'avoir une icône qui suive le thème de l'appareil.
-//    Les PNG sont versionnés dans assets/themed/, produits par
-//    scripts/generate-app-icons.mjs depuis la source vectorielle.
+//    Les PNG sont versionnés dans assets/themed/, rasterisés hors du dépôt
+//    depuis la source vectorielle de lib/app-icon.mjs.
 const launcherBgColor = join(androidDir, "app/src/main/res/values/ic_launcher_background.xml");
 const anydpiDir = join(androidDir, "app/src/main/res/mipmap-anydpi-v26");
 if (existsSync(anydpiDir)) {
@@ -225,7 +225,7 @@ if (existsSync(anydpiDir)) {
   } else {
     console.warn(
       "setup-android: ⚠️ assets/themed/ est vide, pas d'icône thématique.\n" +
-        "  Lancer : node scripts/generate-app-icons.mjs",
+        "  Y déposer monochrome-<densité>.png, rasterisés depuis lib/app-icon.mjs.",
     );
   }
 
