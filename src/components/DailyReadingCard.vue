@@ -18,14 +18,13 @@ const allDone = computed(() => props.total > 0 && props.done >= props.total);
 
 <template>
   <RouterLink to="/bibliotheque/lecture-du-jour" class="card card-hover p-6 block group">
-    <div class="flex items-center justify-between gap-3 mb-4">
+    <div class="mb-4">
       <h3
         class="font-semibold text-text-primary flex items-center gap-2.5 group-hover:text-primary transition-colors"
       >
         <AppIcon name="book" :size="17" class="text-primary" />
         {{ t("dailyReading.title") }}
       </h3>
-      <AppIcon name="chevron-right" :size="15" class="text-text-secondary/50 rtl:rotate-180" />
     </div>
 
     <!-- Liste vide : inviter à la composer -->

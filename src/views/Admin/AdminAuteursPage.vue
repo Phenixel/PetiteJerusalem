@@ -144,7 +144,6 @@ async function copyLink() {
               {{ t("admin.auteurs.chiourimCount", { count: countByAuteur.get(auteur.id) ?? 0 }) }}
             </p>
           </div>
-          <AppIcon name="chevron-right" :size="16" class="text-text-secondary shrink-0" />
         </router-link>
       </li>
     </ul>

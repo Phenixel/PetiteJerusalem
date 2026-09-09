@@ -734,7 +734,7 @@ onUnmounted(() => {
                   class="card card-hover p-4 flex items-center justify-between gap-2 group"
                 >
                   <span class="min-w-0">
-                    <span class="block font-medium text-text-primary truncate">
+                    <span class="block font-medium text-text-primary">
                       {{ appendHebrewNumeral(text.name) }}
                     </span>
                     <span v-if="text.totalSections > 1" class="text-xs text-text-secondary">

@@ -1560,7 +1560,7 @@ watch(textId, (_, previousTextId) => {
             <AppIcon name="book-open" :size="15" class="text-primary flex-shrink-0" />
             {{ t("textReading.resumeTitle") }}
           </p>
-          <p class="text-sm text-text-secondary mt-0.5 truncate">{{ resumePlace }}</p>
+          <p class="text-sm text-text-secondary mt-0.5">{{ resumePlace }}</p>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
           <button @click="resumeReading" class="btn btn-primary !px-3 !py-1.5 text-sm">
@@ -1592,7 +1592,7 @@ watch(textId, (_, previousTextId) => {
                 {{ section.index }}
               </span>
               <span
-                class="font-medium text-text-primary truncate group-hover:text-primary transition-colors"
+                class="font-medium text-text-primary group-hover:text-primary transition-colors"
               >
                 {{ sectionLabel(section) }}
               </span>
@@ -1610,11 +1610,6 @@ watch(textId, (_, previousTextId) => {
                 name="user-clock"
                 :size="16"
                 class="text-amber-500"
-              />
-              <AppIcon
-                name="chevron-right"
-                :size="15"
-                class="text-text-secondary/40 group-hover:text-primary transition-colors"
               />
             </span>
           </button>
@@ -1843,11 +1838,6 @@ watch(textId, (_, previousTextId) => {
               </span>
             </span>
           </span>
-          <AppIcon
-            name="chevron-right"
-            :size="16"
-            class="flex-shrink-0 text-text-secondary/50 group-hover:text-primary transition-colors rtl:rotate-180"
-          />
         </RouterLink>
 
         <!-- Bottom navigation -->

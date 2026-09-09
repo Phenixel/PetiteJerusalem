@@ -25,6 +25,7 @@ import {
 } from "../services/userPreferencesService";
 import { isNativeApp } from "../composables/useNativeApp";
 import { useHomeAccountCta } from "../composables/useHomeAccountCta";
+import AppIcon from "../components/icons/AppIcon.vue";
 import SiteFooter from "../components/SiteFooter.vue";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
@@ -282,34 +283,47 @@ onUnmounted(() => {
     <OmerBanner v-if="!user" class="w-full max-w-6xl mx-auto" />
 
     <div class="w-full max-w-6xl mx-auto">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mb-10 items-stretch">
+      <!-- Les trois portes du site, posées à même le fond : sans cadre. Elles
+           ne sont pas une donnée à consulter mais un endroit où aller, et le
+           cadre les mettait au même rang que les cartes du tableau de bord
+           juste au-dessus. Sans lui, les seules surfaces blanches de la page
+           sont celles qui répondent à une question (ma lecture, l'heure), et
+           l'accueil se lit en deux temps au lieu d'un empilement de boîtes.
+           Ce qui remplace le cadre : un filet, vertical quand les trois sont
+           côte à côte, horizontal quand elles s'empilent ; et au survol, le
+           titre qui prend la couleur et un chevron qui avance. -->
+      <div class="grid grid-cols-1 md:grid-cols-3 mb-10 items-stretch">
         <button
           v-for="(feature, index) in features"
           :key="feature.title"
-          class="feature-card card card-hover group flex cursor-pointer items-center gap-5 p-6 text-left md:flex-col md:items-start md:gap-4 md:p-7"
+          class="feature-link group flex cursor-pointer items-center gap-5 border-b border-line py-5 text-left last:border-b-0 md:flex-col md:items-start md:gap-4 md:border-b-0 md:border-s md:px-7 md:py-2 md:first:border-s-0 md:first:ps-0 md:last:pe-0"
           :style="{ '--enter-delay': `${index * 0.12}s` }"
           @click="
             trackCard(`feature_${feature.route}`);
             router.push(feature.route);
           "
         >
-          <!-- Deux compositions pour la même carte : en ligne sur un téléphone
+          <!-- Deux compositions pour la même porte : en ligne sur un téléphone
                (texte à gauche, dessin à droite), la place y est en largeur ;
                en colonne dès qu'il y en a trois côte à côte, le dessin au-
-               dessus d'un titre qui peut alors prendre son corps. C'est une
-               des trois portes du site : son titre est le plus gros de la page
-               après l'accroche. Au repos, seule la micro-animation interne du
-               SVG vit ; au survol, c'est le dessin lui-même qui s'anime. -->
+               dessus d'un titre qui peut alors prendre son corps. Au repos,
+               seule la micro-animation interne du SVG vit ; au survol, c'est
+               le dessin lui-même qui s'anime. -->
           <div
-            class="order-2 h-24 w-24 shrink-0 text-primary sm:h-28 sm:w-28 md:order-1 md:h-20 md:w-20"
+            class="order-2 h-24 w-24 shrink-0 text-primary sm:h-28 sm:w-28 md:order-1 md:h-24 md:w-24"
           >
             <component :is="feature.illustration" />
           </div>
           <div class="order-1 min-w-0 flex-1 md:order-2">
             <h3
-              class="font-display mb-1.5 text-xl font-bold tracking-tight text-text-primary transition-colors group-hover:text-primary md:text-2xl"
+              class="font-display mb-1.5 flex items-center gap-1.5 text-xl font-bold tracking-tight text-text-primary transition-colors group-hover:text-primary md:text-2xl"
             >
               {{ feature.title }}
+              <AppIcon
+                name="chevron-right"
+                :size="18"
+                class="shrink-0 -translate-x-1.5 opacity-0 transition duration-200 group-hover:translate-x-0 group-hover:opacity-100 rtl:rotate-180"
+              />
             </h3>
             <p class="text-sm leading-relaxed text-text-secondary md:text-base">
               {{ feature.description }}
@@ -333,7 +347,7 @@ onUnmounted(() => {
 
 <style scoped>
 /* Staggered entrance: cards, greeting/hero and memorial all rise into place. */
-.feature-card,
+.feature-link,
 .dash-card,
 .enter-rise {
   opacity: 0;
@@ -350,7 +364,7 @@ onUnmounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .feature-card,
+  .feature-link,
   .dash-card,
   .enter-rise {
     animation: none;

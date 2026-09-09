@@ -223,7 +223,7 @@ const he: LocaleMessages = {
     },
     // קיצור דרך לסידור: בתוך זמן התפילה, דף הבית מוביל ישירות אל הטקסט.
     sidourNow: {
-      title: "עכשיו זמן {tefila}",
+      title: "זמן {tefila}",
       until: "עד {time}",
       names: {
         chaharit: "שחרית",
@@ -424,7 +424,6 @@ const he: LocaleMessages = {
   zmanim: {
     title: "זמני היום",
     navTitle: "זמנים",
-    cardToday: "היום",
     widget: {
       title: "זמני היום",
       then: "אחר כך {label} בשעה {time}",

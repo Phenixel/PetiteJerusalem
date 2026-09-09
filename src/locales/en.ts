@@ -237,7 +237,7 @@ const en: LocaleMessages = {
     // Siddur shortcut: during a prayer's time window, the home page links
     // straight to the text.
     sidourNow: {
-      title: "It's time for {tefila}",
+      title: "Time for {tefila}",
       until: "until {time}",
       names: {
         chaharit: "Shacharit",
@@ -444,7 +444,6 @@ const en: LocaleMessages = {
   zmanim: {
     title: "Today's times",
     navTitle: "Zmanim",
-    cardToday: "Today",
     widget: {
       title: "Zmanim",
       then: "Then {label} at {time}",

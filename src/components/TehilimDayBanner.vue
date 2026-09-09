@@ -45,15 +45,10 @@ function track() {
         {{ t("dailyReading.options.tehilimDayReading", { day: cycle.day }) }}
       </span>
       <span
-        class="block truncate font-medium text-text-primary transition-colors group-hover:text-primary"
+        class="block font-medium text-text-primary transition-colors group-hover:text-primary"
       >
         {{ rangeLabel }}
       </span>
     </span>
-    <AppIcon
-      name="chevron-right"
-      :size="16"
-      class="shrink-0 text-text-secondary/60 rtl:rotate-180"
-    />
   </RouterLink>
 </template>

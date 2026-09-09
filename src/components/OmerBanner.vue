@@ -61,10 +61,5 @@ const compte = computed(() => {
         </span>
       </span>
     </span>
-    <AppIcon
-      name="chevron-right"
-      :size="16"
-      class="shrink-0 text-text-secondary/50 transition-colors group-hover:text-primary rtl:rotate-180"
-    />
   </RouterLink>
 </template>

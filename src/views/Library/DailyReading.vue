@@ -1125,7 +1125,7 @@ const formatBookName = bookName;
                 ]"
               >
                 <span class="min-w-0">
-                  <span class="block font-medium text-text-primary truncate">
+                  <span class="block font-medium text-text-primary">
                     {{ appendHebrewNumeral(text.name) }}
                   </span>
                 </span>

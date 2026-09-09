@@ -402,7 +402,6 @@ async function removeChiour(chiour: ChiourDoc) {
                     }}
                   </p>
                 </div>
-                <AppIcon name="chevron-right" :size="15" class="text-text-secondary shrink-0" />
               </button>
             </li>
           </ul>

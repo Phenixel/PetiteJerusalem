@@ -23,6 +23,39 @@ Une surface se détache du fond par son ombre, jamais par une bordure. Les
 trois ombres (`--shadow-card`, `--shadow-card-hover`, `--shadow-pop`) sont
 teintées chaud pour rester dans la famille du beige.
 
+### La carte est cliquable, et elle le dit sans flèche
+
+Une carte mène quelque part : elle est un lien ou un bouton, entièrement, y
+compris ses marges. Le petit chevron gris posé au bout ne servait qu'à répéter
+ce que la carte fait déjà comprendre, il ajoutait une cible qui n'en est pas
+une (le clic marche partout) et il volait la place du contenu. Il n'y en a
+plus sur une carte.
+
+Trois flèches restent, parce qu'elles ne disent pas « cliquable » :
+
+- la **direction** (le chiour suivant, le chapitre précédent, le mois d'après) ;
+- le **dépliement** (une flèche qui pivote sur un bloc qui s'ouvre) ;
+- la **ligne de liste** dans un panneau (les pages du profil), qui n'a ni
+  cadre ni ombre et où le chevron est la seule marque du lien.
+
+Corollaire : un bloc qui ne mène nulle part n'est pas une carte cliquable. Il
+peut rester une surface (un panneau de réglages, un formulaire), mais il ne
+prend jamais `card-hover`, dont l'ombre qui se creuse promet un clic.
+
+### Le cadre se mérite
+
+Tout n'a pas à être dans une carte. Une carte dit « voici une réponse à une
+question que vous vous posez » : ma lecture du jour, l'heure qui vient, une
+session en cours. Elle contient une donnée, un état, quelque chose qui change.
+
+Un simple endroit où aller n'en est pas une : les trois portes du site, sur
+l'accueil, sont posées à même le beige, séparées par un filet (vertical côte à
+côte, horizontal empilées), avec le titre qui prend la couleur au survol et un
+chevron qui avance. Encadrées, elles se disputaient le regard avec les cartes
+du tableau de bord et la page devenait un empilement de boîtes ; sans cadre,
+les seules surfaces blanches sont celles qui répondent, et la page se lit en
+deux temps.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.
@@ -139,13 +172,20 @@ distinguent d'un coup d'oeil.
 | Corps secondaire | `text-sm` | 14 px | une explication, une ligne de contexte |
 | Méta | `text-xs` | 12 px | une date, une unité, une mention |
 
-Deux règles qui vont avec :
+Trois règles qui vont avec :
 
 - **Une carte ne porte qu'une chose en grand** : celle qu'on vient y chercher.
   L'heure sur la carte des horaires, le pourcentage sur celle de la lecture du
   jour. Tout le reste de la carte la sert et passe donc en dessous.
 - **Le chiffre en avant tombe toujours au même endroit** (à la fin de la
   ligne) d'une carte à l'autre : le regard le retrouve sans le chercher.
+- **Rien ne se coupe.** Un texte qui porte du sens (le nom d'un texte, d'un
+  horaire, d'une section) passe à la ligne ; il n'est jamais rogné par des
+  points de suspension, qui font passer une chose pour une autre (« Fin du
+  Chéma… ») ou cachent justement le chiffre qu'on cherchait. Quand une ligne
+  ne tient pas, on raccourcit ce qui est écrit ou on retire une icône, on ne
+  coupe pas. La troncature ne reste que là où la boîte est physiquement figée
+  (le titre du lecteur audio dans sa barre d'une ligne).
 
 ## 6. Le bandeau de navigation
 

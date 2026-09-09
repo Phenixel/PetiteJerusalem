@@ -101,40 +101,39 @@ const hebrewDate = computed(() =>
 );
 </script>
 
-<!-- Composition : une ligne de situation (le jour), puis l'heure en grand,
+<!-- Composition : la date hébraïque situe la carte, puis l'heure en grand,
      seule chose de la carte à ce corps-là. C'est elle qu'on vient lire, de
      loin et en vitesse ; le nom de l'horaire et le compte à rebours la
-     servent, ils passent donc après elle. -->
+     servent, ils passent donc après elle. Rien ne dit « aujourd'hui » : une
+     carte d'horaires sur l'accueil ne parle pas d'un autre jour. -->
 <template>
   <RouterLink
     :to="localePath('horaires')"
-    class="card card-hover p-5 md:p-6 flex flex-col justify-center gap-3 group"
+    class="card card-hover group flex flex-col justify-center gap-2 p-5 md:p-6"
   >
     <template v-if="headline">
-      <span class="flex items-baseline justify-between gap-3">
-        <span class="text-sm font-semibold text-text-secondary">{{ t("zmanim.cardToday") }}</span>
-        <span class="text-sm text-text-secondary truncate">{{ hebrewDate }}</span>
-      </span>
+      <span class="text-sm text-text-secondary">{{ hebrewDate }}</span>
 
       <span class="flex items-end justify-between gap-4">
         <span class="min-w-0">
-          <span class="flex items-center gap-2">
-            <AppIcon :name="headline.icon" :size="18" class="text-primary shrink-0" />
-            <!-- Pas de troncature sur le nom : « Fin du Chéma (Maguen Avraham) »
-                 réduit à « Fin du Chéma… » ferait passer une heure pour l'autre,
-                 et les deux opinions sont séparées d'une bonne demi-heure. -->
+          <span class="flex items-start gap-2">
+            <AppIcon :name="headline.icon" :size="18" class="mt-0.5 shrink-0 text-primary" />
+            <!-- Ni troncature ni ellipse sur le nom : « Fin du Chéma (Maguen
+                 Avraham) » réduit à « Fin du Chéma… » ferait passer une heure
+                 pour l'autre, et les deux opinions sont séparées d'une bonne
+                 demi-heure. Il passe à la ligne s'il le faut. -->
             <span
-              class="font-semibold text-text-primary leading-snug group-hover:text-primary transition-colors"
+              class="font-semibold leading-snug text-text-primary transition-colors group-hover:text-primary"
             >
               {{ headline.label }}
             </span>
           </span>
-          <span class="mt-1 block text-sm text-text-secondary truncate">
+          <span class="mt-1 block text-sm text-text-secondary">
             <template v-if="headline.note">{{ headline.note }} · </template>{{ placeLabel }}
           </span>
         </span>
         <span
-          class="shrink-0 text-4xl md:text-5xl font-bold leading-none text-primary tabular-nums"
+          class="shrink-0 text-4xl font-bold leading-none text-primary tabular-nums md:text-5xl"
         >
           {{ clock(headline.date) }}
         </span>

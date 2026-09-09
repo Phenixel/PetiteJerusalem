@@ -241,7 +241,7 @@ const fr = {
     // Raccourci du sidour : pendant la plage horaire d'un office, l'accueil
     // mène directement au texte.
     sidourNow: {
-      title: "C'est le temps de {tefila}",
+      title: "Faire {tefila}",
       until: "jusqu'à {time}",
       names: {
         chaharit: "Cha'harit",
@@ -453,8 +453,6 @@ const fr = {
   zmanim: {
     title: "Horaires du jour",
     navTitle: "Horaires",
-    /* En-tête de la carte des horaires, sur l'accueil. */
-    cardToday: "Aujourd'hui",
     widget: {
       title: "Horaires",
       then: "Puis {label} à {time}",
