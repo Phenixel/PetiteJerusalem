@@ -12,7 +12,7 @@
  * testable indépendamment du routeur.
  */
 
-export interface BackContext {
+interface BackContext {
   /** Chemin (sans query ni ancre) de l'entrée précédente, `null` si on est entré directement. */
   previousPath: string | null;
   /** Chemin de la page parente : liste des chapitres, ou bibliothèque du corpus. */
@@ -31,7 +31,7 @@ export interface BackContext {
  * `"back"` : revenir sur l'entrée précédente (elle est déjà la bonne page).
  * `"parent"` : naviguer vers `parentPath` en REMPLAÇANT l'entrée courante.
  */
-export type BackAction = "back" | "parent";
+type BackAction = "back" | "parent";
 
 export function resolveBackNavigation(ctx: BackContext): BackAction {
   const { previousPath, parentPath, isCurrentTextPath, preferHistory } = ctx;

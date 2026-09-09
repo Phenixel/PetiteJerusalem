@@ -12,7 +12,7 @@ let inMemoryGuestId: string | null = null;
  * depuis le même navigateur. Contrairement à l'email, il n'est pas
  * récupérable depuis un autre appareil.
  */
-export class GuestService {
+class GuestService {
   /** Renvoie l'identifiant local s'il existe, sans jamais en créer. */
   getLocalGuestId(): string | null {
     try {

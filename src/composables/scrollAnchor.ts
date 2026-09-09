@@ -17,18 +17,23 @@ export function anchorToElement(el: HTMLElement | null, offset = 90): void {
  * (retour de marque-page, reprise de lecture). `highlight` reçoit `key`
  * pendant la surbrillance puis null, sauf si une autre surbrillance a pris
  * le relais entre-temps.
+ *
+ * Renvoie de quoi annuler l'extinction : un composant qui se démonte avant la
+ * fin de la surbrillance n'a pas à laisser un minuteur écrire dans une ref
+ * qui ne sert plus.
  */
 export function scrollToVerse<K>(
   find: () => Element | null | undefined,
   key: K,
   highlight: { value: K | null },
   duration = 2600,
-): void {
+): () => void {
   const el = find();
-  if (!(el instanceof HTMLElement)) return;
+  if (!(el instanceof HTMLElement)) return () => {};
   el.scrollIntoView({ behavior: "smooth", block: "center" });
   highlight.value = key;
-  setTimeout(() => {
+  const timer = setTimeout(() => {
     if (highlight.value === key) highlight.value = null;
   }, duration);
+  return () => clearTimeout(timer);
 }

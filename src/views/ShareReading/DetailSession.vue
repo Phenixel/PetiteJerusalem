@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { sessionService } from "../../services/sessionService";
-import type { Session, TextStudy, TextStudyReservation } from "../../models/models";
-import type { User } from "../../services/authService";
+import { reservationService, ReservationGoneError } from "../../services/reservationService";
+import { SlotTakenError } from "../../services/appError";
+import { SearchService } from "../../services/searchService";
+import type { Session, TextStudy } from "../../models/models";
+import { authService, type User } from "../../services/authService";
 import GuestForm from "../../components/GuestForm.vue";
 import ShareModal from "../../components/ShareModal.vue";
 import EditSessionModal from "../../components/EditSessionModal.vue";
@@ -27,19 +30,22 @@ import { liveValue } from "../../composables/liveInput";
 import { analyticsService } from "../../services/analyticsService";
 import { moderationService } from "../../services/moderationService";
 import { useConfirm } from "../../composables/useConfirm";
+import { parseSlotKey, slotKey, useReservationIndex } from "../../composables/useReservationIndex";
+import { useSessionEditing, type SessionEditData } from "../../composables/useSessionEditing";
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const { confirm } = useConfirm();
 const toast = useToast();
+const sessionEditing = useSessionEditing("session_detail");
 
 const session = ref<Session | null>(null);
 const textStudies = ref<TextStudy[]>([]);
-const reservations = ref<TextStudyReservation[]>([]);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const currentUser = ref<User | null>(null);
+let unsubscribeAuth: (() => void) | null = null;
 
 const reservationForm = ref({
   name: "",
@@ -65,6 +71,12 @@ const showReportModal = ref(false);
 const hasReported = ref(false);
 const isCreatorBlocked = ref(false);
 
+// Les réservations vivent dans `session.reservations` : une seule source, que
+// la liste des textes et les index lisent. (Une deuxième référence vers le
+// même tableau demandait de les garder alignées à la main.)
+const { activeReservations, reservationAt, isSlotReserved, statusIndex, selectAllAvailable } =
+  useReservationIndex(session, textStudies);
+
 // Funnel réservation : un seul événement par visite pour la 1re sélection et
 // la 1re recherche, sinon chaque clic de chapitre noierait les stats.
 let hasTrackedSelection = false;
@@ -83,7 +95,6 @@ const trackTextExpanded = (textStudyId: string) => {
   if (hasTrackedExpansion) return;
   hasTrackedExpansion = true;
   const index = textStudies.value.findIndex((text) => text.id === textStudyId);
-  const text = index >= 0 ? textStudies.value[index] : null;
   const currentSession = session.value;
   analyticsService.capture("session_text_expanded", {
     session_id: currentSession?.id,
@@ -93,7 +104,7 @@ const trackTextExpanded = (textStudyId: string) => {
     // même chose de l'effort fourni pour trouver une section libre.
     rank: index >= 0 ? index + 1 : null,
     has_available_sections:
-      text && currentSession ? !sessionService.isTextFullyReserved(text, currentSession) : null,
+      index >= 0 ? statusIndex.value.get(textStudyId)?.status !== "fully_reserved" : null,
     is_authenticated: currentUser.value != null,
   });
 };
@@ -137,7 +148,7 @@ const trackReadClicked = (textStudyId: string, section?: number) => {
     // Le bouton du texte entier et l'icône d'un chapitre ne mènent pas au même
     // écran : l'un ouvre le texte, l'autre une section précise déjà cadrée.
     scope: section === undefined ? "text" : "section",
-    is_reserved: isReserved(textStudyId, section).isReserved,
+    is_reserved: isSlotReserved(textStudyId, section),
     is_authenticated: currentUser.value != null,
   });
 };
@@ -162,98 +173,61 @@ const trackFirstSelection = () => {
   });
 };
 
-const groupedTextStudies = computed(() => {
-  if (!textStudies.value.length) return {};
+/*
+ * La liste affichée, en quatre étapes qui ne bougent pas au même rythme : le
+ * regroupement par livre (une fois par chargement), la recherche (à chaque
+ * frappe), le filtre de disponibilité (à chaque réservation) et « mes
+ * réservations » (à chaque réservation ou connexion). Avant, tout était
+ * recalculé à chaque frappe, tri compris.
+ */
+const groupedAll = computed(() => sessionService.groupTextStudiesByBook(textStudies.value));
 
-  let filtered = textStudies.value;
-  if (searchTerm.value.trim()) {
-    filtered = sessionService.filterTextStudiesBySearch(filtered, searchTerm.value);
-  }
-
-  if (showOnlyAvailable.value && session.value) {
-    const currentSession = session.value;
-    filtered = filtered.filter((text) => !sessionService.isTextFullyReserved(text, currentSession));
-  }
-
-  if (currentUser.value) {
-    const myReservedTextIds = new Set<string>();
-
-    reservations.value.forEach((r) => {
-      if (sessionService.canUserDeleteReservation(r, currentUser.value, "")) {
-        myReservedTextIds.add(r.textStudyId);
-      }
-    });
-
-    const myTexts: TextStudy[] = [];
-    const otherTexts: TextStudy[] = [];
-
-    filtered.forEach((text) => {
-      if (myReservedTextIds.has(text.id)) {
-        myTexts.push(text);
-      } else {
-        otherTexts.push(text);
-      }
-    });
-
-    const groupedOthers = sessionService.groupTextStudiesByBook(otherTexts);
-
-    if (myTexts.length > 0) {
-      return {
-        [t("detailSession.myReservations")]: myTexts,
-        ...groupedOthers,
-      };
-    }
-
-    return groupedOthers;
-  }
-
-  return sessionService.groupTextStudiesByBook(filtered);
-});
-
-const progressStats = computed(() => {
-  if (!textStudies.value.length)
-    return {
-      total: 0,
-      reserved: 0,
-      read: 0,
-      participants: 0,
-      reservedPercentage: 0,
-      readPercentage: 0,
-    };
-
-  const total = textStudies.value.reduce((acc, textStudy) => acc + textStudy.totalSections, 0);
-
-  // Les tirages abandonnés (expirés sans lecture) ne comptent plus : leurs
-  // emplacements sont redevenus disponibles.
-  const activeReservations = reservations.value.filter(
-    (r) => !sessionService.isReservationExpired(r),
+const searchedIds = computed<Set<string> | null>(() => {
+  const term = searchTerm.value.trim();
+  if (!term) return null;
+  return new Set(
+    SearchService.filterTextStudiesBySearch(textStudies.value, term).map((text) => text.id),
   );
-
-  const reserved = activeReservations.length;
-
-  const read = activeReservations.filter((r) => r.isCompleted).length;
-
-  const uniqueParticipants = new Set<string>();
-  activeReservations.forEach((r) => {
-    if (r.chosenById) {
-      uniqueParticipants.add(`user:${r.chosenById}`);
-    } else if (r.chosenByGuestId) {
-      uniqueParticipants.add(`guest:${r.chosenByGuestId}`);
-    }
-  });
-  const participants = uniqueParticipants.size;
-
-  return {
-    total,
-    reserved,
-    read,
-    participants,
-    reservedPercentage: total > 0 ? (reserved / total) * 100 : 0,
-    readPercentage: total > 0 ? (read / total) * 100 : 0,
-  };
 });
 
-const hasSelectedItems = computed(() => selectedItems.value.size > 0);
+const myTextIds = computed(() => {
+  const ids = new Set<string>();
+  const user = currentUser.value;
+  if (!user) return ids;
+  for (const r of activeReservations.value) {
+    if (reservationService.isOwnReservation(r, user)) ids.add(r.textStudyId);
+  }
+  return ids;
+});
+
+const groupedTextStudies = computed(() => {
+  const searched = searchedIds.value;
+  const onlyAvailable = showOnlyAvailable.value;
+  const mine = myTextIds.value;
+  const isVisible = (text: TextStudy) =>
+    (searched === null || searched.has(text.id)) &&
+    (!onlyAvailable || statusIndex.value.get(text.id)?.status !== "fully_reserved");
+
+  const myTexts: TextStudy[] = [];
+  const groups: Record<string, TextStudy[]> = {};
+  for (const [bookName, texts] of Object.entries(groupedAll.value)) {
+    const kept: TextStudy[] = [];
+    for (const text of texts) {
+      if (!isVisible(text)) continue;
+      if (mine.has(text.id)) myTexts.push(text);
+      else kept.push(text);
+    }
+    if (kept.length > 0) groups[bookName] = kept;
+  }
+
+  return myTexts.length > 0 ? { [t("detailSession.myReservations")]: myTexts, ...groups } : groups;
+});
+
+const progressStats = computed(() =>
+  session.value
+    ? sessionService.getSessionReservationStats(session.value, textStudies.value)
+    : { total: 0, reserved: 0, read: 0, participants: 0, percentage: 0, readPercentage: 0 },
+);
 
 const confirmButtonLabel = computed(() => {
   return !currentUser.value
@@ -271,13 +245,11 @@ const loadSessionData = async () => {
     error.value = null;
 
     const slugOrId = route.params.slug as string;
-    if (!slugOrId) {
-      throw new Error("Session introuvable");
-    }
-
-    const sessionData = await sessionService.resolveSession(slugOrId);
+    const sessionData = slugOrId ? await sessionService.resolveSession(slugOrId) : null;
     if (!sessionData) {
-      throw new Error("Session introuvable");
+      session.value = null;
+      error.value = t("detailSession.notFound");
+      return;
     }
 
     // Redirect to clean slug URL if accessed via old ID-based URL
@@ -285,39 +257,25 @@ const loadSessionData = async () => {
       router.replace(`/share-reading/session/${sessionData.slug}`);
     }
 
-    const [textStudiesData] = await Promise.all([
-      sessionService.getTextStudiesByType(sessionData.type),
-    ]);
-
-    const filteredTextStudies =
-      sessionData.selectedBooks && sessionData.selectedBooks.length > 0
-        ? textStudiesData.filter((text) => sessionData.selectedBooks!.includes(text.livre))
-        : textStudiesData;
-
-    // `reservations` et `session.reservations` doivent pointer sur LE MÊME
-    // tableau : si le doc n'a pas encore de champ reservations, on le crée,
-    // sinon les réservations ajoutées localement seraient invisibles pour
-    // isReserved()/getTextDisplayStatus() qui lisent session.value.
+    // Un document sans champ reservations en reçoit un : les réservations
+    // ajoutées localement doivent avoir un tableau où aller.
     if (!Array.isArray(sessionData.reservations)) {
       sessionData.reservations = [];
     }
+    textStudies.value = sessionService.getSessionTextStudies(sessionData);
     session.value = sessionData;
-    textStudies.value = filteredTextStudies;
-    reservations.value = sessionData.reservations;
 
     hasReported.value = moderationService.hasReportedSession(sessionData.id);
     isCreatorBlocked.value = moderationService.isCreatorBlocked(sessionData.personId);
   } catch (err) {
     console.error("Erreur lors du chargement des données:", err);
-    error.value = err instanceof Error ? err.message : "Erreur lors du chargement";
+    // Une chaîne déjà affichée reste à l'écran (la liste garde ses textes
+    // dépliés) : l'échec du rechargement se dit en toast.
+    if (session.value) toast.errorFromException(err, t("detailSession.loadError"));
+    else error.value = t("detailSession.loadError");
   } finally {
     isLoading.value = false;
   }
-};
-
-const isReserved = (textStudyId: string, section?: number) => {
-  if (!session.value) return { isReserved: false };
-  return sessionService.isTextOrSectionReserved(textStudyId, section, session.value);
 };
 
 // Sélectionne d'un coup toutes les sections encore disponibles d'un texte
@@ -326,30 +284,14 @@ const isReserved = (textStudyId: string, section?: number) => {
 const handleToggleSelectAll = (textStudyId: string) => {
   const text = textStudies.value.find((t) => t.id === textStudyId);
   if (!text) return;
-
-  const availableKeys = sessionService
-    .generateChapters(text.totalSections)
-    .filter((chapter) => !isReserved(textStudyId, chapter).isReserved)
-    .map((chapter) => `${textStudyId}#${chapter}`);
-
-  const allSelected =
-    availableKeys.length > 0 && availableKeys.every((key) => selectedItems.value.has(key));
-
-  if (allSelected) {
-    availableKeys.forEach((key) => selectedItems.value.delete(key));
-  } else {
-    availableKeys.forEach((key) => selectedItems.value.add(key));
-    if (availableKeys.length > 0) trackFirstSelection();
-  }
+  if (selectAllAvailable(text, selectedItems.value)) trackFirstSelection();
 };
 
-const handleItemClick = (textStudyId: string, section?: number) => {
-  const key = section ? `${textStudyId}#${section}` : `${textStudyId}#full`;
+const handleItemClick = (textStudyId: string, section: number) => {
+  const key = slotKey(textStudyId, section);
 
-  if (isReserved(textStudyId, section).isReserved) {
-    if (selectedItems.value.has(key)) {
-      selectedItems.value.delete(key);
-    }
+  if (isSlotReserved(textStudyId, section)) {
+    selectedItems.value.delete(key);
 
     void confirm({ title: t("detailSession.cancelReservationConfirm"), danger: true }).then(
       (accepted) => {
@@ -421,20 +363,15 @@ const submitGuestIdentity = async (identity: { name: string; email: string }) =>
 };
 
 const submitReservations = async () => {
-  if (!session.value || selectedItems.value.size === 0) return;
+  const current = session.value;
+  if (!current || selectedItems.value.size === 0) return;
 
   try {
     isSubmittingBatch.value = true;
-    const itemsToReserve = Array.from(selectedItems.value).map((key) => {
-      const [textId, sectionStr] = key.split("#");
-      return {
-        textStudyId: textId,
-        section: sectionStr === "full" ? undefined : parseInt(sectionStr),
-      };
-    });
+    const itemsToReserve = Array.from(selectedItems.value).map(parseSlotKey);
 
     const unreservedItems = itemsToReserve.filter(
-      (item) => !isReserved(item.textStudyId, item.section).isReserved,
+      (item) => !isSlotReserved(item.textStudyId, item.section),
     );
 
     if (unreservedItems.length === 0) {
@@ -443,7 +380,7 @@ const submitReservations = async () => {
       // disait dans les stats : ces visites comptaient comme des
       // `reservation_confirm_clicked` sans suite, indistinguables d'un bug.
       analyticsService.capture("reservation_failed", {
-        session_id: session.value.id,
+        session_id: current.id,
         reason: "already_reserved",
         sections_count: itemsToReserve.length,
         is_guest: currentUser.value == null,
@@ -454,7 +391,7 @@ const submitReservations = async () => {
     }
 
     const reservationIds = await sessionService.createBatchReservationsForUser(
-      session.value.id,
+      current.id,
       unreservedItems,
       currentUser.value,
       reservationForm.value,
@@ -468,12 +405,18 @@ const submitReservations = async () => {
       reservationForm.value,
     );
 
-    reservations.value.push(...newReservations);
+    // Les tirages expirés que ces places tenaient encore partent avec : sinon
+    // annuler ou marquer « lu » pouvait retomber sur eux plutôt que sur la
+    // réservation qui vient d'être faite.
+    current.reservations = [
+      ...reservationService.pruneExpiredForSlots(current.reservations, unreservedItems),
+      ...newReservations,
+    ];
     selectedItems.value.clear();
 
     analyticsService.capture("reservation_completed", {
-      session_id: session.value.id,
-      text_type: session.value.type,
+      session_id: current.id,
+      text_type: current.type,
       sections_count: newReservations.length,
       is_guest: currentUser.value == null,
       guest_has_email: currentUser.value == null && reservationForm.value.email.trim() !== "",
@@ -488,65 +431,59 @@ const submitReservations = async () => {
     }
   } catch (err) {
     console.error("Erreur lors de la confirmation globale:", err);
-    const errorMessage = err instanceof Error ? err.message : String(err);
     analyticsService.capture("reservation_failed", {
-      session_id: session.value.id,
-      // Le conflit (section prise entre-temps) vient du message de
-      // reservationService.createBatchReservations.
-      reason: errorMessage.includes("déjà réservée") ? "conflict" : "error",
-      error_message: errorMessage,
+      session_id: current.id,
+      // Le conflit (section prise entre-temps) vient de la transaction.
+      reason: err instanceof SlotTakenError ? "conflict" : "error",
+      error_message: err instanceof Error ? err.message : String(err),
       source: "session_page",
     });
-    toast.errorFromException(
-      err,
-      err instanceof Error && err.message ? err.message : t("detailSession.reservationError"),
-    );
+    toast.errorFromException(err, t("detailSession.reservationError"));
   } finally {
     isSubmittingBatch.value = false;
   }
 };
 
+const removeLocalReservation = (reservationId: string) => {
+  const current = session.value;
+  if (!current) return;
+  const index = current.reservations.findIndex((r) => r.id === reservationId);
+  if (index > -1) current.reservations.splice(index, 1);
+};
+
 const cancelReservation = async (textStudyId: string, section?: number) => {
-  if (!session.value) return;
+  const current = session.value;
+  if (!current) return;
+
+  // La réservation qui tient la place, hors tirages expirés : c'est sur eux
+  // que l'ancien `find` tombait quand la même place venait d'être reprise.
+  const reservation = reservationAt(textStudyId, section);
+  if (!reservation) return;
 
   try {
-    const reservation = reservations.value.find(
-      (r) => r.textStudyId === textStudyId && r.section === section,
+    const canDelete = reservationService.canUserDeleteReservation(
+      reservation,
+      currentUser.value,
+      reservationForm.value.email,
     );
 
-    if (reservation) {
-      const canDelete = sessionService.canUserDeleteReservation(
-        reservation,
-        currentUser.value,
-        reservationForm.value.email,
-      );
-
-      if (!canDelete) {
-        toast.error(t("detailSession.canOnlyCancelOwn"));
-        return;
-      }
-
-      await sessionService.deleteReservation(session.value.id, reservation.id);
-
-      const index = reservations.value.findIndex((r) => r.id === reservation.id);
-      if (index > -1) {
-        reservations.value.splice(index, 1);
-      }
-
-      if (session.value) {
-        session.value.reservations = reservations.value;
-      }
-
-      analyticsService.capture("reservation_cancelled", {
-        session_id: session.value?.id,
-        is_guest: currentUser.value == null,
-        source: "session_page",
-      });
+    if (!canDelete) {
+      toast.error(t("detailSession.canOnlyCancelOwn"));
+      return;
     }
+
+    await reservationService.deleteReservation(current.id, reservation.id);
+    removeLocalReservation(reservation.id);
+
+    analyticsService.capture("reservation_cancelled", {
+      session_id: current.id,
+      is_guest: currentUser.value == null,
+      source: "session_page",
+    });
   } catch (err) {
     console.error("Erreur lors de l'annulation:", err);
     analyticsService.capture("reservation_cancel_failed", {
-      session_id: session.value?.id,
+      session_id: current.id,
       is_guest: currentUser.value == null,
       error_message: err instanceof Error ? err.message : String(err),
       source: "session_page",
@@ -556,38 +493,43 @@ const cancelReservation = async (textStudyId: string, section?: number) => {
 };
 
 const toggleReservationCompletion = async (textStudyId: string, section: number) => {
-  if (!session.value) return;
+  const current = session.value;
+  if (!current) return;
+
+  const reservation = reservationAt(textStudyId, section);
+  if (!reservation) return;
+
+  // Optimiste : l'interrupteur bascule tout de suite, et revient en arrière
+  // si l'écriture échoue.
+  const previous = reservation.isCompleted;
+  const newCompletionStatus = !previous;
+  reservation.isCompleted = newCompletionStatus;
 
   try {
-    const reservation = reservations.value.find(
-      (r) => r.textStudyId === textStudyId && r.section === section,
-    );
-
-    if (!reservation) return;
-
-    const newCompletionStatus = !reservation.isCompleted;
-    await sessionService.markReservationAsCompleted(
-      session.value.id,
+    await reservationService.markReservationAsCompleted(
+      current.id,
       reservation.id,
       newCompletionStatus,
     );
 
-    reservation.isCompleted = newCompletionStatus;
-
     analyticsService.capture("section_marked_read", {
-      session_id: session.value.id,
+      session_id: current.id,
       marked: newCompletionStatus,
       is_guest: currentUser.value == null,
       source: "session",
     });
   } catch (error) {
     console.error("Erreur lors de la mise à jour de la réservation:", error);
+    reservation.isCompleted = previous;
     analyticsService.capture("section_mark_read_failed", {
-      session_id: session.value?.id,
+      session_id: current.id,
       is_guest: currentUser.value == null,
       error_message: error instanceof Error ? error.message : String(error),
       source: "session",
     });
+    // La place a été reprise (tirage expiré, ménage du créateur) : elle
+    // disparaît de la liste, et le message le dit (errors.reservationGone).
+    if (error instanceof ReservationGoneError) removeLocalReservation(reservation.id);
     toast.errorFromException(error, t("detailSession.updateError"));
   }
 };
@@ -601,7 +543,7 @@ const clearSearch = () => {
 const isTehilimSession = computed(() => session.value?.type === EnumTypeTextStudy.Tehilim);
 
 const randomAvailableCount = computed(
-  () => textStudies.value.filter((text) => !isReserved(text.id, 1).isReserved).length,
+  () => textStudies.value.filter((text) => !isSlotReserved(text.id, 1)).length,
 );
 
 /**
@@ -706,49 +648,13 @@ const goToManagement = () => {
 
 // Le créateur qui relit sa session repère souvent une coquille dans l'intitulé
 // ou une date limite à décaler : la correction se fait sur place.
-const saveSessionChanges = async (sessionData: {
-  name: string;
-  description: string;
-  dateLimit: string;
-  guestEmailRequired: boolean;
-}) => {
+const saveSessionChanges = async (sessionData: SessionEditData): Promise<boolean> => {
   const current = session.value;
-  if (!current) return;
+  if (!current) return false;
 
-  try {
-    await sessionService.updateSession(current.id, { ...sessionData, slug: current.slug });
-    // La modification d'une chaîne existante n'était mesurée nulle part, alors
-    // qu'elle se fait depuis trois écrans (ici, l'accueil du partage, la page
-    // de gestion) : `source` les sépare. Pas d'intitulé ni de description dans
-    // les propriétés, ils portent des noms de personnes.
-    analyticsService.capture("session_updated", {
-      session_id: current.id,
-      text_type: current.type,
-      guest_email_required: sessionData.guestEmailRequired,
-      deadline_changed:
-        current.dateLimit instanceof Date
-          ? new Date(sessionData.dateLimit).getTime() !== current.dateLimit.getTime()
-          : null,
-      source: "session_detail",
-    });
-    session.value = {
-      ...current,
-      name: sessionData.name,
-      description: sessionData.description,
-      dateLimit: new Date(sessionData.dateLimit),
-      guestEmailRequired: sessionData.guestEmailRequired,
-      updatedAt: new Date(),
-    };
-    toast.success(t("profile.sessionUpdatedSuccess"));
-  } catch (err) {
-    console.error("Erreur lors de la mise à jour:", err);
-    analyticsService.capture("session_update_failed", {
-      session_id: current.id,
-      error_message: err instanceof Error ? err.message : String(err),
-      source: "session_detail",
-    });
-    toast.errorFromException(err, t("profile.sessionUpdateError"));
-  }
+  const saved = await sessionEditing.saveSession(current, sessionData);
+  if (saved) session.value = sessionEditing.edited(current, sessionData);
+  return saved;
 };
 
 const goToCreateChain = () => {
@@ -783,7 +689,12 @@ const applySessionSeo = (s: typeof session.value) => {
 };
 
 onMounted(async () => {
-  currentUser.value = await sessionService.getCurrentUser();
+  // Abonnement plutôt qu'une lecture unique : après une inscription depuis la
+  // modale (SignupPromptModal), la page doit reconnaître le nouveau compte
+  // sans rechargement.
+  unsubscribeAuth = authService.onAuthChanged((user) => {
+    currentUser.value = user;
+  });
   await loadSessionData();
 
   // Point d'entrée du funnel de réservation. Pas de nom de session dans les
@@ -793,15 +704,31 @@ onMounted(async () => {
     analyticsService.capture("session_viewed", {
       session_id: s.id,
       text_type: s.type,
-      is_ended: s.isEnded === true || s.isCompleted === true,
+      is_ended: s.isEnded === true,
       is_expired: s.dateLimit instanceof Date && s.dateLimit.getTime() < Date.now(),
       sections_total: progressStats.value.total,
-      sections_reserved_pct: Math.round(progressStats.value.reservedPercentage),
+      sections_reserved_pct: progressStats.value.percentage,
       participants_count: progressStats.value.participants,
       is_authenticated: currentUser.value != null,
     });
   }
 });
+
+onUnmounted(() => {
+  unsubscribeAuth?.();
+});
+
+// Même composant réutilisé d'une chaîne à l'autre (lien « Mes sessions »,
+// historique) : le changement d'adresse doit recharger. La redirection vers
+// le slug propre, elle, ne change pas de chaîne.
+watch(
+  () => route.params.slug,
+  (slug) => {
+    if (!slug || slug === session.value?.slug || slug === session.value?.id) return;
+    selectedItems.value.clear();
+    void loadSessionData();
+  },
+);
 
 // La recherche et le filtre signalent une intention active de trouver une
 // section libre : trackés une fois (recherche) ou à chaque bascule (filtre).
@@ -824,8 +751,11 @@ watch(session, (s) => applySessionSeo(s));
 
 <template>
   <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full">
-    <!-- État de chargement -->
-    <div v-if="isLoading" class="flex flex-col items-center justify-center text-text-secondary">
+    <!-- Premier chargement : rien à montrer encore -->
+    <div
+      v-if="isLoading && !session"
+      class="flex flex-col items-center justify-center text-text-secondary"
+    >
       <div
         class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
       ></div>
@@ -876,8 +806,20 @@ watch(session, (s) => applySessionSeo(s));
       </div>
     </div>
 
-    <!-- Contenu de la session -->
-    <div v-else-if="session" class="animate-[fadeIn_0.5s_ease]">
+    <!-- Contenu de la session. Un rechargement (autre chaîne, réessai) se
+         superpose au contenu au lieu de le démonter : la liste garde ses
+         textes dépliés. -->
+    <div v-else-if="session" class="relative animate-[fadeIn_0.5s_ease]">
+      <div
+        v-if="isLoading"
+        class="absolute inset-0 z-10 flex flex-col items-center justify-start pt-24 bg-background/60 backdrop-blur-[1px] text-text-secondary"
+      >
+        <div
+          class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"
+        ></div>
+        <p class="font-medium animate-pulse">{{ t("detailSession.loadingSession") }}</p>
+      </div>
+
       <!-- Bandeau réservé au créateur d'une session masquée : il doit savoir
            pourquoi elle ne reçoit plus de visites. -->
       <div
@@ -967,7 +909,7 @@ watch(session, (s) => applySessionSeo(s));
           </button>
         </div>
         <div v-if="searchTerm" class="text-center mt-2 text-sm text-text-secondary">
-          {{ t("detailSession.searchFor") }} : "{{ searchTerm }}"
+          {{ t("detailSession.searchForValue", { term: searchTerm }) }}
         </div>
 
         <!-- Filtre : masquer les textes entièrement réservés. Fond opaque en
@@ -996,7 +938,6 @@ watch(session, (s) => applySessionSeo(s));
       <TextStudiesList
         :grouped-text-studies="groupedTextStudies"
         :session="session"
-        :reservations="reservations"
         :current-user="currentUser"
         :guest-email="reservationForm.email"
         :selected-items="selectedItems"
@@ -1024,9 +965,8 @@ watch(session, (s) => applySessionSeo(s));
       </section>
     </div>
 
-    <!-- Sticky Bottom Bar pour Confirmation -->
+    <!-- Barre de confirmation, collée en bas (elle se masque seule sans sélection) -->
     <BatchSelectionBar
-      v-if="hasSelectedItems"
       :count="selectedItems.size"
       :loading="isSubmittingBatch"
       :label="confirmButtonLabel"
@@ -1061,7 +1001,7 @@ watch(session, (s) => applySessionSeo(s));
     />
 
     <!-- Modification de la session, réservée à son créateur -->
-    <EditSessionModal v-model:show="showEditModal" :session="session" @save="saveSessionChanges" />
+    <EditSessionModal v-model:show="showEditModal" :session="session" :save="saveSessionChanges" />
 
     <!-- Signalement de la session (modération App Store) -->
     <ReportSessionModal

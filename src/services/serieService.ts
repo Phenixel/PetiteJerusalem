@@ -1,6 +1,7 @@
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase/firestore";
 import type { Chiour, SerieDoc } from "../models/models";
+import { cached } from "./cached";
 
 export type Serie = SerieDoc & { id: string };
 
@@ -8,27 +9,30 @@ export type Serie = SerieDoc & { id: string };
 // publique, on rafraîchit surtout pour voir les nouveautés de l'admin.
 const CACHE_TTL = 60 * 60 * 1000; // 1h
 
-export class SerieService {
-  private cache: { data: Serie[]; fetchedAt: number } | null = null;
-  private fetchPromise: Promise<Serie[]> | null = null;
+/**
+ * L'ordre d'une série : par numéro d'épisode, les sans-numéro en fin, par
+ * nom. Le même tri sert la page d'une série et le studio des auteurs.
+ */
+export function byEpisode(
+  a: { episode?: number | null; name: string },
+  b: { episode?: number | null; name: string },
+): number {
+  if (a.episode != null && b.episode != null) return a.episode - b.episode;
+  if (a.episode != null) return -1;
+  if (b.episode != null) return 1;
+  return a.name.localeCompare(b.name, "fr");
+}
 
-  async getAllSeries(): Promise<Serie[]> {
-    if (this.cache && Date.now() - this.cache.fetchedAt < CACHE_TTL) {
-      return this.cache.data;
-    }
-    if (!this.fetchPromise) {
-      this.fetchPromise = getDocs(collection(db, "series"))
-        .then((snap) => {
-          const series = snap.docs.map((d) => ({ ...(d.data() as SerieDoc), id: d.id }));
-          series.sort((a, b) => a.name.localeCompare(b.name, "fr"));
-          this.cache = { data: series, fetchedAt: Date.now() };
-          return series;
-        })
-        .finally(() => {
-          this.fetchPromise = null;
-        });
-    }
-    return this.fetchPromise;
+class SerieService {
+  private readonly series = cached(CACHE_TTL, async () => {
+    const snap = await getDocs(collection(db, "series"));
+    const series = snap.docs.map((d) => ({ ...(d.data() as SerieDoc), id: d.id }));
+    series.sort((a, b) => a.name.localeCompare(b.name, "fr"));
+    return series;
+  });
+
+  getAllSeries(): Promise<Serie[]> {
+    return this.series.get();
   }
 
   async getSerie(serieId: string): Promise<Serie | null> {
@@ -37,19 +41,12 @@ export class SerieService {
   }
 
   invalidateCache(): void {
-    this.cache = null;
+    this.series.invalidate();
   }
 
   /** Épisodes d'une série, triés par numéro (les sans-numéro en fin, par nom). */
   episodesOf(serieId: string, all: Chiour[]): Chiour[] {
-    const episodes = all.filter((c) => c.serieId === serieId);
-    episodes.sort((a, b) => {
-      if (a.episode != null && b.episode != null) return a.episode - b.episode;
-      if (a.episode != null) return -1;
-      if (b.episode != null) return 1;
-      return a.name.localeCompare(b.name, "fr");
-    });
-    return episodes;
+    return all.filter((c) => c.serieId === serieId).sort(byEpisode);
   }
 
   /** Épisode suivant du même chiour dans sa série, ou null. */

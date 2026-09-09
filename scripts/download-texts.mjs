@@ -1,10 +1,11 @@
 /**
- * Script to download all referenced texts from the public Sefaria GCS export.
- * Run with: node scripts/download-texts.mjs
- * Output goes to public/texts/
+ * Télécharge tous les textes référencés depuis l'export public Sefaria (GCS).
+ * Lancer avec : node scripts/download-texts.mjs
+ * La sortie va dans public/texts/
  *
- * Text license: Sefaria texts are public domain or CC BY-SA / CC BY-NC depending on the version.
- * The "merged" versions combine public domain sources.
+ * Licence des textes : les textes Sefaria sont du domaine public ou sous
+ * CC BY-SA / CC BY-NC selon la version. Les versions « merged » combinent des
+ * sources du domaine public.
  */
 
 import { writeFileSync, readFileSync, mkdirSync } from 'fs';

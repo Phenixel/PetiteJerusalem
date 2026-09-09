@@ -117,5 +117,4 @@ describe("cycles de Tehilim", () => {
       expect(cycle.entries.length).toBe(cycle.psalms.length);
     }
   });
-
 });

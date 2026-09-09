@@ -8,7 +8,7 @@
 // sans connexion, et dans l'app native, dont les fichiers sont embarqués,
 // elle s'ouvre aussi hors ligne. Le site web, lui, n'a pas de service
 // worker : là, il faut le réseau pour charger la page (mais pas après).
-import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { localeMessagesReady } from "../../i18n";
@@ -19,10 +19,13 @@ import { isNativeApp } from "../../composables/useNativeApp";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
 import { useZmanCountdown } from "../../composables/useZmanCountdown";
+import { useNow } from "../../composables/useNow";
+import { dateTimeFormat } from "../../services/intlCache";
 import { getParashaForShabbat } from "../../services/dailyCycles";
 import {
   candleLightingMinutes,
   computeZmanim,
+  placeFromCity,
   dayHighlights,
   festivalsOn,
   formatHebrewDate,
@@ -32,6 +35,7 @@ import {
   sameCivilDay,
   tachanunStatus,
   type City,
+  type ZmanimPlace,
   nextZman,
   ZMAN_PERIODS,
   type ZmanPeriod,
@@ -52,10 +56,22 @@ import { useLocalePath } from "../../composables/useLocalePath";
 const { localePath } = useLocalePath();
 
 const { t, locale } = useI18n();
-const { place, status, locateDevice, selectCity, ensureNearby } = useZmanimLocation();
+const location = useZmanimLocation();
+const { status, locateDevice, selectCity, ensureNearby } = location;
 
-const now = ref(new Date());
-let ticker: ReturnType<typeof setInterval> | null = null;
+/**
+ * Le lieu de la page, distinct du lieu choisi. Sur /horaires/:ville, la page
+ * montre cette ville sans rien changer aux réglages : visiter la page de
+ * Lyon depuis un moteur de recherche ne doit ni remplacer le lieu mémorisé
+ * de l'appareil, ni compter comme un choix de ville. Seuls le sélecteur et le
+ * bouton de position touchent au lieu choisi, et ils ramènent alors sur
+ * /horaires pour que l'adresse ne contredise pas ce qui est affiché.
+ */
+const routePlace = ref<ZmanimPlace | null>(null);
+const place = computed(() => routePlace.value ?? location.place.value);
+
+// L'horloge partagée des cartes de l'accueil : un seul tic pour toute l'app.
+const now = useNow();
 
 /** Décalage en jours par rapport à aujourd'hui (flèches de navigation). */
 const dayOffset = ref(0);
@@ -124,7 +140,7 @@ const countdown = useZmanCountdown();
 const timeLeft = computed(() => (upcoming.value ? countdown(upcoming.value.date, now.value) : ""));
 
 const civilDate = computed(() =>
-  new Intl.DateTimeFormat(locale.value, {
+  dateTimeFormat(locale.value, {
     timeZone: place.value.tzid,
     weekday: "long",
     day: "numeric",
@@ -195,6 +211,7 @@ const coordinates = computed(() =>
 async function locateMe() {
   const granted = await locateDevice();
   analyticsService.capture("zmanim_location_requested", { granted });
+  if (granted) leaveCityPage();
 }
 
 const pickerOpen = ref(false);
@@ -202,6 +219,13 @@ const pickerOpen = ref(false);
 function chooseCity(city: City) {
   selectCity(city);
   analyticsService.capture("zmanim_city_chosen", { city: city.name, country: city.country });
+  leaveCityPage();
+}
+
+/** Un lieu vient d'être choisi : la page d'une ville cède la place à /horaires. */
+function leaveCityPage(): void {
+  if (!routeCity.value) return;
+  void router.replace(sectionPath("horaires", localeOfPath(route.path)));
 }
 
 /** Racine de la page : cible du dévoilement circulaire (bouton rond natif). */
@@ -248,6 +272,7 @@ async function applyRouteCity(): Promise<void> {
   const slug = typeof raw === "string" ? raw.toLowerCase() : "";
   if (!slug) {
     routeCity.value = null;
+    routePlace.value = null;
     setMeta(null);
     return;
   }
@@ -258,7 +283,7 @@ async function applyRouteCity(): Promise<void> {
     return;
   }
   routeCity.value = city;
-  chooseCity(city);
+  routePlace.value = placeFromCity(city);
   setMeta(city);
 }
 
@@ -283,12 +308,8 @@ onMounted(() => {
   // sur la page où l'utilisateur regarde son lieu (le catalogue de villes y
   // est de toute façon à un clic, via le choix de ville).
   void ensureNearby();
-  ticker = setInterval(() => (now.value = new Date()), 30_000);
   void applyRouteCity();
   analyticsService.capture("zmanim_viewed", { place: place.value.source });
-});
-onUnmounted(() => {
-  if (ticker) clearInterval(ticker);
 });
 </script>
 

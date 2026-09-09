@@ -1,6 +1,7 @@
 import { ref } from "vue";
 import { i18n } from "../i18n";
 import { ModerationError } from "../services/moderationService";
+import { AppError } from "../services/appError";
 
 export type ToastType = "success" | "error" | "info";
 
@@ -50,14 +51,19 @@ export function useToast() {
   const info = (message: string) => show(message, "info");
 
   /**
-   * Toast d'erreur adapté au code Firestore : droits manquants et service
-   * indisponible ont chacun leur message, sinon `fallbackMessage`.
+   * Toast d'erreur adapté à l'exception : une erreur métier (AppError) a son
+   * message traduit sous `errors.<code>`, un code Firestore de droits
+   * manquants ou de service indisponible a le sien, sinon `fallbackMessage`.
    */
   const errorFromException = (err: unknown, fallbackMessage: string) => {
     // Terme interdit détecté par la modération : le message dit QUEL terme
     // pose problème, bien plus actionnable que le message générique.
     if (err instanceof ModerationError) {
       return error(err.message);
+    }
+    if (err instanceof AppError) {
+      const key = `errors.${err.code}`;
+      return error(i18n.global.te(key) ? i18n.global.t(key) : fallbackMessage);
     }
     const code = firebaseErrorCode(err);
     if (code === "permission-denied") {

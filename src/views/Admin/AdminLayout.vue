@@ -19,27 +19,15 @@ onMounted(() => {
         {{ t("admin.title") }}
       </h1>
       <nav class="flex gap-2">
-        <router-link
-          to="/admin/chiourim"
-          class="btn btn-soft"
-          active-class="btn-primary"
-        >
+        <router-link to="/admin/chiourim" class="btn btn-soft" active-class="btn-primary">
           <AppIcon name="headphones" :size="15" />
           {{ t("admin.nav.chiourim") }}
         </router-link>
-        <router-link
-          to="/admin/auteurs"
-          class="btn btn-soft"
-          active-class="btn-primary"
-        >
+        <router-link to="/admin/auteurs" class="btn btn-soft" active-class="btn-primary">
           <AppIcon name="users" :size="15" />
           {{ t("admin.nav.auteurs") }}
         </router-link>
-        <router-link
-          to="/admin/sessions"
-          class="btn btn-soft"
-          active-class="btn-primary"
-        >
+        <router-link to="/admin/sessions" class="btn btn-soft" active-class="btn-primary">
           <AppIcon name="flag" :size="15" />
           {{ t("admin.nav.sessions") }}
         </router-link>

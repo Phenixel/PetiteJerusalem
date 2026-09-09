@@ -7,7 +7,7 @@ import { db } from "../firebase/firestore";
 import { auth } from "../firebase/core";
 import { isNativeApp } from "../composables/useNativeApp";
 import { analyticsService } from "./analyticsService";
-import { userPreferencesService } from "./userPreferencesService";
+import { isOffline, userPreferencesService } from "./userPreferencesService";
 import type { ReminderPlace } from "./zmanimService";
 
 /**
@@ -70,6 +70,8 @@ class PushService {
     }
     const token = await this.obtainToken();
     rememberToken(token);
+    // Le jeton part dans l'écriture ci-dessous : plus rien à rattraper.
+    this.pendingRotation = null;
     await setDoc(
       doc(db, "userPreferences", userId),
       {
@@ -134,6 +136,13 @@ class PushService {
   }
 
   /**
+   * Rotation de jeton que le serveur n'a pas encore : sans réseau, ou
+   * Firestore injoignable, on ne conclut rien (les préférences par défaut
+   * diraient à tort « rappels coupés ») et on retente au retour du réseau.
+   */
+  private pendingRotation: { previous: string | null; token: string } | null = null;
+
+  /**
    * Nouveau jeton FCM pour cet appareil : écrit dans le profil du compte
    * connecté si ses rappels sont actifs, l'ancien jeton retiré. Le dernier
    * jeton connu est gardé sur l'appareil pour cela.
@@ -147,25 +156,37 @@ class PushService {
     }
     rememberToken(token);
     if (previous === token) return;
+    await this.syncRotatedToken({ previous, token });
+  }
+
+  private async syncRotatedToken(rotation: { previous: string | null; token: string }) {
     const user = auth.currentUser;
     if (!user) return;
+    // Hors ligne, la lecture rendrait la copie locale et l'écriture partirait
+    // en attente dans Firestore, avec un tableau peut-être périmé : on
+    // attend plutôt le réseau, où la lecture est celle du serveur.
+    if (isOffline()) {
+      this.pendingRotation = rotation;
+      return;
+    }
     try {
-      const prefs = await userPreferencesService.getPreferences(user.uid);
+      // getPreferencesOrThrow, et non getPreferences : celui-ci avale
+      // l'échec et rend les valeurs par défaut, où les rappels sont coupés,
+      // ce qui abandonnait la rotation pour de bon à la moindre coupure.
+      const prefs = await userPreferencesService.getPreferencesOrThrow(user.uid);
+      this.pendingRotation = null;
       if (!prefs.pushReminderEnabled) return;
-      await setDoc(
-        doc(db, "userPreferences", user.uid),
-        { fcmTokens: previous ? arrayRemove(previous) : arrayUnion(token) },
-        { merge: true },
+      // Une seule écriture : Firestore refuse deux transformations
+      // (arrayRemove puis arrayUnion) sur le même champ, on écrit donc le
+      // tableau recalculé, l'ancien jeton retiré et le nouveau ajouté.
+      const fcmTokens = (prefs.fcmTokens ?? []).filter(
+        (known) => known !== rotation.previous && known !== rotation.token,
       );
-      if (previous) {
-        await setDoc(
-          doc(db, "userPreferences", user.uid),
-          { fcmTokens: arrayUnion(token) },
-          { merge: true },
-        );
-      }
+      fcmTokens.push(rotation.token);
+      await setDoc(doc(db, "userPreferences", user.uid), { fcmTokens }, { merge: true });
     } catch (e) {
-      console.error("Mise à jour du jeton de notification échouée:", e);
+      this.pendingRotation = rotation;
+      console.warn("Jeton de notification pas encore synchronisé:", e);
     }
   }
 
@@ -187,6 +208,12 @@ class PushService {
     // les rappels s'éteignaient en silence jusqu'à une réactivation à la main.
     FirebaseMessaging.addListener("tokenReceived", ({ token }) => {
       void this.onTokenRotated(token);
+    });
+    // Rotation restée en attente (coupure au moment du renouvellement) :
+    // elle repart avec le réseau.
+    window.addEventListener("online", () => {
+      const rotation = this.pendingRotation;
+      if (rotation) void this.syncRotatedToken(rotation);
     });
 
     // Deep-link quand l'utilisateur touche une notification push (`data.url`).

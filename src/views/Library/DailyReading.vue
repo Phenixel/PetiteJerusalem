@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../../models/models";
@@ -17,7 +17,7 @@ import {
 } from "../../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../../services/offlineTextStore";
 import { pushService } from "../../services/pushService";
-import { sessionService } from "../../services/sessionService";
+import { bookName } from "../../services/catalogSearch";
 import { widgetService } from "../../services/widgetService";
 import { localDayKey } from "../../services/dateService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
@@ -47,19 +47,17 @@ import ReadingEncadrement from "../../components/ReadingEncadrement.vue";
 import ReminderSettingsModal from "./ReminderSettingsModal.vue";
 import ChneiMikraOptions from "../../components/ChneiMikraOptions.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
+import CatalogSearchField from "../../components/CatalogSearchField.vue";
+import ProgressBar from "../../components/ProgressBar.vue";
+import { useCatalogSearch } from "../../composables/useCatalogSearch";
+import { psalmsLabel, useTehilimDay, useWeeklyParasha } from "../../composables/useTehilimDay";
 import { useChneiMikraOptions } from "../../composables/useChneiMikraOptions";
 import { anchorToElement } from "../../composables/scrollAnchor";
-import {
-  DAILY_OPTION_KEYS,
-  getWeeklyParasha,
-  getTehilimOfDay,
-  type DailyOptionKey,
-} from "../../services/dailyCycles";
+import { DAILY_OPTION_KEYS, parashaTitle, type DailyOptionKey } from "../../services/dailyCycles";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
-import { liveValue } from "../../composables/liveInput";
 import { useSearchMode } from "../../composables/useSearchMode";
 
 const props = defineProps<{ userId: string }>();
@@ -76,7 +74,8 @@ useReadingPinch();
 // bibliothèque, verset écrit deux fois et commentaire de Rachi.
 const { doubleVerses: chneiMikraDouble, withRashi: chneiMikraRashi } = useChneiMikraOptions();
 
-const ALL_TYPE = "Tout";
+// La valeur d'état de l'onglet « Tout » (envoyée telle quelle en analytics).
+const ALL_TYPE = "all";
 
 const TYPES = [
   { key: ALL_TYPE, labelKey: "study.types.all" },
@@ -193,13 +192,10 @@ interface DynamicReading {
   encadrement: Encadrement | null;
 }
 
-function psalmsLabel(psalms: number[]): string {
-  if (psalms.length === 1) return t("dailyReading.options.psalmsOne", { n: psalms[0] });
-  return t("dailyReading.options.psalmsRange", {
-    from: psalms[0],
-    to: psalms[psalms.length - 1],
-  });
-}
+// Le jour hébraïque et la semaine, réactifs au temps et à la chkia : une page
+// laissée ouverte suit le calendrier (voir useTehilimDay).
+const { cycle: tehilimCycle } = useTehilimDay();
+const { parasha: currentParasha } = useWeeklyParasha();
 
 // Les lectures calculées pour aujourd'hui, en tête de la liste quotidienne.
 // Le chnei mikra n'en fait pas partie : c'est une lecture de la semaine,
@@ -207,11 +203,11 @@ function psalmsLabel(psalms: number[]): string {
 const dynamicReadings = computed<DynamicReading[]>(() => {
   const out: DynamicReading[] = [];
   if (selectedOptions.value.includes("tehilim-jour")) {
-    const cycle = getTehilimOfDay();
+    const cycle = tehilimCycle.value;
     out.push({
       key: "tehilim-jour",
       title: t("dailyReading.options.tehilimDayReading", { day: cycle.day }),
-      subtitle: psalmsLabel(cycle.psalms),
+      subtitle: psalmsLabel(cycle.psalms, t),
       entries: cycle.entries,
       encadrement: encadrementOf(cycle.entries[0]),
     });
@@ -221,7 +217,7 @@ const dynamicReadings = computed<DynamicReading[]>(() => {
 
 // --- Chnei mikra : section « Cette semaine », suivi jusqu'au changement de paracha ---
 const weeklyParasha = computed(() =>
-  selectedOptions.value.includes("parasha") ? getWeeklyParasha() : null,
+  selectedOptions.value.includes("parasha") ? currentParasha.value : null,
 );
 // Option paracha désactivée : l'onglet « Cette semaine » disparaît.
 watch(weeklyParasha, (week) => {
@@ -246,8 +242,18 @@ const parashaCompleted = ref(false);
 // être réécrite à chaque sauvegarde même quand l'option paracha est inactive.
 const storedParashaProgress = ref<{ week: string; completed: boolean } | null>(null);
 
-const parashaSubtitle = computed(() =>
-  (weeklyParasha.value?.entries ?? []).map((e) => appendHebrewNumeral(e.name)).join(" · "),
+const parashaSubtitle = computed(() => parashaTitle(weeklyParasha.value));
+
+// La semaine a changé pendant que la page était ouverte (samedi soir) : la
+// coche de la semaine passée ne vaut plus pour la nouvelle paracha.
+watch(
+  () => weeklyParasha.value?.weekKey,
+  (week) => {
+    parashaCompleted.value =
+      !!week &&
+      storedParashaProgress.value?.week === week &&
+      storedParashaProgress.value.completed === true;
+  },
 );
 
 async function toggleParashaCompleted() {
@@ -354,6 +360,8 @@ async function applyPreferences(prefs: UserPreferences, initial: boolean) {
   reminderSunset.value = prefs.pushSunsetReminderEnabled === true;
 
   const progress = prefs.dailyReadingProgress;
+  // Le jour que le suivi affiché décrit : voir ensureSameDay.
+  progressDay = localDayKey();
   // Chnei mikra : la coche tient tant que la paracha n'a pas changé,
   // indépendamment de la remise à zéro quotidienne.
   storedParashaProgress.value = progress?.parashaProgress ?? null;
@@ -397,6 +405,25 @@ async function applyPreferences(prefs: UserPreferences, initial: boolean) {
 // lui écrit rien (sans quoi un échec d'écriture pourrait se rappeler lui-même).
 let resyncing = false;
 
+/**
+ * Le jour civil auquel appartiennent les coches affichées, capturé au
+ * chargement. Une page laissée ouverte après minuit gardait les coches de la
+ * veille et les aurait enregistrées sous la date du jour : avant d'écrire, et
+ * au retour à l'écran, on vérifie que le jour est toujours le même ; sinon on
+ * repart de ce que le serveur connaît, remis à zéro pour le nouveau jour.
+ */
+let progressDay = localDayKey();
+
+async function ensureSameDay(): Promise<boolean> {
+  if (localDayKey() === progressDay) return true;
+  await loadPreferences().catch(() => {});
+  return false;
+}
+
+function onVisibilityChange() {
+  if (document.visibilityState === "visible") void ensureSameDay();
+}
+
 async function loadPreferences(initial = false, resync = false) {
   const prefs = await userPreferencesService.getPreferences(props.userId);
   resyncing = resync;
@@ -419,7 +446,10 @@ onMounted(async () => {
   // Fichiers téléchargés dans un format antérieur : remis à jour en tâche de
   // fond. Aucun nouveau livre n'est téléchargé sans l'accord de l'utilisateur.
   void refreshStaleDownloads();
+  document.addEventListener("visibilitychange", onVisibilityChange);
 });
+
+onUnmounted(() => document.removeEventListener("visibilitychange", onVisibilityChange));
 
 /**
  * Le serveur a toujours raison : au retour de la connexion, on se réaligne sur
@@ -497,6 +527,9 @@ function widgetPrefs() {
 }
 
 async function persistProgress() {
+  // Minuit est passé : les coches à l'écran sont celles de la veille, on
+  // recharge le jour plutôt que de les écrire sous la date d'aujourd'hui.
+  if (!(await ensureSameDay())) return;
   // On ne garde que les textes encore dans la liste, avec des chapitres cochés.
   const sections: Record<string, number[]> = {};
   for (const id of selectedIds.value) {
@@ -616,6 +649,9 @@ async function toggleSelect(entry: TextStudyJsonEntry) {
     const rest = { ...completedSections.value };
     delete rest[id];
     completedSections.value = rest;
+    // Les index de sections remontés par le texte partent avec lui : un
+    // texte remis plus tard les renverra au chargement.
+    sectionIndexes.delete(id);
     setCollapsed(id, false);
   } else {
     selectedIds.value = sortByCatalog([...selectedIds.value, id]);
@@ -839,8 +875,6 @@ async function disableReminder() {
 }
 
 // --- Manage view (browse the library, like the Bibliothèque) ---
-const searchTerm = ref("");
-const { searching } = useSearchMode(searchTerm);
 const selectedType = ref(ALL_TYPE);
 // La ligne « X textes dans votre liste » se déplie pour retirer un texte
 // sans avoir à le retrouver dans le catalogue.
@@ -849,49 +883,29 @@ const showSelectedPanel = ref(false);
 // "Tout" shows every corpus at once; any other tab stays scoped to itself.
 const isAllSelected = computed(() => selectedType.value === ALL_TYPE);
 
-// Comme dans la bibliothèque (StudyPage) : chaque frappe re-filtrait et
-// regroupait les 336 entrées du catalogue ; on attend 150 ms de silence.
-const debouncedTerm = ref("");
-let searchDebounce: ReturnType<typeof setTimeout> | undefined;
-watch(searchTerm, (value) => {
-  clearTimeout(searchDebounce);
-  searchDebounce = setTimeout(() => {
-    debouncedTerm.value = value;
-  }, 150);
-});
+// La recherche du catalogue, la même que dans la bibliothèque (StudyPage) :
+// voir useCatalogSearch. Seuls les corpus d'étude s'y composent : la liturgie
+// ne figure pas dans les onglets, et une recherche qui n'y trouverait qu'une
+// brakha dit « aucun résultat » plutôt que d'ouvrir une zone vide.
+const {
+  term: searchTerm,
+  groupedByType,
+  hasResults,
+} = useCatalogSearch(allTexts, CORPUS_TYPES, () =>
+  isAllSelected.value ? null : selectedType.value,
+);
+const { searching } = useSearchMode(searchTerm);
 
-const filtered = computed(() => {
-  const term = debouncedTerm.value.trim().toLowerCase();
-  return allTexts.filter((txt) => {
-    const matchesTerm = term === "" || txt.name.toLowerCase().includes(term);
-    const matchesType = isAllSelected.value || String(txt.type) === selectedType.value;
-    return matchesTerm && matchesType;
-  });
-});
-
-// Group results by type (a type heading is only shown on the "Tout" tab), then
-// by book/seder, so each section stays readable.
-const groupedByType = computed(() => {
-  return CORPUS_TYPES.map((ty) => {
-    const texts = filtered.value.filter((txt) => String(txt.type) === ty.key);
-    const groups: Record<string, TextStudyJsonEntry[]> = {};
-    for (const txt of texts) (groups[txt.livre] ??= []).push(txt);
-    return { key: ty.key, labelKey: ty.labelKey, groups, count: texts.length };
-  }).filter((group) => group.count > 0);
-});
-
-function formatBookName(livre: string): string {
-  return sessionService.formatBookName(livre);
-}
+const formatBookName = bookName;
 </script>
 
 <template>
   <div>
     <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
       <div>
-        <h2 class="text-2xl font-bold mb-2 text-text-primary">
+        <h1 class="text-2xl font-bold mb-2 text-text-primary">
           {{ t("dailyReading.title") }}
-        </h2>
+        </h1>
         <!-- Le descriptif ne sert que le site ; l'état vide explique déjà la fonction. -->
         <p v-if="!isNativeApp" class="text-text-secondary max-w-xl">
           {{ t("dailyReading.description") }}
@@ -1064,30 +1078,11 @@ function formatBookName(livre: string): string {
         </div>
       </CollapseTransition>
 
-      <!-- Recherche : collante sur l'app pour rester accessible au scroll. -->
-      <div :class="isNativeApp ? 'app-sticky-search' : ''" class="flex justify-center mb-4">
-        <div class="relative w-full md:w-96">
-          <AppIcon
-            name="search"
-            :size="16"
-            class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
-          />
-          <input
-            :value="searchTerm"
-            @input="searchTerm = liveValue($event)"
-            type="text"
-            :placeholder="t('study.searchPlaceholder')"
-            class="field !pl-11"
-          />
-          <button
-            v-if="searchTerm"
-            @click="searchTerm = ''"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
-          >
-            <AppIcon name="x" :size="14" />
-          </button>
-        </div>
-      </div>
+      <CatalogSearchField
+        v-model:term="searchTerm"
+        :placeholder="t('study.searchPlaceholder')"
+        class="mb-4"
+      />
 
       <div class="flex flex-col items-center gap-4 mb-8">
         <div class="flex flex-wrap gap-2 justify-center">
@@ -1107,7 +1102,7 @@ function formatBookName(livre: string): string {
         </div>
       </div>
 
-      <div v-if="filtered.length > 0" class="space-y-10">
+      <div v-if="hasResults" class="space-y-10">
         <div v-for="typeGroup in groupedByType" :key="typeGroup.key" class="space-y-8">
           <!-- Type heading: shown only on the "Tout" tab, where several corpora mix. -->
           <h2 v-if="isAllSelected" class="text-xl font-bold text-text-primary">
@@ -1368,12 +1363,7 @@ function formatBookName(livre: string): string {
                   </span>
                   <span class="text-sm font-semibold text-primary">{{ progressPct }}%</span>
                 </div>
-                <div class="h-2 w-full rounded-full bg-black/5 overflow-hidden dark:bg-white/10">
-                  <div
-                    class="h-full rounded-full bg-primary transition-all duration-500"
-                    :style="{ width: `${progressPct}%` }"
-                  ></div>
-                </div>
+                <ProgressBar :value="progressPct" :label="t('dailyReading.title')" />
               </template>
               <p class="text-xs text-text-secondary/70 mt-3 flex items-center gap-1.5">
                 <AppIcon name="rotate" :size="12" />
@@ -1587,8 +1577,12 @@ function formatBookName(livre: string): string {
     </template>
 
     <!-- Comme les autres textes de la bibliothèque : le menu de lecture et la
-         progression au bas de l'écran. -->
-    <ReadingMenu />
-    <ReadingProgressBar />
+         progression au bas de l'écran. Seulement devant les textes : en mode
+         « gérer » et pendant le chargement, ils masquaient le bouton de
+         remontée sans rien offrir à la place. -->
+    <template v-if="!loading && mode === 'reading'">
+      <ReadingMenu />
+      <ReadingProgressBar />
+    </template>
   </div>
 </template>

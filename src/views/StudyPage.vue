@@ -4,8 +4,9 @@ import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
-import { sessionService } from "../services/sessionService";
-import { seoService } from "../services/seoService";
+import { localeMessagesReady } from "../i18n";
+import { bookName } from "../services/catalogSearch";
+import { pageTitle, seoService } from "../services/seoService";
 import { localDayKey } from "../services/dateService";
 import { appendHebrewNumeral } from "../services/hebrewNumerals";
 import {
@@ -17,13 +18,11 @@ import {
 } from "../content/etudeTexts";
 import { isNativeApp } from "../composables/useNativeApp";
 import {
-  bookForEntry,
   downloadBook,
   downloadingPaths,
   formatDownloadSize,
   isBookDownloaded,
   offlineBooks,
-  removeBook,
   removeBooks,
   totalDownloadedSize,
   type OfflineBook,
@@ -36,13 +35,15 @@ import { useToast } from "../composables/useToast";
 import { useConfirm } from "../composables/useConfirm";
 import { useSearchMode } from "../composables/useSearchMode";
 import { useFoldedBooks } from "../composables/useFoldedBooks";
+import { useCatalogSearch } from "../composables/useCatalogSearch";
+import { useBookDownload, type BookState } from "../composables/useBookDownload";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "../components/icons/AppIcon.vue";
 import AccountCta from "../components/AccountCta.vue";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
 import LibraryShelf, { type ShelfBook } from "../components/LibraryShelf.vue";
 import CollapseTransition from "../components/CollapseTransition.vue";
-import { liveValue } from "../composables/liveInput";
+import CatalogSearchField from "../components/CatalogSearchField.vue";
 import { SITE_URL } from "../config/site";
 
 // L'encart du chnei mikra n'existe que sur le Tanakh, et il tire le calendrier
@@ -60,46 +61,19 @@ const toast = useToast();
 const { confirm } = useConfirm();
 const route = useRoute();
 
-// App native : état de téléchargement affiché sur chaque carte de la bibliothèque.
-type BookState = "none" | "downloading" | "downloaded" | "idle";
-function bookState(text: TextStudyJsonEntry): BookState {
-  if (!isNativeApp) return "none";
-  const book = bookForEntry(text);
-  if (!book) return "none";
-  if (downloadingPaths.has(book.path)) return "downloading";
-  return isBookDownloaded(book) ? "downloaded" : "idle";
-}
-
-async function toggleDownload(text: TextStudyJsonEntry) {
-  const book = bookForEntry(text);
-  if (!book) return;
-  try {
-    if (isBookDownloaded(book)) {
-      await removeBook(book);
-      analyticsService.capture("offline_download_deleted", { scope: "book", book: book.path });
-    } else {
-      // Le couple début/fin manquait sur le téléchargement d'un livre seul :
-      // seule la réussite s'écrivait. Un téléchargement lancé sur un réseau
-      // qui lâche ne laissait aucune trace, et le taux de réussite hors ligne
-      // était donc mécaniquement de 100 %.
-      analyticsService.capture("offline_download_started", { scope: "book", book: book.path });
-      await downloadBook(book);
-      // Téléchargements déclenchés par l'utilisateur uniquement (la synchro en
-      // arrière-plan de la lecture du jour n'est pas trackée).
-      analyticsService.capture("offline_download_completed", { scope: "book", book: book.path });
-    }
-  } catch (e) {
-    analyticsService.capture("offline_download_failed", {
-      scope: "book",
-      book: book.path,
-      // Le premier suspect d'un téléchargement en échec, et il se lit sans
-      // rien demander à l'appareil.
-      is_online: navigator.onLine,
-      error_message: e instanceof Error ? e.message : String(e),
-    });
-    toast.error(t("downloads.error"));
-  }
-}
+// App native : état de téléchargement affiché sur chaque carte de la
+// bibliothèque. Une Map calculée une fois par changement de l'index des
+// téléchargements : le patron lisait l'état six fois par carte, sur cent
+// cinquante cartes, à chaque rendu.
+const { bookStateOf, toggleDownload } = useBookDownload();
+const bookStates = computed(() => {
+  const states = new Map<string, BookState>();
+  if (!isNativeApp) return states;
+  for (const text of allTexts) states.set(String(text.id), bookStateOf(text));
+  return states;
+});
+const bookState = (text: TextStudyJsonEntry): BookState =>
+  bookStates.value.get(String(text.id)) ?? "none";
 
 // La bibliothèque est un tableau de bord : l'accueil ne montre que les grandes
 // sections (corpus) ; la liste détaillée des textes vit sur /bibliotheque/:corpus.
@@ -197,61 +171,35 @@ const searchPlaceholder = computed(() =>
   currentCorpus.value ? t(currentCorpus.value.searchKey) : t("study.searchAllPlaceholder"),
 );
 
-const searchTerm = ref("");
+// La recherche du catalogue, la même que dans la lecture du jour (nom hébreu,
+// nom latin, livre ; filtre différé de 150 ms) : voir useCatalogSearch. La
+// recherche de l'accueil couvre toute la bibliothèque, celle d'un corpus reste
+// dans le corpus.
+const {
+  term: searchTerm,
+  hasSearch,
+  groupedByType,
+  hasResults,
+  reset: resetSearch,
+} = useCatalogSearch(
+  allTexts,
+  CORPUS_META.map((c) => ({ key: c.typeKey, labelKey: c.labelKey })),
+  () => currentCorpus.value?.typeKey ?? null,
+);
 
 // Recherche en cours : l'écran se replie autour de la barre et des résultats.
 const { searching } = useSearchMode(searchTerm);
 
-// Chaque frappe re-filtre et re-groupe les 328 entrées du catalogue : sur un
-// appareil lent, taper devient poussif. On ne recalcule que 150 ms après la
-// dernière frappe, l'input, lui, reste réactif (searchTerm suit la frappe).
-const debouncedTerm = ref("");
-let searchDebounce: ReturnType<typeof setTimeout> | undefined;
 watch(searchTerm, (value) => {
   if (value.trim()) trackLibrarySearchUsed();
-  clearTimeout(searchDebounce);
-  searchDebounce = setTimeout(() => {
-    debouncedTerm.value = value;
-  }, 150);
 });
 
-// La recherche de l'accueil couvre toute la bibliothèque ; celle d'un corpus
-// reste dans le corpus. Changer de page remet la recherche à zéro.
+// Changer de page remet la recherche à zéro.
 watch(currentCorpus, () => {
-  searchTerm.value = "";
-  debouncedTerm.value = "";
+  resetSearch();
   hasTrackedSearch = false;
   trackLibraryViewed();
-  applySeoMeta();
 });
-
-const hasSearch = computed(() => debouncedTerm.value.trim() !== "");
-
-const filtered = computed(() => {
-  const term = debouncedTerm.value.trim().toLowerCase();
-  return allTexts.filter((txt) => {
-    const matchesTerm = term === "" || txt.name.toLowerCase().includes(term);
-    const matchesType =
-      currentCorpus.value === null || String(txt.type) === currentCorpus.value.typeKey;
-    return matchesTerm && matchesType;
-  });
-});
-
-// Group results by type (a type heading is only shown when several corpora can
-// mix, i.e. searching from the dashboard), then by book/seder, so each section
-// stays readable.
-const groupedByType = computed(() => {
-  return CORPUS_META.map((ty) => {
-    const texts = filtered.value.filter((txt) => String(txt.type) === ty.typeKey);
-    const groups: Record<string, TextStudyJsonEntry[]> = {};
-    for (const txt of texts) {
-      (groups[txt.livre] ??= []).push(txt);
-    }
-    return { key: ty.typeKey, labelKey: ty.labelKey, groups, count: texts.length };
-  }).filter((group) => group.count > 0);
-});
-
-const hasResults = computed(() => filtered.value.length > 0);
 
 // --- Les sefarim des Tehilim, repliables ---
 // Les cent cinquante psaumes font une longue page : le titre d'un sefer la
@@ -518,9 +466,7 @@ async function removeAllInTab() {
   }
 }
 
-function formatBookName(livre: string): string {
-  return sessionService.formatBookName(livre);
-}
+const formatBookName = bookName;
 
 // Badge marque-pages sur les cartes : lecture locale immédiate, affinée quand
 // la synchro du compte aboutit.
@@ -538,19 +484,23 @@ function applySeoMeta() {
     seoService.setMeta({
       title: fr
         ? corpusTitle(corpus.corpus as Corpus)
-        : `${t(corpus.labelKey)} | ${t("study.title")} | Petite Jérusalem`,
+        : pageTitle(t(corpus.labelKey), t("study.title")),
       description: fr ? corpusDescription(corpus.corpus as Corpus) : t(corpus.descKey),
       canonical: url,
     });
   } else {
     const url = SITE_URL + "/bibliotheque";
     seoService.setMeta({
-      title: `${t("study.title")} | Petite Jérusalem`,
+      title: pageTitle(t("study.title")),
       description: t("study.subtitle"),
       canonical: url,
     });
   }
 }
+
+// Rejoué au changement de corpus et de langue : les messages en et he
+// arrivent par import dynamique, parfois après le montage (voir ParashaPage).
+watch([currentCorpus, locale, localeMessagesReady], applySeoMeta);
 
 onMounted(() => {
   trackLibraryViewed();
@@ -627,34 +577,12 @@ onUnmounted(() => {
       </div>
     </CollapseTransition>
 
-    <!-- Recherche : collante sur l'app pour rester accessible au scroll.
-         Depuis l'accueil elle cherche dans toute la bibliothèque. -->
-    <div
-      :class="isNativeApp ? 'app-sticky-search' : ''"
-      class="flex justify-center mb-6 animate-[fadeIn_0.5s_ease]"
-    >
-      <div class="relative w-full md:w-96">
-        <AppIcon
-          name="search"
-          :size="16"
-          class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
-        />
-        <input
-          :value="searchTerm"
-          @input="searchTerm = liveValue($event)"
-          type="text"
-          :placeholder="searchPlaceholder"
-          class="field !pl-11"
-        />
-        <button
-          v-if="searchTerm"
-          @click="searchTerm = ''"
-          class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
-        >
-          <AppIcon name="x" :size="14" />
-        </button>
-      </div>
-    </div>
+    <!-- Recherche : depuis l'accueil elle cherche dans toute la bibliothèque. -->
+    <CatalogSearchField
+      v-model:term="searchTerm"
+      :placeholder="searchPlaceholder"
+      class="mb-6 animate-[fadeIn_0.5s_ease]"
+    />
 
     <!-- App native : tout télécharger (bibliothèque entière ou corpus courant)
          + espace utilisé. Retiré pendant une recherche : cette ligne n'a rien à

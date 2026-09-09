@@ -23,6 +23,7 @@ beforeAll(() => {
 import { guestService } from "../services/guestService";
 import { reservationService } from "../services/reservationService";
 import { sessionService } from "../services/sessionService";
+import { SlotTakenError } from "../services/appError";
 
 const makeText = (id: string): TextStudy =>
   ({
@@ -128,7 +129,6 @@ describe("sessionService - tirage aléatoire", () => {
         id: "r1",
         textStudyId: "103",
         section: 1,
-        available: false,
         isCompleted: false,
         createdAt: new Date(),
       },
@@ -148,7 +148,7 @@ describe("sessionService - tirage aléatoire", () => {
   it("repioche un autre texte quand le premier tirage entre en conflit", async () => {
     const spy = vi
       .spyOn(reservationService, "createReservation")
-      .mockRejectedValueOnce(new Error("Cette section est déjà réservée"))
+      .mockRejectedValueOnce(new SlotTakenError())
       .mockResolvedValueOnce("rid-5");
 
     const result = await sessionService.reserveRandomAvailableText(
@@ -173,7 +173,6 @@ describe("sessionService - tirage aléatoire", () => {
         id: "r1",
         textStudyId: "103",
         section: 1,
-        available: false,
         isCompleted: false,
         createdAt: new Date(),
       },
@@ -198,7 +197,6 @@ describe("sessionService - tirage aléatoire", () => {
         id: "r1",
         textStudyId: "103",
         section: 1,
-        available: false,
         isCompleted: false,
         createdAt: new Date(),
         // Tirage abandonné : expiré depuis une minute, jamais lu.
@@ -224,7 +222,6 @@ describe("sessionService - tirage aléatoire", () => {
         id: "r1",
         textStudyId: "103",
         section: 1,
-        available: false,
         isCompleted: true,
         createdAt: new Date(),
         expiresAt: new Date(Date.now() - 60 * 1000).toISOString(),
@@ -247,7 +244,6 @@ describe("sessionService - tirage aléatoire", () => {
     const base = {
       id: "r1",
       textStudyId: "103",
-      available: false,
       createdAt: new Date(),
     };
     const past = new Date(Date.now() - 1000).toISOString();
@@ -276,7 +272,6 @@ describe("sessionService - tirage aléatoire", () => {
         id: "r1",
         textStudyId: "103",
         section: 1,
-        available: false,
         isCompleted: false,
         createdAt: new Date(),
       },
@@ -299,7 +294,6 @@ describe("sessionService - tirage aléatoire", () => {
         id: "r1",
         textStudyId: "103",
         section: 1,
-        available: false,
         isCompleted: false,
         createdAt: new Date(),
       },
@@ -330,7 +324,7 @@ describe("sessionService - tirage aléatoire", () => {
   it("bascule sur un autre texte quand l'annoncé a été pris pendant le trajet", async () => {
     const spy = vi
       .spyOn(reservationService, "createReservation")
-      .mockRejectedValueOnce(new Error("Cette section est déjà réservée"))
+      .mockRejectedValueOnce(new SlotTakenError())
       .mockResolvedValueOnce("rid-8");
     const announced = makeText("103");
 
@@ -357,7 +351,6 @@ describe("sessionService - tirage aléatoire", () => {
         id: "r1",
         textStudyId: "103",
         section: 1,
-        available: false,
         isCompleted: false,
         createdAt: new Date(),
       },
@@ -409,7 +402,6 @@ describe("sessionService - statistiques et tirages abandonnés", () => {
     id: "r1",
     textStudyId: "103",
     section: 1,
-    available: false,
     isCompleted: false,
     createdAt: new Date(),
     ...overrides,

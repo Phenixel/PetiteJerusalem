@@ -18,7 +18,7 @@
 export const APP_BUNDLE_ID = "fr.petitejerusalem.app";
 
 /** Identifiant numérique de la fiche App Store (App Store Connect). */
-export const APPLE_APP_ID = "6798778029";
+const APPLE_APP_ID = "6798778029";
 
 export const APP_STORE_URL = `https://apps.apple.com/app/id${APPLE_APP_ID}`;
 export const PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${APP_BUNDLE_ID}`;

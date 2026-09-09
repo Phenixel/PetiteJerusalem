@@ -5,6 +5,7 @@ import App from "./App.vue";
 import router from "./router";
 import i18n from "./i18n";
 import { isNativeApp } from "./composables/useNativeApp";
+import { closeTopOverlay } from "./composables/useOverlayStack";
 
 // App native : à faire de façon SYNCHRONE avant le premier rendu.
 // - viewport-fit=cover fait passer la webview en vrai edge-to-edge (Capacitor
@@ -151,15 +152,27 @@ if (isNativeApp) {
     });
 }
 
+/** Après le premier rendu, quand le navigateur n'a plus rien d'urgent. */
+function whenIdle(task: () => void): void {
+  if (typeof requestIdleCallback === "function") requestIdleCallback(() => task());
+  else setTimeout(task, 1_500);
+}
+
 // App native uniquement, imports dynamiques pour ne rien ajouter au bundle
 // initial du site web.
-import("./composables/useNativeApp").then(({ isNativeApp }) => {
-  if (!isNativeApp) return;
+if (isNativeApp) {
   // Notifications push : deep-links au toucher + affichage en premier plan.
   import("./services/pushService").then(({ pushService }) => pushService.init(router));
   // Widgets d'écran d'accueil : pousse les horaires et la lecture du jour au
-  // natif (lancement, retour au premier plan, changement de lieu…).
-  import("./services/widgetService").then(({ widgetService }) => widgetService.init());
+  // natif (lancement, retour au premier plan, changement de lieu…). Lancé
+  // après le premier rendu de la page et à l'heure creuse : la mise à jour
+  // tire hebcal et le catalogue des textes, qui n'ont rien à faire avant le
+  // premier écran, et les widgets attendent sans dommage une seconde de plus.
+  void router.isReady().then(() =>
+    whenIdle(() => {
+      import("./services/widgetService").then(({ widgetService }) => widgetService.init());
+    }),
+  );
   // Bandeau de mise à jour : compare le binaire installé à la version publiée
   // sur le store (lancement, puis retour au premier plan).
   import("./services/appUpdateService").then(({ appUpdateService }) => appUpdateService.init());
@@ -199,6 +212,10 @@ import("./composables/useNativeApp").then(({ isNativeApp }) => {
       void router.isReady().then(() => router.push(parsed.pathname + parsed.search + parsed.hash));
     });
     CapacitorApp.addListener("backButton", ({ canGoBack }) => {
+      // Une surcouche ouverte (modale, menu, introduction) se ferme avant
+      // toute navigation, comme Échap le fait : sans cela, le retour
+      // naviguait sous la fenêtre, ou quittait l'app depuis l'introduction.
+      if (closeTopOverlay()) return;
       if (canGoBack) {
         router.back();
       } else {
@@ -207,4 +224,4 @@ import("./composables/useNativeApp").then(({ isNativeApp }) => {
       }
     });
   });
-});
+}

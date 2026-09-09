@@ -65,3 +65,7 @@ keystore.properties
 
 # Configuration locale des agents (Claude Code / Cowork)
 .claude/
+
+# Tests de bout en bout (Playwright)
+/test-results
+/playwright-report

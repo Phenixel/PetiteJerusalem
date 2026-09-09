@@ -1,13 +1,19 @@
 # CI/CD Firebase : droits du service account
 
 Le workflow [.github/workflows/deploy.yml](../.github/workflows/deploy.yml)
-publie **à chaque tag `vX.Y.Z`**, dans cet ordre :
+publie **à chaque tag `vX.Y.Z`** (release complète, avec les apps mobiles)
+**ou `web-vX.Y.Z`** (le site seul : correctif front, contenu, SEO, sans
+release mobile ; le motif `v*` ne matche pas `web-v*`, les workflows mobiles
+ne se lancent donc pas), dans cet ordre :
 
 1. le site (hosting), puis une vérification que la nouvelle version est bien
    celle servie en production ;
-2. les règles **et** les index Firestore ;
-3. les règles Storage ;
-4. les Cloud Functions.
+2. un ping IndexNow (`scripts/indexnow.mjs`), non bloquant
+   (`continue-on-error`) : un refus d'IndexNow ne doit pas faire échouer un
+   déploiement dont le site est déjà en ligne ;
+3. les règles **et** les index Firestore ;
+4. les règles Storage ;
+5. les Cloud Functions.
 
 Tout passe par un seul compte de service, dont la clé JSON est dans le secret
 GitHub `FIREBASE_SERVICE_ACCOUNT` :

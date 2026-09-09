@@ -92,10 +92,7 @@ const ALIYOT_SEMAINE: Rubric[] = [
  * scripts/generate-torah-weekday.mjs, qui le tient de @hebcal/leyning).
  * Indexé par le nom hebcal de la paracha, celui que porte WeeklyParasha.names.
  */
-const TORAH_SEMAINE = torahWeekdayJson as Record<
-  string,
-  { n: number; from: string; to: string }[]
->;
+const TORAH_SEMAINE = torahWeekdayJson as Record<string, { n: number; from: string; to: string }[]>;
 
 /**
  * Remplit le marqueur `torahWeekly` de Cha'harit avec la lecture de la Torah

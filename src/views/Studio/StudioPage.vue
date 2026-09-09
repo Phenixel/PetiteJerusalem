@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 import type { ChiourDoc, SerieDoc } from "../../models/models";
 import { studioService, type StudioAuthor } from "../../services/studioService";
 import { chiourService } from "../../services/chiourService";
+import { byEpisode } from "../../services/serieService";
 import { seoService } from "../../services/seoService";
 import { useToast } from "../../composables/useToast";
 import AppIcon from "../../components/icons/AppIcon.vue";
@@ -48,17 +49,10 @@ const episodeCountBySerie = computed(() => {
 
 const openSerie = computed(() => series.value.find((s) => s.id === openSerieId.value) ?? null);
 
-// Épisodes de la série ouverte, triés par numéro (les sans-numéro en fin).
-const serieEpisodes = computed(() => {
-  const episodes = chiourim.value.filter((c) => c.serieId === openSerieId.value);
-  episodes.sort((a, b) => {
-    if (a.episode != null && b.episode != null) return a.episode - b.episode;
-    if (a.episode != null) return -1;
-    if (b.episode != null) return 1;
-    return a.name.localeCompare(b.name, "fr");
-  });
-  return episodes;
-});
+// Épisodes de la série ouverte, dans l'ordre de la série (voir byEpisode).
+const serieEpisodes = computed(() =>
+  chiourim.value.filter((c) => c.serieId === openSerieId.value).sort(byEpisode),
+);
 
 // Chiourim hors série sur l'accueil (les autres se gèrent depuis leur série).
 const horsSerie = computed(() => chiourim.value.filter((c) => !c.serieId));
@@ -189,10 +183,19 @@ async function removeChiour(chiour: ChiourDoc) {
 
 <template>
   <main class="mx-auto max-w-3xl px-6 py-12 min-h-screen">
-    <div v-if="isLoading" class="text-center py-24 text-text-secondary">
-      <AppIcon name="spinner" :size="24" class="animate-spin mx-auto mb-4" />
-      {{ t("common.loading") }}
-    </div>
+    <!-- Le temps de vérifier le lien : l'en-tête de la page est déjà là,
+         seule la zone de contenu attend. -->
+    <template v-if="isLoading">
+      <div class="text-center mb-10">
+        <p class="text-sm font-semibold uppercase tracking-wider text-primary mb-2">
+          {{ t("studio.title") }}
+        </p>
+      </div>
+      <div class="text-center py-16 text-text-secondary" aria-busy="true">
+        <AppIcon name="spinner" :size="24" class="animate-spin mx-auto mb-4" />
+        {{ t("common.loading") }}
+      </div>
+    </template>
 
     <!-- Lien invalide ou révoqué -->
     <div v-else-if="!author" class="card p-8 text-center animate-[fadeIn_0.5s_ease]">

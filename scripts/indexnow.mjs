@@ -1,22 +1,22 @@
 /**
- * Submit the site's indexable URLs to IndexNow.
+ * Soumet les URL indexables du site à IndexNow.
  *
- * IndexNow instantly notifies participating search engines (Bing, Yandex,
- * Seznam…) that URLs are new or updated, Bing also feeds ChatGPT's web search.
- * Google does NOT use IndexNow; for Google, submit the sitemap in Search Console
- * (see SEO.md).
+ * IndexNow prévient instantanément les moteurs participants (Bing, Yandex,
+ * Seznam…) que des URL sont nouvelles ou modifiées ; Bing alimente aussi la
+ * recherche web de ChatGPT. Google n'utilise PAS IndexNow : pour Google, on
+ * soumet le sitemap dans la Search Console (voir SEO.md).
  *
- * Ownership is proven by hosting the key at
- * `https://petite-jerusalem.fr/<KEY>.txt` (committed under public/).
+ * La propriété est prouvée en hébergeant la clé à
+ * `https://petite-jerusalem.fr/<CLÉ>.txt` (versionnée sous public/).
  *
- * The URL list is read from the sitemaps the build just wrote into `dist/`
- * (sitemap.xml is an index, one file per page family): the sitemap is the
- * single source of truth, so the 1 200 Bibliothèque reading pages, which are
- * generated from the text files rather than declared in `seoPages.ts`, are
- * submitted too (they used to be left out). IndexNow accepts up to 10 000 URLs
- * per call.
+ * La liste des URL est lue dans les sitemaps que le build vient d'écrire dans
+ * `dist/` (sitemap.xml est un index, un fichier par famille de pages) : le
+ * sitemap est la source unique de vérité, si bien que les 1 200 pages de
+ * lecture de la Bibliothèque, générées à partir des fichiers de textes plutôt
+ * que déclarées dans `seoPages.ts`, sont soumises elles aussi (elles étaient
+ * oubliées auparavant). IndexNow accepte jusqu'à 10 000 URL par appel.
  *
- * Run after a deploy:  node scripts/indexnow.mjs   (or: npm run indexnow)
+ * À lancer après un déploiement :  node scripts/indexnow.mjs   (ou : npm run indexnow)
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";

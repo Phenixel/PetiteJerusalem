@@ -24,7 +24,7 @@ const SESSIONS_CACHE_TTL_MS = 60_000;
  * Erreur levée par FirestoreService : conserve le code Firestore d'origine
  * ("permission-denied", "unavailable"…) pour que l'UI adapte son message.
  */
-export class FirestoreOperationError extends Error {
+class FirestoreOperationError extends Error {
   readonly code: string | null;
 
   constructor(message: string, code: string | null) {
@@ -34,7 +34,7 @@ export class FirestoreOperationError extends Error {
   }
 }
 
-export class FirestoreService {
+class FirestoreService {
   private sessionsCache: { data: Session[]; fetchedAt: number } | null = null;
   private sessionsCachePromise: Promise<Session[]> | null = null;
 
@@ -68,12 +68,11 @@ export class FirestoreService {
 
   // === MÉTHODES SESSION ===
 
-  async createSession(session: Omit<Session, "id" | "createdAt" | "isCompleted">): Promise<string> {
+  async createSession(session: Omit<Session, "id" | "createdAt">): Promise<string> {
     try {
       const docRef = await addDoc(collection(db, "sessions"), {
         ...session,
         createdAt: Timestamp.now(),
-        isCompleted: false,
       });
       this.invalidateSessionsCache();
       return docRef.id;

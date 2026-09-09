@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, toRef, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Session } from "../models/models";
+import type { SessionEditData } from "../composables/useSessionEditing";
+import { useOverlay } from "../composables/useOverlayStack";
 import { useToast } from "../composables/useToast";
 import { toDateTimeLocal } from "../services/dateService";
 import AppIcon from "./icons/AppIcon.vue";
@@ -12,25 +14,23 @@ const toast = useToast();
 interface Props {
   show: boolean;
   session: Session | null;
+  /**
+   * La sauvegarde elle-même, fournie par l'écran hôte : la modale l'attend
+   * et ne se ferme que sur un succès. Avant, elle émettait un événement et se
+   * fermait aussitôt : l'écriture échouait dans le vide, la saisie était
+   * perdue avec elle, et l'état « Sauvegarde... » n'apparaissait jamais.
+   */
+  save: (data: SessionEditData) => Promise<boolean>;
 }
 
 interface Emits {
   (e: "update:show", value: boolean): void;
-  (
-    e: "save",
-    sessionData: {
-      name: string;
-      description: string;
-      dateLimit: string;
-      guestEmailRequired: boolean;
-    },
-  ): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const editForm = ref({
+const editForm = ref<SessionEditData>({
   name: "",
   description: "",
   dateLimit: "",
@@ -40,10 +40,16 @@ const editForm = ref({
 const isLoading = ref(false);
 
 const closeModal = () => {
+  if (isLoading.value) return;
   emit("update:show", false);
 };
 
+// Le bouton retour d'Android ferme la modale avant de quitter la page.
+useOverlay(toRef(props, "show"), closeModal);
+
 const saveSession = async () => {
+  if (isLoading.value) return;
+
   if (!editForm.value.name.trim()) {
     toast.error(t("editModal.sessionNameRequired"));
     return;
@@ -54,57 +60,40 @@ const saveSession = async () => {
     return;
   }
 
+  isLoading.value = true;
   try {
-    isLoading.value = true;
-    emit("save", {
+    const saved = await props.save({
       name: editForm.value.name.trim(),
       description: editForm.value.description.trim(),
       dateLimit: editForm.value.dateLimit,
       guestEmailRequired: editForm.value.guestEmailRequired,
     });
-    closeModal();
-  } catch (error) {
-    console.error("Erreur lors de la sauvegarde:", error);
-    toast.errorFromException(error, t("editModal.saveError"));
+    // En cas d'échec, l'hôte a déjà prévenu ; la modale garde la saisie pour
+    // un nouvel essai.
+    if (saved) emit("update:show", false);
   } finally {
     isLoading.value = false;
   }
 };
 
-watch(
-  () => props.session,
-  (newSession) => {
-    if (newSession) {
-      editForm.value = {
-        name: newSession.name,
-        description: newSession.description || "",
-        dateLimit:
-          newSession.dateLimit instanceof Date
-            ? toDateTimeLocal(newSession.dateLimit)
-            : newSession.dateLimit,
-        guestEmailRequired: newSession.guestEmailRequired === true,
-      };
-    }
-  },
-  { immediate: true },
-);
+// Le formulaire repart de la session à chaque ouverture, et à chaque
+// changement de session : une modification abandonnée ne doit pas réapparaître.
+const resetForm = () => {
+  const session = props.session;
+  if (!session) return;
+  editForm.value = {
+    name: session.name,
+    description: session.description || "",
+    // Heure locale (toDateTimeLocal), jamais toISOString : le champ
+    // datetime-local relirait l'heure UTC comme locale et décalerait la date
+    // limite du fuseau à chaque enregistrement.
+    dateLimit:
+      session.dateLimit instanceof Date ? toDateTimeLocal(session.dateLimit) : session.dateLimit,
+    guestEmailRequired: session.guestEmailRequired === true,
+  };
+};
 
-watch(
-  () => props.show,
-  (newValue) => {
-    if (!newValue && props.session) {
-      editForm.value = {
-        name: props.session.name,
-        description: props.session.description || "",
-        dateLimit:
-          props.session.dateLimit instanceof Date
-            ? props.session.dateLimit.toISOString().slice(0, 16)
-            : props.session.dateLimit,
-        guestEmailRequired: props.session.guestEmailRequired === true,
-      };
-    }
-  },
-);
+watch([() => props.session, () => props.show], resetForm, { immediate: true });
 </script>
 
 <template>
@@ -114,7 +103,12 @@ watch(
         <h3 class="text-lg font-bold text-text-primary">
           {{ t("editModal.title") }}
         </h3>
-        <button @click="closeModal" class="icon-btn" :aria-label="t('common.close')">
+        <button
+          @click="closeModal"
+          class="icon-btn"
+          :aria-label="t('common.close')"
+          :disabled="isLoading"
+        >
           <AppIcon name="x" :size="18" />
         </button>
       </div>
@@ -175,6 +169,7 @@ watch(
             {{ t("common.cancel") }}
           </button>
           <button type="submit" class="btn btn-primary" :disabled="isLoading">
+            <AppIcon v-if="isLoading" name="spinner" :size="15" class="animate-spin" />
             {{ isLoading ? t("common.saving") : t("common.save") }}
           </button>
         </div>

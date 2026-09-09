@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { useOverlay } from "../../composables/useOverlayStack";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 
@@ -165,6 +166,12 @@ function openClock() {
 function close() {
   emit("update:show", false);
 }
+
+// Le bouton retour d'Android ferme la modale avant de quitter la page.
+useOverlay(
+  computed(() => props.show),
+  close,
+);
 
 function confirm() {
   if (view.value === "clock") {

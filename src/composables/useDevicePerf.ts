@@ -23,7 +23,7 @@ import { ref, type Ref } from "vue";
 const cores = navigator.hardwareConcurrency ?? 8;
 const memoryGb = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
 
-export const isLowEndDevice = cores <= 4 || memoryGb <= 4;
+const isLowEndDevice = cores <= 4 || memoryGb <= 4;
 
 /**
  * Gecko (Firefox), détecté de façon SYNCHRONE : le mur de pierre y bascule en

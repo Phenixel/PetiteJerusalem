@@ -1,4 +1,5 @@
 import { auth } from "../firebase/core";
+import { loadFirestore } from "../firebase/lazy";
 import { i18n } from "../i18n";
 import { guestService } from "./guestService";
 import { analyticsService } from "./analyticsService";
@@ -90,7 +91,7 @@ function writeLocalList(key: string, values: string[]): void {
   }
 }
 
-export class ModerationService {
+class ModerationService {
   // === Filtre de termes interdits ===
 
   /**
@@ -137,11 +138,8 @@ export class ModerationService {
    */
   async reportSession(session: Session, reason: ReportReason, details: string): Promise<void> {
     const uid = auth.currentUser?.uid ?? null;
-    const [{ addDoc, collection, Timestamp }, { db }] = await Promise.all([
-      import("firebase/firestore"),
-      import("../firebase/firestore"),
-    ]);
-    await addDoc(collection(db, "reports"), {
+    const { sdk, db } = await loadFirestore();
+    await sdk.addDoc(sdk.collection(db, "reports"), {
       sessionId: session.id,
       // Les règles Firestore plafonnent le nom à 300 caractères : un titre
       // plus long rendrait la session impossible à signaler.
@@ -151,7 +149,7 @@ export class ModerationService {
       reporterId: uid,
       reporterGuestId: uid ? null : guestService.getOrCreateLocalGuestId(),
       status: "open",
-      createdAt: Timestamp.now(),
+      createdAt: sdk.Timestamp.now(),
     });
 
     this.markSessionReported(session.id);

@@ -8,8 +8,10 @@ import { ref, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Session } from "../../models/models";
 import { adminService, type ReportWithId } from "../../services/adminService";
-import { sessionService } from "../../services/sessionService";
+import { TextTypeService } from "../../services/textTypeService";
+import { DateService } from "../../services/dateService";
 import { useToast } from "../../composables/useToast";
+import { useSessionEditing, type SessionEditData } from "../../composables/useSessionEditing";
 import EditSessionModal from "../../components/EditSessionModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { liveValue } from "../../composables/liveInput";
@@ -18,6 +20,7 @@ import { useConfirm } from "../../composables/useConfirm";
 const { t } = useI18n();
 const { confirm } = useConfirm();
 const toast = useToast();
+const sessionEditing = useSessionEditing("admin");
 
 const isLoading = ref(true);
 const sessions = ref<Session[]>([]);
@@ -134,23 +137,13 @@ function openEdit(session: Session) {
   showEditModal.value = true;
 }
 
-async function saveSessionChanges(sessionData: {
-  name: string;
-  description: string;
-  dateLimit: string;
-  guestEmailRequired: boolean;
-}) {
+async function saveSessionChanges(sessionData: SessionEditData): Promise<boolean> {
   const target = editTarget.value;
-  if (!target) return;
+  if (!target) return false;
 
-  try {
-    await sessionService.updateSession(target.id, { ...sessionData, slug: target.slug });
-    toast.success(t("profile.sessionUpdatedSuccess"));
-    await refresh();
-  } catch (error) {
-    console.error("Erreur lors de la mise à jour:", error);
-    toast.errorFromException(error, t("profile.sessionUpdateError"));
-  }
+  const saved = await sessionEditing.saveSession(target, sessionData);
+  if (saved) await refresh();
+  return saved;
 }
 
 async function deleteSession(session: Session) {
@@ -177,7 +170,7 @@ async function deleteSession(session: Session) {
   }
 }
 
-const formatDate = (date: Date | undefined) => (date ? sessionService.formatDate(date) : "");
+const formatDate = (date: Date | undefined) => (date ? DateService.formatDate(date) : "");
 </script>
 
 <template>
@@ -237,7 +230,7 @@ const formatDate = (date: Date | undefined) => (date ? sessionService.formatDate
 
             <div class="flex flex-wrap items-center gap-2 mt-2.5">
               <span class="chip bg-primary/10 text-primary">
-                {{ sessionService.formatTextType(session.type) }}
+                {{ TextTypeService.formatType(session.type) }}
               </span>
               <span v-if="session.hidden" class="chip bg-red-600/10 text-red-700 dark:text-red-300">
                 {{
@@ -335,7 +328,7 @@ const formatDate = (date: Date | undefined) => (date ? sessionService.formatDate
     <EditSessionModal
       v-model:show="showEditModal"
       :session="editTarget"
-      @save="saveSessionChanges"
+      :save="saveSessionChanges"
     />
   </div>
 </template>

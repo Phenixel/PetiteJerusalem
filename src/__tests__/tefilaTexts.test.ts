@@ -146,9 +146,7 @@ describe("fichiers de tefila", () => {
     const content = load("brahot", "brakha-aharona");
     const blocks = content.sections[0].blocks ?? [];
     // Le bloc des fêtes : sept variantes, chacune conditionnée à son occasion.
-    const fetes = blocks.find((b) =>
-      (b.paragraphs ?? []).some((p) => p.when === "rosh-chodesh"),
-    )!;
+    const fetes = blocks.find((b) => (b.paragraphs ?? []).some((p) => p.when === "rosh-chodesh"))!;
     expect(fetes.variants).toBe(true);
     const whens = (fetes.paragraphs ?? []).map((p) => p.when);
     expect(whens).toEqual([
@@ -325,9 +323,7 @@ describe("fichiers de tefila", () => {
     // « Achamnou. Akhalnou maakhalot assourot » : la formule de l'aveu porte
     // la ligne, ce que le rite lui ajoute la suit en texte courant.
     const content = load("slihot", "slihot");
-    const vidoui = (content.sections[0].blocks ?? []).find(
-      (b) => b.label === "Vidoui (Achamnou)",
-    )!;
+    const vidoui = (content.sections[0].blocks ?? []).find((b) => b.label === "Vidoui (Achamnou)")!;
     const heads = (vidoui.paragraphs ?? [])
       .map((p) => p.runs[0])
       .filter((run) => run.kind === "he" && run.strong)
@@ -338,7 +334,9 @@ describe("fichiers de tefila", () => {
     // « Ribono chel olam » : le verset qui ferme chaque strophe reste en texte
     // courant, seuls les mots du paytan sont en avant.
     const ribono = (vidoui.paragraphs ?? []).find((p) =>
-      p.runs.some((run) => run.kind === "he" && /רבונו של עולם/.test(run.text.replace(/[֑-ׇ]/g, ""))),
+      p.runs.some(
+        (run) => run.kind === "he" && /רבונו של עולם/.test(run.text.replace(/[֑-ׇ]/g, "")),
+      ),
     )!;
     expect(ribono.runs).toHaveLength(2);
     expect(ribono.runs[0]).toMatchObject({ strong: true });

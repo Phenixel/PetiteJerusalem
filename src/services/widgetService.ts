@@ -184,7 +184,9 @@ class WidgetService {
       const provided = this.pendingDaily;
       this.pendingDaily = null;
       if (!this.user) {
-        this.dailyJson = JSON.stringify(buildDailyReadingWidgetPayload(null, t, new Date(), accent));
+        this.dailyJson = JSON.stringify(
+          buildDailyReadingWidgetPayload(null, t, new Date(), accent),
+        );
       } else {
         try {
           const prefs =

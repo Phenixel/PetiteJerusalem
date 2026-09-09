@@ -49,7 +49,7 @@ function audioExt(file: File): string | null {
   return ext in AUDIO_MIME_BY_EXT ? ext : null;
 }
 
-export class StudioService {
+class StudioService {
   /** Résout un token de lien studio. Renvoie null si inconnu ou révoqué. */
   async resolveToken(token: string): Promise<StudioAuthor | null> {
     if (!token || token.length > 128) return null;
@@ -134,7 +134,9 @@ export class StudioService {
         resolve(value);
       };
       audio.addEventListener("loadedmetadata", () => {
-        done(Number.isFinite(audio.duration) && audio.duration > 0 ? Math.round(audio.duration) : null);
+        done(
+          Number.isFinite(audio.duration) && audio.duration > 0 ? Math.round(audio.duration) : null,
+        );
       });
       audio.addEventListener("error", () => done(null));
       audio.src = url;

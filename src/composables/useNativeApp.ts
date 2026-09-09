@@ -12,7 +12,3 @@ export const isNativeApp = Capacitor.isNativePlatform();
 
 /** "web" | "ios" | "android" */
 export const appPlatform = Capacitor.getPlatform();
-
-export function useNativeApp() {
-  return { isNative: isNativeApp, platform: appPlatform };
-}

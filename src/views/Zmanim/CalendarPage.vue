@@ -23,6 +23,7 @@ import {
   type CalendarEntry,
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
+import { dateTimeFormat } from "../../services/intlCache";
 import { findFestivalBySlug, type SeoFestival } from "../../content/zmanimFestivals";
 import { isSectionPath, localeOfPath, sectionPath, type SeoLocale } from "../../content/seoLocales";
 import AppIcon from "../../components/icons/AppIcon.vue";
@@ -94,14 +95,14 @@ const clock = (date: Date) => formatZmanTime(date, place.value.tzid, locale.valu
 function civilRange(entry: CalendarEntry): string {
   const from = entry.first.greg();
   const to = entry.last.greg();
-  const long = new Intl.DateTimeFormat(locale.value, {
+  const long = dateTimeFormat(locale.value, {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   });
   if (entry.first.abs() === entry.last.abs()) return long.format(from);
-  const short = new Intl.DateTimeFormat(locale.value, { weekday: "long", day: "numeric" });
+  const short = dateTimeFormat(locale.value, { weekday: "long", day: "numeric" });
   return t("calendar.range", { from: short.format(from), to: long.format(to) });
 }
 

@@ -2,6 +2,7 @@
 import { ref, computed, watch, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
+import ProgressBar from "./ProgressBar.vue";
 import { useAudioPlayer, formatTime } from "../composables/useAudioPlayer";
 import { analyticsService } from "../services/analyticsService";
 
@@ -127,14 +128,8 @@ function setSpeed(speed: number) {
     </p>
 
     <!-- Barre de progression -->
-    <div
-      class="group relative h-2 bg-black/10 rounded-full cursor-pointer mb-3 dark:bg-white/10"
-      @click="seek"
-    >
-      <div
-        class="absolute inset-y-0 left-0 bg-primary rounded-full transition-[width] duration-100"
-        :style="{ width: `${progress}%` }"
-      ></div>
+    <div class="group relative cursor-pointer mb-3" @click="seek">
+      <ProgressBar :value="progress" :animated="false" />
       <div
         class="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
         :style="{ left: `calc(${progress}% - 8px)` }"

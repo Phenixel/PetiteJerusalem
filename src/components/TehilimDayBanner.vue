@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { getTehilimOfDay } from "../services/dailyCycles";
+import { psalmsLabel, useTehilimDay } from "../composables/useTehilimDay";
 import { analyticsService } from "../services/analyticsService";
 import AppIcon from "./icons/AppIcon.vue";
 
@@ -18,16 +18,10 @@ import AppIcon from "./icons/AppIcon.vue";
 
 const { t } = useI18n();
 
-const cycle = computed(() => getTehilimOfDay());
+// Le jour hébraïque (bascule à la chkia), relu au fil du temps : voir useTehilimDay.
+const { cycle } = useTehilimDay();
 
-const rangeLabel = computed(() => {
-  const psalms = cycle.value.psalms;
-  if (psalms.length === 1) return t("dailyReading.options.psalmsOne", { n: psalms[0] });
-  return t("dailyReading.options.psalmsRange", {
-    from: psalms[0],
-    to: psalms[psalms.length - 1],
-  });
-});
+const rangeLabel = computed(() => psalmsLabel(cycle.value.psalms, t));
 
 function track() {
   analyticsService.capture("tehilim_day_opened", {

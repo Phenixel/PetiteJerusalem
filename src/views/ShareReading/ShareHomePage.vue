@@ -3,6 +3,8 @@ import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { sessionService } from "../../services/sessionService";
+import { reservationService } from "../../services/reservationService";
+import { TextTypeService } from "../../services/textTypeService";
 import type { Session, TextStudy } from "../../models/models";
 import type { EnumTypeTextStudy } from "../../models/typeTextStudy";
 import SessionCard from "../../components/SessionCard.vue";
@@ -19,15 +21,13 @@ import { authService, type User } from "../../services/authService";
 import { analyticsService } from "../../services/analyticsService";
 import { moderationService } from "../../services/moderationService";
 import { isNativeApp } from "../../composables/useNativeApp";
-import { useToast } from "../../composables/useToast";
 import { liveValue } from "../../composables/liveInput";
+import { useSessionEditing, type SessionEditData } from "../../composables/useSessionEditing";
 import { SITE_URL } from "../../config/site";
-import { useConfirm } from "../../composables/useConfirm";
 
 const router = useRouter();
 const { t } = useI18n();
-const { confirm } = useConfirm();
-const toast = useToast();
+const sessionEditing = useSessionEditing("share_home");
 
 const sessions = ref<Session[]>([]);
 const isLoading = ref(true);
@@ -51,7 +51,7 @@ const loadSessions = async () => {
     sessions.value = sessionService.sortSessionsByDate(fetchedSessions);
   } catch (err) {
     console.error("Erreur lors du chargement des sessions:", err);
-    error.value = err instanceof Error ? err.message : "Erreur lors du chargement des sessions";
+    error.value = t("shareReading.loadError");
   } finally {
     isLoading.value = false;
   }
@@ -71,7 +71,7 @@ const participatedSessions = computed(() => {
     (s) =>
       !isSessionFinished(s) &&
       s.hidden !== true &&
-      s.reservations?.some((r) => r.chosenById === u.id || r.chosenByGuestId === u.email),
+      s.reservations?.some((r) => reservationService.isOwnReservation(r, u)),
   );
 });
 
@@ -142,101 +142,22 @@ const openEditModal = (session: Session) => {
   showEditModal.value = true;
 };
 
-const saveSessionChanges = async (sessionData: {
-  name: string;
-  description: string;
-  dateLimit: string;
-  guestEmailRequired: boolean;
-}) => {
-  if (!selectedSession.value) return;
+const replaceSession = (updated: Session) => {
+  const index = sessions.value.findIndex((s) => s.id === updated.id);
+  if (index > -1) sessions.value[index] = updated;
+};
 
+const saveSessionChanges = async (sessionData: SessionEditData): Promise<boolean> => {
   const edited = selectedSession.value;
-  try {
-    await sessionService.updateSession(edited.id, {
-      ...sessionData,
-      slug: edited.slug,
-    });
-    analyticsService.capture("session_updated", {
-      session_id: edited.id,
-      text_type: edited.type,
-      guest_email_required: sessionData.guestEmailRequired,
-      deadline_changed:
-        edited.dateLimit instanceof Date
-          ? new Date(sessionData.dateLimit).getTime() !== edited.dateLimit.getTime()
-          : null,
-      source: "share_home",
-    });
+  if (!edited) return false;
 
-    const sessionIndex = sessions.value.findIndex((s) => s.id === selectedSession.value!.id);
-    if (sessionIndex > -1) {
-      sessions.value[sessionIndex] = {
-        ...sessions.value[sessionIndex],
-        name: sessionData.name,
-        description: sessionData.description,
-        dateLimit: new Date(sessionData.dateLimit),
-        guestEmailRequired: sessionData.guestEmailRequired,
-        updatedAt: new Date(),
-      };
-    }
-
-    toast.success(t("profile.sessionUpdatedSuccess"));
-  } catch (error) {
-    console.error("Erreur lors de la mise à jour:", error);
-    analyticsService.capture("session_update_failed", {
-      session_id: edited.id,
-      error_message: error instanceof Error ? error.message : String(error),
-      source: "share_home",
-    });
-    toast.errorFromException(error, t("profile.sessionUpdateError"));
-  }
+  const saved = await sessionEditing.saveSession(edited, sessionData);
+  if (saved) replaceSession(sessionEditing.edited(edited, sessionData));
+  return saved;
 };
 
 const endSession = async (session: Session) => {
-  if (!(await confirm({ title: t("profile.endSessionConfirm"), danger: true }))) {
-    return;
-  }
-
-  try {
-    await sessionService.endSession(session.id);
-    // Même lecture que sur la page de gestion : une chaîne close au bout de
-    // son texte et une chaîne close faute de participants comptent toutes deux
-    // pour un `session_ended`, seuls ces taux les distinguent.
-    const stats = sessionService.getSessionReservationStats(session);
-    const reservations = session.reservations ?? [];
-    analyticsService.capture("session_ended", {
-      session_id: session.id,
-      text_type: session.type,
-      reservations_count: stats.reserved,
-      completion_rate:
-        reservations.length > 0
-          ? Math.round(
-              (reservations.filter((r) => r.isCompleted).length / reservations.length) * 100,
-            )
-          : 0,
-      reservation_rate: stats.percentage,
-      source: "share_home",
-    });
-
-    const sessionIndex = sessions.value.findIndex((s) => s.id === session.id);
-    if (sessionIndex > -1) {
-      sessions.value[sessionIndex] = {
-        ...sessions.value[sessionIndex],
-        isEnded: true,
-        endedAt: new Date(),
-        updatedAt: new Date(),
-      };
-    }
-
-    toast.success(t("profile.sessionEndedSuccess"));
-  } catch (error) {
-    console.error("Erreur lors de la fin de session:", error);
-    analyticsService.capture("session_end_failed", {
-      session_id: session.id,
-      error_message: error instanceof Error ? error.message : String(error),
-      source: "share_home",
-    });
-    toast.errorFromException(error, t("profile.sessionEndError"));
-  }
+  if (await sessionEditing.endSession(session)) replaceSession(sessionEditing.ended(session));
 };
 
 const availableTypes = computed(() => {
@@ -342,9 +263,10 @@ const handleCreateClick = () => {
 <template>
   <main class="mx-auto px-6 py-12">
     <div class="text-center mb-16 animate-[fadeIn_0.5s_ease]">
-      <h2 class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight">
+      <!-- Le seul h1 de la page. -->
+      <h1 class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight">
         {{ t("shareReading.title") }}
-      </h2>
+      </h1>
       <!-- Le sous-titre explicatif ne sert que le site : SEO + découverte. -->
       <p v-if="!isNativeApp" class="text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed">
         {{ t("shareReading.subtitle") }}
@@ -484,7 +406,7 @@ const handleCreateClick = () => {
             "
             @click="selectedType = selectedType === type ? '' : type"
           >
-            {{ sessionService.formatTextType(type) }}
+            {{ TextTypeService.formatType(type) }}
           </button>
         </div>
       </div>
@@ -572,7 +494,7 @@ const handleCreateClick = () => {
     <EditSessionModal
       v-model:show="showEditModal"
       :session="selectedSession"
-      @save="saveSessionChanges"
+      :save="saveSessionChanges"
     />
   </main>
 </template>

@@ -57,7 +57,6 @@ const record = (overrides: Partial<ReservationRecord> = {}): ReservationRecord =
   section: 1,
   chosenByName: "Anonyme",
   chosenByGuestId: "guest-1",
-  available: false,
   isCompleted: false,
   createdAt: new Date().toISOString(),
   ...overrides,

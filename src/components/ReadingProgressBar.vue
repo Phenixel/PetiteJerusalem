@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue";
+import { computed } from "vue";
 import { isNativeApp } from "../composables/useNativeApp";
+import { useScrollFrame } from "../composables/useScrollFrame";
 
 /**
  * La progression de lecture : un filet au bas de l'écran qui se remplit à
@@ -8,30 +9,10 @@ import { isNativeApp } from "../composables/useNativeApp";
  * office, une paracha, un chapitre de guemara sont longs et se lisent d'un
  * trait ; la barre dit où l'on en est sans rien réclamer.
  */
-const progress = ref(0);
-let raf = 0;
-
-const update = () => {
-  raf = 0;
-  const max = document.documentElement.scrollHeight - window.innerHeight;
-  progress.value = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
-};
-
-const onScroll = () => {
-  if (!raf) raf = requestAnimationFrame(update);
-};
-
-onMounted(() => {
-  update();
-  window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", onScroll, { passive: true });
-});
-
-onUnmounted(() => {
-  window.removeEventListener("scroll", onScroll);
-  window.removeEventListener("resize", onScroll);
-  if (raf) cancelAnimationFrame(raf);
-});
+// La mesure vient de l'image partagée (useScrollFrame) : un seul écouteur et
+// une seule lecture de la hauteur du document pour toute l'app.
+const scrollFrame = useScrollFrame();
+const progress = computed(() => scrollFrame.value.progress);
 
 // App native : la barre se pose au-dessus de la bottom bar (h-14 + safe-area),
 // pas collée au bord de l'écran où la barre de gestes la recouvrirait.

@@ -187,10 +187,7 @@ class ReadingProgressService {
     const entries = Object.values(byText)
       .sort((a, b) => b.at - a.at)
       .slice(0, MAX_POSITIONS);
-    writeJson(
-      POSITIONS_KEY,
-      Object.fromEntries(entries.map((p) => [p.textId, p])),
-    );
+    writeJson(POSITIONS_KEY, Object.fromEntries(entries.map((p) => [p.textId, p])));
     this.scheduleCloudSave();
   }
 
@@ -294,10 +291,7 @@ class ReadingProgressService {
       .filter((p) => !LITURGY_PATH.test(p.path))
       .sort((a, b) => b.at - a.at)
       .slice(0, MAX_POSITIONS);
-    writeJson(
-      POSITIONS_KEY,
-      Object.fromEntries(mergedList.map((p) => [p.textId, p])),
-    );
+    writeJson(POSITIONS_KEY, Object.fromEntries(mergedList.map((p) => [p.textId, p])));
 
     // Tombstones : union (la suppression la plus récente par id gagne), pour
     // qu'un marque-page supprimé sur un appareil ne soit pas ressuscité par un

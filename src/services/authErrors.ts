@@ -1,3 +1,5 @@
+import { AppError } from "./appError";
+
 /**
  * Lecture des erreurs des flux de connexion Google/Apple (popup web, plugin
  * natif, feuille Apple). Module pur, sans dépendance Firebase ni Capacitor :
@@ -57,4 +59,54 @@ export function isAuthBrowserUnavailable(error: unknown): boolean {
  */
 export function isAppleSignInUnavailable(error: unknown): boolean {
   return /AuthenticationServices\.AuthorizationError\D*1000\b/.test(messageOf(error));
+}
+
+/**
+ * Erreurs propres aux flux de compte de l'app, à côté de celles de Firebase.
+ *
+ * Comme celles-ci, elles portent un `code` : les vues trient dessus
+ * (SecuritySettings) et useToast.errorFromException y cherche la clé de son
+ * message traduit (`errors.<code>`). Le message reste un libellé technique
+ * pour les journaux ; aucune vue ne l'affiche.
+ */
+export type AuthErrorCode =
+  | "googleSignInIncomplete"
+  | "appleSignInIncomplete"
+  | "appleReauthIncomplete"
+  | "noCurrentUser"
+  | "emptyDisplayName";
+
+const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
+  googleSignInIncomplete: "Connexion Google annulée ou incomplète",
+  appleSignInIncomplete: "Connexion Apple annulée ou incomplète",
+  appleReauthIncomplete: "Ré-authentification Apple annulée ou incomplète",
+  noCurrentUser: "Aucun utilisateur connecté",
+  emptyDisplayName: "Le nom d'affichage ne peut pas être vide",
+};
+
+export class AuthFlowError extends AppError {
+  constructor(code: AuthErrorCode) {
+    super(code, AUTH_ERROR_MESSAGES[code]);
+    this.name = "AuthFlowError";
+  }
+}
+
+/**
+ * Le même code que Firebase (`auth/requires-recent-login`), levé par l'app
+ * quand elle vérifie elle-même l'ancienneté de la session avant une action
+ * sensible : l'écran de suppression propose alors de se reconnecter, sans
+ * distinguer d'où vient le refus.
+ */
+export class RecentLoginRequiredError extends Error {
+  readonly code = "auth/requires-recent-login";
+  constructor() {
+    super("auth/requires-recent-login");
+    this.name = "RecentLoginRequiredError";
+  }
+}
+
+/** Le code Firebase (`auth/...`) d'une erreur, ou celui d'une erreur de l'app. */
+export function authErrorCode(error: unknown): string | null {
+  const code = (error as { code?: unknown } | null | undefined)?.code;
+  return typeof code === "string" ? code : null;
 }

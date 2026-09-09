@@ -18,6 +18,7 @@ import { localeOfPath, sectionPath } from "../../content/seoLocales";
 import { SITE_URL } from "../../config/site";
 import { analyticsService } from "../../services/analyticsService";
 import { seoService } from "../../services/seoService";
+import { dateTimeFormat } from "../../services/intlCache";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useLocalePath } from "../../composables/useLocalePath";
 
@@ -59,19 +60,17 @@ const isThisWeek = computed(() => {
  * la date suit toujours le mot « Chabbat », qui le dit déjà.
  */
 const dayYear = (date: Date): string =>
-  new Intl.DateTimeFormat(locale.value, {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(date);
+  dateTimeFormat(locale.value, { day: "numeric", month: "long", year: "numeric" }).format(date);
 
 /**
  * « sam. 7 nov. 2026 », la date d'une ligne du calendrier. Avec l'année : la
  * liste couvre treize mois, et sans elle les dernières lignes ressembleraient
  * à des doublons des premières.
  */
+// Un formateur par locale, gardé (intlCache) : la liste a 56 lignes, en
+// construire un par ligne à chaque rendu se sentait sur un appareil lent.
 const dayShort = (date: Date): string =>
-  new Intl.DateTimeFormat(locale.value, {
+  dateTimeFormat(locale.value, {
     weekday: "short",
     day: "numeric",
     month: "short",

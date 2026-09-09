@@ -16,7 +16,6 @@ import { isNativeApp } from "./useNativeApp";
  * zmanim et reste dans le localStorage de l'appareil, pour ne pas redemander
  * la permission à chaque visite et pour que le lieu soit connu même sans
  * réseau.
- * Le bouton « Revenir à Paris » l'efface.
  *
  * Web et app native ne demandent pas la position de la même façon : le
  * navigateur a `navigator.geolocation`, l'app passe par le plugin Capacitor
@@ -248,13 +247,6 @@ export function useZmanimLocation() {
     persist(chosen.city === DEFAULT_PLACE.city ? null : chosen);
   }
 
-  /** Retour au repli parisien : le lieu mémorisé est effacé. */
-  function resetPlace(): void {
-    place.value = DEFAULT_PLACE;
-    status.value = "idle";
-    persist(null);
-  }
-
   /**
    * Nomme après coup une position mémorisée avant que la page ne sache le
    * faire : sans quoi elle resterait « Ma position » jusqu'à ce que
@@ -270,5 +262,5 @@ export function useZmanimLocation() {
     persist(named);
   }
 
-  return { place, status, deniedBefore, locateDevice, selectCity, resetPlace, ensureNearby };
+  return { place, status, deniedBefore, locateDevice, selectCity, ensureNearby };
 }

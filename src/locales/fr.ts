@@ -31,16 +31,32 @@ const fr = {
     chapter: "Chapitre",
     dateLimit: "Date limite",
     createdBy: "Créé par",
-    view: "Consulter",
+    dateLimitValue: "Date limite : {date}",
+    createdByValue: "Créé par : {name}",
     manage: "Gérer",
     end: "Fin",
-    ongoing: "En cours",
     finished: "Terminée",
+    anonymousUser: "Utilisateur",
     read: "Lu",
   },
   errors: {
     permissionDenied: "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
     unavailable: "Service momentanément indisponible. Vérifiez votre connexion et réessayez.",
+    slotTaken: "Cette section vient d'être réservée par quelqu'un d'autre.",
+    guestNameRequired: "Veuillez renseigner votre nom.",
+    guestEmailRequired: "Veuillez renseigner votre nom et votre email.",
+    sessionMissing: "Cette session n'existe plus.",
+    reservationGone: "Cette réservation n'existe plus : la place a été reprise.",
+    reservationOwnerRequired: "Une réservation doit être rattachée à un compte ou à un invité.",
+    accountGuestRename:
+      "Le nom d'un participant inscrit vient de son profil et ne se modifie pas ici.",
+    sessionFieldsRequired: "Tous les champs sont obligatoires.",
+    googleSignInIncomplete: "Connexion Google annulée ou incomplète.",
+    appleSignInIncomplete: "Connexion Apple annulée ou incomplète.",
+    appleReauthIncomplete: "Ré-authentification Apple annulée ou incomplète.",
+    noCurrentUser: "Aucun utilisateur connecté.",
+    emptyDisplayName: "Le nom d'affichage ne peut pas être vide.",
+    preferencesSaveFailed: "Erreur lors de la sauvegarde des préférences.",
   },
   navbar: {
     title: "Petite Jérusalem",
@@ -59,6 +75,7 @@ const fr = {
     shareTehilim: "Partage de Tehilim",
     tehilimIntentions: "Tehilim par intention",
     manageCookies: "Gérer les cookies",
+    social: "Réseaux sociaux",
   },
   appDownload: {
     title: "Télécharger l'app",
@@ -144,6 +161,9 @@ const fr = {
       pinchTitle: "Pincer pour agrandir",
       pinchText:
         "Deux doigts sur le texte en changent la taille, sans déformer la page. Les boutons A− et A+ du menu font la même chose.",
+      // Les deux lignes de phonétique de la capture du pincement.
+      pinchSample1: "Berechit bara Elokim",
+      pinchSample2: "ète hachamayim vé-ète haaretz",
       menuTitle: "Le menu, en bas à droite",
       menuText:
         "Le rond posé sur le texte ouvre la taille, l'hébreu ou la phonétique, et les repères du texte : sections d'un office, montées d'une paracha, dafim d'une guemara.",
@@ -181,7 +201,6 @@ const fr = {
   },
   home: {
     omer: {
-      title: "Compte du 'Omer",
       day: "{n}e jour du 'Omer",
       dayOne: "1er jour du 'Omer",
       remaining: "Plus que {n} soirs à compter.",
@@ -209,7 +228,6 @@ const fr = {
         description: "Découvrez des cours et leçons de Torah de la communauté",
       },
     },
-    comingSoon: "Bientôt",
     dashboard: {
       hello: "Bonjour",
       helloEvening: "Bonsoir",
@@ -274,7 +292,6 @@ const fr = {
       reminders: "un rappel de lecture quotidien, à l'heure que vous choisissez",
       sync: "vos réglages, marque-pages et reprises de lecture sur tous vos appareils",
     },
-    activeMember: "Membre Actif",
     tabs: {
       myInfo: "Mes Informations",
       security: "Sécurité",
@@ -292,12 +309,8 @@ const fr = {
     noCreatedSessions: "Aucune session créée",
     noCreatedSessionsDesc: "Créez votre première session d'étude partagée.",
     createSession: "Créer une session",
-    participatedSessions: "Sessions participées",
-    createdSessions: "Sessions créées",
     viewSession: "Voir la session",
-    myReservations: "Mes réservations",
     noReservationFound: "Aucune réservation trouvée",
-    reservationsCount: "Vous aviez {count} réservations dans cette session.",
     sessionUpdatedSuccess: "Session mise à jour avec succès",
     sessionUpdateError: "Erreur lors de la mise à jour de la session",
     endSessionConfirm:
@@ -452,13 +465,11 @@ const fr = {
     nextIn: "dans {duration}",
     durationHM: "{h} h {m}",
     durationM: "{m} min",
-    today: "Aujourd'hui",
     previousDay: "Jour précédent",
     nextDay: "Jour suivant",
     backToToday: "Revenir à aujourd'hui",
     nightNote: "Depuis la chkia, on est déjà le {date}.",
     nightNoteWith: "Depuis la chkia, on est déjà le {date} ({names}).",
-    seeAll: "Voir tous les horaires",
     unavailable: "Aucun horaire calculable pour ce jour à cet endroit.",
     disclaimer:
       "Horaires calculés à partir de la position du soleil (niveau de la mer). Pour la pratique, suivez les horaires de votre communauté.",
@@ -471,7 +482,6 @@ const fr = {
       chooseCity: "Choisir ma ville",
       searchCity: "Rechercher une ville…",
       noCity: "Aucune ville ne correspond à « {query} ».",
-      reset: "Revenir à Paris",
       denied:
         "Position refusée. Les horaires restent calculés pour Paris ; autorisez la localisation dans les réglages pour les vôtres.",
       unavailable: "Position indisponible. Les horaires restent calculés pour Paris.",
@@ -583,8 +593,8 @@ const fr = {
       "Répartissez un texte entre plusieurs personnes et étudiez ensemble : pour finir le Chass, lire les Tehilim à plusieurs ou avancer dans la Michna",
     createSession: "Créer une session",
     loadingSessions: "Chargement des sessions...",
+    loadError: "Les sessions n'ont pas pu être chargées.",
     ongoingSessions: "Sessions en cours",
-    archives: "Archives",
     noOngoingSessions: "Aucune session en cours pour le moment.",
     noSessions: "Aucune session existante",
     createFirstSession: "Créez la première session de partage de lectures !",
@@ -647,7 +657,9 @@ const fr = {
     guestSubtitleWithEmail: "Renseignez votre nom et votre email, puis choisissez vos textes.",
     searchPlaceholder: "Rechercher un texte, un livre ou un chapitre...",
     clearSearch: "Effacer la recherche",
-    searchFor: "Recherche",
+    searchForValue: "Recherche : « {term} »",
+    notFound: "Session introuvable.",
+    loadError: "La session n'a pas pu être chargée.",
     availableOnly: "Disponibles uniquement",
     myReservations: "Mes réservations",
     confirmReservation: "Confirmer la réservation",
@@ -774,7 +786,6 @@ const fr = {
     sessionNameRequired: "Le nom de la session est requis",
     dateLimitRequired: "La date limite est requise",
     sessionName: "Nom de la session",
-    saveError: "Erreur lors de la sauvegarde de la session",
   },
   progressBar: {
     participants: "Participe",
@@ -808,7 +819,8 @@ const fr = {
       "Paracha de la semaine : le calendrier des parachiot et leurs textes {'|'} Petite Jérusalem",
     parashaDescription:
       "La paracha lue ce Chabbat, le calendrier daté des 54 parachiot, et le texte de chacune en hébreu et en phonétique.",
-    festivalTitle: "{festival} {year} : dates, heure d\u2019entrée et de sortie {'|'} Petite Jérusalem",
+    festivalTitle:
+      "{festival} {year} : dates, heure d\u2019entrée et de sortie {'|'} Petite Jérusalem",
     festivalDescription:
       "Quand tombe {festival} ? Les dates de {festival} sur plusieurs années, avec l\u2019heure d\u2019entrée et de sortie, calculées pour votre position.",
     dailyReadingTitle: "Ma lecture du jour {'|'} Petite Jérusalem",
@@ -826,6 +838,8 @@ const fr = {
     sessionTitle: "Session de partage de lecture {'|'} Petite Jérusalem",
     sessionDefaultDescription:
       "Rejoignez cette session de partage de lecture et d'étude de Torah sur Petite Jérusalem.",
+    sessionManagementTitle: "Gestion de session",
+    sessionManagementDescription: "Gérez les réservations et le suivi de la session « {name} ».",
     chiourimTitle: "Chiourim {'|'} Cours et leçons de Torah {'|'} Petite Jérusalem",
     chiourimDescription:
       "Écoutez des chiourim : cours et leçons de Torah partagés par la communauté sur Petite Jérusalem.",
@@ -846,7 +860,6 @@ const fr = {
   detailChiour: {
     backToList: "Retour aux chiourim",
     notFound: "Ce chiour n'a pas été trouvé.",
-    noAudio: "Aucun média disponible pour ce chiour.",
     recommendations: "À écouter ensuite",
   },
   auteurPage: {
@@ -884,7 +897,6 @@ const fr = {
     signIn: "Se connecter",
     guestHint: "Créez un compte gratuit pour retrouver vos réservations et suivre vos lectures.",
     guestHintLink: "Se connecter",
-    tip: "Astuce",
     alreadyHaveAccount:
       "Vous avez déjà un compte ? Vos réservations invité seront automatiquement récupérées.",
   },
@@ -959,6 +971,21 @@ const fr = {
     navMenu: "Menu de lecture",
     navSections: "Sections",
     navTop: "Haut de page",
+    // Divisions d'un texte (chapitre, daf) : textService les décrit, la vue
+    // les écrit dans la langue du lecteur.
+    labels: {
+      chapter: "Chapitre {n}",
+      daf: "Daf {daf}",
+      dafRange: "Daf {from} à {to}",
+      chapterDaf: "{chapter} · {daf}",
+    },
+    // Liens de bas de page des lectures publiques de la bibliothèque.
+    links: {
+      library: "Bibliothèque",
+      tehilimIntentions: "Tehilim par intention",
+      shareTehilim: "Partage de Tehilim",
+    },
+    pageTitle: "Lecture",
     autoScroll: {
       pill: "Défilement",
       speed: "Vitesse",
@@ -1153,6 +1180,12 @@ const fr = {
     dayOfMonth: "{day} du mois",
     unavailable: "Les psaumes du jour n'ont pas pu être déterminés.",
   },
+  // Tehilim par intention : l'intention demandée n'existe pas (encore).
+  tehilimIntentions: {
+    notFoundTitle: "Intention introuvable",
+    notFoundDescription: "Cette intention n'existe pas (encore).",
+    notFoundLink: "Voir toutes les intentions « Tehilim par intention »",
+  },
   study: {
     title: "Bibliothèque",
     subtitle:
@@ -1269,8 +1302,6 @@ const fr = {
   serie: {
     label: "Série",
     episodeBadge: "Épisode {n}",
-    nextEpisode: "Épisode suivant",
-    previousEpisode: "Épisode précédent",
     previous: "Précédent",
     next: "Suivant",
     episodesCount: "{count} épisode(s)",

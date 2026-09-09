@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, watchEffect } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { chiourService } from "../../services/chiourService";
@@ -42,16 +42,21 @@ const showShareModal = ref(false);
 // un lien de partage inutilisable.
 const shareUrl = computed(() => (chiour.value ? `${SITE_URL}/chiourim/${chiour.value.slug}` : ""));
 
-watchEffect(() => {
-  const current = chiour.value;
-  if (!current || !viewedLoaded.value || viewMarkedFor.value === current.slug) return;
-  viewMarkedFor.value = current.slug;
-  wasAlreadyViewed.value = isViewed(current.slug);
-  // Un chiour avec audio n'est marqué vu qu'au démarrage de l'écoute (voir
-  // useAudioPlayer) : arriver sur la page ne prouve pas qu'on l'a écouté.
-  // Sans audio, il n'y a rien à écouter : la visite reste le seul signal.
-  if (!current.mediaUrl) markViewed(current.slug);
-});
+// Un watch sur ses deux sources, et non un watchEffect : celui-ci lisait et
+// écrivait `viewMarkedFor`, et se réveillait donc de sa propre écriture.
+watch(
+  [chiour, viewedLoaded],
+  ([current, loaded]) => {
+    if (!current || !loaded || viewMarkedFor.value === current.slug) return;
+    viewMarkedFor.value = current.slug;
+    wasAlreadyViewed.value = isViewed(current.slug);
+    // Un chiour avec audio n'est marqué vu qu'au démarrage de l'écoute (voir
+    // useAudioPlayer) : arriver sur la page ne prouve pas qu'on l'a écouté.
+    // Sans audio, il n'y a rien à écouter : la visite reste le seul signal.
+    if (!current.mediaUrl) markViewed(current.slug);
+  },
+  { immediate: true },
+);
 
 const nextEpisode = computed(() => {
   if (!chiour.value || !allChiourim.value.length) return null;

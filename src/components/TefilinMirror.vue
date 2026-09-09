@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from "vue";
+import { onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
+import AppModal from "./AppModal.vue";
 import { closeTefilinMirror, tefilinMirrorOpen } from "../composables/useTefilinMirror";
 
 /**
@@ -86,84 +87,70 @@ watch(
   { flush: "sync" },
 );
 
-const surEchap = (event: KeyboardEvent) => {
-  if (event.key === "Escape" && tefilinMirrorOpen.value) closeTefilinMirror();
-};
-
-onMounted(() => window.addEventListener("keydown", surEchap));
-
+// Échap, le voile, le retour Android et la navigation ferment par AppModal ;
+// quitter la page rend la caméra et referme l'état partagé.
 onUnmounted(() => {
-  window.removeEventListener("keydown", surEchap);
   stop();
   closeTefilinMirror();
 });
 </script>
 
 <template>
-  <Teleport to="body">
-    <transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="opacity-0"
-      leave-active-class="transition duration-150 ease-in"
-      leave-to-class="opacity-0"
-    >
-      <!-- Un voile, comme les autres fenêtres de l'app : le toucher hors du
-           miroir le referme. -->
-      <div
-        v-if="tefilinMirrorOpen"
-        class="mirror-overlay"
-        role="dialog"
-        aria-modal="true"
-        :aria-label="t('textReading.mirror.title')"
-        @click="closeTefilinMirror"
-      >
-        <div class="mirror-card" @click.stop>
-          <video
-            v-if="status === 'live'"
-            ref="video"
-            class="mirror-video"
-            autoplay
-            playsinline
-            muted
-          ></video>
+  <!-- Un voile, comme les autres fenêtres de l'app : le toucher hors du
+       miroir le referme. Le voile et le carré ont leur propre habillage. -->
+  <AppModal
+    :open="tefilinMirrorOpen"
+    :label="t('textReading.mirror.title')"
+    overlay-class="mirror-overlay"
+    panel-class="mirror-card"
+    @close="closeTefilinMirror"
+  >
+    <video
+      v-if="status === 'live'"
+      ref="video"
+      class="mirror-video"
+      autoplay
+      playsinline
+      muted
+    ></video>
 
-          <!-- Les repères, par-dessus l'image : deux traits et le carré du
+    <!-- Les repères, par-dessus l'image : deux traits et le carré du
                bayit, posé sur la ligne des cheveux. -->
-          <div v-if="status === 'live'" class="mirror-guides" aria-hidden="true">
-            <div class="guide-v"></div>
-            <div class="guide-h"></div>
-            <div class="guide-box"></div>
-          </div>
+    <div v-if="status === 'live'" class="mirror-guides" aria-hidden="true">
+      <div class="guide-v"></div>
+      <div class="guide-h"></div>
+      <div class="guide-box"></div>
+    </div>
 
-          <!-- Ce que la caméra ne peut pas donner : refus, absence, attente. -->
-          <p v-if="status !== 'live'" class="mirror-message">
-            <template v-if="status === 'starting'">{{ t("textReading.mirror.starting") }}</template>
-            <template v-else-if="status === 'denied'">{{
-              t("textReading.mirror.denied")
-            }}</template>
-            <template v-else>{{ t("textReading.mirror.unavailable") }}</template>
-          </p>
+    <!-- Ce que la caméra ne peut pas donner : refus, absence, attente. -->
+    <p v-if="status !== 'live'" class="mirror-message">
+      <template v-if="status === 'starting'">{{ t("textReading.mirror.starting") }}</template>
+      <template v-else-if="status === 'denied'">{{ t("textReading.mirror.denied") }}</template>
+      <template v-else>{{ t("textReading.mirror.unavailable") }}</template>
+    </p>
 
-          <!-- Une croix discrète, dans le coin : le reste du carré est
+    <!-- Une croix discrète, dans le coin : le reste du carré est
                l'image. -->
-          <button
-            type="button"
-            class="mirror-close"
-            :aria-label="t('common.close')"
-            @click="closeTefilinMirror"
-          >
-            <AppIcon name="x" :size="16" />
-          </button>
-        </div>
+    <button
+      type="button"
+      class="mirror-close"
+      :aria-label="t('common.close')"
+      @click="closeTefilinMirror"
+    >
+      <AppIcon name="x" :size="16" />
+    </button>
 
-        <!-- La consigne sous le carré, pour ne rien poser sur l'image. -->
-        <p v-if="status === 'live'" class="mirror-hint">{{ t("textReading.mirror.hint") }}</p>
-      </div>
-    </transition>
-  </Teleport>
+    <!-- La consigne sous le carré, pour ne rien poser sur l'image. -->
+    <template #outside>
+      <p v-if="status === 'live'" class="mirror-hint">{{ t("textReading.mirror.hint") }}</p>
+    </template>
+  </AppModal>
 </template>
 
-<style scoped>
+<!-- Le voile et le carré sont les éléments d'AppModal, hors de la portée des
+     styles scopés de ce composant : leurs règles sont globales, sous des
+     noms qui n'appartiennent qu'au miroir. -->
+<style>
 .mirror-overlay {
   position: fixed;
   inset: 0;
@@ -193,7 +180,9 @@ onUnmounted(() => {
   background: #000;
   box-shadow: 0 24px 60px rgb(0 0 0 / 0.45);
 }
+</style>
 
+<style scoped>
 /* Le miroir renvoie l'image retournée, comme un vrai : la main qui se lève à
    droite doit se lever à droite. */
 .mirror-video {

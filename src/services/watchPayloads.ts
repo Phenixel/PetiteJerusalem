@@ -1,5 +1,4 @@
 import { getTehilimOfDay } from "./dailyCycles";
-import { localDayKey } from "./dateService";
 
 /**
  * Payload de la montre (Wear OS / Apple Watch).
@@ -68,14 +67,6 @@ function nextLocalMidnight(now: Date): number {
   const midnight = new Date(now);
   midnight.setHours(24, 0, 0, 0);
   return midnight.getTime();
-}
-
-/**
- * Le jour civil auquel se rapportent les psaumes du jour. Exporté pour les
- * tests : c'est la même journée que celle de la lecture du jour.
- */
-export function watchDayKey(now: Date = new Date()): string {
-  return localDayKey(now);
 }
 
 export function buildWatchPayload(

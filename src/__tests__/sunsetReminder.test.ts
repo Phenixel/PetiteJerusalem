@@ -112,8 +112,7 @@ describe("sunsetReminderAt", () => {
         { latitude: place.latitude, longitude: place.longitude, tzid: place.tzid },
         PARIS_DAY,
       );
-      const gap =
-        server === null ? Infinity : Math.abs(client.getTime() - server.getTime()) / 1000;
+      const gap = server === null ? Infinity : Math.abs(client.getTime() - server.getTime()) / 1000;
       if (!(gap < 5)) divergences.push(`${name} : ${gap.toFixed(1)} s`);
     }
     expect(divergences).toEqual([]);

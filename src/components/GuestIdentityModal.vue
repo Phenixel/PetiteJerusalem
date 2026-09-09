@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from "vue";
+import { ref, computed, toRef, watch, nextTick } from "vue";
 import { useI18n } from "vue-i18n";
+import { useOverlay } from "../composables/useOverlayStack";
 import AppIcon from "./icons/AppIcon.vue";
 
 const { t } = useI18n();
@@ -68,6 +69,9 @@ const close = () => {
   if (props.loading) return;
   emit("update:show", false);
 };
+
+// Le bouton retour d'Android ferme la modale avant de quitter la page.
+useOverlay(toRef(props, "show"), close);
 
 const submit = () => {
   const name = nameValue.value.trim();
@@ -165,7 +169,10 @@ const submit = () => {
               </p>
             </div>
 
-            <p v-if="error" class="text-sm text-red-600 dark:text-red-400 flex items-center gap-1.5">
+            <p
+              v-if="error"
+              class="text-sm text-red-600 dark:text-red-400 flex items-center gap-1.5"
+            >
               <AppIcon name="alert-circle" :size="14" />
               {{ error }}
             </p>

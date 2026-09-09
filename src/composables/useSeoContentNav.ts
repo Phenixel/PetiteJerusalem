@@ -72,7 +72,7 @@ export function useSeoContentNav() {
 
     // Same-origin in-app link → client-side navigation (no full reload / flash).
     event.preventDefault();
-    router.push(url.pathname + url.search + url.hash);
+    void router.push(url.pathname + url.search + url.hash);
   }
 
   return { showAuthPrompt, onContentClick };

@@ -278,7 +278,7 @@ const sections = computed(() =>
       :data-when="block.when"
       :data-fold="block.fold"
       :data-zman="block.zman"
-      :data-block-anchor="block.zman || !anchored ? undefined : block.offset"
+      :data-block-anchor="block.zman || !anchored ? undefined : (block.anchor ?? block.offset)"
       :class="block.zman ? '' : sectionClass(block)"
     >
       <!-- Horaire du moment (fin du Chéma, plage de Min'ha…), avant ce qui se lit. -->

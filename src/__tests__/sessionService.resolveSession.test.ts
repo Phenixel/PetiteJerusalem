@@ -17,7 +17,6 @@ const mockSession: Session = {
   createdAt: new Date("2026-01-01"),
   personId: "user1",
   creatorName: "Shimon",
-  isCompleted: false,
   reservations: [],
 };
 

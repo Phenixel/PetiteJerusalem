@@ -1,7 +1,8 @@
 /**
- * Generates public/texts/talmud-chapters.json by fetching raw (HTML) Talmud text
- * from Sefaria's GCS export and finding chapter boundaries.
- * Run: node scripts/generate-talmud-chapters.mjs
+ * Génère public/texts/talmud-chapters.json en récupérant le texte brut (HTML)
+ * du Talmud depuis l'export GCS de Sefaria et en y repérant les frontières de
+ * chapitres.
+ * Lancer avec : node scripts/generate-talmud-chapters.mjs
  */
 
 import fs from "fs";

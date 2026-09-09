@@ -12,7 +12,7 @@
  * arrière rejouerait l'animation sans qu'on ait touché le bouton.
  */
 
-export interface RevealOrigin {
+interface RevealOrigin {
   /** Centre du déclencheur, en coordonnées de la fenêtre. */
   x: number;
   y: number;
@@ -34,7 +34,7 @@ export function setRevealOrigin(element: HTMLElement | null): void {
 }
 
 /** Récupère l'origine en attente, et l'oublie. */
-export function takeRevealOrigin(): RevealOrigin | null {
+function takeRevealOrigin(): RevealOrigin | null {
   const origin = pending;
   pending = null;
   return origin;

@@ -1,5 +1,6 @@
 import citiesJson from "../datas/cities.json";
 import { KNOWN_PLACE_KM, type City, type NearbyPlace } from "./zmanimService";
+import { haversineKm } from "./geo";
 
 /**
  * Nommer une position à partir du catalogue de villes embarqué.
@@ -16,23 +17,8 @@ import { KNOWN_PLACE_KM, type City, type NearbyPlace } from "./zmanimService";
 
 const cities = citiesJson as City[];
 
-const EARTH_RADIUS_KM = 6371;
-const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
-
-/** Distance orthodromique, formule de haversine. */
-export function distanceKm(
-  latitudeA: number,
-  longitudeA: number,
-  latitudeB: number,
-  longitudeB: number,
-): number {
-  const dLat = toRadians(latitudeB - latitudeA);
-  const dLon = toRadians(longitudeB - longitudeA);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRadians(latitudeA)) * Math.cos(toRadians(latitudeB)) * Math.sin(dLon / 2) ** 2;
-  return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(a)));
-}
+/** Distance orthodromique (voir geo.ts) ; gardé sous ce nom pour les tests. */
+export const distanceKm = haversineKm;
 
 /**
  * La ville connue la plus proche, ou `null` si la plus proche est si loin

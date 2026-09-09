@@ -207,6 +207,9 @@ toujours fausse dans le sélecteur de langue, un double `applySessionSeo`.
 
 ## 2. Chantiers recommandés (non faits ici)
 
+> Une partie de ces chantiers est traitée dans la revue de septembre 2026
+> (suite), voir `docs/audit-review-2026-09-suite.md`.
+
 Par ordre de valeur. Chaque ligne donne le point d'entrée ; chacun a sa
 tâche dans la base Notion du projet.
 
@@ -324,8 +327,12 @@ tâche dans la base Notion du projet.
   introuvable », « Utilisateur », titres SEO de pages internes).
 - Outillage : `scripts/*.mjs` ni lintés ni typés ; `noUnusedLocals` absent ;
   tous les tests en jsdom, y compris ceux qui n'en ont pas besoin ; `knip` en
-  CI trouverait les exports morts restants (`READING_LEAD_SOLO`, `hubHeading`,
-  `localePrefix`, `CITY_NAMES`, `PARASHA_*`, `ZMANIM_GUIDE_*`).
+  CI trouverait les exports morts. Ceux que cette revue citait ont été
+  traités : `READING_LEAD_SOLO` et `hubHeading` (`src/content/etudeTexts.ts`),
+  `localePrefix` (`seoLocales.ts`), `CITY_NAMES` (`zmanimCities.ts`),
+  `PARASHA_FR/EN/HE` (`parashaStrings.ts`) et `ZMANIM_GUIDE_FR/EN/HE`
+  (`zmanimGuideStrings.ts`) ne sont plus exportés et sont utilisés dans leur
+  propre module.
 
 ## 3. Pistes produit
 

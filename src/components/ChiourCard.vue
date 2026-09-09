@@ -29,10 +29,7 @@ function goToAuteur(event: Event, auteur: string) {
 </script>
 
 <template>
-  <div
-    class="card card-hover flex flex-col p-6 cursor-pointer group"
-    @click="goToDetail(chiour)"
-  >
+  <div class="card card-hover flex flex-col p-6 cursor-pointer group" @click="goToDetail(chiour)">
     <div class="flex justify-between items-start gap-3 mb-3">
       <h4
         class="text-lg font-bold text-text-primary group-hover:text-primary transition-colors line-clamp-2"

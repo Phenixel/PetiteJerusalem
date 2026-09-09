@@ -1,3 +1,5 @@
+import { SITE_NAME } from "../config/site";
+
 export type SeoMeta = {
   title?: string;
   description?: string;
@@ -18,6 +20,14 @@ export type SeoMeta = {
     image: string;
   }>;
 };
+
+/**
+ * Le titre d'une page, suivi du nom du site : « Tehilim 23 | Bibliothèque |
+ * Petite Jérusalem ». Les parties vides sont sautées.
+ */
+export function pageTitle(...parts: Array<string | null | undefined>): string {
+  return [...parts.filter((part): part is string => Boolean(part)), SITE_NAME].join(" | ");
+}
 
 export class SeoService {
   setMeta(meta: SeoMeta) {
@@ -43,7 +53,7 @@ export class SeoService {
     }
 
     this.upsertMeta("property", "og:type", meta.og?.type || "website");
-    this.upsertMeta("property", "og:site_name", meta.og?.site_name || "Petite Jérusalem");
+    this.upsertMeta("property", "og:site_name", meta.og?.site_name || SITE_NAME);
     // Sans image, la balise part : sinon celle de la page précédente (la
     // carte d'une session, par exemple) restait sur la page suivante.
     this.setOrRemoveMeta("property", "og:image", meta.og?.image);

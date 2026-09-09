@@ -1,33 +1,39 @@
 /**
- * Prerender SEO content for static routes.
+ * Prérend le contenu SEO des routes statiques.
  *
- * Petite Jérusalem is a Vue SPA served by Firebase Hosting. Search bots and
- * social crawlers (Bing, GPTBot, ClaudeBot, PerplexityBot, WhatsApp, Facebook…)
- * do NOT execute JavaScript, so they only ever read the static HTML. The built
- * `index.html` ships an empty `<div id="app"></div>`, so without this step a
- * crawler sees no title-specific metadata AND no body content at all.
+ * Petite Jérusalem est une SPA Vue servie par Firebase Hosting. Les robots des
+ * moteurs et des réseaux sociaux (Bing, GPTBot, ClaudeBot, PerplexityBot,
+ * WhatsApp, Facebook…) n'exécutent PAS JavaScript : ils ne lisent jamais que le
+ * HTML statique. L'`index.html` construit embarque un `<div id="app"></div>`
+ * vide, donc sans cette étape un robot ne voit ni métadonnées propres à la
+ * page NI le moindre contenu dans le corps.
  *
- * This script runs after `vite build`. For every page declared in
- * `src/content/seoPages.ts` it writes a dedicated HTML file into `dist/`
- * (e.g. `dist/share-reading.html`) containing route-specific `<head>` tags,
- * JSON-LD, AND real crawlable `<body>` content. With `cleanUrls: true` in
- * firebase.json, `/share-reading` is served straight from that file.
+ * Ce script tourne après `vite build`. Pour chaque page déclarée dans
+ * `src/content/seoPages.ts`, il écrit un fichier HTML dédié dans `dist/`
+ * (par exemple `dist/share-reading.html`) avec les balises `<head>` propres à
+ * la route, le JSON-LD, ET un vrai contenu `<body>` explorable. Avec
+ * `cleanUrls: true` dans firebase.json, `/share-reading` est servi directement
+ * depuis ce fichier.
  *
- * It also writes:
- *  - `dist/app.html`: the bare SPA shell used as the catch-all rewrite target,
- *    so deep app routes (e.g. /profile) never flash the homepage content.
- *  - `dist/sitemap.xml`: an index of one sitemap per page family
+ * Il écrit aussi :
+ *  - `dist/app.html` : la coquille SPA nue, cible du rewrite attrape-tout,
+ *    pour que les routes profondes de l'app (par exemple /profile) ne fassent
+ *    jamais clignoter le contenu de l'accueil.
+ *  - `dist/sitemap.xml` : un index d'un sitemap par famille de pages
  *    (sitemap-pages.xml, sitemap-bibliotheque.xml, sitemap-horaires.xml,
- *    sitemap-calendrier.xml), regenerated from the same page lists, always
- *    in sync. Each URL carries the real date of its content (git), see
- *    scripts/lib/lastmod.mjs; the computed pages carry the build date.
+ *    sitemap-calendrier.xml), régénéré à partir des mêmes listes de pages,
+ *    toujours en phase. Chaque URL porte la vraie date de son contenu (git),
+ *    voir scripts/lib/lastmod.mjs ; les pages calculées portent la date du
+ *    build.
  *
- * Truly dynamic routes (individual sessions, chiourim, authors) are resolved at
- * runtime by the `socialPreview` Firebase Function (see functions/src/index.ts).
+ * Les routes réellement dynamiques (sessions individuelles, chiourim, auteurs)
+ * sont résolues à l'exécution par la Firebase Function `socialPreview` (voir
+ * functions/src/index.ts).
  *
- * The page content lives in `src/content/seoPages.ts` (a typed, framework- and
- * environment-agnostic module) so the Vue app and this build step share one
- * source of truth. It is a TypeScript file, loaded here through `jiti`.
+ * Le contenu des pages vit dans `src/content/seoPages.ts` (un module typé,
+ * indépendant du framework et de l'environnement), pour que l'app Vue et cette
+ * étape de build partagent une seule source de vérité. C'est un fichier
+ * TypeScript, chargé ici via `jiti`.
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -153,9 +159,11 @@ function buildLlmsFull(pages, today) {
 }
 
 /**
- * Generate the public reading pages for the whole library (Tehilim, Tanakh,
- * Michna, Talmud) under /etude/<corpus>/<slug>[/<section>]. Returns their
- * sitemap entries. The big text files are read from disk here, never bundled.
+ * Génère les pages de lecture publiques de toute la bibliothèque (Tehilim,
+ * Tanakh, Michna, Talmud) sous /bibliotheque/<corpus>/<slug>[/<section>]
+ * (les anciennes URL /etude/... redirigent en 301 vers /bibliotheque dans
+ * firebase.json). Renvoie leurs entrées de sitemap. Les gros fichiers de
+ * textes sont lus sur le disque ici, jamais embarqués dans le bundle.
  */
 function generateEtudePages(dist, template, lastmodOf) {
   const talmudChapters = JSON.parse(

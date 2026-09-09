@@ -72,9 +72,9 @@ describe("isAuthBrowserUnavailable", () => {
   });
 
   it("laisse passer le reste", () => {
-    expect(isAuthBrowserUnavailable(new Error("Firebase: Error (auth/network-request-failed)."))).toBe(
-      false,
-    );
+    expect(
+      isAuthBrowserUnavailable(new Error("Firebase: Error (auth/network-request-failed).")),
+    ).toBe(false);
   });
 });
 

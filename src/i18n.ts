@@ -46,7 +46,7 @@ function getInitialLocale(): SupportedLocale {
   return getStoredLocale() ?? getDeviceLocale() ?? "fr";
 }
 
-export function setStoredLocale(locale: SupportedLocale): void {
+function setStoredLocale(locale: SupportedLocale): void {
   try {
     localStorage.setItem(STORAGE_KEY, locale);
   } catch {

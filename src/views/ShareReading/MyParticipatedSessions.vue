@@ -6,7 +6,9 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { sessionService } from "../../services/sessionService";
+import { reservationService, ReservationGoneError } from "../../services/reservationService";
+import { TextTypeService } from "../../services/textTypeService";
+import { endOfLocalDay } from "../../services/dateService";
 import { appendHebrewNumeral, formatNumberWithHebrew } from "../../services/hebrewNumerals";
 import type { Session, TextStudy, TextStudyReservation } from "../../models/models";
 import type { User } from "../../services/authService";
@@ -27,9 +29,7 @@ const props = defineProps<{
 
 // Lignes dépliées (mes réservations à cocher). La première session est
 // ouverte d'office : c'est ce qu'on vient faire ici.
-const expandedIds = ref<Set<string>>(
-  new Set(props.sessions[0] ? [props.sessions[0].id] : []),
-);
+const expandedIds = ref<Set<string>>(new Set(props.sessions[0] ? [props.sessions[0].id] : []));
 
 function toggleExpand(id: string) {
   const next = new Set(expandedIds.value);
@@ -40,13 +40,8 @@ function toggleExpand(id: string) {
 
 const myReservations = (session: Session): TextStudyReservation[] => {
   if (!props.currentUser) return [];
-  return (
-    session.reservations?.filter(
-      (reservation) =>
-        reservation.chosenById === props.currentUser?.id ||
-        reservation.chosenByGuestId === props.currentUser?.email,
-    ) || []
-  );
+  const user = props.currentUser;
+  return (session.reservations ?? []).filter((r) => reservationService.isOwnReservation(r, user));
 };
 
 const readCount = (session: Session) => {
@@ -56,8 +51,7 @@ const readCount = (session: Session) => {
 
 /** Jours restants avant la date limite (arrondi supérieur, 0 = aujourd'hui). */
 const daysLeft = (session: Session): number => {
-  const limit = new Date(session.dateLimit);
-  limit.setHours(23, 59, 59, 999);
+  const limit = endOfLocalDay(new Date(session.dateLimit));
   return Math.max(0, Math.ceil((limit.getTime() - Date.now()) / (24 * 3600 * 1000)));
 };
 
@@ -71,10 +65,11 @@ const toggleReservationCompletion = async (
   reservationId: string,
   isCompleted: boolean,
 ) => {
+  const session = props.sessions.find((s) => s.id === sessionId);
   try {
-    await sessionService.markReservationAsCompleted(sessionId, reservationId, isCompleted);
+    await reservationService.markReservationAsCompleted(sessionId, reservationId, isCompleted);
 
-    const marked = props.sessions.find((s) => s.id === sessionId);
+    const marked = session;
     // Troisième endroit d'où l'on coche « lu » (après la page de chaîne et le
     // lecteur), et le seul qui ne le disait pas : la liste de MES chaînes.
     // Sans lui, `section_marked_read` sous-comptait la lecture des habitués,
@@ -88,12 +83,9 @@ const toggleReservationCompletion = async (
       source: "my_sessions",
     });
 
-    const session = props.sessions.find((s) => s.id === sessionId);
-    if (session) {
-      const reservation = session.reservations?.find((r) => r.id === reservationId);
-      if (reservation) {
-        reservation.isCompleted = isCompleted;
-      }
+    const reservation = session?.reservations?.find((r) => r.id === reservationId);
+    if (reservation) {
+      reservation.isCompleted = isCompleted;
     }
   } catch (error) {
     console.error("Erreur lors de la mise à jour de la réservation:", error);
@@ -104,6 +96,12 @@ const toggleReservationCompletion = async (
       error_message: error instanceof Error ? error.message : String(error),
       source: "my_sessions",
     });
+    // La place a été reprise (tirage expiré, ménage du créateur) : la ligne
+    // disparaît de la liste, et le message le dit (errors.reservationGone).
+    if (error instanceof ReservationGoneError && session?.reservations) {
+      const index = session.reservations.findIndex((r) => r.id === reservationId);
+      if (index > -1) session.reservations.splice(index, 1);
+    }
     toast.errorFromException(error, t("profile.reservationUpdateError"));
   }
 };
@@ -144,7 +142,7 @@ const goToSession = (session: Session) => {
                 {{ session.name }}
               </span>
               <span class="chip bg-primary/10 text-primary shrink-0 hidden sm:inline-flex">
-                {{ sessionService.formatTextType(session.type) }}
+                {{ TextTypeService.formatType(session.type) }}
               </span>
               <!-- Échéance : discrète, orange quand la fin approche -->
               <span
@@ -170,13 +168,15 @@ const goToSession = (session: Session) => {
               "
             >
               <AppIcon
-                v-if="readCount(session).total > 0 && readCount(session).done === readCount(session).total"
+                v-if="
+                  readCount(session).total > 0 &&
+                  readCount(session).done === readCount(session).total
+                "
                 name="circle-check"
                 :size="13"
               />
               {{
-                readCount(session).total > 0 &&
-                readCount(session).done === readCount(session).total
+                readCount(session).total > 0 && readCount(session).done === readCount(session).total
                   ? t("shareReading.allRead")
                   : t("shareReading.readCount", readCount(session))
               }}
@@ -248,7 +248,6 @@ const goToSession = (session: Session) => {
           </CollapseTransition>
         </li>
       </ul>
-
     </div>
   </div>
 </template>

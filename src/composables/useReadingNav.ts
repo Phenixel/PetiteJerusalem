@@ -12,7 +12,13 @@ import { computed, ref } from "vue";
  * le panneau faisant déjà ce travail.
  */
 export interface ReadingNavSection {
-  /** Offset du bloc dans la section : l'ancre `data-block-anchor` du rendu. */
+  /**
+   * Le repère du bloc dans le rendu (`data-block-anchor`), unique dans la
+   * page : l'offset ne l'est pas en tefila, où un marqueur sans ligne partage
+   * le sien avec le bloc suivant (voir TextBlock.anchor).
+   */
+  anchor: string;
+  /** Offset du bloc dans la section (rang du saut, pour la mesure d'audience). */
   offset: number;
   /** Titre du bloc dans la langue du lecteur. */
   label: string;

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { authService } from "../../services/authService";
+import { authErrorCode, isAuthCancellation } from "../../services/authErrors";
 import { useRouter } from "vue-router";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { analyticsService } from "../../services/analyticsService";
@@ -89,22 +90,18 @@ const changePassword = async () => {
     passwordForm.value = { currentPassword: "", newPassword: "", confirmPassword: "" };
   } catch (error) {
     console.error("Erreur lors du changement de mot de passe:", error);
-    if (error instanceof Error) {
-      if (
-        error.message.includes("auth/wrong-password") ||
-        error.message.includes("auth/invalid-credential")
-      ) {
-        trackPasswordFailed("wrong_password");
-        errorMessage.value = t("security.wrongPassword");
-      } else if (error.message.includes("auth/requires-recent-login")) {
-        trackPasswordFailed("requires_recent_login");
-        errorMessage.value = t("security.requiresRecentLogin");
-      } else {
-        trackPasswordFailed("error");
-        errorMessage.value = t("security.passwordChangeError");
-      }
+    // Le code Firebase (`auth/...`), jamais le message : celui-ci varie
+    // avec la langue et la version du SDK (voir authErrors).
+    const code = authErrorCode(error);
+    if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+      trackPasswordFailed("wrong_password");
+      errorMessage.value = t("security.wrongPassword");
+    } else if (code === "auth/requires-recent-login") {
+      trackPasswordFailed("requires_recent_login");
+      errorMessage.value = t("security.requiresRecentLogin");
     } else {
       trackPasswordFailed("error");
+      errorMessage.value = t("security.passwordChangeError");
     }
   } finally {
     isChangingPassword.value = false;
@@ -145,19 +142,16 @@ const deleteAccount = async () => {
     router.push("/");
   } catch (error) {
     console.error("Erreur lors de la suppression du compte:", error);
-    if (error instanceof Error) {
-      if (error.message.includes("auth/requires-recent-login")) {
-        trackDeleteFailed("requires_recent_login");
-        errorMessage.value = t("security.deleteRecentLogin");
-      } else if (error.message.includes("auth/popup-closed-by-user")) {
-        trackDeleteFailed("reauth_cancelled");
-        errorMessage.value = t("security.authCancelled");
-      } else {
-        trackDeleteFailed("error");
-        errorMessage.value = t("security.deleteError");
-      }
+    const code = authErrorCode(error);
+    if (code === "auth/requires-recent-login") {
+      trackDeleteFailed("requires_recent_login");
+      errorMessage.value = t("security.deleteRecentLogin");
+    } else if (isAuthCancellation(error)) {
+      trackDeleteFailed("reauth_cancelled");
+      errorMessage.value = t("security.authCancelled");
     } else {
       trackDeleteFailed("error");
+      errorMessage.value = t("security.deleteError");
     }
   } finally {
     isDeletingAccount.value = false;
@@ -285,7 +279,7 @@ const deleteAccount = async () => {
       <!-- Info compte Apple - la sécurité se gère chez Apple -->
       <div v-else-if="isAppleUser">
         <h3 class="text-xl font-bold text-text-primary mb-3 flex items-center gap-2">
-          <i class="fa-brands fa-apple text-lg"></i>
+          <AppIcon name="apple" :size="18" />
           {{ t("security.appleAccount") }}
         </h3>
         <p class="text-text-secondary">
@@ -323,7 +317,7 @@ const deleteAccount = async () => {
             >
               <AppIcon v-if="isDeletingAccount" name="spinner" :size="15" class="animate-spin" />
               <AppIcon v-else-if="needsGoogleReauth" name="google" :size="14" />
-              <i v-else-if="needsAppleReauth" class="fa-brands fa-apple"></i>
+              <AppIcon v-else-if="needsAppleReauth" name="apple" :size="14" />
               {{
                 isDeletingAccount
                   ? t("common.deleting")

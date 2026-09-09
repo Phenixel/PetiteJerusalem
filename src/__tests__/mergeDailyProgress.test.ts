@@ -49,20 +49,30 @@ describe("mergeDailyProgress", () => {
   });
 
   it("accepte un suivi absent d'un côté", () => {
-    expect(mergeDailyProgress(undefined, { date: "2026-08-07", completedIds: [12] }).completedIds)
-      .toEqual([12]);
+    expect(
+      mergeDailyProgress(undefined, { date: "2026-08-07", completedIds: [12] }).completedIds,
+    ).toEqual([12]);
     expect(
       mergeDailyProgress({ date: "", completedIds: [] }, { date: "2026-08-07", completedIds: [12] })
         .date,
     ).toBe("2026-08-07");
-    expect(mergeDailyProgress({ date: "2026-08-07", completedIds: [5] }, undefined).completedIds)
-      .toEqual([5]);
+    expect(
+      mergeDailyProgress({ date: "2026-08-07", completedIds: [5] }, undefined).completedIds,
+    ).toEqual([5]);
   });
 
   it("garde le chnei mikra lu de la semaine, quel que soit le jour retenu", () => {
     const merged = mergeDailyProgress(
-      { date: "2026-08-06", completedIds: [], parashaProgress: { week: "2026-08-08", completed: true } },
-      { date: "2026-08-07", completedIds: [], parashaProgress: { week: "2026-08-08", completed: false } },
+      {
+        date: "2026-08-06",
+        completedIds: [],
+        parashaProgress: { week: "2026-08-08", completed: true },
+      },
+      {
+        date: "2026-08-07",
+        completedIds: [],
+        parashaProgress: { week: "2026-08-08", completed: false },
+      },
     );
     // Le jour le plus récent l'emporte, mais la lecture de la semaine tient.
     expect(merged.date).toBe("2026-08-07");
@@ -71,8 +81,16 @@ describe("mergeDailyProgress", () => {
 
   it("passe à la nouvelle paracha quand la semaine a changé", () => {
     const merged = mergeDailyProgress(
-      { date: "2026-08-07", completedIds: [], parashaProgress: { week: "2026-08-01", completed: true } },
-      { date: "2026-08-07", completedIds: [], parashaProgress: { week: "2026-08-08", completed: false } },
+      {
+        date: "2026-08-07",
+        completedIds: [],
+        parashaProgress: { week: "2026-08-01", completed: true },
+      },
+      {
+        date: "2026-08-07",
+        completedIds: [],
+        parashaProgress: { week: "2026-08-08", completed: false },
+      },
     );
     expect(merged.parashaProgress).toEqual({ week: "2026-08-08", completed: false });
   });

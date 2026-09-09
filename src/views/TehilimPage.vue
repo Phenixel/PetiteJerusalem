@@ -7,6 +7,7 @@
  */
 import { computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { tehilimPages, SITE_URL } from "../content/seoPages";
 import { seoService } from "../services/seoService";
 import { useSeoContentNav } from "../composables/useSeoContentNav";
@@ -14,6 +15,7 @@ import SignupPromptModal from "../components/SignupPromptModal.vue";
 import { analyticsService } from "../services/analyticsService";
 
 const route = useRoute();
+const { t } = useI18n();
 const { showAuthPrompt, onContentClick } = useSeoContentNav();
 
 const page = computed(() => tehilimPages.find((p) => p.path === route.path) ?? null);
@@ -46,10 +48,11 @@ watch([() => route.path], applyMeta);
 <template>
   <div v-if="page" class="seo-page" v-html="page.bodyHtml" @click="onContentClick"></div>
   <main v-else class="seo-article" @click="onContentClick">
-    <h1>Intention introuvable</h1>
+    <h1>{{ t("tehilimIntentions.notFoundTitle") }}</h1>
     <p>
-      Cette intention n'existe pas (encore).
-      <a href="/tehilim">Voir toutes les intentions « Tehilim par intention »</a>.
+      {{ t("tehilimIntentions.notFoundDescription") }}
+      <a href="/tehilim">{{ t("tehilimIntentions.notFoundLink") }}</a
+      >.
     </p>
   </main>
   <SignupPromptModal v-model:show="showAuthPrompt" variant="auth" />

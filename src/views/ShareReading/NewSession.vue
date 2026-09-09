@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 import { EnumTypeTextStudy } from "../../models/typeTextStudy";
 import { sessionService } from "../../services/sessionService";
 import { TextTypeService } from "../../services/textTypeService";
+import { endOfLocalDay } from "../../services/dateService";
 import { authService } from "../../services/authService";
 import { ModerationError } from "../../services/moderationService";
 import type { User } from "../../services/authService";
@@ -166,8 +167,10 @@ const createSession = async () => {
       // alors sur la même propriété, sans traitement particulier.
       is_authenticated: true,
       guest_email_required: sessionData.guestEmailRequired,
+      // Fin de journée locale, comme la date limite enregistrée : lue en
+      // minuit UTC, la date reculait d'un jour à l'ouest de Greenwich.
       deadline_days: Math.ceil(
-        (new Date(sessionData.dateLimit).getTime() - Date.now()) / (24 * 3600 * 1000),
+        (endOfLocalDay(sessionData.dateLimit).getTime() - Date.now()) / (24 * 3600 * 1000),
       ),
     });
 

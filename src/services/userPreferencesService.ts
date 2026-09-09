@@ -1,17 +1,10 @@
 import type { Bookmark, ReadingPosition } from "./readingProgressService";
 import type { ReminderPlace } from "./zmanimService";
-
+import { AppError } from "./appError";
 // Ce module est chargé dès le démarrage (useTheme et useFonts, montés par
-// App.vue, ainsi que la home). Firestore y est donc importé DYNAMIQUEMENT :
-// un import statique ramènerait tout le SDK (~600 kB minifiés) dans le bundle
-// initial, ce que le découpage de src/firebase/ cherche justement à éviter.
-async function firestore() {
-  const [sdk, { db }] = await Promise.all([
-    import("firebase/firestore"),
-    import("../firebase/firestore"),
-  ]);
-  return { sdk, db };
-}
+// App.vue, ainsi que la home) : Firestore y est chargé à la demande, voir
+// src/firebase/lazy.ts.
+import { loadFirestore as firestore } from "../firebase/lazy";
 
 /** Daily reading completion for a single day. Resets when the date changes. */
 export interface DailyReadingProgress {
@@ -207,7 +200,7 @@ export function isOffline(): boolean {
  * appareil. Le serveur ayant toujours raison, on refuse l'écriture tout de
  * suite, pour que l'appelant le dise à l'utilisateur.
  */
-export class OfflineWriteError extends Error {
+class OfflineWriteError extends Error {
   readonly isOffline = true;
   constructor() {
     super("OFFLINE");
@@ -217,6 +210,14 @@ export class OfflineWriteError extends Error {
 
 export function isOfflineWriteError(error: unknown): boolean {
   return error instanceof OfflineWriteError;
+}
+
+/** Le serveur a refusé l'écriture (règles, réseau tombé en cours de route). */
+export class PreferencesSaveError extends AppError {
+  constructor() {
+    super("preferencesSaveFailed", "Erreur lors de la sauvegarde des préférences.");
+    this.name = "PreferencesSaveError";
+  }
 }
 
 /**
@@ -553,7 +554,7 @@ class UserPreferencesService {
       await sdk.setDoc(docRef, preferences, { mergeFields: Object.keys(preferences) });
     } catch (error) {
       console.error("Erreur lors de la sauvegarde des préférences:", error);
-      throw new Error("Erreur lors de la sauvegarde des préférences.");
+      throw new PreferencesSaveError();
     }
     // Écriture confirmée par le serveur : la copie locale suit, pour que la
     // prochaine ouverture hors ligne montre bien la liste à jour.

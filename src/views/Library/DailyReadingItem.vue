@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { TextStudyJsonEntry } from "../../models/models";
 import {
@@ -12,14 +12,16 @@ import type { RashiComment, TextContent, TextSection } from "../../services/text
 import { isEntryAvailableOffline } from "../../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../../services/offlineTextStore";
 import { useOnline } from "../../composables/useOnline";
-import { anchorToElement, scrollToVerse } from "../../composables/scrollAnchor";
+import { anchorToElement } from "../../composables/scrollAnchor";
 import { useReadingSize } from "../../composables/useReadingSize";
-import { readingProgressService, bookmarkId } from "../../services/readingProgressService";
+import { useVerseBookmarks } from "../../composables/useVerseBookmarks";
+import { useTextLabels } from "../../composables/useTextLabels";
 import type { Bookmark } from "../../services/readingProgressService";
 import { hubPath, sectionPath } from "../../content/etudeTexts";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { analyticsService } from "../../services/analyticsService";
 import CollapseTransition from "../../components/CollapseTransition.vue";
+import TalmudDafText from "../../components/TalmudDafText.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
@@ -39,6 +41,7 @@ const emit = defineEmits<{
   "sections-loaded": [indexes: number[]];
 }>();
 const { t } = useI18n();
+const { sectionLabel, headingLabel } = useTextLabels();
 // Taille de lecture partagée avec le lecteur de la bibliothèque (A− / A+).
 const readingSize = useReadingSize();
 const online = useOnline();
@@ -59,65 +62,71 @@ const isMultiSection = computed(() => (content.value?.sections.length ?? 0) > 1)
 const readSet = computed(() => new Set(props.readSections ?? []));
 
 // --- Marque-pages : même stockage que le lecteur de la bibliothèque, donc un
-// marque-page posé ici se retrouve là-bas (et inversement). ---
-const bookmarks = ref<Bookmark[]>([]);
-/** Verset sélectionné (appui) : "section#ligne". */
-const selectedVerse = ref<string | null>(null);
-const highlightedVerse = ref<string | null>(null);
+// marque-page posé ici se retrouve là-bas (et inversement), dans l'espace
+// « daily ». Un verset se repère par "section#ligne" : le livre entier est
+// sur la page. ---
 // Sections lues (repliées) rouvertes temporairement pour voir un marque-page.
 const peekedSections = ref<Set<number>>(new Set());
-
-function refreshBookmarks() {
-  bookmarks.value = readingProgressService.getBookmarks(String(props.entry.id), "daily");
-}
-
-const bookmarkedIds = computed(() => new Set(bookmarks.value.map((b) => b.id)));
 
 /** Section telle que stockée dans un marque-page (null pour un texte entier). */
 function storeSection(sectionIndex: number): number | null {
   return isMultiSection.value ? sectionIndex : null;
 }
 
+/** Le libellé enregistré avec un marque-page : le texte, et son chapitre. */
+function sectionOf(section: number | null): TextSection | null {
+  return content.value?.sections.find((s) => s.index === section) ?? null;
+}
+
+const {
+  bookmarks,
+  selected: selectedVerse,
+  highlighted: highlightedVerse,
+  refresh: refreshBookmarks,
+  isBookmarked,
+  select,
+  toggleBookmark,
+  scrollTo,
+} = useVerseBookmarks<string>({
+  scope: "daily",
+  textId: () => String(props.entry.id),
+  entry: () => props.entry,
+  keyOf: (section, line) => `${section ?? 0}#${line}`,
+  pathFor: (section) =>
+    section !== null ? sectionPath(props.entry, section) : hubPath(props.entry),
+  labelFor: (section) => {
+    const chapter = section !== null ? sectionOf(section) : null;
+    return chapter
+      ? `${appendHebrewNumeral(props.entry.name)} · ${chapter.label}`
+      : appendHebrewNumeral(props.entry.name);
+  },
+  source: props.source ?? "daily_reading",
+});
+
 function verseKey(sectionIndex: number, line: number): string {
   return `${storeSection(sectionIndex) ?? 0}#${line}`;
 }
 
 function isVerseBookmarked(sectionIndex: number, line: number): boolean {
-  return bookmarkedIds.value.has(
-    bookmarkId(String(props.entry.id), storeSection(sectionIndex), line, "daily"),
-  );
+  return isBookmarked(storeSection(sectionIndex), line);
 }
 
 function onVerseClick(sectionIndex: number, line: number) {
-  const key = verseKey(sectionIndex, line);
-  selectedVerse.value = selectedVerse.value === key ? null : key;
+  select(storeSection(sectionIndex), line);
 }
 
 function toggleBookmarkAt(section: TextSection, line: number) {
-  const label = isMultiSection.value
-    ? `${appendHebrewNumeral(props.entry.name)} · ${section.label}`
-    : appendHebrewNumeral(props.entry.name);
-  const added = readingProgressService.toggleBookmark({
-    textId: String(props.entry.id),
-    section: storeSection(section.index),
-    line,
-    path: isMultiSection.value ? sectionPath(props.entry, section.index) : hubPath(props.entry),
-    label,
-    scope: "daily",
-  });
-  refreshBookmarks();
-  selectedVerse.value = null;
-  analyticsService.capture(added ? "bookmark_added" : "bookmark_removed", {
-    text_id: props.entry.id,
-    corpus: props.entry.type,
-    source: props.source ?? "daily_reading",
-  });
+  toggleBookmark(storeSection(section.index), line);
 }
 
 /** "Chapitre 2 (ב) · 3e montée · verset 14" pour un marque-page. */
 function bookmarkPlace(b: Bookmark): string {
-  return placeLabel(content.value?.sections ?? [], b.section, b.line, (n) =>
-    t("textReading.verseN", { n }),
+  return placeLabel(
+    content.value?.sections ?? [],
+    b.section,
+    b.line,
+    (n) => t("textReading.verseN", { n }),
+    headingLabel,
   );
 }
 
@@ -127,9 +136,7 @@ function goToBookmark(b: Bookmark) {
     peekedSections.value = new Set([...peekedSections.value, b.section]);
   }
   const key = `${b.section ?? 0}#${b.line}`;
-  void nextTick(() =>
-    scrollToVerse(() => root.value?.querySelector(`[data-verse="${key}"]`), key, highlightedVerse),
-  );
+  scrollTo(b.section, b.line, () => root.value?.querySelector(`[data-verse="${key}"]`));
   analyticsService.capture("reading_resumed", {
     text_id: props.entry.id,
     source: `${props.source ?? "daily_reading"}_bookmark`,
@@ -323,7 +330,7 @@ onUnmounted(() => observer?.disconnect());
                 : 'text-primary/80 dark:text-primary'
             "
           >
-            {{ section.label }}
+            {{ sectionLabel(section) }}
           </p>
           <button
             @click="onToggleSection(section, $event)"
@@ -344,19 +351,18 @@ onUnmounted(() => observer?.disconnect());
           </button>
         </div>
 
+        <!-- Une section lue se retire du rendu (`v-if`) : un livre entier est
+             sur la page, ses chapitres déjà lus n'ont pas à peser dans le DOM.
+             Celles qui restent se rendent à l'approche de l'écran
+             (content-visibility, voir le style). -->
         <CollapseTransition>
-          <div v-show="isSectionVisible(section.index)">
+          <div v-if="isSectionVisible(section.index)" class="daily-section">
             <!-- Talmud: continuous text with a marker at each daf change -->
-            <template v-if="content.type === 'Talmud Bavli'">
-              <template v-for="block in section.dafBlocks ?? []" :key="block.daf">
-                <p class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center">
-                  Daf {{ block.daf }}
-                </p>
-                <p dir="rtl" class="font-hebrew text-text-primary daily-he">
-                  {{ block.lines.join(" ") }}
-                </p>
-              </template>
-            </template>
+            <TalmudDafText
+              v-if="content.type === 'Talmud Bavli'"
+              :blocks="section.dafBlocks ?? []"
+              variant="daily"
+            />
 
             <!-- Verses / mishnayot / psalm lines: each on its own line, flowing on
                  the background, with a marker at each chapter / montée block -->
@@ -369,7 +375,7 @@ onUnmounted(() => observer?.disconnect());
                   v-if="block.label"
                   class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center"
                 >
-                  {{ block.label }}
+                  {{ headingLabel(block.heading, block.label) }}
                 </p>
                 <p dir="rtl" class="font-hebrew text-text-primary daily-he">
                   <template v-for="(line, index) in block.lines" :key="block.offset + index">
@@ -462,6 +468,12 @@ onUnmounted(() => observer?.disconnect());
 </template>
 
 <style scoped>
+/* Un chapitre hors écran n'est ni mis en page ni peint tant qu'on n'en
+   approche pas ; la taille estimée garde une barre de défilement stable. */
+.daily-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 40rem;
+}
 /* Tailles pilotées par le réglage A− / A+ (useReadingSize), comme le lecteur.
    L'interligne de l'hébreu est volontairement plus serré que leading-loose :
    assez d'air pour les voyelles et les teamim, sans étirer la lecture. */

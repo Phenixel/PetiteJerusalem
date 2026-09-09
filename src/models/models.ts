@@ -27,8 +27,11 @@ export interface Session {
   personId: string;
   creatorName: string;
   slug?: string;
-  isCompleted: boolean;
   reservations: TextStudyReservation[];
+  /**
+   * Close par son créateur. Les anciens documents portent aussi un
+   * `isCompleted`, jamais passé à vrai par l'application : il n'est plus lu.
+   */
   isEnded?: boolean;
   endedAt?: Date;
   updatedAt?: Date;
@@ -76,7 +79,6 @@ export interface TextStudyReservation {
   chosenByGuestId?: string;
   chosenByName?: string;
   textStudyId: string;
-  available: boolean;
   section?: number;
   isCompleted: boolean;
   createdAt: Date;
@@ -97,7 +99,6 @@ export interface ReservationRecord {
   chosenById?: string;
   chosenByGuestId?: string;
   chosenByName?: string;
-  available: boolean;
   isCompleted: boolean;
   createdAt: string;
   /** Voir TextStudyReservation.expiresAt. */

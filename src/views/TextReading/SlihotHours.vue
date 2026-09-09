@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { formatZmanTime, getSunset, slihotWindow } from "../../services/zmanimService";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
+import { useNow } from "../../composables/useNow";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 /**
@@ -17,14 +18,7 @@ const { place } = useZmanimLocation();
 
 // La plage bascule sur la nuit suivante au lever du soleil : l'heure est une
 // donnée du calcul, pas une valeur figée à l'ouverture de la page.
-const now = ref(new Date());
-let ticker: ReturnType<typeof setInterval> | null = null;
-onMounted(() => {
-  ticker = setInterval(() => (now.value = new Date()), 60_000);
-});
-onUnmounted(() => {
-  if (ticker) clearInterval(ticker);
-});
+const now = useNow();
 
 const range = computed(() => slihotWindow(place.value, now.value));
 const clock = (date: Date) => formatZmanTime(date, place.value.tzid, locale.value);
