@@ -120,7 +120,34 @@ Les options latines sont Manrope (celle de la maison, par défaut), Lora et
 Nunito. Seules les polices de l'identité bloquent le premier rendu
 (`index.html`) ; les autres sont injectées à la demande par `useFonts.ts`.
 
-## 5. Le bandeau de navigation
+## 5. Les tailles de texte
+
+Une page se lit d'abord de loin : ce qui compte doit sauter aux yeux avant
+qu'on ait lu quoi que ce soit. La règle est donc celle de la hiérarchie, pas
+celle du confort : le corps d'un texte dit son rang, et deux rangs voisins se
+distinguent d'un coup d'oeil.
+
+| Rang | Classes | Taille | Pour |
+| --- | --- | --- | --- |
+| Accroche | `text-4xl md:text-6xl` | 36 / 60 px | le titre d'une page d'entrée (accueil), Playfair |
+| Titre de page | `text-3xl md:text-4xl` | 30 / 36 px | le `h1` d'une page ordinaire, Playfair |
+| Porte | `text-xl md:text-2xl` | 20 / 24 px | les trois destinations de l'accueil, Playfair |
+| Chiffre en avant | `text-4xl md:text-5xl` | 36 / 48 px | une heure, un pourcentage, un compteur ; `tabular-nums` |
+| Titre de section | `text-xl md:text-2xl` | 20 / 24 px | un `h2` qui découpe une page |
+| Titre de carte | `text-base` à `text-lg` | 16 / 18 px | l'étiquette d'une carte de tableau de bord |
+| Corps | `text-base` | 16 px | le texte courant |
+| Corps secondaire | `text-sm` | 14 px | une explication, une ligne de contexte |
+| Méta | `text-xs` | 12 px | une date, une unité, une mention |
+
+Deux règles qui vont avec :
+
+- **Une carte ne porte qu'une chose en grand** : celle qu'on vient y chercher.
+  L'heure sur la carte des horaires, le pourcentage sur celle de la lecture du
+  jour. Tout le reste de la carte la sert et passe donc en dessous.
+- **Le chiffre en avant tombe toujours au même endroit** (à la fin de la
+  ligne) d'une carte à l'autre : le regard le retrouve sans le chercher.
+
+## 6. Le bandeau de navigation
 
 Sur le **web**, le bandeau est transparent tant qu'on est en tête de page : il
 laisse voir le beige et ne pèse rien. Dès le premier geste de défilement, il
@@ -133,15 +160,17 @@ barres collantes des pages.
 L'app native n'a pas de bandeau : la navigation y passe par la barre du bas
 (`BottomTabBar`).
 
-## 6. Ce qu'on n'emploie pas
+## 7. Ce qu'on n'emploie pas
 
 - Les dégradés, sous toutes leurs formes.
 - Les bordures pour détacher une carte du fond : c'est le rôle de l'ombre.
-- Les majuscules d'imprimerie et l'interlettrage élargi sur les étiquettes.
+- Les majuscules d'imprimerie et l'interlettrage élargi sur les étiquettes :
+  une étiquette de groupe s'écrit en bas de casse, au corps d'un texte
+  secondaire (« Mon compte », pas « MON COMPTE »).
 - Playfair sur autre chose qu'un titre ou une mise en avant.
 - Une couleur codée en dur là où un jeton existe.
 
-## 7. Ce qui reste à faire
+## 8. Ce qui reste à faire
 
 Cette charte est en cours d'écriture, au fil des décisions.
 

@@ -453,6 +453,8 @@ const fr = {
   zmanim: {
     title: "Horaires du jour",
     navTitle: "Horaires",
+    /* En-tête de la carte des horaires, sur l'accueil. */
+    cardToday: "Aujourd'hui",
     widget: {
       title: "Horaires",
       then: "Puis {label} à {time}",

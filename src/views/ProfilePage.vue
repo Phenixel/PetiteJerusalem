@@ -186,7 +186,7 @@ onUnmounted(() => {
           <template v-if="currentUser">
             <!-- Raccourcis vers les fonctionnalités déplacées dans leurs sections. -->
             <p
-              class="px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary/70"
+              class="px-4 pt-2 pb-1 text-sm font-semibold text-text-secondary"
             >
               {{ t("profile.shortcuts.title") }}
             </p>
@@ -224,7 +224,7 @@ onUnmounted(() => {
             </ul>
 
             <p
-              class="px-4 pt-1 pb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary/70"
+              class="px-4 pt-1 pb-1 text-sm font-semibold text-text-secondary"
             >
               {{ t("profile.shortcuts.accountTitle") }}
             </p>

@@ -341,10 +341,8 @@ onUnmounted(() => {
 
 .section-heading {
   padding: 0.5rem 0.55rem 0.15rem;
-  font-size: calc(0.72rem * var(--menu-scale, 1));
+  font-size: calc(0.78rem * var(--menu-scale, 1));
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   color: var(--color-text-secondary);
 }
 

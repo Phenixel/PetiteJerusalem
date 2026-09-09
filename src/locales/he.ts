@@ -424,6 +424,7 @@ const he: LocaleMessages = {
   zmanim: {
     title: "זמני היום",
     navTitle: "זמנים",
+    cardToday: "היום",
     widget: {
       title: "זמני היום",
       then: "אחר כך {label} בשעה {time}",

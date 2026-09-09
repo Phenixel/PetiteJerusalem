@@ -184,11 +184,13 @@ onUnmounted(() => {
     <!-- ===== Connecté : accueil personnalisé, hors carte ===== -->
     <template v-if="user">
       <div class="w-full max-w-6xl mx-auto mb-8 enter-rise">
-        <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight">
+        <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight">
           {{ greeting }},
           <span class="text-primary">{{ firstName }}</span>
         </h1>
-        <p class="text-text-secondary mt-1.5">{{ t("home.dashboard.subtitle") }}</p>
+        <p class="mt-2 text-base md:text-lg text-text-secondary">
+          {{ t("home.dashboard.subtitle") }}
+        </p>
       </div>
 
       <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
@@ -232,11 +234,13 @@ onUnmounted(() => {
       class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 items-center mb-10"
     >
       <div class="space-y-4 text-center md:text-start">
-        <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight enter-rise">
+        <h1
+          class="text-4xl md:text-6xl font-bold text-text-primary tracking-tight leading-[1.05] enter-rise"
+        >
           {{ t("home.heroTitle") }}
         </h1>
         <p
-          class="text-base md:text-lg text-text-secondary leading-relaxed enter-rise"
+          class="text-lg md:text-xl text-text-secondary leading-relaxed enter-rise"
           style="--enter-delay: 0.1s"
         >
           {{ t("home.heroDescription") }}
@@ -282,31 +286,34 @@ onUnmounted(() => {
         <button
           v-for="(feature, index) in features"
           :key="feature.title"
-          class="feature-card card card-hover group flex items-center gap-5 p-6 text-left cursor-pointer"
+          class="feature-card card card-hover group flex cursor-pointer items-center gap-5 p-6 text-left md:flex-col md:items-start md:gap-4 md:p-7"
           :style="{ '--enter-delay': `${index * 0.12}s` }"
           @click="
             trackCard(`feature_${feature.route}`);
             router.push(feature.route);
           "
         >
-          <!-- Texte à gauche, illustration à droite, tout reste dans la carte
-               (une ligne par carte sur mobile, trois cartes côte à côte sur
-               desktop). Au repos, seule la micro-animation interne du SVG vit ;
-               au survol, c'est le dessin lui-même qui s'anime (aucun zoom). -->
-          <div class="flex-1 min-w-0">
+          <!-- Deux compositions pour la même carte : en ligne sur un téléphone
+               (texte à gauche, dessin à droite), la place y est en largeur ;
+               en colonne dès qu'il y en a trois côte à côte, le dessin au-
+               dessus d'un titre qui peut alors prendre son corps. C'est une
+               des trois portes du site : son titre est le plus gros de la page
+               après l'accroche. Au repos, seule la micro-animation interne du
+               SVG vit ; au survol, c'est le dessin lui-même qui s'anime. -->
+          <div
+            class="order-2 h-24 w-24 shrink-0 text-primary sm:h-28 sm:w-28 md:order-1 md:h-20 md:w-20"
+          >
+            <component :is="feature.illustration" />
+          </div>
+          <div class="order-1 min-w-0 flex-1 md:order-2">
             <h3
-              class="text-lg font-bold mb-1.5 text-text-primary group-hover:text-primary transition-colors"
+              class="font-display mb-1.5 text-xl font-bold tracking-tight text-text-primary transition-colors group-hover:text-primary md:text-2xl"
             >
               {{ feature.title }}
             </h3>
-            <p class="text-text-secondary text-sm leading-relaxed">
+            <p class="text-sm leading-relaxed text-text-secondary md:text-base">
               {{ feature.description }}
             </p>
-          </div>
-          <div
-            class="w-24 h-24 sm:w-28 sm:h-28 md:w-24 md:h-24 lg:w-28 lg:h-28 shrink-0 text-primary"
-          >
-            <component :is="feature.illustration" />
           </div>
         </button>
       </div>

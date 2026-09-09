@@ -20,7 +20,7 @@ const allDone = computed(() => props.total > 0 && props.done >= props.total);
   <RouterLink to="/bibliotheque/lecture-du-jour" class="card card-hover p-6 block group">
     <div class="flex items-center justify-between gap-3 mb-4">
       <h3
-        class="font-bold text-text-primary flex items-center gap-2.5 group-hover:text-primary transition-colors"
+        class="font-semibold text-text-primary flex items-center gap-2.5 group-hover:text-primary transition-colors"
       >
         <AppIcon name="book" :size="17" class="text-primary" />
         {{ t("dailyReading.title") }}
@@ -33,11 +33,15 @@ const allDone = computed(() => props.total > 0 && props.done >= props.total);
       {{ t("home.dashboard.readingEmpty") }}
     </p>
 
+    <!-- Où j'en suis, en grand : c'est la réponse que la carte apporte, et la
+         seule chose qu'elle porte à ce corps-là. Le compte détaillé et la
+         barre la précisent, en dessous. Même rythme que la carte des horaires,
+         dont le chiffre tombe au même endroit. -->
     <template v-else>
-      <div class="flex items-center justify-between mb-2">
+      <div class="flex items-end justify-between gap-3 mb-2">
         <span
           class="text-sm font-medium"
-          :class="allDone ? 'text-green-600 dark:text-green-400' : 'text-text-primary'"
+          :class="allDone ? 'text-green-600 dark:text-green-400' : 'text-text-secondary'"
         >
           <template v-if="allDone">
             {{ t("dailyReading.allReadTitle") }}
@@ -46,7 +50,12 @@ const allDone = computed(() => props.total > 0 && props.done >= props.total);
             {{ t("dailyReading.progress", { done, total }) }}
           </template>
         </span>
-        <span class="text-sm font-semibold text-primary">{{ pct }}%</span>
+        <span
+          class="shrink-0 text-4xl md:text-5xl font-bold leading-none tabular-nums"
+          :class="allDone ? 'text-green-600 dark:text-green-400' : 'text-primary'"
+        >
+          {{ pct }}<span class="text-xl md:text-2xl">%</span>
+        </span>
       </div>
       <ProgressBar :value="pct" :label="t('dailyReading.title')" />
     </template>

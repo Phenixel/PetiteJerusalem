@@ -298,8 +298,8 @@ await seedDoc("sessions", "demo-session-tehilim", {
 });
 
 await seedDoc("userPreferences", uid, {
-  theme: "ocean",
-  fontLatin: "inter",
+  theme: "sunset",
+  fontLatin: "manrope",
   fontHebrew: "frank",
   dailyReadingIds: [103, 104, 105], // Tehilim 1, 2, 3
   dailyReadingProgress: { date: todayKey(), completedIds: [103] },

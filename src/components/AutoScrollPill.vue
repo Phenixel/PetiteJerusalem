@@ -113,10 +113,8 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 <style scoped>
 .speed-heading {
   padding: 0.35rem 0.5rem 0.15rem;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   color: var(--color-text-secondary);
 }
 

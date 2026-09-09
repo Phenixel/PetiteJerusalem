@@ -27,7 +27,7 @@ const points = [
 
 <template>
   <div>
-    <p class="text-sm font-semibold uppercase tracking-wide text-primary mb-2">
+    <p class="text-sm font-semibold text-primary mb-2">
       {{ t("onboarding.consent.welcome") }}
     </p>
     <h1 class="text-3xl sm:text-4xl font-bold text-text-primary mb-3">

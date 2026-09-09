@@ -444,6 +444,7 @@ const en: LocaleMessages = {
   zmanim: {
     title: "Today's times",
     navTitle: "Zmanim",
+    cardToday: "Today",
     widget: {
       title: "Zmanim",
       then: "Then {label} at {time}",
