@@ -26,6 +26,8 @@
  *   « PjWatch » fabriquée de la même façon, avec son icône et les Tehilim
  *   embarqués (sources de native/watchos/, voir docs/app-watch.md)
  * - Icônes / splash générés depuis assets/logo.png
+ * - Icône iOS 18 : variantes sombre et teintée déclarées dans le catalogue
+ *   (fichiers d'assets/themed/, rasterisés depuis lib/app-icon.mjs)
  *
  * Usage : node scripts/setup-ios.mjs
  *
@@ -46,6 +48,7 @@ import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { APP_LINK_DOMAIN } from "./lib/app-links.mjs";
+import { IOS_ICON_FILES, iosAppIconContents } from "./lib/app-icon.mjs";
 import {
   addAppSource,
   addWidgetExtension,
@@ -852,6 +855,43 @@ if (!existsSync(iconMarker)) {
       "setup-ios: ⚠️ génération des icônes échouée, lancer à la main :\n" +
         "  npx @capacitor/assets generate --ios --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'",
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 10. Variantes sombre et teintée de l'icône (iOS 18)
+// ---------------------------------------------------------------------------
+// Depuis iOS 18, l'icône d'une app a trois apparences : claire, sombre, et
+// teintée par la couleur que le propriétaire du téléphone a choisie pour son
+// écran d'accueil. Le système ne les devine pas, il faut les lui donner ; sans
+// cette déclaration, l'icône claire reste affichée telle quelle en mode sombre
+// et échappe à la teinte.
+//
+// La variante teintée est en niveaux de gris sur fond transparent : iOS lit la
+// luminosité comme une intensité de teinte et pose lui-même le fond. C'est
+// pour ça que le noir et blanc est nécessaire, ce n'est pas un parti pris.
+//
+// @capacitor/assets ne connaît que la variante claire (AppIcon-512@2x.png) :
+// on ajoute les deux autres depuis assets/themed/ et on réécrit le
+// Contents.json dans la forme « une taille, trois apparences » de Xcode 16.
+const appIconSet = join(appDir, "Assets.xcassets/AppIcon.appiconset");
+if (existsSync(appIconSet)) {
+  const variants = [
+    { variant: "dark", source: "assets/themed/icon-dark.png" },
+    { variant: "tinted", source: "assets/themed/icon-tinted.png" },
+  ];
+  const missing = variants.filter(({ source }) => !existsSync(join(root, source)));
+  if (missing.length) {
+    console.warn(
+      "setup-ios: ⚠️ variantes d'icône absentes d'assets/themed/, l'icône ne suivra pas le thème.\n" +
+        "  Y déposer icon-dark.png et icon-tinted.png, rasterisés depuis lib/app-icon.mjs.",
+    );
+  } else {
+    for (const { variant, source } of variants) {
+      copyFileSync(join(root, source), join(appIconSet, IOS_ICON_FILES[variant]));
+    }
+    writeFileSync(join(appIconSet, "Contents.json"), iosAppIconContents());
+    console.log("setup-ios: icône sombre et teintée déclarées (apparences iOS 18)");
   }
 }
 
