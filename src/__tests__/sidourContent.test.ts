@@ -18,7 +18,8 @@ import torahWeekdayJson from "../datas/torahWeekday.json";
  *
  * Le corpus du sidour porte aussi des textes qui ne sont pas des offices (le
  * Chema du coucher, le tikoun hatsot, la havdala, générés par
- * scripts/build-brahot.mjs) : ce qui tient à la 'Amida et aux horaires ne les
+ * scripts/build-brahot.mjs ; le Kaddich, généré par scripts/build-sidour.mjs
+ * comme les offices) : ce qui tient à la 'Amida et aux horaires ne les
  * regarde pas, et ils sont vérifiés plus bas avec les autres textes de
  * liturgie.
  */

@@ -1,8 +1,8 @@
 /**
- * Construit les textes du sidour de semaine (Cha'harit, Min'ha, Arvit) à
- * partir du Siddur Edot HaMizrach de l'export public Sefaria (GCS), au format
- * des fichiers de tefila (public/texts/tefila/*, voir loadTefila dans
- * src/services/textService.ts).
+ * Construit les textes du sidour de semaine (Cha'harit, Min'ha, Arvit, et le
+ * Kaddich comme texte à lui) à partir du Siddur Edot HaMizrach de l'export
+ * public Sefaria (GCS), au format des fichiers de tefila
+ * (public/texts/tefila/*, voir loadTefila dans src/services/textService.ts).
  *
  * Lancer avec : node scripts/build-sidour.mjs
  *
@@ -2549,12 +2549,97 @@ function arvitRecipe() {
   };
 }
 
+/**
+ * Le Kaddich, comme texte à lui : à l'office, chacune de ses formes vient à
+ * sa place, repliée dans le fil de l'office ; ici les quatre se lisent
+ * d'affilée, en entier, avec ce qui les distingue les unes des autres. C'est
+ * le texte qu'on ouvre quand on a un Kaddich à dire et qu'on n'est pas en
+ * train de suivre un office.
+ *
+ * La source les donne là où elles se disent : le demi-Kaddich et le Kaddich
+ * Titkabal dans « Uva LeSion », le « yehé chelama » après le psaume du jour,
+ * le « 'al Israël » après l'offrande des parfums du matin. Rien n'est replié
+ * ni conditionné : la page les porte toutes, tout le temps.
+ */
+function kaddichRecipe() {
+  return {
+    title: "קדיש (Kaddich)",
+    blocks: [
+      {
+        src: "Kaddish",
+        labelText: R("Demi-Kaddich", "Half Kaddish", "חצי קדיש"),
+        halakha: R(
+          "Le demi-Kaddich ferme un moment de l'office et ouvre le suivant : il s'arrête après « léélla min kol birkhata », sans Titkabal ni « ossé chalom ». Comme tout Kaddich, il demande dix hommes et se dit debout.",
+          "The half Kaddish closes one moment of the service and opens the next: it stops after “leela min kol birkhata”, without Titkabbal or “oseh shalom”. Like every Kaddish, it needs ten men and is said standing.",
+          "חצי קדיש נאמר בין חלקי התפילה, ומסתיים ב״לעלא מן כל ברכתא״, בלי תתקבל ובלי עושה שלום. ככל קדיש, נאמר בעשרה ובעמידה.",
+        ),
+        lines: [{ seg: 4, splitAmen: true }],
+      },
+      {
+        src: "Kaddish",
+        labelText: R("Kaddich Titkabal", "Kaddish Titkabbal", "קדיש תתקבל"),
+        halakha: R(
+          "Le Kaddich Titkabal suit la 'Amida : on y demande que les prières d'Israël soient reçues. Il se termine par « ossé chalom », en reculant de trois pas.",
+          "The Kaddish Titkabbal follows the Amidah: it asks that the prayers of Israel be received. It ends with “oseh shalom”, stepping back three steps.",
+          "קדיש תתקבל נאמר אחר העמידה, ובו מבקשים שתתקבל תפילתן של ישראל. מסיימים בעושה שלום, ופוסעים שלוש פסיעות לאחור.",
+        ),
+        lines: [
+          { seg: 4, splitAmen: true },
+          { seg: 5, tight: true, splitAmen: true },
+          { seg: 6, tight: true, splitAmen: true },
+          {
+            seg: 7,
+            strip: ["יפסע שלש פסיעות לאחור"],
+            rubric: R(
+              "Il recule de trois pas et dit :",
+              "He steps back three steps and says:",
+              "יפסע שלוש פסיעות לאחור ויאמר:",
+            ),
+            tight: true,
+            splitAmen: true,
+          },
+        ],
+      },
+      {
+        src: "YeheChelama",
+        labelText: R("Kaddich yehé chelama", "Kaddish Yehe Shelama", "קדיש יהא שלמא"),
+        halakha: R(
+          "Le Kaddich « yehé chelama » se dit après des psaumes ou une lecture : c'est celui de l'endeuillé, dit pour l'élévation de l'âme d'un défunt.",
+          "The Kaddish “Yehe Shelama” is said after psalms or a reading: it is the mourner's Kaddish, said for the elevation of a departed soul.",
+          "קדיש ״יהא שלמא״ נאמר אחר מזמורים או אחר קריאה, והוא הקדיש שאומר האבל לעילוי נשמת הנפטר.",
+        ),
+        lines: [
+          { seg: 28, splitAmen: true },
+          { seg: 29, tight: true, splitAmen: true },
+        ],
+      },
+      {
+        src: "AlIsrael",
+        labelText: R("Kaddich 'al Israël", "Kaddish al Yisrael", "קדיש על ישראל"),
+        halakha: R(
+          "Le Kaddich « 'al Israël », le Kaddich dérabanan, se dit après un passage d'étude : il ajoute une prière pour ceux qui étudient la Torah, ici et partout.",
+          "The Kaddish “al Yisrael”, the Kaddish deRabbanan, is said after a passage of study: it adds a prayer for those who study Torah, here and everywhere.",
+          "קדיש ״על ישראל״, הוא קדיש דרבנן, נאמר אחר לימוד תורה, ומוסיף בקשה על העוסקים בתורה כאן ובכל מקום.",
+        ),
+        lines: [
+          { seg: 32, splitAmen: true },
+          { seg: 33, tight: true, splitAmen: true },
+          { seg: 34, tight: true, splitAmen: true },
+        ],
+      },
+    ],
+  };
+}
+
 // ---------- Construction ----------
 
 console.log("Téléchargement du Siddur Edot HaMizrach (export Sefaria)…");
 const text = await fetchSiddur();
 
-/** Les sections sources d'un office, aplaties par la recette (clé `src`). */
+/**
+ * Les sections sources d'un office, aplaties par la recette (clé `src`). Le
+ * texte du Kaddich se sert aux mêmes sources : elles sont toutes de Cha'harit.
+ */
 function sourcesFor(office) {
   const ws = text["Weekday Shacharit"];
   const rh = text["Rosh Hodesh"];
@@ -2604,6 +2689,15 @@ function sourcesFor(office) {
       "Taanit.Torah": text["Fast Days and Mourning"]["Torah Reading for Fast Days"],
     };
   }
+  // Le texte du Kaddich, à part : ses quatre formes viennent des trois
+  // endroits de Cha'harit où la source les porte en entier.
+  if (office === "kaddich") {
+    return {
+      Kaddish: ws["Uva LeSion"],
+      YeheChelama: ws["Song of the Day"],
+      AlIsrael: ws["Incense Offering"],
+    };
+  }
   const wa = text["Weekday Arvit"];
   return {
     Omer: text["Counting of the Omer"],
@@ -2620,6 +2714,7 @@ const RECIPES = {
   chaharit: chaharitRecipe(),
   minha: minhaRecipe(),
   arvit: arvitRecipe(),
+  kaddich: kaddichRecipe(),
 };
 
 for (const [name, recipe] of Object.entries(RECIPES)) {
