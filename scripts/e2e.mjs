@@ -45,6 +45,14 @@ if (await emulatorsReachable()) {
   console.log("e2e : démarrage d'émulateurs Firebase vides le temps de la suite.");
   const script = [npx, "playwright", "test", ...args].map(quote).join(" ");
   run("firebase", ["emulators:exec", "--only", "auth,firestore", script]);
+} else if (process.env.CI) {
+  // En local, sauter les tests Firebase est un service rendu. En CI, ce serait
+  // un job vert qui n'a pas joué un tiers de la suite, sans que personne le
+  // voie : mieux vaut échouer sur l'installation manquante.
+  console.error(
+    "e2e : ni émulateur en cours ni CLI firebase, et la CI ne doit pas passer sans les tests Firebase (voir l'étape « Install Firebase CLI » de ci.yml).",
+  );
+  process.exit(1);
 } else {
   console.warn(
     "e2e : ni émulateur en cours ni CLI firebase (npm i -g firebase-tools) : les tests Firebase seront ignorés.",

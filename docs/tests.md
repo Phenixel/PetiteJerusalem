@@ -13,7 +13,7 @@ npm run test:unit          # vitest, mode interactif
 npx vitest run             # une seule passe, ce que fait `npm run verify`
 ```
 
-Les 85 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
+Les 99 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
 (`vitest.config.ts`) prend l'environnement `jsdom` par défaut ; les tests qui
 n'ont pas besoin du DOM (ceux qui lisent le dépôt ou lancent un script)
 commencent par `// @vitest-environment node`. Les dossiers `e2e/`, `android/`,
@@ -98,7 +98,9 @@ avant de lancer `playwright test` :
    (`firebase emulators:exec --only auth,firestore`) et les arrête en
    sortant ; il faut un JDK 21 ou plus, comme pour le dev ;
 3. sinon, la suite tourne quand même et les tests du projet `firebase` se
-   déclarent ignorés, avec la marche à suivre.
+   déclarent ignorés, avec la marche à suivre. En CI (`CI` posée), ce
+   troisième cas n'est pas un repli mais une erreur : un job vert doit vouloir
+   dire que la suite entière a tourné, pas qu'un tiers en a été sauté.
 
 Tout ce qui suit `--` est transmis à Playwright : `--headed`, `--project
 public`, `--debug`, un chemin de fichier, `-g "un titre"`.
@@ -119,7 +121,10 @@ Tout test importe `test`, `expect` et `gotoApp` de ce fichier plutôt que de
   si l'écran a l'air bon. C'est ainsi que la suite attrape une promesse
   rejetée ou une erreur Vue dans un watcher. Une courte liste de bruit connu
   est ignorée (le SDK Auth qui cherche l'émulateur absent, les ressources
-  réseau injoignables, les messages `[vite]`).
+  réseau injoignables, les messages `[vite]`). Un message qui nomme un port
+  d'émulateur n'est écarté que s'il porte aussi la marque d'un échec réseau :
+  dans le projet `firebase`, où les émulateurs répondent, une erreur du SDK
+  journalisée avec son hôte doit faire échouer le test, pas disparaître.
 
 `gotoApp(page, path)` ouvre une page de l'app et attend que Vue l'ait rendue
 (`#app` a un enfant) : le shell est vide tant que le bundle n'est pas arrivé.

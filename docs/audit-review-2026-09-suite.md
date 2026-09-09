@@ -32,8 +32,9 @@ Ce que la suite a trouvé sur la base, corrigé ici :
   (`src/router/lireRedirect.ts`).
 - **Pages sans `h1`** : accueil, accueil du partage, page d'une chaîne, lecture
   du jour n'avaient qu'un `h2` depuis le retrait du `h1` du bandeau.
-- **Recherche du catalogue** : « Berakhot » ne trouvait rien dans la
-  bibliothèque (nom latin ignoré, alors que le partage le cherchait).
+
+Ce sont les deux seuls constats que la suite a levés d'elle-même ; le reste de
+ce document vient de la relecture.
 
 ## 2. Bugs corrigés
 
@@ -49,8 +50,12 @@ Ce que la suite a trouvé sur la base, corrigé ici :
   fermait avant de savoir si l'écriture avait réussi (saisie perdue). Elle
   attend maintenant le résultat (`save` renvoie une promesse) et reste ouverte
   en cas d'échec.
-- Un texte entièrement réservé par plusieurs personnes ressortait
-  « Disponible » (`getTextDisplayStatus`).
+- Un texte dont toutes les sections étaient prises ressortait « Disponible »
+  dès qu'une section portait deux réservations (`getTextDisplayStatus`
+  comparait le nombre de réservations au nombre de sections : un doublon le
+  faisait passer au-dessus, et aucune branche ne le rattrapait). Le compte
+  porte maintenant sur les sections distinctes. Le cas de plusieurs personnes
+  se partageant un texte complet, lui, était déjà traité.
 - `ReservationGoneError` n'était traitée que dans le lecteur : les trois autres
   écrans affichaient une erreur technique et gardaient un interrupteur faux.
 - Sélection non purgée après rechargement, auth non écoutée sur la page d'une
@@ -59,6 +64,12 @@ Ce que la suite a trouvé sur la base, corrigé ici :
 
 ### Bibliothèque et lecteur
 
+- Recherche du catalogue : une apostrophe typographique ne trouvait rien
+  (« Sli’hot », « Min’ha » : zéro résultat, alors que le catalogue écrit
+  « Sli'hot »), et le nom d'un livre ou d'un seder ne ramenait pas ses traités
+  (« Zeraim » : zéro résultat, douze désormais ; « Moed » : deux, vingt-quatre
+  désormais). Les trois copies du filtre cherchaient bien, elles, le nom latin
+  entre parenthèses : « Berakhot » se trouvait déjà.
 - Lecture du jour laissée ouverte la nuit : la progression de la veille était
   réécrite comme celle du jour (`ensureSameDay` avant chaque écriture et au
   retour à l'écran).

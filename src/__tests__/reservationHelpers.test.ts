@@ -131,8 +131,6 @@ describe("reservationService.getTextDisplayStatus", () => {
   });
 
   it("complet aussi quand toutes les sections sont prises par des personnes différentes", () => {
-    // Ce cas ressortait « disponible » : la branche qui le traitait venait
-    // après celle du partiel, qui l'absorbait.
     const s = session([
       reservation({ id: "a", section: 1, chosenByName: "Sarah" }),
       reservation({ id: "b", section: 2, chosenByName: "David" }),
@@ -142,6 +140,19 @@ describe("reservationService.getTextDisplayStatus", () => {
       status: "fully_reserved",
       reservedBy: "Sarah, David",
     });
+  });
+
+  it("complet malgré un doublon sur une section", () => {
+    // Le vrai cas qui ressortait « disponible » : le compte portait sur les
+    // réservations, pas sur les sections. Quatre réservations pour trois
+    // sections passaient au-dessus de toutes les branches, jusqu'au repli.
+    const s = session([
+      reservation({ id: "a", section: 1 }),
+      reservation({ id: "b", section: 1, chosenByName: "David" }),
+      reservation({ id: "c", section: 2 }),
+      reservation({ id: "d", section: 3 }),
+    ]);
+    expect(reservationService.getTextDisplayStatus("103", texte, s).status).toBe("fully_reserved");
   });
 
   it("ne compte pas un tirage expiré", () => {

@@ -34,12 +34,19 @@ type Fixtures = {
 //  - Vite/Chromium signalent les ressources réseau injoignables de la même
 //    façon (favicon d'un canal de preview, image d'un chiour de démo…).
 const IGNORED_CONSOLE = [
-  /localhost:847\d/,
   /ERR_CONNECTION_REFUSED/,
   /Failed to load resource/,
   /net::ERR_/,
   /\[vite\]/,
 ];
+
+// Nommer un port d'émulateur ne suffit pas à faire taire un message : il faut
+// qu'il porte aussi la marque d'un échec réseau. Dans le projet `firebase`,
+// où les émulateurs répondent, une erreur du SDK (règles refusées, document
+// absent) est journalisée avec son hôte : la filtrer sur le seul port la
+// rendrait invisible, et c'est justement ce qu'on veut voir échouer.
+const EMULATOR_HOST = /localhost:847\d/;
+const NETWORK_FAILURE = /ERR_|Failed to fetch|NetworkError|network-request-failed/;
 
 function watchErrors(page: Page, sink: string[]): void {
   page.on("pageerror", (error) => sink.push(`pageerror: ${error.message}`));
@@ -47,6 +54,7 @@ function watchErrors(page: Page, sink: string[]): void {
     if (message.type() !== "error") return;
     const text = message.text();
     if (IGNORED_CONSOLE.some((pattern) => pattern.test(text))) return;
+    if (EMULATOR_HOST.test(text) && NETWORK_FAILURE.test(text)) return;
     sink.push(`console.error: ${text}`);
   });
 }
