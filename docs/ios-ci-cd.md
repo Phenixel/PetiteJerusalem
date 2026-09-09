@@ -122,6 +122,29 @@ Les capacités de l'App ID nécessaires aux profils, notifications push, Sign in
 with Apple, domaines associés et App Groups, sont activées par le script
 lui-même, ce qu'Xcode faisait auparavant tout seul en mode automatique.
 
+### Quand Apple répond 500
+
+Le provisionnement d'Apple renvoie de temps en temps un `500 UNEXPECTED_ERROR` à
+une requête parfaitement valide, puis accepte la même quelques secondes plus
+tard. Le tag v3.9.3 est mort là-dessus : la création du profil des widgets a
+échoué 180 ms après celle du profil de l'app, avec le même certificat, le même
+App ID et le même code que le run vert de la veille. Il n'y avait rien à
+corriger dans la demande ; il fallait la redemander.
+
+`scripts/lib/asc-retry.mjs` porte la règle, `src/__tests__/ascRetry.test.ts` la
+tient :
+
+- une panne passagère (5xx, 429, ou pas de réponse du tout) vaut jusqu'à trois
+  nouvelles tentatives, à trois secondes, six, puis douze ;
+- un 4xx n'en vaut aucune : il dit quelque chose de vrai sur la demande ;
+- seuls les GET et les DELETE sont rejoués d'office. Un POST, non : rejouer une
+  création de certificat mangerait une place du quota de trois. La création de
+  profil fait exception, mais relit d'abord le profil par son nom, Apple le
+  fabriquant parfois avant d'échouer à le renvoyer.
+
+Un run qui échoue quand même sur ce message n'a rien à corriger dans le repo :
+il se relance.
+
 ### Le quota de trois certificats de distribution
 
 Apple n'accepte que **trois certificats de distribution** par compte, et le
