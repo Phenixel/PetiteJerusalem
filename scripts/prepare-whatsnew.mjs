@@ -4,10 +4,12 @@
  * upload-google-play dans la CI.
  *
  * Source des notes, par ordre de priorité :
- * 1. Le texte de la release GitHub du tag (fichier passé en argument, récupéré
- *    par la CI via `gh api`) : c'est ce que l'utilisateur a écrit à la main en
- *    créant la release. Français → whatsnew-fr-FR uniquement, les autres
- *    langues retombent sur la langue par défaut dans la Play Console.
+ * 1. Le fichier passé en argument, que la CI remplit avec le texte écrit à la
+ *    main pour ce tag : celui de la release GitHub si elle existe déjà, sinon
+ *    le message du tag annoté (`git tag -a`, la source la plus commode : les
+ *    notes s'écrivent au moment même où la release part). Français →
+ *    whatsnew-fr-FR uniquement, les autres langues retombent sur la langue par
+ *    défaut dans la Play Console.
  * 2. Sinon, la phrase par défaut de scripts/release-notes.mjs
  *    (« Correction de bugs mineurs. », traduite par langue).
  *
