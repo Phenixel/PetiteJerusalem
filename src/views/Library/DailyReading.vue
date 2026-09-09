@@ -24,6 +24,7 @@ import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
+import { useKeepAwake } from "../../composables/useKeepAwake";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
 import {
@@ -111,6 +112,10 @@ const activeTab = ref<"today" | "week">("today");
 // dans la pastille du bas (AutoScrollPill). Pas en mode « gérer ma liste »,
 // où l'on choisit des textes au lieu d'en lire un.
 useAutoScroll(() => mode.value === "reading");
+
+// L'écran ne s'éteint pas pendant la lecture du jour ; en mode « gérer ma
+// liste », on touche l'écran, il n'y a rien à retenir.
+useKeepAwake(() => mode.value === "reading");
 
 // Ids kept as strings for reliable Map lookups; converted back to numbers on save.
 const selectedIds = ref<string[]>([]);

@@ -8,6 +8,7 @@ import { psalmsLabel, useTehilimDay } from "../../composables/useTehilimDay";
 import { analyticsService } from "../../services/analyticsService";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
+import { useKeepAwake } from "../../composables/useKeepAwake";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import BookEncadrement from "../../components/BookEncadrement.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
@@ -44,6 +45,9 @@ const { cycle } = useTehilimDay({ live: false });
 // Double appui sur le texte : la page descend toute seule, à l'allure choisie
 // dans la pastille du bas (AutoScrollPill).
 useAutoScroll(() => cycle.value.entries.length > 0);
+
+// L'écran ne s'éteint pas tant que les Tehilim du jour sont à l'écran.
+useKeepAwake(() => cycle.value.entries.length > 0);
 
 const rangeLabel = computed(() => psalmsLabel(cycle.value.psalms, t));
 

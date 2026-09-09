@@ -16,6 +16,7 @@ import { useWeeklyParasha } from "../../composables/useTehilimDay";
 import { analyticsService } from "../../services/analyticsService";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
+import { useKeepAwake } from "../../composables/useKeepAwake";
 import { useChneiMikraOptions } from "../../composables/useChneiMikraOptions";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import ChneiMikraOptions from "../../components/ChneiMikraOptions.vue";
@@ -67,6 +68,10 @@ const parasha = computed<WeeklyParasha | null>(() => {
 // dans la pastille du bas (AutoScrollPill). Sans paracha, il n'y a rien à
 // faire descendre.
 useAutoScroll(() => parasha.value !== null);
+
+// L'écran ne s'éteint pas tant que la paracha est ouverte : les chnei mikra
+// se lisent verset après verset, sans une main pour réveiller le téléphone.
+useKeepAwake(() => parasha.value !== null);
 
 const isCurrentWeek = computed(() => parasha.value?.weekKey === currentWeek.value?.weekKey);
 

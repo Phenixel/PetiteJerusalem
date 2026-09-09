@@ -239,6 +239,45 @@ seul (Data Layer d'un côté, WatchConnectivity de l'autre), derrière le plugin
 maison PjWatch. Les deux plateformes sont scriptées de bout en bout, signature
 et publication comprises, voir `docs/app-watch.md`.
 
+## Icônes qui suivent le thème de l'appareil
+
+Les deux systèmes savent adapter l'icône d'une app au thème du téléphone, à
+condition qu'on leur en donne les variantes ; sinon ils laissent l'icône en
+couleurs telle quelle.
+
+| Variante | Où elle sert |
+|---|---|
+| claire | l'icône d'origine, les boutiques, l'écran de lancement |
+| sombre | mode sombre d'iOS 18 |
+| teintée | iOS 18, teintée par la couleur choisie pour l'écran d'accueil |
+| monochrome | icônes thématiques d'Android 13+, teintées par le fond d'écran |
+
+C'est pour ça que le noir et blanc est nécessaire : les variantes teintée et
+monochrome sont lues comme des intensités, pas comme des images. Le système
+pose la couleur, l'app ne fournit que la forme.
+
+Tout part d'une seule source, `scripts/lib/app-icon.mjs`, où le dessin est écrit
+en vecteur : les variantes n'en changent que la palette et le cadrage. Le
+cadrage de la variante claire reproduit au pixel près l'icône déjà publiée sur
+les boutiques, et un test le tient.
+
+Les PNG d'`assets/themed/` sont versionnés, et ce sont eux qui partent dans les
+projets natifs : `setup-android.mjs` et `setup-ios.mjs` se contentent de les
+recopier, un runner de CI n'a donc jamais besoin d'un navigateur pour fabriquer
+l'app. La rasterisation, elle, ne vit pas dans le dépôt : le jour où le dessin
+change, il faut produire les fichiers à part, aux noms et aux tailles
+qu'attendent les scripts d'installation, puis les remplacer dans `assets/`.
+
+Deux contraintes valent d'être connues avant de retoucher le dessin :
+
+- Android masque l'icône. La toile fait 108 dp mais le lanceur peut manger tout
+  ce qui sort des 66 dp du centre, et son masque est rond aussi souvent que
+  carré. Le dessin y est donc inscrit par son cercle, pas par son rectangle.
+- Une silhouette a perdu ses couleurs, donc ses séparations. Le mur et le livre
+  se toucheraient et l'icône ne serait plus qu'une tache : ce sont les creux du
+  masque (joints des pierres, lignes des pages, bord haut du livre) qui la
+  gardent lisible.
+
 ## Liens du site qui ouvrent l'app
 
 Un lien vers `petite-jerusalem.fr` (une session partagée reçue par message,
