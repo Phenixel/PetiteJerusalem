@@ -95,12 +95,18 @@ const WIDGET_PROVISIONING_PROFILE = process.env.IOS_WIDGET_PROVISIONING_PROFILE?
 const WATCH_PROVISIONING_PROFILE = process.env.IOS_WATCH_PROVISIONING_PROFILE?.trim();
 const CODE_SIGN_IDENTITY = process.env.IOS_CODE_SIGN_IDENTITY?.trim();
 const MANUAL_SIGNING = Boolean(PROVISIONING_PROFILE && CODE_SIGN_IDENTITY);
+// L'app de montre n'entre dans le binaire que si la fiche App Store est prête
+// à la recevoir : Apple exige des captures d'écran d'Apple Watch dès qu'un
+// binaire en contient une, et refuse la version à l'examen tant qu'elles
+// manquent. La variable de repo SHIP_WATCH_APPS commande les deux magasins à
+// la fois, voir docs/app-watch.md. En local, la montre est toujours là : rien
+// n'y part à l'examen.
+const SHIP_WATCH_APPS = process.env.CI ? process.env.SHIP_WATCH_APPS?.trim().toLowerCase() === "true" : true;
 for (const [name, value] of [
-  // Chacun des deux paquets embarqués a son propre App ID, donc son propre
-  // profil : sans lui l'archive échouerait bien plus loin, sur un message de
-  // signature.
+  // Chacun des paquets embarqués a son propre App ID, donc son propre profil :
+  // sans lui l'archive échouerait bien plus loin, sur un message de signature.
   ["IOS_WIDGET_PROVISIONING_PROFILE", WIDGET_PROVISIONING_PROFILE],
-  ["IOS_WATCH_PROVISIONING_PROFILE", WATCH_PROVISIONING_PROFILE],
+  ...(SHIP_WATCH_APPS ? [["IOS_WATCH_PROVISIONING_PROFILE", WATCH_PROVISIONING_PROFILE]] : []),
 ]) {
   if (!MANUAL_SIGNING || value) continue;
   console.error(
@@ -552,27 +558,33 @@ console.log(`setup-ios: sources des widgets copiées depuis native/ios/ (App + $
 //   - un catalogue d'icônes : sans lui, l'App Store refuse l'archive, et rien
 //     avant ne le signale ;
 //   - les 150 Tehilim, embarqués plutôt qu'envoyés (docs/app-watch.md).
-const watchDir = join(iosDir, "App", WATCH_TARGET);
-mkdirSync(watchDir, { recursive: true });
-for (const name of WATCH_SOURCES) {
-  copyFileSync(join(root, "native/watchos", WATCH_TARGET, name), join(watchDir, name));
+if (SHIP_WATCH_APPS) {
+  const watchDir = join(iosDir, "App", WATCH_TARGET);
+  mkdirSync(watchDir, { recursive: true });
+  for (const name of WATCH_SOURCES) {
+    copyFileSync(join(root, "native/watchos", WATCH_TARGET, name), join(watchDir, name));
+  }
+  writeFileSync(join(watchDir, "Info.plist"), watchInfoPlist(DISPLAY_NAME, BUNDLE_ID));
+
+  // L'icône : celle de l'app (assets/logo.png fait déjà 1024 points de côté,
+  // la seule taille que watchOS demande depuis Xcode 14).
+  const appIconDir = join(watchDir, "Assets.xcassets/AppIcon.appiconset");
+  mkdirSync(appIconDir, { recursive: true });
+  copyFileSync(join(root, "assets/logo.png"), join(appIconDir, "AppIcon.png"));
+  writeFileSync(join(appIconDir, "Contents.json"), watchAppIconContents("AppIcon.png"));
+  writeFileSync(
+    join(watchDir, "Assets.xcassets/Contents.json"),
+    `${JSON.stringify({ info: { author: "xcode", version: 1 } }, null, 2)}\n`,
+  );
+
+  const tehilim = JSON.parse(readFileSync(join(root, "public/texts/tehilim.json"), "utf8"));
+  writeFileSync(join(watchDir, TEHILIM_ASSET), JSON.stringify(buildTehilimAsset(tehilim)));
+  console.log(`setup-ios: sources de la montre copiées depuis native/watchos/ (${WATCH_TARGET})`);
+} else {
+  console.log(
+    "setup-ios: app de montre laissée de côté (SHIP_WATCH_APPS absent), la fiche App Store n'a pas encore ses captures d'Apple Watch.",
+  );
 }
-writeFileSync(join(watchDir, "Info.plist"), watchInfoPlist(DISPLAY_NAME, BUNDLE_ID));
-
-// L'icône : celle de l'app (assets/logo.png fait déjà 1024 points de côté,
-// la seule taille que watchOS demande depuis Xcode 14).
-const appIconDir = join(watchDir, "Assets.xcassets/AppIcon.appiconset");
-mkdirSync(appIconDir, { recursive: true });
-copyFileSync(join(root, "assets/logo.png"), join(appIconDir, "AppIcon.png"));
-writeFileSync(join(appIconDir, "Contents.json"), watchAppIconContents("AppIcon.png"));
-writeFileSync(
-  join(watchDir, "Assets.xcassets/Contents.json"),
-  `${JSON.stringify({ info: { author: "xcode", version: 1 } }, null, 2)}\n`,
-);
-
-const tehilim = JSON.parse(readFileSync(join(root, "public/texts/tehilim.json"), "utf8"));
-writeFileSync(join(watchDir, TEHILIM_ASSET), JSON.stringify(buildTehilimAsset(tehilim)));
-console.log(`setup-ios: sources de la montre copiées depuis native/watchos/ (${WATCH_TARGET})`);
 
 // Le plugin doit être enregistré à la main depuis Capacitor 5 :
 // PjViewController remplace CAPBridgeViewController comme classe du view
@@ -711,16 +723,18 @@ try {
       : { manual: false },
   });
   console.log(`setup-ios: cible d'extension ${WIDGET_TARGET} (${WIDGET_BUNDLE_ID}) enregistrée`);
-  pbxproj = addWatchApp(pbxproj, {
-    bundleId: WATCH_BUNDLE_ID,
-    teamId: TEAM_ID,
-    marketingVersion: MARKETING_VERSION ?? "1.0",
-    buildNumber: BUILD_NUMBER ?? "1",
-    signing: MANUAL_SIGNING
-      ? { manual: true, identity: CODE_SIGN_IDENTITY, profile: WATCH_PROVISIONING_PROFILE }
-      : { manual: false },
-  });
-  console.log(`setup-ios: cible de montre ${WATCH_TARGET} (${WATCH_BUNDLE_ID}) enregistrée`);
+  if (SHIP_WATCH_APPS) {
+    pbxproj = addWatchApp(pbxproj, {
+      bundleId: WATCH_BUNDLE_ID,
+      teamId: TEAM_ID,
+      marketingVersion: MARKETING_VERSION ?? "1.0",
+      buildNumber: BUILD_NUMBER ?? "1",
+      signing: MANUAL_SIGNING
+        ? { manual: true, identity: CODE_SIGN_IDENTITY, profile: WATCH_PROVISIONING_PROFILE }
+        : { manual: false },
+    });
+    console.log(`setup-ios: cible de montre ${WATCH_TARGET} (${WATCH_BUNDLE_ID}) enregistrée`);
+  }
 } catch (error) {
   console.error(
     `setup-ios: cible des widgets ou de la montre impossible à écrire, ${error.message}\n` +

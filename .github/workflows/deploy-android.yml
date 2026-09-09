@@ -338,6 +338,23 @@ jobs:
           node scripts/prepare-whatsnew.mjs release-body.md
           ls whatsnew
 
+      # Quels AAB entrent dans la release, et sous quelle forme : les deux
+      # pièges tiennent dans cette seule chaîne, l'en-tête de
+      # scripts/play-release-files.mjs les raconte. Celui de la montre n'y
+      # entre que si la fiche Play déclare le facteur de forme « Wear OS »,
+      # d'où la variable de repo SHIP_WATCH_APPS.
+      - name: Choisir les AAB à publier
+        id: aabs
+        env:
+          SHIP_WATCH_APPS: ${{ vars.SHIP_WATCH_APPS }}
+        run: |
+          files="$(node scripts/play-release-files.mjs)"
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+          echo "AAB envoyés dans la release : $files"
+          if [ "${SHIP_WATCH_APPS:-}" != "true" ]; then
+            echo "::notice::L'AAB de la montre reste dans les artefacts du run : la fiche Play n'a pas encore le facteur de forme « Wear OS » (docs/app-watch.md). Poser la variable de repo SHIP_WATCH_APPS=true une fois la fiche prête."
+          fi
+
       # Piste production, statut « completed » : dès la fin de la review
       # Google, la version part chez tout le monde, sans geste dans la Play
       # Console.
@@ -346,14 +363,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: fr.petitejerusalem.app
-          # Sur une seule ligne, séparés par une virgule et rien d'autre :
-          # l'action fait `getInput('releaseFiles').split(',')`, puis passe le
-          # résultat à fast-glob. Un bloc YAML multiligne devient un seul motif
-          # portant un retour à la ligne, qui ne correspond à aucun fichier, et
-          # le tag meurt sur « Unable to find any release file matching » alors
-          # que les deux AAB sont bien là (tag v3.9.3). Une espace après la
-          # virgule casserait tout autant.
-          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab,android/wear/build/outputs/bundle/release/wear-release.aab
+          releaseFiles: ${{ steps.aabs.outputs.files }}
           track: production
           status: completed
           whatsNewDirectory: whatsnew

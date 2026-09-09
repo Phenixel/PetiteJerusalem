@@ -94,6 +94,12 @@ const WIDGET_BUNDLE_ID = `${BUNDLE_ID}.${WIDGET_TARGET}`;
 // L'app de montre aussi : elle est embarquée dans l'IPA, mais c'est une
 // application à part entière, avec son App ID et son profil (docs/app-watch.md).
 const WATCH_BUNDLE_ID = `${BUNDLE_ID}.${WATCH_BUNDLE_SUFFIX}`;
+// L'app de montre n'entre dans le binaire que quand la fiche App Store a ses
+// captures d'Apple Watch : sans elles, Apple refuse la version à l'examen.
+// Même variable de repo que la montre Wear OS côté Play, voir
+// docs/app-watch.md et scripts/setup-ios.mjs. Sans App ID ni profil de
+// montre, la cible n'est pas écrite dans le pbxproj, et réciproquement.
+const SHIP_WATCH_APPS = process.env.SHIP_WATCH_APPS?.trim().toLowerCase() === "true";
 // Préfixe reconnaissable : --setup fait le ménage des profils laissés par un
 // run interrompu avant son étape de nettoyage.
 const PROFILE_PREFIX = "PetiteJerusalem CI";
@@ -353,23 +359,28 @@ await enableCapabilities(widgetBundleIdRecord, WIDGET_CAPABILITIES);
 // L'App ID de l'app de montre. Aucune capacité à activer : elle ne parle qu'au
 // téléphone, par WatchConnectivity, qui n'en demande aucune. Apple range les
 // App ID watchOS sous la plateforme iOS, comme ceux des extensions.
-let watchBundleIdRecord = await findBundleId(WATCH_BUNDLE_ID);
-if (!watchBundleIdRecord) {
-  const created = await api("POST", "/v1/bundleIds", {
-    data: {
-      type: "bundleIds",
-      attributes: {
-        identifier: WATCH_BUNDLE_ID,
-        // Apple n'accepte ici que des lettres, chiffres et espaces.
-        name: "Petite Jerusalem Watch",
-        platform: "IOS",
+let watchBundleIdRecord = null;
+if (SHIP_WATCH_APPS) {
+  watchBundleIdRecord = await findBundleId(WATCH_BUNDLE_ID);
+  if (!watchBundleIdRecord) {
+    const created = await api("POST", "/v1/bundleIds", {
+      data: {
+        type: "bundleIds",
+        attributes: {
+          identifier: WATCH_BUNDLE_ID,
+          // Apple n'accepte ici que des lettres, chiffres et espaces.
+          name: "Petite Jerusalem Watch",
+          platform: "IOS",
+        },
       },
-    },
-  });
-  watchBundleIdRecord = created.data;
-  console.log(`ios-signing: App ID ${WATCH_BUNDLE_ID} créé (${watchBundleIdRecord.id})`);
+    });
+    watchBundleIdRecord = created.data;
+    console.log(`ios-signing: App ID ${WATCH_BUNDLE_ID} créé (${watchBundleIdRecord.id})`);
+  } else {
+    console.log(`ios-signing: App ID ${WATCH_BUNDLE_ID} (${watchBundleIdRecord.id})`);
+  }
 } else {
-  console.log(`ios-signing: App ID ${WATCH_BUNDLE_ID} (${watchBundleIdRecord.id})`);
+  console.log("ios-signing: App ID de la montre laissé de côté (SHIP_WATCH_APPS absent)");
 }
 
 /**
@@ -708,7 +719,11 @@ exportEnv("IOS_WIDGET_SIGNING_PROFILE_ID", widgetProfile.id);
 exportEnv("IOS_WIDGET_PROVISIONING_PROFILE", widgetProfileName);
 assertAppGroup(widgetProfile.content, WIDGET_BUNDLE_ID);
 
-// L'app de montre : pas d'App Group à relire, elle n'en a pas besoin.
-const watchProfile = await createProfile(watchProfileName, watchBundleIdRecord);
-exportEnv("IOS_WATCH_SIGNING_PROFILE_ID", watchProfile.id);
-exportEnv("IOS_WATCH_PROVISIONING_PROFILE", watchProfileName);
+// L'app de montre : pas d'App Group à relire, elle n'en a pas besoin. Pas de
+// profil non plus quand la cible n'est pas construite, sinon le run créerait
+// chez Apple un profil que rien ne signe.
+if (watchBundleIdRecord) {
+  const watchProfile = await createProfile(watchProfileName, watchBundleIdRecord);
+  exportEnv("IOS_WATCH_SIGNING_PROFILE_ID", watchProfile.id);
+  exportEnv("IOS_WATCH_PROVISIONING_PROFILE", watchProfileName);
+}
