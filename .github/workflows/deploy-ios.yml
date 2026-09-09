@@ -190,9 +190,10 @@ jobs:
       # Certificat de distribution + profils « App Store » (l'app, son
       # extension de widgets et son app de montre, qui ont chacune leur propre
       # App ID), créés via l'API et installés dans un trousseau temporaire.
-      # Expose IOS_PROVISIONING_PROFILE, IOS_WIDGET_PROVISIONING_PROFILE,
-      # IOS_WATCH_PROVISIONING_PROFILE et IOS_CODE_SIGN_IDENTITY au reste du
-      # job, que l'étape suivante inscrit dans les cibles du projet Xcode.
+      # Expose IOS_PROVISIONING_PROFILE, IOS_WIDGET_PROVISIONING_PROFILE et
+      # IOS_CODE_SIGN_IDENTITY au reste du job, que l'étape suivante inscrit
+      # dans les cibles du projet Xcode ; IOS_WATCH_PROVISIONING_PROFILE
+      # seulement quand la montre est du voyage (SHIP_WATCH_APPS).
       # C'est aussi ici que les certificats devenus inutiles sont révoqués,
       # avant d'en créer un de plus, et que l'App Group des widgets est vérifié
       # dans les profils (voir scripts/ios-signing.mjs).
@@ -203,6 +204,10 @@ jobs:
           # binaire part chez Apple et dit alors, aux runs suivants, quel
           # certificat a signé quel build.
           IOS_BUILD_NUMBER: ${{ steps.version.outputs.build }}
+          # Pas d'App ID ni de profil de montre tant que la cible n'est pas
+          # construite : le run laisserait chez Apple un profil que rien ne
+          # signe (voir l'étape suivante et docs/app-watch.md).
+          SHIP_WATCH_APPS: ${{ vars.SHIP_WATCH_APPS }}
         run: node scripts/ios-signing.mjs --setup
 
       # Info.plist, entitlements, PrivacyInfo.xcprivacy, AppDelegate, icônes,
@@ -213,6 +218,11 @@ jobs:
         env:
           IOS_MARKETING_VERSION: ${{ steps.version.outputs.name }}
           IOS_BUILD_NUMBER: ${{ steps.version.outputs.build }}
+          # L'app de montre n'entre dans le binaire que quand la fiche App
+          # Store porte ses captures d'Apple Watch : sans elles, Apple accepte
+          # le binaire sur TestFlight puis refuse la version à l'examen, et le
+          # job `submit` meurt sur un 409 (tag v3.9.4). Voir docs/app-watch.md.
+          SHIP_WATCH_APPS: ${{ vars.SHIP_WATCH_APPS }}
         run: node scripts/setup-ios.mjs
 
       # Build web (type-check + vite + prerender), prune du bundle natif,
@@ -307,6 +317,13 @@ jobs:
       - name: Exporter l'IPA
         run: |
           # « app-store-connect » remplace « app-store » depuis Xcode 15.3.
+          # L'app de montre n'est dans l'archive que si SHIP_WATCH_APPS l'y a
+          # mise : sans profil exporté, pas d'entrée à écrire ici.
+          watch_profile=""
+          if [ -n "${IOS_WATCH_PROVISIONING_PROFILE:-}" ]; then
+            watch_profile="  <key>fr.petitejerusalem.app.watchkitapp</key>
+              <string>$IOS_WATCH_PROVISIONING_PROFILE</string>"
+          fi
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -331,8 +348,7 @@ jobs:
               <string>$IOS_PROVISIONING_PROFILE</string>
               <key>fr.petitejerusalem.app.PjWidgets</key>
               <string>$IOS_WIDGET_PROVISIONING_PROFILE</string>
-              <key>fr.petitejerusalem.app.watchkitapp</key>
-              <string>$IOS_WATCH_PROVISIONING_PROFILE</string>
+            $watch_profile
             </dict>
             <key>uploadSymbols</key>
             <true/>

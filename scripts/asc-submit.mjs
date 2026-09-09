@@ -176,8 +176,27 @@ try {
     },
   });
 } catch (error) {
-  // Brouillon réutilisé qui contient déjà cette version : pas une erreur.
   if (error.status !== 409) throw error;
+  // Apple répond 409 à TOUT ce qui la gêne dans cet ajout : le brouillon
+  // contient déjà cette version (bénin), ou la version n'est pas en état
+  // d'être soumise (pas bénin du tout). Le seul moyen de trancher est de
+  // relire la soumission : si elle porte au moins un élément, l'ajout n'avait
+  // effectivement plus lieu d'être. Sinon le 409 disait quelque chose de vrai,
+  // et le taire menait droit au PATCH suivant, qui mourait sur « does not have
+  // any items » sans jamais montrer la vraie raison (tag v3.9.4).
+  const items = await api("GET", `/v1/reviewSubmissions/${submission.id}/items?limit=200`);
+  if (items.data.length === 0) {
+    console.error(
+      `asc-submit: Apple refuse d'ajouter la version ${versionString} à la soumission.\n` +
+        `  ${error.message}\n` +
+        "  La version reste sur TestFlight, rien n'est perdu ; c'est la fiche App Store\n" +
+        "  qui manque de quelque chose. La cause la plus courante est un jeu de captures\n" +
+        "  d'écran incomplet pour un appareil que le binaire vise désormais (Apple Watch\n" +
+        "  depuis que l'app de montre existe, cf. docs/app-watch.md). App Store Connect\n" +
+        "  l'affiche en clair sur la page de la version.",
+    );
+    process.exit(1);
+  }
   console.log("asc-submit: la version est déjà dans la soumission");
 }
 

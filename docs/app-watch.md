@@ -166,19 +166,19 @@ fiche et se sert du `uses-feature android.hardware.type.watch` du manifest pour
 savoir lequel envoyer à quel appareil. L'APK embarqué dans celui du téléphone
 (`wearApp`) ne concerne plus que Wear OS 2, que l'app ne vise pas (plancher
 API 30, Wear OS 3). Les deux `versionCode` doivent différer : la CI donne à la
-montre celui du téléphone + 1
-(`.github/workflows/deploy-android.yml`), et les deux AAB partent dans la même
-release.
+montre celui du téléphone + 1 (`.github/workflows/deploy-android.yml`), et les
+deux AAB partent dans la même release, **une fois la fiche Play prête à les
+recevoir** : voir la variable `SHIP_WATCH_APPS` plus bas.
 
-Les deux chemins sont donnés à `r0adkll/upload-google-play` sur **une seule
-ligne, séparés par une virgule et rien d'autre**. L'action fait
-`getInput('releaseFiles').split(',')` avant de passer le résultat à fast-glob :
-un bloc YAML multiligne devient un motif unique portant un retour à la ligne,
-qui ne correspond à aucun fichier, et une espace après la virgule fait le même
-effet. Le tag v3.9.3 est mort là-dessus, huit minutes après son départ, sur
-« Unable to find any release file matching », les deux AAB étant pourtant
-signés et prêts. `src/__tests__/playReleaseFiles.test.ts` le voit désormais
-avant la publication.
+C'est `scripts/play-release-files.mjs` qui décide de la liste et l'écrit dans la
+forme exacte que `r0adkll/upload-google-play` attend : **une seule ligne, des
+virgules et rien d'autre**. L'action fait `getInput('releaseFiles').split(',')`
+avant de passer le résultat à fast-glob ; un bloc YAML multiligne devient un
+motif unique portant un retour à la ligne, qui ne correspond à aucun fichier, et
+une espace après la virgule fait le même effet. Le tag v3.9.3 est mort là-dessus,
+huit minutes après son départ, sur « Unable to find any release file matching »,
+les deux AAB étant pourtant signés et prêts.
+`src/__tests__/playReleaseFiles.test.ts` tient la forme et le contenu.
 
 Tester : installer sur une montre (ou l'émulateur Wear OS d'Android Studio,
 appairé au téléphone), ouvrir l'app du téléphone une fois pour qu'elle pousse
@@ -248,17 +248,40 @@ Le code est scripté de bout en bout ; les fiches des magasins, non.
 
 - **Play Console** : une app Wear OS n'est distribuée que si la fiche déclare le
   facteur de forme « Wear OS » et porte ses propres captures d'écran (écran
-  rond). Tant que ce n'est pas fait, l'AAB de la montre monte dans la release
-  sans être servi aux montres. La fiche du téléphone
-  (`store-assets/metadata/android/`, `scripts/play-listing.mjs`) ne couvre pas
-  cette partie.
+  rond). La fiche du téléphone (`store-assets/metadata/android/`,
+  `scripts/play-listing.mjs`) ne couvre pas cette partie.
 - **App Store Connect** : de même, l'app de montre demande son propre jeu de
   captures. `scripts/asc-screenshots.mjs` ne produit que celles de l'iPhone et
   de l'iPad.
 
-Rien de tout cela n'empêche un build : les deux artefacts partent, s'installent
-et fonctionnent en test interne. C'est la distribution publique aux montres qui
-attend ces deux fiches.
+### La variable de repo SHIP_WATCH_APPS
+
+Ces deux fiches ne sont pas un détail cosmétique : **tant qu'elles manquent, les
+deux magasins refusent la release entière**, et pas seulement la partie montre.
+
+- Google accepte les deux AAB, puis refuse de valider l'édition sur un
+  « Internal error encountered » qui ne dit pas lequel des deux le gêne. Le tag
+  v3.9.4 est mort là, les deux AAB signés, envoyés et acceptés ;
+- Apple accepte le binaire sur TestFlight, puis refuse d'ajouter la version à la
+  soumission : elle vise désormais un appareil dont la fiche n'a aucune capture.
+  Le tag v3.9.4 est mort là aussi, dans le job `submit`.
+
+D'où la variable de repo **`SHIP_WATCH_APPS`**, qui commande les deux magasins à
+la fois. Absente, ou différente de `true` :
+
+- côté Play, `scripts/play-release-files.mjs` ne met que l'AAB du téléphone dans
+  la release. Celui de la montre est quand même construit, archivé dans l'onglet
+  Actions et attaché à la release GitHub ;
+- côté App Store, `scripts/setup-ios.mjs` n'écrit pas la cible de montre dans le
+  pbxproj et `scripts/ios-signing.mjs` ne crée ni son App ID ni son profil : le
+  binaire envoyé ne contient pas d'app de montre, donc Apple ne réclame pas ses
+  captures.
+
+En local, la montre est toujours construite : rien n'y part à l'examen.
+
+Une fois les deux fiches prêtes, poser `SHIP_WATCH_APPS=true` dans les variables
+du dépôt (Settings → Secrets and variables → Actions → Variables) et taguer :
+les deux apps de montre partent avec la release suivante, sans autre changement.
 
 ## Évolutions
 
