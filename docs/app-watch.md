@@ -170,6 +170,16 @@ montre celui du téléphone + 1
 (`.github/workflows/deploy-android.yml`), et les deux AAB partent dans la même
 release.
 
+Les deux chemins sont donnés à `r0adkll/upload-google-play` sur **une seule
+ligne, séparés par une virgule et rien d'autre**. L'action fait
+`getInput('releaseFiles').split(',')` avant de passer le résultat à fast-glob :
+un bloc YAML multiligne devient un motif unique portant un retour à la ligne,
+qui ne correspond à aucun fichier, et une espace après la virgule fait le même
+effet. Le tag v3.9.3 est mort là-dessus, huit minutes après son départ, sur
+« Unable to find any release file matching », les deux AAB étant pourtant
+signés et prêts. `src/__tests__/playReleaseFiles.test.ts` le voit désormais
+avant la publication.
+
 Tester : installer sur une montre (ou l'émulateur Wear OS d'Android Studio,
 appairé au téléphone), ouvrir l'app du téléphone une fois pour qu'elle pousse
 les payloads, puis vérifier que le prochain zman bascule au passage d'un
