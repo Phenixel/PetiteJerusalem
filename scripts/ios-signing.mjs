@@ -77,6 +77,7 @@ import { createPrivateKey, randomBytes, sign as cryptoSign } from "node:crypto";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
+import { RETRY_ATTEMPTS, withRetry } from "./lib/asc-retry.mjs";
 import {
   CERTIFICATE_QUOTA,
   distributionCertificates,
@@ -162,7 +163,7 @@ const token = `${signingInput}.${base64url(
   }),
 )}`;
 
-async function api(method, path, body) {
+async function request(method, path, body) {
   const response = await fetch(`https://api.appstoreconnect.apple.com${path}`, {
     method,
     headers: {
@@ -181,6 +182,28 @@ async function api(method, path, body) {
     throw error;
   }
   return json;
+}
+
+/**
+ * Un appel à l'API, rejoué quand Apple tombe en panne passagère.
+ *
+ * Seuls GET et DELETE le sont d'office : les rejouer ne coûte rien. Un POST,
+ * non, il créerait un second exemplaire de ce qu'il vient peut-être de créer,
+ * et un certificat de trop mange une place d'un quota qui n'en compte que
+ * trois. Les créations qui doivent survivre à un 500 s'en chargent
+ * elles-mêmes, en relisant d'abord ce qu'Apple a fait : voir createProfile.
+ */
+async function api(method, path, body) {
+  const idempotent = method === "GET" || method === "DELETE";
+  if (!idempotent) return request(method, path, body);
+  return withRetry(() => request(method, path, body), {
+    onFailure: (error, attempt) => {
+      console.warn(
+        `ios-signing: ⚠️ ${method} ${path} a échoué (${error.status ?? "sans réponse"}), ` +
+          `nouvelle tentative ${attempt}/${RETRY_ATTEMPTS}`,
+      );
+    },
+  });
 }
 
 /** Expose une valeur aux étapes suivantes du job (no-op hors GitHub Actions). */
@@ -578,23 +601,58 @@ for (const stale of profiles.data) {
   console.log(`ios-signing: ancien profil « ${name} » supprimé`);
 }
 
+/** Le profil qui porte exactement ce nom, ou null. */
+async function findProfileNamed(name) {
+  // Le filtre par nom est le chemin court ; s'il déplaît à Apple, on relit la
+  // liste entière, qui tient largement dans une page.
+  const found = await api("GET", `/v1/profiles?filter[name]=${encodeURIComponent(name)}&limit=200`).catch(() =>
+    api("GET", "/v1/profiles?limit=200"),
+  );
+  // Comme pour les App ID, le filtre d'Apple est un « contains » : on exige l'égalité.
+  return found.data.find((entry) => entry.attributes?.name === name) ?? null;
+}
+
 /**
  * Crée un profil « App Store », l'installe sur le runner et rend son id.
+ *
+ * C'est la seule création que l'on rejoue après une panne d'Apple : un profil
+ * de trop se supprime, alors qu'un certificat de trop mange une place du
+ * quota. Encore faut-il savoir ce que le 500 a laissé derrière lui, car Apple
+ * fabrique parfois le profil AVANT d'échouer à le renvoyer ; sans cette
+ * relecture par le nom, la tentative suivante buterait sur l'unicité du nom et
+ * le run mourrait pour de bon.
  *
  * Xcode 16+ lit le second dossier ; les outils en ligne de commande plus
  * anciens lisent le premier. Les deux coûtent un fichier.
  */
 async function createProfile(name, bundleRecord) {
-  const created = await api("POST", "/v1/profiles", {
-    data: {
-      type: "profiles",
-      attributes: { name, profileType: "IOS_APP_STORE" },
-      relationships: {
-        bundleId: { data: { type: "bundleIds", id: bundleRecord.id } },
-        certificates: { data: [{ type: "certificates", id: certificateId }] },
+  const created = await withRetry(
+    () =>
+      api("POST", "/v1/profiles", {
+        data: {
+          type: "profiles",
+          attributes: { name, profileType: "IOS_APP_STORE" },
+          relationships: {
+            bundleId: { data: { type: "bundleIds", id: bundleRecord.id } },
+            certificates: { data: [{ type: "certificates", id: certificateId }] },
+          },
+        },
+      }),
+    {
+      onFailure: async (error, attempt) => {
+        console.warn(
+          `ios-signing: ⚠️ Apple a refusé le profil « ${name} » (${error.status ?? "sans réponse"}), ` +
+            `nouvelle tentative ${attempt}/${RETRY_ATTEMPTS}`,
+        );
+        const orphan = await findProfileNamed(name).catch(() => null);
+        if (!orphan) return undefined;
+        // Le profil existe malgré l'erreur : le reprendre vaut mieux que le
+        // recréer, et évite le conflit de nom qui, lui, serait définitif.
+        console.log(`ios-signing: profil « ${name} » finalement présent chez Apple, repris tel quel`);
+        return { data: orphan };
       },
     },
-  });
+  );
   const content = Buffer.from(created.data.attributes.profileContent, "base64");
   const uuid = created.data.attributes.uuid;
   for (const dir of [
