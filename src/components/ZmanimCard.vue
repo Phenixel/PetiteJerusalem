@@ -101,22 +101,22 @@ const hebrewDate = computed(() =>
 );
 </script>
 
-<!-- Composition : la date hébraïque situe la carte, puis l'heure en grand,
-     seule chose de la carte à ce corps-là. C'est elle qu'on vient lire, de
-     loin et en vitesse ; le nom de l'horaire et le compte à rebours la
-     servent, ils passent donc après elle. Rien ne dit « aujourd'hui » : une
-     carte d'horaires sur l'accueil ne parle pas d'un autre jour. -->
+<!-- Composition : le texte serré à gauche (la date hébraïque qui situe, le nom
+     de l'horaire, le temps qui reste et le lieu), l'heure en grand à droite,
+     centrée sur ce bloc. C'est elle qu'on vient lire, de loin et en vitesse ;
+     le reste la sert et passe donc à côté, au corps du texte courant. Rien ne
+     dit « aujourd'hui » : une carte d'horaires sur l'accueil ne parle pas d'un
+     autre jour. -->
 <template>
   <RouterLink
     :to="localePath('horaires')"
-    class="card card-hover group flex flex-col justify-center gap-2 p-5 md:p-6"
+    class="card card-hover group flex flex-col justify-center p-5 md:p-6"
   >
     <template v-if="headline">
-      <span class="text-sm text-text-secondary">{{ hebrewDate }}</span>
-
-      <span class="flex items-end justify-between gap-4">
+      <span class="flex items-center justify-between gap-4">
         <span class="min-w-0">
-          <span class="flex items-start gap-2">
+          <span class="block text-sm text-text-secondary">{{ hebrewDate }}</span>
+          <span class="mt-1 flex items-start gap-2">
             <AppIcon :name="headline.icon" :size="18" class="mt-0.5 shrink-0 text-primary" />
             <!-- Ni troncature ni ellipse sur le nom : « Fin du Chéma (Maguen
                  Avraham) » réduit à « Fin du Chéma… » ferait passer une heure

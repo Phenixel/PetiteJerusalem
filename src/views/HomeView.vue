@@ -184,24 +184,37 @@ onUnmounted(() => {
   <main class="flex-1 container mx-auto px-4 py-6 flex flex-col justify-center">
     <!-- ===== Connecté : accueil personnalisé, hors carte ===== -->
     <template v-if="user">
-      <div class="w-full max-w-6xl mx-auto mb-8 enter-rise">
-        <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight">
-          {{ greeting }},
-          <span class="text-primary">{{ firstName }}</span>
-        </h1>
-        <p class="mt-2 text-base md:text-lg text-text-secondary">
-          {{ t("home.dashboard.subtitle") }}
-        </p>
+      <!-- La salutation ne remplit qu'une demi-largeur : les raccourcis du
+           moment se rangent dans l'autre moitié, à côté du nom, au lieu de
+           traverser la page en bandeaux au-dessus du tableau de bord. Ils
+           n'apparaissent que quand leur moment est venu (l'heure d'un office,
+           les nuits de la bénédiction de la lune, l'Omer) : le reste du temps
+           la moitié droite est simplement vide, et la salutation garde sa
+           ligne. -->
+      <div
+        class="w-full max-w-6xl mx-auto mb-8 grid gap-4 md:grid-cols-2 md:items-center md:gap-8"
+      >
+        <div class="enter-rise">
+          <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight">
+            {{ greeting }},
+            <span class="text-primary">{{ firstName }}</span>
+          </h1>
+          <p class="mt-2 text-base md:text-lg text-text-secondary">
+            {{ t("home.dashboard.subtitle") }}
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-3">
+          <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
+               limite. Absent entre deux offices. -->
+          <SidourNowCard />
+
+          <!-- La bénédiction de la lune : une fenêtre de quelques nuits par
+               mois, qui se rate faute de rappel. Absente le reste du temps. -->
+          <BirkatHalevanaBanner />
+          <OmerBanner />
+        </div>
       </div>
-
-      <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
-           limite. Absent entre deux offices. -->
-      <SidourNowCard class="w-full max-w-6xl mx-auto mb-5" />
-
-      <!-- La bénédiction de la lune : une fenêtre de quelques nuits par mois,
-           qui se rate faute de rappel. Absente le reste du temps. -->
-      <BirkatHalevanaBanner class="w-full max-w-6xl mx-auto" />
-      <OmerBanner class="w-full max-w-6xl mx-auto" />
 
       <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mb-10">
         <!-- Squelettes pendant le chargement -->
@@ -274,13 +287,16 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <ZmanimCard class="dash-card" style="--enter-delay: 0.3s" @click="trackCard('zmanim')" />
+      <!-- Les horaires du jour et, dessous, les raccourcis du moment : la
+           colonne de droite porte tout ce qui dépend de l'heure qu'il est,
+           l'accroche garde la gauche. -->
+      <div class="flex flex-col gap-4">
+        <ZmanimCard class="dash-card" style="--enter-delay: 0.3s" @click="trackCard('zmanim')" />
+        <SidourNowCard />
+        <BirkatHalevanaBanner />
+        <OmerBanner />
+      </div>
     </div>
-
-    <SidourNowCard v-if="!user" class="w-full max-w-6xl mx-auto mb-5" />
-
-    <BirkatHalevanaBanner v-if="!user" class="w-full max-w-6xl mx-auto" />
-    <OmerBanner v-if="!user" class="w-full max-w-6xl mx-auto" />
 
     <div class="w-full max-w-6xl mx-auto">
       <!-- Les trois portes du site, posées à même le fond : sans cadre. Elles
@@ -296,7 +312,7 @@ onUnmounted(() => {
         <button
           v-for="(feature, index) in features"
           :key="feature.title"
-          class="feature-link group flex cursor-pointer items-center gap-5 border-b border-line py-5 text-left last:border-b-0 md:flex-col md:items-start md:gap-4 md:border-b-0 md:border-s md:px-7 md:py-2 md:first:border-s-0 md:first:ps-0 md:last:pe-0"
+          class="feature-link group flex cursor-pointer items-center gap-5 border-b border-line py-5 text-left last:border-b-0 md:flex-col md:items-center md:gap-4 md:border-b-0 md:border-s md:px-6 md:py-2 md:text-center md:first:border-s-0"
           :style="{ '--enter-delay': `${index * 0.12}s` }"
           @click="
             trackCard(`feature_${feature.route}`);
@@ -305,10 +321,10 @@ onUnmounted(() => {
         >
           <!-- Deux compositions pour la même porte : en ligne sur un téléphone
                (texte à gauche, dessin à droite), la place y est en largeur ;
-               en colonne dès qu'il y en a trois côte à côte, le dessin au-
-               dessus d'un titre qui peut alors prendre son corps. Au repos,
-               seule la micro-animation interne du SVG vit ; au survol, c'est
-               le dessin lui-même qui s'anime. -->
+               en colonne et centrée dès qu'il y en a trois côte à côte, le
+               dessin au-dessus d'un titre qui peut alors prendre son corps.
+               Au repos, seule la micro-animation interne du SVG vit ; au
+               survol, c'est le dessin lui-même qui s'anime. -->
           <div
             class="order-2 h-24 w-24 shrink-0 text-primary sm:h-28 sm:w-28 md:order-1 md:h-24 md:w-24"
           >
@@ -316,7 +332,7 @@ onUnmounted(() => {
           </div>
           <div class="order-1 min-w-0 flex-1 md:order-2">
             <h3
-              class="font-display mb-1.5 flex items-center gap-1.5 text-xl font-bold tracking-tight text-text-primary transition-colors group-hover:text-primary md:text-2xl"
+              class="font-display mb-1.5 flex items-center gap-1.5 text-2xl font-bold tracking-tight text-text-primary transition-colors group-hover:text-primary md:justify-center md:text-3xl"
             >
               {{ feature.title }}
               <AppIcon

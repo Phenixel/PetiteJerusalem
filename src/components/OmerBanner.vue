@@ -45,7 +45,7 @@ const compte = computed(() => {
   <RouterLink
     v-if="jour !== null"
     to="/bibliotheque/sidour/arvit"
-    class="card card-hover mb-5 flex items-center justify-between gap-3 p-4 group"
+    class="card card-hover flex items-center justify-between gap-3 p-4 group"
     @click="analyticsService.capture('omer_opened', { source: 'home', day: jour })"
   >
     <span class="flex min-w-0 items-center gap-3">

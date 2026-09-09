@@ -43,7 +43,7 @@ const deadline = computed(() =>
   <RouterLink
     v-if="visible"
     to="/bibliotheque/brahot/birkat-halevana"
-    class="card card-hover mb-5 flex items-center justify-between gap-3 p-4 group"
+    class="card card-hover flex items-center justify-between gap-3 p-4 group"
     @click="analyticsService.capture('birkat_halevana_opened', { source: 'home' })"
   >
     <span class="flex min-w-0 items-center gap-3">

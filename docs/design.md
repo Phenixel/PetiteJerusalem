@@ -164,7 +164,7 @@ distinguent d'un coup d'oeil.
 | --- | --- | --- | --- |
 | Accroche | `text-4xl md:text-6xl` | 36 / 60 px | le titre d'une page d'entrée (accueil), Playfair |
 | Titre de page | `text-3xl md:text-4xl` | 30 / 36 px | le `h1` d'une page ordinaire, Playfair |
-| Porte | `text-xl md:text-2xl` | 20 / 24 px | les trois destinations de l'accueil, Playfair |
+| Porte | `text-2xl md:text-3xl` | 24 / 30 px | les trois destinations de l'accueil, Playfair, centrées dès qu'elles sont côte à côte |
 | Chiffre en avant | `text-4xl md:text-5xl` | 36 / 48 px | une heure, un pourcentage, un compteur ; `tabular-nums` |
 | Titre de section | `text-xl md:text-2xl` | 20 / 24 px | un `h2` qui découpe une page |
 | Titre de carte | `text-base` à `text-lg` | 16 / 18 px | l'étiquette d'une carte de tableau de bord |
@@ -178,7 +178,10 @@ Trois règles qui vont avec :
   L'heure sur la carte des horaires, le pourcentage sur celle de la lecture du
   jour. Tout le reste de la carte la sert et passe donc en dessous.
 - **Le chiffre en avant tombe toujours au même endroit** (à la fin de la
-  ligne) d'une carte à l'autre : le regard le retrouve sans le chercher.
+  ligne) d'une carte à l'autre : le regard le retrouve sans le chercher. Il est
+  centré sur le bloc de texte qui l'accompagne, et ce texte est serré à gauche,
+  ligne sous ligne : un grand vide entre les deux les ferait lire comme deux
+  cartes au lieu d'une.
 - **Rien ne se coupe.** Un texte qui porte du sens (le nom d'un texte, d'un
   horaire, d'une section) passe à la ligne ; il n'est jamais rogné par des
   points de suspension, qui font passer une chose pour une autre (« Fin du
