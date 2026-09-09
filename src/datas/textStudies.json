@@ -2689,6 +2689,14 @@
       "type": "Sidour"
     },
     {
+      "id": 361,
+      "name": "קדיש (Kaddich)",
+      "livre": "סידור (Sidour)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Weekday_Shacharit,_Uva_LeSion",
+      "totalSections": 1,
+      "type": "Sidour"
+    },
+    {
       "id": 348,
       "name": "קריאת שמע שעל המיטה (Chema al Hamita)",
       "livre": "סידור (Sidour)",
