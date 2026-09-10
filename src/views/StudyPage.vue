@@ -294,12 +294,13 @@ function trackResume() {
 }
 
 // Lecture terminée (ou abandonnée) : la croix retire la position pour ne plus
-// la proposer. S'il reste une lecture récente, elle prend le relais.
+// la proposer, et la ligne s'en va. Une lecture plus ancienne ne prend pas le
+// relais : la bibliothèque ne propose que la dernière.
 function dismissResume() {
   const current = lastReading.value;
   if (!current) return;
-  readingProgressService.clearPosition(current.textId);
-  lastReading.value = readingProgressService.getLastPosition();
+  readingProgressService.dismissResume(current.textId);
+  lastReading.value = null;
   analyticsService.capture("reading_resume_dismissed", {
     text_id: current.textId,
     source: "library",
@@ -508,10 +509,10 @@ onMounted(() => {
   trackLibraryViewed();
   bookmarkCounts.value = readingProgressService.getBookmarkCounts();
   // Position locale tout de suite, affinée quand la synchro du compte aboutit.
-  lastReading.value = readingProgressService.getLastPosition();
+  lastReading.value = readingProgressService.getResumePosition();
   void readingProgressService.ensureSynced().then(() => {
     bookmarkCounts.value = readingProgressService.getBookmarkCounts();
-    lastReading.value = readingProgressService.getLastPosition();
+    lastReading.value = readingProgressService.getResumePosition();
   });
   unsubscribeAuth = authService.onAuthChanged((u) => {
     user.value = u;

@@ -87,7 +87,10 @@ Corollaire : ce qui ne propose plus rien s'efface au lieu de s'éteindre. La
 carte du tirage au sort disparaît quand tous les Tehilim sont pris, plutôt que
 d'offrir un bouton grisé. Dans « Je participe », la chaîne dépliée d'office est
 la première où il me reste à lire, pas la première de la liste : celle dont j'ai
-tout lu n'attend plus rien de moi.
+tout lu n'attend plus rien de moi. Et la ligne « Reprendre ma lecture » de la
+bibliothèque ne propose que la dernière : la refermer la fait disparaître, elle
+ne remonte pas l'historique texte par texte (chaque texte, lui, rouvre toujours
+là où on l'avait laissé).
 
 ### Deux pages, un jeu d'onglets
 
