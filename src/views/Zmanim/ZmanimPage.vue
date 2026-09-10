@@ -364,27 +364,23 @@ onMounted(() => {
       {{ t("zmanim.title") }}
     </h1>
 
-    <!-- Le lieu de calcul, sous le titre, centré comme lui. -->
-    <p class="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
-      <span class="flex items-center gap-1.5">
-        <AppIcon name="map-pin" :size="16" class="text-primary shrink-0" />
-        <span class="font-semibold text-text-primary">{{ placeLabel }}</span>
-      </span>
-      <span v-if="coordinates" class="text-sm text-text-secondary tabular-nums">
-        {{ coordinates }}
-      </span>
-    </p>
-
-    <!-- Les deux façons d'en changer : de vrais boutons, centrés sous le lieu.
-         En liens de petite taille, personne ne voyait qu'on pouvait les
-         toucher, et le pouce les manquait. -->
+    <!-- Le lieu de calcul et sa position, sur une ligne, centrés sous le
+         titre. Le nom de la ville EST le bouton qui ouvre la liste des villes :
+         c'est là qu'on cherche à cliquer, et un bouton « Choisir ma ville »
+         posé à côté du nom disait deux fois la même chose. Le chevron le dit,
+         comme sur toutes les listes de l'app. -->
     <div class="mt-3 flex flex-wrap items-center justify-center gap-2">
       <button
         type="button"
         class="btn btn-soft"
-        :disabled="status === 'loading'"
-        @click="locateMe"
+        :aria-label="t('zmanim.place.chooseCity')"
+        @click="pickerOpen = true"
       >
+        <AppIcon name="map-pin" :size="16" class="text-primary" />
+        <span class="font-semibold">{{ placeLabel }}</span>
+        <AppIcon name="chevron-down" :size="14" class="text-text-secondary" />
+      </button>
+      <button type="button" class="btn btn-soft" :disabled="status === 'loading'" @click="locateMe">
         <AppIcon
           :name="status === 'loading' ? 'spinner' : 'locate'"
           :size="16"
@@ -398,11 +394,14 @@ onMounted(() => {
               : t("zmanim.place.useMine")
         }}
       </button>
-      <button type="button" class="btn btn-soft" @click="pickerOpen = true">
-        <AppIcon name="search" :size="16" />
-        {{ t("zmanim.place.chooseCity") }}
-      </button>
     </div>
+
+    <!-- Les coordonnées, sous les deux boutons : elles disent d'où sortent les
+         horaires quand la position vient de l'appareil, elles n'ont pas à
+         allonger la ligne des commandes. -->
+    <p v-if="coordinates" class="mt-2 text-center text-sm text-text-secondary tabular-nums">
+      {{ coordinates }}
+    </p>
 
     <!-- Une seule ligne d'explication : ce que sont ces horaires, et ce qu'il
          advient de la position. Un refus prend sa place, il est plus urgent. -->
