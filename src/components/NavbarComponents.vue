@@ -32,11 +32,12 @@ function publishHeaderHeight(height: number) {
   document.documentElement.style.setProperty("--navbar-height", `${Math.round(height)}px`);
 }
 
-// Sur le web, le bandeau est transparent : il laisse voir le beige et le haut
-// de la page, et ne pèse rien tant qu'on est en tête. Dès que le contenu passe
-// dessous, il prend un fond translucide et flouté, sans quoi les titres de la
-// page se liraient à travers les liens. Le seuil est court : le fond arrive au
-// premier geste de défilement, pas à mi-page.
+// Le bandeau est transparent tant qu'on est en tête de page, téléphone
+// compris : un fond beige plein s'y voyait comme une bande posée sur le mur de
+// pierre du fond, avec une démarcation nette là où il s'arrêtait. Dès que le
+// contenu passe dessous, il prend un fond translucide et flouté, sans quoi les
+// titres de la page se liraient à travers les liens. Le seuil est court : le
+// fond arrive au premier geste de défilement, pas à mi-page.
 const scroll = useScrollFrame();
 const isScrolled = computed(() => scroll.value.scrollY > 4);
 
@@ -119,8 +120,8 @@ function goToLogin() {
     class="sticky top-0 z-50 flex items-center justify-between gap-4 px-4 py-2.5 md:px-6 md:py-4 transition-colors duration-300"
     :class="
       isScrolled
-        ? 'bg-bg-beige md:bg-bg-beige/80 md:backdrop-blur-md dark:bg-gray-900 md:dark:bg-gray-900/80'
-        : 'bg-bg-beige md:bg-transparent dark:bg-gray-900 md:dark:bg-transparent'
+        ? 'bg-bg-beige/85 backdrop-blur-md dark:bg-gray-900/85'
+        : 'bg-transparent'
     "
   >
     <!-- Pas un h1 : chaque page a le sien, le bandeau en doublait le titre

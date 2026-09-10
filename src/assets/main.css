@@ -406,9 +406,10 @@ button,
   }
   /* Rendu dégradé (perf-lite posé par useDevicePerf : rendu logiciel, petite
      machine, cadence mesurée mauvaise) : le flou de backdrop est re-rasterisé
-     au CPU à chaque frame, on le coupe pour la navbar (classe utilitaire
-     Tailwind, posée à partir de md: seulement, le bandeau mobile étant
-     opaque), son fond à 90 % d'opacité reste lisible sans lui. */
+     au CPU à chaque frame, on le coupe pour la navbar (les deux écritures de
+     la classe utilitaire, le bandeau la posant à toutes les largeurs depuis
+     qu'il est transparent en tête de page), son fond à 85 % d'opacité reste
+     lisible sans lui. */
   :root.perf-lite .backdrop-blur-md,
   :root.perf-lite .md\:backdrop-blur-md {
     backdrop-filter: none;
