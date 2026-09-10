@@ -97,6 +97,22 @@ const monthLabel = computed(() =>
   dateTimeFormat(locale.value, { month: "long", year: "numeric" }).format(cursor.value),
 );
 
+/**
+ * Le jour, en toutes lettres : « mardi 14 septembre 2026 ». C'est le nom que
+ * lit un lecteur d'écran sur la case, où il ne trouverait sinon qu'un chiffre
+ * sans mois ni année.
+ */
+function cellLabel(key: string): string {
+  const date = parse(key);
+  if (!date) return key;
+  return dateTimeFormat(locale.value, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
 /** La date retenue, en toutes lettres, en tête de la fenêtre. */
 const draftLabel = computed(() => {
   const date = parse(draft.value);
@@ -116,7 +132,11 @@ const weeks = computed(() => {
   const start = new Date(first.getFullYear(), first.getMonth(), 1 - offset);
   return Array.from({ length: 6 }, (_, week) =>
     Array.from({ length: 7 }, (_, day) => {
-      const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + week * 7 + day);
+      const date = new Date(
+        start.getFullYear(),
+        start.getMonth(),
+        start.getDate() + week * 7 + day,
+      );
       const key = localDayKey(date);
       return {
         key,
@@ -257,6 +277,7 @@ function confirm(): void {
             class="aspect-square rounded-pill text-sm transition-colors"
             :class="cellClass(cell)"
             :disabled="cell.disabled"
+            :aria-label="cellLabel(cell.key)"
             :aria-current="cell.today ? 'date' : undefined"
             @click="pickDay(cell.key, cell.disabled)"
           >

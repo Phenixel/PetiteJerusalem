@@ -8,7 +8,7 @@ import {
   tehilimId,
   uniqueId,
 } from "../support/firebase";
-import { gotoApp } from "../support/fixtures";
+import { chooseOption, gotoApp, pickDate } from "../support/fixtures";
 
 type Reservation = {
   id: string;
@@ -31,12 +31,12 @@ test.describe("chaînes de lecture", () => {
     const title = `Chaîne créée ${uniqueId()}`;
     await page.locator("#name").fill(title);
     await page.locator("#description").fill("Créée par la suite de bout en bout.");
-    await page.locator("#type").selectOption({ label: "Tehilim" });
+    await chooseOption(page, "type", "Tehilim");
     // Les cinq sefarim sont cochés par défaut : on ne garde que le premier.
     await page.getByLabel("Tout sélectionner").uncheck();
     await page.getByLabel("Sefer 1", { exact: true }).check();
     const tomorrow = new Date(Date.now() + 24 * 3600 * 1000).toISOString().slice(0, 10);
-    await page.locator("#dateLimit").fill(tomorrow);
+    await pickDate(page, "dateLimit", tomorrow);
     await page.getByRole("button", { name: "Créer la session" }).click();
 
     await expect(page).toHaveURL(/\/share-reading\/session\//, { timeout: 20_000 });

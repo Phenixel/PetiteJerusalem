@@ -99,3 +99,36 @@ export async function gotoApp(page: Page, path: string): Promise<void> {
   await page.goto(path);
   await page.locator("#app > *").first().waitFor();
 }
+
+/**
+ * Choisit une ligne dans une liste déroulante de la maison (AppSelect).
+ *
+ * Ce n'est plus un `<select>` du système : `selectOption` n'a pas de prise
+ * dessus, on ouvre le panneau et on touche la ligne, comme un lecteur.
+ */
+export async function chooseOption(page: Page, id: string, label: string): Promise<void> {
+  await page.locator(`#${id}`).click();
+  await page.getByRole("option", { name: label, exact: true }).click();
+}
+
+/**
+ * Choisit un jour dans un champ de date de la maison (AppDateField), à partir
+ * de sa valeur `YYYY-MM-DD`.
+ *
+ * Le calendrier montre six semaines, débordements des mois voisins compris :
+ * le lendemain y est toujours, même le dernier jour du mois. Les cases
+ * portent la date en toutes lettres, c'est par là qu'on la vise.
+ */
+export async function pickDate(page: Page, id: string, day: string): Promise<void> {
+  const [year, month, date] = day.split("-").map(Number);
+  const label = new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(year, month - 1, date));
+  await page.locator(`#${id}`).click();
+  const picker = page.getByRole("dialog");
+  await picker.getByRole("button", { name: label, exact: true }).click();
+  await picker.getByRole("button", { name: "Confirmer", exact: true }).click();
+}
