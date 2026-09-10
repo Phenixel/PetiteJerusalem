@@ -187,11 +187,12 @@ chkia est recalculée côté serveur dans `functions/src/sunsetReminder.ts`
 
 ## Rappels d'horaires (notifications locales)
 
-Posés depuis la page **Horaires**, en touchant l'horaire voulu (ou en faisant
-glisser sa ligne vers la droite, raccourci qui reprend le dernier délai
-choisi) ; comptés, réglés et coupés depuis l'onglet Préférences du profil. Le
-rappel de l'entrée du **Chabbat et des fêtes** est actif d'office, une heure
-avant l'allumage des bougies.
+Posés depuis la page **Horaires**, en touchant l'horaire voulu, ou en tirant sa
+ligne vers la droite : le geste franc pose ou retire le rappel avec le délai de
+la dernière fois, le geste retenu ouvre la ligne sur sa cloche (voir
+`docs/design.md`). Ils se comptent et se coupent depuis l'onglet
+**Notifications** du profil, où vit aussi le rappel de l'entrée du **Chabbat et
+des fêtes**, actif d'office, une heure avant l'allumage des bougies.
 
 Rien ne passe par un serveur, contrairement au rappel de lecture : un horaire
 se calcule sur l'appareil, la notification est donc programmée sur l'appareil

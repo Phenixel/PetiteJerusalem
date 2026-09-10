@@ -7,19 +7,20 @@
  * qu'on se dit « celui-là, il faudrait qu'on me le rappelle » :
  *
  *  - la toucher ouvre le réglage du rappel (combien de minutes avant) ;
- *  - la faire glisser vers la droite pose ou retire le rappel d'un geste,
- *    avec le délai de la dernière fois : le raccourci de qui sait déjà ;
+ *  - la tirer vers la droite découvre un fond de la couleur du thème, avec
+ *    une cloche. Le geste franc, jusqu'au bout, pose ou retire le rappel sans
+ *    rien demander ; le geste retenu laisse la ligne ouverte sur sa cloche,
+ *    qu'on touche alors pour ouvrir les réglages ;
  *  - un rappel posé se voit à un petit triangle plein dans l'angle de la
  *    ligne, du côté de l'heure. Une cloche posée dans le texte aurait mangé
  *    la place du nom sur un téléphone, et une ligne sur deux marquée aurait
  *    fait une colonne d'icônes ; l'angle, lui, ne prend la place de rien et
  *    se repère d'un coup d'oeil en parcourant la liste.
  *
- * Le glissement ne valide qu'au relâcher, passé la moitié de la course : on
- * peut donc l'essayer, voir ce qu'il propose, et revenir en arrière sans rien
- * changer.
+ * Rien ne se valide avant le relâcher : on peut tirer la ligne, voir ce
+ * qu'elle propose, et la laisser revenir sans rien changer.
  */
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import type { ZmanTime } from "../../services/zmanimService";
@@ -34,13 +35,17 @@ const props = defineProps<{
   minutesBefore: number | null;
   /** Les rappels n'existent que dans l'app native. */
   canRemind: boolean;
+  /** La ligne est ouverte sur sa cloche (une seule à la fois dans la liste). */
+  expanded: boolean;
 }>();
 
 const emit = defineEmits<{
-  /** La ligne est touchée : ouvrir le réglage du rappel. */
+  /** Ouvrir le réglage du rappel. */
   (e: "open"): void;
-  /** Le glissement est allé au bout : poser ou retirer le rappel. */
+  /** Le geste est allé au bout : poser ou retirer le rappel. */
   (e: "toggle"): void;
+  /** La ligne s'ouvre sur sa cloche, ou se referme. */
+  (e: "update:expanded", value: boolean): void;
 }>();
 
 const { t } = useI18n();
@@ -54,31 +59,56 @@ const reminderLabel = computed(() => {
     : t("zmanim.reminder.before", { minutes: props.minutesBefore });
 });
 
-/** Ce que le glissement révèle, et ce qu'il fera s'il va au bout. */
+/**
+ * Ce que fait la cloche découverte : elle ouvre les réglages. C'est son
+ * dessin, cloche ou cloche barrée, qui annonce ce que le geste franc ferait ;
+ * l'étiquette, elle, décrit le toucher, seul geste que le clavier et les
+ * lecteurs d'écran atteignent.
+ */
 const actionLabel = computed(() =>
-  hasReminder.value ? t("zmanim.reminder.quickOff") : t("zmanim.reminder.quickOn"),
+  t("zmanim.reminder.openAria", { name: t(`zmanim.names.${props.zman.key}`) }),
 );
 
-/**
- * Largeur de la zone révélée, et course au-delà de laquelle le geste vaut.
- * La zone est un peu plus large que ce qu'elle porte : le libellé est entier
- * bien avant le seuil, on sait donc ce qu'on déclenche avant de relâcher.
- */
-const REVEAL = 104;
-const THRESHOLD = 56;
-/** En deçà, on ne sait pas encore si le doigt défile ou s'il glisse. */
+/** Où la ligne s'ancre quand le geste s'arrête en chemin. */
+const REVEAL = 84;
+/** Au-delà, le relâcher ouvre la ligne au lieu de la laisser revenir. */
+const OPEN_THRESHOLD = 28;
+/** Part de la largeur de la ligne au-delà de laquelle le geste bascule seul. */
+const COMMIT_RATIO = 0.5;
+/** En deçà, on ne sait pas encore si le doigt défile ou s'il tire la ligne. */
 const AXIS_SLOP = 8;
 
-const shift = ref(0);
+const row = ref<HTMLElement | null>(null);
+const shift = ref(props.expanded ? REVEAL : 0);
 const sliding = ref(false);
 
 let startX = 0;
 let startY = 0;
 let axis: "none" | "x" | "y" = "none";
-/** Direction du glissement « vers l'avant » : à gauche quand la page est en hébreu. */
+/** Direction du geste « vers l'avant » : à gauche quand la page est en hébreu. */
 let direction = 1;
-/** Un glissement vient d'avoir lieu : le clic qui le suit n'ouvre rien. */
-let dragged = false;
+/**
+ * Fin du dernier geste. Le relâchement produit aussi un clic, qui ne doit
+ * rien ouvrir ; un simple drapeau ne suffisait pas, il restait levé et
+ * avalait le VRAI appui suivant, celui de la cloche qu'on vient de découvrir.
+ */
+let dragEndedAt = 0;
+const CLICK_AFTER_DRAG_MS = 400;
+
+const fromDrag = () => Date.now() - dragEndedAt < CLICK_AFTER_DRAG_MS;
+
+// La liste n'ouvre qu'une ligne : celle qu'on vient d'ouvrir referme l'autre.
+watch(
+  () => props.expanded,
+  (open) => {
+    if (!sliding.value) shift.value = open ? REVEAL : 0;
+  },
+);
+
+/** La course au-delà de laquelle le relâcher bascule le rappel. */
+function commitDistance(): number {
+  return (row.value?.offsetWidth ?? 320) * COMMIT_RATIO;
+}
 
 function onTouchStart(event: TouchEvent): void {
   if (!props.canRemind || event.touches.length !== 1) return;
@@ -86,45 +116,67 @@ function onTouchStart(event: TouchEvent): void {
   startX = touch.clientX;
   startY = touch.clientY;
   axis = "none";
-  dragged = false;
   direction = document.documentElement.dir === "rtl" ? -1 : 1;
 }
 
 function onTouchMove(event: TouchEvent): void {
   if (!props.canRemind || event.touches.length !== 1) return;
   const touch = event.touches[0];
-  const dx = (touch.clientX - startX) * direction;
+  const from = props.expanded ? REVEAL : 0;
+  const dx = (touch.clientX - startX) * direction + from;
   const dy = touch.clientY - startY;
   if (axis === "none") {
-    if (Math.abs(dx) < AXIS_SLOP && Math.abs(dy) < AXIS_SLOP) return;
-    // Le premier mouvement franc décide : la page défile, ou la ligne glisse.
+    if (Math.abs(dx - from) < AXIS_SLOP && Math.abs(dy) < AXIS_SLOP) return;
+    // Le premier mouvement franc décide : la page défile, ou la ligne suit.
     // Sans cet arbitrage, un défilement du pouce ouvrait les lignes au passage.
-    axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+    axis = Math.abs(dx - from) > Math.abs(dy) ? "x" : "y";
   }
   if (axis !== "x") return;
   // La page ne doit pas défiler pendant que la ligne suit le doigt.
   event.preventDefault();
   sliding.value = true;
-  dragged = true;
-  shift.value = Math.max(0, Math.min(REVEAL, dx));
+  // La ligne ne va pas plus loin que sa propre largeur : au-delà, elle
+  // quitterait l'écran sans que le geste dise rien de plus.
+  shift.value = Math.max(0, Math.min(row.value?.offsetWidth ?? Infinity, dx));
 }
 
 function onTouchEnd(): void {
-  const commit = shift.value >= THRESHOLD;
-  shift.value = 0;
+  if (!sliding.value) return;
+  const travelled = shift.value;
   sliding.value = false;
+  dragEndedAt = Date.now();
+  if (travelled >= commitDistance()) {
+    // Geste franc : la ligne se referme sur son résultat, sans rien demander.
+    settle(false);
+    emit("toggle");
+    return;
+  }
+  settle(travelled >= OPEN_THRESHOLD);
+}
+
+/** Range la ligne : ouverte sur sa cloche, ou refermée. */
+function settle(open: boolean): void {
   axis = "none";
-  if (commit) emit("toggle");
+  shift.value = open ? REVEAL : 0;
+  if (open !== props.expanded) emit("update:expanded", open);
 }
 
 function onClick(): void {
-  if (!props.canRemind) return;
-  // Le relâchement d'un glissement produit aussi un clic : il ne doit pas
-  // ouvrir la fenêtre par-dessus le rappel qu'on vient de poser.
-  if (dragged) {
-    dragged = false;
+  if (!props.canRemind || fromDrag()) return;
+  // Ligne ouverte : la toucher la referme, comme on repousse un tiroir.
+  if (props.expanded) {
+    settle(false);
     return;
   }
+  emit("open");
+}
+
+/** La cloche découverte par le geste : elle ouvre les réglages. */
+function onAction(): void {
+  // Le clic né du relâchement peut atterrir ici quand le doigt a fini
+  // au-dessus du fond découvert : il n'ouvre rien.
+  if (fromDrag()) return;
+  settle(false);
   emit("open");
 }
 
@@ -132,7 +184,23 @@ const transform = computed(() => `translateX(${shift.value * direction}px)`);
 </script>
 
 <template>
-  <li class="relative overflow-hidden">
+  <li ref="row" class="relative overflow-hidden">
+    <!-- Le fond de l'action, aussi large que la ligne et posé juste avant
+         elle : il n'entre dans le cadre qu'à mesure qu'on tire, et la cloche,
+         rangée de son côté, reste collée au bord de la ligne. -->
+    <button
+      v-if="canRemind"
+      type="button"
+      class="absolute inset-y-0 end-full flex w-full items-center justify-end bg-primary pe-5 text-white"
+      :style="{ transform, transition: sliding ? 'none' : 'transform 0.2s ease' }"
+      :tabindex="expanded ? 0 : -1"
+      :aria-hidden="!expanded"
+      :aria-label="actionLabel"
+      @click="onAction"
+    >
+      <AppIcon :name="hasReminder ? 'bell-off' : 'bell'" :size="20" />
+    </button>
+
     <!-- `touch-pan-y` : le défilement vertical reste au navigateur, l'axe
          horizontal revient à la ligne, sans quoi le geste part en défilement
          de la page avant que le premier mouvement ne soit arbitré. -->
@@ -145,18 +213,6 @@ const transform = computed(() => `translateX(${shift.value * direction}px)`);
       @touchend="onTouchEnd"
       @touchcancel="onTouchEnd"
     >
-      <!-- L'action révélée par le glissement, posée juste avant le bord de la
-           ligne : elle n'entre dans le cadre que si l'on tire dessus. -->
-      <span
-        v-if="canRemind"
-        aria-hidden="true"
-        class="absolute inset-y-0 end-full flex items-center justify-end gap-1.5 pe-3 text-sm font-semibold text-primary"
-        :style="{ width: `${REVEAL}px` }"
-      >
-        <AppIcon name="bell" :size="16" class="shrink-0" />
-        {{ actionLabel }}
-      </span>
-
       <!-- Le repère du rappel : un triangle plein dans l'angle de la ligne. -->
       <span
         v-if="hasReminder"

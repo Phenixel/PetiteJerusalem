@@ -145,19 +145,29 @@ adresses).
 ### Une ligne de liste peut devenir une commande
 
 Dans l'app, une ligne d'horaire n'est plus seulement du texte : la toucher pose
-un rappel, la faire glisser vers la droite le pose ou le retire d'un geste
-(voir `ZmanRow.vue`). Sur le site, la même ligne reste du texte : il n'y a rien
-à programmer dans un navigateur, et une commande qui ne mène nulle part serait
-pire que pas de commande du tout.
+un rappel, la tirer vers la droite découvre un fond de la couleur du thème
+portant une cloche (voir `ZmanRow.vue`). Sur le site, la même ligne reste du
+texte : il n'y a rien à programmer dans un navigateur, et une commande qui ne
+mène nulle part serait pire que pas de commande du tout.
 
-Trois règles en découlent, valables pour toute liste qui s'anime ainsi.
+Quatre règles en découlent, valables pour toute liste qui s'anime ainsi.
 
-Le geste se valide au relâcher, passé la moitié de sa course. On peut donc
-tirer une ligne, voir ce qu'elle propose, et revenir sans rien changer ;
-l'action apparaît par le bord, elle ne surgit pas sous le doigt.
+Le geste a trois issues, et c'est le doigt qui choisit laquelle. Retenu, il
+laisse la ligne revenir. Arrêté en chemin, il l'ouvre sur sa cloche, qu'on
+touche alors pour ouvrir les réglages : on a le temps de lire ce qu'on
+déclenche. Poussé franchement, au-delà de la moitié de la ligne, il agit seul
+et la ligne se referme sur son résultat, annoncé par un toast. Le raccourci
+récompense l'assurance sans piéger l'hésitation.
+
+Le fond découvert est plein, de la couleur du thème, et il vient de derrière
+la ligne : il n'y a ni cadre ni surface intermédiaire, la ligne se déplace et
+laisse voir ce qui l'attendait. La cloche reste collée au bord de la ligne,
+elle avance avec elle plutôt que d'apparaître d'un coup.
 
 Le premier mouvement franc arbitre entre défiler et glisser. Sans cet
-arbitrage, un pouce qui parcourt la page ouvrait les lignes au passage.
+arbitrage, un pouce qui parcourt la page ouvrait les lignes au passage. Et une
+seule ligne reste ouverte à la fois, sinon la liste se couvre de tiroirs
+entrouverts.
 
 Ce qu'un geste a produit se voit sans être lu. Un rappel posé marque sa ligne
 d'un petit triangle plein dans l'angle, du côté de l'heure : une cloche posée

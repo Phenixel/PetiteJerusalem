@@ -36,6 +36,9 @@ export const ICONS = {
   bell: {
     body: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   },
+  "bell-off": {
+    body: '<path d="M8.7 3A6 6 0 0 1 18 8c0 2.7.4 4.4.9 5.5"/><path d="M17 17H3s3-2 3-9a4.7 4.7 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/>',
+  },
   check: { body: '<path d="M20 6 9 17l-5-5"/>' },
   "check-double": {
     body: '<path d="M18 6 7 17l-4-4"/><path d="m22 10-7.5 7.5L13 16"/>',

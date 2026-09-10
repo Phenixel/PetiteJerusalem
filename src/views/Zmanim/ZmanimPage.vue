@@ -37,6 +37,7 @@ import {
   tachanunStatus,
   type City,
   type ZmanimPlace,
+  type ZmanKey,
   nextZman,
   ZMAN_PERIODS,
   type ZmanPeriod,
@@ -179,6 +180,16 @@ const toast = useToast();
 const { reminderFor, setReminder, clearReminder, lastMinutes, restEnabled } = useZmanReminders();
 const reminderZman = ref<ZmanTime | null>(null);
 const reminderOpen = ref(false);
+/**
+ * La ligne restée ouverte sur sa cloche, quand le geste s'est arrêté en
+ * chemin. Une seule à la fois : ouvrir la suivante referme la précédente,
+ * sinon la liste se couvrait de tiroirs entrouverts.
+ */
+const expandedZman = ref<ZmanKey | null>(null);
+
+function expandRow(zman: ZmanTime, open: boolean): void {
+  expandedZman.value = open ? zman.key : null;
+}
 
 /** Le délai posé sur un horaire, ou null : c'est lui que porte le triangle. */
 const reminderMinutes = (zman: ZmanTime) =>
@@ -187,6 +198,7 @@ const reminderMinutes = (zman: ZmanTime) =>
 const zmanName = (zman: ZmanTime) => t(`zmanim.names.${zman.key}`);
 
 function openReminder(zman: ZmanTime): void {
+  expandedZman.value = null;
   reminderZman.value = zman;
   reminderOpen.value = true;
 }
@@ -597,8 +609,10 @@ onMounted(() => {
           :is-next="isNext(zman)"
           :minutes-before="reminderMinutes(zman)"
           :can-remind="isNativeApp"
+          :expanded="expandedZman === zman.key"
           @open="openReminder(zman)"
           @toggle="quickToggle(zman)"
+          @update:expanded="expandRow(zman, $event)"
         />
       </ul>
     </section>

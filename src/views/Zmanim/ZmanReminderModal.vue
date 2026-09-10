@@ -162,23 +162,28 @@ function remove(): void {
         {{ t("zmanim.reminder.dailyNote", { place: placeLabel }) }}
       </p>
 
-      <div class="flex items-center justify-end gap-3 pt-6">
+      <!-- Retirer sur sa propre ligne : les trois commandes côte à côte ne
+           tiennent pas sur un écran de téléphone, et « Confirmer » finissait
+           par tomber seul sous les deux autres. -->
+      <div class="flex flex-col gap-3 pt-6">
         <button
           v-if="existing"
           type="button"
-          class="btn btn-soft me-auto text-primary"
+          class="btn btn-soft self-start text-primary"
           @click="remove"
         >
           <AppIcon name="trash" :size="14" />
           {{ t("zmanim.reminder.remove") }}
         </button>
-        <button type="button" class="btn btn-soft" @click="close">
-          {{ t("common.cancel") }}
-        </button>
-        <button type="button" class="btn btn-primary" @click="confirm">
-          <AppIcon name="check" :size="14" />
-          {{ t("common.confirm") }}
-        </button>
+        <div class="flex justify-end gap-3">
+          <button type="button" class="btn btn-soft" @click="close">
+            {{ t("common.cancel") }}
+          </button>
+          <button type="button" class="btn btn-primary" @click="confirm">
+            <AppIcon name="check" :size="14" />
+            {{ t("common.confirm") }}
+          </button>
+        </div>
       </div>
     </div>
   </div>

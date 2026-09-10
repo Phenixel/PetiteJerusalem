@@ -3,15 +3,15 @@
  * Les rappels d'horaires, vus depuis les réglages.
  *
  * Ils se posent sur la page Horaires, là où l'on regarde l'heure qui vient ;
- * cette page-ci est celle où l'on fait le compte de ce qu'on a posé, où l'on
+ * cet onglet-ci est celui où l'on fait le compte de ce qu'on a posé, où l'on
  * coupe le rappel du Chabbat, et où l'on voit ce que le système bloque encore.
  *
- * App native seulement : une notification est programmée par le téléphone
- * (voir zmanReminderService), un navigateur n'a rien à programmer.
+ * C'est l'appelant qui décide de l'afficher : l'onglet Notifications du profil
+ * n'existe que dans l'app native, un navigateur n'ayant rien à programmer
+ * (voir zmanReminderService).
  */
 import { computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
-import { isNativeApp } from "../../composables/useNativeApp";
 import {
   ensureNotificationPermission,
   openExactAlarmSetting,
@@ -46,7 +46,7 @@ function delayLabel(minutes: number): string {
 </script>
 
 <template>
-  <section v-if="isNativeApp">
+  <section>
     <h2 class="mb-2 text-2xl font-bold text-text-primary">
       {{ t("zmanim.reminder.settingsTitle") }}
     </h2>
