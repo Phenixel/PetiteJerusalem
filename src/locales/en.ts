@@ -421,6 +421,7 @@ const en: LocaleMessages = {
   },
   calendar: {
     title: "Holiday calendar",
+    navTitle: "Calendar",
     link: "Holiday calendar",
     description:
       "The festivals and fasts of the year, with candle lighting and end times for your location.",

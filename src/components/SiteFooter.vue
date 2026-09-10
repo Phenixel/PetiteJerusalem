@@ -16,6 +16,11 @@
       <RouterLink class="hover:text-primary transition-colors" :to="localePath('horaires')">{{
         t("zmanim.navTitle")
       }}</RouterLink>
+      <!-- Le pied de page a la place d'écrire « Calendrier des fêtes » en
+           entier, là où le bandeau et l'onglet de l'app disent « Calendrier ». -->
+      <RouterLink class="hover:text-primary transition-colors" :to="localePath('calendrier')">{{
+        t("calendar.link")
+      }}</RouterLink>
       <RouterLink class="hover:text-primary transition-colors" :to="localePath('finirLeChass')">{{
         t("footer.finishChass")
       }}</RouterLink>

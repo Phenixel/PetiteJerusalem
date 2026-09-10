@@ -66,23 +66,43 @@ titre, sans la phrase de présentation : l'écran est étroit, la barre du bas
 attend juste en dessous, et on sait ce qu'est la bibliothèque quand on a
 installé l'app. La phrase sert au visiteur du site, pas à l'habitué.
 
-### Deux pages, un onglet : la bibliothèque dans l'app
+### Deux pages, un jeu d'onglets
 
-La barre du bas de l'app tient quatre onglets, pas un de plus. Le partage de
-lectures n'en a donc pas, et il n'était atteignable que par l'accueil, alors
-que le site le donne d'un clic depuis son bandeau. Il est devenu le second
-onglet de la bibliothèque (`LibraryTabs.vue`, app native seulement) : lire un
-texte, ou se le répartir à plusieurs, deux façons d'aborder les mêmes textes.
+La barre du bas de l'app tient quatre onglets, pas un de plus. Des pages qui
+vont ensemble n'y ont donc pas toutes leur place, et elles finissaient
+introuvables : le partage de lectures n'était atteignable que par l'accueil, le
+calendrier des fêtes par un petit lien perdu sous le titre des horaires. Elles
+se rangent deux par deux, là où l'on est déjà (`PageTabs.vue`, app native
+seulement) :
+
+- **Lecture** et **Partage**, en tête de la bibliothèque : lire un texte, ou se
+  le répartir à plusieurs ;
+- **Horaires** et **Calendrier** : les horaires du jour, ou les fêtes de
+  l'année.
+
+Sur le site, ces onglets ne servent pas : le bandeau y mène d'un clic (le
+calendrier des fêtes y a son entrée depuis).
 
 Deux règles y tiennent :
 
 - ce sont deux **vraies pages**, pas deux panneaux. Chacune garde son adresse,
   donc son lien partageable, son retour Android et sa reprise de défilement ;
   l'onglet ne fait que les relier.
-- les onglets **tiennent lieu de titre** sur ces deux pages. « Lecture »
-  au-dessus de « Bibliothèque » disait deux fois la même chose et coûtait deux
-  lignes en haut d'un écran de téléphone ; le `h1` reste, en `sr-only`, pour
-  les lecteurs d'écran.
+- les onglets **tiennent lieu de titre** sur ces pages. « Lecture » au-dessus
+  de « Bibliothèque » disait deux fois la même chose et coûtait deux lignes en
+  haut d'un écran de téléphone ; le `h1` reste, en `sr-only`, pour les lecteurs
+  d'écran.
+
+### Un titre de page est centré
+
+Sur le site comme dans l'app, le titre d'une page est centré, et ce qui le
+sert (le lieu de calcul des horaires, une phrase d'explication) reste centré
+sous lui. Une page qui alignait son titre à gauche pendant que les autres le
+centraient donnait l'impression d'avoir été oubliée.
+
+Les commandes qui l'accompagnent sont de vrais boutons (`btn`), centrés à leur
+tour : en petits liens colorés, sur un téléphone, personne ne voyait qu'on
+pouvait les toucher, et le pouce les manquait.
 
 Dans la barre du bas, c'est l'onglet Bibliothèque qui reste allumé sur tout le
 partage, comme sur les pages d'un corpus (`activeOn` dans `BottomTabBar.vue`,

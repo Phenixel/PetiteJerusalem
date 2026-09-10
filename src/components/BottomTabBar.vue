@@ -44,7 +44,7 @@ const { localePath } = useLocalePath();
 // distinctes, l'onglet s'éteignait donc dès qu'on ouvrait un corpus, alors
 // qu'on est toujours dans la bibliothèque. Le partage de lectures est dans le
 // même cas, à plus forte raison depuis qu'il est le second onglet de la
-// bibliothèque (voir LibraryTabs) : il n'a pas d'onglet à lui dans la barre.
+// bibliothèque (voir PageTabs) : il n'a pas d'onglet à lui dans la barre.
 type Tab = {
   to: string;
   icon: IconName;

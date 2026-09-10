@@ -402,6 +402,7 @@ const he: LocaleMessages = {
   },
   calendar: {
     title: "לוח החגים",
+    navTitle: "לוח שנה",
     link: "לוח החגים",
     description: "חגי השנה והצומות, עם זמני הדלקת הנרות והיציאה למיקום שלכם.",
     year: "שנת {year}",

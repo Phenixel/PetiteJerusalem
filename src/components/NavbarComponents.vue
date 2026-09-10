@@ -52,6 +52,10 @@ const navLinks = computed(() => [
   { to: "/bibliotheque", labelKey: "study.title", exact: true },
   { to: "/chiourim", labelKey: "common.chiourim", exact: true },
   { to: localePath("horaires"), labelKey: "zmanim.navTitle", exact: true },
+  // Le calendrier des fêtes n'avait qu'un lien discret sous le titre des
+  // horaires, que personne ne trouvait. L'app en fait un onglet (PageTabs),
+  // le site une entrée de bandeau.
+  { to: localePath("calendrier"), labelKey: "calendar.navTitle", exact: true },
 ]);
 
 function toggleMobileMenu() {

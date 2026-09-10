@@ -17,7 +17,8 @@ import {
   type Corpus,
 } from "../content/etudeTexts";
 import { isNativeApp } from "../composables/useNativeApp";
-import LibraryTabs from "../components/LibraryTabs.vue";
+import PageTabs from "../components/PageTabs.vue";
+import { LIBRARY_TABS } from "../config/pageTabs";
 import {
   downloadBook,
   downloadingPaths,
@@ -568,7 +569,12 @@ onUnmounted(() => {
           class="text-center animate-[fadeIn_0.5s_ease]"
           :class="isNativeApp ? 'mb-6' : 'mb-6 md:mb-10'"
         >
-          <LibraryTabs v-if="isNativeApp" />
+          <PageTabs
+            v-if="isNativeApp"
+            :tabs="LIBRARY_TABS"
+            event="library_tab_switched"
+            :label="t('study.title')"
+          />
           <h1
             class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight pb-1"
             :class="isNativeApp ? 'sr-only' : ''"

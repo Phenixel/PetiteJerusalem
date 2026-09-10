@@ -432,6 +432,8 @@ const fr = {
   },
   calendar: {
     title: "Calendrier des fêtes",
+    /* Court : l'onglet de l'app et l'entrée du bandeau du site. */
+    navTitle: "Calendrier",
     link: "Calendrier des fêtes",
     description:
       "Les fêtes et les jeûnes de l\u2019année, avec l\u2019heure d\u2019allumage et l\u2019heure de sortie pour votre position.",
@@ -1194,7 +1196,7 @@ const fr = {
   study: {
     title: "Bibliothèque",
     /* Onglets en tête de la bibliothèque, app native seulement : lire un texte
-       ou se le répartir à plusieurs (voir LibraryTabs.vue). */
+       ou se le répartir à plusieurs (voir PageTabs.vue). */
     tabs: {
       reading: "Lecture",
       sharing: "Partage",

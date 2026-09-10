@@ -21,7 +21,8 @@ import { authService, type User } from "../../services/authService";
 import { analyticsService } from "../../services/analyticsService";
 import { moderationService } from "../../services/moderationService";
 import { isNativeApp } from "../../composables/useNativeApp";
-import LibraryTabs from "../../components/LibraryTabs.vue";
+import PageTabs from "../../components/PageTabs.vue";
+import { LIBRARY_TABS } from "../../config/pageTabs";
 import { liveValue } from "../../composables/liveInput";
 import { useSessionEditing, type SessionEditData } from "../../composables/useSessionEditing";
 import { SITE_URL } from "../../config/site";
@@ -265,8 +266,13 @@ const handleCreateClick = () => {
   <main class="mx-auto px-6 py-12">
     <div class="animate-[fadeIn_0.5s_ease] text-center" :class="isNativeApp ? 'mb-8' : 'mb-16'">
       <!-- App native : le partage est le second onglet de la bibliothèque, et
-           les onglets tiennent lieu de titre (voir LibraryTabs). -->
-      <LibraryTabs v-if="isNativeApp" />
+           les onglets tiennent lieu de titre (voir PageTabs). -->
+      <PageTabs
+        v-if="isNativeApp"
+        :tabs="LIBRARY_TABS"
+        event="library_tab_switched"
+        :label="t('study.title')"
+      />
       <!-- Le seul h1 de la page. -->
       <h1
         class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight"
