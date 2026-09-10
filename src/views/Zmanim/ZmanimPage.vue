@@ -21,7 +21,7 @@ import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
 import { useZmanCountdown } from "../../composables/useZmanCountdown";
 import { useNow } from "../../composables/useNow";
 import { dateTimeFormat } from "../../services/intlCache";
-import { localDayKey } from "../../services/dateService";
+import { localDayFrom, localDayKey } from "../../services/dateService";
 import { getParashaForShabbat } from "../../services/dailyCycles";
 import {
   candleLightingMinutes,
@@ -52,6 +52,7 @@ import RestTimes from "./RestTimes.vue";
 const CityPicker = defineAsyncComponent(() => import("./CityPicker.vue"));
 import AppIcon from "../../components/icons/AppIcon.vue";
 import PageTabs from "../../components/PageTabs.vue";
+import { zmanimTabs } from "../../config/pageTabs";
 import DayPicker from "../../components/DayPicker.vue";
 import { useLocalePath } from "../../composables/useLocalePath";
 
@@ -64,10 +65,7 @@ const { localePath } = useLocalePath();
  * titre, que personne ne voyait ; la barre du bas, elle, est pleine. Les
  * adresses sont traduites, elles se construisent donc ici (voir PageTabs).
  */
-const zmanimTabs = computed(() => [
-  { id: "times", to: localePath("horaires"), labelKey: "zmanim.navTitle" },
-  { id: "calendar", to: localePath("calendrier"), labelKey: "calendar.navTitle" },
-]);
+const tabs = computed(() => zmanimTabs(localePath));
 
 const { t, locale } = useI18n();
 const location = useZmanimLocation();
@@ -106,9 +104,8 @@ const dayPickerOpen = ref(false);
 const dayKey = computed({
   get: () => localDayKey(day.value),
   set: (key: string) => {
-    const [year, month, dayOfMonth] = key.split("-").map(Number);
-    if (!year || !month || !dayOfMonth) return;
-    const picked = new Date(year, month - 1, dayOfMonth);
+    const picked = localDayFrom(key);
+    if (!picked) return;
     const today = new Date(now.value.getFullYear(), now.value.getMonth(), now.value.getDate());
     // Arrondi : les changements d'heure font des journées de 23 ou 25 heures.
     dayOffset.value = Math.round((picked.getTime() - today.getTime()) / 86_400_000);
@@ -352,7 +349,7 @@ onMounted(() => {
          le site, c'est le bandeau qui mène au calendrier. -->
     <PageTabs
       v-if="isNativeApp"
-      :tabs="zmanimTabs"
+      :tabs="tabs"
       event="zmanim_tab_switched"
       :label="t('zmanim.navTitle')"
     />

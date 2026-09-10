@@ -28,6 +28,7 @@ import { findFestivalBySlug, type SeoFestival } from "../../content/zmanimFestiv
 import { isSectionPath, localeOfPath, sectionPath, type SeoLocale } from "../../content/seoLocales";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import PageTabs from "../../components/PageTabs.vue";
+import { zmanimTabs } from "../../config/pageTabs";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useLocalePath } from "../../composables/useLocalePath";
 
@@ -35,10 +36,7 @@ import { useLocalePath } from "../../composables/useLocalePath";
 const { localePath } = useLocalePath();
 
 /** Les deux onglets de l'app : les horaires du jour, le calendrier de l'année. */
-const zmanimTabs = computed(() => [
-  { id: "times", to: localePath("horaires"), labelKey: "zmanim.navTitle" },
-  { id: "calendar", to: localePath("calendrier"), labelKey: "calendar.navTitle" },
-]);
+const tabs = computed(() => zmanimTabs(localePath));
 
 const { t, locale } = useI18n();
 const { place } = useZmanimLocation();
@@ -261,7 +259,7 @@ onMounted(() => {
          bandeau y mène, et le lien de retour reste. -->
     <PageTabs
       v-if="isNativeApp"
-      :tabs="zmanimTabs"
+      :tabs="tabs"
       event="zmanim_tab_switched"
       :label="t('zmanim.navTitle')"
     />

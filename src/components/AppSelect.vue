@@ -46,7 +46,9 @@ const activeIndex = ref(-1);
 /**
  * Identifiants des lignes : ils ne servent qu'à `aria-activedescendant`, qui
  * dit au lecteur d'écran quelle ligne le clavier a atteinte. Sans eux, les
- * flèches déplaçaient une surbrillance dont il n'annonçait rien.
+ * flèches déplaçaient une surbrillance dont il n'annonçait rien. C'est aussi
+ * pourquoi le champ porte `role="combobox"` : sur un simple bouton, l'attribut
+ * n'a pas cours et rien n'est annoncé.
  */
 const listId = `select-${Math.random().toString(36).slice(2, 9)}`;
 const optionId = (index: number) => `${listId}-${index}`;
@@ -66,12 +68,21 @@ function show(): void {
   activeIndex.value = index === -1 ? 0 : index;
   // Après le rendu du panneau : sans cela, le clic qui vient de l'ouvrir
   // serait lui-même pris pour un clic « à côté » et le refermerait aussitôt.
-  void nextTick(() => document.addEventListener("pointerdown", onPointerDown, true));
+  // Le garde-fou `alive` évite d'accrocher l'écouteur à un composant démonté
+  // entre-temps (une barre qui disparaît sous le panneau ouvert) : personne ne
+  // le retirerait plus.
+  void nextTick(() => {
+    if (alive) document.addEventListener("pointerdown", onPointerDown, true);
+  });
 }
 
 function close({ keepFocus = false } = {}): void {
   if (!open.value) return;
   open.value = false;
+  // Remise à zéro : sans elle, rouvrir sur la même ligne ne déclenchait plus
+  // la surveillance qui la fait défiler dans le panneau, et une liste longue
+  // rouvrait en haut, le choix courant hors de vue.
+  activeIndex.value = -1;
   document.removeEventListener("pointerdown", onPointerDown, true);
   // Le clavier revient au champ : la ligne choisie vient de disparaître avec
   // le panneau, et sans cela le focus retombait sur <body>, d'où la
@@ -93,10 +104,17 @@ function onPointerDown(event: PointerEvent): void {
   if (!root.value?.contains(event.target as Node)) close();
 }
 
-/** Le clavier quitte la commande (Tab) : le panneau se referme avec lui. */
+/**
+ * Le clavier quitte la commande (Tab) : le panneau se referme avec lui.
+ *
+ * Seulement si le focus va quelque part : Safari et le WebView d'iOS ne
+ * donnent pas le focus au clic, si bien qu'appuyer sur une ligne produit un
+ * `focusout` sans destination. Fermer là-dessus escamotait la ligne avant que
+ * le clic ne l'atteigne. Le clic à côté, lui, est déjà couvert.
+ */
 function onFocusOut(event: FocusEvent): void {
   const next = event.relatedTarget as Node | null;
-  if (!next || !root.value?.contains(next)) close();
+  if (next && !root.value?.contains(next)) close();
 }
 
 /**
@@ -128,12 +146,25 @@ function onEnter(): void {
   if (option) pick(option);
 }
 
-function onEscape(): void {
+/**
+ * Échap referme le panneau, et s'arrête là : sans quoi la touche continuait sa
+ * route jusqu'à la fenêtre modale qui héberge le formulaire, et la refermait
+ * avec ce qu'on venait d'y écrire.
+ */
+function onEscape(event: KeyboardEvent): void {
+  if (!open.value) return;
+  event.stopPropagation();
   close({ keepFocus: true });
 }
 
+/** Faux dès le démontage : voir l'écouteur différé de `show`. */
+let alive = true;
+
 useOverlay(open, close);
-onBeforeUnmount(() => document.removeEventListener("pointerdown", onPointerDown, true));
+onBeforeUnmount(() => {
+  alive = false;
+  document.removeEventListener("pointerdown", onPointerDown, true);
+});
 </script>
 
 <template>
@@ -148,6 +179,7 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", onPointerDown,
         model === '' ? 'text-text-secondary' : '',
       ]"
       :disabled="disabled"
+      role="combobox"
       :aria-expanded="open"
       aria-haspopup="listbox"
       :aria-controls="open ? listId : undefined"
@@ -175,34 +207,33 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", onPointerDown,
         role="listbox"
         class="absolute inset-x-0 z-30 mt-1 max-h-64 overflow-y-auto rounded-xl bg-surface py-1 shadow-pop"
       >
+        <!-- La ligne est la ligne : un bouton à l'intérieur d'un `option` se
+             présente comme un bouton aux lecteurs d'écran, et le clavier reste
+             de toute façon sur le champ (aria-activedescendant). -->
         <li
           v-for="(option, index) in rows"
           :id="optionId(index)"
           :key="option.value"
           role="option"
           :aria-selected="option.value === model"
+          class="flex cursor-pointer items-center justify-between gap-3 px-4 py-2.5 text-start text-sm transition-colors"
+          :class="
+            option.value === model
+              ? 'font-semibold text-primary'
+              : index === activeIndex
+                ? 'bg-black/[0.04] text-text-primary dark:bg-white/[0.06]'
+                : 'text-text-primary'
+          "
+          @click="pick(option)"
+          @mouseenter="activeIndex = index"
         >
-          <button
-            type="button"
-            class="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-start text-sm transition-colors"
-            :class="
-              option.value === model
-                ? 'font-semibold text-primary'
-                : index === activeIndex
-                  ? 'bg-black/[0.04] text-text-primary dark:bg-white/[0.06]'
-                  : 'text-text-primary'
-            "
-            @click="pick(option)"
-            @mouseenter="activeIndex = index"
-          >
-            <span>{{ option.label }}</span>
-            <AppIcon
-              v-if="option.value === model"
-              name="check"
-              :size="14"
-              class="shrink-0 text-primary"
-            />
-          </button>
+          <span>{{ option.label }}</span>
+          <AppIcon
+            v-if="option.value === model"
+            name="check"
+            :size="14"
+            class="shrink-0 text-primary"
+          />
         </li>
       </ul>
     </Transition>

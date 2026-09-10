@@ -29,7 +29,7 @@ import { useI18n } from "vue-i18n";
 import AppModal from "./AppModal.vue";
 import AppIcon from "./icons/AppIcon.vue";
 import { dateTimeFormat } from "../services/intlCache";
-import { localDayKey } from "../services/dateService";
+import { localDayFrom, localDayKey } from "../services/dateService";
 
 const props = defineProps<{
   open: boolean;
@@ -43,13 +43,6 @@ const emit = defineEmits<{ close: [] }>();
 const model = defineModel<string>({ required: true });
 
 const { t, locale } = useI18n();
-
-/** Une valeur de champ (YYYY-MM-DD) en date locale. */
-function parse(value: string): Date | null {
-  const [year, month, day] = value.split("-").map(Number);
-  if (!year || !month || !day) return null;
-  return new Date(year, month - 1, day);
-}
 
 /**
  * Le jour d'aujourd'hui, relu à chaque ouverture : la page des horaires garde
@@ -72,16 +65,34 @@ watch(
     if (!open) return;
     todayKey.value = localDayKey();
     draft.value = model.value;
-    const start = parse(model.value) ?? parse(props.min ?? "") ?? new Date();
+    focusedKey.value = "";
+    const start = localDayFrom(model.value) ?? localDayFrom(props.min ?? "") ?? new Date();
     cursor.value = new Date(start.getFullYear(), start.getMonth(), 1);
     mode.value = "days";
   },
   { immediate: true },
 );
 
+/** Le premier mois atteignable, quand un premier jour choisissable est posé. */
+const minMonth = computed(() => {
+  const first = localDayFrom(props.min ?? "");
+  return first ? new Date(first.getFullYear(), first.getMonth(), 1) : null;
+});
+
 function shiftMonth(delta: number): void {
-  cursor.value = new Date(cursor.value.getFullYear(), cursor.value.getMonth() + delta, 1);
+  const next = new Date(cursor.value.getFullYear(), cursor.value.getMonth() + delta, 1);
+  // La flèche s'arrête au mois du premier jour choisissable : au-delà, on
+  // parcourait des mois entièrement éteints, sans rien pour le dire.
+  if (minMonth.value && next < minMonth.value) return;
+  cursor.value = next;
 }
+
+/** Vrai quand la flèche du mois précédent n'a plus rien à montrer. */
+const atMinMonth = computed(
+  () =>
+    minMonth.value !== null &&
+    new Date(cursor.value.getFullYear(), cursor.value.getMonth(), 1) <= minMonth.value,
+);
 
 /**
  * Premier jour de la semaine : dimanche en hébreu, lundi ailleurs. Intl ne le
@@ -109,7 +120,7 @@ const monthLabel = computed(() =>
  * sans mois ni année.
  */
 function cellLabel(key: string): string {
-  const date = parse(key);
+  const date = localDayFrom(key);
   if (!date) return key;
   return dateTimeFormat(locale.value, {
     weekday: "long",
@@ -121,7 +132,7 @@ function cellLabel(key: string): string {
 
 /** La date retenue, en toutes lettres, en tête de la fenêtre. */
 const draftLabel = computed(() => {
-  const date = parse(draft.value);
+  const date = localDayFrom(draft.value);
   if (!date) return t("common.chooseDate");
   return dateTimeFormat(locale.value, {
     weekday: "long",
@@ -164,7 +175,7 @@ const weeks = computed(() => {
 const years = computed(() => {
   const thisYear = new Date().getFullYear();
   const minYear = props.min ? Number(props.min.slice(0, 4)) : thisYear - 20;
-  const start = Math.min(minYear, cursor.value.getFullYear());
+  const start = minYear;
   const end = Math.max(thisYear + 20, cursor.value.getFullYear() + 1);
   return Array.from({ length: end - start + 1 }, (_, index) => start + index);
 });
@@ -192,6 +203,37 @@ function cellClass(cell: {
 function pickDay(key: string, disabled: boolean): void {
   if (!disabled) draft.value = key;
 }
+
+/**
+ * Le jour qui porte le focus dans la grille, et le seul à être tabulable :
+ * sans cela, la tabulation traversait quarante-deux cases avant d'atteindre
+ * « Confirmer », et le champ de date natif, lui, se remplissait au clavier en
+ * trois frappes. Les flèches déplacent le focus de jour en jour, comme sur
+ * tous les calendriers.
+ */
+const focusedKey = ref("");
+const grid = ref<HTMLElement | null>(null);
+
+/** Le jour tabulable : celui qu'on parcourt, à défaut le jour retenu. */
+const rovingKey = computed(() => focusedKey.value || draft.value || todayKey.value);
+
+/** Déplace le focus de `days` jours, en changeant de mois s'il le faut. */
+async function moveFocus(days: number): Promise<void> {
+  const from = localDayFrom(rovingKey.value) ?? new Date();
+  const next = new Date(from.getFullYear(), from.getMonth(), from.getDate() + days);
+  const key = localDayKey(next);
+  if (props.min && key < props.min) return;
+  focusedKey.value = key;
+  cursor.value = new Date(next.getFullYear(), next.getMonth(), 1);
+  await nextTick();
+  grid.value?.querySelector<HTMLElement>(`[data-day="${key}"]`)?.focus();
+}
+
+/**
+ * En hébreu, la grille se lit de droite à gauche : la flèche gauche avance
+ * d'un jour au lieu de reculer.
+ */
+const rtlStep = computed(() => (locale.value === "he" ? -1 : 1));
 
 async function showYears(): Promise<void> {
   mode.value = mode.value === "years" ? "days" : "years";
@@ -250,6 +292,8 @@ function confirm(): void {
           <button
             type="button"
             class="icon-btn"
+            :class="atMinMonth ? 'cursor-not-allowed opacity-40' : ''"
+            :disabled="atMinMonth"
             :aria-label="t('common.previousMonth')"
             @click="shiftMonth(-1)"
           >
@@ -266,7 +310,17 @@ function confirm(): void {
         </div>
       </div>
 
-      <div v-if="mode === 'days'" class="grid grid-cols-7 gap-1 text-center">
+      <div
+        v-if="mode === 'days'"
+        ref="grid"
+        class="grid grid-cols-7 gap-1 text-center"
+        @keydown.left.prevent="moveFocus(-rtlStep)"
+        @keydown.right.prevent="moveFocus(rtlStep)"
+        @keydown.up.prevent="moveFocus(-7)"
+        @keydown.down.prevent="moveFocus(7)"
+        @keydown.page-up.prevent="shiftMonth(-1)"
+        @keydown.page-down.prevent="shiftMonth(1)"
+      >
         <span
           v-for="(weekday, index) in weekdayLabels"
           :key="index"
@@ -282,6 +336,8 @@ function confirm(): void {
             type="button"
             class="aspect-square rounded-pill text-sm transition-colors"
             :class="cellClass(cell)"
+            :data-day="cell.key"
+            :tabindex="cell.key === rovingKey ? 0 : -1"
             :disabled="cell.disabled"
             :aria-label="cellLabel(cell.key)"
             :aria-current="cell.today ? 'date' : undefined"

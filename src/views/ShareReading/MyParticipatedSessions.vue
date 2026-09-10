@@ -53,14 +53,19 @@ const expandedIds = ref<Set<string>>(new Set());
 /** Vrai dès que le lecteur a ouvert ou fermé une ligne lui-même. */
 const touched = ref(false);
 
-// Le compte arrive parfois après le montage, et la liste se rafraîchit à
-// chaque lecture cochée : tant que personne n'a touché aux lignes, celle qui
-// s'ouvre d'office suit ce que la liste dit maintenant. Figée au montage, elle
-// laissait tout replié quand mes réservations n'étaient pas encore connues.
+// Le compte arrive parfois après le montage : tant que rien n'est déplié et
+// que personne n'a touché aux lignes, celle qui s'ouvre d'office suit ce que
+// la liste dit maintenant. Figée au montage, elle laissait tout replié quand
+// mes réservations n'étaient pas encore connues.
+//
+// Une fois une ligne ouverte, elle le reste : cocher sa dernière lecture
+// change la première session où il reste à lire, et la ligne se serait refermée
+// sous la main de celui qui vient d'y cocher une case.
 watch(
   firstUnread,
   (id) => {
-    if (!touched.value) expandedIds.value = new Set(id ? [id] : []);
+    if (touched.value || expandedIds.value.size > 0) return;
+    expandedIds.value = new Set(id ? [id] : []);
   },
   { immediate: true },
 );

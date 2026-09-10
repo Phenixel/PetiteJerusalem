@@ -184,6 +184,13 @@ Une couleur plus vive que celles-ci ne passerait plus en texte : si le besoin
 vient, on ajoutera un jeton d'encre distinct du jeton de fond plutôt que
 d'éclaircir `primary`.
 
+C'est une **exception assumée** au niveau AA : 4,5 est le seuil d'un texte de
+taille courante, et aucun des trois `primary` ne l'atteint, ni en encre sur le
+beige, ni sous du blanc dans un bouton plein. On l'accepte parce que `primary`
+ne porte jamais un texte de lecture : des libellés courts, en demi-gras, et
+des titres. Le jour où il en portera un, c'est le jeton d'encre ci-dessus qu'il
+faudra, pas un thème plus terne.
+
 ## 3. Les rayons
 
 Deux familles, et elles vont en sens contraire. Les **surfaces** sont taillées

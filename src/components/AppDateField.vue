@@ -15,7 +15,7 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import DayPicker from "./DayPicker.vue";
 import AppIcon from "./icons/AppIcon.vue";
-import { DateService } from "../services/dateService";
+import { DateService, localDayFrom } from "../services/dateService";
 
 defineProps<{
   /** Premier jour choisissable, au format YYYY-MM-DD (les précédents sont éteints). */
@@ -31,10 +31,7 @@ const model = defineModel<string>({ required: true });
 const { t } = useI18n();
 const open = ref(false);
 
-const selected = computed(() => {
-  const [year, month, day] = model.value.split("-").map(Number);
-  return year && month && day ? new Date(year, month - 1, day) : null;
-});
+const selected = computed(() => localDayFrom(model.value));
 
 const buttonLabel = computed(() =>
   selected.value ? DateService.formatDate(selected.value) : t("common.chooseDate"),

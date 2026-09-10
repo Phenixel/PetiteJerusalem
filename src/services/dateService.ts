@@ -13,6 +13,20 @@ export function localDayKey(now: Date = new Date()): string {
 }
 
 /**
+ * Une valeur de champ `date` (YYYY-MM-DD) en date LOCALE, ou null si la
+ * chaîne n'en est pas une.
+ *
+ * Jamais `new Date("2026-09-14")` : celui-là lit minuit à Greenwich, soit la
+ * veille au soir à l'ouest. Le champ de date, le calendrier et la page des
+ * horaires lisent tous le même format, ils le lisent donc d'ici.
+ */
+export function localDayFrom(key: string): Date | null {
+  const [year, month, day] = key.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
+/**
  * Fin de journée LOCALE d'un jour, donné par une valeur de champ `date`
  * (YYYY-MM-DD) ou par une date. `new Date("YYYY-MM-DD")` lirait minuit UTC,
  * soit la veille au soir à l'ouest de Greenwich : une date limite choisie à
