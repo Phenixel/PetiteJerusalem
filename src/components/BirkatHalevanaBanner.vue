@@ -43,7 +43,7 @@ const deadline = computed(() =>
   <RouterLink
     v-if="visible"
     to="/bibliotheque/brahot/birkat-halevana"
-    class="card card-hover mb-5 flex items-center justify-between gap-3 p-4 group"
+    class="card card-hover flex items-center justify-between gap-3 p-4 group"
     @click="analyticsService.capture('birkat_halevana_opened', { source: 'home' })"
   >
     <span class="flex min-w-0 items-center gap-3">
@@ -59,10 +59,5 @@ const deadline = computed(() =>
         </span>
       </span>
     </span>
-    <AppIcon
-      name="chevron-right"
-      :size="16"
-      class="shrink-0 text-text-secondary/50 transition-colors group-hover:text-primary rtl:rotate-180"
-    />
   </RouterLink>
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import AppIcon from "../../icons/AppIcon.vue";
+import AppIcon from "../icons/AppIcon.vue";
 import MockScreen from "./MockScreen.vue";
 import MockTouch from "./MockTouch.vue";
 

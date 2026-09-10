@@ -52,24 +52,18 @@ function trackOpen() {
   <RouterLink
     v-if="window_ && path"
     :to="path"
-    class="card card-hover w-full px-6 py-4 flex items-center justify-between gap-3 group"
+    class="card card-hover group flex w-full items-center gap-2.5 px-5 py-4 sm:px-6"
     @click="trackOpen()"
   >
-    <span class="flex items-center gap-2.5 min-w-0">
-      <AppIcon :name="ICONS[window_.tefila]" :size="17" class="text-primary flex-shrink-0" />
-      <span
-        class="font-medium text-text-primary truncate group-hover:text-primary transition-colors"
-      >
-        {{ t("home.sidourNow.title", { tefila: tefilaName }) }}
-        <span class="text-text-secondary font-normal">
-          · {{ t("home.sidourNow.until", { time: untilTime }) }}
-        </span>
+    <AppIcon :name="ICONS[window_.tefila]" :size="17" class="shrink-0 text-primary" />
+    <!-- Pas de troncature : si la ligne ne tient pas (écran étroit, texte
+         agrandi), elle passe à la ligne. L'heure limite est le seul chiffre de
+         la carte, elle ne se perd jamais dans les points de suspension. -->
+    <span class="font-medium text-text-primary transition-colors group-hover:text-primary">
+      {{ t("home.sidourNow.title", { tefila: tefilaName }) }}
+      <span class="font-normal text-text-secondary">
+        · {{ t("home.sidourNow.until", { time: untilTime }) }}
       </span>
     </span>
-    <AppIcon
-      name="chevron-right"
-      :size="15"
-      class="flex-shrink-0 text-text-secondary/50 group-hover:text-primary transition-colors rtl:rotate-180"
-    />
   </RouterLink>
 </template>

@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import type { ChiourDoc, SerieDoc } from "../../models/models";
 import { studioService, type StudioChiourPayload } from "../../services/studioService";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import AppSelect from "../../components/AppSelect.vue";
 import ProgressBar from "../../components/ProgressBar.vue";
 
 const props = defineProps<{
@@ -26,6 +27,12 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const NEW_SERIE = "__new__";
+
+/** Les séries existantes, puis « nouvelle série » : le choix qui ouvre le champ. */
+const serieOptions = computed(() => [
+  ...props.series.map((serie) => ({ value: serie.id, label: serie.name })),
+  { value: NEW_SERIE, label: t("studio.form.newSerie") },
+]);
 
 const name = ref(props.chiour?.name ?? "");
 const description = ref(props.chiour?.description ?? "");
@@ -225,23 +232,13 @@ async function save() {
         <label for="studio-serie" class="block text-sm font-semibold text-text-secondary mb-2">
           {{ t("studio.form.serie") }}
         </label>
-        <div class="relative">
-          <select
+        <div>
+          <AppSelect
             id="studio-serie"
             v-model="serieChoice"
+            :options="serieOptions"
+            :placeholder="t('studio.form.noSerie')"
             :disabled="!!presetSerieId"
-            class="field appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <option value="">{{ t("studio.form.noSerie") }}</option>
-            <option v-for="serie in series" :key="serie.id" :value="serie.id">
-              {{ serie.name }}
-            </option>
-            <option :value="NEW_SERIE">{{ t("studio.form.newSerie") }}</option>
-          </select>
-          <AppIcon
-            name="chevron-down"
-            :size="14"
-            class="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
           />
         </div>
       </div>

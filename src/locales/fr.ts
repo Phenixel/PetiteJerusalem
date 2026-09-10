@@ -1,5 +1,10 @@
 const fr = {
   common: {
+    /* Champ de date de la maison (AppDateField), à la place du calendrier du
+       système. */
+    chooseDate: "Choisir une date",
+    previousMonth: "Mois précédent",
+    nextMonth: "Mois suivant",
     home: "Accueil",
     profile: "Profil",
     login: "Se connecter",
@@ -215,7 +220,7 @@ const fr = {
       "Répartissez un texte entre plusieurs personnes pour le terminer ensemble : finir le Chass, lire les Tehilim à plusieurs, suivre la progression de votre limoud. Gratuit, en français, en anglais et en hébreu.",
     features: {
       shareReading: {
-        title: "Partage de Lectures",
+        title: "Partage",
         description:
           "Créez une session, répartissez un texte et étudiez à plusieurs jusqu'au siyoum",
       },
@@ -241,7 +246,7 @@ const fr = {
     // Raccourci du sidour : pendant la plage horaire d'un office, l'accueil
     // mène directement au texte.
     sidourNow: {
-      title: "C'est le temps de {tefila}",
+      title: "Faire {tefila}",
       until: "jusqu'à {time}",
       names: {
         chaharit: "Cha'harit",
@@ -347,11 +352,11 @@ const fr = {
     },
     fontsTitle: "Polices",
     fontsDescription:
-      "Choisissez la police de l'interface et celle des textes en hébreu. Vos choix s'appliquent à tout le site.",
-    fontLatinLabel: "Police de l'interface",
+      "Choisissez la police des textes que vous lisez et celle des textes en hébreu. Vos choix s'appliquent partout où l'on lit.",
+    fontLatinLabel: "Police de lecture",
     fontHebrewLabel: "Police des textes en hébreu",
     fontsLatin: {
-      inter: "Moderne",
+      manrope: "Moderne",
       lora: "Classique",
       nunito: "Douce",
     },
@@ -427,6 +432,8 @@ const fr = {
   },
   calendar: {
     title: "Calendrier des fêtes",
+    /* Court : l'onglet de l'app et l'entrée du bandeau du site. */
+    navTitle: "Calendrier",
     link: "Calendrier des fêtes",
     description:
       "Les fêtes et les jeûnes de l\u2019année, avec l\u2019heure d\u2019allumage et l\u2019heure de sortie pour votre position.",
@@ -480,6 +487,7 @@ const fr = {
       locating: "Localisation…",
       refresh: "Actualiser ma position",
       chooseCity: "Choisir ma ville",
+      changeCity: "{city}, choisir une autre ville",
       searchCity: "Rechercher une ville…",
       noCity: "Aucune ville ne correspond à « {query} ».",
       denied:
@@ -687,9 +695,30 @@ const fr = {
     },
     instructions: {
       title: "Instructions",
-      step1: "Cochez les cases pour réserver une section ou un texte",
-      step2: "Vous pouvez décocher vos propres réservations pour les annuler",
-      step3: "Cliquez sur la carte du texte pour voir les sections disponibles",
+      next: "Suivant",
+      done: "J'ai compris",
+      steps: {
+        search: {
+          title: "Trouver un texte",
+          text: "Tapez son nom dans la recherche, ou n'affichez que ce qui reste à prendre avec « Disponibles uniquement ».",
+        },
+        reserve: {
+          title: "Réserver une place",
+          text: "Cochez un chapitre, ou plusieurs, puis confirmez en bas de l'écran : ils sont à vous.",
+        },
+        cancel: {
+          title: "Rendre une place",
+          text: "Décochez une de vos réservations et le chapitre repart dans la chaîne. Celles des autres ne bougent pas.",
+        },
+        markRead: {
+          title: "Marquer comme lu",
+          text: "Une fois le texte lu, basculez « Lu » : l'avancement de la chaîne monte pour tout le monde.",
+        },
+        read: {
+          title: "Lire le texte",
+          text: "Le bouton « Lire » ouvre le texte, avec ou sans réservation.",
+        },
+      },
     },
     textList: {
       selected: "Sélectionné",
@@ -777,7 +806,7 @@ const fr = {
       "Écoutez le chiour « {name} » 🎧 Un cours de Torah à découvrir sur Petite Jérusalem :",
   },
   batchSelection: {
-    textsSelected: "{count} textes sélectionnés",
+    textsSelected: "{count} texte sélectionné | {count} textes sélectionnés",
   },
   editModal: {
     title: "Modifier la session",
@@ -789,6 +818,8 @@ const fr = {
   },
   progressBar: {
     participants: "Participe",
+    participantsTitle: "Les participants",
+    seeParticipants: "Voir qui participe",
     total: "Total",
     read: "Lus",
     reserved: "Réservés",
@@ -1188,6 +1219,12 @@ const fr = {
   },
   study: {
     title: "Bibliothèque",
+    /* Onglets en tête de la bibliothèque, app native seulement : lire un texte
+       ou se le répartir à plusieurs (voir PageTabs.vue). */
+    tabs: {
+      reading: "Lecture",
+      sharing: "Partage",
+    },
     subtitle:
       "Lisez et étudiez les textes : Tehilim, Michna, Talmud, Tanakh, Sidour, Sli'hot et Brahot.",
     searchPlaceholder: "Rechercher un texte…",

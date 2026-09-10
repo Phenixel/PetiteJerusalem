@@ -1516,7 +1516,7 @@ watch(textId, (_, previousTextId) => {
     <template v-else-if="content">
       <header class="mb-8 flex items-center justify-between gap-3">
         <div class="min-w-0">
-          <p class="text-sm font-semibold text-primary uppercase tracking-wide mb-1">
+          <p class="text-sm font-semibold text-primary mb-1">
             {{ textEntry.livre }}
           </p>
           <h1 class="text-3xl md:text-4xl font-bold text-text-primary">
@@ -1560,7 +1560,7 @@ watch(textId, (_, previousTextId) => {
             <AppIcon name="book-open" :size="15" class="text-primary flex-shrink-0" />
             {{ t("textReading.resumeTitle") }}
           </p>
-          <p class="text-sm text-text-secondary mt-0.5 truncate">{{ resumePlace }}</p>
+          <p class="text-sm text-text-secondary mt-0.5">{{ resumePlace }}</p>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
           <button @click="resumeReading" class="btn btn-primary !px-3 !py-1.5 text-sm">
@@ -1592,7 +1592,7 @@ watch(textId, (_, previousTextId) => {
                 {{ section.index }}
               </span>
               <span
-                class="font-medium text-text-primary truncate group-hover:text-primary transition-colors"
+                class="font-medium text-text-primary group-hover:text-primary transition-colors"
               >
                 {{ sectionLabel(section) }}
               </span>
@@ -1610,11 +1610,6 @@ watch(textId, (_, previousTextId) => {
                 name="user-clock"
                 :size="16"
                 class="text-amber-500"
-              />
-              <AppIcon
-                name="chevron-right"
-                :size="15"
-                class="text-text-secondary/40 group-hover:text-primary transition-colors"
               />
             </span>
           </button>
@@ -1643,7 +1638,7 @@ watch(textId, (_, previousTextId) => {
           <button
             v-if="bookmarks.length"
             @click="showBookmarksPanel = !showBookmarksPanel"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-sm font-medium transition-colors"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn bg-black/5 dark:bg-white/10 text-sm font-medium transition-colors"
             :class="
               showBookmarksPanel ? 'text-primary' : 'text-text-secondary hover:text-text-primary'
             "
@@ -1656,18 +1651,18 @@ watch(textId, (_, previousTextId) => {
 
           <div
             v-if="canTransliterate"
-            class="inline-flex p-0.5 rounded-lg bg-black/5 dark:bg-white/10"
+            class="inline-flex p-0.5 rounded-btn bg-black/5 dark:bg-white/10"
           >
             <button
               @click="showPhonetic = false"
-              class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+              class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
               :class="!showPhonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
             >
               {{ t("textReading.hebrew") }}
             </button>
             <button
               @click="showPhonetic = true"
-              class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+              class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
               :class="showPhonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
             >
               {{ t("textReading.phonetic") }}
@@ -1677,7 +1672,7 @@ watch(textId, (_, previousTextId) => {
 
         <!-- Marque-pages du texte (ouvert depuis l'icône de la barre d'outils) -->
         <div v-if="showBookmarksPanel && bookmarks.length" class="mb-5 card p-3">
-          <p class="text-xs font-semibold uppercase tracking-wide text-text-secondary px-1 mb-1.5">
+          <p class="text-sm font-semibold text-text-secondary px-1 mb-1.5">
             {{ t("textReading.bookmarks") }}
           </p>
           <div v-for="b in bookmarks" :key="b.id" class="flex items-center gap-1">
@@ -1843,11 +1838,6 @@ watch(textId, (_, previousTextId) => {
               </span>
             </span>
           </span>
-          <AppIcon
-            name="chevron-right"
-            :size="16"
-            class="flex-shrink-0 text-text-secondary/50 group-hover:text-primary transition-colors rtl:rotate-180"
-          />
         </RouterLink>
 
         <!-- Bottom navigation -->
@@ -1905,6 +1895,9 @@ watch(textId, (_, previousTextId) => {
   line-height: 1.7;
 }
 .reading-tl {
+  /* La police latine choisie dans les réglages (useFonts) ne vaut que pour le
+     texte des lectures : le reste de l'app garde Manrope. */
+  font-family: var(--font-reading);
   font-size: calc(1.125rem * var(--reading-scale, 1));
 }
 </style>

@@ -21,6 +21,7 @@ import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
 import { useZmanCountdown } from "../../composables/useZmanCountdown";
 import { useNow } from "../../composables/useNow";
 import { dateTimeFormat } from "../../services/intlCache";
+import { localDayFrom, localDayKey } from "../../services/dateService";
 import { getParashaForShabbat } from "../../services/dailyCycles";
 import {
   candleLightingMinutes,
@@ -50,10 +51,21 @@ import RestTimes from "./RestTimes.vue";
 // tant qu'on ne l'ouvre pas.
 const CityPicker = defineAsyncComponent(() => import("./CityPicker.vue"));
 import AppIcon from "../../components/icons/AppIcon.vue";
+import PageTabs from "../../components/PageTabs.vue";
+import { zmanimTabs } from "../../config/pageTabs";
+import DayPicker from "../../components/DayPicker.vue";
 import { useLocalePath } from "../../composables/useLocalePath";
 
 /** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
 const { localePath } = useLocalePath();
+
+/**
+ * App native : les horaires du jour et le calendrier de l'année sont deux
+ * onglets d'un même endroit. Le calendrier n'avait qu'un lien discret sous le
+ * titre, que personne ne voyait ; la barre du bas, elle, est pleine. Les
+ * adresses sont traduites, elles se construisent donc ici (voir PageTabs).
+ */
+const tabs = computed(() => zmanimTabs(localePath));
 
 const { t, locale } = useI18n();
 const location = useZmanimLocation();
@@ -82,6 +94,23 @@ const day = computed(() => {
   return date;
 });
 const isToday = computed(() => dayOffset.value === 0);
+
+/**
+ * Le jour affiché, vu comme une date choisissable : le calendrier s'ouvre sur
+ * la date en cours d'affichage et la ramène en décalage de jours. Sans lui, un
+ * jour un peu loin demandait autant d'appuis sur la flèche qu'il y a de jours.
+ */
+const dayPickerOpen = ref(false);
+const dayKey = computed({
+  get: () => localDayKey(day.value),
+  set: (key: string) => {
+    const picked = localDayFrom(key);
+    if (!picked) return;
+    const today = new Date(now.value.getFullYear(), now.value.getMonth(), now.value.getDate());
+    // Arrondi : les changements d'heure font des journées de 23 ou 25 heures.
+    dayOffset.value = Math.round((picked.getTime() - today.getTime()) / 86_400_000);
+  },
+});
 
 const times = computed(() => computeZmanim(place.value, day.value));
 const upcoming = computed(() => (isToday.value ? nextZman(times.value, now.value) : null));
@@ -315,29 +344,43 @@ onMounted(() => {
 
 <template>
   <main ref="root" class="flex-1 mx-auto w-full max-w-3xl px-6 py-10">
-    <h1 class="text-2xl md:text-3xl font-bold text-text-primary tracking-tight">
+    <!-- App native : les horaires et le calendrier des fêtes sont deux onglets
+         d'un même endroit, et ils tiennent lieu de titre (voir PageTabs). Sur
+         le site, c'est le bandeau qui mène au calendrier. -->
+    <PageTabs
+      v-if="isNativeApp"
+      :tabs="tabs"
+      event="zmanim_tab_switched"
+      :label="t('zmanim.navTitle')"
+    />
+
+    <h1
+      class="text-center text-2xl md:text-3xl font-bold text-text-primary tracking-tight"
+      :class="isNativeApp ? 'sr-only' : ''"
+    >
       {{ t("zmanim.title") }}
     </h1>
 
-    <!-- Lieu de calcul, sur une ligne : le titre et les horaires doivent
-         rester en vue, pas être repoussés par un bloc de réglages. -->
-    <div class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-      <span class="flex items-center gap-1.5 min-w-0">
-        <AppIcon name="map-pin" :size="14" class="text-primary shrink-0" />
-        <span class="font-medium text-text-primary truncate">{{ placeLabel }}</span>
-        <span v-if="coordinates" class="text-xs text-text-secondary tabular-nums shrink-0">
-          {{ coordinates }}
-        </span>
-      </span>
+    <!-- Le lieu de calcul et sa position, sur une ligne, centrés sous le
+         titre. Le nom de la ville EST le bouton qui ouvre la liste des villes :
+         c'est là qu'on cherche à cliquer, et un bouton « Choisir ma ville »
+         posé à côté du nom disait deux fois la même chose. Le chevron le dit,
+         comme sur toutes les listes de l'app. -->
+    <div class="mt-3 flex flex-wrap items-center justify-center gap-2">
       <button
         type="button"
-        class="flex items-center gap-1.5 font-medium text-primary hover:underline disabled:opacity-60"
-        :disabled="status === 'loading'"
-        @click="locateMe"
+        class="btn btn-soft"
+        :aria-label="t('zmanim.place.changeCity', { city: placeLabel })"
+        @click="pickerOpen = true"
       >
+        <AppIcon name="map-pin" :size="16" class="text-primary" />
+        <span class="font-semibold">{{ placeLabel }}</span>
+        <AppIcon name="chevron-down" :size="14" class="text-text-secondary" />
+      </button>
+      <button type="button" class="btn btn-soft" :disabled="status === 'loading'" @click="locateMe">
         <AppIcon
           :name="status === 'loading' ? 'spinner' : 'locate'"
-          :size="14"
+          :size="16"
           :class="status === 'loading' ? 'animate-spin' : ''"
         />
         {{
@@ -348,26 +391,18 @@ onMounted(() => {
               : t("zmanim.place.useMine")
         }}
       </button>
-      <button
-        type="button"
-        class="flex items-center gap-1.5 text-text-secondary hover:text-primary hover:underline"
-        @click="pickerOpen = true"
-      >
-        <AppIcon name="search" :size="14" />
-        {{ t("zmanim.place.chooseCity") }}
-      </button>
-      <RouterLink
-        :to="localePath('calendrier')"
-        class="flex items-center gap-1.5 text-text-secondary hover:text-primary hover:underline"
-      >
-        <AppIcon name="calendar" :size="14" />
-        {{ t("calendar.link") }}
-      </RouterLink>
     </div>
+
+    <!-- Les coordonnées, sous les deux boutons : elles disent d'où sortent les
+         horaires quand la position vient de l'appareil, elles n'ont pas à
+         allonger la ligne des commandes. -->
+    <p v-if="coordinates" class="mt-2 text-center text-sm text-text-secondary tabular-nums">
+      {{ coordinates }}
+    </p>
 
     <!-- Une seule ligne d'explication : ce que sont ces horaires, et ce qu'il
          advient de la position. Un refus prend sa place, il est plus urgent. -->
-    <p class="mt-1.5 text-xs text-text-secondary leading-relaxed">
+    <p class="mt-3 text-center text-sm text-text-secondary leading-relaxed">
       {{
         status === "denied"
           ? t("zmanim.place.denied")
@@ -377,59 +412,69 @@ onMounted(() => {
       }}
     </p>
 
-    <!-- Jour affiché : les flèches parcourent le calendrier sans rien recharger -->
-    <div class="mt-6 flex items-center justify-between gap-3">
+    <!-- Jour affiché : les flèches vont au jour d'à côté, la date elle-même
+         ouvre le calendrier pour aller loin d'un geste. -->
+    <div class="mx-auto mt-8 flex max-w-md items-center justify-between gap-2">
       <button
         type="button"
-        class="icon-btn"
+        class="icon-btn shrink-0"
         :aria-label="t('zmanim.previousDay')"
         @click="dayOffset--"
       >
         <AppIcon name="chevron-left" :size="18" class="rtl:rotate-180" />
       </button>
-      <div class="text-center min-w-0">
-        <p class="font-semibold text-text-primary truncate">{{ civilDate }}</p>
-        <p class="text-sm text-text-secondary truncate">{{ hebrewDate }}</p>
-        <!-- La bascule du soir, dite au lieu d'être appliquée en silence -->
-        <p
-          v-if="nightNote"
-          class="mt-0.5 flex items-center justify-center gap-1 text-xs text-primary"
-        >
-          <AppIcon name="moon" :size="12" class="shrink-0" />
-          {{ nightNote }}
-        </p>
-      </div>
-      <button type="button" class="icon-btn" :aria-label="t('zmanim.nextDay')" @click="dayOffset++">
+
+      <button
+        type="button"
+        class="min-w-0 flex-1 rounded-control px-3 py-1 text-center transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+        :aria-label="t('common.chooseDate')"
+        @click="dayPickerOpen = true"
+      >
+        <span class="block text-lg font-semibold text-text-primary first-letter:uppercase">
+          {{ civilDate }}
+        </span>
+        <span class="block text-sm text-text-secondary">{{ hebrewDate }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="icon-btn shrink-0"
+        :aria-label="t('zmanim.nextDay')"
+        @click="dayOffset++"
+      >
         <AppIcon name="chevron-right" :size="18" class="rtl:rotate-180" />
       </button>
     </div>
-    <div v-if="!isToday" class="mt-2 text-center">
-      <button type="button" class="text-sm font-medium text-primary" @click="dayOffset = 0">
-        {{ t("zmanim.backToToday") }}
-      </button>
-    </div>
 
-    <!-- Le jour dans le calendrier : Roch Hodech, 'Hanouka, un jeûne… et si
-         l'on dit le tahanoun. Un cadre, comme le Chabbat : ce sont des repères
-         du jour, pas des étiquettes. Les fêtes déjà portées par le cadre du
-         repos (avec leurs heures) n'y sont pas répétées. -->
-    <section v-if="holidays.length > 0 || tachanun" class="card mt-4 p-4">
-      <p
-        v-for="name in holidays"
-        :key="name"
-        class="flex items-center gap-2 font-medium text-text-primary"
-      >
-        <AppIcon name="calendar" :size="15" class="shrink-0 text-primary" />
+    <!-- Ce qui caractérise le jour, sous sa date : les fêtes, puis le
+         tahanoun. En italique, à même le fond : ce n'est pas une donnée qu'on
+         vient chercher, c'est une précision sur la date. Le jour SANS tahanoun
+         est celui qui change quelque chose à l'office : il passe en gras et en
+         couleur. Les fêtes déjà portées par le cadre du repos (avec leurs
+         heures) ne sont pas répétées. -->
+    <div v-if="holidays.length > 0 || tachanun || nightNote" class="mt-2 text-center">
+      <p v-for="name in holidays" :key="name" class="font-semibold text-primary">
         {{ name }}
       </p>
       <p
         v-if="tachanun"
-        class="text-sm text-text-secondary"
-        :class="holidays.length > 0 ? 'mt-2' : ''"
+        class="text-sm italic"
+        :class="tachanun === 'none' ? 'font-bold text-primary' : 'text-text-secondary'"
       >
         {{ t(`zmanim.tachanun.${tachanun}`) }}
       </p>
-    </section>
+      <!-- La bascule du soir, dite au lieu d'être appliquée en silence -->
+      <p v-if="nightNote" class="mt-1 flex items-center justify-center gap-1 text-sm text-primary">
+        <AppIcon name="moon" :size="13" class="shrink-0" />
+        {{ nightNote }}
+      </p>
+    </div>
+
+    <div v-if="!isToday" class="mt-3 text-center">
+      <button type="button" class="btn btn-soft" @click="dayOffset = 0">
+        {{ t("zmanim.backToToday") }}
+      </button>
+    </div>
 
     <!-- Le prochain horaire, mis en avant. Pas d'intitulé : une heure isolée
          au-dessus de la liste, en couleur, ne peut être que celle-là. -->
@@ -438,13 +483,13 @@ onMounted(() => {
       class="card mt-4 flex items-center justify-between gap-3 bg-primary/5 p-4 dark:bg-primary/10"
     >
       <span class="min-w-0">
-        <span class="block font-medium leading-snug text-text-primary">
+        <span class="block font-semibold leading-snug text-text-primary">
           {{ t(`zmanim.names.${upcoming.key}`) }}
         </span>
         <!-- Le temps qui reste : c'est lui qui dit s'il faut se presser. -->
-        <span v-if="timeLeft" class="block text-xs text-text-secondary">{{ timeLeft }}</span>
+        <span v-if="timeLeft" class="block text-sm text-text-secondary">{{ timeLeft }}</span>
       </span>
-      <span class="shrink-0 text-xl font-semibold tabular-nums text-primary">
+      <span class="shrink-0 text-2xl font-bold tabular-nums text-primary">
         {{ clock(upcoming.date) }}
       </span>
     </div>
@@ -465,32 +510,35 @@ onMounted(() => {
     <!-- Les horaires à la suite : chaque titre ouvre son groupe et sert de
          séparation. Sans cadres, la journée se lit d'un trait, et tient en
          beaucoup moins de défilement. -->
-    <section v-for="group in byPeriod" :key="group.period">
+    <!-- Le filet d'un titre de groupe SÉPARE deux groupes : le premier n'en
+         porte pas, sinon une ligne venait se coller sous ce qui précède. -->
+    <section v-for="(group, index) in byPeriod" :key="group.period">
       <h2
-        class="flex items-center gap-2 border-t border-line pt-4 pb-1 text-sm font-bold uppercase tracking-wide text-text-secondary"
+        class="flex items-center gap-2 pb-1 text-base font-bold text-text-secondary"
+        :class="index === 0 ? 'pt-6' : 'border-t border-line pt-4'"
       >
-        <AppIcon :name="PERIOD_ICONS[group.period]" :size="15" class="text-primary" />
+        <AppIcon :name="PERIOD_ICONS[group.period]" :size="16" class="text-primary" />
         {{ t(`zmanim.periods.${group.period}`) }}
       </h2>
       <ul class="flex flex-col divide-y divide-line">
         <li
           v-for="zman in group.zmanim"
           :key="zman.key"
-          class="flex items-center justify-between gap-4 py-2"
+          class="flex items-center justify-between gap-4 py-2.5"
         >
           <span class="min-w-0">
             <span
-              class="block font-medium leading-snug"
+              class="block font-semibold leading-snug"
               :class="isNext(zman) ? 'text-primary' : 'text-text-primary'"
             >
               {{ t(`zmanim.names.${zman.key}`) }}
             </span>
-            <span class="block text-xs text-text-secondary">
+            <span class="block text-sm text-text-secondary">
               {{ t(`zmanim.hints.${zman.key}`) }}
             </span>
           </span>
           <span
-            class="shrink-0 font-semibold tabular-nums"
+            class="shrink-0 text-lg font-semibold tabular-nums"
             :class="isNext(zman) ? 'text-primary' : 'text-text-primary'"
           >
             {{ clock(zman.date) }}
@@ -509,10 +557,16 @@ onMounted(() => {
       class="mt-5 first:mt-0"
     />
 
-    <p class="mt-5 border-t border-line pt-3 text-xs text-text-secondary leading-relaxed">
+    <p class="mt-5 border-t border-line pt-3 text-sm text-text-secondary leading-relaxed">
       {{ t("zmanim.disclaimer") }}
     </p>
 
     <CityPicker v-model:show="pickerOpen" :current="place.city" @select="chooseCity" />
+    <DayPicker
+      v-model="dayKey"
+      :open="dayPickerOpen"
+      :label="t('zmanim.title')"
+      @close="dayPickerOpen = false"
+    />
   </main>
 </template>

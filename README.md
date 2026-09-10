@@ -189,6 +189,7 @@ dans le bundle initial…).
 | [CLAUDE.md](CLAUDE.md) | Conventions du dépôt : typographie (jamais de tiret long, espaces insécables) et langue (français). |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Comment signaler un bug, proposer une amélioration, ouvrir une pull request. |
 | [SEO.md](SEO.md) | Comment le site est rendu trouvable par les moteurs et les assistants IA : prérendu, sitemaps, IndexNow, rafraîchissement hebdomadaire. |
+| [docs/design.md](docs/design.md) | Charte graphique : couleurs et thèmes, rayons, polices, bandeau de navigation, ce qu'on n'emploie pas. |
 | [docs/tests.md](docs/tests.md) | Tests unitaires, tests garde-fous, suite de bout en bout Playwright. |
 | [docs/app-native.md](docs/app-native.md) | App native Capacitor : générer, builder, tester ; lecture hors ligne, auth native, push, widgets. |
 | [docs/app-links.md](docs/app-links.md) | Liens d'application : un lien du site ouvre l'app installée (`/.well-known/`). |

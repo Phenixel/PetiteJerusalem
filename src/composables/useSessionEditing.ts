@@ -1,6 +1,7 @@
 import { useI18n } from "vue-i18n";
 import type { Session, TextStudy } from "../models/models";
 import { sessionService } from "../services/sessionService";
+import { endOfLocalDay } from "../services/dateService";
 import { analyticsService } from "../services/analyticsService";
 import { useConfirm } from "./useConfirm";
 import { useToast } from "./useToast";
@@ -41,7 +42,7 @@ export function useSessionEditing(source: string) {
         guest_email_required: data.guestEmailRequired,
         deadline_changed:
           session.dateLimit instanceof Date
-            ? new Date(data.dateLimit).getTime() !== session.dateLimit.getTime()
+            ? endOfLocalDay(data.dateLimit).getTime() !== session.dateLimit.getTime()
             : null,
         source,
       });
@@ -65,7 +66,7 @@ export function useSessionEditing(source: string) {
       ...session,
       name: data.name,
       description: data.description,
-      dateLimit: new Date(data.dateLimit),
+      dateLimit: endOfLocalDay(data.dateLimit),
       guestEmailRequired: data.guestEmailRequired,
       updatedAt: new Date(),
     };

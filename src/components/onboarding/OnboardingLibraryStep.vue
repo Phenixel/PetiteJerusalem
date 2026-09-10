@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import MockShelf from "./mock/MockShelf.vue";
-import MockPinch from "./mock/MockPinch.vue";
-import MockReadingMenu from "./mock/MockReadingMenu.vue";
-import MockAutoScroll from "./mock/MockAutoScroll.vue";
+import MockShelf from "../mock/MockShelf.vue";
+import MockPinch from "../mock/MockPinch.vue";
+import MockReadingMenu from "../mock/MockReadingMenu.vue";
+import MockAutoScroll from "../mock/MockAutoScroll.vue";
 
 /**
  * La bibliothèque, et les gestes de la lecture.
  *
  * Montrés plutôt que décrits : aucun de ces gestes ne se devine, et une
  * phrase ne remplace pas de les voir se faire. Chaque capture est un morceau
- * d'application dessiné (voir mock/MockScreen), donc juste dans le thème
+ * d'application dessiné (voir components/mock/MockScreen), donc juste dans le thème
  * choisi, en clair comme en sombre, et dans la langue affichée.
  */
 

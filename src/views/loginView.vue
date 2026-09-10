@@ -204,7 +204,7 @@ onMounted(async () => {
 
         <button
           v-if="isApplePlatform"
-          class="w-full mt-3 py-3 px-6 bg-black hover:bg-gray-900 rounded-xl font-semibold text-white shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3"
+          class="w-full mt-3 py-3 px-6 bg-black hover:bg-gray-900 rounded-btn font-semibold text-white shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3"
           @click="loginWithApple"
         >
           <AppIcon name="apple" :size="18" />
@@ -216,9 +216,9 @@ onMounted(async () => {
         {{ t("common.or") }}
       </p>
 
-      <div class="relative grid grid-cols-2 gap-0 bg-black/5 p-1 rounded-lg mb-8 dark:bg-white/10">
+      <div class="relative grid grid-cols-2 gap-0 bg-black/5 p-1 rounded-btn mb-8 dark:bg-white/10">
         <div
-          class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-surface rounded-md shadow-sm transition-all duration-300 ease-out"
+          class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-surface rounded-control shadow-sm transition-all duration-300 ease-out"
           :class="mode === 'login' ? 'left-1' : 'left-1 translate-x-full'"
         ></div>
         <button

@@ -6,6 +6,7 @@ import { authService } from "../services/authService";
 import { analyticsService } from "../services/analyticsService";
 import { isAdminEmail } from "../config/admin";
 import { isNativeApp } from "../composables/useNativeApp";
+import { useScrollFrame } from "../composables/useScrollFrame";
 import { useLocalePath } from "../composables/useLocalePath";
 import { useOverlay } from "../composables/useOverlayStack";
 import LanguageSelector from "./LanguageSelector.vue";
@@ -31,6 +32,15 @@ function publishHeaderHeight(height: number) {
   document.documentElement.style.setProperty("--navbar-height", `${Math.round(height)}px`);
 }
 
+// Le bandeau est transparent tant qu'on est en tête de page, téléphone
+// compris : un fond beige plein s'y voyait comme une bande posée sur le mur de
+// pierre du fond, avec une démarcation nette là où il s'arrêtait. Dès que le
+// contenu passe dessous, il prend un fond translucide et flouté, sans quoi les
+// titres de la page se liraient à travers les liens. Le seuil est court : le
+// fond arrive au premier geste de défilement, pas à mi-page.
+const scroll = useScrollFrame();
+const isScrolled = computed(() => scroll.value.scrollY > 4);
+
 // L'accueil et les horaires ont une adresse par langue : les liens suivent
 // l'espace où l'on est, sinon un visiteur venu d'un résultat anglais en sort
 // au premier clic.
@@ -42,6 +52,10 @@ const navLinks = computed(() => [
   { to: "/bibliotheque", labelKey: "study.title", exact: true },
   { to: "/chiourim", labelKey: "common.chiourim", exact: true },
   { to: localePath("horaires"), labelKey: "zmanim.navTitle", exact: true },
+  // Le calendrier des fêtes n'avait qu'un lien discret sous le titre des
+  // horaires, que personne ne trouvait. L'app en fait un onglet (PageTabs),
+  // le site une entrée de bandeau.
+  { to: localePath("calendrier"), labelKey: "calendar.navTitle", exact: true },
 ]);
 
 function toggleMobileMenu() {
@@ -107,18 +121,25 @@ function goToLogin() {
   <header
     v-if="!isNativeApp"
     ref="header"
-    class="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-beige md:bg-bg-beige/90 md:backdrop-blur-md dark:bg-gray-900 md:dark:bg-gray-900/90 transition-colors duration-300"
+    class="sticky top-0 z-50 flex items-center justify-between gap-4 px-4 py-2.5 md:px-6 md:py-4 transition-colors duration-300"
+    :class="
+      isScrolled
+        ? 'bg-bg-beige/85 backdrop-blur-md dark:bg-gray-900/85'
+        : 'bg-transparent'
+    "
   >
     <!-- Pas un h1 : chaque page a le sien, le bandeau en doublait le titre
          sur tout le site (deux h1 par page pour les lecteurs d'écran et le
          référencement). -->
-    <RouterLink :to="localePath('home')" class="group">
-      <p
-        class="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
-      >
+    <RouterLink :to="localePath('home')" class="group min-w-0">
+      <p class="font-display text-xl md:text-3xl font-bold tracking-tight text-primary truncate">
         {{ $t("navbar.title") }}
       </p>
-      <p class="text-sm text-text-secondary mt-1 group-hover:text-primary transition-colors">
+      <!-- La baseline coûte une ligne : sur un téléphone, elle passe après le
+           reste, le bandeau y gagne la hauteur qu'elle prenait. -->
+      <p
+        class="hidden md:block text-sm text-text-secondary mt-1 group-hover:text-primary transition-colors"
+      >
         {{ $t("navbar.subtitle") }}
       </p>
     </RouterLink>
@@ -126,21 +147,21 @@ function goToLogin() {
     <!-- Bouton hamburger pour mobile -->
     <button
       @click="toggleMobileMenu"
-      class="flex flex-col justify-around w-8 h-6 bg-transparent border-none cursor-pointer p-0 z-[1000] md:hidden text-text-primary"
-      :class="{ 'fixed right-6 top-6': isMobileMenuOpen }"
+      class="flex flex-col justify-around w-7 h-5 shrink-0 bg-transparent border-none cursor-pointer p-0 z-[1000] md:hidden text-text-primary"
+      :class="{ 'fixed right-4 top-4': isMobileMenuOpen }"
       :aria-label="$t('navbar.mainMenu')"
     >
       <span
-        class="w-full h-[3px] bg-current rounded-sm transition-all duration-300 origin-center"
-        :class="{ 'rotate-45 translate-x-[6px] translate-y-[6px]': isMobileMenuOpen }"
+        class="w-full h-[2.5px] bg-current rounded-pill transition-all duration-300 origin-center"
+        :class="{ 'rotate-45 translate-x-[5px] translate-y-[5px]': isMobileMenuOpen }"
       ></span>
       <span
-        class="w-full h-[3px] bg-current rounded-sm transition-all duration-300 origin-center"
+        class="w-full h-[2.5px] bg-current rounded-pill transition-all duration-300 origin-center"
         :class="{ 'opacity-0': isMobileMenuOpen }"
       ></span>
       <span
-        class="w-full h-[3px] bg-current rounded-sm transition-all duration-300 origin-center"
-        :class="{ '-rotate-45 translate-x-[6px] -translate-y-[6px]': isMobileMenuOpen }"
+        class="w-full h-[2.5px] bg-current rounded-pill transition-all duration-300 origin-center"
+        :class="{ '-rotate-45 translate-x-[5px] -translate-y-[5px]': isMobileMenuOpen }"
       ></span>
     </button>
 
@@ -167,7 +188,7 @@ function goToLogin() {
           </RouterLink>
           <RouterLink
             to="/profile"
-            class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-black/5 transition-colors dark:hover:bg-white/10"
+            class="flex items-center gap-2 px-3 py-2 rounded-btn hover:bg-black/5 transition-colors dark:hover:bg-white/10"
             @click="trackProfileOpened('navbar')"
           >
             <AppIcon name="user" :size="16" />
@@ -208,9 +229,7 @@ function goToLogin() {
           class="relative flex flex-col min-h-full p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
         >
           <div class="mb-8 pt-2">
-            <h2
-              class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
-            >
+            <h2 class="font-display text-xl font-bold tracking-tight text-primary">
               {{ $t("navbar.title") }}
             </h2>
           </div>
@@ -313,7 +332,7 @@ function goToLogin() {
 /* Mobile links: flat rows, active = primary tint. */
 .mobile-link {
   padding: 0.85rem 1rem;
-  border-radius: 10px;
+  border-radius: var(--radius-btn);
   font-weight: 500;
   color: var(--color-text-primary);
   transition:

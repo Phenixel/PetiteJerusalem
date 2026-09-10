@@ -14,7 +14,7 @@ const readingSize = useReadingSize();
 
 <template>
   <div
-    class="inline-flex items-center rounded-lg bg-black/5 dark:bg-white/10"
+    class="inline-flex items-center rounded-btn bg-black/5 dark:bg-white/10"
     role="group"
     :aria-label="t('textReading.textSize')"
   >

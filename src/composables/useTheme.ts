@@ -7,21 +7,32 @@ export interface ThemeOption {
   secondary: string;
 }
 
+/**
+ * Les trois duos de couleurs, dans l'ordre où ils s'affichent. Le premier est
+ * celui d'origine : « sunset », le vermillon de la pierre de Jérusalem au
+ * soleil couchant. Il tient la maison, le bleu et le vert restent au choix.
+ *
+ * Chaque duo est franc : la couleur se pose à plat, jamais en dégradé (voir
+ * docs/design.md). Le `primary` sert aussi bien de fond sous du blanc que
+ * d'encre sur le beige : il est donc pris assez soutenu pour rester lisible
+ * dans les deux sens, et le `secondary` l'accompagne d'un demi-ton plus loin
+ * sur la roue, pour les puces et les illustrations.
+ */
 export const THEME_OPTIONS: ThemeOption[] = [
   {
-    id: "ocean",
-    primary: "#1D6FDB",
-    secondary: "#06B6D4",
+    id: "sunset",
+    primary: "#DE4F17",
+    secondary: "#C98A00",
   },
   {
-    id: "sunset",
-    primary: "#E05A2B",
-    secondary: "#F59E0B",
+    id: "ocean",
+    primary: "#1E6BF0",
+    secondary: "#0891B2",
   },
   {
     id: "emerald",
-    primary: "#059669",
-    secondary: "#14B8A6",
+    primary: "#059C66",
+    secondary: "#0D9488",
   },
 ];
 

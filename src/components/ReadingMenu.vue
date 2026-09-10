@@ -180,7 +180,7 @@ onUnmounted(() => {
       <transition name="nav-panel">
         <div
           v-if="open"
-          class="nav-panel absolute bottom-0 right-0 flex flex-col overflow-hidden rounded-2xl bg-surface shadow-pop"
+          class="nav-panel absolute bottom-0 right-0 flex flex-col overflow-hidden rounded-xl bg-surface shadow-pop"
           :style="{ '--menu-scale': menuScale }"
         >
           <div class="flex items-center justify-between gap-2 ps-3 pe-2 pt-2.5 pb-1 flex-shrink-0">
@@ -189,13 +189,13 @@ onUnmounted(() => {
               <!-- Hébreu / phonétique, en abrégé : la place manque pour les mots. -->
               <div
                 v-if="phonetic !== null"
-                class="inline-flex p-0.5 rounded-lg bg-black/5 dark:bg-white/10"
+                class="inline-flex p-0.5 rounded-btn bg-black/5 dark:bg-white/10"
                 role="group"
                 :aria-label="`${t('textReading.hebrew')} / ${t('textReading.phonetic')}`"
               >
                 <button
                   @click="emit('update:phonetic', false)"
-                  class="px-2.5 py-1 rounded-md text-sm font-medium transition-colors"
+                  class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
                   :class="!phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
                   :aria-pressed="!phonetic"
                   :aria-label="t('textReading.hebrew')"
@@ -205,7 +205,7 @@ onUnmounted(() => {
                 </button>
                 <button
                   @click="emit('update:phonetic', true)"
-                  class="px-2.5 py-1 rounded-md text-sm font-medium transition-colors"
+                  class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
                   :class="phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
                   :aria-pressed="phonetic"
                   :aria-label="t('textReading.phonetic')"
@@ -341,10 +341,8 @@ onUnmounted(() => {
 
 .section-heading {
   padding: 0.5rem 0.55rem 0.15rem;
-  font-size: calc(0.72rem * var(--menu-scale, 1));
+  font-size: calc(0.78rem * var(--menu-scale, 1));
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   color: var(--color-text-secondary);
 }
 

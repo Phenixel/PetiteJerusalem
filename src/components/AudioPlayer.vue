@@ -204,7 +204,7 @@ function setSpeed(speed: number) {
       <div class="relative w-1/4 flex justify-end">
         <button
           @click="showSpeedMenu = !showSpeedMenu"
-          class="px-3 py-1.5 text-xs font-bold rounded-lg transition-colors"
+          class="px-3 py-1.5 text-xs font-bold rounded-btn transition-colors"
           :class="
             playbackRate !== 1
               ? 'bg-primary/10 text-primary'
@@ -218,7 +218,7 @@ function setSpeed(speed: number) {
         <Transition name="fade">
           <div
             v-if="showSpeedMenu"
-            class="absolute bottom-full right-0 mb-2 bg-surface rounded-lg shadow-pop overflow-hidden z-10"
+            class="absolute bottom-full right-0 mb-2 bg-surface rounded-xl shadow-pop overflow-hidden z-10"
           >
             <button
               v-for="speed in speeds"

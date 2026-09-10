@@ -120,6 +120,28 @@ describe("tahanoun et lecture de la Torah de la semaine", () => {
     expect(chabbat.has("lamnatseah-minha")).toBe(false);
   });
 
+  it("le 28 Eloul : tahanoun aussi à Min'ha, la veille de la veille de Roch Hachana", () => {
+    // La veille d'un jour sans tahanoun, on ne le dit pas à Min'ha ; la veille
+    // de Roch Hachana fait exception, et celle de Kippour aussi.
+    const eloul28 = activeOccasions(new HDate(28, months.ELUL, 5786), false);
+    expect(eloul28.has("tahanoun")).toBe(true);
+    expect(eloul28.has("tahanoun-minha")).toBe(true);
+    expect(eloul28.has("sans-tahanoun-minha")).toBe(false);
+
+    // Le lendemain, veille de Roch Hachana : plus de tahanoun du tout.
+    const eloul29 = activeOccasions(new HDate(29, months.ELUL, 5786), false);
+    expect(eloul29.has("tahanoun")).toBe(false);
+    expect(eloul29.has("tahanoun-minha")).toBe(false);
+  });
+
+  it("la veille de Roch Hodech : tahanoun le matin seulement", () => {
+    // 29 'Hechvan 5787, un lundi : la règle ordinaire vaut, le tahanoun tombe
+    // dès Min'ha.
+    const occ = activeOccasions(new HDate(29, months.CHESHVAN, 5787), false);
+    expect(occ.has("tahanoun")).toBe(true);
+    expect(occ.has("tahanoun-minha")).toBe(false);
+  });
+
   it("Roch Hodech : ni tahanoun, ni lecture de la paracha", () => {
     const occ = activeOccasions(new HDate(1, months.KISLEV, 5786), false);
     expect(occ.has("rosh-chodesh")).toBe(true);

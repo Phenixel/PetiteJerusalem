@@ -171,7 +171,7 @@ watch(
       <div class="grid grid-cols-2 gap-4 mb-8">
         <button
           @click="shareToWhatsApp"
-          class="flex flex-col items-center justify-center p-4 rounded-lg bg-green-600/10 text-green-700 hover:bg-green-600/15 transition-colors gap-2 dark:text-green-300"
+          class="flex flex-col items-center justify-center p-4 rounded-btn bg-green-600/10 text-green-700 hover:bg-green-600/15 transition-colors gap-2 dark:text-green-300"
         >
           <AppIcon name="whatsapp" :size="28" />
           <span class="font-medium">WhatsApp</span>
@@ -179,7 +179,7 @@ watch(
 
         <button
           @click="shareToSMS"
-          class="flex flex-col items-center justify-center p-4 rounded-lg bg-blue-600/10 text-blue-700 hover:bg-blue-600/15 transition-colors gap-2 dark:text-blue-300"
+          class="flex flex-col items-center justify-center p-4 rounded-btn bg-blue-600/10 text-blue-700 hover:bg-blue-600/15 transition-colors gap-2 dark:text-blue-300"
         >
           <AppIcon name="message" :size="28" />
           <span class="font-medium">SMS</span>
@@ -187,7 +187,7 @@ watch(
 
         <button
           @click="shareToFacebook"
-          class="flex flex-col items-center justify-center p-4 rounded-lg bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/15 transition-colors gap-2 dark:text-indigo-300"
+          class="flex flex-col items-center justify-center p-4 rounded-btn bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/15 transition-colors gap-2 dark:text-indigo-300"
         >
           <AppIcon name="facebook" :size="28" />
           <span class="font-medium">Facebook</span>
@@ -195,7 +195,7 @@ watch(
 
         <button
           @click="copyToClipboard"
-          class="flex flex-col items-center justify-center p-4 rounded-lg bg-black/5 text-text-primary hover:bg-black/10 transition-colors gap-2 dark:bg-white/10 dark:hover:bg-white/15"
+          class="flex flex-col items-center justify-center p-4 rounded-btn bg-black/5 text-text-primary hover:bg-black/10 transition-colors gap-2 dark:bg-white/10 dark:hover:bg-white/15"
         >
           <AppIcon name="copy" :size="28" />
           <span class="font-medium">{{ t("shareModal.copyLink") }}</span>

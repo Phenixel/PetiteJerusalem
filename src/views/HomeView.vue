@@ -143,6 +143,31 @@ const features = computed<
   },
 ]);
 
+/**
+ * Les trois portes, deux mises en page.
+ *
+ * Dans l'app, l'écran est étroit et la barre du bas attend juste en dessous :
+ * les trois tiennent sur une seule ligne, un dessin et un titre, sans la
+ * phrase de présentation. On sait ce qu'est la bibliothèque quand on a
+ * installé l'app ; la phrase servait au visiteur du site.
+ *
+ * Sur le web, elles s'empilent en lignes sur un téléphone (texte à gauche,
+ * dessin à droite, la place y est en largeur) et se rangent côte à côte,
+ * centrées sous leur dessin, dès qu'il y a trois colonnes. Rien ne les sépare
+ * qu'un écart : un filet entre elles redessinait les cases dont on venait de
+ * les sortir.
+ */
+const doorsClass = isNativeApp
+  ? "grid grid-cols-3 gap-2"
+  : "grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-8";
+const doorClass = isNativeApp
+  ? "flex flex-col items-center gap-2 px-1 py-3 text-center"
+  : "flex items-center gap-5 py-4 text-left md:flex-col md:items-center md:gap-4 md:py-2 md:text-center";
+const doorIllustrationClass = isNativeApp
+  ? "h-14 w-14"
+  : "order-2 h-24 w-24 sm:h-28 sm:w-28 md:order-1 md:h-24 md:w-24";
+const doorTitleClass = isNativeApp ? "text-base leading-snug" : "text-2xl md:text-3xl";
+
 // Ce que voit un visiteur qui (re)vient : la landing anonyme ou le tableau de
 // bord connecté. Une seule capture, au premier état d'auth connu.
 let hasTrackedHomeView = false;
@@ -183,24 +208,37 @@ onUnmounted(() => {
   <main class="flex-1 container mx-auto px-4 py-6 flex flex-col justify-center">
     <!-- ===== Connecté : accueil personnalisé, hors carte ===== -->
     <template v-if="user">
-      <div class="w-full max-w-6xl mx-auto mb-8 enter-rise">
-        <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight">
-          {{ greeting }},
-          <span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">{{
-            firstName
-          }}</span>
-        </h1>
-        <p class="text-text-secondary mt-1.5">{{ t("home.dashboard.subtitle") }}</p>
+      <!-- La salutation ne remplit qu'une demi-largeur : les raccourcis du
+           moment se rangent dans l'autre moitié, à côté du nom, au lieu de
+           traverser la page en bandeaux au-dessus du tableau de bord. Ils
+           n'apparaissent que quand leur moment est venu (l'heure d'un office,
+           les nuits de la bénédiction de la lune, l'Omer) : le reste du temps
+           la moitié droite est simplement vide, et la salutation garde sa
+           ligne. -->
+      <div
+        class="w-full max-w-6xl mx-auto mb-8 grid gap-4 md:grid-cols-2 md:items-center md:gap-8"
+      >
+        <div class="enter-rise">
+          <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight">
+            {{ greeting }},
+            <span class="text-primary">{{ firstName }}</span>
+          </h1>
+          <p class="mt-2 text-base md:text-lg text-text-secondary">
+            {{ t("home.dashboard.subtitle") }}
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-3">
+          <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
+               limite. Absent entre deux offices. -->
+          <SidourNowCard />
+
+          <!-- La bénédiction de la lune : une fenêtre de quelques nuits par
+               mois, qui se rate faute de rappel. Absente le reste du temps. -->
+          <BirkatHalevanaBanner />
+          <OmerBanner />
+        </div>
       </div>
-
-      <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
-           limite. Absent entre deux offices. -->
-      <SidourNowCard class="w-full max-w-6xl mx-auto mb-5" />
-
-      <!-- La bénédiction de la lune : une fenêtre de quelques nuits par mois,
-           qui se rate faute de rappel. Absente le reste du temps. -->
-      <BirkatHalevanaBanner class="w-full max-w-6xl mx-auto" />
-      <OmerBanner class="w-full max-w-6xl mx-auto" />
 
       <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mb-10">
         <!-- Squelettes pendant le chargement -->
@@ -234,11 +272,13 @@ onUnmounted(() => {
       class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 items-center mb-10"
     >
       <div class="space-y-4 text-center md:text-start">
-        <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight enter-rise">
+        <h1
+          class="text-4xl md:text-6xl font-bold text-text-primary tracking-tight leading-[1.05] enter-rise"
+        >
           {{ t("home.heroTitle") }}
         </h1>
         <p
-          class="text-base md:text-lg text-text-secondary leading-relaxed enter-rise"
+          class="text-lg md:text-xl text-text-secondary leading-relaxed enter-rise"
           style="--enter-delay: 0.1s"
         >
           {{ t("home.heroDescription") }}
@@ -271,44 +311,55 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <ZmanimCard class="dash-card" style="--enter-delay: 0.3s" @click="trackCard('zmanim')" />
+      <!-- Les horaires du jour et, dessous, les raccourcis du moment : la
+           colonne de droite porte tout ce qui dépend de l'heure qu'il est,
+           l'accroche garde la gauche. -->
+      <div class="flex flex-col gap-4">
+        <ZmanimCard class="dash-card" style="--enter-delay: 0.3s" @click="trackCard('zmanim')" />
+        <SidourNowCard />
+        <BirkatHalevanaBanner />
+        <OmerBanner />
+      </div>
     </div>
 
-    <SidourNowCard v-if="!user" class="w-full max-w-6xl mx-auto mb-5" />
-
-    <BirkatHalevanaBanner v-if="!user" class="w-full max-w-6xl mx-auto" />
-    <OmerBanner v-if="!user" class="w-full max-w-6xl mx-auto" />
-
     <div class="w-full max-w-6xl mx-auto">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mb-10 items-stretch">
+      <!-- Les trois portes du site, posées à même le fond : sans cadre. Elles
+           ne sont pas une donnée à consulter mais un endroit où aller, et le
+           cadre les mettait au même rang que les cartes du tableau de bord
+           juste au-dessus. Sans lui, les seules surfaces blanches de la page
+           sont celles qui répondent à une question (ma lecture, l'heure), et
+           l'accueil se lit en deux temps au lieu d'un empilement de boîtes.
+           Ce qui remplace le cadre : rien, qu'un écart entre elles, et au
+           survol le titre qui prend la couleur pendant que le dessin
+           s'anime. -->
+      <div class="mb-10 items-stretch" :class="doorsClass">
         <button
           v-for="(feature, index) in features"
           :key="feature.title"
-          class="feature-card card card-hover group flex items-center gap-5 p-6 text-left cursor-pointer"
+          class="feature-link group cursor-pointer"
+          :class="doorClass"
           :style="{ '--enter-delay': `${index * 0.12}s` }"
           @click="
             trackCard(`feature_${feature.route}`);
             router.push(feature.route);
           "
         >
-          <!-- Texte à gauche, illustration à droite, tout reste dans la carte
-               (une ligne par carte sur mobile, trois cartes côte à côte sur
-               desktop). Au repos, seule la micro-animation interne du SVG vit ;
-               au survol, c'est le dessin lui-même qui s'anime (aucun zoom). -->
-          <div class="flex-1 min-w-0">
+          <div class="shrink-0 text-primary" :class="doorIllustrationClass">
+            <component :is="feature.illustration" />
+          </div>
+          <div class="order-1 min-w-0 flex-1 md:order-2">
             <h3
-              class="text-lg font-bold mb-1.5 text-text-primary group-hover:text-primary transition-colors"
+              class="font-display font-bold tracking-tight text-text-primary transition-colors group-hover:text-primary"
+              :class="doorTitleClass"
             >
               {{ feature.title }}
             </h3>
-            <p class="text-text-secondary text-sm leading-relaxed">
+            <p
+              v-if="!isNativeApp"
+              class="mt-1.5 text-sm leading-relaxed text-text-secondary md:text-base"
+            >
               {{ feature.description }}
             </p>
-          </div>
-          <div
-            class="w-24 h-24 sm:w-28 sm:h-28 md:w-24 md:h-24 lg:w-28 lg:h-28 shrink-0 text-primary"
-          >
-            <component :is="feature.illustration" />
           </div>
         </button>
       </div>
@@ -328,7 +379,7 @@ onUnmounted(() => {
 
 <style scoped>
 /* Staggered entrance: cards, greeting/hero and memorial all rise into place. */
-.feature-card,
+.feature-link,
 .dash-card,
 .enter-rise {
   opacity: 0;
@@ -345,7 +396,7 @@ onUnmounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .feature-card,
+  .feature-link,
   .dash-card,
   .enter-rise {
     animation: none;

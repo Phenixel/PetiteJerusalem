@@ -3,18 +3,30 @@ import { createAccountPreference } from "./createAccountPreference";
 
 export interface FontOption {
   id: string;
-  /** Display name shown in the selector (rendered in the font itself). */
+  /** Nom affiché dans le sélecteur, écrit dans la police elle-même. */
   label: string;
-  /** CSS font-family stack applied to the whole app. */
+  /** Pile de polices CSS posée sur les textes que l'on lit. */
   stack: string;
 }
 
-/** Latin (UI) fonts, applied to --font-sans. */
+/**
+ * Polices latines du TEXTE DES LECTURES, appliquées à --font-reading.
+ *
+ * Elles ne touchent plus l'interface : celle-ci porte Manrope et Playfair
+ * Display, qui font l'identité du site (voir docs/design.md et main.css).
+ * Changer de police, c'est régler son confort de lecture, comme on règle la
+ * taille du texte ; ce n'est pas repeindre l'application.
+ *
+ * La première est celle d'origine : Manrope, la police de l'interface, pour
+ * que la lecture soit d'un seul tenant avec le reste tant qu'on n'a rien
+ * choisi. Elle remplace Inter, dont elle a le dessin : les comptes restés sur
+ * « inter » retrouvent donc la même lecture sous le nom de la maison.
+ */
 export const LATIN_FONT_OPTIONS: FontOption[] = [
   {
-    id: "inter",
-    label: "Inter",
-    stack: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    id: "manrope",
+    label: "Manrope",
+    stack: '"Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   {
     id: "lora",
@@ -64,11 +76,12 @@ const DEFAULT_HEBREW = HEBREW_FONT_OPTIONS[0];
 /**
  * Chargement à la demande des familles NON par défaut.
  *
- * index.html n'embarque en bloquant que Inter + Frank Ruhl Libre (+ le sous-ensemble Noto
- * Hebrew, repli des teamim) : télécharger les 7 familles pour tous les
- * visiteurs retardait le premier rendu de chaque page. Les alternatives ne
- * concernent que les utilisateurs qui les ont choisies (et l'écran de
- * préférences, qui affiche chaque option dans sa propre police).
+ * index.html n'embarque en bloquant que les polices de l'identité, Manrope +
+ * Playfair Display + Frank Ruhl Libre (+ le sous-ensemble Noto Hebrew, repli
+ * des teamim) : télécharger toutes les familles pour tous les visiteurs
+ * retardait le premier rendu de chaque page. Les alternatives ne concernent
+ * que les utilisateurs qui les ont choisies (et l'écran de préférences, qui
+ * affiche chaque option dans sa propre police).
  */
 const FONT_STYLESHEETS: Record<string, string> = {
   lora: "family=Lora:wght@400;500;600;700",
@@ -94,7 +107,7 @@ export function ensureAllFontsLoaded(): void {
   Object.keys(FONT_STYLESHEETS).forEach(ensureFontLoaded);
 }
 
-function applyFont(cssVar: "--font-sans" | "--font-hebrew", options: FontOption[], id: string) {
+function applyFont(cssVar: "--font-reading" | "--font-hebrew", options: FontOption[], id: string) {
   ensureFontLoaded(id);
   if (typeof document === "undefined") return;
   const font = options.find((f) => f.id === id) ?? options[0];
@@ -102,14 +115,14 @@ function applyFont(cssVar: "--font-sans" | "--font-hebrew", options: FontOption[
 }
 
 /**
- * Même mesure que pour le thème (voir useTheme) : `script` sépare la police de
- * l'interface de celle de la lecture hébraïque, dont les enjeux ne sont pas
- * les mêmes (confort de lecture des textes contre goût général).
+ * Même mesure que pour le thème (voir useTheme) : `script` sépare les deux
+ * moitiés d'un texte étudié, la traduction ou la phonétique en caractères
+ * latins et l'hébreu, dont les enjeux de lecture ne sont pas les mêmes.
  */
 function fontPreference(
   script: "latin" | "hebrew",
   field: "fontLatin" | "fontHebrew",
-  cssVar: "--font-sans" | "--font-hebrew",
+  cssVar: "--font-reading" | "--font-hebrew",
   options: FontOption[],
 ) {
   return createAccountPreference<string>({
@@ -129,7 +142,7 @@ function fontPreference(
   });
 }
 
-const latin = fontPreference("latin", "fontLatin", "--font-sans", LATIN_FONT_OPTIONS);
+const latin = fontPreference("latin", "fontLatin", "--font-reading", LATIN_FONT_OPTIONS);
 const hebrew = fontPreference("hebrew", "fontHebrew", "--font-hebrew", HEBREW_FONT_OPTIONS);
 
 const currentLatinId = latin.current;

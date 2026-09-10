@@ -56,6 +56,8 @@ export interface Bookmark {
 const LITURGY_PATH = /^\/bibliotheque\/(?:slihot|brahot)\//;
 
 const POSITIONS_KEY = "pj-reading-positions";
+/** Date du dernier « ignorer » sur la ligne de reprise de la bibliothèque. */
+const RESUME_DISMISSED_KEY = "pj-reading-resume-dismissed";
 const BOOKMARKS_KEY = "pj-bookmarks";
 const TOMBSTONES_KEY = "pj-bookmark-tombstones";
 const MAX_POSITIONS = 50;
@@ -173,11 +175,35 @@ class ReadingProgressService {
     return this.positions()[textId] ?? null;
   }
 
-  /** Dernière position tous textes confondus (CTA « Reprendre ma lecture »). */
+  /** Dernière position tous textes confondus. */
   getLastPosition(): ReadingPosition | null {
     const all = Object.values(this.positions());
     if (all.length === 0) return null;
     return all.reduce((a, b) => (b.at > a.at ? b : a));
+  }
+
+  /**
+   * Ce que propose la bibliothèque : la dernière lecture, et elle seule.
+   *
+   * Les positions des autres textes restent en mémoire (chaque texte rouvre
+   * là où on l'avait laissé), mais elles ne remontent pas ici : refermer la
+   * ligne de reprise faisait défiler tout l'historique, un texte après
+   * l'autre, jusqu'à ce qu'il n'en reste plus. Une fois refermée, la ligne ne
+   * revient qu'avec une lecture plus récente que le refus.
+   */
+  getResumePosition(): ReadingPosition | null {
+    const last = this.getLastPosition();
+    if (!last) return null;
+    return last.at > readJson<number>(RESUME_DISMISSED_KEY, 0) ? last : null;
+  }
+
+  /**
+   * « Ignorer » : ce texte-là est fini, et la bibliothèque n'en propose pas un
+   * plus ancien à la place.
+   */
+  dismissResume(textId: string): void {
+    writeJson(RESUME_DISMISSED_KEY, Date.now());
+    this.clearPosition(textId);
   }
 
   savePosition(position: Omit<ReadingPosition, "at">): void {

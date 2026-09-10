@@ -39,6 +39,7 @@ const OnboardingFlow = defineAsyncComponent(
 // Capacitor) ou rarement affiché (avis hors ligne) : chargés à la demande, le
 // site web n'en embarque pas une ligne dans son chargement initial.
 const BottomTabBar = defineAsyncComponent(() => import("./components/BottomTabBar.vue"));
+const StatusBarScrim = defineAsyncComponent(() => import("./components/StatusBarScrim.vue"));
 const AppUpdateBanner = defineAsyncComponent(() => import("./components/AppUpdateBanner.vue"));
 const OfflineNotice = defineAsyncComponent(() => import("./components/OfflineNotice.vue"));
 
@@ -154,6 +155,9 @@ authService.onAuthChanged((user) => {
     <OnboardingFlow v-if="isOnboardingOpen" />
     <GlobalAudioPlayer />
     <BottomTabBar v-if="isNativeApp" />
+    <!-- App native : le flou en dégradé qui rend l'heure et la batterie
+         lisibles quand la page défile sous elles (l'app reste bord à bord). -->
+    <StatusBarScrim v-if="isNativeApp" />
   </div>
 </template>
 

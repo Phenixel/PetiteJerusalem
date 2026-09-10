@@ -2,6 +2,9 @@ import type { LocaleMessages } from "./fr";
 
 const en: LocaleMessages = {
   common: {
+    chooseDate: "Choose a date",
+    previousMonth: "Previous month",
+    nextMonth: "Next month",
     home: "Home",
     profile: "Profile",
     login: "Sign in",
@@ -212,7 +215,7 @@ const en: LocaleMessages = {
       "A modern platform dedicated to study, sharing and spiritual growth of the Jewish community.",
     features: {
       shareReading: {
-        title: "Reading Share",
+        title: "Sharing",
         description: "Exchange and discover sacred texts with the community",
       },
       study: {
@@ -237,7 +240,7 @@ const en: LocaleMessages = {
     // Siddur shortcut: during a prayer's time window, the home page links
     // straight to the text.
     sidourNow: {
-      title: "It's time for {tefila}",
+      title: "Time for {tefila}",
       until: "until {time}",
       names: {
         chaharit: "Shacharit",
@@ -341,11 +344,11 @@ const en: LocaleMessages = {
     },
     fontsTitle: "Fonts",
     fontsDescription:
-      "Choose the interface font and the Hebrew text font. Your choices apply across the entire site.",
-    fontLatinLabel: "Interface font",
+      "Choose the font for the texts you read and the Hebrew text font. Your choices apply wherever you read.",
+    fontLatinLabel: "Reading font",
     fontHebrewLabel: "Hebrew text font",
     fontsLatin: {
-      inter: "Modern",
+      manrope: "Modern",
       lora: "Classic",
       nunito: "Soft",
     },
@@ -418,6 +421,7 @@ const en: LocaleMessages = {
   },
   calendar: {
     title: "Holiday calendar",
+    navTitle: "Calendar",
     link: "Holiday calendar",
     description:
       "The festivals and fasts of the year, with candle lighting and end times for your location.",
@@ -471,6 +475,7 @@ const en: LocaleMessages = {
       locating: "Locating…",
       refresh: "Refresh my location",
       chooseCity: "Choose my city",
+      changeCity: "{city}, choose another city",
       searchCity: "Search for a city…",
       noCity: "No city matches “{query}”.",
       denied:
@@ -673,9 +678,30 @@ const en: LocaleMessages = {
     },
     instructions: {
       title: "Instructions",
-      step1: "Check the boxes to reserve a section or text",
-      step2: "You can uncheck your own reservations to cancel them",
-      step3: "Click on the text card to see available sections",
+      next: "Next",
+      done: "Got it",
+      steps: {
+        search: {
+          title: "Find a text",
+          text: 'Type its name in the search box, or show only what is left to take with "Available only".',
+        },
+        reserve: {
+          title: "Reserve a place",
+          text: "Check one chapter, or several, then confirm at the bottom of the screen: they are yours.",
+        },
+        cancel: {
+          title: "Give a place back",
+          text: "Uncheck one of your reservations and the chapter goes back to the chain. Other people's stay put.",
+        },
+        markRead: {
+          title: "Mark as read",
+          text: 'Once you have read the text, flip "Read": the chain\'s progress rises for everyone.',
+        },
+        read: {
+          title: "Read the text",
+          text: 'The "Read" button opens the text, with or without a reservation.',
+        },
+      },
     },
     textList: {
       selected: "Selected",
@@ -762,7 +788,7 @@ const en: LocaleMessages = {
       "Listen to the chiour « {name} » 🎧 A Torah lesson to discover on Petite Jerusalem:",
   },
   batchSelection: {
-    textsSelected: "{count} texts selected",
+    textsSelected: "{count} text selected | {count} texts selected",
   },
   editModal: {
     title: "Edit session",
@@ -774,6 +800,8 @@ const en: LocaleMessages = {
   },
   progressBar: {
     participants: "Participating",
+    participantsTitle: "Participants",
+    seeParticipants: "See who is taking part",
     total: "Total",
     read: "Read",
     reserved: "Reserved",
@@ -1161,6 +1189,10 @@ const en: LocaleMessages = {
   },
   study: {
     title: "Library",
+    tabs: {
+      reading: "Reading",
+      sharing: "Sharing",
+    },
     subtitle:
       "Read and study the texts: Tehilim, Mishnah, Talmud, Tanakh, Siddur, Selichot and Berakhot.",
     searchPlaceholder: "Search a text…",

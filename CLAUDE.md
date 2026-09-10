@@ -30,6 +30,13 @@ Le français de l'interface veut ses espaces insécables : U+202F avant `!`, `?`
 et `;`, U+00A0 avant `:` et à l'intérieur des guillemets. Un test le vérifie
 aussi (`src/__tests__/frenchTypography.test.ts`).
 
+## Apparence
+
+L'apparence du site et de l'app suit `docs/design.md` : couleurs des trois
+thèmes, rayons (surfaces franches, commandes rondes), polices (Playfair
+Display pour les titres, Manrope pour le reste), et ce qui ne s'emploie pas,
+à commencer par les dégradés. Toute décision de design nouvelle s'y ajoute.
+
 ## Langue
 
 Les commentaires et la documentation sont en français. Les identifiants de code

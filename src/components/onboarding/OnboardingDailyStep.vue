@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import AppIcon from "../icons/AppIcon.vue";
-import MockDailyReading from "./mock/MockDailyReading.vue";
+import MockDailyReading from "../mock/MockDailyReading.vue";
 
 /**
  * Troisième page : la lecture quotidienne. C'est la fonctionnalité la moins

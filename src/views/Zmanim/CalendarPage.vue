@@ -27,10 +27,16 @@ import { dateTimeFormat } from "../../services/intlCache";
 import { findFestivalBySlug, type SeoFestival } from "../../content/zmanimFestivals";
 import { isSectionPath, localeOfPath, sectionPath, type SeoLocale } from "../../content/seoLocales";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import PageTabs from "../../components/PageTabs.vue";
+import { zmanimTabs } from "../../config/pageTabs";
+import { isNativeApp } from "../../composables/useNativeApp";
 import { useLocalePath } from "../../composables/useLocalePath";
 
 /** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
 const { localePath } = useLocalePath();
+
+/** Les deux onglets de l'app : les horaires du jour, le calendrier de l'année. */
+const tabs = computed(() => zmanimTabs(localePath));
 
 const { t, locale } = useI18n();
 const { place } = useZmanimLocation();
@@ -248,24 +254,36 @@ onMounted(() => {
 
 <template>
   <main ref="root" class="flex-1 mx-auto w-full max-w-3xl px-6 py-10">
-    <RouterLink :to="localePath('horaires')" class="back-link mb-6">
-      <AppIcon name="chevron-left" :size="14" />
+    <!-- App native : le calendrier est le second onglet des horaires, et les
+         onglets tiennent lieu de titre (voir PageTabs). Sur le site, le
+         bandeau y mène, et le lien de retour reste. -->
+    <PageTabs
+      v-if="isNativeApp"
+      :tabs="tabs"
+      event="zmanim_tab_switched"
+      :label="t('zmanim.navTitle')"
+    />
+    <RouterLink v-else :to="localePath('horaires')" class="back-link mb-6">
+      <AppIcon name="chevron-left" :size="14" class="rtl:rotate-180" />
       {{ t("zmanim.navTitle") }}
     </RouterLink>
 
-    <h1 class="text-2xl md:text-3xl font-bold text-text-primary tracking-tight">
+    <h1
+      class="text-center text-2xl md:text-3xl font-bold text-text-primary tracking-tight"
+      :class="isNativeApp ? 'sr-only' : ''"
+    >
       {{ t("calendar.title") }}
     </h1>
-    <p class="mt-1.5 flex items-center gap-1.5 text-sm">
-      <AppIcon name="map-pin" :size="14" class="text-primary shrink-0" />
-      <span class="font-medium text-text-primary truncate">{{ placeLabel }}</span>
+    <p class="mt-2 flex items-center justify-center gap-1.5">
+      <AppIcon name="map-pin" :size="16" class="text-primary shrink-0" />
+      <span class="font-semibold text-text-primary">{{ placeLabel }}</span>
     </p>
-    <p class="mt-1.5 text-xs text-text-secondary leading-relaxed">
+    <p class="mt-3 text-center text-sm text-text-secondary leading-relaxed">
       {{ t("calendar.description") }}
     </p>
 
     <!-- Année affichée : les flèches parcourent le calendrier sans rien recharger -->
-    <div class="mt-6 flex items-center justify-between gap-3">
+    <div class="mx-auto mt-8 flex max-w-md items-center justify-between gap-3">
       <button
         type="button"
         class="icon-btn"
@@ -274,7 +292,7 @@ onMounted(() => {
       >
         <AppIcon name="chevron-left" :size="18" class="rtl:rotate-180" />
       </button>
-      <p class="font-semibold text-text-primary">{{ t("calendar.year", { year }) }}</p>
+      <p class="text-lg font-semibold text-text-primary">{{ t("calendar.year", { year }) }}</p>
       <button
         type="button"
         class="icon-btn"
@@ -284,8 +302,8 @@ onMounted(() => {
         <AppIcon name="chevron-right" :size="18" class="rtl:rotate-180" />
       </button>
     </div>
-    <div v-if="yearOffset !== 0" class="mt-2 text-center">
-      <button type="button" class="text-sm font-medium text-primary" @click="yearOffset = 0">
+    <div v-if="yearOffset !== 0" class="mt-3 text-center">
+      <button type="button" class="btn btn-soft" @click="yearOffset = 0">
         {{ t("calendar.backToCurrent") }}
       </button>
     </div>

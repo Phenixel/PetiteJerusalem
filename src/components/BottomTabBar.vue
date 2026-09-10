@@ -35,16 +35,45 @@ onUnmounted(() => {
  */
 const { localePath } = useLocalePath();
 
-// Le Partage de lectures reste accessible depuis l'accueil et le footer.
 // `anim` : personnalité de l'icône au toucher, en écho aux illustrations de
 // l'accueil (livre qui se redresse, casque qui hoche, personnage qui bondit).
-type Tab = { to: string; icon: IconName; labelKey: string; exact: boolean; anim: string };
+//
+// `activeOn` : les adresses qui allument l'onglet. Le `active-class` de
+// RouterLink ne suffit pas, il compare les routes déclarées et non les
+// adresses : /bibliotheque/tehilim et /bibliotheque sont deux routes
+// distinctes, l'onglet s'éteignait donc dès qu'on ouvrait un corpus, alors
+// qu'on est toujours dans la bibliothèque. Le partage de lectures est dans le
+// même cas, à plus forte raison depuis qu'il est le second onglet de la
+// bibliothèque (voir PageTabs) : il n'a pas d'onglet à lui dans la barre.
+type Tab = {
+  to: string;
+  icon: IconName;
+  labelKey: string;
+  exact: boolean;
+  anim: string;
+  /** Préfixes d'adresse qui allument cet onglet. */
+  activeOn?: string[];
+};
 const tabs = computed<Tab[]>(() => [
   // L'accueil est traduit (/, /en, /he) : l'onglet suit l'espace de langue,
   // comme le bouton des horaires plus bas.
   { to: localePath("home"), icon: "home", labelKey: "common.home", exact: true, anim: "pop" },
-  { to: "/bibliotheque", icon: "book-open", labelKey: "study.title", exact: false, anim: "sway" },
-  { to: "/chiourim", icon: "headphones", labelKey: "common.chiourim", exact: false, anim: "nod" },
+  {
+    to: "/bibliotheque",
+    icon: "book-open",
+    labelKey: "study.title",
+    exact: false,
+    anim: "sway",
+    activeOn: ["/bibliotheque", "/share-reading"],
+  },
+  {
+    to: "/chiourim",
+    icon: "headphones",
+    labelKey: "common.chiourim",
+    exact: false,
+    anim: "nod",
+    activeOn: ["/chiourim"],
+  },
   isLoggedIn.value
     ? { to: "/profile", icon: "user", labelKey: "common.profile", exact: false, anim: "hop" }
     : {
@@ -107,6 +136,7 @@ function toggleZmanim(event: MouseEvent) {
         <RouterLink
           :to="tab.to"
           class="tab-item"
+          :class="tab.activeOn?.some((prefix) => route.path.startsWith(prefix)) ? 'tab-item-active' : ''"
           :exact-active-class="tab.exact ? 'tab-item-active' : 'tab-item-noop'"
           :active-class="tab.exact ? 'tab-item-noop' : 'tab-item-active'"
           @click="popIcon(tab.to)"

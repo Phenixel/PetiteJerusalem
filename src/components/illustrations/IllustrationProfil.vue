@@ -1,7 +1,8 @@
 <script setup lang="ts">
-// "Profil" hero illustration: a person greeted by little sparks. The person
-// rises on load, the sparks pop in then twinkle at idle. On hover of the
-// parent .feature-card, the person gives a friendly hop and the sparks burst.
+// L'illustration de la porte « Profil » : une personne saluée par de petites
+// étincelles. Elle monte à l'ouverture, les étincelles arrivent puis
+// scintillent au repos. Au survol de la porte qui les porte (.feature-link),
+// la personne fait un bond et les étincelles éclatent.
 </script>
 
 <template>
@@ -110,22 +111,22 @@
 /* --- hover (parent card): friendly hop + spark burst ---
    NOTE: the WHOLE selector must live inside :global(), Vue's scoped
    compiler drops anything written after :global(...). */
-:global(.feature-card:hover .illu-profil .person) {
+:global(.feature-link:hover .illu-profil .person) {
   opacity: 1;
   animation: person-hop 0.55s ease 0s 1 both;
 }
-:global(.feature-card:hover .illu-profil .spark) {
+:global(.feature-link:hover .illu-profil .spark) {
   opacity: 1;
   transform-box: fill-box;
   transform-origin: center;
 }
-:global(.feature-card:hover .illu-profil .spark-1) {
+:global(.feature-link:hover .illu-profil .spark-1) {
   animation: spark-burst 0.5s ease-out 0.1s both;
 }
-:global(.feature-card:hover .illu-profil .spark-2) {
+:global(.feature-link:hover .illu-profil .spark-2) {
   animation: spark-burst 0.5s ease-out 0.2s both;
 }
-:global(.feature-card:hover .illu-profil .spark-3) {
+:global(.feature-link:hover .illu-profil .spark-3) {
   animation: spark-burst 0.5s ease-out 0.3s both;
 }
 
@@ -158,8 +159,8 @@
     opacity: 1;
     transform: none;
   }
-  :global(.feature-card:hover .illu-profil .person),
-  :global(.feature-card:hover .illu-profil .spark) {
+  :global(.feature-link:hover .illu-profil .person),
+  :global(.feature-link:hover .illu-profil .spark) {
     animation: none;
     transform: none;
   }

@@ -2,6 +2,9 @@ import type { LocaleMessages } from "./fr";
 
 const he: LocaleMessages = {
   common: {
+    chooseDate: "בחירת תאריך",
+    previousMonth: "החודש הקודם",
+    nextMonth: "החודש הבא",
     home: "בית",
     profile: "פרופיל",
     login: "התחברות",
@@ -199,7 +202,7 @@ const he: LocaleMessages = {
     heroDescription: "פלטפורמה מודרנית המוקדשת ללימוד, שיתוף וצמיחה רוחנית של הקהילה היהודית.",
     features: {
       shareReading: {
-        title: "שיתוף קריאות",
+        title: "שיתוף",
         description: "החליפו וגלו טקסטים קדושים עם הקהילה",
       },
       study: {
@@ -223,7 +226,7 @@ const he: LocaleMessages = {
     },
     // קיצור דרך לסידור: בתוך זמן התפילה, דף הבית מוביל ישירות אל הטקסט.
     sidourNow: {
-      title: "עכשיו זמן {tefila}",
+      title: "זמן {tefila}",
       until: "עד {time}",
       names: {
         chaharit: "שחרית",
@@ -325,11 +328,12 @@ const he: LocaleMessages = {
       emerald: "אזמרגד",
     },
     fontsTitle: "גופנים",
-    fontsDescription: "בחרו את גופן הממשק ואת גופן הטקסטים בעברית. הבחירות חלות על כל האתר.",
-    fontLatinLabel: "גופן הממשק",
+    fontsDescription:
+      "בחרו את גופן הטקסטים שאתם קוראים ואת גופן הטקסטים בעברית. הבחירות חלות בכל מקום שבו קוראים.",
+    fontLatinLabel: "גופן הקריאה",
     fontHebrewLabel: "גופן הטקסטים בעברית",
     fontsLatin: {
-      inter: "מודרני",
+      manrope: "מודרני",
       lora: "קלאסי",
       nunito: "רך",
     },
@@ -399,6 +403,7 @@ const he: LocaleMessages = {
   },
   calendar: {
     title: "לוח החגים",
+    navTitle: "לוח שנה",
     link: "לוח החגים",
     description: "חגי השנה והצומות, עם זמני הדלקת הנרות והיציאה למיקום שלכם.",
     year: "שנת {year}",
@@ -451,6 +456,7 @@ const he: LocaleMessages = {
       locating: "מאתר מיקום…",
       refresh: "עדכון המיקום שלי",
       chooseCity: "בחירת עיר",
+      changeCity: "{city}, לבחור עיר אחרת",
       searchCity: "חיפוש עיר…",
       noCity: "לא נמצאה עיר התואמת ל״{query}״.",
       denied:
@@ -652,9 +658,30 @@ const he: LocaleMessages = {
     },
     instructions: {
       title: "הוראות",
-      step1: "סמן את התיבות כדי להזמין קטע או טקסט",
-      step2: "אתה יכול לבטל סימון של ההזמנות שלך כדי לבטל אותן",
-      step3: "לחץ על כרטיס הטקסט כדי לראות קטעים זמינים",
+      next: "הבא",
+      done: "הבנתי",
+      steps: {
+        search: {
+          title: "למצוא טקסט",
+          text: 'הקלד את שמו בחיפוש, או הצג רק את מה שנותר לקחת עם "רק זמינים".',
+        },
+        reserve: {
+          title: "להזמין מקום",
+          text: "סמן פרק אחד או כמה, ואשר בתחתית המסך: הם שלך.",
+        },
+        cancel: {
+          title: "להחזיר מקום",
+          text: "בטל סימון של אחת ההזמנות שלך והפרק חוזר לשרשרת. ההזמנות של אחרים לא זזות.",
+        },
+        markRead: {
+          title: "לסמן כנקרא",
+          text: 'אחרי שקראת את הטקסט, העבר את "נקרא": ההתקדמות של השרשרת עולה עבור כולם.',
+        },
+        read: {
+          title: "לקרוא את הטקסט",
+          text: 'כפתור "קריאה" פותח את הטקסט, עם הזמנה או בלעדיה.',
+        },
+      },
     },
     textList: {
       selected: "נבחר",
@@ -739,7 +766,7 @@ const he: LocaleMessages = {
     inviteChiour: "האזינו לשיעור « {name} » 🎧 שיעור תורה לגלות בפטיט ירושלים:",
   },
   batchSelection: {
-    textsSelected: "{count} טקסטים נבחרו",
+    textsSelected: "טקסט אחד נבחר | {count} טקסטים נבחרו",
   },
   editModal: {
     title: "עריכת סשן",
@@ -751,6 +778,8 @@ const he: LocaleMessages = {
   },
   progressBar: {
     participants: "משתתפים",
+    participantsTitle: "המשתתפים",
+    seeParticipants: "לראות מי משתתף",
     total: 'סה"כ',
     read: "נקראו",
     reserved: "הוזמנו",
@@ -1116,6 +1145,10 @@ const he: LocaleMessages = {
   },
   study: {
     title: "ספרייה",
+    tabs: {
+      reading: "קריאה",
+      sharing: "שיתוף",
+    },
     subtitle: "קראו ולמדו את הטקסטים: תהילים, משנה, תלמוד, תנ״ך, סידור, סליחות וברכות.",
     searchPlaceholder: "חיפוש טקסט…",
     searchAllPlaceholder: "חיפוש בכל הטקסטים…",

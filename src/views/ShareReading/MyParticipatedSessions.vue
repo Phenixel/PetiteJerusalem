@@ -3,7 +3,7 @@
 // réservations (les terminées ne sont plus affichées, filtrées en amont).
 // Une ligne par session (nom, type, échéance, avancement de mes lectures) ;
 // le clic déplie la liste de mes réservations à cocher, sans quitter la page.
-import { ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { reservationService, ReservationGoneError } from "../../services/reservationService";
@@ -27,17 +27,6 @@ const props = defineProps<{
   textStudiesMap: Map<string, TextStudy>;
 }>();
 
-// Lignes dépliées (mes réservations à cocher). La première session est
-// ouverte d'office : c'est ce qu'on vient faire ici.
-const expandedIds = ref<Set<string>>(new Set(props.sessions[0] ? [props.sessions[0].id] : []));
-
-function toggleExpand(id: string) {
-  const next = new Set(expandedIds.value);
-  if (next.has(id)) next.delete(id);
-  else next.add(id);
-  expandedIds.value = next;
-}
-
 const myReservations = (session: Session): TextStudyReservation[] => {
   if (!props.currentUser) return [];
   const user = props.currentUser;
@@ -48,6 +37,46 @@ const readCount = (session: Session) => {
   const mine = myReservations(session);
   return { done: mine.filter((r) => r.isCompleted).length, total: mine.length };
 };
+
+// Lignes dépliées (mes réservations à cocher). La première session où il me
+// reste à lire est ouverte d'office : c'est ce qu'on vient faire ici. Une
+// session dont j'ai tout lu n'attend plus rien de moi, elle reste repliée.
+const firstUnread = computed(
+  () =>
+    props.sessions.find((session) => {
+      const { done, total } = readCount(session);
+      return total > 0 && done < total;
+    })?.id ?? null,
+);
+
+const expandedIds = ref<Set<string>>(new Set());
+/** Vrai dès que le lecteur a ouvert ou fermé une ligne lui-même. */
+const touched = ref(false);
+
+// Le compte arrive parfois après le montage : tant que rien n'est déplié et
+// que personne n'a touché aux lignes, celle qui s'ouvre d'office suit ce que
+// la liste dit maintenant. Figée au montage, elle laissait tout replié quand
+// mes réservations n'étaient pas encore connues.
+//
+// Une fois une ligne ouverte, elle le reste : cocher sa dernière lecture
+// change la première session où il reste à lire, et la ligne se serait refermée
+// sous la main de celui qui vient d'y cocher une case.
+watch(
+  firstUnread,
+  (id) => {
+    if (touched.value || expandedIds.value.size > 0) return;
+    expandedIds.value = new Set(id ? [id] : []);
+  },
+  { immediate: true },
+);
+
+function toggleExpand(id: string) {
+  touched.value = true;
+  const next = new Set(expandedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  expandedIds.value = next;
+}
 
 /** Jours restants avant la date limite (arrondi supérieur, 0 = aujourd'hui). */
 const daysLeft = (session: Session): number => {
@@ -125,36 +154,49 @@ const goToSession = (session: Session) => {
       <ul class="divide-y divide-line">
         <li v-for="session in sessions" :key="session.id">
           <div class="flex items-center gap-2 py-3">
+            <!-- Sur un téléphone, le nom prend sa ligne et les puces passent
+                 dessous : côte à côte, il ne restait de « Tehilim pour la
+                 refoua de Sarah bat Rivka » que « Tehilim pour… », et deux
+                 chaînes se ressemblaient. -->
             <button
-              class="flex-1 min-w-0 flex items-center gap-2 text-left group"
+              class="flex-1 min-w-0 flex items-start gap-2 text-left group sm:items-center"
               @click="toggleExpand(session.id)"
               :aria-expanded="expandedIds.has(session.id)"
             >
               <AppIcon
                 name="chevron-right"
                 :size="13"
-                class="shrink-0 text-text-secondary/60 transition-transform duration-200 rtl:rotate-180"
+                class="mt-1 shrink-0 text-text-secondary/60 transition-transform duration-200 rtl:rotate-180 sm:mt-0"
                 :class="expandedIds.has(session.id) ? '!rotate-90' : ''"
               />
-              <span
-                class="font-semibold text-text-primary truncate group-hover:text-primary transition-colors"
-              >
-                {{ session.name }}
-              </span>
-              <span class="chip bg-primary/10 text-primary shrink-0 hidden sm:inline-flex">
-                {{ TextTypeService.formatType(session.type) }}
-              </span>
-              <!-- Échéance : discrète, orange quand la fin approche -->
-              <span
-                class="chip shrink-0"
-                :class="
-                  daysLeft(session) <= 3
-                    ? 'bg-accent-secondary/10 text-accent-secondary'
-                    : 'bg-black/5 text-text-secondary dark:bg-white/10'
-                "
-              >
-                <AppIcon name="hourglass" :size="11" />
-                {{ t("shareReading.daysLeftChip", { count: daysLeft(session) }) }}
+              <span class="min-w-0 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                <!-- Sur téléphone, un nom long tient sur deux lignes plutôt
+                     que de se couper au milieu ; en ligne, il se coupe. -->
+                <span
+                  class="font-semibold text-text-primary line-clamp-2 sm:truncate group-hover:text-primary transition-colors"
+                >
+                  {{ session.name }}
+                </span>
+                <span class="flex items-center gap-2">
+                  <span class="chip bg-primary/10 text-primary shrink-0 hidden sm:inline-flex">
+                    {{ TextTypeService.formatType(session.type) }}
+                  </span>
+                  <!-- Échéance : discrète, ambrée quand la fin approche. L'ambre
+                       ne vient pas du thème : une urgence ne change pas de couleur
+                       avec les goûts, et resterait indistincte de la puce voisine
+                       sous le thème orange. -->
+                  <span
+                    class="chip shrink-0"
+                    :class="
+                      daysLeft(session) <= 3
+                        ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                        : 'bg-black/5 text-text-secondary dark:bg-white/10'
+                    "
+                  >
+                    <AppIcon name="hourglass" :size="11" />
+                    {{ t("shareReading.daysLeftChip", { count: daysLeft(session) }) }}
+                  </span>
+                </span>
               </span>
             </button>
 

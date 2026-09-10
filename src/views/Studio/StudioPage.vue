@@ -187,7 +187,7 @@ async function removeChiour(chiour: ChiourDoc) {
          seule la zone de contenu attend. -->
     <template v-if="isLoading">
       <div class="text-center mb-10">
-        <p class="text-sm font-semibold uppercase tracking-wider text-primary mb-2">
+        <p class="text-sm font-semibold text-primary mb-2">
           {{ t("studio.title") }}
         </p>
       </div>
@@ -206,7 +206,7 @@ async function removeChiour(chiour: ChiourDoc) {
 
     <template v-else>
       <div class="text-center mb-10 animate-[fadeIn_0.5s_ease]">
-        <p class="text-sm font-semibold uppercase tracking-wider text-primary mb-2">
+        <p class="text-sm font-semibold text-primary mb-2">
           {{ t("studio.title") }}
         </p>
         <h1 class="text-3xl md:text-4xl font-bold text-text-primary mb-3 tracking-tight">
@@ -402,7 +402,6 @@ async function removeChiour(chiour: ChiourDoc) {
                     }}
                   </p>
                 </div>
-                <AppIcon name="chevron-right" :size="15" class="text-text-secondary shrink-0" />
               </button>
             </li>
           </ul>

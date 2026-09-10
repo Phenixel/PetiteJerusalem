@@ -74,6 +74,7 @@ function offsetOf(index: number): number {
   font-size: calc(1.25rem * var(--reading-scale, 1));
 }
 .daf-tl {
+  font-family: var(--font-reading);
   font-size: calc(1.125rem * var(--reading-scale, 1));
 }
 </style>

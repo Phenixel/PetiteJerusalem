@@ -3,7 +3,7 @@
 // non connectés (beaucoup de fonctionnalités, sessions, lecture quotidienne,
 // rappels, passent par un compte). Même langage visuel que les cartes de
 // l'accueil : titre gras, texte secondaire, illustration animée à droite
-// (la classe .feature-card déclenche ses animations de survol).
+// (la classe .feature-link déclenche ses animations de survol).
 // Autonome : le composant s'occupe de l'état d'auth et ne rend rien tant
 // qu'il n'est pas sûr, pour éviter un flash aux utilisateurs connectés.
 import { ref, onMounted, onUnmounted } from "vue";
@@ -28,7 +28,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="showCta" class="feature-card card flex items-center gap-5 p-6 text-left">
+  <div v-if="showCta" class="feature-link card flex items-center gap-5 p-6 text-left">
     <div class="flex-1 min-w-0">
       <h3 class="text-lg font-bold mb-1.5 text-text-primary">
         {{ t("accountCta.title") }}

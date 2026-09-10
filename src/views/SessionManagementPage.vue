@@ -21,6 +21,7 @@ import { analyticsService } from "../services/analyticsService";
 
 import BatchSelectionBar from "../components/BatchSelectionBar.vue";
 import EditSessionModal from "../components/EditSessionModal.vue";
+import AppSelect from "../components/AppSelect.vue";
 import AppIcon from "../components/icons/AppIcon.vue";
 import { liveValue } from "../composables/liveInput";
 import { useConfirm } from "../composables/useConfirm";
@@ -158,6 +159,13 @@ const availableBooks = computed(() => {
   const books = new Set(textStudies.value.map((text) => text.livre));
   return Array.from(books).sort();
 });
+
+const bookOptions = computed(() =>
+  availableBooks.value.map((book) => ({
+    value: String(book),
+    label: sessionService.formatBookName(String(book)),
+  })),
+);
 
 // Les index partagés avec la page publique : réservations actives (les
 // tirages expirés s'affichent « disponible » partout, la gestion doit dire la
@@ -761,12 +769,11 @@ onMounted(() => {
         </div>
 
         <div class="w-full md:w-64">
-          <select v-model="selectedBook" class="field appearance-none cursor-pointer">
-            <option value="">{{ t("sessionManagement.allBooks") }}</option>
-            <option v-for="book in availableBooks" :key="book" :value="book">
-              {{ sessionService.formatBookName(book) }}
-            </option>
-          </select>
+          <AppSelect
+            v-model="selectedBook"
+            :options="bookOptions"
+            :placeholder="t('sessionManagement.allBooks')"
+          />
         </div>
       </div>
 
@@ -851,7 +858,7 @@ onMounted(() => {
                   <div
                     v-for="row in card.rows"
                     :key="row.section"
-                    class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm"
+                    class="flex items-center gap-2 px-3 py-2 rounded-btn transition-colors text-sm"
                     :class="{
                       'bg-primary/5 dark:bg-primary/10':
                         row.reservation && !row.reservation.isCompleted,
@@ -916,7 +923,7 @@ onMounted(() => {
                       <button
                         v-if="!row.reservation.chosenById"
                         @click="openRenameModal(row.reservation)"
-                        class="w-7 h-7 rounded-lg flex items-center justify-center text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors focus:outline-none dark:hover:bg-white/10"
+                        class="w-7 h-7 rounded-control flex items-center justify-center text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors focus:outline-none dark:hover:bg-white/10"
                         :title="t('sessionManagement.renameGuest')"
                       >
                         <AppIcon name="pencil" :size="13" />
@@ -1017,7 +1024,7 @@ onMounted(() => {
                 v-if="showGuestSuggestions && guestSuggestions.length > 0"
                 id="guest-suggestions"
                 role="listbox"
-                class="absolute z-10 left-0 right-0 mt-1 py-1 bg-surface rounded-lg shadow-pop max-h-56 overflow-y-auto"
+                class="absolute z-10 left-0 right-0 mt-1 py-1 bg-surface rounded-xl shadow-pop max-h-56 overflow-y-auto"
               >
                 <li
                   v-for="(guest, index) in guestSuggestions"

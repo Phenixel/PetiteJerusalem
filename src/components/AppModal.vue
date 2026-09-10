@@ -151,7 +151,9 @@ function unlockScroll(): void {
 
 <template>
   <Teleport to="body">
-    <Transition name="modal">
+    <!-- `appear` : une fenêtre montée déjà ouverte (chargée à la demande) fond
+         comme les autres au lieu de surgir. -->
+    <Transition name="modal" appear>
       <div v-if="open" :class="overlayClass" @click="close" @keydown="onKeydown">
         <div
           ref="panel"

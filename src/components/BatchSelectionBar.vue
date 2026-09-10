@@ -29,7 +29,7 @@ defineEmits<{
     :style="{ bottom: bottomOffset }"
   >
     <div
-      class="max-w-2xl mx-auto bg-surface shadow-pop rounded-lg p-4 flex items-center justify-between gap-4"
+      class="max-w-2xl mx-auto bg-surface shadow-pop rounded-xl p-4 flex items-center justify-between gap-4"
     >
       <div class="flex items-center gap-3">
         <div
@@ -39,7 +39,7 @@ defineEmits<{
         </div>
         <div>
           <p class="font-bold text-text-primary">
-            {{ t("batchSelection.textsSelected", { count }) }}
+            {{ t("batchSelection.textsSelected", count) }}
           </p>
           <p v-if="label" class="text-xs text-text-secondary">
             {{ label }}

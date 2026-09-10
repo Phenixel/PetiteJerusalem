@@ -16,7 +16,9 @@ test.describe("horaires", () => {
 
   test("le sélecteur de ville change le lieu de calcul", async ({ page }) => {
     await gotoApp(page, "/horaires");
-    await page.getByRole("button", { name: "Choisir ma ville" }).click();
+    // Le bouton nomme la ville avant ce qu'il ouvre (« Paris, choisir une
+    // autre ville ») : c'est la seule mention du lieu de calcul de la page.
+    await page.getByRole("button", { name: /choisir une autre ville/i }).click();
     const search = page.getByPlaceholder(/ville/i);
     await search.fill("Marseille");
     await page

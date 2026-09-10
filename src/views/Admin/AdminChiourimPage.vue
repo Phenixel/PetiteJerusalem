@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import type { ChiourDoc } from "../../models/models";
 import { adminService, type AuteurWithId, type SerieWithId } from "../../services/adminService";
 import { useToast } from "../../composables/useToast";
+import AppSelect from "../../components/AppSelect.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { liveValue } from "../../composables/liveInput";
 
@@ -50,6 +51,15 @@ const filtered = computed(() => {
 
 const seriesForBatchAuteur = computed(() =>
   batchAuteurId.value ? series.value.filter((s) => s.auteurId === batchAuteurId.value) : [],
+);
+
+// Voir AdminChiourEditPage : les options se calculent, elles ne se remappent
+// pas à chaque rendu.
+const auteurOptions = computed(() =>
+  auteurs.value.map((auteur) => ({ value: auteur.id, label: auteur.name })),
+);
+const batchSerieOptions = computed(() =>
+  seriesForBatchAuteur.value.map((serie) => ({ value: serie.id, label: serie.name })),
 );
 
 async function refresh() {
@@ -170,22 +180,19 @@ async function togglePublished(chiour: ChiourDoc) {
       <span class="font-semibold text-text-primary">
         {{ t("admin.chiourim.selectedCount", { count: selected.size }) }}
       </span>
-      <select v-model="batchAuteurId" class="field w-auto appearance-none cursor-pointer">
-        <option value="">{{ t("admin.chiourim.batchAuteur") }}</option>
-        <option v-for="auteur in auteurs" :key="auteur.id" :value="auteur.id">
-          {{ auteur.name }}
-        </option>
-      </select>
-      <select
+      <AppSelect
+        v-model="batchAuteurId"
+        class="w-56"
+        :options="auteurOptions"
+        :placeholder="t('admin.chiourim.batchAuteur')"
+      />
+      <AppSelect
         v-model="batchSerieId"
-        class="field w-auto appearance-none cursor-pointer"
+        class="w-56"
+        :options="batchSerieOptions"
+        :placeholder="t('admin.chiourim.batchSerie')"
         :disabled="!batchAuteurId"
-      >
-        <option value="">{{ t("admin.chiourim.batchSerie") }}</option>
-        <option v-for="serie in seriesForBatchAuteur" :key="serie.id" :value="serie.id">
-          {{ serie.name }}
-        </option>
-      </select>
+      />
       <button
         class="btn btn-primary"
         :disabled="isBatchSaving || (!batchAuteurId && !batchSerieId)"

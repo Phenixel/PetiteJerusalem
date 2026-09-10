@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, defineAsyncComponent, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { sessionService } from "../../services/sessionService";
@@ -20,7 +20,11 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
 import SessionHeader from "./detailSession/SessionHeader.vue";
-import SessionInstructions from "./detailSession/SessionInstructions.vue";
+// Cinq captures animées qui ne servent qu'à ceux qui ouvrent la fenêtre : le
+// morceau ne part qu'au clic sur la pastille.
+const SessionInstructionsModal = defineAsyncComponent(
+  () => import("./detailSession/SessionInstructionsModal.vue"),
+);
 import TextStudiesList from "./detailSession/TextStudiesList.vue";
 import RandomTehilimCard from "./detailSession/RandomTehilimCard.vue";
 import { EnumTypeTextStudy } from "../../models/typeTextStudy";
@@ -67,6 +71,11 @@ const showGuestIdentityModal = ref(false);
 
 // Modération : modale de signalement, session déjà signalée depuis cet
 // appareil, et créateur bloqué par le visiteur.
+const showInstructionsModal = ref(false);
+// Monté à la première ouverture seulement : c'est ce qui retient le morceau
+// des captures (voir l'import plus haut). Une fois monté, il le reste, sans
+// quoi la fenêtre disparaîtrait d'un coup au lieu de se refermer.
+const instructionsMounted = ref(false);
 const showReportModal = ref(false);
 const hasReported = ref(false);
 const isCreatorBlocked = ref(false);
@@ -222,6 +231,11 @@ const groupedTextStudies = computed(() => {
 
   return myTexts.length > 0 ? { [t("detailSession.myReservations")]: myTexts, ...groups } : groups;
 });
+
+/** Qui participe, nommément : la liste que la barre d'avancement ouvre. */
+const participants = computed(() =>
+  session.value ? sessionService.getSessionParticipants(session.value, textStudies.value) : [],
+);
 
 const progressStats = computed(() =>
   session.value
@@ -588,6 +602,11 @@ const drawRandomTehilim = () => {
   });
 };
 
+function openInstructions(): void {
+  instructionsMounted.value = true;
+  showInstructionsModal.value = true;
+}
+
 const openShareModal = () => {
   // Domaine canonique plutôt que window.location.href : ce dernier vaut
   // localhost (ou capacitor://localhost) en dev et dans l'app native, ce qui
@@ -844,13 +863,14 @@ watch(session, (s) => applySessionSeo(s));
           trackReportStarted();
           showReportModal = true;
         "
+        @instructions="openInstructions"
       />
 
       <!-- Tirage aléatoire : recevoir un Tehilim disponible en un clic,
-           avec ou sans compte -->
+           avec ou sans compte. Plus rien à tirer, plus de carte : elle ne
+           proposerait qu'un bouton éteint. -->
       <RandomTehilimCard
-        v-if="isTehilimSession"
-        :available-count="randomAvailableCount"
+        v-if="isTehilimSession && randomAvailableCount > 0"
         @draw="drawRandomTehilim"
       />
 
@@ -859,10 +879,8 @@ watch(session, (s) => applySessionSeo(s));
         :total="progressStats.total"
         :reserved="progressStats.reserved"
         :read="progressStats.read"
-        :participants="progressStats.participants"
+        :participants="participants"
       />
-
-      <SessionInstructions />
 
       <!-- Formulaire de réservation pour invités (composant unifié) -->
       <div id="guest-form" v-if="!currentUser" class="card p-5 mb-8">
@@ -989,6 +1007,14 @@ watch(session, (s) => applySessionSeo(s));
 
     <!-- Modal d'incitation à la création de compte -->
     <SignupPromptModal v-model:show="showSignupPrompt" :guest-email="reservationForm.email" />
+
+    <!-- Comment réserver, à la demande : la pastille « Instructions » du
+         bandeau l'ouvre. -->
+    <SessionInstructionsModal
+      v-if="instructionsMounted"
+      :open="showInstructionsModal"
+      @close="showInstructionsModal = false"
+    />
 
     <!-- Modal de partage -->
     <ShareModal

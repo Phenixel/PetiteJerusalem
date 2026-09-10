@@ -17,6 +17,8 @@ import {
   type Corpus,
 } from "../content/etudeTexts";
 import { isNativeApp } from "../composables/useNativeApp";
+import PageTabs from "../components/PageTabs.vue";
+import { LIBRARY_TABS } from "../config/pageTabs";
 import {
   downloadBook,
   downloadingPaths,
@@ -292,12 +294,13 @@ function trackResume() {
 }
 
 // Lecture terminée (ou abandonnée) : la croix retire la position pour ne plus
-// la proposer. S'il reste une lecture récente, elle prend le relais.
+// la proposer, et la ligne s'en va. Une lecture plus ancienne ne prend pas le
+// relais : la bibliothèque ne propose que la dernière.
 function dismissResume() {
   const current = lastReading.value;
   if (!current) return;
-  readingProgressService.clearPosition(current.textId);
-  lastReading.value = readingProgressService.getLastPosition();
+  readingProgressService.dismissResume(current.textId);
+  lastReading.value = null;
   analyticsService.capture("reading_resume_dismissed", {
     text_id: current.textId,
     source: "library",
@@ -506,10 +509,10 @@ onMounted(() => {
   trackLibraryViewed();
   bookmarkCounts.value = readingProgressService.getBookmarkCounts();
   // Position locale tout de suite, affinée quand la synchro du compte aboutit.
-  lastReading.value = readingProgressService.getLastPosition();
+  lastReading.value = readingProgressService.getResumePosition();
   void readingProgressService.ensureSynced().then(() => {
     bookmarkCounts.value = readingProgressService.getBookmarkCounts();
-    lastReading.value = readingProgressService.getLastPosition();
+    lastReading.value = readingProgressService.getResumePosition();
   });
   unsubscribeAuth = authService.onAuthChanged((u) => {
     user.value = u;
@@ -558,13 +561,25 @@ onUnmounted(() => {
 
         <!-- ===== Accueil de la bibliothèque : hero ===== -->
         <!-- Hero resserré sur téléphone : chaque ligne gagnée remonte les livres
-             au-dessus de la pliure. -->
+             au-dessus de la pliure. Dans l'app, les onglets prennent la place du
+             titre : ils disent où l'on est aussi bien que lui, et deux lignes
+             qui se répètent ne valent pas la hauteur qu'elles coûtent. Le titre
+             reste là pour les lecteurs d'écran. -->
         <div
           v-else
           class="text-center animate-[fadeIn_0.5s_ease]"
           :class="isNativeApp ? 'mb-6' : 'mb-6 md:mb-10'"
         >
-          <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight pb-1">
+          <PageTabs
+            v-if="isNativeApp"
+            :tabs="LIBRARY_TABS"
+            event="library_tab_switched"
+            :label="t('study.title')"
+          />
+          <h1
+            class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight pb-1"
+            :class="isNativeApp ? 'sr-only' : ''"
+          >
             {{ t("study.title") }}
           </h1>
           <p
@@ -734,7 +749,7 @@ onUnmounted(() => {
                   class="card card-hover p-4 flex items-center justify-between gap-2 group"
                 >
                   <span class="min-w-0">
-                    <span class="block font-medium text-text-primary truncate">
+                    <span class="block font-medium text-text-primary">
                       {{ appendHebrewNumeral(text.name) }}
                     </span>
                     <span v-if="text.totalSections > 1" class="text-xs text-text-secondary">

@@ -45,7 +45,7 @@ function handleKeydown(event: KeyboardEvent) {
   >
     <button
       @click="toggleDropdown"
-      class="flex items-center gap-2 px-3 py-2 rounded-lg bg-black/5 hover:bg-black/10 transition-colors cursor-pointer dark:bg-white/10 dark:hover:bg-white/15"
+      class="flex items-center gap-2 px-3 py-2 rounded-btn bg-black/5 hover:bg-black/10 transition-colors cursor-pointer dark:bg-white/10 dark:hover:bg-white/15"
       :aria-expanded="isOpen"
       :aria-label="t('common.language')"
     >
@@ -64,7 +64,7 @@ function handleKeydown(event: KeyboardEvent) {
     <Transition :name="dropup ? 'dropup' : 'dropdown'">
       <div
         v-if="isOpen"
-        class="absolute right-0 min-w-[140px] bg-surface rounded-lg shadow-pop overflow-hidden z-50"
+        class="absolute right-0 min-w-[140px] bg-surface rounded-xl shadow-pop overflow-hidden z-50"
         :class="dropup ? 'bottom-full mb-2' : 'top-full mt-2'"
       >
         <button

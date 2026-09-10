@@ -13,15 +13,17 @@ export function localDayKey(now: Date = new Date()): string {
 }
 
 /**
- * Valeur d'un champ `datetime-local` pour une date : l'heure LOCALE, au format
- * YYYY-MM-DDTHH:mm que le champ attend. `toISOString()` donnerait l'heure UTC,
- * que le champ réinterprète ensuite comme locale : chaque enregistrement sans
- * toucher la date la décalait du fuseau horaire (deux heures en France).
+ * Une valeur de champ `date` (YYYY-MM-DD) en date LOCALE, ou null si la
+ * chaîne n'en est pas une.
+ *
+ * Jamais `new Date("2026-09-14")` : celui-là lit minuit à Greenwich, soit la
+ * veille au soir à l'ouest. Le champ de date, le calendrier et la page des
+ * horaires lisent tous le même format, ils le lisent donc d'ici.
  */
-export function toDateTimeLocal(date: Date): string {
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${localDayKey(date)}T${hours}:${minutes}`;
+export function localDayFrom(key: string): Date | null {
+  const [year, month, day] = key.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
 }
 
 /**

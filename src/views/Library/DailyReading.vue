@@ -989,8 +989,8 @@ const formatBookName = bookName;
 
     <!-- Loading -->
     <div v-if="loading" class="animate-pulse space-y-4">
-      <div class="h-20 rounded-2xl bg-black/10 dark:bg-white/10"></div>
-      <div class="h-40 rounded-2xl bg-black/10 dark:bg-white/10"></div>
+      <div class="h-20 rounded-card bg-black/10 dark:bg-white/10"></div>
+      <div class="h-40 rounded-card bg-black/10 dark:bg-white/10"></div>
     </div>
 
     <!-- ===== Manage mode: pick texts from the library ===== -->
@@ -1091,7 +1091,7 @@ const formatBookName = bookName;
             :key="ty.key"
             @click="selectedType = ty.key"
             :class="[
-              'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+              'px-4 py-2 rounded-btn text-sm font-medium transition-colors',
               selectedType === ty.key
                 ? 'bg-primary text-white'
                 : 'bg-black/5 text-text-secondary hover:bg-black/10 hover:text-text-primary dark:bg-white/10 dark:hover:bg-white/15',
@@ -1125,7 +1125,7 @@ const formatBookName = bookName;
                 ]"
               >
                 <span class="min-w-0">
-                  <span class="block font-medium text-text-primary truncate">
+                  <span class="block font-medium text-text-primary">
                     {{ appendHebrewNumeral(text.name) }}
                   </span>
                 </span>
@@ -1191,7 +1191,7 @@ const formatBookName = bookName;
         <div class="flex items-center justify-between gap-3 mb-6 flex-wrap">
           <div
             v-if="weeklyParasha"
-            class="inline-flex items-center gap-1 rounded-lg bg-black/5 p-1 dark:bg-white/10"
+            class="inline-flex items-center gap-1 rounded-btn bg-black/5 p-1 dark:bg-white/10"
             role="tablist"
           >
             <button
