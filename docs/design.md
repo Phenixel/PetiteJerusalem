@@ -145,8 +145,8 @@ adresses).
 ### Une ligne de liste peut devenir une commande
 
 Dans l'app, une ligne d'horaire n'est plus seulement du texte : la toucher pose
-un rappel, la tirer vers la droite découvre un fond de la couleur du thème
-portant une cloche (voir `ZmanRow.vue`). Sur le site, la même ligne reste du
+un rappel, la tirer vers la gauche découvre, du côté de l'heure, un fond de la
+couleur du thème portant une cloche (voir `ZmanRow.vue`). Sur le site, la même ligne reste du
 texte : il n'y a rien à programmer dans un navigateur, et une commande qui ne
 mène nulle part serait pire que pas de commande du tout.
 
@@ -159,10 +159,12 @@ déclenche. Poussé franchement, au-delà de la moitié de la ligne, il agit seu
 et la ligne se referme sur son résultat, annoncé par un toast. Le raccourci
 récompense l'assurance sans piéger l'hésitation.
 
-Le fond découvert est plein, de la couleur du thème, et il vient de derrière
-la ligne : il n'y a ni cadre ni surface intermédiaire, la ligne se déplace et
-laisse voir ce qui l'attendait. La cloche reste collée au bord de la ligne,
-elle avance avec elle plutôt que d'apparaître d'un coup.
+Le fond découvert est plein, de la couleur du thème, et il occupe exactement
+la place que la ligne libère en partant : il n'y a ni cadre ni surface
+intermédiaire, et son icône se tient au milieu de ce qu'on a découvert, jamais
+à cheval sur ce qui reste. Le repère d'angle, lui, s'efface le temps du geste :
+posé contre un tiroir de la même couleur, il n'aurait plus été un repère mais
+une bavure.
 
 Le premier mouvement franc arbitre entre défiler et glisser. Sans cet
 arbitrage, un pouce qui parcourt la page ouvrait les lignes au passage. Et une

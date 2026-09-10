@@ -7,10 +7,10 @@
  * qu'on se dit « celui-là, il faudrait qu'on me le rappelle » :
  *
  *  - la toucher ouvre le réglage du rappel (combien de minutes avant) ;
- *  - la tirer vers la droite découvre un fond de la couleur du thème, avec
- *    une cloche. Le geste franc, jusqu'au bout, pose ou retire le rappel sans
- *    rien demander ; le geste retenu laisse la ligne ouverte sur sa cloche,
- *    qu'on touche alors pour ouvrir les réglages ;
+ *  - la tirer vers la gauche découvre, du côté de l'heure, un fond de la
+ *    couleur du thème portant une cloche. Le geste franc, jusqu'au bout, pose
+ *    ou retire le rappel sans rien demander ; le geste retenu laisse la ligne
+ *    ouverte sur sa cloche, qu'on touche alors pour ouvrir les réglages ;
  *  - un rappel posé se voit à un petit triangle plein dans l'angle de la
  *    ligne, du côté de l'heure. Une cloche posée dans le texte aurait mangé
  *    la place du nom sur un téléphone, et une ligne sur deux marquée aurait
@@ -85,7 +85,11 @@ const sliding = ref(false);
 let startX = 0;
 let startY = 0;
 let axis: "none" | "x" | "y" = "none";
-/** Direction du geste « vers l'avant » : à gauche quand la page est en hébreu. */
+/**
+ * Sens de lecture : le geste va vers la gauche, et le tiroir se découvre à
+ * droite, du côté de l'heure. En hébreu, tout est en miroir, le geste part
+ * donc vers la droite (voir les propriétés logiques du gabarit).
+ */
 let direction = 1;
 /**
  * Fin du dernier geste. Le relâchement produit aussi un clic, qui ne doit
@@ -123,7 +127,8 @@ function onTouchMove(event: TouchEvent): void {
   if (!props.canRemind || event.touches.length !== 1) return;
   const touch = event.touches[0];
   const from = props.expanded ? REVEAL : 0;
-  const dx = (touch.clientX - startX) * direction + from;
+  // Course du geste, comptée positive quand la ligne s'ouvre.
+  const dx = (startX - touch.clientX) * direction + from;
   const dy = touch.clientY - startY;
   if (axis === "none") {
     if (Math.abs(dx - from) < AXIS_SLOP && Math.abs(dy) < AXIS_SLOP) return;
@@ -180,19 +185,20 @@ function onAction(): void {
   emit("open");
 }
 
-const transform = computed(() => `translateX(${shift.value * direction}px)`);
+const transform = computed(() => `translateX(${-shift.value * direction}px)`);
 </script>
 
 <template>
   <li ref="row" class="relative overflow-hidden">
-    <!-- Le fond de l'action, aussi large que la ligne et posé juste avant
-         elle : il n'entre dans le cadre qu'à mesure qu'on tire, et la cloche,
-         rangée de son côté, reste collée au bord de la ligne. -->
+    <!-- Le tiroir de l'action, du côté de l'heure : c'est la place que la
+         ligne libère en partant, et sa largeur EST la course du geste, ce qui
+         garde la cloche au milieu de ce qu'on a découvert. Rognée aux bords,
+         elle n'apparaît pas avant que la place ne soit faite. -->
     <button
       v-if="canRemind"
       type="button"
-      class="absolute inset-y-0 end-full flex w-full items-center justify-end bg-primary pe-5 text-white"
-      :style="{ transform, transition: sliding ? 'none' : 'transform 0.2s ease' }"
+      class="absolute inset-y-0 end-0 flex items-center justify-center overflow-hidden bg-primary text-white"
+      :style="{ width: `${shift}px`, transition: sliding ? 'none' : 'width 0.2s ease' }"
       :tabindex="expanded ? 0 : -1"
       :aria-hidden="!expanded"
       :aria-label="actionLabel"
@@ -213,11 +219,14 @@ const transform = computed(() => `translateX(${shift.value * direction}px)`);
       @touchend="onTouchEnd"
       @touchcancel="onTouchEnd"
     >
-      <!-- Le repère du rappel : un triangle plein dans l'angle de la ligne. -->
+      <!-- Le repère du rappel : un triangle plein dans l'angle de la ligne.
+           Il s'efface le temps du geste : posé contre le tiroir de la même
+           couleur, il n'aurait plus été un repère mais une bavure. -->
       <span
         v-if="hasReminder"
         aria-hidden="true"
-        class="absolute top-0 end-0 h-0 w-0 border-t-[9px] border-s-[9px] border-t-primary border-s-transparent"
+        class="absolute top-0 end-0 h-0 w-0 border-t-[9px] border-s-[9px] border-t-primary border-s-transparent transition-opacity duration-200"
+        :class="shift > 0 ? 'opacity-0' : ''"
       ></span>
 
       <component

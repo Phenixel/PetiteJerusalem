@@ -597,9 +597,10 @@ onMounted(() => {
         <AppIcon :name="PERIOD_ICONS[group.period]" :size="16" class="text-primary" />
         {{ t(`zmanim.periods.${group.period}`) }}
       </h2>
-      <!-- Dans l'app, chaque ligne se touche pour poser un rappel, et se
-           glisse pour le poser d'un geste (voir ZmanRow). Sur le site, elle
-           reste une ligne de texte : rien à programmer dans un navigateur. -->
+      <!-- Dans l'app, chaque ligne se touche pour poser un rappel, et se tire
+           vers la gauche pour le poser d'un geste (voir ZmanRow). Sur le site,
+           elle reste une ligne de texte : rien à programmer dans un
+           navigateur. -->
       <ul class="flex flex-col divide-y divide-line">
         <ZmanRow
           v-for="zman in group.zmanim"

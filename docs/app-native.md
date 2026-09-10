@@ -188,7 +188,7 @@ chkia est recalculée côté serveur dans `functions/src/sunsetReminder.ts`
 ## Rappels d'horaires (notifications locales)
 
 Posés depuis la page **Horaires**, en touchant l'horaire voulu, ou en tirant sa
-ligne vers la droite : le geste franc pose ou retire le rappel avec le délai de
+ligne vers la gauche : le geste franc pose ou retire le rappel avec le délai de
 la dernière fois, le geste retenu ouvre la ligne sur sa cloche (voir
 `docs/design.md`). Ils se comptent et se coupent depuis l'onglet
 **Notifications** du profil, où vit aussi le rappel de l'entrée du **Chabbat et
