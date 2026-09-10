@@ -559,6 +559,46 @@ const he: LocaleMessages = {
       notifyRest: "הכניסה בשעה {time}, בעוד שעה.",
     },
   },
+  /* תאריכים אישיים בלוח העברי (יישום טבעי) : ימי הולדת, לעילוי נשמת.
+     נשמרים במכשיר, ראו useHebrewOccasions. */
+  occasions: {
+    open: "התאריכים שלי",
+    title: "התאריכים שלי",
+    description: "התאריכים שלכם בלוח העברי, החוזרים מדי שנה ביומם. הם נשמרים במכשיר הזה.",
+    empty: "אין עדיין תאריכים.",
+    add: "הוספת תאריך",
+    full: "הרשימה מלאה.",
+    formTitle: "תאריך",
+    name: "שם",
+    namePlaceholder: "לדוגמה: סבא אליהו",
+    kind: "מה התאריך מציין",
+    kinds: {
+      yahrzeit: "לעילוי נשמת",
+      birthday: "יום הולדת",
+      other: "אחר",
+    },
+    date: "תאריך עברי",
+    dayOfMonth: "{day} ב{month}",
+    nextOn: "חוזר ב{civil} ({hebrew})",
+    reminder: "תזכורת",
+    reminders: {
+      none: "ללא",
+      nightfall: "בכניסת היום",
+      morning: "בבוקר",
+      weekBefore: "שבוע לפני",
+    },
+    /* נוסח ההתראה, כששם התאריך הוא הכותרת. */
+    notify: {
+      none: "{date}",
+      nightfall: "היום נכנס הערב: {date}.",
+      morning: "זה היום, {date}.",
+      weekBefore: "בעוד שבוע, {date}.",
+    },
+    note: "היום העברי מתחיל בערב שלפניו, בשקיעה. תאריך באדר חוזר באדר ב׳ בשנים מעוברות, וה־30 בחודש שיש בו 29 יום חוזר ב־29.",
+    remove: "מחיקה",
+    removeAria: "מחיקת {name}",
+    editAria: "עריכת {name}",
+  },
   security: {
     title: "אבטחה",
     changePassword: "שינוי סיסמה",

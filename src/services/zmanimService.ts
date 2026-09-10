@@ -780,6 +780,21 @@ const FRENCH_MONTHS: Record<string, string> = {
   "Adar II": "Adar II",
 };
 
+/**
+ * Le nom d'un mois hébraïque, dans la langue de l'interface.
+ *
+ * L'année compte : le douzième mois s'appelle « Adar » dans une année
+ * ordinaire et « Adar I » dans une année à treize mois. Le français passe par
+ * la table ci-dessus plutôt que par hebcal, qui écrit « H̲echvan » avec une
+ * marque diacritique que le reste du site n'emploie pas.
+ */
+export function hebrewMonthName(month: number, year: number, locale: string): string {
+  const name = HDate.getMonthName(month, year);
+  if (locale === "he") return Locale.gettext(name, "he");
+  if (locale === "fr") return FRENCH_MONTHS[name] ?? name;
+  return name;
+}
+
 /** "21 Av 5786", en hébreu pointé pour la locale he, translittéré sinon. */
 export function formatHebrewDate(hd: HDate, locale: string): string {
   if (locale === "he") return hd.renderGematriya();

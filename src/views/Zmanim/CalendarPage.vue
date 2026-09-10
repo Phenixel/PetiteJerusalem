@@ -7,6 +7,7 @@
 // zmanimService) : les flèches parcourent les années sans rien charger, et la
 // page continue de servir sans connexion.
 import { computed, nextTick, onMounted, ref, watch } from "vue";
+import type { HDate } from "@hebcal/core";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { localeMessagesReady } from "../../i18n";
@@ -22,6 +23,14 @@ import {
   yearCalendar,
   type CalendarEntry,
 } from "../../services/zmanimService";
+import { useHebrewOccasions } from "../../composables/useHebrewOccasions";
+import {
+  occasionDateIn,
+  type HebrewOccasion,
+  type OccasionKind,
+} from "../../services/hebrewOccasions";
+import OccasionsModal from "./OccasionsModal.vue";
+import type { IconName } from "../../components/icons/registry";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
 import { dateTimeFormat } from "../../services/intlCache";
 import { findFestivalBySlug, type SeoFestival } from "../../content/zmanimFestivals";
@@ -77,6 +86,55 @@ const entries = computed(() =>
 );
 
 /**
+ * Les dates personnelles de l'année affichée, mêlées aux fêtes.
+ *
+ * Elles ne viennent pas du calendrier hébraïque mais de l'appareil (voir
+ * useHebrewOccasions) : un anniversaire, un leilouy nichmat. Elles se lisent
+ * au même endroit que les fêtes, parce que c'est la même question, « qu'est-ce
+ * qui vient cette année ». L'app native seule les propose : le rappel est
+ * programmé par le téléphone, et rien ne les porterait d'un appareil à
+ * l'autre.
+ */
+const { occasions } = useHebrewOccasions();
+const occasionsOpen = ref(false);
+
+const KIND_ICONS: Record<OccasionKind, IconName> = {
+  yahrzeit: "candle",
+  birthday: "cake",
+  other: "calendar",
+};
+
+/** Une ligne du calendrier : une fête de l'année, ou une date personnelle. */
+type CalendarRow =
+  | { key: string; abs: number; entry: CalendarEntry; occasion?: undefined }
+  | { key: string; abs: number; entry?: undefined; occasion: HebrewOccasion; date: HDate };
+
+const rows = computed<CalendarRow[]>(() => {
+  const festivals: CalendarRow[] = entries.value.map((entry) => ({
+    key: entry.key,
+    abs: entry.first.abs(),
+    entry,
+  }));
+  const personal: CalendarRow[] = isNativeApp
+    ? occasions.value.map((occasion) => {
+        const date = occasionDateIn(occasion, year.value);
+        return { key: `occasion-${occasion.id}`, abs: date.abs(), occasion, date };
+      })
+    : [];
+  return [...festivals, ...personal].sort((a, b) => a.abs - b.abs);
+});
+
+/** « jeudi 3 décembre 2026 », le jour civil d'une date personnelle. */
+function civilOf(date: HDate): string {
+  return dateTimeFormat(locale.value, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date.greg());
+}
+
+/**
  * La première fête qui n'est pas encore passée : celle qu'on cherche du
  * regard. Elle n'a de sens que sur l'année qui s'ouvre : dans une année à
  * venir, tout est « pas encore passé », et la première entrée n'est pas pour
@@ -87,7 +145,11 @@ const nextKey = computed(() =>
     ? (entries.value.find((entry) => entry.last.abs() >= today.value)?.key ?? null)
     : null,
 );
-const isPast = (entry: CalendarEntry) => entry.last.abs() < today.value;
+/**
+ * Ce qui est derrière nous s'efface : le dernier jour d'une fête pour un bloc,
+ * le jour lui-même pour une date personnelle.
+ */
+const isPastDay = (abs: number) => abs < today.value;
 
 /** « Chabbat Roch Hachana » : le Chabbat qui prolonge une fête est du même bloc. */
 function title(entry: CalendarEntry): string {
@@ -282,6 +344,15 @@ onMounted(() => {
       {{ t("calendar.description") }}
     </p>
 
+    <!-- Ses propres dates : anniversaires, leilouy nichmat. Elles se posent
+         ici parce qu'elles se lisent ici, au milieu des fêtes de l'année. -->
+    <div v-if="isNativeApp" class="mt-4 flex justify-center">
+      <button type="button" class="btn btn-soft" @click="occasionsOpen = true">
+        <AppIcon name="calendar" :size="16" class="text-primary" />
+        {{ t("occasions.open") }}
+      </button>
+    </div>
+
     <!-- Année affichée : les flèches parcourent le calendrier sans rien recharger -->
     <div class="mx-auto mt-8 flex max-w-md items-center justify-between gap-3">
       <button
@@ -312,43 +383,70 @@ onMounted(() => {
          se distingue : c'est elle qu'on vient chercher. -->
     <ul class="mt-6 flex flex-col gap-3">
       <li
-        v-for="entry in entries"
-        :key="entry.key"
-        :data-entry="entry.key"
+        v-for="row in rows"
+        :key="row.key"
+        :data-entry="row.key"
         class="card p-4"
         :class="[
-          isPast(entry) ? 'opacity-55' : '',
-          entry.key === nextKey || entry.key === festivalKey
+          isPastDay(row.entry ? row.entry.last.abs() : row.abs) ? 'opacity-55' : '',
+          row.key === nextKey || row.key === festivalKey
             ? 'border border-primary/30 bg-primary/5'
             : '',
         ]"
       >
-        <div class="flex items-start justify-between gap-4">
+        <!-- Une fête de l'année : son nom, ses dates, et ses heures quand le
+             travail y est interdit. -->
+        <div v-if="row.entry" class="flex items-start justify-between gap-4">
           <div class="min-w-0">
-            <p class="font-semibold text-text-primary">{{ title(entry) }}</p>
-            <p class="text-sm text-text-secondary">{{ civilRange(entry) }}</p>
-            <p class="text-xs text-text-secondary/80">{{ hebrewRange(entry) }}</p>
+            <p class="font-semibold text-text-primary">{{ title(row.entry) }}</p>
+            <p class="text-sm text-text-secondary">{{ civilRange(row.entry) }}</p>
+            <p class="text-xs text-text-secondary/80">{{ hebrewRange(row.entry) }}</p>
           </div>
-          <dl v-if="entry.period" class="shrink-0 text-end text-sm">
+          <dl v-if="row.entry.period" class="shrink-0 text-end text-sm">
             <div class="flex items-baseline justify-end gap-2">
               <dt class="text-xs text-text-secondary">{{ t("calendar.start") }}</dt>
               <dd class="font-semibold tabular-nums text-text-primary">
-                {{ clock(entry.period.start) }}
+                {{ clock(row.entry.period.start) }}
               </dd>
             </div>
             <div class="flex items-baseline justify-end gap-2">
               <dt class="text-xs text-text-secondary">{{ t("calendar.end") }}</dt>
               <dd class="font-semibold tabular-nums text-text-primary">
-                {{ clock(entry.period.end) }}
+                {{ clock(row.entry.period.end) }}
               </dd>
             </div>
           </dl>
         </div>
+
+        <!-- Une date à soi : la toucher rouvre son réglage, là où on l'a
+             posée. L'icône dit ce qu'elle commémore, sans l'écrire. -->
+        <button
+          v-else
+          type="button"
+          class="flex w-full items-start gap-2.5 text-start"
+          :aria-label="t('occasions.editAria', { name: row.occasion.name })"
+          @click="occasionsOpen = true"
+        >
+          <AppIcon
+            :name="KIND_ICONS[row.occasion.kind]"
+            :size="17"
+            class="mt-0.5 shrink-0 text-primary"
+          />
+          <span class="min-w-0">
+            <span class="block font-semibold text-text-primary">{{ row.occasion.name }}</span>
+            <span class="block text-sm text-text-secondary">{{ civilOf(row.date) }}</span>
+            <span class="block text-xs text-text-secondary/80">
+              {{ formatHebrewDate(row.date, locale) }}
+            </span>
+          </span>
+        </button>
       </li>
     </ul>
 
     <p class="mt-5 border-t border-line pt-3 text-xs text-text-secondary leading-relaxed">
       {{ t("zmanim.disclaimer") }}
     </p>
+
+    <OccasionsModal v-if="isNativeApp" v-model:show="occasionsOpen" :today="todayHd" />
   </main>
 </template>

@@ -226,6 +226,32 @@ La permission est demandée au premier geste qui la réclame, jamais au
 lancement : poser un rappel, activer celui du Chabbat, ou ouvrir la page des
 horaires alors que celui du Chabbat est actif d'office.
 
+## Dates personnelles du calendrier
+
+Un anniversaire, un leilouy nichmat : des dates du calendrier **hébraïque**,
+qui reviennent chaque année à leur jour. Elles se posent depuis la page
+**Calendrier** (bouton « Mes dates »), s'y lisent au milieu des fêtes de
+l'année, et portent leur propre rappel, programmé comme les rappels d'horaires
+(`zmanReminderService`).
+
+Deux particularités du calendrier sont tranchées dans
+`src/services/hebrewOccasions.ts`, plutôt que dans chaque écran :
+
+- une date d'**Adar** revient en **Adar II** les années à treize mois, l'usage
+  séfarade que suit le reste du site ;
+- le **30** d'un mois qui n'en compte que 29 ('Hechvan, Kislev selon l'année)
+  revient le 29, dernier jour du mois.
+
+Trois moments de rappel, parce que le jour hébraïque commence la veille au
+soir : à l'entrée du jour (au coucher du soleil du lieu, le moment d'allumer
+une bougie), le matin du jour civil, ou une semaine avant. Les deux derniers
+partent à 9 h du fuseau de l'**appareil**, là où vit celui qui les reçoit, et
+non du lieu des horaires.
+
+Comme les rappels d'horaires, les dates vivent dans le `localStorage`
+(`src/composables/useHebrewOccasions.ts`) : elles ne suivent pas d'un appareil
+à l'autre, ce que dit l'écran qui les tient.
+
 ## Géolocalisation (horaires du jour)
 
 La page **Horaires** calcule les zmanim pour la position de l'appareil quand

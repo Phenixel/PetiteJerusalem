@@ -178,6 +178,20 @@ deux marquée aurait fait une colonne d'icônes. L'angle, lui, ne prend la place
 de rien et se repère d'un coup d'oeil en parcourant la liste. Le triangle suit
 le sens de lecture (bordures logiques), il change donc de côté en hébreu.
 
+### Ce qui est à soi se range avec le reste
+
+Les dates qu'on ajoute au calendrier (un anniversaire, un leilouy nichmat) ne
+font pas une liste à part, sous les fêtes ou derrière un onglet. Elles se
+rangent dans le calendrier de l'année, à leur date, entre Chemini Atzéret et
+'Hanouka s'il le faut : la question posée est la même, « qu'est-ce qui vient
+cette année », et deux listes obligeaient à la poser deux fois.
+
+Ce qui les distingue est le dessin qui les ouvre, pas un cadre ni une couleur
+de fond : une bougie pour un leilouy nichmat, un gâteau pour un anniversaire.
+Une carte se lit alors comme une fête, et son icône dit d'un coup d'oeil qu'
+elle est à nous. Elle est de surcroît la seule qui se touche : on retombe sur
+son réglage, là où on l'a posée.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.

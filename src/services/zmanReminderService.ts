@@ -16,12 +16,22 @@ import { analyticsService } from "./analyticsService";
 import {
   computeZmanim,
   dayInPlace,
+  formatHebrewDate,
   formatZmanTime,
+  getSunset,
   restPeriodAt,
   ZMAN_KEYS,
   type ZmanimPlace,
   type ZmanKey,
 } from "./zmanimService";
+import { useHebrewOccasions } from "../composables/useHebrewOccasions";
+import {
+  nextOccurrence,
+  occasionDateIn,
+  type HebrewOccasion,
+  type OccasionKind,
+  type OccasionReminder,
+} from "./hebrewOccasions";
 
 /**
  * Les rappels d'horaires, posés sur le téléphone (app native uniquement).
@@ -52,7 +62,9 @@ const ID_BASE = 41_000_000;
 const ID_STRIDE = 20;
 /** Les identifiants des rappels du repos, après ceux des horaires. */
 const ID_REST = ID_BASE + ZMAN_KEYS.length * ID_STRIDE;
-const ID_LAST = ID_REST + ID_STRIDE;
+/** Puis les dates personnelles du calendrier, une notification chacune. */
+const ID_OCCASIONS = ID_BASE + 1_000;
+const ID_LAST = ID_OCCASIONS + 100;
 
 /**
  * Marqueur porté par nos notifications : le plugin sert aussi aux push
@@ -80,6 +92,16 @@ export const MAX_PENDING = 56;
 const REST_OCCURRENCES = 3;
 const REST_HORIZON_DAYS = 30;
 
+/**
+ * L'heure à laquelle part le rappel d'une date personnelle qui n'en a pas
+ * d'autre, dans le fuseau de l'APPAREIL et non du lieu des horaires : la
+ * notification arrive là où vit celui qui la reçoit.
+ */
+export const OCCASION_REMINDER_HOUR = 9;
+
+/** Une seule occurrence par date : la suivante est dans un an. */
+const OCCASION_LIMIT = 40;
+
 /** Fenêtre par horaire rappelé, selon le nombre de rappels posés. */
 const MIN_HORIZON_DAYS = 2;
 const MAX_HORIZON_DAYS = 14;
@@ -99,6 +121,14 @@ export interface PlannedReminder {
   festivals?: string[];
   /** Le repos annoncé couvre un Chabbat. */
   shabbat?: boolean;
+  /** La date personnelle annoncée, quand c'en est une. */
+  occasion?: {
+    name: string;
+    kind: OccasionKind;
+    reminder: OccasionReminder;
+    /** Sa date hébraïque, déjà mise en forme : c'est elle qui la nomme. */
+    hebrewDate: string;
+  };
 }
 
 /** L'entrée du repos, une heure avant l'allumage, sur le mois qui vient. */
@@ -131,6 +161,64 @@ function planRestReminders(place: ZmanimPlace, locale: string, now: Date): Plann
   return planned;
 }
 
+/** L'instant d'un rappel de date, pour une occurrence donnée. */
+function occasionReminderAt(
+  place: ZmanimPlace,
+  reminder: OccasionReminder,
+  civilDay: Date,
+): Date | null {
+  if (reminder === "nightfall") {
+    // Le jour hébraïque commence au coucher du soleil de la veille : c'est là
+    // qu'il entre, et c'est le moment d'allumer une bougie.
+    const eve = new Date(civilDay);
+    eve.setDate(eve.getDate() - 1);
+    return getSunset(place, eve);
+  }
+  const at = new Date(civilDay);
+  if (reminder === "weekBefore") at.setDate(at.getDate() - 7);
+  at.setHours(OCCASION_REMINDER_HOUR, 0, 0, 0);
+  return at;
+}
+
+/**
+ * Les rappels des dates personnelles : la prochaine occurrence de chacune,
+ * et celle d'après si le moment du rappel est déjà passé (« une semaine
+ * avant » d'une date qui tombe dans trois jours).
+ */
+function planOccasionReminders(
+  place: ZmanimPlace,
+  occasions: HebrewOccasion[],
+  locale: string,
+  now: Date,
+): PlannedReminder[] {
+  const today = new HDate(dayInPlace(place, now));
+  const planned: PlannedReminder[] = [];
+  for (const [index, occasion] of occasions.slice(0, OCCASION_LIMIT).entries()) {
+    if (occasion.reminder === "none") continue;
+    let date = nextOccurrence(occasion, today);
+    let at = occasionReminderAt(place, occasion.reminder, date.greg());
+    if (at && at.getTime() <= now.getTime()) {
+      date = occasionDateIn(occasion, date.getFullYear() + 1);
+      at = occasionReminderAt(place, occasion.reminder, date.greg());
+    }
+    if (!at || at.getTime() <= now.getTime()) continue;
+    planned.push({
+      id: ID_OCCASIONS + index,
+      at,
+      target: date.greg(),
+      minutesBefore: 0,
+      zman: null,
+      occasion: {
+        name: occasion.name,
+        kind: occasion.kind,
+        reminder: occasion.reminder,
+        hebrewDate: formatHebrewDate(date, locale),
+      },
+    });
+  }
+  return planned;
+}
+
 /** Combien de jours d'avance chaque horaire rappelé peut se permettre. */
 function horizonDays(reminderCount: number, budget: number): number {
   if (reminderCount === 0) return 0;
@@ -149,7 +237,9 @@ export function planZmanReminders(options: {
   reminders: ZmanReminder[];
   /** Rappel avant l'entrée du Chabbat et des fêtes. */
   rest: boolean;
-  /** Langue des noms de fêtes portés par le plan. */
+  /** Les dates personnelles du calendrier (anniversaires, leilouy nichmat). */
+  occasions?: HebrewOccasion[];
+  /** Langue des noms de fêtes et des dates portés par le plan. */
   locale: string;
   now?: Date;
   budget?: number;
@@ -158,10 +248,13 @@ export function planZmanReminders(options: {
   const now = options.now ?? new Date();
   const budget = options.budget ?? MAX_PENDING;
 
+  // Les dates personnelles et le repos passent d'abord : ils ne reviennent
+  // qu'une fois l'an ou l'un dans la semaine, quand un horaire rappelé revient
+  // chaque jour et se contente de la fenêtre qui reste.
+  const occasionPlan = planOccasionReminders(place, options.occasions ?? [], locale, now);
   const restPlan = rest ? planRestReminders(place, locale, now) : [];
-  // Les rappels d'horaires se partagent ce que le repos laisse.
   const reminders = options.reminders.filter((reminder) => ZMAN_KEYS.includes(reminder.key));
-  const days = horizonDays(reminders.length, budget - restPlan.length);
+  const days = horizonDays(reminders.length, budget - restPlan.length - occasionPlan.length);
 
   const counts = new Map<ZmanKey, number>();
   const planned: PlannedReminder[] = [];
@@ -191,7 +284,9 @@ export function planZmanReminders(options: {
 
   // L'ordre est celui du départ des notifications : si le budget devait
   // quand même être dépassé, ce sont les plus lointaines qui tombent.
-  return [...planned, ...restPlan].sort((a, b) => a.at.getTime() - b.at.getTime()).slice(0, budget);
+  return [...planned, ...restPlan, ...occasionPlan]
+    .sort((a, b) => a.at.getTime() - b.at.getTime())
+    .slice(0, budget);
 }
 
 /** Le titre et le texte d'un rappel, dans la langue de l'interface. */
@@ -201,6 +296,13 @@ export function describeReminder(
   locale: string,
   t: (key: string, params?: Record<string, unknown>) => string,
 ): { title: string; body: string } {
+  const occasion = planned.occasion;
+  if (occasion) {
+    return {
+      title: occasion.name,
+      body: t(`occasions.notify.${occasion.reminder}`, { date: occasion.hebrewDate }),
+    };
+  }
   const time = formatZmanTime(planned.target, tzid, locale);
   if (planned.zman) {
     return {
@@ -245,6 +347,10 @@ class ZmanReminderService {
 
     const { reminders, restEnabled } = useZmanReminders();
     watch([reminders, restEnabled], () => void this.refresh(), { deep: true });
+
+    // Les dates personnelles du calendrier portent leurs propres rappels.
+    const { occasions } = useHebrewOccasions();
+    watch(occasions, () => void this.refresh(), { deep: true });
 
     const { place } = useZmanimLocation();
     watch(place, () => void this.refresh());
@@ -297,7 +403,12 @@ class ZmanReminderService {
       }
 
       const { reminders, restEnabled } = useZmanReminders();
-      if (reminders.value.length === 0 && !restEnabled.value) return;
+      const { occasions } = useHebrewOccasions();
+      const nothingAsked =
+        reminders.value.length === 0 &&
+        !restEnabled.value &&
+        occasions.value.every((occasion) => occasion.reminder === "none");
+      if (nothingAsked) return;
       // Sans permission, il n'y a rien à programmer : le système refuserait.
       // On ne la demande pas ici, hors de tout geste : ce serait une fenêtre
       // du système surgie de nulle part (voir ensureNotificationPermission).
@@ -314,12 +425,16 @@ class ZmanReminderService {
         place: place.value,
         reminders: reminders.value,
         rest: restEnabled.value,
+        occasions: occasions.value,
         locale,
       });
       if (planned.length === 0) return;
 
       await this.ensureChannel(LocalNotifications, t);
-      const url = sectionPath("horaires", seoLocaleOf(locale));
+      // Toucher un rappel ouvre la page où il a été posé : les horaires du
+      // jour, ou le calendrier pour une date personnelle.
+      const times = sectionPath("horaires", seoLocaleOf(locale));
+      const calendar = sectionPath("calendrier", seoLocaleOf(locale));
       await LocalNotifications.schedule({
         notifications: planned.map((reminder) => ({
           id: reminder.id,
@@ -329,7 +444,11 @@ class ZmanReminderService {
           // minutes avant arriverait après l'horaire qu'il annonce.
           schedule: { at: reminder.at, allowWhileIdle: true },
           channelId: CHANNEL_ID,
-          extra: { source: REMINDER_SOURCE, url, zman: reminder.zman },
+          extra: {
+            source: REMINDER_SOURCE,
+            url: reminder.occasion ? calendar : times,
+            zman: reminder.zman,
+          },
         })),
       });
     } catch {

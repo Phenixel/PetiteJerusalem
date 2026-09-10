@@ -579,6 +579,47 @@ const en: LocaleMessages = {
       notifyRest: "It comes in at {time}, one hour from now.",
     },
   },
+  /* Personal Hebrew-calendar dates (native app): birthdays, yahrzeits. Kept
+     on the device, see useHebrewOccasions. */
+  occasions: {
+    open: "My dates",
+    title: "My dates",
+    description:
+      "Your Hebrew-calendar dates, coming back every year on their day. They stay on this device.",
+    empty: "No date yet.",
+    add: "Add a date",
+    full: "The list is full.",
+    formTitle: "A date",
+    name: "Name",
+    namePlaceholder: "E.g. Grandpa Élie",
+    kind: "What the date marks",
+    kinds: {
+      yahrzeit: "Yahrzeit",
+      birthday: "Birthday",
+      other: "Other",
+    },
+    date: "Hebrew date",
+    dayOfMonth: "{day} {month}",
+    nextOn: "Next on {civil} ({hebrew})",
+    reminder: "Reminder",
+    reminders: {
+      none: "None",
+      nightfall: "When the day comes in",
+      morning: "In the morning",
+      weekBefore: "A week before",
+    },
+    /* What the notification says, the name of the date being its title. */
+    notify: {
+      none: "{date}",
+      nightfall: "The day comes in tonight: {date}.",
+      morning: "It is today, {date}.",
+      weekBefore: "In one week, {date}.",
+    },
+    note: "The Hebrew day begins the evening before, at sunset. A date in Adar comes back in Adar II in years with thirteen months, and the 30th of a month with only 29 days comes back on the 29th.",
+    remove: "Delete",
+    removeAria: "Delete {name}",
+    editAria: "Edit {name}",
+  },
   security: {
     title: "Security",
     changePassword: "Change password",

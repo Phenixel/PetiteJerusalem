@@ -592,6 +592,47 @@ const fr = {
       notifyRest: "L'entrée est à {time}, dans une heure.",
     },
   },
+  /* Dates personnelles du calendrier hébraïque (app native) : anniversaires,
+     leilouy nichmat. Gardées sur l'appareil, voir useHebrewOccasions. */
+  occasions: {
+    open: "Mes dates",
+    title: "Mes dates",
+    description:
+      "Vos dates du calendrier hébraïque, qui reviennent chaque année à leur jour. Elles sont gardées sur cet appareil.",
+    empty: "Aucune date pour l'instant.",
+    add: "Ajouter une date",
+    full: "La liste est pleine.",
+    formTitle: "Une date",
+    name: "Nom",
+    namePlaceholder: "Ex\u00a0: Papy Élie",
+    kind: "Ce que la date rappelle",
+    kinds: {
+      yahrzeit: "Leilouy nichmat",
+      birthday: "Anniversaire",
+      other: "Autre",
+    },
+    date: "Date hébraïque",
+    dayOfMonth: "{day} {month}",
+    nextOn: "Revient le {civil} ({hebrew})",
+    reminder: "Rappel",
+    reminders: {
+      none: "Aucun",
+      nightfall: "À l'entrée du jour",
+      morning: "Le matin",
+      weekBefore: "Une semaine avant",
+    },
+    /* Ce que dit la notification, le nom de la date faisant le titre. */
+    notify: {
+      none: "{date}",
+      nightfall: "Le jour commence ce soir\u00a0: {date}.",
+      morning: "C'est aujourd'hui, {date}.",
+      weekBefore: "Dans une semaine, {date}.",
+    },
+    note: "Le jour hébraïque commence la veille au coucher du soleil. Une date d'Adar revient en Adar II les années à treize mois, et le 30 d'un mois qui n'en compte que 29 revient le 29.",
+    remove: "Supprimer",
+    removeAria: "Supprimer {name}",
+    editAria: "Modifier {name}",
+  },
   security: {
     title: "Sécurité",
     changePassword: "Changer le mot de passe",

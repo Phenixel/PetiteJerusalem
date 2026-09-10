@@ -77,6 +77,14 @@ const OPEN_THRESHOLD = 28;
 const COMMIT_RATIO = 0.5;
 /** En deçà, on ne sait pas encore si le doigt défile ou s'il tire la ligne. */
 const AXIS_SLOP = 8;
+/**
+ * Le blanc laissé entre l'heure et le tiroir : la ligne s'écarte un peu plus
+ * que le fond ne s'ouvre, sinon l'heure arrivait au contact de l'orange.
+ */
+const GAP = 12;
+
+/** Largeur du tiroir : la course du geste, moins ce blanc. */
+const drawer = computed(() => Math.max(0, shift.value - GAP));
 
 const row = ref<HTMLElement | null>(null);
 const shift = ref(props.expanded ? REVEAL : 0);
@@ -193,12 +201,13 @@ const transform = computed(() => `translateX(${-shift.value * direction}px)`);
     <!-- Le tiroir de l'action, du côté de l'heure : c'est la place que la
          ligne libère en partant, et sa largeur EST la course du geste, ce qui
          garde la cloche au milieu de ce qu'on a découvert. Rognée aux bords,
-         elle n'apparaît pas avant que la place ne soit faite. -->
+         elle n'apparaît pas avant que la place ne soit faite, et un blanc la
+         sépare de l'heure. -->
     <button
       v-if="canRemind"
       type="button"
       class="absolute inset-y-0 end-0 flex items-center justify-center overflow-hidden bg-primary text-white"
-      :style="{ width: `${shift}px`, transition: sliding ? 'none' : 'width 0.2s ease' }"
+      :style="{ width: `${drawer}px`, transition: sliding ? 'none' : 'width 0.2s ease' }"
       :tabindex="expanded ? 0 : -1"
       :aria-hidden="!expanded"
       :aria-label="actionLabel"
