@@ -7,6 +7,7 @@ import { adminService, type AuteurWithId, type SerieWithId } from "../../service
 import { chiourService } from "../../services/chiourService";
 import { studioService } from "../../services/studioService";
 import { useToast } from "../../composables/useToast";
+import AppSelect from "../../components/AppSelect.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import ProgressBar from "../../components/ProgressBar.vue";
 import { useConfirm } from "../../composables/useConfirm";
@@ -215,10 +216,11 @@ async function remove() {
           <label class="block text-sm font-semibold text-text-secondary mb-2">{{
             t("admin.chiourEdit.auteur")
           }}</label>
-          <select v-model="auteurId" class="field appearance-none cursor-pointer">
-            <option value="">{{ t("admin.chiourEdit.noAuteur") }}</option>
-            <option v-for="a in auteurs" :key="a.id" :value="a.id">{{ a.name }}</option>
-          </select>
+          <AppSelect
+            v-model="auteurId"
+            :options="auteurs.map((a) => ({ value: a.id, label: a.name }))"
+            :placeholder="t('admin.chiourEdit.noAuteur')"
+          />
         </div>
         <div>
           <label class="block text-sm font-semibold text-text-secondary mb-2">{{
@@ -267,10 +269,11 @@ async function remove() {
           <label class="block text-sm font-semibold text-text-secondary mb-2">{{
             t("studio.form.serie")
           }}</label>
-          <select v-model="serieId" class="field appearance-none cursor-pointer">
-            <option value="">{{ t("studio.form.noSerie") }}</option>
-            <option v-for="s in seriesForAuteur" :key="s.id" :value="s.id">{{ s.name }}</option>
-          </select>
+          <AppSelect
+            v-model="serieId"
+            :options="seriesForAuteur.map((serie) => ({ value: serie.id, label: serie.name }))"
+            :placeholder="t('studio.form.noSerie')"
+          />
         </div>
         <div>
           <label class="block text-sm font-semibold text-text-secondary mb-2">{{

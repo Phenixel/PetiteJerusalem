@@ -223,7 +223,30 @@ Trois règles qui vont avec :
   coupe pas. La troncature ne reste que là où la boîte est physiquement figée
   (le titre du lecteur audio dans sa barre d'une ligne).
 
-## 6. Le bandeau de navigation
+## 6. Les fenêtres du système
+
+Aucune fenêtre du système ne s'ouvre par-dessus l'app : ni la roue grise d'un
+`<select>`, ni le calendrier bleu d'un `<input type="date">`, ni `alert()` ou
+`confirm()`. Ces fenêtres-là n'ont ni nos couleurs, ni nos rayons, ni notre
+police, et elles arrivent au milieu d'un formulaire qui, lui, les a.
+
+À la place :
+
+| Ce que faisait le système | Ce qu'on emploie |
+| --- | --- |
+| `<select>` | `AppSelect.vue` : le champ, puis un panneau `shadow-pop` |
+| `<input type="date">` | `AppDateField.vue` : le champ, puis un mois dans une `AppModal` |
+| `confirm()` | `useConfirm` et `ConfirmDialog.vue` |
+| `alert()` | un toast (`useToast`) |
+
+Elles restent de vraies commandes : rôles ARIA, clavier (flèches, Entrée,
+Échap), fermeture au clic à côté et retour Android (`useOverlayStack`).
+
+Deux fenêtres du système restent, parce qu'elles ne sont pas de l'habillage
+mais un pouvoir que seul le système a : le **choix d'un fichier**
+(`<input type="file">`) et la **feuille de partage** de l'appareil.
+
+## 7. Le bandeau de navigation
 
 Sur le **web**, le bandeau est transparent tant qu'on est en tête de page : il
 laisse voir le beige et ne pèse rien. Dès le premier geste de défilement, il
@@ -236,7 +259,7 @@ barres collantes des pages.
 L'app native n'a pas de bandeau : la navigation y passe par la barre du bas
 (`BottomTabBar`).
 
-## 7. Ce qu'on n'emploie pas
+## 8. Ce qu'on n'emploie pas
 
 - Les dégradés, sous toutes leurs formes.
 - Les bordures pour détacher une carte du fond : c'est le rôle de l'ombre.
@@ -246,7 +269,7 @@ L'app native n'a pas de bandeau : la navigation y passe par la barre du bas
 - Playfair sur autre chose qu'un titre ou une mise en avant.
 - Une couleur codée en dur là où un jeton existe.
 
-## 8. Ce qui reste à faire
+## 9. Ce qui reste à faire
 
 Cette charte est en cours d'écriture, au fil des décisions.
 

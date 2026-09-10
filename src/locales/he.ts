@@ -2,6 +2,9 @@ import type { LocaleMessages } from "./fr";
 
 const he: LocaleMessages = {
   common: {
+    chooseDate: "בחירת תאריך",
+    previousMonth: "החודש הקודם",
+    nextMonth: "החודש הבא",
     home: "בית",
     profile: "פרופיל",
     login: "התחברות",

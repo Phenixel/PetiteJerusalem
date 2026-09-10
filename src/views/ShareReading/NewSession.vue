@@ -5,13 +5,15 @@ import { useI18n } from "vue-i18n";
 import { EnumTypeTextStudy } from "../../models/typeTextStudy";
 import { sessionService } from "../../services/sessionService";
 import { TextTypeService } from "../../services/textTypeService";
-import { endOfLocalDay } from "../../services/dateService";
+import { endOfLocalDay, localDayKey } from "../../services/dateService";
 import { authService } from "../../services/authService";
 import { ModerationError } from "../../services/moderationService";
 import type { User } from "../../services/authService";
 import { seoService } from "../../services/seoService";
 import { analyticsService } from "../../services/analyticsService";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
+import AppSelect from "../../components/AppSelect.vue";
+import AppDateField from "../../components/AppDateField.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
 import { SITE_URL } from "../../config/site";
@@ -28,6 +30,7 @@ const currentUser = ref<User | null>(null);
 const showAuthPrompt = ref(false);
 
 const textStudyTypes = TextTypeService.getAllTypes();
+const typeOptions = textStudyTypes.map((type) => ({ value: String(type.value), label: type.label }));
 
 const sessionData = reactive({
   name: "",
@@ -36,6 +39,17 @@ const sessionData = reactive({
   dateLimit: "",
   // Décoché par défaut : les invités peuvent réserver avec leur nom seul.
   guestEmailRequired: false,
+});
+
+/** Une date limite dans le passé n'a pas de sens : le calendrier s'arrête à aujourd'hui. */
+const todayKey = localDayKey();
+
+/** Passerelle entre la liste (des chaînes) et le type énuméré du formulaire. */
+const typeValue = computed({
+  get: () => String(sessionData.type),
+  set: (value: string) => {
+    sessionData.type = value as EnumTypeTextStudy | "";
+  },
 });
 
 const availableBooks = ref<string[]>([]);
@@ -246,25 +260,15 @@ const goBack = () => {
           <label for="type" class="block text-sm font-semibold text-text-secondary mb-2">{{
             t("newSession.textType")
           }}</label>
-          <div class="relative">
-            <select
-              name="type"
-              id="type"
-              v-model="sessionData.type"
-              required
-              class="field appearance-none cursor-pointer"
-            >
-              <option value="">{{ t("newSession.selectType") }}</option>
-              <option v-for="type in textStudyTypes" :key="type.value" :value="type.value">
-                {{ type.label }}
-              </option>
-            </select>
-            <AppIcon
-              name="chevron-down"
-              :size="14"
-              class="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
-            />
-          </div>
+          <!-- Le champ obligatoire l'est côté code (createSession refuse un
+               type vide) : la liste n'est plus un <select>, elle n'a donc plus
+               la validation du navigateur. -->
+          <AppSelect
+            id="type"
+            v-model="typeValue"
+            :options="typeOptions"
+            :placeholder="t('newSession.selectType')"
+          />
         </div>
 
         <!-- Sélection des parties/livres (s'affiche uniquement si des livres sont disponibles) -->
@@ -325,12 +329,11 @@ const goBack = () => {
           <label for="dateLimit" class="block text-sm font-semibold text-text-secondary mb-2">{{
             t("common.dateLimit")
           }}</label>
-          <input
-            type="date"
+          <AppDateField
             id="dateLimit"
             v-model="sessionData.dateLimit"
-            required
-            class="field cursor-pointer dark:[color-scheme:dark]"
+            :min="todayKey"
+            :label="t('common.dateLimit')"
           />
         </div>
 

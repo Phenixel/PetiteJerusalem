@@ -1,5 +1,10 @@
 const fr = {
   common: {
+    /* Champ de date de la maison (AppDateField), à la place du calendrier du
+       système. */
+    chooseDate: "Choisir une date",
+    previousMonth: "Mois précédent",
+    nextMonth: "Mois suivant",
     home: "Accueil",
     profile: "Profil",
     login: "Se connecter",

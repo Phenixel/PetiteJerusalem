@@ -504,7 +504,10 @@ class SessionService {
       await firestoreService.updateSession(sessionId, {
         name: sessionData.name,
         description: sessionData.description,
-        dateLimit: new Date(sessionData.dateLimit),
+        // Même règle qu'à la création : la journée limite compte entière. La
+        // modale donne un jour (YYYY-MM-DD), que `new Date` aurait lu à minuit
+        // UTC, soit la veille au soir à l'ouest de Greenwich.
+        dateLimit: endOfLocalDay(sessionData.dateLimit),
         slug,
         updatedAt: new Date(),
         ...(sessionData.guestEmailRequired !== undefined && {

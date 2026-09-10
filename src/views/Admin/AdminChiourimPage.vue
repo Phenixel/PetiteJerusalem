@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import type { ChiourDoc } from "../../models/models";
 import { adminService, type AuteurWithId, type SerieWithId } from "../../services/adminService";
 import { useToast } from "../../composables/useToast";
+import AppSelect from "../../components/AppSelect.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { liveValue } from "../../composables/liveInput";
 
@@ -170,22 +171,19 @@ async function togglePublished(chiour: ChiourDoc) {
       <span class="font-semibold text-text-primary">
         {{ t("admin.chiourim.selectedCount", { count: selected.size }) }}
       </span>
-      <select v-model="batchAuteurId" class="field w-auto appearance-none cursor-pointer">
-        <option value="">{{ t("admin.chiourim.batchAuteur") }}</option>
-        <option v-for="auteur in auteurs" :key="auteur.id" :value="auteur.id">
-          {{ auteur.name }}
-        </option>
-      </select>
-      <select
+      <AppSelect
+        v-model="batchAuteurId"
+        class="w-56"
+        :options="auteurs.map((auteur) => ({ value: auteur.id, label: auteur.name }))"
+        :placeholder="t('admin.chiourim.batchAuteur')"
+      />
+      <AppSelect
         v-model="batchSerieId"
-        class="field w-auto appearance-none cursor-pointer"
+        class="w-56"
+        :options="seriesForBatchAuteur.map((serie) => ({ value: serie.id, label: serie.name }))"
+        :placeholder="t('admin.chiourim.batchSerie')"
         :disabled="!batchAuteurId"
-      >
-        <option value="">{{ t("admin.chiourim.batchSerie") }}</option>
-        <option v-for="serie in seriesForBatchAuteur" :key="serie.id" :value="serie.id">
-          {{ serie.name }}
-        </option>
-      </select>
+      />
       <button
         class="btn btn-primary"
         :disabled="isBatchSaving || (!batchAuteurId && !batchSerieId)"

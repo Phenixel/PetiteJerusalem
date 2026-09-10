@@ -2,6 +2,9 @@ import type { LocaleMessages } from "./fr";
 
 const en: LocaleMessages = {
   common: {
+    chooseDate: "Choose a date",
+    previousMonth: "Previous month",
+    nextMonth: "Next month",
     home: "Home",
     profile: "Profile",
     login: "Sign in",

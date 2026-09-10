@@ -21,6 +21,7 @@ import { analyticsService } from "../services/analyticsService";
 
 import BatchSelectionBar from "../components/BatchSelectionBar.vue";
 import EditSessionModal from "../components/EditSessionModal.vue";
+import AppSelect from "../components/AppSelect.vue";
 import AppIcon from "../components/icons/AppIcon.vue";
 import { liveValue } from "../composables/liveInput";
 import { useConfirm } from "../composables/useConfirm";
@@ -158,6 +159,13 @@ const availableBooks = computed(() => {
   const books = new Set(textStudies.value.map((text) => text.livre));
   return Array.from(books).sort();
 });
+
+const bookOptions = computed(() =>
+  availableBooks.value.map((book) => ({
+    value: String(book),
+    label: sessionService.formatBookName(String(book)),
+  })),
+);
 
 // Les index partagés avec la page publique : réservations actives (les
 // tirages expirés s'affichent « disponible » partout, la gestion doit dire la
@@ -761,12 +769,11 @@ onMounted(() => {
         </div>
 
         <div class="w-full md:w-64">
-          <select v-model="selectedBook" class="field appearance-none cursor-pointer">
-            <option value="">{{ t("sessionManagement.allBooks") }}</option>
-            <option v-for="book in availableBooks" :key="book" :value="book">
-              {{ sessionService.formatBookName(book) }}
-            </option>
-          </select>
+          <AppSelect
+            v-model="selectedBook"
+            :options="bookOptions"
+            :placeholder="t('sessionManagement.allBooks')"
+          />
         </div>
       </div>
 

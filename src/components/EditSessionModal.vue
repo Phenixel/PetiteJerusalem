@@ -5,8 +5,9 @@ import type { Session } from "../models/models";
 import type { SessionEditData } from "../composables/useSessionEditing";
 import { useOverlay } from "../composables/useOverlayStack";
 import { useToast } from "../composables/useToast";
-import { toDateTimeLocal } from "../services/dateService";
+import { localDayKey } from "../services/dateService";
 import AppIcon from "./icons/AppIcon.vue";
+import AppDateField from "./AppDateField.vue";
 
 const { t } = useI18n();
 const toast = useToast();
@@ -84,11 +85,11 @@ const resetForm = () => {
   editForm.value = {
     name: session.name,
     description: session.description || "",
-    // Heure locale (toDateTimeLocal), jamais toISOString : le champ
-    // datetime-local relirait l'heure UTC comme locale et décalerait la date
-    // limite du fuseau à chaque enregistrement.
+    // Le jour LOCAL (localDayKey), jamais toISOString : la date lue en UTC
+    // recule d'un jour à l'ouest de Greenwich, et la date limite se décalait
+    // du fuseau à chaque enregistrement.
     dateLimit:
-      session.dateLimit instanceof Date ? toDateTimeLocal(session.dateLimit) : session.dateLimit,
+      session.dateLimit instanceof Date ? localDayKey(session.dateLimit) : session.dateLimit,
     guestEmailRequired: session.guestEmailRequired === true,
   };
 };
@@ -143,7 +144,11 @@ watch([() => props.session, () => props.show], resetForm, { immediate: true });
           <label class="block text-sm font-semibold text-text-primary mb-2"
             >{{ t("common.dateLimit") }} *</label
           >
-          <input v-model="editForm.dateLimit" class="field" type="datetime-local" required />
+          <!-- Un jour, pas un horaire : la journée limite compte entière,
+               quelle que soit l'heure enregistrée (voir endOfLocalDay). Le
+               champ datetime-local laissait choisir une heure qui n'avait
+               aucun effet. -->
+          <AppDateField v-model="editForm.dateLimit" :label="t('common.dateLimit')" />
         </div>
 
         <div>
