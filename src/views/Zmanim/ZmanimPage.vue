@@ -43,9 +43,13 @@ import {
   type ZmanTime,
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
+import { useToast } from "../../composables/useToast";
+import { ensureNotificationPermission, useZmanReminders } from "../../composables/useZmanReminders";
 import { cityInSentence, citySlug, findCityBySlug } from "../../content/zmanimCities";
 import { isSectionPath, localeOfPath, sectionPath } from "../../content/seoLocales";
 import RestTimes from "./RestTimes.vue";
+import ZmanRow from "./ZmanRow.vue";
+import ZmanReminderModal from "./ZmanReminderModal.vue";
 
 // Chargé à la demande : le sélecteur embarque la liste des villes, inutile
 // tant qu'on ne l'ouvre pas.
@@ -162,6 +166,61 @@ const PERIOD_ICONS: Record<ZmanPeriod, "sunrise" | "sun" | "clock" | "moon"> = {
 
 const clock = (date: Date) => formatZmanTime(date, place.value.tzid, locale.value);
 const isNext = (zman: ZmanTime) => upcoming.value?.key === zman.key;
+
+/**
+ * Les rappels posés sur les horaires (app native seulement : une notification
+ * se programme sur le téléphone qui la recevra, voir zmanReminderService).
+ *
+ * La page ne fait que tenir les réglages ; c'est le service, monté au
+ * démarrage, qui les traduit en notifications et refait la programmation
+ * quand le lieu, la langue ou le jour changent.
+ */
+const toast = useToast();
+const { reminderFor, setReminder, clearReminder, lastMinutes, restEnabled } = useZmanReminders();
+const reminderZman = ref<ZmanTime | null>(null);
+const reminderOpen = ref(false);
+
+/** Le délai posé sur un horaire, ou null : c'est lui que porte le triangle. */
+const reminderMinutes = (zman: ZmanTime) =>
+  isNativeApp ? (reminderFor(zman.key)?.minutesBefore ?? null) : null;
+
+const zmanName = (zman: ZmanTime) => t(`zmanim.names.${zman.key}`);
+
+function openReminder(zman: ZmanTime): void {
+  reminderZman.value = zman;
+  reminderOpen.value = true;
+}
+
+/**
+ * Pose le rappel, la permission système obtenue. Sans elle, rien n'est
+ * enregistré : un rappel qui ne peut pas sonner ne doit pas s'afficher comme
+ * posé.
+ */
+async function applyReminder(zman: ZmanTime, minutes: number, source: string): Promise<void> {
+  if (!(await ensureNotificationPermission(true))) {
+    toast.error(t("zmanim.reminder.permissionDenied"));
+    return;
+  }
+  setReminder(zman.key, minutes);
+  analyticsService.capture("zman_reminder_set", { zman: zman.key, minutes, source });
+  toast.success(
+    minutes === 0
+      ? t("zmanim.reminder.setToastNow", { name: zmanName(zman) })
+      : t("zmanim.reminder.setToast", { name: zmanName(zman), minutes }),
+  );
+}
+
+function removeReminder(zman: ZmanTime, source: string): void {
+  clearReminder(zman.key);
+  analyticsService.capture("zman_reminder_cleared", { zman: zman.key, source });
+  toast.success(t("zmanim.reminder.clearedToast", { name: zmanName(zman) }));
+}
+
+/** Le raccourci du glissement : pose le rappel du dernier délai, ou le retire. */
+function quickToggle(zman: ZmanTime): void {
+  if (reminderFor(zman.key)) removeReminder(zman, "swipe");
+  else void applyReminder(zman, lastMinutes.value, "swipe");
+}
 
 // « dans 2 h 15 » sous le prochain horaire, comme sur la carte de l'accueil :
 // l'heure dit quand, le décompte dit s'il faut se presser.
@@ -339,6 +398,12 @@ onMounted(() => {
   void ensureNearby();
   void applyRouteCity();
   analyticsService.capture("zmanim_viewed", { place: place.value.source });
+  // Le rappel d'entrée du Chabbat et des fêtes est actif d'office : sans la
+  // permission du système, il ne partirait jamais. On la demande ici, sur la
+  // page où l'entrée du repos est sous les yeux, et non au lancement de
+  // l'app, où la fenêtre du système surgirait sans que rien ne l'explique.
+  // Le système ne pose la question qu'une fois : ensuite, l'appel ne fait rien.
+  if (isNativeApp && restEnabled.value) void ensureNotificationPermission(true);
 });
 </script>
 
@@ -520,30 +585,21 @@ onMounted(() => {
         <AppIcon :name="PERIOD_ICONS[group.period]" :size="16" class="text-primary" />
         {{ t(`zmanim.periods.${group.period}`) }}
       </h2>
+      <!-- Dans l'app, chaque ligne se touche pour poser un rappel, et se
+           glisse pour le poser d'un geste (voir ZmanRow). Sur le site, elle
+           reste une ligne de texte : rien à programmer dans un navigateur. -->
       <ul class="flex flex-col divide-y divide-line">
-        <li
+        <ZmanRow
           v-for="zman in group.zmanim"
           :key="zman.key"
-          class="flex items-center justify-between gap-4 py-2.5"
-        >
-          <span class="min-w-0">
-            <span
-              class="block font-semibold leading-snug"
-              :class="isNext(zman) ? 'text-primary' : 'text-text-primary'"
-            >
-              {{ t(`zmanim.names.${zman.key}`) }}
-            </span>
-            <span class="block text-sm text-text-secondary">
-              {{ t(`zmanim.hints.${zman.key}`) }}
-            </span>
-          </span>
-          <span
-            class="shrink-0 text-lg font-semibold tabular-nums"
-            :class="isNext(zman) ? 'text-primary' : 'text-text-primary'"
-          >
-            {{ clock(zman.date) }}
-          </span>
-        </li>
+          :zman="zman"
+          :time="clock(zman.date)"
+          :is-next="isNext(zman)"
+          :minutes-before="reminderMinutes(zman)"
+          :can-remind="isNativeApp"
+          @open="openReminder(zman)"
+          @toggle="quickToggle(zman)"
+        />
       </ul>
     </section>
 
@@ -562,6 +618,17 @@ onMounted(() => {
     </p>
 
     <CityPicker v-model:show="pickerOpen" :current="place.city" @select="chooseCity" />
+    <ZmanReminderModal
+      v-if="reminderZman"
+      v-model:show="reminderOpen"
+      :name="t(`zmanim.names.${reminderZman.key}`)"
+      :time="clock(reminderZman.date)"
+      :place-label="placeLabel"
+      :minutes="reminderMinutes(reminderZman)"
+      :default-minutes="lastMinutes"
+      @save="applyReminder(reminderZman, $event, 'modal')"
+      @remove="removeReminder(reminderZman, 'modal')"
+    />
     <DayPicker
       v-model="dayKey"
       :open="dayPickerOpen"

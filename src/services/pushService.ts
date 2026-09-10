@@ -44,6 +44,13 @@ export interface ReminderSettings {
 /** Dernier jeton FCM connu de cet appareil, pour le retirer à la rotation. */
 const LAST_TOKEN_KEY = "pj_fcm_token";
 
+/**
+ * Marqueur des notifications locales rejouées ici (voir `init`) : le plugin de
+ * notifications locales sert aussi aux rappels d'horaires, et son événement de
+ * toucher est global. Chaque service reconnaît les siennes à ce champ.
+ */
+const PUSH_SOURCE = "push";
+
 function rememberToken(token: string): void {
   try {
     localStorage.setItem(LAST_TOKEN_KEY, token);
@@ -238,14 +245,20 @@ class PushService {
             id: Date.now() % 2147483647,
             title: title ?? "",
             body: body ?? "",
-            extra: data,
+            // `source` : les rappels d'horaires (zmanReminderService) passent
+            // par le même plugin et le même événement. Chacun ne traite que
+            // ses propres notifications, sinon les deux écouteurs
+            // navigueraient pour la même.
+            extra: { ...(data as Record<string, unknown> | undefined), source: PUSH_SOURCE },
           },
         ],
       }).catch((e) => console.error("Affichage de la notification en premier plan échoué:", e));
     });
     // Toucher la notification locale doit deep-linker comme la push d'origine.
     LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
-      const url = (event.notification.extra as { url?: string } | undefined)?.url;
+      const extra = event.notification.extra as { url?: string; source?: string } | undefined;
+      if (extra?.source !== PUSH_SOURCE) return;
+      const url = extra.url;
       analyticsService.capture("push_notification_opened", { url: url ?? null });
       if (url) router.push(url);
     });

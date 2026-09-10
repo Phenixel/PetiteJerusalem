@@ -185,6 +185,46 @@ chkia est recalculée côté serveur dans `functions/src/sunsetReminder.ts`
 `@hebcal/core`, qui la donne dans l'application, est publié en ESM seul quand
 `functions/` compile en CommonJS.
 
+## Rappels d'horaires (notifications locales)
+
+Posés depuis la page **Horaires**, en touchant l'horaire voulu (ou en faisant
+glisser sa ligne vers la droite, raccourci qui reprend le dernier délai
+choisi) ; comptés, réglés et coupés depuis l'onglet Préférences du profil. Le
+rappel de l'entrée du **Chabbat et des fêtes** est actif d'office, une heure
+avant l'allumage des bougies.
+
+Rien ne passe par un serveur, contrairement au rappel de lecture : un horaire
+se calcule sur l'appareil, la notification est donc programmée sur l'appareil
+aussi (`@capacitor/local-notifications`). Aucune position n'est confiée à
+personne, et le téléphone sonne à l'heure dite même sans réseau.
+
+Un horaire n'a pas d'heure fixe : une notification « tous les jours à 6 h 13 »
+serait fausse dès le lendemain. `src/services/zmanReminderService.ts` programme
+donc une suite d'instants exacts, chacun calculé pour son jour, et reprend la
+programmation à chaque retour au premier plan, au changement de lieu et au
+changement de langue. La fenêtre est partagée entre les rappels posés, iOS ne
+gardant que 64 notifications en attente par application : de deux à quatorze
+jours selon leur nombre. Les identifiants vivent dans une plage réservée, pour
+n'annuler que les nôtres et laisser les autres notifications de l'app en place.
+
+Les réglages restent sur l'appareil (`localStorage`, voir
+`src/composables/useZmanReminders.ts`) et ne montent pas dans le compte : c'est
+le téléphone qui fera sonner le rappel, à partir du lieu choisi sur ce
+téléphone-là.
+
+- **Android** : `scripts/setup-android.mjs` ajoute `SCHEDULE_EXACT_ALARM`.
+  Sans elle, le système garde la notification pour sa prochaine fenêtre de
+  veille, et un rappel de dix minutes avant peut arriver après l'horaire qu'il
+  annonce ; la page de réglages propose alors d'ouvrir le réglage système
+  (`changeExactNotificationSetting`). Les rappels ont leur canal (`pj-zmanim`),
+  pour se couper séparément des rappels de lecture.
+- **iOS** : rien de plus à déclarer, c'est la permission de notification déjà
+  demandée pour les push.
+
+La permission est demandée au premier geste qui la réclame, jamais au
+lancement : poser un rappel, activer celui du Chabbat, ou ouvrir la page des
+horaires alors que celui du Chabbat est actif d'office.
+
 ## Géolocalisation (horaires du jour)
 
 La page **Horaires** calcule les zmanim pour la position de l'appareil quand

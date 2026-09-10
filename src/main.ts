@@ -171,6 +171,15 @@ if (isNativeApp) {
   void router.isReady().then(() =>
     whenIdle(() => {
       import("./services/widgetService").then(({ widgetService }) => widgetService.init());
+      // Rappels d'horaires posés depuis la page Horaires : programmés sur
+      // l'appareil (aucun serveur), et replanifiés à chaque retour au premier
+      // plan. Ils tirent le moteur d'horaires comme les widgets, ils partent
+      // donc avec eux, après le premier rendu : l'événement du toucher d'une
+      // notification est retenu par Capacitor jusqu'à ce qu'on l'écoute, un
+      // lancement à froid depuis un rappel n'est donc pas perdu.
+      import("./services/zmanReminderService").then(({ zmanReminderService }) =>
+        zmanReminderService.init(router),
+      );
     }),
   );
   // Bandeau de mise à jour : compare le binaire installé à la version publiée

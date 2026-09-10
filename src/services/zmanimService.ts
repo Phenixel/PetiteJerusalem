@@ -190,6 +190,15 @@ const ZMAN_DEFS = [
 
 export type ZmanKey = (typeof ZMAN_DEFS)[number]["key"];
 
+/**
+ * Les clés des horaires, dans l'ordre de la journée. Un horaire n'est pas
+ * toujours calculable (nuit polaire) et la liste d'un jour peut donc être plus
+ * courte : celle-ci dit ce qui existe, indépendamment d'un jour et d'un lieu.
+ * Les rappels s'en servent pour donner à chaque horaire un identifiant système
+ * stable (voir zmanReminderService).
+ */
+export const ZMAN_KEYS: ZmanKey[] = ZMAN_DEFS.map((def) => def.key);
+
 export interface ZmanTime {
   key: ZmanKey;
   period: ZmanPeriod;

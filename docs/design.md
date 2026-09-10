@@ -142,6 +142,30 @@ partage, comme sur les pages d'un corpus (`activeOn` dans `BottomTabBar.vue`,
 le `active-class` de RouterLink comparant les routes déclarées et non les
 adresses).
 
+### Une ligne de liste peut devenir une commande
+
+Dans l'app, une ligne d'horaire n'est plus seulement du texte : la toucher pose
+un rappel, la faire glisser vers la droite le pose ou le retire d'un geste
+(voir `ZmanRow.vue`). Sur le site, la même ligne reste du texte : il n'y a rien
+à programmer dans un navigateur, et une commande qui ne mène nulle part serait
+pire que pas de commande du tout.
+
+Trois règles en découlent, valables pour toute liste qui s'anime ainsi.
+
+Le geste se valide au relâcher, passé la moitié de sa course. On peut donc
+tirer une ligne, voir ce qu'elle propose, et revenir sans rien changer ;
+l'action apparaît par le bord, elle ne surgit pas sous le doigt.
+
+Le premier mouvement franc arbitre entre défiler et glisser. Sans cet
+arbitrage, un pouce qui parcourt la page ouvrait les lignes au passage.
+
+Ce qu'un geste a produit se voit sans être lu. Un rappel posé marque sa ligne
+d'un petit triangle plein dans l'angle, du côté de l'heure : une cloche posée
+dans le texte aurait mangé la place du nom sur un téléphone, et une ligne sur
+deux marquée aurait fait une colonne d'icônes. L'angle, lui, ne prend la place
+de rien et se repère d'un coup d'oeil en parcourant la liste. Le triangle suit
+le sens de lecture (bordures logiques), il change donc de côté en hébreu.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.
