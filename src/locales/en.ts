@@ -677,9 +677,30 @@ const en: LocaleMessages = {
     },
     instructions: {
       title: "Instructions",
-      step1: "Check the boxes to reserve a section or text",
-      step2: "You can uncheck your own reservations to cancel them",
-      step3: "Click on the text card to see available sections",
+      next: "Next",
+      done: "Got it",
+      steps: {
+        search: {
+          title: "Find a text",
+          text: 'Type its name in the search box, or show only what is left to take with "Available only".',
+        },
+        reserve: {
+          title: "Reserve a place",
+          text: "Check one chapter, or several, then confirm at the bottom of the screen: they are yours.",
+        },
+        cancel: {
+          title: "Give a place back",
+          text: "Uncheck one of your reservations and the chapter goes back to the chain. Other people's stay put.",
+        },
+        markRead: {
+          title: "Mark as read",
+          text: 'Once you have read the text, flip "Read": the chain\'s progress rises for everyone.',
+        },
+        read: {
+          title: "Read the text",
+          text: 'The "Read" button opens the text, with or without a reservation.',
+        },
+      },
     },
     textList: {
       selected: "Selected",
@@ -766,7 +787,7 @@ const en: LocaleMessages = {
       "Listen to the chiour « {name} » 🎧 A Torah lesson to discover on Petite Jerusalem:",
   },
   batchSelection: {
-    textsSelected: "{count} texts selected",
+    textsSelected: "{count} text selected | {count} texts selected",
   },
   editModal: {
     title: "Edit session",

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 /**
- * Le cadre commun des captures de l'introduction : un morceau
- * d'application en réduction, posé sur le fond de l'app.
+ * Le cadre commun des captures dessinées : un morceau d'application en
+ * réduction, posé sur le fond de l'app.
+ *
+ * L'introduction s'en sert pour montrer ce que fait l'app ; les instructions
+ * d'une chaîne, pour montrer comment on réserve.
  *
  * Elles sont dessinées, pas photographiées : elles suivent le thème de
  * couleurs choisi et le mode sombre, elles parlent la langue affichée, et

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, defineAsyncComponent, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { sessionService } from "../../services/sessionService";
@@ -20,7 +20,11 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
 import SessionHeader from "./detailSession/SessionHeader.vue";
-import SessionInstructionsModal from "./detailSession/SessionInstructionsModal.vue";
+// Cinq captures animées qui ne servent qu'à ceux qui ouvrent la fenêtre : le
+// morceau ne part qu'au clic sur la pastille.
+const SessionInstructionsModal = defineAsyncComponent(
+  () => import("./detailSession/SessionInstructionsModal.vue"),
+);
 import TextStudiesList from "./detailSession/TextStudiesList.vue";
 import RandomTehilimCard from "./detailSession/RandomTehilimCard.vue";
 import { EnumTypeTextStudy } from "../../models/typeTextStudy";

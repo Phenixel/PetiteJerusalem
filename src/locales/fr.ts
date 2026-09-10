@@ -694,9 +694,30 @@ const fr = {
     },
     instructions: {
       title: "Instructions",
-      step1: "Cochez les cases pour réserver une section ou un texte",
-      step2: "Vous pouvez décocher vos propres réservations pour les annuler",
-      step3: "Cliquez sur la carte du texte pour voir les sections disponibles",
+      next: "Suivant",
+      done: "J'ai compris",
+      steps: {
+        search: {
+          title: "Trouver un texte",
+          text: "Tapez son nom dans la recherche, ou n'affichez que ce qui reste à prendre avec « Disponibles uniquement ».",
+        },
+        reserve: {
+          title: "Réserver une place",
+          text: "Cochez un chapitre, ou plusieurs, puis confirmez en bas de l'écran : ils sont à vous.",
+        },
+        cancel: {
+          title: "Rendre une place",
+          text: "Décochez une de vos réservations et le chapitre repart dans la chaîne. Celles des autres ne bougent pas.",
+        },
+        markRead: {
+          title: "Marquer comme lu",
+          text: "Une fois le texte lu, basculez « Lu » : l'avancement de la chaîne monte pour tout le monde.",
+        },
+        read: {
+          title: "Lire le texte",
+          text: "Le bouton « Lire » ouvre le texte, avec ou sans réservation.",
+        },
+      },
     },
     textList: {
       selected: "Sélectionné",
@@ -784,7 +805,7 @@ const fr = {
       "Écoutez le chiour « {name} » 🎧 Un cours de Torah à découvrir sur Petite Jérusalem :",
   },
   batchSelection: {
-    textsSelected: "{count} textes sélectionnés",
+    textsSelected: "{count} texte sélectionné | {count} textes sélectionnés",
   },
   editModal: {
     title: "Modifier la session",

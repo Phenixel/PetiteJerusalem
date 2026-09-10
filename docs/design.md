@@ -75,6 +75,13 @@ longtemps comment on réserve. Elle rejoint la rangée de pastilles qui décrive
 la chaîne (le type, la date limite, le créateur) et s'ouvre en fenêtre quand on
 la touche.
 
+Et elle montre plutôt qu'elle n'explique : chaque geste (chercher, réserver,
+rendre, marquer lu, lire) s'y joue en petit, dans une capture **dessinée**
+(`src/components/mock`), qui suit le thème et la langue, ne pèse presque rien
+et ne vieillit pas d'une refonte à l'autre comme le ferait une vidéo. Une
+phrase seule (« cochez les cases pour réserver ») ne dit pas grand-chose
+tant qu'on n'a pas vu la case se cocher.
+
 D'où la règle de cette rangée : une pastille **énonce**, sauf celle qui porte
 une **icône**, qui **ouvre**. Rien d'autre ne la distingue, ni chevron ni
 flèche ; au survol, sa teinte se fonce, et sur un écran tactile l'icône suffit.

@@ -39,7 +39,7 @@ defineEmits<{
         </div>
         <div>
           <p class="font-bold text-text-primary">
-            {{ t("batchSelection.textsSelected", { count }) }}
+            {{ t("batchSelection.textsSelected", count) }}
           </p>
           <p v-if="label" class="text-xs text-text-secondary">
             {{ label }}

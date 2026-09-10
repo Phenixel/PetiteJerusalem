@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import AppIcon from "../icons/AppIcon.vue";
-import MockZmanim from "./mock/MockZmanim.vue";
+import MockZmanim from "../mock/MockZmanim.vue";
 
 /**
  * Les horaires (zmanim). Une section entière de l'application que rien

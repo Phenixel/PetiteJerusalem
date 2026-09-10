@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppIcon from "../../icons/AppIcon.vue";
+import AppIcon from "../icons/AppIcon.vue";
 import MockScreen from "./MockScreen.vue";
 import MockTouch from "./MockTouch.vue";
 
