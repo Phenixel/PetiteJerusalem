@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // "Bibliothèque" hero illustration: books on a shelf, one leaning. The books
-// rise onto the shelf on load. On hover of the parent .feature-card, the
+// rise onto the shelf on load. On hover of the parent .feature-link, the
 // books tidy themselves up: each one hops in turn and the leaning book
 // springs upright.
 </script>
@@ -102,20 +102,20 @@
 /* --- hover (parent card): the books tidy themselves up ---
    NOTE: the WHOLE selector must live inside :global(), Vue's scoped
    compiler drops anything written after :global(...). */
-:global(.feature-card:hover .illu-biblio .tome) {
+:global(.feature-link:hover .illu-biblio .tome) {
   opacity: 1;
   transform-box: fill-box;
   transform-origin: bottom center;
 }
-:global(.feature-card:hover .illu-biblio .tome-1) {
+:global(.feature-link:hover .illu-biblio .tome-1) {
   animation: tome-hop 0.5s ease 0s 1 both;
 }
-:global(.feature-card:hover .illu-biblio .tome-2) {
+:global(.feature-link:hover .illu-biblio .tome-2) {
   animation: tome-hop 0.5s ease 0.12s 1 both;
 }
 /* the leaning book springs upright (cancels its baked-in 9° tilt),
    with a small overshoot, and stays straight while hovered */
-:global(.feature-card:hover .illu-biblio .tome-3) {
+:global(.feature-link:hover .illu-biblio .tome-3) {
   animation: tome-straighten 0.7s ease-out 0.2s both;
 }
 
@@ -149,7 +149,7 @@
     transform: none;
     stroke-dashoffset: 0;
   }
-  :global(.feature-card:hover .illu-biblio .tome) {
+  :global(.feature-link:hover .illu-biblio .tome) {
     animation: none;
     transform: none;
   }

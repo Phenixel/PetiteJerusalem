@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // "Chiourim" hero illustration: headphones with an equalizer. Draws itself in
-// on load. On hover of the parent .feature-card, the headphones nod to the
+// on load. On hover of the parent .feature-link, the headphones nod to the
 // beat while the equalizer goes wild and gains two extra bars.
 </script>
 
@@ -133,7 +133,7 @@
    NOTE: the WHOLE selector must live inside :global(), Vue's scoped
    compiler drops anything written after :global(...). The .illu-chiourim
    root class keeps these global rules from leaking elsewhere. */
-:global(.feature-card:hover .illu-chiourim .phones) {
+:global(.feature-link:hover .illu-chiourim .phones) {
   transform-box: fill-box;
   transform-origin: center 65%;
   animation: phones-nod 0.9s ease-in-out infinite;
@@ -149,25 +149,25 @@
   }
 }
 
-:global(.feature-card:hover .illu-chiourim .bar) {
+:global(.feature-link:hover .illu-chiourim .bar) {
   opacity: 1;
   transform-box: fill-box;
   transform-origin: bottom center;
   animation: illu-play 0.45s ease-in-out infinite;
 }
-:global(.feature-card:hover .illu-chiourim .bar-4) {
+:global(.feature-link:hover .illu-chiourim .bar-4) {
   animation-delay: 0s;
 }
-:global(.feature-card:hover .illu-chiourim .bar-1) {
+:global(.feature-link:hover .illu-chiourim .bar-1) {
   animation-delay: 0.09s;
 }
-:global(.feature-card:hover .illu-chiourim .bar-2) {
+:global(.feature-link:hover .illu-chiourim .bar-2) {
   animation-delay: 0.18s;
 }
-:global(.feature-card:hover .illu-chiourim .bar-3) {
+:global(.feature-link:hover .illu-chiourim .bar-3) {
   animation-delay: 0.27s;
 }
-:global(.feature-card:hover .illu-chiourim .bar-5) {
+:global(.feature-link:hover .illu-chiourim .bar-5) {
   animation-delay: 0.36s;
 }
 
@@ -193,8 +193,8 @@
   .bar-x {
     opacity: 0;
   }
-  :global(.feature-card:hover .illu-chiourim .phones),
-  :global(.feature-card:hover .illu-chiourim .bar) {
+  :global(.feature-link:hover .illu-chiourim .phones),
+  :global(.feature-link:hover .illu-chiourim .bar) {
     animation: none;
     transform: none;
   }

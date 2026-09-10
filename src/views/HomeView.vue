@@ -25,7 +25,6 @@ import {
 } from "../services/userPreferencesService";
 import { isNativeApp } from "../composables/useNativeApp";
 import { useHomeAccountCta } from "../composables/useHomeAccountCta";
-import AppIcon from "../components/icons/AppIcon.vue";
 import SiteFooter from "../components/SiteFooter.vue";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
@@ -143,6 +142,28 @@ const features = computed<
     route: "bibliotheque",
   },
 ]);
+
+/**
+ * Les trois portes, deux mises en page.
+ *
+ * Dans l'app, l'écran est étroit et la barre du bas attend juste en dessous :
+ * les trois tiennent sur une seule ligne, un dessin et un titre, sans la
+ * phrase de présentation. On sait ce qu'est la bibliothèque quand on a
+ * installé l'app ; la phrase servait au visiteur du site.
+ *
+ * Sur le web, elles s'empilent en lignes sur un téléphone (texte à gauche,
+ * dessin à droite, la place y est en largeur) et se rangent côte à côte,
+ * centrées sous leur dessin, dès qu'il y a trois colonnes. Le filet qui les
+ * sépare suit : horizontal quand elles s'empilent, vertical côte à côte.
+ */
+const doorsClass = isNativeApp ? "grid grid-cols-3" : "grid grid-cols-1 md:grid-cols-3";
+const doorClass = isNativeApp
+  ? "flex flex-col items-center gap-2 border-s px-1 py-3 text-center first:border-s-0"
+  : "flex items-center gap-5 border-b py-5 text-left last:border-b-0 md:flex-col md:items-center md:gap-4 md:border-b-0 md:border-s md:px-6 md:py-2 md:text-center md:first:border-s-0";
+const doorIllustrationClass = isNativeApp
+  ? "h-14 w-14"
+  : "order-2 h-24 w-24 sm:h-28 sm:w-28 md:order-1 md:h-24 md:w-24";
+const doorTitleClass = isNativeApp ? "text-base leading-snug" : "text-2xl md:text-3xl";
 
 // Ce que voit un visiteur qui (re)vient : la landing anonyme ou le tableau de
 // bord connecté. Une seule capture, au premier état d'auth connu.
@@ -305,43 +326,34 @@ onUnmounted(() => {
            juste au-dessus. Sans lui, les seules surfaces blanches de la page
            sont celles qui répondent à une question (ma lecture, l'heure), et
            l'accueil se lit en deux temps au lieu d'un empilement de boîtes.
-           Ce qui remplace le cadre : un filet, vertical quand les trois sont
-           côte à côte, horizontal quand elles s'empilent ; et au survol, le
-           titre qui prend la couleur et un chevron qui avance. -->
-      <div class="grid grid-cols-1 md:grid-cols-3 mb-10 items-stretch">
+           Ce qui remplace le cadre : un filet entre elles, et au survol le
+           titre qui prend la couleur pendant que le dessin s'anime. -->
+      <div class="mb-10 items-stretch" :class="doorsClass">
         <button
           v-for="(feature, index) in features"
           :key="feature.title"
-          class="feature-link group flex cursor-pointer items-center gap-5 border-b border-line py-5 text-left last:border-b-0 md:flex-col md:items-center md:gap-4 md:border-b-0 md:border-s md:px-6 md:py-2 md:text-center md:first:border-s-0"
+          class="feature-link group cursor-pointer border-line"
+          :class="doorClass"
           :style="{ '--enter-delay': `${index * 0.12}s` }"
           @click="
             trackCard(`feature_${feature.route}`);
             router.push(feature.route);
           "
         >
-          <!-- Deux compositions pour la même porte : en ligne sur un téléphone
-               (texte à gauche, dessin à droite), la place y est en largeur ;
-               en colonne et centrée dès qu'il y en a trois côte à côte, le
-               dessin au-dessus d'un titre qui peut alors prendre son corps.
-               Au repos, seule la micro-animation interne du SVG vit ; au
-               survol, c'est le dessin lui-même qui s'anime. -->
-          <div
-            class="order-2 h-24 w-24 shrink-0 text-primary sm:h-28 sm:w-28 md:order-1 md:h-24 md:w-24"
-          >
+          <div class="shrink-0 text-primary" :class="doorIllustrationClass">
             <component :is="feature.illustration" />
           </div>
           <div class="order-1 min-w-0 flex-1 md:order-2">
             <h3
-              class="font-display mb-1.5 flex items-center gap-1.5 text-2xl font-bold tracking-tight text-text-primary transition-colors group-hover:text-primary md:justify-center md:text-3xl"
+              class="font-display font-bold tracking-tight text-text-primary transition-colors group-hover:text-primary"
+              :class="doorTitleClass"
             >
               {{ feature.title }}
-              <AppIcon
-                name="chevron-right"
-                :size="18"
-                class="shrink-0 -translate-x-1.5 opacity-0 transition duration-200 group-hover:translate-x-0 group-hover:opacity-100 rtl:rotate-180"
-              />
             </h3>
-            <p class="text-sm leading-relaxed text-text-secondary md:text-base">
+            <p
+              v-if="!isNativeApp"
+              class="mt-1.5 text-sm leading-relaxed text-text-secondary md:text-base"
+            >
               {{ feature.description }}
             </p>
           </div>

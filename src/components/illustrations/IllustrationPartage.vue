@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // "Partage de lecture" hero illustration: an open book shared between three
-// readers. Draws itself in on load. On hover of the parent .feature-card,
+// readers. Draws itself in on load. On hover of the parent .feature-link,
 // the readers bob toward the book one after the other, the link lines flow
 // fast, and the page lines ripple like turning pages.
 </script>
@@ -118,32 +118,32 @@
    fast, page lines ripple, the drawing lives, nothing is scaled up ---
    NOTE: the WHOLE selector must live inside :global(), Vue's scoped
    compiler drops anything written after :global(...). */
-:global(.feature-card:hover .illu-partage .link) {
+:global(.feature-link:hover .illu-partage .link) {
   animation: illu-flow 0.7s linear infinite;
   opacity: 1;
 }
-:global(.feature-card:hover .illu-partage .reader) {
+:global(.feature-link:hover .illu-partage .reader) {
   opacity: 1;
   transform-box: fill-box;
   transform-origin: center;
   animation: reader-bob 1.1s ease-in-out infinite;
 }
-:global(.feature-card:hover .illu-partage .reader-1) {
+:global(.feature-link:hover .illu-partage .reader-1) {
   animation-delay: 0s;
 }
-:global(.feature-card:hover .illu-partage .reader-2) {
+:global(.feature-link:hover .illu-partage .reader-2) {
   animation-delay: 0.18s;
 }
-:global(.feature-card:hover .illu-partage .reader-3) {
+:global(.feature-link:hover .illu-partage .reader-3) {
   animation-delay: 0.36s;
 }
-:global(.feature-card:hover .illu-partage .draw-2) {
+:global(.feature-link:hover .illu-partage .draw-2) {
   stroke-dashoffset: 0;
   transform-box: fill-box;
   transform-origin: center;
   animation: page-ripple 1.1s ease-in-out infinite;
 }
-:global(.feature-card:hover .illu-partage .draw-2:last-of-type) {
+:global(.feature-link:hover .illu-partage .draw-2:last-of-type) {
   animation-delay: 0.55s;
 }
 
@@ -182,9 +182,9 @@
     transform: none;
     stroke-dashoffset: 0;
   }
-  :global(.feature-card:hover .illu-partage .link),
-  :global(.feature-card:hover .illu-partage .draw-2),
-  :global(.feature-card:hover .illu-partage .reader) {
+  :global(.feature-link:hover .illu-partage .link),
+  :global(.feature-link:hover .illu-partage .draw-2),
+  :global(.feature-link:hover .illu-partage .reader) {
     animation: none;
     transform: none;
   }

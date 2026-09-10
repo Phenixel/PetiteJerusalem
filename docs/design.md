@@ -50,11 +50,20 @@ session en cours. Elle contient une donnée, un état, quelque chose qui change.
 
 Un simple endroit où aller n'en est pas une : les trois portes du site, sur
 l'accueil, sont posées à même le beige, séparées par un filet (vertical côte à
-côte, horizontal empilées), avec le titre qui prend la couleur au survol et un
-chevron qui avance. Encadrées, elles se disputaient le regard avec les cartes
-du tableau de bord et la page devenait un empilement de boîtes ; sans cadre,
-les seules surfaces blanches sont celles qui répondent, et la page se lit en
-deux temps.
+côte, horizontal empilées), avec le titre qui prend la couleur au survol
+pendant que le dessin s'anime. Encadrées, elles se disputaient le regard avec
+les cartes du tableau de bord et la page devenait un empilement de boîtes ;
+sans cadre, les seules surfaces blanches sont celles qui répondent, et la page
+se lit en deux temps.
+
+Rien n'indique le clic en plus : ni chevron posé au bout, ni flèche qui
+apparaît au survol. La couleur qui vient sur le titre suffit, et sur un écran
+tactile aucune de ces marques ne se voit de toute façon.
+
+Dans l'app, ces trois portes tiennent sur une seule ligne, un dessin et un
+titre, sans la phrase de présentation : l'écran est étroit, la barre du bas
+attend juste en dessous, et on sait ce qu'est la bibliothèque quand on a
+installé l'app. La phrase sert au visiteur du site, pas à l'habitué.
 
 ## 2. Les couleurs de thème
 
