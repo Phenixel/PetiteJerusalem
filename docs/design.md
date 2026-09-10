@@ -255,12 +255,19 @@ police, et elles arrivent au milieu d'un formulaire qui, lui, les a.
 | Ce que faisait le système | Ce qu'on emploie |
 | --- | --- |
 | `<select>` | `AppSelect.vue` : le champ, puis un panneau `shadow-pop` |
-| `<input type="date">` | `AppDateField.vue` : le champ, puis un mois dans une `AppModal` |
+| `<input type="date">` | `AppDateField.vue` : le champ, puis le calendrier de la maison (`DayPicker.vue`) |
 | `confirm()` | `useConfirm` et `ConfirmDialog.vue` |
 | `alert()` | un toast (`useToast`) |
 
 Elles restent de vraies commandes : rôles ARIA, clavier (flèches, Entrée,
 Échap), fermeture au clic à côté et retour Android (`useOverlayStack`).
+
+Le calendrier reprend la manière de faire de celui d'Android (Material 3),
+parce qu'elle est éprouvée et que les gens la connaissent déjà : la date
+retenue s'écrit en toutes lettres en tête, le mois affiché est un bouton qui
+ouvre la liste des années (pour aller loin sans user la flèche), et rien n'est
+choisi tant qu'on n'a pas confirmé, de sorte qu'on peut parcourir sans rien
+casser. L'habillage, lui, est le nôtre.
 
 Deux fenêtres du système restent, parce qu'elles ne sont pas de l'habillage
 mais un pouvoir que seul le système a : le **choix d'un fichier**
