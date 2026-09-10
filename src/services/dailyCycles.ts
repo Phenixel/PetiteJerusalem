@@ -1,8 +1,9 @@
-import { HDate, Sedra, flags, getHolidaysOnDate, months, tachanun } from "@hebcal/core";
+import { HDate, Sedra, flags, getHolidaysOnDate, months } from "@hebcal/core";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { TORAH_LIVRES } from "../content/etudeTexts";
 import { appendHebrewNumeral } from "./hebrewNumerals";
+import { saidTachanun } from "./tachanun";
 
 /**
  * Lectures « du moment » de la lecture quotidienne : des entrées qui suivent
@@ -370,7 +371,7 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // Nissan… et l'après-midi seulement la veille d'un jour où il tombe.
   // Rien le Chabbat : le sidour de semaine ne s'y lit pas.
   if (hd.getDay() !== 6) {
-    const said = tachanun(hd, il);
+    const said = saidTachanun(hd, il);
     // Les jours sans tahanoun ne sautent pas le passage : à sa place se dit
     // « Yehi chem », et le demi-Kaddich suit dans les deux cas. Deux clés
     // exclusives, comme ete/hiver : le texte porte les deux, seule celle du

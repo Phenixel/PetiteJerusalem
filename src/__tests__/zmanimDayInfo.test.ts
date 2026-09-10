@@ -100,6 +100,30 @@ describe("tachanunStatus", () => {
   it("Chabbat : pas de ligne du tout", () => {
     expect(tachanunStatus(DEFAULT_PLACE, hd(2026, 8, 22))).toBeNull();
   });
+
+  // La veille d'un jour sans tahanoun, on ne le dit pas à Min'ha. Trois
+  // lendemains font exception, et on le dit quand même (hebcal se trompait
+  // sur le premier : il rangeait le 29 Eloul de l'année d'avant).
+  it("veille de la veille de Roch Hachana : Ta'hanoun aussi à Min'ha", () => {
+    // Jeudi 10 septembre 2026, 28 Eloul 5786 : le lendemain, veille de Roch
+    // Hachana, n'a pas de tahanoun ; celui d'aujourd'hui se dit entier.
+    expect(tachanunStatus(DEFAULT_PLACE, hd(2026, 9, 10))).toBe("full");
+    expect(tachanunStatus(DEFAULT_PLACE, hd(2026, 9, 11))).toBe("none");
+  });
+
+  it("veille de la veille de Kippour, et veille de Pessah Cheni : de même", () => {
+    // Jeudi 28 septembre 2028, 8 Tichri 5789 (le 8 Tichri tombe Chabbat les
+    // deux années précédentes, où la question ne se pose pas).
+    expect(tachanunStatus(DEFAULT_PLACE, hd(2028, 9, 28))).toBe("full");
+    // Jeudi 30 avril 2026, 13 Iyar 5786, veille de Pessah Cheni.
+    expect(tachanunStatus(DEFAULT_PLACE, hd(2026, 4, 30))).toBe("full");
+  });
+
+  it("veille de Roch Hodech : pas de Ta'hanoun à Min'ha", () => {
+    // Lundi 9 novembre 2026, 29 'Hechvan 5787 : là, la règle ordinaire vaut,
+    // le tahanoun tombe dès Min'ha.
+    expect(tachanunStatus(DEFAULT_PLACE, hd(2026, 11, 9))).toBe("shacharitOnly");
+  });
 });
 
 describe("restPeriodsNear", () => {
