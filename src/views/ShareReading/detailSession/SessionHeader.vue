@@ -19,6 +19,7 @@ const emit = defineEmits<{
   (e: "manage"): void;
   (e: "edit"): void;
   (e: "report"): void;
+  (e: "instructions"): void;
 }>();
 </script>
 
@@ -39,6 +40,19 @@ const emit = defineEmits<{
       <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
         t("common.createdByValue", { name: session.creatorName })
       }}</span>
+      <!-- Comment on réserve : une pastille parmi celles qui décrivent la
+           chaîne, plutôt qu'un bloc qui repousse les textes vers le bas. Seule
+           de la rangée à porter une icône : les autres énoncent, celle-ci
+           s'ouvre. -->
+      <button
+        type="button"
+        class="chip bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+        :title="t('detailSession.instructions.title')"
+        @click="emit('instructions')"
+      >
+        <AppIcon name="info" :size="12" />
+        {{ t("detailSession.instructions.title") }}
+      </button>
       <button
         v-if="isOwner"
         @click="emit('manage')"

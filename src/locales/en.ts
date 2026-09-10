@@ -778,6 +778,8 @@ const en: LocaleMessages = {
   },
   progressBar: {
     participants: "Participating",
+    participantsTitle: "Participants",
+    seeParticipants: "See who is taking part",
     total: "Total",
     read: "Read",
     reserved: "Reserved",

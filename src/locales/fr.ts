@@ -796,6 +796,8 @@ const fr = {
   },
   progressBar: {
     participants: "Participe",
+    participantsTitle: "Les participants",
+    seeParticipants: "Voir qui participe",
     total: "Total",
     read: "Lus",
     reserved: "Réservés",

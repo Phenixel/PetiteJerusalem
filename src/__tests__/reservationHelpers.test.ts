@@ -213,6 +213,42 @@ describe("sessionService.getSessionReservationStats", () => {
   });
 });
 
+describe("sessionService.getSessionParticipants", () => {
+  const textes = [text("103", 3), text("104", 1)];
+
+  it("nomme les participants, du plus engagé au moins engagé", () => {
+    const s = session([
+      reservation({ id: "a", section: 1, chosenByGuestId: "g1", chosenByName: "Sarah" }),
+      reservation({
+        id: "b",
+        section: 2,
+        chosenByGuestId: "g1",
+        chosenByName: "Sarah",
+        isCompleted: true,
+      }),
+      reservation({ id: "c", textStudyId: "104", chosenById: "u1", chosenByName: "David" }),
+    ]);
+    expect(sessionService.getSessionParticipants(s, textes)).toEqual([
+      { key: "guest:g1", name: "Sarah", reserved: 2, read: 1 },
+      { key: "user:u1", name: "David", reserved: 1, read: 0 },
+    ]);
+  });
+
+  it("compte comme le chiffre de la barre : places du texte entier, sans les tirages expirés", () => {
+    const s = session([
+      reservation({ id: "a", section: undefined, chosenById: "u1", chosenByName: "David" }),
+      reservation({ id: "b", textStudyId: "104", chosenByGuestId: "g2", expiresAt: past() }),
+      // Ni compte ni invité : personne à nommer, et le chiffre l'ignore aussi.
+      reservation({ id: "c", section: 2, chosenById: undefined, chosenByGuestId: undefined }),
+    ]);
+    const participants = sessionService.getSessionParticipants(s, textes);
+    expect(participants).toEqual([{ key: "user:u1", name: "David", reserved: 3, read: 0 }]);
+    expect(participants.length).toBe(
+      sessionService.getSessionReservationStats(s, textes).participants,
+    );
+  });
+});
+
 describe("endOfLocalDay", () => {
   it("donne la fin de journée locale, pour une chaîne de champ date comme pour une date", () => {
     const fromKey = endOfLocalDay("2026-03-15");

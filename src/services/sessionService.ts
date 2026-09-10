@@ -38,6 +38,30 @@ export interface SessionReservationStats {
   readPercentage: number;
 }
 
+/**
+ * Un participant d'une chaîne, tel que la barre d'avancement le nomme : celui
+ * qui a pris des places, avec ce qu'il a pris et ce qu'il a lu.
+ */
+export interface SessionParticipant {
+  /** Le compte, ou l'invité : de quoi distinguer deux homonymes. */
+  key: string;
+  /** Le nom donné en réservant, vide si la réservation n'en portait pas. */
+  name: string;
+  reserved: number;
+  read: number;
+}
+
+/**
+ * Qui tient cette réservation : un compte, un invité, ou personne de
+ * nommable. Les deux comptages de participants (le nombre, puis les noms)
+ * partagent cette règle, sinon la liste et le chiffre finiraient par diverger.
+ */
+function participantKey(reservation: TextStudyReservation): string | null {
+  if (reservation.chosenById) return `user:${reservation.chosenById}`;
+  if (reservation.chosenByGuestId) return `guest:${reservation.chosenByGuestId}`;
+  return null;
+}
+
 class SessionService {
   async getAllSessions(): Promise<Session[]> {
     return await firestoreService.getSessions();
@@ -112,8 +136,8 @@ class SessionService {
       const places = r.section === undefined ? (sectionsByText.get(r.textStudyId) ?? 1) : 1;
       reserved += places;
       if (r.isCompleted) read += places;
-      if (r.chosenById) participants.add(`user:${r.chosenById}`);
-      else if (r.chosenByGuestId) participants.add(`guest:${r.chosenByGuestId}`);
+      const who = participantKey(r);
+      if (who) participants.add(who);
     }
 
     const percent = (count: number) => (total > 0 ? Math.round((count / total) * 100) : 0);
@@ -125,6 +149,38 @@ class SessionService {
       percentage: percent(reserved),
       readPercentage: percent(read),
     };
+  }
+
+  /**
+   * Les participants d'une chaîne, nommés, du plus engagé au moins engagé.
+   *
+   * Le chiffre de la barre d'avancement dit combien ils sont ; la liste dit
+   * qui. Comme le chiffre, elle compte les places (une réservation « texte
+   * entier » vaut toutes ses sections) et laisse de côté les tirages expirés.
+   */
+  getSessionParticipants(
+    session: Session,
+    textStudies: TextStudy[] = this.getSessionTextStudies(session),
+  ): SessionParticipant[] {
+    const sectionsByText = new Map(textStudies.map((text) => [text.id, text.totalSections]));
+    const byParticipant = new Map<string, SessionParticipant>();
+
+    for (const r of reservationService.activeReservations(session.reservations ?? [])) {
+      const key = participantKey(r);
+      if (!key) continue;
+      const places = r.section === undefined ? (sectionsByText.get(r.textStudyId) ?? 1) : 1;
+      const participant = byParticipant.get(key) ?? { key, name: "", reserved: 0, read: 0 };
+      // Le nom peut manquer d'une réservation à l'autre : on garde le premier
+      // qui en porte un.
+      if (!participant.name && r.chosenByName) participant.name = r.chosenByName;
+      participant.reserved += places;
+      if (r.isCompleted) participant.read += places;
+      byParticipant.set(key, participant);
+    }
+
+    return [...byParticipant.values()].sort(
+      (a, b) => b.reserved - a.reserved || a.name.localeCompare(b.name),
+    );
   }
 
   /**

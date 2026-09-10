@@ -755,6 +755,8 @@ const he: LocaleMessages = {
   },
   progressBar: {
     participants: "משתתפים",
+    participantsTitle: "המשתתפים",
+    seeParticipants: "לראות מי משתתף",
     total: 'סה"כ',
     read: "נקראו",
     reserved: "הוזמנו",

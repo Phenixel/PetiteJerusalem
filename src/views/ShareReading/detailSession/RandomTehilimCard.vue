@@ -5,12 +5,9 @@ import AppIcon from "../../../components/icons/AppIcon.vue";
 /**
  * L'entrée la plus courte dans une chaîne de Tehilim : un bouton, et le
  * lecteur se retrouve sur un chapitre libre, déjà réservé à son nom. Purement
- * présentationnel : le tirage lui-même reste à la page de la chaîne.
+ * présentationnel : le tirage lui-même reste à la page de la chaîne, qui
+ * n'affiche la carte que s'il reste un chapitre à tirer.
  */
-
-defineProps<{
-  availableCount: number;
-}>();
 
 const emit = defineEmits<{
   (e: "draw"): void;
@@ -29,12 +26,9 @@ const { t } = useI18n();
     </p>
     <!-- Aucun état de chargement : le clic ouvre la lecture sans attendre, la
          réservation se pose là-bas. -->
-    <button @click="emit('draw')" class="btn btn-primary" :disabled="availableCount === 0">
+    <button @click="emit('draw')" class="btn btn-primary">
       <AppIcon name="shuffle" :size="16" />
       {{ t("detailSession.randomDraw.button") }}
     </button>
-    <p v-if="availableCount === 0" class="text-sm text-text-secondary mt-3">
-      {{ t("detailSession.randomDraw.noneAvailable") }}
-    </p>
   </div>
 </template>

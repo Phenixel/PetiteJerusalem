@@ -10,14 +10,14 @@ là où il faut agir ; rien de vaporeux.
 
 ## 1. Le fond, les surfaces
 
-| Rôle | Jeton | Clair | Sombre |
-| --- | --- | --- | --- |
-| Fond de page | `--color-bg-beige` | `#f4f1ea` | `#111827` |
-| Surface (carte, panneau, fenêtre) | `--color-surface` | `#ffffff` | `#1f2937` |
-| Surface douce | `--color-surface-soft` | `#f8f5ef` | `#273244` |
-| Texte | `--color-text-primary` | `#35312a` | `#f3f4f6` |
-| Texte secondaire | `--color-text-secondary` | `#6d6759` | `#9ca3af` |
-| Filet | `--color-line` | noir à 8 % | blanc à 10 % |
+| Rôle                              | Jeton                    | Clair      | Sombre       |
+| --------------------------------- | ------------------------ | ---------- | ------------ |
+| Fond de page                      | `--color-bg-beige`       | `#f4f1ea`  | `#111827`    |
+| Surface (carte, panneau, fenêtre) | `--color-surface`        | `#ffffff`  | `#1f2937`    |
+| Surface douce                     | `--color-surface-soft`   | `#f8f5ef`  | `#273244`    |
+| Texte                             | `--color-text-primary`   | `#35312a`  | `#f3f4f6`    |
+| Texte secondaire                  | `--color-text-secondary` | `#6d6759`  | `#9ca3af`    |
+| Filet                             | `--color-line`           | noir à 8 % | blanc à 10 % |
 
 Une surface se détache du fond par son ombre, jamais par une bordure. Les
 trois ombres (`--shadow-card`, `--shadow-card-hover`, `--shadow-pop`) sont
@@ -66,6 +66,29 @@ titre, sans la phrase de présentation : l'écran est étroit, la barre du bas
 attend juste en dessous, et on sait ce qu'est la bibliothèque quand on a
 installé l'app. La phrase sert au visiteur du site, pas à l'habitué.
 
+### Le mode d'emploi ne tient pas la page
+
+Une explication se lit une fois. « Instructions », posé en clair entre
+l'avancement d'une chaîne et la liste de ses textes, repoussait les textes de
+quatre lignes à chaque visite, y compris pour l'habitué qui sait depuis
+longtemps comment on réserve. Elle rejoint la rangée de pastilles qui décrivent
+la chaîne (le type, la date limite, le créateur) et s'ouvre en fenêtre quand on
+la touche.
+
+D'où la règle de cette rangée : une pastille **énonce**, sauf celle qui porte
+une **icône**, qui **ouvre**. Rien d'autre ne la distingue, ni chevron ni
+flèche ; au survol, sa teinte se fonce, et sur un écran tactile l'icône suffit.
+
+Un **chiffre qui compte des gens s'ouvre sur leurs noms** de la même façon : la
+barre d'avancement dit combien participent, la toucher dit qui, et où chacun en
+est de ses lectures.
+
+Corollaire : ce qui ne propose plus rien s'efface au lieu de s'éteindre. La
+carte du tirage au sort disparaît quand tous les Tehilim sont pris, plutôt que
+d'offrir un bouton grisé. Dans « Je participe », la chaîne dépliée d'office est
+la première où il me reste à lire, pas la première de la liste : celle dont j'ai
+tout lu n'attend plus rien de moi.
+
 ### Deux pages, un jeu d'onglets
 
 La barre du bas de l'app tient quatre onglets, pas un de plus. Des pages qui
@@ -113,11 +136,11 @@ adresses).
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.
 
-| Thème | `primary` | `secondary` |
-| --- | --- | --- |
-| sunset (défaut) | `#DE4F17` | `#C98A00` |
-| ocean | `#1E6BF0` | `#0891B2` |
-| emerald | `#059C66` | `#0D9488` |
+| Thème           | `primary` | `secondary` |
+| --------------- | --------- | ----------- |
+| sunset (défaut) | `#DE4F17` | `#C98A00`   |
+| ocean           | `#1E6BF0` | `#0891B2`   |
+| emerald         | `#059C66` | `#0D9488`   |
 
 Ils vivent dans `src/composables/useTheme.ts`, qui réécrit `--color-primary`
 et `--color-secondary` sur la racine ; le CSS ne connaît que les deux
@@ -158,13 +181,13 @@ franc, comme la pierre, à peine adoucies aux angles ; les **commandes** sont
 nettement rondes, pour se donner à toucher. C'est le contraste entre les deux
 qui fait lire un bouton comme un bouton.
 
-| Jeton | Valeur | Pour |
-| --- | --- | --- |
-| `--radius-card` (`rounded-card`) | 6 px | cartes, panneaux, listes, tuiles, squelettes |
-| `--radius-control` (`rounded-control`) | 10 px | petites commandes : bouton d'icône, champ, bouton d'un groupe segmenté |
-| `--radius-btn` (`rounded-btn`) | 14 px | boutons, coques de groupes segmentés, lignes de menu |
-| `--radius-pill` (`rounded-pill`) | 999 px | puces, pastilles, curseurs |
-| `--radius-xs` … `--radius-3xl` | 2, 3, 4, 6, 8, 10, 14 px | l'échelle Tailwind, réglée sur la famille des surfaces |
+| Jeton                                  | Valeur                   | Pour                                                                   |
+| -------------------------------------- | ------------------------ | ---------------------------------------------------------------------- |
+| `--radius-card` (`rounded-card`)       | 6 px                     | cartes, panneaux, listes, tuiles, squelettes                           |
+| `--radius-control` (`rounded-control`) | 10 px                    | petites commandes : bouton d'icône, champ, bouton d'un groupe segmenté |
+| `--radius-btn` (`rounded-btn`)         | 14 px                    | boutons, coques de groupes segmentés, lignes de menu                   |
+| `--radius-pill` (`rounded-pill`)       | 999 px                   | puces, pastilles, curseurs                                             |
+| `--radius-xs` … `--radius-3xl`         | 2, 3, 4, 6, 8, 10, 14 px | l'échelle Tailwind, réglée sur la famille des surfaces                 |
 
 L'échelle numérique ne sert qu'aux surfaces : `rounded-lg` vaut 6 px, comme
 `.card` (c'est la valeur par défaut d'une surface), `rounded-xl` 8 px pour les
@@ -179,13 +202,13 @@ rembourrage (une coque à 14 px avec 2 px de marge intérieure tient un bouton �
 Deux familles portent toute l'interface, et elles ne se règlent pas : ce sont
 elles, l'identité du site.
 
-| Jeton | Famille | Pour |
-| --- | --- | --- |
-| `--font-display` (`font-display`) | Playfair Display | le titre de page (`h1`, d'office) et le peu qu'on met vraiment en avant |
-| `--font-sans` (`font-sans`) | Manrope | tout le reste : textes, boutons, étiquettes, chiffres |
-| `--font-hebrew` | au choix | le texte hébreu d'une lecture |
-| `--font-reading` | au choix | le texte latin d'une lecture (traduction, phonétique, didascalies) |
-| `--font-serif` | Lora, Georgia en repli | les tranches des livres de la bibliothèque et la dédicace |
+| Jeton                             | Famille                | Pour                                                                    |
+| --------------------------------- | ---------------------- | ----------------------------------------------------------------------- |
+| `--font-display` (`font-display`) | Playfair Display       | le titre de page (`h1`, d'office) et le peu qu'on met vraiment en avant |
+| `--font-sans` (`font-sans`)       | Manrope                | tout le reste : textes, boutons, étiquettes, chiffres                   |
+| `--font-hebrew`                   | au choix               | le texte hébreu d'une lecture                                           |
+| `--font-reading`                  | au choix               | le texte latin d'une lecture (traduction, phonétique, didascalies)      |
+| `--font-serif`                    | Lora, Georgia en repli | les tranches des livres de la bibliothèque et la dédicace               |
 
 Playfair est une police d'apparat : posée partout, elle ne met plus rien en
 avant. Elle est automatique sur les `h1` et se pose à la main (classe
@@ -213,17 +236,17 @@ qu'on ait lu quoi que ce soit. La règle est donc celle de la hiérarchie, pas
 celle du confort : le corps d'un texte dit son rang, et deux rangs voisins se
 distinguent d'un coup d'oeil.
 
-| Rang | Classes | Taille | Pour |
-| --- | --- | --- | --- |
-| Accroche | `text-4xl md:text-6xl` | 36 / 60 px | le titre d'une page d'entrée (accueil), Playfair |
-| Titre de page | `text-3xl md:text-4xl` | 30 / 36 px | le `h1` d'une page ordinaire, Playfair |
-| Porte | `text-2xl md:text-3xl` | 24 / 30 px | les trois destinations de l'accueil, Playfair, centrées dès qu'elles sont côte à côte |
-| Chiffre en avant | `text-4xl md:text-5xl` | 36 / 48 px | une heure, un pourcentage, un compteur ; `tabular-nums` |
-| Titre de section | `text-xl md:text-2xl` | 20 / 24 px | un `h2` qui découpe une page |
-| Titre de carte | `text-base` à `text-lg` | 16 / 18 px | l'étiquette d'une carte de tableau de bord |
-| Corps | `text-base` | 16 px | le texte courant |
-| Corps secondaire | `text-sm` | 14 px | une explication, une ligne de contexte |
-| Méta | `text-xs` | 12 px | une date, une unité, une mention |
+| Rang             | Classes                 | Taille     | Pour                                                                                  |
+| ---------------- | ----------------------- | ---------- | ------------------------------------------------------------------------------------- |
+| Accroche         | `text-4xl md:text-6xl`  | 36 / 60 px | le titre d'une page d'entrée (accueil), Playfair                                      |
+| Titre de page    | `text-3xl md:text-4xl`  | 30 / 36 px | le `h1` d'une page ordinaire, Playfair                                                |
+| Porte            | `text-2xl md:text-3xl`  | 24 / 30 px | les trois destinations de l'accueil, Playfair, centrées dès qu'elles sont côte à côte |
+| Chiffre en avant | `text-4xl md:text-5xl`  | 36 / 48 px | une heure, un pourcentage, un compteur ; `tabular-nums`                               |
+| Titre de section | `text-xl md:text-2xl`   | 20 / 24 px | un `h2` qui découpe une page                                                          |
+| Titre de carte   | `text-base` à `text-lg` | 16 / 18 px | l'étiquette d'une carte de tableau de bord                                            |
+| Corps            | `text-base`             | 16 px      | le texte courant                                                                      |
+| Corps secondaire | `text-sm`               | 14 px      | une explication, une ligne de contexte                                                |
+| Méta             | `text-xs`               | 12 px      | une date, une unité, une mention                                                      |
 
 Trois règles qui vont avec :
 
@@ -252,12 +275,12 @@ police, et elles arrivent au milieu d'un formulaire qui, lui, les a.
 
 À la place :
 
-| Ce que faisait le système | Ce qu'on emploie |
-| --- | --- |
-| `<select>` | `AppSelect.vue` : le champ, puis un panneau `shadow-pop` |
-| `<input type="date">` | `AppDateField.vue` : le champ, puis le calendrier de la maison (`DayPicker.vue`) |
-| `confirm()` | `useConfirm` et `ConfirmDialog.vue` |
-| `alert()` | un toast (`useToast`) |
+| Ce que faisait le système | Ce qu'on emploie                                                                 |
+| ------------------------- | -------------------------------------------------------------------------------- |
+| `<select>`                | `AppSelect.vue` : le champ, puis un panneau `shadow-pop`                         |
+| `<input type="date">`     | `AppDateField.vue` : le champ, puis le calendrier de la maison (`DayPicker.vue`) |
+| `confirm()`               | `useConfirm` et `ConfirmDialog.vue`                                              |
+| `alert()`                 | un toast (`useToast`)                                                            |
 
 Elles restent de vraies commandes : rôles ARIA, clavier (flèches, Entrée,
 Échap), fermeture au clic à côté et retour Android (`useOverlayStack`).
