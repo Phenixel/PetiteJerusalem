@@ -21,6 +21,7 @@ import { authService, type User } from "../../services/authService";
 import { analyticsService } from "../../services/analyticsService";
 import { moderationService } from "../../services/moderationService";
 import { isNativeApp } from "../../composables/useNativeApp";
+import LibraryTabs from "../../components/LibraryTabs.vue";
 import { liveValue } from "../../composables/liveInput";
 import { useSessionEditing, type SessionEditData } from "../../composables/useSessionEditing";
 import { SITE_URL } from "../../config/site";
@@ -262,9 +263,15 @@ const handleCreateClick = () => {
 
 <template>
   <main class="mx-auto px-6 py-12">
-    <div class="text-center mb-16 animate-[fadeIn_0.5s_ease]">
+    <div class="animate-[fadeIn_0.5s_ease] text-center" :class="isNativeApp ? 'mb-8' : 'mb-16'">
+      <!-- App native : le partage est le second onglet de la bibliothèque, et
+           les onglets tiennent lieu de titre (voir LibraryTabs). -->
+      <LibraryTabs v-if="isNativeApp" />
       <!-- Le seul h1 de la page. -->
-      <h1 class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight">
+      <h1
+        class="text-4xl md:text-5xl font-bold text-text-primary mb-4 tracking-tight"
+        :class="isNativeApp ? 'sr-only' : ''"
+      >
         {{ t("shareReading.title") }}
       </h1>
       <!-- Le sous-titre explicatif ne sert que le site : SEO + découverte. -->
@@ -274,7 +281,8 @@ const handleCreateClick = () => {
 
       <button
         @click="handleCreateClick"
-        class="btn btn-primary mt-8 !px-8 !py-3"
+        class="btn btn-primary !px-8 !py-3"
+        :class="isNativeApp ? 'mt-2' : 'mt-8'"
         :title="t('shareReading.createSession')"
       >
         <AppIcon name="plus" :size="16" />

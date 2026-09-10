@@ -1188,6 +1188,12 @@ const fr = {
   },
   study: {
     title: "Bibliothèque",
+    /* Onglets en tête de la bibliothèque, app native seulement : lire un texte
+       ou se le répartir à plusieurs (voir LibraryTabs.vue). */
+    tabs: {
+      reading: "Lecture",
+      sharing: "Partage",
+    },
     subtitle:
       "Lisez et étudiez les textes : Tehilim, Michna, Talmud, Tanakh, Sidour, Sli'hot et Brahot.",
     searchPlaceholder: "Rechercher un texte…",

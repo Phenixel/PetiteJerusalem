@@ -1116,6 +1116,10 @@ const he: LocaleMessages = {
   },
   study: {
     title: "ספרייה",
+    tabs: {
+      reading: "קריאה",
+      sharing: "שיתוף",
+    },
     subtitle: "קראו ולמדו את הטקסטים: תהילים, משנה, תלמוד, תנ״ך, סידור, סליחות וברכות.",
     searchPlaceholder: "חיפוש טקסט…",
     searchAllPlaceholder: "חיפוש בכל הטקסטים…",

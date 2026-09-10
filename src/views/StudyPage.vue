@@ -17,6 +17,7 @@ import {
   type Corpus,
 } from "../content/etudeTexts";
 import { isNativeApp } from "../composables/useNativeApp";
+import LibraryTabs from "../components/LibraryTabs.vue";
 import {
   downloadBook,
   downloadingPaths,
@@ -558,13 +559,20 @@ onUnmounted(() => {
 
         <!-- ===== Accueil de la bibliothèque : hero ===== -->
         <!-- Hero resserré sur téléphone : chaque ligne gagnée remonte les livres
-             au-dessus de la pliure. -->
+             au-dessus de la pliure. Dans l'app, les onglets prennent la place du
+             titre : ils disent où l'on est aussi bien que lui, et deux lignes
+             qui se répètent ne valent pas la hauteur qu'elles coûtent. Le titre
+             reste là pour les lecteurs d'écran. -->
         <div
           v-else
           class="text-center animate-[fadeIn_0.5s_ease]"
           :class="isNativeApp ? 'mb-6' : 'mb-6 md:mb-10'"
         >
-          <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight pb-1">
+          <LibraryTabs v-if="isNativeApp" />
+          <h1
+            class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight pb-1"
+            :class="isNativeApp ? 'sr-only' : ''"
+          >
             {{ t("study.title") }}
           </h1>
           <p

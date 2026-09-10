@@ -1161,6 +1161,10 @@ const en: LocaleMessages = {
   },
   study: {
     title: "Library",
+    tabs: {
+      reading: "Reading",
+      sharing: "Sharing",
+    },
     subtitle:
       "Read and study the texts: Tehilim, Mishnah, Talmud, Tanakh, Siddur, Selichot and Berakhot.",
     searchPlaceholder: "Search a text…",
