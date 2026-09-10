@@ -319,9 +319,29 @@ barres collantes des pages.
 L'app native n'a pas de bandeau : la navigation y passe par la barre du bas
 (`BottomTabBar`).
 
+### Le haut de l'app n'a pas de bord
+
+Dans l'app, la page monte jusqu'en haut de l'écran, sous l'heure et la
+batterie : rien ne s'arrête à la zone système, et c'est voulu. Un bandeau plein
+y ferait une barre de titre, l'app aurait un plafond.
+
+Ce qui manquait, c'est la lisibilité : dès qu'on défile, un titre ou une ligne
+de texte passe derrière les icônes du système, et on ne lit plus ni les unes ni
+l'autre. D'où le voile (`StatusBarScrim.vue`) : un flou qui va de nul en bas à
+fort en haut, sur la hauteur de la zone système et un doigt de plus. On devine
+ce qui passe dessous, l'heure reste lisible, et le haut n'a toujours pas de
+bord.
+
+Le flou de fond ne se dégrade pas tout seul : quatre couches de force
+croissante, chacune masquée en bas, s'additionnent. Sur une petite machine
+(`perf-lite`), elles se coupent et il ne reste qu'un voile de la couleur du
+fond, qui suffit.
+
 ## 8. Ce qu'on n'emploie pas
 
-- Les dégradés, sous toutes leurs formes.
+- Les dégradés décoratifs, sous toutes leurs formes. Un dégradé qui sert à
+  **disparaître** n'en est pas un : le voile de la barre système s'efface vers
+  le bas, il ne colore rien.
 - Les bordures pour détacher une carte du fond : c'est le rôle de l'ombre.
 - Les majuscules d'imprimerie et l'interlettrage élargi sur les étiquettes :
   une étiquette de groupe s'écrit en bas de casse, au corps d'un texte
