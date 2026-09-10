@@ -36,19 +36,11 @@ const showParticipants = ref(false);
   <div class="mb-12 max-w-3xl mx-auto animate-[fadeIn_0.5s_ease_0.2s_backwards]">
     <!-- L'avancement se lit d'un coup d'œil ; qui le fait avancer demande un
          geste. Le bloc entier ouvre donc la liste des participants : le
-         chiffre dit combien ils sont, la fenêtre dit qui. -->
-    <button
-      type="button"
-      class="group block w-full text-start rounded-card transition-colors"
-      :class="
-        participants.length
-          ? '-mx-3 px-3 py-2 cursor-pointer hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
-          : 'cursor-default'
-      "
-      :disabled="participants.length === 0"
-      :aria-label="t('progressBar.seeParticipants')"
-      @click="showParticipants = true"
-    >
+         chiffre dit combien ils sont, la fenêtre dit qui. Le bouton est posé
+         par-dessus plutôt qu'autour : enveloppés dans un bouton, les chiffres
+         et les deux barres cessaient d'exister pour un lecteur d'écran, qui
+         n'entendait plus que le nom du bouton. -->
+    <div class="group relative rounded-card" :class="participants.length ? '-mx-3 px-3 py-2' : ''">
       <div class="flex items-end justify-between mb-2">
         <div
           class="flex items-center gap-2 group-hover:underline decoration-green-600/40 underline-offset-4"
@@ -101,7 +93,15 @@ const showParticipants = ref(false);
           <span>{{ stats.remaining }} {{ t("progressBar.remaining") }}</span>
         </div>
       </div>
-    </button>
+
+      <button
+        v-if="participants.length"
+        type="button"
+        class="absolute inset-0 rounded-card transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+        :aria-label="t('progressBar.seeParticipants')"
+        @click="showParticipants = true"
+      ></button>
+    </div>
 
     <AppModal
       :open="showParticipants"

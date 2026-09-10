@@ -328,8 +328,9 @@ const he: LocaleMessages = {
       emerald: "אזמרגד",
     },
     fontsTitle: "גופנים",
-    fontsDescription: "בחרו את גופן הממשק ואת גופן הטקסטים בעברית. הבחירות חלות על כל האתר.",
-    fontLatinLabel: "גופן הממשק",
+    fontsDescription:
+      "בחרו את גופן הטקסטים שאתם קוראים ואת גופן הטקסטים בעברית. הבחירות חלות בכל מקום שבו קוראים.",
+    fontLatinLabel: "גופן הקריאה",
     fontHebrewLabel: "גופן הטקסטים בעברית",
     fontsLatin: {
       manrope: "מודרני",
@@ -455,6 +456,7 @@ const he: LocaleMessages = {
       locating: "מאתר מיקום…",
       refresh: "עדכון המיקום שלי",
       chooseCity: "בחירת עיר",
+      changeCity: "{city}, לבחור עיר אחרת",
       searchCity: "חיפוש עיר…",
       noCity: "לא נמצאה עיר התואמת ל״{query}״.",
       denied:

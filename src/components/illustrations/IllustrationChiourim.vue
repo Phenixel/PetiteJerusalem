@@ -1,7 +1,8 @@
 <script setup lang="ts">
-// "Chiourim" hero illustration: headphones with an equalizer. Draws itself in
-// on load. On hover of the parent .feature-link, the headphones nod to the
-// beat while the equalizer goes wild and gains two extra bars.
+// L'illustration de la porte « Chiourim » : un casque et son égaliseur. Il se
+// dessine à l'ouverture. Au survol de la porte qui le porte (.feature-link),
+// le casque bat la mesure pendant que l'égaliseur s'emballe et gagne deux
+// barres.
 </script>
 
 <template>

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-// "Partage de lecture" hero illustration: an open book shared between three
-// readers. Draws itself in on load. On hover of the parent .feature-link,
-// the readers bob toward the book one after the other, the link lines flow
-// fast, and the page lines ripple like turning pages.
+// L'illustration de la porte « Partage » : un livre ouvert, partagé entre
+// trois lecteurs. Il se dessine à l'ouverture. Au survol de la porte qui le
+// porte (.feature-link), les lecteurs se penchent vers le livre l'un après
+// l'autre, les traits de liaison filent et les lignes de la page ondulent
+// comme des pages qu'on tourne.
 </script>
 
 <template>

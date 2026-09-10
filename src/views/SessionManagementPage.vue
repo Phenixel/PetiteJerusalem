@@ -1024,7 +1024,7 @@ onMounted(() => {
                 v-if="showGuestSuggestions && guestSuggestions.length > 0"
                 id="guest-suggestions"
                 role="listbox"
-                class="absolute z-10 left-0 right-0 mt-1 py-1 bg-surface rounded-lg shadow-pop max-h-56 overflow-y-auto"
+                class="absolute z-10 left-0 right-0 mt-1 py-1 bg-surface rounded-xl shadow-pop max-h-56 overflow-y-auto"
               >
                 <li
                   v-for="(guest, index) in guestSuggestions"

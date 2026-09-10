@@ -3,9 +3,9 @@ import { createAccountPreference } from "./createAccountPreference";
 
 export interface FontOption {
   id: string;
-  /** Display name shown in the selector (rendered in the font itself). */
+  /** Nom affiché dans le sélecteur, écrit dans la police elle-même. */
   label: string;
-  /** CSS font-family stack applied to the reading text. */
+  /** Pile de polices CSS posée sur les textes que l'on lit. */
   stack: string;
 }
 

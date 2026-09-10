@@ -72,6 +72,10 @@ const showGuestIdentityModal = ref(false);
 // Modération : modale de signalement, session déjà signalée depuis cet
 // appareil, et créateur bloqué par le visiteur.
 const showInstructionsModal = ref(false);
+// Monté à la première ouverture seulement : c'est ce qui retient le morceau
+// des captures (voir l'import plus haut). Une fois monté, il le reste, sans
+// quoi la fenêtre disparaîtrait d'un coup au lieu de se refermer.
+const instructionsMounted = ref(false);
 const showReportModal = ref(false);
 const hasReported = ref(false);
 const isCreatorBlocked = ref(false);
@@ -598,6 +602,11 @@ const drawRandomTehilim = () => {
   });
 };
 
+function openInstructions(): void {
+  instructionsMounted.value = true;
+  showInstructionsModal.value = true;
+}
+
 const openShareModal = () => {
   // Domaine canonique plutôt que window.location.href : ce dernier vaut
   // localhost (ou capacitor://localhost) en dev et dans l'app native, ce qui
@@ -854,7 +863,7 @@ watch(session, (s) => applySessionSeo(s));
           trackReportStarted();
           showReportModal = true;
         "
-        @instructions="showInstructionsModal = true"
+        @instructions="openInstructions"
       />
 
       <!-- Tirage aléatoire : recevoir un Tehilim disponible en un clic,
@@ -1002,6 +1011,7 @@ watch(session, (s) => applySessionSeo(s));
     <!-- Comment réserver, à la demande : la pastille « Instructions » du
          bandeau l'ouvre. -->
     <SessionInstructionsModal
+      v-if="instructionsMounted"
       :open="showInstructionsModal"
       @close="showInstructionsModal = false"
     />

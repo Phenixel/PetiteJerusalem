@@ -218,7 +218,7 @@ function setSpeed(speed: number) {
         <Transition name="fade">
           <div
             v-if="showSpeedMenu"
-            class="absolute bottom-full right-0 mb-2 bg-surface rounded-lg shadow-pop overflow-hidden z-10"
+            class="absolute bottom-full right-0 mb-2 bg-surface rounded-xl shadow-pop overflow-hidden z-10"
           >
             <button
               v-for="speed in speeds"

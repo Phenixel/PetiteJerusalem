@@ -53,6 +53,15 @@ const seriesForBatchAuteur = computed(() =>
   batchAuteurId.value ? series.value.filter((s) => s.auteurId === batchAuteurId.value) : [],
 );
 
+// Voir AdminChiourEditPage : les options se calculent, elles ne se remappent
+// pas à chaque rendu.
+const auteurOptions = computed(() =>
+  auteurs.value.map((auteur) => ({ value: auteur.id, label: auteur.name })),
+);
+const batchSerieOptions = computed(() =>
+  seriesForBatchAuteur.value.map((serie) => ({ value: serie.id, label: serie.name })),
+);
+
 async function refresh() {
   [chiourim.value, auteurs.value, series.value] = await Promise.all([
     adminService.listAllChiourim(),
@@ -174,13 +183,13 @@ async function togglePublished(chiour: ChiourDoc) {
       <AppSelect
         v-model="batchAuteurId"
         class="w-56"
-        :options="auteurs.map((auteur) => ({ value: auteur.id, label: auteur.name }))"
+        :options="auteurOptions"
         :placeholder="t('admin.chiourim.batchAuteur')"
       />
       <AppSelect
         v-model="batchSerieId"
         class="w-56"
-        :options="seriesForBatchAuteur.map((serie) => ({ value: serie.id, label: serie.name }))"
+        :options="batchSerieOptions"
         :placeholder="t('admin.chiourim.batchSerie')"
         :disabled="!batchAuteurId"
       />

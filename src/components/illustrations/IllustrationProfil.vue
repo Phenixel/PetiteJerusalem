@@ -1,7 +1,8 @@
 <script setup lang="ts">
-// "Profil" hero illustration: a person greeted by little sparks. The person
-// rises on load, the sparks pop in then twinkle at idle. On hover of the
-// parent .feature-link, the person gives a friendly hop and the sparks burst.
+// L'illustration de la porte « Profil » : une personne saluée par de petites
+// étincelles. Elle monte à l'ouverture, les étincelles arrivent puis
+// scintillent au repos. Au survol de la porte qui les porte (.feature-link),
+// la personne fait un bond et les étincelles éclatent.
 </script>
 
 <template>

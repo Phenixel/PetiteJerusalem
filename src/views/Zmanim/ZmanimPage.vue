@@ -373,7 +373,7 @@ onMounted(() => {
       <button
         type="button"
         class="btn btn-soft"
-        :aria-label="t('zmanim.place.chooseCity')"
+        :aria-label="t('zmanim.place.changeCity', { city: placeLabel })"
         @click="pickerOpen = true"
       >
         <AppIcon name="map-pin" :size="16" class="text-primary" />
@@ -467,10 +467,7 @@ onMounted(() => {
         {{ t(`zmanim.tachanun.${tachanun}`) }}
       </p>
       <!-- La bascule du soir, dite au lieu d'être appliquée en silence -->
-      <p
-        v-if="nightNote"
-        class="mt-1 flex items-center justify-center gap-1 text-sm text-primary"
-      >
+      <p v-if="nightNote" class="mt-1 flex items-center justify-center gap-1 text-sm text-primary">
         <AppIcon name="moon" :size="13" class="shrink-0" />
         {{ nightNote }}
       </p>

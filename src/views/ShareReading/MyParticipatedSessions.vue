@@ -3,7 +3,7 @@
 // réservations (les terminées ne sont plus affichées, filtrées en amont).
 // Une ligne par session (nom, type, échéance, avancement de mes lectures) ;
 // le clic déplie la liste de mes réservations à cocher, sans quitter la page.
-import { ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { reservationService, ReservationGoneError } from "../../services/reservationService";
@@ -41,13 +41,32 @@ const readCount = (session: Session) => {
 // Lignes dépliées (mes réservations à cocher). La première session où il me
 // reste à lire est ouverte d'office : c'est ce qu'on vient faire ici. Une
 // session dont j'ai tout lu n'attend plus rien de moi, elle reste repliée.
-const firstUnread = props.sessions.find((session) => {
-  const { done, total } = readCount(session);
-  return total > 0 && done < total;
-});
-const expandedIds = ref<Set<string>>(new Set(firstUnread ? [firstUnread.id] : []));
+const firstUnread = computed(
+  () =>
+    props.sessions.find((session) => {
+      const { done, total } = readCount(session);
+      return total > 0 && done < total;
+    })?.id ?? null,
+);
+
+const expandedIds = ref<Set<string>>(new Set());
+/** Vrai dès que le lecteur a ouvert ou fermé une ligne lui-même. */
+const touched = ref(false);
+
+// Le compte arrive parfois après le montage, et la liste se rafraîchit à
+// chaque lecture cochée : tant que personne n'a touché aux lignes, celle qui
+// s'ouvre d'office suit ce que la liste dit maintenant. Figée au montage, elle
+// laissait tout replié quand mes réservations n'étaient pas encore connues.
+watch(
+  firstUnread,
+  (id) => {
+    if (!touched.value) expandedIds.value = new Set(id ? [id] : []);
+  },
+  { immediate: true },
+);
 
 function toggleExpand(id: string) {
+  touched.value = true;
   const next = new Set(expandedIds.value);
   if (next.has(id)) next.delete(id);
   else next.add(id);

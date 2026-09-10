@@ -13,18 +13,6 @@ export function localDayKey(now: Date = new Date()): string {
 }
 
 /**
- * Valeur d'un champ `datetime-local` pour une date : l'heure LOCALE, au format
- * YYYY-MM-DDTHH:mm que le champ attend. `toISOString()` donnerait l'heure UTC,
- * que le champ réinterprète ensuite comme locale : chaque enregistrement sans
- * toucher la date la décalait du fuseau horaire (deux heures en France).
- */
-export function toDateTimeLocal(date: Date): string {
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${localDayKey(date)}T${hours}:${minutes}`;
-}
-
-/**
  * Fin de journée LOCALE d'un jour, donné par une valeur de champ `date`
  * (YYYY-MM-DD) ou par une date. `new Date("YYYY-MM-DD")` lirait minuit UTC,
  * soit la veille au soir à l'ouest de Greenwich : une date limite choisie à

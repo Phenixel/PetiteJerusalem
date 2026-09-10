@@ -344,8 +344,8 @@ const en: LocaleMessages = {
     },
     fontsTitle: "Fonts",
     fontsDescription:
-      "Choose the interface font and the Hebrew text font. Your choices apply across the entire site.",
-    fontLatinLabel: "Interface font",
+      "Choose the font for the texts you read and the Hebrew text font. Your choices apply wherever you read.",
+    fontLatinLabel: "Reading font",
     fontHebrewLabel: "Hebrew text font",
     fontsLatin: {
       manrope: "Modern",
@@ -475,6 +475,7 @@ const en: LocaleMessages = {
       locating: "Locating…",
       refresh: "Refresh my location",
       chooseCity: "Choose my city",
+      changeCity: "{city}, choose another city",
       searchCity: "Search for a city…",
       noCity: "No city matches “{query}”.",
       denied:

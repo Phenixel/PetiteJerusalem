@@ -46,6 +46,14 @@ const seriesForAuteur = computed(() =>
   auteurId.value ? series.value.filter((s) => s.auteurId === auteurId.value) : series.value,
 );
 
+// Les lignes des listes déroulantes : en `.map()` dans le gabarit, le tableau
+// changeait d'identité à chaque rendu de la page et rouvrait tout le calcul
+// d'AppSelect au passage.
+const auteurOptions = computed(() => auteurs.value.map((a) => ({ value: a.id, label: a.name })));
+const serieOptions = computed(() =>
+  seriesForAuteur.value.map((serie) => ({ value: serie.id, label: serie.name })),
+);
+
 const allCategories = computed(() => {
   const set = new Set([...categorySuggestions.value, ...selectedCategories.value]);
   return [...set].sort((a, b) => a.localeCompare(b, "fr"));
@@ -218,7 +226,7 @@ async function remove() {
           }}</label>
           <AppSelect
             v-model="auteurId"
-            :options="auteurs.map((a) => ({ value: a.id, label: a.name }))"
+            :options="auteurOptions"
             :placeholder="t('admin.chiourEdit.noAuteur')"
           />
         </div>
@@ -271,7 +279,7 @@ async function remove() {
           }}</label>
           <AppSelect
             v-model="serieId"
-            :options="seriesForAuteur.map((serie) => ({ value: serie.id, label: serie.name }))"
+            :options="serieOptions"
             :placeholder="t('studio.form.noSerie')"
           />
         </div>

@@ -52,7 +52,7 @@ const buttonLabel = computed(() =>
         selected ? '' : 'text-text-secondary',
       ]"
       :disabled="disabled"
-      @click="open = !disabled"
+      @click="open = true"
     >
       <span>{{ buttonLabel }}</span>
       <AppIcon name="calendar" :size="16" class="shrink-0 text-text-secondary" />

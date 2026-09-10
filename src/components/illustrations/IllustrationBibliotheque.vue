@@ -1,8 +1,8 @@
 <script setup lang="ts">
-// "Bibliothèque" hero illustration: books on a shelf, one leaning. The books
-// rise onto the shelf on load. On hover of the parent .feature-link, the
-// books tidy themselves up: each one hops in turn and the leaning book
-// springs upright.
+// L'illustration de la porte « Bibliothèque » : des livres sur une planche,
+// dont un penché. Ils montent sur la planche à l'ouverture. Au survol de la
+// porte qui les porte (.feature-link), ils se rangent : chacun saute à son
+// tour et le livre penché se redresse.
 </script>
 
 <template>

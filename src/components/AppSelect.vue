@@ -13,7 +13,7 @@
  * Entrée, Échap), fermeture au clic à côté, et le bouton retour d'Android la
  * referme avant de naviguer (useOverlay).
  */
-import { computed, nextTick, onBeforeUnmount, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import AppIcon from "./icons/AppIcon.vue";
 import { useOverlay } from "../composables/useOverlayStack";
 
@@ -38,8 +38,18 @@ const model = defineModel<string>({ required: true });
 
 const open = ref(false);
 const root = ref<HTMLElement | null>(null);
+const trigger = ref<HTMLButtonElement | null>(null);
+const panel = ref<HTMLElement | null>(null);
 /** Ligne survolée ou atteinte au clavier, pas encore choisie. */
 const activeIndex = ref(-1);
+
+/**
+ * Identifiants des lignes : ils ne servent qu'à `aria-activedescendant`, qui
+ * dit au lecteur d'écran quelle ligne le clavier a atteinte. Sans eux, les
+ * flèches déplaçaient une surbrillance dont il n'annonçait rien.
+ */
+const listId = `select-${Math.random().toString(36).slice(2, 9)}`;
+const optionId = (index: number) => `${listId}-${index}`;
 
 const rows = computed<SelectOption[]>(() =>
   props.placeholder ? [{ value: "", label: props.placeholder }, ...props.options] : props.options,
@@ -59,9 +69,14 @@ function show(): void {
   void nextTick(() => document.addEventListener("pointerdown", onPointerDown, true));
 }
 
-function close(): void {
+function close({ keepFocus = false } = {}): void {
+  if (!open.value) return;
   open.value = false;
   document.removeEventListener("pointerdown", onPointerDown, true);
+  // Le clavier revient au champ : la ligne choisie vient de disparaître avec
+  // le panneau, et sans cela le focus retombait sur <body>, d'où la
+  // tabulation suivante repartait du haut de la page.
+  if (keepFocus) trigger.value?.focus();
 }
 
 function toggle(): void {
@@ -71,12 +86,29 @@ function toggle(): void {
 
 function pick(option: SelectOption): void {
   model.value = option.value;
-  close();
+  close({ keepFocus: true });
 }
 
 function onPointerDown(event: PointerEvent): void {
   if (!root.value?.contains(event.target as Node)) close();
 }
+
+/** Le clavier quitte la commande (Tab) : le panneau se referme avec lui. */
+function onFocusOut(event: FocusEvent): void {
+  const next = event.relatedTarget as Node | null;
+  if (!next || !root.value?.contains(next)) close();
+}
+
+/**
+ * La ligne atteinte au clavier reste visible : le panneau s'arrête à 16 rem
+ * et une liste de trente livres passe dessous sans cela, on validait une
+ * ligne qu'on ne voyait pas.
+ */
+watch(activeIndex, async (index) => {
+  if (!open.value || index < 0) return;
+  await nextTick();
+  panel.value?.children[index]?.scrollIntoView({ block: "nearest" });
+});
 
 function move(delta: number): void {
   if (!open.value) {
@@ -96,14 +128,19 @@ function onEnter(): void {
   if (option) pick(option);
 }
 
+function onEscape(): void {
+  close({ keepFocus: true });
+}
+
 useOverlay(open, close);
 onBeforeUnmount(() => document.removeEventListener("pointerdown", onPointerDown, true));
 </script>
 
 <template>
-  <div ref="root" class="relative">
+  <div ref="root" class="relative" @focusout="onFocusOut">
     <button
       :id="id"
+      ref="trigger"
       type="button"
       class="field flex w-full items-center justify-between gap-3 text-start"
       :class="[
@@ -113,11 +150,13 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", onPointerDown,
       :disabled="disabled"
       :aria-expanded="open"
       aria-haspopup="listbox"
+      :aria-controls="open ? listId : undefined"
+      :aria-activedescendant="open && activeIndex >= 0 ? optionId(activeIndex) : undefined"
       @click="toggle"
       @keydown.down.prevent="move(1)"
       @keydown.up.prevent="move(-1)"
       @keydown.enter.prevent="onEnter"
-      @keydown.esc="close"
+      @keydown.esc="onEscape"
     >
       <span>{{ currentLabel }}</span>
       <AppIcon
@@ -131,11 +170,14 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", onPointerDown,
     <Transition name="select-panel">
       <ul
         v-if="open"
+        :id="listId"
+        ref="panel"
         role="listbox"
         class="absolute inset-x-0 z-30 mt-1 max-h-64 overflow-y-auto rounded-xl bg-surface py-1 shadow-pop"
       >
         <li
           v-for="(option, index) in rows"
+          :id="optionId(index)"
           :key="option.value"
           role="option"
           :aria-selected="option.value === model"

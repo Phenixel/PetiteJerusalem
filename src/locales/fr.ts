@@ -352,8 +352,8 @@ const fr = {
     },
     fontsTitle: "Polices",
     fontsDescription:
-      "Choisissez la police de l'interface et celle des textes en hébreu. Vos choix s'appliquent à tout le site.",
-    fontLatinLabel: "Police de l'interface",
+      "Choisissez la police des textes que vous lisez et celle des textes en hébreu. Vos choix s'appliquent partout où l'on lit.",
+    fontLatinLabel: "Police de lecture",
     fontHebrewLabel: "Police des textes en hébreu",
     fontsLatin: {
       manrope: "Moderne",
@@ -487,6 +487,7 @@ const fr = {
       locating: "Localisation…",
       refresh: "Actualiser ma position",
       chooseCity: "Choisir ma ville",
+      changeCity: "{city}, choisir une autre ville",
       searchCity: "Rechercher une ville…",
       noCity: "Aucune ville ne correspond à « {query} ».",
       denied:

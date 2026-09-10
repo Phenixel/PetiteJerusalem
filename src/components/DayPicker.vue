@@ -51,7 +51,12 @@ function parse(value: string): Date | null {
   return new Date(year, month - 1, day);
 }
 
-const todayKey = localDayKey();
+/**
+ * Le jour d'aujourd'hui, relu à chaque ouverture : la page des horaires garde
+ * son calendrier monté toute la session, et un appareil laissé allumé passe
+ * minuit. Figé au montage, le cercle « aujourd'hui » restait sur la veille.
+ */
+const todayKey = ref(localDayKey());
 
 /** Le jour retenu, pas encore validé : « Confirmer » seul le rend à l'appelant. */
 const draft = ref("");
@@ -65,6 +70,7 @@ watch(
   () => props.open,
   (open) => {
     if (!open) return;
+    todayKey.value = localDayKey();
     draft.value = model.value;
     const start = parse(model.value) ?? parse(props.min ?? "") ?? new Date();
     cursor.value = new Date(start.getFullYear(), start.getMonth(), 1);
@@ -142,7 +148,7 @@ const weeks = computed(() => {
         key,
         day: date.getDate(),
         outside: date.getMonth() !== cursor.value.getMonth(),
-        today: key === todayKey,
+        today: key === todayKey.value,
         chosen: key === draft.value,
         disabled: props.min ? key < props.min : false,
       };
@@ -210,19 +216,19 @@ function confirm(): void {
   <AppModal
     :open="open"
     :label="label ?? t('common.chooseDate')"
-    panel-class="modal-panel !max-w-sm !p-0 overflow-hidden animate-[scaleIn_0.3s_ease]"
+    panel-class="modal-panel !max-w-sm !p-0 flex flex-col max-h-[85svh] overflow-hidden animate-[scaleIn_0.3s_ease]"
     @close="emit('close')"
   >
     <!-- Ce qu'on a retenu, en tête : la date se lit en entier avant d'être
          validée, on ne valide pas un chiffre entouré dans une grille. -->
-    <div class="border-b border-line px-5 pb-4 pt-5">
+    <div class="shrink-0 border-b border-line px-5 pb-4 pt-5">
       <p class="text-sm text-text-secondary">{{ label ?? t("common.chooseDate") }}</p>
       <p class="mt-1 text-xl font-semibold text-text-primary first-letter:uppercase">
         {{ draftLabel }}
       </p>
     </div>
 
-    <div class="px-4 py-4">
+    <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4">
       <div class="mb-3 flex items-center justify-between gap-2">
         <!-- Le mois ouvre les années : c'est ce qui évite d'user la flèche
              pour atteindre un jour lointain. -->
@@ -313,7 +319,7 @@ function confirm(): void {
 
     <!-- Rien n'est choisi tant qu'on n'a pas validé : parcourir les années ne
          change donc rien, et renoncer se fait d'un mot. -->
-    <div class="flex justify-end gap-2 border-t border-line px-4 py-3">
+    <div class="shrink-0 flex justify-end gap-2 border-t border-line px-4 py-3">
       <button type="button" class="btn btn-soft" @click="emit('close')">
         {{ t("common.cancel") }}
       </button>
