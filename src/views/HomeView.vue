@@ -153,13 +153,16 @@ const features = computed<
  *
  * Sur le web, elles s'empilent en lignes sur un téléphone (texte à gauche,
  * dessin à droite, la place y est en largeur) et se rangent côte à côte,
- * centrées sous leur dessin, dès qu'il y a trois colonnes. Le filet qui les
- * sépare suit : horizontal quand elles s'empilent, vertical côte à côte.
+ * centrées sous leur dessin, dès qu'il y a trois colonnes. Rien ne les sépare
+ * qu'un écart : un filet entre elles redessinait les cases dont on venait de
+ * les sortir.
  */
-const doorsClass = isNativeApp ? "grid grid-cols-3" : "grid grid-cols-1 md:grid-cols-3";
+const doorsClass = isNativeApp
+  ? "grid grid-cols-3 gap-2"
+  : "grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-8";
 const doorClass = isNativeApp
-  ? "flex flex-col items-center gap-2 border-s px-1 py-3 text-center first:border-s-0"
-  : "flex items-center gap-5 border-b py-5 text-left last:border-b-0 md:flex-col md:items-center md:gap-4 md:border-b-0 md:border-s md:px-6 md:py-2 md:text-center md:first:border-s-0";
+  ? "flex flex-col items-center gap-2 px-1 py-3 text-center"
+  : "flex items-center gap-5 py-4 text-left md:flex-col md:items-center md:gap-4 md:py-2 md:text-center";
 const doorIllustrationClass = isNativeApp
   ? "h-14 w-14"
   : "order-2 h-24 w-24 sm:h-28 sm:w-28 md:order-1 md:h-24 md:w-24";
@@ -326,13 +329,14 @@ onUnmounted(() => {
            juste au-dessus. Sans lui, les seules surfaces blanches de la page
            sont celles qui répondent à une question (ma lecture, l'heure), et
            l'accueil se lit en deux temps au lieu d'un empilement de boîtes.
-           Ce qui remplace le cadre : un filet entre elles, et au survol le
-           titre qui prend la couleur pendant que le dessin s'anime. -->
+           Ce qui remplace le cadre : rien, qu'un écart entre elles, et au
+           survol le titre qui prend la couleur pendant que le dessin
+           s'anime. -->
       <div class="mb-10 items-stretch" :class="doorsClass">
         <button
           v-for="(feature, index) in features"
           :key="feature.title"
-          class="feature-link group cursor-pointer border-line"
+          class="feature-link group cursor-pointer"
           :class="doorClass"
           :style="{ '--enter-delay': `${index * 0.12}s` }"
           @click="

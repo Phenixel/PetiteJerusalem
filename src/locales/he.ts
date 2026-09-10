@@ -199,7 +199,7 @@ const he: LocaleMessages = {
     heroDescription: "פלטפורמה מודרנית המוקדשת ללימוד, שיתוף וצמיחה רוחנית של הקהילה היהודית.",
     features: {
       shareReading: {
-        title: "שיתוף קריאות",
+        title: "שיתוף",
         description: "החליפו וגלו טקסטים קדושים עם הקהילה",
       },
       study: {

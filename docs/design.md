@@ -49,9 +49,10 @@ question que vous vous posez » : ma lecture du jour, l'heure qui vient, une
 session en cours. Elle contient une donnée, un état, quelque chose qui change.
 
 Un simple endroit où aller n'en est pas une : les trois portes du site, sur
-l'accueil, sont posées à même le beige, séparées par un filet (vertical côte à
-côte, horizontal empilées), avec le titre qui prend la couleur au survol
-pendant que le dessin s'anime. Encadrées, elles se disputaient le regard avec
+l'accueil, sont posées à même le beige, rien entre elles qu'un écart, avec le
+titre qui prend la couleur au survol pendant que le dessin s'anime. Pas de
+filet non plus : une ligne entre elles redessinait les cases dont on venait de
+les sortir. Encadrées, elles se disputaient le regard avec
 les cartes du tableau de bord et la page devenait un empilement de boîtes ;
 sans cadre, les seules surfaces blanches sont celles qui répondent, et la page
 se lit en deux temps.

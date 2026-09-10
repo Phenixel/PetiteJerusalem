@@ -215,7 +215,7 @@ const fr = {
       "Répartissez un texte entre plusieurs personnes pour le terminer ensemble : finir le Chass, lire les Tehilim à plusieurs, suivre la progression de votre limoud. Gratuit, en français, en anglais et en hébreu.",
     features: {
       shareReading: {
-        title: "Partage de Lectures",
+        title: "Partage",
         description:
           "Créez une session, répartissez un texte et étudiez à plusieurs jusqu'au siyoum",
       },

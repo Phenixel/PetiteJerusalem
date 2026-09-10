@@ -212,7 +212,7 @@ const en: LocaleMessages = {
       "A modern platform dedicated to study, sharing and spiritual growth of the Jewish community.",
     features: {
       shareReading: {
-        title: "Reading Share",
+        title: "Sharing",
         description: "Exchange and discover sacred texts with the community",
       },
       study: {
