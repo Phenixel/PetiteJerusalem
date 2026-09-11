@@ -102,6 +102,38 @@ export function nextOccurrence(occasion: HebrewOccasion, from: HDate): HDate {
   return occasionDateIn(occasion, from.getFullYear() + 1);
 }
 
+/** Une date à venir, telle que l'accueil l'annonce. */
+export interface UpcomingOccasion {
+  occasion: HebrewOccasion;
+  date: HDate;
+  /** Jours civils d'ici là : 0 le jour même, 1 demain. */
+  inDays: number;
+}
+
+/** Fenêtre de l'accueil : au-delà, une date n'est plus « ce qui vient ». */
+export const UPCOMING_HORIZON_DAYS = 7;
+
+/**
+ * Les dates qui reviennent dans les jours qui suivent, de la plus proche à la
+ * plus lointaine. C'est ce que l'accueil annonce, et rien d'autre : passé la
+ * fenêtre, la carte s'efface plutôt que de rester là toute l'année.
+ */
+export function upcomingOccasions(
+  occasions: HebrewOccasion[],
+  today: HDate,
+  horizonDays = UPCOMING_HORIZON_DAYS,
+  limit = 3,
+): UpcomingOccasion[] {
+  return occasions
+    .map((occasion) => {
+      const date = nextOccurrence(occasion, today);
+      return { occasion, date, inDays: date.abs() - today.abs() };
+    })
+    .filter((upcoming) => upcoming.inDays <= horizonDays)
+    .sort((a, b) => a.inDays - b.inDays || a.occasion.name.localeCompare(b.occasion.name))
+    .slice(0, limit);
+}
+
 /** Un identifiant qui ne dépend d'aucune API (crypto absent des vieilles webviews). */
 export function newOccasionId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

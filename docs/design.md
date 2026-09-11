@@ -192,6 +192,13 @@ Une carte se lit alors comme une fête, et son icône dit d'un coup d'oeil qu'
 elle est à nous. Elle est de surcroît la seule qui se touche : on retombe sur
 son réglage, là où on l'a posée.
 
+Mais le calendrier, on n'y va pas tous les jours, et une date qu'on a pris la
+peine d'inscrire mérite de venir au-devant : elle paraît sur l'accueil la
+semaine où elle arrive, dans la colonne du moment, avec le sidour de l'office
+et la bénédiction de la lune, puis s'efface le reste de l'année. Trois au
+plus : au-delà, ce n'est plus un rappel mais une liste, et la liste a sa place
+dans le calendrier.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.

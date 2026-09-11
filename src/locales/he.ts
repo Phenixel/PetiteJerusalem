@@ -595,6 +595,13 @@ const he: LocaleMessages = {
       weekBefore: "בעוד שבוע, {date}.",
     },
     note: "היום העברי מתחיל בערב שלפניו, בשקיעה. תאריך באדר חוזר באדר ב׳ בשנים מעוברות, וה־30 בחודש שיש בו 29 יום חוזר ב־29.",
+    /* כרזת העמוד הראשי: מה שמגיע השבוע. */
+    banner: "{when}, {date}",
+    when: {
+      today: "היום",
+      tomorrow: "מחר",
+      inDays: "בעוד {n} ימים",
+    },
     remove: "מחיקה",
     removeAria: "מחיקת {name}",
     editAria: "עריכת {name}",

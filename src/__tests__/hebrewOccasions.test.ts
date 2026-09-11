@@ -4,6 +4,7 @@ import {
   nextOccurrence,
   occasionDateIn,
   parseOccasion,
+  upcomingOccasions,
   type HebrewOccasion,
 } from "../services/hebrewOccasions";
 import { OCCASION_REMINDER_HOUR, planZmanReminders } from "../services/zmanReminderService";
@@ -76,6 +77,56 @@ describe("nextOccurrence", () => {
     const today = new HDate(12, months.KISLEV, 5787);
 
     expect(nextOccurrence(occasion(), today).getFullYear()).toBe(5787);
+  });
+});
+
+describe("upcomingOccasions", () => {
+  const today = new HDate(10, months.KISLEV, 5787);
+
+  it("ne retient que ce qui arrive dans la semaine", () => {
+    const proche = occasion({ id: "proche", day: 12, month: months.KISLEV });
+    const loin = occasion({ id: "loin", day: 25, month: months.KISLEV });
+
+    const upcoming = upcomingOccasions([loin, proche], today);
+
+    expect(upcoming.map((entry) => entry.occasion.id)).toEqual(["proche"]);
+    expect(upcoming[0].inDays).toBe(2);
+  });
+
+  it("compte le jour même comme à venir", () => {
+    const [entry] = upcomingOccasions([occasion({ day: 10, month: months.KISLEV })], today);
+
+    expect(entry.inDays).toBe(0);
+  });
+
+  it("range les dates de la plus proche à la plus lointaine", () => {
+    const dates = [
+      occasion({ id: "c", day: 15, month: months.KISLEV }),
+      occasion({ id: "a", day: 10, month: months.KISLEV }),
+      occasion({ id: "b", day: 13, month: months.KISLEV }),
+    ];
+
+    expect(upcomingOccasions(dates, today).map((entry) => entry.occasion.id)).toEqual([
+      "a",
+      "b",
+      "c",
+    ]);
+  });
+
+  it("n'en annonce pas plus que la limite", () => {
+    const dates = [11, 12, 13, 14].map((day) =>
+      occasion({ id: `j${day}`, day, month: months.KISLEV }),
+    );
+
+    expect(upcomingOccasions(dates, today)).toHaveLength(3);
+  });
+
+  it("annonce celle de l'an prochain quand celle-ci est passée", () => {
+    // Le 1er Kislev est derrière : c'est celui de 5788 qui compte, et il est
+    // loin, donc hors de la fenêtre.
+    const passee = occasion({ day: 1, month: months.KISLEV });
+
+    expect(upcomingOccasions([passee], today)).toEqual([]);
   });
 });
 

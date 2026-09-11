@@ -248,6 +248,10 @@ une bougie), le matin du jour civil, ou une semaine avant. Les deux derniers
 partent à 9 h du fuseau de l'**appareil**, là où vit celui qui les reçoit, et
 non du lieu des horaires.
 
+Une date qui arrive dans les sept jours paraît aussi sur l'**accueil**
+(`OccasionsBanner.vue`, chargé à la demande comme les autres cartes du moment :
+il tire le calendrier hébraïque, qui n'a rien à faire dans le premier rendu).
+
 Comme les rappels d'horaires, les dates vivent dans le `localStorage`
 (`src/composables/useHebrewOccasions.ts`) : elles ne suivent pas d'un appareil
 à l'autre, ce que dit l'écran qui les tient.

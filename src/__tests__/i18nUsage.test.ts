@@ -112,6 +112,7 @@ describe("i18n usage", () => {
       "occasions.kinds.",
       "occasions.notify.",
       "occasions.reminders.",
+      "occasions.when.",
       "profile.appearances.",
       "profile.fontsHebrew.",
       "profile.fontsLatin.",

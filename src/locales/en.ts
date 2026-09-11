@@ -616,6 +616,13 @@ const en: LocaleMessages = {
       weekBefore: "In one week, {date}.",
     },
     note: "The Hebrew day begins the evening before, at sunset. A date in Adar comes back in Adar II in years with thirteen months, and the 30th of a month with only 29 days comes back on the 29th.",
+    /* Home banner: what is coming this week. */
+    banner: "{when}, {date}",
+    when: {
+      today: "Today",
+      tomorrow: "Tomorrow",
+      inDays: "In {n} days",
+    },
     remove: "Delete",
     removeAria: "Delete {name}",
     editAria: "Edit {name}",

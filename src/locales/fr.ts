@@ -629,6 +629,13 @@ const fr = {
       weekBefore: "Dans une semaine, {date}.",
     },
     note: "Le jour hébraïque commence la veille au coucher du soleil. Une date d'Adar revient en Adar II les années à treize mois, et le 30 d'un mois qui n'en compte que 29 revient le 29.",
+    /* Bandeau de l'accueil : ce qui arrive dans la semaine. */
+    banner: "{when}, {date}",
+    when: {
+      today: "Aujourd'hui",
+      tomorrow: "Demain",
+      inDays: "Dans {n} jours",
+    },
     remove: "Supprimer",
     removeAria: "Supprimer {name}",
     editAria: "Modifier {name}",
