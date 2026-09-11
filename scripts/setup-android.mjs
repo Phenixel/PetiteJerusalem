@@ -12,6 +12,8 @@
  *   (fichier téléchargé depuis la console Firebase, git-ignoré)
  * - android/app/build.gradle : signingConfigs.release (lit android/keystore.properties,
  *   git-ignoré ; fallback signature debug si absent) + versionName aligné sur le tag git
+ * - Minification R8 de la release (minifyEnabled) et règles de conservation
+ *   recopiées depuis native/android/app/proguard-rules.pro
  * - Widgets d'écran d'accueil : copie native/android/ (providers Java, layouts)
  *   et déclare les receivers dans le manifest (voir docs/app-widgets.md)
  * - App Links : intent-filter vérifié sur le domaine, un lien du site ouvre
@@ -535,5 +537,36 @@ mkdirSync(wearAssets, { recursive: true });
 const tehilim = JSON.parse(readFileSync(join(root, "public/texts/tehilim.json"), "utf8"));
 writeFileSync(join(wearAssets, TEHILIM_ASSET), JSON.stringify(buildTehilimAsset(tehilim)));
 console.log("setup-android: Tehilim embarqués dans les assets de la montre");
+
+// 14. Minification R8 de la release.
+//     Le scaffold Capacitor laisse `minifyEnabled false` : rien n'est ni
+//     élagué ni renommé, et la Play Console signale l'AAB comme insuffisamment
+//     optimisé (3 % d'obscurcissement sur la 3.9.5, seuil à 25 %, sanction
+//     annoncée sur la visibilité de la fiche). R8 supprime le code mort,
+//     l'optimise et renomme ce qui n'a pas à garder son nom ; les exceptions
+//     vivent dans native/android/app/proguard-rules.pro, recopié ici.
+//     Le fichier de règles par défaut passe à sa variante `-optimize` : l'autre
+//     porte `-dontoptimize`, qui éteint justement l'optimisation mesurée.
+//     Les ressources, elles, ne sont pas élaguées (`shrinkResources` reste
+//     absent) : le Play Store ne mesure que le code, et plusieurs plugins
+//     Capacitor résolvent leurs drawables par leur nom à l'exécution
+//     (AssetUtil.getResourceID), ce qu'un élagage de ressources ne voit pas.
+copyFileSync(
+  join(root, "native/android/app/proguard-rules.pro"),
+  join(androidDir, "app/proguard-rules.pro"),
+);
+const releaseGradle = readFileSync(appBuildGradlePath, "utf8");
+if (releaseGradle.includes("minifyEnabled false")) {
+  writeFileSync(
+    appBuildGradlePath,
+    releaseGradle
+      .replace("minifyEnabled false", "minifyEnabled true")
+      .replace(
+        "getDefaultProguardFile('proguard-android.txt')",
+        "getDefaultProguardFile('proguard-android-optimize.txt')",
+      ),
+  );
+  console.log("setup-android: minification R8 activée pour la release");
+}
 
 console.log("setup-android: terminé.");
