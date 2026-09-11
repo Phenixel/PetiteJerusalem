@@ -51,6 +51,12 @@ import { isSectionPath, localeOfPath, sectionPath } from "../../content/seoLocal
 import RestTimes from "./RestTimes.vue";
 import ZmanRow from "./ZmanRow.vue";
 import ZmanReminderModal from "./ZmanReminderModal.vue";
+import { useZmanimOpinion } from "../../composables/useZmanimOpinion";
+
+// Chargés à la demande : la liste des hiloulot pèse 75 Ko, et la fenêtre de
+// l'opinion ne sert qu'au clic sur son bouton.
+const HiloulotSection = defineAsyncComponent(() => import("./HiloulotSection.vue"));
+const ZmanimOpinionModal = defineAsyncComponent(() => import("./ZmanimOpinionModal.vue"));
 
 // Chargé à la demande : le sélecteur embarque la liste des villes, inutile
 // tant qu'on ne l'ouvre pas.
@@ -328,6 +334,16 @@ function leaveCityPage(): void {
   void router.replace(sectionPath("horaires", localeOfPath(route.path)));
 }
 
+/**
+ * L'avis suivi pour le calcul (Rav Posen, Rav Ovadia Yossef). Sur le SITE, il
+ * se change ici : la page de réglages y est réservée aux comptes, et l'avis
+ * qu'on suit ne doit pas l'être. Dans l'app, il vit dans l'onglet Horaires des
+ * réglages, avec le reste, et le bouton ne charge pas la page d'un réglage de
+ * plus.
+ */
+const { opinion } = useZmanimOpinion();
+const opinionOpen = ref(false);
+
 /** Racine de la page : cible du dévoilement circulaire (bouton rond natif). */
 const root = ref<HTMLElement | null>(null);
 
@@ -452,6 +468,19 @@ onMounted(() => {
       >
         <AppIcon name="map-pin" :size="16" class="text-primary" />
         <span class="font-semibold">{{ placeLabel }}</span>
+        <AppIcon name="chevron-down" :size="14" class="text-text-secondary" />
+      </button>
+      <!-- Le site n'a pas de réglages sans compte : l'avis suivi se change
+           ici, sur la page qu'il gouverne. -->
+      <button
+        v-if="!isNativeApp"
+        type="button"
+        class="btn btn-soft"
+        :aria-label="t('zmanim.opinions.change')"
+        @click="opinionOpen = true"
+      >
+        <AppIcon name="clock" :size="16" class="text-primary" />
+        <span class="font-semibold">{{ t(`zmanim.opinions.${opinion}.short`) }}</span>
         <AppIcon name="chevron-down" :size="14" class="text-text-secondary" />
       </button>
       <button type="button" class="btn btn-soft" :disabled="status === 'loading'" @click="locateMe">
@@ -628,11 +657,16 @@ onMounted(() => {
       class="mt-5 first:mt-0"
     />
 
+    <!-- Les hiloulot du jour, tout en bas : c'est ce qu'on trouve en arrivant
+         au bout, comme au bas de la colonne d'un calendrier imprimé. -->
+    <HiloulotSection :day="hebrewDay" />
+
     <p class="mt-5 border-t border-line pt-3 text-sm text-text-secondary leading-relaxed">
       {{ t("zmanim.disclaimer") }}
     </p>
 
     <CityPicker v-model:show="pickerOpen" :current="place.city" @select="chooseCity" />
+    <ZmanimOpinionModal v-if="!isNativeApp" v-model:show="opinionOpen" />
     <ZmanReminderModal
       v-if="reminderZman"
       v-model:show="reminderOpen"

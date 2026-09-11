@@ -204,6 +204,33 @@ aussi bien depuis le site. Ce qui reste propre à l'app, c'est le rappel, que
 seul un téléphone peut faire sonner : son réglage ne paraît pas là où il ne
 tiendrait pas parole.
 
+### Un réglage se pose là où il est atteignable
+
+L'avis suivi pour les horaires (Rav Posen, Rav Ovadia Yossef) gouverne toutes
+les heures de l'application : il a donc sa place avec les autres réglages,
+dans un onglet Horaires du profil. Sauf que sur le site, la page de réglages
+est réservée aux comptes, et l'avis qu'on suit ne doit pas l'être : un bouton
+le porte alors sur la page des horaires elle-même, à côté du nom de la ville,
+et il annonce l'avis en cours plutôt qu'un mot vague comme « Réglages ».
+
+C'est la même règle que pour le lieu de calcul : le nom de la ville EST le
+bouton qui la change. Ce qu'on lit et ce qu'on règle sont au même endroit, et
+le bouton dit l'état avant de proposer le changement.
+
+Dans l'app, le bouton n'est pas repris : la page y est déjà coiffée de deux
+onglets et d'une barre du bas, et les réglages sont à un geste.
+
+### Ce qui clôt une page se lit à la fin
+
+Les hiloulot du jour ferment la page des horaires, sous la dernière heure et
+avant la note de bas de page, comme le calendrier imprimé les met au bas de sa
+colonne. Pas de carte : une carte répond à une question qu'on est venu poser,
+celle-ci ne se pose pas en ouvrant la page (voir « Le cadre se mérite »). Un
+titre de groupe, le même que ceux des moments de la journée, et des noms.
+
+Certains jours en portent dix-neuf. On en montre quatre, le reste se déplie :
+la page se termine sur une ligne, pas sur un annuaire.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.

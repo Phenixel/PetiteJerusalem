@@ -126,6 +126,9 @@ describe("i18n usage", () => {
       "textReading.zman.",
       "zmanim.hints.",
       "zmanim.names.",
+      // Les deux avis du calcul des horaires (voir services/zmanimOpinions).
+      "zmanim.opinions.ovadia.",
+      "zmanim.opinions.posen.",
       "zmanim.periods.",
       "zmanim.tachanun.",
     ];

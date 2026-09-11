@@ -295,6 +295,7 @@ const en: LocaleMessages = {
       myInfo: "My Information",
       security: "Security",
       appearance: "Appearance",
+      zmanim: "Zmanim",
       notifications: "Notifications",
       about: "About",
     },
@@ -543,6 +544,30 @@ const en: LocaleMessages = {
     },
     /* Zmanim reminders (native app): set by tapping a time in the list,
        scheduled on the device itself, see zmanReminderService. */
+    /* Which opinion the zmanim follow (see services/zmanimOpinions). */
+    opinions: {
+      title: "Zmanim opinion",
+      description:
+        "Luchot do not define the zmanim the same way. Pick the one you follow: every time in the app follows it.",
+      change: "Change the zmanim opinion",
+      note: "The choice applies everywhere: the zmanim page, the home page, the siddur of the moment and the reminders. In practice, your rabbi's ruling comes first.",
+      posen: {
+        name: "Rav Meir Posen (Ohr Meir)",
+        short: "Rav Posen",
+        hint: "Degrees of the sun below the horizon, as European calendars have it: dawn at 16.1°, tallit at 11.5°, nightfall at 8.5°, Rabbeinu Tam 72 minutes after sunset.",
+      },
+      ovadia: {
+        name: "Rav Ovadia Yosef (Ohr HaChaim)",
+        short: "Rav Ovadia",
+        hint: "Seasonal (zmaniyot) minutes, proportional to the length of the day: dawn 72 minutes before sunrise, nightfall 13.5 minutes after sunset, Shabbat ends 40 minutes after sunset.",
+      },
+    },
+    /* The day's hilulot, at the bottom of the page (see services/hiloulot). */
+    hiloulot: {
+      title: "Hilulot of the day",
+      more: "Show one more name | Show {count} more names",
+      note: "List taken from the Ohr HaChaim calendar. Dates of passing differ from one record to another.",
+    },
     reminder: {
       title: "Remind me of this time",
       chooseDelay: "How long before",

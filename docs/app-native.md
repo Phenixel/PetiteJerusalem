@@ -281,6 +281,17 @@ UserDefaults côté iOS), qui survivent et servent de filet, relu au premier
 usage du réglage. Elle ne monte pas dans le compte : un téléphone tenu à bout
 de bras et un ordinateur ne demandent pas la même taille.
 
+L'**avis suivi pour les horaires** (`useZmanimOpinion`) est écrit de la même
+façon, pour la même raison : les zmanim se calculent au premier rendu, et un
+réglage qui n'arriverait qu'après ferait sauter toutes les heures de la page
+sous les yeux. La différence est qu'il MONTE dans le compte : l'avis qu'on
+suit ne dépend pas de l'appareil qu'on a en main. Le compte l'emporte quand il
+en porte un, l'appareil décide sinon.
+
+Changer d'avis reprogramme les rappels d'horaires : ils sont posés sur des
+instants calculés, et ces instants viennent de bouger (voir
+`zmanReminderService`).
+
 ## Géolocalisation (horaires du jour)
 
 La page **Horaires** calcule les zmanim pour la position de l'appareil quand

@@ -301,6 +301,7 @@ const fr = {
       myInfo: "Mes Informations",
       security: "Sécurité",
       appearance: "Apparence",
+      zmanim: "Horaires",
       notifications: "Notifications",
       about: "À propos",
     },
@@ -553,6 +554,32 @@ const fr = {
       sunset: "Coucher du soleil : fin du jour",
       tzeit: "Nuit : Arvit, fin de Chabbat et des jeûnes",
       chatzotNight: "Milieu de la nuit qui vient",
+    },
+    /* L'avis suivi pour le calcul des horaires (voir services/zmanimOpinions) :
+       réglé dans l'onglet Horaires du profil sur l'app, et depuis la page
+       elle-même sur le site, où les réglages sont réservés aux comptes. */
+    opinions: {
+      title: "Avis suivi pour les horaires",
+      description:
+        "Les luhot ne définissent pas les zmanim de la même façon. Choisissez celui que vous suivez : toutes les heures de l'application s'y accordent.",
+      change: "Changer l'avis suivi pour les horaires",
+      note: "Le choix vaut partout : la page des horaires, l'accueil, le sidour du moment et les rappels. Pour la pratique, l'avis de votre rav prime.",
+      posen: {
+        name: "Rav Meïr Posen (Ohr Meïr)",
+        short: "Rav Posen",
+        hint: "Le calcul par degrés du soleil sous l'horizon, celui des calendriers d'Europe : aube à 16,1°, talith à 11,5°, sortie des étoiles à 8,5°, Rabbénou Tam 72 minutes après la chkia.",
+      },
+      ovadia: {
+        name: "Rav Ovadia Yossef (Or Ha'Haïm)",
+        short: "Rav Ovadia",
+        hint: "Le calcul en minutes zmaniyot, proportionnelles à la longueur du jour : aube 72 minutes avant le lever, sortie des étoiles 13,5 minutes après la chkia, sortie du Chabbat 40 minutes.",
+      },
+    },
+    /* Les hiloulot du jour, au bas de la page (voir services/hiloulot). */
+    hiloulot: {
+      title: "Hiloulot du jour",
+      more: "Voir un autre nom | Voir {count} autres noms",
+      note: "Liste reprise du calendrier Or Ha'Haïm. Les jours de disparition diffèrent parfois d'un recensement à l'autre.",
     },
     /* Rappels d'horaires (app native) : posés en touchant un horaire de la
        liste, programmés sur l'appareil, voir zmanReminderService. */

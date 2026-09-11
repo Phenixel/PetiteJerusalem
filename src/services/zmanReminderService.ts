@@ -25,6 +25,7 @@ import {
   type ZmanKey,
 } from "./zmanimService";
 import { useHebrewOccasions } from "../composables/useHebrewOccasions";
+import { useZmanimOpinion } from "../composables/useZmanimOpinion";
 import {
   nextOccurrence,
   occasionDateIn,
@@ -351,6 +352,11 @@ class ZmanReminderService {
     // Les dates personnelles du calendrier portent leurs propres rappels.
     const { occasions } = useHebrewOccasions();
     watch(occasions, () => void this.refresh(), { deep: true });
+
+    // L'opinion suivie déplace tous les horaires : les rappels posés dessus
+    // doivent repartir à la nouvelle heure (voir zmanimOpinions).
+    const { opinion } = useZmanimOpinion();
+    watch(opinion, () => void this.refresh());
 
     const { place } = useZmanimLocation();
     watch(place, () => void this.refresh());

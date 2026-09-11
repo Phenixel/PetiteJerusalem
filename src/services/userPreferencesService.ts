@@ -86,6 +86,13 @@ export interface UserPreferences {
    * marque-page à la prochaine fusion.
    */
   deletedBookmarks: Record<string, number>;
+  /**
+   * Opinion suivie pour le calcul des horaires (Rav Posen, Rav Ovadia
+   * Yossef) : l'avis qu'on suit ne dépend pas de l'appareil qu'on a en main,
+   * il suit donc le compte. Vide tant que personne ne l'a choisie, pour ne
+   * pas imposer un défaut à l'appareil suivant. Voir useZmanimOpinion.
+   */
+  zmanimOpinion: string;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -109,6 +116,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   bookmarks: [],
   deletedBookmarks: {},
   hebrewOccasions: [],
+  zmanimOpinion: "",
 };
 
 /**
