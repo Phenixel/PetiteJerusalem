@@ -204,6 +204,12 @@ aussi bien depuis le site. Ce qui reste propre à l'app, c'est le rappel, que
 seul un téléphone peut faire sonner : son réglage ne paraît pas là où il ne
 tiendrait pas parole.
 
+Elle ne s'efface pas non plus d'un doigt qui glisse : la corbeille pose la
+question, avec le nom de la date, avant d'agir (`useConfirm`). C'est la règle
+de tout ce qui part sans retour, et seulement de cela : ce qu'on peut refaire
+d'un geste, une case cochée, un rappel posé, ne se fait pas confirmer, sans
+quoi la question ne voudrait plus rien dire.
+
 ### Trois onglets de réglages, trois questions
 
 Les réglages ne font pas une seule liste. **Apparence** répond à « à quoi

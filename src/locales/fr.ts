@@ -671,6 +671,8 @@ const fr = {
       inDays: "Dans {n} jours",
     },
     remove: "Supprimer",
+    removeConfirm: "Supprimer «\u00a0{name}\u00a0»\u202f?",
+    removeConfirmHint: "La date et son rappel s'en vont, sans retour en arrière.",
     removeAria: "Supprimer {name}",
     editAria: "Modifier {name}",
   },

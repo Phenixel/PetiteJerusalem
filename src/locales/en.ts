@@ -656,6 +656,8 @@ const en: LocaleMessages = {
       inDays: "In {n} days",
     },
     remove: "Delete",
+    removeConfirm: "Delete \u201c{name}\u201d?",
+    removeConfirmHint: "The date and its reminder go with it, with no way back.",
     removeAria: "Delete {name}",
     editAria: "Edit {name}",
   },

@@ -16,6 +16,7 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { HDate } from "@hebcal/core";
 import { useOverlay } from "../../composables/useOverlayStack";
+import { useConfirm } from "../../composables/useConfirm";
 import { useHebrewOccasions, type OccasionDraft } from "../../composables/useHebrewOccasions";
 import {
   MAX_OCCASION_DAY,
@@ -45,6 +46,7 @@ const emit = defineEmits<{ (e: "update:show", value: boolean): void }>();
 
 const { t, locale } = useI18n();
 const { occasions, full, syncedToAccount, saveOccasion, removeOccasion } = useHebrewOccasions();
+const { confirm } = useConfirm();
 
 /**
  * Où vivent les dates, dit en une ligne : sur le compte, elles se retrouvent
@@ -150,7 +152,23 @@ function save(): void {
   view.value = "list";
 }
 
-function remove(id: string): void {
+/**
+ * Supprime la date, une fois la question posée.
+ *
+ * Une date qu'on a pris la peine d'inscrire ne s'efface pas d'un doigt qui
+ * glisse sur la corbeille : rien ne permettrait de la retrouver, et un
+ * leilouy nichmat se saisit une fois pour toutes. Le nom vient de la liste et
+ * non du formulaire, qui peut être en cours de modification.
+ */
+async function remove(id: string): Promise<void> {
+  const name = occasions.value.find((occasion) => occasion.id === id)?.name ?? "";
+  const accepted = await confirm({
+    title: t("occasions.removeConfirm", { name }),
+    message: t("occasions.removeConfirmHint"),
+    confirmLabel: t("occasions.remove"),
+    danger: true,
+  });
+  if (!accepted) return;
   removeOccasion(id);
   view.value = "list";
 }
