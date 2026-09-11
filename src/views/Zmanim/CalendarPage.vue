@@ -88,12 +88,14 @@ const entries = computed(() =>
 /**
  * Les dates personnelles de l'année affichée, mêlées aux fêtes.
  *
- * Elles ne viennent pas du calendrier hébraïque mais de l'appareil (voir
+ * Elles ne viennent pas du calendrier hébraïque mais de l'utilisateur (voir
  * useHebrewOccasions) : un anniversaire, un leilouy nichmat. Elles se lisent
  * au même endroit que les fêtes, parce que c'est la même question, « qu'est-ce
- * qui vient cette année ». L'app native seule les propose : le rappel est
- * programmé par le téléphone, et rien ne les porterait d'un appareil à
- * l'autre.
+ * qui vient cette année ».
+ *
+ * Le site les porte comme l'app : elles suivent le compte, et se posent donc
+ * aussi bien depuis un navigateur. Seul le rappel reste l'affaire du
+ * téléphone, qui est le seul à pouvoir le faire sonner.
  */
 const { occasions } = useHebrewOccasions();
 const occasionsOpen = ref(false);
@@ -115,12 +117,10 @@ const rows = computed<CalendarRow[]>(() => {
     abs: entry.first.abs(),
     entry,
   }));
-  const personal: CalendarRow[] = isNativeApp
-    ? occasions.value.map((occasion) => {
-        const date = occasionDateIn(occasion, year.value);
-        return { key: `occasion-${occasion.id}`, abs: date.abs(), occasion, date };
-      })
-    : [];
+  const personal: CalendarRow[] = occasions.value.map((occasion) => {
+    const date = occasionDateIn(occasion, year.value);
+    return { key: `occasion-${occasion.id}`, abs: date.abs(), occasion, date };
+  });
   return [...festivals, ...personal].sort((a, b) => a.abs - b.abs);
 });
 
@@ -317,18 +317,15 @@ onMounted(() => {
 <template>
   <main ref="root" class="flex-1 mx-auto w-full max-w-3xl px-6 py-10">
     <!-- App native : le calendrier est le second onglet des horaires, et les
-         onglets tiennent lieu de titre (voir PageTabs). Sur le site, le
-         bandeau y mène, et le lien de retour reste. -->
+         onglets tiennent lieu de titre (voir PageTabs). Sur le site, rien
+         au-dessus du titre : le bandeau porte déjà « Horaires », et un lien de
+         retour en disait une seconde fois. -->
     <PageTabs
       v-if="isNativeApp"
       :tabs="tabs"
       event="zmanim_tab_switched"
       :label="t('zmanim.navTitle')"
     />
-    <RouterLink v-else :to="localePath('horaires')" class="back-link mb-6">
-      <AppIcon name="chevron-left" :size="14" class="rtl:rotate-180" />
-      {{ t("zmanim.navTitle") }}
-    </RouterLink>
 
     <h1
       class="text-center text-2xl md:text-3xl font-bold text-text-primary tracking-tight"
@@ -346,7 +343,7 @@ onMounted(() => {
 
     <!-- Ses propres dates : anniversaires, leilouy nichmat. Elles se posent
          ici parce qu'elles se lisent ici, au milieu des fêtes de l'année. -->
-    <div v-if="isNativeApp" class="mt-4 flex justify-center">
+    <div class="mt-4 flex justify-center">
       <button type="button" class="btn btn-soft" @click="occasionsOpen = true">
         <AppIcon name="calendar" :size="16" class="text-primary" />
         {{ t("occasions.open") }}
@@ -447,6 +444,6 @@ onMounted(() => {
       {{ t("zmanim.disclaimer") }}
     </p>
 
-    <OccasionsModal v-if="isNativeApp" v-model:show="occasionsOpen" :today="todayHd" />
+    <OccasionsModal v-model:show="occasionsOpen" :today="todayHd" />
   </main>
 </template>

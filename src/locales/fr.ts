@@ -597,9 +597,12 @@ const fr = {
   occasions: {
     open: "Mes dates",
     title: "Mes dates",
-    description:
-      "Vos dates du calendrier hébraïque, qui reviennent chaque année à leur jour. Elles sont gardées sur cet appareil.",
+    description: "Vos dates du calendrier hébraïque, qui reviennent chaque année à leur jour.",
     empty: "Aucune date pour l'instant.",
+    onAccount:
+      "Elles suivent votre compte\u00a0: vous les retrouvez sur le site et sur vos autres appareils.",
+    onDevice: "Sans compte, elles ne quittent pas cet appareil.",
+    remindersInApp: "Les rappels se règlent dans l'application, seule à pouvoir les faire sonner.",
     add: "Ajouter une date",
     full: "La liste est pleine.",
     formTitle: "Une date",

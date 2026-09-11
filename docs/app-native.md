@@ -252,9 +252,34 @@ Une date qui arrive dans les sept jours paraît aussi sur l'**accueil**
 (`OccasionsBanner.vue`, chargé à la demande comme les autres cartes du moment :
 il tire le calendrier hébraïque, qui n'a rien à faire dans le premier rendu).
 
-Comme les rappels d'horaires, les dates vivent dans le `localStorage`
-(`src/composables/useHebrewOccasions.ts`) : elles ne suivent pas d'un appareil
-à l'autre, ce que dit l'écran qui les tient.
+Les dates vivent dans le `localStorage` (`src/composables/useHebrewOccasions.ts`)
+ET dans le compte (`userPreferences.hebrewOccasions`), et ce sont deux rôles
+distincts : l'appareil est le socle, lu en synchrone, qui sert sans compte et
+sans réseau et que `zmanReminderService` suit ; le compte les emporte d'un
+appareil à l'autre et jusqu'au site. Une date inscrite sur un téléphone se
+retrouve donc dans un navigateur, ce que l'écran qui les tient annonce.
+
+L'adoption n'a lieu qu'une fois par compte et par appareil : à la première
+connexion, ce qui a été saisi sans compte rejoint le compte (union des deux
+listes, `mergeOccasions`) ; ensuite le compte fait foi et remplace la copie
+locale, sans quoi une date supprimée ailleurs serait ressuscitée à chaque
+connexion. Une écriture que le réseau refuse est retenue et repart au retour de
+la connexion. Le site porte donc les dates comme l'app ; seul le **rappel**
+reste l'affaire du téléphone, et son réglage ne paraît pas dans un navigateur.
+
+## Réglages gardés sur l'appareil
+
+Le `localStorage` d'une webview n'est pas durable : le système peut le vider
+sous la pression mémoire, et l'utilisateur au vidage du cache de l'app. Un
+réglage de confort perdu au lancement suivant, c'est peu, mais c'est agaçant.
+
+La **taille du texte** des pages de lecture (A− / A+ et le pincement,
+`useReadingSize`) est donc écrite deux fois : dans le `localStorage`, seul
+lisible en synchrone, donc dès le premier rendu ; et dans les préférences
+natives (`@capacitor/preferences` : SharedPreferences côté Android,
+UserDefaults côté iOS), qui survivent et servent de filet, relu au premier
+usage du réglage. Elle ne monte pas dans le compte : un téléphone tenu à bout
+de bras et un ordinateur ne demandent pas la même taille.
 
 ## Géolocalisation (horaires du jour)
 

@@ -584,9 +584,12 @@ const en: LocaleMessages = {
   occasions: {
     open: "My dates",
     title: "My dates",
-    description:
-      "Your Hebrew-calendar dates, coming back every year on their day. They stay on this device.",
+    description: "Your Hebrew-calendar dates, coming back every year on their day.",
     empty: "No date yet.",
+    onAccount:
+      "They follow your account: you find them again on the site and on your other devices.",
+    onDevice: "Without an account, they stay on this device.",
+    remindersInApp: "Reminders are set in the app, the only one that can make them ring.",
     add: "Add a date",
     full: "The list is full.",
     formTitle: "A date",

@@ -134,6 +134,23 @@ export function upcomingOccasions(
     .slice(0, limit);
 }
 
+/**
+ * Les dates du COMPTE, complétées de celles que l'appareil est seul à porter.
+ *
+ * C'est la règle de la première connexion : ce qui a été inscrit sans compte
+ * le rejoint, et le compte fait foi pour tout le reste. Les fois suivantes,
+ * le compte remplace la liste de l'appareil sans fusion, sinon une date
+ * supprimée ailleurs reviendrait à chaque connexion (voir useHebrewOccasions).
+ */
+export function mergeOccasions(
+  remote: HebrewOccasion[],
+  local: HebrewOccasion[],
+  limit: number,
+): HebrewOccasion[] {
+  const known = new Set(remote.map((entry) => entry.id));
+  return [...remote, ...local.filter((entry) => !known.has(entry.id))].slice(0, limit);
+}
+
 /** Un identifiant qui ne dépend d'aucune API (crypto absent des vieilles webviews). */
 export function newOccasionId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

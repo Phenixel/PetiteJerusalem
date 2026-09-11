@@ -36,9 +36,20 @@ interface AutoScrollSpeed {
   pixelsPerSecond: number;
 }
 
-/** Les trois allures proposées, de la plus lente à la plus rapide. */
+/**
+ * Les trois allures proposées, de la plus lente à la plus rapide.
+ *
+ * La plus lente a été relevée de 12 à 16 px/s, et c'est une affaire de
+ * fluidité, pas de vitesse. Chromium (donc Android) refuse les positions de
+ * défilement fractionnaires : une page ne peut bouger que d'un pixel entier à
+ * la fois. À 12 px/s, elle avançait donc d'un pixel toutes les 83 ms, une
+ * image sur cinq, et le texte sautait au lieu de glisser. À 16, le pas tombe à
+ * 62 ms, une image sur quatre, sans que l'allure cesse d'être celle d'une
+ * lecture posée (une ligne de texte passe en un peu plus d'une seconde et
+ * demie).
+ */
 export const AUTO_SCROLL_SPEEDS: AutoScrollSpeed[] = [
-  { id: "slow", pixelsPerSecond: 12 },
+  { id: "slow", pixelsPerSecond: 16 },
   { id: "medium", pixelsPerSecond: 26 },
   { id: "fast", pixelsPerSecond: 48 },
 ];
@@ -60,7 +71,7 @@ function readStoredSpeed(): AutoScrollSpeedId {
 const running = ref(false);
 const speedId = ref<AutoScrollSpeedId>(readStoredSpeed());
 
-/** Position visée, en flottant : sous-multiples de pixel compris, sinon l'allure lente saccade. */
+/** Position visée, en flottant : c'est elle qui est posée telle quelle (voir step). */
 let position = 0;
 let frame = 0;
 let lastFrameAt = 0;
@@ -116,11 +127,12 @@ function step(now: number): void {
   if (Math.abs(window.scrollY - position) > 2) position = window.scrollY;
 
   position = Math.min(position + (currentSpeed.value.pixelsPerSecond * elapsed) / 1000, limit);
-  // La position visée reste flottante (l'allure lente avance de moins d'un
-  // pixel par image), mais la page se pose sur un pixel entier : un décalage
-  // fractionnaire fait vibrer tout ce qui est en position fixe, la barre du
-  // haut et la pastille du bas les premières.
-  window.scrollTo(0, Math.round(position));
+  // La position part telle quelle, fraction comprise : WebKit (donc l'app iOS)
+  // défile en sous-multiples de pixel, et le mouvement y est continu. Chromium
+  // arrondit, lui, et c'est pour lui que l'allure lente a été relevée (voir
+  // AUTO_SCROLL_SPEEDS) : rien, du côté du script, ne peut lui faire avancer
+  // une page de moins d'un pixel.
+  window.scrollTo(0, position);
 
   // Fin du texte : le défilement s'arrête de lui-même, il n'y a plus rien à lire.
   if (position >= limit) {

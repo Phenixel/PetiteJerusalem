@@ -199,6 +199,11 @@ et la bénédiction de la lune, puis s'efface le reste de l'année. Trois au
 plus : au-delà, ce n'est plus un rappel mais une liste, et la liste a sa place
 dans le calendrier.
 
+Une date pareille survit à un téléphone : elle suit le compte, et se pose donc
+aussi bien depuis le site. Ce qui reste propre à l'app, c'est le rappel, que
+seul un téléphone peut faire sonner : son réglage ne paraît pas là où il ne
+tiendrait pas parole.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.

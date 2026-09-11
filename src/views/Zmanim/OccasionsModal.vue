@@ -30,6 +30,7 @@ import {
 } from "../../services/hebrewOccasions";
 import { formatHebrewDate, hebrewMonthName } from "../../services/zmanimService";
 import { dateTimeFormat } from "../../services/intlCache";
+import { isNativeApp } from "../../composables/useNativeApp";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import AppSelect from "../../components/AppSelect.vue";
 import type { IconName } from "../../components/icons/registry";
@@ -43,7 +44,16 @@ const props = defineProps<{
 const emit = defineEmits<{ (e: "update:show", value: boolean): void }>();
 
 const { t, locale } = useI18n();
-const { occasions, full, saveOccasion, removeOccasion } = useHebrewOccasions();
+const { occasions, full, syncedToAccount, saveOccasion, removeOccasion } = useHebrewOccasions();
+
+/**
+ * Où vivent les dates, dit en une ligne : sur le compte, elles se retrouvent
+ * partout ; sans compte, elles ne quittent pas cet appareil, et il vaut mieux
+ * le savoir avant d'y inscrire un yahrzeit.
+ */
+const storageNote = computed(() =>
+  syncedToAccount.value ? t("occasions.onAccount") : t("occasions.onDevice"),
+);
 
 /** Écran courant : la liste des dates, ou le formulaire de l'une d'elles. */
 const view = ref<"list" | "form">("list");
@@ -191,7 +201,9 @@ useOverlay(
 
       <!-- ===== La liste des dates posées ===== -->
       <template v-if="view === 'list'">
-        <p class="text-sm text-text-secondary">{{ t("occasions.description") }}</p>
+        <p class="text-sm text-text-secondary">
+          {{ t("occasions.description") }} {{ storageNote }}
+        </p>
 
         <p v-if="occasions.length === 0" class="mt-5 text-sm text-text-secondary">
           {{ t("occasions.empty") }}
@@ -298,8 +310,13 @@ useOverlay(
           </div>
         </div>
 
-        <p class="mt-4 text-sm font-medium text-text-primary">{{ t("occasions.reminder") }}</p>
-        <div class="mt-1.5 flex flex-wrap gap-2">
+        <!-- Le rappel est programmé par le téléphone : un navigateur n'a rien
+             à programmer, le réglage n'y paraît donc pas (voir
+             zmanReminderService). -->
+        <p v-if="isNativeApp" class="mt-4 text-sm font-medium text-text-primary">
+          {{ t("occasions.reminder") }}
+        </p>
+        <div v-if="isNativeApp" class="mt-1.5 flex flex-wrap gap-2">
           <button
             v-for="reminder in OCCASION_REMINDERS"
             :key="reminder"
@@ -316,7 +333,10 @@ useOverlay(
           </button>
         </div>
 
-        <p class="mt-4 text-sm leading-relaxed text-text-secondary">{{ t("occasions.note") }}</p>
+        <p class="mt-4 text-sm leading-relaxed text-text-secondary">
+          {{ t("occasions.note") }}
+          <template v-if="!isNativeApp"> {{ t("occasions.remindersInApp") }}</template>
+        </p>
 
         <div class="flex flex-col gap-3 pt-6">
           <button

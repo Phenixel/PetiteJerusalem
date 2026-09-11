@@ -1,4 +1,5 @@
 import type { Bookmark, ReadingPosition } from "./readingProgressService";
+import type { HebrewOccasion } from "./hebrewOccasions";
 import type { ReminderPlace } from "./zmanimService";
 import { AppError } from "./appError";
 // Ce module est chargé dès le démarrage (useTheme et useFonts, montés par
@@ -73,6 +74,13 @@ export interface UserPreferences {
   /** Marque-pages posés dans les textes de la bibliothèque. */
   bookmarks: Bookmark[];
   /**
+   * Dates personnelles du calendrier hébraïque (anniversaires, leilouy
+   * nichmat). Posées sur un appareil, elles suivent le compte pour se
+   * retrouver sur le web et sur les autres appareils, voir
+   * useHebrewOccasions.
+   */
+  hebrewOccasions: HebrewOccasion[];
+  /**
    * Marque-pages supprimés (id → epoch ms de la suppression) : sans cette
    * trace, un appareil resté avec l'ancienne liste ré-ajouterait le
    * marque-page à la prochaine fusion.
@@ -100,6 +108,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   readingPositions: {},
   bookmarks: [],
   deletedBookmarks: {},
+  hebrewOccasions: [],
 };
 
 /**

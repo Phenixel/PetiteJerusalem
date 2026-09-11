@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { HDate, months } from "@hebcal/core";
 import {
+  mergeOccasions,
   nextOccurrence,
   occasionDateIn,
   parseOccasion,
@@ -127,6 +128,28 @@ describe("upcomingOccasions", () => {
     const passee = occasion({ day: 1, month: months.KISLEV });
 
     expect(upcomingOccasions([passee], today)).toEqual([]);
+  });
+});
+
+describe("mergeOccasions", () => {
+  it("garde la date du compte quand les deux portent le même identifiant", () => {
+    const remote = [occasion({ id: "a", name: "Du compte" })];
+    const local = [occasion({ id: "a", name: "De l'appareil" })];
+
+    expect(mergeOccasions(remote, local, 40)).toEqual(remote);
+  });
+
+  it("ajoute celles que l'appareil est seul à porter", () => {
+    const remote = [occasion({ id: "a" })];
+    const local = [occasion({ id: "b" })];
+
+    expect(mergeOccasions(remote, local, 40).map((entry) => entry.id)).toEqual(["a", "b"]);
+  });
+
+  it("ne dépasse pas la limite", () => {
+    const many = Array.from({ length: 5 }, (_, index) => occasion({ id: `local${index}` }));
+
+    expect(mergeOccasions([occasion({ id: "a" })], many, 3)).toHaveLength(3);
   });
 });
 
