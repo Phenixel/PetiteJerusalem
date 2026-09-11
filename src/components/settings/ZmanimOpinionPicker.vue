@@ -4,9 +4,9 @@
  * touchent : le nom de l'avis, ce qu'il retient, et une marque sur celui qui
  * est suivi.
  *
- * Le même sélecteur sert à deux endroits, et c'est voulu : l'onglet Horaires
- * des réglages dans l'app, une fenêtre ouverte depuis la page des horaires sur
- * le site, où il n'y a pas de page de réglages sans compte.
+ * Le même sélecteur sert à deux endroits, et c'est voulu : l'onglet
+ * Préférences des réglages dans l'app, une fenêtre ouverte depuis la page des
+ * horaires sur le site, où il n'y a pas de page de réglages sans compte.
  */
 import { useI18n } from "vue-i18n";
 import { ZMANIM_OPINIONS, type ZmanimOpinion } from "../../services/zmanimOpinions";

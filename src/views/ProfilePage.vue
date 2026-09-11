@@ -12,7 +12,7 @@ import ProfileHeader from "./profilePage/ProfileHeader.vue";
 import UserInfoForm from "./profilePage/UserInfoForm.vue";
 import SecuritySettings from "./profilePage/SecuritySettings.vue";
 import AppearanceTab from "./profilePage/AppearanceTab.vue";
-import ZmanimTab from "./profilePage/ZmanimTab.vue";
+import PreferencesTab from "./profilePage/PreferencesTab.vue";
 import NotificationsTab from "./profilePage/NotificationsTab.vue";
 import AboutTab from "./profilePage/AboutTab.vue";
 import { isNativeApp } from "../composables/useNativeApp";
@@ -25,7 +25,7 @@ const currentUser = ref<User | null>(null);
 // Le profil ne garde que le compte : la lecture du jour vit dans la
 // bibliothèque et les sessions suivies/créées dans le partage de lectures
 // (les raccourcis du menu y mènent).
-type TabId = "my-info" | "security" | "appearance" | "zmanim" | "notifications" | "about";
+type TabId = "my-info" | "security" | "appearance" | "preferences" | "notifications" | "about";
 const activeTab = ref<TabId>("my-info");
 const isLoading = ref(true);
 
@@ -41,9 +41,10 @@ const visibleTabs = computed<{ id: TabId; label: string }[]>(() => {
     );
   }
   tabs.push({ id: "appearance", label: t("profile.tabs.appearance") });
-  // L'avis suivi pour les horaires est une préférence de personne, qui suit le
-  // compte : l'onglet existe donc aussi sur le site.
-  tabs.push({ id: "zmanim", label: t("profile.tabs.zmanim") });
+  // Les préférences (avis suivi pour les horaires, défilement automatique)
+  // sont des choix de personne, pas des réglages d'appareil : l'onglet existe
+  // donc aussi sur le site.
+  tabs.push({ id: "preferences", label: t("profile.tabs.preferences") });
   // Les rappels d'horaires se programment sur le téléphone : rien à régler
   // dans un navigateur, l'onglet n'y existe donc pas.
   if (isNativeApp) {
@@ -271,8 +272,8 @@ onUnmounted(() => {
             <AppearanceTab :user-id="currentUser?.id ?? null" />
           </div>
 
-          <div v-if="activeTab === 'zmanim'">
-            <ZmanimTab />
+          <div v-if="activeTab === 'preferences'">
+            <PreferencesTab />
           </div>
 
           <div v-if="activeTab === 'notifications'">

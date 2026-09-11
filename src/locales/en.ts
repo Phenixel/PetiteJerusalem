@@ -295,7 +295,7 @@ const en: LocaleMessages = {
       myInfo: "My Information",
       security: "Security",
       appearance: "Appearance",
-      zmanim: "Zmanim",
+      preferences: "Preferences",
       notifications: "Notifications",
       about: "About",
     },
@@ -1107,6 +1107,12 @@ const en: LocaleMessages = {
     },
     pageTitle: "Reading",
     autoScroll: {
+      settingsTitle: "Automatic scrolling",
+      settingsDescription:
+        "A double tap on a text makes it scroll on its own, at reading pace. Turn it off if you would rather never trigger it by accident.",
+      option: "Offer automatic scrolling",
+      optionHint:
+        "Turned off, a double tap does nothing and any scrolling in progress stops. The pace is set while reading, in the pill at the bottom.",
       pill: "Scrolling",
       speed: "Speed",
       speeds: {

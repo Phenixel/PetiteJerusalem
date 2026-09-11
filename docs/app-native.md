@@ -292,6 +292,13 @@ Changer d'avis reprogramme les rappels d'horaires : ils sont posés sur des
 instants calculés, et ces instants viennent de bouger (voir
 `zmanReminderService`).
 
+L'**interrupteur du défilement automatique** (`useAutoScroll`) suit la même
+règle, et pour une raison plus forte encore : il se coupe précisément pour ne
+plus être surpris par un geste qu'on déclenche sans le vouloir. S'il revenait
+allumé au lancement suivant parce que le système a vidé le `localStorage`, le
+réglage n'aurait servi à rien. Il ne monte pas dans le compte : c'est l'écran
+tactile qui pose le problème, pas la personne.
+
 ## Géolocalisation (horaires du jour)
 
 La page **Horaires** calcule les zmanim pour la position de l'appareil quand

@@ -4,7 +4,7 @@
  *
  * C'est la porte du site : la page de réglages y est réservée aux comptes, et
  * le choix de l'opinion, lui, doit rester à portée de tous. Dans l'app, il vit
- * dans l'onglet Horaires des réglages (voir ProfilePage).
+ * dans l'onglet Préférences des réglages (voir ProfilePage).
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";

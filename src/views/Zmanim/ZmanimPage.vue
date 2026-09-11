@@ -337,9 +337,9 @@ function leaveCityPage(): void {
 /**
  * L'avis suivi pour le calcul (Rav Posen, Rav Ovadia Yossef). Sur le SITE, il
  * se change ici : la page de réglages y est réservée aux comptes, et l'avis
- * qu'on suit ne doit pas l'être. Dans l'app, il vit dans l'onglet Horaires des
- * réglages, avec le reste, et le bouton ne charge pas la page d'un réglage de
- * plus.
+ * qu'on suit ne doit pas l'être. Dans l'app, il vit dans l'onglet Préférences
+ * des réglages, avec le reste, et le bouton ne charge pas la page d'un réglage
+ * de plus.
  */
 const { opinion } = useZmanimOpinion();
 const opinionOpen = ref(false);

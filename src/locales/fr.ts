@@ -301,7 +301,7 @@ const fr = {
       myInfo: "Mes Informations",
       security: "Sécurité",
       appearance: "Apparence",
-      zmanim: "Horaires",
+      preferences: "Préférences",
       notifications: "Notifications",
       about: "À propos",
     },
@@ -556,7 +556,7 @@ const fr = {
       chatzotNight: "Milieu de la nuit qui vient",
     },
     /* L'avis suivi pour le calcul des horaires (voir services/zmanimOpinions) :
-       réglé dans l'onglet Horaires du profil sur l'app, et depuis la page
+       réglé dans l'onglet Préférences du profil sur l'app, et depuis la page
        elle-même sur le site, où les réglages sont réservés aux comptes. */
     opinions: {
       title: "Avis suivi pour les horaires",
@@ -1134,6 +1134,12 @@ const fr = {
     },
     pageTitle: "Lecture",
     autoScroll: {
+      settingsTitle: "Défilement automatique",
+      settingsDescription:
+        "Un double appui sur un texte le fait descendre tout seul, à l'allure d'une lecture. Coupez-le si vous préférez ne jamais le déclencher sans le vouloir.",
+      option: "Proposer le défilement automatique",
+      optionHint:
+        "Coupé, le double appui ne lance plus rien, et un défilement en cours s'arrête. L'allure se règle pendant la lecture, dans la pastille du bas.",
       pill: "Défilement",
       speed: "Vitesse",
       speeds: {

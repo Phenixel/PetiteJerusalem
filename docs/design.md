@@ -204,11 +204,38 @@ aussi bien depuis le site. Ce qui reste propre à l'app, c'est le rappel, que
 seul un téléphone peut faire sonner : son réglage ne paraît pas là où il ne
 tiendrait pas parole.
 
+### Trois onglets de réglages, trois questions
+
+Les réglages ne font pas une seule liste. **Apparence** répond à « à quoi
+cela ressemble » (thème, polices, taille du texte), **Notifications** à « ce
+qui sonne », **Préférences** à « comment l'application se comporte » : l'avis
+suivi pour les horaires, le défilement automatique, et ce qui viendra s'y
+ranger. Un même écran mêlant les trois obligeait à lire toute la page pour
+trouver la ligne qu'on cherchait.
+
+Ce qui atterrit dans Préférences y arrive en **section**, avec son titre et
+son cadre, séparée des autres par un simple écart : la liste s'allonge sans
+jamais devenir un formulaire.
+
+### Un geste qui surprend doit pouvoir se couper
+
+Le double appui qui lance le défilement automatique se fait tout seul : deux
+appuis rapprochés sur un téléphone, cela arrive, et le texte se met à
+descendre sans qu'on sache d'où cela vient. Un interrupteur des Préférences le
+retire alors complètement, geste compris, plutôt que de laisser chercher
+comment l'arrêter à chaque fois.
+
+Ce n'est pas la même chose que d'éteindre une fonctionnalité par défaut :
+elle reste proposée à tous, et seul qui s'en plaint la coupe. Ce réglage-là
+est gardé sur l'appareil, et deux fois plutôt qu'une (voir
+docs/app-native.md) : un réglage posé pour ne PLUS être surpris ne doit pas
+revenir tout seul au lancement suivant.
+
 ### Un réglage se pose là où il est atteignable
 
 L'avis suivi pour les horaires (Rav Posen, Rav Ovadia Yossef) gouverne toutes
 les heures de l'application : il a donc sa place avec les autres réglages,
-dans un onglet Horaires du profil. Sauf que sur le site, la page de réglages
+dans l'onglet Préférences du profil. Sauf que sur le site, la page de réglages
 est réservée aux comptes, et l'avis qu'on suit ne doit pas l'être : un bouton
 le porte alors sur la page des horaires elle-même, à côté du nom de la ville,
 et il annonce l'avis en cours plutôt qu'un mot vague comme « Réglages ».

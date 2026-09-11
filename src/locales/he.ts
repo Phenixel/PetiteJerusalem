@@ -280,7 +280,7 @@ const he: LocaleMessages = {
       myInfo: "המידע שלי",
       security: "אבטחה",
       appearance: "מראה",
-      zmanim: "זמנים",
+      preferences: "העדפות",
       notifications: "התראות",
       about: "אודות",
     },
@@ -1072,6 +1072,12 @@ const he: LocaleMessages = {
     },
     pageTitle: "קריאה",
     autoScroll: {
+      settingsTitle: "גלילה אוטומטית",
+      settingsDescription:
+        "הקשה כפולה על טקסט מגלילה אותו מעצמו, בקצב קריאה. אפשר לכבות אותה כדי לא להפעיל אותה בטעות.",
+      option: "אפשור הגלילה האוטומטית",
+      optionHint:
+        "כשהיא כבויה, הקשה כפולה אינה מפעילה דבר, וגלילה שכבר החלה נעצרת. את הקצב מכוונים תוך כדי הקריאה, בכפתור שלמטה.",
       pill: "גלילה",
       speed: "מהירות",
       speeds: {
