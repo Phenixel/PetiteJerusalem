@@ -634,6 +634,8 @@ const he: LocaleMessages = {
       inDays: "בעוד {n} ימים",
     },
     remove: "מחיקה",
+    removeConfirm: "למחוק את \u201c{name}\u201d?",
+    removeConfirmHint: "התאריך והתזכורת שלו נמחקים, ואין דרך לשחזר אותם.",
     removeAria: "מחיקת {name}",
     editAria: "עריכת {name}",
   },
