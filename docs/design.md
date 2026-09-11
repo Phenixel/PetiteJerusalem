@@ -213,9 +213,13 @@ suivi pour les horaires, le défilement automatique, et ce qui viendra s'y
 ranger. Un même écran mêlant les trois obligeait à lire toute la page pour
 trouver la ligne qu'on cherchait.
 
-Ce qui atterrit dans Préférences y arrive en **section**, avec son titre et
-son cadre, séparée des autres par un simple écart : la liste s'allonge sans
-jamais devenir un formulaire.
+Ce qui atterrit dans Préférences y arrive en **section**, avec son titre, et
+la section est faite de LIGNES séparées d'un filet, comme la liste des
+horaires. Pas de carte : une carte répond à une question qu'on est venu poser
+(voir « Le cadre se mérite »), un réglage est une ligne qu'on touche. Mises en
+cartes, trois sections empilées sur un fond beige donnaient trois boîtes
+blanches à la suite, et l'onglet ne fera que s'allonger. Les sections se
+séparent du même filet que leurs lignes.
 
 ### Un geste qui surprend doit pouvoir se couper
 

@@ -9,6 +9,10 @@
  * C'est l'appelant qui décide de l'afficher : l'onglet Notifications du profil
  * n'existe que dans l'app native, un navigateur n'ayant rien à programmer
  * (voir zmanReminderService).
+ *
+ * Des lignes séparées d'un filet, sans cadre, comme l'onglet Préférences et
+ * comme la liste des horaires : un réglage est une ligne qu'on touche, pas une
+ * carte qui répond à une question (voir docs/design.md).
  */
 import { computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
@@ -50,7 +54,7 @@ function delayLabel(minutes: number): string {
     <h2 class="mb-2 text-2xl font-bold text-text-primary">
       {{ t("zmanim.reminder.settingsTitle") }}
     </h2>
-    <p class="mb-6 text-text-secondary">{{ t("zmanim.reminder.settingsDescription") }}</p>
+    <p class="mb-3 text-text-secondary">{{ t("zmanim.reminder.settingsDescription") }}</p>
 
     <!-- Permission refusée : rien ne partira, et cela ne se règle que dans le
          téléphone. On le dit avant la liste, sinon les réglages du dessous
@@ -63,74 +67,74 @@ function delayLabel(minutes: number): string {
       {{ t("zmanim.reminder.permissionDenied") }}
     </p>
 
-    <div class="rounded-card bg-surface p-5 shadow-card">
-      <!-- Entrée du Chabbat et des fêtes -->
-      <label class="flex cursor-pointer items-center justify-between gap-3">
-        <span>
-          <span class="block font-semibold text-text-primary">
-            {{ t("zmanim.reminder.restOption") }}
+    <!-- Entrée du Chabbat et des fêtes -->
+    <ul class="flex flex-col divide-y divide-line">
+      <li>
+        <label class="flex cursor-pointer items-center justify-between gap-3 py-3">
+          <span class="min-w-0">
+            <span class="block font-semibold text-text-primary">
+              {{ t("zmanim.reminder.restOption") }}
+            </span>
+            <span class="block text-sm text-text-secondary leading-relaxed">
+              {{ t("zmanim.reminder.restOptionHint") }}
+            </span>
+          </span>
+          <span class="relative inline-flex shrink-0 items-center">
+            <input
+              type="checkbox"
+              class="sr-only peer"
+              :checked="restEnabled"
+              @change="toggleRest(($event.target as HTMLInputElement).checked)"
+            />
+            <span
+              class="w-10 h-5 bg-black/15 peer-focus-visible:outline-2 peer-focus-visible:outline-primary rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all peer-checked:bg-primary dark:bg-white/20"
+            ></span>
+          </span>
+        </label>
+      </li>
+    </ul>
+
+    <!-- Les rappels posés sur les horaires du jour -->
+    <h3 class="mt-6 mb-1 text-sm font-semibold text-text-secondary">
+      {{ t("zmanim.reminder.postedTitle") }}
+    </h3>
+    <p v-if="posted.length === 0" class="text-sm text-text-secondary">
+      {{ t("zmanim.reminder.postedEmpty") }}
+    </p>
+    <ul v-else class="flex flex-col divide-y divide-line">
+      <li
+        v-for="reminder in posted"
+        :key="reminder.key"
+        class="flex items-center justify-between gap-3 py-3"
+      >
+        <span class="min-w-0">
+          <span class="block font-medium leading-snug text-text-primary">
+            {{ t(`zmanim.names.${reminder.key}`) }}
           </span>
           <span class="block text-sm text-text-secondary">
-            {{ t("zmanim.reminder.restOptionHint") }}
+            {{ delayLabel(reminder.minutesBefore) }}
           </span>
         </span>
-        <span class="relative inline-flex shrink-0 items-center">
-          <input
-            type="checkbox"
-            class="sr-only peer"
-            :checked="restEnabled"
-            @change="toggleRest(($event.target as HTMLInputElement).checked)"
-          />
-          <span
-            class="w-10 h-5 bg-black/15 peer-focus-visible:outline-2 peer-focus-visible:outline-primary rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all peer-checked:bg-primary dark:bg-white/20"
-          ></span>
-        </span>
-      </label>
-
-      <!-- Les rappels posés sur les horaires du jour -->
-      <h3 class="mt-6 mb-1 text-sm font-semibold text-text-secondary">
-        {{ t("zmanim.reminder.postedTitle") }}
-      </h3>
-      <p v-if="posted.length === 0" class="text-sm text-text-secondary">
-        {{ t("zmanim.reminder.postedEmpty") }}
-      </p>
-      <ul v-else class="flex flex-col divide-y divide-line">
-        <li
-          v-for="reminder in posted"
-          :key="reminder.key"
-          class="flex items-center justify-between gap-3 py-2.5"
+        <button
+          type="button"
+          class="icon-btn shrink-0"
+          :aria-label="t('zmanim.reminder.removeAria', { name: t(`zmanim.names.${reminder.key}`) })"
+          @click="clearReminder(reminder.key)"
         >
-          <span class="min-w-0">
-            <span class="block font-medium leading-snug text-text-primary">
-              {{ t(`zmanim.names.${reminder.key}`) }}
-            </span>
-            <span class="block text-sm text-text-secondary">
-              {{ delayLabel(reminder.minutesBefore) }}
-            </span>
-          </span>
-          <button
-            type="button"
-            class="icon-btn shrink-0"
-            :aria-label="
-              t('zmanim.reminder.removeAria', { name: t(`zmanim.names.${reminder.key}`) })
-            "
-            @click="clearReminder(reminder.key)"
-          >
-            <AppIcon name="trash" :size="16" />
-          </button>
-        </li>
-      </ul>
-
-      <!-- Android 12+ : sans « alarmes et rappels », le système garde la
-           notification pour sa prochaine fenêtre de veille, et un rappel de
-           dix minutes avant peut arriver après l'horaire qu'il annonce. -->
-      <div v-if="!exactAlarms" class="mt-5 border-t border-line pt-4">
-        <p class="text-sm text-text-secondary">{{ t("zmanim.reminder.exactAlarms") }}</p>
-        <button type="button" class="btn btn-soft mt-2" @click="openExactAlarmSetting">
-          <AppIcon name="settings" :size="14" />
-          {{ t("zmanim.reminder.exactAlarmsCta") }}
+          <AppIcon name="trash" :size="16" />
         </button>
-      </div>
+      </li>
+    </ul>
+
+    <!-- Android 12+ : sans « alarmes et rappels », le système garde la
+         notification pour sa prochaine fenêtre de veille, et un rappel de
+         dix minutes avant peut arriver après l'horaire qu'il annonce. -->
+    <div v-if="!exactAlarms" class="mt-5 border-t border-line pt-4">
+      <p class="text-sm text-text-secondary">{{ t("zmanim.reminder.exactAlarms") }}</p>
+      <button type="button" class="btn btn-soft mt-2" @click="openExactAlarmSetting">
+        <AppIcon name="settings" :size="14" />
+        {{ t("zmanim.reminder.exactAlarmsCta") }}
+      </button>
     </div>
   </section>
 </template>

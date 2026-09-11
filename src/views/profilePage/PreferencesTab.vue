@@ -8,14 +8,16 @@ import ReadingSettings from "../../components/settings/ReadingSettings.vue";
  * à l'onglet Notifications (ce qui sonne).
  *
  * Il existe partout, site compris : ce sont des préférences de personne, pas
- * des réglages d'appareil. D'autres viendront s'y ranger ; chacune est une
- * section, dans son cadre, séparée des autres par un simple écart.
+ * des réglages d'appareil. D'autres viendront s'y ranger, chacune en section,
+ * et les sections se séparent d'un filet, comme leurs lignes : rien n'est mis
+ * en carte ici, sans quoi la page deviendrait un empilement de boîtes à mesure
+ * qu'elle s'allonge (voir docs/design.md).
  */
 </script>
 
 <template>
-  <div class="flex flex-col gap-10">
+  <div class="flex flex-col gap-8">
     <ZmanimSettings />
-    <ReadingSettings />
+    <ReadingSettings class="border-t border-line pt-8" />
   </div>
 </template>
