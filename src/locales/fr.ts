@@ -948,6 +948,7 @@ const fr = {
     remaining: "Restants",
   },
   seo: {
+    searchTitle: "Recherche {'|'} Petite Jérusalem",
     homeTitle: "Petite Jérusalem {'|'} Partager l'étude de la Torah et finir le Chass à plusieurs",
     homeDescription:
       "Plateforme gratuite pour étudier et partager la Torah à plusieurs : répartissez le Talmud pour finir le Chass, lisez les Tehilim à plusieurs pour une refoua chelema ou à la mémoire d'un proche, suivez la progression jusqu'au siyoum.",
@@ -1389,6 +1390,48 @@ const fr = {
       sidourSearch: "Rechercher dans le Sidour…",
       slihotSearch: "Rechercher dans les Sli'hot…",
       brahotSearch: "Rechercher une brakha…",
+    },
+  },
+  /* La recherche unique (/recherche) : textes, chaînes, chiourim, villes,
+     fêtes et pages au même endroit, au clavier ou à la voix. */
+  search: {
+    title: "Recherche",
+    subtitle:
+      "Un texte, une chaîne de lecture, un chiour, une ville, une fête : tout se cherche ici.",
+    placeholder: "Rechercher un texte, une chaîne, un chiour…",
+    launcherPlaceholder: "Rechercher dans Petite Jérusalem…",
+    hint: "Tapez un nom de traité, de psaume, de paracha, de ville ou de fête, ou dictez-le au micro. En hébreu, la recherche lit aussi le texte des livres présents sur l'appareil.",
+    clear: "Effacer",
+    noResults: "Rien ne correspond à « {term} ».",
+    more: "et {count} de plus",
+    sections: {
+      pages: "Pages",
+      texts: "Textes",
+      passages: "Dans les textes",
+      sessions: "Chaînes de lecture",
+      chiourim: "Chiourim",
+      cities: "Horaires",
+      festivals: "Calendrier",
+    },
+    finished: "Terminée",
+    remoteLoading: "Chaînes de lecture et chiourim en cours de chargement…",
+    remoteFailed:
+      "Les chaînes de lecture et les chiourim n'ont pas pu être chargés. Vérifiez la connexion et réessayez.",
+    offlineRemote: "Sans connexion, les chaînes de lecture et les chiourim ne se cherchent pas.",
+    passagesScope:
+      "Dans le texte de {count} livre présent sur l'appareil. | Dans le texte des {count} livres présents sur l'appareil.",
+    passagesShort: "Tapez au moins {count} lettres pour chercher dans le texte.",
+    passagesSearching: "Lecture des textes…",
+    passagesNone: "Aucun passage ne contient « {term} » dans les livres présents sur l'appareil.",
+    voice: {
+      start: "Dicter",
+      stop: "Arrêter la dictée",
+      listening: "Je vous écoute…",
+      unsupported: "La dictée n'est pas disponible sur cet appareil.",
+      denied: "L'accès au micro a été refusé. Vous pouvez l'autoriser dans les réglages de l'appareil.",
+      noSpeech: "Je n'ai rien entendu.",
+      network: "La dictée demande une connexion sur cet appareil.",
+      error: "La dictée a échoué. Réessayez.",
     },
   },
   watch: {

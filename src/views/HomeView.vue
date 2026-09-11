@@ -27,6 +27,7 @@ import { isNativeApp } from "../composables/useNativeApp";
 import { useHomeAccountCta } from "../composables/useHomeAccountCta";
 import SiteFooter from "../components/SiteFooter.vue";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
+import SearchLauncher from "../components/SearchLauncher.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
 import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
 import IllustrationBibliotheque from "../components/illustrations/IllustrationBibliotheque.vue";
@@ -209,6 +210,12 @@ onUnmounted(() => {
 
 <template>
   <main class="flex-1 container mx-auto px-4 py-6 flex flex-col justify-center">
+    <!-- La recherche unique, avant tout le reste : un texte, une chaîne, un
+         chiour, une ville, une fête, à taper ou à dicter. Dans l'app, c'est
+         son entrée (la barre du bas n'a pas d'onglet de plus à donner). -->
+    <div class="w-full mb-6 md:mb-8 enter-rise">
+      <SearchLauncher />
+    </div>
     <!-- ===== Connecté : accueil personnalisé, hors carte ===== -->
     <template v-if="user">
       <!-- La salutation ne remplit qu'une demi-largeur : les raccourcis du

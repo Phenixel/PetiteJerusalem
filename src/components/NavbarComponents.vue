@@ -56,6 +56,9 @@ const navLinks = computed(() => [
   // horaires, que personne ne trouvait. L'app en fait un onglet (PageTabs),
   // le site une entrée de bandeau.
   { to: localePath("calendrier"), labelKey: "calendar.navTitle", exact: true },
+  // La recherche unique, en bout de bandeau : tout ce qui précède se cherche
+  // aussi là. L'app y accède par le champ de l'accueil (SearchLauncher).
+  { to: "/recherche", labelKey: "search.title", exact: true },
 ]);
 
 function toggleMobileMenu() {

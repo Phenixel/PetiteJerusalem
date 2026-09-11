@@ -12,6 +12,9 @@ juive.
   (limoud).
 - **Réservation de textes** : chacun réserve les parties de texte qu'il
   étudiera.
+- **Recherche unique** : textes, chaînes de lecture, chiourim, villes, fêtes
+  et pages au même endroit (`/recherche`), au clavier ou à la voix ; en
+  hébreu, elle lit aussi le texte des livres présents sur l'appareil.
 - **Internationalisation (i18n)** : français, anglais, hébreu.
 - **Interface moderne** : responsive et soignée, avec TailwindCSS.
 

@@ -200,6 +200,18 @@ export function isEntryAvailableOffline(entry: TextStudyJsonEntry): boolean {
   return BUNDLED_PATHS.has(book.path) || isDownloaded(book.path);
 }
 
+/**
+ * Le livre d'une entrée est-il déjà sur l'appareil, embarqué ou téléchargé ?
+ * Sur le web comme dans l'app : c'est le périmètre de la recherche dans les
+ * textes (textContentSearch), qui ne va pas chercher un livre sur le réseau.
+ * Un type que le lecteur ne lit pas n'a rien à chercher.
+ */
+export function isEntryOnDevice(entry: TextStudyJsonEntry): boolean {
+  const book = bookForEntry(entry);
+  if (!book) return false;
+  return BUNDLED_PATHS.has(book.path) || isDownloaded(book.path);
+}
+
 /** Livres à télécharger pour que ces entrées soient lisibles hors ligne (sans doublon). */
 export function missingBooksForEntries(entries: TextStudyJsonEntry[]): OfflineBook[] {
   if (!isNativeApp) return [];

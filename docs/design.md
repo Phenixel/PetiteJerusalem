@@ -210,6 +210,31 @@ de tout ce qui part sans retour, et seulement de cela : ce qu'on peut refaire
 d'un geste, une case cochée, un rappel posé, ne se fait pas confirmer, sans
 quoi la question ne voudrait plus rien dire.
 
+### Une seule recherche, à taper ou à dire
+
+Chaque liste avait la sienne : la bibliothèque cherchait un texte, le partage
+une chaîne, les chiourim un chiour, les horaires une ville. Elles restent,
+parce qu'on filtre la liste qu'on a sous les yeux ; mais quand on ne sait pas
+encore dans quelle liste chercher, une seule page répond (`/recherche`), et
+l'accueil en porte le champ, avant les trois portes.
+
+Trois règles y tiennent :
+
+- Les résultats se rangent par **sections** (Pages, Textes, Dans les textes,
+  Chaînes de lecture, Chiourim, Horaires, Calendrier), chacune faite de
+  **lignes séparées d'un filet**, jamais de cartes : un résultat est un
+  endroit où aller, pas une réponse (voir « Le cadre se mérite »). Le corpus
+  d'un texte se lit sur une pastille, le livre en sous-titre.
+- Le **micro vit dans le champ**, à droite de la croix, et nulle part ailleurs.
+  Ouvert, il prend la couleur du thème et bat doucement, et une ligne sous le
+  champ dit « Je vous écoute… » : ce que l'on dit s'écrit dans le champ au fil
+  de la parole, comme si on le tapait. Le micro ne paraît que là où la dictée
+  peut exister.
+- Le mot trouvé **dans un texte** est surligné d'un fond léger de la couleur du
+  thème, sans changer l'encre, dans un extrait coupé aux mots ; la ligne dit
+  d'où il vient (livre, chapitre, verset) et l'ouvre au même endroit dans le
+  lecteur.
+
 ### Trois onglets de réglages, trois questions
 
 Les réglages ne font pas une seule liste. **Apparence** répond à « à quoi

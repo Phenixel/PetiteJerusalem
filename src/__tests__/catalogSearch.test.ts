@@ -34,6 +34,11 @@ describe("recherche du catalogue", () => {
     expect(normalizeSearch("  Sli’hot ")).toBe("sli'hot");
   });
 
+  it("ignore les voyelles et la cantillation de l'hébreu", () => {
+    expect(normalizeSearch("בְּרֵאשִׁ֖ית")).toBe("בראשית");
+    expect(matchesSearch({ name: "בְּרָכוֹת (Berakhot)" }, "ברכות")).toBe(true);
+  });
+
   it("cherche aussi dans le livre ou le seder", () => {
     expect(filterBySearch(TEXTS, "zeraim").map((t) => t.id)).toEqual([1]);
     expect(filterBySearch(TEXTS, "sefer").map((t) => t.id)).toEqual([103]);

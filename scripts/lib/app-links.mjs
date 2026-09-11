@@ -71,6 +71,7 @@ export const APP_LINK_PATHS = [
   "/paracha",
   "/partage-tehilim",
   "/profile",
+  "/recherche",
   "/session-management",
   "/share-reading",
   "/studio",

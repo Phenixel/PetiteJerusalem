@@ -69,7 +69,7 @@ variable pour pointer l'app native sur son propre Vite.)
 
 | Script | Rôle |
 |---|---|
-| `npm run app:build` | build web + retrait des corpus volumineux (`app:prune`) + retrait des SDK OAuth inutilisés (`app:prune-spm`) + `cap sync` |
+| `npm run app:build` | build web + retrait des corpus volumineux (`app:prune`) + retrait des SDK OAuth inutilisés (`app:prune-spm`) + paquet Swift du plugin de dictée (`app:spm-speech`) + `cap sync` |
 | `npm run cap:sync` | synchronise web + plugins vers les projets natifs |
 | `npm run cap:android` | build + ouvre Android Studio |
 | `npm run cap:ios` | build + ouvre Xcode |
@@ -317,6 +317,54 @@ le calcul est local, les coordonnées restent en `localStorage`.
 - **iOS** : `scripts/setup-ios.mjs` ajoute `NSLocationWhenInUseUsageDescription`
   à `ios/App/App/Info.plist`. C'est indispensable, sans cette clé, iOS
   **ferme l'app** à la première demande de position.
+
+## Recherche vocale (dictée)
+
+La page **Recherche** (`/recherche`, `src/views/SearchPage.vue`) cherche tout
+au même endroit : le catalogue des textes, les chaînes de lecture, les
+chiourim, les villes des horaires, les fêtes du calendrier, les pages de l'app,
+et le texte même des livres présents sur l'appareil (en hébreu). Le micro du
+champ, et celui de l'accueil, dictent ce qu'on cherche.
+
+- **Web** : l'API Web Speech du navigateur (Chrome, Edge, Safari). Absente de
+  Firefox : le micro n'y paraît pas (`speechMayBeAvailable`).
+- **App native** : la webview n'a pas cette API, l'app passe par
+  `@capacitor-community/speech-recognition` (`src/services/speechRecognition.ts`,
+  chargé à la demande). Il parle au `SpeechRecognizer` d'Android et au
+  `SFSpeechRecognizer` d'iOS.
+- **Android** : le manifest du plugin apporte `RECORD_AUDIO` et la visibilité
+  du service de reconnaissance ; `scripts/setup-android.mjs` déclare en plus
+  le micro **facultatif** (`uses-feature`), sans quoi la permission écarterait
+  du Play Store les appareils qui n'en ont pas.
+- **iOS** : `scripts/setup-ios.mjs` ajoute `NSMicrophoneUsageDescription` et
+  `NSSpeechRecognitionUsageDescription` à `Info.plist`. Comme pour la position,
+  sans ces chaînes iOS **ferme l'app** à la première demande.
+- **iOS, le paquet Swift** : le plugin (7.0.1) ne connaît que CocoaPods, et
+  `cap sync` laisse de côté, avec un simple avertissement, tout plugin sans
+  `Package.swift`. `scripts/spm-speech-recognition.mjs` (rejoué à chaque
+  `app:build`, avant `cap sync`) lui en écrit un dans `node_modules`, avec une
+  copie de sa classe et la conformité `CAPBridgedPlugin` que sa macro
+  Objective-C déclarait. Un test le tient (`spmSpeechRecognition.test.ts`) ;
+  le script s'efface de lui-même le jour où le plugin livrera son paquet.
+
+**Hors ligne.** La reconnaissance se fait sur l'appareil quand le système a la
+langue installée en local (Android 12 et plus avec les services vocaux de
+Google, iOS 13 et plus pour le français, l'anglais et l'hébreu) ; sinon le
+système passe par le réseau et, sans lui, la dictée échoue proprement (toast
+« demande une connexion »). Le choix appartient au système : le plugin
+n'expose pas de mode « local seulement ». La langue de reconnaissance suit
+celle de l'interface (fr-FR, en-US, he-IL).
+
+Ce qui se cherche sans réseau : tout ce qui voyage avec le bundle (catalogue,
+villes, fêtes, pages) et, dans le texte, les livres embarqués ou téléchargés
+(`isEntryOnDevice`). Les chaînes de lecture et les chiourim viennent de
+Firestore : hors ligne, son cache persistant sert ce qu'il a, et la page dit
+ce qui manque.
+
+Vérification : ouvrir la recherche, toucher le micro, dire « Berakhot » (le
+traité paraît), puis en hébreu « אשרי האיש » (le psaume 1 paraît dans « Dans
+les textes ») ; en mode avion, retaper les deux : les mêmes résultats, et la
+ligne qui dit que les chaînes et les chiourim ne se cherchent pas.
 
 ## Retour arrière
 

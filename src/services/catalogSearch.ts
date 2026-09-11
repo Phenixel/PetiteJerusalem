@@ -15,12 +15,26 @@ export interface SearchableText {
 }
 
 /**
- * Forme comparable d'une chaîne : minuscules, sans accents, une seule graphie
- * d'apostrophe. « Min’ha », « Sli'hot » et « berechit » se trouvent ainsi
- * quelle que soit la touche tapée.
+ * Les signes de l'hébreu qui ne sont pas des lettres : voyelles (niqqud),
+ * cantillation (te'amim), méteg, rafé, points du chin et du sin. On les
+ * retire avant de comparer : on tape « ברכות » sans voyelles, alors que le
+ * texte les porte.
+ */
+const HEBREW_MARKS = /[\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7]/g;
+
+/** La chaîne sans ses signes hébraïques (voir HEBREW_MARKS). */
+export function stripHebrewMarks(value: string): string {
+  return value.replace(HEBREW_MARKS, "");
+}
+
+/**
+ * Forme comparable d'une chaîne : minuscules, sans accents, sans voyelles ni
+ * cantillation hébraïques, une seule graphie d'apostrophe. « Min’ha »,
+ * « Sli'hot », « berechit » et « בְּרֵאשִׁית » se trouvent ainsi quelle que
+ * soit la touche tapée.
  */
 export function normalizeSearch(value: string): string {
-  return value
+  return stripHebrewMarks(value)
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[‘’ʼ`]/g, "'")

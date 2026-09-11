@@ -105,6 +105,21 @@ if (!manifest.includes('android:name="android.hardware.camera"')) {
   console.log("setup-android: caméra déclarée facultative (uses-feature)");
 }
 
+// Le micro aussi : la dictée de la recherche (plugin
+// @capacitor-community/speech-recognition, dont le manifest apporte déjà
+// RECORD_AUDIO et la visibilité du service de reconnaissance). Sans cette
+// ligne, la permission suffirait à écarter du Play Store les appareils sans
+// micro, alors que l'app s'y lit très bien sans dicter.
+const MICROPHONE_FEATURE =
+  '<uses-feature android:name="android.hardware.microphone" android:required="false" />';
+if (!manifest.includes('android:name="android.hardware.microphone"')) {
+  manifest = manifest.replace(
+    /(<uses-permission android:name="android\.permission\.INTERNET"\s*\/>)/,
+    `$1\n\n    ${MICROPHONE_FEATURE}`,
+  );
+  console.log("setup-android: micro déclaré facultatif (uses-feature)");
+}
+
 writeFileSync(manifestPath, manifest);
 
 // 3. google-services.json (config Firebase, requis pour auth native + push)

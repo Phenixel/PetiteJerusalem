@@ -235,6 +235,20 @@ addEntry(
   "NSCameraUsageDescription",
 );
 
+// La dictée de la recherche (@capacitor-community/speech-recognition) : le
+// micro et la reconnaissance vocale ont chacun leur chaîne d'usage, et iOS
+// ferme l'app à la première demande s'il en manque une.
+addEntry(
+  "NSMicrophoneUsageDescription",
+  "\t<string>Le micro sert à dicter ce que vous cherchez dans l’application. Rien n’est enregistré.</string>",
+  "NSMicrophoneUsageDescription",
+);
+addEntry(
+  "NSSpeechRecognitionUsageDescription",
+  "\t<string>La reconnaissance vocale transcrit ce que vous dictez pour lancer une recherche. Sur les appareils qui la font en local, rien ne quitte votre iPhone.</string>",
+  "NSSpeechRecognitionUsageDescription",
+);
+
 // Réception des notifications push quand l'app est en arrière-plan.
 addEntry(
   "UIBackgroundModes",

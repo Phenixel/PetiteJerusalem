@@ -25,6 +25,7 @@ const CalendarPage = () => import("../views/Zmanim/CalendarPage.vue");
 const TehilimPage = () => import("../views/TehilimPage.vue");
 const SeoGuidePage = () => import("../views/SeoGuidePage.vue");
 const ParashaPage = () => import("../views/Library/ParashaPage.vue");
+const SearchPage = () => import("../views/SearchPage.vue");
 
 import type { NavigationGuardWithThis, RouteRecordSingleView } from "vue-router";
 import {
@@ -149,6 +150,17 @@ export default [
     path: "/share-reading/session/:slug",
     name: "detail-session",
     component: DetailSession,
+  },
+  // La recherche unique : textes, chaînes, chiourim, villes, fêtes et pages
+  // de l'app au même endroit, à la voix aussi. Le catalogue, les villes et
+  // les fêtes voyagent avec le bundle et les textes présents sur l'appareil
+  // se cherchent sans réseau : la page se rend hors ligne, les sources en
+  // ligne s'y disent indisponibles.
+  {
+    path: "/recherche",
+    name: "search",
+    meta: { offlineOk: true },
+    component: SearchPage,
   },
   {
     path: "/bibliotheque",

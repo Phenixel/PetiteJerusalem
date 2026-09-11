@@ -13,7 +13,7 @@ npm run test:unit          # vitest, mode interactif
 npx vitest run             # une seule passe, ce que fait `npm run verify`
 ```
 
-Les 99 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
+Les 112 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
 (`vitest.config.ts`) prend l'environnement `jsdom` par défaut ; les tests qui
 n'ont pas besoin du DOM (ceux qui lisent le dépôt ou lancent un script)
 commencent par `// @vitest-environment node`. Les dossiers `e2e/`, `android/`,
@@ -38,6 +38,7 @@ avec ce que chacun attend :
 | `prerenderSeo.test.ts` | Le prérendu (`seoPages.ts`) injecte titre, description, canonique, Open Graph, JSON-LD et corps explorable comme attendu, et les sitemaps se construisent à partir des mêmes listes de pages. |
 | `pruneNativeBundle.test.ts` | Le bundle natif ne garde rien du prérendu SEO : pages HTML générées, sitemaps, `robots.txt`, `llms.txt` ; l'app démarre sur la coquille nue `app.html`. |
 | `textsManifest.test.ts` | `public/texts/manifest.json` correspond aux fichiers de textes (`scripts/texts-manifest.mjs --check`) : un texte corrigé sans que le manifeste suive ne serait corrigé que pour qui n'a rien téléchargé. |
+| `spmSpeechRecognition.test.ts` | Le paquet Swift que `scripts/spm-speech-recognition.mjs` fabrique pour le plugin de dictée (qui ne connaît que CocoaPods) se construit à partir du plugin réellement installé : classe reconnue, nom JS et méthodes de la macro repris un à un, script idempotent ; sans lui, `cap sync` laisse le plugin hors du build iOS. |
 | `xcodeWidgets.test.ts` | La cible d'extension des widgets iOS que `scripts/lib/xcode-widgets.mjs` écrit dans le `project.pbxproj` est valide, à partir du vrai template Capacitor de `node_modules` ; personne n'a de macOS pour l'ouvrir dans Xcode. |
 | `xcodeWatch.test.ts` | Même chose pour la cible de l'app Apple Watch (`scripts/lib/xcode-watch.mjs`). |
 | `lastmod.test.ts` | Le `lastmod` du sitemap vient de git (`scripts/lib/lastmod.mjs`) : la date du dernier commit qui a touché le fichier de la page, vérifiée sur un dépôt jetable. |
@@ -53,8 +54,8 @@ et la règle.
 
 La suite pilote l'app dans Chromium, sur le serveur de dev Vite, et vérifie ce
 que voit un visiteur : accueil, bibliothèque, lecteur, horaires, calendrier,
-langues, puis comptes, chaînes de lecture et chiourim contre les émulateurs
-Firebase.
+langues, puis comptes, chaînes de lecture, chiourim et recherche unique contre
+les émulateurs Firebase.
 
 ### Configuration
 

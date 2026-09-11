@@ -245,6 +245,7 @@ jobs:
           mkdir -p dist
           echo '<!doctype html><title>debug</title>' > dist/index.html
           node scripts/prune-spm-providers.mjs
+          node scripts/spm-speech-recognition.mjs
           npx cap sync ios
 
       # xcodebuild et altool lisent la clé d'API dans ce dossier conventionnel.
