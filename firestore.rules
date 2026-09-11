@@ -210,7 +210,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && request.auth.uid == userId;
       allow create, update: if isAuthenticated()
         && request.auth.uid == userId
-        && request.resource.data.size() <= 20
+        && request.resource.data.size() <= 25
         && (!('theme' in request.resource.data) || (request.resource.data.theme is string && request.resource.data.theme.size() <= 20))
         && (!('fontLatin' in request.resource.data) || (request.resource.data.fontLatin is string && request.resource.data.fontLatin.size() <= 20))
         && (!('fontHebrew' in request.resource.data) || (request.resource.data.fontHebrew is string && request.resource.data.fontHebrew.size() <= 20))
@@ -240,7 +240,14 @@ service cloud.firestore {
         && (!('bookmarks' in request.resource.data) || (request.resource.data.bookmarks is list && request.resource.data.bookmarks.size() <= 200))
         // Marque-pages supprimés (tombstones de synchronisation). Le client
         // taille à 300 entrées ; borne large pour empêcher un gonflement du doc.
-        && (!('deletedBookmarks' in request.resource.data) || (request.resource.data.deletedBookmarks is map && request.resource.data.deletedBookmarks.size() <= 400));
+        && (!('deletedBookmarks' in request.resource.data) || (request.resource.data.deletedBookmarks is map && request.resource.data.deletedBookmarks.size() <= 400))
+        // Dates personnelles du calendrier hébraïque (anniversaire, leilouy
+        // nichmat) : le client en garde 40 au plus (MAX_OCCASIONS), borne
+        // large ici pour empêcher un gonflement du document.
+        && (!('hebrewOccasions' in request.resource.data) || (request.resource.data.hebrewOccasions is list && request.resource.data.hebrewOccasions.size() <= 60))
+        // Opinion suivie pour les horaires (voir services/zmanimOpinions) :
+        // une clé courte, « posen » ou « ovadia ».
+        && (!('zmanimOpinion' in request.resource.data) || (request.resource.data.zmanimOpinion is string && request.resource.data.zmanimOpinion.size() <= 20));
       allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
 

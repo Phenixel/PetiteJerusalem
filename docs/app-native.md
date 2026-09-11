@@ -185,6 +185,125 @@ chkia est recalculée côté serveur dans `functions/src/sunsetReminder.ts`
 `@hebcal/core`, qui la donne dans l'application, est publié en ESM seul quand
 `functions/` compile en CommonJS.
 
+## Rappels d'horaires (notifications locales)
+
+Posés depuis la page **Horaires**, en touchant l'horaire voulu, ou en tirant sa
+ligne vers la gauche : le geste franc pose ou retire le rappel avec le délai de
+la dernière fois, le geste retenu ouvre la ligne sur sa cloche (voir
+`docs/design.md`). Ils se comptent et se coupent depuis l'onglet
+**Notifications** du profil, où vit aussi le rappel de l'entrée du **Chabbat et
+des fêtes**, actif d'office, une heure avant l'allumage des bougies.
+
+Rien ne passe par un serveur, contrairement au rappel de lecture : un horaire
+se calcule sur l'appareil, la notification est donc programmée sur l'appareil
+aussi (`@capacitor/local-notifications`). Aucune position n'est confiée à
+personne, et le téléphone sonne à l'heure dite même sans réseau.
+
+Un horaire n'a pas d'heure fixe : une notification « tous les jours à 6 h 13 »
+serait fausse dès le lendemain. `src/services/zmanReminderService.ts` programme
+donc une suite d'instants exacts, chacun calculé pour son jour, et reprend la
+programmation à chaque retour au premier plan, au changement de lieu et au
+changement de langue. La fenêtre est partagée entre les rappels posés, iOS ne
+gardant que 64 notifications en attente par application : de deux à quatorze
+jours selon leur nombre. Les identifiants vivent dans une plage réservée, pour
+n'annuler que les nôtres et laisser les autres notifications de l'app en place.
+
+Les réglages restent sur l'appareil (`localStorage`, voir
+`src/composables/useZmanReminders.ts`) et ne montent pas dans le compte : c'est
+le téléphone qui fera sonner le rappel, à partir du lieu choisi sur ce
+téléphone-là.
+
+- **Android** : `scripts/setup-android.mjs` ajoute `SCHEDULE_EXACT_ALARM`.
+  Sans elle, le système garde la notification pour sa prochaine fenêtre de
+  veille, et un rappel de dix minutes avant peut arriver après l'horaire qu'il
+  annonce ; la page de réglages propose alors d'ouvrir le réglage système
+  (`changeExactNotificationSetting`). Les rappels ont leur canal (`pj-zmanim`),
+  pour se couper séparément des rappels de lecture.
+- **iOS** : rien de plus à déclarer, c'est la permission de notification déjà
+  demandée pour les push.
+
+La permission est demandée au premier geste qui la réclame, jamais au
+lancement : poser un rappel, activer celui du Chabbat, ou ouvrir la page des
+horaires alors que celui du Chabbat est actif d'office.
+
+## Dates personnelles du calendrier
+
+Un anniversaire, un leilouy nichmat : des dates du calendrier **hébraïque**,
+qui reviennent chaque année à leur jour. Elles se posent depuis la page
+**Calendrier** (bouton « Mes dates »), s'y lisent au milieu des fêtes de
+l'année, et portent leur propre rappel, programmé comme les rappels d'horaires
+(`zmanReminderService`).
+
+Deux particularités du calendrier sont tranchées dans
+`src/services/hebrewOccasions.ts`, plutôt que dans chaque écran :
+
+- une date d'**Adar** revient en **Adar II** les années à treize mois, l'usage
+  séfarade que suit le reste du site ;
+- le **30** d'un mois qui n'en compte que 29 ('Hechvan, Kislev selon l'année)
+  revient le 29, dernier jour du mois.
+
+Trois moments de rappel, parce que le jour hébraïque commence la veille au
+soir : à l'entrée du jour (au coucher du soleil du lieu, le moment d'allumer
+une bougie), le matin du jour civil, ou une semaine avant. Les deux derniers
+partent à 9 h du fuseau de l'**appareil**, là où vit celui qui les reçoit, et
+non du lieu des horaires.
+
+Une date qui arrive dans les sept jours paraît aussi sur l'**accueil**
+(`OccasionsBanner.vue`, chargé à la demande comme les autres cartes du moment :
+il tire le calendrier hébraïque, qui n'a rien à faire dans le premier rendu).
+
+Les dates vivent dans le `localStorage` (`src/composables/useHebrewOccasions.ts`)
+ET dans le compte (`userPreferences.hebrewOccasions`), et ce sont deux rôles
+distincts : l'appareil est le socle, lu en synchrone, qui sert sans compte et
+sans réseau et que `zmanReminderService` suit ; le compte les emporte d'un
+appareil à l'autre et jusqu'au site. Une date inscrite sur un téléphone se
+retrouve donc dans un navigateur, ce que l'écran qui les tient annonce.
+
+L'adoption n'a lieu qu'une fois par compte et par appareil : à la première
+connexion, ce qui a été saisi sans compte rejoint le compte (union des deux
+listes, `mergeOccasions`) ; ensuite le compte fait foi et remplace la copie
+locale, sans quoi une date supprimée ailleurs serait ressuscitée à chaque
+connexion. Une écriture que le réseau refuse est retenue et repart au retour de
+la connexion. Le site porte donc les dates comme l'app ; seul le **rappel**
+reste l'affaire du téléphone, et son réglage ne paraît pas dans un navigateur.
+
+## Réglages gardés sur l'appareil
+
+Le `localStorage` d'une webview n'est pas durable : le système peut le vider
+sous la pression mémoire, et l'utilisateur au vidage du cache de l'app. Un
+réglage de confort perdu au lancement suivant, c'est peu, mais c'est agaçant.
+
+Ces réglages-là passent donc tous par `services/devicePreference` : il écrit
+dans les deux stockages, le `localStorage` pour la lecture synchrone du
+premier rendu et les préférences natives pour la durée, et relit le natif
+quand le premier n'a rien à dire.
+
+La **taille du texte** des pages de lecture (A− / A+ et le pincement,
+`useReadingSize`) est donc écrite deux fois : dans le `localStorage`, seul
+lisible en synchrone, donc dès le premier rendu ; et dans les préférences
+natives (`@capacitor/preferences` : SharedPreferences côté Android,
+UserDefaults côté iOS), qui survivent et servent de filet, relu au premier
+usage du réglage. Elle ne monte pas dans le compte : un téléphone tenu à bout
+de bras et un ordinateur ne demandent pas la même taille.
+
+L'**avis suivi pour les horaires** (`useZmanimOpinion`) est écrit de la même
+façon, pour la même raison : les zmanim se calculent au premier rendu, et un
+réglage qui n'arriverait qu'après ferait sauter toutes les heures de la page
+sous les yeux. La différence est qu'il MONTE dans le compte : l'avis qu'on
+suit ne dépend pas de l'appareil qu'on a en main. Le compte l'emporte quand il
+en porte un, l'appareil décide sinon.
+
+Changer d'avis reprogramme les rappels d'horaires : ils sont posés sur des
+instants calculés, et ces instants viennent de bouger (voir
+`zmanReminderService`).
+
+L'**interrupteur du défilement automatique** (`useAutoScroll`) suit la même
+règle, et pour une raison plus forte encore : il se coupe précisément pour ne
+plus être surpris par un geste qu'on déclenche sans le vouloir. S'il revenait
+allumé au lancement suivant parce que le système a vidé le `localStorage`, le
+réglage n'aurait servi à rien. Il ne monte pas dans le compte : c'est l'écran
+tactile qui pose le problème, pas la personne.
+
 ## Géolocalisation (horaires du jour)
 
 La page **Horaires** calcule les zmanim pour la position de l'appareil quand

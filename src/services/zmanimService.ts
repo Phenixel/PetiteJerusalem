@@ -13,6 +13,13 @@ import {
 import "@hebcal/locales/fr";
 import { dateTimeFormat, displayNames } from "./intlCache";
 import { saidTachanun } from "./tachanun";
+import {
+  DEFAULT_ZMANIM_OPINION,
+  opinionZmanim,
+  zmanimOpinionStore,
+  type OpinionZmanim,
+  type ZmanimOpinion,
+} from "./zmanimOpinions";
 
 /**
  * Horaires de la journée (zmanim), calculés en local.
@@ -166,34 +173,66 @@ const ZMAN_DEFS = [
   // jour civil a changé, mais le milieu de sa nuit, souvent vers 1 h, n'est
   // pas forcément passé, et c'est lui qu'on vient vérifier à cette heure-là.
   { key: "chatzotNightDawn", period: "dawn", at: (z: Zmanim) => z.chatzotNight() },
-  { key: "alotHaShachar", period: "dawn", at: (z: Zmanim) => z.alotHaShachar() },
-  { key: "misheyakir", period: "dawn", at: (z: Zmanim) => z.misheyakir() },
+  { key: "alotHaShachar", period: "dawn", at: (z, _n, o) => o.alotHaShachar(z) },
+  { key: "misheyakir", period: "dawn", at: (z, _n, o) => o.misheyakir(z) },
   { key: "sunrise", period: "dawn", at: (z: Zmanim) => z.sunrise() },
-  { key: "sofZmanShmaMGA", period: "morning", at: (z: Zmanim) => z.sofZmanShmaMGA() },
+  { key: "sofZmanShmaMGA", period: "morning", at: (z, _n, o) => o.sofZmanShmaMGA(z) },
   { key: "sofZmanShma", period: "morning", at: (z: Zmanim) => z.sofZmanShma() },
-  { key: "sofZmanTfillaMGA", period: "morning", at: (z: Zmanim) => z.sofZmanTfillaMGA() },
+  { key: "sofZmanTfillaMGA", period: "morning", at: (z, _n, o) => o.sofZmanTfillaMGA(z) },
   { key: "sofZmanTfilla", period: "morning", at: (z: Zmanim) => z.sofZmanTfilla() },
   { key: "chatzot", period: "afternoon", at: (z: Zmanim) => z.chatzot() },
-  { key: "minchaGedola", period: "afternoon", at: (z: Zmanim) => z.minchaGedola() },
+  { key: "minchaGedola", period: "afternoon", at: (z, _n, o) => o.minchaGedola(z) },
   { key: "minchaKetana", period: "afternoon", at: (z: Zmanim) => z.minchaKetana() },
-  { key: "plagHaMincha", period: "afternoon", at: (z: Zmanim) => z.plagHaMincha() },
+  { key: "plagHaMincha", period: "afternoon", at: (z, _n, o) => o.plagHaMincha(z) },
   { key: "sunset", period: "evening", at: (z: Zmanim) => z.sunset() },
-  { key: "tzeit", period: "evening", at: (z: Zmanim) => z.tzeit() },
+  { key: "tzeit", period: "evening", at: (z, _n, o) => o.tzeit(z) },
   // Milieu de la nuit qui suit le jour affiché : lu sur le lendemain, dont la
   // nuit précédente est justement celle-là.
   { key: "chatzotNight", period: "evening", at: (_z: Zmanim, next: Zmanim) => next.chatzotNight() },
 ] as const satisfies readonly {
   key: string;
   period: ZmanPeriod;
-  at: (z: Zmanim, next: Zmanim) => Date;
+  at: (z: Zmanim, next: Zmanim, opinion: OpinionZmanim) => Date;
 }[];
 
 export type ZmanKey = (typeof ZMAN_DEFS)[number]["key"];
+
+/**
+ * Les clés des horaires, dans l'ordre de la journée. Un horaire n'est pas
+ * toujours calculable (nuit polaire) et la liste d'un jour peut donc être plus
+ * courte : celle-ci dit ce qui existe, indépendamment d'un jour et d'un lieu.
+ * Les rappels s'en servent pour donner à chaque horaire un identifiant système
+ * stable (voir zmanReminderService).
+ */
+export const ZMAN_KEYS: ZmanKey[] = ZMAN_DEFS.map((def) => def.key);
 
 export interface ZmanTime {
   key: ZmanKey;
   period: ZmanPeriod;
   date: Date;
+}
+
+/**
+ * L'opinion suivie par tous les calculs de ce module (voir zmanimOpinions).
+ *
+ * Un réglage, et non un paramètre passé de proche en proche : les horaires
+ * sont demandés d'une dizaine d'endroits (l'accueil, le sidour, les widgets,
+ * les rappels, la page des horaires), et tous doivent lire la même. C'est
+ * useZmanimOpinion qui la pose, au chargement du réglage et à chaque
+ * changement.
+ */
+let currentOpinion: ZmanimOpinion = zmanimOpinionStore.read() ?? DEFAULT_ZMANIM_OPINION;
+
+/** L'opinion suivie en ce moment. */
+export function zmanimOpinion(): ZmanimOpinion {
+  return currentOpinion;
+}
+
+/** Change l'opinion suivie, et vide ce qui a été calculé avec la précédente. */
+export function setZmanimOpinion(opinion: ZmanimOpinion): void {
+  if (opinion === currentOpinion) return;
+  currentOpinion = opinion;
+  zmanimCache.clear();
 }
 
 /** Minutes avant le coucher du soleil pour l'allumage des bougies (usage diaspora). */
@@ -269,7 +308,7 @@ function isUsable(date: Date): boolean {
  */
 export function computeZmanim(place: ZmanimPlace, day: Date = new Date()): ZmanTime[] {
   const localDay = dayInPlace(place, day);
-  const key = `${place.latitude}|${place.longitude}|${place.tzid}|${localDay.getTime()}`;
+  const key = `${place.latitude}|${place.longitude}|${place.tzid}|${localDay.getTime()}|${currentOpinion}`;
   const cached = zmanimCache.get(key);
   if (cached) return cached;
   const times = computeZmanimFor(place, localDay);
@@ -291,9 +330,10 @@ function computeZmanimFor(place: ZmanimPlace, localDay: Date): ZmanTime[] {
   nextDay.setDate(nextDay.getDate() + 1);
   const nextZmanim = new Zmanim(gloc, nextDay, false);
 
+  const opinion = opinionZmanim(currentOpinion);
   const times: ZmanTime[] = [];
   for (const def of ZMAN_DEFS) {
-    const date = def.at(zmanim, nextZmanim);
+    const date = def.at(zmanim, nextZmanim, opinion);
     // Nuit ou jour polaire : l'horaire n'existe pas, on ne l'affiche pas.
     if (!isUsable(date)) continue;
     // Le milieu de la nuit en cours n'appartient au jour que s'il tombe après
@@ -500,11 +540,16 @@ function civilNoon(hd: HDate): Date {
 export interface RestPeriod {
   /** Allumage des bougies : 18 minutes avant la chkia de la veille (40 à Jérusalem). */
   start: Date;
-  /** Sortie des étoiles du dernier jour. */
+  /**
+   * Sortie du dernier jour, telle que l'opinion suivie la donne : la sortie
+   * des étoiles pour le Rav Posen, 40 minutes après la chkia pour le luah
+   * Or Ha'Haïm (voir zmanimOpinions).
+   */
   end: Date;
   /**
-   * Sortie selon Rabbénou Tam : 72 minutes après la chkia du dernier jour,
-   * pour qui suit cet avis. Null quand la chkia ne se calcule pas.
+   * Sortie selon Rabbénou Tam, 72 minutes après la chkia du dernier jour
+   * (fixes ou zmaniyot selon l'opinion), pour qui suit cet avis. Null quand
+   * la chkia ne se calcule pas.
    */
   endRabbenouTam: Date | null;
   first: HDate;
@@ -517,9 +562,6 @@ export interface RestPeriod {
 
 /** Trois jours de repos d'affilée au maximum (Yom Tov de deux jours + Chabbat). */
 const MAX_REST_DAYS = 3;
-
-/** Minutes après la chkia de la sortie selon Rabbénou Tam. */
-const RABBENOU_TAM_MINUTES = 72;
 
 /**
  * Le temps de repos auquel appartient ce jour hébraïque, ou null si c'en est
@@ -541,12 +583,13 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
   eve.setDate(eve.getDate() - 1);
   const start = new Zmanim(gloc, eve, false).sunsetOffset(-candleLightingMinutes(place), true);
   const lastDay = new Zmanim(gloc, civilNoon(last), false);
-  const end = lastDay.tzeit();
+  const opinion = opinionZmanim(currentOpinion);
+  const end = opinion.restEnd(lastDay);
   if (!isUsable(start) || !isUsable(end)) return null;
   // Aux hautes latitudes en été, la sortie des étoiles peut dépasser les
   // 72 minutes : une sortie Rabbénou Tam plus tôt que la sortie ordinaire
   // n'apprend rien, on ne la donne pas.
-  const rabbenouTam = lastDay.sunsetOffset(RABBENOU_TAM_MINUTES, true);
+  const rabbenouTam = opinion.rabbenouTam(lastDay);
   const endRabbenouTam =
     isUsable(rabbenouTam) && rabbenouTam.getTime() > end.getTime() ? rabbenouTam : null;
 
@@ -563,7 +606,8 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
 
 /** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */
 export function nightfallOf(place: ZmanimPlace, hd: HDate): Date | null {
-  const end = new Zmanim(geoLocationOf(place), civilNoon(hd), false).tzeit();
+  const zmanim = new Zmanim(geoLocationOf(place), civilNoon(hd), false);
+  const end = opinionZmanim(currentOpinion).tzeit(zmanim);
   return isUsable(end) ? end : null;
 }
 
@@ -770,6 +814,21 @@ const FRENCH_MONTHS: Record<string, string> = {
   "Adar I": "Adar I",
   "Adar II": "Adar II",
 };
+
+/**
+ * Le nom d'un mois hébraïque, dans la langue de l'interface.
+ *
+ * L'année compte : le douzième mois s'appelle « Adar » dans une année
+ * ordinaire et « Adar I » dans une année à treize mois. Le français passe par
+ * la table ci-dessus plutôt que par hebcal, qui écrit « H̲echvan » avec une
+ * marque diacritique que le reste du site n'emploie pas.
+ */
+export function hebrewMonthName(month: number, year: number, locale: string): string {
+  const name = HDate.getMonthName(month, year);
+  if (locale === "he") return Locale.gettext(name, "he");
+  if (locale === "fr") return FRENCH_MONTHS[name] ?? name;
+  return name;
+}
 
 /** "21 Av 5786", en hébreu pointé pour la locale he, translittéré sinon. */
 export function formatHebrewDate(hd: HDate, locale: string): string {

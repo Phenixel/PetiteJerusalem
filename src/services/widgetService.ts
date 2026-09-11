@@ -3,6 +3,7 @@ import { watch } from "vue";
 import { isNativeApp } from "../composables/useNativeApp";
 import { useTheme } from "../composables/useTheme";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
+import { useZmanimOpinion } from "../composables/useZmanimOpinion";
 import { i18n, loadLocaleMessages, type SupportedLocale } from "../i18n";
 import { localDayKey } from "./dateService";
 import { authService, type User } from "./authService";
@@ -110,6 +111,12 @@ class WidgetService {
 
     // Changement de langue : les libellés des payloads doivent suivre.
     watch(i18n.global.locale, () => void this.refresh());
+
+    // Changement d'avis pour les horaires : toutes les heures des payloads
+    // bougent, et le widget de l'écran d'accueil montrerait les anciennes
+    // jusqu'au prochain retour au premier plan (voir zmanimOpinions).
+    const { opinion } = useZmanimOpinion();
+    watch(opinion, () => void this.refresh());
 
     // Changement de thème : l'accent des widgets est celui de l'app.
     const { currentThemeId } = useTheme();

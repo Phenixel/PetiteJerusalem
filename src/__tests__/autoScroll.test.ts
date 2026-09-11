@@ -184,4 +184,55 @@ describe("défilement automatique", () => {
     app.unmount();
     expect(isAutoScrolling.value).toBe(false);
   });
+
+  /**
+   * L'interrupteur des réglages : deux appuis rapprochés arrivent sans qu'on
+   * l'ait voulu, et qui l'a coupé ne doit plus rien voir descendre.
+   */
+  describe("coupé dans les réglages", () => {
+    it("est proposé tant que personne ne l'a coupé", async () => {
+      const { autoScrollEnabled } = await import("../composables/useAutoScroll");
+
+      expect(autoScrollEnabled.value).toBe(true);
+    });
+
+    it("ne répond plus au double appui", async () => {
+      const { isAutoScrolling, setAutoScrollEnabled } = await import(
+        "../composables/useAutoScroll"
+      );
+      const { host } = await mountReadingPage();
+      setAutoScrollEnabled(false);
+
+      doubleClick(host.querySelector("p")!);
+      expect(isAutoScrolling.value).toBe(false);
+
+      // Rallumé, le geste revaut : couper n'est pas une porte à sens unique.
+      now += 1000;
+      setAutoScrollEnabled(true);
+      doubleClick(host.querySelector("p")!);
+      expect(isAutoScrolling.value).toBe(true);
+    });
+
+    it("arrête sur-le-champ ce qui descend", async () => {
+      const { isAutoScrolling, setAutoScrollEnabled } = await import(
+        "../composables/useAutoScroll"
+      );
+      const { host } = await mountReadingPage();
+
+      doubleClick(host.querySelector("p")!);
+      expect(isAutoScrolling.value).toBe(true);
+
+      setAutoScrollEnabled(false);
+      expect(isAutoScrolling.value).toBe(false);
+    });
+
+    it("le reste au lancement suivant", async () => {
+      const module = await import("../composables/useAutoScroll");
+      module.setAutoScrollEnabled(false);
+
+      vi.resetModules();
+      const relaunched = await import("../composables/useAutoScroll");
+      expect(relaunched.autoScrollEnabled.value).toBe(false);
+    });
+  });
 });

@@ -69,6 +69,11 @@ const PERMISSIONS = [
     comment: "Rappel de lecture quotidien (Android 13+ exige la permission explicite)",
   },
   {
+    name: "android.permission.SCHEDULE_EXACT_ALARM",
+    comment:
+      "Rappels d'horaires à l'heure exacte (sans elle, Android les garde pour ses fenêtres de veille et un rappel de dix minutes avant arrive après l'horaire)",
+  },
+  {
     name: "android.permission.ACCESS_COARSE_LOCATION",
     comment: "Horaires (zmanim) calculés pour la position de l'appareil",
   },

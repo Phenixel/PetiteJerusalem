@@ -11,7 +11,9 @@ import type { IconName } from "../components/icons/registry";
 import ProfileHeader from "./profilePage/ProfileHeader.vue";
 import UserInfoForm from "./profilePage/UserInfoForm.vue";
 import SecuritySettings from "./profilePage/SecuritySettings.vue";
+import AppearanceTab from "./profilePage/AppearanceTab.vue";
 import PreferencesTab from "./profilePage/PreferencesTab.vue";
+import NotificationsTab from "./profilePage/NotificationsTab.vue";
 import AboutTab from "./profilePage/AboutTab.vue";
 import { isNativeApp } from "../composables/useNativeApp";
 import { SITE_URL } from "../config/site";
@@ -23,7 +25,7 @@ const currentUser = ref<User | null>(null);
 // Le profil ne garde que le compte : la lecture du jour vit dans la
 // bibliothèque et les sessions suivies/créées dans le partage de lectures
 // (les raccourcis du menu y mènent).
-type TabId = "my-info" | "security" | "preferences" | "about";
+type TabId = "my-info" | "security" | "appearance" | "preferences" | "notifications" | "about";
 const activeTab = ref<TabId>("my-info");
 const isLoading = ref(true);
 
@@ -38,8 +40,17 @@ const visibleTabs = computed<{ id: TabId; label: string }[]>(() => {
       { id: "security", label: t("profile.tabs.security") },
     );
   }
+  tabs.push({ id: "appearance", label: t("profile.tabs.appearance") });
+  // Les préférences (avis suivi pour les horaires, défilement automatique)
+  // sont des choix de personne, pas des réglages d'appareil : l'onglet existe
+  // donc aussi sur le site.
   tabs.push({ id: "preferences", label: t("profile.tabs.preferences") });
-  if (isNativeApp) tabs.push({ id: "about", label: t("profile.tabs.about") });
+  // Les rappels d'horaires se programment sur le téléphone : rien à régler
+  // dans un navigateur, l'onglet n'y existe donc pas.
+  if (isNativeApp) {
+    tabs.push({ id: "notifications", label: t("profile.tabs.notifications") });
+    tabs.push({ id: "about", label: t("profile.tabs.about") });
+  }
   return tabs;
 });
 
@@ -105,7 +116,7 @@ onMounted(() => {
       }
       // App native, sans compte : les onglets de compte n'existent pas.
       if (activeTab.value === "my-info" || activeTab.value === "security") {
-        activeTab.value = "preferences";
+        activeTab.value = "appearance";
       }
     }
   });
@@ -185,9 +196,7 @@ onUnmounted(() => {
         <nav class="lg:sticky lg:top-24 h-fit card p-3">
           <template v-if="currentUser">
             <!-- Raccourcis vers les fonctionnalités déplacées dans leurs sections. -->
-            <p
-              class="px-4 pt-2 pb-1 text-sm font-semibold text-text-secondary"
-            >
+            <p class="px-4 pt-2 pb-1 text-sm font-semibold text-text-secondary">
               {{ t("profile.shortcuts.title") }}
             </p>
             <ul class="flex flex-col gap-1 mb-4">
@@ -223,9 +232,7 @@ onUnmounted(() => {
               </li>
             </ul>
 
-            <p
-              class="px-4 pt-1 pb-1 text-sm font-semibold text-text-secondary"
-            >
+            <p class="px-4 pt-1 pb-1 text-sm font-semibold text-text-secondary">
               {{ t("profile.shortcuts.accountTitle") }}
             </p>
           </template>
@@ -261,8 +268,16 @@ onUnmounted(() => {
             <SecuritySettings />
           </div>
 
+          <div v-if="activeTab === 'appearance'">
+            <AppearanceTab :user-id="currentUser?.id ?? null" />
+          </div>
+
           <div v-if="activeTab === 'preferences'">
-            <PreferencesTab :user-id="currentUser?.id ?? null" />
+            <PreferencesTab />
+          </div>
+
+          <div v-if="activeTab === 'notifications'">
+            <NotificationsTab />
           </div>
 
           <div v-if="activeTab === 'about'">

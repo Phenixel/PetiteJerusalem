@@ -109,6 +109,10 @@ describe("i18n usage", () => {
       "errors.",
       "home.sidourNow.names.",
       "moderation.reasons.",
+      "occasions.kinds.",
+      "occasions.notify.",
+      "occasions.reminders.",
+      "occasions.when.",
       "profile.appearances.",
       "profile.fontsHebrew.",
       "profile.fontsLatin.",
@@ -122,6 +126,9 @@ describe("i18n usage", () => {
       "textReading.zman.",
       "zmanim.hints.",
       "zmanim.names.",
+      // Les deux avis du calcul des horaires (voir services/zmanimOpinions).
+      "zmanim.opinions.ovadia.",
+      "zmanim.opinions.posen.",
       "zmanim.periods.",
       "zmanim.tachanun.",
     ];

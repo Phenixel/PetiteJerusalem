@@ -39,6 +39,9 @@ const BirkatHalevanaBanner = defineAsyncComponent(
   () => import("../components/BirkatHalevanaBanner.vue"),
 );
 const OmerBanner = defineAsyncComponent(() => import("../components/OmerBanner.vue"));
+// Les dates qu'on a inscrites au calendrier, la semaine où elles arrivent.
+// Même moteur de calendrier hébraïque, même chargement à la demande.
+const OccasionsBanner = defineAsyncComponent(() => import("../components/OccasionsBanner.vue"));
 // Le raccourci du sidour : pendant la plage horaire d'un office, l'accueil
 // mène au texte. Même moteur d'horaires, même chargement à la demande.
 const SidourNowCard = defineAsyncComponent(() => import("../components/SidourNowCard.vue"));
@@ -215,9 +218,7 @@ onUnmounted(() => {
            les nuits de la bénédiction de la lune, l'Omer) : le reste du temps
            la moitié droite est simplement vide, et la salutation garde sa
            ligne. -->
-      <div
-        class="w-full max-w-6xl mx-auto mb-8 grid gap-4 md:grid-cols-2 md:items-center md:gap-8"
-      >
+      <div class="w-full max-w-6xl mx-auto mb-8 grid gap-4 md:grid-cols-2 md:items-center md:gap-8">
         <div class="enter-rise">
           <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight">
             {{ greeting }},
@@ -237,6 +238,10 @@ onUnmounted(() => {
                mois, qui se rate faute de rappel. Absente le reste du temps. -->
           <BirkatHalevanaBanner />
           <OmerBanner />
+
+          <!-- Ce qu'on a inscrit soi-même au calendrier : un anniversaire, un
+               leilouy nichmat. Absent le reste de l'année. -->
+          <OccasionsBanner />
         </div>
       </div>
 
@@ -319,6 +324,7 @@ onUnmounted(() => {
         <SidourNowCard />
         <BirkatHalevanaBanner />
         <OmerBanner />
+        <OccasionsBanner />
       </div>
     </div>
 

@@ -160,6 +160,7 @@ Les scripts de `scripts/*.mjs` qui n'ont pas de commande npm se lancent avec
 | `build-sidour.mjs` | Construit les textes du sidour de semaine (Cha'harit, Min'ha, Arvit) à partir du même Siddur, au format des fichiers de tefila. |
 | `download-texts.mjs` | Télécharge tous les textes référencés depuis l'export public Sefaria (GCS) vers `public/texts/`. |
 | `generate-cities.mjs` | Régénère `src/datas/cities.json`, la liste de villes du sélecteur de la page Horaires, avec les coordonnées de geonames. |
+| `generate-hiloulot.mjs` | Régénère `src/datas/hiloulot.json` et `hiloulot.he.json`, les hiloulot des grands rabbanim jour par jour, depuis le calendrier Rabbi Ovadiah Yosef (MIT). |
 | `generate-talmud-chapters.mjs` | Génère `public/texts/talmud-chapters.json` en repérant les frontières de chapitres dans le texte brut du Talmud (Sefaria). |
 | `generate-torah-weekday.mjs` | Écrit `src/datas/torahWeekday.json`, la lecture de la Torah du lundi et du jeudi matin, paracha par paracha. |
 | `texts-manifest.mjs` | Écrit `public/texts/manifest.json` ; `--check` échoue si le manifeste ne correspond plus aux fichiers. |

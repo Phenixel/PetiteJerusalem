@@ -142,6 +142,126 @@ partage, comme sur les pages d'un corpus (`activeOn` dans `BottomTabBar.vue`,
 le `active-class` de RouterLink comparant les routes déclarées et non les
 adresses).
 
+### Une ligne de liste peut devenir une commande
+
+Dans l'app, une ligne d'horaire n'est plus seulement du texte : la toucher pose
+un rappel, la tirer vers la gauche découvre, du côté de l'heure, un fond de la
+couleur du thème portant une cloche (voir `ZmanRow.vue`). Sur le site, la même ligne reste du
+texte : il n'y a rien à programmer dans un navigateur, et une commande qui ne
+mène nulle part serait pire que pas de commande du tout.
+
+Quatre règles en découlent, valables pour toute liste qui s'anime ainsi.
+
+Le geste a trois issues, et c'est le doigt qui choisit laquelle. Retenu, il
+laisse la ligne revenir. Arrêté en chemin, il l'ouvre sur sa cloche, qu'on
+touche alors pour ouvrir les réglages : on a le temps de lire ce qu'on
+déclenche. Poussé franchement, au-delà de la moitié de la ligne, il agit seul
+et la ligne se referme sur son résultat, annoncé par un toast. Le raccourci
+récompense l'assurance sans piéger l'hésitation.
+
+Le fond découvert est plein, de la couleur du thème, et il occupe exactement
+la place que la ligne libère en partant : il n'y a ni cadre ni surface
+intermédiaire, et son icône se tient au milieu de ce qu'on a découvert, jamais
+à cheval sur ce qui reste. Le repère d'angle, lui, s'efface le temps du geste :
+posé contre un tiroir de la même couleur, il n'aurait plus été un repère mais
+une bavure.
+
+Le premier mouvement franc arbitre entre défiler et glisser. Sans cet
+arbitrage, un pouce qui parcourt la page ouvrait les lignes au passage. Et une
+seule ligne reste ouverte à la fois, sinon la liste se couvre de tiroirs
+entrouverts.
+
+Ce qu'un geste a produit se voit sans être lu. Un rappel posé marque sa ligne
+d'un petit triangle plein dans l'angle, du côté de l'heure : une cloche posée
+dans le texte aurait mangé la place du nom sur un téléphone, et une ligne sur
+deux marquée aurait fait une colonne d'icônes. L'angle, lui, ne prend la place
+de rien et se repère d'un coup d'oeil en parcourant la liste. Le triangle suit
+le sens de lecture (bordures logiques), il change donc de côté en hébreu.
+
+### Ce qui est à soi se range avec le reste
+
+Les dates qu'on ajoute au calendrier (un anniversaire, un leilouy nichmat) ne
+font pas une liste à part, sous les fêtes ou derrière un onglet. Elles se
+rangent dans le calendrier de l'année, à leur date, entre Chemini Atzéret et
+'Hanouka s'il le faut : la question posée est la même, « qu'est-ce qui vient
+cette année », et deux listes obligeaient à la poser deux fois.
+
+Ce qui les distingue est le dessin qui les ouvre, pas un cadre ni une couleur
+de fond : une bougie pour un leilouy nichmat, un gâteau pour un anniversaire.
+Une carte se lit alors comme une fête, et son icône dit d'un coup d'oeil qu'
+elle est à nous. Elle est de surcroît la seule qui se touche : on retombe sur
+son réglage, là où on l'a posée.
+
+Mais le calendrier, on n'y va pas tous les jours, et une date qu'on a pris la
+peine d'inscrire mérite de venir au-devant : elle paraît sur l'accueil la
+semaine où elle arrive, dans la colonne du moment, avec le sidour de l'office
+et la bénédiction de la lune, puis s'efface le reste de l'année. Trois au
+plus : au-delà, ce n'est plus un rappel mais une liste, et la liste a sa place
+dans le calendrier.
+
+Une date pareille survit à un téléphone : elle suit le compte, et se pose donc
+aussi bien depuis le site. Ce qui reste propre à l'app, c'est le rappel, que
+seul un téléphone peut faire sonner : son réglage ne paraît pas là où il ne
+tiendrait pas parole.
+
+### Trois onglets de réglages, trois questions
+
+Les réglages ne font pas une seule liste. **Apparence** répond à « à quoi
+cela ressemble » (thème, polices, taille du texte), **Notifications** à « ce
+qui sonne », **Préférences** à « comment l'application se comporte » : l'avis
+suivi pour les horaires, le défilement automatique, et ce qui viendra s'y
+ranger. Un même écran mêlant les trois obligeait à lire toute la page pour
+trouver la ligne qu'on cherchait.
+
+Ce qui atterrit dans Préférences y arrive en **section**, avec son titre, et
+la section est faite de LIGNES séparées d'un filet, comme la liste des
+horaires. Pas de carte : une carte répond à une question qu'on est venu poser
+(voir « Le cadre se mérite »), un réglage est une ligne qu'on touche. Mises en
+cartes, trois sections empilées sur un fond beige donnaient trois boîtes
+blanches à la suite, et l'onglet ne fera que s'allonger. Les sections se
+séparent du même filet que leurs lignes.
+
+### Un geste qui surprend doit pouvoir se couper
+
+Le double appui qui lance le défilement automatique se fait tout seul : deux
+appuis rapprochés sur un téléphone, cela arrive, et le texte se met à
+descendre sans qu'on sache d'où cela vient. Un interrupteur des Préférences le
+retire alors complètement, geste compris, plutôt que de laisser chercher
+comment l'arrêter à chaque fois.
+
+Ce n'est pas la même chose que d'éteindre une fonctionnalité par défaut :
+elle reste proposée à tous, et seul qui s'en plaint la coupe. Ce réglage-là
+est gardé sur l'appareil, et deux fois plutôt qu'une (voir
+docs/app-native.md) : un réglage posé pour ne PLUS être surpris ne doit pas
+revenir tout seul au lancement suivant.
+
+### Un réglage se pose là où il est atteignable
+
+L'avis suivi pour les horaires (Rav Posen, Rav Ovadia Yossef) gouverne toutes
+les heures de l'application : il a donc sa place avec les autres réglages,
+dans l'onglet Préférences du profil. Sauf que sur le site, la page de réglages
+est réservée aux comptes, et l'avis qu'on suit ne doit pas l'être : un bouton
+le porte alors sur la page des horaires elle-même, à côté du nom de la ville,
+et il annonce l'avis en cours plutôt qu'un mot vague comme « Réglages ».
+
+C'est la même règle que pour le lieu de calcul : le nom de la ville EST le
+bouton qui la change. Ce qu'on lit et ce qu'on règle sont au même endroit, et
+le bouton dit l'état avant de proposer le changement.
+
+Dans l'app, le bouton n'est pas repris : la page y est déjà coiffée de deux
+onglets et d'une barre du bas, et les réglages sont à un geste.
+
+### Ce qui clôt une page se lit à la fin
+
+Les hiloulot du jour ferment la page des horaires, sous la dernière heure et
+avant la note de bas de page, comme le calendrier imprimé les met au bas de sa
+colonne. Pas de carte : une carte répond à une question qu'on est venu poser,
+celle-ci ne se pose pas en ouvrant la page (voir « Le cadre se mérite »). Un
+titre de groupe, le même que ceux des moments de la journée, et des noms.
+
+Certains jours en portent dix-neuf. On en montre quatre, le reste se déplie :
+la page se termine sur une ligne, pas sur un annuaire.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.

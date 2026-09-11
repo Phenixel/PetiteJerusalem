@@ -300,7 +300,9 @@ const fr = {
     tabs: {
       myInfo: "Mes Informations",
       security: "Sécurité",
+      appearance: "Apparence",
       preferences: "Préférences",
+      notifications: "Notifications",
       about: "À propos",
     },
     shortcuts: {
@@ -510,14 +512,18 @@ const fr = {
       rabbenouTam: "Sortie Rabbénou Tam",
       rabbenouTamNote:
         "La sortie selon Rabbénou Tam est comptée 72 minutes après le coucher du soleil.",
-      note: "Allumage {minutes} minutes avant le coucher du soleil, sortie à la sortie des étoiles. Un jour de fête qui suit le Chabbat, on allume après la sortie, à partir d'une flamme déjà allumée.",
+      rabbenouTamNoteZmaniyot:
+        "La sortie selon Rabbénou Tam est comptée 72 minutes zmaniyot après le coucher du soleil, proportionnelles à la longueur du jour.",
+      exitAtNightfall: "sortie à la sortie des étoiles",
+      exitAfterSunset: "sortie {minutes} minutes après le coucher du soleil",
+      note: "Allumage {minutes} minutes avant le coucher du soleil, {exit}. Un jour de fête qui suit le Chabbat, on allume après la sortie, à partir d'une flamme déjà allumée.",
     },
     shabbat: {
       title: "Chabbat",
       parasha: "Parachat",
       candleLighting: "Allumage des bougies",
       havdalah: "Sortie de Chabbat",
-      note: "Allumage {minutes} minutes avant le coucher du soleil, sortie à la sortie des étoiles.",
+      note: "Allumage {minutes} minutes avant le coucher du soleil, {exit}.",
     },
     names: {
       chatzotNightDawn: "'Hatsot de la nuit",
@@ -553,6 +559,120 @@ const fr = {
       tzeit: "Nuit : Arvit, fin de Chabbat et des jeûnes",
       chatzotNight: "Milieu de la nuit qui vient",
     },
+    /* L'avis suivi pour le calcul des horaires (voir services/zmanimOpinions) :
+       réglé dans l'onglet Préférences du profil sur l'app, et depuis la page
+       elle-même sur le site, où les réglages sont réservés aux comptes. */
+    opinions: {
+      title: "Avis suivi pour les horaires",
+      description:
+        "Les luhot ne définissent pas les zmanim de la même façon. Choisissez celui que vous suivez : toutes les heures de l'application s'y accordent.",
+      change: "Changer l'avis suivi pour les horaires",
+      note: "Le choix vaut partout : la page des horaires, l'accueil, le sidour du moment et les rappels. Pour la pratique, l'avis de votre rav prime.",
+      posen: {
+        name: "Rav Meïr Posen (Ohr Meïr)",
+        short: "Rav Posen",
+        hint: "Le calcul par degrés du soleil sous l'horizon, celui des calendriers d'Europe : aube à 16,1°, talith à 11,5°, sortie des étoiles à 8,5°, Rabbénou Tam 72 minutes après la chkia.",
+      },
+      ovadia: {
+        name: "Rav Ovadia Yossef (Or Ha'Haïm)",
+        short: "Rav Ovadia",
+        hint: "Le calcul en minutes zmaniyot, proportionnelles à la longueur du jour : aube 72 minutes avant le lever, sortie des étoiles 13,5 minutes après la chkia, sortie du Chabbat 40 minutes.",
+      },
+    },
+    /* Les hiloulot du jour, au bas de la page (voir services/hiloulot). */
+    hiloulot: {
+      title: "Hiloulot du jour",
+      more: "Voir un autre nom | Voir {count} autres noms",
+      note: "Liste reprise du calendrier Or Ha'Haïm. Les jours de disparition diffèrent parfois d'un recensement à l'autre.",
+    },
+    /* Rappels d'horaires (app native) : posés en touchant un horaire de la
+       liste, programmés sur l'appareil, voir zmanReminderService. */
+    reminder: {
+      title: "Me rappeler cet horaire",
+      chooseDelay: "Combien de temps avant",
+      minutes: "{minutes} min",
+      atTime: "à l'heure",
+      before: "{minutes} minutes avant",
+      none: "aucun",
+      less: "Moins de minutes",
+      more: "Plus de minutes",
+      remove: "Retirer",
+      removeAria: "Retirer le rappel de {name}",
+      dailyNote: "Le rappel revient chaque jour, à l'heure de ce jour-là, calculée pour {place}.",
+      rowAria: "{name}, {time}. Rappel\u00a0: {reminder}. Toucher pour le régler.",
+      openAria: "Régler le rappel de {name}",
+      setToast: "Rappel posé\u00a0: {name}, {minutes} minutes avant.",
+      setToastNow: "Rappel posé\u00a0: {name}, à l'heure.",
+      clearedToast: "Rappel retiré\u00a0: {name}.",
+      permissionDenied:
+        "Les notifications sont bloquées pour cette application. Autorisez-les dans les réglages du téléphone, puis réessayez.",
+      settingsTitle: "Rappels des horaires",
+      settingsDescription:
+        "Un rappel se pose sur la page Horaires, en touchant l'horaire voulu. Il est gardé sur cet appareil, c'est lui qui le fera sonner.",
+      restOption: "Entrée de Chabbat et des fêtes",
+      restOptionHint: "Une notification une heure avant l'allumage des bougies.",
+      postedTitle: "Horaires rappelés",
+      postedEmpty: "Aucun pour l'instant.",
+      exactAlarms:
+        "Tant que les alarmes et rappels ne sont pas autorisés, Android garde les notifications pour ses fenêtres de veille\u00a0: le rappel peut arriver quelques minutes trop tard.",
+      exactAlarmsCta: "Autoriser les alarmes",
+      channelName: "Rappels des horaires",
+      channelDescription: "Les horaires du jour que vous demandez à ne pas manquer.",
+      notifyBody: "Dans {minutes} minutes, à {time}.",
+      notifyNow: "C'est l'heure\u00a0: {time}.",
+      notifyRest: "L'entrée est à {time}, dans une heure.",
+    },
+  },
+  /* Dates personnelles du calendrier hébraïque (app native) : anniversaires,
+     leilouy nichmat. Gardées sur l'appareil, voir useHebrewOccasions. */
+  occasions: {
+    open: "Mes dates",
+    title: "Mes dates",
+    description: "Vos dates du calendrier hébraïque, qui reviennent chaque année à leur jour.",
+    empty: "Aucune date pour l'instant.",
+    onAccount:
+      "Elles suivent votre compte\u00a0: vous les retrouvez sur le site et sur vos autres appareils.",
+    onDevice: "Sans compte, elles ne quittent pas cet appareil.",
+    remindersInApp: "Les rappels se règlent dans l'application, seule à pouvoir les faire sonner.",
+    add: "Ajouter une date",
+    full: "La liste est pleine.",
+    formTitle: "Une date",
+    name: "Nom",
+    namePlaceholder: "Ex\u00a0: Papy Élie",
+    kind: "Ce que la date rappelle",
+    kinds: {
+      yahrzeit: "Leilouy nichmat",
+      birthday: "Anniversaire",
+      other: "Autre",
+    },
+    date: "Date hébraïque",
+    dayOfMonth: "{day} {month}",
+    nextOn: "Revient le {civil} ({hebrew})",
+    reminder: "Rappel",
+    reminders: {
+      none: "Aucun",
+      nightfall: "À l'entrée du jour",
+      morning: "Le matin",
+      weekBefore: "Une semaine avant",
+    },
+    /* Ce que dit la notification, le nom de la date faisant le titre. */
+    notify: {
+      none: "{date}",
+      nightfall: "Le jour commence ce soir\u00a0: {date}.",
+      morning: "C'est aujourd'hui, {date}.",
+      weekBefore: "Dans une semaine, {date}.",
+    },
+    note: "Le jour hébraïque commence la veille au coucher du soleil. Une date d'Adar revient en Adar II les années à treize mois, et le 30 d'un mois qui n'en compte que 29 revient le 29.",
+    /* Bandeau de l'accueil : ce qui arrive dans la semaine. */
+    banner: "{when}, {date}",
+    when: {
+      today: "Aujourd'hui",
+      tomorrow: "Demain",
+      inDays: "Dans {n} jours",
+    },
+    remove: "Supprimer",
+    removeAria: "Supprimer {name}",
+    editAria: "Modifier {name}",
   },
   security: {
     title: "Sécurité",
@@ -1018,6 +1138,12 @@ const fr = {
     },
     pageTitle: "Lecture",
     autoScroll: {
+      settingsTitle: "Défilement automatique",
+      settingsDescription:
+        "Un double appui sur un texte le fait descendre tout seul, à l'allure d'une lecture. Coupez-le si vous préférez ne jamais le déclencher sans le vouloir.",
+      option: "Proposer le défilement automatique",
+      optionHint:
+        "Coupé, le double appui ne lance plus rien, et un défilement en cours s'arrête. L'allure se règle pendant la lecture, dans la pastille du bas.",
       pill: "Défilement",
       speed: "Vitesse",
       speeds: {

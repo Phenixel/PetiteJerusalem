@@ -294,7 +294,9 @@ const en: LocaleMessages = {
     tabs: {
       myInfo: "My Information",
       security: "Security",
+      appearance: "Appearance",
       preferences: "Preferences",
+      notifications: "Notifications",
       about: "About",
     },
     shortcuts: {
@@ -497,14 +499,18 @@ const en: LocaleMessages = {
       end: "Ends",
       rabbenouTam: "Ends (Rabbeinu Tam)",
       rabbenouTamNote: "The Rabbeinu Tam end time is 72 minutes after sunset.",
-      note: "Candle lighting {minutes} minutes before sunset, ends at nightfall. When a festival follows Shabbat, light after nightfall from an existing flame.",
+      rabbenouTamNoteZmaniyot:
+        "The Rabbeinu Tam end time is 72 seasonal minutes after sunset, proportional to the length of the day.",
+      exitAtNightfall: "ends at nightfall",
+      exitAfterSunset: "ends {minutes} minutes after sunset",
+      note: "Candle lighting {minutes} minutes before sunset, {exit}. When a festival follows Shabbat, light after nightfall from an existing flame.",
     },
     shabbat: {
       title: "Shabbat",
       parasha: "Parashat",
       candleLighting: "Candle lighting",
       havdalah: "Shabbat ends",
-      note: "Candle lighting {minutes} minutes before sunset, Shabbat ends at nightfall.",
+      note: "Candle lighting {minutes} minutes before sunset, Shabbat {exit}.",
     },
     names: {
       chatzotNightDawn: "Midnight (Chatzot)",
@@ -540,6 +546,118 @@ const en: LocaleMessages = {
       tzeit: "Nightfall: Arvit, end of Shabbat and fasts",
       chatzotNight: "Middle of the coming night",
     },
+    /* Zmanim reminders (native app): set by tapping a time in the list,
+       scheduled on the device itself, see zmanReminderService. */
+    /* Which opinion the zmanim follow (see services/zmanimOpinions). */
+    opinions: {
+      title: "Zmanim opinion",
+      description:
+        "Luchot do not define the zmanim the same way. Pick the one you follow: every time in the app follows it.",
+      change: "Change the zmanim opinion",
+      note: "The choice applies everywhere: the zmanim page, the home page, the siddur of the moment and the reminders. In practice, your rabbi's ruling comes first.",
+      posen: {
+        name: "Rav Meir Posen (Ohr Meir)",
+        short: "Rav Posen",
+        hint: "Degrees of the sun below the horizon, as European calendars have it: dawn at 16.1°, tallit at 11.5°, nightfall at 8.5°, Rabbeinu Tam 72 minutes after sunset.",
+      },
+      ovadia: {
+        name: "Rav Ovadia Yosef (Ohr HaChaim)",
+        short: "Rav Ovadia",
+        hint: "Seasonal (zmaniyot) minutes, proportional to the length of the day: dawn 72 minutes before sunrise, nightfall 13.5 minutes after sunset, Shabbat ends 40 minutes after sunset.",
+      },
+    },
+    /* The day's hilulot, at the bottom of the page (see services/hiloulot). */
+    hiloulot: {
+      title: "Hilulot of the day",
+      more: "Show one more name | Show {count} more names",
+      note: "List taken from the Ohr HaChaim calendar. Dates of passing differ from one record to another.",
+    },
+    reminder: {
+      title: "Remind me of this time",
+      chooseDelay: "How long before",
+      minutes: "{minutes} min",
+      atTime: "on time",
+      before: "{minutes} minutes before",
+      none: "none",
+      less: "Fewer minutes",
+      more: "More minutes",
+      remove: "Remove",
+      removeAria: "Remove the reminder for {name}",
+      dailyNote: "The reminder comes back every day, at that day's time, computed for {place}.",
+      rowAria: "{name}, {time}. Reminder: {reminder}. Tap to set it.",
+      openAria: "Set the reminder for {name}",
+      setToast: "Reminder set: {name}, {minutes} minutes before.",
+      setToastNow: "Reminder set: {name}, on time.",
+      clearedToast: "Reminder removed: {name}.",
+      permissionDenied:
+        "Notifications are blocked for this app. Allow them in your phone settings, then try again.",
+      settingsTitle: "Time reminders",
+      settingsDescription:
+        "A reminder is set on the Times page, by tapping the time you want. It stays on this device, which is what rings.",
+      restOption: "Shabbat and festival candle lighting",
+      restOptionHint: "A notification one hour before candle lighting.",
+      postedTitle: "Times you are reminded of",
+      postedEmpty: "None yet.",
+      exactAlarms:
+        "Until alarms and reminders are allowed, Android holds notifications for its idle windows: the reminder may arrive a few minutes late.",
+      exactAlarmsCta: "Allow alarms",
+      channelName: "Time reminders",
+      channelDescription: "The times of the day you asked not to miss.",
+      notifyBody: "In {minutes} minutes, at {time}.",
+      notifyNow: "It is time: {time}.",
+      notifyRest: "It comes in at {time}, one hour from now.",
+    },
+  },
+  /* Personal Hebrew-calendar dates (native app): birthdays, yahrzeits. Kept
+     on the device, see useHebrewOccasions. */
+  occasions: {
+    open: "My dates",
+    title: "My dates",
+    description: "Your Hebrew-calendar dates, coming back every year on their day.",
+    empty: "No date yet.",
+    onAccount:
+      "They follow your account: you find them again on the site and on your other devices.",
+    onDevice: "Without an account, they stay on this device.",
+    remindersInApp: "Reminders are set in the app, the only one that can make them ring.",
+    add: "Add a date",
+    full: "The list is full.",
+    formTitle: "A date",
+    name: "Name",
+    namePlaceholder: "E.g. Grandpa Élie",
+    kind: "What the date marks",
+    kinds: {
+      yahrzeit: "Yahrzeit",
+      birthday: "Birthday",
+      other: "Other",
+    },
+    date: "Hebrew date",
+    dayOfMonth: "{day} {month}",
+    nextOn: "Next on {civil} ({hebrew})",
+    reminder: "Reminder",
+    reminders: {
+      none: "None",
+      nightfall: "When the day comes in",
+      morning: "In the morning",
+      weekBefore: "A week before",
+    },
+    /* What the notification says, the name of the date being its title. */
+    notify: {
+      none: "{date}",
+      nightfall: "The day comes in tonight: {date}.",
+      morning: "It is today, {date}.",
+      weekBefore: "In one week, {date}.",
+    },
+    note: "The Hebrew day begins the evening before, at sunset. A date in Adar comes back in Adar II in years with thirteen months, and the 30th of a month with only 29 days comes back on the 29th.",
+    /* Home banner: what is coming this week. */
+    banner: "{when}, {date}",
+    when: {
+      today: "Today",
+      tomorrow: "Tomorrow",
+      inDays: "In {n} days",
+    },
+    remove: "Delete",
+    removeAria: "Delete {name}",
+    editAria: "Edit {name}",
   },
   security: {
     title: "Security",
@@ -993,6 +1111,12 @@ const en: LocaleMessages = {
     },
     pageTitle: "Reading",
     autoScroll: {
+      settingsTitle: "Automatic scrolling",
+      settingsDescription:
+        "A double tap on a text makes it scroll on its own, at reading pace. Turn it off if you would rather never trigger it by accident.",
+      option: "Offer automatic scrolling",
+      optionHint:
+        "Turned off, a double tap does nothing and any scrolling in progress stops. The pace is set while reading, in the pill at the bottom.",
       pill: "Scrolling",
       speed: "Speed",
       speeds: {

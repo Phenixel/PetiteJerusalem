@@ -9,6 +9,7 @@ import {
   type MaybeRefOrGetter,
 } from "vue";
 import { analyticsService } from "../services/analyticsService";
+import { devicePreference } from "../services/devicePreference";
 
 /**
  * Défilement automatique des pages de texte.
@@ -26,6 +27,15 @@ import { analyticsService } from "../services/analyticsService";
  * L'état vit dans le module, pas dans la page : la pastille est posée une
  * fois pour toutes dans App.vue et ne se montre que pendant le défilement,
  * qui ne peut lui-même démarrer que là où `useAutoScroll` est actif.
+ *
+ * Le geste se coupe. Deux appuis rapprochés sur un écran, cela arrive sans
+ * qu'on l'ait voulu, et voir le texte se mettre à descendre tout seul pendant
+ * qu'on lit n'a rien d'agréable quand on ne sait pas d'où cela vient. Les
+ * réglages portent donc un interrupteur (voir composants settings) : coupé, ni
+ * le double appui ni rien d'autre ne lance la descente. Il est gardé sur
+ * l'appareil, et deux fois plutôt qu'une (voir devicePreference) : un réglage
+ * posé pour ne PLUS être surpris ne doit pas revenir tout seul au prochain
+ * lancement.
  */
 
 export type AutoScrollSpeedId = "slow" | "medium" | "fast";
@@ -36,14 +46,27 @@ interface AutoScrollSpeed {
   pixelsPerSecond: number;
 }
 
-/** Les trois allures proposées, de la plus lente à la plus rapide. */
+/**
+ * Les trois allures proposées, de la plus lente à la plus rapide.
+ *
+ * La plus lente a été relevée de 12 à 16 px/s, et c'est une affaire de
+ * fluidité, pas de vitesse. Chromium (donc Android) refuse les positions de
+ * défilement fractionnaires : une page ne peut bouger que d'un pixel entier à
+ * la fois. À 12 px/s, elle avançait donc d'un pixel toutes les 83 ms, une
+ * image sur cinq, et le texte sautait au lieu de glisser. À 16, le pas tombe à
+ * 62 ms, une image sur quatre, sans que l'allure cesse d'être celle d'une
+ * lecture posée (une ligne de texte passe en un peu plus d'une seconde et
+ * demie).
+ */
 export const AUTO_SCROLL_SPEEDS: AutoScrollSpeed[] = [
-  { id: "slow", pixelsPerSecond: 12 },
+  { id: "slow", pixelsPerSecond: 16 },
   { id: "medium", pixelsPerSecond: 26 },
   { id: "fast", pixelsPerSecond: 48 },
 ];
 
 const STORAGE_KEY = "pj-autoscroll-speed";
+/** Où l'appareil garde l'interrupteur du geste. */
+const ENABLED_KEY = "pj-autoscroll-enabled";
 const DEFAULT_SPEED: AutoScrollSpeedId = "slow";
 
 function readStoredSpeed(): AutoScrollSpeedId {
@@ -57,10 +80,25 @@ function readStoredSpeed(): AutoScrollSpeedId {
   }
 }
 
+/** L'interrupteur lu d'un stockage : « 1 » ou « 0 », rien d'autre. */
+function parseEnabled(value: string | null): boolean | null {
+  if (value === "1") return true;
+  if (value === "0") return false;
+  return null;
+}
+
+const enabledStore = devicePreference(ENABLED_KEY, parseEnabled, (value) => (value ? "1" : "0"));
+
+const storedEnabled = enabledStore.read();
+const enabled = ref(storedEnabled ?? true);
+
+/** Le choix est-il déjà celui d'une personne ? Sinon, le natif a son mot à dire. */
+let enabledRestored = storedEnabled !== null;
+
 const running = ref(false);
 const speedId = ref<AutoScrollSpeedId>(readStoredSpeed());
 
-/** Position visée, en flottant : sous-multiples de pixel compris, sinon l'allure lente saccade. */
+/** Position visée, en flottant : c'est elle qui est posée telle quelle (voir step). */
 let position = 0;
 let frame = 0;
 let lastFrameAt = 0;
@@ -73,6 +111,8 @@ const currentSpeed = computed(
 /** La pastille du bas et les pages lisent cet état ; elles ne l'écrivent pas directement. */
 export const isAutoScrolling = readonly(running);
 export const autoScrollSpeedId = readonly(speedId);
+/** Le geste est-il proposé ? Les réglages le lisent et l'écrivent (voir setAutoScrollEnabled). */
+export const autoScrollEnabled = readonly(enabled);
 
 function measureMaxScroll(): number {
   return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
@@ -116,11 +156,12 @@ function step(now: number): void {
   if (Math.abs(window.scrollY - position) > 2) position = window.scrollY;
 
   position = Math.min(position + (currentSpeed.value.pixelsPerSecond * elapsed) / 1000, limit);
-  // La position visée reste flottante (l'allure lente avance de moins d'un
-  // pixel par image), mais la page se pose sur un pixel entier : un décalage
-  // fractionnaire fait vibrer tout ce qui est en position fixe, la barre du
-  // haut et la pastille du bas les premières.
-  window.scrollTo(0, Math.round(position));
+  // La position part telle quelle, fraction comprise : WebKit (donc l'app iOS)
+  // défile en sous-multiples de pixel, et le mouvement y est continu. Chromium
+  // arrondit, lui, et c'est pour lui que l'allure lente a été relevée (voir
+  // AUTO_SCROLL_SPEEDS) : rien, du côté du script, ne peut lui faire avancer
+  // une page de moins d'un pixel.
+  window.scrollTo(0, position);
 
   // Fin du texte : le défilement s'arrête de lui-même, il n'y a plus rien à lire.
   if (position >= limit) {
@@ -132,7 +173,7 @@ function step(now: number): void {
 
 /** Lance le défilement (le double appui sur le texte, seule porte d'entrée). */
 function startAutoScroll(): void {
-  if (running.value || typeof window === "undefined") return;
+  if (!enabled.value || running.value || typeof window === "undefined") return;
   // Rien à faire défiler (page courte, ou déjà tout en bas).
   if (window.scrollY >= measureMaxScroll() - 1) return;
   running.value = true;
@@ -160,6 +201,38 @@ export function stopAutoScroll(reason: "user" | "bottom" | "leave"): void {
     speed: speedId.value,
     duration_ms: Date.now() - startedAt,
   });
+}
+
+/**
+ * Propose le geste, ou le retire. Le retirer arrête ce qui descend : le
+ * réglage doit prendre effet sous les yeux, pas à la page suivante.
+ *
+ * Le choix est écrit deux fois, comme la taille du texte : dans le
+ * `localStorage`, seul lisible en synchrone, donc avant le premier double
+ * appui possible ; et dans les préférences natives, qui survivent au vidage du
+ * cache de l'app (voir docs/app-native.md).
+ */
+export function setAutoScrollEnabled(value: boolean): void {
+  enabledRestored = true;
+  if (value === enabled.value) return;
+  enabled.value = value;
+  if (!value) stopAutoScroll("user");
+  enabledStore.write(value);
+  analyticsService.capture("auto_scroll_enabled_changed", { enabled: value });
+}
+
+/**
+ * Reprend l'interrupteur gardé par le natif quand le localStorage n'a rien.
+ * Appelé à l'ouverture d'un texte et à l'ouverture des réglages, jamais au
+ * lancement : le plugin n'a pas à peser sur le démarrage de l'app.
+ */
+export async function restoreAutoScrollFromDevice(): Promise<void> {
+  if (enabledRestored) return;
+  enabledRestored = true;
+  const saved = await enabledStore.restore();
+  if (saved === null) return;
+  enabled.value = saved;
+  if (!saved) stopAutoScroll("user");
 }
 
 /** Change d'allure, défilement en cours ou non ; le choix est gardé sur l'appareil. */
@@ -216,9 +289,13 @@ let lastTap = { time: 0, x: 0, y: 0 };
  * mode « gérer ma liste ») comme quand elle est quittée.
  */
 export function useAutoScroll(reading: MaybeRefOrGetter<boolean> = true): void {
+  void restoreAutoScrollFromDevice();
   let listening = false;
 
   function accept(): void {
+    // Le geste a été coupé dans les réglages : on ne touche à rien, pas même
+    // à la sélection du double clic.
+    if (!enabled.value) return;
     const now = Date.now();
     // `dblclick` suit le double appui tactile sur la plupart des navigateurs :
     // sans ce garde-fou, le second geste annulerait aussitôt le premier.

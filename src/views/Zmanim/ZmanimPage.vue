@@ -37,15 +37,26 @@ import {
   tachanunStatus,
   type City,
   type ZmanimPlace,
+  type ZmanKey,
   nextZman,
   ZMAN_PERIODS,
   type ZmanPeriod,
   type ZmanTime,
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
+import { useToast } from "../../composables/useToast";
+import { ensureNotificationPermission, useZmanReminders } from "../../composables/useZmanReminders";
 import { cityInSentence, citySlug, findCityBySlug } from "../../content/zmanimCities";
 import { isSectionPath, localeOfPath, sectionPath } from "../../content/seoLocales";
 import RestTimes from "./RestTimes.vue";
+import ZmanRow from "./ZmanRow.vue";
+import ZmanReminderModal from "./ZmanReminderModal.vue";
+import { useZmanimOpinion } from "../../composables/useZmanimOpinion";
+
+// Chargés à la demande : la liste des hiloulot pèse 75 Ko, et la fenêtre de
+// l'opinion ne sert qu'au clic sur son bouton.
+const HiloulotSection = defineAsyncComponent(() => import("./HiloulotSection.vue"));
+const ZmanimOpinionModal = defineAsyncComponent(() => import("./ZmanimOpinionModal.vue"));
 
 // Chargé à la demande : le sélecteur embarque la liste des villes, inutile
 // tant qu'on ne l'ouvre pas.
@@ -163,6 +174,72 @@ const PERIOD_ICONS: Record<ZmanPeriod, "sunrise" | "sun" | "clock" | "moon"> = {
 const clock = (date: Date) => formatZmanTime(date, place.value.tzid, locale.value);
 const isNext = (zman: ZmanTime) => upcoming.value?.key === zman.key;
 
+/**
+ * Les rappels posés sur les horaires (app native seulement : une notification
+ * se programme sur le téléphone qui la recevra, voir zmanReminderService).
+ *
+ * La page ne fait que tenir les réglages ; c'est le service, monté au
+ * démarrage, qui les traduit en notifications et refait la programmation
+ * quand le lieu, la langue ou le jour changent.
+ */
+const toast = useToast();
+const { reminderFor, setReminder, clearReminder, lastMinutes, restEnabled } = useZmanReminders();
+const reminderZman = ref<ZmanTime | null>(null);
+const reminderOpen = ref(false);
+/**
+ * La ligne restée ouverte sur sa cloche, quand le geste s'est arrêté en
+ * chemin. Une seule à la fois : ouvrir la suivante referme la précédente,
+ * sinon la liste se couvrait de tiroirs entrouverts.
+ */
+const expandedZman = ref<ZmanKey | null>(null);
+
+function expandRow(zman: ZmanTime, open: boolean): void {
+  expandedZman.value = open ? zman.key : null;
+}
+
+/** Le délai posé sur un horaire, ou null : c'est lui que porte le triangle. */
+const reminderMinutes = (zman: ZmanTime) =>
+  isNativeApp ? (reminderFor(zman.key)?.minutesBefore ?? null) : null;
+
+const zmanName = (zman: ZmanTime) => t(`zmanim.names.${zman.key}`);
+
+function openReminder(zman: ZmanTime): void {
+  expandedZman.value = null;
+  reminderZman.value = zman;
+  reminderOpen.value = true;
+}
+
+/**
+ * Pose le rappel, la permission système obtenue. Sans elle, rien n'est
+ * enregistré : un rappel qui ne peut pas sonner ne doit pas s'afficher comme
+ * posé.
+ */
+async function applyReminder(zman: ZmanTime, minutes: number, source: string): Promise<void> {
+  if (!(await ensureNotificationPermission(true))) {
+    toast.error(t("zmanim.reminder.permissionDenied"));
+    return;
+  }
+  setReminder(zman.key, minutes);
+  analyticsService.capture("zman_reminder_set", { zman: zman.key, minutes, source });
+  toast.success(
+    minutes === 0
+      ? t("zmanim.reminder.setToastNow", { name: zmanName(zman) })
+      : t("zmanim.reminder.setToast", { name: zmanName(zman), minutes }),
+  );
+}
+
+function removeReminder(zman: ZmanTime, source: string): void {
+  clearReminder(zman.key);
+  analyticsService.capture("zman_reminder_cleared", { zman: zman.key, source });
+  toast.success(t("zmanim.reminder.clearedToast", { name: zmanName(zman) }));
+}
+
+/** Le raccourci du glissement : pose le rappel du dernier délai, ou le retire. */
+function quickToggle(zman: ZmanTime): void {
+  if (reminderFor(zman.key)) removeReminder(zman, "swipe");
+  else void applyReminder(zman, lastMinutes.value, "swipe");
+}
+
 // « dans 2 h 15 » sous le prochain horaire, comme sur la carte de l'accueil :
 // l'heure dit quand, le décompte dit s'il faut se presser.
 const countdown = useZmanCountdown();
@@ -257,6 +334,16 @@ function leaveCityPage(): void {
   void router.replace(sectionPath("horaires", localeOfPath(route.path)));
 }
 
+/**
+ * L'avis suivi pour le calcul (Rav Posen, Rav Ovadia Yossef). Sur le SITE, il
+ * se change ici : la page de réglages y est réservée aux comptes, et l'avis
+ * qu'on suit ne doit pas l'être. Dans l'app, il vit dans l'onglet Préférences
+ * des réglages, avec le reste, et le bouton ne charge pas la page d'un réglage
+ * de plus.
+ */
+const { opinion } = useZmanimOpinion();
+const opinionOpen = ref(false);
+
 /** Racine de la page : cible du dévoilement circulaire (bouton rond natif). */
 const root = ref<HTMLElement | null>(null);
 
@@ -339,6 +426,12 @@ onMounted(() => {
   void ensureNearby();
   void applyRouteCity();
   analyticsService.capture("zmanim_viewed", { place: place.value.source });
+  // Le rappel d'entrée du Chabbat et des fêtes est actif d'office : sans la
+  // permission du système, il ne partirait jamais. On la demande ici, sur la
+  // page où l'entrée du repos est sous les yeux, et non au lancement de
+  // l'app, où la fenêtre du système surgirait sans que rien ne l'explique.
+  // Le système ne pose la question qu'une fois : ensuite, l'appel ne fait rien.
+  if (isNativeApp && restEnabled.value) void ensureNotificationPermission(true);
 });
 </script>
 
@@ -375,6 +468,19 @@ onMounted(() => {
       >
         <AppIcon name="map-pin" :size="16" class="text-primary" />
         <span class="font-semibold">{{ placeLabel }}</span>
+        <AppIcon name="chevron-down" :size="14" class="text-text-secondary" />
+      </button>
+      <!-- Le site n'a pas de réglages sans compte : l'avis suivi se change
+           ici, sur la page qu'il gouverne. -->
+      <button
+        v-if="!isNativeApp"
+        type="button"
+        class="btn btn-soft"
+        :aria-label="t('zmanim.opinions.change')"
+        @click="opinionOpen = true"
+      >
+        <AppIcon name="clock" :size="16" class="text-primary" />
+        <span class="font-semibold">{{ t(`zmanim.opinions.${opinion}.short`) }}</span>
         <AppIcon name="chevron-down" :size="14" class="text-text-secondary" />
       </button>
       <button type="button" class="btn btn-soft" :disabled="status === 'loading'" @click="locateMe">
@@ -520,30 +626,24 @@ onMounted(() => {
         <AppIcon :name="PERIOD_ICONS[group.period]" :size="16" class="text-primary" />
         {{ t(`zmanim.periods.${group.period}`) }}
       </h2>
+      <!-- Dans l'app, chaque ligne se touche pour poser un rappel, et se tire
+           vers la gauche pour le poser d'un geste (voir ZmanRow). Sur le site,
+           elle reste une ligne de texte : rien à programmer dans un
+           navigateur. -->
       <ul class="flex flex-col divide-y divide-line">
-        <li
+        <ZmanRow
           v-for="zman in group.zmanim"
           :key="zman.key"
-          class="flex items-center justify-between gap-4 py-2.5"
-        >
-          <span class="min-w-0">
-            <span
-              class="block font-semibold leading-snug"
-              :class="isNext(zman) ? 'text-primary' : 'text-text-primary'"
-            >
-              {{ t(`zmanim.names.${zman.key}`) }}
-            </span>
-            <span class="block text-sm text-text-secondary">
-              {{ t(`zmanim.hints.${zman.key}`) }}
-            </span>
-          </span>
-          <span
-            class="shrink-0 text-lg font-semibold tabular-nums"
-            :class="isNext(zman) ? 'text-primary' : 'text-text-primary'"
-          >
-            {{ clock(zman.date) }}
-          </span>
-        </li>
+          :zman="zman"
+          :time="clock(zman.date)"
+          :is-next="isNext(zman)"
+          :minutes-before="reminderMinutes(zman)"
+          :can-remind="isNativeApp"
+          :expanded="expandedZman === zman.key"
+          @open="openReminder(zman)"
+          @toggle="quickToggle(zman)"
+          @update:expanded="expandRow(zman, $event)"
+        />
       </ul>
     </section>
 
@@ -557,11 +657,27 @@ onMounted(() => {
       class="mt-5 first:mt-0"
     />
 
+    <!-- Les hiloulot du jour, tout en bas : c'est ce qu'on trouve en arrivant
+         au bout, comme au bas de la colonne d'un calendrier imprimé. -->
+    <HiloulotSection :day="hebrewDay" />
+
     <p class="mt-5 border-t border-line pt-3 text-sm text-text-secondary leading-relaxed">
       {{ t("zmanim.disclaimer") }}
     </p>
 
     <CityPicker v-model:show="pickerOpen" :current="place.city" @select="chooseCity" />
+    <ZmanimOpinionModal v-if="!isNativeApp" v-model:show="opinionOpen" />
+    <ZmanReminderModal
+      v-if="reminderZman"
+      v-model:show="reminderOpen"
+      :name="t(`zmanim.names.${reminderZman.key}`)"
+      :time="clock(reminderZman.date)"
+      :place-label="placeLabel"
+      :minutes="reminderMinutes(reminderZman)"
+      :default-minutes="lastMinutes"
+      @save="applyReminder(reminderZman, $event, 'modal')"
+      @remove="removeReminder(reminderZman, 'modal')"
+    />
     <DayPicker
       v-model="dayKey"
       :open="dayPickerOpen"

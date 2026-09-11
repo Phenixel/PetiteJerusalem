@@ -15,6 +15,8 @@ import { useI18n } from "vue-i18n";
 import { hubPath } from "../../content/etudeTexts";
 import type { WeeklyParasha } from "../../services/dailyCycles";
 import { formatZmanDay, formatZmanTime, type RestPeriod } from "../../services/zmanimService";
+import { opinionZmanim } from "../../services/zmanimOpinions";
+import { useZmanimOpinion } from "../../composables/useZmanimOpinion";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
@@ -41,6 +43,28 @@ const title = computed(() => {
 
 /** Un bloc de plusieurs jours (fête, ou fête accolée au Chabbat). */
 const isFestival = computed(() => props.period.festivals.length > 0);
+
+/**
+ * La note dit comment les heures du cadre sont comptées : elle dépend donc de
+ * l'avis suivi, sans quoi elle annoncerait la sortie des étoiles là où le
+ * cadre affiche quarante minutes après la chkia (voir zmanimOpinions).
+ */
+const { opinion } = useZmanimOpinion();
+const rules = computed(() => opinionZmanim(opinion.value));
+
+const exitRule = computed(() =>
+  rules.value.restEndMinutes === null
+    ? t("zmanim.rest.exitAtNightfall")
+    : t("zmanim.rest.exitAfterSunset", { minutes: rules.value.restEndMinutes }),
+);
+
+const rabbenouTamNote = computed(() =>
+  t(
+    rules.value.rabbenouTamZmaniyot
+      ? "zmanim.rest.rabbenouTamNoteZmaniyot"
+      : "zmanim.rest.rabbenouTamNote",
+  ),
+);
 </script>
 
 <template>
@@ -86,7 +110,8 @@ const isFestival = computed(() => props.period.festivals.length > 0);
         </span>
       </li>
       <!-- La sortie selon Rabbénou Tam, pour qui suit cet avis : plus tard,
-           72 minutes après la chkia (l'explication est dans la note). -->
+           72 minutes après la chkia, fixes ou zmaniyot selon l'avis suivi
+           (l'explication est dans la note). -->
       <li v-if="period.endRabbenouTam" class="flex items-center justify-between gap-4 py-2">
         <span class="min-w-0">
           <span class="block font-medium leading-snug text-text-primary">
@@ -105,9 +130,9 @@ const isFestival = computed(() => props.period.festivals.length > 0);
     <p class="mt-2.5 text-xs text-text-secondary">
       {{
         isFestival
-          ? t("zmanim.rest.note", { minutes: candleMinutes })
-          : t("zmanim.shabbat.note", { minutes: candleMinutes })
-      }}<template v-if="period.endRabbenouTam"> {{ t("zmanim.rest.rabbenouTamNote") }}</template>
+          ? t("zmanim.rest.note", { minutes: candleMinutes, exit: exitRule })
+          : t("zmanim.shabbat.note", { minutes: candleMinutes, exit: exitRule })
+      }}<template v-if="period.endRabbenouTam">{{ " " }}{{ rabbenouTamNote }}</template>
     </p>
   </section>
 </template>

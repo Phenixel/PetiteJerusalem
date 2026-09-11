@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { useOverlay } from "../../composables/useOverlayStack";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
+import ToggleSwitch from "../../components/ToggleSwitch.vue";
 
 /**
  * Réglages des rappels de lecture.
@@ -221,17 +222,7 @@ function confirm() {
           class="flex items-center justify-between gap-3 py-3 border-b border-black/5 dark:border-white/10 cursor-pointer"
         >
           <span class="font-semibold text-text-primary">{{ t("notifications.enable") }}</span>
-          <span class="relative inline-flex items-center shrink-0">
-            <input
-              type="checkbox"
-              class="sr-only peer"
-              :checked="enabled"
-              @change="onToggleEnabled(($event.target as HTMLInputElement).checked)"
-            />
-            <span
-              class="w-10 h-5 bg-black/15 peer-focus-visible:outline-2 peer-focus-visible:outline-primary rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all peer-checked:bg-primary dark:bg-white/20"
-            ></span>
-          </span>
+          <ToggleSwitch :model-value="enabled" @update:model-value="onToggleEnabled" />
         </label>
 
         <CollapseTransition>
@@ -247,12 +238,7 @@ function confirm() {
                     {{ t("notifications.dailyOptionHint") }}
                   </span>
                 </span>
-                <span class="relative inline-flex items-center shrink-0">
-                  <input type="checkbox" class="sr-only peer" v-model="daily" />
-                  <span
-                    class="w-10 h-5 bg-black/15 peer-focus-visible:outline-2 peer-focus-visible:outline-primary rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all peer-checked:bg-primary dark:bg-white/20"
-                  ></span>
-                </span>
+                <ToggleSwitch v-model="daily" />
               </label>
               <button
                 type="button"
@@ -285,12 +271,7 @@ function confirm() {
                   {{ t("notifications.sunsetToday", { time: sunsetTime, place: placeLabel }) }}
                 </span>
               </span>
-              <span class="relative inline-flex items-center shrink-0">
-                <input type="checkbox" class="sr-only peer" v-model="sunset" />
-                <span
-                  class="w-10 h-5 bg-black/15 peer-focus-visible:outline-2 peer-focus-visible:outline-primary rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all peer-checked:bg-primary dark:bg-white/20"
-                ></span>
-              </span>
+              <ToggleSwitch v-model="sunset" />
             </label>
 
             <p
