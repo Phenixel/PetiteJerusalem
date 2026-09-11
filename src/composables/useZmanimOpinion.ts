@@ -1,53 +1,35 @@
 import { computed, ref } from "vue";
 import {
   parseZmanimOpinion,
-  storedZmanimOpinion,
-  ZMANIM_OPINION_KEY,
+  zmanimOpinionStore,
   type ZmanimOpinion,
 } from "../services/zmanimOpinions";
 import { setZmanimOpinion, zmanimOpinion } from "../services/zmanimService";
-import { isNativeApp } from "./useNativeApp";
 
 /**
  * L'opinion suivie pour les horaires : celle du Rav Posen, celle du Rav Ovadia
  * Yossef (voir services/zmanimOpinions).
  *
- * Le choix se lit en SYNCHRONE au chargement du module, depuis le
- * `localStorage` : les horaires se calculent au premier rendu, et un réglage
- * qui n'arriverait qu'après ferait sauter toutes les heures de la page sous
- * les yeux. Les préférences natives (@capacitor/preferences) servent de filet,
- * comme pour la taille du texte : le stockage d'une webview peut être vidé par
- * le système, pas elles.
+ * Le choix est gardé sur l'appareil, et lu en SYNCHRONE dès le chargement de
+ * `zmanimService` (voir zmanimOpinionStore) : les horaires se calculent au
+ * premier rendu, et un réglage qui n'arriverait qu'après ferait sauter toutes
+ * les heures de la page sous les yeux.
  *
  * Le compte, lui, l'emporte quand il en porte une : l'avis qu'on suit ne
  * dépend pas de l'appareil qu'on a en main, et se retrouve donc sur le site
  * comme sur le téléphone. Sans compte, c'est l'appareil qui décide.
  */
 
-// La lecture synchrone du stockage vit dans zmanimOpinions : zmanimService en
-// a besoin au chargement, avant que ce composable n'existe (voir la note là-bas).
+// zmanimService a déjà lu le stockage à son chargement : on repart de ce
+// qu'il en a tiré, plutôt que de le relire.
 const opinion = ref<ZmanimOpinion>(zmanimOpinion());
 
 /** Le choix est-il déjà celui d'une personne, et non le défaut ? */
-let known = storedZmanimOpinion() !== null;
+let known = zmanimOpinionStore.read() !== null;
 
 /** Le compte suivi : c'est lui qui reçoit le choix, et qui l'impose au départ. */
 let accountId: string | null = null;
 let watchingAuth = false;
-
-function persistLocally(value: ZmanimOpinion): void {
-  try {
-    localStorage.setItem(ZMANIM_OPINION_KEY, value);
-  } catch {
-    // Stockage indisponible : le choix vaut pour la session en cours.
-  }
-  if (!isNativeApp) return;
-  void import("@capacitor/preferences")
-    .then(({ Preferences }) => Preferences.set({ key: ZMANIM_OPINION_KEY, value }))
-    .catch(() => {
-      // Plugin absent (vieux binaire) : le localStorage fait seul.
-    });
-}
 
 /** Pose l'opinion partout : l'écran, le calcul des horaires, l'appareil. */
 function apply(value: ZmanimOpinion): void {
@@ -58,16 +40,10 @@ function apply(value: ZmanimOpinion): void {
 
 /** Reprend le choix gardé par le natif quand le localStorage n'a rien. */
 async function restoreFromDevice(): Promise<void> {
-  if (known || !isNativeApp) return;
-  try {
-    const { Preferences } = await import("@capacitor/preferences");
-    const saved = parseZmanimOpinion((await Preferences.get({ key: ZMANIM_OPINION_KEY })).value);
-    if (saved === null || known) return;
-    apply(saved);
-    persistLocally(saved);
-  } catch {
-    // Plugin absent : rien à reprendre.
-  }
+  if (known) return;
+  const saved = await zmanimOpinionStore.restore();
+  // La personne a pu choisir pendant l'attente : son geste l'emporte.
+  if (saved !== null && !known) apply(saved);
 }
 
 async function pushToAccount(userId: string, value: ZmanimOpinion): Promise<void> {
@@ -95,7 +71,7 @@ async function adoptAccount(userId: string): Promise<void> {
     if (remote) {
       if (remote !== opinion.value) {
         apply(remote);
-        persistLocally(remote);
+        zmanimOpinionStore.write(remote);
       }
       return;
     }
@@ -112,15 +88,19 @@ async function adoptAccount(userId: string): Promise<void> {
 function watchAccount(): void {
   if (watchingAuth) return;
   watchingAuth = true;
-  void import("../services/authService").then(({ authService }) => {
-    authService.onAuthChanged((user) => {
-      const userId = user?.id ?? null;
-      if (userId === accountId) return;
-      accountId = userId;
-      // Déconnexion : le choix reste sur l'appareil, il y a sa place.
-      if (userId) void adoptAccount(userId);
-    });
-  });
+  void import("../services/authService")
+    .then(({ authService }) => {
+      authService.onAuthChanged((user) => {
+        const userId = user?.id ?? null;
+        if (userId === accountId) return;
+        accountId = userId;
+        // Déconnexion : le choix reste sur l'appareil, il y a sa place.
+        if (userId) void adoptAccount(userId);
+      });
+      // Module introuvable (lot périmé après un déploiement) : l'appareil sert
+      // seul, le prochain lancement retrouvera le compte.
+    })
+    .catch(() => {});
 }
 
 export function useZmanimOpinion() {
@@ -130,7 +110,7 @@ export function useZmanimOpinion() {
   function choose(value: ZmanimOpinion): void {
     if (value === opinion.value && known) return;
     apply(value);
-    persistLocally(value);
+    zmanimOpinionStore.write(value);
     if (accountId) void pushToAccount(accountId, value);
   }
 

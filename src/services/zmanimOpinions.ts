@@ -1,4 +1,5 @@
 import type { Zmanim } from "@hebcal/core";
+import { devicePreference } from "./devicePreference";
 
 /**
  * L'opinion suivie pour le calcul des horaires.
@@ -50,24 +51,19 @@ export function parseZmanimOpinion(value: unknown): ZmanimOpinion | null {
   return ZMANIM_OPINIONS.includes(value as ZmanimOpinion) ? (value as ZmanimOpinion) : null;
 }
 
-/** Où l'appareil garde le choix (voir composables/useZmanimOpinion). */
-export const ZMANIM_OPINION_KEY = "pj_zmanim_opinion";
-
 /**
- * Le choix gardé sur l'appareil, lu en SYNCHRONE.
+ * Le choix, gardé sur l'appareil (voir devicePreference).
  *
- * Les horaires se calculent au premier rendu, d'une dizaine d'endroits : sans
- * cette lecture immédiate, la page s'ouvrirait sur les heures d'une opinion
- * puis sauterait sur celles de l'autre. C'est pour cela qu'elle vit ici, dans
- * un module sans dépendance, et non dans le composable qui gère le réglage.
+ * Il vit ici, et non dans le composable qui règle l'écran : les horaires se
+ * calculent au premier rendu, d'une dizaine d'endroits, et `zmanimService` a
+ * besoin de le LIRE tout de suite, sans quoi la page s'ouvrirait sur les
+ * heures d'une opinion puis sauterait sur celles de l'autre.
  */
-export function storedZmanimOpinion(): ZmanimOpinion | null {
-  try {
-    return parseZmanimOpinion(localStorage.getItem(ZMANIM_OPINION_KEY));
-  } catch {
-    return null; // Stockage indisponible (navigation privée).
-  }
-}
+export const zmanimOpinionStore = devicePreference<ZmanimOpinion>(
+  "pj_zmanim_opinion",
+  parseZmanimOpinion,
+  (opinion) => opinion,
+);
 
 /** Les horaires qui dépendent de l'opinion suivie. */
 export interface OpinionZmanim {
@@ -92,6 +88,15 @@ export interface OpinionZmanim {
    * des étoiles ordinaire : voir la note de `OVADIA`.
    */
   restEnd(z: Zmanim): Date;
+  /**
+   * Comment la sortie du repos se compte, pour la note qui l'explique sous le
+   * cadre : null quand c'est la sortie des étoiles, un nombre de minutes
+   * fixes après la chkia sinon. Sans cela, la note annoncerait une règle et
+   * le cadre afficherait l'heure d'une autre.
+   */
+  restEndMinutes: number | null;
+  /** Rabbénou Tam se compte-t-il en minutes zmaniyot plutôt que fixes ? */
+  rabbenouTamZmaniyot: boolean;
 }
 
 // ---- Rav Meïr Posen : les degrés ----------------------------------------
@@ -107,6 +112,8 @@ const POSEN: OpinionZmanim = {
   tzeit: (z) => z.tzeit(), // 8,5°, trois petites étoiles selon le Ohr Meïr
   rabbenouTam: (z) => z.sunsetOffset(RABBENOU_TAM_MINUTES, true),
   restEnd: (z) => z.tzeit(),
+  restEndMinutes: null,
+  rabbenouTamZmaniyot: false,
 };
 
 /** Minutes après la chkia de la sortie selon Rabbénou Tam, en minutes fixes. */
@@ -168,6 +175,8 @@ const OVADIA: OpinionZmanim = {
   tzeit: (z) => fromSunset(z, OVADIA_TZEIT_MINUTES),
   rabbenouTam: (z) => fromSunset(z, OVADIA_ALOT_MINUTES),
   restEnd: (z) => new Date(z.sunset().getTime() + OVADIA_REST_END_MINUTES * 60_000),
+  restEndMinutes: OVADIA_REST_END_MINUTES,
+  rabbenouTamZmaniyot: true,
 };
 
 /**

@@ -23,12 +23,13 @@ import {
   useZmanReminders,
 } from "../../composables/useZmanReminders";
 import AppIcon from "../icons/AppIcon.vue";
+import ToggleSwitch from "../ToggleSwitch.vue";
 
 const { t } = useI18n();
 const { reminders, restEnabled, permission, exactAlarms, clearReminder, setRestEnabled } =
   useZmanReminders();
 
-/** Les rappels posés, dans l'ordre de la journée : celui de la liste des horaires. */
+/** Les rappels posés, dans l'ordre où ils ont été posés (le dernier en bas). */
 const posted = computed(() => [...reminders.value]);
 
 const blocked = computed(() => permission.value === "denied");
@@ -79,17 +80,7 @@ function delayLabel(minutes: number): string {
               {{ t("zmanim.reminder.restOptionHint") }}
             </span>
           </span>
-          <span class="relative inline-flex shrink-0 items-center">
-            <input
-              type="checkbox"
-              class="sr-only peer"
-              :checked="restEnabled"
-              @change="toggleRest(($event.target as HTMLInputElement).checked)"
-            />
-            <span
-              class="w-10 h-5 bg-black/15 peer-focus-visible:outline-2 peer-focus-visible:outline-primary rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all peer-checked:bg-primary dark:bg-white/20"
-            ></span>
-          </span>
+          <ToggleSwitch :model-value="restEnabled" @update:model-value="toggleRest" />
         </label>
       </li>
     </ul>

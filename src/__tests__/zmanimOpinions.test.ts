@@ -109,6 +109,38 @@ describe("opinion du Rav Ovadia Yossef", () => {
   });
 });
 
+describe("ce que la note annonce", () => {
+  /**
+   * La note du cadre de repos décrit la règle ; le cadre affiche l'heure. Les
+   * deux viennent d'ici, et ce test les tient ensemble : une opinion qui
+   * changerait sa sortie sans changer sa description ferait mentir la page.
+   */
+  it.each(["posen", "ovadia"] as const)("décrit la sortie qu'elle calcule (%s)", (name) => {
+    const rules = opinionZmanim(name);
+    const z = zmanimAt(new Date(2027, 2, 21, 12));
+    const afterSunset = minutesBetween(z.sunset(), rules.restEnd(z));
+
+    if (rules.restEndMinutes === null) {
+      // La note dit « à la sortie des étoiles » : c'est bien elle.
+      expect(rules.restEnd(z).getTime()).toBe(rules.tzeit(z).getTime());
+    } else {
+      expect(afterSunset).toBeCloseTo(rules.restEndMinutes, 5);
+    }
+  });
+
+  it.each(["posen", "ovadia"] as const)("dit juste des minutes de Rabbénou Tam (%s)", (name) => {
+    const rules = opinionZmanim(name);
+    // En été, l'heure zmanit dépasse largement l'heure de l'horloge : une
+    // sortie comptée en minutes zmaniyot s'écarte alors des 72 minutes fixes,
+    // une sortie comptée en minutes fixes, non.
+    const summer = zmanimAt(new Date(2027, 5, 21, 12));
+    const gap = minutesBetween(summer.sunset(), rules.rabbenouTam(summer));
+
+    if (rules.rabbenouTamZmaniyot) expect(gap).toBeGreaterThan(80);
+    else expect(Math.round(gap)).toBe(72);
+  });
+});
+
 describe("l'opinion suivie gouverne toute l'application", () => {
   const day = new Date(2027, 2, 21, 12);
   const timeOf = (key: string) =>

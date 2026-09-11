@@ -138,16 +138,20 @@ async function adoptAccount(userId: string): Promise<void> {
 function watchAccount(): void {
   if (watchingAuth) return;
   watchingAuth = true;
-  void import("../services/authService").then(({ authService }) => {
-    authService.onAuthChanged((user) => {
-      const userId = user?.id ?? null;
-      if (userId === accountId.value) return;
-      accountId.value = userId;
-      // Déconnexion : les dates restent sur l'appareil, elles n'y ont pas
-      // moins leur place qu'avant la connexion.
-      if (userId) void adoptAccount(userId);
-    });
-  });
+  void import("../services/authService")
+    .then(({ authService }) => {
+      authService.onAuthChanged((user) => {
+        const userId = user?.id ?? null;
+        if (userId === accountId.value) return;
+        accountId.value = userId;
+        // Déconnexion : les dates restent sur l'appareil, elles n'y ont pas
+        // moins leur place qu'avant la connexion.
+        if (userId) void adoptAccount(userId);
+      });
+      // Module introuvable (lot périmé après un déploiement) : l'appareil sert
+      // seul, le prochain lancement retrouvera le compte.
+    })
+    .catch(() => {});
   // Une écriture refusée par le réseau repart dès qu'il revient.
   window.addEventListener("online", () => {
     const userId = accountId.value;

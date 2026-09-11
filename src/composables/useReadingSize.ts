@@ -8,18 +8,12 @@ import { ref, computed } from "vue";
  * dépend de l'écran qu'on a en main, pas de la personne. Un téléphone tenu à
  * bout de bras et un ordinateur ne demandent pas la même taille.
  *
- * Deux stockages, et c'est voulu. Le `localStorage` se lit en SYNCHRONE, donc
- * dès le premier rendu, avant que le texte ne s'affiche : sans lui, la page
- * s'ouvrirait à la taille d'origine puis sauterait sous les yeux. Mais celui
- * d'une webview n'est pas durable, le système peut le vider sous la pression
- * mémoire ou au vidage du cache de l'app, et le réglage était alors perdu au
- * lancement suivant. Les préférences natives (@capacitor/preferences :
- * SharedPreferences côté Android, UserDefaults côté iOS) survivent, elles,
- * mais ne se lisent qu'en asynchrone : elles servent de filet, relu au premier
- * usage du réglage.
+ * Gardée deux fois sur l'appareil, comme les autres réglages de ce genre :
+ * le `localStorage` pour la lire dès le premier rendu, les préférences
+ * natives pour qu'elle survive au vidage du cache (voir devicePreference).
  */
 import { analyticsService } from "../services/analyticsService";
-import { isNativeApp } from "./useNativeApp";
+import { devicePreference } from "../services/devicePreference";
 
 const STORAGE_KEY = "pj-reading-size";
 const SCALES = [0.85, 1, 1.15, 1.35, 1.6];
@@ -36,15 +30,9 @@ function parseLevel(value: string | null): number | null {
   return Number.isInteger(raw) && raw >= 0 && raw < SCALES.length ? raw : null;
 }
 
-function readStoredLevel(): number | null {
-  try {
-    return parseLevel(localStorage.getItem(STORAGE_KEY));
-  } catch {
-    return null; // Stockage indisponible (navigation privée).
-  }
-}
+const store = devicePreference(STORAGE_KEY, parseLevel, String);
 
-const stored = readStoredLevel();
+const stored = store.read();
 const level = ref(stored ?? DEFAULT_LEVEL);
 
 /**
@@ -54,34 +42,15 @@ const level = ref(stored ?? DEFAULT_LEVEL);
 let restored = stored !== null;
 
 function persist(): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, String(level.value));
-  } catch {
-    // Stockage indisponible : le réglage vaut pour la lecture en cours.
-  }
-  if (!isNativeApp) return;
-  void import("@capacitor/preferences")
-    .then(({ Preferences }) => Preferences.set({ key: STORAGE_KEY, value: String(level.value) }))
-    .catch(() => {
-      // Plugin absent (vieux binaire) : le localStorage fait seul, comme avant.
-    });
+  store.write(level.value);
 }
 
 /** Reprend le niveau gardé par le natif quand le localStorage n'a rien. */
 async function restoreFromDevice(): Promise<void> {
-  if (restored || !isNativeApp) return;
+  if (restored) return;
   restored = true;
-  try {
-    const { Preferences } = await import("@capacitor/preferences");
-    const saved = parseLevel((await Preferences.get({ key: STORAGE_KEY })).value);
-    if (saved === null) return;
-    level.value = saved;
-    // Remis en place pour le prochain lancement : la lecture synchrone
-    // retrouvera le réglage sans attendre le plugin.
-    persist();
-  } catch {
-    // Plugin absent : rien à reprendre.
-  }
+  const saved = await store.restore();
+  if (saved !== null) level.value = saved;
 }
 
 export function useReadingSize() {

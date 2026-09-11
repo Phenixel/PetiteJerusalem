@@ -369,16 +369,19 @@ class ZmanReminderService {
     // Toucher le rappel ouvre les horaires. Le marqueur `source` distingue nos
     // notifications de celles que pushService rejoue au premier plan : les
     // deux écoutent le même événement, chacun ne traite que les siennes.
-    void import("@capacitor/local-notifications").then(({ LocalNotifications }) => {
-      LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
-        const extra = event.notification.extra as
-          | { source?: string; url?: string; zman?: string | null }
-          | undefined;
-        if (extra?.source !== REMINDER_SOURCE) return;
-        analyticsService.capture("zman_reminder_opened", { zman: extra.zman ?? null });
-        if (extra.url) void router.push(extra.url);
-      });
-    });
+    void import("@capacitor/local-notifications")
+      .then(({ LocalNotifications }) => {
+        LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
+          const extra = event.notification.extra as
+            | { source?: string; url?: string; zman?: string | null }
+            | undefined;
+          if (extra?.source !== REMINDER_SOURCE) return;
+          analyticsService.capture("zman_reminder_opened", { zman: extra.zman ?? null });
+          if (extra.url) void router.push(extra.url);
+        });
+        // Plugin absent (vieux binaire) : rien à écouter, et rien à signaler.
+      })
+      .catch(() => {});
 
     void this.refresh();
   }

@@ -273,6 +273,11 @@ Le `localStorage` d'une webview n'est pas durable : le système peut le vider
 sous la pression mémoire, et l'utilisateur au vidage du cache de l'app. Un
 réglage de confort perdu au lancement suivant, c'est peu, mais c'est agaçant.
 
+Ces réglages-là passent donc tous par `services/devicePreference` : il écrit
+dans les deux stockages, le `localStorage` pour la lecture synchrone du
+premier rendu et les préférences natives pour la durée, et relit le natif
+quand le premier n'a rien à dire.
+
 La **taille du texte** des pages de lecture (A− / A+ et le pincement,
 `useReadingSize`) est donc écrite deux fois : dans le `localStorage`, seul
 lisible en synchrone, donc dès le premier rendu ; et dans les préférences

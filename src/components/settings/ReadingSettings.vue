@@ -19,6 +19,7 @@ import {
   restoreAutoScrollFromDevice,
   setAutoScrollEnabled,
 } from "../../composables/useAutoScroll";
+import ToggleSwitch from "../ToggleSwitch.vue";
 
 const { t } = useI18n();
 
@@ -46,17 +47,10 @@ onMounted(() => void restoreAutoScrollFromDevice());
               {{ t("textReading.autoScroll.optionHint") }}
             </span>
           </span>
-          <span class="relative inline-flex shrink-0 items-center">
-            <input
-              type="checkbox"
-              class="sr-only peer"
-              :checked="autoScrollEnabled"
-              @change="setAutoScrollEnabled(($event.target as HTMLInputElement).checked)"
-            />
-            <span
-              class="w-10 h-5 bg-black/15 peer-focus-visible:outline-2 peer-focus-visible:outline-primary rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all peer-checked:bg-primary dark:bg-white/20"
-            ></span>
-          </span>
+          <ToggleSwitch
+            :model-value="autoScrollEnabled"
+            @update:model-value="setAutoScrollEnabled"
+          />
         </label>
       </li>
     </ul>

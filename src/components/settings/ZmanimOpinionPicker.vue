@@ -21,8 +21,12 @@ const { t } = useI18n();
 const { opinion, choose } = useZmanimOpinion();
 
 function select(value: ZmanimOpinion): void {
-  if (value !== opinion.value) {
-    choose(value);
+  const changed = value !== opinion.value;
+  // Appelé même quand rien ne change : toucher l'avis déjà suivi, c'est le
+  // CHOISIR, et le composable a besoin de le savoir pour l'écrire sur
+  // l'appareil et dans le compte plutôt que de le laisser au rang de défaut.
+  choose(value);
+  if (changed) {
     analyticsService.capture("zmanim_opinion_chosen", { opinion: value, source: props.source });
   }
   emit("choose", value);

@@ -499,14 +499,18 @@ const en: LocaleMessages = {
       end: "Ends",
       rabbenouTam: "Ends (Rabbeinu Tam)",
       rabbenouTamNote: "The Rabbeinu Tam end time is 72 minutes after sunset.",
-      note: "Candle lighting {minutes} minutes before sunset, ends at nightfall. When a festival follows Shabbat, light after nightfall from an existing flame.",
+      rabbenouTamNoteZmaniyot:
+        "The Rabbeinu Tam end time is 72 seasonal minutes after sunset, proportional to the length of the day.",
+      exitAtNightfall: "ends at nightfall",
+      exitAfterSunset: "ends {minutes} minutes after sunset",
+      note: "Candle lighting {minutes} minutes before sunset, {exit}. When a festival follows Shabbat, light after nightfall from an existing flame.",
     },
     shabbat: {
       title: "Shabbat",
       parasha: "Parashat",
       candleLighting: "Candle lighting",
       havdalah: "Shabbat ends",
-      note: "Candle lighting {minutes} minutes before sunset, Shabbat ends at nightfall.",
+      note: "Candle lighting {minutes} minutes before sunset, Shabbat {exit}.",
     },
     names: {
       chatzotNightDawn: "Midnight (Chatzot)",

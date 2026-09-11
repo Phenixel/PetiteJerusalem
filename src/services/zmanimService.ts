@@ -16,7 +16,7 @@ import { saidTachanun } from "./tachanun";
 import {
   DEFAULT_ZMANIM_OPINION,
   opinionZmanim,
-  storedZmanimOpinion,
+  zmanimOpinionStore,
   type OpinionZmanim,
   type ZmanimOpinion,
 } from "./zmanimOpinions";
@@ -221,7 +221,7 @@ export interface ZmanTime {
  * useZmanimOpinion qui la pose, au chargement du réglage et à chaque
  * changement.
  */
-let currentOpinion: ZmanimOpinion = storedZmanimOpinion() ?? DEFAULT_ZMANIM_OPINION;
+let currentOpinion: ZmanimOpinion = zmanimOpinionStore.read() ?? DEFAULT_ZMANIM_OPINION;
 
 /** L'opinion suivie en ce moment. */
 export function zmanimOpinion(): ZmanimOpinion {

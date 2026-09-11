@@ -9,7 +9,7 @@ import {
   type MaybeRefOrGetter,
 } from "vue";
 import { analyticsService } from "../services/analyticsService";
-import { isNativeApp } from "./useNativeApp";
+import { devicePreference } from "../services/devicePreference";
 
 /**
  * Défilement automatique des pages de texte.
@@ -33,9 +33,9 @@ import { isNativeApp } from "./useNativeApp";
  * qu'on lit n'a rien d'agréable quand on ne sait pas d'où cela vient. Les
  * réglages portent donc un interrupteur (voir composants settings) : coupé, ni
  * le double appui ni rien d'autre ne lance la descente. Il est gardé sur
- * l'appareil, et deux fois plutôt qu'une, comme la taille du texte : un
- * réglage posé pour ne PLUS être surpris ne doit pas revenir tout seul au
- * prochain lancement.
+ * l'appareil, et deux fois plutôt qu'une (voir devicePreference) : un réglage
+ * posé pour ne PLUS être surpris ne doit pas revenir tout seul au prochain
+ * lancement.
  */
 
 export type AutoScrollSpeedId = "slow" | "medium" | "fast";
@@ -87,15 +87,9 @@ function parseEnabled(value: string | null): boolean | null {
   return null;
 }
 
-function readStoredEnabled(): boolean | null {
-  try {
-    return parseEnabled(localStorage.getItem(ENABLED_KEY));
-  } catch {
-    return null; // Stockage indisponible (navigation privée).
-  }
-}
+const enabledStore = devicePreference(ENABLED_KEY, parseEnabled, (value) => (value ? "1" : "0"));
 
-const storedEnabled = readStoredEnabled();
+const storedEnabled = enabledStore.read();
 const enabled = ref(storedEnabled ?? true);
 
 /** Le choix est-il déjà celui d'une personne ? Sinon, le natif a son mot à dire. */
@@ -223,22 +217,8 @@ export function setAutoScrollEnabled(value: boolean): void {
   if (value === enabled.value) return;
   enabled.value = value;
   if (!value) stopAutoScroll("user");
-  persistEnabled(value);
+  enabledStore.write(value);
   analyticsService.capture("auto_scroll_enabled_changed", { enabled: value });
-}
-
-function persistEnabled(value: boolean): void {
-  try {
-    localStorage.setItem(ENABLED_KEY, value ? "1" : "0");
-  } catch {
-    // Stockage indisponible : le réglage vaut pour la lecture en cours.
-  }
-  if (!isNativeApp) return;
-  void import("@capacitor/preferences")
-    .then(({ Preferences }) => Preferences.set({ key: ENABLED_KEY, value: value ? "1" : "0" }))
-    .catch(() => {
-      // Plugin absent (vieux binaire) : le localStorage fait seul, comme avant.
-    });
 }
 
 /**
@@ -247,20 +227,12 @@ function persistEnabled(value: boolean): void {
  * lancement : le plugin n'a pas à peser sur le démarrage de l'app.
  */
 export async function restoreAutoScrollFromDevice(): Promise<void> {
-  if (enabledRestored || !isNativeApp) return;
+  if (enabledRestored) return;
   enabledRestored = true;
-  try {
-    const { Preferences } = await import("@capacitor/preferences");
-    const saved = parseEnabled((await Preferences.get({ key: ENABLED_KEY })).value);
-    if (saved === null) return;
-    enabled.value = saved;
-    if (!saved) stopAutoScroll("user");
-    // Remis en place pour le prochain lancement : la lecture synchrone
-    // retrouvera le réglage sans attendre le plugin.
-    persistEnabled(saved);
-  } catch {
-    // Plugin absent : rien à reprendre.
-  }
+  const saved = await enabledStore.restore();
+  if (saved === null) return;
+  enabled.value = saved;
+  if (!saved) stopAutoScroll("user");
 }
 
 /** Change d'allure, défilement en cours ou non ; le choix est gardé sur l'appareil. */
