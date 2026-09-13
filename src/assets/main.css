@@ -295,6 +295,14 @@ button,
     outline-offset: 2px;
   }
 
+  /* Small button: a command that serves a title (the place of the times)
+     and must share one line with its neighbours on a phone. */
+  .btn-sm {
+    gap: 0.375rem;
+    padding: 0.4375rem 0.875rem;
+    font-size: 0.875rem;
+  }
+
   .btn-primary {
     background-color: var(--color-primary);
     color: #fff;
