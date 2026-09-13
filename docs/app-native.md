@@ -75,6 +75,45 @@ variable pour pointer l'app native sur son propre Vite.)
 | `npm run cap:ios` | build + ouvre Xcode |
 | `npm run store:screenshots` | régénère les captures de la fiche Play Store (voir `docs/android-ci-cd.md`) ; `-- --ios` produit celles de l'App Store (voir `docs/ios-ci-cd.md`) |
 
+## Un plugin ne traverse jamais une promesse
+
+Un plugin Capacitor n'est pas un objet, c'est un `Proxy` : **toute** propriété
+qu'on lui demande devient un appel natif, y compris celles qu'on ne lui
+demande pas exprès. `then` en fait partie, et c'est ce qui rend la règle
+nécessaire.
+
+Le faire traverser une promesse (le rendre depuis une fonction `async`, le
+résoudre dans un `.then`) suffit : le moteur JavaScript lit `.then` sur la
+valeur pour savoir s'il tient une promesse, le proxy lui rend une fonction
+comme pour n'importe quelle propriété, et le moteur appelle
+`Plugin.then(resolve, reject)`. Capacitor cherche alors une méthode native
+`then`, ne la trouve pas, et rend une promesse rejetée que personne n'attrape.
+Ni `resolve` ni `reject` n'ayant été appelés, **l'attente ne se règle jamais** :
+le `try` autour n'attrape rien, et tout ce qui suit reste en plan.
+
+C'est ce qui a tué les rappels d'horaires en 3.10.0 (« `"LocalNotifications.then()"`
+is not implemented on android », remonté en erreur non gérée).
+
+La règle, donc : **on déstructure le plugin sur place**, dans la fonction qui
+s'en sert.
+
+```ts
+// Oui : ce qui traverse la promesse est l'espace de noms du module.
+const { LocalNotifications } = await import("@capacitor/local-notifications");
+await LocalNotifications.checkPermissions();
+
+// Non : la promesse se résout avec le proxy.
+async function plugin() {
+  const { LocalNotifications } = await import("@capacitor/local-notifications");
+  return LocalNotifications;
+}
+```
+
+Pas d'aide partagée pour aller chercher un plugin, donc, aussi tentant que ce
+soit quand trois fonctions du même fichier en ont besoin. Un garde-fou tient la
+règle pour les notifications locales (`src/__tests__/notificationPermission.test.ts`),
+avec un leurre qui se comporte comme le vrai proxy, `then` compris.
+
 ## Lecture hors-ligne : téléchargement à la demande
 
 - `npm run app:build` retire `dist/texts/{talmud,mishna,tanakh,rashi,tefila}`
