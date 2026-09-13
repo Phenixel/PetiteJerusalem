@@ -8,9 +8,10 @@
  *
  *  - la toucher ouvre le réglage du rappel (combien de minutes avant) ;
  *  - la tirer vers la gauche découvre, du côté de l'heure, un fond de la
- *    couleur du thème portant une cloche. Le geste franc, jusqu'au bout, pose
- *    ou retire le rappel sans rien demander ; le geste retenu laisse la ligne
- *    ouverte sur sa cloche, qu'on touche alors pour ouvrir les réglages ;
+ *    couleur du thème portant une cloche. Le geste franc, jusqu'au bout ou
+ *    d'un coup sec, pose ou retire le rappel sans rien demander (avec le
+ *    délai proposé d'office) ; le geste retenu laisse la ligne ouverte sur
+ *    sa cloche, qu'on touche alors pour ouvrir les réglages ;
  *  - un rappel posé se voit à un petit triangle plein dans l'angle de la
  *    ligne, du côté de l'heure. Une cloche posée dans le texte aurait mangé
  *    la place du nom sur un téléphone, et une ligne sur deux marquée aurait
@@ -75,6 +76,15 @@ const REVEAL = 84;
 const OPEN_THRESHOLD = 28;
 /** Part de la largeur de la ligne au-delà de laquelle le geste bascule seul. */
 const COMMIT_RATIO = 0.5;
+/**
+ * Vitesse (pixels par milliseconde) à partir de laquelle un geste court mais
+ * sec bascule aussi le rappel : on n'a pas à traverser la moitié de l'écran
+ * quand le coup de pouce dit déjà tout. Un demi-pixel par milliseconde, c'est
+ * un vrai coup, pas un doigt qui traîne.
+ */
+const FLICK_VELOCITY = 0.5;
+/** Un arrêt plus long que cela avant de relâcher, et le geste n'est plus un coup. */
+const FLICK_MAX_PAUSE_MS = 100;
 /** En deçà, on ne sait pas encore si le doigt défile ou s'il tire la ligne. */
 const AXIS_SLOP = 8;
 /**
@@ -93,6 +103,10 @@ const sliding = ref(false);
 let startX = 0;
 let startY = 0;
 let axis: "none" | "x" | "y" = "none";
+/** Le dernier mouvement, pour mesurer la vitesse du geste au relâcher. */
+let lastMoveAt = 0;
+let lastShift = 0;
+let velocity = 0;
 /**
  * Sens de lecture : le geste va vers la gauche, et le tiroir se découvre à
  * droite, du côté de l'heure. En hébreu, tout est en miroir, le geste part
@@ -129,6 +143,9 @@ function onTouchStart(event: TouchEvent): void {
   startY = touch.clientY;
   axis = "none";
   direction = document.documentElement.dir === "rtl" ? -1 : 1;
+  lastMoveAt = event.timeStamp;
+  lastShift = props.expanded ? REVEAL : 0;
+  velocity = 0;
 }
 
 function onTouchMove(event: TouchEvent): void {
@@ -151,15 +168,28 @@ function onTouchMove(event: TouchEvent): void {
   // La ligne ne va pas plus loin que sa propre largeur : au-delà, elle
   // quitterait l'écran sans que le geste dise rien de plus.
   shift.value = Math.max(0, Math.min(row.value?.offsetWidth ?? Infinity, dx));
+  // La vitesse du dernier mouvement, dans le sens de l'ouverture : c'est elle
+  // qui dit, au relâcher, si le geste était un coup sec.
+  const elapsed = event.timeStamp - lastMoveAt;
+  if (elapsed > 0) velocity = (shift.value - lastShift) / elapsed;
+  lastMoveAt = event.timeStamp;
+  lastShift = shift.value;
 }
 
-function onTouchEnd(): void {
+/** Le geste était-il un coup sec, encore en mouvement au relâcher ? */
+function flicked(timeStamp: number): boolean {
+  return velocity >= FLICK_VELOCITY && timeStamp - lastMoveAt <= FLICK_MAX_PAUSE_MS;
+}
+
+function onTouchEnd(event: TouchEvent): void {
   if (!sliding.value) return;
   const travelled = shift.value;
   sliding.value = false;
   dragEndedAt = Date.now();
-  if (travelled >= commitDistance()) {
-    // Geste franc : la ligne se referme sur son résultat, sans rien demander.
+  // Geste franc, jusqu'au bout ou d'un coup sec : la ligne se referme sur son
+  // résultat, sans rien demander. Un coup sec doit tout de même avoir ouvert
+  // la ligne : un frémissement rapide ne bascule rien.
+  if (travelled >= commitDistance() || (travelled >= OPEN_THRESHOLD && flicked(event.timeStamp))) {
     settle(false);
     emit("toggle");
     return;

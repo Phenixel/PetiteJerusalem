@@ -471,6 +471,7 @@ const en: LocaleMessages = {
     disclaimer:
       "Times computed from the position of the sun (sea level). For practice, follow the times of your community.",
     place: {
+      mine: "My location",
       device: "My location",
       near: "Near {city}",
       useMine: "Use my location",
@@ -483,6 +484,16 @@ const en: LocaleMessages = {
       denied:
         "Location denied. Times are still computed for Paris; allow location in your settings to get yours.",
       unavailable: "Location unavailable. Times are still computed for Paris.",
+    },
+    about: {
+      title: "About these times",
+      open: "About these times and your location",
+    },
+    fast: {
+      start: "Fast begins",
+      end: "Fast ends",
+      noteDawn: "The fast begins at dawn (alot hashachar) and ends at nightfall.",
+      noteEve: "The fast begins at sunset the evening before and ends at nightfall.",
     },
     periods: {
       dawn: "Dawn and sunrise",

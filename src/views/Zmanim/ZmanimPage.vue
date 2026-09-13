@@ -28,6 +28,7 @@ import {
   computeZmanim,
   placeFromCity,
   dayHighlights,
+  fastNear,
   festivalsOn,
   formatHebrewDate,
   formatZmanTime,
@@ -45,10 +46,15 @@ import {
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
 import { useToast } from "../../composables/useToast";
-import { ensureNotificationPermission, useZmanReminders } from "../../composables/useZmanReminders";
+import {
+  DEFAULT_MINUTES_BEFORE,
+  ensureNotificationPermission,
+  useZmanReminders,
+} from "../../composables/useZmanReminders";
 import { cityInSentence, citySlug, findCityBySlug } from "../../content/zmanimCities";
 import { isSectionPath, localeOfPath, sectionPath } from "../../content/seoLocales";
 import RestTimes from "./RestTimes.vue";
+import FastTimes from "./FastTimes.vue";
 import ZmanRow from "./ZmanRow.vue";
 import ZmanReminderModal from "./ZmanReminderModal.vue";
 import { useZmanimOpinion } from "../../composables/useZmanimOpinion";
@@ -62,6 +68,7 @@ const ZmanimOpinionModal = defineAsyncComponent(() => import("./ZmanimOpinionMod
 // tant qu'on ne l'ouvre pas.
 const CityPicker = defineAsyncComponent(() => import("./CityPicker.vue"));
 import AppIcon from "../../components/icons/AppIcon.vue";
+import AppModal from "../../components/AppModal.vue";
 import PageTabs from "../../components/PageTabs.vue";
 import { zmanimTabs } from "../../config/pageTabs";
 import DayPicker from "../../components/DayPicker.vue";
@@ -143,6 +150,31 @@ const candleMinutes = computed(() => candleLightingMinutes(place.value));
  */
 const restFirst = computed(() => {
   const period = restPeriods.value[0];
+  if (!period) return false;
+  return (
+    period.start.getTime() <= day.value.getTime() ||
+    sameCivilDay(place.value, period.start, day.value)
+  );
+});
+
+/**
+ * Le jeûne du jour affiché ou du lendemain, tant qu'il n'est pas fini : il
+ * s'annonce dès la veille, c'est le soir d'avant qu'on regarde à quelle heure
+ * il commence. Kippour n'y passe pas, son cadre de repos le porte. Un jour
+ * parcouru avec les flèches se lit comme une journée entière : son jeûne
+ * reste affiché, même si l'heure du jour est déjà passée sa sortie.
+ */
+const fast = computed(() =>
+  fastNear(place.value, day.value, locale.value, isToday.value ? now.value : null),
+);
+
+/**
+ * Comme le repos, le jeûne passe devant les horaires le jour où il commence
+ * et tant qu'il dure ; la veille, il attend en bas de la page. Tich'a beAv,
+ * qui commence au coucher du soleil, monte donc dès la veille.
+ */
+const fastFirst = computed(() => {
+  const period = fast.value;
   if (!period) return false;
   return (
     period.start.getTime() <= day.value.getTime() ||
@@ -234,10 +266,15 @@ function removeReminder(zman: ZmanTime, source: string): void {
   toast.success(t("zmanim.reminder.clearedToast", { name: zmanName(zman) }));
 }
 
-/** Le raccourci du glissement : pose le rappel du dernier délai, ou le retire. */
+/**
+ * Le raccourci du glissement : pose le rappel, ou le retire, sans rien
+ * demander. Le délai est celui proposé d'office (15 minutes), pas le dernier
+ * choisi : un geste qui ne pose aucune question doit faire une chose qu'on
+ * peut prévoir sans se souvenir de ce qu'on a réglé la dernière fois.
+ */
 function quickToggle(zman: ZmanTime): void {
   if (reminderFor(zman.key)) removeReminder(zman, "swipe");
-  else void applyReminder(zman, lastMinutes.value, "swipe");
+  else void applyReminder(zman, DEFAULT_MINUTES_BEFORE, "swipe");
 }
 
 // « dans 2 h 15 » sous le prochain horaire, comme sur la carte de l'accueil :
@@ -321,6 +358,14 @@ async function locateMe() {
 }
 
 const pickerOpen = ref(false);
+
+/**
+ * Ce que sont ces horaires et ce qu'il advient de la position : une phrase
+ * qu'on lit une fois. Elle ne tient plus la page (voir docs/design.md, « Le
+ * mode d'emploi ne tient pas la page ») : un petit « i » à côté de la
+ * position l'ouvre en fenêtre.
+ */
+const aboutOpen = ref(false);
 
 function chooseCity(city: City) {
   selectCity(city);
@@ -454,20 +499,27 @@ onMounted(() => {
       {{ t("zmanim.title") }}
     </h1>
 
-    <!-- Le lieu de calcul et sa position, sur une ligne, centrés sous le
+    <!-- Le lieu de calcul et sa position, sur UNE ligne, centrés sous le
          titre. Le nom de la ville EST le bouton qui ouvre la liste des villes :
          c'est là qu'on cherche à cliquer, et un bouton « Choisir ma ville »
          posé à côté du nom disait deux fois la même chose. Le chevron le dit,
-         comme sur toutes les listes de l'app. -->
-    <div class="mt-3 flex flex-wrap items-center justify-center gap-2">
+         comme sur toutes les listes de l'app. Les boutons sont petits et le
+         second ne dit que « Ma position » : à deux, ils tiennent côte à côte
+         sur un téléphone, même devant un nom de ville un peu long, qui cède
+         alors la place plutôt que de renvoyer le bouton à la ligne. Sur le
+         site, l'avis suivi s'y ajoute et la ligne peut se replier. -->
+    <div
+      class="mt-3 flex items-center justify-center gap-2"
+      :class="isNativeApp ? 'flex-nowrap' : 'flex-wrap'"
+    >
       <button
         type="button"
-        class="btn btn-soft"
+        class="btn btn-soft btn-sm min-w-0"
         :aria-label="t('zmanim.place.changeCity', { city: placeLabel })"
         @click="pickerOpen = true"
       >
         <AppIcon name="map-pin" :size="16" class="text-primary" />
-        <span class="font-semibold">{{ placeLabel }}</span>
+        <span class="min-w-0 truncate font-semibold">{{ placeLabel }}</span>
         <AppIcon name="chevron-down" :size="14" class="text-text-secondary" />
       </button>
       <!-- Le site n'a pas de réglages sans compte : l'avis suivi se change
@@ -475,7 +527,7 @@ onMounted(() => {
       <button
         v-if="!isNativeApp"
         type="button"
-        class="btn btn-soft"
+        class="btn btn-soft btn-sm"
         :aria-label="t('zmanim.opinions.change')"
         @click="opinionOpen = true"
       >
@@ -483,39 +535,55 @@ onMounted(() => {
         <span class="font-semibold">{{ t(`zmanim.opinions.${opinion}.short`) }}</span>
         <AppIcon name="chevron-down" :size="14" class="text-text-secondary" />
       </button>
-      <button type="button" class="btn btn-soft" :disabled="status === 'loading'" @click="locateMe">
+      <!-- « Ma position », et rien de plus : ce que le bouton fait au juste
+           (utiliser la position, ou l'actualiser) reste dans son étiquette
+           pour les lecteurs d'écran. -->
+      <button
+        type="button"
+        class="btn btn-soft btn-sm shrink-0"
+        :disabled="status === 'loading'"
+        :aria-label="
+          status === 'loading'
+            ? t('zmanim.place.locating')
+            : place.source === 'device'
+              ? t('zmanim.place.refresh')
+              : t('zmanim.place.useMine')
+        "
+        @click="locateMe"
+      >
         <AppIcon
           :name="status === 'loading' ? 'spinner' : 'locate'"
           :size="16"
           :class="status === 'loading' ? 'animate-spin' : ''"
         />
-        {{
-          status === "loading"
-            ? t("zmanim.place.locating")
-            : place.source === "device"
-              ? t("zmanim.place.refresh")
-              : t("zmanim.place.useMine")
-        }}
+        {{ status === "loading" ? t("zmanim.place.locating") : t("zmanim.place.mine") }}
       </button>
     </div>
 
-    <!-- Les coordonnées, sous les deux boutons : elles disent d'où sortent les
+    <!-- Les coordonnées, sous les boutons : elles disent d'où sortent les
          horaires quand la position vient de l'appareil, elles n'ont pas à
-         allonger la ligne des commandes. -->
-    <p v-if="coordinates" class="mt-2 text-center text-sm text-text-secondary tabular-nums">
-      {{ coordinates }}
+         allonger la ligne des commandes. À côté, le « i » qui ouvre
+         l'explication : ce que sont ces horaires, et ce qu'il advient de la
+         position. Elle ne tient plus la page en clair, on la lit une fois. -->
+    <p class="mt-2 flex items-center justify-center gap-1 text-sm text-text-secondary">
+      <span v-if="coordinates" class="tabular-nums">{{ coordinates }}</span>
+      <button
+        type="button"
+        class="icon-btn !h-7 !w-7"
+        :aria-label="t('zmanim.about.open')"
+        @click="aboutOpen = true"
+      >
+        <AppIcon name="info" :size="16" />
+      </button>
     </p>
 
-    <!-- Une seule ligne d'explication : ce que sont ces horaires, et ce qu'il
-         advient de la position. Un refus prend sa place, il est plus urgent. -->
-    <p class="mt-3 text-center text-sm text-text-secondary leading-relaxed">
-      {{
-        status === "denied"
-          ? t("zmanim.place.denied")
-          : status === "unavailable"
-            ? t("zmanim.place.unavailable")
-            : t(isNativeApp ? "zmanim.descriptionOffline" : "zmanim.description")
-      }}
+    <!-- Un refus de la position se dit en clair : il est plus urgent qu'une
+         explication, et il change ce qui est affiché. -->
+    <p
+      v-if="status === 'denied' || status === 'unavailable'"
+      class="mt-2 text-center text-sm text-text-secondary leading-relaxed"
+    >
+      {{ status === "denied" ? t("zmanim.place.denied") : t("zmanim.place.unavailable") }}
     </p>
 
     <!-- Jour affiché : les flèches vont au jour d'à côté, la date elle-même
@@ -569,10 +637,11 @@ onMounted(() => {
       >
         {{ t(`zmanim.tachanun.${tachanun}`) }}
       </p>
-      <!-- La bascule du soir, dite au lieu d'être appliquée en silence -->
-      <p v-if="nightNote" class="mt-1 flex items-center justify-center gap-1 text-sm text-primary">
-        <AppIcon name="moon" :size="13" class="shrink-0" />
-        {{ nightNote }}
+      <!-- La bascule du soir, dite au lieu d'être appliquée en silence. La lune
+           est dans le texte, devant son premier mot : posée à côté du bloc,
+           elle flottait au milieu d'une phrase sur deux lignes. -->
+      <p v-if="nightNote" class="mt-1 text-sm text-primary">
+        <AppIcon name="moon" :size="13" class="me-1" />{{ nightNote }}
       </p>
     </div>
 
@@ -601,6 +670,9 @@ onMounted(() => {
     </div>
 
     <p v-if="times.length === 0" class="mt-6 text-text-secondary">{{ t("zmanim.unavailable") }}</p>
+
+    <!-- Le jeûne commencé passe devant, comme le repos -->
+    <FastTimes v-if="fast && fastFirst" :fast="fast" :tzid="place.tzid" class="mt-5" />
 
     <!-- Le repos commencé passe devant : c'est ce qu'on vient vérifier -->
     <RestTimes
@@ -647,6 +719,9 @@ onMounted(() => {
       </ul>
     </section>
 
+    <!-- Le jeûne de demain, annoncé dès la veille, sous les horaires du jour -->
+    <FastTimes v-if="fast && !fastFirst" :fast="fast" :tzid="place.tzid" class="mt-5" />
+
     <RestTimes
       v-for="period in restFirst ? [] : restPeriods"
       :key="period.start.getTime()"
@@ -666,6 +741,30 @@ onMounted(() => {
     </p>
 
     <CityPicker v-model:show="pickerOpen" :current="place.city" @select="chooseCity" />
+    <AppModal
+      :open="aboutOpen"
+      :label="t('zmanim.about.title')"
+      panel-class="modal-panel !max-w-sm animate-[scaleIn_0.3s_ease]"
+      @close="aboutOpen = false"
+    >
+      <div class="mb-1 flex items-center justify-between">
+        <h3 class="flex items-center gap-2 text-lg font-bold text-text-primary">
+          <AppIcon name="info" :size="17" class="text-primary" />
+          {{ t("zmanim.about.title") }}
+        </h3>
+        <button
+          type="button"
+          class="icon-btn -me-1.5"
+          :aria-label="t('common.close')"
+          @click="aboutOpen = false"
+        >
+          <AppIcon name="x" :size="18" />
+        </button>
+      </div>
+      <p class="text-sm text-text-secondary leading-relaxed">
+        {{ t(isNativeApp ? "zmanim.descriptionOffline" : "zmanim.description") }}
+      </p>
+    </AppModal>
     <ZmanimOpinionModal v-if="!isNativeApp" v-model:show="opinionOpen" />
     <ZmanReminderModal
       v-if="reminderZman"

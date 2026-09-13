@@ -483,6 +483,7 @@ const fr = {
     disclaimer:
       "Horaires calculés à partir de la position du soleil (niveau de la mer). Pour la pratique, suivez les horaires de votre communauté.",
     place: {
+      mine: "Ma position",
       device: "Ma position",
       near: "Près de {city}",
       useMine: "Utiliser ma position",
@@ -495,6 +496,21 @@ const fr = {
       denied:
         "Position refusée. Les horaires restent calculés pour Paris ; autorisez la localisation dans les réglages pour les vôtres.",
       unavailable: "Position indisponible. Les horaires restent calculés pour Paris.",
+    },
+    /* Ce que sont ces horaires, en fenêtre depuis le « i » posé à côté de
+       la position : la phrase ne tient plus la page en clair. */
+    about: {
+      title: "À propos des horaires",
+      open: "À propos des horaires et de votre position",
+    },
+    /* Début et fin d'un jeûne public, en cadre dès la veille (voir FastTimes). */
+    fast: {
+      start: "Début du jeûne",
+      end: "Fin du jeûne",
+      noteDawn:
+        "Le jeûne commence à l'aube (alot haCha'har) et se termine à la sortie des étoiles.",
+      noteEve:
+        "Le jeûne commence la veille au coucher du soleil et se termine à la sortie des étoiles.",
     },
     periods: {
       dawn: "Aube et lever",

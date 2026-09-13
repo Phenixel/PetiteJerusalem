@@ -772,6 +772,88 @@ export function restPeriodsNear(
 }
 
 /**
+ * Un jeûne public et ses heures : celui de Guedalia, le 10 Tévet, Esther, les
+ * premiers-nés, le 17 Tamouz, Tich'a beAv. Kippour n'en fait pas partie : il
+ * est aussi un Yom Tov, et c'est son cadre de repos qui porte son entrée et
+ * sa sortie (voir RestPeriod).
+ */
+export interface FastPeriod {
+  /** Le nom du jeûne, dans la langue demandée. */
+  name: string;
+  /** Le jour hébraïque du jeûne, tel qu'il est observé (reporté s'il tombe un Chabbat). */
+  day: HDate;
+  /**
+   * Début : l'aube du jour pour les petits jeûnes, le coucher du soleil de
+   * la veille pour Tich'a beAv, qui dure de soir à soir comme Kippour.
+   */
+  start: Date;
+  /** Fin : la sortie des étoiles, telle que l'opinion suivie la donne. */
+  end: Date;
+  /** Le jeûne commence la veille au soir (Tich'a beAv), non à l'aube. */
+  fromEve: boolean;
+}
+
+/** Les jeûnes du calendrier, petits et grands, hors la veille (« Erev Tich'a beAv »). */
+const FAST_FLAGS = flags.MAJOR_FAST | flags.MINOR_FAST;
+
+/**
+ * Le jeûne observé ce jour hébraïque-là, avec ses heures, ou null s'il n'y en
+ * a pas. Le calendrier de hebcal donne déjà le jour OBSERVÉ : un jeûne qui
+ * tombe un Chabbat est lu au dimanche (ou au jeudi pour les premiers-nés).
+ */
+export function fastAt(place: ZmanimPlace, hd: HDate, locale: string): FastPeriod | null {
+  const event = (getHolidaysOnDate(hd, isIsraelPlace(place)) ?? []).find((ev) => {
+    const eventFlags = ev.getFlags();
+    return (
+      (eventFlags & FAST_FLAGS) !== 0 &&
+      (eventFlags & flags.CHAG) === 0 &&
+      (eventFlags & flags.EREV) === 0
+    );
+  });
+  if (!event) return null;
+
+  const gloc = geoLocationOf(place);
+  const opinion = opinionZmanim(currentOpinion);
+  const fastDay = new Zmanim(gloc, civilNoon(hd), false);
+  const fromEve = (event.getFlags() & flags.MAJOR_FAST) !== 0;
+  let start: Date;
+  if (fromEve) {
+    const eve = civilNoon(hd);
+    eve.setDate(eve.getDate() - 1);
+    start = new Zmanim(gloc, eve, false).sunset();
+  } else {
+    start = opinion.alotHaShachar(fastDay);
+  }
+  const end = opinion.tzeit(fastDay);
+  if (!isUsable(start) || !isUsable(end)) return null;
+  return { name: event.render(hebcalLocale(locale)), day: hd, start, end, fromEve };
+}
+
+/**
+ * Le jeûne qui concerne le jour affiché : celui du jour, tant qu'il n'est pas
+ * fini, sinon celui du lendemain. Annoncé dès la veille : c'est le soir
+ * d'avant qu'on regarde à quelle heure il commence, pour savoir jusqu'à quand
+ * on peut manger.
+ *
+ * `now` dit l'heure qu'il est, pour ne plus annoncer un jeûne sorti ; null
+ * pour un jour parcouru avec les flèches, qui se lit comme une journée
+ * entière et garde son jeûne jusqu'à minuit.
+ */
+export function fastNear(
+  place: ZmanimPlace,
+  day: Date,
+  locale: string,
+  now: Date | null = day,
+): FastPeriod | null {
+  const today = new HDate(dayInPlace(place, day));
+  for (const hd of [today, today.next()]) {
+    const fast = fastAt(place, hd, locale);
+    if (fast && (!now || fast.end.getTime() > now.getTime())) return fast;
+  }
+  return null;
+}
+
+/**
  * Dit-on le tahanoun ce jour hébraïque-là ?
  *
  * - "full" : à Cha'harit et à Min'ha (jour ordinaire) ;

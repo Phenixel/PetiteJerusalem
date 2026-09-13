@@ -66,6 +66,14 @@ titre, sans la phrase de présentation : l'écran est étroit, la barre du bas
 attend juste en dessous, et on sait ce qu'est la bibliothèque quand on a
 installé l'app. La phrase sert au visiteur du site, pas à l'habitué.
 
+Sur la page des horaires, deux rendez-vous prennent ainsi un cadre au milieu
+des lignes de la journée : le repos (le Chabbat, une fête, avec son entrée et
+sa sortie) et le jeûne (son début et sa fin). Ce ne sont pas des moments de la
+journée mais des rendez-vous de la semaine, et tous deux s'annoncent la veille,
+en bas de la page, puis passent devant les horaires le jour où ils commencent :
+le vendredi, l'heure d'allumage est ce qu'on vient vérifier ; la veille d'un
+jeûne, on regarde jusqu'à quelle heure on peut manger.
+
 ### Le mode d'emploi ne tient pas la page
 
 Une explication se lit une fois. « Instructions », posé en clair entre
@@ -137,6 +145,21 @@ Les commandes qui l'accompagnent sont de vrais boutons (`btn`), centrés à leur
 tour : en petits liens colorés, sur un téléphone, personne ne voyait qu'on
 pouvait les toucher, et le pouce les manquait.
 
+Sous le titre des horaires, le lieu tient sur **une ligne** : le nom de la
+ville, qui est le bouton qui la change, et « Ma position », qui la relève. Les
+deux sont de petits boutons (`btn-sm`), et le second ne dit que cela : « Utiliser
+ma position » et « Actualiser ma position » renvoyaient le bouton à la ligne dès
+que la ville avait un nom un peu long, et la distinction ne vaut que pour
+l'étiquette lue par un lecteur d'écran. Si le nom de la ville ne tient toujours
+pas, c'est lui qui cède, rogné, plutôt que la ligne qui se replie : c'est une
+des boîtes physiquement figées où la troncature reste admise (voir « Rien ne se
+coupe »).
+
+La phrase qui dit ce que sont ces horaires et ce qu'il advient de la position
+ne tient pas la page non plus : un petit « i », à côté des coordonnées, l'ouvre
+en fenêtre (voir « Le mode d'emploi ne tient pas la page »). Un refus de la
+position, lui, reste en clair : il est urgent, et il change ce qui est affiché.
+
 Dans la barre du bas, c'est l'onglet Bibliothèque qui reste allumé sur tout le
 partage, comme sur les pages d'un corpus (`activeOn` dans `BottomTabBar.vue`,
 le `active-class` de RouterLink comparant les routes déclarées et non les
@@ -155,9 +178,12 @@ Quatre règles en découlent, valables pour toute liste qui s'anime ainsi.
 Le geste a trois issues, et c'est le doigt qui choisit laquelle. Retenu, il
 laisse la ligne revenir. Arrêté en chemin, il l'ouvre sur sa cloche, qu'on
 touche alors pour ouvrir les réglages : on a le temps de lire ce qu'on
-déclenche. Poussé franchement, au-delà de la moitié de la ligne, il agit seul
-et la ligne se referme sur son résultat, annoncé par un toast. Le raccourci
-récompense l'assurance sans piéger l'hésitation.
+déclenche. Poussé franchement, au-delà de la moitié de la ligne ou d'un coup
+sec, il agit seul et la ligne se referme sur son résultat, annoncé par un
+toast. Le raccourci récompense l'assurance sans piéger l'hésitation, et il ne
+pose aucune question : le rappel qu'il pose est celui proposé d'office
+(15 minutes avant), pas le dernier réglé, pour qu'un geste sans dialogue fasse
+une chose qu'on peut prévoir.
 
 Le fond découvert est plein, de la couleur du thème, et il occupe exactement
 la place que la ligne libère en partant : il n'y a ni cadre ni surface
@@ -407,7 +433,8 @@ Trois règles qui vont avec :
   Chéma… ») ou cachent justement le chiffre qu'on cherchait. Quand une ligne
   ne tient pas, on raccourcit ce qui est écrit ou on retire une icône, on ne
   coupe pas. La troncature ne reste que là où la boîte est physiquement figée
-  (le titre du lecteur audio dans sa barre d'une ligne).
+  (le titre du lecteur audio dans sa barre d'une ligne, le nom de la ville sur
+  la ligne du lieu des horaires).
 
 ## 6. Les fenêtres du système
 
