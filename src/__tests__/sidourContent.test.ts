@@ -81,8 +81,22 @@ const KNOWN_WHEN = new Set([
   "sefer-torah",
   "ledavid",
   "lamnatseah-minha",
+  "motsae",
+  "hoshana-rabba",
+  "pesach",
+  "shavuot",
+  "shemini-atzeret",
+  "magdil",
+  "migdol",
   ...Array.from({ length: 7 }, (_, day) => `jour-${day}`),
 ]);
+
+/**
+ * Les clés d'une condition `when` (voir saidOn) : « teshuva|hoshana-rabba »
+ * en nomme deux, « !teshuva » une, niée.
+ */
+const keysOf = (when: string): string[] =>
+  when.split("|").map((key) => key.trim().replace(/^!/, ""));
 
 const KNOWN_ZMAN = new Set(["chaharit", "shema", "amida", "minha", "arvit"]);
 
@@ -130,9 +144,17 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
     });
 
     it("n'utilise que des clés when connues du calendrier", () => {
-      const unknown = blocks
-        .map((b) => b.when)
-        .filter((when): when is string => Boolean(when) && !KNOWN_WHEN.has(when!));
+      // Sur les blocs, sur les paragraphes, sur les fragments et sur les
+      // halakhot : une clé inconnue masquerait un passage pour toujours.
+      const whens = blocks.flatMap((b) => [
+        b.when,
+        ...(b.halakhot ?? []).map((h) => h.when),
+        ...(b.paragraphs ?? []).flatMap((p) => [p.when, ...p.runs.map((run) => run.when)]),
+      ]);
+      const unknown = whens
+        .filter((when): when is string => Boolean(when))
+        .flatMap(keysOf)
+        .filter((key) => !KNOWN_WHEN.has(key));
       expect(unknown).toEqual([]);
     });
 
@@ -145,7 +167,7 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
     it("donne ses didascalies et halakhot dans les trois langues", () => {
       for (const block of blocks) {
         if (block.labelText) expect(isFullRubric(block.labelText)).toBe(true);
-        if (block.halakha) expect(isFullRubric(block.halakha)).toBe(true);
+        for (const halakha of block.halakhot ?? []) expect(isFullRubric(halakha)).toBe(true);
         for (const paragraph of block.paragraphs ?? []) {
           if (paragraph.rubric) expect(isFullRubric(paragraph.rubric)).toBe(true);
         }
@@ -171,12 +193,91 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
 
     it("garde les variantes de saison, exclusives et à leur place", () => {
       const whens = blocks.map((b) => b.when).filter(Boolean);
-      expect(whens).toContain("ete");
-      expect(whens).toContain("hiver");
-      expect(whens).toContain("barkhenou");
-      expect(whens).toContain("barekh-alenou");
+      // La demande de pluie : deux paragraphes entiers, un par saison, dans
+      // le fil ordinaire (plain), avec la halakha de l'oubli.
+      for (const saison of ["barkhenou", "barekh-alenou"]) {
+        const bloc = blocks.find((b) => b.when === saison)!;
+        expect(bloc.plain).toBe(true);
+        expect(bloc.halakhot?.length).toBe(1);
+      }
       expect(whens).toContain("moed"); // Ya'alé véyavo
       expect(whens).toContain("nissim"); // 'Al hanissim
+      // La mention de la pluie : deux fragments dans le paragraphe des
+      // Guevourot, à leur place après « rav lehochia' », l'un ou l'autre.
+      const gevurot = blocks.find((b) =>
+        (b.paragraphs ?? []).some((p) => p.runs.some((run) => run.when === "ete")),
+      )!;
+      const runs = gevurot.paragraphs![0].runs;
+      const ete = runs.findIndex((run) => run.when === "ete");
+      const hiver = runs.findIndex((run) => run.when === "hiver");
+      expect(sansSignes((runs[ete - 1] as { text: string }).text)).toContain("רב להושיע");
+      expect(hiver).toBe(ete + 1);
+      expect(sansSignes((runs[hiver + 1] as { text: string }).text)).toContain("מכלכל חיים");
+      // Un texte de saison n'est pas un ajout signalé : pas d'accent.
+      expect((runs[ete] as { accent?: boolean }).accent).toBeUndefined();
+    });
+
+    it("met les ajouts des dix jours de techouva à leur place, en accent", () => {
+      // Comme dans un siddour imprimé : Zokhrénou au milieu d'Avot, Hamélekh
+      // hakadoch à la place de haEl hakadoch, et rien d'autre ces jours-là.
+      // Chaque fragment `teshuva` est en accent (couleur du thème), et une
+      // conclusion remplacée a son fragment « !teshuva » à côté.
+      const teshuva = blocks.flatMap((b) =>
+        (b.paragraphs ?? []).flatMap((p) => p.runs.filter((run) => run.when === "teshuva")),
+      );
+      const textes = teshuva.map((run) => (run.kind === "he" ? sansSignes(run.text) : ""));
+      expect(textes.some((t) => t.startsWith("זכרנו לחיים"))).toBe(true);
+      expect(textes.some((t) => t.startsWith("מי כמוך אב הרחמן"))).toBe(true);
+      expect(textes).toContain("המלך הקדוש:");
+      expect(textes).toContain("המלך המשפט:");
+      expect(textes.some((t) => t.startsWith("וכתב לחיים"))).toBe(true);
+      expect(textes.some((t) => t.startsWith("ובספר חיים"))).toBe(true);
+      expect(textes).toContain("עושה השלום");
+      for (const run of teshuva) expect(run.kind === "he" && run.accent).toBe(true);
+      // Plus aucun bloc entier « teshuva » dans la 'Amida : les ajouts vivent
+      // dans leurs paragraphes.
+      const amida = blocks.findIndex((b) => b.label === "'Amida");
+      const avinou = blocks.findIndex((b) => b.label === "Avinou Malkénou");
+      for (const bloc of blocks.slice(amida, avinou)) expect(bloc.when).not.toBe("teshuva");
+      // Les conclusions ordinaires cèdent la place, sans accent.
+      const ordinaires = blocks.flatMap((b) =>
+        (b.paragraphs ?? []).flatMap((p) => p.runs.filter((run) => run.when === "!teshuva")),
+      );
+      expect(ordinaires.map((run) => (run.kind === "he" ? sansSignes(run.text) : ""))).toEqual([
+        "האל הקדוש:",
+        "מלך אוהב צדקה ומשפט:",
+        "עשה שלום",
+      ]);
+      for (const run of ordinaires) expect(run.kind === "he" && run.accent).toBeUndefined();
+    });
+
+    it("accompagne chaque ajout de la halakha de l'oubli, le jour dit seulement", () => {
+      const halakhot = blocks.flatMap((b) => b.halakhot ?? []);
+      const teshuva = halakhot.filter((h) => h.when === "teshuva");
+      expect(teshuva.length).toBeGreaterThanOrEqual(6);
+      expect(teshuva.some((h) => h.fr.includes("Hamélekh hakadoch"))).toBe(true);
+      // Ya'alé véyavo, 'Al hanissim : la halakha suit le bloc, qui a déjà sa
+      // condition.
+      const yv = blocks.find((b) => b.when === "moed")!;
+      expect(yv.halakhot?.length).toBeGreaterThanOrEqual(1);
+      expect(blocks.find((b) => b.when === "nissim")!.halakhot).toHaveLength(1);
+    });
+
+    it("ne nomme dans Ya'alé véyavo que la fête du jour", () => {
+      const yv = blocks.find((b) => b.when === "moed")!;
+      const runs = yv.paragraphs![0].runs;
+      expect(runs.map((run) => run.when)).toEqual([
+        undefined,
+        "rosh-chodesh",
+        "pesach",
+        "sukkot",
+        undefined,
+      ]);
+    });
+
+    it("ne dit dans 'Al hanissim que le récit du jour", () => {
+      const nissim = blocks.find((b) => b.when === "nissim")!;
+      expect(nissim.paragraphs!.map((p) => p.when)).toEqual([undefined, "hanouka", "pourim"]);
     });
 
     it("dit Lédavid, et la saison décide de ce qu'on en voit", () => {
@@ -282,13 +383,23 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       // Réé et elle.
       expect(sansSignes(blocks[hazan + 1].lines[0]).startsWith("רפאנו")).toBe(true);
 
-      // Celui de chacun : plus loin, après Chéma kolénou, et sans titre à lui.
+      // Celui de chacun : plus loin, dans Chéma kolénou, avant « Ki Ata
+      // chomé'a », en accent, avec sa didascalie glissée dans le fil.
       const chacun = blocks.findIndex(
-        (b, i) => i > hazan && b.when === "taanit" && !b.label && !b.fold,
+        (b, i) =>
+          i > hazan &&
+          (b.paragraphs ?? []).some((p) => p.runs.some((run) => run.when === "taanit")),
       );
       expect(chacun).toBeGreaterThan(hazan);
-      expect(sansSignes(blocks[chacun].lines[0])).toContain("עננו אבינו");
-      expect(sansSignes(blocks[chacun - 1].lines.at(-1)!)).toContain("שמע קולנו");
+      const runs = blocks[chacun].paragraphs!.find((p) =>
+        p.runs.some((run) => run.when === "taanit"),
+      )!.runs;
+      const anenou = runs.findIndex((run) => run.kind === "he" && run.when === "taanit");
+      expect(sansSignes((runs[anenou] as { text: string }).text)).toContain("עננו אבינו");
+      expect((runs[anenou] as { accent?: boolean }).accent).toBe(true);
+      expect(runs[anenou - 1].kind).toBe("rubric");
+      expect(sansSignes((runs[0] as { text: string }).text)).toContain("שמע קולנו");
+      expect(sansSignes((runs[anenou + 1] as { text: string }).text)).toContain("כי אתה שומע");
     });
   },
 );
@@ -580,7 +691,7 @@ describe.each(autresLiturgies.map((entry) => [resolveFilePath(entry), entry] as 
     it("donne ses didascalies et halakhot dans les trois langues", () => {
       for (const block of blocks) {
         if (block.labelText) expect(isFullRubric(block.labelText)).toBe(true);
-        if (block.halakha) expect(isFullRubric(block.halakha)).toBe(true);
+        for (const halakha of block.halakhot ?? []) expect(isFullRubric(halakha)).toBe(true);
         for (const paragraph of block.paragraphs ?? []) {
           if (paragraph.rubric) expect(isFullRubric(paragraph.rubric)).toBe(true);
         }
@@ -603,9 +714,17 @@ describe.each(autresLiturgies.map((entry) => [resolveFilePath(entry), entry] as 
     });
 
     it("n'utilise que des clés when connues du calendrier", () => {
-      const unknown = blocks
-        .map((b) => b.when)
-        .filter((when): when is string => Boolean(when) && !KNOWN_WHEN.has(when!));
+      // Sur les blocs, sur les paragraphes, sur les fragments et sur les
+      // halakhot : une clé inconnue masquerait un passage pour toujours.
+      const whens = blocks.flatMap((b) => [
+        b.when,
+        ...(b.halakhot ?? []).map((h) => h.when),
+        ...(b.paragraphs ?? []).flatMap((p) => [p.when, ...p.runs.map((run) => run.when)]),
+      ]);
+      const unknown = whens
+        .filter((when): when is string => Boolean(when))
+        .flatMap(keysOf)
+        .filter((key) => !KNOWN_WHEN.has(key));
       expect(unknown).toEqual([]);
     });
   },

@@ -39,6 +39,16 @@ export interface Rubric {
 }
 
 /**
+ * Une halakha qui accompagne un passage (« en cas d'oubli, on reprend… »),
+ * dans les trois langues. Avec un `when`, elle ne s'affiche que les jours où
+ * elle sert : la règle de Hamélekh hakadoch n'a rien à dire hors des dix
+ * jours de techouva.
+ */
+export interface Halakha extends Rubric {
+  when?: string;
+}
+
+/**
  * Fragment d'un paragraphe : de l'hébreu, mis en avant (`strong`) pour ce que
  * reprend l'assemblée, ou une didascalie glissée dans le fil du texte.
  */
@@ -48,17 +58,37 @@ export type TextRun =
       text: string;
       strong?: boolean;
       /**
-       * Texte affecté par une didascalie (« les jours de Moussaf on dit
-       * מגדול ») : mis en couleur pour qu'on voie d'un coup d'œil quelle
-       * partie du texte la consigne concerne. À la couleur du thème quand un
-       * `when` l'impose au jour dit, en gris quand l'application ne peut pas
-       * trancher (en Terre d'Israël, à dix convives).
+       * Ce que le jour ajoute ou change dans le fil du texte (« Hamélekh
+       * hakadoch » aux dix jours de techouva, מגדול les jours de Moussaf) :
+       * à la couleur du thème quand un `when` le pose au jour dit, pour qu'on
+       * voie d'un coup d'œil ce qui se dit aujourd'hui et pas les autres
+       * jours ; en gris quand l'application ne peut pas trancher (en Terre
+       * d'Israël, à dix convives), une possibilité signalée sans être imposée.
        */
       accent?: boolean;
       /** Fragment qui ne se dit qu'à cette occasion (voir TextBlock.when). */
       when?: string;
     }
   | { kind: "rubric"; rubric: Rubric; when?: string };
+
+/**
+ * Une condition `when` tient-elle parmi les occasions du jour ?
+ *
+ * La condition est une clé d'occasion (voir dailyCycles.activeOccasions),
+ * niée par `!` (« !teshuva » : hors des dix jours de techouva), ou plusieurs
+ * séparées par `|`, dont une seule suffit (« teshuva|hoshana-rabba »). Sans
+ * condition, le passage se dit toujours.
+ *
+ * C'est la seule règle qui décide de ce qui se lit un jour donné : les blocs,
+ * les paragraphes, les fragments et les halakhot la suivent tous.
+ */
+export function saidOn(when: string | undefined, occasions: Set<string>): boolean {
+  if (!when) return true;
+  return when.split("|").some((alternative) => {
+    const key = alternative.trim();
+    return key.startsWith("!") ? !occasions.has(key.slice(1)) : occasions.has(key);
+  });
+}
 
 /**
  * Tefila : un paragraphe du texte, avec sa didascalie et ses mises en avant.
@@ -118,10 +148,11 @@ export interface TextBlock {
    */
   anchor?: string;
   /**
-   * Tefila : occasion du calendrier qui conditionne l'affichage du bloc
-   * (« shabbat », « moed », « nissim »…, voir dailyCycles.activeOccasions).
-   * Le lecteur ne montre le bloc que le jour où son ajout se dit, dans une
-   * carte qui le distingue du fil du texte. Absent = toujours affiché.
+   * Tefila : condition du calendrier qui décide de l'affichage du bloc
+   * (« shabbat », « moed », « nissim », « !teshuva »…, voir saidOn et
+   * dailyCycles.activeOccasions). Le lecteur ne montre le bloc que le jour où
+   * son ajout se dit, à la couleur du thème pour qu'on voie que c'est l'ajout
+   * du jour (sauf `plain`). Absent = toujours affiché.
    */
   when?: string;
   /**
@@ -143,7 +174,10 @@ export interface TextBlock {
    * Tefila : un bloc `when` qui garde le rendu du fil ordinaire. La couleur du
    * thème dit « c'est l'ajout du jour » ; elle serait mensongère sur ce qui
    * n'est pas un ajout, le psaume du jour ou le tahanoun, conditionnels mais
-   * ordinaires.
+   * ordinaires, et illisible sur un passage entier (le Hallel, Avinou
+   * Malkénou), dont le titre suffit à signaler l'occasion. Un bloc `plain`
+   * ne prend la couleur du thème qu'à une bascule saisonnière récente (voir
+   * dailyCycles.recentSeasonalChanges).
    */
   plain?: boolean;
   /**
@@ -159,10 +193,11 @@ export interface TextBlock {
    */
   zman?: string;
   /**
-   * Sidour : la halakha qui accompagne le passage (« en cas d'erreur, on
-   * reprend… »), affichée au-dessus du bloc dans la langue du lecteur.
+   * Sidour : les halakhot qui accompagnent le passage (« en cas d'erreur, on
+   * reprend… »), affichées au-dessus du bloc dans la langue du lecteur,
+   * chacune les jours où son `when` tient (voir Halakha).
    */
-  halakha?: Rubric;
+  halakhot?: Halakha[];
   /**
    * Sidour : le passage se dit face à Jérusalem (la 'Amida, Moussaf). Le
    * lecteur pose alors une boussole à côté du titre, qui montre la direction
@@ -545,7 +580,8 @@ interface TefilaFileBlock {
   numbered?: boolean;
   plain?: boolean;
   zman?: string;
-  halakha?: Rubric;
+  /** Une halakha, ou plusieurs, chacune avec son `when` éventuel. */
+  halakha?: Halakha | Halakha[];
   kotel?: boolean;
   mirror?: boolean;
   torahWeekly?: boolean;
@@ -635,7 +671,7 @@ export function parseTefilaBlocks(rawBlocks: unknown): TextBlock[] {
     if (raw.numbered) block.numbered = true;
     if (raw.plain) block.plain = true;
     if (raw.zman) block.zman = raw.zman;
-    if (raw.halakha) block.halakha = raw.halakha;
+    if (raw.halakha) block.halakhot = Array.isArray(raw.halakha) ? raw.halakha : [raw.halakha];
     if (raw.kotel) block.kotel = true;
     if (raw.mirror) block.mirror = true;
     if (raw.torahWeekly) block.torahWeekly = true;

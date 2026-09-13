@@ -145,9 +145,14 @@ describe("fichiers de tefila", () => {
   it("Mé'ein chaloch : chaque fête ne s'affiche qu'à son jour", () => {
     const content = load("brahot", "brakha-aharona");
     const blocks = content.sections[0].blocks ?? [];
-    // Le bloc des fêtes : sept variantes, chacune conditionnée à son occasion.
+    // Le bloc des fêtes : sept mentions, chacune conditionnée à son occasion,
+    // dans le fil et non en bloc de variantes : le jour choisit, et ce qu'il
+    // ajoute se lit à la couleur du thème (accent).
     const fetes = blocks.find((b) => (b.paragraphs ?? []).some((p) => p.when === "rosh-chodesh"))!;
-    expect(fetes.variants).toBe(true);
+    expect(fetes.variants).toBeUndefined();
+    for (const paragraph of fetes.paragraphs ?? []) {
+      expect(paragraph.runs.some((run) => run.kind === "he" && run.accent)).toBe(true);
+    }
     const whens = (fetes.paragraphs ?? []).map((p) => p.when);
     expect(whens).toEqual([
       "shabbat",
@@ -196,9 +201,10 @@ describe("fichiers de tefila", () => {
       "Mé'ein chaloch (Al hami'hya)",
       "Boré nefachot",
     ]);
-    // Ce qui change selon le repas ou selon le jour sort du fil, en blocs de
-    // variantes : on en choisit une, on ne les lit pas toutes.
-    expect(blocks.filter((b) => b.variants)).toHaveLength(4);
+    // Ce qui change selon le repas sort du fil, en blocs de variantes : on en
+    // choisit une, on ne les lit pas toutes. Ce qui change selon le jour
+    // reste dans le fil : le calendrier choisit pour le lecteur.
+    expect(blocks.filter((b) => b.variants)).toHaveLength(3);
     // Comparé sans vocalisation : l'ordre des signes varie d'une source à l'autre.
     const stripNiqqud = (s: string) => s.normalize("NFC").replace(/[֑-ׇ]/g, "");
     const all = stripNiqqud(content.sections[0].he.join(" "));

@@ -7,6 +7,7 @@ import {
   isWinterMention,
   recentSeasonalChanges,
 } from "../services/dailyCycles";
+import { saidOn } from "../services/textService";
 
 /**
  * Les occasions du sidour de semaine : l'été et l'hiver de la 'Amida, la
@@ -396,5 +397,55 @@ describe("les fêtes nommées du Mé'ein chaloch", () => {
     const ordinaire = activeOccasions(new HDate(10, months.CHESHVAN, 5786), false);
     for (const key of ["pesach", "shavuot", "sukkot", "shemini-atzeret"])
       expect(ordinaire.has(key)).toBe(false);
+  });
+});
+
+describe("la sortie de Chabbat et de Yom Tov (Ata 'honantanou)", () => {
+  it("le jour hébraïque qui suit un Chabbat", () => {
+    // Un dimanche de 'Hechvan : la veille était Chabbat. Arvit du samedi soir
+    // vit déjà ce jour-là (voir tefilaHebrewDay). Le lundi n'a rien à séparer.
+    const dimanche = hebrewDayOfWeek(0, new HDate(1, months.CHESHVAN, 5786));
+    expect(activeOccasions(dimanche, false).has("motsae")).toBe(true);
+    expect(activeOccasions(dimanche.next(), false).has("motsae")).toBe(false);
+  });
+
+  it("le jour qui suit un Yom Tov, s'il n'en est pas un lui-même", () => {
+    // 11 Tichri, lendemain de Kippour ; 23 Tichri en Israël (lendemain de
+    // Chemini 'Atséret), mais pas en diaspora, où c'est Sim'hat Torah.
+    expect(activeOccasions(new HDate(11, months.TISHREI, 5787), false).has("motsae")).toBe(true);
+    expect(activeOccasions(new HDate(23, months.TISHREI, 5787), true).has("motsae")).toBe(true);
+    expect(activeOccasions(new HDate(23, months.TISHREI, 5787), false).has("motsae")).toBe(false);
+    // 'Hol haMoed qui suit le premier jour de Pessah en Israël : Ata
+    // 'honantanou avec Ya'alé véyavo.
+    const holHamoed = activeOccasions(new HDate(16, months.NISAN, 5787), true);
+    expect(holHamoed.has("motsae")).toBe(true);
+    expect(holHamoed.has("moed")).toBe(true);
+    // Le second jour de fête de diaspora n'a rien à séparer.
+    expect(activeOccasions(new HDate(16, months.NISAN, 5787), false).has("motsae")).toBe(false);
+  });
+});
+
+describe("Hochana Rabba", () => {
+  it("le 21 Tichri, et lui seul", () => {
+    expect(activeOccasions(new HDate(21, months.TISHREI, 5787), false).has("hoshana-rabba")).toBe(
+      true,
+    );
+    expect(activeOccasions(new HDate(20, months.TISHREI, 5787), false).has("hoshana-rabba")).toBe(
+      false,
+    );
+  });
+});
+
+describe("la condition d'un passage (saidOn)", () => {
+  const jour = new Set(["teshuva", "ete"]);
+
+  it("une clé, sa négation, ou l'une de plusieurs", () => {
+    expect(saidOn(undefined, jour)).toBe(true);
+    expect(saidOn("teshuva", jour)).toBe(true);
+    expect(saidOn("hiver", jour)).toBe(false);
+    expect(saidOn("!teshuva", jour)).toBe(false);
+    expect(saidOn("!hiver", jour)).toBe(true);
+    expect(saidOn("hoshana-rabba|teshuva", jour)).toBe(true);
+    expect(saidOn("hoshana-rabba|hiver", jour)).toBe(false);
   });
 });

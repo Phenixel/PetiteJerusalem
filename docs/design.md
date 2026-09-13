@@ -317,6 +317,30 @@ ne porte jamais un texte de lecture : des libellés courts, en demi-gras, et
 des titres. Le jour où il en portera un, c'est le jeton d'encre ci-dessus qu'il
 faudra, pas un thème plus terne.
 
+### Ce que le jour ajoute dans une tefila
+
+Dans le lecteur de liturgie (`LiturgyText.vue`), `primary` sert d'encre à
+ce que le jour ajoute ou change dans le fil du texte, comme le rouge d'un
+siddour imprimé : Hamélekh hakadoch aux dix jours de techouva, Zokhrénou au
+milieu d'Avot, Ya'alé véyavo à Roch Hodech, 'Al hanissim à 'Hanouka, le
+compte du 'Omer de ce soir. Le passage se lit à sa place, dans le paragraphe
+qu'il complète, et il n'est là que le jour où il se dit : le reste de
+l'année, le texte ordinaire tient la place, à la couleur du texte.
+
+Ce qui ne se colore pas : un passage entier conditionnel (le Hallel, Avinou
+Malkénou, le psaume du jour, le tahanoun), dont le titre suffit à dire
+l'occasion et qu'une colonne entière de `primary` rendrait illisible ; et le
+texte de saison (morid hatal, Barekh 'alénou), qui est le texte ordinaire de
+six mois, sauf les trois premières semaines d'une bascule, où c'est là qu'on
+se trompe (`recentSeasonalChanges`). Ce que l'application ne peut pas
+trancher (en Terre d'Israël, à dix convives) reste en gris : une possibilité
+signalée, pas une lecture imposée.
+
+C'est l'exception à « `primary` ne porte jamais un texte de lecture » : un
+fragment court, dans un paragraphe qu'on lit d'un trait. La halakha de
+l'oubli (« si l'on a conclu haEl hakadoch, on recommence ») accompagne le
+passage, en didascalie, les jours où elle sert.
+
 ## 3. Les rayons
 
 Deux familles, et elles vont en sens contraire. Les **surfaces** sont taillées

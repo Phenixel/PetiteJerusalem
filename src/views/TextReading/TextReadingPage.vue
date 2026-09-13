@@ -16,6 +16,7 @@ import {
   loadText,
   MissingTextFileError,
   placeLabel as describePlace,
+  saidOn,
 } from "../../services/textService";
 import type { TextBlock, TextContent, TextSection } from "../../services/textService";
 import {
@@ -184,7 +185,7 @@ const occasions = computed(() =>
   activeOccasions(occasionsDay.value, zmanimPlace.value.tzid === "Asia/Jerusalem"),
 );
 const visibleBlocks = computed(() =>
-  verseBlocks.value.filter((b) => !b.when || occasions.value.has(b.when)),
+  verseBlocks.value.filter((b) => saidOn(b.when, occasions.value)),
 );
 
 // Les bascules saisonnières récentes (machiv haroua'h en début d'hiver…) :
@@ -1721,7 +1722,6 @@ watch(textId, (_, previousTextId) => {
           :style="{ '--reading-scale': readingSize.scale.value }"
           :blocks="visibleBlocks"
           :show-phonetic="showPhonetic"
-          :phonetic-lines="phoneticLines"
           :occasions="occasions"
           :recent-changes="recentChanges"
           :highlighted-line="highlightedLine"

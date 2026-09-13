@@ -2,6 +2,8 @@
 import { computed, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Rubric, TextBlock, TextParagraph, TextRun } from "../../services/textService";
+import { saidOn } from "../../services/textService";
+import { transliterate } from "../../services/hebrewTransliteration";
 import type { SupportedLocale } from "../../i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
@@ -20,11 +22,11 @@ import {
 import TefilaZman from "./TefilaZman.vue";
 
 /**
- * Rendu des textes de tefila (Sli'hot, Brahot) : le fil du texte en paragraphes
- * justifiés, les didascalies dans la langue du lecteur, les reprises de
- * l'assemblée en gras, les ajouts du calendrier fondus dans le fil (à la
- * couleur du thème les premières semaines d'une bascule saisonnière) et ceux
- * des dix jours de pénitence dans un encadré qui se replie.
+ * Rendu des textes de tefila (Sli'hot, Brahot, Sidour) : le fil du texte en
+ * paragraphes justifiés, les didascalies dans la langue du lecteur, les
+ * reprises de l'assemblée en gras, et ce que le jour ajoute ou change dans
+ * le fil à sa place et à la couleur du thème, comme un siddour imprimé le met
+ * en rouge : on lit d'un trait, et l'on voit ce qui se dit aujourd'hui.
  *
  * Le lecteur générique (versets numérotés, une ligne = un bloc espacé) ne sait
  * rendre aucune de ces nuances : elles n'ont de sens que pour la liturgie.
@@ -34,14 +36,13 @@ const props = withDefaults(
     /** Blocs déjà filtrés par occasion (voir TextBlock.when). */
     blocks: TextBlock[];
     showPhonetic: boolean;
-    phoneticLines: string[];
-    /** Occasions du jour : ouvrent d'emblée les encadrés qui les concernent. */
+    /** Occasions du jour : ce qui se dit, et les encadrés qui s'ouvrent. */
     occasions: Set<string>;
     /**
      * Occasions saisonnières qui viennent de basculer (machiv haroua'h en
-     * début d'hiver…) : leurs ajouts prennent la couleur du thème les trois
-     * premières semaines, le temps que le pli se prenne. Le reste du temps,
-     * les ajouts se fondent dans le fil, à la couleur du texte.
+     * début d'hiver…). Un texte de saison n'est pas un ajout du jour, il se
+     * lit dans le fil à la couleur du texte ; mais les trois premières
+     * semaines, le temps que le pli se prenne, il prend la couleur du thème.
      */
     recentChanges: Set<string>;
     highlightedLine: number | null;
@@ -132,15 +133,15 @@ const copiesOf = (paragraph: TextParagraph): number => paragraph.repeat ?? 1;
 const runText = (text: string, index: number): string => (index === 0 ? text : ` ${text}`);
 
 /**
- * Un ajout du calendrier au sens fort : conditionnel ET mis en avant. Les
- * blocs `when` marqués `plain` (le psaume du jour, le tahanoun) sont
- * conditionnels sans être des ajouts : ils gardent le rendu du fil ordinaire.
+ * Un bloc qui se lit à la couleur du thème : l'ajout du jour, dans le fil à
+ * sa place (« Al hanissim » à 'Hanouka, le psaume qui s'ajoute à celui du
+ * jour). Un bloc `when` marqué `plain` (le psaume du jour, le tahanoun, un
+ * passage entier comme le Hallel) est conditionnel sans être un ajout à
+ * signaler : il garde la couleur du texte, sauf les premières semaines d'une
+ * bascule saisonnière, quand c'est là qu'on se trompe.
  */
-const isCalendarAdd = (block: TextBlock): boolean => !!block.when && !block.plain;
-
-/** Un ajout dont l'occasion vient de basculer : le seul qui se signale. */
-const isRecentAdd = (block: TextBlock): boolean =>
-  isCalendarAdd(block) && !!block.when && props.recentChanges.has(block.when);
+const isHighlighted = (block: TextBlock): boolean =>
+  !!block.when && (!block.plain || props.recentChanges.has(block.when));
 
 /**
  * Classe de l'encadré d'un bloc. Un encadré repliable ne se colore que
@@ -154,13 +155,7 @@ function sectionClass(block: TextBlock): string {
       ? `${base} bg-primary/5`
       : `${base} bg-black/[0.04] dark:bg-white/[0.05]`;
   }
-  // Ajout du calendrier : dans le fil, comme le reste du texte, puisqu'il ne
-  // s'affiche que le jour où il se dit. Seule une bascule saisonnière récente
-  // (machiv haroua'h les trois premières semaines de l'hiver…) le passe à la
-  // couleur du thème : « attention, ça vient de changer ».
-  if (isCalendarAdd(block)) {
-    return isRecentAdd(block) ? "text-primary" : "";
-  }
+  if (isHighlighted(block)) return "text-primary";
   // Variantes : à part du fil, sur un fond neutre, pour qu'on voie qu'on
   // choisit au lieu de tout lire.
   if (block.variants) return "my-6 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] p-4";
@@ -180,9 +175,9 @@ function titleClass(block: TextBlock, index: number): string {
  * second plan : le fil qu'on lit d'un bout à l'autre doit rester le plus net.
  */
 const paragraphTone = (block: TextBlock, paragraph: TextParagraph): string =>
-  // Un ajout signalé (bascule récente) garde la couleur du thème : elle dit
-  // « ça vient de changer », l'atténuer reviendrait à la contredire.
-  !isRecentAdd(block) && (paragraph.muted || block.variants) ? "text-text-secondary" : "";
+  // Un ajout du jour garde la couleur du thème : elle dit « ceci se dit
+  // aujourd'hui », l'atténuer reviendrait à la contredire.
+  !isHighlighted(block) && (paragraph.muted || block.variants) ? "text-text-secondary" : "";
 
 // Fichier sans mise en forme détaillée : un paragraphe par ligne, sans didascalie.
 const plainParagraphs = (block: TextBlock): TextParagraph[] =>
@@ -198,26 +193,37 @@ interface ParagraphEntry {
   line: number;
 }
 
-const saidToday = (when?: string): boolean => !when || props.occasions.has(when);
+const saidToday = (when?: string): boolean => saidOn(when, props.occasions);
 
 /** Les fragments d'un paragraphe qui se disent aujourd'hui. */
 const visibleRuns = (paragraph: TextParagraph): TextRun[] =>
   paragraph.runs.filter((run) => saidToday(run.when));
 
+/** Le texte hébreu d'un paragraphe tel qu'il se dit aujourd'hui. */
+const visibleText = (paragraph: TextParagraph): string =>
+  visibleRuns(paragraph)
+    .filter((run): run is TextRun & { kind: "he" } => run.kind === "he")
+    .map((run) => run.text)
+    .join(" ");
+
 /**
- * Classe d'un fragment hébreu. Le texte qu'une didascalie affecte suit la
- * même règle que les blocs : quand le calendrier l'impose (un fragment `when`
- * ne s'affiche que les jours où il se dit), il se lit dans le fil, à la
- * couleur du texte, et seule une bascule saisonnière récente le passe à la
- * couleur du thème ; quand l'application ne peut pas trancher (en Terre
- * d'Israël, à dix convives), le gris signale une possibilité sans la faire
- * passer pour une lecture obligée.
+ * Classe d'un fragment hébreu. Ce que le jour ajoute ou change (`accent`,
+ * avec son `when`) se lit à la couleur du thème, à sa place dans le fil :
+ * Hamélekh hakadoch aux dix jours de techouva, Zokhrénou dans Avot. Un
+ * fragment de saison sans accent (morid hatal, machiv haroua'h) reste à la
+ * couleur du texte, sauf les premières semaines d'une bascule. Quand
+ * l'application ne peut pas trancher (en Terre d'Israël, à dix convives), le
+ * gris signale une possibilité sans la faire passer pour une lecture obligée.
  */
 const runClass = (run: TextRun & { kind: "he" }) => ({
   "font-bold": run.strong,
-  "reading-accent": run.accent && !!run.when && props.recentChanges.has(run.when),
+  "reading-accent": (run.accent && !!run.when) || (!!run.when && props.recentChanges.has(run.when)),
   "reading-alt": run.accent && !run.when,
 });
+
+/** Les halakhot d'un bloc qui servent aujourd'hui. */
+const halakhotOf = (block: TextBlock): Rubric[] =>
+  (block.halakhot ?? []).filter((halakha) => saidToday(halakha.when));
 
 /**
  * La boussole du Kotel, ouverte depuis le titre d'un passage qui se dit face
@@ -260,7 +266,13 @@ const sections = computed(() =>
       block,
       paragraphs: (block.paragraphs ?? plainParagraphs(block))
         .map((paragraph, i): ParagraphEntry => ({ paragraph, line: block.offset + i }))
-        .filter(({ paragraph }) => saidToday(paragraph.when)),
+        // Un paragraphe se lit s'il se dit aujourd'hui, et s'il lui reste de
+        // l'hébreu à dire : un paragraphe fait d'un seul fragment `when`
+        // (le compte du 'Omer de ce soir) disparaît avec lui.
+        .filter(
+          ({ paragraph }) =>
+            saidToday(paragraph.when) && visibleRuns(paragraph).some((run) => run.kind === "he"),
+        ),
     }))
     // Un marqueur resté vide (la Torah de la semaine qui n'a pas pu se
     // charger) ou un bloc dont aucune ligne ne se dit aujourd'hui (les fêtes
@@ -268,6 +280,23 @@ const sections = computed(() =>
     .filter(({ block, paragraphs }) => block.zman || paragraphs.length > 0)
     .map((entry, index) => ({ ...entry, index })),
 );
+
+/**
+ * La translittération, ligne par ligne, de ce qui se dit aujourd'hui : les
+ * fragments que le jour écarte (l'autre conclusion, l'autre saison) n'y
+ * entrent pas, le lecteur phonétique lit le même texte que le lecteur hébreu.
+ * Calculée seulement quand on la demande : elle parcourt chaque lettre.
+ */
+const phoneticOf = computed(() => {
+  const byLine = new Map<number, string>();
+  if (!props.showPhonetic) return byLine;
+  for (const { paragraphs } of sections.value) {
+    for (const { paragraph, line } of paragraphs) {
+      byLine.set(line, transliterate(visibleText(paragraph)));
+    }
+  }
+  return byLine;
+});
 </script>
 
 <template>
@@ -344,7 +373,9 @@ const sections = computed(() =>
           <!-- La halakha du passage (« en cas d'erreur, on reprend… »), dans la
                langue du lecteur, avant le texte qu'elle encadre : une simple
                ligne en petit, dans le registre des didascalies. -->
-          <p v-if="block.halakha" class="reading-halakha">{{ say(block.halakha) }}</p>
+          <p v-for="(halakha, h) in halakhotOf(block)" :key="h" class="reading-halakha">
+            {{ say(halakha) }}
+          </p>
           <template v-for="({ paragraph, line }, i) in paragraphs" :key="line">
             <div :class="block.numbered ? 'flex items-start gap-3 py-2' : ''">
               <span
@@ -397,7 +428,7 @@ const sections = computed(() =>
                     </template>
                   </p>
                   <p v-else dir="ltr" class="reading-tl">
-                    {{ phoneticLines[line] }}
+                    {{ phoneticOf.get(line) }}
                   </p>
                 </div>
                 <div v-if="selectedLine === line" class="flex justify-end mt-2">
@@ -485,8 +516,9 @@ const sections = computed(() =>
   transition: background-color 0.5s ease;
 }
 
-/* Le texte imposé par une occasion qui vient de basculer (machiv haroua'h en
-   début d'hiver…) : la couleur du thème, le temps que le pli se prenne. */
+/* Ce que le jour ajoute ou change dans le fil (Hamélekh hakadoch aux dix
+   jours, Zokhrénou, machiv haroua'h en début d'hiver…) : la couleur du thème,
+   comme le rouge d'un siddour imprimé. */
 .reading-accent {
   color: var(--color-primary);
 }
