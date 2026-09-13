@@ -94,7 +94,6 @@ describe("texte que la page fait lire", () => {
         h(LiturgyText, {
           blocks,
           showPhonetic: false,
-          phoneticLines: [],
           occasions: new Set<string>(),
           recentChanges: new Set<string>(),
           highlightedLine: null,

@@ -8,15 +8,14 @@
  * premier psaume repousserait le texte hors de l'écran. Un appui sur le titre
  * les ouvre, et ils restent ouverts le temps de la page.
  */
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import type { TextBlock } from "../services/textService";
-import { transliterate } from "../services/hebrewTransliteration";
 import { useReadingSize } from "../composables/useReadingSize";
 import LiturgyText from "../views/TextReading/LiturgyText.vue";
 import CollapseTransition from "./CollapseTransition.vue";
 import AppIcon from "./icons/AppIcon.vue";
 
-const props = defineProps<{
+defineProps<{
   blocks: TextBlock[];
   /** Titre de l'encadré : « Avant la lecture », « Après la lecture ». */
   title: string;
@@ -35,13 +34,6 @@ const readingSize = useReadingSize();
 const noOccasions = new Set<string>();
 const notBookmarked = () => false;
 
-/**
- * La translittération n'est calculée que si le lecteur l'a demandée : elle
- * parcourt chaque lettre, et ces passages sont longs.
- */
-const phoneticLines = computed(() =>
-  props.showPhonetic ? props.blocks.flatMap((block) => block.lines).map(transliterate) : [],
-);
 </script>
 
 <template>
@@ -66,7 +58,6 @@ const phoneticLines = computed(() =>
           :style="{ '--reading-scale': readingSize.scale.value }"
           :blocks="blocks"
           :show-phonetic="!!showPhonetic"
-          :phonetic-lines="phoneticLines"
           :occasions="noOccasions"
           :recent-changes="noOccasions"
           :highlighted-line="null"

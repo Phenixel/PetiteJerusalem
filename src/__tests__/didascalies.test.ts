@@ -44,7 +44,8 @@ function consignes(node: unknown, out: string[] = []): string[] {
   if (node && typeof node === "object") {
     for (const [key, value] of Object.entries(node as Node)) {
       const isConsigne = key === "rubric" || key === "halakha" || key === "r";
-      if (isConsigne && value && typeof value === "object") {
+      // Une halakha peut en être plusieurs, chacune avec son `when`.
+      if (isConsigne && value && typeof value === "object" && !Array.isArray(value)) {
         const fr = (value as Node).fr;
         const en = (value as Node).en;
         if (typeof fr === "string") out.push(fr);

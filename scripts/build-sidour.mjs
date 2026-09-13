@@ -18,7 +18,7 @@
  * domaine public.
  */
 
-import { writeFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import {
@@ -34,23 +34,32 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, "../public/texts/tefila");
 
+/**
+ * « Ki tolid banim », Devarim 4, 25 à 40 : la lecture du matin de Tich'a
+ * beAv. L'export du siddour ne la porte pas ; elle vient du fichier de la
+ * paracha Vaét'hanan (public/texts/tanakh/308.json, découpé en montées : la
+ * seconde ouvre au 4, 5, le verset 25 est donc son vingt-et-unième).
+ */
+const KI_TOLID_BANIM = (() => {
+  const vaethanan = JSON.parse(
+    readFileSync(resolve(__dirname, "../public/texts/tanakh/308.json"), "utf8"),
+  );
+  const versets = vaethanan.he[1].slice(20, 36);
+  if (versets.length !== 16 || !/תוֹלִ/.test(versets[0])) {
+    throw new Error("Vaét'hanan : le découpage de la 2e montée a changé");
+  }
+  return versets.join(" ");
+})();
+
 // ---------- Recette → fichier ----------
 
 /**
- * Une ligne de recette :
- *   { seg, mode?, strip?: [..], from?, until?, he?: "littéral", rubric?,
- *     when?, muted?, tight?, lead?, repeat?, strong?, alt?: { rubric, text } }
- * `answer` fait suivre la ligne de la réponse de l'assemblée, en gras (amen,
- * ken yehi ratson) ; `strip` retire des consignes restées dans le texte
- * extrait ; `from`/`until`
- * découpent le segment entre deux repères (voir sliceBetween) ; `when` ne dit
- * la ligne qu'à cette occasion ; `alt` ajoute dans le fil une didascalie
- * suivie du texte qu'elle affecte, à la fin de la ligne ou, si `alt.after` le
- * demande, juste après le mot qu'elle remplace ; `splitAmen` déplie un
- * kaddich en une phrase par ligne, chacune suivie de sa réponse (voir
- * buildKaddishLines).
+ * Le texte d'une ligne ou d'un fragment : un segment de la source (`seg`,
+ * dans le `mode` de segText) ou de l'hébreu écrit ici (`he`), débarrassé des
+ * consignes restées dans le texte (`strip`) et découpé entre deux repères
+ * (`from`/`until`, voir sliceBetween).
  */
-function buildLine(spec, segs) {
+function lineText(spec, segs) {
   let text;
   if (spec.he !== undefined) {
     text = cleanFinal(spec.he);
@@ -61,10 +70,62 @@ function buildLine(spec, segs) {
     text = text.split(cut).join(" ");
   }
   if (spec.from || spec.until) text = sliceBetween(text, spec);
-  text = text.replace(/\s+/g, " ").trim();
-  if (!text) return null;
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Un fragment d'une ligne à fragments (`parts`) : le texte se prend comme
+ * pour une ligne, et `when` le réserve à son occasion (« teshuva »,
+ * « !teshuva » pour l'autre conclusion, voir saidOn dans textService). C'est
+ * ainsi qu'un ajout du calendrier entre dans le paragraphe à sa place, et
+ * qu'une conclusion cède la sienne à l'autre le jour dit, au lieu d'un
+ * second paragraphe sous le premier. `accent` marque ce que le jour ajoute
+ * ou change, que le lecteur lit à la couleur du thème ; sans accent, un
+ * fragment `when` est une variante ordinaire (morid hatal, l'autre
+ * conclusion). `rubric` glisse une didascalie devant le fragment.
+ */
+function partRuns(spec, segs) {
+  const text = lineText(spec, segs);
+  if (!text) throw new Error(`Fragment vide : ${JSON.stringify(spec)}`);
+  const when = spec.when ? { when: spec.when } : {};
+  const runs = [];
+  if (spec.rubric) runs.push({ r: spec.rubric, ...when });
+  if (spec.accent) runs.push({ v: text, ...when });
+  else if (spec.strong) runs.push({ b: text, ...when });
+  else if (spec.when) runs.push({ he: text, ...when });
+  else runs.push(text);
+  return runs;
+}
+
+/**
+ * Une ligne de recette :
+ *   { seg, mode?, strip?: [..], from?, until?, he?: "littéral", rubric?,
+ *     when?, muted?, tight?, lead?, repeat?, strong?, alt?: { rubric, text },
+ *     parts?: [fragment, ...] }
+ * `answer` fait suivre la ligne de la réponse de l'assemblée, en gras (amen,
+ * ken yehi ratson) ; `strip` retire des consignes restées dans le texte
+ * extrait ; `from`/`until`
+ * découpent le segment entre deux repères (voir sliceBetween) ; `when` ne dit
+ * la ligne qu'à cette occasion ; `alt` ajoute dans le fil une didascalie
+ * suivie du texte qu'elle affecte, à la fin de la ligne ou, si `alt.after` le
+ * demande, juste après le mot qu'elle remplace ; `parts` compose la ligne de
+ * plusieurs fragments, chacun avec sa condition (voir partRuns) ;
+ * `splitAmen` déplie un kaddich en une phrase par ligne, chacune suivie de sa
+ * réponse (voir buildKaddishLines).
+ */
+function buildLine(spec, segs) {
   const line = {};
   if (spec.rubric) line.rubric = spec.rubric;
+  if (spec.parts) {
+    line.he = spec.parts.flatMap((part) => partRuns(part, segs));
+    if (spec.when) line.when = spec.when;
+    if (spec.muted) line.muted = true;
+    if (spec.tight) line.tight = true;
+    if (spec.lead) line.lead = true;
+    return line;
+  }
+  const text = lineText(spec, segs);
+  if (!text) return null;
   if (spec.strong) line.he = [{ b: text }];
   else if (spec.answer) line.he = [text, { b: spec.answer }];
   else if (spec.alt) {
@@ -117,6 +178,9 @@ function buildBlock(spec, sections) {
   if (spec.when) block.when = spec.when;
   if (spec.plain) block.plain = true;
   if (spec.fold) block.fold = spec.fold;
+  // Une halakha, ou plusieurs : chacune avec son `when` (voir Halakha dans
+  // textService), pour que la règle de Hamélekh hakadoch n'apparaisse
+  // qu'aux dix jours de techouva.
   if (spec.halakha) block.halakha = spec.halakha;
   if (spec.zman) block.zman = spec.zman;
   if (spec.torahWeekly) block.torahWeekly = true;
@@ -166,13 +230,6 @@ const RUBRIC = {
     "During the Ten Days of Repentance, add:",
     "בעשרת ימי תשובה מוסיפים:",
   ),
-  ete: R("En été :", "In summer:", "בקיץ:"),
-  hiver: R("En hiver :", "In winter:", "בחורף:"),
-  roshHodesh: R("À Roch Hodech :", "On Rosh Hodesh:", "בראש חודש:"),
-  holPessah: R("À 'Hol haMoed Pessah :", "On Chol haMoed Pesach:", "בחוה״מ פסח:"),
-  holSouccot: R("À 'Hol haMoed Souccot :", "On Chol haMoed Sukkot:", "בחוה״מ סוכות:"),
-  hanouka: R("À 'Hanouka :", "On Hanukkah:", "בחנוכה:"),
-  pourim: R("À Pourim :", "On Purim:", "בפורים:"),
 };
 
 const STRIP = {
@@ -209,29 +266,51 @@ const HALAKHA = {
     "שכח שאלת גשם, אומרה בשומע תפילה؛ עבר, חוזר לברך עלינו, ואם סיים את העמידה חוזר לראשה.",
   ),
   melekhKadosh: R(
-    "Si l'on a conclu haEl hakadoch, on recommence la 'Amida.",
-    "If haEl hakadosh was said, repeat the Amidah.",
-    "חתם האל הקדוש, חוזר לראש העמידה.",
+    "Dix jours de techouva : on conclut « Hamélekh hakadoch ». Si l'on a conclu haEl hakadoch, on recommence la 'Amida.",
+    "Ten Days of Repentance: conclude with “Hamelech hakadosh”. If haEl hakadosh was said, repeat the Amidah.",
+    "בעשרת ימי תשובה חותמים « המלך הקדוש ». חתם האל הקדוש, חוזר לראש העמידה.",
+  ),
+  melekhMishpat: R(
+    "Dix jours de techouva : on conclut « Hamélekh hamichpat ». Si l'on a conclu Mélekh ohev tsedaka oumichpat, on ne recommence pas.",
+    "Ten Days of Repentance: conclude with “Hamelech hamishpat”. If Melech ohev tzedakah umishpat was said, do not repeat.",
+    "בעשרת ימי תשובה חותמים « המלך המשפט ». חתם מלך אוהב צדקה ומשפט, אינו חוזר.",
+  ),
+  /** Les quatre ajouts des dix jours qui ne font pas recommencer. */
+  oubliTeshuva: (fr, en, he) =>
+    R(
+      `Dix jours de techouva : si l'on a oublié ${fr}, on ne recommence pas.`,
+      `Ten Days of Repentance: if ${en} was omitted, do not repeat.`,
+      `בעשרת ימי תשובה: שכח ${he}, אינו חוזר.`,
+    ),
+  nahem: R(
+    "À Min'ha de Tich'a beAv, Na'hem entre dans la bénédiction de Jérusalem, dont la conclusion change. Si on l'a oublié, on ne recommence pas.",
+    "At Mincha on Tisha b'Av, Nachem enters the blessing of Jerusalem, whose conclusion changes. If it was omitted, do not repeat.",
+    "במנחה של תשעה באב אומרים נחם בברכת ירושלים, וחתימתה משתנה. שכח, אינו חוזר.",
+  ),
+  anenou: R(
+    "Un jour de jeûne, qui jeûne dit 'Anénou dans Chéma kolénou, sans conclusion. Si on l'a oublié, on ne recommence pas.",
+    "On a fast day, whoever is fasting says Anenu within Shema kolenu, without a closing blessing. If it was omitted, do not repeat.",
+    "בתענית, המתענה אומר עננו בשמע קולנו בלי חתימה. שכח, אינו חוזר.",
   ),
   yaaleVeyavoJour: R(
-    "Si l'on a oublié Ya'alé véyavo, on recommence depuis Retsé.",
-    "If Yaale veyavo was omitted, go back to Retseh.",
-    "שכח יעלה ויבוא, חוזר לרצה.",
+    "À Roch Hodech et à 'Hol haMoed, Ya'alé véyavo entre dans Retsé. Si on l'a oublié, on recommence depuis Retsé ; si la 'Amida est achevée, on la recommence.",
+    "On Rosh Hodesh and Chol haMoed, Yaale veyavo enters Retseh. If it was omitted, go back to Retseh; if the Amidah was finished, repeat it.",
+    "בראש חודש ובחול המועד אומרים יעלה ויבוא ברצה. שכח, חוזר לרצה؛ סיים את העמידה, חוזר לראשה.",
   ),
   yaaleVeyavoSoir: R(
-    "Si l'on a oublié Ya'alé véyavo, on ne recommence pas.",
-    "If Yaale veyavo was omitted, do not repeat.",
-    "שכח יעלה ויבוא, אינו חוזר.",
+    "À Roch Hodech, Ya'alé véyavo entre dans Retsé. Si on l'a oublié à Arvit, on ne recommence pas.",
+    "On Rosh Hodesh, Yaale veyavo enters Retseh. If it was omitted at Arvit, do not repeat.",
+    "בראש חודש אומרים יעלה ויבוא ברצה. שכח בערבית, אינו חוזר.",
   ),
   alHanissim: R(
-    "Si l'on a oublié 'Al hanissim, on ne recommence pas.",
-    "If Al hanissim was omitted, do not repeat.",
-    "שכח על הניסים, אינו חוזר.",
+    "À 'Hanouka et à Pourim, 'Al hanissim entre dans Modim. Si on l'a oublié, on ne recommence pas.",
+    "On Hanukkah and Purim, Al hanissim enters Modim. If it was omitted, do not repeat.",
+    "בחנוכה ובפורים אומרים על הניסים במודים. שכח, אינו חוזר.",
   ),
   ataHonantanu: R(
-    "Si l'on a oublié Ata 'honantanou, on ne recommence pas : la havdala sur la coupe en tient lieu.",
-    "If Atah chonantanu was omitted, do not repeat: havdalah over the cup takes its place.",
-    "שכח אתה חוננתנו, אינו חוזר؛ סומך על ההבדלה שעל הכוס.",
+    "À la sortie de Chabbat et de Yom Tov, Ata 'honantanou entre dans 'Honen hadaat. Si on l'a oublié, on ne recommence pas : la havdala sur la coupe en tient lieu.",
+    "At the close of Shabbat and Yom Tov, Atah chonantanu enters Chonen hadaat. If it was omitted, do not repeat: havdalah over the cup takes its place.",
+    "במוצאי שבת ויום טוב אומרים אתה חוננתנו בחונן הדעת. שכח, אינו חוזר؛ סומך על ההבדלה שעל הכוס.",
   ),
   shemaMatin: R(
     "Avant le Chéma, on a en tête d'accomplir la mitsva de le lire et de proclamer l'unité du Nom. On couvre les yeux de la main droite pour le premier verset, qu'on dit avec concentration.",
@@ -342,64 +421,70 @@ function birkatKohanimBlock(src, ix, extra = {}) {
  * Les blocs de la 'Amida d'un office. `ix` : index des segments dans la
  * source de cet office ; `opts` : ce qui n'existe pas partout (kedoucha,
  * modim derabanan, Ata 'honantanou à la sortie de Chabbat…).
+ *
+ * Ce que le jour ajoute ou change entre dans le paragraphe à sa place, comme
+ * dans un siddour imprimé : Zokhrénou au milieu d'Avot, Hamélekh hakadoch à
+ * la place de haEl hakadoch, Ya'alé véyavo avec la fête du jour et elle
+ * seule. Le lecteur ne montre que ce qui se dit ce jour-là, à la couleur du
+ * thème, et la halakha de l'oubli n'accompagne le passage que les jours où
+ * elle sert.
  */
 function amidaBlocks(src, ix, opts = {}) {
   const blocks = [];
+
+  // Avot. Aux dix jours de techouva, Zokhrénou entre avant « Mélekh 'ozer ».
   blocks.push({
     src,
     labelText: R("'Amida", "The Amidah", "עמידה"),
     kotel: true,
-    halakha: HALAKHA.amida,
-    lines: [{ seg: 1 }, { seg: ix.avot, strip: [STRIP.teshuvaDisent] }],
-  });
-
-  blocks.push({
-    src,
-    when: "teshuva",
+    halakha: [
+      HALAKHA.amida,
+      { ...HALAKHA.oubliTeshuva("Zokhrénou", "Zochrenu", "זכרנו"), when: "teshuva" },
+    ],
     lines: [
+      { seg: 1 },
       {
-        seg: ix.avot,
-        mode: "small",
-        strip: [STRIP.teshuvaDisent],
-        rubric: R(
-          "Dix jours de techouva, avant la fin de la bénédiction :",
-          "Ten Days of Repentance, before the end of the blessing:",
-          "בעשרת ימי תשובה, לפני חתימת הברכה:",
-        ),
+        parts: [
+          { seg: ix.avot, strip: [STRIP.teshuvaDisent], until: "מֶֽלֶךְ עוֹזֵר" },
+          {
+            seg: ix.avot,
+            mode: "small",
+            strip: [STRIP.teshuvaDisent],
+            when: "teshuva",
+            accent: true,
+          },
+          { seg: ix.avot, strip: [STRIP.teshuvaDisent], from: "מֶֽלֶךְ עוֹזֵר" },
+        ],
       },
     ],
   });
 
-  blocks.push({ src, lines: [{ seg: ix.gevurot }] });
+  // Guevourot, d'un seul tenant : la mention de la saison (morid hatal en
+  // été, machiv haroua'h en hiver) à sa place après « rav lehochia' », et aux
+  // dix jours de techouva Mi kamokha av hara'haman avant « vénééman ».
   blocks.push({
     src,
-    when: "ete",
-    halakha: HALAKHA.eteMention,
-    lines: [{ he: "מוֹרִיד הַטָּל.", rubric: RUBRIC.ete }],
-  });
-  blocks.push({
-    src,
-    when: "hiver",
-    halakha: HALAKHA.hiverMention,
-    lines: [{ he: "מַשִּׁיב הָרֽוּחַ וּמוֹרִיד הַגֶּֽשֶׁם.", rubric: RUBRIC.hiver }],
-  });
-  blocks.push({
-    src,
-    lines: [{ seg: ix.mekhalkel, strip: [STRIP.teshuvaDisent] }],
-  });
-  blocks.push({
-    src,
-    when: "teshuva",
+    halakha: [
+      { ...HALAKHA.eteMention, when: "ete" },
+      { ...HALAKHA.hiverMention, when: "hiver" },
+      { ...HALAKHA.oubliTeshuva("Mi kamokha", "Mi chamocha", "מי כמוך"), when: "teshuva" },
+    ],
     lines: [
       {
-        seg: ix.mekhalkel,
-        mode: "small",
-        strip: [STRIP.teshuvaDisent],
-        rubric: R(
-          "Dix jours de techouva, avant « וְנֶאֱמָן » :",
-          "Ten Days of Repentance, before “vene'eman”:",
-          "בעשרת ימי תשובה, לפני « וְנֶאֱמָן »:",
-        ),
+        parts: [
+          { seg: ix.gevurot },
+          { he: "מוֹרִיד הַטָּל.", when: "ete" },
+          { he: "מַשִּׁיב הָרֽוּחַ וּמוֹרִיד הַגֶּֽשֶׁם.", when: "hiver" },
+          { seg: ix.mekhalkel, strip: [STRIP.teshuvaDisent], until: "וְנֶֽאֱמָן" },
+          {
+            seg: ix.mekhalkel,
+            mode: "small",
+            strip: [STRIP.teshuvaDisent],
+            when: "teshuva",
+            accent: true,
+          },
+          { seg: ix.mekhalkel, strip: [STRIP.teshuvaDisent], from: "וְנֶֽאֱמָן" },
+        ],
       },
     ],
   });
@@ -415,51 +500,44 @@ function amidaBlocks(src, ix, opts = {}) {
     });
   }
 
+  // Ata kadoch : la conclusion change aux dix jours de techouva, et c'est la
+  // seule dont l'oubli fait recommencer la 'Amida.
   blocks.push({
     src,
+    halakha: [{ ...HALAKHA.melekhKadosh, when: "teshuva" }],
     lines: [
       {
-        seg: ix.ataKadosh,
-        strip: [STRIP.teshuvaDisent, "הַמֶּלֶךְ הַקָּדוֹשׁ:"],
-      },
-    ],
-  });
-  blocks.push({
-    src,
-    when: "teshuva",
-    halakha: HALAKHA.melekhKadosh,
-    lines: [
-      {
-        he: "הַמֶּלֶךְ הַקָּדוֹשׁ:",
-        rubric: R(
-          "Dix jours de techouva : on conclut ainsi :",
-          "Ten Days of Repentance: conclude with:",
-          "בעשרת ימי תשובה חותמים:",
-        ),
+        parts: [
+          {
+            seg: ix.ataKadosh,
+            strip: [STRIP.teshuvaDisent, "הַמֶּלֶךְ הַקָּדוֹשׁ:"],
+            until: "הָאֵל הַקָּדוֹשׁ",
+          },
+          { he: "הָאֵל הַקָּדוֹשׁ:", when: "!teshuva" },
+          { he: "הַמֶּלֶךְ הַקָּדוֹשׁ:", when: "teshuva", accent: true },
+        ],
       },
     ],
   });
 
-  // Bénédictions intermédiaires.
-  blocks.push({ src, lines: [{ seg: ix.honen }] });
+  // Bénédictions intermédiaires. À Arvit, la sortie de Chabbat et de Yom Tov
+  // glisse Ata 'honantanou dans 'Honen hadaat, avant « vé'honénou ».
   if (ix.ataHonantanu !== undefined) {
     blocks.push({
       src,
-      when: "jour-0",
-      halakha: HALAKHA.ataHonantanu,
+      halakha: [{ ...HALAKHA.ataHonantanu, when: "motsae" }],
       lines: [
         {
-          seg: ix.ataHonantanu,
-          mode: "small",
-          rubric: R(
-            "À la sortie de Chabbat et de Yom Tov, on ajoute :",
-            "At the close of Shabbat and Yom Tov, add:",
-            "במוצאי שבת ויום טוב מוסיפים:",
-          ),
+          parts: [
+            { seg: ix.honen },
+            { seg: ix.ataHonantanu, mode: "small", when: "motsae", accent: true },
+            { seg: ix.vehonenu },
+          ],
         },
       ],
     });
-    blocks.push({ src, lines: [{ seg: ix.vehonenu, tight: true }] });
+  } else {
+    blocks.push({ src, lines: [{ seg: ix.honen }] });
   }
   blocks.push({
     src,
@@ -492,159 +570,127 @@ function amidaBlocks(src, ix, opts = {}) {
 
   blocks.push({ src, lines: [{ seg: ix.refaenu }] });
 
+  // La bénédiction des années, celle de la saison : Barkhénou (la rosée) en
+  // été, Barekh 'alénou (la pluie) en hiver. Ce n'est pas un ajout mais le
+  // texte ordinaire de la saison : dans le fil, à la couleur du texte, sauf
+  // les premières semaines d'une bascule (voir recentSeasonalChanges).
   blocks.push({
     src,
     when: "barkhenou",
+    plain: true,
     halakha: HALAKHA.eteDemande,
-    lines: [{ seg: ix.barkhenu, rubric: RUBRIC.ete }],
+    lines: [{ seg: ix.barkhenu }],
   });
   blocks.push({
     src,
     when: "barekh-alenou",
+    plain: true,
     halakha: HALAKHA.hiverDemande,
-    lines: [{ seg: ix.barekhAlenu, rubric: RUBRIC.hiver }],
+    lines: [{ seg: ix.barekhAlenu }],
   });
 
+  blocks.push({ src, lines: [{ seg: ix.teka }] });
+  // Hachiva : la conclusion change aux dix jours de techouva.
   blocks.push({
     src,
-    lines: [
-      { seg: ix.teka },
-      {
-        seg: ix.hashiva,
-        strip: [STRIP.teshuvaDisent, "הַמֶּלֶךְ הַמִּשְׁפָּט:"],
-      },
-    ],
-  });
-  blocks.push({
-    src,
-    when: "teshuva",
+    halakha: [{ ...HALAKHA.melekhMishpat, when: "teshuva" }],
     lines: [
       {
-        he: "הַמֶּלֶךְ הַמִּשְׁפָּט:",
-        rubric: R(
-          "Dix jours de techouva : on conclut ainsi (en cas d'oubli, on ne recommence pas) :",
-          "Ten Days of Repentance: conclude with (if omitted, do not repeat):",
-          "בעשרת ימי תשובה חותמים (ואם שכח אינו חוזר):",
-        ),
+        parts: [
+          {
+            seg: ix.hashiva,
+            strip: [STRIP.teshuvaDisent, "הַמֶּלֶךְ הַמִּשְׁפָּט:"],
+            until: "מֶֽלֶךְ אוֹהֵב",
+          },
+          { he: "מֶֽלֶךְ אוֹהֵב צְדָקָה וּמִשְׁפָּט:", when: "!teshuva" },
+          { he: "הַמֶּלֶךְ הַמִּשְׁפָּט:", when: "teshuva", accent: true },
+        ],
       },
     ],
   });
 
-  blocks.push({
-    src,
-    lines: [{ seg: ix.laminim }, { seg: ix.tsadikim }, { seg: ix.tishkon }],
-  });
+  blocks.push({ src, lines: [{ seg: ix.laminim }, { seg: ix.tsadikim }] });
 
-  // Na'hem, la consolation de Sion : à Min'ha de Tich'a beAv, elle entre dans
-  // la bénédiction de Jérusalem, entre son corps et sa conclusion, qui change
+  // La bénédiction de Jérusalem. À Min'ha de Tich'a beAv, Na'hem, la
+  // consolation de Sion, entre entre son corps et sa conclusion, qui change
   // alors elle aussi (« ména'hem Tsion bevinyan Yerouchalayim »).
   if (ix.nahem !== undefined) {
     blocks.push({
       src,
-      when: "tisha-beav",
+      halakha: [{ ...HALAKHA.nahem, when: "tisha-beav" }],
       lines: [
         {
-          // Consigne et texte partagent le même <small> : on coupe au premier
-          // mot de la prière.
-          seg: ix.nahem,
-          mode: "small",
-          from: "נַחֵם יְהֹוָה",
-          rubric: R(
-            "À Min'ha de Tich'a beAv, on dit ici :",
-            "At Mincha on Tisha b'Av, say here:",
-            "במנחה של תשעה באב אומרים כאן:",
-          ),
-        },
-        { seg: ix.nahem + 1, mode: "small", tight: true },
-      ],
-    });
-  }
-
-  const finJerusalem = [];
-  if (ix.tishkonHatima !== undefined) {
-    // Là où Na'hem peut venir, la conclusion ordinaire lui cède la place :
-    // les deux sont dans le fichier, le jour choisit.
-    const hatima = { seg: ix.tishkonHatima, tight: true };
-    if (ix.nahem !== undefined) hatima.when = "sans-tisha-beav";
-    finJerusalem.push(hatima);
-  }
-  finJerusalem.push({ seg: ix.tsemah }, { seg: ix.shemaKolenu });
-  blocks.push({ src, lines: finJerusalem });
-
-  // 'Anénou de chacun : celui qui jeûne le dit dans Chéma kolénou, sans
-  // conclusion, avant « Ki Ata chomé'a ». La source en donne deux versions,
-  // la seconde pour les trois jeûnes.
-  if (ix.anenouYahid !== undefined) {
-    blocks.push({
-      src,
-      when: "taanit",
-      plain: true,
-      lines: [
-        {
-          // Consigne et texte vivent dans le même <small> : on coupe au
-          // premier mot de la prière plutôt que de tout perdre.
-          seg: ix.anenouYahid,
-          mode: "smallAll",
-          from: "עֲנֵנוּ אָבִינוּ",
-          rubric: R(
-            "Qui jeûne dit ici, sans conclusion :",
-            "Whoever is fasting says here, without a closing blessing:",
-            "המתענה אומר כאן, בלי חתימה:",
-          ),
-        },
-        {
-          seg: ix.anenouYahid + 1,
-          mode: "small",
-          muted: true,
-          rubric: R(
-            "Autre version, pour les trois jeûnes :",
-            "Another version, for the three fasts:",
-            "נוסח אחר, לשלושת הצומות:",
-          ),
+          parts: [
+            { seg: ix.tishkon },
+            {
+              // Consigne et texte partagent le même <small> : on coupe au
+              // premier mot de la prière.
+              seg: ix.nahem,
+              mode: "small",
+              from: "נַחֵם יְהֹוָה",
+              when: "tisha-beav",
+              accent: true,
+            },
+            { seg: ix.tishkonHatima, when: "!tisha-beav" },
+            { seg: ix.nahem + 1, mode: "small", when: "tisha-beav", accent: true },
+          ],
         },
       ],
     });
+  } else {
+    blocks.push({ src, lines: [{ seg: ix.tishkon }] });
   }
 
-  blocks.push({ src, lines: [{ seg: ix.kiAta }, { seg: ix.retse }] });
+  // Chéma kolénou. 'Anénou de chacun : celui qui jeûne le dit dedans, sans
+  // conclusion, avant « Ki Ata chomé'a ».
+  const shemaKolenu =
+    ix.anenouYahid !== undefined
+      ? {
+          parts: [
+            { seg: ix.shemaKolenu },
+            {
+              // Consigne et texte vivent dans le même <small> : on coupe au
+              // premier mot de la prière plutôt que de tout perdre.
+              seg: ix.anenouYahid,
+              mode: "smallAll",
+              from: "עֲנֵנוּ אָבִינוּ",
+              when: "taanit",
+              accent: true,
+              rubric: R("(qui jeûne ajoute :)", "(whoever is fasting adds:)", "(המתענה מוסיף:)"),
+            },
+            { seg: ix.kiAta },
+          ],
+        }
+      : { parts: [{ seg: ix.shemaKolenu }, { seg: ix.kiAta }] };
+  blocks.push({
+    src,
+    halakha: ix.anenouYahid !== undefined ? [{ ...HALAKHA.anenou, when: "taanit" }] : undefined,
+    lines: [{ seg: ix.tsemah }, shemaKolenu],
+  });
 
-  // Ya'alé véyavo : Roch Hodech et 'Hol haMoed.
+  blocks.push({ src, lines: [{ seg: ix.retse }] });
+
+  // Ya'alé véyavo : Roch Hodech et 'Hol haMoed, entre Retsé et « Véata
+  // bera'hamekha ». Une seule fête nommée, celle du jour.
   blocks.push({
     src,
     when: "moed",
-    halakha: opts.soir ? HALAKHA.yaaleVeyavoSoir : HALAKHA.yaaleVeyavoJour,
+    halakha: opts.soir
+      ? [
+          { ...HALAKHA.yaaleVeyavoSoir, when: "rosh-chodesh" },
+          { ...HALAKHA.yaaleVeyavoJour, when: "!rosh-chodesh" },
+        ]
+      : HALAKHA.yaaleVeyavoJour,
     lines: [
       {
-        seg: ix.yv,
-        mode: "small",
-        rubric: R(
-          "À Roch Hodech et à 'Hol haMoed, on ajoute :",
-          "On Rosh Hodesh and Chol haMoed, add:",
-          "בראש חודש ובחול המועד אומרים:",
-        ),
+        parts: [
+          { seg: ix.yv, mode: "small" },
+          { seg: ix.yvRH, mode: "small", strip: ["בראש חדש:"], when: "rosh-chodesh" },
+          { seg: ix.yvPessah, mode: "small", strip: ["בחוה״מ פסח:"], when: "pesach" },
+          { seg: ix.yvSouccot, mode: "small", strip: ["בחוה״מ סוכות:"], when: "sukkot" },
+          { seg: ix.yvSuite, mode: "small" },
+        ],
       },
-      {
-        seg: ix.yvRH,
-        mode: "small",
-        strip: ["בראש חדש:"],
-        rubric: RUBRIC.roshHodesh,
-        tight: true,
-      },
-      {
-        seg: ix.yvPessah,
-        mode: "small",
-        strip: ["בחוה״מ פסח:"],
-        rubric: RUBRIC.holPessah,
-        tight: true,
-      },
-      {
-        seg: ix.yvSouccot,
-        mode: "small",
-        strip: ["בחוה״מ סוכות:"],
-        rubric: RUBRIC.holSouccot,
-        tight: true,
-      },
-      { seg: ix.yvSuite, mode: "small", tight: true },
     ],
   });
 
@@ -655,7 +701,7 @@ function amidaBlocks(src, ix, opts = {}) {
       {
         seg: ix.modim,
         rubric: R(
-          "On s'incline à « Modim » et on se redresse au Nom :",
+          "On s'incline à « Modim » et on se redresse au Nom :",
           "Bow at “Modim” and straighten at God's name:",
           "יכרע ב« מודים » ויזקוף בשם:",
         ),
@@ -688,50 +734,36 @@ function amidaBlocks(src, ix, opts = {}) {
     });
   }
 
+  // 'Al hanissim, entre Modim et « Vé'al koulam » : le récit de 'Hanouka à
+  // 'Hanouka, celui de Pourim à Pourim, jamais les deux.
   blocks.push({
     src,
     when: "nissim",
     halakha: HALAKHA.alHanissim,
     lines: [
-      {
-        seg: ix.alHanissim,
-        mode: "small",
-        rubric: R(
-          "À 'Hanouka et à Pourim, on ajoute :",
-          "On Hanukkah and Purim, add:",
-          "בחנוכה ופורים אומרים:",
-        ),
-      },
-      {
-        seg: ix.hanouka,
-        mode: "small",
-        strip: ["בחנוכה אומרים:"],
-        rubric: RUBRIC.hanouka,
-        tight: true,
-      },
-      {
-        seg: ix.pourim,
-        mode: "small",
-        strip: ["בפורים אומרים"],
-        rubric: RUBRIC.pourim,
-        tight: true,
-      },
+      { seg: ix.alHanissim, mode: "small" },
+      { seg: ix.hanouka, mode: "small", strip: ["בחנוכה אומרים:"], when: "hanouka", tight: true },
+      { seg: ix.pourim, mode: "small", strip: ["בפורים אומרים"], when: "pourim", tight: true },
     ],
   });
 
+  // Vé'al koulam. Aux dix jours de techouva, Oukhtov avant « Vékhol ha'hayim ».
   blocks.push({
     src,
-    lines: [{ seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent] }],
-  });
-  blocks.push({
-    src,
-    when: "teshuva",
+    halakha: [{ ...HALAKHA.oubliTeshuva("Oukhtov", "Uchtov", "וכתוב"), when: "teshuva" }],
     lines: [
       {
-        seg: ix.vealKoulam,
-        mode: "small",
-        strip: [STRIP.teshuvaDisent],
-        rubric: RUBRIC.teshuvaOn,
+        parts: [
+          { seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent], until: "וְכָל־הַחַיִּים" },
+          {
+            seg: ix.vealKoulam,
+            mode: "small",
+            strip: [STRIP.teshuvaDisent],
+            when: "teshuva",
+            accent: true,
+          },
+          { seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent], from: "וְכָל־הַחַיִּים" },
+        ],
       },
     ],
   });
@@ -739,74 +771,104 @@ function amidaBlocks(src, ix, opts = {}) {
   // chalom : les cohanim se tournent vers l'arche quand le 'hazan commence
   // Sim chalom, la bénédiction est donc finie quand il l'entame.
   if (opts.kohanim) blocks.push(opts.kohanim);
+  // Sim chalom. Aux dix jours de techouva, Ouvséfer 'hayim avant la conclusion.
   blocks.push({
     src,
-    lines: [{ seg: ix.simShalom, strip: [STRIP.teshuvaDisent] }],
-  });
-  blocks.push({
-    src,
-    when: "teshuva",
+    halakha: [
+      {
+        ...HALAKHA.oubliTeshuva("Ouvséfer 'hayim", "Uvsefer chayim", "ובספר חיים"),
+        when: "teshuva",
+      },
+    ],
     lines: [
       {
-        seg: ix.simShalom,
-        mode: "small",
-        strip: [STRIP.teshuvaDisent],
-        rubric: RUBRIC.teshuvaOn,
+        parts: [
+          { seg: ix.simShalom, strip: [STRIP.teshuvaDisent], until: "בָּרוּךְ אַתָּה" },
+          {
+            seg: ix.simShalom,
+            mode: "small",
+            strip: [STRIP.teshuvaDisent],
+            when: "teshuva",
+            accent: true,
+          },
+          { seg: ix.simShalom, strip: [STRIP.teshuvaDisent], from: "בָּרוּךְ אַתָּה" },
+        ],
       },
     ],
   });
 
-  const fin = [
-    { seg: ix.yihyu1 },
-    { seg: ix.elohaiNetsor },
-    { seg: ix.lemaan },
-    { seg: ix.yihyu2, tight: true },
-  ];
+  blocks.push({
+    src,
+    lines: [
+      { seg: ix.yihyu1 },
+      { seg: ix.elohaiNetsor },
+      { seg: ix.lemaan },
+      { seg: ix.yihyu2, tight: true },
+    ],
+  });
 
   // Min'ha, avant de reculer de trois pas : c'est là qu'on prend sur soi un
-  // jeûne pour le lendemain, et là qu'on dit, le jour du jeûne, le « Ribbon
-  // haolamim » qui offre à la place du korban la graisse et le sang perdus.
+  // jeûne pour le lendemain. Personne n'y est tenu : le passage vit dans un
+  // encadré replié, comme tout ce qui ne se lit pas d'office, et c'est le
+  // lecteur qui l'ouvre le jour où il veut jeûner. Le jour du jeûne, le
+  // « Ribbon haolamim » qui offre à la place du korban la graisse et le sang
+  // perdus se dit, lui, dans le fil : c'est l'ajout du jour.
   if (ix.taanitYahid !== undefined) {
-    fin.push({
-      // Consigne et texte partagent le même <small> : on coupe au premier mot
-      // de la prière.
-      seg: ix.taanitYahid,
-      mode: "small",
-      from: "רִבּוֹן הָעוֹלָמִים",
-      muted: true,
-      rubric: R(
-        "Qui veut jeûner demain prend son jeûne sur lui ici :",
-        "Whoever wishes to fast tomorrow accepts the fast here:",
-        "הרוצה להתענות למחר מקבל עליו את התענית כאן:",
+    blocks.push({
+      src,
+      fold: "taanit-yahid",
+      labelText: R(
+        "Prendre sur soi un jeûne pour demain",
+        "Taking on a fast for tomorrow",
+        "קבלת תענית למחר",
       ),
+      lines: [
+        {
+          // Consigne et texte partagent le même <small> : on coupe au premier
+          // mot de la prière.
+          seg: ix.taanitYahid,
+          mode: "small",
+          from: "רִבּוֹן הָעוֹלָמִים",
+          rubric: R(
+            "Qui veut jeûner demain prend son jeûne sur lui ici, avant de reculer de trois pas\u00a0:",
+            "Whoever wishes to fast tomorrow accepts the fast here, before stepping back three steps:",
+            "הרוצה להתענות למחר מקבל עליו את התענית כאן, לפני שיפסע שלוש פסיעות:",
+          ),
+        },
+      ],
     });
-    fin.push({
-      seg: ix.taanitYahid + 1,
-      mode: "small",
-      from: "רִבּוֹן הָעוֹלָמִים",
+    blocks.push({
+      src,
       when: "taanit",
-      tight: true,
-      rubric: R("Le jour du jeûne, on dit :", "On the fast day, say:", "ביום התענית אומרים:"),
+      lines: [
+        {
+          seg: ix.taanitYahid + 1,
+          mode: "small",
+          from: "רִבּוֹן הָעוֹלָמִים",
+          rubric: R(
+            "Le jour du jeûne, on dit\u00a0:",
+            "On the fast day, say:",
+            "ביום התענית אומרים:",
+          ),
+        },
+      ],
     });
   }
 
-  fin.push(
-    {
-      seg: ix.osse,
-      alt: {
-        when: "teshuva",
-        rubric: R(
-          "Dix jours de techouva, on dit :",
-          "Ten Days of Repentance, say:",
-          "בעשרת ימי תשובה אומרים:",
-        ),
-        text: "עוֹשֶׂה הַשָּׁלוֹם",
+  // 'Ossé chalom, « 'ossé hachalom » aux dix jours de techouva.
+  blocks.push({
+    src,
+    lines: [
+      {
+        parts: [
+          { he: "עֹשֶׂה שָׁלוֹם", when: "!teshuva" },
+          { he: "עוֹשֶׂה הַשָּׁלוֹם", when: "teshuva", accent: true },
+          { seg: ix.osse, from: "בִּמְרוֹמָיו" },
+        ],
       },
-    },
-    { seg: ix.yehiRatson, mode: "small" },
-  );
-
-  blocks.push({ src, lines: fin });
+      { seg: ix.yehiRatson, mode: "small" },
+    ],
+  });
 
   return blocks;
 }
@@ -1387,7 +1449,9 @@ function chaharitRecipe() {
       },
       {
         src: "Hodu",
-        when: "teshuva",
+        // Les deux occasions où la source le demande : la clé les nomme
+        // toutes deux, l'une ou l'autre suffit.
+        when: "teshuva|hoshana-rabba",
         lines: [
           {
             seg: 7,
@@ -1745,13 +1809,26 @@ function chaharitRecipe() {
         ],
       },
       // Les jeûnes publics : « Vaye'hal Moché », trois montées, le matin
-      // comme l'après-midi.
+      // comme l'après-midi. Sauf le matin de Tich'a beAv, qui lit « Ki tolid
+      // banim » (Devarim 4, 25 à 40) : la source ne le porte pas, il vient du
+      // fichier de la paracha Vaét'hanan que l'application sert déjà.
       {
         src: "Taanit.Torah",
         when: "taanit",
         plain: true,
         labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
-        lines: [{ seg: 1, mode: "full" }],
+        lines: [
+          { seg: 1, mode: "full", when: "!tisha-beav" },
+          {
+            he: KI_TOLID_BANIM,
+            when: "tisha-beav",
+            rubric: R(
+              "Le matin de Tich'a beAv, on lit « Ki tolid banim » (Devarim 4, 25 à 40), en trois montées, puis la haftara « Assof assifem » (Yirmiya 8, 13 à 9, 23) :",
+              "On the morning of Tisha b'Av, “Ki tolid banim” (Deuteronomy 4:25-40) is read in three aliyot, then the haftarah “Asof asifem” (Jeremiah 8:13-9:23):",
+              "בשחרית של תשעה באב קוראים « כי תוליד בנים » (דברים ד, כה-מ) בשלושה עולים, ומפטירים « אסוף אסיפם » (ירמיה ח, יג - ט, כג):",
+            ),
+          },
+        ],
       },
       {
         src: "RH.Hallel",
@@ -2017,14 +2094,16 @@ function chaharitRecipe() {
         lines: [
           { seg: 2 },
           { seg: 3 },
-          { seg: 4 },
-          { he: "מוֹרִיד הַטָּל.", rubric: RUBRIC.ete, tight: true },
+          // Guevourot d'un seul tenant, la mention de la saison à sa place,
+          // comme dans la 'Amida de semaine.
           {
-            he: "מַשִּׁיב הָרֽוּחַ וּמוֹרִיד הַגֶּֽשֶׁם.",
-            rubric: RUBRIC.hiver,
-            tight: true,
+            parts: [
+              { seg: 4 },
+              { he: "מוֹרִיד הַטָּל.", when: "ete" },
+              { he: "מַשִּׁיב הָרֽוּחַ וּמוֹרִיד הַגֶּֽשֶׁם.", when: "hiver" },
+              { seg: 6 },
+            ],
           },
-          { seg: 6 },
         ],
       },
       {
@@ -2202,6 +2281,16 @@ function minhaRecipe() {
       {
         src: "Offerings",
         labelText: R("Korbanot et Achré", "Offerings and Ashrei", "קרבנות ואשרי"),
+        halakha: [
+          {
+            ...R(
+              "À Tich'a beAv, le talit et les téfilines, qu'on n'a pas mis le matin, se mettent à Min'ha avec leurs bénédictions.",
+              "On Tisha b'Av, the talit and tefillin, not worn in the morning, are put on at Mincha with their blessings.",
+              "בתשעה באב מתעטפים בטלית ומניחים תפילין במנחה, בברכותיהם, שלא הניחום בשחרית.",
+            ),
+            when: "tisha-beav",
+          },
+        ],
         lines: [
           { seg: 2 },
           { seg: 3 },
@@ -2283,13 +2372,19 @@ function minhaRecipe() {
         lines: [{ seg: 18, mode: "small" }],
       },
       // Les jours de jeûne public, le psaume 102, « prière du pauvre quand il
-      // défaille », s'ajoute avant le Kaddich.
+      // défaille », s'ajoute avant le Kaddich : un ajout du jour, à la
+      // couleur du thème.
       {
         src: "Vidui",
         when: "taanit",
-        plain: true,
         // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
-        lines: [{ seg: 20, mode: "small" }],
+        lines: [
+          {
+            seg: 20,
+            mode: "small",
+            rubric: R("Un jour de jeûne, on ajoute :", "On a fast day, add:", "בתענית מוסיפים:"),
+          },
+        ],
       },
       kaddishYeheChelama("Vidui", 22),
       {
@@ -2314,13 +2409,16 @@ function arvitRecipe() {
   // sa date hébraïque, le compte lui-même, puis la sefira du jour. La
   // bénédiction est reprise dans chaque soir, parce qu'elle finit sur
   // « hayom » et que le compte l'achève : les deux ne font qu'une phrase.
+  //
+  // Le compte de ce soir est ce que le jour change : il se lit à la couleur
+  // du thème ; la bénédiction, la même chaque soir, garde celle du texte.
   const omerJours = Array.from({ length: 49 }, (_, i) => ({
     src: "Omer",
     when: `omer-${i + 1}`,
     plain: true,
     lines: [
       { seg: 3 },
-      { seg: 5 + 3 * i, tight: true },
+      { parts: [{ seg: 5 + 3 * i, when: `omer-${i + 1}`, accent: true }], tight: true },
       {
         seg: 6 + 3 * i,
         muted: true,

@@ -356,9 +356,25 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   }
   if (occ.has("shabbat") || occ.has("moed")) occ.add("shabbat-or-moed");
   // Les dix jours de pénitence : de Roch Hachana à Yom Kippour, 1 au 10 Tichri.
-  // Ils n'ouvrent aucun ajout à eux seuls, ils déplient les encadrés des
-  // Sli'hot, qui restent lisibles le reste de l'année (voir TextBlock.fold).
+  // Ils déplient les encadrés des Sli'hot, qui restent lisibles le reste de
+  // l'année (voir TextBlock.fold), et posent dans la 'Amida ce qui change ces
+  // jours-là (Hamélekh hakadoch, Zokhrénou…).
   if (hd.getMonth() === months.TISHREI && hd.getDate() <= 10) occ.add("teshuva");
+  // Hochana Rabba, 21 Tichri : le dernier jour de 'Hol haMoed Souccot, qui
+  // reprend à Hodou le verset des dix jours de techouva.
+  if (hd.getMonth() === months.TISHREI && hd.getDate() === 21) occ.add("hoshana-rabba");
+  // La sortie de Chabbat ou de Yom Tov : Ata 'honantanou entre dans la 'Amida
+  // d'Arvit, la havdala de la prière. C'est le jour hébraïque qui commence à
+  // la chkia qui le porte (voir tefilaHebrewDay) : la veille était Chabbat ou
+  // Yom Tov, et ce soir ne l'est plus (sinon on ne prie pas l'office de
+  // semaine, et le second jour de fête de diaspora n'a rien à séparer).
+  const veille = hd.prev();
+  const veilleKodech =
+    veille.getDay() === 6 ||
+    (getHolidaysOnDate(veille, il) ?? []).some(
+      (ev) => (ev.getFlags() & flags.CHAG) !== 0 && (ev.getFlags() & flags.EREV) === 0,
+    );
+  if (veilleKodech && !has(flags.CHAG)) occ.add("motsae");
 
   // --- Sidour de semaine ---------------------------------------------------
   // L'été et l'hiver de la Amida : la mention de la pluie (22 Tichri au
