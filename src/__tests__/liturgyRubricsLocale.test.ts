@@ -68,11 +68,11 @@ function rendu(locale: SupportedLocale, occasions: Set<string>): string {
 describe("didascalies dans la langue du lecteur", () => {
   const teshuva = new Set(["teshuva"]);
 
-  it.each([
+  it.each<[SupportedLocale, string[]]>([
     ["fr", ["Titre FR", "Halakha FR", "Halakha techouva FR", "Didascalie FR", "(en ligne FR)"]],
     ["en", ["Title EN", "Halakha EN", "Halakha teshuva EN", "Rubric EN", "(inline EN)"]],
     ["he", ["כותרת", "הלכה", "הלכה תשובה", "הוראה", "(בשורה)"]],
-  ] as const)("en %s, chaque sorte de didascalie suit la langue", (locale, attendus) => {
+  ])("en %s, chaque sorte de didascalie suit la langue", (locale, attendus) => {
     const texte = rendu(locale, teshuva);
     for (const attendu of attendus) expect(texte).toContain(attendu);
     // Et rien des deux autres langues.
