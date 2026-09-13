@@ -181,9 +181,9 @@ touche alors pour ouvrir les réglages : on a le temps de lire ce qu'on
 déclenche. Poussé franchement, au-delà de la moitié de la ligne ou d'un coup
 sec, il agit seul et la ligne se referme sur son résultat, annoncé par un
 toast. Le raccourci récompense l'assurance sans piéger l'hésitation, et il ne
-pose aucune question : le rappel qu'il pose est celui proposé d'office
-(15 minutes avant), pas le dernier réglé, pour qu'un geste sans dialogue fasse
-une chose qu'on peut prévoir.
+pose aucune question : le rappel qu'il pose reprend le dernier délai réglé
+(15 minutes avant tant qu'on n'en a pas choisi un autre), car qui règle ses
+rappels à une demi-heure les veut tous ainsi.
 
 Le fond découvert est plein, de la couleur du thème, et il occupe exactement
 la place que la ligne libère en partant : il n'y a ni cadre ni surface

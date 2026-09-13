@@ -10,8 +10,8 @@
  *  - la tirer vers la gauche découvre, du côté de l'heure, un fond de la
  *    couleur du thème portant une cloche. Le geste franc, jusqu'au bout ou
  *    d'un coup sec, pose ou retire le rappel sans rien demander (avec le
- *    délai proposé d'office) ; le geste retenu laisse la ligne ouverte sur
- *    sa cloche, qu'on touche alors pour ouvrir les réglages ;
+ *    dernier délai réglé) ; le geste retenu laisse la ligne ouverte sur sa
+ *    cloche, qu'on touche alors pour ouvrir les réglages ;
  *  - un rappel posé se voit à un petit triangle plein dans l'angle de la
  *    ligne, du côté de l'heure. Une cloche posée dans le texte aurait mangé
  *    la place du nom sur un téléphone, et une ligne sur deux marquée aurait

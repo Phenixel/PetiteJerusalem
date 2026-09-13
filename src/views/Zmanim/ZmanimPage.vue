@@ -46,11 +46,7 @@ import {
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
 import { useToast } from "../../composables/useToast";
-import {
-  DEFAULT_MINUTES_BEFORE,
-  ensureNotificationPermission,
-  useZmanReminders,
-} from "../../composables/useZmanReminders";
+import { ensureNotificationPermission, useZmanReminders } from "../../composables/useZmanReminders";
 import { cityInSentence, citySlug, findCityBySlug } from "../../content/zmanimCities";
 import { isSectionPath, localeOfPath, sectionPath } from "../../content/seoLocales";
 import RestTimes from "./RestTimes.vue";
@@ -268,13 +264,13 @@ function removeReminder(zman: ZmanTime, source: string): void {
 
 /**
  * Le raccourci du glissement : pose le rappel, ou le retire, sans rien
- * demander. Le délai est celui proposé d'office (15 minutes), pas le dernier
- * choisi : un geste qui ne pose aucune question doit faire une chose qu'on
- * peut prévoir sans se souvenir de ce qu'on a réglé la dernière fois.
+ * demander. Le délai est le dernier réglé (15 minutes tant qu'on n'en a pas
+ * choisi un autre) : qui règle ses rappels à une demi-heure les veut tous
+ * ainsi, et le geste le lui épargne.
  */
 function quickToggle(zman: ZmanTime): void {
   if (reminderFor(zman.key)) removeReminder(zman, "swipe");
-  else void applyReminder(zman, DEFAULT_MINUTES_BEFORE, "swipe");
+  else void applyReminder(zman, lastMinutes.value, "swipe");
 }
 
 // « dans 2 h 15 » sous le prochain horaire, comme sur la carte de l'accueil :
