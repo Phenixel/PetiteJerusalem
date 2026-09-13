@@ -119,11 +119,24 @@ const permission = ref<NotificationPermission>("unknown");
 /** Vrai quand les alarmes à l'heure exacte sont autorisées (Android 12+). */
 const exactAlarms = ref(true);
 
-/** Le plugin, chargé à la demande : le site web ne le tire jamais. */
-async function plugin() {
-  const { LocalNotifications } = await import("@capacitor/local-notifications");
-  return LocalNotifications;
-}
+/**
+ * Le plugin se charge à la demande, et se déstructure SUR PLACE. Il n'y a pas
+ * d'aide partagée pour aller le chercher, et il ne faut pas en écrire une.
+ *
+ * Un plugin Capacitor n'est pas un objet : c'est un `Proxy` qui transforme
+ * n'importe quel accès à une propriété en appel natif. Le rendre depuis une
+ * fonction `async` le fait traverser une promesse, et le moteur JavaScript lit
+ * alors `.then` dessus pour savoir si c'est une promesse à son tour. Le proxy
+ * lui rend une fonction, comme pour toute propriété : le moteur appelle
+ * `LocalNotifications.then(resolve, reject)`, Capacitor cherche une méthode
+ * native `then`, ne la trouve pas, et rend une promesse rejetée que personne
+ * n'attrape. Ni `resolve` ni `reject` n'étant appelés, l'attente ne se règle
+ * JAMAIS : le `try` autour ne sert à rien, et tout ce qui suit reste en plan.
+ *
+ * C'est ce qui a tué les rappels en 3.10.0 (« "LocalNotifications.then()" is
+ * not implemented on android »). La règle vaut pour tous les plugins : ce qui
+ * traverse une promesse, c'est l'espace de noms du module, jamais le plugin.
+ */
 
 function readPermission(display: string): NotificationPermission {
   if (display === "granted") return "granted";
@@ -141,13 +154,13 @@ function readPermission(display: string): NotificationPermission {
 export async function refreshPermission(): Promise<NotificationPermission> {
   if (!isNativeApp) return "unknown";
   try {
-    const notifications = await plugin();
-    permission.value = readPermission((await notifications.checkPermissions()).display);
+    const { LocalNotifications } = await import("@capacitor/local-notifications");
+    permission.value = readPermission((await LocalNotifications.checkPermissions()).display);
     try {
       // Android 12+ : sans « alarmes et rappels », le système décale la
       // notification de quelques minutes. Ailleurs (iOS), rien à demander.
       exactAlarms.value =
-        (await notifications.checkExactNotificationSetting()).exact_alarm !== "denied";
+        (await LocalNotifications.checkExactNotificationSetting()).exact_alarm !== "denied";
     } catch {
       exactAlarms.value = true; // Réglage inconnu de la plateforme : rien à signaler.
     }
@@ -168,8 +181,8 @@ export async function ensureNotificationPermission(ask: boolean): Promise<boolea
   if (current === "granted") return true;
   if (!ask || current === "denied") return false;
   try {
-    const asked = await (await plugin()).requestPermissions();
-    permission.value = readPermission(asked.display);
+    const { LocalNotifications } = await import("@capacitor/local-notifications");
+    permission.value = readPermission((await LocalNotifications.requestPermissions()).display);
   } catch {
     return false;
   }
@@ -180,7 +193,8 @@ export async function ensureNotificationPermission(ask: boolean): Promise<boolea
 export async function openExactAlarmSetting(): Promise<void> {
   if (!isNativeApp) return;
   try {
-    await (await plugin()).changeExactNotificationSetting();
+    const { LocalNotifications } = await import("@capacitor/local-notifications");
+    await LocalNotifications.changeExactNotificationSetting();
   } catch {
     // Réglage inconnu de la plateforme : rien à ouvrir.
   }
