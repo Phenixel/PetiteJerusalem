@@ -151,6 +151,43 @@ l'app a sa première release production ; l'ancienne variable de repo
 lue, la supprimer si elle traîne encore (Settings → Secrets and variables →
 Actions → Variables).
 
+## Minification (R8)
+
+Le build de release passe par R8 : code mort supprimé, code restant optimisé
+et renommé. C'est `scripts/setup-android.mjs` qui pose `minifyEnabled true`
+sur android/app/, et `native/wear/build.gradle` qui fait de même pour la
+montre ; les deux pointent sur `proguard-android-optimize.txt` (la variante
+sans `-dontoptimize`) plus leurs propres règles, versionnées dans
+`native/android/app/proguard-rules.pro` et `native/wear/proguard-rules.pro`.
+
+Pourquoi : la Play Console note chaque bundle sur la part de code obscurci,
+minifié et optimisé, avec un seuil à 25 %. L'AAB 3.9.5 était à 3 %, et la
+console annonçait une sanction sur la visibilité de la fiche. Avec R8, le
+bundle du téléphone est à 48 % de classes renommées (59 % de méthodes) et son
+DEX passe de 14 Mo à 3,8 Mo ; celui de la montre à 88 %.
+
+Deux choses à savoir avant de toucher au natif :
+
+- Les plugins Capacitor sont chargés par leur nom, et leur `@CapacitorPlugin`
+  est lue à l'exécution. Les règles livrées par Capacitor conservent les
+  classes, pas les types d'annotations : nos règles s'en chargent. Sans elles,
+  l'app démarre, puis meurt au premier appel de permission.
+- Un nouveau plugin qui référence un SDK optionnel absent du bundle fait
+  échouer R8 sur « Missing class ». Le rapport
+  `android/app/build/outputs/mapping/release/missing_rules.txt` donne alors la
+  ligne `-dontwarn` à ajouter (c'est le cas du SDK Facebook, que le plugin
+  d'authentification référence sans qu'on l'embarque).
+
+Tout changement natif se vérifie sur un build de release, pas de debug (R8 ne
+tourne pas en debug) :
+
+```bash
+npm run app:build && cd android && ./gradlew :app:assembleRelease
+```
+
+puis installer l'APK sur l'émulateur et parcourir au moins une page qui
+demande une permission (Horaires, « Utiliser ma position »).
+
 ## Notes
 
 - Le `versionCode` est dérivé du semver du tag : re-publier exige un nouveau

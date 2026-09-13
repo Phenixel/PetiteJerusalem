@@ -54,8 +54,11 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Même régime que le téléphone (voir scripts/setup-android.mjs) :
+            // le Play Store mesure la part de code obscurci de chaque artefact,
+            // et celui de la montre en est un.
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             // Clé absente (autre machine, CI de test) : on retombe sur la
             // signature debug pour ne pas casser `./gradlew :wear:bundleRelease`.
             signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
