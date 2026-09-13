@@ -182,8 +182,11 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       // l'intérêt : l'encadré s'ouvre de lui-même en sa saison.
       const folded = blocks.filter((b) => b.fold);
       expect(folded.length).toBeGreaterThanOrEqual(2);
+      // Le jeûne qu'on prend sur soi à Min'ha n'est pas non plus une
+      // occasion : l'encadré reste replié, le lecteur l'ouvre le jour où il
+      // veut jeûner.
       for (const block of folded) {
-        expect(["hazan", "ledavid", "avel"]).toContain(block.fold);
+        expect(["hazan", "ledavid", "avel", "taanit-yahid"]).toContain(block.fold);
         expect(block.labelText).toBeDefined();
         expect(block.lines.length).toBeGreaterThan(0);
       }
@@ -403,6 +406,24 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
     });
   },
 );
+
+describe("Min'ha : le jeûne qu'on prend sur soi", () => {
+  const entry = sidourEntries.find((e) => resolveFilePath(e).includes("minha"))!;
+  const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
+
+  it("vit dans un encadré replié, avant de reculer de trois pas", () => {
+    const i = blocks.findIndex((b) => b.fold === "taanit-yahid");
+    expect(i).toBeGreaterThan(0);
+    expect(blocks[i].labelText).toBeDefined();
+    expect(sansSignes(blocks[i].lines[0])).toContain("רבון העולמים, הריני לפניך");
+    // Avant lui, la fin de la 'Amida ; après lui, le jour du jeûne seulement,
+    // puis 'Ossé chalom dans le fil.
+    expect(sansSignes(blocks[i - 1].lines.at(-1)!)).toContain("יהיו לרצון");
+    expect(blocks[i + 1].when).toBe("taanit");
+    expect(sansSignes(blocks[i + 1].lines[0])).toContain("גלוי לפניך");
+    expect(sansSignes(blocks[i + 2].lines[0])).toContain("שלום במרומיו");
+  });
+});
 
 describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", () => {
   const entry = sidourEntries.find((e) => resolveFilePath(e).includes("chaharit"))!;

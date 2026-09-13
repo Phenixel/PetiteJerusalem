@@ -797,59 +797,78 @@ function amidaBlocks(src, ix, opts = {}) {
     ],
   });
 
-  const fin = [
-    { seg: ix.yihyu1 },
-    { seg: ix.elohaiNetsor },
-    { seg: ix.lemaan },
-    { seg: ix.yihyu2, tight: true },
-  ];
+  blocks.push({
+    src,
+    lines: [
+      { seg: ix.yihyu1 },
+      { seg: ix.elohaiNetsor },
+      { seg: ix.lemaan },
+      { seg: ix.yihyu2, tight: true },
+    ],
+  });
 
   // Min'ha, avant de reculer de trois pas : c'est là qu'on prend sur soi un
-  // jeûne pour le lendemain, et là qu'on dit, le jour du jeûne, le « Ribbon
-  // haolamim » qui offre à la place du korban la graisse et le sang perdus.
+  // jeûne pour le lendemain. Personne n'y est tenu : le passage vit dans un
+  // encadré replié, comme tout ce qui ne se lit pas d'office, et c'est le
+  // lecteur qui l'ouvre le jour où il veut jeûner. Le jour du jeûne, le
+  // « Ribbon haolamim » qui offre à la place du korban la graisse et le sang
+  // perdus se dit, lui, dans le fil : c'est l'ajout du jour.
   if (ix.taanitYahid !== undefined) {
-    fin.push({
-      // Consigne et texte partagent le même <small> : on coupe au premier mot
-      // de la prière.
-      seg: ix.taanitYahid,
-      mode: "small",
-      from: "רִבּוֹן הָעוֹלָמִים",
-      muted: true,
-      rubric: R(
-        "Qui veut jeûner demain prend son jeûne sur lui ici :",
-        "Whoever wishes to fast tomorrow accepts the fast here:",
-        "הרוצה להתענות למחר מקבל עליו את התענית כאן:",
+    blocks.push({
+      src,
+      fold: "taanit-yahid",
+      labelText: R(
+        "Prendre sur soi un jeûne pour demain",
+        "Taking on a fast for tomorrow",
+        "קבלת תענית למחר",
       ),
+      lines: [
+        {
+          // Consigne et texte partagent le même <small> : on coupe au premier
+          // mot de la prière.
+          seg: ix.taanitYahid,
+          mode: "small",
+          from: "רִבּוֹן הָעוֹלָמִים",
+          rubric: R(
+            "Qui veut jeûner demain prend son jeûne sur lui ici, avant de reculer de trois pas\u00a0:",
+            "Whoever wishes to fast tomorrow accepts the fast here, before stepping back three steps:",
+            "הרוצה להתענות למחר מקבל עליו את התענית כאן, לפני שיפסע שלוש פסיעות:",
+          ),
+        },
+      ],
     });
-    fin.push({
-      parts: [
+    blocks.push({
+      src,
+      when: "taanit",
+      lines: [
         {
           seg: ix.taanitYahid + 1,
           mode: "small",
           from: "רִבּוֹן הָעוֹלָמִים",
-          when: "taanit",
-          accent: true,
+          rubric: R(
+            "Le jour du jeûne, on dit\u00a0:",
+            "On the fast day, say:",
+            "ביום התענית אומרים:",
+          ),
         },
       ],
-      when: "taanit",
-      tight: true,
-      rubric: R("Le jour du jeûne, on dit :", "On the fast day, say:", "ביום התענית אומרים:"),
     });
   }
 
   // 'Ossé chalom, « 'ossé hachalom » aux dix jours de techouva.
-  fin.push(
-    {
-      parts: [
-        { he: "עֹשֶׂה שָׁלוֹם", when: "!teshuva" },
-        { he: "עוֹשֶׂה הַשָּׁלוֹם", when: "teshuva", accent: true },
-        { seg: ix.osse, from: "בִּמְרוֹמָיו" },
-      ],
-    },
-    { seg: ix.yehiRatson, mode: "small" },
-  );
-
-  blocks.push({ src, lines: fin });
+  blocks.push({
+    src,
+    lines: [
+      {
+        parts: [
+          { he: "עֹשֶׂה שָׁלוֹם", when: "!teshuva" },
+          { he: "עוֹשֶׂה הַשָּׁלוֹם", when: "teshuva", accent: true },
+          { seg: ix.osse, from: "בִּמְרוֹמָיו" },
+        ],
+      },
+      { seg: ix.yehiRatson, mode: "small" },
+    ],
+  });
 
   return blocks;
 }
