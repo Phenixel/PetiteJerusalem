@@ -1174,22 +1174,23 @@ const VAYEHAL_MONTEES = [
 ];
 
 /**
- * La lecture de la Torah des jeûnes publics, « Vaye'hal Moché », une montée
- * par bloc, chacune à son titre : le lecteur les distingue comme celles de
- * la paracha de la semaine.
+ * La lecture de la Torah des jeûnes publics, « Vaye'hal Moché » : un seul
+ * bloc, une montée par paragraphe, chacune sous sa didascalie. Le menu de
+ * lecture n'y jette qu'un repère, celui de la sortie du séfer qui précède :
+ * trois titres pour trois montées, c'était trop.
  */
-function vayehalBlocks(when) {
-  return VAYEHAL_MONTEES.map((montee) => ({
+function vayehalBlock(when) {
+  return {
     src: "Taanit.Torah",
     when,
     plain: true,
-    labelText: R(
-      `Vaye'hal Moché · ${montee.fr}`,
-      `Vayechal Moshe · ${montee.en}`,
-      `ויחל משה · ${montee.he}`,
-    ),
-    lines: [{ seg: 1, from: montee.from, until: montee.until }],
-  }));
+    lines: VAYEHAL_MONTEES.map((montee) => ({
+      seg: 1,
+      from: montee.from,
+      until: montee.until,
+      rubric: R(`${montee.fr} :`, `${montee.en}:`, `${montee.he}:`),
+    })),
+  };
 }
 
 /**
@@ -1385,7 +1386,6 @@ function selihotTsomBlocks() {
       src: "Vidui",
       when: "selihot-tsom",
       plain: true,
-      labelText: R("Vidouy", "Viduy", "וידוי"),
       lines: [
         {
           seg: 1,
@@ -2521,7 +2521,7 @@ function chaharitRecipe() {
       // comme l'après-midi. Sauf le matin de Tich'a beAv, qui lit « Ki tolid
       // banim » (Devarim 4, 25 à 40) : la source ne le porte pas, il vient du
       // fichier de la paracha Vaét'hanan que l'application sert déjà.
-      ...vayehalBlocks("selihot-tsom"),
+      vayehalBlock("selihot-tsom"),
       {
         when: "tisha-beav",
         plain: true,
@@ -2886,7 +2886,7 @@ function minhaRecipe() {
         sansTahanoun: "sans-tahanoun-minha",
         halakha: [{ ...HALAKHA.vayehal, when: "selihot-tsom" }],
       }),
-      ...vayehalBlocks("taanit"),
+      vayehalBlock("taanit"),
       benedictionApresLecture("taanit"),
       ...haftaraBlocks(),
       ...psaumesSeferBlocks(),

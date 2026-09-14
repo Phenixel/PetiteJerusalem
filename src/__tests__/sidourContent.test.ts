@@ -440,18 +440,20 @@ describe("Min'ha : les jeûnes publics", () => {
   const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
 
   it("lit « Vaye'hal Moché » en trois montées, sans Kaddich après la lecture", () => {
-    const montees = blocks.filter((b) => b.label.startsWith("Vaye'hal Moché"));
-    expect(montees).toHaveLength(3);
-    for (const montee of montees) expect(montee.when).toBe("taanit");
     // La sortie du séfer précède, avec les clés de tahanoun de Min'ha.
-    const sortie = blocks.find((b) => b.label === "Lecture de la Torah")!;
-    expect(sortie.when).toBe("taanit");
-    expect(sortie.paragraphs![0].when).toBe("tahanoun-minha");
+    const sortie = blocks.findIndex((b) => b.label === "Lecture de la Torah");
+    expect(blocks[sortie].when).toBe("taanit");
+    expect(blocks[sortie].paragraphs![0].when).toBe("tahanoun-minha");
+    // Les trois montées dans un seul bloc, sans titre à lui.
+    const vayehal = blocks[sortie + 1];
+    expect(vayehal.when).toBe("taanit");
+    expect(vayehal.label).toBe("");
+    expect(vayehal.lines).toHaveLength(3);
+    expect(sansSignes(vayehal.lines[0])).toContain("ויחל משה");
     // Après la bénédiction de l'appelé, pas de Kaddich : la haftara, puis
     // le psaume, Yehalelou et le demi-Kaddich qui ouvre la 'Amida.
-    const derniere = blocks.indexOf(montees[2]);
-    expect(sansSignes(blocks[derniere + 1].lines[0])).toContain("אשר נתן לנו את תורתו");
-    expect(blocks[derniere + 2].label).toBe("Haftara du jeûne de Guedalia");
+    expect(sansSignes(blocks[sortie + 2].lines[0])).toContain("אשר נתן לנו את תורתו");
+    expect(blocks[sortie + 3].label).toBe("Haftara du jeûne de Guedalia");
   });
 
   it("donne au jeûne de Guedalia sa haftara, aux autres celle de certaines communautés", () => {
@@ -523,27 +525,29 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
     const pourim = blocks.find((b) => b.when === "pourim")!;
     expect(pourim.label).toBe("Lecture de la Torah");
     expect(sansSignes(pourim.lines.join(" "))).toContain("עמלק");
-    // Les jeûnes lisent « Vaye'hal Moché » en trois montées, chacune à son
-    // titre, après la même sortie du séfer que le lundi et le jeudi.
-    const sortie = blocks.find(
+    // Les jeûnes lisent « Vaye'hal Moché » en trois montées, chacune sous
+    // sa didascalie, dans un seul bloc sans titre : le menu ne retient que
+    // la sortie du séfer qui précède, la même que le lundi et le jeudi.
+    const sortie = blocks.findIndex(
       (b) => b.label === "Lecture de la Torah" && b.when?.includes("taanit"),
-    )!;
-    expect(sortie.when).toBe("torah-semaine|taanit");
-    expect(sansSignes(sortie.lines[0])).toContain("אל ארך אפים");
-    const montees = blocks.filter((b) => b.label.startsWith("Vaye'hal Moché"));
-    expect(montees.map((b) => b.label)).toEqual([
-      "Vaye'hal Moché · Cohen",
-      "Vaye'hal Moché · Lévi",
-      "Vaye'hal Moché · Israël",
+    );
+    expect(blocks[sortie].when).toBe("torah-semaine|taanit");
+    expect(sansSignes(blocks[sortie].lines[0])).toContain("אל ארך אפים");
+    const vayehal = blocks[sortie + 2]; // après le marqueur de la Torah de la semaine
+    expect(vayehal.when).toBe("selihot-tsom");
+    expect(vayehal.label).toBe("");
+    expect(vayehal.paragraphs!.map((p) => p.rubric?.fr)).toEqual([
+      "Cohen\u00a0:",
+      "Lévi\u00a0:",
+      "Israël\u00a0:",
     ]);
-    for (const montee of montees) expect(montee.when).toBe("selihot-tsom");
-    const debuts = montees.map((b) => sansSignes(b.lines[0]).slice(0, 12));
+    const debuts = vayehal.lines.map((l) => sansSignes(l).slice(0, 12));
     expect(debuts[0]).toContain("ויחל משה");
     expect(debuts[1]).toContain("ויאמר יהוה");
     expect(debuts[2]).toContain("ויפסל");
     // Les mots en retrait qui bornent les montées dans la source ne
     // traînent pas dans le fil.
-    expect(sansSignes(montees[0].lines[0])).not.toContain(" לוי ");
+    expect(sansSignes(vayehal.lines[0])).not.toContain(" לוי ");
     // Tich'a beAv lit « Ki tolid banim » à leur place.
     const neufAv = blocks.find((b) => b.when === "tisha-beav" && b.lines.length === 1)!;
     expect(sansSignes(neufAv.lines[0])).toContain("כיתוליד בנים");
@@ -576,7 +580,6 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
     const communs = blocks.filter((b, i) => b.when === "selihot-tsom" && i < yehiChem);
     expect(communs.map((b) => b.label).filter(Boolean)).toEqual([
       "Sli'hot communes aux quatre jeûnes",
-      "Vidouy",
       "Nefilat apayim",
     ]);
     expect(sansSignes(communs[0].lines[0])).toContain("אנשי אמונה");
