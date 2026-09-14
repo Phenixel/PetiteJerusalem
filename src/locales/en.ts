@@ -1169,7 +1169,7 @@ const en: LocaleMessages = {
       photoAlt: "{title}, page {n}",
       zoomIn: "Tap the photo to enlarge it.",
       zoomOut: "Tap the photo to fit it to the window again.",
-      transcribed: "Transcription of the parchment, letter by letter, without vowels.",
+      transcribed: "Transcription of the parchment, letter by letter, in the scribe's script.",
     },
     // Siddur: the time of a moment of prayer, placed right before what is read
     // (see TefilaZman.vue; keys d1..dN are the lines behind the "i").

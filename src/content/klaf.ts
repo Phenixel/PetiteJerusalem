@@ -6,7 +6,8 @@ import type { KlafKind } from "../services/textService";
  * Les photos (public/klaf) sont celles d'un klaf écrit par un sofer, telles
  * quelles : c'est la graphie du sofer, avec ses taguim, qu'on vient regarder.
  * La retranscription reprend le parchemin lettre à lettre, sans voyelles
- * comme lui, un paragraphe à chaque blanc que le sofer a laissé. Le texte
+ * comme lui, un paragraphe à chaque blanc que le sofer a laissé, et s'écrit
+ * dans l'écriture du sofer (police Stam Sefarad CLM, voir main.css). Le texte
  * vocalisé, lui, est déjà dans le fil de l'office.
  */
 

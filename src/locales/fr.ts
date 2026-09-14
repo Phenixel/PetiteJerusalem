@@ -1201,7 +1201,7 @@ const fr = {
       photoAlt: "{title}, page {n}",
       zoomIn: "Touchez la photo pour l'agrandir.",
       zoomOut: "Touchez la photo pour la ramener à la largeur de la fenêtre.",
-      transcribed: "Retranscription du parchemin, lettre à lettre, sans les voyelles.",
+      transcribed: "Retranscription du parchemin, lettre à lettre, dans l'écriture du sofer.",
     },
     // Sidour : la direction du Kotel, ouverte depuis le titre des passages
     // qui se disent face à Jérusalem (voir KotelCompass.vue).

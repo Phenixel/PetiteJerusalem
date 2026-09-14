@@ -381,8 +381,9 @@ paragraphe est loin.
 
 La fenêtre montre d'abord la photo du parchemin, telle quelle
 (`public/klaf/`), qu'un toucher agrandit au double ; un second onglet en donne
-la retranscription, lettre à lettre et sans voyelles, dans la police hébraïque
-et à la taille de lecture du lecteur. Pour le psaume, la retranscription
+la retranscription, lettre à lettre et sans voyelles, dans l'écriture du sofer
+(la police Stam Sefarad CLM, voir « Les polices ») et à la taille de lecture
+du lecteur : le même rendu que le klaf, mais du texte. Pour le psaume, la retranscription
 reprend la forme du parchemin : sept branches verticales, une barre, un pied,
 en traits pleins à la couleur du texte, sans ombre ni dégradé. C'est une
 écriture, pas une illustration.
@@ -422,6 +423,14 @@ elles, l'identité du site.
 | `--font-hebrew`                   | au choix               | le texte hébreu d'une lecture                                           |
 | `--font-reading`                  | au choix               | le texte latin d'une lecture (traduction, phonétique, didascalies)      |
 | `--font-serif`                    | Lora, Georgia en repli | les tranches des livres de la bibliothèque et la dédicace               |
+
+Une seule autre famille a droit de cité, et à un seul endroit : **Stam Sefarad
+CLM** (projet Culmus, GPL avec exception d'embarquement,
+`public/fonts/stam-sefarad-clm.LICENSE.txt`), l'écriture du sofer, ktav
+Sefaradi avec taguim. Elle n'écrit que la retranscription des parchemins
+(`KlafViewer.vue`) : là, le rendu du klaf est ce qu'on vient chercher, et
+c'est la seule raison d'être de la police. Elle ne sert ni au fil d'un texte,
+ni à un titre, ni à une étiquette.
 
 Playfair est une police d'apparat : posée partout, elle ne met plus rien en
 avant. Elle est automatique sur les `h1` et se pose à la main (classe

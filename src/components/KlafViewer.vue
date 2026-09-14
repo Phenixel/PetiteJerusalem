@@ -13,9 +13,11 @@ import { closeKlaf, klafOpen, KLAF_LABELS } from "../composables/useKlaf";
  *
  * La photo se lit de près : un toucher l'agrandit au double, et l'on fait
  * défiler ; un second toucher la ramène à la largeur de la fenêtre. La
- * retranscription du pitoum haketoret suit les blancs du parchemin ; celle
- * du Lamnatséa'h reprend sa forme, sept branches et un pied, en traits pleins :
- * c'est une écriture, pas une illustration.
+ * retranscription est écrite dans l'écriture du sofer (police Stam Sefarad
+ * CLM, ktav Sefaradi avec taguim) : le même rendu que le klaf, mais du texte,
+ * qui suit la taille de lecture. Celle du pitoum haketoret suit les blancs du
+ * parchemin ; celle du Lamnatséa'h reprend sa forme, sept branches et un
+ * pied, en traits pleins : c'est une écriture, pas une illustration.
  */
 const { t } = useI18n();
 
@@ -209,17 +211,20 @@ const title = computed(() => (kind.value ? t(KLAF_LABELS[kind.value].title) : ""
 
 .klaf-hint {
   margin-top: 0.75rem;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   line-height: 1.5;
   text-align: center;
   color: var(--color-text-secondary);
 }
 
-/* La retranscription, dans la police et à la taille de lecture du lecteur
-   (A− / A+), justifiée comme le fil du texte. */
+/* La retranscription, dans l'écriture du sofer (voir @font-face dans
+   main.css), à la taille de lecture du lecteur (A− / A+), justifiée comme le
+   parchemin. La police de lecture ne vient qu'en repli, le temps du
+   chargement. */
 .klaf-text {
-  font-family: var(--font-hebrew);
-  font-size: calc(1.35rem * var(--reading-scale, 1));
+  font-family: "Stam Sefarad CLM", var(--font-hebrew);
+  font-size: calc(1.5rem * var(--reading-scale, 1));
   line-height: 1.7;
   text-align: justify;
   color: var(--color-text-primary);
@@ -234,7 +239,7 @@ const title = computed(() => (kind.value ? t(KLAF_LABELS[kind.value].title) : ""
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-family: var(--font-hebrew);
+  font-family: "Stam Sefarad CLM", var(--font-hebrew);
   color: var(--color-text-primary);
   padding-top: 0.25rem;
 }
