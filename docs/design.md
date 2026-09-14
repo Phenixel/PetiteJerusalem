@@ -367,6 +367,26 @@ fragment court, dans un paragraphe qu'on lit d'un trait. La halakha de
 l'oubli (« si l'on a conclu haEl hakadoch, on recommence ») accompagne le
 passage, en didascalie, les jours où elle sert.
 
+### Le parchemin s'ouvre depuis le texte
+
+Deux passages du sidour ont leur forme propre sur un parchemin : le pitoum
+haketoret, que beaucoup lisent sur un klaf écrit par un sofer, et le psaume
+67 (Lamnatséa'h binguinot), qu'il est bon de dire en regardant la menora dans
+laquelle il est écrit. L'app ne les redessine pas dans le fil : elle pose, au
+paragraphe où ils se disent, une petite commande ronde (`.reading-klaf`,
+dans `LiturgyText.vue`), une pastille à la couleur du thème, à la taille des
+didascalies, qui ouvre une fenêtre (`KlafViewer.vue`). Le menu de lecture
+l'offre aussi, comme la boussole et le miroir : une fois dans la prière, le
+paragraphe est loin.
+
+La fenêtre montre d'abord la photo du parchemin, telle quelle
+(`public/klaf/`), qu'un toucher agrandit au double ; un second onglet en donne
+la retranscription, lettre à lettre et sans voyelles, dans la police hébraïque
+et à la taille de lecture du lecteur. Pour le psaume, la retranscription
+reprend la forme du parchemin : sept branches verticales, une barre, un pied,
+en traits pleins à la couleur du texte, sans ombre ni dégradé. C'est une
+écriture, pas une illustration.
+
 ## 3. Les rayons
 
 Deux familles, et elles vont en sens contraire. Les **surfaces** sont taillées

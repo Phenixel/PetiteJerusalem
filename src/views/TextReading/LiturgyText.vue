@@ -1,14 +1,28 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import type { Rubric, TextBlock, TextParagraph, TextRun } from "../../services/textService";
+import type {
+  KlafKind,
+  Rubric,
+  TextBlock,
+  TextParagraph,
+  TextRun,
+} from "../../services/textService";
 import { saidOn } from "../../services/textService";
 import { transliterate } from "../../services/hebrewTransliteration";
 import type { SupportedLocale } from "../../i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
+import KlafViewer from "../../components/KlafViewer.vue";
 import KotelCompass from "../../components/KotelCompass.vue";
 import TefilinMirror from "../../components/TefilinMirror.vue";
+import {
+  addKlafOffer,
+  KLAF_ICONS,
+  KLAF_LABELS,
+  openKlaf,
+  removeKlafOffer,
+} from "../../composables/useKlaf";
 import {
   addKotelOffer,
   openKotelCompass,
@@ -260,6 +274,30 @@ function syncMirrorOffer(offered: boolean): void {
 watch(offersMirror, syncMirrorOffer, { immediate: true });
 onUnmounted(() => syncMirrorOffer(false));
 
+/**
+ * Les parchemins, sur le même modèle : le paragraphe d'où l'on dit le pitoum
+ * haketoret ou le Lamnatséa'h porte la commande qui ouvre le sien, et le texte
+ * qui en porte un le signale au menu de lecture. Une seule fenêtre pour la
+ * page, qui montre le parchemin demandé.
+ */
+const offersKlaf = computed<KlafKind[]>(() => {
+  const kinds = new Set<KlafKind>();
+  for (const block of props.blocks) {
+    for (const paragraph of block.paragraphs ?? []) {
+      if (paragraph.klaf) kinds.add(paragraph.klaf);
+    }
+  }
+  return [...kinds];
+});
+let offeringKlaf: KlafKind[] = [];
+function syncKlafOffers(kinds: KlafKind[]): void {
+  for (const kind of offeringKlaf) if (!kinds.includes(kind)) removeKlafOffer(kind);
+  for (const kind of kinds) if (!offeringKlaf.includes(kind)) addKlafOffer(kind);
+  offeringKlaf = kinds;
+}
+watch(offersKlaf, syncKlafOffers, { immediate: true });
+onUnmounted(() => syncKlafOffers([]));
+
 const sections = computed(() =>
   props.blocks
     .map((block) => ({
@@ -393,6 +431,17 @@ const phoneticOf = computed(() => {
                 <p v-if="paragraph.rubric" class="reading-rubric">
                   {{ say(paragraph.rubric) }}
                 </p>
+                <!-- Le parchemin, au paragraphe où il se lit : la ketoret
+                     telle qu'un sofer l'écrit, le psaume en forme de menora. -->
+                <button
+                  v-if="paragraph.klaf"
+                  type="button"
+                  class="reading-klaf"
+                  @click.stop="openKlaf(paragraph.klaf, 'text')"
+                >
+                  <AppIcon :name="KLAF_ICONS[paragraph.klaf]" :size="14" />
+                  {{ t(KLAF_LABELS[paragraph.klaf].open) }}
+                </button>
                 <div
                   v-for="copy in copiesOf(paragraph)"
                   :key="copy"
@@ -453,6 +502,7 @@ const phoneticOf = computed(() => {
 
     <KotelCompass v-if="offersKotel" />
     <TefilinMirror v-if="offersMirror" />
+    <KlafViewer v-if="offersKlaf.length > 0" />
   </div>
 </template>
 
@@ -540,6 +590,43 @@ const phoneticOf = computed(() => {
    blanc se tient au-dessus d'elle. */
 .reading-rubric + .reading-para {
   margin-top: 0.25rem;
+}
+
+/* La commande qui ouvre le parchemin : une pastille ronde à la couleur du
+   thème, posée au-dessus du paragraphe, dans le registre des didascalies.
+   Elle se lit comme un bouton, pas comme du texte à dire. */
+.reading-klaf {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: calc(0.8rem * var(--reading-scale, 1));
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-primary);
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  transition: background-color 0.2s ease;
+}
+
+.reading-klaf:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
+}
+
+.reading-klaf:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Sous une didascalie, la pastille la suit de près, et le texte la suit. */
+.reading-rubric + .reading-klaf {
+  margin-top: 0.35rem;
+}
+
+.reading-klaf + .reading-para {
+  margin-top: 0.35rem;
 }
 
 /* Bénédictions numérotées : le numéro tient la marge, pas de blanc en plus. */

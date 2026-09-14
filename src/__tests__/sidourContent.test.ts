@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { parseContent, resolveFilePath } from "../services/textService";
-import type { TextContent } from "../services/textService";
+import type { TextContent, TextParagraph, TextRun } from "../services/textService";
 import { injectWeeklyTorah } from "../services/sidourService";
 import type { WeeklyParasha } from "../services/dailyCycles";
 import { getParashaForShabbat } from "../services/dailyCycles";
@@ -309,6 +309,37 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       expect(sansSignes(ledavid[0].lines[0])).toContain("לדוד יהוה אורי");
       // L'encadré d'Arvit garde son titre : c'est par lui qu'on le déplie.
       if (ledavid[0].fold) expect(ledavid[0].labelText).toBeDefined();
+    });
+
+    it("ouvre le parchemin au pitoum haketoret et au Lamnatséa'h, et là seulement", () => {
+      // Le drapeau vient de la recette (`klaf` dans build-sidour.mjs), posé
+      // sur le paragraphe d'où le parchemin s'ouvre : « Ata hou » pour le
+      // pitoum haketoret, le premier verset du psaume 67 pour la menora.
+      // Cha'harit dit la ketoret deux fois (aux korbanot, après Ein
+      // kélohénou), Min'ha une fois, Arvit jamais ; le psaume 67 se dit une
+      // fois par office (après le compte du 'Omer, à Arvit).
+      const paragraphes = blocks.flatMap((b) => b.paragraphs ?? []);
+      const texte = (p: TextParagraph): string =>
+        sansSignes(
+          p.runs
+            .filter((r): r is TextRun & { kind: "he" } => r.kind === "he")
+            .map((r) => r.text)
+            .join(" "),
+        );
+      for (const paragraphe of paragraphes) {
+        const debut = texte(paragraphe);
+        if (debut.startsWith("אתה הוא יהוה אלהינו, שהקטירו")) {
+          expect(paragraphe.klaf).toBe("ketoret");
+        } else if (debut.startsWith("למנצח בנגינת")) {
+          expect(paragraphe.klaf).toBe("menora");
+        } else {
+          expect(paragraphe.klaf).toBeUndefined();
+        }
+      }
+      const office = resolveFilePath(entry);
+      const ketoret = paragraphes.filter((p) => p.klaf === "ketoret").length;
+      expect(ketoret).toBe(office.includes("chaharit") ? 2 : office.includes("minha") ? 1 : 0);
+      expect(paragraphes.filter((p) => p.klaf === "menora")).toHaveLength(1);
     });
 
     it("offre la boussole du Kotel au titre de la 'Amida", () => {

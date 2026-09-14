@@ -12,6 +12,8 @@ import { useOverlay } from "../composables/useOverlayStack";
 import type { BookState } from "../composables/useBookDownload";
 import { kotelCompassOffered, openKotelCompass } from "../composables/useKotelCompass";
 import { openTefilinMirror, tefilinMirrorOffered } from "../composables/useTefilinMirror";
+import { KLAF_ICONS, KLAF_LABELS, klafOffered, openKlaf } from "../composables/useKlaf";
+import type { KlafKind } from "../services/textService";
 import type { ReadingNavSection } from "../composables/useReadingNav";
 import { analyticsService } from "../services/analyticsService";
 
@@ -134,6 +136,16 @@ function openKotel() {
 function openMirror() {
   close();
   openTefilinMirror("menu");
+}
+
+/**
+ * Le parchemin, quand le texte lu porte le pitoum haketoret ou le
+ * Lamnatséa'h : la commande est au paragraphe, mais on veut souvent le
+ * parchemin sous les yeux avant d'y arriver, ou l'y garder après.
+ */
+function openParchment(kind: KlafKind) {
+  close();
+  openKlaf(kind, "menu");
 }
 
 function goTo(anchor: string) {
@@ -259,6 +271,19 @@ onUnmounted(() => {
             <button v-if="tefilinMirrorOffered" @click="openMirror" class="section-item">
               <AppIcon name="mirror" :size="13" class="flex-shrink-0 text-text-secondary" />
               {{ t("textReading.mirror.title") }}
+            </button>
+            <button
+              v-for="kind in klafOffered"
+              :key="kind"
+              @click="openParchment(kind)"
+              class="section-item"
+            >
+              <AppIcon
+                :name="KLAF_ICONS[kind]"
+                :size="13"
+                class="flex-shrink-0 text-text-secondary"
+              />
+              {{ t(KLAF_LABELS[kind].title) }}
             </button>
             <p v-if="props.sections.length" class="section-heading">
               {{ t("textReading.navSections") }}

@@ -158,7 +158,10 @@ function partRuns(spec, segs) {
  * demande, juste après le mot qu'elle remplace ; `parts` compose la ligne de
  * plusieurs fragments, chacun avec sa condition (voir partRuns) ;
  * `splitAmen` déplie un kaddich en une phrase par ligne, chacune suivie de sa
- * réponse (voir buildKaddishLines).
+ * réponse (voir buildKaddishLines) ; `klaf` (« ketoret », « menora ») marque
+ * le paragraphe d'où le lecteur ouvre le parchemin correspondant (voir
+ * KlafViewer.vue) : le pitoum haketoret tel qu'un sofer l'écrit, le psaume 67
+ * en forme de menora.
  */
 function buildLine(spec, segs) {
   const line = {};
@@ -169,6 +172,7 @@ function buildLine(spec, segs) {
     if (spec.muted) line.muted = true;
     if (spec.tight) line.tight = true;
     if (spec.lead) line.lead = true;
+    if (spec.klaf) line.klaf = spec.klaf;
     return line;
   }
   const text = lineText(spec, segs);
@@ -186,6 +190,7 @@ function buildLine(spec, segs) {
   if (spec.muted) line.muted = true;
   if (spec.tight) line.tight = true;
   if (spec.lead) line.lead = true;
+  if (spec.klaf) line.klaf = spec.klaf;
   // Sans autre attribut, une simple chaîne suffit au format.
   const keys = Object.keys(line);
   if (keys.length === 1 && typeof line.he === "string") return line.he;
@@ -2065,7 +2070,8 @@ function chaharitRecipe() {
       {
         src: "Incense Offering",
         lines: [
-          { seg: 1 },
+          // D'ici s'ouvre le parchemin du pitoum haketoret.
+          { seg: 1, klaf: "ketoret" },
           { seg: 2 },
           { seg: 3 },
           { seg: 4 },
@@ -2139,6 +2145,8 @@ function chaharitRecipe() {
           { seg: 11 },
           {
             seg: 14,
+            // Le parchemin où le psaume est écrit en forme de menora.
+            klaf: "menora",
             rubric: R(
               "Il est bon de dire ce psaume avec l'image de la menora :",
               "It is good to say this psalm picturing the menorah:",
@@ -2729,7 +2737,8 @@ function chaharitRecipe() {
         lines: [
           { seg: 1 },
           { seg: 2 },
-          { seg: 4 },
+          // Le pitoum haketoret se redit ici : même parchemin.
+          { seg: 4, klaf: "ketoret" },
           { seg: 5 },
           { seg: 6 },
           { seg: 7 },
@@ -2868,7 +2877,8 @@ function minhaRecipe() {
         lines: [
           { seg: 2 },
           { seg: 3 },
-          { seg: 4 },
+          // D'ici s'ouvre le parchemin du pitoum haketoret.
+          { seg: 4, klaf: "ketoret" },
           { seg: 5 },
           { seg: 6 },
           { seg: 7 },
@@ -2950,7 +2960,8 @@ function minhaRecipe() {
         when: "lamnatseah-minha",
         plain: true,
         // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
-        lines: [{ seg: 16, strip: ["(תהלים סז)"] }],
+        // Le même psaume 67 que le matin : même parchemin en forme de menora.
+        lines: [{ seg: 16, strip: ["(תהלים סז)"], klaf: "menora" }],
       },
       {
         src: "Vidui",
@@ -3236,7 +3247,8 @@ function arvitRecipe() {
         plain: true,
         lines: [
           { seg: 151 },
-          { seg: 152 },
+          // Le psaume 67, en forme de menora sur le parchemin.
+          { seg: 152, klaf: "menora" },
           { seg: 153 },
           { seg: 154, tight: true },
           { seg: 155, tight: true },

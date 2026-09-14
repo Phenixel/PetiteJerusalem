@@ -91,6 +91,13 @@ export function saidOn(when: string | undefined, occasions: Set<string>): boolea
 }
 
 /**
+ * Sidour : les parchemins que le lecteur peut ouvrir depuis le fil du texte
+ * (voir KlafViewer.vue) : le pitoum haketoret tel qu'un sofer l'écrit, le
+ * psaume 67 (Lamnatséa'h binguinot) écrit en forme de menora.
+ */
+export type KlafKind = "ketoret" | "menora";
+
+/**
  * Tefila : un paragraphe du texte, avec sa didascalie et ses mises en avant.
  * Un paragraphe = une ligne de {@link TextBlock.lines} (même index), pour que
  * les marque-pages et la translittération continuent de raisonner en lignes.
@@ -124,6 +131,12 @@ export interface TextParagraph {
    * section (marque-pages, translittération) ; seul l'affichage le masque.
    */
   when?: string;
+  /**
+   * Sidour : le paragraphe d'où s'ouvre un parchemin (voir KlafKind). Le
+   * lecteur pose une commande au-dessus du paragraphe, et le signale au menu
+   * de lecture, qui l'offre à son tour.
+   */
+  klaf?: KlafKind;
 }
 
 /**
@@ -569,6 +582,7 @@ interface TefilaFileLine {
   lead?: boolean;
   tight?: boolean;
   when?: string;
+  klaf?: string;
 }
 
 interface TefilaFileBlock {
@@ -624,6 +638,9 @@ function parseTefilaLine(raw: string | TefilaFileLine): TextParagraph | null {
   if (raw.lead) paragraph.lead = true;
   if (raw.tight) paragraph.tight = true;
   if (raw.when) paragraph.when = raw.when;
+  // Un fichier peut porter un nom de parchemin que ce lecteur ne connaît pas
+  // (copie hors ligne d'une version ultérieure) : il n'ouvre alors rien.
+  if (raw.klaf === "ketoret" || raw.klaf === "menora") paragraph.klaf = raw.klaf;
   return paragraph;
 }
 
