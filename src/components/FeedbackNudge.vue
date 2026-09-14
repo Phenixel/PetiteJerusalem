@@ -83,7 +83,7 @@ function answer(kind: "fine" | "feedback"): void {
   <Transition name="nudge">
     <div
       v-if="visible"
-      class="card fixed inset-x-4 z-40 mx-auto max-w-sm p-5 [box-shadow:var(--shadow-pop)] sm:inset-x-auto sm:right-6"
+      class="card fixed inset-x-4 z-40 mx-auto max-w-sm p-5 [box-shadow:var(--shadow-pop)] sm:inset-x-auto sm:end-6"
       :style="{ bottom: bottomOffset }"
       role="dialog"
       aria-labelledby="feedback-nudge-title"
