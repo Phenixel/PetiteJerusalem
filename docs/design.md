@@ -294,6 +294,25 @@ titre de groupe, le même que ceux des moments de la journée, et des noms.
 Certains jours en portent dix-neuf. On en montre quatre, le reste se déplie :
 la page se termine sur une ligne, pas sur un annuaire.
 
+### Écrire à l'équipe se propose où l'on finit, pas où l'on commence
+
+Le formulaire de support (une idée, un bug, une erreur dans un texte) est une
+fenêtre, pas une page : on l'ouvre de là où l'on est et l'on y revient en la
+fermant, sans perdre la lecture en cours. Il s'ouvre de trois endroits, tous
+en fin de parcours : le pied de page du site, l'onglet À propos de l'app, et
+le bas de l'accueil.
+
+Sur l'accueil, il tient en une ligne sous la dédicace, en petit et en gris,
+avec le seul lien souligné : « Une idée, un problème ? Écrivez-nous ». Pas de
+carte ni de bouton plein : l'accueil n'est pas venu poser cette question, et
+un bouton coloré tout en bas se disputerait le regard avec les portes du site.
+Discret donc, mais visible : la ligne existe dans l'app comme sur le site, là
+où l'on arrive après avoir tout vu.
+
+La fenêtre dit ce qu'elle joint sans le demander (le support, la plateforme,
+la version) sous le formulaire, en petit : rien ne part à l'insu de la
+personne, et personne n'a à recopier un numéro de version.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.

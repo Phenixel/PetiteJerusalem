@@ -25,6 +25,7 @@ import {
 } from "../services/userPreferencesService";
 import { isNativeApp } from "../composables/useNativeApp";
 import { useHomeAccountCta } from "../composables/useHomeAccountCta";
+import { openFeedback } from "../composables/useFeedback";
 import SiteFooter from "../components/SiteFooter.vue";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
@@ -376,6 +377,22 @@ onUnmounted(() => {
           {{ t("home.memorial.dedication") }}
         </p>
       </div>
+
+      <!-- Le formulaire de support, tout en bas : discret (une ligne en
+           petit, gris) mais visible, là où l'on arrive après avoir tout vu. -->
+      <p
+        class="mt-10 text-center text-sm text-text-secondary enter-rise"
+        style="--enter-delay: 0.5s"
+      >
+        {{ t("feedback.homePrompt") }}
+        <button
+          type="button"
+          class="font-medium text-text-primary underline decoration-line underline-offset-4 hover:text-primary transition-colors"
+          @click="openFeedback"
+        >
+          {{ t("feedback.homeLink") }}
+        </button>
+      </p>
     </div>
   </main>
 

@@ -11,16 +11,17 @@ Vous avez trouvé un bug ? Dites-le nous. Deux possibilités :
 
 1. **Issues GitHub** : ouvrez une issue en décrivant ce que vous avez fait, ce
    que vous attendiez et ce qui s'est réellement passé.
-2. **Formulaire Notion** : vous pouvez aussi passer par notre
-   [formulaire de retour](https://phenixel.notion.site/26b35db90d4d809aada8e077937652d4).
+2. **Formulaire de support** : depuis le site (lien « Nous écrire » du pied
+   de page ou du bas de l'accueil) ou l'app (onglet À propos du profil). Le
+   message arrive avec le support, la plateforme et la version, ce qui aide à
+   reproduire.
 
 ### Proposer une amélioration
 
 Une idée de fonctionnalité ?
 
 - Ouvrez une issue sur GitHub pour en discuter avant de coder.
-- Ou utilisez notre
-  [formulaire de retour](https://phenixel.notion.site/26b35db90d4d809aada8e077937652d4)
+- Ou utilisez le formulaire de support du site ou de l'app (« Nous écrire »)
   pour soumettre vos idées.
 
 ### Proposer une pull request (PR)

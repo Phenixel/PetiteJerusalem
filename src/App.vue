@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, ref } from "vue";
+import { computed, defineAsyncComponent, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Navbar from "./components/NavbarComponents.vue";
 import StoneWallBackground from "./components/StoneWallBackground.vue";
@@ -14,6 +14,7 @@ import { useMiniPlayerVisible } from "./composables/useAudioPlayer";
 import { useOnline } from "./composables/useOnline";
 import { isNativeApp } from "./composables/useNativeApp";
 import { isOnboardingOpen } from "./composables/useOnboarding";
+import { isFeedbackOpen } from "./composables/useFeedback";
 import { useNativeStatusBar } from "./composables/useNativeStatusBar";
 import { useLocale } from "./composables/useLocale";
 import { RouterView } from "vue-router";
@@ -42,6 +43,15 @@ const BottomTabBar = defineAsyncComponent(() => import("./components/BottomTabBa
 const StatusBarScrim = defineAsyncComponent(() => import("./components/StatusBarScrim.vue"));
 const AppUpdateBanner = defineAsyncComponent(() => import("./components/AppUpdateBanner.vue"));
 const OfflineNotice = defineAsyncComponent(() => import("./components/OfflineNotice.vue"));
+
+// Le formulaire de support (pied de page, onglet À propos, bas de l'accueil) :
+// son chunk ne se charge qu'à la première ouverture, puis la fenêtre reste
+// montée pour que sa fermeture s'anime et rende le clavier à qui l'avait.
+const FeedbackModal = defineAsyncComponent(() => import("./components/FeedbackModal.vue"));
+const feedbackMounted = ref(false);
+watch(isFeedbackOpen, (open) => {
+  if (open) feedbackMounted.value = true;
+});
 
 // App native : les horaires (et leur calendrier) se posent au-dessus de la
 // page en cours, comme un modal plein écran ; le bouton rond de la barre
@@ -153,6 +163,7 @@ authService.onAuthChanged((user) => {
     <ConfirmDialog />
     <ConsentBanner />
     <OnboardingFlow v-if="isOnboardingOpen" />
+    <FeedbackModal v-if="feedbackMounted" />
     <GlobalAudioPlayer />
     <BottomTabBar v-if="isNativeApp" />
     <!-- App native : le flou en dégradé qui rend l'heure et la batterie

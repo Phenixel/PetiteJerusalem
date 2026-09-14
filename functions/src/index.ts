@@ -39,6 +39,8 @@ export {
 } from "./studio";
 // Modération : compteur de signalements + masquage auto au 3e signalement.
 export { onSessionReported } from "./moderation";
+// Formulaire de support : dépôt des messages dans la base Notion.
+export { submitFeedback } from "./feedback";
 
 const SITE_URL = "https://petite-jerusalem.fr";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
