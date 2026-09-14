@@ -94,7 +94,10 @@ const ZMANIM_GUIDE_FR = (links: GuideLinks): GuideStrings => ({
       douteux. C'est pour l'enjamber que Chabbat commence avant la chkia et ne se termine qu'à
       la nuit faite.</p>
       <p><strong>Tsét haKokhavim</strong> : la sortie des étoiles, le soleil à 8,5° sous
-      l'horizon. C'est l'heure d'Arvit, la fin de Chabbat et des fêtes, la fin des jeûnes.</p>
+      l'horizon. C'est l'heure d'Arvit, et la fin de Chabbat et des fêtes.</p>
+      <p><strong>Fin des jeûnes</strong> : plus tôt, le soleil à 7,08° sous l'horizon. Trois
+      étoiles moyennes suffisent à clore un jeûne, quand le Chabbat, lui, attend trois petites
+      étoiles ; d'où une dizaine de minutes d'écart entre les deux sorties.</p>
       <p><strong>'Hatsot de la nuit</strong> : le milieu de la nuit, le moment des Sli'hot et du
       Tikoun 'Hatsot.</p>`,
     },
@@ -221,7 +224,10 @@ const ZMANIM_GUIDE_EN = (links: GuideLinks): GuideStrings => ({
       status. It is to clear it that Shabbat starts before shkia and only ends once night has
       fallen.</p>
       <p><strong>Tzeit hakochavim</strong>: nightfall, the sun 8.5° below the horizon. This is
-      the time for Maariv, the end of Shabbat and festivals, and the end of fasts.</p>
+      the time for Maariv and the end of Shabbat and festivals.</p>
+      <p><strong>End of fasts</strong>: earlier, the sun 7.08° below the horizon. Three
+      medium-sized stars are enough to end a fast, while Shabbat waits for three small ones:
+      hence the ten minutes or so between the two.</p>
       <p><strong>Chatzot halayla</strong>: midnight in the halachic sense, the time for Selichot
       and Tikkun Chatzot.</p>`,
     },
@@ -339,8 +345,11 @@ const ZMANIM_GUIDE_HE = (links: GuideLinks): GuideStrings => ({
       html: `<p><strong>שקיעה</strong>: שקיעת השמש, סוף היום.</p>
       <p><strong>בין השמשות</strong>: הזמן שבין השקיעה לצאת הכוכבים, שספק יום ספק לילה. משום כך
       השבת נכנסת לפני השקיעה ואינה יוצאת אלא משחשכה.</p>
-      <p><strong>צאת הכוכבים</strong>: השמש 8.5 מעלות מתחת לאופק. זהו זמן ערבית, צאת השבת והחג,
-      וסוף הצומות.</p>
+      <p><strong>צאת הכוכבים</strong>: השמש 8.5 מעלות מתחת לאופק. זהו זמן ערבית וצאת השבת
+      והחג.</p>
+      <p><strong>סיום הצומות</strong>: מוקדם יותר, השמש 7.08 מעלות מתחת לאופק. שלושה כוכבים
+      בינוניים מספיקים לסיום צום, ואילו השבת ממתינה לשלושה קטנים: מכאן הפרש של כעשר דקות
+      בין השניים.</p>
       <p><strong>חצות הלילה</strong>: אמצע הלילה, זמן הסליחות ותיקון חצות.</p>`,
     },
     {
