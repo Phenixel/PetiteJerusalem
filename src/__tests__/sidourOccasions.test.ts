@@ -186,6 +186,69 @@ describe("jeûnes publics", () => {
   });
 });
 
+describe("les sli'hot des jeûnes", () => {
+  it("nomment le jeûne du jour, et remplacent le tahanoun ordinaire", () => {
+    // 3 Tichri 5786, un jeudi : le tahanoun se dit, mais ce sont les sli'hot
+    // du jeûne qui le portent, pas le tahanoun ordinaire ni les supplications
+    // du jeudi.
+    const guedalia = activeOccasions(new HDate(3, months.TISHREI, 5786), false);
+    expect(guedalia.has("selihot-tsom")).toBe(true);
+    expect(guedalia.has("tsom-guedalia")).toBe(true);
+    expect(guedalia.has("tahanoun")).toBe(true);
+    expect(guedalia.has("tahanoun-ordinaire")).toBe(false);
+    expect(guedalia.has("tahanoun-lundi-jeudi")).toBe(false);
+    expect(activeOccasions(new HDate(10, months.TEVET, 5786), false).has("tsom-tevet")).toBe(true);
+    expect(activeOccasions(new HDate(13, months.ADAR_II, 5786), false).has("tsom-esther")).toBe(
+      true,
+    );
+    expect(activeOccasions(new HDate(17, months.TAMUZ, 5786), false).has("tsom-tamouz")).toBe(true);
+    // Un jeûne ne porte que son nom.
+    const noms = ["tsom-guedalia", "tsom-tevet", "tsom-esther", "tsom-tamouz"];
+    expect(noms.filter((cle) => guedalia.has(cle))).toEqual(["tsom-guedalia"]);
+  });
+
+  it("laissent le tahanoun ordinaire aux autres jours", () => {
+    // 10 'Hechvan 5786 est un samedi ; le lundi qui suit est ordinaire.
+    const lundi = activeOccasions(new HDate(12, months.CHESHVAN, 5786), false);
+    expect(lundi.has("tahanoun-ordinaire")).toBe(true);
+    expect(lundi.has("tahanoun-lundi-jeudi")).toBe(true);
+    expect(lundi.has("selihot-tsom")).toBe(false);
+  });
+
+  it("n'ont rien à faire à Tich'a beAv, qui n'a pas de tahanoun", () => {
+    const neufAv = activeOccasions(new HDate(9, months.AV, 5786), false);
+    expect(neufAv.has("taanit")).toBe(true);
+    expect(neufAv.has("selihot-tsom")).toBe(false);
+    expect(neufAv.has("tahanoun-ordinaire")).toBe(false);
+    // Sa Min'ha n'est pas celle des quatre jeûnes non plus : ni « Chema'
+    // koli » ni le psaume 20.
+    expect(neufAv.has("tsom-minha")).toBe(false);
+  });
+
+  it("distinguent la Min'ha entière de celles de la veille de Pourim et du vendredi", () => {
+    // 13 Adar II 5786, un lundi, veille de Pourim : le jeûne d'Esther n'est
+    // pas avancé, sa Min'ha n'a pas de tahanoun.
+    const veille = activeOccasions(new HDate(13, months.ADAR_II, 5786), false);
+    expect(veille.has("tsom-esther-veille")).toBe(true);
+    expect(veille.has("tsom-minha")).toBe(false);
+    expect(veille.has("tahanoun-minha")).toBe(false);
+    // 11 Adar II 5784, le jeudi où le jeûne est avancé (le 13 est un Chabbat).
+    const avance = activeOccasions(new HDate(11, months.ADAR_II, 5784), false);
+    expect(avance.has("tsom-esther")).toBe(true);
+    expect(avance.has("tsom-esther-veille")).toBe(false);
+    expect(avance.has("tsom-minha")).toBe(true);
+    // 10 Tévet 5784, un vendredi.
+    const vendredi = activeOccasions(new HDate(10, months.TEVET, 5784), false);
+    expect(vendredi.has("tsom-vendredi")).toBe(true);
+    expect(vendredi.has("tsom-minha")).toBe(false);
+    expect(vendredi.has("jour-5")).toBe(true);
+    // 10 Tévet 5786, un mardi : la Min'ha entière.
+    const mardi = activeOccasions(new HDate(10, months.TEVET, 5786), false);
+    expect(mardi.has("tsom-minha")).toBe(true);
+    expect(mardi.has("tsom-vendredi")).toBe(false);
+  });
+});
+
 describe("les psaumes du jour de certaines dates", () => {
   const chir = (hd: HDate) =>
     [...activeOccasions(hd, false)].filter((cle) => cle.startsWith("chir-"));

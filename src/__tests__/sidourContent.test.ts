@@ -61,7 +61,16 @@ const KNOWN_WHEN = new Set([
   "tahanoun-lundi-jeudi",
   "sans-tahanoun",
   "sans-tahanoun-minha",
+  "tahanoun-ordinaire",
   "taanit",
+  "selihot-tsom",
+  "tsom-guedalia",
+  "tsom-tevet",
+  "tsom-esther",
+  "tsom-tamouz",
+  "tsom-esther-veille",
+  "tsom-vendredi",
+  "tsom-minha",
   "hallel",
   "hallel-complet",
   "hallel-abrege",
@@ -334,11 +343,12 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
     });
 
     it("ferme le moment du tahanoun par un Kaddich, quel que soit le jour", () => {
-      // Après le tahanoun, après les supplications du lundi et du jeudi, ou
-      // après « Yehi chem » les jours sans tahanoun : le Kaddich vient dans
-      // les trois cas, et ne porte donc aucune condition.
+      // Après le tahanoun, après les supplications du lundi et du jeudi,
+      // après les sli'hot d'un jeûne, ou après « Yehi chem » les jours sans
+      // tahanoun : le Kaddich vient dans tous les cas, et ne porte donc
+      // aucune condition.
       const chaharit = resolveFilePath(entry).includes("chaharit");
-      const cle = chaharit ? "tahanoun" : "tahanoun-minha";
+      const cle = chaharit ? "tahanoun-ordinaire" : "tahanoun-minha";
       // Le premier bloc du tahanoun : la clé revient plus loin dans l'office
       // (les psaumes qui suivent Achré), ce n'est plus le même moment.
       const debut = blocks.map((b) => b.when).indexOf(cle);
@@ -425,6 +435,59 @@ describe("Min'ha : le jeûne qu'on prend sur soi", () => {
   });
 });
 
+describe("Min'ha : les jeûnes publics", () => {
+  const entry = sidourEntries.find((e) => resolveFilePath(e).includes("minha"))!;
+  const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
+
+  it("lit « Vaye'hal Moché » en trois montées, sans Kaddich après la lecture", () => {
+    // La sortie du séfer précède, avec les clés de tahanoun de Min'ha.
+    const sortie = blocks.findIndex((b) => b.label === "Lecture de la Torah");
+    expect(blocks[sortie].when).toBe("taanit");
+    expect(blocks[sortie].paragraphs![0].when).toBe("tahanoun-minha");
+    // Les trois montées dans un seul bloc, sans titre à lui.
+    const vayehal = blocks[sortie + 1];
+    expect(vayehal.when).toBe("taanit");
+    expect(vayehal.label).toBe("");
+    expect(vayehal.lines).toHaveLength(3);
+    expect(sansSignes(vayehal.lines[0])).toContain("ויחל משה");
+    // Après la bénédiction de l'appelé, pas de Kaddich : la haftara, puis
+    // le psaume, Yehalelou et le demi-Kaddich qui ouvre la 'Amida.
+    expect(sansSignes(blocks[sortie + 2].lines[0])).toContain("אשר נתן לנו את תורתו");
+    expect(blocks[sortie + 3].label).toBe("Haftara du jeûne de Guedalia");
+  });
+
+  it("donne au jeûne de Guedalia sa haftara, aux autres celle de certaines communautés", () => {
+    const guedalia = blocks.find((b) => b.label === "Haftara du jeûne de Guedalia")!;
+    expect(guedalia.when).toBe("tsom-guedalia");
+    expect(sansSignes(guedalia.lines.join(" "))).toContain("דרשו יהוה בהמצאו");
+    expect(sansSignes(guedalia.lines.join(" "))).toContain("אשר בחר בנביאים טובים");
+    expect(sansSignes(guedalia.lines.at(-1)!)).toContain("מגן דוד");
+    const autres = blocks.find((b) => b.label === "Haftara (certaines communautés)")!;
+    expect(autres.when).toBe("tsom-tevet|tsom-esther|tsom-tamouz");
+    expect(sansSignes(autres.lines.join(" "))).toContain("שובה ישראל");
+    expect(sansSignes(autres.lines.join(" "))).toContain("מיאל כמוך");
+    for (const p of autres.paragraphs ?? []) expect(p.muted).toBe(true);
+  });
+
+  it("change de psaumes la veille de Pourim et le vendredi", () => {
+    // Les psaumes sont des lignes dans le fil, sans titre.
+    const psaume = (when: string) => blocks.filter((b) => b.when === when && !b.label);
+    // En rangeant le séfer : 20, ou 124, ou 126.
+    expect(sansSignes(psaume("tsom-minha")[0].lines[0])).toContain("יענך יהוה ביום צרה");
+    expect(sansSignes(psaume("tsom-esther-veille")[0].lines[0])).toContain("לולי יהוה");
+    expect(sansSignes(psaume("tsom-vendredi")[0].lines[0])).toContain("בשוב יהוה");
+    // Après le Kaddich : 102 (Tich'a beAv compris), ou 22 la veille de Pourim
+    // (le vendredi, le 93 du bloc jour-5 est déjà là).
+    expect(sansSignes(psaume("tsom-minha|tisha-beav")[0].lines[0])).toContain("תפלה לעני");
+    expect(sansSignes(psaume("tsom-esther-veille")[1].lines[0])).toContain("אילת השחר");
+    // La supplique « Chema' koli » ouvre l'office, en retrait.
+    const chema = blocks.find((b) => b.label === "Supplique « Chema' koli »")!;
+    expect(chema.when).toBe("tsom-minha");
+    expect(blocks.indexOf(chema)).toBe(1); // juste après le marqueur d'horaire
+    expect(chema.lines).toHaveLength(29);
+  });
+});
+
 describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", () => {
   const entry = sidourEntries.find((e) => resolveFilePath(e).includes("chaharit"))!;
   const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
@@ -459,13 +522,81 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
   });
 
   it("lit la Torah à Pourim et les jours de jeûne", () => {
-    // Les cinq entrées de lecture portent le même titre : c'est la clé du jour
-    // qui les distingue, elles ne se croisent pas.
     const pourim = blocks.find((b) => b.when === "pourim")!;
     expect(pourim.label).toBe("Lecture de la Torah");
     expect(sansSignes(pourim.lines.join(" "))).toContain("עמלק");
-    const jeune = blocks.find((b) => b.label === "Lecture de la Torah" && b.when === "taanit")!;
-    expect(sansSignes(jeune.lines.join(" "))).toContain("ויחל משה");
+    // Les jeûnes lisent « Vaye'hal Moché » en trois montées, chacune sous
+    // sa didascalie, dans un seul bloc sans titre : le menu ne retient que
+    // la sortie du séfer qui précède, la même que le lundi et le jeudi.
+    const sortie = blocks.findIndex(
+      (b) => b.label === "Lecture de la Torah" && b.when?.includes("taanit"),
+    );
+    expect(blocks[sortie].when).toBe("torah-semaine|taanit");
+    expect(sansSignes(blocks[sortie].lines[0])).toContain("אל ארך אפים");
+    const vayehal = blocks[sortie + 2]; // après le marqueur de la Torah de la semaine
+    expect(vayehal.when).toBe("selihot-tsom");
+    expect(vayehal.label).toBe("");
+    expect(vayehal.paragraphs!.map((p) => p.rubric?.fr)).toEqual([
+      "Cohen\u00a0:",
+      "Lévi\u00a0:",
+      "Israël\u00a0:",
+    ]);
+    const debuts = vayehal.lines.map((l) => sansSignes(l).slice(0, 12));
+    expect(debuts[0]).toContain("ויחל משה");
+    expect(debuts[1]).toContain("ויאמר יהוה");
+    expect(debuts[2]).toContain("ויפסל");
+    // Les mots en retrait qui bornent les montées dans la source ne
+    // traînent pas dans le fil.
+    expect(sansSignes(vayehal.lines[0])).not.toContain(" לוי ");
+    // Tich'a beAv lit « Ki tolid banim » à leur place.
+    const neufAv = blocks.find((b) => b.when === "tisha-beav" && b.lines.length === 1)!;
+    expect(sansSignes(neufAv.lines[0])).toContain("כיתוליד בנים");
+  });
+
+  it("remplace le tahanoun par les sli'hot du jeûne, chacun les siennes", () => {
+    // Le tahanoun ordinaire ne se dit pas ces jours-là : sa clé est celle
+    // des jours sans sli'hot.
+    const ordinaire = blocks.find((b) => b.label === "Ta'hanoun (supplications)")!;
+    expect(ordinaire.when).toBe("tahanoun-ordinaire");
+    // Chaque jeûne ouvre ses propres sli'hot, dans le fil (plain).
+    const propres = [
+      ["tsom-guedalia", "Sli'hot du jeûne de Guedalia", "אבלה נפשי"],
+      ["tsom-tevet", "Sli'hot du 10 Tévet", "וארץ שפל רומי"],
+      ["tsom-esther", "Sli'hot du jeûne d'Esther", "אגגי בהעמיקו"],
+      ["tsom-tamouz", "Sli'hot du 17 Tamouz", "אזי בבגדי"],
+    ] as const;
+    for (const [when, label, texte] of propres) {
+      const bloc = blocks.find((b) => b.when === when && b.label === label)!;
+      expect(bloc.plain).toBe(true);
+      expect(sansSignes(bloc.lines.join(" "))).toContain(texte);
+    }
+    // Le jeûne de Guedalia a son second piyout, et le psaume qui le ferme.
+    const guedalia = blocks.find((b) => b.label === "Sli'hot du jeûne de Guedalia")!;
+    expect(sansSignes(guedalia.lines.join(" "))).toContain("יקם דם עבדיך");
+    expect(sansSignes(guedalia.lines.at(-1)!)).toContain("נספר תהלתך");
+    // Puis les textes communs aux quatre, le vidouy, la nefilat apayim…
+    // (les montées de « Vaye'hal Moché », plus loin, portent la même clé).
+    const yehiChem = blocks.findIndex((b) => b.when === "sans-tahanoun");
+    const communs = blocks.filter((b, i) => b.when === "selihot-tsom" && i < yehiChem);
+    expect(communs.map((b) => b.label).filter(Boolean)).toEqual([
+      "Sli'hot communes aux quatre jeûnes",
+      "Nefilat apayim",
+    ]);
+    expect(sansSignes(communs[0].lines[0])).toContain("אנשי אמונה");
+    expect(sansSignes(communs.at(-1)!.lines[0])).toContain("שוב מחרון אפך");
+    // …et, dans la nefilat apayim, le piyout du jour, un par jeûne.
+    const nefila = blocks.findIndex((b) => b.label === "Nefilat apayim");
+    expect(blocks.slice(nefila + 1, nefila + 5).map((b) => b.when)).toEqual([
+      "tsom-guedalia",
+      "tsom-tevet",
+      "tsom-esther",
+      "tsom-tamouz",
+    ]);
+    expect(sansSignes(blocks[nefila + 3].lines[0])).toContain("אויב גבר");
+    // Le tout entre le tahanoun ordinaire et « Yehi chem », que le Kaddich
+    // suit quel que soit le jour.
+    const ordinaireIndex = blocks.indexOf(ordinaire);
+    for (const bloc of communs) expect(blocks.indexOf(bloc)).toBeGreaterThan(ordinaireIndex);
   });
 
   it("ne met ni talit ni téfilines le matin de Tich'a beAv", () => {

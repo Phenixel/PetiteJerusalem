@@ -30,6 +30,15 @@ import {
   sliceBetween,
   splitAfter,
 } from "./lib/sefaria-siddur.mjs";
+import {
+  AJOUT_GUEDALIA,
+  AVAL_HATANOU,
+  CHEMA_KOLI,
+  CHLOCH_ESRE_MIDOT,
+  CHOUV_MEHARON,
+  NEFILAT_APAYIM,
+  YIKOM_DAM,
+} from "./lib/selihot-tsom.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, "../public/texts/tefila");
@@ -50,6 +59,44 @@ const KI_TOLID_BANIM = (() => {
   }
   return versets.join(" ");
 })();
+
+/**
+ * Les fichiers de textes que l'application sert déjà (public/texts), lus une
+ * fois chacun : un livre des Nevi'im sert à plusieurs haftarot.
+ */
+const TEXTS = resolve(__dirname, "../public/texts");
+const textsLus = new Map();
+function readText(rel) {
+  if (!textsLus.has(rel)) textsLus.set(rel, JSON.parse(readFileSync(resolve(TEXTS, rel), "utf8")));
+  return textsLus.get(rel);
+}
+
+/**
+ * Un psaume, entier ou entre deux versets (numérotés depuis 1), tiré du
+ * fichier des Tehilim que l'application sert (public/texts/tehilim.json) :
+ * l'export du siddour ne porte ni ceux que les jeûnes ajoutent à Min'ha
+ * (20, 22, 124, 126) ni le « Chir lama'alot » qui ferme leurs sli'hot.
+ */
+const TEHILIM = readText("tehilim.json");
+function psaume(n, from = 1, to = Infinity) {
+  const versets = TEHILIM[String(n)].he.slice(from - 1, to);
+  return cleanFinal(versets.join(" ").replace(/\{[פס]\}/g, " "));
+}
+
+/**
+ * Des versets d'un livre du Tanakh que l'application sert, chapitre et
+ * versets numérotés depuis 1 : les haftarot de Min'ha des jeûnes. `livre`
+ * est le numéro du livre dans le catalogue (public/texts/tanakh) ; les Trei
+ * 'Assar y sont un seul livre, dont les chapitres se suivent de Hochéa à
+ * Malakhi.
+ */
+function versets(livre, chapitre, from, to) {
+  const texte = readText(`tanakh/${livre}.json`).he[chapitre - 1].slice(from - 1, to);
+  if (texte.length !== to - from + 1) {
+    throw new Error(`Versets manquants : livre ${livre}, ${chapitre}, ${from} à ${to}`);
+  }
+  return cleanFinal(texte.join(" ").replace(/\{[פס]\}/g, " "));
+}
 
 // ---------- Recette → fichier ----------
 
@@ -336,6 +383,11 @@ const HALAKHA = {
     "On lit dans la Torah le début de la paracha de la semaine, en trois montées.",
     "The beginning of the week's parasha is read from the Torah, in three aliyot.",
     "קוראים בתורה את תחילת פרשת השבוע, בשלושה עולים.",
+  ),
+  vayehal: R(
+    "Un jour de jeûne public, on lit « Vaye'hal Moché » (Chemot 32, 11 à 14, puis 34, 1 à 10), en trois montées, le matin comme à Min'ha.",
+    "On a public fast, “Vayechal Moshe” (Exodus 32:11-14, then 34:1-10) is read in three aliyot, in the morning and at Mincha.",
+    "בתענית ציבור קוראים « ויחל משה » (שמות לב, יא-יד; לד, א-י) בשלושה עולים, בשחרית ובמנחה.",
   ),
   hallel: R(
     "Le Hallel se dit debout. Selon l'usage séfarade, l'individuel le dit sans bénédiction.",
@@ -1000,6 +1052,613 @@ function avinouMalkenou(src, from, to) {
   };
 }
 
+/**
+ * La sortie du séfer Torah : ce qui se dit avant la lecture, d'« El erekh
+ * apayim » (ou « Yehi Adonaï » les jours sans tahanoun) à la bénédiction de
+ * l'appelé. Le lundi et le jeudi ordinaires, les jours de jeûne public, le
+ * matin comme à Min'ha : la même cérémonie, seule la lecture change.
+ * `tahanoun` et `sansTahanoun` sont les clés de l'office (Min'ha a les
+ * siennes) ; `halakha` porte celle de la lecture du jour.
+ */
+function sortieSeferTorah({ when, tahanoun, sansTahanoun, halakha }) {
+  return {
+    src: "Torah Reading",
+    when,
+    plain: true,
+    labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
+    halakha,
+    lines: [
+      {
+        seg: 2,
+        when: tahanoun,
+        rubric: R("On dit d'abord :", "First, say:", "תחילה אומרים:"),
+      },
+      { seg: 3, when: tahanoun, tight: true },
+      // Les jours sans tahanoun, « Yehi Adonaï Elohénou 'imanou » tient
+      // la place des deux « El erekh apayim ».
+      {
+        seg: 5,
+        when: sansTahanoun,
+        rubric: R("On dit d'abord :", "First, say:", "תחילה אומרים:"),
+      },
+      {
+        seg: 6,
+        rubric: R(
+          "Quand on sort le séfer Torah :",
+          "As the Torah scroll is taken out:",
+          "כשמוציאים ספר תורה אומרים:",
+        ),
+      },
+      {
+        seg: 8,
+        rubric: R(
+          "On montre l'écriture à l'assemblée :",
+          "The script is shown to the congregation:",
+          "מגביה ומראה הכתב לקהל ואומרים:",
+        ),
+      },
+      // Sur la téba, avant Barekhou : l'appelé salue l'assemblée, qui lui
+      // répond.
+      {
+        seg: 9,
+        mode: "full",
+        strip: ["ואומר העולה:"],
+        rubric: R("L'appelé dit :", "The one called up says:", "ואומר העולה:"),
+      },
+      {
+        seg: 10,
+        mode: "full",
+        strip: ["ועונים הקהל:"],
+        rubric: RUBRIC.kahal,
+        tight: true,
+      },
+      {
+        seg: 11,
+        mode: "full",
+        strip: ["ואומר העולה:"],
+        rubric: R("L'appelé dit :", "The one called up says:", "ואומר העולה:"),
+      },
+      {
+        seg: 12,
+        mode: "full",
+        strip: ["ועונים הקהל:"],
+        rubric: RUBRIC.kahal,
+        tight: true,
+      },
+      {
+        seg: 13,
+        mode: "full",
+        strip: ["וחוזר העולה:"],
+        rubric: R("L'appelé reprend :", "The one called up repeats:", "וחוזר העולה:"),
+        tight: true,
+      },
+      {
+        seg: 15,
+        rubric: R(
+          "Avant la lecture, l'appelé bénit :",
+          "Before the reading, the one called up blesses:",
+          "ומברך העולה לפני הקריאה:",
+        ),
+      },
+    ],
+  };
+}
+
+/** La bénédiction de l'appelé après la lecture. */
+function benedictionApresLecture(when) {
+  return {
+    src: "Torah Reading",
+    when,
+    plain: true,
+    lines: [
+      {
+        seg: 17,
+        rubric: R(
+          "Après la lecture, l'appelé bénit :",
+          "After the reading, the one called up blesses:",
+          "אחר הקריאה מברך העולה:",
+        ),
+      },
+    ],
+  };
+}
+
+/**
+ * Les trois montées de « Vaye'hal Moché » (Chemot 32, 11 à 14 ; 34, 1 à 3 ;
+ * 34, 4 à 10), bornées par leurs premiers mots : la source les marque de
+ * deux mots en retrait (לוי, ישראל) que le fil ne garde pas.
+ */
+const VAYEHAL_MONTEES = [
+  { fr: "Cohen", en: "Kohen", he: "כהן", until: "ויאמר יהוה אל־משה פסל" },
+  {
+    fr: "Lévi",
+    en: "Levi",
+    he: "לוי",
+    from: "ויאמר יהוה אל־משה פסל",
+    until: "ויפסל שני־לחת",
+  },
+  { fr: "Israël", en: "Yisrael", he: "ישראל", from: "ויפסל שני־לחת" },
+];
+
+/**
+ * La lecture de la Torah des jeûnes publics, « Vaye'hal Moché » : un seul
+ * bloc, une montée par paragraphe, chacune sous sa didascalie. Le menu de
+ * lecture n'y jette qu'un repère, celui de la sortie du séfer qui précède :
+ * trois titres pour trois montées, c'était trop.
+ */
+function vayehalBlock(when) {
+  return {
+    src: "Taanit.Torah",
+    when,
+    plain: true,
+    lines: VAYEHAL_MONTEES.map((montee) => ({
+      seg: 1,
+      from: montee.from,
+      until: montee.until,
+      rubric: R(`${montee.fr} :`, `${montee.en}:`, `${montee.he}:`),
+    })),
+  };
+}
+
+/**
+ * Les sli'hot des quatre jeûnes publics à Cha'harit (Guedalia, 10 Tévet,
+ * Esther, 17 Tamouz), après la répétition de la 'Amida, à la place du
+ * tahanoun ordinaire : elles en contiennent le vidouy, la nefilat apayim et
+ * les supplications longues du lundi et du jeudi. L'ordre est celui du
+ * sidour imprimé : les sli'hot propres au jeûne, puis les textes communs aux
+ * quatre, puis la nefilat apayim avec son piyout, un par jeûne, et sa fin.
+ *
+ * La source Sefaria porte les quatre jeûnes, chacun suivi des textes communs
+ * (ceux du jeûne de Guedalia servent pour tous) ; ce qu'elle ne porte pas
+ * vient du sidour imprimé (scripts/lib/selihot-tsom.mjs). Tout se lit dans le
+ * fil (plain) : ce sont les prières du jour, pas un ajout à signaler.
+ */
+function selihotTsomBlocks() {
+  const debout = R(
+    "Après la répétition de la 'Amida, en restant debout, on dit (dans certaines communautés, on commence par le vidouy et la nefilat apayim, suivant l'opinion de l'Ari zal) :",
+    "After the repetition of the Amidah, still standing, say (in some communities, the viduy and nefilat apayim come first, following the Ari zal):",
+    "אחר חזרת הש״ץ, מעומד, אומרים (יש קהילות שמקדימות וידוי ונפילת אפים, כדעת האר״י):",
+  );
+  const certainsNeDisentPas = R(
+    "Certaines communautés ne récitent pas les versets du paragraphe suivant :",
+    "Some communities do not say the verses of the following paragraph:",
+    "יש קהילות שאינן אומרות את פסוקי הקטע הבא:",
+  );
+  // « Vaya'avor », et ce que le jeûne de Guedalia y ajoute dans certaines
+  // communautés : la fin du verset (Chemot 34, 9). Les sli'hot propres aux
+  // trois autres jeûnes n'ont que faire de cet ajout.
+  const vaavor = (seg, ajout = true) => [{ seg, tight: true }, ...(ajout ? [ajoutGuedalia] : [])];
+  const ajoutGuedalia = {
+    he: AJOUT_GUEDALIA,
+    when: "tsom-guedalia",
+    muted: true,
+    tight: true,
+    rubric: R(
+      "(Au jeûne de Guedalia, certaines communautés ajoutent :)",
+      "(On the Fast of Gedaliah, some communities add:)",
+      "(בצום גדליה יש קהילות שמוסיפות:)",
+    ),
+  };
+  // Des paragraphes serrés les uns sous les autres, comme le sidour les
+  // imprime ; `premiere` habille le premier (sa didascalie) et tous (muted).
+  const serrees = (textes, premiere = {}) =>
+    textes.map((he, i) => {
+      const { rubric, ...communs } = premiere;
+      return i === 0 ? { he, rubric, ...communs } : { he, tight: true, ...communs };
+    });
+  const nefila = (jeune, fr, en, he) => ({
+    when: `tsom-${jeune}`,
+    plain: true,
+    lines: serrees(NEFILAT_APAYIM[jeune], { rubric: R(fr, en, he) }),
+  });
+
+  return [
+    // --- Le jeûne de Guedalia ------------------------------------------
+    {
+      src: "Tsom.Guedalia",
+      when: "tsom-guedalia",
+      plain: true,
+      labelText: R(
+        "Sli'hot du jeûne de Guedalia",
+        "Selichot of the Fast of Gedaliah",
+        "סליחות לצום גדליה",
+      ),
+      lines: [
+        { seg: 3, rubric: debout },
+        ...vaavor(4),
+        { seg: 5 },
+        { seg: 6 },
+        ...vaavor(7),
+        ...serrees(YIKOM_DAM),
+        { he: psaume(79, 12, 13), tight: true },
+      ],
+    },
+    {
+      when: "tsom-guedalia",
+      plain: true,
+      lines: serrees(CHLOCH_ESRE_MIDOT, {
+        muted: true,
+        rubric: R(
+          "Dans certaines communautés, on récite avant chaque « Vaya'avor » une strophe du passage suivant :",
+          "In some communities, a stanza of the following is said before each “Vayaavor”:",
+          "יש קהילות שאומרות לפני כל « ויעבר » בית מן הפיוט הזה:",
+        ),
+      }),
+    },
+    // --- Le 10 Tévet -----------------------------------------------------
+    {
+      src: "Tsom.Tevet",
+      when: "tsom-tevet",
+      plain: true,
+      labelText: R("Sli'hot du 10 Tévet", "Selichot of the Tenth of Tevet", "סליחות לעשרה בטבת"),
+      lines: [
+        { seg: 2, rubric: debout },
+        { seg: 3, tight: true },
+        { seg: 4, tight: true },
+        { seg: 5, tight: true },
+        { seg: 6, tight: true },
+        { seg: 7 },
+        ...vaavor(8, false),
+        { seg: 10 },
+        { seg: 13 },
+        ...vaavor(14, false),
+        { seg: 11 },
+        { seg: 12, tight: true },
+      ],
+    },
+    // --- Le jeûne d'Esther ----------------------------------------------
+    {
+      src: "Tsom.Esther",
+      when: "tsom-esther",
+      plain: true,
+      labelText: R(
+        "Sli'hot du jeûne d'Esther",
+        "Selichot of the Fast of Esther",
+        "סליחות לתענית אסתר",
+      ),
+      lines: [
+        { seg: 2, rubric: debout },
+        ...vaavor(3, false),
+        // « Agagi », puis, après El mélekh et Vaya'avor, « Yi'halta
+        // 'avadekha », que la source range à sa suite dans le même segment.
+        { seg: 4, until: "יחלת עבדיך" },
+        { seg: 11 },
+        ...vaavor(12, false),
+        { seg: 4, from: "יחלת עבדיך" },
+        { seg: 5, muted: true, rubric: certainsNeDisentPas },
+        { seg: 6 },
+        { seg: 7, muted: true, rubric: certainsNeDisentPas },
+        { seg: 8 },
+        { seg: 9, muted: true, rubric: certainsNeDisentPas },
+        { seg: 10 },
+      ],
+    },
+    // --- Le 17 Tamouz ----------------------------------------------------
+    {
+      src: "Tsom.Tamouz",
+      when: "tsom-tamouz",
+      plain: true,
+      labelText: R(
+        "Sli'hot du 17 Tamouz",
+        "Selichot of the Seventeenth of Tammuz",
+        "סליחות לי״ז בתמוז",
+      ),
+      lines: [
+        { seg: 3, rubric: debout },
+        { seg: 4, tight: true },
+        { seg: 5, tight: true },
+        { seg: 6, tight: true },
+        { seg: 7, tight: true },
+        { seg: 8, tight: true },
+        { seg: 9 },
+        ...vaavor(10, false),
+        { seg: 12 },
+        { seg: 13, tight: true },
+        { seg: 16 },
+        ...vaavor(17, false),
+        { seg: 14 },
+        { seg: 15, tight: true },
+      ],
+    },
+    // --- Les textes communs aux quatre jeûnes ----------------------------
+    {
+      src: "Tsom.Guedalia",
+      when: "selihot-tsom",
+      plain: true,
+      labelText: R(
+        "Sli'hot communes aux quatre jeûnes",
+        "Selichot common to the four fasts",
+        "סליחות לארבע התעניות",
+      ),
+      lines: [
+        {
+          seg: 9,
+          rubric: R(
+            "Textes communs aux quatre jeûnes :",
+            "Texts common to the four fasts:",
+            "הסליחות המשותפות לארבע התעניות:",
+          ),
+        },
+        { seg: 10 },
+        ...vaavor(11),
+        { seg: 13 },
+        { seg: 14 },
+        ...vaavor(15),
+        { seg: 16 },
+        { seg: 17 },
+        { seg: 19 },
+      ],
+    },
+    {
+      src: "Vidui",
+      when: "selihot-tsom",
+      plain: true,
+      lines: [
+        {
+          seg: 1,
+          rubric: R(
+            "En récitant le passage suivant, on incline légèrement la tête et, du poing droit, on se frappe la poitrine du côté du cœur. (Dans les communautés qui suivent l'Ari zal, on saute ce passage, déjà récité, pour reprendre à « Achamnou mikol 'am ».)",
+            "While saying the following, bow the head slightly and strike the chest over the heart with the right fist. (In communities following the Ari zal, this passage, already said, is skipped, resuming at “Ashamnu mikol am”.)",
+            "באמירת הקטע הבא מרכינים מעט את הראש ומכים באגרוף ימין על הלב. (הנוהגים כדעת האר״י מדלגים על קטע זה, שכבר נאמר, וממשיכים ב« אשמנו מכל עם ».)",
+          ),
+        },
+      ],
+    },
+    {
+      src: "Tsom.Guedalia",
+      when: "selihot-tsom",
+      plain: true,
+      lines: [{ parts: [{ seg: 20 }, { he: AVAL_HATANOU }] }, { seg: 21 }],
+    },
+    {
+      src: "Vidui",
+      when: "selihot-tsom",
+      plain: true,
+      lines: [
+        {
+          seg: 2,
+          rubric: R(
+            "(Dans les communautés qui suivent l'Ari zal, on saute ce passage, déjà récité, pour reprendre à « Vehou ra'houm ».)",
+            "(In communities following the Ari zal, this passage, already said, is skipped, resuming at “Vehu rachum”.)",
+            "(הנוהגים כדעת האר״י מדלגים על קטע זה, שכבר נאמר, וממשיכים ב« והוא רחום ».)",
+          ),
+        },
+        ...vaavor(3),
+      ],
+    },
+    {
+      src: "Tsom.Guedalia",
+      when: "selihot-tsom",
+      plain: true,
+      lines: [
+        {
+          seg: 24,
+          rubric: R(
+            "Un jour de brit-mila (en présence du mohel, du père du nouveau-né ou du sandak) et les sept jours du mariage quand le 'hatan est présent, on passe directement à la lecture de la Torah, précédée du Kaddich :",
+            "On the day of a brit mila (in the presence of the mohel, the father or the sandak) and during the seven days of a wedding when the groom is present, go straight to the Torah reading, preceded by the Kaddish:",
+            "ביום ברית מילה (במעמד המוהל, אבי הבן או הסנדק) ובשבעת ימי המשתה כשהחתן נמצא, עוברים ישר לקריאת התורה, ולפניה הקדיש:",
+          ),
+        },
+        { seg: 25 },
+        { seg: 26 },
+        { seg: 27 },
+        { seg: 28 },
+      ],
+    },
+    // --- La nefilat apayim, avec le piyout du jeûne ------------------------
+    {
+      src: "Vidui",
+      when: "selihot-tsom",
+      plain: true,
+      labelText: R("Nefilat apayim", "Nefilat apayim", "נפילת אפים"),
+      lines: [
+        {
+          seg: 4,
+          rubric: R(
+            "On se rassoit pour dire la nefilat apayim. Certains se penchent en avant et inclinent la tête sur le bras gauche :",
+            "Sit down for nefilat apayim. Some lean forward and rest the head on the left arm:",
+            "יושבים לנפילת אפים. יש שמטים את הראש על זרוע שמאל:",
+          ),
+        },
+        { seg: 6, tight: true },
+        {
+          seg: 7,
+          rubric: R(
+            "(Pour les communautés qui suivent l'Ari zal, le tahanoun se termine ici, et le 'hazan dit le Kaddich.)",
+            "(For communities following the Ari zal, the tachanun ends here, and the chazan says the Kaddish.)",
+            "(לנוהגים כדעת האר״י התחנון מסתיים כאן, והחזן אומר קדיש.)",
+          ),
+        },
+      ],
+    },
+    nefila(
+      "guedalia",
+      "Au jeûne de Guedalia, on dit :",
+      "On the Fast of Gedaliah, say:",
+      "בצום גדליה אומרים:",
+    ),
+    nefila("tevet", "Au 10 Tévet, on dit :", "On the Tenth of Tevet, say:", "בעשרה בטבת אומרים:"),
+    nefila(
+      "esther",
+      "Au jeûne d'Esther, on dit :",
+      "On the Fast of Esther, say:",
+      "בתענית אסתר אומרים:",
+    ),
+    nefila(
+      "tamouz",
+      "Au 17 Tamouz, on dit :",
+      "On the Seventeenth of Tammuz, say:",
+      "בי״ז בתמוז אומרים:",
+    ),
+    {
+      src: "Vidui",
+      when: "selihot-tsom",
+      plain: true,
+      lines: [
+        { he: CHOUV_MEHARON },
+        { seg: 8 },
+        { seg: 9 },
+        {
+          he: psaume(121),
+          muted: true,
+          rubric: R(
+            "Dans certaines communautés, on a l'habitude d'ajouter :",
+            "In some communities, it is customary to add:",
+            "יש קהילות שנוהגות להוסיף:",
+          ),
+        },
+      ],
+    },
+  ];
+}
+
+/**
+ * La supplique « Chema' koli » que certaines communautés disent avant Min'ha
+ * d'un jeûne public, sauf un vendredi et la veille de Pourim.
+ */
+function chemaKoliBlock() {
+  return {
+    when: "tsom-minha",
+    plain: true,
+    labelText: R("Supplique « Chema' koli »", "Supplication “Shema koli”", "בקשת « שמע קולי »"),
+    lines: CHEMA_KOLI.map((he, i) => ({
+      he,
+      muted: true,
+      tight: i > 0,
+      rubric:
+        i === 0
+          ? R(
+              "Avant la prière de Min'ha, certaines communautés récitent la supplique suivante, sauf un vendredi et la veille de Pourim :",
+              "Before Mincha, some communities say the following supplication, except on a Friday and on the eve of Purim:",
+              "לפני תפילת מנחה יש קהילות שאומרות את הבקשה הזאת, חוץ מערב שבת וערב פורים:",
+            )
+          : undefined,
+    })),
+  };
+}
+
+/**
+ * La haftara de Min'ha des jeûnes. Au jeûne de Guedalia, le troisième appelé
+ * lit « Dirchou Adonaï » (Yecha'ya 55, 6 à 56, 8), avec ses bénédictions.
+ * Aux trois autres jeûnes, certaines communautés n'en lisent pas ; d'autres
+ * lisent « Chouva Israël » (Hochéa 14, 2 à 10, puis Mikha 7, 18 à 20). Les
+ * textes viennent des livres que l'application sert déjà, les bénédictions
+ * de celles du Chabbat, qui sont les mêmes.
+ */
+function haftaraBlocks() {
+  const cloture = (muted) => [
+    {
+      seg: 4,
+      mode: "small",
+      muted,
+      rubric: R(
+        "Après la haftara, le maftir lit ce verset, puis les bénédictions de clôture :",
+        "After the haftarah, the maftir reads this verse, then the closing blessings:",
+        "אחר ההפטרה אומר המפטיר פסוק זה, ואחריו ברכות ההפטרה:",
+      ),
+    },
+    { seg: 6, muted, tight: true },
+    { seg: 7, muted, tight: true },
+    { seg: 8, muted, tight: true },
+  ];
+  return [
+    {
+      src: "Haftara",
+      when: "tsom-guedalia",
+      plain: true,
+      labelText: R(
+        "Haftara du jeûne de Guedalia",
+        "Haftarah of the Fast of Gedaliah",
+        "הפטרת צום גדליה",
+      ),
+      lines: [
+        {
+          seg: 1,
+          rubric: R(
+            "Au jeûne de Guedalia, le troisième appelé lit la haftara, en la faisant précéder et suivre des bénédictions d'usage :",
+            "On the Fast of Gedaliah, the third one called up reads the haftarah, with its blessings before and after:",
+            "בצום גדליה העולה השלישי קורא את ההפטרה, בברכותיה לפניה ולאחריה:",
+          ),
+        },
+        {
+          he: versets(324, 55, 6, 13),
+          rubric: R("Yecha'ya 55, 6 à 56, 8 :", "Isaiah 55:6 to 56:8:", "ישעיה נה, ו - נו, ח:"),
+        },
+        { he: versets(324, 56, 1, 8), tight: true },
+        ...cloture(false),
+      ],
+    },
+    {
+      src: "Haftara",
+      when: "tsom-tevet|tsom-esther|tsom-tamouz",
+      plain: true,
+      labelText: R(
+        "Haftara (certaines communautés)",
+        "Haftarah (some communities)",
+        "הפטרה (יש קהילות)",
+      ),
+      lines: [
+        {
+          seg: 1,
+          muted: true,
+          rubric: R(
+            "Aux trois autres jeûnes, certaines communautés ne lisent pas de haftara. D'autres lisent « Chouva Israël », avec ses bénédictions :",
+            "On the three other fasts, some communities read no haftarah. Others read “Shuva Yisrael”, with its blessings:",
+            "בשלוש התעניות האחרות יש קהילות שאינן מפטירות. אחרות מפטירות « שובה ישראל », בברכותיה:",
+          ),
+        },
+        {
+          he: versets(327, 14, 2, 10),
+          muted: true,
+          rubric: R(
+            "Hochéa 14, 2 à 10, puis Mikha 7, 18 à 20 :",
+            "Hosea 14:2-10, then Micah 7:18-20:",
+            "הושע יד, ב-י, ואחריו מיכה ז, יח-כ:",
+          ),
+        },
+        { he: versets(327, 39, 18, 20), muted: true, tight: true },
+        ...cloture(true),
+      ],
+    },
+  ];
+}
+
+/**
+ * Les psaumes de Min'ha des jeûnes pendant qu'on rhabille le séfer Torah :
+ * le 20 dans certaines communautés, remplacé par le 124 au jeûne d'Esther
+ * tenu la veille de Pourim, par le 126 au 10 Tévet tombé un vendredi.
+ */
+function psaumesSeferBlocks() {
+  const bloc = (when, n, fr, en, he) => ({
+    when,
+    plain: true,
+    lines: [{ he: psaume(n), muted: true, rubric: R(fr, en, he) }],
+  });
+  return [
+    bloc(
+      "tsom-minha",
+      20,
+      "Dans certaines communautés, pendant qu'on rhabille le séfer Torah, on dit :",
+      "In some communities, while the Torah scroll is dressed, say:",
+      "יש קהילות שאומרות בשעת גלילת ספר התורה:",
+    ),
+    bloc(
+      "tsom-esther-veille",
+      124,
+      "Au jeûne d'Esther tenu la veille de Pourim, on dit à sa place, en rhabillant le séfer Torah :",
+      "On the Fast of Esther held on the eve of Purim, say instead, while the Torah scroll is dressed:",
+      "בתענית אסתר בערב פורים אומרים במקומו, בשעת גלילת ספר התורה:",
+    ),
+    bloc(
+      "tsom-vendredi",
+      126,
+      "Au 10 Tévet tombé un vendredi, on dit à sa place, en rhabillant le séfer Torah :",
+      "When the Tenth of Tevet falls on a Friday, say instead, while the Torah scroll is dressed:",
+      "בעשרה בטבת שחל בערב שבת אומרים במקומו, בשעת גלילת ספר התורה:",
+    ),
+  ];
+}
+
 // ---------- Recettes des trois offices ----------
 
 function chaharitRecipe() {
@@ -1605,9 +2264,11 @@ function chaharitRecipe() {
       { zman: "amida" },
       ...amida,
       avinouMalkenou("Amida", 74, 105),
+      // Le tahanoun ordinaire. Les jours de jeûne public (Tich'a beAv à
+      // part), les sli'hot du jeûne prennent sa place : voir selihotTsomBlocks.
       {
         src: "Vidui",
-        when: "tahanoun",
+        when: "tahanoun-ordinaire",
         plain: true,
         labelText: R("Ta'hanoun (supplications)", "Tachanun (supplications)", "תחנון"),
         halakha: HALAKHA.tahanoun,
@@ -1656,6 +2317,7 @@ function chaharitRecipe() {
           { seg: 32 },
         ],
       },
+      ...selihotTsomBlocks(),
       // Les jours sans tahanoun, « Yehi chem » tient sa place : le passage
       // n'est pas sauté, il change de texte.
       {
@@ -1808,28 +2470,6 @@ function chaharitRecipe() {
           { seg: 2, mode: "full" },
         ],
       },
-      // Les jeûnes publics : « Vaye'hal Moché », trois montées, le matin
-      // comme l'après-midi. Sauf le matin de Tich'a beAv, qui lit « Ki tolid
-      // banim » (Devarim 4, 25 à 40) : la source ne le porte pas, il vient du
-      // fichier de la paracha Vaét'hanan que l'application sert déjà.
-      {
-        src: "Taanit.Torah",
-        when: "taanit",
-        plain: true,
-        labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
-        lines: [
-          { seg: 1, mode: "full", when: "!tisha-beav" },
-          {
-            he: KI_TOLID_BANIM,
-            when: "tisha-beav",
-            rubric: R(
-              "Le matin de Tich'a beAv, on lit « Ki tolid banim » (Devarim 4, 25 à 40), en trois montées, puis la haftara « Assof assifem » (Yirmiya 8, 13 à 9, 23) :",
-              "On the morning of Tisha b'Av, “Ki tolid banim” (Deuteronomy 4:25-40) is read in three aliyot, then the haftarah “Asof asifem” (Jeremiah 8:13-9:23):",
-              "בשחרית של תשעה באב קוראים « כי תוליד בנים » (דברים ד, כה-מ) בשלושה עולים, ומפטירים « אסוף אסיפם » (ירמיה ח, יג - ט, כג):",
-            ),
-          },
-        ],
-      },
       {
         src: "RH.Hallel",
         when: "rosh-chodesh",
@@ -1870,109 +2510,42 @@ function chaharitRecipe() {
         ),
         rubric: R("Le dernier appelé dit :", "The last one called up says:", "העולה האחרון אומר:"),
       }),
-      {
-        src: "Torah Reading",
-        when: "torah-semaine",
-        plain: true,
-        labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
-        halakha: HALAKHA.torahSemaine,
-        lines: [
-          {
-            seg: 2,
-            when: "tahanoun",
-            rubric: R("On dit d'abord :", "First, say:", "תחילה אומרים:"),
-          },
-          { seg: 3, when: "tahanoun", tight: true },
-          // Les jours sans tahanoun, « Yehi Adonaï Elohénou 'imanou » tient
-          // la place des deux « El erekh apayim ».
-          {
-            seg: 5,
-            when: "sans-tahanoun",
-            rubric: R("On dit d'abord :", "First, say:", "תחילה אומרים:"),
-          },
-          {
-            seg: 6,
-            rubric: R(
-              "Quand on sort le séfer Torah :",
-              "As the Torah scroll is taken out:",
-              "כשמוציאים ספר תורה אומרים:",
-            ),
-          },
-          {
-            seg: 8,
-            rubric: R(
-              "On montre l'écriture à l'assemblée :",
-              "The script is shown to the congregation:",
-              "מגביה ומראה הכתב לקהל ואומרים:",
-            ),
-          },
-          // Sur la téba, avant Barekhou : l'appelé salue l'assemblée, qui lui
-          // répond.
-          {
-            seg: 9,
-            mode: "full",
-            strip: ["ואומר העולה:"],
-            rubric: R("L'appelé dit :", "The one called up says:", "ואומר העולה:"),
-          },
-          {
-            seg: 10,
-            mode: "full",
-            strip: ["ועונים הקהל:"],
-            rubric: RUBRIC.kahal,
-            tight: true,
-          },
-          {
-            seg: 11,
-            mode: "full",
-            strip: ["ואומר העולה:"],
-            rubric: R("L'appelé dit :", "The one called up says:", "ואומר העולה:"),
-          },
-          {
-            seg: 12,
-            mode: "full",
-            strip: ["ועונים הקהל:"],
-            rubric: RUBRIC.kahal,
-            tight: true,
-          },
-          {
-            seg: 13,
-            mode: "full",
-            strip: ["וחוזר העולה:"],
-            rubric: R("L'appelé reprend :", "The one called up repeats:", "וחוזר העולה:"),
-            tight: true,
-          },
-          {
-            seg: 15,
-            rubric: R(
-              "Avant la lecture, l'appelé bénit :",
-              "Before the reading, the one called up blesses:",
-              "ומברך העולה לפני הקריאה:",
-            ),
-          },
+      sortieSeferTorah({
+        when: "torah-semaine|taanit",
+        tahanoun: "tahanoun",
+        sansTahanoun: "sans-tahanoun",
+        halakha: [
+          { ...HALAKHA.torahSemaine, when: "torah-semaine" },
+          { ...HALAKHA.vayehal, when: "selihot-tsom" },
         ],
-      },
+      }),
       {
         when: "torah-semaine",
         plain: true,
         torahWeekly: true,
       },
+      // Les jeûnes publics : « Vaye'hal Moché », trois montées, le matin
+      // comme l'après-midi. Sauf le matin de Tich'a beAv, qui lit « Ki tolid
+      // banim » (Devarim 4, 25 à 40) : la source ne le porte pas, il vient du
+      // fichier de la paracha Vaét'hanan que l'application sert déjà.
+      vayehalBlock("selihot-tsom"),
       {
-        src: "Torah Reading",
-        when: "torah-semaine",
+        when: "tisha-beav",
         plain: true,
         lines: [
           {
-            seg: 17,
+            he: KI_TOLID_BANIM,
             rubric: R(
-              "Après la lecture, l'appelé bénit :",
-              "After the reading, the one called up blesses:",
-              "אחר הקריאה מברך העולה:",
+              "Le matin de Tich'a beAv, on lit « Ki tolid banim » (Devarim 4, 25 à 40), en trois montées, puis la haftara « Assof assifem » (Yirmiya 8, 13 à 9, 23) :",
+              "On the morning of Tisha b'Av, “Ki tolid banim” (Deuteronomy 4:25-40) is read in three aliyot, then the haftarah “Asof asifem” (Jeremiah 8:13-9:23):",
+              "בשחרית של תשעה באב קוראים « כי תוליד בנים » (דברים ד, כה-מ) בשלושה עולים, ומפטירים « אסוף אסיפם » (ירמיה ח, יג - ט, כג):",
             ),
           },
         ],
       },
+      benedictionApresLecture("torah-semaine|taanit"),
       kaddishHalf("Uva LeSion", {
-        when: "torah-semaine",
+        when: "torah-semaine|taanit",
         labelText: R(
           "Demi-Kaddich (le dernier appelé)",
           "Half Kaddish (the last one called up)",
@@ -2278,6 +2851,7 @@ function minhaRecipe() {
     title: "מנחה של חול (Min'ha)",
     blocks: [
       { zman: "minha" },
+      chemaKoliBlock(),
       {
         src: "Offerings",
         labelText: R("Korbanot et Achré", "Offerings and Ashrei", "קרבנות ואשרי"),
@@ -2307,25 +2881,39 @@ function minhaRecipe() {
         ],
       },
       kaddishHalf("Kaddish"),
-      // Un jour de jeûne public, la Torah se lit aussi à Min'ha : le même
-      // « Vaye'hal Moché » que le matin, trois montées, avant la 'Amida.
+      // Un jour de jeûne public, la Torah se lit aussi à Min'ha : la même
+      // sortie du séfer que le matin (« Yehi Adonaï » plutôt qu'« El erekh
+      // apayim » quand la Min'ha est sans tahanoun : veille de Pourim, veille
+      // de Chabbat), le même « Vaye'hal Moché » en trois montées, sans Kaddich
+      // après la lecture ; puis la haftara du jeûne de Guedalia, le psaume en
+      // rangeant le séfer, Yehalelou, et le demi-Kaddich qui ouvre la 'Amida.
+      sortieSeferTorah({
+        when: "taanit",
+        tahanoun: "tahanoun-minha",
+        sansTahanoun: "sans-tahanoun-minha",
+        halakha: [{ ...HALAKHA.vayehal, when: "selihot-tsom" }],
+      }),
+      vayehalBlock("taanit"),
+      benedictionApresLecture("taanit"),
+      ...haftaraBlocks(),
+      ...psaumesSeferBlocks(),
       {
-        src: "Taanit.Torah",
+        src: "Uva LeSion",
         when: "taanit",
         plain: true,
-        labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
         lines: [
           {
-            seg: 1,
-            mode: "full",
+            seg: 9,
+            mode: "small",
             rubric: R(
-              "On sort le séfer Torah, et l'on lit avant la 'Amida :",
-              "The Torah scroll is taken out and read before the Amidah:",
-              "מוציאים ספר תורה וקוראים לפני העמידה:",
+              "Quand on rapporte le séfer Torah :",
+              "As the Torah scroll is returned:",
+              "כשמחזירים ספר תורה:",
             ),
           },
         ],
       },
+      kaddishHalf("Kaddish", { when: "taanit" }),
       ...amida,
       avinouMalkenou("Amida", 73, 104),
       {
@@ -2373,16 +2961,32 @@ function minhaRecipe() {
       },
       // Les jours de jeûne public, le psaume 102, « prière du pauvre quand il
       // défaille », s'ajoute avant le Kaddich : un ajout du jour, à la
-      // couleur du thème.
+      // couleur du thème. Sauf la veille de Pourim, où le jeûne d'Esther dit
+      // le psaume 22 à sa place, et le vendredi, où le psaume 93 (bloc jour-5)
+      // tient déjà la place du Lamnatséa'h. Tich'a beAv le dit aussi, seul
+      // de ce que les quatre jeûnes ajoutent à Min'ha.
       {
         src: "Vidui",
-        when: "taanit",
+        when: "tsom-minha|tisha-beav",
         // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
         lines: [
           {
             seg: 20,
             mode: "small",
             rubric: R("Un jour de jeûne, on ajoute :", "On a fast day, add:", "בתענית מוסיפים:"),
+          },
+        ],
+      },
+      {
+        when: "tsom-esther-veille",
+        lines: [
+          {
+            he: psaume(22),
+            rubric: R(
+              "Au jeûne d'Esther tenu la veille de Pourim, on dit à la place du psaume 102 :",
+              "On the Fast of Esther held on the eve of Purim, say instead of Psalm 102:",
+              "בתענית אסתר בערב פורים אומרים במקום מזמור קב:",
+            ),
           },
         ],
       },
@@ -2767,6 +3371,10 @@ function sourcesFor(office) {
       "Hanouka.Shaharit": text["Hanukkah"]["Shacharit"],
       "Pourim.Jour": text["Purim"]["Purim Day"],
       "Taanit.Torah": text["Fast Days and Mourning"]["Torah Reading for Fast Days"],
+      "Tsom.Guedalia": text["Fast Days and Mourning"]["Fast of Gedalya"],
+      "Tsom.Tevet": text["Fast Days and Mourning"]["Tenth of Tevet"],
+      "Tsom.Esther": text["Fast Days and Mourning"]["Fast of Esther"],
+      "Tsom.Tamouz": text["Fast Days and Mourning"]["Seventeenth of Tammuz"],
       "RH.Mussaf": rh["Mussaf"],
       "RH.Barchi Nafshi": rh["Barchi Nafshi"],
     };
@@ -2783,8 +3391,11 @@ function sourcesFor(office) {
       Vidui: wm["Vidui"],
       Alenu: wm["Alenu"],
       Kaddish: ws["Uva LeSion"],
+      "Uva LeSion": ws["Uva LeSion"],
       Ledavid: ws["Alenu"],
+      "Torah Reading": ws["Torah Reading"],
       "Taanit.Torah": text["Fast Days and Mourning"]["Torah Reading for Fast Days"],
+      Haftara: text["Shabbat Shacharit"]["Haftarah"],
     };
   }
   // Le texte du Kaddich, à part : ses quatre formes viennent des trois
