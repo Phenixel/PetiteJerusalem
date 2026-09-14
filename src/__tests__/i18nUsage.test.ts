@@ -107,6 +107,9 @@ describe("i18n usage", () => {
       "admin.sessions.filters.",
       // Codes d'erreur des services (useToast.errorFromException).
       "errors.",
+      // Le formulaire de support : type de demande et contexte joint.
+      "feedback.context.",
+      "feedback.kinds.",
       "home.sidourNow.names.",
       "moderation.reasons.",
       "occasions.kinds.",

@@ -3,10 +3,11 @@ import { useI18n } from "vue-i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useConsent } from "../../composables/useConsent";
 import { useOnboarding } from "../../composables/useOnboarding";
+import { openFeedback } from "../../composables/useFeedback";
 
 /**
  * App native uniquement : reprend l'essentiel du footer du site (retiré de
- * l'app), pages d'info, signalement de problème, crédits et réseaux.
+ * l'app), pages d'info, formulaire de support, crédits et réseaux.
  */
 
 const { t } = useI18n();
@@ -42,18 +43,17 @@ const pages = [
         </RouterLink>
       </li>
       <li>
-        <a
-          href="https://phenixel.notion.site/26b35db90d4d809aada8e077937652d4?pvs=105"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="flex items-center justify-between gap-3 py-3.5 text-text-primary hover:text-primary transition-colors"
+        <button
+          type="button"
+          class="w-full flex items-center justify-between gap-3 py-3.5 text-text-primary hover:text-primary transition-colors"
+          @click="openFeedback"
         >
           <span class="flex items-center gap-3">
-            <AppIcon name="alert-circle" :size="17" class="text-text-secondary/70" />
+            <AppIcon name="message" :size="17" class="text-text-secondary/70" />
             {{ t("footer.reportIssue") }}
           </span>
-          <AppIcon name="external-link" :size="15" class="text-text-secondary/50" />
-        </a>
+          <AppIcon name="chevron-right" :size="15" class="text-text-secondary/50 rtl:rotate-180" />
+        </button>
       </li>
       <li>
         <button

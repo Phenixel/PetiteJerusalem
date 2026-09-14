@@ -72,14 +72,9 @@
         >
           {{ t("footer.privacy") }}
         </RouterLink>
-        <a
-          class="hover:text-primary transition-colors"
-          href="https://phenixel.notion.site/26b35db90d4d809aada8e077937652d4?pvs=105"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <button class="hover:text-primary transition-colors" type="button" @click="openFeedback">
           {{ t("footer.reportIssue") }}
-        </a>
+        </button>
         <button class="hover:text-primary transition-colors" type="button" @click="reopen">
           {{ t("footer.manageCookies") }}
         </button>
@@ -122,6 +117,7 @@ import AppDownloadButton from "./AppDownloadButton.vue";
 import LanguageSelector from "./LanguageSelector.vue";
 import AppIcon from "./icons/AppIcon.vue";
 import { useConsent } from "../composables/useConsent";
+import { openFeedback } from "../composables/useFeedback";
 
 const { t } = useI18n();
 // Les pages traduites suivent l'espace de langue de l'URL ouverte.

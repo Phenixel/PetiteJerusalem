@@ -25,7 +25,9 @@ import {
 } from "../services/userPreferencesService";
 import { isNativeApp } from "../composables/useNativeApp";
 import { useHomeAccountCta } from "../composables/useHomeAccountCta";
+import { openFeedback } from "../composables/useFeedback";
 import SiteFooter from "../components/SiteFooter.vue";
+import FeedbackNudge from "../components/FeedbackNudge.vue";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
 import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
@@ -376,11 +378,32 @@ onUnmounted(() => {
           {{ t("home.memorial.dedication") }}
         </p>
       </div>
+
+      <!-- Le formulaire de support, tout en bas : discret (une ligne en
+           petit, gris) mais visible, là où l'on arrive après avoir tout vu. -->
+      <p
+        class="mt-10 text-center text-sm text-text-secondary enter-rise"
+        style="--enter-delay: 0.5s"
+      >
+        {{ t("feedback.homePrompt") }}
+        <button
+          type="button"
+          class="font-medium text-text-primary underline decoration-line underline-offset-4 hover:text-primary transition-colors"
+          @click="openFeedback"
+        >
+          {{ t("feedback.homeLink") }}
+        </button>
+      </p>
     </div>
   </main>
 
   <!-- App native : pas de footer de site (l'essentiel vit dans le profil). -->
   <SiteFooter v-if="!isNativeApp" />
+
+  <!-- « Tout se passe bien ? » : la relance du formulaire de support, sur
+       l'accueil seulement (jamais pendant une lecture), après quelques jours
+       d'usage, et seulement quand rien d'autre ne réclame l'attention. -->
+  <FeedbackNudge />
 </template>
 
 <style scoped>
