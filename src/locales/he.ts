@@ -1444,6 +1444,12 @@ const he: LocaleMessages = {
       android: "Android",
       version: "גרסה {version}",
     },
+    nudge: {
+      title: "הכול בסדר?",
+      body: "אתם משתמשים בפטיט ירושלים כבר כמה ימים. רעיון, משהו שחסר או לא עובד? אנחנו קוראים כל הודעה.",
+      fine: "הכול טוב",
+      tell: "יש לי מה לומר",
+    },
     send: "שליחה",
     sending: "שולח…",
     success: "תודה, ההודעה התקבלה.",

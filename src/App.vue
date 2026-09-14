@@ -15,6 +15,7 @@ import { useOnline } from "./composables/useOnline";
 import { isNativeApp } from "./composables/useNativeApp";
 import { isOnboardingOpen } from "./composables/useOnboarding";
 import { isFeedbackOpen } from "./composables/useFeedback";
+import { recordUsageDay, restoreFeedbackNudge } from "./services/feedbackNudge";
 import { useNativeStatusBar } from "./composables/useNativeStatusBar";
 import { useLocale } from "./composables/useLocale";
 import { RouterView } from "vue-router";
@@ -113,6 +114,15 @@ const chromePadClass = computed(() => {
 loadGuestTheme();
 loadGuestFonts();
 loadGuestColorScheme();
+
+// Le jour d'ouverture, pour la relance du formulaire de support (« Tout se
+// passe bien ? », sur l'accueil après quelques jours d'usage). Dans l'app, les
+// préférences natives rendent d'abord ce que le localStorage aurait perdu.
+if (isNativeApp) {
+  void restoreFeedbackNudge().then(() => recordUsageDay());
+} else {
+  recordUsageDay();
+}
 
 // authService, et non onAuthStateChanged directement : avant le premier
 // verdict de Firebase, il rejoue le dernier compte connu, si bien que le

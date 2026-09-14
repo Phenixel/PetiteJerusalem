@@ -1494,6 +1494,12 @@ const en: LocaleMessages = {
       android: "Android",
       version: "version {version}",
     },
+    nudge: {
+      title: "Is everything going well?",
+      body: "You have been using Petite Jérusalem for a few days. An idea, something missing or not working? We read every message.",
+      fine: "All good",
+      tell: "I have something to say",
+    },
     send: "Send",
     sending: "Sending…",
     success: "Thank you, your message has been received.",

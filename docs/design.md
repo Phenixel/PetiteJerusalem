@@ -313,6 +313,16 @@ La fenêtre dit ce qu'elle joint sans le demander (le support, la plateforme,
 la version) sous le formulaire, en petit : rien ne part à l'insu de la
 personne, et personne n'a à recopier un numéro de version.
 
+Le site pose aussi la question de lui-même, une fois : « Tout se passe
+bien ? », une petite carte en bas de l'accueil, à qui a ouvert l'app trois
+jours différents. Sur l'accueil seulement, jamais sur une page de lecture ni
+pendant l'écoute d'un chiour, et jamais par-dessus autre chose (introduction,
+fenêtre ouverte, bannière de consentement encore sans réponse) : une question
+qu'on pose à quelqu'un d'occupé est une interruption, pas une attention. Elle
+attend quelques secondes après l'arrivée, se retire dès qu'on lui répond
+(« Tout va bien » ou le formulaire) et n'insiste pas : au plus trois fois, à
+une semaine d'écart, puis plus jamais.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.

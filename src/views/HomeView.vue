@@ -27,6 +27,7 @@ import { isNativeApp } from "../composables/useNativeApp";
 import { useHomeAccountCta } from "../composables/useHomeAccountCta";
 import { openFeedback } from "../composables/useFeedback";
 import SiteFooter from "../components/SiteFooter.vue";
+import FeedbackNudge from "../components/FeedbackNudge.vue";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
 import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
@@ -398,6 +399,11 @@ onUnmounted(() => {
 
   <!-- App native : pas de footer de site (l'essentiel vit dans le profil). -->
   <SiteFooter v-if="!isNativeApp" />
+
+  <!-- « Tout se passe bien ? » : la relance du formulaire de support, sur
+       l'accueil seulement (jamais pendant une lecture), après quelques jours
+       d'usage, et seulement quand rien d'autre ne réclame l'attention. -->
+  <FeedbackNudge />
 </template>
 
 <style scoped>

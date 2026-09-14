@@ -1533,6 +1533,12 @@ const fr = {
       android: "Android",
       version: "version {version}",
     },
+    nudge: {
+      title: "Tout se passe bien ?",
+      body: "Vous utilisez Petite Jérusalem depuis quelques jours. Une idée, quelque chose qui manque ou qui coince ? On vous lit.",
+      fine: "Tout va bien",
+      tell: "J'ai quelque chose à dire",
+    },
     send: "Envoyer",
     sending: "Envoi…",
     success: "Merci, votre message est bien arrivé.",

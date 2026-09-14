@@ -32,6 +32,25 @@ Ce que l'app joint d'elle-même, et qu'elle annonce sous le formulaire :
 Une seule fenêtre (`src/components/FeedbackModal.vue`), montée dans App.vue à
 la première ouverture ; `useFeedback.ts` porte l'état partagé qui l'ouvre.
 
+## La relance « Tout se passe bien ? »
+
+Le site pose aussi la question de lui-même, à qui a un peu utilisé l'app :
+une petite carte en bas de l'accueil, avec deux réponses, « Tout va bien » et
+« J'ai quelque chose à dire » (qui ouvre le formulaire).
+
+- « Un peu utilisé » : l'app a été ouverte trois jours distincts. Les jours
+  sont notés sur l'appareil au démarrage (`recordUsageDay`, dans App.vue).
+- Sur l'accueil seulement, donc jamais pendant une lecture, et seulement quand
+  rien d'autre ne réclame l'attention : pas d'introduction, pas de fenêtre
+  ouverte, consentement déjà choisi, pas de chiour en cours d'écoute. Elle
+  attend quatre secondes après l'arrivée sur l'accueil.
+- Elle se tait pour de bon dès qu'on lui répond. Sans réponse, elle revient au
+  plus tôt une semaine plus tard, trois fois au maximum.
+
+La règle et sa mémoire sont dans `src/services/feedbackNudge.ts` (testé dans
+`src/__tests__/feedbackNudge.test.ts`), la carte dans
+`src/components/FeedbackNudge.vue`.
+
 ## Le chemin du message
 
 1. `src/services/feedbackService.ts` complète le message avec le support, la
