@@ -239,6 +239,9 @@ function buildBlock(spec, sections) {
   if (spec.kotel) block.kotel = true;
   if (spec.mirror) block.mirror = true;
   if (spec.numbered) block.numbered = true;
+  // L'une des options d'un choix laissé au lecteur (voir TextChoice dans
+  // textService) : la clé du choix, l'identifiant de l'option, son intitulé.
+  if (spec.choice) block.choice = spec.choice;
   const segs = spec.src ? sections[spec.src] : [];
   if (spec.src && !segs) throw new Error(`Section source inconnue : ${spec.src}`);
   block.lines = (spec.lines ?? [])
@@ -246,7 +249,8 @@ function buildBlock(spec, sections) {
       line.splitAmen ? buildKaddishLines(line, segs ?? []) : [buildLine(line, segs ?? [])],
     )
     .filter((line) => line !== null);
-  if (!block.zman && !block.torahWeekly && block.lines.length === 0) {
+  // Une option de choix peut être vide : « pas de haftara » est un choix.
+  if (!block.zman && !block.torahWeekly && !block.choice && block.lines.length === 0) {
     throw new Error(`Bloc vide : ${spec.labelText?.fr ?? spec.when ?? "?"}`);
   }
   return block;
@@ -1543,88 +1547,100 @@ function chemaKoliBlock() {
 }
 
 /**
- * La haftara de Min'ha des jeûnes. Au jeûne de Guedalia, le troisième appelé
- * lit « Dirchou Adonaï » (Yecha'ya 55, 6 à 56, 8), avec ses bénédictions.
- * Aux trois autres jeûnes, certaines communautés n'en lisent pas ; d'autres
- * lisent « Chouva Israël » (Hochéa 14, 2 à 10, puis Mikha 7, 18 à 20). Les
- * textes viennent des livres que l'application sert déjà, les bénédictions
- * de celles du Chabbat, qui sont les mêmes.
+ * La haftara de Min'ha des jeûnes : un choix laissé au lecteur, car chaque
+ * communauté fait autrement (voir la note qui précède le sélecteur). Trois
+ * options d'une même clé : « Dirchou », « Chouva Israël », ou rien. Seule la
+ * première porte un titre, pour que le menu de lecture n'en montre qu'un. Le
+ * jour propose « Dirchou » à Guedalia et rien aux trois autres jeûnes (l'usage
+ * du Maroc, et celui de la plupart des Sefaradim) ; le lecteur tranche, et
+ * son choix est retenu.
  */
 function haftaraBlocks() {
-  const cloture = (muted) => [
+  const NOTE = R(
+    "Qui lit quoi : les Achkenazim lisent « Dirchou » à Min'ha de chaque jeûne public (Rema, Ora'h 'Hayim 566, 1). La plupart des Sefaradim ne lisent pas de haftara à Min'ha d'un jeûne, hormis Tich'a beAv (Choul'han Aroukh, Rambam, 'Hida, Rav Ovadia Yossef). Les communautés du Maroc lisent « Dirchou » au seul jeûne de Guedalia, et rien aux trois autres. Certaines communautés lisent « Chouva Israël » aux jeûnes de Tévet, d'Esther et de Tamouz.",
+    "Who reads what: Ashkenazim read “Dirshu” at Mincha of every public fast (Rema, Orach Chayim 566:1). Most Sephardim read no haftarah at Mincha of a fast, except on Tisha BeAv (Shulchan Aruch, Rambam, Chida, Rav Ovadia Yosef). Moroccan communities read “Dirshu” on the Fast of Gedaliah only, and nothing on the three others. Some communities read “Shuva Yisrael” on the fasts of Tevet, Esther and Tammuz.",
+    'מי קורא מה: האשכנזים מפטירים « דרשו » במנחה של כל תענית ציבור (רמ"א, אורח חיים תקסו, א). רוב הספרדים אינם מפטירים במנחה של תענית, חוץ מתשעה באב (שולחן ערוך, רמב"ם, חיד"א, הרב עובדיה יוסף). קהילות מרוקו מפטירות « דרשו » בצום גדליה בלבד, ולא בשלוש התעניות האחרות. יש קהילות שמפטירות « שובה ישראל » בצומות טבת, אסתר ותמוז.',
+  );
+  const ouverture = {
+    seg: 1,
+    rubric: R(
+      "Le troisième appelé lit la haftara, en la faisant précéder et suivre des bénédictions d'usage :",
+      "The third one called up reads the haftarah, with its blessings before and after:",
+      "העולה השלישי קורא את ההפטרה, בברכותיה לפניה ולאחריה:",
+    ),
+  };
+  const cloture = [
     {
       seg: 4,
       mode: "small",
-      muted,
       rubric: R(
         "Après la haftara, le maftir lit ce verset, puis les bénédictions de clôture :",
         "After the haftarah, the maftir reads this verse, then the closing blessings:",
         "אחר ההפטרה אומר המפטיר פסוק זה, ואחריו ברכות ההפטרה:",
       ),
     },
-    { seg: 6, muted, tight: true },
-    { seg: 7, muted, tight: true },
-    { seg: 8, muted, tight: true },
+    { seg: 6, tight: true },
+    { seg: 7, tight: true },
+    { seg: 8, tight: true },
   ];
+  const option = (id, label, preferred, lines) => ({
+    src: "Haftara",
+    when: "selihot-tsom",
+    plain: true,
+    choice: { key: "haftara-tsom", id, label, ...(preferred ? { preferred } : {}) },
+    halakha: NOTE,
+    lines,
+  });
   return [
     {
-      src: "Haftara",
-      when: "tsom-guedalia",
-      plain: true,
-      labelText: R(
-        "Haftara du jeûne de Guedalia",
-        "Haftarah of the Fast of Gedaliah",
-        "הפטרת צום גדליה",
+      ...option(
+        "dirchou",
+        R(
+          "« Dirchou » (Yecha'ya 55, 6 à 56, 8)",
+          "“Dirshu” (Isaiah 55:6 to 56:8)",
+          "« דרשו » (ישעיה נה, ו עד נו, ח)",
+        ),
+        "tsom-guedalia",
+        [
+          ouverture,
+          {
+            he: versets(324, 55, 6, 13),
+            rubric: R("Yecha'ya 55, 6 à 56, 8 :", "Isaiah 55:6 to 56:8:", "ישעיה נה, ו עד נו, ח:"),
+          },
+          { he: versets(324, 56, 1, 8), tight: true },
+          ...cloture,
+        ],
       ),
-      lines: [
-        {
-          seg: 1,
-          rubric: R(
-            "Au jeûne de Guedalia, le troisième appelé lit la haftara, en la faisant précéder et suivre des bénédictions d'usage :",
-            "On the Fast of Gedaliah, the third one called up reads the haftarah, with its blessings before and after:",
-            "בצום גדליה העולה השלישי קורא את ההפטרה, בברכותיה לפניה ולאחריה:",
-          ),
-        },
-        {
-          he: versets(324, 55, 6, 13),
-          rubric: R("Yecha'ya 55, 6 à 56, 8 :", "Isaiah 55:6 to 56:8:", "ישעיה נה, ו - נו, ח:"),
-        },
-        { he: versets(324, 56, 1, 8), tight: true },
-        ...cloture(false),
-      ],
+      labelText: R("Haftara", "Haftarah", "הפטרה"),
     },
-    {
-      src: "Haftara",
-      when: "tsom-tevet|tsom-esther|tsom-tamouz",
-      plain: true,
-      labelText: R(
-        "Haftara (certaines communautés)",
-        "Haftarah (some communities)",
-        "הפטרה (יש קהילות)",
+    option(
+      "chouva",
+      R(
+        "« Chouva Israël » (Hochéa 14, 2 à 10 ; Mikha 7, 18 à 20)",
+        "“Shuva Yisrael” (Hosea 14:2-10; Micah 7:18-20)",
+        "« שובה ישראל » (הושע יד, ב עד י; מיכה ז, יח עד כ)",
       ),
-      lines: [
-        {
-          seg: 1,
-          muted: true,
-          rubric: R(
-            "Aux trois autres jeûnes, certaines communautés ne lisent pas de haftara. D'autres lisent « Chouva Israël », avec ses bénédictions :",
-            "On the three other fasts, some communities read no haftarah. Others read “Shuva Yisrael”, with its blessings:",
-            "בשלוש התעניות האחרות יש קהילות שאינן מפטירות. אחרות מפטירות « שובה ישראל », בברכותיה:",
-          ),
-        },
+      undefined,
+      [
+        ouverture,
         {
           he: versets(327, 14, 2, 10),
-          muted: true,
           rubric: R(
             "Hochéa 14, 2 à 10, puis Mikha 7, 18 à 20 :",
             "Hosea 14:2-10, then Micah 7:18-20:",
-            "הושע יד, ב-י, ואחריו מיכה ז, יח-כ:",
+            "הושע יד, ב עד י, ואחריו מיכה ז, יח עד כ:",
           ),
         },
-        { he: versets(327, 39, 18, 20), muted: true, tight: true },
-        ...cloture(true),
+        { he: versets(327, 39, 18, 20), tight: true },
+        ...cloture,
       ],
-    },
+    ),
+    option(
+      "aucune",
+      R("Pas de haftara", "No haftarah", "בלי הפטרה"),
+      "tsom-tevet|tsom-esther|tsom-tamouz",
+      [],
+    ),
   ];
 }
 

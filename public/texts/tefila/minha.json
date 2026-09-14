@@ -414,20 +414,35 @@
       ]
     },
     {
-      "label": "Haftara du jeûne de Guedalia",
+      "label": "Haftara",
       "labelText": {
-        "fr": "Haftara du jeûne de Guedalia",
-        "en": "Haftarah of the Fast of Gedaliah",
-        "he": "הפטרת צום גדליה"
+        "fr": "Haftara",
+        "en": "Haftarah",
+        "he": "הפטרה"
       },
-      "when": "tsom-guedalia",
+      "when": "selihot-tsom",
       "plain": true,
+      "halakha": {
+        "fr": "Qui lit quoi : les Achkenazim lisent « Dirchou » à Min'ha de chaque jeûne public (Rema, Ora'h 'Hayim 566, 1). La plupart des Sefaradim ne lisent pas de haftara à Min'ha d'un jeûne, hormis Tich'a beAv (Choul'han Aroukh, Rambam, 'Hida, Rav Ovadia Yossef). Les communautés du Maroc lisent « Dirchou » au seul jeûne de Guedalia, et rien aux trois autres. Certaines communautés lisent « Chouva Israël » aux jeûnes de Tévet, d'Esther et de Tamouz.",
+        "en": "Who reads what: Ashkenazim read “Dirshu” at Mincha of every public fast (Rema, Orach Chayim 566:1). Most Sephardim read no haftarah at Mincha of a fast, except on Tisha BeAv (Shulchan Aruch, Rambam, Chida, Rav Ovadia Yosef). Moroccan communities read “Dirshu” on the Fast of Gedaliah only, and nothing on the three others. Some communities read “Shuva Yisrael” on the fasts of Tevet, Esther and Tammuz.",
+        "he": "מי קורא מה: האשכנזים מפטירים « דרשו » במנחה של כל תענית ציבור (רמ\"א, אורח חיים תקסו, א). רוב הספרדים אינם מפטירים במנחה של תענית, חוץ מתשעה באב (שולחן ערוך, רמב\"ם, חיד\"א, הרב עובדיה יוסף). קהילות מרוקו מפטירות « דרשו » בצום גדליה בלבד, ולא בשלוש התעניות האחרות. יש קהילות שמפטירות « שובה ישראל » בצומות טבת, אסתר ותמוז."
+      },
+      "choice": {
+        "key": "haftara-tsom",
+        "id": "dirchou",
+        "label": {
+          "fr": "« Dirchou » (Yecha'ya 55, 6 à 56, 8)",
+          "en": "“Dirshu” (Isaiah 55:6 to 56:8)",
+          "he": "« דרשו » (ישעיה נה, ו עד נו, ח)"
+        },
+        "preferred": "tsom-guedalia"
+      },
       "lines": [
         {
           "rubric": {
-            "fr": "Au jeûne de Guedalia, le troisième appelé lit la haftara, en la faisant précéder et suivre des bénédictions d'usage :",
-            "en": "On the Fast of Gedaliah, the third one called up reads the haftarah, with its blessings before and after:",
-            "he": "בצום גדליה העולה השלישי קורא את ההפטרה, בברכותיה לפניה ולאחריה:"
+            "fr": "Le troisième appelé lit la haftara, en la faisant précéder et suivre des bénédictions d'usage :",
+            "en": "The third one called up reads the haftarah, with its blessings before and after:",
+            "he": "העולה השלישי קורא את ההפטרה, בברכותיה לפניה ולאחריה:"
           },
           "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר בָּחַר בִּנְבִיאִים טוֹבִים וְרָצָה בְדִבְרֵיהֶם הַנֶּאֱמָרִים בֶּאֱמֶת. בָּרוּךְ אַתָּה יְהֹוָה, הַבּוֹחֵר בַּתּוֹרָה וּבְמֹשֶׁה עַבְדּוֹ, וּבְיִשְׂרָאֵל עַמּוֹ וּבִנְבִיאֵי הָאֱמֶת וְהַצֶּדֶק:"
         },
@@ -435,7 +450,7 @@
           "rubric": {
             "fr": "Yecha'ya 55, 6 à 56, 8 :",
             "en": "Isaiah 55:6 to 56:8:",
-            "he": "ישעיה נה, ו - נו, ח:"
+            "he": "ישעיה נה, ו עד נו, ח:"
           },
           "he": "דִּרְשׁ֥וּ יְהֹוָ֖ה בְּהִמָּֽצְא֑וֹ קְרָאֻ֖הוּ בִּֽהְיוֹת֥וֹ קָרֽוֹב׃ יַעֲזֹ֤ב רָשָׁע֙ דַּרְכּ֔וֹ וְאִ֥ישׁ אָ֖וֶן מַחְשְׁבֹתָ֑יו וְיָשֹׁ֤ב אֶל־יְהֹוָה֙ וִֽירַחֲמֵ֔הוּ וְאֶל־אֱלֹהֵ֖ינוּ כִּֽי־יַרְבֶּ֥ה לִסְלֽוֹחַ׃ כִּ֣י לֹ֤א מַחְשְׁבוֹתַי֙ מַחְשְׁב֣וֹתֵיכֶ֔ם וְלֹ֥א דַרְכֵיכֶ֖ם דְּרָכָ֑י נְאֻ֖ם יְהֹוָֽה׃ כִּֽי־גָבְה֥וּ שָׁמַ֖יִם מֵאָ֑רֶץ כֵּ֣ן גָּבְה֤וּ דְרָכַי֙ מִדַּרְכֵיכֶ֔ם וּמַחְשְׁבֹתַ֖י מִמַּחְשְׁבֹֽתֵיכֶֽם׃ כִּ֡י כַּאֲשֶׁ֣ר יֵרֵד֩ הַגֶּ֨שֶׁם וְהַשֶּׁ֜לֶג מִן־הַשָּׁמַ֗יִם וְשָׁ֙מָּה֙ לֹ֣א יָשׁ֔וּב כִּ֚י אִם־הִרְוָ֣ה אֶת־הָאָ֔רֶץ וְהוֹלִידָ֖הּ וְהִצְמִיחָ֑הּ וְנָ֤תַן זֶ֙רַע֙ לַזֹּרֵ֔עַ וְלֶ֖חֶם לָאֹכֵֽל׃ כֵּ֣ן יִהְיֶ֤ה דְבָרִי֙ אֲשֶׁ֣ר יֵצֵ֣א מִפִּ֔י לֹא־יָשׁ֥וּב אֵלַ֖י רֵיקָ֑ם כִּ֤י אִם־עָשָׂה֙ אֶת־אֲשֶׁ֣ר חָפַ֔צְתִּי וְהִצְלִ֖יחַ אֲשֶׁ֥ר שְׁלַחְתִּֽיו׃ כִּֽי־בְשִׂמְחָ֣ה תֵצֵ֔אוּ וּבְשָׁל֖וֹם תּוּבָל֑וּן הֶהָרִ֣ים וְהַגְּבָע֗וֹת יִפְצְח֤וּ לִפְנֵיכֶם֙ רִנָּ֔ה וְכׇל־עֲצֵ֥י הַשָּׂדֶ֖ה יִמְחֲאוּ־כָֽף׃ תַּ֤חַת הַֽנַּעֲצוּץ֙ יַעֲלֶ֣ה בְר֔וֹשׁ (תחת) [וְתַ֥חַת] הַסִּרְפַּ֖ד יַעֲלֶ֣ה הֲדַ֑ס וְהָיָ֤ה לַֽיהֹוָה֙ לְשֵׁ֔ם לְא֥וֹת עוֹלָ֖ם לֹ֥א יִכָּרֵֽת׃"
         },
@@ -466,36 +481,41 @@
       ]
     },
     {
-      "label": "Haftara (certaines communautés)",
-      "labelText": {
-        "fr": "Haftara (certaines communautés)",
-        "en": "Haftarah (some communities)",
-        "he": "הפטרה (יש קהילות)"
-      },
-      "when": "tsom-tevet|tsom-esther|tsom-tamouz",
+      "when": "selihot-tsom",
       "plain": true,
+      "halakha": {
+        "fr": "Qui lit quoi : les Achkenazim lisent « Dirchou » à Min'ha de chaque jeûne public (Rema, Ora'h 'Hayim 566, 1). La plupart des Sefaradim ne lisent pas de haftara à Min'ha d'un jeûne, hormis Tich'a beAv (Choul'han Aroukh, Rambam, 'Hida, Rav Ovadia Yossef). Les communautés du Maroc lisent « Dirchou » au seul jeûne de Guedalia, et rien aux trois autres. Certaines communautés lisent « Chouva Israël » aux jeûnes de Tévet, d'Esther et de Tamouz.",
+        "en": "Who reads what: Ashkenazim read “Dirshu” at Mincha of every public fast (Rema, Orach Chayim 566:1). Most Sephardim read no haftarah at Mincha of a fast, except on Tisha BeAv (Shulchan Aruch, Rambam, Chida, Rav Ovadia Yosef). Moroccan communities read “Dirshu” on the Fast of Gedaliah only, and nothing on the three others. Some communities read “Shuva Yisrael” on the fasts of Tevet, Esther and Tammuz.",
+        "he": "מי קורא מה: האשכנזים מפטירים « דרשו » במנחה של כל תענית ציבור (רמ\"א, אורח חיים תקסו, א). רוב הספרדים אינם מפטירים במנחה של תענית, חוץ מתשעה באב (שולחן ערוך, רמב\"ם, חיד\"א, הרב עובדיה יוסף). קהילות מרוקו מפטירות « דרשו » בצום גדליה בלבד, ולא בשלוש התעניות האחרות. יש קהילות שמפטירות « שובה ישראל » בצומות טבת, אסתר ותמוז."
+      },
+      "choice": {
+        "key": "haftara-tsom",
+        "id": "chouva",
+        "label": {
+          "fr": "« Chouva Israël » (Hochéa 14, 2 à 10 ; Mikha 7, 18 à 20)",
+          "en": "“Shuva Yisrael” (Hosea 14:2-10; Micah 7:18-20)",
+          "he": "« שובה ישראל » (הושע יד, ב עד י; מיכה ז, יח עד כ)"
+        }
+      },
       "lines": [
         {
           "rubric": {
-            "fr": "Aux trois autres jeûnes, certaines communautés ne lisent pas de haftara. D'autres lisent « Chouva Israël », avec ses bénédictions :",
-            "en": "On the three other fasts, some communities read no haftarah. Others read “Shuva Yisrael”, with its blessings:",
-            "he": "בשלוש התעניות האחרות יש קהילות שאינן מפטירות. אחרות מפטירות « שובה ישראל », בברכותיה:"
+            "fr": "Le troisième appelé lit la haftara, en la faisant précéder et suivre des bénédictions d'usage :",
+            "en": "The third one called up reads the haftarah, with its blessings before and after:",
+            "he": "העולה השלישי קורא את ההפטרה, בברכותיה לפניה ולאחריה:"
           },
-          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר בָּחַר בִּנְבִיאִים טוֹבִים וְרָצָה בְדִבְרֵיהֶם הַנֶּאֱמָרִים בֶּאֱמֶת. בָּרוּךְ אַתָּה יְהֹוָה, הַבּוֹחֵר בַּתּוֹרָה וּבְמֹשֶׁה עַבְדּוֹ, וּבְיִשְׂרָאֵל עַמּוֹ וּבִנְבִיאֵי הָאֱמֶת וְהַצֶּדֶק:",
-          "muted": true
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר בָּחַר בִּנְבִיאִים טוֹבִים וְרָצָה בְדִבְרֵיהֶם הַנֶּאֱמָרִים בֶּאֱמֶת. בָּרוּךְ אַתָּה יְהֹוָה, הַבּוֹחֵר בַּתּוֹרָה וּבְמֹשֶׁה עַבְדּוֹ, וּבְיִשְׂרָאֵל עַמּוֹ וּבִנְבִיאֵי הָאֱמֶת וְהַצֶּדֶק:"
         },
         {
           "rubric": {
             "fr": "Hochéa 14, 2 à 10, puis Mikha 7, 18 à 20 :",
             "en": "Hosea 14:2-10, then Micah 7:18-20:",
-            "he": "הושע יד, ב-י, ואחריו מיכה ז, יח-כ:"
+            "he": "הושע יד, ב עד י, ואחריו מיכה ז, יח עד כ:"
           },
-          "he": "שׁ֚וּבָה יִשְׂרָאֵ֔ל עַ֖ד יְהֹוָ֣ה אֱלֹהֶ֑יךָ כִּ֥י כָשַׁ֖לְתָּ בַּעֲוֺנֶֽךָ׃ קְח֤וּ עִמָּכֶם֙ דְּבָרִ֔ים וְשׁ֖וּבוּ אֶל־יְהֹוָ֑ה אִמְר֣וּ אֵלָ֗יו כׇּל־תִּשָּׂ֤א עָוֺן֙ וְקַח־ט֔וֹב וּֽנְשַׁלְּמָ֥ה פָרִ֖ים שְׂפָתֵֽינוּ׃ אַשּׁ֣וּר ׀ לֹ֣א יוֹשִׁיעֵ֗נוּ עַל־סוּס֙ לֹ֣א נִרְכָּ֔ב וְלֹא־נֹ֥אמַר ע֛וֹד אֱלֹהֵ֖ינוּ לְמַעֲשֵׂ֣ה יָדֵ֑ינוּ אֲשֶׁר־בְּךָ֖ יְרֻחַ֥ם יָתֽוֹם׃ אֶרְפָּא֙ מְשׁ֣וּבָתָ֔ם אֹהֲבֵ֖ם נְדָבָ֑ה כִּ֛י שָׁ֥ב אַפִּ֖י מִמֶּֽנּוּ׃ אֶהְיֶ֤ה כַטַּל֙ לְיִשְׂרָאֵ֔ל יִפְרַ֖ח כַּשּׁוֹשַׁנָּ֑ה וְיַ֥ךְ שׇׁרָשָׁ֖יו כַּלְּבָנֽוֹן׃ יֵֽלְכוּ֙ יֹֽנְקוֹתָ֔יו וִיהִ֥י כַזַּ֖יִת הוֹד֑וֹ וְרֵ֥יחַֽ ל֖וֹ כַּלְּבָנֽוֹן׃ יָשֻׁ֙בוּ֙ יֹשְׁבֵ֣י בְצִלּ֔וֹ יְחַיּ֥וּ דָגָ֖ן וְיִפְרְח֣וּ כַגָּ֑פֶן זִכְר֖וֹ כְּיֵ֥ין לְבָנֽוֹן׃ אֶפְרַ֕יִם מַה־לִּ֥י ע֖וֹד לָעֲצַבִּ֑ים אֲנִ֧י עָנִ֣יתִי וַאֲשׁוּרֶ֗נּוּ אֲנִי֙ כִּבְר֣וֹשׁ רַעֲנָ֔ן מִמֶּ֖נִּי פֶּרְיְךָ֥ נִמְצָֽא׃ מִ֤י חָכָם֙ וְיָ֣בֵֽן אֵ֔לֶּה נָב֖וֹן וְיֵדָעֵ֑ם כִּֽי־יְשָׁרִ֞ים דַּרְכֵ֣י יְהֹוָ֗ה וְצַדִּקִים֙ יֵ֣לְכוּ בָ֔ם וּפֹשְׁעִ֖ים יִכָּ֥שְׁלוּ בָֽם׃",
-          "muted": true
+          "he": "שׁ֚וּבָה יִשְׂרָאֵ֔ל עַ֖ד יְהֹוָ֣ה אֱלֹהֶ֑יךָ כִּ֥י כָשַׁ֖לְתָּ בַּעֲוֺנֶֽךָ׃ קְח֤וּ עִמָּכֶם֙ דְּבָרִ֔ים וְשׁ֖וּבוּ אֶל־יְהֹוָ֑ה אִמְר֣וּ אֵלָ֗יו כׇּל־תִּשָּׂ֤א עָוֺן֙ וְקַח־ט֔וֹב וּֽנְשַׁלְּמָ֥ה פָרִ֖ים שְׂפָתֵֽינוּ׃ אַשּׁ֣וּר ׀ לֹ֣א יוֹשִׁיעֵ֗נוּ עַל־סוּס֙ לֹ֣א נִרְכָּ֔ב וְלֹא־נֹ֥אמַר ע֛וֹד אֱלֹהֵ֖ינוּ לְמַעֲשֵׂ֣ה יָדֵ֑ינוּ אֲשֶׁר־בְּךָ֖ יְרֻחַ֥ם יָתֽוֹם׃ אֶרְפָּא֙ מְשׁ֣וּבָתָ֔ם אֹהֲבֵ֖ם נְדָבָ֑ה כִּ֛י שָׁ֥ב אַפִּ֖י מִמֶּֽנּוּ׃ אֶהְיֶ֤ה כַטַּל֙ לְיִשְׂרָאֵ֔ל יִפְרַ֖ח כַּשּׁוֹשַׁנָּ֑ה וְיַ֥ךְ שׇׁרָשָׁ֖יו כַּלְּבָנֽוֹן׃ יֵֽלְכוּ֙ יֹֽנְקוֹתָ֔יו וִיהִ֥י כַזַּ֖יִת הוֹד֑וֹ וְרֵ֥יחַֽ ל֖וֹ כַּלְּבָנֽוֹן׃ יָשֻׁ֙בוּ֙ יֹשְׁבֵ֣י בְצִלּ֔וֹ יְחַיּ֥וּ דָגָ֖ן וְיִפְרְח֣וּ כַגָּ֑פֶן זִכְר֖וֹ כְּיֵ֥ין לְבָנֽוֹן׃ אֶפְרַ֕יִם מַה־לִּ֥י ע֖וֹד לָעֲצַבִּ֑ים אֲנִ֧י עָנִ֣יתִי וַאֲשׁוּרֶ֗נּוּ אֲנִי֙ כִּבְר֣וֹשׁ רַעֲנָ֔ן מִמֶּ֖נִּי פֶּרְיְךָ֥ נִמְצָֽא׃ מִ֤י חָכָם֙ וְיָ֣בֵֽן אֵ֔לֶּה נָב֖וֹן וְיֵדָעֵ֑ם כִּֽי־יְשָׁרִ֞ים דַּרְכֵ֣י יְהֹוָ֗ה וְצַדִּקִים֙ יֵ֣לְכוּ בָ֔ם וּפֹשְׁעִ֖ים יִכָּ֥שְׁלוּ בָֽם׃"
         },
         {
           "he": "מִי־אֵ֣ל כָּמ֗וֹךָ נֹשֵׂ֤א עָוֺן֙ וְעֹבֵ֣ר עַל־פֶּ֔שַׁע לִשְׁאֵרִ֖ית נַחֲלָת֑וֹ לֹֽא־הֶחֱזִ֤יק לָעַד֙ אַפּ֔וֹ כִּֽי־חָפֵ֥ץ חֶ֖סֶד הֽוּא׃ יָשׁ֣וּב יְרַחֲמֵ֔נוּ יִכְבֹּ֖שׁ עֲוֺנֹתֵ֑ינוּ וְתַשְׁלִ֛יךְ בִּמְצֻל֥וֹת יָ֖ם כׇּל־חַטֹּאותָֽם׃ תִּתֵּ֤ן אֱמֶת֙ לְיַֽעֲקֹ֔ב חֶ֖סֶד לְאַבְרָהָ֑ם אֲשֶׁר־נִשְׁבַּ֥עְתָּ לַאֲבֹתֵ֖ינוּ מִ֥ימֵי קֶֽדֶם׃",
-          "muted": true,
           "tight": true
         },
         {
@@ -504,25 +524,41 @@
             "en": "After the haftarah, the maftir reads this verse, then the closing blessings:",
             "he": "אחר ההפטרה אומר המפטיר פסוק זה, ואחריו ברכות ההפטרה:"
           },
-          "he": "גֹּאֲלֵ֕נוּ יְהֹוָ֥ה צְבָא֖וֹת שְׁמ֑וֹ קְד֖וֹשׁ יִשְׂרָאֵֽל׃",
-          "muted": true
+          "he": "גֹּאֲלֵ֕נוּ יְהֹוָ֥ה צְבָא֖וֹת שְׁמ֑וֹ קְד֖וֹשׁ יִשְׂרָאֵֽל׃"
         },
         {
           "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, צוּר כָּל־הָעוֹלָמִים, צַדִּיק בְּכָל־הַדּוֹרוֹת, הָאֵל הַנֶּאֱמָן הָאֹמֵר וְעֹשֶׂה, הַמְדַבֵּר וּמְקַיֵּם, שֶׁכָּל־דְּבָרָיו אֱמֶת וָצֶדֶק. נֶאֱמָן, אַתָּה הוּא יְהֹוָה אֱלֹהֵינוּ, וְנֶאֱמָנִים דְּבָרֶיךָ, וְדָבָר אֶחָד מִדְּבָרֶיךָ אָחוֹר לֹא יָשׁוּב רֵיקָם, כִּי אֵל מֶלֶךְ נֶאֱמָן וְרַחֲמָן אָתָּה. בָּרוּךְ אַתָּה יְהֹוָה, הָאֵל הַנֶּאֱמָן בְּכָל־דְּבָרָיו:",
-          "muted": true,
           "tight": true
         },
         {
           "he": "רַחֵם עַל צִיּוֹן כִּי הִיא בֵּית חַיֵּינוּ, וְלַעֲלוּבַת נֶפֶשׁ תּוֹשִׁיעַ בִּמְהֵרָה בְיָמֵינוּ. בָּרוּךְ אַתָּה יְהֹוָה, מְשַׂמֵּחַ צִיּוֹן בְּבָנֶיהָ:",
-          "muted": true,
           "tight": true
         },
         {
           "he": "שַׂמְּחֵנוּ יְהֹוָה אֱלֹהֵינוּ, בְּאֵלִיָהוּ הַנָּבִיא עַבְדָּךְ, וּבְמַלְכוּת בֵּית דָּוִד מְשִׁיחָךְ, בִּמְהֵרָה יָבֹא וְיָגֵל לִבֵּנוּ, עַל כִּסְאוֹ לֹא יֵשֶׁב זָר, וְלֹא יִנְחֲלוּ עוֹד אֲחֵרִים אֶת כְּבוֹדוֹ, כִּי בְשֵׁם קָדְשְׁךָ נִשְׁבַּעְתָּ לּוֹ, שֶׁלֹּא יִכְבֶּה נֵרוֹ לְעוֹלָם וָעֶד. בָּרוּךְ אַתָּה יְהֹוָה, מָגֵן דָּוִד:",
-          "muted": true,
           "tight": true
         }
       ]
+    },
+    {
+      "when": "selihot-tsom",
+      "plain": true,
+      "halakha": {
+        "fr": "Qui lit quoi : les Achkenazim lisent « Dirchou » à Min'ha de chaque jeûne public (Rema, Ora'h 'Hayim 566, 1). La plupart des Sefaradim ne lisent pas de haftara à Min'ha d'un jeûne, hormis Tich'a beAv (Choul'han Aroukh, Rambam, 'Hida, Rav Ovadia Yossef). Les communautés du Maroc lisent « Dirchou » au seul jeûne de Guedalia, et rien aux trois autres. Certaines communautés lisent « Chouva Israël » aux jeûnes de Tévet, d'Esther et de Tamouz.",
+        "en": "Who reads what: Ashkenazim read “Dirshu” at Mincha of every public fast (Rema, Orach Chayim 566:1). Most Sephardim read no haftarah at Mincha of a fast, except on Tisha BeAv (Shulchan Aruch, Rambam, Chida, Rav Ovadia Yosef). Moroccan communities read “Dirshu” on the Fast of Gedaliah only, and nothing on the three others. Some communities read “Shuva Yisrael” on the fasts of Tevet, Esther and Tammuz.",
+        "he": "מי קורא מה: האשכנזים מפטירים « דרשו » במנחה של כל תענית ציבור (רמ\"א, אורח חיים תקסו, א). רוב הספרדים אינם מפטירים במנחה של תענית, חוץ מתשעה באב (שולחן ערוך, רמב\"ם, חיד\"א, הרב עובדיה יוסף). קהילות מרוקו מפטירות « דרשו » בצום גדליה בלבד, ולא בשלוש התעניות האחרות. יש קהילות שמפטירות « שובה ישראל » בצומות טבת, אסתר ותמוז."
+      },
+      "choice": {
+        "key": "haftara-tsom",
+        "id": "aucune",
+        "label": {
+          "fr": "Pas de haftara",
+          "en": "No haftarah",
+          "he": "בלי הפטרה"
+        },
+        "preferred": "tsom-tevet|tsom-esther|tsom-tamouz"
+      },
+      "lines": []
     },
     {
       "when": "tsom-minha",

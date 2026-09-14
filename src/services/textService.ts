@@ -144,6 +144,21 @@ export interface TextParagraph {
  * montée d'une paracha) : the text stays one continuous reading, and one
  * reservation unit, with a marker at each block start.
  */
+/**
+ * Tefila : un bloc qui est l'une des options d'un choix laissé au lecteur
+ * (la haftara de Min'ha d'un jeûne, que chaque communauté lit à sa façon).
+ * Les blocs d'une même `key` forment le choix ; le lecteur n'en montre
+ * qu'un, sous un sélecteur, et retient l'option prise. `preferred` est une
+ * condition du calendrier (voir saidOn) : l'option que le jour propose
+ * d'abord, faute d'un choix déjà fait.
+ */
+export interface TextChoice {
+  key: string;
+  id: string;
+  label: Rubric;
+  preferred?: string;
+}
+
 export interface TextBlock {
   label: string;
   /** Le titre sous forme structurée (chapitre N), quand il en a une. */
@@ -181,6 +196,8 @@ export interface TextBlock {
    * variante précédée de son cas : on choisit, on ne lit pas tout.
    */
   variants?: boolean;
+  /** Tefila : l'une des options d'un choix laissé au lecteur (voir TextChoice). */
+  choice?: TextChoice;
   /** Tefila : des paragraphes numérotés et séparés (les sept bénédictions). */
   numbered?: boolean;
   /**
@@ -591,6 +608,7 @@ interface TefilaFileBlock {
   when?: string;
   fold?: string;
   variants?: boolean;
+  choice?: TextChoice;
   numbered?: boolean;
   plain?: boolean;
   zman?: string;
@@ -670,8 +688,9 @@ export function parseTefilaBlocks(rawBlocks: unknown): TextBlock[] {
       .map(parseTefilaLine)
       .filter((p): p is TextParagraph => p !== null);
     // Les marqueurs (horaire, Torah de la semaine) n'ont pas de texte à eux :
-    // ils passent quand même, c'est le lecteur qui les remplit.
-    if (paragraphs.length === 0 && !raw?.zman && !raw?.torahWeekly) return;
+    // ils passent quand même, c'est le lecteur qui les remplit. L'option d'un
+    // choix peut être vide elle aussi : « pas de haftara » est un choix.
+    if (paragraphs.length === 0 && !raw?.zman && !raw?.torahWeekly && !raw?.choice) return;
     const block: TextBlock = {
       label: raw.label ?? "",
       lines: paragraphs.map(paragraphText),
@@ -685,6 +704,7 @@ export function parseTefilaBlocks(rawBlocks: unknown): TextBlock[] {
     if (raw.when) block.when = raw.when;
     if (raw.fold) block.fold = raw.fold;
     if (raw.variants) block.variants = true;
+    if (raw.choice) block.choice = raw.choice;
     if (raw.numbered) block.numbered = true;
     if (raw.plain) block.plain = true;
     if (raw.zman) block.zman = raw.zman;
