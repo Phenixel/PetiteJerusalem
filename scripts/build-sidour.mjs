@@ -662,10 +662,14 @@ function amidaBlocks(src, ix, opts = {}) {
           ],
         }
       : { parts: [{ seg: ix.shemaKolenu }, { seg: ix.kiAta }] };
+  blocks.push({ src, lines: [{ seg: ix.tsemah }] });
+  // La halakha de 'Anénou vise Chéma kolénou, où celui qui jeûne l'insère. Une
+  // halakha se lit en tête de son bloc : Chéma kolénou fait donc bloc à part,
+  // pour qu'elle se lise juste au-dessus de lui.
   blocks.push({
     src,
     halakha: ix.anenouYahid !== undefined ? [{ ...HALAKHA.anenou, when: "taanit" }] : undefined,
-    lines: [{ seg: ix.tsemah }, shemaKolenu],
+    lines: [shemaKolenu],
   });
 
   blocks.push({ src, lines: [{ seg: ix.retse }] });
@@ -747,14 +751,15 @@ function amidaBlocks(src, ix, opts = {}) {
     ],
   });
 
-  // Vé'al koulam. Aux dix jours de techouva, Oukhtov avant « Vékhol ha'hayim ».
+  // Vé'al koulam. Aux dix jours de techouva, Oukhtov après « Vékhol ha'hayim
+  // yodoukha séla », juste avant « Vihalelou ».
   blocks.push({
     src,
     halakha: [{ ...HALAKHA.oubliTeshuva("Oukhtov", "Uchtov", "וכתוב"), when: "teshuva" }],
     lines: [
       {
         parts: [
-          { seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent], until: "וְכָל־הַחַיִּים" },
+          { seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent], until: "וִֽיהַֽלְלוּ" },
           {
             seg: ix.vealKoulam,
             mode: "small",
@@ -762,7 +767,7 @@ function amidaBlocks(src, ix, opts = {}) {
             when: "teshuva",
             accent: true,
           },
-          { seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent], from: "וְכָל־הַחַיִּים" },
+          { seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent], from: "וִֽיהַֽלְלוּ" },
         ],
       },
     ],
