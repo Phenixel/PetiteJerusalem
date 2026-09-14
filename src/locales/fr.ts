@@ -1189,6 +1189,20 @@ const fr = {
     slihotWindowDay:
       "En journée, si la nuit n\u2019a pas été possible\u00a0: on peut encore les rattraper jusqu\u2019à la chkia, le coucher du soleil ({sunset}).",
     slihotWindowPlace: "Heures pour {city}.",
+    // Sidour : le parchemin (klaf) qu'on ouvre depuis le fil du texte (voir
+    // KlafViewer.vue) : le pitoum haketoret écrit par un sofer, le psaume 67
+    // en forme de menora.
+    klaf: {
+      ketoret: { open: "Voir le parchemin", title: "Pitoum haketoret sur parchemin" },
+      menora: { open: "Voir la menora", title: "Le Lamnatséa'h en menora" },
+      views: "Photo ou retranscription",
+      photo: "Photo",
+      text: "Texte",
+      photoAlt: "{title}, page {n}",
+      zoomIn: "Touchez la photo pour l'agrandir.",
+      zoomOut: "Touchez la photo pour la ramener à la largeur de la fenêtre.",
+      transcribed: "Retranscription du parchemin, lettre à lettre, dans l'écriture du sofer.",
+    },
     // Sidour : la direction du Kotel, ouverte depuis le titre des passages
     // qui se disent face à Jérusalem (voir KotelCompass.vue).
     mirror: {

@@ -1157,6 +1157,20 @@ const en: LocaleMessages = {
     slihotWindowDay:
       "During the day, if the night was not possible: they may still be said until shkia, sunset ({sunset}).",
     slihotWindowPlace: "Times for {city}.",
+    // Sidour: the parchment (klaf) opened from the text itself (see
+    // KlafViewer.vue): pitum haketoret as a scribe writes it, psalm 67 in
+    // the shape of a menorah.
+    klaf: {
+      ketoret: { open: "See the parchment", title: "Pitum haketoret on parchment" },
+      menora: { open: "See the menorah", title: "Lamnatzeach as a menorah" },
+      views: "Photo or transcription",
+      photo: "Photo",
+      text: "Text",
+      photoAlt: "{title}, page {n}",
+      zoomIn: "Tap the photo to enlarge it.",
+      zoomOut: "Tap the photo to fit it to the window again.",
+      transcribed: "Transcription of the parchment, letter by letter, in the scribe's script.",
+    },
     // Siddur: the time of a moment of prayer, placed right before what is read
     // (see TefilaZman.vue; keys d1..dN are the lines behind the "i").
     mirror: {

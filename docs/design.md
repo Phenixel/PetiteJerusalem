@@ -367,6 +367,27 @@ fragment court, dans un paragraphe qu'on lit d'un trait. La halakha de
 l'oubli (« si l'on a conclu haEl hakadoch, on recommence ») accompagne le
 passage, en didascalie, les jours où elle sert.
 
+### Le parchemin s'ouvre depuis le texte
+
+Deux passages du sidour ont leur forme propre sur un parchemin : le pitoum
+haketoret, que beaucoup lisent sur un klaf écrit par un sofer, et le psaume
+67 (Lamnatséa'h binguinot), qu'il est bon de dire en regardant la menora dans
+laquelle il est écrit. L'app ne les redessine pas dans le fil : elle pose, au
+paragraphe où ils se disent, une petite commande ronde (`.reading-klaf`,
+dans `LiturgyText.vue`), une pastille à la couleur du thème, à la taille des
+didascalies, qui ouvre une fenêtre (`KlafViewer.vue`). C'est la seule porte :
+à la différence de la boussole et du miroir, le menu de lecture ne propose pas
+les parchemins, on les ouvre à l'endroit où on les lit.
+
+La fenêtre montre d'abord la photo du parchemin, telle quelle
+(`public/klaf/`), qu'un toucher agrandit au double ; un second onglet en donne
+la retranscription, lettre à lettre et sans voyelles, dans l'écriture du sofer
+(la police Stam Sefarad CLM, voir « Les polices ») et à la taille de lecture
+du lecteur : le même rendu que le klaf, mais du texte. Pour le psaume, la retranscription
+reprend la forme du parchemin : sept branches verticales, une barre, un pied,
+en traits pleins à la couleur du texte, sans ombre ni dégradé. C'est une
+écriture, pas une illustration.
+
 ## 3. Les rayons
 
 Deux familles, et elles vont en sens contraire. Les **surfaces** sont taillées
@@ -402,6 +423,14 @@ elles, l'identité du site.
 | `--font-hebrew`                   | au choix               | le texte hébreu d'une lecture                                           |
 | `--font-reading`                  | au choix               | le texte latin d'une lecture (traduction, phonétique, didascalies)      |
 | `--font-serif`                    | Lora, Georgia en repli | les tranches des livres de la bibliothèque et la dédicace               |
+
+Une seule autre famille a droit de cité, et à un seul endroit : **Stam Sefarad
+CLM** (projet Culmus, GPL avec exception d'embarquement,
+`public/fonts/stam-sefarad-clm.LICENSE.txt`), l'écriture du sofer, ktav
+Sefaradi avec taguim. Elle n'écrit que la retranscription des parchemins
+(`KlafViewer.vue`) : là, le rendu du klaf est ce qu'on vient chercher, et
+c'est la seule raison d'être de la police. Elle ne sert ni au fil d'un texte,
+ni à un titre, ni à une étiquette.
 
 Playfair est une police d'apparat : posée partout, elle ne met plus rien en
 avant. Elle est automatique sur les `h1` et se pose à la main (classe

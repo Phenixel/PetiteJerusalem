@@ -7,8 +7,10 @@ import { transliterate } from "../../services/hebrewTransliteration";
 import type { SupportedLocale } from "../../i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
+import KlafViewer from "../../components/KlafViewer.vue";
 import KotelCompass from "../../components/KotelCompass.vue";
 import TefilinMirror from "../../components/TefilinMirror.vue";
+import { KLAF_ICONS, KLAF_LABELS, openKlaf } from "../../composables/useKlaf";
 import {
   addKotelOffer,
   openKotelCompass,
@@ -260,6 +262,16 @@ function syncMirrorOffer(offered: boolean): void {
 watch(offersMirror, syncMirrorOffer, { immediate: true });
 onUnmounted(() => syncMirrorOffer(false));
 
+/**
+ * Les parchemins : le paragraphe d'où l'on dit le pitoum haketoret ou le
+ * Lamnatséa'h porte la commande qui ouvre le sien, et c'est la seule porte
+ * (le menu de lecture ne les propose pas). Une seule fenêtre pour la page,
+ * qui montre le parchemin demandé, montée seulement si la page en porte un.
+ */
+const offersKlaf = computed(() =>
+  props.blocks.some((block) => (block.paragraphs ?? []).some((paragraph) => paragraph.klaf)),
+);
+
 const sections = computed(() =>
   props.blocks
     .map((block) => ({
@@ -393,6 +405,17 @@ const phoneticOf = computed(() => {
                 <p v-if="paragraph.rubric" class="reading-rubric">
                   {{ say(paragraph.rubric) }}
                 </p>
+                <!-- Le parchemin, au paragraphe où il se lit : la ketoret
+                     telle qu'un sofer l'écrit, le psaume en forme de menora. -->
+                <button
+                  v-if="paragraph.klaf"
+                  type="button"
+                  class="reading-klaf"
+                  @click.stop="openKlaf(paragraph.klaf)"
+                >
+                  <AppIcon :name="KLAF_ICONS[paragraph.klaf]" :size="14" />
+                  {{ t(KLAF_LABELS[paragraph.klaf].open) }}
+                </button>
                 <div
                   v-for="copy in copiesOf(paragraph)"
                   :key="copy"
@@ -453,6 +476,7 @@ const phoneticOf = computed(() => {
 
     <KotelCompass v-if="offersKotel" />
     <TefilinMirror v-if="offersMirror" />
+    <KlafViewer v-if="offersKlaf" />
   </div>
 </template>
 
@@ -540,6 +564,43 @@ const phoneticOf = computed(() => {
    blanc se tient au-dessus d'elle. */
 .reading-rubric + .reading-para {
   margin-top: 0.25rem;
+}
+
+/* La commande qui ouvre le parchemin : une pastille ronde à la couleur du
+   thème, posée au-dessus du paragraphe, dans le registre des didascalies.
+   Elle se lit comme un bouton, pas comme du texte à dire. */
+.reading-klaf {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: calc(0.8rem * var(--reading-scale, 1));
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-primary);
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  transition: background-color 0.2s ease;
+}
+
+.reading-klaf:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
+}
+
+.reading-klaf:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Sous une didascalie, la pastille la suit de près, et le texte la suit. */
+.reading-rubric + .reading-klaf {
+  margin-top: 0.35rem;
+}
+
+.reading-klaf + .reading-para {
+  margin-top: 0.35rem;
 }
 
 /* Bénédictions numérotées : le numéro tient la marge, pas de blanc en plus. */

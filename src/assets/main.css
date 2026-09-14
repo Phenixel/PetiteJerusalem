@@ -44,6 +44,18 @@
   unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 
+/* L'écriture du sofer (ktav Sefaradi avec taguim, police Stam Sefarad CLM du
+   projet Culmus, GPL avec exception d'embarquement, voir
+   public/fonts/stam-sefarad-clm.LICENSE.txt) : elle ne sert qu'à la
+   retranscription des parchemins (KlafViewer.vue), jamais au fil d'un texte.
+   Le navigateur ne la charge qu'à la première ouverture d'un parchemin. */
+@font-face {
+  font-family: "Stam Sefarad CLM";
+  src: url("/fonts/stam-sefarad-clm.woff2") format("woff2");
+  font-display: swap;
+  unicode-range: U+0590-05FF, U+FB1D-FB4F;
+}
+
 /* Neutralise l'auto-agrandissement du texte des navigateurs mobiles (font
    boosting / text-size-adjust), qui gonfle certains blocs dans la WebView de
    l'app et fait déborder les mises en page. */

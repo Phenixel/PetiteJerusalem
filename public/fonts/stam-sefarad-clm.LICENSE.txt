@@ -1,0 +1,19 @@
+Stam Sefarad CLM (stam-sefarad-clm.woff2)
+
+Police du projet Culmus (https://culmus.sourceforge.io), version 0.140,
+convertie en woff2 sans autre modification. Elle sert à la retranscription
+des parchemins du sidour (voir src/components/KlafViewer.vue).
+
+Stam Sefarad font is copyright 2008-2010 by Yoram Gnat (yoram.gnat@gmail.com).
+
+This package is distributed under the terms of GNU General Public License
+version 2 (https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt).
+
+As a special exception, if you create a document which uses this font, and
+embed this font or unaltered portions of this font into the document, this
+font does not by itself cause the resulting document to be covered by the
+GNU General Public License. This exception does not however invalidate any
+other reasons why the document might be covered by the GNU General Public
+License. If you modify this font, you may extend this exception to your
+version of the font, but you are not obligated to do so. If you do not wish
+to do so, delete this exception statement from your version.
