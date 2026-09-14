@@ -38,6 +38,9 @@ const bottomOffset = useBottomChromeHeight("1rem");
 /** Le temps de voir la page avant qu'on lui pose une question. */
 const DELAY_MS = 4000;
 
+/** L'accueil, dans chacune de ses langues : « home », « home-en », « home-he ». */
+const isHomeRoute = () => /^home(-|$)/.test(String(route.name ?? ""));
+
 const visible = ref(false);
 let timer: number | null = null;
 
@@ -51,7 +54,7 @@ onMounted(() => {
   timer = window.setTimeout(() => {
     timer = null;
     const quiet =
-      route.name === "home" &&
+      isHomeRoute() &&
       !document.hidden &&
       !isOnboardingOpen.value &&
       !hasOpenOverlay() &&
