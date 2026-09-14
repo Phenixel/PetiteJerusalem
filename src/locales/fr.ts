@@ -1136,6 +1136,9 @@ const fr = {
     bookmarks: "Marque-pages",
     bookmarkAdd: "Ajouter un marque-page",
     bookmarkRemove: "Retirer le marque-page",
+    // Un choix laissé au lecteur (la haftara de Min'ha d'un jeûne) : le
+    // sélecteur entre les options, qui retient l'option prise.
+    choice: "Selon l'usage de votre communauté",
     // Tefilot (Sidour, Sli'hot) : menu de navigation par sections.
     navMenu: "Menu de lecture",
     navSections: "Sections",

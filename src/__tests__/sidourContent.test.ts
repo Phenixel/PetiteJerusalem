@@ -484,20 +484,29 @@ describe("Min'ha : les jeûnes publics", () => {
     // Après la bénédiction de l'appelé, pas de Kaddich : la haftara, puis
     // le psaume, Yehalelou et le demi-Kaddich qui ouvre la 'Amida.
     expect(sansSignes(blocks[sortie + 2].lines[0])).toContain("אשר נתן לנו את תורתו");
-    expect(blocks[sortie + 3].label).toBe("Haftara du jeûne de Guedalia");
+    expect(blocks[sortie + 3].label).toBe("Haftara");
   });
 
-  it("donne au jeûne de Guedalia sa haftara, aux autres celle de certaines communautés", () => {
-    const guedalia = blocks.find((b) => b.label === "Haftara du jeûne de Guedalia")!;
-    expect(guedalia.when).toBe("tsom-guedalia");
-    expect(sansSignes(guedalia.lines.join(" "))).toContain("דרשו יהוה בהמצאו");
-    expect(sansSignes(guedalia.lines.join(" "))).toContain("אשר בחר בנביאים טובים");
-    expect(sansSignes(guedalia.lines.at(-1)!)).toContain("מגן דוד");
-    const autres = blocks.find((b) => b.label === "Haftara (certaines communautés)")!;
-    expect(autres.when).toBe("tsom-tevet|tsom-esther|tsom-tamouz");
-    expect(sansSignes(autres.lines.join(" "))).toContain("שובה ישראל");
-    expect(sansSignes(autres.lines.join(" "))).toContain("מיאל כמוך");
-    for (const p of autres.paragraphs ?? []) expect(p.muted).toBe(true);
+  it("laisse le choix de la haftara : « Dirchou », « Chouva Israël », ou rien", () => {
+    const options = blocks.filter((b) => b.choice?.key === "haftara-tsom");
+    expect(options.map((b) => b.choice!.id)).toEqual(["dirchou", "chouva", "aucune"]);
+    // À tous les jeûnes des sli'hot, et un seul titre pour le menu.
+    for (const b of options) expect(b.when).toBe("selihot-tsom");
+    expect(options.map((b) => b.label)).toEqual(["Haftara", "", ""]);
+    // Le jour propose « Dirchou » à Guedalia, rien aux trois autres.
+    expect(options[0].choice!.preferred).toBe("tsom-guedalia");
+    expect(options[1].choice!.preferred).toBeUndefined();
+    expect(options[2].choice!.preferred).toBe("tsom-tevet|tsom-esther|tsom-tamouz");
+    // La note dit qui lit quoi, sur chaque option : elle précède le sélecteur.
+    for (const b of options) expect(b.halakhot![0].fr).toMatch(/^Qui lit quoi/);
+    const [dirchou, chouva, aucune] = options;
+    expect(sansSignes(dirchou.lines.join(" "))).toContain("דרשו יהוה בהמצאו");
+    expect(sansSignes(dirchou.lines.join(" "))).toContain("אשר בחר בנביאים טובים");
+    expect(sansSignes(dirchou.lines.at(-1)!)).toContain("מגן דוד");
+    expect(sansSignes(chouva.lines.join(" "))).toContain("שובה ישראל");
+    expect(sansSignes(chouva.lines.join(" "))).toContain("מיאל כמוך");
+    expect(sansSignes(chouva.lines.at(-1)!)).toContain("מגן דוד");
+    expect(aucune.lines).toEqual([]);
   });
 
   it("change de psaumes la veille de Pourim et le vendredi", () => {

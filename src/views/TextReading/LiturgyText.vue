@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import type { Rubric, TextBlock, TextParagraph, TextRun } from "../../services/textService";
+import type {
+  Rubric,
+  TextBlock,
+  TextChoice,
+  TextParagraph,
+  TextRun,
+} from "../../services/textService";
 import { saidOn } from "../../services/textService";
 import { transliterate } from "../../services/hebrewTransliteration";
 import type { SupportedLocale } from "../../i18n";
@@ -272,26 +278,101 @@ const offersKlaf = computed(() =>
   props.blocks.some((block) => (block.paragraphs ?? []).some((paragraph) => paragraph.klaf)),
 );
 
-const sections = computed(() =>
-  props.blocks
-    .map((block) => ({
-      block,
-      paragraphs: (block.paragraphs ?? plainParagraphs(block))
-        .map((paragraph, i): ParagraphEntry => ({ paragraph, line: block.offset + i }))
-        // Un paragraphe se lit s'il se dit aujourd'hui, et s'il lui reste de
-        // l'hébreu à dire : un paragraphe fait d'un seul fragment `when`
-        // (le compte du 'Omer de ce soir) disparaît avec lui.
-        .filter(
-          ({ paragraph }) =>
-            saidToday(paragraph.when) && visibleRuns(paragraph).some((run) => run.kind === "he"),
-        ),
-    }))
+/**
+ * Les choix laissés au lecteur (la haftara de Min'ha d'un jeûne, que chaque
+ * communauté lit à sa façon) : l'option prise pour chaque clé, retenue sur
+ * l'appareil comme un réglage de lecture (la taille, la phonétique). Un
+ * choix qui n'a pas encore été fait suit ce que le jour propose (`preferred`),
+ * sinon la première option.
+ */
+const CHOICES_STORAGE_KEY = "pj-tefila-choices";
+function readChoices(): Map<string, string> {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CHOICES_STORAGE_KEY) ?? "{}") as Record<
+      string,
+      string
+    >;
+    return new Map(Object.entries(raw));
+  } catch {
+    return new Map();
+  }
+}
+const chosen = ref(readChoices());
+function choose(option: TextBlock): void {
+  const { key, id } = choiceOf(option);
+  const next = new Map(chosen.value);
+  next.set(key, id);
+  chosen.value = next;
+  try {
+    localStorage.setItem(CHOICES_STORAGE_KEY, JSON.stringify(Object.fromEntries(next)));
+  } catch {
+    // Sans stockage (navigation privée, quota), le choix vaut pour la page ouverte.
+  }
+}
+/** Le choix d'un bloc option : le gabarit ne sait pas qu'il est toujours là. */
+const choiceOf = (option: TextBlock): TextChoice => option.choice as TextChoice;
+function chosenAmong(options: TextBlock[]): TextBlock {
+  const stored = chosen.value.get(choiceOf(options[0]).key);
+  return (
+    options.find((option) => choiceOf(option).id === stored) ??
+    options.find((option) => {
+      const preferred = choiceOf(option).preferred;
+      return !!preferred && saidToday(preferred);
+    }) ??
+    options[0]
+  );
+}
+
+/** Les paragraphes d'un bloc qui se disent aujourd'hui, avec leur ligne. */
+const paragraphsOf = (block: TextBlock): ParagraphEntry[] =>
+  (block.paragraphs ?? plainParagraphs(block))
+    .map((paragraph, i): ParagraphEntry => ({ paragraph, line: block.offset + i }))
+    // Un paragraphe se lit s'il se dit aujourd'hui, et s'il lui reste de
+    // l'hébreu à dire : un paragraphe fait d'un seul fragment `when`
+    // (le compte du 'Omer de ce soir) disparaît avec lui.
+    .filter(
+      ({ paragraph }) =>
+        saidToday(paragraph.when) && visibleRuns(paragraph).some((run) => run.kind === "he"),
+    );
+
+/**
+ * Une section du fil : le bloc qui donne le titre et l'ancre, le texte qui se
+ * lit (le même bloc, ou l'option choisie d'un choix), les options du choix
+ * s'il y en a un, et les paragraphes du texte.
+ */
+interface SectionEntry {
+  block: TextBlock;
+  text: TextBlock;
+  options: TextBlock[];
+  paragraphs: ParagraphEntry[];
+  index: number;
+}
+
+const sections = computed<SectionEntry[]>(() => {
+  const out: SectionEntry[] = [];
+  const choicesSeen = new Set<string>();
+  for (const block of props.blocks) {
+    let text = block;
+    let options: TextBlock[] = [];
+    if (block.choice) {
+      // Les options d'un même choix forment une seule section, à la place de
+      // la première : son titre, son ancre, et le texte de l'option prise.
+      if (choicesSeen.has(block.choice.key)) continue;
+      choicesSeen.add(block.choice.key);
+      const key = block.choice.key;
+      options = props.blocks.filter((candidate) => candidate.choice?.key === key);
+      text = chosenAmong(options);
+    }
+    const paragraphs = paragraphsOf(text);
     // Un marqueur resté vide (la Torah de la semaine qui n'a pas pu se
     // charger) ou un bloc dont aucune ligne ne se dit aujourd'hui (les fêtes
-    // du Mé'ein chaloch) ne laisse pas un titre orphelin dans le fil.
-    .filter(({ block, paragraphs }) => block.zman || paragraphs.length > 0)
-    .map((entry, index) => ({ ...entry, index })),
-);
+    // du Mé'ein chaloch) ne laisse pas un titre orphelin dans le fil. Un
+    // choix reste, même vide : « pas de haftara » se choisit aussi.
+    if (!block.zman && options.length === 0 && paragraphs.length === 0) continue;
+    out.push({ block, text, options, paragraphs, index: out.length });
+  }
+  return out;
+});
 
 /**
  * La translittération, ligne par ligne, de ce qui se dit aujourd'hui : les
@@ -314,7 +395,7 @@ const phoneticOf = computed(() => {
 <template>
   <div class="reading-liturgy">
     <section
-      v-for="{ block, index, paragraphs } in sections"
+      v-for="{ block, text, options, index, paragraphs } in sections"
       :key="`${index}-${block.offset}`"
       :data-when="block.when"
       :data-fold="block.fold"
@@ -385,9 +466,36 @@ const phoneticOf = computed(() => {
           <!-- La halakha du passage (« en cas d'erreur, on reprend… »), dans la
                langue du lecteur, avant le texte qu'elle encadre : une simple
                ligne en petit, dans le registre des didascalies. -->
-          <p v-for="(halakha, h) in halakhotOf(block)" :key="h" class="reading-halakha">
+          <p v-for="(halakha, h) in halakhotOf(text)" :key="h" class="reading-halakha">
             {{ say(halakha) }}
           </p>
+          <!-- Un choix laissé au lecteur : les options, l'une prise, sous la
+               note qui dit qui lit quoi. Le texte de l'option prise suit. -->
+          <div
+            v-if="options.length > 0"
+            class="reading-choice"
+            role="group"
+            :aria-label="t('textReading.choice')"
+          >
+            <p class="reading-choice-label">{{ t("textReading.choice") }}</p>
+            <button
+              v-for="option in options"
+              :key="choiceOf(option).id"
+              type="button"
+              class="reading-choice-option"
+              :class="option === text ? 'text-primary' : 'text-text-secondary'"
+              :aria-pressed="option === text"
+              @click="choose(option)"
+            >
+              <AppIcon
+                name="check"
+                :size="15"
+                class="mt-0.5 shrink-0"
+                :class="option === text ? '' : 'opacity-0'"
+              />
+              <span>{{ say(choiceOf(option).label) }}</span>
+            </button>
+          </div>
           <template v-for="({ paragraph, line }, i) in paragraphs" :key="line">
             <div :class="block.numbered ? 'flex items-start gap-3 py-2' : ''">
               <span
@@ -435,7 +543,7 @@ const phoneticOf = computed(() => {
                     v-if="!showPhonetic"
                     dir="rtl"
                     class="reading-he"
-                    :class="paragraphTone(block, paragraph)"
+                    :class="paragraphTone(text, paragraph)"
                   >
                     <AppIcon
                       v-if="copy === 1 && isBookmarked(line)"
@@ -510,6 +618,46 @@ const phoneticOf = computed(() => {
   font-style: italic;
   line-height: 1.55;
   color: var(--color-text-secondary);
+}
+
+/* Le sélecteur d'un choix : une surface neutre à part du fil, une option par
+   ligne, cochée quand elle est prise. Des boutons, pas du texte à dire. */
+.reading-choice {
+  margin: 0.75rem 0 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-btn);
+  background-color: color-mix(in srgb, var(--color-text-primary) 4%, transparent);
+  font-family: var(--font-sans);
+}
+
+.reading-choice-label {
+  margin: 0.25rem 0 0.375rem;
+  font-size: calc(0.8rem * var(--reading-scale, 1));
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.reading-choice-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.375rem;
+  border-radius: var(--radius-control);
+  text-align: start;
+  font-size: calc(0.9rem * var(--reading-scale, 1));
+  font-weight: 600;
+  line-height: 1.4;
+  transition: background-color 0.2s ease;
+}
+
+.reading-choice-option:hover {
+  background-color: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+}
+
+.reading-choice-option:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* Didascalies : plus petites, en italique, distinctes du texte qui se dit. */

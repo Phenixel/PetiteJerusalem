@@ -1107,6 +1107,8 @@ const en: LocaleMessages = {
     bookmarks: "Bookmarks",
     bookmarkAdd: "Add a bookmark",
     bookmarkRemove: "Remove bookmark",
+    // A choice left to the reader (the haftarah at Mincha of a fast).
+    choice: "According to your community's custom",
     // Tefilot (Siddur, Selichot): section navigation menu.
     navMenu: "Reading menu",
     navSections: "Sections",
