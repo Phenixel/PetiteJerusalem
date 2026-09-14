@@ -394,9 +394,6 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
     // jour s'affiche.
     occ.add(said.shacharit ? "tahanoun" : "sans-tahanoun");
     occ.add(said.mincha ? "tahanoun-minha" : "sans-tahanoun-minha");
-    // Les supplications longues du lundi et du jeudi accompagnent le
-    // tahanoun : elles tombent avec lui.
-    if (said.shacharit && (hd.getDay() === 1 || hd.getDay() === 4)) occ.add("tahanoun-lundi-jeudi");
   }
   // La lecture de la Torah des lundis et jeudis ordinaires : le début de la
   // paracha de la semaine. Les jours à lecture propre (Roch Hodech, 'Hanouka,
@@ -431,6 +428,20 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
     (ev) => ev.basename() === "Tish'a B'Av" && (ev.getFlags() & flags.EREV) === 0,
   );
   occ.add(tishaBeav ? "tisha-beav" : "sans-tisha-beav");
+  // Les quatre jeûnes que le sidour accompagne de leurs sli'hot : Guedalia,
+  // 10 Tévet, Esther, 17 Tamouz. Le matin, elles prennent la place du
+  // tahanoun ordinaire (vidouy, nefilat apayim, et les supplications du
+  // lundi et du jeudi, qu'elles contiennent). Tich'a beAv reste à part : il
+  // a ses kinot, non ces sli'hot, et n'a pas de tahanoun du tout.
+  const selihotTsom = publicFast && !tishaBeav;
+  if (selihotTsom) occ.add("selihot-tsom");
+  // Le tahanoun ordinaire, celui de tous les jours : le tahanoun se dit et
+  // aucune sli'ha ne le remplace. Les supplications longues du lundi et du
+  // jeudi l'accompagnent : elles tombent avec lui.
+  if (occ.has("tahanoun") && !selihotTsom) {
+    occ.add("tahanoun-ordinaire");
+    if (hd.getDay() === 1 || hd.getDay() === 4) occ.add("tahanoun-lundi-jeudi");
+  }
 
   // Les psaumes qui s'ajoutent au chir chel yom certains jours de l'année.
   // Ils ne prennent pas la place de celui du jour : l'usage séfarade dit les
@@ -447,6 +458,26 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // est déjà hors de `publicFast` : il a son propre office.
   if (jeuneDe(months.TISHREI) || jeuneDe(months.TEVET)) occ.add("chir-tsom-tichri");
   if (jeuneDe(months.TAMUZ)) occ.add("chir-tsom-tamouz");
+  // Le jeûne du jour, nommé : chacun des quatre a ses propres sli'hot, sa
+  // propre nefilat apayim, et le jeûne de Guedalia sa haftara à Min'ha.
+  if (selihotTsom) {
+    if (mois === months.TISHREI) occ.add("tsom-guedalia");
+    if (mois === months.TEVET) occ.add("tsom-tevet");
+    if (mois === months.ADAR_I || mois === months.ADAR_II) occ.add("tsom-esther");
+    if (mois === months.TAMUZ) occ.add("tsom-tamouz");
+  }
+  // La Min'ha d'un jeûne change quand le soir qui vient est Pourim ou
+  // Chabbat : le jeûne d'Esther tenu la veille de Pourim (le 13 Adar, quand
+  // il n'est pas avancé au jeudi), et le 10 Tévet tombé un vendredi. Ces
+  // deux Min'ha n'ont pas de tahanoun, disent « Yehi Adonaï » plutôt que
+  // « El erekh apayim » avant la Torah, et changent de psaumes. Les autres
+  // Min'ha de jeûne sont « entières » : psaume 20 en rangeant le séfer,
+  // psaume 102 après le Kaddich.
+  const tsomEstherVeille = occ.has("tsom-esther") && hd.getDate() === 13;
+  const tsomVendredi = publicFast && hd.getDay() === 5;
+  if (tsomEstherVeille) occ.add("tsom-esther-veille");
+  if (tsomVendredi) occ.add("tsom-vendredi");
+  if (publicFast && !tsomEstherVeille && !tsomVendredi) occ.add("tsom-minha");
   if (mois === months.TISHREI && hd.getDate() === 11) occ.add("chir-lendemain-kippour");
   const ownReading =
     occ.has("rosh-chodesh") || occ.has("nissim") || publicFast || has(flags.CHOL_HAMOED);
