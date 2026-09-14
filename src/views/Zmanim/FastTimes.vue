@@ -1,7 +1,10 @@
 <script setup lang="ts">
 // Début et fin d'un jeûne public : le 10 Tévet, Esther, le 17 Tamouz, celui
 // de Guedalia commencent à l'aube ; Tich'a beAv, comme Kippour, la veille au
-// coucher du soleil. Tous finissent à la sortie des étoiles.
+// coucher du soleil. Tous finissent à la nuit, mais pas à l'heure où sort le
+// Chabbat : celui-ci attend une marge qu'un jeûne n'a pas à attendre (voir
+// zmanimOpinions), et la note le dit, sans quoi le cadre afficherait une
+// heure et la phrase en annoncerait une autre.
 //
 // Encadré comme le repos (voir RestTimes) : ce n'est pas un moment de la
 // journée mais un rendez-vous, et il s'annonce dès la veille, quand on
@@ -23,8 +26,17 @@ const { t, locale } = useI18n();
 const clock = (date: Date) => formatZmanTime(date, props.tzid, locale.value);
 const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
 
+/** Comment la fin est comptée : trois étoiles moyennes, ou minutes fixes. */
+const endRule = computed(() =>
+  props.fast.endMinutes === null
+    ? t("zmanim.fast.endStars")
+    : t("zmanim.fast.endAfterSunset", { minutes: props.fast.endMinutes }),
+);
+
 /** Comment les heures sont comptées : à l'aube, ou dès la veille au soir. */
-const note = computed(() => t(props.fast.fromEve ? "zmanim.fast.noteEve" : "zmanim.fast.noteDawn"));
+const note = computed(() =>
+  t(props.fast.fromEve ? "zmanim.fast.noteEve" : "zmanim.fast.noteDawn", { end: endRule.value }),
+);
 </script>
 
 <template>

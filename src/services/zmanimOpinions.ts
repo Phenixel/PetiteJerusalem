@@ -28,10 +28,17 @@ import { devicePreference } from "./devicePreference";
  * fin du Chéma et de la Amida selon le Gaon de Vilna, min'ha ketana) ne sont
  * pas repris ici : `zmanimService` les lit directement de hebcal.
  *
+ * Trois sorties, et non une seule : la sortie des étoiles ordinaire, celle du
+ * Chabbat et celle des jeûnes ne tombent pas ensemble. Le Chabbat se relâche
+ * tard, on ne joue pas avec un interdit de la Torah ; un jeûne, lui, finit à
+ * la nuit sans cette marge. Chaque opinion donne donc ses trois heures, et
+ * confondre les deux dernières fait attendre dix minutes de trop à jeun.
+ *
  * Sources des paramètres de l'opinion du Rav Ovadia Yossef : le calendrier
  * `Rabbi Ovadiah Yosef Calendar` d'Elyahu Jacobi (MIT), écrit avec le Rav
  * Benizri, auteur du luah Or Ha'Haïm, qui documente chaque zman ; pour la
- * sortie du Chabbat, les 40 minutes fixes que ce même calendrier retient.
+ * sortie du Chabbat, les 40 minutes fixes que ce même calendrier retient, et
+ * pour la fin des jeûnes les 20 minutes fixes qu'il donne (« Tzeit Taanit »).
  */
 
 export type ZmanimOpinion = "posen" | "ovadia";
@@ -89,12 +96,26 @@ export interface OpinionZmanim {
    */
   restEnd(z: Zmanim): Date;
   /**
+   * Fin des jeûnes publics, qui ne se lit sur aucune des deux autres : la
+   * sortie du Chabbat attend une marge qu'un jeûne n'a pas à attendre, et la
+   * sortie des étoiles ordinaire ne clôt pas un jeûne. Voir les notes de
+   * `POSEN` et de `OVADIA`.
+   */
+  fastEnd(z: Zmanim): Date;
+  /**
    * Comment la sortie du repos se compte, pour la note qui l'explique sous le
    * cadre : null quand c'est la sortie des étoiles, un nombre de minutes
    * fixes après la chkia sinon. Sans cela, la note annoncerait une règle et
    * le cadre afficherait l'heure d'une autre.
    */
   restEndMinutes: number | null;
+  /**
+   * Comment la fin des jeûnes se compte, pour la note qui l'explique sous le
+   * cadre : null quand ce sont les trois étoiles moyennes, un nombre de
+   * minutes fixes après la chkia sinon. Même raison que `restEndMinutes` : la
+   * note dirait une règle et le cadre afficherait l'heure d'une autre.
+   */
+  fastEndMinutes: number | null;
   /** Rabbénou Tam se compte-t-il en minutes zmaniyot plutôt que fixes ? */
   rabbenouTamZmaniyot: boolean;
 }
@@ -113,11 +134,25 @@ const POSEN: OpinionZmanim = {
   rabbenouTam: (z) => z.sunsetOffset(RABBENOU_TAM_MINUTES, true),
   restEnd: (z) => z.tzeit(),
   restEndMinutes: null,
+  fastEnd: (z) => z.tzeit(POSEN_FAST_END_DEGREES),
+  fastEndMinutes: null,
   rabbenouTamZmaniyot: false,
 };
 
 /** Minutes après la chkia de la sortie selon Rabbénou Tam, en minutes fixes. */
 const RABBENOU_TAM_MINUTES = 72;
+
+/**
+ * Degrés du soleil sous l'horizon à la fin des jeûnes : trois étoiles
+ * MOYENNES, là où la sortie du Chabbat en attend trois petites (8,5°).
+ *
+ * Le Choulhan Aroukh fait attendre les trois petites étoiles pour relâcher le
+ * Chabbat, faute de savoir reconnaître les moyennes à coup sûr ; pour un jeûne,
+ * qui n'est pas un interdit de la Torah, les trois moyennes suffisent. C'est
+ * l'heure que donnent les calendriers, une dizaine de minutes plus tôt sous
+ * nos latitudes : dix minutes à jeun pour rien, sinon.
+ */
+const POSEN_FAST_END_DEGREES = 7.083;
 
 // ---- Rav Ovadia Yossef : les minutes zmaniyot ----------------------------
 
@@ -154,6 +189,15 @@ const OVADIA_MINCHA_GEDOLA_MINUTES = 30;
  * et c'est elle que le cadre du repos affiche.
  */
 const OVADIA_REST_END_MINUTES = 40;
+/**
+ * Minutes FIXES après la chkia de la fin des jeûnes publics.
+ *
+ * Même raison qu'au-dessus, dans l'autre sens : la sortie des étoiles de cette
+ * opinion est trop tôt pour clore un jeûne, et les 40 minutes du Chabbat trop
+ * tard. Le luah Or Ha'Haïm en donne vingt, fixes, et c'est cette heure-là que
+ * le cadre du jeûne affiche.
+ */
+const OVADIA_FAST_END_MINUTES = 20;
 
 const OVADIA: OpinionZmanim = {
   alotHaShachar: (z) => fromSunrise(z, -OVADIA_ALOT_MINUTES),
@@ -176,6 +220,8 @@ const OVADIA: OpinionZmanim = {
   rabbenouTam: (z) => fromSunset(z, OVADIA_ALOT_MINUTES),
   restEnd: (z) => new Date(z.sunset().getTime() + OVADIA_REST_END_MINUTES * 60_000),
   restEndMinutes: OVADIA_REST_END_MINUTES,
+  fastEnd: (z) => new Date(z.sunset().getTime() + OVADIA_FAST_END_MINUTES * 60_000),
+  fastEndMinutes: OVADIA_FAST_END_MINUTES,
   rabbenouTamZmaniyot: true,
 };
 

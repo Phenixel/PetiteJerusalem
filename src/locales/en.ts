@@ -492,8 +492,11 @@ const en: LocaleMessages = {
     fast: {
       start: "Fast begins",
       end: "Fast ends",
-      noteDawn: "The fast begins at dawn (alot hashachar) and ends at nightfall.",
-      noteEve: "The fast begins at sunset the evening before and ends at nightfall.",
+      endStars:
+        "when three medium-sized stars are out, earlier than the end of Shabbat, which waits for three small ones",
+      endAfterSunset: "{minutes} minutes after sunset, earlier than the end of Shabbat",
+      noteDawn: "The fast begins at dawn (alot hashachar) and ends {end}.",
+      noteEve: "The fast begins at sunset the evening before and ends {end}.",
     },
     periods: {
       dawn: "Dawn and sunrise",
@@ -554,7 +557,7 @@ const en: LocaleMessages = {
       minchaKetana: "Preferred time for Mincha",
       plagHaMincha: "Cutoff for an early Arvit",
       sunset: "Sunset: the day ends",
-      tzeit: "Nightfall: Arvit, end of Shabbat and fasts",
+      tzeit: "Nightfall: Arvit and the end of Shabbat",
       chatzotNight: "Middle of the coming night",
     },
     /* Zmanim reminders (native app): set by tapping a time in the list,

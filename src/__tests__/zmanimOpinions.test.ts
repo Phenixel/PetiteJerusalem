@@ -56,6 +56,16 @@ describe("opinion par défaut", () => {
       expect(Math.round(minutesBetween(season.sunset(), posen.rabbenouTam(season)))).toBe(72);
     }
   });
+
+  it("finit les jeûnes à trois étoiles moyennes, avant la sortie du Chabbat", () => {
+    const z = zmanimAt(new Date(2027, 2, 21, 12));
+    const posen = opinionZmanim("posen");
+
+    expect(posen.fastEnd(z).getTime()).toBe(z.tzeit(7.083).getTime());
+    // La marge du Chabbat, celle qui faisait attendre dix minutes de trop.
+    expect(posen.fastEnd(z).getTime()).toBeLessThan(posen.restEnd(z).getTime());
+    expect(minutesBetween(posen.fastEnd(z), posen.tzeit(z))).toBeGreaterThan(4);
+  });
 });
 
 describe("opinion du Rav Ovadia Yossef", () => {
@@ -107,6 +117,17 @@ describe("opinion du Rav Ovadia Yossef", () => {
     expect(minutesBetween(z.sunset(), ovadia.restEnd(z))).toBe(40);
     expect(ovadia.restEnd(z).getTime()).toBeGreaterThan(ovadia.tzeit(z).getTime());
   });
+
+  it("finit les jeûnes vingt minutes fixes après la chkia, entre les deux", () => {
+    // Le luah Or Ha'Haïm donne une troisième heure : ni la sortie des étoiles,
+    // trop tôt pour un jeûne, ni les quarante minutes du Chabbat, trop tard.
+    for (const day of [new Date(2027, 2, 21, 12), new Date(2027, 5, 21, 12)]) {
+      const z = zmanimAt(day);
+      expect(minutesBetween(z.sunset(), ovadia.fastEnd(z))).toBe(20);
+      expect(ovadia.fastEnd(z).getTime()).toBeGreaterThan(ovadia.tzeit(z).getTime());
+      expect(ovadia.fastEnd(z).getTime()).toBeLessThan(ovadia.restEnd(z).getTime());
+    }
+  });
 });
 
 describe("ce que la note annonce", () => {
@@ -126,6 +147,21 @@ describe("ce que la note annonce", () => {
     } else {
       expect(afterSunset).toBeCloseTo(rules.restEndMinutes, 5);
     }
+  });
+
+  it.each(["posen", "ovadia"] as const)("décrit la fin des jeûnes qu'elle calcule (%s)", (name) => {
+    const rules = opinionZmanim(name);
+    const z = zmanimAt(new Date(2027, 2, 21, 12));
+
+    if (rules.fastEndMinutes === null) {
+      // La note dit « trois étoiles moyennes » : plus tôt que les trois
+      // petites de la sortie du Chabbat, jamais après.
+      expect(rules.fastEnd(z).getTime()).toBeLessThan(rules.tzeit(z).getTime());
+    } else {
+      expect(minutesBetween(z.sunset(), rules.fastEnd(z))).toBeCloseTo(rules.fastEndMinutes, 5);
+    }
+    // Dans les deux cas, un jeûne ne dure jamais plus longtemps que le repos.
+    expect(rules.fastEnd(z).getTime()).toBeLessThan(rules.restEnd(z).getTime());
   });
 
   it.each(["posen", "ovadia"] as const)("dit juste des minutes de Rabbénou Tam (%s)", (name) => {

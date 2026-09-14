@@ -787,8 +787,19 @@ export interface FastPeriod {
    * la veille pour Tich'a beAv, qui dure de soir à soir comme Kippour.
    */
   start: Date;
-  /** Fin : la sortie des étoiles, telle que l'opinion suivie la donne. */
+  /**
+   * Fin : la nuit, telle que l'opinion suivie la compte POUR UN JEÛNE, ce qui
+   * n'est ni la sortie des étoiles ordinaire ni celle du Chabbat (voir
+   * OpinionZmanim.fastEnd). Sous nos latitudes, une dizaine de minutes plus
+   * tôt que la sortie du Chabbat.
+   */
   end: Date;
+  /**
+   * Comment cette fin se compte, pour la note sous le cadre : null quand ce
+   * sont les trois étoiles moyennes, un nombre de minutes fixes après la chkia
+   * sinon (voir OpinionZmanim.fastEndMinutes).
+   */
+  endMinutes: number | null;
   /** Le jeûne commence la veille au soir (Tich'a beAv), non à l'aube. */
   fromEve: boolean;
 }
@@ -824,9 +835,16 @@ export function fastAt(place: ZmanimPlace, hd: HDate, locale: string): FastPerio
   } else {
     start = opinion.alotHaShachar(fastDay);
   }
-  const end = opinion.tzeit(fastDay);
+  const end = opinion.fastEnd(fastDay);
   if (!isUsable(start) || !isUsable(end)) return null;
-  return { name: event.render(hebcalLocale(locale)), day: hd, start, end, fromEve };
+  return {
+    name: event.render(hebcalLocale(locale)),
+    day: hd,
+    start,
+    end,
+    endMinutes: opinion.fastEndMinutes,
+    fromEve,
+  };
 }
 
 /**

@@ -507,10 +507,12 @@ const fr = {
     fast: {
       start: "Début du jeûne",
       end: "Fin du jeûne",
-      noteDawn:
-        "Le jeûne commence à l'aube (alot haCha'har) et se termine à la sortie des étoiles.",
-      noteEve:
-        "Le jeûne commence la veille au coucher du soleil et se termine à la sortie des étoiles.",
+      endStars:
+        "à la sortie de trois étoiles moyennes, plus tôt que la sortie du Chabbat, qui en attend trois petites",
+      endAfterSunset:
+        "{minutes} minutes après le coucher du soleil, plus tôt que la sortie du Chabbat",
+      noteDawn: "Le jeûne commence à l'aube (alot haCha'har) et se termine {end}.",
+      noteEve: "Le jeûne commence la veille au coucher du soleil et se termine {end}.",
     },
     periods: {
       dawn: "Aube et lever",
@@ -572,7 +574,7 @@ const fr = {
       minchaKetana: "Moment privilégié pour Min'ha",
       plagHaMincha: "Limite pour anticiper Arvit",
       sunset: "Coucher du soleil : fin du jour",
-      tzeit: "Nuit : Arvit, fin de Chabbat et des jeûnes",
+      tzeit: "Nuit : Arvit et sortie de Chabbat",
       chatzotNight: "Milieu de la nuit qui vient",
     },
     /* L'avis suivi pour le calcul des horaires (voir services/zmanimOpinions) :
@@ -587,12 +589,12 @@ const fr = {
       posen: {
         name: "Rav Meïr Posen (Ohr Meïr)",
         short: "Rav Posen",
-        hint: "Le calcul par degrés du soleil sous l'horizon, celui des calendriers d'Europe : aube à 16,1°, talith à 11,5°, sortie des étoiles à 8,5°, Rabbénou Tam 72 minutes après la chkia.",
+        hint: "Le calcul par degrés du soleil sous l'horizon, celui des calendriers d'Europe : aube à 16,1°, talith à 11,5°, sortie des étoiles à 8,5°, fin des jeûnes à 7,08°, Rabbénou Tam 72 minutes après la chkia.",
       },
       ovadia: {
         name: "Rav Ovadia Yossef (Or Ha'Haïm)",
         short: "Rav Ovadia",
-        hint: "Le calcul en minutes zmaniyot, proportionnelles à la longueur du jour : aube 72 minutes avant le lever, sortie des étoiles 13,5 minutes après la chkia, sortie du Chabbat 40 minutes.",
+        hint: "Le calcul en minutes zmaniyot, proportionnelles à la longueur du jour : aube 72 minutes avant le lever, sortie des étoiles 13,5 minutes après la chkia, fin des jeûnes 20 minutes, sortie du Chabbat 40 minutes.",
       },
     },
     /* Les hiloulot du jour, au bas de la page (voir services/hiloulot). */

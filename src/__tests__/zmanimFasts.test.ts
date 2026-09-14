@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect } from "vitest";
 import { HDate } from "@hebcal/core";
 import {
   DEFAULT_PLACE,
@@ -6,8 +6,12 @@ import {
   fastNear,
   formatZmanDay,
   formatZmanTime,
+  nightfallOf,
+  restPeriodAt,
+  setZmanimOpinion,
   type ZmanimPlace,
 } from "../services/zmanimService";
+import { DEFAULT_ZMANIM_OPINION } from "../services/zmanimOpinions";
 
 // Les jeûnes publics sur la page des horaires : leurs heures, en cadre dès
 // la veille (voir FastTimes.vue).
@@ -24,6 +28,8 @@ const hd = (y: number, m: number, d: number) => new HDate(new Date(y, m - 1, d, 
 const at = (place: ZmanimPlace, date: Date) => formatZmanTime(date, place.tzid, "fr");
 const on = (place: ZmanimPlace, date: Date) => formatZmanDay(date, place.tzid, "fr");
 
+afterEach(() => setZmanimOpinion(DEFAULT_ZMANIM_OPINION));
+
 describe("fastAt", () => {
   it("donne un petit jeûne de l'aube à la sortie des étoiles", () => {
     // 14 septembre 2026 = 3 Tichri 5787, Tzom Guedalia.
@@ -32,9 +38,38 @@ describe("fastAt", () => {
     expect(fast.fromEve).toBe(false);
     expect(on(DEFAULT_PLACE, fast.start)).toBe("lundi 14 septembre");
     expect(on(DEFAULT_PLACE, fast.end)).toBe("lundi 14 septembre");
-    // Aube à 16,1° (Rav Posen), sortie des étoiles à 8,5°.
+    // Aube à 16,1° (Rav Posen), fin du jeûne à 7,08° : trois étoiles
+    // MOYENNES, quand la sortie du Chabbat en attend trois petites (8,5°).
     expect(at(DEFAULT_PLACE, fast.start)).toBe("05:48");
-    expect(at(DEFAULT_PLACE, fast.end)).toBe("20:53");
+    expect(at(DEFAULT_PLACE, fast.end)).toBe("20:44");
+    expect(fast.endMinutes).toBeNull();
+  });
+
+  it("finit le jeûne avant la sortie des étoiles, sans la marge du Chabbat", () => {
+    // C'est là qu'était l'erreur : le jeûne se terminait à l'heure du Chabbat,
+    // une dizaine de minutes trop tard pour qui le lisait pour manger.
+    const fast = fastAt(DEFAULT_PLACE, hd(2026, 9, 14), "fr")!;
+    const tzeit = nightfallOf(DEFAULT_PLACE, hd(2026, 9, 14))!;
+    const gap = (tzeit.getTime() - fast.end.getTime()) / 60_000;
+
+    expect(gap).toBeGreaterThan(5);
+    expect(gap).toBeLessThan(20);
+  });
+
+  it("suit l'avis choisi : vingt minutes fixes chez le Rav Ovadia", () => {
+    setZmanimOpinion("ovadia");
+    const fast = fastAt(DEFAULT_PLACE, hd(2026, 9, 14), "fr")!;
+    // La chkia est à 20:05 ce jour-là à Paris.
+    expect(at(DEFAULT_PLACE, fast.end)).toBe("20:25");
+    expect(fast.endMinutes).toBe(20);
+  });
+
+  it("laisse la sortie de Kippour où elle était", () => {
+    // Kippour est un Yom Tov autant qu'un jeûne : il sort comme le Chabbat, à
+    // la sortie des étoiles, et la fin des jeûnes ne doit pas l'avoir avancé.
+    // 21 septembre 2026 = 10 Tichri 5787.
+    const kippour = restPeriodAt(DEFAULT_PLACE, hd(2026, 9, 21), "fr")!;
+    expect(kippour.end.getTime()).toBe(nightfallOf(DEFAULT_PLACE, hd(2026, 9, 21))!.getTime());
   });
 
   it("fait commencer Tich'a beAv la veille au coucher du soleil", () => {
