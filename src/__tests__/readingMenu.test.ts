@@ -23,7 +23,6 @@ import fr from "../locales/fr";
 import ReadingMenu from "../components/ReadingMenu.vue";
 import { useReadingSize } from "../composables/useReadingSize";
 import { addMirrorOffer, removeMirrorOffer } from "../composables/useTefilinMirror";
-import { addKlafOffer, removeKlafOffer } from "../composables/useKlaf";
 
 const SECTIONS = [
   { anchor: "b0", offset: 0, label: "Bénédictions du matin", hebrew: "ברכות השחר" },
@@ -92,20 +91,6 @@ describe("menu de lecture", () => {
     const avecMiroir = await ouvre();
     expect(avecMiroir.host.textContent).toContain(fr.textReading.mirror.title);
     removeMirrorOffer();
-  });
-
-  it("n'offre un parchemin que devant le texte qui le porte", async () => {
-    // Le pitoum haketoret et le Lamnatséa'h ont chacun le leur : le menu
-    // propose ceux que la page lue porte, et rien devant une guemara.
-    const sansKlaf = await ouvre();
-    expect(sansKlaf.host.textContent).not.toContain(fr.textReading.klaf.ketoret.title);
-    expect(sansKlaf.host.textContent).not.toContain(fr.textReading.klaf.menora.title);
-
-    addKlafOffer("menora");
-    const avecMenora = await ouvre();
-    expect(avecMenora.host.textContent).toContain(fr.textReading.klaf.menora.title);
-    expect(avecMenora.host.textContent).not.toContain(fr.textReading.klaf.ketoret.title);
-    removeKlafOffer("menora");
   });
 
   it("grandit avec la taille de lecture, sans la suivre pas à pas", async () => {

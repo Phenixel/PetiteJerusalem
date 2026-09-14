@@ -7,7 +7,7 @@ import { KETORET_KLAF, KLAF_PHOTOS, MENORA_KLAF, MENORA_STEM } from "../content/
 import { closeKlaf, klafOpen, KLAF_LABELS } from "../composables/useKlaf";
 
 /**
- * Le parchemin, ouvert depuis le fil du sidour ou le menu de lecture : la
+ * Le parchemin, ouvert depuis le paragraphe du sidour qui le porte : la
  * photo du klaf d'abord, telle qu'un sofer l'a écrit, puis, sur un second
  * onglet, sa retranscription dans la police hébraïque du lecteur.
  *

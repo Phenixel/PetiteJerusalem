@@ -375,9 +375,9 @@ haketoret, que beaucoup lisent sur un klaf écrit par un sofer, et le psaume
 laquelle il est écrit. L'app ne les redessine pas dans le fil : elle pose, au
 paragraphe où ils se disent, une petite commande ronde (`.reading-klaf`,
 dans `LiturgyText.vue`), une pastille à la couleur du thème, à la taille des
-didascalies, qui ouvre une fenêtre (`KlafViewer.vue`). Le menu de lecture
-l'offre aussi, comme la boussole et le miroir : une fois dans la prière, le
-paragraphe est loin.
+didascalies, qui ouvre une fenêtre (`KlafViewer.vue`). C'est la seule porte :
+à la différence de la boussole et du miroir, le menu de lecture ne propose pas
+les parchemins, on les ouvre à l'endroit où on les lit.
 
 La fenêtre montre d'abord la photo du parchemin, telle quelle
 (`public/klaf/`), qu'un toucher agrandit au double ; un second onglet en donne

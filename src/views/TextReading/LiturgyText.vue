@@ -1,13 +1,7 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import type {
-  KlafKind,
-  Rubric,
-  TextBlock,
-  TextParagraph,
-  TextRun,
-} from "../../services/textService";
+import type { Rubric, TextBlock, TextParagraph, TextRun } from "../../services/textService";
 import { saidOn } from "../../services/textService";
 import { transliterate } from "../../services/hebrewTransliteration";
 import type { SupportedLocale } from "../../i18n";
@@ -16,13 +10,7 @@ import CollapseTransition from "../../components/CollapseTransition.vue";
 import KlafViewer from "../../components/KlafViewer.vue";
 import KotelCompass from "../../components/KotelCompass.vue";
 import TefilinMirror from "../../components/TefilinMirror.vue";
-import {
-  addKlafOffer,
-  KLAF_ICONS,
-  KLAF_LABELS,
-  openKlaf,
-  removeKlafOffer,
-} from "../../composables/useKlaf";
+import { KLAF_ICONS, KLAF_LABELS, openKlaf } from "../../composables/useKlaf";
 import {
   addKotelOffer,
   openKotelCompass,
@@ -275,28 +263,14 @@ watch(offersMirror, syncMirrorOffer, { immediate: true });
 onUnmounted(() => syncMirrorOffer(false));
 
 /**
- * Les parchemins, sur le même modèle : le paragraphe d'où l'on dit le pitoum
- * haketoret ou le Lamnatséa'h porte la commande qui ouvre le sien, et le texte
- * qui en porte un le signale au menu de lecture. Une seule fenêtre pour la
- * page, qui montre le parchemin demandé.
+ * Les parchemins : le paragraphe d'où l'on dit le pitoum haketoret ou le
+ * Lamnatséa'h porte la commande qui ouvre le sien, et c'est la seule porte
+ * (le menu de lecture ne les propose pas). Une seule fenêtre pour la page,
+ * qui montre le parchemin demandé, montée seulement si la page en porte un.
  */
-const offersKlaf = computed<KlafKind[]>(() => {
-  const kinds = new Set<KlafKind>();
-  for (const block of props.blocks) {
-    for (const paragraph of block.paragraphs ?? []) {
-      if (paragraph.klaf) kinds.add(paragraph.klaf);
-    }
-  }
-  return [...kinds];
-});
-let offeringKlaf: KlafKind[] = [];
-function syncKlafOffers(kinds: KlafKind[]): void {
-  for (const kind of offeringKlaf) if (!kinds.includes(kind)) removeKlafOffer(kind);
-  for (const kind of kinds) if (!offeringKlaf.includes(kind)) addKlafOffer(kind);
-  offeringKlaf = kinds;
-}
-watch(offersKlaf, syncKlafOffers, { immediate: true });
-onUnmounted(() => syncKlafOffers([]));
+const offersKlaf = computed(() =>
+  props.blocks.some((block) => (block.paragraphs ?? []).some((paragraph) => paragraph.klaf)),
+);
 
 const sections = computed(() =>
   props.blocks
@@ -437,7 +411,7 @@ const phoneticOf = computed(() => {
                   v-if="paragraph.klaf"
                   type="button"
                   class="reading-klaf"
-                  @click.stop="openKlaf(paragraph.klaf, 'text')"
+                  @click.stop="openKlaf(paragraph.klaf)"
                 >
                   <AppIcon :name="KLAF_ICONS[paragraph.klaf]" :size="14" />
                   {{ t(KLAF_LABELS[paragraph.klaf].open) }}
@@ -502,7 +476,7 @@ const phoneticOf = computed(() => {
 
     <KotelCompass v-if="offersKotel" />
     <TefilinMirror v-if="offersMirror" />
-    <KlafViewer v-if="offersKlaf.length > 0" />
+    <KlafViewer v-if="offersKlaf" />
   </div>
 </template>
 

@@ -19,7 +19,7 @@ vi.mock("../services/analyticsService", () => ({
 import fr from "../locales/fr";
 import LiturgyText from "../views/TextReading/LiturgyText.vue";
 import { parseTefilaBlocks } from "../services/textService";
-import { closeKlaf, klafOffered, klafOpen } from "../composables/useKlaf";
+import { closeKlaf, klafOpen } from "../composables/useKlaf";
 import { MENORA_KLAF } from "../content/klaf";
 
 const AVEC_KLAF = parseTefilaBlocks([
@@ -72,10 +72,7 @@ describe("le parchemin dans le fil du sidour", () => {
       fr.textReading.klaf.ketoret.open,
       fr.textReading.klaf.menora.open,
     ]);
-    // Le menu de lecture saura les proposer, dans l'ordre des parchemins.
-    expect(klafOffered.value).toEqual(["ketoret", "menora"]);
     app.unmount();
-    expect(klafOffered.value).toEqual([]);
   });
 
   it("ne monte pas la fenêtre devant un texte sans parchemin", () => {
