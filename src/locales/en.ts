@@ -1113,6 +1113,18 @@ const en: LocaleMessages = {
     navMenu: "Reading menu",
     navSections: "Sections",
     navTop: "Top of page",
+    // Reading settings, inside the menu: the second round button, to the
+    // right of the cross, switches the panel from the contents to the settings.
+    settings: {
+      open: "Reading settings",
+      backToMenu: "Back to the contents",
+      title: "Settings",
+      autoScroll: "Automatic scrolling",
+      autoScrollHint: "A double tap on the text makes it scroll on its own.",
+      sansTahanoun: "No Tachanun today",
+      sansTahanounHint:
+        "Brit mila, bar mitzvah, wedding, house of mourning: what is not said on such a day is removed from the text until tomorrow.",
+    },
     labels: {
       chapter: "Chapter {n}",
       daf: "Daf {daf}",

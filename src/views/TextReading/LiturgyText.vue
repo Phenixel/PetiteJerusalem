@@ -53,17 +53,17 @@ const props = withDefaults(
      * semaines, le temps que le pli se prenne, il prend la couleur du thème.
      */
     recentChanges: Set<string>;
-    highlightedLine: number | null;
-    selectedLine: number | null;
-    isBookmarked: (line: number) => boolean;
     /**
      * Le texte que la page fait lire : ses paragraphes portent les ancres par
-     * lesquelles on le retrouve (`data-line` pour un marque-page ou la reprise
-     * de lecture, `data-block-anchor` pour le menu de lecture). Les passages qui
+     * lesquelles on le retrouve (`data-line` pour la position de lecture,
+     * `data-block-anchor` pour le menu de lecture). Les passages qui
      * accompagnent une lecture sans en faire partie, ce qu'on dit avant les
      * Tehilim et après, les posent à `false` : sans quoi leur première ligne
      * répondrait à la place du premier verset, ces ancres étant cherchées dans
      * toute la page.
+     *
+     * Pas de marque-page ici, ni de verset sélectionné : une tefila se lit du
+     * début, on n'y revient pas à un paragraphe comme à un verset de Tehilim.
      */
     anchored?: boolean;
   }>(),
@@ -76,11 +76,6 @@ const props = withDefaults(
     anchored: true,
   },
 );
-
-const emit = defineEmits<{
-  (e: "select", line: number): void;
-  (e: "toggle-bookmark", line: number): void;
-}>();
 
 const { t, locale } = useI18n();
 
@@ -533,11 +528,7 @@ const phoneticOf = computed(() => {
                     'reading-lead': paragraph.lead,
                     'reading-tight': paragraph.tight,
                     'reading-echo': copy > 1,
-                    'bg-primary/10': highlightedLine === line,
-                    'bg-black/5 dark:bg-white/10':
-                      selectedLine === line && highlightedLine !== line,
                   }"
-                  @click="emit('select', line)"
                 >
                   <p
                     v-if="!showPhonetic"
@@ -545,12 +536,6 @@ const phoneticOf = computed(() => {
                     class="reading-he"
                     :class="paragraphTone(text, paragraph)"
                   >
-                    <AppIcon
-                      v-if="copy === 1 && isBookmarked(line)"
-                      name="bookmark"
-                      :size="13"
-                      class="text-primary me-1"
-                    />
                     <template v-for="(run, r) in visibleRuns(paragraph)" :key="r">
                       <span v-if="run.kind === 'rubric'" class="reading-rubric-inline">{{
                         say(run.rubric)
@@ -561,19 +546,6 @@ const phoneticOf = computed(() => {
                   <p v-else dir="ltr" class="reading-tl">
                     {{ phoneticOf.get(line) }}
                   </p>
-                </div>
-                <div v-if="selectedLine === line" class="flex justify-end mt-2">
-                  <button
-                    class="btn btn-soft !px-3 !py-1.5 text-sm"
-                    @click.stop="emit('toggle-bookmark', line)"
-                  >
-                    <AppIcon name="bookmark" :size="13" />
-                    {{
-                      isBookmarked(line)
-                        ? t("textReading.bookmarkRemove")
-                        : t("textReading.bookmarkAdd")
-                    }}
-                  </button>
                 </div>
               </div>
             </div>

@@ -52,9 +52,6 @@ function rendu(locale: SupportedLocale, occasions: Set<string>): string {
         showPhonetic: false,
         occasions,
         recentChanges: new Set<string>(),
-        highlightedLine: null,
-        selectedLine: null,
-        isBookmarked: () => false,
       }),
   });
   app.use(i18n);

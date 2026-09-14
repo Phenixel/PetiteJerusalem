@@ -96,9 +96,6 @@ describe("texte que la page fait lire", () => {
           showPhonetic: false,
           occasions: new Set<string>(),
           recentChanges: new Set<string>(),
-          highlightedLine: null,
-          selectedLine: null,
-          isBookmarked: () => false,
         }),
     });
     app.use(i18n);

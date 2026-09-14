@@ -51,3 +51,31 @@ export function saidTachanun(hd: HDate, il: boolean): TachanunSaid {
   }
   return { shacharit: said.shacharit, mincha: said.mincha };
 }
+
+/**
+ * Les clés d'occasion qui disent « le tahanoun se dit » (voir
+ * dailyCycles.activeOccasions), et celle qui prend leur place.
+ *
+ * Le calendrier n'est pas seul à retirer le tahanoun : on ne le dit pas non
+ * plus dans une maison de deuil, le jour d'une brit mila, devant un marié ou
+ * un bar-mitsva. L'application ne peut pas le savoir ; le lecteur le lui dit
+ * (réglage « sans tahanoun » du menu de lecture), et les occasions du jour
+ * sont refaites comme si le calendrier l'avait retiré : ce qui tombe avec lui
+ * (les supplications du lundi et du jeudi, El erekh apayim) tombe aussi, et
+ * ce qui se dit à sa place (Yehi chem) vient à sa place.
+ */
+const TACHANUN_KEYS: Record<string, string> = {
+  tahanoun: "sans-tahanoun",
+  "tahanoun-minha": "sans-tahanoun-minha",
+};
+const WITH_TACHANUN_ONLY = ["tahanoun-ordinaire", "tahanoun-lundi-jeudi"];
+
+/** Les occasions du jour, le tahanoun retiré comme un jour où il ne se dit pas. */
+export function withoutTachanun(occasions: Set<string>): Set<string> {
+  const result = new Set(occasions);
+  for (const [said, notSaid] of Object.entries(TACHANUN_KEYS)) {
+    if (result.delete(said)) result.add(notSaid);
+  }
+  for (const key of WITH_TACHANUN_ONLY) result.delete(key);
+  return result;
+}

@@ -1,10 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { readingProgressService, type ReadingPosition } from "../services/readingProgressService";
+import {
+  readingProgressService,
+  type Bookmark,
+  type ReadingPosition,
+} from "../services/readingProgressService";
 
-// Liturgie (Sli'hot, Brahot) : pas de « reprendre là où vous étiez ». Les
-// positions héritées d'une version antérieure sont purgées à la lecture.
+// Liturgie (Sli'hot, Brahot, Sidour) : ni « reprendre là où vous étiez », ni
+// marque-page. Les positions et marque-pages hérités d'une version
+// antérieure sont purgés à la lecture.
 
 const POSITIONS_KEY = "pj-reading-positions";
+const BOOKMARKS_KEY = "pj-bookmarks";
 
 const position = (textId: string, path: string, at: number): ReadingPosition => ({
   textId,
@@ -41,6 +47,32 @@ describe("reprise de lecture et liturgie", () => {
       JSON.stringify({ "103": position("103", "/bibliotheque/tehilim/1", 10) }),
     );
     expect(readingProgressService.getLastPosition()?.textId).toBe("103");
+  });
+
+  it("purge les marque-pages liturgiques hérités, le sidour compris", () => {
+    const bookmark = (textId: string, path: string): Bookmark => ({
+      id: `${textId}:0:4`,
+      textId,
+      section: null,
+      line: 4,
+      path,
+      label: textId,
+      at: 10,
+    });
+    localStorage.setItem(
+      BOOKMARKS_KEY,
+      JSON.stringify([
+        bookmark("342", "/bibliotheque/brahot/birkat-hamazon"),
+        bookmark("360", "/bibliotheque/sidour/chaharit"),
+        bookmark("103", "/bibliotheque/tehilim/1"),
+      ]),
+    );
+    expect(readingProgressService.getBookmarks("342")).toEqual([]);
+    expect(readingProgressService.getBookmarks("360")).toEqual([]);
+    expect(readingProgressService.getBookmarks("103")).toHaveLength(1);
+    expect(readingProgressService.getBookmarkCounts()).toEqual({ "103": 1 });
+    const stored = JSON.parse(localStorage.getItem(BOOKMARKS_KEY)!) as Bookmark[];
+    expect(stored.map((b) => b.textId)).toEqual(["103"]);
   });
 });
 

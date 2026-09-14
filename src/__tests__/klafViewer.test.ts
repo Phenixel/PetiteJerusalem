@@ -47,9 +47,6 @@ function monte(blocks: ReturnType<typeof parseTefilaBlocks>) {
         showPhonetic: false,
         occasions: new Set<string>(),
         recentChanges: new Set<string>(),
-        highlightedLine: null,
-        selectedLine: null,
-        isBookmarked: () => false,
       }),
   });
   app.use(i18n);

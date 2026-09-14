@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { HDate } from "@hebcal/core";
 import { activeOccasions } from "../services/dailyCycles";
+import { withoutTachanun } from "../services/tachanun";
 import { parseContent, resolveFilePath } from "../services/textService";
 import { entryByCorpusSlug } from "../content/etudeTexts";
 
@@ -417,5 +418,35 @@ describe("fichiers de tefila", () => {
         for (const marker of MARKERS) expect(line).not.toContain(marker);
       }
     }
+  });
+});
+
+// « Sans tahanoun » (réglage du menu de lecture) : le lecteur retire le
+// tahanoun que le calendrier laissait, une brit mila ou un marié dans
+// l'assemblée. Le jour est refait comme un jour où il ne se dit pas.
+describe("withoutTachanun", () => {
+  it("retire le tahanoun des deux offices, et met Yehi chem à sa place", () => {
+    // Lundi 17 août 2026 : tahanoun ordinaire, avec les supplications du lundi.
+    const occ = activeOccasions(hd(2026, 8, 17), false);
+    expect(occ.has("tahanoun")).toBe(true);
+    expect(occ.has("tahanoun-lundi-jeudi")).toBe(true);
+
+    const sans = withoutTachanun(occ);
+    const restants = ["tahanoun", "tahanoun-minha", "tahanoun-ordinaire", "tahanoun-lundi-jeudi"];
+    expect(restants.filter((key) => sans.has(key))).toEqual([]);
+    expect(sans.has("sans-tahanoun")).toBe(true);
+    expect(sans.has("sans-tahanoun-minha")).toBe(true);
+    // Le reste du jour ne bouge pas.
+    expect(sans.has("ete")).toBe(true);
+    expect(sans.has("jour-1")).toBe(true);
+    // Et le jeu d'origine n'est pas touché.
+    expect(occ.has("tahanoun")).toBe(true);
+  });
+
+  it("ne change rien à un Chabbat, qui n'a pas de tahanoun à retirer", () => {
+    const occ = activeOccasions(hd(2026, 8, 22), false);
+    const sans = withoutTachanun(occ);
+    expect([...sans].sort()).toEqual([...occ].sort());
+    expect(sans.has("sans-tahanoun")).toBe(false);
   });
 });
