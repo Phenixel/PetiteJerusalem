@@ -476,9 +476,9 @@ describe("Min'ha : les jeûnes publics", () => {
     expect(sansSignes(psaume("tsom-minha")[0].lines[0])).toContain("יענך יהוה ביום צרה");
     expect(sansSignes(psaume("tsom-esther-veille")[0].lines[0])).toContain("לולי יהוה");
     expect(sansSignes(psaume("tsom-vendredi")[0].lines[0])).toContain("בשוב יהוה");
-    // Après le Kaddich : 102, ou 22 la veille de Pourim (le vendredi, le 93
-    // du bloc jour-5 est déjà là).
-    expect(sansSignes(psaume("tsom-minha")[1].lines[0])).toContain("תפלה לעני");
+    // Après le Kaddich : 102 (Tich'a beAv compris), ou 22 la veille de Pourim
+    // (le vendredi, le 93 du bloc jour-5 est déjà là).
+    expect(sansSignes(psaume("tsom-minha|tisha-beav")[0].lines[0])).toContain("תפלה לעני");
     expect(sansSignes(psaume("tsom-esther-veille")[1].lines[0])).toContain("אילת השחר");
     // La supplique « Chema' koli » ouvre l'office, en retrait.
     const chema = blocks.find((b) => b.label === "Supplique « Chema' koli »")!;

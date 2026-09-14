@@ -471,13 +471,15 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // il n'est pas avancé au jeudi), et le 10 Tévet tombé un vendredi. Ces
   // deux Min'ha n'ont pas de tahanoun, disent « Yehi Adonaï » plutôt que
   // « El erekh apayim » avant la Torah, et changent de psaumes. Les autres
-  // Min'ha de jeûne sont « entières » : psaume 20 en rangeant le séfer,
-  // psaume 102 après le Kaddich.
+  // Min'ha de ces quatre jeûnes sont « entières » : la supplique « Chema'
+  // koli », le psaume 20 en rangeant le séfer, le psaume 102 après le
+  // Kaddich. Tich'a beAv reste hors de cette clé : sa Min'ha ne dit que le
+  // psaume 102, qui la nomme à part.
   const tsomEstherVeille = occ.has("tsom-esther") && hd.getDate() === 13;
   const tsomVendredi = publicFast && hd.getDay() === 5;
   if (tsomEstherVeille) occ.add("tsom-esther-veille");
   if (tsomVendredi) occ.add("tsom-vendredi");
-  if (publicFast && !tsomEstherVeille && !tsomVendredi) occ.add("tsom-minha");
+  if (selihotTsom && !tsomEstherVeille && !tsomVendredi) occ.add("tsom-minha");
   if (mois === months.TISHREI && hd.getDate() === 11) occ.add("chir-lendemain-kippour");
   const ownReading =
     occ.has("rosh-chodesh") || occ.has("nissim") || publicFast || has(flags.CHOL_HAMOED);

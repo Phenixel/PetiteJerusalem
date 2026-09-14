@@ -220,6 +220,9 @@ describe("les sli'hot des jeûnes", () => {
     expect(neufAv.has("taanit")).toBe(true);
     expect(neufAv.has("selihot-tsom")).toBe(false);
     expect(neufAv.has("tahanoun-ordinaire")).toBe(false);
+    // Sa Min'ha n'est pas celle des quatre jeûnes non plus : ni « Chema'
+    // koli » ni le psaume 20.
+    expect(neufAv.has("tsom-minha")).toBe(false);
   });
 
   it("distinguent la Min'ha entière de celles de la veille de Pourim et du vendredi", () => {

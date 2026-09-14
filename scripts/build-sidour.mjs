@@ -60,9 +60,16 @@ const KI_TOLID_BANIM = (() => {
   return versets.join(" ");
 })();
 
-/** Les fichiers de textes que l'application sert déjà (public/texts). */
+/**
+ * Les fichiers de textes que l'application sert déjà (public/texts), lus une
+ * fois chacun : un livre des Nevi'im sert à plusieurs haftarot.
+ */
 const TEXTS = resolve(__dirname, "../public/texts");
-const readText = (rel) => JSON.parse(readFileSync(resolve(TEXTS, rel), "utf8"));
+const textsLus = new Map();
+function readText(rel) {
+  if (!textsLus.has(rel)) textsLus.set(rel, JSON.parse(readFileSync(resolve(TEXTS, rel), "utf8")));
+  return textsLus.get(rel);
+}
 
 /**
  * Un psaume, entier ou entre deux versets (numérotés depuis 1), tiré du
@@ -2956,10 +2963,11 @@ function minhaRecipe() {
       // défaille », s'ajoute avant le Kaddich : un ajout du jour, à la
       // couleur du thème. Sauf la veille de Pourim, où le jeûne d'Esther dit
       // le psaume 22 à sa place, et le vendredi, où le psaume 93 (bloc jour-5)
-      // tient déjà la place du Lamnatséa'h.
+      // tient déjà la place du Lamnatséa'h. Tich'a beAv le dit aussi, seul
+      // de ce que les quatre jeûnes ajoutent à Min'ha.
       {
         src: "Vidui",
-        when: "tsom-minha",
+        when: "tsom-minha|tisha-beav",
         // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
         lines: [
           {
