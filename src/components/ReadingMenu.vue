@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import ReadingSizeControl from "./ReadingSizeControl.vue";
+import ToggleSwitch from "./ToggleSwitch.vue";
 import { useReadingSize } from "../composables/useReadingSize";
 import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
 import { isNativeApp } from "../composables/useNativeApp";
@@ -12,17 +13,33 @@ import { useOverlay } from "../composables/useOverlayStack";
 import type { BookState } from "../composables/useBookDownload";
 import { kotelCompassOffered, openKotelCompass } from "../composables/useKotelCompass";
 import { openTefilinMirror, tefilinMirrorOffered } from "../composables/useTefilinMirror";
+import {
+  autoScrollEnabled,
+  restoreAutoScrollFromDevice,
+  setAutoScrollEnabled,
+} from "../composables/useAutoScroll";
+import { sansTahanoun, setSansTahanoun } from "../composables/useSansTahanoun";
 import type { ReadingNavSection } from "../composables/useReadingNav";
 import { analyticsService } from "../services/analyticsService";
 
 /**
  * Le menu de lecture, le même sur tous les textes de la bibliothèque : à la
- * place du bouton « remonter en haut », un bouton flottant d'où surgit un
- * petit panneau. Il porte toujours la taille du texte et le retour en haut de
+ * place du bouton « remonter en haut », un bouton rond d'où surgit un petit
+ * panneau. Il porte toujours la taille du texte et le retour en haut de
  * page, sans faire remonter jusqu'à la barre d'outils ; les textes qui se
  * divisent y listent leurs repères (sections d'un office, montées d'une
  * paracha, dafim d'une guemara), qui mènent au passage cherché sans faire
  * défiler trois écrans.
+ *
+ * Le panneau s'ouvre AU-DESSUS du bouton rond, qui reste en place et devient
+ * la croix qui le referme : ce qu'on a touché pour ouvrir est ce qu'on touche
+ * pour fermer, au même endroit, sans chercher la croix dans le panneau. Un
+ * second bouton rond paraît à sa droite, celui des réglages de lecture : il
+ * fait passer le panneau du sommaire aux réglages (le défilement automatique,
+ * « sans tahanoun » sur une tefila). Les deux boutons échangent alors leurs
+ * rôles : celui de gauche ramène au sommaire, celui de droite, à la place des
+ * réglages, devient la croix qui quitte. La croix est toujours sur le bouton
+ * qu'on vient de toucher en dernier.
  *
  * Contrairement au bouton de remontée, le menu reste affiché tout au long de
  * la lecture : c'est un repère permanent, pas un raccourci de passage. Il ne
@@ -34,18 +51,21 @@ import { analyticsService } from "../services/analyticsService";
  * qu'elles restent à portée en pleine lecture : la bascule hébreu /
  * phonétique (`phonetic`, null quand le texte ne se translittère pas) et,
  * dans l'app native, le téléchargement du texte (`downloadState`, "none"
- * quand il n'y a rien à télécharger).
+ * quand il n'y a rien à télécharger). Une tefila (`tefila`) y ajoute le
+ * réglage « sans tahanoun », qui n'a de sens que devant un office.
  */
 const props = withDefaults(
   defineProps<{
     sections?: ReadingNavSection[];
     phonetic?: boolean | null;
     downloadState?: BookState;
+    tefila?: boolean;
   }>(),
   {
     sections: () => [],
     phonetic: null,
     downloadState: "none",
+    tefila: false,
   },
 );
 
@@ -57,6 +77,8 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const open = ref(false);
+/** Ce que le panneau montre : le sommaire, ou les réglages de lecture. */
+const view = ref<"menu" | "settings">("menu");
 const isMiniPlayerVisible = useMiniPlayerVisible();
 
 /**
@@ -71,10 +93,11 @@ const readingSize = useReadingSize();
 const menuScale = computed(() => 1 + (readingSize.scale.value - 1) * 0.5);
 
 // Mêmes règles de placement que ScrollToTop, qu'il remplace : au-dessus du
-// mini-lecteur et, dans l'app, de la bottom bar.
-const bottomClass = computed(() => {
-  if (isNativeApp) return isMiniPlayerVisible.value ? "bottom-44" : "bottom-28";
-  return isMiniPlayerVisible.value ? "bottom-36" : "bottom-20";
+// mini-lecteur et, dans l'app, de la bottom bar. La distance au bas de
+// l'écran est aussi ce que le panneau retranche de sa hauteur (voir style).
+const bottomRem = computed(() => {
+  if (isNativeApp) return isMiniPlayerVisible.value ? 11 : 7;
+  return isMiniPlayerVisible.value ? 9 : 5;
 });
 
 // Tout en bas de l'office : le menu s'efface (panneau ouvert excepté). La
@@ -85,6 +108,7 @@ const atBottom = computed(() => scrollFrame.value.atBottom);
 
 function close() {
   open.value = false;
+  view.value = "menu";
 }
 
 // Le bouton retour d'Android ferme le panneau avant de quitter la page.
@@ -94,6 +118,49 @@ useOverlay(open, close);
 function trackNavOpened() {
   analyticsService.capture("tefila_nav_opened", { sections_count: props.sections.length });
 }
+
+function openMenu() {
+  open.value = true;
+  view.value = "menu";
+  trackNavOpened();
+}
+
+function showSettings() {
+  view.value = "settings";
+  // L'interrupteur du défilement peut n'exister que dans les préférences
+  // natives : on le relit avant de le montrer, comme l'écran des réglages.
+  void restoreAutoScrollFromDevice();
+  analyticsService.capture("reading_settings_opened", { tefila: props.tefila });
+}
+
+/**
+ * Le bouton de gauche, celui du menu : il ouvre le panneau, le referme depuis
+ * le sommaire, et ramène au sommaire depuis les réglages.
+ */
+function onMenuButton() {
+  if (!open.value) openMenu();
+  else if (view.value === "settings") view.value = "menu";
+  else close();
+}
+
+/** Le bouton de droite : les réglages depuis le sommaire, la croix depuis eux. */
+function onSettingsButton() {
+  if (view.value === "menu") showSettings();
+  else close();
+}
+
+const menuButtonIcon = computed(() => {
+  if (!open.value) return "list";
+  return view.value === "settings" ? "list" : "x";
+});
+const menuButtonLabel = computed(() => {
+  if (!open.value) return t("textReading.navMenu");
+  return view.value === "settings" ? t("textReading.settings.backToMenu") : t("common.close");
+});
+const settingsButtonIcon = computed(() => (view.value === "settings" ? "x" : "settings"));
+const settingsButtonLabel = computed(() =>
+  view.value === "settings" ? t("common.close") : t("textReading.settings.open"),
+);
 
 function goTop() {
   close();
@@ -174,134 +241,315 @@ onUnmounted(() => {
     leave-from-class="transform translate-y-0 opacity-100"
     leave-to-class="transform translate-y-10 opacity-0"
   >
-    <div v-show="!atBottom || open" class="fixed right-6 z-50 h-11 w-11" :class="bottomClass">
-      <!-- Le panneau surgit du coin du bouton, ancré à sa place : il grandit
-           sur place plutôt que d'ouvrir un modal ailleurs. -->
+    <div
+      v-show="!atBottom || open"
+      class="fixed right-6 z-50"
+      :style="{ '--menu-bottom': `${bottomRem}rem`, bottom: `${bottomRem}rem` }"
+    >
+      <!-- Le panneau surgit au-dessus des boutons ronds, ancré sur eux : il
+           grandit sur place plutôt que d'ouvrir un modal ailleurs. -->
       <transition name="nav-panel">
         <div
           v-if="open"
-          class="nav-panel absolute bottom-0 right-0 flex flex-col overflow-hidden rounded-xl bg-surface shadow-pop"
+          class="nav-panel absolute bottom-full right-0 mb-2 flex flex-col overflow-hidden rounded-xl bg-surface shadow-pop"
           :style="{ '--menu-scale': menuScale }"
         >
-          <div class="flex items-center justify-between gap-2 ps-3 pe-2 pt-2.5 pb-1 flex-shrink-0">
-            <div class="flex items-center gap-2 min-w-0">
-              <ReadingSizeControl />
-              <!-- Hébreu / phonétique, en abrégé : la place manque pour les mots. -->
+          <transition name="nav-view" mode="out-in">
+            <!-- Le sommaire : la taille du texte, la bascule hébreu /
+                 phonétique, le téléchargement, puis les repères. -->
+            <div v-if="view === 'menu'" key="menu" class="flex min-h-0 flex-col">
               <div
-                v-if="phonetic !== null"
-                class="inline-flex p-0.5 rounded-btn bg-black/5 dark:bg-white/10"
-                role="group"
-                :aria-label="`${t('textReading.hebrew')} / ${t('textReading.phonetic')}`"
+                class="flex items-center justify-between gap-2 ps-3 pe-3 pt-2.5 pb-1 flex-shrink-0"
               >
+                <div class="flex items-center gap-2 min-w-0">
+                  <ReadingSizeControl />
+                  <!-- Hébreu / phonétique, en abrégé : la place manque pour les mots. -->
+                  <div
+                    v-if="phonetic !== null"
+                    class="inline-flex p-0.5 rounded-btn bg-black/5 dark:bg-white/10"
+                    role="group"
+                    :aria-label="`${t('textReading.hebrew')} / ${t('textReading.phonetic')}`"
+                  >
+                    <button
+                      @click="emit('update:phonetic', false)"
+                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      :class="
+                        !phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
+                      "
+                      :aria-pressed="!phonetic"
+                      :aria-label="t('textReading.hebrew')"
+                      :title="t('textReading.hebrew')"
+                    >
+                      א
+                    </button>
+                    <button
+                      @click="emit('update:phonetic', true)"
+                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      :class="
+                        phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
+                      "
+                      :aria-pressed="phonetic"
+                      :aria-label="t('textReading.phonetic')"
+                      :title="t('textReading.phonetic')"
+                    >
+                      Aa
+                    </button>
+                  </div>
+                </div>
+                <!-- App native : le texte se télécharge sans quitter la lecture. -->
                 <button
-                  @click="emit('update:phonetic', false)"
-                  class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
-                  :class="!phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
-                  :aria-pressed="!phonetic"
-                  :aria-label="t('textReading.hebrew')"
-                  :title="t('textReading.hebrew')"
+                  v-if="downloadState !== 'none'"
+                  @click="emit('download')"
+                  class="icon-btn flex-shrink-0"
+                  :class="downloadState === 'downloaded' ? 'text-primary' : ''"
+                  :aria-label="
+                    downloadState === 'downloaded' ? t('downloads.delete') : t('downloads.download')
+                  "
+                  :title="
+                    downloadState === 'downloaded' ? t('downloads.delete') : t('downloads.download')
+                  "
                 >
-                  א
-                </button>
-                <button
-                  @click="emit('update:phonetic', true)"
-                  class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
-                  :class="phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
-                  :aria-pressed="phonetic"
-                  :aria-label="t('textReading.phonetic')"
-                  :title="t('textReading.phonetic')"
-                >
-                  Aa
+                  <AppIcon
+                    v-if="downloadState === 'downloading'"
+                    name="spinner"
+                    :size="16"
+                    class="animate-spin text-primary"
+                  />
+                  <AppIcon
+                    v-else-if="downloadState === 'downloaded'"
+                    name="circle-check"
+                    :size="16"
+                  />
+                  <AppIcon v-else name="download" :size="16" />
                 </button>
               </div>
+              <nav class="overflow-y-auto px-2 pb-2 min-h-0">
+                <button @click="goTop" class="section-item">
+                  <AppIcon name="arrow-up" :size="13" class="flex-shrink-0 text-text-secondary" />
+                  {{ t("textReading.navTop") }}
+                </button>
+                <button v-if="kotelCompassOffered" @click="openKotel" class="section-item">
+                  <AppIcon name="compass" :size="13" class="flex-shrink-0 text-text-secondary" />
+                  {{ t("textReading.kotel.title") }}
+                </button>
+                <button v-if="tefilinMirrorOffered" @click="openMirror" class="section-item">
+                  <AppIcon name="mirror" :size="13" class="flex-shrink-0 text-text-secondary" />
+                  {{ t("textReading.mirror.title") }}
+                </button>
+                <p v-if="props.sections.length" class="section-heading">
+                  {{ t("textReading.navSections") }}
+                </p>
+                <button
+                  v-for="section in props.sections"
+                  :key="section.anchor"
+                  @click="goTo(section.anchor)"
+                  class="section-item"
+                >
+                  <span class="section-name">{{ section.label }}</span>
+                  <!-- Le nom hébreu, celui du sidour de papier : c'est souvent lui
+                       que l'œil cherche. -->
+                  <span v-if="section.hebrew" class="section-he" dir="rtl">{{
+                    section.hebrew
+                  }}</span>
+                </button>
+              </nav>
             </div>
-            <div class="flex items-center flex-shrink-0">
-              <!-- App native : le texte se télécharge sans quitter la lecture. -->
-              <button
-                v-if="downloadState !== 'none'"
-                @click="emit('download')"
-                class="icon-btn"
-                :class="downloadState === 'downloaded' ? 'text-primary' : ''"
-                :aria-label="
-                  downloadState === 'downloaded' ? t('downloads.delete') : t('downloads.download')
-                "
-                :title="
-                  downloadState === 'downloaded' ? t('downloads.delete') : t('downloads.download')
-                "
-              >
-                <AppIcon
-                  v-if="downloadState === 'downloading'"
-                  name="spinner"
-                  :size="16"
-                  class="animate-spin text-primary"
-                />
-                <AppIcon
-                  v-else-if="downloadState === 'downloaded'"
-                  name="circle-check"
-                  :size="16"
-                />
-                <AppIcon v-else name="download" :size="16" />
-              </button>
-              <button @click="close" class="icon-btn" :aria-label="t('common.close')">
-                <AppIcon name="x" :size="15" />
-              </button>
+
+            <!-- Les réglages de lecture : des lignes séparées d'un filet, comme
+                 l'écran des réglages, chacune avec son interrupteur. -->
+            <div v-else key="settings" class="settings-view overflow-y-auto px-3 pt-2.5 pb-2">
+              <p class="section-heading !px-0">{{ t("textReading.settings.title") }}</p>
+              <ul class="flex flex-col divide-y divide-line">
+                <li>
+                  <label class="setting-row">
+                    <span class="min-w-0">
+                      <span class="setting-name">{{ t("textReading.settings.autoScroll") }}</span>
+                      <span class="setting-hint">
+                        {{ t("textReading.settings.autoScrollHint") }}
+                      </span>
+                    </span>
+                    <ToggleSwitch
+                      :model-value="autoScrollEnabled"
+                      @update:model-value="setAutoScrollEnabled"
+                    />
+                  </label>
+                </li>
+                <!-- Une tefila seulement : le tahanoun n'a pas sa place devant
+                     une guemara. -->
+                <li v-if="tefila">
+                  <label class="setting-row">
+                    <span class="min-w-0">
+                      <span class="setting-name">{{ t("textReading.settings.sansTahanoun") }}</span>
+                      <span class="setting-hint">
+                        {{ t("textReading.settings.sansTahanounHint") }}
+                      </span>
+                    </span>
+                    <ToggleSwitch
+                      :model-value="sansTahanoun"
+                      @update:model-value="setSansTahanoun"
+                    />
+                  </label>
+                </li>
+              </ul>
             </div>
-          </div>
-          <nav class="overflow-y-auto px-2 pb-2 min-h-0">
-            <button @click="goTop" class="section-item">
-              <AppIcon name="arrow-up" :size="13" class="flex-shrink-0 text-text-secondary" />
-              {{ t("textReading.navTop") }}
-            </button>
-            <button v-if="kotelCompassOffered" @click="openKotel" class="section-item">
-              <AppIcon name="compass" :size="13" class="flex-shrink-0 text-text-secondary" />
-              {{ t("textReading.kotel.title") }}
-            </button>
-            <button v-if="tefilinMirrorOffered" @click="openMirror" class="section-item">
-              <AppIcon name="mirror" :size="13" class="flex-shrink-0 text-text-secondary" />
-              {{ t("textReading.mirror.title") }}
-            </button>
-            <p v-if="props.sections.length" class="section-heading">
-              {{ t("textReading.navSections") }}
-            </p>
-            <button
-              v-for="section in props.sections"
-              :key="section.anchor"
-              @click="goTo(section.anchor)"
-              class="section-item"
-            >
-              <span class="section-name">{{ section.label }}</span>
-              <!-- Le nom hébreu, celui du sidour de papier : c'est souvent lui
-                   que l'œil cherche. -->
-              <span v-if="section.hebrew" class="section-he" dir="rtl">{{ section.hebrew }}</span>
-            </button>
-          </nav>
+          </transition>
         </div>
       </transition>
-      <transition name="nav-fab">
+
+      <!-- Les boutons ronds : celui du menu, toujours là, et celui des réglages
+           qui paraît à sa droite quand le panneau est ouvert. -->
+      <div class="flex items-center justify-end">
         <button
-          v-if="!open"
-          @click="
-            open = true;
-            trackNavOpened();
-          "
-          class="absolute inset-0 flex items-center justify-center rounded-full bg-surface shadow-pop text-text-primary hover:text-primary transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          :aria-label="t('textReading.navMenu')"
+          @click="onMenuButton"
+          class="fab"
+          :aria-label="menuButtonLabel"
           aria-haspopup="menu"
-          :aria-expanded="false"
+          :aria-expanded="open"
         >
-          <AppIcon name="list" :size="18" />
+          <transition name="fab-icon" mode="out-in">
+            <AppIcon :key="menuButtonIcon" :name="menuButtonIcon" :size="18" />
+          </transition>
         </button>
-      </transition>
+        <transition name="fab-second">
+          <div v-if="open" class="fab-second">
+            <button
+              @click="onSettingsButton"
+              class="fab"
+              :class="{ 'text-primary': view === 'settings' }"
+              :aria-label="settingsButtonLabel"
+            >
+              <transition name="fab-icon" mode="out-in">
+                <AppIcon :key="settingsButtonIcon" :name="settingsButtonIcon" :size="18" />
+              </transition>
+            </button>
+          </div>
+        </transition>
+      </div>
     </div>
   </transition>
 </template>
 
 <style scoped>
+/* Les boutons ronds : la surface qui porte l'ombre, comme le bouton de
+   remontée qu'ils remplacent. */
+.fab {
+  display: flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-pop);
+  color: var(--color-text-primary);
+  transition: color 0.3s ease;
+}
+
+.fab:hover {
+  color: var(--color-primary);
+}
+
+.fab:focus {
+  outline: none;
+}
+
+.fab:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Le second bouton pousse le premier vers la gauche en prenant sa place :
+   sa largeur grandit, le bouton du menu glisse, et l'icône des réglages
+   paraît dans l'espace ouvert. */
+.fab-second {
+  width: 3.25rem;
+  padding-inline-start: 0.5rem;
+  overflow: visible;
+}
+
+.fab-second-enter-active {
+  transition:
+    width 0.25s cubic-bezier(0.3, 1.1, 0.55, 1),
+    padding 0.25s cubic-bezier(0.3, 1.1, 0.55, 1),
+    opacity 0.15s ease-out 0.08s,
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s;
+}
+
+.fab-second-leave-active {
+  transition:
+    width 0.15s ease-in,
+    padding 0.15s ease-in,
+    opacity 0.1s ease-in,
+    transform 0.1s ease-in;
+}
+
+.fab-second-enter-from,
+.fab-second-leave-to {
+  width: 0;
+  padding-inline-start: 0;
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+/* L'icône du bouton change de rôle (menu, croix, réglages) : elle tourne en
+   s'effaçant, la nouvelle arrive dans le même mouvement. */
+.fab-icon-enter-active,
+.fab-icon-leave-active {
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
+}
+
+.fab-icon-enter-from {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.6);
+}
+
+.fab-icon-leave-to {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.6);
+}
+
 /* Le panneau grandit avec le réglage de lecture, sans jamais déborder de
-   l'écran : c'est la largeur disponible qui a le dernier mot. */
+   l'écran : c'est la largeur disponible qui a le dernier mot. En hauteur, il
+   laisse la place des boutons sous lui et ce qui, sous eux, tient le bas de
+   l'écran (mini-lecteur, barre de l'app). */
 .nav-panel {
   width: min(calc(20rem * var(--menu-scale, 1)), calc(100vw - 3rem));
-  max-height: min(calc(30rem * var(--menu-scale, 1)), 78vh);
+  max-height: min(
+    calc(30rem * var(--menu-scale, 1)),
+    calc(100vh - var(--menu-bottom, 5rem) - 5rem),
+    calc(100dvh - var(--menu-bottom, 5rem) - 5rem)
+  );
+}
+
+.settings-view {
+  font-size: calc(0.9rem * var(--menu-scale, 1));
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: calc(0.6rem * var(--menu-scale, 1)) 0;
+  cursor: pointer;
+}
+
+.setting-name {
+  display: block;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--color-text-primary);
+}
+
+.setting-hint {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.85em;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
 }
 
 .section-item {
@@ -351,7 +599,7 @@ onUnmounted(() => {
   color: var(--color-primary);
 }
 
-/* Le panneau surgit du coin du bouton : un léger ressort à l'ouverture, une
+/* Le panneau surgit du coin des boutons : un léger ressort à l'ouverture, une
    sortie brève et discrète. */
 .nav-panel {
   transform-origin: bottom right;
@@ -384,39 +632,39 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-/* Le bouton s'efface pendant que le panneau le remplace, et revient d'un
-   petit rebond quand celui-ci se referme. */
-.nav-fab-enter-active {
-  transition:
-    opacity 0.15s ease-out 0.08s,
-    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s;
+/* Du sommaire aux réglages et retour : un fondu bref, le panneau ne bouge pas. */
+.nav-view-enter-active,
+.nav-view-leave-active {
+  transition: opacity 0.12s ease;
 }
 
-.nav-fab-leave-active {
-  transition:
-    opacity 0.1s ease-in,
-    transform 0.1s ease-in;
-}
-
-.nav-fab-enter-from,
-.nav-fab-leave-to {
+.nav-view-enter-from,
+.nav-view-leave-to {
   opacity: 0;
-  transform: scale(0.5);
 }
 
 /* Mouvement réduit : les fondus suffisent. */
 @media (prefers-reduced-motion: reduce) {
   .nav-panel-enter-active,
   .nav-panel-leave-active,
-  .nav-fab-enter-active,
-  .nav-fab-leave-active {
+  .fab-second-enter-active,
+  .fab-second-leave-active,
+  .fab-icon-enter-active,
+  .fab-icon-leave-active {
     transition: opacity 0.15s ease;
   }
 
   .nav-panel-enter-from,
   .nav-panel-leave-to,
-  .nav-fab-enter-from,
-  .nav-fab-leave-to {
+  .fab-icon-enter-from,
+  .fab-icon-leave-to {
+    transform: none;
+  }
+
+  .fab-second-enter-from,
+  .fab-second-leave-to {
+    width: 3.25rem;
+    padding-inline-start: 0.5rem;
     transform: none;
   }
 }

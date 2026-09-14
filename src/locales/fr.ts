@@ -1143,6 +1143,18 @@ const fr = {
     navMenu: "Menu de lecture",
     navSections: "Sections",
     navTop: "Haut de page",
+    // Les réglages de lecture, dans le menu : le second bouton rond, à droite
+    // de la croix, fait passer le panneau du sommaire aux réglages.
+    settings: {
+      open: "Réglages de lecture",
+      backToMenu: "Revenir au sommaire",
+      title: "Réglages",
+      autoScroll: "Défilement automatique",
+      autoScrollHint: "Un double appui sur le texte le fait descendre tout seul.",
+      sansTahanoun: "Sans tahanoun aujourd'hui",
+      sansTahanounHint:
+        "Brit mila, bar-mitsva, mariage, maison de deuil\u00a0: ce qui ne se dit pas ce jour-là est retiré du texte jusqu'à demain.",
+    },
     // Divisions d'un texte (chapitre, daf) : textService les décrit, la vue
     // les écrit dans la langue du lecteur.
     labels: {

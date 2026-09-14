@@ -79,6 +79,8 @@ import type { ReadingNavSection } from "../../composables/useReadingNav";
 import type { SupportedLocale } from "../../i18n";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
+import { isSansTahanoun } from "../../composables/useSansTahanoun";
+import { withoutTachanun } from "../../services/tachanun";
 import { useKeepAwake } from "../../composables/useKeepAwake";
 import { analyticsService } from "../../services/analyticsService";
 import { useLocalePath } from "../../composables/useLocalePath";
@@ -181,9 +183,14 @@ const occasionsDayAbs = computed(() =>
     : new HDate(now.value).abs(),
 );
 const occasionsDay = computed(() => new HDate(occasionsDayAbs.value));
-const occasions = computed(() =>
-  activeOccasions(occasionsDay.value, zmanimPlace.value.tzid === "Asia/Jerusalem"),
-);
+// « Sans tahanoun » (réglage du menu de lecture) : le lecteur retire ce que
+// le calendrier ne peut pas savoir, une brit mila ou un marié dans
+// l'assemblée. Le réglage ne vaut que le jour où il est posé ; c'est l'heure
+// du rendu qui en décide, comme des occasions elles-mêmes.
+const occasions = computed(() => {
+  const today = activeOccasions(occasionsDay.value, zmanimPlace.value.tzid === "Asia/Jerusalem");
+  return isLiturgyText.value && isSansTahanoun(now.value) ? withoutTachanun(today) : today;
+});
 const visibleBlocks = computed(() =>
   verseBlocks.value.filter((b) => saidOn(b.when, occasions.value)),
 );
@@ -197,6 +204,8 @@ const recentChanges = computed(() =>
 
 /** Tefila (Sli'hot, Brahot, Sidour) : un rendu à part, voir LiturgyText. */
 const isLiturgyText = computed(() => !!textEntry.value && isLiturgy(textEntry.value));
+/** Un office du sidour : le menu de lecture y propose « sans tahanoun ». */
+const isTefila = computed(() => tefilaOf(textEntry.value ?? null) !== null);
 
 /**
  * Les passages qui encadrent la lecture (le Léchem yihoud du Cantique des
@@ -1637,7 +1646,7 @@ watch(textId, (_, previousTextId) => {
         <!-- Reading toolbar: text size + Hebrew / phonetic toggle -->
         <div class="flex items-center justify-end gap-3 mb-5">
           <button
-            v-if="bookmarks.length"
+            v-if="bookmarks.length && !isLiturgyText"
             @click="showBookmarksPanel = !showBookmarksPanel"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn bg-black/5 dark:bg-white/10 text-sm font-medium transition-colors"
             :class="
@@ -1671,8 +1680,10 @@ watch(textId, (_, previousTextId) => {
           </div>
         </div>
 
-        <!-- Marque-pages du texte (ouvert depuis l'icône de la barre d'outils) -->
-        <div v-if="showBookmarksPanel && bookmarks.length" class="mb-5 card p-3">
+        <!-- Marque-pages du texte (ouvert depuis l'icône de la barre d'outils).
+             Pas sur une tefila : une brakha ou un office se lisent du début,
+             on n'y revient pas à un verset. -->
+        <div v-if="showBookmarksPanel && bookmarks.length && !isLiturgyText" class="mb-5 card p-3">
           <p class="text-sm font-semibold text-text-secondary px-1 mb-1.5">
             {{ t("textReading.bookmarks") }}
           </p>
@@ -1724,11 +1735,6 @@ watch(textId, (_, previousTextId) => {
           :show-phonetic="showPhonetic"
           :occasions="occasions"
           :recent-changes="recentChanges"
-          :highlighted-line="highlightedLine"
-          :selected-line="selectedLine"
-          :is-bookmarked="isLineBookmarked"
-          @select="onVerseClick"
-          @toggle-bookmark="toggleBookmarkAt"
         />
 
         <!-- Verses / mishnayot (numbered for reference texts), grouped by
@@ -1872,12 +1878,14 @@ watch(textId, (_, previousTextId) => {
     <!-- Tous les textes de la bibliothèque : le menu de lecture remplace le
          bouton de remontée, et la progression court au bas de l'écran. Le
          menu reprend la bascule hébreu / phonétique de la barre d'outils et,
-         dans l'app native, le téléchargement du texte. -->
+         dans l'app native, le téléchargement du texte ; sur un office, il
+         porte aussi le réglage « sans tahanoun ». -->
     <template v-if="content && currentSection">
       <ReadingMenu
         :sections="navSections"
         :phonetic="canTransliterate ? showPhonetic : null"
         :download-state="bookState"
+        :tefila="isTefila"
         @update:phonetic="showPhonetic = $event"
         @download="toggleDownload()"
       />

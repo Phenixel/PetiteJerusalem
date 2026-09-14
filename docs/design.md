@@ -283,6 +283,38 @@ le bouton dit l'état avant de proposer le changement.
 Dans l'app, le bouton n'est pas repris : la page y est déjà coiffée de deux
 onglets et d'une barre du bas, et les réglages sont à un geste.
 
+### Le menu de lecture s'ouvre au-dessus de son bouton
+
+Sur un texte de la bibliothèque, un bouton rond en bas à droite
+(`ReadingMenu.vue`) tient lieu de bouton de remontée : il ouvre le sommaire
+du texte, la taille des caractères et la bascule hébreu / phonétique. Le
+panneau surgit **au-dessus** du bouton, et le bouton reste : il devient la
+croix qui referme. Ce qu'on a touché pour ouvrir est ce qu'on touche pour
+fermer, au même endroit, sans chercher une croix dans le panneau ; le panneau
+ne remplace jamais ce qui l'a ouvert.
+
+À la droite de cette croix paraît un second rond, celui des réglages de
+lecture, qui fait passer le panneau du sommaire aux réglages. Les deux ronds
+échangent alors leurs rôles : celui de gauche reprend l'icône du sommaire et y
+ramène, celui de droite devient la croix. La croix est toujours sur le rond
+touché en dernier : on quitte d'où l'on est arrivé.
+
+Ces réglages-là sont ceux qu'on change **pendant** qu'on lit, pas avant : le
+défilement automatique (le même interrupteur que dans les Préférences, voir
+« Un geste qui surprend doit pouvoir se couper ») et, sur un office, « sans
+tahanoun ». Ce dernier dit à l'application ce que le calendrier ne peut pas
+savoir : une brit mila, un marié ou un bar-mitsva dans l'assemblée, une maison
+de deuil. Le texte est alors refait comme un jour où le tahanoun ne se dit
+pas, avec ce qui tombe et ce qui vient à sa place. Il ne vaut que **la
+journée** où il est posé et s'éteint au lendemain : une simhá est une affaire
+d'un jour, et un interrupteur oublié retirerait le tahanoun des semaines
+durant sans que rien ne le montre, la page ne disant jamais ce qu'elle tait.
+
+Corollaire : pas de marque-page sur une tefila (Sidour, Sli'hot, Brahot). Un
+office ou une bénédiction se lisent du début, on n'y revient pas à un
+paragraphe comme à un verset de Tehilim ; le sommaire du menu y mène déjà à
+chaque passage.
+
 ### Ce qui clôt une page se lit à la fin
 
 Les hiloulot du jour ferment la page des horaires, sous la dernière heure et

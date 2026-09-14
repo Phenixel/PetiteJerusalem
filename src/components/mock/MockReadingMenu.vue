@@ -5,8 +5,10 @@ import MockTouch from "./MockTouch.vue";
 
 /**
  * Le menu de lecture : le rond posé en bas à droite du texte, et le panneau
- * qui en surgit. La boucle montre le doigt qui l'ouvre, le panneau ouvert, puis
- * le retour au rond, pour qu'on sache quoi chercher et ce qu'on y trouve.
+ * qui surgit au-dessus. La boucle montre le doigt qui l'ouvre, le panneau
+ * ouvert avec le rond devenu croix et le bouton des réglages paru à sa
+ * droite, puis le retour au rond seul, pour qu'on sache quoi chercher et ce
+ * qu'on y trouve.
  */
 </script>
 
@@ -16,7 +18,7 @@ import MockTouch from "./MockTouch.vue";
       <span v-for="line in 6" :key="line" class="line" :style="{ '--i': line }"></span>
     </div>
 
-    <!-- Le panneau, tel qu'il s'ouvre depuis le coin du bouton. -->
+    <!-- Le panneau, tel qu'il s'ouvre au-dessus des boutons ronds. -->
     <div class="panel">
       <div class="panel-head">
         <span class="chip">A−</span>
@@ -27,7 +29,15 @@ import MockTouch from "./MockTouch.vue";
       <span class="panel-row short"></span>
     </div>
 
-    <span class="fab"><AppIcon name="list" :size="12" /></span>
+    <!-- Le rond du menu, qui devient la croix ; les réglages paraissent à sa
+         droite le temps que le panneau est ouvert. -->
+    <div class="fabs">
+      <span class="fab fab-menu">
+        <AppIcon name="list" :size="12" class="fab-icon fab-list" />
+        <AppIcon name="x" :size="12" class="fab-icon fab-x" />
+      </span>
+      <span class="fab fab-settings"><AppIcon name="settings" :size="12" /></span>
+    </div>
     <MockTouch class="tap" duration="6s" delay="1.1s" :taps="1" />
   </MockScreen>
 </template>
@@ -48,20 +58,47 @@ import MockTouch from "./MockTouch.vue";
   width: calc(100% - var(--i) * 4%);
 }
 
-.fab {
+.fabs {
   position: absolute;
   right: 0.7rem;
   bottom: 0.7rem;
   display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.fab {
+  position: relative;
+  display: flex;
   width: 1.7rem;
   height: 1.7rem;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
   background-color: var(--color-surface);
   color: var(--color-text-primary);
   box-shadow: var(--shadow-pop);
-  animation: fab-fade 6s ease-in-out infinite;
+}
+
+/* Les deux icônes du rond se relaient : la liste tant que le panneau est
+   fermé, la croix pendant qu'il est ouvert. */
+.fab-icon {
+  position: absolute;
+}
+
+.fab-list {
+  animation: icon-list 6s ease-in-out infinite;
+}
+
+.fab-x {
+  animation: icon-x 6s ease-in-out infinite;
+}
+
+/* Le bouton des réglages paraît à droite, en poussant le rond du menu. */
+.fab-settings {
+  margin-inline-start: 0.3rem;
+  animation: settings-in 6s ease-in-out infinite;
 }
 
 /* Le doigt qui vient l'ouvrir, une fois par tour : posé sur le bouton rond,
@@ -80,7 +117,7 @@ import MockTouch from "./MockTouch.vue";
 .panel {
   position: absolute;
   right: 0.7rem;
-  bottom: 0.7rem;
+  bottom: 2.7rem;
   width: 7.5rem;
   padding: 0.45rem;
   border-radius: 0.75rem;
@@ -158,35 +195,88 @@ import MockTouch from "./MockTouch.vue";
   }
 }
 
-/* Le bouton s'efface pendant que le panneau prend sa place. */
-@keyframes fab-fade {
+@keyframes icon-list {
   0%,
   30% {
     opacity: 1;
-    transform: scale(1);
+    transform: rotate(0);
   }
   38%,
   86% {
     opacity: 0;
-    transform: scale(0.6);
+    transform: rotate(90deg);
   }
   94%,
   100% {
     opacity: 1;
-    transform: scale(1);
+    transform: rotate(0);
   }
 }
 
+@keyframes icon-x {
+  0%,
+  30% {
+    opacity: 0;
+    transform: rotate(-90deg);
+  }
+  38%,
+  86% {
+    opacity: 1;
+    transform: rotate(0);
+  }
+  94%,
+  100% {
+    opacity: 0;
+    transform: rotate(-90deg);
+  }
+}
+
+@keyframes settings-in {
+  0%,
+  30% {
+    width: 0;
+    margin-inline-start: 0;
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  38%,
+  86% {
+    width: 1.7rem;
+    margin-inline-start: 0.3rem;
+    opacity: 1;
+    transform: scale(1);
+  }
+  94%,
+  100% {
+    width: 0;
+    margin-inline-start: 0;
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+/* Mouvement réduit : l'image fixe du panneau ouvert, croix et réglages en place. */
 @media (prefers-reduced-motion: reduce) {
   .touch.tap,
-  .fab {
+  .fab-icon,
+  .fab-settings {
     animation: none;
   }
   .touch.tap {
     opacity: 0;
   }
-  .fab {
+  .fab-list {
     opacity: 0;
+  }
+  .fab-x {
+    opacity: 1;
+    transform: none;
+  }
+  .fab-settings {
+    width: 1.7rem;
+    margin-inline-start: 0.3rem;
+    opacity: 1;
+    transform: none;
   }
   .panel {
     animation: none;

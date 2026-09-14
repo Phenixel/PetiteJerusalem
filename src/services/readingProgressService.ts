@@ -48,12 +48,14 @@ export interface Bookmark {
 }
 
 /**
- * Textes liturgiques (Sli'hot, Brahot) : pas de « reprendre là où vous
- * étiez ». Le lecteur n'enregistre plus leurs positions, et celles héritées
- * d'une version antérieure (localStorage ou compte) sont purgées à la
- * lecture, reconnues à leur chemin, pour ne pas embarquer le catalogue ici.
+ * Textes liturgiques (Sli'hot, Brahot, Sidour) : ni « reprendre là où vous
+ * étiez », ni marque-page. Une tefila se lit du début, on n'y revient pas à
+ * un paragraphe. Le lecteur n'enregistre plus leurs positions ni leurs
+ * marque-pages, et ceux hérités d'une version antérieure (localStorage ou
+ * compte) sont purgés à la lecture, reconnus à leur chemin, pour ne pas
+ * embarquer le catalogue ici.
  */
-const LITURGY_PATH = /^\/bibliotheque\/(?:slihot|brahot)\//;
+const LITURGY_PATH = /^\/bibliotheque\/(?:slihot|brahot|sidour)\//;
 
 const POSITIONS_KEY = "pj-reading-positions";
 /** Date du dernier « ignorer » sur la ligne de reprise de la bibliothèque. */
@@ -229,7 +231,12 @@ class ReadingProgressService {
   // ---- Marque-pages ----
 
   private bookmarksAll(): Bookmark[] {
-    return readJson<Bookmark[]>(BOOKMARKS_KEY, []);
+    const all = readJson<Bookmark[]>(BOOKMARKS_KEY, []);
+    // Purge des marque-pages liturgiques hérités, comme pour les positions :
+    // la prochaine écriture cloud emporte le nettoyage côté compte.
+    const kept = all.filter((b) => !LITURGY_PATH.test(b.path));
+    if (kept.length !== all.length) writeJson(BOOKMARKS_KEY, kept);
+    return kept;
   }
 
   getBookmarks(textId: string, scope: BookmarkScope = "library"): Bookmark[] {
@@ -333,6 +340,9 @@ class ReadingProgressService {
 
     const byId = new Map<string, Bookmark>();
     for (const b of [...(prefs.bookmarks ?? []), ...this.bookmarksAll()]) {
+      // Le cloud peut encore porter des marque-pages liturgiques : filtrés
+      // ici, la comparaison ci-dessous verra la différence et poussera la purge.
+      if (LITURGY_PATH.test(b.path)) continue;
       const deletedAt = prunedTombstones[b.id];
       if (deletedAt !== undefined && deletedAt >= b.at) continue;
       const existing = byId.get(b.id);

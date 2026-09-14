@@ -66,9 +66,6 @@ function monter(occasions: Set<string>) {
         showPhonetic: false,
         occasions,
         recentChanges: new Set<string>(),
-        highlightedLine: null,
-        selectedLine: null,
-        isBookmarked: () => false,
       }),
   });
   app.use(i18n);
