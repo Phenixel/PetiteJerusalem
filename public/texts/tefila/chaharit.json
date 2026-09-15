@@ -492,13 +492,27 @@
       ]
     },
     {
-      "when": "teshuva|hoshana-rabba",
+      "when": "teshuva",
       "lines": [
         {
           "rubric": {
-            "fr": "Pendant les dix jours de techouva et à Hochana Rabba :",
-            "en": "During the Ten Days of Repentance and on Hoshana Rabbah:",
-            "he": "בעשרת ימי תשובה והושענא רבה אומרים:"
+            "fr": "Pendant les dix jours de techouva :",
+            "en": "During the Ten Days of Repentance:",
+            "he": "בעשרת ימי תשובה אומרים:"
+          },
+          "he": "יְהֹוָה֙ ה֣וּא הָאֱלֹהִ֔ים יְהֹוָ֖ה ה֥וּא הָאֱלֹהִֽים׃",
+          "repeat": 2
+        }
+      ]
+    },
+    {
+      "when": "hoshana-rabba",
+      "lines": [
+        {
+          "rubric": {
+            "fr": "À Hochana Rabba :",
+            "en": "On Hoshana Rabbah:",
+            "he": "בהושענא רבה אומרים:"
           },
           "he": "יְהֹוָה֙ ה֣וּא הָאֱלֹהִ֔ים יְהֹוָ֖ה ה֥וּא הָאֱלֹהִֽים׃",
           "repeat": 2
@@ -871,7 +885,7 @@
             "אַתָּה קָדוֹשׁ וְשִׁמְךָ קָדוֹשׁ, וּקְדוֹשִׁים בְּכָל־יוֹם יְהַֽלְלֽוּךָ סֶּֽלָה: בָּרוּךְ אַתָּה יֹהֵוָהֵ,",
             {
               "he": "הָאֵל הַקָּדוֹשׁ:",
-              "when": "!teshuva"
+              "unless": "teshuva"
             },
             {
               "v": "הַמֶּלֶךְ הַקָּדוֹשׁ:",
@@ -966,7 +980,7 @@
             "הָשִֽׁיבָה שֽׁוֹפְטֵֽינוּ כְּבָרִֽאשׁוֹנָה, וְיֽוֹעֲצֵֽינוּ כְּבַתְּחִלָּה, וְהָסֵר מִמֶּֽנּוּ יָגוֹן וַֽאֲנָחָה. וּמְלוֹךְ עָלֵֽינוּ מְהֵרָה אַתָּה יְהֹוָה לְבַדְּךָ, בְּחֶֽסֶד וּבְרַֽחֲמִים, בְּצֶֽדֶק וּבְמִשְׁפָּט: בָּרוּךְ אַתָּה יוּהוּווּהוּ,",
             {
               "he": "מֶֽלֶךְ אוֹהֵב צְדָקָה וּמִשְׁפָּט:",
-              "when": "!teshuva"
+              "unless": "teshuva"
             },
             {
               "v": "הַמֶּלֶךְ הַמִּשְׁפָּט:",
@@ -1259,7 +1273,7 @@
           "he": [
             {
               "he": "עֹשֶׂה שָׁלוֹם",
-              "when": "!teshuva"
+              "unless": "teshuva"
             },
             {
               "v": "עוֹשֶׂה הַשָּׁלוֹם",
@@ -1415,7 +1429,8 @@
         "en": "Tachanun (supplications)",
         "he": "תחנון"
       },
-      "when": "tahanoun-ordinaire",
+      "when": "tahanoun",
+      "unless": "selihot-tsom",
       "plain": true,
       "halakha": {
         "fr": "On ne le dit pas dans une maison de deuil, un jour de brit-mila, en présence d'un marié, ni les jours où l'usage de la communauté s'en dispense.",
@@ -2631,22 +2646,121 @@
         "en": "Torah reading",
         "he": "קריאת התורה"
       },
-      "when": "torah-semaine|taanit",
+      "when": "torah-semaine",
       "plain": true,
-      "halakha": [
+      "halakha": {
+        "fr": "On lit dans la Torah le début de la paracha de la semaine, en trois montées.",
+        "en": "The beginning of the week's parasha is read from the Torah, in three aliyot.",
+        "he": "קוראים בתורה את תחילת פרשת השבוע, בשלושה עולים."
+      },
+      "lines": [
         {
-          "fr": "On lit dans la Torah le début de la paracha de la semaine, en trois montées.",
-          "en": "The beginning of the week's parasha is read from the Torah, in three aliyot.",
-          "he": "קוראים בתורה את תחילת פרשת השבוע, בשלושה עולים.",
-          "when": "torah-semaine"
+          "rubric": {
+            "fr": "On dit d'abord :",
+            "en": "First, say:",
+            "he": "תחילה אומרים:"
+          },
+          "he": "אֶל אֶרֶךְ אַפַּיִם וְרַב חֶסֶד וֶאֱמֶת, אֶל בְּאַפְּךָ תוֹכִיחֵנוּ, חוּסָה יְהֹוָה עַל יִשְׂרָאֵל עַמֶּךָ, וְהוֹשִׁיעֵנוּ מִכָּל רָע, חָטָאנוּ לְךָ, אָדוֹן סְלַח נָא, כְּרֹב רַחֲמֶיךָ אֶל:",
+          "when": "tahanoun"
         },
         {
-          "fr": "Un jour de jeûne public, on lit « Vaye'hal Moché » (Chemot 32, 11 à 14, puis 34, 1 à 10), en trois montées, le matin comme à Min'ha.",
-          "en": "On a public fast, “Vayechal Moshe” (Exodus 32:11-14, then 34:1-10) is read in three aliyot, in the morning and at Mincha.",
-          "he": "בתענית ציבור קוראים « ויחל משה » (שמות לב, יא-יד; לד, א-י) בשלושה עולים, בשחרית ובמנחה.",
-          "when": "selihot-tsom"
+          "he": "אֶל אֶרֶךְ אַפַּיִם וּמַלֵּא רַחֲמִים, אֶל תַּסְתֵּר פָּנֶיךָ מִמֶּנּוּ, חוּסָה יְהֹוָה עַל שְׁאֵרִית יִשְׂרָאֵל עַמֶּךָ, וְהַצִּילֵנוּ מִכָּל רָע, חָטָאנוּ לְךָ, אֲדוֹן סְלַח נָא, כְּרֹב רַחֲמֶיךָ אֶל:",
+          "when": "tahanoun",
+          "tight": true
+        },
+        {
+          "rubric": {
+            "fr": "On dit d'abord :",
+            "en": "First, say:",
+            "he": "תחילה אומרים:"
+          },
+          "he": "יְהִ֨י יְהֹוָ֤ה אֱלֹהֵ֙ינוּ֙ עִמָּ֔נוּ כַּאֲשֶׁ֥ר הָיָ֖ה עִם־אֲבֹתֵ֑ינוּ אַל־יַעַזְבֵ֖נוּ וְאַֽל־יִטְּשֵֽׁנוּ׃ הוֹשִׁ֤יעָה ׀ אֶת־עַמֶּ֗ךָ וּבָרֵ֥ךְ אֶת־נַחֲלָתֶ֑ךָ וּֽרְעֵ֥ם וְ֝נַשְּׂאֵ֗ם עַד־הָעוֹלָֽם׃ בַּֽ֭עֲבוּר דָּוִ֣ד עַבְדֶּ֑ךָ אַל־תָּ֝שֵׁ֗ב פְּנֵ֣י מְשִׁיחֶֽךָ׃",
+          "when": "sans-tahanoun"
+        },
+        {
+          "rubric": {
+            "fr": "Quand on sort le séfer Torah :",
+            "en": "As the Torah scroll is taken out:",
+            "he": "כשמוציאים ספר תורה אומרים:"
+          },
+          "he": "בָּרוּךְ הַמָּקוֹם שֶׁנָּתַן תּוֹרָה לְעַמּוֹ יִשְׂרָאֵל, בָּרוּךְ הוּא: אַשְׁרֵ֣י הָ֭עָם שֶׁכָּ֣כָה לּ֑וֹ אַֽשְׁרֵ֥י הָ֝עָ֗ם שֱׁיְהֹוָ֥ה אֱלֹהָֽיו׃ גַּדְּל֣וּ לַיהֹוָ֣ה אִתִּ֑י וּנְרוֹמְמָ֖ה שְׁמ֣וֹ יַחְדָּֽו׃ רוֹמְמ֡וּ יְהֹ֘וָ֤ה אֱלֹהֵ֗ינוּ וְֽ֭הִשְׁתַּחֲווּ לַהֲדֹ֥ם רַגְלָ֗יו קָד֥וֹשׁ הֽוּא׃ רוֹמְמ֡וּ יְהֹ֘וָ֤ה אֱלֹהֵ֗ינוּ וְֽ֭הִשְׁתַּחֲווּ לְהַ֣ר קׇדְשׁ֑וֹ כִּי־קָ֝ד֗וֹשׁ יְהֹוָ֥ה אֱלֹהֵֽינוּ׃ אֵין־קָד֥וֹשׁ כַּיהֹוָ֖ה כִּ֣י אֵ֣ין בִּלְתֶּ֑ךָ וְאֵ֥ין צ֖וּר כֵּאלֹהֵֽינוּ׃ כִּ֤י מִ֣י אֱ֭לוֹהַּ מִבַּלְעֲדֵ֣י יְהֹוָ֑ה וּמִ֥י צ֝֗וּר זוּלָתִ֥י אֱלֹהֵֽינוּ׃ תּוֹרָ֥ה צִוָּה־לָ֖נוּ מֹשֶׁ֑ה מוֹרָשָׁ֖ה קְהִלַּ֥ת יַעֲקֹֽב׃ עֵץ־חַיִּ֣ים הִ֭יא לַמַּחֲזִיקִ֣ים בָּ֑הּ וְֽתֹמְכֶ֥יהָ מְאֻשָּֽׁר׃ דְּרָכֶ֥יהָ דַרְכֵי־נֹ֑עַם וְֽכׇל־נְתִ֖יבוֹתֶ֣יהָ שָׁלֽוֹם׃ שָׁל֣וֹם רָ֭ב לְאֹהֲבֵ֣י תוֹרָתֶ֑ךָ וְאֵֽין־לָ֥מוֹ מִכְשֽׁוֹל׃ יְֽהֹוָ֗ה עֹ֭ז לְעַמּ֣וֹ יִתֵּ֑ן יְהֹוָ֓ה ׀ יְבָרֵ֖ךְ אֶת־עַמּ֣וֹ בַשָּׁלֽוֹם׃"
+        },
+        {
+          "rubric": {
+            "fr": "On montre l'écriture à l'assemblée :",
+            "en": "The script is shown to the congregation:",
+            "he": "מגביה ומראה הכתב לקהל ואומרים:"
+          },
+          "he": "וְזֹ֖את הַתּוֹרָ֑ה אֲשֶׁר־שָׂ֣ם מֹשֶׁ֔ה לִפְנֵ֖י בְּנֵ֥י יִשְׂרָאֵֽל׃ תּוֹרָ֥ה צִוָּה־לָ֖נוּ מֹשֶׁ֑ה מוֹרָשָׁ֖ה קְהִלַּ֥ת יַעֲקֹֽב׃ הָאֵל֮ תָּמִ֢ים דַּ֫רְכּ֥וֹ אִמְרַֽת־יְהֹוָ֥ה צְרוּפָ֑ה מָגֵ֥ן ה֝֗וּא לְכֹ֤ל ׀ הַחֹסִ֬ים בּֽוֹ׃"
+        },
+        {
+          "rubric": {
+            "fr": "L'appelé dit :",
+            "en": "The one called up says:",
+            "he": "ואומר העולה:"
+          },
+          "he": "הַשֵּׁם עִמָּכֶם:"
+        },
+        {
+          "rubric": {
+            "fr": "L'assemblée répond :",
+            "en": "The congregation answers:",
+            "he": "ועונים הקהל:"
+          },
+          "he": "יְבָרֶכְךָ הַשֵּׁם:",
+          "tight": true
+        },
+        {
+          "rubric": {
+            "fr": "L'appelé dit :",
+            "en": "The one called up says:",
+            "he": "ואומר העולה:"
+          },
+          "he": "בָּרְכוּ אֶת יְהֹוָה הַמְּבֹרָךְ:"
+        },
+        {
+          "rubric": {
+            "fr": "L'assemblée répond :",
+            "en": "The congregation answers:",
+            "he": "ועונים הקהל:"
+          },
+          "he": "בָּרוּךְ יְהֹוָה הַמְּבֹרָךְ לְעוֹלָם וָעֶד:",
+          "tight": true
+        },
+        {
+          "rubric": {
+            "fr": "L'appelé reprend :",
+            "en": "The one called up repeats:",
+            "he": "וחוזר העולה:"
+          },
+          "he": "בָּרוּךְ יְהֹוָה הַמְּבֹרָךְ לְעוֹלָם וָעֶד:",
+          "tight": true
+        },
+        {
+          "rubric": {
+            "fr": "Avant la lecture, l'appelé bénit :",
+            "en": "Before the reading, the one called up blesses:",
+            "he": "ומברך העולה לפני הקריאה:"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר בָּחַר בָּנוּ מִכָּל הָעַמִּים וְנָתַן לָנוּ אֶת תּוֹרָתוֹ. בָּרוּךְ אַתָּה יְהֹוָה, נוֹתֵן הַתּוֹרָה:"
         }
-      ],
+      ]
+    },
+    {
+      "label": "Lecture de la Torah",
+      "labelText": {
+        "fr": "Lecture de la Torah",
+        "en": "Torah reading",
+        "he": "קריאת התורה"
+      },
+      "when": "taanit",
+      "plain": true,
+      "halakha": {
+        "fr": "Un jour de jeûne public, on lit « Vaye'hal Moché » (Chemot 32, 11 à 14, puis 34, 1 à 10), en trois montées, le matin comme à Min'ha.",
+        "en": "On a public fast, “Vayechal Moshe” (Exodus 32:11-14, then 34:1-10) is read in three aliyot, in the morning and at Mincha.",
+        "he": "בתענית ציבור קוראים « ויחל משה » (שמות לב, יא-יד; לד, א-י) בשלושה עולים, בשחרית ובמנחה.",
+        "when": "selihot-tsom"
+      },
       "lines": [
         {
           "rubric": {
@@ -2791,7 +2905,21 @@
       ]
     },
     {
-      "when": "torah-semaine|taanit",
+      "when": "torah-semaine",
+      "plain": true,
+      "lines": [
+        {
+          "rubric": {
+            "fr": "Après la lecture, l'appelé bénit :",
+            "en": "After the reading, the one called up blesses:",
+            "he": "אחר הקריאה מברך העולה:"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר נָתַן לָנוּ אֶת תּוֹרָתוֹ תּוֹרַת אֱמֶת, וְחַיֵּי עוֹלָם נָטַע בְּתוֹכֵנוּ. בָּרוּךְ אַתָּה יְהֹוָה, נוֹתֵן הַתּוֹרָה:"
+        }
+      ]
+    },
+    {
+      "when": "taanit",
       "plain": true,
       "lines": [
         {
@@ -2811,7 +2939,68 @@
         "en": "Half Kaddish (the last one called up)",
         "he": "חצי קדיש (העולה האחרון)"
       },
-      "when": "torah-semaine|taanit",
+      "when": "torah-semaine",
+      "fold": "hazan",
+      "lines": [
+        {
+          "he": [
+            "יִתְגַּדַּל וְיִתְקַדַּשׁ שְׁמֵהּ רַבָּא.",
+            {
+              "b": "(אָמֵן)"
+            }
+          ],
+          "rubric": {
+            "fr": "Le dernier appelé dit :",
+            "en": "The last one called up says:",
+            "he": "העולה האחרון אומר:"
+          }
+        },
+        {
+          "he": [
+            "בְּעָלְמָא דִּי בְרָא, כִּרְעוּתֵה, וְיַמְלִיךְ מַלְכוּתֵה, וְיַצְמַח פֻּרְקָנֵה, וִיקָרֵב מְשִׁיחֵהּ.",
+            {
+              "b": "(אָמֵן)"
+            }
+          ],
+          "tight": true
+        },
+        {
+          "he": [
+            "בְּחַיֵּיכוֹן וּבְיוֹמֵיכוֹן וּבְחַיֵּי דְכָל בֵּית יִשְׂרָאֵל, בַּעֲגָלָא וּבִזְמַן קָרִיב, וְאִמְרוּ אָמֵן.",
+            {
+              "b": "(אָמֵן)"
+            }
+          ],
+          "tight": true
+        },
+        {
+          "he": [
+            "יְהֵא שְׁמֵיהּ רַבָּא מְבָרַךְ לְעָלַם וּלְעָלְמֵי עָלְמַיָּא יִתְבָּרַךְ. וְיִשְׁתַּבַּח. וְיִתְפָּאַר. וְיִתְרוֹמַם. וְיִתְנַשֵּׂא. וְיִתְהַדָּר. וְיִתְעַלֶּה. וְיִתְהַלָּל שְׁמֵהּ דְּקֻדְשָׁא, בְּרִיךְ הוּא.",
+            {
+              "b": "(אָמֵן)"
+            }
+          ],
+          "tight": true
+        },
+        {
+          "he": [
+            "לְעֵלָּא מִן כָּל בִּרְכָתָא שִׁירָתָא, תֻּשְׁבְּחָתָא וְנֶחֱמָתָא, דַּאֲמִירָן בְּעָלְמָא, וְאִמְרוּ אָמֵן.",
+            {
+              "b": "(אָמֵן)"
+            }
+          ],
+          "tight": true
+        }
+      ]
+    },
+    {
+      "label": "Demi-Kaddich (le dernier appelé)",
+      "labelText": {
+        "fr": "Demi-Kaddich (le dernier appelé)",
+        "en": "Half Kaddish (the last one called up)",
+        "he": "חצי קדיש (העולה האחרון)"
+      },
+      "when": "taanit",
       "fold": "hazan",
       "lines": [
         {

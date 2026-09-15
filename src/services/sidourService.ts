@@ -157,6 +157,7 @@ export function injectWeeklyTorah(
       paragraphs: lines.map((text) => ({ runs: [{ kind: "he", text }] })),
     };
     if (marker.when) block.when = marker.when;
+    if (marker.unless) block.unless = marker.unless;
     if (marker.plain) block.plain = true;
     torahBlocks.push(block);
   });

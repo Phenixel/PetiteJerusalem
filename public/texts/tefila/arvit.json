@@ -318,7 +318,7 @@
             "אַתָּה קָדוֹשׁ וְשִׁמְךָ קָדוֹשׁ, וּקְדוֹשִׁים בְּכָל־יוֹם יְהַֽלְלֽוּךָ סֶּֽלָה: בָּרוּךְ אַתָּה יֹהֵוָהֵ,",
             {
               "he": "הָאֵל הַקָּדוֹשׁ:",
-              "when": "!teshuva"
+              "unless": "teshuva"
             },
             {
               "v": "הַמֶּלֶךְ הַקָּדוֹשׁ:",
@@ -334,7 +334,15 @@
           "fr": "À la sortie de Chabbat et de Yom Tov, Ata 'honantanou entre dans 'Honen hadaat. Si on l'a oublié, on ne recommence pas : la havdala sur la coupe en tient lieu.",
           "en": "At the close of Shabbat and Yom Tov, Atah chonantanu enters Chonen hadaat. If it was omitted, do not repeat: havdalah over the cup takes its place.",
           "he": "במוצאי שבת ויום טוב אומרים אתה חוננתנו בחונן הדעת. שכח, אינו חוזר؛ סומך על ההבדלה שעל הכוס.",
-          "when": "motsae"
+          "when": "jour-0",
+          "unless": "yom-tov"
+        },
+        {
+          "fr": "À la sortie de Chabbat et de Yom Tov, Ata 'honantanou entre dans 'Honen hadaat. Si on l'a oublié, on ne recommence pas : la havdala sur la coupe en tient lieu.",
+          "en": "At the close of Shabbat and Yom Tov, Atah chonantanu enters Chonen hadaat. If it was omitted, do not repeat: havdalah over the cup takes its place.",
+          "he": "במוצאי שבת ויום טוב אומרים אתה חוננתנו בחונן הדעת. שכח, אינו חוזר؛ סומך על ההבדלה שעל הכוס.",
+          "when": "motsae",
+          "unless": "jour-0"
         }
       ],
       "lines": [
@@ -343,7 +351,13 @@
             "אַתָּה חוֹנֵן לְאָדָם דַּֽעַת וּמְלַמֵּד לֶאֱנוֹשׁ בִּינָה.",
             {
               "v": "אַתָּה חוֹנַנְתָּנוּ יְהֹוָה אֱלֹהֵינוּ מַדָּע וְהַשְׂכֵּל, אַתָּה אָמַרְתָּ לְהַבְדִּיל בֵּין קֹדֶשׁ לְחֹל וּבֵין אוֹר לְחֹשֶׁךְ וּבֵין יִשְׂרָאֵל לָעַמִּים, וּבֵין יוֹם הַשְּׁבִיעִי לְשֵׁשֶׁת יְמֵי הַמַּעֲשֶׂה. כְּשֵׁם שֶׁהִבְדַּלְתָּנוּ יְהֹוָה אֱלֹהֵינוּ מֵעַמֵּי הָאֲרָצוֹת וּמִמִּשְׁפְּחוֹת הָאֲדָמָה, כָּךְ פְּדֵנוּ וְהַצִּילֵנוּ מִשָּׂטָן רָע וּמִפֶּגַע רָע, וּמִכָּל גְּזֵרוֹת קָשׁוֹת וְרָעוֹת הַמִּתְרַגְּשׁוֹת לָבֹא בָעוֹלָם.",
-              "when": "motsae"
+              "when": "jour-0",
+              "unless": "yom-tov"
+            },
+            {
+              "v": "אַתָּה חוֹנַנְתָּנוּ יְהֹוָה אֱלֹהֵינוּ מַדָּע וְהַשְׂכֵּל, אַתָּה אָמַרְתָּ לְהַבְדִּיל בֵּין קֹדֶשׁ לְחֹל וּבֵין אוֹר לְחֹשֶׁךְ וּבֵין יִשְׂרָאֵל לָעַמִּים, וּבֵין יוֹם הַשְּׁבִיעִי לְשֵׁשֶׁת יְמֵי הַמַּעֲשֶׂה. כְּשֵׁם שֶׁהִבְדַּלְתָּנוּ יְהֹוָה אֱלֹהֵינוּ מֵעַמֵּי הָאֲרָצוֹת וּמִמִּשְׁפְּחוֹת הָאֲדָמָה, כָּךְ פְּדֵנוּ וְהַצִּילֵנוּ מִשָּׂטָן רָע וּמִפֶּגַע רָע, וּמִכָּל גְּזֵרוֹת קָשׁוֹת וְרָעוֹת הַמִּתְרַגְּשׁוֹת לָבֹא בָעוֹלָם.",
+              "when": "motsae",
+              "unless": "jour-0"
             },
             "וְחָנֵּֽנוּ מֵאִתְּךָ חָכְמָה בִּינָה וָדָֽעַת: בָּרוּךְ אַתָּה יַהַוַהַ, חוֹנֵן הַדָּֽעַת:"
           ]
@@ -406,7 +420,7 @@
             "הָשִֽׁיבָה שֽׁוֹפְטֵֽינוּ כְּבָרִֽאשׁוֹנָה, וְיֽוֹעֲצֵֽינוּ כְּבַתְּחִלָּה, וְהָסֵר מִמֶּֽנּוּ יָגוֹן וַֽאֲנָחָה. וּמְלוֹךְ עָלֵֽינוּ מְהֵרָה אַתָּה יְהֹוָה לְבַדְּךָ, בְּחֶֽסֶד וּבְרַֽחֲמִים, בְּצֶֽדֶק וּבְמִשְׁפָּט: בָּרוּךְ אַתָּה יוּהוּווּהוּ,",
             {
               "he": "מֶֽלֶךְ אוֹהֵב צְדָקָה וּמִשְׁפָּט:",
-              "when": "!teshuva"
+              "unless": "teshuva"
             },
             {
               "v": "הַמֶּלֶךְ הַמִּשְׁפָּט:",
@@ -456,7 +470,7 @@
           "fr": "À Roch Hodech et à 'Hol haMoed, Ya'alé véyavo entre dans Retsé. Si on l'a oublié, on recommence depuis Retsé ; si la 'Amida est achevée, on la recommence.",
           "en": "On Rosh Hodesh and Chol haMoed, Yaale veyavo enters Retseh. If it was omitted, go back to Retseh; if the Amidah was finished, repeat it.",
           "he": "בראש חודש ובחול המועד אומרים יעלה ויבוא ברצה. שכח, חוזר לרצה؛ סיים את העמידה, חוזר לראשה.",
-          "when": "!rosh-chodesh"
+          "unless": "rosh-chodesh"
         }
       ],
       "lines": [
@@ -575,7 +589,7 @@
           "he": [
             {
               "he": "עֹשֶׂה שָׁלוֹם",
-              "when": "!teshuva"
+              "unless": "teshuva"
             },
             {
               "v": "עוֹשֶׂה הַשָּׁלוֹם",
