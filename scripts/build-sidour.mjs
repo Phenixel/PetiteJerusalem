@@ -121,25 +121,60 @@ function lineText(spec, segs) {
 }
 
 /**
+ * La condition d'un bloc, d'une ligne, d'un fragment ou d'une halakha :
+ * `when` le jour où il se dit, `unless` le jour qui le retire.
+ *
+ * Les deux disent la même chose à l'envers, mais ne s'échangent pas : le site
+ * sert ces fichiers à des versions de l'application plus anciennes que lui
+ * (l'app native télécharge les textes, son code reste celui de sa version, et
+ * une version installée peut rester des mois en arrière). Une version
+ * ancienne masque tout `when` qu'elle ne sait pas lire, clé qu'elle ne connaît
+ * pas ou syntaxe qu'elle n'a pas ; le passage disparaît alors au milieu d'une
+ * prière, sans rien dire. Un champ qu'elle ne connaît pas, en revanche, elle
+ * l'ignore, et affiche le passage.
+ *
+ * D'où la règle, qui vaut pour tout ce que ce fichier écrit (voir
+ * docs/compatibilite-textes.md) :
+ *
+ *  - `when` ne porte qu'une clé simple, sans `!` ni `|`, et une clé qu'une
+ *    version publiée connaît déjà, sauf à conditionner un passage que ces
+ *    versions n'ont jamais eu ;
+ *  - tout ce qui affine un passage déjà servi, l'exception comme la négation,
+ *    passe par `unless` ;
+ *  - une alternative (« l'un ou l'autre jour ») s'écrit en deux passages, un
+ *    par clé, puisque les deux jours s'excluent.
+ *
+ * Un test le vérifie (src/__tests__/sidourCompatibilite.test.ts).
+ */
+function condition(spec) {
+  return {
+    ...(spec.when ? { when: spec.when } : {}),
+    ...(spec.unless ? { unless: spec.unless } : {}),
+  };
+}
+
+/**
  * Un fragment d'une ligne à fragments (`parts`) : le texte se prend comme
- * pour une ligne, et `when` le réserve à son occasion (« teshuva »,
- * « !teshuva » pour l'autre conclusion, voir saidOn dans textService). C'est
- * ainsi qu'un ajout du calendrier entre dans le paragraphe à sa place, et
- * qu'une conclusion cède la sienne à l'autre le jour dit, au lieu d'un
- * second paragraphe sous le premier. `accent` marque ce que le jour ajoute
- * ou change, que le lecteur lit à la couleur du thème ; sans accent, un
- * fragment `when` est une variante ordinaire (morid hatal, l'autre
- * conclusion). `rubric` glisse une didascalie devant le fragment.
+ * pour une ligne, et sa condition le réserve à son jour (`when`, « teshuva »)
+ * ou le lui retire (`unless`, « teshuva » pour la conclusion ordinaire, voir
+ * saidOn dans textService et CONDITIONS plus haut). C'est ainsi qu'un ajout
+ * du calendrier entre dans le paragraphe à sa place, et qu'une conclusion
+ * cède la sienne à l'autre le jour dit, au lieu d'un second paragraphe sous
+ * le premier. `accent` marque ce que le jour ajoute ou change, que le lecteur
+ * lit à la couleur du thème ; sans accent, un fragment conditionnel est une
+ * variante ordinaire (morid hatal, l'autre conclusion). `rubric` glisse une
+ * didascalie devant le fragment.
  */
 function partRuns(spec, segs) {
   const text = lineText(spec, segs);
   if (!text) throw new Error(`Fragment vide : ${JSON.stringify(spec)}`);
-  const when = spec.when ? { when: spec.when } : {};
+  const cond = condition(spec);
+  const conditionnel = spec.when || spec.unless;
   const runs = [];
-  if (spec.rubric) runs.push({ r: spec.rubric, ...when });
-  if (spec.accent) runs.push({ v: text, ...when });
-  else if (spec.strong) runs.push({ b: text, ...when });
-  else if (spec.when) runs.push({ he: text, ...when });
+  if (spec.rubric) runs.push({ r: spec.rubric, ...cond });
+  if (spec.accent) runs.push({ v: text, ...cond });
+  else if (spec.strong) runs.push({ b: text, ...cond });
+  else if (conditionnel) runs.push({ he: text, ...cond });
   else runs.push(text);
   return runs;
 }
@@ -169,6 +204,7 @@ function buildLine(spec, segs) {
   if (spec.parts) {
     line.he = spec.parts.flatMap((part) => partRuns(part, segs));
     if (spec.when) line.when = spec.when;
+    if (spec.unless) line.unless = spec.unless;
     if (spec.muted) line.muted = true;
     if (spec.tight) line.tight = true;
     if (spec.lead) line.lead = true;
@@ -180,13 +216,14 @@ function buildLine(spec, segs) {
   if (spec.strong) line.he = [{ b: text }];
   else if (spec.answer) line.he = [text, { b: spec.answer }];
   else if (spec.alt) {
-    const when = spec.alt.when ? { when: spec.alt.when } : {};
+    const when = condition(spec.alt);
     const [debut, suite] = spec.alt.after ? splitAfter(text, spec.alt.after) : [text, ""];
     line.he = [debut, { r: spec.alt.rubric, ...when }, { v: spec.alt.text, ...when }];
     if (suite) line.he.push(suite);
   } else line.he = text;
   if (spec.repeat) line.repeat = spec.repeat;
   if (spec.when) line.when = spec.when;
+  if (spec.unless) line.unless = spec.unless;
   if (spec.muted) line.muted = true;
   if (spec.tight) line.tight = true;
   if (spec.lead) line.lead = true;
@@ -228,6 +265,7 @@ function buildBlock(spec, sections) {
     block.labelText = spec.labelText;
   }
   if (spec.when) block.when = spec.when;
+  if (spec.unless) block.unless = spec.unless;
   if (spec.plain) block.plain = true;
   if (spec.fold) block.fold = spec.fold;
   // Une halakha, ou plusieurs : chacune avec son `when` (voir Halakha dans
@@ -574,7 +612,7 @@ function amidaBlocks(src, ix, opts = {}) {
             strip: [STRIP.teshuvaDisent, "הַמֶּלֶךְ הַקָּדוֹשׁ:"],
             until: "הָאֵל הַקָּדוֹשׁ",
           },
-          { he: "הָאֵל הַקָּדוֹשׁ:", when: "!teshuva" },
+          { he: "הָאֵל הַקָּדוֹשׁ:", unless: "teshuva" },
           { he: "הַמֶּלֶךְ הַקָּדוֹשׁ:", when: "teshuva", accent: true },
         ],
       },
@@ -583,15 +621,39 @@ function amidaBlocks(src, ix, opts = {}) {
 
   // Bénédictions intermédiaires. À Arvit, la sortie de Chabbat et de Yom Tov
   // glisse Ata 'honantanou dans 'Honen hadaat, avant « vé'honénou ».
+  //
+  // Deux fois le même fragment, sous deux clés qui ne se recouvrent jamais :
+  // la sortie de Chabbat, de très loin le cas courant, se nomme par le jour
+  // de la semaine, que les versions publiées connaissent ; la sortie de Yom
+  // Tov, qui tombe n'importe quel soir, se nomme par « motsae », une clé
+  // récente, et le `unless` empêche les deux de se dire ensemble (voir
+  // condition). Le dimanche hébraïque peut être Yom Tov lui-même (le 16
+  // Tichri, le 16 Nissan) : ce soir-là on ne sépare rien, d'où l'exception.
   if (ix.ataHonantanu !== undefined) {
     blocks.push({
       src,
-      halakha: [{ ...HALAKHA.ataHonantanu, when: "motsae" }],
+      halakha: [
+        { ...HALAKHA.ataHonantanu, when: "jour-0", unless: "yom-tov" },
+        { ...HALAKHA.ataHonantanu, when: "motsae", unless: "jour-0" },
+      ],
       lines: [
         {
           parts: [
             { seg: ix.honen },
-            { seg: ix.ataHonantanu, mode: "small", when: "motsae", accent: true },
+            {
+              seg: ix.ataHonantanu,
+              mode: "small",
+              when: "jour-0",
+              unless: "yom-tov",
+              accent: true,
+            },
+            {
+              seg: ix.ataHonantanu,
+              mode: "small",
+              when: "motsae",
+              unless: "jour-0",
+              accent: true,
+            },
             { seg: ix.vehonenu },
           ],
         },
@@ -663,7 +725,7 @@ function amidaBlocks(src, ix, opts = {}) {
             strip: [STRIP.teshuvaDisent, "הַמֶּלֶךְ הַמִּשְׁפָּט:"],
             until: "מֶֽלֶךְ אוֹהֵב",
           },
-          { he: "מֶֽלֶךְ אוֹהֵב צְדָקָה וּמִשְׁפָּט:", when: "!teshuva" },
+          { he: "מֶֽלֶךְ אוֹהֵב צְדָקָה וּמִשְׁפָּט:", unless: "teshuva" },
           { he: "הַמֶּלֶךְ הַמִּשְׁפָּט:", when: "teshuva", accent: true },
         ],
       },
@@ -692,7 +754,7 @@ function amidaBlocks(src, ix, opts = {}) {
               when: "tisha-beav",
               accent: true,
             },
-            { seg: ix.tishkonHatima, when: "!tisha-beav" },
+            { seg: ix.tishkonHatima, unless: "tisha-beav" },
             { seg: ix.nahem + 1, mode: "small", when: "tisha-beav", accent: true },
           ],
         },
@@ -739,7 +801,7 @@ function amidaBlocks(src, ix, opts = {}) {
     halakha: opts.soir
       ? [
           { ...HALAKHA.yaaleVeyavoSoir, when: "rosh-chodesh" },
-          { ...HALAKHA.yaaleVeyavoJour, when: "!rosh-chodesh" },
+          { ...HALAKHA.yaaleVeyavoJour, unless: "rosh-chodesh" },
         ]
       : HALAKHA.yaaleVeyavoJour,
     lines: [
@@ -808,14 +870,16 @@ function amidaBlocks(src, ix, opts = {}) {
     ],
   });
 
-  // Vé'al koulam. Aux dix jours de techouva, Oukhtov avant « Vékhol ha'hayim ».
+  // Vé'al koulam. Aux dix jours de techouva, Oukhtov entre après « Vékhol
+  // ha'hayim yodoukha sséla » et avant « Vihalelou », là où la source le
+  // pose.
   blocks.push({
     src,
     halakha: [{ ...HALAKHA.oubliTeshuva("Oukhtov", "Uchtov", "וכתוב"), when: "teshuva" }],
     lines: [
       {
         parts: [
-          { seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent], until: "וְכָל־הַחַיִּים" },
+          { seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent], until: "וִיהַלְלוּ" },
           {
             seg: ix.vealKoulam,
             mode: "small",
@@ -823,7 +887,7 @@ function amidaBlocks(src, ix, opts = {}) {
             when: "teshuva",
             accent: true,
           },
-          { seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent], from: "וְכָל־הַחַיִּים" },
+          { seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent], from: "וִיהַלְלוּ" },
         ],
       },
     ],
@@ -922,7 +986,7 @@ function amidaBlocks(src, ix, opts = {}) {
     lines: [
       {
         parts: [
-          { he: "עֹשֶׂה שָׁלוֹם", when: "!teshuva" },
+          { he: "עֹשֶׂה שָׁלוֹם", unless: "teshuva" },
           { he: "עוֹשֶׂה הַשָּׁלוֹם", when: "teshuva", accent: true },
           { seg: ix.osse, from: "בִּמְרוֹמָיו" },
         ],
@@ -2130,9 +2194,10 @@ function chaharitRecipe() {
       },
       {
         src: "Hodu",
-        // Les deux occasions où la source le demande : la clé les nomme
-        // toutes deux, l'une ou l'autre suffit.
-        when: "teshuva|hoshana-rabba",
+        // Les deux occasions où la source le demande, en deux blocs : elles
+        // s'excluent (Hochana Rabba tombe le 21 Tichri), et une condition à
+        // deux clés n'est pas lue par les versions publiées (voir condition).
+        when: "teshuva",
         lines: [
           {
             seg: 7,
@@ -2140,10 +2205,23 @@ function chaharitRecipe() {
             strip: ["שתי פעמים"],
             repeat: 2,
             rubric: R(
-              "Pendant les dix jours de techouva et à Hochana Rabba :",
-              "During the Ten Days of Repentance and on Hoshana Rabbah:",
-              "בעשרת ימי תשובה והושענא רבה אומרים:",
+              "Pendant les dix jours de techouva :",
+              "During the Ten Days of Repentance:",
+              "בעשרת ימי תשובה אומרים:",
             ),
+          },
+        ],
+      },
+      {
+        src: "Hodu",
+        when: "hoshana-rabba",
+        lines: [
+          {
+            seg: 7,
+            mode: "small",
+            strip: ["שתי פעמים"],
+            repeat: 2,
+            rubric: R("À Hochana Rabba :", "On Hoshana Rabbah:", "בהושענא רבה אומרים:"),
           },
         ],
       },
@@ -2292,7 +2370,11 @@ function chaharitRecipe() {
       // part), les sli'hot du jeûne prennent sa place : voir selihotTsomBlocks.
       {
         src: "Vidui",
-        when: "tahanoun-ordinaire",
+        // « tahanoun », la clé de toujours, et non « tahanoun-ordinaire » qui
+        // dit la même chose : les versions publiées ne connaissent pas la
+        // seconde et perdraient le tahanoun tout entier (voir condition).
+        when: "tahanoun",
+        unless: "selihot-tsom",
         plain: true,
         labelText: R("Ta'hanoun (supplications)", "Tachanun (supplications)", "תחנון"),
         halakha: HALAKHA.tahanoun,
@@ -2534,14 +2616,21 @@ function chaharitRecipe() {
         ),
         rubric: R("Le dernier appelé dit :", "The last one called up says:", "העולה האחרון אומר:"),
       }),
+      // La sortie du séfer Torah : le lundi et le jeudi ordinaires, et les
+      // jours de jeûne public. Deux blocs plutôt qu'une alternative dans la
+      // condition : les deux jours s'excluent, et une condition à deux clés
+      // n'est pas lue par les versions publiées (voir condition).
       sortieSeferTorah({
-        when: "torah-semaine|taanit",
+        when: "torah-semaine",
         tahanoun: "tahanoun",
         sansTahanoun: "sans-tahanoun",
-        halakha: [
-          { ...HALAKHA.torahSemaine, when: "torah-semaine" },
-          { ...HALAKHA.vayehal, when: "selihot-tsom" },
-        ],
+        halakha: HALAKHA.torahSemaine,
+      }),
+      sortieSeferTorah({
+        when: "taanit",
+        tahanoun: "tahanoun",
+        sansTahanoun: "sans-tahanoun",
+        halakha: { ...HALAKHA.vayehal, when: "selihot-tsom" },
       }),
       {
         when: "torah-semaine",
@@ -2567,9 +2656,19 @@ function chaharitRecipe() {
           },
         ],
       },
-      benedictionApresLecture("torah-semaine|taanit"),
+      benedictionApresLecture("torah-semaine"),
+      benedictionApresLecture("taanit"),
       kaddishHalf("Uva LeSion", {
-        when: "torah-semaine|taanit",
+        when: "torah-semaine",
+        labelText: R(
+          "Demi-Kaddich (le dernier appelé)",
+          "Half Kaddish (the last one called up)",
+          "חצי קדיש (העולה האחרון)",
+        ),
+        rubric: R("Le dernier appelé dit :", "The last one called up says:", "העולה האחרון אומר:"),
+      }),
+      kaddishHalf("Uva LeSion", {
+        when: "taanit",
         labelText: R(
           "Demi-Kaddich (le dernier appelé)",
           "Half Kaddish (the last one called up)",
@@ -2994,7 +3093,21 @@ function minhaRecipe() {
       // de ce que les quatre jeûnes ajoutent à Min'ha.
       {
         src: "Vidui",
-        when: "tsom-minha|tisha-beav",
+        // Les quatre jeûnes, puis Tich'a beAv : deux blocs pour deux jours
+        // qui s'excluent (voir condition).
+        when: "tsom-minha",
+        // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
+        lines: [
+          {
+            seg: 20,
+            mode: "small",
+            rubric: R("Un jour de jeûne, on ajoute :", "On a fast day, add:", "בתענית מוסיפים:"),
+          },
+        ],
+      },
+      {
+        src: "Vidui",
+        when: "tisha-beav",
         // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
         lines: [
           {

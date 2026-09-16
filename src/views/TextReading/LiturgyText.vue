@@ -196,11 +196,13 @@ interface ParagraphEntry {
   line: number;
 }
 
-const saidToday = (when?: string): boolean => saidOn(when, props.occasions);
+/** Ce qui porte une condition : un bloc, un paragraphe, un fragment, une halakha. */
+const saidToday = (item: { when?: string; unless?: string }): boolean =>
+  saidOn(item.when, props.occasions, item.unless);
 
 /** Les fragments d'un paragraphe qui se disent aujourd'hui. */
 const visibleRuns = (paragraph: TextParagraph): TextRun[] =>
-  paragraph.runs.filter((run) => saidToday(run.when));
+  paragraph.runs.filter((run) => saidToday(run));
 
 /** Le texte hébreu d'un paragraphe tel qu'il se dit aujourd'hui. */
 const visibleText = (paragraph: TextParagraph): string =>
@@ -226,7 +228,7 @@ const runClass = (run: TextRun & { kind: "he" }) => ({
 
 /** Les halakhot d'un bloc qui servent aujourd'hui. */
 const halakhotOf = (block: TextBlock): Rubric[] =>
-  (block.halakhot ?? []).filter((halakha) => saidToday(halakha.when));
+  (block.halakhot ?? []).filter((halakha) => saidToday(halakha));
 
 /**
  * La boussole du Kotel, ouverte depuis le titre d'un passage qui se dit face
@@ -312,7 +314,7 @@ function chosenAmong(options: TextBlock[]): TextBlock {
     options.find((option) => choiceOf(option).id === stored) ??
     options.find((option) => {
       const preferred = choiceOf(option).preferred;
-      return !!preferred && saidToday(preferred);
+      return !!preferred && saidToday({ when: preferred });
     }) ??
     options[0]
   );
@@ -327,7 +329,7 @@ const paragraphsOf = (block: TextBlock): ParagraphEntry[] =>
     // (le compte du 'Omer de ce soir) disparaît avec lui.
     .filter(
       ({ paragraph }) =>
-        saidToday(paragraph.when) && visibleRuns(paragraph).some((run) => run.kind === "he"),
+        saidToday(paragraph) && visibleRuns(paragraph).some((run) => run.kind === "he"),
     );
 
 /**

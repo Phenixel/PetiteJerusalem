@@ -511,4 +511,17 @@ describe("la condition d'un passage (saidOn)", () => {
     expect(saidOn("hoshana-rabba|teshuva", jour)).toBe(true);
     expect(saidOn("hoshana-rabba|hiver", jour)).toBe(false);
   });
+
+  it("l'exception (unless) retire le passage, et l'emporte sur la condition", () => {
+    // La forme qu'écrivent les fichiers : le texte ordinaire n'a pas de
+    // condition, l'occasion du jour le retire (voir
+    // docs/compatibilite-textes.md).
+    expect(saidOn(undefined, jour, "teshuva")).toBe(false);
+    expect(saidOn(undefined, jour, "hiver")).toBe(true);
+    expect(saidOn("ete", jour, "teshuva")).toBe(false);
+    expect(saidOn("ete", jour, "hiver")).toBe(true);
+    expect(saidOn("hiver", jour, "rosh-chodesh")).toBe(false);
+    // Une exception vide ne retire rien.
+    expect(saidOn("teshuva", jour, undefined)).toBe(true);
+  });
 });

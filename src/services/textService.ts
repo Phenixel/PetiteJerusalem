@@ -46,6 +46,8 @@ export interface Rubric {
  */
 export interface Halakha extends Rubric {
   when?: string;
+  /** L'occasion qui la retire, quand c'est l'exception qui se nomme le mieux. */
+  unless?: string;
 }
 
 /**
@@ -68,26 +70,39 @@ export type TextRun =
       accent?: boolean;
       /** Fragment qui ne se dit qu'à cette occasion (voir TextBlock.when). */
       when?: string;
+      /** Fragment que cette occasion retire (voir TextBlock.unless). */
+      unless?: string;
     }
-  | { kind: "rubric"; rubric: Rubric; when?: string };
+  | { kind: "rubric"; rubric: Rubric; when?: string; unless?: string };
 
 /**
- * Une condition `when` tient-elle parmi les occasions du jour ?
+ * Une condition tient-elle parmi les occasions du jour ?
  *
- * La condition est une clé d'occasion (voir dailyCycles.activeOccasions),
- * niée par `!` (« !teshuva » : hors des dix jours de techouva), ou plusieurs
- * séparées par `|`, dont une seule suffit (« teshuva|hoshana-rabba »). Sans
- * condition, le passage se dit toujours.
+ * `when` est une clé d'occasion (voir dailyCycles.activeOccasions) ; `unless`
+ * est l'occasion qui retire le passage, et l'emporte sur `when`. Chacune
+ * accepte plusieurs clés séparées par `|`, dont une seule suffit, et la
+ * négation `!`. Sans condition, le passage se dit toujours.
  *
  * C'est la seule règle qui décide de ce qui se lit un jour donné : les blocs,
  * les paragraphes, les fragments et les halakhot la suivent tous.
+ *
+ * Les deux champs ne sont pas interchangeables : les fichiers servis par le
+ * site sont lus par des versions plus anciennes de l'application, qui ne
+ * savent d'une condition que ce que leur code sait déjà (voir
+ * docs/compatibilite-textes.md). Ce qu'elles ne comprennent pas d'un `when`,
+ * elles le masquent : c'est un passage qui manque au milieu d'une prière.
+ * Un champ qu'elles ignorent, elles l'affichent. `when` ne porte donc qu'une
+ * clé simple, que les versions publiées connaissent déjà ; ce qui affine un
+ * passage qui existait, l'exception comme la négation, passe par `unless`.
  */
-export function saidOn(when: string | undefined, occasions: Set<string>): boolean {
-  if (!when) return true;
-  return when.split("|").some((alternative) => {
-    const key = alternative.trim();
-    return key.startsWith("!") ? !occasions.has(key.slice(1)) : occasions.has(key);
-  });
+export function saidOn(when: string | undefined, occasions: Set<string>, unless?: string): boolean {
+  const holds = (condition: string): boolean =>
+    condition.split("|").some((alternative) => {
+      const key = alternative.trim();
+      return key.startsWith("!") ? !occasions.has(key.slice(1)) : occasions.has(key);
+    });
+  if (unless && holds(unless)) return false;
+  return !when || holds(when);
 }
 
 /**
@@ -131,6 +146,8 @@ export interface TextParagraph {
    * section (marque-pages, translittération) ; seul l'affichage le masque.
    */
   when?: string;
+  /** Occasion qui retire le paragraphe (voir saidOn). */
+  unless?: string;
   /**
    * Sidour : le paragraphe d'où s'ouvre un parchemin (voir KlafKind). Le
    * lecteur pose une commande au-dessus du paragraphe, et le signale au menu
@@ -183,6 +200,12 @@ export interface TextBlock {
    * du jour (sauf `plain`). Absent = toujours affiché.
    */
   when?: string;
+  /**
+   * Tefila : l'occasion qui retire le bloc, quand c'est l'exception qui se
+   * nomme le mieux (le tahanoun ordinaire, que les sli'hot d'un jeûne
+   * remplacent). Elle l'emporte sur `when` (voir saidOn).
+   */
+  unless?: string;
   /**
    * Tefila : occasion qui OUVRE le bloc au lieu de le révéler. Le bloc est
    * toujours là, dans un encadré replié, les ajouts des dix jours de
@@ -589,6 +612,8 @@ interface TefilaRun {
   he?: string;
   /** Occasion sans laquelle le fragment ne s'affiche pas. */
   when?: string;
+  /** Occasion qui retire le fragment (voir saidOn). */
+  unless?: string;
 }
 
 interface TefilaFileLine {
@@ -599,6 +624,7 @@ interface TefilaFileLine {
   lead?: boolean;
   tight?: boolean;
   when?: string;
+  unless?: string;
   klaf?: string;
 }
 
@@ -606,6 +632,7 @@ interface TefilaFileBlock {
   label?: string;
   labelText?: Rubric;
   when?: string;
+  unless?: string;
   fold?: string;
   variants?: boolean;
   choice?: TextChoice;
@@ -634,7 +661,10 @@ function parseTefilaLine(raw: string | TefilaFileLine): TextParagraph | null {
       if (text) runs.push({ kind: "he", text });
       continue;
     }
-    const when = part.when ? { when: part.when } : {};
+    const when = {
+      ...(part.when ? { when: part.when } : {}),
+      ...(part.unless ? { unless: part.unless } : {}),
+    };
     if (part.b) {
       const text = cleanText(part.b);
       if (text) runs.push({ kind: "he", text, strong: true, ...when });
@@ -656,6 +686,7 @@ function parseTefilaLine(raw: string | TefilaFileLine): TextParagraph | null {
   if (raw.lead) paragraph.lead = true;
   if (raw.tight) paragraph.tight = true;
   if (raw.when) paragraph.when = raw.when;
+  if (raw.unless) paragraph.unless = raw.unless;
   // Un fichier peut porter un nom de parchemin que ce lecteur ne connaît pas
   // (copie hors ligne d'une version ultérieure) : il n'ouvre alors rien.
   if (raw.klaf === "ketoret" || raw.klaf === "menora") paragraph.klaf = raw.klaf;
@@ -702,6 +733,7 @@ export function parseTefilaBlocks(rawBlocks: unknown): TextBlock[] {
     };
     if (raw.labelText) block.labelText = raw.labelText;
     if (raw.when) block.when = raw.when;
+    if (raw.unless) block.unless = raw.unless;
     if (raw.fold) block.fold = raw.fold;
     if (raw.variants) block.variants = true;
     if (raw.choice) block.choice = raw.choice;

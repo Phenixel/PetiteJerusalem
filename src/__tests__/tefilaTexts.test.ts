@@ -285,10 +285,13 @@ describe("fichiers de tefila", () => {
     expect(bare).toContain("ויודע כי משיח אלהים הוא");
     expect(bare).toContain("אלהים אתה ידעת לאולתי");
     expect(bare).toContain("עננו אבינו עננו");
-    // Chaque strophe se ferme sur le refrain que reprend l'assemblée.
+    // Sept strophes, chacune fermée sur le refrain que reprend l'assemblée.
+    // Le pizmon s'arrête là : les treize midot qui le suivaient n'étaient pas
+    // les siennes, et venaient sans « El mélekh yochev », l'invocation qui les
+    // ouvre partout ailleurs dans le fichier.
     const ana = (content.sections[0].blocks ?? []).find((b) => b.label === "Ana ke'av zedoni")!;
-    expect(ana.lines).toHaveLength(8);
-    for (const paragraph of (ana.paragraphs ?? []).slice(0, 7)) {
+    expect(ana.lines).toHaveLength(7);
+    for (const paragraph of ana.paragraphs ?? []) {
       expect(paragraph.runs.some((run) => run.kind === "he" && run.strong)).toBe(true);
     }
   });

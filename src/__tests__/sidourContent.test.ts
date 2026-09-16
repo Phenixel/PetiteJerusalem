@@ -101,8 +101,11 @@ const KNOWN_WHEN = new Set([
 ]);
 
 /**
- * Les clés d'une condition `when` (voir saidOn) : « teshuva|hoshana-rabba »
- * en nomme deux, « !teshuva » une, niée.
+ * Les clés d'une condition (voir saidOn) : « teshuva|hoshana-rabba » en
+ * nomme deux, « !teshuva » une, niée. Les fichiers du sidour n'écrivent
+ * plus ni l'une ni l'autre forme dans un `when` (voir
+ * sidourCompatibilite.test.ts) ; la lecture reste tolérante, d'autres
+ * corpus de liturgie peuvent les porter.
  */
 const keysOf = (when: string): string[] =>
   when.split("|").map((key) => key.trim().replace(/^!/, ""));
@@ -154,11 +157,18 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
 
     it("n'utilise que des clés when connues du calendrier", () => {
       // Sur les blocs, sur les paragraphes, sur les fragments et sur les
-      // halakhot : une clé inconnue masquerait un passage pour toujours.
+      // halakhot, dans la condition (`when`) comme dans l'exception
+      // (`unless`) : une clé inconnue masquerait un passage pour toujours,
+      // ou le dirait tous les jours.
       const whens = blocks.flatMap((b) => [
         b.when,
-        ...(b.halakhot ?? []).map((h) => h.when),
-        ...(b.paragraphs ?? []).flatMap((p) => [p.when, ...p.runs.map((run) => run.when)]),
+        b.unless,
+        ...(b.halakhot ?? []).flatMap((h) => [h.when, h.unless]),
+        ...(b.paragraphs ?? []).flatMap((p) => [
+          p.when,
+          p.unless,
+          ...p.runs.flatMap((run) => [run.when, run.unless]),
+        ]),
       ]);
       const unknown = whens
         .filter((when): when is string => Boolean(when))
@@ -233,7 +243,7 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       // Comme dans un siddour imprimé : Zokhrénou au milieu d'Avot, Hamélekh
       // hakadoch à la place de haEl hakadoch, et rien d'autre ces jours-là.
       // Chaque fragment `teshuva` est en accent (couleur du thème), et une
-      // conclusion remplacée a son fragment « !teshuva » à côté.
+      // conclusion remplacée a son fragment « unless: teshuva » à côté.
       const teshuva = blocks.flatMap((b) =>
         (b.paragraphs ?? []).flatMap((p) => p.runs.filter((run) => run.when === "teshuva")),
       );
@@ -253,7 +263,9 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       for (const bloc of blocks.slice(amida, avinou)) expect(bloc.when).not.toBe("teshuva");
       // Les conclusions ordinaires cèdent la place, sans accent.
       const ordinaires = blocks.flatMap((b) =>
-        (b.paragraphs ?? []).flatMap((p) => p.runs.filter((run) => run.when === "!teshuva")),
+        (b.paragraphs ?? []).flatMap((p) =>
+          p.runs.filter((run) => run.unless === "teshuva" && !run.when),
+        ),
       );
       expect(ordinaires.map((run) => (run.kind === "he" ? sansSignes(run.text) : ""))).toEqual([
         "האל הקדוש:",
@@ -516,9 +528,11 @@ describe("Min'ha : les jeûnes publics", () => {
     expect(sansSignes(psaume("tsom-minha")[0].lines[0])).toContain("יענך יהוה ביום צרה");
     expect(sansSignes(psaume("tsom-esther-veille")[0].lines[0])).toContain("לולי יהוה");
     expect(sansSignes(psaume("tsom-vendredi")[0].lines[0])).toContain("בשוב יהוה");
-    // Après le Kaddich : 102 (Tich'a beAv compris), ou 22 la veille de Pourim
-    // (le vendredi, le 93 du bloc jour-5 est déjà là).
-    expect(sansSignes(psaume("tsom-minha|tisha-beav")[0].lines[0])).toContain("תפלה לעני");
+    // Après le Kaddich : 102, deux fois pour deux jours qui s'excluent (les
+    // quatre jeûnes, puis Tich'a beAv), ou 22 la veille de Pourim (le
+    // vendredi, le 93 du bloc jour-5 est déjà là).
+    expect(sansSignes(psaume("tsom-minha")[1].lines[0])).toContain("תפלה לעני");
+    expect(sansSignes(psaume("tisha-beav")[0].lines[0])).toContain("תפלה לעני");
     expect(sansSignes(psaume("tsom-esther-veille")[1].lines[0])).toContain("אילת השחר");
     // La supplique « Chema' koli » ouvre l'office, en retrait.
     const chema = blocks.find((b) => b.label === "Supplique « Chema' koli »")!;
@@ -568,10 +582,14 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
     // Les jeûnes lisent « Vaye'hal Moché » en trois montées, chacune sous
     // sa didascalie, dans un seul bloc sans titre : le menu ne retient que
     // la sortie du séfer qui précède, la même que le lundi et le jeudi.
+    // Deux blocs de sortie du séfer, un par clé : le lundi et le jeudi
+    // ordinaires, les jours de jeûne (voir condition dans build-sidour).
+    const sorties = blocks.filter((b) => b.label === "Lecture de la Torah");
+    expect(sorties.filter((b) => b.when === "torah-semaine")).toHaveLength(1);
     const sortie = blocks.findIndex(
-      (b) => b.label === "Lecture de la Torah" && b.when?.includes("taanit"),
+      (b) => b.label === "Lecture de la Torah" && b.when === "taanit",
     );
-    expect(blocks[sortie].when).toBe("torah-semaine|taanit");
+    expect(sortie).toBeGreaterThan(0);
     expect(sansSignes(blocks[sortie].lines[0])).toContain("אל ארך אפים");
     const vayehal = blocks[sortie + 2]; // après le marqueur de la Torah de la semaine
     expect(vayehal.when).toBe("selihot-tsom");
@@ -594,10 +612,12 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
   });
 
   it("remplace le tahanoun par les sli'hot du jeûne, chacun les siennes", () => {
-    // Le tahanoun ordinaire ne se dit pas ces jours-là : sa clé est celle
-    // des jours sans sli'hot.
+    // Le tahanoun ordinaire ne se dit pas ces jours-là : la clé reste celle
+    // de tous les jours, l'exception des jeûnes la retire (voir condition
+    // dans build-sidour : les versions publiées ne lisent que `when`).
     const ordinaire = blocks.find((b) => b.label === "Ta'hanoun (supplications)")!;
-    expect(ordinaire.when).toBe("tahanoun-ordinaire");
+    expect(ordinaire.when).toBe("tahanoun");
+    expect(ordinaire.unless).toBe("selihot-tsom");
     // Chaque jeûne ouvre ses propres sli'hot, dans le fil (plain).
     const propres = [
       ["tsom-guedalia", "Sli'hot du jeûne de Guedalia", "אבלה נפשי"],
@@ -907,11 +927,18 @@ describe.each(autresLiturgies.map((entry) => [resolveFilePath(entry), entry] as 
 
     it("n'utilise que des clés when connues du calendrier", () => {
       // Sur les blocs, sur les paragraphes, sur les fragments et sur les
-      // halakhot : une clé inconnue masquerait un passage pour toujours.
+      // halakhot, dans la condition (`when`) comme dans l'exception
+      // (`unless`) : une clé inconnue masquerait un passage pour toujours,
+      // ou le dirait tous les jours.
       const whens = blocks.flatMap((b) => [
         b.when,
-        ...(b.halakhot ?? []).map((h) => h.when),
-        ...(b.paragraphs ?? []).flatMap((p) => [p.when, ...p.runs.map((run) => run.when)]),
+        b.unless,
+        ...(b.halakhot ?? []).flatMap((h) => [h.when, h.unless]),
+        ...(b.paragraphs ?? []).flatMap((p) => [
+          p.when,
+          p.unless,
+          ...p.runs.flatMap((run) => [run.when, run.unless]),
+        ]),
       ]);
       const unknown = whens
         .filter((when): when is string => Boolean(when))

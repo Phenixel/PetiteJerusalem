@@ -192,7 +192,7 @@ const occasions = computed(() => {
   return isLiturgyText.value && isSansTahanoun(now.value) ? withoutTachanun(today) : today;
 });
 const visibleBlocks = computed(() =>
-  verseBlocks.value.filter((b) => saidOn(b.when, occasions.value)),
+  verseBlocks.value.filter((b) => saidOn(b.when, occasions.value, b.unless)),
 );
 
 // Les bascules saisonnières récentes (machiv haroua'h en début d'hiver…) :
