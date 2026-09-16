@@ -870,14 +870,16 @@ function amidaBlocks(src, ix, opts = {}) {
     ],
   });
 
-  // Vé'al koulam. Aux dix jours de techouva, Oukhtov avant « Vékhol ha'hayim ».
+  // Vé'al koulam. Aux dix jours de techouva, Oukhtov entre après « Vékhol
+  // ha'hayim yodoukha sséla » et avant « Vihalelou », là où la source le
+  // pose.
   blocks.push({
     src,
     halakha: [{ ...HALAKHA.oubliTeshuva("Oukhtov", "Uchtov", "וכתוב"), when: "teshuva" }],
     lines: [
       {
         parts: [
-          { seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent], until: "וְכָל־הַחַיִּים" },
+          { seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent], until: "וִיהַלְלוּ" },
           {
             seg: ix.vealKoulam,
             mode: "small",
@@ -885,7 +887,7 @@ function amidaBlocks(src, ix, opts = {}) {
             when: "teshuva",
             accent: true,
           },
-          { seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent], from: "וְכָל־הַחַיִּים" },
+          { seg: ix.vealKoulam, strip: [STRIP.teshuvaDisent], from: "וִיהַלְלוּ" },
         ],
       },
     ],
