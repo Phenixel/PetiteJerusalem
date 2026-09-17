@@ -26,6 +26,15 @@ const { t, locale } = useI18n();
 const clock = (date: Date) => formatZmanTime(date, props.tzid, locale.value);
 const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
 
+/**
+ * Le jour du jeûne, quand son début n'a pas d'heure : au nord de
+ * l'Angleterre, le soleil ne descend pas à 16,1° au cœur de l'été, et l'aube
+ * de l'avis par degrés n'existe pas le 17 Tamouz. Le jeûne a bien lieu ; il
+ * s'annonce donc avec sa fin, et la ligne du début porte le jour et la raison
+ * plutôt qu'une heure venue d'un autre calcul.
+ */
+const fastDay = computed(() => props.fast.day.greg());
+
 /** Comment la fin est comptée : trois étoiles moyennes, ou minutes fixes. */
 const endRule = computed(() =>
   props.fast.endMinutes === null
@@ -51,10 +60,15 @@ const note = computed(() =>
           <span class="block font-medium leading-snug text-text-primary">
             {{ t("zmanim.fast.start") }}
           </span>
-          <span class="block text-xs text-text-secondary">{{ dayOf(fast.start) }}</span>
+          <span class="block text-xs text-text-secondary">
+            {{ dayOf(fast.start ?? fastDay) }}
+          </span>
         </span>
-        <span class="shrink-0 font-semibold tabular-nums text-text-primary">
+        <span v-if="fast.start" class="shrink-0 font-semibold tabular-nums text-text-primary">
           {{ clock(fast.start) }}
+        </span>
+        <span v-else class="max-w-[60%] shrink text-end text-xs text-text-secondary">
+          {{ t("zmanim.fast.startUnknown") }}
         </span>
       </li>
       <li class="flex items-center justify-between gap-4 py-2">

@@ -134,7 +134,7 @@ const ZMANIM_GUIDE_FR = (links: GuideLinks): GuideStrings => ({
     },
     {
       q: "Quelle différence entre le Maguen Avraham et le Gaon de Vilna ?",
-      a: "Les deux découpent le jour en douze heures égales, mais pas le même jour : le Maguen Avraham le fait courir de l'aube (72 minutes avant le lever du soleil) à la tombée de la nuit, le Gaon de Vilna du lever au coucher du soleil. Le jour du Maguen Avraham est donc plus long, et ses limites du matin tombent plus tôt.",
+      a: "Les deux découpent le jour en douze heures égales, mais pas le même jour : le Maguen Avraham le fait courir de l'aube à la tombée de la nuit, le Gaon de Vilna du lever au coucher du soleil. Le jour du Maguen Avraham est donc plus long, et ses limites du matin tombent plus tôt.",
     },
     {
       q: "Qu'est-ce que le plag hamin'ha ?",
@@ -264,7 +264,7 @@ const ZMANIM_GUIDE_EN = (links: GuideLinks): GuideStrings => ({
     },
     {
       q: "What is the difference between the Magen Avraham and the Vilna Gaon?",
-      a: "Both divide the day into twelve equal hours, but not the same day: the Magen Avraham runs it from dawn (72 minutes before sunrise) to nightfall, the Vilna Gaon from sunrise to sunset. The Magen Avraham's day is therefore longer, and his morning deadlines fall earlier.",
+      a: "Both divide the day into twelve equal hours, but not the same day: the Magen Avraham runs it from dawn to nightfall, the Vilna Gaon from sunrise to sunset. The Magen Avraham's day is therefore longer, and his morning deadlines fall earlier.",
     },
     {
       q: "What is plag hamincha?",

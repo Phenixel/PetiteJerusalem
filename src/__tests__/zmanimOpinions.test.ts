@@ -57,6 +57,26 @@ describe("opinion par défaut", () => {
     }
   });
 
+  it("compte le Maguen Avraham sur l'aube qu'elle affiche, et non sur 72 minutes", () => {
+    const posen = opinionZmanim("posen");
+
+    for (const day of [new Date(2027, 2, 21, 12), new Date(2027, 5, 21, 12)]) {
+      const z = zmanimAt(day);
+      // Le jour du Maguen Avraham court de 16,1° avant le lever à 16,1° après
+      // la chkia : les mêmes degrés que l'aube du cadre, sans quoi la page
+      // afficherait une aube et en calculerait une autre.
+      const alot = posen.alotHaShachar(z);
+      const nightfall = z.timeAtAngle(16.1, false);
+      const hour = (nightfall.getTime() - alot.getTime()) / 12;
+
+      expect(posen.sofZmanShmaMGA(z).getTime()).toBeCloseTo(alot.getTime() + hour * 3, -3);
+      expect(posen.sofZmanTfillaMGA(z).getTime()).toBeCloseTo(alot.getTime() + hour * 4, -3);
+      // L'aube à 72 minutes fixes tombe bien plus tard sous nos latitudes :
+      // c'est l'écart d'une douzaine de minutes que l'on corrigeait ici.
+      expect(posen.sofZmanShmaMGA(z).getTime()).toBeLessThan(z.sofZmanShmaMGA().getTime());
+    }
+  });
+
   it("finit les jeûnes à trois étoiles moyennes, avant la sortie du Chabbat", () => {
     const z = zmanimAt(new Date(2027, 2, 21, 12));
     const posen = opinionZmanim("posen");
@@ -208,7 +228,7 @@ describe("l'opinion suivie gouverne toute l'application", () => {
     const ovadia = restPeriodAt(place, shabbat, "fr")!;
 
     expect(posen.start.getTime()).toBe(ovadia.start.getTime()); // L'allumage est un usage du lieu
-    expect(ovadia.end.getTime()).not.toBe(posen.end.getTime());
-    expect(ovadia.endRabbenouTam!.getTime()).toBeGreaterThan(ovadia.end.getTime());
+    expect(ovadia.end!.getTime()).not.toBe(posen.end!.getTime());
+    expect(ovadia.endRabbenouTam!.getTime()).toBeGreaterThan(ovadia.end!.getTime());
   });
 });

@@ -73,13 +73,20 @@ export interface WeeklyParasha {
  * La paracha de la semaine : celle du Chabbat à venir (aujourd'hui si Chabbat).
  * Les semaines de fête n'ont pas de paracha ordinaire ; on affiche alors celle
  * du prochain Chabbat ordinaire, que le chnei mikra anticipe.
+ *
+ * `il` suit le calendrier d'Israël. La diaspora par défaut, parce que c'est
+ * le public de l'application et que la lecture de la semaine se suit là où
+ * elle a commencé ; mais les deux cycles divergent six Chabbats par an, cinq
+ * années sur sept, dès qu'un dernier jour de Yom Tov tombe un Chabbat en
+ * diaspora (la prochaine fois de mai à juin 2026). La page des horaires,
+ * qui nomme le Chabbat du lieu affiché, passe donc le calendrier du lieu.
  */
-export function getWeeklyParasha(date: Date = new Date()): WeeklyParasha | null {
+export function getWeeklyParasha(date: Date = new Date(), il = false): WeeklyParasha | null {
   const saturday = new Date(date);
   saturday.setDate(saturday.getDate() + ((6 - saturday.getDay() + 7) % 7));
   for (let i = 0; i < 6; i++) {
     const hd = new HDate(saturday);
-    const reading = new Sedra(hd.getFullYear(), false).lookup(hd);
+    const reading = new Sedra(hd.getFullYear(), il).lookup(hd);
     if (!reading.chag) {
       const entries = reading.parsha
         .map((name) => parashaByKey.get(HEBCAL_ALIASES[normalize(name)] ?? normalize(name)))
@@ -104,8 +111,8 @@ export function getWeeklyParasha(date: Date = new Date()): WeeklyParasha | null 
  * annoncer « la paracha de CE Chabbat », cette anticipation est trompeuse
  * on ne garde donc le résultat que s'il tombe bien sur le samedi demandé.
  */
-export function getParashaForShabbat(saturday: Date): WeeklyParasha | null {
-  const parasha = getWeeklyParasha(saturday);
+export function getParashaForShabbat(saturday: Date, il = false): WeeklyParasha | null {
+  const parasha = getWeeklyParasha(saturday, il);
   if (!parasha) return null;
   const month = String(saturday.getMonth() + 1).padStart(2, "0");
   const day = String(saturday.getDate()).padStart(2, "0");

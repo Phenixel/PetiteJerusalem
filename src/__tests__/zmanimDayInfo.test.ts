@@ -97,6 +97,25 @@ describe("tachanunStatus", () => {
     expect(tachanunStatus(DEFAULT_PLACE, hd(2026, 8, 13))).toBe("none");
   });
 
+  it("ne le dit pas jusqu'au 12 Sivan, les jours de tachloumin", () => {
+    // Chavou'ot 5786 : les 6 et 7 Sivan sont les 22 et 23 mai 2026. hebcal
+    // s'arrête au 8 Sivan ; l'usage va jusqu'au 12, et le 13 il reprend.
+    // 9 au 12 Sivan 5786 = 25 au 28 mai 2026, 13 Sivan = 29 mai (un vendredi).
+    for (const day of [25, 26, 27, 28]) {
+      expect(tachanunStatus(DEFAULT_PLACE, hd(2026, 5, day))).toBe("none");
+    }
+    // Le 13 Sivan, le tahanoun revient. C'est un vendredi : le matin seulement.
+    expect(tachanunStatus(DEFAULT_PLACE, hd(2026, 5, 29))).toBe("shacharitOnly");
+  });
+
+  it("le dit encore le 12 Sivan d'Israël comme celui de la diaspora", () => {
+    // Israël n'a qu'un jour de Chavou'ot, mais ses jours de tachloumin
+    // s'arrêtent au même 12 Sivan : la règle ne dépend pas du lieu.
+    const israel = { ...DEFAULT_PLACE, tzid: "Asia/Jerusalem", city: "Jérusalem" };
+    expect(tachanunStatus(israel, hd(2026, 5, 27))).toBe("none");
+    expect(tachanunStatus(israel, hd(2026, 5, 29))).toBe("shacharitOnly");
+  });
+
   it("Chabbat : pas de ligne du tout", () => {
     expect(tachanunStatus(DEFAULT_PLACE, hd(2026, 8, 22))).toBeNull();
   });
@@ -137,7 +156,7 @@ describe("restPeriodsNear", () => {
     expect(periods[0].shabbat).not.toBeNull();
     // Entrée le vendredi soir, sortie le samedi soir.
     expect(periods[0].start.getDay()).toBe(5);
-    expect(periods[0].end.getDay()).toBe(6);
+    expect(periods[0].end!.getDay()).toBe(6);
   });
 
   it("Roch Hachana un Chabbat : un seul bloc, du vendredi au dimanche soir", () => {
@@ -147,7 +166,7 @@ describe("restPeriodsNear", () => {
     expect(periods[0].festivals).toEqual(["Roch Hachanah"]);
     expect(periods[0].shabbat).not.toBeNull();
     expect(periods[0].start.getDate()).toBe(11); // vendredi 11, allumage
-    expect(periods[0].end.getDate()).toBe(13); // dimanche 13, sortie
+    expect(periods[0].end!.getDate()).toBe(13); // dimanche 13, sortie
   });
 
   it("Chemini Atséret et Sim'hat Torah tiennent dans le même bloc", () => {
@@ -190,7 +209,7 @@ describe("yearCalendar", () => {
   it("donne à chaque Yom Tov son entrée et sa sortie", () => {
     const kippour = named("Yom Kippour")[0];
     expect(kippour.period).not.toBeNull();
-    expect(kippour.period!.start.getTime()).toBeLessThan(kippour.period!.end.getTime());
+    expect(kippour.period!.start.getTime()).toBeLessThan(kippour.period!.end!.getTime());
   });
 
   it("sépare les deux blocs de Pessah, et laisse le 'Hol haMoed dehors", () => {

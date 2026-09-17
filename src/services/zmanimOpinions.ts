@@ -13,7 +13,8 @@ import { devicePreference } from "./devicePreference";
  *    le Patah Eliyahou, et c'est celui que l'application suit depuis toujours
  *    (ce sont les valeurs par défaut de hebcal) : l'aube quand le soleil est
  *    à 16,1° sous l'horizon, le talith à 11,5°, la sortie des étoiles à 8,5°,
- *    l'avis de Rabbénou Tam 72 minutes fixes après la chkia.
+ *    le Maguen Avraham sur ce même 16,1°, de l'aube à la nuit, et l'avis de
+ *    Rabbénou Tam 72 minutes fixes après la chkia.
  *  - **Rav Ovadia Yossef** (luah `Or Ha'Haïm`, dont il a suivi la rédaction),
  *    le calcul en MINUTES ZMANIYOT, proportionnelles à la longueur du jour :
  *    l'aube 72 minutes zmaniyot avant le lever, le talith 66, la sortie des
@@ -82,6 +83,12 @@ export interface OpinionZmanim {
   sofZmanShmaMGA(z: Zmanim): Date;
   /** Fin de la Amida selon le Maguen Avraham. */
   sofZmanTfillaMGA(z: Zmanim): Date;
+  /**
+   * Fin de la cinquième heure selon le Maguen Avraham : la veille de Pessah,
+   * dernière limite pour détruire le 'hamets (voir zmanimService, chametzAt).
+   * La quatrième heure, qui clôt la consommation, est déjà celle de la Amida.
+   */
+  sofZmanBiurChametzMGA(z: Zmanim): Date;
   /** Min'ha guedola. */
   minchaGedola(z: Zmanim): Date;
   /** Plag hamin'ha. */
@@ -125,9 +132,15 @@ export interface OpinionZmanim {
 const POSEN: OpinionZmanim = {
   alotHaShachar: (z) => z.alotHaShachar(), // 16,1°
   misheyakir: (z) => z.misheyakir(), // 11,5°
-  // Le Maguen Avraham sur une aube et une nuit à 72 minutes fixes.
-  sofZmanShmaMGA: (z) => z.sofZmanShmaMGA(),
-  sofZmanTfillaMGA: (z) => z.sofZmanTfillaMGA(),
+  // Le Maguen Avraham sur l'aube et la nuit de cette opinion : le jour court
+  // de 16,1° avant le lever à 16,1° après la chkia, et se divise en douze.
+  // Les mêmes degrés que l'aube affichée juste au-dessus, donc, et non les 72
+  // minutes fixes que hebcal calcule par défaut : celles-ci placeraient l'aube
+  // du calcul une demi-heure après celle du cadre, et la fin du Chéma une
+  // douzaine de minutes après l'heure des calendriers d'Europe.
+  sofZmanShmaMGA: (z) => z.sofZmanShmaMGA16Point1(),
+  sofZmanTfillaMGA: (z) => z.sofZmanTfillaMGA16Point1(),
+  sofZmanBiurChametzMGA: (z) => posenMgaHours(z, 5),
   minchaGedola: (z) => z.minchaGedola(),
   plagHaMincha: (z) => z.plagHaMincha(),
   tzeit: (z) => z.tzeit(), // 8,5°, trois petites étoiles selon le Ohr Meïr
@@ -141,6 +154,24 @@ const POSEN: OpinionZmanim = {
 
 /** Minutes après la chkia de la sortie selon Rabbénou Tam, en minutes fixes. */
 const RABBENOU_TAM_MINUTES = 72;
+
+/** Les degrés du jour du Maguen Avraham de cette opinion, matin et soir. */
+const POSEN_MGA_DEGREES = 16.1;
+
+/**
+ * Une heure du jour du Maguen Avraham compté en degrés.
+ *
+ * hebcal nomme les trois et les quatre heures (`sofZmanShmaMGA16Point1`,
+ * `sofZmanTfillaMGA16Point1`), et c'est elles qu'on appelle plus haut ; il n'a
+ * pas de nom pour les cinq, dont la veille de Pessah a besoin. Le calcul est
+ * le même, à l'identique de ce que font ces deux-là : le jour va de 16,1°
+ * avant le lever à 16,1° après la chkia, on le divise en douze, et on tronque
+ * à la milliseconde comme hebcal tronque.
+ */
+function posenMgaHours(z: Zmanim, hours: number): Date {
+  const [alot, hour] = z.getTemporalHourByDeg(POSEN_MGA_DEGREES);
+  return new Date(alot.getTime() + Math.floor(hour * hours));
+}
 
 /**
  * Degrés du soleil sous l'horizon à la fin des jeûnes : trois étoiles
@@ -204,6 +235,7 @@ const OVADIA: OpinionZmanim = {
   misheyakir: (z) => fromSunrise(z, -OVADIA_MISHEYAKIR_MINUTES),
   sofZmanShmaMGA: (z) => mgaHours(z, 3),
   sofZmanTfillaMGA: (z) => mgaHours(z, 4),
+  sofZmanBiurChametzMGA: (z) => mgaHours(z, 5),
   minchaGedola: (z) => {
     // La demi-heure zmanit est plus longue que l'autre en été, plus courte en
     // hiver : on retient la plus tardive des deux, par rigueur.

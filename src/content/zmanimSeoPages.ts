@@ -203,7 +203,7 @@ export function upcomingRestPeriods(
       abs += 1;
       continue;
     }
-    if (period.end.getTime() > now.getTime()) periods.push(period);
+    if (!period.end || period.end.getTime() > now.getTime()) periods.push(period);
     abs = period.last.abs() + 1;
   }
   return periods;
@@ -241,7 +241,7 @@ function restRows(
           <tr>
             <td>${periodLabel(place, p, locale, s)}</td>
             <td>${instantCell(p.start, place.tzid, locale, s)}</td>
-            <td>${instantCell(p.end, place.tzid, locale, s)}</td>
+            <td>${p.end ? instantCell(p.end, place.tzid, locale, s) : ""}</td>
           </tr>`,
     )
     .join("");
@@ -478,11 +478,15 @@ function buildHorairesPage(now: Date, locale: SeoLocale): SeoPage {
             clock(nextShabbat.start, TZ, locale),
             18,
           ),
-          s.faqShabbatEnd(
-            hubCity,
-            instantDayYear(nextShabbat.end, TZ, s),
-            clock(nextShabbat.end, TZ, locale),
-          ),
+          ...(nextShabbat.end
+            ? [
+                s.faqShabbatEnd(
+                  hubCity,
+                  instantDayYear(nextShabbat.end, TZ, s),
+                  clock(nextShabbat.end, TZ, locale),
+                ),
+              ]
+            : []),
         ]
       : []),
     s.faqHowComputed(hubCity, 18),
@@ -597,11 +601,15 @@ function buildCityPage(city: City, all: City[], now: Date, locale: SeoLocale): S
             clock(nextShabbat.start, tz, locale),
             minutes,
           ),
-          s.faqShabbatEnd(
-            name,
-            instantDayYear(nextShabbat.end, tz, s),
-            clock(nextShabbat.end, tz, locale),
-          ),
+          ...(nextShabbat.end
+            ? [
+                s.faqShabbatEnd(
+                  name,
+                  instantDayYear(nextShabbat.end, tz, s),
+                  clock(nextShabbat.end, tz, locale),
+                ),
+              ]
+            : []),
         ]
       : []),
     s.faqHowComputed(name, minutes),
@@ -822,7 +830,7 @@ function calendarRow(entry: CalendarEntry, locale: SeoLocale, s: ZmanimStrings):
             <td>${entryTitleLinked(entry, locale, s)}</td>
             <td>${entryRange(entry, s)}</td>
             <td>${period ? instantCell(period.start, TZ, locale, s) : ""}</td>
-            <td>${period ? instantCell(period.end, TZ, locale, s) : ""}</td>
+            <td>${period?.end ? instantCell(period.end, TZ, locale, s) : ""}</td>
           </tr>`;
 }
 

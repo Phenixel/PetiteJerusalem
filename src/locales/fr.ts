@@ -506,6 +506,8 @@ const fr = {
     /* Début et fin d'un jeûne public, en cadre dès la veille (voir FastTimes). */
     fast: {
       start: "Début du jeûne",
+      startUnknown:
+        "Pas d'heure de début\u00a0: ici, le soleil ne descend pas assez bas ce jour-là pour que l'avis suivi donne l'aube.",
       end: "Fin du jeûne",
       endStars:
         "à la sortie de trois étoiles moyennes, plus tôt que la sortie du Chabbat, qui en attend trois petites",
@@ -514,11 +516,38 @@ const fr = {
       noteDawn: "Le jeûne commence à l'aube (alot haCha'har) et se termine {end}.",
       noteEve: "Le jeûne commence la veille au coucher du soleil et se termine {end}.",
     },
+    /* Les limites du 'hamets, la veille de Pessah (voir services/zmanimService,
+       chametzAt). Deux heures et non une, et trois les années où le 14 Nissan
+       tombe un Chabbat : on ne brûle pas ce jour-là. */
+    chametz: {
+      title: "Limites du 'hamets",
+      eatingMGA: "Fin de la consommation (Maguen Avraham)",
+      eating: "Fin de la consommation (Gaon de Vilna)",
+      disposalMGA: "Fin de la destruction (Maguen Avraham)",
+      disposal: "Fin de la destruction (Gaon de Vilna)",
+      bitulMGA: "Fin de l'annulation (Maguen Avraham)",
+      bitul: "Fin de l'annulation (Gaon de Vilna)",
+      burningEveMGA: "Destruction, le vendredi (Maguen Avraham)",
+      burningEve: "Destruction, le vendredi (Gaon de Vilna)",
+      note: "On cesse de manger le 'hamets à la fin de la quatrième heure du jour, et d'en posséder à la fin de la cinquième. Ce sont des heures zmaniyot : elles suivent la longueur du jour, et les deux avis ne les découpent pas pareil.",
+      noteShabbat:
+        "La veille de Pessah tombe un Chabbat, et on ne brûle pas le 'hamets un Chabbat : la destruction se fait le vendredi, avant la cinquième heure de ce jour-là. Le Chabbat matin, on mange jusqu'à la quatrième heure, et ce qui reste s'annule de la voix avant la cinquième.",
+    },
     periods: {
       dawn: "Aube et lever",
       morning: "Limites du matin",
       afternoon: "Après-midi",
       evening: "Soir et nuit",
+    },
+    /* Ce que l'avis suivi ne sait pas calculer ici aujourd'hui : plutôt que
+       de laisser une ligne manquer sans rien dire, ou d'afficher une heure
+       venue d'une autre règle que celle annoncée (voir services/zmanimService,
+       zmanimGap). */
+    gap: {
+      degrees:
+        "Ici, le soleil ne descend pas assez bas aujourd'hui pour que l'avis suivi donne ces heures : {names}. L'avis du Rav Ovadia Yossef, qui compte en minutes zmaniyot proportionnelles à la longueur du jour, en donne une toute l'année.",
+      polar:
+        "Le soleil ne se lève pas ou ne se couche pas ici aujourd'hui : ces heures n'existent pas ({names}).",
     },
     tachanun: {
       full: "On dit Ta'hanoun.",
@@ -527,6 +556,8 @@ const fr = {
     },
     rest: {
       end: "Sortie",
+      endUnknown:
+        "Pas d'heure de sortie\u00a0: ici, le soleil ne descend pas assez bas ce jour-là pour que l'avis suivi donne la sortie des étoiles.",
       rabbenouTam: "Sortie Rabbénou Tam",
       rabbenouTamNote:
         "La sortie selon Rabbénou Tam est comptée 72 minutes après le coucher du soleil.",
@@ -589,7 +620,7 @@ const fr = {
       posen: {
         name: "Rav Meïr Posen (Ohr Meïr)",
         short: "Rav Posen",
-        hint: "Le calcul par degrés du soleil sous l'horizon, celui des calendriers d'Europe : aube à 16,1°, talith à 11,5°, sortie des étoiles à 8,5°, fin des jeûnes à 7,08°, Rabbénou Tam 72 minutes après la chkia.",
+        hint: "Le calcul par degrés du soleil sous l'horizon, celui des calendriers d'Europe : aube et Maguen Avraham à 16,1°, talith à 11,5°, sortie des étoiles à 8,5°, fin des jeûnes à 7,08°, Rabbénou Tam 72 minutes après la chkia.",
       },
       ovadia: {
         name: "Rav Ovadia Yossef (Or Ha'Haïm)",
