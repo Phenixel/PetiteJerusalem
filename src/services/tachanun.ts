@@ -17,6 +17,8 @@ import { HDate, months, tachanun } from "@hebcal/core";
  * lendemain, et l'exception ne se déclenche donc jamais. Résultat, le 28 Eloul
  * l'application annonçait « pas de tahanoun à Min'ha » alors qu'on le dit.
  *
+ * S'y ajoute le 9 au 12 Sivan, pour une autre raison : voir `isTashlumin`.
+ *
  * On refait donc la vérification ici, pour les trois jours, plutôt que
  * d'attendre la correction en amont. Les deux autres cas passent déjà : les
  * refaire ne change rien, et le jour où hebcal corrigera le premier, cette
@@ -25,6 +27,30 @@ import { HDate, months, tachanun } from "@hebcal/core";
 export interface TachanunSaid {
   shacharit: boolean;
   mincha: boolean;
+}
+
+/**
+ * Les jours de tachloumin, après Chavou'ot.
+ *
+ * hebcal range le 1er au 8 Sivan parmi les jours où AUCUNE communauté ne dit
+ * le tahanoun, et le 9 au 13 parmi ceux où CERTAINES l'omettent seulement.
+ * Cette seconde nuance, il la porte dans un champ à part (`allCongs`) que ses
+ * réponses `shacharit` et `mincha` ignorent : l'application annonçait donc
+ * « On dit Ta'hanoun » du 9 au 12 Sivan.
+ *
+ * Or on ne le dit pas : les sept jours de tachloumin, pendant lesquels on
+ * pouvait encore monter l'offrande de la fête, courent jusqu'au 12 Sivan, et
+ * l'usage séfarade comme achkénaze est de ne pas dire le tahanoun tant qu'ils
+ * durent. Le 13, il reprend.
+ *
+ * Les autres jours que hebcal signale de la même façon (Pessah Cheni, du 25
+ * au 30 Tichri, Yom haAtsmaout, Yom Yerouchalayim) gardent sa réponse : là,
+ * l'usage est réellement partagé.
+ */
+const TASHLUMIN_LAST_DAY = 12;
+
+function isTashlumin(hd: HDate): boolean {
+  return hd.getMonth() === months.SIVAN && hd.getDate() <= TASHLUMIN_LAST_DAY;
 }
 
 /** Ce lendemain-là laisse-t-il le tahanoun à la Min'ha de la veille ? */
@@ -43,6 +69,7 @@ function keepsPreviousMincha(next: HDate): boolean {
 }
 
 export function saidTachanun(hd: HDate, il: boolean): TachanunSaid {
+  if (isTashlumin(hd)) return { shacharit: false, mincha: false };
   const said = tachanun(hd, il);
   // Le vendredi reste à l'écart : ce qui retient sa Min'ha, c'est le Chabbat
   // qui vient, pas le jour d'après.

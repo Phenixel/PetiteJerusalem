@@ -33,6 +33,7 @@ import {
   formatHebrewDate,
   formatZmanTime,
   hebrewDayOf,
+  isIsraelPlace,
   restPeriodsNear,
   sameCivilDay,
   tachanunStatus,
@@ -187,7 +188,8 @@ const fastFirst = computed(() => {
  * affichés, et non celui d'aujourd'hui : le samedi soir après la sortie, le
  * bloc montre déjà le Chabbat suivant, sa paracha doit suivre.
  */
-const parashaOf = (shabbat: Date | null) => (shabbat ? getParashaForShabbat(shabbat) : null);
+const parashaOf = (shabbat: Date | null) =>
+  shabbat ? getParashaForShabbat(shabbat, isIsraelPlace(place.value)) : null;
 
 /**
  * Ce que l'avis suivi ne sait pas calculer ici aujourd'hui.

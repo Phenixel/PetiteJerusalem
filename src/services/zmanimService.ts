@@ -511,7 +511,7 @@ export function hebrewDateFor(place: ZmanimPlace, day: Date, now: Date = new Dat
  * d'Israël du catalogue comme une position d'appareil en Israël vivent toutes
  * deux en Asia/Jerusalem.
  */
-const isIsraelPlace = (place: ZmanimPlace): boolean => place.tzid === "Asia/Jerusalem";
+export const isIsraelPlace = (place: ZmanimPlace): boolean => place.tzid === "Asia/Jerusalem";
 
 /** hebcal ne porte que trois catalogues : en, he et fr (voir l'import en tête). */
 const hebcalLocale = (locale: string): string =>

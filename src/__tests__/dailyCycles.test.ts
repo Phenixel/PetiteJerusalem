@@ -56,6 +56,22 @@ describe("getParashaForShabbat", () => {
     expect(getParashaForShabbat(shabbat)).toBeNull();
   });
 
+  it("suit le cycle d'Israël quand on le lui demande", () => {
+    // Les deux cycles divergent six Chabbats par an dès qu'un dernier jour de
+    // Yom Tov tombe un Chabbat en diaspora : Chavou'ot 5786 s'achève le
+    // samedi 23 mai 2026, qu'Israël a déjà passé. Israël lit Nasso ce
+    // jour-là ; la diaspora, qui est encore en fête, n'a pas de paracha, et
+    // ne rattrape qu'au Chabbat du 27 juin, en doublant Houkat et Balak.
+    expect(getParashaForShabbat(new Date(2026, 4, 23, 22), true)?.names).toEqual(["Nasso"]);
+    expect(getParashaForShabbat(new Date(2026, 4, 23, 22))).toBeNull();
+    expect(getParashaForShabbat(new Date(2026, 5, 27, 22), true)?.names).toEqual(["Balak"]);
+    expect(getParashaForShabbat(new Date(2026, 5, 27, 22))?.names).toEqual(["Chukat", "Balak"]);
+    // Les deux cycles se rejoignent ensuite, et ne se quittent plus de l'année.
+    expect(getParashaForShabbat(new Date(2026, 6, 4, 22), true)?.names).toEqual(
+      getParashaForShabbat(new Date(2026, 6, 4, 22))?.names,
+    );
+  });
+
   it("suit le samedi, pas la date d'aujourd'hui", () => {
     // Deux Chabbats consécutifs : chacun sa paracha.
     expect(getParashaForShabbat(new Date(2026, 7, 8, 22, 0, 0))?.names).toEqual(["Re'eh"]);
