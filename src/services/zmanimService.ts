@@ -3,6 +3,7 @@ import {
   HDate,
   HebrewCalendar,
   Locale,
+  Molad,
   Zmanim,
   flags,
   months,
@@ -1042,30 +1043,77 @@ export function nightfallOf(place: ZmanimPlace, hd: HDate): Date | null {
 }
 
 /**
+ * La fenêtre de la bénédiction de la lune pour le mois de `hd`.
+ *
+ * Elle se compte depuis le MOLAD, la conjonction moyenne, et non depuis le
+ * premier du mois : Roch Hodech tombe de zéro à deux jours après lui, et les
+ * deux ne coïncident donc pas. On attend sept jours complets depuis le molad
+ * (usage séfarade, Ben Ich 'Haï), et on ne dit plus la bénédiction passé la
+ * moitié de la lunaison, 14 jours 18 heures 22 minutes après lui (Choul'han
+ * Aroukh, Ora'h 'Haïm 426, 3, l'avis que le Rav Ovadia Yossef retient).
+ *
+ * hebcal calcule les deux, à partir du même molad qu'annonce le Chabbat
+ * Mevarekhim : celui de Tichri 5787 est bien « vendredi 20 h 59 et 1 'helek »
+ * (`getDow` 5, `getHour` 20, `getMinutes` 59, `getChalakim` 1), soit
+ * l'instant `2026-09-11T18:38:06Z`.
+ */
+export function birkatHalevanaWindow(hd: HDate): { start: Date; end: Date } {
+  const molad = new Molad(hd.getFullYear(), hd.getMonth());
+  const at = (zdt: { epochMilliseconds: number | bigint }) =>
+    new Date(Number(zdt.epochMilliseconds));
+  return {
+    start: at(molad.getTchilasZmanKidushLevana7Days()),
+    end: at(molad.getSofZmanKidushLevanaBetweenMoldos()),
+  };
+}
+
+/**
  * Dit-on la bénédiction de la lune (Birkat Halevana) la nuit qui ouvre ce
  * jour hébraïque-là ?
  *
- * Usage séfarade (Ben Ich 'Haï) : on attend sept jours complets depuis le
- * molad, donc la première nuit est celle qui ouvre le 8 du mois (la nuit du 7
- * n'en compte que six), et on ne la dit plus passé la moitié de la lunaison.
- * Deux reports d'usage, pour la dire dans la joie : en Av on attend la sortie
- * de Tich'a beAv, en Tichri celle de Kippour.
+ * La nuit qui ouvre `hd` commence à la sortie des étoiles de la veille : on
+ * regarde donc si CET INSTANT-LÀ tombe dans la fenêtre du molad. Compter en
+ * jours du mois, comme on le faisait (du 8 au 14), déplaçait la fenêtre de
+ * zéro à deux jours selon l'écart entre le molad et Roch Hodech : en Nissan
+ * 5787, la nuit qui ouvre le 7 était refusée alors que les sept jours étaient
+ * écoulés.
+ *
+ * Deux reports d'usage sont conservés, pour la dire dans la joie : en Av on
+ * attend la sortie de Tich'a beAv, en Tichri celle de Kippour.
  */
-export function saysBirkatHalevana(hd: HDate): boolean {
-  const day = hd.getDate();
-  if (day > BIRKAT_HALEVANA_LAST_DAY) return false;
-  if (hd.getMonth() === months.AV) return day >= 10;
-  if (hd.getMonth() === months.TISHREI) return day >= 11;
-  return day >= 8;
+export function saysBirkatHalevana(place: ZmanimPlace, hd: HDate): boolean {
+  if (hd.getMonth() === months.AV && hd.getDate() < 10) return false;
+  if (hd.getMonth() === months.TISHREI && hd.getDate() < 11) return false;
+  const night = nightfallOf(place, hd.prev());
+  if (!night) return false; // Pas de nuit ici ce jour-là : rien à annoncer.
+  const { start, end } = birkatHalevanaWindow(hd);
+  return night.getTime() >= start.getTime() && night.getTime() <= end.getTime();
 }
 
-/** La moitié de la lunaison : passé ce jour, la bénédiction ne se dit plus. */
-const BIRKAT_HALEVANA_LAST_DAY = 14;
-
-/** Le dernier jour où la bénédiction de la lune se dit, ce mois-là. */
-export function birkatHalevanaLastDay(hd: HDate): HDate {
-  return new HDate(BIRKAT_HALEVANA_LAST_DAY, hd.getMonth(), hd.getFullYear());
+/**
+ * Le dernier jour hébraïque dont la nuit d'ouverture précède la fin de la
+ * fenêtre : celui que le bandeau annonce comme date limite.
+ *
+ * On part du dernier jour possible et on redescend : la fenêtre ne dure jamais
+ * plus d'une quinzaine de nuits, et le calcul reste à la fois exact et court.
+ */
+export function birkatHalevanaLastDay(place: ZmanimPlace, hd: HDate): HDate {
+  const { end } = birkatHalevanaWindow(hd);
+  let day = new HDate(BIRKAT_HALEVANA_SEARCH_LAST_DAY, hd.getMonth(), hd.getFullYear());
+  for (let i = 0; i < BIRKAT_HALEVANA_SEARCH_DAYS; i++) {
+    const night = nightfallOf(place, day.prev());
+    if (night && night.getTime() <= end.getTime()) return day;
+    day = day.prev();
+  }
+  return day;
 }
+
+/**
+ * Jusqu'où chercher le dernier jour : la moitié d'une lunaison ne dépasse
+ * jamais le 17 du mois, le molad pouvant précéder Roch Hodech de deux jours.
+ */
+const BIRKAT_HALEVANA_SEARCH_LAST_DAY = 17;
+const BIRKAT_HALEVANA_SEARCH_DAYS = 6;
 
 /**
  * Une entrée du calendrier des fêtes : une fête (ou un bloc de fêtes qui se

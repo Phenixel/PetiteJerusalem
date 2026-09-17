@@ -26,16 +26,18 @@ const { place } = useZmanimLocation();
 // c'est donc toujours du bon côté de la bascule qu'il faut la poser. D'où
 // hebrewDateFor, qui tient compte de l'heure, et le minuteur qui la suit.
 // Le bandeau paraît ainsi à la chkia de la première nuit où elle se dit
-// (celle qui ouvre le 8 du mois, voir saysBirkatHalevana), jamais la veille.
+// (sept jours pleins après le molad, voir saysBirkatHalevana), jamais la
+// veille. La fenêtre se compte depuis le molad et non depuis Roch Hodech :
+// elle dépend donc du LIEU, dont la sortie des étoiles ouvre la nuit.
 // Horloge partagée entre les cartes de l'accueil (un seul setInterval).
 const now = useNow();
 
 const hebrewDay = computed(() => hebrewDateFor(place.value, now.value, now.value));
-const visible = computed(() => saysBirkatHalevana(hebrewDay.value));
+const visible = computed(() => saysBirkatHalevana(place.value, hebrewDay.value));
 
 /** La date limite : la moitié de la lunaison. */
 const deadline = computed(() =>
-  formatHebrewDate(birkatHalevanaLastDay(hebrewDay.value), locale.value),
+  formatHebrewDate(birkatHalevanaLastDay(place.value, hebrewDay.value), locale.value),
 );
 </script>
 

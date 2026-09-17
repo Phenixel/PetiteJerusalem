@@ -368,6 +368,28 @@ molad (`Molad`) : le début pourrait être « molad + 7 jours » et la fin
 « molad + 14 j 18 h 22 min », en heures de Jérusalem, avec l'usage de
 l'avis suivi pour l'arrondi.
 
+### 3.10 bis Les dates du point 3.10, recalculées
+
+Le point 3.10 donnait, pour Nissan 5787, une demi-lunaison « le 13 Nissan vers
+8 h 30 », et concluait que l'application autorisait une nuit de trop à la fin.
+Le molad de hebcal donne autre chose : la limite tombe le 21 avril 2027 à
+08:08 (heure de Paris), qui est le 14 Nissan. La nuit qui ouvre le 14 est donc
+bien permise, et c'est seulement au DÉBUT que la fenêtre était fausse ce
+mois-là : sept jours pleins sont écoulés dès la nuit qui ouvre le 7.
+
+Les autres mois éprouvés penchent dans l'autre sens, le molad y suivant Roch
+Hodech de plus près :
+
+| Mois          | Fenêtre du compte en jours | Fenêtre du molad |
+| ------------- | -------------------------- | ---------------- |
+| Av 5786       | nuits du 8 au 14           | nuits du 8 au 15 |
+| Eloul 5786    | nuits du 8 au 14           | nuits du 8 au 15 |
+| Tichri 5787   | nuits du 8 au 14           | nuits du 8 au 15 |
+| Nissan 5787   | nuits du 8 au 14           | nuits du 7 au 14 |
+
+L'erreur de fond que le point 3.10 relevait est donc bien réelle, et d'un jour
+dans les deux sens ; ce sont ses deux dates d'exemple qui étaient décalées.
+
 ### 3.11 Le calendrier des fêtes porte des jours qui ne sont pas des fêtes
 
 `CALENDAR_FLAGS` inclut `MINOR_HOLIDAY`, ce qui fait entrer « Lel Selihot »
