@@ -1,0 +1,138 @@
+// @vitest-environment node
+import { describe, it, expect, afterAll } from "vitest";
+import {
+  computeZmanim,
+  DEFAULT_PLACE,
+  setZmanimOpinion,
+  type ZmanKey,
+} from "../services/zmanimService";
+
+/**
+ * Les horaires ne dépendent pas du fuseau de l'appareil.
+ *
+ * Un horaire est un INSTANT : il ne regarde que le lieu affiché et la date.
+ * Le fuseau du navigateur ne sert qu'à l'écrire en heure locale. Pourtant,
+ * jusqu'au correctif posé sur `@hebcal/core` (voir `patches/`), un appareil
+ * réglé sur un fuseau américain lisait certains horaires de Paris avec une
+ * heure d'écart, le jour du retour à l'heure d'hiver de CET APPAREIL.
+ *
+ * Cause : `zdtToDate` faisait `res.setMilliseconds(0)` sur la `Date` obtenue
+ * de l'instant exact. Les setters de `Date` recalculent l'instant depuis les
+ * champs LOCAUX de la machine ; à l'heure ambiguë du retour à l'heure d'hiver,
+ * qui existe deux fois, JavaScript choisit l'autre occurrence, et l'instant
+ * recule d'une heure. Voir `docs/audit-horaires-2026-09.md`, point 3.1.
+ *
+ * Node relit `process.env.TZ` à l'affectation : ce test change donc le fuseau
+ * de la machine sous les pieds du calcul, et exige les mêmes instants.
+ */
+
+/** Dimanche 1er novembre 2026 : jour du retour à l'heure d'hiver en Amérique. */
+const NOVEMBER = new Date(Date.UTC(2026, 10, 1, 12));
+/** Dimanche 29 mars 2026 : jour du passage à l'heure d'été en Europe. */
+const MARCH = new Date(Date.UTC(2026, 2, 29, 12));
+
+/**
+ * Les fuseaux d'appareil éprouvés. Le 1er novembre 2026, l'heure ambiguë est
+ * 1 h à 2 h à New York (5 h à 7 h UTC) et à Los Angeles (8 h à 10 h UTC) :
+ * les horaires de Paris qui y tombent sont justement le lever du soleil et les
+ * deux limites du Gaon de Vilna.
+ */
+const DEVICE_TIMEZONES = ["UTC", "America/New_York", "America/Los_Angeles", "Europe/Paris"];
+
+const ORIGINAL_TZ = process.env.TZ;
+
+/**
+ * Les horaires de Paris tels que le fuseau de la machine ne doit jamais les
+ * déplacer, en UTC.
+ *
+ * Calculés par `@hebcal/core` pour Paris (48,85341 / 2,3488), au niveau de la
+ * mer, avec le moteur solaire NOAA, et recoupés par PyEphem et kosher-zmanim
+ * lors de l'audit (section 2 : moins de six secondes d'écart).
+ */
+const EXPECTED: { day: Date; label: string; times: Partial<Record<ZmanKey, string>> }[] = [
+  {
+    day: NOVEMBER,
+    label: "Paris, dimanche 1er novembre 2026",
+    times: {
+      // Aube du Rav Posen : soleil à 16,1° sous l'horizon le matin.
+      alotHaShachar: "2026-11-01T05:01:46.000Z",
+      // Talith : soleil à 11,5°.
+      misheyakir: "2026-11-01T05:29:57.000Z",
+      // Lever du soleil (bord supérieur, 0,833° au-dessus de l'horizon) :
+      // 07:37:17 à Paris. C'est l'horaire que New York lisait 05:37:17 UTC.
+      sunrise: "2026-11-01T06:37:17.000Z",
+      // Fin du Chéma du Gaon de Vilna : trois heures zmaniyot du lever au
+      // coucher. Los Angeles la lisait 08:05:32 UTC.
+      sofZmanShma: "2026-11-01T09:05:32.000Z",
+      // Fin de la Amida du Gaon de Vilna : quatre heures zmaniyot.
+      sofZmanTfilla: "2026-11-01T09:54:58.000Z",
+      // Coucher du soleil.
+      sunset: "2026-11-01T16:30:18.000Z",
+      // Sortie des étoiles du Rav Posen : soleil à 8,5° sous l'horizon.
+      tzeit: "2026-11-01T17:19:02.000Z",
+    },
+  },
+  {
+    day: MARCH,
+    label: "Paris, dimanche 29 mars 2026",
+    times: {
+      // Le passage à l'heure d'été laisse un TROU dans l'heure locale (2 h à
+      // 3 h n'existe pas) : un setter y saute aussi. Aucun horaire de Paris n'y
+      // tombe ce jour-là, mais les instants doivent rester les mêmes partout.
+      alotHaShachar: "2026-03-29T03:58:13.000Z",
+      sunrise: "2026-03-29T05:34:46.000Z",
+      sofZmanShma: "2026-03-29T08:45:17.000Z",
+      sunset: "2026-03-29T18:16:50.000Z",
+      tzeit: "2026-03-29T19:04:24.000Z",
+    },
+  },
+];
+
+/**
+ * Pose le fuseau de la machine et vide ce qui a été calculé sous l'ancien :
+ * `setZmanimOpinion` est le seul point d'entrée qui purge la mémoïsation, et
+ * il ne fait rien quand l'opinion ne change pas, d'où l'aller-retour.
+ */
+function useDeviceTimezone(tzid: string): void {
+  process.env.TZ = tzid;
+  setZmanimOpinion("ovadia");
+  setZmanimOpinion("posen");
+}
+
+afterAll(() => {
+  if (ORIGINAL_TZ === undefined) delete process.env.TZ;
+  else process.env.TZ = ORIGINAL_TZ;
+  setZmanimOpinion("ovadia");
+  setZmanimOpinion("posen");
+});
+
+describe("horaires et fuseau de l'appareil", () => {
+  for (const tzid of DEVICE_TIMEZONES) {
+    for (const { day, label, times } of EXPECTED) {
+      it(`donne les mêmes instants pour ${label} sous un appareil réglé sur ${tzid}`, () => {
+        useDeviceTimezone(tzid);
+        const byKey = new Map(
+          computeZmanim(DEFAULT_PLACE, day).map((zman) => [zman.key, zman.date]),
+        );
+        for (const [key, iso] of Object.entries(times)) {
+          expect(byKey.get(key as ZmanKey)?.toISOString(), `${key} sous ${tzid}`).toBe(iso);
+        }
+      });
+    }
+  }
+
+  it("donne le même jour d'horaires sous tous les fuseaux d'appareil", () => {
+    const reference = new Map<string, string>();
+    for (const tzid of DEVICE_TIMEZONES) {
+      useDeviceTimezone(tzid);
+      for (const day of [NOVEMBER, MARCH]) {
+        for (const zman of computeZmanim(DEFAULT_PLACE, day)) {
+          const key = `${day.toISOString()}|${zman.key}`;
+          const iso = zman.date.toISOString();
+          if (tzid === DEVICE_TIMEZONES[0]) reference.set(key, iso);
+          else expect(iso, `${key} sous ${tzid}`).toBe(reference.get(key));
+        }
+      }
+    }
+  });
+});

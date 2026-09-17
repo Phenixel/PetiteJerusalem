@@ -44,10 +44,39 @@ avec ce que chacun attend :
 | `ignoredExceptions.test.ts` | Le filtre du bruit connu de l'Error tracking (`src/config/ignoredExceptions`) reconnaît les messages réellement observés dans PostHog, et seulement eux. |
 | `analyticsAudience.test.ts` | `resolveUserType` classe l'équipe, le compte de démonstration remis à Google et les testeurs du test fermé à part des vrais utilisateurs, quelle que soit la casse de l'email. |
 | `adminAccess.test.ts` | `isAdminEmail` n'accepte que le compte admin, et `generateStudioToken` produit un jeton de 64 caractères hexadécimaux jamais répété. |
+| `zmanimDeviceTimezone.test.ts` | Les horaires d'un lieu sont les mêmes instants quel que soit le fuseau de la MACHINE (`process.env.TZ` changé sous les pieds du calcul) : c'est le test qui tient le correctif posé sur `@hebcal/core`, décrit plus bas. |
 
 Quand une PR est rouge sans qu'aucun test fonctionnel ne semble concerné,
 c'est presque toujours l'un de ceux-là ; le message d'échec nomme le fichier
 et la règle.
+
+
+### Le correctif posé sur `@hebcal/core`
+
+`patches/@hebcal+core+6.9.1.patch` corrige trois fonctions de
+`dist/esm/zmanim.js`, et `patch-package` le rejoue à chaque `npm ci` par le
+script `postinstall`. Sans lui, une installation neuve rendrait des horaires
+faux sans que rien ne le signale.
+
+Ce qu'il corrige : `zdtToDate` faisait `res.setMilliseconds(0)`, et
+`sunriseOffset` comme `sunsetOffset` faisaient `setSeconds(0, 0)`. Les setters
+de `Date` ne coupent pas l'instant, ils le RECALCULENT depuis les champs locaux
+de la machine. À l'heure ambiguë du retour à l'heure d'hiver, qui existe deux
+fois, JavaScript choisit l'autre occurrence ; l'instant recule d'une heure. Un
+appareil réglé sur `America/New_York` lisait ainsi le lever du soleil de Paris
+du 1er novembre 2026 à 05:37 UTC au lieu de 06:37, et un appareil californien
+la fin du Chéma à 08:05 au lieu de 09:05. Le lieu affiché n'y était pour
+rien : seul comptait le fuseau de l'appareil.
+
+Le correctif tronque sur l'epoch (`Math.floor(ms / 1000) * 1000`), qui ne passe
+par aucun champ local. Il ne touche que `dist/esm/zmanim.js` : `dist/bundle.js`
+porte le même code, mais aucun import ne l'atteint, le champ `exports` du
+paquet n'exposant que `.` et `./dist/esm/*`.
+
+Le correctif reste à proposer en amont, chez `hebcal/hebcal-es6` ; le patch se
+retire du dépôt dès qu'une version le porte. Voir
+`docs/audit-horaires-2026-09.md`, point 3.1.
+
 
 ## Tests de bout en bout (Playwright)
 
