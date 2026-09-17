@@ -67,14 +67,20 @@ const headline = computed(() => {
     const lit = now.value.getTime() >= period.start.getTime();
     // « Sortie de Chabbat » ne convient plus quand une fête s'y ajoute.
     const endLabel = t(period.festivals.length > 0 ? "zmanim.rest.end" : "zmanim.shabbat.havdalah");
-    return {
-      icon: "candle" as const,
-      label: lit ? endLabel : t("zmanim.shabbat.candleLighting"),
-      date: lit ? period.end : period.start,
-      // Avant l'allumage, la sortie donne l'autre bout du repos ; après, elle
-      // est déjà l'heure annoncée et n'a pas à être répétée.
-      note: lit ? "" : `${endLabel} ${clock(period.end)}`,
-    };
+    if (lit && period.end) return { icon: "candle" as const, label: endLabel, date: period.end };
+    if (!lit) {
+      return {
+        icon: "candle" as const,
+        label: t("zmanim.shabbat.candleLighting"),
+        date: period.start,
+        // Avant l'allumage, la sortie donne l'autre bout du repos ; après,
+        // elle est déjà l'heure annoncée et n'a pas à être répétée.
+        note: period.end ? `${endLabel} ${clock(period.end)}` : "",
+      };
+    }
+    // Le repos est entré et sa sortie n'a pas d'heure ici (voir
+    // RestPeriod.end) : la carte n'a plus rien de particulier à mettre en
+    // avant, elle reprend le fil des horaires du jour.
   }
   const zman = upcoming.value;
   if (!zman) return null;

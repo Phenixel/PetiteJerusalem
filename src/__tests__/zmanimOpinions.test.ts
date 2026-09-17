@@ -228,7 +228,7 @@ describe("l'opinion suivie gouverne toute l'application", () => {
     const ovadia = restPeriodAt(place, shabbat, "fr")!;
 
     expect(posen.start.getTime()).toBe(ovadia.start.getTime()); // L'allumage est un usage du lieu
-    expect(ovadia.end.getTime()).not.toBe(posen.end.getTime());
-    expect(ovadia.endRabbenouTam!.getTime()).toBeGreaterThan(ovadia.end.getTime());
+    expect(ovadia.end!.getTime()).not.toBe(posen.end!.getTime());
+    expect(ovadia.endRabbenouTam!.getTime()).toBeGreaterThan(ovadia.end!.getTime());
   });
 });

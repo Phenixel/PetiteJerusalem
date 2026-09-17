@@ -43,6 +43,7 @@ import {
   ZMAN_PERIODS,
   type ZmanPeriod,
   type ZmanTime,
+  zmanimGap,
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
 import { useToast } from "../../composables/useToast";
@@ -172,6 +173,9 @@ const fast = computed(() =>
 const fastFirst = computed(() => {
   const period = fast.value;
   if (!period) return false;
+  // Sans heure de début (l'aube par degrés n'existe pas ici ce jour-là, voir
+  // FastPeriod.start), le jeûne monte le jour où il tombe, et pas la veille.
+  if (!period.start) return hebrewDayOf(place.value, day.value).abs() === period.day.abs();
   return (
     period.start.getTime() <= day.value.getTime() ||
     sameCivilDay(place.value, period.start, day.value)
@@ -184,6 +188,21 @@ const fastFirst = computed(() => {
  * bloc montre déjà le Chabbat suivant, sa paracha doit suivre.
  */
 const parashaOf = (shabbat: Date | null) => (shabbat ? getParashaForShabbat(shabbat) : null);
+
+/**
+ * Ce que l'avis suivi ne sait pas calculer ici aujourd'hui.
+ *
+ * Une ligne qui manque sans rien dire laisse croire à un oubli. Au nord de
+ * Lille, l'aube de l'avis par degrés n'existe pas quelques semaines par an, et
+ * les deux limites du Maguen Avraham, comptées depuis elle, pas davantage :
+ * la note le dit, et renvoie à l'avis qui, lui, a une heure à donner.
+ */
+const gap = computed(() => zmanimGap(place.value, day.value));
+
+/** Les noms des horaires absents, énumérés dans la note. */
+const gapNames = computed(() =>
+  (gap.value?.keys ?? []).map((key) => t(`zmanim.names.${key}`)).join(", "),
+);
 
 const byPeriod = computed(() =>
   ZMAN_PERIODS.map((period) => ({
@@ -714,6 +733,15 @@ onMounted(() => {
         />
       </ul>
     </section>
+
+    <!-- Ce que l'avis suivi ne calcule pas ici aujourd'hui, dit sous la liste
+         plutôt que laissé en blanc au milieu (voir zmanimGap). -->
+    <p
+      v-if="gap"
+      class="mt-5 border-t border-line pt-3 text-sm text-text-secondary leading-relaxed"
+    >
+      {{ t(`zmanim.gap.${gap.reason}`, { names: gapNames }) }}
+    </p>
 
     <!-- Le jeûne de demain, annoncé dès la veille, sous les horaires du jour -->
     <FastTimes v-if="fast && !fastFirst" :fast="fast" :tzid="place.tzid" class="mt-5" />

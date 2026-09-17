@@ -506,6 +506,8 @@ const fr = {
     /* Début et fin d'un jeûne public, en cadre dès la veille (voir FastTimes). */
     fast: {
       start: "Début du jeûne",
+      startUnknown:
+        "Pas d'heure de début\u00a0: ici, le soleil ne descend pas assez bas ce jour-là pour que l'avis suivi donne l'aube.",
       end: "Fin du jeûne",
       endStars:
         "à la sortie de trois étoiles moyennes, plus tôt que la sortie du Chabbat, qui en attend trois petites",
@@ -520,6 +522,16 @@ const fr = {
       afternoon: "Après-midi",
       evening: "Soir et nuit",
     },
+    /* Ce que l'avis suivi ne sait pas calculer ici aujourd'hui : plutôt que
+       de laisser une ligne manquer sans rien dire, ou d'afficher une heure
+       venue d'une autre règle que celle annoncée (voir services/zmanimService,
+       zmanimGap). */
+    gap: {
+      degrees:
+        "Ici, le soleil ne descend pas assez bas aujourd'hui pour que l'avis suivi donne ces heures : {names}. L'avis du Rav Ovadia Yossef, qui compte en minutes zmaniyot proportionnelles à la longueur du jour, en donne une toute l'année.",
+      polar:
+        "Le soleil ne se lève pas ou ne se couche pas ici aujourd'hui : ces heures n'existent pas ({names}).",
+    },
     tachanun: {
       full: "On dit Ta'hanoun.",
       shacharitOnly: "Ta'hanoun à Cha'harit seulement, pas à Min'ha.",
@@ -527,6 +539,8 @@ const fr = {
     },
     rest: {
       end: "Sortie",
+      endUnknown:
+        "Pas d'heure de sortie\u00a0: ici, le soleil ne descend pas assez bas ce jour-là pour que l'avis suivi donne la sortie des étoiles.",
       rabbenouTam: "Sortie Rabbénou Tam",
       rabbenouTamNote:
         "La sortie selon Rabbénou Tam est comptée 72 minutes après le coucher du soleil.",

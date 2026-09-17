@@ -137,7 +137,7 @@ describe("restPeriodsNear", () => {
     expect(periods[0].shabbat).not.toBeNull();
     // Entrée le vendredi soir, sortie le samedi soir.
     expect(periods[0].start.getDay()).toBe(5);
-    expect(periods[0].end.getDay()).toBe(6);
+    expect(periods[0].end!.getDay()).toBe(6);
   });
 
   it("Roch Hachana un Chabbat : un seul bloc, du vendredi au dimanche soir", () => {
@@ -147,7 +147,7 @@ describe("restPeriodsNear", () => {
     expect(periods[0].festivals).toEqual(["Roch Hachanah"]);
     expect(periods[0].shabbat).not.toBeNull();
     expect(periods[0].start.getDate()).toBe(11); // vendredi 11, allumage
-    expect(periods[0].end.getDate()).toBe(13); // dimanche 13, sortie
+    expect(periods[0].end!.getDate()).toBe(13); // dimanche 13, sortie
   });
 
   it("Chemini Atséret et Sim'hat Torah tiennent dans le même bloc", () => {
@@ -190,7 +190,7 @@ describe("yearCalendar", () => {
   it("donne à chaque Yom Tov son entrée et sa sortie", () => {
     const kippour = named("Yom Kippour")[0];
     expect(kippour.period).not.toBeNull();
-    expect(kippour.period!.start.getTime()).toBeLessThan(kippour.period!.end.getTime());
+    expect(kippour.period!.start.getTime()).toBeLessThan(kippour.period!.end!.getTime());
   });
 
   it("sépare les deux blocs de Pessah, et laisse le 'Hol haMoed dehors", () => {

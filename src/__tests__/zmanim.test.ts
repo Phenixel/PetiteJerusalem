@@ -139,19 +139,19 @@ describe("restPeriodsNear : le Chabbat d'une semaine ordinaire", () => {
     const shabbat = first(PARIS_DAY)!;
     expect(shabbat.festivals).toEqual([]);
     expect(on(DEFAULT_PLACE, shabbat.start)).toBe("vendredi 7 août");
-    expect(on(DEFAULT_PLACE, shabbat.end)).toBe("samedi 8 août");
+    expect(on(DEFAULT_PLACE, shabbat.end!)).toBe("samedi 8 août");
     expect(at(DEFAULT_PLACE, shabbat.start)).toBe("21:01");
-    expect(at(DEFAULT_PLACE, shabbat.end)).toBe("22:12");
+    expect(at(DEFAULT_PLACE, shabbat.end!)).toBe("22:12");
     // Sortie selon Rabbénou Tam : 72 minutes après la chkia (21 h 18 ce
     // samedi-là), après la sortie ordinaire.
     expect(at(DEFAULT_PLACE, shabbat.endRabbenouTam!)).toBe("22:30");
-    expect(shabbat.endRabbenouTam!.getTime()).toBeGreaterThan(shabbat.end.getTime());
+    expect(shabbat.endRabbenouTam!.getTime()).toBeGreaterThan(shabbat.end!.getTime());
   });
 
   it("garde le Chabbat en cours tant qu'il n'est pas sorti", () => {
     // Samedi 8 août 2026, 20 h (Paris) : la sortie n'a pas eu lieu, elle est le soir même.
     const saturdayEvening = new Date(Date.UTC(2026, 7, 8, 18)); // 20 h à Paris
-    expect(on(DEFAULT_PLACE, first(saturdayEvening)!.end)).toBe("samedi 8 août");
+    expect(on(DEFAULT_PLACE, first(saturdayEvening)!.end!)).toBe("samedi 8 août");
   });
 
   it("passe au Chabbat suivant une fois la sortie passée", () => {
@@ -159,7 +159,7 @@ describe("restPeriodsNear : le Chabbat d'une semaine ordinaire", () => {
     const afterHavdalah = new Date(Date.UTC(2026, 7, 8, 21)); // 23 h à Paris
     const shabbat = first(afterHavdalah)!;
     expect(on(DEFAULT_PLACE, shabbat.start)).toBe("vendredi 14 août");
-    expect(on(DEFAULT_PLACE, shabbat.end)).toBe("samedi 15 août");
+    expect(on(DEFAULT_PLACE, shabbat.end!)).toBe("samedi 15 août");
   });
 
   it("n'annonce qu'un seul Chabbat dans la semaine, sans fête", () => {
@@ -167,7 +167,7 @@ describe("restPeriodsNear : le Chabbat d'une semaine ordinaire", () => {
     for (let i = 0; i < 7; i++) {
       const periods = restPeriodsNear(DEFAULT_PLACE, new Date(Date.UTC(2026, 7, 2 + i, 10)), "fr");
       expect(periods).toHaveLength(1);
-      expect(on(DEFAULT_PLACE, periods[0].end)).toBe("samedi 8 août");
+      expect(on(DEFAULT_PLACE, periods[0].end!)).toBe("samedi 8 août");
     }
   });
 });

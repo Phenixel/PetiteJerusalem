@@ -45,6 +45,14 @@ const title = computed(() => {
 const isFestival = computed(() => props.period.festivals.length > 0);
 
 /**
+ * Le dernier jour du bloc, pour dater la ligne de sortie quand celle-ci n'a
+ * pas d'heure : à partir de Stockholm, le soleil ne descend pas à 8,5° au
+ * cœur de l'été (voir RestPeriod.end). Le Chabbat reste annoncé avec son
+ * allumage ; la ligne de sortie porte alors son jour et la raison.
+ */
+const lastDay = computed(() => props.period.last.greg());
+
+/**
  * La note dit comment les heures du cadre sont comptées : elle dépend donc de
  * l'avis suivi, sans quoi elle annoncerait la sortie des étoiles là où le
  * cadre affiche quarante minutes après la chkia (voir zmanimOpinions).
@@ -103,10 +111,17 @@ const rabbenouTamNote = computed(() =>
           <span class="block font-medium leading-snug text-text-primary">
             {{ isFestival ? t("zmanim.rest.end") : t("zmanim.shabbat.havdalah") }}
           </span>
-          <span class="block text-xs text-text-secondary">{{ dayOf(period.end) }}</span>
+          <span class="block text-xs text-text-secondary">
+            {{ dayOf(period.end ?? lastDay) }}
+          </span>
         </span>
-        <span class="shrink-0 font-semibold tabular-nums text-text-primary">
+        <span v-if="period.end" class="shrink-0 font-semibold tabular-nums text-text-primary">
           {{ clock(period.end) }}
+        </span>
+        <!-- Pas d'heure de sortie ici ce jour-là (voir RestPeriod.end) : on le
+             dit à la place, plutôt que d'en donner une venue d'un autre calcul. -->
+        <span v-else class="max-w-[60%] shrink text-end text-xs text-text-secondary">
+          {{ t("zmanim.rest.endUnknown") }}
         </span>
       </li>
       <!-- La sortie selon Rabbénou Tam, pour qui suit cet avis : plus tard,

@@ -353,6 +353,43 @@ function computeZmanimFor(place: ZmanimPlace, localDay: Date): ZmanTime[] {
   return times.sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
+/**
+ * Pourquoi un horaire manque à la liste du jour.
+ *
+ *  - `degrees` : le soleil se lève et se couche, mais il ne descend jamais
+ *    assez bas sous l'horizon pour l'angle que l'avis demande. C'est le cas
+ *    de l'avis du Rav Posen, qui compte en degrés, au nord de Lille environ :
+ *    l'aube (16,1°) n'existe pas une quinzaine de jours par an à Lille, une
+ *    trentaine à Londres, une centaine à Helsinki, et les deux limites du
+ *    Maguen Avraham, qui se comptent depuis elle, pas davantage.
+ *  - `polar` : le soleil ne se lève pas ou ne se couche pas du tout. Là,
+ *    aucun avis n'a d'heure à donner.
+ *
+ * La distinction porte la note affichée sous les horaires : le premier cas a
+ * une issue (l'avis du Rav Ovadia Yossef compte en minutes zmaniyot,
+ * proportionnelles au jour, et donne donc une heure sous toutes les
+ * latitudes où le soleil se lève), le second n'en a pas. Elle se lit sans
+ * connaître l'avis suivi : un calcul en minutes zmaniyot ne peut pas manquer
+ * un horaire tant que le lever et la chkia existent, si bien que `degrees`
+ * ne désigne jamais que l'avis par degrés.
+ */
+export interface ZmanimGap {
+  /** Les horaires absents de la liste du jour. */
+  keys: ZmanKey[];
+  reason: "degrees" | "polar";
+}
+
+/** Ce que l'avis suivi ne sait pas calculer ce jour-là, en ce lieu, ou null. */
+export function zmanimGap(place: ZmanimPlace, day: Date = new Date()): ZmanimGap | null {
+  const present = new Set<string>(computeZmanim(place, day).map((zman) => zman.key));
+  // `chatzotNightDawn` manque par construction certains jours (voir ZMAN_DEFS) :
+  // son absence ne dit rien du soleil, et n'a donc rien à expliquer.
+  const keys = ZMAN_KEYS.filter((key) => key !== "chatzotNightDawn" && !present.has(key));
+  if (keys.length === 0) return null;
+  const polar = !present.has("sunrise") || !present.has("sunset");
+  return { keys, reason: polar ? "polar" : "degrees" };
+}
+
 /** Le prochain horaire à venir, pour mettre en avant « ce qui arrive ». */
 export function nextZman(times: ZmanTime[], now: Date = new Date()): ZmanTime | null {
   return times.find((zman) => zman.date.getTime() > now.getTime()) ?? null;
@@ -575,8 +612,15 @@ export interface RestPeriod {
    * Sortie du dernier jour, telle que l'opinion suivie la donne : la sortie
    * des étoiles pour le Rav Posen, 40 minutes après la chkia pour le luah
    * Or Ha'Haïm (voir zmanimOpinions).
+   *
+   * Null quand l'avis suivi ne sait pas la donner ici ce jour-là : à partir
+   * de Stockholm, le soleil ne descend pas à 8,5° au cœur de l'été, et six à
+   * huit Chabbats par an n'avaient alors ni entrée ni sortie, faute de quoi
+   * le bloc disparaissait tout entier de la page. L'allumage, lui, se lit sur
+   * la chkia et existe toujours : on annonce donc le Chabbat avec son entrée,
+   * et la note dit pourquoi sa sortie n'a pas d'heure (voir ZmanimGap).
    */
-  end: Date;
+  end: Date | null;
   /**
    * Sortie selon Rabbénou Tam, 72 minutes après la chkia du dernier jour
    * (fixes ou zmaniyot selon l'opinion), pour qui suit cet avis. Null quand
@@ -616,13 +660,19 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
   const lastDay = new Zmanim(gloc, civilNoon(last), false);
   const opinion = opinionZmanim(currentOpinion);
   const end = opinion.restEnd(lastDay);
-  if (!isUsable(start) || !isUsable(end)) return null;
+  // L'allumage, lui, est indispensable : sans lui il n'y a rien à annoncer.
+  if (!isUsable(start)) return null;
+  const restEnd = isUsable(end) ? end : null;
   // Aux hautes latitudes en été, la sortie des étoiles peut dépasser les
   // 72 minutes : une sortie Rabbénou Tam plus tôt que la sortie ordinaire
-  // n'apprend rien, on ne la donne pas.
+  // n'apprend rien, on ne la donne pas. Sans sortie du tout, elle n'apprend
+  // rien non plus : ce serait la seule heure du cadre, sous un nom que peu
+  // suivent.
   const rabbenouTam = opinion.rabbenouTam(lastDay);
   const endRabbenouTam =
-    isUsable(rabbenouTam) && rabbenouTam.getTime() > end.getTime() ? rabbenouTam : null;
+    restEnd && isUsable(rabbenouTam) && rabbenouTam.getTime() > restEnd.getTime()
+      ? rabbenouTam
+      : null;
 
   const festivals: string[] = [];
   let shabbat: Date | null = null;
@@ -632,7 +682,7 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
       if (!festivals.includes(name)) festivals.push(name);
     }
   }
-  return { start, end, endRabbenouTam, first, last, shabbat, festivals };
+  return { start, end: restEnd, endRabbenouTam, first, last, shabbat, festivals };
 }
 
 /** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */
@@ -793,7 +843,10 @@ export function restPeriodsNear(
       abs++;
       continue;
     }
-    if (period.end.getTime() > day.getTime()) periods.push(period);
+    // Sans heure de sortie, le bloc reste annoncé : c'est son entrée qu'on
+    // vient chercher, et la disparition du Chabbat serait pire que l'absence
+    // d'une de ses deux heures.
+    if (!period.end || period.end.getTime() > day.getTime()) periods.push(period);
     abs = period.last.abs() + 1;
   }
   // Une fois dedans, le bloc en cours suffit : annoncer le Chabbat suivant en
@@ -816,8 +869,15 @@ export interface FastPeriod {
   /**
    * Début : l'aube du jour pour les petits jeûnes, le coucher du soleil de
    * la veille pour Tich'a beAv, qui dure de soir à soir comme Kippour.
+   *
+   * Null quand l'avis suivi ne sait pas donner l'aube ici ce jour-là : au
+   * nord de l'Angleterre et en Scandinavie, le soleil ne descend pas à 16,1°
+   * au cœur de l'été, et le 17 Tamouz tombe justement là. Le jeûne a lieu
+   * quand même : on l'annonce avec sa fin, et la note dit pourquoi son début
+   * n'a pas d'heure, plutôt que de le faire disparaître du calendrier (voir
+   * ZmanimGap).
    */
-  start: Date;
+  start: Date | null;
   /**
    * Fin : la nuit, telle que l'opinion suivie la compte POUR UN JEÛNE, ce qui
    * n'est ni la sortie des étoiles ordinaire ni celle du Chabbat (voir
@@ -867,11 +927,12 @@ export function fastAt(place: ZmanimPlace, hd: HDate, locale: string): FastPerio
     start = opinion.alotHaShachar(fastDay);
   }
   const end = opinion.fastEnd(fastDay);
-  if (!isUsable(start) || !isUsable(end)) return null;
+  // La fin, elle, est indispensable : sans elle il n'y a rien à annoncer.
+  if (!isUsable(end)) return null;
   return {
     name: event.render(hebcalLocale(locale)),
     day: hd,
-    start,
+    start: isUsable(start) ? start : null,
     end,
     endMinutes: opinion.fastEndMinutes,
     fromEve,

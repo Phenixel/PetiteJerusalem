@@ -37,11 +37,11 @@ describe("fastAt", () => {
     const fast = fastAt(DEFAULT_PLACE, hd(2026, 9, 14), "fr")!;
     expect(fast.name).toContain("Guedalyah");
     expect(fast.fromEve).toBe(false);
-    expect(on(DEFAULT_PLACE, fast.start)).toBe("lundi 14 septembre");
+    expect(on(DEFAULT_PLACE, fast.start!)).toBe("lundi 14 septembre");
     expect(on(DEFAULT_PLACE, fast.end)).toBe("lundi 14 septembre");
     // Aube à 16,1° (Rav Posen), fin du jeûne à 7,08° : trois étoiles
     // MOYENNES, quand la sortie du Chabbat en attend trois petites (8,5°).
-    expect(at(DEFAULT_PLACE, fast.start)).toBe("05:48");
+    expect(at(DEFAULT_PLACE, fast.start!)).toBe("05:48");
     expect(at(DEFAULT_PLACE, fast.end)).toBe("20:44");
     expect(fast.endMinutes).toBeNull();
   });
@@ -70,7 +70,7 @@ describe("fastAt", () => {
     // la sortie des étoiles, et la fin des jeûnes ne doit pas l'avoir avancé.
     // 21 septembre 2026 = 10 Tichri 5787.
     const kippour = restPeriodAt(DEFAULT_PLACE, hd(2026, 9, 21), "fr")!;
-    expect(kippour.end.getTime()).toBe(nightfallOf(DEFAULT_PLACE, hd(2026, 9, 21))!.getTime());
+    expect(kippour.end!.getTime()).toBe(nightfallOf(DEFAULT_PLACE, hd(2026, 9, 21))!.getTime());
   });
 
   it("fait commencer Tich'a beAv la veille au coucher du soleil", () => {
@@ -78,7 +78,7 @@ describe("fastAt", () => {
     const fast = fastAt(DEFAULT_PLACE, hd(2026, 7, 23), "fr")!;
     expect(fast.name).toContain("beAv");
     expect(fast.fromEve).toBe(true);
-    expect(on(DEFAULT_PLACE, fast.start)).toBe("mercredi 22 juillet");
+    expect(on(DEFAULT_PLACE, fast.start!)).toBe("mercredi 22 juillet");
     expect(on(DEFAULT_PLACE, fast.end)).toBe("jeudi 23 juillet");
   });
 
@@ -146,13 +146,13 @@ describe("fastNear", () => {
   it("annonce le jeûne du lendemain dès la veille", () => {
     // Dimanche 13 septembre 2026, midi : Tzom Guedalia est le lendemain.
     const fast = fastNear(DEFAULT_PLACE, paris(9, 13, 10), "fr")!;
-    expect(on(DEFAULT_PLACE, fast.start)).toBe("lundi 14 septembre");
+    expect(on(DEFAULT_PLACE, fast.start!)).toBe("lundi 14 septembre");
   });
 
   it("garde le jeûne du jour tant qu'il n'est pas fini", () => {
     // Lundi 14 septembre, 15 h à Paris.
     const fast = fastNear(DEFAULT_PLACE, paris(9, 14, 13), "fr")!;
-    expect(on(DEFAULT_PLACE, fast.start)).toBe("lundi 14 septembre");
+    expect(on(DEFAULT_PLACE, fast.start!)).toBe("lundi 14 septembre");
   });
 
   it("ne l'annonce plus une fois sorti", () => {
@@ -163,7 +163,7 @@ describe("fastNear", () => {
   it("garde le jeûne d'un jour parcouru, quelle que soit l'heure", () => {
     // Le même lundi soir, lu comme une journée entière (flèches).
     const fast = fastNear(DEFAULT_PLACE, paris(9, 14, 21), "fr", null)!;
-    expect(on(DEFAULT_PLACE, fast.start)).toBe("lundi 14 septembre");
+    expect(on(DEFAULT_PLACE, fast.start!)).toBe("lundi 14 septembre");
   });
 
   it("ne cherche pas au-delà du lendemain", () => {

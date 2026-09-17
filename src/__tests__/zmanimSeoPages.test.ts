@@ -382,7 +382,7 @@ describe("upcomingRestPeriods", () => {
   });
 
   it("ne renvoie que des blocs à venir, en ordre chronologique", () => {
-    for (const p of periods) expect(p.end.getTime()).toBeGreaterThan(NOW.getTime());
+    for (const p of periods) expect(p.end!.getTime()).toBeGreaterThan(NOW.getTime());
     const starts = periods.map((p) => p.start.getTime());
     expect([...starts].sort((a, b) => a - b)).toEqual(starts);
   });

@@ -406,7 +406,7 @@ onMounted(() => {
                 {{ clock(row.entry.period.start) }}
               </dd>
             </div>
-            <div class="flex items-baseline justify-end gap-2">
+            <div v-if="row.entry.period.end" class="flex items-baseline justify-end gap-2">
               <dt class="text-xs text-text-secondary">{{ t("calendar.end") }}</dt>
               <dd class="font-semibold tabular-nums text-text-primary">
                 {{ clock(row.entry.period.end) }}

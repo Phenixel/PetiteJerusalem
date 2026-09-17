@@ -491,6 +491,8 @@ const en: LocaleMessages = {
     },
     fast: {
       start: "Fast begins",
+      startUnknown:
+        "No start time: here the sun does not go low enough on that day for the opinion you follow to give dawn.",
       end: "Fast ends",
       endStars:
         "when three medium-sized stars are out, earlier than the end of Shabbat, which waits for three small ones",
@@ -504,6 +506,12 @@ const en: LocaleMessages = {
       afternoon: "Afternoon",
       evening: "Evening and night",
     },
+    gap: {
+      degrees:
+        "Here the sun does not go low enough today for the opinion you follow to give these times: {names}. Rav Ovadia Yosef's opinion, counted in seasonal minutes proportional to the length of the day, gives one all year round.",
+      polar:
+        "The sun does not rise or does not set here today: these times do not exist ({names}).",
+    },
     tachanun: {
       full: "Tachanun is recited.",
       shacharitOnly: "Tachanun at Shacharit only, not at Mincha.",
@@ -511,6 +519,8 @@ const en: LocaleMessages = {
     },
     rest: {
       end: "Ends",
+      endUnknown:
+        "No end time: here the sun does not go low enough on that day for the opinion you follow to give nightfall.",
       rabbenouTam: "Ends (Rabbeinu Tam)",
       rabbenouTamNote: "The Rabbeinu Tam end time is 72 minutes after sunset.",
       rabbenouTamNoteZmaniyot:
