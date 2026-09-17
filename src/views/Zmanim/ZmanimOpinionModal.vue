@@ -10,6 +10,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useOverlay } from "../../composables/useOverlayStack";
 import ZmanimOpinionPicker from "../../components/settings/ZmanimOpinionPicker.vue";
+import CandleLightingPicker from "../../components/settings/CandleLightingPicker.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{ show: boolean }>();
@@ -44,11 +45,15 @@ useOverlay(
         {{ t("zmanim.opinions.description") }}
       </p>
 
-      <ZmanimOpinionPicker source="zmanim" @choose="close" />
+      <ZmanimOpinionPicker source="zmanim" />
 
       <p class="mt-3 text-sm text-text-secondary leading-relaxed">
         {{ t("zmanim.opinions.note") }}
       </p>
+
+      <!-- L'allumage suit la communauté, non l'avis : la fenêtre ne se ferme
+           donc plus au premier choix, il reste un réglage à régler dessous. -->
+      <CandleLightingPicker class="mt-5 border-t border-line pt-4" />
     </div>
   </div>
 </template>

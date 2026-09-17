@@ -7,6 +7,7 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
+    "postinstall": "patch-package",
     "dev": "vite",
     "emulators": "node scripts/emulators.mjs",
     "dev:local": "run-p -l emulators dev",
@@ -75,6 +76,7 @@
     "jiti": "^2.4.2",
     "jsdom": "^26.1.0",
     "npm-run-all2": "^8.0.4",
+    "patch-package": "^8.0.1",
     "playwright": "^1.61.1",
     "prettier": "3.6.2",
     "tailwindcss": "^4.1.17",

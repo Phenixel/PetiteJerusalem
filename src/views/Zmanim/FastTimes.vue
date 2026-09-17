@@ -12,7 +12,13 @@
 // son cadre de repos, avec son entrée et sa sortie.
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { formatZmanDay, formatZmanTime, type FastPeriod } from "../../services/zmanimService";
+import {
+  formatMarkerDay,
+  formatZmanDay,
+  formatZmanTime,
+  type FastPeriod,
+} from "../../services/zmanimService";
+import { describeEndRule } from "../../services/zmanimRules";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
@@ -25,17 +31,37 @@ const { t, locale } = useI18n();
 
 const clock = (date: Date) => formatZmanTime(date, props.tzid, locale.value);
 const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
+/** Un marqueur de jour se relit dans SON repère, celui de la machine. */
+const markerDay = (date: Date) => formatMarkerDay(date, locale.value);
 
-/** Comment la fin est comptée : trois étoiles moyennes, ou minutes fixes. */
-const endRule = computed(() =>
-  props.fast.endMinutes === null
-    ? t("zmanim.fast.endStars")
-    : t("zmanim.fast.endAfterSunset", { minutes: props.fast.endMinutes }),
-);
+/**
+ * Le jour du jeûne, quand son début n'a pas d'heure : au nord de
+ * l'Angleterre, le soleil ne descend pas à 16,1° au cœur de l'été, et l'aube
+ * de l'avis par degrés n'existe pas le 17 Tamouz. Le jeûne a bien lieu ; il
+ * s'annonce donc avec sa fin, et la ligne du début porte le jour et la raison
+ * plutôt qu'une heure venue d'un autre calcul.
+ */
+const fastDay = computed(() => props.fast.day.greg());
+
+/**
+ * Comment la fin est comptée, dite par la règle que l'avis a posée avec
+ * l'heure (voir zmanimOpinions, EndRule) : la note et le cadre parlent ainsi
+ * du même calcul, au lieu d'annoncer l'un pour l'autre.
+ */
+const endRule = computed(() => describeEndRule(props.fast.endRule, t, locale.value));
 
 /** Comment les heures sont comptées : à l'aube, ou dès la veille au soir. */
 const note = computed(() =>
   t(props.fast.fromEve ? "zmanim.fast.noteEve" : "zmanim.fast.noteDawn", { end: endRule.value }),
+);
+
+/**
+ * Ta'anit Bekhorot n'oblige que les premiers-nés, et un siyoum en dispense :
+ * le cadre le dit, sans quoi il se lit comme un jeûne public que tout le
+ * monde tiendrait.
+ */
+const firstbornNote = computed(() =>
+  props.fast.firstbornOnly ? t("zmanim.fast.noteFirstborn") : "",
 );
 </script>
 
@@ -51,10 +77,15 @@ const note = computed(() =>
           <span class="block font-medium leading-snug text-text-primary">
             {{ t("zmanim.fast.start") }}
           </span>
-          <span class="block text-xs text-text-secondary">{{ dayOf(fast.start) }}</span>
+          <span class="block text-xs text-text-secondary">
+            {{ fast.start ? dayOf(fast.start) : markerDay(fastDay) }}
+          </span>
         </span>
-        <span class="shrink-0 font-semibold tabular-nums text-text-primary">
+        <span v-if="fast.start" class="shrink-0 font-semibold tabular-nums text-text-primary">
           {{ clock(fast.start) }}
+        </span>
+        <span v-else class="max-w-[60%] shrink text-end text-xs text-text-secondary">
+          {{ t("zmanim.fast.startUnknown") }}
         </span>
       </li>
       <li class="flex items-center justify-between gap-4 py-2">
@@ -70,6 +101,8 @@ const note = computed(() =>
       </li>
     </ul>
 
-    <p class="mt-2.5 text-xs text-text-secondary">{{ note }}</p>
+    <p class="mt-2.5 text-xs text-text-secondary">
+      {{ note }}<template v-if="firstbornNote">{{ " " }}{{ firstbornNote }}</template>
+    </p>
   </section>
 </template>

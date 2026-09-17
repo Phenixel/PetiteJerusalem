@@ -14,9 +14,17 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { hubPath } from "../../content/etudeTexts";
 import type { WeeklyParasha } from "../../services/dailyCycles";
-import { formatZmanDay, formatZmanTime, type RestPeriod } from "../../services/zmanimService";
-import { opinionZmanim } from "../../services/zmanimOpinions";
-import { useZmanimOpinion } from "../../composables/useZmanimOpinion";
+import {
+  formatMarkerDay,
+  formatZmanDay,
+  formatZmanTime,
+  type RestPeriod,
+} from "../../services/zmanimService";
+import {
+  describeEndRule,
+  describeLightingRule,
+  describeRabbenouTamRule,
+} from "../../services/zmanimRules";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
@@ -33,6 +41,8 @@ const { t, locale } = useI18n();
 
 const clock = (date: Date) => formatZmanTime(date, props.tzid, locale.value);
 const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
+/** Un marqueur de jour se relit dans SON repère, celui de la machine. */
+const markerDay = (date: Date) => formatMarkerDay(date, locale.value);
 
 /** « Chabbat », « Roch Hachana », « Chabbat Roch Hachana », un seul titre. */
 const title = computed(() => {
@@ -45,25 +55,48 @@ const title = computed(() => {
 const isFestival = computed(() => props.period.festivals.length > 0);
 
 /**
- * La note dit comment les heures du cadre sont comptées : elle dépend donc de
- * l'avis suivi, sans quoi elle annoncerait la sortie des étoiles là où le
- * cadre affiche quarante minutes après la chkia (voir zmanimOpinions).
+ * Le dernier jour du bloc, pour dater la ligne de sortie quand celle-ci n'a
+ * pas d'heure : à partir de Stockholm, le soleil ne descend pas à 8,5° au
+ * cœur de l'été (voir RestPeriod.end). Le Chabbat reste annoncé avec son
+ * allumage ; la ligne de sortie porte alors son jour et la raison.
  */
-const { opinion } = useZmanimOpinion();
-const rules = computed(() => opinionZmanim(opinion.value));
+const lastDay = computed(() => props.period.last.greg());
 
+/**
+ * La note dit comment les heures du cadre sont comptées. La règle voyage avec
+ * le bloc (voir RestPeriod.endRule) plutôt que d'être relue de l'avis : elle
+ * dépend aussi du LIEU, l'avis du Rav Ovadia suivant l'Or Ha'Haïm en Israël
+ * et l'Amudei Horaah ailleurs, et le cadre ne connaît que son bloc.
+ */
 const exitRule = computed(() =>
-  rules.value.restEndMinutes === null
-    ? t("zmanim.rest.exitAtNightfall")
-    : t("zmanim.rest.exitAfterSunset", { minutes: rules.value.restEndMinutes }),
+  t("zmanim.rest.exit", { rule: describeEndRule(props.period.endRule, t, locale.value) }),
 );
 
 const rabbenouTamNote = computed(() =>
-  t(
-    rules.value.rabbenouTamZmaniyot
-      ? "zmanim.rest.rabbenouTamNoteZmaniyot"
-      : "zmanim.rest.rabbenouTamNote",
-  ),
+  describeRabbenouTamRule(props.period.rabbenouTamRule, t),
+);
+
+/**
+ * Les allumages des soirs suivants, entre l'entrée et la sortie.
+ *
+ * Chacun porte sa règle : avant la chkia pour un Chabbat pris dans une fête,
+ * après la sortie du Chabbat pour un Yom Tov qui le suit, à la nuit pour un
+ * deuxième jour de fête. Le libellé le dit, sans quoi deux lignes du cadre
+ * porteraient le même nom à des heures différentes.
+ */
+const lightings = computed(() =>
+  props.period.lightings.map((lighting) => ({
+    key: lighting.at.getTime(),
+    label: describeLightingRule(lighting.rule, t),
+    at: lighting.at,
+  })),
+);
+
+/** Le jour où poser l'érouv tavchilin, écrit en toutes lettres. */
+const eruvNote = computed(() =>
+  props.period.eruvTavshilin
+    ? t("zmanim.rest.eruvTavshilin", { day: markerDay(props.period.eruvTavshilin) })
+    : "",
 );
 </script>
 
@@ -90,7 +123,14 @@ const rabbenouTamNote = computed(() =>
       <li class="flex items-center justify-between gap-4 py-2">
         <span class="min-w-0">
           <span class="block font-medium leading-snug text-text-primary">
-            {{ t("zmanim.shabbat.candleLighting") }}
+            <!-- Kippour : la même heure ouvre le repos ET le jeûne. Sans le
+                 mot, qui cherche « à quelle heure commence le jeûne » ne
+                 trouve rien (voir RestPeriod.fastStarts). -->
+            {{
+              period.fastStarts
+                ? t("zmanim.shabbat.candleLightingAndFast")
+                : t("zmanim.shabbat.candleLighting")
+            }}
           </span>
           <span class="block text-xs text-text-secondary">{{ dayOf(period.start) }}</span>
         </span>
@@ -98,15 +138,40 @@ const rabbenouTamNote = computed(() =>
           {{ clock(period.start) }}
         </span>
       </li>
+      <!-- Les allumages des soirs suivants : le deuxième soir d'une fête, le
+           vendredi pris dans un bloc, le Yom Tov qui suit le Chabbat. Ils se
+           rangent entre l'entrée et la sortie, dans l'ordre des soirs. -->
+      <li
+        v-for="lighting in lightings"
+        :key="lighting.key"
+        class="flex items-center justify-between gap-4 py-2"
+      >
+        <span class="min-w-0">
+          <span class="block font-medium leading-snug text-text-primary">
+            {{ lighting.label }}
+          </span>
+          <span class="block text-xs text-text-secondary">{{ dayOf(lighting.at) }}</span>
+        </span>
+        <span class="shrink-0 font-semibold tabular-nums text-text-primary">
+          {{ clock(lighting.at) }}
+        </span>
+      </li>
       <li class="flex items-center justify-between gap-4 py-2">
         <span class="min-w-0">
           <span class="block font-medium leading-snug text-text-primary">
             {{ isFestival ? t("zmanim.rest.end") : t("zmanim.shabbat.havdalah") }}
           </span>
-          <span class="block text-xs text-text-secondary">{{ dayOf(period.end) }}</span>
+          <span class="block text-xs text-text-secondary">
+            {{ period.end ? dayOf(period.end) : markerDay(lastDay) }}
+          </span>
         </span>
-        <span class="shrink-0 font-semibold tabular-nums text-text-primary">
+        <span v-if="period.end" class="shrink-0 font-semibold tabular-nums text-text-primary">
           {{ clock(period.end) }}
+        </span>
+        <!-- Pas d'heure de sortie ici ce jour-là (voir RestPeriod.end) : on le
+             dit à la place, plutôt que d'en donner une venue d'un autre calcul. -->
+        <span v-else class="max-w-[60%] shrink text-end text-xs text-text-secondary">
+          {{ t("zmanim.rest.endUnknown") }}
         </span>
       </li>
       <!-- La sortie selon Rabbénou Tam, pour qui suit cet avis : plus tard,
@@ -134,5 +199,10 @@ const rabbenouTamNote = computed(() =>
           : t("zmanim.shabbat.note", { minutes: candleMinutes, exit: exitRule })
       }}<template v-if="period.endRabbenouTam">{{ " " }}{{ rabbenouTamNote }}</template>
     </p>
+
+    <!-- L'érouv tavchilin : sans lui, on ne cuisine pas le vendredi de fête
+         pour le Chabbat qui suit. Il se pose l'avant-veille, et c'est donc
+         maintenant qu'il faut le dire. -->
+    <p v-if="eruvNote" class="mt-1.5 text-xs text-text-secondary">{{ eruvNote }}</p>
   </section>
 </template>

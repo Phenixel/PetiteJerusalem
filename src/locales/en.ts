@@ -489,20 +489,57 @@ const en: LocaleMessages = {
       title: "About these times",
       open: "About these times and your location",
     },
+    candle: {
+      title: "Candle lighting",
+      description:
+        "How many minutes before sunset. This is your community's custom, and it does not always follow the city's.",
+      local: "Local custom ({minutes} minutes)",
+      minutes: "{minutes} minutes before sunset",
+    },
+    endRule: {
+      degrees: "when the sun is {degrees}° below the horizon",
+      fixed: "{minutes} minutes after sunset",
+      zmaniyot: "{minutes} seasonal minutes after sunset, proportional to the length of the day",
+      equinoxDegrees:
+        "at the seasonal minutes the Amudei Horaah luach measures on {degrees}° at the equinox, in this place",
+      amudeiHoraah:
+        "when the sun is {degrees}° below the horizon, and never less than {minutes} minutes after it sets",
+    },
     fast: {
       start: "Fast begins",
+      startUnknown:
+        "No start time: here the sun does not go low enough on that day for the opinion you follow to give dawn.",
       end: "Fast ends",
-      endStars:
-        "when three medium-sized stars are out, earlier than the end of Shabbat, which waits for three small ones",
-      endAfterSunset: "{minutes} minutes after sunset, earlier than the end of Shabbat",
       noteDawn: "The fast begins at dawn (alot hashachar) and ends {end}.",
+      noteFirstborn:
+        "It binds firstborn sons only, and taking part in a siyum exempts them.",
       noteEve: "The fast begins at sunset the evening before and ends {end}.",
+    },
+    chametz: {
+      title: "Chametz deadlines",
+      eatingMGA: "Latest time to eat (Magen Avraham)",
+      eating: "Latest time to eat (Vilna Gaon)",
+      disposalMGA: "Latest time to burn (Magen Avraham)",
+      disposal: "Latest time to burn (Vilna Gaon)",
+      bitulMGA: "Latest time to nullify (Magen Avraham)",
+      bitul: "Latest time to nullify (Vilna Gaon)",
+      burningEveMGA: "Burning, on Friday (Magen Avraham)",
+      burningEve: "Burning, on Friday (Vilna Gaon)",
+      note: "Chametz may be eaten until the end of the fourth hour of the day, and owned until the end of the fifth. These are seasonal hours: they follow the length of the day, and the two opinions divide it differently.",
+      noteShabbat:
+        "Erev Pesach falls on Shabbat, and chametz is not burned on Shabbat: it is burned on Friday, before the fifth hour of that day. On Shabbat morning it may be eaten until the fourth hour, and whatever is left is nullified aloud before the fifth.",
     },
     periods: {
       dawn: "Dawn and sunrise",
       morning: "Morning deadlines",
       afternoon: "Afternoon",
       evening: "Evening and night",
+    },
+    gap: {
+      degrees:
+        "Here the sun does not go low enough today for the opinion you follow to give these times: {names}. Rav Ovadia Yosef's opinion, counted in seasonal minutes proportional to the length of the day, gives one all year round.",
+      polar:
+        "The sun does not rise or does not set here today: these times do not exist ({names}).",
     },
     tachanun: {
       full: "Tachanun is recited.",
@@ -511,18 +548,31 @@ const en: LocaleMessages = {
     },
     rest: {
       end: "Ends",
+      endUnknown:
+        "No end time: here the sun does not go low enough on that day for the opinion you follow to give nightfall.",
+      lighting: {
+        beforeSunset: "Shabbat candle lighting",
+        afterShabbat: "Candle lighting after Shabbat ends",
+        afterNightfall: "Candle lighting, next evening",
+      },
+      eruvTavshilin:
+        "Eruv tavshilin: set it on {day}, otherwise you may not cook on the festival Friday for Shabbat.",
       rabbenouTam: "Ends (Rabbeinu Tam)",
-      rabbenouTamNote: "The Rabbeinu Tam end time is 72 minutes after sunset.",
-      rabbenouTamNoteZmaniyot:
-        "The Rabbeinu Tam end time is 72 seasonal minutes after sunset, proportional to the length of the day.",
-      exitAtNightfall: "ends at nightfall",
-      exitAfterSunset: "ends {minutes} minutes after sunset",
+      rabbenouTamNote: {
+        fixed: "The Rabbeinu Tam end time is 72 minutes after sunset.",
+        zmaniyot:
+          "The Rabbeinu Tam end time is 72 seasonal minutes after sunset, proportional to the length of the day.",
+        earliest:
+          "The Rabbeinu Tam end time is the earlier of the two: 72 minutes after sunset, or 72 seasonal minutes.",
+      },
+      exit: "ends {rule}",
       note: "Candle lighting {minutes} minutes before sunset, {exit}. When a festival follows Shabbat, light after nightfall from an existing flame.",
     },
     shabbat: {
       title: "Shabbat",
       parasha: "Parashat",
       candleLighting: "Candle lighting",
+      candleLightingAndFast: "Candle lighting and start of the fast",
       havdalah: "Shabbat ends",
       note: "Candle lighting {minutes} minutes before sunset, Shabbat {exit}.",
     },
@@ -572,12 +622,12 @@ const en: LocaleMessages = {
       posen: {
         name: "Rav Meir Posen (Ohr Meir)",
         short: "Rav Posen",
-        hint: "Degrees of the sun below the horizon, as European calendars have it: dawn at 16.1°, tallit at 11.5°, nightfall at 8.5°, Rabbeinu Tam 72 minutes after sunset.",
+        hint: "Degrees of the sun below the horizon, as European calendars have it: dawn and Magen Avraham at 16.1°, tallit at 11.5°, nightfall at 8.5°, Rabbeinu Tam 72 minutes after sunset.",
       },
       ovadia: {
-        name: "Rav Ovadia Yosef (Ohr HaChaim)",
+        name: "Rav Ovadia Yosef (Ohr HaChaim in Israel, Amudei Horaah elsewhere)",
         short: "Rav Ovadia",
-        hint: "Seasonal (zmaniyot) minutes, proportional to the length of the day: dawn 72 minutes before sunrise, nightfall 13.5 minutes after sunset, Shabbat ends 40 minutes after sunset.",
+        hint: "Seasonal (zmaniyot) minutes, proportional to the length of the day. In Israel, the Ohr HaChaim luach: dawn 72 minutes before sunrise, nightfall 13.5 minutes after sunset, fasts end 20 seasonal minutes after sunset, Shabbat ends 30 minutes after sunset. Elsewhere, the Amudei Horaah luach, which measures those minutes in degrees at the equinox to account for latitude; without it, northern times would be Israel's.",
       },
     },
     /* The day's hilulot, at the bottom of the page (see services/hiloulot). */

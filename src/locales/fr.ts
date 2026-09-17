@@ -503,22 +503,72 @@ const fr = {
       title: "À propos des horaires",
       open: "À propos des horaires et de votre position",
     },
+    /* Comment une sortie ou une fin de jeûne est comptée. Une phrase par
+       manière de compter (voir services/zmanimRules, EndRule) : la note dit
+       ainsi exactement ce que le cadre affiche, pour les deux avis et des
+       deux côtés de la frontière d'Israël. */
+    /* L'écart d'allumage suivi (voir CandleLightingPicker). C'est l'usage
+       d'une communauté, pas d'une ville : Petah Tikva en a deux. */
+    candle: {
+      title: "Allumage des bougies",
+      description:
+        "Combien de minutes avant le coucher du soleil. C'est l'usage de votre communauté, et il ne suit pas toujours celui de la ville.",
+      local: "Usage du lieu ({minutes} minutes)",
+      minutes: "{minutes} minutes avant le coucher du soleil",
+    },
+    endRule: {
+      degrees: "quand le soleil est à {degrees}° sous l'horizon",
+      fixed: "{minutes} minutes après le coucher du soleil",
+      zmaniyot:
+        "{minutes} minutes zmaniyot après le coucher du soleil, proportionnelles à la longueur du jour",
+      equinoxDegrees:
+        "aux minutes zmaniyot que le luah Amudei Horaah mesure sur {degrees}° à l'équinoxe, en ce lieu",
+      amudeiHoraah:
+        "quand le soleil est à {degrees}° sous l'horizon, et jamais moins de {minutes} minutes après son coucher",
+    },
     /* Début et fin d'un jeûne public, en cadre dès la veille (voir FastTimes). */
     fast: {
       start: "Début du jeûne",
+      startUnknown:
+        "Pas d'heure de début\u00a0: ici, le soleil ne descend pas assez bas ce jour-là pour que l'avis suivi donne l'aube.",
       end: "Fin du jeûne",
-      endStars:
-        "à la sortie de trois étoiles moyennes, plus tôt que la sortie du Chabbat, qui en attend trois petites",
-      endAfterSunset:
-        "{minutes} minutes après le coucher du soleil, plus tôt que la sortie du Chabbat",
       noteDawn: "Le jeûne commence à l'aube (alot haCha'har) et se termine {end}.",
+      noteFirstborn:
+        "Il n'oblige que les premiers-nés, et la participation à un siyoum en dispense.",
       noteEve: "Le jeûne commence la veille au coucher du soleil et se termine {end}.",
+    },
+    /* Les limites du 'hamets, la veille de Pessah (voir services/zmanimService,
+       chametzAt). Deux heures et non une, et trois les années où le 14 Nissan
+       tombe un Chabbat : on ne brûle pas ce jour-là. */
+    chametz: {
+      title: "Limites du 'hamets",
+      eatingMGA: "Fin de la consommation (Maguen Avraham)",
+      eating: "Fin de la consommation (Gaon de Vilna)",
+      disposalMGA: "Fin de la destruction (Maguen Avraham)",
+      disposal: "Fin de la destruction (Gaon de Vilna)",
+      bitulMGA: "Fin de l'annulation (Maguen Avraham)",
+      bitul: "Fin de l'annulation (Gaon de Vilna)",
+      burningEveMGA: "Destruction, le vendredi (Maguen Avraham)",
+      burningEve: "Destruction, le vendredi (Gaon de Vilna)",
+      note: "On cesse de manger le 'hamets à la fin de la quatrième heure du jour, et d'en posséder à la fin de la cinquième. Ce sont des heures zmaniyot : elles suivent la longueur du jour, et les deux avis ne les découpent pas pareil.",
+      noteShabbat:
+        "La veille de Pessah tombe un Chabbat, et on ne brûle pas le 'hamets un Chabbat : la destruction se fait le vendredi, avant la cinquième heure de ce jour-là. Le Chabbat matin, on mange jusqu'à la quatrième heure, et ce qui reste s'annule de la voix avant la cinquième.",
     },
     periods: {
       dawn: "Aube et lever",
       morning: "Limites du matin",
       afternoon: "Après-midi",
       evening: "Soir et nuit",
+    },
+    /* Ce que l'avis suivi ne sait pas calculer ici aujourd'hui : plutôt que
+       de laisser une ligne manquer sans rien dire, ou d'afficher une heure
+       venue d'une autre règle que celle annoncée (voir services/zmanimService,
+       zmanimGap). */
+    gap: {
+      degrees:
+        "Ici, le soleil ne descend pas assez bas aujourd'hui pour que l'avis suivi donne ces heures : {names}. L'avis du Rav Ovadia Yossef, qui compte en minutes zmaniyot proportionnelles à la longueur du jour, en donne une toute l'année.",
+      polar:
+        "Le soleil ne se lève pas ou ne se couche pas ici aujourd'hui : ces heures n'existent pas ({names}).",
     },
     tachanun: {
       full: "On dit Ta'hanoun.",
@@ -527,19 +577,33 @@ const fr = {
     },
     rest: {
       end: "Sortie",
+      endUnknown:
+        "Pas d'heure de sortie\u00a0: ici, le soleil ne descend pas assez bas ce jour-là pour que l'avis suivi donne la sortie des étoiles.",
+      /* Les allumages des soirs suivants d'un bloc, et l'érouv tavchilin
+         (voir RestTimes.vue et zmanimService, RestLighting). */
+      lighting: {
+        beforeSunset: "Allumage de Chabbat",
+        afterShabbat: "Allumage après la sortie du Chabbat",
+        afterNightfall: "Allumage du soir suivant",
+      },
+      eruvTavshilin:
+        "Érouv tavchilin\u00a0: à poser le {day}, sans quoi on ne cuisine pas le vendredi de fête pour le Chabbat.",
       rabbenouTam: "Sortie Rabbénou Tam",
-      rabbenouTamNote:
-        "La sortie selon Rabbénou Tam est comptée 72 minutes après le coucher du soleil.",
-      rabbenouTamNoteZmaniyot:
-        "La sortie selon Rabbénou Tam est comptée 72 minutes zmaniyot après le coucher du soleil, proportionnelles à la longueur du jour.",
-      exitAtNightfall: "sortie à la sortie des étoiles",
-      exitAfterSunset: "sortie {minutes} minutes après le coucher du soleil",
+      rabbenouTamNote: {
+        fixed: "La sortie selon Rabbénou Tam est comptée 72 minutes après le coucher du soleil.",
+        zmaniyot:
+          "La sortie selon Rabbénou Tam est comptée 72 minutes zmaniyot après le coucher du soleil, proportionnelles à la longueur du jour.",
+        earliest:
+          "La sortie selon Rabbénou Tam est la plus tôt des deux\u00a0: 72 minutes après le coucher du soleil, ou 72 minutes zmaniyot.",
+      },
+      exit: "sortie {rule}",
       note: "Allumage {minutes} minutes avant le coucher du soleil, {exit}. Un jour de fête qui suit le Chabbat, on allume après la sortie, à partir d'une flamme déjà allumée.",
     },
     shabbat: {
       title: "Chabbat",
       parasha: "Parachat",
       candleLighting: "Allumage des bougies",
+      candleLightingAndFast: "Allumage et début du jeûne",
       havdalah: "Sortie de Chabbat",
       note: "Allumage {minutes} minutes avant le coucher du soleil, {exit}.",
     },
@@ -589,12 +653,12 @@ const fr = {
       posen: {
         name: "Rav Meïr Posen (Ohr Meïr)",
         short: "Rav Posen",
-        hint: "Le calcul par degrés du soleil sous l'horizon, celui des calendriers d'Europe : aube à 16,1°, talith à 11,5°, sortie des étoiles à 8,5°, fin des jeûnes à 7,08°, Rabbénou Tam 72 minutes après la chkia.",
+        hint: "Le calcul par degrés du soleil sous l'horizon, celui des calendriers d'Europe : aube et Maguen Avraham à 16,1°, talith à 11,5°, sortie des étoiles à 8,5°, fin des jeûnes à 7,08°, Rabbénou Tam 72 minutes après la chkia.",
       },
       ovadia: {
-        name: "Rav Ovadia Yossef (Or Ha'Haïm)",
+        name: "Rav Ovadia Yossef (Or Ha'Haïm en Israël, Amudei Horaah ailleurs)",
         short: "Rav Ovadia",
-        hint: "Le calcul en minutes zmaniyot, proportionnelles à la longueur du jour : aube 72 minutes avant le lever, sortie des étoiles 13,5 minutes après la chkia, fin des jeûnes 20 minutes, sortie du Chabbat 40 minutes.",
+        hint: "Le calcul en minutes zmaniyot, proportionnelles à la longueur du jour. En Israël, le luah Or Ha'Haïm\u00a0: aube 72 minutes avant le lever, sortie des étoiles 13,5 minutes après la chkia, fin des jeûnes 20 minutes zmaniyot, sortie du Chabbat 30 minutes. Ailleurs, le luah Amudei Horaah, qui mesure ces minutes en degrés à l'équinoxe pour tenir compte de la latitude\u202f; sans quoi les heures du nord seraient celles d'Israël.",
       },
     },
     /* Les hiloulot du jour, au bas de la page (voir services/hiloulot). */

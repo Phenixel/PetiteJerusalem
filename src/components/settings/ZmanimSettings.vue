@@ -12,6 +12,7 @@
  */
 import { useI18n } from "vue-i18n";
 import ZmanimOpinionPicker from "./ZmanimOpinionPicker.vue";
+import CandleLightingPicker from "./CandleLightingPicker.vue";
 
 const { t } = useI18n();
 </script>
@@ -24,5 +25,9 @@ const { t } = useI18n();
     <ZmanimOpinionPicker source="settings" />
 
     <p class="mt-3 text-sm text-text-secondary leading-relaxed">{{ t("zmanim.opinions.note") }}</p>
+
+    <!-- L'allumage suit la communauté, non l'avis : un réglage à part, sous
+         celui de l'avis, avec le défaut du lieu en première ligne. -->
+    <CandleLightingPicker class="mt-6" />
   </section>
 </template>

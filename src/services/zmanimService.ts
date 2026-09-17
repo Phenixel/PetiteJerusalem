@@ -3,8 +3,10 @@ import {
   HDate,
   HebrewCalendar,
   Locale,
+  Molad,
   Zmanim,
   flags,
+  holidayDesc,
   months,
   getHolidaysOnDate,
 } from "@hebcal/core";
@@ -12,12 +14,16 @@ import {
 // sans ce catalogue (4 Ko), qui s'enregistre auprès de hebcal à l'import.
 import "@hebcal/locales/fr";
 import { dateTimeFormat, displayNames } from "./intlCache";
+import { devicePreference } from "./devicePreference";
 import { saidTachanun } from "./tachanun";
 import {
   DEFAULT_ZMANIM_OPINION,
   opinionZmanim,
   zmanimOpinionStore,
+  type EndRule,
+  type OpinionContext,
   type OpinionZmanim,
+  type RabbenouTamRule,
   type ZmanimOpinion,
 } from "./zmanimOpinions";
 
@@ -160,6 +166,57 @@ export type ZmanPeriod = "dawn" | "morning" | "afternoon" | "evening";
 export const ZMAN_PERIODS: ZmanPeriod[] = ["dawn", "morning", "afternoon", "evening"];
 
 /**
+ * Le sens dans lequel un horaire s'arrondit à la minute.
+ *
+ * Un horaire ne tombe jamais sur une minute ronde, et l'afficher demande de
+ * couper les secondes. Le sens n'est pas indifférent :
+ *
+ *  - une FIN, dernier moment pour faire quelque chose (la fin du Chéma, la fin
+ *    de la consommation du 'hamets, l'allumage, hatsot, la chkia), se coupe
+ *    vers le BAS. La fin du Chéma à 10:37:48 s'affiche 10:37 : on se presse un
+ *    peu, on ne dépasse pas ;
+ *  - un DÉBUT, premier moment où une chose est permise (le talith, le netz,
+ *    min'ha guedola, min'ha ketana, plag, la sortie des étoiles, la sortie du
+ *    Chabbat, la fin d'un jeûne), monte à la minute SUPÉRIEURE. La sortie du
+ *    Chabbat à 20:42:09 s'affiche 20:43, et non 20:42, qui la relâcherait
+ *    cinquante et une secondes trop tôt ; le talith à 06:25:02 s'affiche
+ *    06:26, et non 06:25, qui le ferait mettre deux secondes trop tôt.
+ *
+ * L'aube fait exception aux débuts, et se coupe vers le bas : elle n'ouvre pas
+ * une permission, elle ouvre le JOUR du Maguen Avraham, dont tout le reste se
+ * compte ; c'est aussi le sens que lui donne le calendrier source.
+ *
+ * Ces sens ne sont pas devinés : ce sont ceux que le calendrier Rabbi Ovadiah
+ * Yosef marque zman par zman (`ROUND_EARLIER` et `ROUND_LATER` dans son
+ * `ZmanimFactory.java`), relu pour l'occasion.
+ *
+ * L'arrondi se fait AU CALCUL, et non à l'affichage : le décompte de la page,
+ * les rappels, les widgets et la montre lisent le même instant que la ligne
+ * d'horaire, et annoncent donc la même minute. Voir
+ * `docs/audit-horaires-2026-09.md`, point 3.3.
+ */
+export type ZmanRounding = "down" | "up";
+
+/**
+ * L'horaire coupé à la minute, dans le sens que sa nature commande.
+ *
+ * Le calcul se fait sur l'instant (l'epoch), jamais avec un setter de `Date` :
+ * un setter recalculerait l'instant depuis les champs locaux de la machine, et
+ * sauterait d'une heure à l'heure ambiguë du retour à l'heure d'hiver (voir le
+ * correctif de `patches/` et le point 3.1 de l'audit).
+ */
+export function roundMinute(date: Date, round: ZmanRounding): Date {
+  const ms = date.getTime();
+  const rounded = round === "up" ? Math.ceil(ms / 60_000) : Math.floor(ms / 60_000);
+  return new Date(rounded * 60_000);
+}
+
+/** Le même arrondi, mais qui laisse passer une date incalculable. */
+function roundUsable(date: Date | null, round: ZmanRounding): Date | null {
+  return isUsable(date) ? roundMinute(date, round) : null;
+}
+
+/**
  * Les horaires retenus, dans l'ordre chronologique.
  *
  * Deux opinions sont données là où la pratique les distingue vraiment (fin du
@@ -172,27 +229,38 @@ const ZMAN_DEFS = [
   // est celui de la nuit qui l'a précédé. Il ouvre la liste : après minuit, le
   // jour civil a changé, mais le milieu de sa nuit, souvent vers 1 h, n'est
   // pas forcément passé, et c'est lui qu'on vient vérifier à cette heure-là.
-  { key: "chatzotNightDawn", period: "dawn", at: (z: Zmanim) => z.chatzotNight() },
-  { key: "alotHaShachar", period: "dawn", at: (z, _n, o) => o.alotHaShachar(z) },
-  { key: "misheyakir", period: "dawn", at: (z, _n, o) => o.misheyakir(z) },
-  { key: "sunrise", period: "dawn", at: (z: Zmanim) => z.sunrise() },
-  { key: "sofZmanShmaMGA", period: "morning", at: (z, _n, o) => o.sofZmanShmaMGA(z) },
-  { key: "sofZmanShma", period: "morning", at: (z: Zmanim) => z.sofZmanShma() },
-  { key: "sofZmanTfillaMGA", period: "morning", at: (z, _n, o) => o.sofZmanTfillaMGA(z) },
-  { key: "sofZmanTfilla", period: "morning", at: (z: Zmanim) => z.sofZmanTfilla() },
-  { key: "chatzot", period: "afternoon", at: (z: Zmanim) => z.chatzot() },
-  { key: "minchaGedola", period: "afternoon", at: (z, _n, o) => o.minchaGedola(z) },
-  { key: "minchaKetana", period: "afternoon", at: (z: Zmanim) => z.minchaKetana() },
-  { key: "plagHaMincha", period: "afternoon", at: (z, _n, o) => o.plagHaMincha(z) },
-  { key: "sunset", period: "evening", at: (z: Zmanim) => z.sunset() },
-  { key: "tzeit", period: "evening", at: (z, _n, o) => o.tzeit(z) },
+  { key: "chatzotNightDawn", period: "dawn", round: "up", at: (z: Zmanim) => z.chatzotNight() },
+  { key: "alotHaShachar", period: "dawn", round: "down", at: (z, _n, o, c) => o.alotHaShachar(z, c) },
+  { key: "misheyakir", period: "dawn", round: "up", at: (z, _n, o, c) => o.misheyakir(z, c) },
+  { key: "sunrise", period: "dawn", round: "up", at: (z: Zmanim) => z.sunrise() },
+  { key: "sofZmanShmaMGA", period: "morning", round: "down", at: (z, _n, o, c) => o.sofZmanShmaMGA(z, c) },
+  { key: "sofZmanShma", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanShma() },
+  {
+    key: "sofZmanTfillaMGA",
+    period: "morning",
+    round: "down",
+    at: (z, _n, o, c) => o.sofZmanTfillaMGA(z, c),
+  },
+  { key: "sofZmanTfilla", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanTfilla() },
+  { key: "chatzot", period: "afternoon", round: "down", at: (z: Zmanim) => z.chatzot() },
+  { key: "minchaGedola", period: "afternoon", round: "up", at: (z, _n, o, c) => o.minchaGedola(z, c) },
+  { key: "minchaKetana", period: "afternoon", round: "up", at: (z: Zmanim) => z.minchaKetana() },
+  { key: "plagHaMincha", period: "afternoon", round: "up", at: (z, _n, o, c) => o.plagHaMincha(z, c) },
+  { key: "sunset", period: "evening", round: "down", at: (z: Zmanim) => z.sunset() },
+  { key: "tzeit", period: "evening", round: "up", at: (z, _n, o, c) => o.tzeit(z, c) },
   // Milieu de la nuit qui suit le jour affiché : lu sur le lendemain, dont la
   // nuit précédente est justement celle-là.
-  { key: "chatzotNight", period: "evening", at: (_z: Zmanim, next: Zmanim) => next.chatzotNight() },
+  {
+    key: "chatzotNight",
+    period: "evening",
+    round: "up",
+    at: (_z: Zmanim, next: Zmanim) => next.chatzotNight(),
+  },
 ] as const satisfies readonly {
   key: string;
   period: ZmanPeriod;
-  at: (z: Zmanim, next: Zmanim, opinion: OpinionZmanim) => Date;
+  round: ZmanRounding;
+  at: (z: Zmanim, next: Zmanim, opinion: OpinionZmanim, ctx: OpinionContext) => Date;
 }[];
 
 export type ZmanKey = (typeof ZMAN_DEFS)[number]["key"];
@@ -206,10 +274,34 @@ export type ZmanKey = (typeof ZMAN_DEFS)[number]["key"];
  */
 export const ZMAN_KEYS: ZmanKey[] = ZMAN_DEFS.map((def) => def.key);
 
+/**
+ * Le sens de l'arrondi de chaque horaire (voir ZmanRounding). Publié pour que
+ * le test puisse le confronter à l'instant exact, horaire par horaire, plutôt
+ * que de recopier la liste et de la laisser vieillir.
+ */
+export const ZMAN_ROUNDING: Record<ZmanKey, ZmanRounding> = Object.fromEntries(
+  ZMAN_DEFS.map((def) => [def.key, def.round]),
+) as Record<ZmanKey, ZmanRounding>;
+
 export interface ZmanTime {
   key: ZmanKey;
   period: ZmanPeriod;
+  /**
+   * L'horaire, coupé à la minute dans le sens de sa nature (voir
+   * ZmanRounding). C'est LUI que lisent la page, le décompte, les rappels, les
+   * widgets et la montre : tous annoncent donc la même minute.
+   */
   date: Date;
+  /**
+   * Le même horaire avant la coupe, à la seconde près.
+   *
+   * Il ne s'affiche jamais. Il sert à vérifier les définitions, que la minute
+   * efface : hatsot est à mi-chemin EXACT du lever et du coucher, et non au
+   * midi solaire, dont il ne s'écarte que d'une demi-seconde à une
+   * demi-minute ; trois horaires coupés à la minute ne sauraient plus dire
+   * lequel des deux le calcul a pris. Voir `zmanimInvariants.test.ts`.
+   */
+  exact: Date;
 }
 
 /**
@@ -239,24 +331,91 @@ export function setZmanimOpinion(opinion: ZmanimOpinion): void {
 const CANDLE_LIGHTING_MINUTES = 18;
 
 /**
- * Les villes dont l'usage local fixe l'allumage plus tôt que les 18 minutes
- * habituelles. La table est volontairement courte : on n'y met qu'un usage
- * unanime et vérifiable, sous peine d'annoncer une heure fausse. Jérusalem
- * allume 40 minutes avant la chkia ; ailleurs, tant qu'un usage n'est pas
- * établi ici, le calcul reste celui de la diaspora.
+ * L'usage d'Israël, hors les deux villes qui ont le leur.
  *
- * La clé est le nom exact de la ville du catalogue (src/datas/cities.json) :
- * une position relevée par l'appareil, elle, n'a pas de nom et suit donc la
- * règle générale.
+ * Vingt minutes, et non dix-huit : c'est ce qu'impriment les luhot israéliens,
+ * et ce que le calendrier Rabbi Ovadiah Yosef demande pour retrouver l'Or
+ * Ha'Haïm (« change `setCandleLightingOffset` to 20 if you want to replicate
+ * the exact times of the Ohr Hachaim calendar »). Sur cet avis, l'application
+ * annonçait deux minutes trop tard dans trente-trois villes d'Israël.
+ */
+const CANDLE_LIGHTING_ISRAEL_MINUTES = 20;
+
+/**
+ * Les villes dont l'usage local fixe l'allumage plus tôt encore.
+ *
+ * La table est volontairement courte : on n'y met qu'un usage unanime et
+ * vérifiable, sous peine d'annoncer une heure fausse. Jérusalem allume
+ * 40 minutes avant la chkia, Haïfa 30 ; ce sont les deux seules que hebcal et
+ * Chabad.org retiennent aussi (hebcal y ajoute Zikhron Ya'akov, absente du
+ * catalogue). Petah Tikva, Safed et Tibériade ont un usage PARTAGÉ, entre
+ * celui de Jérusalem et celui du pays : elles suivent les vingt minutes, et
+ * c'est le réglage ci-dessous qui tranche pour qui suit l'autre.
+ *
+ * La clé est le nom exact de la ville du catalogue (src/datas/cities.json).
+ * Une position relevée par l'appareil n'a pas de nom, mais elle a un fuseau :
+ * en Israël, elle suit donc bien les vingt minutes.
  */
 const CANDLE_LIGHTING_BY_CITY: Record<string, number> = {
   Jérusalem: 40,
+  Haïfa: 30,
 };
 
-/** Les minutes d'avance de l'allumage à ce lieu : 18, sauf usage local. */
-export function candleLightingMinutes(place: ZmanimPlace): number {
+/**
+ * Les minutes d'avance de l'allumage QUE LE LIEU commande, sans regarder le
+ * réglage : 18 en diaspora, 20 en Israël, 30 à Haïfa, 40 à Jérusalem.
+ *
+ * C'est cette heure-là que les pages du site annoncent, puisqu'elles sont les
+ * mêmes pour tout le monde ; la page des horaires, elle, passe par
+ * `candleLightingMinutes`, qui laisse le réglage l'emporter.
+ */
+export function localCandleLightingMinutes(place: ZmanimPlace): number {
   const local = place.city ? CANDLE_LIGHTING_BY_CITY[place.city] : undefined;
-  return local ?? CANDLE_LIGHTING_MINUTES;
+  if (local !== undefined) return local;
+  return isIsraelPlace(place) ? CANDLE_LIGHTING_ISRAEL_MINUTES : CANDLE_LIGHTING_MINUTES;
+}
+
+/**
+ * Les écarts d'allumage proposés au réglage.
+ *
+ * Dix-huit, vingt, trente ou quarante minutes : c'est l'usage d'une
+ * COMMUNAUTÉ, pas d'une ville. Petah Tikva en a deux, Safed et Tibériade
+ * aussi, et un Français installé à Jérusalem peut garder l'usage de sa
+ * communauté. Plutôt que de trancher à la place de l'utilisateur, on lui
+ * laisse le choix, avec le défaut du lieu.
+ */
+export const CANDLE_LIGHTING_CHOICES = [18, 20, 30, 40];
+
+function parseCandleMinutes(value: unknown): number | null {
+  const minutes = Number(value);
+  return CANDLE_LIGHTING_CHOICES.includes(minutes) ? minutes : null;
+}
+
+/** Le réglage, gardé sur l'appareil ; null quand on suit l'usage du lieu. */
+export const candleLightingStore = devicePreference<number>(
+  "pj_candle_minutes",
+  parseCandleMinutes,
+  String,
+);
+
+// Lu une fois au chargement, comme l'opinion : l'allumage est affiché dès le
+// premier rendu, et un réglage qui n'arriverait qu'après ferait sauter l'heure
+// sous les yeux.
+let currentCandleMinutes: number | null = candleLightingStore.read();
+
+/** L'écart choisi, ou null quand c'est l'usage du lieu qui vaut. */
+export function candleLightingChoice(): number | null {
+  return currentCandleMinutes;
+}
+
+/** Change l'écart suivi. `null` rend la main à l'usage du lieu. */
+export function setCandleLightingChoice(minutes: number | null): void {
+  currentCandleMinutes = minutes === null ? null : parseCandleMinutes(minutes);
+}
+
+/** Les minutes d'avance de l'allumage à ce lieu : le réglage, sinon l'usage. */
+export function candleLightingMinutes(place: ZmanimPlace): number {
+  return currentCandleMinutes ?? localCandleLightingMinutes(place);
 }
 
 function geoLocationOf(place: ZmanimPlace): GeoLocation {
@@ -267,6 +426,43 @@ function geoLocationOf(place: ZmanimPlace): GeoLocation {
     0, // altitude : les zmanim sont calculés au niveau de la mer
     place.tzid,
   );
+}
+
+/**
+ * Le jour de référence de l'Amudei Horaah : le 17 mars, l'équinoxe.
+ *
+ * C'est la date que le calendrier source pose en dur pour y mesurer, au lieu
+ * même, la part d'heure zmanit qu'occupe la descente du soleil à un angle
+ * donné (voir OpinionContext.equinox).
+ */
+const EQUINOX_MONTH = 2;
+const EQUINOX_DAY = 17;
+
+/**
+ * Ce que le lieu et le jour apportent au calcul d'un avis.
+ *
+ * Construit par jour et par lieu, à chaque endroit qui interroge un avis : un
+ * avis n'est pas un jeu de paramètres fixes, c'est un luah, et le luah du
+ * calendrier Rabbi Ovadiah Yosef change entre Israël et la diaspora (voir
+ * zmanimOpinions).
+ */
+export function opinionContext(place: ZmanimPlace, localDay: Date): OpinionContext {
+  const gloc = geoLocationOf(place);
+  const year = localDay.getFullYear();
+  return {
+    il: isIsraelPlace(place),
+    equinox: new Zmanim(gloc, new Date(year, EQUINOX_MONTH, EQUINOX_DAY, 12), false),
+    equinoxKey: `${place.latitude}|${place.longitude}|${place.tzid}|${year}`,
+    // Paresseux : la plupart des horaires n'en ont pas besoin, et le calculer
+    // à chaque contexte doublerait le travail solaire de la page.
+    solarMidnight: () => {
+      const nextDay = new Date(localDay);
+      nextDay.setDate(nextDay.getDate() + 1);
+      // `chatzotNight` d'un jour est le milieu de la nuit qui l'a PRÉCÉDÉ :
+      // lu sur le lendemain, c'est bien le milieu de la nuit qui suit.
+      return new Zmanim(gloc, nextDay, false).chatzotNight();
+    },
+  };
 }
 
 /**
@@ -293,7 +489,7 @@ export function dayInPlace(place: ZmanimPlace, date: Date): Date {
 }
 
 /** Une date renvoyée par hebcal peut être invalide aux latitudes extrêmes. */
-function isUsable(date: Date): boolean {
+function isUsable(date: Date | null): date is Date {
   return date instanceof Date && !Number.isNaN(date.getTime());
 }
 
@@ -331,19 +527,68 @@ function computeZmanimFor(place: ZmanimPlace, localDay: Date): ZmanTime[] {
   const nextZmanim = new Zmanim(gloc, nextDay, false);
 
   const opinion = opinionZmanim(currentOpinion);
+  const ctx = opinionContext(place, localDay);
   const times: ZmanTime[] = [];
   for (const def of ZMAN_DEFS) {
-    const date = def.at(zmanim, nextZmanim, opinion);
+    const computed = def.at(zmanim, nextZmanim, opinion, ctx);
     // Nuit ou jour polaire : l'horaire n'existe pas, on ne l'affiche pas.
-    if (!isUsable(date)) continue;
+    if (!isUsable(computed)) continue;
+    // Coupé à la minute ici, dans le sens que sa nature commande (voir
+    // ZmanRounding) : c'est cet instant-là que lisent la page, le décompte,
+    // les rappels et les widgets, et ils annoncent donc tous la même minute.
+    const date = roundMinute(computed, def.round);
     // Le milieu de la nuit en cours n'appartient au jour que s'il tombe après
     // minuit. À l'est du méridien de son fuseau (Israël l'hiver), il tombe
     // avant : c'est alors la soirée de la veille qui le porte, pas ce jour-ci.
     if (def.key === "chatzotNightDawn" && dayInPlace(place, date).getTime() !== localDay.getTime())
       continue;
-    times.push({ key: def.key, period: def.period, date });
+    times.push({ key: def.key, period: def.period, date, exact: computed });
   }
-  return times;
+  // ZMAN_DEFS les range dans l'ordre d'une journée ordinaire, mais cet ordre
+  // n'est pas garanti partout : au nord de Manchester, en hiver, le jour du
+  // Maguen Avraham (compté de 16,1° avant le lever à 16,1° après la chkia)
+  // est si long devant celui du Gaon de Vilna que sa QUATRIÈME heure tombe
+  // avant la TROISIÈME de l'autre, et la fin de la Amida s'affichait alors
+  // au-dessus d'une fin du Chéma plus tardive. `nextZman` lit cette liste
+  // dans l'ordre pour annoncer l'horaire qui vient : elle doit l'être.
+  return times.sort((a, b) => a.date.getTime() - b.date.getTime());
+}
+
+/**
+ * Pourquoi un horaire manque à la liste du jour.
+ *
+ *  - `degrees` : le soleil se lève et se couche, mais il ne descend jamais
+ *    assez bas sous l'horizon pour l'angle que l'avis demande. C'est le cas
+ *    de l'avis du Rav Posen, qui compte en degrés, au nord de Lille environ :
+ *    l'aube (16,1°) n'existe pas une quinzaine de jours par an à Lille, une
+ *    trentaine à Londres, une centaine à Helsinki, et les deux limites du
+ *    Maguen Avraham, qui se comptent depuis elle, pas davantage.
+ *  - `polar` : le soleil ne se lève pas ou ne se couche pas du tout. Là,
+ *    aucun avis n'a d'heure à donner.
+ *
+ * La distinction porte la note affichée sous les horaires : le premier cas a
+ * une issue (l'avis du Rav Ovadia Yossef compte en minutes zmaniyot,
+ * proportionnelles au jour, et donne donc une heure sous toutes les
+ * latitudes où le soleil se lève), le second n'en a pas. Elle se lit sans
+ * connaître l'avis suivi : un calcul en minutes zmaniyot ne peut pas manquer
+ * un horaire tant que le lever et la chkia existent, si bien que `degrees`
+ * ne désigne jamais que l'avis par degrés.
+ */
+export interface ZmanimGap {
+  /** Les horaires absents de la liste du jour. */
+  keys: ZmanKey[];
+  reason: "degrees" | "polar";
+}
+
+/** Ce que l'avis suivi ne sait pas calculer ce jour-là, en ce lieu, ou null. */
+export function zmanimGap(place: ZmanimPlace, day: Date = new Date()): ZmanimGap | null {
+  const present = new Set<string>(computeZmanim(place, day).map((zman) => zman.key));
+  // `chatzotNightDawn` manque par construction certains jours (voir ZMAN_DEFS) :
+  // son absence ne dit rien du soleil, et n'a donc rien à expliquer.
+  const keys = ZMAN_KEYS.filter((key) => key !== "chatzotNightDawn" && !present.has(key));
+  if (keys.length === 0) return null;
+  const polar = !present.has("sunrise") || !present.has("sunset");
+  return { keys, reason: polar ? "polar" : "degrees" };
 }
 
 /** Le prochain horaire à venir, pour mettre en avant « ce qui arrive ». */
@@ -392,7 +637,10 @@ export function slihotWindow(place: ZmanimPlace, now: Date = new Date()): Slihot
   const start = zmanim.chatzotNight();
   const end = zmanim.sunrise();
   if (!isUsable(start) || !isUsable(end)) return null;
-  return { start, end, tonight };
+  // Hatsot ouvre la plage (on ne commence pas avant), le netz la ferme : la
+  // première monte à la minute supérieure, la seconde descend (voir
+  // ZmanRounding).
+  return { start: roundMinute(start, "up"), end: roundMinute(end, "down"), tonight };
 }
 
 /**
@@ -467,16 +715,41 @@ export function hebrewDateFor(place: ZmanimPlace, day: Date, now: Date = new Dat
  * d'Israël du catalogue comme une position d'appareil en Israël vivent toutes
  * deux en Asia/Jerusalem.
  */
-const isIsraelPlace = (place: ZmanimPlace): boolean => place.tzid === "Asia/Jerusalem";
+export const isIsraelPlace = (place: ZmanimPlace): boolean => place.tzid === "Asia/Jerusalem";
 
 /** hebcal ne porte que trois catalogues : en, he et fr (voir l'import en tête). */
 const hebcalLocale = (locale: string): string =>
   locale === "he" || locale === "fr" ? locale : "en";
 
+/**
+ * Ce que hebcal range parmi les jeûnes sans que le calendrier de
+ * l'application le suive :
+ *
+ *  - le **Yom Kippour Katan**, jeûne facultatif de la veille de chaque Roch
+ *    Hodech, tenu par des particuliers et non par la communauté ;
+ *  - le **Ta'anit BeHaB**, usage achkénaze des lundi, jeudi et lundi qui
+ *    suivent Pessah et Soukkot.
+ *
+ * `HebrewCalendar.calendar`, dont vit la page du calendrier, les écarte de
+ * lui-même : il faut les demander par ses options `yomKippurKatan` et
+ * `behab`. `getHolidaysOnDate`, lui, rend la liste brute, et la page des
+ * horaires annonçait donc une quinzaine de faux jeûnes par an, avec leur
+ * heure de début et de fin, à côté des six vrais. Les deux pages lisent
+ * maintenant le même calendrier.
+ */
+const NOT_OBSERVED_FLAGS = flags.YOM_KIPPUR_KATAN | flags.BEHAB;
+
+/** Les fêtes et jeûnes d'un jour, tels que l'application les suit. */
+function holidaysOn(hd: HDate, il: boolean) {
+  return (getHolidaysOnDate(hd, il) ?? []).filter(
+    (ev) => (ev.getFlags() & NOT_OBSERVED_FLAGS) === 0,
+  );
+}
+
 /** Jour où le travail est interdit : Chabbat ou Yom Tov, pas 'Hol haMoed. */
 function isRestDay(hd: HDate, il: boolean): boolean {
   if (hd.getDay() === 6) return true;
-  return (getHolidaysOnDate(hd, il) ?? []).some((ev) => (ev.getFlags() & flags.CHAG) !== 0);
+  return holidaysOn(hd, il).some((ev) => (ev.getFlags() & flags.CHAG) !== 0);
 }
 
 /**
@@ -497,8 +770,7 @@ const festivalName = (ev: { basename(): string }, lg: string): string =>
  * d'entrée et de sortie (voir RestPeriod).
  */
 export function dayHighlights(place: ZmanimPlace, hd: HDate, locale: string): string[] {
-  const events = getHolidaysOnDate(hd, isIsraelPlace(place)) ?? [];
-  return events
+  return holidaysOn(hd, isIsraelPlace(place))
     .filter((ev) => (ev.getFlags() & flags.CHAG) === 0)
     .map((ev) => ev.render(hebcalLocale(locale)));
 }
@@ -517,7 +789,7 @@ export function dayHighlights(place: ZmanimPlace, hd: HDate, locale: string): st
 export function festivalsOn(place: ZmanimPlace, hd: HDate, locale: string): string[] {
   const lg = hebcalLocale(locale);
   const names: string[] = [];
-  for (const ev of getHolidaysOnDate(hd, isIsraelPlace(place)) ?? []) {
+  for (const ev of holidaysOn(hd, isIsraelPlace(place))) {
     if ((ev.getFlags() & flags.CHAG) === 0) continue;
     const name = festivalName(ev, lg);
     if (!names.includes(name)) names.push(name);
@@ -544,20 +816,80 @@ export interface RestPeriod {
    * Sortie du dernier jour, telle que l'opinion suivie la donne : la sortie
    * des étoiles pour le Rav Posen, 40 minutes après la chkia pour le luah
    * Or Ha'Haïm (voir zmanimOpinions).
+   *
+   * Null quand l'avis suivi ne sait pas la donner ici ce jour-là : à partir
+   * de Stockholm, le soleil ne descend pas à 8,5° au cœur de l'été, et six à
+   * huit Chabbats par an n'avaient alors ni entrée ni sortie, faute de quoi
+   * le bloc disparaissait tout entier de la page. L'allumage, lui, se lit sur
+   * la chkia et existe toujours : on annonce donc le Chabbat avec son entrée,
+   * et la note dit pourquoi sa sortie n'a pas d'heure (voir ZmanimGap).
    */
-  end: Date;
+  end: Date | null;
   /**
    * Sortie selon Rabbénou Tam, 72 minutes après la chkia du dernier jour
    * (fixes ou zmaniyot selon l'opinion), pour qui suit cet avis. Null quand
    * la chkia ne se calcule pas.
    */
   endRabbenouTam: Date | null;
+  /**
+   * Comment la sortie se compte, pour la note sous le cadre : sans elle, la
+   * note annoncerait « à la sortie des étoiles » là où le cadre affiche trente
+   * minutes après la chkia (voir zmanimOpinions, EndRule).
+   */
+  endRule: EndRule;
+  /** Comment Rabbénou Tam se compte, même raison. */
+  rabbenouTamRule: RabbenouTamRule;
+  /**
+   * Les allumages À L'INTÉRIEUR du bloc : un par soir, sauf le premier, qui
+   * est déjà `start`.
+   *
+   * Un bloc de plusieurs jours n'a qu'une entrée et qu'une sortie, mais il a
+   * plusieurs soirs, et chacun demande une heure que l'on cherchait en vain :
+   * le deuxième soir d'un Yom Tov, le vendredi pris dans une fête, le Yom Tov
+   * qui commence à la sortie du Chabbat. La note disait « on allume après la
+   * sortie, à partir d'une flamme déjà allumée », sans jamais donner l'heure.
+   */
+  lightings: RestLighting[];
+  /**
+   * Le jour civil où faire l'érouv tavchilin, ou null.
+   *
+   * Quand un Yom Tov tombe le vendredi et que le Chabbat suit, on ne peut
+   * cuisiner le vendredi pour le samedi qu'en ayant posé l'érouv la veille de
+   * la fête. Ni la page ni le calendrier ne le disaient.
+   */
+  eruvTavshilin: Date | null;
   first: HDate;
   last: HDate;
   /** Le bloc couvre un Chabbat, son jour civil, pour retrouver la paracha. */
   shabbat: Date | null;
   /** Fêtes couvertes, nommées dans la langue demandée, sans numéro de jour. */
   festivals: string[];
+  /**
+   * Le bloc porte Kippour : son entrée est aussi le début du jeûne.
+   *
+   * Kippour n'a pas de cadre de jeûne, il a un cadre de repos, dont l'entrée
+   * s'appelait « Allumage des bougies ». Qui cherchait « à quelle heure
+   * commence le jeûne » ne trouvait pas le mot.
+   */
+  fastStarts: boolean;
+}
+
+/**
+ * Un allumage à l'intérieur d'un bloc de repos, et la règle qui le place.
+ *
+ *  - `beforeSunset` : le soir qui ouvre un Chabbat, avant la chkia, comme
+ *    l'entrée du bloc. Depuis une flamme déjà allumée si le jour qui s'achève
+ *    est lui-même un Yom Tov ;
+ *  - `afterShabbat` : un Yom Tov qui commence à la sortie du Chabbat ;
+ *  - `afterNightfall` : le deuxième soir d'un Yom Tov de deux jours, à la
+ *    nuit. C'est la fin de jeûne (tsét le'houmra) que le calendrier source
+ *    retient là, et non la sortie des étoiles ordinaire.
+ */
+export interface RestLighting {
+  /** Le jour hébraïque qui COMMENCE à cet allumage. */
+  day: HDate;
+  at: Date;
+  rule: "beforeSunset" | "afterShabbat" | "afterNightfall";
 }
 
 /** Trois jours de repos d'affilée au maximum (Yom Tov de deux jours + Chabbat). */
@@ -582,60 +914,226 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
   const eve = civilNoon(first);
   eve.setDate(eve.getDate() - 1);
   const start = new Zmanim(gloc, eve, false).sunsetOffset(-candleLightingMinutes(place), true);
-  const lastDay = new Zmanim(gloc, civilNoon(last), false);
+  const lastCivil = civilNoon(last);
+  const lastDay = new Zmanim(gloc, lastCivil, false);
   const opinion = opinionZmanim(currentOpinion);
-  const end = opinion.restEnd(lastDay);
-  if (!isUsable(start) || !isUsable(end)) return null;
+  // Le contexte se pose sur le DERNIER jour du bloc : c'est son soir qui donne
+  // la sortie, et c'est sa nuit que l'Amudei Horaah ne dépasse pas.
+  const ctx = opinionContext(place, lastCivil);
+  const end = opinion.restEnd(lastDay, ctx);
+  // L'allumage, lui, est indispensable : sans lui il n'y a rien à annoncer.
+  if (!isUsable(start)) return null;
+  // La sortie est une FIN : elle monte à la minute supérieure, sans quoi le
+  // Chabbat se relâcherait jusqu'à cinquante-neuf secondes trop tôt (voir
+  // ZmanRounding). L'allumage, une limite, est déjà coupé vers le bas par
+  // hebcal.
+  const restEnd = roundUsable(end, "up");
   // Aux hautes latitudes en été, la sortie des étoiles peut dépasser les
   // 72 minutes : une sortie Rabbénou Tam plus tôt que la sortie ordinaire
-  // n'apprend rien, on ne la donne pas.
-  const rabbenouTam = opinion.rabbenouTam(lastDay);
+  // n'apprend rien, on ne la donne pas. Sans sortie du tout, elle n'apprend
+  // rien non plus : ce serait la seule heure du cadre, sous un nom que peu
+  // suivent.
+  const rabbenouTam = roundUsable(opinion.rabbenouTam(lastDay, ctx), "up");
   const endRabbenouTam =
-    isUsable(rabbenouTam) && rabbenouTam.getTime() > end.getTime() ? rabbenouTam : null;
+    restEnd && rabbenouTam && rabbenouTam.getTime() > restEnd.getTime() ? rabbenouTam : null;
+
+  const lightings = restLightings(place, first, last, il, opinion);
+  const eruvTavshilin = eruvTavshilinDay(first, last, il);
 
   const festivals: string[] = [];
   let shabbat: Date | null = null;
+  let fastStarts = false;
   for (let day = first; day.abs() <= last.abs(); day = day.next()) {
     if (day.getDay() === 6) shabbat = civilNoon(day);
+    // Kippour est à la fois un grand jeûne et un jour de repos : c'est cette
+    // réunion des deux drapeaux qui le distingue des autres Yom Tov.
+    if (
+      holidaysOn(day, il).some(
+        (ev) => (ev.getFlags() & flags.MAJOR_FAST) !== 0 && (ev.getFlags() & flags.CHAG) !== 0,
+      )
+    ) {
+      fastStarts = true;
+    }
     for (const name of festivalsOn(place, day, locale)) {
       if (!festivals.includes(name)) festivals.push(name);
     }
   }
-  return { start, end, endRabbenouTam, first, last, shabbat, festivals };
+  return {
+    start,
+    end: restEnd,
+    endRabbenouTam,
+    endRule: opinion.restEndRule(ctx),
+    rabbenouTamRule: opinion.rabbenouTamRule(ctx),
+    lightings,
+    eruvTavshilin,
+    first,
+    last,
+    shabbat,
+    festivals,
+    fastStarts,
+  };
+}
+
+/**
+ * Les allumages des soirs qui suivent l'entrée du bloc.
+ *
+ * On parcourt les jours de `first` à l'avant-dernier : le soir de chaque jour
+ * `d` ouvre `d.next()`, et c'est donc un allumage, sauf pour le premier soir,
+ * qui est l'entrée du bloc. Trois règles, selon ce qui s'achève et ce qui
+ * commence (voir RestLighting).
+ */
+function restLightings(
+  place: ZmanimPlace,
+  first: HDate,
+  last: HDate,
+  il: boolean,
+  opinion: OpinionZmanim,
+): RestLighting[] {
+  const gloc = geoLocationOf(place);
+  const lightings: RestLighting[] = [];
+  for (let day = first; day.abs() < last.abs(); day = day.next()) {
+    const next = day.next();
+    const civil = civilNoon(day);
+    const zmanim = new Zmanim(gloc, civil, false);
+    const ctx = opinionContext(place, civil);
+    let at: Date;
+    let rule: RestLighting["rule"];
+    if (next.getDay() === 6) {
+      // Le Chabbat entre avant la chkia, même pris dans une fête : on allume
+      // à la même avance que l'entrée du bloc.
+      at = zmanim.sunsetOffset(-candleLightingMinutes(place), true);
+      rule = "beforeSunset";
+    } else if (day.getDay() === 6) {
+      // Le Chabbat s'achève, un Yom Tov commence : on allume à sa sortie.
+      at = opinion.restEnd(zmanim, ctx);
+      rule = "afterShabbat";
+    } else {
+      // Deux Yom Tov qui se suivent : à la nuit, depuis une flamme existante.
+      at = opinion.yomTovLighting(zmanim, ctx);
+      rule = "afterNightfall";
+    }
+    // L'allumage ouvre le jour suivant : c'est un DÉBUT, il monte à la minute
+    // supérieure, sauf celui d'avant la chkia, qui est une limite.
+    const rounded = roundUsable(at, rule === "beforeSunset" ? "down" : "up");
+    if (rounded) lightings.push({ day: next, at: rounded, rule });
+  }
+  return lightings;
+}
+
+/**
+ * Le jour civil où poser l'érouv tavchilin, ou null.
+ *
+ * Il le faut dès qu'un Yom Tov tombe le vendredi et que le Chabbat le suit :
+ * sans l'érouv, on ne peut pas cuisiner le vendredi pour le samedi. On le pose
+ * la veille du PREMIER jour du bloc, donc le mercredi pour un Yom Tov de
+ * jeudi et vendredi, le jeudi pour un vendredi seul.
+ *
+ * Kippour ne tombe jamais un vendredi ; Roch Hachana un jeudi et un vendredi
+ * est le cas le plus fréquent.
+ */
+function eruvTavshilinDay(first: HDate, last: HDate, il: boolean): Date | null {
+  let needed = false;
+  for (let day = first; day.abs() <= last.abs(); day = day.next()) {
+    if (day.getDay() !== 5) continue; // vendredi
+    if (!isYomTov(day, il)) continue;
+    // Le Chabbat doit suivre dans le bloc, sans quoi rien n'est à préparer.
+    if (last.abs() > day.abs()) needed = true;
+  }
+  if (!needed) return null;
+  const eve = civilNoon(first);
+  eve.setDate(eve.getDate() - 1);
+  return eve;
+}
+
+/** Un Yom Tov, par opposition à un Chabbat ordinaire. */
+function isYomTov(hd: HDate, il: boolean): boolean {
+  return holidaysOn(hd, il).some((ev) => (ev.getFlags() & flags.CHAG) !== 0);
 }
 
 /** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */
 export function nightfallOf(place: ZmanimPlace, hd: HDate): Date | null {
-  const zmanim = new Zmanim(geoLocationOf(place), civilNoon(hd), false);
-  const end = opinionZmanim(currentOpinion).tzeit(zmanim);
-  return isUsable(end) ? end : null;
+  const day = civilNoon(hd);
+  const zmanim = new Zmanim(geoLocationOf(place), day, false);
+  // Une FIN, comme la sortie des étoiles de la liste du jour : minute
+  // supérieure, pour que les deux annoncent la même (voir ZmanRounding).
+  return roundUsable(
+    opinionZmanim(currentOpinion).tzeit(zmanim, opinionContext(place, day)),
+    "up",
+  );
+}
+
+/**
+ * La fenêtre de la bénédiction de la lune pour le mois de `hd`.
+ *
+ * Elle se compte depuis le MOLAD, la conjonction moyenne, et non depuis le
+ * premier du mois : Roch Hodech tombe de zéro à deux jours après lui, et les
+ * deux ne coïncident donc pas. On attend sept jours complets depuis le molad
+ * (usage séfarade, Ben Ich 'Haï), et on ne dit plus la bénédiction passé la
+ * moitié de la lunaison, 14 jours 18 heures 22 minutes après lui (Choul'han
+ * Aroukh, Ora'h 'Haïm 426, 3, l'avis que le Rav Ovadia Yossef retient).
+ *
+ * hebcal calcule les deux, à partir du même molad qu'annonce le Chabbat
+ * Mevarekhim : celui de Tichri 5787 est bien « vendredi 20 h 59 et 1 'helek »
+ * (`getDow` 5, `getHour` 20, `getMinutes` 59, `getChalakim` 1), soit
+ * l'instant `2026-09-11T18:38:06Z`.
+ */
+export function birkatHalevanaWindow(hd: HDate): { start: Date; end: Date } {
+  const molad = new Molad(hd.getFullYear(), hd.getMonth());
+  const at = (zdt: { epochMilliseconds: number | bigint }) =>
+    new Date(Number(zdt.epochMilliseconds));
+  return {
+    start: at(molad.getTchilasZmanKidushLevana7Days()),
+    end: at(molad.getSofZmanKidushLevanaBetweenMoldos()),
+  };
 }
 
 /**
  * Dit-on la bénédiction de la lune (Birkat Halevana) la nuit qui ouvre ce
  * jour hébraïque-là ?
  *
- * Usage séfarade (Ben Ich 'Haï) : on attend sept jours complets depuis le
- * molad, donc la première nuit est celle qui ouvre le 8 du mois (la nuit du 7
- * n'en compte que six), et on ne la dit plus passé la moitié de la lunaison.
- * Deux reports d'usage, pour la dire dans la joie : en Av on attend la sortie
- * de Tich'a beAv, en Tichri celle de Kippour.
+ * La nuit qui ouvre `hd` commence à la sortie des étoiles de la veille : on
+ * regarde donc si CET INSTANT-LÀ tombe dans la fenêtre du molad. Compter en
+ * jours du mois, comme on le faisait (du 8 au 14), déplaçait la fenêtre de
+ * zéro à deux jours selon l'écart entre le molad et Roch Hodech : en Nissan
+ * 5787, la nuit qui ouvre le 7 était refusée alors que les sept jours étaient
+ * écoulés.
+ *
+ * Deux reports d'usage sont conservés, pour la dire dans la joie : en Av on
+ * attend la sortie de Tich'a beAv, en Tichri celle de Kippour.
  */
-export function saysBirkatHalevana(hd: HDate): boolean {
-  const day = hd.getDate();
-  if (day > BIRKAT_HALEVANA_LAST_DAY) return false;
-  if (hd.getMonth() === months.AV) return day >= 10;
-  if (hd.getMonth() === months.TISHREI) return day >= 11;
-  return day >= 8;
+export function saysBirkatHalevana(place: ZmanimPlace, hd: HDate): boolean {
+  if (hd.getMonth() === months.AV && hd.getDate() < 10) return false;
+  if (hd.getMonth() === months.TISHREI && hd.getDate() < 11) return false;
+  const night = nightfallOf(place, hd.prev());
+  if (!night) return false; // Pas de nuit ici ce jour-là : rien à annoncer.
+  const { start, end } = birkatHalevanaWindow(hd);
+  return night.getTime() >= start.getTime() && night.getTime() <= end.getTime();
 }
 
-/** La moitié de la lunaison : passé ce jour, la bénédiction ne se dit plus. */
-const BIRKAT_HALEVANA_LAST_DAY = 14;
-
-/** Le dernier jour où la bénédiction de la lune se dit, ce mois-là. */
-export function birkatHalevanaLastDay(hd: HDate): HDate {
-  return new HDate(BIRKAT_HALEVANA_LAST_DAY, hd.getMonth(), hd.getFullYear());
+/**
+ * Le dernier jour hébraïque dont la nuit d'ouverture précède la fin de la
+ * fenêtre : celui que le bandeau annonce comme date limite.
+ *
+ * On part du dernier jour possible et on redescend : la fenêtre ne dure jamais
+ * plus d'une quinzaine de nuits, et le calcul reste à la fois exact et court.
+ */
+export function birkatHalevanaLastDay(place: ZmanimPlace, hd: HDate): HDate {
+  const { end } = birkatHalevanaWindow(hd);
+  let day = new HDate(BIRKAT_HALEVANA_SEARCH_LAST_DAY, hd.getMonth(), hd.getFullYear());
+  for (let i = 0; i < BIRKAT_HALEVANA_SEARCH_DAYS; i++) {
+    const night = nightfallOf(place, day.prev());
+    if (night && night.getTime() <= end.getTime()) return day;
+    day = day.prev();
+  }
+  return day;
 }
+
+/**
+ * Jusqu'où chercher le dernier jour : la moitié d'une lunaison ne dépasse
+ * jamais le 17 du mois, le molad pouvant précéder Roch Hodech de deux jours.
+ */
+const BIRKAT_HALEVANA_SEARCH_LAST_DAY = 17;
+const BIRKAT_HALEVANA_SEARCH_DAYS = 6;
 
 /**
  * Une entrée du calendrier des fêtes : une fête (ou un bloc de fêtes qui se
@@ -659,6 +1157,26 @@ export interface CalendarEntry {
  * quand finit une fête.
  */
 const CALENDAR_FLAGS = flags.CHAG | flags.MAJOR_FAST | flags.MINOR_FAST | flags.MINOR_HOLIDAY;
+
+/**
+ * Ce que `MINOR_HOLIDAY` ramène et qui n'a rien à faire dans un calendrier
+ * séfarade.
+ *
+ *  - **Lel Selihot** (23 Eloul) est un usage ACHKÉNAZE : les Séfarades disent
+ *    les Sli'hot depuis Roch Hodech Eloul, et c'est ainsi que l'application
+ *    les propose. L'annoncer le 23 contredirait sa propre page ;
+ *  - **Roch Hachanah LaBehemot** (1er Eloul), le nouvel an du bétail, et
+ *    **'Hag haBanot** (30 Kislev) ne sont pas des jours que le calendrier a à
+ *    tenir : ils n'ont ni heures, ni office, ni interdit.
+ *
+ * Les noms viennent de `holidayDesc`, que hebcal exporte : une chaîne
+ * recopiée à la main vieillirait sans bruit le jour où il la renommerait.
+ */
+const CALENDAR_EXCLUDED = new Set<string>([
+  holidayDesc.LEIL_SELICHOT,
+  holidayDesc.ROSH_HASHANA_LABEHEMOT,
+  holidayDesc.CHAG_HABANOT,
+]);
 
 /**
  * Les fêtes d'une année hébraïque, dans l'ordre.
@@ -697,6 +1215,7 @@ export function yearCalendar(
   for (const ev of events) {
     const eventFlags = ev.getFlags();
     if ((eventFlags & CALENDAR_FLAGS) === 0 || (eventFlags & flags.EREV) !== 0) continue;
+    if (CALENDAR_EXCLUDED.has(ev.basename())) continue;
     const hd = ev.getDate();
 
     // Une fête dont le bloc de repos n'a pas d'heures (pas de chkia ni de
@@ -762,7 +1281,10 @@ export function restPeriodsNear(
       abs++;
       continue;
     }
-    if (period.end.getTime() > day.getTime()) periods.push(period);
+    // Sans heure de sortie, le bloc reste annoncé : c'est son entrée qu'on
+    // vient chercher, et la disparition du Chabbat serait pire que l'absence
+    // d'une de ses deux heures.
+    if (!period.end || period.end.getTime() > day.getTime()) periods.push(period);
     abs = period.last.abs() + 1;
   }
   // Une fois dedans, le bloc en cours suffit : annoncer le Chabbat suivant en
@@ -785,8 +1307,15 @@ export interface FastPeriod {
   /**
    * Début : l'aube du jour pour les petits jeûnes, le coucher du soleil de
    * la veille pour Tich'a beAv, qui dure de soir à soir comme Kippour.
+   *
+   * Null quand l'avis suivi ne sait pas donner l'aube ici ce jour-là : au
+   * nord de l'Angleterre et en Scandinavie, le soleil ne descend pas à 16,1°
+   * au cœur de l'été, et le 17 Tamouz tombe justement là. Le jeûne a lieu
+   * quand même : on l'annonce avec sa fin, et la note dit pourquoi son début
+   * n'a pas d'heure, plutôt que de le faire disparaître du calendrier (voir
+   * ZmanimGap).
    */
-  start: Date;
+  start: Date | null;
   /**
    * Fin : la nuit, telle que l'opinion suivie la compte POUR UN JEÛNE, ce qui
    * n'est ni la sortie des étoiles ordinaire ni celle du Chabbat (voir
@@ -796,16 +1325,29 @@ export interface FastPeriod {
   end: Date;
   /**
    * Comment cette fin se compte, pour la note sous le cadre : null quand ce
-   * sont les trois étoiles moyennes, un nombre de minutes fixes après la chkia
-   * sinon (voir OpinionZmanim.fastEndMinutes).
+   * sont les trois étoiles moyennes, un nombre de minutes après la chkia
+   * sinon (voir zmanimOpinions, EndRule).
    */
-  endMinutes: number | null;
+  endRule: EndRule;
   /** Le jeûne commence la veille au soir (Tich'a beAv), non à l'aube. */
   fromEve: boolean;
+  /**
+   * Ta'anit Bekhorot, la veille de Pessah, qui n'oblige QUE les premiers-nés,
+   * et dont un siyoum dispense.
+   *
+   * Il montait en tête de page comme un jeûne public, avec une fin que
+   * personne ne suit, le jour même où tout le monde cherche les limites du
+   * 'hamets. Il garde son cadre, mais il ne passe plus devant, et sa note le
+   * dit.
+   */
+  firstbornOnly: boolean;
 }
 
 /** Les jeûnes du calendrier, petits et grands, hors la veille (« Erev Tich'a beAv »). */
 const FAST_FLAGS = flags.MAJOR_FAST | flags.MINOR_FAST;
+
+/** Le jeûne des premiers-nés, la veille de Pessah (voir FastPeriod.firstbornOnly). */
+const FIRSTBORN_FAST = holidayDesc.TAANIT_BECHOROT;
 
 /**
  * Le jeûne observé ce jour hébraïque-là, avec ses heures, ou null s'il n'y en
@@ -813,7 +1355,7 @@ const FAST_FLAGS = flags.MAJOR_FAST | flags.MINOR_FAST;
  * tombe un Chabbat est lu au dimanche (ou au jeudi pour les premiers-nés).
  */
 export function fastAt(place: ZmanimPlace, hd: HDate, locale: string): FastPeriod | null {
-  const event = (getHolidaysOnDate(hd, isIsraelPlace(place)) ?? []).find((ev) => {
+  const event = holidaysOn(hd, isIsraelPlace(place)).find((ev) => {
     const eventFlags = ev.getFlags();
     return (
       (eventFlags & FAST_FLAGS) !== 0 &&
@@ -825,7 +1367,9 @@ export function fastAt(place: ZmanimPlace, hd: HDate, locale: string): FastPerio
 
   const gloc = geoLocationOf(place);
   const opinion = opinionZmanim(currentOpinion);
-  const fastDay = new Zmanim(gloc, civilNoon(hd), false);
+  const fastCivil = civilNoon(hd);
+  const ctx = opinionContext(place, fastCivil);
+  const fastDay = new Zmanim(gloc, fastCivil, false);
   const fromEve = (event.getFlags() & flags.MAJOR_FAST) !== 0;
   let start: Date;
   if (fromEve) {
@@ -833,17 +1377,22 @@ export function fastAt(place: ZmanimPlace, hd: HDate, locale: string): FastPerio
     eve.setDate(eve.getDate() - 1);
     start = new Zmanim(gloc, eve, false).sunset();
   } else {
-    start = opinion.alotHaShachar(fastDay);
+    start = opinion.alotHaShachar(fastDay, ctx);
   }
-  const end = opinion.fastEnd(fastDay);
-  if (!isUsable(start) || !isUsable(end)) return null;
+  // Le début est une LIMITE (dernier moment pour manger), la fin une FIN :
+  // l'un descend à la minute, l'autre monte (voir ZmanRounding). Sans arrondi,
+  // le jeûne se rompait jusqu'à cinquante-neuf secondes trop tôt.
+  const end = roundUsable(opinion.fastEnd(fastDay, ctx), "up");
+  // La fin, elle, est indispensable : sans elle il n'y a rien à annoncer.
+  if (!end) return null;
   return {
     name: event.render(hebcalLocale(locale)),
     day: hd,
-    start,
+    start: roundUsable(start, "down"),
     end,
-    endMinutes: opinion.fastEndMinutes,
+    endRule: opinion.fastEndRule(ctx),
     fromEve,
+    firstbornOnly: event.basename() === FIRSTBORN_FAST,
   };
 }
 
@@ -867,6 +1416,118 @@ export function fastNear(
   for (const hd of [today, today.next()]) {
     const fast = fastAt(place, hd, locale);
     if (fast && (!now || fast.end.getTime() > now.getTime())) return fast;
+  }
+  return null;
+}
+
+/**
+ * Les limites du 'hamets, la veille de Pessah.
+ *
+ * Deux heures, et non une : on cesse de MANGER du 'hamets à la fin de la
+ * quatrième heure du jour, on cesse d'en POSSÉDER à la fin de la cinquième.
+ * Ce sont les mêmes heures zmaniyot que partout ailleurs sur la page, et les
+ * deux avis les découpent donc différemment : le cadre donne les deux, comme
+ * il le fait pour la fin du Chéma et de la Amida.
+ *
+ * Le 14 Nissan tombe parfois un Chabbat (en 5785, puis en 5805). On ne brûle
+ * pas le 'hamets un Chabbat : la destruction se fait alors le VENDREDI, avant
+ * la cinquième heure de ce vendredi-là, et ce qui reste le Chabbat matin
+ * s'annule de la voix, avant la cinquième heure du Chabbat. Le cadre porte
+ * donc les trois heures ces années-là, sans quoi il annoncerait un feu le
+ * jour où l'on n'en allume pas.
+ */
+export interface ChametzDeadlines {
+  /** Le 14 Nissan, veille de Pessah. */
+  day: HDate;
+  /** Fin de la consommation : la quatrième heure, Maguen Avraham puis Gaon. */
+  eatingMGA: Date;
+  eating: Date;
+  /**
+   * La cinquième heure du 14 Nissan : fin de la destruction une année
+   * ordinaire, fin de l'annulation quand ce jour-là est un Chabbat.
+   */
+  disposalMGA: Date;
+  disposal: Date;
+  /** Le 14 Nissan est un Chabbat : on n'y brûle pas, on annule. */
+  onShabbat: boolean;
+  /**
+   * La cinquième heure du VENDREDI, dernière limite pour brûler ces
+   * années-là. Null les autres, où la destruction se fait le jour même.
+   */
+  burningEveMGA: Date | null;
+  burningEve: Date | null;
+}
+
+/** Le jour des limites : le 14 Nissan, veille de Pessah. */
+const CHAMETZ_DAY = 14;
+
+/** Les limites du 'hamets de ce jour hébraïque, ou null si ce n'est pas le 14 Nissan. */
+export function chametzAt(place: ZmanimPlace, hd: HDate): ChametzDeadlines | null {
+  if (hd.getMonth() !== months.NISAN || hd.getDate() !== CHAMETZ_DAY) return null;
+
+  const gloc = geoLocationOf(place);
+  const opinion = opinionZmanim(currentOpinion);
+  const erevCivil = civilNoon(hd);
+  const ctx = opinionContext(place, erevCivil);
+  const erev = new Zmanim(gloc, erevCivil, false);
+  const eatingMGA = opinion.sofZmanTfillaMGA(erev, ctx);
+  const eating = erev.sofZmanTfilla();
+  const disposalMGA = opinion.sofZmanBiurChametzMGA(erev, ctx);
+  const disposal = erev.sofZmanBiurChametzGRA();
+  // Les quatre heures du jour vont ensemble : si l'une manque, le cadre
+  // n'aurait que des trous à montrer.
+  if (![eatingMGA, eating, disposalMGA, disposal].every(isUsable)) return null;
+
+  const onShabbat = hd.getDay() === 6;
+  const fridayCivil = onShabbat ? civilNoon(hd.prev()) : null;
+  const friday = fridayCivil ? new Zmanim(gloc, fridayCivil, false) : null;
+  const burningEveMGA =
+    friday && fridayCivil
+      ? opinion.sofZmanBiurChametzMGA(friday, opinionContext(place, fridayCivil))
+      : null;
+  const burningEve = friday ? friday.sofZmanBiurChametzGRA() : null;
+
+  // Quatre LIMITES : toutes descendent à la minute (voir ZmanRounding). On ne
+  // gagne pas une minute pour finir son pain.
+  return {
+    day: hd,
+    eatingMGA: roundMinute(eatingMGA, "down"),
+    eating: roundMinute(eating, "down"),
+    disposalMGA: roundMinute(disposalMGA, "down"),
+    disposal: roundMinute(disposal, "down"),
+    onShabbat,
+    burningEveMGA: roundUsable(burningEveMGA, "down"),
+    burningEve: roundUsable(burningEve, "down"),
+  };
+}
+
+/**
+ * Les limites du 'hamets qui concernent le jour affiché : celles du jour, ou
+ * celles du lendemain. Annoncées dès la veille comme le jeûne : le 13 Nissan
+ * au soir on cherche l'heure du lendemain matin, et les années où le 14 tombe
+ * un Chabbat, c'est justement ce vendredi-là qu'il faut brûler.
+ *
+ * `now` dit l'heure qu'il est, pour ne plus annoncer des limites passées ;
+ * null pour un jour parcouru avec les flèches, qui se lit comme une journée
+ * entière.
+ */
+export function chametzNear(
+  place: ZmanimPlace,
+  day: Date,
+  now: Date | null = day,
+): ChametzDeadlines | null {
+  const today = new HDate(dayInPlace(place, day));
+  for (const hd of [today, today.next()]) {
+    const deadlines = chametzAt(place, hd);
+    if (!deadlines) continue;
+    // Passé la dernière des deux cinquièmes heures, il n'y a plus rien à
+    // annoncer : le 'hamets est détruit, ou il aurait dû l'être.
+    const last = Math.max(
+      deadlines.disposal.getTime(),
+      deadlines.burningEve?.getTime() ?? 0,
+      deadlines.disposalMGA.getTime(),
+    );
+    if (!now || last > now.getTime()) return deadlines;
   }
   return null;
 }
@@ -973,6 +1634,28 @@ export function formatZmanTime(date: Date, tzid: string, locale: string): string
 export function formatZmanDay(date: Date, tzid: string, locale: string): string {
   return dateTimeFormat(locale, {
     timeZone: tzid,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(date);
+}
+
+/**
+ * Le jour d'un MARQUEUR DE JOUR, et non d'un instant.
+ *
+ * Certains champs ne portent pas une heure mais une DATE : le jour du Chabbat
+ * d'un bloc, celui de l'érouv tavchilin, celui d'un jeûne dont l'aube ne se
+ * calcule pas. Ils sont posés au midi local de la machine (voir `civilNoon` et
+ * `HDate.greg`), et c'est dans ce repère-là qu'il faut les relire.
+ *
+ * Les passer à `formatZmanDay`, qui les rendrait dans le fuseau DU LIEU, les
+ * déplacerait d'un jour dès que la machine et le lieu sont assez éloignés : un
+ * appareil réglé sur Auckland qui regarde New York lisait « vendredi » là où
+ * le marqueur dit samedi. C'est le même piège que le point 3.1 de l'audit, à
+ * l'échelle du jour plutôt que de l'heure.
+ */
+export function formatMarkerDay(date: Date, locale: string): string {
+  return dateTimeFormat(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",

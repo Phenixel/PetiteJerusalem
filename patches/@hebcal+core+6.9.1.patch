@@ -1,0 +1,65 @@
+diff --git a/node_modules/@hebcal/core/dist/esm/zmanim.js b/node_modules/@hebcal/core/dist/esm/zmanim.js
+index f8f1f5c..4a21905 100644
+--- a/node_modules/@hebcal/core/dist/esm/zmanim.js
++++ b/node_modules/@hebcal/core/dist/esm/zmanim.js
+@@ -11,9 +11,11 @@ function zdtToDate(zdt) {
+     if (zdt === null) {
+         return new Date(NaN);
+     }
+-    const res = new Date(zdt.epochMilliseconds);
+-    res.setMilliseconds(0);
+-    return res;
++    // Troncature sur l'instant lui-même. Un setter de Date recalcule l'instant
++    // depuis les champs LOCAUX de l'appareil : à l'heure ambiguë du retour à
++    // l'heure d'hiver, il choisit l'autre occurrence et l'horaire saute d'une
++    // heure. Voir docs/audit-horaires-2026-09.md, point 3.1.
++    return new Date(Math.floor(zdt.epochMilliseconds / 1000) * 1000);
+ }
+ /**
+  * The zenith of astronomical sunrise and sunset. The sun is 90° from the vertical 0°
+@@ -971,14 +973,18 @@ class Zmanim {
+         if (isNaN(sunrise.getTime())) {
+             return sunrise;
+         }
++        let base = sunrise.getTime();
+         if (roundMinute) {
+-            // For positive offsets only, round up to next minute if needed
+-            if (offset > 0 && sunrise.getSeconds() >= 30) {
++            // Même raison qu'au-dessus : on tronque sur l'epoch, jamais avec un
++            // setter de Date. Un décalage positif s'arrondit encore à la minute
++            // supérieure au-delà de 30 secondes, comme avant.
++            const floored = Math.floor(base / 60000) * 60000;
++            if (offset > 0 && Math.floor((base - floored) / 1000) >= 30) {
+                 offset++;
+             }
+-            sunrise.setSeconds(0, 0);
++            base = floored;
+         }
+-        return new Date(sunrise.getTime() + offset * 60 * 1000);
++        return new Date(base + offset * 60 * 1000);
+     }
+     /**
+      * Returns sunset + `offset` minutes (either positive or negative).
+@@ -993,14 +999,18 @@ class Zmanim {
+         if (isNaN(sunset.getTime())) {
+             return sunset;
+         }
++        let base = sunset.getTime();
+         if (roundMinute) {
+-            // For Havdalah only, round up to next minute if needed
+-            if (offset > 0 && sunset.getSeconds() >= 30) {
++            // Même raison qu'au-dessus : on tronque sur l'epoch, jamais avec un
++            // setter de Date. Un décalage positif (la havdala) s'arrondit encore à
++            // la minute supérieure au-delà de 30 secondes, comme avant.
++            const floored = Math.floor(base / 60000) * 60000;
++            if (offset > 0 && Math.floor((base - floored) / 1000) >= 30) {
+                 offset++;
+             }
+-            sunset.setSeconds(0, 0);
++            base = floored;
+         }
+-        return new Date(sunset.getTime() + offset * 60 * 1000);
++        return new Date(base + offset * 60 * 1000);
+     }
+     /**
+      * Returns the Hebrew date relative to the specified location and Gregorian date,

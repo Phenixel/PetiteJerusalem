@@ -46,7 +46,7 @@ import { haversineKm } from "../services/geo";
 import { hubPath } from "./etudeTexts";
 import {
   DEFAULT_PLACE,
-  candleLightingMinutes,
+  localCandleLightingMinutes,
   computeZmanim,
   festivalsOn,
   formatHebrewDate,
@@ -203,7 +203,7 @@ export function upcomingRestPeriods(
       abs += 1;
       continue;
     }
-    if (period.end.getTime() > now.getTime()) periods.push(period);
+    if (!period.end || period.end.getTime() > now.getTime()) periods.push(period);
     abs = period.last.abs() + 1;
   }
   return periods;
@@ -241,7 +241,7 @@ function restRows(
           <tr>
             <td>${periodLabel(place, p, locale, s)}</td>
             <td>${instantCell(p.start, place.tzid, locale, s)}</td>
-            <td>${instantCell(p.end, place.tzid, locale, s)}</td>
+            <td>${p.end ? instantCell(p.end, place.tzid, locale, s) : ""}</td>
           </tr>`,
     )
     .join("");
@@ -478,11 +478,15 @@ function buildHorairesPage(now: Date, locale: SeoLocale): SeoPage {
             clock(nextShabbat.start, TZ, locale),
             18,
           ),
-          s.faqShabbatEnd(
-            hubCity,
-            instantDayYear(nextShabbat.end, TZ, s),
-            clock(nextShabbat.end, TZ, locale),
-          ),
+          ...(nextShabbat.end
+            ? [
+                s.faqShabbatEnd(
+                  hubCity,
+                  instantDayYear(nextShabbat.end, TZ, s),
+                  clock(nextShabbat.end, TZ, locale),
+                ),
+              ]
+            : []),
         ]
       : []),
     s.faqHowComputed(hubCity, 18),
@@ -582,7 +586,9 @@ function buildCityPage(city: City, all: City[], now: Date, locale: SeoLocale): S
   const slug = citySlug(city.name);
   const name = cityName(city.name, locale);
   const tz = place.tzid;
-  const minutes = candleLightingMinutes(place);
+  // L'usage DU LIEU, et non le réglage de qui lit : ces pages sont
+  // prérendues, les mêmes pour tout le monde.
+  const minutes = localCandleLightingMinutes(place);
   const periods = upcomingRestPeriods(place, now, HORAIRES_HORIZON_DAYS, locale);
   const nextShabbat = periods.find((p) => p.shabbat) ?? periods[0];
   const neighbours = nearestCities(city, all, 6);
@@ -597,11 +603,15 @@ function buildCityPage(city: City, all: City[], now: Date, locale: SeoLocale): S
             clock(nextShabbat.start, tz, locale),
             minutes,
           ),
-          s.faqShabbatEnd(
-            name,
-            instantDayYear(nextShabbat.end, tz, s),
-            clock(nextShabbat.end, tz, locale),
-          ),
+          ...(nextShabbat.end
+            ? [
+                s.faqShabbatEnd(
+                  name,
+                  instantDayYear(nextShabbat.end, tz, s),
+                  clock(nextShabbat.end, tz, locale),
+                ),
+              ]
+            : []),
         ]
       : []),
     s.faqHowComputed(name, minutes),
@@ -615,7 +625,9 @@ function buildCityPage(city: City, all: City[], now: Date, locale: SeoLocale): S
     )
     .join("\n        ");
 
-  const jerusalemNote = minutes === 40 ? `<p>${s.cityJerusalemNote(name)}</p>` : "";
+  // Dix-huit minutes est l'usage le plus répandu : on ne le commente pas.
+  // Tout écart, lui, se dit, sans quoi le lecteur croirait à une erreur.
+  const candleNote = minutes === 18 ? "" : `<p>${s.cityCandleNote(name, minutes)}</p>`;
   const path = sectionPath("horaires", locale, slug);
 
   return {
@@ -633,7 +645,7 @@ function buildCityPage(city: City, all: City[], now: Date, locale: SeoLocale): S
 ${section(
   s.cityRestTitle(name),
   `${table(s.restHead, restRows(place, periods, locale, s))}
-      ${jerusalemNote}
+      ${candleNote}
       <p>${s.cityRestNote(name, minutes, links)}</p>`,
 )}
 ${section(
@@ -822,7 +834,7 @@ function calendarRow(entry: CalendarEntry, locale: SeoLocale, s: ZmanimStrings):
             <td>${entryTitleLinked(entry, locale, s)}</td>
             <td>${entryRange(entry, s)}</td>
             <td>${period ? instantCell(period.start, TZ, locale, s) : ""}</td>
-            <td>${period ? instantCell(period.end, TZ, locale, s) : ""}</td>
+            <td>${period?.end ? instantCell(period.end, TZ, locale, s) : ""}</td>
           </tr>`;
 }
 

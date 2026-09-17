@@ -1,7 +1,8 @@
 import { afterEach, describe, it, expect } from "vitest";
-import { HDate } from "@hebcal/core";
+import { HDate, months } from "@hebcal/core";
 import {
   DEFAULT_PLACE,
+  dayHighlights,
   fastAt,
   fastNear,
   formatZmanDay,
@@ -36,13 +37,18 @@ describe("fastAt", () => {
     const fast = fastAt(DEFAULT_PLACE, hd(2026, 9, 14), "fr")!;
     expect(fast.name).toContain("Guedalyah");
     expect(fast.fromEve).toBe(false);
-    expect(on(DEFAULT_PLACE, fast.start)).toBe("lundi 14 septembre");
+    expect(on(DEFAULT_PLACE, fast.start!)).toBe("lundi 14 septembre");
     expect(on(DEFAULT_PLACE, fast.end)).toBe("lundi 14 septembre");
     // Aube à 16,1° (Rav Posen), fin du jeûne à 7,08° : trois étoiles
     // MOYENNES, quand la sortie du Chabbat en attend trois petites (8,5°).
-    expect(at(DEFAULT_PLACE, fast.start)).toBe("05:48");
-    expect(at(DEFAULT_PLACE, fast.end)).toBe("20:44");
-    expect(fast.endMinutes).toBeNull();
+    // Le début est une LIMITE (05:48:46, donc 05:48, on ne mange pas
+    // quatorze secondes de plus), la fin une FIN (20:44:19, donc 20:45 : à
+    // 20:44 le jeûne se romprait dix-neuf secondes trop tôt).
+    expect(at(DEFAULT_PLACE, fast.start!)).toBe("05:48");
+    expect(at(DEFAULT_PLACE, fast.end)).toBe("20:45");
+    // La règle voyage avec l'heure : la note du cadre dit donc bien les
+    // 7,083° que le calcul vient d'employer (voir zmanimOpinions, EndRule).
+    expect(fast.endRule).toEqual({ kind: "degrees", degrees: 7.083 });
   });
 
   it("finit le jeûne avant la sortie des étoiles, sans la marge du Chabbat", () => {
@@ -56,12 +62,21 @@ describe("fastAt", () => {
     expect(gap).toBeLessThan(20);
   });
 
-  it("suit l'avis choisi : vingt minutes fixes chez le Rav Ovadia", () => {
+  it("suit l'avis choisi, et le luah que le lieu commande, chez le Rav Ovadia", () => {
     setZmanimOpinion("ovadia");
-    const fast = fastAt(DEFAULT_PLACE, hd(2026, 9, 14), "fr")!;
-    // La chkia est à 20:05 ce jour-là à Paris.
-    expect(at(DEFAULT_PLACE, fast.end)).toBe("20:25");
-    expect(fast.endMinutes).toBe(20);
+    // Paris est hors d'Israël : l'avis y suit le luah Amudei Horaah, qui
+    // mesure la fin des jeûnes sur 5,075° à l'équinoxe. Chkia 20:05:50,
+    // fin 20:33:09, donc 20:34 une fois montée à la minute. Les vingt
+    // minutes FIXES d'avant donnaient 20:25:50, sept minutes trop tôt.
+    const paris = fastAt(DEFAULT_PLACE, hd(2026, 9, 14), "fr")!;
+    expect(at(DEFAULT_PLACE, paris.end)).toBe("20:34");
+    expect(paris.endRule).toEqual({ kind: "equinoxDegrees", degrees: 5.075 });
+
+    // En Israël, le même avis suit l'Or Ha'Haïm : vingt minutes ZMANIYOT.
+    expect(fastAt(israel, hd(2026, 9, 14), "fr")!.endRule).toEqual({
+      kind: "zmaniyot",
+      minutes: 20,
+    });
   });
 
   it("laisse la sortie de Kippour où elle était", () => {
@@ -69,7 +84,7 @@ describe("fastAt", () => {
     // la sortie des étoiles, et la fin des jeûnes ne doit pas l'avoir avancé.
     // 21 septembre 2026 = 10 Tichri 5787.
     const kippour = restPeriodAt(DEFAULT_PLACE, hd(2026, 9, 21), "fr")!;
-    expect(kippour.end.getTime()).toBe(nightfallOf(DEFAULT_PLACE, hd(2026, 9, 21))!.getTime());
+    expect(kippour.end!.getTime()).toBe(nightfallOf(DEFAULT_PLACE, hd(2026, 9, 21))!.getTime());
   });
 
   it("fait commencer Tich'a beAv la veille au coucher du soleil", () => {
@@ -77,7 +92,7 @@ describe("fastAt", () => {
     const fast = fastAt(DEFAULT_PLACE, hd(2026, 7, 23), "fr")!;
     expect(fast.name).toContain("beAv");
     expect(fast.fromEve).toBe(true);
-    expect(on(DEFAULT_PLACE, fast.start)).toBe("mercredi 22 juillet");
+    expect(on(DEFAULT_PLACE, fast.start!)).toBe("mercredi 22 juillet");
     expect(on(DEFAULT_PLACE, fast.end)).toBe("jeudi 23 juillet");
   });
 
@@ -94,6 +109,67 @@ describe("fastAt", () => {
     expect(fastAt(DEFAULT_PLACE, hd(2026, 9, 15), "fr")).toBeNull();
   });
 
+  it("ne retient que les six jeûnes publics de l'année", () => {
+    // hebcal range aussi parmi les jeûnes le Yom Kippour Katan (la veille de
+    // chaque Roch Hodech) et le Ta'anit BeHaB (usage achkénaze d'après Pessah
+    // et Soukkot) : une quinzaine de jours par an que l'application ne suit
+    // pas, et que sa page du calendrier n'a jamais montrés.
+    for (const year of [5786, 5787, 5788]) {
+      const names: string[] = [];
+      const start = new HDate(1, months.TISHREI, year).abs();
+      const end = new HDate(1, months.TISHREI, year + 1).abs();
+      for (let abs = start; abs < end; abs++) {
+        const fast = fastAt(DEFAULT_PLACE, new HDate(abs), "en");
+        if (fast) names.push(fast.name);
+      }
+      // hebcal rend ces noms avec l'apostrophe typographique.
+      expect(names).toEqual([
+        "Tzom Gedaliah",
+        "Asara B\u2019Tevet",
+        "Ta\u2019anit Esther",
+        "Ta\u2019anit Bechorot",
+        "Tzom Tammuz",
+        "Tish\u2019a B\u2019Av",
+      ]);
+    }
+  });
+
+  it("marque Ta'anit Bekhorot comme le jeûne des premiers-nés", () => {
+    // Il n'oblige que les premiers-nés, et un siyoum en dispense : il garde
+    // son cadre, mais il ne passe plus devant les limites du 'hamets, que
+    // tout le monde cherche ce jour-là (voir ZmanimPage, fastFirst).
+    const erevPessah = fastAt(DEFAULT_PLACE, hd(2026, 4, 1), "fr")!;
+    expect(erevPessah.name).toContain("Bekhorot"); // hebcal le rend ainsi en français
+    expect(erevPessah.firstbornOnly).toBe(true);
+    // Les six autres jeûnes sont publics.
+    expect(fastAt(DEFAULT_PLACE, hd(2026, 9, 14), "fr")!.firstbornOnly).toBe(false);
+  });
+
+  it("nomme le début du jeûne à l'entrée de Kippour", () => {
+    // Kippour n'a pas de cadre de jeûne, il a un cadre de repos : c'est son
+    // entrée qui porte le début du jeûne, et le cadre doit le dire.
+    const kippour = restPeriodAt(DEFAULT_PLACE, hd(2026, 9, 21), "fr")!;
+    expect(kippour.festivals.join(" ")).toContain("Kippour");
+    expect(kippour.fastStarts).toBe(true);
+    // Un Chabbat ordinaire ne porte pas ce mot.
+    expect(restPeriodAt(DEFAULT_PLACE, hd(2026, 8, 8), "fr")!.fastStarts).toBe(false);
+    // Roch Hachana non plus : c'est un Yom Tov, pas un jeûne.
+    expect(restPeriodAt(DEFAULT_PLACE, hd(2026, 9, 12), "fr")!.fastStarts).toBe(false);
+  });
+
+  it("ne met ni Yom Kippour Katan ni BeHaB parmi les reliefs du jour", () => {
+    // Ni le cadre du jeûne ni la ligne des reliefs ne les nomment, un an durant.
+    const start = new HDate(1, months.TISHREI, 5787).abs();
+    const end = new HDate(1, months.TISHREI, 5788).abs();
+    const found: string[] = [];
+    for (let abs = start; abs < end; abs++) {
+      for (const name of dayHighlights(DEFAULT_PLACE, new HDate(abs), "en")) {
+        if (name.includes("BeHaB") || name.includes("Yom Kippur Katan")) found.push(name);
+      }
+    }
+    expect(found).toEqual([]);
+  });
+
   it("nomme le jeûne dans la langue demandée", () => {
     expect(fastAt(israel, hd(2026, 9, 14), "en")!.name).toContain("Gedaliah");
     expect(fastAt(israel, hd(2026, 9, 14), "he")!.name).toContain("צוֹם");
@@ -107,13 +183,13 @@ describe("fastNear", () => {
   it("annonce le jeûne du lendemain dès la veille", () => {
     // Dimanche 13 septembre 2026, midi : Tzom Guedalia est le lendemain.
     const fast = fastNear(DEFAULT_PLACE, paris(9, 13, 10), "fr")!;
-    expect(on(DEFAULT_PLACE, fast.start)).toBe("lundi 14 septembre");
+    expect(on(DEFAULT_PLACE, fast.start!)).toBe("lundi 14 septembre");
   });
 
   it("garde le jeûne du jour tant qu'il n'est pas fini", () => {
     // Lundi 14 septembre, 15 h à Paris.
     const fast = fastNear(DEFAULT_PLACE, paris(9, 14, 13), "fr")!;
-    expect(on(DEFAULT_PLACE, fast.start)).toBe("lundi 14 septembre");
+    expect(on(DEFAULT_PLACE, fast.start!)).toBe("lundi 14 septembre");
   });
 
   it("ne l'annonce plus une fois sorti", () => {
@@ -124,7 +200,7 @@ describe("fastNear", () => {
   it("garde le jeûne d'un jour parcouru, quelle que soit l'heure", () => {
     // Le même lundi soir, lu comme une journée entière (flèches).
     const fast = fastNear(DEFAULT_PLACE, paris(9, 14, 21), "fr", null)!;
-    expect(on(DEFAULT_PLACE, fast.start)).toBe("lundi 14 septembre");
+    expect(on(DEFAULT_PLACE, fast.start!)).toBe("lundi 14 septembre");
   });
 
   it("ne cherche pas au-delà du lendemain", () => {

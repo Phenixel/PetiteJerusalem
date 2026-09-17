@@ -77,7 +77,11 @@ export type ZmanimStrings = {
   cityLead: (city: string, minutes: number) => string;
   cityRestTitle: (city: string) => string;
   cityRestNote: (city: string, minutes: number, links: ZmanimLinks) => string;
-  cityJerusalemNote: (city: string) => string;
+  /**
+   * L'usage d'allumage du lieu, quand il n'est pas les 18 minutes de la
+   * diaspora : 20 en Israël, 30 à Haïfa, 40 à Jérusalem.
+   */
+  cityCandleNote: (city: string, minutes: number) => string;
   cityZmanimIntro: (city: string, day: string) => string;
   neighboursTitle: (city: string) => string;
   neighboursIntro: (city: string, where: string) => string;
@@ -236,10 +240,12 @@ const FR: ZmanimStrings = {
       la sortie des étoiles. Voir aussi l'annuaire des
       <a href="${links.horaires}">horaires de Chabbat ville par ville</a> et le
       <a href="${links.calendrier}">calendrier des fêtes juives</a>.`,
-  cityJerusalemNote: (
+  cityCandleNote: (
     city,
-  ) => `A ${city}, l'usage est d'allumer 40 minutes avant le coucher du soleil, et non
-      18 comme dans la plupart des communautés : les heures ci-dessus suivent cet usage.`,
+    minutes,
+  ) => `A ${city}, l'usage est d'allumer ${minutes} minutes avant le coucher du soleil, et non
+      18 comme dans la plupart des communautés de diaspora : les heures ci-dessus suivent cet
+      usage.`,
   cityZmanimIntro: (
     city,
     day,
@@ -498,10 +504,11 @@ const EN: ZmanimStrings = {
       and Shabbat ends at nightfall. See also the directory of
       <a href="${links.horaires}">Shabbat times city by city</a> and the
       <a href="${links.calendrier}">Jewish holiday calendar</a>.`,
-  cityJerusalemNote: (
+  cityCandleNote: (
     city,
-  ) => `In ${city} the custom is to light 40 minutes before sunset, not 18 as in most
-      communities: the times above follow that custom.`,
+    minutes,
+  ) => `In ${city} the custom is to light ${minutes} minutes before sunset, not 18 as in most
+      communities outside Israel: the times above follow that custom.`,
   cityZmanimIntro: (
     city,
     day,
@@ -754,10 +761,11 @@ const HE: ZmanimStrings = {
   ) => `הכניסה מחושבת ${minutes} דקות לפני השקיעה של ${city}, והיציאה בצאת
       הכוכבים. ראו גם את מפתח <a href="${links.horaires}">זמני השבת עיר אחר עיר</a> ואת
       <a href="${links.calendrier}">לוח החגים</a>.`,
-  cityJerusalemNote: (
+  cityCandleNote: (
     city,
-  ) => `${hePrefix("ב", city)} המנהג להדליק 40 דקות לפני השקיעה, ולא 18 כמו ברוב הקהילות: הזמנים
-      שלמעלה הולכים אחרי מנהג זה.`,
+    minutes,
+  ) => `${hePrefix("ב", city)} המנהג להדליק ${minutes} דקות לפני השקיעה, ולא 18 כמו ברוב קהילות
+      חוץ לארץ: הזמנים שלמעלה הולכים אחרי מנהג זה.`,
   cityZmanimIntro: (
     city,
     day,

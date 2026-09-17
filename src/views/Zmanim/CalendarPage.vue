@@ -23,6 +23,7 @@ import {
   yearCalendar,
   type CalendarEntry,
 } from "../../services/zmanimService";
+import { describeLightingRule } from "../../services/zmanimRules";
 import { useHebrewOccasions } from "../../composables/useHebrewOccasions";
 import {
   occasionDateIn,
@@ -406,7 +407,22 @@ onMounted(() => {
                 {{ clock(row.entry.period.start) }}
               </dd>
             </div>
-            <div class="flex items-baseline justify-end gap-2">
+            <!-- Les allumages des soirs suivants, entre l'entrée et la
+                 sortie : le deuxième soir d'une fête, le vendredi pris dans
+                 un bloc (voir zmanimService, RestLighting). -->
+            <div
+              v-for="lighting in row.entry.period.lightings"
+              :key="lighting.at.getTime()"
+              class="flex items-baseline justify-end gap-2"
+            >
+              <dt class="text-xs text-text-secondary">
+                {{ describeLightingRule(lighting.rule, t) }}
+              </dt>
+              <dd class="font-semibold tabular-nums text-text-primary">
+                {{ clock(lighting.at) }}
+              </dd>
+            </div>
+            <div v-if="row.entry.period.end" class="flex items-baseline justify-end gap-2">
               <dt class="text-xs text-text-secondary">{{ t("calendar.end") }}</dt>
               <dd class="font-semibold tabular-nums text-text-primary">
                 {{ clock(row.entry.period.end) }}

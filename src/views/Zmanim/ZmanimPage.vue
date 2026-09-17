@@ -25,6 +25,7 @@ import { localDayFrom, localDayKey } from "../../services/dateService";
 import { getParashaForShabbat } from "../../services/dailyCycles";
 import {
   candleLightingMinutes,
+  chametzNear,
   computeZmanim,
   placeFromCity,
   dayHighlights,
@@ -33,6 +34,7 @@ import {
   formatHebrewDate,
   formatZmanTime,
   hebrewDayOf,
+  isIsraelPlace,
   restPeriodsNear,
   sameCivilDay,
   tachanunStatus,
@@ -43,6 +45,7 @@ import {
   ZMAN_PERIODS,
   type ZmanPeriod,
   type ZmanTime,
+  zmanimGap,
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
 import { useToast } from "../../composables/useToast";
@@ -51,6 +54,7 @@ import { cityInSentence, citySlug, findCityBySlug } from "../../content/zmanimCi
 import { isSectionPath, localeOfPath, sectionPath } from "../../content/seoLocales";
 import RestTimes from "./RestTimes.vue";
 import FastTimes from "./FastTimes.vue";
+import ChametzTimes from "./ChametzTimes.vue";
 import ZmanRow from "./ZmanRow.vue";
 import ZmanReminderModal from "./ZmanReminderModal.vue";
 import { useZmanimOpinion } from "../../composables/useZmanimOpinion";
@@ -165,6 +169,23 @@ const fast = computed(() =>
 );
 
 /**
+ * Les limites du 'hamets, la veille de Pessah : celles du jour affiché ou
+ * celles du lendemain, tant qu'elles ne sont pas passées. Annoncées dès la
+ * veille comme le jeûne, et pour la même raison : c'est le soir d'avant qu'on
+ * regarde jusqu'à quelle heure on pourra manger.
+ */
+const chametz = computed(() =>
+  chametzNear(place.value, day.value, isToday.value ? now.value : null),
+);
+
+/** Le 'hamets suit le jeûne : même jour, même place dans la page. */
+const chametzFirst = computed(() => {
+  const deadlines = chametz.value;
+  if (!deadlines) return false;
+  return hebrewDayOf(place.value, day.value).abs() === deadlines.day.abs();
+});
+
+/**
  * Comme le repos, le jeûne passe devant les horaires le jour où il commence
  * et tant qu'il dure ; la veille, il attend en bas de la page. Tich'a beAv,
  * qui commence au coucher du soleil, monte donc dès la veille.
@@ -172,6 +193,13 @@ const fast = computed(() =>
 const fastFirst = computed(() => {
   const period = fast.value;
   if (!period) return false;
+  // Ta'anit Bekhorot n'oblige que les premiers-nés : il ne passe jamais
+  // devant, et laisse la première place aux limites du 'hamets, que tout le
+  // monde cherche ce jour-là (voir FastPeriod.firstbornOnly).
+  if (period.firstbornOnly) return false;
+  // Sans heure de début (l'aube par degrés n'existe pas ici ce jour-là, voir
+  // FastPeriod.start), le jeûne monte le jour où il tombe, et pas la veille.
+  if (!period.start) return hebrewDayOf(place.value, day.value).abs() === period.day.abs();
   return (
     period.start.getTime() <= day.value.getTime() ||
     sameCivilDay(place.value, period.start, day.value)
@@ -183,7 +211,23 @@ const fastFirst = computed(() => {
  * affichés, et non celui d'aujourd'hui : le samedi soir après la sortie, le
  * bloc montre déjà le Chabbat suivant, sa paracha doit suivre.
  */
-const parashaOf = (shabbat: Date | null) => (shabbat ? getParashaForShabbat(shabbat) : null);
+const parashaOf = (shabbat: Date | null) =>
+  shabbat ? getParashaForShabbat(shabbat, isIsraelPlace(place.value)) : null;
+
+/**
+ * Ce que l'avis suivi ne sait pas calculer ici aujourd'hui.
+ *
+ * Une ligne qui manque sans rien dire laisse croire à un oubli. Au nord de
+ * Lille, l'aube de l'avis par degrés n'existe pas quelques semaines par an, et
+ * les deux limites du Maguen Avraham, comptées depuis elle, pas davantage :
+ * la note le dit, et renvoie à l'avis qui, lui, a une heure à donner.
+ */
+const gap = computed(() => zmanimGap(place.value, day.value));
+
+/** Les noms des horaires absents, énumérés dans la note. */
+const gapNames = computed(() =>
+  (gap.value?.keys ?? []).map((key) => t(`zmanim.names.${key}`)).join(", "),
+);
 
 const byPeriod = computed(() =>
   ZMAN_PERIODS.map((period) => ({
@@ -670,6 +714,15 @@ onMounted(() => {
     <!-- Le jeûne commencé passe devant, comme le repos -->
     <FastTimes v-if="fast && fastFirst" :fast="fast" :tzid="place.tzid" class="mt-5" />
 
+    <!-- La veille de Pessah, les limites du 'hamets : le jour même, elles
+         passent devant comme le jeûne ; la veille, elles attendent en bas. -->
+    <ChametzTimes
+      v-if="chametz && chametzFirst"
+      :chametz="chametz"
+      :tzid="place.tzid"
+      class="mt-5"
+    />
+
     <!-- Le repos commencé passe devant : c'est ce qu'on vient vérifier -->
     <RestTimes
       v-for="period in restFirst ? restPeriods : []"
@@ -715,8 +768,24 @@ onMounted(() => {
       </ul>
     </section>
 
+    <!-- Ce que l'avis suivi ne calcule pas ici aujourd'hui, dit sous la liste
+         plutôt que laissé en blanc au milieu (voir zmanimGap). -->
+    <p
+      v-if="gap"
+      class="mt-5 border-t border-line pt-3 text-sm text-text-secondary leading-relaxed"
+    >
+      {{ t(`zmanim.gap.${gap.reason}`, { names: gapNames }) }}
+    </p>
+
     <!-- Le jeûne de demain, annoncé dès la veille, sous les horaires du jour -->
     <FastTimes v-if="fast && !fastFirst" :fast="fast" :tzid="place.tzid" class="mt-5" />
+
+    <ChametzTimes
+      v-if="chametz && !chametzFirst"
+      :chametz="chametz"
+      :tzid="place.tzid"
+      class="mt-5"
+    />
 
     <RestTimes
       v-for="period in restFirst ? [] : restPeriods"

@@ -6,6 +6,7 @@ import {
   festivalsOn,
   restPeriodAt,
   restPeriodsNear,
+  birkatHalevanaLastDay,
   saysBirkatHalevana,
   tachanunStatus,
   yearCalendar,
@@ -97,6 +98,25 @@ describe("tachanunStatus", () => {
     expect(tachanunStatus(DEFAULT_PLACE, hd(2026, 8, 13))).toBe("none");
   });
 
+  it("ne le dit pas jusqu'au 12 Sivan, les jours de tachloumin", () => {
+    // Chavou'ot 5786 : les 6 et 7 Sivan sont les 22 et 23 mai 2026. hebcal
+    // s'arrête au 8 Sivan ; l'usage va jusqu'au 12, et le 13 il reprend.
+    // 9 au 12 Sivan 5786 = 25 au 28 mai 2026, 13 Sivan = 29 mai (un vendredi).
+    for (const day of [25, 26, 27, 28]) {
+      expect(tachanunStatus(DEFAULT_PLACE, hd(2026, 5, day))).toBe("none");
+    }
+    // Le 13 Sivan, le tahanoun revient. C'est un vendredi : le matin seulement.
+    expect(tachanunStatus(DEFAULT_PLACE, hd(2026, 5, 29))).toBe("shacharitOnly");
+  });
+
+  it("le dit encore le 12 Sivan d'Israël comme celui de la diaspora", () => {
+    // Israël n'a qu'un jour de Chavou'ot, mais ses jours de tachloumin
+    // s'arrêtent au même 12 Sivan : la règle ne dépend pas du lieu.
+    const israel = { ...DEFAULT_PLACE, tzid: "Asia/Jerusalem", city: "Jérusalem" };
+    expect(tachanunStatus(israel, hd(2026, 5, 27))).toBe("none");
+    expect(tachanunStatus(israel, hd(2026, 5, 29))).toBe("shacharitOnly");
+  });
+
   it("Chabbat : pas de ligne du tout", () => {
     expect(tachanunStatus(DEFAULT_PLACE, hd(2026, 8, 22))).toBeNull();
   });
@@ -137,7 +157,7 @@ describe("restPeriodsNear", () => {
     expect(periods[0].shabbat).not.toBeNull();
     // Entrée le vendredi soir, sortie le samedi soir.
     expect(periods[0].start.getDay()).toBe(5);
-    expect(periods[0].end.getDay()).toBe(6);
+    expect(periods[0].end!.getDay()).toBe(6);
   });
 
   it("Roch Hachana un Chabbat : un seul bloc, du vendredi au dimanche soir", () => {
@@ -147,7 +167,7 @@ describe("restPeriodsNear", () => {
     expect(periods[0].festivals).toEqual(["Roch Hachanah"]);
     expect(periods[0].shabbat).not.toBeNull();
     expect(periods[0].start.getDate()).toBe(11); // vendredi 11, allumage
-    expect(periods[0].end.getDate()).toBe(13); // dimanche 13, sortie
+    expect(periods[0].end!.getDate()).toBe(13); // dimanche 13, sortie
   });
 
   it("Chemini Atséret et Sim'hat Torah tiennent dans le même bloc", () => {
@@ -190,7 +210,23 @@ describe("yearCalendar", () => {
   it("donne à chaque Yom Tov son entrée et sa sortie", () => {
     const kippour = named("Yom Kippour")[0];
     expect(kippour.period).not.toBeNull();
-    expect(kippour.period!.start.getTime()).toBeLessThan(kippour.period!.end.getTime());
+    expect(kippour.period!.start.getTime()).toBeLessThan(kippour.period!.end!.getTime());
+  });
+
+  it("n'annonce ni Lel Selihot, ni le nouvel an du bétail, ni 'Hag haBanot", () => {
+    // `MINOR_HOLIDAY` ramenait ces trois jours. Lel Selihot (23 Eloul) est un
+    // usage achkénaze, et l'application propose les Sli'hot depuis Roch
+    // Hodech Eloul : l'annoncer contredirait sa propre page. Les deux autres
+    // n'ont ni heures, ni office, ni interdit.
+    for (const absent of ["Selihot", "Selichot", "Behemot", "Banot"]) {
+      expect(named(absent), `${absent} ne devrait pas être au calendrier`).toEqual([]);
+    }
+    // Les vraies fêtes mineures, elles, restent : ce n'est pas le drapeau
+    // qu'on a retiré, ce sont trois jours nommés.
+    expect(named("anoukah")).not.toEqual([]);
+    expect(named("Pourim")).not.toEqual([]);
+    expect(named("Tou biChvat").length + named("Bichvat").length).toBeGreaterThan(0);
+    expect(named("Lag")).not.toEqual([]);
   });
 
   it("sépare les deux blocs de Pessah, et laisse le 'Hol haMoed dehors", () => {
@@ -225,17 +261,48 @@ describe("yearCalendar", () => {
 });
 
 describe("saysBirkatHalevana", () => {
+  /**
+   * La fenêtre se compte depuis le MOLAD, pas depuis Roch Hodech (voir
+   * birkatHalevanaWindow). En Eloul 5786, le molad tombe le 13 août 2026 à
+   * 07:54 (heure de Paris) : sept jours plus tard, le 20 août, la nuit qui
+   * ouvre le 8 Eloul est déjà passée, et la moitié de la lunaison ne tombe
+   * que le 28 août à 02:16, au cœur de la nuit qui ouvre le 15.
+   */
+  const says = (y: number, m: number, d: number) =>
+    saysBirkatHalevana(DEFAULT_PLACE, hd(y, m, d));
+
   it("de sept jours révolus à la moitié de la lunaison", () => {
-    expect(saysBirkatHalevana(hd(2026, 8, 20))).toBe(false); // nuit du 7 Eloul, six jours seulement
-    expect(saysBirkatHalevana(hd(2026, 8, 21))).toBe(true); // nuit qui ouvre le 8 Eloul
-    expect(saysBirkatHalevana(hd(2026, 8, 27))).toBe(true); // 14 Eloul
-    expect(saysBirkatHalevana(hd(2026, 8, 28))).toBe(false); // 15 Eloul, trop tard
+    expect(says(2026, 8, 20)).toBe(false); // nuit du 7 Eloul, six jours seulement
+    expect(says(2026, 8, 21)).toBe(true); // nuit qui ouvre le 8 Eloul
+    expect(says(2026, 8, 27)).toBe(true); // 14 Eloul
+    // La nuit qui ouvre le 15 Eloul reste permise : la limite tombe à 02:16,
+    // au milieu de cette nuit-là. Le compte en jours du mois la refusait.
+    expect(says(2026, 8, 28)).toBe(true); // 15 Eloul
+    expect(says(2026, 8, 29)).toBe(false); // 16 Eloul, la limite est passée
+  });
+
+  it("ouvre la fenêtre dès le 7 quand le molad précède Roch Hodech", () => {
+    // Nissan 5787 : molad le mardi 6 avril 2027 à 13:46, et le 6 Nissan est le
+    // 13 avril. Sept jours après le molad, le 13 avril au soir, la nuit qui
+    // ouvre le 7 Nissan est déjà dans la fenêtre. Le compte en jours du mois
+    // faisait attendre celle du 8, une nuit de trop.
+    expect(says(2027, 4, 14)).toBe(true); // nuit qui ouvre le 7 Nissan
+    expect(says(2027, 4, 13)).toBe(false); // nuit qui ouvre le 6, trop tôt
+    expect(says(2027, 4, 21)).toBe(true); // nuit qui ouvre le 14 Nissan
+    expect(says(2027, 4, 22)).toBe(false); // nuit qui ouvre le 15, trop tard
   });
 
   it("attend la sortie de Tich'a beAv, et celle de Kippour", () => {
-    expect(saysBirkatHalevana(hd(2026, 7, 23))).toBe(false); // 9 Av, le jeûne
-    expect(saysBirkatHalevana(hd(2026, 7, 24))).toBe(true); // nuit de la sortie du jeûne
-    expect(saysBirkatHalevana(hd(2026, 9, 20))).toBe(false); // 9 Tichri, avant Kippour
-    expect(saysBirkatHalevana(hd(2026, 9, 22))).toBe(true); // 11 Tichri, sortie de Kippour
+    expect(says(2026, 7, 23)).toBe(false); // 9 Av, le jeûne
+    expect(says(2026, 7, 24)).toBe(true); // nuit de la sortie du jeûne
+    expect(says(2026, 9, 20)).toBe(false); // 9 Tichri, avant Kippour
+    expect(says(2026, 9, 22)).toBe(true); // 11 Tichri, sortie de Kippour
+  });
+
+  it("donne la date limite du mois", () => {
+    // Eloul 5786 : la dernière nuit est celle qui ouvre le 15.
+    expect(birkatHalevanaLastDay(DEFAULT_PLACE, hd(2026, 8, 21)).getDate()).toBe(15);
+    // Nissan 5787 : le molad est plus tôt dans le mois, la limite aussi.
+    expect(birkatHalevanaLastDay(DEFAULT_PLACE, hd(2027, 4, 14)).getDate()).toBe(14);
   });
 });

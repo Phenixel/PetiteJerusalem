@@ -10,6 +10,7 @@ import {
   weekdayIn,
   nextZman,
   slihotWindow,
+  ZMAN_ROUNDING,
   type ZmanimPlace,
 } from "../services/zmanimService";
 
@@ -29,12 +30,17 @@ describe("computeZmanim", () => {
     const byKey = new Map(times.map((zman) => [zman.key, zman.date]));
 
     // Valeurs de référence (Paris, 4 août 2026), au niveau de la mer.
-    expect(at(DEFAULT_PLACE, byKey.get("sunrise")!)).toBe("06:27");
+    // Le netz ouvre le temps de la Amida du matin : un DÉBUT, qui monte à la
+    // minute supérieure (06:27:44, donc 06:28).
+    expect(at(DEFAULT_PLACE, byKey.get("sunrise")!)).toBe("06:28");
     expect(at(DEFAULT_PLACE, byKey.get("sofZmanShma")!)).toBe("10:12");
-    expect(at(DEFAULT_PLACE, byKey.get("sofZmanShmaMGA")!)).toBe("09:36");
+    // Le Maguen Avraham du Rav Posen compte de l'aube (16,1°) à la nuit.
+    expect(at(DEFAULT_PLACE, byKey.get("sofZmanShmaMGA")!)).toBe("09:10");
     expect(at(DEFAULT_PLACE, byKey.get("chatzot")!)).toBe("13:56");
     expect(at(DEFAULT_PLACE, byKey.get("sunset")!)).toBe("21:24");
-    expect(at(DEFAULT_PLACE, byKey.get("tzeit")!)).toBe("22:20");
+    // La sortie des étoiles est une FIN : 22:20:14 monte à 22:21, et non à
+    // 22:20, qui la donnerait quatorze secondes trop tôt (voir ZmanRounding).
+    expect(at(DEFAULT_PLACE, byKey.get("tzeit")!)).toBe("22:21");
   });
 
   it("rend les horaires dans l'ordre chronologique", () => {
@@ -115,6 +121,70 @@ describe("computeZmanim", () => {
   });
 });
 
+describe("arrondi des horaires à la minute", () => {
+  /**
+   * Une LIMITE se coupe vers le bas, une FIN monte à la minute supérieure
+   * (voir ZmanRounding dans zmanimService). Le test ne recopie pas la liste
+   * des sens, il la lit (`ZMAN_ROUNDING`) et la confronte à l'instant exact,
+   * que `ZmanTime.exact` conserve.
+   *
+   * Quatre jours de saisons différentes et deux lieux, dont un à l'est de son
+   * méridien : de quoi passer sur des horaires à zéro seconde comme sur des
+   * horaires qui en portent.
+   */
+  const DAYS = [
+    new Date(Date.UTC(2026, 0, 15, 12)),
+    new Date(Date.UTC(2026, 2, 20, 12)),
+    PARIS_DAY,
+    new Date(Date.UTC(2026, 11, 21, 12)),
+  ];
+  const jerusalem: ZmanimPlace = {
+    source: "city",
+    latitude: 31.7683,
+    longitude: 35.2137,
+    tzid: "Asia/Jerusalem",
+    city: "Jérusalem",
+  };
+
+  it("coupe chaque horaire dans le sens que sa nature commande", () => {
+    for (const place of [DEFAULT_PLACE, jerusalem]) {
+      for (const day of DAYS) {
+        for (const zman of computeZmanim(place, day)) {
+          const shown = zman.date.getTime();
+          const exact = zman.exact.getTime();
+          // Toujours une minute pleine, jamais de secondes affichées.
+          expect(zman.date.getSeconds(), `${zman.key} porte des secondes`).toBe(0);
+          expect(zman.date.getMilliseconds()).toBe(0);
+          // Et jamais plus d'une minute de l'instant calculé.
+          expect(Math.abs(shown - exact)).toBeLessThan(60_000);
+          if (ZMAN_ROUNDING[zman.key] === "up") {
+            // Une FIN ne s'annonce jamais avant l'instant où elle a lieu.
+            expect(shown, `${zman.key} annoncé avant son instant`).toBeGreaterThanOrEqual(exact);
+          } else {
+            // Une LIMITE ne s'annonce jamais après.
+            expect(shown, `${zman.key} annoncé après son instant`).toBeLessThanOrEqual(exact);
+          }
+        }
+      }
+    }
+  });
+
+  it("monte les fins et descend les limites des cadres", () => {
+    // Chabbat du 8 août 2026 à Paris : sortie 22:12:39, donc 22:13 ; allumage
+    // du vendredi déjà rond (21:01:00). Tzom Guedalia du 14 septembre :
+    // aube 05:48:46, donc 05:48, fin 20:44:19, donc 20:45.
+    const shabbat = restPeriodsNear(DEFAULT_PLACE, PARIS_DAY, "fr")[0];
+    expect(shabbat.end!.getSeconds()).toBe(0);
+    expect(shabbat.start.getSeconds()).toBe(0);
+    expect(at(DEFAULT_PLACE, shabbat.end!)).toBe("22:13");
+
+    // La plage des Sli'hot : hatsot ouvre (minute supérieure), le netz ferme.
+    const window = slihotWindow(DEFAULT_PLACE, PARIS_DAY)!;
+    expect(window.start.getSeconds()).toBe(0);
+    expect(window.end.getSeconds()).toBe(0);
+  });
+});
+
 describe("nextZman", () => {
   it("donne le premier horaire encore à venir", () => {
     const times = computeZmanim(DEFAULT_PLACE, PARIS_DAY);
@@ -138,19 +208,22 @@ describe("restPeriodsNear : le Chabbat d'une semaine ordinaire", () => {
     const shabbat = first(PARIS_DAY)!;
     expect(shabbat.festivals).toEqual([]);
     expect(on(DEFAULT_PLACE, shabbat.start)).toBe("vendredi 7 août");
-    expect(on(DEFAULT_PLACE, shabbat.end)).toBe("samedi 8 août");
+    expect(on(DEFAULT_PLACE, shabbat.end!)).toBe("samedi 8 août");
     expect(at(DEFAULT_PLACE, shabbat.start)).toBe("21:01");
-    expect(at(DEFAULT_PLACE, shabbat.end)).toBe("22:12");
+    // Sortie du Chabbat (8,5°) à 22:12:39 le samedi 8 août : une FIN, donc
+    // 22:13. L'afficher 22:12 relâcherait le Chabbat trente-neuf secondes
+    // trop tôt (voir ZmanRounding).
+    expect(at(DEFAULT_PLACE, shabbat.end!)).toBe("22:13");
     // Sortie selon Rabbénou Tam : 72 minutes après la chkia (21 h 18 ce
     // samedi-là), après la sortie ordinaire.
     expect(at(DEFAULT_PLACE, shabbat.endRabbenouTam!)).toBe("22:30");
-    expect(shabbat.endRabbenouTam!.getTime()).toBeGreaterThan(shabbat.end.getTime());
+    expect(shabbat.endRabbenouTam!.getTime()).toBeGreaterThan(shabbat.end!.getTime());
   });
 
   it("garde le Chabbat en cours tant qu'il n'est pas sorti", () => {
     // Samedi 8 août 2026, 20 h (Paris) : la sortie n'a pas eu lieu, elle est le soir même.
     const saturdayEvening = new Date(Date.UTC(2026, 7, 8, 18)); // 20 h à Paris
-    expect(on(DEFAULT_PLACE, first(saturdayEvening)!.end)).toBe("samedi 8 août");
+    expect(on(DEFAULT_PLACE, first(saturdayEvening)!.end!)).toBe("samedi 8 août");
   });
 
   it("passe au Chabbat suivant une fois la sortie passée", () => {
@@ -158,7 +231,7 @@ describe("restPeriodsNear : le Chabbat d'une semaine ordinaire", () => {
     const afterHavdalah = new Date(Date.UTC(2026, 7, 8, 21)); // 23 h à Paris
     const shabbat = first(afterHavdalah)!;
     expect(on(DEFAULT_PLACE, shabbat.start)).toBe("vendredi 14 août");
-    expect(on(DEFAULT_PLACE, shabbat.end)).toBe("samedi 15 août");
+    expect(on(DEFAULT_PLACE, shabbat.end!)).toBe("samedi 15 août");
   });
 
   it("n'annonce qu'un seul Chabbat dans la semaine, sans fête", () => {
@@ -166,7 +239,7 @@ describe("restPeriodsNear : le Chabbat d'une semaine ordinaire", () => {
     for (let i = 0; i < 7; i++) {
       const periods = restPeriodsNear(DEFAULT_PLACE, new Date(Date.UTC(2026, 7, 2 + i, 10)), "fr");
       expect(periods).toHaveLength(1);
-      expect(on(DEFAULT_PLACE, periods[0].end)).toBe("samedi 8 août");
+      expect(on(DEFAULT_PLACE, periods[0].end!)).toBe("samedi 8 août");
     }
   });
 });
@@ -221,7 +294,9 @@ describe("plage des Sli'hot", () => {
     // de la nuit du 4 au 5.
     const window = slihotWindow(DEFAULT_PLACE, PARIS_DAY)!;
     expect(window.tonight).toBe(false);
-    expect(at(DEFAULT_PLACE, window.start)).toBe("01:56");
+    // Hatsot OUVRE la plage (01:56:57, donc 01:57 : on ne dit pas les Sli'hot
+    // trois secondes trop tôt), le netz la FERME (06:29:13, donc 06:29).
+    expect(at(DEFAULT_PLACE, window.start)).toBe("01:57");
     expect(at(DEFAULT_PLACE, window.end)).toBe("06:29");
     expect(on(DEFAULT_PLACE, window.end)).toContain("5");
     expect(window.start.getTime()).toBeLessThan(window.end.getTime());
