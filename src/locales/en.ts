@@ -500,6 +500,20 @@ const en: LocaleMessages = {
       noteDawn: "The fast begins at dawn (alot hashachar) and ends {end}.",
       noteEve: "The fast begins at sunset the evening before and ends {end}.",
     },
+    chametz: {
+      title: "Chametz deadlines",
+      eatingMGA: "Latest time to eat (Magen Avraham)",
+      eating: "Latest time to eat (Vilna Gaon)",
+      disposalMGA: "Latest time to burn (Magen Avraham)",
+      disposal: "Latest time to burn (Vilna Gaon)",
+      bitulMGA: "Latest time to nullify (Magen Avraham)",
+      bitul: "Latest time to nullify (Vilna Gaon)",
+      burningEveMGA: "Burning, on Friday (Magen Avraham)",
+      burningEve: "Burning, on Friday (Vilna Gaon)",
+      note: "Chametz may be eaten until the end of the fourth hour of the day, and owned until the end of the fifth. These are seasonal hours: they follow the length of the day, and the two opinions divide it differently.",
+      noteShabbat:
+        "Erev Pesach falls on Shabbat, and chametz is not burned on Shabbat: it is burned on Friday, before the fifth hour of that day. On Shabbat morning it may be eaten until the fourth hour, and whatever is left is nullified aloud before the fifth.",
+    },
     periods: {
       dawn: "Dawn and sunrise",
       morning: "Morning deadlines",

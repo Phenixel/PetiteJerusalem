@@ -516,6 +516,23 @@ const fr = {
       noteDawn: "Le jeûne commence à l'aube (alot haCha'har) et se termine {end}.",
       noteEve: "Le jeûne commence la veille au coucher du soleil et se termine {end}.",
     },
+    /* Les limites du 'hamets, la veille de Pessah (voir services/zmanimService,
+       chametzAt). Deux heures et non une, et trois les années où le 14 Nissan
+       tombe un Chabbat : on ne brûle pas ce jour-là. */
+    chametz: {
+      title: "Limites du 'hamets",
+      eatingMGA: "Fin de la consommation (Maguen Avraham)",
+      eating: "Fin de la consommation (Gaon de Vilna)",
+      disposalMGA: "Fin de la destruction (Maguen Avraham)",
+      disposal: "Fin de la destruction (Gaon de Vilna)",
+      bitulMGA: "Fin de l'annulation (Maguen Avraham)",
+      bitul: "Fin de l'annulation (Gaon de Vilna)",
+      burningEveMGA: "Destruction, le vendredi (Maguen Avraham)",
+      burningEve: "Destruction, le vendredi (Gaon de Vilna)",
+      note: "On cesse de manger le 'hamets à la fin de la quatrième heure du jour, et d'en posséder à la fin de la cinquième. Ce sont des heures zmaniyot : elles suivent la longueur du jour, et les deux avis ne les découpent pas pareil.",
+      noteShabbat:
+        "La veille de Pessah tombe un Chabbat, et on ne brûle pas le 'hamets un Chabbat : la destruction se fait le vendredi, avant la cinquième heure de ce jour-là. Le Chabbat matin, on mange jusqu'à la quatrième heure, et ce qui reste s'annule de la voix avant la cinquième.",
+    },
     periods: {
       dawn: "Aube et lever",
       morning: "Limites du matin",

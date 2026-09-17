@@ -127,6 +127,9 @@ describe("i18n usage", () => {
       "textReading.kotel.points.",
       "textReading.kotel.rose.",
       "textReading.zman.",
+      // Les limites du 'hamets, dont le cadre construit les intitulés selon
+      // que le 14 Nissan tombe un Chabbat ou non (voir ChametzTimes.vue).
+      "zmanim.chametz.",
       // La raison pour laquelle l'avis suivi ne donne pas un horaire ici
       // aujourd'hui (voir services/zmanimService, ZmanimGap).
       "zmanim.gap.",

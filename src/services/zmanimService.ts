@@ -293,7 +293,7 @@ export function dayInPlace(place: ZmanimPlace, date: Date): Date {
 }
 
 /** Une date renvoyée par hebcal peut être invalide aux latitudes extrêmes. */
-function isUsable(date: Date): boolean {
+function isUsable(date: Date | null): date is Date {
   return date instanceof Date && !Number.isNaN(date.getTime());
 }
 
@@ -959,6 +959,110 @@ export function fastNear(
   for (const hd of [today, today.next()]) {
     const fast = fastAt(place, hd, locale);
     if (fast && (!now || fast.end.getTime() > now.getTime())) return fast;
+  }
+  return null;
+}
+
+/**
+ * Les limites du 'hamets, la veille de Pessah.
+ *
+ * Deux heures, et non une : on cesse de MANGER du 'hamets à la fin de la
+ * quatrième heure du jour, on cesse d'en POSSÉDER à la fin de la cinquième.
+ * Ce sont les mêmes heures zmaniyot que partout ailleurs sur la page, et les
+ * deux avis les découpent donc différemment : le cadre donne les deux, comme
+ * il le fait pour la fin du Chéma et de la Amida.
+ *
+ * Le 14 Nissan tombe parfois un Chabbat (en 5785, puis en 5805). On ne brûle
+ * pas le 'hamets un Chabbat : la destruction se fait alors le VENDREDI, avant
+ * la cinquième heure de ce vendredi-là, et ce qui reste le Chabbat matin
+ * s'annule de la voix, avant la cinquième heure du Chabbat. Le cadre porte
+ * donc les trois heures ces années-là, sans quoi il annoncerait un feu le
+ * jour où l'on n'en allume pas.
+ */
+export interface ChametzDeadlines {
+  /** Le 14 Nissan, veille de Pessah. */
+  day: HDate;
+  /** Fin de la consommation : la quatrième heure, Maguen Avraham puis Gaon. */
+  eatingMGA: Date;
+  eating: Date;
+  /**
+   * La cinquième heure du 14 Nissan : fin de la destruction une année
+   * ordinaire, fin de l'annulation quand ce jour-là est un Chabbat.
+   */
+  disposalMGA: Date;
+  disposal: Date;
+  /** Le 14 Nissan est un Chabbat : on n'y brûle pas, on annule. */
+  onShabbat: boolean;
+  /**
+   * La cinquième heure du VENDREDI, dernière limite pour brûler ces
+   * années-là. Null les autres, où la destruction se fait le jour même.
+   */
+  burningEveMGA: Date | null;
+  burningEve: Date | null;
+}
+
+/** Le jour des limites : le 14 Nissan, veille de Pessah. */
+const CHAMETZ_DAY = 14;
+
+/** Les limites du 'hamets de ce jour hébraïque, ou null si ce n'est pas le 14 Nissan. */
+export function chametzAt(place: ZmanimPlace, hd: HDate): ChametzDeadlines | null {
+  if (hd.getMonth() !== months.NISAN || hd.getDate() !== CHAMETZ_DAY) return null;
+
+  const gloc = geoLocationOf(place);
+  const opinion = opinionZmanim(currentOpinion);
+  const erev = new Zmanim(gloc, civilNoon(hd), false);
+  const eatingMGA = opinion.sofZmanTfillaMGA(erev);
+  const eating = erev.sofZmanTfilla();
+  const disposalMGA = opinion.sofZmanBiurChametzMGA(erev);
+  const disposal = erev.sofZmanBiurChametzGRA();
+  // Les quatre heures du jour vont ensemble : si l'une manque, le cadre
+  // n'aurait que des trous à montrer.
+  if (![eatingMGA, eating, disposalMGA, disposal].every(isUsable)) return null;
+
+  const onShabbat = hd.getDay() === 6;
+  const friday = onShabbat ? new Zmanim(gloc, civilNoon(hd.prev()), false) : null;
+  const burningEveMGA = friday ? opinion.sofZmanBiurChametzMGA(friday) : null;
+  const burningEve = friday ? friday.sofZmanBiurChametzGRA() : null;
+
+  return {
+    day: hd,
+    eatingMGA,
+    eating,
+    disposalMGA,
+    disposal,
+    onShabbat,
+    burningEveMGA: isUsable(burningEveMGA) ? burningEveMGA : null,
+    burningEve: isUsable(burningEve) ? burningEve : null,
+  };
+}
+
+/**
+ * Les limites du 'hamets qui concernent le jour affiché : celles du jour, ou
+ * celles du lendemain. Annoncées dès la veille comme le jeûne : le 13 Nissan
+ * au soir on cherche l'heure du lendemain matin, et les années où le 14 tombe
+ * un Chabbat, c'est justement ce vendredi-là qu'il faut brûler.
+ *
+ * `now` dit l'heure qu'il est, pour ne plus annoncer des limites passées ;
+ * null pour un jour parcouru avec les flèches, qui se lit comme une journée
+ * entière.
+ */
+export function chametzNear(
+  place: ZmanimPlace,
+  day: Date,
+  now: Date | null = day,
+): ChametzDeadlines | null {
+  const today = new HDate(dayInPlace(place, day));
+  for (const hd of [today, today.next()]) {
+    const deadlines = chametzAt(place, hd);
+    if (!deadlines) continue;
+    // Passé la dernière des deux cinquièmes heures, il n'y a plus rien à
+    // annoncer : le 'hamets est détruit, ou il aurait dû l'être.
+    const last = Math.max(
+      deadlines.disposal.getTime(),
+      deadlines.burningEve?.getTime() ?? 0,
+      deadlines.disposalMGA.getTime(),
+    );
+    if (!now || last > now.getTime()) return deadlines;
   }
   return null;
 }

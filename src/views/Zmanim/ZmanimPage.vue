@@ -25,6 +25,7 @@ import { localDayFrom, localDayKey } from "../../services/dateService";
 import { getParashaForShabbat } from "../../services/dailyCycles";
 import {
   candleLightingMinutes,
+  chametzNear,
   computeZmanim,
   placeFromCity,
   dayHighlights,
@@ -53,6 +54,7 @@ import { cityInSentence, citySlug, findCityBySlug } from "../../content/zmanimCi
 import { isSectionPath, localeOfPath, sectionPath } from "../../content/seoLocales";
 import RestTimes from "./RestTimes.vue";
 import FastTimes from "./FastTimes.vue";
+import ChametzTimes from "./ChametzTimes.vue";
 import ZmanRow from "./ZmanRow.vue";
 import ZmanReminderModal from "./ZmanReminderModal.vue";
 import { useZmanimOpinion } from "../../composables/useZmanimOpinion";
@@ -165,6 +167,23 @@ const restFirst = computed(() => {
 const fast = computed(() =>
   fastNear(place.value, day.value, locale.value, isToday.value ? now.value : null),
 );
+
+/**
+ * Les limites du 'hamets, la veille de Pessah : celles du jour affiché ou
+ * celles du lendemain, tant qu'elles ne sont pas passées. Annoncées dès la
+ * veille comme le jeûne, et pour la même raison : c'est le soir d'avant qu'on
+ * regarde jusqu'à quelle heure on pourra manger.
+ */
+const chametz = computed(() =>
+  chametzNear(place.value, day.value, isToday.value ? now.value : null),
+);
+
+/** Le 'hamets suit le jeûne : même jour, même place dans la page. */
+const chametzFirst = computed(() => {
+  const deadlines = chametz.value;
+  if (!deadlines) return false;
+  return hebrewDayOf(place.value, day.value).abs() === deadlines.day.abs();
+});
 
 /**
  * Comme le repos, le jeûne passe devant les horaires le jour où il commence
@@ -691,6 +710,15 @@ onMounted(() => {
     <!-- Le jeûne commencé passe devant, comme le repos -->
     <FastTimes v-if="fast && fastFirst" :fast="fast" :tzid="place.tzid" class="mt-5" />
 
+    <!-- La veille de Pessah, les limites du 'hamets : le jour même, elles
+         passent devant comme le jeûne ; la veille, elles attendent en bas. -->
+    <ChametzTimes
+      v-if="chametz && chametzFirst"
+      :chametz="chametz"
+      :tzid="place.tzid"
+      class="mt-5"
+    />
+
     <!-- Le repos commencé passe devant : c'est ce qu'on vient vérifier -->
     <RestTimes
       v-for="period in restFirst ? restPeriods : []"
@@ -747,6 +775,13 @@ onMounted(() => {
 
     <!-- Le jeûne de demain, annoncé dès la veille, sous les horaires du jour -->
     <FastTimes v-if="fast && !fastFirst" :fast="fast" :tzid="place.tzid" class="mt-5" />
+
+    <ChametzTimes
+      v-if="chametz && !chametzFirst"
+      :chametz="chametz"
+      :tzid="place.tzid"
+      class="mt-5"
+    />
 
     <RestTimes
       v-for="period in restFirst ? [] : restPeriods"
