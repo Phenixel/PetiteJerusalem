@@ -31,7 +31,8 @@ describe("computeZmanim", () => {
     // Valeurs de référence (Paris, 4 août 2026), au niveau de la mer.
     expect(at(DEFAULT_PLACE, byKey.get("sunrise")!)).toBe("06:27");
     expect(at(DEFAULT_PLACE, byKey.get("sofZmanShma")!)).toBe("10:12");
-    expect(at(DEFAULT_PLACE, byKey.get("sofZmanShmaMGA")!)).toBe("09:36");
+    // Le Maguen Avraham du Rav Posen compte de l'aube (16,1°) à la nuit.
+    expect(at(DEFAULT_PLACE, byKey.get("sofZmanShmaMGA")!)).toBe("09:10");
     expect(at(DEFAULT_PLACE, byKey.get("chatzot")!)).toBe("13:56");
     expect(at(DEFAULT_PLACE, byKey.get("sunset")!)).toBe("21:24");
     expect(at(DEFAULT_PLACE, byKey.get("tzeit")!)).toBe("22:20");

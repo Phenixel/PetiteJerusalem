@@ -572,7 +572,7 @@ const en: LocaleMessages = {
       posen: {
         name: "Rav Meir Posen (Ohr Meir)",
         short: "Rav Posen",
-        hint: "Degrees of the sun below the horizon, as European calendars have it: dawn at 16.1°, tallit at 11.5°, nightfall at 8.5°, Rabbeinu Tam 72 minutes after sunset.",
+        hint: "Degrees of the sun below the horizon, as European calendars have it: dawn and Magen Avraham at 16.1°, tallit at 11.5°, nightfall at 8.5°, Rabbeinu Tam 72 minutes after sunset.",
       },
       ovadia: {
         name: "Rav Ovadia Yosef (Ohr HaChaim)",

@@ -13,7 +13,8 @@ import { devicePreference } from "./devicePreference";
  *    le Patah Eliyahou, et c'est celui que l'application suit depuis toujours
  *    (ce sont les valeurs par défaut de hebcal) : l'aube quand le soleil est
  *    à 16,1° sous l'horizon, le talith à 11,5°, la sortie des étoiles à 8,5°,
- *    l'avis de Rabbénou Tam 72 minutes fixes après la chkia.
+ *    le Maguen Avraham sur ce même 16,1°, de l'aube à la nuit, et l'avis de
+ *    Rabbénou Tam 72 minutes fixes après la chkia.
  *  - **Rav Ovadia Yossef** (luah `Or Ha'Haïm`, dont il a suivi la rédaction),
  *    le calcul en MINUTES ZMANIYOT, proportionnelles à la longueur du jour :
  *    l'aube 72 minutes zmaniyot avant le lever, le talith 66, la sortie des
@@ -125,9 +126,14 @@ export interface OpinionZmanim {
 const POSEN: OpinionZmanim = {
   alotHaShachar: (z) => z.alotHaShachar(), // 16,1°
   misheyakir: (z) => z.misheyakir(), // 11,5°
-  // Le Maguen Avraham sur une aube et une nuit à 72 minutes fixes.
-  sofZmanShmaMGA: (z) => z.sofZmanShmaMGA(),
-  sofZmanTfillaMGA: (z) => z.sofZmanTfillaMGA(),
+  // Le Maguen Avraham sur l'aube et la nuit de cette opinion : le jour court
+  // de 16,1° avant le lever à 16,1° après la chkia, et se divise en douze.
+  // Les mêmes degrés que l'aube affichée juste au-dessus, donc, et non les 72
+  // minutes fixes que hebcal calcule par défaut : celles-ci placeraient l'aube
+  // du calcul une demi-heure après celle du cadre, et la fin du Chéma une
+  // douzaine de minutes après l'heure des calendriers d'Europe.
+  sofZmanShmaMGA: (z) => z.sofZmanShmaMGA16Point1(),
+  sofZmanTfillaMGA: (z) => z.sofZmanTfillaMGA16Point1(),
   minchaGedola: (z) => z.minchaGedola(),
   plagHaMincha: (z) => z.plagHaMincha(),
   tzeit: (z) => z.tzeit(), // 8,5°, trois petites étoiles selon le Ohr Meïr

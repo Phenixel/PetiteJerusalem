@@ -589,7 +589,7 @@ const fr = {
       posen: {
         name: "Rav Meïr Posen (Ohr Meïr)",
         short: "Rav Posen",
-        hint: "Le calcul par degrés du soleil sous l'horizon, celui des calendriers d'Europe : aube à 16,1°, talith à 11,5°, sortie des étoiles à 8,5°, fin des jeûnes à 7,08°, Rabbénou Tam 72 minutes après la chkia.",
+        hint: "Le calcul par degrés du soleil sous l'horizon, celui des calendriers d'Europe : aube et Maguen Avraham à 16,1°, talith à 11,5°, sortie des étoiles à 8,5°, fin des jeûnes à 7,08°, Rabbénou Tam 72 minutes après la chkia.",
       },
       ovadia: {
         name: "Rav Ovadia Yossef (Or Ha'Haïm)",
