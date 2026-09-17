@@ -184,6 +184,13 @@ FERME, garde la minute inférieure. Le même instant, deux rôles.
 Où : `tachanun.ts`, qui corrige déjà hebcal sur trois points ; ces deux-là
 s'ajoutent à la même liste. Le sidour (`dailyCycles`) lit la même fonction.
 
+Une précision, trouvée en écrivant le correctif : le test ne peut pas porter
+sur `flags.CHANUKAH_CANDLES`, comme le plan le proposait. Le DERNIER jour de
+'Hanouka (« Chanukah: 8th Day ») ne porte pas ce drapeau, puisqu'on n'y allume
+plus rien : la règle aurait rendu le tahanoun au 3 Tévet 5790, qui est
+justement ce huitième jour. C'est le nom de l'événement (`basename()`) qui
+tranche.
+
 ### 3.5 Allumage en Israël : 18 minutes partout sauf Jérusalem
 
 `CANDLE_LIGHTING_BY_CITY` ne connaît que Jérusalem (40). Or :

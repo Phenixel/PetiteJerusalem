@@ -1,4 +1,4 @@
-import { HDate, months, tachanun } from "@hebcal/core";
+import { HDate, getHolidaysOnDate, months, tachanun } from "@hebcal/core";
 
 /**
  * Dit-on le tahanoun, office par office ?
@@ -53,6 +53,39 @@ function isTashlumin(hd: HDate): boolean {
   return hd.getMonth() === months.SIVAN && hd.getDate() <= TASHLUMIN_LAST_DAY;
 }
 
+/**
+ * Le lendemain de 'Hanouka, que hebcal laisse encore sans tahanoun.
+ *
+ * hebcal retire le tahanoun « du 25 au 33 Kislev », sans regarder si Kislev
+ * compte 29 ou 30 jours. Or 'Hanouka dure huit jours, pas neuf : quand Kislev
+ * est plein, elle finit le 2 Tévet et le 33e jour déborde sur le 3 ; quand il
+ * est creux, elle finit le 3 Tévet et le débordement tombe sur le 4. Un
+ * dimanche de décembre 2026, l'application annonçait donc « Pas de
+ * Ta'hanoun » un jour où il se dit.
+ *
+ * Le test ne peut pas être le drapeau des bougies : le DERNIER jour de
+ * 'Hanouka (« Chanukah: 8th Day ») ne le porte pas, puisqu'on n'y allume plus
+ * rien. C'est le nom de l'événement qui tranche, et lui seul.
+ */
+const CHANUKAH = "Chanukah";
+const TEVET_OVERFLOW_DAYS = [3, 4];
+
+function isChanukahOverflow(hd: HDate, il: boolean): boolean {
+  if (hd.getMonth() !== months.TEVET || !TEVET_OVERFLOW_DAYS.includes(hd.getDate())) return false;
+  return !(getHolidaysOnDate(hd, il) ?? []).some((ev) => ev.basename() === CHANUKAH);
+}
+
+/**
+ * Chouchan Pourim Katan, le 15 Adar I des années à treize mois.
+ *
+ * Le Choul'han Aroukh (Ora'h 'Haïm 697, 1) omet le tahanoun les 14 ET 15
+ * Adar I. hebcal ne connaît que le 14 : l'application disait le tahanoun le
+ * 15, lundi 22 février 2027 par exemple.
+ */
+function isShushanPurimKatan(hd: HDate): boolean {
+  return hd.getMonth() === months.ADAR_I && hd.getDate() === 15 && hd.isLeapYear();
+}
+
 /** Ce lendemain-là laisse-t-il le tahanoun à la Min'ha de la veille ? */
 function keepsPreviousMincha(next: HDate): boolean {
   const day = next.getDate();
@@ -69,7 +102,18 @@ function keepsPreviousMincha(next: HDate): boolean {
 }
 
 export function saidTachanun(hd: HDate, il: boolean): TachanunSaid {
-  if (isTashlumin(hd)) return { shacharit: false, mincha: false };
+  if (isTashlumin(hd) || isShushanPurimKatan(hd)) return { shacharit: false, mincha: false };
+  // Le lendemain de 'Hanouka : on ne lit pas hebcal pour ce jour-là, il s'y
+  // trompe. Le tahanoun s'y dit, et sa Min'ha suit la règle ordinaire, celle
+  // qui regarde le lendemain.
+  if (isChanukahOverflow(hd, il)) {
+    const next = hd.next();
+    return {
+      shacharit: true,
+      mincha:
+        hd.getDay() !== 5 && (saidTachanun(next, il).shacharit || keepsPreviousMincha(next)),
+    };
+  }
   const said = tachanun(hd, il);
   // Le vendredi reste à l'écart : ce qui retient sa Min'ha, c'est le Chabbat
   // qui vient, pas le jour d'après.
