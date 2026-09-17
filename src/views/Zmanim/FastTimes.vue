@@ -47,6 +47,15 @@ const endRule = computed(() => describeEndRule(props.fast.endRule, t, locale.val
 const note = computed(() =>
   t(props.fast.fromEve ? "zmanim.fast.noteEve" : "zmanim.fast.noteDawn", { end: endRule.value }),
 );
+
+/**
+ * Ta'anit Bekhorot n'oblige que les premiers-nés, et un siyoum en dispense :
+ * le cadre le dit, sans quoi il se lit comme un jeûne public que tout le
+ * monde tiendrait.
+ */
+const firstbornNote = computed(() =>
+  props.fast.firstbornOnly ? t("zmanim.fast.noteFirstborn") : "",
+);
 </script>
 
 <template>
@@ -85,6 +94,8 @@ const note = computed(() =>
       </li>
     </ul>
 
-    <p class="mt-2.5 text-xs text-text-secondary">{{ note }}</p>
+    <p class="mt-2.5 text-xs text-text-secondary">
+      {{ note }}<template v-if="firstbornNote">{{ " " }}{{ firstbornNote }}</template>
+    </p>
   </section>
 </template>

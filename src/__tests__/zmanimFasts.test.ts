@@ -134,6 +134,29 @@ describe("fastAt", () => {
     }
   });
 
+  it("marque Ta'anit Bekhorot comme le jeûne des premiers-nés", () => {
+    // Il n'oblige que les premiers-nés, et un siyoum en dispense : il garde
+    // son cadre, mais il ne passe plus devant les limites du 'hamets, que
+    // tout le monde cherche ce jour-là (voir ZmanimPage, fastFirst).
+    const erevPessah = fastAt(DEFAULT_PLACE, hd(2026, 4, 1), "fr")!;
+    expect(erevPessah.name).toContain("Bekhorot"); // hebcal le rend ainsi en français
+    expect(erevPessah.firstbornOnly).toBe(true);
+    // Les six autres jeûnes sont publics.
+    expect(fastAt(DEFAULT_PLACE, hd(2026, 9, 14), "fr")!.firstbornOnly).toBe(false);
+  });
+
+  it("nomme le début du jeûne à l'entrée de Kippour", () => {
+    // Kippour n'a pas de cadre de jeûne, il a un cadre de repos : c'est son
+    // entrée qui porte le début du jeûne, et le cadre doit le dire.
+    const kippour = restPeriodAt(DEFAULT_PLACE, hd(2026, 9, 21), "fr")!;
+    expect(kippour.festivals.join(" ")).toContain("Kippour");
+    expect(kippour.fastStarts).toBe(true);
+    // Un Chabbat ordinaire ne porte pas ce mot.
+    expect(restPeriodAt(DEFAULT_PLACE, hd(2026, 8, 8), "fr")!.fastStarts).toBe(false);
+    // Roch Hachana non plus : c'est un Yom Tov, pas un jeûne.
+    expect(restPeriodAt(DEFAULT_PLACE, hd(2026, 9, 12), "fr")!.fastStarts).toBe(false);
+  });
+
   it("ne met ni Yom Kippour Katan ni BeHaB parmi les reliefs du jour", () => {
     // Ni le cadre du jeûne ni la ligne des reliefs ne les nomment, un an durant.
     const start = new HDate(1, months.TISHREI, 5787).abs();

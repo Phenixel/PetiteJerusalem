@@ -193,6 +193,10 @@ const chametzFirst = computed(() => {
 const fastFirst = computed(() => {
   const period = fast.value;
   if (!period) return false;
+  // Ta'anit Bekhorot n'oblige que les premiers-nés : il ne passe jamais
+  // devant, et laisse la première place aux limites du 'hamets, que tout le
+  // monde cherche ce jour-là (voir FastPeriod.firstbornOnly).
+  if (period.firstbornOnly) return false;
   // Sans heure de début (l'aube par degrés n'existe pas ici ce jour-là, voir
   // FastPeriod.start), le jeûne monte le jour où il tombe, et pas la veille.
   if (!period.start) return hebrewDayOf(place.value, day.value).abs() === period.day.abs();

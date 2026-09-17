@@ -213,6 +213,22 @@ describe("yearCalendar", () => {
     expect(kippour.period!.start.getTime()).toBeLessThan(kippour.period!.end!.getTime());
   });
 
+  it("n'annonce ni Lel Selihot, ni le nouvel an du bétail, ni 'Hag haBanot", () => {
+    // `MINOR_HOLIDAY` ramenait ces trois jours. Lel Selihot (23 Eloul) est un
+    // usage achkénaze, et l'application propose les Sli'hot depuis Roch
+    // Hodech Eloul : l'annoncer contredirait sa propre page. Les deux autres
+    // n'ont ni heures, ni office, ni interdit.
+    for (const absent of ["Selihot", "Selichot", "Behemot", "Banot"]) {
+      expect(named(absent), `${absent} ne devrait pas être au calendrier`).toEqual([]);
+    }
+    // Les vraies fêtes mineures, elles, restent : ce n'est pas le drapeau
+    // qu'on a retiré, ce sont trois jours nommés.
+    expect(named("anoukah")).not.toEqual([]);
+    expect(named("Pourim")).not.toEqual([]);
+    expect(named("Tou biChvat").length + named("Bichvat").length).toBeGreaterThan(0);
+    expect(named("Lag")).not.toEqual([]);
+  });
+
   it("sépare les deux blocs de Pessah, et laisse le 'Hol haMoed dehors", () => {
     // Nom exact : « Pessah Cheni », un mois plus tard, est une autre fête.
     const pessah = entries.filter((e) => e.name === named("Pessa")[0].name);

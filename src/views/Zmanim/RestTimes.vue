@@ -116,7 +116,14 @@ const eruvNote = computed(() =>
       <li class="flex items-center justify-between gap-4 py-2">
         <span class="min-w-0">
           <span class="block font-medium leading-snug text-text-primary">
-            {{ t("zmanim.shabbat.candleLighting") }}
+            <!-- Kippour : la même heure ouvre le repos ET le jeûne. Sans le
+                 mot, qui cherche « à quelle heure commence le jeûne » ne
+                 trouve rien (voir RestPeriod.fastStarts). -->
+            {{
+              period.fastStarts
+                ? t("zmanim.shabbat.candleLightingAndFast")
+                : t("zmanim.shabbat.candleLighting")
+            }}
           </span>
           <span class="block text-xs text-text-secondary">{{ dayOf(period.start) }}</span>
         </span>

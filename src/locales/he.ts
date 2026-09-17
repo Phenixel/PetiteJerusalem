@@ -490,6 +490,7 @@ const he: LocaleMessages = {
         "אין שעת התחלה: במקום זה השמש אינה יורדת ביום זה מספיק נמוך כדי שהשיטה הנבחרת תיתן עלות השחר.",
       end: "סיום הצום",
       noteDawn: "הצום מתחיל בעלות השחר ומסתיים {end}.",
+      noteFirstborn: "חובתו על הבכורות בלבד, והשתתפות בסיום פוטרת מהצום.",
       noteEve: "הצום מתחיל בשקיעה בערב שלפניו ומסתיים {end}.",
     },
     chametz: {
@@ -546,6 +547,7 @@ const he: LocaleMessages = {
       title: "שבת",
       parasha: "פרשת",
       candleLighting: "הדלקת נרות",
+      candleLightingAndFast: "הדלקת נרות ותחילת הצום",
       havdalah: "צאת שבת",
       note: "הדלקת נרות {minutes} דקות לפני השקיעה, {exit}.",
     },

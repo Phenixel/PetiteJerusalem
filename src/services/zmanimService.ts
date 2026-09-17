@@ -6,6 +6,7 @@ import {
   Molad,
   Zmanim,
   flags,
+  holidayDesc,
   months,
   getHolidaysOnDate,
 } from "@hebcal/core";
@@ -863,6 +864,14 @@ export interface RestPeriod {
   shabbat: Date | null;
   /** Fêtes couvertes, nommées dans la langue demandée, sans numéro de jour. */
   festivals: string[];
+  /**
+   * Le bloc porte Kippour : son entrée est aussi le début du jeûne.
+   *
+   * Kippour n'a pas de cadre de jeûne, il a un cadre de repos, dont l'entrée
+   * s'appelait « Allumage des bougies ». Qui cherchait « à quelle heure
+   * commence le jeûne » ne trouvait pas le mot.
+   */
+  fastStarts: boolean;
 }
 
 /**
@@ -933,8 +942,18 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
 
   const festivals: string[] = [];
   let shabbat: Date | null = null;
+  let fastStarts = false;
   for (let day = first; day.abs() <= last.abs(); day = day.next()) {
     if (day.getDay() === 6) shabbat = civilNoon(day);
+    // Kippour est à la fois un grand jeûne et un jour de repos : c'est cette
+    // réunion des deux drapeaux qui le distingue des autres Yom Tov.
+    if (
+      holidaysOn(day, il).some(
+        (ev) => (ev.getFlags() & flags.MAJOR_FAST) !== 0 && (ev.getFlags() & flags.CHAG) !== 0,
+      )
+    ) {
+      fastStarts = true;
+    }
     for (const name of festivalsOn(place, day, locale)) {
       if (!festivals.includes(name)) festivals.push(name);
     }
@@ -951,6 +970,7 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
     last,
     shabbat,
     festivals,
+    fastStarts,
   };
 }
 
@@ -1139,6 +1159,26 @@ export interface CalendarEntry {
 const CALENDAR_FLAGS = flags.CHAG | flags.MAJOR_FAST | flags.MINOR_FAST | flags.MINOR_HOLIDAY;
 
 /**
+ * Ce que `MINOR_HOLIDAY` ramène et qui n'a rien à faire dans un calendrier
+ * séfarade.
+ *
+ *  - **Lel Selihot** (23 Eloul) est un usage ACHKÉNAZE : les Séfarades disent
+ *    les Sli'hot depuis Roch Hodech Eloul, et c'est ainsi que l'application
+ *    les propose. L'annoncer le 23 contredirait sa propre page ;
+ *  - **Roch Hachanah LaBehemot** (1er Eloul), le nouvel an du bétail, et
+ *    **'Hag haBanot** (30 Kislev) ne sont pas des jours que le calendrier a à
+ *    tenir : ils n'ont ni heures, ni office, ni interdit.
+ *
+ * Les noms viennent de `holidayDesc`, que hebcal exporte : une chaîne
+ * recopiée à la main vieillirait sans bruit le jour où il la renommerait.
+ */
+const CALENDAR_EXCLUDED = new Set<string>([
+  holidayDesc.LEIL_SELICHOT,
+  holidayDesc.ROSH_HASHANA_LABEHEMOT,
+  holidayDesc.CHAG_HABANOT,
+]);
+
+/**
  * Les fêtes d'une année hébraïque, dans l'ordre.
  *
  * Les jours de Yom Tov qui se suivent, et le Chabbat qui les prolonge, sont
@@ -1175,6 +1215,7 @@ export function yearCalendar(
   for (const ev of events) {
     const eventFlags = ev.getFlags();
     if ((eventFlags & CALENDAR_FLAGS) === 0 || (eventFlags & flags.EREV) !== 0) continue;
+    if (CALENDAR_EXCLUDED.has(ev.basename())) continue;
     const hd = ev.getDate();
 
     // Une fête dont le bloc de repos n'a pas d'heures (pas de chkia ni de
@@ -1290,10 +1331,23 @@ export interface FastPeriod {
   endRule: EndRule;
   /** Le jeûne commence la veille au soir (Tich'a beAv), non à l'aube. */
   fromEve: boolean;
+  /**
+   * Ta'anit Bekhorot, la veille de Pessah, qui n'oblige QUE les premiers-nés,
+   * et dont un siyoum dispense.
+   *
+   * Il montait en tête de page comme un jeûne public, avec une fin que
+   * personne ne suit, le jour même où tout le monde cherche les limites du
+   * 'hamets. Il garde son cadre, mais il ne passe plus devant, et sa note le
+   * dit.
+   */
+  firstbornOnly: boolean;
 }
 
 /** Les jeûnes du calendrier, petits et grands, hors la veille (« Erev Tich'a beAv »). */
 const FAST_FLAGS = flags.MAJOR_FAST | flags.MINOR_FAST;
+
+/** Le jeûne des premiers-nés, la veille de Pessah (voir FastPeriod.firstbornOnly). */
+const FIRSTBORN_FAST = holidayDesc.TAANIT_BECHOROT;
 
 /**
  * Le jeûne observé ce jour hébraïque-là, avec ses heures, ou null s'il n'y en
@@ -1338,6 +1392,7 @@ export function fastAt(place: ZmanimPlace, hd: HDate, locale: string): FastPerio
     end,
     endRule: opinion.fastEndRule(ctx),
     fromEve,
+    firstbornOnly: event.basename() === FIRSTBORN_FAST,
   };
 }
 

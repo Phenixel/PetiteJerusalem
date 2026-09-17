@@ -533,6 +533,8 @@ const fr = {
         "Pas d'heure de début\u00a0: ici, le soleil ne descend pas assez bas ce jour-là pour que l'avis suivi donne l'aube.",
       end: "Fin du jeûne",
       noteDawn: "Le jeûne commence à l'aube (alot haCha'har) et se termine {end}.",
+      noteFirstborn:
+        "Il n'oblige que les premiers-nés, et la participation à un siyoum en dispense.",
       noteEve: "Le jeûne commence la veille au coucher du soleil et se termine {end}.",
     },
     /* Les limites du 'hamets, la veille de Pessah (voir services/zmanimService,
@@ -601,6 +603,7 @@ const fr = {
       title: "Chabbat",
       parasha: "Parachat",
       candleLighting: "Allumage des bougies",
+      candleLightingAndFast: "Allumage et début du jeûne",
       havdalah: "Sortie de Chabbat",
       note: "Allumage {minutes} minutes avant le coucher du soleil, {exit}.",
     },

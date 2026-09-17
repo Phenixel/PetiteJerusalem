@@ -511,6 +511,8 @@ const en: LocaleMessages = {
         "No start time: here the sun does not go low enough on that day for the opinion you follow to give dawn.",
       end: "Fast ends",
       noteDawn: "The fast begins at dawn (alot hashachar) and ends {end}.",
+      noteFirstborn:
+        "It binds firstborn sons only, and taking part in a siyum exempts them.",
       noteEve: "The fast begins at sunset the evening before and ends {end}.",
     },
     chametz: {
@@ -570,6 +572,7 @@ const en: LocaleMessages = {
       title: "Shabbat",
       parasha: "Parashat",
       candleLighting: "Candle lighting",
+      candleLightingAndFast: "Candle lighting and start of the fast",
       havdalah: "Shabbat ends",
       note: "Candle lighting {minutes} minutes before sunset, Shabbat {exit}.",
     },
