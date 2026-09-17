@@ -837,12 +837,49 @@ export interface RestPeriod {
   endRule: EndRule;
   /** Comment Rabbénou Tam se compte, même raison. */
   rabbenouTamRule: RabbenouTamRule;
+  /**
+   * Les allumages À L'INTÉRIEUR du bloc : un par soir, sauf le premier, qui
+   * est déjà `start`.
+   *
+   * Un bloc de plusieurs jours n'a qu'une entrée et qu'une sortie, mais il a
+   * plusieurs soirs, et chacun demande une heure que l'on cherchait en vain :
+   * le deuxième soir d'un Yom Tov, le vendredi pris dans une fête, le Yom Tov
+   * qui commence à la sortie du Chabbat. La note disait « on allume après la
+   * sortie, à partir d'une flamme déjà allumée », sans jamais donner l'heure.
+   */
+  lightings: RestLighting[];
+  /**
+   * Le jour civil où faire l'érouv tavchilin, ou null.
+   *
+   * Quand un Yom Tov tombe le vendredi et que le Chabbat suit, on ne peut
+   * cuisiner le vendredi pour le samedi qu'en ayant posé l'érouv la veille de
+   * la fête. Ni la page ni le calendrier ne le disaient.
+   */
+  eruvTavshilin: Date | null;
   first: HDate;
   last: HDate;
   /** Le bloc couvre un Chabbat, son jour civil, pour retrouver la paracha. */
   shabbat: Date | null;
   /** Fêtes couvertes, nommées dans la langue demandée, sans numéro de jour. */
   festivals: string[];
+}
+
+/**
+ * Un allumage à l'intérieur d'un bloc de repos, et la règle qui le place.
+ *
+ *  - `beforeSunset` : le soir qui ouvre un Chabbat, avant la chkia, comme
+ *    l'entrée du bloc. Depuis une flamme déjà allumée si le jour qui s'achève
+ *    est lui-même un Yom Tov ;
+ *  - `afterShabbat` : un Yom Tov qui commence à la sortie du Chabbat ;
+ *  - `afterNightfall` : le deuxième soir d'un Yom Tov de deux jours, à la
+ *    nuit. C'est la fin de jeûne (tsét le'houmra) que le calendrier source
+ *    retient là, et non la sortie des étoiles ordinaire.
+ */
+export interface RestLighting {
+  /** Le jour hébraïque qui COMMENCE à cet allumage. */
+  day: HDate;
+  at: Date;
+  rule: "beforeSunset" | "afterShabbat" | "afterNightfall";
 }
 
 /** Trois jours de repos d'affilée au maximum (Yom Tov de deux jours + Chabbat). */
@@ -890,6 +927,9 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
   const endRabbenouTam =
     restEnd && rabbenouTam && rabbenouTam.getTime() > restEnd.getTime() ? rabbenouTam : null;
 
+  const lightings = restLightings(place, first, last, il, opinion);
+  const eruvTavshilin = eruvTavshilinDay(first, last, il);
+
   const festivals: string[] = [];
   let shabbat: Date | null = null;
   for (let day = first; day.abs() <= last.abs(); day = day.next()) {
@@ -904,11 +944,89 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
     endRabbenouTam,
     endRule: opinion.restEndRule(ctx),
     rabbenouTamRule: opinion.rabbenouTamRule(ctx),
+    lightings,
+    eruvTavshilin,
     first,
     last,
     shabbat,
     festivals,
   };
+}
+
+/**
+ * Les allumages des soirs qui suivent l'entrée du bloc.
+ *
+ * On parcourt les jours de `first` à l'avant-dernier : le soir de chaque jour
+ * `d` ouvre `d.next()`, et c'est donc un allumage, sauf pour le premier soir,
+ * qui est l'entrée du bloc. Trois règles, selon ce qui s'achève et ce qui
+ * commence (voir RestLighting).
+ */
+function restLightings(
+  place: ZmanimPlace,
+  first: HDate,
+  last: HDate,
+  il: boolean,
+  opinion: OpinionZmanim,
+): RestLighting[] {
+  const gloc = geoLocationOf(place);
+  const lightings: RestLighting[] = [];
+  for (let day = first; day.abs() < last.abs(); day = day.next()) {
+    const next = day.next();
+    const civil = civilNoon(day);
+    const zmanim = new Zmanim(gloc, civil, false);
+    const ctx = opinionContext(place, civil);
+    let at: Date;
+    let rule: RestLighting["rule"];
+    if (next.getDay() === 6) {
+      // Le Chabbat entre avant la chkia, même pris dans une fête : on allume
+      // à la même avance que l'entrée du bloc.
+      at = zmanim.sunsetOffset(-candleLightingMinutes(place), true);
+      rule = "beforeSunset";
+    } else if (day.getDay() === 6) {
+      // Le Chabbat s'achève, un Yom Tov commence : on allume à sa sortie.
+      at = opinion.restEnd(zmanim, ctx);
+      rule = "afterShabbat";
+    } else {
+      // Deux Yom Tov qui se suivent : à la nuit, depuis une flamme existante.
+      at = opinion.yomTovLighting(zmanim, ctx);
+      rule = "afterNightfall";
+    }
+    // L'allumage ouvre le jour suivant : c'est un DÉBUT, il monte à la minute
+    // supérieure, sauf celui d'avant la chkia, qui est une limite.
+    const rounded = roundUsable(at, rule === "beforeSunset" ? "down" : "up");
+    if (rounded) lightings.push({ day: next, at: rounded, rule });
+  }
+  return lightings;
+}
+
+/**
+ * Le jour civil où poser l'érouv tavchilin, ou null.
+ *
+ * Il le faut dès qu'un Yom Tov tombe le vendredi et que le Chabbat le suit :
+ * sans l'érouv, on ne peut pas cuisiner le vendredi pour le samedi. On le pose
+ * la veille du PREMIER jour du bloc, donc le mercredi pour un Yom Tov de
+ * jeudi et vendredi, le jeudi pour un vendredi seul.
+ *
+ * Kippour ne tombe jamais un vendredi ; Roch Hachana un jeudi et un vendredi
+ * est le cas le plus fréquent.
+ */
+function eruvTavshilinDay(first: HDate, last: HDate, il: boolean): Date | null {
+  let needed = false;
+  for (let day = first; day.abs() <= last.abs(); day = day.next()) {
+    if (day.getDay() !== 5) continue; // vendredi
+    if (!isYomTov(day, il)) continue;
+    // Le Chabbat doit suivre dans le bloc, sans quoi rien n'est à préparer.
+    if (last.abs() > day.abs()) needed = true;
+  }
+  if (!needed) return null;
+  const eve = civilNoon(first);
+  eve.setDate(eve.getDate() - 1);
+  return eve;
+}
+
+/** Un Yom Tov, par opposition à un Chabbat ordinaire. */
+function isYomTov(hd: HDate, il: boolean): boolean {
+  return holidaysOn(hd, il).some((ev) => (ev.getFlags() & flags.CHAG) !== 0);
 }
 
 /** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */

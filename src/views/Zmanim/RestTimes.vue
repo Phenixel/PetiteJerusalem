@@ -15,7 +15,11 @@ import { useI18n } from "vue-i18n";
 import { hubPath } from "../../content/etudeTexts";
 import type { WeeklyParasha } from "../../services/dailyCycles";
 import { formatZmanDay, formatZmanTime, type RestPeriod } from "../../services/zmanimService";
-import { describeEndRule, describeRabbenouTamRule } from "../../services/zmanimRules";
+import {
+  describeEndRule,
+  describeLightingRule,
+  describeRabbenouTamRule,
+} from "../../services/zmanimRules";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
@@ -64,6 +68,29 @@ const exitRule = computed(() =>
 const rabbenouTamNote = computed(() =>
   describeRabbenouTamRule(props.period.rabbenouTamRule, t),
 );
+
+/**
+ * Les allumages des soirs suivants, entre l'entrée et la sortie.
+ *
+ * Chacun porte sa règle : avant la chkia pour un Chabbat pris dans une fête,
+ * après la sortie du Chabbat pour un Yom Tov qui le suit, à la nuit pour un
+ * deuxième jour de fête. Le libellé le dit, sans quoi deux lignes du cadre
+ * porteraient le même nom à des heures différentes.
+ */
+const lightings = computed(() =>
+  props.period.lightings.map((lighting) => ({
+    key: lighting.at.getTime(),
+    label: describeLightingRule(lighting.rule, t),
+    at: lighting.at,
+  })),
+);
+
+/** Le jour où poser l'érouv tavchilin, écrit en toutes lettres. */
+const eruvNote = computed(() =>
+  props.period.eruvTavshilin
+    ? t("zmanim.rest.eruvTavshilin", { day: dayOf(props.period.eruvTavshilin) })
+    : "",
+);
 </script>
 
 <template>
@@ -95,6 +122,24 @@ const rabbenouTamNote = computed(() =>
         </span>
         <span class="shrink-0 font-semibold tabular-nums text-text-primary">
           {{ clock(period.start) }}
+        </span>
+      </li>
+      <!-- Les allumages des soirs suivants : le deuxième soir d'une fête, le
+           vendredi pris dans un bloc, le Yom Tov qui suit le Chabbat. Ils se
+           rangent entre l'entrée et la sortie, dans l'ordre des soirs. -->
+      <li
+        v-for="lighting in lightings"
+        :key="lighting.key"
+        class="flex items-center justify-between gap-4 py-2"
+      >
+        <span class="min-w-0">
+          <span class="block font-medium leading-snug text-text-primary">
+            {{ lighting.label }}
+          </span>
+          <span class="block text-xs text-text-secondary">{{ dayOf(lighting.at) }}</span>
+        </span>
+        <span class="shrink-0 font-semibold tabular-nums text-text-primary">
+          {{ clock(lighting.at) }}
         </span>
       </li>
       <li class="flex items-center justify-between gap-4 py-2">
@@ -140,5 +185,10 @@ const rabbenouTamNote = computed(() =>
           : t("zmanim.shabbat.note", { minutes: candleMinutes, exit: exitRule })
       }}<template v-if="period.endRabbenouTam">{{ " " }}{{ rabbenouTamNote }}</template>
     </p>
+
+    <!-- L'érouv tavchilin : sans lui, on ne cuisine pas le vendredi de fête
+         pour le Chabbat qui suit. Il se pose l'avant-veille, et c'est donc
+         maintenant qu'il faut le dire. -->
+    <p v-if="eruvNote" class="mt-1.5 text-xs text-text-secondary">{{ eruvNote }}</p>
   </section>
 </template>

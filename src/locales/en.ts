@@ -548,6 +548,13 @@ const en: LocaleMessages = {
       end: "Ends",
       endUnknown:
         "No end time: here the sun does not go low enough on that day for the opinion you follow to give nightfall.",
+      lighting: {
+        beforeSunset: "Shabbat candle lighting",
+        afterShabbat: "Candle lighting after Shabbat ends",
+        afterNightfall: "Candle lighting, next evening",
+      },
+      eruvTavshilin:
+        "Eruv tavshilin: set it on {day}, otherwise you may not cook on the festival Friday for Shabbat.",
       rabbenouTam: "Ends (Rabbeinu Tam)",
       rabbenouTamNote: {
         fixed: "The Rabbeinu Tam end time is 72 minutes after sunset.",

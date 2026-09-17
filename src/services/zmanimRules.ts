@@ -1,5 +1,6 @@
 import { numberFormat } from "./intlCache";
 import type { EndRule, RabbenouTamRule } from "./zmanimOpinions";
+import type { RestLighting } from "./zmanimService";
 
 /**
  * Comment DIRE la règle qu'un avis a posée avec l'heure.
@@ -55,4 +56,20 @@ const RABBENOU_TAM_KEYS: Record<RabbenouTamRule, string> = {
 
 export function describeRabbenouTamRule(rule: RabbenouTamRule, t: Translate): string {
   return t(RABBENOU_TAM_KEYS[rule]);
+}
+
+/**
+ * Le libellé d'un allumage à l'intérieur d'un bloc de repos.
+ *
+ * Clés en toutes lettres, pour la même raison qu'au-dessus : `i18nUsage`
+ * balaye les sources, et une clé construite lui échappe.
+ */
+const LIGHTING_KEYS: Record<RestLighting["rule"], string> = {
+  beforeSunset: "zmanim.rest.lighting.beforeSunset",
+  afterShabbat: "zmanim.rest.lighting.afterShabbat",
+  afterNightfall: "zmanim.rest.lighting.afterNightfall",
+};
+
+export function describeLightingRule(rule: RestLighting["rule"], t: Translate): string {
+  return t(LIGHTING_KEYS[rule]);
 }

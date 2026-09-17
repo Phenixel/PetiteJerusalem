@@ -143,14 +143,24 @@ function planRestReminders(place: ZmanimPlace, locale: string, now: Date): Plann
       abs++;
       continue;
     }
-    const at = new Date(period.start.getTime() - REST_REMINDER_MINUTES * 60_000);
-    // Un repos déjà entré (ou entré dans moins d'une heure) n'a plus de
-    // rappel à donner : on passe au suivant.
-    if (at.getTime() > now.getTime()) {
+    // L'entrée du bloc, puis les allumages d'AVANT LA CHKIA qu'il porte : le
+    // vendredi pris dans une fête en est un, et il se rate aussi bien que
+    // l'entrée. Les allumages de nuit, eux, tombent quand la fête est déjà
+    // commencée : personne n'y attend un dernier appel.
+    const entries = [
+      period.start,
+      ...period.lightings.filter((l) => l.rule === "beforeSunset").map((l) => l.at),
+    ];
+    for (const entry of entries) {
+      if (planned.length >= REST_OCCURRENCES) break;
+      const at = new Date(entry.getTime() - REST_REMINDER_MINUTES * 60_000);
+      // Un repos déjà entré (ou entré dans moins d'une heure) n'a plus de
+      // rappel à donner : on passe au suivant.
+      if (at.getTime() <= now.getTime()) continue;
       planned.push({
         id: ID_REST + planned.length,
         at,
-        target: period.start,
+        target: entry,
         minutesBefore: REST_REMINDER_MINUTES,
         zman: null,
         festivals: period.festivals,

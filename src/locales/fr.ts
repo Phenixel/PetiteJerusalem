@@ -577,6 +577,15 @@ const fr = {
       end: "Sortie",
       endUnknown:
         "Pas d'heure de sortie\u00a0: ici, le soleil ne descend pas assez bas ce jour-là pour que l'avis suivi donne la sortie des étoiles.",
+      /* Les allumages des soirs suivants d'un bloc, et l'érouv tavchilin
+         (voir RestTimes.vue et zmanimService, RestLighting). */
+      lighting: {
+        beforeSunset: "Allumage de Chabbat",
+        afterShabbat: "Allumage après la sortie du Chabbat",
+        afterNightfall: "Allumage du soir suivant",
+      },
+      eruvTavshilin:
+        "Érouv tavchilin\u00a0: à poser le {day}, sans quoi on ne cuisine pas le vendredi de fête pour le Chabbat.",
       rabbenouTam: "Sortie Rabbénou Tam",
       rabbenouTamNote: {
         fixed: "La sortie selon Rabbénou Tam est comptée 72 minutes après le coucher du soleil.",
