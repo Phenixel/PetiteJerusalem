@@ -374,7 +374,15 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
     (getHolidaysOnDate(veille, il) ?? []).some(
       (ev) => (ev.getFlags() & flags.CHAG) !== 0 && (ev.getFlags() & flags.EREV) === 0,
     );
-  if (veilleKodech && !has(flags.CHAG)) occ.add("motsae");
+  if (veilleKodech && !has(flags.CHAG)) {
+    occ.add("motsae");
+    // La sortie d'un Yom Tov qui ne tombe pas un dimanche hébraïque. Les
+    // fichiers disent la sortie de Chabbat sous « jour-0 », la clé que toutes
+    // les versions publiées connaissent ; celle-ci nomme le reste, et elle
+    // seule, pour qu'aucune version n'affiche les deux (voir
+    // docs/compatibilite-textes.md).
+    if (hd.getDay() !== 0) occ.add("motsae-yom-tov");
+  }
 
   // --- Sidour de semaine ---------------------------------------------------
   // L'été et l'hiver de la Amida : la mention de la pluie (22 Tichri au

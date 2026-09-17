@@ -888,6 +888,15 @@
               "unless": "teshuva"
             },
             {
+              "r": {
+                "fr": "Aux dix jours de techouva, on conclut :",
+                "en": "During the Ten Days of Repentance, conclude:",
+                "he": "בעשרת ימי תשובה חותמים:"
+              },
+              "when": "teshuva",
+              "unless": "teshuva"
+            },
+            {
               "v": "הַמֶּלֶךְ הַקָּדוֹשׁ:",
               "when": "teshuva"
             }
@@ -980,6 +989,15 @@
             "הָשִֽׁיבָה שֽׁוֹפְטֵֽינוּ כְּבָרִֽאשׁוֹנָה, וְיֽוֹעֲצֵֽינוּ כְּבַתְּחִלָּה, וְהָסֵר מִמֶּֽנּוּ יָגוֹן וַֽאֲנָחָה. וּמְלוֹךְ עָלֵֽינוּ מְהֵרָה אַתָּה יְהֹוָה לְבַדְּךָ, בְּחֶֽסֶד וּבְרַֽחֲמִים, בְּצֶֽדֶק וּבְמִשְׁפָּט: בָּרוּךְ אַתָּה יוּהוּווּהוּ,",
             {
               "he": "מֶֽלֶךְ אוֹהֵב צְדָקָה וּמִשְׁפָּט:",
+              "unless": "teshuva"
+            },
+            {
+              "r": {
+                "fr": "Aux dix jours de techouva, on conclut :",
+                "en": "During the Ten Days of Repentance, conclude:",
+                "he": "בעשרת ימי תשובה חותמים:"
+              },
+              "when": "teshuva",
               "unless": "teshuva"
             },
             {
@@ -1273,6 +1291,15 @@
           "he": [
             {
               "he": "עֹשֶׂה שָׁלוֹם",
+              "unless": "teshuva"
+            },
+            {
+              "r": {
+                "fr": "Aux dix jours de techouva, on conclut :",
+                "en": "During the Ten Days of Repentance, conclude:",
+                "he": "בעשרת ימי תשובה חותמים:"
+              },
+              "when": "teshuva",
               "unless": "teshuva"
             },
             {

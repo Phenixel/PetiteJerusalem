@@ -166,6 +166,10 @@ function condition(spec) {
  * didascalie devant le fragment.
  */
 function partRuns(spec, segs) {
+  // Un fragment qui n'est qu'une didascalie : rien à prendre à la source.
+  if (spec.rubric && spec.he === undefined && spec.seg === undefined) {
+    return [{ r: spec.rubric, ...condition(spec) }];
+  }
   const text = lineText(spec, segs);
   if (!text) throw new Error(`Fragment vide : ${JSON.stringify(spec)}`);
   const cond = condition(spec);
@@ -177,6 +181,28 @@ function partRuns(spec, segs) {
   else if (conditionnel) runs.push({ he: text, ...cond });
   else runs.push(text);
   return runs;
+}
+
+/**
+ * La didascalie que seules les versions publiées lisent.
+ *
+ * Quand une conclusion en remplace une autre le jour dit (« Hamélekh
+ * hakadoch » aux dix jours de techouva), le lecteur à jour retire l'ordinaire
+ * par `unless` et ne montre que celle du jour. Une version publiée, elle,
+ * ignore `unless` : elle affiche les deux, l'une derrière l'autre, sans rien
+ * entre elles. Et aucune clé ne peut lui faire cacher l'ordinaire, son
+ * calendrier ne sait pas nommer « hors des dix jours » (voir
+ * docs/compatibilite-textes.md).
+ *
+ * Cette didascalie lui rend alors la présentation du sidour imprimé, qui
+ * écrit les deux conclusions et met la règle entre : « aux dix jours de
+ * techouva, on conclut : ». Sa condition se contredit exprès, `when` et
+ * `unless` sur la même clé : elle ne tient que pour un lecteur qui ignore
+ * `unless`, donc pour ces versions-là et pour elles seules. Elle s'enlèvera
+ * quand la flotte aura rattrapé.
+ */
+function didascalieDeRemplacement(when, rubric) {
+  return { rubric, when, unless: when };
 }
 
 /**
@@ -613,6 +639,14 @@ function amidaBlocks(src, ix, opts = {}) {
             until: "הָאֵל הַקָּדוֹשׁ",
           },
           { he: "הָאֵל הַקָּדוֹשׁ:", unless: "teshuva" },
+          didascalieDeRemplacement(
+            "teshuva",
+            R(
+              "Aux dix jours de techouva, on conclut\u00a0:",
+              "During the Ten Days of Repentance, conclude:",
+              "בעשרת ימי תשובה חותמים:",
+            ),
+          ),
           { he: "הַמֶּלֶךְ הַקָּדוֹשׁ:", when: "teshuva", accent: true },
         ],
       },
@@ -625,16 +659,18 @@ function amidaBlocks(src, ix, opts = {}) {
   // Deux fois le même fragment, sous deux clés qui ne se recouvrent jamais :
   // la sortie de Chabbat, de très loin le cas courant, se nomme par le jour
   // de la semaine, que les versions publiées connaissent ; la sortie de Yom
-  // Tov, qui tombe n'importe quel soir, se nomme par « motsae », une clé
-  // récente, et le `unless` empêche les deux de se dire ensemble (voir
-  // condition). Le dimanche hébraïque peut être Yom Tov lui-même (le 16
-  // Tichri, le 16 Nissan) : ce soir-là on ne sépare rien, d'où l'exception.
+  // Tov, qui tombe n'importe quel autre soir, par « motsae-yom-tov », une clé
+  // que seules les versions qui la posent affichent. Surtout pas « motsae »,
+  // qui couvre aussi le dimanche : les versions v3.10.1 et v3.10.2 le
+  // connaissent sans connaître `unless`, et diraient Ata 'honantanou deux
+  // fois le samedi soir. Le dimanche hébraïque peut être Yom Tov lui-même (le
+  // 16 Tichri, le 16 Nissan) : ce soir-là on ne sépare rien, d'où l'exception.
   if (ix.ataHonantanu !== undefined) {
     blocks.push({
       src,
       halakha: [
         { ...HALAKHA.ataHonantanu, when: "jour-0", unless: "yom-tov" },
-        { ...HALAKHA.ataHonantanu, when: "motsae", unless: "jour-0" },
+        { ...HALAKHA.ataHonantanu, when: "motsae-yom-tov" },
       ],
       lines: [
         {
@@ -647,13 +683,7 @@ function amidaBlocks(src, ix, opts = {}) {
               unless: "yom-tov",
               accent: true,
             },
-            {
-              seg: ix.ataHonantanu,
-              mode: "small",
-              when: "motsae",
-              unless: "jour-0",
-              accent: true,
-            },
+            { seg: ix.ataHonantanu, mode: "small", when: "motsae-yom-tov", accent: true },
             { seg: ix.vehonenu },
           ],
         },
@@ -726,6 +756,14 @@ function amidaBlocks(src, ix, opts = {}) {
             until: "מֶֽלֶךְ אוֹהֵב",
           },
           { he: "מֶֽלֶךְ אוֹהֵב צְדָקָה וּמִשְׁפָּט:", unless: "teshuva" },
+          didascalieDeRemplacement(
+            "teshuva",
+            R(
+              "Aux dix jours de techouva, on conclut\u00a0:",
+              "During the Ten Days of Repentance, conclude:",
+              "בעשרת ימי תשובה חותמים:",
+            ),
+          ),
           { he: "הַמֶּלֶךְ הַמִּשְׁפָּט:", when: "teshuva", accent: true },
         ],
       },
@@ -755,6 +793,14 @@ function amidaBlocks(src, ix, opts = {}) {
               accent: true,
             },
             { seg: ix.tishkonHatima, unless: "tisha-beav" },
+            didascalieDeRemplacement(
+              "tisha-beav",
+              R(
+                "\u00c0 Min'ha de Tich'a beAv, on conclut\u00a0:",
+                "At Mincha on Tisha b'Av, conclude:",
+                "במנחה של תשעה באב חותמים:",
+              ),
+            ),
             { seg: ix.nahem + 1, mode: "small", when: "tisha-beav", accent: true },
           ],
         },
@@ -987,6 +1033,14 @@ function amidaBlocks(src, ix, opts = {}) {
       {
         parts: [
           { he: "עֹשֶׂה שָׁלוֹם", unless: "teshuva" },
+          didascalieDeRemplacement(
+            "teshuva",
+            R(
+              "Aux dix jours de techouva, on conclut\u00a0:",
+              "During the Ten Days of Repentance, conclude:",
+              "בעשרת ימי תשובה חותמים:",
+            ),
+          ),
           { he: "עוֹשֶׂה הַשָּׁלוֹם", when: "teshuva", accent: true },
           { seg: ix.osse, from: "בִּמְרוֹמָיו" },
         ],
