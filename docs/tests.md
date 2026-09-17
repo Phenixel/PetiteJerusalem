@@ -45,6 +45,8 @@ avec ce que chacun attend :
 | `analyticsAudience.test.ts` | `resolveUserType` classe l'équipe, le compte de démonstration remis à Google et les testeurs du test fermé à part des vrais utilisateurs, quelle que soit la casse de l'email. |
 | `adminAccess.test.ts` | `isAdminEmail` n'accepte que le compte admin, et `generateStudioToken` produit un jeton de 64 caractères hexadécimaux jamais répété. |
 | `zmanimDeviceTimezone.test.ts` | Les horaires d'un lieu sont les mêmes instants quel que soit le fuseau de la MACHINE (`process.env.TZ` changé sous les pieds du calcul) : c'est le test qui tient le correctif posé sur `@hebcal/core`, décrit plus bas. |
+| `zmanimMatrice.test.ts` | La matrice de l'audit rejouée : 59 lieux, 30 dates, deux avis, sous trois fuseaux d'appareil. Plus de cent cinquante mille lignes, qui doivent toutes rendre le MÊME instant quel que soit le fuseau de la machine. |
+| `zmanimInvariants.test.ts` | Les rapports qui définissent chaque zman sur deux ans et sur les 243 villes du catalogue, et les points fixes du moteur solaire : lever et coucher à moins de dix secondes des valeurs de PyEphem, pour cinq villes aux quatre tournants de l'année. |
 
 Quand une PR est rouge sans qu'aucun test fonctionnel ne semble concerné,
 c'est presque toujours l'un de ceux-là ; le message d'échec nomme le fichier

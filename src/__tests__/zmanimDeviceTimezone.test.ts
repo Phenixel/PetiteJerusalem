@@ -3,6 +3,8 @@ import { describe, it, expect, afterAll } from "vitest";
 import {
   computeZmanim,
   DEFAULT_PLACE,
+  formatMarkerDay,
+  formatZmanDay,
   setZmanimOpinion,
   type ZmanKey,
 } from "../services/zmanimService";
@@ -127,6 +129,28 @@ describe("horaires et fuseau de l'appareil", () => {
       });
     }
   }
+
+  it("rend un marqueur de jour dans son repère, non dans celui du lieu", () => {
+    // Certains champs ne portent pas une heure mais une DATE : le jour du
+    // Chabbat d'un bloc, celui de l'érouv tavchilin, celui d'un jeûne dont
+    // l'aube ne se calcule pas. Ils sont posés au midi LOCAL de la machine.
+    //
+    // Les rendre dans le fuseau du LIEU les déplace d'un jour dès que les
+    // deux sont assez éloignés : le midi d'Auckland est encore la veille au
+    // soir à New York. C'est le piège du point 3.1 à l'échelle du jour.
+    const marker = new Date(2027, 2, 20, 12); // samedi 20 mars 2027, midi local
+    expect(formatMarkerDay(marker, "fr")).toContain("20");
+    expect(formatMarkerDay(marker, "fr")).toContain("samedi");
+    // Le même marqueur lu dans un fuseau lointain recule d'un jour : c'est
+    // exactement ce que le cadre faisait.
+    const seenFromNewYork = formatZmanDay(marker, "America/New_York", "fr");
+    const seenHere = formatMarkerDay(marker, "fr");
+    if (new Date().getTimezoneOffset() <= -600) {
+      // Machine à l'extrême est : les deux lectures divergent, et c'est le
+      // marqueur qui a raison.
+      expect(seenFromNewYork).not.toBe(seenHere);
+    }
+  });
 
   it("donne le même jour d'horaires sous tous les fuseaux d'appareil", () => {
     const reference = new Map<string, string>();

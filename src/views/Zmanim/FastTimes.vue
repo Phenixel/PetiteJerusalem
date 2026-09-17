@@ -12,7 +12,12 @@
 // son cadre de repos, avec son entrée et sa sortie.
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { formatZmanDay, formatZmanTime, type FastPeriod } from "../../services/zmanimService";
+import {
+  formatMarkerDay,
+  formatZmanDay,
+  formatZmanTime,
+  type FastPeriod,
+} from "../../services/zmanimService";
 import { describeEndRule } from "../../services/zmanimRules";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
@@ -26,6 +31,8 @@ const { t, locale } = useI18n();
 
 const clock = (date: Date) => formatZmanTime(date, props.tzid, locale.value);
 const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
+/** Un marqueur de jour se relit dans SON repère, celui de la machine. */
+const markerDay = (date: Date) => formatMarkerDay(date, locale.value);
 
 /**
  * Le jour du jeûne, quand son début n'a pas d'heure : au nord de
@@ -71,7 +78,7 @@ const firstbornNote = computed(() =>
             {{ t("zmanim.fast.start") }}
           </span>
           <span class="block text-xs text-text-secondary">
-            {{ dayOf(fast.start ?? fastDay) }}
+            {{ fast.start ? dayOf(fast.start) : markerDay(fastDay) }}
           </span>
         </span>
         <span v-if="fast.start" class="shrink-0 font-semibold tabular-nums text-text-primary">

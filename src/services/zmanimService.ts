@@ -1639,3 +1639,25 @@ export function formatZmanDay(date: Date, tzid: string, locale: string): string 
     month: "long",
   }).format(date);
 }
+
+/**
+ * Le jour d'un MARQUEUR DE JOUR, et non d'un instant.
+ *
+ * Certains champs ne portent pas une heure mais une DATE : le jour du Chabbat
+ * d'un bloc, celui de l'érouv tavchilin, celui d'un jeûne dont l'aube ne se
+ * calcule pas. Ils sont posés au midi local de la machine (voir `civilNoon` et
+ * `HDate.greg`), et c'est dans ce repère-là qu'il faut les relire.
+ *
+ * Les passer à `formatZmanDay`, qui les rendrait dans le fuseau DU LIEU, les
+ * déplacerait d'un jour dès que la machine et le lieu sont assez éloignés : un
+ * appareil réglé sur Auckland qui regarde New York lisait « vendredi » là où
+ * le marqueur dit samedi. C'est le même piège que le point 3.1 de l'audit, à
+ * l'échelle du jour plutôt que de l'heure.
+ */
+export function formatMarkerDay(date: Date, locale: string): string {
+  return dateTimeFormat(locale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(date);
+}

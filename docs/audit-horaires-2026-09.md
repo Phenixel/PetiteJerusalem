@@ -399,6 +399,25 @@ LaBehemot » (1er Eloul) et « Hag HaBanot » (30 Kislev). Dans un calendrier
 séfarade, le premier est faux, les deux autres du bruit. Où : `yearCalendar`,
 filtre sur `ev.basename()`.
 
+### 3.12 Un marqueur de jour rendu dans le fuseau du lieu
+
+Trouvé en rejouant la matrice, après le chantier (lot 11).
+
+Certains champs ne portent pas une heure mais une DATE : le jour du Chabbat
+d'un bloc (`RestPeriod.shabbat`), celui de l'érouv tavchilin, celui d'un jeûne
+dont l'aube ne se calcule pas. Ils sont posés au midi LOCAL de la machine
+(`civilNoon`, `HDate.greg`), et c'est là leur repère.
+
+Les cadres les passaient à `formatZmanDay`, qui les rend dans le fuseau du
+LIEU. Tant que la machine et le lieu sont proches, cela ne se voit pas ; dès
+qu'ils s'éloignent, le marqueur recule d'un jour : le midi d'Auckland est
+encore la veille au soir à New York. C'est le piège du point 3.1 à l'échelle
+du jour plutôt que de l'heure.
+
+Corrigé avec le lot 11 : `formatMarkerDay` relit un marqueur dans son propre
+repère, et les deux cadres l'emploient. `CalendarPage` le faisait déjà
+correctement, sans le nommer.
+
 ## 4. Manques
 
 ### 4.1 Les allumages intermédiaires d'un bloc de repos

@@ -14,7 +14,12 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { hubPath } from "../../content/etudeTexts";
 import type { WeeklyParasha } from "../../services/dailyCycles";
-import { formatZmanDay, formatZmanTime, type RestPeriod } from "../../services/zmanimService";
+import {
+  formatMarkerDay,
+  formatZmanDay,
+  formatZmanTime,
+  type RestPeriod,
+} from "../../services/zmanimService";
 import {
   describeEndRule,
   describeLightingRule,
@@ -36,6 +41,8 @@ const { t, locale } = useI18n();
 
 const clock = (date: Date) => formatZmanTime(date, props.tzid, locale.value);
 const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
+/** Un marqueur de jour se relit dans SON repère, celui de la machine. */
+const markerDay = (date: Date) => formatMarkerDay(date, locale.value);
 
 /** « Chabbat », « Roch Hachana », « Chabbat Roch Hachana », un seul titre. */
 const title = computed(() => {
@@ -88,7 +95,7 @@ const lightings = computed(() =>
 /** Le jour où poser l'érouv tavchilin, écrit en toutes lettres. */
 const eruvNote = computed(() =>
   props.period.eruvTavshilin
-    ? t("zmanim.rest.eruvTavshilin", { day: dayOf(props.period.eruvTavshilin) })
+    ? t("zmanim.rest.eruvTavshilin", { day: markerDay(props.period.eruvTavshilin) })
     : "",
 );
 </script>
@@ -155,7 +162,7 @@ const eruvNote = computed(() =>
             {{ isFestival ? t("zmanim.rest.end") : t("zmanim.shabbat.havdalah") }}
           </span>
           <span class="block text-xs text-text-secondary">
-            {{ dayOf(period.end ?? lastDay) }}
+            {{ period.end ? dayOf(period.end) : markerDay(lastDay) }}
           </span>
         </span>
         <span v-if="period.end" class="shrink-0 font-semibold tabular-nums text-text-primary">
