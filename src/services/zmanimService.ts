@@ -343,7 +343,14 @@ function computeZmanimFor(place: ZmanimPlace, localDay: Date): ZmanTime[] {
       continue;
     times.push({ key: def.key, period: def.period, date });
   }
-  return times;
+  // ZMAN_DEFS les range dans l'ordre d'une journée ordinaire, mais cet ordre
+  // n'est pas garanti partout : au nord de Manchester, en hiver, le jour du
+  // Maguen Avraham (compté de 16,1° avant le lever à 16,1° après la chkia)
+  // est si long devant celui du Gaon de Vilna que sa QUATRIÈME heure tombe
+  // avant la TROISIÈME de l'autre, et la fin de la Amida s'affichait alors
+  // au-dessus d'une fin du Chéma plus tardive. `nextZman` lit cette liste
+  // dans l'ordre pour annoncer l'horaire qui vient : elle doit l'être.
+  return times.sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
 /** Le prochain horaire à venir, pour mettre en avant « ce qui arrive ». */

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { flags, getHolidaysOnDate, HDate, months } from "@hebcal/core";
+import { flags, GeoLocation, getHolidaysOnDate, HDate, months, Zmanim } from "@hebcal/core";
+import citiesJson from "../datas/cities.json";
 import {
   candleLightingMinutes,
   computeZmanim,
@@ -22,11 +23,20 @@ import {
  * sortie se lit sur le mauvais jour : ces bizarreries-là ne se voient qu'en
  * parcourant l'année entière, et c'est ce que fait ce fichier.
  *
- * Les villes sont choisies pour ce qu'elles mettent à l'épreuve : Paris et
- * Marseille pour le public de l'application, Jérusalem pour le calendrier
- * d'Israël (Yom Tov d'un seul jour), New York pour un fuseau dont la chkia
- * tombe après minuit UTC, Buenos Aires pour l'hémisphère sud, où les saisons
- * s'inversent.
+ * Deux balayages, parce qu'ils ne coûtent pas la même chose :
+ *
+ *  - une poignée de villes choisies pour ce qu'elles mettent à l'épreuve, sur
+ *    l'année entière et sur plusieurs années : Paris et Marseille pour le
+ *    public de l'application, Jérusalem pour le calendrier d'Israël (Yom Tov
+ *    d'un seul jour), New York pour un fuseau dont la chkia tombe après
+ *    minuit UTC, Buenos Aires pour l'hémisphère sud, où les saisons
+ *    s'inversent ;
+ *  - les 243 villes du catalogue (src/datas/cities.json), 46 pays et 56
+ *    fuseaux, aux seuls jours qui mettent à l'épreuve : les solstices, les
+ *    équinoxes, et deux jours par mois. Balayer le catalogue entier jour
+ *    après jour prendrait deux minutes ; c'est là qu'on a trouvé la fin de la
+ *    Amida qui s'affichait au-dessus d'une fin du Chéma plus tardive au nord
+ *    de l'Angleterre, et c'est cet ordre-là que ce balayage tient.
  */
 
 const PLACES: ZmanimPlace[] = [
@@ -154,6 +164,118 @@ describe("les horaires du jour, tout au long de l'année", () => {
       }
     }
     expect(anomalies.slice(0, 20)).toEqual([]);
+  });
+});
+
+describe("les 243 villes du catalogue", () => {
+  type City = { name: string; country: string; lat: number; lon: number; tz: string };
+  const CITIES = citiesJson as City[];
+
+  /** Les jours de l'année qui éprouvent le calcul : les tournants, et deux par mois. */
+  const PROBE_DAYS: Date[] = [];
+  for (let month = 0; month < 12; month++) {
+    for (const date of [1, 15]) PROBE_DAYS.push(new Date(2026, month, date, 12));
+  }
+  for (const [month, date] of [
+    [2, 20],
+    [5, 21],
+    [8, 22],
+    [11, 21],
+  ]) {
+    PROBE_DAYS.push(new Date(2026, month, date, 12));
+  }
+
+  it("rendent toutes des horaires dans l'ordre, sans trou ni inversion", () => {
+    const anomalies: string[] = [];
+    for (const city of CITIES) {
+      const place: ZmanimPlace = {
+        source: "city",
+        latitude: city.lat,
+        longitude: city.lon,
+        tzid: city.tz,
+        city: city.name,
+      };
+      for (const day of PROBE_DAYS) {
+        const times = computeZmanim(place, day);
+        const byKey = new Map<string, Date>(times.map((zman) => [zman.key, zman.date]));
+        const tag = `${city.name} (${city.country}, ${city.lat.toFixed(1)}°) ${day.toISOString().slice(0, 10)}`;
+
+        // Jamais un horaire plus tôt que celui qui le précède dans la liste.
+        // L'égalité stricte, elle, arrive vraiment : à Leeds le 9 janvier 2026,
+        // la fin de la Amida du Maguen Avraham et la fin du Chéma du Gaon de
+        // Vilna tombent à la même seconde.
+        for (let k = 1; k < times.length; k++) {
+          if (times[k].date.getTime() < times[k - 1].date.getTime()) {
+            anomalies.push(`${tag} : ${times[k - 1].key} tombe après ${times[k].key}`);
+          }
+        }
+        // Le lever, la chkia et hatsot existent partout dans le catalogue :
+        // aucune de ses villes n'atteint le cercle polaire.
+        const sunrise = byKey.get("sunrise");
+        const sunset = byKey.get("sunset");
+        const chatzot = byKey.get("chatzot");
+        if (!sunrise || !sunset || !chatzot) {
+          anomalies.push(`${tag} : lever, chkia ou hatsot manquant`);
+          continue;
+        }
+        if (Math.abs(minutes(sunrise, chatzot) - minutes(chatzot, sunset)) > 0.05) {
+          anomalies.push(`${tag} : hatsot n'est pas au milieu du jour`);
+        }
+        const shemaMGA = byKey.get("sofZmanShmaMGA");
+        if (shemaMGA && shemaMGA.getTime() >= byKey.get("sofZmanShma")!.getTime()) {
+          anomalies.push(`${tag} : le Chéma du Maguen Avraham passe après celui du Gaon`);
+        }
+        // La sortie des étoiles suit la chkia, et la borne est ici bien plus
+        // large que sous nos latitudes : à Oslo, fin mai, le crépuscule dure
+        // vraiment près de trois heures, et c'est la plus longue du catalogue.
+        const tzeit = byKey.get("tzeit");
+        if (tzeit && (minutes(sunset, tzeit) <= 0 || minutes(sunset, tzeit) > 240)) {
+          anomalies.push(`${tag} : sortie des étoiles hors de portée de la chkia`);
+        }
+      }
+    }
+    expect(anomalies.slice(0, 20)).toEqual([]);
+  });
+
+  it("sont calculées au niveau de la mer, quelle que soit leur altitude", () => {
+    // Le choix est posé dans `geoLocationOf` : altitude zéro, et le drapeau
+    // d'élévation de hebcal à faux. C'est le mishor, la plaine, que retiennent
+    // les luhot, et le catalogue ne porte d'ailleurs aucune altitude : aucune
+    // ville n'y échappe, pas même une position relevée par l'appareil.
+    //
+    // Ce test tient ce choix et écrit noir sur blanc ce qu'il coûte, pour que
+    // personne n'ait à le redécouvrir : Jérusalem est à 754 mètres, et compter
+    // son altitude reculerait sa chkia de quatre minutes.
+    const jerusalem: ZmanimPlace = {
+      source: "city",
+      latitude: 31.7683,
+      longitude: 35.2137,
+      tzid: "Asia/Jerusalem",
+      city: "Jérusalem",
+    };
+    const day = new Date(2026, 8, 17, 12);
+    const byKey = new Map<string, Date>(
+      computeZmanim(jerusalem, day).map((zman) => [zman.key, zman.date]),
+    );
+    const atSeaLevel = new Zmanim(
+      new GeoLocation("Jérusalem", 31.7683, 35.2137, 0, "Asia/Jerusalem"),
+      day,
+      false,
+    );
+    expect(byKey.get("sunrise")!.getTime()).toBe(atSeaLevel.sunrise().getTime());
+    expect(byKey.get("sunset")!.getTime()).toBe(atSeaLevel.sunset().getTime());
+
+    const at754m = new Zmanim(
+      new GeoLocation("Jérusalem", 31.7683, 35.2137, 754, "Asia/Jerusalem"),
+      day,
+      true,
+    );
+    const later = minutes(atSeaLevel.sunset(), at754m.sunset());
+    expect(later).toBeGreaterThan(3);
+    expect(later).toBeLessThan(6);
+    // Les horaires comptés en degrés, eux, ne bougent pas d'une seconde avec
+    // l'altitude : ils mesurent la lumière du ciel, pas la ligne d'horizon.
+    expect(at754m.tzeit(8.5).getTime()).toBe(atSeaLevel.tzeit(8.5).getTime());
   });
 });
 
