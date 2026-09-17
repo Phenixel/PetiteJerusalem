@@ -7,7 +7,7 @@ import { ZMANIM_STRINGS } from "../content/zmanimSeoStrings";
 import { buildAppShell, guidePages, staticFooterHtml } from "../content/seoPages";
 import {
   DEFAULT_PLACE,
-  candleLightingMinutes,
+  localCandleLightingMinutes,
   placeFromCity,
   type City,
 } from "../services/zmanimService";
@@ -211,13 +211,22 @@ describe("zmanimSeoPages pages par ville", () => {
     expect(charleroi.title).toContain("ב\u05beCharleroi");
   });
 
-  it("Jérusalem allume 40 minutes avant la chkia, et le dit", () => {
-    const jerusalem = pages.find((p) => p.path === "/horaires/jerusalem")!;
-    expect(jerusalem.bodyHtml).toContain("40 minutes avant le coucher du soleil");
-    expect(jerusalem.bodyHtml).not.toContain("18 minutes avant le coucher du soleil");
-    const city = findCityBySlug(citiesJson as City[], "jerusalem")!;
-    expect(candleLightingMinutes(placeFromCity(city))).toBe(40);
-    expect(candleLightingMinutes(DEFAULT_PLACE)).toBe(18);
+  it("dit l'usage d'allumage du lieu dès qu'il n'est pas celui de la diaspora", () => {
+    // Jérusalem allume 40 minutes avant la chkia, Haïfa 30, le reste d'Israël
+    // 20 : trois usages, trois notes. Les 18 minutes de la diaspora, elles,
+    // sont l'usage le plus répandu et ne se commentent pas.
+    const noteOf = (slug: string) => pages.find((p) => p.path === `/horaires/${slug}`)!.bodyHtml;
+    expect(noteOf("jerusalem")).toContain("40 minutes avant le coucher du soleil");
+    expect(noteOf("haifa")).toContain("30 minutes avant le coucher du soleil");
+    expect(noteOf("tel-aviv")).toContain("20 minutes avant le coucher du soleil");
+    expect(noteOf("lyon")).not.toContain("l'usage est d'allumer");
+
+    const cityPlace = (slug: string) =>
+      placeFromCity(findCityBySlug(citiesJson as City[], slug)!);
+    expect(localCandleLightingMinutes(cityPlace("jerusalem"))).toBe(40);
+    expect(localCandleLightingMinutes(cityPlace("haifa"))).toBe(30);
+    expect(localCandleLightingMinutes(cityPlace("tel-aviv"))).toBe(20);
+    expect(localCandleLightingMinutes(DEFAULT_PLACE)).toBe(18);
   });
 
   it("lie les villes les plus proches, distance à l'appui", () => {

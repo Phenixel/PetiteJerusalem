@@ -507,6 +507,15 @@ const fr = {
        manière de compter (voir services/zmanimRules, EndRule) : la note dit
        ainsi exactement ce que le cadre affiche, pour les deux avis et des
        deux côtés de la frontière d'Israël. */
+    /* L'écart d'allumage suivi (voir CandleLightingPicker). C'est l'usage
+       d'une communauté, pas d'une ville : Petah Tikva en a deux. */
+    candle: {
+      title: "Allumage des bougies",
+      description:
+        "Combien de minutes avant le coucher du soleil. C'est l'usage de votre communauté, et il ne suit pas toujours celui de la ville.",
+      local: "Usage du lieu ({minutes} minutes)",
+      minutes: "{minutes} minutes avant le coucher du soleil",
+    },
     endRule: {
       degrees: "quand le soleil est à {degrees}° sous l'horizon",
       fixed: "{minutes} minutes après le coucher du soleil",

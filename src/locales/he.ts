@@ -470,6 +470,12 @@ const he: LocaleMessages = {
       title: "על הזמנים",
       open: "על הזמנים ועל המיקום שלכם",
     },
+    candle: {
+      title: "הדלקת נרות",
+      description: "כמה דקות לפני השקיעה. זה מנהג הקהילה שלכם, והוא אינו תמיד מנהג העיר.",
+      local: "מנהג המקום ({minutes} דקות)",
+      minutes: "{minutes} דקות לפני השקיעה",
+    },
     endRule: {
       degrees: "כשהשמש {degrees}° מתחת לאופק",
       fixed: "{minutes} דקות אחרי השקיעה",

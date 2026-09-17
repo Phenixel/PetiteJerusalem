@@ -489,6 +489,13 @@ const en: LocaleMessages = {
       title: "About these times",
       open: "About these times and your location",
     },
+    candle: {
+      title: "Candle lighting",
+      description:
+        "How many minutes before sunset. This is your community's custom, and it does not always follow the city's.",
+      local: "Local custom ({minutes} minutes)",
+      minutes: "{minutes} minutes before sunset",
+    },
     endRule: {
       degrees: "when the sun is {degrees}° below the horizon",
       fixed: "{minutes} minutes after sunset",

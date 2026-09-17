@@ -46,7 +46,7 @@ import { haversineKm } from "../services/geo";
 import { hubPath } from "./etudeTexts";
 import {
   DEFAULT_PLACE,
-  candleLightingMinutes,
+  localCandleLightingMinutes,
   computeZmanim,
   festivalsOn,
   formatHebrewDate,
@@ -586,7 +586,9 @@ function buildCityPage(city: City, all: City[], now: Date, locale: SeoLocale): S
   const slug = citySlug(city.name);
   const name = cityName(city.name, locale);
   const tz = place.tzid;
-  const minutes = candleLightingMinutes(place);
+  // L'usage DU LIEU, et non le réglage de qui lit : ces pages sont
+  // prérendues, les mêmes pour tout le monde.
+  const minutes = localCandleLightingMinutes(place);
   const periods = upcomingRestPeriods(place, now, HORAIRES_HORIZON_DAYS, locale);
   const nextShabbat = periods.find((p) => p.shabbat) ?? periods[0];
   const neighbours = nearestCities(city, all, 6);
@@ -623,7 +625,9 @@ function buildCityPage(city: City, all: City[], now: Date, locale: SeoLocale): S
     )
     .join("\n        ");
 
-  const jerusalemNote = minutes === 40 ? `<p>${s.cityJerusalemNote(name)}</p>` : "";
+  // Dix-huit minutes est l'usage le plus répandu : on ne le commente pas.
+  // Tout écart, lui, se dit, sans quoi le lecteur croirait à une erreur.
+  const candleNote = minutes === 18 ? "" : `<p>${s.cityCandleNote(name, minutes)}</p>`;
   const path = sectionPath("horaires", locale, slug);
 
   return {
@@ -641,7 +645,7 @@ function buildCityPage(city: City, all: City[], now: Date, locale: SeoLocale): S
 ${section(
   s.cityRestTitle(name),
   `${table(s.restHead, restRows(place, periods, locale, s))}
-      ${jerusalemNote}
+      ${candleNote}
       <p>${s.cityRestNote(name, minutes, links)}</p>`,
 )}
 ${section(

@@ -12,6 +12,7 @@ import {
 // sans ce catalogue (4 Ko), qui s'enregistre auprès de hebcal à l'import.
 import "@hebcal/locales/fr";
 import { dateTimeFormat, displayNames } from "./intlCache";
+import { devicePreference } from "./devicePreference";
 import { saidTachanun } from "./tachanun";
 import {
   DEFAULT_ZMANIM_OPINION,
@@ -328,24 +329,91 @@ export function setZmanimOpinion(opinion: ZmanimOpinion): void {
 const CANDLE_LIGHTING_MINUTES = 18;
 
 /**
- * Les villes dont l'usage local fixe l'allumage plus tôt que les 18 minutes
- * habituelles. La table est volontairement courte : on n'y met qu'un usage
- * unanime et vérifiable, sous peine d'annoncer une heure fausse. Jérusalem
- * allume 40 minutes avant la chkia ; ailleurs, tant qu'un usage n'est pas
- * établi ici, le calcul reste celui de la diaspora.
+ * L'usage d'Israël, hors les deux villes qui ont le leur.
  *
- * La clé est le nom exact de la ville du catalogue (src/datas/cities.json) :
- * une position relevée par l'appareil, elle, n'a pas de nom et suit donc la
- * règle générale.
+ * Vingt minutes, et non dix-huit : c'est ce qu'impriment les luhot israéliens,
+ * et ce que le calendrier Rabbi Ovadiah Yosef demande pour retrouver l'Or
+ * Ha'Haïm (« change `setCandleLightingOffset` to 20 if you want to replicate
+ * the exact times of the Ohr Hachaim calendar »). Sur cet avis, l'application
+ * annonçait deux minutes trop tard dans trente-trois villes d'Israël.
+ */
+const CANDLE_LIGHTING_ISRAEL_MINUTES = 20;
+
+/**
+ * Les villes dont l'usage local fixe l'allumage plus tôt encore.
+ *
+ * La table est volontairement courte : on n'y met qu'un usage unanime et
+ * vérifiable, sous peine d'annoncer une heure fausse. Jérusalem allume
+ * 40 minutes avant la chkia, Haïfa 30 ; ce sont les deux seules que hebcal et
+ * Chabad.org retiennent aussi (hebcal y ajoute Zikhron Ya'akov, absente du
+ * catalogue). Petah Tikva, Safed et Tibériade ont un usage PARTAGÉ, entre
+ * celui de Jérusalem et celui du pays : elles suivent les vingt minutes, et
+ * c'est le réglage ci-dessous qui tranche pour qui suit l'autre.
+ *
+ * La clé est le nom exact de la ville du catalogue (src/datas/cities.json).
+ * Une position relevée par l'appareil n'a pas de nom, mais elle a un fuseau :
+ * en Israël, elle suit donc bien les vingt minutes.
  */
 const CANDLE_LIGHTING_BY_CITY: Record<string, number> = {
   Jérusalem: 40,
+  Haïfa: 30,
 };
 
-/** Les minutes d'avance de l'allumage à ce lieu : 18, sauf usage local. */
-export function candleLightingMinutes(place: ZmanimPlace): number {
+/**
+ * Les minutes d'avance de l'allumage QUE LE LIEU commande, sans regarder le
+ * réglage : 18 en diaspora, 20 en Israël, 30 à Haïfa, 40 à Jérusalem.
+ *
+ * C'est cette heure-là que les pages du site annoncent, puisqu'elles sont les
+ * mêmes pour tout le monde ; la page des horaires, elle, passe par
+ * `candleLightingMinutes`, qui laisse le réglage l'emporter.
+ */
+export function localCandleLightingMinutes(place: ZmanimPlace): number {
   const local = place.city ? CANDLE_LIGHTING_BY_CITY[place.city] : undefined;
-  return local ?? CANDLE_LIGHTING_MINUTES;
+  if (local !== undefined) return local;
+  return isIsraelPlace(place) ? CANDLE_LIGHTING_ISRAEL_MINUTES : CANDLE_LIGHTING_MINUTES;
+}
+
+/**
+ * Les écarts d'allumage proposés au réglage.
+ *
+ * Dix-huit, vingt, trente ou quarante minutes : c'est l'usage d'une
+ * COMMUNAUTÉ, pas d'une ville. Petah Tikva en a deux, Safed et Tibériade
+ * aussi, et un Français installé à Jérusalem peut garder l'usage de sa
+ * communauté. Plutôt que de trancher à la place de l'utilisateur, on lui
+ * laisse le choix, avec le défaut du lieu.
+ */
+export const CANDLE_LIGHTING_CHOICES = [18, 20, 30, 40];
+
+function parseCandleMinutes(value: unknown): number | null {
+  const minutes = Number(value);
+  return CANDLE_LIGHTING_CHOICES.includes(minutes) ? minutes : null;
+}
+
+/** Le réglage, gardé sur l'appareil ; null quand on suit l'usage du lieu. */
+export const candleLightingStore = devicePreference<number>(
+  "pj_candle_minutes",
+  parseCandleMinutes,
+  String,
+);
+
+// Lu une fois au chargement, comme l'opinion : l'allumage est affiché dès le
+// premier rendu, et un réglage qui n'arriverait qu'après ferait sauter l'heure
+// sous les yeux.
+let currentCandleMinutes: number | null = candleLightingStore.read();
+
+/** L'écart choisi, ou null quand c'est l'usage du lieu qui vaut. */
+export function candleLightingChoice(): number | null {
+  return currentCandleMinutes;
+}
+
+/** Change l'écart suivi. `null` rend la main à l'usage du lieu. */
+export function setCandleLightingChoice(minutes: number | null): void {
+  currentCandleMinutes = minutes === null ? null : parseCandleMinutes(minutes);
+}
+
+/** Les minutes d'avance de l'allumage à ce lieu : le réglage, sinon l'usage. */
+export function candleLightingMinutes(place: ZmanimPlace): number {
+  return currentCandleMinutes ?? localCandleLightingMinutes(place);
 }
 
 function geoLocationOf(place: ZmanimPlace): GeoLocation {
