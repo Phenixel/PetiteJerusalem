@@ -28,6 +28,12 @@ import { useReadingSize } from "../composables/useReadingSize";
 import { addMirrorOffer, removeMirrorOffer } from "../composables/useTefilinMirror";
 import { autoScrollEnabled, setAutoScrollEnabled } from "../composables/useAutoScroll";
 import { sansTahanoun, setSansTahanoun } from "../composables/useSansTahanoun";
+import { halakhotHidden, setHalakhotHidden } from "../composables/useHalakhot";
+import { closeFeedback, isFeedbackOpen } from "../composables/useFeedback";
+
+/** Le presse-papiers de jsdom : c'est par lui que l'adresse partagée se voit. */
+const ecrit = vi.fn(() => Promise.resolve());
+Object.defineProperty(navigator, "clipboard", { value: { writeText: ecrit }, configurable: true });
 
 const SECTIONS = [
   { anchor: "b0", offset: 0, label: "Bénédictions du matin", hebrew: "ברכות השחר" },
@@ -37,7 +43,7 @@ const SECTIONS = [
 ];
 
 /** Monte le menu, panneau ouvert. */
-async function ouvre(props: { tefila?: boolean } = {}) {
+async function ouvre(props: { tefila?: boolean; halakhot?: boolean; shareTitle?: string } = {}) {
   const i18n = createI18n({ legacy: false, locale: "fr", messages: { fr } });
   const router: Router = createRouter({
     history: createMemoryHistory(),
@@ -75,6 +81,13 @@ function boutonMenu(host: HTMLElement): HTMLButtonElement {
 /** Le second bouton rond, à droite du premier : les réglages, ou la croix. */
 function boutonReglages(host: HTMLElement): HTMLButtonElement | null {
   return host.querySelector<HTMLButtonElement>(".fab-second button");
+}
+
+/** Une commande des réglages (partage, support, téléchargement), par son intitulé. */
+function commande(host: HTMLElement, intitule: string): HTMLElement | undefined {
+  return [...host.querySelectorAll<HTMLElement>(".action-item")].find((el) =>
+    el.textContent?.includes(intitule),
+  );
 }
 
 /** L'interrupteur d'une ligne de réglage, repéré par son intitulé. */
@@ -230,5 +243,73 @@ describe("menu de lecture", () => {
     await settle();
     expect(sansTahanoun.value).toBe(true);
     setSansTahanoun(false);
+  });
+
+  it("ne propose de masquer les halakhot que là où le texte en porte", async () => {
+    const guemara = await ouvre();
+    boutonReglages(guemara.host)!.click();
+    await settle();
+    expect(guemara.host.textContent).not.toContain(fr.textReading.settings.hideHalakhot);
+
+    const office = await ouvre({ halakhot: true });
+    boutonReglages(office.host)!.click();
+    await settle();
+
+    const bascule = interrupteur(office.host, fr.textReading.settings.hideHalakhot);
+    // Éteint au départ : personne ne doit découvrir qu'une halakha existait le
+    // jour où il en aurait eu besoin.
+    expect(bascule.checked).toBe(false);
+    bascule.click();
+    await settle();
+    expect(halakhotHidden.value).toBe(true);
+    setHalakhotHidden(false);
+  });
+
+  it("ouvre le formulaire de support depuis la lecture, et referme le panneau", async () => {
+    const { host } = await ouvre();
+    boutonReglages(host)!.click();
+    await settle();
+
+    commande(host, fr.footer.reportIssue)!.click();
+    await settle();
+    expect(isFeedbackOpen.value).toBe(true);
+    // La fenêtre prend la place : le panneau n'a plus à rester ouvert derrière.
+    expect(host.querySelector(".nav-panel")).toBeNull();
+    closeFeedback();
+  });
+
+  it("partage le texte lu, par son nom et l'adresse publique de la page", async () => {
+    const { host } = await ouvre({ shareTitle: "Cha'harit" });
+    boutonReglages(host)!.click();
+    await settle();
+
+    commande(host, fr.textReading.settings.share)!.click();
+    await settle();
+    // La fenêtre vit dans le <body> : le menu s'efface en bas de page, elle non.
+    const modal = document.querySelector<HTMLElement>(".modal-overlay")!;
+    expect(modal).not.toBeNull();
+    expect(modal.textContent).toContain(fr.shareModal.titleText);
+    expect(host.querySelector(".nav-panel")).toBeNull();
+
+    // L'adresse partagée est celle du site, jamais celle de la webview : faute
+    // de page qui en donne une, c'est la route ouverte, préfixée du domaine.
+    const copier = [...modal.querySelectorAll<HTMLButtonElement>("button")].find((b) =>
+      b.textContent?.includes(fr.shareModal.copyLink),
+    )!;
+    copier.click();
+    await settle();
+    expect(ecrit).toHaveBeenCalledWith("https://petite-jerusalem.fr/");
+  });
+
+  it("offre de prendre l'app sur le site, et jamais dans l'app elle-même", async () => {
+    // isNativeApp est à faux ici (voir le mock en tête de fichier) : c'est le
+    // site, celui qui a quelque chose à télécharger.
+    const { host } = await ouvre();
+    boutonReglages(host)!.click();
+    await settle();
+
+    const liens = [...host.querySelectorAll<HTMLAnchorElement>("a.action-item")];
+    expect(liens.length).toBeGreaterThan(0);
+    for (const lien of liens) expect(lien.href).toMatch(/^https:\/\//);
   });
 });

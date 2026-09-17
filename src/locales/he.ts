@@ -940,6 +940,8 @@ const he: LocaleMessages = {
     inviteStudy: "הצטרפו ללימוד המשותף « {name} » 📖 הזמינו את הקטעים שלכם ונלמד יחד:",
     titleChiour: "שיתוף השיעור",
     inviteChiour: "האזינו לשיעור « {name} » 🎧 שיעור תורה לגלות בפטיט ירושלים:",
+    titleText: "שיתוף הטקסט",
+    inviteText: "קראו « {name} » 📖 טקסט לפתוח בפטיט ירושלים:",
   },
   batchSelection: {
     textsSelected: "טקסט אחד נבחר | {count} טקסטים נבחרו",
@@ -1136,6 +1138,9 @@ const he: LocaleMessages = {
       sansTahanoun: "בלי תחנון היום",
       sansTahanounHint:
         "ברית מילה, בר מצווה, חתונה, בית אבל: מה שאין אומרים ביום כזה מוסר מהטקסט עד מחר.",
+      hideHalakhot: "הסתרת ההלכות",
+      hideHalakhotHint: "ההלכות הנלוות לקטע (מה חוזרים לומר כששכחו) מוסרות מהטקסט.",
+      share: "שיתוף הטקסט",
     },
     labels: {
       chapter: "פרק {n}",

@@ -439,7 +439,13 @@ button,
   /* Modal building blocks, one modal style for the whole app. */
   .modal-overlay {
     position: fixed;
-    inset: 0;
+    inset-inline: 0;
+    /* La fenêtre modale se pose sur ce qui est VISIBLE, et non sur la page :
+       un clavier logiciel ne rétrécit pas la fenêtre, il la couvre par le bas
+       (voir composables/useModalKeyboard.ts, qui pose les deux mesures). Sans
+       clavier, les valeurs de repli redonnent la page entière. */
+    top: var(--modal-viewport-top, 0px);
+    height: var(--modal-viewport-height, 100%);
     /* Au-dessus du mobilier flottant des pages, tout posé à 50 (menu de
        lecture, bandeau du site, barre du bas, pilule de défilement) : une
        fenêtre modale doit couvrir ce qu'elle bloque, sans quoi le bouton
@@ -447,9 +453,18 @@ button,
        (100) et l'accueil du premier lancement (90) restent au-dessus. */
     z-index: 60;
     display: flex;
-    align-items: center;
+    /* Le cadre est centré par ses marges automatiques, et non par
+       `align-items` : un cadre plus haut que la fenêtre (un formulaire sur un
+       petit écran, ou le clavier ouvert) se ferait couper en haut, hors
+       d'atteinte, là où les marges le laissent défiler. */
+    align-items: flex-start;
     justify-content: center;
     padding: 1rem;
+    overflow-y: auto;
+    /* Le défilement s'arrête au bord du voile : la page derrière ne part pas
+       avec le geste. Sur l'axe vertical seulement : `contain` sur les deux
+       axes couperait le retour arrière par glissement d'iOS. */
+    overscroll-behavior-y: contain;
     background-color: rgb(20 16 8 / 0.45);
   }
   .modal-panel {
@@ -459,6 +474,9 @@ button,
     width: 100%;
     max-width: 28rem;
     padding: 1.5rem;
+    /* Centré tant qu'il tient dans la fenêtre, posé en haut et défilant
+       dès qu'il déborde (voir le voile ci-dessus). */
+    margin-block: auto;
   }
 }
 

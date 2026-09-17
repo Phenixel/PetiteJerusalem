@@ -1008,6 +1008,8 @@ const fr = {
     titleChiour: "Partager ce chiour",
     inviteChiour:
       "Écoutez le chiour « {name} » 🎧 Un cours de Torah à découvrir sur Petite Jérusalem :",
+    titleText: "Partager ce texte",
+    inviteText: "Lisez « {name} » 📖 Un texte à ouvrir sur Petite Jérusalem :",
   },
   batchSelection: {
     textsSelected: "{count} texte sélectionné | {count} textes sélectionnés",
@@ -1220,6 +1222,10 @@ const fr = {
       sansTahanoun: "Sans tahanoun aujourd'hui",
       sansTahanounHint:
         "Brit mila, bar-mitsva, mariage, maison de deuil\u00a0: ce qui ne se dit pas ce jour-là est retiré du texte jusqu'à demain.",
+      hideHalakhot: "Masquer les halakhot",
+      hideHalakhotHint:
+        "Les consignes de loi qui accompagnent un passage (ce qu'on reprend en cas d'oubli) sont retirées du texte.",
+      share: "Partager ce texte",
     },
     // Divisions d'un texte (chapitre, daf) : textService les décrit, la vue
     // les écrit dans la langue du lecteur.

@@ -76,7 +76,7 @@ function choose(city: City) {
   <AppModal
     :open="show"
     :label="t('zmanim.place.chooseCity')"
-    panel-class="modal-panel flex flex-col max-h-[80vh] animate-[scaleIn_0.3s_ease]"
+    panel-class="modal-panel flex flex-col max-h-full animate-[scaleIn_0.3s_ease]"
     @close="close"
   >
     <div class="flex items-center justify-between gap-3 mb-4">

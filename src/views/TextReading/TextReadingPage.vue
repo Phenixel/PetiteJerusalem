@@ -206,6 +206,16 @@ const recentChanges = computed(() =>
 const isLiturgyText = computed(() => !!textEntry.value && isLiturgy(textEntry.value));
 /** Un office du sidour : le menu de lecture y propose « sans tahanoun ». */
 const isTefila = computed(() => tefilaOf(textEntry.value ?? null) !== null);
+/**
+ * Le texte porte-t-il, aujourd'hui, une consigne de loi ? Le réglage qui les
+ * masque ne se montre que là où il a prise : proposer de masquer ce que la
+ * page n'affiche pas laisserait croire qu'on a raté quelque chose.
+ */
+const hasHalakhot = computed(() =>
+  visibleBlocks.value.some((block) =>
+    (block.halakhot ?? []).some((halakha) => saidOn(halakha.when, occasions.value, halakha.unless)),
+  ),
+);
 
 /**
  * Les passages qui encadrent la lecture (le Léchem yihoud du Cantique des
@@ -1364,6 +1374,20 @@ const pageDescription = computed(() => {
   if (!e || !isEtudeRoute.value) return undefined;
   return currentSection.value ? sectionDescription(e, currentSection.value) : hubDescription(e);
 });
+/**
+ * Le nom sous lequel le texte se partage : celui du texte, et sa section quand
+ * il en a plusieurs. Le titre de la page ne convient pas, il porte le nom du
+ * site, que le message d'invitation dit déjà.
+ */
+const shareTitle = computed(() => {
+  const e = textEntry.value;
+  if (!e) return "";
+  const sec =
+    currentSection.value && !isSingleSection.value
+      ? ` · ${sectionLabel(currentSection.value)}`
+      : "";
+  return `${e.name}${sec}`;
+});
 const canonicalUrl = computed(() => {
   const e = textEntry.value;
   if (!e) return undefined;
@@ -1879,13 +1903,18 @@ watch(textId, (_, previousTextId) => {
          bouton de remontée, et la progression court au bas de l'écran. Le
          menu reprend la bascule hébreu / phonétique de la barre d'outils et,
          dans l'app native, le téléchargement du texte ; sur un office, il
-         porte aussi le réglage « sans tahanoun ». -->
+         porte aussi le réglage « sans tahanoun ». Le partage mène à la page
+         publique du texte (la canonique), et non à la lecture en session, qui
+         n'est pas indexée et ne s'ouvre pas de l'extérieur. -->
     <template v-if="content && currentSection">
       <ReadingMenu
         :sections="navSections"
         :phonetic="canTransliterate ? showPhonetic : null"
         :download-state="bookState"
         :tefila="isTefila"
+        :halakhot="hasHalakhot"
+        :share-title="shareTitle"
+        :share-url="canonicalUrl"
         @update:phonetic="showPhonetic = $event"
         @download="toggleDownload()"
       />
