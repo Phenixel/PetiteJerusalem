@@ -15,8 +15,7 @@ import { useI18n } from "vue-i18n";
 import { hubPath } from "../../content/etudeTexts";
 import type { WeeklyParasha } from "../../services/dailyCycles";
 import { formatZmanDay, formatZmanTime, type RestPeriod } from "../../services/zmanimService";
-import { opinionZmanim } from "../../services/zmanimOpinions";
-import { useZmanimOpinion } from "../../composables/useZmanimOpinion";
+import { describeEndRule, describeRabbenouTamRule } from "../../services/zmanimRules";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
@@ -53,25 +52,17 @@ const isFestival = computed(() => props.period.festivals.length > 0);
 const lastDay = computed(() => props.period.last.greg());
 
 /**
- * La note dit comment les heures du cadre sont comptées : elle dépend donc de
- * l'avis suivi, sans quoi elle annoncerait la sortie des étoiles là où le
- * cadre affiche quarante minutes après la chkia (voir zmanimOpinions).
+ * La note dit comment les heures du cadre sont comptées. La règle voyage avec
+ * le bloc (voir RestPeriod.endRule) plutôt que d'être relue de l'avis : elle
+ * dépend aussi du LIEU, l'avis du Rav Ovadia suivant l'Or Ha'Haïm en Israël
+ * et l'Amudei Horaah ailleurs, et le cadre ne connaît que son bloc.
  */
-const { opinion } = useZmanimOpinion();
-const rules = computed(() => opinionZmanim(opinion.value));
-
 const exitRule = computed(() =>
-  rules.value.restEndMinutes === null
-    ? t("zmanim.rest.exitAtNightfall")
-    : t("zmanim.rest.exitAfterSunset", { minutes: rules.value.restEndMinutes }),
+  t("zmanim.rest.exit", { rule: describeEndRule(props.period.endRule, t, locale.value) }),
 );
 
 const rabbenouTamNote = computed(() =>
-  t(
-    rules.value.rabbenouTamZmaniyot
-      ? "zmanim.rest.rabbenouTamNoteZmaniyot"
-      : "zmanim.rest.rabbenouTamNote",
-  ),
+  describeRabbenouTamRule(props.period.rabbenouTamRule, t),
 );
 </script>
 

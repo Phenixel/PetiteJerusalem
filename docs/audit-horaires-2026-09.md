@@ -280,6 +280,28 @@ donner l'heure de son luah là où l'on est, Or Ha'Haïm en Israël et Amudei
 Horaah ailleurs (voir `docs/plan-horaires-2026-09.md`, principe directeur
 et lot 3).
 
+### 3.9 bis Ce que le lot 3 change pour Paris, et ce que le plan en disait
+
+Le plan donnait, pour éprouver le lot 3, deux heures parisiennes tirées du
+tableau du point 3.2 : Tzom Guedalia 2026 à 20:26:57 (vingt minutes zmaniyot)
+et le 17 Tamouz « six à sept minutes plus tard » que les vingt minutes fixes.
+Ces deux valeurs sont celles de l'Or Ha'Haïm, mesurées avant que le point 3.9
+ne soit tranché.
+
+Or Paris n'est pas en Israël : le lot 3 y pose l'Amudei Horaah, et la fin des
+jeûnes s'y mesure sur 5,075° à l'équinoxe. Les heures vraies sont donc :
+
+| Paris, avis Rav Ovadia     | 20 fixes (avant) | 20 zmaniyot (Or Ha'Haïm) | Amudei Horaah (retenu) |
+| -------------------------- | ---------------- | ------------------------ | ---------------------- |
+| Tzom Guedalia, 14 sept. 2026 | 20:25:50       | 20:26:57                 | 20:33:09               |
+| 17 Tamouz, 2 juillet 2026    | 22:17:16       | 22:24:05                 | 22:31:58               |
+
+C'est le plan qui se contredisait, non la source : son lot 3c dit bien que
+Paris suit l'Amudei Horaah, et le calendrier cité le confirme
+(`getTzeitLChumra`, branche `amudehHoraah`). Les tests retiennent les heures de
+la colonne de droite, et gardent les deux autres en commentaire pour que la
+comparaison reste lisible.
+
 ### 3.10 Birkat Halevana : une fenêtre à jours fixes, sans regarder le molad
 
 `saysBirkatHalevana` autorise les nuits qui ouvrent le 8 au 14 du mois. La

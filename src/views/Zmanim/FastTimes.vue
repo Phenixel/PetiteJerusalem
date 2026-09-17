@@ -13,6 +13,7 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { formatZmanDay, formatZmanTime, type FastPeriod } from "../../services/zmanimService";
+import { describeEndRule } from "../../services/zmanimRules";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
@@ -35,12 +36,12 @@ const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
  */
 const fastDay = computed(() => props.fast.day.greg());
 
-/** Comment la fin est comptée : trois étoiles moyennes, ou minutes fixes. */
-const endRule = computed(() =>
-  props.fast.endMinutes === null
-    ? t("zmanim.fast.endStars")
-    : t("zmanim.fast.endAfterSunset", { minutes: props.fast.endMinutes }),
-);
+/**
+ * Comment la fin est comptée, dite par la règle que l'avis a posée avec
+ * l'heure (voir zmanimOpinions, EndRule) : la note et le cadre parlent ainsi
+ * du même calcul, au lieu d'annoncer l'un pour l'autre.
+ */
+const endRule = computed(() => describeEndRule(props.fast.endRule, t, locale.value));
 
 /** Comment les heures sont comptées : à l'aube, ou dès la veille au soir. */
 const note = computed(() =>

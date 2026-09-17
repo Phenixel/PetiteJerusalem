@@ -46,7 +46,9 @@ describe("fastAt", () => {
     // 20:44 le jeûne se romprait dix-neuf secondes trop tôt).
     expect(at(DEFAULT_PLACE, fast.start!)).toBe("05:48");
     expect(at(DEFAULT_PLACE, fast.end)).toBe("20:45");
-    expect(fast.endMinutes).toBeNull();
+    // La règle voyage avec l'heure : la note du cadre dit donc bien les
+    // 7,083° que le calcul vient d'employer (voir zmanimOpinions, EndRule).
+    expect(fast.endRule).toEqual({ kind: "degrees", degrees: 7.083 });
   });
 
   it("finit le jeûne avant la sortie des étoiles, sans la marge du Chabbat", () => {
@@ -60,13 +62,21 @@ describe("fastAt", () => {
     expect(gap).toBeLessThan(20);
   });
 
-  it("suit l'avis choisi : vingt minutes fixes chez le Rav Ovadia", () => {
+  it("suit l'avis choisi, et le luah que le lieu commande, chez le Rav Ovadia", () => {
     setZmanimOpinion("ovadia");
-    const fast = fastAt(DEFAULT_PLACE, hd(2026, 9, 14), "fr")!;
-    // La chkia est à 20:05:50 ce jour-là à Paris : vingt minutes fixes
-    // donnent 20:25:50, et cette FIN monte à 20:26.
-    expect(at(DEFAULT_PLACE, fast.end)).toBe("20:26");
-    expect(fast.endMinutes).toBe(20);
+    // Paris est hors d'Israël : l'avis y suit le luah Amudei Horaah, qui
+    // mesure la fin des jeûnes sur 5,075° à l'équinoxe. Chkia 20:05:50,
+    // fin 20:33:09, donc 20:34 une fois montée à la minute. Les vingt
+    // minutes FIXES d'avant donnaient 20:25:50, sept minutes trop tôt.
+    const paris = fastAt(DEFAULT_PLACE, hd(2026, 9, 14), "fr")!;
+    expect(at(DEFAULT_PLACE, paris.end)).toBe("20:34");
+    expect(paris.endRule).toEqual({ kind: "equinoxDegrees", degrees: 5.075 });
+
+    // En Israël, le même avis suit l'Or Ha'Haïm : vingt minutes ZMANIYOT.
+    expect(fastAt(israel, hd(2026, 9, 14), "fr")!.endRule).toEqual({
+      kind: "zmaniyot",
+      minutes: 20,
+    });
   });
 
   it("laisse la sortie de Kippour où elle était", () => {

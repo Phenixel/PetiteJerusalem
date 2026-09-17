@@ -10,6 +10,7 @@ import {
   DEFAULT_PLACE,
   formatZmanDay,
   formatZmanTime,
+  opinionContext,
   roundMinute,
   setZmanimOpinion,
 } from "../services/zmanimService";
@@ -79,13 +80,16 @@ describe("chametzAt", () => {
       // Le Maguen Avraham : la quatrième heure est celle de la fin de la Amida,
       // et la cinquième tombe exactement une heure de son jour plus tard.
       const rules = opinionZmanim("posen");
-      expect(chametz.eatingMGA.getTime()).toBe(down(rules.sofZmanTfillaMGA(zmanim)));
+      // L'avis du Rav Posen ignore le contexte de lieu (voir zmanimOpinions) :
+      // celui du jour calculé suffit à l'appeler.
+      const ctx = opinionContext(DEFAULT_PLACE, day.greg());
+      expect(chametz.eatingMGA.getTime()).toBe(down(rules.sofZmanTfillaMGA(zmanim, ctx)));
       // Une heure du jour du Maguen Avraham sépare sa troisième de sa
       // quatrième : la cinquième doit en être à la même distance. L'écart se
       // lit ici entre deux heures coupées à la minute, et peut donc s'écarter
       // d'une minute de celui des instants exacts.
       const mgaHour =
-        rules.sofZmanTfillaMGA(zmanim).getTime() - rules.sofZmanShmaMGA(zmanim).getTime();
+        rules.sofZmanTfillaMGA(zmanim, ctx).getTime() - rules.sofZmanShmaMGA(zmanim, ctx).getTime();
       const gap = chametz.disposalMGA.getTime() - chametz.eatingMGA.getTime();
       expect(Math.abs(gap - mgaHour)).toBeLessThan(60_000);
 

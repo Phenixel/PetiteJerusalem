@@ -503,16 +503,26 @@ const fr = {
       title: "À propos des horaires",
       open: "À propos des horaires et de votre position",
     },
+    /* Comment une sortie ou une fin de jeûne est comptée. Une phrase par
+       manière de compter (voir services/zmanimRules, EndRule) : la note dit
+       ainsi exactement ce que le cadre affiche, pour les deux avis et des
+       deux côtés de la frontière d'Israël. */
+    endRule: {
+      degrees: "quand le soleil est à {degrees}° sous l'horizon",
+      fixed: "{minutes} minutes après le coucher du soleil",
+      zmaniyot:
+        "{minutes} minutes zmaniyot après le coucher du soleil, proportionnelles à la longueur du jour",
+      equinoxDegrees:
+        "aux minutes zmaniyot que le luah Amudei Horaah mesure sur {degrees}° à l'équinoxe, en ce lieu",
+      amudeiHoraah:
+        "quand le soleil est à {degrees}° sous l'horizon, et jamais moins de {minutes} minutes après son coucher",
+    },
     /* Début et fin d'un jeûne public, en cadre dès la veille (voir FastTimes). */
     fast: {
       start: "Début du jeûne",
       startUnknown:
         "Pas d'heure de début\u00a0: ici, le soleil ne descend pas assez bas ce jour-là pour que l'avis suivi donne l'aube.",
       end: "Fin du jeûne",
-      endStars:
-        "à la sortie de trois étoiles moyennes, plus tôt que la sortie du Chabbat, qui en attend trois petites",
-      endAfterSunset:
-        "{minutes} minutes après le coucher du soleil, plus tôt que la sortie du Chabbat",
       noteDawn: "Le jeûne commence à l'aube (alot haCha'har) et se termine {end}.",
       noteEve: "Le jeûne commence la veille au coucher du soleil et se termine {end}.",
     },
@@ -559,12 +569,14 @@ const fr = {
       endUnknown:
         "Pas d'heure de sortie\u00a0: ici, le soleil ne descend pas assez bas ce jour-là pour que l'avis suivi donne la sortie des étoiles.",
       rabbenouTam: "Sortie Rabbénou Tam",
-      rabbenouTamNote:
-        "La sortie selon Rabbénou Tam est comptée 72 minutes après le coucher du soleil.",
-      rabbenouTamNoteZmaniyot:
-        "La sortie selon Rabbénou Tam est comptée 72 minutes zmaniyot après le coucher du soleil, proportionnelles à la longueur du jour.",
-      exitAtNightfall: "sortie à la sortie des étoiles",
-      exitAfterSunset: "sortie {minutes} minutes après le coucher du soleil",
+      rabbenouTamNote: {
+        fixed: "La sortie selon Rabbénou Tam est comptée 72 minutes après le coucher du soleil.",
+        zmaniyot:
+          "La sortie selon Rabbénou Tam est comptée 72 minutes zmaniyot après le coucher du soleil, proportionnelles à la longueur du jour.",
+        earliest:
+          "La sortie selon Rabbénou Tam est la plus tôt des deux\u00a0: 72 minutes après le coucher du soleil, ou 72 minutes zmaniyot.",
+      },
+      exit: "sortie {rule}",
       note: "Allumage {minutes} minutes avant le coucher du soleil, {exit}. Un jour de fête qui suit le Chabbat, on allume après la sortie, à partir d'une flamme déjà allumée.",
     },
     shabbat: {
@@ -623,9 +635,9 @@ const fr = {
         hint: "Le calcul par degrés du soleil sous l'horizon, celui des calendriers d'Europe : aube et Maguen Avraham à 16,1°, talith à 11,5°, sortie des étoiles à 8,5°, fin des jeûnes à 7,08°, Rabbénou Tam 72 minutes après la chkia.",
       },
       ovadia: {
-        name: "Rav Ovadia Yossef (Or Ha'Haïm)",
+        name: "Rav Ovadia Yossef (Or Ha'Haïm en Israël, Amudei Horaah ailleurs)",
         short: "Rav Ovadia",
-        hint: "Le calcul en minutes zmaniyot, proportionnelles à la longueur du jour : aube 72 minutes avant le lever, sortie des étoiles 13,5 minutes après la chkia, fin des jeûnes 20 minutes, sortie du Chabbat 40 minutes.",
+        hint: "Le calcul en minutes zmaniyot, proportionnelles à la longueur du jour. En Israël, le luah Or Ha'Haïm\u00a0: aube 72 minutes avant le lever, sortie des étoiles 13,5 minutes après la chkia, fin des jeûnes 20 minutes zmaniyot, sortie du Chabbat 30 minutes. Ailleurs, le luah Amudei Horaah, qui mesure ces minutes en degrés à l'équinoxe pour tenir compte de la latitude\u202f; sans quoi les heures du nord seraient celles d'Israël.",
       },
     },
     /* Les hiloulot du jour, au bas de la page (voir services/hiloulot). */

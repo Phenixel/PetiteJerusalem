@@ -489,14 +489,20 @@ const en: LocaleMessages = {
       title: "About these times",
       open: "About these times and your location",
     },
+    endRule: {
+      degrees: "when the sun is {degrees}° below the horizon",
+      fixed: "{minutes} minutes after sunset",
+      zmaniyot: "{minutes} seasonal minutes after sunset, proportional to the length of the day",
+      equinoxDegrees:
+        "at the seasonal minutes the Amudei Horaah luach measures on {degrees}° at the equinox, in this place",
+      amudeiHoraah:
+        "when the sun is {degrees}° below the horizon, and never less than {minutes} minutes after it sets",
+    },
     fast: {
       start: "Fast begins",
       startUnknown:
         "No start time: here the sun does not go low enough on that day for the opinion you follow to give dawn.",
       end: "Fast ends",
-      endStars:
-        "when three medium-sized stars are out, earlier than the end of Shabbat, which waits for three small ones",
-      endAfterSunset: "{minutes} minutes after sunset, earlier than the end of Shabbat",
       noteDawn: "The fast begins at dawn (alot hashachar) and ends {end}.",
       noteEve: "The fast begins at sunset the evening before and ends {end}.",
     },
@@ -536,11 +542,14 @@ const en: LocaleMessages = {
       endUnknown:
         "No end time: here the sun does not go low enough on that day for the opinion you follow to give nightfall.",
       rabbenouTam: "Ends (Rabbeinu Tam)",
-      rabbenouTamNote: "The Rabbeinu Tam end time is 72 minutes after sunset.",
-      rabbenouTamNoteZmaniyot:
-        "The Rabbeinu Tam end time is 72 seasonal minutes after sunset, proportional to the length of the day.",
-      exitAtNightfall: "ends at nightfall",
-      exitAfterSunset: "ends {minutes} minutes after sunset",
+      rabbenouTamNote: {
+        fixed: "The Rabbeinu Tam end time is 72 minutes after sunset.",
+        zmaniyot:
+          "The Rabbeinu Tam end time is 72 seasonal minutes after sunset, proportional to the length of the day.",
+        earliest:
+          "The Rabbeinu Tam end time is the earlier of the two: 72 minutes after sunset, or 72 seasonal minutes.",
+      },
+      exit: "ends {rule}",
       note: "Candle lighting {minutes} minutes before sunset, {exit}. When a festival follows Shabbat, light after nightfall from an existing flame.",
     },
     shabbat: {
@@ -599,9 +608,9 @@ const en: LocaleMessages = {
         hint: "Degrees of the sun below the horizon, as European calendars have it: dawn and Magen Avraham at 16.1°, tallit at 11.5°, nightfall at 8.5°, Rabbeinu Tam 72 minutes after sunset.",
       },
       ovadia: {
-        name: "Rav Ovadia Yosef (Ohr HaChaim)",
+        name: "Rav Ovadia Yosef (Ohr HaChaim in Israel, Amudei Horaah elsewhere)",
         short: "Rav Ovadia",
-        hint: "Seasonal (zmaniyot) minutes, proportional to the length of the day: dawn 72 minutes before sunrise, nightfall 13.5 minutes after sunset, Shabbat ends 40 minutes after sunset.",
+        hint: "Seasonal (zmaniyot) minutes, proportional to the length of the day. In Israel, the Ohr HaChaim luach: dawn 72 minutes before sunrise, nightfall 13.5 minutes after sunset, fasts end 20 seasonal minutes after sunset, Shabbat ends 30 minutes after sunset. Elsewhere, the Amudei Horaah luach, which measures those minutes in degrees at the equinox to account for latitude; without it, northern times would be Israel's.",
       },
     },
     /* The day's hilulot, at the bottom of the page (see services/hiloulot). */

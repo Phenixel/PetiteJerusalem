@@ -17,7 +17,10 @@ import {
   DEFAULT_ZMANIM_OPINION,
   opinionZmanim,
   zmanimOpinionStore,
+  type EndRule,
+  type OpinionContext,
   type OpinionZmanim,
+  type RabbenouTamRule,
   type ZmanimOpinion,
 } from "./zmanimOpinions";
 
@@ -224,24 +227,24 @@ const ZMAN_DEFS = [
   // jour civil a changé, mais le milieu de sa nuit, souvent vers 1 h, n'est
   // pas forcément passé, et c'est lui qu'on vient vérifier à cette heure-là.
   { key: "chatzotNightDawn", period: "dawn", round: "up", at: (z: Zmanim) => z.chatzotNight() },
-  { key: "alotHaShachar", period: "dawn", round: "down", at: (z, _n, o) => o.alotHaShachar(z) },
-  { key: "misheyakir", period: "dawn", round: "up", at: (z, _n, o) => o.misheyakir(z) },
+  { key: "alotHaShachar", period: "dawn", round: "down", at: (z, _n, o, c) => o.alotHaShachar(z, c) },
+  { key: "misheyakir", period: "dawn", round: "up", at: (z, _n, o, c) => o.misheyakir(z, c) },
   { key: "sunrise", period: "dawn", round: "up", at: (z: Zmanim) => z.sunrise() },
-  { key: "sofZmanShmaMGA", period: "morning", round: "down", at: (z, _n, o) => o.sofZmanShmaMGA(z) },
+  { key: "sofZmanShmaMGA", period: "morning", round: "down", at: (z, _n, o, c) => o.sofZmanShmaMGA(z, c) },
   { key: "sofZmanShma", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanShma() },
   {
     key: "sofZmanTfillaMGA",
     period: "morning",
     round: "down",
-    at: (z, _n, o) => o.sofZmanTfillaMGA(z),
+    at: (z, _n, o, c) => o.sofZmanTfillaMGA(z, c),
   },
   { key: "sofZmanTfilla", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanTfilla() },
   { key: "chatzot", period: "afternoon", round: "down", at: (z: Zmanim) => z.chatzot() },
-  { key: "minchaGedola", period: "afternoon", round: "up", at: (z, _n, o) => o.minchaGedola(z) },
+  { key: "minchaGedola", period: "afternoon", round: "up", at: (z, _n, o, c) => o.minchaGedola(z, c) },
   { key: "minchaKetana", period: "afternoon", round: "up", at: (z: Zmanim) => z.minchaKetana() },
-  { key: "plagHaMincha", period: "afternoon", round: "up", at: (z, _n, o) => o.plagHaMincha(z) },
+  { key: "plagHaMincha", period: "afternoon", round: "up", at: (z, _n, o, c) => o.plagHaMincha(z, c) },
   { key: "sunset", period: "evening", round: "down", at: (z: Zmanim) => z.sunset() },
-  { key: "tzeit", period: "evening", round: "up", at: (z, _n, o) => o.tzeit(z) },
+  { key: "tzeit", period: "evening", round: "up", at: (z, _n, o, c) => o.tzeit(z, c) },
   // Milieu de la nuit qui suit le jour affiché : lu sur le lendemain, dont la
   // nuit précédente est justement celle-là.
   {
@@ -254,7 +257,7 @@ const ZMAN_DEFS = [
   key: string;
   period: ZmanPeriod;
   round: ZmanRounding;
-  at: (z: Zmanim, next: Zmanim, opinion: OpinionZmanim) => Date;
+  at: (z: Zmanim, next: Zmanim, opinion: OpinionZmanim, ctx: OpinionContext) => Date;
 }[];
 
 export type ZmanKey = (typeof ZMAN_DEFS)[number]["key"];
@@ -356,6 +359,43 @@ function geoLocationOf(place: ZmanimPlace): GeoLocation {
 }
 
 /**
+ * Le jour de référence de l'Amudei Horaah : le 17 mars, l'équinoxe.
+ *
+ * C'est la date que le calendrier source pose en dur pour y mesurer, au lieu
+ * même, la part d'heure zmanit qu'occupe la descente du soleil à un angle
+ * donné (voir OpinionContext.equinox).
+ */
+const EQUINOX_MONTH = 2;
+const EQUINOX_DAY = 17;
+
+/**
+ * Ce que le lieu et le jour apportent au calcul d'un avis.
+ *
+ * Construit par jour et par lieu, à chaque endroit qui interroge un avis : un
+ * avis n'est pas un jeu de paramètres fixes, c'est un luah, et le luah du
+ * calendrier Rabbi Ovadiah Yosef change entre Israël et la diaspora (voir
+ * zmanimOpinions).
+ */
+export function opinionContext(place: ZmanimPlace, localDay: Date): OpinionContext {
+  const gloc = geoLocationOf(place);
+  const year = localDay.getFullYear();
+  return {
+    il: isIsraelPlace(place),
+    equinox: new Zmanim(gloc, new Date(year, EQUINOX_MONTH, EQUINOX_DAY, 12), false),
+    equinoxKey: `${place.latitude}|${place.longitude}|${place.tzid}|${year}`,
+    // Paresseux : la plupart des horaires n'en ont pas besoin, et le calculer
+    // à chaque contexte doublerait le travail solaire de la page.
+    solarMidnight: () => {
+      const nextDay = new Date(localDay);
+      nextDay.setDate(nextDay.getDate() + 1);
+      // `chatzotNight` d'un jour est le milieu de la nuit qui l'a PRÉCÉDÉ :
+      // lu sur le lendemain, c'est bien le milieu de la nuit qui suit.
+      return new Zmanim(gloc, nextDay, false).chatzotNight();
+    },
+  };
+}
+
+/**
  * Le jour civil du lieu, ramené dans le repère local de la machine.
  *
  * hebcal lit l'année, le mois et le jour d'une `Date` dans le fuseau du
@@ -417,9 +457,10 @@ function computeZmanimFor(place: ZmanimPlace, localDay: Date): ZmanTime[] {
   const nextZmanim = new Zmanim(gloc, nextDay, false);
 
   const opinion = opinionZmanim(currentOpinion);
+  const ctx = opinionContext(place, localDay);
   const times: ZmanTime[] = [];
   for (const def of ZMAN_DEFS) {
-    const computed = def.at(zmanim, nextZmanim, opinion);
+    const computed = def.at(zmanim, nextZmanim, opinion, ctx);
     // Nuit ou jour polaire : l'horaire n'existe pas, on ne l'affiche pas.
     if (!isUsable(computed)) continue;
     // Coupé à la minute ici, dans le sens que sa nature commande (voir
@@ -720,6 +761,14 @@ export interface RestPeriod {
    * la chkia ne se calcule pas.
    */
   endRabbenouTam: Date | null;
+  /**
+   * Comment la sortie se compte, pour la note sous le cadre : sans elle, la
+   * note annoncerait « à la sortie des étoiles » là où le cadre affiche trente
+   * minutes après la chkia (voir zmanimOpinions, EndRule).
+   */
+  endRule: EndRule;
+  /** Comment Rabbénou Tam se compte, même raison. */
+  rabbenouTamRule: RabbenouTamRule;
   first: HDate;
   last: HDate;
   /** Le bloc couvre un Chabbat, son jour civil, pour retrouver la paracha. */
@@ -750,9 +799,13 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
   const eve = civilNoon(first);
   eve.setDate(eve.getDate() - 1);
   const start = new Zmanim(gloc, eve, false).sunsetOffset(-candleLightingMinutes(place), true);
-  const lastDay = new Zmanim(gloc, civilNoon(last), false);
+  const lastCivil = civilNoon(last);
+  const lastDay = new Zmanim(gloc, lastCivil, false);
   const opinion = opinionZmanim(currentOpinion);
-  const end = opinion.restEnd(lastDay);
+  // Le contexte se pose sur le DERNIER jour du bloc : c'est son soir qui donne
+  // la sortie, et c'est sa nuit que l'Amudei Horaah ne dépasse pas.
+  const ctx = opinionContext(place, lastCivil);
+  const end = opinion.restEnd(lastDay, ctx);
   // L'allumage, lui, est indispensable : sans lui il n'y a rien à annoncer.
   if (!isUsable(start)) return null;
   // La sortie est une FIN : elle monte à la minute supérieure, sans quoi le
@@ -765,7 +818,7 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
   // n'apprend rien, on ne la donne pas. Sans sortie du tout, elle n'apprend
   // rien non plus : ce serait la seule heure du cadre, sous un nom que peu
   // suivent.
-  const rabbenouTam = roundUsable(opinion.rabbenouTam(lastDay), "up");
+  const rabbenouTam = roundUsable(opinion.rabbenouTam(lastDay, ctx), "up");
   const endRabbenouTam =
     restEnd && rabbenouTam && rabbenouTam.getTime() > restEnd.getTime() ? rabbenouTam : null;
 
@@ -777,15 +830,29 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
       if (!festivals.includes(name)) festivals.push(name);
     }
   }
-  return { start, end: restEnd, endRabbenouTam, first, last, shabbat, festivals };
+  return {
+    start,
+    end: restEnd,
+    endRabbenouTam,
+    endRule: opinion.restEndRule(ctx),
+    rabbenouTamRule: opinion.rabbenouTamRule(ctx),
+    first,
+    last,
+    shabbat,
+    festivals,
+  };
 }
 
 /** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */
 export function nightfallOf(place: ZmanimPlace, hd: HDate): Date | null {
-  const zmanim = new Zmanim(geoLocationOf(place), civilNoon(hd), false);
+  const day = civilNoon(hd);
+  const zmanim = new Zmanim(geoLocationOf(place), day, false);
   // Une FIN, comme la sortie des étoiles de la liste du jour : minute
   // supérieure, pour que les deux annoncent la même (voir ZmanRounding).
-  return roundUsable(opinionZmanim(currentOpinion).tzeit(zmanim), "up");
+  return roundUsable(
+    opinionZmanim(currentOpinion).tzeit(zmanim, opinionContext(place, day)),
+    "up",
+  );
 }
 
 /**
@@ -983,10 +1050,10 @@ export interface FastPeriod {
   end: Date;
   /**
    * Comment cette fin se compte, pour la note sous le cadre : null quand ce
-   * sont les trois étoiles moyennes, un nombre de minutes fixes après la chkia
-   * sinon (voir OpinionZmanim.fastEndMinutes).
+   * sont les trois étoiles moyennes, un nombre de minutes après la chkia
+   * sinon (voir zmanimOpinions, EndRule).
    */
-  endMinutes: number | null;
+  endRule: EndRule;
   /** Le jeûne commence la veille au soir (Tich'a beAv), non à l'aube. */
   fromEve: boolean;
 }
@@ -1012,7 +1079,9 @@ export function fastAt(place: ZmanimPlace, hd: HDate, locale: string): FastPerio
 
   const gloc = geoLocationOf(place);
   const opinion = opinionZmanim(currentOpinion);
-  const fastDay = new Zmanim(gloc, civilNoon(hd), false);
+  const fastCivil = civilNoon(hd);
+  const ctx = opinionContext(place, fastCivil);
+  const fastDay = new Zmanim(gloc, fastCivil, false);
   const fromEve = (event.getFlags() & flags.MAJOR_FAST) !== 0;
   let start: Date;
   if (fromEve) {
@@ -1020,12 +1089,12 @@ export function fastAt(place: ZmanimPlace, hd: HDate, locale: string): FastPerio
     eve.setDate(eve.getDate() - 1);
     start = new Zmanim(gloc, eve, false).sunset();
   } else {
-    start = opinion.alotHaShachar(fastDay);
+    start = opinion.alotHaShachar(fastDay, ctx);
   }
   // Le début est une LIMITE (dernier moment pour manger), la fin une FIN :
   // l'un descend à la minute, l'autre monte (voir ZmanRounding). Sans arrondi,
   // le jeûne se rompait jusqu'à cinquante-neuf secondes trop tôt.
-  const end = roundUsable(opinion.fastEnd(fastDay), "up");
+  const end = roundUsable(opinion.fastEnd(fastDay, ctx), "up");
   // La fin, elle, est indispensable : sans elle il n'y a rien à annoncer.
   if (!end) return null;
   return {
@@ -1033,7 +1102,7 @@ export function fastAt(place: ZmanimPlace, hd: HDate, locale: string): FastPerio
     day: hd,
     start: roundUsable(start, "down"),
     end,
-    endMinutes: opinion.fastEndMinutes,
+    endRule: opinion.fastEndRule(ctx),
     fromEve,
   };
 }
@@ -1109,18 +1178,24 @@ export function chametzAt(place: ZmanimPlace, hd: HDate): ChametzDeadlines | nul
 
   const gloc = geoLocationOf(place);
   const opinion = opinionZmanim(currentOpinion);
-  const erev = new Zmanim(gloc, civilNoon(hd), false);
-  const eatingMGA = opinion.sofZmanTfillaMGA(erev);
+  const erevCivil = civilNoon(hd);
+  const ctx = opinionContext(place, erevCivil);
+  const erev = new Zmanim(gloc, erevCivil, false);
+  const eatingMGA = opinion.sofZmanTfillaMGA(erev, ctx);
   const eating = erev.sofZmanTfilla();
-  const disposalMGA = opinion.sofZmanBiurChametzMGA(erev);
+  const disposalMGA = opinion.sofZmanBiurChametzMGA(erev, ctx);
   const disposal = erev.sofZmanBiurChametzGRA();
   // Les quatre heures du jour vont ensemble : si l'une manque, le cadre
   // n'aurait que des trous à montrer.
   if (![eatingMGA, eating, disposalMGA, disposal].every(isUsable)) return null;
 
   const onShabbat = hd.getDay() === 6;
-  const friday = onShabbat ? new Zmanim(gloc, civilNoon(hd.prev()), false) : null;
-  const burningEveMGA = friday ? opinion.sofZmanBiurChametzMGA(friday) : null;
+  const fridayCivil = onShabbat ? civilNoon(hd.prev()) : null;
+  const friday = fridayCivil ? new Zmanim(gloc, fridayCivil, false) : null;
+  const burningEveMGA =
+    friday && fridayCivil
+      ? opinion.sofZmanBiurChametzMGA(friday, opinionContext(place, fridayCivil))
+      : null;
   const burningEve = friday ? friday.sofZmanBiurChametzGRA() : null;
 
   // Quatre LIMITES : toutes descendent à la minute (voir ZmanRounding). On ne
