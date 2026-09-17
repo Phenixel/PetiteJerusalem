@@ -321,6 +321,15 @@
               "unless": "teshuva"
             },
             {
+              "r": {
+                "fr": "Aux dix jours de techouva, on conclut :",
+                "en": "During the Ten Days of Repentance, conclude:",
+                "he": "בעשרת ימי תשובה חותמים:"
+              },
+              "when": "teshuva",
+              "unless": "teshuva"
+            },
+            {
               "v": "הַמֶּלֶךְ הַקָּדוֹשׁ:",
               "when": "teshuva"
             }
@@ -341,8 +350,7 @@
           "fr": "À la sortie de Chabbat et de Yom Tov, Ata 'honantanou entre dans 'Honen hadaat. Si on l'a oublié, on ne recommence pas : la havdala sur la coupe en tient lieu.",
           "en": "At the close of Shabbat and Yom Tov, Atah chonantanu enters Chonen hadaat. If it was omitted, do not repeat: havdalah over the cup takes its place.",
           "he": "במוצאי שבת ויום טוב אומרים אתה חוננתנו בחונן הדעת. שכח, אינו חוזר؛ סומך על ההבדלה שעל הכוס.",
-          "when": "motsae",
-          "unless": "jour-0"
+          "when": "motsae-yom-tov"
         }
       ],
       "lines": [
@@ -356,8 +364,7 @@
             },
             {
               "v": "אַתָּה חוֹנַנְתָּנוּ יְהֹוָה אֱלֹהֵינוּ מַדָּע וְהַשְׂכֵּל, אַתָּה אָמַרְתָּ לְהַבְדִּיל בֵּין קֹדֶשׁ לְחֹל וּבֵין אוֹר לְחֹשֶׁךְ וּבֵין יִשְׂרָאֵל לָעַמִּים, וּבֵין יוֹם הַשְּׁבִיעִי לְשֵׁשֶׁת יְמֵי הַמַּעֲשֶׂה. כְּשֵׁם שֶׁהִבְדַּלְתָּנוּ יְהֹוָה אֱלֹהֵינוּ מֵעַמֵּי הָאֲרָצוֹת וּמִמִּשְׁפְּחוֹת הָאֲדָמָה, כָּךְ פְּדֵנוּ וְהַצִּילֵנוּ מִשָּׂטָן רָע וּמִפֶּגַע רָע, וּמִכָּל גְּזֵרוֹת קָשׁוֹת וְרָעוֹת הַמִּתְרַגְּשׁוֹת לָבֹא בָעוֹלָם.",
-              "when": "motsae",
-              "unless": "jour-0"
+              "when": "motsae-yom-tov"
             },
             "וְחָנֵּֽנוּ מֵאִתְּךָ חָכְמָה בִּינָה וָדָֽעַת: בָּרוּךְ אַתָּה יַהַוַהַ, חוֹנֵן הַדָּֽעַת:"
           ]
@@ -420,6 +427,15 @@
             "הָשִֽׁיבָה שֽׁוֹפְטֵֽינוּ כְּבָרִֽאשׁוֹנָה, וְיֽוֹעֲצֵֽינוּ כְּבַתְּחִלָּה, וְהָסֵר מִמֶּֽנּוּ יָגוֹן וַֽאֲנָחָה. וּמְלוֹךְ עָלֵֽינוּ מְהֵרָה אַתָּה יְהֹוָה לְבַדְּךָ, בְּחֶֽסֶד וּבְרַֽחֲמִים, בְּצֶֽדֶק וּבְמִשְׁפָּט: בָּרוּךְ אַתָּה יוּהוּווּהוּ,",
             {
               "he": "מֶֽלֶךְ אוֹהֵב צְדָקָה וּמִשְׁפָּט:",
+              "unless": "teshuva"
+            },
+            {
+              "r": {
+                "fr": "Aux dix jours de techouva, on conclut :",
+                "en": "During the Ten Days of Repentance, conclude:",
+                "he": "בעשרת ימי תשובה חותמים:"
+              },
+              "when": "teshuva",
               "unless": "teshuva"
             },
             {
@@ -589,6 +605,15 @@
           "he": [
             {
               "he": "עֹשֶׂה שָׁלוֹם",
+              "unless": "teshuva"
+            },
+            {
+              "r": {
+                "fr": "Aux dix jours de techouva, on conclut :",
+                "en": "During the Ten Days of Repentance, conclude:",
+                "he": "בעשרת ימי תשובה חותמים:"
+              },
+              "when": "teshuva",
               "unless": "teshuva"
             },
             {

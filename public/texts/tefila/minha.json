@@ -795,6 +795,15 @@
               "unless": "teshuva"
             },
             {
+              "r": {
+                "fr": "Aux dix jours de techouva, on conclut :",
+                "en": "During the Ten Days of Repentance, conclude:",
+                "he": "בעשרת ימי תשובה חותמים:"
+              },
+              "when": "teshuva",
+              "unless": "teshuva"
+            },
+            {
               "v": "הַמֶּלֶךְ הַקָּדוֹשׁ:",
               "when": "teshuva"
             }
@@ -890,6 +899,15 @@
               "unless": "teshuva"
             },
             {
+              "r": {
+                "fr": "Aux dix jours de techouva, on conclut :",
+                "en": "During the Ten Days of Repentance, conclude:",
+                "he": "בעשרת ימי תשובה חותמים:"
+              },
+              "when": "teshuva",
+              "unless": "teshuva"
+            },
+            {
               "v": "הַמֶּלֶךְ הַמִּשְׁפָּט:",
               "when": "teshuva"
             }
@@ -922,6 +940,15 @@
             },
             {
               "he": "בָּרוּךְ אַתָּה יֻהֻוֻהֻ, בּוֹנֵה יְרוּשָׁלָיִם:",
+              "unless": "tisha-beav"
+            },
+            {
+              "r": {
+                "fr": "À Min'ha de Tich'a beAv, on conclut :",
+                "en": "At Mincha on Tisha b'Av, conclude:",
+                "he": "במנחה של תשעה באב חותמים:"
+              },
+              "when": "tisha-beav",
               "unless": "tisha-beav"
             },
             {
@@ -1242,6 +1269,15 @@
           "he": [
             {
               "he": "עֹשֶׂה שָׁלוֹם",
+              "unless": "teshuva"
+            },
+            {
+              "r": {
+                "fr": "Aux dix jours de techouva, on conclut :",
+                "en": "During the Ten Days of Repentance, conclude:",
+                "he": "בעשרת ימי תשובה חותמים:"
+              },
+              "when": "teshuva",
               "unless": "teshuva"
             },
             {

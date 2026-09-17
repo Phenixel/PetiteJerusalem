@@ -97,6 +97,7 @@ const KNOWN_WHEN = new Set([
   "shemini-atzeret",
   "magdil",
   "migdol",
+  "motsae-yom-tov",
   ...Array.from({ length: 7 }, (_, day) => `jour-${day}`),
 ]);
 
@@ -245,7 +246,11 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       // Chaque fragment `teshuva` est en accent (couleur du thème), et une
       // conclusion remplacée a son fragment « unless: teshuva » à côté.
       const teshuva = blocks.flatMap((b) =>
-        (b.paragraphs ?? []).flatMap((p) => p.runs.filter((run) => run.when === "teshuva")),
+        (b.paragraphs ?? []).flatMap((p) =>
+          // Les didascalies portent la clé sans être un ajout : seul l'hébreu
+          // se lit à la couleur du thème.
+          p.runs.filter((run) => run.when === "teshuva" && run.kind === "he"),
+        ),
       );
       const textes = teshuva.map((run) => (run.kind === "he" ? sansSignes(run.text) : ""));
       expect(textes.some((t) => t.startsWith("זכרנו לחיים"))).toBe(true);

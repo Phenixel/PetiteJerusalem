@@ -65,8 +65,23 @@ publiées, parce que le site s'était mis à écrire `!tisha-beav` et
    `unless`.
 5. **Tout paragraphe garde un fragment d'hébreu sans condition**, pour qu'un
    paragraphe ne puisse jamais être rendu mutilé, quelle que soit la version.
+6. **Ce qu'une version publiée ne peut pas cacher, elle doit pouvoir le
+   lire.** `unless` retire un passage chez qui le comprend, et le laisse chez
+   les autres : une conclusion remplacée (« Hamélekh hakadoch » aux dix jours)
+   s'affiche donc deux fois sur ces versions, et aucune clé n'y changera rien,
+   leur calendrier ne sait pas nommer « hors des dix jours ». On leur rend
+   alors la présentation du sidour imprimé, qui écrit les deux et met la règle
+   entre : une didascalie `{ when: clé, unless: clé }`, que seul un lecteur
+   ignorant `unless` affiche (voir `didascalieDeRemplacement` dans
+   build-sidour.mjs). Elle s'enlèvera quand la flotte aura rattrapé.
+7. **Une couverture nouvelle se nomme par une clé nouvelle, jamais par une
+   clé déjà posée.** Ata 'honantanou se dit sous `jour-0`, que tout le monde
+   connaît ; la sortie de Yom Tov, qui s'y ajoute, a reçu `motsae-yom-tov`
+   plutôt que `motsae` : ce dernier, posé depuis la v3.10.1, aurait fait dire
+   le passage deux fois le samedi soir aux versions qui le connaissent sans
+   connaître `unless`.
 
-Les points 1, 2 et 5 sont tenus par un test
+Les points 1, 2, 5 et 6 sont tenus par un test
 (`src/__tests__/sidourCompatibilite.test.ts`) ; les clés employées sont
 vérifiées contre celles que pose le calendrier
 (`src/__tests__/sidourContent.test.ts`).

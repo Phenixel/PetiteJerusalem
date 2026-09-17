@@ -85,4 +85,30 @@ describe.each(FICHIERS)("%s", (nom) => {
     }
     expect(mutiles).toEqual([]);
   });
+
+  it("explique la conclusion qu'elles ne savent pas retirer", () => {
+    // Une conclusion remplacée le jour dit (« Hamélekh hakadoch ») laisse
+    // l'ordinaire sous `unless`. Le lecteur à jour la retire ; une version
+    // publiée, qui ignore `unless`, affiche les deux, et aucune clé ne peut
+    // l'en empêcher : son calendrier ne sait pas nommer « hors des dix
+    // jours ». Elle doit alors lire entre les deux la règle du sidour
+    // imprimé, la didascalie que didascalieDeRemplacement pose pour elle.
+    const sans: string[] = [];
+    for (const bloc of parseTefilaBlocks((brut as { blocks?: unknown }).blocks)) {
+      for (const paragraphe of bloc.paragraphs ?? []) {
+        paragraphe.runs.forEach((run, i) => {
+          if (run.kind !== "he" || !run.unless || run.when) return;
+          const cle = run.unless;
+          const suite = paragraphe.runs.slice(i + 1);
+          // Une paire de remplacement : la variante du jour suit l'ordinaire.
+          if (!suite.some((r) => r.kind === "he" && r.when === cle)) return;
+          const explique = suite.some(
+            (r) => r.kind === "rubric" && r.when === cle && r.unless === cle,
+          );
+          if (!explique) sans.push(`${bloc.label || bloc.anchor} : ${run.text.slice(0, 30)}`);
+        });
+      }
+    }
+    expect(sans).toEqual([]);
+  });
 });
