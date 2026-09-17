@@ -271,6 +271,45 @@ Ashdod 27...) et geonames, déjà utilisé par `scripts/generate-cities.mjs`,
 aussi. La note `zmanim.disclaimer` dit bien « niveau de la mer » : elle
 reste vraie, mais elle contredit l'intitulé « Or Ha'Haïm ».
 
+### 3.8 bis L'altitude : le lot 7 est suspendu
+
+Le lot 7 proposait d'activer l'altitude pour l'avis du Rav Ovadia dans les
+villes d'Israël, à partir d'une table d'altitudes geonames. La relecture du
+calendrier source contredit ce point sur deux plans, et le lot est donc laissé
+de côté plutôt qu'appliqué de travers.
+
+**Le sens.** Le calendrier Rabbi Ovadiah Yosef ne met pas l'altitude en Israël,
+il l'en RETIRE. Son écran de démarrage écrit `useElevation = !inIsrael`
+(`InIsraelActivity.saveInfoAndStartActivity`) : répondre « je suis en Israël »
+met l'altitude à zéro. Et la seconde porte d'entrée, quand la position est
+clairement hors d'Israël, écrit `useElevation = false` elle aussi
+(`GetUserLocationWithMapActivity`). La phrase que l'audit citait, « The Ohr
+Hachaim calendar uses elevation adjusted sunrise and sunset for all of its
+zmanim », commente `getCandleLighting()` : elle explique pourquoi cette méthode
+lit le coucher AJUSTÉ plutôt que celui du niveau de la mer quand l'altitude est
+active, non qu'elle le soit toujours. En Israël, le calendrier prend d'ailleurs
+son lever de ChaiTables (`getHaNetz`), qui tient compte de l'horizon réel des
+montagnes, bien mieux qu'une altitude moyenne.
+
+**La donnée.** Le calendrier source ne porte aucune table d'altitudes : il
+interroge geonames.org au moment du calcul, trois fois, et moyenne les
+résultats (`LocationResolver.resolveElevation`). L'altitude y est une valeur
+PAR POSITION, que l'utilisateur peut aussi saisir à la main
+(`SetupElevationActivity`). Les trente-cinq altitudes que le lot demandait
+n'existent donc nulle part dans la source, et geonames n'est pas joignable
+depuis l'environnement de travail : les inventer serait précisément la
+« valeur ajustée pour que ça passe » que le plan interdit.
+
+**Ce que cela coûterait.** Activer l'altitude à Jérusalem recule la chkia de
+quatre à cinq minutes, et avec elle l'allumage, le tsét, la fin des jeûnes et
+la sortie du Chabbat, pour tous les utilisateurs du pays. Un déplacement de
+cette taille ne se pose pas sur une prémisse que la source dément.
+
+**Ce qui serait fidèle**, si le sujet est repris : un réglage d'altitude par
+lieu, éteint par défaut, alimenté par une saisie ou par un service d'altitude,
+comme le fait la source. C'est une décision de produit, pas une correction
+d'audit, et elle sort de ce chantier.
+
 ### 3.9 L'avis « Rav Ovadia » applique les paramètres d'Israël au monde entier
 
 Le calendrier cité n'utilise l'Or Ha'Haïm (72 minutes zmaniyot, 13,5, 72)
