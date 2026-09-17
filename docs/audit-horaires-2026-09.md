@@ -249,10 +249,11 @@ avant le lever en juin ; le même calendrier, pour Paris, en donne environ 123
 Ovadia lui-même suivait les zmaniyot), l'application prend toujours les
 zmaniyot : 23:35 le 27 juin 2026 à Paris, quand le luah écrirait 23:09.
 
-Ce n'est pas une erreur de calcul, c'est une question de fidélité à la source
-citée dans l'écran de réglage. À décider : soit l'avis s'appelle « Or Ha'Haïm
-(Israël) » et se limite à ce qu'il est, soit il porte les deux modes comme le
-calendrier qu'il cite.
+Ce n'est pas une erreur de calcul, c'est une infidélité à la source citée
+dans l'écran de réglage. Décision prise : le lieu décide, et l'avis doit
+donner l'heure de son luah là où l'on est, Or Ha'Haïm en Israël et Amudei
+Horaah ailleurs (voir `docs/plan-horaires-2026-09.md`, principe directeur
+et lot 3).
 
 ### 3.10 Birkat Halevana : une fenêtre à jours fixes, sans regarder le molad
 

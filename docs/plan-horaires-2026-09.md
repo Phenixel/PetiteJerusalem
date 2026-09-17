@@ -6,6 +6,20 @@ ce qu'il change, dans quels fichiers, quels textes et quels tests, et à quoi
 on reconnaît qu'il est fini. Les lots sont indépendants sauf mention ; ils
 se livrent dans l'ordre donné, un commit (ou une PR) par lot.
 
+## Principe directeur
+
+Le lieu décide, et chaque avis donne l'heure que son luah imprime là où
+l'on est. Un avis n'est pas un jeu de paramètres fixes, c'est une source
+(un luah, un calendrier) qui elle-même s'adapte au pays : le calendrier
+Rabbi Ovadiah Yosef suit l'Or Ha'Haïm en Israël et l'Amudei Horaah ailleurs,
+l'usage de l'allumage change de ville en ville, le calendrier des fêtes et
+le tahanoun changent entre Israël et la diaspora. L'application doit donc
+tenir, pour chaque avis, une règle PAR RÉGION, choisie d'après la position
+(ville du catalogue ou position de l'appareil, `isIsraelPlace` tranche par
+le fuseau), sans rien demander à l'utilisateur. Toute décision « garder les
+paramètres d'un pays partout » est exclue : ce plan applique ce principe
+lot par lot, et un avis ajouté plus tard doit l'appliquer aussi.
+
 ## 0. Règles du chantier
 
 - Lire `CLAUDE.md` avant d'écrire une ligne : jamais de tiret long ni
@@ -112,7 +126,9 @@ La source citée dans `zmanimOpinions.ts` est le calendrier Rabbi Ovadiah
 Yosef (`ROZmanimCalendar.java`, `ZmanimFactory.java`). Il fait deux choses :
 en Israël, le luah Or Ha'Haïm ; hors Israël, par défaut, le luah Amudei
 Horaah (Rav Léor Dahan). L'application n'applique qu'Israël, partout, avec
-deux paramètres faux. Ce lot rend l'avis fidèle, en deux modes.
+deux paramètres faux. Ce lot rend l'avis fidèle, en deux modes, choisis
+d'après la position : c'est décidé, il n'y a pas d'option « Israël
+partout » à garder.
 
 ### 3a. Le lieu entre dans le calcul de l'opinion
 
