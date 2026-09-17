@@ -16,6 +16,7 @@ import { isNativeApp } from "./composables/useNativeApp";
 import { isOnboardingOpen } from "./composables/useOnboarding";
 import { isFeedbackOpen } from "./composables/useFeedback";
 import { recordUsageDay, restoreFeedbackNudge } from "./services/feedbackNudge";
+import { useModalKeyboard } from "./composables/useModalKeyboard";
 import { useNativeStatusBar } from "./composables/useNativeStatusBar";
 import { useLocale } from "./composables/useLocale";
 import { RouterView } from "vue-router";
@@ -89,6 +90,10 @@ const showOfflineNotice = computed(() => !online.value && !route.meta.offlineOk)
 
 // La barre système prend la couleur et le style du fond de l'app (no-op sur le web).
 useNativeStatusBar();
+
+// Le clavier logiciel couvre le bas de la fenêtre : les fenêtres modales se
+// posent sur ce qui reste visible, et le champ où l'on écrit y est ramené.
+useModalKeyboard();
 
 // Applique dir/lang au document dès la racine : dans l'app native, le
 // LanguageSelector (navbar/footer) n'est pas monté, personne d'autre ne le fait.

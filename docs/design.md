@@ -608,6 +608,25 @@ Deux fenêtres du système restent, parce qu'elles ne sont pas de l'habillage
 mais un pouvoir que seul le système a : le **choix d'un fichier**
 (`<input type="file">`) et la **feuille de partage** de l'appareil.
 
+### Une fenêtre modale tient dans ce qui est visible, clavier compris
+
+Le voile d'une fenêtre modale (`.modal-overlay`) ne couvre pas la page : il
+couvre ce qui est **visible**. La nuance ne se voit que le jour où un clavier
+logiciel s'ouvre, et ce jour-là elle décide de tout. Un clavier ne rétrécit
+pas la fenêtre, il se pose par-dessus : un cadre centré sur la page entière
+place alors son champ de saisie sous le clavier, et l'on écrit sans voir ce
+qu'on écrit. Le voile prend donc la hauteur du viewport visuel et se pose à
+son sommet (`useModalKeyboard.ts` mesure, le style suit), le champ qui prend
+le clavier est ramené dedans, et une fenêtre à liste se plafonne à cette
+hauteur-là plutôt qu'à une fraction de l'écran.
+
+Le cadre, lui, est centré par des marges automatiques et le voile défile. Un
+cadre centré par `align-items` qui dépasse en hauteur se fait couper **en
+haut**, hors d'atteinte : le bouton « Envoyer » d'un formulaire un peu long
+devenait introuvable sur un petit téléphone. Avec les marges, il est centré
+tant qu'il tient et défile dès qu'il déborde ; c'est vrai du formulaire de
+support, de la modification d'une chaîne et de tout ce qui viendra.
+
 ## 7. Le bandeau de navigation
 
 Sur le **web**, le bandeau est transparent tant qu'on est en tête de page : il
