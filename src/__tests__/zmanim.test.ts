@@ -30,7 +30,9 @@ describe("computeZmanim", () => {
     const byKey = new Map(times.map((zman) => [zman.key, zman.date]));
 
     // Valeurs de référence (Paris, 4 août 2026), au niveau de la mer.
-    expect(at(DEFAULT_PLACE, byKey.get("sunrise")!)).toBe("06:27");
+    // Le netz ouvre le temps de la Amida du matin : un DÉBUT, qui monte à la
+    // minute supérieure (06:27:44, donc 06:28).
+    expect(at(DEFAULT_PLACE, byKey.get("sunrise")!)).toBe("06:28");
     expect(at(DEFAULT_PLACE, byKey.get("sofZmanShma")!)).toBe("10:12");
     // Le Maguen Avraham du Rav Posen compte de l'aube (16,1°) à la nuit.
     expect(at(DEFAULT_PLACE, byKey.get("sofZmanShmaMGA")!)).toBe("09:10");

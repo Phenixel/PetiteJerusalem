@@ -61,12 +61,12 @@ const EXPECTED: { day: Date; label: string; times: Partial<Record<ZmanKey, strin
     times: {
       // Aube du Rav Posen : soleil à 16,1° sous l'horizon le matin (05:01:46).
       alotHaShachar: "2026-11-01T05:01:00.000Z",
-      // Talith : soleil à 11,5° (05:29:57).
-      misheyakir: "2026-11-01T05:29:00.000Z",
+      // Talith : soleil à 11,5° (05:29:57). Un DÉBUT : minute supérieure.
+      misheyakir: "2026-11-01T05:30:00.000Z",
       // Lever du soleil (bord supérieur, 0,833° au-dessus de l'horizon) :
-      // 06:37:17 UTC, soit 07:37 à Paris. C'est l'horaire que New York lisait
-      // 05:37 UTC, une heure trop tôt.
-      sunrise: "2026-11-01T06:37:00.000Z",
+      // 06:37:17 UTC, soit 07:37 à Paris, et 06:38 une fois monté. C'est
+      // l'horaire que New York lisait 05:37 UTC, une heure trop tôt.
+      sunrise: "2026-11-01T06:38:00.000Z",
       // Fin du Chéma du Gaon de Vilna : trois heures zmaniyot du lever au
       // coucher (09:05:32). Los Angeles la lisait 08:05 UTC.
       sofZmanShma: "2026-11-01T09:05:00.000Z",
@@ -87,7 +87,7 @@ const EXPECTED: { day: Date; label: string; times: Partial<Record<ZmanKey, strin
       // 3 h n'existe pas) : un setter y saute aussi. Aucun horaire de Paris n'y
       // tombe ce jour-là, mais les instants doivent rester les mêmes partout.
       alotHaShachar: "2026-03-29T03:58:00.000Z", // 03:58:13
-      sunrise: "2026-03-29T05:34:00.000Z", // 05:34:46
+      sunrise: "2026-03-29T05:35:00.000Z", // 05:34:46, un DÉBUT : minute supérieure
       sofZmanShma: "2026-03-29T08:45:00.000Z", // 08:45:17
       sunset: "2026-03-29T18:16:00.000Z", // 18:16:50
       tzeit: "2026-03-29T19:05:00.000Z", // 19:04:24, une FIN : minute supérieure

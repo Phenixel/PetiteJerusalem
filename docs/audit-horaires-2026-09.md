@@ -145,6 +145,31 @@ Où : `formatZmanTime` (`zmanimService.ts`) n'a pas la notion de sens ;
 bas (le reste), et `RestPeriod.end`, `FastPeriod.end` s'arrondir à la
 minute supérieure avant affichage et rappel.
 
+### 3.3 bis Le sens de l'arrondi, relu sur la source
+
+Le plan (lot 2) rangeait sous « limites, arrondies vers le bas » tout ce qui
+n'est pas une sortie. Le calendrier Rabbi Ovadiah Yosef, relu zman par zman
+(`ROUND_EARLIER` et `ROUND_LATER` de son `ZmanimFactory.java`), en range cinq
+de l'autre côté : le talith, le netz, min'ha guedola, min'ha ketana et plag.
+
+Ce n'est pas une contradiction de fond, c'est l'énumération du plan qui
+manquait sa propre règle : ces cinq horaires sont des DÉBUTS, premiers moments
+où une chose est permise, au même titre qu'une sortie. On ne met pas le talith
+deux secondes avant l'heure, on ne prie pas min'ha avant min'ha guedola. Le
+sens retenu est donc celui de la source :
+
+| Vers le bas (dernier moment) | Vers le haut (premier moment) |
+| ---------------------------- | ----------------------------- |
+| aube, fin du Chéma et de la Amida (les deux avis), limites du 'hamets, hatsot, chkia, allumage | talith, netz, min'ha guedola, min'ha ketana, plag, sortie des étoiles, sortie du Chabbat, fin de jeûne, hatsot de la nuit |
+
+L'aube reste vers le bas : elle n'ouvre pas une permission, elle ouvre le jour
+du Maguen Avraham, dont les limites se comptent. C'est aussi le sens que la
+source lui donne.
+
+Une conséquence visible : le netz s'affiche à la minute supérieure dans la
+liste du jour (06:27:44 devient 06:28), mais la plage des Sli'hot, qu'il
+FERME, garde la minute inférieure. Le même instant, deux rôles.
+
 ### 3.4 Tahanoun : deux jours faux, hérités de hebcal
 
 - **Le lendemain de 'Hanouka.** hebcal retire le tahanoun du 25 au 33 Kislev

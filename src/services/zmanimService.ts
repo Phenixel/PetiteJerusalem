@@ -165,16 +165,24 @@ export const ZMAN_PERIODS: ZmanPeriod[] = ["dawn", "morning", "afternoon", "even
  * Un horaire ne tombe jamais sur une minute ronde, et l'afficher demande de
  * couper les secondes. Le sens n'est pas indifférent :
  *
- *  - une LIMITE (dernier moment pour faire quelque chose : la fin du Chéma, la
- *    fin de la consommation du 'hamets, l'allumage) se coupe vers le BAS. La
- *    fin du Chéma à 10:37:48 s'affiche 10:37 : on se presse un peu, on ne
- *    dépasse pas ;
- *  - une FIN (moment à partir duquel une chose redevient permise : la sortie
- *    des étoiles, la sortie du Chabbat, la fin d'un jeûne) se monte à la
- *    minute SUPÉRIEURE. La sortie du Chabbat à 20:42:09 s'affiche 20:43, et
- *    non 20:42, qui ferait relâcher le Chabbat cinquante et une secondes trop
- *    tôt. C'est ce que font les luhot, qui marquent chaque zman du sens de son
- *    arrondi.
+ *  - une FIN, dernier moment pour faire quelque chose (la fin du Chéma, la fin
+ *    de la consommation du 'hamets, l'allumage, hatsot, la chkia), se coupe
+ *    vers le BAS. La fin du Chéma à 10:37:48 s'affiche 10:37 : on se presse un
+ *    peu, on ne dépasse pas ;
+ *  - un DÉBUT, premier moment où une chose est permise (le talith, le netz,
+ *    min'ha guedola, min'ha ketana, plag, la sortie des étoiles, la sortie du
+ *    Chabbat, la fin d'un jeûne), monte à la minute SUPÉRIEURE. La sortie du
+ *    Chabbat à 20:42:09 s'affiche 20:43, et non 20:42, qui la relâcherait
+ *    cinquante et une secondes trop tôt ; le talith à 06:25:02 s'affiche
+ *    06:26, et non 06:25, qui le ferait mettre deux secondes trop tôt.
+ *
+ * L'aube fait exception aux débuts, et se coupe vers le bas : elle n'ouvre pas
+ * une permission, elle ouvre le JOUR du Maguen Avraham, dont tout le reste se
+ * compte ; c'est aussi le sens que lui donne le calendrier source.
+ *
+ * Ces sens ne sont pas devinés : ce sont ceux que le calendrier Rabbi Ovadiah
+ * Yosef marque zman par zman (`ROUND_EARLIER` et `ROUND_LATER` dans son
+ * `ZmanimFactory.java`), relu pour l'occasion.
  *
  * L'arrondi se fait AU CALCUL, et non à l'affichage : le décompte de la page,
  * les rappels, les widgets et la montre lisent le même instant que la ligne
@@ -217,8 +225,8 @@ const ZMAN_DEFS = [
   // pas forcément passé, et c'est lui qu'on vient vérifier à cette heure-là.
   { key: "chatzotNightDawn", period: "dawn", round: "up", at: (z: Zmanim) => z.chatzotNight() },
   { key: "alotHaShachar", period: "dawn", round: "down", at: (z, _n, o) => o.alotHaShachar(z) },
-  { key: "misheyakir", period: "dawn", round: "down", at: (z, _n, o) => o.misheyakir(z) },
-  { key: "sunrise", period: "dawn", round: "down", at: (z: Zmanim) => z.sunrise() },
+  { key: "misheyakir", period: "dawn", round: "up", at: (z, _n, o) => o.misheyakir(z) },
+  { key: "sunrise", period: "dawn", round: "up", at: (z: Zmanim) => z.sunrise() },
   { key: "sofZmanShmaMGA", period: "morning", round: "down", at: (z, _n, o) => o.sofZmanShmaMGA(z) },
   { key: "sofZmanShma", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanShma() },
   {
@@ -229,9 +237,9 @@ const ZMAN_DEFS = [
   },
   { key: "sofZmanTfilla", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanTfilla() },
   { key: "chatzot", period: "afternoon", round: "down", at: (z: Zmanim) => z.chatzot() },
-  { key: "minchaGedola", period: "afternoon", round: "down", at: (z, _n, o) => o.minchaGedola(z) },
-  { key: "minchaKetana", period: "afternoon", round: "down", at: (z: Zmanim) => z.minchaKetana() },
-  { key: "plagHaMincha", period: "afternoon", round: "down", at: (z, _n, o) => o.plagHaMincha(z) },
+  { key: "minchaGedola", period: "afternoon", round: "up", at: (z, _n, o) => o.minchaGedola(z) },
+  { key: "minchaKetana", period: "afternoon", round: "up", at: (z: Zmanim) => z.minchaKetana() },
+  { key: "plagHaMincha", period: "afternoon", round: "up", at: (z, _n, o) => o.plagHaMincha(z) },
   { key: "sunset", period: "evening", round: "down", at: (z: Zmanim) => z.sunset() },
   { key: "tzeit", period: "evening", round: "up", at: (z, _n, o) => o.tzeit(z) },
   // Milieu de la nuit qui suit le jour affiché : lu sur le lendemain, dont la

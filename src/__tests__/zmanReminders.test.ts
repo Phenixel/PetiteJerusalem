@@ -61,9 +61,12 @@ describe("planZmanReminders", () => {
   it("annonce l'horaire du jour, le délai demandé à l'avance", () => {
     const [first] = plan({ reminders: [{ key: "sunrise", minutesBefore: 15 }] });
 
-    expect(clock(zmanOn("sunrise", MORNING))).toBe("06:27");
-    expect(clock(first.target)).toBe("06:27");
-    expect(clock(first.at)).toBe("06:12");
+    // Le netz du 4 août 2026 à Paris tombe à 06:27:44 : un DÉBUT, donc 06:28
+    // (voir ZmanRounding). Le rappel lit la MÊME minute que la page, c'est
+    // tout l'intérêt de couper au calcul plutôt qu'à l'affichage.
+    expect(clock(zmanOn("sunrise", MORNING))).toBe("06:28");
+    expect(clock(first.target)).toBe("06:28");
+    expect(clock(first.at)).toBe("06:13");
     expect(first.zman).toBe("sunrise");
     expect(first.minutesBefore).toBe(15);
   });
@@ -187,14 +190,14 @@ describe("describeReminder", () => {
     const { title, body } = describeReminder(first, DEFAULT_PLACE.tzid, "fr", t);
 
     expect(title).toBe("zmanim.names.sunrise");
-    expect(body).toBe("zmanim.reminder.notifyBody(15,06:27)");
+    expect(body).toBe("zmanim.reminder.notifyBody(15,06:28)");
   });
 
   it("dit « c'est l'heure » quand le rappel est posé à l'heure pile", () => {
     const [first] = plan({ reminders: [{ key: "sunrise", minutesBefore: 0 }] });
 
     expect(describeReminder(first, DEFAULT_PLACE.tzid, "fr", t).body).toBe(
-      "zmanim.reminder.notifyNow(06:27)",
+      "zmanim.reminder.notifyNow(06:28)",
     );
   });
 
