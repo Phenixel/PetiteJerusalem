@@ -1,7 +1,8 @@
 import { afterEach, describe, it, expect } from "vitest";
-import { HDate } from "@hebcal/core";
+import { HDate, months } from "@hebcal/core";
 import {
   DEFAULT_PLACE,
+  dayHighlights,
   fastAt,
   fastNear,
   formatZmanDay,
@@ -92,6 +93,44 @@ describe("fastAt", () => {
 
   it("rend un jour ordinaire sans rien", () => {
     expect(fastAt(DEFAULT_PLACE, hd(2026, 9, 15), "fr")).toBeNull();
+  });
+
+  it("ne retient que les six jeûnes publics de l'année", () => {
+    // hebcal range aussi parmi les jeûnes le Yom Kippour Katan (la veille de
+    // chaque Roch Hodech) et le Ta'anit BeHaB (usage achkénaze d'après Pessah
+    // et Soukkot) : une quinzaine de jours par an que l'application ne suit
+    // pas, et que sa page du calendrier n'a jamais montrés.
+    for (const year of [5786, 5787, 5788]) {
+      const names: string[] = [];
+      const start = new HDate(1, months.TISHREI, year).abs();
+      const end = new HDate(1, months.TISHREI, year + 1).abs();
+      for (let abs = start; abs < end; abs++) {
+        const fast = fastAt(DEFAULT_PLACE, new HDate(abs), "en");
+        if (fast) names.push(fast.name);
+      }
+      // hebcal rend ces noms avec l'apostrophe typographique.
+      expect(names).toEqual([
+        "Tzom Gedaliah",
+        "Asara B\u2019Tevet",
+        "Ta\u2019anit Esther",
+        "Ta\u2019anit Bechorot",
+        "Tzom Tammuz",
+        "Tish\u2019a B\u2019Av",
+      ]);
+    }
+  });
+
+  it("ne met ni Yom Kippour Katan ni BeHaB parmi les reliefs du jour", () => {
+    // Ni le cadre du jeûne ni la ligne des reliefs ne les nomment, un an durant.
+    const start = new HDate(1, months.TISHREI, 5787).abs();
+    const end = new HDate(1, months.TISHREI, 5788).abs();
+    const found: string[] = [];
+    for (let abs = start; abs < end; abs++) {
+      for (const name of dayHighlights(DEFAULT_PLACE, new HDate(abs), "en")) {
+        if (name.includes("BeHaB") || name.includes("Yom Kippur Katan")) found.push(name);
+      }
+    }
+    expect(found).toEqual([]);
   });
 
   it("nomme le jeûne dans la langue demandée", () => {

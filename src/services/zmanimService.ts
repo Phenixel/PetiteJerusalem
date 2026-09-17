@@ -473,10 +473,35 @@ const isIsraelPlace = (place: ZmanimPlace): boolean => place.tzid === "Asia/Jeru
 const hebcalLocale = (locale: string): string =>
   locale === "he" || locale === "fr" ? locale : "en";
 
+/**
+ * Ce que hebcal range parmi les jeûnes sans que le calendrier de
+ * l'application le suive :
+ *
+ *  - le **Yom Kippour Katan**, jeûne facultatif de la veille de chaque Roch
+ *    Hodech, tenu par des particuliers et non par la communauté ;
+ *  - le **Ta'anit BeHaB**, usage achkénaze des lundi, jeudi et lundi qui
+ *    suivent Pessah et Soukkot.
+ *
+ * `HebrewCalendar.calendar`, dont vit la page du calendrier, les écarte de
+ * lui-même : il faut les demander par ses options `yomKippurKatan` et
+ * `behab`. `getHolidaysOnDate`, lui, rend la liste brute, et la page des
+ * horaires annonçait donc une quinzaine de faux jeûnes par an, avec leur
+ * heure de début et de fin, à côté des six vrais. Les deux pages lisent
+ * maintenant le même calendrier.
+ */
+const NOT_OBSERVED_FLAGS = flags.YOM_KIPPUR_KATAN | flags.BEHAB;
+
+/** Les fêtes et jeûnes d'un jour, tels que l'application les suit. */
+function holidaysOn(hd: HDate, il: boolean) {
+  return (getHolidaysOnDate(hd, il) ?? []).filter(
+    (ev) => (ev.getFlags() & NOT_OBSERVED_FLAGS) === 0,
+  );
+}
+
 /** Jour où le travail est interdit : Chabbat ou Yom Tov, pas 'Hol haMoed. */
 function isRestDay(hd: HDate, il: boolean): boolean {
   if (hd.getDay() === 6) return true;
-  return (getHolidaysOnDate(hd, il) ?? []).some((ev) => (ev.getFlags() & flags.CHAG) !== 0);
+  return holidaysOn(hd, il).some((ev) => (ev.getFlags() & flags.CHAG) !== 0);
 }
 
 /**
@@ -497,8 +522,7 @@ const festivalName = (ev: { basename(): string }, lg: string): string =>
  * d'entrée et de sortie (voir RestPeriod).
  */
 export function dayHighlights(place: ZmanimPlace, hd: HDate, locale: string): string[] {
-  const events = getHolidaysOnDate(hd, isIsraelPlace(place)) ?? [];
-  return events
+  return holidaysOn(hd, isIsraelPlace(place))
     .filter((ev) => (ev.getFlags() & flags.CHAG) === 0)
     .map((ev) => ev.render(hebcalLocale(locale)));
 }
@@ -517,7 +541,7 @@ export function dayHighlights(place: ZmanimPlace, hd: HDate, locale: string): st
 export function festivalsOn(place: ZmanimPlace, hd: HDate, locale: string): string[] {
   const lg = hebcalLocale(locale);
   const names: string[] = [];
-  for (const ev of getHolidaysOnDate(hd, isIsraelPlace(place)) ?? []) {
+  for (const ev of holidaysOn(hd, isIsraelPlace(place))) {
     if ((ev.getFlags() & flags.CHAG) === 0) continue;
     const name = festivalName(ev, lg);
     if (!names.includes(name)) names.push(name);
@@ -813,7 +837,7 @@ const FAST_FLAGS = flags.MAJOR_FAST | flags.MINOR_FAST;
  * tombe un Chabbat est lu au dimanche (ou au jeudi pour les premiers-nés).
  */
 export function fastAt(place: ZmanimPlace, hd: HDate, locale: string): FastPeriod | null {
-  const event = (getHolidaysOnDate(hd, isIsraelPlace(place)) ?? []).find((ev) => {
+  const event = holidaysOn(hd, isIsraelPlace(place)).find((ev) => {
     const eventFlags = ev.getFlags();
     return (
       (eventFlags & FAST_FLAGS) !== 0 &&
