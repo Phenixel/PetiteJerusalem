@@ -105,6 +105,9 @@ function goTo(target: WeeklyParasha | null, direction: "previous" | "next" | "cu
   void router.push({ query });
 }
 
+/** Le nom sous lequel la page se partage (voir ReadingMenu). */
+const shareTitle = computed(() => `${t("chneiMikra.title")} · ${title.value}`);
+
 function applySeoMeta() {
   seoService.setMeta({
     title: pageTitle(`${t("chneiMikra.title")} · ${title.value}`),
@@ -202,7 +205,7 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
 
     <!-- Comme les autres textes de la bibliothèque : le menu de lecture et la
          progression au bas de l'écran. -->
-    <ReadingMenu />
+    <ReadingMenu :share-title="shareTitle" />
     <ReadingProgressBar />
   </main>
 </template>

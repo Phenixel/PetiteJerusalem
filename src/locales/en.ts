@@ -920,6 +920,8 @@ const en: LocaleMessages = {
     titleChiour: "Share this chiour",
     inviteChiour:
       "Listen to the chiour « {name} » 🎧 A Torah lesson to discover on Petite Jerusalem:",
+    titleText: "Share this text",
+    inviteText: "Read « {name} » 📖 A text to open on Petite Jerusalem:",
   },
   batchSelection: {
     textsSelected: "{count} text selected | {count} texts selected",
@@ -1127,6 +1129,10 @@ const en: LocaleMessages = {
       sansTahanoun: "No Tachanun today",
       sansTahanounHint:
         "Brit mila, bar mitzvah, wedding, house of mourning: what is not said on such a day is removed from the text until tomorrow.",
+      hideHalakhot: "Hide halakhot",
+      hideHalakhotHint:
+        "The rulings that accompany a passage (what to repeat if you forgot) are removed from the text.",
+      share: "Share this text",
     },
     labels: {
       chapter: "Chapter {n}",

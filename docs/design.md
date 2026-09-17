@@ -310,6 +310,27 @@ journée** où il est posé et s'éteint au lendemain : une simhá est une affai
 d'un jour, et un interrupteur oublié retirerait le tahanoun des semaines
 durant sans que rien ne le montre, la page ne disant jamais ce qu'elle tait.
 
+« Masquer les halakhot » les rejoint, là où le texte lu en porte : les
+consignes de loi qui accompagnent un passage (ce qu'on reprend en cas d'oubli)
+quittent alors le fil. Elles sont là pour qui doute et encombrent qui sait, et
+un office se dit tous les jours. À la différence de « sans tahanoun », c'est
+un parti pris de lecture, pas une affaire d'un jour : il tient jusqu'à ce
+qu'on le change, et il est éteint au départ, personne ne devant découvrir
+qu'une halakha existait le jour où il en aurait eu besoin. Le réglage ne se
+montre que sur un texte qui en porte : proposer de masquer ce que la page
+n'affiche pas laisserait croire qu'on a raté quelque chose.
+
+Sous les interrupteurs, un filet, puis ce qui se fait d'un geste au lieu de se
+régler : partager le texte lu, écrire à l'équipe, et, sur le site, prendre
+l'app. Ces trois-là n'étaient qu'au pied de page ou dans l'onglet À propos,
+c'est-à-dire là où l'on finit ; or c'est en lisant qu'on veut envoyer un texte
+à quelqu'un, et en lisant qu'on voit la coquille à signaler. Ce sont des
+lignes, comme les repères du sommaire, et non des boutons pleins : le panneau
+reste un panneau de lecture, pas une barre d'outils. Le partage porte
+l'adresse **publique** du texte, celle du site, jamais celle de la page en
+session ni l'adresse locale de la webview de l'app, que personne d'autre ne
+saurait ouvrir.
+
 Corollaire : pas de marque-page sur une tefila (Sidour, Sli'hot, Brahot). Un
 office ou une bénédiction se lisent du début, on n'y revient pas à un
 paragraphe comme à un verset de Tehilim ; le sommaire du menu y mène déjà à
@@ -333,6 +354,13 @@ fenêtre, pas une page : on l'ouvre de là où l'on est et l'on y revient en la
 fermant, sans perdre la lecture en cours. Il s'ouvre de trois endroits, tous
 en fin de parcours : le pied de page du site, l'onglet À propos de l'app, et
 le bas de l'accueil.
+
+Une quatrième porte s'ouvre en pleine lecture, dans les réglages du menu
+(voir « Le menu de lecture s'ouvre au-dessus de son bouton ») : c'est là qu'on
+voit l'erreur dans un texte, et remonter jusqu'au pied de page pour la dire,
+c'est perdre sa ligne. Elle ne contredit pas la règle : c'est toujours la
+personne qui va la chercher, derrière deux gestes, et non l'application qui
+lui coupe la parole.
 
 Sur l'accueil, il tient en une ligne sous la dédicace, en petit et en gris,
 avec le seul lien souligné : « Une idée, un problème ? Écrivez-nous ». Pas de
