@@ -149,8 +149,12 @@ describe("les horaires du jour, tout au long de l'année", () => {
         for (let i = 0; i < 365 * 2; i++) {
           const day = new Date(2026, 0, 1, 12);
           day.setDate(day.getDate() + i);
+          // Les RAPPORTS se lisent sur l'instant exact, non sur la minute
+          // affichée : couper trois horaires à la minute déplace leur écart de
+          // deux minutes, et une tolérance aussi large ne distinguerait plus
+          // hatsot du midi solaire, qui est justement ce que ce test tient.
           const byKey = new Map<string, Date>(
-            computeZmanim(place, day).map((zman) => [zman.key, zman.date]),
+            computeZmanim(place, day).map((zman) => [zman.key, zman.exact]),
           );
           const tag = label(place, day);
           const sunrise = byKey.get("sunrise")!;
@@ -226,7 +230,10 @@ describe("les 243 villes du catalogue", () => {
         };
         for (const day of PROBE_DAYS) {
           const times = computeZmanim(place, day);
-          const byKey = new Map<string, Date>(times.map((zman) => [zman.key, zman.date]));
+          // Même partage qu'au-dessus : l'ORDRE se vérifie sur la minute
+          // affichée, qui est ce que la page montre, les RAPPORTS sur
+          // l'instant exact, que la minute effacerait.
+          const byKey = new Map<string, Date>(times.map((zman) => [zman.key, zman.exact]));
           const tag = `${city.name} (${city.country}, ${city.lat.toFixed(1)}°) ${day.toISOString().slice(0, 10)}`;
 
           // Jamais un horaire plus tôt que celui qui le précède dans la liste.
@@ -287,8 +294,9 @@ describe("les 243 villes du catalogue", () => {
         city: "Jérusalem",
       };
       const day = new Date(2026, 8, 17, 12);
+      // À la seconde près : l'instant exact, que l'affichage coupe à la minute.
       const byKey = new Map<string, Date>(
-        computeZmanim(jerusalem, day).map((zman) => [zman.key, zman.date]),
+        computeZmanim(jerusalem, day).map((zman) => [zman.key, zman.exact]),
       );
       const atSeaLevel = new Zmanim(
         new GeoLocation("Jérusalem", 31.7683, 35.2137, 0, "Asia/Jerusalem"),

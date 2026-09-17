@@ -160,6 +160,49 @@ export type ZmanPeriod = "dawn" | "morning" | "afternoon" | "evening";
 export const ZMAN_PERIODS: ZmanPeriod[] = ["dawn", "morning", "afternoon", "evening"];
 
 /**
+ * Le sens dans lequel un horaire s'arrondit à la minute.
+ *
+ * Un horaire ne tombe jamais sur une minute ronde, et l'afficher demande de
+ * couper les secondes. Le sens n'est pas indifférent :
+ *
+ *  - une LIMITE (dernier moment pour faire quelque chose : la fin du Chéma, la
+ *    fin de la consommation du 'hamets, l'allumage) se coupe vers le BAS. La
+ *    fin du Chéma à 10:37:48 s'affiche 10:37 : on se presse un peu, on ne
+ *    dépasse pas ;
+ *  - une FIN (moment à partir duquel une chose redevient permise : la sortie
+ *    des étoiles, la sortie du Chabbat, la fin d'un jeûne) se monte à la
+ *    minute SUPÉRIEURE. La sortie du Chabbat à 20:42:09 s'affiche 20:43, et
+ *    non 20:42, qui ferait relâcher le Chabbat cinquante et une secondes trop
+ *    tôt. C'est ce que font les luhot, qui marquent chaque zman du sens de son
+ *    arrondi.
+ *
+ * L'arrondi se fait AU CALCUL, et non à l'affichage : le décompte de la page,
+ * les rappels, les widgets et la montre lisent le même instant que la ligne
+ * d'horaire, et annoncent donc la même minute. Voir
+ * `docs/audit-horaires-2026-09.md`, point 3.3.
+ */
+export type ZmanRounding = "down" | "up";
+
+/**
+ * L'horaire coupé à la minute, dans le sens que sa nature commande.
+ *
+ * Le calcul se fait sur l'instant (l'epoch), jamais avec un setter de `Date` :
+ * un setter recalculerait l'instant depuis les champs locaux de la machine, et
+ * sauterait d'une heure à l'heure ambiguë du retour à l'heure d'hiver (voir le
+ * correctif de `patches/` et le point 3.1 de l'audit).
+ */
+export function roundMinute(date: Date, round: ZmanRounding): Date {
+  const ms = date.getTime();
+  const rounded = round === "up" ? Math.ceil(ms / 60_000) : Math.floor(ms / 60_000);
+  return new Date(rounded * 60_000);
+}
+
+/** Le même arrondi, mais qui laisse passer une date incalculable. */
+function roundUsable(date: Date | null, round: ZmanRounding): Date | null {
+  return isUsable(date) ? roundMinute(date, round) : null;
+}
+
+/**
  * Les horaires retenus, dans l'ordre chronologique.
  *
  * Deux opinions sont données là où la pratique les distingue vraiment (fin du
@@ -172,26 +215,37 @@ const ZMAN_DEFS = [
   // est celui de la nuit qui l'a précédé. Il ouvre la liste : après minuit, le
   // jour civil a changé, mais le milieu de sa nuit, souvent vers 1 h, n'est
   // pas forcément passé, et c'est lui qu'on vient vérifier à cette heure-là.
-  { key: "chatzotNightDawn", period: "dawn", at: (z: Zmanim) => z.chatzotNight() },
-  { key: "alotHaShachar", period: "dawn", at: (z, _n, o) => o.alotHaShachar(z) },
-  { key: "misheyakir", period: "dawn", at: (z, _n, o) => o.misheyakir(z) },
-  { key: "sunrise", period: "dawn", at: (z: Zmanim) => z.sunrise() },
-  { key: "sofZmanShmaMGA", period: "morning", at: (z, _n, o) => o.sofZmanShmaMGA(z) },
-  { key: "sofZmanShma", period: "morning", at: (z: Zmanim) => z.sofZmanShma() },
-  { key: "sofZmanTfillaMGA", period: "morning", at: (z, _n, o) => o.sofZmanTfillaMGA(z) },
-  { key: "sofZmanTfilla", period: "morning", at: (z: Zmanim) => z.sofZmanTfilla() },
-  { key: "chatzot", period: "afternoon", at: (z: Zmanim) => z.chatzot() },
-  { key: "minchaGedola", period: "afternoon", at: (z, _n, o) => o.minchaGedola(z) },
-  { key: "minchaKetana", period: "afternoon", at: (z: Zmanim) => z.minchaKetana() },
-  { key: "plagHaMincha", period: "afternoon", at: (z, _n, o) => o.plagHaMincha(z) },
-  { key: "sunset", period: "evening", at: (z: Zmanim) => z.sunset() },
-  { key: "tzeit", period: "evening", at: (z, _n, o) => o.tzeit(z) },
+  { key: "chatzotNightDawn", period: "dawn", round: "up", at: (z: Zmanim) => z.chatzotNight() },
+  { key: "alotHaShachar", period: "dawn", round: "down", at: (z, _n, o) => o.alotHaShachar(z) },
+  { key: "misheyakir", period: "dawn", round: "down", at: (z, _n, o) => o.misheyakir(z) },
+  { key: "sunrise", period: "dawn", round: "down", at: (z: Zmanim) => z.sunrise() },
+  { key: "sofZmanShmaMGA", period: "morning", round: "down", at: (z, _n, o) => o.sofZmanShmaMGA(z) },
+  { key: "sofZmanShma", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanShma() },
+  {
+    key: "sofZmanTfillaMGA",
+    period: "morning",
+    round: "down",
+    at: (z, _n, o) => o.sofZmanTfillaMGA(z),
+  },
+  { key: "sofZmanTfilla", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanTfilla() },
+  { key: "chatzot", period: "afternoon", round: "down", at: (z: Zmanim) => z.chatzot() },
+  { key: "minchaGedola", period: "afternoon", round: "down", at: (z, _n, o) => o.minchaGedola(z) },
+  { key: "minchaKetana", period: "afternoon", round: "down", at: (z: Zmanim) => z.minchaKetana() },
+  { key: "plagHaMincha", period: "afternoon", round: "down", at: (z, _n, o) => o.plagHaMincha(z) },
+  { key: "sunset", period: "evening", round: "down", at: (z: Zmanim) => z.sunset() },
+  { key: "tzeit", period: "evening", round: "up", at: (z, _n, o) => o.tzeit(z) },
   // Milieu de la nuit qui suit le jour affiché : lu sur le lendemain, dont la
   // nuit précédente est justement celle-là.
-  { key: "chatzotNight", period: "evening", at: (_z: Zmanim, next: Zmanim) => next.chatzotNight() },
+  {
+    key: "chatzotNight",
+    period: "evening",
+    round: "up",
+    at: (_z: Zmanim, next: Zmanim) => next.chatzotNight(),
+  },
 ] as const satisfies readonly {
   key: string;
   period: ZmanPeriod;
+  round: ZmanRounding;
   at: (z: Zmanim, next: Zmanim, opinion: OpinionZmanim) => Date;
 }[];
 
@@ -206,10 +260,34 @@ export type ZmanKey = (typeof ZMAN_DEFS)[number]["key"];
  */
 export const ZMAN_KEYS: ZmanKey[] = ZMAN_DEFS.map((def) => def.key);
 
+/**
+ * Le sens de l'arrondi de chaque horaire (voir ZmanRounding). Publié pour que
+ * le test puisse le confronter à l'instant exact, horaire par horaire, plutôt
+ * que de recopier la liste et de la laisser vieillir.
+ */
+export const ZMAN_ROUNDING: Record<ZmanKey, ZmanRounding> = Object.fromEntries(
+  ZMAN_DEFS.map((def) => [def.key, def.round]),
+) as Record<ZmanKey, ZmanRounding>;
+
 export interface ZmanTime {
   key: ZmanKey;
   period: ZmanPeriod;
+  /**
+   * L'horaire, coupé à la minute dans le sens de sa nature (voir
+   * ZmanRounding). C'est LUI que lisent la page, le décompte, les rappels, les
+   * widgets et la montre : tous annoncent donc la même minute.
+   */
   date: Date;
+  /**
+   * Le même horaire avant la coupe, à la seconde près.
+   *
+   * Il ne s'affiche jamais. Il sert à vérifier les définitions, que la minute
+   * efface : hatsot est à mi-chemin EXACT du lever et du coucher, et non au
+   * midi solaire, dont il ne s'écarte que d'une demi-seconde à une
+   * demi-minute ; trois horaires coupés à la minute ne sauraient plus dire
+   * lequel des deux le calcul a pris. Voir `zmanimInvariants.test.ts`.
+   */
+  exact: Date;
 }
 
 /**
@@ -333,15 +411,19 @@ function computeZmanimFor(place: ZmanimPlace, localDay: Date): ZmanTime[] {
   const opinion = opinionZmanim(currentOpinion);
   const times: ZmanTime[] = [];
   for (const def of ZMAN_DEFS) {
-    const date = def.at(zmanim, nextZmanim, opinion);
+    const computed = def.at(zmanim, nextZmanim, opinion);
     // Nuit ou jour polaire : l'horaire n'existe pas, on ne l'affiche pas.
-    if (!isUsable(date)) continue;
+    if (!isUsable(computed)) continue;
+    // Coupé à la minute ici, dans le sens que sa nature commande (voir
+    // ZmanRounding) : c'est cet instant-là que lisent la page, le décompte,
+    // les rappels et les widgets, et ils annoncent donc tous la même minute.
+    const date = roundMinute(computed, def.round);
     // Le milieu de la nuit en cours n'appartient au jour que s'il tombe après
     // minuit. À l'est du méridien de son fuseau (Israël l'hiver), il tombe
     // avant : c'est alors la soirée de la veille qui le porte, pas ce jour-ci.
     if (def.key === "chatzotNightDawn" && dayInPlace(place, date).getTime() !== localDay.getTime())
       continue;
-    times.push({ key: def.key, period: def.period, date });
+    times.push({ key: def.key, period: def.period, date, exact: computed });
   }
   // ZMAN_DEFS les range dans l'ordre d'une journée ordinaire, mais cet ordre
   // n'est pas garanti partout : au nord de Manchester, en hiver, le jour du
@@ -436,7 +518,10 @@ export function slihotWindow(place: ZmanimPlace, now: Date = new Date()): Slihot
   const start = zmanim.chatzotNight();
   const end = zmanim.sunrise();
   if (!isUsable(start) || !isUsable(end)) return null;
-  return { start, end, tonight };
+  // Hatsot ouvre la plage (on ne commence pas avant), le netz la ferme : la
+  // première monte à la minute supérieure, la seconde descend (voir
+  // ZmanRounding).
+  return { start: roundMinute(start, "up"), end: roundMinute(end, "down"), tonight };
 }
 
 /**
@@ -662,17 +747,19 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
   const end = opinion.restEnd(lastDay);
   // L'allumage, lui, est indispensable : sans lui il n'y a rien à annoncer.
   if (!isUsable(start)) return null;
-  const restEnd = isUsable(end) ? end : null;
+  // La sortie est une FIN : elle monte à la minute supérieure, sans quoi le
+  // Chabbat se relâcherait jusqu'à cinquante-neuf secondes trop tôt (voir
+  // ZmanRounding). L'allumage, une limite, est déjà coupé vers le bas par
+  // hebcal.
+  const restEnd = roundUsable(end, "up");
   // Aux hautes latitudes en été, la sortie des étoiles peut dépasser les
   // 72 minutes : une sortie Rabbénou Tam plus tôt que la sortie ordinaire
   // n'apprend rien, on ne la donne pas. Sans sortie du tout, elle n'apprend
   // rien non plus : ce serait la seule heure du cadre, sous un nom que peu
   // suivent.
-  const rabbenouTam = opinion.rabbenouTam(lastDay);
+  const rabbenouTam = roundUsable(opinion.rabbenouTam(lastDay), "up");
   const endRabbenouTam =
-    restEnd && isUsable(rabbenouTam) && rabbenouTam.getTime() > restEnd.getTime()
-      ? rabbenouTam
-      : null;
+    restEnd && rabbenouTam && rabbenouTam.getTime() > restEnd.getTime() ? rabbenouTam : null;
 
   const festivals: string[] = [];
   let shabbat: Date | null = null;
@@ -688,8 +775,9 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
 /** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */
 export function nightfallOf(place: ZmanimPlace, hd: HDate): Date | null {
   const zmanim = new Zmanim(geoLocationOf(place), civilNoon(hd), false);
-  const end = opinionZmanim(currentOpinion).tzeit(zmanim);
-  return isUsable(end) ? end : null;
+  // Une FIN, comme la sortie des étoiles de la liste du jour : minute
+  // supérieure, pour que les deux annoncent la même (voir ZmanRounding).
+  return roundUsable(opinionZmanim(currentOpinion).tzeit(zmanim), "up");
 }
 
 /**
@@ -926,13 +1014,16 @@ export function fastAt(place: ZmanimPlace, hd: HDate, locale: string): FastPerio
   } else {
     start = opinion.alotHaShachar(fastDay);
   }
-  const end = opinion.fastEnd(fastDay);
+  // Le début est une LIMITE (dernier moment pour manger), la fin une FIN :
+  // l'un descend à la minute, l'autre monte (voir ZmanRounding). Sans arrondi,
+  // le jeûne se rompait jusqu'à cinquante-neuf secondes trop tôt.
+  const end = roundUsable(opinion.fastEnd(fastDay), "up");
   // La fin, elle, est indispensable : sans elle il n'y a rien à annoncer.
-  if (!isUsable(end)) return null;
+  if (!end) return null;
   return {
     name: event.render(hebcalLocale(locale)),
     day: hd,
-    start: isUsable(start) ? start : null,
+    start: roundUsable(start, "down"),
     end,
     endMinutes: opinion.fastEndMinutes,
     fromEve,
@@ -1024,15 +1115,17 @@ export function chametzAt(place: ZmanimPlace, hd: HDate): ChametzDeadlines | nul
   const burningEveMGA = friday ? opinion.sofZmanBiurChametzMGA(friday) : null;
   const burningEve = friday ? friday.sofZmanBiurChametzGRA() : null;
 
+  // Quatre LIMITES : toutes descendent à la minute (voir ZmanRounding). On ne
+  // gagne pas une minute pour finir son pain.
   return {
     day: hd,
-    eatingMGA,
-    eating,
-    disposalMGA,
-    disposal,
+    eatingMGA: roundMinute(eatingMGA, "down"),
+    eating: roundMinute(eating, "down"),
+    disposalMGA: roundMinute(disposalMGA, "down"),
+    disposal: roundMinute(disposal, "down"),
     onShabbat,
-    burningEveMGA: isUsable(burningEveMGA) ? burningEveMGA : null,
-    burningEve: isUsable(burningEve) ? burningEve : null,
+    burningEveMGA: roundUsable(burningEveMGA, "down"),
+    burningEve: roundUsable(burningEve, "down"),
   };
 }
 

@@ -48,28 +48,35 @@ const ORIGINAL_TZ = process.env.TZ;
  * Calculés par `@hebcal/core` pour Paris (48,85341 / 2,3488), au niveau de la
  * mer, avec le moteur solaire NOAA, et recoupés par PyEphem et kosher-zmanim
  * lors de l'audit (section 2 : moins de six secondes d'écart).
+ *
+ * Ce sont les heures COUPÉES à la minute, celles que la page affiche : les
+ * limites vers le bas, les fins vers le haut (voir ZmanRounding). L'instant
+ * exact est donné en commentaire, puisque c'est lui qui justifie la coupe. Un
+ * décalage de fuseau, lui, vaut une heure entière : la minute ne le cache pas.
  */
 const EXPECTED: { day: Date; label: string; times: Partial<Record<ZmanKey, string>> }[] = [
   {
     day: NOVEMBER,
     label: "Paris, dimanche 1er novembre 2026",
     times: {
-      // Aube du Rav Posen : soleil à 16,1° sous l'horizon le matin.
-      alotHaShachar: "2026-11-01T05:01:46.000Z",
-      // Talith : soleil à 11,5°.
-      misheyakir: "2026-11-01T05:29:57.000Z",
+      // Aube du Rav Posen : soleil à 16,1° sous l'horizon le matin (05:01:46).
+      alotHaShachar: "2026-11-01T05:01:00.000Z",
+      // Talith : soleil à 11,5° (05:29:57).
+      misheyakir: "2026-11-01T05:29:00.000Z",
       // Lever du soleil (bord supérieur, 0,833° au-dessus de l'horizon) :
-      // 07:37:17 à Paris. C'est l'horaire que New York lisait 05:37:17 UTC.
-      sunrise: "2026-11-01T06:37:17.000Z",
+      // 06:37:17 UTC, soit 07:37 à Paris. C'est l'horaire que New York lisait
+      // 05:37 UTC, une heure trop tôt.
+      sunrise: "2026-11-01T06:37:00.000Z",
       // Fin du Chéma du Gaon de Vilna : trois heures zmaniyot du lever au
-      // coucher. Los Angeles la lisait 08:05:32 UTC.
-      sofZmanShma: "2026-11-01T09:05:32.000Z",
-      // Fin de la Amida du Gaon de Vilna : quatre heures zmaniyot.
-      sofZmanTfilla: "2026-11-01T09:54:58.000Z",
-      // Coucher du soleil.
-      sunset: "2026-11-01T16:30:18.000Z",
-      // Sortie des étoiles du Rav Posen : soleil à 8,5° sous l'horizon.
-      tzeit: "2026-11-01T17:19:02.000Z",
+      // coucher (09:05:32). Los Angeles la lisait 08:05 UTC.
+      sofZmanShma: "2026-11-01T09:05:00.000Z",
+      // Fin de la Amida du Gaon de Vilna : quatre heures zmaniyot (09:54:58).
+      sofZmanTfilla: "2026-11-01T09:54:00.000Z",
+      // Coucher du soleil (16:30:18).
+      sunset: "2026-11-01T16:30:00.000Z",
+      // Sortie des étoiles du Rav Posen : soleil à 8,5° sous l'horizon
+      // (17:19:02). Une FIN : elle monte à la minute supérieure.
+      tzeit: "2026-11-01T17:20:00.000Z",
     },
   },
   {
@@ -79,11 +86,11 @@ const EXPECTED: { day: Date; label: string; times: Partial<Record<ZmanKey, strin
       // Le passage à l'heure d'été laisse un TROU dans l'heure locale (2 h à
       // 3 h n'existe pas) : un setter y saute aussi. Aucun horaire de Paris n'y
       // tombe ce jour-là, mais les instants doivent rester les mêmes partout.
-      alotHaShachar: "2026-03-29T03:58:13.000Z",
-      sunrise: "2026-03-29T05:34:46.000Z",
-      sofZmanShma: "2026-03-29T08:45:17.000Z",
-      sunset: "2026-03-29T18:16:50.000Z",
-      tzeit: "2026-03-29T19:04:24.000Z",
+      alotHaShachar: "2026-03-29T03:58:00.000Z", // 03:58:13
+      sunrise: "2026-03-29T05:34:00.000Z", // 05:34:46
+      sofZmanShma: "2026-03-29T08:45:00.000Z", // 08:45:17
+      sunset: "2026-03-29T18:16:00.000Z", // 18:16:50
+      tzeit: "2026-03-29T19:05:00.000Z", // 19:04:24, une FIN : minute supérieure
     },
   },
 ];

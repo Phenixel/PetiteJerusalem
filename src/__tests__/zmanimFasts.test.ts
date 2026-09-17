@@ -41,8 +41,11 @@ describe("fastAt", () => {
     expect(on(DEFAULT_PLACE, fast.end)).toBe("lundi 14 septembre");
     // Aube à 16,1° (Rav Posen), fin du jeûne à 7,08° : trois étoiles
     // MOYENNES, quand la sortie du Chabbat en attend trois petites (8,5°).
+    // Le début est une LIMITE (05:48:46, donc 05:48, on ne mange pas
+    // quatorze secondes de plus), la fin une FIN (20:44:19, donc 20:45 : à
+    // 20:44 le jeûne se romprait dix-neuf secondes trop tôt).
     expect(at(DEFAULT_PLACE, fast.start!)).toBe("05:48");
-    expect(at(DEFAULT_PLACE, fast.end)).toBe("20:44");
+    expect(at(DEFAULT_PLACE, fast.end)).toBe("20:45");
     expect(fast.endMinutes).toBeNull();
   });
 
@@ -60,8 +63,9 @@ describe("fastAt", () => {
   it("suit l'avis choisi : vingt minutes fixes chez le Rav Ovadia", () => {
     setZmanimOpinion("ovadia");
     const fast = fastAt(DEFAULT_PLACE, hd(2026, 9, 14), "fr")!;
-    // La chkia est à 20:05 ce jour-là à Paris.
-    expect(at(DEFAULT_PLACE, fast.end)).toBe("20:25");
+    // La chkia est à 20:05:50 ce jour-là à Paris : vingt minutes fixes
+    // donnent 20:25:50, et cette FIN monte à 20:26.
+    expect(at(DEFAULT_PLACE, fast.end)).toBe("20:26");
     expect(fast.endMinutes).toBe(20);
   });
 

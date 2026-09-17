@@ -10,6 +10,7 @@ import {
   DEFAULT_PLACE,
   formatZmanDay,
   formatZmanTime,
+  roundMinute,
   setZmanimOpinion,
 } from "../services/zmanimService";
 import { DEFAULT_ZMANIM_OPINION, opinionZmanim } from "../services/zmanimOpinions";
@@ -67,20 +68,26 @@ describe("chametzAt", () => {
       const chametz = chametzAt(DEFAULT_PLACE, day)!;
       const zmanim = new Zmanim(gloc, day.greg(), false);
 
+      // Les quatre heures sont des LIMITES : elles descendent à la minute
+      // (voir ZmanRounding). La référence se coupe donc du même côté.
+      const down = (date: Date) => roundMinute(date, "down").getTime();
+
       // Le Gaon de Vilna : quatre puis cinq douzièmes du jour depuis le lever.
-      expect(chametz.eating.getTime()).toBe(zmanim.sofZmanTfilla().getTime());
-      expect(chametz.disposal.getTime()).toBe(zmanim.sofZmanBiurChametzGRA().getTime());
+      expect(chametz.eating.getTime()).toBe(down(zmanim.sofZmanTfilla()));
+      expect(chametz.disposal.getTime()).toBe(down(zmanim.sofZmanBiurChametzGRA()));
 
       // Le Maguen Avraham : la quatrième heure est celle de la fin de la Amida,
       // et la cinquième tombe exactement une heure de son jour plus tard.
       const rules = opinionZmanim("posen");
-      expect(chametz.eatingMGA.getTime()).toBe(rules.sofZmanTfillaMGA(zmanim).getTime());
+      expect(chametz.eatingMGA.getTime()).toBe(down(rules.sofZmanTfillaMGA(zmanim)));
       // Une heure du jour du Maguen Avraham sépare sa troisième de sa
-      // quatrième : la cinquième doit en être à la même distance.
+      // quatrième : la cinquième doit en être à la même distance. L'écart se
+      // lit ici entre deux heures coupées à la minute, et peut donc s'écarter
+      // d'une minute de celui des instants exacts.
       const mgaHour =
         rules.sofZmanTfillaMGA(zmanim).getTime() - rules.sofZmanShmaMGA(zmanim).getTime();
       const gap = chametz.disposalMGA.getTime() - chametz.eatingMGA.getTime();
-      expect(Math.abs(gap - mgaHour)).toBeLessThan(1_000);
+      expect(Math.abs(gap - mgaHour)).toBeLessThan(60_000);
 
       // Et les deux avis se suivent toujours dans le même ordre.
       expect(chametz.eatingMGA.getTime()).toBeLessThan(chametz.eating.getTime());
