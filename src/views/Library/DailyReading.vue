@@ -1581,7 +1581,7 @@ const formatBookName = bookName;
          « gérer » et pendant le chargement, ils masquaient le bouton de
          remontée sans rien offrir à la place. -->
     <template v-if="!loading && mode === 'reading'">
-      <ReadingMenu />
+      <ReadingMenu :share-title="t('dailyReading.title')" />
       <ReadingProgressBar />
     </template>
   </div>

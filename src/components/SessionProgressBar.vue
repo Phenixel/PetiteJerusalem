@@ -106,7 +106,7 @@ const showParticipants = ref(false);
     <AppModal
       :open="showParticipants"
       :label="t('progressBar.participantsTitle')"
-      panel-class="modal-panel flex flex-col max-h-[80vh] animate-[scaleIn_0.3s_ease]"
+      panel-class="modal-panel flex flex-col max-h-full animate-[scaleIn_0.3s_ease]"
       @close="showParticipants = false"
     >
       <div class="mb-4 flex items-center justify-between gap-3">

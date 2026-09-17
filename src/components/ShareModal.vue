@@ -20,7 +20,7 @@ interface Props {
   /** Clé i18n du message d'invitation pré-rempli ({name} interpolé). */
   messageKey?: string;
   /** Nature du contenu partagé, pour les stats de viralité par type. */
-  contentType?: "session" | "chiour";
+  contentType?: "session" | "chiour" | "text";
   /**
    * Identifiant du contenu partagé, pour les stats de viralité par contenu.
    *

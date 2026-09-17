@@ -258,7 +258,7 @@ function confirm(): void {
   <AppModal
     :open="open"
     :label="label ?? t('common.chooseDate')"
-    panel-class="modal-panel !max-w-sm !p-0 flex flex-col max-h-[85svh] overflow-hidden animate-[scaleIn_0.3s_ease]"
+    panel-class="modal-panel !max-w-sm !p-0 flex flex-col max-h-full overflow-hidden animate-[scaleIn_0.3s_ease]"
     @close="emit('close')"
   >
     <!-- Ce qu'on a retenu, en tête : la date se lit en entier avant d'être

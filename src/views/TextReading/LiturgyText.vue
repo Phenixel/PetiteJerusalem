@@ -27,6 +27,7 @@ import {
   openTefilinMirror,
   removeMirrorOffer,
 } from "../../composables/useTefilinMirror";
+import { halakhotHidden } from "../../composables/useHalakhot";
 import TefilaZman from "./TefilaZman.vue";
 
 /**
@@ -226,9 +227,13 @@ const runClass = (run: TextRun & { kind: "he" }) => ({
   "reading-alt": run.accent && !run.when,
 });
 
-/** Les halakhot d'un bloc qui servent aujourd'hui. */
+/**
+ * Les halakhot d'un bloc qui servent aujourd'hui, ou aucune quand le lecteur
+ * les a masquées dans les réglages de lecture (voir useHalakhot) : il connaît
+ * l'office et vient le dire, pas relire la règle de l'oubli.
+ */
 const halakhotOf = (block: TextBlock): Rubric[] =>
-  (block.halakhot ?? []).filter((halakha) => saidToday(halakha));
+  halakhotHidden.value ? [] : (block.halakhot ?? []).filter((halakha) => saidToday(halakha));
 
 /**
  * La boussole du Kotel, ouverte depuis le titre d'un passage qui se dit face

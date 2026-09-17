@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
 import ReadingSizeControl from "./ReadingSizeControl.vue";
+import ShareModal from "./ShareModal.vue";
 import ToggleSwitch from "./ToggleSwitch.vue";
+import { SITE_URL } from "../config/site";
 import { useReadingSize } from "../composables/useReadingSize";
+import { detectStores, type StoreKey } from "../composables/useAppDownload";
 import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
+import { openFeedback } from "../composables/useFeedback";
 import { isNativeApp } from "../composables/useNativeApp";
 import { addReadingMenu, removeReadingMenu } from "../composables/useReadingNav";
 import { useScrollFrame } from "../composables/useScrollFrame";
@@ -18,6 +23,11 @@ import {
   restoreAutoScrollFromDevice,
   setAutoScrollEnabled,
 } from "../composables/useAutoScroll";
+import {
+  halakhotHidden,
+  restoreHalakhotHiddenFromDevice,
+  setHalakhotHidden,
+} from "../composables/useHalakhot";
 import { sansTahanoun, setSansTahanoun } from "../composables/useSansTahanoun";
 import type { ReadingNavSection } from "../composables/useReadingNav";
 import { analyticsService } from "../services/analyticsService";
@@ -52,7 +62,13 @@ import { analyticsService } from "../services/analyticsService";
  * phonétique (`phonetic`, null quand le texte ne se translittère pas) et,
  * dans l'app native, le téléchargement du texte (`downloadState`, "none"
  * quand il n'y a rien à télécharger). Une tefila (`tefila`) y ajoute le
- * réglage « sans tahanoun », qui n'a de sens que devant un office.
+ * réglage « sans tahanoun », qui n'a de sens que devant un office, et un
+ * texte qui porte des consignes de loi (`halakhot`), celui qui les masque.
+ *
+ * Les réglages portent enfin trois commandes qui n'étaient qu'ailleurs :
+ * partager le texte lu, écrire au support, et, sur le site, télécharger
+ * l'app. On les cherchait au pied de page ou dans l'onglet À propos, c'est-à-
+ * dire loin de la lecture, là où l'idée vient.
  */
 const props = withDefaults(
   defineProps<{
@@ -60,12 +76,21 @@ const props = withDefaults(
     phonetic?: boolean | null;
     downloadState?: BookState;
     tefila?: boolean;
+    /** Le texte porte des halakhot : le réglage qui les masque a prise. */
+    halakhot?: boolean;
+    /** Le nom sous lequel le texte lu se partage. */
+    shareTitle?: string;
+    /** L'adresse publique du texte ; à défaut, celle de la page ouverte. */
+    shareUrl?: string;
   }>(),
   {
     sections: () => [],
     phonetic: null,
     downloadState: "none",
     tefila: false,
+    halakhot: false,
+    shareTitle: "",
+    shareUrl: "",
   },
 );
 
@@ -127,10 +152,44 @@ function openMenu() {
 
 function showSettings() {
   view.value = "settings";
-  // L'interrupteur du défilement peut n'exister que dans les préférences
-  // natives : on le relit avant de le montrer, comme l'écran des réglages.
+  // Les interrupteurs peuvent n'exister que dans les préférences natives : on
+  // les relit avant de les montrer, comme l'écran des réglages.
   void restoreAutoScrollFromDevice();
+  void restoreHalakhotHiddenFromDevice();
   analyticsService.capture("reading_settings_opened", { tefila: props.tefila });
+}
+
+/**
+ * Le partage du texte lu. L'adresse vient de la page quand elle en donne une
+ * (celle du site, publique et indexée) ; sinon celle de la route ouverte,
+ * préfixée du domaine : dans l'app native, `location.href` est une adresse
+ * locale de webview, que personne d'autre ne saurait ouvrir.
+ */
+const route = useRoute();
+const showShare = ref(false);
+const shareUrl = computed(() => props.shareUrl || `${SITE_URL}${route.fullPath}`);
+const shareName = computed(() => props.shareTitle || t("textReading.pageTitle"));
+
+function share() {
+  close();
+  showShare.value = true;
+}
+
+/** Le formulaire de support, ouvert depuis la lecture : la fenêtre vit dans App.vue. */
+function report() {
+  close();
+  analyticsService.capture("feedback_opened", { from: "reading_menu" });
+  openFeedback();
+}
+
+/**
+ * Le téléchargement de l'app, sur le site seulement : dans l'app native, elle
+ * est déjà là (voir AppDownloadButton, même mesure et mêmes liens).
+ */
+const stores = isNativeApp ? [] : detectStores();
+
+function trackDownload(store: StoreKey) {
+  analyticsService.capture("app_download_clicked", { store, offered: stores.length });
 }
 
 /**
@@ -390,7 +449,60 @@ onUnmounted(() => {
                     />
                   </label>
                 </li>
+                <!-- Les consignes de loi, là où le texte en porte : qui connaît
+                     l'office relit la même règle matin après matin. -->
+                <li v-if="halakhot">
+                  <label class="setting-row">
+                    <span class="min-w-0">
+                      <span class="setting-name">{{ t("textReading.settings.hideHalakhot") }}</span>
+                      <span class="setting-hint">
+                        {{ t("textReading.settings.hideHalakhotHint") }}
+                      </span>
+                    </span>
+                    <ToggleSwitch
+                      :model-value="halakhotHidden"
+                      @update:model-value="setHalakhotHidden"
+                    />
+                  </label>
+                </li>
               </ul>
+
+              <!-- Sous les interrupteurs, ce qui s'y fait d'un geste plutôt que
+                   de se régler : partager le texte, écrire au support, et, sur
+                   le site, prendre l'app. -->
+              <div class="settings-actions">
+                <button type="button" class="action-item" @click="share">
+                  <AppIcon name="share" :size="13" class="flex-shrink-0 text-text-secondary" />
+                  {{ t("textReading.settings.share") }}
+                </button>
+                <button type="button" class="action-item" @click="report">
+                  <AppIcon name="message" :size="13" class="flex-shrink-0 text-text-secondary" />
+                  {{ t("footer.reportIssue") }}
+                </button>
+                <!-- Les deux liens quand l'appareil ne se laisse pas deviner
+                     (un ordinateur de bureau) : ils portent alors le nom du
+                     store, le titre restant au-dessus d'eux. -->
+                <p v-if="stores.length > 1" class="section-heading">
+                  {{ t("appDownload.title") }}
+                </p>
+                <a
+                  v-for="store in stores"
+                  :key="store.key"
+                  class="action-item"
+                  :href="store.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  :aria-label="t(store.ariaKey)"
+                  @click="trackDownload(store.key)"
+                >
+                  <AppIcon
+                    :name="store.icon"
+                    :size="13"
+                    class="flex-shrink-0 text-text-secondary"
+                  />
+                  {{ stores.length > 1 ? t(store.labelKey) : t("appDownload.title") }}
+                </a>
+              </div>
             </div>
           </transition>
         </div>
@@ -427,6 +539,20 @@ onUnmounted(() => {
       </div>
     </div>
   </transition>
+
+  <!-- La fenêtre de partage vit dans le <body> : le menu s'efface en bas de
+       page, et elle s'en irait avec lui. -->
+  <Teleport to="body">
+    <ShareModal
+      v-model:show="showShare"
+      :session-name="shareName"
+      :share-url="shareUrl"
+      title-key="shareModal.titleText"
+      message-key="shareModal.inviteText"
+      content-type="text"
+      :content-id="route.path"
+    />
+  </Teleport>
 </template>
 
 <style scoped>
@@ -528,6 +654,15 @@ onUnmounted(() => {
   font-size: calc(0.9rem * var(--menu-scale, 1));
 }
 
+/* Les commandes sous les interrupteurs : mêmes lignes que le sommaire, et le
+   retrait qui les aligne sur les intitulés des réglages, par-dessus le filet
+   qui les en sépare. */
+.settings-actions {
+  margin: 0.35rem -0.5rem 0;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--color-line);
+}
+
 .setting-row {
   display: flex;
   align-items: center;
@@ -552,7 +687,10 @@ onUnmounted(() => {
   color: var(--color-text-secondary);
 }
 
-.section-item {
+/* Une ligne du panneau : un repère du sommaire (`section-item`), ou une
+   commande des réglages (`action-item`). */
+.section-item,
+.action-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -594,7 +732,8 @@ onUnmounted(() => {
   color: var(--color-text-secondary);
 }
 
-.section-item:hover {
+.section-item:hover,
+.action-item:hover {
   background-color: color-mix(in srgb, currentColor 8%, transparent);
   color: var(--color-primary);
 }
