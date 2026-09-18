@@ -28,15 +28,21 @@ defineProps<{ theme: HolidayThemeId }>();
       <path class="detail" d="M35 13c2-7 10-10 16-7-2 7-9 10-16 7Z" />
     </template>
     <template v-else>
-      <!-- la soucca : les parois, la traverse, le sékhakh posé dessus -->
-      <path class="body" d="M9 26h46v28a6 6 0 0 1-6 6H15a6 6 0 0 1-6-6Z" />
-      <path class="beam" d="M5 25h54" />
-      <path class="detail-stroke" d="m12 21 5-9" />
-      <path class="detail-stroke" d="m20 21 5-9" />
-      <path class="detail-stroke" d="m28 21 5-9" />
-      <path class="detail-stroke" d="m36 21 5-9" />
-      <path class="detail-stroke" d="m44 21 5-9" />
-      <path class="detail-stroke" d="m52 21 5-9" />
+      <!-- la soucca : les parois de planches, le rideau de l'entrée à
+           gauche, et le sékhakh de feuillage qui déborde du toit -->
+      <path class="body" d="M9 24h46v32a4 4 0 0 1-4 4H13a4 4 0 0 1-4-4Z" />
+      <path class="plank" d="M22 27v31" />
+      <path class="plank" d="M34 27v31" />
+      <path class="plank" d="M46 27v31" />
+      <path class="curtain" d="M13 27c3 8-1 16 3 31h5c-4-15 0-23-3-31Z" />
+      <path class="detail" d="M2 26c2-8 10-12 17-8 3-6 12-8 17-3 5-6 15-4 19 2 5-1 8 3 7 9H2Z" />
+      <path class="detail" d="M4 26c-2 4-1 8 2 11 2-4 1-8-2-11Z" />
+      <path class="detail" d="M60 26c2 4 1 8-2 11-2-4-1-8 2-11Z" />
+      <path class="frond" d="m12 23 4-6" />
+      <path class="frond" d="m21 21 3-6" />
+      <path class="frond" d="m31 20 1-6" />
+      <path class="frond" d="m41 21-2-6" />
+      <path class="frond" d="m50 23-4-5" />
     </template>
   </svg>
 </template>
@@ -52,13 +58,13 @@ defineProps<{ theme: HolidayThemeId }>();
   filter: drop-shadow(0 6px 10px color-mix(in srgb, var(--color-primary) 45%, transparent));
 }
 /* Le corps de la pomme est centré à 38/64 de sa boîte, celui de la soucca à
-   43/64 : la boîte remonte d'autant pour que ce centre soit celui du bouton
+   42/64 : la boîte remonte d'autant pour que ce centre soit celui du bouton
    (3.25rem de haut). */
 .fab-shape-tichri {
   top: -1.05rem;
 }
 .fab-shape-souccot {
-  top: -1.4rem;
+  top: -1.35rem;
 }
 .body {
   fill: var(--color-primary);
@@ -71,6 +77,22 @@ defineProps<{ theme: HolidayThemeId }>();
 }
 .detail {
   fill: var(--color-secondary);
+}
+/* Les planches et le rideau : du blanc voilé sur la couleur pleine, pas une
+   couleur de plus. Les nervures du feuillage reprennent la couleur du corps. */
+.plank {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.22);
+  stroke-width: 1.5;
+}
+.curtain {
+  fill: rgb(255 255 255 / 0.4);
+}
+.frond {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 1.5;
+  stroke-linecap: round;
 }
 .detail-stroke {
   fill: none;
