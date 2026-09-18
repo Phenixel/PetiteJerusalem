@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import type { IconName } from "./icons/registry";
@@ -22,13 +22,20 @@ import { analyticsService } from "../services/analyticsService";
  *  - un liseré de la couleur du thème autour du projecteur, qui respire ;
  *  - une bulle, au-dessus ou au-dessous selon la place, avec sa flèche vers
  *    la commande : un titre, deux phrases, « Suivant » ou « Compris », et
- *    « Passer ». Toucher le voile passe aussi.
+ *    « Passer ». Toucher le voile passe aussi. « Me le rappeler à la
+ *    prochaine ouverture » la remet à plus tard sans la compter vue.
  *
- * Le composant décide seul de se montrer : jamais deux fois la même astuce
- * (useFeatureTips), jamais sous l'introduction ni sous une fenêtre ouverte,
- * jamais devant une commande qui n'est pas à l'écran, et pas avant que la
- * page ne se soit posée (`delay`). Une astuce montrée est notée vue dès
- * qu'elle paraît : quitter la page en plein milieu ne la fait pas revenir.
+ * Un pas peut n'avoir aucune commande à éclairer (un geste à deux doigts sur
+ * le texte) : la bulle se pose alors au milieu de l'écran, sans projecteur,
+ * et montre le geste dans une capture dessinée (`component`, voir
+ * src/components/mock), plutôt que de le décrire.
+ *
+ * Le composant décide seul de se montrer : jamais deux fois la même astuce,
+ * une seule par ouverture de l'app (useFeatureTips), jamais sous
+ * l'introduction ni sous une fenêtre ouverte, jamais devant une commande qui
+ * n'est pas à l'écran, et pas avant que la page ne se soit posée (`delay`).
+ * Une astuce est notée vue quand elle se ferme, ou quand on quitte la page
+ * en plein milieu : seule « à la prochaine ouverture » la fait revenir.
  *
  * La page qui l'accueille décrit ses pas (`steps`) et se prépare à chacun
  * par l'évènement `step` (ouvrir un panneau pour montrer ce qu'il contient),
@@ -42,8 +49,13 @@ export interface TourStep {
   text: string;
   /** Dessin posé devant le titre. */
   icon?: IconName;
-  /** La commande à éclairer, résolue au moment où le pas commence. */
-  target: () => HTMLElement | null;
+  /**
+   * La commande à éclairer, résolue au moment où le pas commence. Sans
+   * cible, la bulle se pose au milieu de l'écran (un geste sur le texte).
+   */
+  target?: () => HTMLElement | null;
+  /** Une capture dessinée du geste, montrée dans la bulle. */
+  component?: Component;
   /** Rayon du projecteur (pixels) : 9999 pour un bouton rond. */
   radius?: number;
   /** Marge entre la commande et le bord du projecteur (pixels). */
@@ -55,17 +67,30 @@ export interface TourStep {
   gesture?: boolean;
 }
 
-/** Comment l'astuce s'est close ; `lost` : la commande éclairée a disparu. */
-export type TourExit = "next" | "skip" | "target" | "backdrop" | "escape" | "back" | "lost";
+/**
+ * Comment l'astuce s'est close ; `lost` : la commande éclairée a disparu ;
+ * `later` : remise à la prochaine ouverture, elle n'est pas comptée vue.
+ */
+export type TourExit =
+  | "next"
+  | "skip"
+  | "target"
+  | "backdrop"
+  | "escape"
+  | "back"
+  | "lost"
+  | "later";
 
 const props = withDefaults(
   defineProps<{
     tip: FeatureTipId;
     steps: TourStep[];
+    /** Les astuces à avoir vues avant celle-ci (une ouverture plus tôt). */
+    after?: FeatureTipId[];
     /** Le temps que la page se pose (transition d'arrivée comprise). */
     delay?: number;
   }>(),
-  { delay: 800 },
+  { after: () => [], delay: 800 },
 );
 
 const emit = defineEmits<{
@@ -76,7 +101,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { shouldShowTip, markTipSeen } = useFeatureTips();
+const { shouldShowTip, claimTip, releaseTip, markTipSeen } = useFeatureTips();
 
 const visible = ref(false);
 const index = ref(0);
@@ -156,7 +181,18 @@ async function startStep(next: number): Promise<void> {
   index.value = next;
   emit("step", next, props.steps[next].key);
   await nextTick();
-  target = props.steps[next].target();
+  const find = props.steps[next].target;
+  if (!find) {
+    // Un geste sans commande : pas de projecteur, la bulle au milieu.
+    clearTimers();
+    resizeObserver?.disconnect();
+    resizeObserver = null;
+    target = null;
+    hole.value = null;
+    viewport.value = { width: window.innerWidth, height: window.innerHeight };
+    return;
+  }
+  target = find();
   if (!target || !isVisible(target)) {
     // Rien à éclairer pour ce pas : on passe au suivant, ou on s'en va.
     if (next + 1 < props.steps.length) return startStep(next + 1);
@@ -172,8 +208,8 @@ async function startStep(next: number): Promise<void> {
 }
 
 async function show(): Promise<void> {
+  if (!claimTip(props.tip)) return;
   visible.value = true;
-  markTipSeen(props.tip);
   analyticsService.capture("feature_tip_shown", { tip: props.tip, steps: props.steps.length });
   // La page derrière ne bouge pas pendant l'astuce : le projecteur est posé
   // sur une commande, il ne doit pas la perdre au premier défilement.
@@ -210,6 +246,9 @@ function finish(via: TourExit): void {
   const at = index.value;
   teardown();
   visible.value = false;
+  // Remise à la prochaine ouverture : l'astuce reviendra ; sinon, c'est vu.
+  if (via !== "later") markTipSeen(props.tip);
+  releaseTip(props.tip);
   analyticsService.capture("feature_tip_finished", { tip: props.tip, via, step: at });
   emit("finish", via, at);
 }
@@ -246,14 +285,17 @@ function onKeydown(event: KeyboardEvent): void {
 }
 
 onMounted(async () => {
-  if (!props.steps.length || !(await shouldShowTip(props.tip))) return;
+  if (!props.steps.length || !(await shouldShowTip(props.tip, props.after))) return;
   timers.push(
     window.setTimeout(() => {
       timers = [];
       // Rien ne réclame déjà l'attention : ni l'introduction, ni une fenêtre.
       if (document.hidden || isOnboardingOpen.value || hasOpenOverlay()) return;
-      const first = props.steps[0].target();
-      if (!first || !isVisible(first)) return;
+      const find = props.steps[0].target;
+      if (find) {
+        const first = find();
+        if (!first || !isVisible(first)) return;
+      }
       void show();
     }, props.delay),
   );
@@ -261,6 +303,11 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   teardown();
+  // Partie en plein milieu : l'astuce a été vue, elle ne revient pas.
+  if (visible.value) {
+    markTipSeen(props.tip);
+    releaseTip(props.tip);
+  }
   visible.value = false;
 });
 
@@ -316,8 +363,17 @@ const placement = computed(() => {
 
 const bubbleStyle = computed(() => {
   const p = placement.value;
-  if (!p) return { display: "none" };
-  const { height: vh } = viewport.value;
+  const { width: vw, height: vh } = viewport.value;
+  // Sans commande à éclairer : au milieu de l'écran.
+  if (!p) {
+    const width = Math.min(BUBBLE_WIDTH, vw - GUTTER * 2);
+    return {
+      width: `${width}px`,
+      left: `${Math.max(GUTTER, (vw - width) / 2)}px`,
+      top: "50%",
+      transform: "translateY(-50%)",
+    };
+  }
   return {
     width: `${p.width}px`,
     left: `${p.left}px`,
@@ -363,7 +419,7 @@ watch(index, async () => {
         :aria-labelledby="`tour-title-${step.key}`"
         tabindex="-1"
       >
-        <span class="caret" :style="caretStyle" aria-hidden="true"></span>
+        <span v-if="placement" class="caret" :style="caretStyle" aria-hidden="true"></span>
 
         <div class="flex items-center justify-between gap-3">
           <div
@@ -406,9 +462,23 @@ watch(index, async () => {
           {{ step.text }}
         </p>
 
-        <div class="mt-4 flex justify-end">
+        <!-- Le geste montré plutôt que décrit : une capture dessinée. -->
+        <component :is="step.component" v-if="step.component" class="mt-3" />
+
+        <!-- Le bouton qui avance, puis, dessous, « à la prochaine
+             ouverture » : on n'a pas toujours le temps de lire, et l'astuce
+             reviendra, ici même. Sous le bouton et non à côté : la phrase est
+             longue, elle renvoyait le bouton à la ligne. -->
+        <div class="mt-4 flex flex-col items-end gap-2.5">
           <button type="button" class="btn btn-primary btn-sm" @click="advance('next')">
             {{ isLast ? t("tips.done") : t("tips.next") }}
+          </button>
+          <button
+            type="button"
+            class="text-sm font-medium text-text-secondary transition-colors hover:text-primary"
+            @click="finish('later')"
+          >
+            {{ t("tips.later") }}
           </button>
         </div>
       </div>

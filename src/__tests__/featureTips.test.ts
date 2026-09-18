@@ -3,12 +3,15 @@ import { createApp, h, nextTick } from "vue";
 import { createI18n } from "vue-i18n";
 import fr from "../locales/fr";
 import type { TourStep } from "../components/FeatureTour.vue";
+import type { FeatureTipId } from "../composables/useFeatureTips";
 
 /**
  * Les astuces des pages : le geste du rappel sur les horaires, le menu de
- * lecture. Trois promesses : chacune ne se montre qu'une fois par appareil,
- * elle se joue devant la commande qu'elle explique et cette commande reste
- * vivante sous le projecteur, et elle se tait sur le site.
+ * lecture, les gestes du texte. Quatre promesses : chacune ne se montre
+ * qu'une fois par appareil et une seule par ouverture de l'app, « à la
+ * prochaine ouverture » la remet à plus tard sans la compter vue, elle se
+ * joue devant la commande qu'elle explique et cette commande reste vivante
+ * sous le projecteur, et elle se tait sur le site.
  */
 
 // Les astuces ne se montrent que dans l'app native : c'est la plateforme que
@@ -34,7 +37,12 @@ function commande(): HTMLButtonElement {
 
 async function monte(
   steps: TourStep[],
-  handlers: { onStep?: (index: number) => void; onFinish?: (via: string) => void } = {},
+  handlers: {
+    tip?: FeatureTipId;
+    after?: FeatureTipId[];
+    onStep?: (index: number) => void;
+    onFinish?: (via: string) => void;
+  } = {},
 ) {
   const { default: FeatureTour } = await import("../components/FeatureTour.vue");
   const i18n = createI18n({ legacy: false, locale: "fr", messages: { fr } });
@@ -43,8 +51,9 @@ async function monte(
   const app = createApp({
     render: () =>
       h(FeatureTour, {
-        tip: "reading-menu",
+        tip: handlers.tip ?? "reading-menu",
         steps,
+        after: handlers.after,
         delay: 0,
         onStep: handlers.onStep,
         onFinish: handlers.onFinish,
@@ -85,7 +94,7 @@ describe("astuces des pages", () => {
     vi.resetModules();
     // Seuls les délais sont joués : setImmediate reste réel, c'est lui qui
     // laisse passer l'import des préférences natives.
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
   });
 
   it("ne montre chaque astuce qu'une fois, et « Revoir les astuces » les remet en jeu", async () => {
@@ -126,8 +135,6 @@ describe("astuces des pages", () => {
 
     expect(bulle()?.textContent).toContain("Le menu");
     expect(onStep).toHaveBeenCalledWith(0, "menu");
-    // Vue dès qu'elle paraît : quitter la page au milieu ne la fait pas revenir.
-    expect(JSON.parse(localStorage.getItem(SEEN_KEY) ?? "[]")).toEqual(["reading-menu"]);
     // Le projecteur est percé dans le voile, à la place de la commande.
     expect(document.querySelector("svg path")?.getAttribute("d")).toContain("294");
     // La page ne défile pas sous l'astuce.
@@ -144,6 +151,70 @@ describe("astuces des pages", () => {
     expect(bulle()).toBeNull();
     expect(onFinish).toHaveBeenCalledWith("next", 1);
     expect(document.documentElement.style.overflow).toBe("");
+    // Vue une fois close : elle ne reviendra pas.
+    expect(JSON.parse(localStorage.getItem(SEEN_KEY) ?? "[]")).toEqual(["reading-menu"]);
+  });
+
+  it("pose la bulle au milieu, avec sa capture, quand le pas n'a rien à éclairer", async () => {
+    const capture = { render: () => h("i", { class: "capture" }) };
+    await monte([{ key: "pinch", title: "Pincez", text: "Deux doigts.", component: capture }]);
+    expect(bulle()?.textContent).toContain("Pincez");
+    expect(bulle()?.querySelector("i.capture")).not.toBeNull();
+    expect(bulle()?.querySelector(".caret")).toBeNull();
+    expect(bulle()?.style.top).toBe("50%");
+  });
+
+  it("revient à la prochaine ouverture quand on le lui demande, pas avant", async () => {
+    const menu = commande();
+    const onFinish = vi.fn();
+    const pas = [{ key: "menu", title: "Le menu", text: "Un.", target: () => menu }];
+    const { app } = await monte(pas, { onFinish });
+    bouton(fr.tips.later)?.click();
+    await nextTick();
+    expect(onFinish).toHaveBeenCalledWith("later", 0);
+    expect(localStorage.getItem(SEEN_KEY)).toBeNull();
+    app.unmount();
+
+    // La même ouverture : elle ne revient pas, on l'a remise à plus tard.
+    const encore = await monte(pas);
+    expect(bulle()).toBeNull();
+    encore.app.unmount();
+
+    // Une demi-heure en arrière-plan vaut une nouvelle ouverture.
+    const { NEW_OPENING_AFTER_MS } = await import("../composables/useFeatureTips");
+    vi.setSystemTime(new Date("2026-09-18T10:00:00Z"));
+    Object.defineProperty(document, "hidden", { value: true, configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+    vi.setSystemTime(new Date("2026-09-18T10:00:00Z").getTime() + NEW_OPENING_AFTER_MS);
+    Object.defineProperty(document, "hidden", { value: false, configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+    await monte(pas);
+    expect(bulle()).not.toBeNull();
+  });
+
+  it("ne montre qu'une astuce par ouverture, et laisse une astuce en attendre une autre", async () => {
+    const menu = commande();
+    const pas = [{ key: "menu", title: "Le menu", text: "Un.", target: () => menu }];
+    // Les gestes attendent le menu : pas encore vu, ils se taisent.
+    const gestes = await monte(pas, { tip: "reading-gestures", after: ["reading-menu"] });
+    expect(bulle()).toBeNull();
+    gestes.app.unmount();
+
+    const { app } = await monte(pas);
+    expect(bulle()?.textContent).toContain("Le menu");
+    bouton(fr.tips.done)?.click();
+    await nextTick();
+    app.unmount();
+
+    // Le menu vu, mais l'ouverture est prise : les gestes attendront la prochaine.
+    const memeOuverture = await monte(pas, { tip: "reading-gestures", after: ["reading-menu"] });
+    expect(bulle()).toBeNull();
+    memeOuverture.app.unmount();
+
+    const { resetFeatureTipsForTests } = await import("../composables/useFeatureTips");
+    resetFeatureTipsForTests(); // Une nouvelle ouverture, le stockage relu.
+    await monte(pas, { tip: "reading-gestures", after: ["reading-menu"] });
+    expect(bulle()?.textContent).toContain("Le menu");
   });
 
   it("laisse la commande répondre sous le projecteur, et suit", async () => {

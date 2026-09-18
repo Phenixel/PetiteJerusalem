@@ -209,6 +209,7 @@ const fr = {
     skip: "Passer",
     next: "Suivant",
     done: "Compris",
+    later: "Me le rappeler à la prochaine ouverture",
     stepOf: "Astuce {n} sur {total}",
     replay: "Revoir les astuces",
     replayed: "Les astuces se montreront à nouveau, page par page.",
@@ -216,6 +217,10 @@ const fr = {
       reminder: {
         title: "Un rappel d'un geste",
         text: "Tirez une ligne vers la gauche : la cloche pose un rappel avant cet horaire. Touchez la ligne pour choisir combien de minutes avant.",
+      },
+      place: {
+        title: "Le lieu des horaires",
+        text: "Le nom de la ville est le bouton qui la change. « Ma position » relève celle de l'appareil, sans rien envoyer à personne.",
       },
     },
     reading: {
@@ -226,6 +231,18 @@ const fr = {
       settings: {
         title: "Les réglages de lecture",
         text: "Le second rond porte le défilement automatique, le partage du texte et le formulaire pour nous écrire.",
+      },
+      pinch: {
+        title: "Pincez pour la taille du texte",
+        text: "Deux doigts qui s'écartent agrandissent le texte lu, et lui seul. Les boutons A− / A+ du menu font la même chose.",
+      },
+      autoScroll: {
+        title: "Un double appui fait défiler",
+        text: "Deux appuis rapprochés sur le texte le font descendre à une allure de lecture. Un second double appui l'arrête.",
+      },
+      bookmark: {
+        title: "Un marque-page sur un verset",
+        text: "Touchez un verset pour y poser un marque-page. Vous le retrouverez en tête du texte, et en haut de la bibliothèque.",
       },
     },
   },

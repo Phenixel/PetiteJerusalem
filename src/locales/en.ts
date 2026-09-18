@@ -204,6 +204,7 @@ const en: LocaleMessages = {
     skip: "Skip",
     next: "Next",
     done: "Got it",
+    later: "Remind me next time I open the app",
     stepOf: "Tip {n} of {total}",
     replay: "Replay the tips",
     replayed: "The tips will show again, page by page.",
@@ -211,6 +212,10 @@ const en: LocaleMessages = {
       reminder: {
         title: "A reminder in one swipe",
         text: "Swipe a row to the left: the bell sets a reminder before that time. Tap the row to choose how many minutes before.",
+      },
+      place: {
+        title: "Where the times are for",
+        text: 'The city name is the button that changes it. "My location" reads the device\'s position, without sending it anywhere.',
       },
     },
     reading: {
@@ -221,6 +226,18 @@ const en: LocaleMessages = {
       settings: {
         title: "Reading settings",
         text: "The second button holds auto-scroll, sharing the text and the form to write to us.",
+      },
+      pinch: {
+        title: "Pinch to size the text",
+        text: "Spreading two fingers enlarges the text you read, and only it. The A− / A+ buttons of the menu do the same.",
+      },
+      autoScroll: {
+        title: "Double tap to scroll",
+        text: "Two quick taps on the text make it scroll down at a reading pace. A second double tap stops it.",
+      },
+      bookmark: {
+        title: "A bookmark on a verse",
+        text: "Tap a verse to bookmark it. You will find it again at the top of the text, and at the top of the library.",
       },
     },
   },
