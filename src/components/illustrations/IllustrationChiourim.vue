@@ -18,8 +18,10 @@
   >
     <!-- headphones (band + cups) nod together on hover -->
     <g class="phones">
-      <!-- headband -->
-      <path class="draw" d="M10 40v-6a22 22 0 0 1 44 0v6" />
+      <!-- L'arceau s'arrête sur le bord haut des écouteurs (y=36), là où
+           chacun commence : il descendait jusqu'à y=40, et son bout dépassait
+           à l'intérieur de l'écouteur, un moignon rouge posé dans le vide. -->
+      <path class="draw" d="M10 36v-2a22 22 0 0 1 44 0v2" />
       <!-- ear cups -->
       <g class="cup cup-l">
         <path d="M10 36h2a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4h-2a2 2 0 0 1-2-2V38a2 2 0 0 1 2-2z" />
@@ -51,9 +53,11 @@
 }
 
 /* --- entrance --- */
+/* 74 : la longueur de l'arceau (2 + le demi-cercle de rayon 22 + 2), arrondie
+   au-dessus, pour que le tracé s'achève avec l'animation et non avant. */
 .draw {
-  stroke-dasharray: 90;
-  stroke-dashoffset: 90;
+  stroke-dasharray: 74;
+  stroke-dashoffset: 74;
   animation: illu-draw 0.9s ease-out forwards;
 }
 
