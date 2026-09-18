@@ -37,7 +37,7 @@ const sidourEntries = allEntries.filter(
 /** Les textes de liturgie qui ne sont pas des offices. */
 const autresLiturgies = allEntries.filter(
   (entry) =>
-    ["Sidour", "Brahot", "Slihot"].includes(String(entry.type)) && !sidourEntries.includes(entry),
+    ["Sidour", "Brahot", "Moadim"].includes(String(entry.type)) && !sidourEntries.includes(entry),
 );
 
 /** Les clés `when` que le calendrier sait poser (voir activeOccasions). */
@@ -97,6 +97,10 @@ const KNOWN_WHEN = new Set([
   "shemini-atzeret",
   "magdil",
   "migdol",
+  // Hatsot halayla passé : posée par le lecteur, pas par le calendrier (comme
+  // « sans-tahanoun »), elle change au milieu de la nuit sans que le jour
+  // hébraïque bouge.
+  "apres-hatsot",
   "motsae-yom-tov",
   ...Array.from({ length: 7 }, (_, day) => `jour-${day}`),
 ]);

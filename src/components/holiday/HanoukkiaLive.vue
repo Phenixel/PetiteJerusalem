@@ -41,7 +41,7 @@ const lit = computed(() => CANDLES.map((_, i) => CANDLES.length - i <= lights.va
 
 <template>
   <RouterLink
-    to="/bibliotheque/brahot/nerot-hanouka"
+    to="/bibliotheque/moadim/nerot-hanouka"
     class="hanoukkia block"
     :aria-label="t('home.holiday.hanoukaLights', { n: lights })"
     :title="t('home.holiday.hanoukaLights', { n: lights })"

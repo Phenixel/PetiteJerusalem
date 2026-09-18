@@ -13,163 +13,34 @@
  * La recette reste explicite, segment par segment : la source alterne des
  * consignes en hébreu et le texte lui-même, et chaque consigne retenue devient
  * une didascalie dans les trois langues (son hébreu vient de la source, le
- * français et l'anglais sont écrits ici). Ce qui n'est pas retenu ne se perd
- * pas en silence : un repère absent fait échouer la construction.
+ * français et l'anglais sont écrits ici). Le moteur qui les lit vit dans
+ * scripts/lib/tefila-recipe.mjs, partagé avec build-moadim.mjs.
  *
  * Licence des textes : l'export Sefaria « merged » combine des sources du
  * domaine public.
  */
 
-import { writeFileSync } from "fs";
+import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import {
-  bareMap,
-  cleanFinal,
-  HEBREW_MARKS,
-  fetchSiddur,
-  segText,
-  sliceBetween,
-  stripMarks,
-} from "./lib/sefaria-siddur.mjs";
+import { fetchSiddur } from "./lib/sefaria-siddur.mjs";
+import { writeRecipes } from "./lib/tefila-recipe.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, "../public/texts/tefila");
 
-// ---------- Le petit corps de la source ----------
-
 /**
- * Dans ce siddour, le petit corps sert à deux choses : les consignes de lecture
- * et les références d'un côté, des passages qui se disent de l'autre (le Léchem
- * yihoud, les versets de protection du voyageur, la forme féminine d'un mot,
- * ce qu'ajoute celui qui rentre le jour même). Les premières ne sont pas
- * vocalisées, les seconds le sont : c'est ce qui les sépare ici.
- *
- * Les consignes partent donc, le texte reste, à la place où la source le met.
- * Celles qui restent collées au fil du texte, faute de balise, se retirent une
- * à une dans les recettes (`strip`, `from`, `until`).
+ * Un verset du Tanakh que le site sert déjà, par chapitre et verset : un
+ * texte de tefila qui en ajoute un le lit là plutôt que de le recopier, pour
+ * qu'il reste le même des deux côtés, jusqu'à la place des voyelles. Le
+ * fichier porte l'id de l'entrée du catalogue (voir src/datas/textStudies.json,
+ * 324 pour Yeshayahou).
  */
-const NIKOUD = /[\u05B0-\u05BC\u05BE\u05C1\u05C2\u05C7]/;
-
-function dropInstructionSmalls(raw) {
-  let s = String(raw ?? "");
-  let prev;
-  do {
-    prev = s;
-    // Du plus intérieur vers l'extérieur : ce qui se dit est mis de côté sous
-    // une balise que le nettoyage final retire, pour ne pas le reprendre.
-    s = s.replace(/<small>((?:(?!<\/?small>)[\s\S])*)<\/small>/g, (_, inner) =>
-      NIKOUD.test(inner) ? `<garde>${inner}</garde>` : " ",
-    );
-  } while (s !== prev);
-  return s;
-}
-
-/**
- * Retire un passage du texte, repéré sans ses signes : la vocalisation d'une
- * même consigne varie d'un endroit à l'autre de la source (l'ordre du dagech et
- * de la voyelle, notamment), et un repère écrit à la main ne la retrouverait
- * pas au caractère près. Un repère absent laisse le texte tel quel : la même
- * consigne ne se glisse pas dans toutes les formules d'un même texte, et ce
- * qui resterait d'une consigne est attrapé par `assertSansConsigne`.
- */
-function removeMarker(text, marker) {
-  const cible = stripMarks(marker);
-  let out = text;
-  // Toutes les occurrences : la source répète la même consigne à chaque
-  // formule d'un même paragraphe.
-  for (;;) {
-    const { map, bare } = bareMap(out);
-    const j = bare.indexOf(cible);
-    if (j < 0) return out;
-    const debut = map[j];
-    const fin = j + cible.length < map.length ? map[j + cible.length] : out.length;
-    out = `${out.slice(0, debut)} ${out.slice(fin)}`;
-  }
-}
-
-/**
- * Ce qui se lit est vocalisé, les consignes ne le sont pas : une suite de mots
- * hébreux sans une seule voyelle au milieu du texte, c'est une consigne restée
- * là. La construction s'arrête plutôt que de livrer un texte où le lecteur
- * lirait « il dira » au milieu d'une bénédiction.
- */
-function assertSansConsigne(text, spec) {
-  // Le Nom s'écrit parfois sans voyelles au milieu d'un texte vocalisé : ce
-  // n'est pas une consigne.
-  const sansNoms = text.replace(/יהוה|אלהינו|אלהים|אלהי|אדני/g, " ");
-  for (const suite of sansNoms.match(/[\u05D0-\u05EA"'\u05F3\u05F4\s]{10,}/g) ?? []) {
-    if (!HEBREW_MARKS.test(suite) && suite.trim().length >= 10) {
-      throw new Error(`Consigne restée dans le texte (segment ${spec.seg}) : « ${suite.trim()} »`);
-    }
-  }
-}
-
-// ---------- Recette → fichier ----------
-
-/**
- * Une ligne : `seg` prend un segment de la source, `he` écrit l'hébreu en
- * clair. `from`/`until` découpent le segment entre deux repères (une consigne
- * restée collée au texte), `strip` retire un morceau, `rubricSeg` prend
- * l'hébreu d'une didascalie dans la source, `rubric` porte son français et son
- * anglais.
- *
- * Du segment, on garde tout ce qui se dit et rien des consignes (voir
- * dropInstructionSmalls) ; celles qui restent collées au texte se retirent par
- * `from`, `until` ou `strip`.
- */
-function buildLine(spec, segs) {
-  let text =
-    spec.he !== undefined ? cleanFinal(spec.he) : cleanFinal(dropInstructionSmalls(segs[spec.seg]));
-  // Les espaces sont ramenées à une avant tout retrait : les consignes de la
-  // source portent parfois un retour à la ligne au milieu, et le repère
-  // écrit ici ne les retrouverait pas.
-  text = text.replace(/\s+/g, " ");
-  for (const cut of spec.strip ?? []) text = removeMarker(text, cut);
-  if (spec.from || spec.until) text = sliceBetween(text, spec);
-  text = text
-    .replace(/\s+/g, " ")
-    .replace(/\s+([.,:;])/g, "$1")
-    // Une consigne retirée laisse parfois une parenthèse qui bâille.
-    .replace(/\(\s+/g, "(")
-    .replace(/\s+\)/g, ")")
-    .trim();
-  if (!text) throw new Error(`Ligne vide : ${JSON.stringify(spec)}`);
-  assertSansConsigne(text, spec);
-  const line = {};
-  const rubric = rubricOf(spec, segs);
-  if (rubric) line.rubric = rubric;
-  line.he = text;
-  if (spec.repeat) line.repeat = spec.repeat;
-  if (spec.muted) line.muted = true;
-  if (spec.tight) line.tight = true;
-  if (spec.lead) line.lead = true;
-  return line;
-}
-
-/** La didascalie d'une ligne ou d'un bloc : hébreu de la source, reste écrit ici. */
-function rubricOf(spec, segs, key = "rubric") {
-  const written = spec[key];
-  const segKey = `${key}Seg`;
-  if (!written) return null;
-  if (written.he) return written;
-  // Les consignes de la source vivent le plus souvent dans un <small> : c'est
-  // tout le segment qu'on prend, balises retirées.
-  const he = segText(segs[spec[segKey]], "full");
-  if (!he) throw new Error(`Didascalie introuvable : segment ${spec[segKey]}`);
-  return { fr: written.fr, en: written.en, he };
-}
-
-function buildBlock(spec, segs) {
-  const block = {};
-  if (spec.label) block.label = spec.label;
-  if (spec.labelText) block.labelText = spec.labelText;
-  const halakha = rubricOf(spec, segs, "halakha");
-  if (halakha) block.halakha = halakha;
-  if (spec.variants) block.variants = true;
-  if (spec.plain) block.plain = true;
-  block.lines = spec.lines.map((line) => buildLine(line, segs));
-  return block;
+function versetDuTanakh(id, chapitre, verset) {
+  const livre = JSON.parse(readFileSync(resolve(OUT, `../tanakh/${id}.json`), "utf8")).he;
+  const texte = livre[chapitre - 1]?.[verset - 1];
+  if (!texte) throw new Error(`Verset introuvable : ${id} ${chapitre},${verset}`);
+  return texte;
 }
 
 // ---------- Les recettes ----------
@@ -201,12 +72,27 @@ const chemaAlHamita = {
       ],
     },
     {
+      // La bénédiction Hamapil, deux fois : dite en entier tant qu'on se
+      // couche avant hatsot halayla, et, passé hatsot, avec le Nom et la
+      // royauté entre parenthèses, qui se pensent au lieu de se dire. La
+      // source les écrit toujours entre parenthèses : c'est la forme d'après
+      // hatsot, le retrait des parenthèses donne celle d'avant.
+      //
+      // La forme ordinaire porte l'exception (`unless`) et la forme d'après
+      // hatsot la condition (`when`) : une version de l'app qui ne connaît pas
+      // encore « apres-hatsot » ignore la première et masque la seconde, et
+      // affiche donc la bénédiction entière, ce qui est le cas de presque
+      // toutes les nuits (voir docs/compatibilite-textes.md).
       halakha: {
-        fr: "Le Nom et la royauté de cette bénédiction se pensent, ils ne se prononcent pas.",
-        en: "In this blessing the Name and kingship are thought, not spoken.",
+        fr: "Passé hatsot halayla, le Nom et la royauté de cette bénédiction se pensent, ils ne se prononcent pas.",
+        en: "Past chatzot halayla, the Name and kingship of this blessing are thought, not spoken.",
+        when: "apres-hatsot",
       },
       halakhaSeg: 5,
-      lines: [{ seg: 6 }],
+      lines: [
+        { seg: 6, strip: ["(", ")"], unless: "apres-hatsot" },
+        { seg: 6, when: "apres-hatsot" },
+      ],
     },
     {
       label: "Chema Israël",
@@ -244,21 +130,49 @@ const chemaAlHamita = {
         en: "Say it in full each night, then repeat the verse of that night three times.",
       },
       halakhaSeg: 20,
+      // Les sept versets se disent tous, chaque nuit : la source les marque
+      // « ליל א », « ליל ב »… pour dire lequel se répète ensuite, pas pour
+      // n'en faire lire qu'un.
       lines: [
-        { seg: 21, rubric: { fr: "1re nuit :", en: "1st night:", he: "ליל א" } },
-        { seg: 22, rubric: { fr: "2e nuit :", en: "2nd night:", he: "ליל ב" } },
-        { seg: 23, rubric: { fr: "3e nuit :", en: "3rd night:", he: "ליל ג" } },
-        { seg: 24, rubric: { fr: "4e nuit :", en: "4th night:", he: "ליל ד" } },
-        { seg: 25, rubric: { fr: "5e nuit :", en: "5th night:", he: "ליל ה" } },
-        { seg: 26, rubric: { fr: "6e nuit :", en: "6th night:", he: "ליל ו" } },
-        {
-          seg: 27,
-          rubric: { fr: "Nuit de Chabbat :", en: "Shabbat night:", he: "ליל שבת" },
-        },
+        { seg: 21 },
+        { seg: 22 },
+        { seg: 23 },
+        { seg: 24 },
+        { seg: 25 },
+        { seg: 26 },
+        { seg: 27 },
         { seg: 28, muted: true },
       ],
     },
-    { lines: [{ seg: 29 }] },
+    {
+      // Le verset de cette nuit, trois fois : seul celui du soir s'affiche, et
+      // il s'écrit autant de fois qu'il se dit (les reprises en plus clair).
+      // La nuit appartient au jour hébraïque qui commence à la chkia (voir
+      // tefilaHebrewDay) : la nuit ליל א est celle de « jour-0 », la nuit de
+      // Chabbat celle de « jour-6 ».
+      label: "Le verset de cette nuit",
+      lines: [
+        { seg: 21, when: "jour-0", repeat: 3 },
+        { seg: 22, when: "jour-1", repeat: 3 },
+        { seg: 23, when: "jour-2", repeat: 3 },
+        { seg: 24, when: "jour-3", repeat: 3 },
+        { seg: 25, when: "jour-4", repeat: 3 },
+        { seg: 26, when: "jour-5", repeat: 3 },
+        { seg: 27, when: "jour-6", repeat: 3 },
+      ],
+    },
+    {
+      lines: [
+        {
+          // Nafchi ivitikha balayla (Yeshayahou 26,9), absent de ce siddour :
+          // lu dans le corpus du Tanakh que le site sert déjà.
+          he: versetDuTanakh(324, 26, 9),
+          rubric: { fr: "Certains ajoutent :", en: "Some add:", he: "יש מוסיפים" },
+          muted: true,
+        },
+        { seg: 29 },
+      ],
+    },
   ],
 };
 
@@ -1117,12 +1031,5 @@ const RECIPES = [
 console.log("Téléchargement du Siddur Edot HaMizrach (export Sefaria)…");
 const text = await fetchSiddur();
 
-for (const recipe of RECIPES) {
-  const segs = recipe.src(text);
-  const blocks = recipe.blocks.map((spec) => buildBlock(spec, segs));
-  const out = { title: recipe.title, blocks };
-  writeFileSync(resolve(OUT, `${recipe.file}.json`), JSON.stringify(out, null, 2) + "\n");
-  const lineCount = blocks.reduce((sum, b) => sum + b.lines.length, 0);
-  console.log(`  ${recipe.file}.json : ${blocks.length} blocs, ${lineCount} paragraphes`);
-}
+writeRecipes(RECIPES, text, OUT);
 console.log("Terminé.");

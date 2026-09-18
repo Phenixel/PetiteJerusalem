@@ -1430,7 +1430,7 @@ const en: LocaleMessages = {
       sharing: "Sharing",
     },
     subtitle:
-      "Read and study the texts: Tehilim, Mishnah, Talmud, Tanakh, Siddur, Selichot and Berakhot.",
+      "Read and study the texts: Tehilim, Mishnah, Talmud, Tanakh, Siddur, Moadim and Berakhot.",
     searchPlaceholder: "Search a text…",
     searchAllPlaceholder: "Search all texts…",
     noResults: "No text matches your search.",
@@ -1444,7 +1444,7 @@ const en: LocaleMessages = {
       talmud: "Talmud",
       tanakh: "Tanakh",
       sidour: "Siddur",
-      slihot: "Selichot",
+      moadim: "Moadim",
       brahot: "Berakhot",
     },
     corpus: {
@@ -1454,16 +1454,16 @@ const en: LocaleMessages = {
       tanakhDesc: "The Torah parasha by parasha, the Neviim and the Ketuvim.",
       sidourDesc:
         "Weekday Shacharit, Mincha and Arvit, with prayer times for where you are and the day's calendar additions; the bedtime Shema, Tikkun Hatzot and Havdalah.",
-      slihotDesc:
-        "The Sephardic Selichot, in Hebrew and phonetics, for Elul and the ten days of teshuva.",
+      moadimDesc:
+        "What is said at the year's appointed times: the Selichot of Elul and the ten days of teshuva, the Hatarat Nedarim of the eve of Rosh Hashana and Kippur, the Hanukkah lighting.",
       brahotDesc:
-        "Birkat Hamazon, blessings on what you eat and smell, the traveler's prayer, Hanukkah lighting, brit mila: the blessings at hand.",
+        "Birkat Hamazon, blessings on what you eat and smell, the traveler's prayer, brit mila, blessing of the moon: the blessings at hand.",
       tehilimSearch: "Search a tehilim…",
       michnaSearch: "Search a mishnah…",
       talmudSearch: "Search a Talmud tractate…",
       tanakhSearch: "Search a parasha or book…",
       sidourSearch: "Search the Siddur…",
-      slihotSearch: "Search the Selichot…",
+      moadimSearch: "Search a festival text…",
       brahotSearch: "Search a blessing…",
     },
   },

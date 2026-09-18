@@ -29,7 +29,7 @@ describe("reprise de lecture et liturgie", () => {
       POSITIONS_KEY,
       JSON.stringify({
         "342": position("342", "/bibliotheque/brahot/birkat-hamazon", 20),
-        "340": position("340", "/bibliotheque/slihot/slihot", 30),
+        "340": position("340", "/bibliotheque/moadim/slihot", 30),
         "103": position("103", "/bibliotheque/tehilim/1", 10),
       }),
     );

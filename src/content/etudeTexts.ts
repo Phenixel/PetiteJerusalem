@@ -19,14 +19,14 @@ import { transliterate, hasNiqqud } from "../services/hebrewTransliteration";
 
 export const SITE_URL = "https://petite-jerusalem.fr";
 
-export type Corpus = "tehilim" | "tanakh" | "michna" | "talmud" | "slihot" | "brahot" | "sidour";
+export type Corpus = "tehilim" | "tanakh" | "michna" | "talmud" | "moadim" | "brahot" | "sidour";
 
 const TYPE_TO_CORPUS: Record<string, Corpus> = {
   Tehilim: "tehilim",
   Tanakh: "tanakh",
   Mishna: "michna",
   "Talmud Bavli": "talmud",
-  Slihot: "slihot",
+  Moadim: "moadim",
   Brahot: "brahot",
   Sidour: "sidour",
 };
@@ -36,18 +36,18 @@ const CORPUS_LABEL: Record<Corpus, string> = {
   tanakh: "Tanakh",
   michna: "Michna",
   talmud: "Talmud",
-  slihot: "Sli'hot",
+  moadim: "Moadim",
   brahot: "Brahot",
   sidour: "Sidour",
 };
 
 /**
- * Corpus liturgiques (Sli'hot, Brahot, Sidour) : des textes qu'on lit, pas des
+ * Corpus liturgiques (Moadim, Brahot, Sidour) : des textes qu'on lit, pas des
  * textes qu'on partage. Ils ne sont jamais proposés au partage de lecture, le
  * choix des sessions reste limité à EnumTypeTextStudy, et leurs pages
  * n'affichent ni l'appel au partage ni la phrase qui le promet.
  */
-const LITURGY_CORPORA: ReadonlySet<Corpus> = new Set(["slihot", "brahot", "sidour"]);
+const LITURGY_CORPORA: ReadonlySet<Corpus> = new Set(["moadim", "brahot", "sidour"]);
 
 export const isLiturgy = (entry: TextStudyJsonEntry): boolean =>
   LITURGY_CORPORA.has(corpusOf(entry));
@@ -440,16 +440,14 @@ export function hubJsonLd(entry: TextStudyJsonEntry): Record<string, unknown>[] 
 
 export const corpusPath = (corpus: Corpus): string => `${ETUDE}/${corpus}`;
 
-/**
- * Les corpus qui ont une page de liste. Les Sli'hot n'ont qu'un texte : leur
- * adresse redirige dessus (voir router/routes.ts), pas de liste à rendre.
- */
+/** Les corpus qui ont une page de liste : tous, désormais. */
 export const LISTED_CORPORA: Corpus[] = [
   "tehilim",
   "michna",
   "talmud",
   "tanakh",
   "sidour",
+  "moadim",
   "brahot",
 ];
 
@@ -503,20 +501,20 @@ const CORPUS_SEO: Record<Corpus, CorpusSeo> = {
     lead: "Les prières de la semaine, en hébreu avec la phonétique, chacune sur sa page.",
     listLabel: "Tout le Sidour",
   },
-  slihot: {
-    title: "Les Sli'hot en hébreu et phonétique | Petite Jérusalem",
+  moadim: {
+    title: "Moadim : les textes des fêtes en phonétique | Petite Jérusalem",
     description:
-      "Les Sli'hot du rite séfarade, en hébreu et en phonétique, pour Eloul et les dix jours de techouva.",
-    h1: "Les Sli'hot",
-    lead: "Les Sli'hot du rite séfarade, en hébreu avec la phonétique.",
-    listLabel: "Les Sli'hot",
+      "Les textes des fêtes en ligne, en hébreu avec la phonétique : les Sli'hot d'Eloul et des dix jours de techouva, l'Atarat nedarim de la veille de Roch Hachana et de Kippour, l'allumage de Hanouka.",
+    h1: "Moadim : les textes des fêtes",
+    lead: "Ce qu'on dit aux rendez-vous de l'année, chaque texte sur sa page, en hébreu avec la phonétique : les Sli'hot, l'Atarat nedarim, l'allumage de Hanouka.",
+    listLabel: "Tous les textes des fêtes",
   },
   brahot: {
     title: "Les brahot (bénédictions) en hébreu et phonétique | Petite Jérusalem",
     description:
-      "Les bénédictions en ligne, en hébreu avec la phonétique : Birkat Hamazon, brakha a'harona, bénédictions sur ce qu'on mange, prière du voyageur, allumage de Hanouka, brit mila, cheva brahot.",
+      "Les bénédictions en ligne, en hébreu avec la phonétique : Birkat Hamazon, brakha a'harona, bénédictions sur ce qu'on mange, prière du voyageur, bénédiction de la lune, brit mila, cheva brahot.",
     h1: "Les brahot : les bénédictions en ligne",
-    lead: "Chaque bénédiction sur sa page, en hébreu avec la phonétique : les brahot de tous les jours, celles du cycle de la vie, des mitsvot et des fêtes.",
+    lead: "Chaque bénédiction sur sa page, en hébreu avec la phonétique : les brahot de tous les jours, celles du cycle de la vie et des mitsvot.",
     listLabel: "Toutes les brahot",
   },
 };

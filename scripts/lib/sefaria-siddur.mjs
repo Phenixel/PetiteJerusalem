@@ -1,11 +1,14 @@
 /**
  * Les outils partagés par les scripts qui construisent les textes de tefila à
- * partir de l'export public du Siddur Edot HaMizrach (Sefaria, GCS) : le
- * nettoyage des balises, la lecture des consignes que la source met en
- * <small>, et le découpage d'un segment entre deux repères hébreux.
+ * partir de l'export public de Sefaria (GCS) : le nettoyage des balises, la
+ * lecture des consignes que la source met en <small>, et le découpage d'un
+ * segment entre deux repères hébreux.
  *
- * Deux scripts s'en servent : build-sidour.mjs (Cha'harit, Min'ha, Arvit) et
- * build-brahot.mjs (les bénédictions et les rites qui les entourent).
+ * Trois scripts s'en servent : build-sidour.mjs (Cha'harit, Min'ha, Arvit),
+ * build-brahot.mjs (les bénédictions et les rites qui les entourent) et
+ * build-moadim.mjs (les textes des fêtes). Les deux premiers lisent le Siddur
+ * Edot HaMizrach, le troisième le Mahzor de Roch Hachana du même rite : deux
+ * livres de même facture, d'où des outils communs.
  *
  * Licence des textes : l'export Sefaria « merged » combine des sources du
  * domaine public.
@@ -14,17 +17,36 @@
 export const SOURCE_URL =
   "https://storage.googleapis.com/sefaria-export/json/Liturgy/Siddur/Siddur%20Edot%20HaMizrach/Hebrew/merged.json";
 
-/** Le siddour source, tel que l'export le sert. */
-export async function fetchSiddur() {
-  const res = await fetch(SOURCE_URL);
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${SOURCE_URL}`);
+/**
+ * Le mahzor de Roch Hachana du rite Edot HaMizrach : il porte des textes que
+ * le siddour de l'export n'a pas, à commencer par l'Atarat nedarim.
+ */
+export const MACHZOR_ROSH_HASHANA_URL =
+  "https://storage.googleapis.com/sefaria-export/json/Liturgy/High%20Holidays/Machzor%20Rosh%20Hashanah%20Edot%20HaMizrach/Hebrew/merged.json";
+
+/** Un livre de l'export, tel qu'il le sert : ses sections et leurs segments. */
+export async function fetchMerged(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
   const merged = await res.json();
   return merged.text;
 }
 
+/** Le siddour source, tel que l'export le sert. */
+export const fetchSiddur = () => fetchMerged(SOURCE_URL);
+
 // ---------- Nettoyage ----------
 
-/** Balises et entités retirées, tirets longs bannis du dépôt remplacés. */
+/**
+ * Balises et entités retirées, tirets longs bannis du dépôt remplacés.
+ *
+ * Le cercle de massora (U+05AF) part aussi : le mahzor s'en sert par paires,
+ * à la fin d'un mot et au début du suivant, pour marquer les deux mots qu'on
+ * lie en les disant. C'est une indication de l'édition, pas une lettre ni une
+ * voyelle ; laissée là, elle se glisserait au milieu des mots dans la
+ * phonétique. Le siddour n'en porte aucun : le retrait ne change rien à ce
+ * qu'il produit.
+ */
 export function cleanFinal(s) {
   return s
     .replace(/<br\s*\/?>/g, " ")
@@ -35,6 +57,7 @@ export function cleanFinal(s) {
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/[\u2013\u2014]/g, "-")
+    .replace(/\u05AF/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }

@@ -25,9 +25,9 @@ test.describe("bibliothèque", () => {
     await expect(page.getByText("Aucun texte ne correspond à votre recherche.")).toBeVisible();
   });
 
-  test("les Sli'hot s'ouvrent directement sur le texte", async ({ page }) => {
+  test("l'ancienne adresse des Sli'hot mène à leur page dans les Moadim", async ({ page }) => {
     await gotoApp(page, "/bibliotheque/slihot");
-    await expect(page).toHaveURL(/\/bibliotheque\/slihot\/slihot$/);
+    await expect(page).toHaveURL(/\/bibliotheque\/moadim\/slihot$/);
   });
 
   test("l'ancienne page des téléchargements ramène à la bibliothèque", async ({ page }) => {

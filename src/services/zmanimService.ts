@@ -644,6 +644,24 @@ export function slihotWindow(place: ZmanimPlace, now: Date = new Date()): Slihot
 }
 
 /**
+ * Hatsot halayla est-il passé, pour la nuit en cours ?
+ *
+ * Ce que ça décide : le Chema du coucher dit la bénédiction Hamapil en entier
+ * tant qu'on se couche avant le milieu de la nuit ; passé lui, le Nom et la
+ * royauté se pensent au lieu de se dire (voir le fichier chema-al-hamita).
+ *
+ * La plage des Sli'hot répond déjà à la question : elle s'ouvre précisément à
+ * hatsot, et elle sait de quelle nuit il s'agit (celle qui s'achève ce matin
+ * avant le lever du soleil, celle qui vient une fois le jour levé). Un début
+ * déjà passé, c'est donc une nuit dont on a dépassé le milieu ; à 22 h, le
+ * hatsot annoncé est celui de la nuit qui commence, il est devant nous.
+ */
+export function pastChatzotNight(place: ZmanimPlace, now: Date = new Date()): boolean {
+  const window = slihotWindow(place, now);
+  return !!window && now.getTime() >= window.start.getTime();
+}
+
+/**
  * Combien de minutes avant la chkia part le rappel « dernier appel ».
  * Recopié dans functions/src/sunsetReminder.ts, qui ne peut pas importer src/.
  */

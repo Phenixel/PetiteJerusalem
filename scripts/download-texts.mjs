@@ -640,7 +640,7 @@ if (shouldRun('rashi')) {
 if (ONLY === 'tefila') {
   console.log('\n=== Tefila (Sli\'hot + Brahot) ===');
 
-  const tefilaEntries = textStudies.filter(t => t.type === 'Slihot' || t.type === 'Brahot');
+  const tefilaEntries = textStudies.filter(t => t.type === 'Moadim' || t.type === 'Brahot');
   const tefilaEntry = latin => {
     const entry = tefilaEntries.find(t => t.name.includes(`(${latin})`));
     if (!entry) throw new Error(`Entrée absente du catalogue : ${latin}`);

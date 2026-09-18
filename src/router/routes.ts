@@ -193,16 +193,26 @@ export default [
   // Détail d'un corpus de la bibliothèque (liste des textes) : la page
   // d'accueil de la bibliothèque ne montre que les grandes sections.
   {
-    path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh|brahot|sidour)",
+    path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh|moadim|brahot|sidour)",
     name: "study-corpus",
     meta: { offlineOk: true },
     component: StudyPage,
   },
-  // Les Sli'hot n'ont qu'un texte : le livre s'ouvre directement dessus, pas
-  // sur une liste à un seul élément.
+  // Les Sli'hot avaient un livre à elles, l'allumage de Hanouka vivait parmi
+  // les brahot : les deux sont passés dans Moadim, avec les textes des fêtes.
+  // Leurs anciennes adresses sont dans la nature (liens, favoris, index des
+  // moteurs) et mènent au même texte.
   {
     path: "/bibliotheque/slihot",
-    redirect: "/bibliotheque/slihot/slihot",
+    redirect: "/bibliotheque/moadim/slihot",
+  },
+  {
+    path: "/bibliotheque/slihot/slihot",
+    redirect: "/bibliotheque/moadim/slihot",
+  },
+  {
+    path: "/bibliotheque/brahot/nerot-hanouka",
+    redirect: "/bibliotheque/moadim/nerot-hanouka",
   },
   // L'ancienne page « Hors ligne » a été fusionnée dans la bibliothèque
   // (boutons de téléchargement sur chaque carte + « Tout télécharger »).

@@ -97,7 +97,18 @@
     ],
     "redirects": [
       { "source": "/etude", "type": 301, "destination": "/bibliotheque" },
-      { "source": "/etude/**", "type": 301, "destination": "/bibliotheque/:splat" }
+      { "source": "/etude/**", "type": 301, "destination": "/bibliotheque/:splat" },
+      { "source": "/bibliotheque/slihot", "type": 301, "destination": "/bibliotheque/moadim/slihot" },
+      {
+        "source": "/bibliotheque/slihot/slihot",
+        "type": 301,
+        "destination": "/bibliotheque/moadim/slihot"
+      },
+      {
+        "source": "/bibliotheque/brahot/nerot-hanouka",
+        "type": 301,
+        "destination": "/bibliotheque/moadim/nerot-hanouka"
+      }
     ],
     "rewrites": [
       {
