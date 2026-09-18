@@ -336,15 +336,6 @@ const he: LocaleMessages = {
     holidayThemesTitle: "ערכות נושא לחגים",
     holidayThemesHint:
       "בזמן חג, האפליקציה לובשת את צבעיו וקישוטיו, ואחר כך חוזרת לערכת הנושא שלכם.",
-    holidayThemeNow: "עכשיו",
-    holidayThemes: {
-      tichri: "חגי תשרי",
-      souccot: "סוכות",
-    },
-    holidayThemePeriods: {
-      tichri: "שבועיים לפני ראש השנה, עד יום כיפור",
-      souccot: "ממחרת יום כיפור עד מחרת שמחת תורה",
-    },
     fontsTitle: "גופנים",
     fontsDescription:
       "בחרו את גופן הטקסטים שאתם קוראים ואת גופן הטקסטים בעברית. הבחירות חלות בכל מקום שבו קוראים.",

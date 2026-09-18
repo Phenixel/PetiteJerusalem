@@ -9,8 +9,10 @@ import { isNativeApp } from "../composables/useNativeApp";
 import { useScrollFrame } from "../composables/useScrollFrame";
 import { useLocalePath } from "../composables/useLocalePath";
 import { useOverlay } from "../composables/useOverlayStack";
+import { useHolidayTheme } from "../composables/useHolidayTheme";
 import LanguageSelector from "./LanguageSelector.vue";
 import AppIcon from "./icons/AppIcon.vue";
+import HolidayOrnaments from "./holiday/HolidayOrnaments.vue";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -45,6 +47,9 @@ const isScrolled = computed(() => scroll.value.scrollY > 4);
 // l'espace où l'on est, sinon un visiteur venu d'un résultat anglais en sort
 // au premier clic.
 const { localePath } = useLocalePath();
+
+// Le temps d'une fête, ses ornements à côté du nom du site.
+const { activeHolidayTheme } = useHolidayTheme();
 
 const navLinks = computed(() => [
   { to: localePath("home"), labelKey: "common.home", exact: true },
@@ -122,18 +127,22 @@ function goToLogin() {
     v-if="!isNativeApp"
     ref="header"
     class="sticky top-0 z-50 flex items-center justify-between gap-4 px-4 py-2.5 md:px-6 md:py-4 transition-colors duration-300"
-    :class="
-      isScrolled
-        ? 'bg-bg-beige/85 backdrop-blur-md dark:bg-gray-900/85'
-        : 'bg-transparent'
-    "
+    :class="isScrolled ? 'bg-bg-beige/85 backdrop-blur-md dark:bg-gray-900/85' : 'bg-transparent'"
   >
     <!-- Pas un h1 : chaque page a le sien, le bandeau en doublait le titre
          sur tout le site (deux h1 par page pour les lecteurs d'écran et le
          référencement). -->
     <RouterLink :to="localePath('home')" class="group min-w-0">
-      <p class="font-display text-xl md:text-3xl font-bold tracking-tight text-primary truncate">
-        {{ $t("navbar.title") }}
+      <p
+        class="flex items-center gap-3 font-display text-xl md:text-3xl font-bold tracking-tight text-primary"
+      >
+        <span class="truncate">{{ $t("navbar.title") }}</span>
+        <!-- Le temps d'une fête, ses ornements à côté du nom (voir HolidayOrnaments). -->
+        <HolidayOrnaments
+          v-if="activeHolidayTheme"
+          :theme="activeHolidayTheme.id"
+          class="shrink-0 text-[1.6em]"
+        />
       </p>
       <!-- La baseline coûte une ligne : sur un téléphone, elle passe après le
            reste, le bandeau y gagne la hauteur qu'elle prenait. -->
@@ -229,8 +238,15 @@ function goToLogin() {
           class="relative flex flex-col min-h-full p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
         >
           <div class="mb-8 pt-2">
-            <h2 class="font-display text-xl font-bold tracking-tight text-primary">
-              {{ $t("navbar.title") }}
+            <h2
+              class="flex items-center gap-3 font-display text-xl font-bold tracking-tight text-primary"
+            >
+              <span>{{ $t("navbar.title") }}</span>
+              <HolidayOrnaments
+                v-if="activeHolidayTheme"
+                :theme="activeHolidayTheme.id"
+                class="text-[1.6em]"
+              />
             </h2>
           </div>
           <div class="flex flex-col gap-1">

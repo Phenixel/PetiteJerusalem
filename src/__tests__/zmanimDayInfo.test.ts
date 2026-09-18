@@ -268,8 +268,7 @@ describe("saysBirkatHalevana", () => {
    * ouvre le 8 Eloul est déjà passée, et la moitié de la lunaison ne tombe
    * que le 28 août à 02:16, au cœur de la nuit qui ouvre le 15.
    */
-  const says = (y: number, m: number, d: number) =>
-    saysBirkatHalevana(DEFAULT_PLACE, hd(y, m, d));
+  const says = (y: number, m: number, d: number) => saysBirkatHalevana(DEFAULT_PLACE, hd(y, m, d));
 
   it("de sept jours révolus à la moitié de la lunaison", () => {
     expect(says(2026, 8, 20)).toBe(false); // nuit du 7 Eloul, six jours seulement

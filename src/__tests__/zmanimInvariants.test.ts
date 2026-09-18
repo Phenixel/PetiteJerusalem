@@ -600,66 +600,66 @@ describe("les points fixes du moteur solaire", () => {
     tzid: string;
     days: { day: string; sunrise: string; sunset: string }[];
   }[] = [
-  {
-    city: "Paris",
-    latitude: 48.85341,
-    longitude: 2.3488,
-    tzid: "Europe/Paris",
-    days: [
-      { day: "2026-03-20", sunrise: "2026-03-20T05:53:44Z", sunset: "2026-03-20T18:03:16Z" },
-      { day: "2026-06-21", sunrise: "2026-06-21T03:46:58Z", sunset: "2026-06-21T19:57:51Z" },
-      { day: "2026-09-22", sunrise: "2026-09-22T05:37:00Z", sunset: "2026-09-22T17:48:45Z" },
-      { day: "2026-12-21", sunrise: "2026-12-21T07:41:15Z", sunset: "2026-12-21T15:56:03Z" },
-    ],
-  },
-  {
-    city: "Jérusalem",
-    latitude: 31.7683,
-    longitude: 35.2137,
-    tzid: "Asia/Jerusalem",
-    days: [
-      { day: "2026-03-20", sunrise: "2026-03-20T03:43:13Z", sunset: "2026-03-20T15:50:29Z" },
-      { day: "2026-06-21", sunrise: "2026-06-21T02:34:08Z", sunset: "2026-06-21T16:47:43Z" },
-      { day: "2026-09-22", sunrise: "2026-09-22T03:27:15Z", sunset: "2026-09-22T15:36:04Z" },
-      { day: "2026-12-21", sunrise: "2026-12-21T04:34:55Z", sunset: "2026-12-21T14:39:23Z" },
-    ],
-  },
-  {
-    city: "New York",
-    latitude: 40.7128,
-    longitude: -74.006,
-    tzid: "America/New_York",
-    days: [
-      { day: "2026-03-20", sunrise: "2026-03-20T10:59:18Z", sunset: "2026-03-20T23:08:11Z" },
-      { day: "2026-06-21", sunrise: "2026-06-21T09:25:01Z", sunset: "2026-06-22T00:30:44Z" },
-      { day: "2026-09-22", sunrise: "2026-09-22T10:43:38Z", sunset: "2026-09-22T22:53:02Z" },
-      { day: "2026-12-21", sunrise: "2026-12-21T12:16:34Z", sunset: "2026-12-21T21:31:47Z" },
-    ],
-  },
-  {
-    city: "Buenos Aires",
-    latitude: -34.6037,
-    longitude: -58.3816,
-    tzid: "America/Argentina/Buenos_Aires",
-    days: [
-      { day: "2026-03-20", sunrise: "2026-03-20T09:56:43Z", sunset: "2026-03-20T22:04:32Z" },
-      { day: "2026-06-21", sunrise: "2026-06-21T11:00:21Z", sunset: "2026-06-21T20:50:24Z" },
-      { day: "2026-09-22", sunrise: "2026-09-22T09:42:53Z", sunset: "2026-09-22T21:50:02Z" },
-      { day: "2026-12-21", sunrise: "2026-12-21T08:37:17Z", sunset: "2026-12-21T23:06:03Z" },
-    ],
-  },
-  {
-    city: "Oslo",
-    latitude: 59.9139,
-    longitude: 10.7522,
-    tzid: "Europe/Oslo",
-    days: [
-      { day: "2026-03-20", sunrise: "2026-03-20T05:18:57Z", sunset: "2026-03-20T17:31:18Z" },
-      { day: "2026-06-21", sunrise: "2026-06-21T01:53:44Z", sunset: "2026-06-21T20:43:51Z" },
-      { day: "2026-09-22", sunrise: "2026-09-22T05:01:03Z", sunset: "2026-09-22T17:17:01Z" },
-      { day: "2026-12-21", sunrise: "2026-12-21T08:18:06Z", sunset: "2026-12-21T14:11:57Z" },
-    ],
-  },
+    {
+      city: "Paris",
+      latitude: 48.85341,
+      longitude: 2.3488,
+      tzid: "Europe/Paris",
+      days: [
+        { day: "2026-03-20", sunrise: "2026-03-20T05:53:44Z", sunset: "2026-03-20T18:03:16Z" },
+        { day: "2026-06-21", sunrise: "2026-06-21T03:46:58Z", sunset: "2026-06-21T19:57:51Z" },
+        { day: "2026-09-22", sunrise: "2026-09-22T05:37:00Z", sunset: "2026-09-22T17:48:45Z" },
+        { day: "2026-12-21", sunrise: "2026-12-21T07:41:15Z", sunset: "2026-12-21T15:56:03Z" },
+      ],
+    },
+    {
+      city: "Jérusalem",
+      latitude: 31.7683,
+      longitude: 35.2137,
+      tzid: "Asia/Jerusalem",
+      days: [
+        { day: "2026-03-20", sunrise: "2026-03-20T03:43:13Z", sunset: "2026-03-20T15:50:29Z" },
+        { day: "2026-06-21", sunrise: "2026-06-21T02:34:08Z", sunset: "2026-06-21T16:47:43Z" },
+        { day: "2026-09-22", sunrise: "2026-09-22T03:27:15Z", sunset: "2026-09-22T15:36:04Z" },
+        { day: "2026-12-21", sunrise: "2026-12-21T04:34:55Z", sunset: "2026-12-21T14:39:23Z" },
+      ],
+    },
+    {
+      city: "New York",
+      latitude: 40.7128,
+      longitude: -74.006,
+      tzid: "America/New_York",
+      days: [
+        { day: "2026-03-20", sunrise: "2026-03-20T10:59:18Z", sunset: "2026-03-20T23:08:11Z" },
+        { day: "2026-06-21", sunrise: "2026-06-21T09:25:01Z", sunset: "2026-06-22T00:30:44Z" },
+        { day: "2026-09-22", sunrise: "2026-09-22T10:43:38Z", sunset: "2026-09-22T22:53:02Z" },
+        { day: "2026-12-21", sunrise: "2026-12-21T12:16:34Z", sunset: "2026-12-21T21:31:47Z" },
+      ],
+    },
+    {
+      city: "Buenos Aires",
+      latitude: -34.6037,
+      longitude: -58.3816,
+      tzid: "America/Argentina/Buenos_Aires",
+      days: [
+        { day: "2026-03-20", sunrise: "2026-03-20T09:56:43Z", sunset: "2026-03-20T22:04:32Z" },
+        { day: "2026-06-21", sunrise: "2026-06-21T11:00:21Z", sunset: "2026-06-21T20:50:24Z" },
+        { day: "2026-09-22", sunrise: "2026-09-22T09:42:53Z", sunset: "2026-09-22T21:50:02Z" },
+        { day: "2026-12-21", sunrise: "2026-12-21T08:37:17Z", sunset: "2026-12-21T23:06:03Z" },
+      ],
+    },
+    {
+      city: "Oslo",
+      latitude: 59.9139,
+      longitude: 10.7522,
+      tzid: "Europe/Oslo",
+      days: [
+        { day: "2026-03-20", sunrise: "2026-03-20T05:18:57Z", sunset: "2026-03-20T17:31:18Z" },
+        { day: "2026-06-21", sunrise: "2026-06-21T01:53:44Z", sunset: "2026-06-21T20:43:51Z" },
+        { day: "2026-09-22", sunrise: "2026-09-22T05:01:03Z", sunset: "2026-09-22T17:17:01Z" },
+        { day: "2026-12-21", sunrise: "2026-12-21T08:18:06Z", sunset: "2026-12-21T14:11:57Z" },
+      ],
+    },
   ];
 
   /** Dix secondes : la tolérance que le plan fixe pour ces points. */

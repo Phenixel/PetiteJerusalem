@@ -440,6 +440,8 @@ thème de fête ne se choisit pas : le calendrier le pose et le retire
 interrupteur, dans les réglages d'apparence sous les thèmes, l'autorise ou
 non pour toutes les fêtes à la fois. Il est allumé d'office : c'est une
 attention, pas une option à découvrir ; qui n'en veut pas la coupe une fois.
+Les réglages ne listent pas les fêtes qui ont un thème, ni ne les montrent en
+aperçu : le thème arrive avec la fête, c'est une surprise, pas un catalogue.
 
 | Fête    | Période                                                  | `primary`             | `secondary`     | Bouton des horaires | Ornements                 |
 | ------- | -------------------------------------------------------- | --------------------- | --------------- | ------------------- | ------------------------- |
@@ -454,15 +456,20 @@ Trois choses changent, pas une de plus :
   « Lisibilité ») ; le vert de Souccot est pris plus franc et plus jaune que
   l'émeraude, pour qu'on ne les confonde pas ;
 - **les ornements** : deux dessins par fête, dans le style des illustrations
-  des portes (`src/components/holiday`), posés à même le fond en tête de
-  l'accueil, de part et d'autre d'un souhait. Pas de carte : c'est une parure,
-  pas une réponse. Ils servent aussi d'aperçu dans les réglages ;
-- **le bouton rond des horaires** de l'app native, qui prend la forme d'un
-  objet de la fête : c'est le bouton que tout le monde touche chaque jour, et
+  des portes (`src/components/holiday`). En tête de l'accueil, de part et
+  d'autre d'un souhait ; à côté du nom du site dans le bandeau et en tête du
+  pied de page ; en blanc sur le bandeau du profil ; et, sur toutes les autres
+  pages, en filigrane dans les coins hauts (`HolidayBackdrop`), là où le mur
+  de pierre se voit, jamais sur une page de lecture. Toujours à même le fond,
+  jamais en carte : c'est une parure, pas une réponse ;
+- **le bouton rond des horaires** de l'app native, dont le rond prend la forme
+  d'un objet de la fête (une pomme, une soucca, `HolidayFabShape`), l'horloge
+  restant au milieu : c'est toujours le bouton des horaires, il a seulement
+  changé d'habit. C'est le bouton que tout le monde touche chaque jour, et
   c'est là que la fête se voit d'abord.
 
-Ce qui passe devant quoi : le survol d'un thème dans les réglages (choisi ou
-de fête), puis la fête en cours, puis le thème choisi. Le choix reste le choix
+Ce qui passe devant quoi : le survol d'un thème dans les réglages, puis la
+fête en cours, puis le thème choisi. Le choix reste le choix
 pendant la fête, on le retrouve après. Une fenêtre se compte en jours civils,
 pas à la chkia : un thème qui change dans la nuit ne trompe personne, un thème
 qui changerait à 19 h 42 le ferait sous les yeux. Le lendemain de Kippour

@@ -121,9 +121,6 @@ describe("i18n usage", () => {
       "profile.appearances.",
       "profile.fontsHebrew.",
       "profile.fontsLatin.",
-      // Les thèmes des fêtes, leur nom et leur période (voir AppearanceSettings).
-      "profile.holidayThemePeriods.",
-      "profile.holidayThemes.",
       "profile.themes.",
       "seo.",
       "studio.form.",

@@ -1,7 +1,6 @@
 import { computed, ref, watchEffect } from "vue";
 import { createAccountPreference } from "./createAccountPreference";
 import { activeHolidayTheme } from "./useHolidayTheme";
-import { holidayThemeById } from "../services/holidayThemes";
 
 /** Un duo de couleurs, qu'il vienne d'un thème choisi ou d'une fête. */
 export interface ThemeColors {
@@ -92,9 +91,8 @@ const previewed = ref<ThemeColors | null>(null);
 watchEffect(() => applyThemeColors(previewed.value ?? appliedTheme.value), { flush: "sync" });
 
 export function useTheme() {
-  /** Survol d'un thème choisi ou d'un thème de fête : ses couleurs, un instant. */
   function previewTheme(themeId: string) {
-    const option = THEME_OPTIONS.find((t) => t.id === themeId) ?? holidayThemeById(themeId);
+    const option = THEME_OPTIONS.find((t) => t.id === themeId);
     if (option) previewed.value = option;
   }
 

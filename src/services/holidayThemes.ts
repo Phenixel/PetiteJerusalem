@@ -1,5 +1,4 @@
 import { HDate, months } from "@hebcal/hdate";
-import type { IconName } from "../components/icons/registry";
 
 /**
  * Les thèmes des fêtes : le temps d'une fête, l'application change de
@@ -9,7 +8,8 @@ import type { IconName } from "../components/icons/registry";
  *
  * Ce fichier ne connaît que le calendrier : quel thème appelle quel jour.
  * L'activation (le réglage, l'heure qu'il est) est dans useHolidayTheme, les
- * dessins dans src/components/holiday.
+ * dessins (ornements, forme du bouton) dans src/components/holiday, rangés
+ * par l'identifiant du thème.
  *
  * `@hebcal/hdate` et non `@hebcal/core` : la conversion de date suffit ici,
  * et elle pèse le dixième du moteur d'horaires, que rien ne doit tirer avant
@@ -25,8 +25,6 @@ export interface HolidayTheme {
   /** Même rôle que dans un thème choisi (voir useTheme) : fond et encre. */
   primary: string;
   secondary: string;
-  /** L'icône du bouton rond des horaires (app native) pendant la fête. */
-  fabIcon: IconName;
 }
 
 /**
@@ -39,8 +37,8 @@ export interface HolidayTheme {
  *   l'émeraude des thèmes choisis, qui tire sur le bleu), et l'étrog.
  */
 export const HOLIDAY_THEMES: HolidayTheme[] = [
-  { id: "tichri", primary: "#D8322F", secondary: "#D9A21B", fabIcon: "pomme" },
-  { id: "souccot", primary: "#4E8A2E", secondary: "#D9B324", fabIcon: "soucca" },
+  { id: "tichri", primary: "#D8322F", secondary: "#D9A21B" },
+  { id: "souccot", primary: "#4E8A2E", secondary: "#D9B324" },
 ];
 
 export function holidayThemeById(id: string): HolidayTheme | null {

@@ -359,15 +359,6 @@ const fr = {
     holidayThemesTitle: "Thèmes des fêtes",
     holidayThemesHint:
       "Le temps d'une fête, l'application prend ses couleurs et ses ornements, puis retrouve votre thème.",
-    holidayThemeNow: "En ce moment",
-    holidayThemes: {
-      tichri: "Fêtes de Tichri",
-      souccot: "Souccot",
-    },
-    holidayThemePeriods: {
-      tichri: "Deux semaines avant Roch Hachana, jusqu'à Kippour",
-      souccot: "Du lendemain de Kippour au lendemain de Sim'hat Torah",
-    },
     fontsTitle: "Polices",
     fontsDescription:
       "Choisissez la police des textes que vous lisez et celle des textes en hébreu. Vos choix s'appliquent partout où l'on lit.",

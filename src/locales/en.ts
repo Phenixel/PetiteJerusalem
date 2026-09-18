@@ -351,15 +351,6 @@ const en: LocaleMessages = {
     holidayThemesTitle: "Holiday themes",
     holidayThemesHint:
       "During a holiday, the app takes on its colors and ornaments, then returns to your theme.",
-    holidayThemeNow: "Right now",
-    holidayThemes: {
-      tichri: "Tishrei holidays",
-      souccot: "Sukkot",
-    },
-    holidayThemePeriods: {
-      tichri: "Two weeks before Rosh Hashanah, until Yom Kippur",
-      souccot: "From the day after Yom Kippur to the day after Simchat Torah",
-    },
     fontsTitle: "Fonts",
     fontsDescription:
       "Choose the font for the texts you read and the Hebrew text font. Your choices apply wherever you read.",

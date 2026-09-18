@@ -161,9 +161,10 @@ describe("Rav Ovadia Yossef en Israël : le luah Or Ha'Haïm", () => {
     expect(minutesBetween(z.sunset(), ovadia.tzeit(z, ctx)) / zmanit).toBeCloseTo(13.5 / 60, 2);
     expect(minutesBetween(z.sunset(), ovadia.rabbenouTam(z, ctx)) / zmanit).toBeCloseTo(72 / 60, 2);
     // Plag hamin'ha : une heure et quart zmanit avant la sortie (Yalkout Yossef).
-    expect(
-      minutesBetween(ovadia.plagHaMincha(z, ctx), ovadia.tzeit(z, ctx)) / zmanit,
-    ).toBeCloseTo(75 / 60, 2);
+    expect(minutesBetween(ovadia.plagHaMincha(z, ctx), ovadia.tzeit(z, ctx)) / zmanit).toBeCloseTo(
+      75 / 60,
+      2,
+    );
   });
 
   it("donne le talith à 60 minutes zmaniyot, non aux 66 du grand besoin", () => {
@@ -343,9 +344,9 @@ describe("Rav Ovadia Yossef hors d'Israël : le luah Amudei Horaah", () => {
 
     // L'hiver, l'écart change de sens : 17:44:25 le 26 décembre, quand les
     // quarante minutes donnaient 17:39.
-    expect(
-      clock(place, restPeriodAt(place, new HDate(new Date(2026, 11, 26)), "fr")!.end!),
-    ).toBe("17:45");
+    expect(clock(place, restPeriodAt(place, new HDate(new Date(2026, 11, 26)), "fr")!.end!)).toBe(
+      "17:45",
+    );
   });
 
   it("ne sort jamais le Chabbat avant vingt minutes après la chkia", () => {

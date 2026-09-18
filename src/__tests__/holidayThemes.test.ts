@@ -133,12 +133,6 @@ describe("le thème de fête à l'écran", () => {
     expect(primaryColor()).toBe(ocean.primary);
     cancelPreview();
     expect(primaryColor()).toBe(tichri.primary);
-    // Un thème de fête se survole aussi, hors de sa période.
-    today("2026-11-02");
-    previewTheme("souccot");
-    expect(primaryColor()).toBe(souccot.primary);
-    cancelPreview();
-    expect(primaryColor()).toBe(sunset.primary);
   });
 
   it("se coupe dans les réglages, et le réglage reste sur l'appareil", async () => {

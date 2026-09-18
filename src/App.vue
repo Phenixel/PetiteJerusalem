@@ -45,6 +45,12 @@ const OnboardingFlow = defineAsyncComponent(
 // site web n'en embarque pas une ligne dans son chargement initial.
 const BottomTabBar = defineAsyncComponent(() => import("./components/BottomTabBar.vue"));
 const StatusBarScrim = defineAsyncComponent(() => import("./components/StatusBarScrim.vue"));
+// Le temps d'une fête, ses ornements en filigrane dans les coins de la page
+// (voir HolidayBackdrop) : partout où le mur de pierre se voit, sauf sur
+// l'accueil, qui porte déjà la fête en tête de page.
+const HolidayBackdrop = defineAsyncComponent(
+  () => import("./components/holiday/HolidayBackdrop.vue"),
+);
 const AppUpdateBanner = defineAsyncComponent(() => import("./components/AppUpdateBanner.vue"));
 const OfflineNotice = defineAsyncComponent(() => import("./components/OfflineNotice.vue"));
 
@@ -160,6 +166,7 @@ authService.onAuthChanged((user) => {
     :class="chromePadClass"
   >
     <StoneWallBackground v-show="showStoneWall" />
+    <HolidayBackdrop v-if="showStoneWall && !isHome" />
     <Navbar />
     <!-- App native seulement : ne s'affiche que si le binaire installé est
          antérieur à la version publiée sur le store (appUpdateService). -->

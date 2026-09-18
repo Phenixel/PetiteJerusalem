@@ -1,5 +1,9 @@
 <template>
   <footer class="mt-auto px-6 py-8 text-text-secondary transition-colors" role="contentinfo">
+    <!-- Le temps d'une fête, ses ornements ouvrent le pied de page. -->
+    <p v-if="activeHolidayTheme" class="mb-6 flex justify-center text-primary" aria-hidden="true">
+      <HolidayOrnaments :theme="activeHolidayTheme.id" class="text-[2.5rem]" />
+    </p>
     <nav
       class="mx-auto mb-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm"
       :aria-label="t('footer.discover')"
@@ -118,8 +122,11 @@ import LanguageSelector from "./LanguageSelector.vue";
 import AppIcon from "./icons/AppIcon.vue";
 import { useConsent } from "../composables/useConsent";
 import { openFeedback } from "../composables/useFeedback";
+import { useHolidayTheme } from "../composables/useHolidayTheme";
+import HolidayOrnaments from "./holiday/HolidayOrnaments.vue";
 
 const { t } = useI18n();
+const { activeHolidayTheme } = useHolidayTheme();
 // Les pages traduites suivent l'espace de langue de l'URL ouverte.
 const { localePath } = useLocalePath();
 // Réouvre la bannière de consentement (retrait du consentement possible à tout moment).
