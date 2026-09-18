@@ -204,6 +204,31 @@ const fr = {
       hint: "Le bouton rond, au centre de la barre du bas, ouvre les horaires par-dessus la page en cours ; un second appui les referme.",
     },
   },
+  tips: {
+    ariaLabel: "Astuce",
+    skip: "Passer",
+    next: "Suivant",
+    done: "Compris",
+    stepOf: "Astuce {n} sur {total}",
+    replay: "Revoir les astuces",
+    replayed: "Les astuces se montreront à nouveau, page par page.",
+    zmanim: {
+      reminder: {
+        title: "Un rappel d'un geste",
+        text: "Tirez une ligne vers la gauche : la cloche pose un rappel avant cet horaire. Touchez la ligne pour choisir combien de minutes avant.",
+      },
+    },
+    reading: {
+      menu: {
+        title: "Le menu de lecture",
+        text: "Ce bouton ouvre le sommaire du texte, la taille des caractères et la bascule hébreu / phonétique.",
+      },
+      settings: {
+        title: "Les réglages de lecture",
+        text: "Le second rond porte le défilement automatique, le partage du texte et le formulaire pour nous écrire.",
+      },
+    },
+  },
   home: {
     omer: {
       day: "{n}e jour du 'Omer",

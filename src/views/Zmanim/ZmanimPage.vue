@@ -57,6 +57,7 @@ import FastTimes from "./FastTimes.vue";
 import ChametzTimes from "./ChametzTimes.vue";
 import ZmanRow from "./ZmanRow.vue";
 import ZmanReminderModal from "./ZmanReminderModal.vue";
+import FeatureTour, { type TourStep } from "../../components/FeatureTour.vue";
 import { useZmanimOpinion } from "../../composables/useZmanimOpinion";
 
 // Chargés à la demande : la liste des hiloulot pèse 75 Ko, et la fenêtre de
@@ -267,6 +268,36 @@ const expandedZman = ref<ZmanKey | null>(null);
 
 function expandRow(zman: ZmanTime, open: boolean): void {
   expandedZman.value = open ? zman.key : null;
+}
+
+/**
+ * L'astuce du rappel, à la première visite (voir FeatureTour) : personne ne
+ * devine qu'une ligne se tire. Le projecteur se pose sur la première ligne
+ * de la journée, qui s'ouvre d'elle-même sur sa cloche et revient, le temps
+ * de l'astuce (`demo` de ZmanRow), pendant que la bulle dit le geste. App
+ * native seulement : sur le site, la ligne ne se tire pas.
+ */
+const demoZman = ref<ZmanKey | null>(null);
+
+const reminderTip = computed<TourStep[]>(() => [
+  {
+    key: "reminder",
+    icon: "bell",
+    title: t("tips.zmanim.reminder.title"),
+    text: t("tips.zmanim.reminder.text"),
+    target: () => root.value?.querySelector<HTMLElement>("[data-zman-list] > li") ?? null,
+    radius: 12,
+    padding: 4,
+    gesture: true,
+  },
+]);
+
+function onTipStep(): void {
+  demoZman.value = byPeriod.value[0]?.zmanim[0]?.key ?? null;
+}
+
+function onTipFinish(): void {
+  demoZman.value = null;
 }
 
 /** Le délai posé sur un horaire, ou null : c'est lui que porte le triangle. */
@@ -751,7 +782,7 @@ onMounted(() => {
            vers la gauche pour le poser d'un geste (voir ZmanRow). Sur le site,
            elle reste une ligne de texte : rien à programmer dans un
            navigateur. -->
-      <ul class="flex flex-col divide-y divide-line">
+      <ul class="flex flex-col divide-y divide-line" data-zman-list>
         <ZmanRow
           v-for="zman in group.zmanim"
           :key="zman.key"
@@ -761,6 +792,7 @@ onMounted(() => {
           :minutes-before="reminderMinutes(zman)"
           :can-remind="isNativeApp"
           :expanded="expandedZman === zman.key"
+          :demo="demoZman === zman.key"
           @open="openReminder(zman)"
           @toggle="quickToggle(zman)"
           @update:expanded="expandRow(zman, $event)"
@@ -831,6 +863,15 @@ onMounted(() => {
       </p>
     </AppModal>
     <ZmanimOpinionModal v-if="!isNativeApp" v-model:show="opinionOpen" />
+    <!-- L'astuce du rappel, une fois : la première ligne se tire toute seule
+         pendant que la bulle dit le geste (voir reminderTip). -->
+    <FeatureTour
+      v-if="isNativeApp"
+      tip="zmanim-reminder"
+      :steps="reminderTip"
+      @step="onTipStep"
+      @finish="onTipFinish"
+    />
     <ZmanReminderModal
       v-if="reminderZman"
       v-model:show="reminderOpen"

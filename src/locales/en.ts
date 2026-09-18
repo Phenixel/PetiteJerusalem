@@ -199,6 +199,31 @@ const en: LocaleMessages = {
       hint: "The round button in the middle of the bottom bar opens the times over the current page; a second tap closes them.",
     },
   },
+  tips: {
+    ariaLabel: "Tip",
+    skip: "Skip",
+    next: "Next",
+    done: "Got it",
+    stepOf: "Tip {n} of {total}",
+    replay: "Replay the tips",
+    replayed: "The tips will show again, page by page.",
+    zmanim: {
+      reminder: {
+        title: "A reminder in one swipe",
+        text: "Swipe a row to the left: the bell sets a reminder before that time. Tap the row to choose how many minutes before.",
+      },
+    },
+    reading: {
+      menu: {
+        title: "The reading menu",
+        text: "This button opens the table of contents, the text size and the Hebrew / phonetic switch.",
+      },
+      settings: {
+        title: "Reading settings",
+        text: "The second button holds auto-scroll, sharing the text and the form to write to us.",
+      },
+    },
+  },
   home: {
     omer: {
       day: "Day {n} of the Omer",
