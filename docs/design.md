@@ -126,23 +126,35 @@ fait. Quatre règles la tiennent :
   à cet endroit : la toucher fait ce qu'elle fait d'habitude, et l'astuce
   passe au pas suivant ou s'en va, on a compris. Elle **montre** aussi quand
   elle le peut : sur les horaires, la première ligne se tire toute seule sur
-  sa cloche et revient, le temps de l'astuce ; sur une lecture, le second pas
+  sa cloche et revient, le temps du pas, puis le nom de la ville, qui est le
+  bouton qui la change, prend le projecteur ; sur une lecture, le second pas
   ouvre le panneau pour éclairer le rond des réglages ;
 - **elle se passe d'un geste** : « Passer », le voile, Échap ou le retour
   Android. « Suivant » ou « Compris » la mènent au bout. Jamais plus de deux
-  ou trois pas ;
-- **une fois par appareil.** Montrée, elle est notée vue (dans les deux
-  stockages, voir docs/app-native.md), même si l'on quitte la page au
-  milieu : une astuce qui revient n'est plus une aide. « Revoir les astuces »
-  (onglet À propos) les remet en jeu, page par page ;
+  ou trois pas. Un pas sans commande à éclairer (pincer le texte, le double
+  appui) pose la bulle au milieu et **montre** le geste dans une capture
+  dessinée (`src/components/mock`), la même que dans l'introduction ;
+- **une fois par appareil, et une seule par ouverture de l'app.** Close, elle
+  est notée vue (dans les deux stockages, voir docs/app-native.md), même si
+  l'on quitte la page au milieu : une astuce qui revient n'est plus une aide.
+  Et quatre bulles à la suite en changeant de page seraient un tutoriel
+  qu'on n'a pas demandé : la suivante attend la prochaine ouverture (une
+  relance de l'app, ou un retour au premier plan après une demi-heure
+  ailleurs). Sur une même page, une astuce peut en attendre une autre : les
+  gestes de lecture viennent une ouverture après le menu. « Revoir les
+  astuces » (onglet À propos) les remet en jeu, page par page ;
+- **« Me le rappeler à la prochaine ouverture »** : on n'a pas toujours le
+  temps de lire. La bulle se retire sans compter l'astuce vue, et celle-ci
+  revient, sur la même page, à l'ouverture suivante ;
 - **jamais par-dessus autre chose** : ni l'introduction, ni une fenêtre
-  ouverte, ni une commande hors de l'écran ; et elle attend que la page se
-  soit posée.
+  ouverte, ni une autre astuce, ni une commande hors de l'écran ; et elle
+  attend que la page se soit posée.
 
 App native seulement, comme l'introduction : un visiteur du site arrive par
 une page précise et une bulle en travers de ce qu'il vient lire serait une
-gêne. `?tips` dans l'adresse les force partout où la commande existe, pour
-les montrer et les essayer sur les canaux de preview.
+gêne. `?tips` dans l'adresse les force partout où la commande existe (ou
+`?tips=reading-gestures` pour une seule), pour les montrer et les essayer sur
+les canaux de preview.
 
 ### Deux pages, un jeu d'onglets
 

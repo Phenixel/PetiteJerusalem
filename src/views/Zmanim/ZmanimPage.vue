@@ -271,15 +271,18 @@ function expandRow(zman: ZmanTime, open: boolean): void {
 }
 
 /**
- * L'astuce du rappel, à la première visite (voir FeatureTour) : personne ne
- * devine qu'une ligne se tire. Le projecteur se pose sur la première ligne
- * de la journée, qui s'ouvre d'elle-même sur sa cloche et revient, le temps
- * de l'astuce (`demo` de ZmanRow), pendant que la bulle dit le geste. App
- * native seulement : sur le site, la ligne ne se tire pas.
+ * L'astuce des horaires, à la première visite (voir FeatureTour), en deux
+ * pas. Le rappel d'abord : personne ne devine qu'une ligne se tire. Le
+ * projecteur se pose sur la première ligne de la journée, qui s'ouvre
+ * d'elle-même sur sa cloche et revient, le temps du pas (`demo` de ZmanRow),
+ * pendant que la bulle dit le geste. Puis le lieu : le nom de la ville EST
+ * le bouton qui la change, et rien ne le dit. App native seulement : sur le
+ * site, la ligne ne se tire pas.
  */
 const demoZman = ref<ZmanKey | null>(null);
+const placeButton = ref<HTMLElement | null>(null);
 
-const reminderTip = computed<TourStep[]>(() => [
+const zmanimTip = computed<TourStep[]>(() => [
   {
     key: "reminder",
     icon: "bell",
@@ -290,10 +293,18 @@ const reminderTip = computed<TourStep[]>(() => [
     padding: 4,
     gesture: true,
   },
+  {
+    key: "place",
+    icon: "map-pin",
+    title: t("tips.zmanim.place.title"),
+    text: t("tips.zmanim.place.text"),
+    target: () => placeButton.value,
+    radius: 9999,
+  },
 ]);
 
-function onTipStep(): void {
-  demoZman.value = byPeriod.value[0]?.zmanim[0]?.key ?? null;
+function onTipStep(index: number): void {
+  demoZman.value = index === 0 ? (byPeriod.value[0]?.zmanim[0]?.key ?? null) : null;
 }
 
 function onTipFinish(): void {
@@ -584,6 +595,7 @@ onMounted(() => {
       :class="isNativeApp ? 'flex-nowrap' : 'flex-wrap'"
     >
       <button
+        ref="placeButton"
         type="button"
         class="btn btn-soft btn-sm min-w-0"
         :aria-label="t('zmanim.place.changeCity', { city: placeLabel })"
@@ -863,12 +875,12 @@ onMounted(() => {
       </p>
     </AppModal>
     <ZmanimOpinionModal v-if="!isNativeApp" v-model:show="opinionOpen" />
-    <!-- L'astuce du rappel, une fois : la première ligne se tire toute seule
-         pendant que la bulle dit le geste (voir reminderTip). -->
+    <!-- L'astuce des horaires, une fois : la première ligne se tire toute
+         seule pendant que la bulle dit le geste, puis la ville (zmanimTip). -->
     <FeatureTour
       v-if="isNativeApp"
       tip="zmanim-reminder"
-      :steps="reminderTip"
+      :steps="zmanimTip"
       @step="onTipStep"
       @finish="onTipFinish"
     />

@@ -63,6 +63,10 @@ import LiturgyText from "./LiturgyText.vue";
 import ReadingEncadrement from "../../components/ReadingEncadrement.vue";
 import SlihotHours from "./SlihotHours.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
+import FeatureTour, { type TourStep } from "../../components/FeatureTour.vue";
+import MockPinch from "../../components/mock/MockPinch.vue";
+import MockAutoScroll from "../../components/mock/MockAutoScroll.vue";
+import { tipsOffered } from "../../composables/useFeatureTips";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
 import SessionReservationCard from "./SessionReservationCard.vue";
@@ -99,6 +103,45 @@ const readingSize = useReadingSize();
 const { sectionLabel, blockLabel, dafLabel, headingLabel } = useTextLabels();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
+
+/**
+ * L'astuce des gestes de lecture (voir FeatureTour), une ouverture après
+ * celle du menu : pincer pour la taille du texte, double appui pour le
+ * défilement, un appui sur un verset pour le marque-page. Les deux premiers
+ * n'ont rien à éclairer, la bulle les montre en capture dessinée ; le
+ * troisième éclaire le premier verset, quand le texte en a (pas sur une
+ * tefila, qui n'a pas de marque-page).
+ */
+const readingRoot = ref<HTMLElement | null>(null);
+
+const gesturesTip = computed<TourStep[]>(() => {
+  const steps: TourStep[] = [
+    {
+      key: "pinch",
+      title: t("tips.reading.pinch.title"),
+      text: t("tips.reading.pinch.text"),
+      component: MockPinch,
+    },
+    {
+      key: "autoScroll",
+      title: t("tips.reading.autoScroll.title"),
+      text: t("tips.reading.autoScroll.text"),
+      component: MockAutoScroll,
+    },
+  ];
+  if (!isLiturgyText.value) {
+    steps.push({
+      key: "bookmark",
+      icon: "bookmark",
+      title: t("tips.reading.bookmark.title"),
+      text: t("tips.reading.bookmark.text"),
+      target: () => readingRoot.value?.querySelector<HTMLElement>("[data-line]") ?? null,
+      radius: 12,
+      padding: 4,
+    });
+  }
+  return steps;
+});
 // Lieu des horaires : donne le jour hébraïque (sensible à la chkia) qui
 // conditionne les ajouts de calendrier des textes de tefila.
 const { place: zmanimPlace, deniedBefore, locateDevice } = useZmanimLocation();
@@ -1522,7 +1565,7 @@ watch(textId, (_, previousTextId) => {
 </script>
 
 <template>
-  <main class="mx-auto px-6 py-12 max-w-3xl w-full">
+  <main ref="readingRoot" class="mx-auto px-6 py-12 max-w-3xl w-full">
     <button @click="exitReading" class="back-link mb-8">
       <AppIcon name="chevron-left" :size="14" />
       {{ sessionSlug ? t("textReading.backToSession") : t("textReading.back") }}
@@ -1916,6 +1959,13 @@ watch(textId, (_, previousTextId) => {
         @download="toggleDownload()"
       />
       <ReadingProgressBar />
+      <!-- Les gestes de lecture, une ouverture après le menu (gesturesTip). -->
+      <FeatureTour
+        v-if="tipsOffered"
+        tip="reading-gestures"
+        :steps="gesturesTip"
+        :after="['reading-menu']"
+      />
     </template>
   </main>
 </template>
