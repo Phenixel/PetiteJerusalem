@@ -443,10 +443,15 @@ attention, pas une option à découvrir ; qui n'en veut pas la coupe une fois.
 Les réglages ne listent pas les fêtes qui ont un thème, ni ne les montrent en
 aperçu : le thème arrive avec la fête, c'est une surprise, pas un catalogue.
 
-| Fête    | Période                                                  | `primary`             | `secondary`     | Bouton des horaires | Ornements                 |
-| ------- | -------------------------------------------------------- | --------------------- | --------------- | ------------------- | ------------------------- |
-| Tichri  | du 16 Eloul (deux semaines avant Roch Hachana) à Kippour | `#D8322F` rouge pomme | `#D9A21B` miel  | une pomme           | un chofar, un pot de miel |
-| Souccot | du lendemain de Kippour au lendemain de Sim'hat Torah    | `#4E8A2E` vert loulav | `#D9B324` étrog | une soucca          | un loulav, un étrog       |
+| Fête        | Période                                                  | `primary`              | `secondary`       | Bouton des horaires  | Ornements                  |
+| ----------- | -------------------------------------------------------- | ---------------------- | ----------------- | -------------------- | -------------------------- |
+| Tichri      | du 16 Eloul (deux semaines avant Roch Hachana) à Kippour | `#D8322F` rouge pomme  | `#D9A21B` miel    | une pomme            | un chofar, un pot de miel  |
+| Souccot     | du lendemain de Kippour au lendemain de Sim'hat Torah    | `#4E8A2E` vert loulav  | `#D9B324` étrog   | une soucca           | un loulav, un étrog        |
+| 'Hanouka    | les huit jours                                           | `#4F63D9` indigo       | `#F2A93B` flamme  | un beignet           | une toupie, une 'hanoukkia |
+| Tou Bichvat | le jour même                                             | `#9A4FC0` violet figue | `#79B043` feuille | une figue            | une grappe, une figue      |
+| Pourim      | de la veille au lendemain                                | `#CC2E70` framboise    | `#F2B705` or      | une meguila          | une crécelle, un masque    |
+| Pessah      | d'une semaine avant au lendemain de la fête              | `#2A86A3` bleu de mer  | `#D8B570` matsa   | une matsa            | un verre de vin, une matsa |
+| Chavouot    | d'une semaine avant au lendemain de la fête              | `#A06D12` or du blé    | `#4A7FC1` bleuet  | les tables de la loi | un épi de blé, les tables  |
 
 Trois choses changent, pas une de plus :
 
@@ -475,8 +480,10 @@ pas à la chkia : un thème qui change dans la nuit ne trompe personne, un thèm
 qui changerait à 19 h 42 le ferait sous les yeux. Le lendemain de Kippour
 appartient à Souccot, le jour où l'on commence la soucca.
 
-Les fêtes suivantes ('Hanouka, Pourim, Pessah…) viendront s'ajouter au même
-catalogue, avec les mêmes trois changements.
+Les fêtes se comptent comme en diaspora quand le thème doit choisir (la fin
+de Souccot, de Pessah, de Chavouot) : le thème ne sait pas où l'on est, et un
+jour de plus ne gêne personne. Pourim est celui d'Adar II les années
+embolismiques.
 
 ### Ce que le jour ajoute dans une tefila
 

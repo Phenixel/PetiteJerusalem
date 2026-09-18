@@ -201,6 +201,11 @@ const he: LocaleMessages = {
     holiday: {
       tichri: "שנה טובה ומתוקה",
       souccot: "חג סוכות שמח",
+      hanouka: "חנוכה שמח",
+      toubichvat: 'ט"ו בשבט שמח',
+      pourim: "פורים שמח",
+      pessah: "פסח כשר ושמח",
+      chavouot: "חג שבועות שמח",
     },
     heroTitle: "המרכז הרוחני הדיגיטלי שלכם",
     heroDescription: "פלטפורמה מודרנית המוקדשת ללימוד, שיתוף וצמיחה רוחנית של הקהילה היהודית.",

@@ -213,6 +213,11 @@ const en: LocaleMessages = {
     holiday: {
       tichri: "Shana tova umetuka",
       souccot: "Chag Sukkot sameach",
+      hanouka: "Chanukah sameach",
+      toubichvat: "Happy Tu BiShvat",
+      pourim: "Purim sameach",
+      pessah: "Chag Pesach kasher vesameach",
+      chavouot: "Chag Shavuot sameach",
     },
     heroTitle: "Your digital spiritual center",
     heroDescription:

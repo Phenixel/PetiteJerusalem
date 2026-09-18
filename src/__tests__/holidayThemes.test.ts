@@ -68,6 +68,56 @@ describe("le calendrier des thèmes de fête", () => {
     expect(holidayThemeOn(day("2026-12-15"))).toBeNull();
   });
 
+  it("pose les autres fêtes de 5787 sur les bons jours civils", () => {
+    const windows = Object.fromEntries(holidayThemeWindows(5787).map((w) => [w.id, w]));
+    const span = (id: string) =>
+      `${windows[id].first.greg().toDateString()} .. ${windows[id].last.greg().toDateString()}`;
+    // 'Hanouka 5787 : du 25 Kislev (5 décembre 2026), huit jours.
+    expect(span("hanouka")).toBe(
+      `${day("2026-12-05").toDateString()} .. ${day("2026-12-12").toDateString()}`,
+    );
+    // Tou Bichvat : le 15 Chevat, seul.
+    expect(span("toubichvat")).toBe(
+      `${day("2027-01-23").toDateString()} .. ${day("2027-01-23").toDateString()}`,
+    );
+    // 5787 est embolismique : Pourim est le 14 Adar II (23 mars 2027).
+    expect(span("pourim")).toBe(
+      `${day("2027-03-22").toDateString()} .. ${day("2027-03-24").toDateString()}`,
+    );
+    // Pessah : une semaine avant le 15 Nissan (22 avril), jusqu'au 23 Nissan.
+    expect(span("pessah")).toBe(
+      `${day("2027-04-15").toDateString()} .. ${day("2027-04-30").toDateString()}`,
+    );
+    // Chavouot : une semaine avant le 6 Sivan (11 juin), jusqu'au 8 Sivan.
+    expect(span("chavouot")).toBe(
+      `${day("2027-06-04").toDateString()} .. ${day("2027-06-13").toDateString()}`,
+    );
+  });
+
+  it("prend Pourim en Adar tout court une année ordinaire", () => {
+    // 5786 n'est pas embolismique : Pourim tombe le 14 Adar, le 3 mars 2026.
+    expect(holidayThemeOn(day("2026-03-03"))?.id).toBe("pourim");
+    expect(holidayThemeOn(day("2026-03-05"))).toBeNull();
+  });
+
+  it("ne laisse aucune fenêtre en chevaucher une autre", () => {
+    for (const year of [5786, 5787, 5788]) {
+      const windows = holidayThemeWindows(year);
+      for (const a of windows) {
+        for (const b of windows) {
+          if (a === b) continue;
+          const overlap = a.first.abs() <= b.last.abs() && b.first.abs() <= a.last.abs();
+          expect({ year, a: a.id, b: b.id, overlap }).toEqual({
+            year,
+            a: a.id,
+            b: b.id,
+            overlap: false,
+          });
+        }
+      }
+    }
+  });
+
   it("prend des couleurs lisibles dans les deux sens, comme les thèmes choisis", () => {
     // Même règle que docs/design.md : assez soutenu pour tenir en encre sur le
     // beige comme en fond sous du blanc (les bornes des thèmes choisis).
@@ -83,8 +133,14 @@ describe("le calendrier des thèmes de fête", () => {
       return (x + 0.05) / (y + 0.05);
     };
     for (const theme of HOLIDAY_THEMES) {
-      expect(contrast(theme.primary, "#f4f1ea")).toBeGreaterThanOrEqual(3.1);
-      expect(contrast(theme.primary, "#ffffff")).toBeGreaterThanOrEqual(3.5);
+      // Et en encre sur le fond sombre, où les trois thèmes choisis tiennent.
+      const ratios = {
+        id: theme.id,
+        beige: contrast(theme.primary, "#f4f1ea") >= 3.1,
+        white: contrast(theme.primary, "#ffffff") >= 3.5,
+        dark: contrast(theme.primary, "#111827") >= 3.3,
+      };
+      expect(ratios).toEqual({ id: theme.id, beige: true, white: true, dark: true });
     }
   });
 });

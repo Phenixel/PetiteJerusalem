@@ -218,6 +218,11 @@ const fr = {
     holiday: {
       tichri: "Chana tova oumetouka",
       souccot: "Hag Souccot saméah",
+      hanouka: "Hanouka saméah",
+      toubichvat: "Tou Bichvat saméah",
+      pourim: "Pourim saméah",
+      pessah: "Pessah cachère vésaméah",
+      chavouot: "Hag Chavouot saméah",
     },
     heroTitle: "Étudier et partager la Torah, à plusieurs",
     heroDescription:
