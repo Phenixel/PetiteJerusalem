@@ -363,10 +363,10 @@ export function resolveFilePath(textStudy: TextStudyJsonEntry): string {
       return `/texts/talmud/${tractateSlug(tractateFromLink(textStudy.link))}.json`;
     case "Tanakh":
       return `/texts/tanakh/${textStudy.id}.json`;
-    // Liturgie (Sli'hot, Brahot, Sidour) : un fichier par entrée, nommé par sa
+    // Liturgie (Moadim, Brahot, Sidour) : un fichier par entrée, nommé par sa
     // translittération latine, « ברכה אחרונה (Brakha A'harona) » →
     // brakha-aharona.json, comme les traités de la Michna et du Talmud.
-    case "Slihot":
+    case "Moadim":
     case "Brahot":
     case "Sidour": {
       const latin = textStudy.name.match(/\(([^)]+)\)\s*$/)?.[1] ?? String(textStudy.id);
@@ -792,7 +792,7 @@ export function parseContent(
       return parseTalmud(textStudy, data as { title?: string; he?: unknown[] }, talmudChapters);
     case "Tanakh":
       return loadTanakh(textStudy, data as { title?: string; he?: unknown[] });
-    case "Slihot":
+    case "Moadim":
     case "Brahot":
     case "Sidour":
       return loadTefila(textStudy, data as { title?: string; blocks?: TefilaFileBlock[] });

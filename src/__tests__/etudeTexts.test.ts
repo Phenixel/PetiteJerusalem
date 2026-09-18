@@ -64,12 +64,17 @@ describe("etudeTexts URLs", () => {
     expect(body).toContain('href="/share-reading/new-session"');
   });
 
-  it("maps la liturgie (Sli'hot, Brahot) sous ses propres corpus", () => {
-    const slihot = entryByCorpusSlug("slihot", "slihot");
-    expect(slihot).toBeTruthy();
-    expect(corpusOf(slihot!)).toBe("slihot");
-    expect(hubPath(slihot!)).toBe("/bibliotheque/slihot/slihot");
-    expect(resolveFilePath(slihot!)).toBe("/texts/tefila/slihot.json");
+  it("maps la liturgie (Moadim, Brahot) sous ses propres corpus", () => {
+    // Les textes des fêtes vivent ensemble dans les Moadim : les Sli'hot, qui
+    // avaient un livre à elles, l'Atarat nedarim et l'allumage de Hanouka, qui
+    // était parmi les brahot. Le fichier servi, lui, n'a pas bougé de place.
+    for (const slug of ["slihot", "atarat-nedarim", "nerot-hanouka"]) {
+      const e = entryByCorpusSlug("moadim", slug);
+      expect(e).toBeTruthy();
+      expect(corpusOf(e!)).toBe("moadim");
+      expect(hubPath(e!)).toBe(`/bibliotheque/moadim/${slug}`);
+      expect(resolveFilePath(e!)).toBe(`/texts/tefila/${slug}.json`);
+    }
 
     for (const slug of ["brakha-aharona", "birkat-hamazon", "cheva-brahot", "birkat-halevana"]) {
       const e = entryByCorpusSlug("brahot", slug);
@@ -79,14 +84,14 @@ describe("etudeTexts URLs", () => {
   });
 
   it("ne propose jamais la liturgie au partage (pas de CTA, intro sans partage)", () => {
-    const e = entryByCorpusSlug("slihot", "slihot")!;
+    const e = entryByCorpusSlug("moadim", "slihot")!;
     expect(isShareable(e)).toBe(false);
     expect(isShareable(entryByCorpusSlug("brahot", "cheva-brahot")!)).toBe(false);
     expect(isShareable(entryByCorpusSlug("tehilim", "121")!)).toBe(true);
 
     const content: TextContent = {
       title: "Sli'hot",
-      type: "Slihot",
+      type: "Moadim",
       sections: [{ index: 1, label: "Sli'hot", he: ["בֶּן אָדָם מַה לְּךָ נִרְדָּם"] }],
     };
     const body = buildSectionBody(e, content, content.sections[0]);

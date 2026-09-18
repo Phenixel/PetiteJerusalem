@@ -37,7 +37,7 @@ const sidourEntries = allEntries.filter(
 /** Les textes de liturgie qui ne sont pas des offices. */
 const autresLiturgies = allEntries.filter(
   (entry) =>
-    ["Sidour", "Brahot", "Slihot"].includes(String(entry.type)) && !sidourEntries.includes(entry),
+    ["Sidour", "Brahot", "Moadim"].includes(String(entry.type)) && !sidourEntries.includes(entry),
 );
 
 /** Les clés `when` que le calendrier sait poser (voir activeOccasions). */

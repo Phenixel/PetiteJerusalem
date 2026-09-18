@@ -157,7 +157,7 @@ const fr = {
     library: {
       title: "La bibliothèque",
       intro:
-        "Tous les textes vivent au même endroit : Tehilim, Michna, Talmud, Tanakh, Sidour, Sli'hot et bénédictions. Une seule recherche les traverse, et vos marque-pages vous ramènent au bon verset.",
+        "Tous les textes vivent au même endroit : Tehilim, Michna, Talmud, Tanakh, Sidour, textes des fêtes et bénédictions. Une seule recherche les traverse, et vos marque-pages vous ramènent au bon verset.",
       corpusTitle: "Sept corpus, un seul lecteur",
       corpusText:
         "Touchez un volume pour l'ouvrir. La recherche, en haut, traverse toute la bibliothèque : un traité, une paracha, une brakha.",
@@ -1484,7 +1484,7 @@ const fr = {
       sharing: "Partage",
     },
     subtitle:
-      "Lisez et étudiez les textes : Tehilim, Michna, Talmud, Tanakh, Sidour, Sli'hot et Brahot.",
+      "Lisez et étudiez les textes : Tehilim, Michna, Talmud, Tanakh, Sidour, Moadim et Brahot.",
     searchPlaceholder: "Rechercher un texte…",
     searchAllPlaceholder: "Rechercher dans tous les textes…",
     noResults: "Aucun texte ne correspond à votre recherche.",
@@ -1498,7 +1498,7 @@ const fr = {
       talmud: "Talmud",
       tanakh: "Tanakh",
       sidour: "Sidour",
-      slihot: "Sli'hot",
+      moadim: "Moadim",
       brahot: "Brahot",
     },
     corpus: {
@@ -1508,16 +1508,16 @@ const fr = {
       tanakhDesc: "La Torah paracha par paracha, les Neviim et les Ketouvim.",
       sidourDesc:
         "Cha'harit, Min'ha et Arvit de la semaine, avec les horaires au lieu où l'on se trouve et les ajouts du calendrier au jour le jour ; le Chema du coucher, le tikoun hatsot et la havdala.",
-      slihotDesc:
-        "Les Sli'hot du rite séfarade, en hébreu et en phonétique, pour Eloul et les dix jours de techouva.",
+      moadimDesc:
+        "Ce qu'on dit aux rendez-vous de l'année : les Sli'hot d'Eloul et des dix jours de techouva, l'Atarat nedarim de la veille de Roch Hachana et de Kippour, l'allumage de Hanouka.",
       brahotDesc:
-        "Birkat Hamazon, bénédictions sur ce qu'on mange et ce qu'on sent, prière du voyageur, allumage de Hanouka, brit mila : les bénédictions à portée de main.",
+        "Birkat Hamazon, bénédictions sur ce qu'on mange et ce qu'on sent, prière du voyageur, brit mila, bénédiction de la lune : les bénédictions à portée de main.",
       tehilimSearch: "Rechercher un tehilim…",
       michnaSearch: "Rechercher une michna…",
       talmudSearch: "Rechercher un traité du Talmud…",
       tanakhSearch: "Rechercher une paracha ou un livre…",
       sidourSearch: "Rechercher dans le Sidour…",
-      slihotSearch: "Rechercher dans les Sli'hot…",
+      moadimSearch: "Rechercher un texte de fête…",
       brahotSearch: "Rechercher une brakha…",
     },
   },

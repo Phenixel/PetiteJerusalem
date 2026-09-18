@@ -132,11 +132,11 @@ const CORPUS_META: {
     shelf: 2,
   },
   {
-    corpus: "slihot",
-    typeKey: "Slihot",
-    labelKey: "study.types.slihot",
-    descKey: "study.corpus.slihotDesc",
-    searchKey: "study.corpus.slihotSearch",
+    corpus: "moadim",
+    typeKey: "Moadim",
+    labelKey: "study.types.moadim",
+    descKey: "study.corpus.moadimDesc",
+    searchKey: "study.corpus.moadimSearch",
     shelf: 2,
   },
   {

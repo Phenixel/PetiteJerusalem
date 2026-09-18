@@ -2627,10 +2627,18 @@
     {
       "id": 340,
       "name": "סליחות (Sli'hot)",
-      "livre": "סליחות (Sli'hot)",
+      "livre": "ימים נוראים (Yamim Noraim)",
       "link": "https://www.sefaria.org/Selichot_Edot_HaMizrach",
       "totalSections": 1,
-      "type": "Slihot"
+      "type": "Moadim"
+    },
+    {
+      "id": 362,
+      "name": "התרת נדרים (Atarat Nedarim)",
+      "livre": "ימים נוראים (Yamim Noraim)",
+      "link": "https://www.sefaria.org/Machzor_Rosh_Hashanah_Edot_HaMizrach,_Annulment_of_Vows_and_Curses",
+      "totalSections": 1,
+      "type": "Moadim"
     },
     {
       "id": 342,
@@ -2779,10 +2787,10 @@
     {
       "id": 358,
       "name": "נרות חנוכה (Nerot Hanouka)",
-      "livre": "מועדים (Moadim)",
+      "livre": "חנוכה (Hanouka)",
       "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Hanukkah,_Menorah_Lighting",
       "totalSections": 1,
-      "type": "Brahot"
+      "type": "Moadim"
     },
     {
       "id": 359,
@@ -2807,7 +2815,7 @@
     "Tehilim",
     "Parasha Devarim",
     "Tanakh",
-    "Slihot",
+    "Moadim",
     "Brahot",
     "Sidour"
   ]

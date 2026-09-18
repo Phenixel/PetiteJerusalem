@@ -246,12 +246,12 @@ describe("seoPages buildSitemap", () => {
 describe("seoPages maillage de la bibliothèque", () => {
   it("/bibliotheque lie chaque page de corpus", () => {
     const page = allPages.find((p) => p.path === "/bibliotheque")!;
-    for (const corpus of ["tehilim", "michna", "talmud", "tanakh", "sidour", "brahot"]) {
+    for (const corpus of ["tehilim", "michna", "talmud", "tanakh", "sidour", "moadim", "brahot"]) {
       expect(page.bodyHtml).toContain(`href="/bibliotheque/${corpus}"`);
     }
-    // Les Sli'hot n'ont qu'un texte : lien direct, la redirection de
-    // /bibliotheque/slihot n'existe que côté client.
-    expect(page.bodyHtml).toContain('href="/bibliotheque/slihot/slihot"');
+    // Les Sli'hot, le texte le plus cherché des Moadim, gardent leur lien
+    // direct depuis la bibliothèque.
+    expect(page.bodyHtml).toContain('href="/bibliotheque/moadim/slihot"');
   });
 
   it("le pied de page statique lie les pages légales dans chaque langue", () => {

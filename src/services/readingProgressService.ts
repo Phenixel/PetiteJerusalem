@@ -48,14 +48,18 @@ export interface Bookmark {
 }
 
 /**
- * Textes liturgiques (Sli'hot, Brahot, Sidour) : ni « reprendre là où vous
+ * Textes liturgiques (Moadim, Brahot, Sidour) : ni « reprendre là où vous
  * étiez », ni marque-page. Une tefila se lit du début, on n'y revient pas à
  * un paragraphe. Le lecteur n'enregistre plus leurs positions ni leurs
  * marque-pages, et ceux hérités d'une version antérieure (localStorage ou
  * compte) sont purgés à la lecture, reconnus à leur chemin, pour ne pas
  * embarquer le catalogue ici.
+ *
+ * Les Sli'hot ont eu un corpus à elles avant de rejoindre les Moadim : leur
+ * ancien chemin reste reconnu, sans quoi les positions qu'il a laissées ne
+ * seraient jamais purgées.
  */
-const LITURGY_PATH = /^\/bibliotheque\/(?:slihot|brahot|sidour)\//;
+const LITURGY_PATH = /^\/bibliotheque\/(?:moadim|slihot|brahot|sidour)\//;
 
 const POSITIONS_KEY = "pj-reading-positions";
 /** Date du dernier « ignorer » sur la ligne de reprise de la bibliothèque. */

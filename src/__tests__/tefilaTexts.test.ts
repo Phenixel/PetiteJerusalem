@@ -214,8 +214,43 @@ describe("fichiers de tefila", () => {
     expect(all).toContain("בורא נפשות");
   });
 
+  it("Atarat nedarim : les deux voix alternent, les rites se suivent", () => {
+    // Le texte se dit à deux voix, ceux qui demandent et ceux qui délient :
+    // ce sont les didascalies qui disent à qui c'est le tour, et il en faut
+    // donc une à chaque changement de voix. Les deux rites que le mahzor met
+    // à la suite gardent son ordre, chacun sous son titre.
+    const content = load("moadim", "atarat-nedarim");
+    const blocks = content.sections[0].blocks ?? [];
+    expect(blocks.map((b) => b.label)).toEqual([
+      "L'annulation des malédictions",
+      "La déclaration pour l'avenir",
+      "L'annulation des vœux",
+      "La déclaration pour l'avenir",
+      "Yehi ratson",
+      "L'annulation des malédictions du Hida",
+    ]);
+    // Rien ne se dérobe selon la date : on le dit d'un bout à l'autre.
+    for (const block of blocks) expect(block.when).toBeUndefined();
+    const paragraphs = blocks.flatMap((b) => b.paragraphs ?? []);
+    expect(paragraphs.filter((p) => p.rubric).length).toBeGreaterThan(8);
+    // La réponse de ceux qui délient se répète trois fois, comme la
+    // didascalie l'annonce.
+    expect(paragraphs.filter((p) => p.repeat === 3)).toHaveLength(1);
+  });
+
+  it("Atarat nedarim : les deux quand on le dit tiennent dans ses halakhot", () => {
+    // La veille de Roch Hachana et la veille de Kippour : c'est la halakha du
+    // texte qui le dit, il n'a pas de `when` pour le poser au jour dit.
+    const content = load("moadim", "atarat-nedarim");
+    const halakhot = (content.sections[0].blocks ?? []).flatMap((b) => b.halakhot ?? []);
+    expect(halakhot).toHaveLength(2);
+    expect(halakhot.map((h) => h.fr).join(" ")).toContain("Roch Hachana");
+    expect(halakhot.map((h) => h.fr).join(" ")).toContain("Kippour");
+    for (const halakha of halakhot) expect(halakha.he).toBeTruthy();
+  });
+
   it("Sli'hot : des séparations titrées, aucun ajout masqué", () => {
-    const content = load("slihot", "slihot");
+    const content = load("moadim", "slihot");
     const blocks = content.sections[0].blocks ?? [];
     expect(blocks.length).toBeGreaterThan(10);
     // Rien ne disparaît selon la date : les Sli'hot se lisent d'un bout à
@@ -225,7 +260,7 @@ describe("fichiers de tefila", () => {
   });
 
   it("Sli'hot : les ajouts des dix jours de pénitence sont repliables", () => {
-    const content = load("slihot", "slihot");
+    const content = load("moadim", "slihot");
     const folded = (content.sections[0].blocks ?? []).filter(
       (b) => b.fold && !b.fold.startsWith("jour-"),
     );
@@ -236,7 +271,7 @@ describe("fichiers de tefila", () => {
   });
 
   it("Sli'hot : la té'hina du jour se déplie d'elle-même, les six restent lisibles", () => {
-    const content = load("slihot", "slihot");
+    const content = load("moadim", "slihot");
     const blocks = content.sections[0].blocks ?? [];
     const tehinot = blocks.filter((b) => b.fold?.startsWith("jour-"));
     // Du dimanche au vendredi : le Chabbat ne dit pas de Sli'hot.
@@ -266,7 +301,7 @@ describe("fichiers de tefila", () => {
   });
 
   it("Sli'hot : les reprises de l'assemblée et les répétitions sont marquées", () => {
-    const content = load("slihot", "slihot");
+    const content = load("moadim", "slihot");
     const paragraphs = (content.sections[0].blocks ?? []).flatMap((b) => b.paragraphs ?? []);
     // « בדיל ויעבור », « והושיענו למען שמך »… : ce que reprend l'assemblée.
     const strong = paragraphs.filter((p) => p.runs.some((run) => run.kind === "he" && run.strong));
@@ -279,7 +314,7 @@ describe("fichiers de tefila", () => {
     // Ils manquaient au fichier d'origine ; le texte vocalisé vient du siddour
     // Torah-Box (pages 3 à 4 et 7). Comparé sans vocalisation : c'est la suite
     // des consonnes qui fait foi, l'ordre des signes varie d'une source à l'autre.
-    const content = load("slihot", "slihot");
+    const content = load("moadim", "slihot");
     const bare = content.sections[0].he.join(" ").replace(/[֑-ׇ]/g, "");
     expect(bare).toContain("אנא כעב זדוני תמחהו");
     expect(bare).toContain("ויודע כי משיח אלהים הוא");
@@ -299,7 +334,7 @@ describe("fichiers de tefila", () => {
   it("Sli'hot : « Élohénou chébachamayim » ouvre une lettre, pas chaque demande", () => {
     // Au siddour l'invocation s'écrit une fois, puis viennent les demandes de
     // sa lettre. Le fichier d'origine la répétait devant chacune des soixante.
-    const content = load("slihot", "slihot");
+    const content = load("moadim", "slihot");
     const paragraphs = (content.sections[0].blocks ?? []).flatMap((b) => b.paragraphs ?? []);
     const bare = (p: (typeof paragraphs)[number]) =>
       p.runs
@@ -332,7 +367,7 @@ describe("fichiers de tefila", () => {
   it("Sli'hot : le vidoui tient une ligne par lettre, l'aveu en gras", () => {
     // « Achamnou. Akhalnou maakhalot assourot » : la formule de l'aveu porte
     // la ligne, ce que le rite lui ajoute la suit en texte courant.
-    const content = load("slihot", "slihot");
+    const content = load("moadim", "slihot");
     const vidoui = (content.sections[0].blocks ?? []).find((b) => b.label === "Vidoui (Achamnou)")!;
     const heads = (vidoui.paragraphs ?? [])
       .map((p) => p.runs[0])
@@ -356,7 +391,7 @@ describe("fichiers de tefila", () => {
   it("Sli'hot : les piyoutim à deux voix portent leur première moitié en gras", () => {
     // « Lekha Adonaï hatsedaka » : chaque ligne s'ouvre sur les mots du paytan
     // et se ferme sur ce qui leur répond, que la ligne suivante reprendra.
-    const lekha = (load("slihot", "slihot").sections[0].blocks ?? []).find(
+    const lekha = (load("moadim", "slihot").sections[0].blocks ?? []).find(
       (b) => b.label === "Lekha Adonaï hatsedaka",
     )!;
     expect(lekha.paragraphs).toHaveLength(33);
@@ -372,7 +407,7 @@ describe("fichiers de tefila", () => {
   it("Sli'hot : « HaChem melekh » referme chacun de ses deux tercets", () => {
     // Les trois membres d'un tercet portent l'un après l'autre les trois temps
     // de la reprise ; l'assemblée la redit entière à la fin de chacun.
-    const chema = (load("slihot", "slihot").sections[0].blocks ?? []).find(
+    const chema = (load("moadim", "slihot").sections[0].blocks ?? []).find(
       (b) => b.label === "Chéma Israël",
     )!;
     const refrain = "יהוה מלך. יהוה מלך. יהוה ימלך לעולם ועד:";
@@ -390,7 +425,8 @@ describe("fichiers de tefila", () => {
     // fragment ouvrant sur « : » afficherait « הוא : ». La ponctuation reste
     // donc attachée au fragment qu'elle ferme.
     for (const [corpus, slug] of [
-      ["slihot", "slihot"],
+      ["moadim", "slihot"],
+      ["moadim", "atarat-nedarim"],
       ["brahot", "birkat-hamazon"],
       ["brahot", "birkat-halevana"],
       ["brahot", "brakha-aharona"],
@@ -412,7 +448,8 @@ describe("fichiers de tefila", () => {
     // rendues à part, aucune ne doit rester dans ce qui se lit.
     const MARKERS = ["בעשרת ימי תשובה", "יש אומרים", "והמסובים עונים", "אומרים קדיש"];
     for (const [corpus, slug] of [
-      ["slihot", "slihot"],
+      ["moadim", "slihot"],
+      ["moadim", "atarat-nedarim"],
       ["brahot", "birkat-hamazon"],
       ["brahot", "birkat-halevana"],
       ["brahot", "brakha-aharona"],

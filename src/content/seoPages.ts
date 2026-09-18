@@ -530,7 +530,8 @@ export const appPages: SeoPage[] = [
         <li><strong><a href="/bibliotheque/tanakh">Tanakh</a></strong> : la Torah paracha par paracha, les Neviim (Prophètes) et les Ketouvim (Écrits).</li>
       </ul>
       <p>Et la liturgie, à lire sur son écran : le <a href="/bibliotheque/sidour">Sidour</a> (les prières de la semaine),
-      les <a href="/bibliotheque/brahot">brahot</a> (bénédictions) et les <a href="/bibliotheque/slihot/slihot">Sli'hot</a>.</p>
+      les <a href="/bibliotheque/moadim">Moadim</a> (les textes des fêtes, dont les <a href="/bibliotheque/moadim/slihot">Sli'hot</a>)
+      et les <a href="/bibliotheque/brahot">brahot</a> (bénédictions).</p>
       <p>Envie d'avancer en groupe ? Lancez un <a href="/share-reading">partage de lectures</a> ou
       organisez de quoi <a href="/finir-le-chass">finir le Chass</a> ensemble.</p>
     </section>

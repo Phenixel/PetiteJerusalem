@@ -107,10 +107,17 @@ const { place: zmanimPlace, deniedBefore, locateDevice } = useZmanimLocation();
 // (/bibliotheque/:corpus/:slug[/:section], keyword URLs). `isEtudeRoute` switches
 // navigation + metadata between the two.
 const isEtudeRoute = computed(() => route.params.corpus !== undefined);
-/** Corpus ayant leur page de bibliothèque (route `study-corpus`). Pas les
- * Sli'hot : leur unique texte EST la page du corpus (redirection), le retour
- * ramène donc à l'accueil de la bibliothèque. */
-const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh", "brahot", "sidour"]);
+/** Corpus ayant leur page de bibliothèque (route `study-corpus`) : le retour
+ * y ramène, plutôt qu'à l'accueil de la bibliothèque. */
+const LIBRARY_CORPORA = new Set([
+  "tehilim",
+  "michna",
+  "talmud",
+  "tanakh",
+  "moadim",
+  "brahot",
+  "sidour",
+]);
 const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
   isEtudeRoute.value
     ? entryByCorpusSlug(String(route.params.corpus), String(route.params.slug))
@@ -227,12 +234,16 @@ const encadrement = computed(() => {
   const passages = encadrementOf(textEntry.value ?? undefined);
   return passages?.place === "text" ? passages : null;
 });
-const isSlihot = computed(() => String(textEntry.value?.type) === "Slihot");
+// Les Sli'hot, seul texte à afficher sa plage horaire (voir SlihotHours).
+// Elles vivent dans les Moadim avec les autres textes de fête ; c'est le
+// texte qu'on reconnaît ici, pas son corpus.
+const slihotEntry = entryByCorpusSlug("moadim", "slihot");
+const isSlihot = computed(
+  () => !!textEntry.value && !!slihotEntry && textEntry.value.id === slihotEntry.id,
+);
 
 // App native : le texte lu se télécharge sans quitter la page, par l'icône
-// du menu de lecture. Les Sli'hot gardent en plus leur bouton en tête du
-// texte : leur livre s'ouvre directement (voir le router), sans carte dans
-// la bibliothèque d'où le télécharger, le menu seul serait trop discret.
+// du menu de lecture.
 const { bookStateOf, toggleDownload: toggleBookDownload } = useBookDownload();
 const bookState = computed(() => (textEntry.value ? bookStateOf(textEntry.value) : "none"));
 
@@ -1548,37 +1559,16 @@ watch(textId, (_, previousTextId) => {
     </div>
 
     <template v-else-if="content">
-      <header class="mb-8 flex items-center justify-between gap-3">
-        <div class="min-w-0">
-          <p class="text-sm font-semibold text-primary mb-1">
-            {{ textEntry.livre }}
-          </p>
-          <h1 class="text-3xl md:text-4xl font-bold text-text-primary">
-            {{ appendHebrewNumeral(textEntry.name) }}
-          </h1>
-          <p v-if="currentSection && !isSingleSection" class="mt-2 text-text-secondary">
-            {{ sectionLabel(currentSection) }}
-          </p>
-        </div>
-        <!-- App native : télécharger le texte pour le lire sans connexion,
-             faute de carte dans la bibliothèque d'où le faire (Sli'hot). -->
-        <button
-          v-if="isSlihot && bookState !== 'none'"
-          @click="toggleDownload()"
-          class="icon-btn flex-shrink-0"
-          :class="bookState === 'downloaded' ? 'text-primary' : 'text-text-secondary'"
-          :aria-label="bookState === 'downloaded' ? t('downloads.delete') : t('downloads.download')"
-          :title="bookState === 'downloaded' ? t('downloads.delete') : t('downloads.download')"
-        >
-          <AppIcon
-            v-if="bookState === 'downloading'"
-            name="spinner"
-            :size="20"
-            class="animate-spin text-primary"
-          />
-          <AppIcon v-else-if="bookState === 'downloaded'" name="circle-check" :size="20" />
-          <AppIcon v-else name="download" :size="20" />
-        </button>
+      <header class="mb-8 min-w-0">
+        <p class="text-sm font-semibold text-primary mb-1">
+          {{ textEntry.livre }}
+        </p>
+        <h1 class="text-3xl md:text-4xl font-bold text-text-primary">
+          {{ appendHebrewNumeral(textEntry.name) }}
+        </h1>
+        <p v-if="currentSection && !isSingleSection" class="mt-2 text-text-secondary">
+          {{ sectionLabel(currentSection) }}
+        </p>
       </header>
 
       <!-- SEO intro (public /bibliotheque reading pages only ; masquée dans
