@@ -5,7 +5,10 @@ import { useLocale } from "../../composables/useLocale";
 import { useTheme, type ThemeOption } from "../../composables/useTheme";
 import { useColorScheme, type ColorSchemeOption } from "../../composables/useColorScheme";
 import { ensureAllFontsLoaded, useFonts, type FontOption } from "../../composables/useFonts";
+import { useHolidayTheme } from "../../composables/useHolidayTheme";
 import AppIcon from "../icons/AppIcon.vue";
+import ToggleSwitch from "../ToggleSwitch.vue";
+import HolidayOrnaments from "../holiday/HolidayOrnaments.vue";
 
 /**
  * Les réglages d'apparence : langue, clair ou sombre, thème de couleurs,
@@ -38,6 +41,10 @@ const darkScheme = schemes.find((option) => option.id === "dark") ?? schemes[0];
 const { currentThemeId, themes, setTheme, previewTheme, cancelPreview } = useTheme();
 const { currentLatinId, currentHebrewId, latinFonts, hebrewFonts, setLatinFont, setHebrewFont } =
   useFonts();
+// Les thèmes des fêtes : l'interrupteur, et les deux fêtes qui ont le leur,
+// en aperçu sous les thèmes choisis (voir useHolidayTheme).
+const { holidayThemesEnabled, activeHolidayTheme, holidayThemes, setHolidayThemesEnabled } =
+  useHolidayTheme();
 
 // Chaque option s'affiche dans sa propre police : les familles non embarquées
 // dans index.html n'arrivent qu'ici (voir useFonts).
@@ -69,6 +76,11 @@ const selectTheme = (theme: ThemeOption) => {
   apply(() => setTheme(props.userId, theme.id));
 };
 
+const toggleHolidayThemes = (enabled: boolean) => {
+  if (enabled === holidayThemesEnabled.value) return;
+  apply(() => setHolidayThemesEnabled(props.userId, enabled));
+};
+
 const selectLatinFont = (font: FontOption) => {
   if (font.id === currentLatinId.value) return;
   apply(() => setLatinFont(props.userId, font.id));
@@ -81,6 +93,7 @@ const selectHebrewFont = (font: FontOption) => {
 
 // Survol d'un thème : les couleurs s'appliquent le temps du survol, on repose
 // celles du choix courant en partant (y compris si l'écran se ferme entre-temps).
+// Un thème de fête se survole de même : on voit à quoi ressemblera la fête.
 const onThemeEnter = (themeId: string) => {
   if (themeId !== currentThemeId.value) {
     previewingId.value = themeId;
@@ -299,6 +312,77 @@ onUnmounted(() => {
       <AppIcon name="info" :size="14" />
       {{ t("profile.themeHint") }}
     </p>
+
+    <!-- Thèmes des fêtes : une ligne d'interrupteur, comme un réglage (pas
+         une carte, voir docs/design.md), puis les deux fêtes qui ont leur
+         thème, en aperçu : leurs couleurs et leurs ornements, leur période,
+         et celle qui est en cours. Ce sont des aperçus, pas des choix : le
+         calendrier décide, pas le doigt. -->
+    <ul class="mt-6 flex flex-col divide-y divide-line border-t border-line">
+      <li>
+        <label class="flex cursor-pointer items-center justify-between gap-3 py-3">
+          <span class="min-w-0">
+            <span class="block font-semibold text-text-primary">
+              {{ t("profile.holidayThemesTitle") }}
+            </span>
+            <span class="block text-sm leading-relaxed text-text-secondary">
+              {{ t("profile.holidayThemesHint") }}
+            </span>
+          </span>
+          <ToggleSwitch
+            :model-value="holidayThemesEnabled"
+            :label="t('profile.holidayThemesTitle')"
+            @update:model-value="toggleHolidayThemes"
+          />
+        </label>
+      </li>
+    </ul>
+
+    <div
+      class="mt-3 grid grid-cols-2 gap-3 transition-opacity duration-300"
+      :class="{ 'opacity-50': !holidayThemesEnabled }"
+    >
+      <div
+        v-for="holiday in holidayThemes"
+        :key="holiday.id"
+        class="card relative p-1 text-left"
+        :class="activeHolidayTheme?.id === holiday.id ? 'ring-2 ring-primary' : ''"
+        @mouseenter="onThemeEnter(holiday.id)"
+        @mouseleave="onThemeLeave"
+      >
+        <span class="block overflow-hidden rounded-sm">
+          <!-- Les deux couleurs à plat, et les ornements de la fête dessus,
+               en blanc, leur détail à la seconde couleur. -->
+          <span
+            class="relative block h-16 sm:h-24"
+            :style="{ backgroundColor: holiday.primary, '--color-secondary': holiday.secondary }"
+          >
+            <span
+              class="absolute inset-y-0 end-0 w-1/4"
+              :style="{ backgroundColor: holiday.secondary }"
+            ></span>
+            <span class="absolute inset-0 flex items-center justify-center text-white">
+              <HolidayOrnaments :theme="holiday.id" class="text-[2.5rem] sm:text-[3.5rem]" />
+            </span>
+          </span>
+        </span>
+        <span class="flex flex-col items-start gap-0.5 p-2 sm:p-3">
+          <span class="block text-xs font-semibold leading-tight text-text-primary sm:text-sm">
+            {{ t(`profile.holidayThemes.${holiday.id}`) }}
+          </span>
+          <span class="block text-xs leading-snug text-text-secondary">
+            {{ t(`profile.holidayThemePeriods.${holiday.id}`) }}
+          </span>
+          <span
+            v-if="activeHolidayTheme?.id === holiday.id"
+            class="flex items-center gap-1 text-xs font-medium text-primary"
+          >
+            <AppIcon name="check" :size="12" />
+            {{ t("profile.holidayThemeNow") }}
+          </span>
+        </span>
+      </div>
+    </div>
 
     <!-- Polices -->
     <h2 v-if="withDescriptions" class="mt-12 mb-2 text-2xl font-bold text-text-primary">

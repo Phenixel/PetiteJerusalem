@@ -118,9 +118,10 @@ class WidgetService {
     const { opinion } = useZmanimOpinion();
     watch(opinion, () => void this.refresh());
 
-    // Changement de thème : l'accent des widgets est celui de l'app.
-    const { currentThemeId } = useTheme();
-    watch(currentThemeId, () => void this.refresh());
+    // Changement de thème, ou thème de fête qui s'installe ou s'en va :
+    // l'accent des widgets est celui que l'app porte.
+    const { appliedTheme } = useTheme();
+    watch(appliedTheme, () => void this.refresh());
 
     // Retour au premier plan : recharge la fenêtre d'horaires et la
     // progression éventuellement modifiée sur un autre appareil.
@@ -175,7 +176,7 @@ class WidgetService {
       // Horaires : recalculés seulement si une de leurs entrées a bougé
       // une coche de lecture, par exemple, ne les recalcule pas.
       const { place } = useZmanimLocation();
-      const accent = useTheme().currentTheme.value.primary;
+      const accent = useTheme().appliedTheme.value.primary;
       const zmanimKey = `${locale}|${localDayKey()}|${accent}|${JSON.stringify(place.value)}`;
       if (zmanimKey !== this.zmanimKey) {
         await nextIdle();

@@ -213,6 +213,15 @@ export const ICONS = {
   },
 
   /** Menora : le psaume 67 écrit en forme de menora. */
+  // Les objets des fêtes, pour le bouton rond des horaires de l'app native
+  // le temps d'un thème de fête (voir services/holidayThemes) : la pomme de
+  // Roch Hachana, la soucca (sa traverse, le sékhakh posé dessus, l'ouverture).
+  pomme: {
+    body: '<path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"/><path d="M10 2c1 .5 2 2 2 5"/>',
+  },
+  soucca: {
+    body: '<path d="M3 9h18"/><path d="m6 9 2-4"/><path d="m10 9 2-4"/><path d="m14 9 2-4"/><path d="m18 9 2-4"/><path d="M4 9v12"/><path d="M20 9v12"/><path d="M4 21h16"/><path d="M10 21v-6h4v6"/>',
+  },
   menorah: {
     body: '<path d="M12 5v15"/><path d="M8 20h8"/><path d="M4 7v3a8 8 0 0 0 16 0V7"/><path d="M8 7v3a4 4 0 0 0 8 0V7"/>',
   },

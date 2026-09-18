@@ -198,6 +198,10 @@ const he: LocaleMessages = {
       title: "ברכת הלבנה",
       until: "לאומרה הלילה, עד {date}.",
     },
+    holiday: {
+      tichri: "שנה טובה ומתוקה",
+      souccot: "חג סוכות שמח",
+    },
     heroTitle: "המרכז הרוחני הדיגיטלי שלכם",
     heroDescription: "פלטפורמה מודרנית המוקדשת ללימוד, שיתוף וצמיחה רוחנית של הקהילה היהודית.",
     features: {
@@ -328,6 +332,18 @@ const he: LocaleMessages = {
       ocean: "אוקיינוס",
       sunset: "שקיעה",
       emerald: "אזמרגד",
+    },
+    holidayThemesTitle: "ערכות נושא לחגים",
+    holidayThemesHint:
+      "בזמן חג, האפליקציה לובשת את צבעיו וקישוטיו, ואחר כך חוזרת לערכת הנושא שלכם.",
+    holidayThemeNow: "עכשיו",
+    holidayThemes: {
+      tichri: "חגי תשרי",
+      souccot: "סוכות",
+    },
+    holidayThemePeriods: {
+      tichri: "שבועיים לפני ראש השנה, עד יום כיפור",
+      souccot: "ממחרת יום כיפור עד מחרת שמחת תורה",
     },
     fontsTitle: "גופנים",
     fontsDescription:

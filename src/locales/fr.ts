@@ -215,6 +215,10 @@ const fr = {
       title: "Bénédiction de la lune",
       until: "À dire cette nuit, jusqu\u2019au {date}.",
     },
+    holiday: {
+      tichri: "Chana tova oumetouka",
+      souccot: "Hag Souccot saméah",
+    },
     heroTitle: "Étudier et partager la Torah, à plusieurs",
     heroDescription:
       "Répartissez un texte entre plusieurs personnes pour le terminer ensemble : finir le Chass, lire les Tehilim à plusieurs, suivre la progression de votre limoud. Gratuit, en français, en anglais et en hébreu.",
@@ -351,6 +355,18 @@ const fr = {
       ocean: "Océan",
       sunset: "Coucher de soleil",
       emerald: "Émeraude",
+    },
+    holidayThemesTitle: "Thèmes des fêtes",
+    holidayThemesHint:
+      "Le temps d'une fête, l'application prend ses couleurs et ses ornements, puis retrouve votre thème.",
+    holidayThemeNow: "En ce moment",
+    holidayThemes: {
+      tichri: "Fêtes de Tichri",
+      souccot: "Souccot",
+    },
+    holidayThemePeriods: {
+      tichri: "Deux semaines avant Roch Hachana, jusqu'à Kippour",
+      souccot: "Du lendemain de Kippour au lendemain de Sim'hat Torah",
     },
     fontsTitle: "Polices",
     fontsDescription:

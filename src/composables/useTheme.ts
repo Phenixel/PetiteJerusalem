@@ -1,10 +1,16 @@
-import { computed } from "vue";
+import { computed, ref, watchEffect } from "vue";
 import { createAccountPreference } from "./createAccountPreference";
+import { activeHolidayTheme } from "./useHolidayTheme";
+import { holidayThemeById } from "../services/holidayThemes";
 
-export interface ThemeOption {
-  id: string;
+/** Un duo de couleurs, qu'il vienne d'un thème choisi ou d'une fête. */
+export interface ThemeColors {
   primary: string;
   secondary: string;
+}
+
+export interface ThemeOption extends ThemeColors {
+  id: string;
 }
 
 /**
@@ -42,7 +48,7 @@ function themeById(id: string): ThemeOption {
   return THEME_OPTIONS.find((t) => t.id === id) ?? DEFAULT_THEME;
 }
 
-function applyThemeColors(theme: ThemeOption) {
+function applyThemeColors(theme: ThemeColors) {
   if (typeof document === "undefined") return;
   document.documentElement.style.setProperty("--color-primary", theme.primary);
   document.documentElement.style.setProperty("--color-secondary", theme.secondary);
@@ -59,7 +65,6 @@ const theme = createAccountPreference<string>({
   field: "theme",
   defaultValue: DEFAULT_THEME.id,
   isValid: (value): value is string => THEME_OPTIONS.some((t) => t.id === value),
-  apply: (id) => applyThemeColors(themeById(id)),
   eventName: "theme_changed",
   eventProps: (id, previous, scope) => ({ theme: id, previous_theme: previous, scope }),
   failedEventName: "theme_change_failed",
@@ -68,21 +73,39 @@ const theme = createAccountPreference<string>({
 
 const currentThemeId = theme.current;
 
-export function useTheme() {
-  const currentTheme = computed(() => themeById(currentThemeId.value));
+/** Le thème choisi, celui des réglages : il reste le choix même sous une fête. */
+const currentTheme = computed(() => themeById(currentThemeId.value));
 
+/**
+ * Le thème porté par l'app : la fête en cours si elle en a un (voir
+ * useHolidayTheme), sinon le thème choisi. C'est lui que suivent les widgets
+ * et la montre, qui portent les couleurs de l'app et non celles d'un survol.
+ */
+const appliedTheme = computed<ThemeColors>(() => activeHolidayTheme.value ?? currentTheme.value);
+
+/** Les couleurs d'un thème survolé dans les réglages, le temps du survol. */
+const previewed = ref<ThemeColors | null>(null);
+
+// Les couleurs à l'écran, dans l'ordre : l'aperçu survolé, puis le thème de
+// la fête, puis le thème choisi. En synchrone : le thème du compte, servi par
+// sa copie locale, tient dès le premier rendu (voir createAccountPreference).
+watchEffect(() => applyThemeColors(previewed.value ?? appliedTheme.value), { flush: "sync" });
+
+export function useTheme() {
+  /** Survol d'un thème choisi ou d'un thème de fête : ses couleurs, un instant. */
   function previewTheme(themeId: string) {
-    const option = THEME_OPTIONS.find((t) => t.id === themeId);
-    if (option) applyThemeColors(option);
+    const option = THEME_OPTIONS.find((t) => t.id === themeId) ?? holidayThemeById(themeId);
+    if (option) previewed.value = option;
   }
 
   function cancelPreview() {
-    applyThemeColors(currentTheme.value);
+    previewed.value = null;
   }
 
   return {
     currentThemeId,
     currentTheme,
+    appliedTheme,
     themes: THEME_OPTIONS,
     loadTheme: theme.loadForUser,
     loadGuestTheme: theme.loadForGuest,

@@ -7,6 +7,7 @@ import type { IconName } from "./icons/registry";
 import { analyticsService } from "../services/analyticsService";
 import { authService } from "../services/authService";
 import { setRevealOrigin } from "../composables/useRevealOrigin";
+import { useHolidayTheme } from "../composables/useHolidayTheme";
 import { useLocalePath } from "../composables/useLocalePath";
 import { isSectionPath } from "../content/seoLocales";
 
@@ -87,6 +88,13 @@ const tabs = computed<Tab[]>(() => [
 
 const zmanimPath = computed(() => localePath("horaires"));
 
+// Le temps d'une fête, le bouton rond prend la forme d'un objet de la fête
+// (la pomme de Roch Hachana, la soucca) à la place de l'horloge : c'est le
+// seul bouton que tout le monde touche tous les jours, et c'est là que la
+// fête se voit d'abord (voir useHolidayTheme).
+const { activeHolidayTheme } = useHolidayTheme();
+const zmanimIcon = computed<IconName>(() => activeHolidayTheme.value?.fabIcon ?? "clock");
+
 // Onglet dont l'icône s'anime. Remis à null d'abord pour que l'animation
 // reparte même en retouchant l'onglet déjà actif.
 const poppedTab = ref<string | null>(null);
@@ -136,7 +144,9 @@ function toggleZmanim(event: MouseEvent) {
         <RouterLink
           :to="tab.to"
           class="tab-item"
-          :class="tab.activeOn?.some((prefix) => route.path.startsWith(prefix)) ? 'tab-item-active' : ''"
+          :class="
+            tab.activeOn?.some((prefix) => route.path.startsWith(prefix)) ? 'tab-item-active' : ''
+          "
           :exact-active-class="tab.exact ? 'tab-item-active' : 'tab-item-noop'"
           :active-class="tab.exact ? 'tab-item-noop' : 'tab-item-active'"
           @click="popIcon(tab.to)"
@@ -166,7 +176,7 @@ function toggleZmanim(event: MouseEvent) {
           :class="poppedTab === zmanimPath ? 'tab-icon-pop' : ''"
           @animationend="poppedTab = null"
         >
-          <AppIcon name="clock" :size="24" />
+          <AppIcon :name="zmanimIcon" :size="24" />
         </span>
       </button>
     </div>

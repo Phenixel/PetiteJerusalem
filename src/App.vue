@@ -24,11 +24,13 @@ import { authService } from "./services/authService";
 import { useTheme } from "./composables/useTheme";
 import { useFonts } from "./composables/useFonts";
 import { loadColorScheme, loadGuestColorScheme } from "./composables/useColorScheme";
+import { useHolidayTheme } from "./composables/useHolidayTheme";
 
 const route = useRoute();
 const router = useRouter();
 const { loadTheme, loadGuestTheme } = useTheme();
 const { loadFonts, loadGuestFonts } = useFonts();
+const { loadHolidayThemes, loadGuestHolidayThemes } = useHolidayTheme();
 
 // Introduction de première ouverture : chargée seulement pour qui ne l'a pas
 // encore vue (son chunk ne pèse rien pour les autres). Elle prend l'écran
@@ -119,6 +121,7 @@ const chromePadClass = computed(() => {
 loadGuestTheme();
 loadGuestFonts();
 loadGuestColorScheme();
+loadGuestHolidayThemes();
 
 // Le jour d'ouverture, pour la relance du formulaire de support (« Tout se
 // passe bien ? », sur l'accueil après quelques jours d'usage). Dans l'app, les
@@ -138,11 +141,13 @@ authService.onAuthChanged((user) => {
     loadTheme(user.id);
     loadFonts(user.id);
     void loadColorScheme(user.id);
+    void loadHolidayThemes(user.id);
   } else {
     // Sans compte (ou déconnecté) : les réglages de l'appareil.
     loadGuestTheme();
     loadGuestFonts();
     loadGuestColorScheme();
+    loadGuestHolidayThemes();
   }
 });
 </script>

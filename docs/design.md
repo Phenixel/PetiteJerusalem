@@ -432,6 +432,45 @@ ne porte jamais un texte de lecture : des libellés courts, en demi-gras, et
 des titres. Le jour où il en portera un, c'est le jeton d'encre ci-dessus qu'il
 faudra, pas un thème plus terne.
 
+### Les thèmes des fêtes
+
+Le temps d'une fête, l'app change d'habit, puis retrouve le thème choisi. Un
+thème de fête ne se choisit pas : le calendrier le pose et le retire
+(`src/services/holidayThemes.ts`, `useHolidayTheme.ts`), et un seul
+interrupteur, dans les réglages d'apparence sous les thèmes, l'autorise ou
+non pour toutes les fêtes à la fois. Il est allumé d'office : c'est une
+attention, pas une option à découvrir ; qui n'en veut pas la coupe une fois.
+
+| Fête    | Période                                                  | `primary`             | `secondary`     | Bouton des horaires | Ornements                 |
+| ------- | -------------------------------------------------------- | --------------------- | --------------- | ------------------- | ------------------------- |
+| Tichri  | du 16 Eloul (deux semaines avant Roch Hachana) à Kippour | `#D8322F` rouge pomme | `#D9A21B` miel  | une pomme           | un chofar, un pot de miel |
+| Souccot | du lendemain de Kippour au lendemain de Sim'hat Torah    | `#4E8A2E` vert loulav | `#D9B324` étrog | une soucca          | un loulav, un étrog       |
+
+Trois choses changent, pas une de plus :
+
+- **les couleurs** : le duo de la fête prend la place de `primary` et
+  `secondary`, partout où ils servent, widgets et montre compris. Les mêmes
+  bornes de lisibilité que les thèmes choisis s'appliquent (voir
+  « Lisibilité ») ; le vert de Souccot est pris plus franc et plus jaune que
+  l'émeraude, pour qu'on ne les confonde pas ;
+- **les ornements** : deux dessins par fête, dans le style des illustrations
+  des portes (`src/components/holiday`), posés à même le fond en tête de
+  l'accueil, de part et d'autre d'un souhait. Pas de carte : c'est une parure,
+  pas une réponse. Ils servent aussi d'aperçu dans les réglages ;
+- **le bouton rond des horaires** de l'app native, qui prend la forme d'un
+  objet de la fête : c'est le bouton que tout le monde touche chaque jour, et
+  c'est là que la fête se voit d'abord.
+
+Ce qui passe devant quoi : le survol d'un thème dans les réglages (choisi ou
+de fête), puis la fête en cours, puis le thème choisi. Le choix reste le choix
+pendant la fête, on le retrouve après. Une fenêtre se compte en jours civils,
+pas à la chkia : un thème qui change dans la nuit ne trompe personne, un thème
+qui changerait à 19 h 42 le ferait sous les yeux. Le lendemain de Kippour
+appartient à Souccot, le jour où l'on commence la soucca.
+
+Les fêtes suivantes ('Hanouka, Pourim, Pessah…) viendront s'ajouter au même
+catalogue, avec les mêmes trois changements.
+
 ### Ce que le jour ajoute dans une tefila
 
 Dans le lecteur de liturgie (`LiturgyText.vue`), `primary` sert d'encre à
