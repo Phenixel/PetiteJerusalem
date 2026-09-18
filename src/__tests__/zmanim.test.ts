@@ -9,6 +9,7 @@ import {
   restPeriodsNear,
   weekdayIn,
   nextZman,
+  pastChatzotNight,
   slihotWindow,
   ZMAN_ROUNDING,
   type ZmanimPlace,
@@ -309,5 +310,32 @@ describe("plage des Sli'hot", () => {
     expect(window.tonight).toBe(true);
     expect(window.start.getTime()).toBeLessThan(beforeDawn.getTime());
     expect(window.end.getTime()).toBeGreaterThan(beforeDawn.getTime());
+  });
+});
+
+describe("hatsot halayla passé", () => {
+  // Nuit du mardi 4 au mercredi 5 août 2026 à Paris : hatsot à 01:57.
+  const parisAt = (utcHour: number, utcMinute = 0, day = 4) =>
+    new Date(Date.UTC(2026, 7, day, utcHour, utcMinute));
+
+  it("dit non tant que la nuit n'a pas atteint son milieu", () => {
+    // 14 h, puis 23 h à Paris : le hatsot de la nuit qui vient est devant nous.
+    expect(pastChatzotNight(DEFAULT_PLACE, parisAt(12))).toBe(false);
+    expect(pastChatzotNight(DEFAULT_PLACE, parisAt(21))).toBe(false);
+    // 01:30 dans la nuit du 4 au 5, une demi-heure avant hatsot.
+    expect(pastChatzotNight(DEFAULT_PLACE, parisAt(23, 30))).toBe(false);
+  });
+
+  it("dit oui du milieu de la nuit au lever du soleil", () => {
+    // 02:30 puis 04:00 à Paris, le 5 : hatsot (01:57) est passé, le netz
+    // (06:29) pas encore.
+    expect(pastChatzotNight(DEFAULT_PLACE, parisAt(0, 30, 5))).toBe(true);
+    expect(pastChatzotNight(DEFAULT_PLACE, parisAt(2, 0, 5))).toBe(true);
+  });
+
+  it("repasse à non une fois le jour levé", () => {
+    // 8 h à Paris le 5 : la nuit est finie, le hatsot annoncé est celui de la
+    // nuit suivante.
+    expect(pastChatzotNight(DEFAULT_PLACE, parisAt(6, 0, 5))).toBe(false);
   });
 });

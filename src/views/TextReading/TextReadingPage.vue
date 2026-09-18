@@ -81,6 +81,7 @@ import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { isSansTahanoun } from "../../composables/useSansTahanoun";
 import { withoutTachanun } from "../../services/tachanun";
+import { pastChatzotNight } from "../../services/zmanimService";
 import { useKeepAwake } from "../../composables/useKeepAwake";
 import { analyticsService } from "../../services/analyticsService";
 import { useLocalePath } from "../../composables/useLocalePath";
@@ -196,7 +197,13 @@ const occasionsDay = computed(() => new HDate(occasionsDayAbs.value));
 // du rendu qui en décide, comme des occasions elles-mêmes.
 const occasions = computed(() => {
   const today = activeOccasions(occasionsDay.value, zmanimPlace.value.tzid === "Asia/Jerusalem");
-  return isLiturgyText.value && isSansTahanoun(now.value) ? withoutTachanun(today) : today;
+  const jour = isLiturgyText.value && isSansTahanoun(now.value) ? withoutTachanun(today) : today;
+  // Hatsot halayla ne se lit pas sur le calendrier : c'est une heure, elle
+  // change au milieu de la nuit sans que le jour hébraïque bouge. Le Chema du
+  // coucher s'en sert pour la bénédiction Hamapil, dont le Nom se pense au
+  // lieu de se dire une fois hatsot passé.
+  if (!isLiturgyText.value || !pastChatzotNight(zmanimPlace.value, now.value)) return jour;
+  return new Set([...jour, "apres-hatsot"]);
 });
 const visibleBlocks = computed(() =>
   verseBlocks.value.filter((b) => saidOn(b.when, occasions.value, b.unless)),

@@ -131,10 +131,20 @@ function buildLine(spec, segs) {
   if (spec.muted) line.muted = true;
   if (spec.tight) line.tight = true;
   if (spec.lead) line.lead = true;
+  // La condition d'une ligne : `when` le jour où elle se dit, `unless` le jour
+  // qui la retire. Les deux ne s'échangent pas, voir docs/compatibilite-textes.md.
+  if (spec.when) line.when = spec.when;
+  if (spec.unless) line.unless = spec.unless;
   return line;
 }
 
-/** La didascalie d'une ligne ou d'un bloc : hébreu de la source, reste écrit ici. */
+/**
+ * La didascalie d'une ligne ou d'un bloc : hébreu de la source, reste écrit ici.
+ *
+ * Sa condition la suit : une halakha qui ne vaut qu'après hatsot ne s'affiche
+ * qu'après hatsot (voir Halakha dans textService), et elle se perdrait si on
+ * ne recopiait que les trois langues.
+ */
 function rubricOf(spec, segs, key = "rubric") {
   const written = spec[key];
   const segKey = `${key}Seg`;
@@ -144,7 +154,10 @@ function rubricOf(spec, segs, key = "rubric") {
   // tout le segment qu'on prend, balises retirées.
   const he = segText(segs[spec[segKey]], "full");
   if (!he) throw new Error(`Didascalie introuvable : segment ${spec[segKey]}`);
-  return { fr: written.fr, en: written.en, he };
+  const rubric = { fr: written.fr, en: written.en, he };
+  if (written.when) rubric.when = written.when;
+  if (written.unless) rubric.unless = written.unless;
+  return rubric;
 }
 
 export function buildBlock(spec, segs) {
