@@ -210,7 +210,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && request.auth.uid == userId;
       allow create, update: if isAuthenticated()
         && request.auth.uid == userId
-        && request.resource.data.size() <= 25
+        && request.resource.data.size() <= 30
         && (!('theme' in request.resource.data) || (request.resource.data.theme is string && request.resource.data.theme.size() <= 20))
         // Les thèmes des fêtes (voir useHolidayTheme) : un interrupteur.
         && (!('holidayThemes' in request.resource.data) || request.resource.data.holidayThemes is bool)
@@ -220,6 +220,11 @@ service cloud.firestore {
         // Lectures du moment (paracha de la semaine, cycles Tehilim).
         && (!('dailyReadingOptions' in request.resource.data) || (request.resource.data.dailyReadingOptions is list && request.resource.data.dailyReadingOptions.size() <= 10))
         && (!('dailyReadingProgress' in request.resource.data) || request.resource.data.dailyReadingProgress is map)
+        // Actions du jour (clés fermées, voir services/dailyActions) et
+        // objectifs personnels : le client en garde 20 au plus (MAX_DAILY_GOALS),
+        // borne large ici pour empêcher un gonflement du document.
+        && (!('dailyActions' in request.resource.data) || (request.resource.data.dailyActions is list && request.resource.data.dailyActions.size() <= 20))
+        && (!('dailyGoals' in request.resource.data) || (request.resource.data.dailyGoals is list && request.resource.data.dailyGoals.size() <= 40))
         // Notifications push (app native) : tokens FCM des appareils, rappels
         // on/off, langue des notifications. 20 tokens max, les tokens morts
         // sont purgés par la Cloud Function dailyReadingReminder quand un

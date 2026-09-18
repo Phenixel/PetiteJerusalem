@@ -17,6 +17,12 @@ import NotificationsTab from "./profilePage/NotificationsTab.vue";
 import AboutTab from "./profilePage/AboutTab.vue";
 import { isNativeApp } from "../composables/useNativeApp";
 import { SITE_URL } from "../config/site";
+import {
+  userPreferencesService,
+  type DailyReadingProgress,
+} from "../services/userPreferencesService";
+import { localDayKey } from "../services/dateService";
+import { streakStatus, type StreakStatus } from "../services/dailyStreak";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -55,6 +61,23 @@ const visibleTabs = computed<{ id: TabId; label: string }[]>(() => {
 });
 
 const userDisplayName = computed(() => currentUser.value?.name || t("common.anonymousUser"));
+
+// La série de jours de la lecture du jour, affichée dans le bandeau : la
+// copie locale d'abord (elle s'affiche avec le nom), le serveur confirme.
+const streak = ref<StreakStatus | null>(null);
+
+async function loadStreak(userId: string) {
+  const apply = (progress: DailyReadingProgress | undefined) => {
+    streak.value = streakStatus(progress?.streak, localDayKey());
+  };
+  const cached = userPreferencesService.getCachedPreferences(userId);
+  if (cached) apply(cached.dailyReadingProgress);
+  try {
+    apply((await userPreferencesService.getPreferences(userId)).dailyReadingProgress);
+  } catch (error) {
+    console.error("Erreur lors du chargement de la série de jours:", error);
+  }
+}
 
 // Ce que le compte apporte, énuméré dans le bandeau d'invitation. Chaque
 // entrée correspond à une fonctionnalité réellement portée par le compte :
@@ -107,6 +130,8 @@ onMounted(() => {
   unsubscribeAuth = authService.onAuthChanged((user) => {
     currentUser.value = user;
     isLoading.value = false;
+    if (user) void loadStreak(user.id);
+    else streak.value = null;
     if (!user) {
       // Sur le web, la page reste réservée aux comptes (même comportement que
       // la garde de route, qui ne se rejoue pas à la déconnexion).
@@ -154,7 +179,7 @@ onUnmounted(() => {
          alors de page de réglages. Sur le web sans compte, l'abonnement
          ci-dessus renvoie à l'accueil. -->
     <div v-else-if="currentUser || isNativeApp">
-      <ProfileHeader v-if="currentUser" :user-display-name="userDisplayName" />
+      <ProfileHeader v-if="currentUser" :user-display-name="userDisplayName" :streak="streak" />
 
       <!-- Sans compte : le bandeau de tête EST l'invitation, en version
            compacte : le titre de la page, une ligne qui dit où vivent les

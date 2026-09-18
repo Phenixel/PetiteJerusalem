@@ -34,15 +34,15 @@ import { watchService } from "./watchService";
  * Rafraîchi au lancement, au retour au premier plan, au changement de lieu
  * des horaires, au changement de langue, au changement de thème (les widgets
  * et la montre portent l'accent choisi), à chaque progression de la lecture du
- * jour, et quand la montre réclame tout (app de montre ouverte pour la
- * première fois). Un payload inchangé n'est pas renvoyé : le natif ne recharge
- * pas ses widgets pour rien.
+ * jour (série de jours comprise), et quand la montre réclame tout (app de
+ * montre ouverte pour la première fois). Un payload inchangé n'est pas
+ * renvoyé : le natif ne recharge pas ses widgets pour rien.
  */
 
 /** Le sous-ensemble des préférences dont dépend le widget de lecture. */
 export type DailyWidgetPrefs = Pick<
   UserPreferences,
-  "dailyReadingIds" | "dailyReadingOptions" | "dailyReadingProgress"
+  "dailyReadingIds" | "dailyReadingOptions" | "dailyReadingProgress" | "dailyActions" | "dailyGoals"
 >;
 
 interface PjWidgetsBridge {
@@ -171,7 +171,7 @@ class WidgetService {
       // premier payload d'un utilisateur en/he partirait en français.
       const locale = i18n.global.locale.value;
       await loadLocaleMessages(locale as SupportedLocale);
-      const t = i18n.global.t as (key: string, params?: Record<string, unknown>) => string;
+      const t = i18n.global.t as (key: string, params?: Record<string, unknown> | number) => string;
 
       // Horaires : recalculés seulement si une de leurs entrées a bougé
       // une coche de lecture, par exemple, ne les recalcule pas.

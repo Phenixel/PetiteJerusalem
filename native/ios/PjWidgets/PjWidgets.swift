@@ -25,6 +25,9 @@ import WidgetKit
  *   (src/components/DailyReadingCard.vue) : titre, progression, pourcentage,
  *   barre. Une entrée maintenant, redessin à l'échéance du payload
  *   (expiresAt, minuit local calculé côté app).
+ * - Série de jours : la flamme et le nombre de jours d'affilée où tout a été
+ *   fait, le record dessous ; même payload que la lecture, sa propre
+ *   échéance (le minuit qui suit le lendemain du dernier jour fait).
  *
  * Fichier ajouté à la cible d'extension « PjWidgets » du projet Xcode par
  * scripts/setup-ios.mjs, voir docs/app-widgets.md.
@@ -662,8 +665,34 @@ struct DailyPayload: Decodable {
     /// "{done} sur {total} lus aujourd'hui" ; absent des payloads d'avant.
     let progressTemplate: String?
     let accent: String?
+    /// La série de jours (widget « Série ») ; absente des payloads d'avant elle.
+    let streak: DailyStreakPayload?
 
     var expiryDate: Date { Date(timeIntervalSince1970: expiresAt / 1000) }
+}
+
+/**
+ * La série de jours : `current` ne vaut que jusqu'à `expiresAt` (le minuit
+ * qui suit le lendemain du dernier jour fait), `doneToday` que jusqu'à
+ * l'échéance du payload. Simple comparaison d'epochs, comme les coches. Les
+ * libellés arrivent déjà formatés et accordés.
+ */
+struct DailyStreakPayload: Decodable {
+    let current: Int
+    let best: Int
+    let expiresAt: Double
+    let doneToday: Bool
+    let title: String
+    let daysLabel: String
+    let zeroLabel: String
+    let bestLabel: String
+
+    var expiryDate: Date { Date(timeIntervalSince1970: expiresAt / 1000) }
+
+    /// Les jours d'affilée tels qu'ils valent à cet instant.
+    func current(at instant: Date) -> Int {
+        instant < expiryDate ? current : 0
+    }
 }
 
 struct DailyEntry: TimelineEntry {
@@ -870,10 +899,10 @@ struct LectureWidget: Widget {
 // MARK: - Raccourcis
 
 /**
- * Cinq tuiles qui n'ouvrent qu'une page : la bibliothèque, le sidour, les
- * horaires, les Tehilim, la lecture du jour. Le plus petit format que l'écran
- * d'accueil propose (`.systemSmall`), sauf la bibliothèque, à qui son étagère
- * vaut un format moyen.
+ * Six tuiles qui n'ouvrent qu'une page : la bibliothèque, le sidour, les
+ * horaires, les Tehilim, la lecture du jour, la série de jours. Le plus petit
+ * format que l'écran d'accueil propose (`.systemSmall`), sauf la
+ * bibliothèque, à qui son étagère vaut un format moyen.
  *
  * Trois d'entre elles ne montrent qu'un livre : c'est le dessin de l'étagère
  * de `src/components/LibraryShelf.vue`, porté ici trait pour trait.
@@ -1042,6 +1071,7 @@ enum ShortcutFallback {
     static let tehilim = "Tehilim"
     static let daily = "Lecture du jour"
     static let zmanim = "Horaires"
+    static let streak = "Série de jours"
 }
 
 struct LibraryEntry: TimelineEntry {
@@ -1305,6 +1335,123 @@ struct LectureShortcutWidget: Widget {
     }
 }
 
+// MARK: - Série de jours
+
+/**
+ * La flamme, le nombre de jours d'affilée où tout a été fait, le record : le
+ * dessin du bandeau du profil (src/components/DailyStreakStats.vue), dans la
+ * plus petite tuile. Le compteur retombe à zéro à l'échéance de la série,
+ * sans attendre que l'app soit rouverte. Pendant iOS de
+ * StreakWidgetProvider (Android).
+ */
+struct StreakProvider: TimelineProvider {
+    func placeholder(in context: Context) -> DailyEntry {
+        DailyEntry(date: Date(), payload: nil)
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (DailyEntry) -> Void) {
+        completion(DailyEntry(date: Date(), payload: loadPayload("daily", as: DailyPayload.self)))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<DailyEntry>) -> Void) {
+        let now = Date()
+        let payload = loadPayload("daily", as: DailyPayload.self)
+        let entry = DailyEntry(date: now, payload: payload)
+        // Redessin à l'échéance de la série (le compteur retombe à zéro) ;
+        // rien à attendre sinon, le prochain push de l'app rechargera tout.
+        if let streak = payload?.streak, streak.current(at: now) > 0 {
+            completion(Timeline(entries: [entry], policy: .after(streak.expiryDate.addingTimeInterval(1))))
+        } else {
+            completion(Timeline(entries: [entry], policy: .never))
+        }
+    }
+}
+
+struct StreakWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: DailyEntry
+
+    var body: some View {
+        let streak = entry.payload?.streak
+        let current = streak?.current(at: entry.date) ?? 0
+        Group {
+            if isHomeScreen(family) { home(streak, current) } else { accessory(streak, current) }
+        }
+        .widgetURL(URL(string: "petitejerusalem://petite-jerusalem.fr/bibliotheque/lecture-du-jour"))
+    }
+
+    /// Écran verrouillé : la flamme, le chiffre et son libellé sur une ligne,
+    /// le record dessous ; aucune couleur, le système délave tout.
+    private func accessory(_ streak: DailyStreakPayload?, _ current: Int) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 6) {
+                Image(systemName: current > 0 ? "flame.fill" : "flame")
+                    .font(.body.weight(.semibold))
+                Text("\(current)")
+                    .font(.title3.weight(.bold))
+                    .monospacedDigit()
+                Text(current > 0 ? (streak?.daysLabel ?? "") : (streak?.zeroLabel ?? openAppFallback))
+                    .font(.caption2)
+                    .lineLimit(2)
+            }
+            if let streak, streak.best > 0 {
+                Text(streak.bestLabel)
+                    .font(.caption2)
+                    .lineLimit(1)
+            }
+        }
+        .minimumScaleFactor(0.7)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    private func home(_ streak: DailyStreakPayload?, _ current: Int) -> some View {
+        let accent = PjColors.accent(entry.payload?.accent)
+        return VStack(spacing: 4) {
+            Text(streak?.title ?? ShortcutFallback.streak)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .foregroundStyle(PjColors.textSecondary)
+            Spacer(minLength: 0)
+            HStack(spacing: 6) {
+                // La flamme s'allume à l'accent dès qu'il y a une série.
+                Image(systemName: current > 0 ? "flame.fill" : "flame")
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(current > 0 ? accent : PjColors.textSecondary.opacity(0.5))
+                Text("\(current)")
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.6)
+                    .foregroundStyle(PjColors.text)
+            }
+            Text(current > 0 ? (streak?.daysLabel ?? "") : (streak?.zeroLabel ?? openAppFallback))
+                .font(.caption)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .foregroundStyle(PjColors.text)
+            if let streak, streak.best > 0 {
+                Text(streak.bestLabel)
+                    .font(.caption2)
+                    .lineLimit(1)
+                    .foregroundStyle(PjColors.textSecondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+struct StreakWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "StreakWidget", provider: StreakProvider()) { entry in
+            StreakWidgetView(entry: entry).modifier(PjWidgetBackground())
+        }
+        .configurationDisplayName("Série de jours")
+        .description("Vos jours d'affilée à tout terminer, et votre record.")
+        .supportedFamilies(supportedFamilies([.systemSmall]))
+    }
+}
+
 // MARK: - Bundle
 
 @main
@@ -1324,5 +1471,6 @@ struct PjWidgetsBundle: WidgetBundle {
         TehilimWidget()
         ZmanimShortcutWidget()
         LectureShortcutWidget()
+        StreakWidget()
     }
 }

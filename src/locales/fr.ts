@@ -384,7 +384,7 @@ const fr = {
   dailyReading: {
     title: "Ma lecture quotidienne",
     description:
-      "Sélectionnez les textes que vous lisez chaque jour pour les retrouver ici, les uns à la suite des autres.",
+      "Composez votre journée : des textes à lire, des actions à faire, vos propres objectifs. Cochez-les chaque jour et faites monter votre série.",
     manage: "Gérer ma liste",
     done: "Terminé",
     tabToday: "Aujourd'hui",
@@ -396,8 +396,8 @@ const fr = {
     removeFromList: "Retirer de la liste",
     emptyTitle: "Votre liste est vide",
     emptyDescription:
-      "Ajoutez les psaumes ou passages que vous lisez quotidiennement pour les retrouver regroupés ici.",
-    progress: "{done} sur {total} lus aujourd'hui",
+      "Ajoutez des textes à lire, des actions à faire ou vos propres objectifs : tout se coche ici, chaque jour.",
+    progress: "{done} sur {total} faits aujourd'hui",
     allReadTitle: "Bravo, tout est lu pour aujourd'hui !",
     allReadDescription: "Revenez demain pour votre prochaine lecture.",
     markRead: "Marquer comme lu",
@@ -409,6 +409,55 @@ const fr = {
       title: "Lecture du jour",
       empty: "Ouvrez l'app pour composer votre liste de lecture",
     },
+    // Les actions du jour : des gestes à se voir faire chaque jour, cochés
+    // comme une lecture (voir services/dailyActions).
+    actions: {
+      title: "Actions du jour",
+      description:
+        "Des gestes de la journée à cocher chaque jour, à côté de vos lectures : ils comptent dans votre progression et dans votre série.",
+      doneToday: "Fait aujourd'hui",
+      open: "Ouvrir le texte",
+      chaharitTitle: "Cha'harit",
+      chaharitDescription: "La prière du matin.",
+      minhaTitle: "Min'ha",
+      minhaDescription: "La prière de l'après-midi.",
+      arvitTitle: "Arvit",
+      arvitDescription: "La prière du soir.",
+      tefilinTitle: "Tefilin",
+      tefilinDescription: "Mettre les tefilin.",
+      tsedakaTitle: "Tsédaka",
+      tsedakaDescription: "Donner, même une pièce.",
+      chemaTitle: "Chema avant de dormir",
+      chemaDescription: "Le Chema al hamita, avant de se coucher.",
+      etudeTitle: "Étude de la Torah",
+      etudeDescription: "Un passage, une michna, une page : étudier chaque jour.",
+    },
+    // Les objectifs personnels : ce que la personne veut s'améliorer à faire.
+    goals: {
+      title: "Mes objectifs",
+      description:
+        "Ce que vous voulez faire chaque jour, dans vos mots : dix minutes de moussar, un appel à vos parents, un chapitre de plus.",
+      placeholder: "Un objectif pour chaque jour",
+      add: "Ajouter",
+      remove: "Retirer cet objectif",
+      limit: "Vous avez atteint les {max} objectifs : retirez-en un pour en ajouter un autre.",
+    },
+    // La série de jours : tout fait chaque jour, le compteur monte.
+    streak: {
+      title: "Série de jours",
+      days: "jour d'affilée | jour d'affilée | jours d'affilée",
+      best: "Record : {n} jours",
+      bestShort: "record",
+      bestTitle: "Votre plus longue série",
+      doneToday: "Tout est fait aujourd'hui : la série continue demain.",
+      atRisk: "Terminez vos objectifs avant minuit pour garder votre série.",
+      restart: "Terminez tous vos objectifs aujourd'hui pour repartir sur une série.",
+      start: "Terminez tous vos objectifs du jour pour commencer une série.",
+      widgetTitle: "Série",
+      widgetDays: "jour d'affilée | jour d'affilée | jours d'affilée",
+      widgetZero: "Terminez votre journée pour lancer une série",
+      widgetBest: "Record : {n}",
+    },
     options: {
       title: "Lectures du moment",
       description:
@@ -419,8 +468,15 @@ const fr = {
       tehilimDayTitle: "Tehilim du jour",
       tehilimDayDescription:
         "Le cycle mensuel : les psaumes du jour du mois hébraïque, pour finir les Tehilim chaque mois.",
+      dafYomiTitle: "Daf hayomi",
+      dafYomiDescription:
+        "La page du Talmud que le monde entier étudie le même jour : un daf par jour, tout le Chas en sept ans et demi.",
       parashaReading: "Paracha de la semaine",
       tehilimDayReading: "Tehilim du jour · {day} du mois",
+      dafYomiReading: "Daf hayomi",
+      dafYomiLabel: "{tractate} · Daf {daf}",
+      dafYomiMissing:
+        "Ce daf n'est pas dans la bibliothèque : vous pouvez tout de même le cocher une fois étudié.",
       psalmsOne: "Tehilim {n}",
       psalmsRange: "Tehilim {from} à {to}",
       weeklyNote: "À terminer avant Chabbat",

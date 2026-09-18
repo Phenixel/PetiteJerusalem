@@ -1,5 +1,7 @@
 import type { Bookmark, ReadingPosition } from "./readingProgressService";
 import type { HebrewOccasion } from "./hebrewOccasions";
+import type { DailyGoal } from "./dailyActions";
+import { mergeStreak, type DailyStreak } from "./dailyStreak";
 import type { ReminderPlace } from "./zmanimService";
 import { AppError } from "./appError";
 // Ce module est chargé dès le démarrage (useTheme et useFonts, montés par
@@ -19,8 +21,20 @@ export interface DailyReadingProgress {
    * bascule aussi dans `completedIds`.
    */
   completedSections?: Record<string, number[]>;
-  /** Lectures du moment quotidiennes (cycles Tehilim) marquées lues aujourd'hui. */
+  /** Lectures du moment quotidiennes (cycles Tehilim, Daf hayomi) marquées lues aujourd'hui. */
   completedOptions?: string[];
+  /**
+   * Actions du jour (clés de dailyActions) et objectifs personnels (ids de
+   * dailyGoals) cochés aujourd'hui.
+   */
+  completedActions?: string[];
+  /**
+   * La série de jours (voir dailyStreak) : combien de jours d'affilée tout a
+   * été fait, et le record. Rangée ici pour suivre le chemin du suivi
+   * (enregistrée avec lui, gardée hors ligne, fusionnée au retour du réseau),
+   * mais elle ne se remet pas à zéro chaque jour : elle traverse les jours.
+   */
+  streak?: DailyStreak;
   /**
    * Suivi hebdomadaire du chnei mikra : `week` est la date du Chabbat de la
    * paracha (weekKey). Contrairement au reste, il ne se remet à zéro qu'au
@@ -44,8 +58,12 @@ export interface UserPreferences {
   fontHebrew: string;
   /** Ordered ids of the texts the user reads every day (their daily reading list). */
   dailyReadingIds: number[];
-  /** Lectures du moment activées (clés de dailyCycles : paracha, cycles Tehilim). */
+  /** Lectures du moment activées (clés de dailyCycles : paracha, cycles Tehilim, Daf hayomi). */
   dailyReadingOptions: string[];
+  /** Actions du jour choisies parmi celles que l'application propose (clés de dailyActions). */
+  dailyActions: string[];
+  /** Objectifs personnels, écrits par la personne (voir dailyActions). */
+  dailyGoals: DailyGoal[];
   /** Per-day read tracking for the daily reading list. */
   dailyReadingProgress: DailyReadingProgress;
   /** FCM tokens of the user's devices (native app), read by the reminder Cloud Function. */
@@ -108,6 +126,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   fontHebrew: "frank",
   dailyReadingIds: [],
   dailyReadingOptions: [],
+  dailyActions: [],
+  dailyGoals: [],
   dailyReadingProgress: { date: "", completedIds: [] },
   fcmTokens: [],
   pushReminderEnabled: false,
@@ -329,12 +349,16 @@ export function mergeDailyProgress(
   local: DailyReadingProgress | undefined,
 ): DailyReadingProgress {
   const parashaProgress = mergeParashaProgress(server?.parashaProgress, local?.parashaProgress);
+  // La série de jours traverse les jours : fusionnée à part, comme la paracha.
+  const streak = mergeStreak(server?.streak, local?.streak);
   const withParasha = (progress: DailyReadingProgress): DailyReadingProgress => {
     const merged = { ...progress };
     // Le suivi hebdomadaire est fusionné à part : celui du bloc retenu ne doit
     // pas repasser devant.
     if (parashaProgress) merged.parashaProgress = parashaProgress;
     else delete merged.parashaProgress;
+    if (streak) merged.streak = streak;
+    else delete merged.streak;
     return merged;
   };
 
@@ -349,32 +373,44 @@ export function mergeDailyProgress(
     completedOptions: [
       ...new Set([...(server.completedOptions ?? []), ...(local.completedOptions ?? [])]),
     ],
+    completedActions: [
+      ...new Set([...(server.completedActions ?? []), ...(local.completedActions ?? [])]),
+    ],
   });
 }
 
 /**
- * Progression de la lecture du jour : LA règle de comptage, partagée entre la
- * page Lecture quotidienne et le tableau de bord de l'accueil (et recopiée
- * dans functions/src/dailyReminder.ts, qui ne peut pas importer src/).
+ * Progression du jour : LA règle de comptage, partagée entre la page Lecture
+ * quotidienne, le tableau de bord de l'accueil, les widgets et la série de
+ * jours (et recopiée, pour les lectures, dans functions/src/dailyReminder.ts,
+ * qui ne peut pas importer src/).
  * Le chnei mikra (« parasha ») est un suivi hebdomadaire : hors décompte.
  * Les complétions sont intersectées avec les listes actives : une entrée
- * obsolète (texte retiré, option désactivée) ne compte pas.
+ * obsolète (texte retiré, option désactivée, objectif supprimé) ne compte pas.
+ * `actions` réunit les actions du jour choisies et les ids des objectifs
+ * personnels (voir dailyActions.activeActionKeys) : elles comptent comme une
+ * lecture, un objectif chacune.
  */
 export function countDailyProgress(input: {
   textIds: Array<string | number>;
   options: string[];
   completedTextIds: Iterable<string | number>;
   completedOptions: Iterable<string>;
+  actions?: string[];
+  completedActions?: Iterable<string>;
 }): { done: number; total: number } {
   const textIds = input.textIds.map(String);
   const options = input.options.filter((k) => k !== "parasha");
+  const actions = input.actions ?? [];
   const doneTexts = new Set([...input.completedTextIds].map(String));
   const doneOptions = new Set(input.completedOptions);
+  const doneActions = new Set(input.completedActions ?? []);
   return {
-    total: textIds.length + options.length,
+    total: textIds.length + options.length + actions.length,
     done:
       textIds.filter((id) => doneTexts.has(id)).length +
-      options.filter((k) => doneOptions.has(k)).length,
+      options.filter((k) => doneOptions.has(k)).length +
+      actions.filter((k) => doneActions.has(k)).length,
   };
 }
 

@@ -5,15 +5,20 @@
 // éventuels handlers (analytics) directement sur le composant.
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import type { StreakStatus } from "../services/dailyStreak";
 import AppIcon from "./icons/AppIcon.vue";
 import ProgressBar from "./ProgressBar.vue";
+import DailyStreakStats from "./DailyStreakStats.vue";
 
-const props = defineProps<{ done: number; total: number }>();
+// `streak` : la série de jours, quand le parent la connaît ; elle n'a rien à
+// dire tant que personne n'a jamais fini une journée.
+const props = defineProps<{ done: number; total: number; streak?: StreakStatus | null }>();
 
 const { t } = useI18n();
 
 const pct = computed(() => (props.total === 0 ? 0 : Math.round((props.done / props.total) * 100)));
 const allDone = computed(() => props.total > 0 && props.done >= props.total);
+const showStreak = computed(() => Boolean(props.streak && props.streak.best > 0));
 </script>
 
 <!-- Composition : le texte serré à gauche (le titre puis le compte, l'un sous
@@ -71,6 +76,8 @@ const allDone = computed(() => props.total > 0 && props.done >= props.total);
         </span>
       </div>
       <ProgressBar class="mt-4" :value="pct" :label="t('dailyReading.title')" />
+      <!-- La série de jours, une fois qu'elle existe : deux chiffres, sous la barre -->
+      <DailyStreakStats v-if="showStreak && streak" :status="streak" class="mt-4" />
     </template>
   </RouterLink>
 </template>

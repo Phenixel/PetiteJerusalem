@@ -78,9 +78,9 @@ describe("destinations des widgets", () => {
   const urls = widgetUrls();
 
   it("porte une URL par widget, aucune oubliée", () => {
-    // Huit `widgetURL` pour huit widgets : trois grands (horaires, horaires
-    // essentiels, lecture) et cinq raccourcis.
-    expect(urls).toHaveLength(8);
+    // Neuf `widgetURL` pour neuf widgets : trois grands (horaires, horaires
+    // essentiels, lecture) et six raccourcis, série de jours comprise.
+    expect(urls).toHaveLength(9);
   });
 
   it("n'ouvre que des chemins que le routeur reconnaît", () => {
@@ -128,9 +128,9 @@ describe("destinations des widgets Android", () => {
   const urls = androidWidgetUrls();
 
   it("ouvre l'app, et non le navigateur", () => {
-    // Huit widgets, huit destinations : les mêmes que sur iOS (la parité des
+    // Neuf widgets, neuf destinations : les mêmes que sur iOS (la parité des
     // deux plateformes a son propre test, widgetParity.test.ts).
-    expect(urls).toHaveLength(8);
+    expect(urls).toHaveLength(9);
     const matchers = routerMatchers();
     const unmatched: string[] = [];
     // Un chemin absent de la liste des liens d'application s'ouvrirait dans

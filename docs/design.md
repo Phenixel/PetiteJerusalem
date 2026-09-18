@@ -383,6 +383,19 @@ attend quelques secondes après l'arrivée, se retire dès qu'on lui répond
 (« Tout va bien » ou le formulaire) et n'insiste pas : au plus trois fois, à
 une semaine d'écart, puis plus jamais.
 
+### La série de jours se lit en deux chiffres
+
+La série de jours de la lecture du jour (tout coché chaque jour, le compteur
+monte) se montre partout de la même façon, en deux chiffres et rien d'autre :
+la flamme et les jours d'affilée, le trophée et le record
+(`src/components/DailyStreakStats.vue`). Sur le bandeau du profil, tout est
+blanc, comme le nom ; sur une carte, la flamme prend l'accent dès que la série
+est en cours et reste grise sinon. Le zéro s'affiche : une série à recommencer
+se lit mieux qu'une case vide. Les mots (« tout est fait aujourd'hui »,
+« terminez avant minuit ») ne vivent que sur la page de la lecture du jour
+(`DailyStreakBanner.vue`), là où l'on agit dessus. Les widgets natifs
+reprennent le même dessin.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.

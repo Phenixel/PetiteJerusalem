@@ -15,9 +15,11 @@ import { saidTachanun } from "./tachanun";
  *   tient jusqu'au changement de paracha, pas jusqu'à minuit.
  * - Tehilim du jour : le cycle mensuel traditionnel (les 150 psaumes répartis
  *   sur les jours du mois hébraïque).
+ * - Daf hayomi : la page du Talmud que le monde entier étudie le même jour
+ *   (voir dafYomi.ts, qui porte le calcul).
  */
 
-export const DAILY_OPTION_KEYS = ["parasha", "tehilim-jour"] as const;
+export const DAILY_OPTION_KEYS = ["parasha", "tehilim-jour", "daf-yomi"] as const;
 export type DailyOptionKey = (typeof DAILY_OPTION_KEYS)[number];
 
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;

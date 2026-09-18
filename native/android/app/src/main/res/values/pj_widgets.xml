@@ -35,5 +35,7 @@
     <string name="pj_widget_zmanim_shortcut_description">L\'heure du prochain zman, et rien d\'autre</string>
     <string name="pj_widget_lecture_shortcut_label">Avancement de la lecture</string>
     <string name="pj_widget_lecture_shortcut_description">Un anneau qui se remplit au fil de votre lecture du jour</string>
+    <string name="pj_widget_streak_label">Série de jours</string>
+    <string name="pj_widget_streak_description">Vos jours d\'affilée à tout terminer, et votre record</string>
     <string name="pj_widget_open_app">Ouvrez Petite Jérusalem pour préparer le widget</string>
 </resources>

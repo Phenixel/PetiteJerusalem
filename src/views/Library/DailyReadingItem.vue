@@ -35,6 +35,12 @@ const props = defineProps<{
   withRashi?: boolean;
   /** D'où le texte est lu, pour la mesure d'audience (le chnei mikra a deux entrées). */
   source?: string;
+  /**
+   * Daf hayomi : ne garder du traité que ces faces de daf (« 12a », « 12b »),
+   * dans la numérotation des blocs du fichier. Le chapitre qui les porte
+   * s'affiche seul, sans sa coche de chapitre : c'est le daf qu'on coche.
+   */
+  dafFilter?: string[];
 }>();
 const emit = defineEmits<{
   "toggle-section": [index: number];
@@ -58,6 +64,29 @@ const content = ref<TextContent | null>(null);
 // whole (Tehilim, a full parasha) don't need them.
 const showVerseNumbers = computed(() => (props.entry.totalSections ?? 1) > 1);
 const isMultiSection = computed(() => (content.value?.sections.length ?? 0) > 1);
+
+/**
+ * Les sections affichées : toutes, ou, pour le daf du jour, le seul chapitre
+ * qui porte le daf, réduit à ses deux faces. Un daf que le fichier n'a pas
+ * (Kinnim, Tamid et Middot suivent une autre pagination) laisse la liste
+ * vide : la page le dit plutôt que d'afficher un chapitre entier.
+ */
+const sections = computed<TextSection[]>(() => {
+  const all = content.value?.sections ?? [];
+  const wanted = props.dafFilter;
+  if (!wanted?.length) return all;
+  const keep = new Set(wanted);
+  return all.flatMap((section) => {
+    const blocks = (section.dafBlocks ?? []).filter((block) => keep.has(block.daf));
+    if (blocks.length === 0) return [];
+    return [{ ...section, dafBlocks: blocks, he: blocks.flatMap((block) => block.lines) }];
+  });
+});
+const dafMissing = computed(
+  () => Boolean(props.dafFilter?.length) && content.value !== null && sections.value.length === 0,
+);
+// La coche par chapitre n'a pas de sens sur un seul daf : le daf se coche entier.
+const showSectionControls = computed(() => isMultiSection.value && !props.dafFilter?.length);
 
 const readSet = computed(() => new Set(props.readSections ?? []));
 
@@ -293,6 +322,11 @@ onUnmounted(() => observer?.disconnect());
       </button>
     </p>
 
+    <p v-else-if="dafMissing" class="py-2 text-sm text-text-secondary flex items-center gap-1.5">
+      <AppIcon name="info" :size="14" class="text-text-secondary/60" />
+      {{ t("dailyReading.options.dafYomiMissing") }}
+    </p>
+
     <div v-else-if="content" class="space-y-6">
       <!-- Marque-pages posés dans cette lecture : retour direct au verset -->
       <div v-if="bookmarks.length" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
@@ -319,7 +353,7 @@ onUnmounted(() => observer?.disconnect());
         {{ t("chneiMikra.rashiUnavailable") }}
       </p>
 
-      <section v-for="section in content.sections" :key="section.index">
+      <section v-for="section in sections" :key="section.index">
         <!-- Chaptered texts: per-chapter header with its own "mark read". -->
         <div v-if="isMultiSection" class="mb-3 flex items-center justify-between gap-3">
           <p
@@ -333,6 +367,7 @@ onUnmounted(() => observer?.disconnect());
             {{ sectionLabel(section) }}
           </p>
           <button
+            v-if="showSectionControls"
             @click="onToggleSection(section, $event)"
             :class="[
               'inline-flex items-center gap-1.5 text-xs font-medium transition-colors shrink-0',

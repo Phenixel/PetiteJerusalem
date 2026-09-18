@@ -9,6 +9,8 @@ import {
   type TehilimCycle,
   type WeeklyParasha,
 } from "../services/dailyCycles";
+import { getDafYomi, type DafYomi } from "../services/dafYomi";
+import { localDayFrom, localDayKey } from "../services/dateService";
 
 /**
  * Le jour hébraïque courant, et ce qui en découle : les psaumes du cycle
@@ -79,6 +81,18 @@ export function useWeeklyParasha(options: DayClockOptions = {}): {
   const hebrewDay = useHebrewDay(options);
   const parasha = computed(() => getWeeklyParasha(hebrewDay.value.greg()));
   return { hebrewDay, parasha };
+}
+
+/**
+ * Le daf du jour, réactif au temps : à minuit, c'est le suivant. Le Daf
+ * hayomi suit le jour civil, comme le suivi de la lecture du jour, et non le
+ * jour hébraïque : pas de chkia ici, la clé scalaire est le jour civil local.
+ */
+export function useDafYomi(): ComputedRef<DafYomi | null> {
+  const now = useNow();
+  // L'horloge tique toutes les trente secondes ; le daf ne dépend que du jour.
+  const dayKey = computed(() => localDayKey(now.value));
+  return computed(() => getDafYomi(localDayFrom(dayKey.value) ?? new Date()));
 }
 
 /** La fonction de traduction, telle que vue-i18n la donne. */

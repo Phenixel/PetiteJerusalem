@@ -392,6 +392,7 @@ const WIDGET_RECEIVERS = [
     label: "lecture_shortcut",
     info: "widget_lecture_shortcut_info",
   },
+  { provider: "StreakWidgetProvider", label: "streak", info: "widget_streak_info" },
 ];
 
 let widgetManifest = readFileSync(manifestPath, "utf8");

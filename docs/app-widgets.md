@@ -1,6 +1,6 @@
 # Widgets d'écran d'accueil (Android / iOS)
 
-Huit widgets accompagnent l'app native, les mêmes sur Android et sur iOS.
+Neuf widgets accompagnent l'app native, les mêmes sur Android et sur iOS.
 Trois grands :
 
 - **Horaires** : la date hébraïque, le prochain zman du lieu de l'utilisateur
@@ -20,7 +20,7 @@ Trois grands :
   pourcentage et barre de progression, remise à zéro à minuit. Toucher le
   widget ouvre `/bibliotheque/lecture-du-jour`.
 
-S'y ajoutent cinq **raccourcis**, au plus petit format que l'écran d'accueil
+S'y ajoutent six **raccourcis**, au plus petit format que l'écran d'accueil
 propose, qui n'ouvrent chacun qu'une page :
 
 | Raccourci | Ouvre | Ce qu'il montre |
@@ -30,6 +30,7 @@ propose, qui n'ouvrent chacun qu'une page :
 | Tehilim | `/bibliotheque/tehilim` | le livre des Tehilim, idem |
 | Prochain horaire | `/horaires` | l'heure du prochain zman, en grand, et son nom en dessous |
 | Avancement de la lecture | `/bibliotheque/lecture-du-jour` | un anneau qui se remplit au fil des coches, et son pourcentage |
+| Série de jours | `/bibliotheque/lecture-du-jour` | la flamme et le nombre de jours d'affilée où tout a été fait, le record dessous (le dessin du bandeau du profil, `src/components/DailyStreakStats.vue`) |
 
 Les livres reprennent le dessin de `src/components/LibraryShelf.vue`, trait
 pour trait : reliure chaude, pli du dos, tranche de pages ivoire, cadre
@@ -142,6 +143,13 @@ widgets dont le payload a changé.
 - **Cas particulier** : un utilisateur dont la seule lecture est la paracha
   (chnei mikra hebdomadaire) est bien « configuré » ; la paracha devient alors
   la lecture, et c'est son avancement, hebdomadaire, qui remplit la barre.
+- **La série de jours** voyage dans le même payload `daily`, sous `streak`,
+  avec sa propre échéance : `current` ne vaut que jusqu'au minuit qui suit le
+  lendemain du dernier jour où tout a été fait (`src/services/dailyStreak.ts`).
+  Passé cet instant, le widget affiche zéro et `zeroLabel`, sans calendrier.
+  Les libellés (« 5 jours d'affilée », « Record : 12 ») arrivent déjà accordés.
+  Les actions du jour et les objectifs personnels comptent comme une lecture
+  chacun dans `items` : le widget de lecture les compte sans les distinguer.
 
 ## Android : automatique
 

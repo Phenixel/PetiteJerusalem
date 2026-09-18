@@ -10,8 +10,8 @@ import { DEFAULT_PLACE } from "../services/zmanimService";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson } from "../models/models";
 
-const t = (key: string, params?: Record<string, unknown>) =>
-  params ? `${key}:${JSON.stringify(params)}` : key;
+const t = (key: string, params?: Record<string, unknown> | number) =>
+  params !== undefined ? `${key}:${JSON.stringify(params)}` : key;
 
 describe("buildZmanimWidgetPayload", () => {
   const now = new Date(2026, 7, 6, 10, 0); // 6 août 2026, 10h locale
@@ -152,6 +152,76 @@ describe("buildDailyReadingWidgetPayload", () => {
     expect(payload.configured).toBe(true);
     expect(payload.items).toEqual([]);
     expect(payload.parasha).toBeTruthy();
+  });
+
+  it("compte le daf du jour, les actions et les objectifs comme des lectures", () => {
+    const payload = buildDailyReadingWidgetPayload(
+      {
+        dailyReadingIds: [],
+        dailyReadingOptions: ["daf-yomi"],
+        dailyActions: ["chaharit", "tsedaka"],
+        dailyGoals: [{ id: "g-1", label: "Dix minutes de moussar", createdAt: 1 }],
+        dailyReadingProgress: {
+          date: today,
+          completedIds: [],
+          completedOptions: ["daf-yomi"],
+          completedActions: ["g-1"],
+        },
+      },
+      t,
+      now,
+    );
+    expect(payload.configured).toBe(true);
+    expect(payload.items.map((i) => i.key)).toEqual(["daf-yomi", "chaharit", "tsedaka", "g-1"]);
+    expect(payload.items.map((i) => i.done)).toEqual([true, false, false, true]);
+    // Le daf du jour est nommé avec son traité ; l'objectif garde ses mots.
+    expect(payload.items[0].label).toContain("dailyReading.options.dafYomiReading");
+    expect(payload.items[3].label).toBe("Dix minutes de moussar");
+  });
+
+  it("porte la série de jours, avec son échéance et ses libellés accordés", () => {
+    // Fait hier : la série tient encore aujourd'hui, jusqu'à minuit.
+    const payload = buildDailyReadingWidgetPayload(
+      {
+        dailyReadingIds: [Number(firstText.id)],
+        dailyReadingOptions: [],
+        dailyReadingProgress: {
+          date: "2026-08-05",
+          completedIds: [],
+          streak: { current: 4, best: 11, lastDate: "2026-08-05" },
+        },
+      },
+      t,
+      now,
+    );
+    expect(payload.streak.current).toBe(4);
+    expect(payload.streak.best).toBe(11);
+    expect(payload.streak.doneToday).toBe(false);
+    expect(payload.streak.expiresAt).toBe(new Date(2026, 7, 7, 0, 0).getTime());
+    expect(payload.streak.daysLabel).toBe("dailyReading.streak.widgetDays:4");
+    expect(payload.streak.bestLabel).toBe('dailyReading.streak.widgetBest:{"n":11}');
+    expect(payload.streak.zeroLabel).toBe("dailyReading.streak.widgetZero");
+  });
+
+  it("éteint la série rompue, et n'en a pas sans utilisateur", () => {
+    const broken = buildDailyReadingWidgetPayload(
+      {
+        dailyReadingIds: [],
+        dailyReadingOptions: [],
+        dailyReadingProgress: {
+          date: "2026-08-01",
+          completedIds: [],
+          streak: { current: 4, best: 11, lastDate: "2026-08-01" },
+        },
+      },
+      t,
+      now,
+    );
+    expect(broken.streak.current).toBe(0);
+    expect(broken.streak.best).toBe(11);
+    expect(broken.streak.expiresAt).toBe(0);
+    const anonymous = buildDailyReadingWidgetPayload(null, t, now);
+    expect(anonymous.streak).toMatchObject({ current: 0, best: 0, expiresAt: 0 });
   });
 
   it("une progression d'un autre jour repart de zéro", () => {

@@ -16,6 +16,8 @@ import { seoService } from "../services/seoService";
 import { SITE_URL } from "../config/site";
 import { localeOfPath, sectionPath } from "../content/seoLocales";
 import { localDayKey } from "../services/dateService";
+import { activeActionKeys } from "../services/dailyActions";
+import { streakStatus, type StreakStatus } from "../services/dailyStreak";
 import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
 import {
@@ -87,6 +89,7 @@ function dismissAccountCta() {
 const dashLoading = ref(false);
 const readingTotal = ref(0);
 const readingDone = ref(0);
+const readingStreak = ref<StreakStatus | null>(null);
 
 const firstName = computed(
   () => (user.value?.name ?? "").split(" ")[0] || user.value?.name || t("common.anonymousUser"),
@@ -100,15 +103,19 @@ const greeting = computed(() => {
 // hebdomadaire exclu, complétions intersectées avec les listes actives).
 function applyDashboardCounts(prefs: UserPreferences) {
   const progress = prefs.dailyReadingProgress;
-  const isToday = progress?.date === localDayKey();
+  const today = localDayKey();
+  const isToday = progress?.date === today;
   const counts = countDailyProgress({
     textIds: prefs.dailyReadingIds ?? [],
     options: prefs.dailyReadingOptions ?? [],
     completedTextIds: isToday ? (progress.completedIds ?? []) : [],
     completedOptions: isToday ? (progress.completedOptions ?? []) : [],
+    actions: activeActionKeys(prefs.dailyActions ?? [], prefs.dailyGoals ?? []),
+    completedActions: isToday ? (progress.completedActions ?? []) : [],
   });
   readingTotal.value = counts.total;
   readingDone.value = counts.done;
+  readingStreak.value = streakStatus(progress?.streak, today);
 }
 
 async function loadDashboard(u: User) {
@@ -265,6 +272,7 @@ onUnmounted(() => {
           <DailyReadingCard
             :done="readingDone"
             :total="readingTotal"
+            :streak="readingStreak"
             class="dash-card"
             @click="trackCard('daily_reading')"
           />
