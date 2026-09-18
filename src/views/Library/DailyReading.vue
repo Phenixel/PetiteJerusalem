@@ -1199,7 +1199,7 @@ const formatBookName = bookName;
               :aria-selected="activeTab === 'today'"
               @click="switchTab('today')"
               :class="[
-                'px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors',
+                'px-3.5 py-1.5 rounded-control text-sm font-medium transition-colors',
                 activeTab === 'today'
                   ? 'bg-primary text-white'
                   : 'text-text-secondary hover:text-text-primary',
@@ -1212,7 +1212,7 @@ const formatBookName = bookName;
               :aria-selected="activeTab === 'week'"
               @click="switchTab('week')"
               :class="[
-                'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors',
+                'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-control text-sm font-medium transition-colors',
                 activeTab === 'week'
                   ? 'bg-primary text-white'
                   : 'text-text-secondary hover:text-text-primary',

@@ -210,6 +210,16 @@ const en: LocaleMessages = {
       title: "Blessing of the moon",
       until: "To be said tonight, until {date}.",
     },
+    holiday: {
+      tichri: "Shana tova umetuka",
+      souccot: "Chag Sukkot sameach",
+      hanouka: "Chanukah sameach",
+      toubichvat: "Happy Tu BiShvat",
+      pourim: "Purim sameach",
+      pessah: "Chag Pesach kasher vesameach",
+      chavouot: "Chag Shavuot sameach",
+      hanoukaLights: "Night {n} of Chanukah: open the candle-lighting blessings",
+    },
     heroTitle: "Your digital spiritual center",
     heroDescription:
       "A modern platform dedicated to study, sharing and spiritual growth of the Jewish community.",
@@ -344,6 +354,9 @@ const en: LocaleMessages = {
       sunset: "Sunset",
       emerald: "Emerald",
     },
+    holidayThemesTitle: "Holiday themes",
+    holidayThemesHint:
+      "During a holiday, the app takes on its colors and ornaments, then returns to your theme.",
     fontsTitle: "Fonts",
     fontsDescription:
       "Choose the font for the texts you read and the Hebrew text font. Your choices apply wherever you read.",
@@ -511,8 +524,7 @@ const en: LocaleMessages = {
         "No start time: here the sun does not go low enough on that day for the opinion you follow to give dawn.",
       end: "Fast ends",
       noteDawn: "The fast begins at dawn (alot hashachar) and ends {end}.",
-      noteFirstborn:
-        "It binds firstborn sons only, and taking part in a siyum exempts them.",
+      noteFirstborn: "It binds firstborn sons only, and taking part in a siyum exempts them.",
       noteEve: "The fast begins at sunset the evening before and ends {end}.",
     },
     chametz: {

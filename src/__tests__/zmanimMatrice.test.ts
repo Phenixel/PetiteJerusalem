@@ -158,8 +158,7 @@ describe("la matrice de l'audit", () => {
               const hd = hebrewDayOf(place, day);
               const rest = restPeriodAt(place, hd, "fr");
               if (rest) {
-                const asDay = (date: Date | null) =>
-                  date ? formatMarkerDay(date, "fr") : "-";
+                const asDay = (date: Date | null) => (date ? formatMarkerDay(date, "fr") : "-");
                 compare(
                   `${label}|rest`,
                   [

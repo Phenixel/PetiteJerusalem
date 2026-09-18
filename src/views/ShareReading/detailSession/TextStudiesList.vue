@@ -216,7 +216,7 @@ const handleCardClick = (card: TextCard) => {
         >
           <!-- En-tête du texte -->
           <div
-            class="p-5 rounded-t-2xl transition-colors"
+            class="p-5 rounded-t-card transition-colors"
             :class="{
               'cursor-pointer hover:bg-black/[0.03] dark:hover:bg-white/5':
                 (!card.single && !card.expanded) || (card.single && !card.single.locked),
@@ -400,7 +400,7 @@ const handleCardClick = (card: TextCard) => {
               <div
                 v-for="row in card.rows"
                 :key="row.chapter"
-                class="flex items-center justify-between py-2.5 px-3 rounded-lg transition-colors cursor-pointer select-none"
+                class="flex items-center justify-between py-2.5 px-3 rounded-sm transition-colors cursor-pointer select-none"
                 :class="{
                   'bg-green-600/5 hover:bg-green-600/10 dark:bg-green-500/10 dark:hover:bg-green-500/15':
                     row.completed,

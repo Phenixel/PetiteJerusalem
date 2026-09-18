@@ -30,7 +30,10 @@ const currentUser = ref<User | null>(null);
 const showAuthPrompt = ref(false);
 
 const textStudyTypes = TextTypeService.getAllTypes();
-const typeOptions = textStudyTypes.map((type) => ({ value: String(type.value), label: type.label }));
+const typeOptions = textStudyTypes.map((type) => ({
+  value: String(type.value),
+  label: type.label,
+}));
 
 const sessionData = reactive({
   name: "",
@@ -304,7 +307,7 @@ const goBack = () => {
               <label
                 v-for="book in availableBooks"
                 :key="book"
-                class="inline-flex items-center cursor-pointer hover:bg-black/[0.04] px-1.5 py-1 rounded-lg transition-colors dark:hover:bg-white/5"
+                class="inline-flex items-center cursor-pointer hover:bg-black/[0.04] px-1.5 py-1 rounded-sm transition-colors dark:hover:bg-white/5"
               >
                 <input
                   type="checkbox"

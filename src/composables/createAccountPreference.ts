@@ -1,9 +1,13 @@
 import { ref, type Ref } from "vue";
-import { userPreferencesService, type GuestPreferences } from "../services/userPreferencesService";
+import {
+  userPreferencesService,
+  type GuestPreferences,
+  type UserPreferences,
+} from "../services/userPreferencesService";
 import { analyticsService } from "../services/analyticsService";
 
 /**
- * Un réglage qui suit le compte : thème, apparence, polices.
+ * Un réglage qui suit le compte : thème, apparence, polices, thèmes des fêtes.
  *
  * Les trois composables (useTheme, useFonts, useColorScheme) faisaient la
  * même chose en trois copies : charger pour un compte avec la copie locale
@@ -16,7 +20,10 @@ import { analyticsService } from "../services/analyticsService";
 
 export type PreferenceScope = "account" | "device";
 
-export interface AccountPreferenceSpec<T extends string> {
+/** Un réglage est une clé courte (un identifiant) ou un interrupteur. */
+export type PreferenceValue = string | boolean;
+
+export interface AccountPreferenceSpec<T extends PreferenceValue> {
   /** Le champ du document de préférences (et du réglage d'appareil). */
   field: keyof GuestPreferences;
   defaultValue: T;
@@ -31,7 +38,7 @@ export interface AccountPreferenceSpec<T extends string> {
   failedEventProps: (value: T, previous: T) => Record<string, unknown>;
 }
 
-export interface AccountPreference<T extends string> {
+export interface AccountPreference<T extends PreferenceValue> {
   current: Ref<T>;
   /** Réglage du compte : copie locale tout de suite, réponse du serveur ensuite. */
   loadForUser(userId: string): Promise<void>;
@@ -43,11 +50,11 @@ export interface AccountPreference<T extends string> {
    * Firestore et suit l'utilisateur. L'erreur du serveur remonte à l'appelant
    * une fois la valeur d'avant revenue à l'écran.
    */
-  set(userId: string | null, value: string): Promise<void>;
+  set(userId: string | null, value: T): Promise<void>;
   reset(): void;
 }
 
-export function createAccountPreference<T extends string>(
+export function createAccountPreference<T extends PreferenceValue>(
   spec: AccountPreferenceSpec<T>,
 ): AccountPreference<T> {
   const current = ref(spec.defaultValue) as Ref<T>;
@@ -98,7 +105,7 @@ export function createAccountPreference<T extends string>(
     analyticsService.capture(spec.eventName, spec.eventProps(value, previous, scope));
   }
 
-  async function set(userId: string | null, value: string): Promise<void> {
+  async function set(userId: string | null, value: T): Promise<void> {
     if (!spec.isValid(value)) return;
     const previous = current.value;
     version++;
@@ -106,7 +113,7 @@ export function createAccountPreference<T extends string>(
     if (!userId) {
       loadedForUserId = null;
       applyValue(value);
-      userPreferencesService.saveGuestPreferences({ [spec.field]: value });
+      userPreferencesService.saveGuestPreferences({ [spec.field]: value } as GuestPreferences);
       track(value, previous, "device");
       return;
     }
@@ -114,7 +121,9 @@ export function createAccountPreference<T extends string>(
     loadedForUserId = userId;
     applyValue(value);
     try {
-      await userPreferencesService.savePreferences(userId, { [spec.field]: value });
+      await userPreferencesService.savePreferences(userId, {
+        [spec.field]: value,
+      } as Partial<UserPreferences>);
       track(value, previous, "account");
     } catch (error) {
       // Le réglage revient à sa valeur d'avant sous les yeux de l'utilisateur :

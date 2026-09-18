@@ -33,6 +33,11 @@ export interface UserPreferences {
   theme: string;
   /** Apparence claire, sombre, ou celle du système, voir useColorScheme. */
   colorScheme: string;
+  /**
+   * Les thèmes des fêtes (couleurs, ornements et bouton des horaires le temps
+   * d'une fête, voir useHolidayTheme) : allumés d'office, à couper ici.
+   */
+  holidayThemes: boolean;
   /** Latin (UI) font choice, see LATIN_FONT_OPTIONS in useFonts. */
   fontLatin: string;
   /** Hebrew (reading) font choice, see HEBREW_FONT_OPTIONS in useFonts. */
@@ -98,6 +103,7 @@ export interface UserPreferences {
 const DEFAULT_PREFERENCES: UserPreferences = {
   theme: "sunset",
   colorScheme: "system",
+  holidayThemes: true,
   fontLatin: "manrope",
   fontHebrew: "frank",
   dailyReadingIds: [],
@@ -190,7 +196,7 @@ const GUEST_PREFS_KEY = "pj-preferences:guest";
 
 /** Champs réglables sans compte. */
 export type GuestPreferences = Partial<
-  Pick<UserPreferences, "theme" | "colorScheme" | "fontLatin" | "fontHebrew">
+  Pick<UserPreferences, "theme" | "colorScheme" | "holidayThemes" | "fontLatin" | "fontHebrew">
 >;
 
 function readGuestPreferences(): GuestPreferences | null {
@@ -428,6 +434,9 @@ class UserPreferencesService {
     if (data.theme === undefined && guest.theme !== undefined) adopted.theme = guest.theme;
     if (data.colorScheme === undefined && guest.colorScheme !== undefined) {
       adopted.colorScheme = guest.colorScheme;
+    }
+    if (data.holidayThemes === undefined && guest.holidayThemes !== undefined) {
+      adopted.holidayThemes = guest.holidayThemes;
     }
     if (data.fontLatin === undefined && guest.fontLatin !== undefined) {
       adopted.fontLatin = guest.fontLatin;

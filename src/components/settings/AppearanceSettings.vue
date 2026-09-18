@@ -5,7 +5,9 @@ import { useLocale } from "../../composables/useLocale";
 import { useTheme, type ThemeOption } from "../../composables/useTheme";
 import { useColorScheme, type ColorSchemeOption } from "../../composables/useColorScheme";
 import { ensureAllFontsLoaded, useFonts, type FontOption } from "../../composables/useFonts";
+import { useHolidayTheme } from "../../composables/useHolidayTheme";
 import AppIcon from "../icons/AppIcon.vue";
+import ToggleSwitch from "../ToggleSwitch.vue";
 
 /**
  * Les réglages d'apparence : langue, clair ou sombre, thème de couleurs,
@@ -38,6 +40,10 @@ const darkScheme = schemes.find((option) => option.id === "dark") ?? schemes[0];
 const { currentThemeId, themes, setTheme, previewTheme, cancelPreview } = useTheme();
 const { currentLatinId, currentHebrewId, latinFonts, hebrewFonts, setLatinFont, setHebrewFont } =
   useFonts();
+// Les thèmes des fêtes : un interrupteur, sous les thèmes choisis, et rien
+// de plus (voir useHolidayTheme). Les fêtes ne sont pas listées : le thème
+// arrive avec la fête, c'est une surprise, pas un catalogue.
+const { holidayThemesEnabled, setHolidayThemesEnabled } = useHolidayTheme();
 
 // Chaque option s'affiche dans sa propre police : les familles non embarquées
 // dans index.html n'arrivent qu'ici (voir useFonts).
@@ -67,6 +73,11 @@ const selectTheme = (theme: ThemeOption) => {
   if (theme.id === currentThemeId.value) return;
   previewingId.value = null;
   apply(() => setTheme(props.userId, theme.id));
+};
+
+const toggleHolidayThemes = (enabled: boolean) => {
+  if (enabled === holidayThemesEnabled.value) return;
+  apply(() => setHolidayThemesEnabled(props.userId, enabled));
 };
 
 const selectLatinFont = (font: FontOption) => {
@@ -156,7 +167,7 @@ onUnmounted(() => {
         <!-- Miroir de l'apparence : une page en réduction. « Système » montre
              les deux, coupées en diagonale. -->
         <span
-          class="relative block h-16 overflow-hidden rounded-sm ring-1 ring-black/5 sm:h-20 dark:ring-white/10"
+          class="relative block h-16 overflow-hidden rounded-xs ring-1 ring-black/5 sm:h-20 dark:ring-white/10"
           :style="{ backgroundColor: option.background }"
         >
           <span class="absolute inset-0 flex flex-col justify-center gap-1.5 p-3">
@@ -234,7 +245,7 @@ onUnmounted(() => {
         @mouseenter="onThemeEnter(theme.id)"
         @mouseleave="onThemeLeave"
       >
-        <span class="block overflow-hidden rounded-sm">
+        <span class="block overflow-hidden rounded-xs">
           <!-- En-tête coloré du thème : les deux couleurs du duo posées à
                plat, la seconde en bande sur le bord. Un dégradé les mélangeait
                en une troisième couleur qui n'existe nulle part dans l'app. -->
@@ -299,6 +310,29 @@ onUnmounted(() => {
       <AppIcon name="info" :size="14" />
       {{ t("profile.themeHint") }}
     </p>
+
+    <!-- Thèmes des fêtes : une ligne d'interrupteur, comme un réglage (pas
+         une carte, voir docs/design.md). Les fêtes ne sont pas listées : le
+         thème arrive avec la fête, c'est une surprise, pas un catalogue. -->
+    <ul class="mt-6 flex flex-col divide-y divide-line border-t border-line">
+      <li>
+        <label class="flex cursor-pointer items-center justify-between gap-3 py-3">
+          <span class="min-w-0">
+            <span class="block font-semibold text-text-primary">
+              {{ t("profile.holidayThemesTitle") }}
+            </span>
+            <span class="block text-sm leading-relaxed text-text-secondary">
+              {{ t("profile.holidayThemesHint") }}
+            </span>
+          </span>
+          <ToggleSwitch
+            :model-value="holidayThemesEnabled"
+            :label="t('profile.holidayThemesTitle')"
+            @update:model-value="toggleHolidayThemes"
+          />
+        </label>
+      </li>
+    </ul>
 
     <!-- Polices -->
     <h2 v-if="withDescriptions" class="mt-12 mb-2 text-2xl font-bold text-text-primary">

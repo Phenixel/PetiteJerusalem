@@ -31,6 +31,7 @@ vi.mock("../firebase/firestore", () => ({ db: {} }));
 import { userPreferencesService } from "../services/userPreferencesService";
 import { THEME_OPTIONS, useTheme } from "../composables/useTheme";
 import { useFonts } from "../composables/useFonts";
+import { refreshHolidayDay } from "../composables/useHolidayTheme";
 
 function snapshot(data: Record<string, unknown> | null) {
   return { exists: () => data !== null, data: () => data };
@@ -46,6 +47,9 @@ const emerald = THEME_OPTIONS.find((t) => t.id === "emerald")!;
 
 describe("réglages sans compte", () => {
   beforeEach(() => {
+    // Hors des fêtes : ici, c'est le thème choisi qu'on regarde (le thème de
+    // fête, qui passerait devant, a ses propres tests).
+    refreshHolidayDay(new Date("2026-11-02T12:00:00"));
     localStorage.clear();
     getDoc.mockReset();
     setDoc.mockReset();

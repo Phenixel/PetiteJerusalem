@@ -432,6 +432,65 @@ ne porte jamais un texte de lecture : des libellés courts, en demi-gras, et
 des titres. Le jour où il en portera un, c'est le jeton d'encre ci-dessus qu'il
 faudra, pas un thème plus terne.
 
+### Les thèmes des fêtes
+
+Le temps d'une fête, l'app change d'habit, puis retrouve le thème choisi. Un
+thème de fête ne se choisit pas : le calendrier le pose et le retire
+(`src/services/holidayThemes.ts`, `useHolidayTheme.ts`), et un seul
+interrupteur, dans les réglages d'apparence sous les thèmes, l'autorise ou
+non pour toutes les fêtes à la fois. Il est allumé d'office : c'est une
+attention, pas une option à découvrir ; qui n'en veut pas la coupe une fois.
+Les réglages ne listent pas les fêtes qui ont un thème, ni ne les montrent en
+aperçu : le thème arrive avec la fête, c'est une surprise, pas un catalogue.
+
+| Fête        | Période                                                  | `primary`                | `secondary`         | Bouton des horaires  | Ornements                  |
+| ----------- | -------------------------------------------------------- | ------------------------ | ------------------- | -------------------- | -------------------------- |
+| Tichri      | du 16 Eloul (deux semaines avant Roch Hachana) à Kippour | `#D8322F` rouge pomme    | `#D9A21B` miel      | une pomme            | un chofar, un pot de miel  |
+| Souccot     | du lendemain de Kippour au lendemain de Sim'hat Torah    | `#4E8A2E` vert loulav    | `#D9B324` étrog     | une soucca           | un loulav, un étrog        |
+| 'Hanouka    | les huit jours                                           | `#9F7A00` jaune moutarde | `#FFD23F` flamme    | une toupie           | un beignet, une 'hanoukkia |
+| Tou Bichvat | le jour même                                             | `#9A4FC0` violet figue   | `#79B043` feuille   | une figue            | une grappe, une figue      |
+| Pourim      | de la veille au lendemain                                | `#CC2E70` framboise      | `#F2B705` or        | une meguila          | une crécelle, un masque    |
+| Pessah      | d'une semaine avant au lendemain de la fête              | `#2A86A3` bleu de mer    | `#D8B570` matsa     | une matsa            | un verre de vin, une matsa |
+| Chavouot    | d'une semaine avant au lendemain de la fête              | `#3F72B8` bleuet         | `#D4A017` or du blé | les tables de la loi | un épi de blé, les tables  |
+
+Trois choses changent, pas une de plus :
+
+- **les couleurs** : le duo de la fête prend la place de `primary` et
+  `secondary`, partout où ils servent, widgets et montre compris. Les mêmes
+  bornes de lisibilité que les thèmes choisis s'appliquent (voir
+  « Lisibilité ») ; le vert de Souccot est pris plus franc et plus jaune que
+  l'émeraude, pour qu'on ne les confonde pas ;
+- **les ornements** : deux dessins par fête, dans le style des illustrations
+  des portes (`src/components/holiday`). En tête de l'accueil, de part et
+  d'autre d'un souhait ; à côté du nom du site dans le bandeau et en tête du
+  pied de page ; en blanc sur le bandeau du profil ; et, sur toutes les autres
+  pages, en filigrane dans les coins hauts (`HolidayBackdrop`), là où le mur
+  de pierre se voit, jamais sur une page de lecture. Toujours à même le fond,
+  jamais en carte : c'est une parure, pas une réponse ;
+- **le bouton rond des horaires** de l'app native, dont le rond prend la forme
+  d'un objet de la fête (une pomme, une soucca, `HolidayFabShape`), l'horloge
+  restant au milieu : c'est toujours le bouton des horaires, il a seulement
+  changé d'habit. C'est le bouton que tout le monde touche chaque jour, et
+  c'est là que la fête se voit d'abord.
+
+Ce qui passe devant quoi : le survol d'un thème dans les réglages, puis la
+fête en cours, puis le thème choisi. Le choix reste le choix
+pendant la fête, on le retrouve après. Une fenêtre se compte en jours civils,
+pas à la chkia : un thème qui change dans la nuit ne trompe personne, un thème
+qui changerait à 19 h 42 le ferait sous les yeux. Le lendemain de Kippour
+appartient à Souccot, le jour où l'on commence la soucca.
+
+À 'Hanouka, la 'hanoukkia de l'accueil est vivante (`HanoukkiaLive`) : elle
+porte autant de lumières que le soir en compte, la chkia faisant foi comme
+pour le compte du 'Omer, et la toucher ouvre le texte de l'allumage. Le jaune
+de 'Hanouka est pris en moutarde : un jaune vif ne tient pas en encre sur le
+blanc, alors la flamme, vive, est en seconde couleur, là où le jaune se voit.
+
+Les fêtes se comptent comme en diaspora quand le thème doit choisir (la fin
+de Souccot, de Pessah, de Chavouot) : le thème ne sait pas où l'on est, et un
+jour de plus ne gêne personne. Pourim est celui d'Adar II les années
+embolismiques.
+
 ### Ce que le jour ajoute dans une tefila
 
 Dans le lecteur de liturgie (`LiturgyText.vue`), `primary` sert d'encre à
@@ -494,11 +553,27 @@ qui fait lire un bouton comme un bouton.
 
 L'échelle numérique ne sert qu'aux surfaces : `rounded-lg` vaut 6 px, comme
 `.card` (c'est la valeur par défaut d'une surface), `rounded-xl` 8 px pour les
-fenêtres et les panneaux flottants, `rounded-sm` 3 px pour un aperçu posé dans
-une carte. Les commandes ne suivent pas cette échelle : elles prennent leurs
-alias. Un élément posé dans un autre prend le rayon du parent moins son
-rembourrage (une coque à 14 px avec 2 px de marge intérieure tient un bouton à
-12 px, arrondi ici à `rounded-control`).
+fenêtres et les panneaux flottants, `rounded-xs` 2 px pour un aperçu posé à
+quelques pixels du bord d'une carte. Les commandes ne suivent pas cette
+échelle : elles prennent leurs alias.
+
+### Deux arrondis emboîtés ne sont jamais égaux
+
+Un élément posé dans un autre prend le rayon du parent moins son rembourrage
+(une coque à 14 px avec 2 px de marge intérieure tient un bouton à 12 px,
+arrondi ici à `rounded-control` ; une carte à 6 px avec 4 px de marge tient un
+aperçu à 2 px). Deux courbes concentriques de même rayon ne sont pas
+parallèles : l'intérieure paraît plus ronde, et l'oeil le voit sans savoir
+pourquoi. La règle vaut pour ce qui **épouse** les angles du parent : la
+coque d'un groupe segmenté et ses boutons, l'en-tête d'une carte et son fond
+de survol, les lignes d'une liste posée dans une carte, un aperçu dans une
+carte.
+
+Elle ne vaut pas pour ce qui ne partage pas les angles : un bouton (14 px)
+posé au milieu d'une carte (6 px) garde son rayon de commande, c'est le
+contraste des deux familles qui le fait lire comme un bouton ; une pastille
+ou un rond (999 px) est rond partout, et deux ronds emboîtés sont toujours
+concentriques.
 
 ## 4. Les polices
 

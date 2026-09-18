@@ -18,6 +18,7 @@ vi.mock("../services/userPreferencesService", () => ({
 }));
 
 import { THEME_OPTIONS, useTheme } from "../composables/useTheme";
+import { refreshHolidayDay } from "../composables/useHolidayTheme";
 
 const emerald = THEME_OPTIONS.find((t) => t.id === "emerald")!;
 const ocean = THEME_OPTIONS.find((t) => t.id === "ocean")!;
@@ -30,6 +31,9 @@ function primaryColor() {
 
 describe("useTheme et la copie locale", () => {
   beforeEach(() => {
+    // Hors des fêtes : ici, c'est le thème choisi qu'on regarde (le thème de
+    // fête, qui passerait devant, a ses propres tests).
+    refreshHolidayDay(new Date("2026-11-02T12:00:00"));
     useTheme().resetTheme();
     getPreferences.mockReset();
     getCachedPreferences.mockReset();

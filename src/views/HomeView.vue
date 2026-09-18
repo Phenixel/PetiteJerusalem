@@ -32,6 +32,7 @@ import DailyReadingCard from "../components/DailyReadingCard.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
 import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
 import IllustrationBibliotheque from "../components/illustrations/IllustrationBibliotheque.vue";
+import HolidayGreeting from "../components/holiday/HolidayGreeting.vue";
 
 // Chargée à la demande : la carte tire le moteur de calcul des horaires
 // (@hebcal/core), qui pèse plus lourd que tout le bundle initial réuni. Elle
@@ -211,6 +212,10 @@ onUnmounted(() => {
 
 <template>
   <main class="flex-1 container mx-auto px-4 py-6 flex flex-col justify-center">
+    <!-- Le temps d'une fête : ses ornements et un souhait, en tête de page,
+         connecté ou non (voir HolidayGreeting). Rien le reste de l'année. -->
+    <HolidayGreeting class="mb-6 md:mb-8" />
+
     <!-- ===== Connecté : accueil personnalisé, hors carte ===== -->
     <template v-if="user">
       <!-- La salutation ne remplit qu'une demi-largeur : les raccourcis du

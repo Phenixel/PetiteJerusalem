@@ -24,11 +24,13 @@ import { authService } from "./services/authService";
 import { useTheme } from "./composables/useTheme";
 import { useFonts } from "./composables/useFonts";
 import { loadColorScheme, loadGuestColorScheme } from "./composables/useColorScheme";
+import { useHolidayTheme } from "./composables/useHolidayTheme";
 
 const route = useRoute();
 const router = useRouter();
 const { loadTheme, loadGuestTheme } = useTheme();
 const { loadFonts, loadGuestFonts } = useFonts();
+const { loadHolidayThemes, loadGuestHolidayThemes } = useHolidayTheme();
 
 // Introduction de première ouverture : chargée seulement pour qui ne l'a pas
 // encore vue (son chunk ne pèse rien pour les autres). Elle prend l'écran
@@ -43,6 +45,12 @@ const OnboardingFlow = defineAsyncComponent(
 // site web n'en embarque pas une ligne dans son chargement initial.
 const BottomTabBar = defineAsyncComponent(() => import("./components/BottomTabBar.vue"));
 const StatusBarScrim = defineAsyncComponent(() => import("./components/StatusBarScrim.vue"));
+// Le temps d'une fête, ses ornements en filigrane dans les coins de la page
+// (voir HolidayBackdrop) : partout où le mur de pierre se voit, sauf sur
+// l'accueil, qui porte déjà la fête en tête de page.
+const HolidayBackdrop = defineAsyncComponent(
+  () => import("./components/holiday/HolidayBackdrop.vue"),
+);
 const AppUpdateBanner = defineAsyncComponent(() => import("./components/AppUpdateBanner.vue"));
 const OfflineNotice = defineAsyncComponent(() => import("./components/OfflineNotice.vue"));
 
@@ -119,6 +127,7 @@ const chromePadClass = computed(() => {
 loadGuestTheme();
 loadGuestFonts();
 loadGuestColorScheme();
+loadGuestHolidayThemes();
 
 // Le jour d'ouverture, pour la relance du formulaire de support (« Tout se
 // passe bien ? », sur l'accueil après quelques jours d'usage). Dans l'app, les
@@ -138,11 +147,13 @@ authService.onAuthChanged((user) => {
     loadTheme(user.id);
     loadFonts(user.id);
     void loadColorScheme(user.id);
+    void loadHolidayThemes(user.id);
   } else {
     // Sans compte (ou déconnecté) : les réglages de l'appareil.
     loadGuestTheme();
     loadGuestFonts();
     loadGuestColorScheme();
+    loadGuestHolidayThemes();
   }
 });
 </script>
@@ -155,6 +166,7 @@ authService.onAuthChanged((user) => {
     :class="chromePadClass"
   >
     <StoneWallBackground v-show="showStoneWall" />
+    <HolidayBackdrop v-if="showStoneWall && !isHome" />
     <Navbar />
     <!-- App native seulement : ne s'affiche que si le binaire installé est
          antérieur à la version publiée sur le store (appUpdateService). -->

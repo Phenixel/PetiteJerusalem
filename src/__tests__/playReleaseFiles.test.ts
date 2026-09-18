@@ -1,7 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { PHONE_AAB, WEAR_AAB, playReleaseFiles, shipWatchAppsFromEnv } from "../../scripts/play-release-files.mjs";
+import {
+  PHONE_AAB,
+  WEAR_AAB,
+  playReleaseFiles,
+  shipWatchAppsFromEnv,
+} from "../../scripts/play-release-files.mjs";
 
 /**
  * Deux pièges vivent dans le champ `releaseFiles` de la publication Play, et
@@ -60,7 +65,9 @@ describe("le workflow de publication Android", () => {
   const workflow = readFileSync(WORKFLOW, "utf8");
 
   it("passe la valeur calculée à l'action, sans la réécrire à la main", () => {
-    const line = workflow.split("\n").find((candidate) => candidate.trim().startsWith("releaseFiles:"));
+    const line = workflow
+      .split("\n")
+      .find((candidate) => candidate.trim().startsWith("releaseFiles:"));
     expect(line, `aucun « releaseFiles: » dans ${WORKFLOW}`).toBeDefined();
     expect(line!.trim()).toBe("releaseFiles: ${{ steps.aabs.outputs.files }}");
   });

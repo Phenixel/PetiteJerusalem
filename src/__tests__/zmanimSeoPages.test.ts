@@ -221,8 +221,7 @@ describe("zmanimSeoPages pages par ville", () => {
     expect(noteOf("tel-aviv")).toContain("20 minutes avant le coucher du soleil");
     expect(noteOf("lyon")).not.toContain("l'usage est d'allumer");
 
-    const cityPlace = (slug: string) =>
-      placeFromCity(findCityBySlug(citiesJson as City[], slug)!);
+    const cityPlace = (slug: string) => placeFromCity(findCityBySlug(citiesJson as City[], slug)!);
     expect(localCandleLightingMinutes(cityPlace("jerusalem"))).toBe(40);
     expect(localCandleLightingMinutes(cityPlace("haifa"))).toBe(30);
     expect(localCandleLightingMinutes(cityPlace("tel-aviv"))).toBe(20);

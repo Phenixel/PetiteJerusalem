@@ -110,6 +110,8 @@ describe("i18n usage", () => {
       // Le formulaire de support : type de demande et contexte joint.
       "feedback.context.",
       "feedback.kinds.",
+      // Le souhait de la fête en cours sur l'accueil (voir HolidayGreeting).
+      "home.holiday.",
       "home.sidourNow.names.",
       "moderation.reasons.",
       "occasions.kinds.",

@@ -7,6 +7,8 @@ import type { IconName } from "./icons/registry";
 import { analyticsService } from "../services/analyticsService";
 import { authService } from "../services/authService";
 import { setRevealOrigin } from "../composables/useRevealOrigin";
+import { useHolidayTheme } from "../composables/useHolidayTheme";
+import HolidayFabShape from "./holiday/HolidayFabShape.vue";
 import { useLocalePath } from "../composables/useLocalePath";
 import { isSectionPath } from "../content/seoLocales";
 
@@ -87,6 +89,12 @@ const tabs = computed<Tab[]>(() => [
 
 const zmanimPath = computed(() => localePath("horaires"));
 
+// Le temps d'une fête, le rond prend la forme d'un objet de la fête (la
+// pomme de Roch Hachana, la soucca), l'horloge restant au milieu : c'est le
+// seul bouton que tout le monde touche tous les jours, et c'est là que la
+// fête se voit d'abord (voir useHolidayTheme, HolidayFabShape).
+const { activeHolidayTheme } = useHolidayTheme();
+
 // Onglet dont l'icône s'anime. Remis à null d'abord pour que l'animation
 // reparte même en retouchant l'onglet déjà actif.
 const poppedTab = ref<string | null>(null);
@@ -136,7 +144,9 @@ function toggleZmanim(event: MouseEvent) {
         <RouterLink
           :to="tab.to"
           class="tab-item"
-          :class="tab.activeOn?.some((prefix) => route.path.startsWith(prefix)) ? 'tab-item-active' : ''"
+          :class="
+            tab.activeOn?.some((prefix) => route.path.startsWith(prefix)) ? 'tab-item-active' : ''
+          "
           :exact-active-class="tab.exact ? 'tab-item-active' : 'tab-item-noop'"
           :active-class="tab.exact ? 'tab-item-noop' : 'tab-item-active'"
           @click="popIcon(tab.to)"
@@ -155,14 +165,15 @@ function toggleZmanim(event: MouseEvent) {
       <button
         type="button"
         class="zmanim-fab"
-        :class="{ 'zmanim-fab-active': onZmanim }"
+        :class="{ 'zmanim-fab-active': onZmanim, 'zmanim-fab-shaped': activeHolidayTheme }"
         :aria-label="t('zmanim.title')"
         :title="t('zmanim.title')"
         :aria-pressed="onZmanim"
         @click="toggleZmanim"
       >
+        <HolidayFabShape v-if="activeHolidayTheme" :theme="activeHolidayTheme.id" />
         <span
-          class="tab-icon"
+          class="tab-icon relative"
           :class="poppedTab === zmanimPath ? 'tab-icon-pop' : ''"
           @animationend="poppedTab = null"
         >
@@ -219,6 +230,18 @@ function toggleZmanim(event: MouseEvent) {
   box-shadow:
     0 6px 18px color-mix(in srgb, var(--color-primary) 45%, transparent),
     0 0 0 3px color-mix(in srgb, var(--color-primary) 28%, transparent);
+}
+/* Le temps d'une fête, le rond s'efface derrière la forme de l'objet
+   (HolidayFabShape), qui porte l'ombre à sa place ; l'état ouvert se lit
+   alors par un halo autour de la forme, l'anneau du rond n'ayant plus de
+   rond à entourer. */
+.zmanim-fab-shaped {
+  background-color: transparent;
+  box-shadow: none;
+}
+.zmanim-fab-shaped.zmanim-fab-active :deep(.fab-shape) {
+  filter: drop-shadow(0 6px 10px color-mix(in srgb, var(--color-primary) 45%, transparent))
+    drop-shadow(0 0 3px color-mix(in srgb, var(--color-primary) 55%, transparent));
 }
 
 /* Accueil : la maison gonfle d'aise, on arrive chez soi. */
