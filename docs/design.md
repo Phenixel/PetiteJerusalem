@@ -443,15 +443,15 @@ attention, pas une option à découvrir ; qui n'en veut pas la coupe une fois.
 Les réglages ne listent pas les fêtes qui ont un thème, ni ne les montrent en
 aperçu : le thème arrive avec la fête, c'est une surprise, pas un catalogue.
 
-| Fête        | Période                                                  | `primary`              | `secondary`       | Bouton des horaires  | Ornements                  |
-| ----------- | -------------------------------------------------------- | ---------------------- | ----------------- | -------------------- | -------------------------- |
-| Tichri      | du 16 Eloul (deux semaines avant Roch Hachana) à Kippour | `#D8322F` rouge pomme  | `#D9A21B` miel    | une pomme            | un chofar, un pot de miel  |
-| Souccot     | du lendemain de Kippour au lendemain de Sim'hat Torah    | `#4E8A2E` vert loulav  | `#D9B324` étrog   | une soucca           | un loulav, un étrog        |
-| 'Hanouka    | les huit jours                                           | `#4F63D9` indigo       | `#F2A93B` flamme  | un beignet           | une toupie, une 'hanoukkia |
-| Tou Bichvat | le jour même                                             | `#9A4FC0` violet figue | `#79B043` feuille | une figue            | une grappe, une figue      |
-| Pourim      | de la veille au lendemain                                | `#CC2E70` framboise    | `#F2B705` or      | une meguila          | une crécelle, un masque    |
-| Pessah      | d'une semaine avant au lendemain de la fête              | `#2A86A3` bleu de mer  | `#D8B570` matsa   | une matsa            | un verre de vin, une matsa |
-| Chavouot    | d'une semaine avant au lendemain de la fête              | `#A06D12` or du blé    | `#4A7FC1` bleuet  | les tables de la loi | un épi de blé, les tables  |
+| Fête        | Période                                                  | `primary`                | `secondary`         | Bouton des horaires  | Ornements                  |
+| ----------- | -------------------------------------------------------- | ------------------------ | ------------------- | -------------------- | -------------------------- |
+| Tichri      | du 16 Eloul (deux semaines avant Roch Hachana) à Kippour | `#D8322F` rouge pomme    | `#D9A21B` miel      | une pomme            | un chofar, un pot de miel  |
+| Souccot     | du lendemain de Kippour au lendemain de Sim'hat Torah    | `#4E8A2E` vert loulav    | `#D9B324` étrog     | une soucca           | un loulav, un étrog        |
+| 'Hanouka    | les huit jours                                           | `#9F7A00` jaune moutarde | `#FFD23F` flamme    | une toupie           | un beignet, une 'hanoukkia |
+| Tou Bichvat | le jour même                                             | `#9A4FC0` violet figue   | `#79B043` feuille   | une figue            | une grappe, une figue      |
+| Pourim      | de la veille au lendemain                                | `#CC2E70` framboise      | `#F2B705` or        | une meguila          | une crécelle, un masque    |
+| Pessah      | d'une semaine avant au lendemain de la fête              | `#2A86A3` bleu de mer    | `#D8B570` matsa     | une matsa            | un verre de vin, une matsa |
+| Chavouot    | d'une semaine avant au lendemain de la fête              | `#3F72B8` bleuet         | `#D4A017` or du blé | les tables de la loi | un épi de blé, les tables  |
 
 Trois choses changent, pas une de plus :
 
@@ -479,6 +479,12 @@ pendant la fête, on le retrouve après. Une fenêtre se compte en jours civils,
 pas à la chkia : un thème qui change dans la nuit ne trompe personne, un thème
 qui changerait à 19 h 42 le ferait sous les yeux. Le lendemain de Kippour
 appartient à Souccot, le jour où l'on commence la soucca.
+
+À 'Hanouka, la 'hanoukkia de l'accueil est vivante (`HanoukkiaLive`) : elle
+porte autant de lumières que le soir en compte, la chkia faisant foi comme
+pour le compte du 'Omer, et la toucher ouvre le texte de l'allumage. Le jaune
+de 'Hanouka est pris en moutarde : un jaune vif ne tient pas en encre sur le
+blanc, alors la flamme, vive, est en seconde couleur, là où le jaune se voit.
 
 Les fêtes se comptent comme en diaspora quand le thème doit choisir (la fin
 de Souccot, de Pessah, de Chavouot) : le thème ne sait pas où l'on est, et un
@@ -547,11 +553,27 @@ qui fait lire un bouton comme un bouton.
 
 L'échelle numérique ne sert qu'aux surfaces : `rounded-lg` vaut 6 px, comme
 `.card` (c'est la valeur par défaut d'une surface), `rounded-xl` 8 px pour les
-fenêtres et les panneaux flottants, `rounded-sm` 3 px pour un aperçu posé dans
-une carte. Les commandes ne suivent pas cette échelle : elles prennent leurs
-alias. Un élément posé dans un autre prend le rayon du parent moins son
-rembourrage (une coque à 14 px avec 2 px de marge intérieure tient un bouton à
-12 px, arrondi ici à `rounded-control`).
+fenêtres et les panneaux flottants, `rounded-xs` 2 px pour un aperçu posé à
+quelques pixels du bord d'une carte. Les commandes ne suivent pas cette
+échelle : elles prennent leurs alias.
+
+### Deux arrondis emboîtés ne sont jamais égaux
+
+Un élément posé dans un autre prend le rayon du parent moins son rembourrage
+(une coque à 14 px avec 2 px de marge intérieure tient un bouton à 12 px,
+arrondi ici à `rounded-control` ; une carte à 6 px avec 4 px de marge tient un
+aperçu à 2 px). Deux courbes concentriques de même rayon ne sont pas
+parallèles : l'intérieure paraît plus ronde, et l'oeil le voit sans savoir
+pourquoi. La règle vaut pour ce qui **épouse** les angles du parent : la
+coque d'un groupe segmenté et ses boutons, l'en-tête d'une carte et son fond
+de survol, les lignes d'une liste posée dans une carte, un aperçu dans une
+carte.
+
+Elle ne vaut pas pour ce qui ne partage pas les angles : un bouton (14 px)
+posé au milieu d'une carte (6 px) garde son rayon de commande, c'est le
+contraste des deux familles qui le fait lire comme un bouton ; une pastille
+ou un rond (999 px) est rond partout, et deux ronds emboîtés sont toujours
+concentriques.
 
 ## 4. Les polices
 

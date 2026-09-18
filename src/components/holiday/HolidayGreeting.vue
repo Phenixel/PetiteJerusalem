@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import { defineAsyncComponent } from "vue";
 import { useHolidayTheme } from "../../composables/useHolidayTheme";
 import { HOLIDAY_ORNAMENTS } from "./ornaments";
+
+// À 'Hanouka, l'ornement de droite est une 'hanoukkia vivante : elle porte
+// les lumières du soir et mène au texte de l'allumage. Chargée à la demande,
+// elle tire le moteur d'horaires (la chkia décide du soir qu'il est).
+const HanoukkiaLive = defineAsyncComponent(() => import("./HanoukkiaLive.vue"));
 
 /**
  * La fête sur l'accueil : ses ornements de part et d'autre d'un souhait
@@ -29,7 +35,13 @@ const { activeHolidayTheme } = useHolidayTheme();
     <span class="font-display text-xl font-bold tracking-tight md:text-3xl">
       {{ t(`home.holiday.${activeHolidayTheme.id}`) }}
     </span>
-    <span class="block h-11 w-11 shrink-0 md:h-14 md:w-14">
+    <span
+      v-if="activeHolidayTheme.id === 'hanouka'"
+      class="block h-12 w-12 shrink-0 md:h-16 md:w-16"
+    >
+      <HanoukkiaLive />
+    </span>
+    <span v-else class="block h-11 w-11 shrink-0 md:h-14 md:w-14">
       <component :is="HOLIDAY_ORNAMENTS[activeHolidayTheme.id][1]" />
     </span>
   </p>

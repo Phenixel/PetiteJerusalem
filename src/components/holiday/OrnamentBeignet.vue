@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// La toupie de 'Hanouka : le corps à facettes, sa pointe en bas, son manche
-// en haut, et une lettre sur chaque face visible. Les lettres et les éclats
-// du mouvement prennent la seconde couleur. À l'arrivée, elle se pose.
+// Le beignet de 'Hanouka : la boule, le sucre glace qui la coiffe, et la
+// confiture qui perle au sommet, à la seconde couleur. À l'arrivée, il se
+// pose.
 </script>
 
 <template>
@@ -16,17 +16,12 @@
     class="illu"
   >
     <g class="pose">
-      <path d="M29 4h6" />
-      <path d="M32 4v10" />
-      <path d="M17 14h30v20L32 56 17 34z" />
-      <path d="M32 14v42" />
-      <path class="accent" d="M23 22v9" />
-      <path class="accent" d="M23 31h4" />
-      <path class="accent" d="M40 22c2 1 3 3 3 6v3" />
-      <path class="accent" d="m8 22-4-3" />
-      <path class="accent" d="m8 32-4 1" />
-      <path class="accent" d="m56 22 4-3" />
-      <path class="accent" d="m56 32 4 1" />
+      <circle cx="32" cy="36" r="22" />
+      <path d="M12 32c6-5 12-8 20-8s14 3 20 8" />
+      <path class="accent" d="M22 28h.01" />
+      <path class="accent" d="M32 25h.01" />
+      <path class="accent" d="M42 28h.01" />
+      <path class="accent" d="M27 20c0-3 2-5 5-5s5 2 5 5-2 4-5 4-5-1-5-4z" />
     </g>
   </svg>
 </template>

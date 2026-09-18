@@ -223,6 +223,7 @@ const fr = {
       pourim: "Pourim saméah",
       pessah: "Pessah cachère vésaméah",
       chavouot: "Hag Chavouot saméah",
+      hanoukaLights: "{n}e soir de Hanouka\u00a0: ouvrir les bénédictions de l'allumage",
     },
     heroTitle: "Étudier et partager la Torah, à plusieurs",
     heroDescription:

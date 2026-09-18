@@ -218,6 +218,7 @@ const en: LocaleMessages = {
       pourim: "Purim sameach",
       pessah: "Chag Pesach kasher vesameach",
       chavouot: "Chag Shavuot sameach",
+      hanoukaLights: "Night {n} of Chanukah: open the candle-lighting blessings",
     },
     heroTitle: "Your digital spiritual center",
     heroDescription:

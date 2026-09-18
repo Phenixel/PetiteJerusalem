@@ -43,20 +43,22 @@ export interface HolidayTheme {
  * - Tichri : le rouge de la pomme qu'on trempe dans le miel, et le miel.
  * - Souccot : le vert des feuilles du loulav (plus franc et plus jaune que
  *   l'émeraude des thèmes choisis, qui tire sur le bleu), et l'étrog.
- * - 'Hanouka : l'indigo de la toupie, et la flamme des lumières.
+ * - 'Hanouka : le jaune des lumières, pris en moutarde pour rester lisible en
+ *   encre (un jaune vif ne passe pas sur le blanc), et la flamme, vive, en
+ *   seconde couleur, là où le jaune se voit.
  * - Tou Bichvat : le violet de la figue et du raisin, et la feuille.
  * - Pourim : la framboise du masque, et son or.
  * - Pessah : le bleu de la mer qui s'ouvre, et la matsa.
- * - Chavouot : l'or du blé de la moisson, et le bleuet des champs.
+ * - Chavouot : le bleuet des champs, et l'or du blé de la moisson.
  */
 export const HOLIDAY_THEMES: HolidayTheme[] = [
   { id: "tichri", primary: "#D8322F", secondary: "#D9A21B" },
   { id: "souccot", primary: "#4E8A2E", secondary: "#D9B324" },
-  { id: "hanouka", primary: "#4F63D9", secondary: "#F2A93B" },
+  { id: "hanouka", primary: "#9F7A00", secondary: "#FFD23F" },
   { id: "toubichvat", primary: "#9A4FC0", secondary: "#79B043" },
   { id: "pourim", primary: "#CC2E70", secondary: "#F2B705" },
   { id: "pessah", primary: "#2A86A3", secondary: "#D8B570" },
-  { id: "chavouot", primary: "#A06D12", secondary: "#4A7FC1" },
+  { id: "chavouot", primary: "#3F72B8", secondary: "#D4A017" },
 ];
 
 export function holidayThemeById(id: string): HolidayTheme | null {

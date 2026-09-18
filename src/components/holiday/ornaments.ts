@@ -4,7 +4,7 @@ import OrnamentChofar from "./OrnamentChofar.vue";
 import OrnamentMiel from "./OrnamentMiel.vue";
 import OrnamentLoulav from "./OrnamentLoulav.vue";
 import OrnamentEtrog from "./OrnamentEtrog.vue";
-import OrnamentToupie from "./OrnamentToupie.vue";
+import OrnamentBeignet from "./OrnamentBeignet.vue";
 import OrnamentHanoukkia from "./OrnamentHanoukkia.vue";
 import OrnamentFigue from "./OrnamentFigue.vue";
 import OrnamentRaisin from "./OrnamentRaisin.vue";
@@ -16,7 +16,7 @@ import OrnamentTables from "./OrnamentTables.vue";
 import OrnamentBle from "./OrnamentBle.vue";
 import FabPomme from "./fab/FabPomme.vue";
 import FabSoucca from "./fab/FabSoucca.vue";
-import FabBeignet from "./fab/FabBeignet.vue";
+import FabToupie from "./fab/FabToupie.vue";
 import FabFigue from "./fab/FabFigue.vue";
 import FabMeguila from "./fab/FabMeguila.vue";
 import FabMatsa from "./fab/FabMatsa.vue";
@@ -35,7 +35,7 @@ import FabTables from "./fab/FabTables.vue";
 export const HOLIDAY_ORNAMENTS: Record<HolidayThemeId, [Component, Component]> = {
   tichri: [OrnamentChofar, OrnamentMiel],
   souccot: [OrnamentLoulav, OrnamentEtrog],
-  hanouka: [OrnamentToupie, OrnamentHanoukkia],
+  hanouka: [OrnamentBeignet, OrnamentHanoukkia],
   toubichvat: [OrnamentRaisin, OrnamentFigue],
   pourim: [OrnamentCrecelle, OrnamentMasque],
   pessah: [OrnamentVin, OrnamentMatsa],
@@ -52,7 +52,7 @@ export const HOLIDAY_ORNAMENTS: Record<HolidayThemeId, [Component, Component]> =
 export const HOLIDAY_FAB_SHAPES: Record<HolidayThemeId, { shape: Component; top: string }> = {
   tichri: { shape: FabPomme, top: "-1.05rem" },
   souccot: { shape: FabSoucca, top: "-1.35rem" },
-  hanouka: { shape: FabBeignet, top: "-1.05rem" },
+  hanouka: { shape: FabToupie, top: "-0.8rem" },
   toubichvat: { shape: FabFigue, top: "-1.05rem" },
   pourim: { shape: FabMeguila, top: "-0.98rem" },
   pessah: { shape: FabMatsa, top: "-0.9rem" },
