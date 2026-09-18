@@ -690,6 +690,9 @@ await page.evaluate(() => {
   localStorage.setItem("petite-jerusalem-locale", "fr");
   localStorage.setItem("pj_analytics_consent", "denied");
   localStorage.setItem("pj_onboarding_seen", "1");
+  // Les astuces des pages (horaires, lecture) non plus : elles ne se montrent
+  // qu'à qui n'a pas encore vu la page, pas sur une capture.
+  localStorage.setItem("pj_tips_seen", JSON.stringify(["zmanim-reminder", "reading-menu"]));
 });
 
 let count = 0;

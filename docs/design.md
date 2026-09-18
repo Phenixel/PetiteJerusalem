@@ -107,6 +107,43 @@ bibliothèque ne propose que la dernière : la refermer la fait disparaître, el
 ne remonte pas l'historique texte par texte (chaque texte, lui, rouvre toujours
 là où on l'avait laissé).
 
+### Une astuce se joue sur la page, une fois
+
+L'introduction dit ce que l'app contient ; elle ne peut pas dire comment
+chaque écran se manie. Une ligne d'horaire qui se tire pour poser un rappel,
+le bouton rond d'une page de lecture qui ouvre le sommaire et les réglages :
+personne ne devine un geste, et une commande qu'on ne connaît pas ne sert à
+personne. Ces deux-là avaient été expliquées nulle part, et donc jamais
+employées.
+
+L'astuce se joue donc **là où la commande est**, la première fois qu'on
+arrive sur la page (`FeatureTour.vue`, `useFeatureTips`) : un voile assombrit
+la page, un projecteur découpe la commande, un liseré de la couleur du thème
+respire autour, et une bulle avec sa flèche dit en deux phrases ce qu'elle
+fait. Quatre règles la tiennent :
+
+- **la commande reste vivante sous le projecteur.** Le voile n'est pas peint
+  à cet endroit : la toucher fait ce qu'elle fait d'habitude, et l'astuce
+  passe au pas suivant ou s'en va, on a compris. Elle **montre** aussi quand
+  elle le peut : sur les horaires, la première ligne se tire toute seule sur
+  sa cloche et revient, le temps de l'astuce ; sur une lecture, le second pas
+  ouvre le panneau pour éclairer le rond des réglages ;
+- **elle se passe d'un geste** : « Passer », le voile, Échap ou le retour
+  Android. « Suivant » ou « Compris » la mènent au bout. Jamais plus de deux
+  ou trois pas ;
+- **une fois par appareil.** Montrée, elle est notée vue (dans les deux
+  stockages, voir docs/app-native.md), même si l'on quitte la page au
+  milieu : une astuce qui revient n'est plus une aide. « Revoir les astuces »
+  (onglet À propos) les remet en jeu, page par page ;
+- **jamais par-dessus autre chose** : ni l'introduction, ni une fenêtre
+  ouverte, ni une commande hors de l'écran ; et elle attend que la page se
+  soit posée.
+
+App native seulement, comme l'introduction : un visiteur du site arrive par
+une page précise et une bulle en travers de ce qu'il vient lire serait une
+gêne. `?tips` dans l'adresse les force partout où la commande existe, pour
+les montrer et les essayer sur les canaux de preview.
+
 ### Deux pages, un jeu d'onglets
 
 La barre du bas de l'app tient quatre onglets, pas un de plus. Des pages qui

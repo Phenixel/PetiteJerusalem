@@ -21,7 +21,7 @@
  * Rien ne se valide avant le relâcher : on peut tirer la ligne, voir ce
  * qu'elle propose, et la laisser revenir sans rien changer.
  */
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import type { ZmanTime } from "../../services/zmanimService";
@@ -38,6 +38,13 @@ const props = defineProps<{
   canRemind: boolean;
   /** La ligne est ouverte sur sa cloche (une seule à la fois dans la liste). */
   expanded: boolean;
+  /**
+   * La démonstration de l'astuce (voir ZmanimPage) : la ligne s'ouvre
+   * d'elle-même sur sa cloche, le temps de la voir, puis revient, et
+   * recommence. Elle ne fait que montrer : pour tout le reste la ligne est
+   * fermée, un toucher ouvre les réglages, un geste la tire comme d'habitude.
+   */
+  demo?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -130,6 +137,43 @@ watch(
     if (!sliding.value) shift.value = open ? REVEAL : 0;
   },
 );
+
+/** Un tour de la démonstration : ouverte à 0,7 s, refermée à 2 s. */
+const DEMO_PERIOD_MS = 3200;
+const DEMO_OPEN_AT_MS = 700;
+const DEMO_CLOSE_AT_MS = 2000;
+let demoTimers: number[] = [];
+
+/** Pose la ligne où la démonstration la veut, sauf si un doigt la tient. */
+function demoShift(value: number): void {
+  if (!sliding.value) shift.value = value;
+}
+
+function stopDemo(): void {
+  demoTimers.forEach((timer) => window.clearTimeout(timer));
+  demoTimers = [];
+  demoShift(props.expanded ? REVEAL : 0);
+}
+
+function playDemo(): void {
+  stopDemo();
+  const cycle = () => {
+    demoTimers = [
+      window.setTimeout(() => demoShift(REVEAL), DEMO_OPEN_AT_MS),
+      window.setTimeout(() => demoShift(0), DEMO_CLOSE_AT_MS),
+      window.setTimeout(cycle, DEMO_PERIOD_MS),
+    ];
+  };
+  cycle();
+}
+
+watch(
+  () => props.demo,
+  (on) => (on ? playDemo() : stopDemo()),
+  { immediate: true },
+);
+
+onBeforeUnmount(stopDemo);
 
 /** La course au-delà de laquelle le relâcher bascule le rappel. */
 function commitDistance(): number {

@@ -6,6 +6,7 @@ import AppIcon from "./icons/AppIcon.vue";
 import ReadingSizeControl from "./ReadingSizeControl.vue";
 import ShareModal from "./ShareModal.vue";
 import ToggleSwitch from "./ToggleSwitch.vue";
+import FeatureTour, { type TourExit, type TourStep } from "./FeatureTour.vue";
 import { SITE_URL } from "../config/site";
 import { useReadingSize } from "../composables/useReadingSize";
 import { detectStores, type StoreKey } from "../composables/useAppDownload";
@@ -15,6 +16,7 @@ import { isNativeApp } from "../composables/useNativeApp";
 import { addReadingMenu, removeReadingMenu } from "../composables/useReadingNav";
 import { useScrollFrame } from "../composables/useScrollFrame";
 import { useOverlay } from "../composables/useOverlayStack";
+import { tipsOffered } from "../composables/useFeatureTips";
 import type { BookState } from "../composables/useBookDownload";
 import { kotelCompassOffered, openKotelCompass } from "../composables/useKotelCompass";
 import { openTefilinMirror, tefilinMirrorOffered } from "../composables/useTefilinMirror";
@@ -134,6 +136,8 @@ const atBottom = computed(() => scrollFrame.value.atBottom);
 function close() {
   open.value = false;
   view.value = "menu";
+  // Le panneau parti, le rond des réglages qu'éclairait l'astuce n'est plus là.
+  tour.value?.finish("lost");
 }
 
 // Le bouton retour d'Android ferme le panneau avant de quitter la page.
@@ -277,6 +281,54 @@ function goTo(anchor: string) {
 const onKeydown = (e: KeyboardEvent) => {
   if (e.key === "Escape" && open.value) close();
 };
+
+/**
+ * L'astuce du menu, à la première lecture (voir FeatureTour) : un bouton rond
+ * dans un coin, personne ne sait ce qu'il cache. Deux pas : le bouton du
+ * menu, puis, le panneau ouvert par l'astuce elle-même, le second rond des
+ * réglages. Toucher un bouton à travers le projecteur fait ce qu'il fait
+ * d'habitude, et l'astuce suit.
+ */
+const tour = ref<InstanceType<typeof FeatureTour> | null>(null);
+const menuButton = ref<HTMLElement | null>(null);
+const settingsButton = ref<HTMLElement | null>(null);
+
+const menuTip = computed<TourStep[]>(() => [
+  {
+    key: "menu",
+    icon: "list",
+    title: t("tips.reading.menu.title"),
+    text: t("tips.reading.menu.text"),
+    target: () => menuButton.value,
+    radius: 9999,
+  },
+  {
+    key: "settings",
+    icon: "settings",
+    title: t("tips.reading.settings.title"),
+    text: t("tips.reading.settings.text"),
+    target: () => settingsButton.value,
+    radius: 9999,
+  },
+]);
+
+/** Le panneau a été ouvert par l'astuce, et non par la personne : elle le range. */
+let openedByTip = false;
+
+function onTipStep(index: number): void {
+  if (index !== 1 || open.value) return;
+  // Sans passer par openMenu : une ouverture de démonstration n'est pas une
+  // ouverture qu'on mesure.
+  open.value = true;
+  view.value = "menu";
+  openedByTip = true;
+}
+
+function onTipFinish(via: TourExit): void {
+  // La commande touchée reste sur ce qu'elle vient d'ouvrir : on explore.
+  if (openedByTip && via !== "target") close();
+  openedByTip = false;
+}
 
 onMounted(() => {
   addReadingMenu();
@@ -512,6 +564,7 @@ onUnmounted(() => {
            qui paraît à sa droite quand le panneau est ouvert. -->
       <div class="flex items-center justify-end">
         <button
+          ref="menuButton"
           @click="onMenuButton"
           class="fab"
           :aria-label="menuButtonLabel"
@@ -525,6 +578,7 @@ onUnmounted(() => {
         <transition name="fab-second">
           <div v-if="open" class="fab-second">
             <button
+              ref="settingsButton"
               @click="onSettingsButton"
               class="fab"
               :class="{ 'text-primary': view === 'settings' }"
@@ -539,6 +593,16 @@ onUnmounted(() => {
       </div>
     </div>
   </transition>
+
+  <!-- L'astuce du menu, une fois (voir menuTip). -->
+  <FeatureTour
+    v-if="tipsOffered"
+    ref="tour"
+    tip="reading-menu"
+    :steps="menuTip"
+    @step="onTipStep"
+    @finish="onTipFinish"
+  />
 
   <!-- La fenêtre de partage vit dans le <body> : le menu s'efface en bas de
        page, et elle s'en irait avec lui. -->
