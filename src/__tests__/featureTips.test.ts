@@ -253,11 +253,18 @@ describe("astuces des pages", () => {
     expect(bulle()).toBeNull();
   });
 
-  it("se tait sous l'introduction, sans se compter vue", async () => {
+  it("attend sous l'introduction, et paraît quand elle se ferme", async () => {
     localStorage.removeItem("pj_onboarding_seen");
-    await monte([{ key: "menu", title: "Le menu", text: "Un.", target: () => commande() }]);
+    const menu = commande();
+    await monte([{ key: "menu", title: "Le menu", text: "Un.", target: () => menu }]);
     expect(bulle()).toBeNull();
     expect(localStorage.getItem(SEEN_KEY)).toBeNull();
+
+    // L'introduction se ferme : l'astuce de l'accueil reprend son délai.
+    const { useOnboarding } = await import("../composables/useOnboarding");
+    useOnboarding().completeOnboarding();
+    await pose();
+    expect(bulle()?.textContent).toContain("Le menu");
   });
 
   it("attend que la commande soit à l'écran, sans la compter vue", async () => {

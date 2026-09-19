@@ -284,13 +284,22 @@ function onKeydown(event: KeyboardEvent): void {
   if (event.key === "Escape") finish("escape");
 }
 
-onMounted(async () => {
-  if (!props.steps.length || !(await shouldShowTip(props.tip, props.after))) return;
+/** Le délai de pose, puis l'astuce si rien d'autre ne réclame l'attention. */
+function schedule(): void {
   timers.push(
     window.setTimeout(() => {
       timers = [];
-      // Rien ne réclame déjà l'attention : ni l'introduction, ni une fenêtre.
-      if (document.hidden || isOnboardingOpen.value || hasOpenOverlay()) return;
+      // L'introduction occupe l'écran (première ouverture, l'accueil monté
+      // dessous) : l'astuce attend qu'elle se ferme, puis reprend son délai.
+      if (isOnboardingOpen.value) {
+        const stop = watch(isOnboardingOpen, (open) => {
+          if (open) return;
+          stop();
+          schedule();
+        });
+        return;
+      }
+      if (document.hidden || hasOpenOverlay()) return;
       const find = props.steps[0].target;
       if (find) {
         const first = find();
@@ -299,6 +308,11 @@ onMounted(async () => {
       void show();
     }, props.delay),
   );
+}
+
+onMounted(async () => {
+  if (!props.steps.length || !(await shouldShowTip(props.tip, props.after))) return;
+  schedule();
 });
 
 onBeforeUnmount(() => {

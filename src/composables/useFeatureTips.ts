@@ -42,11 +42,16 @@ import { isNativeApp } from "./useNativeApp";
  */
 
 /** Les astuces connues, par page. Ajouter une entrée suffit à en créer une. */
-export type FeatureTipId = "zmanim-reminder" | "reading-menu" | "reading-gestures";
+export type FeatureTipId =
+  | "home-settings"
+  | "zmanim-reminder"
+  | "reading-menu"
+  | "reading-gestures";
 
 const STORAGE_KEY = "pj_tips_seen";
 
 export const TIP_IDS: readonly FeatureTipId[] = [
+  "home-settings",
   "zmanim-reminder",
   "reading-menu",
   "reading-gestures",

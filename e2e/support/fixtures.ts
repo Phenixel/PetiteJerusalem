@@ -70,7 +70,12 @@ export const test = base.extend<Options & Fixtures>({
           localStorage.setItem("pj_onboarding_seen", "1");
           localStorage.setItem(
             "pj_tips_seen",
-            JSON.stringify(["zmanim-reminder", "reading-menu", "reading-gestures"]),
+            JSON.stringify([
+              "home-settings",
+              "zmanim-reminder",
+              "reading-menu",
+              "reading-gestures",
+            ]),
           );
         } catch {
           // Stockage indisponible : la bannière s'affichera, les tests qui la

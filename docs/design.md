@@ -148,7 +148,15 @@ fait. Quatre règles la tiennent :
   revient, sur la même page, à l'ouverture suivante ;
 - **jamais par-dessus autre chose** : ni l'introduction, ni une fenêtre
   ouverte, ni une autre astuce, ni une commande hors de l'écran ; et elle
-  attend que la page se soit posée.
+  attend que la page se soit posée. Sous l'introduction, elle attend qu'elle
+  se ferme : c'est le cas de l'astuce de l'accueil, à la première ouverture.
+
+L'accueil porte la première : où l'app se règle à son goût (l'onglet en bas
+à droite, thème, police, mode sombre), puis le compte, ce qu'il apporte
+(partager des lectures, la lecture du jour, ses réglages sur un autre
+appareil) et, avant tout, qu'il n'est pas obligatoire. Elle éclaire le bouton
+« Créer un compte » tant que l'accueil le porte, et ne se propose pas à qui a
+déjà un compte.
 
 App native seulement, comme l'introduction : un visiteur du site arrive par
 une page précise et une bulle en travers de ce qu'il vient lire serait une

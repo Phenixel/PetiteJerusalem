@@ -208,6 +208,16 @@ const en: LocaleMessages = {
     stepOf: "Tip {n} of {total}",
     replay: "Replay the tips",
     replayed: "The tips will show again, page by page.",
+    home: {
+      settings: {
+        title: "Make it yours",
+        text: "The bottom-right tab sets the look: colour theme, text font, dark mode and reading size.",
+      },
+      account: {
+        title: "An account, if you like",
+        text: "Nothing requires one: everything can be read without it. It lets you share readings with others, follow your daily reading and find your settings again on another device.",
+      },
+    },
     zmanim: {
       reminder: {
         title: "A reminder in one swipe",

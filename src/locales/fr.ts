@@ -213,6 +213,16 @@ const fr = {
     stepOf: "Astuce {n} sur {total}",
     replay: "Revoir les astuces",
     replayed: "Les astuces se montreront à nouveau, page par page.",
+    home: {
+      settings: {
+        title: "À votre goût",
+        text: "L'onglet en bas à droite règle l'apparence : le thème de couleurs, la police des textes, le mode sombre et la taille de lecture.",
+      },
+      account: {
+        title: "Un compte, si vous voulez",
+        text: "Rien n'oblige à en créer un : tout se lit sans. Il sert à partager des lectures à plusieurs, suivre votre lecture quotidienne et retrouver vos réglages sur un autre appareil.",
+      },
+    },
     zmanim: {
       reminder: {
         title: "Un rappel d'un geste",
