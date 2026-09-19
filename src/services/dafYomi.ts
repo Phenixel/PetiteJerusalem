@@ -146,3 +146,41 @@ export function getDafYomi(date: Date = new Date()): DafYomi | null {
 
 /** Les traités du cycle, pour qui veut vérifier que le catalogue les a tous. */
 export const DAF_YOMI_TRACTATES: readonly string[] = SHAS.map(([name]) => name);
+
+/** Le dernier daf d'un traité, dans la numérotation de Vilna. */
+export function lastDafOf(tractate: string): number {
+  const found = SHAS.find(([name]) => name === tractate);
+  return found ? found[1] + (VILNA_OFFSET[tractate] ?? 0) : 0;
+}
+
+/** Vrai le jour du dernier daf d'un traité : le jour du siyoum. */
+export function isLastDafOf(daf: DafYomi): boolean {
+  return daf.blatt === lastDafOf(daf.tractate);
+}
+
+/** Où l'on en est : dans le traité (dafs faits sur dafs du traité) et dans le cycle. */
+export interface DafProgress {
+  /** Rang du daf dans le traité (1 au premier daf). */
+  dafIndex: number;
+  /** Nombre de dafs du traité. */
+  dafCount: number;
+  /** Rang du jour dans le cycle (1..2711). */
+  cycleDay: number;
+  cycleDays: number;
+}
+
+export function dafProgress(daf: DafYomi): DafProgress {
+  const first = 2 + (VILNA_OFFSET[daf.tractate] ?? 0);
+  const last = lastDafOf(daf.tractate);
+  let before = 0;
+  for (const [name, lastDaf] of SHAS) {
+    if (name === daf.tractate) break;
+    before += lastDaf - 1;
+  }
+  return {
+    dafIndex: daf.blatt - first + 1,
+    dafCount: last - first + 1,
+    cycleDay: before + (daf.blatt - first) + 1,
+    cycleDays: DAF_YOMI_CYCLE_DAYS,
+  };
+}

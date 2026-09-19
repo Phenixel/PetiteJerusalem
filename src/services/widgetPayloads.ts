@@ -5,6 +5,7 @@ import { getTehilimOfDay, getWeeklyParasha } from "./dailyCycles";
 import { getDafYomi } from "./dafYomi";
 import { activeActionKeys, DAILY_ACTIONS } from "./dailyActions";
 import { streakExpiresAt, streakStatus } from "./dailyStreak";
+import { pauseRule } from "./restDays";
 import {
   computeZmanim,
   dayInPlace,
@@ -270,14 +271,18 @@ function nextLocalMidnight(now: Date): number {
 /** La série telle qu'elle part au natif, à partir du suivi du compte. */
 function streakWidget(
   progress: UserPreferences["dailyReadingProgress"] | undefined,
+  restDays: boolean,
   t: Translate,
   now: Date,
 ): DailyStreakWidget {
-  const status = streakStatus(progress?.streak, localDayKey(now));
+  // Les jours de pause (Chabbat, Yom Tov) ne rompent pas la série : l'échéance
+  // les enjambe, comme la page.
+  const rules = { isPause: pauseRule(restDays) };
+  const status = streakStatus(progress?.streak, localDayKey(now), rules);
   return {
     current: status.current,
     best: status.best,
-    expiresAt: status.current > 0 ? streakExpiresAt(progress?.streak) : 0,
+    expiresAt: status.current > 0 ? streakExpiresAt(progress?.streak, rules) : 0,
     doneToday: status.doneToday,
     title: t("dailyReading.streak.widgetTitle"),
     daysLabel: t("dailyReading.streak.widgetDays", status.current),
@@ -289,7 +294,7 @@ function streakWidget(
 export function buildDailyReadingWidgetPayload(
   prefs:
     | (Pick<UserPreferences, "dailyReadingIds" | "dailyReadingOptions" | "dailyReadingProgress"> &
-        Partial<Pick<UserPreferences, "dailyActions" | "dailyGoals">>)
+        Partial<Pick<UserPreferences, "dailyActions" | "dailyGoals" | "dailyRestDays">>)
     | null,
   t: Translate,
   now: Date = new Date(),
@@ -315,7 +320,7 @@ export function buildDailyReadingWidgetPayload(
       items: [],
       parasha: null,
       parashaDone: false,
-      streak: streakWidget(undefined, t, now),
+      streak: streakWidget(undefined, true, t, now),
     };
   }
 
@@ -384,7 +389,7 @@ export function buildDailyReadingWidgetPayload(
     items,
     parasha,
     parashaDone,
-    streak: streakWidget(progress, t, now),
+    streak: streakWidget(progress, prefs.dailyRestDays !== false, t, now),
   };
 }
 

@@ -15,6 +15,12 @@ const { t } = useI18n();
 
 const hint = computed(() => {
   if (props.status.doneToday) return t("dailyReading.streak.doneToday");
+  if (props.status.pausedToday && props.status.current > 0) {
+    return t("dailyReading.streak.paused");
+  }
+  if (props.status.atRisk && props.status.freezesNeeded > 0) {
+    return t("dailyReading.streak.atRiskFreeze", props.status.freezesNeeded);
+  }
   if (props.status.atRisk) return t("dailyReading.streak.atRisk");
   if (props.status.best > 0) return t("dailyReading.streak.restart");
   return t("dailyReading.streak.start");

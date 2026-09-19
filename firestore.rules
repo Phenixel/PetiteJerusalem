@@ -225,6 +225,10 @@ service cloud.firestore {
         // borne large ici pour empêcher un gonflement du document.
         && (!('dailyActions' in request.resource.data) || (request.resource.data.dailyActions is list && request.resource.data.dailyActions.size() <= 20))
         && (!('dailyGoals' in request.resource.data) || (request.resource.data.dailyGoals is list && request.resource.data.dailyGoals.size() <= 40))
+        // La règle de la journée réussie (« all », « half », « one ») et les
+        // jours de pause de la série (Chabbat, Yom Tov).
+        && (!('dailyGoalRule' in request.resource.data) || (request.resource.data.dailyGoalRule is string && request.resource.data.dailyGoalRule.size() <= 10))
+        && (!('dailyRestDays' in request.resource.data) || request.resource.data.dailyRestDays is bool)
         // Notifications push (app native) : tokens FCM des appareils, rappels
         // on/off, langue des notifications. 20 tokens max, les tokens morts
         // sont purgés par la Cloud Function dailyReadingReminder quand un

@@ -396,6 +396,18 @@ se lit mieux qu'une case vide. Les mots (« tout est fait aujourd'hui »,
 (`DailyStreakBanner.vue`), là où l'on agit dessus. Les widgets natifs
 reprennent le même dessin.
 
+La semaine se lit en sept pastilles, du dimanche au Chabbat
+(`DailyWeekDots.vue`), et le mois en grille (`DailyMonthCalendar.vue`) : une
+journée réussie est pleine, entamée à un quart de teinte, un jour de pause
+(Chabbat, Yom Tov) en pointillé, un jour manqué vide. Le jour courant porte un
+anneau. Les mêmes quatre états, aux mêmes couleurs, partout où la semaine se
+montre, jusqu'à la carte de l'accueil en petit.
+
+La journée réussie se fête une fois, dans une fenêtre (`DailyCelebration.vue`) :
+la flamme qui grandit, le nouveau nombre, et ce que la journée a de plus (un
+palier, un siyoum, un joker gagné). C'est la seule animation « de récompense »
+de l'app ; elle ne revient pas tant que la journée n'a pas changé.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.

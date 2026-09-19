@@ -18,6 +18,7 @@ import { localeOfPath, sectionPath } from "../content/seoLocales";
 import { localDayKey } from "../services/dateService";
 import { activeActionKeys } from "../services/dailyActions";
 import { streakStatus, type StreakStatus } from "../services/dailyStreak";
+import { weekOf, type DayCell } from "../services/dailyHistory";
 import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
 import {
@@ -90,6 +91,7 @@ const dashLoading = ref(false);
 const readingTotal = ref(0);
 const readingDone = ref(0);
 const readingStreak = ref<StreakStatus | null>(null);
+const readingWeek = ref<DayCell[]>([]);
 
 const firstName = computed(
   () => (user.value?.name ?? "").split(" ")[0] || user.value?.name || t("common.anonymousUser"),
@@ -115,7 +117,16 @@ function applyDashboardCounts(prefs: UserPreferences) {
   });
   readingTotal.value = counts.total;
   readingDone.value = counts.done;
+  // Les jours de pause (Chabbat, Yom Tov) demandent hebcal, qui n'a rien à
+  // faire dans le premier chargement : chargé à la demande, comme les
+  // horaires. En attendant, la série se lit sans pause.
   readingStreak.value = streakStatus(progress?.streak, today);
+  readingWeek.value = weekOf(today, progress?.history ?? {}, () => false);
+  void import("../services/restDays").then(({ pauseRule }) => {
+    const rules = { isPause: pauseRule(prefs.dailyRestDays !== false) };
+    readingStreak.value = streakStatus(progress?.streak, today, rules);
+    readingWeek.value = weekOf(today, progress?.history ?? {}, rules.isPause);
+  });
 }
 
 async function loadDashboard(u: User) {
@@ -273,6 +284,7 @@ onUnmounted(() => {
             :done="readingDone"
             :total="readingTotal"
             :streak="readingStreak"
+            :week="readingWeek"
             class="dash-card"
             @click="trackCard('daily_reading')"
           />

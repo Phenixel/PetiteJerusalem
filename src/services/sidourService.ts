@@ -196,7 +196,7 @@ const TEFILA_BOUNDS: [TefilaKey, ZmanKey, ZmanKey][] = [
   ["arvit", "tzeit", "chatzotNight"],
 ];
 
-function windowsOfDay(place: ZmanimPlace, day: Date): TefilaWindow[] {
+export function tefilaWindowsOfDay(place: ZmanimPlace, day: Date): TefilaWindow[] {
   const times = new Map(computeZmanim(place, day).map((z) => [z.key, z.date]));
   const windows: TefilaWindow[] = [];
   for (const [tefila, startKey, endKey] of TEFILA_BOUNDS) {
@@ -218,12 +218,12 @@ export function currentTefilaWindow(
 ): TefilaWindow | null {
   const t = now.getTime();
   const inWindow = (w: TefilaWindow) => t >= w.start.getTime() && t < w.end.getTime();
-  const today = windowsOfDay(place, now).find(inWindow);
+  const today = tefilaWindowsOfDay(place, now).find(inWindow);
   if (today) return today;
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   return (
-    windowsOfDay(place, yesterday)
+    tefilaWindowsOfDay(place, yesterday)
       .filter((w) => w.tefila === "arvit")
       .find(inWindow) ?? null
   );

@@ -102,6 +102,6 @@ describe("mergeDailyProgress avec les actions et la série", () => {
       },
     );
     expect(merged.date).toBe("2026-09-18");
-    expect(merged.streak).toEqual({ current: 3, best: 8, lastDate: "2026-09-18" });
+    expect(merged.streak).toMatchObject({ current: 3, best: 8, lastDate: "2026-09-18" });
   });
 });

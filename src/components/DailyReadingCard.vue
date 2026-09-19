@@ -6,13 +6,21 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { StreakStatus } from "../services/dailyStreak";
+import type { DayCell } from "../services/dailyHistory";
 import AppIcon from "./icons/AppIcon.vue";
 import ProgressBar from "./ProgressBar.vue";
 import DailyStreakStats from "./DailyStreakStats.vue";
+import DailyWeekDots from "./DailyWeekDots.vue";
 
 // `streak` : la série de jours, quand le parent la connaît ; elle n'a rien à
-// dire tant que personne n'a jamais fini une journée.
-const props = defineProps<{ done: number; total: number; streak?: StreakStatus | null }>();
+// dire tant que personne n'a jamais fini une journée. `week` : les sept
+// pastilles de la semaine en cours, en petit.
+const props = defineProps<{
+  done: number;
+  total: number;
+  streak?: StreakStatus | null;
+  week?: DayCell[];
+}>();
 
 const { t } = useI18n();
 
@@ -76,8 +84,15 @@ const showStreak = computed(() => Boolean(props.streak && props.streak.best > 0)
         </span>
       </div>
       <ProgressBar class="mt-4" :value="pct" :label="t('dailyReading.title')" />
-      <!-- La série de jours, une fois qu'elle existe : deux chiffres, sous la barre -->
-      <DailyStreakStats v-if="showStreak && streak" :status="streak" class="mt-4" />
+      <!-- La série de jours, une fois qu'elle existe : deux chiffres et la
+           semaine en cours, sous la barre -->
+      <div
+        v-if="showStreak && streak"
+        class="mt-4 flex flex-wrap items-center justify-between gap-3"
+      >
+        <DailyStreakStats :status="streak" />
+        <DailyWeekDots v-if="week?.length" :days="week" compact class="w-44" />
+      </div>
     </template>
   </RouterLink>
 </template>

@@ -67,13 +67,17 @@ const userDisplayName = computed(() => currentUser.value?.name || t("common.anon
 const streak = ref<StreakStatus | null>(null);
 
 async function loadStreak(userId: string) {
-  const apply = (progress: DailyReadingProgress | undefined) => {
-    streak.value = streakStatus(progress?.streak, localDayKey());
+  const apply = async (progress: DailyReadingProgress | undefined, restDays: boolean) => {
+    const { pauseRule } = await import("../services/restDays");
+    streak.value = streakStatus(progress?.streak, localDayKey(), {
+      isPause: pauseRule(restDays),
+    });
   };
   const cached = userPreferencesService.getCachedPreferences(userId);
-  if (cached) apply(cached.dailyReadingProgress);
+  if (cached) void apply(cached.dailyReadingProgress, cached.dailyRestDays !== false);
   try {
-    apply((await userPreferencesService.getPreferences(userId)).dailyReadingProgress);
+    const prefs = await userPreferencesService.getPreferences(userId);
+    await apply(prefs.dailyReadingProgress, prefs.dailyRestDays !== false);
   } catch (error) {
     console.error("Erreur lors du chargement de la série de jours:", error);
   }

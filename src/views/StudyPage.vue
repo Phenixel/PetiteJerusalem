@@ -329,7 +329,10 @@ async function loadDailySummary(u: User) {
     });
     readingTotal.value = counts.total;
     readingDone.value = counts.done;
-    readingStreak.value = streakStatus(progress?.streak, today);
+    const { pauseRule } = await import("../services/restDays");
+    readingStreak.value = streakStatus(progress?.streak, today, {
+      isPause: pauseRule(prefs.dailyRestDays !== false),
+    });
   } catch (error) {
     console.error("Erreur lors du chargement de la lecture du jour:", error);
   } finally {

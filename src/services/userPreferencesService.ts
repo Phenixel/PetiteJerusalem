@@ -2,6 +2,7 @@ import type { Bookmark, ReadingPosition } from "./readingProgressService";
 import type { HebrewOccasion } from "./hebrewOccasions";
 import type { DailyGoal } from "./dailyActions";
 import { mergeStreak, type DailyStreak } from "./dailyStreak";
+import { mergeHistory, type DailyGoalRule, type DailyHistory } from "./dailyHistory";
 import type { ReminderPlace } from "./zmanimService";
 import { AppError } from "./appError";
 // Ce module est chargé dès le démarrage (useTheme et useFonts, montés par
@@ -36,6 +37,12 @@ export interface DailyReadingProgress {
    */
   streak?: DailyStreak;
   /**
+   * L'historique des journées (voir dailyHistory) : quatre mois de « ce qui
+   * a été fait », d'où sortent le calendrier, les compteurs et les objectifs
+   * à fréquence. Même chemin que la série : il traverse les jours.
+   */
+  history?: DailyHistory;
+  /**
    * Suivi hebdomadaire du chnei mikra : `week` est la date du Chabbat de la
    * paracha (weekKey). Contrairement au reste, il ne se remet à zéro qu'au
    * changement de paracha.
@@ -64,6 +71,10 @@ export interface UserPreferences {
   dailyActions: string[];
   /** Objectifs personnels, écrits par la personne (voir dailyActions). */
   dailyGoals: DailyGoal[];
+  /** Ce qu'il faut pour qu'une journée soit réussie (voir dailyHistory.daySucceeded). */
+  dailyGoalRule: DailyGoalRule;
+  /** Le Chabbat et les Yom Tov sont des jours de pause de la série (voir restDays). */
+  dailyRestDays: boolean;
   /** Per-day read tracking for the daily reading list. */
   dailyReadingProgress: DailyReadingProgress;
   /** FCM tokens of the user's devices (native app), read by the reminder Cloud Function. */
@@ -128,6 +139,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   dailyReadingOptions: [],
   dailyActions: [],
   dailyGoals: [],
+  dailyGoalRule: "all",
+  dailyRestDays: true,
   dailyReadingProgress: { date: "", completedIds: [] },
   fcmTokens: [],
   pushReminderEnabled: false,
@@ -349,8 +362,10 @@ export function mergeDailyProgress(
   local: DailyReadingProgress | undefined,
 ): DailyReadingProgress {
   const parashaProgress = mergeParashaProgress(server?.parashaProgress, local?.parashaProgress);
-  // La série de jours traverse les jours : fusionnée à part, comme la paracha.
+  // La série de jours et l'historique traversent les jours : fusionnés à
+  // part, comme la paracha.
   const streak = mergeStreak(server?.streak, local?.streak);
+  const history = mergeHistory(server?.history, local?.history);
   const withParasha = (progress: DailyReadingProgress): DailyReadingProgress => {
     const merged = { ...progress };
     // Le suivi hebdomadaire est fusionné à part : celui du bloc retenu ne doit
@@ -359,6 +374,8 @@ export function mergeDailyProgress(
     else delete merged.parashaProgress;
     if (streak) merged.streak = streak;
     else delete merged.streak;
+    if (history) merged.history = history;
+    else delete merged.history;
     return merged;
   };
 

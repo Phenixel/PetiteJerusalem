@@ -30,6 +30,26 @@ interface ReminderCopy {
   body: (remaining: number) => string;
 }
 
+/**
+ * Le titre quand une série de jours est en jeu : c'est le message qui fait
+ * revenir, bien plus que le nombre de textes. La série vit dans
+ * dailyReadingProgress.streak (src/services/dailyStreak.ts) ; elle est « en
+ * jeu » quand son dernier jour fait est la veille.
+ */
+const STREAK_TITLE: Record<string, (days: number) => string> = {
+  fr: (n) => `Ta série de ${n} jours se joue ce soir 🔥`,
+  en: (n) => `Your ${n}-day streak is on the line tonight 🔥`,
+  he: (n) => `הרצף של ${n} ימים שלך על הכף הערב 🔥`,
+};
+
+/** La veille d'un jour YYYY-MM-DD. */
+function dayBefore(key: string): string {
+  const [y, m, d] = key.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCDate(date.getUTCDate() - 1);
+  return date.toISOString().slice(0, 10);
+}
+
 // La langue est figée côté client au moment de l'activation (`pushLocale`).
 const COPY: Record<string, { daily: ReminderCopy; sunset: ReminderCopy }> = {
   fr: {
@@ -196,7 +216,12 @@ async function remindProfile(
   if (tokens.length === 0 || totalReadings === 0) return 0;
 
   const progress = prefs.dailyReadingProgress as
-    | { date?: string; completedIds?: unknown[]; completedOptions?: unknown[] }
+    | {
+        date?: string;
+        completedIds?: unknown[];
+        completedOptions?: unknown[];
+        streak?: { current?: unknown; lastDate?: unknown };
+      }
     | undefined;
   const isToday = progress?.date === today;
   // Même règle que countDailyProgress (src/services/userPreferencesService.ts) :
@@ -214,14 +239,24 @@ async function remindProfile(
   const remaining = totalReadings - completedToday;
   if (remaining <= 0) return 0;
 
-  const locale = COPY[typeof prefs.pushLocale === "string" ? prefs.pushLocale : "fr"] ?? COPY.fr;
+  const lang = typeof prefs.pushLocale === "string" ? prefs.pushLocale : "fr";
+  const locale = COPY[lang] ?? COPY.fr;
   // Les deux rappels dans le même créneau : c'est l'échéance de la chkia
   // qui a quelque chose de plus à dire, et une seule notification part.
   const copy = sunsetDue ? locale.sunset : locale.daily;
+  // Une série en jeu (faite hier, pas encore aujourd'hui) prend le titre :
+  // c'est elle qu'on ne veut pas perdre.
+  const streakDays =
+    typeof progress?.streak?.current === "number" &&
+    progress.streak.current > 0 &&
+    progress.streak.lastDate === dayBefore(today)
+      ? progress.streak.current
+      : 0;
+  const title = streakDays > 0 ? (STREAK_TITLE[lang] ?? STREAK_TITLE.fr)(streakDays) : copy.title;
 
   const result = await messaging.sendEachForMulticast({
     tokens,
-    notification: { title: copy.title, body: copy.body(remaining) },
+    notification: { title, body: copy.body(remaining) },
     // Deep-link géré par pushService.initDeepLinks côté app.
     data: { url: "/bibliotheque/lecture-du-jour" },
     apns: { payload: { aps: { sound: "default" } } },

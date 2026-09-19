@@ -42,7 +42,12 @@ import { watchService } from "./watchService";
 /** Le sous-ensemble des préférences dont dépend le widget de lecture. */
 export type DailyWidgetPrefs = Pick<
   UserPreferences,
-  "dailyReadingIds" | "dailyReadingOptions" | "dailyReadingProgress" | "dailyActions" | "dailyGoals"
+  | "dailyReadingIds"
+  | "dailyReadingOptions"
+  | "dailyReadingProgress"
+  | "dailyActions"
+  | "dailyGoals"
+  | "dailyRestDays"
 >;
 
 interface PjWidgetsBridge {

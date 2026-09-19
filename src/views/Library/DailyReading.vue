@@ -60,15 +60,53 @@ import { useNow } from "../../composables/useNow";
 import {
   activeActionKeys,
   DAILY_ACTIONS,
+  DAY_MOMENTS,
   isDailyActionKey,
+  isDailyGoal,
   MAX_DAILY_GOALS,
   MAX_GOAL_LABEL_LENGTH,
   newGoalId,
   normalizeGoalLabel,
+  type DailyActionMeta,
   type DailyGoal,
+  type DayMoment,
+  type StarterPack,
 } from "../../services/dailyActions";
-import { recordDayDone, streakStatus, type DailyStreak } from "../../services/dailyStreak";
+import {
+  MAX_FREEZES,
+  milestoneReached,
+  previousDayKey,
+  recordDayDone,
+  STREAK_MILESTONES,
+  streakStatus,
+  type DailyStreak,
+} from "../../services/dailyStreak";
+import {
+  DAILY_GOAL_RULES,
+  daySucceeded,
+  pruneHistory,
+  weekOf,
+  weeklyCount,
+  type DailyGoalRule,
+  type DailyHistory,
+  type DayRecord,
+} from "../../services/dailyHistory";
+import { historyTotals, siyoumimOf } from "../../services/dailyStats";
+import { activeChallenge, challengeProgress } from "../../services/dailyChallenges";
+import { pauseRule } from "../../services/restDays";
+import { dafProgress, isLastDafOf } from "../../services/dafYomi";
+import { tefilaWindowsOfDay } from "../../services/sidourService";
+import { shareStreakCard } from "../../services/streakShareCard";
+import { useTheme } from "../../composables/useTheme";
+import { latinName } from "../../content/etudeTexts";
 import DailyStreakBanner from "../../components/DailyStreakBanner.vue";
+import DailyWeekDots from "../../components/DailyWeekDots.vue";
+import DailyMonthCalendar from "../../components/DailyMonthCalendar.vue";
+import DailyCelebration from "../../components/DailyCelebration.vue";
+import DailyChallengeCard from "../../components/DailyChallengeCard.vue";
+import DailyStarterPacks from "../../components/DailyStarterPacks.vue";
+import AppSelect from "../../components/AppSelect.vue";
+import ToggleSwitch from "../../components/ToggleSwitch.vue";
 import { useChneiMikraOptions } from "../../composables/useChneiMikraOptions";
 import { anchorToElement } from "../../composables/scrollAnchor";
 import { DAILY_OPTION_KEYS, parashaTitle, type DailyOptionKey } from "../../services/dailyCycles";
@@ -122,9 +160,11 @@ function sortByCatalog(ids: string[]): string[] {
 const loading = ref(true);
 const saving = ref(false);
 const mode = ref<"reading" | "manage">("reading");
-// Deux onglets en mode lecture : le quotidien d'abord, le chnei mikra
-// (hebdomadaire) dans « Cette semaine » pour ne pas allonger la page du jour.
-const activeTab = ref<"today" | "week">("today");
+// Trois onglets en mode lecture : le quotidien d'abord, le chnei mikra
+// (hebdomadaire) dans « Cette semaine » pour ne pas allonger la page du jour,
+// et « Progression » pour le calendrier, les compteurs et les paliers.
+type Tab = "today" | "week" | "progress";
+const activeTab = ref<Tab>("today");
 
 // Double appui sur le texte : la page descend toute seule, à l'allure choisie
 // dans la pastille du bas (AutoScrollPill). Pas en mode « gérer ma liste »,
@@ -215,6 +255,8 @@ interface DynamicReading {
   encadrement: Encadrement | null;
   /** Daf hayomi : les deux faces du daf à garder du traité (voir DailyReadingItem). */
   dafs?: string[];
+  /** Où l'on en est dans le cycle (« daf 12 sur 63 · cycle 62 % »). */
+  progress?: string;
 }
 
 // Le jour hébraïque et la semaine, réactifs au temps et à la chkia : une page
@@ -238,10 +280,12 @@ const dynamicReadings = computed<DynamicReading[]>(() => {
       subtitle: psalmsLabel(cycle.psalms, t),
       entries: cycle.entries,
       encadrement: encadrementOf(cycle.entries[0]),
+      progress: t("dailyReading.progressChips.tehilim", { day: cycle.day }),
     });
   }
   if (selectedOptions.value.includes("daf-yomi") && dafYomi.value) {
     const daf = dafYomi.value;
+    const progress = dafProgress(daf);
     out.push({
       key: "daf-yomi",
       title: t("dailyReading.options.dafYomiReading"),
@@ -252,6 +296,13 @@ const dynamicReadings = computed<DynamicReading[]>(() => {
       entries: daf.entry ? [daf.entry] : [],
       encadrement: null,
       dafs: daf.dafs,
+      // Où l'on en est dans le traité et dans le cycle : le daf devient un
+      // chemin qu'on voit.
+      progress: t("dailyReading.progressChips.daf", {
+        index: progress.dafIndex,
+        count: progress.dafCount,
+        pct: Math.round((progress.cycleDay / progress.cycleDays) * 100),
+      }),
     });
   }
   return out;
@@ -366,9 +417,201 @@ async function removeGoal(id: string) {
   });
 }
 
+/** Les objectifs de chaque jour et ceux à fréquence, à part. */
+const dailyGoals = computed(() => sortedGoals.value.filter(isDailyGoal));
+const weeklyGoals = computed(() => sortedGoals.value.filter((goal) => !isDailyGoal(goal)));
+
+/** Le choix de fréquence d'un objectif (chaque jour, ou n fois par semaine). */
+const frequencyOptions = computed(() => [
+  { value: "0", label: t("dailyReading.goals.everyDay") },
+  ...[1, 2, 3, 4, 5, 6].map((n) => ({
+    value: String(n),
+    label: t("dailyReading.goals.perWeek", n),
+  })),
+]);
+
+async function setGoalFrequency(goal: DailyGoal, value: string) {
+  if (!requireOnline()) return;
+  const perWeek = Number(value) || null;
+  goals.value = goals.value.map((g) => (g.id === goal.id ? { ...g, perWeek } : g));
+  saving.value = true;
+  try {
+    const saved = await persist({ dailyGoals: [...goals.value] });
+    if (saved) await persistProgress();
+  } finally {
+    saving.value = false;
+  }
+  analyticsService.capture("daily_reading_configured", {
+    action: "goal_frequency",
+    per_week: perWeek ?? 0,
+  });
+}
+
+/** Combien de fois un objectif à fréquence a été fait cette semaine. */
+function weeklyDone(goal: DailyGoal): number {
+  return weeklyCount(goal.id, history.value, todayKey.value, completedActions.value.has(goal.id));
+}
+
+// --- Les actions par moment de la journée, avec la fin de plage des offices ---
+const actionGroups = computed<{ moment: DayMoment; actions: DailyActionMeta[] }[]>(() =>
+  DAY_MOMENTS.map((moment) => ({
+    moment,
+    actions: chosenActions.value.filter((action) => action.moment === moment),
+  })).filter((group) => group.actions.length > 0),
+);
+const tefilaEnds = computed(() => {
+  const ends = new Map<string, string>();
+  for (const w of tefilaWindowsOfDay(zmanimPlace.value, now.value)) {
+    ends.set(w.tefila, formatZmanTime(w.end, zmanimPlace.value.tzid, locale.value));
+  }
+  return ends;
+});
+function actionDeadline(action: DailyActionMeta): string | null {
+  return action.tefila ? (tefilaEnds.value.get(action.tefila) ?? null) : null;
+}
+
+// --- La règle de la journée réussie et les jours de pause ---
+const goalRule = ref<DailyGoalRule>("all");
+const restDays = ref(true);
+const todayKey = computed(() => localDayKey(now.value));
+const isPause = computed(() => pauseRule(restDays.value));
+const streakRules = computed(() => ({ isPause: isPause.value }));
+
+async function setGoalRule(rule: DailyGoalRule) {
+  if (!requireOnline() || goalRule.value === rule) return;
+  goalRule.value = rule;
+  await persist({ dailyGoalRule: rule });
+  // La journée en cours se rejuge tout de suite.
+  await persistProgress();
+  analyticsService.capture("daily_reading_configured", { action: "goal_rule", rule });
+}
+
+async function setRestDays(value: boolean) {
+  if (!requireOnline()) return;
+  restDays.value = value;
+  await persist({ dailyRestDays: value });
+  void widgetService.refresh(widgetPrefs());
+  analyticsService.capture("daily_reading_configured", { action: "rest_days", rest_days: value });
+}
+
 // --- La série de jours (voir dailyStreak) ---
 const streak = ref<DailyStreak | undefined>(undefined);
-const streakInfo = computed(() => streakStatus(streak.value, localDayKey(now.value)));
+const streakInfo = computed(() => streakStatus(streak.value, todayKey.value, streakRules.value));
+
+// --- L'historique des journées (voir dailyHistory) ---
+const history = ref<DailyHistory>({});
+/** La journée d'aujourd'hui telle qu'elle est en ce moment, avant enregistrement. */
+const todayRecord = computed<DayRecord>(() => ({
+  done: completedCount.value,
+  total: totalCount.value,
+  ok: dayOk.value,
+  keys: [
+    ...[...completedIds.value].filter((id) => selectedIds.value.includes(id)),
+    ...[...completedOptions.value].filter((k) => selectedOptions.value.includes(k)),
+    ...[...completedActions.value].filter(
+      (k) => actionKeys.value.includes(k) || weeklyGoals.value.some((g) => g.id === k),
+    ),
+  ],
+}));
+/** L'historique avec la journée en cours : ce que la semaine et le mois montrent. */
+const liveHistory = computed<DailyHistory>(() =>
+  totalCount.value > 0 ? { ...history.value, [todayKey.value]: todayRecord.value } : history.value,
+);
+const weekCells = computed(() => weekOf(todayKey.value, liveHistory.value, isPause.value));
+const totals = computed(() => historyTotals(liveHistory.value));
+const siyoumim = computed(() => siyoumimOf(liveHistory.value));
+const milestones = computed(() =>
+  STREAK_MILESTONES.map((days) => ({ days, reached: streakInfo.value.best >= days })),
+);
+
+/** La journée est réussie selon la règle choisie (voir daySucceeded). */
+const dayOk = computed(() => daySucceeded(completedCount.value, totalCount.value, goalRule.value));
+
+// --- Le défi de saison, s'il y en a un ---
+const challenge = computed(() => activeChallenge(now.value));
+const challengeDone = computed(() =>
+  challenge.value
+    ? challengeProgress(challenge.value, liveHistory.value, todayKey.value, dayOk.value)
+    : 0,
+);
+
+// --- Rattraper la veille : jusqu'à midi, on peut dire qu'hier était fait ---
+const canCatchUpYesterday = computed(() => {
+  const yesterday = previousDayKey(todayKey.value);
+  const record = history.value[yesterday];
+  return (
+    now.value.getHours() < 12 &&
+    !streakInfo.value.doneToday &&
+    !isPause.value(yesterday) &&
+    !!record &&
+    record.total > 0 &&
+    !record.ok &&
+    streak.value?.lastDate !== yesterday
+  );
+});
+
+async function catchUpYesterday() {
+  const yesterday = previousDayKey(todayKey.value);
+  const record = history.value[yesterday];
+  if (!record) return;
+  history.value = { ...history.value, [yesterday]: { ...record, ok: true, done: record.total } };
+  streak.value = recordDayDone(streak.value, yesterday, streakRules.value);
+  await persistProgress();
+  toast.success(t("dailyReading.catchUp.done"));
+  analyticsService.capture("daily_streak_caught_up", { current: streak.value.current });
+}
+
+// --- La fête de la journée réussie ---
+const celebration = ref<{
+  milestone: number | null;
+  siyoum: string | null;
+  freezeEarned: boolean;
+} | null>(null);
+
+const { appliedTheme } = useTheme();
+
+async function shareStreak() {
+  const status = streakInfo.value;
+  const result = await shareStreakCard(
+    {
+      count: String(status.current),
+      countLabel: t("dailyReading.streak.days", status.current),
+      best: t("dailyReading.streak.best", { n: status.best }),
+      brand: "Petite Jérusalem",
+      date: new Intl.DateTimeFormat(locale.value, { dateStyle: "long" }).format(now.value),
+    },
+    appliedTheme.value.primary,
+  );
+  if (result === "downloaded") toast.success(t("dailyReading.streak.shareDownloaded"));
+  analyticsService.capture("daily_streak_shared", { result, current: status.current });
+}
+
+// --- Les parcours de départ : une première liste en un clic ---
+async function applyPack(pack: StarterPack) {
+  if (!requireOnline()) return;
+  selectedOptions.value = DAILY_OPTION_KEYS.filter((k) => pack.options.includes(k));
+  selectedActions.value = [...pack.actions];
+  const packGoals: DailyGoal[] = pack.goalKeys.map((key, i) => ({
+    id: newGoalId(),
+    label: t(key),
+    createdAt: Date.now() + i,
+  }));
+  goals.value = [...goals.value, ...packGoals];
+  saving.value = true;
+  try {
+    const saved = await persist({
+      dailyReadingOptions: [...selectedOptions.value],
+      dailyActions: [...selectedActions.value],
+      dailyGoals: [...goals.value],
+    });
+    if (saved) void widgetService.refresh(widgetPrefs());
+  } finally {
+    saving.value = false;
+  }
+  analyticsService.capture("daily_reading_configured", { action: "pack", pack: pack.id });
+  const entries = dynamicReadings.value.flatMap((reading) => reading.entries);
+  await proposeOfflineDownload(entries, t(pack.titleKey));
+}
 
 // --- Chnei mikra : section « Cette semaine », suivi jusqu'au changement de paracha ---
 const weeklyParasha = computed(() =>
@@ -379,7 +622,7 @@ watch(weeklyParasha, (week) => {
   if (!week) activeTab.value = "today";
 });
 
-function switchTab(tab: "today" | "week") {
+function switchTab(tab: Tab) {
   if (activeTab.value === tab) return;
   activeTab.value = tab;
   analyticsService.capture("daily_reading_tab_switched", { tab });
@@ -508,6 +751,8 @@ async function applyPreferences(prefs: UserPreferences, initial: boolean) {
     (DAILY_OPTION_KEYS as readonly string[]).includes(k),
   );
   selectedActions.value = (prefs.dailyActions ?? []).filter(isDailyActionKey);
+  goalRule.value = DAILY_GOAL_RULES.includes(prefs.dailyGoalRule) ? prefs.dailyGoalRule : "all";
+  restDays.value = prefs.dailyRestDays !== false;
   goals.value = (prefs.dailyGoals ?? []).filter(
     (goal) => typeof goal?.id === "string" && typeof goal.label === "string",
   );
@@ -521,8 +766,10 @@ async function applyPreferences(prefs: UserPreferences, initial: boolean) {
   const progress = prefs.dailyReadingProgress;
   // Le jour que le suivi affiché décrit : voir ensureSameDay.
   progressDay = localDayKey();
-  // La série traverse les jours : elle se lit quel que soit le jour du suivi.
+  // La série et l'historique traversent les jours : ils se lisent quel que
+  // soit le jour du suivi.
   streak.value = progress?.streak;
+  history.value = pruneHistory(progress?.history ?? {}, localDayKey());
   // Chnei mikra : la coche tient tant que la paracha n'a pas changé,
   // indépendamment de la remise à zéro quotidienne.
   storedParashaProgress.value = progress?.parashaProgress ?? null;
@@ -681,6 +928,7 @@ function widgetPrefs() {
     dailyReadingOptions: [...selectedOptions.value],
     dailyActions: [...selectedActions.value],
     dailyGoals: [...goals.value],
+    dailyRestDays: restDays.value,
     dailyReadingProgress: {
       date: localDayKey(),
       completedIds: [...completedIds.value].map(Number),
@@ -689,6 +937,7 @@ function widgetPrefs() {
       ),
       completedActions: [...completedActions.value].filter((k) => actionKeys.value.includes(k)),
       ...(streak.value ? { streak: streak.value } : {}),
+      ...(Object.keys(history.value).length ? { history: history.value } : {}),
       ...(storedParashaProgress.value ? { parashaProgress: storedParashaProgress.value } : {}),
     },
   };
@@ -704,16 +953,34 @@ async function persistProgress() {
     const list = completedSections.value[id];
     if (list?.length) sections[id] = list;
   }
-  // Tout est fait : la série de jours prend son cran du jour, une fois. Elle
-  // part avec le suivi, dans la même écriture (hors ligne comprise).
-  if (allDone.value) {
-    const next = recordDayDone(streak.value, localDayKey());
-    if (next !== streak.value) {
+  // La journée s'écrit dans l'historique telle qu'elle est ; réussie, la
+  // série prend son cran du jour, une fois, et la page le fête. Tout part
+  // avec le suivi, dans la même écriture (hors ligne comprise).
+  const today = localDayKey();
+  if (totalCount.value > 0) {
+    history.value = pruneHistory({ ...history.value, [today]: todayRecord.value }, today);
+  }
+  if (dayOk.value) {
+    const previous = streak.value;
+    const next = recordDayDone(previous, today, streakRules.value);
+    if (next !== previous) {
       streak.value = next;
+      const daf = dafYomi.value;
+      celebration.value = {
+        milestone: milestoneReached(next.current),
+        siyoum:
+          daf && completedOptions.value.has("daf-yomi") && isLastDafOf(daf)
+            ? daf.entry
+              ? latinName(daf.entry)
+              : daf.tractate
+            : null,
+        freezeEarned: (next.freezes ?? 0) > (previous?.freezes ?? 0),
+      };
       analyticsService.capture("daily_streak_extended", {
         current: next.current,
         best: next.best,
         total_count: totalCount.value,
+        rule: goalRule.value,
       });
     }
   }
@@ -725,10 +992,13 @@ async function persistProgress() {
     completedIds: [...completedIds.value].map(Number),
     completedSections: sections,
     completedOptions: [...completedOptions.value].filter((k) => selectedOptions.value.includes(k)),
-    completedActions: [...completedActions.value].filter((k) => actionKeys.value.includes(k)),
-    // La série traverse les jours : réécrite à chaque fois, savePreferences
-    // remplaçant dailyReadingProgress en entier.
+    completedActions: [...completedActions.value].filter(
+      (k) => actionKeys.value.includes(k) || weeklyGoals.value.some((g) => g.id === k),
+    ),
+    // La série et l'historique traversent les jours : réécrits à chaque fois,
+    // savePreferences remplaçant dailyReadingProgress en entier.
     ...(streak.value ? { streak: streak.value } : {}),
+    ...(Object.keys(history.value).length ? { history: history.value } : {}),
     // Le chnei mikra vit à la semaine : sa coche est rattachée au Chabbat de
     // la paracha et survit à la remise à zéro quotidienne.
     ...(storedParashaProgress.value ? { parashaProgress: storedParashaProgress.value } : {}),
@@ -1302,7 +1572,7 @@ const formatBookName = bookName;
           </section>
 
           <!-- Objectifs personnels : ce que la personne veut s'améliorer à faire,
-               dans ses mots à elle -->
+               dans ses mots à elle, chaque jour ou tant de fois par semaine -->
           <section class="mb-8">
             <h3 class="text-lg font-bold text-text-primary mb-1">
               {{ t("dailyReading.goals.title") }}
@@ -1314,20 +1584,28 @@ const formatBookName = bookName;
               <li
                 v-for="goal in sortedGoals"
                 :key="goal.id"
-                class="flex items-center justify-between gap-3 p-3 rounded-lg bg-primary/10"
+                class="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg bg-primary/10"
               >
                 <span class="flex items-center gap-2.5 min-w-0 font-medium text-text-primary">
                   <AppIcon name="target" :size="14" class="shrink-0 text-primary" />
                   <span class="truncate">{{ goal.label }}</span>
                 </span>
-                <button
-                  @click="removeGoal(goal.id)"
-                  class="p-1 rounded-full text-text-secondary hover:text-red-600 transition-colors shrink-0"
-                  :title="t('dailyReading.goals.remove')"
-                  :aria-label="t('dailyReading.goals.remove')"
-                >
-                  <AppIcon name="x" :size="14" />
-                </button>
+                <span class="flex items-center gap-2">
+                  <AppSelect
+                    :model-value="String(goal.perWeek ?? 0)"
+                    :options="frequencyOptions"
+                    class="w-44"
+                    @update:model-value="(value) => setGoalFrequency(goal, value)"
+                  />
+                  <button
+                    @click="removeGoal(goal.id)"
+                    class="p-1 rounded-full text-text-secondary hover:text-red-600 transition-colors shrink-0"
+                    :title="t('dailyReading.goals.remove')"
+                    :aria-label="t('dailyReading.goals.remove')"
+                  >
+                    <AppIcon name="x" :size="14" />
+                  </button>
+                </span>
               </li>
             </ul>
             <form
@@ -1355,6 +1633,49 @@ const formatBookName = bookName;
             <p v-else class="text-xs text-text-secondary/70">
               {{ t("dailyReading.goals.limit", { max: goalLimits.max }) }}
             </p>
+          </section>
+
+          <!-- La série : ce qu'il faut pour réussir une journée, et les jours
+               de pause (voir dailyHistory.daySucceeded et restDays) -->
+          <section class="mb-8">
+            <h3 class="text-lg font-bold text-text-primary mb-1">
+              {{ t("dailyReading.rules.title") }}
+            </h3>
+            <p class="text-sm text-text-secondary mb-3 max-w-xl">
+              {{ t("dailyReading.rules.description") }}
+            </p>
+            <div class="flex flex-wrap gap-2 mb-4" role="radiogroup">
+              <button
+                v-for="rule in DAILY_GOAL_RULES"
+                :key="rule"
+                role="radio"
+                :aria-checked="goalRule === rule"
+                @click="setGoalRule(rule)"
+                :class="[
+                  'px-4 py-2 rounded-btn text-sm font-medium transition-colors',
+                  goalRule === rule
+                    ? 'bg-primary text-white'
+                    : 'bg-black/5 text-text-secondary hover:bg-black/10 hover:text-text-primary dark:bg-white/10 dark:hover:bg-white/15',
+                ]"
+              >
+                {{ t(`dailyReading.rules.${rule}`) }}
+              </button>
+            </div>
+            <label class="card flex items-center justify-between gap-4 p-4 cursor-pointer">
+              <span class="min-w-0">
+                <span class="block font-medium text-text-primary">
+                  {{ t("dailyReading.rules.restDays") }}
+                </span>
+                <span class="block text-xs text-text-secondary">
+                  {{ t("dailyReading.rules.restDaysHint") }}
+                </span>
+              </span>
+              <ToggleSwitch
+                :model-value="restDays"
+                :label="t('dailyReading.rules.restDays')"
+                @update:model-value="setRestDays"
+              />
+            </label>
           </section>
         </div>
       </CollapseTransition>
@@ -1449,29 +1770,30 @@ const formatBookName = bookName;
 
     <!-- ===== Reading mode: the selected texts, one after another ===== -->
     <template v-else>
-      <!-- Empty list -->
-      <div
-        v-if="totalCount === 0 && !weeklyParasha"
-        class="flex flex-col items-center justify-center py-16 text-center"
-      >
-        <AppIcon name="book" :size="32" class="text-primary/50 mb-4" />
-        <h3 class="text-xl font-semibold text-text-primary mb-2">
-          {{ t("dailyReading.emptyTitle") }}
-        </h3>
-        <p class="text-text-secondary mb-6 max-w-sm">
-          {{ t("dailyReading.emptyDescription") }}
-        </p>
-        <button @click="mode = 'manage'" class="btn btn-primary">
-          <AppIcon name="plus" :size="14" />
-          {{ t("dailyReading.addTexts") }}
-        </button>
+      <!-- Liste vide : les trois parcours de départ, ou composer soi-même -->
+      <div v-if="totalCount === 0 && !weeklyParasha" class="py-6">
+        <div class="text-center mb-6">
+          <AppIcon name="book" :size="32" class="text-primary/50 mb-4 mx-auto" />
+          <h3 class="text-xl font-semibold text-text-primary mb-2">
+            {{ t("dailyReading.emptyTitle") }}
+          </h3>
+          <p class="text-text-secondary max-w-md mx-auto">
+            {{ t("dailyReading.emptyDescription") }}
+          </p>
+        </div>
+        <DailyStarterPacks :busy="saving" @choose="applyPack" />
+        <div class="mt-6 text-center">
+          <button @click="mode = 'manage'" class="btn btn-soft">
+            <AppIcon name="settings" :size="14" />
+            {{ t("dailyReading.packs.compose") }}
+          </button>
+        </div>
       </div>
 
       <template v-else>
-        <!-- Onglets Aujourd'hui / Cette semaine + taille du texte -->
+        <!-- Onglets Aujourd'hui / Cette semaine / Progression + taille du texte -->
         <div class="flex items-center justify-between gap-3 mb-6 flex-wrap">
           <div
-            v-if="weeklyParasha"
             class="inline-flex items-center gap-1 rounded-btn bg-black/5 p-1 dark:bg-white/10"
             role="tablist"
           >
@@ -1489,6 +1811,7 @@ const formatBookName = bookName;
               {{ t("dailyReading.tabToday") }}
             </button>
             <button
+              v-if="weeklyParasha"
               role="tab"
               :aria-selected="activeTab === 'week'"
               @click="switchTab('week')"
@@ -1513,11 +1836,126 @@ const formatBookName = bookName;
                 :class="activeTab === 'week' ? 'bg-white' : 'bg-primary'"
               ></span>
             </button>
+            <button
+              role="tab"
+              :aria-selected="activeTab === 'progress'"
+              @click="switchTab('progress')"
+              :class="[
+                'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-control text-sm font-medium transition-colors',
+                activeTab === 'progress'
+                  ? 'bg-primary text-white'
+                  : 'text-text-secondary hover:text-text-primary',
+              ]"
+            >
+              <AppIcon name="flame" :size="13" />
+              {{ t("dailyReading.tabProgress") }}
+            </button>
           </div>
 
           <!-- Taille du texte (même réglage que le lecteur de la bibliothèque) -->
-          <ReadingSizeControl class="ml-auto" />
+          <ReadingSizeControl v-if="activeTab !== 'progress'" class="ml-auto" />
         </div>
+
+        <!-- Onglet « Progression » : le calendrier, les compteurs, les paliers -->
+        <section v-if="activeTab === 'progress'" class="space-y-6 mb-10">
+          <div class="card p-5">
+            <DailyStreakBanner :status="streakInfo" />
+            <p
+              v-if="streakInfo.freezes > 0 || streakInfo.best >= 7"
+              class="mt-3 text-xs text-text-secondary flex items-center gap-1.5"
+            >
+              <AppIcon name="shield" :size="13" class="text-primary" />
+              {{ t("dailyReading.freezes.count", streakInfo.freezes) }}
+              <span class="text-text-secondary/70">
+                · {{ t("dailyReading.freezes.hint", { max: MAX_FREEZES }) }}
+              </span>
+            </p>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <button class="btn btn-soft btn-sm" @click="shareStreak">
+                <AppIcon name="share" :size="13" />
+                {{ t("dailyReading.streak.share") }}
+              </button>
+            </div>
+          </div>
+
+          <DailyChallengeCard v-if="challenge" :challenge="challenge" :succeeded="challengeDone" />
+
+          <div class="card p-5">
+            <DailyMonthCalendar :history="liveHistory" :today="todayKey" :is-pause="isPause" />
+          </div>
+
+          <!-- Les compteurs cumulés : des chiffres qui ne redescendent jamais -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div
+              v-for="stat in [
+                { key: 'days', value: totals.days },
+                { key: 'psalms', value: totals.psalms },
+                { key: 'dafim', value: totals.dafim },
+                { key: 'prayers', value: totals.prayers },
+              ]"
+              :key="stat.key"
+              class="card p-4"
+            >
+              <p class="text-3xl font-bold tabular-nums text-text-primary leading-none">
+                {{ stat.value }}
+              </p>
+              <p class="mt-1.5 text-xs text-text-secondary">
+                {{ t(`dailyReading.totals.${stat.key}`, stat.value) }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Les paliers de la série, et les siyoumim -->
+          <div class="card p-5">
+            <h2 class="font-semibold text-text-primary mb-3">
+              {{ t("dailyReading.milestones.title") }}
+            </h2>
+            <ul class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <li
+                v-for="m in milestones"
+                :key="m.days"
+                class="flex items-center gap-2.5 rounded-lg p-3"
+                :class="m.reached ? 'bg-primary/10' : 'bg-black/[0.03] dark:bg-white/5'"
+              >
+                <AppIcon
+                  :name="m.reached ? 'trophy' : 'flame'"
+                  :size="18"
+                  :class="m.reached ? 'text-primary' : 'text-text-secondary/40'"
+                />
+                <span class="min-w-0">
+                  <span
+                    class="block text-sm font-semibold"
+                    :class="m.reached ? 'text-text-primary' : 'text-text-secondary'"
+                  >
+                    {{ t("dailyReading.milestones.days", { n: m.days }) }}
+                  </span>
+                  <span class="block text-[11px] text-text-secondary/80">
+                    {{
+                      m.reached
+                        ? t("dailyReading.milestones.reached")
+                        : t("dailyReading.milestones.locked")
+                    }}
+                  </span>
+                </span>
+              </li>
+            </ul>
+            <template v-if="siyoumim.length">
+              <h3 class="mt-5 mb-2 text-sm font-semibold text-text-primary">
+                {{ t("dailyReading.milestones.siyoumim") }}
+              </h3>
+              <ul class="flex flex-wrap gap-2">
+                <li
+                  v-for="siyoum in siyoumim"
+                  :key="siyoum.date"
+                  class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-text-primary"
+                >
+                  <AppIcon name="graduation-cap" :size="14" class="text-primary" />
+                  {{ siyoum.tractate }}
+                </li>
+              </ul>
+            </template>
+          </div>
+        </section>
 
         <!-- Onglet « Cette semaine » : le chnei mikra, à part de la liste du
              jour. Sa coche tient jusqu'au changement de paracha. -->
@@ -1604,7 +2042,7 @@ const formatBookName = bookName;
         </section>
 
         <!-- Onglet « Aujourd'hui » : progression et liste du jour -->
-        <template v-else>
+        <template v-else-if="activeTab === 'today'">
           <!-- Seul le chnei mikra est suivi : la liste du jour est vide -->
           <div
             v-if="totalCount === 0"
@@ -1649,11 +2087,37 @@ const formatBookName = bookName;
               <p class="text-xs text-text-secondary/70 mt-3 flex items-center gap-1.5">
                 <AppIcon name="rotate" :size="12" />
                 {{ t("dailyReading.resetsDaily") }}
+                <span v-if="goalRule !== 'all'"
+                  >· {{ t(`dailyReading.rules.short.${goalRule}`) }}</span
+                >
               </p>
 
-              <!-- La série de jours : tout fait chaque jour, le compteur monte -->
+              <!-- La semaine en cours : sept pastilles, du dimanche au Chabbat -->
+              <DailyWeekDots :days="weekCells" class="mt-4 max-w-sm" />
+
+              <!-- La série de jours : la journée réussie chaque jour, le compteur monte -->
               <DailyStreakBanner :status="streakInfo" class="mt-4 pt-4 border-t border-line" />
+
+              <!-- Hier n'a pas été coché : jusqu'à midi, on peut le dire -->
+              <div
+                v-if="canCatchUpYesterday"
+                class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-primary/10 p-3"
+              >
+                <p class="text-sm text-text-primary">{{ t("dailyReading.catchUp.question") }}</p>
+                <button class="btn btn-soft btn-sm" @click="catchUpYesterday">
+                  <AppIcon name="check" :size="13" />
+                  {{ t("dailyReading.catchUp.confirm") }}
+                </button>
+              </div>
             </div>
+
+            <!-- Le défi de saison en cours ('Omer, Yamim Noraïm, 'Hanouka) -->
+            <DailyChallengeCard
+              v-if="challenge"
+              :challenge="challenge"
+              :succeeded="challengeDone"
+              class="mb-8"
+            />
 
             <!-- Texts, one after another, directly on the page background -->
             <div class="space-y-12">
@@ -1690,6 +2154,13 @@ const formatBookName = bookName;
                           :size="15"
                           class="text-green-500"
                         />
+                      </span>
+                      <!-- Où l'on en est dans le cycle : un chemin qu'on voit -->
+                      <span
+                        v-if="reading.progress"
+                        class="mt-1 inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary"
+                      >
+                        {{ reading.progress }}
                       </span>
                     </span>
                   </button>
@@ -1864,15 +2335,23 @@ const formatBookName = bookName;
                 />
               </template>
 
-              <!-- Les actions du jour : une case chacune, et le texte à portée
-                   quand l'application l'a -->
-              <section v-if="chosenActions.length">
-                <h2 class="text-xs font-semibold text-primary mb-3">
-                  {{ t("dailyReading.actions.title") }}
+              <!-- Les actions du jour, rangées par moment de la journée : une
+                   case chacune, la fin de plage des offices, et le texte à
+                   portée quand l'application l'a -->
+              <section
+                v-for="group in actionGroups"
+                :key="group.moment"
+                :aria-label="t(`dailyReading.moments.${group.moment}`)"
+              >
+                <h2 class="text-xs font-semibold text-primary mb-3 flex items-center gap-2">
+                  {{ t(`dailyReading.moments.${group.moment}`) }}
+                  <span class="font-normal text-text-secondary/70">
+                    · {{ t("dailyReading.actions.title") }}
+                  </span>
                 </h2>
                 <ul class="space-y-2">
                   <li
-                    v-for="action in chosenActions"
+                    v-for="action in group.actions"
                     :key="action.key"
                     class="card flex items-center gap-3 p-3"
                     :class="completedActions.has(action.key) ? 'opacity-60' : ''"
@@ -1902,6 +2381,13 @@ const formatBookName = bookName;
                               ? t("dailyReading.actions.doneToday")
                               : t(action.descriptionKey)
                           }}
+                          <span
+                            v-if="!completedActions.has(action.key) && actionDeadline(action)"
+                            class="text-primary font-medium"
+                          >
+                            ·
+                            {{ t("dailyReading.actions.until", { time: actionDeadline(action) }) }}
+                          </span>
                         </span>
                       </span>
                     </button>
@@ -1918,14 +2404,14 @@ const formatBookName = bookName;
                 </ul>
               </section>
 
-              <!-- Les objectifs personnels, cochés de la même façon -->
-              <section v-if="sortedGoals.length">
+              <!-- Les objectifs personnels de chaque jour, cochés de la même façon -->
+              <section v-if="dailyGoals.length">
                 <h2 class="text-xs font-semibold text-primary mb-3">
                   {{ t("dailyReading.goals.title") }}
                 </h2>
                 <ul class="space-y-2">
                   <li
-                    v-for="goal in sortedGoals"
+                    v-for="goal in dailyGoals"
                     :key="goal.id"
                     class="card p-3"
                     :class="completedActions.has(goal.id) ? 'opacity-60' : ''"
@@ -1958,6 +2444,60 @@ const formatBookName = bookName;
                   </li>
                 </ul>
               </section>
+
+              <!-- Les objectifs à fréquence : « 2 sur 3 cette semaine », hors
+                   du décompte du jour -->
+              <section v-if="weeklyGoals.length">
+                <h2 class="text-xs font-semibold text-primary mb-3">
+                  {{ t("dailyReading.goals.weeklyTitle") }}
+                </h2>
+                <ul class="space-y-2">
+                  <li
+                    v-for="goal in weeklyGoals"
+                    :key="goal.id"
+                    class="card p-3"
+                    :class="completedActions.has(goal.id) ? 'opacity-60' : ''"
+                  >
+                    <button
+                      @click="toggleActionCompleted(goal.id)"
+                      class="flex w-full items-center gap-3 text-left"
+                      :aria-pressed="completedActions.has(goal.id)"
+                    >
+                      <AppIcon
+                        v-if="completedActions.has(goal.id)"
+                        name="circle-check"
+                        :size="20"
+                        class="shrink-0 text-green-500"
+                      />
+                      <span
+                        v-else
+                        class="w-5 h-5 rounded-full border-2 border-text-secondary/50 shrink-0"
+                      ></span>
+                      <span class="min-w-0 flex-1">
+                        <span class="block font-medium text-text-primary">{{ goal.label }}</span>
+                        <span class="block text-xs text-text-secondary">
+                          {{
+                            t("dailyReading.goals.weeklyProgress", {
+                              done: weeklyDone(goal),
+                              total: goal.perWeek,
+                            })
+                          }}
+                        </span>
+                      </span>
+                      <span class="flex gap-1" aria-hidden="true">
+                        <span
+                          v-for="i in goal.perWeek ?? 0"
+                          :key="i"
+                          class="h-2 w-2 rounded-full"
+                          :class="
+                            i <= weeklyDone(goal) ? 'bg-primary' : 'bg-black/10 dark:bg-white/15'
+                          "
+                        ></span>
+                      </span>
+                    </button>
+                  </li>
+                </ul>
+              </section>
             </div>
           </template>
         </template>
@@ -1972,5 +2512,16 @@ const formatBookName = bookName;
       <ReadingMenu :share-title="t('dailyReading.title')" />
       <ReadingProgressBar />
     </template>
+
+    <!-- La fête de la journée réussie, une fois par jour -->
+    <DailyCelebration
+      :open="celebration !== null"
+      :status="streakInfo"
+      :milestone="celebration?.milestone ?? null"
+      :siyoum="celebration?.siyoum ?? null"
+      :freeze-earned="celebration?.freezeEarned ?? false"
+      @close="celebration = null"
+      @share="shareStreak"
+    />
   </div>
 </template>

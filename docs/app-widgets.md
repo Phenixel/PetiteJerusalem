@@ -147,6 +147,9 @@ widgets dont le payload a changé.
   avec sa propre échéance : `current` ne vaut que jusqu'au minuit qui suit le
   lendemain du dernier jour où tout a été fait (`src/services/dailyStreak.ts`).
   Passé cet instant, le widget affiche zéro et `zeroLabel`, sans calendrier.
+  L'échéance enjambe les jours de pause (Chabbat, Yom Tov, voir
+  `src/services/restDays.ts`) et les jokers en réserve : c'est l'app qui les
+  compte, le natif ne compare qu'un epoch.
   Les libellés (« 5 jours d'affilée », « Record : 12 ») arrivent déjà accordés.
   Les actions du jour et les objectifs personnels comptent comme une lecture
   chacun dans `items` : le widget de lecture les compte sans les distinguer.

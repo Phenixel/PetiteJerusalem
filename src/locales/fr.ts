@@ -389,6 +389,7 @@ const fr = {
     done: "Terminé",
     tabToday: "Aujourd'hui",
     tabWeek: "Cette semaine",
+    tabProgress: "Progression",
     addTexts: "Ajouter des textes",
     add: "Ajouter",
     added: "Ajouté",
@@ -417,6 +418,7 @@ const fr = {
         "Des gestes de la journée à cocher chaque jour, à côté de vos lectures : ils comptent dans votre progression et dans votre série.",
       doneToday: "Fait aujourd'hui",
       open: "Ouvrir le texte",
+      until: "jusqu'à {time}",
       chaharitTitle: "Cha'harit",
       chaharitDescription: "La prière du matin.",
       minhaTitle: "Min'ha",
@@ -439,6 +441,10 @@ const fr = {
         "Ce que vous voulez faire chaque jour, dans vos mots : dix minutes de moussar, un appel à vos parents, un chapitre de plus.",
       placeholder: "Un objectif pour chaque jour",
       add: "Ajouter",
+      everyDay: "Chaque jour",
+      perWeek: "{n} fois par semaine | {n} fois par semaine | {n} fois par semaine",
+      weeklyTitle: "Cette semaine",
+      weeklyProgress: "{done} sur {total} cette semaine",
       remove: "Retirer cet objectif",
       limit: "Vous avez atteint les {max} objectifs : retirez-en un pour en ajouter un autre.",
     },
@@ -451,12 +457,118 @@ const fr = {
       bestTitle: "Votre plus longue série",
       doneToday: "Tout est fait aujourd'hui : la série continue demain.",
       atRisk: "Terminez vos objectifs avant minuit pour garder votre série.",
+      atRiskFreeze:
+        "Un jour a été manqué : un joker le couvre si vous terminez aujourd'hui. | Un jour a été manqué : un joker le couvre si vous terminez aujourd'hui. | {n} jours ont été manqués : vos jokers les couvrent si vous terminez aujourd'hui.",
+      paused: "Jour de pause : votre série tient sans rien faire. Cocher reste possible.",
       restart: "Terminez tous vos objectifs aujourd'hui pour repartir sur une série.",
       start: "Terminez tous vos objectifs du jour pour commencer une série.",
       widgetTitle: "Série",
       widgetDays: "jour d'affilée | jour d'affilée | jours d'affilée",
       widgetZero: "Terminez votre journée pour lancer une série",
       widgetBest: "Record : {n}",
+      share: "Partager ma série",
+      shareDownloaded: "L'image de votre série est téléchargée.",
+    },
+    // Les jokers : un par semaine entière de série, un jour manqué en consomme un.
+    freezes: {
+      count: "Aucun joker en réserve | 1 joker en réserve | {n} jokers en réserve",
+      hint: "Une semaine entière de série en donne un ({max} au plus) : un jour manqué le consomme au lieu de rompre la série.",
+    },
+    // La règle de la journée réussie et les jours de pause.
+    rules: {
+      title: "Ma journée réussie",
+      description:
+        "Ce qu'il faut avoir coché pour que la journée compte dans votre série. Tout, c'est exigeant ; une chose, c'est tenable.",
+      all: "Tout",
+      half: "Au moins la moitié",
+      one: "Au moins une chose",
+      short: {
+        all: "journée réussie quand tout est fait",
+        half: "journée réussie à la moitié",
+        one: "journée réussie dès une chose faite",
+      },
+      restDays: "Chabbat et Yom Tov en pause",
+      restDaysHint:
+        "Ces jours-là ne comptent ni pour ni contre : la série les traverse sans que vous ayez à ouvrir l'application.",
+    },
+    // Rattraper la veille, jusqu'à midi.
+    catchUp: {
+      question: "Hier n'est pas coché. Aviez-vous tout fait ?",
+      confirm: "Oui, hier était fait",
+      done: "Hier compte : votre série continue.",
+    },
+    // La semaine en cours et le calendrier.
+    week: {
+      title: "Cette semaine",
+      days: { 0: "D", 1: "L", 2: "M", 3: "M", 4: "J", 5: "V", 6: "S" },
+      states: {
+        done: "Journée réussie",
+        partial: "Journée entamée",
+        missed: "Journée manquée",
+        pause: "Jour de pause",
+        future: "À venir",
+        empty: "Rien encore",
+      },
+    },
+    calendar: {
+      previous: "Mois précédent",
+      next: "Mois suivant",
+    },
+    // Les compteurs cumulés de l'onglet Progression.
+    totals: {
+      days: "journée réussie | journée réussie | journées réussies",
+      psalms: "psaume lu | psaume lu | psaumes lus",
+      dafim: "daf étudié | daf étudié | dafim étudiés",
+      prayers: "prière | prière | prières",
+    },
+    milestones: {
+      title: "Paliers",
+      days: "{n} jours",
+      reached: "atteint",
+      locked: "à venir",
+      siyoumim: "Siyoumim",
+    },
+    // La fête de la journée réussie.
+    celebration: {
+      kicker: "Journée réussie",
+      title: "Bravo, tout est fait !",
+      milestone: "{n} jours d'affilée !",
+      siyoum: "Siyoum de {tractate} !",
+      newBest: "Votre plus longue série, à ce jour.",
+      freezeEarned: "Une semaine entière : vous gagnez un joker.",
+      close: "Continuer",
+    },
+    // Les défis de saison.
+    challenges: {
+      kicker: "Défi de saison",
+      omer: "Les 49 jours du 'Omer",
+      "yamim-noraim": "D'Eloul à Kippour",
+      hanouka: "Les huit soirs de 'Hanouka",
+      progress: "Jour {day} sur {total} · {done} journées réussies",
+    },
+    // Où l'on en est dans un cycle.
+    progressChips: {
+      daf: "Daf {index} sur {count} · cycle à {pct} %",
+      tehilim: "Jour {day} sur 30 du cycle",
+    },
+    // Les moments de la journée, pour ranger les actions.
+    moments: {
+      morning: "Matin",
+      afternoon: "Après-midi",
+      evening: "Soir",
+      any: "À tout moment",
+    },
+    // Les parcours de départ.
+    packs: {
+      intro: "Par où commencer ? Choisissez un parcours, vous le retoucherez ensuite.",
+      lireTitle: "Lire",
+      lireDescription: "Les Tehilim du jour et la paracha de la semaine, chaque jour.",
+      faireTitle: "Faire",
+      faireDescription: "Les trois offices et les tefilin, cochés au fil de la journée.",
+      progresserTitle: "Progresser",
+      progresserDescription: "Le Daf hayomi, un temps d'étude, la tsédaka, et un objectif à vous.",
+      progresserGoal: "Dix minutes de moussar",
+      compose: "Composer moi-même",
     },
     options: {
       title: "Lectures du moment",
