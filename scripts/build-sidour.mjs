@@ -24,11 +24,14 @@ import { fileURLToPath } from "url";
 import {
   cleanFinal,
   dropSmalls,
+  fetchMerged,
   fetchSiddur,
+  MACHZOR_YOM_KIPPUR_URL,
   outerSmalls,
   segText,
   sliceBetween,
   splitAfter,
+  stripMarks,
 } from "./lib/sefaria-siddur.mjs";
 import {
   AJOUT_GUEDALIA,
@@ -219,7 +222,9 @@ function didascalieDeRemplacement(when, rubric) {
  * demande, juste après le mot qu'elle remplace ; `parts` compose la ligne de
  * plusieurs fragments, chacun avec sa condition (voir partRuns) ;
  * `splitAmen` déplie un kaddich en une phrase par ligne, chacune suivie de sa
- * réponse (voir buildKaddishLines) ; `klaf` (« ketoret », « menora ») marque
+ * réponse (voir buildKaddishLines) ; `splitBr` déplie une liste que la source
+ * tient en un segment, une ligne par <br> (voir buildBrLines) ;
+ * `klaf` (« ketoret », « menora ») marque
  * le paragraphe d'où le lecteur ouvre le parchemin correspondant (voir
  * KlafViewer.vue) : le pitoum haketoret tel qu'un sofer l'écrit, le psaume 67
  * en forme de menora.
@@ -284,6 +289,31 @@ function buildKaddishLines(spec, segs) {
     });
 }
 
+/**
+ * Une liste que la source donne en un seul segment, une ligne par <br> : les
+ * aveux du 'Al het, les fautes du 'Al hataïm. On rend un paragraphe par ligne,
+ * serrés les uns sous les autres (`tight`), comme le sidour les imprime ;
+ * sinon, les cinquante aveux du vidouy s'étirent sur autant d'écrans. La
+ * didascalie, s'il y en a une, ouvre la première.
+ *
+ * La condition, elle, se porte sur le bloc : une liste ne se dit pas à
+ * moitié, et ses lignes n'en portent aucune.
+ */
+function buildBrLines(spec, segs) {
+  const lignes = String(segs[spec.seg] ?? "")
+    .split(/<br\s*\/?>/)
+    .map((part) => cleanFinal(dropSmalls(part)))
+    .filter((text) => text.length > 0);
+  if (lignes.length < 2) throw new Error(`Liste d'une seule ligne : segment ${spec.seg}`);
+  return lignes.map((text, i) => {
+    const line = { he: text };
+    if (i === 0 && spec.rubric) line.rubric = spec.rubric;
+    if (i > 0 || spec.tight) line.tight = true;
+    // Sans autre attribut, une simple chaîne suffit au format.
+    return Object.keys(line).length === 1 ? text : line;
+  });
+}
+
 function buildBlock(spec, sections) {
   const block = {};
   if (spec.labelText) {
@@ -309,9 +339,11 @@ function buildBlock(spec, sections) {
   const segs = spec.src ? sections[spec.src] : [];
   if (spec.src && !segs) throw new Error(`Section source inconnue : ${spec.src}`);
   block.lines = (spec.lines ?? [])
-    .flatMap((line) =>
-      line.splitAmen ? buildKaddishLines(line, segs ?? []) : [buildLine(line, segs ?? [])],
-    )
+    .flatMap((line) => {
+      if (line.splitAmen) return buildKaddishLines(line, segs ?? []);
+      if (line.splitBr) return buildBrLines(line, segs ?? []);
+      return [buildLine(line, segs ?? [])];
+    })
     .filter((line) => line !== null);
   // Une option de choix peut être vide : « pas de haftara » est un choix.
   if (!block.zman && !block.torahWeekly && !block.choice && block.lines.length === 0) {
@@ -968,15 +1000,16 @@ function amidaBlocks(src, ix, opts = {}) {
     ],
   });
 
-  blocks.push({
-    src,
-    lines: [
-      { seg: ix.yihyu1 },
-      { seg: ix.elohaiNetsor },
-      { seg: ix.lemaan },
-      { seg: ix.yihyu2, tight: true },
-    ],
-  });
+  // La fin de la 'Amida : « Yihyou lératson », Élohaï netsor, et le second
+  // « Yihyou lératson ». La veille de Kippour, le vidouy s'ouvre entre les
+  // deux (`opts.vidouy`, voir vidouyKippour) : la fin se dit alors en deux
+  // blocs, lui au milieu, comme le mahzor l'imprime.
+  const finAmida = [{ seg: ix.elohaiNetsor }, { seg: ix.lemaan }, { seg: ix.yihyu2, tight: true }];
+  if (opts.vidouy) {
+    blocks.push({ src, lines: [{ seg: ix.yihyu1 }] }, ...opts.vidouy, { src, lines: finAmida });
+  } else {
+    blocks.push({ src, lines: [{ seg: ix.yihyu1 }, ...finAmida] });
+  }
 
   // Min'ha, avant de reculer de trois pas : c'est là qu'on prend sur soi un
   // jeûne pour le lendemain. Personne n'y est tenu : le passage vit dans un
@@ -2952,6 +2985,104 @@ function chaharitRecipe() {
   };
 }
 
+/**
+ * Le vidouy de la veille de Kippour, dans la 'Amida de Min'ha.
+ *
+ * C'est le seul jour de l'année où la confession entre dans la 'Amida de tous
+ * les jours : on se confesse déjà à Min'ha, avant le repas qui précède le
+ * jeûne, de peur qu'un accident au cours du repas n'en laisse plus le temps
+ * (Yoma 87b, Choul'han 'Aroukh Ora'h 'Haïm 607, 1). Il s'ouvre après le
+ * premier « Yihyou lératson » et se ferme sur « Élohaï netsor ».
+ *
+ * Le siddour de l'export ne le porte pas : ses segments viennent du mahzor de
+ * Kippour du même rite, section « Mincha for Yom Kippur Eve » (voir
+ * amidaKippour, qui en vérifie les repères). Ses trois listes tiennent chacune
+ * en un seul segment, une ligne par <br> : `splitBr` les déplie.
+ *
+ * Quatre blocs plutôt qu'un : le titre ouvre le premier, la note de Tunis
+ * accompagne la liste qu'elle vise, et le menu de lecture n'a qu'une entrée à
+ * y prendre. Tous `plain` : la couleur du thème dit « l'ajout du jour » sur
+ * une ligne, elle serait illisible sur cinquante.
+ */
+function vidouyKippour() {
+  const when = "erev-kippour";
+  const src = "YK.Amida";
+  return [
+    {
+      src,
+      when,
+      plain: true,
+      labelText: R("Vidouy (confession)", "Vidui (confession)", "וידוי"),
+      halakha: [
+        R(
+          "La veille de Kippour, on se confesse déjà à Min'ha, avant le repas qui précède le jeûne\u00a0: de peur qu'un accident au cours du repas n'en laisse plus le temps.",
+          "On the eve of Kippur, the confession is already said at Mincha, before the meal that precedes the fast: lest a mishap during the meal leave no time for it.",
+          "בערב כיפור מתוודים כבר במנחה, קודם הסעודה המפסקת, שמא יארע דבר בסעודה ולא יוכל להתוודות.",
+        ),
+      ],
+      lines: [
+        { seg: 23 },
+        { seg: 24 },
+        { seg: 25 },
+        {
+          seg: 26,
+          splitBr: true,
+          rubric: R(
+            "Les aveux, dans l'ordre de l'alphabet\u00a0:",
+            "The confessions, in the order of the alphabet:",
+            "על סדר א״ב:",
+          ),
+        },
+      ],
+    },
+    {
+      src,
+      when,
+      plain: true,
+      halakha: [
+        R(
+          "À Tunis, on ne disait pas cette seconde liste.",
+          "In Tunis, this second list was not said.",
+          "בתוניס לא היו אומרים רשימה זו.",
+        ),
+      ],
+      lines: [
+        {
+          seg: 27,
+          splitBr: true,
+          rubric: R(
+            "Puis à rebours, du tav à l'alef\u00a0:",
+            "Then in reverse, from tav to alef:",
+            "על סדר תשר״ק:",
+          ),
+        },
+      ],
+    },
+    {
+      src,
+      when,
+      plain: true,
+      lines: [
+        {
+          seg: 28,
+          splitBr: true,
+          rubric: R(
+            "Les fautes, selon ce qu'elles coûtaient au Temple\u00a0:",
+            "The sins, by what they once cost in the Temple:",
+            "ועל החטאים, לפי מה שהיו חייבים עליהם:",
+          ),
+        },
+      ],
+    },
+    {
+      src,
+      when,
+      plain: true,
+      lines: [{ seg: 29 }, { seg: 30 }],
+    },
+  ];
+}
+
 function minhaRecipe() {
   const amida = amidaBlocks(
     "Amida",
@@ -3003,6 +3134,9 @@ function minhaRecipe() {
       yehiRatson: 71,
     },
     {
+      // La veille de Kippour, le vidouy entre dans la 'Amida, entre les deux
+      // « Yihyou lératson » (voir vidouyKippour).
+      vidouy: vidouyKippour(),
       // À Min'ha, les trois versets ne tiennent qu'en un segment de la source,
       // d'où le même index trois fois : ce sont leurs repères qui les séparent.
       kohanim: birkatKohanimBlock(
@@ -3127,10 +3261,32 @@ function minhaRecipe() {
       {
         src: "Vidui",
         when: "lamnatseah-minha",
+        // La veille de Kippour, deux autres psaumes prennent sa place.
+        unless: "erev-kippour",
         plain: true,
         // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
         // Le même psaume 67 que le matin : même parchemin en forme de menora.
         lines: [{ seg: 16, strip: ["(תהלים סז)"], klaf: "menora" }],
+      },
+      // La veille de Kippour, le psaume 85 (« Tu as pardonné la faute de ton
+      // peuple ») et le psaume 130 (« Des profondeurs je t'ai appelé »)
+      // tiennent la place du Lamnatséa'h. Sauf le vendredi, où le psaume 93
+      // de la veille de Chabbat la tient déjà (bloc jour-5) : quand Kippour
+      // tombe un Chabbat, sa veille est un vendredi.
+      {
+        when: "erev-kippour",
+        unless: "jour-5",
+        lines: [
+          {
+            he: psaume(85),
+            rubric: R(
+              "La veille de Kippour, on dit à la place du Lamnatséa'h\u00a0:",
+              "On the eve of Kippur, say in place of the Lamnatzeach:",
+              "בערב כיפור אומרים במקום למנצח:",
+            ),
+          },
+          { he: psaume(130) },
+        ],
       },
       {
         src: "Vidui",
@@ -3532,6 +3688,38 @@ function kaddichRecipe() {
 
 console.log("Téléchargement du Siddur Edot HaMizrach (export Sefaria)…");
 const text = await fetchSiddur();
+console.log("Téléchargement du Mahzor Kippour Edot HaMizrach (export Sefaria)…");
+const machzorKippour = await fetchMerged(MACHZOR_YOM_KIPPUR_URL);
+
+/**
+ * La 'Amida de la Min'ha de la veille de Kippour, dans le mahzor : la section
+ * que le siddour n'a pas, et d'où vient le vidouy (voir vidouyKippour).
+ *
+ * Ses segments sont désignés par leur rang, comme partout ici ; mais ils
+ * viennent d'un second livre, qui ne bouge pas avec le premier. On vérifie
+ * donc qu'ils sont bien ceux qu'on croit avant de bâtir : un repère déplacé
+ * fait échouer la construction, plutôt que d'écrire un vidouy amputé que rien
+ * ne signalerait.
+ */
+function amidaKippour() {
+  const segs = machzorKippour["Mincha for Yom Kippur Eve"]?.["Amidah"] ?? [];
+  const REPERES = [
+    [23, "אנא"],
+    [24, "נאמר לפניך יושב מרום"],
+    [25, "שתמחל לנו"],
+    [26, "על סדר א״ב"],
+    [27, "על סדר תשר״ק"],
+    [28, "על חטאים שאנחנו חיבים עליהם"],
+    [29, "עד שלא נוצרתי"],
+    [30, "שלא אחטא עוד"],
+  ];
+  for (const [i, repere] of REPERES) {
+    if (!stripMarks(segText(segs[i], "full")).includes(repere)) {
+      throw new Error(`Mahzor de Kippour : le segment ${i} ne porte plus « ${repere} »`);
+    }
+  }
+  return segs;
+}
 
 /**
  * Les sections sources d'un office, aplaties par la recette (clé `src`). Le
@@ -3591,6 +3779,9 @@ function sourcesFor(office) {
       "Torah Reading": ws["Torah Reading"],
       "Taanit.Torah": text["Fast Days and Mourning"]["Torah Reading for Fast Days"],
       Haftara: text["Shabbat Shacharit"]["Haftarah"],
+      // La veille de Kippour : le vidouy de la 'Amida, que seul le mahzor
+      // porte.
+      "YK.Amida": amidaKippour(),
     };
   }
   // Le texte du Kaddich, à part : ses quatre formes viennent des trois
