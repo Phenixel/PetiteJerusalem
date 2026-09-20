@@ -571,12 +571,16 @@ const phoneticOf = computed(() => {
 /* Les tailles suivent le réglage A− / A+ (--reading-scale, useReadingSize).
    Interligne aligné sur celui des autres lecteurs (1.7) : assez d'air pour
    les voyelles, sans étirer la lecture. */
+/* Aucune couleur ici : elle vient du bloc (la couleur du thème pour l'ajout
+   du jour) ou de la classe que porte le paragraphe lui-même (le gris de ce qui
+   ne se dit pas toujours, voir paragraphTone). Une règle `color` sur
+   `.reading-he` l'emporterait sur cette classe, le style scopé étant plus
+   spécifique qu'un utilitaire : le second plan ne se voyait plus. */
 .reading-he {
   font-family: var(--font-hebrew);
   font-size: calc(1.45rem * var(--reading-scale, 1));
   line-height: 1.7;
   text-align: justify;
-  color: inherit;
 }
 
 .reading-tl {

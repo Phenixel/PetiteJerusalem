@@ -297,7 +297,8 @@ function buildKaddishLines(spec, segs) {
  * didascalie, s'il y en a une, ouvre la première.
  *
  * La condition, elle, se porte sur le bloc : une liste ne se dit pas à
- * moitié, et ses lignes n'en portent aucune.
+ * moitié, et ses lignes n'en portent aucune. `muted` les passe toutes au
+ * second plan, quand c'est la liste entière que l'on ne dit pas partout.
  */
 function buildBrLines(spec, segs) {
   const lignes = String(segs[spec.seg] ?? "")
@@ -309,6 +310,7 @@ function buildBrLines(spec, segs) {
     const line = { he: text };
     if (i === 0 && spec.rubric) line.rubric = spec.rubric;
     if (i > 0 || spec.tight) line.tight = true;
+    if (spec.muted) line.muted = true;
     // Sans autre attribut, une simple chaîne suffit au format.
     return Object.keys(line).length === 1 ? text : line;
   });
@@ -3050,6 +3052,9 @@ function vidouyKippour() {
         {
           seg: 27,
           splitBr: true,
+          // En gris, comme tout ce qui ne se dit pas partout : la note dit que
+          // Tunis ne la disait pas, la couleur montre jusqu'où elle va.
+          muted: true,
           rubric: R(
             "Puis à rebours, du tav à l'alef\u00a0:",
             "Then in reverse, from tav to alef:",

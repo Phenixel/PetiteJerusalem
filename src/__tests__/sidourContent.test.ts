@@ -597,6 +597,11 @@ describe("Min'ha : la veille de Kippour", () => {
     expect(sansSignes(tashrak.lines[0])).toBe("על חטא שחטאנו לפניך בתמהון לבב:");
     expect(tashrak.lines).toHaveLength(26);
     expect(tashrak.halakhot![0].fr).toContain("Tunis");
+    // Elle passe entière au second plan : la note dit que Tunis ne la disait
+    // pas, le gris montre de quel passage elle parle. Le bloc est `plain`, le
+    // lecteur peut donc l'atténuer (voir paragraphTone dans LiturgyText).
+    expect(tashrak.paragraphs!.every((p) => p.muted)).toBe(true);
+    expect(ana.paragraphs!.some((p) => p.muted)).toBe(false);
     // Les fautes selon ce qu'elles coûtaient au Temple, jusqu'aux quatre
     // morts du tribunal et à « Ki Ata sol'han ».
     expect(sansSignes(hataim.lines[0])).toContain("על בטול מצות עשה");
