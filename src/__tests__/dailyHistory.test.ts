@@ -6,19 +6,25 @@ import {
   mergeHistory,
   monthGrid,
   pruneHistory,
-  weeklyCount,
-  weekOf,
+  goalDates,
+  mergeGoalProgress,
+  setGoalDone,
+  recentDays,
   type DailyHistory,
 } from "../services/dailyHistory";
 import { historyTotals, siyoumimOf } from "../services/dailyStats";
 import { activeChallenge, challengeProgress } from "../services/dailyChallenges";
 import { isRestDayKey, pauseRule } from "../services/restDays";
+import { goalStatus, periodKeyOf } from "../services/goalPeriods";
+import { frozenDaysBetween, rebuildStreak } from "../services/dailyStreak";
+import { activeActionKeys, customWindow, goalPeriod, isDailyGoal } from "../services/dailyActions";
 
 /**
  * L'historique des journées et ce qu'on en tire : la règle de la journée
  * réussie, la semaine, le mois, les compteurs, les siyoumim, les défis.
  */
 const shabbatOnly = (key: string) => new Date(key + "T12:00:00").getDay() === 6;
+const shabbat = { isPause: shabbatOnly };
 
 describe("daySucceeded", () => {
   it("juge la journée selon la règle choisie", () => {
@@ -70,28 +76,29 @@ describe("la semaine et le mois", () => {
     "2026-09-17": { done: 3, total: 3, ok: true, keys: ["chaharit"] },
   };
 
-  it("range les sept jours du dimanche au Chabbat, avec leur état", () => {
-    // Vendredi 18 septembre 2026 : la semaine va du 13 au 19.
-    const week = weekOf("2026-09-18", history, shabbatOnly);
+  it("donne les sept derniers jours, aujourd'hui compris, avec leur état", () => {
+    // Vendredi 18 septembre 2026 : du samedi 12 au vendredi 18.
+    const week = recentDays("2026-09-18", history, shabbatOnly);
     expect(week.map((c) => c.key)).toEqual([
+      "2026-09-12",
       "2026-09-13",
       "2026-09-14",
       "2026-09-15",
       "2026-09-16",
       "2026-09-17",
       "2026-09-18",
-      "2026-09-19",
     ]);
     expect(week.map((c) => c.state)).toEqual([
+      "pause", // le Chabbat d'avant
       "empty", // avant la première journée connue : rien n'a été manqué
       "done",
       "partial",
       "missed",
       "done",
       "empty", // aujourd'hui, rien encore
-      "pause", // le Chabbat, à venir mais en pause
     ]);
-    expect(week[5].today).toBe(true);
+    expect(week[6].today).toBe(true);
+    expect(week.map((c) => c.weekday)).toEqual([6, 0, 1, 2, 3, 4, 5]);
   });
 
   it("marque les Chabbats en pause et les jours à venir", () => {
@@ -111,16 +118,150 @@ describe("la semaine et le mois", () => {
   });
 });
 
-describe("weeklyCount", () => {
-  it("compte les fois de la semaine, aujourd'hui compris", () => {
-    const history: DailyHistory = {
-      "2026-09-14": { done: 1, total: 1, ok: true, keys: ["g-1"] },
-      "2026-09-16": { done: 1, total: 1, ok: true, keys: ["g-1"] },
-      // La semaine d'avant ne compte pas.
-      "2026-09-10": { done: 1, total: 1, ok: true, keys: ["g-1"] },
+describe("les objectifs par période", () => {
+  const week = { id: "g-w", label: "Un chiour", createdAt: 1, period: "week" as const, times: 2 };
+  const month = { id: "g-m", label: "Birkat halevana", createdAt: 2, period: "month" as const };
+  const year = { id: "g-y", label: "Mezouzot", createdAt: 3, period: "year" as const };
+  const program = {
+    id: "g-p",
+    label: "Pérek Chira",
+    createdAt: 4,
+    period: "custom" as const,
+    days: 40,
+    start: "2026-09-01",
+  };
+  const legacy = { id: "g-l", label: "Parents", createdAt: 5, perWeek: 3 };
+
+  it("nomme la période : le dimanche, le mois et l'année hébraïques, le début du programme", () => {
+    // Vendredi 18 septembre 2026 = 7 Tichri 5787.
+    expect(periodKeyOf(week, "2026-09-18")).toBe("2026-09-13");
+    expect(periodKeyOf(month, "2026-09-18")).toBe("5787-07");
+    expect(periodKeyOf(year, "2026-09-18")).toBe("5787");
+    // Le 11 septembre est encore en 5786, en Eloul (le 6e mois).
+    expect(periodKeyOf(year, "2026-09-11")).toBe("5786");
+    expect(periodKeyOf(month, "2026-09-11")).toBe("5786-06");
+    expect(periodKeyOf(program, "2026-09-18")).toBe("2026-09-01");
+  });
+
+  it("lit la forme d'avant comme une fréquence par semaine", () => {
+    expect(goalPeriod(legacy)).toBe("week");
+    expect(isDailyGoal(legacy)).toBe(false);
+    expect(goalPeriod({ id: "g", label: "x", createdAt: 0 })).toBe("day");
+  });
+
+  it("compte un programme sur N jours dans la journée tant qu'il court", () => {
+    expect(customWindow(program)).toEqual({ start: "2026-09-01", last: "2026-10-10", days: 40 });
+    expect(isDailyGoal(program, "2026-09-18")).toBe(true);
+    expect(isDailyGoal(program, "2026-10-11")).toBe(false);
+    expect(activeActionKeys([], [program, week], "2026-09-18")).toEqual(["g-p"]);
+    expect(activeActionKeys([], [program, week], "2026-10-11")).toEqual([]);
+  });
+
+  it("coche et décoche un jour dans la période, une période à la fois", () => {
+    let progress = setGoalDone({}, "g-w", "2026-09-13", "2026-09-14", true);
+    progress = setGoalDone(progress, "g-w", "2026-09-13", "2026-09-16", true);
+    expect(goalDates(progress, "g-w", "2026-09-13")).toEqual(["2026-09-14", "2026-09-16"]);
+    progress = setGoalDone(progress, "g-w", "2026-09-13", "2026-09-14", false);
+    expect(goalDates(progress, "g-w", "2026-09-13")).toEqual(["2026-09-16"]);
+    // La semaine suivante repart de zéro.
+    expect(goalDates(progress, "g-w", "2026-09-20")).toEqual([]);
+    progress = setGoalDone(progress, "g-w", "2026-09-20", "2026-09-21", true);
+    expect(goalDates(progress, "g-w", "2026-09-13")).toEqual([]);
+  });
+
+  it("dit où en est chaque objectif", () => {
+    const progress = {
+      "g-w": { period: "2026-09-13", dates: ["2026-09-14", "2026-09-18"] },
+      "g-p": {
+        period: "2026-09-01",
+        dates: Array.from({ length: 17 }, (_, i) => `2026-09-${String(i + 1).padStart(2, "0")}`),
+      },
     };
-    expect(weeklyCount("g-1", history, "2026-09-18", false)).toBe(2);
-    expect(weeklyCount("g-1", history, "2026-09-18", true)).toBe(3);
+    expect(goalStatus(week, progress, "2026-09-18")).toMatchObject({
+      done: 2,
+      target: 2,
+      doneToday: true,
+    });
+    expect(goalStatus(month, progress, "2026-09-18")).toMatchObject({
+      done: 0,
+      target: 1,
+      doneToday: false,
+    });
+    expect(goalStatus(program, progress, "2026-09-18")).toMatchObject({
+      done: 17,
+      target: 40,
+      day: 18,
+      finished: false,
+    });
+    expect(goalStatus(program, progress, "2026-10-11")).toMatchObject({ day: 0, finished: true });
+  });
+
+  it("fusionne les suivis : la période la plus récente, ou l'union des jours", () => {
+    const merged = mergeGoalProgress(
+      {
+        "g-w": { period: "2026-09-13", dates: ["2026-09-14"] },
+        "g-m": { period: "5787-06", dates: ["2026-09-01"] },
+      },
+      {
+        "g-w": { period: "2026-09-13", dates: ["2026-09-16"] },
+        "g-m": { period: "5787-07", dates: ["2026-09-15"] },
+      },
+    );
+    expect(merged?.["g-w"].dates).toEqual(["2026-09-14", "2026-09-16"]);
+    expect(merged?.["g-m"]).toEqual({ period: "5787-07", dates: ["2026-09-15"] });
+  });
+});
+
+describe("la série relue depuis l'historique", () => {
+  const ok = { done: 1, total: 1, ok: true, keys: [] };
+  const ko = { done: 0, total: 1, ok: false, keys: [] };
+
+  it("compte les journées réussies consécutives, pauses enjambées", () => {
+    const history: DailyHistory = {
+      "2026-09-14": ok,
+      "2026-09-15": ok,
+      "2026-09-16": ko,
+      "2026-09-17": ok,
+      "2026-09-18": ok, // vendredi
+      "2026-09-20": ok, // dimanche, après le Chabbat
+    };
+    const streak = rebuildStreak(
+      history,
+      "2026-09-20",
+      { current: 1, best: 9, lastDate: "2026-09-20", freezes: 1 },
+      shabbat,
+    );
+    expect(streak).toEqual({ current: 3, best: 9, lastDate: "2026-09-20", freezes: 1 });
+    // Le 16 corrigé : la série remonte jusqu'au 14.
+    const fixed = rebuildStreak({ ...history, "2026-09-16": ok }, "2026-09-20", streak, shabbat);
+    expect(fixed.current).toBe(6);
+  });
+
+  it("compte les jours gelés et vaut zéro sans journée réussie", () => {
+    const history: DailyHistory = {
+      "2026-09-16": ok,
+      "2026-09-17": { ...ko, ok: true, frozen: true },
+      "2026-09-18": ok,
+    };
+    expect(rebuildStreak(history, "2026-09-18", undefined).current).toBe(3);
+    expect(
+      rebuildStreak({ "2026-09-18": ko }, "2026-09-18", {
+        current: 4,
+        best: 4,
+        lastDate: "2026-09-17",
+      }),
+    ).toMatchObject({ current: 0, best: 4 });
+  });
+
+  it("nomme les jours manqués que les jokers couvriront", () => {
+    const streak = { current: 8, best: 8, lastDate: "2026-09-15", freezes: 1 };
+    expect(frozenDaysBetween(streak, "2026-09-17")).toEqual(["2026-09-16"]);
+    // Deux jours pour un joker : rien n'est couvert, la série tombera.
+    expect(frozenDaysBetween(streak, "2026-09-18")).toEqual([]);
+    // Le Chabbat entre les deux n'est pas un jour manqué.
+    expect(frozenDaysBetween({ ...streak, lastDate: "2026-09-18" }, "2026-09-20", shabbat)).toEqual(
+      [],
+    );
   });
 });
 

@@ -18,7 +18,7 @@ import { localeOfPath, sectionPath } from "../content/seoLocales";
 import { localDayKey } from "../services/dateService";
 import { activeActionKeys } from "../services/dailyActions";
 import { streakStatus, type StreakStatus } from "../services/dailyStreak";
-import { weekOf, type DayCell } from "../services/dailyHistory";
+import { recentDays, type DayCell } from "../services/dailyHistory";
 import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
 import {
@@ -112,7 +112,7 @@ function applyDashboardCounts(prefs: UserPreferences) {
     options: prefs.dailyReadingOptions ?? [],
     completedTextIds: isToday ? (progress.completedIds ?? []) : [],
     completedOptions: isToday ? (progress.completedOptions ?? []) : [],
-    actions: activeActionKeys(prefs.dailyActions ?? [], prefs.dailyGoals ?? []),
+    actions: activeActionKeys(prefs.dailyActions ?? [], prefs.dailyGoals ?? [], today),
     completedActions: isToday ? (progress.completedActions ?? []) : [],
   });
   readingTotal.value = counts.total;
@@ -121,11 +121,11 @@ function applyDashboardCounts(prefs: UserPreferences) {
   // faire dans le premier chargement : chargé à la demande, comme les
   // horaires. En attendant, la série se lit sans pause.
   readingStreak.value = streakStatus(progress?.streak, today);
-  readingWeek.value = weekOf(today, progress?.history ?? {}, () => false);
+  readingWeek.value = recentDays(today, progress?.history ?? {}, () => false);
   void import("../services/restDays").then(({ pauseRule }) => {
     const rules = { isPause: pauseRule(prefs.dailyRestDays !== false) };
     readingStreak.value = streakStatus(progress?.streak, today, rules);
-    readingWeek.value = weekOf(today, progress?.history ?? {}, rules.isPause);
+    readingWeek.value = recentDays(today, progress?.history ?? {}, rules.isPause);
   });
 }
 

@@ -26,6 +26,8 @@ export interface DayRecord {
   ok: boolean;
   /** Tout ce qui a été coché : ids de textes, clés d'options, d'actions, d'objectifs. */
   keys: string[];
+  /** Journée manquée que la série a couverte avec un joker (voir dailyStreak). */
+  frozen?: boolean;
 }
 
 export type DailyHistory = Record<string, DayRecord>;
@@ -99,6 +101,8 @@ export interface DayCell {
   key: string;
   /** Quantième civil. */
   day: number;
+  /** Jour de la semaine (0 = dimanche), pour la lettre sous la pastille. */
+  weekday: number;
   state: DayState;
   today: boolean;
 }
@@ -122,20 +126,24 @@ export function dayState(
   return key === today ? "empty" : "missed";
 }
 
-/** Les sept jours de la semaine de `today`, du dimanche au Chabbat. */
-export function weekOf(
+/**
+ * Les sept derniers jours, aujourd'hui compris : la semaine glissante que la
+ * carte du jour montre, et dont chaque jour passé se corrige. Glissante et
+ * non calendaire : un dimanche n'aurait sinon rien à corriger.
+ */
+export function recentDays(
   today: string,
   history: DailyHistory,
   isPause: (key: string) => boolean,
+  count = 7,
 ): DayCell[] {
-  const day = localDayFrom(today);
-  if (!day) return [];
-  const sunday = shiftDayKey(today, -day.getDay());
-  return Array.from({ length: 7 }, (_, i) => {
-    const key = shiftDayKey(sunday, i);
+  return Array.from({ length: count }, (_, i) => {
+    const key = shiftDayKey(today, i - (count - 1));
+    const day = localDayFrom(key);
     return {
       key,
       day: Number(key.slice(-2)),
+      weekday: day ? day.getDay() : 0,
       state: dayState(key, history, today, isPause),
       today: key === today,
     };
@@ -161,6 +169,7 @@ export function monthGrid(
     cells.push({
       key,
       day: d,
+      weekday: new Date(year, month, d).getDay(),
       state: dayState(key, history, today, isPause),
       today: key === today,
     });
@@ -169,24 +178,59 @@ export function monthGrid(
 }
 
 /**
- * Combien de fois un objectif à fréquence a été fait dans la semaine de
- * `today` (du dimanche au Chabbat), le jour même compris quand il est coché.
+ * Le suivi des objectifs à période (semaine, mois, an, programme sur N
+ * jours) : pour chaque objectif, la période en cours et les jours où il a
+ * été fait. Une seule période à la fois, celle qui change remet à zéro : un
+ * objectif « trois fois par semaine » ne garde que la semaine en cours. La
+ * clé de période est calculée par goalPeriods (le calendrier hébraïque pour
+ * le mois et l'année) ; ici on ne fait que ranger.
  */
-export function weeklyCount(
+export interface GoalProgressEntry {
+  period: string;
+  dates: string[];
+}
+export type GoalProgress = Record<string, GoalProgressEntry>;
+
+/** Les jours faits de l'objectif dans la période donnée. */
+export function goalDates(progress: GoalProgress, goalId: string, period: string): string[] {
+  const entry = progress[goalId];
+  return entry && entry.period === period ? entry.dates : [];
+}
+
+/** Coche ou décoche un jour d'un objectif dans sa période. */
+export function setGoalDone(
+  progress: GoalProgress,
   goalId: string,
-  history: DailyHistory,
-  today: string,
-  doneToday: boolean,
-): number {
-  const day = localDayFrom(today);
-  if (!day) return 0;
-  const sunday = shiftDayKey(today, -day.getDay());
-  let count = 0;
-  for (let i = 0; i < 7; i++) {
-    const key = shiftDayKey(sunday, i);
-    if (key === today) {
-      if (doneToday) count += 1;
-    } else if (history[key]?.keys.includes(goalId)) count += 1;
+  period: string,
+  dayKey: string,
+  done: boolean,
+): GoalProgress {
+  const dates = new Set(goalDates(progress, goalId, period));
+  if (done) dates.add(dayKey);
+  else dates.delete(dayKey);
+  return { ...progress, [goalId]: { period, dates: [...dates].sort() } };
+}
+
+/**
+ * Deux suivis, celui du serveur et celui de l'appareil : par objectif, la
+ * période la plus récente l'emporte ; à période égale, l'union des jours.
+ */
+export function mergeGoalProgress(
+  a: GoalProgress | undefined,
+  b: GoalProgress | undefined,
+): GoalProgress | undefined {
+  if (!a) return b;
+  if (!b) return a;
+  const merged: GoalProgress = { ...a };
+  for (const [id, entry] of Object.entries(b)) {
+    const other = merged[id];
+    if (!other || entry.period > other.period) merged[id] = entry;
+    else if (entry.period === other.period) {
+      merged[id] = {
+        period: entry.period,
+        dates: [...new Set([...other.dates, ...entry.dates])].sort(),
+      };
+    }
   }
-  return count;
+  return merged;
 }

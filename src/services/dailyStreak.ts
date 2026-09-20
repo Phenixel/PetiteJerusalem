@@ -81,6 +81,60 @@ function missedBetween(from: string, to: string, rules: StreakRules): string[] |
 }
 
 /**
+ * Les jours manqués que la série couvrira avec ses jokers si la journée est
+ * réussie aujourd'hui : l'appelant les écrit dans l'historique comme gelés,
+ * pour que la série se relise pareil plus tard (voir rebuildStreak).
+ */
+export function frozenDaysBetween(
+  streak: DailyStreak | undefined,
+  today: string,
+  rules: StreakRules = {},
+): string[] {
+  const base = streak ?? EMPTY_STREAK;
+  if (base.lastDate === today || !base.lastDate || base.current === 0 || base.lastDate >= today) {
+    return [];
+  }
+  const missed = missedBetween(base.lastDate, today, rules);
+  return missed !== null && missed.length > 0 && missed.length <= (base.freezes ?? 0) ? missed : [];
+}
+
+/**
+ * La série relue depuis l'historique, après qu'un jour passé a été corrigé
+ * (voir dailyHistory) : les journées réussies consécutives jusqu'à la plus
+ * récente, les jours de pause enjambés, les jours gelés comptés. Le record
+ * ne redescend jamais, les jokers restent ceux d'avant. L'historique ne
+ * remonte que quatre mois : une série plus longue se relit à cette hauteur.
+ */
+export function rebuildStreak(
+  history: Record<string, { ok: boolean }>,
+  today: string,
+  previous: DailyStreak | undefined,
+  rules: StreakRules = {},
+): DailyStreak {
+  const base = previous ?? EMPTY_STREAK;
+  const isPause = rules.isPause ?? (() => false);
+  const okDays = Object.keys(history)
+    .filter((key) => key <= today && history[key].ok)
+    .sort();
+  const latest = okDays[okDays.length - 1];
+  if (!latest) return { ...base, current: 0, lastDate: "" };
+  let current = 1;
+  let cursor = latest;
+  for (let i = 0; i < 400; i++) {
+    cursor = shiftDayKey(cursor, -1);
+    if (history[cursor]?.ok) current += 1;
+    else if (isPause(cursor)) continue;
+    else break;
+  }
+  return {
+    current,
+    best: Math.max(base.best, current),
+    lastDate: latest,
+    freezes: base.freezes ?? 0,
+  };
+}
+
+/**
  * La journée est réussie aujourd'hui : la série continue (les jours d'entre
  * deux étaient des pauses, ou couverts par des jokers), repart de un (un jour
  * a été manqué), ou reste telle quelle (déjà comptée aujourd'hui).

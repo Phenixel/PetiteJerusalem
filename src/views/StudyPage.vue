@@ -324,7 +324,7 @@ async function loadDailySummary(u: User) {
       options: prefs.dailyReadingOptions ?? [],
       completedTextIds: isToday ? (progress.completedIds ?? []) : [],
       completedOptions: isToday ? (progress.completedOptions ?? []) : [],
-      actions: activeActionKeys(prefs.dailyActions ?? [], prefs.dailyGoals ?? []),
+      actions: activeActionKeys(prefs.dailyActions ?? [], prefs.dailyGoals ?? [], today),
       completedActions: isToday ? (progress.completedActions ?? []) : [],
     });
     readingTotal.value = counts.total;

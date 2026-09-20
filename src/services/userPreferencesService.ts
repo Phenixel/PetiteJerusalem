@@ -2,7 +2,13 @@ import type { Bookmark, ReadingPosition } from "./readingProgressService";
 import type { HebrewOccasion } from "./hebrewOccasions";
 import type { DailyGoal } from "./dailyActions";
 import { mergeStreak, type DailyStreak } from "./dailyStreak";
-import { mergeHistory, type DailyGoalRule, type DailyHistory } from "./dailyHistory";
+import {
+  mergeGoalProgress,
+  mergeHistory,
+  type DailyGoalRule,
+  type DailyHistory,
+  type GoalProgress,
+} from "./dailyHistory";
 import type { ReminderPlace } from "./zmanimService";
 import { AppError } from "./appError";
 // Ce module est chargé dès le démarrage (useTheme et useFonts, montés par
@@ -42,6 +48,11 @@ export interface DailyReadingProgress {
    * à fréquence. Même chemin que la série : il traverse les jours.
    */
   history?: DailyHistory;
+  /**
+   * Le suivi des objectifs à période (voir dailyHistory.GoalProgress) : la
+   * période en cours de chaque objectif et ses jours faits.
+   */
+  goalProgress?: GoalProgress;
   /**
    * Suivi hebdomadaire du chnei mikra : `week` est la date du Chabbat de la
    * paracha (weekKey). Contrairement au reste, il ne se remet à zéro qu'au
@@ -366,6 +377,7 @@ export function mergeDailyProgress(
   // part, comme la paracha.
   const streak = mergeStreak(server?.streak, local?.streak);
   const history = mergeHistory(server?.history, local?.history);
+  const goalProgress = mergeGoalProgress(server?.goalProgress, local?.goalProgress);
   const withParasha = (progress: DailyReadingProgress): DailyReadingProgress => {
     const merged = { ...progress };
     // Le suivi hebdomadaire est fusionné à part : celui du bloc retenu ne doit
@@ -376,6 +388,8 @@ export function mergeDailyProgress(
     else delete merged.streak;
     if (history) merged.history = history;
     else delete merged.history;
+    if (goalProgress) merged.goalProgress = goalProgress;
+    else delete merged.goalProgress;
     return merged;
   };
 

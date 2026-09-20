@@ -108,6 +108,11 @@ describe("i18n usage", () => {
       // La lecture du jour : la règle de la journée, les moments, les états
       // des jours, les compteurs et les défis se nomment par leur clé.
       "dailyReading.challenges.",
+      "dailyReading.goals.periods.",
+      "dailyReading.goals.periodProgress.",
+      "dailyReading.goals.periodTimes.",
+      "dailyReading.goals.periodTitles.",
+      "dailyReading.goals.timesPer.",
       "dailyReading.moments.",
       "dailyReading.rules.",
       "dailyReading.totals.",

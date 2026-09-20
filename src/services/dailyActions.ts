@@ -1,3 +1,5 @@
+import { localDayKey } from "./dateService";
+
 /**
  * Les objectifs du jour qui ne sont pas des lectures.
  *
@@ -104,6 +106,15 @@ export function isDailyActionKey(key: string): key is DailyActionKey {
   return (DAILY_ACTION_KEYS as readonly string[]).includes(key);
 }
 
+/**
+ * La période d'un objectif : chaque jour, tant de fois par semaine, par
+ * mois, par an, ou un programme sur N jours (le Pérek Chira en quarante
+ * jours). Les semaines vont du dimanche au Chabbat ; les mois et les années
+ * sont ceux du calendrier hébraïque (voir goalPeriods).
+ */
+export type GoalPeriod = "day" | "week" | "month" | "year" | "custom";
+export const GOAL_PERIODS: GoalPeriod[] = ["day", "week", "month", "year", "custom"];
+
 /** Un objectif écrit par la personne. */
 export interface DailyGoal {
   /** `g-` suivi d'un identifiant aléatoire : jamais une clé d'action. */
@@ -111,18 +122,87 @@ export interface DailyGoal {
   label: string;
   /** Epoch ms de la création, l'ordre d'affichage. */
   createdAt: number;
+  /** La période ; absente, l'objectif est de chaque jour. */
+  period?: GoalPeriod;
+  /** Combien de fois par période (semaine, mois, an) ; 1 par défaut. */
+  times?: number;
+  /** Programme sur N jours : sa longueur, et le jour où il a commencé. */
+  days?: number;
+  start?: string;
   /**
-   * Objectif à fréquence : tant de fois par semaine (1 à 6). Absent ou nul,
-   * l'objectif est de chaque jour et compte dans la journée ; à fréquence, il
-   * se suit à la semaine (voir dailyHistory.weeklyCount) et n'y compte pas.
+   * Forme d'avant les périodes : tant de fois par semaine. Lue comme
+   * `period: "week"`, `times: perWeek`.
    */
   perWeek?: number | null;
 }
 
-/** Un objectif de chaque jour, celui qui compte dans la journée. */
-export function isDailyGoal(goal: DailyGoal): boolean {
-  return !goal.perWeek;
+export function goalPeriod(goal: DailyGoal): GoalPeriod {
+  if (goal.period) return goal.period;
+  return goal.perWeek ? "week" : "day";
 }
+
+/** Combien de fois par période l'objectif demande. */
+export function goalTimes(goal: DailyGoal): number {
+  if (goal.period === "custom") return goal.days ?? 1;
+  return Math.max(1, goal.times ?? goal.perWeek ?? 1);
+}
+
+/** La fenêtre d'un programme sur N jours : du premier jour au dernier (compris). */
+export function customWindow(
+  goal: DailyGoal,
+): { start: string; last: string; days: number } | null {
+  if (goalPeriod(goal) !== "custom" || !goal.start || !goal.days) return null;
+  const start = new Date(goal.start + "T12:00:00");
+  if (Number.isNaN(start.getTime())) return null;
+  const last = new Date(start);
+  last.setDate(last.getDate() + goal.days - 1);
+  return { start: goal.start, last: localDayKey(last), days: goal.days };
+}
+
+/**
+ * Un objectif qui compte dans la journée : ceux de chaque jour, et un
+ * programme sur N jours tant qu'on est dans sa fenêtre.
+ */
+export function isDailyGoal(goal: DailyGoal, today: string = localDayKey()): boolean {
+  const period = goalPeriod(goal);
+  if (period === "day") return true;
+  if (period !== "custom") return false;
+  const window = customWindow(goal);
+  return !!window && today >= window.start && today <= window.last;
+}
+
+/** Un objectif suivi à la période (semaine, mois, an), hors décompte du jour. */
+export function isPeriodGoal(goal: DailyGoal): boolean {
+  const period = goalPeriod(goal);
+  return period === "week" || period === "month" || period === "year";
+}
+
+/**
+ * Les objectifs que l'application propose, à ajouter d'un geste : chacun
+ * montre ce qu'une période permet. Le Pérek Chira se lit quarante jours de
+ * suite ; la bénédiction de la lune se dit une fois par mois.
+ */
+export interface GoalPreset {
+  id: string;
+  labelKey: string;
+  period: GoalPeriod;
+  times?: number;
+  days?: number;
+}
+
+export const GOAL_PRESETS: GoalPreset[] = [
+  {
+    id: "perek-chira",
+    labelKey: "dailyReading.goals.presets.perekChira",
+    period: "custom",
+    days: 40,
+  },
+  { id: "birkat-halevana", labelKey: "dailyReading.goals.presets.birkatHalevana", period: "month" },
+  { id: "chiour", labelKey: "dailyReading.goals.presets.chiour", period: "week", times: 2 },
+  { id: "parents", labelKey: "dailyReading.goals.presets.parents", period: "week", times: 3 },
+  { id: "tehilim-mois", labelKey: "dailyReading.goals.presets.tehilimMois", period: "month" },
+  { id: "mezouzot", labelKey: "dailyReading.goals.presets.mezouzot", period: "year" },
+];
 
 /** Au plus vingt objectifs personnels, et des libellés courts. */
 export const MAX_DAILY_GOALS = 20;
@@ -148,12 +228,16 @@ export function normalizeGoalLabel(label: string): string {
  * dans l'ordre de leur création. C'est la liste que compte la progression du
  * jour ; les objectifs à fréquence se suivent à part, à la semaine.
  */
-export function activeActionKeys(actions: string[], goals: DailyGoal[]): string[] {
+export function activeActionKeys(
+  actions: string[],
+  goals: DailyGoal[],
+  today: string = localDayKey(),
+): string[] {
   const chosen = new Set(actions);
   return [
     ...DAILY_ACTION_KEYS.filter((key) => chosen.has(key)),
     ...[...goals]
-      .filter(isDailyGoal)
+      .filter((goal) => isDailyGoal(goal, today))
       .sort((a, b) => a.createdAt - b.createdAt)
       .map((goal) => goal.id),
   ];

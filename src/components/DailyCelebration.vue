@@ -17,6 +17,8 @@ const props = defineProps<{
   siyoum: string | null;
   /** Un joker gagné avec cette journée. */
   freezeEarned: boolean;
+  /** Le programme sur N jours qui vient de se finir (son libellé). */
+  program: string | null;
 }>();
 const emit = defineEmits<{ (e: "close"): void; (e: "share"): void }>();
 
@@ -24,6 +26,7 @@ const { t } = useI18n();
 const sharing = ref(false);
 
 const headline = computed(() => {
+  if (props.program) return t("dailyReading.celebration.program", { label: props.program });
   if (props.siyoum) return t("dailyReading.celebration.siyoum", { tractate: props.siyoum });
   if (props.milestone) return t("dailyReading.celebration.milestone", { n: props.milestone });
   return t("dailyReading.celebration.title");

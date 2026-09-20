@@ -438,13 +438,54 @@ const fr = {
     goals: {
       title: "Mes objectifs",
       description:
-        "Ce que vous voulez faire chaque jour, dans vos mots : dix minutes de moussar, un appel à vos parents, un chapitre de plus.",
-      placeholder: "Un objectif pour chaque jour",
+        "Dans vos mots, et à votre rythme : chaque jour, tant de fois par semaine, par mois, par an, ou sur quarante jours de suite comme le Pérek Chira.",
+      placeholder: "Un objectif, dans vos mots",
       add: "Ajouter",
       everyDay: "Chaque jour",
-      perWeek: "{n} fois par semaine | {n} fois par semaine | {n} fois par semaine",
-      weeklyTitle: "Cette semaine",
-      weeklyProgress: "{done} sur {total} cette semaine",
+      restart: "Recommencer",
+      finishedTitle: "Programmes accomplis",
+      customHint: "jours de suite, à partir d'aujourd'hui",
+      programDay: "Jour {day} sur {days}",
+      programDone: "{days} jours accomplis",
+      // La période d'un objectif (voir services/dailyActions.GoalPeriod).
+      periods: {
+        day: "Chaque jour",
+        week: "Par semaine",
+        month: "Par mois",
+        year: "Par an",
+        custom: "Sur N jours",
+        customDays: "{days} jours de suite",
+      },
+      timesPer: {
+        week: "fois par semaine | fois par semaine | fois par semaine",
+        month: "fois par mois | fois par mois | fois par mois",
+        year: "fois par an | fois par an | fois par an",
+      },
+      periodTimes: {
+        week: "{n} fois par semaine | {n} fois par semaine | {n} fois par semaine",
+        month: "{n} fois par mois | {n} fois par mois | {n} fois par mois",
+        year: "{n} fois par an | {n} fois par an | {n} fois par an",
+      },
+      periodTitles: {
+        week: "Cette semaine",
+        month: "Ce mois-ci",
+        year: "Cette année",
+      },
+      periodProgress: {
+        week: "{done} sur {total} cette semaine",
+        month: "{done} sur {total} ce mois-ci",
+        year: "{done} sur {total} cette année",
+      },
+      // Les objectifs proposés (voir services/dailyActions.GOAL_PRESETS).
+      presets: {
+        title: "Objectifs proposés",
+        perekChira: "Pérek Chira",
+        birkatHalevana: "Birkat halevana",
+        chiour: "Écouter un chiour",
+        parents: "Appeler mes parents",
+        tehilimMois: "Finir les Tehilim",
+        mezouzot: "Faire vérifier mes mezouzot",
+      },
       remove: "Retirer cet objectif",
       limit: "Vous avez atteint les {max} objectifs : retirez-en un pour en ajouter un autre.",
     },
@@ -491,11 +532,19 @@ const fr = {
       restDaysHint:
         "Ces jours-là ne comptent ni pour ni contre : la série les traverse sans que vous ayez à ouvrir l'application.",
     },
-    // Rattraper la veille, jusqu'à midi.
-    catchUp: {
-      question: "Hier n'est pas coché. Aviez-vous tout fait ?",
-      confirm: "Oui, hier était fait",
-      done: "Hier compte : votre série continue.",
+    // Corriger un jour passé (voir DailyDayEditor).
+    editor: {
+      title: "Corriger un jour",
+      hint: "Cochez ce que vous aviez fait ce jour-là. Votre série se relit ensuite.",
+      open: "Corriger le {day}",
+      weekHint: "Un jour oublié ? Touchez-le pour le corriger, jusqu'à sept jours en arrière.",
+      yesterday: "Hier n'est pas coché. Vous l'aviez fait ?",
+      fixYesterday: "Corriger hier",
+      checkAll: "Tout cocher",
+      uncheckAll: "Tout décocher",
+      save: "Enregistrer",
+      saved: "Le jour est corrigé.",
+      savedStreak: "Le jour est corrigé : votre série est à {n} jours.",
     },
     // La semaine en cours et le calendrier.
     week: {
@@ -534,6 +583,7 @@ const fr = {
       title: "Bravo, tout est fait !",
       milestone: "{n} jours d'affilée !",
       siyoum: "Siyoum de {tractate} !",
+      program: "{label} : programme accompli !",
       newBest: "Votre plus longue série, à ce jour.",
       freezeEarned: "Une semaine entière : vous gagnez un joker.",
       close: "Continuer",

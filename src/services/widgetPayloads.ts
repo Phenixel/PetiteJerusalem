@@ -361,7 +361,7 @@ export function buildDailyReadingWidgetPayload(
   // Les actions du jour et les objectifs personnels comptent comme une
   // lecture chacun, dans l'ordre de la page (voir activeActionKeys).
   const goals = prefs.dailyGoals ?? [];
-  for (const key of activeActionKeys(prefs.dailyActions ?? [], goals)) {
+  for (const key of activeActionKeys(prefs.dailyActions ?? [], goals, date)) {
     const action = DAILY_ACTIONS.find((a) => a.key === key);
     const label = action ? t(action.titleKey) : (goals.find((g) => g.id === key)?.label ?? key);
     items.push({ key, label, done: doneActions.has(key) });
