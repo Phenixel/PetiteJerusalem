@@ -455,6 +455,7 @@ const fr = {
         year: "Par an",
         custom: "Sur N jours",
         customDays: "{days} jours de suite",
+        book: "Finir un livre",
       },
       timesPer: {
         week: "fois par semaine | fois par semaine | fois par semaine",
@@ -475,6 +476,21 @@ const fr = {
         week: "{done} sur {total} cette semaine",
         month: "{done} sur {total} ce mois-ci",
         year: "{done} sur {total} cette année",
+      },
+      // Finir un livre sur une période (voir services/bookGoals).
+      book: {
+        pick: "Choisir un traité",
+        goalLabel: "Finir {name}",
+        daysHint: "jours, jusqu'au {date}",
+        frequency: "{units} portions sur {days} jours",
+        today: "Aujourd'hui : {portion}",
+        behind: "{n} en retard, réparties sur la suite",
+        done: "Livre fini",
+        dafOne: "daf {daf}",
+        dafRange: "daf {from} à {to}",
+        mishnaOne: "chapitre {chapter}, michna {n}",
+        mishnaRange: "chapitre {chapter}, michnayot {from} à {to}",
+        mishnaAcross: "chapitre {fromChapter} michna {from} à chapitre {toChapter} michna {to}",
       },
       // Les objectifs proposés (voir services/dailyActions.GOAL_PRESETS).
       presets: {
@@ -600,13 +616,6 @@ const fr = {
     progressChips: {
       daf: "Daf {index} sur {count} · cycle à {pct} %",
       tehilim: "Jour {day} sur 30 du cycle",
-    },
-    // Les moments de la journée, pour ranger les actions.
-    moments: {
-      morning: "Matin",
-      afternoon: "Après-midi",
-      evening: "Soir",
-      any: "À tout moment",
     },
     // Les parcours de départ.
     packs: {

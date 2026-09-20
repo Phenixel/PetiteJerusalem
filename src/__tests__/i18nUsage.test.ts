@@ -113,7 +113,6 @@ describe("i18n usage", () => {
       "dailyReading.goals.periodTimes.",
       "dailyReading.goals.periodTitles.",
       "dailyReading.goals.timesPer.",
-      "dailyReading.moments.",
       "dailyReading.rules.",
       "dailyReading.totals.",
       "dailyReading.week.",

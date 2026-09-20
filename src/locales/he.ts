@@ -446,6 +446,7 @@ const he: LocaleMessages = {
         year: "בשנה",
         custom: "על פני N ימים",
         customDays: "{days} ימים ברצף",
+        book: "לסיים ספר",
       },
       timesPer: {
         week: "פעם בשבוע | פעם בשבוע | פעמים בשבוע",
@@ -466,6 +467,20 @@ const he: LocaleMessages = {
         week: "{done} מתוך {total} השבוע",
         month: "{done} מתוך {total} החודש",
         year: "{done} מתוך {total} השנה",
+      },
+      book: {
+        pick: "בחירת מסכת",
+        goalLabel: "לסיים {name}",
+        daysHint: "ימים, עד {date}",
+        frequency: "{units} קטעים על פני {days} ימים",
+        today: "היום: {portion}",
+        behind: "{n} בפיגור, מחולקים על ההמשך",
+        done: "הספר הסתיים",
+        dafOne: "דף {daf}",
+        dafRange: "דף {from} עד {to}",
+        mishnaOne: "פרק {chapter}, משנה {n}",
+        mishnaRange: "פרק {chapter}, משניות {from} עד {to}",
+        mishnaAcross: "פרק {fromChapter} משנה {from} עד פרק {toChapter} משנה {to}",
       },
       presets: {
         title: "יעדים מוצעים",
@@ -579,12 +594,6 @@ const he: LocaleMessages = {
     progressChips: {
       daf: "דף {index} מתוך {count} · המחזור ב-{pct}%",
       tehilim: "יום {day} מתוך 30 במחזור",
-    },
-    moments: {
-      morning: "בוקר",
-      afternoon: "אחר הצהריים",
-      evening: "ערב",
-      any: "בכל שעה",
     },
     packs: {
       intro: "מאיפה להתחיל? בחרו מסלול, תוכלו לשנות אותו אחר כך.",

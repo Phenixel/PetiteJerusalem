@@ -466,6 +466,7 @@ const en: LocaleMessages = {
         year: "Per year",
         custom: "Over N days",
         customDays: "{days} days in a row",
+        book: "Finish a book",
       },
       timesPer: {
         week: "time a week | time a week | times a week",
@@ -486,6 +487,20 @@ const en: LocaleMessages = {
         week: "{done} of {total} this week",
         month: "{done} of {total} this month",
         year: "{done} of {total} this year",
+      },
+      book: {
+        pick: "Pick a tractate",
+        goalLabel: "Finish {name}",
+        daysHint: "days, until {date}",
+        frequency: "{units} portions over {days} days",
+        today: "Today: {portion}",
+        behind: "{n} behind, spread over the rest",
+        done: "Book finished",
+        dafOne: "daf {daf}",
+        dafRange: "daf {from} to {to}",
+        mishnaOne: "chapter {chapter}, mishna {n}",
+        mishnaRange: "chapter {chapter}, mishnayot {from} to {to}",
+        mishnaAcross: "chapter {fromChapter} mishna {from} to chapter {toChapter} mishna {to}",
       },
       presets: {
         title: "Suggested goals",
@@ -602,12 +617,6 @@ const en: LocaleMessages = {
     progressChips: {
       daf: "Daf {index} of {count} · cycle at {pct}%",
       tehilim: "Day {day} of 30 in the cycle",
-    },
-    moments: {
-      morning: "Morning",
-      afternoon: "Afternoon",
-      evening: "Evening",
-      any: "Any time",
     },
     packs: {
       intro: "Where to start? Pick a path, you can adjust it afterwards.",

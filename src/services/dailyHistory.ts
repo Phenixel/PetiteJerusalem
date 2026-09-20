@@ -188,6 +188,9 @@ export function monthGrid(
 export interface GoalProgressEntry {
   period: string;
   dates: string[];
+  /** Livre à finir : unités lues (voir bookGoals), et celles ajoutées au dernier jour coché. */
+  units?: number;
+  dayUnits?: number;
 }
 export type GoalProgress = Record<string, GoalProgressEntry>;
 
@@ -208,7 +211,40 @@ export function setGoalDone(
   const dates = new Set(goalDates(progress, goalId, period));
   if (done) dates.add(dayKey);
   else dates.delete(dayKey);
-  return { ...progress, [goalId]: { period, dates: [...dates].sort() } };
+  const entry = progress[goalId];
+  const kept =
+    entry && entry.period === period ? { units: entry.units, dayUnits: entry.dayUnits } : {};
+  return { ...progress, [goalId]: { period, dates: [...dates].sort(), ...kept } };
+}
+
+/** Unités lues d'un livre dans sa période (voir bookGoals). */
+export function goalUnits(progress: GoalProgress, goalId: string, period: string): number {
+  const entry = progress[goalId];
+  return entry && entry.period === period ? (entry.units ?? 0) : 0;
+}
+
+/**
+ * Coche ou décoche la portion du jour d'un livre : `portion` unités de plus,
+ * ou celles du dernier jour coché de moins.
+ */
+export function setBookDone(
+  progress: GoalProgress,
+  goalId: string,
+  period: string,
+  dayKey: string,
+  portion: number,
+  done: boolean,
+): GoalProgress {
+  const next = setGoalDone(progress, goalId, period, dayKey, done);
+  const entry = next[goalId];
+  const units = goalUnits(progress, goalId, period);
+  const dayUnits = progress[goalId]?.period === period ? (progress[goalId].dayUnits ?? 0) : 0;
+  return {
+    ...next,
+    [goalId]: done
+      ? { ...entry, units: units + portion, dayUnits: portion }
+      : { ...entry, units: Math.max(0, units - dayUnits), dayUnits: 0 },
+  };
 }
 
 /**
@@ -229,6 +265,10 @@ export function mergeGoalProgress(
       merged[id] = {
         period: entry.period,
         dates: [...new Set([...other.dates, ...entry.dates])].sort(),
+        // Le livre le plus avancé l'emporte : ce qui est lu est lu.
+        ...((other.units ?? 0) >= (entry.units ?? 0)
+          ? { units: other.units, dayUnits: other.dayUnits }
+          : { units: entry.units, dayUnits: entry.dayUnits }),
       };
     }
   }

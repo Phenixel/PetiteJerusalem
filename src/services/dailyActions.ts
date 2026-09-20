@@ -28,13 +28,6 @@ export const DAILY_ACTION_KEYS = [
 ] as const;
 export type DailyActionKey = (typeof DAILY_ACTION_KEYS)[number];
 
-/**
- * Le moment de la journée où l'action se fait : la page range les actions par
- * moment, et pose sur les offices la fin de leur plage horaire.
- */
-export type DayMoment = "morning" | "afternoon" | "evening" | "any";
-export const DAY_MOMENTS: DayMoment[] = ["morning", "afternoon", "evening", "any"];
-
 export interface DailyActionMeta {
   key: DailyActionKey;
   /** Clés de traduction du titre et de la description (dailyReading.actions.*). */
@@ -42,7 +35,6 @@ export interface DailyActionMeta {
   descriptionKey: string;
   /** Le texte de la bibliothèque qui accompagne l'action, quand il existe. */
   path: string | null;
-  moment: DayMoment;
   /** L'office dont la plage horaire borne l'action (voir sidourService). */
   tefila?: "chaharit" | "minha" | "arvit";
 }
@@ -53,7 +45,6 @@ export const DAILY_ACTIONS: DailyActionMeta[] = [
     titleKey: "dailyReading.actions.chaharitTitle",
     descriptionKey: "dailyReading.actions.chaharitDescription",
     path: "/bibliotheque/sidour/chaharit",
-    moment: "morning",
     tefila: "chaharit",
   },
   {
@@ -61,7 +52,6 @@ export const DAILY_ACTIONS: DailyActionMeta[] = [
     titleKey: "dailyReading.actions.minhaTitle",
     descriptionKey: "dailyReading.actions.minhaDescription",
     path: "/bibliotheque/sidour/minha",
-    moment: "afternoon",
     tefila: "minha",
   },
   {
@@ -69,7 +59,6 @@ export const DAILY_ACTIONS: DailyActionMeta[] = [
     titleKey: "dailyReading.actions.arvitTitle",
     descriptionKey: "dailyReading.actions.arvitDescription",
     path: "/bibliotheque/sidour/arvit",
-    moment: "evening",
     tefila: "arvit",
   },
   {
@@ -77,28 +66,24 @@ export const DAILY_ACTIONS: DailyActionMeta[] = [
     titleKey: "dailyReading.actions.tefilinTitle",
     descriptionKey: "dailyReading.actions.tefilinDescription",
     path: null,
-    moment: "morning",
   },
   {
     key: "tsedaka",
     titleKey: "dailyReading.actions.tsedakaTitle",
     descriptionKey: "dailyReading.actions.tsedakaDescription",
     path: null,
-    moment: "any",
   },
   {
     key: "chema-al-hamita",
     titleKey: "dailyReading.actions.chemaTitle",
     descriptionKey: "dailyReading.actions.chemaDescription",
     path: "/bibliotheque/sidour/chema-al-hamita",
-    moment: "evening",
   },
   {
     key: "etude",
     titleKey: "dailyReading.actions.etudeTitle",
     descriptionKey: "dailyReading.actions.etudeDescription",
     path: "/bibliotheque",
-    moment: "any",
   },
 ];
 
@@ -112,8 +97,8 @@ export function isDailyActionKey(key: string): key is DailyActionKey {
  * jours). Les semaines vont du dimanche au Chabbat ; les mois et les années
  * sont ceux du calendrier hébraïque (voir goalPeriods).
  */
-export type GoalPeriod = "day" | "week" | "month" | "year" | "custom";
-export const GOAL_PERIODS: GoalPeriod[] = ["day", "week", "month", "year", "custom"];
+export type GoalPeriod = "day" | "week" | "month" | "year" | "custom" | "book";
+export const GOAL_PERIODS: GoalPeriod[] = ["day", "week", "month", "year", "custom", "book"];
 
 /** Un objectif écrit par la personne. */
 export interface DailyGoal {
@@ -126,9 +111,12 @@ export interface DailyGoal {
   period?: GoalPeriod;
   /** Combien de fois par période (semaine, mois, an) ; 1 par défaut. */
   times?: number;
-  /** Programme sur N jours : sa longueur, et le jour où il a commencé. */
+  /** Programme sur N jours, ou livre à finir : sa longueur, et le jour où il a commencé. */
   days?: number;
   start?: string;
+  /** Livre à finir : l'entrée du catalogue et son découpage (voir bookGoals). */
+  textId?: number;
+  sections?: { index: number; units: number; firstDaf?: string }[];
   /**
    * Forme d'avant les périodes : tant de fois par semaine. Lue comme
    * `period: "week"`, `times: perWeek`.
@@ -147,11 +135,12 @@ export function goalTimes(goal: DailyGoal): number {
   return Math.max(1, goal.times ?? goal.perWeek ?? 1);
 }
 
-/** La fenêtre d'un programme sur N jours : du premier jour au dernier (compris). */
+/** La fenêtre d'un programme sur N jours ou d'un livre à finir : du premier jour au dernier (compris). */
 export function customWindow(
   goal: DailyGoal,
 ): { start: string; last: string; days: number } | null {
-  if (goalPeriod(goal) !== "custom" || !goal.start || !goal.days) return null;
+  const period = goalPeriod(goal);
+  if ((period !== "custom" && period !== "book") || !goal.start || !goal.days) return null;
   const start = new Date(goal.start + "T12:00:00");
   if (Number.isNaN(start.getTime())) return null;
   const last = new Date(start);
@@ -161,14 +150,17 @@ export function customWindow(
 
 /**
  * Un objectif qui compte dans la journée : ceux de chaque jour, et un
- * programme sur N jours tant qu'on est dans sa fenêtre.
+ * programme sur N jours ou un livre à finir tant qu'on est dans sa fenêtre.
+ * Un livre en retard reste dans la journée après sa date : ce qui reste est
+ * pour aujourd'hui (voir bookGoals.bookPlan).
  */
 export function isDailyGoal(goal: DailyGoal, today: string = localDayKey()): boolean {
   const period = goalPeriod(goal);
   if (period === "day") return true;
-  if (period !== "custom") return false;
+  if (period !== "custom" && period !== "book") return false;
   const window = customWindow(goal);
-  return !!window && today >= window.start && today <= window.last;
+  if (!window || today < window.start) return false;
+  return period === "book" || today <= window.last;
 }
 
 /** Un objectif suivi à la période (semaine, mois, an), hors décompte du jour. */

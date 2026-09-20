@@ -1,6 +1,7 @@
 import { HDate } from "@hebcal/core";
 import { customWindow, goalPeriod, goalTimes, type DailyGoal } from "./dailyActions";
-import { goalDates, type GoalProgress } from "./dailyHistory";
+import { bookPlan } from "./bookGoals";
+import { goalDates, goalUnits, type GoalProgress } from "./dailyHistory";
 import { shiftDayKey } from "./dailyStreak";
 import { localDayFrom } from "./dateService";
 
@@ -24,6 +25,7 @@ export function periodKeyOf(goal: DailyGoal, dayKey: string): string {
     case "year":
       return String(new HDate(day).getFullYear());
     case "custom":
+    case "book":
       return goal.start ?? "";
     default:
       return dayKey;
@@ -47,6 +49,16 @@ export interface GoalStatus {
 export function goalStatus(goal: DailyGoal, progress: GoalProgress, today: string): GoalStatus {
   const period = periodKeyOf(goal, today);
   const dates = goalDates(progress, goal.id, period);
+  if (goalPeriod(goal) === "book") {
+    const plan = bookPlan(goal, goalUnits(progress, goal.id, period), today);
+    return {
+      done: plan.unitsDone,
+      target: plan.total,
+      doneToday: dates.includes(today),
+      day: plan.day,
+      finished: plan.finished,
+    };
+  }
   const target = goalTimes(goal);
   const window = customWindow(goal);
   let day = 0;
