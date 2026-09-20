@@ -18,6 +18,7 @@ import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
 import {
   formatHebrewDate,
+  formatHebrewRangeStart,
   formatZmanTime,
   hebrewDayOf,
   yearCalendar,
@@ -179,7 +180,8 @@ function civilRange(entry: CalendarEntry): string {
 function hebrewRange(entry: CalendarEntry): string {
   const last = formatHebrewDate(entry.last, locale.value);
   if (entry.first.abs() === entry.last.abs()) return last;
-  return t("calendar.range", { from: formatHebrewDate(entry.first, locale.value), to: last });
+  const first = formatHebrewRangeStart(entry.first, entry.last, locale.value);
+  return t("calendar.range", { from: first, to: last });
 }
 
 /** Racine de la page : cible du dévoilement circulaire (bouton rond natif). */
@@ -393,17 +395,29 @@ onMounted(() => {
         ]"
       >
         <!-- Une fête de l'année : son nom, ses dates, et ses heures quand le
-             travail y est interdit. -->
-        <div v-if="row.entry" class="flex items-start justify-between gap-4">
+             travail y est interdit. Sur un téléphone, les heures se rangent
+             sous les dates ; côte à côte, un libellé long (« Allumage après
+             la sortie du Chabbat ») prenait toute la carte et le nom de la
+             fête n'avait plus que la largeur d'un mot. -->
+        <div
+          v-if="row.entry"
+          class="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
+        >
           <div class="min-w-0">
-            <p class="font-semibold text-text-primary">{{ title(row.entry) }}</p>
-            <p class="text-sm text-text-secondary">{{ civilRange(row.entry) }}</p>
+            <p class="font-semibold text-pretty text-text-primary">{{ title(row.entry) }}</p>
+            <p class="text-sm text-pretty text-text-secondary">{{ civilRange(row.entry) }}</p>
             <p class="text-xs text-text-secondary/80">{{ hebrewRange(row.entry) }}</p>
           </div>
-          <dl v-if="row.entry.period" class="shrink-0 text-end text-sm">
-            <div class="flex items-baseline justify-end gap-2">
+          <!-- Les heures de la fête. Chacune finit sa ligne, comme sur la page
+               des horaires : le regard descend la colonne des chiffres sans
+               les chercher. -->
+          <dl
+            v-if="row.entry.period"
+            class="flex flex-col gap-1 border-t border-line pt-2.5 text-sm sm:max-w-72 sm:shrink-0 sm:border-t-0 sm:pt-0"
+          >
+            <div class="flex items-baseline justify-between gap-3">
               <dt class="text-xs text-text-secondary">{{ t("calendar.start") }}</dt>
-              <dd class="font-semibold tabular-nums text-text-primary">
+              <dd class="shrink-0 font-semibold tabular-nums text-text-primary">
                 {{ clock(row.entry.period.start) }}
               </dd>
             </div>
@@ -413,18 +427,18 @@ onMounted(() => {
             <div
               v-for="lighting in row.entry.period.lightings"
               :key="lighting.at.getTime()"
-              class="flex items-baseline justify-end gap-2"
+              class="flex items-baseline justify-between gap-3"
             >
               <dt class="text-xs text-text-secondary">
                 {{ describeLightingRule(lighting.rule, t) }}
               </dt>
-              <dd class="font-semibold tabular-nums text-text-primary">
+              <dd class="shrink-0 font-semibold tabular-nums text-text-primary">
                 {{ clock(lighting.at) }}
               </dd>
             </div>
-            <div v-if="row.entry.period.end" class="flex items-baseline justify-end gap-2">
+            <div v-if="row.entry.period.end" class="flex items-baseline justify-between gap-3">
               <dt class="text-xs text-text-secondary">{{ t("calendar.end") }}</dt>
-              <dd class="font-semibold tabular-nums text-text-primary">
+              <dd class="shrink-0 font-semibold tabular-nums text-text-primary">
                 {{ clock(row.entry.period.end) }}
               </dd>
             </div>
