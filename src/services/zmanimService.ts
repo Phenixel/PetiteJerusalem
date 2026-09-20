@@ -1620,6 +1620,32 @@ export function formatHebrewDate(hd: HDate, locale: string): string {
 }
 
 /**
+ * Le début d'une plage de dates hébraïques, allégé de ce que la fin répète.
+ *
+ * « du 1 Tichri 5787 au 2 Tichri 5787 » écrit le mois et l'année deux fois
+ * pour ne rien apprendre, et fait trois lignes sur un téléphone là où « du 1
+ * au 2 Tichri 5787 » en fait une. On retire donc du premier les mots que le
+ * second redit, en partant de la fin.
+ *
+ * La comparaison se fait mot à mot, jamais caractère par caractère : « 12
+ * Adar » et « 2 Adar » finissent pareil sans commencer pareil. Et il reste
+ * toujours au moins un mot, le jour, qui est ce que la plage vient dire. Rien
+ * n'est traduit ici : on ne fait que couper ce que `formatHebrewDate` a écrit
+ * dans la langue de l'interface, ce qui vaut aussi pour l'hébreu.
+ */
+export function formatHebrewRangeStart(first: HDate, last: HDate, locale: string): string {
+  const from = formatHebrewDate(first, locale).split(" ");
+  const to = formatHebrewDate(last, locale).split(" ");
+  let kept = from.length;
+  let mirror = to.length;
+  while (kept > 1 && mirror > 0 && from[kept - 1] === to[mirror - 1]) {
+    kept--;
+    mirror--;
+  }
+  return from.slice(0, kept).join(" ");
+}
+
+/**
  * Jour de la semaine au lieu affiché (0 = dimanche … 6 = samedi).
  *
  * Le fuseau de la machine ne fait pas foi : à 23 h à Paris, un appareil réglé
