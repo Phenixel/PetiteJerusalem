@@ -204,6 +204,27 @@ deux marquée aurait fait une colonne d'icônes. L'angle, lui, ne prend la place
 de rien et se repère d'un coup d'oeil en parcourant la liste. Le triangle suit
 le sens de lecture (bordures logiques), il change donc de côté en hébreu.
 
+### Deux colonnes sur un téléphone, seulement si la seconde se plafonne
+
+Une carte du calendrier porte deux choses : le nom de la fête avec ses dates,
+et ses heures. Côte à côte sur un téléphone, elles ne tiennent pas. Le libellé
+le plus long de la colonne des heures (« Allumage après la sortie du Chabbat »)
+décidait seul de sa largeur, qui prenait la carte entière : il ne restait au
+nom que la largeur d'un mot, « Chabbat Roch Hachanah » descendait en escalier,
+et les deux colonnes finissaient par se chevaucher.
+
+D'où la règle, valable pour toute carte à deux colonnes. Tant que l'écran est
+étroit, la seconde passe sous la première, séparée par un filet, chaque heure
+finissant sa ligne comme sur la page des horaires. Dès qu'il y a de la place
+(`sm`), elle revient à côté, mais plafonnée en largeur : une colonne qui se
+dimensionne sur son plus long libellé mange la carte, et ce qu'on lit en
+premier, le nom, passe en dernier.
+
+Une plage de dates, enfin, n'écrit qu'une fois ce que ses deux bouts
+répètent : « du 1 au 2 Tichri 5787 », et non « du 1 Tichri 5787 au 2 Tichri
+5787 ». Trois lignes de moins sur un téléphone, et rien de perdu
+(`formatHebrewRangeStart`).
+
 ### Ce qui est à soi se range avec le reste
 
 Les dates qu'on ajoute au calendrier (un anniversaire, un leilouy nichmat) ne

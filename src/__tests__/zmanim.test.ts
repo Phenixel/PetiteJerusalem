@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
+import { HDate } from "@hebcal/core";
 import {
   computeZmanim,
   DEFAULT_PLACE,
   formatHebrewDate,
+  formatHebrewRangeStart,
   formatZmanDay,
   formatZmanTime,
   hebrewDateFor,
@@ -286,6 +288,27 @@ describe("date hébraïque", () => {
     expect(formatHebrewDate(hd, "fr")).toBe("21 Av 5786");
     expect(formatHebrewDate(hd, "en")).toBe("21st of Av, 5786");
     expect(formatHebrewDate(hd, "he")).toContain("אָב");
+  });
+
+  it("ne redit pas le mois ni l'année au début d'une plage", () => {
+    // Roch Hachana : « du 1 au 2 Tichri 5787 », et non « du 1 Tichri 5787 au
+    // 2 Tichri 5787 ».
+    const first = new HDate(1, "Tishrei", 5787);
+    const last = new HDate(2, "Tishrei", 5787);
+    expect(formatHebrewRangeStart(first, last, "fr")).toBe("1");
+    expect(formatHebrewRangeStart(first, last, "en")).toBe("1st");
+    expect(formatHebrewRangeStart(first, last, "he")).toBe("א׳");
+  });
+
+  it("garde du début d'une plage ce que la fin ne redit pas", () => {
+    // Deux mois : le mois du premier jour reste, l'année s'en va.
+    expect(
+      formatHebrewRangeStart(new HDate(30, "Kislev", 5787), new HDate(1, "Tevet", 5787), "fr"),
+    ).toBe("30 Kislev");
+    // Deux années : rien ne se retire.
+    expect(
+      formatHebrewRangeStart(new HDate(29, "Elul", 5786), new HDate(1, "Tishrei", 5787), "fr"),
+    ).toBe("29 Eloul 5786");
   });
 });
 
