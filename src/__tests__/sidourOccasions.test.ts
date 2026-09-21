@@ -171,6 +171,44 @@ describe("tahanoun, et son absence", () => {
   });
 });
 
+describe("la veille de Kippour", () => {
+  const veille = (year: number) => activeOccasions(new HDate(9, months.TISHREI, year), false);
+
+  it("pose sa clé le 9 Tichri, et ce jour-là seulement", () => {
+    // 5787 : la veille de Kippour tombe le dimanche 20 septembre 2026.
+    expect(veille(5787).has("erev-kippour")).toBe(true);
+    expect(activeOccasions(new HDate(8, months.TISHREI, 5787), false).has("erev-kippour")).toBe(
+      false,
+    );
+    expect(activeOccasions(new HDate(10, months.TISHREI, 5787), false).has("erev-kippour")).toBe(
+      false,
+    );
+  });
+
+  it("reste dans les dix jours de techouva, et sans tahanoun", () => {
+    // Le vidouy de sa Min'ha s'ajoute à ce que le jour porte déjà : Avinou
+    // Malkénou et les ajouts des dix jours dans la 'Amida, « Yehi chem » à la
+    // place du tahanoun.
+    const occ = veille(5787);
+    expect(occ.has("teshuva")).toBe(true);
+    expect(occ.has("tahanoun")).toBe(false);
+    expect(occ.has("sans-tahanoun")).toBe(true);
+    expect(occ.has("sans-tahanoun-minha")).toBe(true);
+    // Le Lamnatséa'h garde sa clé : c'est le fichier qui le retire ce jour-là
+    // (`unless`), pour que les versions publiées gardent un psaume.
+    expect(occ.has("lamnatseah-minha")).toBe(true);
+  });
+
+  it("tombe un vendredi quand Kippour tombe un Chabbat", () => {
+    // 5785 : Kippour le samedi 12 octobre 2024, sa veille le vendredi 11. Le
+    // psaume 93 de la veille de Chabbat tient alors la place du Lamnatséa'h.
+    const vendredi = veille(5785);
+    expect(vendredi.has("erev-kippour")).toBe(true);
+    expect(vendredi.has("jour-5")).toBe(true);
+    expect(vendredi.has("lamnatseah-minha")).toBe(false);
+  });
+});
+
 describe("jeûnes publics", () => {
   it("les jeûnes du calendrier, pas ceux de coutume", () => {
     // Le 10 Tevet et Tsom Guedalia en sont. Le lendemain d'un jeûne n'en est

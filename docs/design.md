@@ -531,6 +531,16 @@ se trompe (`recentSeasonalChanges`). Ce que l'application ne peut pas
 trancher (en Terre d'Israël, à dix convives) reste en gris : une possibilité
 signalée, pas une lecture imposée.
 
+Le second plan dit autre chose que la couleur du jour. Un passage que l'on ne
+dit pas partout (la supplique « Chema' koli » avant Min'ha d'un jeûne, le
+léchem yihoud d'Arvit, la seconde liste du vidouy de la veille de Kippour, que
+Tunis ne disait pas) se lit en `text-secondary`, sous la note qui l'explique :
+le gris montre jusqu'où va le passage dont la note parle, quand la note seule
+laisserait chercher. Le fil que l'on lit d'un bout à l'autre garde, lui, sa
+pleine encre. Aucune règle ne fixe donc de couleur sur `.reading-he` : elle
+vient du bloc ou du paragraphe, et une couleur posée là les couvrirait tous
+les deux.
+
 C'est l'exception à « `primary` ne porte jamais un texte de lecture » : un
 fragment court, dans un paragraphe qu'on lit d'un trait. La halakha de
 l'oubli (« si l'on a conclu haEl hakadoch, on recommence ») accompagne le
