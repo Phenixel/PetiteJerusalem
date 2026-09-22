@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createApp, h, nextTick, type App } from "vue";
+import { createApp, effectScope, h, nextTick, type App } from "vue";
 import { createI18n } from "vue-i18n";
 import { createMemoryHistory, createRouter, type Router } from "vue-router";
 import { readFileSync } from "node:fs";
@@ -29,6 +29,7 @@ import {
   readingPassage,
   selectPassage,
   selectedPassageKey,
+  usePassageLongPress,
   type ReadingPassage,
 } from "../composables/useReadingSelection";
 import { closeFeedback, feedbackPrefill, isFeedbackOpen } from "../composables/useFeedback";
@@ -198,5 +199,87 @@ describe("la couleur de la sélection", () => {
     // Le fond du passage choisi est celui de la sélection : les deux façons de
     // désigner un passage se voient pareil.
     expect(css).toMatch(/\.reading-selected\s*{\s*background-color:\s*var\(--color-selection\);/);
+  });
+});
+
+/**
+ * L'appui long. Couper la sélection du système coupe le geste qui l'ouvrait :
+ * sans ce qui suit, appuyer longuement sur un verset ne ferait plus rien du
+ * tout sur un téléphone, et le geste que tout le monde connaît serait mort.
+ */
+describe("l'appui long sur un passage", () => {
+  /** Un évènement tactile tel que jsdom sait en porter un. */
+  function touche(type: string, cible: Element, x: number, y: number): void {
+    const event = new Event(type, { bubbles: true });
+    const points =
+      type === "touchend" || type === "touchcancel" ? [] : [{ clientX: x, clientY: y }];
+    Object.defineProperty(event, "touches", { value: points });
+    cible.dispatchEvent(event);
+  }
+
+  let scope: ReturnType<typeof effectScope> | null = null;
+  let passage: HTMLElement;
+  let choisi: number;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    clearPassage();
+    choisi = 0;
+    passage = document.createElement("div");
+    passage.className = "reading-pick";
+    // Le fil répond au clic, comme les vrais passages : l'appui long n'a rien
+    // à savoir de ce qu'un passage fait, il lui envoie un clic.
+    passage.addEventListener("click", () => (choisi += 1));
+    passage.append(document.createElement("p"));
+    document.body.append(passage);
+    scope = effectScope();
+    scope.run(() => usePassageLongPress());
+  });
+
+  afterEach(() => {
+    scope?.stop();
+    scope = null;
+    vi.useRealTimers();
+  });
+
+  /** Le texte du passage : c'est lui qu'un doigt touche, pas le bloc. */
+  const dedans = (): Element => passage.firstElementChild as Element;
+
+  it("ouvre le passage, et le relâchement ne le referme pas", () => {
+    touche("touchstart", dedans(), 100, 200);
+    vi.advanceTimersByTime(500);
+    expect(choisi, "l'appui long choisit le passage").toBe(1);
+
+    // Selon les navigateurs, relâcher envoie un clic ou non : celui qui vient
+    // est le même geste, il ne doit pas rejouer le choix (ce qui le relâcherait).
+    touche("touchend", dedans(), 100, 200);
+    dedans().dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(choisi, "le clic du relâchement ne compte pas").toBe(1);
+  });
+
+  it("ne déclenche rien quand le doigt part en défilement", () => {
+    touche("touchstart", dedans(), 100, 200);
+    touche("touchmove", dedans(), 100, 260);
+    vi.advanceTimersByTime(500);
+    touche("touchend", dedans(), 100, 260);
+    expect(choisi).toBe(0);
+  });
+
+  it("laisse l'appui bref au clic ordinaire", () => {
+    touche("touchstart", dedans(), 100, 200);
+    vi.advanceTimersByTime(120);
+    touche("touchend", dedans(), 100, 200);
+    dedans().dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(choisi, "le clic du navigateur passe, l'appui long n'a rien envoyé").toBe(1);
+  });
+
+  it("ne regarde pas ce qui n'est pas un passage", () => {
+    const ailleurs = document.createElement("div");
+    let clics = 0;
+    ailleurs.addEventListener("click", () => (clics += 1));
+    document.body.append(ailleurs);
+    touche("touchstart", ailleurs, 10, 10);
+    vi.advanceTimersByTime(500);
+    expect(clics).toBe(0);
   });
 });

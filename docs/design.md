@@ -745,6 +745,15 @@ page, **signaler une erreur** (le formulaire de support s'ouvre avec
 l'endroit, les premiers mots et le lien déjà écrits), et le **marque-page** là
 où le texte en prend.
 
+L'appui long ouvre la bulle, comme l'appui bref. Couper la sélection du
+système coupe aussi le geste qui l'ouvrait : sans cela, appuyer longuement sur
+un verset ne ferait plus rien du tout, et le geste que tout le monde connaît
+pour agir sur du texte serait mort. La bulle se pose au-dessus du passage,
+jamais sous la zone système ni sous le bandeau du site (elle passe alors
+dessous), et sa rangée de commandes suit la taille de lecture, à moitié comme
+le menu de lecture, plafonnée pour que quatre colonnes tiennent sur la largeur
+d'un téléphone.
+
 Le choix se fait au passage, jamais au mot : c'est la seule unité que ces
 commandes savent nommer. Un lien mène à un verset, pas à trois mots, et un
 signalement qui dit « Tehilim 23 · verset 4 » se corrige, là où trois mots

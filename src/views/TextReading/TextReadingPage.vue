@@ -90,6 +90,7 @@ import {
   clearPassage,
   selectedPassageKey,
   selectPassage,
+  usePassageLongPress,
 } from "../../composables/useReadingSelection";
 
 /** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
@@ -817,6 +818,10 @@ function toggleBookmarkAt(line: number) {
 // phonétique, signaler une erreur, et le marque-page là où le texte en prend.
 // C'est la page qui sait nommer un passage et lui donner une adresse ; le
 // rendu, lui, ne connaît que sa ligne.
+
+// L'appui long sur un passage vaut l'appui bref : couper la sélection du
+// système a coupé le geste qui l'ouvrait, il est rendu à la bulle.
+usePassageLongPress();
 
 /** Le passage choisi dans le texte ouvert, par sa ligne : le fil le surligne. */
 const pickedLine = ref<number | null>(null);

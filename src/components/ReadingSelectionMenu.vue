@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
 import ShareModal from "./ShareModal.vue";
+import { useReadingSize } from "../composables/useReadingSize";
 import { useScrollFrame } from "../composables/useScrollFrame";
 import { useOverlay } from "../composables/useOverlayStack";
 import { openFeedback } from "../composables/useFeedback";
@@ -45,14 +46,41 @@ const view = ref<"actions" | "phonetic">("actions");
 const showShare = ref(false);
 
 /**
- * La place de la bulle : le haut (en pixels de fenêtre) contre lequel elle
- * s'aligne, et de quel côté du passage elle se pose. Au-dessus, comme le menu
- * du système ; dessous quand le passage touche le haut de l'écran, où la bulle
- * sortirait de la fenêtre ou passerait sous le bandeau.
+ * La place de la bulle : le haut de son bord, en pixels de fenêtre. Elle se
+ * pose au-dessus du passage, comme le menu du système ; dessous quand le
+ * passage touche le haut de l'écran, où elle passerait sous la zone système ou
+ * sous le bandeau du site.
  */
-const spot = shallowRef<{ top: number; below: boolean } | null>(null);
+const spot = shallowRef<{ top: number } | null>(null);
 
 const bubble = ref<HTMLElement | null>(null);
+
+/**
+ * La bulle suit la taille de lecture, à moitié, comme le menu de lecture : qui
+ * agrandit le texte le fait parce qu'il le lit mal, et lui laisser une rangée
+ * de commandes en petits caractères la lui fermerait. À moitié, et plafonnée :
+ * quatre colonnes doivent tenir sur la largeur d'un téléphone.
+ */
+const readingSize = useReadingSize();
+const bubbleScale = computed(() => Math.min(1.2, 1 + (readingSize.scale.value - 1) * 0.5));
+const iconSize = computed(() => Math.round(17 * bubbleScale.value));
+
+/**
+ * Ce qui tient le haut de l'écran et sous quoi la bulle ne passe pas : la zone
+ * système (l'app native est bord à bord) et le bandeau du site. Mesuré par un
+ * témoin : `--safe-top` est une expression `max()` que le style calculé ne rend
+ * pas en pixels. Refait quand la fenêtre change de taille, pas à chaque image.
+ */
+const chromeTop = ref(0);
+function measureChrome(): void {
+  const probe = document.createElement("div");
+  probe.style.cssText =
+    "position:fixed;top:0;left:0;width:0;visibility:hidden;pointer-events:none;" +
+    "height:calc(var(--safe-top) + var(--navbar-height) + 0.5rem)";
+  document.body.appendChild(probe);
+  chromeTop.value = probe.getBoundingClientRect().height;
+  probe.remove();
+}
 
 /**
  * Hauteur supposée de la bulle tant qu'elle n'est pas rendue : sa rangée de
@@ -79,15 +107,21 @@ function measure(): void {
   // paragraphe ne tient pas dans la place d'une rangée de commandes, et
   // sortirait par le haut de l'écran.
   const height = bubble.value?.offsetHeight || ROOM_ABOVE;
-  const below = rect.top - GAP - height < 0;
-  spot.value = { top: below ? rect.bottom + GAP : rect.top - GAP, below };
+  const above = rect.top - GAP - height;
+  const below = above < chromeTop.value;
+  spot.value = { top: below ? rect.bottom + GAP : above };
 }
 
 // La bulle suit le passage sans poser d'écouteur de plus : la géométrie du
 // défilement est déjà mesurée une fois par image pour toute l'app.
 watch([readingPassage, scrollFrame], measure, { immediate: true });
+watch(() => scrollFrame.value.viewport, measureChrome);
 // La phonétique change sa hauteur : elle peut lui faire changer de côté.
 watch(view, () => void nextTick(measure));
+// Et la bulle se replace une fois rendue, sa hauteur enfin connue : avant ce
+// second passage, la hauteur supposée (ROOM_ABOVE) la faisait passer sous le
+// passage alors qu'elle tenait au-dessus.
+watch(readingPassage, () => void nextTick(measure));
 
 // Un nouveau passage repart des commandes : la phonétique du précédent n'a
 // rien à faire au-dessus de celui-ci, ni sa fenêtre de partage devant.
@@ -200,6 +234,7 @@ function onKeydown(event: KeyboardEvent): void {
 }
 
 onMounted(() => {
+  measureChrome();
   document.addEventListener("pointerdown", onPointerDown);
   window.addEventListener("keydown", onKeydown);
 });
@@ -218,7 +253,7 @@ onBeforeUnmount(() => {
     <div
       v-if="readingPassage && spot && !showShare"
       class="bubble-anchor"
-      :style="{ top: `${spot.top}px`, transform: spot.below ? 'none' : 'translateY(-100%)' }"
+      :style="{ top: `${spot.top}px`, '--bubble-scale': bubbleScale }"
     >
       <div
         ref="bubble"
@@ -230,15 +265,15 @@ onBeforeUnmount(() => {
              remplacent, chacune sous son icône. -->
         <div v-if="view === 'actions'" class="flex items-stretch">
           <button type="button" class="bubble-action" @click="share">
-            <AppIcon name="share" :size="17" />
+            <AppIcon name="share" :size="iconSize" />
             {{ t("textReading.selection.share") }}
           </button>
           <button v-if="canTransliterate" type="button" class="bubble-action" @click="showPhonetic">
-            <AppIcon name="languages" :size="17" />
+            <AppIcon name="languages" :size="iconSize" />
             {{ t("textReading.phonetic") }}
           </button>
           <button type="button" class="bubble-action" @click="report">
-            <AppIcon name="flag" :size="17" />
+            <AppIcon name="flag" :size="iconSize" />
             {{ t("textReading.selection.report") }}
           </button>
           <!-- Le marque-page, là où le texte en prend : on ne revient pas à un
@@ -252,7 +287,7 @@ onBeforeUnmount(() => {
             :title="bookmarkLabel"
             @click="bookmark"
           >
-            <AppIcon name="bookmark" :size="17" />
+            <AppIcon name="bookmark" :size="iconSize" />
             {{ t("textReading.selection.bookmark") }}
           </button>
         </div>
@@ -321,13 +356,13 @@ onBeforeUnmount(() => {
    Quatre tiennent sur la largeur d'un téléphone. */
 .bubble-action {
   display: flex;
-  min-width: 4.5rem;
+  min-width: calc(4.5rem * var(--bubble-scale, 1));
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   gap: 0.3rem;
   padding: 0.6rem 0.5rem;
-  font-size: 0.72rem;
+  font-size: calc(0.72rem * var(--bubble-scale, 1));
   font-weight: 600;
   line-height: 1.2;
   text-align: center;
@@ -357,7 +392,7 @@ onBeforeUnmount(() => {
 }
 
 .bubble-place {
-  font-size: 0.75rem;
+  font-size: calc(0.75rem * var(--bubble-scale, 1));
   font-weight: 600;
   line-height: 1.3;
   color: var(--color-text-secondary);
@@ -366,7 +401,7 @@ onBeforeUnmount(() => {
 .bubble-tl {
   margin-top: 0.35rem;
   font-family: var(--font-reading);
-  font-size: 1rem;
+  font-size: calc(1rem * var(--bubble-scale, 1));
   font-style: italic;
   line-height: 1.6;
   color: var(--color-text-primary);

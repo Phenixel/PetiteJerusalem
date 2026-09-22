@@ -20,6 +20,7 @@ import {
   clearPassage,
   selectedPassageKey,
   selectPassage,
+  usePassageLongPress,
 } from "../../composables/useReadingSelection";
 import type { Bookmark } from "../../services/readingProgressService";
 import { hubPath, sectionPath, SITE_URL } from "../../content/etudeTexts";
@@ -124,6 +125,10 @@ function toggleBookmarkAt(sectionIndex: number, line: number) {
 // verset le choisit, la bulle de commandes se pose dessus. La lecture du jour
 // pose plusieurs textes sur une page, d'où l'identifiant du texte dans la clé
 // du passage : un seul est choisi à la fois, quel que soit le livre.
+
+// L'appui long ouvre la bulle comme l'appui bref (écouteurs comptés : la page
+// pose un lecteur par texte, ils ne sont posés qu'une fois).
+usePassageLongPress();
 
 /** Ce qui distingue ce verset de tous les autres de la page. */
 function passageKey(sectionIndex: number, line: number): string {
