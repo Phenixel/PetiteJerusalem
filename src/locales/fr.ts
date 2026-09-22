@@ -1023,6 +1023,9 @@ const fr = {
       "Écoutez le chiour « {name} » 🎧 Un cours de Torah à découvrir sur Petite Jérusalem :",
     titleText: "Partager ce texte",
     inviteText: "Lisez « {name} » 📖 Un texte à ouvrir sur Petite Jérusalem :",
+    // Un passage choisi dans un texte : le lien ouvre le texte à cet endroit.
+    titlePassage: "Partager ce passage",
+    invitePassage: "« {name} » 📖 Ce passage s'ouvre ici, sur Petite Jérusalem :",
   },
   batchSelection: {
     textsSelected: "{count} texte sélectionné | {count} textes sélectionnés",
@@ -1217,6 +1220,19 @@ const fr = {
     bookmarks: "Marque-pages",
     bookmarkAdd: "Ajouter un marque-page",
     bookmarkRemove: "Retirer le marque-page",
+    // La bulle de commandes d'un passage choisi (ReadingSelectionMenu) : elle
+    // remplace le menu du système, coupé sur les textes.
+    selection: {
+      title: "Ce passage",
+      share: "Partager",
+      report: "Signaler",
+      bookmark: "Marque-page",
+      // Le signalement, pré-rempli : de quoi retrouver le passage à coup sûr,
+      // l'endroit, les premiers mots et le lien.
+      reportPlace: "Passage : {place}",
+      reportText: "Texte : « {text} »",
+      reportLink: "Lien : {url}",
+    },
     // Un choix laissé au lecteur (la haftara de Min'ha d'un jeûne) : le
     // sélecteur entre les options, qui retient l'option prise.
     choice: "Selon l'usage de votre communauté",

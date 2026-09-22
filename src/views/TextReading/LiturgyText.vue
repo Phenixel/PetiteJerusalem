@@ -63,10 +63,19 @@ const props = withDefaults(
      * répondrait à la place du premier verset, ces ancres étant cherchées dans
      * toute la page.
      *
-     * Pas de marque-page ici, ni de verset sélectionné : une tefila se lit du
-     * début, on n'y revient pas à un paragraphe comme à un verset de Tehilim.
+     * Pas de marque-page ici : une tefila se lit du début, on n'y revient pas
+     * à un paragraphe comme à un verset de Tehilim.
      */
     anchored?: boolean;
+    /**
+     * Les paragraphes se choisissent d'un appui, et la bulle de commandes vient
+     * se poser dessus (voir useReadingSelection). Le texte de la page le pose ;
+     * les passages qui l'accompagnent (ce qu'on dit avant les Tehilim et après)
+     * gardent la sélection ordinaire, n'ayant pas d'adresse à eux.
+     */
+    selectable?: boolean;
+    /** Le paragraphe choisi, par sa ligne : c'est lui que le fil surligne. */
+    selectedLine?: number | null;
   }>(),
   {
     // Par défaut le texte est celui de la page : il porte ses ancres. La
@@ -75,8 +84,15 @@ const props = withDefaults(
     // `true`, aucun texte de liturgie ne portait plus d'ancre : le menu de
     // lecture ne menait nulle part, et la reprise de lecture non plus.
     anchored: true,
+    selectable: false,
+    selectedLine: null,
   },
 );
+
+const emit = defineEmits<{
+  /** Un paragraphe vient d'être choisi : la page en fait un passage. */
+  pick: [passage: { el: HTMLElement; line: number; hebrew: string; label: string }];
+}>();
 
 const { t, locale } = useI18n();
 
@@ -377,6 +393,25 @@ const sections = computed<SectionEntry[]>(() => {
 });
 
 /**
+ * Un appui sur un paragraphe le choisit, et la page en fait un passage (son
+ * endroit, son adresse, ses commandes). Seule la première écriture d'un
+ * passage répété porte le choix : les reprises n'ont pas d'ancre à elles, et
+ * ce sont les mêmes mots.
+ */
+function pick(event: MouseEvent, entry: ParagraphEntry, block: TextBlock, copy: number): void {
+  if (!props.selectable || copy !== 1) return;
+  // Clic droit : le menu du navigateur propose de copier, c'est la bulle qui
+  // répond à sa place.
+  if (event.type === "contextmenu") event.preventDefault();
+  emit("pick", {
+    el: event.currentTarget as HTMLElement,
+    line: entry.line,
+    hebrew: visibleText(entry.paragraph),
+    label: blockTitle(block),
+  });
+}
+
+/**
  * La translittération, ligne par ligne, de ce qui se dit aujourd'hui : les
  * fragments que le jour écarte (l'autre conclusion, l'autre saison) n'y
  * entrent pas, le lecteur phonétique lit le même texte que le lecteur hébreu.
@@ -535,7 +570,11 @@ const phoneticOf = computed(() => {
                     'reading-lead': paragraph.lead,
                     'reading-tight': paragraph.tight,
                     'reading-echo': copy > 1,
+                    'reading-pick': selectable && copy === 1,
+                    'reading-selected': selectable && copy === 1 && selectedLine === line,
                   }"
+                  @click="pick($event, { paragraph, line }, text, copy)"
+                  @contextmenu="pick($event, { paragraph, line }, text, copy)"
                 >
                   <p
                     v-if="!showPhonetic"

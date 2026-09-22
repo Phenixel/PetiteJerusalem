@@ -46,7 +46,7 @@ const pages = [
         <button
           type="button"
           class="w-full flex items-center justify-between gap-3 py-3.5 text-text-primary hover:text-primary transition-colors"
-          @click="openFeedback"
+          @click="openFeedback()"
         >
           <span class="flex items-center gap-3">
             <AppIcon name="message" :size="17" class="text-text-secondary/70" />

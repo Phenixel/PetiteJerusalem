@@ -955,6 +955,8 @@ const he: LocaleMessages = {
     inviteChiour: "האזינו לשיעור « {name} » 🎧 שיעור תורה לגלות בפטיט ירושלים:",
     titleText: "שיתוף הטקסט",
     inviteText: "קראו « {name} » 📖 טקסט לפתוח בפטיט ירושלים:",
+    titlePassage: "שיתוף הקטע",
+    invitePassage: "« {name} » 📖 הקטע נפתח כאן, בפטיט ירושלים:",
   },
   batchSelection: {
     textsSelected: "טקסט אחד נבחר | {count} טקסטים נבחרו",
@@ -1134,6 +1136,15 @@ const he: LocaleMessages = {
     bookmarks: "סימניות",
     bookmarkAdd: "הוספת סימנייה",
     bookmarkRemove: "הסרת הסימנייה",
+    selection: {
+      title: "הקטע הזה",
+      share: "שיתוף",
+      report: "דיווח",
+      bookmark: "סימנייה",
+      reportPlace: "קטע: {place}",
+      reportText: "טקסט: « {text} »",
+      reportLink: "קישור: {url}",
+    },
     // בחירה שבידי הקורא (הפטרת מנחה של תענית).
     choice: "לפי מנהג קהילתך",
     // תפילות (סידור, סליחות): תפריט ניווט בין הקטעים.

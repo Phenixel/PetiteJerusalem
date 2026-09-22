@@ -15,6 +15,7 @@ import { useOnline } from "./composables/useOnline";
 import { isNativeApp } from "./composables/useNativeApp";
 import { isOnboardingOpen } from "./composables/useOnboarding";
 import { isFeedbackOpen } from "./composables/useFeedback";
+import { readingPassage } from "./composables/useReadingSelection";
 import { recordUsageDay, restoreFeedbackNudge } from "./services/feedbackNudge";
 import { useModalKeyboard } from "./composables/useModalKeyboard";
 import { useNativeStatusBar } from "./composables/useNativeStatusBar";
@@ -53,6 +54,20 @@ const HolidayBackdrop = defineAsyncComponent(
 );
 const AppUpdateBanner = defineAsyncComponent(() => import("./components/AppUpdateBanner.vue"));
 const OfflineNotice = defineAsyncComponent(() => import("./components/OfflineNotice.vue"));
+
+// La bulle de commandes d'un passage de texte (partager, phonétique, signaler
+// une erreur, voir useReadingSelection) : posée une fois pour toute l'app, pour
+// qu'une page qui pose plusieurs lecteurs (la lecture du jour) n'en ouvre pas
+// deux. Son chunk n'arrive qu'au premier passage choisi.
+const ReadingSelectionMenu = defineAsyncComponent(
+  () => import("./components/ReadingSelectionMenu.vue"),
+);
+// Montée au premier passage choisi, puis laissée en place : sa sortie
+// s'anime, et elle ne se recharge pas au passage suivant.
+const selectionMounted = ref(false);
+watch(readingPassage, (passage) => {
+  if (passage) selectionMounted.value = true;
+});
 
 // Le formulaire de support (pied de page, onglet À propos, bas de l'accueil) :
 // son chunk ne se charge qu'à la première ouverture, puis la fenêtre reste
@@ -191,6 +206,7 @@ authService.onAuthChanged((user) => {
     <ConsentBanner />
     <OnboardingFlow v-if="isOnboardingOpen" />
     <FeedbackModal v-if="feedbackMounted" />
+    <ReadingSelectionMenu v-if="selectionMounted" />
     <GlobalAudioPlayer />
     <BottomTabBar v-if="isNativeApp" />
     <!-- App native : le flou en dégradé qui rend l'heure et la batterie

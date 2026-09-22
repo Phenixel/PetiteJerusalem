@@ -86,6 +86,12 @@ import { useKeepAwake } from "../../composables/useKeepAwake";
 import { analyticsService } from "../../services/analyticsService";
 import { useLocalePath } from "../../composables/useLocalePath";
 import { useConfirm } from "../../composables/useConfirm";
+import {
+  clearPassage,
+  selectedPassageKey,
+  selectPassage,
+  usePassageLongPress,
+} from "../../composables/useReadingSelection";
 
 /** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
 const { localePath } = useLocalePath();
@@ -631,11 +637,9 @@ function placeLabel(sectionIndex: number | null, line: number): string {
 // chemin et le libellé enregistrés sont ceux de la section ouverte.
 const {
   bookmarks,
-  selected: selectedLine,
   highlighted: highlightedLine,
   refresh: refreshBookmarks,
   isBookmarked,
-  select,
   toggleBookmark,
   remove: removeBookmarkItem,
   scrollTo,
@@ -802,13 +806,72 @@ function isLineBookmarked(line: number): boolean {
   return isBookmarked(positionSection.value, line);
 }
 
-function onVerseClick(line: number) {
-  select(positionSection.value, line);
-}
-
 function toggleBookmarkAt(line: number) {
   if (!textEntry.value) return;
   toggleBookmark(positionSection.value, line);
+}
+
+// --- Le passage choisi (voir useReadingSelection) ---
+//
+// Un appui sur un verset ou sur un paragraphe d'office le choisit, et la bulle
+// de commandes vient se poser dessus : partager ce passage, en lire la
+// phonétique, signaler une erreur, et le marque-page là où le texte en prend.
+// C'est la page qui sait nommer un passage et lui donner une adresse ; le
+// rendu, lui, ne connaît que sa ligne.
+
+// L'appui long sur un passage vaut l'appui bref : couper la sélection du
+// système a coupé le geste qui l'ouvrait, il est rendu à la bulle.
+usePassageLongPress();
+
+/** Le passage choisi dans le texte ouvert, par sa ligne : le fil le surligne. */
+const pickedLine = ref<number | null>(null);
+// Relâché d'ailleurs (un appui hors du texte, Échap, le bouton retour) : le
+// surlignage suit.
+watch(selectedPassageKey, (key) => {
+  if (key === null) pickedLine.value = null;
+});
+// On ne garde pas un passage d'un texte en ouvrant le suivant.
+watch([textId, sectionParam], clearPassage);
+onBeforeUnmount(clearPassage);
+
+/** L'adresse publique qui ramène à ce passage, et à lui seul. */
+function passageUrl(line: number): string {
+  return `${SITE_URL}${canonicalReadingPath.value}?verset=${line}`;
+}
+
+/**
+ * Où se trouve un passage, en clair. Un livre se repère par son verset
+ * (« Michna Berakhot · Chapitre 2 · verset 14 ») ; un office par le nom de son
+ * passage, un numéro de verset ne voulant rien dire devant une brakha.
+ */
+function passagePlace(line: number, label?: string): string {
+  const name = textEntry.value ? appendHebrewNumeral(textEntry.value.name) : "";
+  const where = isLiturgyText.value ? (label ?? "") : placeLabel(positionSection.value, line);
+  return [name, where].filter(Boolean).join(" · ");
+}
+
+function pickPassage(passage: { el: HTMLElement; line: number; hebrew: string; label?: string }) {
+  const key = `${textId.value}#${positionSection.value ?? 0}#${passage.line}`;
+  selectPassage({
+    key,
+    el: passage.el,
+    hebrew: passage.hebrew,
+    place: passagePlace(passage.line, passage.label),
+    url: passageUrl(passage.line),
+    // Une tefila ne prend pas de marque-page : elle se lit du début.
+    bookmarked: isLiturgyText.value ? null : isLineBookmarked(passage.line),
+    toggleBookmark: () => toggleBookmarkAt(passage.line),
+  });
+  // Un second appui sur le même passage le relâche (voir selectPassage).
+  pickedLine.value = selectedPassageKey.value === key ? passage.line : null;
+}
+
+/** Un verset : son texte hébreu est la ligne elle-même. */
+function pickVerse(event: MouseEvent, line: number, hebrew: string) {
+  // Clic droit : le menu du navigateur propose de copier, c'est la bulle qui
+  // répond à sa place.
+  if (event.type === "contextmenu") event.preventDefault();
+  pickPassage({ el: event.currentTarget as HTMLElement, line, hebrew });
 }
 
 function bookmarkPlace(b: Bookmark): string {
@@ -826,7 +889,7 @@ function refreshProgressState() {
   savedPosition.value = readingProgressService.getPosition(textId.value);
   refreshBookmarks();
   resumeDismissed.value = false;
-  selectedLine.value = null;
+  clearPassage();
   showBookmarksPanel.value = false;
 }
 
@@ -1756,6 +1819,9 @@ watch(textId, (_, previousTextId) => {
           :show-phonetic="showPhonetic"
           :occasions="occasions"
           :recent-changes="recentChanges"
+          selectable
+          :selected-line="pickedLine"
+          @pick="pickPassage"
         />
 
         <!-- Verses / mishnayot (numbered for reference texts), grouped by
@@ -1773,12 +1839,13 @@ watch(textId, (_, previousTextId) => {
               <template v-for="(line, index) in block.lines" :key="block.offset + index">
                 <div
                   :data-line="block.offset + index"
-                  @click="onVerseClick(block.offset + index)"
-                  class="flex items-start gap-3 rounded-lg transition-colors duration-500 -mx-2 px-2"
+                  @click="pickVerse($event, block.offset + index, line)"
+                  @contextmenu="pickVerse($event, block.offset + index, line)"
+                  class="reading-pick flex items-start gap-3 rounded-lg transition-colors duration-500 -mx-2 px-2"
                   :class="{
                     'bg-primary/10': highlightedLine === block.offset + index,
-                    'bg-black/5 dark:bg-white/10':
-                      selectedLine === block.offset + index &&
+                    'reading-selected':
+                      pickedLine === block.offset + index &&
                       highlightedLine !== block.offset + index,
                   }"
                 >
@@ -1807,20 +1874,6 @@ watch(textId, (_, previousTextId) => {
                   >
                     {{ phoneticLines[block.offset + index] }}
                   </p>
-                </div>
-                <!-- Verset sélectionné : proposer le marque-page -->
-                <div v-if="selectedLine === block.offset + index" class="flex justify-end !mt-2">
-                  <button
-                    @click.stop="toggleBookmarkAt(block.offset + index)"
-                    class="btn btn-soft !px-3 !py-1.5 text-sm"
-                  >
-                    <AppIcon name="bookmark" :size="13" />
-                    {{
-                      isLineBookmarked(block.offset + index)
-                        ? t("textReading.bookmarkRemove")
-                        : t("textReading.bookmarkAdd")
-                    }}
-                  </button>
                 </div>
               </template>
             </div>
