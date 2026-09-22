@@ -164,8 +164,16 @@ export function buildBlock(spec, segs) {
   const block = {};
   if (spec.label) block.label = spec.label;
   if (spec.labelText) block.labelText = spec.labelText;
-  const halakha = rubricOf(spec, segs, "halakha");
-  if (halakha) block.halakha = halakha;
+  // Une halakha, ou plusieurs : un bloc en porte parfois toute une suite (les
+  // dinim de l'habitation dans la soucca), et le lecteur les rend l'une après
+  // l'autre (voir halakhotOf dans LiturgyText). Chacune est alors écrite ici
+  // dans les trois langues, sans segment de la source à prendre.
+  if (Array.isArray(spec.halakha)) {
+    block.halakha = spec.halakha.map((halakha) => rubricOf({ halakha }, segs, "halakha"));
+  } else {
+    const halakha = rubricOf(spec, segs, "halakha");
+    if (halakha) block.halakha = halakha;
+  }
   if (spec.variants) block.variants = true;
   if (spec.plain) block.plain = true;
   block.lines = spec.lines.map((line) => buildLine(line, segs));

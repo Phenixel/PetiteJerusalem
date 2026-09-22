@@ -5,12 +5,14 @@
  *
  * Lancer avec : node scripts/build-moadim.mjs
  *
- * Deux textes pour l'heure. L'Atarat nedarim, qu'on dit la veille de Roch
+ * Trois textes pour l'heure. L'Atarat nedarim, qu'on dit la veille de Roch
  * Hachana et la veille de Kippour devant dix hommes, ou trois à défaut : le
  * siddour de l'export ne le porte pas ; le mahzor, si, sous « Annulment of
- * Vows and Curses ». Et les brahot du loulav, que ni l'un ni l'autre ne
+ * Vows and Curses ». Les brahot du loulav, que ni l'un ni l'autre ne
  * portent : leur texte vit dans scripts/lib/loulav.mjs, d'où la Cha'harit le
- * prend aussi. Les autres textes de fête du livre Moadim (les Sli'hot,
+ * prend aussi. Et le séder de la nuit de Souccot, que la source ne porte pas
+ * davantage : il vit dans scripts/lib/leil-souccot.mjs, transcrit d'un sidour
+ * imprimé. Les autres textes de fête du livre Moadim (les Sli'hot,
  * l'allumage de Hanouka) viennent, eux, d'ailleurs : voir scripts/lib et
  * build-brahot.mjs.
  *
@@ -38,6 +40,29 @@ import {
   RUBRIC_CHEHEHIYANOU,
   RUBRIC_NAANOUIM,
 } from "./lib/loulav.mjs";
+import {
+  AVINOU,
+  DINIM,
+  EL_MALE,
+  KAVANOT_NUITS,
+  LECHEM_YIHOUD,
+  LEIOUL_NUITS,
+  LEKHA,
+  NUITS,
+  OULOU,
+  RASHEI_TEVOT,
+  RUBRIC_AJOUT,
+  RUBRIC_ASSIS,
+  RUBRIC_CHAQUE_NUIT,
+  RUBRIC_ENTREE,
+  RUBRIC_FIN,
+  RUBRIC_KAVANOT,
+  RUBRIC_SEUIL,
+  TIVOU,
+  VEHOUKHAN,
+  VERSETS_AJOUT,
+  VERSETS_NUITS,
+} from "./lib/leil-souccot.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, "../public/texts/tefila");
@@ -215,7 +240,67 @@ const netilatLoulav = {
   ],
 };
 
-const RECIPES = [ataratNedarim, netilatLoulav];
+/**
+ * Le séder de la nuit de Souccot : la page du livre Moadim. Comme les brahot
+ * du loulav, rien n'en vient de la source Sefaria, qui ne le porte pas ; tout
+ * est dans scripts/lib/leil-souccot.mjs, transcrit du sidour imprimé, et la
+ * recette ne fait que l'ordonner.
+ *
+ * L'ordre est celui du sidour : au seuil, le Léchem yihoud et la kavana de la
+ * nuit ; en entrant, l'invitation aux ouchpizin, l'hôte de la nuit en tête ;
+ * assis, son verset, les versets que certains ajoutent, et le verset de David
+ * pour finir. Les sept nuits sont écrites l'une sous l'autre, chacune sous sa
+ * didascalie, comme l'allumage de Hanouka donne ses huit soirs : le livre se
+ * lit aussi bien la veille que le soir même.
+ *
+ * Les dinim de l'habitation dans la soucca accompagnent le bloc où l'on
+ * s'assoit : c'est là qu'ils s'appliquent, et le sidour les donne à la suite
+ * du séder, sous le titre « דיני ישיבה בסוכה ».
+ */
+const leilSouccot = {
+  file: "seder-leil-souccot",
+  title: "סדר ליל סוכות (Seder Leil Souccot)",
+  src: () => [],
+  blocks: [
+    {
+      label: "Au seuil de la soucca",
+      lines: [
+        { he: LECHEM_YIHOUD[0], rubric: RUBRIC_SEUIL },
+        { he: LECHEM_YIHOUD[1], tight: true },
+        ...KAVANOT_NUITS.map((he, i) => ({ he, rubric: i === 0 ? RUBRIC_KAVANOT : NUITS[i] })),
+        { he: VEHOUKHAN[0], rubric: RUBRIC_CHAQUE_NUIT },
+        { he: VEHOUKHAN[1], tight: true },
+        { he: AVINOU },
+        ...RASHEI_TEVOT.map(({ he, rubric }) => ({ he, rubric })),
+        { he: EL_MALE },
+      ],
+    },
+    {
+      label: "Les ouchpizin",
+      lines: [
+        { he: OULOU, rubric: RUBRIC_ENTREE },
+        ...LEIOUL_NUITS.map((he, i) => ({ he, rubric: NUITS[i] })),
+        { he: TIVOU, rubric: RUBRIC_CHAQUE_NUIT },
+      ],
+    },
+    {
+      label: "Assis dans la soucca",
+      halakha: DINIM,
+      lines: [
+        ...VERSETS_NUITS.flatMap((nuit, i) =>
+          nuit.map((verset, rang) => ({
+            ...verset,
+            ...(rang === 0 ? { rubric: i === 0 ? RUBRIC_ASSIS : NUITS[i] } : { tight: true }),
+          })),
+        ),
+        ...VERSETS_AJOUT.map((he, i) => ({ he, rubric: i === 0 ? RUBRIC_AJOUT : NUITS[i] })),
+        { he: LEKHA, rubric: RUBRIC_FIN },
+      ],
+    },
+  ],
+};
+
+const RECIPES = [ataratNedarim, netilatLoulav, leilSouccot];
 
 console.log("Téléchargement du Mahzor Roch Hachana Edot HaMizrach (export Sefaria)…");
 const text = await fetchMerged(MACHZOR_ROSH_HASHANA_URL);

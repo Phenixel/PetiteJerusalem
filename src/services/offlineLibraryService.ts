@@ -92,7 +92,7 @@ const CORPUS_META: { key: string; labelKey: string; approxBytes: number }[] = [
   { key: "Talmud Bavli", labelKey: "study.types.talmud", approxBytes: 29_900_000 },
   { key: "Tanakh", labelKey: "study.types.tanakh", approxBytes: 6_800_000 },
   { key: "Sidour", labelKey: "study.types.sidour", approxBytes: 856_000 },
-  { key: "Moadim", labelKey: "study.types.moadim", approxBytes: 218_000 },
+  { key: "Moadim", labelKey: "study.types.moadim", approxBytes: 274_000 },
   { key: "Brahot", labelKey: "study.types.brahot", approxBytes: 132_000 },
 ];
 

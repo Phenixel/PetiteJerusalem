@@ -2801,6 +2801,14 @@
       "type": "Moadim"
     },
     {
+      "id": 364,
+      "name": "סדר ליל סוכות (Seder Leil Souccot)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.639.1",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
       "id": 359,
       "name": "ברית מילה (Brit Mila)",
       "livre": "מעגל החיים (Maagal Hahayim)",

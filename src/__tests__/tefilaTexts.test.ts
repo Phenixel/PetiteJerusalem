@@ -534,6 +534,48 @@ describe("fichiers de tefila", () => {
       }
     }
   });
+
+  it("Séder leil Souccot : les sept nuits, du seuil à la place assise", () => {
+    const blocks = load("moadim", "seder-leil-souccot").sections[0].blocks ?? [];
+    expect(blocks.map((b) => b.label)).toEqual([
+      "Au seuil de la soucca",
+      "Les ouchpizin",
+      "Assis dans la soucca",
+    ]);
+    // Chaque nuit a sa kavana, son hôte et son verset. Les sept hôtes portent
+    // chacun sa didascalie ; les kavanot n'en comptent que six, la première
+    // nuit étant nommée par la consigne qui ouvre la série.
+    const nuits = (n: number) =>
+      (blocks[n].paragraphs ?? []).filter((p) => /^ליל [א-ז]':$/.test(p.rubric?.he ?? "")).length;
+    expect(nuits(0)).toBe(6);
+    expect(nuits(1)).toBe(7);
+    const ouchpizin = blocks[1].paragraphs ?? [];
+    expect(ouchpizin[1].runs[0]).toMatchObject({ text: expect.stringContaining("אַבְרָהָם") });
+    expect(ouchpizin[7].runs[0]).toMatchObject({ text: expect.stringContaining("דָּוִד") });
+    // Les versets des trois premières nuits se disent sept fois, ceux des
+    // quatre autres trois fois.
+    const repeats = (blocks[2].paragraphs ?? []).map((p) => p.repeat).filter(Boolean);
+    expect(repeats.slice(0, 3)).toEqual([7, 7, 7]);
+    expect(repeats.slice(3)).toEqual([3, 3, 3, 3, 3, 3, 3, 3, 3]);
+  });
+
+  it("Séder leil Souccot : les dinim de la soucca accompagnent le bloc où l'on s'assoit", () => {
+    const blocks = load("moadim", "seder-leil-souccot").sections[0].blocks ?? [];
+    const halakhot = blocks[2].halakhot ?? [];
+    expect(halakhot).toHaveLength(19);
+    for (const halakha of halakhot) {
+      expect(halakha).toMatchObject({
+        fr: expect.any(String),
+        en: expect.any(String),
+        he: expect.any(String),
+      });
+    }
+    expect(halakhot[0].he).toContain("מצות עשה מן התורה לאכול כזית פת");
+    // Les deux autres blocs n'en portent pas : la loi de l'habitation ne vaut
+    // pas au seuil.
+    expect(blocks[0].halakhot ?? []).toHaveLength(0);
+    expect(blocks[1].halakhot ?? []).toHaveLength(0);
+  });
 });
 
 // « Sans tahanoun » (réglage du menu de lecture) : le lecteur retire le
