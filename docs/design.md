@@ -245,20 +245,26 @@ répètent : « du 1 au 2 Tichri 5787 », et non « du 1 Tichri 5787 au 2 Tichri
 5787 ». Trois lignes de moins sur un téléphone, et rien de perdu
 (`formatHebrewRangeStart`).
 
-### Ce qu'on vient chercher prend la couleur, pas un cadre
+### Ce qu'on vient chercher prend la couleur, pleine
 
-Dans une liste de cartes, mettre une carte en avant par un cadre et un fond
-teintés ne marche pas. Le cadre est une bordure de plus dans une page qui
-n'est faite que de bordures, et un fond à quelques pour cent de la couleur du
-thème ne se détache pas du beige. La prochaine fête du calendrier portait les
-deux, et se repérait en réalité à sa place dans la liste.
+Mettre une carte en avant sans poser de couleur sur elle ne marche pas. Un
+cadre teinté est une bordure de plus dans une page qui n'est faite que de
+bordures ; un fond à quelques pour cent de la couleur du thème ne se détache
+pas du beige ; et l'encre seule, qui suffit à marquer le prochain horaire de
+la journée dans une liste de lignes (`ZmanRow`), se perd dans une liste de
+cartes, où chacune porte déjà trois niveaux de texte.
 
-Ce qu'on vient chercher prend donc l'encre du thème : le nom de la fête et
-ses heures passent en `primary`, à plat et sans transparence, le reste de la
-carte ne bougeant pas. C'est déjà ainsi que se marque le prochain horaire de
-la journée (`ZmanRow`), et les deux pages se lisent pareil. Les dates passées,
-elles, gardent leur effacement : s'effacer et ressortir sont deux moyens
-opposés, ils ne se gênent pas.
+La prochaine fête du calendrier prend donc la couleur du thème à plein, sur
+toute sa carte, et son texte passe au blanc. C'est la seule carte colorée de
+la page, et on la trouve sans avoir à lire.
+
+Le blanc y descend en trois tons, comme sur le bandeau du profil, le seul
+autre endroit où l'on écrit sur la couleur : le nom de la fête et ses heures à
+plein, les dates et les intitulés des heures en dessous, la date hébraïque
+plus bas encore. Sans quoi tout se vaudrait et la carte ne se lirait plus.
+
+Les dates passées, elles, gardent leur effacement : s'effacer et ressortir
+sont deux moyens opposés, ils ne se gênent pas.
 
 ### Ce qui est à soi se range avec le reste
 
