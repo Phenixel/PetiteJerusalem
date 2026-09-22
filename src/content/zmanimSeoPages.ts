@@ -85,6 +85,43 @@ import {
 
 const TZ = DEFAULT_PLACE.tzid;
 
+/** Jérusalem, telle que le catalogue des villes la porte. */
+const JERUSALEM_PLACE: ZmanimPlace = {
+  source: "city",
+  latitude: 31.769,
+  longitude: 35.2163,
+  tzid: "Asia/Jerusalem",
+  city: "Jérusalem",
+};
+
+/**
+ * Le lieu de référence des pages de calendrier, langue par langue.
+ *
+ * Tout le prérendu se calculait sur Paris, y compris les pages hébraïques :
+ * `/he/chagim/simchat-tora` annonçait Simhat Torah « du 3 au 4 octobre », avec
+ * l'heure d'allumage de Paris, à un lecteur qui est en Israël, où la fête
+ * tombe le 3 et s'y arrête. Ce n'est pas un écart d'une heure, c'est un jour
+ * de fête en trop : en diaspora, le second jour de Yom Tov double le premier,
+ * et Souccot comme Pessah y durent un jour de plus.
+ *
+ * La page hébraïque se calcule donc sur Jérusalem, le français et l'anglais
+ * restent en diaspora. Le tzid suffit à `yearCalendar` pour basculer le
+ * calendrier (voir isIsraelPlace), et l'allumage y passe de lui-même à
+ * quarante minutes, l'usage de Jérusalem.
+ */
+const CALENDAR_PLACE: Record<SeoLocale, ZmanimPlace> = {
+  fr: DEFAULT_PLACE,
+  en: DEFAULT_PLACE,
+  he: JERUSALEM_PLACE,
+};
+
+/** La ville dont les pages de calendrier donnent les heures, par langue. */
+const CALENDAR_CITY: Record<SeoLocale, string> = {
+  fr: HUB_CITY_NAME,
+  en: HUB_CITY_NAME,
+  he: "Jérusalem",
+};
+
 /** Les libellés des zmanim, déjà traduits pour l'application. */
 const ZMAN_MESSAGES: Record<
   SeoLocale,
@@ -700,7 +737,17 @@ type YearEntries = { year: number; entries: CalendarEntry[] };
  * 'Hol haMoed.
  */
 function entriesOf(entries: CalendarEntry[], def: SeoFestival, locale: SeoLocale) {
-  return entries.filter((entry) => cleanName(entry.name) === def.names[locale]);
+  // Un bloc de repos peut réunir deux fêtes sous un nom composé (« Chemini
+  // Atzéret · Simhat Torah » en diaspora) et n'en porter qu'une en Israël, où
+  // les deux tombent le même jour. On compare donc nom à nom, de part et
+  // d'autre : l'égalité reste stricte sur chacun, sans quoi Pourim
+  // attraperait Chouchan Pourim.
+  const wanted = def.names[locale].split(" · ");
+  return entries.filter((entry) =>
+    cleanName(entry.name)
+      .split(" · ")
+      .some((name) => wanted.includes(name)),
+  );
 }
 
 /**
@@ -724,7 +771,7 @@ function festivalBlock(entry: CalendarEntry, def: SeoFestival, locale: SeoLocale
   let first: HDate | null = null;
   let last: HDate | null = null;
   for (let day = entry.first; day.abs() <= entry.last.abs(); day = day.next()) {
-    const owns = festivalsOn(DEFAULT_PLACE, day, locale).some((name) =>
+    const owns = festivalsOn(CALENDAR_PLACE[locale], day, locale).some((name) =>
       wanted.includes(cleanName(name)),
     );
     if (!owns) continue;
@@ -739,8 +786,9 @@ function festivalBlock(entry: CalendarEntry, def: SeoFestival, locale: SeoLocale
   const start =
     first.abs() === entry.first.abs()
       ? entry.period.start
-      : nightfallOf(DEFAULT_PLACE, first.prev());
-  const end = last.abs() === entry.last.abs() ? entry.period.end : nightfallOf(DEFAULT_PLACE, last);
+      : nightfallOf(CALENDAR_PLACE[locale], first.prev());
+  const end =
+    last.abs() === entry.last.abs() ? entry.period.end : nightfallOf(CALENDAR_PLACE[locale], last);
   return { first, last, start, end };
 }
 
@@ -755,7 +803,7 @@ const MAX_FESTIVAL_DAYS = 10;
 /** Ce jour porte-t-il cette fête, Yom Tov ou 'Hol haMoed ? */
 function carriesFestival(day: HDate, def: SeoFestival, locale: SeoLocale): boolean {
   const wanted = def.names[locale].split(" · ");
-  return holidayNamesOn(DEFAULT_PLACE, day, locale).some((name) =>
+  return holidayNamesOn(CALENDAR_PLACE[locale], day, locale).some((name) =>
     wanted.includes(cleanName(name)),
   );
 }
@@ -829,16 +877,17 @@ function festivalFaq(
   if (!span || !full) return null;
   const label = def.labels[locale];
   const year = full.first.greg().getFullYear();
-  const hubCity = cityName(HUB_CITY_NAME, locale);
+  const tz = CALENDAR_PLACE[locale].tzid;
+  const hubCity = cityName(CALENDAR_CITY[locale], locale);
   // La fête entière, jours intermédiaires compris : c'est la réponse à
   // « quand tombe Souccot ? ». L'entrée et la sortie, elles, restent celles
   // des jours de Yom Tov, les seuls à en avoir.
   const when = entryRange(full, s);
   if (span.first.start && span.last.end) {
-    const startDay = instantDayYear(span.first.start, TZ, s);
-    const startTime = clock(span.first.start, TZ, locale);
-    const endDay = instantDayYear(span.last.end, TZ, s);
-    const endTime = clock(span.last.end, TZ, locale);
+    const startDay = instantDayYear(span.first.start, tz, s);
+    const startTime = clock(span.first.start, tz, locale);
+    const endDay = instantDayYear(span.last.end, tz, s);
+    const endTime = clock(span.last.end, tz, locale);
     return hasCholHamoed(blocks, full)
       ? s.faqWhenFestivalDays(label, year, when, startDay, startTime, endDay, endTime, hubCity)
       : s.faqWhenFestival(label, year, startDay, startTime, endDay, endTime, hubCity);
@@ -875,8 +924,8 @@ function calendarRow(entry: CalendarEntry, locale: SeoLocale, s: ZmanimStrings):
           <tr>
             <td>${entryTitleLinked(entry, locale, s)}</td>
             <td>${entryRange(entry, s)}</td>
-            <td>${period ? instantCell(period.start, TZ, locale, s) : ""}</td>
-            <td>${period?.end ? instantCell(period.end, TZ, locale, s) : ""}</td>
+            <td>${period ? instantCell(period.start, CALENDAR_PLACE[locale].tzid, locale, s) : ""}</td>
+            <td>${period?.end ? instantCell(period.end, CALENDAR_PLACE[locale].tzid, locale, s) : ""}</td>
           </tr>`;
 }
 
@@ -913,7 +962,7 @@ function multiYearTable(years: YearEntries[], locale: SeoLocale, s: ZmanimString
 function buildCalendrierPage(now: Date, years: YearEntries[], locale: SeoLocale): SeoPage {
   const s = ZMANIM_STRINGS[locale];
   const links = linksOf(locale);
-  const today = hebrewDayOf(DEFAULT_PLACE, now).abs();
+  const today = hebrewDayOf(CALENDAR_PLACE[locale], now).abs();
   const openingYear = years[0].year;
   const nextYear = years[1].year;
   const openingEntries = years[0].entries.filter((entry) => entry.last.abs() >= today);
@@ -1005,6 +1054,8 @@ function buildFestivalPage(
   const s = ZMANIM_STRINGS[locale];
   const links = linksOf(locale);
   const label = def.labels[locale];
+  const tz = CALENDAR_PLACE[locale].tzid;
+  const refCity = cityName(CALENDAR_CITY[locale], locale);
 
   // Seules les occurrences à venir : une page qui s'ouvre sur « Hanouka 2025 »
   // a l'air périmée, même quand la date est juste.
@@ -1029,8 +1080,8 @@ function buildFestivalPage(
       if (!span || !full) return "";
       const times = hasTimes
         ? `
-            <td>${span.first.start ? instantCell(span.first.start, TZ, locale, s) : ""}</td>
-            <td>${span.last.end ? instantCell(span.last.end, TZ, locale, s) : ""}</td>`
+            <td>${span.first.start ? instantCell(span.first.start, tz, locale, s) : ""}</td>
+            <td>${span.last.end ? instantCell(span.last.end, tz, locale, s) : ""}</td>`
         : "";
       return `
           <tr>
@@ -1046,7 +1097,7 @@ function buildFestivalPage(
     return entry ? [entry] : [];
   });
   faq.push(s.faqFestivalWork(label, hasTimes, Boolean(def.fast)));
-  faq.push(s.faqFestivalCity(label));
+  faq.push(s.faqFestivalCity(label, refCity));
 
   const fromYear = fullPerYear[0] ? fullPerYear[0].first.greg().getFullYear() : 0;
   const head = hasTimes
@@ -1072,7 +1123,7 @@ ${section(
   s.festivalWhenTitle(label),
   `${table(head, rows)}
       ${intermediate ? `<p>${s.festivalCholHamoedNote(label)}</p>` : ""}
-      <p>${hasTimes ? s.festivalTimesNote(links) : s.festivalNoTimesNote(links)}</p>`,
+      <p>${hasTimes ? s.festivalTimesNote(links, refCity) : s.festivalNoTimesNote(links)}</p>`,
 )}
 ${section(s.festivalAroundTitle(label), s.festivalAroundHtml(links))}
 
@@ -1113,14 +1164,16 @@ export function buildZmanimSeoPages(now: Date = new Date()): ZmanimSeoBuild {
       locale,
       yearNumbers.map((year) => ({
         year,
-        entries: yearCalendar(DEFAULT_PLACE, year, locale),
+        entries: yearCalendar(CALENDAR_PLACE[locale as SeoLocale], year, locale),
       })),
     ]),
   ) as Record<SeoLocale, YearEntries[]>;
-  const today = hebrewDayOf(DEFAULT_PLACE, now).abs();
 
   const pages = SEO_LOCALES.flatMap((locale) => {
     const years = yearsByLocale[locale];
+    // Le jour courant se lit au lieu de la langue : la date hébraïque de
+    // Jérusalem a déjà tourné quand celle de Paris attend le soir.
+    const today = hebrewDayOf(CALENDAR_PLACE[locale], now).abs();
     return [
       buildHorairesPage(now, locale),
       buildCalendrierPage(now, years, locale),

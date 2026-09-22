@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildZmanimSeoPages, seoCities, upcomingRestPeriods } from "../content/zmanimSeoPages";
 import { COUNTRIES, FEATURED_CITY_NAMES, citySlug, findCityBySlug } from "../content/zmanimCities";
 import { SEO_FESTIVALS, findFestivalBySlug } from "../content/zmanimFestivals";
-import { SEO_LOCALES } from "../content/seoLocales";
+import { SEO_LOCALES, sectionPath } from "../content/seoLocales";
 import { ZMANIM_STRINGS } from "../content/zmanimSeoStrings";
 import { buildAppShell, guidePages, staticFooterHtml } from "../content/seoPages";
 import {
@@ -291,6 +291,39 @@ describe("zmanimSeoPages pages par fête", () => {
       expect(pessah.bodyHtml).toContain(year);
     }
     expect(pessah.bodyHtml).not.toContain("Quand tombe Pessah 2026");
+  });
+
+  it("existe dans les trois langues, pour que les hreflang se répondent", () => {
+    // Une fête que hebcal nomme autrement en Israël (Simhat Torah, confondue
+    // avec Chemini Atséret) faisait disparaître la page hébraïque, en laissant
+    // le français et l'anglais se déclarer alternates d'une page absente.
+    for (const festival of SEO_FESTIVALS) {
+      for (const locale of SEO_LOCALES) {
+        const path = sectionPath("calendrier", locale, festival.slugs[locale]);
+        expect(pages.find((p) => p.path === path)?.path ?? null).toBe(path);
+      }
+    }
+  });
+
+  it("calcule les pages hébraïques sur Jérusalem, pas sur Paris", () => {
+    // En diaspora, le second jour de Yom Tov double le premier : Souccot y
+    // dure un jour de fête de plus, et Simhat Torah y est un jour à part,
+    // le lendemain de Chemini Atséret. La page hébraïque s'adresse à un
+    // lecteur qui est en Israël ; elle donnait pourtant les dates et les
+    // heures d'allumage de Paris.
+    const sukkotHe = pages.find((p) => p.path === "/he/chagim/sukkot")!;
+    // Un seul jour de Yom Tov : la sortie tombe le samedi 26, pas le dimanche.
+    expect(sukkotHe.bodyHtml).toContain("שבת, 26 בספט׳ בשעה 19:07");
+
+    const simchatTorahHe = pages.find((p) => p.path === "/he/chagim/simchat-tora")!;
+    expect(simchatTorahHe.bodyHtml).toContain("יום שבת, 3 באוקטובר 2026");
+    expect(simchatTorahHe.bodyHtml).not.toContain("4 באוקטובר 2026");
+
+    // Le français reste en diaspora : deux jours, Simhat Torah le 4.
+    const simhatTorah = pages.find((p) => p.path === "/calendrier/simhat-torah")!;
+    expect(simhatTorah.bodyHtml).toContain("du samedi 3 au dimanche 4 octobre 2026");
+    const souccot = pages.find((p) => p.path === "/calendrier/souccot")!;
+    expect(souccot.bodyHtml).toContain("dim. 27 sept. à 20:25");
   });
 
   it("date la fête entière, 'Hol haMoed compris", () => {

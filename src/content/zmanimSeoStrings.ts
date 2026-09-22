@@ -129,7 +129,8 @@ export type ZmanimStrings = {
   festivalWhenTitle: (label: string) => string;
   festivalHead: [string, string, string];
   festivalCholHamoedNote: (label: string) => string;
-  festivalTimesNote: (links: ZmanimLinks) => string;
+  /** `city` : la ville de référence des heures, Paris ou Jérusalem selon la langue. */
+  festivalTimesNote: (links: ZmanimLinks, city: string) => string;
   festivalNoTimesNote: (links: ZmanimLinks) => string;
   festivalAroundTitle: (label: string) => string;
   festivalAroundHtml: (links: ZmanimLinks) => string;
@@ -161,7 +162,7 @@ export type ZmanimStrings = {
   faqWhenFast: (label: string, year: number, when: string, kind: "dawn" | "eve") => Faq;
   faqWhenPlain: (label: string, year: number, when: string) => Faq;
   faqFestivalWork: (label: string, hasTimes: boolean, isFast: boolean) => Faq;
-  faqFestivalCity: (label: string) => Faq;
+  faqFestivalCity: (label: string, city: string) => Faq;
   /** Les intros des pages de fête, par slug français (la clé stable). */
   festivalIntro: Record<string, string>;
 };
@@ -357,7 +358,8 @@ const FR: ZmanimStrings = {
       continue.`,
   festivalTimesNote: (
     links,
-  ) => `Les heures d'entrée et de sortie sont calculées pour Paris. Pour votre ville,
+    city,
+  ) => `Les heures d'entrée et de sortie sont calculées pour ${city}. Pour votre ville,
       voir les <a href="${links.horaires}">horaires ville par ville</a> : l'application les
       recalcule à vos coordonnées, même hors ligne.`,
   festivalNoTimesNote: (
@@ -404,9 +406,9 @@ const FR: ZmanimStrings = {
         ? `Non : ${label} est un jour de jeûne, pas un Yom Tov ; le travail y reste permis.`
         : `Non : ${label} n'est pas un jour de Yom Tov, le travail y reste permis. La journée a ses usages propres, mais pas d'entrée ni de sortie comme Chabbat.`,
   }),
-  faqFestivalCity: (label) => ({
+  faqFestivalCity: (label, city) => ({
     q: `Comment connaître l'heure exacte de ${label} dans ma ville ?`,
-    a: `Les heures ci-dessus sont calculées pour Paris. Ouvrez les horaires dans l'application, ou la page d'horaires de votre ville, pour l'heure d'entrée et de sortie à vos coordonnées, calculée sur votre appareil et même hors ligne.`,
+    a: `Les heures ci-dessus sont calculées pour ${city}. Ouvrez les horaires dans l'application, ou la page d'horaires de votre ville, pour l'heure d'entrée et de sortie à vos coordonnées, calculée sur votre appareil et même hors ligne.`,
   }),
   festivalIntro: {
     "roch-hachana":
@@ -621,7 +623,8 @@ const EN: ZmanimStrings = {
       festival are Chol HaMoed, on which work is allowed and the festival carries on.`,
   festivalTimesNote: (
     links,
-  ) => `The start and end times are computed for Paris. For your own city, see
+    city,
+  ) => `The start and end times are computed for ${city}. For your own city, see
       <a href="${links.horaires}">Shabbat times city by city</a>: the app recomputes them at your
       coordinates, even offline.`,
   festivalNoTimesNote: (
@@ -668,9 +671,9 @@ const EN: ZmanimStrings = {
         ? `No: ${label} is a fast day, not a Yom Tov; work is allowed.`
         : `No: ${label} is not a Yom Tov, work is allowed. The day has its own customs, but no start and end the way Shabbat does.`,
   }),
-  faqFestivalCity: (label) => ({
+  faqFestivalCity: (label, city) => ({
     q: `How do I find the exact time of ${label} in my city?`,
-    a: `The times above are computed for Paris. Open the Shabbat times in the app, or your city's page, for the start and end times at your own coordinates, computed on your device and even offline.`,
+    a: `The times above are computed for ${city}. Open the Shabbat times in the app, or your city's page, for the start and end times at your own coordinates, computed on your device and even offline.`,
   }),
   festivalIntro: {
     "roch-hachana":
@@ -874,7 +877,10 @@ const HE: ZmanimStrings = {
   festivalCholHamoedNote: (label) => `התאריכים שלמעלה מכסים את ${label} כולו. הימים שבהם המלאכה
       אסורה (ימים טובים) הם אלה שזמני הכניסה והיציאה תוחמים; שאר ימי החג הם חול המועד, שבהם
       המלאכה מותרת והחג נמשך.`,
-  festivalTimesNote: (links) => `זמני הכניסה והיציאה מחושבים לפריז. לעיר שלכם, ראו את
+  festivalTimesNote: (
+    links,
+    city,
+  ) => `זמני הכניסה והיציאה מחושבים ${hePrefix("ל", city)}. לעיר שלכם, ראו את
       <a href="${links.horaires}">זמני השבת עיר אחר עיר</a>: האפליקציה מחשבת אותם מחדש לנקודות
       הציון שלכם, גם ללא חיבור לאינטרנט.`,
   festivalNoTimesNote: (
@@ -918,9 +924,9 @@ const HE: ZmanimStrings = {
         ? `לא: ${label} הוא יום צום ולא יום טוב; המלאכה מותרת בו.`
         : `לא: ${label} אינו יום טוב, והמלאכה מותרת בו. ליום יש מנהגים משלו, אך אין לו כניסה ויציאה כמו לשבת.`,
   }),
-  faqFestivalCity: (label) => ({
+  faqFestivalCity: (label, city) => ({
     q: `כיצד אפשר לדעת את הזמן המדויק של ${label} בעיר שלי?`,
-    a: `הזמנים שלמעלה מחושבים לפריז. פתחו את עמוד הזמנים באפליקציה, או את עמוד העיר שלכם, כדי לקבל את זמני הכניסה והיציאה בנקודות הציון שלכם, המחושבים במכשיר שלכם וגם ללא חיבור לאינטרנט.`,
+    a: `הזמנים שלמעלה מחושבים ${hePrefix("ל", city)}. פתחו את עמוד הזמנים באפליקציה, או את עמוד העיר שלכם, כדי לקבל את זמני הכניסה והיציאה בנקודות הציון שלכם, המחושבים במכשיר שלכם וגם ללא חיבור לאינטרנט.`,
   }),
   festivalIntro: {
     "roch-hachana":
