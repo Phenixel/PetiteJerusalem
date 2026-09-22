@@ -134,6 +134,12 @@ export type ZmanimStrings = {
   festivalNoTimesNote: (links: ZmanimLinks) => string;
   festivalAroundTitle: (label: string) => string;
   festivalAroundHtml: (links: ZmanimLinks) => string;
+  /**
+   * Le rappel de l'application, sous les liens de la fête : les horaires s'y
+   * recalculent aux coordonnées du lecteur, et hors connexion. Le site seul
+   * l'affiche ; dans l'app, la vue ne le rend pas.
+   */
+  festivalAppHtml: (appStore: string, playStore: string) => string;
   festivalFaqHeading: (label: string) => string;
   faqWhenFestival: (
     label: string,
@@ -374,6 +380,13 @@ const FR: ZmanimStrings = {
       les <a href="${links.horaires}">horaires de Chabbat et des fêtes</a> et
       <a href="${links.zmanim}">les zmanim expliqués</a> (l'aube, le netz, la chkia, la sortie
       des étoiles), qui donnent le sens des heures de ce tableau.</p>`,
+  festivalAppHtml: (
+    appStore,
+    playStore,
+  ) => `<p>L'application Petite Jérusalem recalcule ces heures à vos coordonnées,
+      même sans connexion, et rappelle l'entrée et la sortie de la fête :
+      <a href="${appStore}" rel="noopener">sur l'App Store</a> ou
+      <a href="${playStore}" rel="noopener">sur Google Play</a>.</p>`,
   festivalFaqHeading: (label) => `Questions fréquentes sur ${label}`,
   faqWhenFestival: (label, year, start, startTime, end, endTime, city) => ({
     q: `Quand tombe ${label} ${year} ?`,
@@ -643,6 +656,13 @@ const EN: ZmanimStrings = {
       <a href="${links.horaires}">Shabbat and festival times</a> and
       <a href="${links.zmanim}">zmanim explained</a> (dawn, sunrise, shkia, nightfall), which give
       the meaning of the times in this table.</p>`,
+  festivalAppHtml: (
+    appStore,
+    playStore,
+  ) => `<p>The Petite Jérusalem app recomputes these times at your own coordinates,
+      even offline, and reminds you of the start and end of the festival:
+      <a href="${appStore}" rel="noopener">on the App Store</a> or
+      <a href="${playStore}" rel="noopener">on Google Play</a>.</p>`,
   festivalFaqHeading: (label) => `Frequently asked questions about ${label}`,
   faqWhenFestival: (label, year, start, startTime, end, endTime, city) => ({
     q: `When is ${label} ${year}?`,
@@ -900,6 +920,10 @@ const HE: ZmanimStrings = {
   festivalAroundHtml: (links) => `<p>ראו את <a href="${links.calendrier}">לוח החגים המלא</a>, את
       <a href="${links.horaires}">זמני השבת והחגים</a> ואת <a href="${links.zmanim}">זמני היום
       ההלכתיים</a> (עלות השחר, הנץ, השקיעה וצאת הכוכבים), שנותנים את משמעות הזמנים שבטבלה.</p>`,
+  festivalAppHtml: (appStore, playStore) => `<p>אפליקציית פטיט ירושלים מחשבת את הזמנים האלה
+      מחדש לנקודות הציון שלכם, גם ללא חיבור לאינטרנט, ומזכירה את כניסת החג ויציאתו:
+      <a href="${appStore}" rel="noopener">ב-App Store</a> או
+      <a href="${playStore}" rel="noopener">ב-Google Play</a>.</p>`,
   festivalFaqHeading: (label) => `שאלות נפוצות על ${label}`,
   faqWhenFestival: (label, year, start, startTime, end, endTime, city) => ({
     q: `מתי חל ${label} ${year}?`,

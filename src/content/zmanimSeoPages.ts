@@ -63,6 +63,8 @@ import {
   type ZmanimPlace,
 } from "../services/zmanimService";
 import { SEO_FESTIVALS, type SeoFestival } from "./zmanimFestivals";
+import { festivalLinks } from "./festivalLinks";
+import { APP_STORE_URL, PLAY_STORE_URL } from "../config/stores";
 import {
   COUNTRY_ORDER,
   FEATURED_CITY_NAMES,
@@ -1122,6 +1124,24 @@ function festivalEvents(
   });
 }
 
+/**
+ * Les liens propres à la fête : ce qu'on dit et ce qu'on lit ce jour-là.
+ * Vide quand le site ne porte rien de particulier pour elle.
+ */
+function festivalLinksHtml(def: SeoFestival, locale: SeoLocale): string {
+  const items = festivalLinks(def.slugs.fr);
+  if (!items.length) return "";
+  const list = items
+    .map(
+      (link) =>
+        `<li><a href="${link.path(locale)}" data-cta="${link.id}">${link.labels[locale]}</a></li>`,
+    )
+    .join("\n        ");
+  return `<ul>
+        ${list}
+      </ul>`;
+}
+
 function buildFestivalPage(
   def: SeoFestival,
   years: YearEntries[],
@@ -1202,7 +1222,12 @@ ${section(
       ${intermediate ? `<p>${s.festivalCholHamoedNote(label)}</p>` : ""}
       <p>${hasTimes ? s.festivalTimesNote(links, refCity) : s.festivalNoTimesNote(links)}</p>`,
 )}
-${section(s.festivalAroundTitle(label), s.festivalAroundHtml(links))}
+${section(
+  s.festivalAroundTitle(label),
+  `${s.festivalAroundHtml(links)}
+      ${festivalLinksHtml(def, locale)}
+      ${s.festivalAppHtml(APP_STORE_URL, PLAY_STORE_URL)}`,
+)}
 
     ${faqHtml(faq, s.festivalFaqHeading(label))}
   </main>`,

@@ -529,6 +529,7 @@ const en: LocaleMessages = {
     range: "{from} to {to}",
     start: "Lighting",
     end: "Ends",
+    goFurther: "Going further",
   },
   paracha: {
     title: "Parashat hashavua",

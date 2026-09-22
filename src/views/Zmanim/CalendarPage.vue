@@ -38,9 +38,11 @@ import type { IconName } from "../../components/icons/registry";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
 import { dateTimeFormat } from "../../services/intlCache";
 import { findFestivalBySlug, type SeoFestival } from "../../content/zmanimFestivals";
+import { festivalLinks } from "../../content/festivalLinks";
 import { isSectionPath, localeOfPath, sectionPath, type SeoLocale } from "../../content/seoLocales";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import PageTabs from "../../components/PageTabs.vue";
+import AppDownloadButton from "../../components/AppDownloadButton.vue";
 import { zmanimTabs } from "../../config/pageTabs";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useLocalePath } from "../../composables/useLocalePath";
@@ -359,10 +361,39 @@ watch(
 // quand ils sont là.
 watch([locale, localeMessagesReady], applyMeta);
 
+/**
+ * Ce qu'on dit et ce qu'on lit le jour de la fête ouverte.
+ *
+ * La page prérendue portait déjà ces liens, mais Vue remplace son contenu au
+ * montage : un visiteur venu d'un moteur sur /calendrier/souccot voyait le
+ * calendrier de l'année et rien d'autre. Sur les 231 arrivés par la recherche
+ * en trente jours, 3 % ont ouvert une seconde page. C'est ce bloc-là qui
+ * manquait, du côté des gens.
+ */
+const goFurther = computed(() => (festival.value ? festivalLinks(festival.value.slugs.fr) : []));
+
+/** Le slug français, clé stable de la fête, celle que porte le suivi. */
+const holidaySlug = computed(() => festival.value?.slugs.fr ?? null);
+
+function trackCta(ctaType: "internal_link" | "app_store" | "play_store", target: string): void {
+  analyticsService.capture("calendar_cta_clicked", {
+    holiday: holidaySlug.value,
+    cta_type: ctaType,
+    target,
+  });
+}
+
 onMounted(() => {
   revealFromOrigin(root.value);
   void applyRouteFestival();
-  analyticsService.capture("calendar_viewed", { festival: festival.value?.slugs.fr ?? null });
+  analyticsService.capture("calendar_viewed", {
+    // `festival` existe depuis l'origine : on ne la renomme pas. `holiday`
+    // porte la même valeur, sous le nom qu'emploient les événements de
+    // conversion (`calendar_cta_clicked`), pour que les deux se croisent
+    // sans traitement particulier.
+    festival: holidaySlug.value,
+    holiday: holidaySlug.value,
+  });
 });
 </script>
 
@@ -524,6 +555,30 @@ onMounted(() => {
         </button>
       </li>
     </ul>
+
+    <!-- Une fête ouverte depuis un moteur : ce qu'on dit et ce qu'on lit ce
+         jour-là, puis l'app. Sans ce bloc, la page ne menait nulle part. -->
+    <section v-if="goFurther.length" class="card mt-8 p-5">
+      <h2 class="font-semibold text-text-primary">{{ t("calendar.goFurther") }}</h2>
+      <ul class="mt-3 flex flex-col gap-2">
+        <li v-for="link in goFurther" :key="link.id">
+          <RouterLink
+            class="text-primary underline-offset-2 hover:underline"
+            :to="link.path(calendarLocale)"
+            @click="trackCta('internal_link', link.path(calendarLocale))"
+          >
+            {{ link.labels[calendarLocale] }}
+          </RouterLink>
+        </li>
+      </ul>
+      <!-- Le site seul : dans l'app, elle est déjà là (voir AppDownloadButton). -->
+      <div class="mt-5 border-t border-line pt-4">
+        <AppDownloadButton
+          source="calendar_festival"
+          @download="(store) => trackCta(store === 'apple' ? 'app_store' : 'play_store', store)"
+        />
+      </div>
+    </section>
 
     <p class="mt-5 border-t border-line pt-3 text-xs text-text-secondary leading-relaxed">
       {{ t("zmanim.disclaimer") }}
