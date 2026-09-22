@@ -1232,6 +1232,7 @@ const en: LocaleMessages = {
         slow: "Slow",
         medium: "Medium",
         fast: "Fast",
+        veryFast: "Very fast",
       },
       stop: "Stop scrolling",
       openMenu: "Adjust automatic scrolling",

@@ -38,7 +38,7 @@ import { devicePreference } from "../services/devicePreference";
  * lancement.
  */
 
-export type AutoScrollSpeedId = "slow" | "medium" | "fast";
+export type AutoScrollSpeedId = "slow" | "medium" | "fast" | "veryFast";
 
 interface AutoScrollSpeed {
   id: AutoScrollSpeedId;
@@ -47,7 +47,14 @@ interface AutoScrollSpeed {
 }
 
 /**
- * Les trois allures proposées, de la plus lente à la plus rapide.
+ * Les allures proposées, de la plus lente à la plus rapide. L'ordre du tableau
+ * est celui des crans du curseur (voir AutoScrollPill) : il se lit du plus lent
+ * au plus rapide, et rien ne doit l'y ranger autrement.
+ *
+ * La quatrième a été ajoutée pour qui lit vite, et parce que trois crans font
+ * un curseur trop court pour qu'on le prenne pour un curseur. Elle reste une
+ * allure de lecture, pas un survol : une ligne y passe en un peu plus d'un
+ * tiers de seconde.
  *
  * La plus lente a été relevée de 12 à 16 px/s, et c'est une affaire de
  * fluidité, pas de vitesse. Chromium (donc Android) refuse les positions de
@@ -62,6 +69,7 @@ export const AUTO_SCROLL_SPEEDS: AutoScrollSpeed[] = [
   { id: "slow", pixelsPerSecond: 16 },
   { id: "medium", pixelsPerSecond: 26 },
   { id: "fast", pixelsPerSecond: 48 },
+  { id: "veryFast", pixelsPerSecond: 72 },
 ];
 
 const STORAGE_KEY = "pj-autoscroll-speed";
