@@ -245,6 +245,21 @@ répètent : « du 1 au 2 Tichri 5787 », et non « du 1 Tichri 5787 au 2 Tichri
 5787 ». Trois lignes de moins sur un téléphone, et rien de perdu
 (`formatHebrewRangeStart`).
 
+### Ce qu'on vient chercher prend la couleur, pas un cadre
+
+Dans une liste de cartes, mettre une carte en avant par un cadre et un fond
+teintés ne marche pas. Le cadre est une bordure de plus dans une page qui
+n'est faite que de bordures, et un fond à quelques pour cent de la couleur du
+thème ne se détache pas du beige. La prochaine fête du calendrier portait les
+deux, et se repérait en réalité à sa place dans la liste.
+
+Ce qu'on vient chercher prend donc l'encre du thème : le nom de la fête et
+ses heures passent en `primary`, à plat et sans transparence, le reste de la
+carte ne bougeant pas. C'est déjà ainsi que se marque le prochain horaire de
+la journée (`ZmanRow`), et les deux pages se lisent pareil. Les dates passées,
+elles, gardent leur effacement : s'effacer et ressortir sont deux moyens
+opposés, ils ne se gênent pas.
+
 ### Ce qui est à soi se range avec le reste
 
 Les dates qu'on ajoute au calendrier (un anniversaire, un leilouy nichmat) ne

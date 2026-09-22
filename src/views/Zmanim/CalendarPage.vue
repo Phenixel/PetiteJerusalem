@@ -153,6 +153,17 @@ const nextKey = computed(() =>
  */
 const isPastDay = (abs: number) => abs < today.value;
 
+/**
+ * L'encre d'une ligne. La prochaine fête, et celle que l'adresse ouvre,
+ * prennent la couleur du thème : c'est ainsi que se distingue le prochain
+ * horaire de la journée (voir ZmanRow), et les deux pages se lisent pareil.
+ * Elles portaient jusqu'ici un cadre et un fond teintés, tous deux en
+ * transparence : un cadre de plus dans une liste qui n'est faite que de
+ * cadres ne se remarquait pas, et le fond ne se voyait pas sur le beige.
+ */
+const ink = (key: string): string =>
+  key === nextKey.value || key === festivalKey.value ? "text-primary" : "text-text-primary";
+
 /** « Chabbat Roch Hachana » : le Chabbat qui prolonge une fête est du même bloc. */
 function title(entry: CalendarEntry): string {
   if (!entry.period?.shabbat) return entry.name;
@@ -380,19 +391,14 @@ onMounted(() => {
     </div>
 
     <!-- Les fêtes à la suite. Celles qui sont passées s'effacent, la prochaine
-         se distingue : c'est elle qu'on vient chercher. -->
+         prend la couleur du thème : c'est elle qu'on vient chercher. -->
     <ul class="mt-6 flex flex-col gap-3">
       <li
         v-for="row in rows"
         :key="row.key"
         :data-entry="row.key"
         class="card p-4"
-        :class="[
-          isPastDay(row.entry ? row.entry.last.abs() : row.abs) ? 'opacity-55' : '',
-          row.key === nextKey || row.key === festivalKey
-            ? 'border border-primary/30 bg-primary/5'
-            : '',
-        ]"
+        :class="isPastDay(row.entry ? row.entry.last.abs() : row.abs) ? 'opacity-55' : ''"
       >
         <!-- Une fête de l'année : son nom, ses dates, et ses heures quand le
              travail y est interdit. Sur un téléphone, les heures se rangent
@@ -404,7 +410,7 @@ onMounted(() => {
           class="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
         >
           <div class="min-w-0">
-            <p class="font-semibold text-pretty text-text-primary">{{ title(row.entry) }}</p>
+            <p class="font-semibold text-pretty" :class="ink(row.key)">{{ title(row.entry) }}</p>
             <p class="text-sm text-pretty text-text-secondary">{{ civilRange(row.entry) }}</p>
             <p class="text-xs text-text-secondary/80">{{ hebrewRange(row.entry) }}</p>
           </div>
@@ -417,7 +423,7 @@ onMounted(() => {
           >
             <div class="flex items-baseline justify-between gap-3">
               <dt class="text-xs text-text-secondary">{{ t("calendar.start") }}</dt>
-              <dd class="shrink-0 font-semibold tabular-nums text-text-primary">
+              <dd class="shrink-0 font-semibold tabular-nums" :class="ink(row.key)">
                 {{ clock(row.entry.period.start) }}
               </dd>
             </div>
@@ -432,13 +438,13 @@ onMounted(() => {
               <dt class="text-xs text-text-secondary">
                 {{ describeLightingRule(lighting.rule, t) }}
               </dt>
-              <dd class="shrink-0 font-semibold tabular-nums text-text-primary">
+              <dd class="shrink-0 font-semibold tabular-nums" :class="ink(row.key)">
                 {{ clock(lighting.at) }}
               </dd>
             </div>
             <div v-if="row.entry.period.end" class="flex items-baseline justify-between gap-3">
               <dt class="text-xs text-text-secondary">{{ t("calendar.end") }}</dt>
-              <dd class="shrink-0 font-semibold tabular-nums text-text-primary">
+              <dd class="shrink-0 font-semibold tabular-nums" :class="ink(row.key)">
                 {{ clock(row.entry.period.end) }}
               </dd>
             </div>
