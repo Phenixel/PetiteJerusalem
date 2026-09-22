@@ -984,6 +984,8 @@ const en: LocaleMessages = {
       "Listen to the chiour « {name} » 🎧 A Torah lesson to discover on Petite Jerusalem:",
     titleText: "Share this text",
     inviteText: "Read « {name} » 📖 A text to open on Petite Jerusalem:",
+    titlePassage: "Share this passage",
+    invitePassage: "« {name} » 📖 This passage opens here, on Petite Jerusalem:",
   },
   batchSelection: {
     textsSelected: "{count} text selected | {count} texts selected",
@@ -1174,6 +1176,15 @@ const en: LocaleMessages = {
     bookmarks: "Bookmarks",
     bookmarkAdd: "Add a bookmark",
     bookmarkRemove: "Remove bookmark",
+    selection: {
+      title: "This passage",
+      share: "Share",
+      report: "Report",
+      bookmark: "Bookmark",
+      reportPlace: "Passage: {place}",
+      reportText: "Text: « {text} »",
+      reportLink: "Link: {url}",
+    },
     // A choice left to the reader (the haftarah at Mincha of a fast).
     choice: "According to your community's custom",
     // Tefilot (Siddur, Selichot): section navigation menu.

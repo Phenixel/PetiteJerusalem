@@ -437,6 +437,19 @@ Deux couleurs échappent au thème, parce qu'elles disent un état et non un
 goût : le danger (rouge, `.btn-danger`) et l'échéance qui approche (ambre).
 Elles ne bougent pas quand on change de thème.
 
+### La sélection prend la couleur du thème
+
+Sélectionner du texte posait derrière lui le bleu du navigateur, la seule
+couleur de l'app que personne n'avait choisie, et elle traversait les trois
+thèmes sans broncher. `::selection` prend donc `primary` en transparence
+(jeton `--color-selection`, dans `main.css`) : le texte garde son encre, seul
+le fond change. La transparence est plus appuyée en sombre, où la même teinte,
+posée sur du gris nuit au lieu du beige, ne se voyait presque plus.
+
+C'est vrai partout, site et app, et le passage choisi dans un texte reprend
+exactement la même teinte (`.reading-selected`) : les deux façons de désigner
+du texte se voient pareil.
+
 ### Lisibilité
 
 `primary` sert à la fois de fond sous du blanc et d'encre sur le beige. Les
@@ -699,6 +712,7 @@ police, et elles arrivent au milieu d'un formulaire qui, lui, les a.
 | `<input type="date">`     | `AppDateField.vue` : le champ, puis le calendrier de la maison (`DayPicker.vue`) |
 | `confirm()`               | `useConfirm` et `ConfirmDialog.vue`                                              |
 | `alert()`                 | un toast (`useToast`)                                                            |
+| le menu d'une sélection   | `ReadingSelectionMenu.vue` sur un texte (voir plus bas)                          |
 
 Elles restent de vraies commandes : rôles ARIA, clavier (flèches, Entrée,
 Échap), fermeture au clic à côté et retour Android (`useOverlayStack`).
@@ -713,6 +727,30 @@ casser. L'habillage, lui, est le nôtre.
 Deux fenêtres du système restent, parce qu'elles ne sont pas de l'habillage
 mais un pouvoir que seul le système a : le **choix d'un fichier**
 (`<input type="file">`) et la **feuille de partage** de l'appareil.
+
+### Sur un texte, le menu de la sélection est le nôtre
+
+Le menu qui surgit d'une sélection (copier, rechercher, traduire, partager)
+est une fenêtre du système comme les autres, à ceci près qu'on ne peut pas
+l'habiller : sur un téléphone, il s'ouvre par-dessus tout ce qu'on poserait à
+côté. Et devant un texte, ce qu'il propose n'est pas ce qu'on veut proposer :
+la traduction automatique d'un verset et la recherche web d'un mot d'hébreu.
+
+Les passages d'un texte coupent donc la sélection du système (`.reading-pick`)
+et se choisissent d'un appui ; une bulle vient se poser dessus, au-dessus du
+passage comme le ferait le menu qu'elle remplace, avec les gestes qui ont un
+sens là où l'on est : **partager** ce passage (le lien y ramène, et non en
+haut du chapitre), en lire la **phonétique** sans faire basculer toute la
+page, **signaler une erreur** (le formulaire de support s'ouvre avec
+l'endroit, les premiers mots et le lien déjà écrits), et le **marque-page** là
+où le texte en prend.
+
+Le choix se fait au passage, jamais au mot : c'est la seule unité que ces
+commandes savent nommer. Un lien mène à un verset, pas à trois mots, et un
+signalement qui dit « Tehilim 23 · verset 4 » se corrige, là où trois mots
+copiés se cherchent. Partout ailleurs (le reste du site, un texte qu'on
+accompagne sans qu'il ait d'adresse à lui), la sélection ordinaire reste, à la
+couleur du thème.
 
 ### Une fenêtre modale tient dans ce qui est visible, clavier compris
 

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppModal from "./AppModal.vue";
 import AppIcon from "./icons/AppIcon.vue";
 import { useToast } from "../composables/useToast";
-import { isFeedbackOpen, closeFeedback } from "../composables/useFeedback";
+import { feedbackPrefill, isFeedbackOpen, closeFeedback } from "../composables/useFeedback";
 import { analyticsService } from "../services/analyticsService";
 import {
   feedbackContext,
@@ -50,15 +50,40 @@ const contextLabel = computed(() => {
   return `${support}${platform}, ${t("feedback.context.version", { version: ctx.version })}`;
 });
 
-watch(isFeedbackOpen, (open) => {
-  if (open) {
-    kind.value = "idea";
+/**
+ * Le champ des détails : quand l'ouverture l'a pré-rempli (un signalement
+ * parti d'un passage de texte), le clavier y va directement, curseur APRÈS ce
+ * qui est déjà écrit. Le focus seul ne suffit pas : selon les navigateurs, il
+ * laisse le curseur au tout début, c'est-à-dire devant l'emplacement du
+ * passage, que la personne se met alors à écraser.
+ */
+const detailsField = ref<HTMLTextAreaElement | null>(null);
+const isPrefilled = ref(false);
+
+// `immediate` : la fenêtre n'est montée qu'à la première ouverture (voir
+// App.vue), et l'état est donc DÉJÀ ouvert quand ce suivi se pose. Sans lui,
+// la toute première ouverture n'appliquait rien, et une amorce se perdait.
+watch(
+  isFeedbackOpen,
+  (open) => {
+    if (!open) return;
+    const prefill = feedbackPrefill.value;
+    isPrefilled.value = prefill !== null;
+    kind.value = prefill?.kind ?? "idea";
     otherKind.value = "";
-    details.value = "";
+    details.value = prefill?.details ?? "";
     canContact.value = false;
     contact.value = "";
-  }
-});
+    if (!prefill) return;
+    void nextTick(() => {
+      const field = detailsField.value;
+      if (!field) return;
+      field.focus();
+      field.setSelectionRange(field.value.length, field.value.length);
+    });
+  },
+  { immediate: true },
+);
 
 const canSubmit = computed(
   () => details.value.trim().length > 0 && (!canContact.value || contact.value.trim().length > 0),
@@ -127,7 +152,7 @@ async function submit(): Promise<void> {
               class="w-4 h-4 accent-primary cursor-pointer shrink-0"
               :value="option"
               v-model="kind"
-              :data-autofocus="option === 'idea' ? '' : undefined"
+              :data-autofocus="!isPrefilled && option === 'idea' ? '' : undefined"
             />
             <span class="text-sm font-medium">{{ t(`feedback.kinds.${option}`) }}</span>
           </label>
@@ -154,7 +179,9 @@ async function submit(): Promise<void> {
         </label>
         <textarea
           id="feedback-details"
+          ref="detailsField"
           v-model="details"
+          :data-autofocus="isPrefilled ? '' : undefined"
           class="field resize-y"
           rows="4"
           maxlength="2000"

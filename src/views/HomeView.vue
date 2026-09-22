@@ -394,7 +394,7 @@ onUnmounted(() => {
         <button
           type="button"
           class="font-medium text-text-primary underline decoration-line underline-offset-4 hover:text-primary transition-colors"
-          @click="openFeedback"
+          @click="openFeedback()"
         >
           {{ t("feedback.homeLink") }}
         </button>
