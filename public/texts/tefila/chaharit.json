@@ -2244,6 +2244,7 @@
         "en": "The lulav is taken in the right hand, the left for left-handed people, and the etrog in the other. The etrog is not brought together with the lulav before the blessing is said: it is said over a mitzvah not yet fulfilled.",
         "he": "נוטל הלולב בימין והאתרוג בשמאל (ואטר בהיפוך), ואין מחברים האתרוג ללולב עד אחר הברכה"
       },
+      "naanouim": true,
       "lines": [
         "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו, וְצִוָּנוּ עַל נְטִילַת לוּלָב:",
         {
@@ -2256,9 +2257,9 @@
         },
         {
           "rubric": {
-            "fr": "On agite ensuite le loulav de chaque côté, dans cet ordre :",
-            "en": "The lulav is then waved on each side, in this order:",
-            "he": "ומנענע לשש קצוות כסדר הזה:"
+            "fr": "On agite ensuite le loulav trois fois de chaque côté, en l'éloignant puis en le ramenant vers la poitrine, dans cet ordre : sud, nord, est, haut, bas, ouest.",
+            "en": "The lulav is then waved three times on each side, away from you and back towards the chest, in this order: south, north, east, up, down, west.",
+            "he": "ויעשה הנענועים שלש פעמים בהולכה והובאה אל החזה, כסדר הזה:"
           },
           "he": "דָּרוֹם, צָפוֹן, מִזְרָח, מַעְלָה, מַטָּה, מַעֲרָב:",
           "muted": true

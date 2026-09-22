@@ -380,6 +380,7 @@ function buildBlock(spec, sections) {
   if (spec.zman) block.zman = spec.zman;
   if (spec.torahWeekly) block.torahWeekly = true;
   if (spec.kotel) block.kotel = true;
+  if (spec.naanouim) block.naanouim = true;
   if (spec.mirror) block.mirror = true;
   if (spec.numbered) block.numbered = true;
   // L'une des options d'un choix laissé au lecteur (voir TextChoice dans
@@ -2615,6 +2616,8 @@ function chaharitRecipe() {
       {
         when: "loulav",
         plain: true,
+        // Le cadran des six côtés, comme à la page du livre Moadim.
+        naanouim: true,
         labelText: R("Les brahot du loulav", "The lulav blessings", "\u05d1\u05e8\u05db\u05d5\u05ea \u05d4\u05dc\u05d5\u05dc\u05d1"),
         halakha: HALAKHA_LOULAV,
         lines: [

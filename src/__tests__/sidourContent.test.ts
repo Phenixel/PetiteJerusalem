@@ -793,6 +793,16 @@ describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
     expect(texte).toContain("דרום, צפון, מזרח, מעלה, מטה, מערב");
   });
 
+  it("ouvre le cadran des six côtés au titre des brahot du loulav", () => {
+    const bloc = blocks.find((b) => b.when === "loulav")!;
+    expect(bloc.naanouim).toBe(true);
+    // La didascalie les nomme dans la langue du lecteur : la ligne qui suit
+    // ne les porte qu'en hébreu.
+    const cotes = (bloc.paragraphs ?? []).at(-1)!.rubric!;
+    expect(cotes.fr).toContain("sud, nord, est, haut, bas, ouest");
+    expect(cotes.en).toContain("south, north, east, up, down, west");
+  });
+
   it("ferme le Hallel entier par Yehalelou'ha, jamais l'abrégé", () => {
     const hallel = brut.find((b) => b.label === "Hallel")!;
     const lignes = hallel.lines as { when?: string; he?: string }[];

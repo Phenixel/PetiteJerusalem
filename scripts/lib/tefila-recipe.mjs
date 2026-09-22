@@ -176,6 +176,8 @@ export function buildBlock(spec, segs) {
   }
   if (spec.variants) block.variants = true;
   if (spec.plain) block.plain = true;
+  // Les brahot du loulav portent le cadran des six côtés à leur titre.
+  if (spec.naanouim) block.naanouim = true;
   block.lines = spec.lines.map((line) => buildLine(line, segs));
   return block;
 }

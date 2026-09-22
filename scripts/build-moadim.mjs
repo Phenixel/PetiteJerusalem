@@ -231,6 +231,9 @@ const netilatLoulav = {
     {
       label: "Les brahot du loulav",
       halakha: HALAKHA_LOULAV,
+      // Le cadran des six côtés s'ouvre du titre : l'ordre des na'anou'im se
+      // retient mieux posé sur une boussole qu'en liste.
+      naanouim: true,
       lines: [
         { he: BRAKHA_LOULAV },
         { he: BRAKHA_CHEHEHIYANOU, rubric: RUBRIC_CHEHEHIYANOU },

@@ -535,6 +535,15 @@ describe("fichiers de tefila", () => {
     }
   });
 
+  it("Netilat loulav : le cadran des six côtés, et les côtés nommés en clair", () => {
+    const blocks = load("moadim", "netilat-loulav").sections[0].blocks ?? [];
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].naanouim).toBe(true);
+    const cotes = (blocks[0].paragraphs ?? []).at(-1)!.rubric!;
+    expect(cotes.fr).toContain("sud, nord, est, haut, bas, ouest");
+    expect(cotes.en).toContain("south, north, east, up, down, west");
+  });
+
   it("Séder leil Souccot : les sept nuits, du seuil à la place assise", () => {
     const blocks = load("moadim", "seder-leil-souccot").sections[0].blocks ?? [];
     expect(blocks.map((b) => b.label)).toEqual([

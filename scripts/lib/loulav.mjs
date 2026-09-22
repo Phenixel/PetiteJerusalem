@@ -49,9 +49,14 @@ export const RUBRIC_CHEHEHIYANOU = {
   he: "מחבר האתרוג ללולב, ובפעם הראשונה בלבד מוסיף:",
 };
 
-/** Après les bénédictions : les six côtés, dans leur ordre. */
+/**
+ * Après les bénédictions : les six côtés, dans leur ordre. La didascalie les
+ * nomme en toutes lettres dans la langue du lecteur, la ligne qui suit ne les
+ * portant qu'en hébreu ; le cadran du lecteur (NaanouimCompass) les pose au
+ * même ordre, numérotés.
+ */
 export const RUBRIC_NAANOUIM = {
-  fr: "On agite ensuite le loulav de chaque côté, dans cet ordre :",
-  en: "The lulav is then waved on each side, in this order:",
-  he: "ומנענע לשש קצוות כסדר הזה:",
+  fr: "On agite ensuite le loulav trois fois de chaque côté, en l'éloignant puis en le ramenant vers la poitrine, dans cet ordre : sud, nord, est, haut, bas, ouest.",
+  en: "The lulav is then waved three times on each side, away from you and back towards the chest, in this order: south, north, east, up, down, west.",
+  he: "ויעשה הנענועים שלש פעמים בהולכה והובאה אל החזה, כסדר הזה:",
 };
