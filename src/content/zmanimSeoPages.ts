@@ -168,6 +168,16 @@ const instantCell = (date: Date, tz: string, locale: SeoLocale, s: ZmanimStrings
 // repère local de la machine : on les formate sans fuseau, dans ce même
 // repère, pour ne jamais glisser d'un jour (même logique que CalendarPage).
 
+/**
+ * « 2026-09-26 » : le jour civil d'une date hébraïque, pour les données
+ * structurées. Lu dans le même repère local que les formateurs ci-dessous,
+ * pour ne jamais glisser d'un jour.
+ */
+const isoDay = (date: Date): string =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
+
 /** « samedi 12 septembre 2026 », le jour civil d'une date hébraïque. */
 const civilDayYear = (date: Date, s: ZmanimStrings): string =>
   new Intl.DateTimeFormat(s.intl, {
@@ -792,8 +802,20 @@ function festivalBlock(entry: CalendarEntry, def: SeoFestival, locale: SeoLocale
   return { first, last, start, end };
 }
 
-/** Les blocs d'une fête dans une année, réduits à leurs propres jours. */
+/**
+ * Les blocs d'une fête dans une année, réduits à leurs propres jours.
+ *
+ * Une fête que hebcal ne nomme pas à part (Hochaana Rabba, septième jour de
+ * Souccot) n'a aucune entrée à filtrer : c'est sa date hébraïque qui la
+ * donne, et son jour n'a ni entrée ni sortie, le travail y étant permis.
+ */
 function blocksOf(entries: CalendarEntry[], def: SeoFestival, locale: SeoLocale): FestivalBlock[] {
+  if (def.hebrewDate) {
+    const year = entries[0]?.first.getFullYear();
+    if (!year) return [];
+    const day = new HDate(def.hebrewDate.day, def.hebrewDate.month, year);
+    return [{ first: day, last: day, start: null, end: null }];
+  }
   return entriesOf(entries, def, locale).map((entry) => festivalBlock(entry, def, locale));
 }
 
@@ -802,6 +824,10 @@ const MAX_FESTIVAL_DAYS = 10;
 
 /** Ce jour porte-t-il cette fête, Yom Tov ou 'Hol haMoed ? */
 function carriesFestival(day: HDate, def: SeoFestival, locale: SeoLocale): boolean {
+  // Une fête tenue par sa date est ce seul jour : la chercher par son nom
+  // l'étendrait à toute la fête dont elle fait partie (Hochaana Rabba
+  // avalerait les sept jours de Souccot).
+  if (def.hebrewDate) return false;
   const wanted = def.names[locale].split(" · ");
   return holidayNamesOn(CALENDAR_PLACE[locale], day, locale).some((name) =>
     wanted.includes(cleanName(name)),
@@ -1045,6 +1071,57 @@ ${section(s.calendarShabbatTitle, s.calendarShabbatHtml(links))}
 
 // ---- /calendrier/:fete : une page par fête -------------------------------
 
+/**
+ * Un `Event` schema.org par occurrence à venir de la fête.
+ *
+ * Les pages portaient déjà `BreadcrumbList` et `FAQPage` ; il leur manquait
+ * ce qui dit à un moteur que la page parle d'une date. C'est l'objet même de
+ * la requête à laquelle elle répond (« quand tombe Souccot »), et c'est ce
+ * qui permet à un résultat de porter la date plutôt que le seul titre.
+ *
+ * Les dates sont celles de la fête entière, 'Hol haMoed compris, comme le
+ * tableau. Le lieu est la ville dont la page donne les heures : elle ne
+ * limite pas la fête, elle dit à quelles coordonnées l'entrée et la sortie
+ * ont été calculées.
+ */
+function festivalEvents(
+  def: SeoFestival,
+  fullPerYear: (DaySpan | null)[],
+  locale: SeoLocale,
+  path: string,
+): Record<string, unknown>[] {
+  const cityLabel = cityName(CALENDAR_CITY[locale], locale);
+  const country = CALENDAR_PLACE[locale].tzid === "Asia/Jerusalem" ? "IL" : "FR";
+  const label = def.labels[locale];
+  return fullPerYear.flatMap((full) => {
+    if (!full) return [];
+    const year = full.first.greg().getFullYear();
+    return [
+      {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        name: `${label} ${year}`,
+        startDate: isoDay(full.first.greg()),
+        endDate: isoDay(full.last.greg()),
+        eventStatus: "https://schema.org/EventScheduled",
+        eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+        isAccessibleForFree: true,
+        description: ZMANIM_STRINGS[locale].festivalIntro[def.slugs.fr] ?? "",
+        url: `${SITE_URL}${path}`,
+        location: {
+          "@type": "Place",
+          name: cityLabel,
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: cityLabel,
+            addressCountry: country,
+          },
+        },
+      },
+    ];
+  });
+}
+
 function buildFestivalPage(
   def: SeoFestival,
   years: YearEntries[],
@@ -1136,6 +1213,7 @@ ${section(s.festivalAroundTitle(label), s.festivalAroundHtml(links))}
         { name: label, path },
       ]),
       faqJsonLd(faq),
+      ...festivalEvents(def, fullPerYear, locale, path),
     ],
   };
 }

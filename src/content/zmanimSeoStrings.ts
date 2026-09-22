@@ -419,8 +419,12 @@ const FR: ZmanimStrings = {
       "Yom Kippour, le 10 Tichri, est le jour du Grand Pardon : un jeûne de vingt-cinq heures, de l'entrée de la fête au soir jusqu'à la sortie des étoiles du lendemain, ouvert par Kol Nidré et refermé par la Néïla et le chofar.",
     souccot:
       "Souccot, la fête des cabanes, commence le 15 Tichri : on mange (et on dort) dans la soucca sept jours durant, et l'on prend chaque matin les quatre espèces, le loulav et l'étrog. Les deux premiers jours sont Yom Tov en diaspora, les suivants 'Hol haMoed.",
+    "hochaana-rabba":
+      "Hochaana Rabba, le 21 Tichri, est le septième et dernier jour de Souccot : on fait sept fois le tour de la synagogue avec le loulav et l'étrog, on bat les aravot (les rameaux de saule) à terre, et l'usage est de veiller la nuit à étudier. Le travail y reste permis, mais l'office du matin est plus long que de coutume.",
+    "chemini-atseret":
+      "Chemini Atséret, le 22 Tichri, est le huitième jour qui ferme Souccot sans tout à fait en être : on n'y prend plus le loulav et l'on n'y mange plus dans la soucca, et c'est ce jour-là qu'on demande la pluie (la prière de Guechem). En diaspora, Simhat Torah la suit le lendemain ; en Israël, les deux tombent le même jour.",
     "simhat-torah":
-      "Chemini Atséret et Simhat Torah closent le cycle de Tichri : on demande la pluie, puis on achève la lecture annuelle de la Torah et on la recommence aussitôt, en dansant avec les rouleaux (les hakafot).",
+      "Simhat Torah ferme le cycle des fêtes de Tichri : on achève la lecture annuelle de la Torah et on la recommence aussitôt, en dansant avec les rouleaux (les hakafot). En diaspora, elle tombe le lendemain de Chemini Atséret ; en Israël, les deux se célèbrent le même jour.",
     hanouka:
       "Hanouka dure huit jours à partir du 25 Kislev : on allume chaque soir une bougie de plus sur la 'hanoukia, en souvenir de la fiole d'huile du Temple. Le travail y est permis, et la première bougie s'allume la veille du premier jour, au soir.",
     "10-tevet":
@@ -684,8 +688,12 @@ const EN: ZmanimStrings = {
       "Yom Kippur, on 10 Tishrei, is the Day of Atonement: a fast of twenty-five hours, from the start of the day in the evening until nightfall the following day, opened by Kol Nidrei and closed by Neilah and the shofar.",
     souccot:
       "Sukkot, the festival of booths, begins on 15 Tishrei: one eats (and sleeps) in the sukkah for seven days, and takes the four species, lulav and etrog, each morning. The first two days are Yom Tov in the diaspora, the rest are Chol HaMoed.",
+    "hochaana-rabba":
+      "Hoshana Rabbah, on 21 Tishrei, is the seventh and last day of Sukkot: the synagogue is circled seven times with the lulav and the etrog, the aravot (willow branches) are beaten on the ground, and many stay up through the night to study. Work is allowed, but the morning service is longer than usual.",
+    "chemini-atseret":
+      "Shemini Atzeret, on 22 Tishrei, is the eighth day that closes Sukkot without quite belonging to it: the lulav is no longer taken and meals are no longer eaten in the sukkah, and it is the day rain is asked for (the prayer of Geshem). In the diaspora Simchat Torah follows the next day; in Israel the two fall together.",
     "simhat-torah":
-      "Shemini Atzeret and Simchat Torah close the cycle of Tishrei: rain is asked for, then the annual reading of the Torah is finished and begun again straight away, dancing with the scrolls (the hakafot).",
+      "Simchat Torah closes the cycle of the Tishrei festivals: the annual reading of the Torah is finished and begun again straight away, dancing with the scrolls (the hakafot). In the diaspora it falls the day after Shemini Atzeret; in Israel the two are celebrated together.",
     hanouka:
       "Hanukkah runs eight days from 25 Kislev: one candle more is lit each evening on the chanukiah, in memory of the flask of oil in the Temple. Work is allowed, and the first candle is lit on the evening before the first day.",
     "10-tevet":
@@ -937,6 +945,10 @@ const HE: ZmanimStrings = {
       "יום כיפור, בי׳ בתשרי, הוא יום הסליחה והכפרה: צום של עשרים וחמש שעות, מכניסת החג בערב ועד צאת הכוכבים למחרת, הנפתח בכל נדרי ונחתם בנעילה ובתקיעת שופר.",
     souccot:
       "סוכות, חג האסיף, מתחיל בט״ו בתשרי: יושבים (וישנים) בסוכה שבעה ימים, ונוטלים בכל בוקר את ארבעת המינים, לולב ואתרוג. בחוץ לארץ שני הימים הראשונים הם יום טוב, והשאר חול המועד.",
+    "hochaana-rabba":
+      "הושענא רבה, כ״א בתשרי, הוא היום השביעי והאחרון של סוכות: מקיפים את בית הכנסת שבע פעמים עם הלולב והאתרוג, חובטים את הערבות בקרקע, ורבים נשארים ערים בלילה ולומדים. המלאכה מותרת, אך תפילת שחרית ארוכה מן הרגיל.",
+    "chemini-atseret":
+      "שמיני עצרת, כ״ב בתשרי, הוא היום השמיני שחותם את סוכות מבלי להיות ממש חלק ממנו: אין נוטלים בו לולב ואין אוכלים בסוכה, ובו מבקשים על הגשם (תפילת גשם). בחוץ לארץ שמחת תורה באה למחרת; בארץ ישראל השניים חלים באותו יום.",
     "simhat-torah":
       "שמיני עצרת ושמחת תורה חותמים את חגי תשרי: מבקשים על הגשם, ואז מסיימים את קריאת התורה השנתית ומתחילים אותה מיד מחדש, ברוקדים עם ספרי התורה בהקפות.",
     hanouka:

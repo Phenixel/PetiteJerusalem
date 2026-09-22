@@ -319,9 +319,12 @@ describe("zmanimSeoPages pages par fête", () => {
     expect(simchatTorahHe.bodyHtml).toContain("יום שבת, 3 באוקטובר 2026");
     expect(simchatTorahHe.bodyHtml).not.toContain("4 באוקטובר 2026");
 
-    // Le français reste en diaspora : deux jours, Simhat Torah le 4.
+    // Le français reste en diaspora, où Simhat Torah est le lendemain de
+    // Chemini Atséret : le dimanche 4, pas le samedi 3.
     const simhatTorah = pages.find((p) => p.path === "/calendrier/simhat-torah")!;
-    expect(simhatTorah.bodyHtml).toContain("du samedi 3 au dimanche 4 octobre 2026");
+    expect(simhatTorah.bodyHtml).toContain("dimanche 4 octobre 2026");
+    const cheminiAtseret = pages.find((p) => p.path === "/calendrier/chemini-atseret")!;
+    expect(cheminiAtseret.bodyHtml).toContain("samedi 3 octobre 2026");
     const souccot = pages.find((p) => p.path === "/calendrier/souccot")!;
     expect(souccot.bodyHtml).toContain("dim. 27 sept. à 20:25");
   });
