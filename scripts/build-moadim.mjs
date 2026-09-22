@@ -5,10 +5,12 @@
  *
  * Lancer avec : node scripts/build-moadim.mjs
  *
- * Pour l'heure, un seul texte : l'Atarat nedarim, qu'on dit la veille de Roch
- * Hachana et la veille de Kippour devant dix hommes, ou trois à défaut. Le
+ * Deux textes pour l'heure. L'Atarat nedarim, qu'on dit la veille de Roch
+ * Hachana et la veille de Kippour devant dix hommes, ou trois à défaut : le
  * siddour de l'export ne le porte pas ; le mahzor, si, sous « Annulment of
- * Vows and Curses ». Les autres textes de fête du livre Moadim (les Sli'hot,
+ * Vows and Curses ». Et les brahot du loulav, que ni l'un ni l'autre ne
+ * portent : leur texte vit dans scripts/lib/loulav.mjs, d'où la Cha'harit le
+ * prend aussi. Les autres textes de fête du livre Moadim (les Sli'hot,
  * l'allumage de Hanouka) viennent, eux, d'ailleurs : voir scripts/lib et
  * build-brahot.mjs.
  *
@@ -28,6 +30,14 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { fetchMerged, MACHZOR_ROSH_HASHANA_URL } from "./lib/sefaria-siddur.mjs";
 import { writeRecipes } from "./lib/tefila-recipe.mjs";
+import {
+  BRAKHA_CHEHEHIYANOU,
+  BRAKHA_LOULAV,
+  HALAKHA_LOULAV,
+  NAANOUIM,
+  RUBRIC_CHEHEHIYANOU,
+  RUBRIC_NAANOUIM,
+} from "./lib/loulav.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, "../public/texts/tefila");
@@ -179,7 +189,33 @@ const ataratNedarim = {
   ],
 };
 
-const RECIPES = [ataratNedarim];
+/**
+ * Les brahot du loulav : la page du livre Moadim. Rien ne vient de la source
+ * Sefaria ici, tout est écrit dans scripts/lib/loulav.mjs ; la recette ne
+ * fait que l'ordonner, et `src` ne sert donc à rien (aucune ligne ne prend de
+ * segment).
+ *
+ * L'ordre est celui du sidour : la bénédiction sur la prise, puis, la
+ * première fois de l'année, le Chéhé'héyanou, et les six côtés pour finir.
+ */
+const netilatLoulav = {
+  file: "netilat-loulav",
+  title: "נטילת לולב (Netilat Loulav)",
+  src: () => [],
+  blocks: [
+    {
+      label: "Les brahot du loulav",
+      halakha: HALAKHA_LOULAV,
+      lines: [
+        { he: BRAKHA_LOULAV },
+        { he: BRAKHA_CHEHEHIYANOU, rubric: RUBRIC_CHEHEHIYANOU },
+        { he: NAANOUIM, rubric: RUBRIC_NAANOUIM, muted: true },
+      ],
+    },
+  ],
+};
+
+const RECIPES = [ataratNedarim, netilatLoulav];
 
 console.log("Téléchargement du Mahzor Roch Hachana Edot HaMizrach (export Sefaria)…");
 const text = await fetchMerged(MACHZOR_ROSH_HASHANA_URL);

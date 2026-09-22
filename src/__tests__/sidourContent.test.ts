@@ -50,6 +50,8 @@ const KNOWN_WHEN = new Set([
   "nissim",
   "moadim",
   "moed",
+  "hol-hamoed",
+  "loulav",
   "shabbat-or-moed",
   "teshuva",
   "erev-kippour",
@@ -650,8 +652,10 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
     const entier = lignes.filter((l) => l?.when === "hallel-complet");
     const abrege = lignes.filter((l) => l?.when === "hallel-abrege");
     // « Lo lanou » et « Ahavti » ne sont là qu'au Hallel entier, avec leur
-    // suite ; les deux consignes de saut ne sont là qu'à l'abrégé.
-    expect(entier).toHaveLength(4);
+    // suite ; les deux consignes de saut ne sont là qu'à l'abrégé. La
+    // cinquième ligne du Hallel entier est « Yehalelou'ha », qui le ferme
+    // (voir le describe de 'Hol haMoed plus bas).
+    expect(entier).toHaveLength(5);
     expect(abrege).toHaveLength(2);
     expect(sansSignes(String(entier[0].he))).toContain("לא לנו");
     expect(sansSignes(String(entier[2].he))).toContain("אהבתי");
@@ -763,6 +767,79 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
     }
   });
 });
+
+describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
+  const entry = sidourEntries.find((e) => resolveFilePath(e).includes("chaharit"))!;
+  const brut = (
+    loadRaw(entry) as {
+      blocks: { label?: string; when?: string; lines: unknown[] }[];
+    }
+  ).blocks;
+  const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
+  const indexOf = (label: string, when: string) =>
+    brut.findIndex((b) => b.label === label && b.when === when);
+
+  it("prend le loulav juste avant le Hallel", () => {
+    const loulav = indexOf("Les brahot du loulav", "loulav");
+    const hallel = brut.findIndex((b) => b.label === "Hallel");
+    expect(loulav).toBeGreaterThan(0);
+    expect(hallel).toBe(loulav + 1);
+    const bloc = blocks.find((b) => b.when === "loulav")!;
+    const texte = sansSignes(bloc.lines.join(" "));
+    expect(texte).toContain("על נטילת לולב");
+    expect(texte).toContain("שהחיינו");
+    // Les six côtés, dans l'ordre de l'usage, en didascalie du dernier
+    // paragraphe : le na'anou'a se fait, il ne se dit pas.
+    expect(texte).toContain("דרום, צפון, מזרח, מעלה, מטה, מערב");
+  });
+
+  it("ferme le Hallel entier par Yehalelou'ha, jamais l'abrégé", () => {
+    const hallel = brut.find((b) => b.label === "Hallel")!;
+    const lignes = hallel.lines as { when?: string; he?: string }[];
+    const fin = lignes.at(-1)!;
+    expect(fin.when).toBe("hallel-complet");
+    expect(sansSignes(String(fin.he))).toContain("יהללוך");
+  });
+
+  it("enchaîne Kaddich, lecture de la Torah et Moussaf à 'Hol haMoed", () => {
+    // Le même enchaînement qu'à Roch Hodech, et dans le même ordre : le
+    // Titkabal entier (la source ne fait exception que pour 'Hanouka), la
+    // sortie du séfer, le demi-Kaddich du dernier appelé.
+    // Les blocs des autres jours s'intercalent dans le fichier (la lecture
+    // de 'Hanouka, celle de Roch Hodech) : c'est leur ordre relatif qui
+    // compte, un seul jeu s'affichant le jour venu.
+    const rangs = [
+      "Kaddich Titkabal (le 'hazan)",
+      "Lecture de la Torah",
+      "Demi-Kaddich (le dernier appelé)",
+      "Moussaf",
+      "Kedoucha de Moussaf (Keter)",
+      "Modim dérabanan",
+    ].map((label) => indexOf(label, "hol-hamoed"));
+    expect(rangs.some((rang) => rang < 0)).toBe(false);
+    expect(rangs).toEqual([...rangs].sort((a, b) => a - b));
+  });
+
+  it("nomme la fête dans le Moussaf, et n'y garde rien du Chabbat", () => {
+    const moussaf = blocks.filter((b) => b.when === "hol-hamoed" && b.lines.length > 3);
+    const runs = moussaf.flatMap((b) => b.paragraphs ?? []).flatMap((p) => p.runs);
+    const nomme = (cle: string) =>
+      runs.flatMap((r) => (r.kind === "he" && r.when === cle ? [sansSignes(r.text)] : []));
+    expect(nomme("sukkot").join(" ")).toContain("חג הסכות");
+    expect(nomme("pesach").join(" ")).toContain("חג המצות");
+    // La source écrit les ajouts du Chabbat et de Yom Tov en petit corps ;
+    // la recette prend le segment sans eux, il ne doit donc rien en rester.
+    const tout = sansSignes(moussaf.flatMap((b) => b.lines).join(" "));
+    expect(tout).not.toContain("שבתות למנוחה");
+    expect(tout).not.toContain("רצה נא במנוחתנו");
+    // Le Keter de 'Hol haMoed, non celui de Yom Tov : « ועמך ישראל ».
+    const keter = blocks.find(
+      (b) => b.when === "hol-hamoed" && b.label === "Kedoucha de Moussaf (Keter)",
+    )!;
+    expect(sansSignes(keter.lines.join(" "))).toContain("ועמך ישראל קבוצי מטה");
+  });
+});
+
 
 describe("Arvit : le compte du 'Omer", () => {
   const entry = sidourEntries.find((e) => resolveFilePath(e).includes("arvit"))!;

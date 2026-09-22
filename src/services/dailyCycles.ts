@@ -394,6 +394,17 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // Tévet tombe dans 'Hanouka : c'est 'Hanouka qui l'emporte, et le Hallel s'y
   // dit entier.
   const holHamoed = has(flags.CHOL_HAMOED);
+  // 'Hol haMoed, les jours intermédiaires : l'office y est celui de la
+  // semaine, avec le Hallel, la lecture de la Torah du jour et le Moussaf de
+  // la fête en plus. La clé nomme ces trois ajouts, qui n'ont pas d'autre
+  // jour où se dire ; les fêtes qu'elle sert se nomment par ailleurs
+  // (`sukkot`, `pesach`), pour le passage du Moussaf qui dit laquelle.
+  if (holHamoed) occ.add("hol-hamoed");
+  // Le loulav, du 15 au 21 Tichri : on prend les quatre espèces chaque matin
+  // de Souccot, avant le Hallel, et on les agite pendant. Sauf le Chabbat, où
+  // on ne les porte pas : la première fois de l'année est alors le lendemain,
+  // et c'est ce jour-là que se dit le Chéhé'héyanou.
+  if (occ.has("sukkot") && hd.getDay() !== 6) occ.add("loulav");
   if (occ.has("rosh-chodesh") || hanukkah || holHamoed) {
     occ.add("hallel");
     const entier = hanukkah || (holHamoed && festival("Sukkot"));

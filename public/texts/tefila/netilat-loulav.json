@@ -1,0 +1,35 @@
+{
+  "title": "נטילת לולב (Netilat Loulav)",
+  "blocks": [
+    {
+      "label": "Les brahot du loulav",
+      "halakha": {
+        "fr": "On prend le loulav de la main droite, la main gauche pour les gauchers, et l'étrog de l'autre main. On ne réunit pas l'étrog au loulav avant d'avoir dit la bénédiction : elle se dit sur une mitsva qui n'est pas encore accomplie.",
+        "en": "The lulav is taken in the right hand, the left for left-handed people, and the etrog in the other. The etrog is not brought together with the lulav before the blessing is said: it is said over a mitzvah not yet fulfilled.",
+        "he": "נוטל הלולב בימין והאתרוג בשמאל (ואטר בהיפוך), ואין מחברים האתרוג ללולב עד אחר הברכה"
+      },
+      "lines": [
+        {
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו, וְצִוָּנוּ עַל נְטִילַת לוּלָב:"
+        },
+        {
+          "rubric": {
+            "fr": "On rapproche alors l'étrog du loulav. La première fois de l'année seulement, on ajoute :",
+            "en": "The etrog is then brought together with the lulav. The first time of the year only, add:",
+            "he": "מחבר האתרוג ללולב, ובפעם הראשונה בלבד מוסיף:"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵֽינוּ מֶלֶךְ הָעוֹלָם, שֶׁהֶחֱיָֽינוּ וְקִיְּמָנוּ וְהִגִּיעָנוּ לַזְּמַן הַזֶּה:"
+        },
+        {
+          "rubric": {
+            "fr": "On agite ensuite le loulav de chaque côté, dans cet ordre :",
+            "en": "The lulav is then waved on each side, in this order:",
+            "he": "ומנענע לשש קצוות כסדר הזה:"
+          },
+          "he": "דָּרוֹם, צָפוֹן, מִזְרָח, מַעְלָה, מַטָּה, מַעֲרָב:",
+          "muted": true
+        }
+      ]
+    }
+  ]
+}

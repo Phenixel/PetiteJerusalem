@@ -2793,6 +2793,14 @@
       "type": "Moadim"
     },
     {
+      "id": 363,
+      "name": "נטילת לולב (Netilat Loulav)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.651.5",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
       "id": 359,
       "name": "ברית מילה (Brit Mila)",
       "livre": "מעגל החיים (Maagal Hahayim)",

@@ -379,6 +379,38 @@ describe("le Hallel, et sa longueur", () => {
   });
 });
 
+describe("'Hol haMoed, et le loulav de Souccot", () => {
+  const occ = (jour: number, mois: number, annee: number) =>
+    activeOccasions(new HDate(jour, mois, annee), false);
+
+  it("nomme les jours intermédiaires, et eux seuls", () => {
+    // Souccot 5787 : Yom Tov les 15 et 16 Tichri, 'Hol haMoed du 17 au 21,
+    // Chemini 'Atséret le 22.
+    expect(occ(15, months.TISHREI, 5787).has("hol-hamoed")).toBe(false);
+    expect(occ(17, months.TISHREI, 5787).has("hol-hamoed")).toBe(true);
+    expect(occ(21, months.TISHREI, 5787).has("hol-hamoed")).toBe(true);
+    expect(occ(22, months.TISHREI, 5787).has("hol-hamoed")).toBe(false);
+    // Pessah aussi : 'Hol haMoed y va du 17 au 20 Nissan.
+    expect(occ(17, months.NISAN, 5787).has("hol-hamoed")).toBe(true);
+    expect(occ(5, months.CHESHVAN, 5787).has("hol-hamoed")).toBe(false);
+  });
+
+  it("prend le loulav les sept jours de Souccot, jamais le Chabbat", () => {
+    // 5787 : le 15 Tichri tombe un Chabbat, on ne prend pas le loulav ce
+    // jour-là ; la première fois de l'année est donc le 16.
+    expect(new HDate(15, months.TISHREI, 5787).getDay()).toBe(6);
+    expect(occ(15, months.TISHREI, 5787).has("loulav")).toBe(false);
+    expect(occ(16, months.TISHREI, 5787).has("loulav")).toBe(true);
+    expect(occ(21, months.TISHREI, 5787).has("loulav")).toBe(true);
+  });
+
+  it("ne le prend plus à Chemini 'Atséret ni hors de Souccot", () => {
+    expect(occ(22, months.TISHREI, 5787).has("loulav")).toBe(false);
+    expect(occ(23, months.TISHREI, 5787).has("loulav")).toBe(false);
+    expect(occ(17, months.NISAN, 5787).has("loulav")).toBe(false);
+  });
+});
+
 describe("les huit jours de 'Hanouka", () => {
   it("se numérotent de 1 à 8, une clé par jour", () => {
     // hebcal pose « 1 Candle » sur la veille : le premier jour porte

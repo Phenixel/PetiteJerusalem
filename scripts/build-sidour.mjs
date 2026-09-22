@@ -42,6 +42,14 @@ import {
   NEFILAT_APAYIM,
   YIKOM_DAM,
 } from "./lib/selihot-tsom.mjs";
+import {
+  BRAKHA_CHEHEHIYANOU,
+  BRAKHA_LOULAV,
+  HALAKHA_LOULAV,
+  NAANOUIM,
+  RUBRIC_CHEHEHIYANOU,
+  RUBRIC_NAANOUIM,
+} from "./lib/loulav.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, "../public/texts/tefila");
@@ -2600,6 +2608,21 @@ function chaharitRecipe() {
       // tahanoun, après les supplications du lundi et du jeudi, ou après
       // « Yehi chem ». Un seul bloc suffit donc, sans condition.
       kaddishHalf("Uva LeSion"),
+      // Les brahot du loulav, avant le Hallel : c'est là qu'on prend les
+      // quatre espèces, et c'est pendant le Hallel qu'on les agite. Le même
+      // texte a sa page dans le livre Moadim (build-moadim.mjs) ; il est
+      // écrit une seule fois, dans scripts/lib/loulav.mjs.
+      {
+        when: "loulav",
+        plain: true,
+        labelText: R("Les brahot du loulav", "The lulav blessings", "\u05d1\u05e8\u05db\u05d5\u05ea \u05d4\u05dc\u05d5\u05dc\u05d1"),
+        halakha: HALAKHA_LOULAV,
+        lines: [
+          { he: BRAKHA_LOULAV },
+          { he: BRAKHA_CHEHEHIYANOU, rubric: RUBRIC_CHEHEHIYANOU },
+          { he: NAANOUIM, rubric: RUBRIC_NAANOUIM, muted: true },
+        ],
+      },
       {
         src: "RH.Hallel",
         when: "hallel",
@@ -2648,6 +2671,23 @@ function chaharitRecipe() {
           { seg: 20, repeat: 2 },
           { seg: 21, repeat: 2, tight: true },
           { seg: 22, mode: "full" },
+          // « Yehalelou'ha », la bénédiction qui ferme le Hallel. Elle ne se
+          // dit que les jours où on le dit en entier : la source l'écrit en
+          // toutes lettres au-dessus d'elle (« בימים שאין גומרים את ההלל אין
+          // אומרים »), et c'est à 'Hanouka et à 'Hol haMoed de Souccot qu'on
+          // le termine.
+          {
+            // La source la met tout entière en retrait, puisqu'on la saute
+            // la plupart du temps : c'est le petit corps qu'on prend ici.
+            seg: 24,
+            mode: "small",
+            when: "hallel-complet",
+            rubric: R(
+              "Le Hallel dit en entier, on le ferme par cette bénédiction\u00a0:",
+              "When the whole Hallel is said, it closes with this blessing:",
+              "\u05d1\u05d9\u05de\u05d9\u05dd \u05e9\u05d2\u05d5\u05de\u05e8\u05d9\u05dd \u05d0\u05ea \u05d4\u05d4\u05dc\u05dc \u05d7\u05d5\u05ea\u05de\u05d9\u05dd:",
+            ),
+          },
         ],
       },
       // Le Hallel fini, le 'hazan dit le Kaddich Titkabal : « que soient
@@ -2655,6 +2695,11 @@ function chaharitRecipe() {
       // « Yehalelou'ha » (le Hallel y est abrégé), mais le Kaddich, lui, se
       // dit entier.
       kaddishTitkabal("RH.Hallel", { seg: 26, when: "rosh-chodesh" }),
+      // À 'Hol haMoed de même, le Titkabal entier : la source ne fait
+      // exception que pour 'Hanouka. Deux blocs plutôt qu'une condition à
+      // deux clés, les deux jours s'excluant (voir
+      // docs/compatibilite-textes.md).
+      kaddishTitkabal("RH.Hallel", { seg: 26, when: "hol-hamoed" }),
       // À 'Hanouka la source ne veut qu'un demi-Kaddich : la lecture de la
       // Torah vient juste après, et le Titkabal attendra Ouva letsion.
       // À Roch Hodech Tévet, qui tombe dans 'Hanouka, c'est l'ordre de Roch
@@ -2852,6 +2897,46 @@ function chaharitRecipe() {
       kaddishHalf("RH.Hallel", {
         seg: 41,
         when: "rosh-chodesh",
+        labelText: R(
+          "Demi-Kaddich (le dernier appelé)",
+          "Half Kaddish (the last one called up)",
+          "חצי קדיש (העולה האחרון)",
+        ),
+        rubric: R("Le dernier appelé dit :", "The last one called up says:", "העולה האחרון אומר:"),
+      }),
+      // La lecture de la Torah de 'Hol haMoed. Le siddour de la source ne
+      // porte pas ses passages : il n'a que celui de Roch Hodech (Bamidbar
+      // 28), ceux de 'Hanouka et celui de Pourim. Le bloc donne donc ce qui
+      // l'entoure, et la halakha dit ce qui se lit. Quatre montées, comme à
+      // Roch Hodech.
+      {
+        src: "RH.Hallel",
+        when: "hol-hamoed",
+        plain: true,
+        labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
+        halakha: R(
+          "On sort un séfer Torah et l'on y lit quatre montées. À 'Hol haMoed de Souccot, les korbanot du jour (Bamidbar 29) ; à 'Hol haMoed de Pessah, le passage propre à chaque jour.",
+          "A Torah scroll is taken out and four aliyot are read from it. On Chol HaMoed Sukkot, the offerings of the day (Numbers 29); on Chol HaMoed Pesach, the passage proper to each day.",
+          "מוציאים ספר תורה וקוראים ארבעה עולים. בחול המועד סוכות בקרבנות היום (במדבר כט), ובחול המועד פסח בפרשה של כל יום ויום.",
+        ),
+        lines: [
+          {
+            seg: 35,
+            rubric: R("On dit d'abord :", "First, say:", "תחילה אומרים:"),
+          },
+          {
+            seg: 37,
+            rubric: R(
+              "On ouvre le hékhal et l'on dit :",
+              "The ark is opened and one says:",
+              "פותחים ההיכל ואומרים:",
+            ),
+          },
+        ],
+      },
+      kaddishHalf("RH.Hallel", {
+        seg: 41,
+        when: "hol-hamoed",
         labelText: R(
           "Demi-Kaddich (le dernier appelé)",
           "Half Kaddish (the last one called up)",
@@ -3080,6 +3165,136 @@ function chaharitRecipe() {
           { seg: 36 },
           { seg: 38, tight: true },
           { seg: 39 },
+        ],
+      },
+      // Le Moussaf de 'Hol haMoed. Les jours intermédiaires ont leur Moussaf
+      // comme les jours de fête, et c'est la même 'Amida : la source la donne
+      // une fois pour les trois régalim, avec ses variantes en petit corps
+      // (« בשבת », « ביו"ט מוסיף »). On prend donc le segment sans ses petits
+      // corps, et il reste exactement ce qui se dit un jour de 'Hol haMoed ;
+      // la fête, elle, se nomme, et deux fragments s'en chargent.
+      {
+        src: "Regalim.Mussaf",
+        when: "hol-hamoed",
+        plain: true,
+        kotel: true,
+        labelText: R("Moussaf", "Musaf", "מוסף"),
+        halakha: R(
+          "On garde dans Moussaf la mention de la saison (morid hatal en été, machiv haroua'h oumorid haguéchem en hiver).",
+          "The seasonal mention is kept in Musaf (morid hatal in summer, mashiv haruach umorid hageshem in winter).",
+          "מזכירים במוסף את העונה (מוריד הטל בקיץ, משיב הרוח ומוריד הגשם בחורף).",
+        ),
+        lines: [
+          { seg: 1 },
+          { seg: 2 },
+          // Guevourot d'un seul tenant, la mention de la saison à sa place,
+          // comme dans la 'Amida de semaine et dans le Moussaf de Roch
+          // Hodech : la source met les deux mentions dans un même segment,
+          // chacune derrière sa consigne.
+          {
+            parts: [
+              { seg: 3 },
+              { he: "מוֹרִיד הַטָּל.", when: "ete" },
+              { he: "מַשִּׁיב הָרֽוּחַ וּמוֹרִיד הַגֶּֽשֶׁם.", when: "hiver" },
+              { seg: 5 },
+            ],
+          },
+        ],
+      },
+      // Le Keter de 'Hol haMoed, que la source distingue de celui de Yom Tov
+      // et de Chabbat : « וְעַמְּךָ יִשְׂרָאֵל » là où les jours de fête disent
+      // « עִם עַמְּךָ יִשְׂרָאֵל ». C'est le segment 9, non le 7.
+      {
+        src: "Regalim.Mussaf",
+        when: "hol-hamoed",
+        fold: "hazan",
+        labelText: R(
+          "Kedoucha de Moussaf (Keter)",
+          "Kedushah of Musaf (Keter)",
+          "כתר (קדושת מוסף)",
+        ),
+        lines: [
+          {
+            seg: 9,
+            mode: "small",
+            rubric: R("Pendant la répétition :", "During the repetition:", "בחזרה:"),
+          },
+        ],
+      },
+      {
+        src: "Regalim.Mussaf",
+        when: "hol-hamoed",
+        plain: true,
+        lines: [
+          { seg: 10 },
+          { seg: 11 },
+          // La fête nommée, deux fois : dans « Vatitèn lanou », puis dans
+          // « Ètt moussaf ». Le début et la fin de chaque paragraphe se
+          // disent tous les jours de 'Hol haMoed ; seul le nom change, et il
+          // porte sa clé. Un paragraphe garde ainsi de l'hébreu sans
+          // condition (voir docs/compatibilite-textes.md).
+          {
+            parts: [
+              { seg: 12 },
+              { seg: 16, when: "sukkot" },
+              { seg: 14, when: "pesach" },
+              { seg: 18 },
+            ],
+          },
+          { seg: 19 },
+          { seg: 20 },
+          {
+            parts: [
+              { seg: 21 },
+              { seg: 24, when: "sukkot" },
+              { seg: 22, when: "pesach" },
+              { seg: 26 },
+            ],
+          },
+          { seg: 27 },
+          { seg: 28 },
+          { seg: 31 },
+          { seg: 32 },
+          { seg: 34 },
+        ],
+      },
+      // Modim dérabanan, ce que l'assemblée dit pendant que le 'hazan dit
+      // Modim : la source le donne en petit corps, sa consigne collée au
+      // texte, comme dans la 'Amida de semaine.
+      {
+        src: "Regalim.Mussaf",
+        when: "hol-hamoed",
+        fold: "hazan",
+        labelText: R("Modim dérabanan", "Modim derabanan", "מודים דרבנן"),
+        lines: [
+          {
+            seg: 35,
+            mode: "small",
+            strip: [
+              "מודים דרבנן",
+              'בחזרת הש"ץ כשהחזן אומר מודים, הקהל אומרים:',
+              "בחזרת הש״ץ כשהחזן אומר מודים, הקהל אומרים:",
+            ],
+            rubric: R(
+              "Pendant la répétition, quand le 'hazan dit Modim, l'assemblée dit :",
+              "During the repetition, as the chazan says Modim, the congregation says:",
+              "בחזרת הש״ץ, כשהחזן אומר מודים, הקהל אומרים:",
+            ),
+          },
+        ],
+      },
+      {
+        src: "Regalim.Mussaf",
+        when: "hol-hamoed",
+        plain: true,
+        lines: [
+          { seg: 36 },
+          { seg: 50 },
+          { seg: 51, tight: true },
+          { seg: 52 },
+          { seg: 54, tight: true },
+          { seg: 55 },
+          { seg: 56 },
         ],
       },
       {
@@ -3919,6 +4134,10 @@ function sourcesFor(office) {
       "Tsom.Tamouz": text["Fast Days and Mourning"]["Seventeenth of Tammuz"],
       "RH.Mussaf": rh["Mussaf"],
       "RH.Barchi Nafshi": rh["Barchi Nafshi"],
+      // La 'Amida de Moussaf des trois régalim : une seule dans la source,
+      // avec ses variantes en petit corps. 'Hol haMoed y prend ce qui reste
+      // une fois ces variantes retirées.
+      "Regalim.Mussaf": text["Prayers for Three Festivals"]["Mussaf"],
     };
   }
   // Le Kaddich (segments 4 à 7 de « Uva LeSion ») est le même aux trois
