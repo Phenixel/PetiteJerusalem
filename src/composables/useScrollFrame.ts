@@ -38,6 +38,13 @@ const frame = shallowRef<ScrollFrame>({
 
 let subscribers = 0;
 let raf = 0;
+/**
+ * Le document change de hauteur sans qu'on défile : un texte qui arrive,
+ * une section qui se déplie. Sans cette mesure, « tout en bas » restait vrai
+ * d'une page encore vide, et le menu de lecture attendait le premier
+ * défilement pour paraître.
+ */
+let sizeObserver: ResizeObserver | null = null;
 
 function measure(): void {
   raf = 0;
@@ -61,12 +68,18 @@ function schedule(): void {
 function attach(): void {
   window.addEventListener("scroll", schedule, { passive: true });
   window.addEventListener("resize", schedule, { passive: true });
+  if (typeof ResizeObserver !== "undefined") {
+    sizeObserver = new ResizeObserver(schedule);
+    sizeObserver.observe(document.documentElement);
+  }
   schedule();
 }
 
 function detach(): void {
   window.removeEventListener("scroll", schedule);
   window.removeEventListener("resize", schedule);
+  sizeObserver?.disconnect();
+  sizeObserver = null;
   if (raf) cancelAnimationFrame(raf);
   raf = 0;
 }
