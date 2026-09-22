@@ -1366,6 +1366,7 @@ const fr = {
         slow: "Lent",
         medium: "Moyen",
         fast: "Rapide",
+        veryFast: "Très rapide",
       },
       stop: "Arrêter le défilement",
       openMenu: "Régler le défilement automatique",

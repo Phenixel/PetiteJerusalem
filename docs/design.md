@@ -42,6 +42,26 @@ Corollaire : un bloc qui ne mène nulle part n'est pas une carte cliquable. Il
 peut rester une surface (un panneau de réglages, un formulaire), mais il ne
 prend jamais `card-hover`, dont l'ombre qui se creuse promet un clic.
 
+### Une commande posée dans un texte porte son nom
+
+Dans un texte, une icône seule ne se lit pas comme une commande. Le lecteur y
+voit un ornement du passage, une marque de plus dans une page qui en porte
+déjà (numéros de verset, didascalies, renvois), et il ne l'appuie pas. La
+boussole du Kotel et le miroir des téfilines sont restés à côté de leur titre
+sans que personne ne devine qu'on pouvait les toucher.
+
+Une commande posée dans un texte est donc une pastille à la couleur du thème,
+qui porte son dessin ET son nom en toutes lettres : « Direction du Kotel »,
+« Miroir », le parchemin d'un paragraphe. Le fond, même léger, la détache du
+texte ; le nom dit ce qu'elle fait avant qu'on l'ait touchée.
+
+Au titre d'un passage, elle se pose en face du titre, au bout de sa ligne, et
+non collée au dernier mot : collée, elle passe pour la suite du titre. Sa
+taille ne suit pas celle du texte lu, à la différence de la pastille d'un
+parchemin, qui vit dans le fil de la lecture : une commande de titre est un
+objet de l'interface, et deux d'entre elles se ressemblent exactement, sur
+n'importe quelle page et à n'importe quelle taille de lecture.
+
 ### Le cadre se mérite
 
 Tout n'a pas à être dans une carte. Une carte dit « voici une réponse à une
@@ -293,6 +313,27 @@ répètent : « du 1 au 2 Tichri 5787 », et non « du 1 Tichri 5787 au 2 Tichri
 5787 ». Trois lignes de moins sur un téléphone, et rien de perdu
 (`formatHebrewRangeStart`).
 
+### Ce qu'on vient chercher prend la couleur, pleine
+
+Mettre une carte en avant sans poser de couleur sur elle ne marche pas. Un
+cadre teinté est une bordure de plus dans une page qui n'est faite que de
+bordures ; un fond à quelques pour cent de la couleur du thème ne se détache
+pas du beige ; et l'encre seule, qui suffit à marquer le prochain horaire de
+la journée dans une liste de lignes (`ZmanRow`), se perd dans une liste de
+cartes, où chacune porte déjà trois niveaux de texte.
+
+La prochaine fête du calendrier prend donc la couleur du thème à plein, sur
+toute sa carte, et son texte passe au blanc. C'est la seule carte colorée de
+la page, et on la trouve sans avoir à lire.
+
+Le blanc y descend en trois tons, comme sur le bandeau du profil, le seul
+autre endroit où l'on écrit sur la couleur : le nom de la fête et ses heures à
+plein, les dates et les intitulés des heures en dessous, la date hébraïque
+plus bas encore. Sans quoi tout se vaudrait et la carte ne se lirait plus.
+
+Les dates passées, elles, gardent leur effacement : s'effacer et ressortir
+sont deux moyens opposés, ils ne se gênent pas.
+
 ### Ce qui est à soi se range avec le reste
 
 Les dates qu'on ajoute au calendrier (un anniversaire, un leilouy nichmat) ne
@@ -424,6 +465,28 @@ Corollaire : pas de marque-page sur une tefila (Sidour, Sli'hot, Brahot). Un
 office ou une bénédiction se lisent du début, on n'y revient pas à un
 paragraphe comme à un verset de Tehilim ; le sommaire du menu y mène déjà à
 chaque passage.
+
+### La pastille du défilement est son propre arrêt
+
+Pendant une descente automatique, une pastille au bas de l'écran
+(`AutoScrollPill.vue`) dit que la page avance toute seule, et c'est le seul
+signe qu'elle en donne. Un appui l'ouvre sur l'allure, le suivant arrête.
+
+C'est la règle du menu de lecture, juste au-dessus : ce qu'on a touché pour
+ouvrir est ce qu'on touche pour en finir, au même endroit. L'arrêt était une
+ligne de plus dans le panneau, sous les allures, c'est-à-dire là où l'on ne
+pense pas à revenir quand on veut simplement que cela cesse. Un appui à côté
+referme le réglage sans rien arrêter : fermer et arrêter ne sont pas le même
+geste, et c'est au geste le plus large de ne rien faire.
+
+L'allure se règle à un curseur à crans, du plus lent à gauche au plus rapide à
+droite, et non dans une liste d'intitulés. Une liste demande de lire chaque
+ligne pour comprendre qu'elles forment une échelle ; un curseur le montre, et
+se pousse du pouce sans viser une ligne. Les crans sont les allures
+elles-mêmes, dessinés sous le rail à l'aplomb des positions du curseur : un
+rail lisse promettrait un réglage continu qui n'existe pas. Les deux bouts
+portent le nom des allures extrêmes, parce que ce sont elles. En hébreu, le
+rail se retourne avec la page, et le plus lent passe à droite.
 
 ### Ce qui clôt une page se lit à la fin
 
@@ -890,6 +953,10 @@ fond, qui suffit.
   secondaire (« Mon compte », pas « MON COMPTE »).
 - Playfair sur autre chose qu'un titre ou une mise en avant.
 - Une couleur codée en dur là où un jeton existe.
+- Le zoom au double appui du navigateur, sur le site comme dans l'app : le
+  pincement fait ce travail et reste entier. Le double appui, lui, est un geste
+  à nous (il lance le défilement automatique sur un texte) ; là où le navigateur
+  zoomait en même temps, les deux se disputaient la page.
 
 ## 9. Ce qui reste à faire
 

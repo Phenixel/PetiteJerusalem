@@ -1273,6 +1273,7 @@ const he: LocaleMessages = {
         slow: "איטית",
         medium: "בינונית",
         fast: "מהירה",
+        veryFast: "מהירה מאוד",
       },
       stop: "עצירת הגלילה",
       openMenu: "כוונון הגלילה האוטומטית",
