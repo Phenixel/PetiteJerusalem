@@ -87,8 +87,11 @@ function measureChrome(): void {
  * commandes est plus basse que cela, on la pose donc au-dessus sans hésiter.
  */
 const ROOM_ABOVE = 132;
-/** L'écart entre la bulle et le passage : elle le désigne sans le couvrir. */
-const GAP = 10;
+/**
+ * L'écart entre la bulle et le passage : elle se pose contre lui, juste assez
+ * détachée pour qu'on voie où finit l'une et où commence l'autre.
+ */
+const GAP = 6;
 
 function measure(): void {
   const el = readingPassage.value?.el;
@@ -118,9 +121,9 @@ watch([readingPassage, scrollFrame], measure, { immediate: true });
 watch(() => scrollFrame.value.viewport, measureChrome);
 // La phonétique change sa hauteur : elle peut lui faire changer de côté.
 watch(view, () => void nextTick(measure));
-// Et la bulle se replace une fois rendue, sa hauteur enfin connue : avant ce
-// second passage, la hauteur supposée (ROOM_ABOVE) la faisait passer sous le
-// passage alors qu'elle tenait au-dessus.
+// Et la bulle se replace une fois rendue, sa hauteur enfin connue (voir aussi
+// le montage, plus bas) : sur la hauteur supposée, elle se posait trop haut
+// au-dessus du passage, ou passait dessous alors qu'elle tenait au-dessus.
 watch(readingPassage, () => void nextTick(measure));
 
 // Un nouveau passage repart des commandes : la phonétique du précédent n'a
@@ -235,6 +238,12 @@ function onKeydown(event: KeyboardEvent): void {
 
 onMounted(() => {
   measureChrome();
+  // Le tout premier passage de la page : la bulle a été placée pendant que le
+  // composant se montait, c'est-à-dire sur sa hauteur supposée, et le suivi
+  // ci-dessus ne rejoue pas pour un passage déjà choisi. Elle se replace donc
+  // ici, la bulle rendue et sa hauteur connue. Sans ce passage, le premier
+  // passage choisi de chaque page laissait un blanc sous la bulle.
+  measure();
   document.addEventListener("pointerdown", onPointerDown);
   window.addEventListener("keydown", onKeydown);
 });

@@ -74,6 +74,28 @@ async function ouvre(choisi: ReadingPassage) {
   monte = app;
   await router.isReady();
   selectPassage(choisi);
+  // Deux tours : la bulle est rendue au premier, et se replace au second, sa
+  // hauteur enfin connue (dans un navigateur, les deux tiennent dans la même
+  // image, rien ne se voit bouger).
+  await nextTick();
+  await nextTick();
+  return host;
+}
+
+/** Monte la bulle sur un passage DÉJÀ choisi, comme le fait la première fois. */
+async function monteSeule(): Promise<HTMLElement> {
+  const i18n = createI18n({ legacy: false, locale: "fr", messages: { fr } });
+  const router: Router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: "/:chemin(.*)*", component: { render: () => null } }],
+  });
+  const host = document.createElement("div");
+  document.body.appendChild(host);
+  const app = createApp({ render: () => h(ReadingSelectionMenu) });
+  app.use(i18n).use(router);
+  app.mount(host);
+  monte = app;
+  await router.isReady();
   await nextTick();
   return host;
 }
@@ -176,6 +198,65 @@ describe("la bulle de commandes", () => {
     await nextTick();
     expect(pose).toHaveBeenCalledOnce();
     expect(readingPassage.value).toBeNull();
+  });
+});
+
+/**
+ * La place de la bulle. Elle se pose CONTRE le passage : tant qu'elle n'est
+ * pas rendue, sa hauteur n'est qu'une supposition, et le tout premier passage
+ * choisi d'une page se voyait coiffé d'une bulle flottant bien au-dessus de
+ * lui, un blanc entre les deux. C'est ce cas-là, le premier choix, que le
+ * test tient.
+ */
+describe("la place de la bulle", () => {
+  /** Hauteur de la bulle : jsdom ne met en page rien du tout. */
+  const hauteurBulle = 50;
+  const HAUT = 300;
+
+  beforeEach(() => {
+    repart();
+    Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+      configurable: true,
+      get(this: HTMLElement) {
+        return this.classList.contains("reading-bubble") ? hauteurBulle : 0;
+      },
+    });
+  });
+
+  afterEach(() => {
+    delete (HTMLElement.prototype as unknown as Record<string, unknown>).offsetHeight;
+  });
+
+  /** Un passage posé à une hauteur connue de la fenêtre. */
+  function pose(haut: number, bas: number): ReadingPassage {
+    const p = passage();
+    p.el.getBoundingClientRect = () =>
+      ({ top: haut, bottom: bas, left: 0, right: 360, width: 360, height: bas - haut }) as DOMRect;
+    return p;
+  }
+
+  const hautDeLaBulle = (host: HTMLElement): string =>
+    (host.querySelector(".bubble-anchor") as HTMLElement).style.top;
+
+  it("se pose contre le passage choisi", async () => {
+    const host = await ouvre(pose(HAUT, HAUT + 40));
+    // Au-dessus du passage, à l'écart près : sur sa hauteur SUPPOSÉE elle se
+    // serait posée bien plus haut, laissant un blanc sous elle.
+    expect(hautDeLaBulle(host)).toBe(`${HAUT - 6 - hauteurBulle}px`);
+  });
+
+  it("s'y pose aussi au tout premier passage de la page", async () => {
+    // Le cas qui était faux : la bulle n'est montée qu'au premier passage
+    // choisi (App.vue), donc elle se place pendant son propre montage, et le
+    // suivi du passage ne rejoue pas pour un choix déjà fait.
+    selectPassage(pose(HAUT, HAUT + 40));
+    const host = await monteSeule();
+    expect(hautDeLaBulle(host)).toBe(`${HAUT - 6 - hauteurBulle}px`);
+  });
+
+  it("passe sous le passage quand elle ne tient pas au-dessus", async () => {
+    const host = await ouvre(pose(20, 60));
+    expect(hautDeLaBulle(host)).toBe("66px");
   });
 });
 
