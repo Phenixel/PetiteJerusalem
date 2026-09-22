@@ -204,7 +204,7 @@ const en: LocaleMessages = {
     skip: "Skip",
     next: "Next",
     done: "Got it",
-    later: "Remind me next time I open the app",
+    later: "Later",
     stepOf: "Tip {n} of {total}",
     replay: "Replay the tips",
     replayed: "The tips will show again, page by page.",

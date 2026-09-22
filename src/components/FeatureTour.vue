@@ -22,8 +22,8 @@ import { analyticsService } from "../services/analyticsService";
  *  - un liseré de la couleur du thème autour du projecteur, qui respire ;
  *  - une bulle, au-dessus ou au-dessous selon la place, avec sa flèche vers
  *    la commande : un titre, deux phrases, « Suivant » ou « Compris », et
- *    « Passer ». Toucher le voile passe aussi. « Me le rappeler à la
- *    prochaine ouverture » la remet à plus tard sans la compter vue.
+ *    « Passer ». Toucher le voile passe aussi. « Plus tard » la remet à la
+ *    prochaine ouverture sans la compter vue.
  *
  * Un pas peut n'avoir aucune commande à éclairer (un geste à deux doigts sur
  * le texte) : la bulle se pose alors au milieu de l'écran, sans projecteur,
@@ -35,7 +35,7 @@ import { analyticsService } from "../services/analyticsService";
  * l'introduction ni sous une fenêtre ouverte, jamais devant une commande qui
  * n'est pas à l'écran, et pas avant que la page ne se soit posée (`delay`).
  * Une astuce est notée vue quand elle se ferme, ou quand on quitte la page
- * en plein milieu : seule « à la prochaine ouverture » la fait revenir.
+ * en plein milieu : seul « Plus tard » la fait revenir.
  *
  * La page qui l'accueille décrit ses pas (`steps`) et se prépare à chacun
  * par l'évènement `step` (ouvrir un panneau pour montrer ce qu'il contient),
@@ -479,20 +479,19 @@ watch(index, async () => {
         <!-- Le geste montré plutôt que décrit : une capture dessinée. -->
         <component :is="step.component" v-if="step.component" class="mt-3" />
 
-        <!-- Le bouton qui avance, puis, dessous, « à la prochaine
-             ouverture » : on n'a pas toujours le temps de lire, et l'astuce
-             reviendra, ici même. Sous le bouton et non à côté : la phrase est
-             longue, elle renvoyait le bouton à la ligne. -->
-        <div class="mt-4 flex flex-col items-end gap-2.5">
-          <button type="button" class="btn btn-primary btn-sm" @click="advance('next')">
-            {{ isLast ? t("tips.done") : t("tips.next") }}
-          </button>
+        <!-- « Plus tard », puis le bouton qui avance : on n'a pas toujours
+             le temps de lire, et l'astuce reviendra, ici même, à la
+             prochaine ouverture. -->
+        <div class="mt-4 flex items-center justify-end gap-4">
           <button
             type="button"
             class="text-sm font-medium text-text-secondary transition-colors hover:text-primary"
             @click="finish('later')"
           >
             {{ t("tips.later") }}
+          </button>
+          <button type="button" class="btn btn-primary btn-sm" @click="advance('next')">
+            {{ isLast ? t("tips.done") : t("tips.next") }}
           </button>
         </div>
       </div>

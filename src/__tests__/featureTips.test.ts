@@ -8,8 +8,8 @@ import type { FeatureTipId } from "../composables/useFeatureTips";
 /**
  * Les astuces des pages : le geste du rappel sur les horaires, le menu de
  * lecture, les gestes du texte. Quatre promesses : chacune ne se montre
- * qu'une fois par appareil et une seule par ouverture de l'app, « à la
- * prochaine ouverture » la remet à plus tard sans la compter vue, elle se
+ * qu'une fois par appareil et une seule par ouverture de l'app, « Plus
+ * tard » la remet à la prochaine ouverture sans la compter vue, elle se
  * joue devant la commande qu'elle explique et cette commande reste vivante
  * sous le projecteur, et elle se tait sur le site.
  */

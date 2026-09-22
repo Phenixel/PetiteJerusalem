@@ -32,9 +32,9 @@ import { isNativeApp } from "./useNativeApp";
  *  - une seule astuce par ouverture de l'app : quatre bulles à la suite en
  *    changeant de page, c'est un tutoriel qu'on n'a pas demandé. La suivante
  *    attend la prochaine ouverture (voir `launchSpent`) ;
- *  - « Me le rappeler à la prochaine ouverture » remet l'astuce à plus tard
- *    sans la marquer vue : on n'a pas toujours le temps de lire, et l'astuce
- *    revient, à la prochaine ouverture, sur la même page.
+ *  - « Plus tard » remet l'astuce à la prochaine ouverture sans la marquer
+ *    vue : on n'a pas toujours le temps de lire, et l'astuce revient, à
+ *    l'ouverture suivante, sur la même page.
  *
  * Une astuce peut aussi en attendre une autre (`after`) : sur une page de
  * lecture, les gestes ne s'expliquent qu'après le menu, une ouverture plus

@@ -209,7 +209,7 @@ const fr = {
     skip: "Passer",
     next: "Suivant",
     done: "Compris",
-    later: "Me le rappeler à la prochaine ouverture",
+    later: "Plus tard",
     stepOf: "Astuce {n} sur {total}",
     replay: "Revoir les astuces",
     replayed: "Les astuces se montreront à nouveau, page par page.",

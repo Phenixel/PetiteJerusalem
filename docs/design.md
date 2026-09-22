@@ -143,9 +143,9 @@ fait. Quatre règles la tiennent :
   ailleurs). Sur une même page, une astuce peut en attendre une autre : les
   gestes de lecture viennent une ouverture après le menu. « Revoir les
   astuces » (onglet À propos) les remet en jeu, page par page ;
-- **« Me le rappeler à la prochaine ouverture »** : on n'a pas toujours le
-  temps de lire. La bulle se retire sans compter l'astuce vue, et celle-ci
-  revient, sur la même page, à l'ouverture suivante ;
+- **« Plus tard »** : on n'a pas toujours le temps de lire. La bulle se
+  retire sans compter l'astuce vue, et celle-ci revient, sur la même page, à
+  l'ouverture suivante ;
 - **jamais par-dessus autre chose** : ni l'introduction, ni une fenêtre
   ouverte, ni une autre astuce, ni une commande hors de l'écran ; et elle
   attend que la page se soit posée. Sous l'introduction, elle attend qu'elle
