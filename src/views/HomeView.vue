@@ -28,6 +28,8 @@ import { useHomeAccountCta } from "../composables/useHomeAccountCta";
 import { openFeedback } from "../composables/useFeedback";
 import SiteFooter from "../components/SiteFooter.vue";
 import FeedbackNudge from "../components/FeedbackNudge.vue";
+import FeatureTour, { type TourStep } from "../components/FeatureTour.vue";
+import { tipsOffered } from "../composables/useFeatureTips";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
 import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
@@ -77,6 +79,43 @@ let unsubscribeAuth: (() => void) | null = null;
 // L'invitation à créer un compte : l'accueil la propose une fois, puis plus du
 // tout (voir useHomeAccountCta). Elle reste entière ailleurs.
 const { dismissed: accountCtaDismissed, dismissHomeAccountCta } = useHomeAccountCta();
+
+/**
+ * L'astuce de l'accueil (voir FeatureTour), juste après l'introduction : où
+ * l'app se règle à son goût (l'onglet en bas à droite : thème, police, mode
+ * sombre), et le compte, à quoi il sert, et qu'il n'est pas obligatoire. Le
+ * second pas éclaire le bouton « Créer un compte » quand l'accueil le porte
+ * encore ; sinon, la bulle se pose au milieu. Il n'est pas proposé à qui a
+ * déjà un compte.
+ */
+const homeRoot = ref<HTMLElement | null>(null);
+
+const homeTip = computed<TourStep[]>(() => {
+  const steps: TourStep[] = [
+    {
+      key: "settings",
+      icon: "settings",
+      title: t("tips.home.settings.title"),
+      text: t("tips.home.settings.text"),
+      target: () => document.querySelector<HTMLElement>('nav a[href^="/profile"]'),
+      radius: 14,
+      padding: 2,
+    },
+  ];
+  if (!user.value) {
+    const signup = () =>
+      homeRoot.value?.querySelector<HTMLElement>('a[href="/login?mode=signup"]') ?? null;
+    steps.push({
+      key: "account",
+      icon: "user",
+      title: t("tips.home.account.title"),
+      text: t("tips.home.account.text"),
+      target: signup() ? signup : undefined,
+      radius: 9999,
+    });
+  }
+  return steps;
+});
 
 function dismissAccountCta() {
   dismissHomeAccountCta();
@@ -211,7 +250,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main class="flex-1 container mx-auto px-4 py-6 flex flex-col justify-center">
+  <main ref="homeRoot" class="flex-1 container mx-auto px-4 py-6 flex flex-col justify-center">
     <!-- Le temps d'une fête : ses ornements et un souhait, en tête de page,
          connecté ou non (voir HolidayGreeting). Rien le reste de l'année. -->
     <HolidayGreeting class="mb-6 md:mb-8" />
@@ -400,6 +439,9 @@ onUnmounted(() => {
         </button>
       </p>
     </div>
+
+    <!-- L'astuce de l'accueil, une fois : les réglages, puis le compte (homeTip). -->
+    <FeatureTour v-if="tipsOffered" tip="home-settings" :steps="homeTip" />
   </main>
 
   <!-- App native : pas de footer de site (l'essentiel vit dans le profil). -->

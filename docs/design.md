@@ -107,6 +107,74 @@ bibliothèque ne propose que la dernière : la refermer la fait disparaître, el
 ne remonte pas l'historique texte par texte (chaque texte, lui, rouvre toujours
 là où on l'avait laissé).
 
+### Une astuce se joue sur la page, une fois
+
+L'introduction dit ce que l'app contient ; elle ne peut pas dire comment
+chaque écran se manie. Une ligne d'horaire qui se tire pour poser un rappel,
+le bouton rond d'une page de lecture qui ouvre le sommaire et les réglages :
+personne ne devine un geste, et une commande qu'on ne connaît pas ne sert à
+personne. Ces deux-là avaient été expliquées nulle part, et donc jamais
+employées.
+
+L'astuce se joue donc **là où la commande est**, la première fois qu'on
+arrive sur la page (`FeatureTour.vue`, `useFeatureTips`) : un voile assombrit
+la page, un projecteur découpe la commande, un liseré de la couleur du thème
+respire autour, et une bulle avec sa flèche dit en deux phrases ce qu'elle
+fait. Quatre règles la tiennent :
+
+- **la commande reste vivante sous le projecteur.** Le voile n'est pas peint
+  à cet endroit : la toucher fait ce qu'elle fait d'habitude, et l'astuce
+  passe au pas suivant ou s'en va, on a compris. Elle **montre** aussi quand
+  elle le peut : sur les horaires, un doigt dessiné (le même que dans les
+  captures de l'introduction) se pose sur la première ligne, la tire vers la
+  gauche jusqu'à sa cloche et la lâche, le temps du pas, puis le nom de la
+  ville, qui est le bouton qui la change, prend le projecteur ; sur une
+  lecture, l'astuce ouvre le panneau pour éclairer le téléchargement du
+  texte, puis le rond des réglages ;
+- **elle se passe d'un geste** : « Passer », le voile, Échap ou le retour
+  Android. « Suivant » ou « Compris » la mènent au bout. Jamais plus de deux
+  ou trois pas. Un pas sans commande à éclairer (pincer le texte, le double
+  appui) pose la bulle au milieu et **montre** le geste dans une capture
+  dessinée (`src/components/mock`), la même que dans l'introduction ;
+- **une fois par appareil, et une seule par ouverture de l'app.** Close, elle
+  est notée vue (dans les deux stockages, voir docs/app-native.md), même si
+  l'on quitte la page au milieu : une astuce qui revient n'est plus une aide.
+  Et quatre bulles à la suite en changeant de page seraient un tutoriel
+  qu'on n'a pas demandé : la suivante attend la prochaine ouverture (une
+  relance de l'app, ou un retour au premier plan après une demi-heure
+  ailleurs). Sur une même page, une astuce peut en attendre une autre : les
+  gestes de lecture viennent une ouverture après le menu. « Revoir les
+  astuces » (onglet À propos) les remet en jeu, page par page ;
+- **« Plus tard »** : on n'a pas toujours le temps de lire. La bulle se
+  retire sans compter l'astuce vue, et celle-ci revient, sur la même page, à
+  l'ouverture suivante ;
+- **jamais par-dessus autre chose** : ni l'introduction, ni une fenêtre
+  ouverte, ni une autre astuce, ni une commande hors de l'écran ; et elle
+  attend que la page se soit posée. Sous l'introduction, elle attend qu'elle
+  se ferme : c'est le cas de l'astuce de l'accueil, à la première ouverture.
+
+L'accueil porte la première : où l'app se règle à son goût (l'onglet en bas
+à droite, thème, police, mode sombre), puis le compte, ce qu'il apporte
+(partager des lectures, la lecture du jour, ses réglages sur un autre
+appareil) et, avant tout, qu'il n'est pas obligatoire. Elle éclaire le bouton
+« Créer un compte » tant que l'accueil le porte, et ne se propose pas à qui a
+déjà un compte.
+
+Les autres, chacune sur sa page : les horaires (le rappel d'un geste, le
+lieu), le calendrier (ses propres dates, qui reviennent sur l'accueil et se
+rappellent), la lecture (le menu, lire hors ligne, les réglages ; puis les
+gestes, une ouverture plus tard), le partage de lectures (créer une chaîne,
+en rejoindre une, la première de la liste sous le projecteur) et la lecture
+du jour (composer sa liste, la cloche du rappel). Une astuce ne présente que
+ce que la page propose : pas de rappel sur le site, pas de téléchargement
+quand le texte n'en a pas.
+
+App native seulement, comme l'introduction : un visiteur du site arrive par
+une page précise et une bulle en travers de ce qu'il vient lire serait une
+gêne. `?tips` dans l'adresse les force partout où la commande existe (ou
+`?tips=reading-gestures` pour une seule), pour les montrer et les essayer sur
+les canaux de preview.
+
 ### Deux pages, un jeu d'onglets
 
 La barre du bas de l'app tient quatre onglets, pas un de plus. Des pages qui

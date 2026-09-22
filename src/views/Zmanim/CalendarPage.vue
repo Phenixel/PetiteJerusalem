@@ -32,6 +32,8 @@ import {
   type OccasionKind,
 } from "../../services/hebrewOccasions";
 import OccasionsModal from "./OccasionsModal.vue";
+import FeatureTour, { type TourStep } from "../../components/FeatureTour.vue";
+import { tipsOffered } from "../../composables/useFeatureTips";
 import type { IconName } from "../../components/icons/registry";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
 import { dateTimeFormat } from "../../services/intlCache";
@@ -101,6 +103,24 @@ const entries = computed(() =>
  */
 const { occasions } = useHebrewOccasions();
 const occasionsOpen = ref(false);
+
+/**
+ * L'astuce du calendrier (voir FeatureTour) : ses propres dates. Le bouton
+ * se voit, mais peu de gens savent ce qu'une date posée là fait ensuite
+ * (elle revient sur l'accueil la semaine venue, et l'app la rappelle).
+ */
+const occasionsButton = ref<HTMLElement | null>(null);
+
+const occasionsTip = computed<TourStep[]>(() => [
+  {
+    key: "occasions",
+    icon: "cake",
+    title: t("tips.calendar.occasions.title"),
+    text: t("tips.calendar.occasions.text"),
+    target: () => occasionsButton.value,
+    radius: 9999,
+  },
+]);
 
 const KIND_ICONS: Record<OccasionKind, IconName> = {
   yahrzeit: "candle",
@@ -347,7 +367,12 @@ onMounted(() => {
     <!-- Ses propres dates : anniversaires, leilouy nichmat. Elles se posent
          ici parce qu'elles se lisent ici, au milieu des fêtes de l'année. -->
     <div class="mt-4 flex justify-center">
-      <button type="button" class="btn btn-soft" @click="occasionsOpen = true">
+      <button
+        ref="occasionsButton"
+        type="button"
+        class="btn btn-soft"
+        @click="occasionsOpen = true"
+      >
         <AppIcon name="calendar" :size="16" class="text-primary" />
         {{ t("occasions.open") }}
       </button>
@@ -475,5 +500,8 @@ onMounted(() => {
     </p>
 
     <OccasionsModal v-model:show="occasionsOpen" :today="todayHd" />
+
+    <!-- L'astuce des dates à soi, une fois (occasionsTip). -->
+    <FeatureTour v-if="tipsOffered" tip="calendar-occasions" :steps="occasionsTip" />
   </main>
 </template>
