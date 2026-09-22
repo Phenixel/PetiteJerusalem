@@ -49,6 +49,9 @@ import {
   NAANOUIM,
   RUBRIC_CHEHEHIYANOU,
   RUBRIC_NAANOUIM,
+  RUBRIC_NAANOUIM_ANA,
+  RUBRIC_NAANOUIM_HODOU,
+  RUBRIC_NAANOUIM_HODOU_FIN,
 } from "./lib/loulav.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -281,6 +284,9 @@ function buildLine(spec, segs) {
   if (spec.rubric) line.rubric = spec.rubric;
   if (spec.parts) {
     line.he = spec.parts.flatMap((part) => partRuns(part, segs));
+    // Une ligne à fragments se redit comme une autre : « Ana Hachem hochia
+    // na » porte sa didascalie et son « deux fois ».
+    if (spec.repeat) line.repeat = spec.repeat;
     if (spec.when) line.when = spec.when;
     if (spec.unless) line.unless = spec.unless;
     if (spec.muted) line.muted = true;
@@ -2665,15 +2671,32 @@ function chaharitRecipe() {
             rubric: R("On saute « אָהַבְתִּי » :", "Skip “Ahavti”:", "מדלגים « אָהַבְתִּי »:"),
           },
           { seg: 13 },
-          { seg: 14 },
+          // Le premier « Hodou » : c'est là que le loulav s'agite, un côté
+          // par mot. La didascalie n'entre dans le paragraphe que les jours
+          // où on le porte ; le verset y reste sans condition.
+          { parts: [{ rubric: RUBRIC_NAANOUIM_HODOU, when: "loulav" }, { seg: 14 }] },
           { seg: 15, tight: true },
           { seg: 16, tight: true },
           { seg: 17, tight: true },
           { seg: 18 },
           { seg: 19, mode: "full" },
-          { seg: 20, repeat: 2 },
+          // « Ana Hachem hochia na » : une syllabe par côté, puis on se
+          // tourne vers la droite et l'on recommence.
+          {
+            parts: [{ rubric: RUBRIC_NAANOUIM_ANA, when: "loulav" }, { seg: 20 }],
+            repeat: 2,
+          },
           { seg: 21, repeat: 2, tight: true },
-          { seg: 22, mode: "full" },
+          // Le « Hodou » de la fin, où l'on agite une dernière fois : la
+          // didascalie se glisse devant lui, au milieu du paragraphe, et une
+          // seule fois, bien que le verset se redise.
+          {
+            parts: [
+              { seg: 22, mode: "full", until: "הודו ליהוה כי־טוב" },
+              { rubric: RUBRIC_NAANOUIM_HODOU_FIN, when: "loulav" },
+              { seg: 22, mode: "full", from: "הודו ליהוה כי־טוב" },
+            ],
+          },
           // « Yehalelou'ha », la bénédiction qui ferme le Hallel. Elle ne se
           // dit que les jours où on le dit en entier : la source l'écrit en
           // toutes lettres au-dessus d'elle (« בימים שאין גומרים את ההלל אין

@@ -803,6 +803,38 @@ describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
     expect(cotes.en).toContain("south, north, east, up, down, west");
   });
 
+  it("marque les na'anou'im du Hallel aux trois endroits du sidour", () => {
+    const hallel = blocks.find((b) => b.label === "Hallel")!;
+    // Les didascalies sont glissées dans le fil du texte, et ne paraissent
+    // que les jours où l'on porte le loulav.
+    const didascalies = (hallel.paragraphs ?? []).flatMap((p) =>
+      p.runs.filter((run) => run.kind === "rubric"),
+    );
+    expect(didascalies).toHaveLength(3);
+    for (const run of didascalies) expect(run.when).toBe("loulav");
+    // Le premier « Hodou », « Ana Hachem hochia na », et le « Hodou » de la
+    // fin, une seule fois bien que le verset se redise.
+    const paragraphes = (hallel.paragraphs ?? []).filter((p) =>
+      p.runs.some((run) => run.kind === "rubric"),
+    );
+    for (const paragraphe of paragraphes) {
+      const hebreu = paragraphe.runs.filter((run) => run.kind === "he");
+      // Tout paragraphe garde de l'hébreu sans condition : une version qui
+      // ignore « loulav » perd la consigne, jamais le verset.
+      expect(hebreu.some((run) => !run.when && !run.unless)).toBe(true);
+    }
+    // sansSignes retire aussi le maqaf : « כי־טוב » s'y lit « כיטוב ».
+    const hebreuDe = (index: number) =>
+      sansSignes(paragraphes[index].runs.map((r) => (r.kind === "he" ? r.text : "")).join(""));
+    expect(hebreuDe(0)).toContain("הודו ליהוה כיטוב");
+    expect(paragraphes[1].repeat).toBe(2);
+    const fin = paragraphes[2].runs;
+    const rang = fin.findIndex((run) => run.kind === "rubric");
+    expect(rang).toBeGreaterThan(0);
+    const suivant = fin[rang + 1];
+    expect(sansSignes(suivant.kind === "he" ? suivant.text : "")).toMatch(/^הודו ליהוה כיטוב/);
+  });
+
   it("ferme le Hallel entier par Yehalelou'ha, jamais l'abrégé", () => {
     const hallel = brut.find((b) => b.label === "Hallel")!;
     const lignes = hallel.lines as { when?: string; he?: string }[];
