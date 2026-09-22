@@ -2679,13 +2679,14 @@ function chaharitRecipe() {
           { seg: 16, tight: true },
           { seg: 17, tight: true },
           { seg: 18 },
-          { seg: 19, mode: "full" },
           // « Ana Hachem hochia na » : une syllabe par côté, puis on se
-          // tourne vers la droite et l'on recommence.
+          // tourne vers la droite et l'on recommence. La consigne ferme le
+          // paragraphe d'avant plutôt que d'ouvrir le sien : celui-ci se dit
+          // deux fois, et elle se lirait deux fois avec lui.
           {
-            parts: [{ rubric: RUBRIC_NAANOUIM_ANA, when: "loulav" }, { seg: 20 }],
-            repeat: 2,
+            parts: [{ seg: 19, mode: "full" }, { rubric: RUBRIC_NAANOUIM_ANA, when: "loulav" }],
           },
+          { seg: 20, repeat: 2 },
           { seg: 21, repeat: 2, tight: true },
           // Le « Hodou » de la fin, où l'on agite une dernière fois : la
           // didascalie se glisse devant lui, au milieu du paragraphe, et une
