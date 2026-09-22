@@ -128,7 +128,7 @@ export type ZmanimStrings = {
   festivalH1: (label: string) => string;
   festivalWhenTitle: (label: string) => string;
   festivalHead: [string, string, string];
-  festivalSplitNote: (label: string) => string;
+  festivalCholHamoedNote: (label: string) => string;
   festivalTimesNote: (links: ZmanimLinks) => string;
   festivalNoTimesNote: (links: ZmanimLinks) => string;
   festivalAroundTitle: (label: string) => string;
@@ -137,6 +137,20 @@ export type ZmanimStrings = {
   faqWhenFestival: (
     label: string,
     year: number,
+    start: string,
+    startTime: string,
+    end: string,
+    endTime: string,
+    city: string,
+  ) => Faq;
+  /**
+   * « Quand tombe X ? » pour une fête à 'Hol haMoed : la plage donne la fête
+   * entière, l'entrée et la sortie celles de ses seuls jours de Yom Tov.
+   */
+  faqWhenFestivalDays: (
+    label: string,
+    year: number,
+    when: string,
     start: string,
     startTime: string,
     end: string,
@@ -335,11 +349,12 @@ const FR: ZmanimStrings = {
   festivalH1: (label) => `${label} : dates, entrée et sortie`,
   festivalWhenTitle: (label) => `Quand tombe ${label} ?`,
   festivalHead: ["Année", "Dates", "Date hébraïque"],
-  festivalSplitNote: (
+  festivalCholHamoedNote: (
     label,
-  ) => `${label} compte deux blocs de fête, séparés par le 'Hol haMoed (les jours
-      intermédiaires, où le travail est permis) : l'heure d'entrée est celle du premier jour, la
-      sortie celle du dernier.`,
+  ) => `Les dates ci-dessus couvrent ${label} en entier. Les jours où le travail
+      est interdit (Yom Tov) sont ceux que l'heure d'entrée et l'heure de sortie encadrent ; les
+      autres jours de la fête sont le 'Hol haMoed, où le travail est permis et où la fête
+      continue.`,
   festivalTimesNote: (
     links,
   ) => `Les heures d'entrée et de sortie sont calculées pour Paris. Pour votre ville,
@@ -361,6 +376,10 @@ const FR: ZmanimStrings = {
   faqWhenFestival: (label, year, start, startTime, end, endTime, city) => ({
     q: `Quand tombe ${label} ${year} ?`,
     a: `${label} ${year} commence le ${start} au soir (entrée à ${startTime} à ${city}) et se termine le ${end} à la tombée de la nuit (${endTime} à ${city}).`,
+  }),
+  faqWhenFestivalDays: (label, year, when, start, startTime, end, endTime, city) => ({
+    q: `Quand tombe ${label} ${year} ?`,
+    a: `${label} ${year} a lieu ${when}. Son entrée est le ${start} au soir (allumage à ${startTime} à ${city}) ; ses jours de Yom Tov, où le travail est interdit, se terminent le ${end} à la tombée de la nuit (${endTime} à ${city}). Les autres jours de la fête sont le 'Hol haMoed, où le travail est permis.`,
   }),
   faqWhenHanukkah: (label, year, eve, range) => ({
     q: `Quand tombe ${label} ${year} ?`,
@@ -595,11 +614,11 @@ const EN: ZmanimStrings = {
   festivalH1: (label) => `${label}: dates, start and end`,
   festivalWhenTitle: (label) => `When is ${label}?`,
   festivalHead: ["Year", "Dates", "Hebrew date"],
-  festivalSplitNote: (
+  festivalCholHamoedNote: (
     label,
-  ) => `${label} has two blocks of festival days, separated by Chol HaMoed (the
-      intermediate days, on which work is allowed): the start time is that of the first day, the
-      end time that of the last.`,
+  ) => `The dates above cover the whole of ${label}. The days on which work is
+      forbidden (Yom Tov) are the ones the start and end times frame; the remaining days of the
+      festival are Chol HaMoed, on which work is allowed and the festival carries on.`,
   festivalTimesNote: (
     links,
   ) => `The start and end times are computed for Paris. For your own city, see
@@ -621,6 +640,10 @@ const EN: ZmanimStrings = {
   faqWhenFestival: (label, year, start, startTime, end, endTime, city) => ({
     q: `When is ${label} ${year}?`,
     a: `${label} ${year} begins on the evening of ${start} (candle lighting at ${startTime} in ${city}) and ends on ${end} at nightfall (${endTime} in ${city}).`,
+  }),
+  faqWhenFestivalDays: (label, year, when, start, startTime, end, endTime, city) => ({
+    q: `When is ${label} ${year}?`,
+    a: `${label} ${year} runs ${when}. It begins on the evening of ${start} (candle lighting at ${startTime} in ${city}); its Yom Tov days, on which work is forbidden, end on ${end} at nightfall (${endTime} in ${city}). The remaining days of the festival are Chol HaMoed, on which work is allowed.`,
   }),
   faqWhenHanukkah: (label, year, eve, range) => ({
     q: `When is ${label} ${year}?`,
@@ -848,8 +871,9 @@ const HE: ZmanimStrings = {
   festivalH1: (label) => `${label}: תאריכים, כניסה ויציאה`,
   festivalWhenTitle: (label) => `מתי חל ${label}?`,
   festivalHead: ["שנה", "תאריכים", "תאריך עברי"],
-  festivalSplitNote: (label) => `${label} כולל שני חלקים של ימים טובים, ובאמצע חול המועד (הימים שבהם
-      המלאכה מותרת): זמן הכניסה הוא של היום הראשון, וזמן היציאה של האחרון.`,
+  festivalCholHamoedNote: (label) => `התאריכים שלמעלה מכסים את ${label} כולו. הימים שבהם המלאכה
+      אסורה (ימים טובים) הם אלה שזמני הכניסה והיציאה תוחמים; שאר ימי החג הם חול המועד, שבהם
+      המלאכה מותרת והחג נמשך.`,
   festivalTimesNote: (links) => `זמני הכניסה והיציאה מחושבים לפריז. לעיר שלכם, ראו את
       <a href="${links.horaires}">זמני השבת עיר אחר עיר</a>: האפליקציה מחשבת אותם מחדש לנקודות
       הציון שלכם, גם ללא חיבור לאינטרנט.`,
@@ -866,6 +890,10 @@ const HE: ZmanimStrings = {
   faqWhenFestival: (label, year, start, startTime, end, endTime, city) => ({
     q: `מתי חל ${label} ${year}?`,
     a: `${label} ${year} מתחיל בערב ${start} (כניסה בשעה ${startTime} ${hePrefix("ב", city)}) ומסתיים ב${end} בצאת הכוכבים (${endTime} ${hePrefix("ב", city)}).`,
+  }),
+  faqWhenFestivalDays: (label, year, when, start, startTime, end, endTime, city) => ({
+    q: `מתי חל ${label} ${year}?`,
+    a: `${label} ${year} חל ${when}. הכניסה היא בערב ${start} (הדלקה בשעה ${startTime} ${hePrefix("ב", city)}); ימי היום טוב שלו, שבהם המלאכה אסורה, מסתיימים ב${end} בצאת הכוכבים (${endTime} ${hePrefix("ב", city)}). שאר ימי החג הם חול המועד, שבהם המלאכה מותרת.`,
   }),
   faqWhenHanukkah: (label, year, eve, range) => ({
     q: `מתי חל ${label} ${year}?`,

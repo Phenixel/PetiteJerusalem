@@ -52,6 +52,7 @@ import {
   formatHebrewDate,
   formatZmanTime,
   hebrewDayOf,
+  holidayNamesOn,
   nightfallOf,
   placeFromCity,
   restPeriodAt,
@@ -748,6 +749,57 @@ function blocksOf(entries: CalendarEntry[], def: SeoFestival, locale: SeoLocale)
   return entriesOf(entries, def, locale).map((entry) => festivalBlock(entry, def, locale));
 }
 
+/** Garde-fou du parcours jour par jour : aucune fête ne dure dix jours. */
+const MAX_FESTIVAL_DAYS = 10;
+
+/** Ce jour porte-t-il cette fête, Yom Tov ou 'Hol haMoed ? */
+function carriesFestival(day: HDate, def: SeoFestival, locale: SeoLocale): boolean {
+  const wanted = def.names[locale].split(" · ");
+  return holidayNamesOn(DEFAULT_PLACE, day, locale).some((name) =>
+    wanted.includes(cleanName(name)),
+  );
+}
+
+/**
+ * La fête entière, 'Hol haMoed compris : du 15 au 21 Tichri pour Souccot, du
+ * 15 au 22 Nissan pour Pessah.
+ *
+ * Les blocs, eux, ne portent que les jours de Yom Tov : ce sont les seuls à
+ * avoir une entrée et une sortie, et c'est à eux que le calendrier de
+ * l'année se tient. Mais la page répond à « quand tombe Souccot ? », et
+ * Souccot dure sept jours : s'en tenir aux blocs faisait dire à la page
+ * « du 26 au 27 septembre » juste sous un chapô annonçant « sept jours
+ * durant ». On repart donc des blocs et on s'étend de part et d'autre tant
+ * que le jour porte encore le nom de la fête.
+ *
+ * Les fêtes sans 'Hol haMoed (Roch Hachana, les jeûnes, Pourim) rendent
+ * exactement leurs blocs : le parcours s'arrête au premier jour qui ne les
+ * porte pas.
+ */
+function fullSpanOf(blocks: FestivalBlock[], def: SeoFestival, locale: SeoLocale): DaySpan | null {
+  const span = spanOf(blocks);
+  if (!span) return null;
+  let first = span.first.first;
+  for (let i = 0; i < MAX_FESTIVAL_DAYS && carriesFestival(first.prev(), def, locale); i++) {
+    first = first.prev();
+  }
+  let last = span.last.last;
+  for (let i = 0; i < MAX_FESTIVAL_DAYS && carriesFestival(last.next(), def, locale); i++) {
+    last = last.next();
+  }
+  return { first, last };
+}
+
+/** La fête a-t-elle des jours intermédiaires, hors de ses Yom Tov ? */
+function hasCholHamoed(blocks: FestivalBlock[], full: DaySpan | null): boolean {
+  if (!full) return false;
+  const yomTovDays = blocks.reduce(
+    (total, block) => total + (block.last.abs() - block.first.abs() + 1),
+    0,
+  );
+  return full.last.abs() - full.first.abs() + 1 > yomTovDays;
+}
+
 /** Des jours qui se suivent : un bloc de repos, ou un bloc de fête réduit. */
 type DaySpan = { first: HDate; last: HDate };
 
@@ -765,18 +817,6 @@ function spanOf<T extends DaySpan>(entries: T[]): { first: T; last: T } | null {
   return { first: entries[0], last: entries[entries.length - 1] };
 }
 
-/** « du jeudi 2 au jeudi 9 avril 2026 » pour toute la fête, blocs compris. */
-function spanRange(entries: DaySpan[], s: ZmanimStrings): string {
-  const span = spanOf(entries);
-  if (!span) return "";
-  if (span.first.first.abs() === span.last.last.abs()) {
-    return civilDayYear(span.first.first.greg(), s);
-  }
-  const from = span.first.first.greg();
-  const to = span.last.last.greg();
-  return s.range(civilRangeStart(from, to, s), civilDayYear(to, s));
-}
-
 /** La question-réponse « Quand tombe X ? » d'une fête, une année donnée. */
 function festivalFaq(
   def: SeoFestival,
@@ -785,27 +825,29 @@ function festivalFaq(
   s: ZmanimStrings,
 ): Faq | null {
   const span = spanOf(blocks);
-  if (!span) return null;
+  const full = fullSpanOf(blocks, def, locale);
+  if (!span || !full) return null;
   const label = def.labels[locale];
-  const year = span.first.first.greg().getFullYear();
+  const year = full.first.greg().getFullYear();
   const hubCity = cityName(HUB_CITY_NAME, locale);
+  // La fête entière, jours intermédiaires compris : c'est la réponse à
+  // « quand tombe Souccot ? ». L'entrée et la sortie, elles, restent celles
+  // des jours de Yom Tov, les seuls à en avoir.
+  const when = entryRange(full, s);
   if (span.first.start && span.last.end) {
-    return s.faqWhenFestival(
-      label,
-      year,
-      instantDayYear(span.first.start, TZ, s),
-      clock(span.first.start, TZ, locale),
-      instantDayYear(span.last.end, TZ, s),
-      clock(span.last.end, TZ, locale),
-      hubCity,
-    );
+    const startDay = instantDayYear(span.first.start, TZ, s);
+    const startTime = clock(span.first.start, TZ, locale);
+    const endDay = instantDayYear(span.last.end, TZ, s);
+    const endTime = clock(span.last.end, TZ, locale);
+    return hasCholHamoed(blocks, full)
+      ? s.faqWhenFestivalDays(label, year, when, startDay, startTime, endDay, endTime, hubCity)
+      : s.faqWhenFestival(label, year, startDay, startTime, endDay, endTime, hubCity);
   }
   if (def.slugs.fr === "hanouka") {
-    const eve = new Date(span.first.first.greg());
+    const eve = new Date(full.first.greg());
     eve.setDate(eve.getDate() - 1);
-    return s.faqWhenHanukkah(label, year, civilDayYear(eve, s), spanRange(blocks, s));
+    return s.faqWhenHanukkah(label, year, civilDayYear(eve, s), when);
   }
-  const when = spanRange(blocks, s);
   if (def.fast) return s.faqWhenFast(label, year, when, def.fast);
   return s.faqWhenPlain(label, year, when);
 }
@@ -975,14 +1017,16 @@ function buildFestivalPage(
   // Un Yom Tov a une entrée et une sortie ; un jeûne ou une fête de travail
   // permis n'en a pas, et deux colonnes vides valent moins que pas de colonne.
   const hasTimes = perYear.some((blocks) => blocks.some((block) => block.start && block.end));
-  // Pessah compte deux blocs de fête séparés par le 'Hol haMoed : l'entrée est
-  // celle du premier jour, la sortie celle du dernier.
-  const splitFestival = perYear.some((blocks) => blocks.length > 1);
+  // La fête entière, jours intermédiaires compris : c'est elle que la colonne
+  // des dates annonce, l'entrée et la sortie restant celles des Yom Tov.
+  const fullPerYear = perYear.map((blocks) => fullSpanOf(blocks, def, locale));
+  const intermediate = perYear.some((blocks, index) => hasCholHamoed(blocks, fullPerYear[index]));
 
   const rows = perYear
-    .map((blocks) => {
+    .map((blocks, index) => {
       const span = spanOf(blocks);
-      if (!span) return "";
+      const full = fullPerYear[index];
+      if (!span || !full) return "";
       const times = hasTimes
         ? `
             <td>${span.first.start ? instantCell(span.first.start, TZ, locale, s) : ""}</td>
@@ -990,9 +1034,9 @@ function buildFestivalPage(
         : "";
       return `
           <tr>
-            <td>${span.first.first.greg().getFullYear()}</td>
-            <td>${spanRange(blocks, s)}</td>
-            <td>${hebrewRange(span.first.first, span.last.last, locale, s)}</td>${times}
+            <td>${full.first.greg().getFullYear()}</td>
+            <td>${entryRange(full, s)}</td>
+            <td>${hebrewRange(full.first, full.last, locale, s)}</td>${times}
           </tr>`;
     })
     .join("");
@@ -1004,8 +1048,7 @@ function buildFestivalPage(
   faq.push(s.faqFestivalWork(label, hasTimes, Boolean(def.fast)));
   faq.push(s.faqFestivalCity(label));
 
-  const span = spanOf(perYear[0]);
-  const fromYear = span ? span.first.first.greg().getFullYear() : 0;
+  const fromYear = fullPerYear[0] ? fullPerYear[0].first.greg().getFullYear() : 0;
   const head = hasTimes
     ? [...s.festivalHead, s.calendarHead[2], s.calendarHead[3]]
     : [...s.festivalHead];
@@ -1028,7 +1071,7 @@ function buildFestivalPage(
 ${section(
   s.festivalWhenTitle(label),
   `${table(head, rows)}
-      ${splitFestival ? `<p>${s.festivalSplitNote(label)}</p>` : ""}
+      ${intermediate ? `<p>${s.festivalCholHamoedNote(label)}</p>` : ""}
       <p>${hasTimes ? s.festivalTimesNote(links) : s.festivalNoTimesNote(links)}</p>`,
 )}
 ${section(s.festivalAroundTitle(label), s.festivalAroundHtml(links))}

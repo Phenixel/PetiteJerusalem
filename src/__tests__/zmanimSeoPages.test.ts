@@ -293,6 +293,29 @@ describe("zmanimSeoPages pages par fête", () => {
     expect(pessah.bodyHtml).not.toContain("Quand tombe Pessah 2026");
   });
 
+  it("date la fête entière, 'Hol haMoed compris", () => {
+    // Souccot dure sept jours, du 15 au 21 Tichri. La page n'en donnait que
+    // les deux premiers (les seuls Yom Tov), sous un chapô annonçant « sept
+    // jours durant » : le tableau contredisait son propre texte sur la
+    // requête même à laquelle il répond.
+    const souccot = pages.find((p) => p.path === "/calendrier/souccot")!;
+    expect(souccot.bodyHtml).toContain("du samedi 26 septembre au vendredi 2 octobre 2026");
+    expect(souccot.bodyHtml).toContain("du 15 au 21 Tichri 5787");
+    // L'entrée et la sortie restent celles des jours de Yom Tov : ce sont les
+    // seuls à en avoir, le 'Hol haMoed est ouvrable.
+    expect(souccot.bodyHtml).toContain("dim. 27 sept. à 20:25");
+
+    // Pessah a ses Yom Tov aux deux bouts, le 'Hol haMoed au milieu : la
+    // plage couvre les huit jours, du 15 au 22 Nissan.
+    const pessahDays = pages.find((p) => p.path === "/calendrier/pessah")!;
+    expect(pessahDays.bodyHtml).toContain("du jeudi 22 au jeudi 29 avril 2027");
+    expect(pessahDays.bodyHtml).toContain("du 15 au 22 Nissan 5787");
+
+    // Une fête sans jour intermédiaire n'a pas la note, et ne s'étale pas.
+    const rochHachana = pages.find((p) => p.path === "/calendrier/roch-hachana")!;
+    expect(rochHachana.bodyHtml).not.toContain("'Hol haMoed");
+  });
+
   it("date la fête de ses propres jours, pas du bloc de repos qui l'englobe", () => {
     // Chavouot 5789 tombe les 6 et 7 Sivan (dimanche 20 et lundi 21 mai 2029) ;
     // le samedi 19 est le Chabbat, réuni à la fête dans le même bloc de repos.
