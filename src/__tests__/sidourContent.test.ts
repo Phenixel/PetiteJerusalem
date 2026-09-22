@@ -827,7 +827,11 @@ describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
     const hebreuDe = (index: number) =>
       sansSignes(paragraphes[index].runs.map((r) => (r.kind === "he" ? r.text : "")).join(""));
     expect(hebreuDe(0)).toContain("הודו ליהוה כיטוב");
-    expect(paragraphes[1].repeat).toBe(2);
+    // Celle de « Ana » ferme le paragraphe d'avant : le sien se dit deux
+    // fois, et elle s'y lirait deux fois.
+    const ana = (hallel.paragraphs ?? [])[(hallel.paragraphs ?? []).indexOf(paragraphes[1]) + 1];
+    expect(ana.repeat).toBe(2);
+    expect(hebreuDe(1)).toContain("זההיום עשה יהוה");
     const fin = paragraphes[2].runs;
     const rang = fin.findIndex((run) => run.kind === "rubric");
     expect(rang).toBeGreaterThan(0);
