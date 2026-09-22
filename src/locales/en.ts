@@ -218,6 +218,12 @@ const en: LocaleMessages = {
         text: "Nothing requires one: everything can be read without it. It lets you share readings with others, follow your daily reading and find your settings again on another device.",
       },
     },
+    calendar: {
+      occasions: {
+        title: "Your dates, in the calendar",
+        text: "A birthday, a leilouy nichmat: the date takes its place in the year, on its day, comes back on the home page the week it arrives, and the app reminds you.",
+      },
+    },
     zmanim: {
       reminder: {
         title: "A reminder in one swipe",
@@ -237,6 +243,10 @@ const en: LocaleMessages = {
         title: "Reading settings",
         text: "The second button holds auto-scroll, sharing the text and the form to write to us.",
       },
+      download: {
+        title: "Read offline",
+        text: "This command downloads the text to the device: it then opens without a network. A tick says it is there.",
+      },
       pinch: {
         title: "Pinch to size the text",
         text: "Spreading two fingers enlarges the text you read, and only it. The A− / A+ buttons of the menu do the same.",
@@ -248,6 +258,26 @@ const en: LocaleMessages = {
       bookmark: {
         title: "A bookmark on a verse",
         text: "Tap a verse to bookmark it. You will find it again at the top of the text, and at the top of the library.",
+      },
+    },
+    share: {
+      create: {
+        title: "Read together",
+        text: "Split a text between several people: the Tehilim, a tractate, the whole Shas. Each one reserves a part, reads it, marks it read.",
+      },
+      join: {
+        title: "Join a reading",
+        text: "Open a session, reserve a chapter, or let the draw choose for you. Even without an account.",
+      },
+    },
+    daily: {
+      compose: {
+        title: "Your daily reading",
+        text: "Build your list: chapters of Tehilim, a mishna, the week's parasha. It waits for you every day, and gets ticked as you read.",
+      },
+      reminder: {
+        title: "A reminder every day",
+        text: "The bell reminds you of your reading, at the time you choose, or at nightfall.",
       },
     },
   },

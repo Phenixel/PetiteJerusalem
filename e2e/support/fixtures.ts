@@ -73,8 +73,11 @@ export const test = base.extend<Options & Fixtures>({
             JSON.stringify([
               "home-settings",
               "zmanim-reminder",
+              "calendar-occasions",
               "reading-menu",
               "reading-gestures",
+              "share-reading",
+              "daily-reading",
             ]),
           );
         } catch {

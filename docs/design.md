@@ -125,10 +125,12 @@ fait. Quatre règles la tiennent :
 - **la commande reste vivante sous le projecteur.** Le voile n'est pas peint
   à cet endroit : la toucher fait ce qu'elle fait d'habitude, et l'astuce
   passe au pas suivant ou s'en va, on a compris. Elle **montre** aussi quand
-  elle le peut : sur les horaires, la première ligne se tire toute seule sur
-  sa cloche et revient, le temps du pas, puis le nom de la ville, qui est le
-  bouton qui la change, prend le projecteur ; sur une lecture, le second pas
-  ouvre le panneau pour éclairer le rond des réglages ;
+  elle le peut : sur les horaires, un doigt dessiné (le même que dans les
+  captures de l'introduction) se pose sur la première ligne, la tire vers la
+  gauche jusqu'à sa cloche et la lâche, le temps du pas, puis le nom de la
+  ville, qui est le bouton qui la change, prend le projecteur ; sur une
+  lecture, l'astuce ouvre le panneau pour éclairer le téléchargement du
+  texte, puis le rond des réglages ;
 - **elle se passe d'un geste** : « Passer », le voile, Échap ou le retour
   Android. « Suivant » ou « Compris » la mènent au bout. Jamais plus de deux
   ou trois pas. Un pas sans commande à éclairer (pincer le texte, le double
@@ -157,6 +159,15 @@ L'accueil porte la première : où l'app se règle à son goût (l'onglet en bas
 appareil) et, avant tout, qu'il n'est pas obligatoire. Elle éclaire le bouton
 « Créer un compte » tant que l'accueil le porte, et ne se propose pas à qui a
 déjà un compte.
+
+Les autres, chacune sur sa page : les horaires (le rappel d'un geste, le
+lieu), le calendrier (ses propres dates, qui reviennent sur l'accueil et se
+rappellent), la lecture (le menu, lire hors ligne, les réglages ; puis les
+gestes, une ouverture plus tard), le partage de lectures (créer une chaîne,
+en rejoindre une, la première de la liste sous le projecteur) et la lecture
+du jour (composer sa liste, la cloche du rappel). Une astuce ne présente que
+ce que la page propose : pas de rappel sur le site, pas de téléchargement
+quand le texte n'en a pas.
 
 App native seulement, comme l'introduction : un visiteur du site arrive par
 une page précise et une bulle en travers de ce qu'il vient lire serait une

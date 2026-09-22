@@ -223,6 +223,12 @@ const fr = {
         text: "Rien n'oblige à en créer un : tout se lit sans. Il sert à partager des lectures à plusieurs, suivre votre lecture quotidienne et retrouver vos réglages sur un autre appareil.",
       },
     },
+    calendar: {
+      occasions: {
+        title: "Vos dates, dans le calendrier",
+        text: "Un anniversaire, un leilouy nichmat : la date se range dans l'année, à son jour, revient sur l'accueil la semaine venue, et l'app vous la rappelle.",
+      },
+    },
     zmanim: {
       reminder: {
         title: "Un rappel d'un geste",
@@ -242,6 +248,10 @@ const fr = {
         title: "Les réglages de lecture",
         text: "Le second rond porte le défilement automatique, le partage du texte et le formulaire pour nous écrire.",
       },
+      download: {
+        title: "Lire hors ligne",
+        text: "Cette commande télécharge le texte sur l'appareil : il s'ouvre ensuite sans réseau. Une coche dit qu'il y est.",
+      },
       pinch: {
         title: "Pincez pour la taille du texte",
         text: "Deux doigts qui s'écartent agrandissent le texte lu, et lui seul. Les boutons A− / A+ du menu font la même chose.",
@@ -253,6 +263,26 @@ const fr = {
       bookmark: {
         title: "Un marque-page sur un verset",
         text: "Touchez un verset pour y poser un marque-page. Vous le retrouverez en tête du texte, et en haut de la bibliothèque.",
+      },
+    },
+    share: {
+      create: {
+        title: "Lire à plusieurs",
+        text: "Répartissez un texte entre plusieurs personnes : les Tehilim, un traité, le Chass entier. Chacun réserve sa part, la lit, la marque lue.",
+      },
+      join: {
+        title: "Rejoindre une lecture",
+        text: "Ouvrez une session, réservez un chapitre, ou laissez le tirage au sort choisir pour vous. Même sans compte.",
+      },
+    },
+    daily: {
+      compose: {
+        title: "Votre lecture du jour",
+        text: "Composez votre liste : des chapitres de Tehilim, une michna, la paracha de la semaine. Elle vous attend chaque jour, et se coche au fil de la lecture.",
+      },
+      reminder: {
+        title: "Un rappel chaque jour",
+        text: "La cloche vous rappelle votre lecture, à l'heure que vous choisissez, ou à la tombée de la nuit.",
       },
     },
   },

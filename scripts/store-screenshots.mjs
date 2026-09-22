@@ -692,7 +692,18 @@ await page.evaluate(() => {
   localStorage.setItem("pj_onboarding_seen", "1");
   // Les astuces des pages (horaires, lecture) non plus : elles ne se montrent
   // qu'à qui n'a pas encore vu la page, pas sur une capture.
-  localStorage.setItem("pj_tips_seen", JSON.stringify(["home-settings", "zmanim-reminder", "reading-menu", "reading-gestures"]));
+  localStorage.setItem(
+    "pj_tips_seen",
+    JSON.stringify([
+      "home-settings",
+      "zmanim-reminder",
+      "calendar-occasions",
+      "reading-menu",
+      "reading-gestures",
+      "share-reading",
+      "daily-reading",
+    ]),
+  );
 });
 
 let count = 0;

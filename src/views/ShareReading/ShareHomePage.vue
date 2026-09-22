@@ -10,6 +10,8 @@ import type { EnumTypeTextStudy } from "../../models/typeTextStudy";
 import SessionCard from "../../components/SessionCard.vue";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
 import AccountCta from "../../components/AccountCta.vue";
+import FeatureTour, { type TourStep } from "../../components/FeatureTour.vue";
+import { tipsOffered } from "../../composables/useFeatureTips";
 import HowItWorksTimeline from "../../components/HowItWorksTimeline.vue";
 import ShareModal from "../../components/ShareModal.vue";
 import EditSessionModal from "../../components/EditSessionModal.vue";
@@ -29,6 +31,37 @@ import { SITE_URL } from "../../config/site";
 
 const router = useRouter();
 const { t } = useI18n();
+
+/**
+ * L'astuce du partage (voir FeatureTour), en deux pas : créer une chaîne de
+ * lecture, puis en rejoindre une, la première de la liste sous le projecteur
+ * quand il y en a (sinon la bulle se pose au milieu).
+ */
+const shareRoot = ref<HTMLElement | null>(null);
+const createButton = ref<HTMLElement | null>(null);
+
+const shareTip = computed<TourStep[]>(() => {
+  const firstSession = () =>
+    shareRoot.value?.querySelector<HTMLElement>("[data-session-list] > *") ?? null;
+  return [
+    {
+      key: "create",
+      icon: "users",
+      title: t("tips.share.create.title"),
+      text: t("tips.share.create.text"),
+      target: () => createButton.value,
+      radius: 9999,
+    },
+    {
+      key: "join",
+      icon: "book-open",
+      title: t("tips.share.join.title"),
+      text: t("tips.share.join.text"),
+      target: firstSession() ? firstSession : undefined,
+      radius: 16,
+    },
+  ];
+});
 const sessionEditing = useSessionEditing("share_home");
 
 const sessions = ref<Session[]>([]);
@@ -263,7 +296,7 @@ const handleCreateClick = () => {
 </script>
 
 <template>
-  <main class="mx-auto px-6 py-12">
+  <main ref="shareRoot" class="mx-auto px-6 py-12">
     <div class="animate-[fadeIn_0.5s_ease] text-center" :class="isNativeApp ? 'mb-8' : 'mb-16'">
       <!-- App native : le partage est le second onglet de la bibliothèque, et
            les onglets tiennent lieu de titre (voir PageTabs). -->
@@ -286,6 +319,7 @@ const handleCreateClick = () => {
       </p>
 
       <button
+        ref="createButton"
         @click="handleCreateClick"
         class="btn btn-primary !px-8 !py-3"
         :class="isNativeApp ? 'mt-2' : 'mt-8'"
@@ -458,6 +492,7 @@ const handleCreateClick = () => {
           <div
             v-if="ongoingSessions.length > 0"
             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+            data-session-list
           >
             <SessionCard
               v-for="session in ongoingSessions"
@@ -510,5 +545,8 @@ const handleCreateClick = () => {
       :session="selectedSession"
       :save="saveSessionChanges"
     />
+
+    <!-- L'astuce du partage, une fois (shareTip). -->
+    <FeatureTour v-if="tipsOffered" tip="share-reading" :steps="shareTip" />
   </main>
 </template>

@@ -284,39 +284,54 @@ const onKeydown = (e: KeyboardEvent) => {
 
 /**
  * L'astuce du menu, à la première lecture (voir FeatureTour) : un bouton rond
- * dans un coin, personne ne sait ce qu'il cache. Deux pas : le bouton du
- * menu, puis, le panneau ouvert par l'astuce elle-même, le second rond des
- * réglages. Toucher un bouton à travers le projecteur fait ce qu'il fait
+ * dans un coin, personne ne sait ce qu'il cache. Le bouton du menu, puis,
+ * le panneau ouvert par l'astuce elle-même, le téléchargement du texte
+ * quand il se propose (app native : lire hors ligne), puis le second rond
+ * des réglages. Toucher un bouton à travers le projecteur fait ce qu'il fait
  * d'habitude, et l'astuce suit.
  */
 const tour = ref<InstanceType<typeof FeatureTour> | null>(null);
 const menuButton = ref<HTMLElement | null>(null);
+const downloadButton = ref<HTMLElement | null>(null);
 const settingsButton = ref<HTMLElement | null>(null);
 
-const menuTip = computed<TourStep[]>(() => [
-  {
-    key: "menu",
-    icon: "list",
-    title: t("tips.reading.menu.title"),
-    text: t("tips.reading.menu.text"),
-    target: () => menuButton.value,
-    radius: 9999,
-  },
-  {
+const menuTip = computed<TourStep[]>(() => {
+  const steps: TourStep[] = [
+    {
+      key: "menu",
+      icon: "list",
+      title: t("tips.reading.menu.title"),
+      text: t("tips.reading.menu.text"),
+      target: () => menuButton.value,
+      radius: 9999,
+    },
+  ];
+  if (props.downloadState !== "none") {
+    steps.push({
+      key: "download",
+      icon: "download",
+      title: t("tips.reading.download.title"),
+      text: t("tips.reading.download.text"),
+      target: () => downloadButton.value,
+      radius: 9999,
+    });
+  }
+  steps.push({
     key: "settings",
     icon: "settings",
     title: t("tips.reading.settings.title"),
     text: t("tips.reading.settings.text"),
     target: () => settingsButton.value,
     radius: 9999,
-  },
-]);
+  });
+  return steps;
+});
 
 /** Le panneau a été ouvert par l'astuce, et non par la personne : elle le range. */
 let openedByTip = false;
 
 function onTipStep(index: number): void {
-  if (index !== 1 || open.value) return;
+  if (index === 0 || open.value) return;
   // Sans passer par openMenu : une ouverture de démonstration n'est pas une
   // ouverture qu'on mesure.
   open.value = true;
@@ -410,6 +425,7 @@ onUnmounted(() => {
                 <!-- App native : le texte se télécharge sans quitter la lecture. -->
                 <button
                   v-if="downloadState !== 'none'"
+                  ref="downloadButton"
                   @click="emit('download')"
                   class="icon-btn flex-shrink-0"
                   :class="downloadState === 'downloaded' ? 'text-primary' : ''"

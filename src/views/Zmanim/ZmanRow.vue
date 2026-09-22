@@ -24,6 +24,7 @@
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import MockTouch from "../../components/mock/MockTouch.vue";
 import type { ZmanTime } from "../../services/zmanimService";
 
 const props = defineProps<{
@@ -39,10 +40,12 @@ const props = defineProps<{
   /** La ligne est ouverte sur sa cloche (une seule à la fois dans la liste). */
   expanded: boolean;
   /**
-   * La démonstration de l'astuce (voir ZmanimPage) : la ligne s'ouvre
-   * d'elle-même sur sa cloche, le temps de la voir, puis revient, et
-   * recommence. Elle ne fait que montrer : pour tout le reste la ligne est
-   * fermée, un toucher ouvre les réglages, un geste la tire comme d'habitude.
+   * La démonstration de l'astuce (voir ZmanimPage) : un doigt se pose sur
+   * la ligne, la tire vers la gauche jusqu'à sa cloche, la lâche, et
+   * recommence. Le doigt est celui des captures dessinées (MockTouch), posé
+   * dans la ligne pour la suivre dans son mouvement. Elle ne fait que
+   * montrer : pour tout le reste la ligne est fermée, un toucher ouvre les
+   * réglages, un geste la tire comme d'habitude.
    */
   demo?: boolean;
 }>();
@@ -312,6 +315,12 @@ const transform = computed(() => `translateX(${-shift.value * direction}px)`);
         :class="shift > 0 ? 'opacity-0' : ''"
       ></span>
 
+      <!-- Le doigt de la démonstration : il se pose, la ligne part avec lui,
+           il s'efface quand elle revient (voir `demo`). -->
+      <span v-if="demo" class="demo-finger" aria-hidden="true">
+        <MockTouch duration="3.2s" delay="0.4s" :taps="1" />
+      </span>
+
       <component
         :is="canRemind ? 'button' : 'div'"
         :type="canRemind ? 'button' : undefined"
@@ -348,3 +357,38 @@ const transform = computed(() => `translateX(${-shift.value * direction}px)`);
     </div>
   </li>
 </template>
+
+<style scoped>
+/* Le doigt de la démonstration : posé aux deux tiers de la ligne, du côté
+   de l'heure, là où l'on tire. Il paraît, appuie (MockTouch), suit la ligne
+   qui s'ouvre, et s'efface le temps qu'elle revienne : le même tour de 3,2 s
+   que les minuteurs de `playDemo`. */
+.demo-finger {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: 68%;
+  z-index: 1;
+  pointer-events: none;
+  animation: demo-finger 3.2s ease-in-out infinite;
+}
+
+@keyframes demo-finger {
+  0% {
+    opacity: 0;
+  }
+  10%,
+  62% {
+    opacity: 1;
+  }
+  74%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-finger {
+    animation: none;
+  }
+}
+</style>
