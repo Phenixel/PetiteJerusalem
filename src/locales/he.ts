@@ -887,7 +887,7 @@ const he: LocaleMessages = {
     selectAtLeastOne: "אנא בחר לפחות חלק אחד",
     creating: "יוצר...",
     create: "צור סשן",
-    fillAllFields: "אנא מלא את כל השדות",
+    fieldRequired: "אנא מלא את השדה ״{field}״",
     createdSuccess: "הסשן נוצר בהצלחה!",
     createError: "שגיאה ביצירת הסשן. אנא נסה שוב.",
     requireGuestEmail: "לדרוש אימייל מהאורחים",
