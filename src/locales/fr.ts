@@ -950,7 +950,7 @@ const fr = {
     selectAtLeastOne: "Veuillez sélectionner au moins une partie",
     creating: "Création en cours...",
     create: "Créer la session",
-    fillAllFields: "Veuillez remplir tous les champs",
+    fieldRequired: "Veuillez renseigner « {field} »",
     createdSuccess: "Session créée avec succès !",
     createError: "Erreur lors de la création de la session. Veuillez réessayer.",
     requireGuestEmail: "Exiger l'email des invités",

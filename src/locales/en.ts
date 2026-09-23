@@ -913,7 +913,7 @@ const en: LocaleMessages = {
     selectAtLeastOne: "Please select at least one part",
     creating: "Creating...",
     create: "Create session",
-    fillAllFields: "Please fill in all fields",
+    fieldRequired: "Please fill in “{field}”",
     createdSuccess: "Session created successfully!",
     createError: "Error creating session. Please try again.",
     requireGuestEmail: "Require guests' email",
