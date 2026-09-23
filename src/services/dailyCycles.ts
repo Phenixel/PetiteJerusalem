@@ -372,6 +372,12 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // Hochana Rabba, 21 Tichri : le dernier jour de 'Hol haMoed Souccot, qui
   // reprend à Hodou le verset des dix jours de techouva.
   if (hd.getMonth() === months.TISHREI && hd.getDate() === 21) occ.add("hoshana-rabba");
+  // La veille de Kippour, 9 Tichri : sa Min'ha n'est pas une Min'ha de
+  // semaine. Le vidouy entre dans la 'Amida, après Sim chalom (on se confesse
+  // avant le repas, de peur qu'un accident n'empêche ensuite de le faire), et
+  // deux psaumes prennent la place du Lamnatséa'h. Le reste du jour ne change
+  // pas : il est dans les dix jours de techouva, et sans tahanoun.
+  if (hd.getMonth() === months.TISHREI && hd.getDate() === 9) occ.add("erev-kippour");
   // La sortie de Chabbat ou de Yom Tov : Ata 'honantanou entre dans la 'Amida
   // d'Arvit, la havdala de la prière. C'est le jour hébraïque qui commence à
   // la chkia qui le porte (voir tefilaHebrewDay) : la veille était Chabbat ou

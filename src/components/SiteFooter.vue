@@ -76,7 +76,7 @@
         >
           {{ t("footer.privacy") }}
         </RouterLink>
-        <button class="hover:text-primary transition-colors" type="button" @click="openFeedback">
+        <button class="hover:text-primary transition-colors" type="button" @click="openFeedback()">
           {{ t("footer.reportIssue") }}
         </button>
         <button class="hover:text-primary transition-colors" type="button" @click="reopen">

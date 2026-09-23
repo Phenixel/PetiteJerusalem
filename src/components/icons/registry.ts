@@ -176,6 +176,11 @@ export const ICONS = {
   "align-left": {
     body: '<path d="M15 12H3"/><path d="M17 18H3"/><path d="M21 6H3"/>',
   },
+  // La phonétique : le A latin et le trait d'une langue qui en traduit une
+  // autre (geometrie « languages » de Lucide).
+  languages: {
+    body: '<path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>',
+  },
   envelope: {
     body: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
   },

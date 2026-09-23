@@ -68,6 +68,18 @@ export const test = base.extend<Options & Fixtures>({
         try {
           if (consent !== "ask") localStorage.setItem("pj_analytics_consent", consent);
           localStorage.setItem("pj_onboarding_seen", "1");
+          localStorage.setItem(
+            "pj_tips_seen",
+            JSON.stringify([
+              "home-settings",
+              "zmanim-reminder",
+              "calendar-occasions",
+              "reading-menu",
+              "reading-gestures",
+              "share-reading",
+              "daily-reading",
+            ]),
+          );
         } catch {
           // Stockage indisponible : la bannière s'affichera, les tests qui la
           // supposent absente le diront.

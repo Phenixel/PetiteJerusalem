@@ -7,8 +7,9 @@
  * Trois scripts s'en servent : build-sidour.mjs (Cha'harit, Min'ha, Arvit),
  * build-brahot.mjs (les bénédictions et les rites qui les entourent) et
  * build-moadim.mjs (les textes des fêtes). Les deux premiers lisent le Siddur
- * Edot HaMizrach, le troisième le Mahzor de Roch Hachana du même rite : deux
- * livres de même facture, d'où des outils communs.
+ * Edot HaMizrach, le troisième le Mahzor de Roch Hachana du même rite, et
+ * build-sidour.mjs y ajoute le Mahzor de Kippour pour la Min'ha de sa veille :
+ * des livres de même facture, d'où des outils communs.
  *
  * Licence des textes : l'export Sefaria « merged » combine des sources du
  * domaine public.
@@ -23,6 +24,15 @@ export const SOURCE_URL =
  */
 export const MACHZOR_ROSH_HASHANA_URL =
   "https://storage.googleapis.com/sefaria-export/json/Liturgy/High%20Holidays/Machzor%20Rosh%20Hashanah%20Edot%20HaMizrach/Hebrew/merged.json";
+
+/**
+ * Le mahzor de Kippour du même rite : le siddour de l'export ne porte que les
+ * offices ordinaires, et la Min'ha de la veille de Kippour y a sa section à
+ * elle (« Mincha for Yom Kippur Eve »), avec le vidouy qui entre dans la
+ * 'Amida.
+ */
+export const MACHZOR_YOM_KIPPUR_URL =
+  "https://storage.googleapis.com/sefaria-export/json/Liturgy/High%20Holidays/Machzor%20Yom%20Kippur%20Edot%20HaMizrach/Hebrew/merged.json";
 
 /** Un livre de l'export, tel qu'il le sert : ses sections et leurs segments. */
 export async function fetchMerged(url) {

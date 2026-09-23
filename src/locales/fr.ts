@@ -204,6 +204,88 @@ const fr = {
       hint: "Le bouton rond, au centre de la barre du bas, ouvre les horaires par-dessus la page en cours ; un second appui les referme.",
     },
   },
+  tips: {
+    ariaLabel: "Astuce",
+    skip: "Passer",
+    next: "Suivant",
+    done: "Compris",
+    later: "Plus tard",
+    stepOf: "Astuce {n} sur {total}",
+    replay: "Revoir les astuces",
+    replayed: "Les astuces se montreront à nouveau, page par page.",
+    home: {
+      settings: {
+        title: "À votre goût",
+        text: "L'onglet en bas à droite règle l'apparence : le thème de couleurs, la police des textes, le mode sombre et la taille de lecture.",
+      },
+      account: {
+        title: "Un compte, si vous voulez",
+        text: "Rien n'oblige à en créer un : tout se lit sans. Il sert à partager des lectures à plusieurs, suivre votre lecture quotidienne et retrouver vos réglages sur un autre appareil.",
+      },
+    },
+    calendar: {
+      occasions: {
+        title: "Vos dates, dans le calendrier",
+        text: "Un anniversaire, un leilouy nichmat : la date se range dans l'année, à son jour, revient sur l'accueil la semaine venue, et l'app vous la rappelle.",
+      },
+    },
+    zmanim: {
+      reminder: {
+        title: "Un rappel d'un geste",
+        text: "Tirez une ligne vers la gauche : la cloche pose un rappel avant cet horaire. Touchez la ligne pour choisir combien de minutes avant.",
+      },
+      place: {
+        title: "Le lieu des horaires",
+        text: "Le nom de la ville est le bouton qui la change. « Ma position » relève celle de l'appareil, sans rien envoyer à personne.",
+      },
+    },
+    reading: {
+      menu: {
+        title: "Le menu de lecture",
+        text: "Ce bouton ouvre le sommaire du texte, la taille des caractères et la bascule hébreu / phonétique.",
+      },
+      settings: {
+        title: "Les réglages de lecture",
+        text: "Le second rond porte le défilement automatique, le partage du texte et le formulaire pour nous écrire.",
+      },
+      download: {
+        title: "Lire hors ligne",
+        text: "Cette commande télécharge le texte sur l'appareil : il s'ouvre ensuite sans réseau. Une coche dit qu'il y est.",
+      },
+      pinch: {
+        title: "Pincez pour la taille du texte",
+        text: "Deux doigts qui s'écartent agrandissent le texte lu, et lui seul. Les boutons A− / A+ du menu font la même chose.",
+      },
+      autoScroll: {
+        title: "Un double appui fait défiler",
+        text: "Deux appuis rapprochés sur le texte le font descendre à une allure de lecture. Un second double appui l'arrête.",
+      },
+      bookmark: {
+        title: "Un marque-page sur un verset",
+        text: "Touchez un verset pour y poser un marque-page. Vous le retrouverez en tête du texte, et en haut de la bibliothèque.",
+      },
+    },
+    share: {
+      create: {
+        title: "Lire à plusieurs",
+        text: "Répartissez un texte entre plusieurs personnes : les Tehilim, un traité, le Chass entier. Chacun réserve sa part, la lit, la marque lue.",
+      },
+      join: {
+        title: "Rejoindre une lecture",
+        text: "Ouvrez une session, réservez un chapitre, ou laissez le tirage au sort choisir pour vous. Même sans compte.",
+      },
+    },
+    daily: {
+      compose: {
+        title: "Votre lecture du jour",
+        text: "Composez votre liste : des chapitres de Tehilim, une michna, la paracha de la semaine. Elle vous attend chaque jour, et se coche au fil de la lecture.",
+      },
+      reminder: {
+        title: "Un rappel chaque jour",
+        text: "La cloche vous rappelle votre lecture, à l'heure que vous choisissez, ou à la tombée de la nuit.",
+      },
+    },
+  },
   home: {
     omer: {
       day: "{n}e jour du 'Omer",
@@ -1250,6 +1332,9 @@ const fr = {
       "Écoutez le chiour « {name} » 🎧 Un cours de Torah à découvrir sur Petite Jérusalem :",
     titleText: "Partager ce texte",
     inviteText: "Lisez « {name} » 📖 Un texte à ouvrir sur Petite Jérusalem :",
+    // Un passage choisi dans un texte : le lien ouvre le texte à cet endroit.
+    titlePassage: "Partager ce passage",
+    invitePassage: "« {name} » 📖 Ce passage s'ouvre ici, sur Petite Jérusalem :",
   },
   batchSelection: {
     textsSelected: "{count} texte sélectionné | {count} textes sélectionnés",
@@ -1444,6 +1529,19 @@ const fr = {
     bookmarks: "Marque-pages",
     bookmarkAdd: "Ajouter un marque-page",
     bookmarkRemove: "Retirer le marque-page",
+    // La bulle de commandes d'un passage choisi (ReadingSelectionMenu) : elle
+    // remplace le menu du système, coupé sur les textes.
+    selection: {
+      title: "Ce passage",
+      share: "Partager",
+      report: "Signaler",
+      bookmark: "Marque-page",
+      // Le signalement, pré-rempli : de quoi retrouver le passage à coup sûr,
+      // l'endroit, les premiers mots et le lien.
+      reportPlace: "Passage : {place}",
+      reportText: "Texte : « {text} »",
+      reportLink: "Lien : {url}",
+    },
     // Un choix laissé au lecteur (la haftara de Min'ha d'un jeûne) : le
     // sélecteur entre les options, qui retient l'option prise.
     choice: "Selon l'usage de votre communauté",
@@ -1495,6 +1593,7 @@ const fr = {
         slow: "Lent",
         medium: "Moyen",
         fast: "Rapide",
+        veryFast: "Très rapide",
       },
       stop: "Arrêter le défilement",
       openMenu: "Régler le défilement automatique",

@@ -18,6 +18,7 @@ import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
 import {
   formatHebrewDate,
+  formatHebrewRangeStart,
   formatZmanTime,
   hebrewDayOf,
   yearCalendar,
@@ -31,6 +32,8 @@ import {
   type OccasionKind,
 } from "../../services/hebrewOccasions";
 import OccasionsModal from "./OccasionsModal.vue";
+import FeatureTour, { type TourStep } from "../../components/FeatureTour.vue";
+import { tipsOffered } from "../../composables/useFeatureTips";
 import type { IconName } from "../../components/icons/registry";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
 import { dateTimeFormat } from "../../services/intlCache";
@@ -101,6 +104,24 @@ const entries = computed(() =>
 const { occasions } = useHebrewOccasions();
 const occasionsOpen = ref(false);
 
+/**
+ * L'astuce du calendrier (voir FeatureTour) : ses propres dates. Le bouton
+ * se voit, mais peu de gens savent ce qu'une date posée là fait ensuite
+ * (elle revient sur l'accueil la semaine venue, et l'app la rappelle).
+ */
+const occasionsButton = ref<HTMLElement | null>(null);
+
+const occasionsTip = computed<TourStep[]>(() => [
+  {
+    key: "occasions",
+    icon: "cake",
+    title: t("tips.calendar.occasions.title"),
+    text: t("tips.calendar.occasions.text"),
+    target: () => occasionsButton.value,
+    radius: 9999,
+  },
+]);
+
 const KIND_ICONS: Record<OccasionKind, IconName> = {
   yahrzeit: "candle",
   birthday: "cake",
@@ -152,6 +173,35 @@ const nextKey = computed(() =>
  */
 const isPastDay = (abs: number) => abs < today.value;
 
+/**
+ * Ce qu'on vient chercher : la prochaine fête, et celle que l'adresse ouvre.
+ *
+ * Sa carte prend la couleur du thème, pleine, et son texte passe au blanc.
+ * Elle a porté un cadre et un fond teintés, tous deux en transparence, et ni
+ * l'un ni l'autre ne la désignait : un cadre de plus dans une liste qui n'est
+ * faite que de cadres passe inaperçu, et un fond à quelques pour cent de la
+ * couleur ne se détache pas du beige. Une carte pleine, elle, se voit d'un
+ * bout à l'autre de la page.
+ *
+ * Le blanc y descend en trois tons, comme sur le bandeau du profil, le seul
+ * autre endroit où l'on écrit sur la couleur : le nom et les heures à plein,
+ * les dates et les intitulés en dessous, la date hébraïque plus bas encore.
+ * Sans quoi tout se vaudrait et la carte ne se lirait plus.
+ */
+const isAhead = (key: string): boolean => key === nextKey.value || key === festivalKey.value;
+
+/** Le fond de la carte. */
+const surface = (key: string): string => (isAhead(key) ? "bg-primary" : "");
+/** Le nom de la fête, et ses heures. */
+const ink = (key: string): string => (isAhead(key) ? "text-white" : "text-text-primary");
+/** Ce qui les accompagne : les dates civiles, les intitulés des heures. */
+const subInk = (key: string): string => (isAhead(key) ? "text-white/85" : "text-text-secondary");
+/** La date hébraïque, d'un ton plus bas. */
+const fadedInk = (key: string): string =>
+  isAhead(key) ? "text-white/70" : "text-text-secondary/80";
+/** Le filet qui sépare les heures des dates sur un téléphone. */
+const divider = (key: string): string => (isAhead(key) ? "border-white/25" : "border-line");
+
 /** « Chabbat Roch Hachana » : le Chabbat qui prolonge une fête est du même bloc. */
 function title(entry: CalendarEntry): string {
   if (!entry.period?.shabbat) return entry.name;
@@ -179,7 +229,8 @@ function civilRange(entry: CalendarEntry): string {
 function hebrewRange(entry: CalendarEntry): string {
   const last = formatHebrewDate(entry.last, locale.value);
   if (entry.first.abs() === entry.last.abs()) return last;
-  return t("calendar.range", { from: formatHebrewDate(entry.first, locale.value), to: last });
+  const first = formatHebrewRangeStart(entry.first, entry.last, locale.value);
+  return t("calendar.range", { from: first, to: last });
 }
 
 /** Racine de la page : cible du dévoilement circulaire (bouton rond natif). */
@@ -345,7 +396,12 @@ onMounted(() => {
     <!-- Ses propres dates : anniversaires, leilouy nichmat. Elles se posent
          ici parce qu'elles se lisent ici, au milieu des fêtes de l'année. -->
     <div class="mt-4 flex justify-center">
-      <button type="button" class="btn btn-soft" @click="occasionsOpen = true">
+      <button
+        ref="occasionsButton"
+        type="button"
+        class="btn btn-soft"
+        @click="occasionsOpen = true"
+      >
         <AppIcon name="calendar" :size="16" class="text-primary" />
         {{ t("occasions.open") }}
       </button>
@@ -378,7 +434,7 @@ onMounted(() => {
     </div>
 
     <!-- Les fêtes à la suite. Celles qui sont passées s'effacent, la prochaine
-         se distingue : c'est elle qu'on vient chercher. -->
+         prend la couleur du thème, pleine : c'est elle qu'on vient chercher. -->
     <ul class="mt-6 flex flex-col gap-3">
       <li
         v-for="row in rows"
@@ -387,23 +443,36 @@ onMounted(() => {
         class="card p-4"
         :class="[
           isPastDay(row.entry ? row.entry.last.abs() : row.abs) ? 'opacity-55' : '',
-          row.key === nextKey || row.key === festivalKey
-            ? 'border border-primary/30 bg-primary/5'
-            : '',
+          surface(row.key),
         ]"
       >
         <!-- Une fête de l'année : son nom, ses dates, et ses heures quand le
-             travail y est interdit. -->
-        <div v-if="row.entry" class="flex items-start justify-between gap-4">
+             travail y est interdit. Sur un téléphone, les heures se rangent
+             sous les dates ; côte à côte, un libellé long (« Allumage après
+             la sortie du Chabbat ») prenait toute la carte et le nom de la
+             fête n'avait plus que la largeur d'un mot. -->
+        <div
+          v-if="row.entry"
+          class="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
+        >
           <div class="min-w-0">
-            <p class="font-semibold text-text-primary">{{ title(row.entry) }}</p>
-            <p class="text-sm text-text-secondary">{{ civilRange(row.entry) }}</p>
-            <p class="text-xs text-text-secondary/80">{{ hebrewRange(row.entry) }}</p>
+            <p class="font-semibold text-pretty" :class="ink(row.key)">{{ title(row.entry) }}</p>
+            <p class="text-sm text-pretty" :class="subInk(row.key)">
+              {{ civilRange(row.entry) }}
+            </p>
+            <p class="text-xs" :class="fadedInk(row.key)">{{ hebrewRange(row.entry) }}</p>
           </div>
-          <dl v-if="row.entry.period" class="shrink-0 text-end text-sm">
-            <div class="flex items-baseline justify-end gap-2">
-              <dt class="text-xs text-text-secondary">{{ t("calendar.start") }}</dt>
-              <dd class="font-semibold tabular-nums text-text-primary">
+          <!-- Les heures de la fête. Chacune finit sa ligne, comme sur la page
+               des horaires : le regard descend la colonne des chiffres sans
+               les chercher. -->
+          <dl
+            v-if="row.entry.period"
+            class="flex flex-col gap-1 border-t pt-2.5 text-sm sm:max-w-72 sm:shrink-0 sm:border-t-0 sm:pt-0"
+            :class="divider(row.key)"
+          >
+            <div class="flex items-baseline justify-between gap-3">
+              <dt class="text-xs" :class="subInk(row.key)">{{ t("calendar.start") }}</dt>
+              <dd class="shrink-0 font-semibold tabular-nums" :class="ink(row.key)">
                 {{ clock(row.entry.period.start) }}
               </dd>
             </div>
@@ -413,18 +482,18 @@ onMounted(() => {
             <div
               v-for="lighting in row.entry.period.lightings"
               :key="lighting.at.getTime()"
-              class="flex items-baseline justify-end gap-2"
+              class="flex items-baseline justify-between gap-3"
             >
-              <dt class="text-xs text-text-secondary">
+              <dt class="text-xs" :class="subInk(row.key)">
                 {{ describeLightingRule(lighting.rule, t) }}
               </dt>
-              <dd class="font-semibold tabular-nums text-text-primary">
+              <dd class="shrink-0 font-semibold tabular-nums" :class="ink(row.key)">
                 {{ clock(lighting.at) }}
               </dd>
             </div>
-            <div v-if="row.entry.period.end" class="flex items-baseline justify-end gap-2">
-              <dt class="text-xs text-text-secondary">{{ t("calendar.end") }}</dt>
-              <dd class="font-semibold tabular-nums text-text-primary">
+            <div v-if="row.entry.period.end" class="flex items-baseline justify-between gap-3">
+              <dt class="text-xs" :class="subInk(row.key)">{{ t("calendar.end") }}</dt>
+              <dd class="shrink-0 font-semibold tabular-nums" :class="ink(row.key)">
                 {{ clock(row.entry.period.end) }}
               </dd>
             </div>
@@ -461,5 +530,8 @@ onMounted(() => {
     </p>
 
     <OccasionsModal v-model:show="occasionsOpen" :today="todayHd" />
+
+    <!-- L'astuce des dates à soi, une fois (occasionsTip). -->
+    <FeatureTour v-if="tipsOffered" tip="calendar-occasions" :steps="occasionsTip" />
   </main>
 </template>

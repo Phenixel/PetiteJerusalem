@@ -52,6 +52,7 @@ const KNOWN_WHEN = new Set([
   "moed",
   "shabbat-or-moed",
   "teshuva",
+  "erev-kippour",
   "ete",
   "hiver",
   "barkhenou",
@@ -548,6 +549,86 @@ describe("Min'ha : les jeûnes publics", () => {
     expect(chema.when).toBe("tsom-minha");
     expect(blocks.indexOf(chema)).toBe(1); // juste après le marqueur d'horaire
     expect(chema.lines).toHaveLength(29);
+  });
+});
+
+describe("Min'ha : la veille de Kippour", () => {
+  const entry = sidourEntries.find((e) => resolveFilePath(e).includes("minha"))!;
+  const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
+  const debut = blocks.findIndex((b) => b.label === "Vidouy (confession)");
+  const vidouy = blocks.slice(debut, debut + 4);
+
+  it("ouvre le vidouy dans la 'Amida, entre les deux « Yihyou lératson »", () => {
+    // C'est le seul jour où la confession entre dans la 'Amida de semaine :
+    // on se confesse avant le repas qui précède le jeûne. Elle s'ouvre après
+    // le premier « Yihyou lératson » et se ferme sur « Élohaï netsor ».
+    expect(debut).toBeGreaterThan(0);
+    expect(sansSignes(blocks[debut - 1].lines.at(-1)!)).toContain("יהיו לרצון");
+    const suite = blocks[debut + 4];
+    expect(suite.when).toBeUndefined();
+    expect(sansSignes(suite.lines[0])).toContain("אלהי, נצר לשוני מרע");
+    expect(sansSignes(suite.lines.at(-1)!)).toContain("יהיו לרצון");
+    // Quatre blocs, tous à ce jour-là, tous dans le fil ordinaire : la
+    // couleur du thème dit « l'ajout du jour » sur une ligne, elle serait
+    // illisible sur cinquante.
+    for (const bloc of vidouy) {
+      expect(bloc.when).toBe("erev-kippour");
+      expect(bloc.plain).toBe(true);
+    }
+    expect(blocks.filter((b) => b.when === "erev-kippour")).toHaveLength(5);
+    // La raison du jour accompagne le titre.
+    expect(vidouy[0].halakhot).toHaveLength(1);
+    expect(vidouy[0].halakhot![0].fr).toContain("avant le repas");
+  });
+
+  it("dit les aveux dans les deux ordres, puis les fautes", () => {
+    const [ana, tashrak, hataim, elohai] = vidouy;
+    // Le vidouy entier : « Ana » et Achamnou, Ma nomar, Yehi ratson, puis les
+    // vingt-quatre aveux de l'alphabet, serrés les uns sous les autres.
+    expect(sansSignes(ana.lines[0])).toContain("אנא יהוה אלהינו");
+    expect(sansSignes(ana.lines[0])).toContain("אשמנו. בגדנו");
+    expect(sansSignes(ana.lines[1])).toContain("מהנאמר לפניך יושב מרום");
+    expect(sansSignes(ana.lines[2])).toContain("שתמחל לנו");
+    expect(sansSignes(ana.lines[3])).toBe("על חטא שחטאנו לפניך באנס:");
+    expect(ana.lines).toHaveLength(27);
+    expect(ana.paragraphs![3].rubric!.fr).toContain("ordre de l'alphabet");
+    for (const p of ana.paragraphs!.slice(4)) expect(p.tight).toBe(true);
+    // Les aveux à rebours, du tav à l'alef, et la note de Tunis sur eux.
+    expect(sansSignes(tashrak.lines[0])).toBe("על חטא שחטאנו לפניך בתמהון לבב:");
+    expect(tashrak.lines).toHaveLength(26);
+    expect(tashrak.halakhot![0].fr).toContain("Tunis");
+    // Elle passe entière au second plan : la note dit que Tunis ne la disait
+    // pas, le gris montre de quel passage elle parle. Le bloc est `plain`, le
+    // lecteur peut donc l'atténuer (voir paragraphTone dans LiturgyText).
+    expect(tashrak.paragraphs!.every((p) => p.muted)).toBe(true);
+    expect(ana.paragraphs!.some((p) => p.muted)).toBe(false);
+    // Les fautes selon ce qu'elles coûtaient au Temple, jusqu'aux quatre
+    // morts du tribunal et à « Ki Ata sol'han ».
+    expect(sansSignes(hataim.lines[0])).toContain("על בטול מצות עשה");
+    expect(hataim.lines).toHaveLength(16);
+    expect(sansSignes(hataim.lines.at(-1)!)).toContain("ארבע מיתות בית דין");
+    expect(sansSignes(hataim.lines.at(-1)!)).toContain("כי אתה סולחן לישראל");
+    // Puis les deux prières de chacun, avant Élohaï netsor.
+    expect(sansSignes(elohai.lines[0])).toContain("עד שלא נוצרתי");
+    expect(sansSignes(elohai.lines[1])).toContain("שלא אחטא עוד");
+  });
+
+  it("remplace le Lamnatséa'h par les psaumes 85 et 130, sauf un vendredi", () => {
+    // Après le Kaddich Titkabal. Le psaume 67 garde sa clé et c'est `unless`
+    // qui le retire : une version ancienne, qui l'ignore, affiche les deux
+    // plutôt que de perdre l'un des textes (voir docs/compatibilite-textes.md).
+    const lamnatseah = blocks.find((b) => b.when === "lamnatseah-minha")!;
+    expect(lamnatseah.unless).toBe("erev-kippour");
+    const psaumes = blocks.find((b) => b.when === "erev-kippour" && b.unless === "jour-5")!;
+    expect(blocks.indexOf(psaumes)).toBe(blocks.indexOf(lamnatseah) + 1);
+    expect(psaumes.lines).toHaveLength(2);
+    expect(sansSignes(psaumes.lines[0])).toContain("רצית יהוה ארצך");
+    expect(sansSignes(psaumes.lines[1])).toContain("ממעמקים קראתיך");
+    expect(psaumes.paragraphs![0].rubric!.fr).toContain("veille de Kippour");
+    // Le vendredi, c'est le psaume 93 de la veille de Chabbat qui tient déjà
+    // la place : la veille de Kippour tombe un vendredi quand Kippour tombe
+    // un Chabbat.
+    expect(sansSignes(blocks.find((b) => b.when === "jour-5")!.lines[0])).toContain("יהוה מלך");
   });
 });
 

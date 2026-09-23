@@ -199,6 +199,88 @@ const en: LocaleMessages = {
       hint: "The round button in the middle of the bottom bar opens the times over the current page; a second tap closes them.",
     },
   },
+  tips: {
+    ariaLabel: "Tip",
+    skip: "Skip",
+    next: "Next",
+    done: "Got it",
+    later: "Later",
+    stepOf: "Tip {n} of {total}",
+    replay: "Replay the tips",
+    replayed: "The tips will show again, page by page.",
+    home: {
+      settings: {
+        title: "Make it yours",
+        text: "The bottom-right tab sets the look: colour theme, text font, dark mode and reading size.",
+      },
+      account: {
+        title: "An account, if you like",
+        text: "Nothing requires one: everything can be read without it. It lets you share readings with others, follow your daily reading and find your settings again on another device.",
+      },
+    },
+    calendar: {
+      occasions: {
+        title: "Your dates, in the calendar",
+        text: "A birthday, a leilouy nichmat: the date takes its place in the year, on its day, comes back on the home page the week it arrives, and the app reminds you.",
+      },
+    },
+    zmanim: {
+      reminder: {
+        title: "A reminder in one swipe",
+        text: "Swipe a row to the left: the bell sets a reminder before that time. Tap the row to choose how many minutes before.",
+      },
+      place: {
+        title: "Where the times are for",
+        text: 'The city name is the button that changes it. "My location" reads the device\'s position, without sending it anywhere.',
+      },
+    },
+    reading: {
+      menu: {
+        title: "The reading menu",
+        text: "This button opens the table of contents, the text size and the Hebrew / phonetic switch.",
+      },
+      settings: {
+        title: "Reading settings",
+        text: "The second button holds auto-scroll, sharing the text and the form to write to us.",
+      },
+      download: {
+        title: "Read offline",
+        text: "This command downloads the text to the device: it then opens without a network. A tick says it is there.",
+      },
+      pinch: {
+        title: "Pinch to size the text",
+        text: "Spreading two fingers enlarges the text you read, and only it. The A− / A+ buttons of the menu do the same.",
+      },
+      autoScroll: {
+        title: "Double tap to scroll",
+        text: "Two quick taps on the text make it scroll down at a reading pace. A second double tap stops it.",
+      },
+      bookmark: {
+        title: "A bookmark on a verse",
+        text: "Tap a verse to bookmark it. You will find it again at the top of the text, and at the top of the library.",
+      },
+    },
+    share: {
+      create: {
+        title: "Read together",
+        text: "Split a text between several people: the Tehilim, a tractate, the whole Shas. Each one reserves a part, reads it, marks it read.",
+      },
+      join: {
+        title: "Join a reading",
+        text: "Open a session, reserve a chapter, or let the draw choose for you. Even without an account.",
+      },
+    },
+    daily: {
+      compose: {
+        title: "Your daily reading",
+        text: "Build your list: chapters of Tehilim, a mishna, the week's parasha. It waits for you every day, and gets ticked as you read.",
+      },
+      reminder: {
+        title: "A reminder every day",
+        text: "The bell reminds you of your reading, at the time you choose, or at nightfall.",
+      },
+    },
+  },
   home: {
     omer: {
       day: "Day {n} of the Omer",
@@ -1196,6 +1278,8 @@ const en: LocaleMessages = {
       "Listen to the chiour « {name} » 🎧 A Torah lesson to discover on Petite Jerusalem:",
     titleText: "Share this text",
     inviteText: "Read « {name} » 📖 A text to open on Petite Jerusalem:",
+    titlePassage: "Share this passage",
+    invitePassage: "« {name} » 📖 This passage opens here, on Petite Jerusalem:",
   },
   batchSelection: {
     textsSelected: "{count} text selected | {count} texts selected",
@@ -1386,6 +1470,15 @@ const en: LocaleMessages = {
     bookmarks: "Bookmarks",
     bookmarkAdd: "Add a bookmark",
     bookmarkRemove: "Remove bookmark",
+    selection: {
+      title: "This passage",
+      share: "Share",
+      report: "Report",
+      bookmark: "Bookmark",
+      reportPlace: "Passage: {place}",
+      reportText: "Text: « {text} »",
+      reportLink: "Link: {url}",
+    },
     // A choice left to the reader (the haftarah at Mincha of a fast).
     choice: "According to your community's custom",
     // Tefilot (Siddur, Selichot): section navigation menu.
@@ -1433,6 +1526,7 @@ const en: LocaleMessages = {
         slow: "Slow",
         medium: "Medium",
         fast: "Fast",
+        veryFast: "Very fast",
       },
       stop: "Stop scrolling",
       openMenu: "Adjust automatic scrolling",

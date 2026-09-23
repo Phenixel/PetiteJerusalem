@@ -21,9 +21,10 @@
  * Rien ne se valide avant le relâcher : on peut tirer la ligne, voir ce
  * qu'elle propose, et la laisser revenir sans rien changer.
  */
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import MockTouch from "../../components/mock/MockTouch.vue";
 import type { ZmanTime } from "../../services/zmanimService";
 
 const props = defineProps<{
@@ -38,6 +39,15 @@ const props = defineProps<{
   canRemind: boolean;
   /** La ligne est ouverte sur sa cloche (une seule à la fois dans la liste). */
   expanded: boolean;
+  /**
+   * La démonstration de l'astuce (voir ZmanimPage) : un doigt se pose sur
+   * la ligne, la tire vers la gauche jusqu'à sa cloche, la lâche, et
+   * recommence. Le doigt est celui des captures dessinées (MockTouch), posé
+   * dans la ligne pour la suivre dans son mouvement. Elle ne fait que
+   * montrer : pour tout le reste la ligne est fermée, un toucher ouvre les
+   * réglages, un geste la tire comme d'habitude.
+   */
+  demo?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -130,6 +140,43 @@ watch(
     if (!sliding.value) shift.value = open ? REVEAL : 0;
   },
 );
+
+/** Un tour de la démonstration : ouverte à 0,7 s, refermée à 2 s. */
+const DEMO_PERIOD_MS = 3200;
+const DEMO_OPEN_AT_MS = 700;
+const DEMO_CLOSE_AT_MS = 2000;
+let demoTimers: number[] = [];
+
+/** Pose la ligne où la démonstration la veut, sauf si un doigt la tient. */
+function demoShift(value: number): void {
+  if (!sliding.value) shift.value = value;
+}
+
+function stopDemo(): void {
+  demoTimers.forEach((timer) => window.clearTimeout(timer));
+  demoTimers = [];
+  demoShift(props.expanded ? REVEAL : 0);
+}
+
+function playDemo(): void {
+  stopDemo();
+  const cycle = () => {
+    demoTimers = [
+      window.setTimeout(() => demoShift(REVEAL), DEMO_OPEN_AT_MS),
+      window.setTimeout(() => demoShift(0), DEMO_CLOSE_AT_MS),
+      window.setTimeout(cycle, DEMO_PERIOD_MS),
+    ];
+  };
+  cycle();
+}
+
+watch(
+  () => props.demo,
+  (on) => (on ? playDemo() : stopDemo()),
+  { immediate: true },
+);
+
+onBeforeUnmount(stopDemo);
 
 /** La course au-delà de laquelle le relâcher bascule le rappel. */
 function commitDistance(): number {
@@ -268,6 +315,12 @@ const transform = computed(() => `translateX(${-shift.value * direction}px)`);
         :class="shift > 0 ? 'opacity-0' : ''"
       ></span>
 
+      <!-- Le doigt de la démonstration : il se pose, la ligne part avec lui,
+           il s'efface quand elle revient (voir `demo`). -->
+      <span v-if="demo" class="demo-finger" aria-hidden="true">
+        <MockTouch duration="3.2s" delay="0.4s" :taps="1" />
+      </span>
+
       <component
         :is="canRemind ? 'button' : 'div'"
         :type="canRemind ? 'button' : undefined"
@@ -304,3 +357,38 @@ const transform = computed(() => `translateX(${-shift.value * direction}px)`);
     </div>
   </li>
 </template>
+
+<style scoped>
+/* Le doigt de la démonstration : posé aux deux tiers de la ligne, du côté
+   de l'heure, là où l'on tire. Il paraît, appuie (MockTouch), suit la ligne
+   qui s'ouvre, et s'efface le temps qu'elle revienne : le même tour de 3,2 s
+   que les minuteurs de `playDemo`. */
+.demo-finger {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: 68%;
+  z-index: 1;
+  pointer-events: none;
+  animation: demo-finger 3.2s ease-in-out infinite;
+}
+
+@keyframes demo-finger {
+  0% {
+    opacity: 0;
+  }
+  10%,
+  62% {
+    opacity: 1;
+  }
+  74%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-finger {
+    animation: none;
+  }
+}
+</style>

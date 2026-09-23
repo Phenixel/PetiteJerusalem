@@ -42,6 +42,26 @@ Corollaire : un bloc qui ne mène nulle part n'est pas une carte cliquable. Il
 peut rester une surface (un panneau de réglages, un formulaire), mais il ne
 prend jamais `card-hover`, dont l'ombre qui se creuse promet un clic.
 
+### Une commande posée dans un texte porte son nom
+
+Dans un texte, une icône seule ne se lit pas comme une commande. Le lecteur y
+voit un ornement du passage, une marque de plus dans une page qui en porte
+déjà (numéros de verset, didascalies, renvois), et il ne l'appuie pas. La
+boussole du Kotel et le miroir des téfilines sont restés à côté de leur titre
+sans que personne ne devine qu'on pouvait les toucher.
+
+Une commande posée dans un texte est donc une pastille à la couleur du thème,
+qui porte son dessin ET son nom en toutes lettres : « Direction du Kotel »,
+« Miroir », le parchemin d'un paragraphe. Le fond, même léger, la détache du
+texte ; le nom dit ce qu'elle fait avant qu'on l'ait touchée.
+
+Au titre d'un passage, elle se pose en face du titre, au bout de sa ligne, et
+non collée au dernier mot : collée, elle passe pour la suite du titre. Sa
+taille ne suit pas celle du texte lu, à la différence de la pastille d'un
+parchemin, qui vit dans le fil de la lecture : une commande de titre est un
+objet de l'interface, et deux d'entre elles se ressemblent exactement, sur
+n'importe quelle page et à n'importe quelle taille de lecture.
+
 ### Le cadre se mérite
 
 Tout n'a pas à être dans une carte. Une carte dit « voici une réponse à une
@@ -106,6 +126,74 @@ tout lu n'attend plus rien de moi. Et la ligne « Reprendre ma lecture » de la
 bibliothèque ne propose que la dernière : la refermer la fait disparaître, elle
 ne remonte pas l'historique texte par texte (chaque texte, lui, rouvre toujours
 là où on l'avait laissé).
+
+### Une astuce se joue sur la page, une fois
+
+L'introduction dit ce que l'app contient ; elle ne peut pas dire comment
+chaque écran se manie. Une ligne d'horaire qui se tire pour poser un rappel,
+le bouton rond d'une page de lecture qui ouvre le sommaire et les réglages :
+personne ne devine un geste, et une commande qu'on ne connaît pas ne sert à
+personne. Ces deux-là avaient été expliquées nulle part, et donc jamais
+employées.
+
+L'astuce se joue donc **là où la commande est**, la première fois qu'on
+arrive sur la page (`FeatureTour.vue`, `useFeatureTips`) : un voile assombrit
+la page, un projecteur découpe la commande, un liseré de la couleur du thème
+respire autour, et une bulle avec sa flèche dit en deux phrases ce qu'elle
+fait. Quatre règles la tiennent :
+
+- **la commande reste vivante sous le projecteur.** Le voile n'est pas peint
+  à cet endroit : la toucher fait ce qu'elle fait d'habitude, et l'astuce
+  passe au pas suivant ou s'en va, on a compris. Elle **montre** aussi quand
+  elle le peut : sur les horaires, un doigt dessiné (le même que dans les
+  captures de l'introduction) se pose sur la première ligne, la tire vers la
+  gauche jusqu'à sa cloche et la lâche, le temps du pas, puis le nom de la
+  ville, qui est le bouton qui la change, prend le projecteur ; sur une
+  lecture, l'astuce ouvre le panneau pour éclairer le téléchargement du
+  texte, puis le rond des réglages ;
+- **elle se passe d'un geste** : « Passer », le voile, Échap ou le retour
+  Android. « Suivant » ou « Compris » la mènent au bout. Jamais plus de deux
+  ou trois pas. Un pas sans commande à éclairer (pincer le texte, le double
+  appui) pose la bulle au milieu et **montre** le geste dans une capture
+  dessinée (`src/components/mock`), la même que dans l'introduction ;
+- **une fois par appareil, et une seule par ouverture de l'app.** Close, elle
+  est notée vue (dans les deux stockages, voir docs/app-native.md), même si
+  l'on quitte la page au milieu : une astuce qui revient n'est plus une aide.
+  Et quatre bulles à la suite en changeant de page seraient un tutoriel
+  qu'on n'a pas demandé : la suivante attend la prochaine ouverture (une
+  relance de l'app, ou un retour au premier plan après une demi-heure
+  ailleurs). Sur une même page, une astuce peut en attendre une autre : les
+  gestes de lecture viennent une ouverture après le menu. « Revoir les
+  astuces » (onglet À propos) les remet en jeu, page par page ;
+- **« Plus tard »** : on n'a pas toujours le temps de lire. La bulle se
+  retire sans compter l'astuce vue, et celle-ci revient, sur la même page, à
+  l'ouverture suivante ;
+- **jamais par-dessus autre chose** : ni l'introduction, ni une fenêtre
+  ouverte, ni une autre astuce, ni une commande hors de l'écran ; et elle
+  attend que la page se soit posée. Sous l'introduction, elle attend qu'elle
+  se ferme : c'est le cas de l'astuce de l'accueil, à la première ouverture.
+
+L'accueil porte la première : où l'app se règle à son goût (l'onglet en bas
+à droite, thème, police, mode sombre), puis le compte, ce qu'il apporte
+(partager des lectures, la lecture du jour, ses réglages sur un autre
+appareil) et, avant tout, qu'il n'est pas obligatoire. Elle éclaire le bouton
+« Créer un compte » tant que l'accueil le porte, et ne se propose pas à qui a
+déjà un compte.
+
+Les autres, chacune sur sa page : les horaires (le rappel d'un geste, le
+lieu), le calendrier (ses propres dates, qui reviennent sur l'accueil et se
+rappellent), la lecture (le menu, lire hors ligne, les réglages ; puis les
+gestes, une ouverture plus tard), le partage de lectures (créer une chaîne,
+en rejoindre une, la première de la liste sous le projecteur) et la lecture
+du jour (composer sa liste, la cloche du rappel). Une astuce ne présente que
+ce que la page propose : pas de rappel sur le site, pas de téléchargement
+quand le texte n'en a pas.
+
+App native seulement, comme l'introduction : un visiteur du site arrive par
+une page précise et une bulle en travers de ce qu'il vient lire serait une
+gêne. `?tips` dans l'adresse les force partout où la commande existe (ou
+`?tips=reading-gestures` pour une seule), pour les montrer et les essayer sur
+les canaux de preview.
 
 ### Deux pages, un jeu d'onglets
 
@@ -203,6 +291,48 @@ dans le texte aurait mangé la place du nom sur un téléphone, et une ligne sur
 deux marquée aurait fait une colonne d'icônes. L'angle, lui, ne prend la place
 de rien et se repère d'un coup d'oeil en parcourant la liste. Le triangle suit
 le sens de lecture (bordures logiques), il change donc de côté en hébreu.
+
+### Deux colonnes sur un téléphone, seulement si la seconde se plafonne
+
+Une carte du calendrier porte deux choses : le nom de la fête avec ses dates,
+et ses heures. Côte à côte sur un téléphone, elles ne tiennent pas. Le libellé
+le plus long de la colonne des heures (« Allumage après la sortie du Chabbat »)
+décidait seul de sa largeur, qui prenait la carte entière : il ne restait au
+nom que la largeur d'un mot, « Chabbat Roch Hachanah » descendait en escalier,
+et les deux colonnes finissaient par se chevaucher.
+
+D'où la règle, valable pour toute carte à deux colonnes. Tant que l'écran est
+étroit, la seconde passe sous la première, séparée par un filet, chaque heure
+finissant sa ligne comme sur la page des horaires. Dès qu'il y a de la place
+(`sm`), elle revient à côté, mais plafonnée en largeur : une colonne qui se
+dimensionne sur son plus long libellé mange la carte, et ce qu'on lit en
+premier, le nom, passe en dernier.
+
+Une plage de dates, enfin, n'écrit qu'une fois ce que ses deux bouts
+répètent : « du 1 au 2 Tichri 5787 », et non « du 1 Tichri 5787 au 2 Tichri
+5787 ». Trois lignes de moins sur un téléphone, et rien de perdu
+(`formatHebrewRangeStart`).
+
+### Ce qu'on vient chercher prend la couleur, pleine
+
+Mettre une carte en avant sans poser de couleur sur elle ne marche pas. Un
+cadre teinté est une bordure de plus dans une page qui n'est faite que de
+bordures ; un fond à quelques pour cent de la couleur du thème ne se détache
+pas du beige ; et l'encre seule, qui suffit à marquer le prochain horaire de
+la journée dans une liste de lignes (`ZmanRow`), se perd dans une liste de
+cartes, où chacune porte déjà trois niveaux de texte.
+
+La prochaine fête du calendrier prend donc la couleur du thème à plein, sur
+toute sa carte, et son texte passe au blanc. C'est la seule carte colorée de
+la page, et on la trouve sans avoir à lire.
+
+Le blanc y descend en trois tons, comme sur le bandeau du profil, le seul
+autre endroit où l'on écrit sur la couleur : le nom de la fête et ses heures à
+plein, les dates et les intitulés des heures en dessous, la date hébraïque
+plus bas encore. Sans quoi tout se vaudrait et la carte ne se lirait plus.
+
+Les dates passées, elles, gardent leur effacement : s'effacer et ressortir
+sont deux moyens opposés, ils ne se gênent pas.
 
 ### Ce qui est à soi se range avec le reste
 
@@ -336,6 +466,28 @@ office ou une bénédiction se lisent du début, on n'y revient pas à un
 paragraphe comme à un verset de Tehilim ; le sommaire du menu y mène déjà à
 chaque passage.
 
+### La pastille du défilement est son propre arrêt
+
+Pendant une descente automatique, une pastille au bas de l'écran
+(`AutoScrollPill.vue`) dit que la page avance toute seule, et c'est le seul
+signe qu'elle en donne. Un appui l'ouvre sur l'allure, le suivant arrête.
+
+C'est la règle du menu de lecture, juste au-dessus : ce qu'on a touché pour
+ouvrir est ce qu'on touche pour en finir, au même endroit. L'arrêt était une
+ligne de plus dans le panneau, sous les allures, c'est-à-dire là où l'on ne
+pense pas à revenir quand on veut simplement que cela cesse. Un appui à côté
+referme le réglage sans rien arrêter : fermer et arrêter ne sont pas le même
+geste, et c'est au geste le plus large de ne rien faire.
+
+L'allure se règle à un curseur à crans, du plus lent à gauche au plus rapide à
+droite, et non dans une liste d'intitulés. Une liste demande de lire chaque
+ligne pour comprendre qu'elles forment une échelle ; un curseur le montre, et
+se pousse du pouce sans viser une ligne. Les crans sont les allures
+elles-mêmes, dessinés sous le rail à l'aplomb des positions du curseur : un
+rail lisse promettrait un réglage continu qui n'existe pas. Les deux bouts
+portent le nom des allures extrêmes, parce que ce sont elles. En hébreu, le
+rail se retourne avec la page, et le plus lent passe à droite.
+
 ### Ce qui clôt une page se lit à la fin
 
 Les hiloulot du jour ferment la page des horaires, sous la dernière heure et
@@ -441,6 +593,19 @@ Deux couleurs échappent au thème, parce qu'elles disent un état et non un
 goût : le danger (rouge, `.btn-danger`) et l'échéance qui approche (ambre).
 Elles ne bougent pas quand on change de thème.
 
+### La sélection prend la couleur du thème
+
+Sélectionner du texte posait derrière lui le bleu du navigateur, la seule
+couleur de l'app que personne n'avait choisie, et elle traversait les trois
+thèmes sans broncher. `::selection` prend donc `primary` en transparence
+(jeton `--color-selection`, dans `main.css`) : le texte garde son encre, seul
+le fond change. La transparence est plus appuyée en sombre, où la même teinte,
+posée sur du gris nuit au lieu du beige, ne se voyait presque plus.
+
+C'est vrai partout, site et app, et le passage choisi dans un texte reprend
+exactement la même teinte (`.reading-selected`) : les deux façons de désigner
+du texte se voient pareil.
+
 ### Lisibilité
 
 `primary` sert à la fois de fond sous du blanc et d'encre sur le beige. Les
@@ -534,6 +699,16 @@ six mois, sauf les trois premières semaines d'une bascule, où c'est là qu'on
 se trompe (`recentSeasonalChanges`). Ce que l'application ne peut pas
 trancher (en Terre d'Israël, à dix convives) reste en gris : une possibilité
 signalée, pas une lecture imposée.
+
+Le second plan dit autre chose que la couleur du jour. Un passage que l'on ne
+dit pas partout (la supplique « Chema' koli » avant Min'ha d'un jeûne, le
+léchem yihoud d'Arvit, la seconde liste du vidouy de la veille de Kippour, que
+Tunis ne disait pas) se lit en `text-secondary`, sous la note qui l'explique :
+le gris montre jusqu'où va le passage dont la note parle, quand la note seule
+laisserait chercher. Le fil que l'on lit d'un bout à l'autre garde, lui, sa
+pleine encre. Aucune règle ne fixe donc de couleur sur `.reading-he` : elle
+vient du bloc ou du paragraphe, et une couleur posée là les couvrirait tous
+les deux.
 
 C'est l'exception à « `primary` ne porte jamais un texte de lecture » : un
 fragment court, dans un paragraphe qu'on lit d'un trait. La halakha de
@@ -693,6 +868,7 @@ police, et elles arrivent au milieu d'un formulaire qui, lui, les a.
 | `<input type="date">`     | `AppDateField.vue` : le champ, puis le calendrier de la maison (`DayPicker.vue`) |
 | `confirm()`               | `useConfirm` et `ConfirmDialog.vue`                                              |
 | `alert()`                 | un toast (`useToast`)                                                            |
+| le menu d'une sélection   | `ReadingSelectionMenu.vue` sur un texte (voir plus bas)                          |
 
 Elles restent de vraies commandes : rôles ARIA, clavier (flèches, Entrée,
 Échap), fermeture au clic à côté et retour Android (`useOverlayStack`).
@@ -707,6 +883,39 @@ casser. L'habillage, lui, est le nôtre.
 Deux fenêtres du système restent, parce qu'elles ne sont pas de l'habillage
 mais un pouvoir que seul le système a : le **choix d'un fichier**
 (`<input type="file">`) et la **feuille de partage** de l'appareil.
+
+### Sur un texte, le menu de la sélection est le nôtre
+
+Le menu qui surgit d'une sélection (copier, rechercher, traduire, partager)
+est une fenêtre du système comme les autres, à ceci près qu'on ne peut pas
+l'habiller : sur un téléphone, il s'ouvre par-dessus tout ce qu'on poserait à
+côté. Et devant un texte, ce qu'il propose n'est pas ce qu'on veut proposer :
+la traduction automatique d'un verset et la recherche web d'un mot d'hébreu.
+
+Les passages d'un texte coupent donc la sélection du système (`.reading-pick`)
+et se choisissent d'un appui ; une bulle vient se poser dessus, au-dessus du
+passage comme le ferait le menu qu'elle remplace, avec les gestes qui ont un
+sens là où l'on est : **partager** ce passage (le lien y ramène, et non en
+haut du chapitre), en lire la **phonétique** sans faire basculer toute la
+page, **signaler une erreur** (le formulaire de support s'ouvre avec
+l'endroit, les premiers mots et le lien déjà écrits), et le **marque-page** là
+où le texte en prend.
+
+L'appui long ouvre la bulle, comme l'appui bref. Couper la sélection du
+système coupe aussi le geste qui l'ouvrait : sans cela, appuyer longuement sur
+un verset ne ferait plus rien du tout, et le geste que tout le monde connaît
+pour agir sur du texte serait mort. La bulle se pose au-dessus du passage,
+jamais sous la zone système ni sous le bandeau du site (elle passe alors
+dessous), et sa rangée de commandes suit la taille de lecture, à moitié comme
+le menu de lecture, plafonnée pour que quatre colonnes tiennent sur la largeur
+d'un téléphone.
+
+Le choix se fait au passage, jamais au mot : c'est la seule unité que ces
+commandes savent nommer. Un lien mène à un verset, pas à trois mots, et un
+signalement qui dit « Tehilim 23 · verset 4 » se corrige, là où trois mots
+copiés se cherchent. Partout ailleurs (le reste du site, un texte qu'on
+accompagne sans qu'il ait d'adresse à lui), la sélection ordinaire reste, à la
+couleur du thème.
 
 ### Une fenêtre modale tient dans ce qui est visible, clavier compris
 
@@ -769,6 +978,10 @@ fond, qui suffit.
   secondaire (« Mon compte », pas « MON COMPTE »).
 - Playfair sur autre chose qu'un titre ou une mise en avant.
 - Une couleur codée en dur là où un jeton existe.
+- Le zoom au double appui du navigateur, sur le site comme dans l'app : le
+  pincement fait ce travail et reste entier. Le double appui, lui, est un geste
+  à nous (il lance le défilement automatique sur un texte) ; là où le navigateur
+  zoomait en même temps, les deux se disputaient la page.
 
 ## 9. Ce qui reste à faire
 

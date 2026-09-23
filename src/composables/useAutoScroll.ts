@@ -38,7 +38,7 @@ import { devicePreference } from "../services/devicePreference";
  * lancement.
  */
 
-export type AutoScrollSpeedId = "slow" | "medium" | "fast";
+export type AutoScrollSpeedId = "slow" | "medium" | "fast" | "veryFast";
 
 interface AutoScrollSpeed {
   id: AutoScrollSpeedId;
@@ -47,7 +47,14 @@ interface AutoScrollSpeed {
 }
 
 /**
- * Les trois allures proposées, de la plus lente à la plus rapide.
+ * Les allures proposées, de la plus lente à la plus rapide. L'ordre du tableau
+ * est celui des crans du curseur (voir AutoScrollPill) : il se lit du plus lent
+ * au plus rapide, et rien ne doit l'y ranger autrement.
+ *
+ * La quatrième a été ajoutée pour qui lit vite, et parce que trois crans font
+ * un curseur trop court pour qu'on le prenne pour un curseur. Elle reste une
+ * allure de lecture, pas un survol : une ligne y passe en un peu plus d'un
+ * tiers de seconde.
  *
  * La plus lente a été relevée de 12 à 16 px/s, et c'est une affaire de
  * fluidité, pas de vitesse. Chromium (donc Android) refuse les positions de
@@ -62,6 +69,7 @@ export const AUTO_SCROLL_SPEEDS: AutoScrollSpeed[] = [
   { id: "slow", pixelsPerSecond: 16 },
   { id: "medium", pixelsPerSecond: 26 },
   { id: "fast", pixelsPerSecond: 48 },
+  { id: "veryFast", pixelsPerSecond: 72 },
 ];
 
 const STORAGE_KEY = "pj-autoscroll-speed";
@@ -100,9 +108,13 @@ const speedId = ref<AutoScrollSpeedId>(readStoredSpeed());
 
 /** Position visée, en flottant : c'est elle qui est posée telle quelle (voir step). */
 let position = 0;
+/** Dernière position réellement posée : sert à reconnaître un saut venu d'ailleurs. */
+let appliedPosition = 0;
 let frame = 0;
 let lastFrameAt = 0;
 let startedAt = 0;
+/** La page a bougé sans nous : la prochaine image active repart d'où elle est. */
+let needsSync = false;
 
 const currentSpeed = computed(
   () => AUTO_SCROLL_SPEEDS.find((speed) => speed.id === speedId.value) ?? AUTO_SCROLL_SPEEDS[0],
@@ -146,14 +158,158 @@ function unwatchPageSize(): void {
   bodyObserver = null;
 }
 
+/**
+ * La main du lecteur.
+ *
+ * Sur iPhone, ce n'est pas le script qui fait défiler la page mais le
+ * défileur du système, sur son propre fil. Poser une position pendant qu'un
+ * doigt glisse lui arrache la page ; il la reprend à l'image suivante, le
+ * script la reprend à la sienne, et les deux se la disputent soixante fois
+ * par seconde : c'est le défilement frénétique remonté, et c'est pire encore
+ * quand on essaie de faire défiler pendant que la descente est lancée.
+ *
+ * Le même fil explique un deuxième à-coup, celui qu'on voit sans toucher à
+ * rien : `window.scrollY`, lu depuis le fil principal, est en retard d'une
+ * image ou deux sur la position réelle. L'ancien garde-fou resynchronisait
+ * dès deux pixels d'écart, donc sur une valeur périmée, et ramenait la page
+ * en arrière à chaque image un peu longue.
+ *
+ * D'où la règle : tant que la page est au lecteur, on ne pose rien du tout.
+ * Elle lui est tant qu'un doigt la touche, puis le temps que l'élan du
+ * glissement retombe (iOS continue de la faire défiler bien après que le
+ * doigt soit parti), et pendant une salve de molette ou de clavier.
+ */
+
+/** Doigts posés sur l'écran. Un seul suffit pour que la page ne soit plus à nous. */
+let fingers = 0;
+/** On s'abstient au moins jusque-là (horodatage). */
+let settleUntil = 0;
+/** Puis on attend que la page soit immobile : l'élan d'iOS court encore. */
+let waitForStill = false;
+/** Sauf à ce que l'attente s'éternise : au-delà, on reprend la main. */
+let stillDeadline = 0;
+/** Position vue à l'image précédente, pour juger de l'immobilité. */
+let lastSeenY = 0;
+
+/** Le temps qu'iOS lance sa décélération : avant, la page peut sembler immobile à tort. */
+const TOUCH_SETTLE_MS = 150;
+/** Molette et clavier défilent par salves, avec leur propre inertie. */
+const WHEEL_SETTLE_MS = 300;
+/** En deçà, d'une image à l'autre, la page ne bouge plus. */
+const STILL_PX = 0.5;
+/** Plafond de l'attente d'un élan : rien ne décélère aussi longtemps. */
+const MOMENTUM_CAP_MS = 2000;
+/** Au-delà, la page a été déplacée par autre chose que nous (ancre, restauration). */
+const EXTERNAL_JUMP_PX = 24;
+/** Une image plus longue que ça est une image perdue : on ne lui compte pas sa distance. */
+const MAX_FRAME_MS = 50;
+
+/** Un geste de défilement vient d'avoir lieu : la page est au lecteur. */
+function noteUserScroll(settleMs: number): void {
+  const now = Date.now();
+  settleUntil = Math.max(settleUntil, now + settleMs);
+  waitForStill = true;
+  stillDeadline = now + MOMENTUM_CAP_MS;
+  lastSeenY = window.scrollY;
+}
+
+function onUserTouch(event: TouchEvent): void {
+  fingers = event.touches.length;
+  // Le dernier doigt part : l'élan, s'il y en a un, commence maintenant.
+  if (fingers === 0) noteUserScroll(TOUCH_SETTLE_MS);
+}
+
+function onUserWheel(): void {
+  noteUserScroll(WHEEL_SETTLE_MS);
+}
+
+/** Les touches qui font défiler une page ; les autres ne nous regardent pas. */
+const SCROLL_KEYS = new Set([
+  "ArrowUp",
+  "ArrowDown",
+  "PageUp",
+  "PageDown",
+  "Home",
+  "End",
+  " ",
+  "Spacebar",
+]);
+
+function onUserKey(event: KeyboardEvent): void {
+  // Une espace tapée dans un champ, ou qui appuie sur un bouton, ne fait rien
+  // défiler : elle n'a pas à interrompre la descente (voir isInteractive).
+  if (SCROLL_KEYS.has(event.key) && !isInteractive(event.target)) {
+    noteUserScroll(WHEEL_SETTLE_MS);
+  }
+}
+
+/** La page est-elle au lecteur ? */
+function userHasControl(): boolean {
+  if (fingers > 0) return true;
+  const now = Date.now();
+  if (now < settleUntil) return true;
+  if (!waitForStill) return false;
+  // L'élan d'iOS s'éteint de lui-même : on le laisse finir plutôt que de le
+  // couper net, et on reprend dès que la page ne bouge plus.
+  const y = window.scrollY;
+  const moving = Math.abs(y - lastSeenY) > STILL_PX;
+  lastSeenY = y;
+  if (moving && now < stillDeadline) return true;
+  waitForStill = false;
+  return false;
+}
+
+function watchUserScroll(): void {
+  fingers = 0;
+  settleUntil = 0;
+  waitForStill = false;
+  window.addEventListener("touchstart", onUserTouch, { passive: true });
+  window.addEventListener("touchmove", onUserTouch, { passive: true });
+  window.addEventListener("touchend", onUserTouch, { passive: true });
+  window.addEventListener("touchcancel", onUserTouch, { passive: true });
+  window.addEventListener("wheel", onUserWheel, { passive: true });
+  window.addEventListener("keydown", onUserKey, { passive: true });
+}
+
+function unwatchUserScroll(): void {
+  window.removeEventListener("touchstart", onUserTouch);
+  window.removeEventListener("touchmove", onUserTouch);
+  window.removeEventListener("touchend", onUserTouch);
+  window.removeEventListener("touchcancel", onUserTouch);
+  window.removeEventListener("wheel", onUserWheel);
+  window.removeEventListener("keydown", onUserKey);
+}
+
 function step(now: number): void {
   if (!running.value) return;
-  const elapsed = lastFrameAt ? now - lastFrameAt : 0;
-  lastFrameAt = now;
+  // Programmée d'abord : la sortie anticipée ci-dessous ne doit pas éteindre
+  // la boucle, elle passe son tour. `stopAutoScroll` annule celle-ci.
+  frame = requestAnimationFrame(step);
 
-  // La page a bougé sans nous (le lecteur a fait défiler à la main, un lien
-  // a sauté ailleurs) : on repart d'où elle est, plutôt que de la ramener.
-  if (Math.abs(window.scrollY - position) > 2) position = window.scrollY;
+  // La page est au lecteur (doigt posé, élan de son glissement, molette) : on
+  // ne pose rien. Poser quoi que ce soit ici, c'est la lui arracher des mains
+  // (voir plus haut), et le temps ne se compte pas non plus : ce qu'il a
+  // parcouru n'est pas de la lecture en retard à rattraper.
+  if (userHasControl()) {
+    lastFrameAt = 0;
+    needsSync = true;
+    return;
+  }
+
+  // Reprise après un geste, ou saut venu d'ailleurs (lien d'ancre, position
+  // restaurée) : on repart de la page telle qu'elle est, plutôt que de la
+  // ramener. La limite est remesurée du même coup, le saut a pu suivre une
+  // page qui a changé de taille.
+  if (needsSync || Math.abs(window.scrollY - appliedPosition) > EXTERNAL_JUMP_PX) {
+    needsSync = false;
+    position = window.scrollY;
+    remeasure();
+  }
+
+  // Une image perdue (mise en page longue, app revenue au premier plan) ne se
+  // rattrape pas d'un bond : le texte sauterait de plusieurs lignes d'un coup.
+  const elapsed = lastFrameAt ? Math.min(now - lastFrameAt, MAX_FRAME_MS) : 0;
+  lastFrameAt = now;
 
   position = Math.min(position + (currentSpeed.value.pixelsPerSecond * elapsed) / 1000, limit);
   // La position part telle quelle, fraction comprise : WebKit (donc l'app iOS)
@@ -161,14 +317,15 @@ function step(now: number): void {
   // arrondit, lui, et c'est pour lui que l'allure lente a été relevée (voir
   // AUTO_SCROLL_SPEEDS) : rien, du côté du script, ne peut lui faire avancer
   // une page de moins d'un pixel.
-  window.scrollTo(0, position);
+  //
+  // L'abscisse est celle de la page, pas zéro : en hébreu, et sur une page
+  // zoomée au pincement, la remettre à zéro à chaque image collait la page
+  // contre un bord et se battait avec tout geste horizontal.
+  window.scrollTo(window.scrollX, position);
+  appliedPosition = position;
 
   // Fin du texte : le défilement s'arrête de lui-même, il n'y a plus rien à lire.
-  if (position >= limit) {
-    stopAutoScroll("bottom");
-    return;
-  }
-  frame = requestAnimationFrame(step);
+  if (position >= limit) stopAutoScroll("bottom");
 }
 
 /** Lance le défilement (le double appui sur le texte, seule porte d'entrée). */
@@ -178,7 +335,10 @@ function startAutoScroll(): void {
   if (window.scrollY >= measureMaxScroll() - 1) return;
   running.value = true;
   watchPageSize();
+  watchUserScroll();
   position = window.scrollY;
+  appliedPosition = position;
+  needsSync = false;
   lastFrameAt = 0;
   startedAt = Date.now();
   analyticsService.capture("auto_scroll_started", { speed: speedId.value });
@@ -194,6 +354,7 @@ export function stopAutoScroll(reason: "user" | "bottom" | "leave"): void {
   if (!running.value) return;
   running.value = false;
   unwatchPageSize();
+  unwatchUserScroll();
   cancelAnimationFrame(frame);
   frame = 0;
   analyticsService.capture("auto_scroll_stopped", {

@@ -16,8 +16,14 @@ import { anchorToElement } from "../../composables/scrollAnchor";
 import { useReadingSize } from "../../composables/useReadingSize";
 import { useVerseBookmarks } from "../../composables/useVerseBookmarks";
 import { useTextLabels } from "../../composables/useTextLabels";
+import {
+  clearPassage,
+  selectedPassageKey,
+  selectPassage,
+  usePassageLongPress,
+} from "../../composables/useReadingSelection";
 import type { Bookmark } from "../../services/readingProgressService";
-import { hubPath, sectionPath } from "../../content/etudeTexts";
+import { hubPath, sectionPath, SITE_URL } from "../../content/etudeTexts";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { analyticsService } from "../../services/analyticsService";
 import CollapseTransition from "../../components/CollapseTransition.vue";
@@ -109,11 +115,9 @@ function sectionOf(section: number | null): TextSection | null {
 
 const {
   bookmarks,
-  selected: selectedVerse,
   highlighted: highlightedVerse,
   refresh: refreshBookmarks,
   isBookmarked,
-  select,
   toggleBookmark,
   scrollTo,
 } = useVerseBookmarks<string>({
@@ -140,12 +144,62 @@ function isVerseBookmarked(sectionIndex: number, line: number): boolean {
   return isBookmarked(storeSection(sectionIndex), line);
 }
 
-function onVerseClick(sectionIndex: number, line: number) {
-  select(storeSection(sectionIndex), line);
+function toggleBookmarkAt(sectionIndex: number, line: number) {
+  toggleBookmark(storeSection(sectionIndex), line);
 }
 
-function toggleBookmarkAt(section: TextSection, line: number) {
-  toggleBookmark(storeSection(section.index), line);
+// --- Le passage choisi (voir useReadingSelection) ---
+//
+// Le même geste que dans le lecteur de la bibliothèque : un appui sur un
+// verset le choisit, la bulle de commandes se pose dessus. La lecture du jour
+// pose plusieurs textes sur une page, d'où l'identifiant du texte dans la clé
+// du passage : un seul est choisi à la fois, quel que soit le livre.
+
+// L'appui long ouvre la bulle comme l'appui bref (écouteurs comptés : la page
+// pose un lecteur par texte, ils ne sont posés qu'une fois).
+usePassageLongPress();
+
+/** Ce qui distingue ce verset de tous les autres de la page. */
+function passageKey(sectionIndex: number, line: number): string {
+  return `daily:${props.entry.id}#${verseKey(sectionIndex, line)}`;
+}
+
+function isVerseSelected(sectionIndex: number, line: number): boolean {
+  return selectedPassageKey.value === passageKey(sectionIndex, line);
+}
+
+/** L'adresse publique qui ramène à ce verset, et à lui seul. */
+function passageUrl(sectionIndex: number, line: number): string {
+  const section = storeSection(sectionIndex);
+  const path = section !== null ? sectionPath(props.entry, section) : hubPath(props.entry);
+  return `${SITE_URL}${path}?verset=${line}`;
+}
+
+function pickVerse(event: MouseEvent, sectionIndex: number, line: number, hebrew: string) {
+  // Clic droit : le menu du navigateur propose de copier, c'est la bulle qui
+  // répond à sa place.
+  if (event.type === "contextmenu") event.preventDefault();
+  const section = storeSection(sectionIndex);
+  selectPassage({
+    key: passageKey(sectionIndex, line),
+    el: event.currentTarget as HTMLElement,
+    hebrew,
+    place: [
+      appendHebrewNumeral(props.entry.name),
+      placeLabel(
+        content.value?.sections ?? [],
+        section,
+        line,
+        (n) => t("textReading.verseN", { n }),
+        headingLabel,
+      ),
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    url: passageUrl(sectionIndex, line),
+    bookmarked: isVerseBookmarked(sectionIndex, line),
+    toggleBookmark: () => toggleBookmarkAt(sectionIndex, line),
+  });
 }
 
 /** "Chapitre 2 (ב) · 3e montée · verset 14" pour un marque-page. */
@@ -295,7 +349,12 @@ onMounted(() => {
   observer.observe(root.value);
 });
 
-onUnmounted(() => observer?.disconnect());
+onUnmounted(() => {
+  observer?.disconnect();
+  // Un passage de CE texte ne survit pas à son retrait de la page (un chapitre
+  // marqué lu se replie) ; celui d'un texte voisin, si.
+  if (selectedPassageKey.value?.startsWith(`daily:${props.entry.id}#`)) clearPassage();
+});
 </script>
 
 <template>
@@ -416,13 +475,14 @@ onUnmounted(() => observer?.disconnect());
                   <template v-for="(line, index) in block.lines" :key="block.offset + index">
                     <span
                       :data-verse="verseKey(section.index, block.offset + index)"
-                      @click="onVerseClick(section.index, block.offset + index)"
-                      class="cursor-pointer rounded transition-colors duration-500 box-decoration-clone px-0.5 -mx-0.5"
+                      @click="pickVerse($event, section.index, block.offset + index, line)"
+                      @contextmenu="pickVerse($event, section.index, block.offset + index, line)"
+                      class="reading-pick rounded transition-colors duration-500 box-decoration-clone px-0.5 -mx-0.5"
                       :class="{
                         'bg-primary/10':
                           highlightedVerse === verseKey(section.index, block.offset + index),
-                        'bg-black/5 dark:bg-white/10':
-                          selectedVerse === verseKey(section.index, block.offset + index) &&
+                        'reading-selected':
+                          isVerseSelected(section.index, block.offset + index) &&
                           highlightedVerse !== verseKey(section.index, block.offset + index),
                       }"
                     >
@@ -468,25 +528,8 @@ onUnmounted(() => observer?.disconnect());
                         {{ comment.text }}
                       </span>
                     </span>
-                    <!-- Verset sélectionné : proposer le marque-page -->
-                    <span
-                      v-if="selectedVerse === verseKey(section.index, block.offset + index)"
-                      class="block my-2"
-                    >
-                      <button
-                        @click.stop="toggleBookmarkAt(section, block.offset + index)"
-                        class="btn btn-soft !px-3 !py-1.5 text-sm"
-                      >
-                        <AppIcon name="bookmark" :size="13" />
-                        {{
-                          isVerseBookmarked(section.index, block.offset + index)
-                            ? t("textReading.bookmarkRemove")
-                            : t("textReading.bookmarkAdd")
-                        }}
-                      </button>
-                    </span>
                     <br
-                      v-else-if="
+                      v-if="
                         !targumLine(section, block.offset + index) &&
                         !rashiComments(block.offset + index).length
                       "

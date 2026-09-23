@@ -3,6 +3,8 @@ import { useI18n } from "vue-i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useConsent } from "../../composables/useConsent";
 import { useOnboarding } from "../../composables/useOnboarding";
+import { useFeatureTips } from "../../composables/useFeatureTips";
+import { useToast } from "../../composables/useToast";
 import { openFeedback } from "../../composables/useFeedback";
 
 /**
@@ -15,6 +17,15 @@ const { t } = useI18n();
 const { reopen } = useConsent();
 // L'introduction ne s'affiche qu'une fois : c'est d'ici qu'on la revoit.
 const { replayOnboarding } = useOnboarding();
+// Les astuces des pages (le geste du rappel, le menu de lecture) ne se
+// montrent qu'une fois chacune : d'ici, elles se remettent en jeu.
+const { resetFeatureTips } = useFeatureTips();
+const toast = useToast();
+
+function replayTips(): void {
+  resetFeatureTips();
+  toast.info(t("tips.replayed"));
+}
 
 const pages = [
   { to: "/a-propos", labelKey: "footer.about", icon: "info" },
@@ -46,7 +57,7 @@ const pages = [
         <button
           type="button"
           class="w-full flex items-center justify-between gap-3 py-3.5 text-text-primary hover:text-primary transition-colors"
-          @click="openFeedback"
+          @click="openFeedback()"
         >
           <span class="flex items-center gap-3">
             <AppIcon name="message" :size="17" class="text-text-secondary/70" />
@@ -77,6 +88,19 @@ const pages = [
           <span class="flex items-center gap-3">
             <AppIcon name="rocket" :size="17" class="text-text-secondary/70" />
             {{ t("onboarding.replay") }}
+          </span>
+          <AppIcon name="chevron-right" :size="15" class="text-text-secondary/50 rtl:rotate-180" />
+        </button>
+      </li>
+      <li>
+        <button
+          type="button"
+          class="w-full flex items-center justify-between gap-3 py-3.5 text-text-primary hover:text-primary transition-colors"
+          @click="replayTips"
+        >
+          <span class="flex items-center gap-3">
+            <AppIcon name="lightbulb" :size="17" class="text-text-secondary/70" />
+            {{ t("tips.replay") }}
           </span>
           <AppIcon name="chevron-right" :size="15" class="text-text-secondary/50 rtl:rotate-180" />
         </button>

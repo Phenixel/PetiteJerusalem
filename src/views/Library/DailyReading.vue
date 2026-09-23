@@ -45,6 +45,8 @@ import {
 import DailyReadingItem from "./DailyReadingItem.vue";
 import ReadingEncadrement from "../../components/ReadingEncadrement.vue";
 import ReminderSettingsModal from "./ReminderSettingsModal.vue";
+import FeatureTour, { type TourStep } from "../../components/FeatureTour.vue";
+import { tipsOffered } from "../../composables/useFeatureTips";
 import ChneiMikraOptions from "../../components/ChneiMikraOptions.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import CatalogSearchField from "../../components/CatalogSearchField.vue";
@@ -187,6 +189,38 @@ function sortByCatalog(ids: string[]): string[] {
 const loading = ref(true);
 const saving = ref(false);
 const mode = ref<"reading" | "manage">("reading");
+
+/**
+ * L'astuce de la lecture du jour (voir FeatureTour) : composer sa liste,
+ * puis, dans l'app, la cloche qui la rappelle chaque jour.
+ */
+const manageButton = ref<HTMLElement | null>(null);
+const bellButton = ref<HTMLElement | null>(null);
+
+const dailyTip = computed<TourStep[]>(() => {
+  const steps: TourStep[] = [
+    {
+      key: "compose",
+      icon: "book-reader",
+      title: t("tips.daily.compose.title"),
+      text: t("tips.daily.compose.text"),
+      target: () => manageButton.value,
+      radius: 9999,
+    },
+  ];
+  if (isNativeApp) {
+    steps.push({
+      key: "reminder",
+      icon: "bell",
+      title: t("tips.daily.reminder.title"),
+      text: t("tips.daily.reminder.text"),
+      target: () => bellButton.value,
+      radius: 9999,
+    });
+  }
+  return steps;
+});
+
 // Trois onglets en mode lecture : le quotidien d'abord, le chnei mikra
 // (hebdomadaire) dans « Cette semaine » pour ne pas allonger la page du jour,
 // et « Progression » pour le calendrier, les compteurs et les paliers.
@@ -1725,6 +1759,7 @@ const formatBookName = bookName;
         <!-- App native : la cloche ouvre les réglages des rappels push. -->
         <button
           v-if="isNativeApp"
+          ref="bellButton"
           @click="onBellClick"
           :disabled="reminderBusy"
           :class="[
@@ -1742,7 +1777,12 @@ const formatBookName = bookName;
           <AppIcon v-else name="bell" :size="20" />
         </button>
 
-        <button v-if="mode === 'reading'" @click="mode = 'manage'" class="btn btn-primary">
+        <button
+          v-if="mode === 'reading'"
+          ref="manageButton"
+          @click="mode = 'manage'"
+          class="btn btn-primary"
+        >
           <AppIcon name="settings" :size="14" />
           {{ t("dailyReading.manage") }}
         </button>
@@ -3050,5 +3090,8 @@ const formatBookName = bookName;
       @close="editingDay = null"
       @save="saveDay"
     />
+
+    <!-- L'astuce de la lecture du jour, une fois (dailyTip). -->
+    <FeatureTour v-if="tipsOffered" tip="daily-reading" :steps="dailyTip" />
   </div>
 </template>

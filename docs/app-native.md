@@ -336,6 +336,11 @@ Changer d'avis reprogramme les rappels d'horaires : ils sont posés sur des
 instants calculés, et ces instants viennent de bouger (voir
 `zmanReminderService`).
 
+Les **astuces vues** (`useFeatureTips`, clé `pj_tips_seen`) aussi : une
+astuce qui reviendrait à chaque vidage de cache finirait par agacer, et
+« Revoir les astuces » (onglet À propos) est là pour qui la veut. Elles ne
+montent pas dans le compte : c'est sur cet écran-là qu'on a vu le geste.
+
 L'**interrupteur du défilement automatique** (`useAutoScroll`) suit la même
 règle, et pour une raison plus forte encore : il se coupe précisément pour ne
 plus être surpris par un geste qu'on déclenche sans le vouloir. S'il revenait

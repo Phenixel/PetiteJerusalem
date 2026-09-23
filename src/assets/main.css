@@ -153,6 +153,27 @@ body {
   --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.5);
 }
 
+/* ---- La sélection ---------------------------------------------------------
+   Sélectionner du texte posait derrière lui le bleu du système, la seule
+   couleur de l'app que personne n'avait choisie. Elle prend celle du thème,
+   en transparence : le texte garde son encre, seul le fond change. La teinte
+   est reprise par le passage choisi dans un texte (`.reading-selected`), pour
+   que les deux façons de désigner un passage se voient pareil.
+
+   Elle est plus soutenue en sombre : la même transparence, posée sur du gris
+   nuit au lieu du beige, ne se voyait presque plus. */
+:root {
+  --color-selection: color-mix(in srgb, var(--color-primary) 24%, transparent);
+}
+
+:root.dark {
+  --color-selection: color-mix(in srgb, var(--color-primary) 40%, transparent);
+}
+
+::selection {
+  background-color: var(--color-selection);
+}
+
 /* Global Styles */
 body {
   font-family: var(--font-sans);
@@ -171,6 +192,17 @@ body {
   color: #f3f4f6; /* gray-100 */
 }
 
+/* Pas de zoom au double appui, nulle part : le pincement fait ce travail, et
+   il reste entier. Le double appui, lui, est un geste à nous (il lance le
+   défilement automatique sur un texte, voir useAutoScroll) : là où le
+   navigateur zoomait en même temps, les deux se disputaient la page. La règle
+   valait déjà dans l'app, elle vaut maintenant aussi sur le site, où le meta
+   viewport ne suffit à la tenir ni sur Safari ni sur toutes les webviews. */
+:root,
+body {
+  touch-action: manipulation;
+}
+
 /* App native uniquement (classe posée par main.ts) : sans ça, l'étirement
    d'overscroll d'Android déforme toute la page, bottom bar comprise.
    (Complété par overScrollMode NEVER côté natif, cf. setup-android.mjs.)
@@ -178,13 +210,10 @@ body {
    pour l'horizontale, et WebKit y voit l'ordre de couper le retour arrière par
    glissement depuis le bord de l'écran, le geste système des iPhone (son
    équivalent Android, le bouton retour, passe par le natif et n'est donc pas
-   concerné, ce qui explique que le bug ne se voyait que sur iOS).
-   `touch-action: manipulation` coupe en plus le zoom au double-tap, que le
-   meta viewport ne suffit pas à neutraliser sur toutes les webviews. */
+   concerné, ce qui explique que le bug ne se voyait que sur iOS). */
 :root.native-app,
 :root.native-app body {
   overscroll-behavior-y: none;
-  touch-action: manipulation;
 }
 
 /* Safe-areas : env() est fourni par les WebViews récentes (viewport-fit=cover),
@@ -434,6 +463,25 @@ button,
   :root.perf-lite .md\:backdrop-blur-md {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+  }
+
+  /* ---- Les passages d'un texte -------------------------------------------
+     Un appui sur un verset, un paragraphe d'office ou un daf le choisit, et
+     la bulle de commandes vient se poser dessus (ReadingSelectionMenu.vue).
+     D'où la sélection du système coupée ici, et seulement ici : sur un
+     téléphone, son menu (copier, rechercher, partager) s'ouvre par-dessus le
+     nôtre, et il propose ce que nous ne voulons pas proposer sur un texte.
+     Le reste des pages garde la sélection ordinaire, à la couleur du thème. */
+  .reading-pick {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Le passage choisi : la couleur de la sélection, celle du thème. */
+  .reading-selected {
+    background-color: var(--color-selection);
   }
 
   /* Modal building blocks, one modal style for the whole app. */

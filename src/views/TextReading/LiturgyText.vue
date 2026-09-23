@@ -63,10 +63,19 @@ const props = withDefaults(
      * répondrait à la place du premier verset, ces ancres étant cherchées dans
      * toute la page.
      *
-     * Pas de marque-page ici, ni de verset sélectionné : une tefila se lit du
-     * début, on n'y revient pas à un paragraphe comme à un verset de Tehilim.
+     * Pas de marque-page ici : une tefila se lit du début, on n'y revient pas
+     * à un paragraphe comme à un verset de Tehilim.
      */
     anchored?: boolean;
+    /**
+     * Les paragraphes se choisissent d'un appui, et la bulle de commandes vient
+     * se poser dessus (voir useReadingSelection). Le texte de la page le pose ;
+     * les passages qui l'accompagnent (ce qu'on dit avant les Tehilim et après)
+     * gardent la sélection ordinaire, n'ayant pas d'adresse à eux.
+     */
+    selectable?: boolean;
+    /** Le paragraphe choisi, par sa ligne : c'est lui que le fil surligne. */
+    selectedLine?: number | null;
   }>(),
   {
     // Par défaut le texte est celui de la page : il porte ses ancres. La
@@ -75,8 +84,15 @@ const props = withDefaults(
     // `true`, aucun texte de liturgie ne portait plus d'ancre : le menu de
     // lecture ne menait nulle part, et la reprise de lecture non plus.
     anchored: true,
+    selectable: false,
+    selectedLine: null,
   },
 );
+
+const emit = defineEmits<{
+  /** Un paragraphe vient d'être choisi : la page en fait un passage. */
+  pick: [passage: { el: HTMLElement; line: number; hebrew: string; label: string }];
+}>();
 
 const { t, locale } = useI18n();
 
@@ -167,6 +183,9 @@ function sectionClass(block: TextBlock): string {
 }
 
 /** Titre du fil du texte : filet de séparation, sauf au tout premier bloc. */
+/** Un titre porte-t-il une commande (boussole du Kotel, miroir des téfilines) ? */
+const hasTitleAction = (block: TextBlock): boolean => Boolean(block.kotel || block.mirror);
+
 function titleClass(block: TextBlock, index: number): string {
   if (block.variants) return "mb-3 text-sm font-semibold text-text-secondary";
   const base = "mb-3 text-sm font-semibold text-primary";
@@ -377,6 +396,25 @@ const sections = computed<SectionEntry[]>(() => {
 });
 
 /**
+ * Un appui sur un paragraphe le choisit, et la page en fait un passage (son
+ * endroit, son adresse, ses commandes). Seule la première écriture d'un
+ * passage répété porte le choix : les reprises n'ont pas d'ancre à elles, et
+ * ce sont les mêmes mots.
+ */
+function pick(event: MouseEvent, entry: ParagraphEntry, block: TextBlock, copy: number): void {
+  if (!props.selectable || copy !== 1) return;
+  // Clic droit : le menu du navigateur propose de copier, c'est la bulle qui
+  // répond à sa place.
+  if (event.type === "contextmenu") event.preventDefault();
+  emit("pick", {
+    el: event.currentTarget as HTMLElement,
+    line: entry.line,
+    hebrew: visibleText(entry.paragraph),
+    label: blockTitle(block),
+  });
+}
+
+/**
  * La translittération, ligne par ligne, de ce qui se dit aujourd'hui : les
  * fragments que le jour écarte (l'autre conclusion, l'autre saison) n'y
  * entrent pas, le lecteur phonétique lit le même texte que le lecteur hébreu.
@@ -428,33 +466,42 @@ const phoneticOf = computed(() => {
           :class="inSeason(block) ? 'text-primary' : 'text-text-secondary'"
         />
       </button>
-      <p v-else-if="blockTitle(block)" :class="titleClass(block, index)">
-        {{ blockTitle(block) }}
-        <!-- Face à Jérusalem : la boussole donne la direction du Kotel depuis
-             le lieu où l'on se trouve, là où la question se pose, au titre du
-             passage qui se dit tourné vers elle. -->
-        <button
-          v-if="block.kotel"
-          type="button"
-          class="ms-1.5 inline-flex items-center align-middle rounded-full p-1 text-primary hover:bg-primary/10"
-          :aria-label="t('textReading.kotel.open')"
-          :title="t('textReading.kotel.open')"
-          @click="openKotelCompass('title')"
-        >
-          <AppIcon name="compass" :size="15" />
-        </button>
-        <!-- Le miroir, au titre du passage où l'on pose les téfilines : le
-             bayit de la tête se place là où l'on ne se voit pas. -->
-        <button
-          v-if="block.mirror"
-          type="button"
-          class="ms-1.5 inline-flex items-center align-middle rounded-full p-1 text-primary hover:bg-primary/10"
-          :aria-label="t('textReading.mirror.open')"
-          :title="t('textReading.mirror.open')"
-          @click="openTefilinMirror('title')"
-        >
-          <AppIcon name="mirror" :size="15" />
-        </button>
+      <p
+        v-else-if="blockTitle(block)"
+        :class="[
+          titleClass(block, index),
+          hasTitleAction(block) ? 'flex items-center justify-between gap-3' : '',
+        ]"
+      >
+        <span>{{ blockTitle(block) }}</span>
+        <!-- Les commandes du passage, en face de son titre et au bout de sa
+             ligne : collées au titre, en icône seule, personne ne voyait
+             qu'elles s'appuyaient. -->
+        <span v-if="hasTitleAction(block)" class="flex flex-shrink-0 items-center gap-2">
+          <!-- Face à Jérusalem : la boussole donne la direction du Kotel depuis
+               le lieu où l'on se trouve, là où la question se pose, au titre du
+               passage qui se dit tourné vers elle. -->
+          <button
+            v-if="block.kotel"
+            type="button"
+            class="title-action"
+            @click="openKotelCompass('title')"
+          >
+            <AppIcon name="compass" :size="15" class="flex-shrink-0" />
+            {{ t("textReading.kotel.open") }}
+          </button>
+          <!-- Le miroir, au titre du passage où l'on pose les téfilines : le
+               bayit de la tête se place là où l'on ne se voit pas. -->
+          <button
+            v-if="block.mirror"
+            type="button"
+            class="title-action"
+            @click="openTefilinMirror('title')"
+          >
+            <AppIcon name="mirror" :size="15" class="flex-shrink-0" />
+            {{ t("textReading.mirror.open") }}
+          </button>
+        </span>
       </p>
 
       <CollapseTransition v-if="!block.zman">
@@ -535,7 +582,11 @@ const phoneticOf = computed(() => {
                     'reading-lead': paragraph.lead,
                     'reading-tight': paragraph.tight,
                     'reading-echo': copy > 1,
+                    'reading-pick': selectable && copy === 1,
+                    'reading-selected': selectable && copy === 1 && selectedLine === line,
                   }"
+                  @click="pick($event, { paragraph, line }, text, copy)"
+                  @contextmenu="pick($event, { paragraph, line }, text, copy)"
                 >
                   <p
                     v-if="!showPhonetic"
@@ -571,12 +622,16 @@ const phoneticOf = computed(() => {
 /* Les tailles suivent le réglage A− / A+ (--reading-scale, useReadingSize).
    Interligne aligné sur celui des autres lecteurs (1.7) : assez d'air pour
    les voyelles, sans étirer la lecture. */
+/* Aucune couleur ici : elle vient du bloc (la couleur du thème pour l'ajout
+   du jour) ou de la classe que porte le paragraphe lui-même (le gris de ce qui
+   ne se dit pas toujours, voir paragraphTone). Une règle `color` sur
+   `.reading-he` l'emporterait sur cette classe, le style scopé étant plus
+   spécifique qu'un utilitaire : le second plan ne se voyait plus. */
 .reading-he {
   font-family: var(--font-hebrew);
   font-size: calc(1.45rem * var(--reading-scale, 1));
   line-height: 1.7;
   text-align: justify;
-  color: inherit;
 }
 
 .reading-tl {
@@ -717,6 +772,38 @@ const phoneticOf = computed(() => {
 }
 
 .reading-klaf:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* La commande d'un titre (la boussole du Kotel, le miroir des téfilines) :
+   la même pastille que celle du parchemin, mais posée en face du titre, au
+   bout de sa ligne, et portant son nom en toutes lettres. En icône seule et
+   collée au titre, elle passait pour un ornement du titre : personne
+   n'appuyait dessus. Sa taille ne suit pas celle du texte lu, elle : c'est
+   une commande de l'interface, pas du texte à dire, et les deux commandes
+   gardent ainsi exactement la même. */
+.title-action {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-primary);
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  transition: background-color 0.2s ease;
+}
+
+.title-action:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
+}
+
+.title-action:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
