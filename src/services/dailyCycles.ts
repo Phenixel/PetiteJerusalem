@@ -448,7 +448,9 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   }
   // La lecture de la Torah des lundis et jeudis ordinaires : le début de la
   // paracha de la semaine. Les jours à lecture propre (Roch Hodech, 'Hanouka,
-  // Pourim, jeûnes publics, 'Hol haMoed) lisent leur passage, pas celui-là.
+  // Pourim, jeûnes publics, 'Hol haMoed, et les Yom Tov : Roch Hachana,
+  // Kippour, Pessah, Chavou'ot, Souccot, Chemini Atseret) lisent leur
+  // passage, pas celui-là.
   // Les jeûnes de coutume (BeHaB, Yom Kippour Katan) gardent la lecture
   // ordinaire : hebcal les marque pourtant comme jeûnes, on les écarte.
   // Un jeûne que dit toute l'assemblée. hebcal marque de la même façon des
@@ -533,7 +535,11 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   if (selihotTsom && !tsomEstherVeille && !tsomVendredi) occ.add("tsom-minha");
   if (mois === months.TISHREI && hd.getDate() === 11) occ.add("chir-lendemain-kippour");
   const ownReading =
-    occ.has("rosh-chodesh") || occ.has("nissim") || publicFast || has(flags.CHOL_HAMOED);
+    occ.has("rosh-chodesh") ||
+    occ.has("nissim") ||
+    publicFast ||
+    has(flags.CHOL_HAMOED) ||
+    has(flags.CHAG);
   if ((hd.getDay() === 1 || hd.getDay() === 4) && !ownReading) occ.add("torah-semaine");
   // Un séfer Torah est sorti à Cha'harit : lundi et jeudi, Chabbat, et les
   // jours à lecture propre. C'est la clé de ce qui accompagne son retour

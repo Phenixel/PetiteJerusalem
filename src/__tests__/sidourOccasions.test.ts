@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { HDate, months } from "@hebcal/core";
 import {
   activeOccasions,
+  getWeekdayTorahParasha,
   omerDay,
   isRainRequest,
   isWinterMention,
@@ -149,6 +150,28 @@ describe("tahanoun et lecture de la Torah de la semaine", () => {
     expect(occ.has("tahanoun")).toBe(false);
     expect(occ.has("tahanoun-minha")).toBe(false);
     expect(occ.has("torah-semaine")).toBe(false);
+  });
+
+  it("un Yom Tov tombé un lundi ou un jeudi lit son propre passage", () => {
+    // Kippour (lundi 21 septembre 2026), Pessah I (jeudi 2 avril 2026) et le
+    // second jour de Chavou'ot en diaspora (jeudi 1er juin 2028) : le séfer
+    // est sorti, mais pour la lecture de la fête, pas pour la paracha.
+    for (const date of [new Date(2026, 8, 21), new Date(2026, 3, 2), new Date(2028, 5, 1)]) {
+      const occ = activeOccasions(new HDate(date), false);
+      expect(occ.has("torah-semaine")).toBe(false);
+      expect(occ.has("sefer-torah")).toBe(true);
+    }
+  });
+
+  it("suit le calendrier du lieu : Israël a parfois une paracha d'avance", () => {
+    // Lundi 25 mai 2026 : Chavou'ot s'est achevé le samedi 23 en diaspora,
+    // Israël, qui ne l'a fêté qu'un jour, a lu Nasso ce Chabbat-là. Le lundi
+    // qui suit, Israël lit Beha'alotcha, la diaspora Nasso.
+    const lundi = new Date(2026, 4, 25, 12);
+    expect(activeOccasions(new HDate(lundi), true).has("torah-semaine")).toBe(true);
+    expect(activeOccasions(new HDate(lundi), false).has("torah-semaine")).toBe(true);
+    expect(getWeekdayTorahParasha(lundi, true)?.names).toEqual(["Beha'alotcha"]);
+    expect(getWeekdayTorahParasha(lundi, false)?.names).toEqual(["Nasso"]);
   });
 });
 
