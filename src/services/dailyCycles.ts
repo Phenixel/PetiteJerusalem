@@ -69,6 +69,13 @@ export interface WeeklyParasha {
   weekKey: string;
 }
 
+/** La date civile locale d'un jour, au format d'une `weekKey` ("2026-08-08"). */
+function dateKey(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
 /**
  * La paracha de la semaine : celle du Chabbat à venir (aujourd'hui si Chabbat).
  * Les semaines de fête n'ont pas de paracha ordinaire ; on affiche alors celle
@@ -91,11 +98,8 @@ export function getWeeklyParasha(date: Date = new Date(), il = false): WeeklyPar
       const entries = reading.parsha
         .map((name) => parashaByKey.get(HEBCAL_ALIASES[normalize(name)] ?? normalize(name)))
         .filter((e): e is TextStudyJsonEntry => Boolean(e));
-      const month = String(saturday.getMonth() + 1).padStart(2, "0");
-      const day = String(saturday.getDate()).padStart(2, "0");
-      const weekKey = `${saturday.getFullYear()}-${month}-${day}`;
       return entries.length === reading.parsha.length
-        ? { names: [...reading.parsha], entries, weekKey }
+        ? { names: [...reading.parsha], entries, weekKey: dateKey(saturday) }
         : null;
     }
     saturday.setDate(saturday.getDate() + 7);
@@ -114,9 +118,35 @@ export function getWeeklyParasha(date: Date = new Date(), il = false): WeeklyPar
 export function getParashaForShabbat(saturday: Date, il = false): WeeklyParasha | null {
   const parasha = getWeeklyParasha(saturday, il);
   if (!parasha) return null;
-  const month = String(saturday.getMonth() + 1).padStart(2, "0");
-  const day = String(saturday.getDate()).padStart(2, "0");
-  return parasha.weekKey === `${saturday.getFullYear()}-${month}-${day}` ? parasha : null;
+  return parasha.weekKey === dateKey(saturday) ? parasha : null;
+}
+
+/**
+ * La paracha lue le lundi et le jeudi matin : le début de celle du Chabbat
+ * qui vient, comme `getWeeklyParasha`, sauf avant Souccot.
+ *
+ * `getWeeklyParasha` enjambe les Chabbats de fête (le chnei mikra anticipe),
+ * et saute donc Vezot Haberakha, qui n'a pas de Chabbat : on la lit à Sim'hat
+ * Torah. Mais les lundis et jeudis de Tichri qui précèdent un Chabbat de fête
+ * la lisent : entre Kippour et Souccot, ou dès la semaine de Kippour quand
+ * Kippour tombe un Chabbat (Roch Hachana un jeudi : les 5 et 8 Tichri).
+ *
+ * `il` suit le calendrier d'Israël, où Sim'hat Torah tombe le 22 Tichri, et
+ * non le 23.
+ */
+export function getWeekdayTorahParasha(date: Date, il = false): WeeklyParasha | null {
+  const hd = new HDate(date);
+  const simchatTorah = il ? 22 : 23;
+  if (hd.getMonth() === months.TISHREI && hd.getDate() < simchatTorah) {
+    const saturday = new Date(date);
+    saturday.setDate(saturday.getDate() + ((6 - saturday.getDay() + 7) % 7));
+    const shabbat = new HDate(saturday);
+    const entry = parashaByKey.get(HEBCAL_ALIASES.vezothaberakhah);
+    if (entry && new Sedra(shabbat.getFullYear(), il).lookup(shabbat).chag) {
+      return { names: ["Vezot Haberakhah"], entries: [entry], weekKey: dateKey(saturday) };
+    }
+  }
+  return getWeeklyParasha(date, il);
 }
 
 /** Le Chabbat d'une `weekKey` ("2026-08-08"), dans le repère local. */
