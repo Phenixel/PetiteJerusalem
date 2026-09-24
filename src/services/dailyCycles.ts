@@ -373,6 +373,9 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
     // la lecture de la Torah venant juste après (à Roch Hodech, c'est le
     // Titkabal entier).
     occ.add("hanouka");
+    // Roch Hodech Tévet, qui tombe dans 'Hanouka : la lecture de Roch Hodech
+    // se fait en trois montées, et le nassi du jour en quatrième.
+    if (occ.has("rosh-chodesh")) occ.add("rosh-chodesh-hanouka");
   }
   // Pourim nommé à part de `nissim` : le jeûne d'Esther partage le psaume du
   // jour de Pourim, mais pas sa lecture de la Torah ni Al hanissim.
