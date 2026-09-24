@@ -4,11 +4,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { Capacitor } from "@capacitor/core";
 import { authService, type User } from "../services/authService";
-import {
-  isAppleSignInUnavailable,
-  isAuthBrowserUnavailable,
-  isAuthCancellation,
-} from "../services/authErrors";
+import { isAuthCancellation, isAuthProviderUnavailable } from "../services/authErrors";
 import { reservationService } from "../services/reservationService";
 import { guestService } from "../services/guestService";
 import { seoService } from "../services/seoService";
@@ -130,14 +126,18 @@ async function socialSignIn(provider: "google" | "apple", signIn: () => Promise<
       return;
     }
     console.error(`Connexion ${provider} échouée:`, e);
-    analyticsService.captureException(e, { auth_flow: provider });
     // Ce que l'appareil ne peut pas faire, et que réessayer ne changera pas :
     // Safari indisponible pour Google (restrictions Temps d'écran), la feuille
     // Apple sans compte Apple connecté (code 1000). On dit quoi vérifier, et
     // vers quoi se replier, plutôt qu'une erreur générique observée en prod
     // (trois tentatives puis abandon).
-    const unavailable =
-      provider === "google" ? isAuthBrowserUnavailable(e) : isAppleSignInUnavailable(e);
+    const unavailable = isAuthProviderUnavailable(provider, e);
+    // Cet appareil-là ne peut pas, et aucun correctif n'y changera rien : comme
+    // pour un mot de passe refusé plus haut, l'Error tracking n'a rien à en
+    // faire. Le funnel garde la trace du décrochage, avec sa raison.
+    if (!unavailable) {
+      analyticsService.captureException(e, { auth_flow: provider });
+    }
     analyticsService.capture(`${provider}_signin_failed`, {
       reason: unavailable ? "unavailable" : "error",
       error_message: e instanceof Error ? e.message : String(e),

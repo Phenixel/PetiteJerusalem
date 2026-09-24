@@ -62,6 +62,17 @@ export function isAppleSignInUnavailable(error: unknown): boolean {
 }
 
 /**
+ * Ce que l'appareil ne sait pas faire, quel que soit le fournisseur : Safari
+ * hors d'atteinte pour Google, feuille Apple imprésentable. Ni un refus ni un
+ * bug de l'app : réessayer ne change rien, seul le repli par email aboutit.
+ * Les appelants affichent quoi vérifier, comptent le décrochage dans le
+ * funnel, mais ne remontent pas ces échecs à l'Error tracking.
+ */
+export function isAuthProviderUnavailable(provider: "google" | "apple", error: unknown): boolean {
+  return provider === "google" ? isAuthBrowserUnavailable(error) : isAppleSignInUnavailable(error);
+}
+
+/**
  * Erreurs propres aux flux de compte de l'app, à côté de celles de Firebase.
  *
  * Comme celles-ci, elles portent un `code` : les vues trient dessus

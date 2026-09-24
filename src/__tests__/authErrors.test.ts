@@ -3,6 +3,7 @@ import {
   isAppleSignInUnavailable,
   isAuthBrowserUnavailable,
   isAuthCancellation,
+  isAuthProviderUnavailable,
 } from "../services/authErrors";
 
 /**
@@ -104,5 +105,31 @@ describe("isAppleSignInUnavailable", () => {
         ),
       ),
     ).toBe(false);
+  });
+});
+
+describe("isAuthProviderUnavailable", () => {
+  const safariUnavailable = new Error("Unable to open Safari.");
+  const appleUnavailable = new Error(
+    "The operation couldn’t be completed. (com.apple.AuthenticationServices.AuthorizationError error 1000.)",
+  );
+
+  it("reconnaît l'appareil hors d'état pour le fournisseur demandé", () => {
+    expect(isAuthProviderUnavailable("google", safariUnavailable)).toBe(true);
+    expect(isAuthProviderUnavailable("apple", appleUnavailable)).toBe(true);
+  });
+
+  it("ne prend pas la panne d'un fournisseur pour celle de l'autre", () => {
+    expect(isAuthProviderUnavailable("apple", safariUnavailable)).toBe(false);
+    expect(isAuthProviderUnavailable("google", appleUnavailable)).toBe(false);
+  });
+
+  it("laisse passer les pannes que l'app peut corriger", () => {
+    // Celles-ci gardent leur place dans l'Error tracking.
+    expect(isAuthProviderUnavailable("google", firebaseError("auth/network-request-failed"))).toBe(
+      false,
+    );
+    expect(isAuthProviderUnavailable("apple", new Error("Script error."))).toBe(false);
+    expect(isAuthProviderUnavailable("apple", null)).toBe(false);
   });
 });
