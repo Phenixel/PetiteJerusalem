@@ -530,6 +530,10 @@ const he: LocaleMessages = {
       title: "זמני היום",
       then: "אחר כך {label} בשעה {time}",
       stale: "פתחו את האפליקציה לעדכון הזמנים",
+      entry: "כניסת {name}",
+      shabbat: "שבת",
+      festivalOn: "{name} ב{day}",
+      cholHamoed: "חול המועד {name}",
     },
     description:
       "זמנים הלכתיים המחושבים למיקום שלכם, במכשיר עצמו: המיקום שלכם אינו נשלח לשום מקום.",

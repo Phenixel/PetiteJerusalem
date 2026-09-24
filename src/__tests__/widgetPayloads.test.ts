@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { createI18n } from "vue-i18n";
+import fr from "../locales/fr";
 import {
   buildDailyReadingWidgetPayload,
   buildLibraryWidgetPayload,
@@ -71,6 +73,67 @@ describe("buildZmanimWidgetPayload", () => {
     const shabbat = buildZmanimWidgetPayload(DEFAULT_PLACE, t, "fr", new Date(2026, 7, 8, 10));
     expect(shabbat.days[0].tachanun).toBeNull();
     expect(shabbat.days[0].tachanunStrong).toBe(false);
+  });
+});
+
+describe("buildZmanimWidgetPayload autour des fêtes", () => {
+  // Les vraies chaînes françaises : ce sont elles qui composent la ligne de
+  // fête et le libellé de l'entrée.
+  const i18n = createI18n({ legacy: false, locale: "fr", messages: { fr } });
+  const tr = (key: string, params?: Record<string, unknown>) => i18n.global.t(key, params ?? {});
+  /** L'heure (0 à 23) d'un instant, à Paris, quel que soit le fuseau de la machine. */
+  const parisHour = (epoch: number) =>
+    Number(
+      new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/Paris",
+        hour: "2-digit",
+        hourCycle: "h23",
+      }).format(new Date(epoch)),
+    );
+  const parisDay = (epoch: number) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date(epoch));
+
+  // Jeudi 24 septembre 2026, 13 Tichri 5787 : Souccot tombe le samedi.
+  const now = new Date(2026, 8, 24, 10, 40);
+  const payload = buildZmanimWidgetPayload(DEFAULT_PLACE, tr, "fr", now);
+  const dayOf = (civil: string) =>
+    payload.days.find((d) => parisDay(d.until) === civil && parisHour(d.until) >= 12);
+
+  it("annonce la fête qui vient plutôt qu'une paracha qu'on ne lira pas", () => {
+    const covering = payload.days.find((d) => d.from <= now.getTime() && now.getTime() < d.until);
+    expect(covering?.parasha).toBeNull();
+    expect(covering?.festival).toMatch(/ce samedi$/);
+  });
+
+  it("nomme la fête le jour même, puis son 'Hol haMoed", () => {
+    expect(dayOf("2026-09-26")?.festival).toBe("Soukkot");
+    expect(dayOf("2026-09-28")?.festival).toBe("'Hol haMoed Soukkot");
+  });
+
+  it("met en avant l'entrée de Chabbat et de fête dès l'aube de la veille", () => {
+    const featured = payload.times.filter((z) => z.featuredFrom !== undefined);
+    expect(featured).toHaveLength(1);
+    const [entry] = featured;
+    expect(entry.key).toBe("candleLighting");
+    expect(entry.label).toBe("Entrée de Chabbat et Soukkot");
+    expect(parisDay(entry.epoch)).toBe("2026-09-25");
+    expect(parisHour(entry.featuredFrom!)).toBeLessThan(8);
+    expect(parisHour(entry.epoch)).toBeGreaterThanOrEqual(18);
+    // L'entrée reste un horaire comme un autre, à sa place dans le temps :
+    // les binaires d'avant l'affichent sans rien savoir de la mise en avant.
+    const index = payload.times.indexOf(entry);
+    expect(payload.times[index - 1].epoch).toBeLessThanOrEqual(entry.epoch);
+    expect(payload.times[index + 1].epoch).toBeGreaterThanOrEqual(entry.epoch);
+  });
+
+  it("garde la paracha une semaine ordinaire, et l'entrée du vendredi", () => {
+    // Jeudi 6 août 2026 : Re'eh, lue le Chabbat 8 août.
+    const ordinary = buildZmanimWidgetPayload(DEFAULT_PLACE, tr, "fr", new Date(2026, 7, 6, 10));
+    expect(ordinary.days[0].parasha).toBe("Parachat Re'eh");
+    expect(ordinary.days[0].festival).toBeNull();
+    const entries = ordinary.times.filter((z) => z.featuredFrom !== undefined);
+    expect(entries.map((z) => parisDay(z.epoch))).toContain("2026-08-07");
+    expect(entries[0].label).toBe("Entrée de Chabbat");
   });
 });
 

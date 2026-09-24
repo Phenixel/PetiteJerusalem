@@ -139,8 +139,19 @@ struct ZmanTime: Decodable {
     let time: String
     /// Epoch en millisecondes (Date.getTime() côté JS).
     let epoch: Double
+    /// Epoch ms à partir duquel l'horaire passe devant le prochain, jusqu'à
+    /// son heure : l'entrée de Chabbat, mise en avant dès l'aube de la veille.
+    /// Absent des horaires ordinaires et des payloads d'avant.
+    let featuredFrom: Double?
 
     var date: Date { Date(timeIntervalSince1970: epoch / 1000) }
+    var featuredDate: Date? { featuredFrom.map { Date(timeIntervalSince1970: $0 / 1000) } }
+
+    /// Mis en avant à cet instant : entre son `featuredFrom` et son heure.
+    func isFeatured(at instant: Date) -> Bool {
+        guard let from = featuredDate else { return false }
+        return from <= instant && instant < date
+    }
 }
 
 /// Le jour hébraïque, borné par les chkiot qui l'ouvrent et le ferment.
@@ -150,6 +161,9 @@ struct ZmanimDay: Decodable {
     let until: Double
     let hebrewDate: String
     let parasha: String?
+    /// La fête du jour, son 'Hol haMoed ou la prochaine d'ici au Chabbat :
+    /// affichée en grand à la place de la paracha. Absente des payloads d'avant.
+    let festival: String?
     let tachanun: String?
     /// Vrai les jours SANS tahanoun : à repérer d'un coup d'œil, donc en gras.
     let tachanunStrong: Bool
@@ -184,6 +198,8 @@ struct ZmanimEntry: TimelineEntry {
     let place: String
     let hebrewDate: String
     let parasha: String?
+    /// Prend la place de la paracha quand elle est là (voir ZmanimDay).
+    let festival: String?
     let tachanun: String?
     let tachanunStrong: Bool
     /// Prochain zman à l'instant `date`, nil quand `message` prend la place.
@@ -201,7 +217,7 @@ extension ZmanimEntry {
         -> ZmanimEntry
     {
         ZmanimEntry(
-            date: date, place: place, hebrewDate: "", parasha: nil, tachanun: nil,
+            date: date, place: place, hebrewDate: "", parasha: nil, festival: nil, tachanun: nil,
             tachanunStrong: false, next: nil, following: [], message: text, accent: accent)
     }
 }
@@ -245,16 +261,23 @@ struct ZmanimProvider: TimelineProvider {
                 policy: .never)
         }
 
+        // Les instants où l'affichage change : maintenant, juste après chaque
+        // zman, et quand une mise en avant commence (l'entrée de Chabbat, dès
+        // l'aube de la veille).
+        var instants = Set([now])
+        for time in upcoming { instants.insert(time.date.addingTimeInterval(1)) }
+        for time in payload.times {
+            if let from = time.featuredDate, from > now { instants.insert(from) }
+        }
+
         var entries: [ZmanimEntry] = []
-        for (i, next) in upcoming.prefix(Self.maxEntries).enumerated() {
-            // L'entrée i affiche `next` ; elle prend effet maintenant pour la
-            // première, au passage du zman précédent pour les suivantes.
-            let at = i == 0 ? now : upcoming[i - 1].date.addingTimeInterval(1)
+        for at in instants.sorted().prefix(Self.maxEntries) {
+            guard let next = Self.pick(payload.times, at: at) else { continue }
             // Le jour hébraïque de CET instant-là : la date, la paracha et le
             // tahanoun changent à la chkia, pas au zman.
             let day = payload.days?.first { $0.covers(at) }
-            let following = upcoming
-                .dropFirst(i + 1)
+            let following = payload.times
+                .filter { $0.date > at && !($0.epoch == next.epoch && $0.key == next.key) }
                 .prefix(Self.maxFollowing)
                 .map { ZmanLine(label: $0.label, time: $0.time) }
             entries.append(ZmanimEntry(
@@ -262,6 +285,7 @@ struct ZmanimProvider: TimelineProvider {
                 place: payload.place,
                 hebrewDate: day?.hebrewDate ?? "",
                 parasha: day?.parasha,
+                festival: day?.festival,
                 tachanun: day?.tachanun,
                 tachanunStrong: day?.tachanunStrong ?? false,
                 next: ZmanLine(label: next.label, time: next.time),
@@ -270,6 +294,13 @@ struct ZmanimProvider: TimelineProvider {
                 accent: payload.accent))
         }
         return Timeline(entries: entries, policy: .atEnd)
+    }
+
+    /// L'horaire à mettre en avant : celui dont la mise en avant court à cet
+    /// instant, sinon le premier à venir. Même choix que `ZmanimPayload.next`
+    /// d'Android.
+    static func pick(_ times: [ZmanTime], at instant: Date) -> ZmanTime? {
+        times.first { $0.isFeatured(at: instant) } ?? times.first { $0.date > instant }
     }
 }
 
@@ -424,10 +455,18 @@ struct HorairesWidgetView: View {
 
     /// La paracha et le tahanoun, posés en bas : ce sont les repères du jour,
     /// pas des horaires, et ils ferment le widget au lieu de flotter au milieu.
+    /// Une fête (le jour même, son 'Hol haMoed, ou la prochaine d'ici au
+    /// Chabbat) prend la place de la paracha, en grand et à l'accent : c'est
+    /// ce que la semaine a de plus marquant, et ces semaines-là n'ont de toute
+    /// façon pas de paracha à annoncer.
     @ViewBuilder private var footer: some View {
-        if entry.parasha != nil || entry.tachanun != nil {
+        if entry.festival != nil || entry.parasha != nil || entry.tachanun != nil {
             VStack(alignment: .leading, spacing: 1) {
-                if let parasha = entry.parasha {
+                if let festival = entry.festival {
+                    Text(festival)
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(PjColors.accent(entry.accent))
+                } else if let parasha = entry.parasha {
                     Text(parasha)
                         .font(.caption2)
                         .foregroundStyle(PjColors.textSecondary)

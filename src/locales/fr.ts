@@ -561,6 +561,10 @@ const fr = {
       title: "Horaires",
       then: "Puis {label} à {time}",
       stale: "Ouvrez l'app pour actualiser les horaires",
+      entry: "Entrée de {name}",
+      shabbat: "Chabbat",
+      festivalOn: "{name} ce {day}",
+      cholHamoed: "'Hol haMoed {name}",
     },
     description:
       "Horaires halakhiques calculés pour votre position, directement sur votre appareil : votre position n'est envoyée nulle part.",

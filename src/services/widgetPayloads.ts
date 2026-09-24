@@ -1,18 +1,24 @@
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { localDayKey } from "./dateService";
-import { getTehilimOfDay, getWeeklyParasha } from "./dailyCycles";
+import { getParashaForShabbat, getTehilimOfDay, getWeeklyParasha } from "./dailyCycles";
+import { dateTimeFormat } from "./intlCache";
 import {
+  cholHamoedOn,
   computeZmanim,
   dayInPlace,
+  festivalsOn,
   formatHebrewDate,
   formatPlaceLabel,
   formatZmanTime,
   getSunset,
   hebrewDayOf,
+  isIsraelPlace,
+  restPeriodAt,
   tachanunStatus,
   type ZmanimPlace,
 } from "./zmanimService";
+import type { HDate } from "@hebcal/core";
 import type { UserPreferences } from "./userPreferencesService";
 
 /**
@@ -47,6 +53,13 @@ export interface ZmanimWidgetTime {
   time: string;
   /** Epoch ms : sert au natif à choisir le prochain horaire et à se replanifier. */
   epoch: number;
+  /**
+   * Epoch ms à partir duquel cet horaire passe devant les autres, jusqu'à son
+   * heure : l'entrée de Chabbat ou de fête, mise en avant dès l'aube de la
+   * veille. Absent des horaires ordinaires. Les binaires d'avant l'ignorent
+   * et rangent l'entrée parmi les autres horaires, à sa place dans le temps.
+   */
+  featuredFrom?: number;
 }
 
 /**
@@ -61,8 +74,18 @@ export interface ZmanimWidgetDay {
   until: number;
   /** "21 Eloul 5786", déjà localisé. */
   hebrewDate: string;
-  /** "Parachat Ki Tavo", ou null si la paracha n'est pas connue. */
+  /**
+   * "Parachat Ki Tavo" : la paracha du Chabbat qui vient, ou null si ce
+   * Chabbat n'en a pas (une semaine de fête) ou qu'elle n'est pas connue.
+   */
   parasha: string | null;
+  /**
+   * La fête du jour ("Souccot"), son 'Hol haMoed ("'Hol haMoed Souccot"),
+   * ou la prochaine d'ici au Chabbat ("Souccot ce samedi") ; null sinon. Le
+   * natif l'affiche en grand, à la place de la paracha. Absent des payloads
+   * d'avant, et ignoré des binaires d'avant.
+   */
+  festival?: string | null;
   /** "Pas de Ta'hanoun.", null le Chabbat, où la question ne se pose pas. */
   tachanun: string | null;
   /** Vrai quand il n'y a PAS de tahanoun : le natif le met en gras. */
@@ -127,7 +150,12 @@ function widgetDay(place: ZmanimPlace, civil: Date, t: Translate, locale: string
   // jour civil : pas de bascule à appliquer ici, elle est déjà dans les bornes.
   const hd = hebrewDayOf(place, civil);
   const status = tachanunStatus(place, hd);
-  const week = getWeeklyParasha(local);
+  // La paracha du Chabbat qui vient, au calendrier du lieu, comme la page des
+  // horaires : une semaine de fête n'en a pas, et le widget n'anticipe pas
+  // celle d'après comme le fait le chnei mikra.
+  const saturday = new Date(local);
+  saturday.setDate(saturday.getDate() + ((6 - saturday.getDay() + 7) % 7));
+  const week = getParashaForShabbat(saturday, isIsraelPlace(place));
   const parasha = week
     ? `${t("zmanim.shabbat.parasha")} ${week.entries.map((e) => e.name).join(" · ")}`
     : null;
@@ -136,8 +164,91 @@ function widgetDay(place: ZmanimPlace, civil: Date, t: Translate, locale: string
     until: until.getTime(),
     hebrewDate: formatHebrewDate(hd, locale),
     parasha,
+    festival: festivalLine(place, hd, t, locale),
     tachanun: status ? t(`zmanim.tachanun.${status}`) : null,
     tachanunStrong: status === "none",
+  };
+}
+
+/**
+ * Plusieurs noms en une liste de la langue (« Chabbat et Souccot »).
+ * Intl.ListFormat manque aux typages ES2020 du projet, d'où le cast ; sans
+ * lui (vieux moteur), un point médian les sépare.
+ */
+function joinNames(names: string[], locale: string): string {
+  const ListFormat = (
+    Intl as unknown as {
+      ListFormat?: new (
+        locale: string,
+        options: { style: string; type: string },
+      ) => { format(items: string[]): string };
+    }
+  ).ListFormat;
+  if (!ListFormat) return names.join(" · ");
+  return new ListFormat(locale, { style: "long", type: "conjunction" }).format(names);
+}
+
+/**
+ * La ligne de fête du widget, par ordre de priorité :
+ *  - la fête du jour, si le jour hébraïque est un Yom Tov ;
+ *  - « 'Hol haMoed Souccot », si c'est un jour de 'Hol haMoed ;
+ *  - la prochaine fête d'ici au Chabbat qui vient compris, avec son jour
+ *    (« Souccot ce samedi ») : de quoi voir venir la semaine ;
+ *  - null sinon.
+ */
+function festivalLine(place: ZmanimPlace, hd: HDate, t: Translate, locale: string): string | null {
+  const today = festivalsOn(place, hd, locale);
+  if (today.length > 0) return joinNames(today, locale);
+  const cholHamoed = cholHamoedOn(place, hd, locale);
+  if (cholHamoed.length > 0) {
+    return t("zmanim.widget.cholHamoed", { name: joinNames(cholHamoed, locale) });
+  }
+  if (hd.getDay() === 6) return null;
+  for (let day = hd.next(); ; day = day.next()) {
+    const names = festivalsOn(place, day, locale);
+    if (names.length > 0) {
+      const greg = day.greg();
+      const noon = new Date(greg.getFullYear(), greg.getMonth(), greg.getDate(), 12);
+      return t("zmanim.widget.festivalOn", {
+        name: joinNames(names, locale),
+        day: dateTimeFormat(locale, { weekday: "long" }).format(noon),
+      });
+    }
+    if (day.getDay() === 6) return null;
+  }
+}
+
+/**
+ * L'entrée du temps de repos qui commence au soir de ce jour civil, ou null :
+ * le jour doit être la veille du PREMIER jour du bloc, pas un jour pris dedans
+ * (le deuxième soir d'une fête a son allumage, mais ce n'est pas l'entrée).
+ *
+ * L'horaire passe devant les autres dès l'aube (l'aube du jour, à défaut le
+ * lever du soleil, à défaut douze heures avant) : c'est l'heure que l'on
+ * cherche toute la veille de Chabbat, bien avant qu'elle soit la prochaine.
+ */
+function restEntry(
+  place: ZmanimPlace,
+  civil: Date,
+  zmanim: { key: string; date: Date }[],
+  t: Translate,
+  locale: string,
+): ZmanimWidgetTime | null {
+  const tomorrow = hebrewDayOf(place, civil).next();
+  const period = restPeriodAt(place, tomorrow, locale);
+  if (!period || period.first.abs() !== tomorrow.abs()) return null;
+  const names = [
+    ...(tomorrow.getDay() === 6 ? [t("zmanim.widget.shabbat")] : []),
+    ...festivalsOn(place, tomorrow, locale),
+  ];
+  const dawn =
+    zmanim.find((z) => z.key === "alotHaShachar") ?? zmanim.find((z) => z.key === "sunrise");
+  return {
+    key: "candleLighting",
+    label: t("zmanim.widget.entry", { name: joinNames(names, locale) }),
+    time: formatZmanTime(period.start, place.tzid, locale),
+    epoch: period.start.getTime(),
+    featuredFrom: dawn ? dawn.date.getTime() : period.start.getTime() - 12 * 3_600_000,
   };
 }
 
@@ -153,7 +264,8 @@ export function buildZmanimWidgetPayload(
   for (let i = 0; i < ZMANIM_WIDGET_DAYS; i++) {
     const day = new Date(now);
     day.setDate(day.getDate() + i);
-    for (const zman of computeZmanim(place, day)) {
+    const zmanim = computeZmanim(place, day);
+    for (const zman of zmanim) {
       times.push({
         key: zman.key,
         label: t(`zmanim.names.${zman.key}`),
@@ -161,6 +273,8 @@ export function buildZmanimWidgetPayload(
         epoch: zman.date.getTime(),
       });
     }
+    const entry = restEntry(place, day, zmanim, t, locale);
+    if (entry) times.push(entry);
     days.push(widgetDay(place, day, t, locale));
   }
   times.sort((a, b) => a.epoch - b.epoch);

@@ -5,9 +5,26 @@ Trois grands :
 
 - **Horaires** : la date hébraïque, le prochain zman du lieu de l'utilisateur
   (à l'accent de son thème, comme la carte « prochain horaire » de la page),
-  ceux d'après, la paracha de la semaine et le ta'hanoun (en gras les jours où
-  l'on n'en dit pas), mis à jour à chaque horaire passé. Toucher le widget
-  ouvre la page `/horaires`.
+  ceux d'après, la paracha du Chabbat qui vient et le ta'hanoun (en gras les
+  jours où l'on n'en dit pas), mis à jour à chaque horaire passé. Toucher le
+  widget ouvre la page `/horaires`.
+
+  Autour des fêtes, deux choses changent :
+
+  - **la fête prend la ligne de la paracha**, en grand (1,6 fois la taille de
+    la ligne), en gras et à l'accent : « Soukkot » le jour même, « 'Hol haMoed
+    Soukkot » pendant les demi-fêtes, « Soukkot ce samedi » quand elle tombe
+    d'ici au Chabbat. Une semaine de fête n'annonce pas de paracha : son
+    Chabbat n'en a pas, et le widget n'anticipe pas celle d'après comme le fait
+    le chnei mikra ;
+  - **l'entrée de Chabbat ou de fête passe devant** : la veille, dès l'aube
+    (`featuredFrom`), elle occupe la place du prochain horaire jusqu'à son
+    heure, libellée « Entrée de Chabbat » ou « Entrée de Chabbat et Soukkot ».
+    C'est l'heure que l'on vient chercher toute la journée du vendredi.
+
+  Les deux champs sont facultatifs (`festival`, `featuredFrom`, `v` reste 2) :
+  un binaire d'avant les ignore, garde la paracha et range l'entrée parmi les
+  horaires, à sa place dans le temps.
 - **Horaires essentiels** : les quatre horaires que l'on vient
   vérifier le plus souvent, et rien d'autre : fin du Chéma et fin de la Amida
   (au Gaon de Vilna, l'opinion la plus tardive, celle qui fait la limite), plag
