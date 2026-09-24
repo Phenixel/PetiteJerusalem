@@ -200,6 +200,22 @@ describe("buildDailyReadingWidgetPayload", () => {
     expect(payload.parashaDone).toBe(false);
   });
 
+  it("suit le calendrier du lieu pour la paracha", () => {
+    // Lundi 25 mai 2026 : Israël lira Beha'alotcha le Chabbat qui vient, la
+    // diaspora Nasso (voir getWeeklyParasha).
+    const prefs = {
+      dailyReadingIds: [],
+      dailyReadingOptions: ["parasha"],
+      dailyReadingProgress: { date: "", completedIds: [] },
+    };
+    const monday = new Date(2026, 4, 25, 10);
+    const israel = buildDailyReadingWidgetPayload(prefs, t, monday, undefined, true);
+    const diaspora = buildDailyReadingWidgetPayload(prefs, t, monday);
+    expect(israel.parasha).toContain("Beha'alotcha");
+    expect(diaspora.parasha).toContain("Nasso");
+    expect(israel.parasha).not.toBe(diaspora.parasha);
+  });
+
   it("la paracha seule suffit à être configuré", () => {
     const payload = buildDailyReadingWidgetPayload(
       {

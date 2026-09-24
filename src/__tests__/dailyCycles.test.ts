@@ -146,6 +146,14 @@ describe("adjacentParasha", () => {
     }
   });
 
+  it("feuillette au calendrier d'Israël quand on le lui demande", () => {
+    // Chabbat 23 mai 2026 : Israël lit Nasso, la diaspora est encore en fête
+    // (second jour de Chavou'ot). La paracha qui suit est Beha'alotcha en
+    // Israël ; en diaspora, qui n'a rien lu ce jour-là, c'est Nasso.
+    expect(adjacentParasha("2026-05-23", 1, true)?.names).toEqual(["Beha'alotcha"]);
+    expect(adjacentParasha("2026-05-23", 1)?.names).toEqual(["Nasso"]);
+  });
+
   it("le Chabbat d'une semaine est bien un samedi", () => {
     expect(shabbatOfWeek("2026-08-08").getDay()).toBe(6);
   });

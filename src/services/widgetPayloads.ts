@@ -349,6 +349,9 @@ function nextLocalMidnight(now: Date): number {
 /**
  * La lecture du jour telle que le widget l'affichera. `prefs` vaut null quand
  * personne n'est connecté : le widget invite alors à ouvrir l'app.
+ *
+ * `il` : le calendrier d'Israël pour la paracha du chnei mikra, celui du lieu
+ * des horaires, comme la page de lecture du jour.
  */
 export function buildDailyReadingWidgetPayload(
   prefs: Pick<
@@ -358,6 +361,7 @@ export function buildDailyReadingWidgetPayload(
   t: Translate,
   now: Date = new Date(),
   accent: string = DEFAULT_ACCENT,
+  il = false,
 ): DailyReadingWidgetPayload {
   const date = localDayKey(now);
   const base = {
@@ -400,7 +404,7 @@ export function buildDailyReadingWidgetPayload(
   let parasha: string | null = null;
   let parashaDone = false;
   if ((prefs.dailyReadingOptions ?? []).includes("parasha")) {
-    const week = getWeeklyParasha(now);
+    const week = getWeeklyParasha(now, il);
     if (week) {
       // Libellé prêt à afficher ("Parachat Ekev") : le natif ne traduit rien.
       parasha = `${t("zmanim.shabbat.parasha")} ${week.entries.map((e) => e.name).join(" · ")}`;

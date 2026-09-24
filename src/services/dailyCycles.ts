@@ -10,9 +10,9 @@ import { saidTachanun } from "./tachanun";
  * le calendrier hébraïque au lieu d'être choisies une à une.
  *
  * - Paracha de la semaine (chnei mikra) : la paracha lue au prochain Chabbat,
- *   affichée toute la semaine. Calendrier de diaspora (le public de
- *   l'application est en France). C'est une lecture de la semaine : son suivi
- *   tient jusqu'au changement de paracha, pas jusqu'à minuit.
+ *   affichée toute la semaine, au calendrier du lieu des horaires (Israël ou
+ *   diaspora). C'est une lecture de la semaine : son suivi tient jusqu'au
+ *   changement de paracha, pas jusqu'à minuit.
  * - Tehilim du jour : le cycle mensuel traditionnel (les 150 psaumes répartis
  *   sur les jours du mois hébraïque).
  */
@@ -81,12 +81,11 @@ function dateKey(date: Date): string {
  * Les semaines de fête n'ont pas de paracha ordinaire ; on affiche alors celle
  * du prochain Chabbat ordinaire, que le chnei mikra anticipe.
  *
- * `il` suit le calendrier d'Israël. La diaspora par défaut, parce que c'est
- * le public de l'application et que la lecture de la semaine se suit là où
- * elle a commencé ; mais les deux cycles divergent six Chabbats par an, cinq
- * années sur sept, dès qu'un dernier jour de Yom Tov tombe un Chabbat en
- * diaspora (la prochaine fois de mai à juin 2026). La page des horaires,
- * qui nomme le Chabbat du lieu affiché, passe donc le calendrier du lieu.
+ * `il` suit le calendrier d'Israël, la diaspora par défaut. Les deux cycles
+ * divergent six Chabbats par an, cinq années sur sept, dès qu'un dernier jour
+ * de Yom Tov tombe un Chabbat en diaspora (la prochaine fois de mai à juin
+ * 2026) : la page des horaires, le chnei mikra et la lecture du lundi et du
+ * jeudi passent donc le calendrier du lieu des horaires.
  */
 export function getWeeklyParasha(date: Date = new Date(), il = false): WeeklyParasha | null {
   const saturday = new Date(date);
@@ -163,12 +162,18 @@ export function shabbatOfWeek(weekKey: string): Date {
  * renvoie null) ; on les enjambe plutôt que de s'arrêter sur une semaine vide.
  * Deux Chabbats de fête ne se suivent jamais de plus de deux crans, la borne
  * est large.
+ *
+ * `il` suit le calendrier d'Israël, comme `getParashaForShabbat`.
  */
-export function adjacentParasha(weekKey: string, direction: 1 | -1): WeeklyParasha | null {
+export function adjacentParasha(
+  weekKey: string,
+  direction: 1 | -1,
+  il = false,
+): WeeklyParasha | null {
   const saturday = shabbatOfWeek(weekKey);
   for (let step = 0; step < 8; step++) {
     saturday.setDate(saturday.getDate() + direction * 7);
-    const parasha = getParashaForShabbat(saturday);
+    const parasha = getParashaForShabbat(saturday, il);
     if (parasha) return parasha;
   }
   return null;
