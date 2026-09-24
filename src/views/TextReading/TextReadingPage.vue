@@ -21,7 +21,7 @@ import {
 import type { TextBlock, TextContent, TextSection } from "../../services/textService";
 import {
   activeOccasions,
-  getWeeklyParasha,
+  getWeekdayTorahParasha,
   recentSeasonalChanges,
 } from "../../services/dailyCycles";
 import {
@@ -487,10 +487,16 @@ async function loadContent() {
     // Sidour : le lundi et le jeudi, la lecture de la Torah de la semaine
     // (le début de la paracha, en trois montées) prend la place de son
     // marqueur dans Cha'harit. Elle change chaque semaine : c'est le lecteur
-    // qui la charge.
+    // qui la charge. Avant Souccot, c'est Vezot Haberakha, que le chnei mikra
+    // enjambe (voir getWeekdayTorahParasha). Le calendrier est celui du lieu,
+    // comme pour les occasions : Israël et la diaspora lisent parfois des
+    // parachiot différentes plusieurs semaines de suite.
     if (tefilaOf(textEntry.value) === "chaharit" && occasions.value.has("torah-semaine")) {
       try {
-        const parasha = getWeeklyParasha(occasionsDay.value.greg());
+        const parasha = getWeekdayTorahParasha(
+          occasionsDay.value.greg(),
+          zmanimPlace.value.tzid === "Asia/Jerusalem",
+        );
         if (parasha?.entries[0]) {
           const parashaContent = await loadText(parasha.entries[0]);
           if (stale()) return;

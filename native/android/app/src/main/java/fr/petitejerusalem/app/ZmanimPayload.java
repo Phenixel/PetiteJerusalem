@@ -26,12 +26,24 @@ final class ZmanimPayload {
         final String time;
         /** Epoch en millisecondes (Date.getTime() côté JS). */
         final long epoch;
+        /**
+         * Epoch à partir duquel l'horaire passe devant le prochain, jusqu'à
+         * son heure : l'entrée de Chabbat, mise en avant dès l'aube de la
+         * veille. 0 pour les horaires ordinaires et les payloads d'avant.
+         */
+        final long featuredFrom;
 
-        Line(String key, String label, String time, long epoch) {
+        Line(String key, String label, String time, long epoch, long featuredFrom) {
             this.key = key;
             this.label = label;
             this.time = time;
             this.epoch = epoch;
+            this.featuredFrom = featuredFrom;
+        }
+
+        /** Mis en avant à cet instant : entre son `featuredFrom` et son heure. */
+        boolean featuredAt(long now) {
+            return featuredFrom > 0 && featuredFrom <= now && now < epoch;
         }
     }
 
@@ -41,6 +53,12 @@ final class ZmanimPayload {
         final long until;
         final String hebrewDate;
         final String parasha;
+        /**
+         * La fête du jour, son 'Hol haMoed ou la prochaine d'ici au Chabbat :
+         * affichée en grand à la place de la paracha. Null sinon, et dans les
+         * payloads d'avant.
+         */
+        final String festival;
         final String tachanun;
         /** Vrai les jours SANS tahanoun : à repérer d'un coup d'oeil, donc en gras. */
         final boolean tachanunStrong;
@@ -51,6 +69,7 @@ final class ZmanimPayload {
             String date = Json.text(json, "hebrewDate");
             hebrewDate = date == null ? "" : date;
             parasha = Json.text(json, "parasha");
+            festival = Json.text(json, "festival");
             tachanun = Json.text(json, "tachanun");
             tachanunStrong = json.optBoolean("tachanunStrong");
         }
@@ -101,7 +120,8 @@ final class ZmanimPayload {
                 time.optString("key", ""),
                 time.getString("label"),
                 time.getString("time"),
-                time.getLong("epoch")));
+                time.getLong("epoch"),
+                time.optLong("featuredFrom", 0)));
         }
         days = new ArrayList<>();
         // Absents des payloads d'avant la v2 : les lignes du jour restent vides.
@@ -112,8 +132,16 @@ final class ZmanimPayload {
         }
     }
 
-    /** Le premier horaire à venir, ou null : la fenêtre embarquée est épuisée. */
+    /**
+     * L'horaire à mettre en avant : celui dont la mise en avant court à cet
+     * instant (l'entrée de Chabbat, la veille dès l'aube), sinon le premier à
+     * venir. Null : la fenêtre embarquée est épuisée. Même choix que
+     * `ZmanimProvider.pick` d'iOS.
+     */
     Line next(long now) {
+        for (Line line : times) {
+            if (line.featuredAt(now)) return line;
+        }
         for (Line line : times) {
             if (line.epoch > now) return line;
         }
@@ -121,23 +149,39 @@ final class ZmanimPayload {
     }
 
     /**
-     * Ceux d'après le prochain, au plus `max` : ils remplissent la place que
-     * le prochain laisse libre.
+     * Ceux d'après, au plus `max`, sans celui que `next` a mis en avant : ils
+     * remplissent la place qu'il laisse libre.
      */
     List<Line> following(long now, int max) {
+        Line chosen = next(now);
         List<Line> upcoming = new ArrayList<>();
-        boolean skippedNext = false;
         for (Line line : times) {
             if (line.epoch <= now) continue;
-            if (!skippedNext) {
-                // Le prochain est mis en avant ailleurs : il ne se répète pas.
-                skippedNext = true;
-                continue;
-            }
+            // Le prochain est mis en avant ailleurs : il ne se répète pas.
+            if (line == chosen) continue;
             upcoming.add(line);
             if (upcoming.size() == max) break;
         }
         return upcoming;
+    }
+
+    /**
+     * L'instant où redessiner : juste après le premier horaire à venir, ou
+     * juste après le début de la prochaine mise en avant s'il vient avant. 0
+     * quand il n'y a plus rien à attendre.
+     */
+    long refreshAt(long now) {
+        long at = Long.MAX_VALUE;
+        for (Line line : times) {
+            if (line.epoch > now) {
+                at = Math.min(at, line.epoch);
+                break;
+            }
+        }
+        for (Line line : times) {
+            if (line.featuredFrom > now) at = Math.min(at, line.featuredFrom);
+        }
+        return at == Long.MAX_VALUE ? 0 : at + 1000;
     }
 
     /** Le jour hébraïque qui couvre l'instant, ou null s'il n'est pas embarqué. */

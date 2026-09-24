@@ -815,6 +815,22 @@ export function festivalsOn(place: ZmanimPlace, hd: HDate, locale: string): stri
   return names;
 }
 
+/**
+ * Les fêtes dont ce jour hébraïque est un jour de 'Hol haMoed, sans numéro de
+ * jour : « Souccot », pas « Souccot III ». Pendant de `festivalsOn` pour les
+ * demi-fêtes, où l'on travaille, que le widget des horaires nomme aussi.
+ */
+export function cholHamoedOn(place: ZmanimPlace, hd: HDate, locale: string): string[] {
+  const lg = hebcalLocale(locale);
+  const names: string[] = [];
+  for (const ev of holidaysOn(hd, isIsraelPlace(place))) {
+    if ((ev.getFlags() & flags.CHOL_HAMOED) === 0) continue;
+    const name = festivalName(ev, lg);
+    if (!names.includes(name)) names.push(name);
+  }
+  return names;
+}
+
 /** Le jour civil d'une date hébraïque, à midi, comme le veut `dayInPlace`. */
 function civilNoon(hd: HDate): Date {
   const greg = hd.greg();

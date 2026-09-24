@@ -76,6 +76,7 @@ const KNOWN_WHEN = new Set([
   "hallel-complet",
   "hallel-abrege",
   "hanouka",
+  "rosh-chodesh-hanouka",
   "pourim",
   "omer",
   ...Array.from({ length: 8 }, (_, i) => `hanouka-${i + 1}`),
@@ -532,8 +533,9 @@ describe("Min'ha : les jeûnes publics", () => {
   });
 
   it("change de psaumes la veille de Pourim et le vendredi", () => {
-    // Les psaumes sont des lignes dans le fil, sans titre.
-    const psaume = (when: string) => blocks.filter((b) => b.when === when && !b.label);
+    // Les psaumes sont des lignes dans le fil, sans titre, et ne sont pas
+    // les options d'un choix (la haftara de Tich'a beAv en a une sans titre).
+    const psaume = (when: string) => blocks.filter((b) => b.when === when && !b.label && !b.choice);
     // En rangeant le séfer : 20, ou 124, ou 126.
     expect(sansSignes(psaume("tsom-minha")[0].lines[0])).toContain("יענך יהוה ביום צרה");
     expect(sansSignes(psaume("tsom-esther-veille")[0].lines[0])).toContain("לולי יהוה");

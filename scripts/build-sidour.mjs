@@ -101,6 +101,45 @@ function versets(livre, chapitre, from, to) {
   return cleanFinal(texte.join(" ").replace(/\{[פס]\}/g, " "));
 }
 
+/**
+ * « Vessamou et chemi », Bamidbar 6, 27 : le dernier verset de Birkat
+ * kohanim. Le premier jour de 'Hanouka, l'usage séfarade commence la lecture
+ * à Birkat kohanim (6, 22), et la source du siddour saute ce verset pour
+ * passer directement à 7, 1. Il vient du fichier de la paracha Nasso que
+ * l'application sert (public/texts/tanakh/298.json).
+ */
+const VESSAMOU = (() => {
+  const nasso = readText("tanakh/298.json").he.flat();
+  const i = nasso.findIndex((v) => stripMarks(v).startsWith("ושמו את־שמי"));
+  if (i < 1 || !stripMarks(nasso[i - 1]).includes("וישם לך שלום")) {
+    throw new Error("Nasso : Bamidbar 6, 27 introuvable après Birkat kohanim");
+  }
+  return cleanFinal(nasso[i].replace(/\{[פס]\}/g, " "));
+})();
+
+/**
+ * Les trois montées du premier jour de 'Hanouka, telles que la source les
+ * donne dans sa consigne : le Cohen jusqu'à « lifné hamichkan » (7, 3), le
+ * Lévi jusqu'à « la'hanoukat hamizbéa'h » (7, 11), Israël jusqu'à
+ * « Na'hchon ben 'Aminadav » (7, 17). La source les marque d'un <small> au
+ * milieu du texte, que la lecture en mode « full » laissait passer comme un
+ * mot ordinaire ; ici, chacune reçoit sa didascalie.
+ */
+const HANOUKA_1_LEVI = "ויאמר יהוה אל־משה לאמר";
+const HANOUKA_1_ISRAEL = "ויהי המקריב ביום הראשון";
+
+/**
+ * Les trois montées de Pourim, « Vayavo 'Amalek » (Chemot 17, 8 à 16) : 8 à
+ * 10, 11 à 13, 14 à 16. Même raison que pour 'Hanouka : la source les marque
+ * en ligne, et porte même une référence (« (שמות יז ח) ») au milieu du
+ * premier verset, que le mode « full » affichait.
+ */
+const POURIM_MONTEES = [
+  { fr: "Cohen", en: "Kohen", he: "כהן", until: "והיה כאשר ירים" },
+  { fr: "Lévi", en: "Levi", he: "לוי", from: "והיה כאשר ירים", until: "ויאמר יהוה אל־משה כתב" },
+  { fr: "Israël", en: "Yisrael", he: "ישראל", from: "ויאמר יהוה אל־משה כתב" },
+];
+
 // ---------- Recette → fichier ----------
 
 /**
@@ -1093,7 +1132,7 @@ function amidaBlocks(src, ix, opts = {}) {
  * « Uva LeSion » de Cha'harit (yitgadal, titkabal, yehé chelama, 'ossé
  * chalom) ; Min'ha et Arvit le reçoivent sous la clé source `src`.
  */
-function kaddishHalf(src, { when, rubric = RUBRIC.hazan, labelText, seg = 4 } = {}) {
+function kaddishHalf(src, { when, unless, rubric = RUBRIC.hazan, labelText, seg = 4 } = {}) {
   const spec = {
     src,
     fold: "hazan",
@@ -1102,6 +1141,7 @@ function kaddishHalf(src, { when, rubric = RUBRIC.hazan, labelText, seg = 4 } = 
     lines: [{ seg, rubric, splitAmen: true }],
   };
   if (when) spec.when = when;
+  if (unless) spec.unless = unless;
   return spec;
 }
 
@@ -1744,6 +1784,56 @@ function haftaraBlocks() {
     halakha: NOTE,
     lines,
   });
+  const dirchou = [
+    ouverture,
+    {
+      he: versets(324, 55, 6, 13),
+      rubric: R("Yecha'ya 55, 6 à 56, 8 :", "Isaiah 55:6 to 56:8:", "ישעיה נה, ו עד נו, ח:"),
+    },
+    { he: versets(324, 56, 1, 8), tight: true },
+    ...cloture,
+  ];
+  const chouva = [
+    ouverture,
+    {
+      he: versets(327, 14, 2, 10),
+      rubric: R(
+        "Hochéa 14, 2 à 10, puis Mikha 7, 18 à 20 :",
+        "Hosea 14:2-10, then Micah 7:18-20:",
+        "הושע יד, ב עד י, ואחריו מיכה ז, יח עד כ:",
+      ),
+    },
+    { he: versets(327, 39, 18, 20), tight: true },
+    ...cloture,
+  ];
+  const DIRCHOU = R(
+    "« Dirchou » (Yecha'ya 55, 6 à 56, 8)",
+    "“Dirshu” (Isaiah 55:6 to 56:8)",
+    "« דרשו » (ישעיה נה, ו עד נו, ח)",
+  );
+  const CHOUVA = R(
+    "« Chouva Israël » (Hochéa 14, 2 à 10 ; Mikha 7, 18 à 20)",
+    "“Shuva Yisrael” (Hosea 14:2-10; Micah 7:18-20)",
+    "« שובה ישראל » (הושע יד, ב עד י; מיכה ז, יח עד כ)",
+  );
+  // Tich'a beAv a sa propre clé de choix : on y lit une haftara même là où
+  // l'on n'en lit aucune aux autres jeûnes, et le choix « pas de haftara »
+  // fait pour ceux-ci ne doit pas l'effacer. La clé du jour, `tisha-beav`,
+  // est connue des versions publiées, et ne conditionne ici que du contenu
+  // qu'elles n'avaient pas (voir docs/compatibilite-textes.md).
+  const NOTE_TISHA_BEAV = R(
+    "Qui lit quoi : à Min'ha de Tich'a beAv, les Sefaradim lisent « Chouva Israël » (Hochéa 14, 2 à 10, puis Mikha 7, 18 à 20), les Achkenazim « Dirchou » (Rema, Ora'h 'Hayim 566, 1).",
+    "Who reads what: at Mincha of Tisha BeAv, Sephardim read “Shuva Yisrael” (Hosea 14:2-10, then Micah 7:18-20), Ashkenazim “Dirshu” (Rema, Orach Chayim 566:1).",
+    'מי קורא מה: במנחה של תשעה באב הספרדים מפטירים « שובה ישראל » (הושע יד, ב עד י, ואחריו מיכה ז, יח עד כ), והאשכנזים « דרשו » (רמ"א, אורח חיים תקסו, א).',
+  );
+  const optionTishaBeav = (id, label, preferred, lines) => ({
+    src: "Haftara",
+    when: "tisha-beav",
+    plain: true,
+    choice: { key: "haftara-tisha-beav", id, label, ...(preferred ? { preferred } : {}) },
+    halakha: NOTE_TISHA_BEAV,
+    lines,
+  });
   return [
     {
       ...option(
@@ -1754,15 +1844,7 @@ function haftaraBlocks() {
           "« דרשו » (ישעיה נה, ו עד נו, ח)",
         ),
         "tsom-guedalia",
-        [
-          ouverture,
-          {
-            he: versets(324, 55, 6, 13),
-            rubric: R("Yecha'ya 55, 6 à 56, 8 :", "Isaiah 55:6 to 56:8:", "ישעיה נה, ו עד נו, ח:"),
-          },
-          { he: versets(324, 56, 1, 8), tight: true },
-          ...cloture,
-        ],
+        dirchou,
       ),
       labelText: R("Haftara", "Haftarah", "הפטרה"),
     },
@@ -1774,19 +1856,7 @@ function haftaraBlocks() {
         "« שובה ישראל » (הושע יד, ב עד י; מיכה ז, יח עד כ)",
       ),
       undefined,
-      [
-        ouverture,
-        {
-          he: versets(327, 14, 2, 10),
-          rubric: R(
-            "Hochéa 14, 2 à 10, puis Mikha 7, 18 à 20 :",
-            "Hosea 14:2-10, then Micah 7:18-20:",
-            "הושע יד, ב עד י, ואחריו מיכה ז, יח עד כ:",
-          ),
-        },
-        { he: versets(327, 39, 18, 20), tight: true },
-        ...cloture,
-      ],
+      chouva,
     ),
     option(
       "aucune",
@@ -1794,6 +1864,11 @@ function haftaraBlocks() {
       "tsom-tevet|tsom-esther|tsom-tamouz",
       [],
     ),
+    {
+      ...optionTishaBeav("chouva", CHOUVA, "tisha-beav", chouva),
+      labelText: R("Haftara", "Haftarah", "הפטרה"),
+    },
+    optionTishaBeav("dirchou", DIRCHOU, undefined, dirchou),
   ];
 }
 
@@ -2582,13 +2657,18 @@ function chaharitRecipe() {
       kaddishTitkabal("RH.Hallel", { seg: 26, when: "rosh-chodesh" }),
       // À 'Hanouka la source ne veut qu'un demi-Kaddich : la lecture de la
       // Torah vient juste après, et le Titkabal attendra Ouva letsion.
-      kaddishHalf("RH.Hallel", { seg: 26, when: "hanouka" }),
+      // À Roch Hodech Tévet, qui tombe dans 'Hanouka, c'est l'ordre de Roch
+      // Hodech qui vaut : le Titkabal au-dessus, puis sa lecture, avec le
+      // nassi du jour en quatrième montée (voir plus bas). Les versions
+      // publiées ignorent `unless` et gardent l'ancien affichage.
+      kaddishHalf("RH.Hallel", { seg: 26, when: "hanouka", unless: "rosh-chodesh" }),
       // La lecture de la Torah de 'Hanouka : trois montées dans la paracha
       // Nasso, le passage du nassi du jour. Un bloc par jour, un seul
       // s'affiche.
       {
         src: "Hanouka.Shaharit",
         when: "hanouka",
+        unless: "rosh-chodesh",
         plain: true,
         labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
         lines: [
@@ -2604,47 +2684,65 @@ function chaharitRecipe() {
         src: "Hanouka.Shaharit",
         when: "hanouka-1",
         plain: true,
-        lines: [{ seg: 5, mode: "full" }],
+        lines: [
+          { seg: 5, until: "ויהי ביום כלות", rubric: R("Cohen :", "Kohen:", "כהן:") },
+          { he: VESSAMOU, tight: true },
+          { seg: 5, from: "ויהי ביום כלות", until: HANOUKA_1_LEVI, tight: true },
+          {
+            seg: 5,
+            from: HANOUKA_1_LEVI,
+            until: HANOUKA_1_ISRAEL,
+            rubric: R("Lévi :", "Levi:", "לוי:"),
+          },
+          { seg: 5, from: HANOUKA_1_ISRAEL, rubric: R("Israël :", "Yisrael:", "ישראל:") },
+        ],
       },
       {
         src: "Hanouka.Shaharit",
         when: "hanouka-2",
+        unless: "rosh-chodesh",
         plain: true,
         lines: [{ seg: 8, mode: "full" }],
       },
       {
         src: "Hanouka.Shaharit",
         when: "hanouka-3",
+        unless: "rosh-chodesh",
         plain: true,
         lines: [{ seg: 10, mode: "full" }],
       },
       {
         src: "Hanouka.Shaharit",
         when: "hanouka-4",
+        unless: "rosh-chodesh",
         plain: true,
         lines: [{ seg: 12, mode: "full" }],
       },
       {
         src: "Hanouka.Shaharit",
         when: "hanouka-5",
+        unless: "rosh-chodesh",
         plain: true,
         lines: [{ seg: 14, mode: "full" }],
       },
       {
         src: "Hanouka.Shaharit",
         when: "hanouka-6",
+        unless: "rosh-chodesh",
         plain: true,
         lines: [{ seg: 16, mode: "full" }],
       },
       {
         src: "Hanouka.Shaharit",
         when: "hanouka-7",
+        unless: "rosh-chodesh",
         plain: true,
         lines: [{ seg: 18, mode: "full" }],
       },
       {
         src: "Hanouka.Shaharit",
         when: "hanouka-8",
+        unless: "rosh-chodesh",
         plain: true,
         lines: [{ seg: 21, mode: "full" }],
       },
@@ -2662,7 +2760,12 @@ function chaharitRecipe() {
             muted: true,
             rubric: R("L'ordre du jour :", "The order of the day:", "סדר יום פורים:"),
           },
-          { seg: 2, mode: "full" },
+          ...POURIM_MONTEES.map((montee) => ({
+            seg: 2,
+            from: montee.from,
+            until: montee.until,
+            rubric: R(`${montee.fr} :`, `${montee.en}:`, `${montee.he}:`),
+          })),
         ],
       },
       {
@@ -2685,11 +2788,62 @@ function chaharitRecipe() {
           },
           {
             seg: 39,
+            unless: "hanouka",
             rubric: R(
               "On lit quatre montées dans la paracha des moussafim (Bamidbar 28) :",
               "Four aliyot are read from the portion of the musaf offerings (Numbers 28):",
               "מוציאים ספר תורה וקוראים ארבעה עולים (במדבר כח):",
             ),
+          },
+        ],
+      },
+      // Roch Hodech Tévet, dans 'Hanouka : trois montées de Roch Hodech
+      // (Bamidbar 28, 1 à 5, 6 à 10, 11 à 15), sans la reprise du verset 3
+      // qui ne sert qu'à en faire quatre, puis le nassi du jour de 'Hanouka
+      // en quatrième montée (Choul'han Aroukh, Ora'h 'Hayim 684, 3). Une clé
+      // nouvelle pour du contenu nouveau : les versions publiées n'affichent
+      // rien de plus qu'avant (voir docs/compatibilite-textes.md).
+      {
+        src: "RH.Hallel",
+        when: "rosh-chodesh-hanouka",
+        plain: true,
+        lines: [
+          {
+            seg: 39,
+            until: "ואמרת להם",
+            rubric: R(
+              "À Roch Hodech Tévet, on lit trois montées dans la paracha des moussafim (Bamidbar 28), puis une quatrième dans celle de 'Hanouka. Cohen :",
+              "On Rosh Chodesh Tevet, three aliyot are read from the portion of the musaf offerings (Numbers 28), then a fourth from the Hanukkah reading. Kohen:",
+              "בראש חודש טבת קוראים שלושה עולים בפרשת המוספים (במדבר כח), והרביעי בקריאת חנוכה. כהן:",
+            ),
+          },
+          { seg: 39, from: "ואמרת להם", until: "ואמרת להם", tight: true },
+          { seg: 39, from: "את־הכבש אחד", until: "עלת תמיד העשיה", tight: true },
+          {
+            seg: 39,
+            from: "עלת תמיד העשיה",
+            until: "ובראשי חדשיכם",
+            rubric: R("Lévi :", "Levi:", "לוי:"),
+          },
+          { seg: 39, from: "ובראשי חדשיכם", rubric: R("Israël :", "Yisrael:", "ישראל:") },
+        ],
+      },
+      {
+        src: "Hanouka.Shaharit",
+        when: "rosh-chodesh-hanouka",
+        plain: true,
+        lines: [
+          {
+            seg: 16,
+            mode: "full",
+            when: "hanouka-6",
+            rubric: R("Quatrième montée, 'Hanouka :", "Fourth aliyah, Hanukkah:", "רביעי, חנוכה:"),
+          },
+          {
+            seg: 18,
+            mode: "full",
+            when: "hanouka-7",
+            rubric: R("Quatrième montée, 'Hanouka :", "Fourth aliyah, Hanukkah:", "רביעי, חנוכה:"),
           },
         ],
       },

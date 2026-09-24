@@ -549,6 +549,10 @@ const en: LocaleMessages = {
       title: "Zmanim",
       then: "Then {label} at {time}",
       stale: "Open the app to refresh the times",
+      entry: "{name} begins",
+      shabbat: "Shabbat",
+      festivalOn: "{name} this {day}",
+      cholHamoed: "Chol HaMoed {name}",
     },
     description:
       "Halachic times computed for your location, right on your device: your location is never sent anywhere.",
