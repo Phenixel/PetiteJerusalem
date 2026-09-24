@@ -62,6 +62,19 @@ export const RUBRIC_NAANOUIM = {
 };
 
 /**
+ * Les trois paragraphes des brahot, tels que les deux recettes les posent : la
+ * page du livre Moadim (build-moadim.mjs) et la Cha'harit de 'Hol haMoed
+ * (build-sidour.mjs). Ils vivent ici pour que les deux textes restent
+ * d'accord : un paragraphe ajouté, déplacé ou remis en forme l'est aux deux
+ * endroits à la fois.
+ */
+export const LIGNES_LOULAV = [
+  { he: BRAKHA_LOULAV },
+  { he: BRAKHA_CHEHEHIYANOU, rubric: RUBRIC_CHEHEHIYANOU },
+  { he: NAANOUIM, rubric: RUBRIC_NAANOUIM, muted: true },
+];
+
+/**
  * Les na'anou'im du Hallel, là où le sidour les marque : au premier « Hodou »,
  * à « Ana Hachem hochia na », et au « Hodou » qui ferme le psaume 118.
  *
@@ -70,13 +83,13 @@ export const RUBRIC_NAANOUIM = {
  * du lecteur (NaanouimCompass) en donne l'ordre.
  */
 export const RUBRIC_NAANOUIM_HODOU = {
-  fr: "Le loulav en main, un côté par mot : « Hodou » au sud, « ki » au nord, « tov » à l'est face à soi, « ki » en haut, « lé'olam » en bas, « hasdo » à l'ouest. Rien sur le Nom.",
+  fr: "Le loulav en main, un côté par mot : « Hodou » au sud, « ki » au nord, « tov » à l'est face à soi, « ki » en haut, « lé'olam » en bas, « hasdo » à l'ouest. Rien sur le Nom.",
   en: "Lulav in hand, one side per word: “Hodu” to the south, “ki” to the north, “tov” to the east, straight ahead, “ki” up, “le'olam” down, “hasdo” to the west. Nothing on the Name.",
   he: "וינענע בלולב כך: הוֹדוּ : לצד דרום. לַה' : אסור לנענע. כִּי : לצד צפון. טוֹב : לצד מזרח לנוכח. כִּי : למעלה. לְעוֹלָם : למטה. חַסְדּוֹ : לצד מערב.",
 };
 
 export const RUBRIC_NAANOUIM_ANA = {
-  fr: "Une syllabe par côté : « A » au sud, « na » au nord, « ho » à l'est face à soi, « chi » en haut, « 'a » en bas, « na » à l'ouest. Rien sur le Nom. On se tourne ensuite vers la droite et l'on agite de même au second « Ana Hachem hochia na » ; à Djerba, on agite des deux côtés à chaque mot. « Ana Hachem hatsli'ha na » se dit deux fois, sans na'anou'im.",
+  fr: "Une syllabe par côté : « A » au sud, « na » au nord, « ho » à l'est face à soi, « chi » en haut, « 'a » en bas, « na » à l'ouest. Rien sur le Nom. On se tourne ensuite vers la droite et l'on agite de même au second « Ana Hachem hochia na » ; à Djerba, on agite des deux côtés à chaque mot. « Ana Hachem hatsli'ha na » se dit deux fois, sans na'anou'im.",
   en: "One syllable per side: “A” to the south, “na” to the north, “ho” to the east, straight ahead, “shi” up, “a” down, “na” to the west. Nothing on the Name. Then turn to the right and wave the same way at the second “Ana Hashem hoshia na”; in Djerba each word is waved on both sides. “Ana Hashem hatzlicha na” is said twice, without waving.",
   he: "וינענע בלולב כך: אָ : לצד דרום. נָּא : לצד צפון. ה' : אסור לנענע. הוֹ : לצד מזרח לנוכח. שִׁי : למעלה. עָה : למטה. נָּא : לצד מערב. ויסתובב לצד ימין וינענע שוב כנ\"ל (ובג'רבא נוהגים בכל מלה לנענע לשני צדדים), ואחר כך יאמר אנא ה' הצליחה נא, ב\"פ.",
 };
@@ -86,7 +99,7 @@ export const RUBRIC_NAANOUIM_ANA = {
  * seule fois, bien que le verset se redise.
  */
 export const RUBRIC_NAANOUIM_HODOU_FIN = {
-  fr: "On agite de nouveau, un côté par mot, comme au premier « Hodou » : sud, nord, est, haut, bas, ouest.",
+  fr: "On agite de nouveau, un côté par mot, comme au premier « Hodou » : sud, nord, est, haut, bas, ouest.",
   en: "Wave again, one side per word, as at the first “Hodu”: south, north, east, up, down, west.",
   he: "וינענע בלולב כמו בהודו הראשון: דרום, צפון, מזרח, מעלה, מטה, מערב.",
 };

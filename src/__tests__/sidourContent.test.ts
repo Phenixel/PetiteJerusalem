@@ -884,6 +884,49 @@ describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
     )!;
     expect(sansSignes(keter.lines.join(" "))).toContain("ועמך ישראל קבוצי מטה");
   });
+
+  it("dit Birkat kohanim dans la répétition du Moussaf, avant Sim chalom", () => {
+    // Entre « Vé'al koulam » et Sim chalom, comme dans la 'Amida de semaine :
+    // les cohanim, ou à défaut « Élohénou… barkhénou » dit par le 'hazan.
+    const debut = indexOf("Moussaf", "hol-hamoed");
+    const kohanim = brut.findIndex(
+      (b, i) => i > debut && b.label === "Birkat kohanim" && b.when === "hol-hamoed",
+    );
+    expect(kohanim).toBeGreaterThan(debut);
+    const texte = (i: number) => sansSignes(JSON.stringify(brut[i].lines));
+    expect(texte(kohanim - 1)).toContain("ועל כלם");
+    expect(texte(kohanim + 1)).toContain("שים שלום");
+    expect(texte(kohanim)).toContain("ברכנו בברכה המשלשת");
+  });
+
+  it("ferme l'office par le psaume de la fête, dans l'ordre que donne la source", () => {
+    // Après la répétition : Yehi chem, le Titkabal, le psaume de la fête, le
+    // Kaddich yehé chelama ; puis Kavé, comme les autres jours.
+    const debut = indexOf("Moussaf", "hol-hamoed");
+    const kave = brut.findIndex((b, i) => i > debut && b.label === "Kavé · Ein kélohénou");
+    const fin = brut.slice(debut, kave);
+    // Les deux Kaddichs se ressemblent (le Titkabal finit aussi sur « yehé
+    // chelama rabba ») : on les reconnaît à leur titre, le reste au texte.
+    const rang = (motif: string) =>
+      fin.findIndex((b) => b.label === motif || sansSignes(JSON.stringify(b)).includes(motif));
+    const ordre = [
+      "יהי שם יהוה מברך",
+      "Kaddich Titkabal (le 'hazan)",
+      "כאיל תערג",
+      "Kaddich yehé chelama",
+    ].map(rang);
+    expect(ordre.every((r) => r >= 0)).toBe(true);
+    expect(ordre).toEqual([...ordre].sort((a, b) => a - b));
+    // Le psaume nomme sa fête : le 42 à Souccot, le 107 à Pessah.
+    const psaume = (cle: string) =>
+      blocks
+        .filter((b) => b.when === "hol-hamoed")
+        .flatMap((b) => b.paragraphs ?? [])
+        .filter((p) => p.when === cle)
+        .map((p) => sansSignes(p.runs.map((r) => ("text" in r ? r.text : "")).join(" ")));
+    expect(psaume("sukkot").join(" ")).toContain("כאיל תערג");
+    expect(psaume("pesach").join(" ")).toContain("גאולי יהוה");
+  });
 });
 
 

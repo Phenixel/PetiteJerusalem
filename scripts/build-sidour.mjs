@@ -43,12 +43,8 @@ import {
   YIKOM_DAM,
 } from "./lib/selihot-tsom.mjs";
 import {
-  BRAKHA_CHEHEHIYANOU,
-  BRAKHA_LOULAV,
   HALAKHA_LOULAV,
-  NAANOUIM,
-  RUBRIC_CHEHEHIYANOU,
-  RUBRIC_NAANOUIM,
+  LIGNES_LOULAV,
   RUBRIC_NAANOUIM_ANA,
   RUBRIC_NAANOUIM_HODOU,
   RUBRIC_NAANOUIM_HODOU_FIN,
@@ -284,9 +280,6 @@ function buildLine(spec, segs) {
   if (spec.rubric) line.rubric = spec.rubric;
   if (spec.parts) {
     line.he = spec.parts.flatMap((part) => partRuns(part, segs));
-    // Une ligne à fragments se redit comme une autre : « Ana Hachem hochia
-    // na » porte sa didascalie et son « deux fois ».
-    if (spec.repeat) line.repeat = spec.repeat;
     if (spec.when) line.when = spec.when;
     if (spec.unless) line.unless = spec.unless;
     if (spec.muted) line.muted = true;
@@ -2624,13 +2617,9 @@ function chaharitRecipe() {
         plain: true,
         // Le cadran des six côtés, comme à la page du livre Moadim.
         naanouim: true,
-        labelText: R("Les brahot du loulav", "The lulav blessings", "\u05d1\u05e8\u05db\u05d5\u05ea \u05d4\u05dc\u05d5\u05dc\u05d1"),
+        labelText: R("Les brahot du loulav", "The lulav blessings", "ברכות הלולב"),
         halakha: HALAKHA_LOULAV,
-        lines: [
-          { he: BRAKHA_LOULAV },
-          { he: BRAKHA_CHEHEHIYANOU, rubric: RUBRIC_CHEHEHIYANOU },
-          { he: NAANOUIM, rubric: RUBRIC_NAANOUIM, muted: true },
-        ],
+        lines: LIGNES_LOULAV,
       },
       {
         src: "RH.Hallel",
@@ -2710,9 +2699,9 @@ function chaharitRecipe() {
             mode: "small",
             when: "hallel-complet",
             rubric: R(
-              "Le Hallel dit en entier, on le ferme par cette bénédiction\u00a0:",
+              "Le Hallel dit en entier, on le ferme par cette bénédiction :",
               "When the whole Hallel is said, it closes with this blessing:",
-              "\u05d1\u05d9\u05de\u05d9\u05dd \u05e9\u05d2\u05d5\u05de\u05e8\u05d9\u05dd \u05d0\u05ea \u05d4\u05d4\u05dc\u05dc \u05d7\u05d5\u05ea\u05de\u05d9\u05dd:",
+              "בימים שגומרים את ההלל חותמים:",
             ),
           },
         ],
@@ -3314,8 +3303,21 @@ function chaharitRecipe() {
         src: "Regalim.Mussaf",
         when: "hol-hamoed",
         plain: true,
+        lines: [{ seg: 36 }],
+      },
+      // Birkat kohanim, dans la répétition, entre « Vé'al koulam » et Sim
+      // chalom : les cohanim la disent à Moussaf, et sans eux le 'hazan dit
+      // « Élohénou… barkhénou ». Mêmes repères que dans la 'Amida de semaine.
+      birkatKohanimBlock(
+        "Regalim.Mussaf",
+        { bracha: 40, versets: [42, 43, 44], hazan: 46, versetsHazan: [47, 48, 49] },
+        { when: "hol-hamoed" },
+      ),
+      {
+        src: "Regalim.Mussaf",
+        when: "hol-hamoed",
+        plain: true,
         lines: [
-          { seg: 36 },
           { seg: 50 },
           { seg: 51, tight: true },
           { seg: 52 },
@@ -3324,6 +3326,45 @@ function chaharitRecipe() {
           { seg: 56 },
         ],
       },
+      // La fin de l'office de 'Hol haMoed, dans l'ordre que la source donne
+      // après la répétition (« בחול המועד אחרי החזרה אומרים יהי שם, ואחריו
+      // אומר הש"ץ קדיש תתקבל ואומרים המזמור השייך לאותו יום טוב, וקדיש יהא
+      // שלמא וקוה עד הסוף ») : « Yehi chem », le Kaddich Titkabal qui ferme
+      // Moussaf, le psaume de la fête, le Kaddich yehé chelama, puis Kavé.
+      {
+        src: "Amida",
+        when: "hol-hamoed",
+        plain: true,
+        lines: [{ seg: 107 }],
+      },
+      kaddishTitkabal("RH.Hallel", { seg: 26, when: "hol-hamoed" }),
+      // Le psaume de la fête : le 42 à Souccot, le 107 à Pessah. Un bloc par
+      // fête, chacun sous sa clé, la ligne seule portant la condition.
+      {
+        src: "Regalim.ChirSouccot",
+        when: "hol-hamoed",
+        plain: true,
+        lines: [
+          {
+            seg: 1,
+            when: "sukkot",
+            rubric: R("Le psaume de Souccot :", "The psalm of Sukkot:", "מזמור לסוכות:"),
+          },
+        ],
+      },
+      {
+        src: "Regalim.ChirPessah",
+        when: "hol-hamoed",
+        plain: true,
+        lines: [
+          {
+            seg: 1,
+            when: "pesach",
+            rubric: R("Le psaume de Pessa'h :", "The psalm of Pesach:", "מזמור לפסח:"),
+          },
+        ],
+      },
+      { ...kaddishYeheChelama("Song of the Day", 28), when: "hol-hamoed" },
       {
         src: "RH.Barchi Nafshi",
         when: "rosh-chodesh",
@@ -4165,6 +4206,9 @@ function sourcesFor(office) {
       // avec ses variantes en petit corps. 'Hol haMoed y prend ce qui reste
       // une fois ces variantes retirées.
       "Regalim.Mussaf": text["Prayers for Three Festivals"]["Mussaf"],
+      // Le psaume de chaque fête, dit à 'Hol haMoed après Moussaf.
+      "Regalim.ChirSouccot": text["Prayers for Three Festivals"]["Song for Sukkot"],
+      "Regalim.ChirPessah": text["Prayers for Three Festivals"]["Song for Passover"],
     };
   }
   // Le Kaddich (segments 4 à 7 de « Uva LeSion ») est le même aux trois

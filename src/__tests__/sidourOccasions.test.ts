@@ -395,13 +395,28 @@ describe("'Hol haMoed, et le loulav de Souccot", () => {
     expect(occ(5, months.CHESHVAN, 5787).has("hol-hamoed")).toBe(false);
   });
 
-  it("prend le loulav les sept jours de Souccot, jamais le Chabbat", () => {
-    // 5787 : le 15 Tichri tombe un Chabbat, on ne prend pas le loulav ce
-    // jour-là ; la première fois de l'année est donc le 16.
+  it("porte le loulav dans la Cha'harit de 'Hol haMoed, jamais le Chabbat", () => {
+    // 5787 en diaspora : Yom Tov les 15 et 16 Tichri, que le sidour de
+    // semaine ne sert pas (sans Hallel, les brahot y resteraient orphelines),
+    // puis 'Hol haMoed du 17 au 21.
     expect(new HDate(15, months.TISHREI, 5787).getDay()).toBe(6);
     expect(occ(15, months.TISHREI, 5787).has("loulav")).toBe(false);
-    expect(occ(16, months.TISHREI, 5787).has("loulav")).toBe(true);
+    expect(occ(16, months.TISHREI, 5787).has("loulav")).toBe(false);
+    expect(occ(17, months.TISHREI, 5787).has("loulav")).toBe(true);
     expect(occ(21, months.TISHREI, 5787).has("loulav")).toBe(true);
+    // En Israël, le 16 est déjà 'Hol haMoed.
+    expect(activeOccasions(new HDate(16, months.TISHREI, 5787), true).has("loulav")).toBe(true);
+  });
+
+  it("ne pose le loulav que là où le Hallel le suit", () => {
+    // Les brahot précèdent le Hallel dans Cha'harit : un jour qui porterait
+    // l'un sans l'autre les montrerait sans suite.
+    for (let jour = 15; jour <= 23; jour++) {
+      for (const il of [false, true]) {
+        const o = activeOccasions(new HDate(jour, months.TISHREI, 5787), il);
+        if (o.has("loulav")) expect(o.has("hallel")).toBe(true);
+      }
+    }
   });
 
   it("ne le prend plus à Chemini 'Atséret ni hors de Souccot", () => {

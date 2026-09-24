@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import AppModal from "./AppModal.vue";
@@ -89,6 +89,12 @@ const hint = computed(() => {
 const showFlat = computed(() => compassStatus.value === "live" || askable.value);
 
 const close = closeNaanouimCompass;
+
+// Quitter la page emporte la fenêtre, comme pour la boussole du Kotel : sans
+// cela, l'état partagé resterait « ouvert » (le retour arrière d'Android
+// navigue sans rien fermer) et le cadran surgirait de lui-même, figé, au
+// prochain texte qui le porte.
+onUnmounted(closeNaanouimCompass);
 
 // La boussole n'écoute que la fenêtre ouverte : les événements d'orientation
 // arrivent plusieurs fois par seconde.

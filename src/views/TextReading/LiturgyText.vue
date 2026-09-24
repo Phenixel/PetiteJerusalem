@@ -277,16 +277,16 @@ watch(offersKotel, syncKotelOffer, { immediate: true });
 onUnmounted(() => syncKotelOffer(false));
 
 /**
- * Le miroir des téfilines, sur le même modèle que la boussole : le passage qui
- * les pose le porte à son titre, et le signale au menu de lecture, qui l'offre
- * alors sous le pouce. Cha'harit est le seul office à le porter.
- */
-/**
  * Le cadran des na'anou'im : les brahot du loulav le portent à leur titre.
  * Rien à signaler au menu de lecture, il ne sert qu'à ce passage-là.
  */
 const offersNaanouim = computed(() => props.blocks.some((block) => block.naanouim));
 
+/**
+ * Le miroir des téfilines, sur le même modèle que la boussole : le passage qui
+ * les pose le porte à son titre, et le signale au menu de lecture, qui l'offre
+ * alors sous le pouce. Cha'harit est le seul office à le porter.
+ */
 const offersMirror = computed(() => props.blocks.some((block) => block.mirror));
 let offeringMirror = false;
 function syncMirrorOffer(offered: boolean): void {

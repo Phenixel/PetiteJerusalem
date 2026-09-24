@@ -1442,8 +1442,6 @@ const fr = {
         no: "Nord-ouest",
       },
     },
-    // Sidour : l'horaire d'un moment de la prière, posé avant ce qui se lit
-    // (voir TefilaZman.vue ; les clés d1..dN sont les lignes du « i »).
     // Souccot : les six côtés du na'anou'a, posés sur le même cadran que la
     // boussole du Kotel, mais numérotés dans l'ordre où on les fait.
     naanouim: {
@@ -1455,6 +1453,8 @@ const fr = {
       middle: "Le haut et le bas, au centre du cadran, ne sont pas des points cardinaux.",
       live: "Le cadran suit votre appareil : tournez-vous vers le nombre du côté que vous agitez.",
     },
+    // Sidour : l'horaire d'un moment de la prière, posé avant ce qui se lit
+    // (voir TefilaZman.vue ; les clés d1..dN sont les lignes du « i »).
     zman: {
       info: "À propos de cet horaire",
       place: "Heures pour {city}.",

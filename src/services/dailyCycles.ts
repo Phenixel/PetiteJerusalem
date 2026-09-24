@@ -400,11 +400,13 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // jour où se dire ; les fêtes qu'elle sert se nomment par ailleurs
   // (`sukkot`, `pesach`), pour le passage du Moussaf qui dit laquelle.
   if (holHamoed) occ.add("hol-hamoed");
-  // Le loulav, du 15 au 21 Tichri : on prend les quatre espèces chaque matin
-  // de Souccot, avant le Hallel, et on les agite pendant. Sauf le Chabbat, où
-  // on ne les porte pas : la première fois de l'année est alors le lendemain,
-  // et c'est ce jour-là que se dit le Chéhé'héyanou.
-  if (occ.has("sukkot") && hd.getDay() !== 6) occ.add("loulav");
+  // Le loulav dans la Cha'harit de semaine : les jours de 'Hol haMoed de
+  // Souccot, avant le Hallel, et pendant pour les na'anou'im. Pas le Chabbat,
+  // où on ne porte pas les quatre espèces. Pas les jours de Yom Tov non plus,
+  // bien qu'on les y prenne : ce sidour n'est pas l'office de Yom Tov, qui n'y
+  // dit pas le Hallel, et les brahot n'y viendraient qu'orphelines. Ces
+  // jours-là, c'est la page du livre Moadim qui les porte.
+  if (occ.has("sukkot") && holHamoed && hd.getDay() !== 6) occ.add("loulav");
   if (occ.has("rosh-chodesh") || hanukkah || holHamoed) {
     occ.add("hallel");
     const entier = hanukkah || (holHamoed && festival("Sukkot"));

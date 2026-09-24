@@ -550,6 +550,7 @@ describe("fichiers de tefila", () => {
       "Au seuil de la soucca",
       "Les ouchpizin",
       "Assis dans la soucca",
+      "Le kiddouch",
     ]);
     // Chaque nuit a sa kavana, son hôte et son verset. Les sept hôtes portent
     // chacun sa didascalie ; les kavanot n'en comptent que six, la première
@@ -584,6 +585,34 @@ describe("fichiers de tefila", () => {
     // pas au seuil.
     expect(blocks[0].halakhot ?? []).toHaveLength(0);
     expect(blocks[1].halakhot ?? []).toHaveLength(0);
+  });
+
+  it("Séder leil Souccot : le kiddouch des soirs de Yom Tov, Chabbat et havdala compris", () => {
+    const blocks = load("moadim", "seder-leil-souccot").sections[0].blocks ?? [];
+    const kiddouch = blocks[3];
+    // Les signes retirés : les voyelles et les accents varient, les lettres
+    // non.
+    const texte = kiddouch.lines.join(" ").replace(/[\u0591-\u05C7]/g, "");
+    // Le « Yom hachichi » du Chabbat ouvre, puis « Ele moadé ».
+    expect(texte).toContain("יום הששי");
+    expect(texte).toContain("אלה מועדי");
+    // Souccot seule est nommée : ni Chavou'ot ni Chemini 'Atséret.
+    expect(texte).toContain("חג הסכות הזה");
+    expect(texte).not.toContain("חג השבועות");
+    expect(texte).not.toContain("שמיני חג עצרת");
+    // Les ajouts du Chabbat, entre parenthèses comme dans le sidour imprimé.
+    expect(texte).toContain("(השבת ו)ישראל והזמנים");
+    // La havdala du soir qui suit un Chabbat, puis les deux bénédictions de
+    // la fête, dans l'ordre du premier soir.
+    expect(texte).toContain("המבדיל בין קדש לקדש");
+    expect(texte.indexOf("לישב בסכה")).toBeLessThan(texte.indexOf("שהחינו"));
+    // Chaque consigne dit son ordre dans les trois langues ; celle du second
+    // soir renverse les deux bénédictions.
+    const rubriques = (kiddouch.paragraphs ?? []).map((p) => p.rubric).filter(Boolean);
+    expect(rubriques.at(-1)).toMatchObject({
+      fr: expect.stringContaining("Le second soir"),
+      he: expect.stringContaining("בליל שני"),
+    });
   });
 });
 

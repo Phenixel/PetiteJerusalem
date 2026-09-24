@@ -2785,14 +2785,6 @@
       "type": "Brahot"
     },
     {
-      "id": 358,
-      "name": "נרות חנוכה (Nerot Hanouka)",
-      "livre": "חנוכה (Hanouka)",
-      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Hanukkah,_Menorah_Lighting",
-      "totalSections": 1,
-      "type": "Moadim"
-    },
-    {
       "id": 363,
       "name": "נטילת לולב (Netilat Loulav)",
       "livre": "סוכות (Souccot)",
@@ -2805,6 +2797,14 @@
       "name": "סדר ליל סוכות (Seder Leil Souccot)",
       "livre": "סוכות (Souccot)",
       "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.639.1",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
+      "id": 358,
+      "name": "נרות חנוכה (Nerot Hanouka)",
+      "livre": "חנוכה (Hanouka)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Hanukkah,_Menorah_Lighting",
       "totalSections": 1,
       "type": "Moadim"
     },
