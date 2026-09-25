@@ -89,8 +89,8 @@ export const RUBRIC_NAANOUIM_HODOU = {
 };
 
 export const RUBRIC_NAANOUIM_ANA = {
-  fr: "Une syllabe par côté : « A » au sud, « na » au nord, « ho » à l'est face à soi, « chi » en haut, « 'a » en bas, « na » à l'ouest. Rien sur le Nom. On se tourne ensuite vers la droite et l'on agite de même au second « Ana Hachem hochia na » ; à Djerba, on agite des deux côtés à chaque mot. « Ana Hachem hatsli'ha na » se dit deux fois, sans na'anou'im.",
-  en: "One syllable per side: “A” to the south, “na” to the north, “ho” to the east, straight ahead, “shi” up, “a” down, “na” to the west. Nothing on the Name. Then turn to the right and wave the same way at the second “Ana Hashem hoshia na”; in Djerba each word is waved on both sides. “Ana Hashem hatzlicha na” is said twice, without waving.",
+  fr: "Une syllabe par côté : « A » au sud, « na » au nord, « ho » à l'est face à soi, « chi » en haut, « 'a » en bas, « na » à l'ouest. Rien sur le Nom. Chaque mot se dit d'un seul souffle : on ne reprend jamais sa respiration au milieu d'un mot, et « A » et « na » ne se séparent pas en deux souffles. On se tourne ensuite vers la droite et l'on agite de même au second « Ana Hachem hochia na » ; à Djerba, on agite des deux côtés à chaque mot. « Ana Hachem hatsli'ha na » se dit deux fois, sans na'anou'im.",
+  en: "One syllable per side: “A” to the south, “na” to the north, “ho” to the east, straight ahead, “shi” up, “a” down, “na” to the west. Nothing on the Name. Each word is said in a single breath: never stop for breath in the middle of a word, so “A” and “na” are not split across two breaths. Then turn to the right and wave the same way at the second “Ana Hashem hoshia na”; in Djerba each word is waved on both sides. “Ana Hashem hatzlicha na” is said twice, without waving.",
   he: "וינענע בלולב כך: אָ : לצד דרום. נָּא : לצד צפון. ה' : אסור לנענע. הוֹ : לצד מזרח לנוכח. שִׁי : למעלה. עָה : למטה. נָּא : לצד מערב. ויסתובב לצד ימין וינענע שוב כנ\"ל (ובג'רבא נוהגים בכל מלה לנענע לשני צדדים), ואחר כך יאמר אנא ה' הצליחה נא, ב\"פ.",
 };
 

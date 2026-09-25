@@ -275,24 +275,10 @@ const netilatLoulav = {
  * s'assoit : c'est là qu'ils s'appliquent, et le sidour les donne à la suite
  * du séder, sous le titre « דיני ישיבה בסוכה ».
  */
-/**
- * Les segments du kiddouch des soirs de fête : la section « קידוש לליל שלש
- * רגלים » que la source range à la suite du Moussaf des régalim, et le « Yom
- * hachichi » du kiddouch de Chabbat, auquel elle renvoie sans le redonner
- * (« בשבת אומרים כל הקידוש עד סוף יום הששי »). Les autres blocs du séder ne
- * prennent rien à la source : leurs lignes sont écrites en clair.
- */
-function segmentsKiddouch(siddur) {
-  return {
-    ...siddur["Prayers for Three Festivals"]["Mussaf"],
-    yomHachichi: siddur["Shabbat Evening"]["Kiddush"][8],
-  };
-}
-
 const leilSouccot = {
   file: "seder-leil-souccot",
   title: "סדר ליל סוכות (Seder Leil Souccot)",
-  src: (t) => segmentsKiddouch(t.siddur),
+  src: () => [],
   blocks: [
     {
       label: "Au seuil de la soucca",
@@ -327,74 +313,6 @@ const leilSouccot = {
         ),
         ...VERSETS_AJOUT.map((he, i) => ({ he, rubric: i === 0 ? RUBRIC_AJOUT : NUITS[i] })),
         { he: LEKHA, rubric: RUBRIC_FIN },
-      ],
-    },
-    // Le kiddouch des soirs de Yom Tov, dans la soucca. Il vient de la source,
-    // qui le donne une fois pour les trois fêtes : on n'en garde que ce qui
-    // sert à Souccot. Les ajouts du Chabbat y sont entre parenthèses, comme
-    // dans le sidour imprimé, et la havdala du soir qui suit un Chabbat vient
-    // à sa place, entre le kiddouch et les deux bénédictions de la fête.
-    {
-      label: "Le kiddouch",
-      halakha: {
-        fr: "Le kiddouch des soirs de Yom Tov se dit dans la soucca : le premier soir, et le second hors d'Israël.",
-        en: "The kiddush of the Yom Tov evenings is said in the sukkah: on the first evening, and outside Israel on the second too.",
-        he: "קידוש של ליל יום טוב אומרים בסוכה: בליל ראשון, ובחוץ לארץ גם בליל שני.",
-      },
-      lines: [
-        {
-          seg: "yomHachichi",
-          rubric: {
-            fr: "Le Chabbat, on commence par « Yom hachichi » :",
-            en: "On Shabbat, begin with “Yom hashishi”:",
-          },
-          rubricSeg: 218,
-        },
-        {
-          seg: 219,
-          rubric: {
-            fr: "Puis, chaque soir de fête :",
-            en: "Then, every festival evening:",
-            he: "ואחר כך אומרים:",
-          },
-        },
-        {
-          seg: 220,
-          rubric: {
-            fr: "Celui qui fait le kiddouch dit « Savri maranan », et l'on répond « Le'hayim » :",
-            en: "The one making kiddush says “Savri maranan”, and all answer “Lechayim”:",
-            he: "ואומר המקדש סברי מרנן, ועונים לחיים:",
-          },
-        },
-        { seg: 221 },
-        {
-          seg: 222,
-          rubric: {
-            fr: "Les mots entre parenthèses ne se disent que le Chabbat :",
-            en: "The words in parentheses are said on Shabbat only:",
-            he: "המילים שבסוגריים נאמרות בשבת בלבד:",
-          },
-        },
-        { seg: 224, tight: true },
-        { seg: 226, tight: true },
-        {
-          seg: 228,
-          rubric: {
-            fr: "Le soir qui suit un Chabbat, on ajoute la havdala :",
-            en: "On the evening that follows a Shabbat, add the havdalah:",
-          },
-          rubricSeg: 227,
-        },
-        { seg: 229, tight: true },
-        {
-          seg: 231,
-          rubric: {
-            fr: "Le premier soir, « Lechev basoukka » puis Chéhé'héyanou. Le second soir, Chéhé'héyanou d'abord, puis « Lechev basoukka » :",
-            en: "On the first evening, “Leshev basukkah” and then Shehecheyanu. On the second evening, Shehecheyanu first, then “Leshev basukkah”:",
-          },
-          rubricSeg: 230,
-        },
-        { seg: 232, tight: true },
       ],
     },
   ],

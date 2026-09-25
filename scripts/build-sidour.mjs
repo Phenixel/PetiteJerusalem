@@ -2701,13 +2701,16 @@ function chaharitRecipe() {
           { seg: 18 },
           // « Ana Hachem hochia na » : une syllabe par côté, puis on se
           // tourne vers la droite et l'on recommence. La consigne ferme le
-          // paragraphe d'avant plutôt que d'ouvrir le sien : celui-ci se dit
-          // deux fois, et elle se lirait deux fois avec lui.
+          // paragraphe d'avant plutôt que d'ouvrir le sien, qui porte deux
+          // fois le verset : elle vaut pour les deux.
           {
             parts: [{ seg: 19, mode: "full" }, { rubric: RUBRIC_NAANOUIM_ANA, when: "loulav" }],
           },
-          { seg: 20, repeat: 2 },
-          { seg: 21, repeat: 2, tight: true },
+          // La source écrit déjà chaque verset deux fois : c'est ce que dit
+          // chacun (le 'hazan le dit, l'assemblée le redit, deux fois chacun).
+          // Un « × 2 » par-dessus le ferait lire quatre fois.
+          { seg: 20 },
+          { seg: 21, tight: true },
           // Le « Hodou » de la fin, où l'on agite une dernière fois : la
           // didascalie se glisse devant lui, au milieu du paragraphe, et une
           // seule fois, bien que le verset se redise.
