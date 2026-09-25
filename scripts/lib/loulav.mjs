@@ -96,12 +96,13 @@ export const RUBRIC_NAANOUIM_ANA = {
 
 /**
  * Le « Hodou » qui ferme le psaume : les mêmes six côtés qu'au premier, une
- * seule fois, bien que le verset se redise.
+ * seule fois, bien que le verset se redise. L'hébreu est celui de la page
+ * 623 du sidour.
  */
 export const RUBRIC_NAANOUIM_HODOU_FIN = {
-  fr: "On agite de nouveau, un côté par mot, comme au premier « Hodou » : sud, nord, est, haut, bas, ouest.",
-  en: "Wave again, one side per word, as at the first “Hodu”: south, north, east, up, down, west.",
-  he: "וינענע בלולב כמו בהודו הראשון: דרום, צפון, מזרח, מעלה, מטה, מערב.",
+  fr: "On agite encore une fois, comme au premier « Hodou » : un côté par mot, sud, nord, est, haut, bas, ouest.",
+  en: "Wave once more, as at the first “Hodu”: one side per word, south, north, east, up, down, west.",
+  he: "וינענע שוב פעם אחת כנ\"ל בהודו לה' וגו'",
 };
 
 /**
