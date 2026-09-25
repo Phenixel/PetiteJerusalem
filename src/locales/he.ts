@@ -510,6 +510,7 @@ const he: LocaleMessages = {
     range: "מ־{from} עד {to}",
     start: "הדלקה",
     end: "צאת החג",
+    goFurther: "להמשיך מכאן",
   },
   paracha: {
     title: "פרשת השבוע",

@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { buildZmanimSeoPages, seoCities, upcomingRestPeriods } from "../content/zmanimSeoPages";
 import { COUNTRIES, FEATURED_CITY_NAMES, citySlug, findCityBySlug } from "../content/zmanimCities";
 import { SEO_FESTIVALS, findFestivalBySlug } from "../content/zmanimFestivals";
-import { SEO_LOCALES } from "../content/seoLocales";
+import { SEO_LOCALES, sectionPath } from "../content/seoLocales";
 import { ZMANIM_STRINGS } from "../content/zmanimSeoStrings";
 import { buildAppShell, guidePages, staticFooterHtml } from "../content/seoPages";
 import {
@@ -291,6 +291,65 @@ describe("zmanimSeoPages pages par fête", () => {
       expect(pessah.bodyHtml).toContain(year);
     }
     expect(pessah.bodyHtml).not.toContain("Quand tombe Pessah 2026");
+  });
+
+  it("existe dans les trois langues, pour que les hreflang se répondent", () => {
+    // Une fête que hebcal nomme autrement en Israël (Simhat Torah, confondue
+    // avec Chemini Atséret) faisait disparaître la page hébraïque, en laissant
+    // le français et l'anglais se déclarer alternates d'une page absente.
+    for (const festival of SEO_FESTIVALS) {
+      for (const locale of SEO_LOCALES) {
+        const path = sectionPath("calendrier", locale, festival.slugs[locale]);
+        expect(pages.find((p) => p.path === path)?.path ?? null).toBe(path);
+      }
+    }
+  });
+
+  it("calcule les pages hébraïques sur Jérusalem, pas sur Paris", () => {
+    // En diaspora, le second jour de Yom Tov double le premier : Souccot y
+    // dure un jour de fête de plus, et Simhat Torah y est un jour à part,
+    // le lendemain de Chemini Atséret. La page hébraïque s'adresse à un
+    // lecteur qui est en Israël ; elle donnait pourtant les dates et les
+    // heures d'allumage de Paris.
+    const sukkotHe = pages.find((p) => p.path === "/he/chagim/sukkot")!;
+    // Un seul jour de Yom Tov : la sortie tombe le samedi 26, pas le dimanche.
+    expect(sukkotHe.bodyHtml).toContain("שבת, 26 בספט׳ בשעה 19:07");
+
+    const simchatTorahHe = pages.find((p) => p.path === "/he/chagim/simchat-tora")!;
+    expect(simchatTorahHe.bodyHtml).toContain("יום שבת, 3 באוקטובר 2026");
+    expect(simchatTorahHe.bodyHtml).not.toContain("4 באוקטובר 2026");
+
+    // Le français reste en diaspora, où Simhat Torah est le lendemain de
+    // Chemini Atséret : le dimanche 4, pas le samedi 3.
+    const simhatTorah = pages.find((p) => p.path === "/calendrier/simhat-torah")!;
+    expect(simhatTorah.bodyHtml).toContain("dimanche 4 octobre 2026");
+    const cheminiAtseret = pages.find((p) => p.path === "/calendrier/chemini-atseret")!;
+    expect(cheminiAtseret.bodyHtml).toContain("samedi 3 octobre 2026");
+    const souccot = pages.find((p) => p.path === "/calendrier/souccot")!;
+    expect(souccot.bodyHtml).toContain("dim. 27 sept. à 20:25");
+  });
+
+  it("date la fête entière, 'Hol haMoed compris", () => {
+    // Souccot dure sept jours, du 15 au 21 Tichri. La page n'en donnait que
+    // les deux premiers (les seuls Yom Tov), sous un chapô annonçant « sept
+    // jours durant » : le tableau contredisait son propre texte sur la
+    // requête même à laquelle il répond.
+    const souccot = pages.find((p) => p.path === "/calendrier/souccot")!;
+    expect(souccot.bodyHtml).toContain("du samedi 26 septembre au vendredi 2 octobre 2026");
+    expect(souccot.bodyHtml).toContain("du 15 au 21 Tichri 5787");
+    // L'entrée et la sortie restent celles des jours de Yom Tov : ce sont les
+    // seuls à en avoir, le 'Hol haMoed est ouvrable.
+    expect(souccot.bodyHtml).toContain("dim. 27 sept. à 20:25");
+
+    // Pessah a ses Yom Tov aux deux bouts, le 'Hol haMoed au milieu : la
+    // plage couvre les huit jours, du 15 au 22 Nissan.
+    const pessahDays = pages.find((p) => p.path === "/calendrier/pessah")!;
+    expect(pessahDays.bodyHtml).toContain("du jeudi 22 au jeudi 29 avril 2027");
+    expect(pessahDays.bodyHtml).toContain("du 15 au 22 Nissan 5787");
+
+    // Une fête sans jour intermédiaire n'a pas la note, et ne s'étale pas.
+    const rochHachana = pages.find((p) => p.path === "/calendrier/roch-hachana")!;
+    expect(rochHachana.bodyHtml).not.toContain("'Hol haMoed");
   });
 
   it("date la fête de ses propres jours, pas du bloc de repos qui l'englobe", () => {

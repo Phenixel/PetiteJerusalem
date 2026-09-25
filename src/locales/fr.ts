@@ -541,6 +541,8 @@ const fr = {
     range: "du {from} au {to}",
     start: "Allumage",
     end: "Sortie",
+    /* Le bloc sous une fête ouverte : ce qu'on dit et ce qu'on lit ce jour-là. */
+    goFurther: "Aller plus loin",
   },
   paracha: {
     title: "Paracha de la semaine",

@@ -128,11 +128,18 @@ export type ZmanimStrings = {
   festivalH1: (label: string) => string;
   festivalWhenTitle: (label: string) => string;
   festivalHead: [string, string, string];
-  festivalSplitNote: (label: string) => string;
-  festivalTimesNote: (links: ZmanimLinks) => string;
+  festivalCholHamoedNote: (label: string) => string;
+  /** `city` : la ville de référence des heures, Paris ou Jérusalem selon la langue. */
+  festivalTimesNote: (links: ZmanimLinks, city: string) => string;
   festivalNoTimesNote: (links: ZmanimLinks) => string;
   festivalAroundTitle: (label: string) => string;
   festivalAroundHtml: (links: ZmanimLinks) => string;
+  /**
+   * Le rappel de l'application, sous les liens de la fête : les horaires s'y
+   * recalculent aux coordonnées du lecteur, et hors connexion. Le site seul
+   * l'affiche ; dans l'app, la vue ne le rend pas.
+   */
+  festivalAppHtml: (appStore: string, playStore: string) => string;
   festivalFaqHeading: (label: string) => string;
   faqWhenFestival: (
     label: string,
@@ -143,11 +150,25 @@ export type ZmanimStrings = {
     endTime: string,
     city: string,
   ) => Faq;
+  /**
+   * « Quand tombe X ? » pour une fête à 'Hol haMoed : la plage donne la fête
+   * entière, l'entrée et la sortie celles de ses seuls jours de Yom Tov.
+   */
+  faqWhenFestivalDays: (
+    label: string,
+    year: number,
+    when: string,
+    start: string,
+    startTime: string,
+    end: string,
+    endTime: string,
+    city: string,
+  ) => Faq;
   faqWhenHanukkah: (label: string, year: number, eve: string, range: string) => Faq;
   faqWhenFast: (label: string, year: number, when: string, kind: "dawn" | "eve") => Faq;
   faqWhenPlain: (label: string, year: number, when: string) => Faq;
   faqFestivalWork: (label: string, hasTimes: boolean, isFast: boolean) => Faq;
-  faqFestivalCity: (label: string) => Faq;
+  faqFestivalCity: (label: string, city: string) => Faq;
   /** Les intros des pages de fête, par slug français (la clé stable). */
   festivalIntro: Record<string, string>;
 };
@@ -335,14 +356,16 @@ const FR: ZmanimStrings = {
   festivalH1: (label) => `${label} : dates, entrée et sortie`,
   festivalWhenTitle: (label) => `Quand tombe ${label} ?`,
   festivalHead: ["Année", "Dates", "Date hébraïque"],
-  festivalSplitNote: (
+  festivalCholHamoedNote: (
     label,
-  ) => `${label} compte deux blocs de fête, séparés par le 'Hol haMoed (les jours
-      intermédiaires, où le travail est permis) : l'heure d'entrée est celle du premier jour, la
-      sortie celle du dernier.`,
+  ) => `Les dates ci-dessus couvrent ${label} en entier. Les jours où le travail
+      est interdit (Yom Tov) sont ceux que l'heure d'entrée et l'heure de sortie encadrent ; les
+      autres jours de la fête sont le 'Hol haMoed, où le travail est permis et où la fête
+      continue.`,
   festivalTimesNote: (
     links,
-  ) => `Les heures d'entrée et de sortie sont calculées pour Paris. Pour votre ville,
+    city,
+  ) => `Les heures d'entrée et de sortie sont calculées pour ${city}. Pour votre ville,
       voir les <a href="${links.horaires}">horaires ville par ville</a> : l'application les
       recalcule à vos coordonnées, même hors ligne.`,
   festivalNoTimesNote: (
@@ -357,10 +380,21 @@ const FR: ZmanimStrings = {
       les <a href="${links.horaires}">horaires de Chabbat et des fêtes</a> et
       <a href="${links.zmanim}">les zmanim expliqués</a> (l'aube, le netz, la chkia, la sortie
       des étoiles), qui donnent le sens des heures de ce tableau.</p>`,
+  festivalAppHtml: (
+    appStore,
+    playStore,
+  ) => `<p>L'application Petite Jérusalem recalcule ces heures à vos coordonnées,
+      même sans connexion, et rappelle l'entrée et la sortie de la fête :
+      <a href="${appStore}" rel="noopener">sur l'App Store</a> ou
+      <a href="${playStore}" rel="noopener">sur Google Play</a>.</p>`,
   festivalFaqHeading: (label) => `Questions fréquentes sur ${label}`,
   faqWhenFestival: (label, year, start, startTime, end, endTime, city) => ({
     q: `Quand tombe ${label} ${year} ?`,
     a: `${label} ${year} commence le ${start} au soir (entrée à ${startTime} à ${city}) et se termine le ${end} à la tombée de la nuit (${endTime} à ${city}).`,
+  }),
+  faqWhenFestivalDays: (label, year, when, start, startTime, end, endTime, city) => ({
+    q: `Quand tombe ${label} ${year} ?`,
+    a: `${label} ${year} a lieu ${when}. Son entrée est le ${start} au soir (allumage à ${startTime} à ${city}) ; ses jours de Yom Tov, où le travail est interdit, se terminent le ${end} à la tombée de la nuit (${endTime} à ${city}). Les autres jours de la fête sont le 'Hol haMoed, où le travail est permis.`,
   }),
   faqWhenHanukkah: (label, year, eve, range) => ({
     q: `Quand tombe ${label} ${year} ?`,
@@ -385,9 +419,9 @@ const FR: ZmanimStrings = {
         ? `Non : ${label} est un jour de jeûne, pas un Yom Tov ; le travail y reste permis.`
         : `Non : ${label} n'est pas un jour de Yom Tov, le travail y reste permis. La journée a ses usages propres, mais pas d'entrée ni de sortie comme Chabbat.`,
   }),
-  faqFestivalCity: (label) => ({
+  faqFestivalCity: (label, city) => ({
     q: `Comment connaître l'heure exacte de ${label} dans ma ville ?`,
-    a: `Les heures ci-dessus sont calculées pour Paris. Ouvrez les horaires dans l'application, ou la page d'horaires de votre ville, pour l'heure d'entrée et de sortie à vos coordonnées, calculée sur votre appareil et même hors ligne.`,
+    a: `Les heures ci-dessus sont calculées pour ${city}. Ouvrez les horaires dans l'application, ou la page d'horaires de votre ville, pour l'heure d'entrée et de sortie à vos coordonnées, calculée sur votre appareil et même hors ligne.`,
   }),
   festivalIntro: {
     "roch-hachana":
@@ -398,8 +432,12 @@ const FR: ZmanimStrings = {
       "Yom Kippour, le 10 Tichri, est le jour du Grand Pardon : un jeûne de vingt-cinq heures, de l'entrée de la fête au soir jusqu'à la sortie des étoiles du lendemain, ouvert par Kol Nidré et refermé par la Néïla et le chofar.",
     souccot:
       "Souccot, la fête des cabanes, commence le 15 Tichri : on mange (et on dort) dans la soucca sept jours durant, et l'on prend chaque matin les quatre espèces, le loulav et l'étrog. Les deux premiers jours sont Yom Tov en diaspora, les suivants 'Hol haMoed.",
+    "hochaana-rabba":
+      "Hochaana Rabba, le 21 Tichri, est le septième et dernier jour de Souccot : on fait sept fois le tour de la synagogue avec le loulav et l'étrog, on bat les aravot (les rameaux de saule) à terre, et l'usage est de veiller la nuit à étudier. Le travail y reste permis, mais l'office du matin est plus long que de coutume.",
+    "chemini-atseret":
+      "Chemini Atséret, le 22 Tichri, est le huitième jour qui ferme Souccot sans tout à fait en être : on n'y prend plus le loulav et l'on n'y mange plus dans la soucca, et c'est ce jour-là qu'on demande la pluie (la prière de Guechem). En diaspora, Simhat Torah la suit le lendemain ; en Israël, les deux tombent le même jour.",
     "simhat-torah":
-      "Chemini Atséret et Simhat Torah closent le cycle de Tichri : on demande la pluie, puis on achève la lecture annuelle de la Torah et on la recommence aussitôt, en dansant avec les rouleaux (les hakafot).",
+      "Simhat Torah ferme le cycle des fêtes de Tichri : on achève la lecture annuelle de la Torah et on la recommence aussitôt, en dansant avec les rouleaux (les hakafot). En diaspora, elle tombe le lendemain de Chemini Atséret ; en Israël, les deux se célèbrent le même jour.",
     hanouka:
       "Hanouka dure huit jours à partir du 25 Kislev : on allume chaque soir une bougie de plus sur la 'hanoukia, en souvenir de la fiole d'huile du Temple. Le travail y est permis, et la première bougie s'allume la veille du premier jour, au soir.",
     "10-tevet":
@@ -595,14 +633,15 @@ const EN: ZmanimStrings = {
   festivalH1: (label) => `${label}: dates, start and end`,
   festivalWhenTitle: (label) => `When is ${label}?`,
   festivalHead: ["Year", "Dates", "Hebrew date"],
-  festivalSplitNote: (
+  festivalCholHamoedNote: (
     label,
-  ) => `${label} has two blocks of festival days, separated by Chol HaMoed (the
-      intermediate days, on which work is allowed): the start time is that of the first day, the
-      end time that of the last.`,
+  ) => `The dates above cover the whole of ${label}. The days on which work is
+      forbidden (Yom Tov) are the ones the start and end times frame; the remaining days of the
+      festival are Chol HaMoed, on which work is allowed and the festival carries on.`,
   festivalTimesNote: (
     links,
-  ) => `The start and end times are computed for Paris. For your own city, see
+    city,
+  ) => `The start and end times are computed for ${city}. For your own city, see
       <a href="${links.horaires}">Shabbat times city by city</a>: the app recomputes them at your
       coordinates, even offline.`,
   festivalNoTimesNote: (
@@ -617,10 +656,21 @@ const EN: ZmanimStrings = {
       <a href="${links.horaires}">Shabbat and festival times</a> and
       <a href="${links.zmanim}">zmanim explained</a> (dawn, sunrise, shkia, nightfall), which give
       the meaning of the times in this table.</p>`,
+  festivalAppHtml: (
+    appStore,
+    playStore,
+  ) => `<p>The Petite Jérusalem app recomputes these times at your own coordinates,
+      even offline, and reminds you of the start and end of the festival:
+      <a href="${appStore}" rel="noopener">on the App Store</a> or
+      <a href="${playStore}" rel="noopener">on Google Play</a>.</p>`,
   festivalFaqHeading: (label) => `Frequently asked questions about ${label}`,
   faqWhenFestival: (label, year, start, startTime, end, endTime, city) => ({
     q: `When is ${label} ${year}?`,
     a: `${label} ${year} begins on the evening of ${start} (candle lighting at ${startTime} in ${city}) and ends on ${end} at nightfall (${endTime} in ${city}).`,
+  }),
+  faqWhenFestivalDays: (label, year, when, start, startTime, end, endTime, city) => ({
+    q: `When is ${label} ${year}?`,
+    a: `${label} ${year} runs ${when}. It begins on the evening of ${start} (candle lighting at ${startTime} in ${city}); its Yom Tov days, on which work is forbidden, end on ${end} at nightfall (${endTime} in ${city}). The remaining days of the festival are Chol HaMoed, on which work is allowed.`,
   }),
   faqWhenHanukkah: (label, year, eve, range) => ({
     q: `When is ${label} ${year}?`,
@@ -645,9 +695,9 @@ const EN: ZmanimStrings = {
         ? `No: ${label} is a fast day, not a Yom Tov; work is allowed.`
         : `No: ${label} is not a Yom Tov, work is allowed. The day has its own customs, but no start and end the way Shabbat does.`,
   }),
-  faqFestivalCity: (label) => ({
+  faqFestivalCity: (label, city) => ({
     q: `How do I find the exact time of ${label} in my city?`,
-    a: `The times above are computed for Paris. Open the Shabbat times in the app, or your city's page, for the start and end times at your own coordinates, computed on your device and even offline.`,
+    a: `The times above are computed for ${city}. Open the Shabbat times in the app, or your city's page, for the start and end times at your own coordinates, computed on your device and even offline.`,
   }),
   festivalIntro: {
     "roch-hachana":
@@ -658,8 +708,12 @@ const EN: ZmanimStrings = {
       "Yom Kippur, on 10 Tishrei, is the Day of Atonement: a fast of twenty-five hours, from the start of the day in the evening until nightfall the following day, opened by Kol Nidrei and closed by Neilah and the shofar.",
     souccot:
       "Sukkot, the festival of booths, begins on 15 Tishrei: one eats (and sleeps) in the sukkah for seven days, and takes the four species, lulav and etrog, each morning. The first two days are Yom Tov in the diaspora, the rest are Chol HaMoed.",
+    "hochaana-rabba":
+      "Hoshana Rabbah, on 21 Tishrei, is the seventh and last day of Sukkot: the synagogue is circled seven times with the lulav and the etrog, the aravot (willow branches) are beaten on the ground, and many stay up through the night to study. Work is allowed, but the morning service is longer than usual.",
+    "chemini-atseret":
+      "Shemini Atzeret, on 22 Tishrei, is the eighth day that closes Sukkot without quite belonging to it: the lulav is no longer taken and meals are no longer eaten in the sukkah, and it is the day rain is asked for (the prayer of Geshem). In the diaspora Simchat Torah follows the next day; in Israel the two fall together.",
     "simhat-torah":
-      "Shemini Atzeret and Simchat Torah close the cycle of Tishrei: rain is asked for, then the annual reading of the Torah is finished and begun again straight away, dancing with the scrolls (the hakafot).",
+      "Simchat Torah closes the cycle of the Tishrei festivals: the annual reading of the Torah is finished and begun again straight away, dancing with the scrolls (the hakafot). In the diaspora it falls the day after Shemini Atzeret; in Israel the two are celebrated together.",
     hanouka:
       "Hanukkah runs eight days from 25 Kislev: one candle more is lit each evening on the chanukiah, in memory of the flask of oil in the Temple. Work is allowed, and the first candle is lit on the evening before the first day.",
     "10-tevet":
@@ -848,9 +902,13 @@ const HE: ZmanimStrings = {
   festivalH1: (label) => `${label}: תאריכים, כניסה ויציאה`,
   festivalWhenTitle: (label) => `מתי חל ${label}?`,
   festivalHead: ["שנה", "תאריכים", "תאריך עברי"],
-  festivalSplitNote: (label) => `${label} כולל שני חלקים של ימים טובים, ובאמצע חול המועד (הימים שבהם
-      המלאכה מותרת): זמן הכניסה הוא של היום הראשון, וזמן היציאה של האחרון.`,
-  festivalTimesNote: (links) => `זמני הכניסה והיציאה מחושבים לפריז. לעיר שלכם, ראו את
+  festivalCholHamoedNote: (label) => `התאריכים שלמעלה מכסים את ${label} כולו. הימים שבהם המלאכה
+      אסורה (ימים טובים) הם אלה שזמני הכניסה והיציאה תוחמים; שאר ימי החג הם חול המועד, שבהם
+      המלאכה מותרת והחג נמשך.`,
+  festivalTimesNote: (
+    links,
+    city,
+  ) => `זמני הכניסה והיציאה מחושבים ${hePrefix("ל", city)}. לעיר שלכם, ראו את
       <a href="${links.horaires}">זמני השבת עיר אחר עיר</a>: האפליקציה מחשבת אותם מחדש לנקודות
       הציון שלכם, גם ללא חיבור לאינטרנט.`,
   festivalNoTimesNote: (
@@ -862,10 +920,18 @@ const HE: ZmanimStrings = {
   festivalAroundHtml: (links) => `<p>ראו את <a href="${links.calendrier}">לוח החגים המלא</a>, את
       <a href="${links.horaires}">זמני השבת והחגים</a> ואת <a href="${links.zmanim}">זמני היום
       ההלכתיים</a> (עלות השחר, הנץ, השקיעה וצאת הכוכבים), שנותנים את משמעות הזמנים שבטבלה.</p>`,
+  festivalAppHtml: (appStore, playStore) => `<p>אפליקציית פטיט ירושלים מחשבת את הזמנים האלה
+      מחדש לנקודות הציון שלכם, גם ללא חיבור לאינטרנט, ומזכירה את כניסת החג ויציאתו:
+      <a href="${appStore}" rel="noopener">ב-App Store</a> או
+      <a href="${playStore}" rel="noopener">ב-Google Play</a>.</p>`,
   festivalFaqHeading: (label) => `שאלות נפוצות על ${label}`,
   faqWhenFestival: (label, year, start, startTime, end, endTime, city) => ({
     q: `מתי חל ${label} ${year}?`,
     a: `${label} ${year} מתחיל בערב ${start} (כניסה בשעה ${startTime} ${hePrefix("ב", city)}) ומסתיים ב${end} בצאת הכוכבים (${endTime} ${hePrefix("ב", city)}).`,
+  }),
+  faqWhenFestivalDays: (label, year, when, start, startTime, end, endTime, city) => ({
+    q: `מתי חל ${label} ${year}?`,
+    a: `${label} ${year} חל ${when}. הכניסה היא בערב ${start} (הדלקה בשעה ${startTime} ${hePrefix("ב", city)}); ימי היום טוב שלו, שבהם המלאכה אסורה, מסתיימים ב${end} בצאת הכוכבים (${endTime} ${hePrefix("ב", city)}). שאר ימי החג הם חול המועד, שבהם המלאכה מותרת.`,
   }),
   faqWhenHanukkah: (label, year, eve, range) => ({
     q: `מתי חל ${label} ${year}?`,
@@ -890,9 +956,9 @@ const HE: ZmanimStrings = {
         ? `לא: ${label} הוא יום צום ולא יום טוב; המלאכה מותרת בו.`
         : `לא: ${label} אינו יום טוב, והמלאכה מותרת בו. ליום יש מנהגים משלו, אך אין לו כניסה ויציאה כמו לשבת.`,
   }),
-  faqFestivalCity: (label) => ({
+  faqFestivalCity: (label, city) => ({
     q: `כיצד אפשר לדעת את הזמן המדויק של ${label} בעיר שלי?`,
-    a: `הזמנים שלמעלה מחושבים לפריז. פתחו את עמוד הזמנים באפליקציה, או את עמוד העיר שלכם, כדי לקבל את זמני הכניסה והיציאה בנקודות הציון שלכם, המחושבים במכשיר שלכם וגם ללא חיבור לאינטרנט.`,
+    a: `הזמנים שלמעלה מחושבים ${hePrefix("ל", city)}. פתחו את עמוד הזמנים באפליקציה, או את עמוד העיר שלכם, כדי לקבל את זמני הכניסה והיציאה בנקודות הציון שלכם, המחושבים במכשיר שלכם וגם ללא חיבור לאינטרנט.`,
   }),
   festivalIntro: {
     "roch-hachana":
@@ -903,6 +969,10 @@ const HE: ZmanimStrings = {
       "יום כיפור, בי׳ בתשרי, הוא יום הסליחה והכפרה: צום של עשרים וחמש שעות, מכניסת החג בערב ועד צאת הכוכבים למחרת, הנפתח בכל נדרי ונחתם בנעילה ובתקיעת שופר.",
     souccot:
       "סוכות, חג האסיף, מתחיל בט״ו בתשרי: יושבים (וישנים) בסוכה שבעה ימים, ונוטלים בכל בוקר את ארבעת המינים, לולב ואתרוג. בחוץ לארץ שני הימים הראשונים הם יום טוב, והשאר חול המועד.",
+    "hochaana-rabba":
+      "הושענא רבה, כ״א בתשרי, הוא היום השביעי והאחרון של סוכות: מקיפים את בית הכנסת שבע פעמים עם הלולב והאתרוג, חובטים את הערבות בקרקע, ורבים נשארים ערים בלילה ולומדים. המלאכה מותרת, אך תפילת שחרית ארוכה מן הרגיל.",
+    "chemini-atseret":
+      "שמיני עצרת, כ״ב בתשרי, הוא היום השמיני שחותם את סוכות מבלי להיות ממש חלק ממנו: אין נוטלים בו לולב ואין אוכלים בסוכה, ובו מבקשים על הגשם (תפילת גשם). בחוץ לארץ שמחת תורה באה למחרת; בארץ ישראל השניים חלים באותו יום.",
     "simhat-torah":
       "שמיני עצרת ושמחת תורה חותמים את חגי תשרי: מבקשים על הגשם, ואז מסיימים את קריאת התורה השנתית ומתחילים אותה מיד מחדש, ברוקדים עם ספרי התורה בהקפות.",
     hanouka:

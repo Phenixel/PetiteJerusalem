@@ -32,6 +32,15 @@ export type SeoFestival = {
    * la veille au soir. Absent pour les fêtes.
    */
   fast?: "dawn" | "eve";
+  /**
+   * La date hébraïque du jour, pour les fêtes que hebcal ne nomme pas à part.
+   *
+   * Hochaana Rabba est le septième jour de Souccot : hebcal la rend sous le
+   * nom de Souccot, comme les autres jours de 'Hol haMoed, et aucun nom ne
+   * permet de la reconnaître. Sa date, elle, ne bouge pas : le 21 Tichri,
+   * en Israël comme en diaspora. C'est donc par là qu'on la tient.
+   */
+  hebrewDate?: { day: number; month: string };
 };
 
 const festival = (
@@ -39,11 +48,13 @@ const festival = (
   slugs: [string, string, string],
   labels: [string, string, string],
   fast?: "dawn" | "eve",
+  hebrewDate?: { day: number; month: string },
 ): SeoFestival => ({
   names: { fr: names[0], en: names[1], he: names[2] },
   slugs: { fr: slugs[0], en: slugs[1], he: slugs[2] },
   labels: { fr: labels[0], en: labels[1], he: labels[2] },
   ...(fast ? { fast } : {}),
+  ...(hebrewDate ? { hebrewDate } : {}),
 });
 
 export const SEO_FESTIVALS: SeoFestival[] = [
@@ -68,12 +79,31 @@ export const SEO_FESTIVALS: SeoFestival[] = [
     ["souccot", "sukkot", "sukkot"],
     ["Souccot", "Sukkot", "סוכות"],
   ),
+  // Hochaana Rabba n'a pas de nom à elle chez hebcal (c'est le septième jour
+  // de Souccot) : sa date la désigne. « Quand tombe Hochaana Rabba » est une
+  // vraie question, la nuit se veille et l'office est long ; la page manquait.
   festival(
-    [
-      "Chemini Atzéret · Simhat Torah",
-      "Shmini Atzeret · Simchat Torah",
-      "שְׁמִינִי עֲצֶרֶת · שִׂמְחַת תּוֹרָה",
-    ],
+    ["Hochaana Rabba", "Hoshana Rabbah", "הוֹשַׁעְנָא רַבָּה"],
+    ["hochaana-rabba", "hoshana-rabbah", "hoshana-raba"],
+    ["Hochaana Rabba", "Hoshana Rabbah", "הושענא רבה"],
+    undefined,
+    { day: 21, month: "Tishrei" },
+  ),
+  // Chemini Atséret vivait fondue dans la page de Simhat Torah : en diaspora
+  // ce sont deux jours distincts, et « chemini atseret date » ne trouvait
+  // rien. En Israël, les deux tombent le même jour, et les deux pages le
+  // disent.
+  festival(
+    ["Chemini Atzéret", "Shmini Atzeret", "שְׁמִינִי עֲצֶרֶת"],
+    ["chemini-atseret", "shmini-atzeret", "shmini-atzeret"],
+    ["Chemini Atséret", "Shmini Atzeret", "שמיני עצרת"],
+  ),
+  // Le français et l'anglais ne nomment que Simhat Torah : Chemini Atséret a
+  // sa page, et la fête tombe le lendemain en diaspora. L'hébreu garde les
+  // deux noms parce qu'en Israël hebcal n'émet que Chemini Atséret : sans le
+  // premier nom, la page hébraïque n'aurait plus de jour à dater.
+  festival(
+    ["Simhat Torah", "Simchat Torah", "שְׁמִינִי עֲצֶרֶת · שִׂמְחַת תּוֹרָה"],
     ["simhat-torah", "simchat-torah", "simchat-tora"],
     ["Simhat Torah", "Simchat Torah", "שמחת תורה"],
   ),

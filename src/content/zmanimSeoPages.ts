@@ -52,6 +52,7 @@ import {
   formatHebrewDate,
   formatZmanTime,
   hebrewDayOf,
+  holidayNamesOn,
   nightfallOf,
   placeFromCity,
   restPeriodAt,
@@ -62,6 +63,8 @@ import {
   type ZmanimPlace,
 } from "../services/zmanimService";
 import { SEO_FESTIVALS, type SeoFestival } from "./zmanimFestivals";
+import { festivalLinks } from "./festivalLinks";
+import { APP_STORE_URL, PLAY_STORE_URL } from "../config/stores";
 import {
   COUNTRY_ORDER,
   FEATURED_CITY_NAMES,
@@ -83,6 +86,43 @@ import {
 } from "./seoPages";
 
 const TZ = DEFAULT_PLACE.tzid;
+
+/** Jérusalem, telle que le catalogue des villes la porte. */
+const JERUSALEM_PLACE: ZmanimPlace = {
+  source: "city",
+  latitude: 31.769,
+  longitude: 35.2163,
+  tzid: "Asia/Jerusalem",
+  city: "Jérusalem",
+};
+
+/**
+ * Le lieu de référence des pages de calendrier, langue par langue.
+ *
+ * Tout le prérendu se calculait sur Paris, y compris les pages hébraïques :
+ * `/he/chagim/simchat-tora` annonçait Simhat Torah « du 3 au 4 octobre », avec
+ * l'heure d'allumage de Paris, à un lecteur qui est en Israël, où la fête
+ * tombe le 3 et s'y arrête. Ce n'est pas un écart d'une heure, c'est un jour
+ * de fête en trop : en diaspora, le second jour de Yom Tov double le premier,
+ * et Souccot comme Pessah y durent un jour de plus.
+ *
+ * La page hébraïque se calcule donc sur Jérusalem, le français et l'anglais
+ * restent en diaspora. Le tzid suffit à `yearCalendar` pour basculer le
+ * calendrier (voir isIsraelPlace), et l'allumage y passe de lui-même à
+ * quarante minutes, l'usage de Jérusalem.
+ */
+const CALENDAR_PLACE: Record<SeoLocale, ZmanimPlace> = {
+  fr: DEFAULT_PLACE,
+  en: DEFAULT_PLACE,
+  he: JERUSALEM_PLACE,
+};
+
+/** La ville dont les pages de calendrier donnent les heures, par langue. */
+const CALENDAR_CITY: Record<SeoLocale, string> = {
+  fr: HUB_CITY_NAME,
+  en: HUB_CITY_NAME,
+  he: "Jérusalem",
+};
 
 /** Les libellés des zmanim, déjà traduits pour l'application. */
 const ZMAN_MESSAGES: Record<
@@ -129,6 +169,16 @@ const instantCell = (date: Date, tz: string, locale: SeoLocale, s: ZmanimStrings
 // Les dates civiles issues de HDate.greg() sont construites à midi dans le
 // repère local de la machine : on les formate sans fuseau, dans ce même
 // repère, pour ne jamais glisser d'un jour (même logique que CalendarPage).
+
+/**
+ * « 2026-09-26 » : le jour civil d'une date hébraïque, pour les données
+ * structurées. Lu dans le même repère local que les formateurs ci-dessous,
+ * pour ne jamais glisser d'un jour.
+ */
+const isoDay = (date: Date): string =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
 
 /** « samedi 12 septembre 2026 », le jour civil d'une date hébraïque. */
 const civilDayYear = (date: Date, s: ZmanimStrings): string =>
@@ -723,7 +773,17 @@ type YearEntries = { year: number; entries: CalendarEntry[] };
  * 'Hol haMoed.
  */
 function entriesOf(entries: CalendarEntry[], def: SeoFestival, locale: SeoLocale) {
-  return entries.filter((entry) => cleanName(entry.name) === def.names[locale]);
+  // Un bloc de repos peut réunir deux fêtes sous un nom composé (« Chemini
+  // Atzéret · Simhat Torah » en diaspora) et n'en porter qu'une en Israël, où
+  // les deux tombent le même jour. On compare donc nom à nom, de part et
+  // d'autre : l'égalité reste stricte sur chacun, sans quoi Pourim
+  // attraperait Chouchan Pourim.
+  const wanted = def.names[locale].split(" · ");
+  return entries.filter((entry) =>
+    cleanName(entry.name)
+      .split(" · ")
+      .some((name) => wanted.includes(name)),
+  );
 }
 
 /**
@@ -747,7 +807,7 @@ function festivalBlock(entry: CalendarEntry, def: SeoFestival, locale: SeoLocale
   let first: HDate | null = null;
   let last: HDate | null = null;
   for (let day = entry.first; day.abs() <= entry.last.abs(); day = day.next()) {
-    const owns = festivalsOn(DEFAULT_PLACE, day, locale).some((name) =>
+    const owns = festivalsOn(CALENDAR_PLACE[locale], day, locale).some((name) =>
       wanted.includes(cleanName(name)),
     );
     if (!owns) continue;
@@ -762,14 +822,82 @@ function festivalBlock(entry: CalendarEntry, def: SeoFestival, locale: SeoLocale
   const start =
     first.abs() === entry.first.abs()
       ? entry.period.start
-      : nightfallOf(DEFAULT_PLACE, first.prev());
-  const end = last.abs() === entry.last.abs() ? entry.period.end : nightfallOf(DEFAULT_PLACE, last);
+      : nightfallOf(CALENDAR_PLACE[locale], first.prev());
+  const end =
+    last.abs() === entry.last.abs() ? entry.period.end : nightfallOf(CALENDAR_PLACE[locale], last);
   return { first, last, start, end };
 }
 
-/** Les blocs d'une fête dans une année, réduits à leurs propres jours. */
+/**
+ * Les blocs d'une fête dans une année, réduits à leurs propres jours.
+ *
+ * Une fête que hebcal ne nomme pas à part (Hochaana Rabba, septième jour de
+ * Souccot) n'a aucune entrée à filtrer : c'est sa date hébraïque qui la
+ * donne, et son jour n'a ni entrée ni sortie, le travail y étant permis.
+ */
 function blocksOf(entries: CalendarEntry[], def: SeoFestival, locale: SeoLocale): FestivalBlock[] {
+  if (def.hebrewDate) {
+    const year = entries[0]?.first.getFullYear();
+    if (!year) return [];
+    const day = new HDate(def.hebrewDate.day, def.hebrewDate.month, year);
+    return [{ first: day, last: day, start: null, end: null }];
+  }
   return entriesOf(entries, def, locale).map((entry) => festivalBlock(entry, def, locale));
+}
+
+/** Garde-fou du parcours jour par jour : aucune fête ne dure dix jours. */
+const MAX_FESTIVAL_DAYS = 10;
+
+/** Ce jour porte-t-il cette fête, Yom Tov ou 'Hol haMoed ? */
+function carriesFestival(day: HDate, def: SeoFestival, locale: SeoLocale): boolean {
+  // Une fête tenue par sa date est ce seul jour : la chercher par son nom
+  // l'étendrait à toute la fête dont elle fait partie (Hochaana Rabba
+  // avalerait les sept jours de Souccot).
+  if (def.hebrewDate) return false;
+  const wanted = def.names[locale].split(" · ");
+  return holidayNamesOn(CALENDAR_PLACE[locale], day, locale).some((name) =>
+    wanted.includes(cleanName(name)),
+  );
+}
+
+/**
+ * La fête entière, 'Hol haMoed compris : du 15 au 21 Tichri pour Souccot, du
+ * 15 au 22 Nissan pour Pessah.
+ *
+ * Les blocs, eux, ne portent que les jours de Yom Tov : ce sont les seuls à
+ * avoir une entrée et une sortie, et c'est à eux que le calendrier de
+ * l'année se tient. Mais la page répond à « quand tombe Souccot ? », et
+ * Souccot dure sept jours : s'en tenir aux blocs faisait dire à la page
+ * « du 26 au 27 septembre » juste sous un chapô annonçant « sept jours
+ * durant ». On repart donc des blocs et on s'étend de part et d'autre tant
+ * que le jour porte encore le nom de la fête.
+ *
+ * Les fêtes sans 'Hol haMoed (Roch Hachana, les jeûnes, Pourim) rendent
+ * exactement leurs blocs : le parcours s'arrête au premier jour qui ne les
+ * porte pas.
+ */
+function fullSpanOf(blocks: FestivalBlock[], def: SeoFestival, locale: SeoLocale): DaySpan | null {
+  const span = spanOf(blocks);
+  if (!span) return null;
+  let first = span.first.first;
+  for (let i = 0; i < MAX_FESTIVAL_DAYS && carriesFestival(first.prev(), def, locale); i++) {
+    first = first.prev();
+  }
+  let last = span.last.last;
+  for (let i = 0; i < MAX_FESTIVAL_DAYS && carriesFestival(last.next(), def, locale); i++) {
+    last = last.next();
+  }
+  return { first, last };
+}
+
+/** La fête a-t-elle des jours intermédiaires, hors de ses Yom Tov ? */
+function hasCholHamoed(blocks: FestivalBlock[], full: DaySpan | null): boolean {
+  if (!full) return false;
+  const yomTovDays = blocks.reduce(
+    (total, block) => total + (block.last.abs() - block.first.abs() + 1),
+    0,
+  );
+  return full.last.abs() - full.first.abs() + 1 > yomTovDays;
 }
 
 /** Des jours qui se suivent : un bloc de repos, ou un bloc de fête réduit. */
@@ -789,18 +917,6 @@ function spanOf<T extends DaySpan>(entries: T[]): { first: T; last: T } | null {
   return { first: entries[0], last: entries[entries.length - 1] };
 }
 
-/** « du jeudi 2 au jeudi 9 avril 2026 » pour toute la fête, blocs compris. */
-function spanRange(entries: DaySpan[], s: ZmanimStrings): string {
-  const span = spanOf(entries);
-  if (!span) return "";
-  if (span.first.first.abs() === span.last.last.abs()) {
-    return civilDayYear(span.first.first.greg(), s);
-  }
-  const from = span.first.first.greg();
-  const to = span.last.last.greg();
-  return s.range(civilRangeStart(from, to, s), civilDayYear(to, s));
-}
-
 /** La question-réponse « Quand tombe X ? » d'une fête, une année donnée. */
 function festivalFaq(
   def: SeoFestival,
@@ -809,27 +925,30 @@ function festivalFaq(
   s: ZmanimStrings,
 ): Faq | null {
   const span = spanOf(blocks);
-  if (!span) return null;
+  const full = fullSpanOf(blocks, def, locale);
+  if (!span || !full) return null;
   const label = def.labels[locale];
-  const year = span.first.first.greg().getFullYear();
-  const hubCity = cityName(HUB_CITY_NAME, locale);
+  const year = full.first.greg().getFullYear();
+  const tz = CALENDAR_PLACE[locale].tzid;
+  const hubCity = cityName(CALENDAR_CITY[locale], locale);
+  // La fête entière, jours intermédiaires compris : c'est la réponse à
+  // « quand tombe Souccot ? ». L'entrée et la sortie, elles, restent celles
+  // des jours de Yom Tov, les seuls à en avoir.
+  const when = entryRange(full, s);
   if (span.first.start && span.last.end) {
-    return s.faqWhenFestival(
-      label,
-      year,
-      instantDayYear(span.first.start, TZ, s),
-      clock(span.first.start, TZ, locale),
-      instantDayYear(span.last.end, TZ, s),
-      clock(span.last.end, TZ, locale),
-      hubCity,
-    );
+    const startDay = instantDayYear(span.first.start, tz, s);
+    const startTime = clock(span.first.start, tz, locale);
+    const endDay = instantDayYear(span.last.end, tz, s);
+    const endTime = clock(span.last.end, tz, locale);
+    return hasCholHamoed(blocks, full)
+      ? s.faqWhenFestivalDays(label, year, when, startDay, startTime, endDay, endTime, hubCity)
+      : s.faqWhenFestival(label, year, startDay, startTime, endDay, endTime, hubCity);
   }
   if (def.slugs.fr === "hanouka") {
-    const eve = new Date(span.first.first.greg());
+    const eve = new Date(full.first.greg());
     eve.setDate(eve.getDate() - 1);
-    return s.faqWhenHanukkah(label, year, civilDayYear(eve, s), spanRange(blocks, s));
+    return s.faqWhenHanukkah(label, year, civilDayYear(eve, s), when);
   }
-  const when = spanRange(blocks, s);
   if (def.fast) return s.faqWhenFast(label, year, when, def.fast);
   return s.faqWhenPlain(label, year, when);
 }
@@ -857,8 +976,8 @@ function calendarRow(entry: CalendarEntry, locale: SeoLocale, s: ZmanimStrings):
           <tr>
             <td>${entryTitleLinked(entry, locale, s)}</td>
             <td>${entryRange(entry, s)}</td>
-            <td>${period ? instantCell(period.start, TZ, locale, s) : ""}</td>
-            <td>${period?.end ? instantCell(period.end, TZ, locale, s) : ""}</td>
+            <td>${period ? instantCell(period.start, CALENDAR_PLACE[locale].tzid, locale, s) : ""}</td>
+            <td>${period?.end ? instantCell(period.end, CALENDAR_PLACE[locale].tzid, locale, s) : ""}</td>
           </tr>`;
 }
 
@@ -895,7 +1014,7 @@ function multiYearTable(years: YearEntries[], locale: SeoLocale, s: ZmanimString
 function buildCalendrierPage(now: Date, years: YearEntries[], locale: SeoLocale): SeoPage {
   const s = ZMANIM_STRINGS[locale];
   const links = linksOf(locale);
-  const today = hebrewDayOf(DEFAULT_PLACE, now).abs();
+  const today = hebrewDayOf(CALENDAR_PLACE[locale], now).abs();
   const openingYear = years[0].year;
   const nextYear = years[1].year;
   const openingEntries = years[0].entries.filter((entry) => entry.last.abs() >= today);
@@ -978,6 +1097,75 @@ ${section(s.calendarShabbatTitle, s.calendarShabbatHtml(links))}
 
 // ---- /calendrier/:fete : une page par fête -------------------------------
 
+/**
+ * Un `Event` schema.org par occurrence à venir de la fête.
+ *
+ * Les pages portaient déjà `BreadcrumbList` et `FAQPage` ; il leur manquait
+ * ce qui dit à un moteur que la page parle d'une date. C'est l'objet même de
+ * la requête à laquelle elle répond (« quand tombe Souccot »), et c'est ce
+ * qui permet à un résultat de porter la date plutôt que le seul titre.
+ *
+ * Les dates sont celles de la fête entière, 'Hol haMoed compris, comme le
+ * tableau. Le lieu est la ville dont la page donne les heures : elle ne
+ * limite pas la fête, elle dit à quelles coordonnées l'entrée et la sortie
+ * ont été calculées.
+ */
+function festivalEvents(
+  def: SeoFestival,
+  fullPerYear: (DaySpan | null)[],
+  locale: SeoLocale,
+  path: string,
+): Record<string, unknown>[] {
+  const cityLabel = cityName(CALENDAR_CITY[locale], locale);
+  const country = CALENDAR_PLACE[locale].tzid === "Asia/Jerusalem" ? "IL" : "FR";
+  const label = def.labels[locale];
+  return fullPerYear.flatMap((full) => {
+    if (!full) return [];
+    const year = full.first.greg().getFullYear();
+    return [
+      {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        name: `${label} ${year}`,
+        startDate: isoDay(full.first.greg()),
+        endDate: isoDay(full.last.greg()),
+        eventStatus: "https://schema.org/EventScheduled",
+        eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+        isAccessibleForFree: true,
+        description: ZMANIM_STRINGS[locale].festivalIntro[def.slugs.fr] ?? "",
+        url: `${SITE_URL}${path}`,
+        location: {
+          "@type": "Place",
+          name: cityLabel,
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: cityLabel,
+            addressCountry: country,
+          },
+        },
+      },
+    ];
+  });
+}
+
+/**
+ * Les liens propres à la fête : ce qu'on dit et ce qu'on lit ce jour-là.
+ * Vide quand le site ne porte rien de particulier pour elle.
+ */
+function festivalLinksHtml(def: SeoFestival, locale: SeoLocale): string {
+  const items = festivalLinks(def.slugs.fr);
+  if (!items.length) return "";
+  const list = items
+    .map(
+      (link) =>
+        `<li><a href="${link.path(locale)}" data-cta="${link.id}">${link.labels[locale]}</a></li>`,
+    )
+    .join("\n        ");
+  return `<ul>
+        ${list}
+      </ul>`;
+}
+
 function buildFestivalPage(
   def: SeoFestival,
   years: YearEntries[],
@@ -987,6 +1175,8 @@ function buildFestivalPage(
   const s = ZMANIM_STRINGS[locale];
   const links = linksOf(locale);
   const label = def.labels[locale];
+  const tz = CALENDAR_PLACE[locale].tzid;
+  const refCity = cityName(CALENDAR_CITY[locale], locale);
 
   // Seules les occurrences à venir : une page qui s'ouvre sur « Hanouka 2025 »
   // a l'air périmée, même quand la date est juste.
@@ -999,24 +1189,26 @@ function buildFestivalPage(
   // Un Yom Tov a une entrée et une sortie ; un jeûne ou une fête de travail
   // permis n'en a pas, et deux colonnes vides valent moins que pas de colonne.
   const hasTimes = perYear.some((blocks) => blocks.some((block) => block.start && block.end));
-  // Pessah compte deux blocs de fête séparés par le 'Hol haMoed : l'entrée est
-  // celle du premier jour, la sortie celle du dernier.
-  const splitFestival = perYear.some((blocks) => blocks.length > 1);
+  // La fête entière, jours intermédiaires compris : c'est elle que la colonne
+  // des dates annonce, l'entrée et la sortie restant celles des Yom Tov.
+  const fullPerYear = perYear.map((blocks) => fullSpanOf(blocks, def, locale));
+  const intermediate = perYear.some((blocks, index) => hasCholHamoed(blocks, fullPerYear[index]));
 
   const rows = perYear
-    .map((blocks) => {
+    .map((blocks, index) => {
       const span = spanOf(blocks);
-      if (!span) return "";
+      const full = fullPerYear[index];
+      if (!span || !full) return "";
       const times = hasTimes
         ? `
-            <td>${span.first.start ? instantCell(span.first.start, TZ, locale, s) : ""}</td>
-            <td>${span.last.end ? instantCell(span.last.end, TZ, locale, s) : ""}</td>`
+            <td>${span.first.start ? instantCell(span.first.start, tz, locale, s) : ""}</td>
+            <td>${span.last.end ? instantCell(span.last.end, tz, locale, s) : ""}</td>`
         : "";
       return `
           <tr>
-            <td>${span.first.first.greg().getFullYear()}</td>
-            <td>${spanRange(blocks, s)}</td>
-            <td>${hebrewRange(span.first.first, span.last.last, locale, s)}</td>${times}
+            <td>${full.first.greg().getFullYear()}</td>
+            <td>${entryRange(full, s)}</td>
+            <td>${hebrewRange(full.first, full.last, locale, s)}</td>${times}
           </tr>`;
     })
     .join("");
@@ -1026,10 +1218,9 @@ function buildFestivalPage(
     return entry ? [entry] : [];
   });
   faq.push(s.faqFestivalWork(label, hasTimes, Boolean(def.fast)));
-  faq.push(s.faqFestivalCity(label));
+  faq.push(s.faqFestivalCity(label, refCity));
 
-  const span = spanOf(perYear[0]);
-  const fromYear = span ? span.first.first.greg().getFullYear() : 0;
+  const fromYear = fullPerYear[0] ? fullPerYear[0].first.greg().getFullYear() : 0;
   const head = hasTimes
     ? [...s.festivalHead, s.calendarHead[2], s.calendarHead[3]]
     : [...s.festivalHead];
@@ -1052,10 +1243,15 @@ function buildFestivalPage(
 ${section(
   s.festivalWhenTitle(label),
   `${table(head, rows)}
-      ${splitFestival ? `<p>${s.festivalSplitNote(label)}</p>` : ""}
-      <p>${hasTimes ? s.festivalTimesNote(links) : s.festivalNoTimesNote(links)}</p>`,
+      ${intermediate ? `<p>${s.festivalCholHamoedNote(label)}</p>` : ""}
+      <p>${hasTimes ? s.festivalTimesNote(links, refCity) : s.festivalNoTimesNote(links)}</p>`,
 )}
-${section(s.festivalAroundTitle(label), s.festivalAroundHtml(links))}
+${section(
+  s.festivalAroundTitle(label),
+  `${s.festivalAroundHtml(links)}
+      ${festivalLinksHtml(def, locale)}
+      ${s.festivalAppHtml(APP_STORE_URL, PLAY_STORE_URL)}`,
+)}
 
     ${faqHtml(faq, s.festivalFaqHeading(label))}
   </main>`,
@@ -1066,6 +1262,7 @@ ${section(s.festivalAroundTitle(label), s.festivalAroundHtml(links))}
         { name: label, path },
       ]),
       faqJsonLd(faq),
+      ...festivalEvents(def, fullPerYear, locale, path),
     ],
   };
 }
@@ -1094,14 +1291,16 @@ export function buildZmanimSeoPages(now: Date = new Date()): ZmanimSeoBuild {
       locale,
       yearNumbers.map((year) => ({
         year,
-        entries: yearCalendar(DEFAULT_PLACE, year, locale),
+        entries: yearCalendar(CALENDAR_PLACE[locale as SeoLocale], year, locale),
       })),
     ]),
   ) as Record<SeoLocale, YearEntries[]>;
-  const today = hebrewDayOf(DEFAULT_PLACE, now).abs();
 
   const pages = SEO_LOCALES.flatMap((locale) => {
     const years = yearsByLocale[locale];
+    // Le jour courant se lit au lieu de la langue : la date hébraïque de
+    // Jérusalem a déjà tourné quand celle de Paris attend le soir.
+    const today = hebrewDayOf(CALENDAR_PLACE[locale], now).abs();
     return [
       buildHorairesPage(now, locale),
       buildCalendrierPage(now, years, locale),

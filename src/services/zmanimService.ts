@@ -821,10 +821,40 @@ export function festivalsOn(place: ZmanimPlace, hd: HDate, locale: string): stri
  * demi-fêtes, où l'on travaille, que le widget des horaires nomme aussi.
  */
 export function cholHamoedOn(place: ZmanimPlace, hd: HDate, locale: string): string[] {
+  return namesOn(place, hd, locale, (f) => (f & flags.CHOL_HAMOED) !== 0);
+}
+
+/**
+ * Toutes les fêtes d'un jour, 'Hol haMoed compris, sous le nom de la fête
+ * entière : le 18 Tichri rend « Soukkot », comme le 15.
+ *
+ * `festivalsOn` ne rend que les Yom Tov, `cholHamoedOn` que les demi-fêtes ;
+ * le calendrier de l'année écarte de même les jours intermédiaires, et c'est
+ * la bonne règle pour lui : ce sont des jours ouvrables, ils n'ont ni entrée
+ * ni sortie, et une ligne par jour noierait les fêtes. Mais la question
+ * « quand tombe Souccot ? » porte sur la fête entière, sept jours, pas sur
+ * ses deux premiers : c'est cette durée-là que ceci sert à mesurer (voir les
+ * pages de fête, zmanimSeoPages.ts). Les deux familles de jours y passent
+ * donc ensemble, et 'Hanouka, Pourim et les jeûnes avec elles.
+ *
+ * La veille est exclue comme partout ailleurs : le 14 Tichri est Érev
+ * Soukkot, pas Soukkot.
+ */
+export function holidayNamesOn(place: ZmanimPlace, hd: HDate, locale: string): string[] {
+  return namesOn(place, hd, locale, (f) => (f & flags.EREV) === 0);
+}
+
+/** Les noms des fêtes du jour que `keep` retient, chacun une fois. */
+function namesOn(
+  place: ZmanimPlace,
+  hd: HDate,
+  locale: string,
+  keep: (eventFlags: number) => boolean,
+): string[] {
   const lg = hebcalLocale(locale);
   const names: string[] = [];
   for (const ev of holidaysOn(hd, isIsraelPlace(place))) {
-    if ((ev.getFlags() & flags.CHOL_HAMOED) === 0) continue;
+    if (!keep(ev.getFlags())) continue;
     const name = festivalName(ev, lg);
     if (!names.includes(name)) names.push(name);
   }
