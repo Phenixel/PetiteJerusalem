@@ -44,6 +44,8 @@ import {
 } from "./lib/selihot-tsom.mjs";
 import {
   HALAKHA_LOULAV,
+  HALAKHA_AVANT_LOULAV,
+  LIGNES_AVANT_LOULAV,
   LIGNES_LOULAV,
   RUBRIC_NAANOUIM_ANA,
   RUBRIC_NAANOUIM_HODOU,
@@ -2629,10 +2631,18 @@ function chaharitRecipe() {
       // tahanoun, après les supplications du lundi et du jeudi, ou après
       // « Yehi chem ». Un seul bloc suffit donc, sans condition.
       kaddishHalf("Uva LeSion"),
-      // Les brahot du loulav, avant le Hallel : c'est là qu'on prend les
-      // quatre espèces, et c'est pendant le Hallel qu'on les agite. Le même
-      // texte a sa page dans le livre Moadim (build-moadim.mjs) ; il est
-      // écrit une seule fois, dans scripts/lib/loulav.mjs.
+      // Ce qui se dit avant de prendre le loulav, puis ses brahot, avant le
+      // Hallel : c'est là qu'on prend les quatre espèces, et c'est pendant le
+      // Hallel qu'on les agite. Le même texte a sa page dans le livre Moadim
+      // (build-moadim.mjs) ; il est écrit une seule fois, dans
+      // scripts/lib/loulav.mjs.
+      {
+        when: "loulav",
+        plain: true,
+        labelText: R("Avant de prendre le loulav", "Before taking the lulav", "קודם נטילת לולב"),
+        halakha: HALAKHA_AVANT_LOULAV,
+        lines: LIGNES_AVANT_LOULAV,
+      },
       {
         when: "loulav",
         plain: true,
@@ -2732,6 +2742,28 @@ function chaharitRecipe() {
       // « Yehalelou'ha » (le Hallel y est abrégé), mais le Kaddich, lui, se
       // dit entier.
       kaddishTitkabal("RH.Hallel", { seg: 26, when: "rosh-chodesh" }),
+      // Les Hochanot, entre le Hallel et le Kaddich Titkabal : on sort le
+      // séfer Torah, on le pose sur la téva et l'on en fait le tour, loulav
+      // en main. Leur texte, une page par jour, vit dans le livre Moadim
+      // (build-moadim.mjs) : il pèse près de 300 Ko, qui n'ont rien à faire
+      // dans l'office de tous les jours. Le bloc en donne le premier verset,
+      // commun à tous les jours, et dit où lire la suite. La clé « loulav »
+      // est celle des jours où l'office de semaine les dit : 'Hol haMoed de
+      // Souccot, hors Chabbat, où l'on ne fait pas le tour.
+      {
+        when: "loulav",
+        plain: true,
+        labelText: R("Les Hochanot", "The Hoshanot", "הושענות"),
+        halakha: R(
+          "On sort un séfer Torah et on le pose sur la téva. Loulav en main, on en fait le tour en disant les Hochanot du jour : une fois chaque jour, sept fois à Hochana Rabba, et deux fois le dimanche qui suit un Chabbat, où l'on n'a pas fait le tour. Leur texte est dans le livre Moadim, sous Souccot, une page par jour.",
+          "A Torah scroll is taken out and placed on the teva. Lulav in hand, one circles it while saying the Hoshanot of the day: once each day, seven times on Hoshana Rabba, and twice on the Sunday after a Shabbat, when no circuit was made. Their text is in the Moadim book, under Sukkot, one page for each day.",
+          "מוציאים ספר תורה ומניחים אותו על התיבה, ומקיפים את התיבה עם הלולב ואומרים ההושענות של אותו היום: פעם אחת בכל יום, שבע פעמים בהושענא רבה, ושתי הקפות ביום ראשון שלאחר השבת. ההושענות בספר המועדים, בסוכות.",
+        ),
+        lines: [
+          { he: "אֶרְחַץ בְּנִקָּיוֹן כַּפָּי, וַאֲסוֹבְבָה אֶת־מִזְבַּחֲךָ יְהֹוָה:" },
+          { he: "הוֹשַׁעֲנָא. הוֹשַׁעֲנָא:", tight: true },
+        ],
+      },
       // À 'Hol haMoed de même, le Titkabal entier : la source ne fait
       // exception que pour 'Hanouka. Deux blocs plutôt qu'une condition à
       // deux clés, les deux jours s'excluant (voir
@@ -2951,11 +2983,23 @@ function chaharitRecipe() {
         when: "hol-hamoed",
         plain: true,
         labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
-        halakha: R(
-          "On sort un séfer Torah et l'on y lit quatre montées. À 'Hol haMoed de Souccot, les korbanot du jour (Bamidbar 29) ; à 'Hol haMoed de Pessah, le passage propre à chaque jour.",
-          "A Torah scroll is taken out and four aliyot are read from it. On Chol HaMoed Sukkot, the offerings of the day (Numbers 29); on Chol HaMoed Pesach, the passage proper to each day.",
-          "מוציאים ספר תורה וקוראים ארבעה עולים. בחול המועד סוכות בקרבנות היום (במדבר כט), ובחול המועד פסח בפרשה של כל יום ויום.",
-        ),
+        halakha: [
+          R(
+            "On sort un séfer Torah et l'on y lit quatre montées. À 'Hol haMoed de Souccot, les korbanot du jour (Bamidbar 29) ; à 'Hol haMoed de Pessah, le passage propre à chaque jour.",
+            "A Torah scroll is taken out and four aliyot are read from it. On Chol HaMoed Sukkot, the offerings of the day (Numbers 29); on Chol HaMoed Pesach, the passage proper to each day.",
+            "מוציאים ספר תורה וקוראים ארבעה עולים. בחול המועד סוכות בקרבנות היום (במדבר כט), ובחול המועד פסח בפרשה של כל יום ויום.",
+          ),
+          // À Souccot, le séfer est déjà sorti pour les Hochanot : les dinim
+          // du sidour (page 674) disent « Brikh chmeh » près de lui.
+          {
+            ...R(
+              "À Souccot, le séfer Torah est déjà sur la téva depuis les Hochanot : on n'ouvre pas le hékhal, on dit « Brikh chmeh » près du séfer.",
+              "On Sukkot the Torah scroll is already on the teva since the Hoshanot: the ark is not opened, and “Brich shmeh” is said beside the scroll.",
+              'ובחוה"מ סוכות שמוציאים רק ס"ת אחד, יאמר בריך שמיה אחר ההושענות ליד הס"ת שבתיבה.',
+            ),
+            when: "loulav",
+          },
+        ],
         lines: [
           {
             seg: 35,

@@ -537,11 +537,71 @@ describe("fichiers de tefila", () => {
 
   it("Netilat loulav : le cadran des six côtés, et les côtés nommés en clair", () => {
     const blocks = load("moadim", "netilat-loulav").sections[0].blocks ?? [];
-    expect(blocks).toHaveLength(1);
-    expect(blocks[0].naanouim).toBe(true);
-    const cotes = (blocks[0].paragraphs ?? []).at(-1)!.rubric!;
+    // Ce qui se dit avant de prendre le loulav, puis ses brahot.
+    expect(blocks.map((b) => b.label)).toEqual(["Avant de prendre le loulav", "Les brahot du loulav"]);
+    expect(blocks[1].naanouim).toBe(true);
+    const cotes = (blocks[1].paragraphs ?? []).at(-1)!.rubric!;
     expect(cotes.fr).toContain("sud, nord, est, haut, bas, ouest");
     expect(cotes.en).toContain("south, north, east, up, down, west");
+  });
+
+  it("Hochanot : une page par jour, chacune ouverte par les dinim du sidour", () => {
+    const jours = [
+      "hochanot-yom-richon",
+      "hochanot-yom-cheni",
+      "hochanot-yom-chelichi",
+      "hochanot-yom-revii",
+      "hochanot-yom-hamichi",
+      "hochanot-yom-chichi",
+      "hochanot-hochana-rabba",
+    ];
+    for (const slug of jours) {
+      const blocks = load("moadim", slug).sections[0].blocks ?? [];
+      expect(blocks.length).toBeGreaterThan(5);
+      // Les cinq dinim de la page 674 d'abord, puis ce que le bloc a de propre.
+      const halakhot = blocks[0].halakhot ?? [];
+      expect(halakhot.length).toBeGreaterThanOrEqual(5);
+      expect(halakhot[0].he).toContain("ולהקיף את הבימה");
+      expect(halakhot[3].he).toContain("בשבת אין מקיפין");
+      // L'usage de Djerba ouvre chaque jour : le verset « Vessoukka tihyé »
+      // se dit selon cet usage, en retrait.
+      const paragraphes = blocks.flatMap((b) => b.paragraphs ?? []);
+      const vessoukka = paragraphes.find((p) =>
+        p.runs.some((r) => r.kind === "he" && r.text.startsWith("וְסֻכָּה תִּהְיֶה")),
+      )!;
+      expect(vessoukka.muted).toBe(true);
+      // Chaque jour finit sur les deux versets qui ferment les Hochanot.
+      const dernier = blocks.at(-1)!.lines.join(" ");
+      expect(dernier).toContain("וְיִהְיוּ דְבָרַי אֵלֶּה");
+    }
+  });
+
+  it("Hochanot : Hochana Rabba fait ses sept hakafot, dans l'ordre", () => {
+    const blocks = load("moadim", "hochanot-hochana-rabba").sections[0].blocks ?? [];
+    const hakafot = blocks.map((b) => b.label).filter((label) => label.includes("hakafa"));
+    expect(hakafot.map((label) => label.replace(/\s+/g, " "))).toEqual([
+      "Première hakafa : Abraham",
+      "Deuxième hakafa : Isaac",
+      "Troisième hakafa : Jacob",
+      "Quatrième hakafa : Moïse",
+      "Cinquième hakafa : Aaron",
+      "Sixième hakafa : Joseph et Pin'has",
+      "Septième hakafa : David",
+    ]);
+    // Les pages du sidour coupent deux hakafot : chacune redevient un seul
+    // bloc. La première coupure tombe au milieu d'un verset (Berechit 43,
+    // 11), qui redevient une seule ligne.
+    for (const block of blocks) expect(block.label).not.toMatch(/\((fin|suite)\)$/);
+    const jacob = blocks.find((b) => b.label.includes("Jacob"))!;
+    expect(jacob.lines.some((line) => line.includes("קְחוּ מִזִּמְרַת הָאָרֶץ"))).toBe(true);
+    expect(jacob.lines.some((line) => line.startsWith("הָאָרֶץ בִּכְלֵיכֶם"))).toBe(false);
+  });
+
+  it("Hochanot du Chabbat : la halakha dit que seul l'usage de Tunis les dit", () => {
+    const blocks = load("moadim", "hochanot-chabbat").sections[0].blocks ?? [];
+    const halakha = (blocks[0].halakhot ?? [])[0];
+    expect(halakha.he).toContain("בשבת אין מקיפין");
+    expect(halakha.he).toContain("בתונס");
   });
 
   it("Séder leil Souccot : les sept nuits, du seuil à la place assise", () => {

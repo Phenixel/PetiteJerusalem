@@ -787,7 +787,7 @@ describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
     const hallel = brut.findIndex((b) => b.label === "Hallel");
     expect(loulav).toBeGreaterThan(0);
     expect(hallel).toBe(loulav + 1);
-    const bloc = blocks.find((b) => b.when === "loulav")!;
+    const bloc = blocks.find((b) => b.labelText?.fr === "Les brahot du loulav")!;
     const texte = sansSignes(bloc.lines.join(" "));
     expect(texte).toContain("על נטילת לולב");
     expect(texte).toContain("שהחיינו");
@@ -796,14 +796,49 @@ describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
     expect(texte).toContain("דרום, צפון, מזרח, מעלה, מטה, מערב");
   });
 
+  it("dit, avant les brahot, ce que le sidour fait dire avant de prendre le loulav", () => {
+    const avant = indexOf("Avant de prendre le loulav", "loulav");
+    const brahot = indexOf("Les brahot du loulav", "loulav");
+    expect(avant).toBeGreaterThan(0);
+    expect(brahot).toBe(avant + 1);
+    const bloc = blocks.find((b) => b.labelText?.fr === "Avant de prendre le loulav")!;
+    const texte = sansSignes(bloc.lines.join(" "));
+    expect(texte).toContain("לשם יחוד קדשא בריך הוא");
+    expect(texte).toContain("והריני מוכן לנענע");
+    expect(texte).toContain("רבון עלמא");
+    // Le verset « Vihi no'am » se dit deux fois.
+    const noam = (bloc.paragraphs ?? []).find((p) => p.rubric?.he.includes("ויכפול"))!;
+    expect(noam.repeat).toBe(2);
+  });
+
   it("ouvre le cadran des six côtés au titre des brahot du loulav", () => {
-    const bloc = blocks.find((b) => b.when === "loulav")!;
+    const bloc = blocks.find((b) => b.labelText?.fr === "Les brahot du loulav")!;
     expect(bloc.naanouim).toBe(true);
     // La didascalie les nomme dans la langue du lecteur : la ligne qui suit
     // ne les porte qu'en hébreu.
     const cotes = (bloc.paragraphs ?? []).at(-1)!.rubric!;
     expect(cotes.fr).toContain("sud, nord, est, haut, bas, ouest");
     expect(cotes.en).toContain("south, north, east, up, down, west");
+  });
+
+  it("dit les Hochanot entre le Hallel et le Kaddich Titkabal", () => {
+    const hallel = brut.findIndex((b) => b.label === "Hallel");
+    const hochanot = brut.findIndex((b) => b.when === "loulav" && (b as { labelText?: { fr: string } }).labelText?.fr === "Les Hochanot");
+    // Entre les deux, seuls des blocs d'autres jours (le Titkabal de Roch
+    // Hodech) : ce jour-là, le lecteur passe du Hallel aux Hochanot.
+    expect(hochanot).toBeGreaterThan(hallel);
+    for (const bloc of brut.slice(hallel + 1, hochanot)) {
+      expect(["rosh-chodesh", "hanouka"]).toContain(bloc.when);
+    }
+    // Le Kaddich Titkabal de 'Hol haMoed suit.
+    const titkabal = brut.findIndex(
+      (b, i) => i > hochanot && b.when === "hol-hamoed",
+    );
+    expect(titkabal).toBe(hochanot + 1);
+    // Le bloc dit où lire la suite : le livre Moadim.
+    const bloc = blocks.find((b) => b.labelText?.fr === "Les Hochanot")!;
+    expect(bloc.halakhot?.[0].fr).toContain("livre Moadim");
+    expect(sansSignes(bloc.lines[0])).toContain("ארחץ בנקיון כפי");
   });
 
   it("lit les korbanot du jour, selon Erets Israël ou la diaspora", () => {
@@ -1203,8 +1238,12 @@ describe.each(autresLiturgies.map((entry) => [resolveFilePath(entry), entry] as 
       // Le Nom s'écrit parfois sans voyelles au milieu d'un texte vocalisé
       // (le vidouy des Sli'hot) : ce n'est pas une consigne.
       const NOMS = /יהוה|אלהינו|אלהים|אלהי|אדני/g;
+      // Ses lettres épelées non plus, quand une kavana les nomme une à une
+      // (« (יו"ד ה"ה ו"ו ה"ה) », avant le loulav) : la même exception que le
+      // moteur des recettes (assertSansConsigne).
+      const LETTRES_EPELEES = /[א-ת]{1,2}["״][א-ת](?![א-ת])/g;
       const suites = content.sections[0].he
-        .map((ligne) => ligne.replace(NOMS, " "))
+        .map((ligne) => ligne.replace(NOMS, " ").replace(LETTRES_EPELEES, " "))
         .flatMap((ligne) => ligne.match(/[א-ת"'׳״\s]{10,}/g) ?? [])
         .filter((suite) => !signes.test(suite) && suite.trim().length >= 10);
       expect(suites).toEqual([]);

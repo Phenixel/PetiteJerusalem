@@ -83,8 +83,13 @@ function removeMarker(text, marker) {
  */
 function assertSansConsigne(text, spec) {
   // Le Nom s'écrit parfois sans voyelles au milieu d'un texte vocalisé : ce
-  // n'est pas une consigne.
-  const sansNoms = text.replace(/יהוה|אלהינו|אלהים|אלהי|אדני/g, " ");
+  // n'est pas une consigne. Ses lettres épelées non plus, quand une kavana
+  // les nomme une à une (« שֵׁם הֲוָיָ"ה בְּמִלּוּי הֵהִי"ן שֶׁהֵם (יו"ד ה"ה ו"ו
+  // ה"ה) », avant le loulav) : un groupe de deux lettres au plus, un
+  // guillemet, une lettre.
+  const sansNoms = text
+    .replace(/יהוה|אלהינו|אלהים|אלהי|אדני/g, " ")
+    .replace(/[א-ת]{1,2}["״][א-ת](?![א-ת])/g, " ");
   for (const suite of sansNoms.match(/[\u05D0-\u05EA"'\u05F3\u05F4\s]{10,}/g) ?? []) {
     if (!HEBREW_MARKS.test(suite) && suite.trim().length >= 10) {
       throw new Error(`Consigne restée dans le texte (segment ${spec.seg}) : « ${suite.trim()} »`);
