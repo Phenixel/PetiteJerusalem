@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Teinte de la petite icône des notifications (drawable ic_stat_pj) dans
+         le volet : l'or des pierres de l'icône de l'app. Lue par Firebase
+         (meta-data du manifest) ; les notifications locales reçoivent la même
+         valeur par capacitor.config.ts. -->
+    <color name="pj_notification">#C79A3B</color>
+</resources>

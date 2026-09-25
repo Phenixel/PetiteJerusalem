@@ -55,6 +55,15 @@ const config: CapacitorConfig = {
     FirebaseMessaging: {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
+    // Android : petite icône de toutes les notifications locales (rappels
+    // d'horaires, rappel du Chabbat, push rejouées au premier plan). Sans
+    // elle, le plugin retombe sur l'icône « i » générique du système. La
+    // ressource est versionnée dans native/android/ ; les push reçues app
+    // fermée prennent la même par le manifest (scripts/setup-android.mjs).
+    LocalNotifications: {
+      smallIcon: 'ic_stat_pj',
+      iconColor: '#C79A3B',
+    },
   },
 }
 

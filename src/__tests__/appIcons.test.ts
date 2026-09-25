@@ -56,13 +56,14 @@ describe("source vectorielle des icônes", () => {
     // iOS et Android teignent eux-mêmes ces deux variantes : ils lisent la
     // luminosité, une couleur de marque qui traînerait ressortirait en gris
     // sale. Seuls le blanc de la silhouette et le noir du masque ont cours.
-    const palettes = ["tinted", "monochrome"].map((variant) => [
+    const palettes = ["tinted", "monochrome", "notification"].map((variant) => [
       variant,
       [...new Set(appIconSvg(variant).match(/#[0-9a-fA-F]{3,6}/g) ?? [])].sort(),
     ]);
     expect(palettes).toEqual([
       ["tinted", ["#000", "#fff"]],
       ["monochrome", ["#000", "#fff"]],
+      ["notification", ["#000", "#fff"]],
     ]);
   });
 
@@ -89,6 +90,22 @@ describe("source vectorielle des icônes", () => {
     // Et le dessin est bien centré sur la toile, sinon la zone sûre ne sert à rien.
     expect(((art.minX + art.maxX) / 2 - x) * scale).toBeCloseTo(54, 6);
     expect(((art.minY + art.maxY) / 2 - y) * scale).toBeCloseTo(54, 6);
+  });
+});
+
+describe("petite icône des notifications Android", () => {
+  it("tient le dessin dans les 22 dp utiles de la toile de 24 dp", () => {
+    // Android ne garde de cette icône que son opacité et la réduit à la
+    // hauteur d'une ligne de barre d'état : 1 dp de marge de chaque côté,
+    // et le dessin le plus grand possible dans ce qui reste.
+    const { x, y, size } = viewBox(appIconSvg("notification"));
+    const art = { minX: 15, minY: 30.5, maxX: 85, maxY: 77 };
+    const scale = 24 / size;
+    const widthDp = (art.maxX - art.minX) * scale;
+    const heightDp = (art.maxY - art.minY) * scale;
+    expect(Math.max(widthDp, heightDp)).toBeCloseTo(22, 6);
+    expect(((art.minX + art.maxX) / 2 - x) * scale).toBeCloseTo(12, 6);
+    expect(((art.minY + art.maxY) / 2 - y) * scale).toBeCloseTo(12, 6);
   });
 });
 
