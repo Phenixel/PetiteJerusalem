@@ -7,7 +7,8 @@
  * - AndroidManifest.xml : permissions POST_NOTIFICATIONS (rappel de lecture,
  *   Android 13+) et ACCESS_COARSE/FINE_LOCATION (horaires calculés pour la
  *   position de l'appareil, le plugin @capacitor/geolocation livre un
- *   manifest vide, l'app doit donc les déclarer elle-même)
+ *   manifest vide, l'app doit donc les déclarer elle-même), et la petite
+ *   icône des notifications push
  * - android/app/google-services.json : copié depuis la racine s'il s'y trouve
  *   (fichier téléchargé depuis la console Firebase, git-ignoré)
  * - android/app/build.gradle : signingConfigs.release (lit android/keystore.properties,
@@ -105,6 +106,35 @@ if (!manifest.includes('android:name="android.hardware.camera"')) {
     `$1\n\n    ${CAMERA_FEATURE}`,
   );
   console.log("setup-android: caméra déclarée facultative (uses-feature)");
+}
+
+
+// Petite icône des notifications push. Sans ces deux meta-data, Firebase
+// affiche les push reçues app fermée avec l'icône du lanceur, qu'Android réduit
+// à sa seule opacité : une pastille pleine, ou l'icône générique du système.
+// ic_stat_pj (silhouette blanche de 24 dp, rasterisée depuis lib/app-icon.mjs)
+// et sa teinte vivent dans native/android/, recopié plus bas avec les widgets.
+// Les notifications locales (rappels d'horaires, push rejouées au premier plan)
+// prennent la même icône par capacitor.config.ts.
+const NOTIFICATION_META = [
+  { name: "com.google.firebase.messaging.default_notification_icon", resource: "@drawable/ic_stat_pj" },
+  { name: "com.google.firebase.messaging.default_notification_color", resource: "@color/pj_notification" },
+];
+const missingNotificationMeta = NOTIFICATION_META.filter(({ name }) => !manifest.includes(name));
+if (missingNotificationMeta.length > 0) {
+  const lines = missingNotificationMeta
+    .map(({ name, resource }) => `        <meta-data\n            android:name="${name}"\n            android:resource="${resource}" />`)
+    .join("\n");
+  const patched = manifest.replace(
+    /(<application\b[^>]*>)/,
+    `$1\n\n        <!-- Petite icône des notifications push (voir docs/app-native.md) -->\n${lines}\n`,
+  );
+  if (patched === manifest) {
+    console.error("setup-android: balise <application> introuvable, icône des notifications non déclarée.");
+    process.exit(1);
+  }
+  manifest = patched;
+  console.log("setup-android: icône des notifications push déclarée dans le manifest");
 }
 
 writeFileSync(manifestPath, manifest);

@@ -15,6 +15,9 @@
  *                icônes adaptatives Android, pour les « icônes thématiques »
  *                d'Android 13+ (le lanceur la teint aux couleurs du fond
  *                d'écran et du mode clair/sombre).
+ *   notification la même silhouette encore, cadrée serré pour les 24 dp de la
+ *                petite icône des notifications Android (barre d'état et
+ *                volet), qu'Android teint lui aussi.
  *
  * Le noir et blanc n'est pas une décision d'esthétique : c'est ce que les deux
  * systèmes exigent pour pouvoir teinter l'icône eux-mêmes. Une icône en
@@ -63,6 +66,28 @@ function androidView() {
   const artRadius = Math.hypot(artWidth, artHeight) / 2;
   const scale = ANDROID_SAFE_DP / 2 / artRadius;
   const size = ANDROID_CANVAS_DP / scale;
+  return {
+    x: (ART.minX + ART.maxX) / 2 - size / 2,
+    y: (ART.minY + ART.maxY) / 2 - size / 2,
+    size,
+  };
+}
+
+/**
+ * Petite icône des notifications Android : une toile de 24 dp, dont Android
+ * ne garde que l'opacité. Le dessin y tient dans les 22 dp du centre (1 dp de
+ * marge de chaque côté, la règle des icônes de barre d'état). Rien ne le
+ * masque, il s'inscrit donc par son rectangle, pas par son cercle : le livre,
+ * large et bas, est ce qui touche les bords.
+ */
+const NOTIFICATION_CANVAS_DP = 24;
+const NOTIFICATION_LIVE_DP = 22;
+
+function notificationView() {
+  const artWidth = ART.maxX - ART.minX;
+  const artHeight = ART.maxY - ART.minY;
+  const scale = NOTIFICATION_LIVE_DP / Math.max(artWidth, artHeight);
+  const size = NOTIFICATION_CANVAS_DP / scale;
   return {
     x: (ART.minX + ART.maxX) / 2 - size / 2,
     y: (ART.minY + ART.maxY) / 2 - size / 2,
@@ -191,12 +216,14 @@ export function appIconSvg(variant) {
       return silhouette(FULL_VIEW);
     case "monochrome":
       return silhouette(androidView());
+    case "notification":
+      return silhouette(notificationView());
     default:
       throw new Error(`app-icon: variante inconnue « ${variant} »`);
   }
 }
 
-export const ICON_VARIANTS = ["light", "dark", "tinted", "monochrome"];
+export const ICON_VARIANTS = ["light", "dark", "tinted", "monochrome", "notification"];
 
 // --- Déclaration côté natif --------------------------------------------------
 
