@@ -147,6 +147,27 @@ const POURIM_MONTEES = [
   { fr: "Israël", en: "Yisrael", he: "ישראל", from: "ויאמר יהוה אל־משה כתב" },
 ];
 
+/**
+ * Les korbanot d'un jour de Souccot (Bamidbar 29, 17 à 34), trois versets par
+ * jour, du deuxième au septième : la lecture de la Torah de 'Hol haMoed.
+ * L'export du siddour ne les porte pas ; ils viennent du fichier de la
+ * paracha Pin'has (public/texts/tanakh/304.json, découpé en montées : la
+ * septième ouvre au 29, 12, et le passage du deuxième jour est son sixième
+ * verset). Chaque passage ouvre sur « וּבַיּוֹם » et le nom du jour : la
+ * construction s'arrête si le découpage du fichier a bougé.
+ */
+const PINHAS = readText("tanakh/304.json");
+const JOURS_SOUCCOT = ["", "", "השני", "השלישי", "הרביעי", "החמישי", "הששי", "השביעי"];
+function korbanotSouccot(jour) {
+  const debut = 5 + (jour - 2) * 3;
+  const passage = PINHAS.he[6].slice(debut, debut + 3);
+  const tete = stripMarks(passage[0] ?? "").replace(/\s+/g, " ");
+  if (passage.length !== 3 || !tete.startsWith(`וביום ${JOURS_SOUCCOT[jour]} `)) {
+    throw new Error(`Pin'has : le passage du jour ${jour} de Souccot a bougé`);
+  }
+  return cleanFinal(passage.join(" ").replace(/\{[פס]\}/g, " "));
+}
+
 // ---------- Recette → fichier ----------
 
 /**
@@ -2950,6 +2971,59 @@ function chaharitRecipe() {
           },
         ],
       },
+      // Les korbanot du jour, à 'Hol haMoed de Souccot. Un bloc par jour,
+      // comme à 'Hanouka ; dans chacun, la répartition d'Erets Israël et
+      // celle de la diaspora, que le sidour donne l'une après l'autre :
+      // quatre appelés sur le passage du jour en Terre d'Israël ; en diaspora,
+      // où l'on doute encore de la date, le cohen lit la veille, le lévi et le
+      // troisième le jour, et le quatrième les deux. Le deuxième jour n'est
+      // 'Hol haMoed qu'en Terre d'Israël : il n'a que sa répartition.
+      ...[2, 3, 4, 5, 6, 7].map((jour) => ({
+        when: `souccot-${jour}`,
+        plain: true,
+        lines: [
+          {
+            he: korbanotSouccot(jour),
+            when: "eretz-israel",
+            rubric: R(
+              "En Erets Israël, les quatre appelés lisent chacun ce passage :",
+              "In Eretz Israel, each of the four called up reads this passage:",
+              "בארץ ישראל עולים ארבעה אנשים, וכל אחד קורא:",
+            ),
+          },
+          ...(jour === 2
+            ? []
+            : [
+                {
+                  he: korbanotSouccot(jour - 1),
+                  when: "houts-laarets",
+                  rubric: R(
+                    "Hors d'Israël, le cohen lit :",
+                    "Outside Israel, the kohen reads:",
+                    'ובחו"ל, הכהן קורא:',
+                  ),
+                },
+                {
+                  he: korbanotSouccot(jour),
+                  when: "houts-laarets",
+                  rubric: R(
+                    "Le lévi lit, et le troisième appelé relit après lui :",
+                    "The levi reads, and the third one called up reads it again:",
+                    "הלוי קורא, והשלישי חוזר:",
+                  ),
+                },
+                {
+                  he: `${korbanotSouccot(jour - 1)} ${korbanotSouccot(jour)}`,
+                  when: "houts-laarets",
+                  rubric: R(
+                    "Le quatrième appelé lit les deux :",
+                    "The fourth one called up reads both:",
+                    "הרביעי קורא שניהם:",
+                  ),
+                },
+              ]),
+        ],
+      })),
       kaddishHalf("RH.Hallel", {
         seg: 41,
         when: "hol-hamoed",

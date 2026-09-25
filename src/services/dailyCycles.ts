@@ -407,6 +407,21 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // dit pas le Hallel, et les brahot n'y viendraient qu'orphelines. Ces
   // jours-là, c'est la page du livre Moadim qui les porte.
   if (occ.has("sukkot") && holHamoed && hd.getDay() !== 6) occ.add("loulav");
+  // Le quantième de Souccot, du 15 au 21 Tichri : la lecture de la Torah de
+  // 'Hol haMoed y prend les korbanot du jour (Bamidbar 29), comme celle de
+  // 'Hanouka prend le nassi du jour. Il se compte sur la date, en Terre
+  // d'Israël comme en diaspora : c'est la répartition des montées qui change
+  // (voir ci-dessous), pas le jour.
+  if (occ.has("sukkot") && hd.getMonth() === months.TISHREI) {
+    const jour = hd.getDate() - 14;
+    if (jour >= 1 && jour <= 7) occ.add(`souccot-${jour}`);
+  }
+  // Terre d'Israël ou diaspora, selon le lieu des horaires. À 'Hol haMoed de
+  // Souccot, la diaspora lit deux jours de korbanot, par doute sur la date ;
+  // la Terre d'Israël lit celui du jour quatre fois. Deux clés plutôt qu'une
+  // et sa négation : `when` n'en porte qu'une simple (voir
+  // docs/compatibilite-textes.md).
+  occ.add(il ? "eretz-israel" : "houts-laarets");
   if (occ.has("rosh-chodesh") || hanukkah || holHamoed) {
     occ.add("hallel");
     const entier = hanukkah || (holHamoed && festival("Sukkot"));

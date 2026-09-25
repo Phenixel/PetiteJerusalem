@@ -82,6 +82,9 @@ const KNOWN_WHEN = new Set([
   "pourim",
   "omer",
   ...Array.from({ length: 8 }, (_, i) => `hanouka-${i + 1}`),
+  ...Array.from({ length: 7 }, (_, i) => `souccot-${i + 1}`),
+  "eretz-israel",
+  "houts-laarets",
   ...Array.from({ length: 49 }, (_, i) => `omer-${i + 1}`),
   "tisha-beav",
   "sans-tisha-beav",
@@ -801,6 +804,30 @@ describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
     const cotes = (bloc.paragraphs ?? []).at(-1)!.rubric!;
     expect(cotes.fr).toContain("sud, nord, est, haut, bas, ouest");
     expect(cotes.en).toContain("south, north, east, up, down, west");
+  });
+
+  it("lit les korbanot du jour, selon Erets Israël ou la diaspora", () => {
+    const JOURS = ["", "", "השני", "השלישי", "הרביעי", "החמישי", "הששי", "השביעי"];
+    for (let jour = 2; jour <= 7; jour++) {
+      const bloc = blocks.find((b) => b.when === `souccot-${jour}`)!;
+      const lignes = bloc.paragraphs ?? [];
+      // En Terre d'Israël, le passage du jour, lu par les quatre appelés.
+      const israel = lignes.filter((p) => p.when === "eretz-israel");
+      expect(israel).toHaveLength(1);
+      expect(sansSignes(bloc.lines[lignes.indexOf(israel[0])])).toMatch(
+        new RegExp(`^וביום ${JOURS[jour]} `),
+      );
+      // En diaspora, la veille et le jour ; le deuxième jour y est Yom Tov.
+      const diaspora = lignes.filter((p) => p.when === "houts-laarets");
+      expect(diaspora).toHaveLength(jour === 2 ? 0 : 3);
+      if (jour > 2) {
+        const texte = (p: (typeof diaspora)[number]) => sansSignes(bloc.lines[lignes.indexOf(p)]);
+        expect(texte(diaspora[0])).toMatch(new RegExp(`^וביום ${JOURS[jour - 1]} `));
+        expect(texte(diaspora[1])).toMatch(new RegExp(`^וביום ${JOURS[jour]} `));
+        expect(texte(diaspora[2])).toMatch(new RegExp(`^וביום ${JOURS[jour - 1]} `));
+        expect(texte(diaspora[2])).toContain(`וביום ${JOURS[jour]} `);
+      }
+    }
   });
 
   it("marque les na'anou'im du Hallel aux trois endroits du sidour", () => {

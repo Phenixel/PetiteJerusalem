@@ -424,6 +424,36 @@ describe("'Hol haMoed, et le loulav de Souccot", () => {
     expect(occ(23, months.TISHREI, 5787).has("loulav")).toBe(false);
     expect(occ(17, months.NISAN, 5787).has("loulav")).toBe(false);
   });
+
+  it("compte les sept jours de la fête sur la date, une clé par jour", () => {
+    const jours: string[] = [];
+    for (let date = 14; date <= 23; date++) {
+      const cles = [...occ(date, months.TISHREI, 5787)].filter((cle) =>
+        cle.startsWith("souccot-"),
+      );
+      jours.push(cles.join(",") || "-");
+    }
+    expect(jours).toEqual([
+      "-",
+      "souccot-1",
+      "souccot-2",
+      "souccot-3",
+      "souccot-4",
+      "souccot-5",
+      "souccot-6",
+      "souccot-7",
+      "-",
+      "-",
+    ]);
+    // Le même jour en Terre d'Israël : la date ne change pas, la répartition
+    // des montées si.
+    const israel = activeOccasions(new HDate(18, months.TISHREI, 5787), true);
+    expect(israel.has("souccot-4")).toBe(true);
+    expect(israel.has("eretz-israel")).toBe(true);
+    expect(israel.has("houts-laarets")).toBe(false);
+    expect(occ(18, months.TISHREI, 5787).has("houts-laarets")).toBe(true);
+    expect(occ(18, months.TISHREI, 5787).has("eretz-israel")).toBe(false);
+  });
 });
 
 describe("les huit jours de 'Hanouka", () => {
