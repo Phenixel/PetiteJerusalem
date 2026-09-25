@@ -563,6 +563,10 @@ const fr = {
       title: "Horaires",
       then: "Puis {label} à {time}",
       stale: "Ouvrez l'app pour actualiser les horaires",
+      entry: "Entrée de {name}",
+      shabbat: "Chabbat",
+      festivalOn: "{name} ce {day}",
+      cholHamoed: "'Hol haMoed {name}",
     },
     description:
       "Horaires halakhiques calculés pour votre position, directement sur votre appareil : votre position n'est envoyée nulle part.",
@@ -1439,6 +1443,17 @@ const fr = {
         o: "Ouest",
         no: "Nord-ouest",
       },
+    },
+    // Souccot : les six côtés du na'anou'a, posés sur le même cadran que la
+    // boussole du Kotel, mais numérotés dans l'ordre où on les fait.
+    naanouim: {
+      open: "Les six côtés",
+      title: "Les six côtés du na'anou'a",
+      intro:
+        "On agite le loulav trois fois de chaque côté, en l'éloignant puis en le ramenant vers la poitrine. Les nombres donnent l'ordre.",
+      order: "Sud (1), nord (2), est (3), haut (4), bas (5), ouest (6).",
+      middle: "Le haut et le bas, au centre du cadran, ne sont pas des points cardinaux.",
+      live: "Le cadran suit votre appareil : tournez-vous vers le nombre du côté que vous agitez.",
     },
     // Sidour : l'horaire d'un moment de la prière, posé avant ce qui se lit
     // (voir TefilaZman.vue ; les clés d1..dN sont les lignes du « i »).

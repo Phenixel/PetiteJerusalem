@@ -9,7 +9,8 @@ import android.widget.RemoteViews;
  * d'autre ; son nom en dessous dit seulement de quelle heure il s'agit.
  *
  * Il lit le même payload que le widget « Horaires » et se replanifie comme
- * lui, à chaque zman passé. Pendant Android du ZmanimShortcutWidget d'iOS.
+ * lui, à chaque zman passé et quand l'entrée de Chabbat passe devant (voir
+ * ZmanimPayload.next). Pendant Android du ZmanimShortcutWidget d'iOS.
  */
 public class ZmanimShortcutWidgetProvider extends PjWidgetProvider {
 
@@ -59,7 +60,7 @@ public class ZmanimShortcutWidgetProvider extends PjWidgetProvider {
         views.setTextViewText(R.id.pj_zmanim_time, next.time);
         views.setTextColor(R.id.pj_zmanim_time, parseAccent(payload.accent));
         views.setTextViewText(R.id.pj_zmanim_label, next.label);
-        return new Rendered(views, next.epoch + 1000);
+        return new Rendered(views, payload.refreshAt(now));
     }
 
     /** Le repli : le message prend toute la tuile, l'heure s'efface. */

@@ -268,11 +268,22 @@ function parashaName(place: ZmanimPlace, period: RestPeriod, locale: SeoLocale):
   return reading.parsha.map((name) => cleanName(Locale.gettext(name, locale))).join(" - ");
 }
 
-/** « Chabbat Ki Tétzé », « Chabbat Roch Hachanah » ou « Yom Kippour ». */
+/**
+ * « Chabbat Ki Tétzé », « Chabbat Roch Hachanah », « Yom Kippour », ou
+ * « Chavou'ot · Chabbat Nasso ».
+ *
+ * Un bloc de repos réunit parfois une fête et le Chabbat qui la suit sans en
+ * faire partie : en Israël, Chavou'ot 5786 tombe le vendredi 22 mai 2026 et le
+ * Chabbat du 23 lit Nasso, que la diaspora, encore en fête, ne lit pas. Ce
+ * Chabbat garde alors sa paracha, au calendrier du lieu ; sans elle, Nasso
+ * n'apparaissait nulle part sur la page de Jérusalem.
+ */
 function periodLabel(place: ZmanimPlace, period: RestPeriod, locale: SeoLocale, s: ZmanimStrings) {
   if (period.festivals.length) {
     const names = cleanName(period.festivals.join(" · "));
-    return period.shabbat ? s.shabbatOf(names) : names;
+    if (!period.shabbat) return names;
+    const parasha = parashaName(place, period, locale);
+    return parasha ? `${names} · ${s.shabbatOf(parasha)}` : s.shabbatOf(names);
   }
   const parasha = parashaName(place, period, locale);
   return parasha ? s.shabbatOf(parasha) : s.shabbat;
@@ -465,11 +476,20 @@ function parashaLabel(
     : entry.name;
 }
 
-function parashaRows(periods: RestPeriod[], locale: SeoLocale, s: ZmanimStrings): string {
+/**
+ * Le tableau des parachiot à venir, au calendrier du lieu (Israël ou
+ * diaspora), comme les libellés des blocs de repos (voir parashaName).
+ */
+function parashaRows(
+  place: ZmanimPlace,
+  periods: RestPeriod[],
+  locale: SeoLocale,
+  s: ZmanimStrings,
+): string {
   return periods
     .flatMap((period) => {
       if (!period.shabbat) return [];
-      const parasha = getParashaForShabbat(period.shabbat);
+      const parasha = getParashaForShabbat(period.shabbat, isIsraelPlace(place));
       if (!parasha) return [];
       const links = parasha.entries
         .map(
@@ -517,7 +537,11 @@ function buildHorairesPage(now: Date, locale: SeoLocale): SeoPage {
   );
 
   const currentShabbat = periods.find((p) => p.shabbat)?.shabbat;
-  const currentParasha = currentShabbat ? getParashaForShabbat(currentShabbat) : null;
+  // La page hub est celle de Paris : son calendrier est celui de la diaspora,
+  // mais c'est le lieu qui en décide, comme sur les pages de ville.
+  const currentParasha = currentShabbat
+    ? getParashaForShabbat(currentShabbat, isIsraelPlace(DEFAULT_PLACE))
+    : null;
 
   const faq: Faq[] = [
     ...(nextShabbat
@@ -582,7 +606,7 @@ ${section(
 ${section(
   s.parashaTitle,
   `<p>${s.parashaIntro(links.paracha)}</p>
-      ${table(s.parashaHead, parashaRows(periods, locale, s))}`,
+      ${table(s.parashaHead, parashaRows(DEFAULT_PLACE, periods, locale, s))}`,
 )}
 ${section(
   s.featuredTitle,

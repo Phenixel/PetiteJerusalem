@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { buildZmanimSeoPages, seoCities, upcomingRestPeriods } from "../content/zmanimSeoPages";
 import { COUNTRIES, FEATURED_CITY_NAMES, citySlug, findCityBySlug } from "../content/zmanimCities";
 import { SEO_FESTIVALS, findFestivalBySlug } from "../content/zmanimFestivals";
@@ -469,5 +469,37 @@ describe("buildAppShell", () => {
     expect(shell).not.toContain('property="og:url"');
     // Le reste du head est intact.
     expect(shell).toContain('property="og:title"');
+  });
+});
+
+describe("la paracha au calendrier du lieu", () => {
+  // Semaine du 18 mai 2026 : Chavou'ot 5786 tombe le vendredi 22 mai. En
+  // Israël, la fête ne dure qu'un jour et le Chabbat du 23 lit Nasso ; en
+  // diaspora, ce Chabbat est le second jour de la fête, sans paracha, et les
+  // deux cycles restent décalés d'une semaine jusqu'au 27 juin.
+  let body: (path: string) => string;
+  beforeAll(() => {
+    const { pages: may } = buildZmanimSeoPages(new Date("2026-05-18T10:00:00Z"));
+    body = (path) => may.find((p) => p.path === path)!.bodyHtml;
+  }, 60_000);
+
+  it("nomme Nasso le Chabbat qui suit Chavou'ot à Jérusalem", () => {
+    expect(body("/horaires/jerusalem")).toContain("Chavou'ot · Chabbat Nasso");
+    expect(body("/horaires/tel-aviv")).toContain("Chavou'ot · Chabbat Nasso");
+  });
+
+  it("sépare Houkat et Balak en Israël, les double en diaspora", () => {
+    const jerusalem = body("/horaires/jerusalem");
+    expect(jerusalem).toContain("Chabbat Houkat<");
+    expect(jerusalem).toContain("Chabbat Balak<");
+    expect(jerusalem).not.toContain("Houkat - Balak");
+    expect(body("/horaires")).toContain("Chabbat Houkat - Balak");
+  });
+
+  it("garde la diaspora à Paris : Chavou'ot sans paracha, puis Nasso", () => {
+    const paris = body("/horaires");
+    expect(paris).toContain("Chabbat Chavou'ot");
+    expect(paris).not.toContain("Chavou'ot · Chabbat");
+    expect(paris).toContain("Chabbat Nasso");
   });
 });

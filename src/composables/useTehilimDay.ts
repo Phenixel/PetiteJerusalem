@@ -2,7 +2,7 @@ import { computed, onMounted, onUnmounted, ref, type ComputedRef } from "vue";
 import { HDate } from "@hebcal/core";
 import { useNow } from "./useNow";
 import { useZmanimLocation } from "./useZmanimLocation";
-import { hebrewDateFor } from "../services/zmanimService";
+import { hebrewDateFor, isIsraelPlace } from "../services/zmanimService";
 import {
   getTehilimOfHebrewDay,
   getWeeklyParasha,
@@ -71,13 +71,20 @@ export function useTehilimDay(options: DayClockOptions = {}): {
 /**
  * La paracha de la semaine, réactive au temps : samedi soir, après la chkia,
  * c'est déjà celle de la semaine qui commence.
+ *
+ * Au calendrier du lieu des horaires : Israël et la diaspora lisent parfois
+ * des parachiot différentes plusieurs semaines de suite (voir
+ * getWeeklyParasha), et le chnei mikra suit celle qu'on lira à la synagogue.
  */
 export function useWeeklyParasha(options: DayClockOptions = {}): {
   hebrewDay: ComputedRef<HDate>;
   parasha: ComputedRef<WeeklyParasha | null>;
 } {
   const hebrewDay = useHebrewDay(options);
-  const parasha = computed(() => getWeeklyParasha(hebrewDay.value.greg()));
+  const { place } = useZmanimLocation();
+  const parasha = computed(() =>
+    getWeeklyParasha(hebrewDay.value.greg(), isIsraelPlace(place.value)),
+  );
   return { hebrewDay, parasha };
 }
 

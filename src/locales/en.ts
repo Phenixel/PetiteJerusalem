@@ -550,6 +550,10 @@ const en: LocaleMessages = {
       title: "Zmanim",
       then: "Then {label} at {time}",
       stale: "Open the app to refresh the times",
+      entry: "{name} begins",
+      shabbat: "Shabbat",
+      festivalOn: "{name} this {day}",
+      cholHamoed: "Chol HaMoed {name}",
     },
     description:
       "Halachic times computed for your location, right on your device: your location is never sent anywhere.",
@@ -1385,6 +1389,15 @@ const en: LocaleMessages = {
         o: "West",
         no: "North-west",
       },
+    },
+    naanouim: {
+      open: "The six sides",
+      title: "The six sides of the na'anua",
+      intro:
+        "The lulav is waved three times on each side, away from you and back towards the chest. The numbers give the order.",
+      order: "South (1), north (2), east (3), up (4), down (5), west (6).",
+      middle: "Up and down, in the middle of the dial, are not compass points.",
+      live: "The dial follows your device: turn towards the number of the side you are waving.",
     },
     zman: {
       info: "About these times",
