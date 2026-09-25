@@ -59,6 +59,26 @@ const LINKS: Record<string, FestivalLink> = {
     "The Hatarat Nedarim, the annulment of vows on the eve",
     "התרת נדרים של הערב שלפני",
   ]),
+  netilatLoulav: library("netilatLoulav", "/bibliotheque/moadim/netilat-loulav", [
+    "Les brahot du loulav, et le séder qui les précède",
+    "The blessings on the lulav, and the seder before them",
+    "ברכות הלולב והסדר שלפניהן",
+  ]),
+  sederLeilSouccot: library("sederLeilSouccot", "/bibliotheque/moadim/seder-leil-souccot", [
+    "Le séder du premier soir dans la soucca",
+    "The seder of the first evening in the sukkah",
+    "סדר ליל סוכות בסוכה",
+  ]),
+  hochanot: library("hochanot", "/bibliotheque/moadim/hochanot-yom-richon", [
+    "Les Hochanot, jour par jour",
+    "The Hoshanot, day by day",
+    "ההושענות, יום אחר יום",
+  ]),
+  hochanotRabba: library("hochanotRabba", "/bibliotheque/moadim/hochanot-hochana-rabba", [
+    "Les Hochanot de Hochaana Rabba, et ses sept hakafot",
+    "The Hoshanot of Hoshana Rabbah, and its seven hakafot",
+    "הושענות הושענא רבה ושבע ההקפות",
+  ]),
   nerotHanouka: library("nerotHanouka", "/bibliotheque/moadim/nerot-hanouka", [
     "L'allumage de la 'hanoukia et ses bénédictions",
     "Lighting the chanukiah and its blessings",
@@ -111,8 +131,8 @@ const BY_FESTIVAL: Record<string, string[]> = {
   "roch-hachana": ["slihot", "ataratNedarim", "sidour", "partageTehilim"],
   "jeune-guedalia": ["slihot", "sidour", "tehilimIntentions"],
   "yom-kippour": ["slihot", "ataratNedarim", "sidour", "tehilimIntentions"],
-  souccot: ["sidour", "tehilimBook", "brahot"],
-  "hochaana-rabba": ["sidour", "tehilimBook", "partageTehilim"],
+  souccot: ["sederLeilSouccot", "netilatLoulav", "hochanot", "sidour", "tehilimBook"],
+  "hochaana-rabba": ["hochanotRabba", "netilatLoulav", "sidour", "partageTehilim"],
   "chemini-atseret": ["sidour", "paracha", "tehilimBook"],
   "simhat-torah": ["paracha", "tanakh", "sidour"],
   hanouka: ["nerotHanouka", "sidour", "tehilimBook"],
