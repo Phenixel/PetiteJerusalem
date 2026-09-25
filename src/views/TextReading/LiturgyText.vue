@@ -15,6 +15,7 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import KlafViewer from "../../components/KlafViewer.vue";
 import KotelCompass from "../../components/KotelCompass.vue";
+import NaanouimCompass from "../../components/NaanouimCompass.vue";
 import TefilinMirror from "../../components/TefilinMirror.vue";
 import { KLAF_ICONS, KLAF_LABELS, openKlaf } from "../../composables/useKlaf";
 import {
@@ -27,6 +28,7 @@ import {
   openTefilinMirror,
   removeMirrorOffer,
 } from "../../composables/useTefilinMirror";
+import { openNaanouimCompass } from "../../composables/useNaanouimCompass";
 import { halakhotHidden } from "../../composables/useHalakhot";
 import TefilaZman from "./TefilaZman.vue";
 
@@ -184,7 +186,8 @@ function sectionClass(block: TextBlock): string {
 
 /** Titre du fil du texte : filet de séparation, sauf au tout premier bloc. */
 /** Un titre porte-t-il une commande (boussole du Kotel, miroir des téfilines) ? */
-const hasTitleAction = (block: TextBlock): boolean => Boolean(block.kotel || block.mirror);
+const hasTitleAction = (block: TextBlock): boolean =>
+  Boolean(block.kotel || block.mirror || block.naanouim);
 
 function titleClass(block: TextBlock, index: number): string {
   if (block.variants) return "mb-3 text-sm font-semibold text-text-secondary";
@@ -272,6 +275,12 @@ function syncKotelOffer(offered: boolean): void {
 }
 watch(offersKotel, syncKotelOffer, { immediate: true });
 onUnmounted(() => syncKotelOffer(false));
+
+/**
+ * Le cadran des na'anou'im : les brahot du loulav le portent à leur titre.
+ * Rien à signaler au menu de lecture, il ne sert qu'à ce passage-là.
+ */
+const offersNaanouim = computed(() => props.blocks.some((block) => block.naanouim));
 
 /**
  * Le miroir des téfilines, sur le même modèle que la boussole : le passage qui
@@ -490,6 +499,17 @@ const phoneticOf = computed(() => {
             <AppIcon name="compass" :size="15" class="flex-shrink-0" />
             {{ t("textReading.kotel.open") }}
           </button>
+          <!-- Les six côtés du na'anou'a, au titre des brahot du loulav :
+               l'ordre se retient mieux posé sur un cadran qu'en liste. -->
+          <button
+            v-if="block.naanouim"
+            type="button"
+            class="title-action"
+            @click="openNaanouimCompass()"
+          >
+            <AppIcon name="compass" :size="15" class="flex-shrink-0" />
+            {{ t("textReading.naanouim.open") }}
+          </button>
           <!-- Le miroir, au titre du passage où l'on pose les téfilines : le
                bayit de la tête se place là où l'on ne se voit pas. -->
           <button
@@ -613,6 +633,7 @@ const phoneticOf = computed(() => {
     </section>
 
     <KotelCompass v-if="offersKotel" />
+    <NaanouimCompass v-if="offersNaanouim" />
     <TefilinMirror v-if="offersMirror" />
     <KlafViewer v-if="offersKlaf" />
   </div>

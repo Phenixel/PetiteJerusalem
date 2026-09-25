@@ -379,6 +379,83 @@ describe("le Hallel, et sa longueur", () => {
   });
 });
 
+describe("'Hol haMoed, et le loulav de Souccot", () => {
+  const occ = (jour: number, mois: number, annee: number) =>
+    activeOccasions(new HDate(jour, mois, annee), false);
+
+  it("nomme les jours intermédiaires, et eux seuls", () => {
+    // Souccot 5787 : Yom Tov les 15 et 16 Tichri, 'Hol haMoed du 17 au 21,
+    // Chemini 'Atséret le 22.
+    expect(occ(15, months.TISHREI, 5787).has("hol-hamoed")).toBe(false);
+    expect(occ(17, months.TISHREI, 5787).has("hol-hamoed")).toBe(true);
+    expect(occ(21, months.TISHREI, 5787).has("hol-hamoed")).toBe(true);
+    expect(occ(22, months.TISHREI, 5787).has("hol-hamoed")).toBe(false);
+    // Pessah aussi : 'Hol haMoed y va du 17 au 20 Nissan.
+    expect(occ(17, months.NISAN, 5787).has("hol-hamoed")).toBe(true);
+    expect(occ(5, months.CHESHVAN, 5787).has("hol-hamoed")).toBe(false);
+  });
+
+  it("porte le loulav dans la Cha'harit de 'Hol haMoed, jamais le Chabbat", () => {
+    // 5787 en diaspora : Yom Tov les 15 et 16 Tichri, que le sidour de
+    // semaine ne sert pas (sans Hallel, les brahot y resteraient orphelines),
+    // puis 'Hol haMoed du 17 au 21.
+    expect(new HDate(15, months.TISHREI, 5787).getDay()).toBe(6);
+    expect(occ(15, months.TISHREI, 5787).has("loulav")).toBe(false);
+    expect(occ(16, months.TISHREI, 5787).has("loulav")).toBe(false);
+    expect(occ(17, months.TISHREI, 5787).has("loulav")).toBe(true);
+    expect(occ(21, months.TISHREI, 5787).has("loulav")).toBe(true);
+    // En Israël, le 16 est déjà 'Hol haMoed.
+    expect(activeOccasions(new HDate(16, months.TISHREI, 5787), true).has("loulav")).toBe(true);
+  });
+
+  it("ne pose le loulav que là où le Hallel le suit", () => {
+    // Les brahot précèdent le Hallel dans Cha'harit : un jour qui porterait
+    // l'un sans l'autre les montrerait sans suite.
+    for (let jour = 15; jour <= 23; jour++) {
+      for (const il of [false, true]) {
+        const o = activeOccasions(new HDate(jour, months.TISHREI, 5787), il);
+        if (o.has("loulav")) expect(o.has("hallel")).toBe(true);
+      }
+    }
+  });
+
+  it("ne le prend plus à Chemini 'Atséret ni hors de Souccot", () => {
+    expect(occ(22, months.TISHREI, 5787).has("loulav")).toBe(false);
+    expect(occ(23, months.TISHREI, 5787).has("loulav")).toBe(false);
+    expect(occ(17, months.NISAN, 5787).has("loulav")).toBe(false);
+  });
+
+  it("compte les sept jours de la fête sur la date, une clé par jour", () => {
+    const jours: string[] = [];
+    for (let date = 14; date <= 23; date++) {
+      const cles = [...occ(date, months.TISHREI, 5787)].filter((cle) =>
+        cle.startsWith("souccot-"),
+      );
+      jours.push(cles.join(",") || "-");
+    }
+    expect(jours).toEqual([
+      "-",
+      "souccot-1",
+      "souccot-2",
+      "souccot-3",
+      "souccot-4",
+      "souccot-5",
+      "souccot-6",
+      "souccot-7",
+      "-",
+      "-",
+    ]);
+    // Le même jour en Terre d'Israël : la date ne change pas, la répartition
+    // des montées si.
+    const israel = activeOccasions(new HDate(18, months.TISHREI, 5787), true);
+    expect(israel.has("souccot-4")).toBe(true);
+    expect(israel.has("eretz-israel")).toBe(true);
+    expect(israel.has("houts-laarets")).toBe(false);
+    expect(occ(18, months.TISHREI, 5787).has("houts-laarets")).toBe(true);
+    expect(occ(18, months.TISHREI, 5787).has("eretz-israel")).toBe(false);
+  });
+});
+
 describe("les huit jours de 'Hanouka", () => {
   it("se numérotent de 1 à 8, une clé par jour", () => {
     // hebcal pose « 1 Candle » sur la veille : le premier jour porte

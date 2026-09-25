@@ -1389,6 +1389,15 @@ const en: LocaleMessages = {
         no: "North-west",
       },
     },
+    naanouim: {
+      open: "The six sides",
+      title: "The six sides of the na'anua",
+      intro:
+        "The lulav is waved three times on each side, away from you and back towards the chest. The numbers give the order.",
+      order: "South (1), north (2), east (3), up (4), down (5), west (6).",
+      middle: "Up and down, in the middle of the dial, are not compass points.",
+      live: "The dial follows your device: turn towards the number of the side you are waving.",
+    },
     zman: {
       info: "About these times",
       place: "Times for {city}.",

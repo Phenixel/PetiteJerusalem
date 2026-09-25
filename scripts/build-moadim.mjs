@@ -5,10 +5,14 @@
  *
  * Lancer avec : node scripts/build-moadim.mjs
  *
- * Pour l'heure, un seul texte : l'Atarat nedarim, qu'on dit la veille de Roch
- * Hachana et la veille de Kippour devant dix hommes, ou trois à défaut. Le
+ * Trois textes pour l'heure. L'Atarat nedarim, qu'on dit la veille de Roch
+ * Hachana et la veille de Kippour devant dix hommes, ou trois à défaut : le
  * siddour de l'export ne le porte pas ; le mahzor, si, sous « Annulment of
- * Vows and Curses ». Les autres textes de fête du livre Moadim (les Sli'hot,
+ * Vows and Curses ». Les brahot du loulav, que ni l'un ni l'autre ne
+ * portent : leur texte vit dans scripts/lib/loulav.mjs, d'où la Cha'harit le
+ * prend aussi. Et le séder de la nuit de Souccot, que la source ne porte pas
+ * davantage : il vit dans scripts/lib/leil-souccot.mjs, transcrit d'un sidour
+ * imprimé. Les autres textes de fête du livre Moadim (les Sli'hot,
  * l'allumage de Hanouka) viennent, eux, d'ailleurs : voir scripts/lib et
  * build-brahot.mjs.
  *
@@ -26,8 +30,48 @@
 
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { fetchMerged, MACHZOR_ROSH_HASHANA_URL } from "./lib/sefaria-siddur.mjs";
+import { fetchMerged, fetchSiddur, MACHZOR_ROSH_HASHANA_URL } from "./lib/sefaria-siddur.mjs";
 import { writeRecipes } from "./lib/tefila-recipe.mjs";
+import {
+  HALAKHA_AVANT_LOULAV,
+  HALAKHA_LOULAV,
+  LIGNES_AVANT_LOULAV,
+  LIGNES_LOULAV,
+} from "./lib/loulav.mjs";
+import {
+  AVINOU,
+  DINIM,
+  EL_MALE,
+  KAVANOT_NUITS,
+  LECHEM_YIHOUD,
+  LEIOUL_NUITS,
+  LEKHA,
+  NUITS,
+  OULOU,
+  RASHEI_TEVOT,
+  RUBRIC_AJOUT,
+  RUBRIC_ASSIS,
+  RUBRIC_CHAQUE_NUIT,
+  RUBRIC_ENTREE,
+  RUBRIC_FIN,
+  RUBRIC_KAVANOT,
+  RUBRIC_SEUIL,
+  TIVOU,
+  VEHOUKHAN,
+  VERSETS_AJOUT,
+  VERSETS_NUITS,
+} from "./lib/leil-souccot.mjs";
+import { DINIM_HOCHANOT } from "./lib/hochanot/dinim.mjs";
+import JOUR_1 from "./lib/hochanot/jour-1.mjs";
+import JOUR_2 from "./lib/hochanot/jour-2.mjs";
+import JOUR_3 from "./lib/hochanot/jour-3.mjs";
+import JOUR_4 from "./lib/hochanot/jour-4.mjs";
+import JOUR_5 from "./lib/hochanot/jour-5.mjs";
+import JOUR_6 from "./lib/hochanot/jour-6.mjs";
+import HOCHANA_RABBA_1 from "./lib/hochanot/hochana-rabba-1.mjs";
+import HOCHANA_RABBA_2 from "./lib/hochanot/hochana-rabba-2.mjs";
+import HOCHANA_RABBA_3 from "./lib/hochanot/hochana-rabba-3.mjs";
+import CHABBAT from "./lib/hochanot/chabbat.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, "../public/texts/tefila");
@@ -47,7 +91,7 @@ const OUT = resolve(__dirname, "../public/texts/tefila");
 const ataratNedarim = {
   file: "atarat-nedarim",
   title: "התרת נדרים (Atarat Nedarim)",
-  src: (t) => t["Annulment of Vows and Curses"],
+  src: (t) => t.mahzor["Annulment of Vows and Curses"],
   blocks: [
     {
       label: "L'annulation des malédictions",
@@ -179,10 +223,189 @@ const ataratNedarim = {
   ],
 };
 
-const RECIPES = [ataratNedarim];
+/**
+ * Les brahot du loulav : la page du livre Moadim. Rien ne vient de la source
+ * Sefaria ici, tout est écrit dans scripts/lib/loulav.mjs ; la recette ne
+ * fait que l'ordonner, et `src` ne sert donc à rien (aucune ligne ne prend de
+ * segment).
+ *
+ * L'ordre est celui du sidour : ce qui se dit avant de prendre les espèces
+ * (Léchem yihoud, Yehi ratson, « Ribon 'alma »), la bénédiction sur la prise,
+ * puis, la première fois de l'année, le Chéhé'héyanou, et les six côtés pour
+ * finir.
+ */
+const netilatLoulav = {
+  file: "netilat-loulav",
+  title: "נטילת לולב (Netilat Loulav)",
+  src: () => [],
+  blocks: [
+    // Avant de prendre les quatre espèces : le Léchem yihoud, la kavana des
+    // six côtés, le Yehi ratson et « Ribon 'alma », comme le sidour les
+    // donne avant la bénédiction.
+    {
+      label: "Avant de prendre le loulav",
+      halakha: HALAKHA_AVANT_LOULAV,
+      lines: LIGNES_AVANT_LOULAV,
+    },
+    {
+      label: "Les brahot du loulav",
+      halakha: HALAKHA_LOULAV,
+      // Le cadran des six côtés s'ouvre du titre : l'ordre des na'anou'im se
+      // retient mieux posé sur une boussole qu'en liste.
+      naanouim: true,
+      lines: LIGNES_LOULAV,
+    },
+  ],
+};
 
-console.log("Téléchargement du Mahzor Roch Hachana Edot HaMizrach (export Sefaria)…");
-const text = await fetchMerged(MACHZOR_ROSH_HASHANA_URL);
+/**
+ * Le séder de la nuit de Souccot : la page du livre Moadim. Comme les brahot
+ * du loulav, rien n'en vient de la source Sefaria, qui ne le porte pas ; tout
+ * est dans scripts/lib/leil-souccot.mjs, transcrit du sidour imprimé, et la
+ * recette ne fait que l'ordonner.
+ *
+ * L'ordre est celui du sidour : au seuil, le Léchem yihoud et la kavana de la
+ * nuit ; en entrant, l'invitation aux ouchpizin, l'hôte de la nuit en tête ;
+ * assis, son verset, les versets que certains ajoutent, et le verset de David
+ * pour finir. Les sept nuits sont écrites l'une sous l'autre, chacune sous sa
+ * didascalie, comme l'allumage de Hanouka donne ses huit soirs : le livre se
+ * lit aussi bien la veille que le soir même.
+ *
+ * Les dinim de l'habitation dans la soucca accompagnent le bloc où l'on
+ * s'assoit : c'est là qu'ils s'appliquent, et le sidour les donne à la suite
+ * du séder, sous le titre « דיני ישיבה בסוכה ».
+ */
+const leilSouccot = {
+  file: "seder-leil-souccot",
+  title: "סדר ליל סוכות (Seder Leil Souccot)",
+  src: () => [],
+  blocks: [
+    {
+      label: "Au seuil de la soucca",
+      lines: [
+        { he: LECHEM_YIHOUD[0], rubric: RUBRIC_SEUIL },
+        { he: LECHEM_YIHOUD[1], tight: true },
+        ...KAVANOT_NUITS.map((he, i) => ({ he, rubric: i === 0 ? RUBRIC_KAVANOT : NUITS[i] })),
+        { he: VEHOUKHAN[0], rubric: RUBRIC_CHAQUE_NUIT },
+        { he: VEHOUKHAN[1], tight: true },
+        { he: AVINOU },
+        ...RASHEI_TEVOT.map(({ he, rubric }) => ({ he, rubric })),
+        { he: EL_MALE },
+      ],
+    },
+    {
+      label: "Les ouchpizin",
+      lines: [
+        { he: OULOU, rubric: RUBRIC_ENTREE },
+        ...LEIOUL_NUITS.map((he, i) => ({ he, rubric: NUITS[i] })),
+        { he: TIVOU, rubric: RUBRIC_CHAQUE_NUIT },
+      ],
+    },
+    {
+      label: "Assis dans la soucca",
+      halakha: DINIM,
+      lines: [
+        ...VERSETS_NUITS.flatMap((nuit, i) =>
+          nuit.map((verset, rang) => ({
+            ...verset,
+            ...(rang === 0 ? { rubric: i === 0 ? RUBRIC_ASSIS : NUITS[i] } : { tight: true }),
+          })),
+        ),
+        ...VERSETS_AJOUT.map((he, i) => ({ he, rubric: i === 0 ? RUBRIC_AJOUT : NUITS[i] })),
+        { he: LEKHA, rubric: RUBRIC_FIN },
+      ],
+    },
+  ],
+};
 
-writeRecipes(RECIPES, text, OUT);
+/**
+ * Les Hochanot : une page par jour de Souccot, puis Hochana Rabba et le
+ * Chabbat. Aucune source numérique du rite ne les porte ; elles sont
+ * transcrites du sidour imprimé, page à page, et relues contre les photos,
+ * dans un module par jour (scripts/lib/hochanot). La recette ne fait que les
+ * ordonner.
+ *
+ * Chaque jour a sa page plutôt qu'un seul texte à sept conditions : le livre
+ * se lit n'importe quel jour, et c'est celle du jour qu'on ouvre, à la
+ * synagogue, le loulav en main. C'est aussi pourquoi les dinim que le sidour
+ * imprime une fois, en tête du premier jour, ouvrent chaque page.
+ *
+ * Hochana Rabba tient en trois modules, coupés aux pages du sidour : une
+ * hakafa commencée dans l'un s'achève dans le suivant, sous le même titre
+ * suivi de « (fin) » ou « (suite) ». `raccorder` en refait un seul bloc, et
+ * recoud le verset que la coupure de page a tranché en deux.
+ */
+function raccorder(blocs) {
+  // Les titres se comparent sans égard aux espaces : un module écrit
+  // « hakafa : David » avec une espace insécable, un autre avec une espace
+  // ordinaire, et c'est bien la même hakafa.
+  const titre = (label) => (label ?? "").replace(/\s+/g, " ").trim();
+  const out = [];
+  for (const bloc of blocs) {
+    const suite = /\s\((fin|suite)\)$/.exec(bloc.label ?? "");
+    const avant = out.at(-1);
+    if (!suite || !avant || titre(avant.label) !== titre(bloc.label.slice(0, suite.index))) {
+      out.push({ ...bloc, lines: [...bloc.lines] });
+      continue;
+    }
+    const [premiere, ...reste] = bloc.lines;
+    const derniere = avant.lines.at(-1);
+    // Une ligne qui ne finit ni par « : » ni par « . » est coupée au milieu :
+    // la suite en est la première ligne du module suivant.
+    if (!/[:.]$/.test(derniere.he.trim())) {
+      avant.lines[avant.lines.length - 1] = { ...derniere, he: `${derniere.he} ${premiere.he}` };
+    } else {
+      avant.lines.push(premiere);
+    }
+    avant.lines.push(...reste);
+  }
+  return out;
+}
+
+/** Les dinim en tête de la page, avant la halakha propre au premier bloc. */
+function avecDinim([premier, ...reste]) {
+  const propres = premier.halakha ? [premier.halakha].flat() : [];
+  return [{ ...premier, halakha: [...DINIM_HOCHANOT, ...propres] }, ...reste];
+}
+
+const HOCHANOT = [
+  ["hochanot-yom-richon", "הושענות ליום ראשון (Hochanot Yom Richon)", [JOUR_1]],
+  ["hochanot-yom-cheni", "הושענות ליום שני (Hochanot Yom Cheni)", [JOUR_2]],
+  ["hochanot-yom-chelichi", "הושענות ליום שלישי (Hochanot Yom Chelichi)", [JOUR_3]],
+  ["hochanot-yom-revii", "הושענות ליום רביעי (Hochanot Yom Revi'i)", [JOUR_4]],
+  ["hochanot-yom-hamichi", "הושענות ליום חמישי (Hochanot Yom 'Hamichi)", [JOUR_5]],
+  ["hochanot-yom-chichi", "הושענות ליום ששי (Hochanot Yom Chichi)", [JOUR_6]],
+  [
+    "hochanot-hochana-rabba",
+    "הושענות להושענא רבא (Hochanot Hochana Rabba)",
+    [HOCHANA_RABBA_1, HOCHANA_RABBA_2, HOCHANA_RABBA_3],
+  ],
+].map(([file, title, modules]) => ({
+  file,
+  title,
+  src: () => [],
+  blocks: avecDinim(raccorder(modules.flatMap((module) => module.blocks))),
+}));
+
+/**
+ * Les Hochanot du Chabbat : on ne les dit pas selon l'usage du sidour, qui
+ * les imprime pour celui de Tunis. Leur première halakha le dit ; les dinim
+ * des autres jours n'y ont rien à faire.
+ */
+const hochanotChabbat = {
+  file: "hochanot-chabbat",
+  title: "הושענות ליום שבת (Hochanot Chabbat)",
+  src: () => [],
+  blocks: CHABBAT.blocks,
+};
+
+const RECIPES = [ataratNedarim, netilatLoulav, leilSouccot, ...HOCHANOT, hochanotChabbat];
+
+console.log("Téléchargement du Mahzor Roch Hachana et du Siddur Edot HaMizrach (export Sefaria)…");
+const [mahzor, siddur] = await Promise.all([
+  fetchMerged(MACHZOR_ROSH_HASHANA_URL),
+  fetchSiddur(),
+]);
+
+writeRecipes(RECIPES, { mahzor, siddur }, OUT);
 console.log("Terminé.");

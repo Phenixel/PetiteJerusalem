@@ -42,6 +42,15 @@ import {
   NEFILAT_APAYIM,
   YIKOM_DAM,
 } from "./lib/selihot-tsom.mjs";
+import {
+  HALAKHA_LOULAV,
+  HALAKHA_AVANT_LOULAV,
+  LIGNES_AVANT_LOULAV,
+  LIGNES_LOULAV,
+  RUBRIC_NAANOUIM_ANA,
+  RUBRIC_NAANOUIM_HODOU,
+  RUBRIC_NAANOUIM_HODOU_FIN,
+} from "./lib/loulav.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, "../public/texts/tefila");
@@ -139,6 +148,27 @@ const POURIM_MONTEES = [
   { fr: "Lévi", en: "Levi", he: "לוי", from: "והיה כאשר ירים", until: "ויאמר יהוה אל־משה כתב" },
   { fr: "Israël", en: "Yisrael", he: "ישראל", from: "ויאמר יהוה אל־משה כתב" },
 ];
+
+/**
+ * Les korbanot d'un jour de Souccot (Bamidbar 29, 17 à 34), trois versets par
+ * jour, du deuxième au septième : la lecture de la Torah de 'Hol haMoed.
+ * L'export du siddour ne les porte pas ; ils viennent du fichier de la
+ * paracha Pin'has (public/texts/tanakh/304.json, découpé en montées : la
+ * septième ouvre au 29, 12, et le passage du deuxième jour est son sixième
+ * verset). Chaque passage ouvre sur « וּבַיּוֹם » et le nom du jour : la
+ * construction s'arrête si le découpage du fichier a bougé.
+ */
+const PINHAS = readText("tanakh/304.json");
+const JOURS_SOUCCOT = ["", "", "השני", "השלישי", "הרביעי", "החמישי", "הששי", "השביעי"];
+function korbanotSouccot(jour) {
+  const debut = 5 + (jour - 2) * 3;
+  const passage = PINHAS.he[6].slice(debut, debut + 3);
+  const tete = stripMarks(passage[0] ?? "").replace(/\s+/g, " ");
+  if (passage.length !== 3 || !tete.startsWith(`וביום ${JOURS_SOUCCOT[jour]} `)) {
+    throw new Error(`Pin'has : le passage du jour ${jour} de Souccot a bougé`);
+  }
+  return cleanFinal(passage.join(" ").replace(/\{[פס]\}/g, " "));
+}
 
 // ---------- Recette → fichier ----------
 
@@ -372,6 +402,7 @@ function buildBlock(spec, sections) {
   if (spec.zman) block.zman = spec.zman;
   if (spec.torahWeekly) block.torahWeekly = true;
   if (spec.kotel) block.kotel = true;
+  if (spec.naanouim) block.naanouim = true;
   if (spec.mirror) block.mirror = true;
   if (spec.numbered) block.numbered = true;
   // L'une des options d'un choix laissé au lecteur (voir TextChoice dans
@@ -2600,6 +2631,27 @@ function chaharitRecipe() {
       // tahanoun, après les supplications du lundi et du jeudi, ou après
       // « Yehi chem ». Un seul bloc suffit donc, sans condition.
       kaddishHalf("Uva LeSion"),
+      // Ce qui se dit avant de prendre le loulav, puis ses brahot, avant le
+      // Hallel : c'est là qu'on prend les quatre espèces, et c'est pendant le
+      // Hallel qu'on les agite. Le même texte a sa page dans le livre Moadim
+      // (build-moadim.mjs) ; il est écrit une seule fois, dans
+      // scripts/lib/loulav.mjs.
+      {
+        when: "loulav",
+        plain: true,
+        labelText: R("Avant de prendre le loulav", "Before taking the lulav", "קודם נטילת לולב"),
+        halakha: HALAKHA_AVANT_LOULAV,
+        lines: LIGNES_AVANT_LOULAV,
+      },
+      {
+        when: "loulav",
+        plain: true,
+        // Le cadran des six côtés, comme à la page du livre Moadim.
+        naanouim: true,
+        labelText: R("Les brahot du loulav", "The lulav blessings", "ברכות הלולב"),
+        halakha: HALAKHA_LOULAV,
+        lines: LIGNES_LOULAV,
+      },
       {
         src: "RH.Hallel",
         when: "hallel",
@@ -2639,15 +2691,53 @@ function chaharitRecipe() {
             rubric: R("On saute « אָהַבְתִּי » :", "Skip “Ahavti”:", "מדלגים « אָהַבְתִּי »:"),
           },
           { seg: 13 },
-          { seg: 14 },
+          // Le premier « Hodou » : c'est là que le loulav s'agite, un côté
+          // par mot. La didascalie n'entre dans le paragraphe que les jours
+          // où on le porte ; le verset y reste sans condition.
+          { parts: [{ rubric: RUBRIC_NAANOUIM_HODOU, when: "loulav" }, { seg: 14 }] },
           { seg: 15, tight: true },
           { seg: 16, tight: true },
           { seg: 17, tight: true },
           { seg: 18 },
-          { seg: 19, mode: "full" },
-          { seg: 20, repeat: 2 },
-          { seg: 21, repeat: 2, tight: true },
-          { seg: 22, mode: "full" },
+          // « Ana Hachem hochia na » : une syllabe par côté, puis on se
+          // tourne vers la droite et l'on recommence. La consigne ferme le
+          // paragraphe d'avant plutôt que d'ouvrir le sien, qui porte deux
+          // fois le verset : elle vaut pour les deux.
+          {
+            parts: [{ seg: 19, mode: "full" }, { rubric: RUBRIC_NAANOUIM_ANA, when: "loulav" }],
+          },
+          // La source écrit déjà chaque verset deux fois : c'est ce que dit
+          // chacun (le 'hazan le dit, l'assemblée le redit, deux fois chacun).
+          // Un « × 2 » par-dessus le ferait lire quatre fois.
+          { seg: 20 },
+          { seg: 21, tight: true },
+          // Le « Hodou » de la fin, où l'on agite une dernière fois : la
+          // didascalie se glisse devant lui, au milieu du paragraphe, et une
+          // seule fois, bien que le verset se redise.
+          {
+            parts: [
+              { seg: 22, mode: "full", until: "הודו ליהוה כי־טוב" },
+              { rubric: RUBRIC_NAANOUIM_HODOU_FIN, when: "loulav" },
+              { seg: 22, mode: "full", from: "הודו ליהוה כי־טוב" },
+            ],
+          },
+          // « Yehalelou'ha », la bénédiction qui ferme le Hallel. Elle ne se
+          // dit que les jours où on le dit en entier : la source l'écrit en
+          // toutes lettres au-dessus d'elle (« בימים שאין גומרים את ההלל אין
+          // אומרים »), et c'est à 'Hanouka et à 'Hol haMoed de Souccot qu'on
+          // le termine.
+          {
+            // La source la met tout entière en retrait, puisqu'on la saute
+            // la plupart du temps : c'est le petit corps qu'on prend ici.
+            seg: 24,
+            mode: "small",
+            when: "hallel-complet",
+            rubric: R(
+              "Le Hallel dit en entier, on le ferme par cette bénédiction :",
+              "When the whole Hallel is said, it closes with this blessing:",
+              "בימים שגומרים את ההלל חותמים:",
+            ),
+          },
         ],
       },
       // Le Hallel fini, le 'hazan dit le Kaddich Titkabal : « que soient
@@ -2655,6 +2745,33 @@ function chaharitRecipe() {
       // « Yehalelou'ha » (le Hallel y est abrégé), mais le Kaddich, lui, se
       // dit entier.
       kaddishTitkabal("RH.Hallel", { seg: 26, when: "rosh-chodesh" }),
+      // Les Hochanot, entre le Hallel et le Kaddich Titkabal : on sort le
+      // séfer Torah, on le pose sur la téva et l'on en fait le tour, loulav
+      // en main. Leur texte, une page par jour, vit dans le livre Moadim
+      // (build-moadim.mjs) : il pèse près de 300 Ko, qui n'ont rien à faire
+      // dans l'office de tous les jours. Le bloc en donne le premier verset,
+      // commun à tous les jours, et dit où lire la suite. La clé « loulav »
+      // est celle des jours où l'office de semaine les dit : 'Hol haMoed de
+      // Souccot, hors Chabbat, où l'on ne fait pas le tour.
+      {
+        when: "loulav",
+        plain: true,
+        labelText: R("Les Hochanot", "The Hoshanot", "הושענות"),
+        halakha: R(
+          "On sort un séfer Torah et on le pose sur la téva. Loulav en main, on en fait le tour en disant les Hochanot du jour : une fois chaque jour, sept fois à Hochana Rabba, et deux fois le dimanche qui suit un Chabbat, où l'on n'a pas fait le tour. Leur texte est dans le livre Moadim, sous Souccot, une page par jour.",
+          "A Torah scroll is taken out and placed on the teva. Lulav in hand, one circles it while saying the Hoshanot of the day: once each day, seven times on Hoshana Rabba, and twice on the Sunday after a Shabbat, when no circuit was made. Their text is in the Moadim book, under Sukkot, one page for each day.",
+          "מוציאים ספר תורה ומניחים אותו על התיבה, ומקיפים את התיבה עם הלולב ואומרים ההושענות של אותו היום: פעם אחת בכל יום, שבע פעמים בהושענא רבה, ושתי הקפות ביום ראשון שלאחר השבת. ההושענות בספר המועדים, בסוכות.",
+        ),
+        lines: [
+          { he: "אֶרְחַץ בְּנִקָּיוֹן כַּפָּי, וַאֲסוֹבְבָה אֶת־מִזְבַּחֲךָ יְהֹוָה:" },
+          { he: "הוֹשַׁעֲנָא. הוֹשַׁעֲנָא:", tight: true },
+        ],
+      },
+      // À 'Hol haMoed de même, le Titkabal entier : la source ne fait
+      // exception que pour 'Hanouka. Deux blocs plutôt qu'une condition à
+      // deux clés, les deux jours s'excluant (voir
+      // docs/compatibilite-textes.md).
+      kaddishTitkabal("RH.Hallel", { seg: 26, when: "hol-hamoed" }),
       // À 'Hanouka la source ne veut qu'un demi-Kaddich : la lecture de la
       // Torah vient juste après, et le Titkabal attendra Ouva letsion.
       // À Roch Hodech Tévet, qui tombe dans 'Hanouka, c'est l'ordre de Roch
@@ -2852,6 +2969,111 @@ function chaharitRecipe() {
       kaddishHalf("RH.Hallel", {
         seg: 41,
         when: "rosh-chodesh",
+        labelText: R(
+          "Demi-Kaddich (le dernier appelé)",
+          "Half Kaddish (the last one called up)",
+          "חצי קדיש (העולה האחרון)",
+        ),
+        rubric: R("Le dernier appelé dit :", "The last one called up says:", "העולה האחרון אומר:"),
+      }),
+      // La lecture de la Torah de 'Hol haMoed. Le siddour de la source ne
+      // porte pas ses passages : il n'a que celui de Roch Hodech (Bamidbar
+      // 28), ceux de 'Hanouka et celui de Pourim. Le bloc donne donc ce qui
+      // l'entoure, et la halakha dit ce qui se lit. Quatre montées, comme à
+      // Roch Hodech.
+      {
+        src: "RH.Hallel",
+        when: "hol-hamoed",
+        plain: true,
+        labelText: R("Lecture de la Torah", "Torah reading", "קריאת התורה"),
+        halakha: [
+          R(
+            "On sort un séfer Torah et l'on y lit quatre montées. À 'Hol haMoed de Souccot, les korbanot du jour (Bamidbar 29) ; à 'Hol haMoed de Pessah, le passage propre à chaque jour.",
+            "A Torah scroll is taken out and four aliyot are read from it. On Chol HaMoed Sukkot, the offerings of the day (Numbers 29); on Chol HaMoed Pesach, the passage proper to each day.",
+            "מוציאים ספר תורה וקוראים ארבעה עולים. בחול המועד סוכות בקרבנות היום (במדבר כט), ובחול המועד פסח בפרשה של כל יום ויום.",
+          ),
+          // À Souccot, le séfer est déjà sorti pour les Hochanot : les dinim
+          // du sidour (page 674) disent « Brikh chmeh » près de lui.
+          {
+            ...R(
+              "À Souccot, le séfer Torah est déjà sur la téva depuis les Hochanot : on n'ouvre pas le hékhal, on dit « Brikh chmeh » près du séfer.",
+              "On Sukkot the Torah scroll is already on the teva since the Hoshanot: the ark is not opened, and “Brich shmeh” is said beside the scroll.",
+              'ובחוה"מ סוכות שמוציאים רק ס"ת אחד, יאמר בריך שמיה אחר ההושענות ליד הס"ת שבתיבה.',
+            ),
+            when: "loulav",
+          },
+        ],
+        lines: [
+          {
+            seg: 35,
+            rubric: R("On dit d'abord :", "First, say:", "תחילה אומרים:"),
+          },
+          {
+            seg: 37,
+            rubric: R(
+              "On ouvre le hékhal et l'on dit :",
+              "The ark is opened and one says:",
+              "פותחים ההיכל ואומרים:",
+            ),
+          },
+        ],
+      },
+      // Les korbanot du jour, à 'Hol haMoed de Souccot. Un bloc par jour,
+      // comme à 'Hanouka ; dans chacun, la répartition d'Erets Israël et
+      // celle de la diaspora, que le sidour donne l'une après l'autre :
+      // quatre appelés sur le passage du jour en Terre d'Israël ; en diaspora,
+      // où l'on doute encore de la date, le cohen lit la veille, le lévi et le
+      // troisième le jour, et le quatrième les deux. Le deuxième jour n'est
+      // 'Hol haMoed qu'en Terre d'Israël : il n'a que sa répartition.
+      ...[2, 3, 4, 5, 6, 7].map((jour) => ({
+        when: `souccot-${jour}`,
+        plain: true,
+        lines: [
+          {
+            he: korbanotSouccot(jour),
+            when: "eretz-israel",
+            rubric: R(
+              "En Erets Israël, les quatre appelés lisent chacun ce passage :",
+              "In Eretz Israel, each of the four called up reads this passage:",
+              "בארץ ישראל עולים ארבעה אנשים, וכל אחד קורא:",
+            ),
+          },
+          ...(jour === 2
+            ? []
+            : [
+                {
+                  he: korbanotSouccot(jour - 1),
+                  when: "houts-laarets",
+                  rubric: R(
+                    "Hors d'Israël, le cohen lit :",
+                    "Outside Israel, the kohen reads:",
+                    'ובחו"ל, הכהן קורא:',
+                  ),
+                },
+                {
+                  he: korbanotSouccot(jour),
+                  when: "houts-laarets",
+                  rubric: R(
+                    "Le lévi lit, et le troisième appelé relit après lui :",
+                    "The levi reads, and the third one called up reads it again:",
+                    "הלוי קורא, והשלישי חוזר:",
+                  ),
+                },
+                {
+                  he: `${korbanotSouccot(jour - 1)} ${korbanotSouccot(jour)}`,
+                  when: "houts-laarets",
+                  rubric: R(
+                    "Le quatrième appelé lit les deux :",
+                    "The fourth one called up reads both:",
+                    "הרביעי קורא שניהם:",
+                  ),
+                },
+              ]),
+        ],
+      })),
+      kaddishHalf("RH.Hallel", {
+        seg: 41,
+        when: "hol-hamoed",
         labelText: R(
           "Demi-Kaddich (le dernier appelé)",
           "Half Kaddish (the last one called up)",
@@ -3082,6 +3304,188 @@ function chaharitRecipe() {
           { seg: 39 },
         ],
       },
+      // Le Moussaf de 'Hol haMoed. Les jours intermédiaires ont leur Moussaf
+      // comme les jours de fête, et c'est la même 'Amida : la source la donne
+      // une fois pour les trois régalim, avec ses variantes en petit corps
+      // (« בשבת », « ביו"ט מוסיף »). On prend donc le segment sans ses petits
+      // corps, et il reste exactement ce qui se dit un jour de 'Hol haMoed ;
+      // la fête, elle, se nomme, et deux fragments s'en chargent.
+      {
+        src: "Regalim.Mussaf",
+        when: "hol-hamoed",
+        plain: true,
+        kotel: true,
+        labelText: R("Moussaf", "Musaf", "מוסף"),
+        halakha: R(
+          "On garde dans Moussaf la mention de la saison (morid hatal en été, machiv haroua'h oumorid haguéchem en hiver).",
+          "The seasonal mention is kept in Musaf (morid hatal in summer, mashiv haruach umorid hageshem in winter).",
+          "מזכירים במוסף את העונה (מוריד הטל בקיץ, משיב הרוח ומוריד הגשם בחורף).",
+        ),
+        lines: [
+          { seg: 1 },
+          { seg: 2 },
+          // Guevourot d'un seul tenant, la mention de la saison à sa place,
+          // comme dans la 'Amida de semaine et dans le Moussaf de Roch
+          // Hodech : la source met les deux mentions dans un même segment,
+          // chacune derrière sa consigne.
+          {
+            parts: [
+              { seg: 3 },
+              { he: "מוֹרִיד הַטָּל.", when: "ete" },
+              { he: "מַשִּׁיב הָרֽוּחַ וּמוֹרִיד הַגֶּֽשֶׁם.", when: "hiver" },
+              { seg: 5 },
+            ],
+          },
+        ],
+      },
+      // Le Keter de 'Hol haMoed, que la source distingue de celui de Yom Tov
+      // et de Chabbat : « וְעַמְּךָ יִשְׂרָאֵל » là où les jours de fête disent
+      // « עִם עַמְּךָ יִשְׂרָאֵל ». C'est le segment 9, non le 7.
+      {
+        src: "Regalim.Mussaf",
+        when: "hol-hamoed",
+        fold: "hazan",
+        labelText: R(
+          "Kedoucha de Moussaf (Keter)",
+          "Kedushah of Musaf (Keter)",
+          "כתר (קדושת מוסף)",
+        ),
+        lines: [
+          {
+            seg: 9,
+            mode: "small",
+            rubric: R("Pendant la répétition :", "During the repetition:", "בחזרה:"),
+          },
+        ],
+      },
+      {
+        src: "Regalim.Mussaf",
+        when: "hol-hamoed",
+        plain: true,
+        lines: [
+          { seg: 10 },
+          { seg: 11 },
+          // La fête nommée, deux fois : dans « Vatitèn lanou », puis dans
+          // « Ètt moussaf ». Le début et la fin de chaque paragraphe se
+          // disent tous les jours de 'Hol haMoed ; seul le nom change, et il
+          // porte sa clé. Un paragraphe garde ainsi de l'hébreu sans
+          // condition (voir docs/compatibilite-textes.md).
+          {
+            parts: [
+              { seg: 12 },
+              { seg: 16, when: "sukkot" },
+              { seg: 14, when: "pesach" },
+              { seg: 18 },
+            ],
+          },
+          { seg: 19 },
+          { seg: 20 },
+          {
+            parts: [
+              { seg: 21 },
+              { seg: 24, when: "sukkot" },
+              { seg: 22, when: "pesach" },
+              { seg: 26 },
+            ],
+          },
+          { seg: 27 },
+          { seg: 28 },
+          { seg: 31 },
+          { seg: 32 },
+          { seg: 34 },
+        ],
+      },
+      // Modim dérabanan, ce que l'assemblée dit pendant que le 'hazan dit
+      // Modim : la source le donne en petit corps, sa consigne collée au
+      // texte, comme dans la 'Amida de semaine.
+      {
+        src: "Regalim.Mussaf",
+        when: "hol-hamoed",
+        fold: "hazan",
+        labelText: R("Modim dérabanan", "Modim derabanan", "מודים דרבנן"),
+        lines: [
+          {
+            seg: 35,
+            mode: "small",
+            strip: [
+              "מודים דרבנן",
+              'בחזרת הש"ץ כשהחזן אומר מודים, הקהל אומרים:',
+              "בחזרת הש״ץ כשהחזן אומר מודים, הקהל אומרים:",
+            ],
+            rubric: R(
+              "Pendant la répétition, quand le 'hazan dit Modim, l'assemblée dit :",
+              "During the repetition, as the chazan says Modim, the congregation says:",
+              "בחזרת הש״ץ, כשהחזן אומר מודים, הקהל אומרים:",
+            ),
+          },
+        ],
+      },
+      {
+        src: "Regalim.Mussaf",
+        when: "hol-hamoed",
+        plain: true,
+        lines: [{ seg: 36 }],
+      },
+      // Birkat kohanim, dans la répétition, entre « Vé'al koulam » et Sim
+      // chalom : les cohanim la disent à Moussaf, et sans eux le 'hazan dit
+      // « Élohénou… barkhénou ». Mêmes repères que dans la 'Amida de semaine.
+      birkatKohanimBlock(
+        "Regalim.Mussaf",
+        { bracha: 40, versets: [42, 43, 44], hazan: 46, versetsHazan: [47, 48, 49] },
+        { when: "hol-hamoed" },
+      ),
+      {
+        src: "Regalim.Mussaf",
+        when: "hol-hamoed",
+        plain: true,
+        lines: [
+          { seg: 50 },
+          { seg: 51, tight: true },
+          { seg: 52 },
+          { seg: 54, tight: true },
+          { seg: 55 },
+          { seg: 56 },
+        ],
+      },
+      // La fin de l'office de 'Hol haMoed, dans l'ordre que la source donne
+      // après la répétition (« בחול המועד אחרי החזרה אומרים יהי שם, ואחריו
+      // אומר הש"ץ קדיש תתקבל ואומרים המזמור השייך לאותו יום טוב, וקדיש יהא
+      // שלמא וקוה עד הסוף ») : « Yehi chem », le Kaddich Titkabal qui ferme
+      // Moussaf, le psaume de la fête, le Kaddich yehé chelama, puis Kavé.
+      {
+        src: "Amida",
+        when: "hol-hamoed",
+        plain: true,
+        lines: [{ seg: 107 }],
+      },
+      kaddishTitkabal("RH.Hallel", { seg: 26, when: "hol-hamoed" }),
+      // Le psaume de la fête : le 42 à Souccot, le 107 à Pessah. Un bloc par
+      // fête, chacun sous sa clé, la ligne seule portant la condition.
+      {
+        src: "Regalim.ChirSouccot",
+        when: "hol-hamoed",
+        plain: true,
+        lines: [
+          {
+            seg: 1,
+            when: "sukkot",
+            rubric: R("Le psaume de Souccot :", "The psalm of Sukkot:", "מזמור לסוכות:"),
+          },
+        ],
+      },
+      {
+        src: "Regalim.ChirPessah",
+        when: "hol-hamoed",
+        plain: true,
+        lines: [
+          {
+            seg: 1,
+            when: "pesach",
+            rubric: R("Le psaume de Pessa'h :", "The psalm of Pesach:", "מזמור לפסח:"),
+          },
+        ],
+      },
+      { ...kaddishYeheChelama("Song of the Day", 28), when: "hol-hamoed" },
       {
         src: "RH.Barchi Nafshi",
         when: "rosh-chodesh",
@@ -3919,6 +4323,13 @@ function sourcesFor(office) {
       "Tsom.Tamouz": text["Fast Days and Mourning"]["Seventeenth of Tammuz"],
       "RH.Mussaf": rh["Mussaf"],
       "RH.Barchi Nafshi": rh["Barchi Nafshi"],
+      // La 'Amida de Moussaf des trois régalim : une seule dans la source,
+      // avec ses variantes en petit corps. 'Hol haMoed y prend ce qui reste
+      // une fois ces variantes retirées.
+      "Regalim.Mussaf": text["Prayers for Three Festivals"]["Mussaf"],
+      // Le psaume de chaque fête, dit à 'Hol haMoed après Moussaf.
+      "Regalim.ChirSouccot": text["Prayers for Three Festivals"]["Song for Sukkot"],
+      "Regalim.ChirPessah": text["Prayers for Three Festivals"]["Song for Passover"],
     };
   }
   // Le Kaddich (segments 4 à 7 de « Uva LeSion ») est le même aux trois
