@@ -145,7 +145,11 @@ const rows = computed<CalendarRow[]>(() => {
     const date = occasionDateIn(occasion, year.value);
     return { key: `occasion-${occasion.id}`, abs: date.abs(), occasion, date };
   });
-  return [...festivals, ...personal].sort((a, b) => a.abs - b.abs);
+  const all = [...festivals, ...personal].sort((a, b) => a.abs - b.abs);
+  // Ce qui est passé descend en bas de la liste, dans son ordre : on lit
+  // d'abord ce qui vient.
+  const past = all.filter(isPastRow);
+  return [...all.filter((row) => !isPastRow(row)), ...past];
 });
 
 /** « jeudi 3 décembre 2026 », le jour civil d'une date personnelle. */
@@ -174,6 +178,8 @@ const nextKey = computed(() =>
  * le jour lui-même pour une date personnelle.
  */
 const isPastDay = (abs: number) => abs < today.value;
+const isPastRow = (row: CalendarRow): boolean =>
+  isPastDay(row.entry ? row.entry.last.abs() : row.abs);
 
 /**
  * Ce qu'on vient chercher : la prochaine fête, et celle que l'adresse ouvre.
@@ -464,8 +470,9 @@ onMounted(() => {
       </button>
     </div>
 
-    <!-- Les fêtes à la suite. Celles qui sont passées s'effacent, la prochaine
-         prend la couleur du thème, pleine : c'est elle qu'on vient chercher. -->
+    <!-- Les fêtes à la suite. Celles qui sont passées s'effacent et descendent
+         en bas de la liste, la prochaine prend la couleur du thème, pleine :
+         c'est elle qu'on vient chercher. -->
     <ul class="mt-6 flex flex-col gap-3">
       <li
         v-for="row in rows"
@@ -473,7 +480,7 @@ onMounted(() => {
         :data-entry="row.key"
         class="card p-4"
         :class="[
-          isPastDay(row.entry ? row.entry.last.abs() : row.abs) ? 'opacity-55' : '',
+          isPastRow(row) ? 'opacity-55' : '',
           surface(row.key),
         ]"
       >
