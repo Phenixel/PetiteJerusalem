@@ -6,6 +6,7 @@ import router from "./router";
 import i18n from "./i18n";
 import { isNativeApp } from "./composables/useNativeApp";
 import { closeTopOverlay } from "./composables/useOverlayStack";
+import { chunkNameFrom, isChunkLoadError } from "./config/chunkLoadError";
 
 // App native : à faire de façon SYNCHRONE avant le premier rendu.
 // - viewport-fit=cover fait passer la webview en vrai edge-to-edge (Capacitor
@@ -31,7 +32,7 @@ if (isNativeApp) {
 // fetch dynamically imported module ») et la navigation échoue, page blanche à
 // la clé. On recharge une seule fois (garde sessionStorage pour ne pas boucler
 // si le réseau est vraiment en panne) : le HTML frais référence les nouveaux
-// chunks.
+// chunks. Les messages reconnus vivent dans config/chunkLoadError.
 //
 // Trois sources d'écoute, parce qu'elles ne se recouvrent pas :
 //  - vite:preloadError, échec du PRÉchargement des dépendances d'un chunk ;
@@ -40,16 +41,6 @@ if (isNativeApp) {
 //    production, et il n'était pas rattrapé ;
 //  - unhandledrejection, les import() hors routeur (services, composants).
 const CHUNK_RELOAD_KEY = "pj_chunk_reload_at";
-
-// Messages des navigateurs pour un module dynamique injoignable : Chrome
-// (« Failed to fetch dynamically imported module »), Firefox (« error loading
-// dynamically imported module »), Safari (« Importing a module script failed »).
-const CHUNK_ERROR = /dynamically imported module|Importing a module script failed/i;
-
-function chunkNameFrom(message: string): string | null {
-  const url = message.match(/https?:\/\/\S+?\.(?:js|mjs|css)/)?.[0];
-  return url ? (url.split("/").pop() ?? null) : null;
-}
 
 /** Un seul rechargement par minute et par onglet : sinon un vrai incident réseau boucle. */
 function claimReload(): boolean {
@@ -66,7 +57,7 @@ function claimReload(): boolean {
 /** Renvoie true si l'erreur est bien un chunk manquant ET qu'on recharge. */
 function handleChunkLoadError(error: unknown, source: string): boolean {
   const message = error instanceof Error ? error.message : String(error);
-  if (!CHUNK_ERROR.test(message)) return false;
+  if (!isChunkLoadError(message)) return false;
 
   const reloading = claimReload();
   // Capture AVANT le rechargement : PostHog vide sa file en sendBeacon au
