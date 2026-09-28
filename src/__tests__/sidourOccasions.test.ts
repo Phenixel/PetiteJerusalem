@@ -453,6 +453,44 @@ describe("'Hol haMoed, et le loulav de Souccot", () => {
     expect(occ(18, months.TISHREI, 5787).has("eretz-israel")).toBe(false);
   });
 
+  it("nomme les jours de Moussaf : Roch 'Hodech et 'Hol haMoed, eux seuls", () => {
+    expect(occ(17, months.TISHREI, 5787).has("moussaf")).toBe(true);
+    expect(occ(17, months.NISAN, 5787).has("moussaf")).toBe(true);
+    expect(occ(1, months.CHESHVAN, 5787).has("moussaf")).toBe(true);
+    expect(occ(30, months.TISHREI, 5787).has("moussaf")).toBe(true);
+    expect(occ(14, months.CHESHVAN, 5787).has("moussaf")).toBe(false);
+    expect(occ(22, months.TISHREI, 5787).has("moussaf")).toBe(false);
+  });
+
+  it("à Min'ha, dit le psaume de la fête à la place du Lamnatséa'h", () => {
+    // La consigne de la source : « ובחול המועד סוכות ופסח יש נוהגים לומר את
+    // מזמור החג במקום למנצח ». 5787 : le 17 Tichri est un lundi, le 21
+    // (Hochana Rabba) un vendredi, où le psaume 93 tient seul la place.
+    expect(new HDate(17, months.TISHREI, 5787).getDay()).toBe(1);
+    expect(occ(17, months.TISHREI, 5787).has("chir-moed-minha")).toBe(true);
+    expect(occ(17, months.TISHREI, 5787).has("lamnatseah-minha")).toBe(false);
+    const hochanaRabba = occ(21, months.TISHREI, 5787);
+    expect(hochanaRabba.has("jour-5")).toBe(true);
+    expect(hochanaRabba.has("chir-moed-minha")).toBe(false);
+    expect(hochanaRabba.has("lamnatseah-minha")).toBe(false);
+    // Le lendemain de la fête, le Lamnatséa'h revient.
+    expect(occ(23, months.TISHREI, 5787).has("lamnatseah-minha")).toBe(true);
+    // Chaque jour autour des deux fêtes, ici et en Terre d'Israël : le psaume
+    // de la fête exactement les jours de semaine de 'Hol haMoed, et jamais
+    // avec le Lamnatséa'h.
+    for (const mois of [months.TISHREI, months.NISAN]) {
+      for (let jour = 13; jour <= 24; jour++) {
+        for (const il of [false, true]) {
+          const hd = new HDate(jour, mois, 5787);
+          const o = activeOccasions(hd, il);
+          const semaine = hd.getDay() !== 5 && hd.getDay() !== 6;
+          expect(o.has("chir-moed-minha")).toBe(o.has("hol-hamoed") && semaine);
+          expect(o.has("chir-moed-minha") && o.has("lamnatseah-minha")).toBe(false);
+        }
+      }
+    }
+  });
+
   it("nomme le Chabbat de Souccot, et lui seul", () => {
     // 5787 : le 15 Tichri est un Chabbat ; 5786 : le 19.
     expect(occ(15, months.TISHREI, 5787).has("chabbat-souccot")).toBe(true);

@@ -844,6 +844,21 @@ Hochanot porte le renvoi inverse, qui ramène à Cha'harit au passage qui suit
 Cha'harit, le renvoi y revient au lieu de l'empiler une seconde fois : le
 bouton « précédent » ne fait pas la navette entre les deux textes.
 
+### La 'hazara repart du début de la 'Amida
+
+Les passages que le 'hazan dit pendant la répétition (Kedoucha, Modim
+dérabanan, Birkat kohanim, 'Anénou) restent repliés dans la 'Amida : on la
+prie d'abord à voix basse, et ils couperaient le fil. Quand le 'hazan
+reprend, le lecteur est en bas de la 'Amida et doit remonter les déplier un
+à un. La fin de chaque 'Amida répétée (Cha'harit, Min'ha, Moussaf ; pas
+Arvit) porte donc une pastille « 'Hazara », la même que celle d'un renvoi
+(`.reading-link`, dans `LiturgyText.vue`), posée sous « 'Ossé chalom » :
+elle remonte au titre de la 'Amida et déplie en chemin les passages du
+'hazan, et eux seuls (le Kaddich qui suit reste replié). Le marqueur vient de
+la recette (`hazara`, dans `scripts/build-sidour.mjs`) ; un test tient sa
+place (`sidourContent.test.ts`), un autre ce que fait le bouton
+(`liturgyHazara.test.ts`).
+
 ### Un texte qui change avec le jour s'ouvre sur le jour
 
 Un livre qui porte une suite par jour (les Hochanot : six jours, Hochana

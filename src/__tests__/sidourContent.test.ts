@@ -3,11 +3,12 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
-import { parseContent, resolveFilePath } from "../services/textService";
+import { HDate, months } from "@hebcal/core";
+import { parseContent, resolveFilePath, saidOn } from "../services/textService";
 import type { TextContent, TextParagraph, TextRun } from "../services/textService";
 import { injectWeeklyTorah } from "../services/sidourService";
 import type { WeeklyParasha } from "../services/dailyCycles";
-import { getParashaForShabbat } from "../services/dailyCycles";
+import { activeOccasions, getParashaForShabbat } from "../services/dailyCycles";
 import torahWeekdayJson from "../datas/torahWeekday.json";
 
 /**
@@ -98,6 +99,8 @@ const KNOWN_WHEN = new Set([
   "sefer-torah",
   "ledavid",
   "lamnatseah-minha",
+  "chir-moed-minha",
+  "moussaf",
   "motsae",
   "hoshana-rabba",
   "pesach",
@@ -380,6 +383,30 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       expect(amida[0].kotel).toBe(true);
     });
 
+    it("pose la 'hazara à la fin de chaque 'Amida que le 'hazan répète", () => {
+      // Le bouton « 'Hazara » (LiturgyText) remonte au dernier titre `kotel`
+      // et déplie les passages du 'hazan d'ici là : chaque 'Amida répétée
+      // (Cha'harit, Min'ha, les deux Moussaf) a donc sa fin marquée, sur le
+      // bloc de 'Ossé chalom, avec au moins un passage du 'hazan entre les
+      // deux. Arvit n'a pas de répétition, et pas de bouton.
+      const hazara = blocks.flatMap((b, i) => (b.hazara ? [i] : []));
+      if (resolveFilePath(entry).includes("arvit")) {
+        expect(hazara).toEqual([]);
+        return;
+      }
+      const kotel = blocks.flatMap((b, i) => (b.kotel ? [i] : []));
+      expect(hazara).toHaveLength(kotel.length);
+      kotel.forEach((debut, k) => {
+        const fin = hazara[k];
+        expect(fin).toBeGreaterThan(debut);
+        expect(fin).toBeLessThan(kotel[k + 1] ?? Infinity);
+        const entre = blocks.slice(debut, fin + 1);
+        expect(entre.some((b) => b.fold === "hazan")).toBe(true);
+        expect(blocks[fin].when).toBe(blocks[debut].when);
+        expect(sansSignes(blocks[fin].lines.join(" "))).toContain("במרומיו");
+      });
+    });
+
     it("revêt le talit et les téfilines avant d'entrer dans la prière", () => {
       // À Cha'harit seulement, et à leur place : après les bénédictions du
       // matin, avant 'Akédat Its'hak. On ne prie pas d'abord pour s'en revêtir
@@ -621,6 +648,25 @@ describe("Min'ha : la veille de Kippour", () => {
     expect(sansSignes(elohai.lines[1])).toContain("שלא אחטא עוד");
   });
 
+  it("dit à 'Hol haMoed le psaume de la fête à la place du Lamnatséa'h", () => {
+    // À sa place, après les psaumes de la veille de Kippour, sous une clé que seul le calendrier récent pose, et qui
+    // retire du même coup `lamnatseah-minha` (voir dailyCycles) : chaque
+    // version dit un seul psaume. Le même que Cha'harit après Moussaf.
+    const lamnatseah = blocks.findIndex((b) => b.when === "lamnatseah-minha");
+    const fete = blocks.filter((b) => b.when === "chir-moed-minha");
+    expect(fete).toHaveLength(2);
+    expect(blocks[lamnatseah + 1].when).toBe("erev-kippour");
+    expect(blocks.indexOf(fete[0])).toBe(lamnatseah + 2);
+    expect(blocks.indexOf(fete[1])).toBe(lamnatseah + 3);
+    expect(fete.map((b) => b.paragraphs![0].when)).toEqual(["sukkot", "pesach"]);
+    expect(sansSignes(fete[0].lines[0])).toContain("כאיל תערג");
+    expect(sansSignes(fete[1].lines[0])).toContain("הדו ליהוה כיטוב");
+    for (const b of fete)
+      expect(b.paragraphs![0].rubric!.fr).toContain("à la place du Lamnatséa'h");
+    // Pas `plain` : c'est ce qui change ce jour-là, à la couleur du thème.
+    expect(fete.some((b) => b.plain)).toBe(false);
+  });
+
   it("remplace le Lamnatséa'h par les psaumes 85 et 130, sauf un vendredi", () => {
     // Après le Kaddich Titkabal. Le psaume 67 garde sa clé et c'est `unless`
     // qui le retire : une version ancienne, qui l'ignore, affiche les deux
@@ -776,6 +822,72 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
       // jours, ce n'est pas une addition du calendrier.
       expect(bloc.plain).toBe(true);
     }
+  });
+});
+
+describe("Cha'harit : Moussaf, et les Kaddich qui l'entourent", () => {
+  // Les jours de Moussaf, la source passe d'Ouva letsion au psaume du jour
+  // sans Kaddich, dit un demi-Kaddich avant Moussaf, puis après la
+  // répétition « Yehi chem » et le Kaddich Titkabal ; le Kaddich yehé
+  // chelama vient après Barkhi nafchi, ou après le psaume de la fête.
+  const entry = sidourEntries.find((e) => resolveFilePath(e).includes("chaharit"))!;
+  const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
+  /** Les titres qui se lisent ce jour-là, d'Achré à Kavé. */
+  function titres(hd: HDate): string[] {
+    const occ = activeOccasions(hd, false);
+    const lus = blocks.filter((b) => saidOn(b.when, occ, b.unless));
+    const debut = lus.findIndex((b) => b.label === "Achré");
+    const fin = lus.findIndex((b) => b.label === "Kavé · Ein kélohénou");
+    return lus.slice(debut + 1, fin).flatMap((b) => (b.label ? [b.label] : []));
+  }
+  const MOUSSAF = [
+    "Dans une maison endeuillée",
+    "Demi-Kaddich (le 'hazan)",
+    "Moussaf",
+    "Kedoucha de Moussaf (Keter)",
+    "Modim dérabanan",
+    "Birkat kohanim",
+    "Kaddich Titkabal (le 'hazan)",
+    "Kaddich yehé chelama",
+  ];
+
+  it("garde l'ordre de semaine les autres jours", () => {
+    // Le dimanche 14 Hechvan 5787.
+    expect(titres(new HDate(14, months.CHESHVAN, 5787))).toEqual([
+      "Kaddich Titkabal (le 'hazan)",
+      "Dans une maison endeuillée",
+      "Kaddich yehé chelama",
+    ]);
+  });
+
+  it("à Roch 'Hodech : la répétition entière, puis le Kaddich qui ferme Moussaf", () => {
+    const hd = new HDate(1, months.CHESHVAN, 5787);
+    expect(titres(hd)).toEqual(MOUSSAF);
+    // Barkhi nafchi, avant le Kaddich yehé chelama.
+    const occ = activeOccasions(hd, false);
+    const lus = blocks.filter((b) => saidOn(b.when, occ, b.unless));
+    const barkhi = lus.findIndex((b) => sansSignes(b.lines[0] ?? "").startsWith("ברכי נפשי"));
+    expect(lus[barkhi + 1].label).toBe("Kaddich yehé chelama");
+  });
+
+  it("à Roch 'Hodech Tévet, 'Al hanissim entre dans le Modim de Moussaf", () => {
+    const occ = activeOccasions(new HDate(1, months.TEVET, 5787), false);
+    expect(occ.has("rosh-chodesh-hanouka")).toBe(true);
+    const lus = blocks.filter((b) => saidOn(b.when, occ, b.unless));
+    const moussaf = lus.findIndex((b) => b.label === "Moussaf");
+    const nissim = lus.findIndex((b, i) => i > moussaf && b.when === "rosh-chodesh-hanouka");
+    expect(nissim).toBeGreaterThan(moussaf);
+    expect(lus[nissim - 1].label).toBe("Modim dérabanan");
+    expect(sansSignes(lus[nissim].lines.join(" "))).toContain("בימי מתתיה");
+    // Les autres Roch 'Hodech, non.
+    const cheshvan = activeOccasions(new HDate(1, months.CHESHVAN, 5787), false);
+    expect(
+      blocks.filter((b) => b.when === "rosh-chodesh-hanouka" && saidOn(b.when, cheshvan)),
+    ).toEqual([]);
+  });
+
+  it("à 'Hol haMoed : le même ordre, le psaume de la fête avant le Kaddich yehé chelama", () => {
+    expect(titres(new HDate(17, months.TISHREI, 5787))).toEqual(MOUSSAF);
   });
 });
 

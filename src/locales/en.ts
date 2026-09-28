@@ -1338,6 +1338,10 @@ const en: LocaleMessages = {
         "Camera access was denied. You can allow it in your device settings, then open the mirror again.",
       unavailable: "This device gives no access to its front camera.",
     },
+    hazara: {
+      open: "Chazara",
+      hint: "Back to the start of the Amidah, with the passages of the chazan's repetition unfolded",
+    },
     kotel: {
       open: "Direction of the Kotel",
       title: "Direction of the Kotel",

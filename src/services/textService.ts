@@ -318,6 +318,13 @@ export interface TextBlock {
    */
   kotel?: boolean;
   /**
+   * Sidour : la fin d'une 'Amida que le 'hazan répète (Cha'harit, Min'ha,
+   * Moussaf ; pas Arvit). Le lecteur pose sous le texte un bouton « 'Hazara »
+   * qui remonte au début de cette 'Amida (le bloc `kotel` qui la précède) et
+   * déplie les passages du 'hazan qu'elle contient (`fold: "hazan"`).
+   */
+  hazara?: boolean;
+  /**
    * Souccot : le passage porte les brahot du loulav. Le lecteur pose alors un
    * cadran à côté du titre, où les six côtés du na'anou'a sont numérotés dans
    * l'ordre où on les fait.
@@ -715,6 +722,7 @@ interface TefilaFileBlock {
   /** Une halakha, ou plusieurs, chacune avec son `when` éventuel. */
   halakha?: Halakha | Halakha[];
   kotel?: boolean;
+  hazara?: boolean;
   mirror?: boolean;
   naanouim?: boolean;
   torahWeekly?: boolean;
@@ -854,6 +862,7 @@ export function parseTefilaBlocks(rawBlocks: unknown): TextBlock[] {
     if (raw.zman) block.zman = raw.zman;
     if (raw.halakha) block.halakhot = Array.isArray(raw.halakha) ? raw.halakha : [raw.halakha];
     if (raw.kotel) block.kotel = true;
+    if (raw.hazara) block.hazara = true;
     if (raw.naanouim) block.naanouim = true;
     if (raw.mirror) block.mirror = true;
     if (raw.torahWeekly) block.torahWeekly = true;

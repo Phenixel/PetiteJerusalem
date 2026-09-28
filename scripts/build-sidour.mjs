@@ -402,6 +402,9 @@ function buildBlock(spec, sections) {
   if (spec.zman) block.zman = spec.zman;
   if (spec.torahWeekly) block.torahWeekly = true;
   if (spec.kotel) block.kotel = true;
+  // La fin d'une 'Amida que le 'hazan répète : le lecteur y pose le bouton
+  // qui remonte à son début, les passages de la répétition dépliés.
+  if (spec.hazara) block.hazara = true;
   if (spec.naanouim) block.naanouim = true;
   if (spec.mirror) block.mirror = true;
   if (spec.numbered) block.numbered = true;
@@ -1136,9 +1139,12 @@ function amidaBlocks(src, ix, opts = {}) {
     });
   }
 
-  // 'Ossé chalom, « 'ossé hachalom » aux dix jours de techouva.
+  // 'Ossé chalom, « 'ossé hachalom » aux dix jours de techouva. C'est la fin
+  // de la 'Amida : le 'hazan la répète alors à Cha'harit et à Min'ha, pas à
+  // Arvit, qui n'a pas de répétition.
   blocks.push({
     src,
+    ...(opts.soir ? {} : { hazara: true }),
     lines: [
       {
         parts: [
@@ -1209,6 +1215,67 @@ function kaddishTitkabal(src, { when, seg = 4 } = {}) {
   };
   if (when) spec.when = when;
   return spec;
+}
+
+/**
+ * Modim dérabanan dans la répétition de Moussaf : ce que l'assemblée dit
+ * pendant que le 'hazan dit Modim. La source le donne en petit corps, sa
+ * consigne collée au texte, au Moussaf de Roch 'Hodech comme à celui des
+ * régalim.
+ */
+function modimDerabananMoussaf(src, seg, when) {
+  return {
+    src,
+    when,
+    fold: "hazan",
+    labelText: R("Modim dérabanan", "Modim derabanan", "מודים דרבנן"),
+    lines: [
+      {
+        seg,
+        mode: "small",
+        strip: [
+          "מודים דרבנן",
+          'בחזרת הש"ץ כשהחזן אומר מודים, הקהל אומרים:',
+          "בחזרת הש״ץ כשהחזן אומר מודים, הקהל אומרים:",
+        ],
+        rubric: R(
+          "Pendant la répétition, quand le 'hazan dit Modim, l'assemblée dit\u00a0:",
+          "During the repetition, as the chazan says Modim, the congregation says:",
+          "בחזרת הש״ץ, כשהחזן אומר מודים, הקהל אומרים:",
+        ),
+      },
+    ],
+  };
+}
+
+/**
+ * Ce qui suit la répétition de Moussaf, à Roch 'Hodech comme à 'Hol haMoed
+ * (« אחרי חזרת הש"ץ אומרים יהי שם », puis « ואומר החזן קדיש תתקבל ») :
+ * « Yehi chem », et le Kaddich Titkabal qui ferme Moussaf.
+ */
+function apresMoussaf(when) {
+  return [
+    { src: "Amida", when, plain: true, lines: [{ seg: 107 }] },
+    kaddishTitkabal("RH.Hallel", { seg: 26, when }),
+  ];
+}
+
+/**
+ * Le psaume de la fête à 'Hol haMoed : le 42 à Souccot, le 107 à Pessa'h.
+ * Un bloc par fête sous la clé `when`, la ligne seule portant la fête.
+ * Cha'harit le dit après Moussaf, Min'ha à la place du Lamnatséa'h ;
+ * `rubrique` écrit la didascalie à partir du nom de la fête.
+ */
+function psaumesDeLaFete(when, rubrique, extra = {}) {
+  return [
+    ["Regalim.ChirSouccot", "sukkot", R("Souccot", "Sukkot", "סוכות")],
+    ["Regalim.ChirPessah", "pesach", R("Pessa'h", "Pesach", "פסח")],
+  ].map(([src, fete, nom]) => ({
+    src,
+    when,
+    ...extra,
+    lines: [{ seg: 1, when: fete, rubric: rubrique(nom) }],
+  }));
 }
 
 /**
@@ -3275,7 +3342,10 @@ function chaharitRecipe() {
           { seg: 2 },
         ],
       },
-      kaddishTitkabal("Uva LeSion"),
+      // Les jours de Moussaf, le Kaddich Titkabal ne se dit pas ici : il
+      // ferme Moussaf (voir apresMoussaf), et la source passe d'Ouva letsion
+      // au psaume du jour sans Kaddich.
+      { ...kaddishTitkabal("Uva LeSion"), unless: "moussaf" },
       {
         src: "Uva LeSion",
         when: "sefer-torah",
@@ -3308,7 +3378,11 @@ function chaharitRecipe() {
       {
         lines: [{ he: HOSHIENU }],
       },
-      kaddishYeheChelama("Song of the Day", 28),
+      // Avant Moussaf, le 'hazan dit un demi-Kaddich (« אומר החזן חצי קדיש
+      // וחולצין תפילין ») à la place du Kaddich yehé chelama, qui vient après
+      // Barkhi nafchi ou le psaume de la fête.
+      { ...kaddishYeheChelama("Song of the Day", 28), unless: "moussaf" },
+      kaddishHalf("Uva LeSion", { when: "moussaf" }),
       {
         src: "RH.Mussaf",
         when: "rosh-chodesh",
@@ -3364,14 +3438,48 @@ function chaharitRecipe() {
           { seg: 12 },
           { seg: 13 },
           { seg: 15 },
-          { seg: 20 },
+        ],
+      },
+      modimDerabananMoussaf("RH.Mussaf", 16, "rosh-chodesh"),
+      // Roch 'Hodech Tévet tombe dans 'Hanouka : 'Al hanissim entre alors
+      // dans le Modim de Moussaf aussi, comme la source le pose.
+      {
+        src: "RH.Mussaf",
+        when: "rosh-chodesh-hanouka",
+        halakha: HALAKHA.alHanissim,
+        lines: [
+          { seg: 18, mode: "small" },
+          { seg: 19, mode: "small", tight: true },
+        ],
+      },
+      {
+        src: "RH.Mussaf",
+        when: "rosh-chodesh",
+        plain: true,
+        lines: [{ seg: 20 }],
+      },
+      // Birkat kohanim, dans la répétition, comme à Moussaf de 'Hol haMoed.
+      birkatKohanimBlock(
+        "RH.Mussaf",
+        { bracha: 24, versets: [26, 27, 28], hazan: 30, versetsHazan: [31, 32, 33] },
+        { when: "rosh-chodesh" },
+      ),
+      {
+        src: "RH.Mussaf",
+        when: "rosh-chodesh",
+        plain: true,
+        lines: [
           { seg: 34 },
           { seg: 35 },
           { seg: 36 },
           { seg: 38, tight: true },
           { seg: 39 },
+          { seg: 40, mode: "small" },
         ],
+        // La fin de Moussaf, que le 'hazan répète.
+        hazara: true,
       },
+      ...apresMoussaf("rosh-chodesh"),
       // Le Moussaf de 'Hol haMoed. Les jours intermédiaires ont leur Moussaf
       // comme les jours de fête, et c'est la même 'Amida : la source la donne
       // une fois pour les trois régalim, avec ses variantes en petit corps
@@ -3463,31 +3571,7 @@ function chaharitRecipe() {
           { seg: 34 },
         ],
       },
-      // Modim dérabanan, ce que l'assemblée dit pendant que le 'hazan dit
-      // Modim : la source le donne en petit corps, sa consigne collée au
-      // texte, comme dans la 'Amida de semaine.
-      {
-        src: "Regalim.Mussaf",
-        when: "hol-hamoed",
-        fold: "hazan",
-        labelText: R("Modim dérabanan", "Modim derabanan", "מודים דרבנן"),
-        lines: [
-          {
-            seg: 35,
-            mode: "small",
-            strip: [
-              "מודים דרבנן",
-              'בחזרת הש"ץ כשהחזן אומר מודים, הקהל אומרים:',
-              "בחזרת הש״ץ כשהחזן אומר מודים, הקהל אומרים:",
-            ],
-            rubric: R(
-              "Pendant la répétition, quand le 'hazan dit Modim, l'assemblée dit :",
-              "During the repetition, as the chazan says Modim, the congregation says:",
-              "בחזרת הש״ץ, כשהחזן אומר מודים, הקהל אומרים:",
-            ),
-          },
-        ],
-      },
+      modimDerabananMoussaf("Regalim.Mussaf", 35, "hol-hamoed"),
       {
         src: "Regalim.Mussaf",
         when: "hol-hamoed",
@@ -3512,47 +3596,22 @@ function chaharitRecipe() {
           { seg: 52 },
           { seg: 54, tight: true },
           { seg: 55 },
-          { seg: 56 },
+          { seg: 56, mode: "small" },
         ],
+        hazara: true,
       },
       // La fin de l'office de 'Hol haMoed, dans l'ordre que la source donne
       // après la répétition (« בחול המועד אחרי החזרה אומרים יהי שם, ואחריו
       // אומר הש"ץ קדיש תתקבל ואומרים המזמור השייך לאותו יום טוב, וקדיש יהא
       // שלמא וקוה עד הסוף ») : « Yehi chem », le Kaddich Titkabal qui ferme
       // Moussaf, le psaume de la fête, le Kaddich yehé chelama, puis Kavé.
-      {
-        src: "Amida",
-        when: "hol-hamoed",
-        plain: true,
-        lines: [{ seg: 107 }],
-      },
-      kaddishTitkabal("RH.Hallel", { seg: 26, when: "hol-hamoed" }),
-      // Le psaume de la fête : le 42 à Souccot, le 107 à Pessah. Un bloc par
-      // fête, chacun sous sa clé, la ligne seule portant la condition.
-      {
-        src: "Regalim.ChirSouccot",
-        when: "hol-hamoed",
-        plain: true,
-        lines: [
-          {
-            seg: 1,
-            when: "sukkot",
-            rubric: R("Le psaume de Souccot :", "The psalm of Sukkot:", "מזמור לסוכות:"),
-          },
-        ],
-      },
-      {
-        src: "Regalim.ChirPessah",
-        when: "hol-hamoed",
-        plain: true,
-        lines: [
-          {
-            seg: 1,
-            when: "pesach",
-            rubric: R("Le psaume de Pessa'h :", "The psalm of Pesach:", "מזמור לפסח:"),
-          },
-        ],
-      },
+      ...apresMoussaf("hol-hamoed"),
+      // Le psaume de la fête (voir psaumesDeLaFete).
+      ...psaumesDeLaFete(
+        "hol-hamoed",
+        (nom) => R(`Le psaume de ${nom.fr}\u00a0:`, `The psalm of ${nom.en}:`, `מזמור ל${nom.he}:`),
+        { plain: true },
+      ),
       { ...kaddishYeheChelama("Song of the Day", 28), when: "hol-hamoed" },
       {
         src: "RH.Barchi Nafshi",
@@ -3561,6 +3620,8 @@ function chaharitRecipe() {
         // Une ligne dans le fil : pas de titre, le menu n'a rien à y jeter.
         lines: [{ seg: 2 }],
       },
+      // « ואומרים קדיש יהא שלמא » : après Barkhi nafchi, avant Kavé.
+      { ...kaddishYeheChelama("RH.Barchi Nafshi", 4), when: "rosh-chodesh" },
       {
         src: "Kaveh",
         labelText: R("Kavé · Ein kélohénou", "Kaveh · Ein keloheinu", "קוה · אין כאלהינו"),
@@ -3919,6 +3980,17 @@ function minhaRecipe() {
           { he: psaume(130) },
         ],
       },
+      // À 'Hol haMoed, le psaume de la fête à la place du Lamnatséa'h, comme
+      // le dit la consigne de la source (segment 15). La clé ne se pose pas
+      // la veille de Chabbat, où le psaume 93 tient déjà la place. À la
+      // couleur du thème : c'est ce qui change ce jour-là.
+      ...psaumesDeLaFete("chir-moed-minha", (nom) =>
+        R(
+          `À 'Hol haMoed de ${nom.fr}, on dit à la place du Lamnatséa'h\u00a0:`,
+          `On Chol haMoed ${nom.en}, say in place of the Lamnatzeach:`,
+          `בחול המועד ${nom.he} אומרים במקום למנצח:`,
+        ),
+      ),
       {
         src: "Vidui",
         when: "jour-5",
@@ -4417,6 +4489,10 @@ function sourcesFor(office) {
       "Torah Reading": ws["Torah Reading"],
       "Taanit.Torah": text["Fast Days and Mourning"]["Torah Reading for Fast Days"],
       Haftara: text["Shabbat Shacharit"]["Haftarah"],
+      // Le psaume de la fête, qui prend à 'Hol haMoed la place du
+      // Lamnatséa'h.
+      "Regalim.ChirSouccot": text["Prayers for Three Festivals"]["Song for Sukkot"],
+      "Regalim.ChirPessah": text["Prayers for Three Festivals"]["Song for Passover"],
       // La veille de Kippour : le vidouy de la 'Amida, que seul le mahzor
       // porte.
       "YK.Amida": amidaKippour(),
