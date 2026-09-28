@@ -18,6 +18,10 @@ import ToggleSwitch from "../ToggleSwitch.vue";
  * Chaque famille tient sur une ligne de trois, y compris sur un téléphone :
  * les options se comparent d'un regard, ce qu'un empilement ne permet pas.
  *
+ * `essentials` n'en garde que la langue, l'apparence et le thème : c'est ce que
+ * l'introduction propose, le reste (polices, thèmes des fêtes) attend dans le
+ * profil.
+ *
  * `userId` null (visiteur sans compte, réglages de l'app native) : les choix
  * sont gardés sur l'appareil, et le compte les adoptera à la connexion, voir
  * userPreferencesService.
@@ -28,6 +32,8 @@ const props = withDefaults(
     userId: string | null;
     /** Titres pleins et explications (page de réglages) plutôt que de simples étiquettes. */
     withDescriptions?: boolean;
+    /** Langue, apparence et thème seulement (introduction de première ouverture). */
+    essentials?: boolean;
     /**
      * La langue en tête. Les réglages de l'app lui donnent sa propre ligne
      * (on la change rarement, et elle se lit mieux en liste) : ils l'ôtent ici.
@@ -39,7 +45,7 @@ const props = withDefaults(
      */
     schemeTitle?: string;
   }>(),
-  { withDescriptions: false, withLanguage: true, schemeTitle: undefined },
+  { withDescriptions: false, essentials: false, withLanguage: true, schemeTitle: undefined },
 );
 
 const { t } = useI18n();
@@ -56,8 +62,9 @@ const { currentLatinId, currentHebrewId, latinFonts, hebrewFonts, setLatinFont, 
 const { holidayThemesEnabled, setHolidayThemesEnabled } = useHolidayTheme();
 
 // Chaque option s'affiche dans sa propre police : les familles non embarquées
-// dans index.html n'arrivent qu'ici (voir useFonts).
-ensureAllFontsLoaded();
+// dans index.html n'arrivent qu'ici (voir useFonts). Sans les polices à
+// l'écran, rien à charger.
+if (!props.essentials) ensureAllFontsLoaded();
 
 const saving = ref(false);
 const previewingId = ref<string | null>(null);
@@ -135,7 +142,7 @@ onUnmounted(() => {
         {{ t("profile.languageDescription") }}
       </p>
 
-      <div class="grid grid-cols-3 gap-3 mb-10">
+      <div class="grid grid-cols-3 gap-3" :class="essentials ? 'mb-6' : 'mb-10'">
         <button
           v-for="locale in availableLocales"
           :key="locale.code"
@@ -166,7 +173,7 @@ onUnmounted(() => {
       {{ t("profile.appearanceDescription") }}
     </p>
 
-    <div class="grid grid-cols-3 gap-3 mb-10">
+    <div class="grid grid-cols-3 gap-3" :class="essentials ? 'mb-6' : 'mb-10'">
       <button
         v-for="option in schemes"
         :key="option.id"
@@ -323,96 +330,98 @@ onUnmounted(() => {
       {{ t("profile.themeHint") }}
     </p>
 
-    <!-- Thèmes des fêtes : une ligne d'interrupteur, comme un réglage (pas
+    <template v-if="!essentials">
+      <!-- Thèmes des fêtes : une ligne d'interrupteur, comme un réglage (pas
          une carte, voir docs/design.md). Les fêtes ne sont pas listées : le
          thème arrive avec la fête, c'est une surprise, pas un catalogue. -->
-    <ul class="mt-6 flex flex-col divide-y divide-line border-t border-line">
-      <li>
-        <label class="flex cursor-pointer items-center justify-between gap-3 py-3">
-          <span class="min-w-0">
-            <span class="block font-semibold text-text-primary">
-              {{ t("profile.holidayThemesTitle") }}
+      <ul class="mt-6 flex flex-col divide-y divide-line border-t border-line">
+        <li>
+          <label class="flex cursor-pointer items-center justify-between gap-3 py-3">
+            <span class="min-w-0">
+              <span class="block font-semibold text-text-primary">
+                {{ t("profile.holidayThemesTitle") }}
+              </span>
+              <span class="block text-sm leading-relaxed text-text-secondary">
+                {{ t("profile.holidayThemesHint") }}
+              </span>
             </span>
-            <span class="block text-sm leading-relaxed text-text-secondary">
-              {{ t("profile.holidayThemesHint") }}
-            </span>
+            <ToggleSwitch
+              :model-value="holidayThemesEnabled"
+              :label="t('profile.holidayThemesTitle')"
+              @update:model-value="toggleHolidayThemes"
+            />
+          </label>
+        </li>
+      </ul>
+
+      <!-- Polices -->
+      <h2 v-if="withDescriptions" class="mt-12 mb-2 text-2xl font-bold text-text-primary">
+        {{ t("profile.fontsTitle") }}
+      </h2>
+      <h2 v-else class="mt-10 mb-3 text-sm font-semibold text-text-secondary">
+        {{ t("profile.fontsTitle") }}
+      </h2>
+      <p v-if="withDescriptions" class="mb-6 text-text-secondary">
+        {{ t("profile.fontsDescription") }}
+      </p>
+
+      <h3 class="mb-3 text-sm font-semibold text-text-secondary">
+        {{ t("profile.fontLatinLabel") }}
+      </h3>
+      <div class="grid grid-cols-3 gap-3 mb-8">
+        <button
+          v-for="font in latinFonts"
+          :key="font.id"
+          type="button"
+          class="card p-3 text-center transition-all duration-300"
+          :class="currentLatinId === font.id ? 'ring-2 ring-primary' : 'card-hover'"
+          :disabled="saving"
+          @click="selectLatinFont(font)"
+        >
+          <span class="mb-1 block text-2xl text-text-primary" :style="{ fontFamily: font.stack }">
+            Aa
           </span>
-          <ToggleSwitch
-            :model-value="holidayThemesEnabled"
-            :label="t('profile.holidayThemesTitle')"
-            @update:model-value="toggleHolidayThemes"
-          />
-        </label>
-      </li>
-    </ul>
+          <span
+            class="block text-xs font-semibold leading-tight text-text-primary sm:text-sm"
+            :style="{ fontFamily: font.stack }"
+          >
+            {{ font.label }}
+          </span>
+          <span class="mt-0.5 block text-xs leading-tight text-text-secondary">
+            {{ t(`profile.fontsLatin.${font.id}`) }}
+          </span>
+        </button>
+      </div>
 
-    <!-- Polices -->
-    <h2 v-if="withDescriptions" class="mt-12 mb-2 text-2xl font-bold text-text-primary">
-      {{ t("profile.fontsTitle") }}
-    </h2>
-    <h2 v-else class="mt-10 mb-3 text-sm font-semibold text-text-secondary">
-      {{ t("profile.fontsTitle") }}
-    </h2>
-    <p v-if="withDescriptions" class="mb-6 text-text-secondary">
-      {{ t("profile.fontsDescription") }}
-    </p>
-
-    <h3 class="mb-3 text-sm font-semibold text-text-secondary">
-      {{ t("profile.fontLatinLabel") }}
-    </h3>
-    <div class="grid grid-cols-3 gap-3 mb-8">
-      <button
-        v-for="font in latinFonts"
-        :key="font.id"
-        type="button"
-        class="card p-3 text-center transition-all duration-300"
-        :class="currentLatinId === font.id ? 'ring-2 ring-primary' : 'card-hover'"
-        :disabled="saving"
-        @click="selectLatinFont(font)"
-      >
-        <span class="mb-1 block text-2xl text-text-primary" :style="{ fontFamily: font.stack }">
-          Aa
-        </span>
-        <span
-          class="block text-xs font-semibold leading-tight text-text-primary sm:text-sm"
-          :style="{ fontFamily: font.stack }"
+      <h3 class="mb-3 text-sm font-semibold text-text-secondary">
+        {{ t("profile.fontHebrewLabel") }}
+      </h3>
+      <div class="grid grid-cols-3 gap-3">
+        <button
+          v-for="font in hebrewFonts"
+          :key="font.id"
+          type="button"
+          class="card p-3 text-center transition-all duration-300"
+          :class="currentHebrewId === font.id ? 'ring-2 ring-primary' : 'card-hover'"
+          :disabled="saving"
+          @click="selectHebrewFont(font)"
         >
-          {{ font.label }}
-        </span>
-        <span class="mt-0.5 block text-xs leading-tight text-text-secondary">
-          {{ t(`profile.fontsLatin.${font.id}`) }}
-        </span>
-      </button>
-    </div>
-
-    <h3 class="mb-3 text-sm font-semibold text-text-secondary">
-      {{ t("profile.fontHebrewLabel") }}
-    </h3>
-    <div class="grid grid-cols-3 gap-3">
-      <button
-        v-for="font in hebrewFonts"
-        :key="font.id"
-        type="button"
-        class="card p-3 text-center transition-all duration-300"
-        :class="currentHebrewId === font.id ? 'ring-2 ring-primary' : 'card-hover'"
-        :disabled="saving"
-        @click="selectHebrewFont(font)"
-      >
-        <span
-          class="mb-1 block text-2xl text-text-primary"
-          dir="rtl"
-          :style="{ fontFamily: font.stack }"
-        >
-          אבג
-        </span>
-        <span class="block text-xs font-semibold leading-tight text-text-primary sm:text-sm">
-          {{ font.label }}
-        </span>
-        <span class="mt-0.5 block text-xs leading-tight text-text-secondary">
-          {{ t(`profile.fontsHebrew.${font.id}`) }}
-        </span>
-      </button>
-    </div>
+          <span
+            class="mb-1 block text-2xl text-text-primary"
+            dir="rtl"
+            :style="{ fontFamily: font.stack }"
+          >
+            אבג
+          </span>
+          <span class="block text-xs font-semibold leading-tight text-text-primary sm:text-sm">
+            {{ font.label }}
+          </span>
+          <span class="mt-0.5 block text-xs leading-tight text-text-secondary">
+            {{ t(`profile.fontsHebrew.${font.id}`) }}
+          </span>
+        </button>
+      </div>
+    </template>
   </div>
 </template>
 

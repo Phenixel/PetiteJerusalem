@@ -23,6 +23,7 @@ import {
   downloadBook,
   downloadingPaths,
   formatDownloadSize,
+  isBookBundled,
   isBookDownloaded,
   offlineBooks,
   removeBooks,
@@ -370,12 +371,17 @@ function trackLibrarySearchUsed() {
 
 // App native : « Tout télécharger » (toute la bibliothèque sur l'accueil, le
 // corpus courant sur sa page) + espace utilisé.
-const tabBooks = computed<OfflineBook[]>(() => {
+const tabCorpusBooks = computed<OfflineBook[]>(() => {
   if (!isNativeApp) return [];
   return currentCorpus.value === null
     ? offlineBooks
     : offlineBooks.filter((b) => b.corpus === currentCorpus.value?.typeKey);
 });
+
+// Ce qui se télécharge : les livres embarqués dans l'app (les Tehilim, les
+// Sidour) y sont déjà, leurs pages n'ont donc rien à
+// proposer.
+const tabBooks = computed(() => tabCorpusBooks.value.filter((b) => !isBookBundled(b)));
 
 const tabAllDownloaded = computed(
   () => tabBooks.value.length > 0 && tabBooks.value.every((b) => isBookDownloaded(b)),
@@ -422,7 +428,9 @@ async function downloadAllInTab() {
 // Libérer de la place : symétrique de « Tout télécharger », donc au même
 // endroit et avec la même portée, toute la bibliothèque depuis l'accueil, le
 // corpus courant depuis sa page.
-const tabDownloadedBooks = computed(() => tabBooks.value.filter((b) => isBookDownloaded(b)));
+// Un livre embarqué a pu être téléchargé par une version d'avant : sa copie
+// se libère avec les autres.
+const tabDownloadedBooks = computed(() => tabCorpusBooks.value.filter((b) => isBookDownloaded(b)));
 
 const removingAll = ref(false);
 
@@ -604,27 +612,31 @@ onUnmounted(() => {
          voir avec ce qu'on cherche, et elle repousserait les résultats sous le
          clavier. -->
     <div
-      v-if="isNativeApp && !searching && tabBooks.length > 0"
+      v-if="isNativeApp && !searching && (tabBooks.length > 0 || tabDownloadedBooks.length > 0)"
       class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-8 animate-[fadeIn_0.5s_ease]"
     >
       <!-- Télécharger et supprimer vont ensemble : le second est une petite
            icône posée contre le premier. Supprimer reste l'exception, il n'a
            pas à peser autant à l'écran, la modale, elle, explique tout. -->
       <span class="flex items-center gap-1">
-        <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
-          <AppIcon
-            v-if="downloadingPaths.size > 0"
-            name="spinner"
-            :size="14"
-            class="animate-spin"
-          />
-          <AppIcon v-else name="download" :size="14" />
-          {{ t("downloads.downloadAll") }}
-        </button>
-        <p v-else class="flex items-center gap-1.5 text-sm text-primary">
-          <AppIcon name="circle-check" :size="14" />
-          {{ t("downloads.allDownloaded") }}
-        </p>
+        <!-- Rien à télécharger (Tehilim, Sidour) : seule reste la corbeille,
+             pour une copie téléchargée par une version d'avant. -->
+        <template v-if="tabBooks.length > 0">
+          <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
+            <AppIcon
+              v-if="downloadingPaths.size > 0"
+              name="spinner"
+              :size="14"
+              class="animate-spin"
+            />
+            <AppIcon v-else name="download" :size="14" />
+            {{ t("downloads.downloadAll") }}
+          </button>
+          <p v-else class="flex items-center gap-1.5 text-sm text-primary">
+            <AppIcon name="circle-check" :size="14" />
+            {{ t("downloads.allDownloaded") }}
+          </p>
+        </template>
         <button
           v-if="tabDownloadedBooks.length > 0"
           class="icon-btn hover:text-red-600 dark:hover:text-red-400"

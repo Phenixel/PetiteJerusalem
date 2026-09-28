@@ -1,9 +1,11 @@
 // Retire du bundle natif (Capacitor) ce qui n'a de sens que sur le web.
 //
 // 1. Les corpus téléchargeables à la demande : l'app mobile ne doit pas
-//    embarquer les ~38 Mo de public/texts. Elle garde seulement les petits
-//    fichiers transverses (tehilim.json, ~370 Ko, et talmud-chapters.json,
-//    ~40 Ko) et télécharge le reste depuis le site via offlineTextStore.
+//    embarquer les ~38 Mo de public/texts. Elle garde seulement ce qu'on doit
+//    pouvoir lire sans réseau dès l'installation, listé dans
+//    src/datas/bundledTexts.json : les Tehilim (~370 Ko), le Sidour (~1 Mo),
+//    le découpage du Talmud (~40 Ko). Le reste se télécharge
+//    depuis le site via offlineTextStore.
 //
 // 2. Les pages HTML prérendues pour les moteurs de recherche (accueil SEO,
 //    /horaires, /calendrier, bibliothèque, pages Tehilim par intention...) :
@@ -20,10 +22,21 @@
 //
 // À lancer entre `vite build` et `cap sync` (voir app:build), jamais pour le
 // déploiement web, qui sert tout cela depuis dist/.
-import { copyFileSync, existsSync, readdirSync, rmdirSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, readdirSync, readFileSync, rmdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 const root = process.argv[2] ?? "dist";
+
+/** Ce que l'app embarque, liste partagée avec offlineLibraryService. */
+const bundledTexts = JSON.parse(
+  readFileSync(new URL("../src/datas/bundledTexts.json", import.meta.url), "utf-8"),
+);
+/** "/texts/tefila/chaharit.json" → chemin sous `root`. */
+const KEPT_FILES = new Set(
+  [...bundledTexts.authoritative, ...bundledTexts.revalidated].map((path) =>
+    join(root, path.replace(/^\//, "")),
+  ),
+);
 
 const PRUNED_DIRS = [
   "texts/talmud",
@@ -52,15 +65,20 @@ const PRUNED_FILES = [
 /** Ce que seul le site sert : les preuves des liens d'application. */
 const WEB_ONLY_DIRS = [".well-known"].map((d) => join(root, d));
 
-/** Tous les fichiers .html sous `dir`, récursivement. */
-function htmlFiles(dir) {
+/** Tous les fichiers sous `dir`, récursivement. */
+function allFiles(dir) {
   const found = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name);
-    if (entry.isDirectory()) found.push(...htmlFiles(path));
-    else if (entry.name.endsWith(".html")) found.push(path);
+    if (entry.isDirectory()) found.push(...allFiles(path));
+    else found.push(path);
   }
   return found;
+}
+
+/** Tous les fichiers .html sous `dir`, récursivement. */
+function htmlFiles(dir) {
+  return allFiles(dir).filter((path) => path.endsWith(".html"));
 }
 
 /** Supprime les dossiers devenus vides, en remontant. */
@@ -95,10 +113,23 @@ for (const file of PRUNED_FILES) {
   console.log(`prune-native-bundle: ${file} retiré (web uniquement)`);
 }
 
+// Un corpus s'en va entier, sauf les fichiers que l'app embarque (le Sidour,
+// dans texts/tefila) ; ses dossiers vides partent ensuite.
 for (const dir of PRUNED_DIRS) {
   if (!existsSync(dir)) continue;
-  rmSync(dir, { recursive: true });
-  console.log(`prune-native-bundle: ${dir} retiré (téléchargeable à la demande dans l'app)`);
+  const files = allFiles(dir);
+  const kept = files.filter((path) => KEPT_FILES.has(path));
+  if (kept.length === 0) {
+    rmSync(dir, { recursive: true });
+    console.log(`prune-native-bundle: ${dir} retiré (téléchargeable à la demande dans l'app)`);
+    continue;
+  }
+  for (const path of files) {
+    if (!KEPT_FILES.has(path)) rmSync(path);
+  }
+  console.log(
+    `prune-native-bundle: ${dir} retiré (téléchargeable à la demande dans l'app), sauf ${kept.length} fichier(s) embarqué(s)`,
+  );
 }
 
 for (const dir of WEB_ONLY_DIRS) {

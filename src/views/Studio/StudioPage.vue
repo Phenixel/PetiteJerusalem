@@ -10,6 +10,7 @@ import { seoService } from "../../services/seoService";
 import { useToast } from "../../composables/useToast";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import StudioChiourForm from "./StudioChiourForm.vue";
+import StudioChiourSummary from "./StudioChiourSummary.vue";
 import { useConfirm } from "../../composables/useConfirm";
 
 const route = useRoute();
@@ -301,47 +302,12 @@ async function removeChiour(chiour: ChiourDoc) {
             </span>
 
             <div class="flex-1 min-w-0">
-              <p class="font-semibold text-text-primary break-words">{{ chiour.name }}</p>
-              <p v-if="chiour.categories.length" class="text-sm text-text-secondary truncate">
-                {{ chiour.categories.join(", ") }}
-              </p>
-
-              <div class="flex flex-wrap items-center gap-2 mt-2.5">
-                <span
-                  class="chip"
-                  :class="
-                    chiour.published
-                      ? 'bg-green-600/10 text-green-700 dark:text-green-300'
-                      : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                  "
-                >
-                  {{ chiour.published ? t("studio.published") : t("studio.draft") }}
-                </span>
-                <span
-                  v-if="chiour.published"
-                  class="inline-flex items-center gap-1 text-sm text-text-secondary"
-                >
-                  <AppIcon name="eye" :size="14" />
-                  {{ t("common.viewsCount", { count: chiour.views ?? 0 }) }}
-                </span>
-                <button class="btn btn-soft" @click="openEdit(chiour)">
-                  {{ t("common.edit") }}
-                </button>
-                <button
-                  v-if="!chiour.published"
-                  class="btn btn-soft text-red-600 dark:text-red-400"
-                  :disabled="deletingSlug === chiour.slug"
-                  @click="removeChiour(chiour)"
-                >
-                  <AppIcon
-                    v-if="deletingSlug === chiour.slug"
-                    name="spinner"
-                    :size="14"
-                    class="animate-spin"
-                  />
-                  {{ t("common.delete") }}
-                </button>
-              </div>
+              <StudioChiourSummary
+                :chiour="chiour"
+                :deleting="deletingSlug === chiour.slug"
+                @edit="openEdit(chiour)"
+                @remove="removeChiour(chiour)"
+              />
             </div>
           </li>
         </ul>
@@ -422,47 +388,12 @@ async function removeChiour(chiour: ChiourDoc) {
             <!-- Même disposition que la page série : titre pleine largeur,
                  statut et actions en dessous (lisible sur mobile). -->
             <li v-for="chiour in horsSerie" :key="chiour.slug" class="card p-4 md:p-5">
-              <p class="font-semibold text-text-primary break-words">{{ chiour.name }}</p>
-              <p v-if="chiour.categories.length" class="text-sm text-text-secondary truncate">
-                {{ chiour.categories.join(", ") }}
-              </p>
-
-              <div class="flex flex-wrap items-center gap-2 mt-2.5">
-                <span
-                  class="chip"
-                  :class="
-                    chiour.published
-                      ? 'bg-green-600/10 text-green-700 dark:text-green-300'
-                      : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                  "
-                >
-                  {{ chiour.published ? t("studio.published") : t("studio.draft") }}
-                </span>
-                <span
-                  v-if="chiour.published"
-                  class="inline-flex items-center gap-1 text-sm text-text-secondary"
-                >
-                  <AppIcon name="eye" :size="14" />
-                  {{ t("common.viewsCount", { count: chiour.views ?? 0 }) }}
-                </span>
-                <button class="btn btn-soft" @click="openEdit(chiour)">
-                  {{ t("common.edit") }}
-                </button>
-                <button
-                  v-if="!chiour.published"
-                  class="btn btn-soft text-red-600 dark:text-red-400"
-                  :disabled="deletingSlug === chiour.slug"
-                  @click="removeChiour(chiour)"
-                >
-                  <AppIcon
-                    v-if="deletingSlug === chiour.slug"
-                    name="spinner"
-                    :size="14"
-                    class="animate-spin"
-                  />
-                  {{ t("common.delete") }}
-                </button>
-              </div>
+              <StudioChiourSummary
+                :chiour="chiour"
+                :deleting="deletingSlug === chiour.slug"
+                @edit="openEdit(chiour)"
+                @remove="removeChiour(chiour)"
+              />
             </li>
           </ul>
         </section>

@@ -119,16 +119,31 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
 - `npm run app:build` retire `dist/texts/{talmud,mishna,tanakh,rashi,tefila}`
   (~38 Mo) et `dist/texts/manifest.json` (l'app va le chercher en ligne,
   jamais dans son bundle) du bundle natif via
-  `scripts/prune-native-bundle.mjs`. Seuls `tehilim.json` (~370 Ko) et
-  `talmud-chapters.json` (~40 Ko) restent embarqués.
+  `scripts/prune-native-bundle.mjs`. Restent embarqués, pour se lire sans
+  réseau dès l'installation, les fichiers listés dans
+  `src/datas/bundledTexts.json` :
+  - `authoritative` : `tehilim.json` (~370 Ko) et `talmud-chapters.json`
+    (~40 Ko), lus dans le binaire, qui fait foi pour eux ;
+  - `revalidated` : le Sidour, les trois offices et les quatre textes qui les
+    accompagnent (`tefila/`, ~1 Mo). La copie du binaire s'ouvre tout de
+    suite, sans rien attendre du réseau ; en fond, l'app demande au site s'il
+    en sert une autre version (une correction de tefila n'attend pas une
+    version de l'app) et la télécharge, vérifiée à l'empreinte : c'est elle
+    qui s'ouvre la fois suivante, et la synchronisation la tient à jour.
+
+  Un livre embarqué n'a ni bouton « Télécharger » ni place dans « Tout
+  télécharger ». Tests : `src/__tests__/bundledTexts.test.ts` (ordre de
+  lecture), `pruneNativeBundle.test.ts` (ce que le binaire garde).
 - Les livres se téléchargent depuis la bibliothèque (bouton sur chaque carte,
   « Tout télécharger » par corpus) ou sur proposition de la lecture du jour
   (voir plus bas). Stockage : `Directory.Data` en natif
   (`@capacitor/file-transfer` + `@capacitor/filesystem`), Cache Storage sur le
   web ; index dans `@capacitor/preferences` (`src/services/offlineTextStore.ts`
   et `offlineLibraryService.ts`).
-- `textService.loadText` passe par `fetchTextResponse` : copie locale d'abord,
-  réseau (`https://petite-jerusalem.fr`) sinon.
+- `textService.loadText` passe par `fetchTextResponse` : copie téléchargée à
+  jour d'abord, puis copie embarquée (et pour le Sidour, la vérification de
+  fond décrite plus haut), puis réseau (`https://petite-jerusalem.fr`), puis,
+  le réseau en échec, copie téléchargée périmée.
 
 Vérification : télécharger un livre, activer le mode avion, l'ouvrir.
 
