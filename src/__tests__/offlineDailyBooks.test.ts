@@ -9,7 +9,7 @@ import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
  * d'un texte, et le rappel affiché quand une lecture du jour ne serait pas
  * lisible hors connexion. Les corpus volumineux sont retirés du binaire natif
  * (scripts/prune-native-bundle.mjs) : eux doivent être téléchargés, alors que
- * les Tehilim, embarqués, sont toujours là.
+ * les Tehilim et les trois tefilot du jour, embarqués, sont toujours là.
  */
 
 // L'app native : c'est la seule plateforme où les textes vivent sur l'appareil.
@@ -48,6 +48,18 @@ describe("disponibilité hors ligne des textes de la lecture du jour", () => {
     );
     expect(isEntryAvailableOffline(psalm)).toBe(true);
     expect(missingBooksForEntries([psalm])).toEqual([]);
+  });
+
+  it("considère Cha'harit, Min'ha et Arvit disponibles : elles sont embarquées dans l'app", async () => {
+    const { isEntryAvailableOffline, missingBooksForEntries } = await import(
+      "../services/offlineLibraryService"
+    );
+    const tefilot = allTexts.filter((txt) =>
+      ["שחרית (Chaharit)", "מנחה (Min'ha)", "ערבית (Arvit)"].includes(txt.name),
+    );
+    expect(tefilot).toHaveLength(3);
+    for (const tefila of tefilot) expect(isEntryAvailableOffline(tefila)).toBe(true);
+    expect(missingBooksForEntries(tefilot)).toEqual([]);
   });
 
   it("signale un texte d'un corpus téléchargeable tant qu'il n'est pas sur l'appareil", async () => {

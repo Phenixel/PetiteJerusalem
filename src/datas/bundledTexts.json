@@ -1,0 +1,8 @@
+{
+  "authoritative": ["/texts/tehilim.json", "/texts/talmud-chapters.json"],
+  "fallback": [
+    "/texts/tefila/chaharit.json",
+    "/texts/tefila/minha.json",
+    "/texts/tefila/arvit.json"
+  ]
+}

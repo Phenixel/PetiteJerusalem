@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   downloadBook,
+  downloadableBooksOfCorpus,
   formatDownloadSize,
   missingBooksOfCorpus,
   offlineCorpora,
@@ -56,8 +57,10 @@ onMounted(async () => {
 /** Poids approximatif de ce qui reste à télécharger dans un corpus. */
 function remainingBytes(corpus: OfflineCorpus): number {
   if (corpus.bundled || corpus.books.length === 0) return 0;
+  const downloadable = downloadableBooksOfCorpus(corpus).length;
+  if (downloadable === 0) return 0;
   const missing = missingBooksOfCorpus(corpus).length;
-  return Math.round((corpus.approxBytes * missing) / corpus.books.length);
+  return Math.round((corpus.approxBytes * missing) / downloadable);
 }
 
 const rows = computed(() =>

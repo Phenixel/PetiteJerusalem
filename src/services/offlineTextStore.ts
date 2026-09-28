@@ -3,6 +3,7 @@ import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import { FileTransfer } from "@capacitor/file-transfer";
 import { Preferences } from "@capacitor/preferences";
+import bundledTexts from "../datas/bundledTexts.json";
 
 /**
  * Stockage local des fichiers de textes (`/texts/**`).
@@ -10,7 +11,8 @@ import { Preferences } from "@capacitor/preferences";
  * L'app native n'embarque pas les corpus volumineux (talmud, mishna, tanakh
  * retirés du bundle par `scripts/prune-native-bundle.mjs`) : ils se
  * téléchargent à la demande depuis le site, ce qui garde le binaire léger
- * pendant que la bibliothèque grandit.
+ * pendant que la bibliothèque grandit. Ce qu'elle embarque est listé dans
+ * `src/datas/bundledTexts.json`, en deux familles (voir `fetchTextResponse`).
  *
  * Deux backends selon la plateforme :
  * - natif : fichiers dans `Directory.Data` (téléchargés via FileTransfer,
@@ -30,6 +32,23 @@ import { Preferences } from "@capacitor/preferences";
 const REMOTE_TEXTS_BASE = "https://petite-jerusalem.fr";
 const MANIFEST_KEY = "offline-texts:manifest";
 const WEB_CACHE_NAME = "pj-texts-v1";
+
+/**
+ * Textes embarqués dont le site fait foi : Cha'harit, Min'ha et Arvit. Une
+ * correction de tefila doit atteindre les lecteurs sans attendre une version
+ * de l'app, le binaire ne les porte donc que pour qu'on puisse prier sans
+ * réseau, dès l'installation. Les autres fichiers embarqués (Tehilim,
+ * découpage du Talmud) sont lus dans le binaire, qui fait foi pour eux.
+ */
+const BUNDLED_FALLBACK = new Set(bundledTexts.fallback);
+
+/**
+ * Délais du réseau pour un texte qui a sa copie embarquée : dans une
+ * synagogue en sous-sol, le réseau répond mal plutôt que pas du tout, et
+ * attendre le délai du système (une minute, parfois plus) pour finir sur la
+ * copie du binaire, c'est rater le début de l'office.
+ */
+const FALLBACK_TIMEOUT_MS = 5_000;
 
 /**
  * Version des données `/texts/**` : à incrémenter quand le format des fichiers
@@ -279,6 +298,29 @@ async function readLocalCopy(webPath: string): Promise<Response | null> {
   }
 }
 
+/** Copie embarquée dans le binaire natif, null si le fichier n'y est pas. */
+async function readBundledCopy(webPath: string): Promise<Response | null> {
+  try {
+    const res = await fetch(webPath);
+    return res.ok ? res : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Ce qui se lit quand le site ne répond pas : la copie embarquée d'une tefila,
+ * écrite pour le code qui la lit, puis la copie téléchargée même périmée
+ * (ancien format, dégradé mais lisible), qui vaut mieux qu'une erreur.
+ */
+async function offlineFallback(webPath: string): Promise<Response | null> {
+  if (isNative && BUNDLED_FALLBACK.has(webPath)) {
+    const bundled = await readBundledCopy(webPath);
+    if (bundled) return bundled;
+  }
+  return isDownloaded(webPath) ? await readLocalCopy(webPath) : null;
+}
+
 export async function fetchTextResponse(webPath: string): Promise<Response> {
   await ensureManifestLoaded();
 
@@ -291,13 +333,13 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
 
   try {
     if (isNative) {
-      // Les petits fichiers (tehilim, talmud-chapters) restent embarqués dans
-      // le binaire : on tente d'abord l'asset local, puis le site.
-      try {
-        const local = await fetch(webPath);
-        if (local.ok) return local;
-      } catch {
-        // Asset absent du bundle (corpus retiré) : réseau.
+      // Les Tehilim et le découpage du Talmud sont lus dans le binaire. Les
+      // tefilot embarquées, elles, se demandent d'abord au site : leur copie
+      // du binaire n'est qu'un secours (voir BUNDLED_FALLBACK).
+      const fallback = BUNDLED_FALLBACK.has(webPath);
+      if (!fallback) {
+        const bundled = await readBundledCopy(webPath);
+        if (bundled) return bundled;
       }
       // HTTP natif (pas la fetch de la webview) : l'origine de l'app
       // (https://localhost) n'est pas autorisée par CORS sur le site, une
@@ -306,6 +348,9 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
         url: versionedUrl(remoteUrl(webPath), remoteHashes?.[webPath]),
         responseType: "text",
         headers: { Accept: "application/json" },
+        ...(fallback
+          ? { connectTimeout: FALLBACK_TIMEOUT_MS, readTimeout: FALLBACK_TIMEOUT_MS }
+          : {}),
       });
       const body = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
       if (res.status >= 200 && res.status < 300) {
@@ -314,10 +359,8 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
           headers: { "Content-Type": "application/json" },
         });
       }
-      // Réseau en échec : la copie périmée vaut mieux que rien.
-      const stale = isDownloaded(webPath) ? await readLocalCopy(webPath) : null;
       return (
-        stale ??
+        (await offlineFallback(webPath)) ??
         new Response(body, { status: res.status, headers: { "Content-Type": "application/json" } })
       );
     }
@@ -328,13 +371,11 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
     if (!remoteHashes) await loadRemoteHashes();
     const res = await fetch(versionedUrl(webPath, remoteHashes?.[webPath]));
     if (res.ok) return res;
-    const stale = isDownloaded(webPath) ? await readLocalCopy(webPath) : null;
-    return stale ?? res;
+    return (await offlineFallback(webPath)) ?? res;
   } catch (error) {
-    // Hors ligne : une copie périmée (ancien format, dégradé mais lisible)
-    // vaut mieux qu'une erreur.
-    const stale = isDownloaded(webPath) ? await readLocalCopy(webPath) : null;
-    if (stale) return stale;
+    // Hors ligne, ou le site trop lent pour une tefila embarquée.
+    const secours = await offlineFallback(webPath);
+    if (secours) return secours;
     throw error;
   }
 }

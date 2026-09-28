@@ -23,6 +23,7 @@ import {
   downloadBook,
   downloadingPaths,
   formatDownloadSize,
+  isBookBundled,
   isBookDownloaded,
   offlineBooks,
   removeBooks,
@@ -370,12 +371,17 @@ function trackLibrarySearchUsed() {
 
 // App native : « Tout télécharger » (toute la bibliothèque sur l'accueil, le
 // corpus courant sur sa page) + espace utilisé.
-const tabBooks = computed<OfflineBook[]>(() => {
+const tabCorpusBooks = computed<OfflineBook[]>(() => {
   if (!isNativeApp) return [];
   return currentCorpus.value === null
     ? offlineBooks
     : offlineBooks.filter((b) => b.corpus === currentCorpus.value?.typeKey);
 });
+
+// Ce qui se télécharge : les livres embarqués dans l'app (les Tehilim, les
+// trois tefilot du jour) y sont déjà, la page des Tehilim n'a donc rien à
+// proposer.
+const tabBooks = computed(() => tabCorpusBooks.value.filter((b) => !isBookBundled(b)));
 
 const tabAllDownloaded = computed(
   () => tabBooks.value.length > 0 && tabBooks.value.every((b) => isBookDownloaded(b)),
@@ -422,7 +428,9 @@ async function downloadAllInTab() {
 // Libérer de la place : symétrique de « Tout télécharger », donc au même
 // endroit et avec la même portée, toute la bibliothèque depuis l'accueil, le
 // corpus courant depuis sa page.
-const tabDownloadedBooks = computed(() => tabBooks.value.filter((b) => isBookDownloaded(b)));
+// Un livre embarqué a pu être téléchargé par une version d'avant : sa copie
+// se libère avec les autres.
+const tabDownloadedBooks = computed(() => tabCorpusBooks.value.filter((b) => isBookDownloaded(b)));
 
 const removingAll = ref(false);
 

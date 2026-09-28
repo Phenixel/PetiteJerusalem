@@ -13,12 +13,14 @@ la minute ; l'app, elle, attend la revue d'Apple et de Google, puis que
 l'appareil veuille bien se mettre à jour. Une version installée peut rester
 des mois en arrière (c'est la raison d'être de `appUpdateService`).
 
-Pendant ce temps, l'app native ne lit pas les textes de son bundle : elle ne
-les embarque pas (`scripts/prune-native-bundle.mjs` retire
-`texts/tefila/`) et les télécharge depuis le site
-(`offlineTextStore.fetchTextResponse`), avec une empreinte qui garantit qu'ils
-sont bien les derniers publiés. Résultat, et c'est voulu pour les corrections
-de contenu :
+Pendant ce temps, l'app native ne lit pas les textes de son bundle : elle
+n'embarque que Cha'harit, Min'ha et Arvit, et encore, pour qu'on puisse prier
+sans réseau (`src/datas/bundledTexts.json`) ; tout le reste de
+`texts/tefila/` est retiré par `scripts/prune-native-bundle.mjs`. Elle les
+demande au site (`offlineTextStore.fetchTextResponse`), avec une empreinte qui
+garantit qu'ils sont bien les derniers publiés, et ne lit la copie embarquée
+que quand le site ne répond pas. Résultat, et c'est voulu pour les
+corrections de contenu :
 
 > le fichier vient d'aujourd'hui, le code qui le lit vient de la version
 > installée.
