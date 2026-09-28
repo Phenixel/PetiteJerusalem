@@ -1218,13 +1218,6 @@ function kaddishTitkabal(src, { when, seg = 4 } = {}) {
 }
 
 /**
- * Le Kaddich « yehé chelama » (le kaddich des endeuillés), dit après des
- * psaumes : yitgadal, puis yehé chelama et 'ossé chalom, sans titkabal.
- * Comme les autres kaddichim, il est replié : il demande un minyan, celui
- * qui prie seul ne le dit pas. La source le porte en entier là où il se
- * dit ; `seg` pointe son premier segment, le suivant le continue.
- */
-/**
  * Modim dérabanan dans la répétition de Moussaf : ce que l'assemblée dit
  * pendant que le 'hazan dit Modim. La source le donne en petit corps, sa
  * consigne collée au texte, au Moussaf de Roch 'Hodech comme à celui des
@@ -1267,6 +1260,31 @@ function apresMoussaf(when) {
   ];
 }
 
+/**
+ * Le psaume de la fête à 'Hol haMoed : le 42 à Souccot, le 107 à Pessa'h.
+ * Un bloc par fête sous la clé `when`, la ligne seule portant la fête.
+ * Cha'harit le dit après Moussaf, Min'ha à la place du Lamnatséa'h ;
+ * `rubrique` écrit la didascalie à partir du nom de la fête.
+ */
+function psaumesDeLaFete(when, rubrique, extra = {}) {
+  return [
+    ["Regalim.ChirSouccot", "sukkot", R("Souccot", "Sukkot", "סוכות")],
+    ["Regalim.ChirPessah", "pesach", R("Pessa'h", "Pesach", "פסח")],
+  ].map(([src, fete, nom]) => ({
+    src,
+    when,
+    ...extra,
+    lines: [{ seg: 1, when: fete, rubric: rubrique(nom) }],
+  }));
+}
+
+/**
+ * Le Kaddich « yehé chelama » (le kaddich des endeuillés), dit après des
+ * psaumes : yitgadal, puis yehé chelama et 'ossé chalom, sans titkabal.
+ * Comme les autres kaddichim, il est replié : il demande un minyan, celui
+ * qui prie seul ne le dit pas. La source le porte en entier là où il se
+ * dit ; `seg` pointe son premier segment, le suivant le continue.
+ */
 function kaddishYeheChelama(src, seg) {
   return {
     src,
@@ -2808,10 +2826,7 @@ function chaharitRecipe() {
           // paragraphe d'avant plutôt que d'ouvrir le sien, qui porte deux
           // fois le verset : elle vaut pour les deux.
           {
-            parts: [
-              { seg: 19, mode: "full" },
-              { rubric: RUBRIC_NAANOUIM_ANA, when: "loulav" },
-            ],
+            parts: [{ seg: 19, mode: "full" }, { rubric: RUBRIC_NAANOUIM_ANA, when: "loulav" }],
           },
           // La source écrit déjà chaque verset deux fois : c'est ce que dit
           // chacun (le 'hazan le dit, l'assemblée le redit, deux fois chacun).
@@ -3591,32 +3606,12 @@ function chaharitRecipe() {
       // שלמא וקוה עד הסוף ») : « Yehi chem », le Kaddich Titkabal qui ferme
       // Moussaf, le psaume de la fête, le Kaddich yehé chelama, puis Kavé.
       ...apresMoussaf("hol-hamoed"),
-      // Le psaume de la fête : le 42 à Souccot, le 107 à Pessah. Un bloc par
-      // fête, chacun sous sa clé, la ligne seule portant la condition.
-      {
-        src: "Regalim.ChirSouccot",
-        when: "hol-hamoed",
-        plain: true,
-        lines: [
-          {
-            seg: 1,
-            when: "sukkot",
-            rubric: R("Le psaume de Souccot :", "The psalm of Sukkot:", "מזמור לסוכות:"),
-          },
-        ],
-      },
-      {
-        src: "Regalim.ChirPessah",
-        when: "hol-hamoed",
-        plain: true,
-        lines: [
-          {
-            seg: 1,
-            when: "pesach",
-            rubric: R("Le psaume de Pessa'h :", "The psalm of Pesach:", "מזמור לפסח:"),
-          },
-        ],
-      },
+      // Le psaume de la fête (voir psaumesDeLaFete).
+      ...psaumesDeLaFete(
+        "hol-hamoed",
+        (nom) => R(`Le psaume de ${nom.fr}\u00a0:`, `The psalm of ${nom.en}:`, `מזמור ל${nom.he}:`),
+        { plain: true },
+      ),
       { ...kaddishYeheChelama("Song of the Day", 28), when: "hol-hamoed" },
       {
         src: "RH.Barchi Nafshi",
@@ -3986,28 +3981,16 @@ function minhaRecipe() {
         ],
       },
       // À 'Hol haMoed, le psaume de la fête à la place du Lamnatséa'h, comme
-      // le dit la consigne de la source (segment 15) : le 42 à Souccot, le
-      // 107 à Pessa'h, ceux que Cha'harit dit après Moussaf. La clé ne se
-      // pose pas la veille de Chabbat, où le psaume 93 tient déjà la place.
-      // À la couleur du thème : c'est ce qui change ce jour-là.
-      ...[
-        ["Regalim.ChirSouccot", "sukkot", R("Souccot", "Sukkot", "סוכות")],
-        ["Regalim.ChirPessah", "pesach", R("Pessa'h", "Pesach", "פסח")],
-      ].map(([src, fete, nom]) => ({
-        src,
-        when: "chir-moed-minha",
-        lines: [
-          {
-            seg: 1,
-            when: fete,
-            rubric: R(
-              `À 'Hol haMoed de ${nom.fr}, on dit à la place du Lamnatséa'h\u00a0:`,
-              `On Chol haMoed ${nom.en}, say in place of the Lamnatzeach:`,
-              `בחול המועד ${nom.he} אומרים במקום למנצח:`,
-            ),
-          },
-        ],
-      })),
+      // le dit la consigne de la source (segment 15). La clé ne se pose pas
+      // la veille de Chabbat, où le psaume 93 tient déjà la place. À la
+      // couleur du thème : c'est ce qui change ce jour-là.
+      ...psaumesDeLaFete("chir-moed-minha", (nom) =>
+        R(
+          `À 'Hol haMoed de ${nom.fr}, on dit à la place du Lamnatséa'h\u00a0:`,
+          `On Chol haMoed ${nom.en}, say in place of the Lamnatzeach:`,
+          `בחול המועד ${nom.he} אומרים במקום למנצח:`,
+        ),
+      ),
       {
         src: "Vidui",
         when: "jour-5",
