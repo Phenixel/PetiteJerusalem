@@ -33,9 +33,14 @@ Dans l'ordre des fiches (`SCREENS` dans le script) :
 5. bibliothèque
 6. lecture quotidienne
 7. détail d'un chiour
+8. calendrier des fêtes
 
-Le Play Store en prend huit au plus par format, l'App Store dix : un écran de
-plus tient encore, pas deux.
+Le Play Store en prend huit au plus par format, l'App Store dix : le compte
+y est pour le Play Store, un écran de plus demanderait d'en retirer un.
+Ensemble, ils couvrent ce que promet la description des fiches :
+bibliothèque (et son « Tout télécharger » pour la lecture hors ligne),
+partage de lecture, lecture quotidienne et son rappel, chiourim, horaires
+et calendrier.
 
 ## Rendu
 

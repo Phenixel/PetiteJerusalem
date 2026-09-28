@@ -26,8 +26,9 @@
  *   01 accueil connecté (tableau de bord)   05 bibliothèque
  *   02 horaires du jour (Paris)             06 lecture quotidienne
  *   03 session de partage de lecture        07 détail d'un chiour
- *   04 lecteur de texte (Tehilim 1)
- * Le Play Store en prend huit au plus par format, l'App Store dix.
+ *   04 lecteur de texte (Tehilim 1)         08 calendrier des fêtes
+ * Le Play Store en prend huit au plus par format (le compte y est), l'App
+ * Store dix.
  *
  * Usage :
  *   npm run store:screenshots                      les trois formats
@@ -425,6 +426,9 @@ const SCREENS = [
         .evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 24)),
   },
   { name: "07-chiour", path: `/chiourim/${CHIOUR_SLUG}`, readyText: "Description" },
+  // Le calendrier des fêtes, l'onglet voisin des horaires : ses lignes
+  // disent l'heure d'allumage de chaque fête.
+  { name: "08-calendrier", path: "/calendrier", readyText: "Allumage" },
 ];
 
 // --- Navigateur --------------------------------------------------------------

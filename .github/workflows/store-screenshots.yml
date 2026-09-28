@@ -14,13 +14,21 @@ name: Store screenshots
 # store-assets/screenshots/ : la release n'attend jamais les captures.
 #
 # Le lancement manuel régénère les captures du commit choisi, pour contrôle
-# visuel (artifact du run, à committer au besoin) sans rien publier. Voir
+# visuel (artifact du run, à committer au besoin) sans rien publier ; une PR
+# qui modifie le script de captures fait de même. Voir
 # store-assets/screenshots/README.md.
 
 on:
   push:
     tags:
       - "v*"
+  # Une PR qui touche au rendu des captures le prouve sur un vrai runner
+  # avant le merge : son artifact montre le résultat, rien n'est publié.
+  pull_request:
+    paths:
+      - scripts/store-screenshots.mjs
+      - scripts/lib/firebase-emulator.mjs
+      - .github/workflows/store-screenshots.yml
   workflow_dispatch:
 
 concurrency:
