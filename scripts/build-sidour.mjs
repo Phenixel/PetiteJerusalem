@@ -3931,6 +3931,29 @@ function minhaRecipe() {
           { he: psaume(130) },
         ],
       },
+      // À 'Hol haMoed, le psaume de la fête à la place du Lamnatséa'h, comme
+      // le dit la consigne de la source (segment 15) : le 42 à Souccot, le
+      // 107 à Pessa'h, ceux que Cha'harit dit après Moussaf. La clé ne se
+      // pose pas la veille de Chabbat, où le psaume 93 tient déjà la place.
+      // À la couleur du thème : c'est ce qui change ce jour-là.
+      ...[
+        ["Regalim.ChirSouccot", "sukkot", R("Souccot", "Sukkot", "סוכות")],
+        ["Regalim.ChirPessah", "pesach", R("Pessa'h", "Pesach", "פסח")],
+      ].map(([src, fete, nom]) => ({
+        src,
+        when: "chir-moed-minha",
+        lines: [
+          {
+            seg: 1,
+            when: fete,
+            rubric: R(
+              `À 'Hol haMoed de ${nom.fr}, on dit à la place du Lamnatséa'h\u00a0:`,
+              `On Chol haMoed ${nom.en}, say in place of the Lamnatzeach:`,
+              `בחול המועד ${nom.he} אומרים במקום למנצח:`,
+            ),
+          },
+        ],
+      })),
       {
         src: "Vidui",
         when: "jour-5",
@@ -4429,6 +4452,10 @@ function sourcesFor(office) {
       "Torah Reading": ws["Torah Reading"],
       "Taanit.Torah": text["Fast Days and Mourning"]["Torah Reading for Fast Days"],
       Haftara: text["Shabbat Shacharit"]["Haftarah"],
+      // Le psaume de la fête, qui prend à 'Hol haMoed la place du
+      // Lamnatséa'h.
+      "Regalim.ChirSouccot": text["Prayers for Three Festivals"]["Song for Sukkot"],
+      "Regalim.ChirPessah": text["Prayers for Three Festivals"]["Song for Passover"],
       // La veille de Kippour : le vidouy de la 'Amida, que seul le mahzor
       // porte.
       "YK.Amida": amidaKippour(),

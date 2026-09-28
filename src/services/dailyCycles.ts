@@ -596,8 +596,16 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   occ.add(`jour-${hd.getDay()}`);
   // Le Lamnatséa'h de Min'ha (psaume 67), entre le Kaddich Titkabal et
   // 'Alénou : tous les jours de semaine, sauf la veille de Chabbat où le
-  // psaume 93 le remplace (bloc jour-5 du fichier).
-  if (hd.getDay() !== 5 && hd.getDay() !== 6) occ.add("lamnatseah-minha");
+  // psaume 93 le remplace (bloc jour-5 du fichier). À 'Hol haMoed, le psaume
+  // de la fête prend sa place (« ובחול המועד סוכות ופסח יש נוהגים לומר את
+  // מזמור החג במקום למנצח ») : une clé à lui, que les versions publiées ne
+  // connaissent pas. Elles gardent le Lamnatséa'h, que leur propre code pose
+  // encore ; rien ne s'y dit deux fois (voir docs/compatibilite-textes.md).
+  // La veille de Chabbat, il n'y a pas de Lamnatséa'h à remplacer : le
+  // psaume 93 reste seul.
+  if (hd.getDay() !== 5 && hd.getDay() !== 6) {
+    occ.add(holHamoed ? "chir-moed-minha" : "lamnatseah-minha");
+  }
   // Le compte du 'Omer, quarante-neuf soirs, de la deuxième nuit de Pessah au
   // 5 Sivan. Il se compte le soir : c'est donc le jour hébraïque d'Arvit, déjà
   // basculé à la chkia, qui donne le bon numéro (voir tefilaHebrewDay).

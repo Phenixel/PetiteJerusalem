@@ -98,6 +98,7 @@ const KNOWN_WHEN = new Set([
   "sefer-torah",
   "ledavid",
   "lamnatseah-minha",
+  "chir-moed-minha",
   "motsae",
   "hoshana-rabba",
   "pesach",
@@ -643,6 +644,25 @@ describe("Min'ha : la veille de Kippour", () => {
     // Puis les deux prières de chacun, avant Élohaï netsor.
     expect(sansSignes(elohai.lines[0])).toContain("עד שלא נוצרתי");
     expect(sansSignes(elohai.lines[1])).toContain("שלא אחטא עוד");
+  });
+
+  it("dit à 'Hol haMoed le psaume de la fête à la place du Lamnatséa'h", () => {
+    // À sa place, après les psaumes de la veille de Kippour, sous une clé que seul le calendrier récent pose, et qui
+    // retire du même coup `lamnatseah-minha` (voir dailyCycles) : chaque
+    // version dit un seul psaume. Le même que Cha'harit après Moussaf.
+    const lamnatseah = blocks.findIndex((b) => b.when === "lamnatseah-minha");
+    const fete = blocks.filter((b) => b.when === "chir-moed-minha");
+    expect(fete).toHaveLength(2);
+    expect(blocks[lamnatseah + 1].when).toBe("erev-kippour");
+    expect(blocks.indexOf(fete[0])).toBe(lamnatseah + 2);
+    expect(blocks.indexOf(fete[1])).toBe(lamnatseah + 3);
+    expect(fete.map((b) => b.paragraphs![0].when)).toEqual(["sukkot", "pesach"]);
+    expect(sansSignes(fete[0].lines[0])).toContain("כאיל תערג");
+    expect(sansSignes(fete[1].lines[0])).toContain("הדו ליהוה כיטוב");
+    for (const b of fete)
+      expect(b.paragraphs![0].rubric!.fr).toContain("à la place du Lamnatséa'h");
+    // Pas `plain` : c'est ce qui change ce jour-là, à la couleur du thème.
+    expect(fete.some((b) => b.plain)).toBe(false);
   });
 
   it("remplace le Lamnatséa'h par les psaumes 85 et 130, sauf un vendredi", () => {
