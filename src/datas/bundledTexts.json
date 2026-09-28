@@ -1,0 +1,12 @@
+{
+  "authoritative": ["/texts/tehilim.json", "/texts/talmud-chapters.json"],
+  "revalidated": [
+    "/texts/tefila/chaharit.json",
+    "/texts/tefila/minha.json",
+    "/texts/tefila/arvit.json",
+    "/texts/tefila/kaddich.json",
+    "/texts/tefila/chema-al-hamita.json",
+    "/texts/tefila/tikoun-hatsot.json",
+    "/texts/tefila/havdala.json"
+  ]
+}

@@ -1,7 +1,8 @@
 /**
  * Client App Store Connect minimal, partagé par les scripts de release
  * (appstore-listing, asc-submit, asc-screenshots) : JWT ES256 signé avec la
- * clé d'API, et un `api()` qui met en forme les erreurs de l'API.
+ * clé d'API, et un `api()` qui rejoue les pannes passagères d'Apple et met en
+ * forme les erreurs de l'API.
  *
  * Le jeton Apple vit 20 minutes au maximum, mais un script peut durer plus
  * longtemps (asc-submit attend le traitement du build, jusqu'à 45 minutes) :
@@ -13,6 +14,7 @@
  * dédié, là où ce client suppose des identifiants sains.
  */
 import { createPrivateKey, sign as cryptoSign } from "node:crypto";
+import { RETRY_ATTEMPTS, withRetry } from "./asc-retry.mjs";
 
 const base64url = (input) =>
   Buffer.from(input).toString("base64").replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
@@ -34,11 +36,34 @@ export const EDITABLE_STATES = [
 export const versionState = (v) => v.attributes.appVersionState ?? v.attributes.appStoreState;
 
 /**
+ * Le texte d'une réponse d'erreur de l'API, raisons détaillées comprises.
+ *
+ * Quand Apple refuse une version entière (le 409 de la soumission à l'examen),
+ * `detail` se contente de « please check associated errors to see why » : la
+ * vraie raison (un champ obligatoire vide, une série de captures manquante)
+ * est rangée dans `meta.associatedErrors`, par ressource. Sans elle, le
+ * journal ne disait rien d'utile (tag v3.10.8).
+ */
+export function describeAscErrors(json, text) {
+  if (!Array.isArray(json?.errors)) return text;
+  return json.errors
+    .flatMap((error) => [
+      `${error.title} : ${error.detail}`,
+      ...Object.values(error.meta?.associatedErrors ?? {})
+        .flat()
+        .map((reason) => `  ${reason.title ?? reason.code} : ${reason.detail ?? ""}`.trimEnd()),
+    ])
+    .join("\n  ");
+}
+
+/**
  * Fabrique le client. Les identifiants sont nettoyés ici (les secrets collés
  * dans l'interface GitHub embarquent facilement un blanc ou un retour à la
  * ligne, et le PEM peut arriver en une ligne avec des « \n » littéraux).
+ *
+ * `sleep` ne sert qu'aux tests, pour rejouer une panne sans attendre.
  */
-export function createAscClient({ keyId, issuerId, privateKeyPem }) {
+export function createAscClient({ keyId, issuerId, privateKeyPem, sleep }) {
   const kid = keyId.trim();
   const iss = issuerId.trim();
   const key = createPrivateKey(privateKeyPem.replaceAll("\\n", "\n"));
@@ -62,11 +87,11 @@ export function createAscClient({ keyId, issuerId, privateKeyPem }) {
   }
 
   /**
-   * Appel API App Store Connect. Jette, en cas d'erreur HTTP, une Error
-   * portant `status` (code HTTP) et `body` (JSON de l'API) pour que les
-   * appelants distinguent les 409 attendus des vrais échecs.
+   * Une requête, sans rejeu. Jette, en cas d'erreur HTTP, une Error portant
+   * `status` (code HTTP) et `body` (JSON de l'API) pour que les appelants
+   * distinguent les 409 attendus des vrais échecs.
    */
-  async function api(method, path, body) {
+  async function request(method, path, body) {
     const response = await fetch(`https://api.appstoreconnect.apple.com${path}`, {
       method,
       headers: {
@@ -78,13 +103,38 @@ export function createAscClient({ keyId, issuerId, privateKeyPem }) {
     const text = await response.text();
     const json = text ? JSON.parse(text) : null;
     if (!response.ok) {
-      const detail = json?.errors?.map((e) => `${e.title} : ${e.detail}`).join("\n  ") ?? text;
-      const error = new Error(`${method} ${path} → ${response.status}\n  ${detail}`);
+      const error = new Error(
+        `${method} ${path} → ${response.status}\n  ${describeAscErrors(json, text)}`,
+      );
       error.status = response.status;
       error.body = json;
       throw error;
     }
     return json;
+  }
+
+  /**
+   * Appel API App Store Connect, rejoué quand Apple tombe (5xx, 429, pas de
+   * réponse), même règle que la signature (scripts/lib/asc-retry.mjs). Seuls
+   * GET et DELETE le sont : les rejouer ne coûte rien. Un POST ou un PATCH
+   * rejoué pourrait créer en double, ou soumettre deux fois.
+   *
+   * Le tag v3.10.8 est mort faute de ce rejeu : un 500 « UNEXPECTED_ERROR »
+   * sur une simple lecture a coupé appstore-listing.mjs juste après la
+   * création de la version, avant qu'il en écrive les « Nouveautés », et
+   * Apple a refusé la soumission d'une version incomplète.
+   */
+  async function api(method, path, body) {
+    if (method !== "GET" && method !== "DELETE") return request(method, path, body);
+    return withRetry(() => request(method, path, body), {
+      ...(sleep ? { sleep } : {}),
+      onFailure: (error, attempt) => {
+        console.warn(
+          `asc-api: ${method} ${path} a échoué (${error.status ?? "sans réponse"}), ` +
+            `nouvelle tentative ${attempt}/${RETRY_ATTEMPTS}`,
+        );
+      },
+    });
   }
 
   return { api };

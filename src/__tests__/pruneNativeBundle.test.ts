@@ -49,6 +49,11 @@ describe("prune-native-bundle", () => {
     write(root, "llms-full.txt", "# Petite Jérusalem");
     write(root, "texts/talmud/berakhot.json", "{}");
     write(root, "texts/tehilim.json", "{}");
+    write(root, "texts/tefila/chaharit.json", "{}");
+    write(root, "texts/tefila/minha.json", "{}");
+    write(root, "texts/tefila/arvit.json", "{}");
+    write(root, "texts/tefila/havdala.json", "{}");
+    write(root, "texts/tefila/slihot.json", "{}");
     write(root, "assets/app.js", "//");
     execFileSync("node", [SCRIPT, root]);
   });
@@ -80,5 +85,12 @@ describe("prune-native-bundle", () => {
     expect(existsSync(join(root, "texts/talmud"))).toBe(false);
     expect(existsSync(join(root, "texts/tehilim.json"))).toBe(true);
     expect(existsSync(join(root, "assets/app.js"))).toBe(true);
+  });
+
+  it("garde le Sidour, et lui seul parmi les tefilot", () => {
+    for (const kept of ["chaharit", "minha", "arvit", "havdala"]) {
+      expect(existsSync(join(root, `texts/tefila/${kept}.json`))).toBe(true);
+    }
+    expect(existsSync(join(root, "texts/tefila/slihot.json"))).toBe(false);
   });
 });

@@ -142,8 +142,27 @@ tient :
   profil fait exception, mais relit d'abord le profil par son nom, Apple le
   fabriquant parfois avant d'échouer à le renvoyer.
 
+La même règle vaut pour le client partagé par la fiche, les captures et la
+soumission (`scripts/lib/asc-api.mjs`, tenu par `src/__tests__/ascApi.test.ts`),
+depuis le tag v3.10.8 : un 500 sur une simple lecture y avait coupé
+`appstore-listing.mjs` juste après la création de la version, avant qu'il en
+écrive les « Nouveautés ». L'étape, non bloquante, n'a laissé qu'un
+avertissement, et la soumission a échoué ensuite sur un 409 « not in valid
+state » : Apple refuse une version dont un champ obligatoire est vide. Ce
+client affiche désormais aussi les raisons détaillées qu'Apple range dans
+`meta.associatedErrors`, là où le journal ne disait que « please check
+associated errors to see why ».
+
 Un run qui échoue quand même sur ce message n'a rien à corriger dans le repo :
-il se relance.
+il se relance. Quand c'est l'étape « Mettre à jour la fiche App Store » qui a
+flanché, relancer le seul job `submit` ne suffit pas, il ne réécrit pas la
+fiche. Deux façons de reprendre la version restée en plan :
+
+- remplir ce qui manque dans App Store Connect (les « Nouveautés » de chaque
+  langue), puis relancer le job `submit` (« Re-run failed jobs ») ;
+- ou pousser un nouveau tag (patch + 1) : `appstore-listing.mjs` renomme la
+  version modifiable restée en plan et la reprend depuis le début. Le tag
+  republie aussi le site et l'app Android.
 
 ### Le quota de trois certificats de distribution
 
@@ -257,8 +276,11 @@ store-assets/metadata/ios/<locale>/   # fr-FR, en-US, he
   script le corps de la release GitHub du tag (`--release-notes`), et à
   défaut c'est la phrase par défaut de `scripts/release-notes.mjs`
   (« Correction de bugs mineurs. », traduite par langue) qui part, même
-  logique que le Play Store. Le corps, rédigé en français, n'alimente que
-  fr-FR ; les autres langues reçoivent la phrase par défaut.
+  logique que le Play Store. Écrit en trois sections (`## Français`,
+  `## English`, `## עברית`), chaque langue reçoit la sienne ; sans ces
+  titres, le corps ne va qu'à fr-FR, et une langue sans texte reçoit la
+  phrase par défaut. Le format est décrit dans
+  [android-ci-cd.md](android-ci-cd.md#notes-de-version-en-trois-langues).
 - `node scripts/appstore-listing.mjs --check` vérifie en local, sans réseau,
   les limites de caractères **et** l'absence de caractères refusés par l'API
   App Store Connect (émojis, symboles hors BMP…) : la CI le fait en début de
@@ -276,18 +298,22 @@ store-assets/metadata/ios/<locale>/   # fr-FR, en-US, he
 
 ### Captures d'écran
 
-Automatiques : à chaque tag, le job `screenshots` de deploy-ios.yml (Linux)
-régénère les captures avec `npm run store:screenshots -- --ios` (émulateurs
-Firebase + données de démo fixes, rendu Chrome aux dimensions exactes
-d'Apple) puis les envoie dans App Store Connect via
-`scripts/asc-screenshots.mjs`, qui joue le cérémonial d'envoi de l'API
-(réservation, morceaux, somme MD5) et remplace le jeu entier de chaque
-famille sur la version du tag. Non bloquant : si le job échoue, les captures
-déjà en place dans App Store Connect restent telles quelles et la soumission
-part quand même.
+Automatiques : à chaque tag, le workflow `store-screenshots.yml` génère UNE
+fois les captures des deux fiches avec `npm run store:screenshots`
+(émulateurs Firebase + données de démo fixes, puis Chrome headless qui rend
+l'interface de l'app, barre d'onglets comprise, aux dimensions exactes
+d'Apple). Le job `screenshots` de deploy-ios.yml les récupère (action
+`.github/actions/fetch-store-screenshots`) puis les envoie dans App Store
+Connect via `scripts/asc-screenshots.mjs`, qui joue le cérémonial d'envoi de
+l'API (réservation, morceaux, somme MD5) et remplace le jeu entier de chaque
+famille sur la version du tag. Non bloquant : si la génération échoue, ce
+sont les captures committées qui partent ; si l'envoi échoue, les captures
+déjà en place dans App Store Connect restent telles quelles et la
+soumission part quand même.
 
 L'app est universelle (iPhone + iPad), donc **deux séries** par langue,
-rangées dans `store-assets/metadata/ios/screenshots/<locale>/` :
+rangées dans `store-assets/screenshots/<locale>/` à côté de la série du
+Play Store (`phone-*`, qui n'est pas lue ici) :
 
 | Famille | Fichiers | Dimensions | displayType |
 |---|---|---|---|
@@ -299,12 +325,13 @@ triés par nom. Apple redimensionne lui-même pour les appareils plus petits
 de chaque famille ; une locale sans dossier laisse sa fiche intacte (elle
 retombe sur la langue principale).
 
-Contrairement aux captures Android (app native sur émulateur, barre de
-statut et barre d'onglets incluses), les captures iOS sont un rendu du site
-mobile, sans barre système. Pour reprendre la main avec un jeu fait au
-simulateur iOS (`⌘S`), déposer les fichiers dans le dossier ci-dessus en
-respectant les préfixes, puis
-`node scripts/asc-screenshots.mjs --version X.Y.Z`.
+Les captures sont celles de la fiche Play, écran pour écran : l'interface de
+l'app, sans barre système d'aucune plateforme (le détail du rendu est dans
+[store-assets/screenshots/README.md](../store-assets/screenshots/README.md)).
+Pour reprendre la main avec un jeu fait au simulateur iOS (`⌘S`), déposer
+les fichiers dans le dossier ci-dessus en respectant les préfixes, puis
+`node scripts/asc-screenshots.mjs --version X.Y.Z` ; la CI, elle, enverra
+de nouveau le jeu généré au tag suivant.
 
 ## Notes
 

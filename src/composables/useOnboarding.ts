@@ -49,7 +49,7 @@ function readSeenVersion(): string | null {
 
 const seenVersion = ref<string | null>(readSeenVersion());
 
-/** « Revoir l'introduction » (onglet À propos) : la rouvre sans rien effacer. */
+/** « Revoir l'introduction » (profil de l'app) : la rouvre sans rien effacer. */
 const replaying = ref(false);
 
 /** Paramètre d'adresse qui ouvre l'introduction, où qu'on soit. */

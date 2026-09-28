@@ -62,8 +62,7 @@ la variable d'environnement `CAP_SERVER_URL` : rien à éditer dans le fichier.
 
 Sans la variable, `cap sync` revient au bundle embarqué : il n'y a rien à
 retirer avant un build destiné à un store, `npm run app:build` sans
-`CAP_SERVER_URL` suffit. (`scripts/store-screenshots.mjs` utilise la même
-variable pour pointer l'app native sur son propre Vite.)
+`CAP_SERVER_URL` suffit.
 
 ## Scripts
 
@@ -73,7 +72,7 @@ variable pour pointer l'app native sur son propre Vite.)
 | `npm run cap:sync` | synchronise web + plugins vers les projets natifs |
 | `npm run cap:android` | build + ouvre Android Studio |
 | `npm run cap:ios` | build + ouvre Xcode |
-| `npm run store:screenshots` | régénère les captures de la fiche Play Store (voir `docs/android-ci-cd.md`) ; `-- --ios` produit celles de l'App Store (voir `docs/ios-ci-cd.md`) |
+| `npm run store:screenshots` | régénère les captures des fiches Play Store et App Store, les mêmes pour les deux (voir `store-assets/screenshots/README.md`) |
 
 ## Un plugin ne traverse jamais une promesse
 
@@ -119,16 +118,31 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
 - `npm run app:build` retire `dist/texts/{talmud,mishna,tanakh,rashi,tefila}`
   (~38 Mo) et `dist/texts/manifest.json` (l'app va le chercher en ligne,
   jamais dans son bundle) du bundle natif via
-  `scripts/prune-native-bundle.mjs`. Seuls `tehilim.json` (~370 Ko) et
-  `talmud-chapters.json` (~40 Ko) restent embarqués.
+  `scripts/prune-native-bundle.mjs`. Restent embarqués, pour se lire sans
+  réseau dès l'installation, les fichiers listés dans
+  `src/datas/bundledTexts.json` :
+  - `authoritative` : `tehilim.json` (~370 Ko) et `talmud-chapters.json`
+    (~40 Ko), lus dans le binaire, qui fait foi pour eux ;
+  - `revalidated` : le Sidour, les trois offices et les quatre textes qui les
+    accompagnent (`tefila/`, ~1 Mo). La copie du binaire s'ouvre tout de
+    suite, sans rien attendre du réseau ; en fond, l'app demande au site s'il
+    en sert une autre version (une correction de tefila n'attend pas une
+    version de l'app) et la télécharge, vérifiée à l'empreinte : c'est elle
+    qui s'ouvre la fois suivante, et la synchronisation la tient à jour.
+
+  Un livre embarqué n'a ni bouton « Télécharger » ni place dans « Tout
+  télécharger ». Tests : `src/__tests__/bundledTexts.test.ts` (ordre de
+  lecture), `pruneNativeBundle.test.ts` (ce que le binaire garde).
 - Les livres se téléchargent depuis la bibliothèque (bouton sur chaque carte,
   « Tout télécharger » par corpus) ou sur proposition de la lecture du jour
   (voir plus bas). Stockage : `Directory.Data` en natif
   (`@capacitor/file-transfer` + `@capacitor/filesystem`), Cache Storage sur le
   web ; index dans `@capacitor/preferences` (`src/services/offlineTextStore.ts`
   et `offlineLibraryService.ts`).
-- `textService.loadText` passe par `fetchTextResponse` : copie locale d'abord,
-  réseau (`https://petite-jerusalem.fr`) sinon.
+- `textService.loadText` passe par `fetchTextResponse` : copie téléchargée à
+  jour d'abord, puis copie embarquée (et pour le Sidour, la vérification de
+  fond décrite plus haut), puis réseau (`https://petite-jerusalem.fr`), puis,
+  le réseau en échec, copie téléchargée périmée.
 
 Vérification : télécharger un livre, activer le mode avion, l'ouvrir.
 
@@ -338,8 +352,9 @@ instants calculés, et ces instants viennent de bouger (voir
 
 Les **astuces vues** (`useFeatureTips`, clé `pj_tips_seen`) aussi : une
 astuce qui reviendrait à chaque vidage de cache finirait par agacer, et
-« Revoir les astuces » (onglet À propos) est là pour qui la veut. Elles ne
-montent pas dans le compte : c'est sur cet écran-là qu'on a vu le geste.
+« Revoir les astuces » (profil de l'app, groupe Aide) est là pour qui la
+veut. Elles ne montent pas dans le compte : c'est sur cet écran-là qu'on a vu
+le geste.
 
 L'**interrupteur du défilement automatique** (`useAutoScroll`) suit la même
 règle, et pour une raison plus forte encore : il se coupe précisément pour ne
@@ -414,6 +429,7 @@ couleurs telle quelle.
 | sombre | mode sombre d'iOS 18 |
 | teintée | iOS 18, teintée par la couleur choisie pour l'écran d'accueil |
 | monochrome | icônes thématiques d'Android 13+, teintées par le fond d'écran |
+| notification | petite icône de toutes les notifications Android, teintée par le système |
 
 C'est pour ça que le noir et blanc est nécessaire : les variantes teintée et
 monochrome sont lues comme des intensités, pas comme des images. Le système
@@ -440,6 +456,29 @@ Deux contraintes valent d'être connues avant de retoucher le dessin :
   se toucheraient et l'icône ne serait plus qu'une tache : ce sont les creux du
   masque (joints des pierres, lignes des pages, bord haut du livre) qui la
   gardent lisible.
+
+### Petite icône des notifications
+
+Android n'affiche de la petite icône d'une notification que son opacité. Sans
+icône déclarée, chaque source retombait sur la sienne : l'icône du lanceur
+réduite à une pastille pour les push reçues app fermée, le « i » générique du
+système pour les notifications locales (rappels d'horaires, rappel du Chabbat,
+push rejouées au premier plan).
+
+Toutes prennent désormais `ic_stat_pj`, la silhouette de l'icône cadrée pour
+24 dp. Ses PNG sont versionnés dans `native/android/app/src/main/res/drawable-*`
+(recopiés par `setup-android.mjs` avec les widgets) et se rasterisent comme les
+autres, depuis la variante `notification` de `scripts/lib/app-icon.mjs`, aux
+tailles de 24, 36, 48, 72 et 96 px (de mdpi à xxxhdpi). Deux déclarations la
+branchent :
+
+- `capacitor.config.ts`, `LocalNotifications.smallIcon` : toutes les
+  notifications locales ;
+- le manifest, meta-data `default_notification_icon` de Firebase (posée par
+  `setup-android.mjs`) : les push affichées par le système app fermée.
+
+La teinte du volet est l'or des pierres de l'icône (`#C79A3B`), déclarée aux
+deux endroits.
 
 ## Liens du site qui ouvrent l'app
 

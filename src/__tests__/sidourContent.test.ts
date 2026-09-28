@@ -3,11 +3,12 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
-import { parseContent, resolveFilePath } from "../services/textService";
+import { HDate, months } from "@hebcal/core";
+import { parseContent, resolveFilePath, saidOn } from "../services/textService";
 import type { TextContent, TextParagraph, TextRun } from "../services/textService";
 import { injectWeeklyTorah } from "../services/sidourService";
 import type { WeeklyParasha } from "../services/dailyCycles";
-import { getParashaForShabbat } from "../services/dailyCycles";
+import { activeOccasions, getParashaForShabbat } from "../services/dailyCycles";
 import torahWeekdayJson from "../datas/torahWeekday.json";
 
 /**
@@ -50,6 +51,8 @@ const KNOWN_WHEN = new Set([
   "nissim",
   "moadim",
   "moed",
+  "hol-hamoed",
+  "loulav",
   "shabbat-or-moed",
   "teshuva",
   "erev-kippour",
@@ -76,9 +79,14 @@ const KNOWN_WHEN = new Set([
   "hallel-complet",
   "hallel-abrege",
   "hanouka",
+  "rosh-chodesh-hanouka",
   "pourim",
   "omer",
   ...Array.from({ length: 8 }, (_, i) => `hanouka-${i + 1}`),
+  ...Array.from({ length: 7 }, (_, i) => `souccot-${i + 1}`),
+  "chabbat-souccot",
+  "eretz-israel",
+  "houts-laarets",
   ...Array.from({ length: 49 }, (_, i) => `omer-${i + 1}`),
   "tisha-beav",
   "sans-tisha-beav",
@@ -91,6 +99,8 @@ const KNOWN_WHEN = new Set([
   "sefer-torah",
   "ledavid",
   "lamnatseah-minha",
+  "chir-moed-minha",
+  "moussaf",
   "motsae",
   "hoshana-rabba",
   "pesach",
@@ -373,6 +383,30 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       expect(amida[0].kotel).toBe(true);
     });
 
+    it("pose la 'hazara à la fin de chaque 'Amida que le 'hazan répète", () => {
+      // Le bouton « 'Hazara » (LiturgyText) remonte au dernier titre `kotel`
+      // et déplie les passages du 'hazan d'ici là : chaque 'Amida répétée
+      // (Cha'harit, Min'ha, les deux Moussaf) a donc sa fin marquée, sur le
+      // bloc de 'Ossé chalom, avec au moins un passage du 'hazan entre les
+      // deux. Arvit n'a pas de répétition, et pas de bouton.
+      const hazara = blocks.flatMap((b, i) => (b.hazara ? [i] : []));
+      if (resolveFilePath(entry).includes("arvit")) {
+        expect(hazara).toEqual([]);
+        return;
+      }
+      const kotel = blocks.flatMap((b, i) => (b.kotel ? [i] : []));
+      expect(hazara).toHaveLength(kotel.length);
+      kotel.forEach((debut, k) => {
+        const fin = hazara[k];
+        expect(fin).toBeGreaterThan(debut);
+        expect(fin).toBeLessThan(kotel[k + 1] ?? Infinity);
+        const entre = blocks.slice(debut, fin + 1);
+        expect(entre.some((b) => b.fold === "hazan")).toBe(true);
+        expect(blocks[fin].when).toBe(blocks[debut].when);
+        expect(sansSignes(blocks[fin].lines.join(" "))).toContain("במרומיו");
+      });
+    });
+
     it("revêt le talit et les téfilines avant d'entrer dans la prière", () => {
       // À Cha'harit seulement, et à leur place : après les bénédictions du
       // matin, avant 'Akédat Its'hak. On ne prie pas d'abord pour s'en revêtir
@@ -532,8 +566,9 @@ describe("Min'ha : les jeûnes publics", () => {
   });
 
   it("change de psaumes la veille de Pourim et le vendredi", () => {
-    // Les psaumes sont des lignes dans le fil, sans titre.
-    const psaume = (when: string) => blocks.filter((b) => b.when === when && !b.label);
+    // Les psaumes sont des lignes dans le fil, sans titre, et ne sont pas
+    // les options d'un choix (la haftara de Tich'a beAv en a une sans titre).
+    const psaume = (when: string) => blocks.filter((b) => b.when === when && !b.label && !b.choice);
     // En rangeant le séfer : 20, ou 124, ou 126.
     expect(sansSignes(psaume("tsom-minha")[0].lines[0])).toContain("יענך יהוה ביום צרה");
     expect(sansSignes(psaume("tsom-esther-veille")[0].lines[0])).toContain("לולי יהוה");
@@ -613,6 +648,25 @@ describe("Min'ha : la veille de Kippour", () => {
     expect(sansSignes(elohai.lines[1])).toContain("שלא אחטא עוד");
   });
 
+  it("dit à 'Hol haMoed le psaume de la fête à la place du Lamnatséa'h", () => {
+    // À sa place, après les psaumes de la veille de Kippour, sous une clé que seul le calendrier récent pose, et qui
+    // retire du même coup `lamnatseah-minha` (voir dailyCycles) : chaque
+    // version dit un seul psaume. Le même que Cha'harit après Moussaf.
+    const lamnatseah = blocks.findIndex((b) => b.when === "lamnatseah-minha");
+    const fete = blocks.filter((b) => b.when === "chir-moed-minha");
+    expect(fete).toHaveLength(2);
+    expect(blocks[lamnatseah + 1].when).toBe("erev-kippour");
+    expect(blocks.indexOf(fete[0])).toBe(lamnatseah + 2);
+    expect(blocks.indexOf(fete[1])).toBe(lamnatseah + 3);
+    expect(fete.map((b) => b.paragraphs![0].when)).toEqual(["sukkot", "pesach"]);
+    expect(sansSignes(fete[0].lines[0])).toContain("כאיל תערג");
+    expect(sansSignes(fete[1].lines[0])).toContain("הדו ליהוה כיטוב");
+    for (const b of fete)
+      expect(b.paragraphs![0].rubric!.fr).toContain("à la place du Lamnatséa'h");
+    // Pas `plain` : c'est ce qui change ce jour-là, à la couleur du thème.
+    expect(fete.some((b) => b.plain)).toBe(false);
+  });
+
   it("remplace le Lamnatséa'h par les psaumes 85 et 130, sauf un vendredi", () => {
     // Après le Kaddich Titkabal. Le psaume 67 garde sa clé et c'est `unless`
     // qui le retire : une version ancienne, qui l'ignore, affiche les deux
@@ -647,12 +701,21 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
     const lignes = hallel.lines as { when?: string; he?: string }[];
     const entier = lignes.filter((l) => l?.when === "hallel-complet");
     const abrege = lignes.filter((l) => l?.when === "hallel-abrege");
-    // « Lo lanou » et « Ahavti » ne sont là qu'au Hallel entier, avec leur
-    // suite ; les deux consignes de saut ne sont là qu'à l'abrégé.
-    expect(entier).toHaveLength(4);
+    // Le Hallel entier s'ouvre sur sa bénédiction, que le 'hazan demande la
+    // permission de dire (« Birchout », l'assemblée répond « Chamayim ») ;
+    // l'abrégé ne se bénit pas. Puis « Lo lanou » et « Ahavti » ne sont là
+    // qu'au Hallel entier, avec leur suite ; les deux consignes de saut ne
+    // sont là qu'à l'abrégé. La dernière ligne du Hallel entier est
+    // « Yehalelou'ha », qui le ferme (voir le describe de 'Hol haMoed plus
+    // bas).
+    expect(entier).toHaveLength(8);
     expect(abrege).toHaveLength(2);
-    expect(sansSignes(String(entier[0].he))).toContain("לא לנו");
-    expect(sansSignes(String(entier[2].he))).toContain("אהבתי");
+    expect(sansSignes(String(entier[0].he))).toContain("ברשות מורי ורבותי");
+    expect(sansSignes(String(entier[1].he))).toContain("שמים");
+    expect(sansSignes(String(entier[2].he))).toContain("לגמור את ההלל");
+    expect(lignes.indexOf(entier[2])).toBe(2);
+    expect(sansSignes(String(entier[3].he))).toContain("לא לנו");
+    expect(sansSignes(String(entier[5].he))).toContain("אהבתי");
   });
 
   it("lit un passage par jour à 'Hanouka, dans l'ordre des nessiim", () => {
@@ -759,6 +822,313 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
       // jours, ce n'est pas une addition du calendrier.
       expect(bloc.plain).toBe(true);
     }
+  });
+});
+
+describe("Cha'harit : Moussaf, et les Kaddich qui l'entourent", () => {
+  // Les jours de Moussaf, la source passe d'Ouva letsion au psaume du jour
+  // sans Kaddich, dit un demi-Kaddich avant Moussaf, puis après la
+  // répétition « Yehi chem » et le Kaddich Titkabal ; le Kaddich yehé
+  // chelama vient après Barkhi nafchi, ou après le psaume de la fête.
+  const entry = sidourEntries.find((e) => resolveFilePath(e).includes("chaharit"))!;
+  const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
+  /** Les titres qui se lisent ce jour-là, d'Achré à Kavé. */
+  function titres(hd: HDate): string[] {
+    const occ = activeOccasions(hd, false);
+    const lus = blocks.filter((b) => saidOn(b.when, occ, b.unless));
+    const debut = lus.findIndex((b) => b.label === "Achré");
+    const fin = lus.findIndex((b) => b.label === "Kavé · Ein kélohénou");
+    return lus.slice(debut + 1, fin).flatMap((b) => (b.label ? [b.label] : []));
+  }
+  const MOUSSAF = [
+    "Dans une maison endeuillée",
+    "Demi-Kaddich (le 'hazan)",
+    "Moussaf",
+    "Kedoucha de Moussaf (Keter)",
+    "Modim dérabanan",
+    "Birkat kohanim",
+    "Kaddich Titkabal (le 'hazan)",
+    "Kaddich yehé chelama",
+  ];
+
+  it("garde l'ordre de semaine les autres jours", () => {
+    // Le dimanche 14 Hechvan 5787.
+    expect(titres(new HDate(14, months.CHESHVAN, 5787))).toEqual([
+      "Kaddich Titkabal (le 'hazan)",
+      "Dans une maison endeuillée",
+      "Kaddich yehé chelama",
+    ]);
+  });
+
+  it("à Roch 'Hodech : la répétition entière, puis le Kaddich qui ferme Moussaf", () => {
+    const hd = new HDate(1, months.CHESHVAN, 5787);
+    expect(titres(hd)).toEqual(MOUSSAF);
+    // Barkhi nafchi, avant le Kaddich yehé chelama.
+    const occ = activeOccasions(hd, false);
+    const lus = blocks.filter((b) => saidOn(b.when, occ, b.unless));
+    const barkhi = lus.findIndex((b) => sansSignes(b.lines[0] ?? "").startsWith("ברכי נפשי"));
+    expect(lus[barkhi + 1].label).toBe("Kaddich yehé chelama");
+  });
+
+  it("à Roch 'Hodech Tévet, 'Al hanissim entre dans le Modim de Moussaf", () => {
+    const occ = activeOccasions(new HDate(1, months.TEVET, 5787), false);
+    expect(occ.has("rosh-chodesh-hanouka")).toBe(true);
+    const lus = blocks.filter((b) => saidOn(b.when, occ, b.unless));
+    const moussaf = lus.findIndex((b) => b.label === "Moussaf");
+    const nissim = lus.findIndex((b, i) => i > moussaf && b.when === "rosh-chodesh-hanouka");
+    expect(nissim).toBeGreaterThan(moussaf);
+    expect(lus[nissim - 1].label).toBe("Modim dérabanan");
+    expect(sansSignes(lus[nissim].lines.join(" "))).toContain("בימי מתתיה");
+    // Les autres Roch 'Hodech, non.
+    const cheshvan = activeOccasions(new HDate(1, months.CHESHVAN, 5787), false);
+    expect(
+      blocks.filter((b) => b.when === "rosh-chodesh-hanouka" && saidOn(b.when, cheshvan)),
+    ).toEqual([]);
+  });
+
+  it("à 'Hol haMoed : le même ordre, le psaume de la fête avant le Kaddich yehé chelama", () => {
+    expect(titres(new HDate(17, months.TISHREI, 5787))).toEqual(MOUSSAF);
+  });
+});
+
+describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
+  const entry = sidourEntries.find((e) => resolveFilePath(e).includes("chaharit"))!;
+  const brut = (
+    loadRaw(entry) as {
+      blocks: { label?: string; when?: string; lines: unknown[] }[];
+    }
+  ).blocks;
+  const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
+  const indexOf = (label: string, when: string) =>
+    brut.findIndex((b) => b.label === label && b.when === when);
+
+  it("prend le loulav juste avant le Hallel", () => {
+    const loulav = indexOf("Les brahot du loulav", "loulav");
+    const hallel = brut.findIndex((b) => b.label === "Hallel");
+    expect(loulav).toBeGreaterThan(0);
+    expect(hallel).toBe(loulav + 1);
+    const bloc = blocks.find((b) => b.labelText?.fr === "Les brahot du loulav")!;
+    const texte = sansSignes(bloc.lines.join(" "));
+    expect(texte).toContain("על נטילת לולב");
+    expect(texte).toContain("שהחיינו");
+    // Les six côtés, dans l'ordre de l'usage, en didascalie du dernier
+    // paragraphe : le na'anou'a se fait, il ne se dit pas.
+    expect(texte).toContain("דרום, צפון, מזרח, מעלה, מטה, מערב");
+  });
+
+  it("dit, avant les brahot, ce que le sidour fait dire avant de prendre le loulav", () => {
+    const avant = indexOf("Avant de prendre le loulav", "loulav");
+    const brahot = indexOf("Les brahot du loulav", "loulav");
+    expect(avant).toBeGreaterThan(0);
+    expect(brahot).toBe(avant + 1);
+    const bloc = blocks.find((b) => b.labelText?.fr === "Avant de prendre le loulav")!;
+    const texte = sansSignes(bloc.lines.join(" "));
+    expect(texte).toContain("לשם יחוד קדשא בריך הוא");
+    expect(texte).toContain("והריני מוכן לנענע");
+    expect(texte).toContain("רבון עלמא");
+    // Le verset « Vihi no'am » se dit deux fois.
+    const noam = (bloc.paragraphs ?? []).find((p) => p.rubric?.he.includes("ויכפול"))!;
+    expect(noam.repeat).toBe(2);
+  });
+
+  it("ouvre le cadran des six côtés au titre des brahot du loulav", () => {
+    const bloc = blocks.find((b) => b.labelText?.fr === "Les brahot du loulav")!;
+    expect(bloc.naanouim).toBe(true);
+    // La didascalie les nomme dans la langue du lecteur : la ligne qui suit
+    // ne les porte qu'en hébreu.
+    const cotes = (bloc.paragraphs ?? []).at(-1)!.rubric!;
+    expect(cotes.fr).toContain("sud, nord, est, haut, bas, ouest");
+    expect(cotes.en).toContain("south, north, east, up, down, west");
+  });
+
+  it("ne met pas les téfilines à 'Hol haMoed, et le dit au talit", () => {
+    // Le bloc des téfilines se retire (`unless`), celui du talit reste, avec
+    // la consigne du jour.
+    const tefilines = blocks.find((b) => b.halakhot?.[0].fr.startsWith("On pose d'abord"))!;
+    expect(tefilines.when).toBe("sans-tisha-beav");
+    expect(tefilines.unless).toBe("hol-hamoed");
+    const talit = blocks.find((b) => b.labelText?.fr === "Le talit et les téfilines")!;
+    expect(talit.unless).toBeUndefined();
+    expect(talit.halakhot?.find((h) => h.when === "hol-hamoed")?.fr).toContain("téfilines");
+  });
+
+  it("dit les Hochanot entre le Hallel et le Kaddich Titkabal", () => {
+    const hallel = brut.findIndex((b) => b.label === "Hallel");
+    const hochanot = brut.findIndex(
+      (b) =>
+        b.when === "loulav" &&
+        (b as { labelText?: { fr: string } }).labelText?.fr === "Les Hochanot",
+    );
+    // Entre les deux, seuls des blocs d'autres jours (le Titkabal de Roch
+    // Hodech) : ce jour-là, le lecteur passe du Hallel aux Hochanot.
+    expect(hochanot).toBeGreaterThan(hallel);
+    for (const bloc of brut.slice(hallel + 1, hochanot)) {
+      expect(["rosh-chodesh", "hanouka"]).toContain(bloc.when);
+    }
+    // Le Kaddich Titkabal de 'Hol haMoed suit.
+    const titkabal = brut.findIndex((b, i) => i > hochanot && b.when === "hol-hamoed");
+    expect(titkabal).toBe(hochanot + 1);
+    // Le bloc dit où lire la suite, le livre Moadim, et y renvoie.
+    const bloc = blocks.find((b) => b.labelText?.fr === "Les Hochanot")!;
+    expect(bloc.halakhot?.[0].fr).toContain("livre Moadim");
+    expect(sansSignes(bloc.lines[0])).toContain("ארחץ בנקיון כפי");
+    expect(bloc.link).toMatchObject({ corpus: "moadim", slug: "hochanot" });
+    // La fin des Hochanot ramène au Kaddich Titkabal qui les suit : il porte
+    // le repère que leur renvoi nomme.
+    const retour = blocks[blocks.indexOf(bloc) + 1];
+    expect(retour.when).toBe("hol-hamoed");
+    expect(retour.anchor).toBe("apres-hochanot");
+  });
+
+  it("lit les korbanot du jour, selon Erets Israël ou la diaspora", () => {
+    const JOURS = ["", "", "השני", "השלישי", "הרביעי", "החמישי", "הששי", "השביעי"];
+    for (let jour = 2; jour <= 7; jour++) {
+      const bloc = blocks.find((b) => b.when === `souccot-${jour}`)!;
+      const lignes = bloc.paragraphs ?? [];
+      // En Terre d'Israël, le passage du jour, lu par les quatre appelés.
+      const israel = lignes.filter((p) => p.when === "eretz-israel");
+      expect(israel).toHaveLength(1);
+      expect(sansSignes(bloc.lines[lignes.indexOf(israel[0])])).toMatch(
+        new RegExp(`^וביום ${JOURS[jour]} `),
+      );
+      // En diaspora, la veille et le jour ; le deuxième jour y est Yom Tov.
+      const diaspora = lignes.filter((p) => p.when === "houts-laarets");
+      expect(diaspora).toHaveLength(jour === 2 ? 0 : 3);
+      if (jour > 2) {
+        const texte = (p: (typeof diaspora)[number]) => sansSignes(bloc.lines[lignes.indexOf(p)]);
+        expect(texte(diaspora[0])).toMatch(new RegExp(`^וביום ${JOURS[jour - 1]} `));
+        expect(texte(diaspora[1])).toMatch(new RegExp(`^וביום ${JOURS[jour]} `));
+        expect(texte(diaspora[2])).toMatch(new RegExp(`^וביום ${JOURS[jour - 1]} `));
+        expect(texte(diaspora[2])).toContain(`וביום ${JOURS[jour]} `);
+      }
+    }
+  });
+
+  it("marque les na'anou'im du Hallel aux trois endroits du sidour", () => {
+    const hallel = blocks.find((b) => b.label === "Hallel")!;
+    // Les didascalies sont glissées dans le fil du texte, et ne paraissent
+    // que les jours où l'on porte le loulav.
+    const didascalies = (hallel.paragraphs ?? []).flatMap((p) =>
+      p.runs.filter((run) => run.kind === "rubric"),
+    );
+    expect(didascalies).toHaveLength(3);
+    for (const run of didascalies) expect(run.when).toBe("loulav");
+    // Le premier « Hodou », « Ana Hachem hochia na », et le « Hodou » de la
+    // fin, une seule fois bien que le verset se redise.
+    const paragraphes = (hallel.paragraphs ?? []).filter((p) =>
+      p.runs.some((run) => run.kind === "rubric"),
+    );
+    for (const paragraphe of paragraphes) {
+      const hebreu = paragraphe.runs.filter((run) => run.kind === "he");
+      // Tout paragraphe garde de l'hébreu sans condition : une version qui
+      // ignore « loulav » perd la consigne, jamais le verset.
+      expect(hebreu.some((run) => !run.when && !run.unless)).toBe(true);
+    }
+    // sansSignes retire aussi le maqaf : « כי־טוב » s'y lit « כיטוב ».
+    const hebreuDe = (index: number) =>
+      sansSignes(paragraphes[index].runs.map((r) => (r.kind === "he" ? r.text : "")).join(""));
+    expect(hebreuDe(0)).toContain("הודו ליהוה כיטוב");
+    // Celle de « Ana » ferme le paragraphe d'avant. Le sien porte le verset
+    // deux fois, et c'est tout : chacun le dit deux fois, pas quatre.
+    const ana = (hallel.paragraphs ?? [])[(hallel.paragraphs ?? []).indexOf(paragraphes[1]) + 1];
+    expect(ana.repeat).toBeUndefined();
+    const texteAna = sansSignes(ana.runs.map((r) => (r.kind === "he" ? r.text : "")).join(""));
+    expect(texteAna.match(/אנא יהוה הושיעה נא/g)).toHaveLength(2);
+    expect(hebreuDe(1)).toContain("זההיום עשה יהוה");
+    const fin = paragraphes[2].runs;
+    const rang = fin.findIndex((run) => run.kind === "rubric");
+    expect(rang).toBeGreaterThan(0);
+    const suivant = fin[rang + 1];
+    expect(sansSignes(suivant.kind === "he" ? suivant.text : "")).toMatch(/^הודו ליהוה כיטוב/);
+  });
+
+  it("ferme le Hallel entier par Yehalelou'ha, jamais l'abrégé", () => {
+    const hallel = brut.find((b) => b.label === "Hallel")!;
+    const lignes = hallel.lines as { when?: string; he?: string }[];
+    const fin = lignes.at(-1)!;
+    expect(fin.when).toBe("hallel-complet");
+    expect(sansSignes(String(fin.he))).toContain("יהללוך");
+  });
+
+  it("enchaîne Kaddich, lecture de la Torah et Moussaf à 'Hol haMoed", () => {
+    // Le même enchaînement qu'à Roch Hodech, et dans le même ordre : le
+    // Titkabal entier (la source ne fait exception que pour 'Hanouka), la
+    // sortie du séfer, le demi-Kaddich du dernier appelé.
+    // Les blocs des autres jours s'intercalent dans le fichier (la lecture
+    // de 'Hanouka, celle de Roch Hodech) : c'est leur ordre relatif qui
+    // compte, un seul jeu s'affichant le jour venu.
+    const rangs = [
+      "Kaddich Titkabal (le 'hazan)",
+      "Lecture de la Torah",
+      "Demi-Kaddich (le dernier appelé)",
+      "Moussaf",
+      "Kedoucha de Moussaf (Keter)",
+      "Modim dérabanan",
+    ].map((label) => indexOf(label, "hol-hamoed"));
+    expect(rangs.some((rang) => rang < 0)).toBe(false);
+    expect(rangs).toEqual([...rangs].sort((a, b) => a - b));
+  });
+
+  it("nomme la fête dans le Moussaf, et n'y garde rien du Chabbat", () => {
+    const moussaf = blocks.filter((b) => b.when === "hol-hamoed" && b.lines.length > 3);
+    const runs = moussaf.flatMap((b) => b.paragraphs ?? []).flatMap((p) => p.runs);
+    const nomme = (cle: string) =>
+      runs.flatMap((r) => (r.kind === "he" && r.when === cle ? [sansSignes(r.text)] : []));
+    expect(nomme("sukkot").join(" ")).toContain("חג הסכות");
+    expect(nomme("pesach").join(" ")).toContain("חג המצות");
+    // La source écrit les ajouts du Chabbat et de Yom Tov en petit corps ;
+    // la recette prend le segment sans eux, il ne doit donc rien en rester.
+    const tout = sansSignes(moussaf.flatMap((b) => b.lines).join(" "));
+    expect(tout).not.toContain("שבתות למנוחה");
+    expect(tout).not.toContain("רצה נא במנוחתנו");
+    // Le Keter de 'Hol haMoed, non celui de Yom Tov : « ועמך ישראל ».
+    const keter = blocks.find(
+      (b) => b.when === "hol-hamoed" && b.label === "Kedoucha de Moussaf (Keter)",
+    )!;
+    expect(sansSignes(keter.lines.join(" "))).toContain("ועמך ישראל קבוצי מטה");
+  });
+
+  it("dit Birkat kohanim dans la répétition du Moussaf, avant Sim chalom", () => {
+    // Entre « Vé'al koulam » et Sim chalom, comme dans la 'Amida de semaine :
+    // les cohanim, ou à défaut « Élohénou… barkhénou » dit par le 'hazan.
+    const debut = indexOf("Moussaf", "hol-hamoed");
+    const kohanim = brut.findIndex(
+      (b, i) => i > debut && b.label === "Birkat kohanim" && b.when === "hol-hamoed",
+    );
+    expect(kohanim).toBeGreaterThan(debut);
+    const texte = (i: number) => sansSignes(JSON.stringify(brut[i].lines));
+    expect(texte(kohanim - 1)).toContain("ועל כלם");
+    expect(texte(kohanim + 1)).toContain("שים שלום");
+    expect(texte(kohanim)).toContain("ברכנו בברכה המשלשת");
+  });
+
+  it("ferme l'office par le psaume de la fête, dans l'ordre que donne la source", () => {
+    // Après la répétition : Yehi chem, le Titkabal, le psaume de la fête, le
+    // Kaddich yehé chelama ; puis Kavé, comme les autres jours.
+    const debut = indexOf("Moussaf", "hol-hamoed");
+    const kave = brut.findIndex((b, i) => i > debut && b.label === "Kavé · Ein kélohénou");
+    const fin = brut.slice(debut, kave);
+    // Les deux Kaddichs se ressemblent (le Titkabal finit aussi sur « yehé
+    // chelama rabba ») : on les reconnaît à leur titre, le reste au texte.
+    const rang = (motif: string) =>
+      fin.findIndex((b) => b.label === motif || sansSignes(JSON.stringify(b)).includes(motif));
+    const ordre = [
+      "יהי שם יהוה מברך",
+      "Kaddich Titkabal (le 'hazan)",
+      "כאיל תערג",
+      "Kaddich yehé chelama",
+    ].map(rang);
+    expect(ordre.every((r) => r >= 0)).toBe(true);
+    expect(ordre).toEqual([...ordre].sort((a, b) => a - b));
+    // Le psaume nomme sa fête : le 42 à Souccot, le 107 à Pessah.
+    const psaume = (cle: string) =>
+      blocks
+        .filter((b) => b.when === "hol-hamoed")
+        .flatMap((b) => b.paragraphs ?? [])
+        .filter((p) => p.when === cle)
+        .map((p) => sansSignes(p.runs.map((r) => ("text" in r ? r.text : "")).join(" ")));
+    expect(psaume("sukkot").join(" ")).toContain("כאיל תערג");
+    expect(psaume("pesach").join(" ")).toContain("גאולי יהוה");
   });
 });
 
@@ -1008,8 +1378,12 @@ describe.each(autresLiturgies.map((entry) => [resolveFilePath(entry), entry] as 
       // Le Nom s'écrit parfois sans voyelles au milieu d'un texte vocalisé
       // (le vidouy des Sli'hot) : ce n'est pas une consigne.
       const NOMS = /יהוה|אלהינו|אלהים|אלהי|אדני/g;
+      // Ses lettres épelées non plus, quand une kavana les nomme une à une
+      // (« (יו"ד ה"ה ו"ו ה"ה) », avant le loulav) : la même exception que le
+      // moteur des recettes (assertSansConsigne).
+      const LETTRES_EPELEES = /[א-ת]{1,2}["״][א-ת](?![א-ת])/g;
       const suites = content.sections[0].he
-        .map((ligne) => ligne.replace(NOMS, " "))
+        .map((ligne) => ligne.replace(NOMS, " ").replace(LETTRES_EPELEES, " "))
         .flatMap((ligne) => ligne.match(/[א-ת"'׳״\s]{10,}/g) ?? [])
         .filter((suite) => !signes.test(suite) && suite.trim().length >= 10);
       expect(suites).toEqual([]);

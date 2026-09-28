@@ -8,9 +8,13 @@
  *   <locale>/title.txt                    (≤ 30 caractères)
  *   <locale>/short_description.txt        (≤ 80)
  *   <locale>/full_description.txt         (≤ 4000)
- *   <locale>/images/phoneScreenshots/*.png|jpg  (remplacées seulement si ≥ 2,
- *                                          le minimum exigé par la Play Console)
  *   <locale>/images/featureGraphic.png    (bannière 1024×500, optionnelle)
+ *
+ * Les captures d'écran, elles, sont communes aux deux fiches et vivent dans
+ * store-assets/screenshots/<locale>/ : les `phone-*` (1080×1920) partent
+ * dans les captures « téléphone » de la langue du même nom, remplacées
+ * seulement s'il y en a au moins 2, le minimum exigé par la Play Console.
+ * Voir store-assets/screenshots/README.md et scripts/store-screenshots.mjs.
  *
  * Usage :
  *   node scripts/play-listing.mjs --check   vérifie les limites de caractères
@@ -23,6 +27,7 @@ import { join } from "node:path";
 
 const PACKAGE_NAME = "fr.petitejerusalem.app";
 const metadataDir = join(import.meta.dirname, "../store-assets/metadata/android");
+const screenshotsDir = join(import.meta.dirname, "../store-assets/screenshots");
 
 // Les limites de la Play Console comptent les caractères Unicode (code points),
 // pas les octets, important pour l'hébreu et les émojis.
@@ -48,10 +53,10 @@ function readText(locale, relPath) {
 }
 
 function screenshotFiles(locale) {
-  const dir = join(metadataDir, locale, "images/phoneScreenshots");
+  const dir = join(screenshotsDir, locale);
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
-    .filter((name) => /\.(png|jpe?g)$/i.test(name))
+    .filter((name) => name.startsWith("phone-") && /\.(png|jpe?g)$/i.test(name))
     .sort()
     .map((name) => join(dir, name));
 }

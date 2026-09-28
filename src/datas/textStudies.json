@@ -2785,6 +2785,30 @@
       "type": "Brahot"
     },
     {
+      "id": 363,
+      "name": "נטילת לולב (Netilat Loulav)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.651.5",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
+      "id": 364,
+      "name": "סדר ליל סוכות (Seder Leil Souccot)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.639.1",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
+      "id": 373,
+      "name": "הושענות (Hochanot)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.660.1",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
       "id": 358,
       "name": "נרות חנוכה (Nerot Hanouka)",
       "livre": "חנוכה (Hanouka)",

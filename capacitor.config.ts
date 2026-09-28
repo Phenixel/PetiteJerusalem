@@ -20,8 +20,7 @@ const config: CapacitorConfig = {
   // pour que la règle reste explicite au prochain passage.
   zoomEnabled: false,
   // CAP_SERVER_URL : charge l'app depuis un serveur de dev au lieu du bundle
-  // (itération rapide, et captures d'écran natives, scripts/store-screenshots.mjs
-  // le pointe sur son Vite : `adb reverse` rend le localhost du device = la machine).
+  // (itération rapide, voir docs/app-native.md).
   ...(process.env.CAP_SERVER_URL
     ? { server: { url: process.env.CAP_SERVER_URL, cleartext: true } }
     : {}),
@@ -54,6 +53,15 @@ const config: CapacitorConfig = {
     // pushService via @capacitor/local-notifications.
     FirebaseMessaging: {
       presentationOptions: ['badge', 'sound', 'alert'],
+    },
+    // Android : petite icône de toutes les notifications locales (rappels
+    // d'horaires, rappel du Chabbat, push rejouées au premier plan). Sans
+    // elle, le plugin retombe sur l'icône « i » générique du système. La
+    // ressource est versionnée dans native/android/ ; les push reçues app
+    // fermée prennent la même par le manifest (scripts/setup-android.mjs).
+    LocalNotifications: {
+      smallIcon: 'ic_stat_pj',
+      iconColor: '#C79A3B',
     },
   },
 }

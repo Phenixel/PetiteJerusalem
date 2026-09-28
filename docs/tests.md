@@ -13,7 +13,7 @@ npm run test:unit          # vitest, mode interactif
 npx vitest run             # une seule passe, ce que fait `npm run verify`
 ```
 
-Les 99 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
+Les 142 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
 (`vitest.config.ts`) prend l'environnement `jsdom` par défaut ; les tests qui
 n'ont pas besoin du DOM (ceux qui lisent le dépôt ou lancent un script)
 commencent par `// @vitest-environment node`. Les dossiers `e2e/`, `android/`,
@@ -30,13 +30,17 @@ avec ce que chacun attend :
 | --- | --- |
 | `typography.test.ts` | Aucun tiret long (U+2014) ni demi-cadratin (U+2013) dans les fichiers versionnés, code et contenus compris (CLAUDE.md) ; seules exceptions, les corpus importés sous `public/texts/` et la licence. |
 | `frenchTypography.test.ts` | Dans `src/locales/fr`, une espace insécable avant `!`, `?`, `;` (fine, U+202F), avant `:` et dans les guillemets « » (U+00A0), sans quoi le signe part seul à la ligne sur un téléphone ; le bloc `seo` est hors jeu. |
+| `searchInputs.test.ts` | Les barres de recherche lisent la frappe par `liveValue`, pas par `v-model` (qui attend la fin du mot sur un clavier à prédiction), et aucune ne filtre par un `toLowerCase().includes(…)` écrit sur place : toute recherche passe par `services/fuzzySearch`, qui trouve les autres graphies et pardonne les fautes (`docs/design.md`, « Une recherche trouve ce qu'on voulait dire »). |
+| `catalogSearch.test.ts` | Chaque clé des autres noms du catalogue (`src/datas/catalogAliases.ts`) désigne un texte ou un livre de `textStudies.json` : un texte renommé rendrait ses alias muets. Le même fichier rejoue sur le vrai catalogue ce que les gens tapent (« chabbat », « kidouchin », « psaume 23 », « genèse »). |
+| `cityAliases.test.ts` | Chaque ville des autres noms (`src/datas/cityAliases.ts`) figure dans `cities.json`, et « london », « ירושלים », « st etienne » trouvent leur ville en premier. |
 | `i18nUsage.test.ts` | Toute clé passée à `t("…")` ou `$t("…")` dans `src/` existe dans la locale française. |
 | `appLinks.test.ts` | La liste des chemins que l'app installée s'approprie (`scripts/lib/app-links.mjs`, servie sous `/.well-known/`) couvre les routes du routeur et n'attrape aucun chemin technique, `/__/auth/` en premier. |
 | `widgetParity.test.ts` | Les deux plateformes proposent les mêmes widgets : les noms du sélecteur iOS et Android coïncident, et le câblage Android est complet (provider, `appwidget-provider`, gabarit, libellés). |
 | `seoTitles.test.ts` | Les titres du bloc `seo` échappent la barre verticale (`{'|'}`), que vue-i18n lirait sinon comme un séparateur de pluriel et tronquerait. |
 | `initialBundle.test.ts` | Le graphe des imports statiques depuis `src/main.ts` ne contient ni Firestore, ni hebcal, ni PostHog : ils se chargent à la demande, et un simple import ajouté dans un service touché par la racine les ramènerait dans le premier chargement. |
 | `prerenderSeo.test.ts` | Le prérendu (`seoPages.ts`) injecte titre, description, canonique, Open Graph, JSON-LD et corps explorable comme attendu, et les sitemaps se construisent à partir des mêmes listes de pages. |
-| `pruneNativeBundle.test.ts` | Le bundle natif ne garde rien du prérendu SEO : pages HTML générées, sitemaps, `robots.txt`, `llms.txt` ; l'app démarre sur la coquille nue `app.html`. |
+| `pruneNativeBundle.test.ts` | Le bundle natif ne garde rien du prérendu SEO : pages HTML générées, sitemaps, `robots.txt`, `llms.txt` ; l'app démarre sur la coquille nue `app.html`. Des corpus, il ne garde que les textes listés dans `src/datas/bundledTexts.json` (Tehilim, Sidour). |
+| `bundledTexts.test.ts` | Chaque texte que l'app embarque existe dans `public/texts/`. Les Tehilim se lisent dans le binaire, sans rien demander au site ; le Sidour s'y ouvre aussi sans attendre le réseau, puis l'app télécharge en fond la version corrigée que le site servirait, vérifiée à l'empreinte (un portail captif ne la remplace pas). Que le Sidour soit embarqué tout entier, c'est `offlineDailyBooks.test.ts` qui le tient. |
 | `textsManifest.test.ts` | `public/texts/manifest.json` correspond aux fichiers de textes (`scripts/texts-manifest.mjs --check`) : un texte corrigé sans que le manifeste suive ne serait corrigé que pour qui n'a rien téléchargé. |
 | `xcodeWidgets.test.ts` | La cible d'extension des widgets iOS que `scripts/lib/xcode-widgets.mjs` écrit dans le `project.pbxproj` est valide, à partir du vrai template Capacitor de `node_modules` ; personne n'a de macOS pour l'ouvrir dans Xcode. |
 | `xcodeWatch.test.ts` | Même chose pour la cible de l'app Apple Watch (`scripts/lib/xcode-watch.mjs`). |
@@ -220,5 +224,5 @@ et captures) sont publiés en artefacts du run, conservés sept jours.
 la suite de bout en bout : il pilote l'app avec Playwright contre des
 émulateurs Firebase éphémères peuplés de données de démo fixes (par le même
 `scripts/lib/firebase-emulator.mjs`), pour produire les captures des fiches
-Play Store et App Store de façon reproductible. Voir `docs/android-ci-cd.md`
-et `docs/ios-ci-cd.md`.
+Play Store et App Store de façon reproductible, les mêmes pour les deux. Voir
+`store-assets/screenshots/README.md`.

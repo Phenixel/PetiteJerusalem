@@ -7,6 +7,14 @@ import { useRouter } from "vue-router";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { analyticsService } from "../../services/analyticsService";
 
+withDefaults(
+  defineProps<{
+    /** Le titre de la section. La sous-page de l'app porte déjà le sien. */
+    showTitle?: boolean;
+  }>(),
+  { showTitle: true },
+);
+
 const router = useRouter();
 const { t } = useI18n();
 
@@ -161,7 +169,7 @@ const deleteAccount = async () => {
 
 <template>
   <div class="animate-[fadeIn_0.3s_ease]">
-    <div class="flex items-center justify-between mb-8">
+    <div v-if="showTitle" class="flex items-center justify-between mb-8">
       <h2 class="text-2xl font-bold text-text-primary">
         {{ t("security.title") }}
       </h2>
@@ -186,7 +194,7 @@ const deleteAccount = async () => {
 
     <div class="grid gap-10 max-w-2xl">
       <!-- Changement de mot de passe - seulement pour les comptes email/password -->
-      <div v-if="hasPasswordProvider" class="card p-8">
+      <div v-if="hasPasswordProvider" class="card p-6 sm:p-8">
         <h3 class="text-xl font-bold text-text-primary mb-6">
           {{ t("security.changePassword") }}
         </h3>

@@ -6,6 +6,7 @@ import {
   bookForEntry,
   downloadBook,
   downloadingPaths,
+  isBookBundled,
   isBookDownloaded,
   removeBook,
 } from "../services/offlineLibraryService";
@@ -24,7 +25,8 @@ import { analyticsService } from "../services/analyticsService";
 
 /**
  * L'état d'un livre à l'écran : "none" quand il n'y a rien à télécharger
- * (web, ou entrée sans livre), "idle" quand il ne l'est pas encore.
+ * (web, entrée sans livre, ou livre embarqué dans l'app comme les Tehilim et
+ * le Sidour), "idle" quand il ne l'est pas encore.
  */
 export type BookState = "none" | "downloading" | "downloaded" | "idle";
 
@@ -32,7 +34,7 @@ export type BookState = "none" | "downloading" | "downloaded" | "idle";
 export function bookStateOf(entry: TextStudyJsonEntry): BookState {
   if (!isNativeApp) return "none";
   const book = bookForEntry(entry);
-  if (!book) return "none";
+  if (!book || isBookBundled(book)) return "none";
   if (downloadingPaths.has(book.path)) return "downloading";
   return isBookDownloaded(book) ? "downloaded" : "idle";
 }

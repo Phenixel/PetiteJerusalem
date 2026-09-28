@@ -9,7 +9,7 @@ import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
  * d'un texte, et le rappel affiché quand une lecture du jour ne serait pas
  * lisible hors connexion. Les corpus volumineux sont retirés du binaire natif
  * (scripts/prune-native-bundle.mjs) : eux doivent être téléchargés, alors que
- * les Tehilim, embarqués, sont toujours là.
+ * les Tehilim et le Sidour, embarqués, sont toujours là.
  */
 
 // L'app native : c'est la seule plateforme où les textes vivent sur l'appareil.
@@ -48,6 +48,19 @@ describe("disponibilité hors ligne des textes de la lecture du jour", () => {
     );
     expect(isEntryAvailableOffline(psalm)).toBe(true);
     expect(missingBooksForEntries([psalm])).toEqual([]);
+  });
+
+  it("considère tout le Sidour disponible : il est embarqué dans l'app", async () => {
+    const { isEntryAvailableOffline, missingBooksForEntries } = await import(
+      "../services/offlineLibraryService"
+    );
+    const sidour = allTexts.filter((txt) => String(txt.type) === "Sidour");
+    // Les trois offices, le Kaddich, le Chema du coucher, le tikoun 'hatsot,
+    // la havdala : un texte ajouté au Sidour doit rejoindre bundledTexts.json.
+    expect(sidour.length).toBeGreaterThanOrEqual(7);
+    const absents = sidour.filter((txt) => !isEntryAvailableOffline(txt)).map((txt) => txt.name);
+    expect(absents, "Ajouter son fichier à src/datas/bundledTexts.json").toEqual([]);
+    expect(missingBooksForEntries(sidour)).toEqual([]);
   });
 
   it("signale un texte d'un corpus téléchargeable tant qu'il n'est pas sur l'appareil", async () => {

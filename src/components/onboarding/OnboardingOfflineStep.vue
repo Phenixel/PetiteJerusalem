@@ -9,11 +9,11 @@ const OnboardingOfflinePicker = defineAsyncComponent(() => import("./OnboardingO
 /**
  * Ce qu'on emporte sur l'appareil.
  *
- * Les corpus volumineux ne voyagent pas dans le binaire natif
- * (scripts/prune-native-bundle.mjs) : un texte n'est lisible sans connexion
- * que s'il a été téléchargé, et personne ne le devinait avant d'être dans le
- * métro. Sa propre page, parce que c'est la seule de l'introduction où l'on
- * fait quelque chose.
+ * Les Tehilim et le Sidour voyagent avec l'app
+ * (src/datas/bundledTexts.json) ; les autres corpus se téléchargent, et
+ * personne ne le devinait avant d'être dans le métro. Le seul réglage de
+ * l'introduction qui fasse quelque chose, et l'un des plus suivis : on le
+ * garde, en une phrase.
  */
 
 const { t } = useI18n();

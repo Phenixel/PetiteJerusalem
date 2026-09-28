@@ -10,6 +10,7 @@ import {
   type ReservationForm,
 } from "../services/reservationService";
 import { SearchService } from "../services/searchService";
+import { searchItems } from "../services/fuzzySearch";
 import { TextTypeService } from "../services/textTypeService";
 import { DateService } from "../services/dateService";
 import { authService } from "../services/authService";
@@ -264,13 +265,11 @@ const sessionGuests = computed(() => {
   return Array.from(byGuestId.values()).sort((a, b) => a.name.localeCompare(b.name));
 });
 
-const guestSuggestions = computed(() => {
-  const term = guestForm.value.name.trim().toLowerCase();
-  const matches = term
-    ? sessionGuests.value.filter((guest) => guest.name.toLowerCase().includes(term))
-    : sessionGuests.value;
-  return matches.slice(0, 6);
-});
+// Un invité se retrouve comme on l'écrit (« Yonathan », « Jonathan »), le
+// plus proche d'abord.
+const guestSuggestions = computed(() =>
+  searchItems(sessionGuests.value, guestForm.value.name, (guest) => [guest.name]).slice(0, 6),
+);
 
 const selectGuest = (guest: { guestId: string; name: string }) => {
   guestForm.value.name = guest.name;

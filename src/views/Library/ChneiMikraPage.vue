@@ -13,6 +13,8 @@ import { localeMessagesReady } from "../../i18n";
 import { dateTimeFormat } from "../../services/intlCache";
 import { pageTitle, seoService } from "../../services/seoService";
 import { useWeeklyParasha } from "../../composables/useTehilimDay";
+import { useZmanimLocation } from "../../composables/useZmanimLocation";
+import { isIsraelPlace } from "../../services/zmanimService";
 import { analyticsService } from "../../services/analyticsService";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
@@ -53,6 +55,10 @@ const WEEK_PARAM = "semaine";
  * hébraïque (samedi soir, la suivante) et le temps qui passe. */
 const { parasha: currentWeek } = useWeeklyParasha();
 
+/** Le calendrier du lieu des horaires : Israël lit parfois une paracha d'avance. */
+const { place } = useZmanimLocation();
+const il = computed(() => isIsraelPlace(place.value));
+
 /**
  * La paracha demandée par l'URL. Une semaine inconnue (lien trafiqué, Chabbat
  * de fête sans paracha ordinaire) retombe sur celle de la semaine : mieux vaut
@@ -61,7 +67,7 @@ const { parasha: currentWeek } = useWeeklyParasha();
 const parasha = computed<WeeklyParasha | null>(() => {
   const asked = route.query[WEEK_PARAM];
   if (typeof asked !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(asked)) return currentWeek.value;
-  return getParashaForShabbat(shabbatOfWeek(asked)) ?? currentWeek.value;
+  return getParashaForShabbat(shabbatOfWeek(asked), il.value) ?? currentWeek.value;
 });
 
 // Double appui sur le texte : la page descend toute seule, à l'allure choisie
@@ -88,9 +94,11 @@ const shabbatLabel = computed(() => {
 
 /** Les parachiot voisines : une flèche sans destination est désactivée. */
 const previous = computed(() =>
-  parasha.value ? adjacentParasha(parasha.value.weekKey, -1) : null,
+  parasha.value ? adjacentParasha(parasha.value.weekKey, -1, il.value) : null,
 );
-const next = computed(() => (parasha.value ? adjacentParasha(parasha.value.weekKey, 1) : null));
+const next = computed(() =>
+  parasha.value ? adjacentParasha(parasha.value.weekKey, 1, il.value) : null,
+);
 
 function goTo(target: WeeklyParasha | null, direction: "previous" | "next" | "current") {
   if (!target) return;

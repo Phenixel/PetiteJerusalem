@@ -2,10 +2,27 @@ import HomeView from "../views/HomeView.vue";
 import NotFound from "../views/NotFound.vue";
 import { isNativeApp } from "../composables/useNativeApp";
 
+/**
+ * Les anciennes pages d'un jour des Hochanot → la clé du jour dans le livre
+ * (voir TextDay) ; firebase.json porte les mêmes redirections côté serveur.
+ */
+const HOCHANOT_JOURS: Record<string, string> = {
+  "yom-richon": "souccot-1",
+  "yom-cheni": "souccot-2",
+  "yom-chelichi": "souccot-3",
+  "yom-revii": "souccot-4",
+  "yom-hamichi": "souccot-5",
+  "yom-chichi": "souccot-6",
+  "hochana-rabba": "hoshana-rabba",
+  chabbat: "chabbat-souccot",
+};
+
 // Toutes les autres vues sont lazy-loadées : Vite génère un chunk par vue,
 // le bundle initial ne contient que la home (et la 404, minuscule).
 const LoginView = () => import("../views/loginView.vue");
 const ProfilePage = () => import("../views/ProfilePage.vue");
+const NativeProfileHome = () => import("../views/profilePage/native/NativeProfileHome.vue");
+const NativeProfileSection = () => import("../views/profilePage/native/NativeProfileSection.vue");
 const SessionManagementPage = () => import("../views/SessionManagementPage.vue");
 const ShareHomePage = () => import("../views/ShareReading/ShareHomePage.vue");
 const NewSession = () => import("../views/ShareReading/NewSession.vue");
@@ -26,7 +43,7 @@ const TehilimPage = () => import("../views/TehilimPage.vue");
 const SeoGuidePage = () => import("../views/SeoGuidePage.vue");
 const ParashaPage = () => import("../views/Library/ParashaPage.vue");
 
-import type { NavigationGuardWithThis, RouteRecordSingleView } from "vue-router";
+import type { NavigationGuardWithThis, RouteLocation, RouteRecordSingleView } from "vue-router";
 import {
   DEFAULT_SEO_LOCALE,
   SEO_LOCALES,
@@ -122,13 +139,35 @@ export default [
   {
     path: "/profile",
     name: "profile",
-    component: ProfilePage,
+    // Deux pages sous une adresse : le site garde son menu latéral, l'app a
+    // sa page de réglages rangée en lignes et en sous-pages (voir
+    // docs/design.md, « Le profil de l'app est une liste, pas un menu »).
+    component: isNativeApp ? NativeProfileHome : ProfilePage,
     // App native : la page sert aussi de page de réglages, accessible sans
     // compte (langue, thème, polices, à propos), et ces réglages sont locaux :
     // elle se rend hors ligne aussi. Le web garde la garde de connexion : les
     // réglages n'y sont proposés qu'aux comptes.
     meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp },
   },
+  // Les sous-pages du profil de l'app. Le site n'en a pas : son menu change
+  // de panneau sur place. Les réglages d'appareil s'ouvrent sans compte et
+  // hors ligne ; les pages du compte demandent l'un et le réseau.
+  ...(isNativeApp
+    ? [
+        {
+          path: "/profile/:section(appearance|language|notifications|preferences)",
+          name: "profile-settings",
+          component: NativeProfileSection,
+          meta: { offlineOk: true },
+        },
+        {
+          path: "/profile/:section(account|security)",
+          name: "profile-account",
+          component: NativeProfileSection,
+          meta: { requiresAuth: true },
+        },
+      ]
+    : []),
   {
     path: "/session-management/:id",
     name: "session-management",
@@ -213,6 +252,16 @@ export default [
   {
     path: "/bibliotheque/brahot/nerot-hanouka",
     redirect: "/bibliotheque/moadim/nerot-hanouka",
+  },
+  // Les Hochanot avaient une page par jour, et le Chabbat la sienne : elles
+  // tiennent désormais en un livre, qui s'ouvre sur le jour. L'ancienne page
+  // nommait son jour, l'adresse du livre le garde (?jour=).
+  {
+    path: `/bibliotheque/moadim/hochanot-:jour(${Object.keys(HOCHANOT_JOURS).join("|")})`,
+    redirect: (to: RouteLocation) => ({
+      path: "/bibliotheque/moadim/hochanot",
+      query: { jour: HOCHANOT_JOURS[String(to.params.jour)] },
+    }),
   },
   // L'ancienne page « Hors ligne » a été fusionnée dans la bibliothèque
   // (boutons de téléchargement sur chaque carte + « Tout télécharger »).

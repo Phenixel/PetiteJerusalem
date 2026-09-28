@@ -13,12 +13,15 @@ la minute ; l'app, elle, attend la revue d'Apple et de Google, puis que
 l'appareil veuille bien se mettre à jour. Une version installée peut rester
 des mois en arrière (c'est la raison d'être de `appUpdateService`).
 
-Pendant ce temps, l'app native ne lit pas les textes de son bundle : elle ne
-les embarque pas (`scripts/prune-native-bundle.mjs` retire
-`texts/tefila/`) et les télécharge depuis le site
-(`offlineTextStore.fetchTextResponse`), avec une empreinte qui garantit qu'ils
-sont bien les derniers publiés. Résultat, et c'est voulu pour les corrections
-de contenu :
+Pendant ce temps, l'app native ne se contente pas des textes de son bundle.
+Elle n'embarque que le Sidour (`src/datas/bundledTexts.json`), pour qu'on
+puisse prier sans réseau dès l'installation ; tout le reste de
+`texts/tefila/` est retiré par `scripts/prune-native-bundle.mjs` et se
+télécharge. Et même le Sidour embarqué, elle le compare au site
+(`offlineTextStore.fetchTextResponse`) : dès qu'il en sert une autre version,
+avec une empreinte qui garantit qu'elle est bien la dernière publiée, l'app
+la télécharge et la lit ensuite à la place de la sienne. Résultat, et c'est
+voulu pour les corrections de contenu :
 
 > le fichier vient d'aujourd'hui, le code qui le lit vient de la version
 > installée.
@@ -80,6 +83,37 @@ publiées, parce que le site s'était mis à écrire `!tisha-beav` et
    plutôt que `motsae` : ce dernier, posé depuis la v3.10.1, aurait fait dire
    le passage deux fois le samedi soir aux versions qui le connaissent sans
    connaître `unless`.
+
+8. **Un texte qui quitte le catalogue garde son fichier.** Le catalogue
+   (`src/datas/textStudies.json`) vit dans le code, le fichier sur le site :
+   une version publiée continue d'ouvrir le texte sous son ancien nom. Les
+   Hochanot, passées d'une page par jour à un seul livre qui s'ouvre sur le
+   jour (`hochanot.json`), écrivent donc encore leurs huit pages d'avant
+   (`build-moadim.mjs`, `PAGES_DU_JOUR`), que le catalogue ne porte plus ;
+   les adresses web de ces pages, elles, redirigent vers le livre.
+9. **Un champ nouveau ne porte que du nouveau.** Le renvoi d'un bloc vers un
+   autre texte (`link`) et le repère qui le reçoit (`anchor`) sont ignorés
+   par les versions publiées : le bloc des Hochanot de Cha'harit y garde son
+   premier verset et la halakha qui dit où lire la suite. De même pour la fin
+   d'une 'Amida répétée (`hazara`) : une version publiée n'affiche pas le
+   bouton de la 'hazara, et rien du texte ne manque.
+10. **Un remplacement que le calendrier décide se fait dans le calendrier.**
+    À 'Hol haMoed, le psaume de la fête prend à Min'ha la place du
+    Lamnatséa'h. Le psaume reçoit une clé nouvelle (`chir-moed-minha`), et
+    c'est le code récent qui cesse de poser `lamnatseah-minha` ces jours-là,
+    au lieu d'un `unless` dans le fichier. Une version publiée pose encore
+    `lamnatseah-minha` et ne connaît pas la clé nouvelle : elle garde le
+    Lamnatséa'h, comme avant ; une version récente ne dit que le psaume de la
+    fête. Aucune ne perd de texte, aucune ne dit les deux (tenu par
+    `sidourOccasions.test.ts`).
+
+    Même principe pour les Kaddich des jours de Moussaf (clé `moussaf`) : le
+    Kaddich Titkabal après Ouva letsion et le Kaddich yehé chelama avant
+    Moussaf portent `unless: "moussaf"`, le demi-Kaddich qui les remplace
+    `when: "moussaf"`. Une version publiée garde l'ordre de semaine, et voit
+    en plus, à Roch 'Hodech, le Kaddich Titkabal et le Kaddich yehé chelama
+    qui suivent désormais Moussaf, comme elle les voyait déjà à 'Hol haMoed :
+    deux encadrés repliés du 'hazan, pas un mot de la prière en double.
 
 Les points 1, 2, 5 et 6 sont tenus par un test
 (`src/__tests__/sidourCompatibilite.test.ts`) ; les clés employées sont

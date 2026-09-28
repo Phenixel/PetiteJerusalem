@@ -1,5 +1,6 @@
 import { computed, reactive } from "vue";
 import textStudiesJson from "../datas/textStudies.json";
+import bundledTexts from "../datas/bundledTexts.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { resolveFilePath } from "./textService";
 import {
@@ -23,10 +24,12 @@ const TALMUD_CHAPTERS_PATH = "/texts/talmud-chapters.json";
 
 /**
  * Fichiers embarqués dans le binaire natif : ils sont lisibles hors ligne sans
- * rien télécharger. Les corpus volumineux, eux, sont retirés du bundle, voir
- * scripts/prune-native-bundle.mjs, qui doit rester d'accord avec cette liste.
+ * rien télécharger, dès l'installation (les Tehilim, le Sidour, le découpage
+ * du Talmud). Les corpus volumineux, eux, sont retirés du
+ * bundle par scripts/prune-native-bundle.mjs, qui lit la même liste
+ * (`src/datas/bundledTexts.json`).
  */
-const BUNDLED_PATHS = new Set(["/texts/tehilim.json", TALMUD_CHAPTERS_PATH]);
+const BUNDLED_PATHS = new Set([...bundledTexts.authoritative, ...bundledTexts.revalidated]);
 
 export interface OfflineBook {
   /** Chemin web du fichier, clé unique du livre. */
@@ -80,19 +83,23 @@ export interface OfflineCorpus {
   labelKey: string;
   /** Livres du corpus, dans l'ordre du catalogue. */
   books: OfflineBook[];
-  /** Poids approximatif du corpus entier, en octets. */
+  /**
+   * Poids approximatif de ce que le corpus télécharge, en octets : ses livres
+   * embarqués n'en font pas partie (0 pour les Tehilim et le Sidour, tout
+   * entiers dans l'app).
+   */
   approxBytes: number;
   /** Déjà dans le binaire natif : lisible hors ligne sans rien télécharger. */
   bundled: boolean;
 }
 
 const CORPUS_META: { key: string; labelKey: string; approxBytes: number }[] = [
-  { key: "Tehilim", labelKey: "study.types.tehilim", approxBytes: 372_000 },
+  { key: "Tehilim", labelKey: "study.types.tehilim", approxBytes: 0 },
   { key: "Mishna", labelKey: "study.types.mishna", approxBytes: 3_000_000 },
   { key: "Talmud Bavli", labelKey: "study.types.talmud", approxBytes: 29_900_000 },
   { key: "Tanakh", labelKey: "study.types.tanakh", approxBytes: 6_800_000 },
-  { key: "Sidour", labelKey: "study.types.sidour", approxBytes: 856_000 },
-  { key: "Moadim", labelKey: "study.types.moadim", approxBytes: 218_000 },
+  { key: "Sidour", labelKey: "study.types.sidour", approxBytes: 0 },
+  { key: "Moadim", labelKey: "study.types.moadim", approxBytes: 560_000 },
   { key: "Brahot", labelKey: "study.types.brahot", approxBytes: 132_000 },
 ];
 
@@ -103,13 +110,26 @@ export const offlineCorpora: OfflineCorpus[] = CORPUS_META.map((meta) => {
     books,
     // Un corpus est embarqué quand aucun de ses livres n'est à télécharger
     // (les Tehilim, dont l'unique fichier voyage avec l'app).
-    bundled: books.length > 0 && books.every((book) => BUNDLED_PATHS.has(book.path)),
+    bundled: books.length > 0 && books.every(isBookBundled),
   };
 }).filter((corpus) => corpus.books.length > 0);
 
 /** Livres d'un corpus qui manquent encore sur l'appareil. */
 export function missingBooksOfCorpus(corpus: OfflineCorpus): OfflineBook[] {
-  return corpus.books.filter((book) => !BUNDLED_PATHS.has(book.path) && !isDownloaded(book.path));
+  return corpus.books.filter((book) => !isBookBundled(book) && !isDownloaded(book.path));
+}
+
+/** Livres d'un corpus qui se téléchargent (ceux que l'app n'embarque pas). */
+export function downloadableBooksOfCorpus(corpus: OfflineCorpus): OfflineBook[] {
+  return corpus.books.filter((book) => !isBookBundled(book));
+}
+
+/**
+ * Livre embarqué dans le binaire natif : il n'y a rien à télécharger, l'app
+ * l'a depuis son installation.
+ */
+export function isBookBundled(book: OfflineBook): boolean {
+  return BUNDLED_PATHS.has(book.path);
 }
 
 /** « 2.9 Mo », « 145 Ko » : le poids d'un téléchargement, lisible d'un coup d'œil. */
@@ -197,7 +217,7 @@ export function isEntryAvailableOffline(entry: TextStudyJsonEntry): boolean {
   const book = bookForEntry(entry);
   // Type non lisible par le lecteur : rien à télécharger.
   if (!book) return true;
-  return BUNDLED_PATHS.has(book.path) || isDownloaded(book.path);
+  return isBookBundled(book) || isDownloaded(book.path);
 }
 
 /** Livres à télécharger pour que ces entrées soient lisibles hors ligne (sans doublon). */
@@ -206,7 +226,7 @@ export function missingBooksForEntries(entries: TextStudyJsonEntry[]): OfflineBo
   const byPath = new Map<string, OfflineBook>();
   for (const entry of entries) {
     const book = bookForEntry(entry);
-    if (!book || BUNDLED_PATHS.has(book.path) || isDownloaded(book.path)) continue;
+    if (!book || isBookBundled(book) || isDownloaded(book.path)) continue;
     byPath.set(book.path, book);
   }
   return [...byPath.values()];

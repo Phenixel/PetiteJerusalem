@@ -3,6 +3,9 @@ package fr.petitejerusalem.app;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.view.View;
 import android.widget.RemoteViews;
@@ -73,7 +76,7 @@ public class HorairesWidgetProvider extends PjWidgetProvider {
 
         long now = System.currentTimeMillis();
         views.setTextViewText(R.id.pj_horaires_place, payload.place);
-        showDay(views, payload.dayCovering(now));
+        showDay(views, payload.dayCovering(now), parseAccent(payload.accent));
 
         ZmanimPayload.Line next = payload.next(now);
         if (next == null) {
@@ -89,7 +92,7 @@ public class HorairesWidgetProvider extends PjWidgetProvider {
         // Le petit format n'a la hauteur que d'un horaire de plus ; le large a
         // la largeur d'une colonne de trois.
         showFollowing(views, payload.following(now, size.isWide() ? ROWS.length : 1));
-        return new Rendered(views, next.epoch + 1000);
+        return new Rendered(views, payload.refreshAt(now));
     }
 
     /** Les horaires d'après le prochain ; les lignes en trop disparaissent. */
@@ -109,11 +112,22 @@ public class HorairesWidgetProvider extends PjWidgetProvider {
      * Le jour hébraïque qui couvre l'instant courant : sa date, la paracha de
      * la semaine et le tahanoun. Absent d'un payload d'avant la v2, les
      * lignes restent alors simplement masquées.
+     *
+     * Une fête (le jour même, son 'Hol haMoed, ou la prochaine d'ici au
+     * Chabbat) prend la ligne de la paracha, en grand, en gras et à l'accent :
+     * c'est ce que la semaine a de plus marquant. Ces semaines-là n'ont de
+     * toute façon pas de paracha à annoncer.
      */
-    private void showDay(RemoteViews views, ZmanimPayload.Day day) {
+    private void showDay(RemoteViews views, ZmanimPayload.Day day, int accent) {
         views.setTextViewText(
             R.id.pj_horaires_hebrew_date, day == null ? "" : day.hebrewDate);
-        setOptional(views, R.id.pj_horaires_parasha, day == null ? null : day.parasha);
+        String festival = day == null ? null : day.festival;
+        if (festival != null && !festival.isEmpty()) {
+            views.setViewVisibility(R.id.pj_horaires_parasha, View.VISIBLE);
+            views.setTextViewText(R.id.pj_horaires_parasha, featured(festival, accent));
+        } else {
+            setOptional(views, R.id.pj_horaires_parasha, day == null ? null : day.parasha);
+        }
 
         String tachanun = day == null ? null : day.tachanun;
         setOptional(views, R.id.pj_horaires_tachanun, tachanun);
@@ -121,6 +135,16 @@ public class HorairesWidgetProvider extends PjWidgetProvider {
         if (tachanun != null && day.tachanunStrong) {
             views.setTextViewText(R.id.pj_horaires_tachanun, bold(tachanun));
         }
+    }
+
+    /** La fête : 1,6 fois la taille de la ligne, en gras, à l'accent du thème. */
+    private CharSequence featured(String text, int accent) {
+        SpannableString spanned = new SpannableString(text);
+        int end = text.length();
+        spanned.setSpan(new RelativeSizeSpan(1.6f), 0, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        spanned.setSpan(new StyleSpan(Typeface.BOLD), 0, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        spanned.setSpan(new ForegroundColorSpan(accent), 0, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return spanned;
     }
 
     private CharSequence bold(String text) {

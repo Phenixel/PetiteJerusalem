@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import { HDate } from "@hebcal/core";
 import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
 import type { RouteLocationRaw } from "vue-router";
@@ -13,15 +13,18 @@ import type {
 } from "../../models/models";
 import type { User } from "../../services/authService";
 import {
+  calendarDay,
   loadText,
   MissingTextFileError,
+  occasionsForDay,
   placeLabel as describePlace,
+  rubricText,
   saidOn,
 } from "../../services/textService";
-import type { TextBlock, TextContent, TextSection } from "../../services/textService";
+import type { TextBlock, TextContent, TextDay, TextSection } from "../../services/textService";
 import {
   activeOccasions,
-  getWeeklyParasha,
+  getWeekdayTorahParasha,
   recentSeasonalChanges,
 } from "../../services/dailyCycles";
 import {
@@ -60,6 +63,7 @@ import {
 } from "../../content/etudeTexts";
 import { encadrementOf } from "../../services/encadrementService";
 import LiturgyText from "./LiturgyText.vue";
+import TefilaDays from "./TefilaDays.vue";
 import ReadingEncadrement from "../../components/ReadingEncadrement.vue";
 import SlihotHours from "./SlihotHours.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
@@ -79,8 +83,8 @@ import { readingProgressService } from "../../services/readingProgressService";
 import type { Bookmark, ReadingPosition } from "../../services/readingProgressService";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { ensureManifestLoaded } from "../../services/offlineTextStore";
+import { scrollToBlockAnchor } from "../../composables/useReadingNav";
 import type { ReadingNavSection } from "../../composables/useReadingNav";
-import type { SupportedLocale } from "../../i18n";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { isSansTahanoun } from "../../composables/useSansTahanoun";
@@ -244,7 +248,7 @@ const occasionsDay = computed(() => new HDate(occasionsDayAbs.value));
 // le calendrier ne peut pas savoir, une brit mila ou un marié dans
 // l'assemblée. Le réglage ne vaut que le jour où il est posé ; c'est l'heure
 // du rendu qui en décide, comme des occasions elles-mêmes.
-const occasions = computed(() => {
+const calendarOccasions = computed(() => {
   const today = activeOccasions(occasionsDay.value, zmanimPlace.value.tzid === "Asia/Jerusalem");
   const jour = isLiturgyText.value && isSansTahanoun(now.value) ? withoutTachanun(today) : today;
   // Hatsot halayla ne se lit pas sur le calendrier : c'est une heure, elle
@@ -254,6 +258,33 @@ const occasions = computed(() => {
   if (!isLiturgyText.value || !pastChatzotNight(zmanimPlace.value, now.value)) return jour;
   return new Set([...jour, "apres-hatsot"]);
 });
+
+// Un texte à jours (les Hochanot, une suite par jour de Souccot) s'ouvre sur
+// le jour du calendrier, et sur le premier hors de la fête ; le lecteur peut
+// en lire un autre (voir TefilaDays). Une adresse peut aussi nommer le jour
+// (?jour=hoshana-rabba) : le lien de la page de Hochaana Rabba, les
+// anciennes pages d'un jour, un passage partagé. Le choix ne vaut que pour le
+// texte ouvert : le rouvrir, c'est retrouver le jour qu'il est.
+const textDays = computed<TextDay[]>(() => currentSection.value?.days ?? []);
+const pickedDay = ref<string | null>(null);
+watch(
+  [textId, () => route.query.jour],
+  ([, jour]) => (pickedDay.value = typeof jour === "string" ? jour : null),
+  { immediate: true },
+);
+const todayDay = computed(() => calendarDay(textDays.value, calendarOccasions.value));
+const shownDay = computed<TextDay | null>(
+  () =>
+    textDays.value.find((day) => day.when === pickedDay.value) ??
+    todayDay.value ??
+    textDays.value[0] ??
+    null,
+);
+const occasions = computed(() =>
+  shownDay.value
+    ? occasionsForDay(calendarOccasions.value, textDays.value, shownDay.value)
+    : calendarOccasions.value,
+);
 const visibleBlocks = computed(() =>
   verseBlocks.value.filter((b) => saidOn(b.when, occasions.value, b.unless)),
 );
@@ -392,9 +423,7 @@ const navSections = computed<ReadingNavSection[]>(() => {
     return visibleBlocks.value
       .filter((b) => !b.zman && !b.fold && (b.labelText || b.label))
       .map((b) => {
-        const label = b.labelText
-          ? b.labelText[locale.value as SupportedLocale] || b.labelText.fr
-          : b.label;
+        const label = b.labelText ? rubricText(b.labelText, locale.value) : b.label;
         // Le titre hébreu accompagne le traduit, sauf à le répéter.
         const hebrew = b.labelText?.he;
         return {
@@ -487,10 +516,16 @@ async function loadContent() {
     // Sidour : le lundi et le jeudi, la lecture de la Torah de la semaine
     // (le début de la paracha, en trois montées) prend la place de son
     // marqueur dans Cha'harit. Elle change chaque semaine : c'est le lecteur
-    // qui la charge.
+    // qui la charge. Avant Souccot, c'est Vezot Haberakha, que le chnei mikra
+    // enjambe (voir getWeekdayTorahParasha). Le calendrier est celui du lieu,
+    // comme pour les occasions : Israël et la diaspora lisent parfois des
+    // parachiot différentes plusieurs semaines de suite.
     if (tefilaOf(textEntry.value) === "chaharit" && occasions.value.has("torah-semaine")) {
       try {
-        const parasha = getWeeklyParasha(occasionsDay.value.greg());
+        const parasha = getWeekdayTorahParasha(
+          occasionsDay.value.greg(),
+          zmanimPlace.value.tzid === "Asia/Jerusalem",
+        );
         if (parasha?.entries[0]) {
           const parashaContent = await loadText(parasha.entries[0]);
           if (stale()) return;
@@ -751,6 +786,17 @@ watch([content, sectionParam, () => route.query.verset], ([loaded, , verset]) =>
   if (Number.isInteger(line) && line >= 0) scrollToLine(line);
 });
 
+// Arrivée par un renvoi (#repère, voir TextLink) : la fin des Hochanot ramène
+// à Cha'harit là où l'on en était, au Kaddich Titkabal. Le passage n'existe
+// qu'une fois le texte chargé et rendu ; son titre vient se poser sous
+// l'en-tête, comme depuis le menu de lecture.
+watch([content, () => route.hash], async ([loaded, hash]) => {
+  if (!loaded || !hash) return;
+  await nextTick();
+  markProgrammaticScroll();
+  scrollToBlockAnchor(hash.slice(1));
+});
+
 // --- Suivi de la position (sauvegarde silencieuse au scroll) ---
 // La position ne s'enregistre qu'après un geste du lecteur (scroll, choix d'un
 // chapitre), jamais à la simple ouverture : sinon on écraserait la position à
@@ -879,7 +925,10 @@ onBeforeUnmount(clearPassage);
 
 /** L'adresse publique qui ramène à ce passage, et à lui seul. */
 function passageUrl(line: number): string {
-  return `${SITE_URL}${canonicalReadingPath.value}?verset=${line}`;
+  // Dans un texte à jours, le passage n'existe que sous son jour : l'adresse
+  // le nomme, pour que celui qui la reçoit ne tombe pas sur un autre.
+  const jour = shownDay.value ? `&jour=${encodeURIComponent(shownDay.value.when)}` : "";
+  return `${SITE_URL}${canonicalReadingPath.value}?verset=${line}${jour}`;
 }
 
 /**
@@ -1839,6 +1888,16 @@ watch(textId, (_, previousTextId) => {
           :blocks="encadrement.before"
           :title="t('encadrement.before')"
           :show-phonetic="showPhonetic"
+        />
+
+        <!-- Un texte à jours (les Hochanot) : celui qu'on lit, les autres à
+             un appui. -->
+        <TefilaDays
+          v-if="isLiturgyText && shownDay"
+          :days="textDays"
+          :shown="shownDay.when"
+          :today="todayDay?.when ?? null"
+          @pick="pickedDay = $event"
         />
 
         <!-- Talmud: continuous text with a marker at each daf change -->

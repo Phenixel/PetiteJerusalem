@@ -3,6 +3,7 @@ import { db } from "../firebase/firestore";
 import type { Chiour } from "../models/models";
 import { chiourFirestoreRepository } from "../repositories/chiourFirestoreRepository";
 import { cached } from "./cached";
+import { searchItems } from "./fuzzySearch";
 
 function generateChiourSlug(name: string): string {
   return name
@@ -96,15 +97,17 @@ class ChiourService {
     return scored.slice(0, max).map((s) => s.chiour);
   }
 
+  /**
+   * Par titre, rav, catégorie ou description, graphies et fautes de frappe
+   * comprises (voir fuzzySearch), du plus pertinent au moins pertinent.
+   */
   filterBySearch(chiourim: Chiour[], searchTerm: string): Chiour[] {
-    if (!searchTerm.trim()) return chiourim;
-    const lower = searchTerm.toLowerCase();
-    return chiourim.filter(
-      (c) =>
-        c.name.toLowerCase().includes(lower) ||
-        (c.auteur?.toLowerCase().includes(lower) ?? false) ||
-        c.description.toLowerCase().includes(lower),
-    );
+    return searchItems(chiourim, searchTerm, (c) => [
+      c.name,
+      c.auteur,
+      ...c.categories,
+      { text: c.description, long: true },
+    ]);
   }
 
   filterByCategory(chiourim: Chiour[], category: string): Chiour[] {

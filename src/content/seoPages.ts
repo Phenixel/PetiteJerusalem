@@ -24,6 +24,7 @@
 // pas ce fichier de contenu (~94 kB) dans leur chunk. Ré-exportées ici pour
 // le prerender et les consommateurs historiques.
 import { SITE_URL, SITE_NAME, OG_IMAGE, LOGO_IMAGE } from "../config/site";
+import { APPLE_APP_ID } from "../config/stores";
 import { ZMANIM_GUIDE } from "./zmanimGuideStrings";
 import {
   DEFAULT_SEO_LOCALE,
@@ -850,7 +851,7 @@ const PRIVACY_FR: LegalStrings = {
     {
       heading: "Mesure d'audience et cookies",
       html: `<p>Avec votre accord (bannière affichée à la première visite), nous utilisons PostHog pour comprendre comment l'application est utilisée et corriger ses bugs : pages vues, interactions, erreurs techniques, et enregistrements de session dans lesquels tout ce que vous tapez est masqué. Ces données sont hébergées dans l'Union européenne.</p>
-      <p>Tant que vous n'avez pas accepté, aucun cookie ni traceur de mesure d'audience n'est déposé. Vous pouvez retirer ou donner votre accord à tout moment via le lien « Gérer les cookies » en bas de page (ou dans l'onglet À propos de l'application).</p>`,
+      <p>Tant que vous n'avez pas accepté, aucun cookie ni traceur de mesure d'audience n'est déposé. Vous pouvez retirer ou donner votre accord à tout moment via le lien « Gérer les cookies » en bas de page (ou, dans l'application, depuis l'onglet Profil, qui s'appelle Réglages sans compte).</p>`,
     },
     {
       heading: "Où sont hébergées ces données ?",
@@ -927,7 +928,7 @@ const PRIVACY_EN: LegalStrings = {
     {
       heading: "Analytics and cookies",
       html: `<p>With your consent (a banner is shown on your first visit), we use PostHog to understand how the app is used and fix its bugs: page views, interactions, technical errors, and session recordings in which everything you type is masked. This data is hosted in the European Union.</p>
-      <p>Until you accept, no analytics cookie or tracker is set. You can withdraw or give your consent at any time via the "Manage cookies" link at the bottom of the page (or in the app's About tab).</p>`,
+      <p>Until you accept, no analytics cookie or tracker is set. You can withdraw or give your consent at any time via the "Manage cookies" link at the bottom of the page (or, in the app, from the Profile tab, called Settings without an account).</p>`,
     },
     {
       heading: "Where is this data hosted?",
@@ -1003,7 +1004,7 @@ const PRIVACY_HE: LegalStrings = {
     {
       heading: "מדידת שימוש ועוגיות",
       html: `<p>בהסכמתכם (באנר המוצג בביקור הראשון), אנו משתמשים ב-PostHog כדי להבין כיצד נעשה שימוש באפליקציה ולתקן תקלות: צפיות בעמודים, אינטראקציות, שגיאות טכניות והקלטות שימוש שבהן כל מה שאתם מקלידים מוסתר. נתונים אלה מאוחסנים באיחוד האירופי.</p>
-      <p>כל עוד לא אישרתם, לא מוצבת אף עוגיית מדידה. תוכלו לתת או לבטל את הסכמתכם בכל עת דרך הקישור «ניהול עוגיות» בתחתית העמוד (או בלשונית אודות באפליקציה).</p>`,
+      <p>כל עוד לא אישרתם, לא מוצבת אף עוגיית מדידה. תוכלו לתת או לבטל את הסכמתכם בכל עת דרך הקישור «ניהול עוגיות» בתחתית העמוד (או באפליקציה, בלשונית הפרופיל, שנקראת הגדרות ללא חשבון).</p>`,
     },
     {
       heading: "היכן מאוחסנים הנתונים?",
@@ -2289,6 +2290,14 @@ export function injectMeta(template: string, page: SeoPage): string {
   html = replaceMetaContent(html, "name", "twitter:title", page.title);
   html = replaceMetaContent(html, "name", "twitter:description", page.description);
   html = replaceCanonical(html, url);
+  // Smart App Banner iOS : l'app doit s'ouvrir sur la page que Safari
+  // affiche, pas sur l'accueil (voir index.html).
+  html = replaceMetaContent(
+    html,
+    "name",
+    "apple-itunes-app",
+    `app-id=${APPLE_APP_ID}, app-argument=${url}`,
+  );
 
   if (page.robots) {
     html = replaceMetaContent(html, "name", "robots", page.robots);

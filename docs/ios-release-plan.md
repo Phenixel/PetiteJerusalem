@@ -219,8 +219,8 @@ Sur [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → Mes apps
   Vérifier avant : `node scripts/appstore-listing.mjs --check` (limites de
   caractères **et** caractères refusés par App Store Connect, les émojis,
   acceptés par le Play Store, sont interdits ici). Les « Nouveautés »
-  viennent du corps de la release GitHub du tag, sinon d'une phrase par
-  défaut (voir `docs/ios-ci-cd.md`).
+  viennent du corps de la release GitHub du tag, une section par langue,
+  sinon d'une phrase par défaut (voir `docs/ios-ci-cd.md`).
   **Fait (14/08/2026)** : la fiche 3.7.0 (fr-FR) a été remplie à la main dans
   App Store Connect, copyright « © 2026 Phenixel » compris ; les pushes
   suivants de la CI la maintiendront alignée sur le repo.
@@ -229,8 +229,9 @@ Sur [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → Mes apps
   - **iPad 13 pouces** : 2064 × 2752 ou 2048 × 2732.
 
   PNG ou JPEG sRGB **sans transparence**. Apple redimensionne pour les
-  appareils plus petits de chaque famille. Désormais régénérées et envoyées
-  automatiquement à chaque tag (`scripts/asc-screenshots.mjs`), voir
+  appareils plus petits de chaque famille. Désormais régénérées (le même jeu
+  que la fiche Play) et envoyées automatiquement à chaque tag
+  (`scripts/asc-screenshots.mjs`), voir
   [ios-ci-cd.md](ios-ci-cd.md#captures-décran).
 
 ## Étape 6. CI/CD

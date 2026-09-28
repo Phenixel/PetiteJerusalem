@@ -27,7 +27,10 @@ const { capture, downloaded, downloadBook, removeBook } = vi.hoisted(() => {
 vi.mock("../services/analyticsService", () => ({ analyticsService: { capture } }));
 vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "android" }));
 vi.mock("../services/offlineLibraryService", () => ({
-  bookForEntry: () => ({ path: "/texts/talmud/berakhot.json" }),
+  bookForEntry: (entry: { type: string }) => ({
+    path: entry.type === "Tehilim" ? "/texts/tehilim.json" : "/texts/talmud/berakhot.json",
+  }),
+  isBookBundled: (book: { path: string }) => book.path === "/texts/tehilim.json",
   isBookDownloaded: (book: { path: string }) => downloaded.has(book.path),
   downloadingPaths: new Set<string>(),
   downloadBook,
@@ -94,5 +97,10 @@ describe("useBookDownload", () => {
     const [, props] = capture.mock.calls[1];
     expect(props).toMatchObject({ scope: "book", error_message: "réseau coupé" });
     expect(typeof props.is_online).toBe("boolean");
+  });
+
+  it("ne propose pas de télécharger un livre embarqué dans l'app (les Tehilim)", () => {
+    const { bookStateOf } = setup();
+    expect(bookStateOf({ ...ENTRY, type: "Tehilim" })).toBe("none");
   });
 });

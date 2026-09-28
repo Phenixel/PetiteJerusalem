@@ -15,6 +15,7 @@ import { useSessionEditing, type SessionEditData } from "../../composables/useSe
 import EditSessionModal from "../../components/EditSessionModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { liveValue } from "../../composables/liveInput";
+import { searchItems } from "../../services/fuzzySearch";
 import { useConfirm } from "../../composables/useConfirm";
 
 const { t } = useI18n();
@@ -56,15 +57,11 @@ const filtered = computed(() => {
   if (filter.value === "reported") list = list.filter((s) => openReportsFor(s.id).length > 0);
   if (filter.value === "hidden") list = list.filter((s) => s.hidden === true);
 
-  const term = search.value.trim().toLowerCase();
-  if (term) {
-    list = list.filter(
-      (s) =>
-        s.name.toLowerCase().includes(term) ||
-        (s.creatorName || "").toLowerCase().includes(term) ||
-        (s.description || "").toLowerCase().includes(term),
-    );
-  }
+  list = searchItems(list, search.value, (s) => [
+    s.name,
+    s.creatorName,
+    { text: s.description, long: true },
+  ]);
 
   // Les sessions à traiter d'abord : signalées, puis masquées, puis récentes.
   return [...list].sort((a, b) => {

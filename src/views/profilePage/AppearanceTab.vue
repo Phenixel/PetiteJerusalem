@@ -10,12 +10,12 @@ import AppearanceSettings from "../../components/settings/AppearanceSettings.vue
  * Les notifications ont leur propre onglet : elles ne se règlent pas au même
  * moment que les couleurs, et elles ne valent que dans l'app native.
  *
- * userId null : réglages sans compte (page profil de l'app native). Les choix
- * sont alors gardés sur l'appareil, et le compte les adoptera à la connexion
- * (userPreferencesService).
+ * Profil du site seulement, donc toujours avec un compte : l'app pose les
+ * mêmes réglages sur sa sous-page Apparence (NativeProfileSection), compte ou
+ * non.
  */
 defineProps<{
-  userId: string | null;
+  userId: string;
 }>();
 </script>
 

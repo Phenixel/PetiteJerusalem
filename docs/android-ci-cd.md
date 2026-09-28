@@ -79,23 +79,79 @@ store-assets/metadata/android/<locale>/   # fr-FR, en-US, iw-IL (hébreu)
 ├── short_description.txt     # ≤ 80
 ├── full_description.txt      # ≤ 4000
 └── images/
-    ├── phoneScreenshots/     # ≥ 2 captures sinon elles ne sont pas envoyées
     └── featureGraphic.png    # bannière 1024×500 (optionnelle)
 ```
+
+Les captures d'écran, elles, sont communes aux fiches Play et App Store et
+vivent à part, dans `store-assets/screenshots/<locale>/` (les `phone-*`
+pour le Play Store, au moins 2 sinon elles ne sont pas envoyées) : voir
+[store-assets/screenshots/README.md](../store-assets/screenshots/README.md).
 
 - Les notes de version sont attachées à la release Play par
   `upload-google-play` (paramètre `whatsNewDirectory`), préparées par
   `scripts/prepare-whatsnew.mjs` :
   1. **si une release GitHub existe pour le tag** (créée depuis l'interface
      GitHub avec son texte), c'est ce texte qui part sur le Play Store
-     (markdown allégé, tronqué à 500 caractères), en français, les autres
-     langues retombent sur la langue par défaut dans la console ;
+     (markdown allégé, tronqué à 500 caractères par langue). Écrit en trois
+     sections, chaque langue de la fiche reçoit la sienne (voir
+     « Notes de version en trois langues » ci-dessous) ; sans ces titres,
+     il ne va qu'au français, et une langue sans texte retombe sur la
+     langue par défaut dans la console ;
   2. **sinon**, la phrase par défaut de `scripts/release-notes.mjs`
      (« Correction de bugs mineurs. », traduite par langue), il n'y a plus
      de `changelogs/default.txt` dans le repo.
 
   La release GitHub est de toute façon créée/complétée par la CI avec l'AAB
   signé ; si elle existe déjà, son texte n'est pas touché.
+
+### Notes de version en trois langues
+
+Le texte de la release GitHub peut porter une section par langue, chacune
+sous un titre au nom de la langue. Le Play Store (fr-FR, en-US, iw-IL) et
+l'App Store (fr-FR, en-US, he) reçoivent alors, dans chaque langue, le texte
+écrit pour elle :
+
+```markdown
+## Français
+Nouveautés
+- …
+
+Corrections
+- …
+
+## English
+What's new
+- …
+
+Fixes
+- …
+
+## עברית
+חדש
+- …
+
+תיקונים
+- …
+```
+
+- Les titres de langue se reconnaissent sans casse ni accent, et aussi sous
+  leur nom français ou leur code (`## Anglais`, `## Hébreu`, `## en`…). Un
+  autre titre (`## Nouveautés`) reste du texte de la section.
+- Ce qui précède le premier titre de langue est ignoré.
+- Sans aucun titre de langue, le texte entier est du français : les
+  releases écrites avant continuent de marcher.
+- Une langue sans section reçoit, côté App Store, la phrase par défaut ;
+  côté Play, la langue par défaut de la console.
+
+`splitReleaseNotes` dans `scripts/release-notes.mjs` porte la règle,
+`src/__tests__/releaseNotes.test.ts` la tient.
+
+Une note se vérifie avant de la coller, avec
+`node scripts/check-release-notes.mjs note.md` : trois langues présentes,
+500 caractères au plus chacune (au-delà, le Play Store coupe), ni tiret long
+ni émoji (App Store Connect les refuse). Pour la faire rédiger par Claude,
+« rédige la note de patch » suffit : la marche à suivre est dans
+[notes-de-version.md](notes-de-version.md).
 - La fiche est envoyée par `node scripts/play-listing.mjs` (API Android
   Publisher, même compte de service). `node scripts/play-listing.mjs --check`
   vérifie les limites de caractères en local, sans réseau.
@@ -103,42 +159,26 @@ store-assets/metadata/android/<locale>/   # fr-FR, en-US, iw-IL (hébreu)
   console ; une langue sans captures dans le repo laisse la console
   intacte (les langues sans images retombent sur la langue par défaut).
 - Les captures se régénèrent avec `npm run store:screenshots`
-  (scripts/store-screenshots.mjs) : émulateurs Firebase éphémères + données
-  de démo fixes (compte « Sarah Levy », session Tehilim, chiourim), puis
-  l'app **native** (build debug Capacitor branché sur le Vite local via
-  `CAP_SERVER_URL` + `adb reverse`) sur l'AVD dédié `pj-store` (1080×1920,
-  créé automatiquement), pilotée par Playwright à travers sa webview et
-  capturée par `adb screencap` (barre de statut en mode démo SystemUI,
-  barre d'onglets native visible). Reproductible : mêmes données à chaque
-  exécution, il suffit de committer les PNG produits. Variante rapide sans
-  émulateur Android : `npm run store:screenshots -- --web` (rendu site
-  mobile, sans la barre d'onglets).
-- La CI n'attend pas ces commits : à chaque tag, le job `screenshots` de
-  deploy-android.yml rejoue ce script sur un émulateur Android du runner et le
-  job `listing` envoie les captures fraîches avec la fiche. Si l'émulateur
-  flanche, la fiche part avec les captures committées dans le repo ; dans tous
-  les cas la release, elle, n'attend pas les captures. Les PNG régénérés
-  restent téléchargeables 90 jours en artifact du run, pour contrôle visuel ou
-  pour les committer.
-- **L'émulateur de la CI n'est pas ouvert par le script** mais par l'action
-  [android-emulator-runner](https://github.com/ReactiveCircus/android-emulator-runner) :
-  démarrer un émulateur sur un runner sans écran demande plus que trois
-  options de ligne de commande (paquets SDK, AVD, attente du boot, reprise
-  après un démarrage manqué), et le lancement maison y mourait sans un mot au
-  tag v3.8.1. L'action pose l'émulateur, la variable `ANDROID_SERIAL` dit au
-  script de s'y brancher au lieu d'en lancer un second. En local, rien ne
-  change : sans `ANDROID_SERIAL`, le script ouvre son AVD `pj-store` comme
-  avant, et affiche désormais le journal de l'émulateur si le démarrage
-  échoue.
-- Le job régénère `android/` de zéro, donc il rejoue `npm run build-only`
-  **puis** `npx cap sync android` : c'est le sync qui écrit
-  `android/capacitor.settings.gradle` (la liste des plugins que lit Gradle),
-  et `npx cap add android`, lancé avant que `dist/` existe, ne peut pas le
-  produire. Sans lui, `gradlew :app:installDebug` s'arrête sur « Could not read
-  script … as it does not exist ».
-- Pour vérifier les captures sans rien publier : onglet Actions → Deploy
-  Android → Run workflow, en cochant **screenshots_only**. Seul le job
-  `screenshots` tourne, son artifact contient les PNG.
+  (scripts/store-screenshots.mjs), en un seul passage pour les deux stores :
+  émulateurs Firebase éphémères + données de démo fixes (compte « Sarah
+  Levy », session Tehilim, chiourim), puis Chrome headless qui rend
+  l'interface de l'**app** (barre d'onglets du bas, sans en-tête de site)
+  grâce à une plateforme Capacitor « maison », dans les trois formats des
+  fiches : téléphone Play (1080×1920), iPhone 6,9" et iPad 13". Ni émulateur
+  Android, ni Gradle, ni barre système : le rendu est le même que la fiche
+  App Store, et un passage tient en quelques minutes sur un runner Linux.
+  Détails et choix dans
+  [store-assets/screenshots/README.md](../store-assets/screenshots/README.md).
+- La CI n'attend pas de commit : à chaque tag, le workflow
+  `store-screenshots.yml` génère le jeu une fois et le publie en artifact ;
+  le job `listing` de deploy-android.yml le récupère (action
+  `.github/actions/fetch-store-screenshots`, qui attend la fin du run s'il
+  tourne encore) et envoie les `phone-*` avec la fiche. Si la génération
+  flanche, la fiche part avec les captures committées dans le repo ; dans
+  tous les cas la release, elle, n'attend pas les captures.
+- Pour vérifier les captures sans rien publier : onglet Actions → Store
+  screenshots → Run workflow. Son artifact contient les trois formats.
+  (L'ancienne option **screenshots_only** de Deploy Android n'existe plus.)
 
 ## Piste de publication
 

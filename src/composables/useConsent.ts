@@ -5,8 +5,8 @@ import { ref, type Ref } from "vue";
  *
  * ePrivacy/RGPD : le suivi (cookies/localStorage, session replay) ne démarre
  * qu'après un accord explicite. Le choix est conservé en localStorage et peut
- * être modifié à tout moment (lien « Gérer les cookies » du footer et de
- * l'onglet À propos), y compris pour retirer un accord déjà donné.
+ * être modifié à tout moment (lien « Gérer les cookies » du footer et du
+ * profil de l'app), y compris pour retirer un accord déjà donné.
  */
 
 export type ConsentChoice = "granted" | "denied";

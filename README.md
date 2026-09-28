@@ -199,6 +199,7 @@ dans le bundle initial…).
 | [docs/app-watch.md](docs/app-watch.md) | Montres connectées (Wear OS / Apple Watch) : horaires, lecture du jour, Tehilim. |
 | [docs/android-ci-cd.md](docs/android-ci-cd.md) | CI/CD Android : publication Play Store automatique à chaque tag `vX.Y.Z`. |
 | [docs/ios-ci-cd.md](docs/ios-ci-cd.md) | CI/CD iOS : envoi automatique sur TestFlight à chaque tag `vX.Y.Z`. |
+| [docs/notes-de-version.md](docs/notes-de-version.md) | Rédiger la note de version d'un tag : trois langues, 500 caractères par langue, nouveautés puis corrections. |
 | [docs/ios-release-plan.md](docs/ios-release-plan.md) | Plan de publication iOS, de « aucun compte Apple » à « app en vente ». |
 | [docs/firebase-ci-cd.md](docs/firebase-ci-cd.md) | CI/CD Firebase : ce que déploie `deploy.yml` et les droits du compte de service. |
 | [docs/moderation.md](docs/moderation.md) | Modération des sessions (exigences App Store, règle 1.2). |
