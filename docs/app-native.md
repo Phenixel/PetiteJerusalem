@@ -414,6 +414,7 @@ couleurs telle quelle.
 | sombre | mode sombre d'iOS 18 |
 | teintée | iOS 18, teintée par la couleur choisie pour l'écran d'accueil |
 | monochrome | icônes thématiques d'Android 13+, teintées par le fond d'écran |
+| notification | petite icône de toutes les notifications Android, teintée par le système |
 
 C'est pour ça que le noir et blanc est nécessaire : les variantes teintée et
 monochrome sont lues comme des intensités, pas comme des images. Le système
@@ -440,6 +441,29 @@ Deux contraintes valent d'être connues avant de retoucher le dessin :
   se toucheraient et l'icône ne serait plus qu'une tache : ce sont les creux du
   masque (joints des pierres, lignes des pages, bord haut du livre) qui la
   gardent lisible.
+
+### Petite icône des notifications
+
+Android n'affiche de la petite icône d'une notification que son opacité. Sans
+icône déclarée, chaque source retombait sur la sienne : l'icône du lanceur
+réduite à une pastille pour les push reçues app fermée, le « i » générique du
+système pour les notifications locales (rappels d'horaires, rappel du Chabbat,
+push rejouées au premier plan).
+
+Toutes prennent désormais `ic_stat_pj`, la silhouette de l'icône cadrée pour
+24 dp. Ses PNG sont versionnés dans `native/android/app/src/main/res/drawable-*`
+(recopiés par `setup-android.mjs` avec les widgets) et se rasterisent comme les
+autres, depuis la variante `notification` de `scripts/lib/app-icon.mjs`, aux
+tailles de 24, 36, 48, 72 et 96 px (de mdpi à xxxhdpi). Deux déclarations la
+branchent :
+
+- `capacitor.config.ts`, `LocalNotifications.smallIcon` : toutes les
+  notifications locales ;
+- le manifest, meta-data `default_notification_icon` de Firebase (posée par
+  `setup-android.mjs`) : les push affichées par le système app fermée.
+
+La teinte du volet est l'or des pierres de l'icône (`#C79A3B`), déclarée aux
+deux endroits.
 
 ## Liens du site qui ouvrent l'app
 

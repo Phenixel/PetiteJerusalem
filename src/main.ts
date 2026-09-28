@@ -6,6 +6,7 @@ import router from "./router";
 import i18n from "./i18n";
 import { isNativeApp } from "./composables/useNativeApp";
 import { closeTopOverlay } from "./composables/useOverlayStack";
+import { chunkNameFrom, isChunkLoadError } from "./config/chunkErrors";
 
 // App native : à faire de façon SYNCHRONE avant le premier rendu.
 // - viewport-fit=cover fait passer la webview en vrai edge-to-edge (Capacitor
@@ -33,23 +34,18 @@ if (isNativeApp) {
 // si le réseau est vraiment en panne) : le HTML frais référence les nouveaux
 // chunks.
 //
-// Trois sources d'écoute, parce qu'elles ne se recouvrent pas :
+// Quatre sources d'écoute, parce qu'elles ne se recouvrent pas :
 //  - vite:preloadError, échec du PRÉchargement des dépendances d'un chunk ;
 //  - router.onError, échec de l'import() du composant de route lui-même, qui
 //    ne déclenche aucun vite:preloadError. C'est le cas réellement observé en
 //    production, et il n'était pas rattrapé ;
-//  - unhandledrejection, les import() hors routeur (services, composants).
+//  - unhandledrejection, les import() hors routeur (services, composants) ;
+//  - le gestionnaire d'erreurs de Vue, quand l'import() rate à l'intérieur
+//    d'un composant : l'erreur ne ressort ni en rejet non géré ni au routeur,
+//    Vue l'a déjà interceptée.
+//
+// Les messages reconnus vivent dans config/chunkErrors.
 const CHUNK_RELOAD_KEY = "pj_chunk_reload_at";
-
-// Messages des navigateurs pour un module dynamique injoignable : Chrome
-// (« Failed to fetch dynamically imported module »), Firefox (« error loading
-// dynamically imported module »), Safari (« Importing a module script failed »).
-const CHUNK_ERROR = /dynamically imported module|Importing a module script failed/i;
-
-function chunkNameFrom(message: string): string | null {
-  const url = message.match(/https?:\/\/\S+?\.(?:js|mjs|css)/)?.[0];
-  return url ? (url.split("/").pop() ?? null) : null;
-}
 
 /** Un seul rechargement par minute et par onglet : sinon un vrai incident réseau boucle. */
 function claimReload(): boolean {
@@ -65,8 +61,7 @@ function claimReload(): boolean {
 
 /** Renvoie true si l'erreur est bien un chunk manquant ET qu'on recharge. */
 function handleChunkLoadError(error: unknown, source: string): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  if (!CHUNK_ERROR.test(message)) return false;
+  if (!isChunkLoadError(error)) return false;
 
   const reloading = claimReload();
   // Capture AVANT le rechargement : PostHog vide sa file en sendBeacon au
@@ -74,7 +69,7 @@ function handleChunkLoadError(error: unknown, source: string): boolean {
   void import("./services/analyticsService")
     .then(({ analyticsService }) =>
       analyticsService.capture("chunk_load_error", {
-        chunk: chunkNameFrom(message),
+        chunk: chunkNameFrom(error),
         route: window.location.pathname,
         source,
         reloaded: reloading,
@@ -125,6 +120,10 @@ router.onError((error) => handleChunkLoadError(error, "router"));
 // Les erreurs de rendu/handlers Vue ne remontent pas jusqu'à window.onerror :
 // sans ce handler, elles seraient invisibles dans l'Error tracking PostHog.
 app.config.errorHandler = (err, _instance, info) => {
+  // Un chunk manquant qui rate dans un composant (import() d'un service, d'une
+  // vue enfant) arrive ici et nulle part ailleurs : il se répare d'un
+  // rechargement, il n'a rien à faire dans les erreurs de rendu.
+  if (handleChunkLoadError(err, "vue")) return;
   console.error("Erreur Vue non gérée:", err, info);
   import("./services/analyticsService").then(({ analyticsService }) =>
     analyticsService.captureException(err, { vue_error_info: info }),
