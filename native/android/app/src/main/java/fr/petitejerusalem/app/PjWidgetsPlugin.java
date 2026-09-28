@@ -51,6 +51,7 @@ public class PjWidgetsPlugin extends Plugin {
         if (daily != null) {
             PjWidgetProvider.requestUpdate(context, LectureWidgetProvider.class);
             PjWidgetProvider.requestUpdate(context, LectureShortcutWidgetProvider.class);
+            PjWidgetProvider.requestUpdate(context, StreakWidgetProvider.class);
         }
         if (library != null) {
             PjWidgetProvider.requestUpdate(context, LibraryWidgetProvider.class);

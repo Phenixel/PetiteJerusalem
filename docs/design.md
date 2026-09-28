@@ -652,6 +652,31 @@ attend quelques secondes après l'arrivée, se retire dès qu'on lui répond
 (« Tout va bien » ou le formulaire) et n'insiste pas : au plus trois fois, à
 une semaine d'écart, puis plus jamais.
 
+### La série de jours se lit en deux chiffres
+
+La série de jours de la lecture du jour (tout coché chaque jour, le compteur
+monte) se montre partout de la même façon, en deux chiffres et rien d'autre :
+la flamme et les jours d'affilée, le trophée et le record
+(`src/components/DailyStreakStats.vue`). Sur le bandeau du profil, tout est
+blanc, comme le nom ; sur une carte, la flamme prend l'accent dès que la série
+est en cours et reste grise sinon. Le zéro s'affiche : une série à recommencer
+se lit mieux qu'une case vide. Les mots (« tout est fait aujourd'hui »,
+« terminez avant minuit ») ne vivent que sur la page de la lecture du jour
+(`DailyStreakBanner.vue`), là où l'on agit dessus. Les widgets natifs
+reprennent le même dessin.
+
+La semaine se lit en sept pastilles, du dimanche au Chabbat
+(`DailyWeekDots.vue`), et le mois en grille (`DailyMonthCalendar.vue`) : une
+journée réussie est pleine, entamée à un quart de teinte, un jour de pause
+(Chabbat, Yom Tov) en pointillé, un jour manqué vide. Le jour courant porte un
+anneau. Les mêmes quatre états, aux mêmes couleurs, partout où la semaine se
+montre, jusqu'à la carte de l'accueil en petit.
+
+La journée réussie se fête une fois, dans une fenêtre (`DailyCelebration.vue`) :
+la flamme qui grandit, le nouveau nombre, et ce que la journée a de plus (un
+palier, un siyoum, un joker gagné). C'est la seule animation « de récompense »
+de l'app ; elle ne revient pas tant que la journée n'a pas changé.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.

@@ -53,6 +53,41 @@ final class DailyPayload {
     final String accent;
     /** Les coches de la lecture du jour, une par texte de la liste. */
     private final boolean[] done;
+    /** La série de jours (widget « Série »), null pour un payload d'avant elle. */
+    final Streak streak;
+
+    /**
+     * La série de jours : `current` ne vaut que jusqu'à `expiresAt` (le
+     * minuit qui suit le lendemain du dernier jour fait), `doneToday` que
+     * jusqu'à l'échéance du payload. Simple comparaison d'epochs, comme les
+     * coches. Les libellés arrivent déjà formatés et accordés.
+     */
+    static final class Streak {
+        final int current;
+        final int best;
+        final long expiresAt;
+        final boolean doneToday;
+        final String title;
+        final String daysLabel;
+        final String zeroLabel;
+        final String bestLabel;
+
+        Streak(JSONObject json) {
+            current = json.optInt("current");
+            best = json.optInt("best");
+            expiresAt = json.optLong("expiresAt");
+            doneToday = json.optBoolean("doneToday");
+            title = json.optString("title", "");
+            daysLabel = json.optString("daysLabel", "");
+            zeroLabel = json.optString("zeroLabel", "");
+            bestLabel = json.optString("bestLabel", "");
+        }
+
+        /** Les jours d'affilée tels qu'ils valent à cet instant. */
+        int currentAt(long now) {
+            return now < expiresAt ? current : 0;
+        }
+    }
 
     /** Le payload rangé par le plugin, ou null s'il manque ou ne se lit pas. */
     static DailyPayload load(Context context) {
@@ -80,6 +115,8 @@ final class DailyPayload {
         for (int i = 0; i < items.length(); i++) {
             done[i] = items.getJSONObject(i).getBoolean("done");
         }
+        JSONObject streakJson = json.optJSONObject("streak");
+        streak = streakJson == null ? null : new Streak(streakJson);
     }
 
     /** La progression telle qu'elle vaut à cet instant. */

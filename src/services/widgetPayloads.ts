@@ -2,7 +2,11 @@ import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { localDayKey } from "./dateService";
 import { getParashaForShabbat, getTehilimOfDay, getWeeklyParasha } from "./dailyCycles";
+import { getDafYomi } from "./dafYomi";
+import { activeActionKeys, DAILY_ACTIONS } from "./dailyActions";
+import { streakExpiresAt, streakStatus } from "./dailyStreak";
 import { dateTimeFormat } from "./intlCache";
+import { pauseRule } from "./restDays";
 import {
   cholHamoedOn,
   computeZmanim,
@@ -36,7 +40,8 @@ import type { UserPreferences } from "./userPreferencesService";
  * (Codable), toute évolution doit rester rétro-compatible ou incrémenter `v`.
  */
 
-type Translate = (key: string, params?: Record<string, unknown>) => string;
+/** La fonction de traduction : des paramètres nommés, ou le nombre d'un pluriel. */
+type Translate = (key: string, params?: Record<string, unknown> | number) => string;
 
 /**
  * Couleur d'accent de repli : le thème d'origine « sunset » de useTheme.
@@ -302,6 +307,28 @@ export interface DailyWidgetItem {
   done: boolean;
 }
 
+/**
+ * La série de jours, telle que le widget « Série » l'affiche. `current` ne
+ * vaut que jusqu'à `expiresAt` (le minuit qui suit le lendemain du dernier
+ * jour fait) : passé cet instant, le natif affiche zéro et `zeroLabel`, sans
+ * calendrier, par simple comparaison d'epochs. `doneToday` ne vaut que
+ * jusqu'à l'`expiresAt` du payload lui-même (minuit prochain).
+ */
+export interface DailyStreakWidget {
+  current: number;
+  best: number;
+  expiresAt: number;
+  doneToday: boolean;
+  /** « Série », le titre du widget. */
+  title: string;
+  /** « jours d'affilée », accordé à `current`. */
+  daysLabel: string;
+  /** Ce qu'on lit quand la série vaut zéro. */
+  zeroLabel: string;
+  /** « Record : 12 jours », déjà formaté (le record n'expire pas). */
+  bestLabel: string;
+}
+
 export interface DailyReadingWidgetPayload {
   v: 1;
   title: string;
@@ -334,6 +361,11 @@ export interface DailyReadingWidgetPayload {
   /** Paracha de la semaine (chnei mikra), hors décompte quotidien. */
   parasha: string | null;
   parashaDone: boolean;
+  /**
+   * La série de jours (widget « Série »). Absente des payloads d'avant : le
+   * natif la lit en option.
+   */
+  streak: DailyStreakWidget;
 }
 
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
@@ -353,11 +385,34 @@ function nextLocalMidnight(now: Date): number {
  * `il` : le calendrier d'Israël pour la paracha du chnei mikra, celui du lieu
  * des horaires, comme la page de lecture du jour.
  */
+/** La série telle qu'elle part au natif, à partir du suivi du compte. */
+function streakWidget(
+  progress: UserPreferences["dailyReadingProgress"] | undefined,
+  restDays: boolean,
+  t: Translate,
+  now: Date,
+): DailyStreakWidget {
+  // Les jours de pause (Chabbat, Yom Tov) ne rompent pas la série : l'échéance
+  // les enjambe, comme la page.
+  const rules = { isPause: pauseRule(restDays) };
+  const status = streakStatus(progress?.streak, localDayKey(now), rules);
+  return {
+    current: status.current,
+    best: status.best,
+    expiresAt: status.current > 0 ? streakExpiresAt(progress?.streak, rules) : 0,
+    doneToday: status.doneToday,
+    title: t("dailyReading.streak.widgetTitle"),
+    daysLabel: t("dailyReading.streak.widgetDays", status.current),
+    zeroLabel: t("dailyReading.streak.widgetZero"),
+    bestLabel: t("dailyReading.streak.widgetBest", { n: status.best }),
+  };
+}
+
 export function buildDailyReadingWidgetPayload(
-  prefs: Pick<
-    UserPreferences,
-    "dailyReadingIds" | "dailyReadingOptions" | "dailyReadingProgress"
-  > | null,
+  prefs:
+    | (Pick<UserPreferences, "dailyReadingIds" | "dailyReadingOptions" | "dailyReadingProgress"> &
+        Partial<Pick<UserPreferences, "dailyActions" | "dailyGoals" | "dailyRestDays">>)
+    | null,
   t: Translate,
   now: Date = new Date(),
   accent: string = DEFAULT_ACCENT,
@@ -377,7 +432,14 @@ export function buildDailyReadingWidgetPayload(
     accent,
   };
   if (!prefs) {
-    return { ...base, configured: false, items: [], parasha: null, parashaDone: false };
+    return {
+      ...base,
+      configured: false,
+      items: [],
+      parasha: null,
+      parashaDone: false,
+      streak: streakWidget(undefined, true, t, now),
+    };
   }
 
   const progress = prefs.dailyReadingProgress;
@@ -385,9 +447,11 @@ export function buildDailyReadingWidgetPayload(
   const fresh = progress?.date === date;
   const doneIds = new Set(fresh ? (progress.completedIds ?? []).map(String) : []);
   const doneOptions = new Set(fresh ? (progress.completedOptions ?? []) : []);
+  const doneActions = new Set(fresh ? (progress.completedActions ?? []) : []);
 
   const items: DailyWidgetItem[] = [];
-  if ((prefs.dailyReadingOptions ?? []).includes("tehilim-jour")) {
+  const options = prefs.dailyReadingOptions ?? [];
+  if (options.includes("tehilim-jour")) {
     const cycle = getTehilimOfDay(now);
     items.push({
       key: "tehilim-jour",
@@ -395,9 +459,30 @@ export function buildDailyReadingWidgetPayload(
       done: doneOptions.has("tehilim-jour"),
     });
   }
+  if (options.includes("daf-yomi")) {
+    const daf = getDafYomi(now);
+    if (daf) {
+      items.push({
+        key: "daf-yomi",
+        label: t("dailyReading.options.dafYomiReading", {
+          tractate: daf.entry?.name ?? daf.tractate,
+          daf: daf.blatt,
+        }),
+        done: doneOptions.has("daf-yomi"),
+      });
+    }
+  }
   for (const id of (prefs.dailyReadingIds ?? []).map(String)) {
     const entry = textById.get(id);
     if (entry) items.push({ key: id, label: entry.name, done: doneIds.has(id) });
+  }
+  // Les actions du jour et les objectifs personnels comptent comme une
+  // lecture chacun, dans l'ordre de la page (voir activeActionKeys).
+  const goals = prefs.dailyGoals ?? [];
+  for (const key of activeActionKeys(prefs.dailyActions ?? [], goals, date)) {
+    const action = DAILY_ACTIONS.find((a) => a.key === key);
+    const label = action ? t(action.titleKey) : (goals.find((g) => g.id === key)?.label ?? key);
+    items.push({ key, label, done: doneActions.has(key) });
   }
 
   // Chnei mikra : suivi hebdomadaire, affiché à part et hors décompte.
@@ -422,6 +507,7 @@ export function buildDailyReadingWidgetPayload(
     items,
     parasha,
     parashaDone,
+    streak: streakWidget(progress, prefs.dailyRestDays !== false, t, now),
   };
 }
 

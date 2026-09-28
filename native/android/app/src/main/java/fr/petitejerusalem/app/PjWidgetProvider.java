@@ -12,7 +12,7 @@ import android.net.Uri;
 import android.os.Bundle;
 
 /**
- * Socle commun des huit widgets : diffusion des mises à jour, alarme de
+ * Socle commun des neuf widgets : diffusion des mises à jour, alarme de
  * redessin, toucher-pour-ouvrir. Les sous-classes ne fournissent que leur
  * rendu, qui dit aussi QUAND se redessiner (prochain zman, chkia, minuit), la
  * planification elle-même vivant ici, en un seul endroit, dans onUpdate.

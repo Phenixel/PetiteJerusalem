@@ -105,6 +105,17 @@ describe("i18n usage", () => {
     const DYNAMIC_PREFIXES = [
       "admin.chiourim.filters.",
       "admin.sessions.filters.",
+      // La lecture du jour : la règle de la journée, les moments, les états
+      // des jours, les compteurs et les défis se nomment par leur clé.
+      "dailyReading.challenges.",
+      "dailyReading.goals.periods.",
+      "dailyReading.goals.periodProgress.",
+      "dailyReading.goals.periodTimes.",
+      "dailyReading.goals.periodTitles.",
+      "dailyReading.goals.timesPer.",
+      "dailyReading.rules.",
+      "dailyReading.totals.",
+      "dailyReading.week.",
       // Codes d'erreur des services (useToast.errorFromException).
       "errors.",
       // Le formulaire de support : type de demande et contexte joint.

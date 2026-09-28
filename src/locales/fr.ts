@@ -434,11 +434,12 @@ const fr = {
   dailyReading: {
     title: "Ma lecture quotidienne",
     description:
-      "Sélectionnez les textes que vous lisez chaque jour pour les retrouver ici, les uns à la suite des autres.",
+      "Composez votre journée : des textes à lire, des actions à faire, vos propres objectifs. Cochez-les chaque jour et faites monter votre série.",
     manage: "Gérer ma liste",
     done: "Terminé",
     tabToday: "Aujourd'hui",
     tabWeek: "Cette semaine",
+    tabProgress: "Progression",
     addTexts: "Ajouter des textes",
     add: "Ajouter",
     added: "Ajouté",
@@ -446,8 +447,8 @@ const fr = {
     removeFromList: "Retirer de la liste",
     emptyTitle: "Votre liste est vide",
     emptyDescription:
-      "Ajoutez les psaumes ou passages que vous lisez quotidiennement pour les retrouver regroupés ici.",
-    progress: "{done} sur {total} lus aujourd'hui",
+      "Ajoutez des textes à lire, des actions à faire ou vos propres objectifs : tout se coche ici, chaque jour.",
+    progress: "{done} sur {total} faits aujourd'hui",
     allReadTitle: "Bravo, tout est lu pour aujourd'hui !",
     allReadDescription: "Revenez demain pour votre prochaine lecture.",
     markRead: "Marquer comme lu",
@@ -459,6 +460,225 @@ const fr = {
       title: "Lecture du jour",
       empty: "Ouvrez l'app pour composer votre liste de lecture",
     },
+    // Les actions du jour : des gestes à se voir faire chaque jour, cochés
+    // comme une lecture (voir services/dailyActions).
+    actions: {
+      title: "Actions du jour",
+      description:
+        "Des gestes de la journée à cocher chaque jour, à côté de vos lectures : ils comptent dans votre progression et dans votre série.",
+      doneToday: "Fait aujourd'hui",
+      open: "Ouvrir le texte",
+      until: "jusqu'à {time}",
+      chaharitTitle: "Cha'harit",
+      chaharitDescription: "La prière du matin.",
+      minhaTitle: "Min'ha",
+      minhaDescription: "La prière de l'après-midi.",
+      arvitTitle: "Arvit",
+      arvitDescription: "La prière du soir.",
+      tefilinTitle: "Tefilin",
+      tefilinDescription: "Mettre les tefilin.",
+      tsedakaTitle: "Tsédaka",
+      tsedakaDescription: "Donner, même une pièce.",
+      chemaTitle: "Chema avant de dormir",
+      chemaDescription: "Le Chema al hamita, avant de se coucher.",
+      etudeTitle: "Étude de la Torah",
+      etudeDescription: "Un passage, une michna, une page : étudier chaque jour.",
+    },
+    // Les objectifs personnels : ce que la personne veut s'améliorer à faire.
+    goals: {
+      title: "Mes objectifs",
+      description:
+        "Dans vos mots, et à votre rythme : chaque jour, tant de fois par semaine, par mois, par an, ou sur quarante jours de suite comme le Pérek Chira.",
+      placeholder: "Un objectif, dans vos mots",
+      add: "Ajouter",
+      everyDay: "Chaque jour",
+      restart: "Recommencer",
+      finishedTitle: "Programmes accomplis",
+      customHint: "jours de suite, à partir d'aujourd'hui",
+      programDay: "Jour {day} sur {days}",
+      programDone: "{days} jours accomplis",
+      // La période d'un objectif (voir services/dailyActions.GoalPeriod).
+      periods: {
+        day: "Chaque jour",
+        week: "Par semaine",
+        month: "Par mois",
+        year: "Par an",
+        custom: "Sur N jours",
+        customDays: "{days} jours de suite",
+        book: "Finir un livre",
+      },
+      timesPer: {
+        week: "fois par semaine | fois par semaine | fois par semaine",
+        month: "fois par mois | fois par mois | fois par mois",
+        year: "fois par an | fois par an | fois par an",
+      },
+      periodTimes: {
+        week: "{n} fois par semaine | {n} fois par semaine | {n} fois par semaine",
+        month: "{n} fois par mois | {n} fois par mois | {n} fois par mois",
+        year: "{n} fois par an | {n} fois par an | {n} fois par an",
+      },
+      periodTitles: {
+        week: "Cette semaine",
+        month: "Ce mois-ci",
+        year: "Cette année",
+      },
+      periodProgress: {
+        week: "{done} sur {total} cette semaine",
+        month: "{done} sur {total} ce mois-ci",
+        year: "{done} sur {total} cette année",
+      },
+      // Finir un livre sur une période (voir services/bookGoals).
+      book: {
+        pick: "Choisir un traité",
+        goalLabel: "Finir {name}",
+        daysHint: "jours, jusqu'au {date}",
+        frequency: "{units} portions sur {days} jours",
+        today: "Aujourd'hui : {portion}",
+        behind: "{n} en retard, réparties sur la suite",
+        done: "Livre fini",
+        dafOne: "daf {daf}",
+        dafRange: "daf {from} à {to}",
+        mishnaOne: "chapitre {chapter}, michna {n}",
+        mishnaRange: "chapitre {chapter}, michnayot {from} à {to}",
+        mishnaAcross: "chapitre {fromChapter} michna {from} à chapitre {toChapter} michna {to}",
+      },
+      // Les objectifs proposés (voir services/dailyActions.GOAL_PRESETS).
+      presets: {
+        title: "Objectifs proposés",
+        perekChira: "Pérek Chira",
+        birkatHalevana: "Birkat halevana",
+        chiour: "Écouter un chiour",
+        parents: "Appeler mes parents",
+        tehilimMois: "Finir les Tehilim",
+        mezouzot: "Faire vérifier mes mezouzot",
+      },
+      remove: "Retirer cet objectif",
+      limit: "Vous avez atteint les {max} objectifs : retirez-en un pour en ajouter un autre.",
+    },
+    // La série de jours : tout fait chaque jour, le compteur monte.
+    streak: {
+      title: "Série de jours",
+      days: "jour d'affilée | jour d'affilée | jours d'affilée",
+      best: "Record : {n} jours",
+      bestShort: "record",
+      bestTitle: "Votre plus longue série",
+      doneToday: "Tout est fait aujourd'hui : la série continue demain.",
+      atRisk: "Terminez vos objectifs avant minuit pour garder votre série.",
+      atRiskFreeze:
+        "Un jour a été manqué : un joker le couvre si vous terminez aujourd'hui. | Un jour a été manqué : un joker le couvre si vous terminez aujourd'hui. | {n} jours ont été manqués : vos jokers les couvrent si vous terminez aujourd'hui.",
+      paused: "Jour de pause : votre série tient sans rien faire. Cocher reste possible.",
+      restart: "Terminez tous vos objectifs aujourd'hui pour repartir sur une série.",
+      start: "Terminez tous vos objectifs du jour pour commencer une série.",
+      widgetTitle: "Série",
+      widgetDays: "jour d'affilée | jour d'affilée | jours d'affilée",
+      widgetZero: "Terminez votre journée pour lancer une série",
+      widgetBest: "Record : {n}",
+      share: "Partager ma série",
+      shareDownloaded: "L'image de votre série est téléchargée.",
+    },
+    // Les jokers : un par semaine entière de série, un jour manqué en consomme un.
+    freezes: {
+      count: "Aucun joker en réserve | 1 joker en réserve | {n} jokers en réserve",
+      hint: "Une semaine entière de série en donne un ({max} au plus) : un jour manqué le consomme au lieu de rompre la série.",
+    },
+    // La règle de la journée réussie et les jours de pause.
+    rules: {
+      title: "Ma journée réussie",
+      description:
+        "Ce qu'il faut avoir coché pour que la journée compte dans votre série. Tout, c'est exigeant ; une chose, c'est tenable.",
+      all: "Tout",
+      half: "Au moins la moitié",
+      one: "Au moins une chose",
+      short: {
+        all: "journée réussie quand tout est fait",
+        half: "journée réussie à la moitié",
+        one: "journée réussie dès une chose faite",
+      },
+      restDays: "Chabbat et Yom Tov en pause",
+      restDaysHint:
+        "Ces jours-là ne comptent ni pour ni contre : la série les traverse sans que vous ayez à ouvrir l'application.",
+    },
+    // Corriger un jour passé (voir DailyDayEditor).
+    editor: {
+      title: "Corriger un jour",
+      hint: "Cochez ce que vous aviez fait ce jour-là. Votre série se relit ensuite.",
+      open: "Corriger le {day}",
+      weekHint: "Un jour oublié ? Touchez-le pour le corriger, jusqu'à sept jours en arrière.",
+      yesterday: "Hier n'est pas coché. Vous l'aviez fait ?",
+      fixYesterday: "Corriger hier",
+      checkAll: "Tout cocher",
+      uncheckAll: "Tout décocher",
+      save: "Enregistrer",
+      saved: "Le jour est corrigé.",
+      savedStreak: "Le jour est corrigé : votre série est à {n} jours.",
+    },
+    // La semaine en cours et le calendrier.
+    week: {
+      title: "Cette semaine",
+      days: { 0: "D", 1: "L", 2: "M", 3: "M", 4: "J", 5: "V", 6: "S" },
+      states: {
+        done: "Journée réussie",
+        partial: "Journée entamée",
+        missed: "Journée manquée",
+        pause: "Jour de pause",
+        future: "À venir",
+        empty: "Rien encore",
+      },
+    },
+    calendar: {
+      previous: "Mois précédent",
+      next: "Mois suivant",
+    },
+    // Les compteurs cumulés de l'onglet Progression.
+    totals: {
+      days: "journée réussie | journée réussie | journées réussies",
+      psalms: "psaume lu | psaume lu | psaumes lus",
+      dafim: "daf étudié | daf étudié | dafim étudiés",
+      prayers: "prière | prière | prières",
+    },
+    milestones: {
+      title: "Paliers",
+      days: "{n} jours",
+      reached: "atteint",
+      locked: "à venir",
+      siyoumim: "Siyoumim",
+    },
+    // La fête de la journée réussie.
+    celebration: {
+      kicker: "Journée réussie",
+      title: "Bravo, tout est fait !",
+      milestone: "{n} jours d'affilée !",
+      siyoum: "Siyoum de {tractate} !",
+      program: "{label} : programme accompli !",
+      newBest: "Votre plus longue série, à ce jour.",
+      freezeEarned: "Une semaine entière : vous gagnez un joker.",
+      close: "Continuer",
+    },
+    // Les défis de saison.
+    challenges: {
+      kicker: "Défi de saison",
+      omer: "Les 49 jours du 'Omer",
+      "yamim-noraim": "D'Eloul à Kippour",
+      hanouka: "Les huit soirs de 'Hanouka",
+      progress: "Jour {day} sur {total} · {done} journées réussies",
+    },
+    // Où l'on en est dans un cycle.
+    progressChips: {
+      daf: "Daf {index} sur {count} · cycle à {pct} %",
+      tehilim: "Jour {day} sur 30 du cycle",
+    },
+    // Les parcours de départ.
+    packs: {
+      intro: "Par où commencer ? Choisissez un parcours, vous le retoucherez ensuite.",
+      lireTitle: "Lire",
+      lireDescription: "Les Tehilim du jour et la paracha de la semaine, chaque jour.",
+      faireTitle: "Faire",
+      faireDescription: "Les trois offices et les tefilin, cochés au fil de la journée.",
+      progresserTitle: "Progresser",
+      progresserDescription: "Le Daf hayomi, un temps d'étude, la tsédaka, et un objectif à vous.",
+      progresserGoal: "Dix minutes de moussar",
+      compose: "Composer moi-même",
+    },
     options: {
       title: "Lectures du moment",
       description:
@@ -469,8 +689,15 @@ const fr = {
       tehilimDayTitle: "Tehilim du jour",
       tehilimDayDescription:
         "Le cycle mensuel : les psaumes du jour du mois hébraïque, pour finir les Tehilim chaque mois.",
+      dafYomiTitle: "Daf hayomi",
+      dafYomiDescription:
+        "La page du Talmud que le monde entier étudie le même jour : un daf par jour, tout le Chas en sept ans et demi.",
       parashaReading: "Paracha de la semaine",
       tehilimDayReading: "Tehilim du jour · {day} du mois",
+      dafYomiReading: "Daf hayomi",
+      dafYomiLabel: "{tractate} · Daf {daf}",
+      dafYomiMissing:
+        "Ce daf n'est pas dans la bibliothèque : vous pouvez tout de même le cocher une fois étudié.",
       psalmsOne: "Tehilim {n}",
       psalmsRange: "Tehilim {from} à {to}",
       weeklyNote: "À terminer avant Chabbat",

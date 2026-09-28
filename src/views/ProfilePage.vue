@@ -13,6 +13,12 @@ import SecuritySettings from "./profilePage/SecuritySettings.vue";
 import AppearanceTab from "./profilePage/AppearanceTab.vue";
 import PreferencesTab from "./profilePage/PreferencesTab.vue";
 import { SITE_URL } from "../config/site";
+import {
+  userPreferencesService,
+  type DailyReadingProgress,
+} from "../services/userPreferencesService";
+import { localDayKey } from "../services/dateService";
+import { streakStatus, type StreakStatus } from "../services/dailyStreak";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -43,6 +49,27 @@ const visibleTabs = computed<{ id: TabId; label: string }[]>(() => [
 ]);
 
 const userDisplayName = computed(() => currentUser.value?.name || t("common.anonymousUser"));
+
+// La série de jours de la lecture du jour, affichée dans le bandeau : la
+// copie locale d'abord (elle s'affiche avec le nom), le serveur confirme.
+const streak = ref<StreakStatus | null>(null);
+
+async function loadStreak(userId: string) {
+  const apply = async (progress: DailyReadingProgress | undefined, restDays: boolean) => {
+    const { pauseRule } = await import("../services/restDays");
+    streak.value = streakStatus(progress?.streak, localDayKey(), {
+      isPause: pauseRule(restDays),
+    });
+  };
+  const cached = userPreferencesService.getCachedPreferences(userId);
+  if (cached) void apply(cached.dailyReadingProgress, cached.dailyRestDays !== false);
+  try {
+    const prefs = await userPreferencesService.getPreferences(userId);
+    await apply(prefs.dailyReadingProgress, prefs.dailyRestDays !== false);
+  } catch (error) {
+    console.error("Erreur lors du chargement de la série de jours:", error);
+  }
+}
 
 let unsubscribeAuth: (() => void) | null = null;
 
@@ -84,6 +111,8 @@ onMounted(() => {
   unsubscribeAuth = authService.onAuthChanged((user) => {
     currentUser.value = user;
     isLoading.value = false;
+    if (user) void loadStreak(user.id);
+    else streak.value = null;
     // La page reste réservée aux comptes (même comportement que la garde de
     // route, qui ne se rejoue pas à la déconnexion).
     if (!user) router.replace("/");
@@ -120,7 +149,7 @@ onUnmounted(() => {
 
     <!-- Sans compte, l'abonnement ci-dessus renvoie à l'accueil. -->
     <div v-else-if="currentUser">
-      <ProfileHeader :user-display-name="userDisplayName" />
+      <ProfileHeader :user-display-name="userDisplayName" :streak="streak" />
 
       <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
         <nav class="lg:sticky lg:top-24 h-fit card p-3">

@@ -34,6 +34,8 @@ import { ensureManifestLoaded } from "../services/offlineTextStore";
 import { readingProgressService, type ReadingPosition } from "../services/readingProgressService";
 import { authService, type User } from "../services/authService";
 import { countDailyProgress, userPreferencesService } from "../services/userPreferencesService";
+import { activeActionKeys } from "../services/dailyActions";
+import { streakStatus, type StreakStatus } from "../services/dailyStreak";
 import { useToast } from "../composables/useToast";
 import { useConfirm } from "../composables/useConfirm";
 import { useSearchMode } from "../composables/useSearchMode";
@@ -277,6 +279,7 @@ let unsubscribeAuth: (() => void) | null = null;
 const dailyLoading = ref(false);
 const readingTotal = ref(0);
 const readingDone = ref(0);
+const readingStreak = ref<StreakStatus | null>(null);
 
 // Dernière position de lecture : le vrai « Reprendre ma lecture ».
 const lastReading = ref<ReadingPosition | null>(null);
@@ -315,15 +318,22 @@ async function loadDailySummary(u: User) {
     // Même règle de comptage que la page Lecture du jour (chnei mikra
     // hebdomadaire exclu, complétions intersectées avec les listes actives).
     const progress = prefs.dailyReadingProgress;
-    const isToday = progress?.date === localDayKey();
+    const today = localDayKey();
+    const isToday = progress?.date === today;
     const counts = countDailyProgress({
       textIds: prefs.dailyReadingIds ?? [],
       options: prefs.dailyReadingOptions ?? [],
       completedTextIds: isToday ? (progress.completedIds ?? []) : [],
       completedOptions: isToday ? (progress.completedOptions ?? []) : [],
+      actions: activeActionKeys(prefs.dailyActions ?? [], prefs.dailyGoals ?? [], today),
+      completedActions: isToday ? (progress.completedActions ?? []) : [],
     });
     readingTotal.value = counts.total;
     readingDone.value = counts.done;
+    const { pauseRule } = await import("../services/restDays");
+    readingStreak.value = streakStatus(progress?.streak, today, {
+      isPause: pauseRule(prefs.dailyRestDays !== false),
+    });
   } catch (error) {
     console.error("Erreur lors du chargement de la lecture du jour:", error);
   } finally {
@@ -710,7 +720,12 @@ onUnmounted(() => {
            tableau de bord de l'accueil (un seul design pour la même chose). -->
       <div v-if="user" class="max-w-3xl mx-auto mt-14 animate-[fadeIn_0.5s_ease]">
         <div v-if="dailyLoading" class="card p-6 h-36 animate-pulse"></div>
-        <DailyReadingCard v-else :done="readingDone" :total="readingTotal" />
+        <DailyReadingCard
+          v-else
+          :done="readingDone"
+          :total="readingTotal"
+          :streak="readingStreak"
+        />
       </div>
     </template>
 
