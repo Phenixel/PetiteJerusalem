@@ -453,6 +453,15 @@ describe("'Hol haMoed, et le loulav de Souccot", () => {
     expect(occ(18, months.TISHREI, 5787).has("eretz-israel")).toBe(false);
   });
 
+  it("nomme les jours de Moussaf : Roch 'Hodech et 'Hol haMoed, eux seuls", () => {
+    expect(occ(17, months.TISHREI, 5787).has("moussaf")).toBe(true);
+    expect(occ(17, months.NISAN, 5787).has("moussaf")).toBe(true);
+    expect(occ(1, months.CHESHVAN, 5787).has("moussaf")).toBe(true);
+    expect(occ(30, months.TISHREI, 5787).has("moussaf")).toBe(true);
+    expect(occ(14, months.CHESHVAN, 5787).has("moussaf")).toBe(false);
+    expect(occ(22, months.TISHREI, 5787).has("moussaf")).toBe(false);
+  });
+
   it("à Min'ha, dit le psaume de la fête à la place du Lamnatséa'h", () => {
     // La consigne de la source : « ובחול המועד סוכות ופסח יש נוהגים לומר את
     // מזמור החג במקום למנצח ». 5787 : le 17 Tichri est un lundi, le 21

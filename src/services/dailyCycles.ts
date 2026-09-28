@@ -400,6 +400,11 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // jour où se dire ; les fêtes qu'elle sert se nomment par ailleurs
   // (`sukkot`, `pesach`), pour le passage du Moussaf qui dit laquelle.
   if (holHamoed) occ.add("hol-hamoed");
+  // Les jours où le sidour de semaine dit Moussaf (Roch 'Hodech, 'Hol
+  // haMoed) : le Kaddich Titkabal passe d'Ouva letsion à la fin de Moussaf,
+  // et un demi-Kaddich précède Moussaf. Une clé à part, que les versions
+  // publiées ne connaissent pas : elles gardent l'ordre de semaine.
+  if (occ.has("rosh-chodesh") || holHamoed) occ.add("moussaf");
   // Le loulav dans la Cha'harit de semaine : les jours de 'Hol haMoed de
   // Souccot, avant le Hallel, et pendant pour les na'anou'im. Pas le Chabbat,
   // où on ne porte pas les quatre espèces. Pas les jours de Yom Tov non plus,

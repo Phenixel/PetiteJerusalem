@@ -3,11 +3,12 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
-import { parseContent, resolveFilePath } from "../services/textService";
+import { HDate, months } from "@hebcal/core";
+import { parseContent, resolveFilePath, saidOn } from "../services/textService";
 import type { TextContent, TextParagraph, TextRun } from "../services/textService";
 import { injectWeeklyTorah } from "../services/sidourService";
 import type { WeeklyParasha } from "../services/dailyCycles";
-import { getParashaForShabbat } from "../services/dailyCycles";
+import { activeOccasions, getParashaForShabbat } from "../services/dailyCycles";
 import torahWeekdayJson from "../datas/torahWeekday.json";
 
 /**
@@ -99,6 +100,7 @@ const KNOWN_WHEN = new Set([
   "ledavid",
   "lamnatseah-minha",
   "chir-moed-minha",
+  "moussaf",
   "motsae",
   "hoshana-rabba",
   "pesach",
@@ -820,6 +822,72 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
       // jours, ce n'est pas une addition du calendrier.
       expect(bloc.plain).toBe(true);
     }
+  });
+});
+
+describe("Cha'harit : Moussaf, et les Kaddich qui l'entourent", () => {
+  // Les jours de Moussaf, la source passe d'Ouva letsion au psaume du jour
+  // sans Kaddich, dit un demi-Kaddich avant Moussaf, puis après la
+  // répétition « Yehi chem » et le Kaddich Titkabal ; le Kaddich yehé
+  // chelama vient après Barkhi nafchi, ou après le psaume de la fête.
+  const entry = sidourEntries.find((e) => resolveFilePath(e).includes("chaharit"))!;
+  const blocks = parseContent(entry, loadRaw(entry)).sections[0].blocks ?? [];
+  /** Les titres qui se lisent ce jour-là, d'Achré à Kavé. */
+  function titres(hd: HDate): string[] {
+    const occ = activeOccasions(hd, false);
+    const lus = blocks.filter((b) => saidOn(b.when, occ, b.unless));
+    const debut = lus.findIndex((b) => b.label === "Achré");
+    const fin = lus.findIndex((b) => b.label === "Kavé · Ein kélohénou");
+    return lus.slice(debut + 1, fin).flatMap((b) => (b.label ? [b.label] : []));
+  }
+  const MOUSSAF = [
+    "Dans une maison endeuillée",
+    "Demi-Kaddich (le 'hazan)",
+    "Moussaf",
+    "Kedoucha de Moussaf (Keter)",
+    "Modim dérabanan",
+    "Birkat kohanim",
+    "Kaddich Titkabal (le 'hazan)",
+    "Kaddich yehé chelama",
+  ];
+
+  it("garde l'ordre de semaine les autres jours", () => {
+    // Le dimanche 14 Hechvan 5787.
+    expect(titres(new HDate(14, months.CHESHVAN, 5787))).toEqual([
+      "Kaddich Titkabal (le 'hazan)",
+      "Dans une maison endeuillée",
+      "Kaddich yehé chelama",
+    ]);
+  });
+
+  it("à Roch 'Hodech : la répétition entière, puis le Kaddich qui ferme Moussaf", () => {
+    const hd = new HDate(1, months.CHESHVAN, 5787);
+    expect(titres(hd)).toEqual(MOUSSAF);
+    // Barkhi nafchi, avant le Kaddich yehé chelama.
+    const occ = activeOccasions(hd, false);
+    const lus = blocks.filter((b) => saidOn(b.when, occ, b.unless));
+    const barkhi = lus.findIndex((b) => sansSignes(b.lines[0] ?? "").startsWith("ברכי נפשי"));
+    expect(lus[barkhi + 1].label).toBe("Kaddich yehé chelama");
+  });
+
+  it("à Roch 'Hodech Tévet, 'Al hanissim entre dans le Modim de Moussaf", () => {
+    const occ = activeOccasions(new HDate(1, months.TEVET, 5787), false);
+    expect(occ.has("rosh-chodesh-hanouka")).toBe(true);
+    const lus = blocks.filter((b) => saidOn(b.when, occ, b.unless));
+    const moussaf = lus.findIndex((b) => b.label === "Moussaf");
+    const nissim = lus.findIndex((b, i) => i > moussaf && b.when === "rosh-chodesh-hanouka");
+    expect(nissim).toBeGreaterThan(moussaf);
+    expect(lus[nissim - 1].label).toBe("Modim dérabanan");
+    expect(sansSignes(lus[nissim].lines.join(" "))).toContain("בימי מתתיה");
+    // Les autres Roch 'Hodech, non.
+    const cheshvan = activeOccasions(new HDate(1, months.CHESHVAN, 5787), false);
+    expect(
+      blocks.filter((b) => b.when === "rosh-chodesh-hanouka" && saidOn(b.when, cheshvan)),
+    ).toEqual([]);
+  });
+
+  it("à 'Hol haMoed : le même ordre, le psaume de la fête avant le Kaddich yehé chelama", () => {
+    expect(titres(new HDate(17, months.TISHREI, 5787))).toEqual(MOUSSAF);
   });
 });
 

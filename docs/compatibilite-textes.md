@@ -107,6 +107,14 @@ publiées, parce que le site s'était mis à écrire `!tisha-beav` et
     fête. Aucune ne perd de texte, aucune ne dit les deux (tenu par
     `sidourOccasions.test.ts`).
 
+    Même principe pour les Kaddich des jours de Moussaf (clé `moussaf`) : le
+    Kaddich Titkabal après Ouva letsion et le Kaddich yehé chelama avant
+    Moussaf portent `unless: "moussaf"`, le demi-Kaddich qui les remplace
+    `when: "moussaf"`. Une version publiée garde l'ordre de semaine, et voit
+    en plus, à Roch 'Hodech, le Kaddich Titkabal et le Kaddich yehé chelama
+    qui suivent désormais Moussaf, comme elle les voyait déjà à 'Hol haMoed :
+    deux encadrés repliés du 'hazan, pas un mot de la prière en double.
+
 Les points 1, 2, 5 et 6 sont tenus par un test
 (`src/__tests__/sidourCompatibilite.test.ts`) ; les clés employées sont
 vérifiées contre celles que pose le calendrier
