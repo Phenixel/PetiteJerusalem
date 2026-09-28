@@ -1,23 +1,25 @@
 #!/usr/bin/env node
 /**
  * Envoie les captures d'écran de la fiche App Store depuis
- * store-assets/metadata/ios/screenshots/<locale>/ via l'API App Store Connect
- * (pendant iOS de l'envoi d'images de scripts/play-listing.mjs).
+ * store-assets/screenshots/<locale>/ via l'API App Store Connect (pendant iOS
+ * de l'envoi d'images de scripts/play-listing.mjs, qui lit le même dossier).
  *
  * L'API impose un envoi en trois temps par image : réservation (POST
  * appScreenshots avec nom et taille, qui répond des « upload operations »),
  * envoi des morceaux (PUT vers les URLs signées), puis validation (PATCH
  * uploaded=true avec la somme MD5). C'est ce cérémonial qui faisait des
  * captures le dernier geste manuel de la release iOS ; il est ici scripté et
- * joué par le job « screenshots » de deploy-ios.yml à chaque tag.
+ * joué par le job « screenshots » de deploy-ios.yml à chaque tag, sur les
+ * captures produites une fois pour les deux stores (store-screenshots.yml).
  *
  * Arborescence attendue (mêmes locales qu'App Store Connect : fr-FR, en-US,
  * he ; une locale sans dossier ou sans images laisse sa fiche intacte) :
  *   <locale>/iphone-*.jpg   famille iPhone 6,9" (1320×2868), APP_IPHONE_67
  *   <locale>/ipad-*.jpg     famille iPad 13" (2064×2752), APP_IPAD_PRO_3GEN_129
  *
- * Les fichiers sont produits par `npm run store:screenshots -- --ios` (JPEG
- * sRGB sans canal alpha, dimensions exactes) et envoyés triés par nom ; le
+ * Les fichiers sont produits par `npm run store:screenshots` (JPEG sRGB sans
+ * canal alpha, dimensions exactes ; les `phone-*` du même dossier sont ceux de
+ * la fiche Play et ne sont pas lus ici) et envoyés triés par nom ; le
  * jeu existant de chaque famille est remplacé en entier, comme pour les
  * captures Play. Apple valide les images après l'envoi : le script attend ce
  * verdict et échoue si une image est refusée (mauvaises dimensions, alpha…).
@@ -37,7 +39,7 @@ import { join } from "node:path";
 import { createAscClient, EDITABLE_STATES, versionState } from "./lib/asc-api.mjs";
 
 const BUNDLE_ID = "fr.petitejerusalem.app";
-const screenshotsDir = join(import.meta.dirname, "../store-assets/metadata/ios/screenshots");
+const screenshotsDir = join(import.meta.dirname, "../store-assets/screenshots");
 
 // Familles d'appareils : préfixe de fichier → displayType App Store Connect.
 // APP_IPHONE_67 couvre les grands iPhone (6,7" et 6,9", 1290×2796 ou

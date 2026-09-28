@@ -221,5 +221,5 @@ et captures) sont publiés en artefacts du run, conservés sept jours.
 la suite de bout en bout : il pilote l'app avec Playwright contre des
 émulateurs Firebase éphémères peuplés de données de démo fixes (par le même
 `scripts/lib/firebase-emulator.mjs`), pour produire les captures des fiches
-Play Store et App Store de façon reproductible. Voir `docs/android-ci-cd.md`
-et `docs/ios-ci-cd.md`.
+Play Store et App Store de façon reproductible, les mêmes pour les deux. Voir
+`store-assets/screenshots/README.md`.
