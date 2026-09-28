@@ -194,25 +194,29 @@ gêne. `?tips` dans l'adresse les force partout où la commande existe (ou
 `?tips=reading-gestures` pour une seule), pour les montrer et les essayer sur
 les canaux de preview.
 
-### L'introduction règle, elle n'enseigne pas
+### L'introduction règle d'abord, les gestes viennent en dernier
 
 L'introduction de première ouverture (`OnboardingFlow.vue`) pose quelques
-réglages, dit ce que l'app contient, et laisse découvrir le reste. Elle
-comptait six pages, chacune avec ses captures animées (le pincement, le menu
-de lecture, la liste du jour, les horaires) : près de la moitié des gens la
-passaient, presque tous dès la première page après le consentement. Il en
-reste trois, quatre avec le consentement, et chacune tient sur un écran :
+réglages, dit ce que l'app contient, puis montre les gestes à qui veut les
+voir. Elle comptait six pages, avec des captures animées dès la deuxième :
+près de la moitié des gens la passaient, presque tous dès la première page
+après le consentement. Elle en compte cinq, chacune courte :
 
-- **le consentement**, en trois lignes courtes, parce qu'il demande un choix ;
+- **le consentement**, en trois lignes, parce qu'il demande un choix ;
 - **les réglages** : la langue, clair ou sombre, le thème, rien de plus
   (`AppearanceSettings essentials`). Les polices et les thèmes des fêtes
   attendent dans le profil ;
 - **les textes à emporter**, le seul réglage qui fasse quelque chose ;
 - **l'essentiel** : la bibliothèque, les horaires, la lecture du jour, une
-  ligne chacun, et le bouton qui compose la lecture du jour.
+  ligne chacun, et le bouton qui compose la lecture du jour ;
+- **les gestes** : le menu de lecture, le pincement, le double appui, en
+  captures, avec les textes des astuces du lecteur.
 
-Un geste ne s'y explique pas : c'est le rôle des astuces, sur la page où il
-sert (ci-dessus). Une page nouvelle doit y gagner sa place contre les autres.
+Les quatre premières n'ont pas de « Passer » : on tient à ce qu'elles soient
+lues, et elles sont courtes pour qu'on les lise. Seuls les gestes se passent
+(le bouton, Échap), sans dommage : les mêmes reviennent en astuces sur la
+page de lecture. Une page nouvelle doit gagner sa place contre les autres,
+et ce qui s'apprend en le faisant va avec les gestes, pas avant.
 
 ### Deux pages, un jeu d'onglets
 

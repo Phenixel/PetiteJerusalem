@@ -127,7 +127,7 @@ const he: LocaleMessages = {
       pinchSample1: "בראשית ברא אלהים",
       pinchSample2: "את השמים ואת הארץ",
       offlineTitle: "בלי חיבור",
-      offlineIntro: "תהילים, שחרית, מנחה וערבית כבר באפליקציה. סמנו מה עוד לקחת אתכם.",
+      offlineIntro: "תהילים וכל הסידור כבר באפליקציה. סמנו מה עוד לקחת אתכם.",
       alreadyDownloaded: "כבר במכשיר הזה",
       booksCount: "ספר אחד להורדה | {count} ספרים להורדה",
       selection: "כ-{size} להורדה",
@@ -146,6 +146,10 @@ const he: LocaleMessages = {
       dailyTitle: "הקריאה היומית",
       dailyText: "הטקסטים היומיים שלכם ברשימה אחת, מסומנים עם הקריאה.",
       compose: "להרכיב את הקריאה היומית שלי",
+    },
+    gestures: {
+      title: "שלוש תנועות לקריאה",
+      intro: "לא חובה: תפגשו אותן שוב בזמן הקריאה.",
     },
   },
   tips: {

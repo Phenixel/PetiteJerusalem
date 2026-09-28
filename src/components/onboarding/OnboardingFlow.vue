@@ -12,19 +12,25 @@ import OnboardingConsentStep from "./OnboardingConsentStep.vue";
 import OnboardingSettingsStep from "./OnboardingSettingsStep.vue";
 import OnboardingOfflineStep from "./OnboardingOfflineStep.vue";
 import OnboardingEssentialsStep from "./OnboardingEssentialsStep.vue";
+import OnboardingGesturesStep from "./OnboardingGesturesStep.vue";
 
 /**
  * L'introduction de première ouverture : quelques réglages, l'essentiel en
- * trois lignes, puis l'application. Ce n'est pas un tutoriel : les gestes se
- * découvrent sur la page où ils servent (les astuces, voir docs/design.md).
+ * trois lignes, puis, pour qui le veut, les gestes de la lecture.
  *
- * Elle comptait six pages, avec des captures animées pour chaque geste, et
- * près de la moitié des gens la passaient, presque tous dès la première page
- * après le consentement. Il en reste trois, quatre avec le consentement :
+ * Elle comptait six pages, avec des captures animées dès la deuxième, et près
+ * de la moitié des gens la passaient, presque tous dès la première page après
+ * le consentement. Elle en compte maintenant quatre, cinq avec le
+ * consentement :
  * - consent : la mesure d'audience, qui demande un choix explicite ;
  * - settings : langue, clair ou sombre, thème ;
  * - offline : les textes à emporter, le seul réglage qui fasse quelque chose ;
- * - essentials : ce que contient l'app, et la lecture du jour à composer.
+ * - essentials : ce que contient l'app, et la lecture du jour à composer ;
+ * - gestures : les gestes de la lecture, en captures.
+ *
+ * Les quatre premières se lisent : elles n'ont pas de « Passer ». La dernière
+ * est la seule qu'on puisse passer, et c'est sans dommage, les mêmes gestes
+ * reviennent en astuces sur la page de lecture (voir docs/design.md).
  *
  * Rien n'y est définitif : tout se retrouve ensuite dans les écrans concernés.
  *
@@ -44,13 +50,15 @@ const { choice, setChoice } = useConsent();
  * leur décision tient, on ne la remet pas en jeu. Figée à l'ouverture, pour
  * que répondre ne fasse pas disparaître la page en cours de lecture.
  */
-const steps = ["consent", "settings", "offline", "essentials"].filter(
+const steps = ["consent", "settings", "offline", "essentials", "gestures"].filter(
   (step) => step !== "consent" || choice.value === null,
 );
 
 const index = ref(0);
 const current = computed(() => steps[index.value]);
 const isLast = computed(() => index.value === steps.length - 1);
+/** Seuls les gestes se passent : le reste, on tient à ce qu'il soit lu. */
+const skippable = computed(() => current.value === "gestures");
 
 /** Compte connecté : ses réglages partent chez Firestore, sinon ils restent sur l'appareil. */
 const userId = ref<string | null>(null);
@@ -72,10 +80,11 @@ const removeOverlay = pushOverlay(() => {
 /**
  * Fin de l'introduction, par la dernière page ou par un raccourci.
  *
- * « Composer ma lecture du jour » (via `daily`) est sur la dernière page : il
- * termine l'introduction avant d'y conduire. Plus tôt, il la coupait en deux
- * (la page demande un compte, le routeur emmenait vers la connexion, et
- * l'introduction, notée comme vue, ne revenait jamais).
+ * « Composer ma lecture du jour » (via `daily`) est sur la page de
+ * l'essentiel, après tout ce qu'il faut lire : il termine l'introduction
+ * avant d'y conduire, sans les gestes, qu'on peut passer. Plus tôt, il la
+ * coupait en deux (la page demande un compte, le routeur emmenait vers la
+ * connexion, et l'introduction, notée comme vue, ne revenait jamais).
  */
 function finish(via: string): void {
   const toDaily = via === "daily";
@@ -93,10 +102,9 @@ function onConsent(newChoice: ConsentChoice): void {
   goTo(index.value + 1);
 }
 
-// Le consentement n'a pas de porte de sortie (un choix explicite est attendu) ;
-// partout ailleurs, la touche Échap vaut « passer ».
+// La touche Échap vaut « Passer », là seulement où l'on peut passer.
 function onKeydown(event: KeyboardEvent): void {
-  if (event.key === "Escape" && current.value !== "consent") finish("escape");
+  if (event.key === "Escape" && skippable.value) finish("escape");
 }
 
 onMounted(() => {
@@ -142,8 +150,8 @@ watch(
     <div
       class="mx-auto flex min-h-full w-full max-w-2xl flex-col px-6 pb-[calc(2rem+var(--safe-bottom))] pt-[calc(1.5rem+var(--safe-top))]"
     >
-      <!-- Avancement, et la sortie : « Passer » n'apparaît qu'une fois le
-           consentement tranché, il ne peut pas servir à l'esquiver. -->
+      <!-- Avancement, et la sortie : « Passer » n'apparaît que sur les
+           gestes, la seule page qu'on puisse sauter. -->
       <header class="mb-6 flex items-center justify-between gap-4">
         <div class="flex items-center gap-2" :aria-label="t('onboarding.ariaProgress')">
           <span
@@ -160,7 +168,7 @@ watch(
           ></span>
         </div>
         <button
-          v-if="current !== 'consent'"
+          v-if="skippable"
           type="button"
           class="text-sm font-medium text-text-secondary transition-colors hover:text-primary"
           @click="finish('skip')"
@@ -173,7 +181,8 @@ watch(
         <OnboardingConsentStep v-if="current === 'consent'" @choose="onConsent" />
         <OnboardingSettingsStep v-else-if="current === 'settings'" :user-id="userId" />
         <OnboardingOfflineStep v-else-if="current === 'offline'" />
-        <OnboardingEssentialsStep v-else @compose="finish('daily')" />
+        <OnboardingEssentialsStep v-else-if="current === 'essentials'" @compose="finish('daily')" />
+        <OnboardingGesturesStep v-else />
       </main>
 
       <!-- Le consentement porte ses propres boutons (accepter, refuser) :

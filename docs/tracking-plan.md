@@ -85,7 +85,8 @@ l'événement ne disait pas lequel rapporte.
 ## Introduction de première ouverture
 
 L'introduction de l'app native (`OnboardingFlow.vue`). Elle est passée de six
-pages à trois (quatre avec le consentement) en septembre 2026 : sur les 90
+pages à quatre (cinq avec le consentement) en septembre 2026, et « Passer »
+n'est plus proposé que sur la dernière, celle des gestes : sur les 90
 jours d'avant, 69 des 148 fins étaient un « Passer », dont 55 dès la première
 ou la deuxième page après le consentement. `app_version` sépare les deux
 formes pour mesurer l'effet.
@@ -94,17 +95,17 @@ formes pour mesurer l'effet.
 
 | Propriété | Valeurs                                                     |
 | --------- | ----------------------------------------------------------- |
-| `steps`   | nombre de pages : 4, ou 3 si le consentement est déjà donné |
+| `steps`   | nombre de pages : 5, ou 4 si le consentement est déjà donné |
 
 ### `onboarding_step_viewed` (existant)
 
-| Propriété | Valeurs                                        | Statut                   |
-| --------- | ---------------------------------------------- | ------------------------ |
-| `step`    | `consent`, `settings`, `offline`, `essentials` | `essentials` **nouveau** |
-| `index`   | rang de la page, à partir de 0                 | existant                 |
+| Propriété | Valeurs                                                    | Statut                                |
+| --------- | ---------------------------------------------------------- | ------------------------------------- |
+| `step`    | `consent`, `settings`, `offline`, `essentials`, `gestures` | `essentials`, `gestures` **nouveaux** |
+| `index`   | rang de la page, à partir de 0                             | existant                              |
 
 `daily`, `library` et `zmanim` ne partent plus : ces trois pages sont réunies
-dans `essentials`.
+dans `essentials`, et les gestes de `library` ont leur page, `gestures`.
 
 ### `onboarding_finished` (existant)
 
@@ -114,8 +115,9 @@ dans `essentials`.
 | `step`                | la page où l'introduction s'est terminée          | existant            |
 | `wants_daily_reading` | vrai quand elle se termine sur la lecture du jour | existant            |
 
-`daily` : le bouton « Composer ma lecture du jour » de la dernière page, qui
-termine l'introduction et y conduit. `wants_daily_reading` garde son sens
+`daily` : le bouton « Composer ma lecture du jour » de la page `essentials`,
+qui termine l'introduction et y conduit. `skip` et `escape` ne partent plus que
+de `gestures`, la seule page qu'on puisse passer. `wants_daily_reading` garde son sens
 (l'introduction mène à la lecture du jour), il vaut maintenant `via = daily`.
 
 ### `onboarding_offline_download_started`, `onboarding_offline_download_finished` (existants)

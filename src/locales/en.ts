@@ -129,7 +129,7 @@ const en: LocaleMessages = {
       pinchSample2: "et hashamayim ve-et ha'aretz",
       offlineTitle: "Without a connection",
       offlineIntro:
-        "Tehilim, Shacharit, Minha and Arvit are already in the app. Tick what else you want to take along.",
+        "Tehilim and the whole Siddur are already in the app. Tick what else you want to take along.",
       alreadyDownloaded: "Already on this device",
       booksCount: "{count} book to download | {count} books to download",
       selection: "About {size} to download",
@@ -149,6 +149,10 @@ const en: LocaleMessages = {
       dailyTitle: "The reading of the day",
       dailyText: "Your daily texts in one list, ticked off as you read.",
       compose: "Build my daily reading",
+    },
+    gestures: {
+      title: "Three gestures for reading",
+      intro: "Optional: they will show up again as you read.",
     },
   },
   tips: {

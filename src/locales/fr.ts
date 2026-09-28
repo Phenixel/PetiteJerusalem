@@ -130,7 +130,7 @@ const fr = {
       pinchSample2: "ète hachamayim vé-ète haaretz",
       offlineTitle: "Sans connexion",
       offlineIntro:
-        "Les Tehilim, Cha'harit, Min'ha et Arvit sont déjà dans l'application. Cochez ce que vous voulez emporter en plus.",
+        "Les Tehilim et tout le Sidour sont déjà dans l'application. Cochez ce que vous voulez emporter en plus.",
       alreadyDownloaded: "Déjà sur cet appareil",
       booksCount: "{count} livre à télécharger | {count} livres à télécharger",
       selection: "Environ {size} à télécharger",
@@ -150,6 +150,10 @@ const fr = {
       dailyTitle: "La lecture du jour",
       dailyText: "Vos textes de chaque jour dans une liste, cochés au fil de la lecture.",
       compose: "Composer ma lecture du jour",
+    },
+    gestures: {
+      title: "Trois gestes pour lire",
+      intro: "Facultatif : vous les retrouverez aussi en lisant.",
     },
   },
   tips: {
