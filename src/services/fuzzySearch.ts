@@ -1,122 +1,65 @@
 /**
- * Recherche tolérante, la même pour toutes les barres de recherche du site :
- * bibliothèque, lecture du jour, chaînes de lecture, chiourim, villes, invités,
- * administration.
+ * Recherche tolérante, commune à toutes les barres de recherche du site.
  *
- * Un même nom s'écrit de dix façons : « Chabbat », « Shabbat », « Shabat » ;
- * « Berakhot », « Brakhot », « Berachot », « Brahot » ; « Pessa'him »,
- * « Pesachim ». Le catalogue lui-même mélange l'anglais de Sefaria
- * (« Chagigah ») et le français (« Kaddich »). Chercher la chaîne exacte
- * ne trouvait donc que ceux qui tapaient la graphie du catalogue.
+ * Un même nom s'écrit de dix façons (« Chabbat », « Shabbat » ; « Berakhot »,
+ * « Brakhot », « Brahot »). Plutôt qu'énumérer les graphies, chaque mot est
+ * ramené à une clé phonétique où elles se confondent (voir `latinKey`), et
+ * la clé de ce qu'on tape se cherche dans celle du texte. Trois rangs :
+ * 1. le texte sans casse, accents ni apostrophes ;
+ * 2. la clé phonétique ;
+ * 3. la clé à une ou deux fautes de frappe près, seulement faute de mieux :
+ *    sans quoi « bava » ramènerait aussi « Shabbat ».
  *
- * On n'énumère pas toutes les graphies possibles : on ramène chaque mot à
- * une clé phonétique, où les graphies d'un même son se confondent (voir
- * `latinKey`). Deux graphies d'un même nom ont la même clé, et la clé de ce
- * qu'on tape se cherche dans celle du texte. Par-dessus, une distance
- * d'édition rattrape les fautes de frappe (une lettre de trop, de moins,
- * changée ou inversée).
- *
- * Trois rangs, du plus sûr au plus large :
- * 1. le texte tel quel, sans accents ni casse (« berakh » dans « Berakhot ») ;
- * 2. la clé phonétique (« brakhot » dans « Berakhot ») ;
- * 3. la clé à une ou deux fautes près (« brakot » pour « Berakhot »).
- *
- * Le troisième rang ne sert que de repli : dès qu'un résultat répond aux deux
- * premiers, les approchants se taisent. Sans ce garde-fou, « bava » (Bava
- * Kamma) ramènerait aussi « Shabbat », à une lettre près.
- *
- * Plusieurs mots se cherchent chacun de leur côté, dans n'importe quel ordre
- * (« metsia baba »). Un résultat où tous les mots tombent dans le même champ
- * passe devant celui qui les ramasse dans plusieurs (« sefer 1 » : le livre
- * 1 des Tehilim, pas le Tehilim 100 du livre 4).
- *
- * Aucune dépendance à Vue : le module se lit aussi depuis les services.
+ * Chaque mot de la requête doit répondre, dans n'importe quel ordre ; un
+ * résultat qui les tient tous dans un même champ passe devant (« sefer 1 » :
+ * le livre 1 des Tehilim, pas le Tehilim 100 du livre 4).
  */
-
-// ---------------------------------------------------------------------------
-// Normalisation
-// ---------------------------------------------------------------------------
 
 const HEBREW_FINALS: Record<string, string> = { ך: "כ", ם: "מ", ן: "נ", ף: "פ", ץ: "צ" };
+const HEBREW_LETTER = /[\u05D0-\u05EA]/;
+const NUMBER = /^\d+$/;
 
 /**
- * Forme comparable d'une chaîne : minuscules, sans accents ni ponctuation,
- * hébreu sans voyelles ni cantillation et sans lettres finales. Les mots
- * restent séparés par une espace.
- *
- * L'apostrophe s'efface (`apostrophe` vide, par défaut) : elle tient au mot
- * dans une translittération (« Min'ha » = « Minha »). Elle sépare deux mots
- * dans une élision française (« d'Abraham ») : `apostrophe` à " " donne
- * cette seconde lecture.
+ * Minuscules, sans accents, ponctuation, voyelles hébraïques ni lettres
+ * finales. L'apostrophe s'efface (« Min'ha » = « Minha ») ; `apostrophe`
+ * à " " la lit comme une séparation (« d'Abraham »).
  */
 export function normalizeText(value: string, apostrophe: "" | " " = ""): string {
-  return (
-    value
-      .normalize("NFD")
-      // Accents latins : « Béréchit » = « Berechit ».
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .replace(/œ/g, "oe")
-      .replace(/æ/g, "ae")
-      .replace(/ß/g, "ss")
-      // Hébreu : niqqud, te'amim, points du shin, geresh et gershayim
-      // (« כ״ג » = « כג »). Le maqaf et les signes de fin de verset séparent.
-      .replace(/[\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7\u05F3\u05F4]/g, "")
-      .replace(/[ךםןףץ]/g, (letter) => HEBREW_FINALS[letter])
-      // Le geresh et les gershayim tapés au clavier : « כ"ג » = « כג ».
-      .replace(/(?<=[\u05D0-\u05EA])["'](?=[\u05D0-\u05EA])/g, "")
-      .replace(/['‘’ʼ`´]/g, apostrophe)
-      .replace(/[^\p{L}\p{N}]+/gu, " ")
-      .trim()
-  );
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/œ/g, "oe")
+    .replace(/æ/g, "ae")
+    .replace(/[\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7\u05F3\u05F4]/g, "")
+    .replace(/[ךםןףץ]/g, (letter) => HEBREW_FINALS[letter])
+    .replace(/(?<=[\u05D0-\u05EA])["'](?=[\u05D0-\u05EA])/g, "")
+    .replace(/['‘’ʼ`´]/g, apostrophe)
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
 }
 
-/** Les mots d'une chaîne normalisée ; « tehilim23 » donne « tehilim », « 23 ». */
+/** Les mots ; « tehilim23 » donne « tehilim », « 23 ». */
 function splitWords(normalized: string): string[] {
-  if (normalized === "") return [];
-  return normalized
-    .split(" ")
-    .flatMap((word) => word.split(/(?<=\p{L})(?=\p{N})|(?<=\p{N})(?=\p{L})/u))
-    .filter((word) => word !== "");
+  return normalized.split(/ |(?<=\p{L})(?=\p{N})|(?<=\p{N})(?=\p{L})/u).filter(Boolean);
 }
-
-// ---------------------------------------------------------------------------
-// Clé phonétique
-// ---------------------------------------------------------------------------
-
-const HEBREW_LETTER = /[\u05D0-\u05EA]/;
 
 /**
- * Clé d'un mot écrit en lettres latines. Les majuscules `H` et `C` sont des
- * classes, jamais des lettres tapées (tout est déjà en minuscules) :
- *
- * - `H` : « sh », « ch », « sch », « kh » et « h ». Le « ch » vaut chin en
- *   français (Chabbat) et 'het en anglais (Pesachim) ; le « h » vaut 'het en
- *   français (Pessah) et hé partout. Tout se confond, c'est le prix d'une
- *   clé qui retrouve les deux écoles ;
- * - `C` : « tz », « ts » (tsadi : Metzia, Metsia) ;
- * - b, v, w se confondent (Bava, Baba ; Yevamot, Yebamot) ; k, c dur, q,
- *   ck aussi (Souccot, Sukkot ; Qohelet) ; y, i, j (Yoma, Ioma ; Jonathan,
- *   Yonathan) ; « ou », « oo » et u ; « ei » et e ; « ph » et f ; « th »
- *   et t ; « gu » devant e, i et g (Meguila) ;
- * - les lettres doublées se simplifient (Kiddushin, Kidouchin) ;
- * - un e entre deux consonnes tombe, parce que le chva s'écrit ou non selon
- *   les gens : Berakhot, Brakhot ; Shemot, Chmot ; Devarim, Dvarim.
- *
- * Le h final après une voyelle (Megillah, Havdalah, Noah) est facultatif
- * dans ce qu'on tape : `optionalFinalH` le retire de la clé de la requête,
- * pas de celle du texte. « havdalah » trouve ainsi « Havdala », « meguila »
- * trouve « Megillah », et « noach » trouve toujours « Noah ».
+ * Clé d'un mot latin. `H` : sh, ch, sch, kh et h (le ch vaut chin en français,
+ * 'het en anglais) ; `C` : tz, ts. Se confondent aussi b, v, w ; k, c dur, q ;
+ * y, i, j ; ou et u ; ei et e ; ph et f ; th et t ; gu devant e, i et g. Les
+ * lettres doublées se simplifient, et un e entre deux consonnes tombe (le
+ * chva s'écrit ou non : Berakhot, Brakhot). Le h final après une voyelle est
+ * facultatif dans ce qu'on tape (`typed`) : « havdalah » trouve « Havdala ».
  */
-function latinKey(word: string, optionalFinalH: boolean): string {
+function latinKey(word: string, typed: boolean): string {
   const spelled = word
     .replace(/sch|[sck]h/g, "H")
     .replace(/ph/g, "f")
     .replace(/th/g, "t")
     .replace(/gh/g, "g")
     .replace(/gu(?=[eiy])/g, "g")
-    .replace(/qu?/g, "k")
-    .replace(/ck/g, "k")
+    .replace(/qu?|ck/g, "k")
     .replace(/t[sz]/g, "C")
     .replace(/c(?=[eiy])/g, "s")
     .replace(/c/g, "k")
@@ -126,24 +69,19 @@ function latinKey(word: string, optionalFinalH: boolean): string {
     .replace(/ou|oo/g, "u")
     .replace(/(\D)\1+/g, "$1")
     .replace(/ei/g, "e");
-  // Le h final se met de côté avant la chute des e : « Tetzaveh » et
-  // « Tetsavé » gardent ainsi le même e final.
+  // Le h final se met de côté avant la chute des e (Tetzaveh, Tetsavé).
   const finalH = /[aeiou]h$/.test(spelled);
   const key = (finalH ? spelled.slice(0, -1) : spelled)
     .replace(/h/g, "H")
     .replace(/(\D)\1+/g, "$1")
     .replace(/(?<=[^aeiou\d])e(?=[^aeiou\d])/g, "");
-  return finalH && !optionalFinalH ? key + "H" : key;
+  return finalH && !typed ? key + "H" : key;
 }
 
 /**
- * Clé d'un mot hébreu : sans les lettres-voyelles (vav et yod après la
- * première lettre : « מידות » = « מדות »), et les lettres qu'on confond en
- * écrivant de mémoire, parce qu'elles se prononcent pareil, ramenées à une
- * seule : ק et כ, ח et כ, ט et ת, ס et ש, ע et א.
- *
- * Un mot de trois lettres ou moins reste tel quel : on l'écrit rarement de
- * travers, et c'est souvent un nombre (« כג », 23, n'est pas « קג », 103).
+ * Clé d'un mot hébreu : sans vav ni yod après la première lettre, et ק/כ,
+ * ח/כ, ט/ת, ס/ש, ע/א confondus. Trois lettres ou moins restent telles
+ * quelles : c'est souvent un nombre (« כג », 23, n'est pas « קג », 103).
  */
 function hebrewKey(word: string): string {
   if (word.length <= 3) return word;
@@ -156,41 +94,25 @@ function hebrewKey(word: string): string {
     .replace(/(\D)\1+/g, "$1");
 }
 
-/**
- * La clé phonétique d'un mot normalisé ; un nombre reste un nombre.
- * `typed` : le mot vient de la requête (voir `latinKey`, le h final).
- */
 export function phoneticKey(word: string, typed = false): string {
-  if (/^\d+$/.test(word)) return word;
+  if (NUMBER.test(word)) return word;
   return HEBREW_LETTER.test(word) ? hebrewKey(word) : latinKey(word, typed);
 }
 
-// ---------------------------------------------------------------------------
-// Distance approchée
-// ---------------------------------------------------------------------------
-
 /**
- * Le moins de fautes (lettre ajoutée, retirée, changée, ou deux lettres
- * voisines inversées) pour trouver `pattern` dans `text`, en partant d'un
- * début de mot (`wordStarts`, positions dans `text`) ; la fin est libre.
- * Distance d'édition de Damerau restreinte, en recherche de sous-chaîne
- * (Sellers). L'ancrage compte : sans lui, « ohalot » tombait sur le
- * « oharot » de Toharot, à une lettre près, et ramenait tout le seder.
+ * Le moins de fautes (lettre ajoutée, retirée, changée, ou deux voisines
+ * inversées) pour trouver `pattern` dans `text` en partant d'un début de mot
+ * (`wordStarts`). Sans cet ancrage, « ohalot » tombait sur le « oharot » de
+ * Toharot et ramenait tout le seder.
  */
-export function approximateDistance(
-  pattern: string,
-  text: string,
-  wordStarts: readonly number[] = [0],
-): number {
+export function approximateDistance(pattern: string, text: string, wordStarts = [0]): number {
   const m = pattern.length;
-  if (m === 0) return 0;
   const starts = new Set(wordStarts);
   let lastStart = 0;
   let before: number[] = [];
   let previous = Array.from({ length: m + 1 }, (_, i) => i);
   let best = m;
   for (let j = 1; j <= text.length; j++) {
-    // Les lettres sautées depuis le dernier début de mot se paient.
     if (starts.has(j - 1)) lastStart = j - 1;
     const current = [starts.has(j) ? 0 : j - lastStart];
     for (let i = 1; i <= m; i++) {
@@ -208,63 +130,32 @@ export function approximateDistance(
   return best;
 }
 
-/** Les fautes tolérées selon la longueur de la clé cherchée. */
-function allowedMistakes(keyLength: number): number {
-  if (keyLength < 4) return 0;
-  if (keyLength < 8) return 1;
-  return 2;
-}
-
-// ---------------------------------------------------------------------------
-// Textes et requêtes préparés
-// ---------------------------------------------------------------------------
-
 interface PreparedText {
-  /** Les mots, dans les deux lectures de l'apostrophe (voir `normalizeText`). */
+  /** Les mots, apostrophe effacée et apostrophe séparatrice. */
   words: string[];
-  /** Le texte normalisé, sans espaces : « roch hachana » → « rochhachana ». */
   compact: string;
   wordKeys: string[];
-  /** Les clés des mots mises bout à bout. */
   key: string;
-  /** Où commence chaque mot dans `key`. */
   keyStarts: number[];
 }
 
-const preparedTexts = new Map<string, PreparedText>();
-const PREPARED_TEXTS_LIMIT = 5000;
+// Le catalogue ne change pas : chaque texte ne se prépare qu'une fois.
+const prepared = new Map<string, PreparedText>();
 
-/** Prépare un texte une fois pour toutes : le catalogue ne change pas. */
 function prepareText(value: string): PreparedText {
-  let prepared = preparedTexts.get(value);
-  if (prepared) return prepared;
+  const cached = prepared.get(value);
+  if (cached) return cached;
   const merged = splitWords(normalizeText(value));
-  const split = splitWords(normalizeText(value, " "));
-  const words = split.length === merged.length ? merged : [...new Set([...merged, ...split])];
+  const words = [...new Set([...merged, ...splitWords(normalizeText(value, " "))])];
   const wordKeys = merged.map((word) => phoneticKey(word));
-  const keyStarts: number[] = [];
-  let length = 0;
-  for (const key of wordKeys) {
-    keyStarts.push(length);
-    length += key.length;
-  }
-  prepared = { words, compact: merged.join(""), wordKeys, key: wordKeys.join(""), keyStarts };
-  if (preparedTexts.size >= PREPARED_TEXTS_LIMIT) preparedTexts.clear();
-  preparedTexts.set(value, prepared);
-  return prepared;
+  const keyStarts = wordKeys.map((_, i) => wordKeys.slice(0, i).join("").length);
+  const text = { words, compact: merged.join(""), wordKeys, key: wordKeys.join(""), keyStarts };
+  if (prepared.size > 5000) prepared.clear();
+  prepared.set(value, text);
+  return text;
 }
 
-interface Token {
-  norm: string;
-  key: string;
-  numeric: boolean;
-}
-
-/**
- * Les abréviations et les titres qu'on écrit de plusieurs façons : un mot de
- * la requête vaut aussi chacune de ses équivalences. « st etienne » trouve
- * Saint-Étienne ; « rabbi » trouve le « Rav » d'un auteur.
- */
+/** « st etienne » trouve Saint-Étienne ; « rabbi » trouve le « Rav » d'un auteur. */
 const EQUIVALENTS: Record<string, string[]> = {
   st: ["saint"],
   ste: ["sainte"],
@@ -274,87 +165,41 @@ const EQUIVALENTS: Record<string, string[]> = {
   harav: ["rav", "rabbi", "rabbin"],
 };
 
-function makeToken(norm: string): Token {
-  return { norm, key: phoneticKey(norm, true), numeric: /^\d+$/.test(norm) };
-}
-
-/** Un mot de la requête, et les formes qui valent pour lui. */
-type QueryWord = Token[];
-
-interface PreparedQuery {
-  words: QueryWord[];
-  /** Toute la requête d'un seul tenant, pour « a mazon » (Hamazon). */
-  whole: QueryWord | null;
-}
-
-function prepareQuery(term: string): PreparedQuery | null {
-  const words = splitWords(normalizeText(term));
-  if (words.length === 0) return null;
-  const queryWords = words.map((word) => [word, ...(EQUIVALENTS[word] ?? [])].map(makeToken));
-  // Pas de lecture d'un seul tenant dès qu'un nombre s'y trouve : elle le
-  // rendrait approchable (« tehilim24 » à une faute de « tehilim23 »).
-  const hasNumber = words.some((word) => /^\d+$/.test(word));
-  const whole = words.length > 1 && !hasNumber ? [makeToken(words.join(""))] : null;
-  return { words: queryWords, whole };
-}
-
-// ---------------------------------------------------------------------------
-// Score
-// ---------------------------------------------------------------------------
-
-/** En deçà, la correspondance n'est qu'approchante (troisième rang). */
+/** En deçà, la correspondance n'est qu'approchante. */
 const STRONG = 60;
 
-/**
- * Jusqu'où chercher dans un champ :
- * - `approximate` : tous les rangs, fautes de frappe comprises ;
- * - `exact` : le texte et sa clé phonétique, sans les fautes ;
- * - `words` : les débuts de mots seulement (texte ou clé), pour un texte
- *   long où un bout de mot tomberait n'importe où (« rav » dans « travail »).
- */
-type Reach = "approximate" | "exact" | "words";
+/** Un mot de la requête : tel quel et sa clé. */
+interface Token {
+  norm: string;
+  key: string;
+}
 
-function tokenScore(token: Token, field: PreparedText, reach: Reach): number {
-  // Un nombre se cherche comme un nombre : « 23 » trouve le Tehilim 23 (et
-  // 230), pas le 123 ; jamais « à une faute près ».
-  if (token.numeric) {
-    let score = 0;
-    for (const word of field.words) {
-      if (word === token.norm) return 100;
-      if (/^\d/.test(word) && word.startsWith(token.norm)) score = 95;
-    }
-    return score;
+function tokenScore(
+  { norm, key }: Token,
+  field: PreparedText,
+  long: boolean,
+  typos: boolean,
+): number {
+  // Un nombre reste un nombre : « 23 » trouve 23 et 230, jamais 123 ni 24.
+  if (NUMBER.test(norm)) {
+    if (field.words.includes(norm)) return 100;
+    return field.words.some((w) => NUMBER.test(w) && w.startsWith(norm)) ? 95 : 0;
   }
-
-  // 1. Le texte normalisé. Deux lettres ne comptent qu'en début de mot :
-  // « bo » est la paracha Bo, pas le milieu de « Ketubot ».
-  if (field.words[0]?.startsWith(token.norm)) return 100;
-  if (field.words.some((word) => word.startsWith(token.norm))) return 95;
-  const inside = reach !== "words";
-  if (inside && token.norm.length > 2 && field.compact.includes(token.norm)) return 85;
-
-  // 2. La clé phonétique. Une clé de deux lettres ne compte qu'en début de mot.
-  if (token.key !== "") {
-    if (field.wordKeys.some((key) => key.startsWith(token.key))) return 75;
-    if (inside && token.key.length > 2 && field.key.includes(token.key)) return 70;
-  }
-
-  // 3. À quelques fautes près.
-  if (reach === "approximate") {
-    const allowed = allowedMistakes(token.key.length);
-    if (allowed > 0) {
-      const distance = approximateDistance(token.key, field.key, field.keyStarts);
-      if (distance <= allowed) return 50 - 10 * distance;
-    }
-  }
-  return 0;
+  // Deux lettres ne comptent qu'en début de mot : « bo » n'est pas dans
+  // « Ketubot ». Un texte long ne se cherche que par débuts de mots.
+  if (field.words[0]?.startsWith(norm)) return 100;
+  if (field.words.some((w) => w.startsWith(norm))) return 95;
+  if (!long && norm.length > 2 && field.compact.includes(norm)) return 85;
+  if (field.wordKeys.some((k) => k.startsWith(key))) return 75;
+  if (!long && key.length > 2 && field.key.includes(key)) return 70;
+  if (!typos || long || key.length < 4) return 0;
+  const distance = approximateDistance(key, field.key, field.keyStarts);
+  return distance <= (key.length < 8 ? 1 : 2) ? 50 - 10 * distance : 0;
 }
 
 /**
- * Un champ où chercher : un nom, un auteur, une ville. Un texte long (une
- * description) se déclare `{ text, long: true }` : on n'y cherche que des
- * débuts de mots, sans fautes de frappe, sans quoi une phrase entière
- * répondrait à presque tout.
+ * Un champ où chercher. Un texte long (une description) se déclare
+ * `{ text, long: true }` : débuts de mots seulement, sans fautes de frappe.
  */
 export type SearchField =
   | string
@@ -362,118 +207,51 @@ export type SearchField =
   | undefined
   | { text: string | null | undefined; long?: boolean };
 
-interface PreparedField {
-  text: PreparedText;
-  long: boolean;
-}
-
-function prepareFields(fields: SearchField[]): PreparedField[] {
-  const prepared: PreparedField[] = [];
-  for (const field of fields) {
-    const text = typeof field === "object" && field !== null ? field.text : field;
-    if (!text) continue;
-    const long = typeof field === "object" && field !== null && field.long === true;
-    prepared.push({ text: prepareText(text), long });
-  }
-  return prepared;
-}
-
-function wordScore(word: QueryWord, field: PreparedField, withTypos: boolean): number {
-  const reach: Reach = field.long ? "words" : withTypos ? "approximate" : "exact";
-  let best = 0;
-  for (const token of word) best = Math.max(best, tokenScore(token, field.text, reach));
-  return best;
-}
-
-/**
- * Le score d'un élément (0 : ne répond pas). Tous les mots de la requête
- * doivent répondre. Au-dessus de `STRONG`, la correspondance est franche ;
- * un résultat qui tient tous les mots dans un même champ gagne un rang.
- */
-function scoreItem(query: PreparedQuery, fields: PreparedField[], withTypos: boolean): number {
-  if (fields.length === 0) return 0;
-  // scores[w][f] : le mot w de la requête dans le champ f.
-  const scores = query.words.map((word) =>
-    fields.map((field) => wordScore(word, field, withTypos)),
+/** Rang (millier) et score : 2 = tous les mots dans un champ, 1 = dans plusieurs, 0 = approchant. */
+function scoreItem(words: Token[][], fields: SearchField[], typos: boolean): number {
+  const prepared = fields.flatMap((field) => {
+    const text = typeof field === "object" && field ? field.text : field;
+    const long = typeof field === "object" && field?.long === true;
+    return text ? [{ text: prepareText(text), long }] : [];
+  });
+  if (prepared.length === 0) return 0;
+  // scores[w][f] : le mot w de la requête (ou une de ses équivalences) dans le champ f.
+  const scores = words.map((forms) =>
+    prepared.map((f) =>
+      Math.max(...forms.map((token) => tokenScore(token, f.text, f.long, typos))),
+    ),
   );
-
-  let sameField = 0;
-  for (let f = 0; f < fields.length; f++) {
-    sameField = Math.max(sameField, Math.min(...scores.map((row) => row[f])));
-  }
-  if (query.whole) {
-    for (const field of fields) {
-      sameField = Math.max(sameField, wordScore(query.whole, field, withTypos));
-    }
-  }
+  const sameField = Math.max(...prepared.map((_, f) => Math.min(...scores.map((row) => row[f]))));
   const acrossFields = Math.min(...scores.map((row) => Math.max(...row)));
-
-  // Le rang « même champ » passe devant « plusieurs champs », qui passe
-  // devant les approchants ; le millier porte le rang (voir `tierOf`).
   if (sameField >= STRONG) return 2000 + sameField;
   if (acrossFields >= STRONG) return 1000 + acrossFields;
   return Math.max(sameField, acrossFields);
 }
 
-/** 2 : tous les mots dans un même champ ; 1 : dans plusieurs ; 0 : approchant. */
-function tierOf(score: number): number {
-  return Math.floor(score / 1000);
-}
-
-export interface SearchOptions {
-  /**
-   * Garder l'ordre d'origine plutôt que ranger du plus pertinent au moins
-   * pertinent : la bibliothèque regroupe par corpus et par livre, dans
-   * l'ordre du catalogue.
-   */
-  keepOrder?: boolean;
-}
-
 /**
  * Les éléments qui répondent à la recherche, du plus pertinent au moins
- * pertinent (à pertinence égale, dans l'ordre d'origine). Seul le meilleur
- * rang présent est rendu : les approchants ne s'affichent que faute de mieux.
- * Une recherche vide rend la liste telle quelle.
+ * pertinent (`keepOrder` : dans l'ordre d'origine). Seul le meilleur rang
+ * présent est rendu ; une recherche vide rend la liste telle quelle.
  */
 export function searchItems<T>(
   items: readonly T[],
   term: string,
   fieldsOf: (item: T) => SearchField[],
-  options: SearchOptions = {},
+  { keepOrder = false } = {},
 ): T[] {
-  const query = prepareQuery(term);
-  if (query === null) return items as T[];
-  const fields = items.map((item) => prepareFields(fieldsOf(item)));
-
-  // D'abord sans les approchants, qui coûtent le plus cher ; ils ne se
-  // calculent que si rien ne répond franchement.
-  let scored = items
-    .map((item, index) => ({ item, index, score: scoreItem(query, fields[index], false) }))
-    .filter((entry) => entry.score > 0);
-  if (scored.length === 0) {
-    scored = items
-      .map((item, index) => ({ item, index, score: scoreItem(query, fields[index], true) }))
+  const words = splitWords(normalizeText(term)).map((w) =>
+    [w, ...(EQUIVALENTS[w] ?? [])].map((norm) => ({ norm, key: phoneticKey(norm, true) })),
+  );
+  if (words.length === 0) return items as T[];
+  const score = (typos: boolean) =>
+    items
+      .map((item, index) => ({ item, index, score: scoreItem(words, fieldsOf(item), typos) }))
       .filter((entry) => entry.score > 0);
-  }
-
-  const bestTier = Math.max(-1, ...scored.map((entry) => tierOf(entry.score)));
-  const kept = scored.filter((entry) => tierOf(entry.score) === bestTier);
-  if (!options.keepOrder) kept.sort((a, b) => b.score - a.score || a.index - b.index);
+  // Les fautes de frappe, les plus coûteuses, ne se cherchent que faute de mieux.
+  let found = score(false);
+  if (found.length === 0) found = score(true);
+  const tier = Math.max(...found.map((entry) => Math.floor(entry.score / 1000)));
+  const kept = found.filter((entry) => Math.floor(entry.score / 1000) === tier);
+  if (!keepOrder) kept.sort((a, b) => b.score - a.score || a.index - b.index);
   return kept.map((entry) => entry.item);
-}
-
-/**
- * Vrai si les champs répondent à la recherche, à n'importe quel rang. Pour
- * filtrer une liste, préférer `searchItems`, qui écarte les approchants
- * quand mieux existe.
- */
-export function matchesQuery(term: string, fields: SearchField[]): boolean {
-  const query = prepareQuery(term);
-  if (query === null) return true;
-  return scoreItem(query, prepareFields(fields), true) > 0;
-}
-
-/** Vrai si la recherche est vide (espaces et ponctuation seuls compris). */
-export function isBlankQuery(term: string): boolean {
-  return prepareQuery(term) === null;
 }

@@ -8,7 +8,6 @@ import {
   filterBySearch,
   groupByBook,
   latinPart,
-  matchesSearch,
 } from "../services/catalogSearch";
 
 /**
@@ -33,9 +32,9 @@ describe("recherche du catalogue", () => {
   });
 
   it("ignore la casse, les accents et la graphie de l'apostrophe", () => {
-    expect(matchesSearch(TEXTS[4], "min’ha")).toBe(true);
-    expect(matchesSearch(TEXTS[4], "MIN'HA")).toBe(true);
-    expect(matchesSearch(TEXTS[3], "béréchit")).toBe(true);
+    expect(filterBySearch(TEXTS, "min’ha").map((t) => t.id)).toEqual([346]);
+    expect(filterBySearch(TEXTS, "MIN'HA").map((t) => t.id)).toEqual([346]);
+    expect(filterBySearch(TEXTS, "béréchit").map((t) => t.id)).toEqual([264]);
   });
 
   it("trouve les autres graphies d'un nom", () => {

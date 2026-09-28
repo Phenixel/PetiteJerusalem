@@ -1,7 +1,6 @@
 import { computed, onScopeDispose, ref, toValue, watch, type MaybeRefOrGetter } from "vue";
 import type { TextStudyJsonEntry } from "../models/models";
 import { filterBySearch, groupByBook } from "../services/catalogSearch";
-import { isBlankQuery } from "../services/fuzzySearch";
 
 /**
  * La recherche dans le catalogue, telle que la bibliothèque et la composition
@@ -58,8 +57,7 @@ export function useCatalogSearch<T extends TextStudyJsonEntry>(
     debouncedTerm.value = "";
   }
 
-  // Une apostrophe seule ne cherche rien : la liste reste celle du corpus.
-  const hasSearch = computed(() => !isBlankQuery(debouncedTerm.value));
+  const hasSearch = computed(() => debouncedTerm.value.trim() !== "");
 
   const filtered = computed(() => {
     const type = toValue(selectedType);

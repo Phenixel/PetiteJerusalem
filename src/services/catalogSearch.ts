@@ -12,7 +12,7 @@
  * Aucune dépendance à Vue : le module se lit aussi depuis les services.
  */
 import { BOOK_ALIASES, TEXT_ALIASES } from "../datas/catalogAliases";
-import { matchesQuery, searchItems, type SearchField } from "./fuzzySearch";
+import { searchItems, type SearchField } from "./fuzzySearch";
 import { toHebrewNumeral } from "./hebrewNumerals";
 
 /** Un texte tel que la recherche le voit : son nom, et le livre qui le porte. */
@@ -60,11 +60,6 @@ export function aliasesOf(text: SearchableText): string[] {
 
 function searchFields(text: SearchableText): SearchField[] {
   return [text.name, text.livre, ...aliasesOf(text)];
-}
-
-/** Vrai si le texte répond au terme, fût-ce à une faute près. */
-export function matchesSearch(text: SearchableText, term: string): boolean {
-  return matchesQuery(term, searchFields(text));
 }
 
 /**
