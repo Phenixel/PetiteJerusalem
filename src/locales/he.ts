@@ -1392,6 +1392,10 @@ const he: LocaleMessages = {
     // סידור: בסוף מנחה, ערבית במרחק נגיעה.
     sidourNext: "להמשיך אל {name}",
     sidourNextHint: "אחר צאת הכוכבים, ערבית באה אחרי מנחה.",
+    days: {
+      label: "יום",
+      today: "היום",
+    },
   },
   accountCta: {
     title: "צרו חשבון חינם",

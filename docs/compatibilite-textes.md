@@ -81,6 +81,18 @@ publiées, parce que le site s'était mis à écrire `!tisha-beav` et
    le passage deux fois le samedi soir aux versions qui le connaissent sans
    connaître `unless`.
 
+8. **Un texte qui quitte le catalogue garde son fichier.** Le catalogue
+   (`src/datas/textStudies.json`) vit dans le code, le fichier sur le site :
+   une version publiée continue d'ouvrir le texte sous son ancien nom. Les
+   Hochanot, passées d'une page par jour à un seul livre qui s'ouvre sur le
+   jour (`hochanot.json`), écrivent donc encore leurs huit pages d'avant
+   (`build-moadim.mjs`, `PAGES_DU_JOUR`), que le catalogue ne porte plus ;
+   les adresses web de ces pages, elles, redirigent vers le livre.
+9. **Un champ nouveau ne porte que du nouveau.** Le renvoi d'un bloc vers un
+   autre texte (`link`) et le repère qui le reçoit (`anchor`) sont ignorés
+   par les versions publiées : le bloc des Hochanot de Cha'harit y garde son
+   premier verset et la halakha qui dit où lire la suite.
+
 Les points 1, 2, 5 et 6 sont tenus par un test
 (`src/__tests__/sidourCompatibilite.test.ts`) ; les clés employées sont
 vérifiées contre celles que pose le calendrier

@@ -1442,6 +1442,10 @@ const en: LocaleMessages = {
     // Siddur: at the end of Mincha, Arvit is one tap away.
     sidourNext: "Continue with {name}",
     sidourNextHint: "After nightfall, Arvit follows Mincha.",
+    days: {
+      label: "The day",
+      today: "Today",
+    },
   },
   accountCta: {
     title: "Create your free account",

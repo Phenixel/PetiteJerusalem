@@ -711,6 +711,32 @@ reprend la forme du parchemin : sept branches verticales, une barre, un pied,
 en traits pleins à la couleur du texte, sans ombre ni dégradé. C'est une
 écriture, pas une illustration.
 
+### Une prière qui passe par un autre livre y mène d'un geste
+
+Les Hochanot se disent au milieu de Cha'harit, après le Hallel, mais leur
+texte vit dans le livre Moadim : il pèse trop pour l'office de tous les
+jours. Là où la prière change de livre, le bloc porte un renvoi, une pastille
+à la couleur du thème qui porte son dessin et son nom (« Lire les Hochanot du
+jour »), posée sous le texte qu'elle prolonge (`.reading-link`, dans
+`LiturgyText.vue`). C'est une commande de l'interface : sa taille est celle
+des commandes de titre, elle ne suit pas celle du texte lu. La fin des
+Hochanot porte le renvoi inverse, qui ramène à Cha'harit au passage qui suit
+(le Kaddich Titkabal) et non en haut de l'office. Quand on vient de
+Cha'harit, le renvoi y revient au lieu de l'empiler une seconde fois : le
+bouton « précédent » ne fait pas la navette entre les deux textes.
+
+### Un texte qui change avec le jour s'ouvre sur le jour
+
+Un livre qui porte une suite par jour (les Hochanot : six jours, Hochana
+Rabba, le Chabbat) n'en montre qu'une, celle du jour du calendrier. Au-dessus
+du texte, une rangée de pastilles nomme les jours (`TefilaDays.vue`) : celle
+du jour lu est pleine, à la couleur du thème ; celle du jour du calendrier
+porte un point, pour qu'on la retrouve après avoir lu un autre jour. Hors de
+la fête, le livre s'ouvre sur le premier. Le choix ne se retient pas : rouvrir
+le livre, c'est retrouver le jour qu'il est. Une adresse peut nommer le jour
+(`?jour=hoshana-rabba`) : le lien de la page de Hochaana Rabba, les anciennes
+pages d'un jour, un passage partagé.
+
 ## 3. Les rayons
 
 Deux familles, et elles vont en sens contraire. Les **surfaces** sont taillées

@@ -408,6 +408,11 @@ function buildBlock(spec, sections) {
   // L'une des options d'un choix laissé au lecteur (voir TextChoice dans
   // textService) : la clé du choix, l'identifiant de l'option, son intitulé.
   if (spec.choice) block.choice = spec.choice;
+  // Le nom du bloc où mène un renvoi d'un autre texte (la fin des Hochanot
+  // ramène au Kaddich Titkabal), et le renvoi que porte un bloc (voir
+  // TextLink dans textService). Les versions publiées ignorent les deux.
+  if (spec.anchor) block.anchor = spec.anchor;
+  if (spec.link) block.link = spec.link;
   const segs = spec.src ? sections[spec.src] : [];
   if (spec.src && !segs) throw new Error(`Section source inconnue : ${spec.src}`);
   block.lines = (spec.lines ?? [])
@@ -567,9 +572,9 @@ const HALAKHA = {
     "בתענית ציבור קוראים « ויחל משה » (שמות לב, יא-יד; לד, א-י) בשלושה עולים, בשחרית ובמנחה.",
   ),
   hallel: R(
-    "Le Hallel se dit debout. Selon l'usage séfarade, l'individuel le dit sans bénédiction.",
-    "Hallel is said standing. By Sephardic custom, an individual says it without a blessing.",
-    "אומרים הלל מעומד. למנהג הספרדים היחיד אומרו בלא ברכה.",
+    "Le Hallel se dit debout. Les jours où on le dit en entier ('Hanouka, 'Hol haMoed de Souccot), il s'ouvre sur sa bénédiction ; les jours où on l'abrège (Roch Hodech, 'Hol haMoed de Pessah), l'usage séfarade le dit sans bénédiction.",
+    "Hallel is said standing. On days when the whole Hallel is said (Hanukkah, Chol HaMoed Sukkot), it opens with its blessing; on days when it is shortened (Rosh Hodesh, Chol HaMoed Pesach), Sephardic custom says it without a blessing.",
+    "אומרים הלל מעומד. בימים שגומרים את ההלל מברכים עליו, ובימים שמדלגים (ראש חודש וחול המועד פסח) נוהגים הספרדים לאומרו בלא ברכה.",
   ),
 };
 
@@ -2189,11 +2194,23 @@ function chaharitRecipe() {
         // titre, qui porte aussi le miroir du bayit de la tête.
         labelText: R("Le talit et les téfilines", "Talit and tefillin", "טלית ותפילין"),
         mirror: true,
-        halakha: R(
-          "Avant de bénir, on vérifie les fils du tsitsit et on les sépare. On s'enveloppe la tête, puis on rabat le talit sur le corps.",
-          "Before blessing, check the tzitzit threads and separate them. Wrap the head, then draw the talit down over the body.",
-          "לפני הברכה בודקים את חוטי הציצית ומפרידים אותם. מתעטפים בטלית על הראש, ואחר כך מורידים אותה על הגוף.",
-        ),
+        halakha: [
+          R(
+            "Avant de bénir, on vérifie les fils du tsitsit et on les sépare. On s'enveloppe la tête, puis on rabat le talit sur le corps.",
+            "Before blessing, check the tzitzit threads and separate them. Wrap the head, then draw the talit down over the body.",
+            "לפני הברכה בודקים את חוטי הציצית ומפרידים אותם. מתעטפים בטלית על הראש, ואחר כך מורידים אותה על הגוף.",
+          ),
+          // À 'Hol haMoed, le talit seul : la consigne dit pourquoi le titre
+          // annonce des téfilines que le fil ne donne pas ce jour-là.
+          {
+            ...R(
+              "À 'Hol haMoed, selon l'usage séfarade, on ne met pas les téfilines : on ne se revêt que du talit.",
+              "On Chol HaMoed, by Sephardic custom, tefillin are not worn: only the talit is put on.",
+              "בחול המועד נוהגים הספרדים שלא להניח תפילין, ומתעטפים בטלית בלבד.",
+            ),
+            when: "hol-hamoed",
+          },
+        ],
         lines: [
           {
             seg: 1,
@@ -2234,6 +2251,9 @@ function chaharitRecipe() {
       {
         // Le matin de Tich'a beAv, on ne les met pas : ils attendent Min'ha.
         when: "sans-tisha-beav",
+        // À 'Hol haMoed non plus : l'usage séfarade ne les met pas. Les
+        // versions publiées ignorent `unless` et les affichent, comme avant.
+        unless: "hol-hamoed",
         plain: true,
         src: "Tefillin",
         halakha: R(
@@ -2659,6 +2679,41 @@ function chaharitRecipe() {
         labelText: R("Hallel", "Hallel", "הלל"),
         halakha: HALAKHA.hallel,
         lines: [
+          // Les jours où on le dit en entier ('Hanouka, 'Hol haMoed de
+          // Souccot), le Hallel s'ouvre sur sa bénédiction, « ligmor et
+          // hahallel », que le 'hazan demande la permission de dire. Les
+          // jours où on l'abrège, on ne le bénit pas.
+          {
+            seg: 2,
+            mode: "full",
+            strip: ["והציבור עונים:"],
+            until: "שמים",
+            when: "hallel-complet",
+            rubric: R(
+              "Les jours où l'on dit le Hallel en entier, le 'hazan dit :",
+              "On days when the whole Hallel is said, the chazan says:",
+              "בימים שגומרים את ההלל אומר החזן:",
+            ),
+          },
+          {
+            seg: 2,
+            mode: "full",
+            strip: ["והציבור עונים:"],
+            from: "שמים",
+            when: "hallel-complet",
+            rubric: RUBRIC.kahal,
+            tight: true,
+          },
+          {
+            seg: 4,
+            mode: "full",
+            when: "hallel-complet",
+            rubric: R(
+              "Le 'hazan bénit, puis l'assemblée :",
+              "The chazan says the blessing, then the congregation:",
+              "והחזן מברך ואחר כך הציבור מברכים:",
+            ),
+          },
           { seg: 5 },
           { seg: 6 },
           // Lo lanou et Ahavti font la différence entre le Hallel entier et
@@ -2747,31 +2802,44 @@ function chaharitRecipe() {
       kaddishTitkabal("RH.Hallel", { seg: 26, when: "rosh-chodesh" }),
       // Les Hochanot, entre le Hallel et le Kaddich Titkabal : on sort le
       // séfer Torah, on le pose sur la téva et l'on en fait le tour, loulav
-      // en main. Leur texte, une page par jour, vit dans le livre Moadim
-      // (build-moadim.mjs) : il pèse près de 300 Ko, qui n'ont rien à faire
-      // dans l'office de tous les jours. Le bloc en donne le premier verset,
-      // commun à tous les jours, et dit où lire la suite. La clé « loulav »
-      // est celle des jours où l'office de semaine les dit : 'Hol haMoed de
+      // en main. Leur texte vit dans le livre Moadim (build-moadim.mjs), un
+      // seul livre qui s'ouvre sur le jour : il pèse près de 300 Ko, qui
+      // n'ont rien à faire dans l'office de tous les jours. Le bloc en donne
+      // le premier verset, commun à tous les jours, et y renvoie ; la fin du
+      // livre ramène au Kaddich Titkabal qui suit. La halakha ne dit que le
+      // livre et la fête : les versions publiées n'ont ni le livre unique ni
+      // les renvois, et elle doit rester vraie pour elles (elles y trouvent
+      // les pages d'un jour). La clé « loulav » est
+      // celle des jours où l'office de semaine les dit : 'Hol haMoed de
       // Souccot, hors Chabbat, où l'on ne fait pas le tour.
       {
         when: "loulav",
         plain: true,
         labelText: R("Les Hochanot", "The Hoshanot", "הושענות"),
         halakha: R(
-          "On sort un séfer Torah et on le pose sur la téva. Loulav en main, on en fait le tour en disant les Hochanot du jour : une fois chaque jour, sept fois à Hochana Rabba, et deux fois le dimanche qui suit un Chabbat, où l'on n'a pas fait le tour. Leur texte est dans le livre Moadim, sous Souccot, une page par jour.",
-          "A Torah scroll is taken out and placed on the teva. Lulav in hand, one circles it while saying the Hoshanot of the day: once each day, seven times on Hoshana Rabba, and twice on the Sunday after a Shabbat, when no circuit was made. Their text is in the Moadim book, under Sukkot, one page for each day.",
+          "On sort un séfer Torah et on le pose sur la téva. Loulav en main, on en fait le tour en disant les Hochanot du jour : une fois chaque jour, sept fois à Hochana Rabba, et deux fois le dimanche qui suit un Chabbat, où l'on n'a pas fait le tour. Leur texte est dans le livre Moadim, sous Souccot.",
+          "A Torah scroll is taken out and placed on the teva. Lulav in hand, one circles it while saying the Hoshanot of the day: once each day, seven times on Hoshana Rabba, and twice on the Sunday after a Shabbat, when no circuit was made. Their text is in the Moadim book, under Sukkot.",
           "מוציאים ספר תורה ומניחים אותו על התיבה, ומקיפים את התיבה עם הלולב ואומרים ההושענות של אותו היום: פעם אחת בכל יום, שבע פעמים בהושענא רבה, ושתי הקפות ביום ראשון שלאחר השבת. ההושענות בספר המועדים, בסוכות.",
         ),
         lines: [
           { he: "אֶרְחַץ בְּנִקָּיוֹן כַּפָּי, וַאֲסוֹבְבָה אֶת־מִזְבַּחֲךָ יְהֹוָה:" },
           { he: "הוֹשַׁעֲנָא. הוֹשַׁעֲנָא:", tight: true },
         ],
+        link: {
+          corpus: "moadim",
+          slug: "hochanot",
+          label: R("Lire les Hochanot du jour", "Read today's Hoshanot", "להושענות של היום"),
+        },
       },
       // À 'Hol haMoed de même, le Titkabal entier : la source ne fait
       // exception que pour 'Hanouka. Deux blocs plutôt qu'une condition à
       // deux clés, les deux jours s'excluant (voir
-      // docs/compatibilite-textes.md).
-      kaddishTitkabal("RH.Hallel", { seg: 26, when: "hol-hamoed" }),
+      // docs/compatibilite-textes.md). C'est ici que ramène la fin des
+      // Hochanot : le bloc porte le repère que leur renvoi nomme.
+      {
+        ...kaddishTitkabal("RH.Hallel", { seg: 26, when: "hol-hamoed" }),
+        anchor: "apres-hochanot",
+      },
       // À 'Hanouka la source ne veut qu'un demi-Kaddich : la lecture de la
       // Torah vient juste après, et le Titkabal attendra Ouva letsion.
       // À Roch Hodech Tévet, qui tombe dans 'Hanouka, c'est l'ordre de Roch

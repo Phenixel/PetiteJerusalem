@@ -13,7 +13,11 @@ import { detectStores, type StoreKey } from "../composables/useAppDownload";
 import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
 import { openFeedback } from "../composables/useFeedback";
 import { isNativeApp } from "../composables/useNativeApp";
-import { addReadingMenu, removeReadingMenu } from "../composables/useReadingNav";
+import {
+  addReadingMenu,
+  removeReadingMenu,
+  scrollToBlockAnchor,
+} from "../composables/useReadingNav";
 import { useScrollFrame } from "../composables/useScrollFrame";
 import { useOverlay } from "../composables/useOverlayStack";
 import { tipsOffered } from "../composables/useFeatureTips";
@@ -269,13 +273,8 @@ function openMirror() {
 function goTo(anchor: string) {
   trackJump(anchor);
   close();
-  const el = document.querySelector(`[data-block-anchor="${anchor}"]`);
-  if (!(el instanceof HTMLElement)) return;
   // Le titre de la section vient se poser sous l'en-tête, la lecture dessous.
-  window.scrollTo({
-    top: window.scrollY + el.getBoundingClientRect().top - 84,
-    behavior: "smooth",
-  });
+  scrollToBlockAnchor(anchor, "smooth");
 }
 
 const onKeydown = (e: KeyboardEvent) => {

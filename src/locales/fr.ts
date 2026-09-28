@@ -1500,6 +1500,11 @@ const fr = {
     // Sidour : à la fin de Min'ha, Arvit est à un geste.
     sidourNext: "Enchaîner avec {name}",
     sidourNextHint: "À la sortie des étoiles, Arvit suit Min'ha.",
+    // Un texte à jours (les Hochanot) : le jour lu, et celui du calendrier.
+    days: {
+      label: "Le jour",
+      today: "Aujourd'hui",
+    },
   },
   accountCta: {
     title: "Créez votre compte gratuit",

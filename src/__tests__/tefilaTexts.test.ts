@@ -3,7 +3,13 @@ import { readFileSync } from "node:fs";
 import { HDate } from "@hebcal/core";
 import { activeOccasions } from "../services/dailyCycles";
 import { withoutTachanun } from "../services/tachanun";
-import { parseContent, resolveFilePath, saidOn } from "../services/textService";
+import {
+  calendarDay,
+  occasionsForDay,
+  parseContent,
+  resolveFilePath,
+  saidOn,
+} from "../services/textService";
 import { entryByCorpusSlug } from "../content/etudeTexts";
 
 // Les textes de tefila : blocs conditionnels de Birkat Hamazon (ajouts du
@@ -120,6 +126,25 @@ describe("fichiers de tefila", () => {
       offset += block.lines.length;
     }
     expect(content.sections[0].he.length).toBe(offset);
+  });
+
+  it("Birkat Hamazon : Souccot dit « ביום מקרא קדש הזה » à 'Hol haMoed, « ביום טוב » le Yom Tov", () => {
+    const paragraphs = (load("brahot", "birkat-hamazon").sections[0].blocks ?? []).flatMap(
+      (b) => b.paragraphs ?? [],
+    );
+    // Le fragment de la fête tel qu'il se dit un jour donné, sans ses signes.
+    const souccotLe = (jour: number) => {
+      const occ = activeOccasions(new HDate(jour, "Tishrei", 5787), false);
+      const ligne = paragraphs.find((p) => p.when === "sukkot" && saidOn(p.when, occ, p.unless))!;
+      return ligne.runs
+        .filter((r) => r.kind === "he" && saidOn(r.when, occ, r.unless))
+        .map((r) => (r.kind === "he" ? r.text.replace(/[\u0591-\u05C7]/g, "") : ""))
+        .join(" ");
+    };
+    // 17 Tichri, 'Hol haMoed.
+    expect(souccotLe(17)).toBe("חג הסכות הזה, ביום מקרא קדש הזה,");
+    // 16 Tichri, Yom Tov en diaspora.
+    expect(souccotLe(16)).toBe("חג הסכות הזה, ביום טוב מקרא קדש הזה,");
   });
 
   it("Birkat Hamazon : le zimoun porte ses didascalies dans les trois langues", () => {
@@ -538,29 +563,59 @@ describe("fichiers de tefila", () => {
   it("Netilat loulav : le cadran des six côtés, et les côtés nommés en clair", () => {
     const blocks = load("moadim", "netilat-loulav").sections[0].blocks ?? [];
     // Ce qui se dit avant de prendre le loulav, puis ses brahot.
-    expect(blocks.map((b) => b.label)).toEqual(["Avant de prendre le loulav", "Les brahot du loulav"]);
+    expect(blocks.map((b) => b.label)).toEqual([
+      "Avant de prendre le loulav",
+      "Les brahot du loulav",
+    ]);
     expect(blocks[1].naanouim).toBe(true);
     const cotes = (blocks[1].paragraphs ?? []).at(-1)!.rubric!;
     expect(cotes.fr).toContain("sud, nord, est, haut, bas, ouest");
     expect(cotes.en).toContain("south, north, east, up, down, west");
   });
 
-  it("Hochanot : une page par jour, chacune ouverte par les dinim du sidour", () => {
-    const jours = [
-      "hochanot-yom-richon",
-      "hochanot-yom-cheni",
-      "hochanot-yom-chelichi",
-      "hochanot-yom-revii",
-      "hochanot-yom-hamichi",
-      "hochanot-yom-chichi",
-      "hochanot-hochana-rabba",
-    ];
-    for (const slug of jours) {
-      const blocks = load("moadim", slug).sections[0].blocks ?? [];
+  // Les Hochanot : un seul livre, dont le lecteur ne montre qu'un jour (voir
+  // TextDay). Les blocs d'un jour sont ceux qui se lisent sous ses occasions.
+  const hochanot = () => load("moadim", "hochanot").sections[0];
+  const blocsDuJour = (when: string, base: Set<string> = new Set()) => {
+    const section = hochanot();
+    const days = section.days ?? [];
+    const occasions = occasionsForDay(base, days, days.find((day) => day.when === when)!);
+    return (section.blocks ?? []).filter((b) => saidOn(b.when, occasions, b.unless));
+  };
+
+  it("Hochanot : un seul livre, qui nomme ses jours", () => {
+    expect((hochanot().days ?? []).map((day) => day.when)).toEqual([
+      "souccot-1",
+      "souccot-2",
+      "souccot-3",
+      "souccot-4",
+      "souccot-5",
+      "souccot-6",
+      "hoshana-rabba",
+      "chabbat-souccot",
+    ]);
+    // Chaque bloc de texte appartient à un jour, et à un seul ; les dinim et
+    // le retour à Cha'harit, qui n'ont rien à dire, à aucun.
+    const keys = new Set((hochanot().days ?? []).map((day) => day.when));
+    for (const block of hochanot().blocks ?? []) {
+      if (block.lines.length === 0) continue;
+      expect(keys.has(block.when ?? "")).toBe(true);
+      expect(block.plain).toBe(true);
+    }
+  });
+
+  it("Hochanot : chaque jour ouvert par les dinim du sidour, écrits une fois", () => {
+    // Les cinq dinim de la page 674, dans un seul bloc en tête du livre.
+    const dinim = (hochanot().blocks ?? []).filter((b) =>
+      (b.halakhot ?? []).some((h) => h.he.includes("ולהקיף את הבימה")),
+    );
+    expect(dinim).toHaveLength(1);
+    for (const jour of [1, 2, 3, 4, 5, 6].map((n) => `souccot-${n}`).concat("hoshana-rabba")) {
+      const blocks = blocsDuJour(jour);
       expect(blocks.length).toBeGreaterThan(5);
-      // Les cinq dinim de la page 674 d'abord, puis ce que le bloc a de propre.
       const halakhot = blocks[0].halakhot ?? [];
-      expect(halakhot.length).toBeGreaterThanOrEqual(5);
+      expect(blocks[0].lines).toEqual([]);
+      expect(halakhot).toHaveLength(5);
       expect(halakhot[0].he).toContain("ולהקיף את הבימה");
       expect(halakhot[3].he).toContain("בשבת אין מקיפין");
       // L'usage de Djerba ouvre chaque jour : le verset « Vessoukka tihyé »
@@ -577,7 +632,7 @@ describe("fichiers de tefila", () => {
   });
 
   it("Hochanot : Hochana Rabba fait ses sept hakafot, dans l'ordre", () => {
-    const blocks = load("moadim", "hochanot-hochana-rabba").sections[0].blocks ?? [];
+    const blocks = blocsDuJour("hoshana-rabba");
     const hakafot = blocks.map((b) => b.label).filter((label) => label.includes("hakafa"));
     expect(hakafot.map((label) => label.replace(/\s+/g, " "))).toEqual([
       "Première hakafa : Abraham",
@@ -598,10 +653,61 @@ describe("fichiers de tefila", () => {
   });
 
   it("Hochanot du Chabbat : la halakha dit que seul l'usage de Tunis les dit", () => {
-    const blocks = load("moadim", "hochanot-chabbat").sections[0].blocks ?? [];
+    // Le Chabbat a sa propre note : les dinim des autres jours n'y sont pas.
+    const blocks = blocsDuJour("chabbat-souccot");
     const halakha = (blocks[0].halakhot ?? [])[0];
     expect(halakha.he).toContain("בשבת אין מקיפין");
     expect(halakha.he).toContain("בתונס");
+  });
+
+  it("Hochanot : le livre s'ouvre sur le jour du calendrier", () => {
+    const days = hochanot().days ?? [];
+    const jourDe = (d: number) =>
+      calendarDay(days, activeOccasions(new HDate(d, "Tishrei", 5787), false))?.when ?? null;
+    // 5787 : le 15 Tichri est un Chabbat, les Hochanot du Chabbat l'emportent
+    // sur celles du premier jour.
+    expect(jourDe(15)).toBe("chabbat-souccot");
+    expect(jourDe(16)).toBe("souccot-2");
+    expect(jourDe(17)).toBe("souccot-3");
+    expect(jourDe(20)).toBe("souccot-6");
+    expect(jourDe(21)).toBe("hoshana-rabba");
+    // Hors de la fête, aucun : le lecteur ouvre alors le premier jour.
+    expect(jourDe(22)).toBeNull();
+    expect(jourDe(1)).toBeNull();
+  });
+
+  it("Hochanot : leur fin ramène à Cha'harit, les jours où Cha'harit les dit", () => {
+    const retour = (hochanot().blocks ?? []).at(-1)!;
+    expect(retour.link).toMatchObject({
+      corpus: "sidour",
+      slug: "chaharit",
+      anchor: "apres-hochanot",
+    });
+    // 'Hol haMoed en semaine (17 Tichri 5787, un lundi) : le renvoi est là,
+    // quel que soit le jour qu'on lit.
+    const lundi = activeOccasions(new HDate(17, "Tishrei", 5787), false);
+    expect(blocsDuJour("souccot-5", lundi).at(-1)?.link).toEqual(retour.link);
+    // Le Chabbat, on ne les dit pas à Cha'harit : pas de retour.
+    const chabbat = activeOccasions(new HDate(15, "Tishrei", 5787), false);
+    expect(blocsDuJour("chabbat-souccot", chabbat).some((b) => b.link)).toBe(false);
+  });
+
+  it("les renvois mènent à un texte du catalogue, et au bloc qu'ils nomment", () => {
+    for (const [corpus, slug] of [
+      ["moadim", "hochanot"],
+      ["sidour", "chaharit"],
+    ] as const) {
+      for (const block of load(corpus, slug).sections[0].blocks ?? []) {
+        if (!block.link) continue;
+        const cible = entryByCorpusSlug(block.link.corpus, block.link.slug);
+        expect(cible, `${slug} → ${block.link.slug}`).toBeTruthy();
+        if (!block.link.anchor) continue;
+        const anchors = (load(block.link.corpus, block.link.slug).sections[0].blocks ?? []).map(
+          (b) => b.anchor,
+        );
+        expect(anchors).toContain(block.link.anchor);
+      }
+    }
   });
 
   it("Séder leil Souccot : les sept nuits, du seuil à la place assise", () => {

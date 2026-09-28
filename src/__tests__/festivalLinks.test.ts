@@ -36,8 +36,10 @@ describe("liens des pages de fête", () => {
     for (const festival of SEO_FESTIVALS) {
       for (const link of festivalLinks(festival.slugs.fr)) {
         for (const locale of SEO_LOCALES) {
+          // Une adresse peut porter une requête (le jour d'un texte à jours,
+          // ?jour=) : c'est sa page qui doit exister.
           const path = link.path(locale);
-          if (!paths.has(path)) dead.push(`${festival.slugs.fr} → ${path}`);
+          if (!paths.has(path.split("?")[0])) dead.push(`${festival.slugs.fr} → ${path}`);
         }
       }
     }

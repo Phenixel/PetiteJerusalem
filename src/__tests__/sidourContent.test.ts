@@ -83,6 +83,7 @@ const KNOWN_WHEN = new Set([
   "omer",
   ...Array.from({ length: 8 }, (_, i) => `hanouka-${i + 1}`),
   ...Array.from({ length: 7 }, (_, i) => `souccot-${i + 1}`),
+  "chabbat-souccot",
   "eretz-israel",
   "houts-laarets",
   ...Array.from({ length: 49 }, (_, i) => `omer-${i + 1}`),
@@ -654,14 +655,21 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
     const lignes = hallel.lines as { when?: string; he?: string }[];
     const entier = lignes.filter((l) => l?.when === "hallel-complet");
     const abrege = lignes.filter((l) => l?.when === "hallel-abrege");
-    // « Lo lanou » et « Ahavti » ne sont là qu'au Hallel entier, avec leur
-    // suite ; les deux consignes de saut ne sont là qu'à l'abrégé. La
-    // cinquième ligne du Hallel entier est « Yehalelou'ha », qui le ferme
-    // (voir le describe de 'Hol haMoed plus bas).
-    expect(entier).toHaveLength(5);
+    // Le Hallel entier s'ouvre sur sa bénédiction, que le 'hazan demande la
+    // permission de dire (« Birchout », l'assemblée répond « Chamayim ») ;
+    // l'abrégé ne se bénit pas. Puis « Lo lanou » et « Ahavti » ne sont là
+    // qu'au Hallel entier, avec leur suite ; les deux consignes de saut ne
+    // sont là qu'à l'abrégé. La dernière ligne du Hallel entier est
+    // « Yehalelou'ha », qui le ferme (voir le describe de 'Hol haMoed plus
+    // bas).
+    expect(entier).toHaveLength(8);
     expect(abrege).toHaveLength(2);
-    expect(sansSignes(String(entier[0].he))).toContain("לא לנו");
-    expect(sansSignes(String(entier[2].he))).toContain("אהבתי");
+    expect(sansSignes(String(entier[0].he))).toContain("ברשות מורי ורבותי");
+    expect(sansSignes(String(entier[1].he))).toContain("שמים");
+    expect(sansSignes(String(entier[2].he))).toContain("לגמור את ההלל");
+    expect(lignes.indexOf(entier[2])).toBe(2);
+    expect(sansSignes(String(entier[3].he))).toContain("לא לנו");
+    expect(sansSignes(String(entier[5].he))).toContain("אהבתי");
   });
 
   it("lit un passage par jour à 'Hanouka, dans l'ordre des nessiim", () => {
@@ -821,9 +829,24 @@ describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
     expect(cotes.en).toContain("south, north, east, up, down, west");
   });
 
+  it("ne met pas les téfilines à 'Hol haMoed, et le dit au talit", () => {
+    // Le bloc des téfilines se retire (`unless`), celui du talit reste, avec
+    // la consigne du jour.
+    const tefilines = blocks.find((b) => b.halakhot?.[0].fr.startsWith("On pose d'abord"))!;
+    expect(tefilines.when).toBe("sans-tisha-beav");
+    expect(tefilines.unless).toBe("hol-hamoed");
+    const talit = blocks.find((b) => b.labelText?.fr === "Le talit et les téfilines")!;
+    expect(talit.unless).toBeUndefined();
+    expect(talit.halakhot?.find((h) => h.when === "hol-hamoed")?.fr).toContain("téfilines");
+  });
+
   it("dit les Hochanot entre le Hallel et le Kaddich Titkabal", () => {
     const hallel = brut.findIndex((b) => b.label === "Hallel");
-    const hochanot = brut.findIndex((b) => b.when === "loulav" && (b as { labelText?: { fr: string } }).labelText?.fr === "Les Hochanot");
+    const hochanot = brut.findIndex(
+      (b) =>
+        b.when === "loulav" &&
+        (b as { labelText?: { fr: string } }).labelText?.fr === "Les Hochanot",
+    );
     // Entre les deux, seuls des blocs d'autres jours (le Titkabal de Roch
     // Hodech) : ce jour-là, le lecteur passe du Hallel aux Hochanot.
     expect(hochanot).toBeGreaterThan(hallel);
@@ -831,14 +854,18 @@ describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
       expect(["rosh-chodesh", "hanouka"]).toContain(bloc.when);
     }
     // Le Kaddich Titkabal de 'Hol haMoed suit.
-    const titkabal = brut.findIndex(
-      (b, i) => i > hochanot && b.when === "hol-hamoed",
-    );
+    const titkabal = brut.findIndex((b, i) => i > hochanot && b.when === "hol-hamoed");
     expect(titkabal).toBe(hochanot + 1);
-    // Le bloc dit où lire la suite : le livre Moadim.
+    // Le bloc dit où lire la suite, le livre Moadim, et y renvoie.
     const bloc = blocks.find((b) => b.labelText?.fr === "Les Hochanot")!;
     expect(bloc.halakhot?.[0].fr).toContain("livre Moadim");
     expect(sansSignes(bloc.lines[0])).toContain("ארחץ בנקיון כפי");
+    expect(bloc.link).toMatchObject({ corpus: "moadim", slug: "hochanot" });
+    // La fin des Hochanot ramène au Kaddich Titkabal qui les suit : il porte
+    // le repère que leur renvoi nomme.
+    const retour = blocks[blocks.indexOf(bloc) + 1];
+    expect(retour.when).toBe("hol-hamoed");
+    expect(retour.anchor).toBe("apres-hochanot");
   });
 
   it("lit les korbanot du jour, selon Erets Israël ou la diaspora", () => {
@@ -992,7 +1019,6 @@ describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
     expect(psaume("pesach").join(" ")).toContain("גאולי יהוה");
   });
 });
-
 
 describe("Arvit : le compte du 'Omer", () => {
   const entry = sidourEntries.find((e) => resolveFilePath(e).includes("arvit"))!;
