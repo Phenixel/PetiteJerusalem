@@ -374,7 +374,6 @@ const he: LocaleMessages = {
       appearance: "מראה",
       preferences: "העדפות",
       notifications: "התראות",
-      about: "אודות",
     },
     shortcuts: {
       title: "תמצאו גם",
@@ -438,6 +437,23 @@ const he: LocaleMessages = {
       frank: "קלאסי",
       david: "מסורתי",
       heebo: "מודרני",
+    },
+    native: {
+      groups: {
+        reading: "הקריאות שלי",
+        settings: "הגדרות",
+        account: "החשבון שלי",
+        help: "עזרה",
+        info: "מידע",
+      },
+      editProfile: "עריכת הפרופיל",
+      schemeTitle: "בהיר או כהה",
+      notificationsSummary: "אין תזכורות | תזכורת אחת | {n} תזכורות",
+      notificationsBlocked: "חסומות",
+      version: "גרסה {version}",
+      logoutConfirm: "להתנתק?",
+      logoutConfirmHint:
+        "ההגדרות שלכם נשמרות במכשיר הזה. כדי לחזור לקריאות ולשרשראות שלכם, תצטרכו להתחבר שוב.",
     },
   },
   dailyReading: {

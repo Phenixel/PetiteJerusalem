@@ -395,7 +395,6 @@ const fr = {
       appearance: "Apparence",
       preferences: "Préférences",
       notifications: "Notifications",
-      about: "À propos",
     },
     shortcuts: {
       title: "Retrouvez aussi",
@@ -461,6 +460,23 @@ const fr = {
       frank: "Classique",
       david: "Traditionnelle",
       heebo: "Moderne",
+    },
+    native: {
+      groups: {
+        reading: "Mes lectures",
+        settings: "Réglages",
+        account: "Mon compte",
+        help: "Aide",
+        info: "Informations",
+      },
+      editProfile: "Modifier mon profil",
+      schemeTitle: "Clair ou sombre",
+      notificationsSummary: "Aucun rappel | {n} rappel | {n} rappels",
+      notificationsBlocked: "Bloquées",
+      version: "Version {version}",
+      logoutConfirm: "Se déconnecter ?",
+      logoutConfirmHint:
+        "Vos réglages restent sur cet appareil. Pour retrouver vos lectures et vos chaînes, il faudra vous reconnecter.",
     },
   },
   dailyReading: {

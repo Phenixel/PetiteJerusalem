@@ -21,6 +21,8 @@ const HOCHANOT_JOURS: Record<string, string> = {
 // le bundle initial ne contient que la home (et la 404, minuscule).
 const LoginView = () => import("../views/loginView.vue");
 const ProfilePage = () => import("../views/ProfilePage.vue");
+const NativeProfileHome = () => import("../views/profilePage/native/NativeProfileHome.vue");
+const NativeProfileSection = () => import("../views/profilePage/native/NativeProfileSection.vue");
 const SessionManagementPage = () => import("../views/SessionManagementPage.vue");
 const ShareHomePage = () => import("../views/ShareReading/ShareHomePage.vue");
 const NewSession = () => import("../views/ShareReading/NewSession.vue");
@@ -137,13 +139,35 @@ export default [
   {
     path: "/profile",
     name: "profile",
-    component: ProfilePage,
+    // Deux pages sous une adresse : le site garde son menu latéral, l'app a
+    // sa page de réglages rangée en lignes et en sous-pages (voir
+    // docs/design.md, « Le profil de l'app est une liste, pas un menu »).
+    component: isNativeApp ? NativeProfileHome : ProfilePage,
     // App native : la page sert aussi de page de réglages, accessible sans
     // compte (langue, thème, polices, à propos), et ces réglages sont locaux :
     // elle se rend hors ligne aussi. Le web garde la garde de connexion : les
     // réglages n'y sont proposés qu'aux comptes.
     meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp },
   },
+  // Les sous-pages du profil de l'app. Le site n'en a pas : son menu change
+  // de panneau sur place. Les réglages d'appareil s'ouvrent sans compte et
+  // hors ligne ; les pages du compte demandent l'un et le réseau.
+  ...(isNativeApp
+    ? [
+        {
+          path: "/profile/:section(appearance|language|notifications|preferences)",
+          name: "profile-settings",
+          component: NativeProfileSection,
+          meta: { offlineOk: true },
+        },
+        {
+          path: "/profile/:section(account|security)",
+          name: "profile-account",
+          component: NativeProfileSection,
+          meta: { requiresAuth: true },
+        },
+      ]
+    : []),
   {
     path: "/session-management/:id",
     name: "session-management",

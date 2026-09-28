@@ -11,7 +11,7 @@ const { localePath } = useLocalePath();
 /**
  * Bannière de consentement à la mesure d'audience (PostHog). Affichée tant
  * qu'aucun choix n'a été fait ; réouvrable via « Gérer les cookies » (footer,
- * onglet À propos). Le suivi ne démarre qu'après « Accepter » (analyticsService).
+ * profil de l'app). Le suivi ne démarre qu'après « Accepter » (analyticsService).
  *
  * À la toute première ouverture, c'est l'introduction qui pose la question, sur
  * une page entière et avec les explications qui vont avec : la bannière se tait

@@ -338,8 +338,9 @@ instants calculés, et ces instants viennent de bouger (voir
 
 Les **astuces vues** (`useFeatureTips`, clé `pj_tips_seen`) aussi : une
 astuce qui reviendrait à chaque vidage de cache finirait par agacer, et
-« Revoir les astuces » (onglet À propos) est là pour qui la veut. Elles ne
-montent pas dans le compte : c'est sur cet écran-là qu'on a vu le geste.
+« Revoir les astuces » (profil de l'app, groupe Aide) est là pour qui la
+veut. Elles ne montent pas dans le compte : c'est sur cet écran-là qu'on a vu
+le geste.
 
 L'**interrupteur du défilement automatique** (`useAutoScroll`) suit la même
 règle, et pour une raison plus forte encore : il se coupe précisément pour ne

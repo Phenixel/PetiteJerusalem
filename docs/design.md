@@ -164,7 +164,7 @@ fait. Quatre règles la tiennent :
   relance de l'app, ou un retour au premier plan après une demi-heure
   ailleurs). Sur une même page, une astuce peut en attendre une autre : les
   gestes de lecture viennent une ouverture après le menu. « Revoir les
-  astuces » (onglet À propos) les remet en jeu, page par page ;
+  astuces » (profil de l'app, groupe Aide) les remet en jeu, page par page ;
 - **« Plus tard »** : on n'a pas toujours le temps de lire. La bulle se
   retire sans compter l'astuce vue, et celle-ci revient, sur la même page, à
   l'ouverture suivante ;
@@ -383,6 +383,57 @@ cartes, trois sections empilées sur un fond beige donnaient trois boîtes
 blanches à la suite, et l'onglet ne fera que s'allonger. Les sections se
 séparent du même filet que leurs lignes.
 
+### Le profil de l'app est une liste, pas un menu
+
+Sur le site, le profil est un menu à gauche et un panneau à droite : il y a la
+place, et un clic change de panneau. Posé tel quel sur un téléphone, ce menu
+passait en tête de page, le panneau dessous, et chaque onglet faisait défiler
+jusqu'à son contenu : on ne savait jamais sur quel onglet on était, ni ce qui
+était réglé sans l'ouvrir. L'app a donc son propre profil
+(`NativeProfileHome.vue`), rangé comme les réglages d'un téléphone ; le site
+garde le sien, qui lui convient.
+
+- **Une page de lignes, rangées par groupe.** Mes lectures (les raccourcis),
+  Réglages (apparence, langue, notifications, préférences), Mon compte
+  (sécurité, déconnexion), Aide, Informations. Chaque groupe est un panneau
+  (`SettingsGroup`), une surface sans `card-hover`, et ses lignes
+  (`SettingsRow`) vont d'un bord à l'autre, séparées d'un filet. Le titre du
+  groupe s'écrit en bas de casse, au-dessus.
+- **Une ligne dit où elle mène et ce qui y est réglé.** Au bout, avant le
+  chevron : « Océan · Système », « Français », « 2 rappels », « Rav Posen ».
+  On lit l'état sans ouvrir la page. Ce qui ne va pas le dit à la place du
+  nombre : des notifications bloquées par le téléphone s'annoncent
+  « Bloquées », en ambre.
+- **Trois formes, une allure.** Une page de l'app (chevron), une action sur
+  place (sans chevron : rien ne s'ouvre derrière, « Revoir l'introduction »),
+  la déconnexion (en rouge). Chaque ligne fait au moins 52 px de haut et
+  répond au toucher par un fond, faute de survol.
+- **La déconnexion pose la question, dans l'app seulement.** Sur le site,
+  c'est un bouton à part ; ici, une ligne parmi d'autres, qu'un pouce touche
+  par mégarde en visant sa voisine, et se reconnecter demande un mot de passe
+  et le réseau. Elle ne part donc pas sans retour, mais son retour coûte trop
+  pour la règle « ce qui se refait d'un geste ne se confirme pas ».
+- **Les sous-pages sont de vraies pages** (`NativeProfileSection.vue`,
+  `/profile/appearance`, `/profile/language`, `/profile/notifications`,
+  `/profile/preferences`, et pour un compte `/profile/account`,
+  `/profile/security`) : leur adresse, leur retour Android, leur glissement
+  iOS. Un lien discret en haut (« Profil », ou « Réglages » sans compte)
+  remonte l'historique plutôt que d'en empiler, et le titre est centré. Elles
+  reprennent les réglages du site tels quels : seule la façon d'y arriver
+  change. L'onglet de la barre du bas reste allumé dessus (`activeOn`).
+- **La langue a sa ligne.** Sur le site, elle ouvre l'onglet Apparence ; dans
+  l'app, on la change rarement, et trois langues se lisent mieux en liste
+  cochée qu'en tuiles (`AppearanceSettings`, `with-language` à faux).
+- **L'identité en tête, sans bandeau.** Connecté : un rond à l'initiale, de la
+  couleur du thème (la seule touche pleine de la page), le nom, l'adresse et
+  « Modifier mon profil ». Sans compte : le titre « Réglages » et une carte
+  qui propose le compte, deux boutons, sans insister.
+- **Le pied de page du site finit la page,** en petit : qui fait l'app, ses
+  réseaux et la version installée, qu'on demande à qui écrit pour un bug.
+
+Le test `nativeProfile.test.ts` tient la page : ce qui paraît avec et sans
+compte, les sous-pages où mène chaque ligne, l'état porté au bout.
+
 ### Un geste qui surprend doit pouvoir se couper
 
 Le double appui qui lance le défilement automatique se fait tout seul : deux
@@ -504,7 +555,7 @@ la page se termine sur une ligne, pas sur un annuaire.
 Le formulaire de support (une idée, un bug, une erreur dans un texte) est une
 fenêtre, pas une page : on l'ouvre de là où l'on est et l'on y revient en la
 fermant, sans perdre la lecture en cours. Il s'ouvre de trois endroits, tous
-en fin de parcours : le pied de page du site, l'onglet À propos de l'app, et
+en fin de parcours : le pied de page du site, le profil de l'app (groupe Aide), et
 le bas de l'accueil.
 
 Une quatrième porte s'ouvre en pleine lecture, dans les réglages du menu

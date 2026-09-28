@@ -76,14 +76,24 @@ const tabs = computed<Tab[]>(() => [
     anim: "nod",
     activeOn: ["/chiourim"],
   },
+  // Les sous-pages du profil (/profile/appearance...) sont des routes à part :
+  // `activeOn` garde l'onglet allumé tant qu'on y est.
   isLoggedIn.value
-    ? { to: "/profile", icon: "user", labelKey: "common.profile", exact: false, anim: "hop" }
+    ? {
+        to: "/profile",
+        icon: "user",
+        labelKey: "common.profile",
+        exact: false,
+        anim: "hop",
+        activeOn: ["/profile"],
+      }
     : {
         to: "/profile",
         icon: "settings",
         labelKey: "profile.guestTitle",
         exact: false,
         anim: "hop",
+        activeOn: ["/profile"],
       },
 ]);
 

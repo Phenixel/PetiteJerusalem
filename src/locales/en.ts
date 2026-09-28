@@ -389,7 +389,6 @@ const en: LocaleMessages = {
       appearance: "Appearance",
       preferences: "Preferences",
       notifications: "Notifications",
-      about: "About",
     },
     shortcuts: {
       title: "Also find",
@@ -453,6 +452,23 @@ const en: LocaleMessages = {
       frank: "Classic",
       david: "Traditional",
       heebo: "Modern",
+    },
+    native: {
+      groups: {
+        reading: "My readings",
+        settings: "Settings",
+        account: "My account",
+        help: "Help",
+        info: "Information",
+      },
+      editProfile: "Edit my profile",
+      schemeTitle: "Light or dark",
+      notificationsSummary: "No reminder | {n} reminder | {n} reminders",
+      notificationsBlocked: "Blocked",
+      version: "Version {version}",
+      logoutConfirm: "Log out?",
+      logoutConfirmHint:
+        "Your settings stay on this device. To get your readings and chains back, you will need to log in again.",
     },
   },
   dailyReading: {
