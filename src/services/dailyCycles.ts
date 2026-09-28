@@ -415,6 +415,10 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   if (occ.has("sukkot") && hd.getMonth() === months.TISHREI) {
     const jour = hd.getDate() - 14;
     if (jour >= 1 && jour <= 7) occ.add(`souccot-${jour}`);
+    // Le Chabbat de Souccot : on n'y fait pas le tour de la téva, et le livre
+    // des Hochanot ouvre ce jour-là celles que le sidour imprime pour Tunis
+    // plutôt que celles du quantième.
+    if (hd.getDay() === 6) occ.add("chabbat-souccot");
   }
   // Terre d'Israël ou diaspora, selon le lieu des horaires. À 'Hol haMoed de
   // Souccot, la diaspora lit deux jours de korbanot, par doute sur la date ;

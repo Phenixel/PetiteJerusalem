@@ -106,6 +106,30 @@ export function saidOn(when: string | undefined, occasions: Set<string>, unless?
 }
 
 /**
+ * Le jour que le calendrier fait lire dans un texte à jours (voir TextDay) :
+ * le premier qui tient parmi les occasions, à défaut aucun (hors de la fête).
+ */
+export function calendarDay(days: TextDay[], occasions: Set<string>): TextDay | null {
+  return days.find((day) => saidOn(day.when, occasions, day.unless)) ?? null;
+}
+
+/**
+ * Les occasions sous lesquelles se lit un jour donné d'un texte à jours : les
+ * clés de tous ses jours retirées, la sienne posée. Le reste du calendrier ne
+ * bouge pas (le renvoi vers Cha'harit suit toujours le jour réel).
+ */
+export function occasionsForDay(
+  occasions: Set<string>,
+  days: TextDay[],
+  day: TextDay,
+): Set<string> {
+  const keys = new Set(days.map((d) => d.when));
+  const out = new Set([...occasions].filter((key) => !keys.has(key)));
+  out.add(day.when);
+  return out;
+}
+
+/**
  * Sidour : les parchemins que le lecteur peut ouvrir depuis le fil du texte
  * (voir KlafViewer.vue) : le pitoum haketoret tel qu'un sofer l'écrit, le
  * psaume 67 (Lamnatséa'h binguinot) écrit en forme de menora.
@@ -174,6 +198,34 @@ export interface TextChoice {
   id: string;
   label: Rubric;
   preferred?: string;
+}
+
+/**
+ * Tefila : un renvoi vers un autre texte de la bibliothèque, là où la prière y
+ * passe (les Hochanot, que Cha'harit dit après le Hallel, vivent dans le livre
+ * Moadim ; leur fin ramène à Cha'harit). Le texte visé se nomme par son corpus
+ * et son slug, comme son adresse (/bibliotheque/:corpus/:slug) ; `anchor` est
+ * le repère du bloc où l'on arrive (voir TextBlock.anchor).
+ */
+export interface TextLink {
+  corpus: string;
+  slug: string;
+  anchor?: string;
+  label: Rubric;
+}
+
+/**
+ * Tefila : l'un des jours d'un texte qui change avec le jour (les Hochanot, une
+ * suite par jour de Souccot). Le texte suit le jour du calendrier, et le
+ * lecteur peut en lire un autre : le jour choisi prend alors la place de
+ * celui du calendrier parmi les occasions (voir saidOn). `when` est la clé
+ * d'occasion qui le nomme, `unless` celle qui le cède à un autre (le Chabbat
+ * de Souccot, qui n'est pas lu comme le quantième qu'il est).
+ */
+export interface TextDay {
+  when: string;
+  unless?: string;
+  label: Rubric;
 }
 
 export interface TextBlock {
@@ -269,6 +321,11 @@ export interface TextBlock {
    * elle change chaque semaine, le fichier ne peut pas la porter.
    */
   torahWeekly?: boolean;
+  /**
+   * Tefila : le renvoi posé sous le texte du bloc, vers le texte où la prière
+   * continue (voir TextLink). Un bloc peut n'avoir que lui.
+   */
+  link?: TextLink;
   /** Tefila : le détail de mise en forme, ligne à ligne. */
   paragraphs?: TextParagraph[];
 }
@@ -287,6 +344,8 @@ export interface TextSection {
   blocks?: TextBlock[];
   /** Parachiot : Targoum Onkelos aligné ligne à ligne sur `he` (chnei mikra). */
   targum?: string[];
+  /** Tefila : les jours entre lesquels le texte change (voir TextDay). */
+  days?: TextDay[];
 }
 
 export interface TextContent {
@@ -651,7 +710,39 @@ interface TefilaFileBlock {
   mirror?: boolean;
   naanouim?: boolean;
   torahWeekly?: boolean;
+  /** Le repère du bloc, quand un renvoi d'un autre texte y mène. */
+  anchor?: string;
+  link?: TextLink;
   lines?: (string | TefilaFileLine)[];
+}
+
+/** Une didascalie complète, dans les trois langues. */
+function isRubric(value: unknown): value is Rubric {
+  if (typeof value !== "object" || value === null) return false;
+  const rubric = value as Record<string, unknown>;
+  return ["fr", "en", "he"].every((lang) => typeof rubric[lang] === "string");
+}
+
+/**
+ * Un renvoi du fichier, ou rien : une copie abîmée ou venue d'une autre
+ * version ne doit pas poser de lien qui ne mène nulle part.
+ */
+function parseLink(raw: unknown): TextLink | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const { corpus, slug, anchor, label } = raw as Record<string, unknown>;
+  if (typeof corpus !== "string" || typeof slug !== "string" || !isRubric(label)) return null;
+  return { corpus, slug, label, ...(typeof anchor === "string" ? { anchor } : {}) };
+}
+
+/** Les jours d'un fichier (voir TextDay), ceux qui sont bien formés. */
+function parseDays(raw: unknown): TextDay[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((day: unknown) => {
+    if (typeof day !== "object" || day === null) return [];
+    const { when, unless, label } = day as Record<string, unknown>;
+    if (typeof when !== "string" || !isRubric(label)) return [];
+    return [{ when, label, ...(typeof unless === "string" ? { unless } : {}) }];
+  });
 }
 
 /** Un paragraphe du fichier → ses fragments, ou null si rien ne se lit. */
@@ -727,17 +818,24 @@ export function parseTefilaBlocks(rawBlocks: unknown): TextBlock[] {
       .filter((p): p is TextParagraph => p !== null);
     // Les marqueurs (horaire, Torah de la semaine) n'ont pas de texte à eux :
     // ils passent quand même, c'est le lecteur qui les remplit. L'option d'un
-    // choix peut être vide elle aussi : « pas de haftara » est un choix.
-    if (paragraphs.length === 0 && !raw?.zman && !raw?.torahWeekly && !raw?.choice) return;
+    // choix peut être vide elle aussi : « pas de haftara » est un choix. Un
+    // renvoi aussi se suffit : la fin des Hochanot n'est que le chemin du
+    // retour à Cha'harit.
+    const link = parseLink(raw?.link);
+    if (paragraphs.length === 0 && !raw?.zman && !raw?.torahWeekly && !raw?.choice && !link) {
+      return;
+    }
     const block: TextBlock = {
       label: raw.label ?? "",
       lines: paragraphs.map(paragraphText),
       offset,
       // Le rang du bloc dans le fichier : unique, là où l'offset d'un
-      // marqueur vide est celui du bloc suivant.
-      anchor: `b${index}`,
+      // marqueur vide est celui du bloc suivant. Un bloc où mène un renvoi
+      // porte son propre nom, qui ne bouge pas quand l'office s'allonge.
+      anchor: typeof raw.anchor === "string" ? raw.anchor : `b${index}`,
       paragraphs,
     };
+    if (link) block.link = link;
     if (raw.labelText) block.labelText = raw.labelText;
     if (raw.when) block.when = raw.when;
     if (raw.unless) block.unless = raw.unless;
@@ -760,7 +858,7 @@ export function parseTefilaBlocks(rawBlocks: unknown): TextBlock[] {
 
 function loadTefila(
   textStudy: TextStudyJsonEntry,
-  data: { title?: string; blocks?: TefilaFileBlock[] },
+  data: { title?: string; blocks?: TefilaFileBlock[]; days?: unknown },
 ): TextContent {
   const blocks = parseTefilaBlocks(data.blocks);
   const section = buildSection(
@@ -771,6 +869,8 @@ function loadTefila(
   // Toujours des blocs, même seul : c'est là que vit la mise en forme
   // (didascalies, réponses de l'assemblée, répétitions).
   section.blocks = blocks;
+  const days = parseDays(data.days);
+  if (days.length > 0) section.days = days;
   return { title: data.title ?? textStudy.name, type: String(textStudy.type), sections: [section] };
 }
 

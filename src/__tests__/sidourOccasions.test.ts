@@ -428,9 +428,7 @@ describe("'Hol haMoed, et le loulav de Souccot", () => {
   it("compte les sept jours de la fête sur la date, une clé par jour", () => {
     const jours: string[] = [];
     for (let date = 14; date <= 23; date++) {
-      const cles = [...occ(date, months.TISHREI, 5787)].filter((cle) =>
-        cle.startsWith("souccot-"),
-      );
+      const cles = [...occ(date, months.TISHREI, 5787)].filter((cle) => cle.startsWith("souccot-"));
       jours.push(cles.join(",") || "-");
     }
     expect(jours).toEqual([
@@ -453,6 +451,15 @@ describe("'Hol haMoed, et le loulav de Souccot", () => {
     expect(israel.has("houts-laarets")).toBe(false);
     expect(occ(18, months.TISHREI, 5787).has("houts-laarets")).toBe(true);
     expect(occ(18, months.TISHREI, 5787).has("eretz-israel")).toBe(false);
+  });
+
+  it("nomme le Chabbat de Souccot, et lui seul", () => {
+    // 5787 : le 15 Tichri est un Chabbat ; 5786 : le 19.
+    expect(occ(15, months.TISHREI, 5787).has("chabbat-souccot")).toBe(true);
+    expect(occ(16, months.TISHREI, 5787).has("chabbat-souccot")).toBe(false);
+    expect(occ(19, months.TISHREI, 5786).has("chabbat-souccot")).toBe(true);
+    // Le Chabbat qui suit la fête n'en est pas un.
+    expect(occ(22, months.TISHREI, 5787).has("chabbat-souccot")).toBe(false);
   });
 });
 

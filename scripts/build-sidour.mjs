@@ -408,6 +408,11 @@ function buildBlock(spec, sections) {
   // L'une des options d'un choix laissé au lecteur (voir TextChoice dans
   // textService) : la clé du choix, l'identifiant de l'option, son intitulé.
   if (spec.choice) block.choice = spec.choice;
+  // Le nom du bloc où mène un renvoi d'un autre texte (la fin des Hochanot
+  // ramène au Kaddich Titkabal), et le renvoi que porte un bloc (voir
+  // TextLink dans textService). Les versions publiées ignorent les deux.
+  if (spec.anchor) block.anchor = spec.anchor;
+  if (spec.link) block.link = spec.link;
   const segs = spec.src ? sections[spec.src] : [];
   if (spec.src && !segs) throw new Error(`Section source inconnue : ${spec.src}`);
   block.lines = (spec.lines ?? [])
@@ -2747,31 +2752,41 @@ function chaharitRecipe() {
       kaddishTitkabal("RH.Hallel", { seg: 26, when: "rosh-chodesh" }),
       // Les Hochanot, entre le Hallel et le Kaddich Titkabal : on sort le
       // séfer Torah, on le pose sur la téva et l'on en fait le tour, loulav
-      // en main. Leur texte, une page par jour, vit dans le livre Moadim
-      // (build-moadim.mjs) : il pèse près de 300 Ko, qui n'ont rien à faire
-      // dans l'office de tous les jours. Le bloc en donne le premier verset,
-      // commun à tous les jours, et dit où lire la suite. La clé « loulav »
-      // est celle des jours où l'office de semaine les dit : 'Hol haMoed de
+      // en main. Leur texte vit dans le livre Moadim (build-moadim.mjs), un
+      // seul livre qui s'ouvre sur le jour : il pèse près de 300 Ko, qui
+      // n'ont rien à faire dans l'office de tous les jours. Le bloc en donne
+      // le premier verset, commun à tous les jours, et y renvoie ; la fin du
+      // livre ramène au Kaddich Titkabal qui suit. La clé « loulav » est
+      // celle des jours où l'office de semaine les dit : 'Hol haMoed de
       // Souccot, hors Chabbat, où l'on ne fait pas le tour.
       {
         when: "loulav",
         plain: true,
         labelText: R("Les Hochanot", "The Hoshanot", "הושענות"),
         halakha: R(
-          "On sort un séfer Torah et on le pose sur la téva. Loulav en main, on en fait le tour en disant les Hochanot du jour : une fois chaque jour, sept fois à Hochana Rabba, et deux fois le dimanche qui suit un Chabbat, où l'on n'a pas fait le tour. Leur texte est dans le livre Moadim, sous Souccot, une page par jour.",
-          "A Torah scroll is taken out and placed on the teva. Lulav in hand, one circles it while saying the Hoshanot of the day: once each day, seven times on Hoshana Rabba, and twice on the Sunday after a Shabbat, when no circuit was made. Their text is in the Moadim book, under Sukkot, one page for each day.",
+          "On sort un séfer Torah et on le pose sur la téva. Loulav en main, on en fait le tour en disant les Hochanot du jour : une fois chaque jour, sept fois à Hochana Rabba, et deux fois le dimanche qui suit un Chabbat, où l'on n'a pas fait le tour. Leur texte est dans le livre Moadim, sous Souccot : il s'ouvre sur le jour, et ramène ici à la fin.",
+          "A Torah scroll is taken out and placed on the teva. Lulav in hand, one circles it while saying the Hoshanot of the day: once each day, seven times on Hoshana Rabba, and twice on the Sunday after a Shabbat, when no circuit was made. Their text is in the Moadim book, under Sukkot: it opens on the day, and leads back here at the end.",
           "מוציאים ספר תורה ומניחים אותו על התיבה, ומקיפים את התיבה עם הלולב ואומרים ההושענות של אותו היום: פעם אחת בכל יום, שבע פעמים בהושענא רבה, ושתי הקפות ביום ראשון שלאחר השבת. ההושענות בספר המועדים, בסוכות.",
         ),
         lines: [
           { he: "אֶרְחַץ בְּנִקָּיוֹן כַּפָּי, וַאֲסוֹבְבָה אֶת־מִזְבַּחֲךָ יְהֹוָה:" },
           { he: "הוֹשַׁעֲנָא. הוֹשַׁעֲנָא:", tight: true },
         ],
+        link: {
+          corpus: "moadim",
+          slug: "hochanot",
+          label: R("Lire les Hochanot du jour", "Read today's Hoshanot", "להושענות של היום"),
+        },
       },
       // À 'Hol haMoed de même, le Titkabal entier : la source ne fait
       // exception que pour 'Hanouka. Deux blocs plutôt qu'une condition à
       // deux clés, les deux jours s'excluant (voir
-      // docs/compatibilite-textes.md).
-      kaddishTitkabal("RH.Hallel", { seg: 26, when: "hol-hamoed" }),
+      // docs/compatibilite-textes.md). C'est ici que ramène la fin des
+      // Hochanot : le bloc porte le repère que leur renvoi nomme.
+      {
+        ...kaddishTitkabal("RH.Hallel", { seg: 26, when: "hol-hamoed" }),
+        anchor: "apres-hochanot",
+      },
       // À 'Hanouka la source ne veut qu'un demi-Kaddich : la lecture de la
       // Torah vient juste après, et le Titkabal attendra Ouva letsion.
       // À Roch Hodech Tévet, qui tombe dans 'Hanouka, c'est l'ordre de Roch

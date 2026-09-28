@@ -179,11 +179,19 @@ export function buildBlock(spec, segs) {
     const halakha = rubricOf(spec, segs, "halakha");
     if (halakha) block.halakha = halakha;
   }
+  // La condition du bloc : les Hochanot d'un jour ne se lisent que ce jour-là
+  // (voir `days` dans writeRecipes).
+  if (spec.when) block.when = spec.when;
+  if (spec.unless) block.unless = spec.unless;
   if (spec.variants) block.variants = true;
   if (spec.plain) block.plain = true;
   // Les brahot du loulav portent le cadran des six côtés à leur titre.
   if (spec.naanouim) block.naanouim = true;
-  block.lines = spec.lines.map((line) => buildLine(line, segs));
+  // Le renvoi vers le texte où la prière continue (voir TextLink dans
+  // textService) ; un bloc peut n'avoir que lui.
+  if (spec.link) block.link = spec.link;
+  block.lines = (spec.lines ?? []).map((line) => buildLine(line, segs));
+  if (block.lines.length === 0 && !block.link) throw new Error(`Bloc vide : ${spec.label ?? "?"}`);
   return block;
 }
 
@@ -196,7 +204,9 @@ export function writeRecipes(recipes, text, outDir) {
   for (const recipe of recipes) {
     const segs = recipe.src(text);
     const blocks = recipe.blocks.map((spec) => buildBlock(spec, segs));
-    const out = { title: recipe.title, blocks };
+    // Un texte à jours (les Hochanot) nomme ses jours : le lecteur ouvre celui
+    // du calendrier et offre les autres (voir TextDay dans textService).
+    const out = { title: recipe.title, ...(recipe.days ? { days: recipe.days } : {}), blocks };
     writeFileSync(resolve(outDir, `${recipe.file}.json`), JSON.stringify(out, null, 2) + "\n");
     const lineCount = blocks.reduce((sum, b) => sum + b.lines.length, 0);
     console.log(`  ${recipe.file}.json : ${blocks.length} blocs, ${lineCount} paragraphes`);

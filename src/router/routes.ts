@@ -214,6 +214,12 @@ export default [
     path: "/bibliotheque/brahot/nerot-hanouka",
     redirect: "/bibliotheque/moadim/nerot-hanouka",
   },
+  // Les Hochanot avaient une page par jour, et le Chabbat la sienne : elles
+  // tiennent désormais en un livre, qui s'ouvre sur le jour.
+  {
+    path: "/bibliotheque/moadim/hochanot-:jour(yom-richon|yom-cheni|yom-chelichi|yom-revii|yom-hamichi|yom-chichi|hochana-rabba|chabbat)",
+    redirect: "/bibliotheque/moadim/hochanot",
+  },
   // L'ancienne page « Hors ligne » a été fusionnée dans la bibliothèque
   // (boutons de téléchargement sur chaque carte + « Tout télécharger »).
   {

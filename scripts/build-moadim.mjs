@@ -319,16 +319,20 @@ const leilSouccot = {
 };
 
 /**
- * Les Hochanot : une page par jour de Souccot, puis Hochana Rabba et le
- * Chabbat. Aucune source numérique du rite ne les porte ; elles sont
- * transcrites du sidour imprimé, page à page, et relues contre les photos,
- * dans un module par jour (scripts/lib/hochanot). La recette ne fait que les
- * ordonner.
+ * Les Hochanot : un seul livre, qui s'ouvre sur le jour. Aucune source
+ * numérique du rite ne les porte ; elles sont transcrites du sidour imprimé,
+ * page à page, et relues contre les photos, dans un module par jour
+ * (scripts/lib/hochanot). La recette ne fait que les ordonner.
  *
- * Chaque jour a sa page plutôt qu'un seul texte à sept conditions : le livre
- * se lit n'importe quel jour, et c'est celle du jour qu'on ouvre, à la
- * synagogue, le loulav en main. C'est aussi pourquoi les dinim que le sidour
- * imprime une fois, en tête du premier jour, ouvrent chaque page.
+ * Les suites des six jours, de Hochana Rabba et du Chabbat vivent l'une après
+ * l'autre dans le même fichier, chacune sous la clé de son jour (`souccot-1`
+ * à `souccot-6`, `hoshana-rabba`, `chabbat-souccot`) ; le fichier nomme ces
+ * jours (`days`), et le lecteur n'en montre qu'un : celui du calendrier, ou
+ * celui qu'on choisit (voir TextDay dans textService). Cha'harit y renvoie
+ * après le Hallel, et leur fin ramène à Cha'harit, au Kaddich Titkabal.
+ *
+ * Les dinim que le sidour imprime une fois, en tête du premier jour, ouvrent
+ * chaque jour : on lit celui qu'il est, pas le premier.
  *
  * Hochana Rabba tient en trois modules, coupés aux pages du sidour : une
  * hakafa commencée dans l'un s'achève dans le suivant, sous le même titre
@@ -368,38 +372,136 @@ function avecDinim([premier, ...reste]) {
   return [{ ...premier, halakha: [...DINIM_HOCHANOT, ...propres] }, ...reste];
 }
 
-const HOCHANOT = [
-  ["hochanot-yom-richon", "הושענות ליום ראשון (Hochanot Yom Richon)", [JOUR_1]],
-  ["hochanot-yom-cheni", "הושענות ליום שני (Hochanot Yom Cheni)", [JOUR_2]],
-  ["hochanot-yom-chelichi", "הושענות ליום שלישי (Hochanot Yom Chelichi)", [JOUR_3]],
-  ["hochanot-yom-revii", "הושענות ליום רביעי (Hochanot Yom Revi'i)", [JOUR_4]],
-  ["hochanot-yom-hamichi", "הושענות ליום חמישי (Hochanot Yom 'Hamichi)", [JOUR_5]],
-  ["hochanot-yom-chichi", "הושענות ליום ששי (Hochanot Yom Chichi)", [JOUR_6]],
-  [
-    "hochanot-hochana-rabba",
-    "הושענות להושענא רבא (Hochanot Hochana Rabba)",
-    [HOCHANA_RABBA_1, HOCHANA_RABBA_2, HOCHANA_RABBA_3],
-  ],
-].map(([file, title, modules]) => ({
-  file,
-  title,
-  src: () => [],
-  blocks: avecDinim(raccorder(modules.flatMap((module) => module.blocks))),
-}));
+const R = (fr, en, he) => ({ fr, en, he });
 
 /**
- * Les Hochanot du Chabbat : on ne les dit pas selon l'usage du sidour, qui
- * les imprime pour celui de Tunis. Leur première halakha le dit ; les dinim
- * des autres jours n'y ont rien à faire.
+ * Les jours du livre, dans l'ordre où le lecteur les propose, chacun avec ses
+ * modules, la page qu'il avait avant d'entrer dans le livre (voir plus bas)
+ * et ses dinim.
+ *
+ * Le Chabbat de Souccot est aussi l'un des six premiers jours : c'est lui qui
+ * l'emporte (`unless`), le livre s'ouvrant ce jour-là sur les Hochanot du
+ * Chabbat. Leur première halakha dit qu'on ne les dit pas selon l'usage du
+ * sidour, qui les imprime pour celui de Tunis ; les dinim des autres jours
+ * n'y ont rien à faire.
  */
-const hochanotChabbat = {
-  file: "hochanot-chabbat",
-  title: "הושענות ליום שבת (Hochanot Chabbat)",
-  src: () => [],
-  blocks: CHABBAT.blocks,
+const JOURS = [
+  {
+    when: "souccot-1",
+    unless: "chabbat-souccot",
+    label: R("1er jour", "Day 1", "יום ראשון"),
+    page: ["hochanot-yom-richon", "הושענות ליום ראשון (Hochanot Yom Richon)"],
+    modules: [JOUR_1],
+  },
+  {
+    when: "souccot-2",
+    unless: "chabbat-souccot",
+    label: R("2e jour", "Day 2", "יום שני"),
+    page: ["hochanot-yom-cheni", "הושענות ליום שני (Hochanot Yom Cheni)"],
+    modules: [JOUR_2],
+  },
+  {
+    when: "souccot-3",
+    unless: "chabbat-souccot",
+    label: R("3e jour", "Day 3", "יום שלישי"),
+    page: ["hochanot-yom-chelichi", "הושענות ליום שלישי (Hochanot Yom Chelichi)"],
+    modules: [JOUR_3],
+  },
+  {
+    when: "souccot-4",
+    unless: "chabbat-souccot",
+    label: R("4e jour", "Day 4", "יום רביעי"),
+    page: ["hochanot-yom-revii", "הושענות ליום רביעי (Hochanot Yom Revi'i)"],
+    modules: [JOUR_4],
+  },
+  {
+    when: "souccot-5",
+    unless: "chabbat-souccot",
+    label: R("5e jour", "Day 5", "יום חמישי"),
+    page: ["hochanot-yom-hamichi", "הושענות ליום חמישי (Hochanot Yom 'Hamichi)"],
+    modules: [JOUR_5],
+  },
+  {
+    when: "souccot-6",
+    unless: "chabbat-souccot",
+    label: R("6e jour", "Day 6", "יום ששי"),
+    page: ["hochanot-yom-chichi", "הושענות ליום ששי (Hochanot Yom Chichi)"],
+    modules: [JOUR_6],
+  },
+  {
+    when: "hoshana-rabba",
+    label: R("Hochana Rabba", "Hoshana Rabbah", "הושענא רבה"),
+    page: ["hochanot-hochana-rabba", "הושענות להושענא רבא (Hochanot Hochana Rabba)"],
+    modules: [HOCHANA_RABBA_1, HOCHANA_RABBA_2, HOCHANA_RABBA_3],
+  },
+  {
+    when: "chabbat-souccot",
+    label: R("Chabbat", "Shabbat", "שבת"),
+    page: ["hochanot-chabbat", "הושענות ליום שבת (Hochanot Chabbat)"],
+    modules: [CHABBAT],
+    sansDinim: true,
+  },
+];
+
+/** Les blocs d'un jour : ses modules recousus, ouverts par les dinim. */
+function blocsDuJour(jour) {
+  const blocs = raccorder(jour.modules.flatMap((module) => module.blocks));
+  return jour.sansDinim ? blocs : avecDinim(blocs);
+}
+
+/**
+ * La fin des Hochanot ramène à Cha'harit, au Kaddich Titkabal qui les suit
+ * (son bloc porte le repère « apres-hochanot », voir build-sidour.mjs). Les
+ * jours où Cha'harit les dit, seulement : le sidour n'est pas l'office de
+ * Yom Tov, et le Chabbat on ne les dit pas. La clé est celle du bloc qui y
+ * renvoie depuis Cha'harit ; n'étant pas celle d'un jour du livre, elle suit
+ * le calendrier quel que soit le jour qu'on lit.
+ */
+const RETOUR_CHAHARIT = {
+  when: "loulav",
+  plain: true,
+  link: {
+    corpus: "sidour",
+    slug: "chaharit",
+    anchor: "apres-hochanot",
+    label: R(
+      "Revenir à Cha'harit : le Kaddich Titkabal",
+      "Back to Shacharit: Kaddish Titkabbal",
+      "חזרה לשחרית: קדיש תתקבל",
+    ),
+  },
 };
 
-const RECIPES = [ataratNedarim, netilatLoulav, leilSouccot, ...HOCHANOT, hochanotChabbat];
+const hochanot = {
+  file: "hochanot",
+  title: "הושענות (Hochanot)",
+  src: () => [],
+  days: JOURS.map(({ when, unless, label }) => ({ when, ...(unless ? { unless } : {}), label })),
+  blocks: [
+    // `plain` : le texte du jour n'est pas un ajout à signaler, il est tout le
+    // livre, et se lit à la couleur du texte.
+    ...JOURS.flatMap((jour) =>
+      blocsDuJour(jour).map((bloc) => ({ ...bloc, when: jour.when, plain: true })),
+    ),
+    RETOUR_CHAHARIT,
+  ],
+};
+
+/**
+ * Les pages d'un jour, telles qu'elles étaient avant le livre unique. Le
+ * catalogue ne les porte plus, mais celui des versions publiées de l'app, si :
+ * elles lisent ces fichiers sur le site (voir docs/compatibilite-textes.md),
+ * et les retirer leur ôterait les Hochanot. Elles s'écrivent donc encore, des
+ * mêmes modules, jusqu'à ce que la flotte ait rattrapé.
+ */
+const PAGES_DU_JOUR = JOURS.map((jour) => ({
+  file: jour.page[0],
+  title: jour.page[1],
+  src: () => [],
+  blocks: blocsDuJour(jour),
+}));
+
+const RECIPES = [ataratNedarim, netilatLoulav, leilSouccot, hochanot, ...PAGES_DU_JOUR];
 
 console.log("Téléchargement du Mahzor Roch Hachana et du Siddur Edot HaMizrach (export Sefaria)…");
 const [mahzor, siddur] = await Promise.all([

@@ -118,6 +118,13 @@ describe("didascalies des textes de tefila", () => {
     const offenders: string[] = [];
     for (const name of fichiers) {
       const contenu = JSON.parse(readFileSync(resolve(DIR, name), "utf-8"));
+      // Les jours d'un texte à jours (les Hochanot, voir TextDay) : le lecteur
+      // lit celui qu'il choisit, pas seulement celui du calendrier. La note
+      // qui ouvre les Hochanot du Chabbat (on ne les dit pas, sauf à Tunis)
+      // se lit donc aussi un autre jour, au moment où elle compte.
+      const jours = new Set(
+        ((contenu as { days?: { when: string }[] }).days ?? []).map((day) => day.when),
+      );
       const walk = (node: unknown): void => {
         if (Array.isArray(node)) {
           for (const item of node) walk(item);
@@ -125,7 +132,7 @@ describe("didascalies des textes de tefila", () => {
         }
         if (!node || typeof node !== "object") return;
         const bloc = node as Node;
-        if (typeof bloc.when === "string") {
+        if (typeof bloc.when === "string" && !jours.has(bloc.when)) {
           for (const texte of consignes({ ...bloc, blocks: undefined })) {
             const vise = OCCASIONS.some((jour) => texte.includes(jour));
             if (vise && OMISSION.test(texte)) {

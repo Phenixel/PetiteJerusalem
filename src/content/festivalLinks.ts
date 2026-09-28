@@ -69,12 +69,12 @@ const LINKS: Record<string, FestivalLink> = {
     "The seder of the first evening in the sukkah",
     "סדר ליל סוכות בסוכה",
   ]),
-  hochanot: library("hochanot", "/bibliotheque/moadim/hochanot-yom-richon", [
+  hochanot: library("hochanot", "/bibliotheque/moadim/hochanot", [
     "Les Hochanot, jour par jour",
     "The Hoshanot, day by day",
     "ההושענות, יום אחר יום",
   ]),
-  hochanotRabba: library("hochanotRabba", "/bibliotheque/moadim/hochanot-hochana-rabba", [
+  hochanotRabba: library("hochanotRabba", "/bibliotheque/moadim/hochanot", [
     "Les Hochanot de Hochaana Rabba, et ses sept hakafot",
     "The Hoshanot of Hoshana Rabbah, and its seven hakafot",
     "הושענות הושענא רבה ושבע ההקפות",

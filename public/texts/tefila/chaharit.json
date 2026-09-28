@@ -2540,9 +2540,18 @@
       "when": "loulav",
       "plain": true,
       "halakha": {
-        "fr": "On sort un séfer Torah et on le pose sur la téva. Loulav en main, on en fait le tour en disant les Hochanot du jour : une fois chaque jour, sept fois à Hochana Rabba, et deux fois le dimanche qui suit un Chabbat, où l'on n'a pas fait le tour. Leur texte est dans le livre Moadim, sous Souccot, une page par jour.",
-        "en": "A Torah scroll is taken out and placed on the teva. Lulav in hand, one circles it while saying the Hoshanot of the day: once each day, seven times on Hoshana Rabba, and twice on the Sunday after a Shabbat, when no circuit was made. Their text is in the Moadim book, under Sukkot, one page for each day.",
+        "fr": "On sort un séfer Torah et on le pose sur la téva. Loulav en main, on en fait le tour en disant les Hochanot du jour : une fois chaque jour, sept fois à Hochana Rabba, et deux fois le dimanche qui suit un Chabbat, où l'on n'a pas fait le tour. Leur texte est dans le livre Moadim, sous Souccot : il s'ouvre sur le jour, et ramène ici à la fin.",
+        "en": "A Torah scroll is taken out and placed on the teva. Lulav in hand, one circles it while saying the Hoshanot of the day: once each day, seven times on Hoshana Rabba, and twice on the Sunday after a Shabbat, when no circuit was made. Their text is in the Moadim book, under Sukkot: it opens on the day, and leads back here at the end.",
         "he": "מוציאים ספר תורה ומניחים אותו על התיבה, ומקיפים את התיבה עם הלולב ואומרים ההושענות של אותו היום: פעם אחת בכל יום, שבע פעמים בהושענא רבה, ושתי הקפות ביום ראשון שלאחר השבת. ההושענות בספר המועדים, בסוכות."
+      },
+      "link": {
+        "corpus": "moadim",
+        "slug": "hochanot",
+        "label": {
+          "fr": "Lire les Hochanot du jour",
+          "en": "Read today's Hoshanot",
+          "he": "להושענות של היום"
+        }
       },
       "lines": [
         "אֶרְחַץ בְּנִקָּיוֹן כַּפָּי, וַאֲסוֹבְבָה אֶת־מִזְבַּחֲךָ יְהֹוָה:",
@@ -2561,6 +2570,7 @@
       },
       "when": "hol-hamoed",
       "fold": "hazan",
+      "anchor": "apres-hochanot",
       "lines": [
         {
           "he": [

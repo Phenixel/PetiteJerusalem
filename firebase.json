@@ -108,6 +108,11 @@
         "source": "/bibliotheque/brahot/nerot-hanouka",
         "type": 301,
         "destination": "/bibliotheque/moadim/nerot-hanouka"
+      },
+      {
+        "source": "/bibliotheque/moadim/hochanot-*",
+        "type": 301,
+        "destination": "/bibliotheque/moadim/hochanot"
       }
     ],
     "rewrites": [

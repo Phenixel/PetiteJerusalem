@@ -30,6 +30,7 @@ import {
 } from "../../composables/useTefilinMirror";
 import { openNaanouimCompass } from "../../composables/useNaanouimCompass";
 import { halakhotHidden } from "../../composables/useHalakhot";
+import { entryByCorpusSlug, hubPath } from "../../content/etudeTexts";
 import TefilaZman from "./TefilaZman.vue";
 
 /**
@@ -353,6 +354,18 @@ function chosenAmong(options: TextBlock[]): TextBlock {
   );
 }
 
+/**
+ * L'adresse d'un renvoi (voir TextLink), ou rien quand le texte visé n'est pas
+ * au catalogue de cette version : un fichier plus récent que le code peut
+ * nommer un texte qu'elle ne connaît pas encore.
+ */
+function linkTarget(block: TextBlock): string | null {
+  if (!block.link) return null;
+  const entry = entryByCorpusSlug(block.link.corpus, block.link.slug);
+  if (!entry) return null;
+  return block.link.anchor ? `${hubPath(entry)}#${block.link.anchor}` : hubPath(entry);
+}
+
 /** Les paragraphes d'un bloc qui se disent aujourd'hui, avec leur ligne. */
 const paragraphsOf = (block: TextBlock): ParagraphEntry[] =>
   (block.paragraphs ?? plainParagraphs(block))
@@ -397,8 +410,11 @@ const sections = computed<SectionEntry[]>(() => {
     // Un marqueur resté vide (la Torah de la semaine qui n'a pas pu se
     // charger) ou un bloc dont aucune ligne ne se dit aujourd'hui (les fêtes
     // du Mé'ein chaloch) ne laisse pas un titre orphelin dans le fil. Un
-    // choix reste, même vide : « pas de haftara » se choisit aussi.
-    if (!block.zman && options.length === 0 && paragraphs.length === 0) continue;
+    // choix reste, même vide : « pas de haftara » se choisit aussi, et un
+    // renvoi seul mène quelque part.
+    if (!block.zman && options.length === 0 && paragraphs.length === 0 && !linkTarget(text)) {
+      continue;
+    }
     out.push({ block, text, options, paragraphs, index: out.length });
   }
   return out;
@@ -628,6 +644,13 @@ const phoneticOf = computed(() => {
               </div>
             </div>
           </template>
+          <!-- Le renvoi vers le texte où la prière continue (les Hochanot du
+               jour depuis Cha'harit, le retour à Cha'harit à leur fin) : une
+               pastille qui porte son nom, sous le texte qu'elle prolonge. -->
+          <RouterLink v-if="linkTarget(text)" :to="linkTarget(text)!" class="reading-link">
+            <AppIcon name="book-open" :size="15" class="flex-shrink-0" />
+            {{ say(text.link!.label) }}
+          </RouterLink>
         </div>
       </CollapseTransition>
     </section>
@@ -825,6 +848,34 @@ const phoneticOf = computed(() => {
 }
 
 .title-action:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Le renvoi vers un autre texte : la pastille des commandes de titre, posée
+   sous le texte du bloc. C'est une commande de l'interface, sa taille ne suit
+   pas celle du texte lu. */
+.reading-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1.25rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-primary);
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  transition: background-color 0.2s ease;
+}
+
+.reading-link:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
+}
+
+.reading-link:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }

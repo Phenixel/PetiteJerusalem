@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import { HDate } from "@hebcal/core";
 import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
 import type { RouteLocationRaw } from "vue-router";
@@ -13,12 +13,14 @@ import type {
 } from "../../models/models";
 import type { User } from "../../services/authService";
 import {
+  calendarDay,
   loadText,
   MissingTextFileError,
+  occasionsForDay,
   placeLabel as describePlace,
   saidOn,
 } from "../../services/textService";
-import type { TextBlock, TextContent, TextSection } from "../../services/textService";
+import type { TextBlock, TextContent, TextDay, TextSection } from "../../services/textService";
 import {
   activeOccasions,
   getWeekdayTorahParasha,
@@ -60,6 +62,7 @@ import {
 } from "../../content/etudeTexts";
 import { encadrementOf } from "../../services/encadrementService";
 import LiturgyText from "./LiturgyText.vue";
+import TefilaDays from "./TefilaDays.vue";
 import ReadingEncadrement from "../../components/ReadingEncadrement.vue";
 import SlihotHours from "./SlihotHours.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
@@ -244,7 +247,7 @@ const occasionsDay = computed(() => new HDate(occasionsDayAbs.value));
 // le calendrier ne peut pas savoir, une brit mila ou un marié dans
 // l'assemblée. Le réglage ne vaut que le jour où il est posé ; c'est l'heure
 // du rendu qui en décide, comme des occasions elles-mêmes.
-const occasions = computed(() => {
+const calendarOccasions = computed(() => {
   const today = activeOccasions(occasionsDay.value, zmanimPlace.value.tzid === "Asia/Jerusalem");
   const jour = isLiturgyText.value && isSansTahanoun(now.value) ? withoutTachanun(today) : today;
   // Hatsot halayla ne se lit pas sur le calendrier : c'est une heure, elle
@@ -254,6 +257,27 @@ const occasions = computed(() => {
   if (!isLiturgyText.value || !pastChatzotNight(zmanimPlace.value, now.value)) return jour;
   return new Set([...jour, "apres-hatsot"]);
 });
+
+// Un texte à jours (les Hochanot, une suite par jour de Souccot) s'ouvre sur
+// le jour du calendrier, et sur le premier hors de la fête ; le lecteur peut
+// en lire un autre (voir TefilaDays). Le choix ne vaut que pour le texte
+// ouvert : le rouvrir, c'est retrouver le jour qu'il est.
+const textDays = computed<TextDay[]>(() => currentSection.value?.days ?? []);
+const pickedDay = ref<string | null>(null);
+watch(textId, () => (pickedDay.value = null));
+const todayDay = computed(() => calendarDay(textDays.value, calendarOccasions.value));
+const shownDay = computed<TextDay | null>(
+  () =>
+    textDays.value.find((day) => day.when === pickedDay.value) ??
+    todayDay.value ??
+    textDays.value[0] ??
+    null,
+);
+const occasions = computed(() =>
+  shownDay.value
+    ? occasionsForDay(calendarOccasions.value, textDays.value, shownDay.value)
+    : calendarOccasions.value,
+);
 const visibleBlocks = computed(() =>
   verseBlocks.value.filter((b) => saidOn(b.when, occasions.value, b.unless)),
 );
@@ -755,6 +779,19 @@ watch([content, sectionParam, () => route.query.verset], ([loaded, , verset]) =>
   if (!loaded || verset === undefined) return;
   const line = Number(verset);
   if (Number.isInteger(line) && line >= 0) scrollToLine(line);
+});
+
+// Arrivée par un renvoi (#repère, voir TextLink) : la fin des Hochanot ramène
+// à Cha'harit là où l'on en était, au Kaddich Titkabal. Le passage n'existe
+// qu'une fois le texte chargé et rendu ; son titre vient se poser sous
+// l'en-tête, comme depuis le menu de lecture.
+watch([content, () => route.hash], async ([loaded, hash]) => {
+  if (!loaded || !hash) return;
+  await nextTick();
+  const el = document.querySelector(`[data-block-anchor="${CSS.escape(hash.slice(1))}"]`);
+  if (!(el instanceof HTMLElement)) return;
+  markProgrammaticScroll();
+  window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - 84 });
 });
 
 // --- Suivi de la position (sauvegarde silencieuse au scroll) ---
@@ -1845,6 +1882,16 @@ watch(textId, (_, previousTextId) => {
           :blocks="encadrement.before"
           :title="t('encadrement.before')"
           :show-phonetic="showPhonetic"
+        />
+
+        <!-- Un texte à jours (les Hochanot) : celui qu'on lit, les autres à
+             un appui. -->
+        <TefilaDays
+          v-if="isLiturgyText && shownDay"
+          :days="textDays"
+          :shown="shownDay.when"
+          :today="todayDay?.when ?? null"
+          @pick="pickedDay = $event"
         />
 
         <!-- Talmud: continuous text with a marker at each daf change -->
