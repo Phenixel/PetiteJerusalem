@@ -13,14 +13,15 @@ la minute ; l'app, elle, attend la revue d'Apple et de Google, puis que
 l'appareil veuille bien se mettre à jour. Une version installée peut rester
 des mois en arrière (c'est la raison d'être de `appUpdateService`).
 
-Pendant ce temps, l'app native ne lit pas les textes de son bundle : elle
-n'embarque que le Sidour, et encore, pour qu'on puisse prier
-sans réseau (`src/datas/bundledTexts.json`) ; tout le reste de
-`texts/tefila/` est retiré par `scripts/prune-native-bundle.mjs`. Elle les
-demande au site (`offlineTextStore.fetchTextResponse`), avec une empreinte qui
-garantit qu'ils sont bien les derniers publiés, et ne lit la copie embarquée
-que quand le site ne répond pas. Résultat, et c'est voulu pour les
-corrections de contenu :
+Pendant ce temps, l'app native ne se contente pas des textes de son bundle.
+Elle n'embarque que le Sidour (`src/datas/bundledTexts.json`), pour qu'on
+puisse prier sans réseau dès l'installation ; tout le reste de
+`texts/tefila/` est retiré par `scripts/prune-native-bundle.mjs` et se
+télécharge. Et même le Sidour embarqué, elle le compare au site
+(`offlineTextStore.fetchTextResponse`) : dès qu'il en sert une autre version,
+avec une empreinte qui garantit qu'elle est bien la dernière publiée, l'app
+la télécharge et la lit ensuite à la place de la sienne. Résultat, et c'est
+voulu pour les corrections de contenu :
 
 > le fichier vient d'aujourd'hui, le code qui le lit vient de la version
 > installée.

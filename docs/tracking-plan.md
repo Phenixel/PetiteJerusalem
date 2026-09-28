@@ -85,7 +85,7 @@ l'événement ne disait pas lequel rapporte.
 ## Introduction de première ouverture
 
 L'introduction de l'app native (`OnboardingFlow.vue`). Elle est passée de six
-pages à quatre (cinq avec le consentement) en septembre 2026, et « Passer »
+pages à cinq, consentement compris, en septembre 2026, et « Passer »
 n'est plus proposé que sur la dernière, celle des gestes : sur les 90
 jours d'avant, 69 des 148 fins étaient un « Passer », dont 55 dès la première
 ou la deuxième page après le consentement. `app_version` sépare les deux

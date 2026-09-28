@@ -198,9 +198,10 @@ les canaux de preview.
 
 L'introduction de première ouverture (`OnboardingFlow.vue`) pose quelques
 réglages, dit ce que l'app contient, puis montre les gestes à qui veut les
-voir. Elle comptait six pages, avec des captures animées dès la deuxième :
-près de la moitié des gens la passaient, presque tous dès la première page
-après le consentement. Elle en compte cinq, chacune courte :
+voir. Elle comptait six pages, consentement compris, avec des captures
+animées dès la troisième : près de la moitié des gens la passaient, presque
+tous dès la première page après le consentement. Elle en compte cinq, chacune
+courte :
 
 - **le consentement**, en trois lignes, parce qu'il demande un choix ;
 - **les réglages** : la langue, clair ou sombre, le thème, rien de plus

@@ -18,10 +18,10 @@ import OnboardingGesturesStep from "./OnboardingGesturesStep.vue";
  * L'introduction de première ouverture : quelques réglages, l'essentiel en
  * trois lignes, puis, pour qui le veut, les gestes de la lecture.
  *
- * Elle comptait six pages, avec des captures animées dès la deuxième, et près
- * de la moitié des gens la passaient, presque tous dès la première page après
- * le consentement. Elle en compte maintenant quatre, cinq avec le
- * consentement :
+ * Elle comptait six pages avec le consentement, des captures animées dès la
+ * troisième, et près de la moitié des gens la passaient, presque tous dès la
+ * première page après le consentement. Elle en compte maintenant cinq avec le
+ * consentement (quatre sans) :
  * - consent : la mesure d'audience, qui demande un choix explicite ;
  * - settings : langue, clair ou sombre, thème ;
  * - offline : les textes à emporter, le seul réglage qui fasse quelque chose ;

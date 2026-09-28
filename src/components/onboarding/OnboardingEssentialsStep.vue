@@ -3,15 +3,16 @@ import { useI18n } from "vue-i18n";
 import AppIcon from "../icons/AppIcon.vue";
 
 /**
- * La dernière page : ce que contient l'application, en trois lignes, et
- * rien sur la façon de s'en servir. Les gestes se découvrent sur la page où
- * ils servent, par une astuce (voir docs/design.md) : les trois pages d'avant
- * (lecture du jour, bibliothèque, horaires), chacune avec ses captures,
- * étaient celles où l'on passait l'introduction.
+ * L'essentiel : ce que contient l'application, en trois lignes, et rien sur
+ * la façon de s'en servir (les gestes ont la page suivante, qu'on peut
+ * passer). Les trois pages qu'elle remplace (lecture du jour, bibliothèque,
+ * horaires), chacune avec ses captures, étaient celles où l'on passait
+ * l'introduction.
  *
  * La lecture du jour, la fonction la moins devinée, a son bouton : il
- * termine l'introduction en y conduisant (voir OnboardingFlow). Secondaire,
- * pour laisser « Terminer » seul en couleur pleine.
+ * termine l'introduction en y conduisant, sans passer par les gestes (voir
+ * OnboardingFlow). Secondaire, pour laisser « Continuer » seul en couleur
+ * pleine.
  */
 
 const emit = defineEmits<{ (e: "compose"): void }>();

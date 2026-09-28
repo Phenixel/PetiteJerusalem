@@ -612,27 +612,31 @@ onUnmounted(() => {
          voir avec ce qu'on cherche, et elle repousserait les résultats sous le
          clavier. -->
     <div
-      v-if="isNativeApp && !searching && tabBooks.length > 0"
+      v-if="isNativeApp && !searching && (tabBooks.length > 0 || tabDownloadedBooks.length > 0)"
       class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-8 animate-[fadeIn_0.5s_ease]"
     >
       <!-- Télécharger et supprimer vont ensemble : le second est une petite
            icône posée contre le premier. Supprimer reste l'exception, il n'a
            pas à peser autant à l'écran, la modale, elle, explique tout. -->
       <span class="flex items-center gap-1">
-        <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
-          <AppIcon
-            v-if="downloadingPaths.size > 0"
-            name="spinner"
-            :size="14"
-            class="animate-spin"
-          />
-          <AppIcon v-else name="download" :size="14" />
-          {{ t("downloads.downloadAll") }}
-        </button>
-        <p v-else class="flex items-center gap-1.5 text-sm text-primary">
-          <AppIcon name="circle-check" :size="14" />
-          {{ t("downloads.allDownloaded") }}
-        </p>
+        <!-- Rien à télécharger (Tehilim, Sidour) : seule reste la corbeille,
+             pour une copie téléchargée par une version d'avant. -->
+        <template v-if="tabBooks.length > 0">
+          <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
+            <AppIcon
+              v-if="downloadingPaths.size > 0"
+              name="spinner"
+              :size="14"
+              class="animate-spin"
+            />
+            <AppIcon v-else name="download" :size="14" />
+            {{ t("downloads.downloadAll") }}
+          </button>
+          <p v-else class="flex items-center gap-1.5 text-sm text-primary">
+            <AppIcon name="circle-check" :size="14" />
+            {{ t("downloads.allDownloaded") }}
+          </p>
+        </template>
         <button
           v-if="tabDownloadedBooks.length > 0"
           class="icon-btn hover:text-red-600 dark:hover:text-red-400"

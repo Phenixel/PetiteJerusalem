@@ -9,12 +9,21 @@ import bundledTexts from "../datas/bundledTexts.json";
  * réseau dès l'installation : les Tehilim, et le Sidour tout entier.
  *
  * Les deux familles ne se lisent pas de la même façon. Les Tehilim se lisent
- * dans le binaire. Les tefilot se demandent d'abord au site, qui fait foi (une
- * correction ne doit pas attendre une version de l'app), et la copie embarquée
- * ne sert que quand il ne répond pas.
+ * dans le binaire, qui fait foi. Le Sidour s'ouvre aussi dans le binaire, sans
+ * rien attendre du réseau, mais l'app demande ensuite au site s'il en sert une
+ * autre version (une correction de tefila n'attend pas une version de l'app) :
+ * elle la télécharge, et c'est elle qui s'ouvre la fois suivante.
  */
 
-const { httpGet } = vi.hoisted(() => ({ httpGet: vi.fn() }));
+const { httpGet, transfers } = vi.hoisted(() => ({
+  httpGet: vi.fn(),
+  transfers: [] as string[],
+}));
+
+/** Le disque de l'appareil, par adresse de fichier. */
+const disque: Record<string, string> = {};
+/** Ce que le téléchargement écrit : le texte du site, ou la page d'un portail captif. */
+let recu = "";
 
 vi.mock("@capacitor/preferences", () => ({
   Preferences: {
@@ -30,8 +39,24 @@ vi.mock("@capacitor/core", () => ({
   },
   CapacitorHttp: { get: httpGet },
 }));
-vi.mock("@capacitor/filesystem", () => ({ Directory: { Data: "DATA" }, Filesystem: {} }));
-vi.mock("@capacitor/file-transfer", () => ({ FileTransfer: { downloadFile: vi.fn() } }));
+vi.mock("@capacitor/filesystem", () => ({
+  Directory: { Data: "DATA" },
+  Filesystem: {
+    mkdir: () => Promise.resolve(),
+    getUri: ({ path }: { path: string }) => Promise.resolve({ uri: `file:///data/${path}` }),
+    stat: ({ path }: { path: string }) =>
+      Promise.resolve({ size: (disque[`file:///data/${path}`] ?? "").length }),
+  },
+}));
+vi.mock("@capacitor/file-transfer", () => ({
+  FileTransfer: {
+    downloadFile: ({ url, path }: { url: string; path: string }) => {
+      transfers.push(url);
+      disque[path] = recu;
+      return Promise.resolve();
+    },
+  },
+}));
 
 const CHAHARIT = "/texts/tefila/chaharit.json";
 const TEHILIM = "/texts/tehilim.json";
@@ -42,16 +67,41 @@ const embarques: Record<string, string> = {
   [TEHILIM]: "tehilim embarqués",
 };
 
-async function lire(path: string): Promise<string> {
+async function empreinte(contenu: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(contenu));
+  return [...new Uint8Array(digest)]
+    .map((octet) => octet.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 12);
+}
+
+/** Le site répond au manifeste avec ces empreintes. */
+function siteSert(files: Record<string, string>): void {
+  httpGet.mockImplementation(({ url }: { url: string }) =>
+    url.includes("/texts/manifest.json")
+      ? Promise.resolve({ status: 200, data: JSON.stringify({ files }) })
+      : Promise.reject(new Error(`inattendu : ${url}`)),
+  );
+}
+
+/** Un lancement de l'app : le service repart de zéro. */
+async function lancer() {
   vi.resetModules();
   const { fetchTextResponse } = await import("../services/offlineTextStore");
-  return (await fetchTextResponse(path)).text();
+  return (path: string) => fetchTextResponse(path).then((res) => res.text());
 }
+
+/** Laisse finir la vérification de fond. */
+const tacheDeFond = () => new Promise((resolve) => setTimeout(resolve, 20));
 
 beforeEach(() => {
   httpGet.mockReset();
+  transfers.length = 0;
+  for (const cle of Object.keys(disque)) delete disque[cle];
+  recu = "";
   vi.stubGlobal("fetch", (url: string) => {
-    const corps = embarques[String(url)];
+    const adresse = String(url);
+    const corps = adresse.startsWith("file://") ? disque[adresse] : embarques[adresse];
     return Promise.resolve(
       corps === undefined ? new Response("", { status: 404 }) : new Response(corps),
     );
@@ -61,32 +111,66 @@ beforeEach(() => {
 describe("textes embarqués dans l'app", () => {
   it("existent tous dans public/texts, d'où le build les copie", () => {
     const publicDir = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "public");
-    const manquants = [...bundledTexts.authoritative, ...bundledTexts.fallback].filter(
+    const manquants = [...bundledTexts.authoritative, ...bundledTexts.revalidated].filter(
       (path) => !existsSync(join(publicDir, path)),
     );
     expect(manquants).toEqual([]);
   });
 
   it("lit les Tehilim dans le binaire, sans rien demander au site", async () => {
+    const lire = await lancer();
     expect(await lire(TEHILIM)).toBe("tehilim embarqués");
+    await tacheDeFond();
     expect(httpGet).not.toHaveBeenCalled();
   });
 
-  it("lit Cha'harit sur le site quand il répond, avec des délais courts", async () => {
-    httpGet.mockResolvedValue({ status: 200, data: "chaharit du site" });
-    expect(await lire(CHAHARIT)).toBe("chaharit du site");
-    expect(httpGet).toHaveBeenCalledWith(
-      expect.objectContaining({ connectTimeout: 5_000, readTimeout: 5_000 }),
-    );
-  });
-
-  it("lit la copie embarquée de Cha'harit hors ligne", async () => {
-    httpGet.mockRejectedValue(new Error("hors ligne"));
+  it("ouvre Cha'harit dans le binaire sans attendre le site, même s'il ne répond jamais", async () => {
+    httpGet.mockReturnValue(new Promise(() => {}));
+    const lire = await lancer();
     expect(await lire(CHAHARIT)).toBe("chaharit embarqué");
   });
 
-  it("lit la copie embarquée de Cha'harit quand le site est en erreur", async () => {
-    httpGet.mockResolvedValue({ status: 503, data: "" });
+  it("ouvre Cha'harit hors ligne, sans erreur", async () => {
+    httpGet.mockRejectedValue(new Error("hors ligne"));
+    const lire = await lancer();
+    expect(await lire(CHAHARIT)).toBe("chaharit embarqué");
+    await tacheDeFond();
+    expect(transfers).toEqual([]);
+  });
+
+  it("ne télécharge rien quand le site sert la version embarquée", async () => {
+    siteSert({ [CHAHARIT]: await empreinte("chaharit embarqué") });
+    const lire = await lancer();
+    await lire(CHAHARIT);
+    await tacheDeFond();
+    expect(httpGet).toHaveBeenCalled();
+    expect(transfers).toEqual([]);
+  });
+
+  it("télécharge la version corrigée du site, qui s'ouvre la fois suivante", async () => {
+    const corrigee = await empreinte("chaharit corrigé");
+    siteSert({ [CHAHARIT]: corrigee });
+    recu = "chaharit corrigé";
+    const lire = await lancer();
+
+    // La lecture n'attend pas le site : la copie embarquée d'abord.
+    expect(await lire(CHAHARIT)).toBe("chaharit embarqué");
+    await vi.waitFor(() => expect(transfers).toHaveLength(1));
+    // L'empreinte dans l'adresse : aucun cache HTTP ne rend l'ancien fichier.
+    expect(transfers[0]).toContain(`h=${corrigee}`);
+
+    await tacheDeFond();
+    expect(await lire(CHAHARIT)).toBe("chaharit corrigé");
+  });
+
+  it("garde la copie embarquée quand le téléchargement rend autre chose (portail captif)", async () => {
+    siteSert({ [CHAHARIT]: await empreinte("chaharit corrigé") });
+    recu = "<html>Connectez-vous au Wi-Fi</html>";
+    const lire = await lancer();
+
+    await lire(CHAHARIT);
+    await vi.waitFor(() => expect(transfers).toHaveLength(1));
+    await tacheDeFond();
     expect(await lire(CHAHARIT)).toBe("chaharit embarqué");
   });
 });

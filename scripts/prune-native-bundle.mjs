@@ -33,7 +33,7 @@ const bundledTexts = JSON.parse(
 );
 /** "/texts/tefila/chaharit.json" → chemin sous `root`. */
 const KEPT_FILES = new Set(
-  [...bundledTexts.authoritative, ...bundledTexts.fallback].map((path) =>
+  [...bundledTexts.authoritative, ...bundledTexts.revalidated].map((path) =>
     join(root, path.replace(/^\//, "")),
   ),
 );
@@ -117,13 +117,14 @@ for (const file of PRUNED_FILES) {
 // dans texts/tefila) ; ses dossiers vides partent ensuite.
 for (const dir of PRUNED_DIRS) {
   if (!existsSync(dir)) continue;
-  const kept = allFiles(dir).filter((path) => KEPT_FILES.has(path));
+  const files = allFiles(dir);
+  const kept = files.filter((path) => KEPT_FILES.has(path));
   if (kept.length === 0) {
     rmSync(dir, { recursive: true });
     console.log(`prune-native-bundle: ${dir} retiré (téléchargeable à la demande dans l'app)`);
     continue;
   }
-  for (const path of allFiles(dir)) {
+  for (const path of files) {
     if (!KEPT_FILES.has(path)) rmSync(path);
   }
   console.log(

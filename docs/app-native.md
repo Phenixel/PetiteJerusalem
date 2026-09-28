@@ -124,11 +124,12 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
   `src/datas/bundledTexts.json` :
   - `authoritative` : `tehilim.json` (~370 Ko) et `talmud-chapters.json`
     (~40 Ko), lus dans le binaire, qui fait foi pour eux ;
-  - `fallback` : le Sidour, les trois offices et les quatre textes qui les
-    accompagnent (`tefila/`, ~1 Mo), demandés d'abord au
-    site, qui fait foi (une correction de tefila n'attend pas une version de
-    l'app), avec cinq secondes de délai ; la copie du binaire ne sert que
-    quand le site ne répond pas.
+  - `revalidated` : le Sidour, les trois offices et les quatre textes qui les
+    accompagnent (`tefila/`, ~1 Mo). La copie du binaire s'ouvre tout de
+    suite, sans rien attendre du réseau ; en fond, l'app demande au site s'il
+    en sert une autre version (une correction de tefila n'attend pas une
+    version de l'app) et la télécharge, vérifiée à l'empreinte : c'est elle
+    qui s'ouvre la fois suivante, et la synchronisation la tient à jour.
 
   Un livre embarqué n'a ni bouton « Télécharger » ni place dans « Tout
   télécharger ». Tests : `src/__tests__/bundledTexts.test.ts` (ordre de
@@ -140,9 +141,9 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
   web ; index dans `@capacitor/preferences` (`src/services/offlineTextStore.ts`
   et `offlineLibraryService.ts`).
 - `textService.loadText` passe par `fetchTextResponse` : copie téléchargée à
-  jour d'abord, puis copie embarquée (`authoritative`), puis réseau
-  (`https://petite-jerusalem.fr`), puis, le réseau en échec, copie embarquée
-  (`fallback`) ou copie téléchargée périmée.
+  jour d'abord, puis copie embarquée (et pour le Sidour, la vérification de
+  fond décrite plus haut), puis réseau (`https://petite-jerusalem.fr`), puis,
+  le réseau en échec, copie téléchargée périmée.
 
 Vérification : télécharger un livre, activer le mode avion, l'ouvrir.
 

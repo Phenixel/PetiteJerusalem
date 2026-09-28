@@ -29,7 +29,7 @@ const TALMUD_CHAPTERS_PATH = "/texts/talmud-chapters.json";
  * bundle par scripts/prune-native-bundle.mjs, qui lit la même liste
  * (`src/datas/bundledTexts.json`).
  */
-const BUNDLED_PATHS = new Set([...bundledTexts.authoritative, ...bundledTexts.fallback]);
+const BUNDLED_PATHS = new Set([...bundledTexts.authoritative, ...bundledTexts.revalidated]);
 
 export interface OfflineBook {
   /** Chemin web du fichier, clé unique du livre. */
@@ -110,13 +110,13 @@ export const offlineCorpora: OfflineCorpus[] = CORPUS_META.map((meta) => {
     books,
     // Un corpus est embarqué quand aucun de ses livres n'est à télécharger
     // (les Tehilim, dont l'unique fichier voyage avec l'app).
-    bundled: books.length > 0 && books.every((book) => BUNDLED_PATHS.has(book.path)),
+    bundled: books.length > 0 && books.every(isBookBundled),
   };
 }).filter((corpus) => corpus.books.length > 0);
 
 /** Livres d'un corpus qui manquent encore sur l'appareil. */
 export function missingBooksOfCorpus(corpus: OfflineCorpus): OfflineBook[] {
-  return corpus.books.filter((book) => !BUNDLED_PATHS.has(book.path) && !isDownloaded(book.path));
+  return corpus.books.filter((book) => !isBookBundled(book) && !isDownloaded(book.path));
 }
 
 /** Livres d'un corpus qui se téléchargent (ceux que l'app n'embarque pas). */
@@ -217,7 +217,7 @@ export function isEntryAvailableOffline(entry: TextStudyJsonEntry): boolean {
   const book = bookForEntry(entry);
   // Type non lisible par le lecteur : rien à télécharger.
   if (!book) return true;
-  return BUNDLED_PATHS.has(book.path) || isDownloaded(book.path);
+  return isBookBundled(book) || isDownloaded(book.path);
 }
 
 /** Livres à télécharger pour que ces entrées soient lisibles hors ligne (sans doublon). */
@@ -226,7 +226,7 @@ export function missingBooksForEntries(entries: TextStudyJsonEntry[]): OfflineBo
   const byPath = new Map<string, OfflineBook>();
   for (const entry of entries) {
     const book = bookForEntry(entry);
-    if (!book || BUNDLED_PATHS.has(book.path) || isDownloaded(book.path)) continue;
+    if (!book || isBookBundled(book) || isDownloaded(book.path)) continue;
     byPath.set(book.path, book);
   }
   return [...byPath.values()];
