@@ -510,6 +510,7 @@ const he: LocaleMessages = {
     range: "מ־{from} עד {to}",
     start: "הדלקה",
     end: "צאת החג",
+    goFurther: "להמשיך מכאן",
   },
   paracha: {
     title: "פרשת השבוע",
@@ -530,6 +531,10 @@ const he: LocaleMessages = {
       title: "זמני היום",
       then: "אחר כך {label} בשעה {time}",
       stale: "פתחו את האפליקציה לעדכון הזמנים",
+      entry: "כניסת {name}",
+      shabbat: "שבת",
+      festivalOn: "{name} ב{day}",
+      cholHamoed: "חול המועד {name}",
     },
     description:
       "זמנים הלכתיים המחושבים למיקום שלכם, במכשיר עצמו: המיקום שלכם אינו נשלח לשום מקום.",
@@ -887,7 +892,7 @@ const he: LocaleMessages = {
     selectAtLeastOne: "אנא בחר לפחות חלק אחד",
     creating: "יוצר...",
     create: "צור סשן",
-    fillAllFields: "אנא מלא את כל השדות",
+    fieldRequired: "אנא מלא את השדה ״{field}״",
     createdSuccess: "הסשן נוצר בהצלחה!",
     createError: "שגיאה ביצירת הסשן. אנא נסה שוב.",
     requireGuestEmail: "לדרוש אימייל מהאורחים",
@@ -1335,6 +1340,14 @@ const he: LocaleMessages = {
         o: "מערב",
         no: "צפון-מערב",
       },
+    },
+    naanouim: {
+      open: "שש הקצוות",
+      title: "שש קצוות הנענוע",
+      intro: "מנענעים את הלולב שלוש פעמים לכל צד, בהולכה והובאה אל החזה. המספרים הם הסדר.",
+      order: "דרום (1), צפון (2), מזרח (3), מעלה (4), מטה (5), מערב (6).",
+      middle: "מעלה ומטה, באמצע הלוח, אינם רוחות השמים.",
+      live: "הלוח מסתובב עם המכשיר: פנה אל המספר של הצד שאתה מנענע.",
     },
     zman: {
       info: "על אודות הזמן הזה",

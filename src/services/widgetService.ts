@@ -191,16 +191,19 @@ class WidgetService {
       // payload calculé plutôt que d'écraser les surfaces par du vide.
       const provided = this.pendingDaily;
       this.pendingDaily = null;
+      // Le chnei mikra suit le calendrier du lieu des horaires, comme la page
+      // (le test d'isIsraelPlace, sans tirer zmanimService dans ce module).
+      const il = place.value.tzid === "Asia/Jerusalem";
       if (!this.user) {
         this.dailyJson = JSON.stringify(
-          buildDailyReadingWidgetPayload(null, t, new Date(), accent),
+          buildDailyReadingWidgetPayload(null, t, new Date(), accent, il),
         );
       } else {
         try {
           const prefs =
             provided ?? (await userPreferencesService.getPreferencesOrThrow(this.user.id));
           this.dailyJson = JSON.stringify(
-            buildDailyReadingWidgetPayload(prefs, t, new Date(), accent),
+            buildDailyReadingWidgetPayload(prefs, t, new Date(), accent, il),
           );
         } catch {
           // Hors ligne : le dernier payload tient.

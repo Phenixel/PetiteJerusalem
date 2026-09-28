@@ -2785,6 +2785,86 @@
       "type": "Brahot"
     },
     {
+      "id": 363,
+      "name": "נטילת לולב (Netilat Loulav)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.651.5",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
+      "id": 364,
+      "name": "סדר ליל סוכות (Seder Leil Souccot)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.639.1",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
+      "id": 365,
+      "name": "הושענות ליום ראשון (Hochanot Yom Richon)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.660.1",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
+      "id": 366,
+      "name": "הושענות ליום שני (Hochanot Yom Cheni)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.660.1",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
+      "id": 367,
+      "name": "הושענות ליום שלישי (Hochanot Yom Chelichi)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.660.1",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
+      "id": 368,
+      "name": "הושענות ליום רביעי (Hochanot Yom Revi'i)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.660.1",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
+      "id": 369,
+      "name": "הושענות ליום חמישי (Hochanot Yom 'Hamichi)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.660.1",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
+      "id": 370,
+      "name": "הושענות ליום ששי (Hochanot Yom Chichi)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.660.1",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
+      "id": 371,
+      "name": "הושענות להושענא רבא (Hochanot Hochana Rabba)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.660.1",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
+      "id": 372,
+      "name": "הושענות ליום שבת (Hochanot Chabbat)",
+      "livre": "סוכות (Souccot)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.660.1",
+      "totalSections": 1,
+      "type": "Moadim"
+    },
+    {
       "id": 358,
       "name": "נרות חנוכה (Nerot Hanouka)",
       "livre": "חנוכה (Hanouka)",

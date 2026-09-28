@@ -10,9 +10,9 @@ import { saidTachanun } from "./tachanun";
  * le calendrier hébraïque au lieu d'être choisies une à une.
  *
  * - Paracha de la semaine (chnei mikra) : la paracha lue au prochain Chabbat,
- *   affichée toute la semaine. Calendrier de diaspora (le public de
- *   l'application est en France). C'est une lecture de la semaine : son suivi
- *   tient jusqu'au changement de paracha, pas jusqu'à minuit.
+ *   affichée toute la semaine, au calendrier du lieu des horaires (Israël ou
+ *   diaspora). C'est une lecture de la semaine : son suivi tient jusqu'au
+ *   changement de paracha, pas jusqu'à minuit.
  * - Tehilim du jour : le cycle mensuel traditionnel (les 150 psaumes répartis
  *   sur les jours du mois hébraïque).
  */
@@ -69,17 +69,23 @@ export interface WeeklyParasha {
   weekKey: string;
 }
 
+/** La date civile locale d'un jour, au format d'une `weekKey` ("2026-08-08"). */
+function dateKey(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
 /**
  * La paracha de la semaine : celle du Chabbat à venir (aujourd'hui si Chabbat).
  * Les semaines de fête n'ont pas de paracha ordinaire ; on affiche alors celle
  * du prochain Chabbat ordinaire, que le chnei mikra anticipe.
  *
- * `il` suit le calendrier d'Israël. La diaspora par défaut, parce que c'est
- * le public de l'application et que la lecture de la semaine se suit là où
- * elle a commencé ; mais les deux cycles divergent six Chabbats par an, cinq
- * années sur sept, dès qu'un dernier jour de Yom Tov tombe un Chabbat en
- * diaspora (la prochaine fois de mai à juin 2026). La page des horaires,
- * qui nomme le Chabbat du lieu affiché, passe donc le calendrier du lieu.
+ * `il` suit le calendrier d'Israël, la diaspora par défaut. Les deux cycles
+ * divergent six Chabbats par an, cinq années sur sept, dès qu'un dernier jour
+ * de Yom Tov tombe un Chabbat en diaspora (la prochaine fois de mai à juin
+ * 2026) : la page des horaires, le chnei mikra et la lecture du lundi et du
+ * jeudi passent donc le calendrier du lieu des horaires.
  */
 export function getWeeklyParasha(date: Date = new Date(), il = false): WeeklyParasha | null {
   const saturday = new Date(date);
@@ -91,11 +97,8 @@ export function getWeeklyParasha(date: Date = new Date(), il = false): WeeklyPar
       const entries = reading.parsha
         .map((name) => parashaByKey.get(HEBCAL_ALIASES[normalize(name)] ?? normalize(name)))
         .filter((e): e is TextStudyJsonEntry => Boolean(e));
-      const month = String(saturday.getMonth() + 1).padStart(2, "0");
-      const day = String(saturday.getDate()).padStart(2, "0");
-      const weekKey = `${saturday.getFullYear()}-${month}-${day}`;
       return entries.length === reading.parsha.length
-        ? { names: [...reading.parsha], entries, weekKey }
+        ? { names: [...reading.parsha], entries, weekKey: dateKey(saturday) }
         : null;
     }
     saturday.setDate(saturday.getDate() + 7);
@@ -114,9 +117,35 @@ export function getWeeklyParasha(date: Date = new Date(), il = false): WeeklyPar
 export function getParashaForShabbat(saturday: Date, il = false): WeeklyParasha | null {
   const parasha = getWeeklyParasha(saturday, il);
   if (!parasha) return null;
-  const month = String(saturday.getMonth() + 1).padStart(2, "0");
-  const day = String(saturday.getDate()).padStart(2, "0");
-  return parasha.weekKey === `${saturday.getFullYear()}-${month}-${day}` ? parasha : null;
+  return parasha.weekKey === dateKey(saturday) ? parasha : null;
+}
+
+/**
+ * La paracha lue le lundi et le jeudi matin : le début de celle du Chabbat
+ * qui vient, comme `getWeeklyParasha`, sauf avant Souccot.
+ *
+ * `getWeeklyParasha` enjambe les Chabbats de fête (le chnei mikra anticipe),
+ * et saute donc Vezot Haberakha, qui n'a pas de Chabbat : on la lit à Sim'hat
+ * Torah. Mais les lundis et jeudis de Tichri qui précèdent un Chabbat de fête
+ * la lisent : entre Kippour et Souccot, ou dès la semaine de Kippour quand
+ * Kippour tombe un Chabbat (Roch Hachana un jeudi : les 5 et 8 Tichri).
+ *
+ * `il` suit le calendrier d'Israël, où Sim'hat Torah tombe le 22 Tichri, et
+ * non le 23.
+ */
+export function getWeekdayTorahParasha(date: Date, il = false): WeeklyParasha | null {
+  const hd = new HDate(date);
+  const simchatTorah = il ? 22 : 23;
+  if (hd.getMonth() === months.TISHREI && hd.getDate() < simchatTorah) {
+    const saturday = new Date(date);
+    saturday.setDate(saturday.getDate() + ((6 - saturday.getDay() + 7) % 7));
+    const shabbat = new HDate(saturday);
+    const entry = parashaByKey.get(HEBCAL_ALIASES.vezothaberakhah);
+    if (entry && new Sedra(shabbat.getFullYear(), il).lookup(shabbat).chag) {
+      return { names: ["Vezot Haberakhah"], entries: [entry], weekKey: dateKey(saturday) };
+    }
+  }
+  return getWeeklyParasha(date, il);
 }
 
 /** Le Chabbat d'une `weekKey` ("2026-08-08"), dans le repère local. */
@@ -133,12 +162,18 @@ export function shabbatOfWeek(weekKey: string): Date {
  * renvoie null) ; on les enjambe plutôt que de s'arrêter sur une semaine vide.
  * Deux Chabbats de fête ne se suivent jamais de plus de deux crans, la borne
  * est large.
+ *
+ * `il` suit le calendrier d'Israël, comme `getParashaForShabbat`.
  */
-export function adjacentParasha(weekKey: string, direction: 1 | -1): WeeklyParasha | null {
+export function adjacentParasha(
+  weekKey: string,
+  direction: 1 | -1,
+  il = false,
+): WeeklyParasha | null {
   const saturday = shabbatOfWeek(weekKey);
   for (let step = 0; step < 8; step++) {
     saturday.setDate(saturday.getDate() + direction * 7);
-    const parasha = getParashaForShabbat(saturday);
+    const parasha = getParashaForShabbat(saturday, il);
     if (parasha) return parasha;
   }
   return null;
@@ -338,6 +373,9 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
     // la lecture de la Torah venant juste après (à Roch Hodech, c'est le
     // Titkabal entier).
     occ.add("hanouka");
+    // Roch Hodech Tévet, qui tombe dans 'Hanouka : la lecture de Roch Hodech
+    // se fait en trois montées, et le nassi du jour en quatrième.
+    if (occ.has("rosh-chodesh")) occ.add("rosh-chodesh-hanouka");
   }
   // Pourim nommé à part de `nissim` : le jeûne d'Esther partage le psaume du
   // jour de Pourim, mais pas sa lecture de la Torah ni Al hanissim.
@@ -356,6 +394,34 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // Tévet tombe dans 'Hanouka : c'est 'Hanouka qui l'emporte, et le Hallel s'y
   // dit entier.
   const holHamoed = has(flags.CHOL_HAMOED);
+  // 'Hol haMoed, les jours intermédiaires : l'office y est celui de la
+  // semaine, avec le Hallel, la lecture de la Torah du jour et le Moussaf de
+  // la fête en plus. La clé nomme ces trois ajouts, qui n'ont pas d'autre
+  // jour où se dire ; les fêtes qu'elle sert se nomment par ailleurs
+  // (`sukkot`, `pesach`), pour le passage du Moussaf qui dit laquelle.
+  if (holHamoed) occ.add("hol-hamoed");
+  // Le loulav dans la Cha'harit de semaine : les jours de 'Hol haMoed de
+  // Souccot, avant le Hallel, et pendant pour les na'anou'im. Pas le Chabbat,
+  // où on ne porte pas les quatre espèces. Pas les jours de Yom Tov non plus,
+  // bien qu'on les y prenne : ce sidour n'est pas l'office de Yom Tov, qui n'y
+  // dit pas le Hallel, et les brahot n'y viendraient qu'orphelines. Ces
+  // jours-là, c'est la page du livre Moadim qui les porte.
+  if (occ.has("sukkot") && holHamoed && hd.getDay() !== 6) occ.add("loulav");
+  // Le quantième de Souccot, du 15 au 21 Tichri : la lecture de la Torah de
+  // 'Hol haMoed y prend les korbanot du jour (Bamidbar 29), comme celle de
+  // 'Hanouka prend le nassi du jour. Il se compte sur la date, en Terre
+  // d'Israël comme en diaspora : c'est la répartition des montées qui change
+  // (voir ci-dessous), pas le jour.
+  if (occ.has("sukkot") && hd.getMonth() === months.TISHREI) {
+    const jour = hd.getDate() - 14;
+    if (jour >= 1 && jour <= 7) occ.add(`souccot-${jour}`);
+  }
+  // Terre d'Israël ou diaspora, selon le lieu des horaires. À 'Hol haMoed de
+  // Souccot, la diaspora lit deux jours de korbanot, par doute sur la date ;
+  // la Terre d'Israël lit celui du jour quatre fois. Deux clés plutôt qu'une
+  // et sa négation : `when` n'en porte qu'une simple (voir
+  // docs/compatibilite-textes.md).
+  occ.add(il ? "eretz-israel" : "houts-laarets");
   if (occ.has("rosh-chodesh") || hanukkah || holHamoed) {
     occ.add("hallel");
     const entier = hanukkah || (holHamoed && festival("Sukkot"));
@@ -418,7 +484,9 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   }
   // La lecture de la Torah des lundis et jeudis ordinaires : le début de la
   // paracha de la semaine. Les jours à lecture propre (Roch Hodech, 'Hanouka,
-  // Pourim, jeûnes publics, 'Hol haMoed) lisent leur passage, pas celui-là.
+  // Pourim, jeûnes publics, 'Hol haMoed, et les Yom Tov : Roch Hachana,
+  // Kippour, Pessah, Chavou'ot, Souccot, Chemini Atseret) lisent leur
+  // passage, pas celui-là.
   // Les jeûnes de coutume (BeHaB, Yom Kippour Katan) gardent la lecture
   // ordinaire : hebcal les marque pourtant comme jeûnes, on les écarte.
   // Un jeûne que dit toute l'assemblée. hebcal marque de la même façon des
@@ -503,7 +571,11 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   if (selihotTsom && !tsomEstherVeille && !tsomVendredi) occ.add("tsom-minha");
   if (mois === months.TISHREI && hd.getDate() === 11) occ.add("chir-lendemain-kippour");
   const ownReading =
-    occ.has("rosh-chodesh") || occ.has("nissim") || publicFast || has(flags.CHOL_HAMOED);
+    occ.has("rosh-chodesh") ||
+    occ.has("nissim") ||
+    publicFast ||
+    has(flags.CHOL_HAMOED) ||
+    has(flags.CHAG);
   if ((hd.getDay() === 1 || hd.getDay() === 4) && !ownReading) occ.add("torah-semaine");
   // Un séfer Torah est sorti à Cha'harit : lundi et jeudi, Chabbat, et les
   // jours à lecture propre. C'est la clé de ce qui accompagne son retour

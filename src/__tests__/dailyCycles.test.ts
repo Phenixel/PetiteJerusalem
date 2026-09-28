@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   adjacentParasha,
+  getWeekdayTorahParasha,
   getWeeklyParasha,
   getParashaForShabbat,
   getTehilimOfDay,
@@ -49,7 +50,7 @@ describe("getParashaForShabbat", () => {
   });
 
   it("ne renvoie rien quand ce Chabbat tombe un jour de fête", () => {
-    // 3 octobre 2026 : Chabbat 'Hol Hamoed Souccot, sans paracha ordinaire.
+    // 3 octobre 2026 : Chemini Atseret, un Chabbat sans paracha ordinaire.
     // getWeeklyParasha anticiperait sur la suivante, pas getParashaForShabbat.
     const shabbat = new Date(2026, 9, 3, 22, 0, 0);
     expect(getWeeklyParasha(shabbat)).not.toBeNull();
@@ -79,6 +80,44 @@ describe("getParashaForShabbat", () => {
   });
 });
 
+describe("getWeekdayTorahParasha", () => {
+  // La lecture du lundi et du jeudi matin : le début de la paracha du Chabbat
+  // qui vient, sauf avant Souccot, où c'est Vezot Haberakha.
+  it("lit Vezot Haberakha entre Kippour et Souccot", () => {
+    // Jeudi 24 septembre 2026, 13 Tichri 5787 : le Chabbat qui vient est
+    // Souccot. Le chnei mikra, lui, anticipe Berechit.
+    const jeudi = new Date(2026, 8, 24, 12);
+    expect(getWeekdayTorahParasha(jeudi)?.names).toEqual(["Vezot Haberakhah"]);
+    expect(getWeekdayTorahParasha(jeudi)?.entries[0]?.name).toBe("V'Zot HaBerachah");
+    expect(getWeekdayTorahParasha(jeudi)?.weekKey).toBe("2026-09-26");
+    expect(getWeeklyParasha(jeudi)?.names).toEqual(["Bereshit"]);
+  });
+
+  it("garde Ha'azinou quand un Chabbat ordinaire sépare Kippour de Souccot", () => {
+    // Jeudi 20 septembre 2029, 11 Tichri 5790 : Kippour est tombé un
+    // mercredi, le Chabbat qui vient lit Ha'azinou.
+    expect(getWeekdayTorahParasha(new Date(2029, 8, 20, 12))?.names).toEqual(["Ha'azinu"]);
+  });
+
+  it("lit Vezot Haberakha la semaine où Kippour tombe un Chabbat", () => {
+    // Roch Hachana 5789 tombe un jeudi : Kippour est le Chabbat 30 septembre
+    // 2028. Le lundi 25 (5 Tichri) et le jeudi 28 (8 Tichri) lisent donc
+    // déjà Vezot Haberakha.
+    expect(getWeekdayTorahParasha(new Date(2028, 8, 25, 12))?.names).toEqual(["Vezot Haberakhah"]);
+    expect(getWeekdayTorahParasha(new Date(2028, 8, 28, 12))?.names).toEqual(["Vezot Haberakhah"]);
+  });
+
+  it("reprend au Berechit après Sim'hat Torah", () => {
+    // Lundi 5 octobre 2026, 24 Tichri.
+    expect(getWeekdayTorahParasha(new Date(2026, 9, 5, 12))?.names).toEqual(["Bereshit"]);
+  });
+
+  it("suit la paracha de la semaine le reste de l'année", () => {
+    // Jeudi 6 août 2026 : Re'eh, lue le Chabbat 8 août.
+    expect(getWeekdayTorahParasha(new Date(2026, 7, 6, 12))?.names).toEqual(["Re'eh"]);
+  });
+});
+
 describe("adjacentParasha", () => {
   // Les flèches du chnei mikra, en tête du Tanakh : elles feuillettent les
   // parachiot une à une, dans les deux sens.
@@ -88,8 +127,8 @@ describe("adjacentParasha", () => {
   });
 
   it("enjambe les Chabbats de fête, qui n'ont pas de paracha ordinaire", () => {
-    // Chabbat 26 septembre 2026 : Ha'azinou. Le suivant (3 octobre) est
-    // 'Hol Hamoed Souccot, la paracha d'après est Berechit, le 10.
+    // Chabbat 26 septembre 2026 : premier jour de Souccot. Le suivant
+    // (3 octobre) est Chemini Atseret, la paracha d'après est Berechit, le 10.
     expect(getParashaForShabbat(new Date(2026, 9, 3, 12))).toBeNull();
     const next = adjacentParasha("2026-09-26", 1);
     expect(next?.names).toEqual(["Bereshit"]);
@@ -105,6 +144,14 @@ describe("adjacentParasha", () => {
       expect(adjacentParasha(next!.weekKey, -1)?.weekKey).toBe(week);
       week = next!.weekKey;
     }
+  });
+
+  it("feuillette au calendrier d'Israël quand on le lui demande", () => {
+    // Chabbat 23 mai 2026 : Israël lit Nasso, la diaspora est encore en fête
+    // (second jour de Chavou'ot). La paracha qui suit est Beha'alotcha en
+    // Israël ; en diaspora, qui n'a rien lu ce jour-là, c'est Nasso.
+    expect(adjacentParasha("2026-05-23", 1, true)?.names).toEqual(["Beha'alotcha"]);
+    expect(adjacentParasha("2026-05-23", 1)?.names).toEqual(["Nasso"]);
   });
 
   it("le Chabbat d'une semaine est bien un samedi", () => {

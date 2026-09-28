@@ -24,6 +24,7 @@
 // pas ce fichier de contenu (~94 kB) dans leur chunk. Ré-exportées ici pour
 // le prerender et les consommateurs historiques.
 import { SITE_URL, SITE_NAME, OG_IMAGE, LOGO_IMAGE } from "../config/site";
+import { APPLE_APP_ID } from "../config/stores";
 import { ZMANIM_GUIDE } from "./zmanimGuideStrings";
 import {
   DEFAULT_SEO_LOCALE,
@@ -2289,6 +2290,14 @@ export function injectMeta(template: string, page: SeoPage): string {
   html = replaceMetaContent(html, "name", "twitter:title", page.title);
   html = replaceMetaContent(html, "name", "twitter:description", page.description);
   html = replaceCanonical(html, url);
+  // Smart App Banner iOS : l'app doit s'ouvrir sur la page que Safari
+  // affiche, pas sur l'accueil (voir index.html).
+  html = replaceMetaContent(
+    html,
+    "name",
+    "apple-itunes-app",
+    `app-id=${APPLE_APP_ID}, app-argument=${url}`,
+  );
 
   if (page.robots) {
     html = replaceMetaContent(html, "name", "robots", page.robots);

@@ -8,6 +8,12 @@
  *
  * Les Chabbats de fête n'ont pas de paracha ordinaire : ils sont simplement
  * absents de la liste, comme ils le sont du cycle.
+ *
+ * Calendrier de la diaspora, volontairement. Ce calendrier n'est rattaché à
+ * aucun lieu : ses pages sont prérendues une fois pour tous (le hub /paracha
+ * et la date de lecture de chaque paracha), et le public de l'application
+ * est d'abord en France. Les pages qui ont un lieu (horaires, chnei mikra,
+ * lecture du lundi et du jeudi) suivent, elles, le calendrier de ce lieu.
  */
 
 import { getParashaForShabbat, type WeeklyParasha } from "../services/dailyCycles";
@@ -38,7 +44,7 @@ export function parashaWeeks(now: Date, weeks: number): ParashaWeek[] {
   const found: ParashaWeek[] = [];
   const saturday = nextSaturday(now);
   for (let i = 0; i < weeks; i++) {
-    const parasha = getParashaForShabbat(saturday);
+    const parasha = getParashaForShabbat(saturday, false);
     if (parasha) found.push({ shabbat: new Date(saturday), parasha });
     saturday.setDate(saturday.getDate() + 7);
   }

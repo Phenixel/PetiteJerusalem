@@ -258,6 +258,12 @@ export interface TextBlock {
    */
   kotel?: boolean;
   /**
+   * Souccot : le passage porte les brahot du loulav. Le lecteur pose alors un
+   * cadran à côté du titre, où les six côtés du na'anou'a sont numérotés dans
+   * l'ordre où on les fait.
+   */
+  naanouim?: boolean;
+  /**
    * Sidour : à cet endroit s'insère la lecture de la Torah de la semaine (la
    * 1re montée de la paracha), que le lecteur charge et injecte lui-même :
    * elle change chaque semaine, le fichier ne peut pas la porter.
@@ -643,6 +649,7 @@ interface TefilaFileBlock {
   halakha?: Halakha | Halakha[];
   kotel?: boolean;
   mirror?: boolean;
+  naanouim?: boolean;
   torahWeekly?: boolean;
   lines?: (string | TefilaFileLine)[];
 }
@@ -742,6 +749,7 @@ export function parseTefilaBlocks(rawBlocks: unknown): TextBlock[] {
     if (raw.zman) block.zman = raw.zman;
     if (raw.halakha) block.halakhot = Array.isArray(raw.halakha) ? raw.halakha : [raw.halakha];
     if (raw.kotel) block.kotel = true;
+    if (raw.naanouim) block.naanouim = true;
     if (raw.mirror) block.mirror = true;
     if (raw.torahWeekly) block.torahWeekly = true;
     blocks.push(block);
